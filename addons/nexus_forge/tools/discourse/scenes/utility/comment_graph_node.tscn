@@ -1,0 +1,25 @@
+[gd_scene load_steps=2 format=3 uid="uid://cfbwbpf3bv5q4"]
+
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/scenes/utility/comment_graph_node_script.gd" id="1_mukc8"]
+
+[node name="CommentGraphNode" type="GraphNode"]
+custom_minimum_size = Vector2(175, 100)
+offset_right = 290.0
+offset_bottom = 190.0
+resizable = true
+title = "Comment"
+slot/0/left_enabled = false
+slot/0/left_type = 0
+slot/0/left_color = Color(1, 1, 1, 1)
+slot/0/left_icon = null
+slot/0/right_enabled = false
+slot/0/right_type = 0
+slot/0/right_color = Color(1, 1, 1, 1)
+slot/0/right_icon = null
+slot/0/draw_stylebox = true
+script = ExtResource("1_mukc8")
+
+[node name="ComentText" type="TextEdit" parent="."]
+layout_mode = 2
+size_flags_vertical = 3
+wrap_mode = 1

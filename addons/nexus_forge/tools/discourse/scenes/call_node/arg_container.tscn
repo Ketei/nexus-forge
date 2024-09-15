@@ -1,0 +1,35 @@
+[gd_scene load_steps=3 format=3 uid="uid://ck0og3nkdnok1"]
+
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/scenes/call_node/arg_container_script.gd" id="1_568fg"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_r1prc"]
+
+[node name="ArgContainer" type="HBoxContainer"]
+size_flags_horizontal = 3
+script = ExtResource("1_568fg")
+
+[node name="VarLabel" type="Label" parent="."]
+custom_minimum_size = Vector2(75, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "ArgName"
+text_overrun_behavior = 3
+
+[node name="ValContainer" type="PanelContainer" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxEmpty_r1prc")
+
+[node name="ValSpinBox" type="SpinBox" parent="ValContainer"]
+layout_mode = 2
+
+[node name="BoolBox" type="CheckBox" parent="ValContainer"]
+visible = false
+layout_mode = 2
+text = "Enabled"
+alignment = 1
+text_overrun_behavior = 3
+
+[node name="StringLine" type="LineEdit" parent="ValContainer"]
+visible = false
+layout_mode = 2

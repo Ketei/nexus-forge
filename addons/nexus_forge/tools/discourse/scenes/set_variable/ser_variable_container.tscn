@@ -1,0 +1,64 @@
+[gd_scene load_steps=3 format=3 uid="uid://cfr3ka80fgyqb"]
+
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/scenes/set_variable/ser_variable_container_script.gd" id="1_u15c5"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_xi6rb"]
+
+[node name="SerVarContainer" type="HBoxContainer"]
+anchors_preset = -1
+anchor_right = 1.0
+anchor_bottom = 0.111111
+script = ExtResource("1_u15c5")
+metadata/_edit_use_anchors_ = true
+
+[node name="VarNameLine" type="LineEdit" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+size_flags_stretch_ratio = 2.0
+placeholder_text = "Variable Path"
+
+[node name="Label" type="Label" parent="."]
+layout_mode = 2
+text = "="
+
+[node name="VarTypesOption" type="OptionButton" parent="."]
+layout_mode = 2
+size_flags_vertical = 4
+expand_icon = true
+selected = 0
+item_count = 4
+popup/item_0/text = "int"
+popup/item_1/text = "float"
+popup/item_1/id = 1
+popup/item_2/text = "bool"
+popup/item_2/id = 2
+popup/item_3/text = "Str"
+popup/item_3/id = 3
+
+[node name="PanelContainer" type="PanelContainer" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 3.0
+theme_override_styles/panel = SubResource("StyleBoxEmpty_xi6rb")
+
+[node name="ValVarNode" type="SpinBox" parent="PanelContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="BoolVarNode" type="CheckBox" parent="PanelContainer"]
+visible = false
+layout_mode = 2
+text = "Enabled"
+alignment = 1
+
+[node name="StrValNode" type="LineEdit" parent="PanelContainer"]
+visible = false
+layout_mode = 2
+placeholder_text = "Variable Value"
+
+[node name="RemoveVarButton" type="Button" parent="."]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+size_flags_vertical = 4
+text = "X"

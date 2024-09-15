@@ -1,0 +1,25 @@
+[gd_scene load_steps=2 format=3 uid="uid://b8of7df1gb5qk"]
+
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/scenes/entry/entry_dialog_gnode_script.gd" id="1_ux8t8"]
+
+[node name="EntryDialogGraphNode" type="GraphNode"]
+custom_minimum_size = Vector2(160, 80)
+offset_right = 160.0
+offset_bottom = 79.9999
+title = "Dialog Entry"
+slot/0/left_enabled = false
+slot/0/left_type = 0
+slot/0/left_color = Color(1, 1, 1, 1)
+slot/0/left_icon = null
+slot/0/right_enabled = true
+slot/0/right_type = 0
+slot/0/right_color = Color(0.294, 0.8, 0.248, 1)
+slot/0/right_icon = null
+slot/0/draw_stylebox = true
+script = ExtResource("1_ux8t8")
+
+[node name="Label" type="Label" parent="."]
+layout_mode = 2
+text = "Initial Dialog"
+horizontal_alignment = 2
+vertical_alignment = 1

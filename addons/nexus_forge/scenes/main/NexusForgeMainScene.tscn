@@ -1,0 +1,82 @@
+[gd_scene load_steps=7 format=3 uid="uid://dykskyw7tvdof"]
+
+[ext_resource type="PackedScene" uid="uid://cx4h4u45kp8vt" path="res://addons/nexus_forge/tools/discourse/scenes/discourse_main.tscn" id="1_4y35a"]
+[ext_resource type="Texture2D" uid="uid://bixkesgcxvbpk" path="res://icon.svg" id="1_j02mv"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_7uir0"]
+bg_color = Color(0.145098, 0.168627, 0.203922, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_i88kw"]
+content_margin_left = 7.0
+content_margin_top = 10.0
+content_margin_right = 7.0
+content_margin_bottom = 5.0
+bg_color = Color(0.211765, 0.239216, 0.290196, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_jtiy1"]
+content_margin_left = 10.0
+content_margin_right = 10.0
+bg_color = Color(0.211765, 0.239216, 0.290196, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ern4d"]
+bg_color = Color(0.113725, 0.133333, 0.160784, 1)
+
+[node name="NexusForgeMainScene" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TabContainer" type="TabContainer" parent="."]
+layout_mode = 2
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_constants/side_margin = 0
+theme_override_styles/tabbar_background = SubResource("StyleBoxFlat_7uir0")
+theme_override_styles/panel = SubResource("StyleBoxFlat_i88kw")
+theme_override_styles/tab_selected = SubResource("StyleBoxFlat_jtiy1")
+current_tab = 0
+metadata/_edit_use_anchors_ = true
+
+[node name="NexusForge" type="Control" parent="TabContainer"]
+layout_mode = 2
+metadata/_tab_index = 0
+
+[node name="CenterContainer" type="CenterContainer" parent="TabContainer/NexusForge"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="TabContainer/NexusForge/CenterContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="TabContainer/NexusForge/CenterContainer/VBoxContainer"]
+layout_mode = 2
+text = "NexusForge Logo"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="TextureRect" type="TextureRect" parent="TabContainer/NexusForge/CenterContainer/VBoxContainer"]
+layout_mode = 2
+texture = ExtResource("1_j02mv")
+stretch_mode = 5
+
+[node name="Discourse" parent="TabContainer" instance=ExtResource("1_4y35a")]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 1
+
+[node name="PanelContainer" type="PanelContainer" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_ern4d")

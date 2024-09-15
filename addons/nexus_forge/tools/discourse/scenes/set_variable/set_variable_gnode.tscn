@@ -1,0 +1,58 @@
+[gd_scene load_steps=2 format=3 uid="uid://db0mrd07e7srv"]
+
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/scenes/set_variable/set_variable_gnode_script.gd" id="1_sdsb4"]
+
+[node name="SetVariableGNode" type="GraphNode"]
+offset_right = 370.0
+offset_bottom = 280.0
+title = "Set Variables"
+slot/0/left_enabled = false
+slot/0/left_type = 0
+slot/0/left_color = Color(1, 1, 1, 1)
+slot/0/left_icon = null
+slot/0/right_enabled = true
+slot/0/right_type = 4
+slot/0/right_color = Color(0.811186, 0.536205, 5.77569e-07, 1)
+slot/0/right_icon = null
+slot/0/draw_stylebox = true
+slot/1/left_enabled = false
+slot/1/left_type = 0
+slot/1/left_color = Color(1, 1, 1, 1)
+slot/1/left_icon = null
+slot/1/right_enabled = false
+slot/1/right_type = 0
+slot/1/right_color = Color(1, 1, 1, 1)
+slot/1/right_icon = null
+slot/1/draw_stylebox = true
+script = ExtResource("1_sdsb4")
+
+[node name="SetVarLabel" type="Label" parent="."]
+custom_minimum_size = Vector2(0, 35)
+layout_mode = 2
+text = "Variables"
+horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 3
+
+[node name="AddVarButton" type="Button" parent="SetVarLabel"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -8.0
+offset_top = -4.0
+offset_bottom = 4.0
+grow_horizontal = 0
+grow_vertical = 2
+text = "+"
+
+[node name="ScrollContainer" type="ScrollContainer" parent="."]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="VariablesContainer" type="VBoxContainer" parent="ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3

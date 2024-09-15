@@ -1,0 +1,100 @@
+[gd_scene load_steps=2 format=3 uid="uid://dc5ntjnr7076g"]
+
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/scenes/comparation/comparation_gnode_script.gd" id="1_5qx7q"]
+
+[node name="ComparationGraphNode" type="GraphNode"]
+offset_right = 170.0
+offset_bottom = 170.0
+title = "Comparation"
+slot/0/left_enabled = false
+slot/0/left_type = 0
+slot/0/left_color = Color(1, 1, 1, 1)
+slot/0/left_icon = null
+slot/0/right_enabled = false
+slot/0/right_type = 0
+slot/0/right_color = Color(1, 1, 1, 1)
+slot/0/right_icon = null
+slot/0/draw_stylebox = true
+slot/1/left_enabled = false
+slot/1/left_type = 0
+slot/1/left_color = Color(1, 1, 1, 1)
+slot/1/left_icon = null
+slot/1/right_enabled = true
+slot/1/right_type = 8
+slot/1/right_color = Color(1, 0.244945, 0.962502, 1)
+slot/1/right_icon = null
+slot/1/draw_stylebox = true
+slot/2/left_enabled = true
+slot/2/left_type = 9
+slot/2/left_color = Color(3.46541e-06, 0.64948, 0.447818, 1)
+slot/2/left_icon = null
+slot/2/right_enabled = false
+slot/2/right_type = 0
+slot/2/right_color = Color(1, 1, 1, 1)
+slot/2/right_icon = null
+slot/2/draw_stylebox = true
+slot/3/left_enabled = true
+slot/3/left_type = 9
+slot/3/left_color = Color(3.46541e-06, 0.64948, 0.447818, 1)
+slot/3/left_icon = null
+slot/3/right_enabled = false
+slot/3/right_type = 0
+slot/3/right_color = Color(1, 1, 1, 1)
+slot/3/right_icon = null
+slot/3/draw_stylebox = true
+script = ExtResource("1_5qx7q")
+
+[node name="CompContainer" type="HBoxContainer" parent="."]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+
+[node name="VarA" type="Label" parent="CompContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 2.0
+text = "A"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="OperationOption" type="OptionButton" parent="CompContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+alignment = 1
+selected = 0
+item_count = 6
+popup/item_0/text = "=="
+popup/item_1/text = "!="
+popup/item_1/id = 1
+popup/item_2/text = "<"
+popup/item_2/id = 2
+popup/item_3/text = "<="
+popup/item_3/id = 3
+popup/item_4/text = ">="
+popup/item_4/id = 4
+popup/item_5/text = ">"
+popup/item_5/id = 5
+
+[node name="VarB" type="Label" parent="CompContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 2.0
+text = "B"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Result" type="Label" parent="."]
+layout_mode = 2
+text = "Result"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="InputVarA" type="Label" parent="."]
+layout_mode = 2
+text = "A"
+vertical_alignment = 1
+
+[node name="InputVarB" type="Label" parent="."]
+layout_mode = 2
+text = "B"
+vertical_alignment = 1
