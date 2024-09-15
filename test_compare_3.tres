@@ -1,0 +1,120 @@
+[gd_resource type="Resource" script_class="DialogData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/scripts/classes/dialog/resources/dialog_resource.gd" id="1_quqls"]
+
+[resource]
+script = ExtResource("1_quqls")
+dialog_entry = "entry"
+_entry_offset = Vector2(0, 0)
+conversation = {
+"entry": {
+"call": {},
+"character": {
+"id": "test_character",
+"idle": {
+"animation": "idle",
+"play": false
+},
+"offset": Vector2(40, 140),
+"talking": {
+"animation": "animated",
+"play": true
+}
+},
+"dialog": {
+"seconds_per_letter": 10.0,
+"text": "Entry dialog with 10 seconds per letter plus pause"
+},
+"next": {
+"data": {
+"next": "test_replies",
+"offset": Vector2(1320, -120),
+"use_shortcut": false
+},
+"type": 0
+},
+"offset": Vector2(500, -80),
+"pause": true,
+"set_variable": {},
+"signal": {
+"offset": Vector2(120, 380),
+"signal": "test_signal"
+},
+"type": 0
+},
+"no_dialog": {
+"call": {},
+"character": {},
+"dialog": {
+"seconds_per_letter": -1.0,
+"text": "no no no"
+},
+"next": {
+"data": {
+"offset": Vector2(2180, 260)
+},
+"type": 3
+},
+"offset": Vector2(1660, 220),
+"pause": false,
+"set_variable": {},
+"signal": {},
+"type": 0
+},
+"test_replies": {
+"cancel": -1.0,
+"keep_dialog": true,
+"offset": Vector2(1320, -120),
+"options": [{
+"call": {},
+"conditions": {},
+"offset": Vector2(0, 0),
+"set_variable": {},
+"signal": {},
+"text": "Yes reply"
+}, {
+"call": {},
+"conditions": {},
+"offset": Vector2(0, 0),
+"set_variable": {},
+"signal": {},
+"text": "No reply"
+}],
+"targets": [{
+"data": {
+"next": "yes_dialog",
+"offset": Vector2(1640, -460),
+"use_shortcut": false
+},
+"type": 0
+}, {
+"data": {
+"next": "no_dialog",
+"offset": Vector2(1660, 220),
+"use_shortcut": false
+},
+"type": 0
+}],
+"type": 1
+},
+"yes_dialog": {
+"call": {},
+"character": {},
+"dialog": {
+"seconds_per_letter": -1.0,
+"text": "yes yes yes"
+},
+"next": {
+"data": {
+"offset": Vector2(2200, -400)
+},
+"type": 3
+},
+"offset": Vector2(1640, -460),
+"pause": false,
+"set_variable": {},
+"signal": {},
+"type": 0
+}
+}
+orphans = Array[Dictionary]([])

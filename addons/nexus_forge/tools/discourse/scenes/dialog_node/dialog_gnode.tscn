@@ -89,6 +89,7 @@ custom_minimum_size = Vector2(0, 250)
 layout_mode = 2
 size_flags_vertical = 3
 placeholder_text = "Dialog Text"
+wrap_mode = 1
 
 [node name="OptionsContainer" type="HBoxContainer" parent="DialogContainer"]
 layout_mode = 2

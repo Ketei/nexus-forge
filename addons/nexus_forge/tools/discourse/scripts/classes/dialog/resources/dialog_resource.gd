@@ -334,8 +334,8 @@ static func get_condition_structure() -> Dictionary:
 	return {
 		"type": DialogType.CONDITION,
 		"comparation": {}, # uses get_comparation_structure
-		"true": "",
-		"false": "",
+		"true": {}, # next_structure
+		"false": {},
 		"offset": Vector2()
 	}
 
@@ -397,6 +397,10 @@ static func get_comment_structure() -> Dictionary:
 		"size": Vector2(175, 100),
 		"offset": Vector2()
 	}
+
+
+static func get_end_structure() -> Dictionary:
+	return {"offset": Vector2()}
 
 
 # var_a: "variant" = Will "variant"(string)

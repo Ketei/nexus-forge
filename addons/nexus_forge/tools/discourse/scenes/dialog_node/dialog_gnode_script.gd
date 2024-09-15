@@ -122,10 +122,9 @@ func generate_node_dictionary() -> Dictionary:
 		elif next_node.node_type == DialogData.DialogType.CONDITION:
 			next_class = DialogData.NextType.CONDITION
 			next_dict_data = next_node.generate_node_dictionary()
-		#elif next_node.node_type == DialogData.DialogType.END:
-		else:
+		elif next_node.node_type == DialogData.DialogType.END:
 			next_class = DialogData.NextType.END
-			next_dict_data = {}
+			next_dict_data = next_node.generate_node_dictionary()
 		
 		next_dict["type"] = next_class
 		next_dict["data"] = next_dict_data

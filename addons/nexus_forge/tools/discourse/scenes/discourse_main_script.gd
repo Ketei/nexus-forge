@@ -15,6 +15,7 @@ const CONDITIONAL_SPLIT_NODE = preload("res://addons/nexus_forge/tools/discourse
 const GO_TO_ID_GNODE = preload("res://addons/nexus_forge/tools/discourse/scenes/utility/go_to_id_gnode.tscn")
 const RETURN_CALL_NODE = preload("res://addons/nexus_forge/tools/discourse/scenes/call_node/return_call_gnode.tscn")
 const COMMENT_GRAPH_NODE = preload("res://addons/nexus_forge/tools/discourse/scenes/utility/comment_graph_node.tscn")
+const END_GNODE = preload("res://addons/nexus_forge/tools/discourse/scenes/end_node/end_gnode.tscn")
 
 var current_dialog: TreeItem
 var entry_node: DiscourseGraphNode = null
@@ -33,8 +34,10 @@ var _is_traveling: bool = false
 @onready var add_node_button: MenuButton = $Dialogues/TreeContainer/MenuContainer/AddNodeButton
 
 @onready var discourse_save_dialog: FileDialog = $DiscourseSaveDialog
+@onready var discourse_open_dialog: FileDialog = $DiscourseOpenDialog
 
 @onready var test_save_button: Button = $Dialogues/TreeContainer/MenuContainer/Button
+@onready var test_open: Button = $Dialogues/TreeContainer/MenuContainer/test_open
 
 
 func _ready() -> void:
@@ -52,11 +55,30 @@ func _ready() -> void:
 	id_nodes.center_dialog_pressed.connect(center_node)
 	test_save_button.pressed.connect(on_test_save_pressed)
 	
-	entry_node = $Dialogues/TreeContainer/DialogNodes/DialogGraphEdit/EntryDialogGraphNode
+	discourse_save_dialog.file_selected.connect(on_test_save_file_selected)
+	test_open.pressed.connect(on_test_open_pressed)
+	discourse_open_dialog.file_selected.connect(on_test_open_selected)
 
 
+# TODO Remove once finished
 func on_test_save_pressed() -> void:
-	print(get_current_conversation_data())
+	discourse_save_dialog.show()
+	
+
+func on_test_open_pressed() -> void:
+	discourse_open_dialog.show()
+
+
+func on_test_open_selected(path: String) -> void:
+	on_resource_selected(path)
+
+
+func on_test_save_file_selected(path:String) -> void:
+	var save_data: Dictionary = get_current_conversation_data()
+	
+	print(save_data)
+	print("Saved to: " + path)
+	save_conversation(save_data, path)
 
 
 func get_dialog_graph_center() -> Vector2:
@@ -82,7 +104,7 @@ func on_add_node_selected(selected_idx: int) -> void:
 					target_pos)
 			
 		4:
-			new_node = spawn_reply_options_node(
+			new_node = spawn_reply_selector_node(
 					"",
 					DialogData.get_replies_structure(),
 					null,
@@ -131,7 +153,15 @@ func on_add_node_selected(selected_idx: int) -> void:
 		15:
 			new_node = spawn_id_shortcut(target_pos)
 		16:
-			new_node = spawn_comment_node(DialogData.get_comment_structure())
+			new_node = spawn_comment_node(
+					DialogData.get_comment_structure(),
+					true,
+					target_pos)
+		17:
+			new_node = spawn_end_node(
+					DialogData.get_end_structure(),
+					true,
+					target_pos)
 	
 	if new_node != null:
 		new_node.position_offset -= new_node.size / 2
@@ -190,7 +220,7 @@ func on_from_next_selected(index: int) -> void:
 			else:
 				connect_nodes(from_graph, new_dialog, "next")
 		1:
-			var new_replies := spawn_reply_options_node(
+			var new_replies := spawn_reply_selector_node(
 					"",
 					DialogData.get_replies_structure(),
 					null,
@@ -296,6 +326,13 @@ func on_from_next_selected(index: int) -> void:
 							"next")
 			else:
 				connect_nodes(from_graph, new_random, "next")
+		5:
+			var new_end := spawn_end_node(
+					DialogData.get_end_structure(),
+					true,
+					target_position)
+			new_end.position_offset -= new_end.get_input_port_position(0)
+			connect_nodes(from_graph, new_end, "next")
 
 
 func on_connection_from_empty(to_node: StringName, to_port: int, release_position: Vector2) -> void:
@@ -483,11 +520,13 @@ func on_close_requested(graph_node: DiscourseGraphNode) -> void:
 
 func on_resource_selected(resource_path: String) -> void:
 	if not FileAccess.file_exists(resource_path):
+		printerr(str("[DISCOURSE] File \"", resource_path, "\" not found."))
 		return
 	
 	var dialog: Resource = load(resource_path)
 	
 	if dialog is not DialogData:
+		printerr(str("[DISCOURSE] File \"", resource_path, "\" is not a dialog."))
 		return
 	
 	var tree_item: TreeItem = open_dialog_list.add_file(resource_path.get_file())
@@ -497,7 +536,7 @@ func on_resource_selected(resource_path: String) -> void:
 			{
 			"path": resource_path,
 			"resource": dialog,
-			"data": {"tree": {}, "orphans": [], "entry": ""}, # Used when unsaved data exists.
+			"data": {"tree": {}, "orphans": [], "entry": "", "entry_offset": Vector2()}, # Used when unsaved data exists.
 			"unsaved": false})
 
 	on_dialog_selected(tree_item)
@@ -506,7 +545,7 @@ func on_resource_selected(resource_path: String) -> void:
 func on_dialog_selected(tree_item: TreeItem) -> void:
 	if current_dialog != null:
 		if current_dialog.get_metadata(0)["unsaved"]:
-			current_dialog.get_metadata(0)["temp"] = get_current_conversation_data()
+			current_dialog.get_metadata(0)["data"] = get_current_conversation_data()
 		
 		dialog_graph_edit.clear_connections()
 		root_nodes.clear()
@@ -526,10 +565,8 @@ func on_dialog_selected(tree_item: TreeItem) -> void:
 	dialog_graph_edit.scroll_offset.y = -dialog_graph_edit.size.y / 2
 	
 	if entry_node == null:
-		entry_node = load("res://addons/nexus_forge/tools/discourse/scenes/entry_dialog_gnode.tscn").instantiate()
+		entry_node = load("res://addons/nexus_forge/tools/discourse/scenes/entry/entry_dialog_gnode.tscn").instantiate()
 		dialog_graph_edit.add_child(entry_node)
-	
-	entry_node.position_offset = Vector2.ZERO
 	
 	dialog_graph_edit.visible = true
 	no_dialog_container.visible = false
@@ -539,13 +576,15 @@ func on_dialog_selected(tree_item: TreeItem) -> void:
 	var entry_node_id: String = ""
 	
 	if item_metadata["unsaved"]:
-		data_tree = item_metadata["temp"]["tree"]
-		orphan_nodes = item_metadata["temp"]["orphans"]
-		entry_node_id = item_metadata["temp"]["entry"]
+		data_tree = item_metadata["data"]["tree"]
+		orphan_nodes = item_metadata["data"]["orphans"]
+		entry_node_id = item_metadata["data"]["entry"]
+		entry_node.position_offset = item_metadata["data"]["entry_offset"]
 	else:
 		data_tree = item_metadata["resource"].conversation
 		orphan_nodes = item_metadata["resource"].orphans
 		entry_node_id = item_metadata["resource"].dialog_entry
+		entry_node.position_offset = item_metadata["resource"]._entry_offset
 	
 	# First loop to instantiate all id_nodes
 	for dialog_id:String in data_tree:
@@ -556,12 +595,15 @@ func on_dialog_selected(tree_item: TreeItem) -> void:
 				dialog_node.node_id = dialog_id
 				root_nodes.append(dialog_node)
 				id_nodes.add_node(dialog_node)
+				print(dialog_id + " spawned")
 			
 			DialogData.DialogType.OPTIONS:
 				var reply_selector: DiscourseGraphNode = REPLY_SELECTOR_NODE.instantiate()
 				dialog_graph_edit.add_child(reply_selector)
 				reply_selector.node_id = dialog_id
+				root_nodes.append(reply_selector)
 				id_nodes.add_node(reply_selector)
+				print(dialog_id + " spawned")
 			_:
 				continue # We skip it because it's not typed
 	
@@ -571,7 +613,7 @@ func on_dialog_selected(tree_item: TreeItem) -> void:
 			DialogData.DialogType.DIALOG:
 				spawn_dialog_node(dialog_id, data_tree[dialog_id], get_root_with_id(dialog_id))
 			DialogData.DialogType.OPTIONS:
-				spawn_reply_options_node(dialog_id, data_tree[dialog_id], get_root_with_id(dialog_id))
+				spawn_reply_selector_node(dialog_id, data_tree[dialog_id], get_root_with_id(dialog_id))
 			_:
 				continue # We skip it because it's not typed
 	
@@ -701,7 +743,7 @@ func spawn_dialog_node(dialog_id: String, dialog_dict: Dictionary, target_node: 
 			connect_nodes(dialog_node, new_cond, "next")
 		
 		#elif dialog_dict["next"]["type"] == DialogData.NextType.OPTIONS:
-			#var new_options := spawn_reply_options_node("", dialog_dict["next"]["data"])
+			#var new_options := spawn_reply_selector_node("", dialog_dict["next"]["data"])
 			#connect_nodes(dialog_node, new_options, "next")
 		
 		elif dialog_dict["next"]["type"] == DialogData.NextType.ID:
@@ -713,6 +755,12 @@ func spawn_dialog_node(dialog_id: String, dialog_dict: Dictionary, target_node: 
 				connect_to = get_root_with_id(dialog_dict["next"]["data"]["next"])
 			if connect_to != null:
 				connect_nodes(dialog_node, connect_to, "next")
+		
+		elif dialog_dict["next"]["type"] == DialogData.NextType.END:
+			if not dialog_dict["next"]["data"].is_empty():
+				var new_end := spawn_end_node(dialog_dict["next"]["data"])
+				connect_nodes(dialog_node, new_end, "next")
+		
 	
 	return dialog_node
 
@@ -752,6 +800,46 @@ func spawn_conditional_split_node(split_data: Dictionary, override_offset := fal
 		var comp_node := spawn_comparator_node(split_data["comparation"])
 		connect_nodes(comp_node, new_conditional, "result")
 	
+	if not split_data["true"].is_empty():
+		if split_data["true"]["type"] == DialogData.NextType.ID:
+			var next_id_node: DiscourseGraphNode
+			if split_data["true"]["data"]["use_shortcut"]:
+				next_id_node = spawn_id_shortcut(split_data["true"]["data"]["offset"])
+			else:
+				next_id_node = get_root_with_id(split_data["true"]["data"]["next"])
+			if next_id_node != null:
+				connect_nodes_specific(new_conditional, "true", next_id_node, "next")
+		elif split_data["true"]["type"] == DialogData.NextType.RANDOM:
+			var new_rand := spawn_random_select_node(split_data["true"]["data"])
+			connect_nodes_specific(new_conditional, "true", new_rand, "next")
+		elif split_data["true"]["type"] == DialogData.NextType.CONDITION:
+			var new_cond_reloaded := spawn_conditional_split_node(split_data["true"]["data"])
+			connect_nodes_specific(new_conditional, "true", new_cond_reloaded, "next")
+		elif split_data["true"]["type"] == DialogData.NextType.END:
+			if not split_data["true"]["data"].is_empty():
+				var new_end := spawn_end_node(split_data["true"]["data"])
+				connect_nodes_specific(new_conditional, "true", new_end, "next")
+		
+	if not split_data["false"].is_empty():
+		if split_data["false"]["type"] == DialogData.NextType.ID:
+			var next_id_node: DiscourseGraphNode
+			if split_data["false"]["data"]["use_shortcut"]:
+				next_id_node = spawn_id_shortcut(split_data["false"]["data"]["offset"])
+			else:
+				next_id_node = get_root_with_id(split_data["false"]["data"]["next"])
+			if next_id_node != null:
+				connect_nodes_specific(new_conditional, "false", next_id_node, "next")
+		elif split_data["false"]["type"] == DialogData.NextType.RANDOM:
+			var new_rand := spawn_random_select_node(split_data["false"]["data"])
+			connect_nodes_specific(new_conditional, "false", new_rand, "next")
+		elif split_data["false"]["type"] == DialogData.NextType.CONDITION:
+			var new_cond_reloaded := spawn_conditional_split_node(split_data["false"]["data"])
+			connect_nodes_specific(new_conditional, "false", new_cond_reloaded, "next")
+		elif split_data["false"]["type"] == DialogData.NextType.END:
+			if not split_data["false"]["data"].is_empty():
+				var new_end := spawn_end_node(split_data["false"]["data"])
+				connect_nodes_specific(new_conditional, "false", new_end, "next")
+	
 	return new_conditional
 
 
@@ -789,11 +877,15 @@ func spawn_random_select_node(random_data: Dictionary, override_offset := false,
 		elif random_data["options"][opt_idx]["next"]["type"] == DialogData.NextType.CONDITION:
 			var new_cond := spawn_conditional_split_node(random_data["options"][opt_idx]["next"])
 			connect_nodes_specific(new_rand, str(opt_idx), new_cond, "next")
+		
+		elif random_data["options"][opt_idx]["next"]["type"] == DialogData.NextType.END and not random_data["options"][opt_idx]["next"]["data"].is_empty():
+			var new_end := spawn_end_node(random_data["options"][opt_idx]["next"]["data"])
+			connect_nodes_specific(new_rand, str(opt_idx), new_end, "next")
 			
 	return new_rand
 
 
-func spawn_reply_options_node(dialog_id: String, options_dict: Dictionary, target_node: DiscourseGraphNode = null, override_offset := false, offset_override: Vector2 = Vector2.ZERO) -> DiscourseGraphNode:
+func spawn_reply_selector_node(dialog_id: String, options_dict: Dictionary, target_node: DiscourseGraphNode = null, override_offset := false, offset_override: Vector2 = Vector2.ZERO) -> DiscourseGraphNode:
 	var reply_selector: DiscourseGraphNode
 	
 	if target_node == null:
@@ -819,10 +911,8 @@ func spawn_reply_options_node(dialog_id: String, options_dict: Dictionary, targe
 			# If the input ins't empty
 			if not options_dict["options"][option_idx].is_empty():
 				var new_reply := spawn_reply_node(options_dict["options"][option_idx])
-				var connection_idx: int = reply_selector.get_connector_index(option_idx)
-			
-				if connection_idx != -1:
-					connect_nodes_specific(new_reply, "reply", reply_selector, str(option_idx))
+				
+				connect_nodes_specific(new_reply, "reply", reply_selector, str(option_idx))
 			
 			# If the output isn't empty
 			if not options_dict["targets"][option_idx].is_empty():
@@ -838,16 +928,17 @@ func spawn_reply_options_node(dialog_id: String, options_dict: Dictionary, targe
 					if target_shortcut != null:
 						connect_nodes_specific(reply_selector, str(option_idx), target_shortcut, "next")
 						
-				elif options_dict["options"][option_idx]["next"]["type"] == DialogData.NextType.RANDOM:
-					var random_node: DiscourseGraphNode = spawn_random_select_node(options_dict["options"][option_idx]["next"])
+				elif options_dict["targets"][option_idx]["type"] == DialogData.NextType.RANDOM:
+					var random_node: DiscourseGraphNode = spawn_random_select_node(options_dict["targets"][option_idx]["next"])
 					connect_nodes_specific(reply_selector, str(option_idx), random_node, "next")
 					
-				elif options_dict["options"][option_idx]["next"]["type"] == DialogData.NextType.CONDITION:
-					var new_cond := spawn_conditional_split_node(options_dict["options"][option_idx]["next"])
+				elif options_dict["targets"][option_idx]["type"] == DialogData.NextType.CONDITION:
+					var new_cond := spawn_conditional_split_node(options_dict["targets"][option_idx]["next"])
 					connect_nodes_specific(reply_selector, str(option_idx), new_cond, "next")
-				
-				#elif options_dict["options"][option_idx]["next"]["type"] == DialogData.NextType.END:
-					#pass
+				elif options_dict["targets"][option_idx]["type"] == DialogData.NextType.END:
+					if not options_dict["targets"][option_idx]["data"].is_empty():
+						var new_end := spawn_end_node(options_dict["targets"][option_idx]["data"])
+						connect_nodes_specific(reply_selector, str(option_idx), new_end, "next")
 	
 	reply_selector.reply_cancel_box.value = options_dict["cancel"]
 	
@@ -965,14 +1056,21 @@ func spawn_return_call_node(call_data: Dictionary, override_offset := false, off
 	return new_node
 
 
-func spawn_comment_node(comment_data: Dictionary) -> DiscourseGraphNode:
+func spawn_comment_node(comment_data: Dictionary, override_offset := false, offset_override: Vector2 = Vector2.ZERO) -> DiscourseGraphNode:
 	var new_comment: DiscourseGraphNode = COMMENT_GRAPH_NODE.instantiate()
 	new_comment.close_requested.connect(on_close_requested)
 	dialog_graph_edit.add_child(new_comment)
-	new_comment.position_offset = comment_data["offset"]
+	new_comment.position_offset = offset_override if override_offset else comment_data["offset"]
 	new_comment.size = comment_data["size"]
 	new_comment.comment_text.text = comment_data["text"]
 	return new_comment
+
+
+func spawn_end_node(end_data: Dictionary, override_offset := false, offset_override: Vector2 = Vector2.ZERO) -> DiscourseGraphNode:
+	var new_end: DiscourseGraphNode = END_GNODE.instantiate()
+	dialog_graph_edit.add_child(new_end)
+	new_end.position_offset = offset_override if override_offset else end_data["offset"]
+	return new_end
 
 
 func on_center_dialog_called(dialog_id: String) -> void:
@@ -1001,8 +1099,13 @@ func center_node(dialog_node: DiscourseGraphNode) -> void:
 
 func get_root_with_id(node_id: String) -> DiscourseGraphNode:
 	for node in root_nodes:
-		if node._get_node_id() == node_id:
+		if node.node_id == node_id:
 			return node
+	print(node_id + " not found.")
+	var node_names: Array[String] = []
+	for node in root_nodes:
+		node_names.append(node.node_id)
+	print(",".join(node_names))
 	return null
 
 
@@ -1039,20 +1142,21 @@ func on_save_resources() -> void:
 			if entry_node.has_output_connection("next"):
 				entry = entry_node.get_output_port_connection_by_id("next").node_id
 				
-			save_onversation(conv_data, dialog_metadata["path"])
+			save_conversation(conv_data, dialog_metadata["path"])
 
 
 func on_save_folder_selected(file_path: String) -> void:
-	save_onversation(
+	save_conversation(
 			discourse_save_dialog.conv_data,
 			file_path)
 
 
-func save_onversation(conversation_data: Dictionary, resource_path: String) -> void:
+func save_conversation(conversation_data: Dictionary, resource_path: String) -> void:
 	var new_resource := DialogData.new()
 	new_resource.dialog_entry = conversation_data["entry"]
 	new_resource.conversation = conversation_data["tree"]
 	new_resource.orphans = conversation_data["orphans"]
+	new_resource._entry_offset = conversation_data["entry_offset"]
 	conversation_data["unsaved"] = false
 	conversation_data["resource"] = new_resource
 	ResourceSaver.save(new_resource, resource_path)
@@ -1090,4 +1194,4 @@ func get_current_conversation_data() -> Dictionary:
 	for node in id_orphans:
 		orphans.append(node.generate_node_dictionary())
 	
-	return {"tree": full_data_dict, "orphans": orphans, "entry": entry}
+	return {"tree": full_data_dict, "orphans": orphans, "entry": entry, "entry_offset": entry_node.position_offset}

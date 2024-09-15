@@ -1,0 +1,64 @@
+[gd_resource type="Resource" script_class="DialogData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/scripts/classes/dialog/resources/dialog_resource.gd" id="1_0s2jq"]
+
+[resource]
+script = ExtResource("1_0s2jq")
+dialog_entry = "initial_dialog"
+_entry_offset = Vector2(0, 0)
+conversation = {
+"215_190": {
+"cancel": -1.0,
+"keep_dialog": true,
+"offset": Vector2(960, -40),
+"options": [{
+"call": {},
+"conditions": {},
+"offset": Vector2(0, 0),
+"set_variable": {},
+"signal": {},
+"text": "411, 479"
+}, {
+"call": {},
+"conditions": {},
+"offset": Vector2(0, 0),
+"set_variable": {},
+"signal": {},
+"text": "420, 680"
+}],
+"targets": [{
+"data": {
+"offset": Vector2(1360, -20)
+},
+"type": 3
+}, {
+"data": {
+"offset": Vector2(1360, 140)
+},
+"type": 3
+}],
+"type": 1
+},
+"initial_dialog": {
+"call": {},
+"character": {},
+"dialog": {
+"seconds_per_letter": -1.0,
+"text": "position offset = 280, -40"
+},
+"next": {
+"data": {
+"next": "215_190",
+"offset": Vector2(960, -40),
+"use_shortcut": false
+},
+"type": 0
+},
+"offset": Vector2(280, -40),
+"pause": false,
+"set_variable": {},
+"signal": {},
+"type": 0
+}
+}
+orphans = Array[Dictionary]([])

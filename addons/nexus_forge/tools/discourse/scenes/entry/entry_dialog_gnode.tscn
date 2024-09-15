@@ -6,7 +6,7 @@
 custom_minimum_size = Vector2(160, 80)
 offset_right = 160.0
 offset_bottom = 79.9999
-title = "Dialog Entry"
+title = "Dialog Start"
 slot/0/left_enabled = false
 slot/0/left_type = 0
 slot/0/left_color = Color(1, 1, 1, 1)
@@ -20,6 +20,6 @@ script = ExtResource("1_ux8t8")
 
 [node name="Label" type="Label" parent="."]
 layout_mode = 2
-text = "Initial Dialog"
+text = "Start"
 horizontal_alignment = 2
 vertical_alignment = 1

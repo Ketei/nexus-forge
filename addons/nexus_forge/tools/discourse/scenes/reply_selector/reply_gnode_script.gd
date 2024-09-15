@@ -55,6 +55,7 @@ func _is_root() -> bool:
 func generate_node_dictionary() -> Dictionary:
 	var reply_otion_data: Dictionary = DialogData.get_option_structure()
 	reply_otion_data["text"] = reply_line.text
+	reply_otion_data["offset"] = position_offset
 	if has_input_connection("result"):
 		reply_otion_data["conditions"] = get_input_port_connection_by_id("result").generate_node_dictionary()
 	if has_input_connection("signal"):

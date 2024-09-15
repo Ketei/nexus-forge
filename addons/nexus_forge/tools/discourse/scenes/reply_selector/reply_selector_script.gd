@@ -50,9 +50,11 @@ func on_reply_amount_changed(new_reply_count: float) -> void:
 	
 	elif replies_size < new_reply_count: # We need to add nodes.
 		var nodes_to_add: int = Math.distancei(replies_size, new_reply_count)
+		print("I have to spawn " + str(nodes_to_add) + " reply levels.")
 		for node in range(nodes_to_add):
 			var new_node: Label = Label.new()
-			new_node.text = "Option #" + str(replies_size + 1)
+			var reply_idx: int = replies.size()
+			new_node.text = "Option #" + str(reply_idx + 1)
 			new_node.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			new_node.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 			new_node.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -66,8 +68,8 @@ func on_reply_amount_changed(new_reply_count: float) -> void:
 					true,
 					0,
 					Color(0.294, 0.8, 0.248))
-			create_input_connection(str(replies_size), get_input_port_count() - 1)
-			create_output_connection(str(replies_size), get_output_port_count() - 1)
+			create_input_connection(str(reply_idx), get_input_port_count() - 1)
+			create_output_connection(str(reply_idx), get_output_port_count() - 1)
 			
 	else: # We need to remove nodes.
 		for idx_to_remove in range(replies.size() - 1, new_reply_count - 1, -1):
@@ -134,6 +136,7 @@ func generate_node_dictionary() -> Dictionary:
 				next_dict_data = next_node.generate_node_dictionary()
 			elif next_node.node_type == DialogData.DialogType.END:
 				next_class = DialogData.NextType.END
+				next_dict_data = next_node.generate_node_dictionary()
 			
 			next_structure["type"] = next_class
 			next_structure["data"] = next_dict_data
