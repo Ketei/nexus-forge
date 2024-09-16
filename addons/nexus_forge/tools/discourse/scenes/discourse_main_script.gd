@@ -19,7 +19,14 @@ const RETURN_CALL_NODE = preload("res://addons/nexus_forge/tools/discourse/scene
 const COMMENT_GRAPH_NODE = preload("res://addons/nexus_forge/tools/discourse/scenes/utility/comment_graph_node.tscn")
 const END_GNODE = preload("res://addons/nexus_forge/tools/discourse/scenes/end_node/end_gnode.tscn")
 
-var current_dialog: TreeItem
+var current_dialog: TreeItem:
+	set(new_dialog):
+		current_dialog = new_dialog
+		var popup := file_menu_button.get_popup()
+		var set_disabled: bool = current_dialog == null
+		popup.set_item_disabled(2, set_disabled)
+		popup.set_item_disabled(3, set_disabled)
+		popup.set_item_disabled(4, set_disabled)
 var entry_node: DiscourseGraphNode = null
 var root_nodes: Array[DiscourseGraphNode] = []
 var _is_traveling: bool = false
@@ -35,6 +42,7 @@ var _block_change_current: bool = false
 @onready var to_result: DiscoursePopupMenu = $MenuWindowPopup/ToResult
 
 @onready var add_node_button: MenuButton = $Dialogues/TreeContainer/MenuContainer/AddNodeButton
+@onready var file_menu_button: MenuButton = $Dialogues/TreeContainer/MenuContainer/FileMenuButton
 
 @onready var discourse_save_dialog: FileDialog = $DiscourseSaveDialog
 @onready var discourse_open_dialog: FileDialog = $DiscourseOpenDialog

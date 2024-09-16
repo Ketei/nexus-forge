@@ -191,7 +191,6 @@ popup/item_4/id = 4
 popup/item_4/disabled = true
 popup/item_5/text = "Close All"
 popup/item_5/id = 5
-popup/item_5/disabled = true
 
 [node name="AddNodeButton" type="MenuButton" parent="Dialogues/TreeContainer/MenuContainer"]
 layout_mode = 2
