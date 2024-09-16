@@ -1,6 +1,8 @@
 extends Control
 
 
+signal current_changed
+
 const DIALOG_NODE = preload("res://addons/nexus_forge/tools/discourse/scenes/dialog_node/dialog_gnode.tscn")
 const CHARACTER_NODE = preload("res://addons/nexus_forge/tools/discourse/scenes/character_node/character_gnode.tscn")
 const SIGNAL_EMIT_NODE = preload("res://addons/nexus_forge/tools/discourse/scenes/signal_emmiter/signal_emit_gnode.tscn")
@@ -21,6 +23,7 @@ var current_dialog: TreeItem
 var entry_node: DiscourseGraphNode = null
 var root_nodes: Array[DiscourseGraphNode] = []
 var _is_traveling: bool = false
+var _block_change_current: bool = false
 
 @onready var dialog_graph_edit: GraphEdit = %DialogGraphEdit
 @onready var no_dialog_container: CenterContainer = %NoDialogContainer
@@ -38,11 +41,12 @@ var _is_traveling: bool = false
 
 @onready var test_save_button: Button = $Dialogues/TreeContainer/MenuContainer/Button
 @onready var test_open: Button = $Dialogues/TreeContainer/MenuContainer/test_open
+@onready var test_new: Button = $Dialogues/TreeContainer/MenuContainer/test_new
 
 
 func _ready() -> void:
 	await get_tree().process_frame
-	dialog_graph_edit.scroll_offset = -(dialog_graph_edit.size / 2)
+	#dialog_graph_edit.scroll_offset = -(dialog_graph_edit.size / 2)
 	dialog_graph_edit.add_valid_connection_type(8, 9)
 	dialog_graph_edit.connection_request.connect(on_connection_request)
 	dialog_graph_edit.disconnection_request.connect(on_disconnection_request)
@@ -53,17 +57,34 @@ func _ready() -> void:
 	to_result.index_pressed.connect(on_to_result_selected)
 	add_node_button.get_popup().index_pressed.connect(on_add_node_selected)
 	id_nodes.center_dialog_pressed.connect(center_node)
-	test_save_button.pressed.connect(on_test_save_pressed)
+	current_changed.connect(on_current_changed)
 	
+	test_save_button.pressed.connect(on_test_save_pressed)
 	discourse_save_dialog.file_selected.connect(on_test_save_file_selected)
 	test_open.pressed.connect(on_test_open_pressed)
 	discourse_open_dialog.file_selected.connect(on_test_open_selected)
+	test_new.pressed.connect(on_test_new_pressed)
+
+
 
 
 # TODO Remove once finished
 func on_test_save_pressed() -> void:
-	discourse_save_dialog.show()
+	if not current_dialog.get_metadata(0)["unsaved"]:
+		return
 	
+	if current_dialog.get_metadata(0)["path"].is_empty():
+		discourse_save_dialog.target_tree = current_dialog
+		discourse_save_dialog.show()
+	else:
+		save_conversation(current_dialog, current_dialog.get_metadata(0)["path"])
+	
+	#current_dialog.set_text(0, current_dialog.get_text(0).trim_suffix("(*)"))
+
+
+func on_test_new_pressed() -> void:
+	on_new_dialog_selected()
+
 
 func on_test_open_pressed() -> void:
 	discourse_open_dialog.show()
@@ -74,11 +95,15 @@ func on_test_open_selected(path: String) -> void:
 
 
 func on_test_save_file_selected(path:String) -> void:
-	var save_data: Dictionary = get_current_conversation_data()
-	
-	print(save_data)
-	print("Saved to: " + path)
-	save_conversation(save_data, path)
+	on_save_folder_selected(path)
+# ---------------------------------------------
+
+func on_current_changed() -> void:
+	if current_dialog == null or _block_change_current:
+		return
+	if not current_dialog.get_metadata(0)["unsaved"]:
+		current_dialog.set_text(0, current_dialog.get_text(0) + "(*)")
+		current_dialog.get_metadata(0)["unsaved"] = true
 
 
 func get_dialog_graph_center() -> Vector2:
@@ -165,6 +190,7 @@ func on_add_node_selected(selected_idx: int) -> void:
 	
 	if new_node != null:
 		new_node.position_offset -= new_node.size / 2
+		current_changed.emit()
 
 
 func on_connection_to_empty(from_node: StringName, from_port: int, release_position: Vector2) -> void:
@@ -342,6 +368,7 @@ func on_connection_from_empty(to_node: StringName, to_port: int, release_positio
 	var to_graph: DiscourseGraphNode = dialog_graph_edit.get_node(NodePath(to_node))
 	var port_type = to_graph.get_input_port_type(to_port)
 	var target_position := Vector2((release_position / dialog_graph_edit.zoom) + (dialog_graph_edit.scroll_offset / dialog_graph_edit.zoom))
+	
 	match port_type:
 		1:
 			var char_node := spawn_charcter_node(
@@ -466,13 +493,18 @@ func on_disconnection_request(from_node: StringName, from_port: int, to_node: St
 	var to_graph: DiscourseGraphNode = dialog_graph_edit.get_node(NodePath(to_node))
 	var from_id: String = from_graph.get_output_port_id_by_idx(from_port)
 	var to_id: String = to_graph.get_input_port_id_by_idx(to_port)
+	var _changed: bool = false
 	
 	if from_graph.has_output_connection(from_id):
-		# We have a from previous connection
 		disconnect_output_port(from_graph, from_id)
+		_changed = true
 	
 	if to_graph.has_input_connection(to_id):
 		disconnect_input_port(to_graph, to_id)
+		_changed = true
+	
+	if _changed:
+		current_changed.emit()
 
 
 func has_connection_from(from: StringName, port: int) -> bool:
@@ -497,6 +529,7 @@ func on_connection_request(from_node: StringName, from_port: int, to_node: Strin
 		disconnect_input_port(to_graph, to_id)
 	
 	connect_nodes_specific(from_graph, from_id, to_graph, to_id)
+	current_changed.emit()
 
 
 func on_options_input_disconnected(to_node: DiscourseGraphNode, port_id: String) -> void:
@@ -516,6 +549,7 @@ func on_close_requested(graph_node: DiscourseGraphNode) -> void:
 		disconnect_output_port(graph_node, connected_output)
 	
 	graph_node.queue_free()
+	current_changed.emit()
 
 
 func on_resource_selected(resource_path: String) -> void:
@@ -542,8 +576,24 @@ func on_resource_selected(resource_path: String) -> void:
 	on_dialog_selected(tree_item)
 
 
+func on_new_dialog_selected() -> void:
+	var new_dialog := DialogData.new()
+	var tree_item: TreeItem = open_dialog_list.add_file("[UNSAVED DIALOG](*)")
+	tree_item.set_metadata(
+			0,
+			{
+				"path": "",
+				"resource": new_dialog,
+				"data": {"tree": {}, "orphans": [], "entry": "", "entry_offset": Vector2()},
+				"unsaved": true})
+	on_dialog_selected(tree_item)
+
+
 func on_dialog_selected(tree_item: TreeItem) -> void:
+	_block_change_current = true
+	
 	if current_dialog != null:
+		current_dialog.deselect(0)
 		if current_dialog.get_metadata(0)["unsaved"]:
 			current_dialog.get_metadata(0)["data"] = get_current_conversation_data()
 		
@@ -560,9 +610,6 @@ func on_dialog_selected(tree_item: TreeItem) -> void:
 	
 	var item_metadata: Dictionary = tree_item.get_metadata(0)
 	
-	dialog_graph_edit.zoom = 1.0
-	dialog_graph_edit.scroll_offset.x = -dialog_graph_edit.size.x / 2
-	dialog_graph_edit.scroll_offset.y = -dialog_graph_edit.size.y / 2
 	
 	if entry_node == null:
 		entry_node = load("res://addons/nexus_forge/tools/discourse/scenes/entry/entry_dialog_gnode.tscn").instantiate()
@@ -571,8 +618,12 @@ func on_dialog_selected(tree_item: TreeItem) -> void:
 	dialog_graph_edit.visible = true
 	no_dialog_container.visible = false
 	
+	dialog_graph_edit.zoom = 1.0
+	#dialog_graph_edit.set_deferred("scroll_offset", -dialog_graph_edit.size / 2)
+	#dialog_graph_edit.scroll_offset.y = -dialog_graph_edit.size.y / 2
+	
 	var data_tree: Dictionary = {}
-	var orphan_nodes: Array[Dictionary]
+	var orphan_nodes: Array
 	var entry_node_id: String = ""
 	
 	if item_metadata["unsaved"]:
@@ -595,7 +646,6 @@ func on_dialog_selected(tree_item: TreeItem) -> void:
 				dialog_node.node_id = dialog_id
 				root_nodes.append(dialog_node)
 				id_nodes.add_node(dialog_node)
-				print(dialog_id + " spawned")
 			
 			DialogData.DialogType.OPTIONS:
 				var reply_selector: DiscourseGraphNode = REPLY_SELECTOR_NODE.instantiate()
@@ -603,7 +653,6 @@ func on_dialog_selected(tree_item: TreeItem) -> void:
 				reply_selector.node_id = dialog_id
 				root_nodes.append(reply_selector)
 				id_nodes.add_node(reply_selector)
-				print(dialog_id + " spawned")
 			_:
 				continue # We skip it because it's not typed
 	
@@ -624,8 +673,11 @@ func on_dialog_selected(tree_item: TreeItem) -> void:
 		var target_entry := get_root_with_id(entry_node_id)
 		if target_entry != null:
 			connect_nodes(entry_node, target_entry, "next")
-	
 	current_dialog = tree_item
+	tree_item.select(0)
+	_block_change_current = false
+	await get_tree().process_frame
+	dialog_graph_edit.scroll_offset = -dialog_graph_edit.size/2 + (entry_node.size / 2)
 
 
 func connect_nodes(from: DiscourseGraphNode, to: DiscourseGraphNode, port_id: String) -> void:
@@ -637,6 +689,7 @@ func connect_nodes(from: DiscourseGraphNode, to: DiscourseGraphNode, port_id: St
 	
 	from.connect_output_port(port_id, to)
 	to.connect_input_port(port_id, from)
+	current_changed.emit()
 
 
 func connect_nodes_specific(from_node: DiscourseGraphNode, from_port: String, to_node: DiscourseGraphNode, to_port: String) -> void:
@@ -648,6 +701,7 @@ func connect_nodes_specific(from_node: DiscourseGraphNode, from_port: String, to
 	
 	from_node.connect_output_port(from_port, to_node)
 	to_node.connect_input_port(to_port, from_node)
+	current_changed.emit()
 
 
 ## Disconnects from_node connection and the node it was connected to.
@@ -668,6 +722,7 @@ func disconnect_output_port(from_node: DiscourseGraphNode, from_port: String) ->
 	
 	from_node.disconnect_output_port(from_port)
 	to_node.disconnect_input_port(to_port)
+	current_changed.emit()
 
 
 ## Disconnects to_node connection and the node it was connected to.
@@ -689,6 +744,7 @@ func disconnect_input_port(to_node: DiscourseGraphNode, to_port: String) -> void
 	
 	from_node.disconnect_output_port(from_port)
 	to_node.disconnect_input_port(to_port)
+	current_changed.emit()
 
 
 func spawn_dialog_node(dialog_id: String, dialog_dict: Dictionary, target_node: DiscourseGraphNode = null, override_offset := false, offset_override: Vector2 = Vector2.ZERO) -> DiscourseGraphNode:
@@ -760,8 +816,7 @@ func spawn_dialog_node(dialog_id: String, dialog_dict: Dictionary, target_node: 
 			if not dialog_dict["next"]["data"].is_empty():
 				var new_end := spawn_end_node(dialog_dict["next"]["data"])
 				connect_nodes(dialog_node, new_end, "next")
-		
-	
+
 	return dialog_node
 
 
@@ -1142,24 +1197,36 @@ func on_save_resources() -> void:
 			if entry_node.has_output_connection("next"):
 				entry = entry_node.get_output_port_connection_by_id("next").node_id
 				
-			save_conversation(conv_data, dialog_metadata["path"])
+			save_conversation(dialog_item, dialog_metadata["path"])
 
 
 func on_save_folder_selected(file_path: String) -> void:
 	save_conversation(
-			discourse_save_dialog.conv_data,
+			discourse_save_dialog.target_tree,
 			file_path)
 
 
-func save_conversation(conversation_data: Dictionary, resource_path: String) -> void:
+func save_conversation(target_tree: TreeItem, resource_path: String) -> void:
+	if target_tree == null or resource_path.is_empty():
+		printerr("Couldn't save")
+		return
+	
 	var new_resource := DialogData.new()
-	new_resource.dialog_entry = conversation_data["entry"]
-	new_resource.conversation = conversation_data["tree"]
-	new_resource.orphans = conversation_data["orphans"]
-	new_resource._entry_offset = conversation_data["entry_offset"]
-	conversation_data["unsaved"] = false
+	var conversation_data: Dictionary = target_tree.get_metadata(0)
+	new_resource.dialog_entry = conversation_data["data"]["entry"]
+	new_resource.conversation = conversation_data["data"]["tree"]
+	new_resource.orphans = conversation_data["data"]["orphans"]
+	new_resource._entry_offset = conversation_data["data"]["entry_offset"]
 	conversation_data["resource"] = new_resource
+	conversation_data["path"] = resource_path
 	ResourceSaver.save(new_resource, resource_path)
+	
+	if conversation_data["unsaved"]:
+		conversation_data["unsaved"] = false
+		if target_tree.get_text(0) == "[UNSAVED DIALOG](*)":
+			target_tree.set_text(0, resource_path.get_file())
+		else:
+			target_tree.set_text(0, target_tree.get_text(0).trim_suffix("(*)"))
 
 
 func get_current_conversation_data() -> Dictionary:

@@ -54,7 +54,7 @@ enum ElementType {
 ## using this variable directly.
 @export var conversation: Dictionary = {}
 ## Nodes that don't connect to anything and/or are just for informative purposes.
-@export var orphans: Array[Dictionary] = []
+@export var orphans: Array = []
 
 # Contains the full structure of the conversation.
 var _full_conv: Dictionary = {}
