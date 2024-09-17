@@ -31,7 +31,6 @@ var current_dialog: TreeItem:
 		popup.set_item_disabled(4, set_disabled)
 		add_node_button.disabled = set_disabled
 		review_menu_button.disabled = set_disabled
-var entry_node: DiscourseGraphNode = null
 var root_nodes: Array[DiscourseGraphNode] = []
 var shortcut_nodes: Array[DiscourseGraphNode] = []
 var _is_traveling: bool = false
@@ -57,6 +56,7 @@ var _block_change_current: bool = false
 
 @onready var discourse_save_dialog: FileDialog = $DiscourseSaveDialog
 @onready var discourse_open_dialog: FileDialog = $DiscourseOpenDialog
+@onready var entry_node: DiscourseGraphNode = $Dialogues/TreeContainer/MainWorkerContainer/DialogNodes/DialogGraphEdit/DialogEntry
 
 
 func _ready() -> void:
@@ -318,9 +318,9 @@ func clear_nodes() -> void:
 	
 	for child in dialog_graph_edit.get_children():
 		if child is not DiscourseGraphNode:
-			continue
+			continue # Don't remove nodes we didn't add
 		if child.node_type == DialogData.DialogType.START:
-			continue
+			continue # Don't remove the start node
 		
 		child.queue_free()
 
@@ -441,6 +441,12 @@ func open_save_dialog(save_item: TreeItem, close_on_save: bool = false) -> void:
 		save_item.free()
 
 
+func snap_to_grid(target_node: DiscourseGraphNode) -> void:
+	if not dialog_graph_edit.snapping_enabled:
+		return
+	target_node.position_offset = target_node.position_offset.snappedf(dialog_graph_edit.snapping_distance)
+
+
 func on_current_changed() -> void:
 	if current_dialog == null or _block_change_current:
 		return
@@ -466,6 +472,7 @@ func on_file_menu_selected(idx: int) -> void:
 				else:
 					save_conversation(current_dialog, current_dialog.get_metadata(0)["path"])
 		3: # Save All
+			current_dialog.get_metadata(0)["data"] = get_current_conversation_data()
 			on_save_resources()
 		4: # Close Current
 			if current_dialog != null:
@@ -582,6 +589,7 @@ func on_add_node_selected(selected_id: int) -> void:
 	
 	if new_node != null:
 		new_node.position_offset -= new_node.size / 2
+		snap_to_grid(new_node)
 		current_changed.emit()
 
 
@@ -627,6 +635,7 @@ func on_from_next_selected(index: int) -> void:
 					true,
 					target_position)
 			new_dialog.position_offset -= new_dialog.get_input_port_position(0)
+			snap_to_grid(new_dialog)
 			if from_graph.node_type == DialogData.DialogType.RANDOM or from_graph.node_type == DialogData.DialogType.OPTIONS:
 				connect_nodes_specific(
 					from_graph,
@@ -656,6 +665,7 @@ func on_from_next_selected(index: int) -> void:
 					true,
 					target_position)
 			new_replies.position_offset -= new_replies.get_input_port_position(0)
+			snap_to_grid(new_replies)
 			if from_graph.node_type == DialogData.DialogType.RANDOM or from_graph.node_type == DialogData.DialogType.OPTIONS:
 				connect_nodes_specific(
 					from_graph,
@@ -680,6 +690,7 @@ func on_from_next_selected(index: int) -> void:
 		2:
 			var new_shortcut := spawn_id_shortcut(target_position)
 			new_shortcut.position_offset -= new_shortcut.get_input_port_position(0)
+			snap_to_grid(new_shortcut)
 			if from_graph.node_type == DialogData.DialogType.RANDOM or from_graph.node_type == DialogData.DialogType.OPTIONS:
 				connect_nodes_specific(
 					from_graph,
@@ -707,6 +718,7 @@ func on_from_next_selected(index: int) -> void:
 					true,
 					target_position)
 			new_cond.position_offset -= new_cond.get_input_port_position(0)
+			snap_to_grid(new_cond)
 			if from_graph.node_type == DialogData.DialogType.RANDOM or from_graph.node_type == DialogData.DialogType.OPTIONS:
 				connect_nodes_specific(
 					from_graph,
@@ -734,6 +746,7 @@ func on_from_next_selected(index: int) -> void:
 					true,
 					target_position)
 			new_random.position_offset -= new_random.get_input_port_position(0)
+			snap_to_grid(new_random)
 			if from_graph.node_type == DialogData.DialogType.RANDOM or from_graph.node_type == DialogData.DialogType.OPTIONS:
 				connect_nodes_specific(
 					from_graph,
@@ -761,7 +774,29 @@ func on_from_next_selected(index: int) -> void:
 					true,
 					target_position)
 			new_end.position_offset -= new_end.get_input_port_position(0)
-			connect_nodes(from_graph, new_end, "next")
+			snap_to_grid(new_end)
+			if from_graph.node_type == DialogData.DialogType.RANDOM or from_graph.node_type == DialogData.DialogType.OPTIONS:
+				connect_nodes_specific(
+					from_graph,
+					str(from_port),
+					new_end,
+					"next")
+			elif from_graph.node_type == DialogData.DialogType.CONDITION:
+				if from_port == 0:
+					connect_nodes_specific(
+							from_graph,
+							"true",
+							new_end,
+							"next")
+				else:
+					connect_nodes_specific(
+							from_graph,
+							"false",
+							new_end,
+							"next")
+			else:
+				connect_nodes(from_graph, new_end, "next")
+			
 
 
 func on_connection_from_empty(to_node: StringName, to_port: int, release_position: Vector2) -> void:
@@ -779,6 +814,7 @@ func on_connection_from_empty(to_node: StringName, to_port: int, release_positio
 					true,
 					target_position)
 			char_node.position_offset -= char_node.get_output_port_position(0)
+			snap_to_grid(char_node)
 			connect_nodes(char_node, to_graph, "character")
 		3:
 			var signal_node := spawn_signal_node(
@@ -786,6 +822,7 @@ func on_connection_from_empty(to_node: StringName, to_port: int, release_positio
 					true,
 					target_position)
 			signal_node.position_offset -= signal_node.get_output_port_position(0)
+			snap_to_grid(signal_node)
 			connect_nodes(signal_node, to_graph, "signal")
 		4:
 			var variable_node := spawn_variables_node(
@@ -793,6 +830,7 @@ func on_connection_from_empty(to_node: StringName, to_port: int, release_positio
 					true,
 					target_position)
 			variable_node.position_offset -= variable_node.get_output_port_position(0)
+			snap_to_grid(variable_node)
 			connect_nodes(variable_node, to_graph, "variables")
 		5:
 			var call_node := spawn_call_node(
@@ -800,6 +838,7 @@ func on_connection_from_empty(to_node: StringName, to_port: int, release_positio
 					true,
 					target_position)
 			call_node.position_offset -= call_node.get_output_port_position(0)
+			snap_to_grid(call_node)
 			connect_nodes(call_node, to_graph, "call")
 		6:
 			var new_reply := spawn_reply_node(
@@ -807,6 +846,7 @@ func on_connection_from_empty(to_node: StringName, to_port: int, release_positio
 					true,
 					target_position)
 			new_reply.position_offset -= new_reply.get_output_port_position(0)
+			snap_to_grid(new_reply)
 			connect_nodes_specific(
 					new_reply,
 					"reply",
@@ -837,6 +877,7 @@ func on_to_result_selected(selected: int) -> void:
 					true,
 					target_pos)
 			new_comparation.position_offset -= new_comparation.get_output_port_position(0)
+			snap_to_grid(new_comparation)
 			connect_nodes(new_comparation, to_graph, "result")
 		1:
 			var new_return_call := spawn_return_call_node(
@@ -844,6 +885,7 @@ func on_to_result_selected(selected: int) -> void:
 					true,
 					target_pos)
 			new_return_call.position_offset -= new_return_call.get_output_port_position(0)
+			snap_to_grid(new_return_call)
 			connect_nodes(new_return_call, to_graph, "result")
 
 
@@ -859,6 +901,7 @@ func on_to_type_selected(selected: int) -> void:
 					true,
 					target_position)
 			new_value.position_offset -= new_value.get_output_port_position(0)
+			snap_to_grid(new_value)
 			if to_port == 0:
 				connect_nodes_specific(
 					new_value,
@@ -877,6 +920,7 @@ func on_to_type_selected(selected: int) -> void:
 					true,
 					target_position)
 			new_comparation.position_offset -= new_comparation.get_output_port_position(0)
+			snap_to_grid(new_comparation)
 			if to_port == 0:
 				connect_nodes_specific(
 					new_comparation,
@@ -1021,10 +1065,6 @@ func on_dialog_selected(tree_item: TreeItem) -> void:
 	
 	var item_metadata: Dictionary = tree_item.get_metadata(0)
 	
-	if entry_node == null:
-		entry_node = load("res://addons/nexus_forge/tools/discourse/scenes/entry/entry_dialog_gnode.tscn").instantiate()
-		dialog_graph_edit.add_child(entry_node)
-	
 	dialog_graph_edit.visible = true
 	no_dialog_container.visible = false
 	
@@ -1073,19 +1113,21 @@ func on_dialog_selected(tree_item: TreeItem) -> void:
 	
 	# Second loop to connect all nodes.
 	for dialog_id:Dictionary in data_tree:
+		var target_dialog := get_root_with_id(dialog_id["id"])
 		match dialog_id["data"]["type"]:
 			DialogData.DialogType.DIALOG:
 				spawn_dialog_node(
 					dialog_id["id"],
 					dialog_id["data"],
-					get_root_with_id(dialog_id["id"]))
+					target_dialog)
 			DialogData.DialogType.OPTIONS:
 				spawn_reply_selector_node(
 					dialog_id["id"], 
 					dialog_id["data"],
-					get_root_with_id(dialog_id["id"]))
+					target_dialog)
 			_:
 				continue # We skip it because it's not typed
+		snap_to_grid(target_dialog)
 	
 	for dialog_id:Dictionary in orphan_nodes:
 		match dialog_id["type"]:
@@ -1152,29 +1194,29 @@ func on_save_resources() -> void:
 		
 		var _skip_file: bool = false
 		
-		for dialog_id in dialog_metadata["data"]["tree"].keys():
-			if dialog_id.is_empty():
+		for dialog_id:Dictionary in dialog_metadata["data"]["tree"]:
+			var clean_id: String = dialog_id["id"]
+			if clean_id.is_empty():
 				critical_error_dialog.dialog_text = ERROR_TEXT.format([dialog_item.get_text(0)])
 				critical_error_dialog.show()
 				_skip_file = true
 				break
-			elif used_ids.has(dialog_id):
+			elif used_ids.has(clean_id):
 				critical_error_dialog.dialog_text = ERROR_TEXT.format([dialog_item.get_text(0)])
 				critical_error_dialog.show()
 				_skip_file = true
 				break
 			else:
-				used_ids.append(dialog_id)
+				used_ids.append(clean_id)
 		
 		if not dialog_metadata["unsaved"] or _skip_file:
 			continue # No need to waste time saving unchanged resources.
 
 		if dialog_metadata["path"].is_empty():
-			discourse_save_dialog.conv_data = dialog_metadata
-			discourse_save_dialog.current_file = dialog_item.get_text(0)
+			discourse_save_dialog.target_tree = dialog_item
 			discourse_save_dialog.show()
 		else:
-			save_conversation(dialog_item, dialog_metadata["path"])
+			save_conversation(dialog_item, dialog_metadata["data"]["path"])
 
 
 func on_save_folder_selected(file_path: String) -> void:

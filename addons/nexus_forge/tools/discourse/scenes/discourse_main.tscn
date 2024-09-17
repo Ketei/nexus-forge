@@ -1,4 +1,4 @@
-[gd_scene load_steps=23 format=3 uid="uid://cx4h4u45kp8vt"]
+[gd_scene load_steps=24 format=3 uid="uid://cx4h4u45kp8vt"]
 
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/scenes/discourse_main_script.gd" id="1_frko2"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/scenes/discourse_id_node_tree.gd" id="2_40hbj"]
@@ -13,6 +13,7 @@
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/scenes/main_info_container.gd" id="8_ev1q6"]
 [ext_resource type="Texture2D" uid="uid://pelqek8ou3ft" path="res://addons/nexus_forge/tools/discourse/icons/save_all_files.svg" id="8_hgkok"]
 [ext_resource type="Texture2D" uid="uid://cmwf1utkpiqsf" path="res://addons/nexus_forge/tools/discourse/icons/delete_icon.svg" id="9_2g3h2"]
+[ext_resource type="PackedScene" uid="uid://b8of7df1gb5qk" path="res://addons/nexus_forge/tools/discourse/scenes/entry/entry_dialog_gnode.tscn" id="11_d0f7h"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/scenes/unsaved_confirmation_script.gd" id="13_420lk"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/scenes/discourse_popup_menu.gd" id="15_sa68m"]
 
@@ -267,6 +268,10 @@ zoom_min = 0.5
 zoom_max = 1.5
 zoom_step = 1.25
 minimap_opacity = 0.5
+
+[node name="DialogEntry" parent="Dialogues/TreeContainer/MainWorkerContainer/DialogNodes/DialogGraphEdit" instance=ExtResource("11_d0f7h")]
+layout_mode = 0
+mouse_filter = 1
 
 [node name="NoDialogContainer" type="CenterContainer" parent="Dialogues/TreeContainer/MainWorkerContainer/DialogNodes"]
 unique_name_in_owner = true
