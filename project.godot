@@ -11,6 +11,7 @@ config_version=5
 [application]
 
 config/name="NexusForge"
+run/main_scene="res://addons/nexus_forge/scenes/main/NexusForgeMainScene.tscn"
 config/features=PackedStringArray("4.3", "GL Compatibility")
 run/low_processor_mode=true
 config/icon="res://icon.svg"
