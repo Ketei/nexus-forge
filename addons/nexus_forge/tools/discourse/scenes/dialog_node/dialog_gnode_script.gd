@@ -102,6 +102,7 @@ func on_minimize_pressed() -> void:
 		minimize()
 	
 	minimized = not minimized
+	node_updated.emit()
 
 
 func _is_root() -> bool:
@@ -147,6 +148,7 @@ func generate_node_dictionary() -> Dictionary:
 		next_dict["data"] = next_dict_data
 		dialog_dict["next"] = next_dict
 	
+	dialog_dict["expand"] = not minimized
 	dialog_dict["dialog"]["text"] = text_edit.text
 	dialog_dict["dialog"]["seconds_per_letter"] = seconds_spin_box.value
 	dialog_dict["pause"] = pause_check_box.button_pressed

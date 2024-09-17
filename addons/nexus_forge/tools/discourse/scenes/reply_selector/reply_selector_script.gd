@@ -122,7 +122,6 @@ func generate_node_dictionary() -> Dictionary:
 			var next_dict_data: Dictionary = {}
 			
 			if next_node.node_type == DialogData.DialogType.DIALOG or next_node.node_type == DialogData.DialogType.OPTIONS:
-				# NOTE This might be better on an "else" but needs logic testing.
 				next_class = DialogData.NextType.ID
 				next_dict_data = DialogData.get_next_by_id()
 				next_dict_data["next"] = next_node.node_id

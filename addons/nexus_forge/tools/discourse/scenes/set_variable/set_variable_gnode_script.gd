@@ -66,6 +66,7 @@ func on_minimize_pressed() -> void:
 		minimize()
 	
 	minimized = not minimized
+	node_updated.emit()
 
 
 func on_add_variable() -> void:
@@ -104,6 +105,7 @@ func _is_root() -> bool:
 func generate_node_dictionary() -> Dictionary:
 	var new_val_data: Dictionary = DialogData.get_set_var_structure()
 	new_val_data["offset"] = position_offset
+	new_val_data["expand"] = not minimized
 	
 	for set_var in variables_container.get_children():
 		new_val_data["variables"][set_var.get_variable_path()] = set_var.get_variable_value()

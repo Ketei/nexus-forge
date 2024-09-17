@@ -253,7 +253,8 @@ static func get_dialog_structure() -> Dictionary:
 		"set_variable": {},
 		"call": {},
 		"pause": false,
-		"offset": Vector2() # Offset of the dialog node
+		"offset": Vector2(), # Editor only
+		"expand": true # Editor only
 	}
 
 
@@ -262,7 +263,8 @@ static func get_character_structure() -> Dictionary:
 		"id": "",
 		"idle": {"animation": "", "play": false},
 		"talking": {"animation": "", "play": false},
-		"offset": Vector2()
+		"offset": Vector2(),
+		"expand": true # Editor only
 	}
 
 
@@ -273,7 +275,8 @@ static func get_call_structure() -> Dictionary:
 		"method": "",
 		"args": [],
 		"is_return": false,
-		"offset": Vector2()
+		"offset": Vector2(),
+		"expand": true # Editor only
 	}
 
 
@@ -370,8 +373,9 @@ static func _get_val_structure(element_type := ElementType.STRING) -> Dictionary
 
 static func get_set_var_structure() -> Dictionary:
 	return {
-		"offset": Vector2(),
-		"variables": {}
+		"variables": {},
+		"offset": Vector2(), # Editor only
+		"expand": true # Editor only
 	}
 
 

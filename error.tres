@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="DialogData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/scripts/classes/dialog/resources/dialog_resource.gd" id="1_tsckp"]
+
+[resource]
+script = ExtResource("1_tsckp")
+dialog_entry = "error"
+_entry_offset = Vector2(-320, 0)
+conversation = {
+"error": {
+"call": {},
+"character": {},
+"dialog": {
+"seconds_per_letter": -1.0,
+"text": ""
+},
+"expand": true,
+"next": {
+"data": {
+"offset": Vector2(1103.25, -22.25)
+},
+"type": 3
+},
+"offset": Vector2(520, -40),
+"pause": false,
+"set_variable": {},
+"signal": {},
+"type": 0
+}
+}
+orphans = Array[Dictionary]([])

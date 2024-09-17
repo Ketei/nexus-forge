@@ -153,3 +153,25 @@ func on_bool_toggled(_is_toggled: bool) -> void:
 func on_var_selected(_val_idx: int) -> void:
 	if current_node == var_option:
 		node_updated.emit()
+
+
+func generate_node_dictionary() -> Dictionary:
+	var value_struct: Dictionary = DialogData.get_element_structure()
+	
+	if current_node == val_spin_box:
+		if val_spin_box.step == 1.0:
+			value_struct["value"] = DialogData._get_val_structure(DialogData.ElementType.INT)
+		else:
+			value_struct["value"] = DialogData._get_val_structure(DialogData.ElementType.FLOAT)
+		value_struct["value"]["value"] = val_spin_box.value
+	elif current_node == var_option:
+		value_struct["value"] = DialogData._get_val_structure(DialogData.ElementType.VAR)
+		value_struct["value"]["value"] = var_option.get_item_text(var_option.selected)
+	elif current_node == bool_box:
+		value_struct["value"] = DialogData._get_val_structure(DialogData.ElementType.BOOL)
+		value_struct["value"]["value"] = bool_box.button_pressed
+	else:
+		value_struct["value"] = DialogData._get_val_structure(DialogData.ElementType.STRING)
+		value_struct["value"]["value"] = string_edit.text
+		
+	return value_struct

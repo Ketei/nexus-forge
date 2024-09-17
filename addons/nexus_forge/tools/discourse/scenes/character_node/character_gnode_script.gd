@@ -60,6 +60,7 @@ func on_minimize_pressed() -> void:
 	else:
 		minimize()
 	minimized = not minimized
+	node_updated.emit()
 
 
 func minimize() -> void:
@@ -95,6 +96,7 @@ func generate_node_dictionary() -> Dictionary:
 	character_structure["talking"]["animation"] = talking_idle.text
 	character_structure["talking"]["play"] = play_talking_check_button.button_pressed
 	character_structure["offset"] = position_offset
+	character_structure["expand"] = not minimized
 	return character_structure
 
 

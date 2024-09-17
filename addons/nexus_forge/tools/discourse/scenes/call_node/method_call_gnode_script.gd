@@ -95,9 +95,13 @@ func on_callable_selected(callable_selected: int) -> void:
 		args_container.add_child(new_arg)
 		new_arg.set_arg_type(arg["type"])
 		new_arg.var_label.text = arg["name"]
-		new_arg.current_value_updated.connect(node_updated)
+		new_arg.current_value_updated.connect(on_arg_updated)
 	
 	size.y = 80 + (callables[callable_option.get_item_metadata(callable_selected)]["args"].size() * 39)
+	node_updated.emit()
+
+
+func on_arg_updated() -> void:
 	node_updated.emit()
 
 
@@ -110,6 +114,9 @@ func select_by_key(callable_key: String) -> void:
 
 
 func select_by_callable(object: String, method: String) -> void:
+	if object.is_empty() or method.is_empty():
+		return
+	
 	for item_idx in range(callable_option.item_count):
 		var key: String = callable_option.get_item_metadata(item_idx)
 		if callables[key]["callable"]["object"] == object and callables[key]["callable"]["method"] == method:
@@ -137,6 +144,7 @@ func on_minimize_pressed() -> void:
 		minimize()
 	
 	minimized = not minimized
+	node_updated.emit()
 
 
 func minimize() -> void:
@@ -172,6 +180,8 @@ func generate_node_dictionary() -> Dictionary:
 	call_structure["method"] = method
 	call_structure["offset"] = position_offset
 	call_structure["is_return"] = false
+	call_structure["expand"] = not minimized
+	
 	for argument in args_container.get_children():
 		call_structure["args"].append(argument.generate_node_dictionary())
 	
