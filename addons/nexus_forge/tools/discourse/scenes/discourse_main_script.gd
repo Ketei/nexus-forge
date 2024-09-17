@@ -903,6 +903,9 @@ func on_close_requested(graph_node: DiscourseGraphNode) -> void:
 	for connected_output in graph_node.get_connected_output_ports():
 		disconnect_output_port(graph_node, connected_output)
 	
+	if graph_node.node_type == DialogData.DialogType.DIALOG or graph_node.node_type == DialogData.DialogType.OPTIONS:
+		id_nodes.remove_node(graph_node)
+	
 	graph_node.queue_free()
 	current_changed.emit()
 
