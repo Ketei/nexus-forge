@@ -23,6 +23,8 @@ func _ready() -> void:
 	var title_bar: HBoxContainer = get_titlebar_hbox()
 	title_bar.add_child(new_hbox_node)
 	new_hbox_node.add_child(close_button)
+	
+	signal_val_line.text_changed.connect(signal_name_changed)
 
 
 func _is_root() -> bool:
@@ -34,3 +36,7 @@ func generate_node_dictionary() -> Dictionary:
 	new_signal_data["signal"] = signal_val_line.text
 	new_signal_data["offset"] = position_offset
 	return new_signal_data
+
+
+func signal_name_changed(_new_name: String) -> void:
+	node_updated.emit()

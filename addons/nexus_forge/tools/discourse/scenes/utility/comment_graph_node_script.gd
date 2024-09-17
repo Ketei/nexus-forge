@@ -22,6 +22,9 @@ func _ready() -> void:
 	var title_bar: HBoxContainer = get_titlebar_hbox()
 	title_bar.add_child(new_hbox_node)
 	new_hbox_node.add_child(close_button)
+	
+	comment_text.text_changed.connect(on_comment_updated)
+	resize_end.connect(on_node_resized)
 
 
 func _is_root() -> bool:
@@ -34,3 +37,11 @@ func generate_node_dictionary() -> Dictionary:
 	comment_struct["offset"] = position_offset
 	comment_struct["size"] = size
 	return comment_struct
+
+
+func on_comment_updated() -> void:
+	node_updated.emit()
+
+
+func on_node_resized(_new_size: Vector2) -> void:
+	node_updated.emit()

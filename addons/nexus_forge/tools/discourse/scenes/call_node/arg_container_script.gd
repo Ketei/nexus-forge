@@ -1,5 +1,8 @@
 extends HBoxContainer
 
+
+signal current_value_updated
+
 @onready var val_spin_box: SpinBox = $ValContainer/ValSpinBox
 @onready var bool_box: CheckBox = $ValContainer/BoolBox
 @onready var string_line: LineEdit = $ValContainer/StringLine
@@ -10,6 +13,9 @@ var current_visible: Control
 
 func _ready() -> void:
 	current_visible = val_spin_box
+	val_spin_box.value_changed.connect(on_val_updated)
+	bool_box.toggled.connect(on_bool_updated)
+	string_line.text_changed.connect(on_text_updated)
 
 
 func set_arg_type(type_of: Variant.Type) -> void:
@@ -62,4 +68,18 @@ func generate_node_dictionary() -> Dictionary:
 		value_dictionary["value"] = string_line.text
 	
 	return value_dictionary
-	
+
+
+func on_val_updated(_new_val: float) -> void:
+	if current_visible == val_spin_box:
+		current_value_updated.emit()
+
+
+func on_bool_updated(_is_pressed:bool) -> void:
+	if current_visible == bool_box:
+		current_value_updated.emit()
+
+
+func on_text_updated(_new_text: String) -> void:
+	if current_visible == string_line:
+		current_value_updated.emit()

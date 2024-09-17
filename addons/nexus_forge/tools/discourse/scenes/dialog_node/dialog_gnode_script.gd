@@ -51,10 +51,27 @@ func _ready() -> void:
 	new_hbox_node.add_child(close_button)
 	
 	dialog_id_line.text_changed.connect(on_line_id_changed)
+	text_edit.text_changed.connect(on_dialog_changed)
+	seconds_spin_box.value_changed.connect(on_spl_changed)
+	pause_check_box.toggled.connect(on_pause_toggled)
 
 
 func on_line_id_changed(new_line: String) -> void:
 	node_id = new_line
+	node_updated.emit()
+
+
+func on_dialog_changed() -> void:
+	node_updated.emit()
+
+
+func on_spl_changed(_new_val: float) -> void:
+	node_updated.emit()
+
+
+func on_pause_toggled(_is_toggled: bool) -> void:
+	node_updated.emit()
+
 
 
 func minimize() -> void:

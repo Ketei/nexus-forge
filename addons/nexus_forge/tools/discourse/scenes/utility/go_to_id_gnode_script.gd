@@ -28,6 +28,7 @@ func _ready() -> void:
 	new_hbox_node.add_child(close_button)
 
 	go_to_id_button.pressed.connect(_on_go_to_button_pressed)
+	go_to_id_line.text_changed.connect(on_id_line_changed)
 
 
 func _on_go_to_button_pressed() -> void:
@@ -37,6 +38,10 @@ func _on_go_to_button_pressed() -> void:
 
 func _is_root() -> bool:
 	return not has_input_connection("next")
+
+
+func get_connection_id() -> String:
+	return go_to_id_line.text
 
 
 func set_short_id(new_target: String) -> void:
@@ -50,3 +55,7 @@ func generate_node_dictionary() -> Dictionary:
 	go_to_id_data["offset"] = position_offset
 	
 	return go_to_id_data
+
+
+func on_id_line_changed(_new_id: String) -> void:
+	node_updated.emit()

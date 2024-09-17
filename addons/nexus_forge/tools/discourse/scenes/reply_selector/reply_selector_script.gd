@@ -35,10 +35,13 @@ func _ready() -> void:
 	new_hbox_node.add_child(close_button)
 	
 	id_line.text_changed.connect(on_id_line_changed)
+	reply_cancel_box.value_changed.connect(on_val_selected)
+	keep_dialog_check.toggled.connect(on_keep_dialog_toggled)
 
 
 func on_id_line_changed(new_line: String) -> void:
 	node_id = new_line
+	node_updated.emit()
 
 
 func on_reply_amount_changed(new_reply_count: float) -> void:
@@ -50,7 +53,6 @@ func on_reply_amount_changed(new_reply_count: float) -> void:
 	
 	elif replies_size < new_reply_count: # We need to add nodes.
 		var nodes_to_add: int = Math.distancei(replies_size, new_reply_count)
-		print("I have to spawn " + str(nodes_to_add) + " reply levels.")
 		for node in range(nodes_to_add):
 			var new_node: Label = Label.new()
 			var reply_idx: int = replies.size()
@@ -87,6 +89,7 @@ func on_reply_amount_changed(new_reply_count: float) -> void:
 			replies[idx_to_remove].queue_free()
 		replies.resize(new_reply_count)
 		size.y = 190 + (24 * replies.size())
+	node_updated.emit()
 
 
 func get_connector_index(option_index: int) -> int:
@@ -146,3 +149,11 @@ func generate_node_dictionary() -> Dictionary:
 		reply_data["targets"].append(reply_next)
 	
 	return reply_data
+
+
+func on_val_selected(_new_val: float) -> void:
+	node_updated.emit()
+
+
+func on_keep_dialog_toggled(_is_toggled: bool) -> void:
+	node_updated.emit()

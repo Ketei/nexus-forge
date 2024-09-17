@@ -1,4 +1,4 @@
-[gd_scene load_steps=15 format=3 uid="uid://cx4h4u45kp8vt"]
+[gd_scene load_steps=20 format=3 uid="uid://cx4h4u45kp8vt"]
 
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/scenes/discourse_main_script.gd" id="1_frko2"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/scenes/discourse_id_node_tree.gd" id="2_40hbj"]
@@ -7,6 +7,11 @@
 [ext_resource type="Texture2D" uid="uid://bwspmik2qv43f" path="res://addons/nexus_forge/tools/discourse/icons/new_file.svg" id="4_secj6"]
 [ext_resource type="Texture2D" uid="uid://xkqkxosnppid" path="res://addons/nexus_forge/tools/discourse/icons/open_file.svg" id="5_mm7jt"]
 [ext_resource type="Texture2D" uid="uid://cd4jt2ru86e16" path="res://addons/nexus_forge/tools/discourse/icons/save_file.svg" id="6_l8hwc"]
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/scenes/log_container_script.gd" id="8_e84u1"]
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/scenes/main_info_container.gd" id="8_ev1q6"]
+[ext_resource type="Texture2D" uid="uid://pelqek8ou3ft" path="res://addons/nexus_forge/tools/discourse/icons/save_all_files.svg" id="8_hgkok"]
+[ext_resource type="Texture2D" uid="uid://cmwf1utkpiqsf" path="res://addons/nexus_forge/tools/discourse/icons/delete_icon.svg" id="9_2g3h2"]
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/scenes/unsaved_confirmation_script.gd" id="13_420lk"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/scenes/discourse_popup_menu.gd" id="15_sa68m"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_rx1e4"]
@@ -28,24 +33,24 @@ script/source = "extends MenuButton
 func _ready() -> void:
 	var popup := get_popup()
 	
-	popup.add_separator(\"Dialog\")
-	popup.add_item(\"Dialog\")
-	popup.add_item(\"Character\")
-	popup.add_separator(\"Direction\")
-	popup.add_item(\"Replies\")
-	popup.add_item(\"Evaluation\")
-	popup.add_item(\"Random\")
-	popup.add_separator(\"Logic\")
-	popup.add_item(\"Call Method\")
-	popup.add_item(\"Call Return\")
-	popup.add_item(\"Comparation\")
-	popup.add_item(\"Variables\")
-	popup.add_item(\"Signal\")
-	popup.add_item(\"Value\")
-	popup.add_separator(\"Utility\")
-	popup.add_item(\"Go to ID\")
-	popup.add_item(\"Comment\")
-	popup.add_item(\"End\")
+	popup.add_separator(\"Dialog\", 101)
+	popup.add_item(\"Dialog\", 1)
+	popup.add_item(\"Replies\", 2)
+	popup.add_item(\"End\", 3)
+	popup.add_separator(\"Elements\", 102)
+	popup.add_item(\"Character\", 4)
+	popup.add_item(\"Variables\", 5)
+	popup.add_item(\"Call Method\", 6)
+	popup.add_item(\"Call Return\", 7)
+	popup.add_item(\"Variant\", 8)
+	popup.add_item(\"Signal\", 9)
+	popup.add_separator(\"Logic\", 103)
+	popup.add_item(\"Comparation\", 10) # a == b
+	popup.add_item(\"Conditional Path\", 11) # conditional Split
+	popup.add_item(\"Random\", 12) 
+	popup.add_separator(\"Utility\", 104)
+	popup.add_item(\"Go to ID\", 13)
+	popup.add_item(\"Comment\", 14)
 "
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_140wq"]
@@ -56,7 +61,18 @@ resource_name = "conv_pointer"
 script/source = "extends FileDialog
 
 
+signal finished(dialog_confirmed: bool)
+
+
 var target_tree: TreeItem
+
+
+func on_confirmed() -> void:
+	finished.emit(true)
+
+
+func on_cancelled() -> void:
+	finished.emit(false)
 "
 
 [node name="Discourse" type="Control"]
@@ -179,14 +195,14 @@ popup/item_0/icon = ExtResource("4_secj6")
 popup/item_1/text = "Open"
 popup/item_1/icon = ExtResource("5_mm7jt")
 popup/item_1/id = 1
-popup/item_2/text = "Save"
+popup/item_2/text = "Save Current"
 popup/item_2/icon = ExtResource("6_l8hwc")
 popup/item_2/id = 2
 popup/item_2/disabled = true
-popup/item_3/text = "Close Current"
+popup/item_3/text = "Save All"
+popup/item_3/icon = ExtResource("8_hgkok")
 popup/item_3/id = 3
-popup/item_3/disabled = true
-popup/item_4/text = "Close Others"
+popup/item_4/text = "Close Current"
 popup/item_4/id = 4
 popup/item_4/disabled = true
 popup/item_5/text = "Close All"
@@ -194,12 +210,14 @@ popup/item_5/id = 5
 
 [node name="AddNodeButton" type="MenuButton" parent="Dialogues/TreeContainer/MenuContainer"]
 layout_mode = 2
+disabled = true
 text = "Add Node"
 switch_on_hover = true
 script = SubResource("GDScript_2taqm")
 
 [node name="ReviewMenuButton" type="MenuButton" parent="Dialogues/TreeContainer/MenuContainer"]
 layout_mode = 2
+disabled = true
 text = "Review"
 switch_on_hover = true
 item_count = 2
@@ -207,26 +225,20 @@ popup/item_0/text = "Check for issues"
 popup/item_1/text = "Open issues panel"
 popup/item_1/id = 1
 
-[node name="Button" type="Button" parent="Dialogues/TreeContainer/MenuContainer"]
+[node name="MainWorkerContainer" type="VSplitContainer" parent="Dialogues/TreeContainer"]
 layout_mode = 2
-text = "test save"
+size_flags_vertical = 3
+theme_override_constants/separation = 10
 
-[node name="test_open" type="Button" parent="Dialogues/TreeContainer/MenuContainer"]
-layout_mode = 2
-text = "test open"
-
-[node name="test_new" type="Button" parent="Dialogues/TreeContainer/MenuContainer"]
-layout_mode = 2
-text = "test new"
-
-[node name="DialogNodes" type="PanelContainer" parent="Dialogues/TreeContainer"]
+[node name="DialogNodes" type="PanelContainer" parent="Dialogues/TreeContainer/MainWorkerContainer"]
+custom_minimum_size = Vector2(0, 300)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 size_flags_stretch_ratio = 4.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_140wq")
 
-[node name="DialogGraphEdit" type="GraphEdit" parent="Dialogues/TreeContainer/DialogNodes"]
+[node name="DialogGraphEdit" type="GraphEdit" parent="Dialogues/TreeContainer/MainWorkerContainer/DialogNodes"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
@@ -239,18 +251,66 @@ zoom_max = 1.5
 zoom_step = 1.25
 minimap_opacity = 0.5
 
-[node name="NoDialogContainer" type="CenterContainer" parent="Dialogues/TreeContainer/DialogNodes"]
+[node name="NoDialogContainer" type="CenterContainer" parent="Dialogues/TreeContainer/MainWorkerContainer/DialogNodes"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="VBoxContainer" type="VBoxContainer" parent="Dialogues/TreeContainer/DialogNodes/NoDialogContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="Dialogues/TreeContainer/MainWorkerContainer/DialogNodes/NoDialogContainer"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="Dialogues/TreeContainer/DialogNodes/NoDialogContainer/VBoxContainer"]
+[node name="Label" type="Label" parent="Dialogues/TreeContainer/MainWorkerContainer/DialogNodes/NoDialogContainer/VBoxContainer"]
 layout_mode = 2
 text = "No conversation selected"
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="LogPanel" type="PanelContainer" parent="Dialogues/TreeContainer/MainWorkerContainer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 140)
+layout_mode = 2
+script = ExtResource("8_e84u1")
+
+[node name="LogContainer" type="VBoxContainer" parent="Dialogues/TreeContainer/MainWorkerContainer/LogPanel"]
+layout_mode = 2
+
+[node name="TitleContainer" type="HBoxContainer" parent="Dialogues/TreeContainer/MainWorkerContainer/LogPanel/LogContainer"]
+layout_mode = 2
+
+[node name="TitleContainer" type="Label" parent="Dialogues/TreeContainer/MainWorkerContainer/LogPanel/LogContainer/TitleContainer"]
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+text = "Issues"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="CloseButton" type="Button" parent="Dialogues/TreeContainer/MainWorkerContainer/LogPanel/LogContainer/TitleContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+size_flags_horizontal = 10
+text = "X"
+flat = true
+
+[node name="IssueContainer" type="HBoxContainer" parent="Dialogues/TreeContainer/MainWorkerContainer/LogPanel/LogContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="InfoContainer" type="Tree" parent="Dialogues/TreeContainer/MainWorkerContainer/LogPanel/LogContainer/IssueContainer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 100)
+layout_mode = 2
+size_flags_horizontal = 3
+hide_folding = true
+hide_root = true
+script = ExtResource("8_ev1q6")
+
+[node name="ButtonsContainer" type="VBoxContainer" parent="Dialogues/TreeContainer/MainWorkerContainer/LogPanel/LogContainer/IssueContainer"]
+layout_mode = 2
+alignment = 2
+
+[node name="ClearButton" type="Button" parent="Dialogues/TreeContainer/MainWorkerContainer/LogPanel/LogContainer/IssueContainer/ButtonsContainer"]
+layout_mode = 2
+tooltip_text = "Clear"
+icon = ExtResource("9_2g3h2")
 
 [node name="MenuWindowPopup" type="Node" parent="."]
 
@@ -286,6 +346,14 @@ item_0/text = "Comparation"
 item_1/text = "Return Call"
 item_1/id = 1
 script = ExtResource("15_sa68m")
+
+[node name="UnsavedConfirmation" type="ConfirmationDialog" parent="MenuWindowPopup"]
+initial_position = 1
+size = Vector2i(292, 106)
+ok_button_text = "Save"
+dialog_text = "Conversation has unsaved changes.
+Save?"
+script = ExtResource("13_420lk")
 
 [node name="DiscourseOpenDialog" type="FileDialog" parent="."]
 title = "Open a File"

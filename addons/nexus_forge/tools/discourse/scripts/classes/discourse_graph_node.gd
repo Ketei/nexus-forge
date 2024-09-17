@@ -4,6 +4,7 @@ extends GraphNode
 
 signal close_requested(graph_node: DiscourseGraphNode)
 signal id_changed(new_id: String)
+signal node_updated
 
 var in_connections: Dictionary = {}
 var out_connections: Dictionary = {}
@@ -11,8 +12,8 @@ var out_connections: Dictionary = {}
 var node_type := DialogData.DialogType.DIALOG
 var node_id: String = "":
 	set(new_node_id):
-		node_id = new_node_id
-		id_changed.emit(new_node_id)
+		node_id = new_node_id.strip_edges()
+		id_changed.emit(node_id)
 
 
 func _get_node_id() -> String:
@@ -232,6 +233,79 @@ func is_connected_to_root(_from_node: DiscourseGraphNode = null) -> bool:
 			return false
 	else:
 		return false
+
+
+func get_earliest_connected_node(_from_node: DiscourseGraphNode = null, _prev_node: DiscourseGraphNode = null) -> DiscourseGraphNode:
+	var caller_node: DiscourseGraphNode = self if _from_node == null else _from_node
+	
+	if self == _from_node:
+		if _prev_node == null:
+			return self
+		else:
+			return _prev_node
+	
+	if node_type == DialogData.DialogType.START:
+		return self
+	elif node_type == DialogData.DialogType.DIALOG or node_type == DialogData.DialogType.OPTIONS:
+		if has_input_connection("next"):
+			return get_input_port_connection_by_id("next").get_earliest_connected_node(caller_node, self)
+		else:
+			return self
+	elif node_type == DialogData.DialogType.CALL:
+		if has_output_connection("call"):
+			return get_output_port_connection_by_id("call").get_earliest_connected_node(caller_node, self)
+		else:
+			return self
+	elif node_type == DialogData.DialogType.CHARACTER:
+		if has_output_connection("character"):
+			return get_output_port_connection_by_id("character").get_earliest_connected_node(caller_node, self)
+		else:
+			return self
+	elif node_type == DialogData.DialogType.COMPARATION:
+		if has_output_connection("result"):
+			return get_output_port_connection_by_id("result").get_earliest_connected_node(caller_node, self)
+		else:
+			return self
+	elif node_type == DialogData.DialogType.CONDITION:
+		if has_input_connection("next"):
+			return get_input_port_connection_by_id("next").get_earliest_connected_node(caller_node, self)
+		else:
+			return self
+	elif node_type == DialogData.DialogType.RANDOM:
+		if has_input_connection("next"):
+			return get_input_port_connection_by_id("next").get_earliest_connected_node(caller_node, self)
+		else:
+			return self
+	elif node_type == DialogData.DialogType.REPLY:
+		if has_output_connection("reply"):
+			return get_output_port_connection_by_id("reply").get_earliest_connected_node(caller_node, self)
+		else:
+			return self
+	elif node_type == DialogData.DialogType.VARIABLES:
+		if has_output_connection("variables"):
+			return get_output_port_connection_by_id("variables").get_earliest_connected_node(caller_node, self)
+		else:
+			return self
+	elif node_type == DialogData.DialogType.SIGNAL:
+		if has_output_connection("signal"):
+			return get_output_port_connection_by_id("signal").get_earliest_connected_node(caller_node, self)
+		else:
+			return self
+	elif node_type == DialogData.DialogType.COMMENT:
+		return self
+	elif node_type == DialogData.DialogType.ID:
+		if has_input_connection("next"):
+			return get_input_port_connection_by_id("next").get_earliest_connected_node(caller_node, self)
+		else:
+			return self
+	elif node_type == DialogData.DialogType.VALUE:
+		if has_output_connection("value"):
+			return get_output_port_connection_by_id("value").get_earliest_connected_node(caller_node, self)
+		else:
+			return self
+	else:
+		return self
+
 
 
 func generate_node_dictionary() -> Dictionary:

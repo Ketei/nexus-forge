@@ -6,7 +6,7 @@
 custom_minimum_size = Vector2(190, 155)
 offset_right = 188.0
 offset_bottom = 155.0
-title = "Conditional Point"
+title = "Conditional Path"
 slot/0/left_enabled = true
 slot/0/left_type = 0
 slot/0/left_color = Color(0.294, 0.8, 0.248, 1)

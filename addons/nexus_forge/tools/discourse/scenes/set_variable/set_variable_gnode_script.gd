@@ -71,6 +71,8 @@ func on_minimize_pressed() -> void:
 func on_add_variable() -> void:
 	var new_var: HBoxContainer = SER_VARIABLE_CONTAINER.instantiate()
 	variables_container.add_child(new_var)
+	new_var.close_requested.connect(on_node_remove_requested)
+	node_updated.emit()
 
 
 func add_variable_type(variable_name: String, value: Variant) -> void:
@@ -107,3 +109,8 @@ func generate_node_dictionary() -> Dictionary:
 		new_val_data["variables"][set_var.get_variable_path()] = set_var.get_variable_value()
 	
 	return new_val_data
+
+
+func on_node_remove_requested(node: Control) -> void:
+	node.queue_free()
+	node_updated.emit()

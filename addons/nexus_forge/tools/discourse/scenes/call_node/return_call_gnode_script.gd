@@ -75,8 +75,10 @@ func on_callable_selected(callable_selected: int) -> void:
 		args_container.add_child(new_arg)
 		new_arg.set_arg_type(arg["type"])
 		new_arg.var_label.text = arg["name"]
+		new_arg.current_value_updated.connect(node_updated)
 	
 	size.y = 90 + (return_callables[callables_option_button.get_item_metadata(callable_selected)]["args"].size() * 39)
+	node_updated.emit()
 
 
 func select_by_key(callable_key: String) -> void:

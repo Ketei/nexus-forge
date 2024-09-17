@@ -46,7 +46,11 @@ func _ready() -> void:
 	new_hbox_node.add_child(minimize_button)
 	new_hbox_node.add_child(close_button)
 	
-	print(get_output_port_position(0))
+	char_id_line.text_changed.connect(on_text_changed)
+	idle_line.text_changed.connect(on_text_changed)
+	talking_idle.text_changed.connect(on_text_changed)
+	play_idle_check_button.toggled.connect(on_button_toggled)
+	play_talking_check_button.toggled.connect(on_button_toggled)
 
 
 func on_minimize_pressed() -> void:
@@ -92,3 +96,11 @@ func generate_node_dictionary() -> Dictionary:
 	character_structure["talking"]["play"] = play_talking_check_button.button_pressed
 	character_structure["offset"] = position_offset
 	return character_structure
+
+
+func on_text_changed(_new_text: String) -> void:
+	node_updated.emit()
+
+
+func on_button_toggled(_is_toggled: bool) -> void:
+	node_updated.emit()

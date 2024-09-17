@@ -27,84 +27,381 @@ var current_dialog: TreeItem:
 		popup.set_item_disabled(2, set_disabled)
 		popup.set_item_disabled(3, set_disabled)
 		popup.set_item_disabled(4, set_disabled)
+		add_node_button.disabled = set_disabled
+		review_menu_button.disabled = set_disabled
 var entry_node: DiscourseGraphNode = null
 var root_nodes: Array[DiscourseGraphNode] = []
+var shortcut_nodes: Array[DiscourseGraphNode] = []
 var _is_traveling: bool = false
+var _is_loading: bool = false
 var _block_change_current: bool = false
 
 @onready var dialog_graph_edit: GraphEdit = %DialogGraphEdit
 @onready var no_dialog_container: CenterContainer = %NoDialogContainer
 @onready var open_dialog_list: Tree = %OpenDialogList
 @onready var id_nodes: Tree = %IDNodes
+@onready var info_container: Tree = %InfoContainer
+@onready var log_panel: PanelContainer = %LogPanel
 
 @onready var from_next: DiscoursePopupMenu = $MenuWindowPopup/FromNext
 @onready var to_value: DiscoursePopupMenu = $MenuWindowPopup/ToValue
 @onready var to_result: DiscoursePopupMenu = $MenuWindowPopup/ToResult
+@onready var unsaved_confirmation: ConfirmationDialog = $MenuWindowPopup/UnsavedConfirmation
 
 @onready var add_node_button: MenuButton = $Dialogues/TreeContainer/MenuContainer/AddNodeButton
 @onready var file_menu_button: MenuButton = $Dialogues/TreeContainer/MenuContainer/FileMenuButton
+@onready var review_menu_button: MenuButton = $Dialogues/TreeContainer/MenuContainer/ReviewMenuButton
 
 @onready var discourse_save_dialog: FileDialog = $DiscourseSaveDialog
 @onready var discourse_open_dialog: FileDialog = $DiscourseOpenDialog
 
-@onready var test_save_button: Button = $Dialogues/TreeContainer/MenuContainer/Button
-@onready var test_open: Button = $Dialogues/TreeContainer/MenuContainer/test_open
-@onready var test_new: Button = $Dialogues/TreeContainer/MenuContainer/test_new
-
 
 func _ready() -> void:
-	await get_tree().process_frame
-	#dialog_graph_edit.scroll_offset = -(dialog_graph_edit.size / 2)
 	dialog_graph_edit.add_valid_connection_type(8, 9)
 	dialog_graph_edit.connection_request.connect(on_connection_request)
 	dialog_graph_edit.disconnection_request.connect(on_disconnection_request)
 	dialog_graph_edit.connection_to_empty.connect(on_connection_to_empty)
 	dialog_graph_edit.connection_from_empty.connect(on_connection_from_empty)
+	id_nodes.center_dialog_pressed.connect(center_node)
+	info_container.center_dialog_pressed.connect(center_node)
+	# Modification notifications
+	current_changed.connect(on_current_changed)
+	dialog_graph_edit.end_node_move.connect(notify_change)
+	# Popups
 	to_value.index_pressed.connect(on_to_type_selected)
 	from_next.index_pressed.connect(on_from_next_selected)
 	to_result.index_pressed.connect(on_to_result_selected)
-	add_node_button.get_popup().index_pressed.connect(on_add_node_selected)
-	id_nodes.center_dialog_pressed.connect(center_node)
-	current_changed.connect(on_current_changed)
+	# Menus
+	add_node_button.get_popup().id_pressed.connect(on_add_node_selected)
+	file_menu_button.get_popup().index_pressed.connect(on_file_menu_selected)
+	review_menu_button.get_popup().index_pressed.connect(on_review_option_selected)
 	
-	test_save_button.pressed.connect(on_test_save_pressed)
-	discourse_save_dialog.file_selected.connect(on_test_save_file_selected)
-	test_open.pressed.connect(on_test_open_pressed)
-	discourse_open_dialog.file_selected.connect(on_test_open_selected)
-	test_new.pressed.connect(on_test_new_pressed)
+	discourse_save_dialog.file_selected.connect(on_save_folder_selected)
+	discourse_open_dialog.file_selected.connect(on_resource_selected)
+	
+	open_dialog_list.conversation_selected.connect(on_dialog_selected)
 
 
+func is_connected_to_entry(node: DiscourseGraphNode, _caller_node: DiscourseGraphNode = null) -> bool:
+	#var is_node_connected: bool = node.is_connected_to_root()
+	var caller_node = node if _caller_node == null else _caller_node
+	
+	if _caller_node == node: # Prevent infinite recursion.
+		return false
+	
+	if node.is_connected_to_root():
+		return true
+	
+	var earliest_node: DiscourseGraphNode = node.get_earliest_connected_node()
+	
+	if earliest_node.node_type == DialogData.DialogType.DIALOG or earliest_node.node_type == DialogData.DialogType.OPTIONS:
+		for shortcut in shortcut_nodes:
+			if shortcut.get_connection_id() == earliest_node.node_id:
+				var connected_to_entry: bool = is_connected_to_entry(shortcut, caller_node)
+				# Allows to check all shortcuts.
+				if connected_to_entry:
+					return true
+
+	# earliest node is not ID'd so we can't shortcut it.
+	return false
 
 
-# TODO Remove once finished
-func on_test_save_pressed() -> void:
-	if not current_dialog.get_metadata(0)["unsaved"]:
+func has_connection_from(from: StringName, port: int) -> bool:
+	for connection in dialog_graph_edit.get_connection_list():
+		if connection["from_port"] == port and connection["from_node"] == from:
+			return true
+	return false
+
+
+func has_dialog_root(node_id: String) -> bool:
+	for node in root_nodes:
+		if node._get_node_id() == node_id:
+			return true
+	return false
+
+
+func get_dialog_graph_center() -> Vector2:
+	return Vector2((dialog_graph_edit.scroll_offset / dialog_graph_edit.zoom) + ((dialog_graph_edit.size / 2) / dialog_graph_edit.zoom))
+
+
+func get_root_with_id(node_id: String) -> DiscourseGraphNode:
+	for node in root_nodes:
+		if node.node_id == node_id:
+			return node
+	print(node_id + " not found.")
+	var node_names: Array[String] = []
+	for node in root_nodes:
+		node_names.append(node.node_id)
+	print(",".join(node_names))
+	return null
+
+
+func get_current_conversation_data() -> Dictionary:
+	var entry: String = ""
+	# Node references
+	var id_orphans: Array[DiscourseGraphNode] = []
+	var id_tree_nodes: Array[DiscourseGraphNode] = []
+	
+	# Dialog Data
+	var full_data_dict: Dictionary = {}
+	var orphans: Array[Dictionary] = []
+	
+	if entry_node.has_output_connection("next"):
+		entry = entry_node.get_output_port_connection_by_id("next").node_id
+	
+	for node in dialog_graph_edit.get_children():
+		if node is not DiscourseGraphNode:
+			continue # We ignore the connection nodes.
+		
+		if node.node_type == DialogData.DialogType.START:
+			continue # We can ignore the start node
+		
+		if node._is_root():
+			if node.node_type == DialogData.DialogType.DIALOG or node.node_type == DialogData.DialogType.OPTIONS:
+				id_tree_nodes.append(node)
+			else:
+				id_orphans.append(node)
+	
+	for node in id_tree_nodes:
+		full_data_dict[node.node_id] = node.generate_node_dictionary()
+	
+	for node in id_orphans:
+		orphans.append(node.generate_node_dictionary())
+	
+	return {"tree": full_data_dict, "orphans": orphans, "entry": entry, "entry_offset": entry_node.position_offset}
+
+
+func close_all_files() -> void:
+	for file:TreeItem in open_dialog_list.get_tree_children():
+		var confirm_close: bool = true
+		var final_idx: int = -1
+		if file.get_metadata(0)["unsaved"]:
+			
+			on_dialog_selected(file)
+			unsaved_confirmation.show()
+			
+			var confirmation: int = await unsaved_confirmation.option_selected
+			
+			match confirmation:
+				0: #save
+					open_save_dialog(current_dialog, true)
+					confirm_close = true
+				1: # Discard
+					confirm_close = true
+				2: # Cancel. Don't close this one.
+					confirm_close = false
+					final_idx = file.get_index()
+		
+		if confirm_close:
+			file.free()
+			
+		if 0 <= final_idx:
+			on_dialog_selected(
+					open_dialog_list.get_file_child(final_idx))
+		else:
+			dialog_graph_edit.visible = false
+			no_dialog_container.visible = true
+	
+	current_dialog = null
+
+
+func notify_change() -> void:
+	current_changed.emit()
+
+
+func check_for_mistakes() -> void:
+	var roots: Array[DiscourseGraphNode] = []
+	
+	var orphans: Array[DiscourseGraphNode] = []
+	var unreachable: Array[DiscourseGraphNode] = []
+	var missing_ids: Array[DiscourseGraphNode] = []
+	var duplicate_ids: Array[DiscourseGraphNode] = []
+	
+	var used_ids: Array[String] = []
+	
+	info_container.clear_logs()
+	
+	for node in dialog_graph_edit.get_children():
+		if node is not DiscourseGraphNode:
+			continue # We ignore the connection nodes.
+		
+		if node.node_type == DialogData.DialogType.START:
+			continue # We can ignore the start node
+		
+		if node._is_root():
+			if node.node_type == DialogData.DialogType.DIALOG or node.node_type == DialogData.DialogType.OPTIONS:
+				roots.append(node)
+				if node.node_id.is_empty():
+					missing_ids.append(node)
+				elif used_ids.has(node.node_id):
+					duplicate_ids.append(node)
+				else:
+					used_ids.append(node.node_id)
+			else:
+				orphans.append(node)
+	
+	for root in roots:
+		if not is_connected_to_entry(root):
+			unreachable.append(root)
+	
+	for unreachable_root in unreachable:
+		info_container.log_item(
+		"[UNREACHABLE] The dialog is not normally reachable.",
+		unreachable_root)
+	
+	for empty_id_node in missing_ids:
+		info_container.log_item(
+			"[MISSING_ID] The dialog doesn't have an assigned ID",
+			empty_id_node)
+	
+	for duplicated_id_node in duplicate_ids:
+		info_container.log_item(
+			"[DUPLICATED ID] The dialog uses an already used ID",
+			duplicated_id_node)
+	
+	for orphan in orphans:
+		if orphan.node_type != DialogData.DialogType.COMMENT:
+			info_container.log_item(
+				"[ORPHAN NODE] This node isn't connected to an ID'd node.",
+				orphan)
+	
+	if info_container.get_log_count() == 0:
+		info_container.log_item(
+				"[OK] No issues exist for the current dialog.",
+				null)
+
+
+func clear_nodes() -> void:
+	dialog_graph_edit.clear_connections()
+	root_nodes.clear()
+	shortcut_nodes.clear()
+	id_nodes.remove_all_nodes()
+	info_container.clear_logs()
+	
+	for child in dialog_graph_edit.get_children():
+		if child is not DiscourseGraphNode:
+			continue
+		if child.node_type == DialogData.DialogType.START:
+			continue
+		
+		child.queue_free()
+
+
+func connect_nodes(from: DiscourseGraphNode, to: DiscourseGraphNode, port_id: String) -> void:
+	dialog_graph_edit.connect_node(
+			from.name,
+			from.get_output_port_idx_by_id(port_id),
+			to.name,
+			to.get_input_port_idx_by_id(port_id))
+	
+	from.connect_output_port(port_id, to)
+	to.connect_input_port(port_id, from)
+	current_changed.emit()
+
+
+func connect_nodes_specific(from_node: DiscourseGraphNode, from_port: String, to_node: DiscourseGraphNode, to_port: String) -> void:
+	dialog_graph_edit.connect_node(
+			from_node.name,
+			from_node.get_output_port_idx_by_id(from_port),
+			to_node.name,
+			to_node.get_input_port_idx_by_id(to_port))
+	
+	from_node.connect_output_port(from_port, to_node)
+	to_node.connect_input_port(to_port, from_node)
+	current_changed.emit()
+
+
+## Disconnects from_node connection and the node it was connected to.
+func disconnect_output_port(from_node: DiscourseGraphNode, from_port: String) -> void:
+	if not from_node.has_output_connection(from_port):
 		return
 	
-	if current_dialog.get_metadata(0)["path"].is_empty():
-		discourse_save_dialog.target_tree = current_dialog
-		discourse_save_dialog.show()
-	else:
-		save_conversation(current_dialog, current_dialog.get_metadata(0)["path"])
+	# Returns the stringname of what from_node is connected to
+	var to_node: DiscourseGraphNode = from_node.get_output_port_connection_by_id(from_port)
+	# The port to what from_node is connected to.
+	var to_port: String = to_node.get_input_port_id_by_connection(from_node)
+
+	dialog_graph_edit.disconnect_node(
+			from_node.name,
+			from_node.get_output_port_idx_by_id(from_port),
+			to_node.name,
+			to_node.get_input_port_idx_by_id(to_port))
 	
-	#current_dialog.set_text(0, current_dialog.get_text(0).trim_suffix("(*)"))
+	from_node.disconnect_output_port(from_port)
+	to_node.disconnect_input_port(to_port)
+	current_changed.emit()
 
 
-func on_test_new_pressed() -> void:
-	on_new_dialog_selected()
+## Disconnects to_node connection and the node it was connected to.
+func disconnect_input_port(to_node: DiscourseGraphNode, to_port: String) -> void:
+	if not to_node.has_input_connection(to_port):
+		return
+	
+	# Returns the stringname of what to_node is connected to
+	var from_node: DiscourseGraphNode = to_node.get_input_port_connection_by_id(to_port)
+	
+	# The port to what from_node is connected to.
+	var from_port: String = from_node.get_output_port_id_by_connection(to_node)
+
+	dialog_graph_edit.disconnect_node(
+			from_node.name,
+			from_node.get_output_port_idx_by_id(from_port),
+			to_node.name,
+			to_node.get_input_port_idx_by_id(to_port))
+	
+	from_node.disconnect_output_port(from_port)
+	to_node.disconnect_input_port(to_port)
+	current_changed.emit()
 
 
-func on_test_open_pressed() -> void:
-	discourse_open_dialog.show()
+## Centers a node in the NodeEdit.
+func center_node(dialog_node: DiscourseGraphNode) -> void:
+	if dialog_node == null or _is_traveling:
+		return
+	_is_traveling = true # We prevent crazy movement
+	var new_tween: Tween = get_tree().create_tween()
+	var target := Vector2(
+			((dialog_node.position_offset * dialog_graph_edit.zoom) -\
+			(dialog_graph_edit.size / 2)) +\
+			((dialog_node.size / 2) * dialog_graph_edit.zoom))
+	await new_tween.tween_property(
+		dialog_graph_edit,
+		"scroll_offset",
+		target,
+		1.0).set_trans(Tween.TRANS_QUINT).set_ease(Tween.EASE_OUT).finished
+	_is_traveling = false
 
 
-func on_test_open_selected(path: String) -> void:
-	on_resource_selected(path)
+func save_conversation(target_tree: TreeItem, resource_path: String) -> void:
+	if target_tree == null or resource_path.is_empty():
+		printerr("Couldn't save")
+		return
+	
+	var new_resource := DialogData.new()
+	var conversation_data: Dictionary = target_tree.get_metadata(0)
+	new_resource.dialog_entry = conversation_data["data"]["entry"]
+	new_resource.conversation = conversation_data["data"]["tree"]
+	new_resource.orphans = conversation_data["data"]["orphans"]
+	new_resource._entry_offset = conversation_data["data"]["entry_offset"]
+	conversation_data["resource"] = new_resource
+	conversation_data["path"] = resource_path
+	ResourceSaver.save(new_resource, resource_path)
+	
+	if conversation_data["unsaved"]:
+		conversation_data["unsaved"] = false
+		if target_tree.get_text(0) == "[UNSAVED DIALOG](*)":
+			target_tree.set_text(0, resource_path.get_file())
+		else:
+			target_tree.set_text(0, target_tree.get_text(0).trim_suffix("(*)"))
 
 
-func on_test_save_file_selected(path:String) -> void:
-	on_save_folder_selected(path)
-# ---------------------------------------------
+func open_save_dialog(save_item: TreeItem, close_on_save: bool = false) -> void:
+	discourse_save_dialog.target_tree = save_item
+	discourse_save_dialog.show()
+	var item_saved: bool = await discourse_save_dialog.finished
+	if item_saved and close_on_save:
+		save_item.free()
+
 
 func on_current_changed() -> void:
 	if current_dialog == null or _block_change_current:
@@ -114,91 +411,148 @@ func on_current_changed() -> void:
 		current_dialog.get_metadata(0)["unsaved"] = true
 
 
-func get_dialog_graph_center() -> Vector2:
-	return Vector2((dialog_graph_edit.scroll_offset / dialog_graph_edit.zoom) + ((dialog_graph_edit.size / 2) / dialog_graph_edit.zoom))
+func on_file_menu_selected(idx: int) -> void:
+	match idx:
+		0: # New
+			on_new_dialog_selected()
+		1: # Open
+			discourse_open_dialog.show()
+		2: # Save Current
+			if current_dialog.get_metadata(0)["unsaved"]:
+				if current_dialog.get_metadata(0)["path"].is_empty():
+					discourse_save_dialog.target_tree = current_dialog
+					discourse_save_dialog.show()
+				else:
+					save_conversation(current_dialog, current_dialog.get_metadata(0)["path"])
+		3: # Save All
+			on_save_resources()
+		4: # Close Current
+			if current_dialog != null:
+				var selected_idx: int = current_dialog.get_index()
+				var confirm_close := true
+				
+				if current_dialog.get_metadata(0)["unsaved"]:
+					unsaved_confirmation.show()
+					var confirmation: int = await unsaved_confirmation.option_selected
+					match confirmation:
+						0: #save
+							open_save_dialog(current_dialog, true)
+						1: # Discard
+							confirm_close = true
+						2: # Cancel. Don't close this one.
+							confirm_close = false
+				
+				if confirm_close:
+					current_dialog.deselect(0)
+					current_dialog.free()
+					clear_nodes()
+					var new_index: int = clampi(selected_idx, -1, open_dialog_list.get_open_file_count() - 1)
+					
+					if 0 <= new_index:
+						on_dialog_selected(
+								open_dialog_list.get_file_child(new_index))
+					else:
+						dialog_graph_edit.visible = false
+						no_dialog_container.visible = true
+						current_dialog = null
+		5:
+			close_all_files()
 
 
-func on_add_node_selected(selected_idx: int) -> void:
+func on_add_node_selected(selected_id: int) -> void:
 	var target_pos := get_dialog_graph_center()
 	var new_node: DiscourseGraphNode
 	
-	match selected_idx:
-		1:
+	match selected_id:
+		1: # Dialog
 			new_node = spawn_dialog_node(
 					"",
 					DialogData.get_dialog_structure(),
 					null,
 					true,
 					target_pos)
-		2:
-			new_node = spawn_charcter_node(
-					DialogData.get_character_structure(),
-					true,
-					target_pos)
-			
-		4:
+		2: # Reply Selector
 			new_node = spawn_reply_selector_node(
 					"",
 					DialogData.get_replies_structure(),
 					null,
 					true,
 					target_pos)
-		5:
-			new_node = spawn_conditional_split_node(
-					DialogData.get_condition_structure(),
-					true,
-					target_pos)
-		6:
-			new_node = spawn_random_select_node(
-					DialogData.get_random_select_structure(),
-					true,
-					target_pos)
-		8:
-			new_node = spawn_call_node(
-					DialogData.get_call_structure(),
-					true,
-					target_pos)
-		9:
-			new_node = spawn_return_call_node(
-					DialogData.get_call_structure(),
-					true,
-					target_pos)
-		10:
-			new_node = spawn_comparator_node(
-					DialogData.get_comparation_structure(),
-					true,
-					target_pos)
-		11:
-			new_node = spawn_variables_node(
-					DialogData.get_set_var_structure(),
-					true,
-					target_pos)
-		12:
-			new_node = spawn_signal_node(
-				DialogData.get_signal_structure(),
-				true,
-				target_pos)
-		13:
-			new_node = spawn_element_node(
-					DialogData.get_element_structure(),
-					true,
-					target_pos)
-		15:
-			new_node = spawn_id_shortcut(target_pos)
-		16:
-			new_node = spawn_comment_node(
-					DialogData.get_comment_structure(),
-					true,
-					target_pos)
-		17:
+		3: # End
 			new_node = spawn_end_node(
 					DialogData.get_end_structure(),
 					true,
 					target_pos)
+		4: # Character
+			new_node = spawn_charcter_node(
+					DialogData.get_character_structure(),
+					true,
+					target_pos)
+		5: # Variables
+			new_node = spawn_variables_node(
+					DialogData.get_set_var_structure(),
+					true,
+					target_pos)
+		6: # Call Normal
+			new_node = spawn_call_node(
+					DialogData.get_call_structure(),
+					true,
+					target_pos)
+		7: # Call Return
+			new_node = spawn_return_call_node(
+					DialogData.get_call_structure(),
+					true,
+					target_pos)
+		8: # Element/Variant
+			new_node = spawn_element_node(
+					DialogData.get_element_structure(),
+					true,
+					target_pos)
+		9: # Signal
+			new_node = spawn_signal_node(
+				DialogData.get_signal_structure(),
+				true,
+				target_pos)
+		10: # Comparator
+			new_node = spawn_comparator_node(
+					DialogData.get_comparation_structure(),
+					true,
+					target_pos)
+		11: # Conditional Split/Cond. Path
+			new_node = spawn_conditional_split_node(
+					DialogData.get_condition_structure(),
+					true,
+					target_pos)
+		12: # Random
+			new_node = spawn_random_select_node(
+					DialogData.get_random_select_structure(),
+					true,
+					target_pos)
+		13: # Go to ID/
+			new_node = spawn_id_shortcut(target_pos)
+		14: # Comment
+			new_node = spawn_comment_node(
+					DialogData.get_comment_structure(),
+					true,
+					target_pos)
+		_:
+			new_node = null
+			
 	
 	if new_node != null:
 		new_node.position_offset -= new_node.size / 2
 		current_changed.emit()
+
+
+func on_review_option_selected(selected_idx: int) -> void:
+	match selected_idx:
+		0: # Check for errors
+			if not log_panel.visible:
+				log_panel.visible = true
+			check_for_mistakes()
+		1: # Open LogPanel
+			if not log_panel.visible:
+				log_panel.visible = true
 
 
 func on_connection_to_empty(from_node: StringName, from_port: int, release_position: Vector2) -> void:
@@ -515,13 +869,6 @@ func on_disconnection_request(from_node: StringName, from_port: int, to_node: St
 		current_changed.emit()
 
 
-func has_connection_from(from: StringName, port: int) -> bool:
-	for connection in dialog_graph_edit.get_connection_list():
-		if connection["from_port"] == port and connection["from_node"] == from:
-			return true
-	return false
-
-
 func on_connection_request(from_node: StringName, from_port: int, to_node: StringName, to_port: int) -> void:
 	#print(str("From node: ", from_node, " from port ", from_port, " to node: ", to_node, " to port ", to_port))
 	var from_graph: DiscourseGraphNode = dialog_graph_edit.get_node(NodePath(from_node))
@@ -579,7 +926,9 @@ func on_resource_selected(resource_path: String) -> void:
 			"path": resource_path,
 			"resource": dialog,
 			"data": {"tree": {}, "orphans": [], "entry": "", "entry_offset": Vector2()}, # Used when unsaved data exists.
-			"unsaved": false})
+			"unsaved": false,
+			"scroll_offset": null,
+			"zoom": 0.0})
 
 	on_dialog_selected(tree_item)
 
@@ -593,31 +942,28 @@ func on_new_dialog_selected() -> void:
 				"path": "",
 				"resource": new_dialog,
 				"data": {"tree": {}, "orphans": [], "entry": "", "entry_offset": Vector2()},
-				"unsaved": true})
+				"unsaved": true,
+				"scroll_offset": null,
+				"zoom": 0.0})
 	on_dialog_selected(tree_item)
 
 
 func on_dialog_selected(tree_item: TreeItem) -> void:
-	_block_change_current = true
+	if _is_loading:
+		return # Preveinting infinite loading
 	
+	_block_change_current = true
+	_is_loading = true
 	if current_dialog != null:
 		current_dialog.deselect(0)
 		if current_dialog.get_metadata(0)["unsaved"]:
-			current_dialog.get_metadata(0)["data"] = get_current_conversation_data()
-		
-		dialog_graph_edit.clear_connections()
-		root_nodes.clear()
-	
-		for child in dialog_graph_edit.get_children():
-			if child is not DiscourseGraphNode:
-				continue
-			if child.node_type == DialogData.DialogType.START:
-				continue
-			
-			child.queue_free()
+			var item_metadata: Dictionary = current_dialog.get_metadata(0)
+			item_metadata["data"] = get_current_conversation_data()
+			item_metadata["scroll_offset"] = dialog_graph_edit.scroll_offset
+			item_metadata["zoom"] = dialog_graph_edit.zoom
+		clear_nodes()
 	
 	var item_metadata: Dictionary = tree_item.get_metadata(0)
-	
 	
 	if entry_node == null:
 		entry_node = load("res://addons/nexus_forge/tools/discourse/scenes/entry/entry_dialog_gnode.tscn").instantiate()
@@ -625,10 +971,6 @@ func on_dialog_selected(tree_item: TreeItem) -> void:
 	
 	dialog_graph_edit.visible = true
 	no_dialog_container.visible = false
-	
-	dialog_graph_edit.zoom = 1.0
-	#dialog_graph_edit.set_deferred("scroll_offset", -dialog_graph_edit.size / 2)
-	#dialog_graph_edit.scroll_offset.y = -dialog_graph_edit.size.y / 2
 	
 	var data_tree: Dictionary = {}
 	var orphan_nodes: Array
@@ -684,75 +1026,46 @@ func on_dialog_selected(tree_item: TreeItem) -> void:
 	current_dialog = tree_item
 	tree_item.select(0)
 	_block_change_current = false
+	_is_loading = false
 	await get_tree().process_frame
-	dialog_graph_edit.scroll_offset = -dialog_graph_edit.size/2 + (entry_node.size / 2)
-
-
-func connect_nodes(from: DiscourseGraphNode, to: DiscourseGraphNode, port_id: String) -> void:
-	dialog_graph_edit.connect_node(
-			from.name,
-			from.get_output_port_idx_by_id(port_id),
-			to.name,
-			to.get_input_port_idx_by_id(port_id))
 	
-	from.connect_output_port(port_id, to)
-	to.connect_input_port(port_id, from)
-	current_changed.emit()
-
-
-func connect_nodes_specific(from_node: DiscourseGraphNode, from_port: String, to_node: DiscourseGraphNode, to_port: String) -> void:
-	dialog_graph_edit.connect_node(
-			from_node.name,
-			from_node.get_output_port_idx_by_id(from_port),
-			to_node.name,
-			to_node.get_input_port_idx_by_id(to_port))
+	if item_metadata["zoom"] == 0:
+		dialog_graph_edit.zoom = 1
+	else:
+		dialog_graph_edit.zoom = item_metadata["zoom"]
 	
-	from_node.connect_output_port(from_port, to_node)
-	to_node.connect_input_port(to_port, from_node)
-	current_changed.emit()
+	if item_metadata["scroll_offset"] == null:
+		dialog_graph_edit.scroll_offset = -dialog_graph_edit.size/2 + (entry_node.size / 2)
+	else:
+		dialog_graph_edit.scroll_offset = item_metadata["scroll_offset"]
 
 
-## Disconnects from_node connection and the node it was connected to.
-func disconnect_output_port(from_node: DiscourseGraphNode, from_port: String) -> void:
-	if not from_node.has_output_connection(from_port):
-		return
-	
-	# Returns the stringname of what from_node is connected to
-	var to_node: DiscourseGraphNode = from_node.get_output_port_connection_by_id(from_port)
-	# The port to what from_node is connected to.
-	var to_port: String = to_node.get_input_port_id_by_connection(from_node)
-
-	dialog_graph_edit.disconnect_node(
-			from_node.name,
-			from_node.get_output_port_idx_by_id(from_port),
-			to_node.name,
-			to_node.get_input_port_idx_by_id(to_port))
-	
-	from_node.disconnect_output_port(from_port)
-	to_node.disconnect_input_port(to_port)
-	current_changed.emit()
+func on_center_dialog_called(dialog_id: String) -> void:
+	var target_dialog: DiscourseGraphNode = get_root_with_id(dialog_id)
+	if target_dialog != null:
+		center_node(target_dialog)
 
 
-## Disconnects to_node connection and the node it was connected to.
-func disconnect_input_port(to_node: DiscourseGraphNode, to_port: String) -> void:
-	if not to_node.has_input_connection(to_port):
-		return
-	
-	# Returns the stringname of what to_node is connected to
-	var from_node: DiscourseGraphNode = to_node.get_input_port_connection_by_id(to_port)
-	
-	# The port to what from_node is connected to.
-	var from_port: String = from_node.get_output_port_id_by_connection(to_node)
+func on_save_resources() -> void:
+	for dialog_item:TreeItem in open_dialog_list.get_tree_children():
+		
+		var dialog_metadata: Dictionary = dialog_item.get_metadata(0)
+		
+		if not dialog_metadata["unsaved"]:
+			continue # No need to waste time saving unchanged resources.
 
-	dialog_graph_edit.disconnect_node(
-			from_node.name,
-			from_node.get_output_port_idx_by_id(from_port),
-			to_node.name,
-			to_node.get_input_port_idx_by_id(to_port))
-	
-	from_node.disconnect_output_port(from_port)
-	to_node.disconnect_input_port(to_port)
-	current_changed.emit()
+		if dialog_metadata["path"].is_empty():
+			discourse_save_dialog.conv_data = dialog_metadata
+			discourse_save_dialog.current_file = dialog_item.get_text(0)
+			discourse_save_dialog.show()
+		else:
+			save_conversation(dialog_item, dialog_metadata["path"])
+
+
+func on_save_folder_selected(file_path: String) -> void:
+	save_conversation(
+			discourse_save_dialog.target_tree,
+			file_path)
 
 
 func spawn_dialog_node(dialog_id: String, dialog_dict: Dictionary, target_node: DiscourseGraphNode = null, override_offset := false, offset_override: Vector2 = Vector2.ZERO) -> DiscourseGraphNode:
@@ -776,6 +1089,7 @@ func spawn_dialog_node(dialog_id: String, dialog_dict: Dictionary, target_node: 
 	dialog_node.seconds_spin_box.value = dialog_dict["dialog"]["seconds_per_letter"]
 	dialog_node.pause_check_box.button_pressed = dialog_dict["pause"]
 	dialog_node.close_requested.connect(on_close_requested)
+	dialog_node.node_updated.connect(notify_change)
 	
 	if not dialog_dict["character"].is_empty():
 		var character_node := spawn_charcter_node(dialog_dict["character"])
@@ -840,6 +1154,7 @@ func spawn_charcter_node(character_data: Dictionary, override_offset := false, o
 	character_node.play_idle_check_button.button_pressed = character_data["idle"]["play"]
 	character_node.talking_idle.text = character_data["talking"]["animation"]
 	character_node.play_talking_check_button.button_pressed = character_data["talking"]["play"]
+	character_node.node_updated.connect(notify_change)
 	
 	return character_node
 
@@ -847,9 +1162,11 @@ func spawn_charcter_node(character_data: Dictionary, override_offset := false, o
 func spawn_id_shortcut(offset: Vector2) -> DiscourseGraphNode:
 	var new_short: DiscourseGraphNode = GO_TO_ID_GNODE.instantiate()
 	dialog_graph_edit.add_child(new_short)
+	shortcut_nodes.append(new_short)
 	new_short.position_offset = offset
 	new_short.close_requested.connect(on_close_requested)
 	new_short.go_to_dialog.connect(on_center_dialog_called)
+	new_short.node_updated.connect(notify_change)
 	return new_short
 
 
@@ -858,6 +1175,7 @@ func spawn_conditional_split_node(split_data: Dictionary, override_offset := fal
 	dialog_graph_edit.add_child(new_conditional)
 	new_conditional.position_offset = offset_override if override_offset else split_data["offset"]
 	new_conditional.close_requested.connect(on_close_requested)
+	new_conditional.node_updated.connect(notify_change)
 	
 	if not split_data["comparation"].is_empty():
 		var comp_node := spawn_comparator_node(split_data["comparation"])
@@ -916,6 +1234,7 @@ func spawn_random_select_node(random_data: Dictionary, override_offset := false,
 	
 	new_rand.port_removed.connect(on_options_output_disconnected)
 	new_rand.close_requested.connect(on_close_requested)
+	new_rand.node_updated.connect(notify_change)
 	
 	for opt_idx in range(opt_size):
 		new_rand.set_exit_weigth(opt_idx, random_data["options"][opt_idx]["weight"])
@@ -966,6 +1285,7 @@ func spawn_reply_selector_node(dialog_id: String, options_dict: Dictionary, targ
 	reply_selector.position_offset = offset_override if override_offset else options_dict["offset"]
 	reply_selector.keep_dialog_check.button_pressed = options_dict["keep_dialog"]
 	reply_selector.close_requested.connect(on_close_requested)
+	reply_selector.node_updated.connect(notify_change)
 	
 	if not options_dict["options"].is_empty():
 		reply_selector.reply_count_box.value = options_dict["options"].size()
@@ -1015,6 +1335,7 @@ func spawn_reply_node(reply_data: Dictionary, override_offset := false, offset_o
 	option_node.position_offset = offset_override if override_offset else reply_data["offset"]
 	option_node.reply_line.text = reply_data["text"] 
 	option_node.close_requested.connect(on_close_requested)
+	option_node.node_updated.connect(notify_change)
 	
 	if not reply_data["signal"].is_empty():
 		var signal_node := spawn_signal_node(reply_data["signal"])
@@ -1046,6 +1367,7 @@ func spawn_comparator_node(comparation_data: Dictionary, override_offset := fals
 	new_comparator.position_offset = offset_override if override_offset else comparation_data["offset"]
 	new_comparator.select_by_text(comparation_data["operator"])
 	new_comparator.close_requested.connect(on_close_requested)
+	new_comparator.node_updated.connect(notify_change)
 	
 	if not comparation_data["var_a"].is_empty():
 		if comparation_data["var_a"]["type"] == DialogData.DialogType.COMPARATION:
@@ -1072,6 +1394,7 @@ func spawn_element_node(element_data: Dictionary, override_offset := false, offs
 	dialog_graph_edit.add_child(new_element)
 	new_element.position_offset = offset_override if override_offset else element_data["offset"]
 	new_element.close_requested.connect(on_close_requested)
+	new_element.node_updated.connect(notify_change)
 	if not element_data["value"].is_empty():
 		new_element.select_by_resource(element_data["value"]["element_type"])
 		new_element.set_value(element_data["value"]["value"])
@@ -1084,6 +1407,7 @@ func spawn_signal_node(signal_data: Dictionary, override_offset := false, offset
 	new_signal_node.position_offset = offset_override if override_offset else signal_data["offset"]
 	new_signal_node.signal_val_line.text = signal_data["signal"]
 	new_signal_node.close_requested.connect(on_close_requested)
+	new_signal_node.node_updated.connect(notify_change)
 	return new_signal_node
 
 
@@ -1092,6 +1416,7 @@ func spawn_variables_node(variables_data: Dictionary, override_offset := false, 
 	dialog_graph_edit.add_child(variables_node)
 	variables_node.position_offset = offset_override if override_offset else variables_data["offset"]
 	variables_node.close_requested.connect(on_close_requested)
+	variables_node.node_updated.connect(notify_change)
 	for variable in variables_data["variables"]:
 		variables_node.add_variable_type(
 				variable,
@@ -1106,6 +1431,7 @@ func spawn_call_node(call_data: Dictionary, override_offset := false, offset_ove
 	new_node.select_by_callable(call_data["object"], call_data["method"])
 	new_node.set_args(call_data["args"])
 	new_node.close_requested.connect(on_close_requested)
+	new_node.node_updated.connect(notify_change)
 	return new_node
 
 
@@ -1116,6 +1442,7 @@ func spawn_return_call_node(call_data: Dictionary, override_offset := false, off
 	new_node.select_by_key(call_data["key"])
 	new_node.set_args(call_data["args"])
 	new_node.close_requested.connect(on_close_requested)
+	new_node.node_updated.connect(notify_change)
 	return new_node
 
 
@@ -1126,147 +1453,13 @@ func spawn_comment_node(comment_data: Dictionary, override_offset := false, offs
 	new_comment.position_offset = offset_override if override_offset else comment_data["offset"]
 	new_comment.size = comment_data["size"]
 	new_comment.comment_text.text = comment_data["text"]
+	new_comment.node_updated.connect(notify_change)
 	return new_comment
 
 
 func spawn_end_node(end_data: Dictionary, override_offset := false, offset_override: Vector2 = Vector2.ZERO) -> DiscourseGraphNode:
 	var new_end: DiscourseGraphNode = END_GNODE.instantiate()
 	dialog_graph_edit.add_child(new_end)
+	new_end.close_requested.connect(on_close_requested)
 	new_end.position_offset = offset_override if override_offset else end_data["offset"]
 	return new_end
-
-
-func on_center_dialog_called(dialog_id: String) -> void:
-	var target_dialog: DiscourseGraphNode = get_root_with_id(dialog_id)
-	if target_dialog != null:
-		center_node(target_dialog)
-
-
-## Centers a node in the NodeEdit.
-func center_node(dialog_node: DiscourseGraphNode) -> void:
-	if _is_traveling:
-		return
-	_is_traveling = true # We prevent crazy movement
-	var new_tween: Tween = get_tree().create_tween()
-	var target := Vector2(
-			((dialog_node.position_offset * dialog_graph_edit.zoom) -\
-			(dialog_graph_edit.size / 2)) +\
-			((dialog_node.size / 2) * dialog_graph_edit.zoom))
-	await new_tween.tween_property(
-		dialog_graph_edit,
-		"scroll_offset",
-		target,
-		1.0).set_trans(Tween.TRANS_QUINT).set_ease(Tween.EASE_OUT).finished
-	_is_traveling = false
-
-
-func get_root_with_id(node_id: String) -> DiscourseGraphNode:
-	for node in root_nodes:
-		if node.node_id == node_id:
-			return node
-	print(node_id + " not found.")
-	var node_names: Array[String] = []
-	for node in root_nodes:
-		node_names.append(node.node_id)
-	print(",".join(node_names))
-	return null
-
-
-func has_dialog_root(node_id: String) -> bool:
-	for node in root_nodes:
-		if node._get_node_id() == node_id:
-			return true
-	return false
-
-
-func on_save_resources() -> void:
-	for dialog_item:TreeItem in open_dialog_list.tree_root.get_children():
-		
-		var dialog_metadata: Dictionary = dialog_item.get_metadata(0)
-		
-		if not dialog_metadata["unsaved"]:
-			continue # No need to waste time saving unchanged resources.
-		
-		#on_dialog_selected(dialog_item)
-		
-		if dialog_metadata["path"].is_empty():
-			discourse_save_dialog.conv_data = dialog_metadata
-			discourse_save_dialog.current_file = dialog_item.get_text(0)
-			discourse_save_dialog.show()
-		else:
-			var entry: String = ""
-			var conv_data: Dictionary = {}
-			
-			if dialog_item == current_dialog:
-				conv_data = get_current_conversation_data()
-			else:
-				conv_data = dialog_metadata["temp"]
-			
-			if entry_node.has_output_connection("next"):
-				entry = entry_node.get_output_port_connection_by_id("next").node_id
-				
-			save_conversation(dialog_item, dialog_metadata["path"])
-
-
-func on_save_folder_selected(file_path: String) -> void:
-	save_conversation(
-			discourse_save_dialog.target_tree,
-			file_path)
-
-
-func save_conversation(target_tree: TreeItem, resource_path: String) -> void:
-	if target_tree == null or resource_path.is_empty():
-		printerr("Couldn't save")
-		return
-	
-	var new_resource := DialogData.new()
-	var conversation_data: Dictionary = target_tree.get_metadata(0)
-	new_resource.dialog_entry = conversation_data["data"]["entry"]
-	new_resource.conversation = conversation_data["data"]["tree"]
-	new_resource.orphans = conversation_data["data"]["orphans"]
-	new_resource._entry_offset = conversation_data["data"]["entry_offset"]
-	conversation_data["resource"] = new_resource
-	conversation_data["path"] = resource_path
-	ResourceSaver.save(new_resource, resource_path)
-	
-	if conversation_data["unsaved"]:
-		conversation_data["unsaved"] = false
-		if target_tree.get_text(0) == "[UNSAVED DIALOG](*)":
-			target_tree.set_text(0, resource_path.get_file())
-		else:
-			target_tree.set_text(0, target_tree.get_text(0).trim_suffix("(*)"))
-
-
-func get_current_conversation_data() -> Dictionary:
-	var entry: String = ""
-	# Node references
-	var id_orphans: Array[DiscourseGraphNode] = []
-	var id_tree_nodes: Array[DiscourseGraphNode] = []
-	
-	# Dialog Data
-	var full_data_dict: Dictionary = {}
-	var orphans: Array[Dictionary] = []
-	
-	if entry_node.has_output_connection("next"):
-		entry = entry_node.get_output_port_connection_by_id("next").node_id
-	
-	for node in dialog_graph_edit.get_children():
-		if node is not DiscourseGraphNode:
-			continue # We ignore the connection nodes.
-		
-		if node.node_type == DialogData.DialogType.START:
-			continue # We can ignore the start node
-		
-		if node._is_root():
-			if node.node_type == DialogData.DialogType.DIALOG or node.node_type == DialogData.DialogType.OPTIONS:
-				id_tree_nodes.append(node)
-			else:
-				id_orphans.append(node)
-	
-	for node in id_tree_nodes:
-		full_data_dict[node.node_id] = node.generate_node_dictionary()
-	
-	for node in id_orphans:
-		orphans.append(node.generate_node_dictionary())
-	
-	return {"tree": full_data_dict, "orphans": orphans, "entry": entry, "entry_offset": entry_node.position_offset}

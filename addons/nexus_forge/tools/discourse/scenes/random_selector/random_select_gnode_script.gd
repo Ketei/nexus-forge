@@ -40,6 +40,7 @@ func on_use_weigths_toggled(is_toggled: bool) -> void:
 	for exit in exits:
 		if exit.option_weight.editable != is_toggled:
 			exit.option_weight.editable = is_toggled
+	node_updated.emit()
 
 
 func on_exits_changed(new_exits: float) -> void:
@@ -58,6 +59,7 @@ func on_exits_changed(new_exits: float) -> void:
 			#var out_index: int = exits.size()
 			new_node.name = "WeigthExit" + current_exit
 			add_child(new_node)
+			new_node.weight_changed.connect(on_item_weight_changed)
 			new_node.option_weight.editable = toggle_weights_check.button_pressed
 			exits.append(new_node)
 			set_slot(
@@ -77,6 +79,11 @@ func on_exits_changed(new_exits: float) -> void:
 			exits[idx_to_remove].queue_free()
 		exits.resize(new_exits)
 		size.y = 150 + (exits.size() * 29)
+	node_updated.emit()
+
+
+func on_item_weight_changed() -> void:
+	node_updated.emit()
 
 
 func get_node_index_by_opt(option_idx: int) -> int:

@@ -1,6 +1,8 @@
 extends HBoxContainer
 
 
+signal close_requested(node: Control)
+
 @onready var var_types_option: OptionButton = $VarTypesOption
 @onready var val_var_node: SpinBox = $PanelContainer/ValVarNode
 @onready var bool_var_node: CheckBox = $PanelContainer/BoolVarNode
@@ -18,7 +20,7 @@ func _ready() -> void:
 
 
 func on_remove_pressed() -> void:
-	self.queue_free()
+	close_requested.emit(self)
 
 
 func on_var_type_selected(selected_idx: int) -> void:

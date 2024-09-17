@@ -26,6 +26,8 @@ func _ready() -> void:
 	var title_bar: HBoxContainer = get_titlebar_hbox()
 	title_bar.add_child(new_hbox_node)
 	new_hbox_node.add_child(close_button)
+	
+	operation_option.item_selected.connect(on_operation_selected)
 
 
 func select_by_text(comparation: String) -> void:
@@ -49,3 +51,7 @@ func generate_node_dictionary() -> Dictionary:
 	comp_dictionary["operator"] = operation_option.get_item_text(operation_option.selected)
 	comp_dictionary["offset"] = position_offset
 	return comp_dictionary
+
+
+func on_operation_selected(_op_idx: int) -> void:
+	node_updated.emit() 

@@ -28,6 +28,8 @@ func _ready() -> void:
 	var title_bar: HBoxContainer = get_titlebar_hbox()
 	title_bar.add_child(new_hbox_node)
 	new_hbox_node.add_child(close_button)
+	
+	reply_line.text_changed.connect(on_reply_text_changed)
 
 
 func get_input_port_by_type(input_type: int) -> int:
@@ -66,3 +68,7 @@ func generate_node_dictionary() -> Dictionary:
 		reply_otion_data["call"] = get_output_port_connection_by_id("call").generate_node_dictionary()
 	
 	return reply_otion_data
+
+
+func on_reply_text_changed(_new_text: String) -> void:
+	node_updated.emit()

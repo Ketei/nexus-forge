@@ -34,6 +34,11 @@ func _ready() -> void:
 		var_option.add_item(variable)
 	type_option_button.item_selected.connect(on_type_selected)
 	Variables.variable_updated.connect(on_variable_updated)
+	
+	val_spin_box.value_changed.connect(on_val_updated)
+	string_edit.text_changed.connect(on_string_updated)
+	var_option.item_selected.connect(on_var_selected)
+	bool_box.toggled.connect(on_bool_toggled)
 
 
 func on_variable_updated(update: bool = var_option.visible) -> void:
@@ -128,3 +133,23 @@ func get_output_port_by_type(output_type: int) -> int:
 
 func _is_root() -> bool:
 	return not has_output_connection("value")
+
+
+func on_val_updated(_new_val: float) -> void:
+	if current_node == val_spin_box:
+		node_updated.emit()
+
+
+func on_string_updated(_new_string: String) -> void:
+	if current_node == string_edit:
+		node_updated.emit()
+
+
+func on_bool_toggled(_is_toggled: bool) -> void:
+	if current_node == bool_box:
+		node_updated.emit()
+
+
+func on_var_selected(_val_idx: int) -> void:
+	if current_node == var_option:
+		node_updated.emit()

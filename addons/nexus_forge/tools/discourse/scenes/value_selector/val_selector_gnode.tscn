@@ -8,7 +8,7 @@
 custom_minimum_size = Vector2(250, 120)
 offset_right = 247.0
 offset_bottom = 102.0
-title = "Value"
+title = "Variant"
 slot/0/left_enabled = false
 slot/0/left_type = 0
 slot/0/left_color = Color(1, 1, 1, 1)
@@ -34,7 +34,7 @@ layout_mode = 2
 
 [node name="Label" type="Label" parent="TypeContainer"]
 layout_mode = 2
-text = "Value type:"
+text = "Type:"
 
 [node name="TypeOptionButton" type="OptionButton" parent="TypeContainer"]
 layout_mode = 2
