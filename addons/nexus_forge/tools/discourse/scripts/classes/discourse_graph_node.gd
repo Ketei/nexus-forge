@@ -4,6 +4,7 @@ extends GraphNode
 
 signal close_requested(graph_node: DiscourseGraphNode)
 signal id_changed(new_id: String)
+signal id_submitted(new_id: String)
 signal node_updated
 
 var in_connections: Dictionary = {}
@@ -17,8 +18,10 @@ var node_id: String = "":
 		else:
 			node_id = new_node_id.strip_edges()
 			id_changed.emit(node_id)
+			node_updated.emit()
 var _clear_on_load: bool = false
 var _debug_naming: bool = false
+
 
 func _get_node_id() -> String:
 	return node_id

@@ -39,14 +39,14 @@ func set_arg_type(type_of: Variant.Type) -> void:
 
 
 func set_arg_value(new_value: Variant) -> void:
-	var val_type: Variant.Type = typeof(new_value)
+	var val_type := typeof(new_value)
 	if current_visible == val_spin_box:
 		if val_type == TYPE_INT or val_type == TYPE_FLOAT:
 			val_spin_box.value = new_value
 	elif current_visible == bool_box:
 		if val_type == TYPE_BOOL:
 			bool_box.button_pressed = new_value
-	elif current_visible == val_spin_box:
+	elif current_visible == string_line:
 		if val_type == TYPE_STRING:
 			string_line.text = new_value
 

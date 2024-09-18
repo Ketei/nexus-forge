@@ -14,6 +14,12 @@ var minimize_button: Button
 @onready var pause_check_box: CheckBox = $DialogContainer/OptionsContainer/PauseCheckBox
 @onready var options_container: HBoxContainer = $DialogContainer/OptionsContainer
 
+@onready var signal_time_container: HBoxContainer = $SignalConnector/SignalTimeContainer
+@onready var call_time_container: HBoxContainer = $MethodConnector/CallTimeContainer
+
+@onready var signal_moment_option: OptionButton = $SignalConnector/SignalTimeContainer/SignalMomentOption
+@onready var call_moment_option: OptionButton = $MethodConnector/CallTimeContainer/CallMomentOption
+
 
 func _ready() -> void:
 	create_output_connection("next", 0)
@@ -50,15 +56,28 @@ func _ready() -> void:
 	new_hbox_node.add_child(minimize_button)
 	new_hbox_node.add_child(close_button)
 	
-	dialog_id_line.text_changed.connect(on_line_id_changed)
+	#dialog_id_line.text_changed.connect(on_line_id_changed)
+	dialog_id_line.text_submitted.connect(on_text_submitted)
+	dialog_id_line.focus_exited.connect(on_id_line_focus_lost)
 	text_edit.text_changed.connect(on_dialog_changed)
 	seconds_spin_box.value_changed.connect(on_spl_changed)
 	pause_check_box.toggled.connect(on_pause_toggled)
 
 
-func on_line_id_changed(new_line: String) -> void:
-	node_id = new_line
-	node_updated.emit()
+func on_id_line_focus_lost() -> void:
+	on_text_submitted()
+
+
+func on_text_submitted(_text: String = "") -> void:
+	if dialog_id_line.has_focus():
+		dialog_id_line.release_focus()
+	id_submitted.emit(dialog_id_line.text.strip_edges())
+
+
+func set_id_text(new_text: String) -> void:
+	dialog_id_line.text = new_text
+	if dialog_id_line.has_focus():
+		dialog_id_line.caret_column = dialog_id_line.text.length()
 
 
 func on_dialog_changed() -> void:
@@ -73,6 +92,19 @@ func on_pause_toggled(_is_toggled: bool) -> void:
 	node_updated.emit()
 
 
+func set_signal_emit_time(at_start: bool) -> void:
+	if at_start:
+		signal_moment_option.select(0)
+	else:
+		signal_moment_option.select(1)
+
+
+func set_method_call_time(at_start: bool) -> void:
+	if at_start:
+		call_moment_option.select(0)
+	else:
+		call_moment_option.select(1)
+
 
 func minimize() -> void:
 	if dialog_id_line.text.is_empty():
@@ -83,6 +115,8 @@ func minimize() -> void:
 	dialog_id_line.visible = false
 	text_edit.visible = false
 	options_container.visible = false
+	signal_time_container.visible = false
+	call_time_container.visible = false
 	size = MINI_SIZE
 
 
@@ -91,6 +125,8 @@ func maximize() -> void:
 	dialog_id_line.visible = true
 	text_edit.visible = true
 	options_container.visible = true
+	signal_time_container.visible = true
+	call_time_container.visible = true
 	size = DEFAULT_SIZE
 
 
@@ -115,10 +151,12 @@ func generate_node_dictionary() -> Dictionary:
 		dialog_dict["character"] = get_input_port_connection_by_id("character").generate_node_dictionary()
 	if has_input_connection("signal"):
 		dialog_dict["signal"] = get_input_port_connection_by_id("signal").generate_node_dictionary()
+		dialog_dict["signal"]["call_at_start"] = signal_moment_option.selected == 0
 	if has_input_connection("variables"):
 		dialog_dict["set_variable"] = get_input_port_connection_by_id("variables").generate_node_dictionary()
 	if has_input_connection("call"):
 		dialog_dict["call"] = get_input_port_connection_by_id("call").generate_node_dictionary()
+		dialog_dict["call"]["call_at_start"] = call_moment_option.selected == 0
 	if has_output_connection("next"):
 		var next_dict: Dictionary = DialogData.get_next_structure()
 		var next_node: DiscourseGraphNode = get_output_port_connection_by_id("next")

@@ -88,7 +88,7 @@ func _ready() -> void:
 func on_callable_selected(callable_selected: int) -> void:
 	for child in args_container.get_children():
 		child.visible = false
-		child.queue_free
+		child.free()
 	
 	for arg:Dictionary in callables[callable_option.get_item_metadata(callable_selected)]["args"]:
 		var new_arg = ARG_CONTAINER.instantiate()
@@ -126,13 +126,13 @@ func select_by_callable(object: String, method: String) -> void:
 
 
 func set_args(args: Array) -> void:
-	var max_arg: int = args.size()
+	var max_arg: int = args.size() - 1
 	
-	if max_arg == 0:
+	if max_arg < 0:
 		return
 	
-	for arg_idx in args_container.get_child_count():
-		args_container.get_child(arg_idx).set_arg_value(args[mini(arg_idx, max_arg)])
+	for arg_idx in range(args_container.get_child_count()):
+		args_container.get_child(arg_idx).set_arg_value(args[mini(arg_idx, max_arg)]["value"])
 
 
 func on_minimize_pressed() -> void:
@@ -184,5 +184,4 @@ func generate_node_dictionary() -> Dictionary:
 	
 	for argument in args_container.get_children():
 		call_structure["args"].append(argument.generate_node_dictionary())
-	
 	return call_structure

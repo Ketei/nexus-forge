@@ -274,6 +274,7 @@ static func get_call_structure() -> Dictionary:
 		"object": "",
 		"method": "",
 		"args": [],
+		"call_at_start": true,
 		"is_return": false,
 		"offset": Vector2(),
 		"expand": true # Editor only
@@ -282,7 +283,7 @@ static func get_call_structure() -> Dictionary:
 
 # Used for signal emmision.
 static func get_signal_structure() -> Dictionary:
-	return {"signal": "", "offset": Vector2()}
+	return {"signal": "", "call_at_start": true,"offset": Vector2()}
 
 
 # To be used on the "next" of dialogs replies.

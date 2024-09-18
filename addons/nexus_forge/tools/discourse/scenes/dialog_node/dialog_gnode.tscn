@@ -147,11 +147,23 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "Signal"
 
-[node name="SignalNameLabel" type="Label" parent="SignalConnector"]
+[node name="SignalTimeContainer" type="HBoxContainer" parent="SignalConnector"]
+layout_mode = 2
+
+[node name="SignalSetMoment" type="Label" parent="SignalConnector/SignalTimeContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 3.0
+text = "Signal at"
 vertical_alignment = 1
+
+[node name="SignalMomentOption" type="OptionButton" parent="SignalConnector/SignalTimeContainer"]
+layout_mode = 2
+selected = 0
+item_count = 2
+popup/item_0/text = "Dialog Start"
+popup/item_1/text = "Dialog End"
+popup/item_1/id = 1
 
 [node name="VariablesConnector" type="HBoxContainer" parent="."]
 layout_mode = 2
@@ -177,8 +189,20 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "Method Call"
 
-[node name="CallPath" type="Label" parent="MethodConnector"]
+[node name="CallTimeContainer" type="HBoxContainer" parent="MethodConnector"]
+layout_mode = 2
+
+[node name="SignalSetMoment" type="Label" parent="MethodConnector/CallTimeContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 3.0
+text = "Call at"
 vertical_alignment = 1
+
+[node name="CallMomentOption" type="OptionButton" parent="MethodConnector/CallTimeContainer"]
+layout_mode = 2
+selected = 0
+item_count = 2
+popup/item_0/text = "Dialog Start"
+popup/item_1/text = "Dialog End"
+popup/item_1/id = 1

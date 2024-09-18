@@ -1,7 +1,8 @@
-[gd_scene load_steps=7 format=3 uid="uid://dykskyw7tvdof"]
+[gd_scene load_steps=8 format=3 uid="uid://dykskyw7tvdof"]
 
 [ext_resource type="PackedScene" uid="uid://cx4h4u45kp8vt" path="res://addons/nexus_forge/tools/discourse/scenes/discourse_main.tscn" id="1_4y35a"]
 [ext_resource type="Texture2D" uid="uid://bixkesgcxvbpk" path="res://icon.svg" id="1_j02mv"]
+[ext_resource type="PackedScene" uid="uid://d3qq6j2xbhrgp" path="res://addons/nexus_forge/tools/variables.tscn" id="3_umhp2"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_7uir0"]
 bg_color = Color(0.145098, 0.168627, 0.203922, 1)
@@ -37,10 +38,11 @@ theme_override_constants/side_margin = 0
 theme_override_styles/tabbar_background = SubResource("StyleBoxFlat_7uir0")
 theme_override_styles/panel = SubResource("StyleBoxFlat_i88kw")
 theme_override_styles/tab_selected = SubResource("StyleBoxFlat_jtiy1")
-current_tab = 0
+current_tab = 2
 metadata/_edit_use_anchors_ = true
 
 [node name="NexusForge" type="Control" parent="TabContainer"]
+visible = false
 layout_mode = 2
 metadata/_tab_index = 0
 
@@ -70,6 +72,9 @@ stretch_mode = 5
 visible = false
 layout_mode = 2
 metadata/_tab_index = 1
+
+[node name="Variables" parent="TabContainer" instance=ExtResource("3_umhp2")]
+layout_mode = 2
 
 [node name="PanelContainer" type="PanelContainer" parent="."]
 visible = false

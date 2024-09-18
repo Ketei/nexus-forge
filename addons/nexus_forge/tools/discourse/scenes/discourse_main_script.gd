@@ -38,7 +38,7 @@ var _is_loading: bool = false
 var _block_change_current: bool = false
 
 @onready var dialog_graph_edit: GraphEdit = %DialogGraphEdit
-@onready var no_dialog_container: CenterContainer = %NoDialogContainer
+@onready var no_dialog_container: PanelContainer = %NoDialogContainer
 @onready var open_dialog_list: Tree = %OpenDialogList
 @onready var id_nodes: Tree = %IDNodes
 @onready var info_container: Tree = %InfoContainer
@@ -322,7 +322,7 @@ func clear_nodes() -> void:
 		if child.node_type == DialogData.DialogType.START:
 			continue # Don't remove the start node
 		
-		child.queue_free()
+		child.free()
 
 
 func connect_nodes(from: DiscourseGraphNode, to: DiscourseGraphNode, port_id: String) -> void:
@@ -445,6 +445,38 @@ func snap_to_grid(target_node: DiscourseGraphNode) -> void:
 	if not dialog_graph_edit.snapping_enabled:
 		return
 	target_node.position_offset = target_node.position_offset.snappedf(dialog_graph_edit.snapping_distance)
+
+
+func on_id_submitted(submitted_id: String, caller_node: DiscourseGraphNode) -> void:
+	var new_id: String = validate_id(submitted_id, caller_node)
+	caller_node.node_id = new_id
+	caller_node.set_id_text(new_id)
+
+
+func validate_id(new_id: String, caller_node: DiscourseGraphNode) -> String:
+	var desired_id: String = new_id
+	if desired_id.is_empty():
+		desired_id = "dialog_node"
+	
+	var has_id: bool = has_root_with_exception(desired_id, caller_node)
+	var final_id: String = desired_id
+	var iteration_count: int = 1
+	
+	while has_id:
+		final_id = str(desired_id, "_", iteration_count)
+		iteration_count += 1
+		has_id = has_root_with_exception(final_id, caller_node)
+	
+	return final_id
+
+
+func has_root_with_exception(root_id: String, except: DiscourseGraphNode) -> bool:
+	for node in root_nodes:
+		if node == except:
+			continue
+		if node.node_id == root_id:
+			return true
+	return false
 
 
 func on_current_changed() -> void:
@@ -1065,9 +1097,7 @@ func on_dialog_selected(tree_item: TreeItem) -> void:
 	
 	var item_metadata: Dictionary = tree_item.get_metadata(0)
 	
-	dialog_graph_edit.visible = true
 	no_dialog_container.visible = false
-	
 	var data_tree: Array = []
 	var orphan_nodes: Array = []
 	var entry_node_id: String = ""
@@ -1167,7 +1197,6 @@ func on_dialog_selected(tree_item: TreeItem) -> void:
 	tree_item.select(0)
 	_block_change_current = false
 	_is_loading = false
-	await get_tree().process_frame
 	
 	if item_metadata["zoom"] == 0:
 		dialog_graph_edit.zoom = 1
@@ -1231,8 +1260,6 @@ func spawn_dialog_node(dialog_id: String, dialog_dict: Dictionary, target_node: 
 	if target_node == null:
 		dialog_node = DIALOG_NODE.instantiate()
 		dialog_graph_edit.add_child(dialog_node)
-		root_nodes.append(dialog_node)
-		id_nodes.add_node(dialog_node)
 	else:
 		dialog_node = target_node
 	
@@ -1245,11 +1272,16 @@ func spawn_dialog_node(dialog_id: String, dialog_dict: Dictionary, target_node: 
 		dialog_node.minimized = true
 		dialog_node.minimize()
 	
-	dialog_node.dialog_id_line.text = dialog_id
+	var valid_id: String = validate_id(dialog_id, dialog_node)
+	
+	dialog_node.dialog_id_line.text = valid_id
+	dialog_node.node_id = valid_id
 	dialog_node.text_edit.text = dialog_dict["dialog"]["text"]
 	dialog_node.seconds_spin_box.value = dialog_dict["dialog"]["seconds_per_letter"]
 	dialog_node.pause_check_box.button_pressed = dialog_dict["pause"]
+	
 	dialog_node.close_requested.connect(on_close_requested)
+	dialog_node.id_submitted.connect(on_id_submitted.bind(dialog_node))
 	dialog_node.node_updated.connect(notify_change)
 	
 	if not dialog_dict["character"].is_empty():
@@ -1259,6 +1291,7 @@ func spawn_dialog_node(dialog_id: String, dialog_dict: Dictionary, target_node: 
 	if not dialog_dict["signal"].is_empty():
 		var signal_node := spawn_signal_node(dialog_dict["signal"])
 		connect_nodes(signal_node, dialog_node, "signal")
+		dialog_node.set_signal_emit_time(dialog_dict["signal"]["call_at_start"])
 		
 	if not dialog_dict["set_variable"].is_empty():
 		var variables_node: DiscourseGraphNode = spawn_variables_node(dialog_dict["set_variable"])
@@ -1271,6 +1304,7 @@ func spawn_dialog_node(dialog_id: String, dialog_dict: Dictionary, target_node: 
 		else:
 			call_node = spawn_call_node(dialog_dict["call"])
 		connect_nodes(call_node, dialog_node, "call")
+		dialog_node.set_method_call_time(dialog_dict["call"]["call_at_start"])
 	
 	if not dialog_dict["next"].is_empty():
 		if dialog_dict["next"]["type"] == DialogData.NextType.RANDOM:
@@ -1299,6 +1333,10 @@ func spawn_dialog_node(dialog_id: String, dialog_dict: Dictionary, target_node: 
 			if not dialog_dict["next"]["data"].is_empty():
 				var new_end := spawn_end_node(dialog_dict["next"]["data"])
 				connect_nodes(dialog_node, new_end, "next")
+	
+	if target_node == null:
+		root_nodes.append(dialog_node)
+		id_nodes.add_node(dialog_node)
 	
 	return dialog_node
 
@@ -1438,19 +1476,21 @@ func spawn_reply_selector_node(dialog_id: String, options_dict: Dictionary, targ
 	if target_node == null:
 		reply_selector = REPLY_SELECTOR_NODE.instantiate()
 		dialog_graph_edit.add_child(reply_selector)
-		root_nodes.append(reply_selector)
-		id_nodes.add_node(reply_selector)
 	else:
 		reply_selector = target_node
 	
 	reply_selector.output_port_disconnected.connect(on_options_output_disconnected)
 	reply_selector.input_port_disconnected.connect(on_options_input_disconnected)
 	
-	reply_selector.id_line.text = dialog_id
+	var valid_id: String = validate_id(dialog_id, reply_selector)
+	
+	reply_selector.id_line.text = valid_id
+	reply_selector.node_id = valid_id
 	reply_selector.position_offset = offset_override if override_offset else options_dict["offset"]
 	reply_selector.keep_dialog_check.button_pressed = options_dict["keep_dialog"]
 	reply_selector.close_requested.connect(on_close_requested)
 	reply_selector.node_updated.connect(notify_change)
+	reply_selector.id_submitted.connect(on_id_submitted.bind(reply_selector))
 	
 	if not options_dict["options"].is_empty():
 		reply_selector.reply_count_box.value = options_dict["options"].size()
@@ -1489,6 +1529,10 @@ func spawn_reply_selector_node(dialog_id: String, options_dict: Dictionary, targ
 						connect_nodes_specific(reply_selector, str(option_idx), new_end, "next")
 	
 	reply_selector.reply_cancel_box.value = options_dict["cancel"]
+	
+	if target_node == null:
+		root_nodes.append(reply_selector)
+		id_nodes.add_node(reply_selector)
 	
 	return reply_selector
 
@@ -1597,7 +1641,9 @@ func spawn_variables_node(variables_data: Dictionary, override_offset := false, 
 func spawn_call_node(call_data: Dictionary, override_offset := false, offset_override: Vector2 = Vector2.ZERO) -> DiscourseGraphNode:
 	var new_node: DiscourseGraphNode = METHOD_CALL_GNODE.instantiate()
 	dialog_graph_edit.add_child(new_node)
+	
 	new_node.position_offset = offset_override if override_offset else call_data["offset"]
+	
 	if not call_data["expand"]:
 		new_node.minimized = true
 		new_node.minimize()

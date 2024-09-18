@@ -1,20 +1,20 @@
-[gd_scene load_steps=24 format=3 uid="uid://cx4h4u45kp8vt"]
+[gd_scene load_steps=25 format=3 uid="uid://cx4h4u45kp8vt"]
 
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/scenes/discourse_main_script.gd" id="1_frko2"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/scenes/discourse_id_node_tree.gd" id="2_40hbj"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/scenes/discourse_open_dialog_tree_script.gd" id="2_68plr"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/scenes/files_panel_script.gd" id="2_tfoft"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/scenes/discourse_id_nodes.gd" id="2_uf78j"]
-[ext_resource type="Texture2D" uid="uid://b8q6di4imiriq" path="res://addons/nexus_forge/tools/discourse/icons/search_icon.svg" id="3_d5eee"]
-[ext_resource type="Texture2D" uid="uid://bwspmik2qv43f" path="res://addons/nexus_forge/tools/discourse/icons/new_file.svg" id="4_secj6"]
-[ext_resource type="Texture2D" uid="uid://xkqkxosnppid" path="res://addons/nexus_forge/tools/discourse/icons/open_file.svg" id="5_mm7jt"]
-[ext_resource type="Texture2D" uid="uid://cd4jt2ru86e16" path="res://addons/nexus_forge/tools/discourse/icons/save_file.svg" id="6_l8hwc"]
+[ext_resource type="Texture2D" uid="uid://b8q6di4imiriq" path="res://addons/nexus_forge/common_icons/search_icon.svg" id="3_d5eee"]
+[ext_resource type="Texture2D" uid="uid://bwspmik2qv43f" path="res://addons/nexus_forge/common_icons/new_file.svg" id="4_secj6"]
+[ext_resource type="Texture2D" uid="uid://xkqkxosnppid" path="res://addons/nexus_forge/common_icons/open_file.svg" id="5_mm7jt"]
+[ext_resource type="Texture2D" uid="uid://cd4jt2ru86e16" path="res://addons/nexus_forge/common_icons/save_file.svg" id="6_l8hwc"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/scenes/log_container_script.gd" id="8_e84u1"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/scenes/main_info_container.gd" id="8_ev1q6"]
-[ext_resource type="Texture2D" uid="uid://pelqek8ou3ft" path="res://addons/nexus_forge/tools/discourse/icons/save_all_files.svg" id="8_hgkok"]
-[ext_resource type="Texture2D" uid="uid://cmwf1utkpiqsf" path="res://addons/nexus_forge/tools/discourse/icons/delete_icon.svg" id="9_2g3h2"]
+[ext_resource type="Texture2D" uid="uid://pelqek8ou3ft" path="res://addons/nexus_forge/common_icons/save_all_files.svg" id="8_hgkok"]
 [ext_resource type="PackedScene" uid="uid://b8of7df1gb5qk" path="res://addons/nexus_forge/tools/discourse/scenes/entry/entry_dialog_gnode.tscn" id="11_d0f7h"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/scenes/unsaved_confirmation_script.gd" id="13_420lk"]
+[ext_resource type="Texture2D" uid="uid://bx226t88nlc4v" path="res://addons/nexus_forge/common_icons/trash_bin.svg" id="14_qcagm"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/scenes/discourse_popup_menu.gd" id="15_sa68m"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_rx1e4"]
@@ -57,6 +57,9 @@ func _ready() -> void:
 "
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_140wq"]
+bg_color = Color(0.129412, 0.14902, 0.180392, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fsjbe"]
 bg_color = Color(0.129412, 0.14902, 0.180392, 1)
 
 [sub_resource type="GDScript" id="GDScript_km4bd"]
@@ -258,7 +261,6 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_140wq")
 
 [node name="DialogGraphEdit" type="GraphEdit" parent="Dialogues/TreeContainer/MainWorkerContainer/DialogNodes"]
 unique_name_in_owner = true
-visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -273,14 +275,18 @@ minimap_opacity = 0.5
 layout_mode = 0
 mouse_filter = 1
 
-[node name="NoDialogContainer" type="CenterContainer" parent="Dialogues/TreeContainer/MainWorkerContainer/DialogNodes"]
+[node name="NoDialogContainer" type="PanelContainer" parent="Dialogues/TreeContainer/MainWorkerContainer/DialogNodes"]
 unique_name_in_owner = true
 layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_fsjbe")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="Dialogues/TreeContainer/MainWorkerContainer/DialogNodes/NoDialogContainer"]
+[node name="CenterContainer" type="CenterContainer" parent="Dialogues/TreeContainer/MainWorkerContainer/DialogNodes/NoDialogContainer"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="Dialogues/TreeContainer/MainWorkerContainer/DialogNodes/NoDialogContainer/VBoxContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="Dialogues/TreeContainer/MainWorkerContainer/DialogNodes/NoDialogContainer/CenterContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Dialogues/TreeContainer/MainWorkerContainer/DialogNodes/NoDialogContainer/CenterContainer/VBoxContainer"]
 layout_mode = 2
 text = "No conversation selected"
 horizontal_alignment = 1
@@ -333,7 +339,7 @@ alignment = 2
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Clear"
-icon = ExtResource("9_2g3h2")
+icon = ExtResource("14_qcagm")
 icon_alignment = 1
 expand_icon = true
 

@@ -104,13 +104,13 @@ func select_by_callable(object: String, method: String) -> void:
 
 
 func set_args(args: Array) -> void:
-	var max_arg: int = args.size()
+	var max_arg: int = args.size() - 1
 	
-	if max_arg == 0:
+	if max_arg < 0:
 		return
 	
-	for arg_idx in args_container.get_child_count():
-		args_container.get_child(arg_idx).set_arg_value(args[mini(arg_idx, max_arg)])
+	for arg_idx in range(args_container.get_child_count()):
+		args_container.get_child(arg_idx).set_arg_value(args[mini(arg_idx, max_arg)]["value"])
 
 
 func on_minimize_pressed() -> void:

@@ -34,14 +34,25 @@ func _ready() -> void:
 	title_bar.add_child(new_hbox_node)
 	new_hbox_node.add_child(close_button)
 	
-	id_line.text_changed.connect(on_id_line_changed)
+	#id_line.text_changed.connect(on_id_line_changed)
 	reply_cancel_box.value_changed.connect(on_val_selected)
 	keep_dialog_check.toggled.connect(on_keep_dialog_toggled)
+	id_line.text_submitted.connect(on_id_submitted)
+	id_line.focus_exited.connect(on_id_focus_lost)
 
 
-func on_id_line_changed(new_line: String) -> void:
-	node_id = new_line
-	node_updated.emit()
+func on_id_focus_lost() -> void:
+	id_submitted.emit(id_line.text.strip_edges())
+
+
+func on_id_submitted(_text: String = "") -> void:
+	id_line.release_focus()
+
+
+func set_id_text(new_text: String) -> void:
+	id_line.text = new_text
+	if id_line.has_focus():
+		id_line.caret_column = id_line.text.length()
 
 
 func on_reply_amount_changed(new_reply_count: float) -> void:

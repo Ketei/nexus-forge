@@ -19,7 +19,7 @@ func add_node(node_ref: DiscourseGraphNode) -> void:
 	if ref_id.is_empty():
 		new_tree.set_text(0, "[MISSING ID]")
 	else:
-		new_tree.set_text(0, node_ref._get_node_id())
+		new_tree.set_text(0, node_ref.node_id)
 	new_tree.set_metadata(0, node_ref)
 	node_ref.id_changed.connect(on_node_updated.bind(node_ref))
 	new_tree.add_button(

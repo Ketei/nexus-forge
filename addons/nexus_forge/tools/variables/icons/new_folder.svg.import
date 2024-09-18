@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cmwf1utkpiqsf"
-path="res://.godot/imported/delete_icon.svg-4a73c425379062bcdc3d95ffe1aa4cba.ctex"
+uid="uid://bs2p4nkbfnuwa"
+path="res://.godot/imported/new_folder.svg-c3f8398dadaf4e9817886ac9fc1f1eee.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://addons/nexus_forge/tools/discourse/icons/delete_icon.svg"
-dest_files=["res://.godot/imported/delete_icon.svg-4a73c425379062bcdc3d95ffe1aa4cba.ctex"]
+source_file="res://addons/nexus_forge/tools/variables/icons/new_folder.svg"
+dest_files=["res://.godot/imported/new_folder.svg-c3f8398dadaf4e9817886ac9fc1f1eee.ctex"]
 
 [params]
 

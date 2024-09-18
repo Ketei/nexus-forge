@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cd4jt2ru86e16"
-path="res://.godot/imported/save_file.svg-c5d2d0f42de22b865aecf964f7db2a8d.ctex"
+uid="uid://bwspmik2qv43f"
+path="res://.godot/imported/new_file.svg-f5f88e0e505c00fa4099bd3029d543ea.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://addons/nexus_forge/tools/discourse/icons/save_file.svg"
-dest_files=["res://.godot/imported/save_file.svg-c5d2d0f42de22b865aecf964f7db2a8d.ctex"]
+source_file="res://addons/nexus_forge/common_icons/new_file.svg"
+dest_files=["res://.godot/imported/new_file.svg-f5f88e0e505c00fa4099bd3029d543ea.ctex"]
 
 [params]
 
