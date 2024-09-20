@@ -16,11 +16,6 @@ config/features=PackedStringArray("4.3", "GL Compatibility")
 run/low_processor_mode=true
 config/icon="res://icon.svg"
 
-[autoload]
-
-Variables="*res://addons/nexus_forge/tools/discourse/scripts/singleton/variables.gd"
-Characters="*res://addons/nexus_forge/tools/discourse/scripts/singleton/character_manager.gd"
-
 [display]
 
 window/size/viewport_width=1280

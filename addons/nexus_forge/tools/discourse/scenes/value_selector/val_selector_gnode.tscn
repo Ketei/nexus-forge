@@ -66,10 +66,6 @@ visible = false
 layout_mode = 2
 placeholder_text = "String"
 
-[node name="VarOption" type="OptionButton" parent="PanelContainer"]
-visible = false
-layout_mode = 2
-
 [node name="BoolBox" type="CheckBox" parent="PanelContainer"]
 visible = false
 layout_mode = 2
