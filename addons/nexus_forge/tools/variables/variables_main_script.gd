@@ -96,9 +96,8 @@ func _ready() -> void:
 
 
 func on_something_changed() -> void:
-	if _switching_tree:
+	if _switching_tree or _unsaved:
 		return
-	# Notify there are unsaved changes
 	_unsaved = true
 
 

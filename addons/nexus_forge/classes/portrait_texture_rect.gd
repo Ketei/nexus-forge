@@ -42,6 +42,10 @@ func set_playing(is_playing: bool) -> void:
 		playing = is_playing
 		return
 	playing = is_playing
+	
+	if portrait_frames == null:
+		return
+	
 	if playing:
 		_animation_control.play()
 	else:
@@ -76,13 +80,14 @@ func set_portrait_frames(new_frames: SpriteFrames) -> void:
 	if not is_node_ready():
 		portrait_frames = new_frames
 		return
+	
 	_animation_control.sprite_frames = new_frames
 	portrait_frames = new_frames
 	var anim_names: PackedStringArray = new_frames.get_animation_names() if new_frames != null else PackedStringArray()
 	notify_property_list_changed()
 	if not anim_names.is_empty():
 		animation_name = StringName(anim_names[0])
-	frame = 0
+		frame = 0
 
 
 func set_anim_name(new_name: StringName) -> void:

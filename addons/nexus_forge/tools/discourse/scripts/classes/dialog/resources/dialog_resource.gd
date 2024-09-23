@@ -405,7 +405,9 @@ static func get_comment_structure() -> Dictionary:
 
 
 static func get_end_structure() -> Dictionary:
-	return {"offset": Vector2()}
+	return {
+		"type": DialogType.END,
+		"offset": Vector2()}
 
 
 # var_a: "variant" = Will "variant"(string)

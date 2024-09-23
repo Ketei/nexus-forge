@@ -44,12 +44,15 @@ func _is_root() -> bool:
 
 func generate_node_dictionary() -> Dictionary:
 	var comp_dictionary: Dictionary = DialogData.get_comparation_structure()
-	if has_input_connection("variable_a"):
-		comp_dictionary["var_a"] = get_input_port_connection_by_id("variable_a").generate_node_dictionary()
-	if has_input_connection("variable_b"):
-		comp_dictionary["var_b"] = get_input_port_connection_by_id("variable_b").generate_node_dictionary()
+	if has_input_connection("value_a"):
+		comp_dictionary["var_a"] = get_input_port_connection_by_id("value_a").generate_node_dictionary()
+	if has_input_connection("value_b"):
+		comp_dictionary["var_b"] = get_input_port_connection_by_id("value_b").generate_node_dictionary()
 	comp_dictionary["operator"] = operation_option.get_item_text(operation_option.selected)
 	comp_dictionary["offset"] = position_offset
+	print("----------------")
+	print(comp_dictionary)
+	print("-------------------")
 	return comp_dictionary
 
 

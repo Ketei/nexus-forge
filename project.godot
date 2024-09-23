@@ -16,6 +16,10 @@ config/features=PackedStringArray("4.3", "GL Compatibility")
 run/low_processor_mode=true
 config/icon="res://icon.svg"
 
+[autoload]
+
+NexusForge="*res://addons/nexus_forge/classes/autoload/nexus_forge_singleton.gd"
+
 [display]
 
 window/size/viewport_width=1280

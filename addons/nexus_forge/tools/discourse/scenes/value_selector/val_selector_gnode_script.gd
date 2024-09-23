@@ -120,7 +120,7 @@ func on_bool_toggled(_is_toggled: bool) -> void:
 
 func generate_node_dictionary() -> Dictionary:
 	var value_struct: Dictionary = DialogData.get_element_structure()
-	
+	value_struct["offset"] = position_offset
 	if current_node == val_spin_box:
 		if val_spin_box.step == 1.0:
 			value_struct["value"] = DialogData._get_val_structure(DialogData.ElementType.INT)

@@ -1,0 +1,59 @@
+extends Tree
+
+
+var root_tree: TreeItem
+
+
+func _ready() -> void:
+	root_tree = create_item()
+	set_column_expand(0, true)
+	
+	load_flags()
+
+
+func load_flags() -> void:
+	var flag_strings = NexusForgeRaces.Flags.keys()
+	for flag in NexusForgeRaces.Flags:
+		var new_flag: TreeItem = create_item(root_tree)
+		new_flag.set_cell_mode(0, TreeItem.CELL_MODE_CHECK)
+		new_flag.set_text(0, Strings.capitalize(flag_strings[NexusForgeRaces.Flags.get(flag)]))
+		new_flag.set_metadata(0, flag)
+		
+		new_flag.set_selectable(0, false)
+		
+		new_flag.set_editable(0, true)
+
+
+func set_flag(flag_index: NexusForgeRaces.Flags, set_checked: bool) -> void:
+	var target_flag: TreeItem = null
+	for flag in root_tree.get_children():
+		if flag.get_metadata(0) == flag_index:
+			target_flag = flag
+			break
+	if target_flag == null:
+		printerr("Something went wrong when looking to switch a flag")
+		return
+	
+	target_flag.set_checked(0, set_checked)
+
+
+func clear_flags() -> void:
+	for flag_tree:TreeItem in root_tree.get_children():
+		flag_tree.free()
+
+
+func reset_flags() -> void:
+	for flag_tree:TreeItem in root_tree.get_children():
+		if flag_tree.is_checked(0):
+			flag_tree.set_checked(0, false)
+
+
+func get_flags() -> int:
+	var flags: int = 0
+	
+	for flag_tree:TreeItem in root_tree.get_children():
+		if not flag_tree.is_checked(0):
+			continue
+		flags |= 1 << NexusForgeRaces.Flags.get(flag_tree.get_metadata(1))
+	
+	return flags

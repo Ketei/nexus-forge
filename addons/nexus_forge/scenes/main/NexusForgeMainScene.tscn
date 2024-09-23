@@ -3,6 +3,7 @@
 [ext_resource type="PackedScene" uid="uid://cx4h4u45kp8vt" path="res://addons/nexus_forge/tools/discourse/scenes/discourse_main.tscn" id="1_4y35a"]
 [ext_resource type="Texture2D" uid="uid://bixkesgcxvbpk" path="res://icon.svg" id="1_j02mv"]
 [ext_resource type="PackedScene" uid="uid://d3qq6j2xbhrgp" path="res://addons/nexus_forge/tools/variables/variables.tscn" id="3_umhp2"]
+[ext_resource type="PackedScene" uid="uid://cvuo0on5wm8qb" path="res://addons/nexus_forge/tools/characters/characters_main.tscn" id="4_xgwoe"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_7uir0"]
 bg_color = Color(0.145098, 0.168627, 0.203922, 1)
@@ -18,9 +19,6 @@ bg_color = Color(0.211765, 0.239216, 0.290196, 1)
 content_margin_left = 10.0
 content_margin_right = 10.0
 bg_color = Color(0.211765, 0.239216, 0.290196, 1)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ern4d"]
-bg_color = Color(0.113725, 0.133333, 0.160784, 1)
 
 [node name="NexusForgeMainScene" type="Control"]
 layout_mode = 3
@@ -38,10 +36,11 @@ theme_override_constants/side_margin = 0
 theme_override_styles/tabbar_background = SubResource("StyleBoxFlat_7uir0")
 theme_override_styles/panel = SubResource("StyleBoxFlat_i88kw")
 theme_override_styles/tab_selected = SubResource("StyleBoxFlat_jtiy1")
-current_tab = 0
+current_tab = 5
 metadata/_edit_use_anchors_ = true
 
 [node name="NexusForge" type="Control" parent="TabContainer"]
+visible = false
 layout_mode = 2
 metadata/_tab_index = 0
 
@@ -76,12 +75,88 @@ metadata/_tab_index = 1
 visible = false
 layout_mode = 2
 
-[node name="PanelContainer" type="PanelContainer" parent="."]
+[node name="Kinds" type="Control" parent="TabContainer"]
 visible = false
+layout_mode = 2
+metadata/_tab_index = 3
+
+[node name="TabContainer" type="TabContainer" parent="TabContainer/Kinds"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_ern4d")
+tab_alignment = 2
+current_tab = 0
+
+[node name="Characters" parent="TabContainer/Kinds/TabContainer" instance=ExtResource("4_xgwoe")]
+layout_mode = 2
+metadata/_tab_index = 0
+
+[node name="Races" type="Control" parent="TabContainer/Kinds/TabContainer"]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 1
+
+[node name="Factions" type="Control" parent="TabContainer/Kinds/TabContainer"]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 2
+
+[node name="Talents" type="Control" parent="TabContainer"]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 4
+
+[node name="TabContainer" type="TabContainer" parent="TabContainer/Talents"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+tab_alignment = 2
+current_tab = 0
+
+[node name="Skills" type="Control" parent="TabContainer/Talents/TabContainer"]
+layout_mode = 2
+metadata/_tab_index = 0
+
+[node name="Perks" type="Control" parent="TabContainer/Talents/TabContainer"]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 1
+
+[node name="Depot" type="Control" parent="TabContainer"]
+layout_mode = 2
+metadata/_tab_index = 5
+
+[node name="TabContainer" type="TabContainer" parent="TabContainer/Depot"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+tab_alignment = 2
+current_tab = 0
+
+[node name="Items" type="Control" parent="TabContainer/Depot/TabContainer"]
+layout_mode = 2
+metadata/_tab_index = 0
+
+[node name="Spells" type="Control" parent="TabContainer/Depot/TabContainer"]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 1
+
+[node name="Attributes" type="Control" parent="TabContainer/Depot/TabContainer"]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 2
+
+[node name="Odyssey (Quests)" type="Control" parent="TabContainer"]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 6

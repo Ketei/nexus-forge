@@ -209,13 +209,15 @@ func get_current_conversation_data() -> Dictionary:
 	return {"tree": full_data_dict, "orphans": orphans, "entry": entry, "entry_offset": entry_node.position_offset}
 
 
+# TEST: This for some reason sometimes crashes. Find why. Maybe missing entries.
+# It crashes when switching from one dialog to another
 func close_all_files() -> void:
 	for file:TreeItem in open_dialog_list.get_tree_children():
 		var confirm_close: bool = true
 		var final_idx: int = -1
 		if file.get_metadata(0)["unsaved"]:
-			
-			on_dialog_selected(file)
+			if current_dialog != file:
+				on_dialog_selected(file) # <- Right here it crashes. Sometimes
 			unsaved_confirmation.show()
 			
 			var confirmation: int = await unsaved_confirmation.option_selected
@@ -237,7 +239,6 @@ func close_all_files() -> void:
 			on_dialog_selected(
 					open_dialog_list.get_file_child(final_idx))
 		else:
-			dialog_graph_edit.visible = false
 			no_dialog_container.visible = true
 	
 	current_dialog = null
@@ -532,7 +533,6 @@ func on_file_menu_selected(idx: int) -> void:
 						on_dialog_selected(
 								open_dialog_list.get_file_child(new_index))
 					else:
-						dialog_graph_edit.visible = false
 						no_dialog_container.visible = true
 						current_dialog = null
 		5:
@@ -1400,9 +1400,8 @@ func spawn_conditional_split_node(split_data: Dictionary, override_offset := fal
 			var new_cond_reloaded := spawn_conditional_split_node(split_data["true"]["data"])
 			connect_nodes_specific(new_conditional, "true", new_cond_reloaded, "next")
 		elif split_data["true"]["type"] == DialogData.NextType.END:
-			if not split_data["true"]["data"].is_empty():
-				var new_end := spawn_end_node(split_data["true"]["data"])
-				connect_nodes_specific(new_conditional, "true", new_end, "next")
+			var new_end := spawn_end_node(split_data["true"]["data"])
+			connect_nodes_specific(new_conditional, "true", new_end, "next")
 		
 	if not split_data["false"].is_empty():
 		if split_data["false"]["type"] == DialogData.NextType.ID:
@@ -1521,7 +1520,7 @@ func spawn_reply_selector_node(dialog_id: String, options_dict: Dictionary, targ
 					connect_nodes_specific(reply_selector, str(option_idx), random_node, "next")
 					
 				elif options_dict["targets"][option_idx]["type"] == DialogData.NextType.CONDITION:
-					var new_cond := spawn_conditional_split_node(options_dict["targets"][option_idx]["next"])
+					var new_cond := spawn_conditional_split_node(options_dict["targets"][option_idx]["data"])
 					connect_nodes_specific(reply_selector, str(option_idx), new_cond, "next")
 				elif options_dict["targets"][option_idx]["type"] == DialogData.NextType.END:
 					if not options_dict["targets"][option_idx]["data"].is_empty():
@@ -1572,7 +1571,6 @@ func spawn_reply_node(reply_data: Dictionary, override_offset := false, offset_o
 func spawn_comparator_node(comparation_data: Dictionary, override_offset := false, offset_override: Vector2 = Vector2.ZERO) -> DiscourseGraphNode:
 	var new_comparator: DiscourseGraphNode = COMPARATION_NODE.instantiate()
 	dialog_graph_edit.add_child(new_comparator)
-	
 	new_comparator.position_offset = offset_override if override_offset else comparation_data["offset"]
 	new_comparator.select_by_text(comparation_data["operator"])
 	new_comparator.close_requested.connect(on_close_requested)
@@ -1585,7 +1583,9 @@ func spawn_comparator_node(comparation_data: Dictionary, override_offset := fals
 		elif comparation_data["var_a"]["type"] == DialogData.DialogType.ELEMENT:
 			var a_el := spawn_element_node(comparation_data["var_a"])
 			connect_nodes_specific(a_el, "value", new_comparator, "value_a")
-			dialog_graph_edit.connect_node(a_el.name, 0, new_comparator.name, 2)
+		elif comparation_data["var_a"]["type"] == DialogData.DialogType.CALL and comparation_data["var_a"]["is_return"]:
+			var a_el := spawn_return_call_node(comparation_data["var_a"])
+			connect_nodes_specific(a_el, "result", new_comparator, "value_a")
 	
 	if not comparation_data["var_b"].is_empty():
 		if comparation_data["var_b"]["type"] == DialogData.DialogType.COMPARATION:
@@ -1594,6 +1594,9 @@ func spawn_comparator_node(comparation_data: Dictionary, override_offset := fals
 		elif comparation_data["var_b"]["type"] == DialogData.DialogType.ELEMENT:
 			var b_el := spawn_element_node(comparation_data["var_b"])
 			connect_nodes_specific(b_el, "value", new_comparator, "value_b")
+		elif comparation_data["var_b"]["type"] == DialogData.DialogType.CALL and comparation_data["var_b"]["is_return"]:
+			var b_el := spawn_return_call_node(comparation_data["var_b"])
+			connect_nodes_specific(b_el, "result", new_comparator, "value_b")
 	
 	return new_comparator
 

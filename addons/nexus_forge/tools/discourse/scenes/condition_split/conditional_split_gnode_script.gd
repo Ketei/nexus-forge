@@ -54,27 +54,47 @@ func generate_node_dictionary() -> Dictionary:
 		condition_dictionary["comparation"] = get_input_port_connection_by_id("result").generate_node_dictionary()
 	if has_output_connection("true"):
 		var next_true_node: DiscourseGraphNode = get_output_port_connection_by_id("true")
+		var true_next_structure: Dictionary = DialogData.get_next_structure()
 		if next_true_node.node_type == DialogData.DialogType.DIALOG or next_true_node.node_type == DialogData.DialogType.OPTIONS or next_true_node.node_type == DialogData.DialogType.ID:
-			condition_dictionary["true"] = DialogData.get_next_structure()
-			condition_dictionary["true"]["type"] = DialogData.NextType.ID
-			condition_dictionary["true"]["data"] = DialogData.get_next_by_id()
-			condition_dictionary["true"]["data"]["next"] = next_true_node.node_id
-			condition_dictionary["true"]["data"]["use_shortcut"] = next_true_node.node_type == DialogData.DialogType.ID
-			condition_dictionary["true"]["data"]["offset"] = next_true_node.position_offset
+			#condition_dictionary["true"] = DialogData.get_next_structure()
+			true_next_structure["type"] = DialogData.NextType.ID
+			true_next_structure["data"] = DialogData.get_next_by_id()
+			true_next_structure["data"]["next"] = next_true_node.node_id
+			true_next_structure["data"]["use_shortcut"] = next_true_node.node_type == DialogData.DialogType.ID
+			true_next_structure["data"]["offset"] = next_true_node.position_offset
 		else:
-			condition_dictionary["true"] = next_true_node.generate_node_dictionary()
+			match next_true_node.node_type:
+				DialogData.DialogType.RANDOM:
+					true_next_structure["type"] = DialogData.NextType.RANDOM
+				DialogData.DialogType.CONDITION:
+					true_next_structure["type"] = DialogData.NextType.CONDITION
+				DialogData.DialogType.END:
+					true_next_structure["type"] = DialogData.NextType.END
+				_:
+					printerr("Something unexpected happened while tryting to generate dict for conditional split")
+			true_next_structure["data"] = next_true_node.generate_node_dictionary()
+		condition_dictionary["true"] = true_next_structure
+	
 	if has_output_connection("false"):
 		var next_false_node: DiscourseGraphNode = get_output_port_connection_by_id("false")
+		var false_next_structure: Dictionary = DialogData.get_next_structure()
 		if next_false_node.node_type == DialogData.DialogType.DIALOG or next_false_node.node_type == DialogData.DialogType.OPTIONS or next_false_node.node_type == DialogData.DialogType.ID:
-			condition_dictionary["false"] = DialogData.get_next_structure()
-			condition_dictionary["false"]["type"] = DialogData.NextType.ID
-			condition_dictionary["false"]["data"] = DialogData.get_next_by_id()
-			condition_dictionary["false"]["data"]["next"] = next_false_node.node_id
-			condition_dictionary["false"]["data"]["use_shortcut"] = next_false_node.node_type == DialogData.DialogType.ID
-			condition_dictionary["false"]["data"]["offset"] = next_false_node.position_offset
+			false_next_structure["type"] = DialogData.NextType.ID
+			false_next_structure["data"] = DialogData.get_next_by_id()
+			false_next_structure["data"]["next"] = next_false_node.node_id
+			false_next_structure["data"]["use_shortcut"] = next_false_node.node_type == DialogData.DialogType.ID
+			false_next_structure["data"]["offset"] = next_false_node.position_offset
 		else:
-			condition_dictionary["false"] = next_false_node.generate_node_dictionary()
+			match next_false_node.node_type:
+				DialogData.DialogType.RANDOM:
+					false_next_structure["type"] = DialogData.NextType.RANDOM
+				DialogData.DialogType.CONDITION:
+					false_next_structure["type"] = DialogData.NextType.CONDITION
+				DialogData.DialogType.END:
+					false_next_structure["type"] = DialogData.NextType.END
+				_:
+					printerr("Something unexpected happened while tryting to generate dict for conditional split")
+			false_next_structure["data"] = next_false_node.generate_node_dictionary()
 	
 	condition_dictionary["offset"] = position_offset
-	
 	return condition_dictionary

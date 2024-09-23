@@ -1,0 +1,713 @@
+[gd_scene load_steps=28 format=3 uid="uid://cvuo0on5wm8qb"]
+
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/characters/characters_main_script.gd" id="1_0oiu4"]
+[ext_resource type="Texture2D" uid="uid://12lyg7db58dg" path="res://addons/nexus_forge/tools/variables/icons/add_int.svg" id="1_54l1c"]
+[ext_resource type="Texture2D" uid="uid://bulvfr7x1bwq8" path="res://addons/nexus_forge/common_icons/add_character_icon.svg" id="2_jm2sw"]
+[ext_resource type="Texture2D" uid="uid://dcgniolhiay6u" path="res://addons/nexus_forge/tools/variables/icons/add_float.svg" id="2_nxing"]
+[ext_resource type="Texture2D" uid="uid://mve5bcrecv8v" path="res://addons/nexus_forge/common_icons/import_icon.svg" id="3_grla6"]
+[ext_resource type="Texture2D" uid="uid://c472l5bho4jpi" path="res://addons/nexus_forge/tools/variables/icons/add_bool.svg" id="3_vw3yf"]
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/characters/characters_tree_script.gd" id="4_5334i"]
+[ext_resource type="Texture2D" uid="uid://cxv7veghytl4m" path="res://addons/nexus_forge/tools/variables/icons/add_string.svg" id="4_aort3"]
+[ext_resource type="Texture2D" uid="uid://bwspmik2qv43f" path="res://addons/nexus_forge/common_icons/new_file.svg" id="6_4qmbo"]
+[ext_resource type="Texture2D" uid="uid://b8q6di4imiriq" path="res://addons/nexus_forge/common_icons/search_icon.svg" id="6_nr27b"]
+[ext_resource type="Script" path="res://addons/nexus_forge/classes/portrait_texture_rect.gd" id="7_d3t2u"]
+[ext_resource type="Texture2D" uid="uid://xkqkxosnppid" path="res://addons/nexus_forge/common_icons/open_file.svg" id="7_gnapp"]
+[ext_resource type="Texture2D" uid="uid://c1aelqf557khb" path="res://addons/nexus_forge/common_icons/plus_icon.svg" id="9_d72ha"]
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/characters/stats_container_script.gd" id="9_mdywn"]
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/characters/custom_data_tree_script.gd" id="10_va8cf"]
+[ext_resource type="Texture2D" uid="uid://c53li367o8i6k" path="res://addons/nexus_forge/common_icons/refresh_icon.svg" id="10_vdvbr"]
+[ext_resource type="Texture2D" uid="uid://dag1uf3tql5xg" path="res://addons/nexus_forge/common_icons/play_button.svg" id="12_ox0jv"]
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/characters/flags_tree_script.gd" id="12_us4su"]
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/characters/variants_tree_script.gd" id="12_wrqly"]
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/characters/sprite_sheets_tree_script.gd" id="18_0ssl4"]
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/characters/id_select_panel_script.gd" id="21_herpi"]
+[ext_resource type="Texture2D" uid="uid://kt71ijsyge48" path="res://addons/nexus_forge/common_icons/check_icon.svg" id="22_am184"]
+[ext_resource type="Texture2D" uid="uid://bpxvu88n8n48" path="res://addons/nexus_forge/common_icons/error_icon.svg" id="23_pa6u1"]
+
+[sub_resource type="GDScript" id="GDScript_1vnd0"]
+
+[sub_resource type="GDScript" id="GDScript_4551j"]
+resource_name = "toggle"
+script/source = "extends FileDialog
+
+var is_character: bool = false
+var character_id: String = \"\"
+"
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ahb4n"]
+bg_color = Color(0.348583, 0.38729, 0.45909, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+expand_margin_left = 5.0
+expand_margin_top = 3.0
+expand_margin_right = 5.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fjgnf"]
+content_margin_top = 5.0
+bg_color = Color(0.211765, 0.239216, 0.290196, 1)
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+expand_margin_left = 5.0
+expand_margin_right = 5.0
+expand_margin_bottom = 5.0
+
+[node name="Characters" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_0oiu4")
+metadata/_tab_index = 3
+
+[node name="MainContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MenusContainer" type="HBoxContainer" parent="MainContainer"]
+visible = false
+layout_mode = 2
+
+[node name="MainMenu" type="MenuButton" parent="MainContainer/MenusContainer"]
+layout_mode = 2
+text = "Character"
+item_count = 2
+popup/item_0/text = "New"
+popup/item_1/text = "Save"
+popup/item_1/id = 1
+
+[node name="DataSplitContainer" type="HSplitContainer" parent="MainContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="CharacterSelectorContainer" type="VBoxContainer" parent="MainContainer/DataSplitContainer"]
+custom_minimum_size = Vector2(220, 0)
+layout_mode = 2
+
+[node name="ButtonContainer" type="HBoxContainer" parent="MainContainer/DataSplitContainer/CharacterSelectorContainer"]
+layout_mode = 2
+
+[node name="SearchCharacterLine" type="LineEdit" parent="MainContainer/DataSplitContainer/CharacterSelectorContainer/ButtonContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Search"
+
+[node name="NewCharacter" type="Button" parent="MainContainer/DataSplitContainer/CharacterSelectorContainer/ButtonContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Add character to database"
+icon = ExtResource("2_jm2sw")
+icon_alignment = 1
+expand_icon = true
+
+[node name="ImportCharacterButton" type="Button" parent="MainContainer/DataSplitContainer/CharacterSelectorContainer/ButtonContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Import character to database"
+icon = ExtResource("3_grla6")
+icon_alignment = 1
+expand_icon = true
+
+[node name="CharactersTree" type="Tree" parent="MainContainer/DataSplitContainer/CharacterSelectorContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+allow_reselect = true
+hide_root = true
+script = ExtResource("4_5334i")
+
+[node name="DataPanel" type="PanelContainer" parent="MainContainer/DataSplitContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 3.0
+
+[node name="DataContainer" type="VBoxContainer" parent="MainContainer/DataSplitContainer/DataPanel"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 3.0
+
+[node name="MainDataContainer" type="HBoxContainer" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 3.0
+
+[node name="GeneralContainer" type="VBoxContainer" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer"]
+custom_minimum_size = Vector2(250, 0)
+layout_mode = 2
+size_flags_stretch_ratio = 4.0
+
+[node name="Label" type="Label" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "General"
+
+[node name="CharNameContainer" type="HBoxContainer" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/CharNameContainer"]
+custom_minimum_size = Vector2(60, 0)
+layout_mode = 2
+size_flags_stretch_ratio = 0.2
+text = "Name"
+
+[node name="CharNameLine" type="LineEdit" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/CharNameContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="CharNameColor" type="ColorPickerButton" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/CharNameContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+color = Color(1, 1, 1, 1)
+edit_alpha = false
+
+[node name="SpeciesContainer" type="HBoxContainer" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/SpeciesContainer"]
+custom_minimum_size = Vector2(60, 0)
+layout_mode = 2
+size_flags_stretch_ratio = 0.2
+text = "Species"
+
+[node name="SpeciesOptionButton" type="OptionButton" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/SpeciesContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="RaceContainer" type="HBoxContainer" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/RaceContainer"]
+custom_minimum_size = Vector2(60, 0)
+layout_mode = 2
+size_flags_stretch_ratio = 0.2
+text = "Race"
+
+[node name="RaceOptionButton" type="OptionButton" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/RaceContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="GenderContainer" type="HBoxContainer" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/GenderContainer"]
+custom_minimum_size = Vector2(60, 0)
+layout_mode = 2
+size_flags_stretch_ratio = 0.2
+text = "Gender"
+
+[node name="GenderOptionButton" type="OptionButton" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/GenderContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VBoxContainer4" type="VBoxContainer" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer"]
+custom_minimum_size = Vector2(250, 200)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/VBoxContainer4"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/VBoxContainer4/HBoxContainer"]
+layout_mode = 2
+text = "Custom Data"
+
+[node name="AddButtonsContainer" type="HBoxContainer" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/VBoxContainer4/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 2
+
+[node name="AddIntButton" type="Button" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/VBoxContainer4/HBoxContainer/AddButtonsContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Create integer variable."
+icon = ExtResource("1_54l1c")
+icon_alignment = 1
+
+[node name="AddFloatButton" type="Button" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/VBoxContainer4/HBoxContainer/AddButtonsContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Create float variable."
+icon = ExtResource("2_nxing")
+icon_alignment = 1
+
+[node name="AddBoolButton" type="Button" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/VBoxContainer4/HBoxContainer/AddButtonsContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Create bool variable."
+icon = ExtResource("3_vw3yf")
+icon_alignment = 1
+
+[node name="AddStringButton" type="Button" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/VBoxContainer4/HBoxContainer/AddButtonsContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Create string  variable."
+icon = ExtResource("4_aort3")
+icon_alignment = 1
+
+[node name="CustomDataSearchLine" type="LineEdit" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/VBoxContainer4"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 3.0
+placeholder_text = "Search Custom Data"
+clear_button_enabled = true
+right_icon = ExtResource("6_nr27b")
+
+[node name="CustomDataTree" type="Tree" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/VBoxContainer4"]
+layout_mode = 2
+size_flags_vertical = 3
+columns = 3
+allow_reselect = true
+hide_folding = true
+hide_root = true
+script = ExtResource("10_va8cf")
+
+[node name="DataSetTabs" type="TabContainer" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+current_tab = 0
+
+[node name="StatsContainer" type="Tree" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/DataSetTabs"]
+layout_mode = 2
+size_flags_vertical = 3
+columns = 3
+column_titles_visible = true
+hide_folding = true
+hide_root = true
+script = ExtResource("9_mdywn")
+metadata/_tab_index = 0
+
+[node name="SkillsContainer" type="VBoxContainer" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/DataSetTabs"]
+visible = false
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+metadata/_tab_index = 1
+
+[node name="SkillsTree" type="Tree" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/DataSetTabs/SkillsContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+size_flags_stretch_ratio = 2.0
+columns = 2
+column_titles_visible = true
+hide_folding = true
+hide_root = true
+
+[node name="SkillsDesc" type="TextEdit" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/DataSetTabs/SkillsContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="PerksContainer" type="VBoxContainer" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/DataSetTabs"]
+visible = false
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+metadata/_tab_index = 2
+
+[node name="PerksTree" type="Tree" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/DataSetTabs/PerksContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+size_flags_stretch_ratio = 2.0
+columns = 2
+column_titles_visible = true
+hide_folding = true
+hide_root = true
+
+[node name="PerksDesc" type="TextEdit" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/DataSetTabs/PerksContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="VariantsContainer" type="VBoxContainer" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/DataSetTabs"]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 3
+
+[node name="TitleContainer" type="HBoxContainer" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/DataSetTabs/VariantsContainer"]
+layout_mode = 2
+alignment = 2
+
+[node name="Label" type="Label" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/DataSetTabs/VariantsContainer/TitleContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Stat Changes"
+
+[node name="AddVariantButton" type="Button" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/DataSetTabs/VariantsContainer/TitleContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+icon = ExtResource("9_d72ha")
+flat = true
+icon_alignment = 1
+
+[node name="VariantsTree" type="Tree" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/DataSetTabs/VariantsContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+columns = 2
+hide_root = true
+script = ExtResource("12_wrqly")
+
+[node name="FlagsContainer" type="VBoxContainer" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer"]
+custom_minimum_size = Vector2(200, 200)
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/FlagsContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+text = "Flags"
+vertical_alignment = 1
+
+[node name="FlagSearchLine" type="LineEdit" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/FlagsContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 3.0
+placeholder_text = "Search Flag"
+clear_button_enabled = true
+right_icon = ExtResource("6_nr27b")
+
+[node name="FlagsTree" type="Tree" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/FlagsContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+hide_folding = true
+hide_root = true
+script = ExtResource("12_us4su")
+
+[node name="FactionsContainer" type="VBoxContainer" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer"]
+custom_minimum_size = Vector2(200, 200)
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/FactionsContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+text = "Factions"
+vertical_alignment = 1
+
+[node name="FactionSearchLine" type="LineEdit" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/FactionsContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 3.0
+placeholder_text = "Search Faction"
+clear_button_enabled = true
+right_icon = ExtResource("6_nr27b")
+
+[node name="FactionsTree" type="Tree" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/FactionsContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+columns = 2
+hide_folding = true
+hide_root = true
+script = SubResource("GDScript_1vnd0")
+
+[node name="DataPortraitSeparator" type="HSeparator" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ImageContainer" type="HBoxContainer" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 2.0
+
+[node name="PortraitsContainer" type="HBoxContainer" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/ImageContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 2.0
+
+[node name="PortraitDataContainer" type="VBoxContainer" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/ImageContainer/PortraitsContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 2.0
+
+[node name="SpriteFrameContainer" type="VBoxContainer" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/ImageContainer/PortraitsContainer/PortraitDataContainer"]
+layout_mode = 2
+
+[node name="Header" type="HBoxContainer" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/ImageContainer/PortraitsContainer/PortraitDataContainer/SpriteFrameContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/ImageContainer/PortraitsContainer/PortraitDataContainer/SpriteFrameContainer/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "SpriteFrames Resource"
+vertical_alignment = 1
+
+[node name="RefreshButton" type="Button" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/ImageContainer/PortraitsContainer/PortraitDataContainer/SpriteFrameContainer/Header"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+icon = ExtResource("10_vdvbr")
+flat = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="LinePanel" type="PanelContainer" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/ImageContainer/PortraitsContainer/PortraitDataContainer/SpriteFrameContainer"]
+layout_mode = 2
+
+[node name="LineContainer" type="HBoxContainer" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/ImageContainer/PortraitsContainer/PortraitDataContainer/SpriteFrameContainer/LinePanel"]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="SpriteFrameLine" type="LineEdit" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/ImageContainer/PortraitsContainer/PortraitDataContainer/SpriteFrameContainer/LinePanel/LineContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+flat = true
+
+[node name="SelectSpritesButton" type="Button" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/ImageContainer/PortraitsContainer/PortraitDataContainer/SpriteFrameContainer/LinePanel/LineContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+icon = ExtResource("7_gnapp")
+flat = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="HSeparator" type="HSeparator" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/ImageContainer/PortraitsContainer/PortraitDataContainer"]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/ImageContainer/PortraitsContainer/PortraitDataContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/ImageContainer/PortraitsContainer/PortraitDataContainer/VBoxContainer"]
+layout_mode = 2
+text = "Portrait Animations"
+
+[node name="PortraitsAnimContainer" type="HBoxContainer" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/ImageContainer/PortraitsContainer/PortraitDataContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="AnimSelectButton" type="OptionButton" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/ImageContainer/PortraitsContainer/PortraitDataContainer/VBoxContainer/PortraitsAnimContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="PlayCheckButton" type="CheckButton" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/ImageContainer/PortraitsContainer/PortraitDataContainer/VBoxContainer/PortraitsAnimContainer"]
+layout_mode = 2
+text = "Playing"
+
+[node name="HSeparator2" type="HSeparator" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/ImageContainer/PortraitsContainer/PortraitDataContainer"]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="SoundsContainer" type="VBoxContainer" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/ImageContainer/PortraitsContainer/PortraitDataContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/ImageContainer/PortraitsContainer/PortraitDataContainer/SoundsContainer"]
+layout_mode = 2
+text = "Typing Sound"
+vertical_alignment = 1
+
+[node name="DataContainer" type="HBoxContainer" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/ImageContainer/PortraitsContainer/PortraitDataContainer/SoundsContainer"]
+layout_mode = 2
+
+[node name="PanelContainer" type="PanelContainer" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/ImageContainer/PortraitsContainer/PortraitDataContainer/SoundsContainer/DataContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/ImageContainer/PortraitsContainer/PortraitDataContainer/SoundsContainer/DataContainer/PanelContainer"]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="SoundPathLine" type="LineEdit" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/ImageContainer/PortraitsContainer/PortraitDataContainer/SoundsContainer/DataContainer/PanelContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+flat = true
+
+[node name="SelectSoundPathButton" type="Button" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/ImageContainer/PortraitsContainer/PortraitDataContainer/SoundsContainer/DataContainer/PanelContainer/HBoxContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+icon = ExtResource("7_gnapp")
+flat = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="PlaySoundButton" type="Button" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/ImageContainer/PortraitsContainer/PortraitDataContainer/SoundsContainer/DataContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+icon = ExtResource("12_ox0jv")
+icon_alignment = 1
+
+[node name="PortraitContainer" type="PanelContainer" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/ImageContainer/PortraitsContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 3.0
+
+[node name="PortraitTextureRect" type="TextureRect" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/ImageContainer/PortraitsContainer/PortraitContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 3.0
+expand_mode = 1
+stretch_mode = 6
+script = ExtResource("7_d3t2u")
+animation_name = &""
+
+[node name="SheetsContainer" type="VBoxContainer" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/ImageContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HeaderContainer" type="HBoxContainer" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/ImageContainer/SheetsContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/ImageContainer/SheetsContainer/HeaderContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Sprite Sheets"
+
+[node name="AddSpriteButton" type="Button" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/ImageContainer/SheetsContainer/HeaderContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+icon = ExtResource("9_d72ha")
+icon_alignment = 1
+
+[node name="SpriteSheetsTree" type="Tree" parent="MainContainer/DataSplitContainer/DataPanel/DataContainer/ImageContainer/SheetsContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+columns = 2
+column_titles_visible = true
+hide_folding = true
+hide_root = true
+script = ExtResource("18_0ssl4")
+
+[node name="NoCharCenter" type="CenterContainer" parent="MainContainer/DataSplitContainer/DataPanel"]
+visible = false
+layout_mode = 2
+
+[node name="NoCharContainer" type="VBoxContainer" parent="MainContainer/DataSplitContainer/DataPanel/NoCharCenter"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/DataSplitContainer/DataPanel/NoCharCenter/NoCharContainer"]
+layout_mode = 2
+text = "No Character Selected"
+
+[node name="NoDBContainer" type="PanelContainer" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="CenterContainer" type="CenterContainer" parent="NoDBContainer"]
+layout_mode = 2
+
+[node name="InfoContainer" type="VBoxContainer" parent="NoDBContainer/CenterContainer"]
+layout_mode = 2
+
+[node name="ButtonsContainer" type="HBoxContainer" parent="NoDBContainer/CenterContainer/InfoContainer"]
+layout_mode = 2
+
+[node name="CreateDBButton" type="Button" parent="NoDBContainer/CenterContainer/InfoContainer/ButtonsContainer"]
+layout_mode = 2
+text = "Create Characters Database"
+icon = ExtResource("6_4qmbo")
+
+[node name="LoadDBButton" type="Button" parent="NoDBContainer/CenterContainer/InfoContainer/ButtonsContainer"]
+layout_mode = 2
+text = "Load Characters Database"
+icon = ExtResource("7_gnapp")
+
+[node name="HSeparator" type="HSeparator" parent="NoDBContainer/CenterContainer/InfoContainer"]
+layout_mode = 2
+
+[node name="InfoLabel" type="RichTextLabel" parent="NoDBContainer/CenterContainer/InfoContainer"]
+layout_mode = 2
+bbcode_enabled = true
+text = "Characters uses a resource of type [color=AQUAMARINE]NexusForgeCharacterDatabase[/color] to store all references to the characters resources so that they can be easily accessed through NexusForge and in-game. You can create one or load one to use in your project. 
+
+Only one resource can be used for the project.
+
+The path to this resource will be saved to your project settings and loaded automatically next time you open the project."
+fit_content = true
+
+[node name="ComponentNode" type="Node" parent="."]
+
+[node name="DataSelectDialog" type="FileDialog" parent="ComponentNode"]
+auto_translate_mode = 1
+initial_position = 1
+size = Vector2i(500, 350)
+ok_button_text = "Save"
+filters = PackedStringArray("*.tres;Resources")
+script = SubResource("GDScript_4551j")
+
+[node name="TypeStreamPlayer" type="AudioStreamPlayer" parent="ComponentNode"]
+
+[node name="IDSelectPanel" type="PanelContainer" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("21_herpi")
+
+[node name="MainCenterContainer" type="CenterContainer" parent="IDSelectPanel"]
+layout_mode = 2
+
+[node name="ItemsContainer" type="VBoxContainer" parent="IDSelectPanel/MainCenterContainer"]
+custom_minimum_size = Vector2(250, 0)
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="TitlePanel" type="PanelContainer" parent="IDSelectPanel/MainCenterContainer/ItemsContainer"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_ahb4n")
+
+[node name="Label" type="Label" parent="IDSelectPanel/MainCenterContainer/ItemsContainer/TitlePanel"]
+layout_mode = 2
+text = "Please define character ID"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="DataPanel" type="PanelContainer" parent="IDSelectPanel/MainCenterContainer/ItemsContainer"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_fjgnf")
+
+[node name="ItemsContainer" type="VBoxContainer" parent="IDSelectPanel/MainCenterContainer/ItemsContainer/DataPanel"]
+layout_mode = 2
+
+[node name="IDContainer" type="HBoxContainer" parent="IDSelectPanel/MainCenterContainer/ItemsContainer/DataPanel/ItemsContainer"]
+layout_mode = 2
+
+[node name="IDLinePanel" type="PanelContainer" parent="IDSelectPanel/MainCenterContainer/ItemsContainer/DataPanel/ItemsContainer/IDContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="IDLine" type="LineEdit" parent="IDSelectPanel/MainCenterContainer/ItemsContainer/DataPanel/ItemsContainer/IDContainer/IDLinePanel"]
+layout_mode = 2
+flat = true
+
+[node name="ValidIDTexture" type="TextureRect" parent="IDSelectPanel/MainCenterContainer/ItemsContainer/DataPanel/ItemsContainer/IDContainer"]
+visible = false
+modulate = Color(0.392157, 0.843137, 0.196078, 1)
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "This ID is valid"
+texture = ExtResource("22_am184")
+stretch_mode = 5
+
+[node name="InvalidIDTexture" type="TextureRect" parent="IDSelectPanel/MainCenterContainer/ItemsContainer/DataPanel/ItemsContainer/IDContainer"]
+modulate = Color(0.882353, 0.196078, 0.235294, 1)
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "This ID is invalid"
+texture = ExtResource("23_pa6u1")
+
+[node name="ButtonsContainer" type="HBoxContainer" parent="IDSelectPanel/MainCenterContainer/ItemsContainer/DataPanel/ItemsContainer"]
+layout_mode = 2
+
+[node name="CancelButton" type="Button" parent="IDSelectPanel/MainCenterContainer/ItemsContainer/DataPanel/ItemsContainer/ButtonsContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 2.0
+text = "Cancel"
+
+[node name="AcceptButton" type="Button" parent="IDSelectPanel/MainCenterContainer/ItemsContainer/DataPanel/ItemsContainer/ButtonsContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 3.0
+disabled = true
+text = "Accept"

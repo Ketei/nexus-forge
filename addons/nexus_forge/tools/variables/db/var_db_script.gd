@@ -5,7 +5,7 @@ extends Resource
 ## A dictionary containing all variables and folders. The first level is always
 ## folders.
 @export var variables: Dictionary = {}
-
+@export_flags("fire", "watur") var flags
 
 ## Returns true if a variable exist with the path [param var_path]
 func has_variable(var_path: String) -> bool:

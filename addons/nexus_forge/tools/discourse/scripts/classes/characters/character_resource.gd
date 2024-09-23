@@ -27,7 +27,7 @@ enum Age {
 }
 
 
-@export var character_id: String = ""
+@export var character_id: StringName = &""
 @export var character_name: String = ""
 @export var character_portrait: SpriteFrames = null
 @export var character_gender := Gender.MALE
