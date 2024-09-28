@@ -9,9 +9,9 @@ extends Control
 # {folder_name: "", "variables": {}, "subfolders": []}
 
 # "variable_key": 
-const RES_PATH_SETTING: String = "nexus_forge/variables/resource_path"
+const RES_PATH_SETTING: String = "nexus_forge/variables_resource"
 
-var _variables_resource: NexusForgeVariables = null
+var _variables_resource: NFVariablesRes = null
 var _switching_tree: bool = false
 var _switching_variable: bool = false
 var _current_folder: TreeItem = null:
@@ -62,7 +62,7 @@ func _ready() -> void:
 		main_split.visible = false
 	else:
 		var res_load: Resource = load(res_path)
-		if res_load is NexusForgeVariables:
+		if res_load is NFVariablesRes:
 			_variables_resource = res_load
 			_load_variables(_variables_resource.variables)
 			no_db_container.visible = false
@@ -122,11 +122,11 @@ func on_load_resource_pressed() -> void:
 func on_data_select_file_selected(path: String) -> void:
 	var load_success: bool = true
 	if data_select_dialog.file_mode == FileDialog.FileMode.FILE_MODE_SAVE_FILE:
-		var new_var_db := NexusForgeVariables.new()
+		var new_var_db := NFVariablesRes.new()
 		_variables_resource = new_var_db
 	else: # We are in load mode
 		var resource = load(path)
-		if resource is NexusForgeVariables:
+		if resource is NFVariablesRes:
 			_variables_resource = resource
 			_load_variables(_variables_resource.variables)
 		else:

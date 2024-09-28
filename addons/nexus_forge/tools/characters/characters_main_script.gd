@@ -1,9 +1,9 @@
 extends Control
 
 
-const RES_PATH_SETTING: String = "nexus_forge/characters/resource_path"
+const RES_PATH_SETTING: String = "nexus_forge/characters_resource"
 
-var _characters_resource: NexusForgeCharacterDatabase
+var _characters_resource: NFCharacterDBRes
 var _character_selected: TreeItem:
 	set(new_character):
 		_character_selected = new_character
@@ -15,37 +15,37 @@ var _block_switch: bool = false
 
 @onready var new_character: Button = $MainContainer/DataSplitContainer/CharacterSelectorContainer/ButtonContainer/NewCharacter
 @onready var import_character_button: Button = $MainContainer/DataSplitContainer/CharacterSelectorContainer/ButtonContainer/ImportCharacterButton
-@onready var add_int_button: Button = $MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/VBoxContainer4/HBoxContainer/AddButtonsContainer/AddIntButton
-@onready var add_float_button: Button = $MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/VBoxContainer4/HBoxContainer/AddButtonsContainer/AddFloatButton
-@onready var add_bool_button: Button = $MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/VBoxContainer4/HBoxContainer/AddButtonsContainer/AddBoolButton
-@onready var add_string_button: Button = $MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/VBoxContainer4/HBoxContainer/AddButtonsContainer/AddStringButton
-@onready var refresh_button: Button = $MainContainer/DataSplitContainer/DataPanel/DataContainer/ImageContainer/PortraitsContainer/PortraitDataContainer/SpriteFrameContainer/Header/RefreshButton
-@onready var select_sound_path_button: Button = $MainContainer/DataSplitContainer/DataPanel/DataContainer/ImageContainer/PortraitsContainer/PortraitDataContainer/SoundsContainer/DataContainer/PanelContainer/HBoxContainer/SelectSoundPathButton
-@onready var play_sound_button: Button = $MainContainer/DataSplitContainer/DataPanel/DataContainer/ImageContainer/PortraitsContainer/PortraitDataContainer/SoundsContainer/DataContainer/PlaySoundButton
-@onready var select_sprites_button: Button = $MainContainer/DataSplitContainer/DataPanel/DataContainer/ImageContainer/PortraitsContainer/PortraitDataContainer/SpriteFrameContainer/LinePanel/LineContainer/SelectSpritesButton
+@onready var refresh_button: Button = $MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/PortraitDataContainer/SpriteFrameContainer/Header/RefreshButton
+@onready var select_sound_path_button: Button = $MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/PortraitDataContainer/SoundsContainer/DataContainer/PanelContainer/HBoxContainer/SelectSoundPathButton
+@onready var play_sound_button: Button = $MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/PortraitDataContainer/SoundsContainer/DataContainer/PlaySoundButton
+@onready var select_sprites_button: Button = $MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/PortraitDataContainer/SpriteFrameContainer/LinePanel/LineContainer/SelectSpritesButton
 @onready var add_variant_button: Button = $MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/DataSetTabs/VariantsContainer/TitleContainer/AddVariantButton
-@onready var create_db_button: Button = $NoDBContainer/CenterContainer/InfoContainer/ButtonsContainer/CreateDBButton
-@onready var load_db_button: Button = $NoDBContainer/CenterContainer/InfoContainer/ButtonsContainer/LoadDBButton
+@onready var create_db_button: Button = $NoDBContainer/CenterContainer/InfoContainer/ButtonsContainer/CharaButtonContainer/CreateDBButton
+@onready var load_db_button: Button = $NoDBContainer/CenterContainer/InfoContainer/ButtonsContainer/CharaButtonContainer/LoadDBButton
+@onready var add_int_button: Button = $MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer/AddIntButton
+@onready var add_float_button: Button = $MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer/AddFloatButton
+@onready var add_bool_button: Button = $MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer/AddBoolButton
+@onready var add_string_button: Button = $MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer/AddStringButton
+
 
 @onready var search_character_line: LineEdit = $MainContainer/DataSplitContainer/CharacterSelectorContainer/ButtonContainer/SearchCharacterLine
 #@onready var character_id_line: LineEdit = $MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/IDContainer/CharacterIDLine
 @onready var char_name_line: LineEdit = $MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/CharNameContainer/CharNameLine
-@onready var custom_data_search_line: LineEdit = $MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/VBoxContainer4/CustomDataSearchLine
-@onready var flag_search_line: LineEdit = $MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/FlagsContainer/FlagSearchLine
-@onready var faction_search_line: LineEdit = $MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/FactionsContainer/FactionSearchLine
-@onready var sound_path_line: LineEdit = $MainContainer/DataSplitContainer/DataPanel/DataContainer/ImageContainer/PortraitsContainer/PortraitDataContainer/SoundsContainer/DataContainer/PanelContainer/HBoxContainer/SoundPathLine
-@onready var sprite_frame_line: LineEdit = $MainContainer/DataSplitContainer/DataPanel/DataContainer/ImageContainer/PortraitsContainer/PortraitDataContainer/SpriteFrameContainer/LinePanel/LineContainer/SpriteFrameLine
+@onready var custom_data_search_line: LineEdit = $MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/CustomDataContainer/CustomDataSearchLine
+@onready var flag_search_line: LineEdit = $MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/VBoxContainer/FlagsContainer/FlagSearchLine
+@onready var faction_search_line: LineEdit = $MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/VBoxContainer/FactionsContainer/FactionSearchLine
+@onready var sound_path_line: LineEdit = $MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/PortraitDataContainer/SoundsContainer/DataContainer/PanelContainer/HBoxContainer/SoundPathLine
+@onready var sprite_frame_line: LineEdit = $MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/PortraitDataContainer/SpriteFrameContainer/LinePanel/LineContainer/SpriteFrameLine
 
 @onready var species_option_button: OptionButton = $MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/SpeciesContainer/SpeciesOptionButton
 @onready var race_option_button: OptionButton = $MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/RaceContainer/RaceOptionButton
 @onready var gender_option_button: OptionButton = $MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/GenderContainer/GenderOptionButton
-@onready var anim_select_button: OptionButton = $MainContainer/DataSplitContainer/DataPanel/DataContainer/ImageContainer/PortraitsContainer/PortraitDataContainer/VBoxContainer/PortraitsAnimContainer/AnimSelectButton
 
 @onready var characters_tree: Tree = $MainContainer/DataSplitContainer/CharacterSelectorContainer/CharactersTree
-@onready var custom_data_tree: Tree = $MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/VBoxContainer4/CustomDataTree
-@onready var flags_tree: Tree = $MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/FlagsContainer/FlagsTree
-@onready var factions_tree: Tree = $MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/FactionsContainer/FactionsTree
-@onready var sprite_sheets_tree: Tree = $MainContainer/DataSplitContainer/DataPanel/DataContainer/ImageContainer/SheetsContainer/SpriteSheetsTree
+@onready var custom_data_tree: Tree = $MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/CustomDataContainer/CustomDataTree
+@onready var flags_tree: Tree = $MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/VBoxContainer/FlagsContainer/FlagsTree
+@onready var factions_tree: Tree = $MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/VBoxContainer/FactionsContainer/FactionsTree
+@onready var sprite_sheets_tree: Tree = $MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/SheetsContainer/SpriteSheetsTree
 @onready var stats_container: Tree = $MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/DataSetTabs/StatsContainer
 @onready var skills_tree: Tree = $MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/DataSetTabs/SkillsContainer/SkillsTree
 @onready var perks_tree: Tree = $MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/DataSetTabs/PerksContainer/PerksTree
@@ -57,8 +57,6 @@ var _block_switch: bool = false
 @onready var data_set_tabs: TabContainer = $MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/DataSetTabs
 
 @onready var char_name_color: ColorPickerButton = $MainContainer/DataSplitContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/CharNameContainer/CharNameColor
-@onready var play_check_button: CheckButton = $MainContainer/DataSplitContainer/DataPanel/DataContainer/ImageContainer/PortraitsContainer/PortraitDataContainer/VBoxContainer/PortraitsAnimContainer/PlayCheckButton
-@onready var portrait_texture_rect: PortraitTextureRect = $MainContainer/DataSplitContainer/DataPanel/DataContainer/ImageContainer/PortraitsContainer/PortraitContainer/PortraitTextureRect
 
 @onready var no_db_container: PanelContainer = $NoDBContainer
 
@@ -70,6 +68,18 @@ var _block_switch: bool = false
 @onready var data_select_dialog: FileDialog = $ComponentNode/DataSelectDialog
 @onready var id_select_panel: PanelContainer = $IDSelectPanel
 
+@onready var races_missing_container: HBoxContainer = $NoDBContainer/CenterContainer/InfoContainer/RacesMissingContainer
+@onready var char_db_container: HBoxContainer = $NoDBContainer/CenterContainer/InfoContainer/RacesMissingContainer/CharDBContainer
+@onready var race_res_container: HBoxContainer = $NoDBContainer/CenterContainer/InfoContainer/RacesMissingContainer/RaceResContainer
+#@onready var create_db_buttons_container: HBoxContainer = $NoDBContainer/CenterContainer/InfoContainer/ButtonsContainer
+
+@onready var success_char_texture: TextureRect = $NoDBContainer/CenterContainer/InfoContainer/RacesMissingContainer/CharDBContainer/SuccessCharTexture
+@onready var failure_char_texture: TextureRect = $NoDBContainer/CenterContainer/InfoContainer/RacesMissingContainer/CharDBContainer/FailureCharTexture
+@onready var success_races_texture: TextureRect = $NoDBContainer/CenterContainer/InfoContainer/RacesMissingContainer/RaceResContainer/SuccessRacesTexture
+@onready var failure_races_texture: TextureRect = $NoDBContainer/CenterContainer/InfoContainer/RacesMissingContainer/RaceResContainer/FailureRacesTexture
+
+@onready var chara_button_container: VBoxContainer = $NoDBContainer/CenterContainer/InfoContainer/ButtonsContainer/CharaButtonContainer
+
 
 func _ready() -> void:
 	var res_path: String = ProjectSettings.get_setting(RES_PATH_SETTING, "")
@@ -79,37 +89,30 @@ func _ready() -> void:
 	tabs.set_tab_title(2, "Perks")
 	tabs.set_tab_title(3, "Variants")
 	
-	if _character_selected == null:
-		data_container.visible = false
-		no_char_center.visible = true
-	else:
-		data_container.visible = true
-		no_char_center.visible = false
-	
-	if res_path.is_empty() or not ResourceLoader.exists(res_path):
-		no_db_container.visible = true
-		main_container.visible = false
-	else:
+	if not res_path.is_empty() and ResourceLoader.exists(res_path):
 		var res_load: Resource = load(res_path)
-		if res_load is NexusForgeCharacterDatabase:
+		if res_load is NFCharacterDBRes:
 			_characters_resource = res_load
 			_load_characters()
-			no_db_container.visible = false
-			main_container.visible = true
-		else:
-			no_db_container.visible = true
-			main_container.visible = false
 	
-	var gender_names = NexusForgeRaces.Genders.keys()
+	if _characters_resource == null or NexusForge.Races == null:
+		create_db_button.disabled = _characters_resource != null
+		load_db_button.disabled = _characters_resource != null
+		
+		success_char_texture.visible = _characters_resource != null
+		failure_char_texture.visible = _characters_resource == null
+		
+		success_races_texture.visible = NexusForge.Races != null
+		failure_races_texture.visible = NexusForge.Races == null
+		
+		main_container.visible = false
+		no_db_container.visible = true
+	else:
+		main_container.visible = true
+		no_db_container.visible = false
 	
-	for gender in NexusForgeRaces.Genders.values():
-		if NexusForgeRaces.GENDER_DATA[gender]["icon"].is_empty():
-			gender_option_button.add_item(
-					Strings.capitalize(gender_names[gender]))
-		else:
-			gender_option_button.add_icon_item(
-					load(NexusForgeRaces.GENDER_DATA[gender]["icon"]),
-					Strings.capitalize(gender_names[gender]))
+	if NexusForge.Races != null:
+		load_races()
 	
 	data_select_dialog.file_selected.connect(on_dialog_ok)
 	create_db_button.pressed.connect(on_create_new_resource)
@@ -118,6 +121,61 @@ func _ready() -> void:
 	id_select_panel.id_submitted.connect(on_id_submitted)
 	new_character.pressed.connect(on_create_new_character)
 	import_character_button.pressed.connect(on_import_character)
+	
+	add_int_button.pressed.connect(create_custom_data.bind(TYPE_INT))
+	add_float_button.pressed.connect(create_custom_data.bind(TYPE_FLOAT))
+	add_bool_button.pressed.connect(create_custom_data.bind(TYPE_BOOL))
+	add_string_button.pressed.connect(create_custom_data.bind(TYPE_STRING))
+	
+	characters_tree.item_selected.connect(on_character_tree_selected)
+	
+	species_option_button.item_selected.connect(on_species_selected)
+	race_option_button.item_selected.connect(on_race_selected)
+
+
+func on_species_selected(index_selected: int) -> void:
+	var species: String = species_option_button.get_item_metadata(index_selected)
+	var race_id: int = 0
+	race_option_button.clear()
+	for race in NexusForge.Races.species[species]["races"]:
+		race_option_button.add_item(
+				Strings.capitalize(NexusForge.Races.species[species]["races"][race]["name"]),
+				race_id)
+		race_option_button.set_item_metadata(
+				race_option_button.get_item_index(race_id),
+				race)
+		race_id += 1
+	if race_id != 0:
+		race_option_button.select(0)
+		on_race_selected(0)
+
+
+func on_race_selected(index_selected: int) -> void:
+	var species: String = species_option_button.get_item_metadata(species_option_button.selected)
+	var race: String = race_option_button.get_item_metadata(race_option_button.selected)
+	var gender_id: int = 0
+	
+	gender_option_button.clear()
+	
+	for gender in NexusForge.Races.species[species]["races"][race]["genders"]:
+		gender_option_button.add_item(Strings.capitalize(NFRacesRes.get_gender_name(gender)), gender_id)
+		gender_option_button.set_item_metadata(
+			gender_option_button.get_item_index(gender_id),
+			gender)
+		gender_id += 1
+
+
+func on_character_tree_selected():
+	if _block_switch:
+		return
+	_block_switch = true
+	
+	var target_character: TreeItem = characters_tree.get_selected()
+	
+	_character_selected = target_character
+	if not target_character.is_selected(0):
+		target_character.select(0)
+	_block_switch = false
 
 
 func on_id_selector_id_changed(new_id: String) -> void:
@@ -184,7 +242,7 @@ func on_dialog_ok(resource_path: String) -> void:
 			_characters_resource.save()
 	else:
 		if data_select_dialog.file_mode == FileDialog.FILE_MODE_SAVE_FILE:
-			var new_chara_db := NexusForgeCharacterDatabase.new()
+			var new_chara_db := NFCharacterDBRes.new()
 			ResourceSaver.save(
 					new_chara_db,
 					resource_path)
@@ -195,7 +253,7 @@ func on_dialog_ok(resource_path: String) -> void:
 		
 			var preload_resource: Resource = load(resource_path)
 		
-			if preload_resource is not NexusForgeCharacterDatabase:
+			if preload_resource is not NFCharacterDBRes:
 				return
 			_characters_resource = preload_resource
 			_characters_resource.validate_characters()
@@ -204,8 +262,50 @@ func on_dialog_ok(resource_path: String) -> void:
 			# TODO Uncomment this once plugin is ready
 			#ProjectSettings.set_setting(RES_PATH_SETTING, resource_path)
 			_load_characters()
-			no_db_container.visible = false
-			main_container.visible = true
+			if _has_all_required_resources():
+				no_db_container.visible = false
+				main_container.visible = true
+			else:
+				create_db_button.disabled = true
+				load_db_button.disabled = true
+				
+				success_char_texture.visible = true
+				failure_char_texture.visible = false
+				
+				failure_races_texture.visible = true
+				success_races_texture.visible = false
+				
+
+
+func _has_all_required_resources() -> bool:
+	return _characters_resource != null and NexusForge.Races != null
+
+
+func load_races() -> void:
+	gender_option_button.clear()
+	species_option_button.clear()
+	
+	var gender_names = NFRacesRes.Genders.keys()
+		
+	for gender in NFRacesRes.Genders.values():
+		if NFRacesRes.GENDER_DATA[gender]["icon"].is_empty():
+			gender_option_button.add_item(
+					Strings.capitalize(gender_names[gender]))
+		else:
+			gender_option_button.add_icon_item(
+					load(NFRacesRes.GENDER_DATA[gender]["icon"]),
+					Strings.capitalize(gender_names[gender]))
+
+	var species_id: int = 0
+	
+	for species in NexusForge.Races.species:
+		species_option_button.add_item(Strings.capitalize(NexusForge.Races.species[species]["name"]), species_id)
+		species_option_button.set_item_metadata(species_option_button.get_item_index(species_id), species)
+		species_id += 1
+	
+	if species_id != 0:
+		species_option_button.select(0)
+		on_species_selected(0)
 
 
 func clear_character() -> void:
@@ -217,10 +317,11 @@ func clear_character() -> void:
 	gender_option_button.select(-1)
 	custom_data_search_line.clear()
 	sprite_frame_line.clear()
-	anim_select_button.select(-1)
 	sound_path_line.clear()
-	portrait_texture_rect.portrait_frames = null
-	portrait_texture_rect.playing = false
+
+
+func create_custom_data(data_type: int) -> void:
+	custom_data_tree.create_custom_value(data_type)
 
 
 func _load_characters() -> void:

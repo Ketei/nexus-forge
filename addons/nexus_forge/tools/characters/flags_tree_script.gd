@@ -12,11 +12,11 @@ func _ready() -> void:
 
 
 func load_flags() -> void:
-	var flag_strings = NexusForgeRaces.Flags.keys()
-	for flag in NexusForgeRaces.Flags:
+	var flag_strings = NFRacesRes.Flags.keys()
+	for flag in NFRacesRes.Flags:
 		var new_flag: TreeItem = create_item(root_tree)
 		new_flag.set_cell_mode(0, TreeItem.CELL_MODE_CHECK)
-		new_flag.set_text(0, Strings.capitalize(flag_strings[NexusForgeRaces.Flags.get(flag)]))
+		new_flag.set_text(0, Strings.capitalize(flag_strings[NFRacesRes.Flags.get(flag)]))
 		new_flag.set_metadata(0, flag)
 		
 		new_flag.set_selectable(0, false)
@@ -24,7 +24,7 @@ func load_flags() -> void:
 		new_flag.set_editable(0, true)
 
 
-func set_flag(flag_index: NexusForgeRaces.Flags, set_checked: bool) -> void:
+func set_flag(flag_index: NFRacesRes.Flags, set_checked: bool) -> void:
 	var target_flag: TreeItem = null
 	for flag in root_tree.get_children():
 		if flag.get_metadata(0) == flag_index:
@@ -54,6 +54,6 @@ func get_flags() -> int:
 	for flag_tree:TreeItem in root_tree.get_children():
 		if not flag_tree.is_checked(0):
 			continue
-		flags |= 1 << NexusForgeRaces.Flags.get(flag_tree.get_metadata(1))
+		flags |= 1 << NFRacesRes.Flags.get(flag_tree.get_metadata(1))
 	
 	return flags

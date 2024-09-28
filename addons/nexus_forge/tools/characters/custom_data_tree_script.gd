@@ -9,6 +9,8 @@ const TRASH_BIN_ICON = preload("res://addons/nexus_forge/common_icons/trash_bin.
 const RANGE_LIMIT: float = 9999
 const FLOAT_STEP: float = 0.01
 
+const DELETE_DATA_ID: int = 0
+
 var root_tree: TreeItem
 
 
@@ -20,7 +22,8 @@ func _ready() -> void:
 	set_column_expand(2, true)
 	
 	set_column_custom_minimum_width(1, 32)
-	create_custom_value(TYPE_INT)
+	
+	button_clicked.connect(on_item_button_pressed)
 
 
 func create_custom_value(value_type: int) -> TreeItem:
@@ -31,7 +34,7 @@ func create_custom_value(value_type: int) -> TreeItem:
 	new_type.set_cell_mode(1, TreeItem.CELL_MODE_ICON)
 	new_type.set_icon_max_width(1, 32)
 	new_type.set_selectable(1, false)
-	new_type.add_button(2, TRASH_BIN_ICON, -1, false, "Delete Data")
+	new_type.add_button(2, TRASH_BIN_ICON, DELETE_DATA_ID, false, "Delete Data")
 	
 	match value_type:
 		TYPE_INT:
@@ -54,6 +57,12 @@ func create_custom_value(value_type: int) -> TreeItem:
 			new_type.set_cell_mode(2, TreeItem.CELL_MODE_STRING)
 	
 	return new_type
+
+
+func on_item_button_pressed(item: TreeItem, _column: int, id: int, _mouse_button_index: int) -> void:
+	match id:
+		0:
+			item.free()
 
 
 func get_custom_data() -> Dictionary:

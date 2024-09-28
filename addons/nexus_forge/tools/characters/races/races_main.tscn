@@ -1,0 +1,418 @@
+[gd_scene load_steps=17 format=3 uid="uid://bn2hjhl25ja30"]
+
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/characters/races/races_main_script.gd" id="1_sjgg0"]
+[ext_resource type="Texture2D" uid="uid://bwspmik2qv43f" path="res://addons/nexus_forge/common_icons/new_file.svg" id="1_th1yf"]
+[ext_resource type="Texture2D" uid="uid://12lyg7db58dg" path="res://addons/nexus_forge/tools/variables/icons/add_int.svg" id="1_xq5hu"]
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/characters/races/stats_tree_scripts.gd" id="2_2bxdm"]
+[ext_resource type="Texture2D" uid="uid://dcgniolhiay6u" path="res://addons/nexus_forge/tools/variables/icons/add_float.svg" id="2_ubeaa"]
+[ext_resource type="Texture2D" uid="uid://bx226t88nlc4v" path="res://addons/nexus_forge/common_icons/trash_bin.svg" id="2_xtvcw"]
+[ext_resource type="Texture2D" uid="uid://b8q6di4imiriq" path="res://addons/nexus_forge/common_icons/search_icon.svg" id="3_32n5p"]
+[ext_resource type="Texture2D" uid="uid://c472l5bho4jpi" path="res://addons/nexus_forge/tools/variables/icons/add_bool.svg" id="3_ej5pg"]
+[ext_resource type="Texture2D" uid="uid://cxv7veghytl4m" path="res://addons/nexus_forge/tools/variables/icons/add_string.svg" id="4_u5owq"]
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/characters/races/genders_tree_script.gd" id="6_2k43f"]
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/characters/races/custom_data_tree_script.gd" id="7_q4jyj"]
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/characters/races/species_cr_popup_script.gd" id="10_uka0x"]
+[ext_resource type="Texture2D" uid="uid://bpxvu88n8n48" path="res://addons/nexus_forge/common_icons/error_icon.svg" id="11_agvgq"]
+[ext_resource type="Texture2D" uid="uid://xkqkxosnppid" path="res://addons/nexus_forge/common_icons/open_file.svg" id="13_1np2l"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_kk4mv"]
+content_margin_left = 10.0
+content_margin_top = 3.0
+content_margin_bottom = 3.0
+bg_color = Color(0.34902, 0.388235, 0.458824, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_uv42v"]
+content_margin_left = 5.0
+content_margin_top = 5.0
+content_margin_right = 5.0
+content_margin_bottom = 5.0
+bg_color = Color(0.211765, 0.239216, 0.290196, 1)
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[node name="Races" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_sjgg0")
+
+[node name="MainContainer" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_vertical = 3
+
+[node name="SpcRcContainer" type="VBoxContainer" parent="MainContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SpeciesContainer" type="VBoxContainer" parent="MainContainer/SpcRcContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/SpcRcContainer/SpeciesContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+text = "Species"
+vertical_alignment = 1
+
+[node name="SpeciesDataCotnainer" type="HBoxContainer" parent="MainContainer/SpcRcContainer/SpeciesContainer"]
+layout_mode = 2
+
+[node name="SpeciesOptBtn" type="OptionButton" parent="MainContainer/SpcRcContainer/SpeciesContainer/SpeciesDataCotnainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+fit_to_longest_item = false
+
+[node name="CreateSpeciesBtn" type="Button" parent="MainContainer/SpcRcContainer/SpeciesContainer/SpeciesDataCotnainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Create Species"
+icon = ExtResource("1_th1yf")
+icon_alignment = 1
+
+[node name="DeleteSpeciesBtn" type="Button" parent="MainContainer/SpcRcContainer/SpeciesContainer/SpeciesDataCotnainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Delete Species"
+disabled = true
+icon = ExtResource("2_xtvcw")
+icon_alignment = 1
+
+[node name="SpeciesNameLEdit" type="LineEdit" parent="MainContainer/SpcRcContainer/SpeciesContainer"]
+layout_mode = 2
+placeholder_text = "Species Name"
+editable = false
+
+[node name="RaceContainer" type="VBoxContainer" parent="MainContainer/SpcRcContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/SpcRcContainer/RaceContainer"]
+layout_mode = 2
+text = "Race"
+
+[node name="RaceDataContainer" type="HBoxContainer" parent="MainContainer/SpcRcContainer/RaceContainer"]
+layout_mode = 2
+
+[node name="RaceOptBtn" type="OptionButton" parent="MainContainer/SpcRcContainer/RaceContainer/RaceDataContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+fit_to_longest_item = false
+
+[node name="CreateRaceBtn" type="Button" parent="MainContainer/SpcRcContainer/RaceContainer/RaceDataContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Create Race"
+disabled = true
+icon = ExtResource("1_th1yf")
+icon_alignment = 1
+
+[node name="DeleteRaceBtn" type="Button" parent="MainContainer/SpcRcContainer/RaceContainer/RaceDataContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Delete Race"
+disabled = true
+icon = ExtResource("2_xtvcw")
+icon_alignment = 1
+
+[node name="RaceNameLEdit" type="LineEdit" parent="MainContainer/SpcRcContainer/RaceContainer"]
+layout_mode = 2
+placeholder_text = "Race Name"
+editable = false
+
+[node name="Label" type="Label" parent="MainContainer/SpcRcContainer"]
+layout_mode = 2
+text = "Race Description"
+
+[node name="RaceTextEdit" type="TextEdit" parent="MainContainer/SpcRcContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+placeholder_text = "Race Description"
+editable = false
+
+[node name="StatsContainer" type="VBoxContainer" parent="MainContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="Label" type="Label" parent="MainContainer/StatsContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+text = "Enabled Stats"
+vertical_alignment = 1
+
+[node name="StatSearchLEdit" type="LineEdit" parent="MainContainer/StatsContainer"]
+layout_mode = 2
+placeholder_text = "Search Stats"
+clear_button_enabled = true
+right_icon = ExtResource("3_32n5p")
+
+[node name="StatsTree" type="Tree" parent="MainContainer/StatsContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+columns = 2
+column_titles_visible = true
+allow_reselect = true
+hide_folding = true
+hide_root = true
+script = ExtResource("2_2bxdm")
+
+[node name="PerksContainer" type="VBoxContainer" parent="MainContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="PerkSlectorContainer" type="VBoxContainer" parent="MainContainer/PerksContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+size_flags_stretch_ratio = 3.0
+
+[node name="Label" type="Label" parent="MainContainer/PerksContainer/PerkSlectorContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+text = "Race Perks"
+vertical_alignment = 1
+
+[node name="PerkSearchLEdit" type="LineEdit" parent="MainContainer/PerksContainer/PerkSlectorContainer"]
+layout_mode = 2
+placeholder_text = "Search Perks"
+clear_button_enabled = true
+right_icon = ExtResource("3_32n5p")
+
+[node name="PerksTree" type="Tree" parent="MainContainer/PerksContainer/PerkSlectorContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+columns = 3
+column_titles_visible = true
+allow_reselect = true
+hide_folding = true
+hide_root = true
+
+[node name="PerkDescContainer" type="VBoxContainer" parent="MainContainer/PerksContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+size_flags_stretch_ratio = 2.0
+
+[node name="Label" type="Label" parent="MainContainer/PerksContainer/PerkDescContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+text = "Perk Description"
+vertical_alignment = 1
+
+[node name="RichTextLabel" type="RichTextLabel" parent="MainContainer/PerksContainer/PerkDescContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true
+
+[node name="DataGenderContainer" type="VBoxContainer" parent="MainContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="CustomDataContainer" type="VBoxContainer" parent="MainContainer/DataGenderContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 3.0
+
+[node name="DataHeader" type="HBoxContainer" parent="MainContainer/DataGenderContainer/CustomDataContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/DataGenderContainer/CustomDataContainer/DataHeader"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+text = "Custom Data"
+vertical_alignment = 1
+
+[node name="CustomDataButtonContainer" type="HBoxContainer" parent="MainContainer/DataGenderContainer/CustomDataContainer/DataHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 2
+
+[node name="CustomIntButton" type="Button" parent="MainContainer/DataGenderContainer/CustomDataContainer/DataHeader/CustomDataButtonContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+disabled = true
+icon = ExtResource("1_xq5hu")
+icon_alignment = 1
+
+[node name="CustomFloatButton" type="Button" parent="MainContainer/DataGenderContainer/CustomDataContainer/DataHeader/CustomDataButtonContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+disabled = true
+icon = ExtResource("2_ubeaa")
+icon_alignment = 1
+
+[node name="CustomBoolButton" type="Button" parent="MainContainer/DataGenderContainer/CustomDataContainer/DataHeader/CustomDataButtonContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+disabled = true
+icon = ExtResource("3_ej5pg")
+icon_alignment = 1
+
+[node name="CustomStringButton" type="Button" parent="MainContainer/DataGenderContainer/CustomDataContainer/DataHeader/CustomDataButtonContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+disabled = true
+icon = ExtResource("4_u5owq")
+icon_alignment = 1
+
+[node name="CustomDataSearchLEdit" type="LineEdit" parent="MainContainer/DataGenderContainer/CustomDataContainer"]
+layout_mode = 2
+placeholder_text = "Search Custom Data"
+clear_button_enabled = true
+right_icon = ExtResource("3_32n5p")
+
+[node name="CustomDataTree" type="Tree" parent="MainContainer/DataGenderContainer/CustomDataContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+columns = 3
+column_titles_visible = true
+allow_reselect = true
+hide_folding = true
+hide_root = true
+script = ExtResource("7_q4jyj")
+
+[node name="GenderContainer" type="VBoxContainer" parent="MainContainer/DataGenderContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 2.0
+
+[node name="Label" type="Label" parent="MainContainer/DataGenderContainer/GenderContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+text = "Race Genders"
+vertical_alignment = 1
+
+[node name="GendersTree" type="Tree" parent="MainContainer/DataGenderContainer/GenderContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+columns = 2
+allow_reselect = true
+hide_folding = true
+hide_root = true
+script = ExtResource("6_2k43f")
+
+[node name="SpeciesIDSelectPanel" type="PanelContainer" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("10_uka0x")
+
+[node name="CenterContainer" type="CenterContainer" parent="SpeciesIDSelectPanel"]
+layout_mode = 2
+
+[node name="PromptContainer" type="VBoxContainer" parent="SpeciesIDSelectPanel/CenterContainer"]
+custom_minimum_size = Vector2(280, 100)
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="HeaderPanel" type="PanelContainer" parent="SpeciesIDSelectPanel/CenterContainer/PromptContainer"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_kk4mv")
+
+[node name="PopupTitleLbl" type="Label" parent="SpeciesIDSelectPanel/CenterContainer/PromptContainer/HeaderPanel"]
+layout_mode = 2
+text = "New Species ID"
+
+[node name="PopupDataPanel" type="PanelContainer" parent="SpeciesIDSelectPanel/CenterContainer/PromptContainer"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_uv42v")
+
+[node name="DataContainer" type="VBoxContainer" parent="SpeciesIDSelectPanel/CenterContainer/PromptContainer/PopupDataPanel"]
+layout_mode = 2
+
+[node name="IDContainer" type="HBoxContainer" parent="SpeciesIDSelectPanel/CenterContainer/PromptContainer/PopupDataPanel/DataContainer"]
+layout_mode = 2
+
+[node name="IDLineEdit" type="LineEdit" parent="SpeciesIDSelectPanel/CenterContainer/PromptContainer/PopupDataPanel/DataContainer/IDContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "New ID"
+
+[node name="ValidTextRect" type="TextureRect" parent="SpeciesIDSelectPanel/CenterContainer/PromptContainer/PopupDataPanel/DataContainer/IDContainer"]
+modulate = Color(0.882353, 0.196078, 0.235294, 1)
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+texture = ExtResource("11_agvgq")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ButtonsContainer" type="HBoxContainer" parent="SpeciesIDSelectPanel/CenterContainer/PromptContainer/PopupDataPanel/DataContainer"]
+layout_mode = 2
+
+[node name="CancelBtn" type="Button" parent="SpeciesIDSelectPanel/CenterContainer/PromptContainer/PopupDataPanel/DataContainer/ButtonsContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 2.0
+text = "Cancel"
+
+[node name="CreateBtn" type="Button" parent="SpeciesIDSelectPanel/CenterContainer/PromptContainer/PopupDataPanel/DataContainer/ButtonsContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 3.0
+disabled = true
+text = "Create"
+
+[node name="NoRacePanel" type="PanelContainer" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="CenterContainer" type="CenterContainer" parent="NoRacePanel"]
+layout_mode = 2
+
+[node name="InfoContainer" type="VBoxContainer" parent="NoRacePanel/CenterContainer"]
+custom_minimum_size = Vector2(500, 0)
+layout_mode = 2
+
+[node name="ButtonContainer2" type="HBoxContainer" parent="NoRacePanel/CenterContainer/InfoContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="CreateDBButton" type="Button" parent="NoRacePanel/CenterContainer/InfoContainer/ButtonContainer2"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Create Race Resource"
+icon = ExtResource("1_th1yf")
+
+[node name="LoadDBButton" type="Button" parent="NoRacePanel/CenterContainer/InfoContainer/ButtonContainer2"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Load Race Resource"
+icon = ExtResource("13_1np2l")
+
+[node name="HSeparator" type="HSeparator" parent="NoRacePanel/CenterContainer/InfoContainer"]
+layout_mode = 2
+
+[node name="InfoLabel" type="RichTextLabel" parent="NoRacePanel/CenterContainer/InfoContainer"]
+layout_mode = 2
+bbcode_enabled = true
+text = "Races uses a resource of type [color=AQUAMARINE]NexusForgeRaces[/color] to store all data relevant to species and races so that they can be easily accessed through NexusForge and in-game. You can create one or load one to use in your project. 
+
+Only one resource can be used for the project.
+
+The path to this resource will be saved to your project settings and loaded automatically next time you open the project."
+fit_content = true
+
+[node name="Elements" type="Node" parent="."]
+
+[node name="RacesResourceDialog" type="FileDialog" parent="Elements"]
+initial_position = 1
+size = Vector2i(500, 350)
+ok_button_text = "Save"
+filters = PackedStringArray("*.tres;Resources")

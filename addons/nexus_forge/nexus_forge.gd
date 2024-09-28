@@ -6,7 +6,10 @@ static var SINGLETONS: Dictionary = {
 }
 
 static var SETTINGS_PATHS: Dictionary = {
-	"variables": [{"path": "resource_path", "default": ""}]
+	"variables_resource": "",
+	"races_resource": "",
+	"characters_resource": "",
+	"factions_resource": "",
 }
 
 
@@ -25,13 +28,12 @@ func _enable_plugin() -> void:
 	var trigger_setting_save: bool = false
 	
 	for category in SETTINGS_PATHS:
-		for setting in SETTINGS_PATHS[category]:
-			var setting_path: String = str(category, "/", setting["path"])
-			if not ProjectSettings.has_setting(setting_path):
-				ProjectSettings.set_setting(setting_path, setting["default"])
-				ProjectSettings.set_initial_value(setting_path, setting["default"])
-				if not trigger_setting_save:
-					trigger_setting_save = true
+		var setting_path: String = str("nexus_forge/", category)
+		if not ProjectSettings.has_setting(setting_path):
+			ProjectSettings.set_setting(setting_path, SETTINGS_PATHS[category])
+			ProjectSettings.set_initial_value(setting_path, SETTINGS_PATHS[category])
+			if not trigger_setting_save:
+				trigger_setting_save = true
 	
 	if trigger_setting_save:
 		ProjectSettings.save()
@@ -49,5 +51,6 @@ func _disable_plugin() -> void:
 				ProjectSettings.set_setting(setting_path, null)
 				if not trigger_setting_save:
 					trigger_setting_save = true
+	
 	if trigger_setting_save:
 		ProjectSettings.save()

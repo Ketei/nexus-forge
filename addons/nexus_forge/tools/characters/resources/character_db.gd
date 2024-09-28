@@ -1,4 +1,4 @@
-class_name NexusForgeCharacterDatabase
+class_name NFCharacterDBRes
 extends Resource
 
 
@@ -11,7 +11,7 @@ func has_character(character_id: StringName) -> bool:
 	return _characters.has(character_id)
 
 
-func get_character(character_id: StringName) -> NexusForgeCharacterDefinition:
+func get_character(character_id: StringName) -> CharacterDefinition:
 	return load(_characters[character_id])
 
 

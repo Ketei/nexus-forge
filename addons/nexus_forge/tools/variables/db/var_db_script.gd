@@ -1,4 +1,4 @@
-class_name NexusForgeVariables
+class_name NFVariablesRes
 extends Resource
 
 
