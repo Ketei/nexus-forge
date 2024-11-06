@@ -1,16 +1,58 @@
+@tool
 extends Tree
 
 
-const TRASH_BIN = preload("res://addons/nexus_forge/common_icons/trash_bin.svg")
+signal close_requested(character_id: String)
+signal character_selected(character_id: String)
+
+const CLOSE_ICON = preload("res://addons/nexus_forge/common_icons/close_icon.svg")
+
 var root_tree: TreeItem = null
 
 func _ready() -> void:
 	root_tree = create_item()
 
 
-func add_character(char_name: String, character_path: String) -> void:
+func add_character(character_path: String) -> void:
+	var character_res: CharacterDefinition = load(character_path)
 	var new_character = create_item(root_tree)
-	new_character.set_text(0, char_name)
+	new_character.set_text(0, character_res.character_id)
 	new_character.set_editable(0, false)
-	new_character.add_button(0, TRASH_BIN, -1, false, "Remove Character")
-	new_character.set_metadata(0, {"path": character_path, "data": {}})
+	new_character.add_button(0, CLOSE_ICON, 0, false, "Close Character")
+	new_character.set_metadata(0, {"path": character_path, "data": character_res})
+
+
+func on_item_selected() -> void:
+	character_selected.emit(get_selected().get_text(0))
+
+
+func on_button_pressed(item: TreeItem, column: int, id: int, mouse_button_index: int) -> void:
+	close_requested.emit(item.get_text(0))
+
+
+func get_serialized_data(character_id: String) -> Dictionary:
+	for character in root_tree.get_children():
+		if character.get_text(0) == character_id:
+			return character.get_metadata(0)
+	return {"path": "", "data": null}
+
+
+func get_character_data(character_id: String) -> CharacterDefinition:
+	for character in root_tree.get_children():
+		if character.get_text(0) == character_id:
+			return character.get_metadata(0)["data"]
+	return null
+
+
+func set_character_data(character_id: String, character_data: CharacterDefinition) -> void:
+	for character in root_tree.get_children():
+		if character.get_text(0) == character_id:
+			character.get_metadata(0)["data"] = character_data
+
+
+func ensure_selected(character_id: String) -> void:
+	for character in root_tree.get_children():
+		if character.get_text(0) == character_id:
+			if not character.is_selected(0):
+				character.select(0)
+				break

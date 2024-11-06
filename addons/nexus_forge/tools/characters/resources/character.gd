@@ -28,12 +28,15 @@ extends Resource
 ## when letters are appearing on a textbox.
 @export var typing_sound_path: String = ""
 
+@export var factions: Dictionary = {}
+
 ## The stats this character has. It's reccomended you only add/remove stats
 ## this character has through [method add_stat] and [method remove_stat].
 ## The stat values can be safely modified directly.
 @export var stats: Dictionary = {}
 @export var skills: Dictionary = {}
 @export var perks: Dictionary = {}
+@export var sprite_sheets: Dictionary = {}
 ## The variants of this character. It is reccomended you only tweak variants
 ## with the methods [method create_variant], [method delete_variant], 
 ## [method set_variant_sprite_sheet] and [method set_variant_stat].
@@ -41,27 +44,6 @@ extends Resource
 
 
 # Main Mods
-## Adds [param stat_id] to the character and to all variants. Variants will have
-## the stat mod set to 0.
-func add_stat(stat_id: String, stat_value: int) -> void:
-	stats[stat_id] = stat_value
-	for variant in variants:
-		variants[variant]["stats"][stat_id] = 0
-
-
-## Removes [param stat_id] from the charracter and from all variants.
-func remove_stat(stat_id: String) -> void:
-	stats.erase(stat_id)
-	for variant in variants:
-		variants[variant]["stats"].erase(stat_id)
-
-
-## Returns true if the character has [param data_id], you can also pass a
-## [enum Variant.Type] to further compare the custom data type.
-func has_custom_data(data_id: String, data_type: int = -1) -> bool:
-	if 0 <= data_type :
-		return custom_data.has(data_id) and typeof(custom_data[data_id]) == data_type
-	return custom_data.has(data_id)
 
 
 ## Returns true if [member sprite_frames_path] isn't empty
@@ -104,6 +86,22 @@ func create_variant(variant_id: String) -> void:
 		variants[variant_id]["stats"][existing_stat] = 0
 
 
+func get_variant_sprite_sheet(variant_id: String) -> String:
+	return variants[variant_id]["sheet"]
+
+
+func get_variant_stat_ids(variant_id: String) -> String:
+	return variants[variant_id]["stats"].keys()
+
+
+func get_variant_stat_mod(variant_id: String, stat_id: String) -> int:
+	return variants[variant_id]["stats"][stat_id]
+
+
+func get_variant_mods(variant_id: String) -> Dictionary:
+	return variants[variant_id]["stats"]
+
+
 ## Removes [member variant_id] from this character's variants
 func delete_variant(variant_id: String) -> void:
 	if has_variant(variant_id):
@@ -111,16 +109,172 @@ func delete_variant(variant_id: String) -> void:
 
 
 ## Sets the sprite sheet for this variant to use.
-func set_variant_sprite_sheet(variant_id: String) -> void:
-	variants[variant_id]["sheet"] = variant_id
+func set_variant_sprite_sheet(variant_id: String, sprite_sheet: String) -> void:
+	variants[variant_id]["sheet"] = sprite_sheet
 
 
 ## Sets one of the stats for variant_id. The total stat of this variant will be
 ## the base stat plus [member stat_mod].
-func set_variant_stat(variant_id: String, stat_id: String, stat_mod: int) -> void:
+func set_variant_stat_mod(variant_id: String, stat_id: String, stat_mod: int) -> void:
 	variants[variant_id]["stats"][stat_id] = stat_mod
 
 # -----------
+# --- Sprite Sheets ---
+func add_sprite_sheet(sprite_id: String, sprite_path: String) -> void:
+	sprite_sheets[sprite_id] = sprite_path
+
+
+func remove_sprite_sheet(sprite_id: String) -> void:
+	sprite_sheets.erase(sprite_id)
+
+
+func get_sprite_sheet_path(sprite_id: String) -> String:
+	return sprite_sheets[sprite_id]
+
+
+func has_sprite_sheet(sprite_id: String) -> bool:
+	return sprite_sheets.has(sprite_id)
+
+
+func clear_sprite_sheets() -> void:
+	sprite_sheets.clear()
+
+
+func get_sprite_sheet_ids() -> Array:
+	return sprite_sheets.keys()
+
+# ---------------------
+# --- Custom Data ---
+func set_custom_data(data_key: String, data: Variant) -> void:
+	custom_data[data_key] = data
+
+
+func get_custom_data_ids() -> Array:
+	return custom_data.keys()
+
+
+func get_custom_data(data_id: String) -> Variant:
+	return custom_data[data_id]
+
+
+## Returns true if the character has [param data_id], you can also pass a
+## [enum Variant.Type] to further compare the custom data type.
+func has_custom_data(data_id: String, data_type: int = -1) -> bool:
+	if 0 <= data_type :
+		return custom_data.has(data_id) and typeof(custom_data[data_id]) == data_type
+	return custom_data.has(data_id)
+
+
+func clear_custom_data() -> void:
+	custom_data.clear()
+
+
+# -------------------
+# --- Factions ---
+func add_to_faction(faction_id: String, rank: int) -> void:
+	factions[faction_id] = {"rank": maxi(0, rank)}
+
+
+func remove_from_faction(faction_id: String) -> void:
+	factions.erase(faction_id)
+
+
+func is_in_faction(faction_id: String) -> bool:
+	return factions.has(faction_id)
+
+
+func get_faction_rank(faction_id: String) -> int:
+	if factions.has(faction_id):
+		return factions[faction_id]["rank"]
+	return -1
+
+
+func set_faction_rank(faction_id: String, rank: int) -> void:
+	factions[faction_id]["rank"] = maxi(0, rank)
+
+
+func get_characer_factions() -> Array:
+	return factions.keys()
+
+
+func clear_factions() -> void:
+	factions.clear()
+
+# ----------------
+# --- Stats ---
+## Adds [param stat_id] to the character and to all variants. Variants will have
+## the stat mod set to 0.
+func add_stat(stat_id: String, stat_min: int, stat_max: int) -> void:
+	stats[stat_id] = {"min": stat_min, "max": stat_max}
+	for variant in variants:
+		variants[variant]["stats"][stat_id] = 0
+
+
+## Removes [param stat_id] from the charracter and from all variants.
+func remove_stat(stat_id: String) -> void:
+	stats.erase(stat_id)
+	for variant in variants:
+		variants[variant]["stats"].erase(stat_id)
+
+
+func get_stat_ids() -> Array:
+	return stats.keys()
+
+
+func get_stat_range(stat_id: String) -> Dictionary:
+	return {"min": stats[stat_id]["min"], "max": stats[stat_id]["max"]}
+
+
+func get_stat_min(stat_id: String) -> int:
+	return stats[stat_id]["min"]
+
+
+func get_stat_max(stat_id: String) -> int:
+	return stats[stat_id]["max"]
+
+# -------------
+# --- Perks ---
+func set_perk(perk_id: String, perk_level: int) -> void:
+	perks[perk_id] = {"level": maxi(perk_level, 0)}
+
+
+func has_perk(perk_id: String) -> bool:
+	return perks.has(perk_id)
+
+
+func get_perk_level(perk_id) -> int:
+	return perks[perk_id]["level"]
+
+
+func remove_perk(perk_id: String) -> void:
+	perks.erase(perk_id)
+
+
+func get_perk_ids() -> Array:
+	return perks.keys()
+
+# -------------
+# --- Skills ---
+func set_skill(skill_id: String, skill_level: int) -> void:
+	skills[skill_id] = {"level": skill_level}
+
+
+func get_skill_ids() -> Array:
+	return skills.keys()
+
+
+func remove_skill(skill_id: String) -> void:
+	skills.erase(skill_id)
+
+
+func get_skill_level(skill_id: String) -> int:
+	return skills[skill_id]["level"]
+
+
+func clear_skills() -> void:
+	skills.clear()
+
+# --------------
 # Data loaders
 ## Loads the portrait sprite frame resource and returns it.
 func load_portrait_frames() -> SpriteFrames:

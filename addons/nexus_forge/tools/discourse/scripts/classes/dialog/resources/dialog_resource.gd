@@ -42,7 +42,7 @@ enum ElementType {
 
 
 ## The initial conversation key contained in [member conversation].
-@export var dialog_entry: String = ""
+@export var dialog_entry: Dictionary = {}
 @export var _entry_offset: Vector2
 
 # callable code is:

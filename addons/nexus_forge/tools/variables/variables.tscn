@@ -6,12 +6,12 @@
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/variables/folders_tree_script.gd" id="3_ylv6p"]
 [ext_resource type="Texture2D" uid="uid://12lyg7db58dg" path="res://addons/nexus_forge/tools/variables/icons/add_int.svg" id="4_2tem4"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/variables/variables_tree_script.gd" id="4_fyw2a"]
+[ext_resource type="Texture2D" uid="uid://cd4jt2ru86e16" path="res://addons/nexus_forge/common_icons/save_file.svg" id="5_l8ff6"]
 [ext_resource type="Texture2D" uid="uid://dcgniolhiay6u" path="res://addons/nexus_forge/tools/variables/icons/add_float.svg" id="5_o2qef"]
 [ext_resource type="Texture2D" uid="uid://c472l5bho4jpi" path="res://addons/nexus_forge/tools/variables/icons/add_bool.svg" id="6_dmfoy"]
+[ext_resource type="Texture2D" uid="uid://bbkubj3vinsms" path="res://addons/nexus_forge/tools/variables/icons/add_variable_icon.svg" id="6_qhc38"]
 [ext_resource type="Texture2D" uid="uid://cxv7veghytl4m" path="res://addons/nexus_forge/tools/variables/icons/add_string.svg" id="7_wd8y6"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/variables/folder_delete_confirm_script.gd" id="10_4j6kw"]
-[ext_resource type="Texture2D" uid="uid://bwspmik2qv43f" path="res://addons/nexus_forge/common_icons/new_file.svg" id="10_lcawl"]
-[ext_resource type="Texture2D" uid="uid://xkqkxosnppid" path="res://addons/nexus_forge/common_icons/open_file.svg" id="11_6xa8m"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_jvoa0"]
 bg_color = Color(0.211765, 0.239216, 0.290196, 1)
@@ -33,6 +33,7 @@ script = ExtResource("1_qnbb8")
 metadata/_tab_index = 2
 
 [node name="MainSplit" type="HSplitContainer" parent="."]
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -50,17 +51,11 @@ size_flags_horizontal = 3
 layout_mode = 2
 
 [node name="TitleLabel" type="Label" parent="MainSplit/VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.223182, 0.705086, 0.904884, 1)
 theme_override_font_sizes/font_size = 25
 text = "Variables"
-
-[node name="UnsavedLabel" type="Label" parent="MainSplit/VBoxContainer/HBoxContainer"]
-visible = false
-layout_mode = 2
-theme_override_colors/font_color = Color(0.223182, 0.705086, 0.904884, 1)
-theme_override_font_sizes/font_size = 25
-text = "(*)"
 
 [node name="FoldersPanel" type="PanelContainer" parent="MainSplit/VBoxContainer"]
 custom_minimum_size = Vector2(200, 0)
@@ -102,7 +97,110 @@ hide_root = true
 scroll_horizontal_enabled = false
 script = ExtResource("3_ylv6p")
 
-[node name="VariablesPanel" type="PanelContainer" parent="MainSplit"]
+[node name="VBoxContainer2" type="VBoxContainer" parent="MainSplit"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 4.0
+
+[node name="TitleContainer" type="HBoxContainer" parent="MainSplit/VBoxContainer2"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+
+[node name="MenuContainer" type="HBoxContainer" parent="MainSplit/VBoxContainer2/TitleContainer"]
+layout_mode = 2
+
+[node name="VariablesMnBtn" type="MenuButton" parent="MainSplit/VBoxContainer2/TitleContainer/MenuContainer"]
+layout_mode = 2
+text = "Variables"
+item_count = 3
+popup/item_0/text = "Save Variables"
+popup/item_0/icon = ExtResource("5_l8ff6")
+popup/item_1/text = "Create Variable"
+popup/item_1/icon = ExtResource("6_qhc38")
+popup/item_1/id = 1
+popup/item_1/disabled = true
+popup/item_2/text = "Create Folder"
+popup/item_2/icon = ExtResource("3_c3swr")
+popup/item_2/id = 2
+
+[node name="VSeparator2" type="VSeparator" parent="MainSplit/VBoxContainer2/TitleContainer"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="FolderPathContainer" type="HBoxContainer" parent="MainSplit/VBoxContainer2/TitleContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Label" type="Label" parent="MainSplit/VBoxContainer2/TitleContainer/FolderPathContainer"]
+layout_mode = 2
+size_flags_vertical = 1
+text = "Current Folder:"
+vertical_alignment = 1
+
+[node name="CurrentFolderLabel" type="Label" parent="MainSplit/VBoxContainer2/TitleContainer/FolderPathContainer"]
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 1
+vertical_alignment = 1
+text_overrun_behavior = 3
+
+[node name="VSeparator3" type="VSeparator" parent="MainSplit/VBoxContainer2/TitleContainer"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="VarSearchLine" type="LineEdit" parent="MainSplit/VBoxContainer2/TitleContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+placeholder_text = "Search Variables"
+clear_button_enabled = true
+right_icon = ExtResource("2_pmhqk")
+
+[node name="VSeparator" type="VSeparator" parent="MainSplit/VBoxContainer2/TitleContainer"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="AddButtonsContainer" type="HBoxContainer" parent="MainSplit/VBoxContainer2/TitleContainer"]
+layout_mode = 2
+
+[node name="AddIntButton" type="Button" parent="MainSplit/VBoxContainer2/TitleContainer/AddButtonsContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+size_flags_vertical = 4
+tooltip_text = "Create integer variable."
+disabled = true
+icon = ExtResource("4_2tem4")
+icon_alignment = 1
+
+[node name="AddFloatButton" type="Button" parent="MainSplit/VBoxContainer2/TitleContainer/AddButtonsContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+size_flags_vertical = 4
+tooltip_text = "Create float variable."
+disabled = true
+icon = ExtResource("5_o2qef")
+icon_alignment = 1
+
+[node name="AddBoolButton" type="Button" parent="MainSplit/VBoxContainer2/TitleContainer/AddButtonsContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+size_flags_vertical = 4
+tooltip_text = "Create bool variable."
+disabled = true
+icon = ExtResource("6_dmfoy")
+icon_alignment = 1
+
+[node name="AddStringButton" type="Button" parent="MainSplit/VBoxContainer2/TitleContainer/AddButtonsContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+size_flags_vertical = 4
+tooltip_text = "Create string  variable."
+disabled = true
+icon = ExtResource("7_wd8y6")
+icon_alignment = 1
+
+[node name="VariablesPanel" type="PanelContainer" parent="MainSplit/VBoxContainer2"]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -110,61 +208,7 @@ size_flags_vertical = 3
 size_flags_stretch_ratio = 4.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_8xo0l")
 
-[node name="VariablesContainer" type="VBoxContainer" parent="MainSplit/VariablesPanel"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_stretch_ratio = 3.0
-
-[node name="TitleContainer" type="HBoxContainer" parent="MainSplit/VariablesPanel/VariablesContainer"]
-layout_mode = 2
-
-[node name="VarSearchLine" type="LineEdit" parent="MainSplit/VariablesPanel/VariablesContainer/TitleContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-placeholder_text = "Search Variables"
-clear_button_enabled = true
-right_icon = ExtResource("2_pmhqk")
-
-[node name="VSeparator" type="VSeparator" parent="MainSplit/VariablesPanel/VariablesContainer/TitleContainer"]
-layout_mode = 2
-theme_override_constants/separation = 12
-
-[node name="AddButtonsContainer" type="HBoxContainer" parent="MainSplit/VariablesPanel/VariablesContainer/TitleContainer"]
-layout_mode = 2
-
-[node name="AddIntButton" type="Button" parent="MainSplit/VariablesPanel/VariablesContainer/TitleContainer/AddButtonsContainer"]
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 2
-tooltip_text = "Create integer variable."
-disabled = true
-icon = ExtResource("4_2tem4")
-icon_alignment = 1
-
-[node name="AddFloatButton" type="Button" parent="MainSplit/VariablesPanel/VariablesContainer/TitleContainer/AddButtonsContainer"]
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 2
-tooltip_text = "Create float variable."
-disabled = true
-icon = ExtResource("5_o2qef")
-icon_alignment = 1
-
-[node name="AddBoolButton" type="Button" parent="MainSplit/VariablesPanel/VariablesContainer/TitleContainer/AddButtonsContainer"]
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 2
-tooltip_text = "Create bool variable."
-disabled = true
-icon = ExtResource("6_dmfoy")
-icon_alignment = 1
-
-[node name="AddStringButton" type="Button" parent="MainSplit/VariablesPanel/VariablesContainer/TitleContainer/AddButtonsContainer"]
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 2
-tooltip_text = "Create string  variable."
-disabled = true
-icon = ExtResource("7_wd8y6")
-icon_alignment = 1
-
-[node name="VariablesTree" type="Tree" parent="MainSplit/VariablesPanel/VariablesContainer"]
+[node name="VariablesTree" type="Tree" parent="MainSplit/VBoxContainer2/VariablesPanel"]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/inner_item_margin_left = 10
@@ -178,47 +222,6 @@ hide_folding = true
 hide_root = true
 scroll_horizontal_enabled = false
 script = ExtResource("4_fyw2a")
-
-[node name="NoDBContainer" type="PanelContainer" parent="."]
-visible = false
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="CenterContainer" type="CenterContainer" parent="NoDBContainer"]
-layout_mode = 2
-
-[node name="InfoContainer" type="VBoxContainer" parent="NoDBContainer/CenterContainer"]
-layout_mode = 2
-
-[node name="ButtonsContainer" type="HBoxContainer" parent="NoDBContainer/CenterContainer/InfoContainer"]
-layout_mode = 2
-
-[node name="CreateDBButton" type="Button" parent="NoDBContainer/CenterContainer/InfoContainer/ButtonsContainer"]
-layout_mode = 2
-text = "Create Variables Resource"
-icon = ExtResource("10_lcawl")
-
-[node name="LoadDBButton" type="Button" parent="NoDBContainer/CenterContainer/InfoContainer/ButtonsContainer"]
-layout_mode = 2
-text = "Load Variables Resource"
-icon = ExtResource("11_6xa8m")
-
-[node name="HSeparator" type="HSeparator" parent="NoDBContainer/CenterContainer/InfoContainer"]
-layout_mode = 2
-
-[node name="InfoLabel" type="RichTextLabel" parent="NoDBContainer/CenterContainer/InfoContainer"]
-layout_mode = 2
-bbcode_enabled = true
-text = "Variables uses a resource of type [color=AQUAMARINE]NexusForgeVariables[/color] to store all the variable's data. You can create one or load one to use in your project. 
-
-Only one resource can be used for the project.
-
-The path to this resource will be saved to your project settings and loaded automatically next time you open the project."
-fit_content = true
 
 [node name="PopUps" type="Node" parent="."]
 

@@ -1,4 +1,4 @@
-[gd_scene load_steps=25 format=3 uid="uid://cx4h4u45kp8vt"]
+[gd_scene load_steps=24 format=3 uid="uid://cx4h4u45kp8vt"]
 
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/scenes/discourse_main_script.gd" id="1_frko2"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/scenes/discourse_id_node_tree.gd" id="2_40hbj"]
@@ -28,34 +28,6 @@ corner_radius_bottom_right = 3
 bg_color = Color(0.211765, 0.239216, 0.290196, 1)
 corner_radius_top_right = 3
 
-[sub_resource type="GDScript" id="GDScript_2taqm"]
-resource_name = "fill"
-script/source = "extends MenuButton
-
-
-func _ready() -> void:
-	var popup := get_popup()
-	
-	popup.add_separator(\"Dialog\", 101)
-	popup.add_item(\"Dialog\", 1)
-	popup.add_item(\"Replies\", 2)
-	popup.add_item(\"End\", 3)
-	popup.add_separator(\"Elements\", 102)
-	popup.add_item(\"Character\", 4)
-	popup.add_item(\"Variables\", 5)
-	popup.add_item(\"Call Method\", 6)
-	popup.add_item(\"Call Return\", 7)
-	popup.add_item(\"Variant\", 8)
-	popup.add_item(\"Signal\", 9)
-	popup.add_separator(\"Logic\", 103)
-	popup.add_item(\"Comparation\", 10) # a == b
-	popup.add_item(\"Conditional Path\", 11) # conditional Split
-	popup.add_item(\"Random\", 12) 
-	popup.add_separator(\"Utility\", 104)
-	popup.add_item(\"Go to ID\", 13)
-	popup.add_item(\"Comment\", 14)
-"
-
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_140wq"]
 bg_color = Color(0.129412, 0.14902, 0.180392, 1)
 
@@ -64,7 +36,8 @@ bg_color = Color(0.129412, 0.14902, 0.180392, 1)
 
 [sub_resource type="GDScript" id="GDScript_km4bd"]
 resource_name = "show_with_message"
-script/source = "extends AcceptDialog
+script/source = "@tool
+extends AcceptDialog
 
 
 func _ready() -> void:
@@ -75,7 +48,8 @@ func _ready() -> void:
 
 [sub_resource type="GDScript" id="GDScript_771kq"]
 resource_name = "conv_pointer"
-script/source = "extends FileDialog
+script/source = "@tool
+extends FileDialog
 
 
 signal finished(dialog_confirmed: bool)
@@ -234,7 +208,167 @@ layout_mode = 2
 disabled = true
 text = "Add Node"
 switch_on_hover = true
-script = SubResource("GDScript_2taqm")
+item_count = 72
+popup/item_0/text = "Dialog"
+popup/item_0/id = 101
+popup/item_0/separator = true
+popup/item_1/text = "Dialog"
+popup/item_1/id = 1
+popup/item_2/text = "Replies"
+popup/item_2/id = 2
+popup/item_3/text = "End"
+popup/item_3/id = 3
+popup/item_4/text = "Elements"
+popup/item_4/id = 102
+popup/item_4/separator = true
+popup/item_5/text = "Character"
+popup/item_5/id = 4
+popup/item_6/text = "Variables"
+popup/item_6/id = 5
+popup/item_7/text = "Call Method"
+popup/item_7/id = 6
+popup/item_8/text = "Call Return"
+popup/item_8/id = 7
+popup/item_9/text = "Variant"
+popup/item_9/id = 8
+popup/item_10/text = "Signal"
+popup/item_10/id = 9
+popup/item_11/text = "Logic"
+popup/item_11/id = 103
+popup/item_11/separator = true
+popup/item_12/text = "Comparation"
+popup/item_12/id = 10
+popup/item_13/text = "Conditional Path"
+popup/item_13/id = 11
+popup/item_14/text = "Random"
+popup/item_14/id = 12
+popup/item_15/text = "Utility"
+popup/item_15/id = 104
+popup/item_15/separator = true
+popup/item_16/text = "Go to ID"
+popup/item_16/id = 13
+popup/item_17/text = "Comment"
+popup/item_17/id = 14
+popup/item_18/text = "Dialog"
+popup/item_18/id = 101
+popup/item_18/separator = true
+popup/item_19/text = "Dialog"
+popup/item_19/id = 1
+popup/item_20/text = "Replies"
+popup/item_20/id = 2
+popup/item_21/text = "End"
+popup/item_21/id = 3
+popup/item_22/text = "Elements"
+popup/item_22/id = 102
+popup/item_22/separator = true
+popup/item_23/text = "Character"
+popup/item_23/id = 4
+popup/item_24/text = "Variables"
+popup/item_24/id = 5
+popup/item_25/text = "Call Method"
+popup/item_25/id = 6
+popup/item_26/text = "Call Return"
+popup/item_26/id = 7
+popup/item_27/text = "Variant"
+popup/item_27/id = 8
+popup/item_28/text = "Signal"
+popup/item_28/id = 9
+popup/item_29/text = "Logic"
+popup/item_29/id = 103
+popup/item_29/separator = true
+popup/item_30/text = "Comparation"
+popup/item_30/id = 10
+popup/item_31/text = "Conditional Path"
+popup/item_31/id = 11
+popup/item_32/text = "Random"
+popup/item_32/id = 12
+popup/item_33/text = "Utility"
+popup/item_33/id = 104
+popup/item_33/separator = true
+popup/item_34/text = "Go to ID"
+popup/item_34/id = 13
+popup/item_35/text = "Comment"
+popup/item_35/id = 14
+popup/item_36/text = "Dialog"
+popup/item_36/id = 101
+popup/item_36/separator = true
+popup/item_37/text = "Dialog"
+popup/item_37/id = 1
+popup/item_38/text = "Replies"
+popup/item_38/id = 2
+popup/item_39/text = "End"
+popup/item_39/id = 3
+popup/item_40/text = "Elements"
+popup/item_40/id = 102
+popup/item_40/separator = true
+popup/item_41/text = "Character"
+popup/item_41/id = 4
+popup/item_42/text = "Variables"
+popup/item_42/id = 5
+popup/item_43/text = "Call Method"
+popup/item_43/id = 6
+popup/item_44/text = "Call Return"
+popup/item_44/id = 7
+popup/item_45/text = "Variant"
+popup/item_45/id = 8
+popup/item_46/text = "Signal"
+popup/item_46/id = 9
+popup/item_47/text = "Logic"
+popup/item_47/id = 103
+popup/item_47/separator = true
+popup/item_48/text = "Comparation"
+popup/item_48/id = 10
+popup/item_49/text = "Conditional Path"
+popup/item_49/id = 11
+popup/item_50/text = "Random"
+popup/item_50/id = 12
+popup/item_51/text = "Utility"
+popup/item_51/id = 104
+popup/item_51/separator = true
+popup/item_52/text = "Go to ID"
+popup/item_52/id = 13
+popup/item_53/text = "Comment"
+popup/item_53/id = 14
+popup/item_54/text = "Dialog"
+popup/item_54/id = 101
+popup/item_54/separator = true
+popup/item_55/text = "Dialog"
+popup/item_55/id = 1
+popup/item_56/text = "Replies"
+popup/item_56/id = 2
+popup/item_57/text = "End"
+popup/item_57/id = 3
+popup/item_58/text = "Elements"
+popup/item_58/id = 102
+popup/item_58/separator = true
+popup/item_59/text = "Character"
+popup/item_59/id = 4
+popup/item_60/text = "Variables"
+popup/item_60/id = 5
+popup/item_61/text = "Call Method"
+popup/item_61/id = 6
+popup/item_62/text = "Call Return"
+popup/item_62/id = 7
+popup/item_63/text = "Variant"
+popup/item_63/id = 8
+popup/item_64/text = "Signal"
+popup/item_64/id = 9
+popup/item_65/text = "Logic"
+popup/item_65/id = 103
+popup/item_65/separator = true
+popup/item_66/text = "Comparation"
+popup/item_66/id = 10
+popup/item_67/text = "Conditional Path"
+popup/item_67/id = 11
+popup/item_68/text = "Random"
+popup/item_68/id = 12
+popup/item_69/text = "Utility"
+popup/item_69/id = 104
+popup/item_69/separator = true
+popup/item_70/text = "Go to ID"
+popup/item_70/id = 13
+popup/item_71/text = "Comment"
+popup/item_71/id = 14
 
 [node name="ReviewMenuButton" type="MenuButton" parent="Dialogues/TreeContainer/MenuContainer"]
 layout_mode = 2
@@ -294,6 +428,7 @@ vertical_alignment = 1
 
 [node name="LogPanel" type="PanelContainer" parent="Dialogues/TreeContainer/MainWorkerContainer"]
 unique_name_in_owner = true
+visible = false
 custom_minimum_size = Vector2(0, 140)
 layout_mode = 2
 script = ExtResource("8_e84u1")

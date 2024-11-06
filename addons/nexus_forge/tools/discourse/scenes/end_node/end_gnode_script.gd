@@ -1,5 +1,5 @@
+@tool
 extends DiscourseGraphNode
-
 
 
 func _ready() -> void:

@@ -1,8 +1,10 @@
+@tool
 extends Tree
 
 
 signal delete_folder_request(folder_item: TreeItem)
 signal something_changed
+signal folder_renamed(from: String, to: String, tree: TreeItem)
 
 const FOLDER_ICON = preload("res://addons/nexus_forge/common_icons/folder_icon.svg")
 const NEW_FOLDER_ICON = preload("res://addons/nexus_forge/tools/variables/icons/new_folder.svg")
@@ -21,6 +23,11 @@ func _ready() -> void:
 	
 	item_edited.connect(on_folder_edited)
 	button_clicked.connect(on_item_button_pressed)
+
+
+func clear_folders() -> void:
+	for folder in root_tree.get_children():
+		folder.free()
 
 
 func set_folder_name_data(folder_tree: TreeItem, new_name: String) -> void:
@@ -96,6 +103,7 @@ func on_folder_edited() -> void:
 	
 	if tweaked_name != current_name:
 		item_edited.set_text(1, tweaked_name)
+	folder_renamed.emit(item_edited.get_metadata(1), tweaked_name, item_edited)
 	item_edited.set_metadata(1, tweaked_name)
 
 

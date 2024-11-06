@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="NFRacesRes" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/characters/resources/races.gd" id="1_e5nlh"]
+
+[resource]
+script = ExtResource("1_e5nlh")
+species = {}

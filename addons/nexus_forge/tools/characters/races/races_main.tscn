@@ -9,11 +9,11 @@
 [ext_resource type="Texture2D" uid="uid://b8q6di4imiriq" path="res://addons/nexus_forge/common_icons/search_icon.svg" id="3_32n5p"]
 [ext_resource type="Texture2D" uid="uid://c472l5bho4jpi" path="res://addons/nexus_forge/tools/variables/icons/add_bool.svg" id="3_ej5pg"]
 [ext_resource type="Texture2D" uid="uid://cxv7veghytl4m" path="res://addons/nexus_forge/tools/variables/icons/add_string.svg" id="4_u5owq"]
+[ext_resource type="Texture2D" uid="uid://cd4jt2ru86e16" path="res://addons/nexus_forge/common_icons/save_file.svg" id="4_yfoub"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/characters/races/genders_tree_script.gd" id="6_2k43f"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/characters/races/custom_data_tree_script.gd" id="7_q4jyj"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/characters/races/species_cr_popup_script.gd" id="10_uka0x"]
 [ext_resource type="Texture2D" uid="uid://bpxvu88n8n48" path="res://addons/nexus_forge/common_icons/error_icon.svg" id="11_agvgq"]
-[ext_resource type="Texture2D" uid="uid://xkqkxosnppid" path="res://addons/nexus_forge/common_icons/open_file.svg" id="13_1np2l"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_kk4mv"]
 content_margin_left = 10.0
@@ -54,14 +54,15 @@ size_flags_vertical = 3
 layout_mode = 2
 size_flags_horizontal = 3
 
+[node name="TitleLabel" type="Label" parent="MainContainer/SpcRcContainer"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.223182, 0.705086, 0.904884, 1)
+theme_override_font_sizes/font_size = 25
+text = "Species"
+
 [node name="SpeciesContainer" type="VBoxContainer" parent="MainContainer/SpcRcContainer"]
 layout_mode = 2
-
-[node name="Label" type="Label" parent="MainContainer/SpcRcContainer/SpeciesContainer"]
-custom_minimum_size = Vector2(0, 32)
-layout_mode = 2
-text = "Species"
-vertical_alignment = 1
 
 [node name="SpeciesDataCotnainer" type="HBoxContainer" parent="MainContainer/SpcRcContainer/SpeciesContainer"]
 layout_mode = 2
@@ -104,6 +105,7 @@ layout_mode = 2
 [node name="RaceOptBtn" type="OptionButton" parent="MainContainer/SpcRcContainer/RaceContainer/RaceDataContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
+disabled = true
 fit_to_longest_item = false
 
 [node name="CreateRaceBtn" type="Button" parent="MainContainer/SpcRcContainer/RaceContainer/RaceDataContainer"]
@@ -142,6 +144,17 @@ layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
+[node name="MenuContainer" type="HBoxContainer" parent="MainContainer/StatsContainer"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+
+[node name="MainMenu" type="MenuButton" parent="MainContainer/StatsContainer/MenuContainer"]
+layout_mode = 2
+text = "Menu"
+item_count = 1
+popup/item_0/text = "Save"
+popup/item_0/icon = ExtResource("4_yfoub")
+
 [node name="Label" type="Label" parent="MainContainer/StatsContainer"]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
@@ -167,6 +180,10 @@ script = ExtResource("2_2bxdm")
 [node name="PerksContainer" type="VBoxContainer" parent="MainContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
+
+[node name="Control" type="Control" parent="MainContainer/PerksContainer"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
 
 [node name="PerkSlectorContainer" type="VBoxContainer" parent="MainContainer/PerksContainer"]
 layout_mode = 2
@@ -215,6 +232,10 @@ bbcode_enabled = true
 [node name="DataGenderContainer" type="VBoxContainer" parent="MainContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
+
+[node name="Control" type="Control" parent="MainContainer/DataGenderContainer"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
 
 [node name="CustomDataContainer" type="VBoxContainer" parent="MainContainer/DataGenderContainer"]
 layout_mode = 2
@@ -363,51 +384,6 @@ size_flags_horizontal = 3
 size_flags_stretch_ratio = 3.0
 disabled = true
 text = "Create"
-
-[node name="NoRacePanel" type="PanelContainer" parent="."]
-visible = false
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="CenterContainer" type="CenterContainer" parent="NoRacePanel"]
-layout_mode = 2
-
-[node name="InfoContainer" type="VBoxContainer" parent="NoRacePanel/CenterContainer"]
-custom_minimum_size = Vector2(500, 0)
-layout_mode = 2
-
-[node name="ButtonContainer2" type="HBoxContainer" parent="NoRacePanel/CenterContainer/InfoContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="CreateDBButton" type="Button" parent="NoRacePanel/CenterContainer/InfoContainer/ButtonContainer2"]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "Create Race Resource"
-icon = ExtResource("1_th1yf")
-
-[node name="LoadDBButton" type="Button" parent="NoRacePanel/CenterContainer/InfoContainer/ButtonContainer2"]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "Load Race Resource"
-icon = ExtResource("13_1np2l")
-
-[node name="HSeparator" type="HSeparator" parent="NoRacePanel/CenterContainer/InfoContainer"]
-layout_mode = 2
-
-[node name="InfoLabel" type="RichTextLabel" parent="NoRacePanel/CenterContainer/InfoContainer"]
-layout_mode = 2
-bbcode_enabled = true
-text = "Races uses a resource of type [color=AQUAMARINE]NexusForgeRaces[/color] to store all data relevant to species and races so that they can be easily accessed through NexusForge and in-game. You can create one or load one to use in your project. 
-
-Only one resource can be used for the project.
-
-The path to this resource will be saved to your project settings and loaded automatically next time you open the project."
-fit_content = true
 
 [node name="Elements" type="Node" parent="."]
 

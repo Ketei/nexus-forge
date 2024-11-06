@@ -1,4 +1,4 @@
-# Dialog
+@tool
 extends DiscourseGraphNode
 
 const DEFAULT_SIZE := Vector2(410,480)

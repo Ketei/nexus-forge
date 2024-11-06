@@ -1,3 +1,4 @@
+@tool
 extends ConfirmationDialog
 
 signal option_selected(save_opt: int)

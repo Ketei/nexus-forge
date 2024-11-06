@@ -1,3 +1,4 @@
+@tool
 extends DiscourseGraphNode
 
 const ARG_CONTAINER = preload("res://addons/nexus_forge/tools/discourse/scenes/call_node/arg_container.tscn")

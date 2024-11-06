@@ -1,15 +1,12 @@
+@tool
 extends Control
 
-
-# Idea
-
-# The main root will consist of a dictionary. Subfolders will consist of the
-# same structure.
-
-# {folder_name: "", "variables": {}, "subfolders": []}
-
-# "variable_key": 
-const RES_PATH_SETTING: String = "nexus_forge/variables_resource"
+const SAVE_FILE_ICON = preload("res://addons/nexus_forge/common_icons/save_file.svg")
+const ADD_BOOL_ICON = preload("res://addons/nexus_forge/tools/variables/icons/add_bool.svg")
+const ADD_FLOAT_ICON = preload("res://addons/nexus_forge/tools/variables/icons/add_float.svg")
+const ADD_INT_ICON = preload("res://addons/nexus_forge/tools/variables/icons/add_int.svg")
+const ADD_STRING_ICON = preload("res://addons/nexus_forge/tools/variables/icons/add_string.svg")
+const NEW_FOLDER_ICON = preload("res://addons/nexus_forge/tools/variables/icons/new_folder.svg")
 
 var _variables_resource: NFVariablesRes = null
 var _switching_tree: bool = false
@@ -22,54 +19,70 @@ var _current_folder: TreeItem = null:
 		add_float_button.disabled = set_disabled
 		add_bool_button.disabled = set_disabled
 		add_string_button.disabled = set_disabled
-
-var _unsaved: bool = false:
-	set(is_unsaved):
-		_unsaved = is_unsaved
-		unsaved_label.visible = _unsaved
-
+		variables_mn_btn.get_popup().set_item_disabled(1, set_disabled)
+var no_db_container: PanelContainer = null
+var _unsaved: bool = false
+var main_submenu: PopupMenu = null
 
 @onready var main_split: HSplitContainer = $MainSplit
-@onready var no_db_container: PanelContainer = $NoDBContainer
 
 @onready var folder_search_line: LineEdit = $MainSplit/VBoxContainer/FoldersPanel/FoldersContainer/TitleContainer/FolderSearchLine
-@onready var var_search_line: LineEdit = $MainSplit/VariablesPanel/VariablesContainer/TitleContainer/VarSearchLine
+@onready var var_search_line: LineEdit = $MainSplit/VBoxContainer2/TitleContainer/VarSearchLine
 
 @onready var folders_tree: Tree = $MainSplit/VBoxContainer/FoldersPanel/FoldersContainer/FoldersTree
-@onready var variables_tree: Tree = $MainSplit/VariablesPanel/VariablesContainer/VariablesTree
+@onready var variables_tree: Tree = $MainSplit/VBoxContainer2/VariablesPanel/VariablesTree
 
 @onready var add_folder_button: Button = $MainSplit/VBoxContainer/FoldersPanel/FoldersContainer/TitleContainer/FolderButtons/AddFolderButton
-@onready var add_int_button: Button = $MainSplit/VariablesPanel/VariablesContainer/TitleContainer/AddButtonsContainer/AddIntButton
-@onready var add_float_button: Button = $MainSplit/VariablesPanel/VariablesContainer/TitleContainer/AddButtonsContainer/AddFloatButton
-@onready var add_bool_button: Button = $MainSplit/VariablesPanel/VariablesContainer/TitleContainer/AddButtonsContainer/AddBoolButton
-@onready var add_string_button: Button = $MainSplit/VariablesPanel/VariablesContainer/TitleContainer/AddButtonsContainer/AddStringButton
+@onready var add_int_button: Button = $MainSplit/VBoxContainer2/TitleContainer/AddButtonsContainer/AddIntButton
+@onready var add_float_button: Button = $MainSplit/VBoxContainer2/TitleContainer/AddButtonsContainer/AddFloatButton
+@onready var add_bool_button: Button = $MainSplit/VBoxContainer2/TitleContainer/AddButtonsContainer/AddBoolButton
+@onready var add_string_button: Button = $MainSplit/VBoxContainer2/TitleContainer/AddButtonsContainer/AddStringButton
 
-@onready var create_db_button: Button = $NoDBContainer/CenterContainer/InfoContainer/ButtonsContainer/CreateDBButton
-@onready var load_db_button: Button = $NoDBContainer/CenterContainer/InfoContainer/ButtonsContainer/LoadDBButton
 
 @onready var confirmation_dialog: ConfirmationDialog = $PopUps/ConfirmationDialog
 @onready var data_select_dialog: FileDialog = $PopUps/DataSelectDialog
 
 @onready var title_label: Label = $MainSplit/VBoxContainer/HBoxContainer/TitleLabel
-@onready var unsaved_label: Label = $MainSplit/VBoxContainer/HBoxContainer/UnsavedLabel
+@onready var current_folder_label: Label = $MainSplit/VBoxContainer2/TitleContainer/FolderPathContainer/CurrentFolderLabel
+
+@onready var variables_mn_btn: MenuButton = $MainSplit/VBoxContainer2/TitleContainer/MenuContainer/VariablesMnBtn
 
 
 func _ready() -> void:
-	var res_path: String = ProjectSettings.get_setting(RES_PATH_SETTING, "")
+	var res_path: String = ProjectSettings.get_setting(NFVariablesRes.SETTINGS_PATH, "")
+	var menu_button: PopupMenu = variables_mn_btn.get_popup()
 	
-	if res_path.is_empty() or not ResourceLoader.exists(res_path):
-		no_db_container.visible = true
-		main_split.visible = false
+	if main_submenu == null:
+		main_submenu = PopupMenu.new()
 	else:
+		main_submenu.clear()
+	
+	main_submenu.add_icon_item(ADD_INT_ICON, "Create Integer", 0)
+	main_submenu.add_icon_item(ADD_FLOAT_ICON, "Create Float", 1)
+	main_submenu.add_icon_item(ADD_BOOL_ICON, "Create Boolean", 2)
+	main_submenu.add_icon_item(ADD_STRING_ICON, "Create String", 3)
+	
+	menu_button.set_item_submenu_node(1, main_submenu)
+	
+	menu_button.set_item_disabled(1, true)
+	
+	if not res_path.is_empty() and ResourceLoader.exists(res_path):
 		var res_load: Resource = load(res_path)
 		if res_load is NFVariablesRes:
-			_variables_resource = res_load
-			_load_variables(_variables_resource.variables)
-			no_db_container.visible = false
-			main_split.visible = true
-		else:
-			no_db_container.visible = true
-			main_split.visible = false
+			if res_load is NFVariablesRes:
+				_variables_resource = res_load
+	
+	if _variables_resource != null:
+		_load_variables(_variables_resource.variables)
+		main_split.visible = true
+	else:
+		no_db_container = preload("res://addons/nexus_forge/scenes/no_db_container.tscn").instantiate()
+		add_child(no_db_container)
+		no_db_container.set_resource_type("NFVariablesRes", "Variables", "Variables")
+		no_db_container.create_resource_pressed.connect(on_create_resource_pressed)
+		no_db_container.load_resource_pressed.connect(on_load_resource_pressed)
+		no_db_container.visible = true
+		main_split.visible = false
 	
 	folders_tree.item_selected.connect(on_folder_clicked)
 	folders_tree.something_changed.connect(on_something_changed)
@@ -87,12 +100,37 @@ func _ready() -> void:
 	var_search_line.text_changed.connect(on_search_var_changed)
 	
 	folders_tree.delete_folder_request.connect(on_folder_delete_request)
+	folders_tree.folder_renamed.connect(on_folder_renamed)
 	
 	data_select_dialog.file_selected.connect(on_data_select_file_selected)
 	
-	#test_save_button.pressed.connect(test_save_pressed)
-	create_db_button.pressed.connect(on_create_resource_pressed)
-	load_db_button.pressed.connect(on_load_resource_pressed)
+	menu_button.id_pressed.connect(on_menu_button_pressed)
+	main_submenu.id_pressed.connect(on_create_variable_pressed)
+
+
+func on_folder_renamed(from: String, to: String, folder: TreeItem) -> void:
+	if folder == _current_folder:
+		current_folder_label.text = folders_tree.get_path_to_folder(folder)
+
+
+func on_create_variable_pressed(id: int) -> void:
+	match id:
+		0:
+			on_add_var_int_pressed()
+		1:
+			on_add_var_float_pressed()
+		2:
+			on_add_var_bool_pressed()
+		3:
+			on_add_var_str_pressed()
+
+
+func on_menu_button_pressed(id: int) -> void:
+	match id:
+		0:
+			save_variables()
+		2:
+			on_add_root_folder_pressed()
 
 
 func on_something_changed() -> void:
@@ -102,11 +140,9 @@ func on_something_changed() -> void:
 
 
 func save_variables() -> void:
-	var save_path: String = ProjectSettings.get_setting(RES_PATH_SETTING, "")
-	if save_path.is_empty():
-		return
 	_variables_resource.variables = build_variable_dictionary()
-	ResourceSaver.save(_variables_resource, save_path)
+	_variables_resource.save()
+	_unsaved = false
 
 
 func on_create_resource_pressed() -> void:
@@ -124,17 +160,20 @@ func on_data_select_file_selected(path: String) -> void:
 	if data_select_dialog.file_mode == FileDialog.FileMode.FILE_MODE_SAVE_FILE:
 		var new_var_db := NFVariablesRes.new()
 		_variables_resource = new_var_db
+		ProjectSettings.set_setting(NFVariablesRes.SETTINGS_PATH, path)
+		ProjectSettings.save()
+		_variables_resource.save()
 	else: # We are in load mode
 		var resource = load(path)
 		if resource is NFVariablesRes:
 			_variables_resource = resource
+			ProjectSettings.set_setting(NFVariablesRes.SETTINGS_PATH, path)
+			ProjectSettings.save()
 			_load_variables(_variables_resource.variables)
 		else:
 			load_success = false
 	
 	if load_success:
-		ProjectSettings.set_setting(RES_PATH_SETTING, path)
-		ProjectSettings.save()
 		main_split.visible = true
 		no_db_container.visible = false
 
@@ -164,6 +203,7 @@ func on_folder_delete_request(folder: TreeItem) -> void:
 
 
 func _load_variables(folder_dict: Dictionary) -> void:
+	folders_tree.clear_folders()
 	_switching_tree = true
 	for folder in folder_dict:
 		folders_tree.load_folder_data(folder, folder_dict[folder])
@@ -230,6 +270,7 @@ func on_folder_clicked() -> void:
 		target.select(1)
 	
 	_current_folder = target
+	current_folder_label.text = folders_tree.get_path_to_folder(target)
 	
 	_switching_tree = false
 

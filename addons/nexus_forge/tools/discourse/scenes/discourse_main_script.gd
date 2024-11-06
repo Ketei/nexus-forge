@@ -1,3 +1,4 @@
+@tool
 extends Control
 
 
@@ -60,6 +61,27 @@ var _block_change_current: bool = false
 
 
 func _ready() -> void:
+	var popup := add_node_button.get_popup()
+	
+	popup.add_separator("Dialog", 101)
+	popup.add_item("Dialog", 1)
+	popup.add_item("Replies", 2)
+	popup.add_item("End", 3)
+	popup.add_separator("Elements", 102)
+	popup.add_item("Character", 4)
+	popup.add_item("Variables", 5)
+	popup.add_item("Call Method", 6)
+	popup.add_item("Call Return", 7)
+	popup.add_item("Variant", 8)
+	popup.add_item("Signal", 9)
+	popup.add_separator("Logic", 103)
+	popup.add_item("Comparation", 10) # a == b
+	popup.add_item("Conditional Path", 11) # conditional Split
+	popup.add_item("Random", 12) 
+	popup.add_separator("Utility", 104)
+	popup.add_item("Go to ID", 13)
+	popup.add_item("Comment", 14)
+	
 	dialog_graph_edit.add_valid_connection_type(8, 9)
 	dialog_graph_edit.connection_request.connect(on_connection_request)
 	dialog_graph_edit.disconnection_request.connect(on_disconnection_request)
@@ -156,7 +178,7 @@ func get_root_with_local_name(node_name: StringName) -> DiscourseGraphNode:
 
 
 func get_current_conversation_data() -> Dictionary:
-	var entry: String = ""
+	#var entry: String = ""
 	# Node references
 	var id_orphans: Array[DiscourseGraphNode] = []
 	var id_tree_nodes: Array[DiscourseGraphNode] = []
@@ -197,8 +219,8 @@ func get_current_conversation_data() -> Dictionary:
 			node._clear_on_load = false
 		node._debug_naming = false
 	
-	if entry_node.has_output_connection("next"):
-		entry = entry_node.get_output_port_connection_by_id("next").node_id
+	#if entry_node.has_output_connection("next"):
+		#entry = entry_node.get_output_port_connection_by_id("next").node_id
 	
 	for node in id_tree_nodes:
 		full_data_dict.append({"id": node.node_id, "data": node.generate_node_dictionary(), "clear_on_load": node._clear_on_load})
@@ -206,7 +228,7 @@ func get_current_conversation_data() -> Dictionary:
 	for node in id_orphans:
 		orphans.append(node.generate_node_dictionary())
 		
-	return {"tree": full_data_dict, "orphans": orphans, "entry": entry, "entry_offset": entry_node.position_offset}
+	return {"tree": full_data_dict, "orphans": orphans, "entry": entry_node.generate_node_dictionary(), "entry_offset": entry_node.position_offset}
 
 
 # TEST: This for some reason sometimes crashes. Find why. Maybe missing entries.
@@ -316,6 +338,8 @@ func clear_nodes() -> void:
 	shortcut_nodes.clear()
 	id_nodes.remove_all_nodes()
 	info_container.clear_logs()
+	if entry_node.has_output_connection("next"):
+		entry_node.disconnect_output_port("next")
 	
 	for child in dialog_graph_edit.get_children():
 		if child is not DiscourseGraphNode:
@@ -1023,6 +1047,9 @@ func on_close_requested(graph_node: DiscourseGraphNode) -> void:
 	if graph_node.node_type == DialogData.DialogType.DIALOG or graph_node.node_type == DialogData.DialogType.OPTIONS:
 		id_nodes.remove_node(graph_node)
 	
+	if graph_node.node_type == DialogData.DialogType.DIALOG or graph_node.node_type == DialogData.DialogType.OPTIONS:
+		root_nodes.erase(graph_node)
+	
 	graph_node.queue_free()
 	current_changed.emit()
 
@@ -1054,9 +1081,9 @@ func on_resource_selected(resource_path: String) -> void:
 			"original_data": {
 				"tree": tree_tree,
 				"orphans": orphans,
-				"entry": "",
+				"entry": dialog.dialog_entry,
 				"entry_offset": Vector2()},
-			"data": {"tree": [], "orphans": [], "entry": "", "entry_offset": dialog._entry_offset}, # Used when unsaved data exists.
+			"data": {"tree": [], "orphans": [], "entry": {}, "entry_offset": dialog._entry_offset}, # Used when unsaved data exists.
 			"unsaved": false,
 			"scroll_offset": null,
 			"zoom": 0.0})
@@ -1071,8 +1098,8 @@ func on_new_dialog_selected() -> void:
 			0,
 			{
 				"path": "",
-				"original_data": {"tree": [], "orphans": [], "entry": "", "entry_offset": Vector2.ZERO},
-				"data": {"tree": [], "orphans": [], "entry": "", "entry_offset": Vector2()},
+				"original_data": {"tree": [], "orphans": [], "entry": {}, "entry_offset": Vector2.ZERO},
+				"data": {"tree": [], "orphans": [], "entry": {}, "entry_offset": Vector2()},
 				"unsaved": true,
 				"scroll_offset": null,
 				"zoom": 0.0})
@@ -1100,19 +1127,53 @@ func on_dialog_selected(tree_item: TreeItem) -> void:
 	no_dialog_container.visible = false
 	var data_tree: Array = []
 	var orphan_nodes: Array = []
-	var entry_node_id: String = ""
+	var entry_target: DiscourseGraphNode = null
+	var entry_id: String = ""
+	var entry_data: Dictionary = {}
 	
 	if item_metadata["unsaved"]:
 		data_tree = item_metadata["data"]["tree"]
 		orphan_nodes = item_metadata["data"]["orphans"]
-		entry_node_id = item_metadata["data"]["entry"]
 		entry_node.position_offset = item_metadata["data"]["entry_offset"]
+		if not item_metadata["data"]["entry"].is_empty():
+			entry_data = item_metadata["data"]["entry"]
+			#match item_metadata["data"]["entry"]["type"]:
+				#DialogData.NextType.ID:
+					#if item_metadata["data"]["entry"]["data"]["use_shortcut"]:
+						#entry_target = spawn_id_shortcut(
+								#item_metadata["data"]["entry"]["data"]["offset"])
+						#entry_target.set_short_id(
+								#item_metadata["data"]["entry"]["data"]["next"])
+					#else:
+						#entry_id = item_metadata["data"]["entry"]["data"]["next"]
+				#DialogData.NextType.RANDOM:
+					#entry_target = spawn_random_select_node(item_metadata["data"]["entry"]["data"])
+				#DialogData.NextType.CONDITION:
+					#entry_target = spawn_conditional_split_node(item_metadata["data"]["entry"]["data"])
+				#DialogData.NextType.END:
+					#entry_target = spawn_end_node(item_metadata["data"]["entry"]["data"])
 	else:
 		data_tree = item_metadata["original_data"]["tree"]
 		orphan_nodes = item_metadata["original_data"]["orphans"]
-		entry_node_id = item_metadata["original_data"]["entry"]
 		entry_node.position_offset = item_metadata["original_data"]["entry_offset"]
-	
+		if not item_metadata["original_data"]["entry"].is_empty():
+			entry_data = item_metadata["original_data"]["entry"]
+			#match item_metadata["original_data"]["entry"]["type"]:
+				#DialogData.NextType.ID:
+					#if item_metadata["original_data"]["entry"]["data"]["use_shortcut"]:
+						#entry_target = spawn_id_shortcut(
+								#item_metadata["original_data"]["entry"]["data"]["offset"])
+						#entry_target.set_short_id(
+								#item_metadata["original_data"]["entry"]["data"]["next"])
+					#else:
+						#entry_id = item_metadata["original_data"]["entry"]["data"]["next"]
+				#DialogData.NextType.RANDOM:
+					#entry_target = spawn_random_select_node(item_metadata["original_data"]["entry"]["data"])
+				#DialogData.NextType.CONDITION:
+					#entry_target = spawn_conditional_split_node(item_metadata["original_data"]["entry"]["data"])
+				#DialogData.NextType.END:
+					#entry_target = spawn_end_node(item_metadata["original_data"]["entry"]["data"])
+	#
 	# Used to prevent data loss when IDs are repeated.
 	var clear_on_load: Array[DiscourseGraphNode] = []
 	
@@ -1140,6 +1201,24 @@ func on_dialog_selected(tree_item: TreeItem) -> void:
 				id_nodes.add_node(reply_selector)
 			_:
 				continue # We skip it because it's not typed
+	
+	# Instantiating and connecting entry
+	if not entry_data.is_empty():
+		match entry_data["type"]:
+			DialogData.NextType.ID:
+				if entry_data["data"]["use_shortcut"]:
+					entry_target = spawn_id_shortcut(
+							entry_data["data"]["offset"])
+					entry_target.set_short_id(
+							entry_data["data"]["next"])
+				else:
+					entry_id = entry_data["data"]["next"]
+			DialogData.NextType.RANDOM:
+				entry_target = spawn_random_select_node(entry_data["data"])
+			DialogData.NextType.CONDITION:
+				entry_target = spawn_conditional_split_node(entry_data["data"])
+			DialogData.NextType.END:
+				entry_target = spawn_end_node(entry_data["data"])
 	
 	# Second loop to connect all nodes.
 	for dialog_id:Dictionary in data_tree:
@@ -1184,8 +1263,10 @@ func on_dialog_selected(tree_item: TreeItem) -> void:
 			_:
 				continue
 	
-	if not entry_node_id.is_empty():
-		var target_entry := get_root_with_id(entry_node_id)
+	if entry_target != null:
+		connect_nodes(entry_node, entry_target, "next")
+	elif not entry_id.is_empty():
+		var target_entry := get_root_with_id(entry_id)
 		if target_entry != null:
 			connect_nodes(entry_node, target_entry, "next")
 	
@@ -1441,25 +1522,25 @@ func spawn_random_select_node(random_data: Dictionary, override_offset := false,
 	for opt_idx in range(opt_size):
 		new_rand.set_exit_weigth(opt_idx, random_data["options"][opt_idx]["weight"])
 		if random_data["options"][opt_idx]["next"]["type"] == DialogData.NextType.ID:
-			if not has_dialog_root(random_data["options"][opt_idx]["next"]["data"]):
+			if not has_dialog_root(random_data["options"][opt_idx]["next"]["data"]["next"]):
 				continue
 			
 			var target_node: DiscourseGraphNode
 			
-			if random_data["options"][opt_idx]["next"]["use_shortcut"]:
-				target_node = spawn_id_shortcut(random_data["options"][opt_idx]["next"]["offset"])
+			if random_data["options"][opt_idx]["next"]["data"]["use_shortcut"]:
+				target_node = spawn_id_shortcut(random_data["options"][opt_idx]["next"]["data"]["offset"])
 			else:
-				target_node = get_root_with_id(random_data["options"][opt_idx]["next"]["data"])
+				target_node = get_root_with_id(random_data["options"][opt_idx]["next"]["data"]["next"])
 			
 			if target_node != null:
 				connect_nodes_specific(new_rand, str(opt_idx), target_node, "next")
 			
 		elif random_data["options"][opt_idx]["next"]["type"] == DialogData.NextType.RANDOM:
-			var new_rand_reloaded := spawn_random_select_node(random_data["options"][opt_idx]["next"])
+			var new_rand_reloaded := spawn_random_select_node(random_data["options"][opt_idx]["next"]["data"])
 			connect_nodes_specific(new_rand, str(opt_idx), new_rand_reloaded, "next")
 			
 		elif random_data["options"][opt_idx]["next"]["type"] == DialogData.NextType.CONDITION:
-			var new_cond := spawn_conditional_split_node(random_data["options"][opt_idx]["next"])
+			var new_cond := spawn_conditional_split_node(random_data["options"][opt_idx]["next"]["data"])
 			connect_nodes_specific(new_rand, str(opt_idx), new_cond, "next")
 		
 		elif random_data["options"][opt_idx]["next"]["type"] == DialogData.NextType.END and not random_data["options"][opt_idx]["next"]["data"].is_empty():

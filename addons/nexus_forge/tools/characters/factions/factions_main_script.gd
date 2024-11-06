@@ -1,3 +1,4 @@
+@tool
 extends Control
 
 
@@ -6,12 +7,10 @@ const ERROR_ICON = preload("res://addons/nexus_forge/common_icons/error_icon.svg
 const RED_MODULATE = Color(0.882, 0.196, 0.235)
 const GREEN_MODULATE = Color(0.392, 0.843, 0.196)
 
-var _factions_resource: NFFactionRes = null:
-	set(new_res):
-		_factions_resource = new_res
-		main_container.visible = new_res != null
-		no_faction_panel.visible = new_res == null
+var current_faction: String = ""
+var _factions_resource: NFFactionRes = null
 var _create_faction_mode: bool = true
+var no_faction_panel: PanelContainer = null
 
 @onready var id_line: LineEdit = $SelectIDPanel/CenterContainer/ItemsContainer/DataPanel/ItemsContainer/IDContainer/IDLinePanel/IDLine
 @onready var id_status_texture: TextureRect = $SelectIDPanel/CenterContainer/ItemsContainer/DataPanel/ItemsContainer/IDContainer/IDStatusTexture
@@ -36,39 +35,81 @@ var _create_faction_mode: bool = true
 @onready var select_id_panel: PanelContainer = $SelectIDPanel
 
 @onready var factions_resource_dialog: FileDialog = $Elements/FactionsResourceDialog
-@onready var create_db_button: Button = $NoFactionPanel/CenterContainer/InfoContainer/ButtonContainer2/CreateDBButton
-@onready var load_db_button: Button = $NoFactionPanel/CenterContainer/InfoContainer/ButtonContainer2/LoadDBButton
+#@onready var create_db_button: Button = $NoFactionPanel/CenterContainer/InfoContainer/ButtonContainer2/CreateDBButton
+#@onready var load_db_button: Button = $NoFactionPanel/CenterContainer/InfoContainer/ButtonContainer2/LoadDBButton
 
-@onready var no_faction_panel: PanelContainer = $NoFactionPanel
 @onready var main_container: HBoxContainer = $MainContainer
+
+@onready var main_menu_btn: MenuButton = $MainContainer/FlagsContainer/MenuContainer/MainMenuMnBtn
 
 
 func _ready() -> void:
-	var resource_path: String = ProjectSettings.get_setting(NFFactionRes.FACTIONS_RESOURCE_PATH, "")
+	var resource_path: String = ProjectSettings.get_setting(NFFactionRes.SETTINGS_PATH, "")
+	var menu_popup: PopupMenu = main_menu_btn.get_popup()
 	
-	if resource_path.is_empty() or not ResourceLoader.exists(resource_path):
-		no_faction_panel.visible = true
-		main_container.visible = false
-	else:
+	if not resource_path.is_empty() and ResourceLoader.exists(resource_path):
 		var res_preload: Resource = load(resource_path)
 		if res_preload is NFFactionRes:
 			_factions_resource = res_preload
 		else:
 			printerr("[FACTIONS] Defined factions resource isn't NFFactionRes")
 	
+	main_container.visible = _factions_resource != null
+	
 	if _factions_resource != null:
 		_load_resource()
+	else:
+		no_faction_panel = preload("res://addons/nexus_forge/scenes/no_db_container.tscn").instantiate()
+		add_child(no_faction_panel)
+		no_faction_panel.set_resource_type("NFFactionRes", "Factions", "Factions")
+		no_faction_panel.create_resource_pressed.connect(on_create_fac_db_pressed)
+		no_faction_panel.load_resource_pressed.connect(on_load_fact_db_pressed)
+		no_faction_panel.visible = true
 	
+	menu_popup.id_pressed.connect(on_menu_id_selected)
 	id_line.text_changed.connect(on_id_line_changed)
 	accept_button.pressed.connect(on_faction_created)
 	add_fact_button.pressed.connect(on_create_faction_pressed)
 	add_rank_btn.pressed.connect(on_create_rank_pressed)
 	factions_resource_dialog.file_selected.connect(on_faction_path_selected)
-	create_db_button.pressed.connect(on_create_fac_db_pressed)
-	load_db_button.pressed.connect(on_load_fact_db_pressed)
+	cancel_button.pressed.connect(select_id_panel.hide)
+	faction_rank_tree.rank_renamed.connect(on_rank_renamed)
+	search_ally_ln_edt.text_changed.connect(on_search_faction.bind(ally_faction_tree))
+	search_enemy_ln_edt.text_changed.connect(on_search_faction.bind(enemy_faction_tree))
+	rank_search_ln_edt.text_changed.connect(on_search_rank)
+	flags_ln_edt.text_changed.connect(on_search_flag)
+	faction_opt_btn.item_selected.connect(on_faction_selected)
+	ally_faction_tree.faction_selected.connect(on_faction_checked.bind(enemy_faction_tree))
+	enemy_faction_tree.faction_selected.connect(on_faction_checked.bind(ally_faction_tree))
+
+
+func on_faction_checked(faction_id: String, opposite: Tree) -> void:
+	opposite.set_faction_checked(faction_id, false)
+
+
+func on_search_flag(flag_text: String) -> void:
+	flags_tree.search_flags(flag_text.strip_edges())
+
+
+func on_search_rank(rank: String) -> void:
+	faction_rank_tree.search_rank(rank.strip_edges())
+
+
+func on_search_faction(faction_search: String, faction_tree: Tree) -> void:
+	faction_tree.search_faction(faction_search.strip_edges())
+
+
+func on_menu_id_selected(id: int) -> void:
+	match id:
+		0:
+			if faction_opt_btn.selected != -1:
+				save_current()
+			save_resource()
 
 
 func _load_resource() -> void:
+	faction_opt_btn.clear()
+	
 	for faction in _factions_resource.get_factions():
 		faction_opt_btn.add_item(faction)
 		ally_faction_tree.add_faction(faction)
@@ -102,7 +143,7 @@ func on_faction_path_selected(file_path: String) -> void:
 			printerr("[FACTIONS] Defined factions resource isn't NFFactionRes")
 	
 	if _factions_resource != null:
-		ProjectSettings.set_setting(NFFactionRes.FACTIONS_RESOURCE_PATH, file_path)
+		ProjectSettings.set_setting(NFFactionRes.SETTINGS_PATH, file_path)
 		ProjectSettings.save()
 		_load_resource()
 
@@ -116,8 +157,8 @@ func on_faction_created() -> void:
 		faction_opt_btn.add_item(selected_id)
 		ally_faction_tree.add_faction(selected_id)
 		enemy_faction_tree.add_faction(selected_id)
-		faction_opt_btn.select(faction_opt_btn.item_count)
-		on_faction_selected(faction_opt_btn.item_count)
+		faction_opt_btn.select(faction_opt_btn.item_count - 1)
+		on_faction_selected(faction_opt_btn.item_count - 1)
 	else:
 		var faction_level: int = faction_rank_tree.get_rank_count()
 		_factions_resource.create_faction_rank(
@@ -141,11 +182,25 @@ func on_delete_faction_pressed() -> void:
 	on_faction_selected(faction_opt_btn.selected)
 
 
+func on_rank_renamed(from: String, to: String) -> void:
+	print(str(from, ",", to))
+	var rank_idx: int = _factions_resource.get_rank_level(current_faction, from)
+	if rank_idx == -1:
+		print("fail")
+		return
+	_factions_resource.factions[current_faction]["ranks"][rank_idx]["id"] = to
+
+
 func on_faction_selected(faction_idx: int) -> void:
+	if not current_faction.is_empty():
+		save_current()
+	
 	rank_search_ln_edt.clear()
 	search_ally_ln_edt.clear()
 	search_enemy_ln_edt.clear()
 	faction_rank_tree.clear_ranks()
+	ally_faction_tree.clear_checks()
+	enemy_faction_tree.clear_checks()
 	
 	faction_ln_edt.editable = faction_idx != -1
 	add_rank_btn.disabled = faction_idx == -1
@@ -156,27 +211,36 @@ func on_faction_selected(faction_idx: int) -> void:
 	search_enemy_ln_edt.editable = faction_idx != -1
 	flags_tree.set_editable(faction_idx != -1)
 	
-	if faction_idx != -1:
-		var faction_id: String = faction_opt_btn.get_item_text(faction_opt_btn.selected)
-		var faction_ranks: Dictionary = _factions_resource.get_faction_ranks(faction_id)
-		var factions_relations: Dictionary = _factions_resource.get_factions_relationships(faction_id)
-		faction_ln_edt.text = _factions_resource.get_faction_name(faction_id)
-		for rank_id in faction_ranks:
+	if 0 <= faction_idx:
+		current_faction = faction_opt_btn.get_item_text(faction_opt_btn.selected)
+		var faction_ranks: Array = _factions_resource.get_faction_ranks(current_faction)
+		ally_faction_tree.set_current_faction(current_faction)
+		enemy_faction_tree.set_current_faction(current_faction)
+		
+		faction_ln_edt.text = _factions_resource.get_faction_name(current_faction)
+		for rank_idx in range(faction_ranks.size()):
 			faction_rank_tree.add_rank(
-					faction_ranks[rank_id]["level"],
-					rank_id,
-					Strings.title_case(faction_ranks[rank_id]["name"]))
-		faction_desc_text_edt.text = _factions_resource.get_faction_description(faction_id)
-		flags_tree.set_flags(_factions_resource.get_faction_flags(faction_id))
-		for relation_id in factions_relations:
-			ally_faction_tree.set_faction_checked(relation_id, factions_relations[faction_id] == NFFactionRes.FactionRelation.ALLY)
-			enemy_faction_tree.set_faction_checked(relation_id, factions_relations[faction_id] == NFFactionRes.FactionRelation.ENEMY)
+					-1,
+					faction_ranks[rank_idx],
+					Strings.title_case(_factions_resource.get_rank_name(current_faction, rank_idx)))
+		
+		faction_desc_text_edt.text = _factions_resource.get_faction_description(current_faction)
+		flags_tree.set_flags(_factions_resource.get_faction_flags(current_faction))
+		
+		for faction_relation in _factions_resource.get_factions():
+			if faction_relation == current_faction:
+				continue
+			var relation: int = _factions_resource.get_faction_relationship(current_faction, faction_relation)
+			ally_faction_tree.set_faction_checked(faction_relation, relation == 1)
+			enemy_faction_tree.set_faction_checked(faction_relation, relation == -1)
 	else:
+		current_faction = ""
+		var valid_faction: bool = not current_faction.is_empty()
+		add_rank_btn.disabled = not valid_faction
+		faction_desc_text_edt.editable = valid_faction
 		flags_tree.clear_flags()
 		faction_desc_text_edt.clear()
 		faction_ln_edt.clear()
-		ally_faction_tree.clear_checks()
-		enemy_faction_tree.clear_checks()
 
 
 func on_create_faction_pressed() -> void:
@@ -187,10 +251,11 @@ func on_create_faction_pressed() -> void:
 
 
 func on_create_rank_pressed() -> void:
-	_create_faction_mode = false
-	id_line.clear()
+	_factions_resource.create_faction_rank(
+			current_faction,
+			faction_rank_tree.add_rank(-1, "new_rank", "New Rank"),
+			-1)
 	
-	select_id_panel.visible = true
 
 
 func on_id_line_changed(new_text: String) -> void:
@@ -216,3 +281,39 @@ func on_id_line_changed(new_text: String) -> void:
 func on_id_text_submitted(_text_submit: String) -> void:
 	if accept_button.disabled == false:
 		on_faction_created()
+
+
+func save_current() -> void:
+	#var faction_id: String = faction_opt_btn.get_item_text(faction_opt_btn.selected)
+	if not _factions_resource.has_faction(current_faction):
+		_factions_resource.create_faction(current_faction)
+	
+	_factions_resource.set_faction_name(current_faction, faction_ln_edt.text.strip_edges())
+	_factions_resource.set_faction_description(current_faction, faction_desc_text_edt.text.strip_edges())
+	_factions_resource.set_faction_flags(current_faction, flags_tree.get_flags())
+	_factions_resource.clear_faction_relationships(current_faction)
+	
+	for ally in ally_faction_tree.get_enabled_factions():
+		_factions_resource.set_faction_ally(current_faction, ally)
+	for enemy in enemy_faction_tree.get_enabled_factions():
+		_factions_resource.set_faction_enemy(current_faction, enemy)
+	
+	var ranks: Array = faction_rank_tree.get_ranks() 
+	for rank_idx in range(ranks.size()):
+		if not _factions_resource.is_rank(
+				current_faction,
+				ranks[rank_idx]["id"],
+				rank_idx):
+			_factions_resource.set_faction_rank_level(
+					current_faction,
+					ranks[rank_idx]["id"],
+					rank_idx)
+		
+		_factions_resource.set_faction_rank_name(
+				current_faction,
+				rank_idx,
+				ranks[rank_idx]["name"])
+
+
+func save_resource() -> void:
+	_factions_resource.save()

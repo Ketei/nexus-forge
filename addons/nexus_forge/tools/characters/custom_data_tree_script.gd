@@ -1,4 +1,6 @@
+@tool
 extends Tree
+
 
 const BOOL_ICON = preload("res://addons/nexus_forge/common_icons/variables/bool.svg")
 const FLOAT_ICON = preload("res://addons/nexus_forge/common_icons/variables/float.svg")
@@ -26,9 +28,11 @@ func _ready() -> void:
 	button_clicked.connect(on_item_button_pressed)
 
 
-func create_custom_value(value_type: int) -> TreeItem:
+func create_custom_value(value: Variant, id: String) -> TreeItem:
 	var new_type: TreeItem = create_item(root_tree)
-	new_type.set_text(0, validate_data_id(""))
+	var value_type: int = typeof(value)
+	
+	new_type.set_text(0, validate_data_id(id))
 	new_type.set_editable(0, true)
 	new_type.set_editable(2, true)
 	new_type.set_cell_mode(1, TreeItem.CELL_MODE_ICON)
@@ -42,19 +46,24 @@ func create_custom_value(value_type: int) -> TreeItem:
 			new_type.set_metadata(1, TYPE_INT)
 			new_type.set_cell_mode(2, TreeItem.CELL_MODE_RANGE)
 			new_type.set_range_config(2, -RANGE_LIMIT, RANGE_LIMIT, 1.0)
+			new_type.set_range(2, value)
 		TYPE_FLOAT:
 			new_type.set_icon(1, FLOAT_ICON)
 			new_type.set_metadata(1, TYPE_FLOAT)
 			new_type.set_cell_mode(2, TreeItem.CELL_MODE_RANGE)
 			new_type.set_range_config(2, -RANGE_LIMIT, RANGE_LIMIT, FLOAT_STEP)
+			new_type.set_range(2, value)
 		TYPE_BOOL:
 			new_type.set_icon(1, BOOL_ICON)
 			new_type.set_metadata(1, TYPE_BOOL)
 			new_type.set_cell_mode(2, TreeItem.CELL_MODE_CHECK)
+			new_type.set_checked(2, value)
 		_:
 			new_type.set_icon(1, STRING_ICON)
 			new_type.set_metadata(1, TYPE_STRING)
 			new_type.set_cell_mode(2, TreeItem.CELL_MODE_STRING)
+			if value_type == TYPE_STRING:
+				new_type.set_text(2, value)
 	
 	return new_type
 
@@ -80,22 +89,22 @@ func get_custom_data() -> Dictionary:
 	return custom_data
 
 
-func set_custom_data(custom_data: Dictionary) -> void:
-	clear_custom_data()
-	
-	for data_id in custom_data:
-		var data_type: int = typeof(custom_data[data_id])
-		var custom_val: TreeItem = create_custom_value(data_type)
-		
-		match data_type:
-			TYPE_FLOAT:
-				custom_val.set_range(2, custom_data[data_id])
-			TYPE_INT:
-				custom_val.set_range(2, custom_data[data_id])
-			TYPE_BOOL:
-				custom_val.set_checked(2, custom_data[data_id])
-			TYPE_STRING:
-				custom_val.set_text(2, custom_data[data_id])
+#func set_custom_data(custom_data: Dictionary) -> void:
+	#clear_custom_data()
+	#
+	#for data_id in custom_data:
+		#var data_type: int = typeof(custom_data[data_id])
+		#var custom_val: TreeItem = create_custom_value(data_type)
+		#
+		#match data_type:
+			#TYPE_FLOAT:
+				#custom_val.set_range(2, custom_data[data_id])
+			#TYPE_INT:
+				#custom_val.set_range(2, custom_data[data_id])
+			#TYPE_BOOL:
+				#custom_val.set_checked(2, custom_data[data_id])
+			#TYPE_STRING:
+				#custom_val.set_text(2, custom_data[data_id])
 
 
 func clear_custom_data() -> void:

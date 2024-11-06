@@ -1,0 +1,546 @@
+[gd_scene load_steps=18 format=3 uid="uid://fss7aqmbgj6s"]
+
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/depot/items_main_script.gd" id="1_82bi8"]
+[ext_resource type="Texture2D" uid="uid://12lyg7db58dg" path="res://addons/nexus_forge/tools/variables/icons/add_int.svg" id="1_tsjpe"]
+[ext_resource type="Texture2D" uid="uid://xkqkxosnppid" path="res://addons/nexus_forge/common_icons/open_file.svg" id="2_djc7d"]
+[ext_resource type="Texture2D" uid="uid://dcgniolhiay6u" path="res://addons/nexus_forge/tools/variables/icons/add_float.svg" id="2_ib6x0"]
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/depot/item_tree_script.gd" id="2_un8xd"]
+[ext_resource type="Texture2D" uid="uid://mve5bcrecv8v" path="res://addons/nexus_forge/common_icons/import_icon.svg" id="3_pqhat"]
+[ext_resource type="Texture2D" uid="uid://c472l5bho4jpi" path="res://addons/nexus_forge/tools/variables/icons/add_bool.svg" id="3_ujuwe"]
+[ext_resource type="Texture2D" uid="uid://cxv7veghytl4m" path="res://addons/nexus_forge/tools/variables/icons/add_string.svg" id="4_8td5l"]
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/depot/currencies_tree_script.gd" id="4_m5bf7"]
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/depot/materials_tree_script.gd" id="4_moi3l"]
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/depot/item_flag_tree_script.gd" id="5_0ah1r"]
+[ext_resource type="Texture2D" uid="uid://b8q6di4imiriq" path="res://addons/nexus_forge/common_icons/search_icon.svg" id="5_xbb04"]
+[ext_resource type="Texture2D" uid="uid://c1aelqf557khb" path="res://addons/nexus_forge/common_icons/plus_icon.svg" id="6_eml1p"]
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/depot/stations_tree_script.gd" id="9_ox1mw"]
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/depot/recipe_tree_script.gd" id="11_2psm1"]
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/depot/custom_data_tree_script.gd" id="11_ri7fi"]
+
+[sub_resource type="GDScript" id="GDScript_urlnk"]
+script/source = "@tool
+extends FileDialog
+
+
+var item_id: String = \"\"
+var db_mode: bool = false
+"
+
+[node name="Items" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_82bi8")
+
+[node name="MainContainer" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ItemsContainer" type="VBoxContainer" parent="MainContainer"]
+custom_minimum_size = Vector2(650, 0)
+layout_mode = 2
+size_flags_stretch_ratio = 4.0
+
+[node name="HeaderContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer"]
+layout_mode = 2
+
+[node name="HSeparator" type="HSeparator" parent="MainContainer/ItemsContainer/HeaderContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Label" type="Label" parent="MainContainer/ItemsContainer/HeaderContainer"]
+layout_mode = 2
+text = "Items"
+
+[node name="HSeparator2" type="HSeparator" parent="MainContainer/ItemsContainer/HeaderContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="DataContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="ItemSelectContainer" type="VBoxContainer" parent="MainContainer/ItemsContainer/DataContainer"]
+custom_minimum_size = Vector2(250, 0)
+layout_mode = 2
+
+[node name="BarPanelContainer" type="PanelContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemSelectContainer"]
+layout_mode = 2
+
+[node name="ItemContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemSelectContainer/BarPanelContainer"]
+layout_mode = 2
+
+[node name="SearchItemLnEdt" type="LineEdit" parent="MainContainer/ItemsContainer/DataContainer/ItemSelectContainer/BarPanelContainer/ItemContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Search Item"
+flat = true
+
+[node name="CreateItemBtn" type="Button" parent="MainContainer/ItemsContainer/DataContainer/ItemSelectContainer/BarPanelContainer/ItemContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+icon = ExtResource("6_eml1p")
+flat = true
+icon_alignment = 1
+
+[node name="ImportItemBtn" type="Button" parent="MainContainer/ItemsContainer/DataContainer/ItemSelectContainer/BarPanelContainer/ItemContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+icon = ExtResource("3_pqhat")
+flat = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="ItemTree" type="Tree" parent="MainContainer/ItemsContainer/DataContainer/ItemSelectContainer"]
+custom_minimum_size = Vector2(250, 0)
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 3.0
+allow_reselect = true
+hide_folding = true
+hide_root = true
+script = ExtResource("2_un8xd")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemSelectContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 2.0
+
+[node name="PanelContainer" type="PanelContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemSelectContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemSelectContainer/VBoxContainer/PanelContainer"]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="CurrencySearchLnEdit" type="LineEdit" parent="MainContainer/ItemsContainer/DataContainer/ItemSelectContainer/VBoxContainer/PanelContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Search Currency"
+flat = true
+
+[node name="CreateCurrencyBtn" type="Button" parent="MainContainer/ItemsContainer/DataContainer/ItemSelectContainer/VBoxContainer/PanelContainer/HBoxContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Create Currency"
+icon = ExtResource("6_eml1p")
+flat = true
+icon_alignment = 1
+
+[node name="CurrenciesTree" type="Tree" parent="MainContainer/ItemsContainer/DataContainer/ItemSelectContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/draw_guides = 0
+theme_override_constants/draw_relationship_lines = 1
+columns = 2
+allow_reselect = true
+hide_root = true
+scroll_horizontal_enabled = false
+script = ExtResource("4_m5bf7")
+
+[node name="VSeparator" type="VSeparator" parent="MainContainer/ItemsContainer/DataContainer"]
+layout_mode = 2
+
+[node name="ItemDataContainer" type="VBoxContainer" parent="MainContainer/ItemsContainer/DataContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="NameContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/NameContainer"]
+custom_minimum_size = Vector2(105, 0)
+layout_mode = 2
+text = "Item Name"
+
+[node name="ItemNameLnEdt" type="LineEdit" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/NameContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SpriteContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/SpriteContainer"]
+custom_minimum_size = Vector2(105, 0)
+layout_mode = 2
+text = "Item Sprite"
+
+[node name="PanelContainer" type="PanelContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/SpriteContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/SpriteContainer/PanelContainer"]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="SpritePathLnEdt" type="LineEdit" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/SpriteContainer/PanelContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+editable = false
+flat = true
+
+[node name="BrowseSpriteBtn" type="Button" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/SpriteContainer/PanelContainer/HBoxContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+icon = ExtResource("2_djc7d")
+flat = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="TypeContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Label" type="Label" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/TypeContainer"]
+custom_minimum_size = Vector2(105, 0)
+layout_mode = 2
+text = "Item Type"
+
+[node name="ItemTypeOptBtn" type="OptionButton" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/TypeContainer"]
+custom_minimum_size = Vector2(0, 31)
+layout_mode = 2
+size_flags_horizontal = 3
+text_overrun_behavior = 3
+clip_text = true
+
+[node name="SubtypeContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Label" type="Label" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/SubtypeContainer"]
+custom_minimum_size = Vector2(105, 0)
+layout_mode = 2
+text = "Item Subtype"
+
+[node name="ItemSubtypeOptBtn" type="OptionButton" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/SubtypeContainer"]
+custom_minimum_size = Vector2(0, 31)
+layout_mode = 2
+size_flags_horizontal = 3
+text_overrun_behavior = 3
+clip_text = true
+
+[node name="ValuesContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/ValuesContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Label" type="Label" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/ValuesContainer/HBoxContainer"]
+custom_minimum_size = Vector2(105, 0)
+layout_mode = 2
+text = "Item Level"
+
+[node name="ItemLvlSpnBtn" type="SpinBox" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/ValuesContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+allow_greater = true
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/ValuesContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Label" type="Label" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/ValuesContainer/HBoxContainer2"]
+custom_minimum_size = Vector2(90, 0)
+layout_mode = 2
+text = "Item Value"
+
+[node name="ItemValueSpnBx" type="SpinBox" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/ValuesContainer/HBoxContainer2"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="TreesContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 2.0
+
+[node name="MaterialsContainer" type="VBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/TreesContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 2.0
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/TreesContainer/MaterialsContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/TreesContainer/MaterialsContainer/HBoxContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Item Materials"
+vertical_alignment = 2
+
+[node name="MaterialsTree" type="Tree" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/TreesContainer/MaterialsContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+allow_reselect = true
+hide_folding = true
+hide_root = true
+scroll_horizontal_enabled = false
+script = ExtResource("4_moi3l")
+
+[node name="FlagsCotnainer" type="VBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/TreesContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 2.0
+
+[node name="Label" type="Label" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/TreesContainer/FlagsCotnainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+text = "Item Flags"
+vertical_alignment = 2
+
+[node name="ItemFlagTree" type="Tree" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/TreesContainer/FlagsCotnainer"]
+layout_mode = 2
+size_flags_vertical = 3
+hide_folding = true
+hide_root = true
+scroll_horizontal_enabled = false
+script = ExtResource("5_0ah1r")
+
+[node name="CustomDataContainer" type="VBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 3.0
+
+[node name="CDHeaderContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/CustomDataContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/CustomDataContainer/CDHeaderContainer"]
+layout_mode = 2
+text = "Custom Data"
+
+[node name="AddButtonsContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/CustomDataContainer/CDHeaderContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 2
+
+[node name="AddIntButton" type="Button" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Create integer variable."
+icon = ExtResource("1_tsjpe")
+icon_alignment = 1
+
+[node name="AddFloatButton" type="Button" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Create float variable."
+icon = ExtResource("2_ib6x0")
+icon_alignment = 1
+
+[node name="AddBoolButton" type="Button" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Create bool variable."
+icon = ExtResource("3_ujuwe")
+icon_alignment = 1
+
+[node name="AddStringButton" type="Button" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Create string  variable."
+icon = ExtResource("4_8td5l")
+icon_alignment = 1
+
+[node name="CustomDataSearchLine" type="LineEdit" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/CustomDataContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 3.0
+placeholder_text = "Search Custom Data"
+clear_button_enabled = true
+right_icon = ExtResource("5_xbb04")
+
+[node name="CustomDataTree" type="Tree" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/CustomDataContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+columns = 3
+allow_reselect = true
+hide_folding = true
+hide_root = true
+scroll_horizontal_enabled = false
+script = ExtResource("11_ri7fi")
+
+[node name="VSeparator2" type="VSeparator" parent="MainContainer"]
+layout_mode = 2
+
+[node name="RecipesContainer" type="VBoxContainer" parent="MainContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 5.0
+
+[node name="UpperTreeContainer" type="HBoxContainer" parent="MainContainer/RecipesContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="StationsTreeCont" type="VBoxContainer" parent="MainContainer/RecipesContainer/UpperTreeContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HBoxContainer7" type="HBoxContainer" parent="MainContainer/RecipesContainer/UpperTreeContainer/StationsTreeCont"]
+layout_mode = 2
+
+[node name="HSeparator" type="HSeparator" parent="MainContainer/RecipesContainer/UpperTreeContainer/StationsTreeCont/HBoxContainer7"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Label" type="Label" parent="MainContainer/RecipesContainer/UpperTreeContainer/StationsTreeCont/HBoxContainer7"]
+layout_mode = 2
+text = "Stations"
+
+[node name="HSeparator2" type="HSeparator" parent="MainContainer/RecipesContainer/UpperTreeContainer/StationsTreeCont/HBoxContainer7"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="MainContainer/RecipesContainer/UpperTreeContainer/StationsTreeCont"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MainContainer/RecipesContainer/UpperTreeContainer/StationsTreeCont/HBoxContainer2"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="PanelContainer" type="PanelContainer" parent="MainContainer/RecipesContainer/UpperTreeContainer/StationsTreeCont/HBoxContainer2/VBoxContainer"]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MainContainer/RecipesContainer/UpperTreeContainer/StationsTreeCont/HBoxContainer2/VBoxContainer/PanelContainer"]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="SearchStationLnEdt" type="LineEdit" parent="MainContainer/RecipesContainer/UpperTreeContainer/StationsTreeCont/HBoxContainer2/VBoxContainer/PanelContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Search Station"
+clear_button_enabled = true
+right_icon = ExtResource("5_xbb04")
+flat = true
+
+[node name="AddStationBtn" type="Button" parent="MainContainer/RecipesContainer/UpperTreeContainer/StationsTreeCont/HBoxContainer2/VBoxContainer/PanelContainer/HBoxContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+icon = ExtResource("6_eml1p")
+flat = true
+icon_alignment = 1
+
+[node name="StationsTree" type="Tree" parent="MainContainer/RecipesContainer/UpperTreeContainer/StationsTreeCont/HBoxContainer2/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/draw_guides = 0
+theme_override_constants/draw_relationship_lines = 1
+columns = 2
+allow_reselect = true
+hide_root = true
+scroll_horizontal_enabled = false
+script = ExtResource("9_ox1mw")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MainContainer/RecipesContainer"]
+layout_mode = 2
+
+[node name="HSeparator" type="HSeparator" parent="MainContainer/RecipesContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="RecipeLabel" type="Label" parent="MainContainer/RecipesContainer/HBoxContainer"]
+custom_minimum_size = Vector2(250, 0)
+layout_mode = 2
+text = "No recipe selected"
+horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 3
+
+[node name="HSeparator2" type="HSeparator" parent="MainContainer/RecipesContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="LowerTreeContainer" type="HBoxContainer" parent="MainContainer/RecipesContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="InputTreeContainer" type="VBoxContainer" parent="MainContainer/RecipesContainer/LowerTreeContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HBoxContainer7" type="HBoxContainer" parent="MainContainer/RecipesContainer/LowerTreeContainer/InputTreeContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/RecipesContainer/LowerTreeContainer/InputTreeContainer/HBoxContainer7"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Input"
+
+[node name="InputRecipeSpinBox" type="SpinBox" parent="MainContainer/RecipesContainer/LowerTreeContainer/InputTreeContainer/HBoxContainer7"]
+layout_mode = 2
+tooltip_text = "Slot Count"
+alignment = 1
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MainContainer/RecipesContainer/LowerTreeContainer/InputTreeContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="PanelContainer" type="PanelContainer" parent="MainContainer/RecipesContainer/LowerTreeContainer/InputTreeContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="InputRecipeTree" type="Tree" parent="MainContainer/RecipesContainer/LowerTreeContainer/InputTreeContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+columns = 3
+column_titles_visible = true
+allow_reselect = true
+hide_folding = true
+hide_root = true
+scroll_horizontal_enabled = false
+script = ExtResource("11_2psm1")
+
+[node name="OutputTreeContainer" type="VBoxContainer" parent="MainContainer/RecipesContainer/LowerTreeContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HBoxContainer7" type="HBoxContainer" parent="MainContainer/RecipesContainer/LowerTreeContainer/OutputTreeContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/RecipesContainer/LowerTreeContainer/OutputTreeContainer/HBoxContainer7"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Output"
+
+[node name="OutputRecipeSpinBox" type="SpinBox" parent="MainContainer/RecipesContainer/LowerTreeContainer/OutputTreeContainer/HBoxContainer7"]
+layout_mode = 2
+tooltip_text = "Slot Count"
+alignment = 1
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MainContainer/RecipesContainer/LowerTreeContainer/OutputTreeContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="PanelContainer" type="PanelContainer" parent="MainContainer/RecipesContainer/LowerTreeContainer/OutputTreeContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="OutputRecipeTree" type="Tree" parent="MainContainer/RecipesContainer/LowerTreeContainer/OutputTreeContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+columns = 3
+column_titles_visible = true
+allow_reselect = true
+hide_folding = true
+hide_root = true
+scroll_horizontal_enabled = false
+script = ExtResource("11_2psm1")
+
+[node name="Components" type="Node" parent="."]
+
+[node name="ItemFileDialog" type="FileDialog" parent="Components"]
+auto_translate_mode = 1
+initial_position = 1
+size = Vector2i(500, 350)
+ok_button_text = "Save"
+filters = PackedStringArray("*.tres;Resources")
+script = SubResource("GDScript_urlnk")

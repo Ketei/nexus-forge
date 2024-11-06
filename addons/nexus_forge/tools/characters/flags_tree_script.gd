@@ -1,3 +1,4 @@
+@tool
 extends Tree
 
 
@@ -13,10 +14,10 @@ func _ready() -> void:
 
 func load_flags() -> void:
 	var flag_strings = NFRacesRes.Flags.keys()
-	for flag in NFRacesRes.Flags:
+	for flag in NFRacesRes.Flags.values():
 		var new_flag: TreeItem = create_item(root_tree)
 		new_flag.set_cell_mode(0, TreeItem.CELL_MODE_CHECK)
-		new_flag.set_text(0, Strings.capitalize(flag_strings[NFRacesRes.Flags.get(flag)]))
+		new_flag.set_text(0, Strings.title_case(flag_strings[flag].replace("_", " ")))
 		new_flag.set_metadata(0, flag)
 		
 		new_flag.set_selectable(0, false)
@@ -35,6 +36,13 @@ func set_flag(flag_index: NFRacesRes.Flags, set_checked: bool) -> void:
 		return
 	
 	target_flag.set_checked(0, set_checked)
+
+
+func set_flags(flags: int) -> void:
+	for flag in root_tree.get_children():
+		flag.set_checked(
+				0,
+				(flags & (1 << flag.get_metadata(0))) != 0)
 
 
 func clear_flags() -> void:

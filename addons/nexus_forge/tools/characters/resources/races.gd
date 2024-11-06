@@ -1,6 +1,6 @@
+@tool
 class_name NFRacesRes
 extends Resource
-
 
 ## A list of the different valid genders among species
 enum Genders {
@@ -34,7 +34,7 @@ const STATS: Dictionary = {
 }
 
 
-const RACE_RES_PATH: String = "nexus_forge/races_resource_path"
+const SETTINGS_PATH: String = "nexus_forge/races_resource"
 
 ## A dictionary of species. Right now it only holds names but it can hold traits
 ## and other information.
@@ -188,7 +188,8 @@ func remove_species(species_id: String) -> void:
 
 
 func save() -> void:
-	ResourceSaver.save(self, ProjectSettings.get_setting(RACE_RES_PATH, "res://races_resource.tres"))
+	ResourceSaver.save(self, ProjectSettings.get_setting(SETTINGS_PATH, "res://races_resource.tres"))
+	emit_changed()
 
 
 static func get_stat_name(stat_id: String) -> String:

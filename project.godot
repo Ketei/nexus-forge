@@ -33,6 +33,16 @@ control_key={
 ]
 }
 
+[nexus_forge]
+
+variables_resource="res://variables.tres"
+factions_resource="res://factions.tres"
+races_resource="res://races.tres"
+talents_resource="res://talents_resource.tres"
+items_resource="res://items.tres"
+quests_resource="res://quests.tres"
+characters_resource="res://characters.tres"
+
 [rendering]
 
 renderer/rendering_method="gl_compatibility"

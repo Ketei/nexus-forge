@@ -10,6 +10,7 @@ static var SETTINGS_PATHS: Dictionary = {
 	"races_resource": "",
 	"characters_resource": "",
 	"factions_resource": "",
+	"talents_resource": ""
 }
 
 

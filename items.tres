@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="NFItemsRes" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/depot/resoruces/item_manager.gd" id="1_v3i6c"]
+
+[resource]
+script = ExtResource("1_v3i6c")
+item_types = {
+"weapon": {
+"name": "armament",
+"subtypes": {
+"mace": {
+"name": "mace"
+}
+}
+}
+}
+item_materials = {
+"diamond": {
+"name": "Diamond"
+},
+"iron": {
+"name": "Iron"
+},
+"stone": {
+"name": "Stone"
+},
+"wood": {
+"name": "Wood"
+}
+}
+_currencies = {}
+_items = {}
+_recipes = {}

@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="NFVariablesRes" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/variables/db/var_db_script.gd" id="1_pb4pe"]
+
+[resource]
+script = ExtResource("1_pb4pe")
+variables = {}

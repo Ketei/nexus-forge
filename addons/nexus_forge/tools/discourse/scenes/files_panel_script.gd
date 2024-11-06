@@ -1,3 +1,4 @@
+@tool
 extends PanelContainer
 
 @onready var search_line_edit: LineEdit = %SearchLineEdit

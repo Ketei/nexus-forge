@@ -1,3 +1,4 @@
+@tool
 extends DiscourseGraphNode
 
 
@@ -93,10 +94,10 @@ func get_node_index_by_opt(option_idx: int) -> int:
 
 
 func set_exit_weigth(option_idx: int, weight: float) -> void:
-	var target: int = get_node_index_by_opt(option_idx)
-	if target == -1:
-		return
-	exits[target].option_weight.value = weight
+	#var target: int = get_node_index_by_opt(option_idx)
+	#if target == -1:
+		#return
+	exits[option_idx].option_weight.value = weight
 
 
 func get_input_port_by_type(input_type: int) -> int:

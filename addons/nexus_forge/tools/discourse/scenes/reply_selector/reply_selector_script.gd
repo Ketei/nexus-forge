@@ -1,3 +1,4 @@
+@tool
 extends DiscourseGraphNode
 
 signal output_port_disconnected(from_node: DiscourseGraphNode, from_port: int, to_node: DiscourseGraphNode, to_port: int)

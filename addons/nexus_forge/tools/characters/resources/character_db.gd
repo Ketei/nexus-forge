@@ -1,8 +1,9 @@
+@tool
 class_name NFCharacterDBRes
 extends Resource
 
 
-const RES_PATH_SETTING: String = "nexus_forge/characters/resource_path"
+const SETTINGS_PATH: String = "nexus_forge/characters_resource"
 
 @export var _characters: Dictionary = {}
 
@@ -42,7 +43,5 @@ func set_character(character_id: StringName, res_path: String) -> void:
 
 
 func save() -> void:
-	var save_path: String = ProjectSettings.get_setting(RES_PATH_SETTING, "")
-	if save_path.is_empty():
-		save_path = "res://character_database.tres"
+	var save_path: String = ProjectSettings.get_setting(SETTINGS_PATH, "res://character_database.tres")
 	ResourceSaver.save(self, save_path)

@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3 uid="uid://dykskyw7tvdof"]
+[gd_scene load_steps=13 format=3 uid="uid://dykskyw7tvdof"]
 
 [ext_resource type="PackedScene" uid="uid://cx4h4u45kp8vt" path="res://addons/nexus_forge/tools/discourse/scenes/discourse_main.tscn" id="1_4y35a"]
 [ext_resource type="Texture2D" uid="uid://bixkesgcxvbpk" path="res://icon.svg" id="1_j02mv"]
@@ -6,6 +6,9 @@
 [ext_resource type="PackedScene" uid="uid://cvuo0on5wm8qb" path="res://addons/nexus_forge/tools/characters/characters_main.tscn" id="4_xgwoe"]
 [ext_resource type="PackedScene" uid="uid://bn2hjhl25ja30" path="res://addons/nexus_forge/tools/characters/races/races_main.tscn" id="5_dh8bc"]
 [ext_resource type="PackedScene" uid="uid://cu1j8e1hrvu18" path="res://addons/nexus_forge/tools/characters/factions/factions_main.tscn" id="6_kwcc3"]
+[ext_resource type="PackedScene" uid="uid://dt7vndut1j8qv" path="res://addons/nexus_forge/tools/talents/talents_main.tscn" id="7_ot0lo"]
+[ext_resource type="PackedScene" uid="uid://fss7aqmbgj6s" path="res://addons/nexus_forge/tools/depot/items_main.tscn" id="8_y8g87"]
+[ext_resource type="PackedScene" uid="uid://bjjffy4fyjmgn" path="res://addons/nexus_forge/tools/odyssey/quests_main.tscn" id="9_rx28i"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_7uir0"]
 bg_color = Color(0.145098, 0.168627, 0.203922, 1)
@@ -38,11 +41,10 @@ theme_override_constants/side_margin = 0
 theme_override_styles/tabbar_background = SubResource("StyleBoxFlat_7uir0")
 theme_override_styles/panel = SubResource("StyleBoxFlat_i88kw")
 theme_override_styles/tab_selected = SubResource("StyleBoxFlat_jtiy1")
-current_tab = 3
+current_tab = 0
 metadata/_edit_use_anchors_ = true
 
 [node name="NexusForge" type="Control" parent="TabContainer"]
-visible = false
 layout_mode = 2
 metadata/_tab_index = 0
 
@@ -78,6 +80,7 @@ visible = false
 layout_mode = 2
 
 [node name="Kinds" type="Control" parent="TabContainer"]
+visible = false
 layout_mode = 2
 metadata/_tab_index = 3
 
@@ -105,60 +108,17 @@ visible = false
 layout_mode = 2
 metadata/_tab_index = 2
 
-[node name="Talents" type="Control" parent="TabContainer"]
+[node name="Talents" parent="TabContainer" instance=ExtResource("7_ot0lo")]
 visible = false
 layout_mode = 2
 metadata/_tab_index = 4
 
-[node name="TabContainer" type="TabContainer" parent="TabContainer/Talents"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-tab_alignment = 2
-current_tab = 0
-
-[node name="Skills" type="Control" parent="TabContainer/Talents/TabContainer"]
-layout_mode = 2
-metadata/_tab_index = 0
-
-[node name="Perks" type="Control" parent="TabContainer/Talents/TabContainer"]
-visible = false
-layout_mode = 2
-metadata/_tab_index = 1
-
-[node name="Depot" type="Control" parent="TabContainer"]
+[node name="Depot" parent="TabContainer" instance=ExtResource("8_y8g87")]
 visible = false
 layout_mode = 2
 metadata/_tab_index = 5
 
-[node name="TabContainer" type="TabContainer" parent="TabContainer/Depot"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-tab_alignment = 2
-current_tab = 0
-
-[node name="Items" type="Control" parent="TabContainer/Depot/TabContainer"]
-layout_mode = 2
-metadata/_tab_index = 0
-
-[node name="Spells" type="Control" parent="TabContainer/Depot/TabContainer"]
-visible = false
-layout_mode = 2
-metadata/_tab_index = 1
-
-[node name="Attributes" type="Control" parent="TabContainer/Depot/TabContainer"]
-visible = false
-layout_mode = 2
-metadata/_tab_index = 2
-
-[node name="Odyssey (Quests)" type="Control" parent="TabContainer"]
+[node name="Odyssey" parent="TabContainer" instance=ExtResource("9_rx28i")]
 visible = false
 layout_mode = 2
 metadata/_tab_index = 6

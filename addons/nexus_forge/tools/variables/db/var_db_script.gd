@@ -1,11 +1,14 @@
+@tool
 class_name NFVariablesRes
 extends Resource
 
 
+const SETTINGS_PATH = "nexus_forge/variables_resource"
+
 ## A dictionary containing all variables and folders. The first level is always
 ## folders.
 @export var variables: Dictionary = {}
-@export_flags("fire", "watur") var flags
+
 
 ## Returns true if a variable exist with the path [param var_path]
 func has_variable(var_path: String) -> bool:
@@ -114,3 +117,10 @@ func is_folder_empty(folder_path: String) -> bool:
 		_level_mem = _level_mem[level]["subfolders"]
 	
 	return _level_mem[folder_name]["subfolders"].is_empty() and _level_mem[folder_name]["variables"].is_empty()
+
+
+func save() -> void:
+	ResourceSaver.save(
+		self,
+		ProjectSettings.get_setting(SETTINGS_PATH, "res://variables_resource.tres")
+	)
