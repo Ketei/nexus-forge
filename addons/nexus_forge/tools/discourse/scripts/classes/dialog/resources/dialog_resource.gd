@@ -56,11 +56,6 @@ enum ElementType {
 ## Nodes that don't connect to anything and/or are just for informative purposes.
 @export var orphans: Array = []
 
-# Contains the full structure of the conversation.
-var _full_conv: Dictionary = {}
-# Contains the characters to load.
-var _characters: Array[StringName] = []
-
 # Order of events -> 
 # Set characer & portrait -> set dialog & time -> set options -> set variables
 # call methods -> signal start -> display text -> |if options exist| display options
@@ -68,161 +63,203 @@ var _characters: Array[StringName] = []
 # hide options -> || if unpaused, move to next.
 
 
-## Returns the internal conversation dictionary with each dialogue key having
-## the complete structure required for a conversation with the conversation
-## data of each dialogue included.[br]
-## It'll also build the dialog map if it hand't been before.
-## Check [method get_dialog_structure] for the conversation structure and
-## [method get_option_structure] for the reply option structure.[br]
-## DON'T change the dictionary from the resource.
-func get_dialog_map() -> Dictionary:
-	if _full_conv.is_empty():
-		_build_full_conv()
-	return _full_conv
-
-
-## Will build the conversation map if empty, if it isn't empty it'll do nothing.
-## It is reccomended to call this during a loading screen to prevent any lag
-## spike the building might cause.
-func build_dialog_map() -> void:
-	if _full_conv.is_empty():
-		_build_full_conv()
-
-
-## Fully rebuilds the interanl conversation map if you changed it.
-func rebuild_dialog_map() -> void:
-	_build_full_conv()
-
-
+### Returns the internal conversation dictionary with each dialogue key having
+### the complete structure required for a conversation with the conversation
+### data of each dialogue included.[br]
+### It'll also build the dialog map if it hand't been before.
+### Check [method get_dialog_structure] for the conversation structure and
+### [method get_option_structure] for the reply option structure.[br]
+### DON'T change the dictionary from the resource.
+#func get_dialog_map() -> Dictionary:
+	#if _full_conv.is_empty():
+		#_build_full_conv()
+	#return _full_conv
+#
+#
+### Will build the conversation map if empty, if it isn't empty it'll do nothing.
+### It is reccomended to call this during a loading screen to prevent any lag
+### spike the building might cause.
+#func build_dialog_map() -> void:
+	#if _full_conv.is_empty():
+		#_build_full_conv()
+#
+#
+### Fully rebuilds the interanl conversation map if you changed it.
+#func rebuild_dialog_map() -> void:
+	#_build_full_conv()
+#
+#
 ## Returns an array with all the character IDs that participate in this
-## conversation. Be sure to call [method build_dialog_map] first or the array will
-## be empty.
+## conversation.
 func get_conversation_characters() -> Array[StringName]:
-	return _characters
+	var characters: Array[StringName] = []
+	for conv in conversation:
+		if conversation[conv]["type"] != DialogType.DIALOG:
+			continue
+		characters.append(conversation[conv]["character"]["id"])
+	return characters
 
 
-## Gets a dictionary with keys [code]id[/code], [code]idle[/code] and [br]
-## [code]talking[/code].
-func get_character(conversation_id: String) -> Dictionary:
-	return _full_conv[conversation_id]["character"]
+### Gets a dictionary with keys [code]id[/code], [code]idle[/code] and [br]
+### [code]talking[/code].
+#func get_character(conversation_id: String) -> Dictionary:
+	#return _full_conv[conversation_id]["character"]
+#
+#
+### Gets the character id of [param conversation_id].
+#func get_character_id(conversation_id: String) -> String:
+	#return _full_conv[conversation_id]["character"]["id"]
+#
+#
+### Gets the character mood of [param conversation_id].
+#func get_character_portrait_idle(conversation_id: String) -> Dictionary:
+	#return _full_conv[conversation_id]["character"]["idle"]
+#
+#
+### Gets the character mood of [param conversation_id].
+#func get_character_portrait_talking(conversation_id: String) -> Dictionary:
+	#return _full_conv[conversation_id]["character"]["talking"]
+#
+#
+### Gets a dictionary with keys [code]text[/code] and [code]seconds_per_letter[/code].
+#func get_dialog(conversation_id: String) -> Dictionary:
+	#return _full_conv[conversation_id]["dialog"]
+#
+#
+### Returns the dialogue text from [param conversation_id].
+#func get_dialog_text(conversation_id: String) -> String:
+	#return _full_conv[conversation_id]["dialog"]["text"]
+#
+#
+### Gets a dictionary with keys [code]options[/code] and [code]cancel[/code].
+#func get_dialog_replies(conversation_id: String) -> Dictionary:
+	#return _full_conv[conversation_id]["replies"]
+#
+#
+### Returns true if the [param conversation_id] has replies. If not it means only text
+### needs to be displayed.
+#func has_replies(conversation_id: String) -> bool:
+	#return not _full_conv[conversation_id]["replies"]["options"].is_empty()
+#
+#
+### Returns the string to emit on the signal
+#func get_signal_arg(conversation_id: String) -> String:
+	#return _full_conv[conversation_id]["signal"]
+#
+#
+### Gets the next direct dialog id to go to. It'll only return the direct next
+### dialog id. It won't take options into consideration.
+#func get_next_dialog(conversation_id: String) -> String:
+	#return _full_conv[conversation_id]["next"]
+#
+#
+### Gets a dictionary with keys as variable name and values as the values to set.
+#func get_variables(conversation_id: String) -> Dictionary:
+	#return _full_conv[conversation_id]["set_variable"]
+#
+#
+### Returns true if the conversation has the required method call fields.
+#func has_method_call(conversation_id: String) -> bool:
+	#return not (_full_conv[conversation_id]["call"]["node"].is_empty() or _full_conv[conversation_id]["call"]["method"].is_empty())
+#
+#
+### Gets a dictionary with keys [code]node[/code], [code]method[/code] 
+### and [code]args[/code].
+#func get_method_call(conversation_id: String) -> Dictionary:
+	#return _full_conv[conversation_id]["call"]
+#
+#
+### Returns true if the conversation should be paused on this dialog.
+#func pause_after_display(conversation_id: String) -> bool:
+	#return _full_conv[conversation_id]["pause"]
+#
+#
+### Gets a dictionary with keys [code]text[/code], [code]next[/code],
+### [code]signal[/code], [code]set_variable[/code] and [code]call[/code].
+#func get_option_data(conversation_id: String, option_idx: int) -> Dictionary:
+	#return _full_conv[conversation_id]["replies"]["options"][option_idx]
+#
+#
+### Returns true if the conversation option has the required method call fields.
+#func has_option_method_call(conversation_id: String, option_idx: int) -> bool:
+	#return not (_full_conv[conversation_id]["replies"]["options"][option_idx]["call"]["node"].is_empty() or _full_conv[conversation_id]["replies"]["options"][option_idx]["call"]["method"].is_empty())
+#
+#
 
 
-## Gets the character id of [param conversation_id].
-func get_character_id(conversation_id: String) -> String:
-	return _full_conv[conversation_id]["character"]["id"]
-
-
-## Gets the character mood of [param conversation_id].
-func get_character_portrait_idle(conversation_id: String) -> Dictionary:
-	return _full_conv[conversation_id]["character"]["idle"]
-
-
-## Gets the character mood of [param conversation_id].
-func get_character_portrait_talking(conversation_id: String) -> Dictionary:
-	return _full_conv[conversation_id]["character"]["talking"]
-
-
-## Gets a dictionary with keys [code]text[/code] and [code]seconds_per_letter[/code].
-func get_dialog(conversation_id: String) -> Dictionary:
-	return _full_conv[conversation_id]["dialog"]
-
-
-## Returns the dialogue text from [param conversation_id].
-func get_dialog_text(conversation_id: String) -> String:
-	return _full_conv[conversation_id]["dialog"]["text"]
-
-
-## Gets a dictionary with keys [code]options[/code] and [code]cancel[/code].
-func get_dialog_replies(conversation_id: String) -> Dictionary:
-	return _full_conv[conversation_id]["replies"]
-
-
-## Returns true if the [param conversation_id] has replies. If not it means only text
-## needs to be displayed.
-func has_replies(conversation_id: String) -> bool:
-	return not _full_conv[conversation_id]["replies"]["options"].is_empty()
-
-
-## Returns the string to emit on the signal
-func get_signal_arg(conversation_id: String) -> String:
-	return _full_conv[conversation_id]["signal"]
-
-
-## Gets the next direct dialog id to go to. It'll only return the direct next
-## dialog id. It won't take options into consideration.
-func get_next_dialog(conversation_id: String) -> String:
-	return _full_conv[conversation_id]["next"]
-
-
-## Gets a dictionary with keys as variable name and values as the values to set.
-func get_variables(conversation_id: String) -> Dictionary:
-	return _full_conv[conversation_id]["set_variable"]
-
-
-## Returns true if the conversation has the required method call fields.
-func has_method_call(conversation_id: String) -> bool:
-	return not (_full_conv[conversation_id]["call"]["node"].is_empty() or _full_conv[conversation_id]["call"]["method"].is_empty())
-
-
-## Gets a dictionary with keys [code]node[/code], [code]method[/code] 
-## and [code]args[/code].
-func get_method_call(conversation_id: String) -> Dictionary:
-	return _full_conv[conversation_id]["call"]
-
-
-## Returns true if the conversation should be paused on this dialog.
-func pause_after_display(conversation_id: String) -> bool:
-	return _full_conv[conversation_id]["pause"]
-
-
-## Gets a dictionary with keys [code]text[/code], [code]next[/code],
-## [code]signal[/code], [code]set_variable[/code] and [code]call[/code].
-func get_option_data(conversation_id: String, option_idx: int) -> Dictionary:
-	return _full_conv[conversation_id]["replies"]["options"][option_idx]
-
-
-## Returns true if the conversation option has the required method call fields.
-func has_option_method_call(conversation_id: String, option_idx: int) -> bool:
-	return not (_full_conv[conversation_id]["replies"]["options"][option_idx]["call"]["node"].is_empty() or _full_conv[conversation_id]["replies"]["options"][option_idx]["call"]["method"].is_empty())
-
-
-# FIXME The structures have been updated. Fix it
-func _build_full_conv() -> void:
-	var full_dialog_map: Dictionary = {}
-	
-	for dialog_id in conversation:
-		full_dialog_map[dialog_id] = get_dialog_structure()
-		for key in conversation[dialog_id]:
-			if not full_dialog_map[dialog_id].has(key):
-				continue
-			if key == "replies":
-				if conversation[dialog_id][key].has("cancel"):
-					full_dialog_map[dialog_id][key]["cancel"] = conversation[dialog_id][key]["cancel"]
-				for reply in conversation[dialog_id][key]["options"]:
-					var reply_struct: Dictionary = DialogData.get_option_structure()
-					reply_struct.merge(reply, true)
-					full_dialog_map[dialog_id][key]["options"].append(reply_struct)
-			elif key == "character":
-				if conversation[dialog_id][key].has("id"):
-					full_dialog_map[dialog_id][key]["id"] = conversation[dialog_id][key]["id"]
-				if conversation[dialog_id][key].has("idle"):
-					full_dialog_map[dialog_id][key]["idle"].merge(conversation[dialog_id][key]["idle"], true)
-				if conversation[dialog_id][key].has("talking"):
-					full_dialog_map[dialog_id][key]["talking"].merge(conversation[dialog_id][key]["talking"], true)
-			elif key == "dialog":
-				full_dialog_map[dialog_id][key].merge(conversation[dialog_id][key], true)
-			elif typeof(conversation[dialog_id][key]) == TYPE_DICTIONARY:
-				full_dialog_map[dialog_id][key].merge(conversation[dialog_id][key], true)
-			elif typeof(conversation[dialog_id][key]) == TYPE_ARRAY:
-				full_dialog_map[dialog_id][key].assign(conversation[dialog_id][key])
+func travel_tree(structure: Dictionary) -> String:
+	match structure["type"]:
+		NextType.ID:
+			return structure["data"]["next"]
+		NextType.RANDOM:
+			if structure["data"]["use_weights"]:
+				var random_pool := Random.create_random_weighted_pool()
+				
+				for exit in structure["data"]["options"]:
+					random_pool.add_weighted(exit["next"], exit["weight"])
+				
+				var result: Dictionary = random_pool.get_rand_weighted()
+				
+				if result["type"] == NextType.ID:
+					return result["data"]["next"]
+				else:
+					return travel_tree(result)
 			else:
-				full_dialog_map[dialog_id][key] = conversation[dialog_id][key]
+				var result: Dictionary = structure["data"]["options"].pick_random()
+				
+				if result["next"]["type"] == NextType.ID:
+					return result["next"]["data"]["next"]
+				else:
+					return travel_tree(result["next"])
+		NextType.CONDITION:
+			var success: bool = false
+			var element_a: Variant = structure["data"]["comparation"]["var_a"]["value"]["value"]
+			var element_b: Variant = structure["data"]["comparation"]["var_a"]["value"]["value"]
+			match structure["data"]["comparation"]["operator"]:
+				OP_EQUAL:
+					success = element_a == element_b
+				OP_NOT_EQUAL:
+					success = element_a != element_b
+				OP_GREATER:
+					success = element_a > element_b
+				OP_GREATER_EQUAL:
+					success = element_a >= element_b
+				OP_LESS:
+					success = element_a < element_b
+				OP_LESS_EQUAL:
+					success = element_a <= element_b
+			var next_key: String = "true" if success else "false"
+			var next_target: Dictionary = structure["data"][next_key]
 			
-			if not full_dialog_map[dialog_id]["character"]["id"].is_empty() and not _characters.has(full_dialog_map[dialog_id]["character"]["id"]):
-				_characters.append(StringName(full_dialog_map[dialog_id]["character"]["id"]))
-			
+			if next_target["type"] == NextType.ID:
+				return next_target["data"]["next"]
+			else:
+				return travel_tree(next_target)
+		_:
+			return ""
+
+
+## Returns the next dialog ID starting [param from_id]. If an empty string is
+## passed it'll give the starting dialog.[br]
+## If the dialog has options, passing the idx of the option is required, 
+## else 0 will be assumed. If the return is an empty string it indicates 
+## the end of the dialog.
+func get_next_id(from_id: String = "", option_idx: int = 0) -> String:
+	if not conversation.has(from_id) and not from_id.is_empty():
+		printerr("[DISCOURSE] Given dialog id {0} is not found in conversation map.".format([from_id]))
+		return ""
 	
-	_full_conv = full_dialog_map
+	var target_dict: Dictionary = dialog_entry if from_id.is_empty() else conversation[from_id]
+	
+	if target_dict["type"] == DialogType.OPTIONS:
+		return travel_tree(target_dict["targets"][option_idx])
+	else:
+		return travel_tree(target_dict)
+
+
+## Returns 0 if it's dialog, returns 1 if it's options.
+func get_dialog_type(dialog_id: String) -> int:
+	return conversation[dialog_id]["type"]
 
 
 ## Returns a complete dialog structure with default values. Used for the
@@ -350,7 +387,7 @@ static func get_comparation_structure() -> Dictionary:
 		"type": DialogType.COMPARATION,
 		"var_a": {}, # Can use get_comparation_structure and get_element_structure
 		"var_b": {},
-		"operator": "==",
+		"operator": OP_EQUAL,
 		"offset": Vector2()
 	}
 

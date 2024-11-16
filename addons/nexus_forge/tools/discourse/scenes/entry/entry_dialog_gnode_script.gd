@@ -16,7 +16,7 @@ func generate_node_dictionary() -> Dictionary:
 	var next_structure := DialogData.get_next_structure()
 	if next_port == null:
 		return {}
-	elif next_port.node_type == DialogData.DialogType.DIALOG or next_port.node_type == DialogData.DialogType.OPTIONS:# or next_port.node_type == DialogData.DialogType.ID:
+	elif next_port.node_type == DialogData.DialogType.DIALOG or next_port.node_type == DialogData.DialogType.OPTIONS:
 		next_structure["type"] = DialogData.NextType.ID
 		next_structure["data"] = DialogData.get_next_by_id()
 		next_structure["data"]["next"] = next_port.node_id

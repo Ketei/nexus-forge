@@ -63,6 +63,8 @@ var _block_change_current: bool = false
 func _ready() -> void:
 	var popup := add_node_button.get_popup()
 	
+	popup.clear()
+	
 	popup.add_separator("Dialog", 101)
 	popup.add_item("Dialog", 1)
 	popup.add_item("Replies", 2)
@@ -439,7 +441,7 @@ func save_conversation(target_tree: TreeItem, resource_path: String) -> void:
 	if target_tree == null or resource_path.is_empty():
 		printerr("Couldn't save")
 		return
-	
+
 	var new_resource := DialogData.new()
 	var conversation_data: Dictionary = target_tree.get_metadata(0)
 	new_resource.dialog_entry = conversation_data["data"]["entry"]
@@ -523,6 +525,7 @@ func on_file_menu_selected(idx: int) -> void:
 				critical_error_dialog.dialog_text = ERROR_TEXT.format([current_dialog.get_text(0)])
 				critical_error_dialog.show()
 			elif current_dialog.get_metadata(0)["unsaved"]:
+				store_current_dialog_data()
 				if current_dialog.get_metadata(0)["path"].is_empty():
 					discourse_save_dialog.target_tree = current_dialog
 					discourse_save_dialog.show()
@@ -1082,7 +1085,7 @@ func on_resource_selected(resource_path: String) -> void:
 				"tree": tree_tree,
 				"orphans": orphans,
 				"entry": dialog.dialog_entry,
-				"entry_offset": Vector2()},
+				"entry_offset": dialog._entry_offset},
 			"data": {"tree": [], "orphans": [], "entry": {}, "entry_offset": dialog._entry_offset}, # Used when unsaved data exists.
 			"unsaved": false,
 			"scroll_offset": null,
@@ -1106,6 +1109,13 @@ func on_new_dialog_selected() -> void:
 	on_dialog_selected(tree_item)
 
 
+func store_current_dialog_data() -> void:
+	var item_metadata: Dictionary = current_dialog.get_metadata(0)
+	item_metadata["data"] = get_current_conversation_data()
+	item_metadata["scroll_offset"] = dialog_graph_edit.scroll_offset
+	item_metadata["zoom"] = dialog_graph_edit.zoom
+
+
 func on_dialog_selected(tree_item: TreeItem) -> void:
 	if _is_loading:
 		return # Preveinting infinite loading
@@ -1116,10 +1126,7 @@ func on_dialog_selected(tree_item: TreeItem) -> void:
 	if current_dialog != null:
 		current_dialog.deselect(0)
 		if current_dialog.get_metadata(0)["unsaved"]:
-			var item_metadata: Dictionary = current_dialog.get_metadata(0)
-			item_metadata["data"] = get_current_conversation_data()
-			item_metadata["scroll_offset"] = dialog_graph_edit.scroll_offset
-			item_metadata["zoom"] = dialog_graph_edit.zoom
+			store_current_dialog_data()
 		clear_nodes()
 	
 	var item_metadata: Dictionary = tree_item.get_metadata(0)
@@ -1175,7 +1182,7 @@ func on_dialog_selected(tree_item: TreeItem) -> void:
 					#entry_target = spawn_end_node(item_metadata["original_data"]["entry"]["data"])
 	#
 	# Used to prevent data loss when IDs are repeated.
-	var clear_on_load: Array[DiscourseGraphNode] = []
+	#var clear_on_load: Array[DiscourseGraphNode] = []
 	
 	# First loop to instantiate all id_nodes
 	for dialog_id:Dictionary in data_tree:
@@ -1183,9 +1190,9 @@ func on_dialog_selected(tree_item: TreeItem) -> void:
 			DialogData.DialogType.DIALOG:
 				var dialog_node: DiscourseGraphNode = DIALOG_NODE.instantiate()
 				dialog_graph_edit.add_child(dialog_node)
-				if dialog_id["clear_on_load"]:
-					clear_on_load.append(dialog_node)
-					dialog_node._debug_naming = true
+				#if dialog_id["clear_on_load"]:
+					#clear_on_load.append(dialog_node)
+					#dialog_node._debug_naming = true
 				dialog_node.node_id = dialog_id["id"]
 				root_nodes.append(dialog_node)
 				id_nodes.add_node(dialog_node)
@@ -1193,9 +1200,9 @@ func on_dialog_selected(tree_item: TreeItem) -> void:
 			DialogData.DialogType.OPTIONS:
 				var reply_selector: DiscourseGraphNode = REPLY_SELECTOR_NODE.instantiate()
 				dialog_graph_edit.add_child(reply_selector)
-				if dialog_id["clear_on_load"]:
-					clear_on_load.append(reply_selector)
-					reply_selector._debug_naming = true
+				#if dialog_id["clear_on_load"]:
+					#clear_on_load.append(reply_selector)
+					#reply_selector._debug_naming = true
 				reply_selector.node_id = dialog_id["id"]
 				root_nodes.append(reply_selector)
 				id_nodes.add_node(reply_selector)
@@ -1270,9 +1277,9 @@ func on_dialog_selected(tree_item: TreeItem) -> void:
 		if target_entry != null:
 			connect_nodes(entry_node, target_entry, "next")
 	
-	for temp_id_dialog in clear_on_load:
-		temp_id_dialog._debug_naming = false
-		temp_id_dialog.node_id = temp_id_dialog.node_id
+	#for temp_id_dialog in clear_on_load:
+		#temp_id_dialog._debug_naming = false
+		#temp_id_dialog.node_id = temp_id_dialog.node_id
 	
 	current_dialog = tree_item
 	tree_item.select(0)

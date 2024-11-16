@@ -1,4 +1,4 @@
-[gd_scene load_steps=30 format=3 uid="uid://cvuo0on5wm8qb"]
+[gd_scene load_steps=29 format=3 uid="uid://cvuo0on5wm8qb"]
 
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/characters/characters_main_script.gd" id="1_0oiu4"]
 [ext_resource type="Texture2D" uid="uid://12lyg7db58dg" path="res://addons/nexus_forge/tools/variables/icons/add_int.svg" id="1_54l1c"]
@@ -15,7 +15,6 @@
 [ext_resource type="Texture2D" uid="uid://c1aelqf557khb" path="res://addons/nexus_forge/common_icons/plus_icon.svg" id="9_d72ha"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/characters/stats_container_script.gd" id="9_mdywn"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/characters/custom_data_tree_script.gd" id="10_va8cf"]
-[ext_resource type="Texture2D" uid="uid://c53li367o8i6k" path="res://addons/nexus_forge/common_icons/refresh_icon.svg" id="10_vdvbr"]
 [ext_resource type="Texture2D" uid="uid://dag1uf3tql5xg" path="res://addons/nexus_forge/common_icons/play_button.svg" id="12_ox0jv"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/characters/flags_tree_script.gd" id="12_us4su"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/characters/variants_tree_script.gd" id="12_wrqly"]
@@ -32,8 +31,7 @@ resource_name = "toggle"
 script/source = "@tool
 extends FileDialog
 
-var is_character: bool = false
-var character_id: String = \"\"
+var dialog_mode: int = 0 # 0 = resource, 1 = character, 2 = sound, 3 = frames
 "
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ahb4n"]
@@ -82,12 +80,35 @@ size_flags_vertical = 3
 custom_minimum_size = Vector2(220, 0)
 layout_mode = 2
 
-[node name="TitleLabel" type="Label" parent="MainContainer/DataSplitContainer/CharacterSelectorContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="MainContainer/DataSplitContainer/CharacterSelectorContainer"]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="MainContainer/DataSplitContainer/CharacterSelectorContainer/HBoxContainer"]
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.223182, 0.705086, 0.904884, 1)
 theme_override_font_sizes/font_size = 25
 text = "Characters"
+
+[node name="MenusContainer" type="HBoxContainer" parent="MainContainer/DataSplitContainer/CharacterSelectorContainer/HBoxContainer"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 2
+
+[node name="MainMenu" type="MenuButton" parent="MainContainer/DataSplitContainer/CharacterSelectorContainer/HBoxContainer/MenusContainer"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+text = "Menu"
+item_count = 3
+popup/item_0/text = "New Character"
+popup/item_0/icon = ExtResource("2_jm2sw")
+popup/item_1/text = "Load Character"
+popup/item_1/icon = ExtResource("3_grla6")
+popup/item_1/id = 2
+popup/item_2/text = "Save"
+popup/item_2/icon = ExtResource("5_s3cey")
+popup/item_2/id = 1
 
 [node name="ButtonContainer" type="HBoxContainer" parent="MainContainer/DataSplitContainer/CharacterSelectorContainer"]
 layout_mode = 2
@@ -119,27 +140,10 @@ size_flags_vertical = 3
 allow_reselect = true
 hide_root = true
 script = ExtResource("4_5334i")
+default_name = null
 
 [node name="VBoxContainer" type="VBoxContainer" parent="MainContainer/DataSplitContainer"]
 layout_mode = 2
-
-[node name="MenusContainer" type="HBoxContainer" parent="MainContainer/DataSplitContainer/VBoxContainer"]
-custom_minimum_size = Vector2(0, 36)
-layout_mode = 2
-
-[node name="MainMenu" type="MenuButton" parent="MainContainer/DataSplitContainer/VBoxContainer/MenusContainer"]
-custom_minimum_size = Vector2(0, 36)
-layout_mode = 2
-text = "Menu"
-item_count = 3
-popup/item_0/text = "New Character"
-popup/item_0/icon = ExtResource("2_jm2sw")
-popup/item_1/text = "Load Character"
-popup/item_1/icon = ExtResource("3_grla6")
-popup/item_1/id = 2
-popup/item_2/text = "Save"
-popup/item_2/icon = ExtResource("5_s3cey")
-popup/item_2/id = 1
 
 [node name="DataPanel" type="PanelContainer" parent="MainContainer/DataSplitContainer/VBoxContainer"]
 layout_mode = 2
@@ -259,16 +263,8 @@ layout_mode = 2
 [node name="Label" type="Label" parent="MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/PortraitDataContainer/SpriteFrameContainer/Header"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "SpriteFrames Resource"
+text = "Portrait Frames"
 vertical_alignment = 1
-
-[node name="RefreshButton" type="Button" parent="MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/PortraitDataContainer/SpriteFrameContainer/Header"]
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 2
-icon = ExtResource("10_vdvbr")
-flat = true
-icon_alignment = 1
-expand_icon = true
 
 [node name="LinePanel" type="PanelContainer" parent="MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/PortraitDataContainer/SpriteFrameContainer"]
 layout_mode = 2
@@ -292,6 +288,7 @@ expand_icon = true
 
 [node name="SoundsContainer" type="VBoxContainer" parent="MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/PortraitDataContainer"]
 layout_mode = 2
+size_flags_vertical = 3
 
 [node name="Label" type="Label" parent="MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/PortraitDataContainer/SoundsContainer"]
 layout_mode = 2
@@ -325,6 +322,7 @@ expand_icon = true
 [node name="PlaySoundButton" type="Button" parent="MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/PortraitDataContainer/SoundsContainer/DataContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
+disabled = true
 icon = ExtResource("12_ox0jv")
 icon_alignment = 1
 
@@ -478,33 +476,39 @@ hide_root = true
 scroll_horizontal_enabled = false
 script = ExtResource("18_31kop")
 
-[node name="DataSetTabs" type="TabContainer" parent="MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer"]
+[node name="ExtraContainer" type="VBoxContainer" parent="MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 1.5
+
+[node name="DataSetTabs" type="TabContainer" parent="MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+size_flags_stretch_ratio = 3.0
 current_tab = 0
 
-[node name="StatsContainer" type="VBoxContainer" parent="MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/DataSetTabs"]
+[node name="StatsContainer" type="VBoxContainer" parent="MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer/DataSetTabs"]
 layout_mode = 2
 metadata/_tab_index = 0
 
-[node name="HeaderContainer" type="HBoxContainer" parent="MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/DataSetTabs/StatsContainer"]
+[node name="HeaderContainer" type="HBoxContainer" parent="MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer/DataSetTabs/StatsContainer"]
 layout_mode = 2
 
-[node name="LineEdit" type="LineEdit" parent="MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/DataSetTabs/StatsContainer/HeaderContainer"]
+[node name="LineEdit" type="LineEdit" parent="MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer/DataSetTabs/StatsContainer/HeaderContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "Search Stat"
 clear_button_enabled = true
 right_icon = ExtResource("6_nr27b")
 
-[node name="AddStatBtn" type="Button" parent="MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/DataSetTabs/StatsContainer/HeaderContainer"]
+[node name="AddStatBtn" type="Button" parent="MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer/DataSetTabs/StatsContainer/HeaderContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 icon = ExtResource("9_d72ha")
 icon_alignment = 1
 
-[node name="StatsTree" type="Tree" parent="MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/DataSetTabs/StatsContainer"]
+[node name="StatsTree" type="Tree" parent="MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer/DataSetTabs/StatsContainer"]
 layout_mode = 2
 size_flags_vertical = 3
 columns = 3
@@ -513,7 +517,7 @@ hide_folding = true
 hide_root = true
 script = ExtResource("9_mdywn")
 
-[node name="SkillsContainer" type="VBoxContainer" parent="MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/DataSetTabs"]
+[node name="SkillsContainer" type="VBoxContainer" parent="MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer/DataSetTabs"]
 visible = false
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
@@ -521,13 +525,13 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 metadata/_tab_index = 1
 
-[node name="SkillSearchLine" type="LineEdit" parent="MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/DataSetTabs/SkillsContainer"]
+[node name="SkillSearchLine" type="LineEdit" parent="MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer/DataSetTabs/SkillsContainer"]
 layout_mode = 2
 placeholder_text = "Search Skill"
 clear_button_enabled = true
 right_icon = ExtResource("6_nr27b")
 
-[node name="SkillsTree" type="Tree" parent="MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/DataSetTabs/SkillsContainer"]
+[node name="SkillsTree" type="Tree" parent="MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer/DataSetTabs/SkillsContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -539,7 +543,7 @@ hide_root = true
 scroll_horizontal_enabled = false
 script = ExtResource("20_hnvx1")
 
-[node name="PerksContainer" type="VBoxContainer" parent="MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/DataSetTabs"]
+[node name="PerksContainer" type="VBoxContainer" parent="MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer/DataSetTabs"]
 visible = false
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
@@ -547,14 +551,14 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 metadata/_tab_index = 2
 
-[node name="SearchPerkLnEdt" type="LineEdit" parent="MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/DataSetTabs/PerksContainer"]
+[node name="SearchPerkLnEdt" type="LineEdit" parent="MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer/DataSetTabs/PerksContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "Search Perks"
 clear_button_enabled = true
 right_icon = ExtResource("6_nr27b")
 
-[node name="PerksTree" type="Tree" parent="MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/DataSetTabs/PerksContainer"]
+[node name="PerksTree" type="Tree" parent="MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer/DataSetTabs/PerksContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -565,29 +569,29 @@ hide_folding = true
 hide_root = true
 script = ExtResource("20_h3aos")
 
-[node name="VariantsContainer" type="VBoxContainer" parent="MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/DataSetTabs"]
+[node name="VariantsContainer" type="VBoxContainer" parent="MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer/DataSetTabs"]
 visible = false
 layout_mode = 2
 metadata/_tab_index = 3
 
-[node name="TitleContainer" type="HBoxContainer" parent="MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/DataSetTabs/VariantsContainer"]
+[node name="TitleContainer" type="HBoxContainer" parent="MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer/DataSetTabs/VariantsContainer"]
 layout_mode = 2
 
-[node name="SearchVariantLnEdt" type="LineEdit" parent="MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/DataSetTabs/VariantsContainer/TitleContainer"]
+[node name="SearchVariantLnEdt" type="LineEdit" parent="MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer/DataSetTabs/VariantsContainer/TitleContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "Search Variant"
 clear_button_enabled = true
 right_icon = ExtResource("6_nr27b")
 
-[node name="AddVariantButton" type="Button" parent="MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/DataSetTabs/VariantsContainer/TitleContainer"]
+[node name="AddVariantButton" type="Button" parent="MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer/DataSetTabs/VariantsContainer/TitleContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 icon = ExtResource("9_d72ha")
 flat = true
 icon_alignment = 1
 
-[node name="VariantsTree" type="Tree" parent="MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/DataSetTabs/VariantsContainer"]
+[node name="VariantsTree" type="Tree" parent="MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer/DataSetTabs/VariantsContainer"]
 layout_mode = 2
 size_flags_vertical = 3
 columns = 2
@@ -612,7 +616,6 @@ auto_translate_mode = 1
 initial_position = 1
 size = Vector2i(500, 350)
 ok_button_text = "Save"
-filters = PackedStringArray("*.tres;Resources")
 script = SubResource("GDScript_4551j")
 
 [node name="TypeStreamPlayer" type="AudioStreamPlayer" parent="ComponentNode"]

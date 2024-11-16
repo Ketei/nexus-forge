@@ -185,6 +185,11 @@ func generate_node_dictionary() -> Dictionary:
 		next_dict["type"] = next_class
 		next_dict["data"] = next_dict_data
 		dialog_dict["next"] = next_dict
+	else:
+		var next_dict: Dictionary = DialogData.get_next_structure()
+		next_dict["type"] = DialogData.NextType.END
+		dialog_dict["next"] = next_dict
+		
 	
 	dialog_dict["expand"] = not minimized
 	dialog_dict["dialog"]["text"] = text_edit.text

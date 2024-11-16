@@ -36,12 +36,28 @@ layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 2.5
 
-[node name="TitleLabel" type="Label" parent="MainContainer/QuestsContainer"]
+[node name="HBoxContainer2" type="HBoxContainer" parent="MainContainer/QuestsContainer"]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="MainContainer/QuestsContainer/HBoxContainer2"]
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.223182, 0.705086, 0.904884, 1)
 theme_override_font_sizes/font_size = 25
 text = "Quests"
+
+[node name="MenuContainer" type="HBoxContainer" parent="MainContainer/QuestsContainer/HBoxContainer2"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 2
+
+[node name="QuestsMenuButton" type="MenuButton" parent="MainContainer/QuestsContainer/HBoxContainer2/MenuContainer"]
+layout_mode = 2
+text = "Quest Menu"
+item_count = 1
+popup/item_0/text = "Save"
+popup/item_0/icon = ExtResource("5_j0k76")
 
 [node name="SearchPanel" type="PanelContainer" parent="MainContainer/QuestsContainer"]
 layout_mode = 2
@@ -96,33 +112,29 @@ scroll_horizontal_enabled = false
 script = ExtResource("3_7mr1o")
 default_name = "new_quest"
 
+[node name="VSeparator" type="VSeparator" parent="MainContainer"]
+layout_mode = 2
+
 [node name="QuestDescContainer" type="VBoxContainer" parent="MainContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 3.0
 
-[node name="MenuContainer" type="HBoxContainer" parent="MainContainer/QuestDescContainer"]
+[node name="DataContainer" type="VBoxContainer" parent="MainContainer/QuestDescContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="InfoContainer" type="HBoxContainer" parent="MainContainer/QuestDescContainer/DataContainer"]
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 
-[node name="QuestsMenuButton" type="MenuButton" parent="MainContainer/QuestDescContainer/MenuContainer"]
-layout_mode = 2
-text = "Quest Menu"
-item_count = 1
-popup/item_0/text = "Save"
-popup/item_0/icon = ExtResource("5_j0k76")
-
-[node name="InfoContainer" type="HBoxContainer" parent="MainContainer/QuestDescContainer"]
-custom_minimum_size = Vector2(0, 36)
-layout_mode = 2
-
-[node name="Label" type="Label" parent="MainContainer/QuestDescContainer/InfoContainer"]
+[node name="Label" type="Label" parent="MainContainer/QuestDescContainer/DataContainer/InfoContainer"]
 layout_mode = 2
 size_flags_vertical = 5
 text = "Quest:"
 vertical_alignment = 1
 
-[node name="QuestLabel" type="Label" parent="MainContainer/QuestDescContainer/InfoContainer"]
+[node name="QuestLabel" type="Label" parent="MainContainer/QuestDescContainer/DataContainer/InfoContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 5
@@ -130,64 +142,50 @@ theme_override_colors/font_color = Color(0.465398, 0.873983, 1, 1)
 vertical_alignment = 1
 text_overrun_behavior = 3
 
-[node name="TitleContainer" type="HBoxContainer" parent="MainContainer/QuestDescContainer"]
+[node name="TitleContainer" type="HBoxContainer" parent="MainContainer/QuestDescContainer/DataContainer"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="MainContainer/QuestDescContainer/TitleContainer"]
+[node name="Label" type="Label" parent="MainContainer/QuestDescContainer/DataContainer/TitleContainer"]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 text = "Title"
 vertical_alignment = 1
 
-[node name="QuestTitleLnEdt" type="LineEdit" parent="MainContainer/QuestDescContainer/TitleContainer"]
+[node name="QuestTitleLnEdt" type="LineEdit" parent="MainContainer/QuestDescContainer/DataContainer/TitleContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="DescContainer" type="VBoxContainer" parent="MainContainer/QuestDescContainer"]
+[node name="DescContainer" type="VBoxContainer" parent="MainContainer/QuestDescContainer/DataContainer"]
 custom_minimum_size = Vector2(0, 180)
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="Label" type="Label" parent="MainContainer/QuestDescContainer/DescContainer"]
+[node name="Label" type="Label" parent="MainContainer/QuestDescContainer/DataContainer/DescContainer"]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 text = "Quest Description"
 vertical_alignment = 1
 
-[node name="DescTextEdit" type="TextEdit" parent="MainContainer/QuestDescContainer/DescContainer"]
+[node name="DescTextEdit" type="TextEdit" parent="MainContainer/QuestDescContainer/DataContainer/DescContainer"]
 layout_mode = 2
 size_flags_vertical = 3
 wrap_mode = 1
 
-[node name="ObjectiveContainer" type="VBoxContainer" parent="MainContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_stretch_ratio = 7.0
-
-[node name="Control" type="Control" parent="MainContainer/ObjectiveContainer"]
-custom_minimum_size = Vector2(0, 36)
-layout_mode = 2
-
-[node name="ObjectiveInfoContainer" type="HBoxContainer" parent="MainContainer/ObjectiveContainer"]
-layout_mode = 2
-size_flags_vertical = 3
-size_flags_stretch_ratio = 2.0
-
-[node name="ObjectiveContainer" type="VBoxContainer" parent="MainContainer/ObjectiveContainer/ObjectiveInfoContainer"]
+[node name="ObjectiveContainer" type="VBoxContainer" parent="MainContainer/QuestDescContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="ObjectiveHeader" type="HBoxContainer" parent="MainContainer/ObjectiveContainer/ObjectiveInfoContainer/ObjectiveContainer"]
+[node name="ObjectiveHeader" type="HBoxContainer" parent="MainContainer/QuestDescContainer/ObjectiveContainer"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="MainContainer/ObjectiveContainer/ObjectiveInfoContainer/ObjectiveContainer/ObjectiveHeader"]
+[node name="Label" type="Label" parent="MainContainer/QuestDescContainer/ObjectiveContainer/ObjectiveHeader"]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 text = "Quest Objectives"
 vertical_alignment = 1
 
-[node name="AddObjBtn" type="Button" parent="MainContainer/ObjectiveContainer/ObjectiveInfoContainer/ObjectiveContainer/ObjectiveHeader"]
+[node name="AddObjBtn" type="Button" parent="MainContainer/QuestDescContainer/ObjectiveContainer/ObjectiveHeader"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 size_flags_horizontal = 10
@@ -196,13 +194,13 @@ disabled = true
 icon = ExtResource("2_3n35v")
 icon_alignment = 1
 
-[node name="ObjSrchLnEdt" type="LineEdit" parent="MainContainer/ObjectiveContainer/ObjectiveInfoContainer/ObjectiveContainer"]
+[node name="ObjSrchLnEdt" type="LineEdit" parent="MainContainer/QuestDescContainer/ObjectiveContainer"]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 placeholder_text = "Search Objective"
 editable = false
 
-[node name="ObjectivesTree" type="Tree" parent="MainContainer/ObjectiveContainer/ObjectiveInfoContainer/ObjectiveContainer"]
+[node name="ObjectivesTree" type="Tree" parent="MainContainer/QuestDescContainer/ObjectiveContainer"]
 layout_mode = 2
 size_flags_vertical = 3
 columns = 2
@@ -213,21 +211,39 @@ scroll_horizontal_enabled = false
 script = ExtResource("4_26wfg")
 default_name = "new_objective"
 
-[node name="ObjTitleDescContainer" type="VBoxContainer" parent="MainContainer/ObjectiveContainer/ObjectiveInfoContainer"]
-custom_minimum_size = Vector2(0, 180)
+[node name="VSeparator2" type="VSeparator" parent="MainContainer"]
+layout_mode = 2
+
+[node name="ObjectiveContainer" type="VBoxContainer" parent="MainContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 7.0
+
+[node name="ObjReqContainer" type="HBoxContainer" parent="MainContainer/ObjectiveContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 2.5
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MainContainer/ObjectiveContainer/ObjReqContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="ObjHeader" type="HBoxContainer" parent="MainContainer/ObjectiveContainer/ObjectiveInfoContainer/ObjTitleDescContainer"]
+[node name="ObjTitleDescContainer" type="VBoxContainer" parent="MainContainer/ObjectiveContainer/ObjReqContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 180)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="ObjHeader" type="HBoxContainer" parent="MainContainer/ObjectiveContainer/ObjReqContainer/VBoxContainer/ObjTitleDescContainer"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="MainContainer/ObjectiveContainer/ObjectiveInfoContainer/ObjTitleDescContainer/ObjHeader"]
+[node name="Label" type="Label" parent="MainContainer/ObjectiveContainer/ObjReqContainer/VBoxContainer/ObjTitleDescContainer/ObjHeader"]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 text = "Objective:"
 vertical_alignment = 1
 
-[node name="IDLbl" type="Label" parent="MainContainer/ObjectiveContainer/ObjectiveInfoContainer/ObjTitleDescContainer/ObjHeader"]
+[node name="IDLbl" type="Label" parent="MainContainer/ObjectiveContainer/ObjReqContainer/VBoxContainer/ObjTitleDescContainer/ObjHeader"]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -235,28 +251,91 @@ theme_override_colors/font_color = Color(0.466667, 0.87451, 1, 1)
 vertical_alignment = 1
 text_overrun_behavior = 3
 
-[node name="TitleLineEdt" type="HBoxContainer" parent="MainContainer/ObjectiveContainer/ObjectiveInfoContainer/ObjTitleDescContainer"]
+[node name="TitleLineEdt" type="HBoxContainer" parent="MainContainer/ObjectiveContainer/ObjReqContainer/VBoxContainer/ObjTitleDescContainer"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="MainContainer/ObjectiveContainer/ObjectiveInfoContainer/ObjTitleDescContainer/TitleLineEdt"]
+[node name="Label" type="Label" parent="MainContainer/ObjectiveContainer/ObjReqContainer/VBoxContainer/ObjTitleDescContainer/TitleLineEdt"]
 layout_mode = 2
 text = "Title"
 
-[node name="ObjTitleLnEdt" type="LineEdit" parent="MainContainer/ObjectiveContainer/ObjectiveInfoContainer/ObjTitleDescContainer/TitleLineEdt"]
+[node name="ObjTitleLnEdt" type="LineEdit" parent="MainContainer/ObjectiveContainer/ObjReqContainer/VBoxContainer/ObjTitleDescContainer/TitleLineEdt"]
 layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "Objective Title"
 editable = false
 
-[node name="ObjDescTxtEdt" type="TextEdit" parent="MainContainer/ObjectiveContainer/ObjectiveInfoContainer/ObjTitleDescContainer"]
+[node name="ObjDescTxtEdt" type="TextEdit" parent="MainContainer/ObjectiveContainer/ObjReqContainer/VBoxContainer/ObjTitleDescContainer"]
 layout_mode = 2
 size_flags_vertical = 3
+placeholder_text = "Objective Description"
 editable = false
+wrap_mode = 1
 
-[node name="ObjReqContainer" type="HBoxContainer" parent="MainContainer/ObjectiveContainer"]
+[node name="VariablesCotnainer" type="VBoxContainer" parent="MainContainer/ObjectiveContainer/ObjReqContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="VariablesHeader" type="HBoxContainer" parent="MainContainer/ObjectiveContainer/ObjReqContainer/VBoxContainer/VariablesCotnainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/ObjectiveContainer/ObjReqContainer/VBoxContainer/VariablesCotnainer/VariablesHeader"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+text = "Variables"
+vertical_alignment = 1
+
+[node name="ButtonContainer" type="HBoxContainer" parent="MainContainer/ObjectiveContainer/ObjReqContainer/VBoxContainer/VariablesCotnainer/VariablesHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 2
+
+[node name="AddIntBtn" type="Button" parent="MainContainer/ObjectiveContainer/ObjReqContainer/VBoxContainer/VariablesCotnainer/VariablesHeader/ButtonContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+disabled = true
+icon = ExtResource("3_k5s2v")
+icon_alignment = 1
+
+[node name="AddFltBtn" type="Button" parent="MainContainer/ObjectiveContainer/ObjReqContainer/VBoxContainer/VariablesCotnainer/VariablesHeader/ButtonContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+disabled = true
+icon = ExtResource("4_dqq4k")
+icon_alignment = 1
+
+[node name="AddBoolBtn" type="Button" parent="MainContainer/ObjectiveContainer/ObjReqContainer/VBoxContainer/VariablesCotnainer/VariablesHeader/ButtonContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+disabled = true
+icon = ExtResource("5_t0peb")
+icon_alignment = 1
+
+[node name="AddStrBtn" type="Button" parent="MainContainer/ObjectiveContainer/ObjReqContainer/VBoxContainer/VariablesCotnainer/VariablesHeader/ButtonContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+disabled = true
+icon = ExtResource("6_q0c84")
+icon_alignment = 1
+
+[node name="SearchVarLnEdt" type="LineEdit" parent="MainContainer/ObjectiveContainer/ObjReqContainer/VBoxContainer/VariablesCotnainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Search Variable"
+editable = false
+clear_button_enabled = true
+right_icon = ExtResource("1_rueqv")
+
+[node name="VariablesTree" type="Tree" parent="MainContainer/ObjectiveContainer/ObjReqContainer/VBoxContainer/VariablesCotnainer"]
 layout_mode = 2
 size_flags_vertical = 3
-size_flags_stretch_ratio = 2.5
+columns = 4
+allow_reselect = true
+hide_folding = true
+hide_root = true
+scroll_horizontal_enabled = false
+script = ExtResource("11_xj7pk")
+default_name = "new_variable"
 
 [node name="ItemTriggerContainer" type="VBoxContainer" parent="MainContainer/ObjectiveContainer/ObjReqContainer"]
 layout_mode = 2
@@ -344,68 +423,3 @@ hide_root = true
 scroll_horizontal_enabled = false
 script = ExtResource("6_l8qk7")
 default_name = "new_trigger"
-
-[node name="VariablesCotnainer" type="VBoxContainer" parent="MainContainer/ObjectiveContainer/ObjReqContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="VariablesHeader" type="HBoxContainer" parent="MainContainer/ObjectiveContainer/ObjReqContainer/VariablesCotnainer"]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="MainContainer/ObjectiveContainer/ObjReqContainer/VariablesCotnainer/VariablesHeader"]
-custom_minimum_size = Vector2(0, 32)
-layout_mode = 2
-text = "Variables"
-vertical_alignment = 1
-
-[node name="ButtonContainer" type="HBoxContainer" parent="MainContainer/ObjectiveContainer/ObjReqContainer/VariablesCotnainer/VariablesHeader"]
-layout_mode = 2
-size_flags_horizontal = 3
-alignment = 2
-
-[node name="AddIntBtn" type="Button" parent="MainContainer/ObjectiveContainer/ObjReqContainer/VariablesCotnainer/VariablesHeader/ButtonContainer"]
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 2
-disabled = true
-icon = ExtResource("3_k5s2v")
-icon_alignment = 1
-
-[node name="AddFltBtn" type="Button" parent="MainContainer/ObjectiveContainer/ObjReqContainer/VariablesCotnainer/VariablesHeader/ButtonContainer"]
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 2
-disabled = true
-icon = ExtResource("4_dqq4k")
-icon_alignment = 1
-
-[node name="AddBoolBtn" type="Button" parent="MainContainer/ObjectiveContainer/ObjReqContainer/VariablesCotnainer/VariablesHeader/ButtonContainer"]
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 2
-disabled = true
-icon = ExtResource("5_t0peb")
-icon_alignment = 1
-
-[node name="AddStrBtn" type="Button" parent="MainContainer/ObjectiveContainer/ObjReqContainer/VariablesCotnainer/VariablesHeader/ButtonContainer"]
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 2
-disabled = true
-icon = ExtResource("6_q0c84")
-icon_alignment = 1
-
-[node name="SearchVarLnEdt" type="LineEdit" parent="MainContainer/ObjectiveContainer/ObjReqContainer/VariablesCotnainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-placeholder_text = "Search Variable"
-editable = false
-clear_button_enabled = true
-right_icon = ExtResource("1_rueqv")
-
-[node name="VariablesTree" type="Tree" parent="MainContainer/ObjectiveContainer/ObjReqContainer/VariablesCotnainer"]
-layout_mode = 2
-size_flags_vertical = 3
-columns = 4
-allow_reselect = true
-hide_folding = true
-hide_root = true
-scroll_horizontal_enabled = false
-script = ExtResource("11_xj7pk")
-default_name = "new_variable"

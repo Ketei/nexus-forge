@@ -69,7 +69,7 @@ var _ignore_changes: bool = false
 
 @onready var species_id_select_panel: PanelContainer = $SpeciesIDSelectPanel
 @onready var races_resource_dialog: FileDialog = $Elements/RacesResourceDialog
-@onready var main_menu: MenuButton = $MainContainer/StatsContainer/MenuContainer/MainMenu
+@onready var main_menu: MenuButton = $MainContainer/SpcRcContainer/HBoxContainer/MenuContainer/MainMenu
 
 
 func _ready() -> void:

@@ -31,16 +31,49 @@ func _ready() -> void:
 	operation_option.item_selected.connect(on_operation_selected)
 
 
-func select_by_text(comparation: String) -> void:
-	for ipt_idx in range(operation_option.item_count):
-		if operation_option.get_item_text(ipt_idx) == comparation:
-			operation_option.select(ipt_idx)
-			break
+func select_by_text(comparation: Variant.Operator) -> void:
+	operation_option.select(operator_to_id(comparation))
+
+
+func selected_to_operator(selected_id: int) -> Variant.Operator:
+	match selected_id:
+		0:
+			return OP_EQUAL
+		1:
+			return OP_NOT_EQUAL
+		2:
+			return OP_LESS
+		3:
+			return OP_LESS_EQUAL
+		4:
+			return OP_GREATER_EQUAL
+		5:
+			return OP_GREATER
+		_:
+			return OP_EQUAL
+
+
+func operator_to_id(operator: Variant.Operator) -> int:
+	match operator:
+		OP_EQUAL:
+			return 0
+		OP_NOT_EQUAL:
+			return 1
+		OP_LESS:
+			return 2
+		OP_LESS_EQUAL:
+			return 3
+		OP_GREATER_EQUAL:
+			return 4
+		OP_GREATER:
+			return 5
+		_:
+			return 0
+
 
 
 func _is_root() -> bool:
 	return not has_output_connection("result")
-
 
 
 func generate_node_dictionary() -> Dictionary:
@@ -49,11 +82,11 @@ func generate_node_dictionary() -> Dictionary:
 		comp_dictionary["var_a"] = get_input_port_connection_by_id("value_a").generate_node_dictionary()
 	if has_input_connection("value_b"):
 		comp_dictionary["var_b"] = get_input_port_connection_by_id("value_b").generate_node_dictionary()
-	comp_dictionary["operator"] = operation_option.get_item_text(operation_option.selected)
+	comp_dictionary["operator"] = selected_to_operator(operation_option.get_item_id(operation_option.selected))
 	comp_dictionary["offset"] = position_offset
-	print("----------------")
-	print(comp_dictionary)
-	print("-------------------")
+	#print("----------------")
+	#print(comp_dictionary)
+	#print("-------------------")
 	return comp_dictionary
 
 

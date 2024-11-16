@@ -48,12 +48,28 @@ grow_vertical = 2
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="TitleLabel" type="Label" parent="MainContainer/FactionDataContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="MainContainer/FactionDataContainer"]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="MainContainer/FactionDataContainer/HBoxContainer"]
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.223182, 0.705086, 0.904884, 1)
 theme_override_font_sizes/font_size = 25
 text = "Factions"
+
+[node name="MenuContainer" type="HBoxContainer" parent="MainContainer/FactionDataContainer/HBoxContainer"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 2
+
+[node name="MainMenuMnBtn" type="MenuButton" parent="MainContainer/FactionDataContainer/HBoxContainer/MenuContainer"]
+layout_mode = 2
+text = "Menu"
+item_count = 1
+popup/item_0/text = "Save"
+popup/item_0/icon = ExtResource("6_yyyl0")
 
 [node name="FactionIDContainer" type="VBoxContainer" parent="MainContainer/FactionDataContainer"]
 layout_mode = 2
@@ -167,17 +183,6 @@ wrap_mode = 1
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="MenuContainer" type="HBoxContainer" parent="MainContainer/FlagsContainer"]
-custom_minimum_size = Vector2(0, 36)
-layout_mode = 2
-
-[node name="MainMenuMnBtn" type="MenuButton" parent="MainContainer/FlagsContainer/MenuContainer"]
-layout_mode = 2
-text = "Menu"
-item_count = 1
-popup/item_0/text = "Save"
-popup/item_0/icon = ExtResource("6_yyyl0")
-
 [node name="Label" type="Label" parent="MainContainer/FlagsContainer"]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
@@ -202,10 +207,6 @@ script = ExtResource("4_q07pq")
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 2.0
-
-[node name="Control" type="Control" parent="MainContainer/FactionRelationContainer"]
-custom_minimum_size = Vector2(0, 36)
-layout_mode = 2
 
 [node name="HBoxContainer" type="HBoxContainer" parent="MainContainer/FactionRelationContainer"]
 layout_mode = 2

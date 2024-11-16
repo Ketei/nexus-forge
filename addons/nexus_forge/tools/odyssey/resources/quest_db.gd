@@ -465,9 +465,13 @@ func erase_quest(quest_id: String, is_unique: bool) -> void:
 		quests_boiler.erase(quest_id)
 
 
-func erase_objective(quest_id: String, objective: String) -> void:
-	if quests_unique[quest_id]["objectives"].erase(objective):
-		quests_unique[quest_id]["order"].erase(objective)
+func erase_objective(quest_id: String, objective: String, on_unique: bool) -> void:
+	if on_unique:
+		if quests_unique[quest_id]["objectives"].erase(objective):
+			quests_unique[quest_id]["order"].erase(objective)
+	else:
+		if quests_boiler[quest_id]["objectives"].erase(objective):
+			quests_boiler[quest_id]["order"].erase(objective)
 
 
 func clear_all_quests() -> void:

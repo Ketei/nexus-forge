@@ -33,7 +33,6 @@ script = ExtResource("1_qnbb8")
 metadata/_tab_index = 2
 
 [node name="MainSplit" type="HSplitContainer" parent="."]
-visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -56,6 +55,25 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.223182, 0.705086, 0.904884, 1)
 theme_override_font_sizes/font_size = 25
 text = "Variables"
+
+[node name="MenuContainer" type="HBoxContainer" parent="MainSplit/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 2
+
+[node name="VariablesMnBtn" type="MenuButton" parent="MainSplit/VBoxContainer/HBoxContainer/MenuContainer"]
+layout_mode = 2
+text = "Variables"
+item_count = 3
+popup/item_0/text = "Save Variables"
+popup/item_0/icon = ExtResource("5_l8ff6")
+popup/item_1/text = "Create Variable"
+popup/item_1/icon = ExtResource("6_qhc38")
+popup/item_1/id = 1
+popup/item_1/disabled = true
+popup/item_2/text = "Create Folder"
+popup/item_2/icon = ExtResource("3_c3swr")
+popup/item_2/id = 2
 
 [node name="FoldersPanel" type="PanelContainer" parent="MainSplit/VBoxContainer"]
 custom_minimum_size = Vector2(200, 0)
@@ -105,27 +123,6 @@ size_flags_stretch_ratio = 4.0
 [node name="TitleContainer" type="HBoxContainer" parent="MainSplit/VBoxContainer2"]
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
-
-[node name="MenuContainer" type="HBoxContainer" parent="MainSplit/VBoxContainer2/TitleContainer"]
-layout_mode = 2
-
-[node name="VariablesMnBtn" type="MenuButton" parent="MainSplit/VBoxContainer2/TitleContainer/MenuContainer"]
-layout_mode = 2
-text = "Variables"
-item_count = 3
-popup/item_0/text = "Save Variables"
-popup/item_0/icon = ExtResource("5_l8ff6")
-popup/item_1/text = "Create Variable"
-popup/item_1/icon = ExtResource("6_qhc38")
-popup/item_1/id = 1
-popup/item_1/disabled = true
-popup/item_2/text = "Create Folder"
-popup/item_2/icon = ExtResource("3_c3swr")
-popup/item_2/id = 2
-
-[node name="VSeparator2" type="VSeparator" parent="MainSplit/VBoxContainer2/TitleContainer"]
-layout_mode = 2
-theme_override_constants/separation = 12
 
 [node name="FolderPathContainer" type="HBoxContainer" parent="MainSplit/VBoxContainer2/TitleContainer"]
 layout_mode = 2

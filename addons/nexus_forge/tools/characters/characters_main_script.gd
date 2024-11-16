@@ -27,21 +27,20 @@ var _block_switch: bool = false
 var _character_memory: Dictionary = {}
 var no_db_container: PanelContainer = null
 
+@onready var sprite_frame_line: LineEdit = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/PortraitDataContainer/SpriteFrameContainer/LinePanel/LineContainer/SpriteFrameLine
+@onready var select_sprites_button: Button = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/PortraitDataContainer/SpriteFrameContainer/LinePanel/LineContainer/SelectSpritesButton
+@onready var sound_path_line: LineEdit = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/PortraitDataContainer/SoundsContainer/DataContainer/PanelContainer/HBoxContainer/SoundPathLine
+@onready var select_sound_path_button: Button = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/PortraitDataContainer/SoundsContainer/DataContainer/PanelContainer/HBoxContainer/SelectSoundPathButton
+@onready var play_sound_button: Button = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/PortraitDataContainer/SoundsContainer/DataContainer/PlaySoundButton
 
 
-
-@onready var data_set_tabs: TabContainer = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/DataSetTabs
+@onready var data_set_tabs: TabContainer = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer/DataSetTabs
 
 @onready var no_char_center: CenterContainer = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/NoCharCenter
 
 @onready var chara_id_label: Label = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/HBoxContainer/CharaIDLabel
 
-@onready var add_variant_button: Button = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/DataSetTabs/VariantsContainer/TitleContainer/AddVariantButton
 @onready var copy_id_btn: Button = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/HBoxContainer/CopyIDBtn
-@onready var refresh_button: Button = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/PortraitDataContainer/SpriteFrameContainer/Header/RefreshButton
-@onready var select_sprites_button: Button = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/PortraitDataContainer/SpriteFrameContainer/LinePanel/LineContainer/SelectSpritesButton
-@onready var select_sound_path_button: Button = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/PortraitDataContainer/SoundsContainer/DataContainer/PanelContainer/HBoxContainer/SelectSoundPathButton
-@onready var play_sound_button: Button = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/PortraitDataContainer/SoundsContainer/DataContainer/PlaySoundButton
 @onready var add_sprite_button: Button = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/SheetsContainer/HeaderContainer/AddSpriteButton
 @onready var add_int_button: Button = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer/AddIntButton
 @onready var add_float_button: Button = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer/AddFloatButton
@@ -49,42 +48,48 @@ var no_db_container: PanelContainer = null
 @onready var add_string_button: Button = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer/AddStringButton
 @onready var new_character: Button = $MainContainer/DataSplitContainer/CharacterSelectorContainer/ButtonContainer/NewCharacter
 @onready var import_character_button: Button = $MainContainer/DataSplitContainer/CharacterSelectorContainer/ButtonContainer/ImportCharacterButton
-#@onready var create_db_button: Button = $NoDBContainer/CenterContainer/InfoContainer/ButtonsContainer/CharaButtonContainer/CreateDBButton
-#@onready var load_db_button: Button = $NoDBContainer/CenterContainer/InfoContainer/ButtonsContainer/CharaButtonContainer/LoadDBButton
+@onready var add_stat_btn: Button = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer/DataSetTabs/StatsContainer/HeaderContainer/AddStatBtn
+@onready var add_variant_button: Button = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer/DataSetTabs/VariantsContainer/TitleContainer/AddVariantButton
+#@onready var refresh_button: Button = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer/PortraitContainer/SpriteFrameContainer/Header/RefreshButton
+
+#@onready var animated_chk_btn: CheckButton = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer/PortraitContainer/HBoxContainer/InfoContainer/AnimationContainer/AnimatedChkBtn
 
 @onready var search_character_line: LineEdit = $MainContainer/DataSplitContainer/CharacterSelectorContainer/ButtonContainer/SearchCharacterLine
-@onready var line_edit: LineEdit = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/DataSetTabs/StatsContainer/HeaderContainer/LineEdit
-@onready var skill_search_line: LineEdit = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/DataSetTabs/SkillsContainer/SkillSearchLine
-@onready var search_perk_ln_edt: LineEdit = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/DataSetTabs/PerksContainer/SearchPerkLnEdt
-@onready var search_variant_ln_edt: LineEdit = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/DataSetTabs/VariantsContainer/TitleContainer/SearchVariantLnEdt
 @onready var custom_data_search_line: LineEdit = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/CustomDataContainer/CustomDataSearchLine
 @onready var flag_search_line: LineEdit = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/VBoxContainer/FlagsContainer/FlagSearchLine
 @onready var faction_search_line: LineEdit = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/VBoxContainer/FactionsContainer/FactionSearchLine
-@onready var sprite_frame_line: LineEdit = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/PortraitDataContainer/SpriteFrameContainer/LinePanel/LineContainer/SpriteFrameLine
-@onready var sound_path_line: LineEdit = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/PortraitDataContainer/SoundsContainer/DataContainer/PanelContainer/HBoxContainer/SoundPathLine
 @onready var char_name_line: LineEdit = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/CharNameContainer/CharNameLine
+@onready var line_edit: LineEdit = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer/DataSetTabs/StatsContainer/HeaderContainer/LineEdit
+@onready var skill_search_line: LineEdit = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer/DataSetTabs/SkillsContainer/SkillSearchLine
+@onready var search_perk_ln_edt: LineEdit = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer/DataSetTabs/PerksContainer/SearchPerkLnEdt
+@onready var search_variant_ln_edt: LineEdit = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer/DataSetTabs/VariantsContainer/TitleContainer/SearchVariantLnEdt
+#@onready var sprite_frame_line: LineEdit = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer/PortraitContainer/SpriteFrameContainer/LinePanel/LineContainer/SpriteFrameLine
+#@onready var sound_path_line: LineEdit = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer/PortraitContainer/HBoxContainer/InfoContainer/SoundsContainer/DataContainer/PanelContainer/HBoxContainer/SoundPathLine
 
 @onready var characters_tree: Tree = $MainContainer/DataSplitContainer/CharacterSelectorContainer/CharactersTree
 @onready var factions_tree: Tree = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/VBoxContainer/FactionsContainer/FactionsTree
-@onready var stats_tree: Tree = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/DataSetTabs/StatsContainer/StatsTree
-@onready var skills_tree: Tree = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/DataSetTabs/SkillsContainer/SkillsTree
-@onready var variants_tree: Tree = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/DataSetTabs/VariantsContainer/VariantsTree
-@onready var perks_tree: Tree = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/DataSetTabs/PerksContainer/PerksTree
 @onready var sprite_sheets_tree: Tree = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/SheetsContainer/SpriteSheetsTree
 @onready var custom_data_tree: Tree = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/CustomDataContainer/CustomDataTree
 @onready var flags_tree: Tree = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/VBoxContainer/FlagsContainer/FlagsTree
+@onready var stats_tree: Tree = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer/DataSetTabs/StatsContainer/StatsTree
+@onready var skills_tree: Tree = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer/DataSetTabs/SkillsContainer/SkillsTree
+@onready var perks_tree: Tree = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer/DataSetTabs/PerksContainer/PerksTree
+@onready var variants_tree: Tree = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer/DataSetTabs/VariantsContainer/VariantsTree
 
 @onready var char_name_color: ColorPickerButton = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/CharNameContainer/CharNameColor
 @onready var species_option_button: OptionButton = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/SpeciesContainer/SpeciesOptionButton
 @onready var race_option_button: OptionButton = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/RaceContainer/RaceOptionButton
 @onready var gender_option_button: OptionButton = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/GenderContainer/GenderOptionButton
+#@onready var anim_opt_btn: OptionButton = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer/PortraitContainer/HBoxContainer/InfoContainer/AnimationContainer/AnimOptBtn
+
+#@onready var fps_spn_bx: SpinBox = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer/PortraitContainer/HBoxContainer/InfoContainer/FPSContainer/FPSSpnBx
 
 #@onready var no_db_container: PanelContainer = $NoDBContainer
 
 @onready var main_container: VBoxContainer = $MainContainer
 
 @onready var data_select_dialog: FileDialog = $ComponentNode/DataSelectDialog
-@onready var id_select_panel: PanelContainer = $IDSelectPanel
+#@onready var id_select_panel: PanelContainer = $IDSelectPanel
 
 #@onready var races_missing_container: HBoxContainer = $NoDBContainer/CenterContainer/InfoContainer/RacesMissingContainer
 #@onready var char_db_container: HBoxContainer = $NoDBContainer/CenterContainer/InfoContainer/RacesMissingContainer/CharDBContainer
@@ -104,7 +109,10 @@ var no_db_container: PanelContainer = null
 #@onready var success_talent_texture: TextureRect = $NoDBContainer/CenterContainer/InfoContainer/RacesMissingContainer/TalentsResContainer/SuccessFaccTexture
 #@onready var failure_talent_texture: TextureRect = $NoDBContainer/CenterContainer/InfoContainer/RacesMissingContainer/TalentsResContainer/FailureFaccTexture
 
-@onready var main_menu: MenuButton = $MainContainer/DataSplitContainer/VBoxContainer/MenusContainer/MainMenu
+@onready var main_menu: MenuButton = $MainContainer/DataSplitContainer/CharacterSelectorContainer/HBoxContainer/MenusContainer/MainMenu
+@onready var type_stream_player: AudioStreamPlayer = $ComponentNode/TypeStreamPlayer
+
+#@onready var portrait_texture: PortraitTextureRect = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer/PortraitContainer/HBoxContainer/PortraitTexture
 
 
 func _ready() -> void:
@@ -142,8 +150,8 @@ func _ready() -> void:
 	data_select_dialog.file_selected.connect(on_dialog_ok)
 	#create_db_button.pressed.connect(on_create_new_resource)
 	#load_db_button.pressed.connect(on_open_char_resource)
-	id_select_panel.id_changed.connect(on_id_selector_id_changed)
-	id_select_panel.id_submitted.connect(on_id_submitted)
+	#id_select_panel.id_changed.connect(on_id_selector_id_changed)
+	#id_select_panel.id_submitted.connect(on_id_submitted)
 	new_character.pressed.connect(on_create_new_character)
 	import_character_button.pressed.connect(on_import_character)
 	copy_id_btn.pressed.connect(on_copy_id_btn_pressed)
@@ -161,7 +169,26 @@ func _ready() -> void:
 	sprite_sheets_tree.sheets_updated.connect(on_sheets_updated)
 	sprite_sheets_tree.id_edited.connect(on_ref_id_edited)
 	
+	select_sprites_button.pressed.connect(on_load_portrait_pressed)
+	select_sound_path_button.pressed.connect(on_load_sound_pressed)
+	play_sound_button.pressed.connect(on_play_sound_pressed)
+	sound_path_line.text_changed.connect(on_sound_path_set)
+	
 	stats_tree.stat_edited.connect(on_stat_id_edited)
+
+
+func on_play_sound_pressed() -> void:
+	if sprite_frame_line.text.is_empty():
+		return
+	
+	if type_stream_player.stream == null:
+		type_stream_player.stream = load(sprite_frame_line.text)
+	
+	type_stream_player.play()
+
+
+func on_sound_path_set(path: String) -> void:
+	play_sound_button.disabled = path.is_empty()
 
 
 func on_menu_pressed(id: int) -> void:
@@ -310,6 +337,7 @@ func _set_character_selected(character_id: String) -> void:
 	stats_tree.clear_stats()
 	perks_tree.clear_checks()
 	variants_tree.clear_variants()
+	type_stream_player.stream = null
 	
 	if _character_memory.has(character_id):
 		var character_data: Dictionary = _character_memory[character_id]
@@ -510,94 +538,115 @@ func select_gender(gender: int) -> void:
 		printerr(str("[CHARACTERS] Gender ", gender, " not found."))
 
 
-func on_id_selector_id_changed(new_id: String) -> void:
-	id_select_panel.set_valid_id(not _characters_resource.has_character(new_id))
+
+func on_load_sound_pressed() -> void:
+	data_select_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
+	data_select_dialog.clear_filters()
+	data_select_dialog.add_filter("*.ogg,*.mp3,*.wav", "Audio Files")
+	data_select_dialog.dialog_mode = 2
+	data_select_dialog.show()
 
 
-func on_id_submitted(new_id: String) -> void:
-	id_select_panel.visible = false
-	data_select_dialog.is_character = true
-	data_select_dialog.character_id = new_id
-	data_select_dialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
-	data_select_dialog.current_file = new_id
+func on_load_portrait_pressed() -> void:
+	data_select_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
+	data_select_dialog.clear_filters()
+	data_select_dialog.add_filter("*.tres,*.res", "Resources")
+	data_select_dialog.dialog_mode = 3
 	data_select_dialog.show()
 
 
 func on_create_new_character() -> void:
-	id_select_panel.clear_id()
-	id_select_panel.visible = true
+	data_select_dialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
+	data_select_dialog.clear_filters()
+	data_select_dialog.add_filter("*.tres", "Resources")
+	data_select_dialog.dialog_mode = 1
+	data_select_dialog.show()
 
 
 func on_import_character() -> void:
-	data_select_dialog.is_character = true
+	data_select_dialog.dialog_mode = 1
+	data_select_dialog.clear_filters()
+	data_select_dialog.add_filter("*.tres", "Resources")
 	data_select_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
 	data_select_dialog.show()
 
 
 func on_create_new_resource() -> void:
-	data_select_dialog.is_character = false
+	data_select_dialog.dialog_mode = 0
+	data_select_dialog.clear_filters()
+	data_select_dialog.add_filter("*.tres", "Resources")
 	data_select_dialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
 	data_select_dialog.show()
 
 
 func on_open_char_resource() -> void:
-	data_select_dialog.is_character = false
+	data_select_dialog.dialog_mode = 0
+	data_select_dialog.clear_filters()
+	data_select_dialog.add_filter("*.tres", "Resources")
 	data_select_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
 	data_select_dialog.show()
 
 
 func on_dialog_ok(resource_path: String) -> void:
-	if data_select_dialog.is_character:
-		if data_select_dialog.file_mode == FileDialog.FILE_MODE_SAVE_FILE:
-			var new_char := CharacterDefinition.new()
-			new_char.character_id = data_select_dialog.character_id
-			if ResourceSaver.save(new_char, resource_path) == OK:
-				if not _characters_resource.has_character(data_select_dialog.character_id):
-					characters_tree.add_character(
-							data_select_dialog.character_id,
-							resource_path)
-				_characters_resource.set_character(data_select_dialog.character_id, resource_path)
-				_characters_resource.save()
-		else:
-			if not ResourceLoader.exists(resource_path):
-				return
-			var res_pre: Resource = load(resource_path)
-			if res_pre is not CharacterDefinition:
-				return
-			if _characters_resource.has_character(res_pre.character_id):
-				printerr(str("[CHARACTERS] A character with ID \"", res_pre.character_id, "\" already exists. Path will be replaced."))
+	match data_select_dialog.dialog_mode:
+		0: # Resource
+			if data_select_dialog.file_mode == FileDialog.FILE_MODE_SAVE_FILE:
+				var new_chara_db := NFCharacterDBRes.new()
+				ResourceSaver.save(
+						new_chara_db,
+						resource_path)
+				_characters_resource = new_chara_db
 			else:
-				characters_tree.add_character(
-							res_pre.character_id,
-							resource_path)
-			_characters_resource.set_character(res_pre.character_id, resource_path)
-			_characters_resource.save()
-	else:
-		if data_select_dialog.file_mode == FileDialog.FILE_MODE_SAVE_FILE:
-			var new_chara_db := NFCharacterDBRes.new()
-			ResourceSaver.save(
-					new_chara_db,
-					resource_path)
-			_characters_resource = new_chara_db
-		else:
-			if not ResourceLoader.exists(resource_path):
-				return
-		
-			var preload_resource: Resource = load(resource_path)
-		
-			if preload_resource is NFCharacterDBRes:
-				_characters_resource = preload_resource
-				_characters_resource.validate_characters()
-		
-		if _characters_resource != null:
-			ProjectSettings.set_setting(NFCharacterDBRes.SETTINGS_PATH, resource_path)
-			ProjectSettings.save()
-			load_characters()
+				if not ResourceLoader.exists(resource_path):
+					return
 			
-			if check_for_resources():
-				if no_db_container == null:
-					no_db_container.queue_free()
-				main_container.visible = true
+				var preload_resource: Resource = load(resource_path)
+			
+				if preload_resource is NFCharacterDBRes:
+					_characters_resource = preload_resource
+					_characters_resource.validate_characters()
+			
+			if _characters_resource != null:
+				ProjectSettings.set_setting(NFCharacterDBRes.SETTINGS_PATH, resource_path)
+				ProjectSettings.save()
+				load_characters()
+				
+				if check_for_resources():
+					if no_db_container == null:
+						no_db_container.queue_free()
+					main_container.visible = true
+		1: # Character
+			if data_select_dialog.file_mode == FileDialog.FILE_MODE_SAVE_FILE:
+				var new_char := CharacterDefinition.new()
+				#new_char.character_id = data_select_dialog.character_id
+				if ResourceSaver.save(new_char, resource_path) == OK:
+					if not _characters_resource.has_character(data_select_dialog.character_id):
+						characters_tree.add_character(resource_path)
+					_characters_resource.set_character(data_select_dialog.character_id, resource_path)
+					_characters_resource.save()
+			else:
+				if not ResourceLoader.exists(resource_path):
+					return
+				
+				var res_pre: Resource = load(resource_path)
+				
+				if res_pre is not CharacterDefinition:
+					return
+				
+				if _characters_resource.has_character(res_pre.character_id):
+					printerr(str("[CHARACTERS] A character with ID \"", res_pre.character_id, "\" already exists. ID will be changed."))
+				
+				_characters_resource.set_character(characters_tree.add_character(resource_path), resource_path)
+				_characters_resource.save()
+		2: # Sound
+			sound_path_line.text = resource_path
+		3: # Sprite
+			var frames_preload: Resource = load(resource_path)
+			if frames_preload is SpriteFrames:
+				sprite_frame_line.text = resource_path
+			else:
+				printerr("[KINDS] Selected resource isn't SpriteFrames")
+		
 
 
 func _has_all_required_resources() -> bool:

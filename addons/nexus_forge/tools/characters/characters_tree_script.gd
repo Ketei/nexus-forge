@@ -1,5 +1,5 @@
 @tool
-extends Tree
+extends IDTree
 
 
 signal close_requested(character_id: String)
@@ -13,13 +13,15 @@ func _ready() -> void:
 	root_tree = create_item()
 
 
-func add_character(character_path: String) -> void:
+func add_character(character_path: String) -> String:
 	var character_res: CharacterDefinition = load(character_path)
 	var new_character = create_item(root_tree)
-	new_character.set_text(0, character_res.character_id)
+	var character_id: String = validate_id(root_tree, character_res.character_id, new_character)
+	new_character.set_text(0, character_id)
 	new_character.set_editable(0, false)
 	new_character.add_button(0, CLOSE_ICON, 0, false, "Close Character")
 	new_character.set_metadata(0, {"path": character_path, "data": character_res})
+	return character_id
 
 
 func on_item_selected() -> void:

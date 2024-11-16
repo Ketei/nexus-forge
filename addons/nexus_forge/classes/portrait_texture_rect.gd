@@ -3,135 +3,141 @@ class_name PortraitTextureRect
 extends TextureRect
 
 
+signal animation_finished
+
 @export var portrait_frames: SpriteFrames : set = set_portrait_frames
 @export var frame: int = -1 : set = set_frame
 @export var playing: bool = false: set = set_playing
 
-var animation_name: StringName: set = set_anim_name
+var current_animation: StringName: set = set_anim_name
 
-var _animation_control: AnimatedSprite2D
+var _animation_control: AnimatedSprite2D = null
+var _delta_time: float = 0.0
+var _queued_frames: int = 0
+var _delta_timeout: float = 0.0
 
 
 func _ready() -> void:
 	expand_mode = EXPAND_IGNORE_SIZE
 	stretch_mode = STRETCH_KEEP_ASPECT_COVERED
-	_animation_control = AnimatedSprite2D.new()
-	_animation_control.name = &"_animation_control"
-	_animation_control.visible = false
-	add_child(_animation_control, false, Node.INTERNAL_MODE_FRONT)
-	
-	_animation_control.sprite_frames = portrait_frames
-	
-	if portrait_frames != null:
-		if _animation_control.sprite_frames.has_animation(animation_name):
-			_animation_control.animation = animation_name
-		_animation_control.frame = frame
-		if playing:
-			_animation_control.play()
-	else:
-		if playing:
-			playing = false
-	
-	_animation_control.frame_changed.connect(_on_frame_changed)
-	_animation_control.animation_finished.connect(_on_animation_finished)
+	set_process(false)
+
+
+func _process(delta: float) -> void:
+	_delta_time += delta
+	if _delta_timeout <= _delta_time:
+		_queued_frames = int(_delta_time / _delta_timeout)
+		frame += _queued_frames
+		_delta_time -= _delta_timeout * _queued_frames
 
 
 ## Plays and stops an animation
 func set_playing(is_playing: bool) -> void:
-	if not is_node_ready():
-		playing = is_playing
-		return
-	playing = is_playing
+	_delta_time = 0
+	if is_playing:
+		playing = portrait_frames != null and 0 < portrait_frames.get_frame_count(current_animation)
+	else:
+		playing = false
 	
-	if portrait_frames == null:
-		return
 	
 	if playing:
-		_animation_control.play()
-	else:
-		if _animation_control.is_playing():
-			_animation_control.stop()
+		_delta_timeout = 1.0 / portrait_frames.get_animation_speed(current_animation)
+	set_process(playing)
 
 
-## Animations are controlled by this node. Don't delete or it'll stop working.
-func get_anim_control() -> AnimatedSprite2D:
-	return _animation_control
+func get_animations() -> PackedStringArray:
+	if portrait_frames != null:
+		return portrait_frames.get_animation_names()
+	return PackedStringArray()
 
 
 func set_frame(frame_index: int) -> void:
-	if not is_node_ready():
-		frame = frame_index
-		return
-	
-	if portrait_frames == null:
+	if portrait_frames != null:
+		var frame_limit: int = portrait_frames.get_frame_count(current_animation)
+		
+		if frame_limit == 0:
+			frame = -1
+			return
+		
+		if portrait_frames.get_animation_loop(current_animation):
+			frame = posmod(frame_index, frame_limit)
+		else:
+			frame = clampi(frame_index, -1, frame_limit)
+			if playing:
+				if frame == frame_limit - 1:
+					animation_finished.emit()
+					playing = false
+	else:
 		frame = -1
-	else:
-		frame = clampi(frame_index, -1, portrait_frames.get_frame_count(animation_name) - 1)
 	
-	if frame == -1:
-		texture = null
-	else:
-		if frame == 0 and _animation_control.frame == 0:
-			_on_frame_changed()
-		_animation_control.frame = frame
+	texture = get_current_frame_texture()
+
+
+func get_current_frame_texture() -> Texture2D:
+	if portrait_frames != null and -1 < frame and portrait_frames.has_animation(current_animation):
+		return portrait_frames.get_frame_texture(
+				current_animation,
+				frame)
+	return null
 
 
 func set_portrait_frames(new_frames: SpriteFrames) -> void:
-	if not is_node_ready():
-		portrait_frames = new_frames
+	if portrait_frames != null:
+		portrait_frames.changed.disconnect(on_frames_updated)
+	
+	portrait_frames = new_frames
+	notify_property_list_changed()
+		
+	if new_frames != null:
+		new_frames.changed.connect(on_frames_updated)
+		print(new_frames.get_signal_list())
+	else:
+		frame = -1
+		playing = false
 		return
 	
-	_animation_control.sprite_frames = new_frames
-	portrait_frames = new_frames
-	var anim_names: PackedStringArray = new_frames.get_animation_names() if new_frames != null else PackedStringArray()
-	notify_property_list_changed()
+	var anim_names: PackedStringArray = new_frames.get_animation_names()
+	
 	if not anim_names.is_empty():
-		animation_name = StringName(anim_names[0])
+		current_animation = anim_names[0]
 		frame = 0
+	else:
+		#current_animation = &"" # Does this clear the thing?
+		frame = -1
+
+
+func on_frames_updated() -> void:
+	notify_property_list_changed()
+	print("Frames updated")
+	var anim_count: int = portrait_frames.get_animation_names().size()
+	if anim_count == 0:
+		playing = false
+		frame = -1
+		return
+	
+	if playing:
+		if 0 < portrait_frames.get_frame_count(current_animation):
+			_delta_timeout = 1.0 / portrait_frames.get_animation_speed(current_animation)
+		else:
+			playing = false
 
 
 func set_anim_name(new_name: StringName) -> void:
-	if not is_node_ready():
-		animation_name = new_name
-		return
-	if new_name.is_empty():
-		frame = -1
-		animation_name = new_name
-	else:
-		if _animation_control.sprite_frames != null and _animation_control.sprite_frames.has_animation(new_name):
-			animation_name = new_name
-			_animation_control.animation = new_name
-			frame = 0
-			if playing:
-				_animation_control.play()
-		else:
-			if Engine.is_editor_hint():
-				notify_property_list_changed()
-
-
-func _on_frame_changed() -> void:
-	texture = _animation_control.sprite_frames.get_frame_texture(
-			_animation_control.animation,
-			_animation_control.frame
-			)
-
-
-func _on_animation_finished() -> void:
-	playing = false
+	current_animation = new_name
+	frame = 0
 
 
 func _get_property_list() -> Array[Dictionary]:
-	@warning_ignore("incompatible_ternary")
 	return [{
-		"name": "animation_name",
+		"name": "current_animation",
 		"type": TYPE_STRING_NAME,
 		"hint": PROPERTY_HINT_ENUM,
-		"hint_string": ",".join(_animation_control.sprite_frames.get_animation_names() if portrait_frames != null else [])
+		"hint_string": ",".join(get_animations())
 	}]
 
 
 func _set(property: StringName, value: Variant) -> bool:
-	if property == &"animation_name":
-		animation_name = value
+	if property == &"current_animation":
+		current_animation = value
 		return true
 	return false

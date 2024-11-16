@@ -1,10 +1,11 @@
-[gd_scene load_steps=18 format=3 uid="uid://fss7aqmbgj6s"]
+[gd_scene load_steps=19 format=3 uid="uid://fss7aqmbgj6s"]
 
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/depot/items_main_script.gd" id="1_82bi8"]
 [ext_resource type="Texture2D" uid="uid://12lyg7db58dg" path="res://addons/nexus_forge/tools/variables/icons/add_int.svg" id="1_tsjpe"]
 [ext_resource type="Texture2D" uid="uid://xkqkxosnppid" path="res://addons/nexus_forge/common_icons/open_file.svg" id="2_djc7d"]
 [ext_resource type="Texture2D" uid="uid://dcgniolhiay6u" path="res://addons/nexus_forge/tools/variables/icons/add_float.svg" id="2_ib6x0"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/depot/item_tree_script.gd" id="2_un8xd"]
+[ext_resource type="Texture2D" uid="uid://cd4jt2ru86e16" path="res://addons/nexus_forge/common_icons/save_file.svg" id="2_wq7bt"]
 [ext_resource type="Texture2D" uid="uid://mve5bcrecv8v" path="res://addons/nexus_forge/common_icons/import_icon.svg" id="3_pqhat"]
 [ext_resource type="Texture2D" uid="uid://c472l5bho4jpi" path="res://addons/nexus_forge/tools/variables/icons/add_bool.svg" id="3_ujuwe"]
 [ext_resource type="Texture2D" uid="uid://cxv7veghytl4m" path="res://addons/nexus_forge/tools/variables/icons/add_string.svg" id="4_8td5l"]
@@ -48,21 +49,6 @@ custom_minimum_size = Vector2(650, 0)
 layout_mode = 2
 size_flags_stretch_ratio = 4.0
 
-[node name="HeaderContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer"]
-layout_mode = 2
-
-[node name="HSeparator" type="HSeparator" parent="MainContainer/ItemsContainer/HeaderContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="Label" type="Label" parent="MainContainer/ItemsContainer/HeaderContainer"]
-layout_mode = 2
-text = "Items"
-
-[node name="HSeparator2" type="HSeparator" parent="MainContainer/ItemsContainer/HeaderContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-
 [node name="DataContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
@@ -71,6 +57,26 @@ size_flags_vertical = 3
 [node name="ItemSelectContainer" type="VBoxContainer" parent="MainContainer/ItemsContainer/DataContainer"]
 custom_minimum_size = Vector2(250, 0)
 layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemSelectContainer"]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="MainContainer/ItemsContainer/DataContainer/ItemSelectContainer/HBoxContainer"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.223182, 0.705086, 0.904884, 1)
+theme_override_font_sizes/font_size = 25
+text = "Depot"
+vertical_alignment = 1
+
+[node name="SaveButton" type="Button" parent="MainContainer/ItemsContainer/DataContainer/ItemSelectContainer/HBoxContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+size_flags_horizontal = 10
+size_flags_vertical = 4
+icon = ExtResource("2_wq7bt")
+icon_alignment = 1
+expand_icon = true
 
 [node name="BarPanelContainer" type="PanelContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemSelectContainer"]
 layout_mode = 2
@@ -210,6 +216,9 @@ layout_mode = 2
 size_flags_horizontal = 3
 text_overrun_behavior = 3
 clip_text = true
+selected = 0
+item_count = 1
+popup/item_0/text = "weapon"
 
 [node name="SubtypeContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer"]
 layout_mode = 2
@@ -226,6 +235,9 @@ layout_mode = 2
 size_flags_horizontal = 3
 text_overrun_behavior = 3
 clip_text = true
+selected = 0
+item_count = 1
+popup/item_0/text = "mace"
 
 [node name="ValuesContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer"]
 layout_mode = 2
@@ -369,7 +381,7 @@ hide_root = true
 scroll_horizontal_enabled = false
 script = ExtResource("11_ri7fi")
 
-[node name="VSeparator2" type="VSeparator" parent="MainContainer"]
+[node name="VSeparator" type="VSeparator" parent="MainContainer"]
 layout_mode = 2
 
 [node name="RecipesContainer" type="VBoxContainer" parent="MainContainer"]
@@ -382,21 +394,6 @@ layout_mode = 2
 size_flags_vertical = 3
 
 [node name="StationsTreeCont" type="VBoxContainer" parent="MainContainer/RecipesContainer/UpperTreeContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="HBoxContainer7" type="HBoxContainer" parent="MainContainer/RecipesContainer/UpperTreeContainer/StationsTreeCont"]
-layout_mode = 2
-
-[node name="HSeparator" type="HSeparator" parent="MainContainer/RecipesContainer/UpperTreeContainer/StationsTreeCont/HBoxContainer7"]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="Label" type="Label" parent="MainContainer/RecipesContainer/UpperTreeContainer/StationsTreeCont/HBoxContainer7"]
-layout_mode = 2
-text = "Stations"
-
-[node name="HSeparator2" type="HSeparator" parent="MainContainer/RecipesContainer/UpperTreeContainer/StationsTreeCont/HBoxContainer7"]
 layout_mode = 2
 size_flags_horizontal = 3
 

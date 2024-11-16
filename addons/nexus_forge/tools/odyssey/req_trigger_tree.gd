@@ -11,9 +11,10 @@ func _ready() -> void:
 	root_tree = create_item()
 	set_column_expand(0, true)
 	set_column_expand(1, false)
-	set_column_expand(2, true)
+	set_column_expand(2, false)
 	
 	set_column_custom_minimum_width(1, 48)
+	set_column_custom_minimum_width(2, 90)
 
 
 func clear_items() -> void:

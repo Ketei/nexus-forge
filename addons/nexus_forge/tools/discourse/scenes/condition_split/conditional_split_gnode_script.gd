@@ -96,6 +96,7 @@ func generate_node_dictionary() -> Dictionary:
 				_:
 					printerr("Something unexpected happened while tryting to generate dict for conditional split")
 			false_next_structure["data"] = next_false_node.generate_node_dictionary()
-	
+		condition_dictionary["false"] = false_next_structure
+		
 	condition_dictionary["offset"] = position_offset
 	return condition_dictionary

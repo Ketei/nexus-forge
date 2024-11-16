@@ -40,7 +40,7 @@ var no_faction_panel: PanelContainer = null
 
 @onready var main_container: HBoxContainer = $MainContainer
 
-@onready var main_menu_btn: MenuButton = $MainContainer/FlagsContainer/MenuContainer/MainMenuMnBtn
+@onready var main_menu_btn: MenuButton = $MainContainer/FactionDataContainer/HBoxContainer/MenuContainer/MainMenuMnBtn
 
 
 func _ready() -> void:

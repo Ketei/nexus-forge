@@ -52,6 +52,7 @@ var no_resource_panel: PanelContainer = null
 @onready var recipe_label: Label = $MainContainer/RecipesContainer/HBoxContainer/RecipeLabel
 
 @onready var main_container: HBoxContainer = $MainContainer
+@onready var save_button: Button = $MainContainer/ItemsContainer/DataContainer/ItemSelectContainer/HBoxContainer/SaveButton
 
 # Consider freeing from memory as once hidden it isn't used again.
 #@onready var no_resource_panel: PanelContainer = $NoResourcePanel
@@ -91,6 +92,7 @@ func _ready() -> void:
 	search_data_ln_edt.text_changed.connect(on_search_item.bind(custom_data_tree))
 	search_currency_ln_edit.text_changed.connect(on_search_item.bind(currencies_tree))
 	search_station_ln_edt.text_changed.connect(on_search_item.bind(stations_tree))
+	save_button.pressed.connect(on_save)
 	
 	if _items_resource != null:
 		load_items()

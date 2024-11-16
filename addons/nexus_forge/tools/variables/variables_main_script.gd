@@ -45,7 +45,7 @@ var main_submenu: PopupMenu = null
 @onready var title_label: Label = $MainSplit/VBoxContainer/HBoxContainer/TitleLabel
 @onready var current_folder_label: Label = $MainSplit/VBoxContainer2/TitleContainer/FolderPathContainer/CurrentFolderLabel
 
-@onready var variables_mn_btn: MenuButton = $MainSplit/VBoxContainer2/TitleContainer/MenuContainer/VariablesMnBtn
+@onready var variables_mn_btn: MenuButton = $MainSplit/VBoxContainer/HBoxContainer/MenuContainer/VariablesMnBtn
 
 
 func _ready() -> void:

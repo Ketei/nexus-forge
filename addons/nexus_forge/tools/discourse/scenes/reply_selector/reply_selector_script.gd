@@ -155,6 +155,10 @@ func generate_node_dictionary() -> Dictionary:
 			next_structure["type"] = next_class
 			next_structure["data"] = next_dict_data
 			reply_next = next_structure
+		else:
+			var next_dict: Dictionary = DialogData.get_next_structure()
+			next_dict["type"] = DialogData.NextType.END
+			reply_next = next_dict
 		
 		reply_data["options"].append(reply_input)
 		reply_data["targets"].append(reply_next)

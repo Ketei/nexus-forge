@@ -54,12 +54,28 @@ size_flags_vertical = 3
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="TitleLabel" type="Label" parent="MainContainer/SpcRcContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="MainContainer/SpcRcContainer"]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="MainContainer/SpcRcContainer/HBoxContainer"]
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.223182, 0.705086, 0.904884, 1)
 theme_override_font_sizes/font_size = 25
 text = "Species"
+
+[node name="MenuContainer" type="HBoxContainer" parent="MainContainer/SpcRcContainer/HBoxContainer"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 2
+
+[node name="MainMenu" type="MenuButton" parent="MainContainer/SpcRcContainer/HBoxContainer/MenuContainer"]
+layout_mode = 2
+text = "Menu"
+item_count = 1
+popup/item_0/text = "Save"
+popup/item_0/icon = ExtResource("4_yfoub")
 
 [node name="SpeciesContainer" type="VBoxContainer" parent="MainContainer/SpcRcContainer"]
 layout_mode = 2
@@ -144,17 +160,6 @@ layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="MenuContainer" type="HBoxContainer" parent="MainContainer/StatsContainer"]
-custom_minimum_size = Vector2(0, 36)
-layout_mode = 2
-
-[node name="MainMenu" type="MenuButton" parent="MainContainer/StatsContainer/MenuContainer"]
-layout_mode = 2
-text = "Menu"
-item_count = 1
-popup/item_0/text = "Save"
-popup/item_0/icon = ExtResource("4_yfoub")
-
 [node name="Label" type="Label" parent="MainContainer/StatsContainer"]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
@@ -180,10 +185,6 @@ script = ExtResource("2_2bxdm")
 [node name="PerksContainer" type="VBoxContainer" parent="MainContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
-
-[node name="Control" type="Control" parent="MainContainer/PerksContainer"]
-custom_minimum_size = Vector2(0, 36)
-layout_mode = 2
 
 [node name="PerkSlectorContainer" type="VBoxContainer" parent="MainContainer/PerksContainer"]
 layout_mode = 2
@@ -232,10 +233,6 @@ bbcode_enabled = true
 [node name="DataGenderContainer" type="VBoxContainer" parent="MainContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
-
-[node name="Control" type="Control" parent="MainContainer/DataGenderContainer"]
-custom_minimum_size = Vector2(0, 36)
-layout_mode = 2
 
 [node name="CustomDataContainer" type="VBoxContainer" parent="MainContainer/DataGenderContainer"]
 layout_mode = 2

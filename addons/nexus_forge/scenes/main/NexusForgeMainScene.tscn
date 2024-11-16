@@ -41,10 +41,11 @@ theme_override_constants/side_margin = 0
 theme_override_styles/tabbar_background = SubResource("StyleBoxFlat_7uir0")
 theme_override_styles/panel = SubResource("StyleBoxFlat_i88kw")
 theme_override_styles/tab_selected = SubResource("StyleBoxFlat_jtiy1")
-current_tab = 0
+current_tab = 3
 metadata/_edit_use_anchors_ = true
 
 [node name="NexusForge" type="Control" parent="TabContainer"]
+visible = false
 layout_mode = 2
 metadata/_tab_index = 0
 
@@ -80,7 +81,6 @@ visible = false
 layout_mode = 2
 
 [node name="Kinds" type="Control" parent="TabContainer"]
-visible = false
 layout_mode = 2
 metadata/_tab_index = 3
 

@@ -29,40 +29,42 @@ var current_obj: String = "":
 var resource_file_dialog: FileDialog = null
 var on_main_quests: bool = true
 var no_resource_panel: PanelContainer = null
+var loading_quest: bool = false
 
-@onready var quest_title_ln_edt: LineEdit = $MainContainer/QuestDescContainer/TitleContainer/QuestTitleLnEdt
-@onready var obj_title_ln_edt: LineEdit = $MainContainer/ObjectiveContainer/ObjectiveInfoContainer/ObjTitleDescContainer/TitleLineEdt/ObjTitleLnEdt
-@onready var search_obj_ln_edt: LineEdit = $MainContainer/ObjectiveContainer/ObjectiveInfoContainer/ObjectiveContainer/ObjSrchLnEdt
 @onready var search_qst_ln_edt: LineEdit = $MainContainer/QuestsContainer/SearchPanel/SearchContainer/SearchLnEdt
+@onready var quest_title_ln_edt: LineEdit = $MainContainer/QuestDescContainer/DataContainer/TitleContainer/QuestTitleLnEdt
+@onready var search_obj_ln_edt: LineEdit = $MainContainer/QuestDescContainer/ObjectiveContainer/ObjSrchLnEdt
 @onready var search_item_ln_edt: LineEdit = $MainContainer/ObjectiveContainer/ObjReqContainer/ItemTriggerContainer/ItemsContainer/SearchItemLnEdt
 @onready var search_trigger_ln_edt: LineEdit = $MainContainer/ObjectiveContainer/ObjReqContainer/ItemTriggerContainer/TriggerContainer/SearchTriggerLnEdt
-@onready var search_var_ln_edt: LineEdit = $MainContainer/ObjectiveContainer/ObjReqContainer/VariablesCotnainer/SearchVarLnEdt
+@onready var obj_title_ln_edt: LineEdit = $MainContainer/ObjectiveContainer/ObjReqContainer/VBoxContainer/ObjTitleDescContainer/TitleLineEdt/ObjTitleLnEdt
+@onready var search_var_ln_edt: LineEdit = $MainContainer/ObjectiveContainer/ObjReqContainer/VBoxContainer/VariablesCotnainer/SearchVarLnEdt
 
 @onready var create_quest_btn: Button = $MainContainer/QuestsContainer/SearchPanel/SearchContainer/CreateQuestBtn
-@onready var add_obj_btn: Button = $MainContainer/ObjectiveContainer/ObjectiveInfoContainer/ObjectiveContainer/ObjectiveHeader/AddObjBtn
+@onready var add_obj_btn: Button = $MainContainer/QuestDescContainer/ObjectiveContainer/ObjectiveHeader/AddObjBtn
 @onready var add_item_btn: Button = $MainContainer/ObjectiveContainer/ObjReqContainer/ItemTriggerContainer/ItemsContainer/ItemsHeader/AddItemBtn
+@onready var add_int_btn: Button = $MainContainer/ObjectiveContainer/ObjReqContainer/VBoxContainer/VariablesCotnainer/VariablesHeader/ButtonContainer/AddIntBtn
+@onready var add_flt_btn: Button = $MainContainer/ObjectiveContainer/ObjReqContainer/VBoxContainer/VariablesCotnainer/VariablesHeader/ButtonContainer/AddFltBtn
+@onready var add_bool_btn: Button = $MainContainer/ObjectiveContainer/ObjReqContainer/VBoxContainer/VariablesCotnainer/VariablesHeader/ButtonContainer/AddBoolBtn
+@onready var add_str_btn: Button = $MainContainer/ObjectiveContainer/ObjReqContainer/VBoxContainer/VariablesCotnainer/VariablesHeader/ButtonContainer/AddStrBtn
 @onready var add_trigger_btn: Button = $MainContainer/ObjectiveContainer/ObjReqContainer/ItemTriggerContainer/TriggerContainer/HeaderContainer/AddTriggerBtn
-@onready var add_int_btn: Button = $MainContainer/ObjectiveContainer/ObjReqContainer/VariablesCotnainer/VariablesHeader/ButtonContainer/AddIntBtn
-@onready var add_flt_btn: Button = $MainContainer/ObjectiveContainer/ObjReqContainer/VariablesCotnainer/VariablesHeader/ButtonContainer/AddFltBtn
-@onready var add_bool_btn: Button = $MainContainer/ObjectiveContainer/ObjReqContainer/VariablesCotnainer/VariablesHeader/ButtonContainer/AddBoolBtn
-@onready var add_str_btn: Button = $MainContainer/ObjectiveContainer/ObjReqContainer/VariablesCotnainer/VariablesHeader/ButtonContainer/AddStrBtn
 
 @onready var quest_tree: Tree = $MainContainer/QuestsContainer/QuestTree
-@onready var objectives_tree: Tree = $MainContainer/ObjectiveContainer/ObjectiveInfoContainer/ObjectiveContainer/ObjectivesTree
+@onready var objectives_tree: Tree = $MainContainer/QuestDescContainer/ObjectiveContainer/ObjectivesTree
 @onready var item_tree: Tree = $MainContainer/ObjectiveContainer/ObjReqContainer/ItemTriggerContainer/ItemsContainer/ItemTree
 @onready var trigger_tree: Tree = $MainContainer/ObjectiveContainer/ObjReqContainer/ItemTriggerContainer/TriggerContainer/TriggerTree
-@onready var variables_tree: Tree = $MainContainer/ObjectiveContainer/ObjReqContainer/VariablesCotnainer/VariablesTree
+@onready var variables_tree: Tree = $MainContainer/ObjectiveContainer/ObjReqContainer/VBoxContainer/VariablesCotnainer/VariablesTree
 
-@onready var quest_desc_txt_edt: TextEdit = $MainContainer/QuestDescContainer/DescContainer/DescTextEdit
-@onready var obj_desc_txt_edt: TextEdit = $MainContainer/ObjectiveContainer/ObjectiveInfoContainer/ObjTitleDescContainer/ObjDescTxtEdt
+@onready var quest_desc_txt_edt: TextEdit = $MainContainer/QuestDescContainer/DataContainer/DescContainer/DescTextEdit
+@onready var desc_text_edit: TextEdit = $MainContainer/QuestDescContainer/DataContainer/DescContainer/DescTextEdit
+@onready var obj_desc_txt_edt: TextEdit = $MainContainer/ObjectiveContainer/ObjReqContainer/VBoxContainer/ObjTitleDescContainer/ObjDescTxtEdt
 
-@onready var obj_id_lbl: Label = $MainContainer/ObjectiveContainer/ObjectiveInfoContainer/ObjTitleDescContainer/ObjHeader/IDLbl
+@onready var quest_label: Label = $MainContainer/QuestDescContainer/DataContainer/InfoContainer/QuestLabel
+@onready var obj_id_lbl: Label = $MainContainer/ObjectiveContainer/ObjReqContainer/VBoxContainer/ObjTitleDescContainer/ObjHeader/IDLbl
 
 @onready var main_container: HBoxContainer = $MainContainer
 
 @onready var quest_type_opt_btn: OptionButton = $MainContainer/QuestsContainer/HBoxContainer/QuestTypeOptBtn
-@onready var quests_menu_button: MenuButton = $MainContainer/QuestDescContainer/MenuContainer/QuestsMenuButton
-@onready var quest_label: Label = $MainContainer/QuestDescContainer/InfoContainer/QuestLabel
+@onready var quests_menu_button: MenuButton = $MainContainer/QuestsContainer/HBoxContainer2/MenuContainer/QuestsMenuButton
 
 
 func _ready() -> void:
@@ -158,6 +160,8 @@ func on_quest_renamed(from: String, to: String) -> void:
 
 
 func on_objective_created(objective_id: String) -> void:
+	if loading_quest:
+		return
 	if not quest_resource.has_quest_objective(current_quest, objective_id, on_main_quests):
 		quest_resource.create_objective(
 				current_quest,
@@ -167,10 +171,19 @@ func on_objective_created(objective_id: String) -> void:
 
 
 func on_objective_renamed(from: String, to: String) -> void:
-	var from_idx: int = quest_resource.quests[current_quest]["order"].find(from)
-	quest_resource.quests[current_quest]["order"][from_idx] = to
-	quest_resource.quests[current_quest]["objectives"][to] = quest_resource.quests[current_quest]["objectives"][from]
-	quest_resource.erase_objective(current_quest, from)
+	var from_idx: int = 0
+	if on_main_quests:
+		from_idx = quest_resource.quests_unique[current_quest]["order"].find(from)
+		quest_resource.quests_unique[current_quest]["order"][from_idx] = to
+		quest_resource.quests_unique[current_quest]["objectives"][to] = quest_resource.quests_unique[current_quest]["objectives"][from]
+		quest_resource.erase_objective(current_quest, from, true)
+	else:
+		from_idx = quest_resource.quests_boiler[current_quest]["order"].find(from)
+		quest_resource.quests_boiler[current_quest]["order"][from_idx] = to
+		quest_resource.quests_boiler[current_quest]["objectives"][to] = quest_resource.quests_unique[current_quest]["objectives"][from]
+		quest_resource.erase_objective(current_quest, from, false)
+	
+	
 	if current_obj == from:
 		current_obj = to
 
@@ -254,18 +267,21 @@ func save_objective() -> void:
 	var item_data: Dictionary = item_tree.get_data()
 	var trigger_data: Dictionary = trigger_tree.get_data()
 	var var_data: Dictionary = variables_tree.get_data()
-	# TODO restore this
-	#for item in item_data:
-		#quest_resource.add_objective_item(
-				#current_quest,
-				#current_obj,
-				#item,
-				#item_data[item]["amount"],
-				#range_to_operator(item_data[item]["match"]))
+	
+	for item in item_data:
+		quest_resource.add_objective_item(
+				current_quest,
+				current_obj,
+				on_main_quests,
+				item,
+				item_data[item]["exact"],
+				item_data[item]["amount"],
+				range_to_operator(item_data[item]["match"]))
 	for trigger in trigger_data:
 		quest_resource.add_objective_trigger(
 				current_quest,
 				current_obj,
+				on_main_quests,
 				trigger,
 				trigger_data[trigger]["amount"],
 				range_to_operator(trigger_data[trigger]["match"]))
@@ -273,6 +289,7 @@ func save_objective() -> void:
 		quest_resource.add_objective_variable(
 				current_quest,
 				current_obj,
+				on_main_quests,
 				variable,
 				var_data[variable]["value"],
 				range_to_operator(var_data[variable]["match"]))
@@ -288,7 +305,7 @@ func on_quest_deleted(quest_id: String) -> void:
 
 
 func on_objective_deleted(objective_id: String) -> void:
-	quest_resource.erase_objective(current_quest, objective_id)
+	quest_resource.erase_objective(current_quest, objective_id, on_main_quests)
 	if current_obj == objective_id:
 		clear_objectives()
 		current_obj = ""
@@ -315,6 +332,9 @@ func clear_quest() -> void:
 
 
 func on_quest_selected(quest_id: String) -> void:
+	if loading_quest:
+		return
+	loading_quest = true
 	if not current_obj.is_empty():
 		save_objective()
 	
@@ -330,6 +350,7 @@ func on_quest_selected(quest_id: String) -> void:
 		objectives_tree.add_item(quest_obj)
 	
 	current_quest = quest_id
+	loading_quest = false
 
 
 func on_objective_selected(obj_id: String) -> void:
