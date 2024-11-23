@@ -65,3 +65,7 @@ static func string_to_variant(string: String) -> Variant:
 		return false
 	else:
 		return string
+
+
+static func nocasecmp_equal(string_a: String, string_b: String) -> bool:
+	return string_a.to_upper() == string_b.to_upper()

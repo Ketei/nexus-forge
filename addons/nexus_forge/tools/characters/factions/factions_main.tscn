@@ -64,12 +64,14 @@ layout_mode = 2
 size_flags_horizontal = 3
 alignment = 2
 
-[node name="MainMenuMnBtn" type="MenuButton" parent="MainContainer/FactionDataContainer/HBoxContainer/MenuContainer"]
+[node name="SaveResButton" type="Button" parent="MainContainer/FactionDataContainer/HBoxContainer/MenuContainer"]
+custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
-text = "Menu"
-item_count = 1
-popup/item_0/text = "Save"
-popup/item_0/icon = ExtResource("6_yyyl0")
+tooltip_text = "Save factions"
+icon = ExtResource("6_yyyl0")
+flat = true
+icon_alignment = 1
+expand_icon = true
 
 [node name="FactionIDContainer" type="VBoxContainer" parent="MainContainer/FactionDataContainer"]
 layout_mode = 2
@@ -102,11 +104,6 @@ layout_mode = 2
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
-selected = 0
-item_count = 2
-popup/item_0/text = "bandits"
-popup/item_1/text = "guards"
-popup/item_1/id = 1
 
 [node name="DeleteFactionBtn" type="Button" parent="MainContainer/FactionDataContainer/FactionIDContainer/FactionSelect"]
 custom_minimum_size = Vector2(32, 32)
@@ -327,12 +324,3 @@ size_flags_horizontal = 3
 size_flags_stretch_ratio = 3.0
 disabled = true
 text = "Accept"
-
-[node name="Elements" type="Node" parent="."]
-
-[node name="FactionsResourceDialog" type="FileDialog" parent="Elements"]
-auto_translate_mode = 1
-initial_position = 1
-size = Vector2i(500, 350)
-ok_button_text = "Save"
-filters = PackedStringArray("*.tres;Resources")

@@ -90,7 +90,7 @@ func _is_root() -> bool:
 
 
 func generate_node_dictionary() -> Dictionary:
-	var character_structure: Dictionary = DialogData.get_character_structure()
+	var character_structure: Dictionary = NFDiscourseTool.get_character_structure()
 	character_structure["id"] = char_id_line.text
 	character_structure["idle"]["animation"] = idle_line.text
 	character_structure["idle"]["play"] = play_idle_check_button.button_pressed

@@ -115,7 +115,7 @@ func _is_root() -> bool:
 
 
 func generate_node_dictionary() -> Dictionary:
-	var reply_data: Dictionary = DialogData.get_replies_structure()
+	var reply_data: Dictionary = NFDiscourseTool.get_replies_structure()
 	reply_data["cancel"] = reply_cancel_box.value - 1
 	reply_data["keep_dialog"] = keep_dialog_check.button_pressed
 	reply_data["offset"] = position_offset
@@ -130,12 +130,12 @@ func generate_node_dictionary() -> Dictionary:
 		if has_output_connection(str(reply)):
 			var next_node := get_output_port_connection_by_id(str(reply))
 			var next_class := DialogData.NextType.END
-			var next_structure = DialogData.get_next_structure()
+			var next_structure = NFDiscourseTool.get_next_structure()
 			var next_dict_data: Dictionary = {}
 			
 			if next_node.node_type == DialogData.DialogType.DIALOG or next_node.node_type == DialogData.DialogType.OPTIONS:
 				next_class = DialogData.NextType.ID
-				next_dict_data = DialogData.get_next_by_id()
+				next_dict_data = NFDiscourseTool.get_next_by_id()
 				next_dict_data["next"] = next_node.node_id
 				next_dict_data["use_shortcut"] = next_node.node_type == DialogData.DialogType.ID
 				next_dict_data["offset"] = next_node.position_offset
@@ -156,7 +156,7 @@ func generate_node_dictionary() -> Dictionary:
 			next_structure["data"] = next_dict_data
 			reply_next = next_structure
 		else:
-			var next_dict: Dictionary = DialogData.get_next_structure()
+			var next_dict: Dictionary = NFDiscourseTool.get_next_structure()
 			next_dict["type"] = DialogData.NextType.END
 			reply_next = next_dict
 		

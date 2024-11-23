@@ -70,9 +70,9 @@ popup/item_2/text = "<"
 popup/item_2/id = 2
 popup/item_3/text = "<="
 popup/item_3/id = 3
-popup/item_4/text = ">="
+popup/item_4/text = ">"
 popup/item_4/id = 4
-popup/item_5/text = ">"
+popup/item_5/text = ">="
 popup/item_5/id = 5
 
 [node name="VarB" type="Label" parent="CompContainer"]

@@ -33,6 +33,7 @@ script = ExtResource("1_qnbb8")
 metadata/_tab_index = 2
 
 [node name="MainSplit" type="HSplitContainer" parent="."]
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0

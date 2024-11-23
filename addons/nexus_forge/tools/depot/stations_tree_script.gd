@@ -5,9 +5,12 @@ extends IDTree
 signal station_deleted(station_id: String)
 signal recipe_deleted(station_id: String, recipe_id: String)
 signal recipe_selected(station_id: String, recipe_id: String)
-signal recipe_id_changed(from: String, to: String)
+signal recipe_id_changed(station: String, from: String, to: String)
 signal station_id_changed(from: String, to: String)
 signal recipe_changed()
+signal station_created(id: String, station_name: String)
+signal station_renamed(id: String, new_name: String)
+
 
 const TRASH_BIN_ICON = preload("res://addons/nexus_forge/common_icons/trash_bin.svg")
 const OPEN_ICON = preload("res://addons/nexus_forge/common_icons/open_file.svg")
@@ -96,6 +99,8 @@ func create_station(station_id: String, recipes: Array) -> void:
 			"Delete Station")
 	
 	new_station.set_collapsed_recursive(true)
+	
+	station_created.emit(new_id, "New Station")
 
 
 func on_button_pressed(item: TreeItem, column: int, id: int, mouse_button_index: int) -> void:
@@ -141,9 +146,11 @@ func on_item_edited() -> void:
 		station_id_changed.emit(edited_meta["id"], new_id)
 		edited.set_text(0, new_id)
 		edited_meta["id"] = new_id
+	elif edited_id == 1: # Station Renamed
+		station_renamed.emit(edited.get_parent().get_metadata(0)["id"], edited.get_text(1))
 	elif edited_id == 3: # Recipe ID changed
 		var new_id: String = validate_id(edited.get_parent(), edited.get_text(0), edited)
-		recipe_id_changed.emit(edited_meta["id"], new_id)
+		recipe_id_changed.emit(edited.get_parent().get_parent().get_metadata(0)["id"], edited_meta["id"], new_id)
 		edited.set_text(0, new_id)
 		edited_meta["id"] = new_id
 	

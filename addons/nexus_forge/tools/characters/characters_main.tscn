@@ -140,7 +140,6 @@ size_flags_vertical = 3
 allow_reselect = true
 hide_root = true
 script = ExtResource("4_5334i")
-default_name = null
 
 [node name="VBoxContainer" type="VBoxContainer" parent="MainContainer/DataSplitContainer"]
 layout_mode = 2

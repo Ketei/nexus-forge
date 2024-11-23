@@ -123,20 +123,20 @@ func _is_root() -> bool:
 
 
 func generate_node_dictionary() -> Dictionary:
-	var random_select: Dictionary = DialogData.get_random_select_structure()
+	var random_select: Dictionary = NFDiscourseTool.get_random_select_structure()
 	
 	random_select["use_weights"] = toggle_weights_check.button_pressed
 	random_select["offset"] = position_offset
 	
 	for exit_idx in range(exits.size()):
-		var option_random: Dictionary = DialogData.get_random_select_opt_structure()
-		var rand_next_struct: Dictionary = DialogData.get_next_structure()
+		var option_random: Dictionary = NFDiscourseTool.get_random_select_opt_structure()
+		var rand_next_struct: Dictionary = NFDiscourseTool.get_next_structure()
 		option_random["weight"] = exits[exit_idx].option_weight.value
 		
 		if has_output_connection(str(exit_idx)):
 			var rand_next: DiscourseGraphNode = get_output_port_connection_by_id(str(exit_idx))
 			if rand_next.node_type == DialogData.DialogType.DIALOG or rand_next.node_type == DialogData.DialogType.OPTIONS or rand_next.node_type == DialogData.DialogType.ID:
-				var next_id: Dictionary = DialogData.get_next_by_id()
+				var next_id: Dictionary = NFDiscourseTool.get_next_by_id()
 				next_id["next"] = rand_next.node_id
 				next_id["use_shortcut"] = rand_next.node_type == DialogData.DialogType.ID
 				next_id["offset"] = rand_next.position_offset

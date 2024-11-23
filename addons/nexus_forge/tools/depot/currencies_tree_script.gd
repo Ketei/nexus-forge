@@ -2,6 +2,12 @@
 extends IDTree
 
 
+signal currency_created(id: String, currency_name: String, currency_value: int)
+signal currency_id_changed(from: String, to: String)
+signal currency_renamed(id: String, to: String)
+signal currency_revaluated(id: String, value: int)
+
+
 const MAX_RANGE: int = 9999
 
 
@@ -63,17 +69,19 @@ func create_currency(currency_id: String, value: int = 1, c_name: String = "New 
 	name_tree.set_text(1, c_name)
 	value_tree.set_text(0, "Value")
 	
-	new_currency.set_metadata(0, 0)
-	name_tree.set_metadata(0, 1)
-	value_tree.set_metadata(0, 2)
+	new_currency.set_metadata(0, {"idx": 0, "id": id})
+	name_tree.set_metadata(0, {"idx": 1})
+	value_tree.set_metadata(0, {"idx": 2})
 	
 	new_currency.collapsed = true
+	
+	currency_created.emit(id, c_name, value)
 
 
 func on_item_edited() -> void:
 	var item_edited: TreeItem = get_edited()
 	
-	match item_edited.get_metadata(0):
+	match item_edited.get_metadata(0)["idx"]:
 		0:
 			item_edited.set_text(
 					0,
@@ -81,6 +89,18 @@ func on_item_edited() -> void:
 							root_tree,
 							item_edited.get_text(0),
 							item_edited))
+			currency_id_changed.emit(
+					item_edited.get_metadata(0)["id"],
+					item_edited.get_text(0))
+			item_edited.get_metadata(0)["id"] = item_edited.get_text(0)
+		1:
+			currency_renamed.emit(
+				item_edited.get_parent().get_metadata(0)["id"],
+				item_edited.get_text(1))
+		2:
+			currency_revaluated.emit(
+				item_edited.get_parent().get_metadata(0)["id"],
+				item_edited.get_range(1))
 
 
 func get_currencies() -> Dictionary:

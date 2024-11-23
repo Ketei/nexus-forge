@@ -52,6 +52,18 @@ func get_currency_value(currency_id: String) -> int:
 	return _currencies[currency_id]["value"]
 
 
+func set_currency_name(id: String, new_name: String) -> void:
+	_currencies[id]["name"] = new_name
+
+
+func set_currency_value(id: String, new_value: int) -> void:
+	_currencies[id]["value"] = new_value
+
+
+func erase_currency(currency_id: String) -> void:
+	_currencies.erase(currency_id)
+
+
 func clear_currencies() -> void:
 	_currencies.clear()
 
@@ -98,6 +110,10 @@ func get_items() -> Array:
 
 func create_crafting_station(station_id: String, station_name: String = "") -> void:
 	_recipes[station_id] = {"name": "", "recipes": {}}
+
+
+func set_station_name(station_id: String, station_name: String) -> void:
+	_recipes[station_id]["name"] = station_name
 
 
 func erase_station(station_id: String) -> void:

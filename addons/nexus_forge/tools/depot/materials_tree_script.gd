@@ -3,12 +3,20 @@ extends IDTree
 
 
 signal material_removed(material_id: String)
+signal material_selected(material_id: String)
+
 const BIN_ICON = preload("res://addons/nexus_forge/common_icons/trash_bin.svg")
 var root_tree: TreeItem
 
 
 func _ready() -> void:
 	root_tree = create_item()
+	item_edited.connect(on_item_edited)
+
+
+func on_item_edited() -> void:
+	var item_edited: TreeItem = get_edited()
+	material_selected.emit(item_edited.get_metadata(0))
 
 
 func add_material(material_id: String) -> void:
@@ -22,8 +30,8 @@ func add_material(material_id: String) -> void:
 	new_material.set_metadata(0, material_id)
 
 
-func get_selected_materials() -> Array:
-	var selected: Array = []
+func get_selected_materials() -> Array[String]:
+	var selected: Array[String] = []
 	for mat in root_tree.get_children():
 		if mat.is_checked(0):
 			selected.append(mat.get_text(0))

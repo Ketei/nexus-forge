@@ -5,37 +5,6 @@ const ARG_CONTAINER = preload("res://addons/nexus_forge/tools/discourse/scenes/c
 
 const MINI_SIZE := Vector2(175, 90)
 
-const callables: Dictionary = {
-	"set_name": {
-		"name": "Set Actor Name",
-		"callable": {"object": "Variables", "method": "set_var"},
-		"args": [
-				{
-					"name": "Actor Path",
-					"type": TYPE_STRING
-				}
-		]
-	},
-	"set_age": {
-		"name": "Roll DX",
-		"callable": {"object": "Random", "method": "get_random"},
-		"args": [
-				{
-					"name": "Dice Sides",
-					"type": TYPE_INT
-				},
-				{
-					"name": "Success Roll",
-					"type": TYPE_INT
-				},
-				{
-					"name": "Just an extra",
-					"type": TYPE_BOOL
-				}
-		]
-	}
-}
-
 var minimized: bool = false
 var minimize_button: Button
 
@@ -45,14 +14,15 @@ var minimize_button: Button
 
 
 func _ready() -> void:
+	callable_option.clear()
 	node_type = DialogData.DialogType.CALL
 	create_output_connection("call", 0)
 	
 	var current_idx: int = -1
 	
-	for callable in callables:
+	for callable in NexusForge.Callables.get_callable_ids():
 		current_idx += 1
-		callable_option.add_item(callables[callable]["name"])
+		callable_option.add_item(NexusForge.Callables.get_callable_name(callable, false))
 		callable_option.set_item_metadata(current_idx, callable)
 	
 	if -1 < current_idx:
@@ -91,14 +61,14 @@ func on_callable_selected(callable_selected: int) -> void:
 		child.visible = false
 		child.free()
 	
-	for arg:Dictionary in callables[callable_option.get_item_metadata(callable_selected)]["args"]:
+	for arg:Dictionary in NexusForge.Callables.get_callable_args(callable_option.get_item_metadata(callable_selected), false):
 		var new_arg = ARG_CONTAINER.instantiate()
 		args_container.add_child(new_arg)
 		new_arg.set_arg_type(arg["type"])
 		new_arg.var_label.text = arg["name"]
 		new_arg.current_value_updated.connect(on_arg_updated)
 	
-	size.y = 80 + (callables[callable_option.get_item_metadata(callable_selected)]["args"].size() * 39)
+	size.y = 80 + (args_container.get_child_count() * 39)
 	node_updated.emit()
 
 
@@ -114,16 +84,16 @@ func select_by_key(callable_key: String) -> void:
 			break
 
 
-func select_by_callable(object: String, method: String) -> void:
-	if object.is_empty() or method.is_empty():
-		return
-	
-	for item_idx in range(callable_option.item_count):
-		var key: String = callable_option.get_item_metadata(item_idx)
-		if callables[key]["callable"]["object"] == object and callables[key]["callable"]["method"] == method:
-			callable_option.select(item_idx)
-			on_callable_selected(item_idx)
-			break
+#func select_by_callable(object: String, method: String) -> void:
+	#if object.is_empty() or method.is_empty():
+		#return
+	#
+	#for item_idx in range(callable_option.item_count):
+		#var key: String = callable_option.get_item_metadata(item_idx)
+		#if callables[key]["callable"]["object"] == object and callables[key]["callable"]["method"] == method:
+			#callable_option.select(item_idx)
+			#on_callable_selected(item_idx)
+			#break
 
 
 func set_args(args: Array) -> void:
@@ -133,7 +103,7 @@ func set_args(args: Array) -> void:
 		return
 	
 	for arg_idx in range(args_container.get_child_count()):
-		args_container.get_child(arg_idx).set_arg_value(args[mini(arg_idx, max_arg)]["value"])
+		args_container.get_child(arg_idx).set_arg_value(args[mini(arg_idx, max_arg)])
 
 
 func on_minimize_pressed() -> void:
@@ -160,7 +130,7 @@ func maximize() -> void:
 	callable_option.visible = true
 	args_container.visible = true
 	size.x = 300
-	size.y = 80 + (callables[callable_option.get_item_metadata(callable_option.selected)]["args"].size() * 39)
+	size.y = 80 + (args_container.get_child_count() * 39)
 
 
 func _is_root() -> bool:
@@ -168,21 +138,19 @@ func _is_root() -> bool:
 
 
 func generate_node_dictionary() -> Dictionary:
-	var call_structure: Dictionary = DialogData.get_call_structure()
-	var object: String = ""
-	var method: String = ""
+	var call_structure: Dictionary = NFDiscourseTool.get_call_structure()
+	var call_id: String = ""
+	#var method: String = ""
 	
 	if callable_option.selected != -1:
-		var selected_call: String = callable_option.get_item_metadata(callable_option.selected)
-		object = callables[selected_call]["callable"]["object"]
-		method = callables[selected_call]["callable"]["method"]
+		call_id = callable_option.get_item_metadata(callable_option.selected)
 
-	call_structure["object"] =  object
-	call_structure["method"] = method
+	call_structure["call_id"] =  call_id
 	call_structure["offset"] = position_offset
 	call_structure["is_return"] = false
 	call_structure["expand"] = not minimized
 	
-	for argument in args_container.get_children():
-		call_structure["args"].append(argument.generate_node_dictionary())
+	for arg_idx in range(args_container.get_child_count()):
+		call_structure["args"].append(
+				args_container.get_child(arg_idx).get_argument())
 	return call_structure

@@ -1,0 +1,176 @@
+[gd_resource type="Resource" script_class="DialogData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/scripts/classes/dialog/resources/dialog_resource.gd" id="1_fx81v"]
+
+[resource]
+script = ExtResource("1_fx81v")
+dialog_entry = {
+"data": {
+"next": "normal_dialog",
+"offset": Vector2(-20, -120),
+"use_shortcut": false
+},
+"type": 0
+}
+_entry_offset = Vector2(-300, -20)
+conversation = {
+"dialog_node": {
+"cancel": -1.0,
+"keep_dialog": true,
+"offset": Vector2(1440, -80),
+"options": [{
+"call": {
+"args": [":("],
+"call_at_start": true,
+"expand": false,
+"is_return": false,
+"method": "set_var",
+"object": "Variables",
+"offset": Vector2(540, 380)
+},
+"conditions": {
+"offset": Vector2(580, -400),
+"operator": 0,
+"type": 4,
+"var_a": {
+"offset": Vector2(300, -600),
+"operator": 0,
+"type": 4,
+"var_a": {
+"args": ["aaa"],
+"call_at_start": true,
+"expand": true,
+"is_return": true,
+"method": "is_alive",
+"object": "Characters",
+"offset": Vector2(-80, -640)
+},
+"var_b": {
+"offset": Vector2(-60, -460),
+"type": 5,
+"value": {
+"element_type": 0,
+"value": true
+}
+}
+},
+"var_b": {
+"offset": Vector2(180, -320),
+"type": 5,
+"value": {
+"element_type": 0,
+"value": true
+}
+}
+},
+"offset": Vector2(820, 20),
+"set_variable": {
+"expand": false,
+"offset": Vector2(540, 280),
+"variables": {
+"mp": 10.0
+}
+},
+"signal": {
+"call_at_start": true,
+"offset": Vector2(440, 180),
+"signal": "signal"
+},
+"text": "reply_a_valid"
+}, {
+"call": {},
+"conditions": {
+"offset": Vector2(580, 480),
+"operator": 1,
+"type": 4,
+"var_a": {
+"offset": Vector2(240, 580),
+"type": 5,
+"value": {
+"element_type": 1,
+"value": 1.0
+}
+},
+"var_b": {
+"offset": Vector2(220, 780),
+"type": 5,
+"value": {
+"element_type": 1,
+"value": 3.0
+}
+}
+},
+"offset": Vector2(840, 400),
+"set_variable": {},
+"signal": {},
+"text": "reply_b_comp"
+}],
+"targets": [{
+"data": {
+"offset": Vector2(1820, -20),
+"type": 13
+},
+"type": 3
+}, {
+"data": {
+"offset": Vector2(1800, 180),
+"type": 13
+},
+"type": 3
+}],
+"type": 1
+},
+"normal_dialog": {
+"call": {
+"args": [":3"],
+"call_at_start": true,
+"expand": true,
+"is_return": false,
+"method": "set_var",
+"object": "Variables",
+"offset": Vector2(-460, 740)
+},
+"character": {
+"expand": true,
+"id": "character_id",
+"idle": {
+"animation": "",
+"play": false
+},
+"offset": Vector2(-480, 120),
+"talking": {
+"animation": "",
+"play": false
+}
+},
+"dialog": {
+"seconds_per_letter": -1.0,
+"text": ""
+},
+"expand": true,
+"next": {
+"data": {
+"next": "dialog_node",
+"offset": Vector2(1440, -80),
+"use_shortcut": false
+},
+"type": 0
+},
+"offset": Vector2(-20, -120),
+"pause": false,
+"set_variable": {
+"expand": true,
+"offset": Vector2(-540, 420),
+"variables": {
+"health": 10.0
+}
+},
+"signal": {
+"call_at_start": true,
+"offset": Vector2(-420, 300),
+"signal": "signal_name"
+},
+"type": 0
+}
+}
+orphans = Array[Dictionary]([])

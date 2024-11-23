@@ -4,7 +4,7 @@
 
 [node name="MethodCallGNode" type="GraphNode"]
 offset_right = 300.0
-offset_bottom = 80.0
+offset_bottom = 119.0
 title = "Method Call"
 slot/0/left_enabled = false
 slot/0/left_type = 0
@@ -41,6 +41,7 @@ text_overrun_behavior = 3
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 3.0
+selected = 0
 
 [node name="ArgsContainer" type="VBoxContainer" parent="."]
 layout_mode = 2

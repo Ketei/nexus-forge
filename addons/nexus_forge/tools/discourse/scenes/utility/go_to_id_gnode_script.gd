@@ -50,7 +50,7 @@ func set_short_id(new_target: String) -> void:
 
 
 func generate_node_dictionary() -> Dictionary:
-	var go_to_id_data: Dictionary = DialogData.get_next_by_id()
+	var go_to_id_data: Dictionary = NFDiscourseTool.get_next_by_id()
 	go_to_id_data["next"] = go_to_id_line.text
 	go_to_id_data["use_shortcut"] = true
 	go_to_id_data["offset"] = position_offset

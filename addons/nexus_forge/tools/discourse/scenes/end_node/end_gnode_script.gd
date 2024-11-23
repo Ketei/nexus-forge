@@ -28,6 +28,6 @@ func _is_root() -> bool:
 
 
 func generate_node_dictionary() -> Dictionary:
-	var return_dict: Dictionary = DialogData.get_end_structure()
+	var return_dict: Dictionary = NFDiscourseTool.get_end_structure()
 	return_dict["offset"] = position_offset
 	return return_dict

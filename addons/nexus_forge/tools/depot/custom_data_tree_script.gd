@@ -2,6 +2,8 @@
 extends IDTree
 
 
+signal variables_changed
+
 const BOOL_ICON = preload("res://addons/nexus_forge/common_icons/variables/bool.svg")
 const FLOAT_ICON = preload("res://addons/nexus_forge/common_icons/variables/float.svg")
 const INT_ICON = preload("res://addons/nexus_forge/common_icons/variables/int.svg")
@@ -34,6 +36,7 @@ func on_item_edited() -> void:
 	
 	if get_edited_column() == 0:
 		edited_item.set_text(0, validate_id(root_tree, edited_item.get_text(0), edited_item))
+	variables_changed.emit()
 
 
 func on_button_pressed(item: TreeItem, column: int, id: int, mouse_button_index: int) -> void:

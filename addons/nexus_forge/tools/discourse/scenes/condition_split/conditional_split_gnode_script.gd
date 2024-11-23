@@ -50,16 +50,16 @@ func _is_root() -> bool:
 
 
 func generate_node_dictionary() -> Dictionary:
-	var condition_dictionary: Dictionary = DialogData.get_condition_structure()
+	var condition_dictionary: Dictionary = NFDiscourseTool.get_condition_structure()
 	if has_input_connection("result"):
 		condition_dictionary["comparation"] = get_input_port_connection_by_id("result").generate_node_dictionary()
 	if has_output_connection("true"):
 		var next_true_node: DiscourseGraphNode = get_output_port_connection_by_id("true")
-		var true_next_structure: Dictionary = DialogData.get_next_structure()
+		var true_next_structure: Dictionary = NFDiscourseTool.get_next_structure()
 		if next_true_node.node_type == DialogData.DialogType.DIALOG or next_true_node.node_type == DialogData.DialogType.OPTIONS or next_true_node.node_type == DialogData.DialogType.ID:
 			#condition_dictionary["true"] = DialogData.get_next_structure()
 			true_next_structure["type"] = DialogData.NextType.ID
-			true_next_structure["data"] = DialogData.get_next_by_id()
+			true_next_structure["data"] = NFDiscourseTool.get_next_by_id()
 			true_next_structure["data"]["next"] = next_true_node.node_id
 			true_next_structure["data"]["use_shortcut"] = next_true_node.node_type == DialogData.DialogType.ID
 			true_next_structure["data"]["offset"] = next_true_node.position_offset
@@ -78,10 +78,10 @@ func generate_node_dictionary() -> Dictionary:
 	
 	if has_output_connection("false"):
 		var next_false_node: DiscourseGraphNode = get_output_port_connection_by_id("false")
-		var false_next_structure: Dictionary = DialogData.get_next_structure()
+		var false_next_structure: Dictionary = NFDiscourseTool.get_next_structure()
 		if next_false_node.node_type == DialogData.DialogType.DIALOG or next_false_node.node_type == DialogData.DialogType.OPTIONS or next_false_node.node_type == DialogData.DialogType.ID:
 			false_next_structure["type"] = DialogData.NextType.ID
-			false_next_structure["data"] = DialogData.get_next_by_id()
+			false_next_structure["data"] = NFDiscourseTool.get_next_by_id()
 			false_next_structure["data"]["next"] = next_false_node.node_id
 			false_next_structure["data"]["use_shortcut"] = next_false_node.node_type == DialogData.DialogType.ID
 			false_next_structure["data"]["offset"] = next_false_node.position_offset

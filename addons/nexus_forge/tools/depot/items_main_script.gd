@@ -6,10 +6,10 @@ var _items_resource: NFItemsRes = null
 var _current_id: String = ""
 var _current_station: String = ""
 var _current_recipe: String = ""
-var item_memory: Dictionary = {}
-var recipe_memory: Dictionary = {}
+var item_memory: Dictionary = {} # ID: Resource
 var loading_item: bool = false
 var unsaved_recipe: bool = false
+var unsaved_item: bool = false
 var resource_loader: FileDialog = null
 var no_resource_panel: PanelContainer = null
 
@@ -54,6 +54,7 @@ var no_resource_panel: PanelContainer = null
 @onready var main_container: HBoxContainer = $MainContainer
 @onready var save_button: Button = $MainContainer/ItemsContainer/DataContainer/ItemSelectContainer/HBoxContainer/SaveButton
 
+
 # Consider freeing from memory as once hidden it isn't used again.
 #@onready var no_resource_panel: PanelContainer = $NoResourcePanel
 #@onready var create_db_button: Button = $NoResourcePanel/CenterContainer/InfoContainer/ButtonContainer2/CreateDBButton
@@ -93,6 +94,22 @@ func _ready() -> void:
 	search_currency_ln_edit.text_changed.connect(on_search_item.bind(currencies_tree))
 	search_station_ln_edt.text_changed.connect(on_search_item.bind(stations_tree))
 	save_button.pressed.connect(on_save)
+	item_tree.id_changed.connect(on_item_id_changed)
+	item_flag_tree.flag_selected.connect(on_item_data_changed)
+	custom_data_tree.variables_changed.connect(on_item_data_changed)
+	
+	item_name_ln_edt.text_changed.connect(on_item_data_changed)
+	sprite_path_ln_edt.text_changed.connect(on_item_data_changed)
+	item_type_opt_btn.item_selected.connect(on_item_data_changed)
+	item_subtype_opt_btn.item_selected.connect(on_item_data_changed)
+	item_lvl_spn_btn.value_changed.connect(on_item_data_changed)
+	item_value_spn_bx.value_changed.connect(on_item_data_changed)
+	materials_tree.material_selected.connect(on_item_data_changed)
+	
+	currencies_tree.currency_created.connect(on_currency_created)
+	currencies_tree.currency_id_changed.connect(on_currency_id_changed)
+	currencies_tree.currency_renamed.connect(on_currency_renamed)
+	currencies_tree.currency_revaluated.connect(on_currency_revaluated)
 	
 	if _items_resource != null:
 		load_items()
@@ -109,6 +126,11 @@ func _ready() -> void:
 		no_resource_panel.set_resource_type("NFItemsRes", "Depot", "Items")
 		no_resource_panel.create_resource_pressed.connect(on_create_resource_pressed)
 		no_resource_panel.load_resource_pressed.connect(on_load_resource_pressed)
+
+
+func on_item_data_changed(_ig_arg: Variant = null, _arg_2: Variant = null) -> void:
+	if not unsaved_item and not loading_item:
+		unsaved_item = true
 
 
 func on_search_item(search_str: String, search_node: Tree) -> void:
@@ -195,8 +217,27 @@ func on_create_currency_pressed() -> void:
 	currencies_tree.create_currency("new_currency")
 
 
+func on_currency_created(id: String, currency_name: String, currency_value: int) -> void:
+	_items_resource.create_currency(id, currency_name, currency_value)
+
+
+func on_currency_id_changed(from: String, to: String) -> void:
+	_items_resource._currencies[to] = _items_resource._currencies[from]
+	_items_resource.erase_currency(from)
+
+
+func on_currency_renamed(id: String, to: String) -> void:
+	_items_resource.set_currency_name(id, to)
+
+
+func on_currency_revaluated(id: String, value: int) -> void:
+	_items_resource.set_currency_value(id, value)
+
+
 func on_add_new_station_pressed() -> void:
-	stations_tree.create_station("new_station", [])
+	_items_resource.create_crafting_station(
+		stations_tree.create_station("new_station", []),
+		"New Station")
 
 
 func load_types() -> void:
@@ -210,13 +251,11 @@ func load_types() -> void:
 
 
 func on_station_deleted(station_id: String) -> void:
-	if recipe_memory.has(station_id):
-		recipe_memory.erase(station_id)
-	
+	_items_resource.erase_station(station_id)
+
 
 func on_recipe_deleted(station_id: String, recipe_id: String) -> void:
-	if recipe_memory.has(station_id) and recipe_memory[station_id].has(recipe_id):
-		recipe_memory[station_id].erase(recipe_id)
+	_items_resource.erase_recipe(station_id, recipe_id)
 
 
 func on_add_variable_button_pressed(variable_val: Variant) -> void:
@@ -224,8 +263,10 @@ func on_add_variable_button_pressed(variable_val: Variant) -> void:
 
 
 func on_type_selected(type_idx: int) -> void:
-	var type_id: String = item_type_opt_btn.get_item_text(type_idx)
 	item_subtype_opt_btn.clear()
+	if type_idx == -1:
+		return
+	var type_id: String = item_type_opt_btn.get_item_text(type_idx)
 	for subtype in _items_resource.get_item_subtypes(type_id):
 		item_subtype_opt_btn.add_item(subtype)
 
@@ -238,24 +279,56 @@ func load_recipes() -> void:
 
 
 func save_current_recipe() -> void:
-	if not recipe_memory.has(_current_station):
-				recipe_memory[_current_station] = {}
-			
-	recipe_memory[_current_station][_current_recipe] = {
-			"input": input_recipe_tree.get_current_recipe(),
-			"output": output_recipe_tree.get_current_recipe()}
+	_items_resource.set_station_recipe(
+		_current_station,
+		_current_recipe,
+		input_recipe_tree.get_current_recipe(),
+		output_recipe_tree.get_current_recipe())
+	unsaved_recipe = false
 
 
-func on_recipe_id_changed(from: String, to: String) -> void:
+func on_item_id_changed(from: String, to: String) -> void:
+	current_item_to_memory(true)
+	
+	_items_resource._items[to] = _items_resource._items[from]
+	_items_resource.remove_item(from)
+	
+	item_memory[to] = item_memory[from]
+	item_memory[to].item_id = to
+	item_memory.erase(from)
+	
+	if _current_id == from:
+		_current_id = to
+
+
+func on_recipe_id_changed(station: String, from: String, to: String) -> void:
+	_items_resource._recipes[station][to] = _items_resource._recipes[station][from]
+	_items_resource.erase_station(from)
+	
 	if from == _current_recipe:
 		_current_recipe = to
-		recipe_label.text = _current_station + "/" + to
+		recipe_label.text = station + "/" + to
 
 
 func on_station_id_changed(from: String, to: String) -> void:
+	_items_resource._recipes[to] = _items_resource._recipes[from]
+	_items_resource.erase_station(from)
+	
 	if from == _current_station:
 		_current_station = to
 		recipe_label.text = to + "/" + _current_recipe
+
+
+func on_station_created(id: String, station_name: String) -> void:
+	_items_resource.create_crafting_station(
+			id,
+			station_name)
+
+
+func on_station_renamed(id: String, new_name: String) -> void:
+	_items_resource.set_station_name(
+		id,
+		new_name)
 
 
 func on_recipe_selected(station_id: String, recipe_id: String) -> void:
@@ -263,7 +336,7 @@ func on_recipe_selected(station_id: String, recipe_id: String) -> void:
 		return
 	
 	if not _current_station.is_empty():
-		if _current_station != station_id or recipe_id != _current_recipe:
+		if unsaved_recipe or _current_station != station_id or recipe_id != _current_recipe:
 			save_current_recipe()
 	
 	_current_station = station_id
@@ -271,24 +344,7 @@ func on_recipe_selected(station_id: String, recipe_id: String) -> void:
 	
 	recipe_label.text = station_id + "/" + recipe_id
 	
-	if recipe_memory.has(station_id) and recipe_memory[station_id].has(recipe_id):
-		var input_size: int = recipe_memory[station_id][recipe_id]["input"].size()
-		var output_size: int = recipe_memory[station_id][recipe_id]["output"].size()
-		
-		input_recipe_spin_box.value = input_size
-		output_recipe_spin_box.value = output_size
-		
-		for input_idx in range(input_size):
-			input_recipe_tree.set_slot_recipe(
-					input_idx, 
-					recipe_memory[station_id][recipe_id]["input"][input_idx]["item"],
-					recipe_memory[station_id][recipe_id]["input"][input_idx]["count"])
-		for output_idx in range(output_size):
-			output_recipe_tree.set_slot_recipe(
-					output_idx, 
-					recipe_memory[station_id][recipe_id]["output"][output_idx]["item"],
-					recipe_memory[station_id][recipe_id]["output"][output_idx]["count"])
-	elif _items_resource.has_recipe(station_id, recipe_id):
+	if _items_resource.has_recipe(station_id, recipe_id):
 		var input_recipe: Array[Dictionary] = _items_resource.get_recipe_input(
 				station_id,
 				recipe_id)
@@ -322,43 +378,53 @@ func change_recipe_size(new_size: float, target_tree: Tree) -> void:
 	on_recipe_changed()
 
 
-func current_item_to_memory() -> void:
-	item_memory[_current_id] = {
-		"item_name": item_name_ln_edt.text,
-		"item_sprite": sprite_path_ln_edt.text,
-		"item_type": item_type_opt_btn.get_item_text(item_type_opt_btn.selected),
-		"item_level": item_lvl_spn_btn.value,
-		"item_value": item_value_spn_bx.value,
-		"item_materials": materials_tree.get_selected_materials(),
-		"item_flags": item_flag_tree.get_flags(),
-		"custom_data": custom_data_tree.get_custom_data()}
+func current_item_to_memory(bypass_unsaved: bool = false) -> void:
+	if not unsaved_item and not bypass_unsaved:
+		return
+	
+	if not item_memory.has(_current_id) or item_memory[_current_id] == null:
+		item_memory[_current_id] = ItemDefinition.new()
+	var item_def: ItemDefinition = item_memory[_current_id]
+	
+	item_def.item_id = _current_id
+	item_def.item_name = item_name_ln_edt.text
+	item_def.item_sprite = sprite_path_ln_edt.text
+	item_def.item_type = item_type_opt_btn.get_item_text(item_type_opt_btn.selected)
+	item_def.item_level = item_lvl_spn_btn.value
+	item_def.item_value = item_value_spn_bx.value
+	item_def.item_materials.assign(materials_tree.get_selected_materials())
+	item_def.item_flags = item_flag_tree.get_flags()
+	item_def.custom_data = custom_data_tree.get_custom_data()
+	
+	unsaved_item = false
 
 
 func load_item(item_path: String, item_id: String) -> bool:
-	if item_path == _current_id:
+	if item_id == _current_id:
 		return true
 	
 	if not _current_id.is_empty():
 		current_item_to_memory()
 	
-	if item_memory.has(item_path):
-		item_name_ln_edt.text = item_memory[item_path]["item_name"]
-		sprite_path_ln_edt.text = item_memory[item_path]["item_sprite"]
-		select_type(item_memory[item_path]["item_type"])
-		item_lvl_spn_btn.value = item_memory[item_path]["item_level"]
-		item_value_spn_bx.value = item_memory[item_path]["item_value"]
+	if item_memory.has(item_id):
+		var memory_item: ItemDefinition = item_memory[item_id]
+		item_name_ln_edt.text = memory_item.item_name
+		sprite_path_ln_edt.text = memory_item.item_sprite
+		select_type(memory_item.item_type)
+		item_lvl_spn_btn.value = memory_item.item_level
+		item_value_spn_bx.value = memory_item.item_value
 		materials_tree.uncheck_materials()
-		materials_tree.select_materials(item_memory[item_path]["item_materials"])
+		materials_tree.select_materials(memory_item.item_materials)
 		item_flag_tree.reset_flags()
-		item_flag_tree.set_flags(item_memory[item_path]["item_flags"])
+		item_flag_tree.set_flags(memory_item.item_flags)
 		custom_data_tree.clear_variables()
-		for c_data in item_memory[item_path]["custom_data"]:
+		for c_data in memory_item.get_custom_data_keys():
 			custom_data_tree.add_variable(
 					c_data,
-					item_memory[item_path]["custom_data"][c_data])
+					memory_item.get_custom_data(c_data))
 		return true
-	elif not item_path.is_empty() and ResourceLoader.exists(item_path):
-		var preload_resource: Resource = load(item_path)
+	elif ResourceLoader.exists(_items_resource.get_item_path(item_id)):
+		var preload_resource: Resource = load(_items_resource.get_item_path(item_id))
 		if preload_resource is ItemDefinition:
 			item_name_ln_edt.text = preload_resource.item_name
 			sprite_path_ln_edt.text = preload_resource.item_sprite
@@ -377,7 +443,7 @@ func load_item(item_path: String, item_id: String) -> bool:
 			return true
 		else:
 			printerr("[DEPOT] Item with path " + item_path + " is not ItemDefinition.")
-			clear_fields()
+			clear_item_fields()
 	return false
 
 
@@ -412,8 +478,18 @@ func load_flags() -> void:
 		item_flag_tree.add_flag(flag, Strings.capitalize(flag_str[flag]))
 
 
-func clear_fields() -> void:
-	pass
+func clear_item_fields() -> void:
+	item_name_ln_edt.clear()
+	sprite_path_ln_edt.clear()
+	search_data_ln_edt.clear()
+	item_type_opt_btn.select(item_type_opt_btn.item_count - 1)
+	on_type_selected(item_type_opt_btn.selected)
+	item_subtype_opt_btn.select(item_subtype_opt_btn.item_count - 1)
+	item_lvl_spn_btn.value = 0
+	item_value_spn_bx.value = 0
+	materials_tree.uncheck_materials()
+	item_flag_tree.reset_flags()
+	custom_data_tree.clear_variables()
 
 
 func on_item_id_pressed(item_id: String, item_path: String) -> void:
@@ -428,19 +504,20 @@ func on_item_id_pressed(item_id: String, item_path: String) -> void:
 	else:
 		item_tree.deselect_all()
 	
+	_current_id = item_id
+	
 	loading_item = false
 
 
 func on_item_deleted(item_id: String, item_path: String) -> void:
-	if item_memory.has(item_path):
-		item_memory.erase(item_path)
+	_items_resource.remove_item(item_id)
 	
 	if _current_id == item_path:
-		clear_fields()
+		clear_item_fields()
 
 
 func on_item_file_selected(file_path: String) -> void:
-	if item_file_dialog.file_mode == FileDialog.FileMode.FILE_MODE_SAVE_FILE: # Creating an existing file
+	if item_file_dialog.file_mode == FileDialog.FileMode.FILE_MODE_SAVE_FILE: # Creating an new file
 		var new_item := ItemDefinition.new()
 		new_item.item_id = file_path.get_file().get_basename()
 		ResourceSaver.save(new_item, file_path)
@@ -456,90 +533,32 @@ func on_item_file_selected(file_path: String) -> void:
 			push_error("[DEPOT] Selected file isn't an ItemDefinition")
 
 
-func save_currencies() -> void:
-	var currency_dict: Dictionary = currencies_tree.get_currencies()
-	
-	_items_resource.clear_currencies()
-	
-	for currency_id in currency_dict:
-		_items_resource.create_currency(
-				currency_id,
-				currency_dict[currency_id]["name"],
-				currency_dict[currency_id]["value"])
+#func save_currencies() -> void:
+	#var currency_dict: Dictionary = currencies_tree.get_currencies()
+	#
+	#_items_resource.clear_currencies()
+	#
+	#for currency_id in currency_dict:
+		#_items_resource.create_currency(
+				#currency_id,
+				#currency_dict[currency_id]["name"],
+				#currency_dict[currency_id]["value"])
 
 
 func save_items() -> void:
-	var items: Array[Dictionary] = item_tree.get_items_serialized()
+	if not _current_id.is_empty():
+		current_item_to_memory(true)
 	
-	_items_resource.clear_items()
+	for item in item_memory:
+		ResourceSaver.save(item_memory[item], _items_resource.get_item_path(item))
 	
-	current_item_to_memory()
-	
-	for item_dict in items:
-		if item_dict["file"].is_empty():
-			printerr("[DEPOT] Item with id {0} has empty path. Skipping".format([item_dict["id"]]))
-			continue
-		
-		var new_item := ItemDefinition.new()
-		
-		# It means we changed it and need to update it
-		if item_memory.has(item_dict["file"]):
-			new_item.item_id = item_dict["id"]
-			new_item.item_name = item_memory["item_name"]
-			new_item.item_sprite = item_memory["item_sprite"]
-			new_item.item_type = item_memory["item_type"]
-			new_item.item_materials = item_memory["item_materials"]
-			new_item.item_flags = item_memory["item_flags"]
-			new_item.item_level = item_memory["item_level"]
-			new_item.item_value = item_memory["item_value"]
-			new_item.custom_data = item_memory["custom_data"]
-			ResourceSaver.save(new_item, item_dict["file"])
-		
-		_items_resource.create_item(item_dict["id"])
-		_items_resource.set_item_path(item_dict["id"], item_dict["file"])
 	item_memory.clear()
-
-
-func save_recipes() -> void:
-	if not _current_station.is_empty():
-		save_current_recipe()
-	
-	var new_recipes: Dictionary = {}
-	
-	# We grab all the existing recipes and stations
-	
-	var stations_recipes: Dictionary = stations_tree.get_stations_and_recipes()
-	
-	for station in stations_recipes:
-		if not recipe_memory.has(station):
-			recipe_memory[station] = {}
-		for recipe in stations_recipes[station]:
-			if not recipe_memory[station].has(recipe):
-				if _items_resource.has_recipe(station, recipe):
-					recipe_memory[station][recipe] = {
-						"input": _items_resource.get_recipe_input(station, recipe),
-						"output": _items_resource.get_recipe_output(station, recipe)}
-				else:
-					recipe_memory[station][recipe] = {
-						"input": [],
-						"output": []}
-	
-	_items_resource.clear_recipes()
-	
-	for station_id in recipe_memory:
-		_items_resource.create_crafting_station(station_id, stations_recipes[station_id]["name"])
-		for recipe_id in recipe_memory[station_id]:
-			_items_resource.set_station_recipe(
-					station_id,
-					recipe_id,
-					recipe_memory[station_id][recipe_id]["input"],
-					recipe_memory[station_id][recipe_id]["output"])
-	
-	recipe_memory.clear()
 
 
 func on_save() -> void:
 	save_items()
-	save_recipes()
-	save_currencies()
+	
+	if not _current_station.is_empty() and not _current_recipe.is_empty():
+		save_current_recipe()
+	
 	_items_resource.save()

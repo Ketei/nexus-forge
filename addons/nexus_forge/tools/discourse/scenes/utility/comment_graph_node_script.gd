@@ -33,7 +33,7 @@ func _is_root() -> bool:
 
 
 func generate_node_dictionary() -> Dictionary:
-	var comment_struct := DialogData.get_comment_structure()
+	var comment_struct := NFDiscourseTool.get_comment_structure()
 	comment_struct["text"] = comment_text.text
 	comment_struct["offset"] = position_offset
 	comment_struct["size"] = size

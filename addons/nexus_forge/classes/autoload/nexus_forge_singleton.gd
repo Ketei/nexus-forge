@@ -14,6 +14,8 @@ var Items: NFItemsRes = null
 
 var Talents: NFTalentsRes = null
 
+var Callables: NFCallablesRes = null
+
 
 func _ready() -> void:
 	var variables_path: String = ProjectSettings.get_setting(NFVariablesRes.SETTINGS_PATH, "")
@@ -77,3 +79,5 @@ func _ready() -> void:
 		Talents = NFTalentsRes.new()
 	if Items == null:
 		Items = NFItemsRes.new()
+	
+	Callables = NFCallablesRes.new()

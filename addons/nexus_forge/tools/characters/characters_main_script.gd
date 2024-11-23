@@ -143,7 +143,7 @@ func _ready() -> void:
 		no_db_container.visible = true
 		no_db_container.set_tal_success(_talents_resource != null)
 		no_db_container.set_facc_success(_factions_resource != null)
-		no_db_container.set_race_success(_factions_resource != null)
+		no_db_container.set_race_success(_races_resource != null)
 		no_db_container.set_char_success(_characters_resource != null)
 	
 	main_menu.get_popup().id_pressed.connect(on_menu_pressed)
@@ -612,7 +612,8 @@ func on_dialog_ok(resource_path: String) -> void:
 				load_characters()
 				
 				if check_for_resources():
-					if no_db_container == null:
+					no_db_container.visible = false
+					if no_db_container != null:
 						no_db_container.queue_free()
 					main_container.visible = true
 		1: # Character

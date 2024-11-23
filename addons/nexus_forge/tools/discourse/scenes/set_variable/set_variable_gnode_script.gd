@@ -105,7 +105,7 @@ func _is_root() -> bool:
 
 
 func generate_node_dictionary() -> Dictionary:
-	var new_val_data: Dictionary = DialogData.get_set_var_structure()
+	var new_val_data: Dictionary = NFDiscourseTool.get_set_var_structure()
 	new_val_data["offset"] = position_offset
 	new_val_data["expand"] = not minimized
 	

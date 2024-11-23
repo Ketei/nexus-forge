@@ -11,6 +11,7 @@ var current_faction: String = ""
 var _factions_resource: NFFactionRes = null
 var _create_faction_mode: bool = true
 var no_faction_panel: PanelContainer = null
+var factions_resource_dialog: FileDialog = null
 
 @onready var id_line: LineEdit = $SelectIDPanel/CenterContainer/ItemsContainer/DataPanel/ItemsContainer/IDContainer/IDLinePanel/IDLine
 @onready var id_status_texture: TextureRect = $SelectIDPanel/CenterContainer/ItemsContainer/DataPanel/ItemsContainer/IDContainer/IDStatusTexture
@@ -31,21 +32,21 @@ var no_faction_panel: PanelContainer = null
 @onready var faction_rank_tree: Tree = $MainContainer/FactionDataContainer/RanksContainer/FactionRankTree
 @onready var delete_faction_btn: Button = $MainContainer/FactionDataContainer/FactionIDContainer/FactionSelect/DeleteFactionBtn
 @onready var add_fact_button: Button = $MainContainer/FactionDataContainer/FactionIDContainer/HeaderContainer/ButtonsContainer/AddFactButton
+@onready var save_res_button: Button = $MainContainer/FactionDataContainer/HBoxContainer/MenuContainer/SaveResButton
 
 @onready var select_id_panel: PanelContainer = $SelectIDPanel
 
-@onready var factions_resource_dialog: FileDialog = $Elements/FactionsResourceDialog
 #@onready var create_db_button: Button = $NoFactionPanel/CenterContainer/InfoContainer/ButtonContainer2/CreateDBButton
 #@onready var load_db_button: Button = $NoFactionPanel/CenterContainer/InfoContainer/ButtonContainer2/LoadDBButton
 
 @onready var main_container: HBoxContainer = $MainContainer
 
-@onready var main_menu_btn: MenuButton = $MainContainer/FactionDataContainer/HBoxContainer/MenuContainer/MainMenuMnBtn
+#@onready var main_menu_btn: MenuButton = $MainContainer/FactionDataContainer/HBoxContainer/MenuContainer/MainMenuMnBtn
 
 
 func _ready() -> void:
 	var resource_path: String = ProjectSettings.get_setting(NFFactionRes.SETTINGS_PATH, "")
-	var menu_popup: PopupMenu = main_menu_btn.get_popup()
+	#var menu_popup: PopupMenu = main_menu_btn.get_popup()
 	
 	if not resource_path.is_empty() and ResourceLoader.exists(resource_path):
 		var res_preload: Resource = load(resource_path)
@@ -59,6 +60,14 @@ func _ready() -> void:
 	if _factions_resource != null:
 		_load_resource()
 	else:
+		factions_resource_dialog = FileDialog.new()
+		factions_resource_dialog.add_filter("*.tres", "Resource")
+		factions_resource_dialog.initial_position = Window.WINDOW_INITIAL_POSITION_CENTER_PRIMARY_SCREEN
+		factions_resource_dialog.size = Vector2i(500, 350)
+		factions_resource_dialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
+		factions_resource_dialog.file_selected.connect(on_faction_path_selected)
+		add_child(factions_resource_dialog)
+		
 		no_faction_panel = preload("res://addons/nexus_forge/scenes/no_db_container.tscn").instantiate()
 		add_child(no_faction_panel)
 		no_faction_panel.set_resource_type("NFFactionRes", "Factions", "Factions")
@@ -66,12 +75,13 @@ func _ready() -> void:
 		no_faction_panel.load_resource_pressed.connect(on_load_fact_db_pressed)
 		no_faction_panel.visible = true
 	
-	menu_popup.id_pressed.connect(on_menu_id_selected)
+	#menu_popup.id_pressed.connect(on_menu_id_selected)
+	save_res_button.pressed.connect(on_save_resource_pressed)
 	id_line.text_changed.connect(on_id_line_changed)
+	id_line.text_submitted.connect(on_id_text_submitted)
 	accept_button.pressed.connect(on_faction_created)
 	add_fact_button.pressed.connect(on_create_faction_pressed)
 	add_rank_btn.pressed.connect(on_create_rank_pressed)
-	factions_resource_dialog.file_selected.connect(on_faction_path_selected)
 	cancel_button.pressed.connect(select_id_panel.hide)
 	faction_rank_tree.rank_renamed.connect(on_rank_renamed)
 	search_ally_ln_edt.text_changed.connect(on_search_faction.bind(ally_faction_tree))
@@ -99,12 +109,18 @@ func on_search_faction(faction_search: String, faction_tree: Tree) -> void:
 	faction_tree.search_faction(faction_search.strip_edges())
 
 
-func on_menu_id_selected(id: int) -> void:
-	match id:
-		0:
-			if faction_opt_btn.selected != -1:
-				save_current()
-			save_resource()
+func on_save_resource_pressed() -> void:
+	if faction_opt_btn.selected != -1:
+		save_current()
+	save_resource()
+
+
+#func on_menu_id_selected(id: int) -> void:
+	#match id:
+		#0:
+			#if faction_opt_btn.selected != -1:
+				#save_current()
+			#save_resource()
 
 
 func _load_resource() -> void:
@@ -145,6 +161,10 @@ func on_faction_path_selected(file_path: String) -> void:
 	if _factions_resource != null:
 		ProjectSettings.set_setting(NFFactionRes.SETTINGS_PATH, file_path)
 		ProjectSettings.save()
+		no_faction_panel.visible = false
+		main_container.visible = true
+		no_faction_panel.queue_free()
+		factions_resource_dialog.queue_free()
 		_load_resource()
 
 
@@ -255,7 +275,6 @@ func on_create_rank_pressed() -> void:
 			current_faction,
 			faction_rank_tree.add_rank(-1, "new_rank", "New Rank"),
 			-1)
-	
 
 
 func on_id_line_changed(new_text: String) -> void:

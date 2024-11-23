@@ -2,11 +2,19 @@
 extends Tree
 
 
+signal flag_selected(flag_id: int, selected: bool)
+
 var root_tree: TreeItem
 
 
 func _ready() -> void:
 	root_tree = create_item()
+	item_edited.connect(on_item_edited)
+
+
+func on_item_edited() -> void:
+	var flag: TreeItem = get_edited()
+	flag_selected.emit(flag.get_metadata(0), flag.is_checked(0))
 
 
 func add_flag(flag_id: int, flag_text: String) -> void:
@@ -41,6 +49,6 @@ func get_flags() -> int:
 	for flag_tree:TreeItem in root_tree.get_children():
 		if not flag_tree.is_checked(0):
 			continue
-		flags |= 1 << NFRacesRes.Flags.get(flag_tree.get_metadata(1))
+		flags |= 1 << flag_tree.get_metadata(0)
 	
 	return flags

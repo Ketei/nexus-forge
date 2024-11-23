@@ -36,7 +36,7 @@ func get_items_serialized() -> Array[Dictionary]:
 		item_array.append(
 			{
 				"id": item.get_text(0),
-				"file": item.get_metadata(0)
+				"file": item.get_metadata(0)["path"]
 			}
 		)
 	return item_array

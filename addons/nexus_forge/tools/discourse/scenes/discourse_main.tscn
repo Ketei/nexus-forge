@@ -377,11 +377,13 @@ item_5/id = 5
 script = ExtResource("15_sa68m")
 
 [node name="ToValue" type="PopupMenu" parent="MenuWindowPopup"]
-size = Vector2i(122, 62)
-item_count = 2
+size = Vector2i(122, 89)
+item_count = 3
 item_0/text = "Value"
 item_1/text = "Comparation"
 item_1/id = 1
+item_2/text = "Return Call"
+item_2/id = 2
 script = ExtResource("15_sa68m")
 
 [node name="ToResult" type="PopupMenu" parent="MenuWindowPopup"]

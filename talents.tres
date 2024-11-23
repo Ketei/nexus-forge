@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="NFTalentsRes" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/talents/resources/talents.gd" id="1_3j2b4"]
+
+[resource]
+script = ExtResource("1_3j2b4")
+skills = {}
+perks = {}

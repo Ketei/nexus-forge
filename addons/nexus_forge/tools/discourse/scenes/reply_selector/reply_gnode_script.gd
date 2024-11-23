@@ -56,7 +56,7 @@ func _is_root() -> bool:
 
 
 func generate_node_dictionary() -> Dictionary:
-	var reply_otion_data: Dictionary = DialogData.get_option_structure()
+	var reply_otion_data: Dictionary = NFDiscourseTool.get_option_structure()
 	reply_otion_data["text"] = reply_line.text
 	reply_otion_data["offset"] = position_offset
 	if has_input_connection("result"):
@@ -66,7 +66,7 @@ func generate_node_dictionary() -> Dictionary:
 	if has_input_connection("variables"):
 		reply_otion_data["set_variable"] = get_input_port_connection_by_id("variables").generate_node_dictionary()
 	if has_input_connection("call"):
-		reply_otion_data["call"] = get_output_port_connection_by_id("call").generate_node_dictionary()
+		reply_otion_data["call"] = get_input_port_connection_by_id("call").generate_node_dictionary()
 	
 	return reply_otion_data
 

@@ -4,18 +4,6 @@ extends DiscourseGraphNode
 
 const ARG_CONTAINER = preload("res://addons/nexus_forge/tools/discourse/scenes/call_node/arg_container.tscn")
 const MINI_SIZE := Vector2(175, 90)
-const return_callables: Dictionary = {
-	"is_alive": {
-		"name": "Character Alive",
-		"callable": {"object": "Characters", "method": "is_alive"},
-		"args": [
-				{
-					"name": "Actor ID",
-					"type": TYPE_STRING
-				}
-		]
-	}
-}
 
 var minimize_button: Button
 var minimized: bool = false
@@ -26,13 +14,14 @@ var minimized: bool = false
 
 
 func _ready() -> void:
+	callables_option_button.clear()
 	node_type = DialogData.DialogType.CALL
 	create_output_connection("result", 0)
 	var current_idx: int = -1
 	
-	for callable in return_callables:
+	for callable in NexusForge.Callables.get_callable_ids(true): #return_callables:
 		current_idx += 1
-		callables_option_button.add_item(return_callables[callable]["name"])
+		callables_option_button.add_item(NexusForge.Callables.get_callable_name(callable, true)) #(return_callables[callable]["name"])
 		callables_option_button.set_item_metadata(current_idx, callable)
 	
 	if -1 < current_idx:
@@ -69,16 +58,16 @@ func _ready() -> void:
 func on_callable_selected(callable_selected: int) -> void:
 	for child in args_container.get_children():
 		child.visible = false
-		child.queue_free
+		child.free()
 	
-	for arg:Dictionary in return_callables[callables_option_button.get_item_metadata(callable_selected)]["args"]:
+	for arg:Dictionary in NexusForge.Callables.get_callable_args(callables_option_button.get_item_metadata(callable_selected), true): #return_callables[callables_option_button.get_item_metadata(callable_selected)]["args"]:
 		var new_arg = ARG_CONTAINER.instantiate()
 		args_container.add_child(new_arg)
 		new_arg.set_arg_type(arg["type"])
 		new_arg.var_label.text = arg["name"]
 		new_arg.current_value_updated.connect(on_arg_updated)
 	
-	size.y = 90 + (return_callables[callables_option_button.get_item_metadata(callable_selected)]["args"].size() * 39)
+	size.y = 90 + (args_container.get_child_count() * 39)
 	node_updated.emit()
 
 
@@ -89,16 +78,6 @@ func on_arg_updated() -> void:
 func select_by_key(callable_key: String) -> void:
 	for item_idx in range(callables_option_button.item_count):
 		if callables_option_button.get_item_metadata(item_idx) == callable_key:
-			on_callable_selected(item_idx)
-			break
-
-
-func select_by_callable(object: String, method: String) -> void:
-	if object.is_empty() or method.is_empty():
-		return
-	for item_idx in range(return_callables.item_count):
-		var key: String = callables_option_button.get_item_metadata(item_idx)
-		if return_callables[key]["callable"]["object"] == object and return_callables[key]["callable"]["method"] == method:
 			callables_option_button.select(item_idx)
 			on_callable_selected(item_idx)
 			break
@@ -138,7 +117,7 @@ func maximize() -> void:
 	callables_option_button.visible = true
 	args_container.visible = true
 	size.x = 300
-	size.y = 90 + (return_callables[callables_option_button.get_item_metadata(callables_option_button.selected)]["args"].size() * 39)
+	size.y = 90 + (args_container.get_child_count() * 39)
 
 
 func _is_root() -> bool:
@@ -146,22 +125,18 @@ func _is_root() -> bool:
 
 
 func generate_node_dictionary() -> Dictionary:
-	var call_structure: Dictionary = DialogData.get_call_structure()
-	var object: String = ""
-	var method: String = ""
+	var call_structure: Dictionary = NFDiscourseTool.get_call_structure()
+	var call_id: String = ""
 	
 	if callables_option_button.selected != -1:
-		var selected_call: String = callables_option_button.get_item_metadata(callables_option_button.selected)
-		object = return_callables[selected_call]["callable"]["object"]
-		method = return_callables[selected_call]["callable"]["method"]
+		call_id = callables_option_button.get_item_metadata(callables_option_button.selected)
 
-	call_structure["object"] =  object
-	call_structure["method"] = method
+	call_structure["call_id"] =  call_id
 	call_structure["offset"] = position_offset
 	call_structure["is_return"] = true
 	call_structure["expand"] = not minimized
 	
 	for argument in args_container.get_children():
-		call_structure["args"].append(argument.generate_node_dictionary())
+		call_structure["args"].append(argument.get_argument())
 	
 	return call_structure

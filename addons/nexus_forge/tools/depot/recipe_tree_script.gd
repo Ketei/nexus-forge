@@ -2,7 +2,7 @@
 extends Tree
 
 
-signal recipe_changed()
+signal recipe_changed
 
 const MAX_ITEM_COUNT: int = 9999
 var root_tree: TreeItem
@@ -21,6 +21,11 @@ func _ready() -> void:
 	
 	set_column_custom_minimum_width(0, 50)
 	set_column_custom_minimum_width(2, 92)
+	item_edited.connect(on_item_edited)
+
+
+func on_item_edited() -> void:
+	recipe_changed.emit()
 
 
 func create_item_slot() -> void:
@@ -68,9 +73,11 @@ func set_slot_count(slot_count: int) -> void:
 		var current_children: Array[TreeItem] = root_tree.get_children()
 		for extra_slot in range(target_count, current_count):
 			current_children[extra_slot].free()
+		recipe_changed.emit()
 	elif current_count < target_count:
 		for new_idx in range(target_count - current_count):
 			create_item_slot()
+		recipe_changed.emit()
 
 
 func reset_slots() -> void:

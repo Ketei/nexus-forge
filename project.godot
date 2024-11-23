@@ -36,10 +36,10 @@ control_key={
 [nexus_forge]
 
 variables_resource="res://variables.tres"
-factions_resource="res://factions.tres"
+factions_resource="res://factions_res.tres"
 races_resource="res://races.tres"
-talents_resource="res://talents_resource.tres"
-items_resource="res://items.tres"
+talents_resource="res://talents.tres"
+items_resource="res://itemns.tres"
 quests_resource="res://quests.tres"
 characters_resource="res://characters.tres"
 

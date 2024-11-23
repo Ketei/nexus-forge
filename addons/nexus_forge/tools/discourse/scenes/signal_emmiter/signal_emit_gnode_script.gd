@@ -33,7 +33,7 @@ func _is_root() -> bool:
 
 
 func generate_node_dictionary() -> Dictionary:
-	var new_signal_data := DialogData.get_signal_structure()
+	var new_signal_data := NFDiscourseTool.get_signal_structure()
 	new_signal_data["signal"] = signal_val_line.text
 	new_signal_data["offset"] = position_offset
 	return new_signal_data

@@ -1,4 +1,5 @@
 @tool
+class_name NFDiscourseTool
 extends Control
 
 
@@ -266,6 +267,7 @@ func close_all_files() -> void:
 			no_dialog_container.visible = true
 	
 	current_dialog = null
+	clear_nodes()
 
 
 func notify_change() -> void:
@@ -340,6 +342,7 @@ func clear_nodes() -> void:
 	shortcut_nodes.clear()
 	id_nodes.remove_all_nodes()
 	info_container.clear_logs()
+	
 	if entry_node.has_output_connection("next"):
 		entry_node.disconnect_output_port("next")
 	
@@ -574,72 +577,72 @@ func on_add_node_selected(selected_id: int) -> void:
 		1: # Dialog
 			new_node = spawn_dialog_node(
 					"",
-					DialogData.get_dialog_structure(),
+					get_dialog_structure(),
 					null,
 					true,
 					target_pos)
 		2: # Reply Selector
 			new_node = spawn_reply_selector_node(
 					"",
-					DialogData.get_replies_structure(),
+					get_replies_structure(),
 					null,
 					true,
 					target_pos)
 		3: # End
 			new_node = spawn_end_node(
-					DialogData.get_end_structure(),
+					get_end_structure(),
 					true,
 					target_pos)
 		4: # Character
 			new_node = spawn_character_node(
-					DialogData.get_character_structure(),
+					get_character_structure(),
 					true,
 					target_pos)
 		5: # Variables
 			new_node = spawn_variables_node(
-					DialogData.get_set_var_structure(),
+					get_set_var_structure(),
 					true,
 					target_pos)
 		6: # Call Normal
 			new_node = spawn_call_node(
-					DialogData.get_call_structure(),
+					get_call_structure(),
 					true,
 					target_pos)
 		7: # Call Return
 			new_node = spawn_return_call_node(
-					DialogData.get_call_structure(),
+					get_call_structure(),
 					true,
 					target_pos)
 		8: # Element/Variant
 			new_node = spawn_element_node(
-					DialogData.get_element_structure(),
+					get_element_structure(),
 					true,
 					target_pos)
 		9: # Signal
 			new_node = spawn_signal_node(
-				DialogData.get_signal_structure(),
+				get_signal_structure(),
 				true,
 				target_pos)
 		10: # Comparator
 			new_node = spawn_comparator_node(
-					DialogData.get_comparation_structure(),
+					get_comparation_structure(),
 					true,
 					target_pos)
 		11: # Conditional Split/Cond. Path
 			new_node = spawn_conditional_split_node(
-					DialogData.get_condition_structure(),
+					get_condition_structure(),
 					true,
 					target_pos)
 		12: # Random
 			new_node = spawn_random_select_node(
-					DialogData.get_random_select_structure(),
+					get_random_select_structure(),
 					true,
 					target_pos)
 		13: # Go to ID/
 			new_node = spawn_id_shortcut(target_pos)
 		14: # Comment
 			new_node = spawn_comment_node(
-					DialogData.get_comment_structure(),
+					get_comment_structure(),
 					true,
 					target_pos)
 		_:
@@ -689,7 +692,7 @@ func on_from_next_selected(index: int) -> void:
 		0:
 			var new_dialog := spawn_dialog_node(
 					"",
-					DialogData.get_dialog_structure(),
+					get_dialog_structure(),
 					null,
 					true,
 					target_position)
@@ -719,7 +722,7 @@ func on_from_next_selected(index: int) -> void:
 		1:
 			var new_replies := spawn_reply_selector_node(
 					"",
-					DialogData.get_replies_structure(),
+					get_replies_structure(),
 					null,
 					true,
 					target_position)
@@ -773,7 +776,7 @@ func on_from_next_selected(index: int) -> void:
 				connect_nodes(from_graph, new_shortcut, "next")
 		3:
 			var new_cond := spawn_conditional_split_node(
-					DialogData.get_condition_structure(),
+					get_condition_structure(),
 					true,
 					target_position)
 			new_cond.position_offset -= new_cond.get_input_port_position(0)
@@ -801,7 +804,7 @@ func on_from_next_selected(index: int) -> void:
 				connect_nodes(from_graph, new_cond, "next")
 		4:
 			var new_random := spawn_random_select_node(
-					DialogData.get_random_select_structure(),
+					get_random_select_structure(),
 					true,
 					target_position)
 			new_random.position_offset -= new_random.get_input_port_position(0)
@@ -829,7 +832,7 @@ func on_from_next_selected(index: int) -> void:
 				connect_nodes(from_graph, new_random, "next")
 		5:
 			var new_end := spawn_end_node(
-					DialogData.get_end_structure(),
+					get_end_structure(),
 					true,
 					target_position)
 			new_end.position_offset -= new_end.get_input_port_position(0)
@@ -869,7 +872,7 @@ func on_connection_from_empty(to_node: StringName, to_port: int, release_positio
 	match port_type:
 		1:
 			var char_node := spawn_character_node(
-					DialogData.get_character_structure(),
+					get_character_structure(),
 					true,
 					target_position)
 			char_node.position_offset -= char_node.get_output_port_position(0)
@@ -877,7 +880,7 @@ func on_connection_from_empty(to_node: StringName, to_port: int, release_positio
 			connect_nodes(char_node, to_graph, "character")
 		3:
 			var signal_node := spawn_signal_node(
-					DialogData.get_signal_structure(),
+					get_signal_structure(),
 					true,
 					target_position)
 			signal_node.position_offset -= signal_node.get_output_port_position(0)
@@ -885,7 +888,7 @@ func on_connection_from_empty(to_node: StringName, to_port: int, release_positio
 			connect_nodes(signal_node, to_graph, "signal")
 		4:
 			var variable_node := spawn_variables_node(
-					DialogData.get_set_var_structure(),
+					get_set_var_structure(),
 					true,
 					target_position)
 			variable_node.position_offset -= variable_node.get_output_port_position(0)
@@ -893,7 +896,7 @@ func on_connection_from_empty(to_node: StringName, to_port: int, release_positio
 			connect_nodes(variable_node, to_graph, "variables")
 		5:
 			var call_node := spawn_call_node(
-					DialogData.get_call_structure(),
+					get_call_structure(),
 					true,
 					target_position)
 			call_node.position_offset -= call_node.get_output_port_position(0)
@@ -901,7 +904,7 @@ func on_connection_from_empty(to_node: StringName, to_port: int, release_positio
 			connect_nodes(call_node, to_graph, "call")
 		6:
 			var new_reply := spawn_reply_node(
-					DialogData.get_option_structure(),
+					get_option_structure(),
 					true,
 					target_position)
 			new_reply.position_offset -= new_reply.get_output_port_position(0)
@@ -932,7 +935,7 @@ func on_to_result_selected(selected: int) -> void:
 	match selected:
 		0:
 			var new_comparation := spawn_comparator_node(
-					DialogData.get_comparation_structure(),
+					get_comparation_structure(),
 					true,
 					target_pos)
 			new_comparation.position_offset -= new_comparation.get_output_port_position(0)
@@ -940,7 +943,7 @@ func on_to_result_selected(selected: int) -> void:
 			connect_nodes(new_comparation, to_graph, "result")
 		1:
 			var new_return_call := spawn_return_call_node(
-					DialogData.get_call_structure(),
+					get_call_structure(),
 					true,
 					target_pos)
 			new_return_call.position_offset -= new_return_call.get_output_port_position(0)
@@ -956,7 +959,7 @@ func on_to_type_selected(selected: int) -> void:
 	match selected:
 		0:
 			var new_value := spawn_element_node(
-					DialogData.get_element_structure(),
+					get_element_structure(),
 					true,
 					target_position)
 			new_value.position_offset -= new_value.get_output_port_position(0)
@@ -975,7 +978,7 @@ func on_to_type_selected(selected: int) -> void:
 						"value_b")
 		1:
 			var new_comparation := spawn_comparator_node(
-					DialogData.get_comparation_structure(),
+					get_comparation_structure(),
 					true,
 					target_position)
 			new_comparation.position_offset -= new_comparation.get_output_port_position(0)
@@ -992,6 +995,25 @@ func on_to_type_selected(selected: int) -> void:
 						"result",
 						to_graph,
 						"value_b")
+		2: # Return call
+			var new_return := spawn_return_call_node(
+				get_call_structure(),
+				true,
+				target_position)
+			new_return.position_offset -= new_return.get_output_port_position(0)
+			snap_to_grid(new_return)
+			if to_port == 0:
+				connect_nodes_specific(
+					new_return,
+					"result",
+					to_graph,
+					"value_a")
+			else:
+				connect_nodes_specific(
+					new_return,
+					"result",
+					to_graph,
+					"value_b")
 
 
 func on_disconnection_request(from_node: StringName, from_port: int, to_node: StringName, to_port: int) -> void:
@@ -1068,7 +1090,11 @@ func on_resource_selected(resource_path: String) -> void:
 		printerr(str("[DISCOURSE] File \"", resource_path, "\" is not a dialog."))
 		return
 	
-	var tree_item: TreeItem = open_dialog_list.add_file(resource_path.get_file())
+	# The file is already open
+	if open_dialog_list.has_file(resource_path):
+		return
+	
+	var tree_item: TreeItem = open_dialog_list.add_file(resource_path)
 	var tree_tree: Array = []
 	var orphans: Array = []
 	
@@ -1739,7 +1765,7 @@ func spawn_call_node(call_data: Dictionary, override_offset := false, offset_ove
 		new_node.minimized = true
 		new_node.minimize()
 	
-	new_node.select_by_callable(call_data["object"], call_data["method"])
+	new_node.select_by_key(call_data["call_id"])
 	new_node.set_args(call_data["args"])
 	new_node.close_requested.connect(on_close_requested)
 	new_node.node_updated.connect(notify_change)
@@ -1753,7 +1779,7 @@ func spawn_return_call_node(call_data: Dictionary, override_offset := false, off
 	if not call_data["expand"]:
 		new_node.minimized = true
 		new_node.minimize()
-	new_node.select_by_callable(call_data["object"], call_data["method"])
+	new_node.select_by_key(call_data["call_id"])
 	new_node.set_args(call_data["args"])
 	new_node.close_requested.connect(on_close_requested)
 	new_node.node_updated.connect(notify_change)
@@ -1777,3 +1803,199 @@ func spawn_end_node(end_data: Dictionary, override_offset := false, offset_overr
 	new_end.close_requested.connect(on_close_requested)
 	new_end.position_offset = offset_override if override_offset else end_data["offset"]
 	return new_end
+
+
+# ------------------ Dialog Map Functions ------------------
+#region Dialog Map Functions
+## Returns a complete dialog structure with default values. Used for the
+## creation of a complete conversation map.[br]
+## [codeblock lang=gdscript]
+## {
+##	"type": DialogType.DIALOG
+##	"character": {
+##		"id": "",
+##		"idle": {"animation": "", "play": false},
+##		"talking": {"animation": "", "play": false}},
+##	"dialog": {"text": "", "seconds_per_letter": -1.0},
+##	"next": {},
+##	"signal": {},
+##	"set_variable": {},
+##	"call": {},
+##	"pause": false
+## }
+## [/codeblock]
+static func get_dialog_structure() -> Dictionary:
+	return {
+		"type": DialogData.DialogType.DIALOG,
+		"character": {},
+		"dialog": {"text": "", "seconds_per_letter": -1.0}, # <0 means nothing will change.
+		# get_next_structure
+		"next": {},
+		"signal": {},
+		"set_variable": {},
+		"call": {},
+		"pause": false,
+		"offset": Vector2(), # Editor only
+		"expand": true # Editor only
+	}
+
+
+static func get_character_structure() -> Dictionary:
+	return {
+		"id": "",
+		"idle": {"animation": "", "play": false},
+		"talking": {"animation": "", "play": false},
+		"offset": Vector2(),
+		"expand": true # Editor only
+	}
+
+
+static func get_call_structure() -> Dictionary:
+	return {
+		"type": DialogData.DialogType.CALL,
+		"call_id": "",
+		"args": [],
+		"call_at_start": true,
+		"is_return": false,
+		"offset": Vector2(),
+		"expand": true # Editor only
+	}
+
+
+# Used for signal emmision.
+static func get_signal_structure() -> Dictionary:
+	return {"signal": "", "call_at_start": true,"offset": Vector2()}
+
+
+# To be used on the "next" of dialogs replies.
+static func get_next_structure() -> Dictionary:
+	return {
+		"type": DialogData.NextType.END,
+		# get_next_by_id, get_replies_structure, 
+		# get_condition_structure, get_random_select_structure
+		"data": {}
+	}
+
+
+static func get_next_by_id() -> Dictionary:
+	return {"next": "", "use_shortcut": false, "offset": Vector2()}
+
+
+static func get_replies_structure() -> Dictionary:
+	return {
+		"type": DialogData.DialogType.OPTIONS,
+		"options": [], # Has get_option_structure
+		"targets": [], # get_next.., get_condition, get_random_select
+		"cancel": -1,
+		"keep_dialog": true,
+		"offset": Vector2() # Offsest of the reply selector
+	}
+
+
+## Returns a complete dialog option structure with default values. Used for the
+## creation of a complete conversation map.[br]
+## [codeblock lang=gdscript]
+##{
+##	"text": "",
+##	"next": "",
+##	"signal": "",
+##	"conditions": {},
+##	"set_variable": {},
+##	"call": {"node": "", "method": &"", "args": []}
+##}
+## [/codeblock]
+static func get_option_structure() -> Dictionary:
+	return {
+		"text": "",
+		"signal": {},
+		"conditions": {}, # uses get_comparation_structure.
+		"set_variable": {},
+		"call": {},
+		"offset": Vector2()
+	}
+
+
+static func get_condition_structure() -> Dictionary:
+	return {
+		"type": DialogData.DialogType.CONDITION,
+		"comparation": {}, # uses get_comparation_structure
+		"true": {}, # next_structure
+		"false": {},
+		"offset": Vector2()
+	}
+
+
+# Used in condition structure and replies
+static func get_comparation_structure() -> Dictionary:
+	return {
+		"type": DialogData.DialogType.COMPARATION,
+		"var_a": {}, # Can use get_comparation_structure and get_element_structure
+		"var_b": {},
+		"operator": OP_EQUAL,
+		"offset": Vector2()
+	}
+
+
+# Used for comparation
+static func get_element_structure() -> Dictionary:
+	return {
+		"type": DialogData.DialogType.ELEMENT,
+		"value": {}, # uses _get_val_structure
+		"offset": Vector2()
+	}
+
+
+# Used only on get_element_structure
+static func _get_val_structure(element_type := DialogData.ElementType.STRING) -> Dictionary:
+	return {
+		"element_type": element_type,
+		"value": ""
+	}
+
+
+static func get_set_var_structure() -> Dictionary:
+	return {
+		"variables": {},
+		"offset": Vector2(), # Editor only
+		"expand": true # Editor only
+	}
+
+
+static func get_random_select_structure() -> Dictionary:
+	return {
+		"type": DialogData.DialogType.RANDOM,
+		"use_weights": false,
+		"options": [], # full of get_random_select_opt_structure
+		"offset": Vector2()
+	}
+
+
+static func get_random_select_opt_structure() -> Dictionary:
+	return {
+		"next": {},
+		"weight": 0.0
+	}
+
+
+static func get_comment_structure() -> Dictionary:
+	return {
+		"text": "",
+		"size": Vector2(175, 100),
+		"offset": Vector2()
+	}
+
+
+static func get_end_structure() -> Dictionary:
+	return {
+		"type": DialogData.DialogType.END,
+		"offset": Vector2()}
+
+
+# var_a: "variant" = Will "variant"(string)
+# var_a: "{variant}" = will access the variable "variant" and compare it.
+# var_a: "[Globals/variant,{arg_a,arg_b}]" = Will do Globals.variant.callv()
+#	with everything in {} as a list as argument
+
+# comparators "==" "!=" "<" ">" "<=" ">="
+#endregion
+# ----------------------------------------------------------

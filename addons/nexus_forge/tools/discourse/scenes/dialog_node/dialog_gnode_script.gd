@@ -146,7 +146,7 @@ func _is_root() -> bool:
 
 
 func generate_node_dictionary() -> Dictionary:
-	var dialog_dict: Dictionary = DialogData.get_dialog_structure()
+	var dialog_dict: Dictionary = NFDiscourseTool.get_dialog_structure()
 	if has_input_connection("character"):
 		dialog_dict["character"] = get_input_port_connection_by_id("character").generate_node_dictionary()
 	if has_input_connection("signal"):
@@ -158,14 +158,14 @@ func generate_node_dictionary() -> Dictionary:
 		dialog_dict["call"] = get_input_port_connection_by_id("call").generate_node_dictionary()
 		dialog_dict["call"]["call_at_start"] = call_moment_option.selected == 0
 	if has_output_connection("next"):
-		var next_dict: Dictionary = DialogData.get_next_structure()
+		var next_dict: Dictionary = NFDiscourseTool.get_next_structure()
 		var next_node: DiscourseGraphNode = get_output_port_connection_by_id("next")
 		var next_class: DialogData.NextType
 		var next_dict_data: Dictionary
 		
 		if next_node.node_type == DialogData.DialogType.DIALOG or next_node.node_type == DialogData.DialogType.OPTIONS:
 			next_class = DialogData.NextType.ID
-			next_dict_data = DialogData.get_next_by_id()
+			next_dict_data = NFDiscourseTool.get_next_by_id()
 			next_dict_data["next"] = next_node.node_id
 			next_dict_data["use_shortcut"] = false
 			next_dict_data["offset"] = next_node.position_offset
@@ -186,7 +186,7 @@ func generate_node_dictionary() -> Dictionary:
 		next_dict["data"] = next_dict_data
 		dialog_dict["next"] = next_dict
 	else:
-		var next_dict: Dictionary = DialogData.get_next_structure()
+		var next_dict: Dictionary = NFDiscourseTool.get_next_structure()
 		next_dict["type"] = DialogData.NextType.END
 		dialog_dict["next"] = next_dict
 		
