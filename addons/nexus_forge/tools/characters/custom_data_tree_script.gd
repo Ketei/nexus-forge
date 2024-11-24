@@ -28,7 +28,9 @@ func _ready() -> void:
 	button_clicked.connect(on_item_button_pressed)
 
 
-func create_custom_value(value: Variant, id: String) -> TreeItem:
+func create_custom_value(value: Variant, id: String = "") -> TreeItem:
+	if id.is_empty():
+		id = "Custom Value"
 	var new_type: TreeItem = create_item(root_tree)
 	var value_type: int = typeof(value)
 	

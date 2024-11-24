@@ -122,5 +122,4 @@ func is_folder_empty(folder_path: String) -> bool:
 func save() -> void:
 	ResourceSaver.save(
 		self,
-		ProjectSettings.get_setting(SETTINGS_PATH, "res://variables_resource.tres")
-	)
+		ProjectSettings.get_setting(SETTINGS_PATH, "res://variables_resource.tres"))

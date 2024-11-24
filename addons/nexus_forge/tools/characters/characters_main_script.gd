@@ -19,12 +19,14 @@ var _talents_resource: NFTalentsRes = null:
 	set(new_talents):
 		if _talents_resource != null:
 			_talents_resource.changed.disconnect(on_talents_changed)
+			_talents_resource.perk_renamed.disconnect(on_perk_renamed)
 		_talents_resource = new_talents
+		_talents_resource.perk_renamed.connect(on_perk_renamed)
 		_talents_resource.changed.connect(on_talents_changed)
 
-var _character_selected: String = ""
+var current_character: String = "": set = set_character_selected
 var _block_switch: bool = false
-var _character_memory: Dictionary = {}
+var character_memory: Dictionary = {}
 var no_db_container: PanelContainer = null
 
 @onready var sprite_frame_line: LineEdit = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/PortraitDataContainer/SpriteFrameContainer/LinePanel/LineContainer/SpriteFrameLine
@@ -178,13 +180,16 @@ func _ready() -> void:
 
 
 func on_play_sound_pressed() -> void:
-	if sprite_frame_line.text.is_empty():
+	if sound_path_line.text.is_empty():
 		return
 	
 	if type_stream_player.stream == null:
-		type_stream_player.stream = load(sprite_frame_line.text)
+		type_stream_player.stream = load(sound_path_line.text)
 	
 	type_stream_player.play()
+	play_sound_button.disabled = true
+	await type_stream_player.finished
+	play_sound_button.disabled = false
 
 
 func on_sound_path_set(path: String) -> void:
@@ -199,6 +204,10 @@ func on_menu_pressed(id: int) -> void:
 			save_characters()
 		2:
 			on_import_character()
+
+
+func on_perk_renamed(from: String, to: String) -> void:
+	perks_tree.rename_perk(from, to)
 
 
 func on_talents_changed() -> void:
@@ -216,7 +225,7 @@ func on_talents_changed() -> void:
 
 	for perk in _talents_resource.get_perks():
 		if perk_config.has(perk):
-			perks_tree.set_perk(perk, true, perk_config[perk]["level"])
+			perks_tree.set_perk(perk, perk_config[perk]["level"])
 
 
 func load_factions() -> void:
@@ -271,16 +280,27 @@ func on_races_changed() -> void:
 func load_perks() -> void:
 	perks_tree.clear_perks()
 	for perk in _talents_resource.get_perks():
-		perks_tree.add_perk(perk, _talents_resource.get_perk_level(perk))
+		perks_tree.add_perk(
+				perk,
+				_talents_resource.get_perk_name(perk),
+				_talents_resource.get_perk_level(perk))
 
 
 func load_skills() -> void:
 	skills_tree.clear_skills()
+	perks_tree.clear_perks()
+	
 	for skill in _talents_resource.get_skills():
 		skills_tree.add_skill(
 				skill,
 				_talents_resource.get_skill_name(skill),
 				_talents_resource.get_skill_limit(skill))
+	
+	for perk in _talents_resource.get_perks():
+		perks_tree.add_perk(
+			perk,
+			_talents_resource.get_perk_name(perk),
+			_talents_resource.get_perk_level(perk))
 
 
 func on_species_selected(index_selected: int) -> void:
@@ -319,7 +339,7 @@ func on_character_selected(character_id: String):
 	if _block_switch:
 		return
 	_block_switch = true
-	_character_selected = character_id
+	current_character = character_id
 	characters_tree.ensure_selected(character_id)
 	_block_switch = false
 
@@ -328,8 +348,8 @@ func on_copy_id_btn_pressed() -> void:
 	DisplayServer.clipboard_set(chara_id_label.text)
 
 
-func _set_character_selected(character_id: String) -> void:
-	_character_selected = character_id
+func set_character_selected(character_id: String) -> void:
+	current_character = character_id
 	
 	sprite_sheets_tree.clear_sprite_sheets()
 	custom_data_tree.clear_custom_data()
@@ -339,65 +359,75 @@ func _set_character_selected(character_id: String) -> void:
 	variants_tree.clear_variants()
 	type_stream_player.stream = null
 	
-	if _character_memory.has(character_id):
-		var character_data: Dictionary = _character_memory[character_id]
-		chara_id_label.text = character_id
-		char_name_line.text = character_data["character_name"]
-		char_name_color.color = character_data["color"]
-		sprite_frame_line.text = character_data["sprite_frames_path"]
-		sound_path_line.text = character_data["typing_sound_path"]
-		select_species(character_data["character_species"])
-		select_race(character_data["character_race"])
-		select_gender(character_data["character_gender"])
-		flags_tree.set_flags(character_data["flags"])
+	if character_memory.has(character_id):
+		var character_data: CharacterDefinition = character_memory[character_id]
+		chara_id_label.text = Strings.title_case(character_id)
+		char_name_line.text = character_data.character_name
+		char_name_color.color = character_data.character_name_color
+		sprite_frame_line.text = character_data.sprite_frames_path
+		sound_path_line.text = character_data.typing_sound_path
+		play_sound_button.disabled = sound_path_line.text.is_empty()
+		if not character_data.character_species.is_empty():
+			select_species(character_data.character_species)
+		if not character_data.character_species.is_empty():
+			select_race(character_data.character_race)
+		select_gender(character_data.character_gender)
+		flags_tree.set_flags(character_data.flags)
 		
-		for sheet in character_data["sprite_sheets"]:
+		for sheet in character_data.get_sprite_sheet_ids():
 			sprite_sheets_tree.create_sheet_path(
 					sheet,
-					character_data["sprite_sheets"][sheet])
+					character_data.get_sprite_sheet_path(sheet))
 		
-		for data in character_data["custom_data"]:
+		for data in character_data.get_custom_data_ids():
 			custom_data_tree.create_custom_value(
-				character_data["custom_data"][data],
+				character_data.get_custom_data(data),
 				data)
-		for faction in character_data["factions"]:
+		
+		for faction in character_data.get_characer_factions():
 			factions_tree.set_faction(
 					faction,
 					true,
-					character_data["factions"][faction]["rank"])
-		for stat in character_data["stats"]:
+					character_data.get_faction_rank(faction))
+		
+		for stat in character_data.get_stat_ids():
 			stats_tree.create_stat(
 					stat,
-					character_data["stats"][stat]["min"],
-					character_data["stats"][stat]["max"])
-		for perk in character_data["perks"]:
+					character_data.get_stat_min(stat),
+					character_data.get_stat_max(stat))
+		
+		for perk in character_data.get_perk_ids():
 			perks_tree.set_perk(
 					perk,
-					true,
-					character_data["perks"][perk]["level"])
-		for skill in character_data["skills"]:
+					character_data.get_perk_level(perk))
+		
+		for skill in character_data.get_skill_ids():
 			skills_tree.set_skill(
 					skill,
-					character_data["skills"][skill]["level"])
-		for variant in character_data["variants"]:
+					character_data.get_skill_level(skill))
+		
+		for variant in character_data.get_variants():
 			variants_tree.create_variant(
 					variant,
-					character_data["variants"][variant]["sheet"],
-					character_data["variants"][variant]["stats"])
+					character_data.get_variant_sprite_sheet(variant),
+					character_data.get_variant_mods(variant))
 	else:
-		var character_data: CharacterDefinition = characters_tree.get_character_data(character_id)
+		var character_data: CharacterDefinition = _characters_resource.get_character(character_id)
 		
 		if character_data == null:
 			printerr("[CHARACTERS] Something went wrong while opening data from: " + character_id)
 			return
 		
-		chara_id_label.text = character_data.character_id
+		chara_id_label.text = Strings.title_case(character_id)
 		char_name_line.text = character_data.character_name
 		char_name_color.color = character_data.character_name_color
 		sprite_frame_line.text = character_data.sprite_frames_path
 		sound_path_line.text = character_data.typing_sound_path
-		select_species(character_data.character_species)
-		select_race(character_data.character_race)
+		play_sound_button.disabled = sound_path_line.text.is_empty()
+		if not character_data.character_species.is_empty():
+			select_species(character_data.character_species)
+		if not character_data.character_race.is_empty():
+			select_race(character_data.character_race)
 		select_gender(character_data.character_gender)
 		flags_tree.set_flags(character_data.flags)
 		
@@ -423,7 +453,6 @@ func _set_character_selected(character_id: String) -> void:
 		for perk in character_data.get_perk_ids():
 			perks_tree.set_perk(
 					perk,
-					true,
 					character_data.get_perk_level(perk))
 		for skill in character_data.get_skill_ids():
 			skills_tree.set_skill(
@@ -512,7 +541,7 @@ func select_species(species_id: String) -> void:
 			found = true
 			break
 	if not found:
-		printerr(str("[CHARACTERS] Species ", species_id, " not found."))
+		printerr(str("[CHARACTERS] Species \"", species_id, "\" not found."))
 
 
 func select_race(race_id: String) -> void:
@@ -621,9 +650,8 @@ func on_dialog_ok(resource_path: String) -> void:
 				var new_char := CharacterDefinition.new()
 				#new_char.character_id = data_select_dialog.character_id
 				if ResourceSaver.save(new_char, resource_path) == OK:
-					if not _characters_resource.has_character(data_select_dialog.character_id):
-						characters_tree.add_character(resource_path)
-					_characters_resource.set_character(data_select_dialog.character_id, resource_path)
+					var character_id: String = characters_tree.add_character(resource_path)
+					_characters_resource.set_character(character_id, resource_path)
 					_characters_resource.save()
 			else:
 				if not ResourceLoader.exists(resource_path):
@@ -641,6 +669,7 @@ func on_dialog_ok(resource_path: String) -> void:
 				_characters_resource.save()
 		2: # Sound
 			sound_path_line.text = resource_path
+			play_sound_button.disabled = sound_path_line.text.is_empty()
 		3: # Sprite
 			var frames_preload: Resource = load(resource_path)
 			if frames_preload is SpriteFrames:
@@ -700,71 +729,40 @@ func create_custom_data(data_type: int) -> void:
 
 
 func load_characters() -> void:
-	for character in _characters_resource._characters:
-		characters_tree.add_character(_characters_resource._characters[character])
+	for character in _characters_resource.get_characters():
+		characters_tree.add_character(character)
 
 
 func store_current() -> void:
-	if _character_selected.is_empty():
-		return
-	_character_memory[_character_selected] = {
-		"character_name": char_name_line.text.strip_edges(),
-		"color": char_name_color.color,
-		"sprite_frames_path": sprite_frame_line.text,
-		"typing_sound_path": sound_path_line.text,
-		"character_species": species_option_button.get_item_text(species_option_button.selected),
-		"character_race": race_option_button.get_item_text(race_option_button.selected),
-		"character_gender": gender_option_button.get_item_metadata(gender_option_button.selected),
-		"flags": flags_tree.get_flags(),
-		"sprite_sheets": sprite_sheets_tree.get_sprites_data(),
-		"custom_data": custom_data_tree.get_custom_data(),
-		"factions": factions_tree.get_factions(),
-		"stats": stats_tree.get_stats(),
-		"perks": perks_tree.get_selected_perks(),
-		"skills": skills_tree.get_skill_data(),
-		"variants": variants_tree.get_stat_variant_data()
-	}
+	var new_chara := CharacterDefinition.new()
+	new_chara.character_name = char_name_line.text.strip_edges()
+	new_chara.character_name_color = char_name_color.color
+	new_chara.sprite_frames_path = sprite_frame_line.text
+	new_chara.typing_sound_path = sound_path_line.text
+	if species_option_button.selected != -1:
+		new_chara.character_species = species_option_button.get_item_text(species_option_button.selected)
+	if race_option_button.selected != -1:
+		new_chara.character_race = race_option_button.get_item_text(race_option_button.selected)
+	new_chara.character_gender = gender_option_button.get_item_metadata(gender_option_button.selected)
+	new_chara.flags = flags_tree.get_flags()
+	new_chara.sprite_sheets = sprite_sheets_tree.get_sprites_data()
+	new_chara.custom_data = custom_data_tree.get_custom_data()
+	new_chara.factions = factions_tree.get_factions()
+	new_chara.stats = stats_tree.get_stats()
+	new_chara.perks = perks_tree.get_selected_perks()
+	new_chara.skills = skills_tree.get_skill_data()
+	new_chara.variants = variants_tree.get_stat_variant_data()
+	
+	character_memory[current_character] = new_chara
 
 
 func save_characters() -> void:
-	store_current()
-	for character in _character_memory:
-		var char_path: Dictionary = characters_tree.get_serialized_data(character)
-		var character_res: CharacterDefinition = CharacterDefinition.new()
-		var ch: Dictionary = _character_memory[character]
-		character_res.character_id = chara_id_label.text
-		character_res.character_name = ch["character_name"]
-		character_res.character_name_color = ch["color"]
-		character_res.sprite_frames_path = ch["sprite_frames_path"]
-		character_res.typing_sound_path = ch["typing_sound_path"]
-		character_res.character_species = ch["character_species"]
-		character_res.character_race = ch["character_race"]
-		character_res.character_gender = ch["character_gender"]
-		character_res.flags = ch["flags"]
-		for sprite_sheet in ch["sprite_sheets"]:
-			character_res.add_sprite_sheet(sprite_sheet, ch["sprite_sheets"][sprite_sheet])
-		for c_data in ch["custom_data"]:
-			character_res.set_custom_data(c_data, ch["custom_data"][c_data])
-		for faction in ch["factions"]:
-			character_res.add_to_faction(faction, ch["factions"][faction]["rank"])
-		for stat in ch["stats"]:
-			character_res.add_stat(stat, ch["stat"][stat]["min"], ch["stat"][stat]["max"])
-		for perk in ch["perks"]:
-			character_res.set_perk(perk, ch["perks"][perk]["level"])
-		for skill in ch["skills"]:
-			character_res.set_skill(skill, ch["skills"][skill]["level"])
-		for variant in ch["variants"]:
-			character_res.create_variant(variant)
-			character_res.set_variant_sprite_sheet(
-					variant,
-					ch["variants"][variant]["sheet"])
-			for stat_variant in ch["variants"][variant]["stats"]:
-				character_res.set_variant_stat_mod(
-						variant,
-						stat_variant,
-						ch["variants"][variant]["stats"][stat_variant])
-		ResourceSaver.save(character_res, char_path["path"])
-		characters_tree.set_character_data(
-				chara_id_label.text,
-				character_res)
-	_character_memory.clear()
+	if not current_character.is_empty():
+		store_current()
+	
+	for character in character_memory:
+		ResourceSaver.save(
+			character_memory[character],
+			_characters_resource.get_character_path(character))
+	
+	character_memory.clear()

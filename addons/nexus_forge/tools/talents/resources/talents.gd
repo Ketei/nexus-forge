@@ -3,6 +3,8 @@ class_name NFTalentsRes
 extends Resource
 
 
+signal perk_renamed(from: String, to: String)
+
 enum PerkFlags {
 	UNIQUE_BRANCHING,
 	REQUIRE_PARENTS,
@@ -72,6 +74,61 @@ const SETTINGS_PATH: String = "nexus_forge/talents_resource"
 	#}
 }
 
+
+var skill_trackers: Dictionary = {}
+var perk_trackers: Dictionary = {}
+
+
+func drop_perk_tracker(tracker_id: String) -> void:
+	perk_trackers.erase(tracker_id)
+
+
+func create_perk_tracker(tracker_id: String) -> void:
+	perk_trackers[tracker_id] = {}
+
+
+func set_tracked_perk(tracker_id: String, perk_id: String, value: int) -> void:
+	perk_trackers[tracker_id][perk_id] = clampi(value, 0, perks[perk_id]["levels"])
+
+
+func stop_tracking_perk(tracker_id: String, perk_id: String) -> void:
+	perk_trackers[tracker_id].erase(perk_id)
+
+
+func get_tracked_perk(tracker_id: String, perk_id: String) -> int:
+	return perk_trackers[tracker_id][perk_id]
+
+
+func get_tracked_perks(tracker_id: String) -> Array[String]:
+	var all_perks: Array[String] = []
+	all_perks.assign(perk_trackers[tracker_id].keys())
+	return all_perks
+
+
+func set_tracked_skill(tracker_id: String, skill_id: String, value: int) -> void:
+	skill_trackers[tracker_id][skill_id] = clampi(value, 0, skills[skill_id]["limit"])
+
+
+func stop_tracking_skill(tracker_id: String, skill_id: String) -> void:
+	skill_trackers[tracker_id].erase(skill_id)
+
+
+func get_tracked_skill(tracker_id: String, skill_id: String) -> int:
+	return skill_trackers[tracker_id][skill_id]
+
+
+func get_tracked_skills(tracker_id: String) -> Array[String]:
+	var all_skills: Array[String] = []
+	all_skills.assign(skill_trackers[tracker_id].keys())
+	return all_skills
+
+
+func drop_skill_tracker(tracker_id: String) -> void:
+	skill_trackers.erase(tracker_id)
+
+
+func create_skill_tracker(tracker_id: String) -> void:
+	skill_trackers[tracker_id] = {}
 
 
 func create_skill(skill_id: String, name: String = "", desc: String = "", limit: int = 1, icon: String = "") -> void:
@@ -161,16 +218,16 @@ func set_perk_levels(perk_id: String, perk_levels: int) -> void:
 			perks[perk_id]["requirements"][idx] = get_perk_req_structure()
 
 
-func set_perk_value_requirement(perk_id: String, perk_level: int, id: String, value: int, operator: int) -> void:
-	perks[perk_id]["requirements"][perk_level]["values"][id] = {
+func set_perk_skill_requirement(perk_id: String, perk_level: int, id: String, value: int, operator: int) -> void:
+	perks[perk_id]["requirements"][perk_level]["skills"][id] = {
 		"value": value,
-		"match": operator}
+		"operator": operator}
 
 
 func set_perk_perk_requirement(perk_id: String, perk_level: int, req_perk: String, level: int, operator: int) -> void:
 	perks[perk_id]["requirements"][perk_level]["perks"][req_perk] = {
 		"level": level,
-		"match": operator}
+		"operator": operator}
 
 
 func set_perk_var_requirement(perk_id: String, perk_level: int, var_id: String, value: Variant, operator: int) -> void:
@@ -227,7 +284,7 @@ func get_skill_limit(skill_id: String) -> int:
 
 func get_perk_req_structure() -> Dictionary:
 	return {
-		"values": {},
+		"skills": {},
 		"perks": {},
 		"variables": {}
 	}

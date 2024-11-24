@@ -1,0 +1,40 @@
+[gd_scene load_steps=2 format=3 uid="uid://dtwpnkm0oh603"]
+
+[sub_resource type="GDScript" id="GDScript_gl43i"]
+script/source = "extends Control
+
+
+func _ready() -> void:
+	for _ig in range(2):
+		#print(random_base64(64))
+		print(random_base64())
+		print(\"-----------------\")
+		await get_tree().create_timer(3.0).timeout
+
+
+#func random_base64(num_chars: int) -> String:
+	#var crypto := Crypto.new()
+	#var byte_array := crypto.generate_random_bytes(num_chars * 3 / 4)
+	#return (Marshalls.raw_to_base64(byte_array)
+		#.replace(\"+\", \"-\")
+		#.replace(\"/\", \"_\")
+		#.substr(0, num_chars))
+
+
+func random_base64() -> String:
+	var crypto := Crypto.new()
+	var random_array: PackedByteArray = var_to_bytes(Time.get_unix_time_from_system())  # := crypto.generate_random_bytes(36)
+	
+	random_array.append_array(crypto.generate_random_bytes(3))
+	
+	return Marshalls.raw_to_base64(random_array).replace(\"+\", \"-\").replace(\"/\", \"_\")
+"
+
+[node name="Test" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = SubResource("GDScript_gl43i")

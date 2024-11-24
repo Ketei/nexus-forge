@@ -5,6 +5,7 @@ extends IDTree
 signal station_deleted(station_id: String)
 signal recipe_deleted(station_id: String, recipe_id: String)
 signal recipe_selected(station_id: String, recipe_id: String)
+signal recipe_created(station_id: String, recipe_id: String)
 signal recipe_id_changed(station: String, from: String, to: String)
 signal station_id_changed(from: String, to: String)
 signal recipe_changed()
@@ -119,10 +120,10 @@ func on_button_pressed(item: TreeItem, column: int, id: int, mouse_button_index:
 		2: # Add new recipe
 			if item.collapsed:
 				item.collapsed = false
-			create_recipe(item)
+			recipe_created.emit(item.get_parent().get_metadata(0)["id"], create_recipe(item))
 
 
-func create_recipe(tree_item: TreeItem) -> void:
+func create_recipe(tree_item: TreeItem) -> String:
 	var new_item: TreeItem = create_item(tree_item)
 	var new_recipe_id: String = validate_id(tree_item, "new_recipe", new_item)
 	new_item.set_text(0, new_recipe_id)
@@ -133,6 +134,7 @@ func create_recipe(tree_item: TreeItem) -> void:
 	new_item.set_selectable(0, true)
 	new_item.set_selectable(1, false)
 	new_item.set_editable(0, true)
+	return new_recipe_id
 
 
 func on_item_edited() -> void:

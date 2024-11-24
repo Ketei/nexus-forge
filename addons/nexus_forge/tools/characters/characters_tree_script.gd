@@ -11,16 +11,17 @@ var root_tree: TreeItem = null
 
 func _ready() -> void:
 	root_tree = create_item()
+	item_selected.connect(on_item_selected)
 
 
-func add_character(character_path: String) -> String:
-	var character_res: CharacterDefinition = load(character_path)
+func add_character(character_id: String) -> String:
+	#var character_res: CharacterDefinition = load(character_path)
 	var new_character = create_item(root_tree)
-	var character_id: String = validate_id(root_tree, character_res.character_id, new_character)
+	#var character_id: String = validate_id(root_tree, character_res.character_id, new_character)
 	new_character.set_text(0, character_id)
 	new_character.set_editable(0, false)
 	new_character.add_button(0, CLOSE_ICON, 0, false, "Close Character")
-	new_character.set_metadata(0, {"path": character_path, "data": character_res})
+	#new_character.set_metadata(0, {"path": character_path, "data": character_res})
 	return character_id
 
 

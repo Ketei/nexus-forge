@@ -31,6 +31,10 @@ func add_skill(skill_id: String, skill_name: String, skill_limit: int) -> void:
 	new_skill.set_editable(1, false)
 	new_skill.set_editable(2, true)
 	
+	new_skill.set_selectable(0, false)
+	new_skill.set_selectable(1, false)
+	new_skill.set_selectable(2, true)
+	
 	new_skill.set_range_config(
 			2,
 			0,

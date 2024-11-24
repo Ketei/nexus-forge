@@ -2,8 +2,6 @@ class_name CharacterDefinition
 extends Resource
 
 
-## The id of the character. Meant to be unique.
-@export var character_id: StringName = &""
 ## The display name of the character.
 @export var character_name: String = ""
 ## The color the character name will appear as on the textbox.

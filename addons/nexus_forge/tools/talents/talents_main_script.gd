@@ -15,12 +15,12 @@ var current_level: int = -1
 var current_perk: String = ""
 var no_talents_panel: PanelContainer = null
 
-@onready var skill_opt_btn: OptionButton = $MainContainer/SkillsContainer/SkillSelectContainer/SkillContainer/SkillOptBtn
-@onready var create_skill_btn: Button = $MainContainer/SkillsContainer/SkillSelectContainer/SkillContainer/CreateSkillBtn
-@onready var skill_ln_edt: LineEdit = $MainContainer/SkillsContainer/NameContainer/SkillLnEdt
-@onready var icon_path_ln_edt: LineEdit = $MainContainer/SkillsContainer/HBoxContainer3/IconPathPanel/DataContainer/IconPathLnEdt
-@onready var skill_limit_spn_bx: SpinBox = $MainContainer/SkillsContainer/LimitContainer/SkillLimitSpnBx
-@onready var skill_desc_txt_edt: TextEdit = $MainContainer/SkillsContainer/DesContainer/DescTxtEdt
+@onready var skill_opt_btn: OptionButton = $MainPanel/MainMargin/MainContainer/SkillsContainer/SkillSelectContainer/SkillContainer/SkillOptBtn
+@onready var create_skill_btn: Button = $MainPanel/MainMargin/MainContainer/SkillsContainer/SkillSelectContainer/SkillContainer/CreateSkillBtn
+@onready var skill_ln_edt: LineEdit = $MainPanel/MainMargin/MainContainer/SkillsContainer/NameContainer/SkillLnEdt
+@onready var icon_path_ln_edt: LineEdit = $MainPanel/MainMargin/MainContainer/SkillsContainer/HBoxContainer3/IconPathPanel/DataContainer/IconPathLnEdt
+@onready var skill_limit_spn_bx: SpinBox = $MainPanel/MainMargin/MainContainer/SkillsContainer/LimitContainer/SkillLimitSpnBx
+@onready var skill_desc_txt_edt: TextEdit = $MainPanel/MainMargin/MainContainer/SkillsContainer/DesContainer/DescTxtEdt
 
 @onready var id_select_panel: PanelContainer = $IDSelectPanel
 @onready var popup_title_lbl: Label = $IDSelectPanel/CenterContainer/PromptContainer/HeaderPanel/PopupTitleLbl
@@ -28,29 +28,29 @@ var no_talents_panel: PanelContainer = null
 @onready var valid_text_rect: TextureRect = $IDSelectPanel/CenterContainer/PromptContainer/PopupDataPanel/DataContainer/IDContainer/ValidTextRect
 @onready var cancel_btn: Button = $IDSelectPanel/CenterContainer/PromptContainer/PopupDataPanel/DataContainer/ButtonsContainer/CancelBtn
 @onready var create_btn: Button = $IDSelectPanel/CenterContainer/PromptContainer/PopupDataPanel/DataContainer/ButtonsContainer/CreateBtn
-@onready var perk_tree: Tree = $MainContainer/PerksContainer/DataContainer/LeftContainer/PerkAndFlagsContainer/PerksContainer/PerkTree
-@onready var main_container: HBoxContainer = $MainContainer
+@onready var perk_tree: Tree = $MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/LeftContainer/PerkAndFlagsContainer/PerksContainer/PerkTree
+@onready var main_container: HBoxContainer = $MainPanel/MainMargin/MainContainer
 @onready var talents_resource_dialog: FileDialog = $Components/TalentsResourceDialog
-@onready var flags_tree: Tree = $MainContainer/PerksContainer/DataContainer/LeftContainer/PerkDescContainer/FlagsContainer/FlagsTree
-@onready var perk_desc_txt_edt: TextEdit = $MainContainer/PerksContainer/DataContainer/LeftContainer/PerkDescContainer/DataContainer/PerkDescTxtEdt
-@onready var stats_tree: Tree = $MainContainer/PerksContainer/DataContainer/ReqContainer/Stats/StatsTree
-@onready var perk_lvl_spn_bx: SpinBox = $MainContainer/PerksContainer/DataContainer/ReqContainer/LevelRequirement/LevelContainer/PerkLvlSpnBx
-@onready var perk_requirement_tree: Tree = $MainContainer/PerksContainer/DataContainer/ReqContainer/PerksCotainer/PerkReqTree
-@onready var variables_tree: Tree = $MainContainer/PerksContainer/DataContainer/ReqContainer/Variables/VariablesTree
-@onready var add_stat_btn: Button = $MainContainer/PerksContainer/DataContainer/ReqContainer/Stats/StatLineContainer/AddStatBtn
-@onready var add_int_btn: Button = $MainContainer/PerksContainer/DataContainer/ReqContainer/Variables/VariableBtnContainer/ButtonContainer/AddIntBtn
-@onready var add_flt_btn: Button = $MainContainer/PerksContainer/DataContainer/ReqContainer/Variables/VariableBtnContainer/ButtonContainer/AddFltBtn
-@onready var add_bool_btn: Button = $MainContainer/PerksContainer/DataContainer/ReqContainer/Variables/VariableBtnContainer/ButtonContainer/AddBoolBtn
-@onready var add_str_btn: Button = $MainContainer/PerksContainer/DataContainer/ReqContainer/Variables/VariableBtnContainer/ButtonContainer/AddStrBtn
-@onready var add_stat_ln_edt: LineEdit = $MainContainer/PerksContainer/DataContainer/ReqContainer/Stats/StatLineContainer/AddStatLnEdt
-@onready var perk_search_ln_edt: LineEdit = $MainContainer/PerksContainer/DataContainer/ReqContainer/PerksCotainer/PerkSearchContainer/PerkSearchLnEdt
-@onready var create_perk_btn: Button = $MainContainer/PerksContainer/DataContainer/LeftContainer/PerkAndFlagsContainer/PerksContainer/PerkBarContainer/CreatePerkBtn
+@onready var flags_tree: Tree = $MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/LeftContainer/PerkDescContainer/FlagsContainer/FlagsTree
+@onready var perk_desc_txt_edt: TextEdit = $MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/LeftContainer/PerkDescContainer/DataContainer/PerkDescTxtEdt
+@onready var skills_reqirement_tree: Tree = $MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer/Stats/SkillsReqTree
+@onready var perk_lvl_spn_bx: SpinBox = $MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer/LevelRequirement/LevelContainer/PerkLvlSpnBx
+@onready var perk_requirement_tree: Tree = $MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer/PerksCotainer/PerkReqTree
+@onready var variables_tree: Tree = $MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer/Variables/VariablesTree
+#@onready var add_stat_btn: Button = $MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer/Stats/StatLineContainer/AddStatBtn
+@onready var add_int_btn: Button = $MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer/Variables/VariableBtnContainer/ButtonContainer/AddIntBtn
+@onready var add_flt_btn: Button = $MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer/Variables/VariableBtnContainer/ButtonContainer/AddFltBtn
+@onready var add_bool_btn: Button = $MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer/Variables/VariableBtnContainer/ButtonContainer/AddBoolBtn
+@onready var add_str_btn: Button = $MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer/Variables/VariableBtnContainer/ButtonContainer/AddStrBtn
+@onready var search_skill_ln_edt: LineEdit = $MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer/Stats/StatLineContainer/SearchSkillLnEdt
+@onready var perk_search_ln_edt: LineEdit = $MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer/PerksCotainer/PerkSearchContainer/PerkSearchLnEdt
+@onready var create_perk_btn: Button = $MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/LeftContainer/PerkAndFlagsContainer/PerksContainer/PerkBarContainer/CreatePerkBtn
 #@onready var create_db_button: Button = $NoTalentsPanel/CenterContainer/InfoContainer/ButtonContainer2/CreateDBButton
 #@onready var load_db_button: Button = $NoTalentsPanel/CenterContainer/InfoContainer/ButtonContainer2/LoadDBButton
-@onready var browse_icon_btn: Button = $MainContainer/SkillsContainer/HBoxContainer3/IconPathPanel/DataContainer/BrowseIconBtn
-@onready var delete_skill_btn: Button = $MainContainer/SkillsContainer/SkillSelectContainer/SkillContainer/DeleteSkillBtn
-@onready var save_btn: Button = $MainContainer/PerksContainer/HBoxContainer/SaveBtn
-@onready var current_perk_lbl: Label = $MainContainer/PerksContainer/DataContainer/LeftContainer/PerkInfo/CurrentPerkLbl
+@onready var browse_icon_btn: Button = $MainPanel/MainMargin/MainContainer/SkillsContainer/HBoxContainer3/IconPathPanel/DataContainer/BrowseIconBtn
+@onready var delete_skill_btn: Button = $MainPanel/MainMargin/MainContainer/SkillsContainer/SkillSelectContainer/SkillContainer/DeleteSkillBtn
+@onready var save_btn: Button = $MainPanel/MainMargin/MainContainer/PerksContainer/HBoxContainer/SaveBtn
+@onready var current_perk_lbl: Label = $MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/LeftContainer/PerkInfo/CurrentPerkLbl
 
 
 func _ready() -> void:
@@ -87,14 +87,24 @@ func _ready() -> void:
 	create_skill_btn.pressed.connect(on_create_skill_pressed)
 	cancel_btn.pressed.connect(id_select_panel.hide)
 	create_btn.pressed.connect(on_panel_ok_button_pressed)
+	add_int_btn.pressed.connect(on_create_variant_requirement_pressed.bind(0))
+	add_flt_btn.pressed.connect(on_create_variant_requirement_pressed.bind(0.0))
+	add_bool_btn.pressed.connect(on_create_variant_requirement_pressed.bind(false))
+	add_str_btn.pressed.connect(on_create_variant_requirement_pressed.bind(""))
 
 
 func load_resource() -> void:
 	skill_opt_btn.clear()
 	perk_tree.clear_perks()
+	perk_requirement_tree.clear_perks()
+	skills_reqirement_tree.clear_skills()
 	
 	for skill in _talents_resource.get_skills():
 		skill_opt_btn.add_item(skill)
+		skills_reqirement_tree.add_skill(
+			skill,
+			0,
+			OP_EQUAL)
 	
 	for perk in _talents_resource.get_perks():
 		perk_tree.add_perk(
@@ -102,10 +112,16 @@ func load_resource() -> void:
 				_talents_resource.get_perk_name(perk),
 				_talents_resource.get_perk_level(perk),
 				false)
+		perk_requirement_tree.add_perk(perk)
+	
 	
 	if 0 < skill_opt_btn.item_count:
 		skill_opt_btn.select(0)
 		on_skill_selected(0)
+
+
+func on_create_variant_requirement_pressed(variant: Variant) -> void:
+	variables_tree.create_variable(variant)
 
 
 func on_create_perk_pressed() -> void:
@@ -114,6 +130,7 @@ func on_create_perk_pressed() -> void:
 
 func on_perk_created(perk_id: String) -> void:
 	_talents_resource.create_perk(perk_id)
+	perk_requirement_tree.add_perk(perk_id)
 
 
 func on_load_talent_res_pressed() -> void:
@@ -207,6 +224,8 @@ func on_panel_ok_button_pressed() -> void:
 	var skill_id: String = id_line_edit.text.strip_edges()
 	id_select_panel.visible = false
 	_talents_resource.create_skill(skill_id)
+	skills_reqirement_tree.add_skill(skill_id, 0,OP_EQUAL)
+	
 	skill_opt_btn.add_item(skill_id)
 	skill_opt_btn.select(skill_opt_btn.item_count - 1)
 	on_skill_selected(skill_opt_btn.item_count - 1)
@@ -220,8 +239,11 @@ func on_id_line_submitted(_submitted_text: String = "") -> void:
 func on_perk_id_changed(from: String, to: String) -> void:
 	_talents_resource.perks[to] = _talents_resource.perks[from]
 	_talents_resource.erase_perk(from)
+	_talents_resource.perk_renamed.emit(from, to)
+	perk_requirement_tree.rename_perk(from, to)
 	if current_perk == from:
 		current_perk = to
+		current_perk_lbl.text = to
 
 
 func on_perk_deleted(perk_id: String) -> void:
@@ -236,22 +258,24 @@ func set_perk_as_current(new_id: String) -> void:
 	current_perk = new_id
 	current_perk_lbl.text = new_id
 	
-	add_stat_btn.disabled = invalid_id
+	#add_stat_btn.disabled = invalid_id
 	add_int_btn.disabled = invalid_id
 	add_flt_btn.disabled = invalid_id
 	add_bool_btn.disabled = invalid_id
 	add_str_btn.disabled = invalid_id
 	flags_tree.set_editable(not invalid_id)
 	perk_desc_txt_edt.editable = not invalid_id
-	add_stat_ln_edt.editable = not invalid_id
+	search_skill_ln_edt.editable = not invalid_id
 	perk_search_ln_edt.editable = not invalid_id
 	perk_lvl_spn_bx.editable = not invalid_id
+	perk_requirement_tree.set_perks_enabled(not invalid_id)
+	skills_reqirement_tree.set_skills_enabled(not invalid_id)
 	
-	add_stat_ln_edt.clear()
+	search_skill_ln_edt.clear()
 	perk_search_ln_edt.clear()
 	variables_tree.clear_variables()
-	perk_requirement_tree.clear_checks()
-	stats_tree.clear_stats()
+	perk_requirement_tree.reset_perks()
+	skills_reqirement_tree.reset_skills()
 	perk_lvl_spn_bx.set_value_no_signal(1)
 	perk_lvl_spn_bx.get_line_edit().text = "1"
 	
@@ -265,48 +289,51 @@ func set_perk_as_current(new_id: String) -> void:
 		perk_desc_txt_edt.text = _talents_resource.get_perk_desc(new_id)
 		perk_lvl_spn_bx.max_value = _talents_resource.get_perk_level(new_id)
 		flags_tree.set_flags(_talents_resource.get_perk_flags(new_id))
-			
+		perk_requirement_tree.set_perk_hidden(current_perk)
+		
 		var perk_req: Dictionary = _talents_resource.get_perk_requirements(current_perk, 0)
 		
-		for stat in perk_req["values"]:
-			stats_tree.add_requirement(
+		for stat in perk_req["skills"]:
+			skills_reqirement_tree.add_requirement(
 					stat,
-					perk_req["values"][stat]["value"],
-					_operator_to_range(perk_req["values"][stat]["operator"]))
+					perk_req["skills"][stat]["value"],
+					perk_req["skills"][stat]["operator"])
 		
 		for perk in perk_req["perks"]:
 			perk_requirement_tree.set_perk(
 					perk,
 					perk_req["perks"][perk]["level"],
-					_operator_to_range(perk_req["perks"][perk]["operator"]))
+					perk_req["perks"][perk]["operator"])
 		
 		for variable in perk_req["variables"]:
 			variables_tree.create_variable(
 				perk_req["variables"][variable]["value"],
 				variable,
-				_operator_to_range(perk_req["variables"][variable]["operator"]))
+				perk_req["variables"][variable]["operator"])
 
 
 func on_perk_selected(perk_id: String) -> void:
 	if current_perk == perk_id:
 		return
+	
 	if not current_perk.is_empty():
 		save_current_perk()
+	
 	set_perk_as_current(perk_id)
 
 
 func save_current_level() -> void:
-	var val_req: Dictionary = stats_tree.get_current_stat_data()
+	var skills_req: Dictionary = skills_reqirement_tree.get_current_skill_data()
 	var perks_req: Dictionary = perk_requirement_tree.get_selected_perks()
 	var var_req: Dictionary = variables_tree.get_variables()
-	
-	for val in val_req:
-		_talents_resource.set_perk_value_requirement(
+	print(var_req)
+	for val in skills_req:
+		_talents_resource.set_perk_skill_requirement(
 				current_perk,
 				current_level,
 				val,
-				val_req[val]["value"],
-				_range_to_operator(val_req[val]["operator"]))
+				skills_req[val]["value"],
+				skills_req[val]["operator"])
 	
 	for perk in perks_req:
 		_talents_resource.set_perk_perk_requirement(
@@ -331,8 +358,8 @@ func on_level_changed(new_level: float) -> void:
 	
 	current_level = new_level - 1
 	
-	stats_tree.clear_stats()
-	perk_requirement_tree.clear_checks()
+	skills_reqirement_tree.reset_skills()
+	perk_requirement_tree.reset_perks()
 	variables_tree.clear_variables()
 	
 	if current_level < 0:
@@ -340,11 +367,12 @@ func on_level_changed(new_level: float) -> void:
 	
 	var level_req: Dictionary = _talents_resource.get_perk_requirements(current_perk, current_level)
 	
-	for stat in level_req["values"]:
-		stats_tree.add_requirement(
-				stat,
-				level_req["values"][stat]["value"],
-				_operator_to_range(level_req["values"][stat]["operator"]))
+	for skill in level_req["skills"]:
+		skills_reqirement_tree.set_requirement(
+			skill,
+			true,
+			level_req["skills"][skill]["value"],
+			level_req["skills"][skill]["operator"])
 	
 	for perk in level_req["perks"]:
 		perk_requirement_tree.set_perk(
@@ -378,6 +406,7 @@ func on_current_perk_max_level_changed(perk_id: String, new_level: int) -> void:
 	if perk_id == current_perk:
 		perk_lvl_spn_bx.max_value = new_level
 	_talents_resource.set_perk_levels(perk_id, new_level)
+	
 
 
 func _range_to_operator(range_value: int) -> NFTalentsRes.OperatorValue:

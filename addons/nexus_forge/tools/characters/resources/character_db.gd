@@ -8,11 +8,11 @@ const SETTINGS_PATH: String = "nexus_forge/characters_resource"
 @export var _characters: Dictionary = {}
 
 
-func has_character(character_id: StringName) -> bool:
+func has_character(character_id: String) -> bool:
 	return _characters.has(character_id)
 
 
-func get_character(character_id: StringName) -> CharacterDefinition:
+func get_character(character_id: String) -> CharacterDefinition:
 	return load(_characters[character_id])
 
 
@@ -38,8 +38,16 @@ func validate_characters() -> void:
 		printerr("[CHARACTERS] Some characters were not found and have been removed")
 
 
-func set_character(character_id: StringName, res_path: String) -> void:
+func register_character(character_id: String, res_path: String) -> void:
 	_characters[character_id] = res_path
+
+
+func get_characters() -> Array:
+	return _characters.keys()
+
+
+func get_character_path(character_id: String) -> String:
+	return _characters[character_id]
 
 
 func save() -> void:

@@ -1,4 +1,4 @@
-[gd_scene load_steps=29 format=3 uid="uid://cvuo0on5wm8qb"]
+[gd_scene load_steps=30 format=3 uid="uid://cvuo0on5wm8qb"]
 
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/characters/characters_main_script.gd" id="1_0oiu4"]
 [ext_resource type="Texture2D" uid="uid://12lyg7db58dg" path="res://addons/nexus_forge/tools/variables/icons/add_int.svg" id="1_54l1c"]
@@ -25,6 +25,10 @@
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/characters/id_select_panel_script.gd" id="21_herpi"]
 [ext_resource type="Texture2D" uid="uid://kt71ijsyge48" path="res://addons/nexus_forge/common_icons/check_icon.svg" id="22_am184"]
 [ext_resource type="Texture2D" uid="uid://bpxvu88n8n48" path="res://addons/nexus_forge/common_icons/error_icon.svg" id="23_pa6u1"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_sh161"]
+font_size = 20
+font_color = Color(0.951773, 0.547043, 0.398248, 1)
 
 [sub_resource type="GDScript" id="GDScript_4551j"]
 resource_name = "toggle"
@@ -139,7 +143,9 @@ layout_mode = 2
 size_flags_vertical = 3
 allow_reselect = true
 hide_root = true
+select_mode = 1
 script = ExtResource("4_5334i")
+default_name = "new_character"
 
 [node name="VBoxContainer" type="VBoxContainer" parent="MainContainer/DataSplitContainer"]
 layout_mode = 2
@@ -172,6 +178,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 20
 text = "[CharID]"
+label_settings = SubResource("LabelSettings_sh161")
 text_overrun_behavior = 3
 
 [node name="CopyIDBtn" type="Button" parent="MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/HBoxContainer"]
@@ -210,6 +217,7 @@ size_flags_stretch_ratio = 0.2
 text = "Species"
 
 [node name="SpeciesOptionButton" type="OptionButton" parent="MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/SpeciesContainer"]
+custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
 
@@ -223,6 +231,7 @@ size_flags_stretch_ratio = 0.2
 text = "Race"
 
 [node name="RaceOptionButton" type="OptionButton" parent="MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/RaceContainer"]
+custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
 
@@ -236,6 +245,7 @@ size_flags_stretch_ratio = 0.2
 text = "Gender"
 
 [node name="GenderOptionButton" type="OptionButton" parent="MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/GenderContainer"]
+custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
 selected = 0
@@ -357,7 +367,7 @@ script = ExtResource("18_0ssl4")
 [node name="CustomDataContainer" type="VBoxContainer" parent="MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer"]
 layout_mode = 2
 size_flags_vertical = 3
-size_flags_stretch_ratio = 3.0
+size_flags_stretch_ratio = 2.5
 
 [node name="CDHeaderContainer" type="HBoxContainer" parent="MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/CustomDataContainer"]
 layout_mode = 2
@@ -562,7 +572,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 size_flags_stretch_ratio = 2.0
-columns = 2
+columns = 3
 column_titles_visible = true
 hide_folding = true
 hide_root = true

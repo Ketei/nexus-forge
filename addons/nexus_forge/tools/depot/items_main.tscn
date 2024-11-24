@@ -75,6 +75,7 @@ layout_mode = 2
 size_flags_horizontal = 10
 size_flags_vertical = 4
 icon = ExtResource("2_wq7bt")
+flat = true
 icon_alignment = 1
 expand_icon = true
 

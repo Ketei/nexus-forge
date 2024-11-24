@@ -15,7 +15,6 @@ enum Flags {
 	RESPAWN,
 	INVULNERABLE,
 	TEST,
-	CHILD,
 	FERTILE,
 	VIRILE,
 }

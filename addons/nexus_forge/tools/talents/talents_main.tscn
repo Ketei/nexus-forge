@@ -43,7 +43,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_e4wsj")
 
-[node name="MainContainer" type="HBoxContainer" parent="."]
+[node name="MainPanel" type="PanelContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -51,171 +51,186 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="SkillsContainer" type="VBoxContainer" parent="MainContainer"]
+[node name="MainMargin" type="MarginContainer" parent="MainPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 6
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 6
+theme_override_constants/margin_bottom = 6
+
+[node name="MainContainer" type="HBoxContainer" parent="MainPanel/MainMargin"]
+layout_mode = 2
+
+[node name="SkillsContainer" type="VBoxContainer" parent="MainPanel/MainMargin/MainContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Label" type="Label" parent="MainContainer/SkillsContainer"]
+[node name="Label" type="Label" parent="MainPanel/MainMargin/MainContainer/SkillsContainer"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.223529, 0.705882, 0.905882, 1)
 theme_override_font_sizes/font_size = 25
 text = "Skills"
 
-[node name="SkillSelectContainer" type="HBoxContainer" parent="MainContainer/SkillsContainer"]
+[node name="SkillSelectContainer" type="HBoxContainer" parent="MainPanel/MainMargin/MainContainer/SkillsContainer"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="MainContainer/SkillsContainer/SkillSelectContainer"]
-custom_minimum_size = Vector2(50, 0)
+[node name="Label" type="Label" parent="MainPanel/MainMargin/MainContainer/SkillsContainer/SkillSelectContainer"]
+custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
 text = "Skill"
+vertical_alignment = 1
 
-[node name="SkillContainer" type="HBoxContainer" parent="MainContainer/SkillsContainer/SkillSelectContainer"]
+[node name="SkillContainer" type="HBoxContainer" parent="MainPanel/MainMargin/MainContainer/SkillsContainer/SkillSelectContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="SkillOptBtn" type="OptionButton" parent="MainContainer/SkillsContainer/SkillSelectContainer/SkillContainer"]
+[node name="SkillOptBtn" type="OptionButton" parent="MainPanel/MainMargin/MainContainer/SkillsContainer/SkillSelectContainer/SkillContainer"]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
+selected = 0
+item_count = 1
+popup/item_0/text = "cooking"
 
-[node name="CreateSkillBtn" type="Button" parent="MainContainer/SkillsContainer/SkillSelectContainer/SkillContainer"]
+[node name="CreateSkillBtn" type="Button" parent="MainPanel/MainMargin/MainContainer/SkillsContainer/SkillSelectContainer/SkillContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 icon = ExtResource("1_buyl6")
 icon_alignment = 1
 
-[node name="DeleteSkillBtn" type="Button" parent="MainContainer/SkillsContainer/SkillSelectContainer/SkillContainer"]
+[node name="DeleteSkillBtn" type="Button" parent="MainPanel/MainMargin/MainContainer/SkillsContainer/SkillSelectContainer/SkillContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
-disabled = true
 icon = ExtResource("3_2kjm8")
 icon_alignment = 1
 
-[node name="NameContainer" type="HBoxContainer" parent="MainContainer/SkillsContainer"]
+[node name="NameContainer" type="HBoxContainer" parent="MainPanel/MainMargin/MainContainer/SkillsContainer"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="MainContainer/SkillsContainer/NameContainer"]
-custom_minimum_size = Vector2(50, 0)
+[node name="Label" type="Label" parent="MainPanel/MainMargin/MainContainer/SkillsContainer/NameContainer"]
+custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
 text = "Name"
+vertical_alignment = 1
 
-[node name="SkillLnEdt" type="LineEdit" parent="MainContainer/SkillsContainer/NameContainer"]
+[node name="SkillLnEdt" type="LineEdit" parent="MainPanel/MainMargin/MainContainer/SkillsContainer/NameContainer"]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
-editable = false
+text = "Cooking"
 
-[node name="HBoxContainer3" type="HBoxContainer" parent="MainContainer/SkillsContainer"]
+[node name="HBoxContainer3" type="HBoxContainer" parent="MainPanel/MainMargin/MainContainer/SkillsContainer"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="MainContainer/SkillsContainer/HBoxContainer3"]
-custom_minimum_size = Vector2(50, 0)
+[node name="Label" type="Label" parent="MainPanel/MainMargin/MainContainer/SkillsContainer/HBoxContainer3"]
+custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
 text = "Icon"
+vertical_alignment = 1
 
-[node name="IconPathPanel" type="PanelContainer" parent="MainContainer/SkillsContainer/HBoxContainer3"]
+[node name="IconPathPanel" type="PanelContainer" parent="MainPanel/MainMargin/MainContainer/SkillsContainer/HBoxContainer3"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="DataContainer" type="HBoxContainer" parent="MainContainer/SkillsContainer/HBoxContainer3/IconPathPanel"]
+[node name="DataContainer" type="HBoxContainer" parent="MainPanel/MainMargin/MainContainer/SkillsContainer/HBoxContainer3/IconPathPanel"]
 layout_mode = 2
 theme_override_constants/separation = 0
 
-[node name="IconPathLnEdt" type="LineEdit" parent="MainContainer/SkillsContainer/HBoxContainer3/IconPathPanel/DataContainer"]
+[node name="IconPathLnEdt" type="LineEdit" parent="MainPanel/MainMargin/MainContainer/SkillsContainer/HBoxContainer3/IconPathPanel/DataContainer"]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
 editable = false
 flat = true
 
-[node name="BrowseIconBtn" type="Button" parent="MainContainer/SkillsContainer/HBoxContainer3/IconPathPanel/DataContainer"]
+[node name="BrowseIconBtn" type="Button" parent="MainPanel/MainMargin/MainContainer/SkillsContainer/HBoxContainer3/IconPathPanel/DataContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
-disabled = true
 icon = ExtResource("3_de8x4")
 flat = true
 icon_alignment = 1
 
-[node name="LimitContainer" type="HBoxContainer" parent="MainContainer/SkillsContainer"]
+[node name="LimitContainer" type="HBoxContainer" parent="MainPanel/MainMargin/MainContainer/SkillsContainer"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="MainContainer/SkillsContainer/LimitContainer"]
-custom_minimum_size = Vector2(50, 0)
+[node name="Label" type="Label" parent="MainPanel/MainMargin/MainContainer/SkillsContainer/LimitContainer"]
+custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
-text = "Limit"
+text = "Max Level"
+vertical_alignment = 1
 
-[node name="SkillLimitSpnBx" type="SpinBox" parent="MainContainer/SkillsContainer/LimitContainer"]
+[node name="SkillLimitSpnBx" type="SpinBox" parent="MainPanel/MainMargin/MainContainer/SkillsContainer/LimitContainer"]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
 min_value = 1.0
 max_value = 9999.0
-value = 1.0
-editable = false
+value = 20.0
 
-[node name="DesContainer" type="VBoxContainer" parent="MainContainer/SkillsContainer"]
+[node name="DesContainer" type="VBoxContainer" parent="MainPanel/MainMargin/MainContainer/SkillsContainer"]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="Label" type="Label" parent="MainContainer/SkillsContainer/DesContainer"]
+[node name="Label" type="Label" parent="MainPanel/MainMargin/MainContainer/SkillsContainer/DesContainer"]
 layout_mode = 2
 text = "Description"
 
-[node name="DescTxtEdt" type="TextEdit" parent="MainContainer/SkillsContainer/DesContainer"]
+[node name="DescTxtEdt" type="TextEdit" parent="MainPanel/MainMargin/MainContainer/SkillsContainer/DesContainer"]
 layout_mode = 2
 size_flags_vertical = 3
-editable = false
+text = "How efficient you're in the kitchen."
 wrap_mode = 1
 
-[node name="VSeparator" type="VSeparator" parent="MainContainer"]
+[node name="VSeparator" type="VSeparator" parent="MainPanel/MainMargin/MainContainer"]
 layout_mode = 2
 theme_override_constants/separation = 20
 
-[node name="PerksContainer" type="VBoxContainer" parent="MainContainer"]
+[node name="PerksContainer" type="VBoxContainer" parent="MainPanel/MainMargin/MainContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 2.0
 
-[node name="HBoxContainer" type="HBoxContainer" parent="MainContainer/PerksContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="MainPanel/MainMargin/MainContainer/PerksContainer"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="MainContainer/PerksContainer/HBoxContainer"]
+[node name="Label" type="Label" parent="MainPanel/MainMargin/MainContainer/PerksContainer/HBoxContainer"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.223529, 0.705882, 0.905882, 1)
 theme_override_font_sizes/font_size = 25
 text = "Perks"
 
-[node name="SaveBtn" type="Button" parent="MainContainer/PerksContainer/HBoxContainer"]
+[node name="SaveBtn" type="Button" parent="MainPanel/MainMargin/MainContainer/PerksContainer/HBoxContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 size_flags_horizontal = 10
 icon = ExtResource("5_jswh7")
+flat = true
 icon_alignment = 1
 expand_icon = true
 
-[node name="DataContainer" type="HBoxContainer" parent="MainContainer/PerksContainer"]
+[node name="DataContainer" type="HBoxContainer" parent="MainPanel/MainMargin/MainContainer/PerksContainer"]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="LeftContainer" type="VBoxContainer" parent="MainContainer/PerksContainer/DataContainer"]
+[node name="LeftContainer" type="VBoxContainer" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 3.0
 
-[node name="PerkAndFlagsContainer" type="HBoxContainer" parent="MainContainer/PerksContainer/DataContainer/LeftContainer"]
+[node name="PerkAndFlagsContainer" type="HBoxContainer" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/LeftContainer"]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="PerksContainer" type="VBoxContainer" parent="MainContainer/PerksContainer/DataContainer/LeftContainer/PerkAndFlagsContainer"]
+[node name="PerksContainer" type="VBoxContainer" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/LeftContainer/PerkAndFlagsContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 size_flags_stretch_ratio = 3.0
 
-[node name="PerkBarContainer" type="HBoxContainer" parent="MainContainer/PerksContainer/DataContainer/LeftContainer/PerkAndFlagsContainer/PerksContainer"]
+[node name="PerkBarContainer" type="HBoxContainer" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/LeftContainer/PerkAndFlagsContainer/PerksContainer"]
 layout_mode = 2
 
-[node name="PerkSearchLnEdt" type="LineEdit" parent="MainContainer/PerksContainer/DataContainer/LeftContainer/PerkAndFlagsContainer/PerksContainer/PerkBarContainer"]
+[node name="PerkSearchLnEdt" type="LineEdit" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/LeftContainer/PerkAndFlagsContainer/PerksContainer/PerkBarContainer"]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -223,14 +238,14 @@ placeholder_text = "Search Perk"
 clear_button_enabled = true
 right_icon = ExtResource("1_h67ip")
 
-[node name="CreatePerkBtn" type="Button" parent="MainContainer/PerksContainer/DataContainer/LeftContainer/PerkAndFlagsContainer/PerksContainer/PerkBarContainer"]
+[node name="CreatePerkBtn" type="Button" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/LeftContainer/PerkAndFlagsContainer/PerksContainer/PerkBarContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Create Perk"
 icon = ExtResource("1_buyl6")
 icon_alignment = 1
 
-[node name="PerkTree" type="Tree" parent="MainContainer/PerksContainer/DataContainer/LeftContainer/PerkAndFlagsContainer/PerksContainer"]
+[node name="PerkTree" type="Tree" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/LeftContainer/PerkAndFlagsContainer/PerksContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -244,14 +259,14 @@ scroll_horizontal_enabled = false
 script = ExtResource("5_rmgq1")
 default_name = "new_perk"
 
-[node name="PerkInfo" type="HBoxContainer" parent="MainContainer/PerksContainer/DataContainer/LeftContainer"]
+[node name="PerkInfo" type="HBoxContainer" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/LeftContainer"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="MainContainer/PerksContainer/DataContainer/LeftContainer/PerkInfo"]
+[node name="Label" type="Label" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/LeftContainer/PerkInfo"]
 layout_mode = 2
 text = "Current perk:"
 
-[node name="CurrentPerkLbl" type="Label" parent="MainContainer/PerksContainer/DataContainer/LeftContainer/PerkInfo"]
+[node name="CurrentPerkLbl" type="Label" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/LeftContainer/PerkInfo"]
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -259,40 +274,40 @@ theme_override_colors/font_color = Color(0.528429, 0.849634, 1, 1)
 vertical_alignment = 1
 text_overrun_behavior = 3
 
-[node name="PerkDescContainer" type="HBoxContainer" parent="MainContainer/PerksContainer/DataContainer/LeftContainer"]
+[node name="PerkDescContainer" type="HBoxContainer" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/LeftContainer"]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="DataContainer" type="VBoxContainer" parent="MainContainer/PerksContainer/DataContainer/LeftContainer/PerkDescContainer"]
+[node name="DataContainer" type="VBoxContainer" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/LeftContainer/PerkDescContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 size_flags_stretch_ratio = 2.0
 
-[node name="Label" type="Label" parent="MainContainer/PerksContainer/DataContainer/LeftContainer/PerkDescContainer/DataContainer"]
+[node name="Label" type="Label" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/LeftContainer/PerkDescContainer/DataContainer"]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 text = "Perk Description"
 vertical_alignment = 1
 
-[node name="PerkDescTxtEdt" type="TextEdit" parent="MainContainer/PerksContainer/DataContainer/LeftContainer/PerkDescContainer/DataContainer"]
+[node name="PerkDescTxtEdt" type="TextEdit" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/LeftContainer/PerkDescContainer/DataContainer"]
 layout_mode = 2
 size_flags_vertical = 3
 wrap_mode = 1
 
-[node name="FlagsContainer" type="VBoxContainer" parent="MainContainer/PerksContainer/DataContainer/LeftContainer/PerkDescContainer"]
+[node name="FlagsContainer" type="VBoxContainer" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/LeftContainer/PerkDescContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 size_flags_stretch_ratio = 2.0
 
-[node name="Label" type="Label" parent="MainContainer/PerksContainer/DataContainer/LeftContainer/PerkDescContainer/FlagsContainer"]
+[node name="Label" type="Label" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/LeftContainer/PerkDescContainer/FlagsContainer"]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 text = "Flags"
 vertical_alignment = 1
 
-[node name="FlagsTree" type="Tree" parent="MainContainer/PerksContainer/DataContainer/LeftContainer/PerkDescContainer/FlagsContainer"]
+[node name="FlagsTree" type="Tree" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/LeftContainer/PerkDescContainer/FlagsContainer"]
 layout_mode = 2
 size_flags_vertical = 3
 hide_folding = true
@@ -300,31 +315,31 @@ hide_root = true
 scroll_horizontal_enabled = false
 script = ExtResource("6_og1nq")
 
-[node name="ReqContainer" type="VBoxContainer" parent="MainContainer/PerksContainer/DataContainer"]
+[node name="ReqContainer" type="VBoxContainer" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 size_flags_stretch_ratio = 2.0
 
-[node name="LevelRequirement" type="HBoxContainer" parent="MainContainer/PerksContainer/DataContainer/ReqContainer"]
+[node name="LevelRequirement" type="HBoxContainer" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="MainContainer/PerksContainer/DataContainer/ReqContainer/LevelRequirement"]
+[node name="Label" type="Label" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer/LevelRequirement"]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 text = "Requirements"
 vertical_alignment = 1
 
-[node name="LevelContainer" type="HBoxContainer" parent="MainContainer/PerksContainer/DataContainer/ReqContainer/LevelRequirement"]
+[node name="LevelContainer" type="HBoxContainer" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer/LevelRequirement"]
 layout_mode = 2
 size_flags_horizontal = 3
 alignment = 2
 
-[node name="Label" type="Label" parent="MainContainer/PerksContainer/DataContainer/ReqContainer/LevelRequirement/LevelContainer"]
+[node name="Label" type="Label" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer/LevelRequirement/LevelContainer"]
 layout_mode = 2
 text = "Level"
 
-[node name="PerkLvlSpnBx" type="SpinBox" parent="MainContainer/PerksContainer/DataContainer/ReqContainer/LevelRequirement/LevelContainer"]
+[node name="PerkLvlSpnBx" type="SpinBox" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer/LevelRequirement/LevelContainer"]
 layout_mode = 2
 min_value = 1.0
 max_value = 1.0
@@ -332,35 +347,28 @@ value = 1.0
 alignment = 1
 editable = false
 
-[node name="Stats" type="VBoxContainer" parent="MainContainer/PerksContainer/DataContainer/ReqContainer"]
+[node name="Stats" type="VBoxContainer" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer"]
 layout_mode = 2
 size_flags_vertical = 3
 size_flags_stretch_ratio = 5.0
 
-[node name="StatLineContainer" type="HBoxContainer" parent="MainContainer/PerksContainer/DataContainer/ReqContainer/Stats"]
+[node name="StatLineContainer" type="HBoxContainer" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer/Stats"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="MainContainer/PerksContainer/DataContainer/ReqContainer/Stats/StatLineContainer"]
+[node name="Label" type="Label" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer/Stats/StatLineContainer"]
 custom_minimum_size = Vector2(54, 0)
 layout_mode = 2
-text = "Values"
+text = "Skills"
 
-[node name="AddStatLnEdt" type="LineEdit" parent="MainContainer/PerksContainer/DataContainer/ReqContainer/Stats/StatLineContainer"]
+[node name="SearchSkillLnEdt" type="LineEdit" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer/Stats/StatLineContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
-placeholder_text = "Search Stat"
+placeholder_text = "Search Skill"
 editable = false
 clear_button_enabled = true
 right_icon = ExtResource("1_h67ip")
 
-[node name="AddStatBtn" type="Button" parent="MainContainer/PerksContainer/DataContainer/ReqContainer/Stats/StatLineContainer"]
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 2
-disabled = true
-icon = ExtResource("1_buyl6")
-icon_alignment = 1
-
-[node name="StatsTree" type="Tree" parent="MainContainer/PerksContainer/DataContainer/ReqContainer/Stats"]
+[node name="SkillsReqTree" type="Tree" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer/Stats"]
 layout_mode = 2
 size_flags_vertical = 3
 columns = 3
@@ -370,20 +378,20 @@ hide_root = true
 scroll_horizontal_enabled = false
 script = ExtResource("7_u5r1e")
 
-[node name="PerksCotainer" type="VBoxContainer" parent="MainContainer/PerksContainer/DataContainer/ReqContainer"]
+[node name="PerksCotainer" type="VBoxContainer" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer"]
 layout_mode = 2
 size_flags_vertical = 3
 size_flags_stretch_ratio = 5.0
 
-[node name="PerkSearchContainer" type="HBoxContainer" parent="MainContainer/PerksContainer/DataContainer/ReqContainer/PerksCotainer"]
+[node name="PerkSearchContainer" type="HBoxContainer" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer/PerksCotainer"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="MainContainer/PerksContainer/DataContainer/ReqContainer/PerksCotainer/PerkSearchContainer"]
+[node name="Label" type="Label" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer/PerksCotainer/PerkSearchContainer"]
 custom_minimum_size = Vector2(54, 0)
 layout_mode = 2
 text = "Perks"
 
-[node name="PerkSearchLnEdt" type="LineEdit" parent="MainContainer/PerksContainer/DataContainer/ReqContainer/PerksCotainer/PerkSearchContainer"]
+[node name="PerkSearchLnEdt" type="LineEdit" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer/PerksCotainer/PerkSearchContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "Search Perk"
@@ -391,7 +399,7 @@ editable = false
 clear_button_enabled = true
 right_icon = ExtResource("1_h67ip")
 
-[node name="PerkReqTree" type="Tree" parent="MainContainer/PerksContainer/DataContainer/ReqContainer/PerksCotainer"]
+[node name="PerkReqTree" type="Tree" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer/PerksCotainer"]
 layout_mode = 2
 size_flags_vertical = 3
 columns = 3
@@ -399,52 +407,52 @@ hide_root = true
 scroll_horizontal_enabled = false
 script = ExtResource("8_34pmq")
 
-[node name="Variables" type="VBoxContainer" parent="MainContainer/PerksContainer/DataContainer/ReqContainer"]
+[node name="Variables" type="VBoxContainer" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer"]
 layout_mode = 2
 size_flags_vertical = 3
 size_flags_stretch_ratio = 6.0
 
-[node name="VariableBtnContainer" type="HBoxContainer" parent="MainContainer/PerksContainer/DataContainer/ReqContainer/Variables"]
+[node name="VariableBtnContainer" type="HBoxContainer" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer/Variables"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="MainContainer/PerksContainer/DataContainer/ReqContainer/Variables/VariableBtnContainer"]
+[node name="Label" type="Label" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer/Variables/VariableBtnContainer"]
 layout_mode = 2
 text = "Variables"
 
-[node name="ButtonContainer" type="HBoxContainer" parent="MainContainer/PerksContainer/DataContainer/ReqContainer/Variables/VariableBtnContainer"]
+[node name="ButtonContainer" type="HBoxContainer" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer/Variables/VariableBtnContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 alignment = 2
 
-[node name="AddIntBtn" type="Button" parent="MainContainer/PerksContainer/DataContainer/ReqContainer/Variables/VariableBtnContainer/ButtonContainer"]
+[node name="AddIntBtn" type="Button" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer/Variables/VariableBtnContainer/ButtonContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 disabled = true
 icon = ExtResource("3_x82do")
 icon_alignment = 1
 
-[node name="AddFltBtn" type="Button" parent="MainContainer/PerksContainer/DataContainer/ReqContainer/Variables/VariableBtnContainer/ButtonContainer"]
+[node name="AddFltBtn" type="Button" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer/Variables/VariableBtnContainer/ButtonContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 disabled = true
 icon = ExtResource("4_ltayi")
 icon_alignment = 1
 
-[node name="AddBoolBtn" type="Button" parent="MainContainer/PerksContainer/DataContainer/ReqContainer/Variables/VariableBtnContainer/ButtonContainer"]
+[node name="AddBoolBtn" type="Button" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer/Variables/VariableBtnContainer/ButtonContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 disabled = true
 icon = ExtResource("5_nr5b0")
 icon_alignment = 1
 
-[node name="AddStrBtn" type="Button" parent="MainContainer/PerksContainer/DataContainer/ReqContainer/Variables/VariableBtnContainer/ButtonContainer"]
+[node name="AddStrBtn" type="Button" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer/Variables/VariableBtnContainer/ButtonContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 disabled = true
 icon = ExtResource("6_h36c1")
 icon_alignment = 1
 
-[node name="VariablesTree" type="Tree" parent="MainContainer/PerksContainer/DataContainer/ReqContainer/Variables"]
+[node name="VariablesTree" type="Tree" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer/Variables"]
 layout_mode = 2
 size_flags_vertical = 3
 columns = 4
@@ -453,6 +461,7 @@ hide_folding = true
 hide_root = true
 scroll_horizontal_enabled = false
 script = ExtResource("13_kkdeb")
+default_name = null
 
 [node name="IDSelectPanel" type="PanelContainer" parent="."]
 visible = false

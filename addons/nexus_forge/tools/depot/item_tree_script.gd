@@ -16,6 +16,7 @@ func _ready() -> void:
 	root_tree = create_item()
 	button_clicked.connect(on_button_pressed)
 	item_selected.connect(on_item_selected)
+	item_edited.connect(on_item_edited)
 
 
 func is_selected(item_path: String) -> bool:
@@ -47,7 +48,7 @@ func clear_items() -> void:
 		item.free()
 
 
-func add_item(item_id: String, item_path: String) -> void:
+func add_item(item_id: String, item_path: String) -> String:
 	var new_item: TreeItem = create_item(root_tree)
 	new_item.set_text(0, validate_id(root_tree, item_id, new_item))
 	new_item.set_metadata(0, {"id": item_id, "path": item_path})
@@ -56,6 +57,8 @@ func add_item(item_id: String, item_path: String) -> void:
 	
 	new_item.add_button(0, COPY_ICON, 1, false, "Copy ID")
 	new_item.add_button(0, BIN_ICON, 0, false, "Remove Item")
+	
+	return new_item.get_text(0)
 
 
 func on_item_edited() -> void:
@@ -64,6 +67,7 @@ func on_item_edited() -> void:
 	var new_id: String = validate_id(root_tree, edited_item.get_text(0), edited_item)
 	edited_item.set_text(0, new_id)
 	id_changed.emit(original_id, new_id)
+	edited_item.get_metadata(0)["id"] = new_id
 
 
 func match_ids() -> void:
@@ -78,12 +82,19 @@ func has_item(id: String) -> bool:
 	return false
 
 
-func has_file(file: String) -> bool:
+func select_by_file(file_path: String) -> void:
+	var simplified_path: String = file_path.simplify_path()
+	for item in root_tree.get_children():
+		if item.get_metadata(0).simplify_path() == file_path:
+			item_id_pressed.emit(item.get_text(0), item.get_metadata(0)["path"])
+
+
+func has_file(file: String) -> TreeItem:
 	var simplified_path: String = file.simplify_path()
 	for item in root_tree.get_children():
 		if item.get_metadata(0).simplify_path() == file:
-			return true
-	return false
+			return item
+	return null
 
 
 func on_item_selected() -> void:

@@ -69,6 +69,22 @@ func _ready() -> void:
 		if res_preload is NFItemsRes:
 			_items_resource = res_preload
 	
+	if _items_resource != null:
+		load_items()
+		load_recipes()
+		load_materials()
+		load_flags()
+		load_types()
+		load_currencies()
+		main_container.visible = true
+	else:
+		main_container.visible = false
+		no_resource_panel = preload("res://addons/nexus_forge/scenes/no_db_container.tscn").instantiate()
+		add_child(no_resource_panel)
+		no_resource_panel.set_resource_type("NFItemsRes", "Depot", "Items")
+		no_resource_panel.create_resource_pressed.connect(on_create_resource_pressed)
+		no_resource_panel.load_resource_pressed.connect(on_load_resource_pressed)
+	
 	item_tree.item_id_pressed.connect(on_item_id_pressed)
 	add_int_button.pressed.connect(on_add_variable_button_pressed.bind(0))
 	add_float_button.pressed.connect(on_add_variable_button_pressed.bind(0.0))
@@ -111,21 +127,11 @@ func _ready() -> void:
 	currencies_tree.currency_renamed.connect(on_currency_renamed)
 	currencies_tree.currency_revaluated.connect(on_currency_revaluated)
 	
-	if _items_resource != null:
-		load_items()
-		load_materials()
-		load_flags()
-		load_types()
-		load_recipes()
-		load_currencies()
-		main_container.visible = true
-	else:
-		main_container.visible = false
-		no_resource_panel = preload("res://addons/nexus_forge/scenes/no_db_container.tscn").instantiate()
-		add_child(no_resource_panel)
-		no_resource_panel.set_resource_type("NFItemsRes", "Depot", "Items")
-		no_resource_panel.create_resource_pressed.connect(on_create_resource_pressed)
-		no_resource_panel.load_resource_pressed.connect(on_load_resource_pressed)
+	stations_tree.station_created.connect(on_station_created)
+	stations_tree.recipe_created.connect(on_recipe_created)
+	stations_tree.station_renamed.connect(on_station_renamed)
+	
+	item_tree.item_deleted.connect(on_item_deleted)
 
 
 func on_item_data_changed(_ig_arg: Variant = null, _arg_2: Variant = null) -> void:
@@ -181,12 +187,14 @@ func on_resource_selected(resource_path: String) -> void:
 		main_container.visible = true
 		no_resource_panel.visible = false
 		no_resource_panel.queue_free()
+		stations_tree.station_created.disconnect(on_station_created)
 		load_items()
 		load_materials()
 		load_flags()
 		load_types()
 		load_recipes()
 		load_currencies()
+		stations_tree.station_created.connect(on_station_created)
 
 
 func on_create_resource_pressed() -> void:
@@ -235,9 +243,7 @@ func on_currency_revaluated(id: String, value: int) -> void:
 
 
 func on_add_new_station_pressed() -> void:
-	_items_resource.create_crafting_station(
-		stations_tree.create_station("new_station", []),
-		"New Station")
+	stations_tree.create_station("new_station", [])
 
 
 func load_types() -> void:
@@ -301,9 +307,17 @@ func on_item_id_changed(from: String, to: String) -> void:
 		_current_id = to
 
 
+func on_recipe_created(station_id: String, recipe_id: String) -> void:
+	_items_resource.set_station_recipe(
+		station_id,
+		recipe_id,
+		[],
+		[])
+
+
 func on_recipe_id_changed(station: String, from: String, to: String) -> void:
-	_items_resource._recipes[station][to] = _items_resource._recipes[station][from]
-	_items_resource.erase_station(from)
+	_items_resource._recipes[station]["recipes"][to] = _items_resource._recipes[station]["recipes"][from]
+	_items_resource.erase_recipe(station, from)
 	
 	if from == _current_recipe:
 		_current_recipe = to
@@ -399,7 +413,7 @@ func current_item_to_memory(bypass_unsaved: bool = false) -> void:
 	unsaved_item = false
 
 
-func load_item(item_path: String, item_id: String) -> bool:
+func load_item(item_id: String) -> bool:
 	if item_id == _current_id:
 		return true
 	
@@ -424,26 +438,22 @@ func load_item(item_path: String, item_id: String) -> bool:
 					memory_item.get_custom_data(c_data))
 		return true
 	elif ResourceLoader.exists(_items_resource.get_item_path(item_id)):
-		var preload_resource: Resource = load(_items_resource.get_item_path(item_id))
-		if preload_resource is ItemDefinition:
-			item_name_ln_edt.text = preload_resource.item_name
-			sprite_path_ln_edt.text = preload_resource.item_sprite
-			select_type(preload_resource.item_type)
-			item_lvl_spn_btn.value = preload_resource.item_level
-			item_value_spn_bx.value = preload_resource.item_value
-			materials_tree.uncheck_materials()
-			materials_tree.select_materials(preload_resource.item_materials)
-			item_flag_tree.reset_flags()
-			item_flag_tree.set_flags(preload_resource.item_flags)
-			custom_data_tree.clear_variables()
-			for c_data in preload_resource.get_custom_data_keys():
-				custom_data_tree.add_variable(
-						c_data,
-						preload_resource.get_custom_data(c_data))
-			return true
-		else:
-			printerr("[DEPOT] Item with path " + item_path + " is not ItemDefinition.")
-			clear_item_fields()
+		var preload_resource: ItemDefinition = load(_items_resource.get_item_path(item_id))
+		item_name_ln_edt.text = preload_resource.item_name
+		sprite_path_ln_edt.text = preload_resource.item_sprite
+		select_type(preload_resource.item_type)
+		item_lvl_spn_btn.value = preload_resource.item_level
+		item_value_spn_bx.value = preload_resource.item_value
+		materials_tree.uncheck_materials()
+		materials_tree.select_materials(preload_resource.item_materials)
+		item_flag_tree.reset_flags()
+		item_flag_tree.set_flags(preload_resource.item_flags)
+		custom_data_tree.clear_variables()
+		for c_data in preload_resource.get_custom_data_keys():
+			custom_data_tree.add_variable(
+					c_data,
+					preload_resource.get_custom_data(c_data))
+		return true
 	return false
 
 
@@ -498,7 +508,7 @@ func on_item_id_pressed(item_id: String, item_path: String) -> void:
 	
 	loading_item = true
 	
-	if load_item(item_path, item_id):
+	if load_item(item_id):
 		if not item_tree.is_selected(item_path):
 			item_tree.select_item(item_path)
 	else:
@@ -519,16 +529,27 @@ func on_item_deleted(item_id: String, item_path: String) -> void:
 func on_item_file_selected(file_path: String) -> void:
 	if item_file_dialog.file_mode == FileDialog.FileMode.FILE_MODE_SAVE_FILE: # Creating an new file
 		var new_item := ItemDefinition.new()
-		new_item.item_id = file_path.get_file().get_basename()
+		var file_name: String = file_path.get_file().get_basename()
+		var item_id := Strings.random_string(8, 4) if _items_resource.has_item(file_name) else file_name
 		ResourceSaver.save(new_item, file_path)
-		item_tree.add_item(new_item.item_id, file_path)
-		on_item_id_pressed(new_item.item_id, file_path)
+		_items_resource.create_item(
+				item_id,
+				file_path)
+		if item_tree.has_file(file_path):
+			item_tree.select_by_file(file_path)
+		else:
+			item_tree.add_item(item_id, file_path)
+			on_item_id_pressed(item_id, file_path)
 	else: # Adding an existing file
+		if _items_resource.has_item_file(file_path):
+			return
+		
 		var res_preload: Resource = load(file_path)
+		
 		if res_preload is ItemDefinition:
-			if item_tree.has_item(res_preload.item_id):
-				push_warning("[DEPOT] An item with id " + res_preload.item_id + " already exists. It'll be renamed.")
-			item_tree.add_item(res_preload.item_id, file_path)
+			var item_id: String = Strings.random_string(8, 4)
+			_items_resource.create_item(item_id, file_path)
+			item_tree.add_item(item_id, file_path)
 		else:
 			push_error("[DEPOT] Selected file isn't an ItemDefinition")
 

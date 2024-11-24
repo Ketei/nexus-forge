@@ -69,3 +69,28 @@ static func string_to_variant(string: String) -> Variant:
 
 static func nocasecmp_equal(string_a: String, string_b: String) -> bool:
 	return string_a.to_upper() == string_b.to_upper()
+
+
+static func random_string(length: int, slice: int) -> String:
+	const RANDOM_UNICODE: Array[int] = [48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122] 
+	var unicode_items: Array[int] = []
+	
+	for _ignore in range(length):
+		unicode_items.append(RANDOM_UNICODE.pick_random())
+	
+	if 0 < slice:
+		var unicode_groups: Array[String] = []
+		
+		for item_index in range(0, unicode_items.size(), slice):
+			var pair = unicode_items.slice(item_index, item_index + slice)
+			var u_slice: String = ""
+			for uchar in pair:
+				u_slice += char(uchar)
+			unicode_groups.append(u_slice)
+		
+		return "-".join(unicode_groups)
+	else:
+		var full_string: String = ""
+		for uchar in unicode_items:
+			full_string += char(uchar)
+		return full_string

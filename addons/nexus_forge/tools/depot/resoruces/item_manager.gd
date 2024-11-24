@@ -76,8 +76,8 @@ func _sort_currencies(currency_a: String, currency_b: String) -> bool:
 	return _currencies[currency_a]["value"] < _currencies[currency_b]["value"]
 
 
-func create_item(item_id: String) -> void:
-	_items[item_id] = {"path": "", "resource": null}
+func create_item(item_id: String, path: String) -> void:
+	_items[item_id] = {"path": path, "resource": null}
 
 
 func get_item_types() -> Array:
@@ -140,7 +140,7 @@ func set_station_recipe(station_id: String, recipe_id: String, input_ids: Array[
 		output_array.append({"item": "", "count": 1}.merged(output, true))
 		output_size += 1
 	
-	_recipes[station_id][recipe_id]["recipes"] = {
+	_recipes[station_id]["recipes"][recipe_id] = {
 		"input": input_array,
 		"input_size": input_size,
 		"output": output_array,
@@ -217,6 +217,13 @@ func clear_recipes() -> void:
 
 func has_item(item_id: String) -> bool:
 	return _items.has(item_id)
+
+
+func has_item_file(item_path: String) -> bool:
+	for key in _items:
+		if _items[key]["path"] == item_path:
+			return true
+	return false
 
 
 func remove_item(item_id: String) -> void:

@@ -62,6 +62,6 @@ func get_flags() -> int:
 	for flag_tree:TreeItem in root_tree.get_children():
 		if not flag_tree.is_checked(0):
 			continue
-		flags |= 1 << NFRacesRes.Flags.get(flag_tree.get_metadata(1))
+		flags |= 1 << flag_tree.get_metadata(0)
 	
 	return flags
