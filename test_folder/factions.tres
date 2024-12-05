@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="NFFactionRes" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/characters/resources/factions_db.gd" id="1_bycmg"]
+
+[resource]
+script = ExtResource("1_bycmg")
+factions = {}

@@ -38,6 +38,10 @@ func validate_characters() -> void:
 		printerr("[CHARACTERS] Some characters were not found and have been removed")
 
 
+func remove_character(character_id: String) -> void:
+	_characters.erase(character_id)
+
+
 func register_character(character_id: String, res_path: String) -> void:
 	_characters[character_id] = res_path
 

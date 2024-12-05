@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/depot/resoruces/item_def.gd" id="1_m8qfi"]
+
+[resource]
+script = ExtResource("1_m8qfi")
+item_id = &"test_item_0"
+item_name = "TestItem"
+item_sprite = ""
+item_type = "weapon"
+item_materials = Array[String]([])
+item_flags = 0
+item_level = 0
+item_value = 0
+custom_data = {}

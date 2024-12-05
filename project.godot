@@ -35,13 +35,13 @@ control_key={
 
 [nexus_forge]
 
-variables_resource="res://test_resources/variables.tres"
-factions_resource="res://test_resources/factions.tres"
-races_resource="res://test_resources/races.tres"
-talents_resource="res://test_resources/quirks.tres"
-items_resource="res://test_resources/items.tres"
-quests_resource="res://test_resources/quests.tres"
-characters_resource="res://test_resources/characters.tres"
+variables_resource="res://test_folder/variables.tres"
+factions_resource="res://test_folder/factions.tres"
+races_resource="res://test_folder/races.tres"
+talents_resource="res://test_folder/talents.tres"
+items_resource="res://test_folder/items.tres"
+quests_resource="res://test_folder/quests.tres"
+characters_resource="res://test_folder/characters.tres"
 
 [rendering]
 

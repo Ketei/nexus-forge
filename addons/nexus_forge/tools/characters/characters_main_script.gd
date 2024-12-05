@@ -2,6 +2,8 @@
 extends Control
 
 
+const CharacterDataSelect = preload("res://addons/nexus_forge/tools/characters/character_data_select.gd")
+
 var _characters_resource: NFCharacterDBRes = null
 var _races_resource: NFRacesRes = null:
 	set(new_races):
@@ -24,7 +26,7 @@ var _talents_resource: NFTalentsRes = null:
 		_talents_resource.perk_renamed.connect(on_perk_renamed)
 		_talents_resource.changed.connect(on_talents_changed)
 
-var current_character: String = "": set = set_character_selected
+var current_character: String = ""
 var _block_switch: bool = false
 var character_memory: Dictionary = {}
 var no_db_container: PanelContainer = null
@@ -90,7 +92,7 @@ var no_db_container: PanelContainer = null
 
 @onready var main_container: VBoxContainer = $MainContainer
 
-@onready var data_select_dialog: FileDialog = $ComponentNode/DataSelectDialog
+#@onready var data_select_dialog: FileDialog = $ComponentNode/DataSelectDialog
 #@onready var id_select_panel: PanelContainer = $IDSelectPanel
 
 #@onready var races_missing_container: HBoxContainer = $NoDBContainer/CenterContainer/InfoContainer/RacesMissingContainer
@@ -118,11 +120,6 @@ var no_db_container: PanelContainer = null
 
 
 func _ready() -> void:
-	#var res_path: String = ProjectSettings.get_setting(NFCharacterDBRes.SETTINGS_PATH, "")
-	#var races_path: String = ProjectSettings.get_setting(NFRacesRes.SETTINGS_PATH, "")
-	#var factions_path: String = ProjectSettings.get_setting(NFFactionRes.SETTINGS_PATH, "")
-	#var talents_path: String = ProjectSettings.get_setting(NFTalentsRes.SETTINGS_PATH, "")
-	
 	var tabs := data_set_tabs.get_tab_bar()
 	tabs.set_tab_title(0, "Stats")
 	tabs.set_tab_title(1, "Skills")
@@ -149,11 +146,6 @@ func _ready() -> void:
 		no_db_container.set_char_success(_characters_resource != null)
 	
 	main_menu.get_popup().id_pressed.connect(on_menu_pressed)
-	data_select_dialog.file_selected.connect(on_dialog_ok)
-	#create_db_button.pressed.connect(on_create_new_resource)
-	#load_db_button.pressed.connect(on_open_char_resource)
-	#id_select_panel.id_changed.connect(on_id_selector_id_changed)
-	#id_select_panel.id_submitted.connect(on_id_submitted)
 	new_character.pressed.connect(on_create_new_character)
 	import_character_button.pressed.connect(on_import_character)
 	copy_id_btn.pressed.connect(on_copy_id_btn_pressed)
@@ -164,6 +156,8 @@ func _ready() -> void:
 	add_string_button.pressed.connect(create_custom_data.bind(TYPE_STRING))
 	
 	characters_tree.character_selected.connect(on_character_selected)
+	characters_tree.character_removed.connect(on_character_removed)
+	characters_tree.character_id_changed.connect(on_character_id_changed)
 	
 	species_option_button.item_selected.connect(on_species_selected)
 	race_option_button.item_selected.connect(on_race_selected)
@@ -177,6 +171,19 @@ func _ready() -> void:
 	sound_path_line.text_changed.connect(on_sound_path_set)
 	
 	stats_tree.stat_edited.connect(on_stat_id_edited)
+
+
+func on_character_id_changed(from: String, to: String) -> void:
+	_characters_resource._characters[to] = _characters_resource._characters[from]
+	_characters_resource.remove_character(from)
+	
+	if character_memory.has(from):
+		character_memory[to] = character_memory[from]
+		character_memory.erase(from)
+	
+	if from == current_character:
+		current_character = to
+		chara_id_label.text = Strings.title_case(to)
 
 
 func on_play_sound_pressed() -> void:
@@ -335,22 +342,21 @@ func on_race_selected(index_selected: int) -> void:
 		gender_id += 1
 
 
+func on_copy_id_btn_pressed() -> void:
+	DisplayServer.clipboard_set(chara_id_label.text)
+
+
 func on_character_selected(character_id: String):
 	if _block_switch:
 		return
 	_block_switch = true
 	current_character = character_id
+	load_character(character_id)
 	characters_tree.ensure_selected(character_id)
 	_block_switch = false
 
 
-func on_copy_id_btn_pressed() -> void:
-	DisplayServer.clipboard_set(chara_id_label.text)
-
-
-func set_character_selected(character_id: String) -> void:
-	current_character = character_id
-	
+func load_character(character_id: String) -> void:
 	sprite_sheets_tree.clear_sprite_sheets()
 	custom_data_tree.clear_custom_data()
 	factions_tree.clear_checks()
@@ -569,114 +575,136 @@ func select_gender(gender: int) -> void:
 
 
 func on_load_sound_pressed() -> void:
-	data_select_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
-	data_select_dialog.clear_filters()
-	data_select_dialog.add_filter("*.ogg,*.mp3,*.wav", "Audio Files")
-	data_select_dialog.dialog_mode = 2
-	data_select_dialog.show()
+	var new_dialog := CharacterDataSelect.new()
+	new_dialog.dialog_mode = 2
+	add_child(new_dialog)
+	new_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
+	new_dialog.show()
+	
+	var result: Array = await new_dialog.dialog_finished
+	
+	if result[0]:
+		sound_path_line.text = result[1]
+		play_sound_button.disabled = sound_path_line.text.is_empty()
+	new_dialog.queue_free()
 
 
 func on_load_portrait_pressed() -> void:
-	data_select_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
-	data_select_dialog.clear_filters()
-	data_select_dialog.add_filter("*.tres,*.res", "Resources")
-	data_select_dialog.dialog_mode = 3
-	data_select_dialog.show()
+	var new_dialog := CharacterDataSelect.new()
+	new_dialog.dialog_mode = 3
+	add_child(new_dialog)
+	new_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
+	new_dialog.show()
+	
+	var result: Array = await new_dialog.dialog_finished
+	
+	if result[0]:
+		var frames_preload: Resource = load(result[1])
+		if frames_preload is SpriteFrames:
+			sprite_frame_line.text = result[1]
+		else:
+			printerr("[KINDS] Selected resource isn't SpriteFrames")
+	new_dialog.queue_free()
 
 
 func on_create_new_character() -> void:
-	data_select_dialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
-	data_select_dialog.clear_filters()
-	data_select_dialog.add_filter("*.tres", "Resources")
-	data_select_dialog.dialog_mode = 1
-	data_select_dialog.show()
+	var new_dialog := CharacterDataSelect.new()
+	new_dialog.dialog_mode = 1
+	add_child(new_dialog)
+	new_dialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
+	new_dialog.show()
+	
+	var result: Array = await new_dialog.dialog_finished
+	
+	if result[0]:
+		var new_char := CharacterDefinition.new()
+		if ResourceSaver.save(new_char, result[1]) == OK:
+			var character_id: String = characters_tree.get_valid_character_id(result[1].get_file().get_basename())
+			characters_tree.add_character(character_id)
+			_characters_resource.register_character(character_id, result[1])
+			_characters_resource.save()
+		else:
+			printerr("[CHARACERS] There was an error while saving the character.")
+
+	new_dialog.queue_free()
 
 
 func on_import_character() -> void:
-	data_select_dialog.dialog_mode = 1
-	data_select_dialog.clear_filters()
-	data_select_dialog.add_filter("*.tres", "Resources")
-	data_select_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
-	data_select_dialog.show()
+	var new_dialog := CharacterDataSelect.new()
+	new_dialog.dialog_mode = 1
+	add_child(new_dialog)
+	new_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
+	new_dialog.show()
+	
+	var result: Array = await new_dialog.dialog_finished
+	
+	if result[0]:
+		var res_pre: Resource = load(result[1])
+		
+		if res_pre is CharacterDefinition:
+			var character_id: String = characters_tree.get_valid_character_id(result[1].get_file().get_basename())
+			_characters_resource.register_character(character_id, result[1])
+			_characters_resource.save()
+		else:
+			printerr(str("[CHARACTERS] Resource is not a CharacterDefiniton: ", result[1]))
+	new_dialog.queue_free()
 
 
 func on_create_new_resource() -> void:
-	data_select_dialog.dialog_mode = 0
-	data_select_dialog.clear_filters()
-	data_select_dialog.add_filter("*.tres", "Resources")
-	data_select_dialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
-	data_select_dialog.show()
+	var new_dialog := CharacterDataSelect.new()
+	new_dialog.dialog_mode = 0
+	add_child(new_dialog)
+	new_dialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
+	new_dialog.show()
+	
+	var result: Array = await new_dialog.dialog_finished
+	
+	if result[0]:
+		var new_chara_db := NFCharacterDBRes.new()
+		if ResourceSaver.save(new_chara_db, result[1]) == OK:
+			_characters_resource = new_chara_db
+			ProjectSettings.set_setting(NFCharacterDBRes.SETTINGS_PATH, result[1])
+			ProjectSettings.save()
+			load_characters()
+			
+			if check_for_resources():
+				no_db_container.visible = false
+				no_db_container.queue_free()
+				main_container.visible = true
+	
+	new_dialog.queue_free()
+
+
+func on_character_removed(character_id: String) -> void:
+	_characters_resource.remove_character(character_id)
 
 
 func on_open_char_resource() -> void:
-	data_select_dialog.dialog_mode = 0
-	data_select_dialog.clear_filters()
-	data_select_dialog.add_filter("*.tres", "Resources")
-	data_select_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
-	data_select_dialog.show()
-
-
-func on_dialog_ok(resource_path: String) -> void:
-	match data_select_dialog.dialog_mode:
-		0: # Resource
-			if data_select_dialog.file_mode == FileDialog.FILE_MODE_SAVE_FILE:
-				var new_chara_db := NFCharacterDBRes.new()
-				ResourceSaver.save(
-						new_chara_db,
-						resource_path)
-				_characters_resource = new_chara_db
-			else:
-				if not ResourceLoader.exists(resource_path):
-					return
+	var new_dialog := CharacterDataSelect.new()
+	new_dialog.dialog_mode = 0
+	add_child(new_dialog)
+	new_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
+	new_dialog.show()
+	
+	var result: Array = await new_dialog.dialog_finished
+	
+	if result[0]:
+		var preload_resource: Resource = load(result[1])
+		if preload_resource is NFCharacterDBRes:
+			_characters_resource = preload_resource
+			_characters_resource.validate_characters()
+			ProjectSettings.set_setting(NFCharacterDBRes.SETTINGS_PATH, result[1])
+			ProjectSettings.save()
+			load_characters()
 			
-				var preload_resource: Resource = load(resource_path)
-			
-				if preload_resource is NFCharacterDBRes:
-					_characters_resource = preload_resource
-					_characters_resource.validate_characters()
-			
-			if _characters_resource != null:
-				ProjectSettings.set_setting(NFCharacterDBRes.SETTINGS_PATH, resource_path)
-				ProjectSettings.save()
-				load_characters()
-				
-				if check_for_resources():
-					no_db_container.visible = false
-					if no_db_container != null:
-						no_db_container.queue_free()
-					main_container.visible = true
-		1: # Character
-			if data_select_dialog.file_mode == FileDialog.FILE_MODE_SAVE_FILE:
-				var new_char := CharacterDefinition.new()
-				#new_char.character_id = data_select_dialog.character_id
-				if ResourceSaver.save(new_char, resource_path) == OK:
-					var character_id: String = characters_tree.add_character(resource_path)
-					_characters_resource.set_character(character_id, resource_path)
-					_characters_resource.save()
-			else:
-				if not ResourceLoader.exists(resource_path):
-					return
-				
-				var res_pre: Resource = load(resource_path)
-				
-				if res_pre is not CharacterDefinition:
-					return
-				
-				if _characters_resource.has_character(res_pre.character_id):
-					printerr(str("[CHARACTERS] A character with ID \"", res_pre.character_id, "\" already exists. ID will be changed."))
-				
-				_characters_resource.set_character(characters_tree.add_character(resource_path), resource_path)
-				_characters_resource.save()
-		2: # Sound
-			sound_path_line.text = resource_path
-			play_sound_button.disabled = sound_path_line.text.is_empty()
-		3: # Sprite
-			var frames_preload: Resource = load(resource_path)
-			if frames_preload is SpriteFrames:
-				sprite_frame_line.text = resource_path
-			else:
-				printerr("[KINDS] Selected resource isn't SpriteFrames")
+			if check_for_resources():
+				no_db_container.visible = false
+				no_db_container.queue_free()
+				main_container.visible = true
+		else:
+			printerr("[CHARACTERS] Selected resource isn't a NFCharacterDBRes.")
 		
+	new_dialog.queue_free()
 
 
 func _has_all_required_resources() -> bool:
@@ -729,6 +757,7 @@ func create_custom_data(data_type: int) -> void:
 
 
 func load_characters() -> void:
+	characters_tree.clear_characters()
 	for character in _characters_resource.get_characters():
 		characters_tree.add_character(character)
 
@@ -766,3 +795,4 @@ func save_characters() -> void:
 			_characters_resource.get_character_path(character))
 	
 	character_memory.clear()
+	_characters_resource.save()

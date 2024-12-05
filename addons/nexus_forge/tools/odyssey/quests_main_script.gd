@@ -64,12 +64,13 @@ var loading_quest: bool = false
 @onready var main_container: HBoxContainer = $MainContainer
 
 @onready var quest_type_opt_btn: OptionButton = $MainContainer/QuestsContainer/HBoxContainer/QuestTypeOptBtn
-@onready var quests_menu_button: MenuButton = $MainContainer/QuestsContainer/HBoxContainer2/MenuContainer/QuestsMenuButton
+@onready var save_button: Button = $MainContainer/QuestsContainer/HBoxContainer2/MenuContainer/SaveButton
 
 
 func _ready() -> void:
 	var res_path: String = ProjectSettings.get_setting(NFQuestRes.SETTINGS_PATH, "")
 	
+
 	if not res_path.is_empty() and ResourceLoader.exists(res_path):
 		var res_preload: Resource = load(res_path)
 		if res_preload is NFQuestRes:
@@ -98,7 +99,7 @@ func _ready() -> void:
 	objectives_tree.objective_id_changed.connect(on_objective_renamed)
 	objectives_tree.objectives_reordered.connect(on_objectives_reordered)
 	objectives_tree.objective_created.connect(on_objective_created)
-	quests_menu_button.get_popup().id_pressed.connect(on_menu_id_pressed)
+	save_button.pressed.connect(on_save_pressed)
 	
 	if quest_resource != null:
 		load_resource()
@@ -119,14 +120,8 @@ func _ready() -> void:
 		add_child(resource_file_dialog)
 
 
-func on_menu_id_pressed(id: int) -> void:
-	match id:
-		0:
-			if not current_obj.is_empty():
-				save_objective()
-			if not current_quest.is_empty():
-				save_quest()
-			on_save()
+func on_save_pressed() -> void:
+	save()
 
 
 func on_quest_type_changed(quest_idx: int) -> void:
@@ -441,5 +436,9 @@ func range_to_operator(range: int) -> NFQuestRes.OperatorFlags:
 			#return 1
 
 
-func on_save() -> void:
+func save() -> void:
+	if not current_obj.is_empty():
+		save_objective()
+	if not current_quest.is_empty():
+		save_quest()
 	quest_resource.save()

@@ -52,12 +52,14 @@ layout_mode = 2
 size_flags_horizontal = 3
 alignment = 2
 
-[node name="QuestsMenuButton" type="MenuButton" parent="MainContainer/QuestsContainer/HBoxContainer2/MenuContainer"]
+[node name="SaveButton" type="Button" parent="MainContainer/QuestsContainer/HBoxContainer2/MenuContainer"]
+custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
-text = "Quest Menu"
-item_count = 1
-popup/item_0/text = "Save"
-popup/item_0/icon = ExtResource("5_j0k76")
+size_flags_horizontal = 4
+size_flags_vertical = 4
+icon = ExtResource("5_j0k76")
+icon_alignment = 1
+expand_icon = true
 
 [node name="SearchPanel" type="PanelContainer" parent="MainContainer/QuestsContainer"]
 layout_mode = 2

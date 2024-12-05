@@ -80,6 +80,7 @@ visible = false
 layout_mode = 2
 
 [node name="Variables" parent="MainContainer/ToolContainer" instance=ExtResource("3_umhp2")]
+visible = false
 layout_mode = 2
 
 [node name="Kinds" type="Control" parent="MainContainer/ToolContainer"]

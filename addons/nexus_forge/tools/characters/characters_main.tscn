@@ -1,4 +1,4 @@
-[gd_scene load_steps=30 format=3 uid="uid://cvuo0on5wm8qb"]
+[gd_scene load_steps=25 format=3 uid="uid://cvuo0on5wm8qb"]
 
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/characters/characters_main_script.gd" id="1_0oiu4"]
 [ext_resource type="Texture2D" uid="uid://12lyg7db58dg" path="res://addons/nexus_forge/tools/variables/icons/add_int.svg" id="1_54l1c"]
@@ -22,38 +22,11 @@
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/characters/factions_tree_script.gd" id="18_31kop"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/characters/perks_tree_script.gd" id="20_h3aos"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/characters/skills_tree_script.gd" id="20_hnvx1"]
-[ext_resource type="Script" path="res://addons/nexus_forge/tools/characters/id_select_panel_script.gd" id="21_herpi"]
-[ext_resource type="Texture2D" uid="uid://kt71ijsyge48" path="res://addons/nexus_forge/common_icons/check_icon.svg" id="22_am184"]
-[ext_resource type="Texture2D" uid="uid://bpxvu88n8n48" path="res://addons/nexus_forge/common_icons/error_icon.svg" id="23_pa6u1"]
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/characters/character_data_select.gd" id="23_hls67"]
 
 [sub_resource type="LabelSettings" id="LabelSettings_sh161"]
 font_size = 20
 font_color = Color(0.951773, 0.547043, 0.398248, 1)
-
-[sub_resource type="GDScript" id="GDScript_4551j"]
-resource_name = "toggle"
-script/source = "@tool
-extends FileDialog
-
-var dialog_mode: int = 0 # 0 = resource, 1 = character, 2 = sound, 3 = frames
-"
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ahb4n"]
-bg_color = Color(0.348583, 0.38729, 0.45909, 1)
-corner_radius_top_left = 5
-corner_radius_top_right = 5
-expand_margin_left = 5.0
-expand_margin_top = 3.0
-expand_margin_right = 5.0
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fjgnf"]
-content_margin_top = 5.0
-bg_color = Color(0.211765, 0.239216, 0.290196, 1)
-corner_radius_bottom_right = 5
-corner_radius_bottom_left = 5
-expand_margin_left = 5.0
-expand_margin_right = 5.0
-expand_margin_bottom = 5.0
 
 [node name="Characters" type="Control"]
 layout_mode = 3
@@ -177,7 +150,6 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 20
-text = "[CharID]"
 label_settings = SubResource("LabelSettings_sh161")
 text_overrun_behavior = 3
 
@@ -625,84 +597,7 @@ auto_translate_mode = 1
 initial_position = 1
 size = Vector2i(500, 350)
 ok_button_text = "Save"
-script = SubResource("GDScript_4551j")
+filters = PackedStringArray("*.tres,*.res ; Resources", "*.tres,*.res ; Resources")
+script = ExtResource("23_hls67")
 
 [node name="TypeStreamPlayer" type="AudioStreamPlayer" parent="ComponentNode"]
-
-[node name="IDSelectPanel" type="PanelContainer" parent="."]
-visible = false
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-script = ExtResource("21_herpi")
-
-[node name="MainCenterContainer" type="CenterContainer" parent="IDSelectPanel"]
-layout_mode = 2
-
-[node name="ItemsContainer" type="VBoxContainer" parent="IDSelectPanel/MainCenterContainer"]
-custom_minimum_size = Vector2(250, 0)
-layout_mode = 2
-theme_override_constants/separation = 0
-
-[node name="TitlePanel" type="PanelContainer" parent="IDSelectPanel/MainCenterContainer/ItemsContainer"]
-layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_ahb4n")
-
-[node name="Label" type="Label" parent="IDSelectPanel/MainCenterContainer/ItemsContainer/TitlePanel"]
-layout_mode = 2
-text = "Please define character ID"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="DataPanel" type="PanelContainer" parent="IDSelectPanel/MainCenterContainer/ItemsContainer"]
-layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_fjgnf")
-
-[node name="ItemsContainer" type="VBoxContainer" parent="IDSelectPanel/MainCenterContainer/ItemsContainer/DataPanel"]
-layout_mode = 2
-
-[node name="IDContainer" type="HBoxContainer" parent="IDSelectPanel/MainCenterContainer/ItemsContainer/DataPanel/ItemsContainer"]
-layout_mode = 2
-
-[node name="IDLinePanel" type="PanelContainer" parent="IDSelectPanel/MainCenterContainer/ItemsContainer/DataPanel/ItemsContainer/IDContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="IDLine" type="LineEdit" parent="IDSelectPanel/MainCenterContainer/ItemsContainer/DataPanel/ItemsContainer/IDContainer/IDLinePanel"]
-layout_mode = 2
-flat = true
-
-[node name="ValidIDTexture" type="TextureRect" parent="IDSelectPanel/MainCenterContainer/ItemsContainer/DataPanel/ItemsContainer/IDContainer"]
-visible = false
-modulate = Color(0.392157, 0.843137, 0.196078, 1)
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 2
-tooltip_text = "This ID is valid"
-texture = ExtResource("22_am184")
-stretch_mode = 5
-
-[node name="InvalidIDTexture" type="TextureRect" parent="IDSelectPanel/MainCenterContainer/ItemsContainer/DataPanel/ItemsContainer/IDContainer"]
-modulate = Color(0.882353, 0.196078, 0.235294, 1)
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 2
-tooltip_text = "This ID is invalid"
-texture = ExtResource("23_pa6u1")
-
-[node name="ButtonsContainer" type="HBoxContainer" parent="IDSelectPanel/MainCenterContainer/ItemsContainer/DataPanel/ItemsContainer"]
-layout_mode = 2
-
-[node name="CancelButton" type="Button" parent="IDSelectPanel/MainCenterContainer/ItemsContainer/DataPanel/ItemsContainer/ButtonsContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_stretch_ratio = 2.0
-text = "Cancel"
-
-[node name="AcceptButton" type="Button" parent="IDSelectPanel/MainCenterContainer/ItemsContainer/DataPanel/ItemsContainer/ButtonsContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_stretch_ratio = 3.0
-disabled = true
-text = "Accept"

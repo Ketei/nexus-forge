@@ -87,4 +87,10 @@ func clear_checks() -> void:
 func clear_perks() -> void:
 	for perk in root_tree.get_children():
 		perk.free()
-	
+
+
+func rename_perk(from: String, to: String) -> void:
+	for perk in root_tree.get_children():
+		if perk.get_text(1) == from:
+			perk.set_text(1, to)
+			break

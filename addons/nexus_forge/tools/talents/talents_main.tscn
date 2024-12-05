@@ -1,4 +1,4 @@
-[gd_scene load_steps=19 format=3 uid="uid://dt7vndut1j8qv"]
+[gd_scene load_steps=16 format=3 uid="uid://dt7vndut1j8qv"]
 
 [ext_resource type="Texture2D" uid="uid://c1aelqf557khb" path="res://addons/nexus_forge/common_icons/plus_icon.svg" id="1_buyl6"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/talents/talents_main_script.gd" id="1_e4wsj"]
@@ -14,25 +14,7 @@
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/talents/flags_tree_script.gd" id="6_og1nq"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/talents/req_stats_tree.gd" id="7_u5r1e"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/talents/req_perk_tree.gd" id="8_34pmq"]
-[ext_resource type="Texture2D" uid="uid://bpxvu88n8n48" path="res://addons/nexus_forge/common_icons/error_icon.svg" id="9_h5crx"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/talents/req_variables_tree_script.gd" id="13_kkdeb"]
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tlmxo"]
-content_margin_left = 10.0
-content_margin_top = 3.0
-content_margin_bottom = 3.0
-bg_color = Color(0.34902, 0.388235, 0.458824, 1)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fpkos"]
-content_margin_left = 5.0
-content_margin_top = 5.0
-content_margin_right = 5.0
-content_margin_bottom = 5.0
-bg_color = Color(0.211765, 0.239216, 0.290196, 1)
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
 
 [node name="Talents" type="Control"]
 layout_mode = 3
@@ -88,9 +70,6 @@ size_flags_horizontal = 3
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
-selected = 0
-item_count = 1
-popup/item_0/text = "cooking"
 
 [node name="CreateSkillBtn" type="Button" parent="MainPanel/MainMargin/MainContainer/SkillsContainer/SkillSelectContainer/SkillContainer"]
 custom_minimum_size = Vector2(32, 32)
@@ -461,71 +440,6 @@ hide_folding = true
 hide_root = true
 scroll_horizontal_enabled = false
 script = ExtResource("13_kkdeb")
-default_name = null
-
-[node name="IDSelectPanel" type="PanelContainer" parent="."]
-visible = false
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="CenterContainer" type="CenterContainer" parent="IDSelectPanel"]
-layout_mode = 2
-
-[node name="PromptContainer" type="VBoxContainer" parent="IDSelectPanel/CenterContainer"]
-custom_minimum_size = Vector2(280, 100)
-layout_mode = 2
-theme_override_constants/separation = 0
-
-[node name="HeaderPanel" type="PanelContainer" parent="IDSelectPanel/CenterContainer/PromptContainer"]
-layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_tlmxo")
-
-[node name="PopupTitleLbl" type="Label" parent="IDSelectPanel/CenterContainer/PromptContainer/HeaderPanel"]
-layout_mode = 2
-text = "New Skill ID"
-
-[node name="PopupDataPanel" type="PanelContainer" parent="IDSelectPanel/CenterContainer/PromptContainer"]
-layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_fpkos")
-
-[node name="DataContainer" type="VBoxContainer" parent="IDSelectPanel/CenterContainer/PromptContainer/PopupDataPanel"]
-layout_mode = 2
-
-[node name="IDContainer" type="HBoxContainer" parent="IDSelectPanel/CenterContainer/PromptContainer/PopupDataPanel/DataContainer"]
-layout_mode = 2
-
-[node name="IDLineEdit" type="LineEdit" parent="IDSelectPanel/CenterContainer/PromptContainer/PopupDataPanel/DataContainer/IDContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-placeholder_text = "New ID"
-
-[node name="ValidTextRect" type="TextureRect" parent="IDSelectPanel/CenterContainer/PromptContainer/PopupDataPanel/DataContainer/IDContainer"]
-modulate = Color(0.882353, 0.196078, 0.235294, 1)
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 2
-texture = ExtResource("9_h5crx")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="ButtonsContainer" type="HBoxContainer" parent="IDSelectPanel/CenterContainer/PromptContainer/PopupDataPanel/DataContainer"]
-layout_mode = 2
-
-[node name="CancelBtn" type="Button" parent="IDSelectPanel/CenterContainer/PromptContainer/PopupDataPanel/DataContainer/ButtonsContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_stretch_ratio = 2.0
-text = "Cancel"
-
-[node name="CreateBtn" type="Button" parent="IDSelectPanel/CenterContainer/PromptContainer/PopupDataPanel/DataContainer/ButtonsContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_stretch_ratio = 3.0
-disabled = true
-text = "Create"
 
 [node name="Components" type="Node" parent="."]
 

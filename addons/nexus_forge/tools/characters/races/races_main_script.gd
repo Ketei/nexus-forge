@@ -2,10 +2,8 @@
 extends Control
 
 
-var _race_resource: NFRacesRes = null:
-	set(new_res):
-		_race_resource = new_res
-		species_id_select_panel._race_resource = new_res
+const SPECIES_DIALOG = preload("res://addons/nexus_forge/tools/characters/races/species_dialog.tscn")
+var _race_resource: NFRacesRes = null
 var species_selected: bool = false:
 	set(is_selected):
 		if is_selected == species_selected:
@@ -67,9 +65,9 @@ var _ignore_changes: bool = false
 @onready var main_container: HBoxContainer = $MainContainer
 
 
-@onready var species_id_select_panel: PanelContainer = $SpeciesIDSelectPanel
+#@onready var species_id_select_panel: PanelContainer = $SpeciesIDSelectPanel
 @onready var races_resource_dialog: FileDialog = $Elements/RacesResourceDialog
-@onready var main_menu: MenuButton = $MainContainer/SpcRcContainer/HBoxContainer/MenuContainer/MainMenu
+#@onready var main_menu: MenuButton k= $MainContainer/SpcRcContainer/HBoxContainer/MenuContainer/MainMenu
 
 
 func _ready() -> void:
@@ -82,7 +80,7 @@ func _ready() -> void:
 	
 	main_container.visible = _race_resource != null
 	
-	var menu_popup: PopupMenu = main_menu.get_popup()
+	#var menu_popup: PopupMenu = main_menu.get_popup()
 	
 	#menu_popup.clear()
 	#menu_popup.add_icon_item(
@@ -100,14 +98,10 @@ func _ready() -> void:
 		no_race_panel.load_resource_pressed.connect(on_load_database_pressed)
 		no_race_panel.visible = true
 	
-	menu_popup.id_pressed.connect(on_menu_clicled)
+	#menu_popup.id_pressed.connect(on_menu_clicled)
 	races_resource_dialog.file_selected.connect(on_file_path_selected)
-	#create_db_button.pressed.connect(on_create_database_pressed)
-	#load_db_button.pressed.connect(on_load_database_pressed)
-	species_id_select_panel.create_species_pressed.connect(on_create_species)
-	species_id_select_panel.create_race_pressed.connect(on_create_race)
-	create_species_btn.pressed.connect(on_create_species_pressed)
-	create_race_btn.pressed.connect(on_create_race_pressed)
+	create_species_btn.pressed.connect(on_create_species)
+	create_race_btn.pressed.connect(on_create_race)
 	race_name_l_edit.text_changed.connect(on_line_changed)
 	species_name_l_edit.text_changed.connect(on_line_changed)
 	race_text_edit.text_changed.connect(on_something_changed)
@@ -122,12 +116,6 @@ func _ready() -> void:
 	custom_string_button.pressed.connect(on_create_custom_data_pressed.bind(""))
 	stat_search_l_edit.text_changed.connect(on_stat_search_changed)
 	custom_data_search_l_edit.text_changed.connect(on_data_search_changed)
-
-
-func on_menu_clicled(id: int) -> void:
-	match id:
-		0:
-			save_resource()
 
 
 func _load_species() -> void:
@@ -264,20 +252,35 @@ func on_load_database_pressed() -> void:
 	races_resource_dialog.show()
 
 
-func on_create_species(species_id: String) -> void:
-	species_id_select_panel.visible = false
-	_race_resource.create_species(species_id)
-	species_opt_btn.add_item(species_id)
-	species_opt_btn.select(species_opt_btn.item_count - 1)
-	on_species_selected(species_opt_btn.item_count - 1)
+func on_create_species() -> void:
+	var new_species := SPECIES_DIALOG.instantiate()
+	new_species.race_resource = _race_resource
+	new_species.species_mode = true
+	add_child(new_species)
+	new_species.show()
+	var result: Array = await new_species.dialog_finished
+	if result[0]:
+		_race_resource.create_species(result[1])
+		species_opt_btn.add_item(result[1])
+		species_opt_btn.select(species_opt_btn.item_count - 1)
+		on_species_selected(species_opt_btn.item_count - 1)
+	new_species.queue_free()
 
 
-func on_create_race(species_id: String, race_id: String) -> void:
-	species_id_select_panel.visible = false
-	_race_resource.create_race(species_id, race_id)
-	race_opt_btn.add_item(race_id)
-	race_opt_btn.select(race_opt_btn.item_count - 1)
-	on_race_selected(race_opt_btn.item_count - 1)
+func on_create_race() -> void:
+	var new_race := SPECIES_DIALOG.instantiate()
+	new_race.race_resource = _race_resource
+	new_race.species_mode = false
+	new_race.species_id = species_opt_btn.get_item_text(species_opt_btn.selected)
+	add_child(new_race)
+	new_race.show()
+	var result: Array = await new_race.dialog_finished
+	if result[0]:
+		_race_resource.create_race(new_race.species_id, result[1])
+		race_opt_btn.add_item(result[1])
+		race_opt_btn.select(race_opt_btn.item_count - 1)
+		on_race_selected(race_opt_btn.item_count - 1)
+	new_race.queue_free()
 
 
 func on_file_path_selected(file_path: String) -> void:
@@ -296,19 +299,18 @@ func on_file_path_selected(file_path: String) -> void:
 		ProjectSettings.set_setting(NFRacesRes.SETTINGS_PATH, file_path)
 		ProjectSettings.save()
 		_load_species()
-		species_id_select_panel._race_resource = _race_resource
 		main_container.visible = true
 		no_race_panel.visible = false
 		no_race_panel.queue_free()
 
 
-func on_create_species_pressed() -> void:
-	species_id_select_panel.create_new_species()
-
-
-func on_create_race_pressed() -> void:
-	species_id_select_panel.create_new_race(
-			species_opt_btn.get_item_text(species_opt_btn.selected))
+#func on_create_species_pressed() -> void:
+	#create_
+#
+#
+#func on_create_race_pressed() -> void:
+	#species_id_select_panel.create_new_race(
+			#species_opt_btn.get_item_text(species_opt_btn.selected))
 
 
 func on_something_changed() -> void:
@@ -349,7 +351,7 @@ func save_active_race() -> void:
 		_race_resource.set_race_custom_data_dict(species_id, race_id, custom_data_tree.get_custom_data_dict())
 
 
-func save_resource() -> void:
+func save() -> void:
 	if _saving_needed:
 		save_active_race()
 	_race_resource.save()

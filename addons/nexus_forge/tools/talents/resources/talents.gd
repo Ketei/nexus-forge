@@ -7,19 +7,7 @@ signal perk_renamed(from: String, to: String)
 
 enum PerkFlags {
 	UNIQUE_BRANCHING,
-	REQUIRE_PARENTS,
-}
-
-
-enum OperatorValue {
-	EQUAL = 1,
-	NOT = 2,
-	LESS_THAN = 4,
-	MORE_THAN = 8,
-	EQUAL_OR_LESS = 5,
-	EQUAL_OR_MORE = 9, 
-}
-
+	REQUIRE_PARENTS,}
 
 const SETTINGS_PATH: String = "nexus_forge/talents_resource"
 

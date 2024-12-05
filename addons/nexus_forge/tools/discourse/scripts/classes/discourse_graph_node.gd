@@ -14,14 +14,11 @@ var out_connections: Dictionary = {}
 var node_type := DialogData.DialogType.DIALOG
 var node_id: String = "":
 	set(new_node_id):
-		if _debug_naming:
-			node_id = new_node_id
-		else:
-			node_id = new_node_id.strip_edges()
-			id_changed.emit(node_id)
-			node_updated.emit()
-var _clear_on_load: bool = false
-var _debug_naming: bool = false
+		node_id = new_node_id.strip_edges()
+		id_changed.emit(node_id)
+		node_updated.emit()
+#var _clear_on_load: bool = false
+#var _debug_naming: bool = false
 
 
 func _get_node_id() -> String:

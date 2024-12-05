@@ -60,6 +60,12 @@ var _block_change_current: bool = false
 @onready var discourse_open_dialog: FileDialog = $DiscourseOpenDialog
 @onready var entry_node: DiscourseGraphNode = $Dialogues/TreeContainer/MainWorkerContainer/DialogNodes/DialogGraphEdit/DialogEntry
 
+@onready var file_search_line_edit: LineEdit = %SearchLineEdit
+@onready var search_ids_line: LineEdit = $Dialogues/PanelContainer/DialoguesSelector/IDNodes/MarginContainer/IDsContainer/HeaderContainer/SearchIDsLine
+
+@onready var clear_logs_button: Button = $Dialogues/TreeContainer/MainWorkerContainer/LogPanel/LogContainer/IssueContainer/ButtonsContainer/ClearButton
+@onready var close_logs_button: Button = $Dialogues/TreeContainer/MainWorkerContainer/LogPanel/LogContainer/TitleContainer/CloseButton
+
 
 func _ready() -> void:
 	var popup := add_node_button.get_popup()
@@ -108,8 +114,51 @@ func _ready() -> void:
 	discourse_open_dialog.file_selected.connect(on_resource_selected)
 	
 	open_dialog_list.conversation_selected.connect(on_dialog_selected)
+	file_search_line_edit.text_changed.connect(on_file_text_changed)
+	search_ids_line.text_changed.connect(on_id_filter_text_changed)
+	clear_logs_button.pressed.connect(on_clear_pressed)
+	close_logs_button.pressed.connect(on_close_pressed)
+	log_panel.visible = false
+
+# Verified
+func on_clear_pressed() -> void:
+	clear_logs_button.release_focus()
+	info_container.clear_logs()
+
+# Verified
+func on_close_pressed() -> void:
+	close_logs_button.release_focus()
+	log_panel.visible = false
 
 
+# Verified
+func on_id_filter_text_changed(new_filter: String) -> void:
+	var filter_stripped: String = new_filter.strip_edges().to_lower()
+	
+	if filter_stripped.is_empty():
+		for tree_item:TreeItem in id_nodes.tree_root.get_children():
+			if not tree_item.visible:
+				tree_item.visible = true
+	else:
+		for tree_item:TreeItem in id_nodes.tree_root.get_children():
+			tree_item.visible = tree_item.get_text(0).to_lower().contains(filter_stripped)
+
+# Verified
+func on_file_text_changed(new_text: String) -> void:
+	var stripped_text: String = new_text.strip_edges().to_lower()
+	
+	if stripped_text.is_empty():
+		for item:TreeItem in open_dialog_list.get_tree_children():
+			if not item.visible:
+				item.visible = true
+	else:
+		for item:TreeItem in open_dialog_list.get_tree_children():
+			if item.get_text(0).to_lower().contains(stripped_text):
+				item.visible = true
+			else:
+				item.visible = false
+
+# Verified
 func is_connected_to_entry(node: DiscourseGraphNode, _caller_node: DiscourseGraphNode = null) -> bool:
 	#var is_node_connected: bool = node.is_connected_to_root()
 	var caller_node = node if _caller_node == null else _caller_node
@@ -125,63 +174,47 @@ func is_connected_to_entry(node: DiscourseGraphNode, _caller_node: DiscourseGrap
 	if earliest_node.node_type == DialogData.DialogType.DIALOG or earliest_node.node_type == DialogData.DialogType.OPTIONS:
 		for shortcut in shortcut_nodes:
 			if shortcut.get_connection_id() == earliest_node.node_id:
-				var connected_to_entry: bool = is_connected_to_entry(shortcut, caller_node)
 				# Allows to check all shortcuts.
-				if connected_to_entry:
+				if is_connected_to_entry(shortcut, caller_node):
 					return true
-
 	# earliest node is not ID'd so we can't shortcut it.
 	return false
 
 
-func has_connection_from(from: StringName, port: int) -> bool:
-	for connection in dialog_graph_edit.get_connection_list():
-		if connection["from_port"] == port and connection["from_node"] == from:
-			return true
-	return false
+#func has_connection_from(from: StringName, port: int) -> bool:
+	#for connection in dialog_graph_edit.get_connection_list():
+		#if connection["from_port"] == port and connection["from_node"] == from:
+			#return true
+	#return false
 
-
+# Verified
 func has_dialog_root(node_id: String) -> bool:
 	for node in root_nodes:
-		if node._get_node_id() == node_id:
+		if node.node_id == node_id:
 			return true
 	return false
 
-
-## Returns true if the dialog has a mistake that will cause data loss.
-func has_critical_mistake() -> bool:
-	var used_ids: Array[String] = []
-	
-	for root_node in root_nodes:
-		if root_node.node_id.is_empty():
-			return true
-		elif used_ids.has(root_node.node_id):
-			return true
-		else:
-			used_ids.append(root_node.node_id)
-	return false
-
-
+# Verified
 func get_dialog_graph_center() -> Vector2:
 	return Vector2((dialog_graph_edit.scroll_offset / dialog_graph_edit.zoom) + ((dialog_graph_edit.size / 2) / dialog_graph_edit.zoom))
 
-
-func get_root_with_id(node_id: String) -> DiscourseGraphNode:
+# Verified
+func get_graph_node_with_id(node_id: String) -> DiscourseGraphNode:
 	for node in root_nodes:
 		if node.node_id == node_id:
 			return node
 	return null
 
 
-func get_root_with_local_name(node_name: StringName) -> DiscourseGraphNode:
-	for node in root_nodes:
-		if node.name == node_name:
-			return node
-	return null
+#func get_root_with_local_name(node_name: StringName) -> DiscourseGraphNode:
+	#for node in root_nodes:
+		#if node.name == node_name:
+			#return node
+	#return null
 
 
+# Verified
 func get_current_conversation_data() -> Dictionary:
-	#var entry: String = ""
 	# Node references
 	var id_orphans: Array[DiscourseGraphNode] = []
 	var id_tree_nodes: Array[DiscourseGraphNode] = []
@@ -191,42 +224,25 @@ func get_current_conversation_data() -> Dictionary:
 	var orphans: Array[Dictionary] = []
 	
 	for node in dialog_graph_edit.get_children():
-		if node is not DiscourseGraphNode:
-			continue # We ignore the connection nodes.
+		if node is not DiscourseGraphNode or node.node_type == DialogData.DialogType.START:
+			continue # We ignore the connection nodes and the start node.
 		
-		if node.node_type == DialogData.DialogType.START:
-			continue # We can ignore the start node
-		
+		# Nodes that should have a parent (Dialog/Options) but don't will return true.
+		# Dialogs and options are always true. In the data structure there can
+		# only be dialog/options, hence anything that returns true that isn't these
+		# IS an orphan and needs to be stored differently.
 		if node._is_root():
 			if node.node_type == DialogData.DialogType.DIALOG or node.node_type == DialogData.DialogType.OPTIONS:
 				id_tree_nodes.append(node)
 			else:
 				id_orphans.append(node)
 	
-	var used_ids: Array[String] = []
-	var pads: int = 1
-	
 	for node in id_tree_nodes:
-		node._debug_naming = true
-		
-		if node.node_id.is_empty():
-			node.node_id = "".rpad(pads)
-			pads += 1
-			node._clear_on_load = true
-		elif used_ids.has(node.node_id):
-			node.node_id = node.node_id + "".rpad(pads)
-			pads += 1
-			node._clear_on_load = true
-		else:
-			used_ids.append(node.node_id)
-			node._clear_on_load = false
-		node._debug_naming = false
-	
-	#if entry_node.has_output_connection("next"):
-		#entry = entry_node.get_output_port_connection_by_id("next").node_id
-	
-	for node in id_tree_nodes:
-		full_data_dict.append({"id": node.node_id, "data": node.generate_node_dictionary(), "clear_on_load": node._clear_on_load})
+		full_data_dict.append(
+			{
+				"id": node.node_id,
+				"data": node.generate_node_dictionary()
+			})
 	
 	for node in id_orphans:
 		orphans.append(node.generate_node_dictionary())
@@ -234,13 +250,16 @@ func get_current_conversation_data() -> Dictionary:
 	return {"tree": full_data_dict, "orphans": orphans, "entry": entry_node.generate_node_dictionary(), "entry_offset": entry_node.position_offset}
 
 
-# TEST: This for some reason sometimes crashes. Find why. Maybe missing entries.
+# TEST: This for some reason sometimes crashes. Find why.
+# Maybe missing entries?
 # It crashes when switching from one dialog to another
 func close_all_files() -> void:
 	for file:TreeItem in open_dialog_list.get_tree_children():
 		var confirm_close: bool = true
 		var final_idx: int = -1
-		if file.get_metadata(0)["unsaved"]:
+		# Maybe missing metadata, since we create it in here instead of letting 
+		# the node do it automatically? Check to ensure metadata fillage.
+		if file.get_metadata(0)["unsaved"]: 
 			if current_dialog != file:
 				on_dialog_selected(file) # <- Right here it crashes. Sometimes
 			unsaved_confirmation.show()
@@ -274,15 +293,12 @@ func notify_change() -> void:
 	current_changed.emit()
 
 
+# Verified
 func check_for_mistakes() -> void:
 	var roots: Array[DiscourseGraphNode] = []
 	
 	var orphans: Array[DiscourseGraphNode] = []
 	var unreachable: Array[DiscourseGraphNode] = []
-	var missing_ids: Array[DiscourseGraphNode] = []
-	var duplicate_ids: Array[DiscourseGraphNode] = []
-	
-	var used_ids: Array[String] = []
 	
 	info_container.clear_logs()
 	
@@ -296,12 +312,6 @@ func check_for_mistakes() -> void:
 		if node._is_root():
 			if node.node_type == DialogData.DialogType.DIALOG or node.node_type == DialogData.DialogType.OPTIONS:
 				roots.append(node)
-				if node.node_id.is_empty():
-					missing_ids.append(node)
-				elif used_ids.has(node.node_id):
-					duplicate_ids.append(node)
-				else:
-					used_ids.append(node.node_id)
 			else:
 				orphans.append(node)
 	
@@ -313,16 +323,6 @@ func check_for_mistakes() -> void:
 		info_container.log_item(
 		"[UNREACHABLE] The dialog is not normally reachable.",
 		unreachable_root)
-	
-	for empty_id_node in missing_ids:
-		info_container.log_item(
-			"[MISSING_ID] The dialog doesn't have an assigned ID",
-			empty_id_node)
-	
-	for duplicated_id_node in duplicate_ids:
-		info_container.log_item(
-			"[DUPLICATED ID] The dialog uses a duplicated ID",
-			duplicated_id_node)
 	
 	for orphan in orphans:
 		if orphan.node_type != DialogData.DialogType.COMMENT:
@@ -355,6 +355,7 @@ func clear_nodes() -> void:
 		child.free()
 
 
+# Verified TODO Rename
 func connect_nodes(from: DiscourseGraphNode, to: DiscourseGraphNode, port_id: String) -> void:
 	dialog_graph_edit.connect_node(
 			from.name,
@@ -367,6 +368,7 @@ func connect_nodes(from: DiscourseGraphNode, to: DiscourseGraphNode, port_id: St
 	current_changed.emit()
 
 
+# Verified TODO Rename
 func connect_nodes_specific(from_node: DiscourseGraphNode, from_port: String, to_node: DiscourseGraphNode, to_port: String) -> void:
 	dialog_graph_edit.connect_node(
 			from_node.name,
@@ -423,6 +425,7 @@ func disconnect_input_port(to_node: DiscourseGraphNode, to_port: String) -> void
 
 
 ## Centers a node in the NodeEdit.
+# Verified
 func center_node(dialog_node: DiscourseGraphNode) -> void:
 	if dialog_node == null or _is_traveling:
 		return
@@ -447,12 +450,16 @@ func save_conversation(target_tree: TreeItem, resource_path: String) -> void:
 
 	var new_resource := DialogData.new()
 	var conversation_data: Dictionary = target_tree.get_metadata(0)
+	
 	new_resource.dialog_entry = conversation_data["data"]["entry"]
+	
 	for tree_dict in conversation_data["data"]["tree"]:
 		new_resource.conversation[tree_dict["id"]] = tree_dict["data"]
+	
 	new_resource.orphans = conversation_data["data"]["orphans"]
 	new_resource._entry_offset = conversation_data["data"]["entry_offset"]
 	conversation_data["path"] = resource_path
+	
 	ResourceSaver.save(new_resource, resource_path)
 	
 	if conversation_data["unsaved"]:
@@ -471,6 +478,7 @@ func open_save_dialog(save_item: TreeItem, close_on_save: bool = false) -> void:
 		save_item.free()
 
 
+# Verified
 func snap_to_grid(target_node: DiscourseGraphNode) -> void:
 	if not dialog_graph_edit.snapping_enabled:
 		return
@@ -483,23 +491,22 @@ func on_id_submitted(submitted_id: String, caller_node: DiscourseGraphNode) -> v
 	caller_node.set_id_text(new_id)
 
 
+# Verified
 func validate_id(new_id: String, caller_node: DiscourseGraphNode) -> String:
 	var desired_id: String = new_id
 	if desired_id.is_empty():
 		desired_id = "dialog_node"
-	
-	var has_id: bool = has_root_with_exception(desired_id, caller_node)
 	var final_id: String = desired_id
+	
 	var iteration_count: int = 1
 	
-	while has_id:
+	while has_root_with_exception(final_id, caller_node):
 		final_id = str(desired_id, "_", iteration_count)
 		iteration_count += 1
-		has_id = has_root_with_exception(final_id, caller_node)
 	
 	return final_id
 
-
+# Verified
 func has_root_with_exception(root_id: String, except: DiscourseGraphNode) -> bool:
 	for node in root_nodes:
 		if node == except:
@@ -524,10 +531,7 @@ func on_file_menu_selected(idx: int) -> void:
 		1: # Open
 			discourse_open_dialog.show()
 		2: # Save Current
-			if has_critical_mistake():
-				critical_error_dialog.dialog_text = ERROR_TEXT.format([current_dialog.get_text(0)])
-				critical_error_dialog.show()
-			elif current_dialog.get_metadata(0)["unsaved"]:
+			if current_dialog.get_metadata(0)["unsaved"]:
 				store_current_dialog_data()
 				if current_dialog.get_metadata(0)["path"].is_empty():
 					discourse_save_dialog.target_tree = current_dialog
@@ -568,7 +572,7 @@ func on_file_menu_selected(idx: int) -> void:
 		5:
 			close_all_files()
 
-
+# Verified.
 func on_add_node_selected(selected_id: int) -> void:
 	var target_pos := get_dialog_graph_center()
 	var new_node: DiscourseGraphNode
@@ -647,7 +651,6 @@ func on_add_node_selected(selected_id: int) -> void:
 					target_pos)
 		_:
 			new_node = null
-			
 	
 	if new_node != null:
 		new_node.position_offset -= new_node.size / 2
@@ -665,7 +668,7 @@ func on_review_option_selected(selected_idx: int) -> void:
 			if not log_panel.visible:
 				log_panel.visible = true
 
-
+# Verified
 func on_connection_to_empty(from_node: StringName, from_port: int, release_position: Vector2) -> void:
 	if not Input.is_action_pressed("control_key"):
 		return
@@ -682,7 +685,7 @@ func on_connection_to_empty(from_node: StringName, from_port: int, release_posit
 	from_next.port_idx = from_port
 	from_next.show()
 
-
+# Verified.
 func on_from_next_selected(index: int) -> void:
 	var target_position = from_next.at
 	var from_graph: DiscourseGraphNode = from_next.node
@@ -858,9 +861,8 @@ func on_from_next_selected(index: int) -> void:
 							"next")
 			else:
 				connect_nodes(from_graph, new_end, "next")
-			
 
-
+# Verified
 func on_connection_from_empty(to_node: StringName, to_port: int, release_position: Vector2) -> void:
 	if not Input.is_action_pressed("control_key"):
 		return
@@ -927,7 +929,7 @@ func on_connection_from_empty(to_node: StringName, to_port: int, release_positio
 			to_value.port_idx = to_port
 			to_value.show()
 
-
+# Verified
 func on_to_result_selected(selected: int) -> void:
 	var target_pos: Vector2 = to_result.at
 	var to_graph: DiscourseGraphNode = to_result.node
@@ -1170,45 +1172,12 @@ func on_dialog_selected(tree_item: TreeItem) -> void:
 		entry_node.position_offset = item_metadata["data"]["entry_offset"]
 		if not item_metadata["data"]["entry"].is_empty():
 			entry_data = item_metadata["data"]["entry"]
-			#match item_metadata["data"]["entry"]["type"]:
-				#DialogData.NextType.ID:
-					#if item_metadata["data"]["entry"]["data"]["use_shortcut"]:
-						#entry_target = spawn_id_shortcut(
-								#item_metadata["data"]["entry"]["data"]["offset"])
-						#entry_target.set_short_id(
-								#item_metadata["data"]["entry"]["data"]["next"])
-					#else:
-						#entry_id = item_metadata["data"]["entry"]["data"]["next"]
-				#DialogData.NextType.RANDOM:
-					#entry_target = spawn_random_select_node(item_metadata["data"]["entry"]["data"])
-				#DialogData.NextType.CONDITION:
-					#entry_target = spawn_conditional_split_node(item_metadata["data"]["entry"]["data"])
-				#DialogData.NextType.END:
-					#entry_target = spawn_end_node(item_metadata["data"]["entry"]["data"])
 	else:
 		data_tree = item_metadata["original_data"]["tree"]
 		orphan_nodes = item_metadata["original_data"]["orphans"]
 		entry_node.position_offset = item_metadata["original_data"]["entry_offset"]
 		if not item_metadata["original_data"]["entry"].is_empty():
 			entry_data = item_metadata["original_data"]["entry"]
-			#match item_metadata["original_data"]["entry"]["type"]:
-				#DialogData.NextType.ID:
-					#if item_metadata["original_data"]["entry"]["data"]["use_shortcut"]:
-						#entry_target = spawn_id_shortcut(
-								#item_metadata["original_data"]["entry"]["data"]["offset"])
-						#entry_target.set_short_id(
-								#item_metadata["original_data"]["entry"]["data"]["next"])
-					#else:
-						#entry_id = item_metadata["original_data"]["entry"]["data"]["next"]
-				#DialogData.NextType.RANDOM:
-					#entry_target = spawn_random_select_node(item_metadata["original_data"]["entry"]["data"])
-				#DialogData.NextType.CONDITION:
-					#entry_target = spawn_conditional_split_node(item_metadata["original_data"]["entry"]["data"])
-				#DialogData.NextType.END:
-					#entry_target = spawn_end_node(item_metadata["original_data"]["entry"]["data"])
-	#
-	# Used to prevent data loss when IDs are repeated.
-	#var clear_on_load: Array[DiscourseGraphNode] = []
 	
 	# First loop to instantiate all id_nodes
 	for dialog_id:Dictionary in data_tree:
@@ -1255,7 +1224,7 @@ func on_dialog_selected(tree_item: TreeItem) -> void:
 	
 	# Second loop to connect all nodes.
 	for dialog_id:Dictionary in data_tree:
-		var target_dialog := get_root_with_id(dialog_id["id"])
+		var target_dialog := get_graph_node_with_id(dialog_id["id"])
 		match dialog_id["data"]["type"]:
 			DialogData.DialogType.DIALOG:
 				spawn_dialog_node(
@@ -1269,7 +1238,6 @@ func on_dialog_selected(tree_item: TreeItem) -> void:
 					target_dialog)
 			_:
 				continue # We skip it because it's not typed
-		snap_to_grid(target_dialog)
 	
 	for dialog_id:Dictionary in orphan_nodes:
 		match dialog_id["type"]:
@@ -1299,7 +1267,7 @@ func on_dialog_selected(tree_item: TreeItem) -> void:
 	if entry_target != null:
 		connect_nodes(entry_node, entry_target, "next")
 	elif not entry_id.is_empty():
-		var target_entry := get_root_with_id(entry_id)
+		var target_entry := get_graph_node_with_id(entry_id)
 		if target_entry != null:
 			connect_nodes(entry_node, target_entry, "next")
 	
@@ -1324,7 +1292,7 @@ func on_dialog_selected(tree_item: TreeItem) -> void:
 
 
 func on_center_dialog_called(dialog_id: String) -> void:
-	var target_dialog: DiscourseGraphNode = get_root_with_id(dialog_id)
+	var target_dialog: DiscourseGraphNode = get_graph_node_with_id(dialog_id)
 	if target_dialog != null:
 		center_node(target_dialog)
 
@@ -1367,6 +1335,9 @@ func on_save_folder_selected(file_path: String) -> void:
 			discourse_save_dialog.target_tree,
 			file_path)
 
+
+#region Spawners
+# ----- Spawners -----
 
 func spawn_dialog_node(dialog_id: String, dialog_dict: Dictionary, target_node: DiscourseGraphNode = null, override_offset := false, offset_override: Vector2 = Vector2.ZERO) -> DiscourseGraphNode:
 	var dialog_node: DiscourseGraphNode
@@ -1439,7 +1410,7 @@ func spawn_dialog_node(dialog_id: String, dialog_dict: Dictionary, target_node: 
 			if dialog_dict["next"]["data"]["use_shortcut"]:
 				connect_to = spawn_id_shortcut(dialog_dict["next"]["data"]["offset"])
 			else:
-				connect_to = get_root_with_id(dialog_dict["next"]["data"]["next"])
+				connect_to = get_graph_node_with_id(dialog_dict["next"]["data"]["next"])
 			if connect_to != null:
 				connect_nodes(dialog_node, connect_to, "next")
 		
@@ -1504,7 +1475,7 @@ func spawn_conditional_split_node(split_data: Dictionary, override_offset := fal
 			if split_data["true"]["data"]["use_shortcut"]:
 				next_id_node = spawn_id_shortcut(split_data["true"]["data"]["offset"])
 			else:
-				next_id_node = get_root_with_id(split_data["true"]["data"]["next"])
+				next_id_node = get_graph_node_with_id(split_data["true"]["data"]["next"])
 			if next_id_node != null:
 				connect_nodes_specific(new_conditional, "true", next_id_node, "next")
 		elif split_data["true"]["type"] == DialogData.NextType.RANDOM:
@@ -1523,7 +1494,7 @@ func spawn_conditional_split_node(split_data: Dictionary, override_offset := fal
 			if split_data["false"]["data"]["use_shortcut"]:
 				next_id_node = spawn_id_shortcut(split_data["false"]["data"]["offset"])
 			else:
-				next_id_node = get_root_with_id(split_data["false"]["data"]["next"])
+				next_id_node = get_graph_node_with_id(split_data["false"]["data"]["next"])
 			if next_id_node != null:
 				connect_nodes_specific(new_conditional, "false", next_id_node, "next")
 		elif split_data["false"]["type"] == DialogData.NextType.RANDOM:
@@ -1563,7 +1534,7 @@ func spawn_random_select_node(random_data: Dictionary, override_offset := false,
 			if random_data["options"][opt_idx]["next"]["data"]["use_shortcut"]:
 				target_node = spawn_id_shortcut(random_data["options"][opt_idx]["next"]["data"]["offset"])
 			else:
-				target_node = get_root_with_id(random_data["options"][opt_idx]["next"]["data"]["next"])
+				target_node = get_graph_node_with_id(random_data["options"][opt_idx]["next"]["data"]["next"])
 			
 			if target_node != null:
 				connect_nodes_specific(new_rand, str(opt_idx), target_node, "next")
@@ -1625,7 +1596,7 @@ func spawn_reply_selector_node(dialog_id: String, options_dict: Dictionary, targ
 						target_shortcut = spawn_id_shortcut(options_dict["targets"][option_idx]["data"]["offset"])
 						target_shortcut.set_short_id(options_dict["targets"][option_idx]["data"]["next"])
 					else:
-						target_shortcut = get_root_with_id(options_dict["targets"][option_idx]["data"]["next"])
+						target_shortcut = get_graph_node_with_id(options_dict["targets"][option_idx]["data"]["next"])
 					if target_shortcut != null:
 						connect_nodes_specific(reply_selector, str(option_idx), target_shortcut, "next")
 						
@@ -1803,7 +1774,7 @@ func spawn_end_node(end_data: Dictionary, override_offset := false, offset_overr
 	new_end.close_requested.connect(on_close_requested)
 	new_end.position_offset = offset_override if override_offset else end_data["offset"]
 	return new_end
-
+#endregion
 
 # ------------------ Dialog Map Functions ------------------
 #region Dialog Map Functions

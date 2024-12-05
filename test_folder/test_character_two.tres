@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="CharacterDefinition" load_steps=2 format=3 uid="uid://dvtyovv2s8n0o"]
+
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/characters/resources/character.gd" id="1_55wsj"]
+
+[resource]
+script = ExtResource("1_55wsj")
+character_name = ""
+character_name_color = Color(1, 1, 1, 1)
+character_species = ""
+character_race = ""
+character_gender = 0
+flags = 0
+custom_data = {}
+sprite_frames_path = ""
+typing_sound_path = ""
+factions = {}
+stats = {}
+skills = {}
+perks = {}
+sprite_sheets = {}
+variants = {}

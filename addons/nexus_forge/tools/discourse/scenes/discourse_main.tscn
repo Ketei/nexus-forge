@@ -1,15 +1,12 @@
-[gd_scene load_steps=24 format=3 uid="uid://cx4h4u45kp8vt"]
+[gd_scene load_steps=21 format=3 uid="uid://cx4h4u45kp8vt"]
 
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/scenes/discourse_main_script.gd" id="1_frko2"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/scenes/discourse_id_node_tree.gd" id="2_40hbj"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/scenes/discourse_open_dialog_tree_script.gd" id="2_68plr"]
-[ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/scenes/files_panel_script.gd" id="2_tfoft"]
-[ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/scenes/discourse_id_nodes.gd" id="2_uf78j"]
 [ext_resource type="Texture2D" uid="uid://b8q6di4imiriq" path="res://addons/nexus_forge/common_icons/search_icon.svg" id="3_d5eee"]
 [ext_resource type="Texture2D" uid="uid://bwspmik2qv43f" path="res://addons/nexus_forge/common_icons/new_file.svg" id="4_secj6"]
 [ext_resource type="Texture2D" uid="uid://xkqkxosnppid" path="res://addons/nexus_forge/common_icons/open_file.svg" id="5_mm7jt"]
 [ext_resource type="Texture2D" uid="uid://cd4jt2ru86e16" path="res://addons/nexus_forge/common_icons/save_file.svg" id="6_l8hwc"]
-[ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/scenes/log_container_script.gd" id="8_e84u1"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/scenes/main_info_container.gd" id="8_ev1q6"]
 [ext_resource type="Texture2D" uid="uid://pelqek8ou3ft" path="res://addons/nexus_forge/common_icons/save_all_files.svg" id="8_hgkok"]
 [ext_resource type="PackedScene" uid="uid://b8of7df1gb5qk" path="res://addons/nexus_forge/tools/discourse/scenes/entry/entry_dialog_gnode.tscn" id="11_d0f7h"]
@@ -104,7 +101,6 @@ layout_mode = 2
 size_flags_vertical = 3
 size_flags_stretch_ratio = 2.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_2htvj")
-script = ExtResource("2_tfoft")
 
 [node name="ListMargin" type="MarginContainer" parent="Dialogues/PanelContainer/DialoguesSelector/ListPanel"]
 layout_mode = 2
@@ -136,7 +132,6 @@ custom_minimum_size = Vector2(0, 240)
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("StyleBoxFlat_q3xnu")
-script = ExtResource("2_uf78j")
 
 [node name="MarginContainer" type="MarginContainer" parent="Dialogues/PanelContainer/DialoguesSelector/IDNodes"]
 layout_mode = 2
@@ -311,7 +306,6 @@ unique_name_in_owner = true
 visible = false
 custom_minimum_size = Vector2(0, 140)
 layout_mode = 2
-script = ExtResource("8_e84u1")
 
 [node name="LogContainer" type="VBoxContainer" parent="Dialogues/TreeContainer/MainWorkerContainer/LogPanel"]
 layout_mode = 2
@@ -361,7 +355,7 @@ expand_icon = true
 [node name="MenuWindowPopup" type="Node" parent="."]
 
 [node name="FromNext" type="PopupMenu" parent="MenuWindowPopup"]
-size = Vector2i(161, 143)
+size = Vector2i(161, 170)
 item_count = 6
 item_0/text = "New Dialog"
 item_1/text = "New Replies"
