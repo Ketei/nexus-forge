@@ -182,12 +182,12 @@ func generate_node_dictionary() -> Dictionary:
 			next_class = DialogData.NextType.END
 			next_dict_data = next_node.generate_node_dictionary()
 		
-		next_dict["type"] = next_class
+		next_dict["next_type"] = next_class
 		next_dict["data"] = next_dict_data
 		dialog_dict["next"] = next_dict
 	else:
 		var next_dict: Dictionary = NFDiscourseTool.get_next_structure()
-		next_dict["type"] = DialogData.NextType.END
+		next_dict["next_type"] = DialogData.NextType.END
 		dialog_dict["next"] = next_dict
 		
 	

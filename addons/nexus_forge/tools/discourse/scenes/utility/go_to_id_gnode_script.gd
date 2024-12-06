@@ -46,6 +46,7 @@ func get_connection_id() -> String:
 
 
 func set_short_id(new_target: String) -> void:
+	print(new_target)
 	go_to_id_line.text = new_target
 
 

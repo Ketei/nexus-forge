@@ -1,0 +1,38 @@
+[gd_resource type="Resource" script_class="DialogData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/scripts/classes/dialog/resources/dialog_resource.gd" id="1_6tyac"]
+
+[resource]
+script = ExtResource("1_6tyac")
+dialog_entry = {
+"data": {
+"next": "reply_node",
+"offset": Vector2(0, -60),
+"use_shortcut": false
+},
+"next_type": 0
+}
+_entry_offset = Vector2(-280, -40)
+conversation = {
+"reply_node": {
+"cancel": -1.0,
+"keep_dialog": true,
+"offset": Vector2(0, -60),
+"options": [{}, {}],
+"targets": [{
+"data": {
+"offset": Vector2(380, -60),
+"type": 13
+},
+"next_type": 3
+}, {
+"data": {
+"offset": Vector2(380, 160),
+"type": 13
+},
+"next_type": 3
+}],
+"type": 1
+}
+}
+orphans = Array[Dictionary]([])

@@ -1,4 +1,4 @@
-[gd_scene load_steps=21 format=3 uid="uid://cx4h4u45kp8vt"]
+[gd_scene load_steps=19 format=3 uid="uid://cx4h4u45kp8vt"]
 
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/scenes/discourse_main_script.gd" id="1_frko2"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/scenes/discourse_id_node_tree.gd" id="2_40hbj"]
@@ -30,38 +30,6 @@ bg_color = Color(0.129412, 0.14902, 0.180392, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fsjbe"]
 bg_color = Color(0.129412, 0.14902, 0.180392, 1)
-
-[sub_resource type="GDScript" id="GDScript_km4bd"]
-resource_name = "show_with_message"
-script/source = "@tool
-extends AcceptDialog
-
-
-func _ready() -> void:
-	var label: Label = get_label()
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-"
-
-[sub_resource type="GDScript" id="GDScript_771kq"]
-resource_name = "conv_pointer"
-script/source = "@tool
-extends FileDialog
-
-
-signal finished(dialog_confirmed: bool)
-
-
-var target_tree: TreeItem
-
-
-func on_confirmed() -> void:
-	finished.emit(true)
-
-
-func on_cancelled() -> void:
-	finished.emit(false)
-"
 
 [node name="Discourse" type="Control"]
 layout_mode = 3
@@ -396,26 +364,3 @@ ok_button_text = "Save"
 dialog_text = "Conversation has unsaved changes.
 Save?"
 script = ExtResource("13_420lk")
-
-[node name="CriticalErrorDialog" type="AcceptDialog" parent="MenuWindowPopup"]
-title = "Dialog Error"
-initial_position = 1
-size = Vector2i(350, 160)
-script = SubResource("GDScript_km4bd")
-
-[node name="DiscourseOpenDialog" type="FileDialog" parent="."]
-title = "Open a File"
-initial_position = 1
-size = Vector2i(512, 288)
-ok_button_text = "Open"
-file_mode = 0
-filters = PackedStringArray("*.tres;Resources")
-
-[node name="DiscourseSaveDialog" type="FileDialog" parent="."]
-auto_translate_mode = 1
-title = "Save Dialog"
-initial_position = 1
-size = Vector2i(512, 288)
-ok_button_text = "Save Dialog"
-filters = PackedStringArray("*.tres;Resources")
-script = SubResource("GDScript_771kq")

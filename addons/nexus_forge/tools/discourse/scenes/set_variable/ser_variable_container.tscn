@@ -15,7 +15,7 @@ metadata/_edit_use_anchors_ = true
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 4
-size_flags_stretch_ratio = 2.0
+size_flags_stretch_ratio = 3.0
 placeholder_text = "Variable Path"
 
 [node name="Label" type="Label" parent="."]
@@ -39,7 +39,7 @@ popup/item_3/id = 3
 [node name="PanelContainer" type="PanelContainer" parent="."]
 layout_mode = 2
 size_flags_horizontal = 3
-size_flags_stretch_ratio = 3.0
+size_flags_stretch_ratio = 2.0
 theme_override_styles/panel = SubResource("StyleBoxEmpty_xi6rb")
 
 [node name="ValVarNode" type="SpinBox" parent="PanelContainer"]

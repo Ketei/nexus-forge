@@ -3,7 +3,7 @@ extends DiscourseGraphNode
 
 
 const SER_VARIABLE_CONTAINER = preload("res://addons/nexus_forge/tools/discourse/scenes/set_variable/ser_variable_container.tscn")
-const MAXI_SIZE := Vector2(370, 280)
+const MAXI_SIZE := Vector2(400, 280)
 const MINI_SIZE := Vector2(175, 90)
 
 var minimized: bool = false

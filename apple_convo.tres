@@ -1,0 +1,211 @@
+[gd_resource type="Resource" script_class="DialogData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/scripts/classes/dialog/resources/dialog_resource.gd" id="1_rp0j0"]
+
+[resource]
+script = ExtResource("1_rp0j0")
+dialog_entry = {
+"data": {
+"next": "dialog_node",
+"offset": Vector2(-40, -100),
+"use_shortcut": false
+},
+"next_type": 0
+}
+_entry_offset = Vector2(-400, -100)
+conversation = {
+"apple_explanation": {
+"call": {},
+"character": {},
+"dialog": {
+"seconds_per_letter": -1.0,
+"text": "Apples are a nummy fruit!
+So! Want apples?"
+},
+"expand": true,
+"next": {
+"data": {
+"next": "intro_reply",
+"offset": Vector2(1780, 500),
+"use_shortcut": true
+},
+"next_type": 0
+},
+"offset": Vector2(1320, 500),
+"pause": false,
+"set_variable": {
+"expand": true,
+"offset": Vector2(700, 820),
+"variables": {
+"apple_explain": true
+}
+},
+"signal": {},
+"type": 0
+},
+"apple_give": {
+"call": {},
+"character": {},
+"dialog": {
+"seconds_per_letter": -1.0,
+"text": "Here you go! An apple!"
+},
+"expand": true,
+"next": {
+"data": {
+"offset": Vector2(1840, -520),
+"type": 13
+},
+"next_type": 3
+},
+"offset": Vector2(1320, -540),
+"pause": false,
+"set_variable": {},
+"signal": {},
+"type": 0
+},
+"dialog_node": {
+"call": {
+"args": ["apple_vendor", "Applez"],
+"call_at_start": true,
+"call_id": "set_name",
+"expand": true,
+"is_return": false,
+"offset": Vector2(-500, 600),
+"type": 8
+},
+"character": {
+"expand": true,
+"id": "apple_vendor",
+"idle": {
+"animation": "idle",
+"play": false
+},
+"offset": Vector2(-560, 20),
+"talking": {
+"animation": "talking",
+"play": true
+}
+},
+"dialog": {
+"seconds_per_letter": -1.0,
+"text": "Hi! Would you like some apples?"
+},
+"expand": true,
+"next": {
+"data": {
+"next": "intro_reply",
+"offset": Vector2(900, -100),
+"use_shortcut": false
+},
+"next_type": 0
+},
+"offset": Vector2(-40, -100),
+"pause": false,
+"set_variable": {
+"expand": true,
+"offset": Vector2(-600, 300),
+"variables": {
+"met_apple": true
+}
+},
+"signal": {
+"call_at_start": false,
+"offset": Vector2(-460, 200),
+"signal": "met_applez"
+},
+"type": 0
+},
+"intro_reply": {
+"cancel": 0.0,
+"keep_dialog": true,
+"offset": Vector2(900, -100),
+"options": [{
+"call": {},
+"conditions": {},
+"offset": Vector2(520, 0),
+"set_variable": {},
+"signal": {},
+"text": "Yes"
+}, {
+"call": {},
+"conditions": {},
+"offset": Vector2(520, 220),
+"set_variable": {},
+"signal": {},
+"text": "No"
+}, {
+"call": {},
+"conditions": {
+"offset": Vector2(240, 460),
+"operator": 1,
+"type": 4,
+"var_a": {
+"offset": Vector2(-80, 480),
+"type": 5,
+"value": {
+"element_type": 0,
+"value": true
+}
+},
+"var_b": {
+"offset": Vector2(-80, 640),
+"type": 5,
+"value": {
+"element_type": 4,
+"value": "apple_explain"
+}
+}
+},
+"offset": Vector2(520, 420),
+"set_variable": {},
+"signal": {},
+"text": "What are apples?"
+}],
+"targets": [{
+"data": {
+"next": "apple_give",
+"offset": Vector2(1320, -540),
+"use_shortcut": false
+},
+"next_type": 0
+}, {
+"data": {
+"next": "no_apple",
+"offset": Vector2(1320, -20),
+"use_shortcut": false
+},
+"next_type": 0
+}, {
+"data": {
+"next": "apple_explanation",
+"offset": Vector2(1320, 500),
+"use_shortcut": false
+},
+"next_type": 0
+}],
+"type": 1
+},
+"no_apple": {
+"call": {},
+"character": {},
+"dialog": {
+"seconds_per_letter": -1.0,
+"text": "Ok, see you next time"
+},
+"expand": true,
+"next": {
+"data": {
+"offset": Vector2(1840, 0),
+"type": 13
+},
+"next_type": 3
+},
+"offset": Vector2(1320, -20),
+"pause": false,
+"set_variable": {},
+"signal": {},
+"type": 0
+}
+}
+orphans = Array[Dictionary]([])

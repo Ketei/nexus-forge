@@ -69,7 +69,7 @@ func get_conversation_characters() -> Array[StringName]:
 
 
 func travel_tree(structure: Dictionary) -> String:
-	match structure["type"]:
+	match structure["next_type"]:
 		NextType.ID:
 			return structure["data"]["next"]
 		NextType.RANDOM:
@@ -81,14 +81,14 @@ func travel_tree(structure: Dictionary) -> String:
 				
 				var result: Dictionary = random_pool.get_rand_weighted()
 				
-				if result["type"] == NextType.ID:
+				if result["next_type"] == NextType.ID:
 					return result["data"]["next"]
 				else:
 					return travel_tree(result)
 			else:
 				var result: Dictionary = structure["data"]["options"].pick_random()
 				
-				if result["next"]["type"] == NextType.ID:
+				if result["next"]["next_type"] == NextType.ID:
 					return result["next"]["data"]["next"]
 				else:
 					return travel_tree(result["next"])
@@ -132,10 +132,13 @@ func get_next_id(from_id: String = "", option_idx: int = 0) -> String:
 	
 	var target_dict: Dictionary = dialog_entry if from_id.is_empty() else conversation[from_id]
 	
-	if target_dict["type"] == DialogType.OPTIONS:
-		return travel_tree(target_dict["targets"][option_idx])
-	else:
+	if target_dict.has("next_type"):
 		return travel_tree(target_dict)
+	else:
+		if target_dict["type"] == DialogType.OPTIONS:
+			return travel_tree(target_dict["targets"][option_idx])
+		else:
+			return travel_tree(target_dict["next"])
 
 
 ## Returns 0 if it's dialog, returns 1 if it's options.
@@ -153,7 +156,7 @@ func get_dialog_data(dialog_id: String) -> Dictionary:
 	match data["type"]:
 		DialogType.DIALOG:
 			var dialog_data: Dictionary = {
-				"character": {
+				"character": {"id": "", "talking": "", "idle": ""} if conversation[dialog_id]["character"].is_empty() else {
 					"id": conversation[dialog_id]["character"]["id"],
 					"talking": conversation[dialog_id]["character"]["talking"],
 					"idle": conversation[dialog_id]["character"]["idle"]},
@@ -161,13 +164,13 @@ func get_dialog_data(dialog_id: String) -> Dictionary:
 					"text": conversation[dialog_id]["dialog"]["text"],
 					"speed": conversation[dialog_id]["dialog"]["seconds_per_letter"]},
 				"pause": conversation[dialog_id]["pause"],
-				"variables": conversation[dialog_id]["set_variable"]["variables"].duplicate(),
-				"call": {
-					"object": conversation[dialog_id]["call"]["object"],
-					"method": conversation[dialog_id]["call"]["method"],
-					"args": conversation[dialog_id]["call"]["args"].duplicate(),
+				"variables": conversation[dialog_id]["set_variable"]["variables"].duplicate() if conversation[dialog_id]["set_variable"].has("variables") else {},
+				"call": {"id": "", "direct": true, "args": [], "at_start": false} if conversation[dialog_id]["call"].is_empty() else {
+					"id": conversation[dialog_id]["call"]["call_id"],
+					"direct": not conversation[dialog_id]["call"]["is_return"],
+					"args" : conversation[dialog_id]["call"]["args"].duplicate(),
 					"at_start": conversation[dialog_id]["call"]["call_at_start"]},
-				"signal": {
+				"signal": {"argument": "", "at_start": false} if conversation[dialog_id]["signal"].is_empty() else {
 					"argument": conversation[dialog_id]["signal"]["signal"],
 					"at_start": conversation[dialog_id]["signal"]["call_at_start"]}}
 			
@@ -176,25 +179,26 @@ func get_dialog_data(dialog_id: String) -> Dictionary:
 		DialogType.OPTIONS:
 			var options: Array[Dictionary] = []
 			for option_idx in range(conversation[dialog_id]["options"].size()):
+				if conversation[dialog_id]["options"][option_idx].is_empty():
+					continue
+				
 				var option_dict: Dictionary = {
 					"text": conversation[dialog_id]["options"][option_idx]["text"],
 					"id": option_idx,
-					"call": {
-						"object": conversation[dialog_id]["options"][option_idx]["call"]["object"],
-						"method": conversation[dialog_id]["options"][option_idx]["call"]["method"],
-						"args": conversation[dialog_id]["options"][option_idx]["call"]["args"].duplicate(),
+					"call": {} if conversation[dialog_id]["call"].is_empty() else {
+						"id": conversation[dialog_id]["call"]["call_id"],
+						"direct": not conversation[dialog_id]["call"]["is_return"],
+						"args": conversation[dialog_id]["call"]["args"].duplicate(),
 						"at_start": conversation[dialog_id]["options"][option_idx]["call"]["call_at_start"]},
-					"conditions": {},
-					"variables": conversation[dialog_id]["options"][option_idx]["set_variable"]["variables"].duplicate(),
-					"signal": {
-						"argument": conversation[dialog_id]["options"][option_idx]["signal"]["signal"],
-						"at_start": conversation[dialog_id]["options"][option_idx]["signal"]["call_at_start"]}}
-					
-				if not conversation[dialog_id]["options"][option_idx]["conditions"].is_empty():
-					option_dict["conditions"] = {
+					"conditions": {} if conversation[dialog_id]["options"][option_idx]["conditions"].is_empty() else {
 						"operator": conversation[dialog_id]["options"][option_idx]["conditions"]["operator"],
 						"a": _simplify_condition_structure(conversation[dialog_id]["options"][option_idx]["conditions"]["var_a"]["value"]),
-						"b": _simplify_condition_structure(conversation[dialog_id]["options"][option_idx]["conditions"]["var_a"]["value"])}
+						"b": _simplify_condition_structure(conversation[dialog_id]["options"][option_idx]["conditions"]["var_a"]["value"])},
+					"variables": conversation[dialog_id]["options"][option_idx]["set_variable"]["variables"].duplicate() if conversation[dialog_id]["options"][option_idx]["set_variable"].has("variables") else {},
+					"signal": {"argument": "", "at_start": false} if conversation[dialog_id]["options"][option_idx]["signal"].is_empty() else {
+						"argument": conversation[dialog_id]["options"][option_idx]["signal"]["signal"],
+						"at_start": conversation[dialog_id]["options"][option_idx]["signal"]["call_at_start"]}
+					}
 				
 				options.append(option_dict)
 			
@@ -202,7 +206,7 @@ func get_dialog_data(dialog_id: String) -> Dictionary:
 				"cancel_id": conversation[dialog_id]["cancel"],
 				"keep_dialog_on_screen": conversation[dialog_id]["keep_dialog"],
 				"options": options}
-	
+			data.merge(option_data)
 	return data
 	
 

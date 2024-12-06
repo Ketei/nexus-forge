@@ -4,7 +4,7 @@
 
 [node name="MethodCallGNode" type="GraphNode"]
 offset_right = 300.0
-offset_bottom = 119.0
+offset_bottom = 122.0
 title = "Method Call"
 slot/0/left_enabled = false
 slot/0/left_type = 0
@@ -24,12 +24,24 @@ slot/1/right_type = 0
 slot/1/right_color = Color(1, 1, 1, 1)
 slot/1/right_icon = null
 slot/1/draw_stylebox = true
+slot/2/left_enabled = false
+slot/2/left_type = 0
+slot/2/left_color = Color(1, 1, 1, 1)
+slot/2/left_icon = null
+slot/2/right_enabled = false
+slot/2/right_type = 0
+slot/2/right_color = Color(1, 1, 1, 1)
+slot/2/right_icon = null
+slot/2/draw_stylebox = true
 script = ExtResource("1_5effe")
 
-[node name="ObjectContainer" type="HBoxContainer" parent="."]
+[node name="MainContainer" type="VBoxContainer" parent="."]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="ObjectContainer"]
+[node name="ObjectContainer" type="HBoxContainer" parent="MainContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/ObjectContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Callable"
@@ -37,11 +49,16 @@ horizontal_alignment = 1
 vertical_alignment = 1
 text_overrun_behavior = 3
 
-[node name="CallableOption" type="OptionButton" parent="ObjectContainer"]
+[node name="CallableOption" type="OptionButton" parent="MainContainer/ObjectContainer"]
+custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 3.0
-selected = 0
+
+[node name="CallAtStart" type="CheckBox" parent="."]
+layout_mode = 2
+text = "Call at Start"
+alignment = 1
 
 [node name="ArgsContainer" type="VBoxContainer" parent="."]
 layout_mode = 2

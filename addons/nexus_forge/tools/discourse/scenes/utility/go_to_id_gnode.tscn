@@ -4,7 +4,7 @@
 [ext_resource type="Texture2D" uid="uid://df81p1ua1na0t" path="res://addons/nexus_forge/tools/discourse/icons/go_to.svg" id="2_a8rku"]
 
 [node name="GoToIDGraphNode" type="GraphNode"]
-custom_minimum_size = Vector2(210, 90)
+custom_minimum_size = Vector2(220, 90)
 offset_right = 250.0
 offset_bottom = 90.0
 title = "Go to ID"

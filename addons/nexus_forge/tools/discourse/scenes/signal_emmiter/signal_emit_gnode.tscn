@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/scenes/signal_emmiter/signal_emit_gnode_script.gd" id="1_7gmno"]
 
 [node name="SignalEmitGNode" type="GraphNode"]
-custom_minimum_size = Vector2(250, 88)
+custom_minimum_size = Vector2(260, 88)
 offset_right = 237.0
 offset_bottom = 88.0
 title = "Emit Signal"

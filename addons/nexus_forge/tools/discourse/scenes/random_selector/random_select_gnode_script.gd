@@ -141,22 +141,21 @@ func generate_node_dictionary() -> Dictionary:
 				next_id["use_shortcut"] = rand_next.node_type == DialogData.DialogType.ID
 				next_id["offset"] = rand_next.position_offset
 				
-				rand_next_struct["type"] = DialogData.NextType.ID
+				rand_next_struct["next_type"] = DialogData.NextType.ID
 				rand_next_struct["data"] = next_id
 			else:
 				if rand_next.node_type == DialogData.DialogType.CONDITION:
-					rand_next_struct["type"] = DialogData.NextType.CONDITION
+					rand_next_struct["next_type"] = DialogData.NextType.CONDITION
 				elif rand_next.node_type == DialogData.DialogType.RANDOM:
-					rand_next_struct["type"] = DialogData.NextType.RANDOM
+					rand_next_struct["next_type"] = DialogData.NextType.RANDOM
 				elif rand_next.node_type == DialogData.DialogType.END:
-					rand_next_struct["type"] = DialogData.NextType.END
+					rand_next_struct["next_type"] = DialogData.NextType.END
 				rand_next_struct["data"] = rand_next.generate_node_dictionary()
 		else:
-			rand_next_struct["type"] = DialogData.NextType.END
+			rand_next_struct["next_type"] = DialogData.NextType.END
 		
 		option_random["next"] = rand_next_struct
 		
 		random_select["options"].append(option_random)
 		
-	
 	return random_select

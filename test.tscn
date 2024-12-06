@@ -5,11 +5,15 @@ script/source = "extends Control
 
 
 func _ready() -> void:
-	for _ig in range(2):
-		#print(random_base64(64))
-		print(random_base64())
-		print(\"-----------------\")
-		await get_tree().create_timer(3.0).timeout
+	var welcome_dialog: DialogData = preload(\"res://random_c.tres\")
+	
+	for n in range(10):
+		print(welcome_dialog.get_next_id())
+	
+	
+	var next_id: String = welcome_dialog.get_next_id()
+	print(next_id)
+	print(welcome_dialog.get_dialog_data(next_id))
 
 
 #func random_base64(num_chars: int) -> String:

@@ -1,0 +1,81 @@
+[gd_resource type="Resource" script_class="DialogData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/scripts/classes/dialog/resources/dialog_resource.gd" id="1_we653"]
+
+[resource]
+script = ExtResource("1_we653")
+dialog_entry = {
+"data": {
+"offset": Vector2(40, -20),
+"options": [{
+"next": {
+"data": {
+"next": "random_a",
+"offset": Vector2(420, -140),
+"use_shortcut": false
+},
+"type": 0
+},
+"weight": 0.01
+}, {
+"next": {
+"data": {
+"next": "random_b",
+"offset": Vector2(380, 500),
+"use_shortcut": false
+},
+"type": 0
+},
+"weight": 0.01
+}],
+"type": 6,
+"use_weights": false
+},
+"type": 1
+}
+_entry_offset = Vector2(-260, 0)
+conversation = {
+"random_a": {
+"call": {},
+"character": {},
+"dialog": {
+"seconds_per_letter": -1.0,
+"text": "Random dialog A"
+},
+"expand": true,
+"next": {
+"data": {
+"offset": Vector2(960, -120),
+"type": 13
+},
+"type": 3
+},
+"offset": Vector2(420, -140),
+"pause": false,
+"set_variable": {},
+"signal": {},
+"type": 0
+},
+"random_b": {
+"call": {},
+"character": {},
+"dialog": {
+"seconds_per_letter": -1.0,
+"text": "Random dialog B"
+},
+"expand": true,
+"next": {
+"data": {
+"offset": Vector2(960, 500),
+"type": 13
+},
+"type": 3
+},
+"offset": Vector2(380, 500),
+"pause": false,
+"set_variable": {},
+"signal": {},
+"type": 0
+}
+}
+orphans = Array[Dictionary]([])

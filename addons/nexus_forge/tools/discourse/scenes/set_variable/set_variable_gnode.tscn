@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/scenes/set_variable/set_variable_gnode_script.gd" id="1_sdsb4"]
 
 [node name="SetVariableGNode" type="GraphNode"]
-offset_right = 370.0
+offset_right = 400.0
 offset_bottom = 280.0
 title = "Set Variables"
 slot/0/left_enabled = false

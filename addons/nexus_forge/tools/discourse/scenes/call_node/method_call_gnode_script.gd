@@ -8,9 +8,10 @@ const MINI_SIZE := Vector2(175, 90)
 var minimized: bool = false
 var minimize_button: Button
 
-@onready var callable_option: OptionButton = $ObjectContainer/CallableOption
+@onready var callable_option: OptionButton = $MainContainer/ObjectContainer/CallableOption
 @onready var args_container: VBoxContainer = $ArgsContainer
-@onready var label: Label = $ObjectContainer/Label
+@onready var label: Label = $MainContainer/ObjectContainer/Label
+@onready var call_at_start: CheckBox = $CallAtStart
 
 
 func _ready() -> void:
@@ -68,7 +69,7 @@ func on_callable_selected(callable_selected: int) -> void:
 		new_arg.var_label.text = arg["name"]
 		new_arg.current_value_updated.connect(on_arg_updated)
 	
-	size.y = 80 + (args_container.get_child_count() * 39)
+	size.y = 122 + (args_container.get_child_count() * 39)
 	node_updated.emit()
 
 
@@ -130,7 +131,7 @@ func maximize() -> void:
 	callable_option.visible = true
 	args_container.visible = true
 	size.x = 300
-	size.y = 80 + (args_container.get_child_count() * 39)
+	size.y = 122 + (args_container.get_child_count() * 39)
 
 
 func _is_root() -> bool:
@@ -140,7 +141,6 @@ func _is_root() -> bool:
 func generate_node_dictionary() -> Dictionary:
 	var call_structure: Dictionary = NFDiscourseTool.get_call_structure()
 	var call_id: String = ""
-	#var method: String = ""
 	
 	if callable_option.selected != -1:
 		call_id = callable_option.get_item_metadata(callable_option.selected)
@@ -149,6 +149,7 @@ func generate_node_dictionary() -> Dictionary:
 	call_structure["offset"] = position_offset
 	call_structure["is_return"] = false
 	call_structure["expand"] = not minimized
+	call_structure["call_at_start"] = call_at_start.button_pressed
 	
 	for arg_idx in range(args_container.get_child_count()):
 		call_structure["args"].append(

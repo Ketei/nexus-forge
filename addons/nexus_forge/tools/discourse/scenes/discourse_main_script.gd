@@ -21,6 +21,8 @@ const RETURN_CALL_NODE = preload("res://addons/nexus_forge/tools/discourse/scene
 const COMMENT_GRAPH_NODE = preload("res://addons/nexus_forge/tools/discourse/scenes/utility/comment_graph_node.tscn")
 const END_GNODE = preload("res://addons/nexus_forge/tools/discourse/scenes/end_node/end_gnode.tscn")
 
+const DiscourseResourceDialog = preload("res://addons/nexus_forge/tools/discourse/scenes/discourse_resource_dialog.gd")
+
 const ERROR_TEXT: String = "The next dialog has a critical issue:\n{0}\nPlease [Review] the dialog for issues\nand try again."
 
 var current_dialog: TreeItem:
@@ -50,14 +52,13 @@ var _block_change_current: bool = false
 @onready var to_value: DiscoursePopupMenu = $MenuWindowPopup/ToValue
 @onready var to_result: DiscoursePopupMenu = $MenuWindowPopup/ToResult
 @onready var unsaved_confirmation: ConfirmationDialog = $MenuWindowPopup/UnsavedConfirmation
-@onready var critical_error_dialog: AcceptDialog = $MenuWindowPopup/CriticalErrorDialog
 
 @onready var add_node_button: MenuButton = $Dialogues/TreeContainer/MenuContainer/AddNodeButton
 @onready var file_menu_button: MenuButton = $Dialogues/TreeContainer/MenuContainer/FileMenuButton
 @onready var review_menu_button: MenuButton = $Dialogues/TreeContainer/MenuContainer/ReviewMenuButton
 
-@onready var discourse_save_dialog: FileDialog = $DiscourseSaveDialog
-@onready var discourse_open_dialog: FileDialog = $DiscourseOpenDialog
+#@onready var discourse_save_dialog: FileDialog = $DiscourseSaveDialog
+#@onready var discourse_open_dialog: FileDialog = $DiscourseOpenDialog
 @onready var entry_node: DiscourseGraphNode = $Dialogues/TreeContainer/MainWorkerContainer/DialogNodes/DialogGraphEdit/DialogEntry
 
 @onready var file_search_line_edit: LineEdit = %SearchLineEdit
@@ -110,8 +111,8 @@ func _ready() -> void:
 	file_menu_button.get_popup().index_pressed.connect(on_file_menu_selected)
 	review_menu_button.get_popup().index_pressed.connect(on_review_option_selected)
 	
-	discourse_save_dialog.file_selected.connect(on_save_folder_selected)
-	discourse_open_dialog.file_selected.connect(on_resource_selected)
+	#discourse_save_dialog.file_selected.connect(on_save_folder_selected)
+	#discourse_open_dialog.file_selected.connect(on_resource_selected)
 	
 	open_dialog_list.conversation_selected.connect(on_dialog_selected)
 	file_search_line_edit.text_changed.connect(on_file_text_changed)
@@ -119,6 +120,7 @@ func _ready() -> void:
 	clear_logs_button.pressed.connect(on_clear_pressed)
 	close_logs_button.pressed.connect(on_close_pressed)
 	log_panel.visible = false
+
 
 # Verified
 func on_clear_pressed() -> void:
@@ -268,7 +270,7 @@ func close_all_files() -> void:
 			
 			match confirmation:
 				0: #save
-					open_save_dialog(current_dialog, true)
+					save_conversation(current_dialog, current_dialog.get_metadata(0)["path"])
 					confirm_close = true
 				1: # Discard
 					confirm_close = true
@@ -464,18 +466,7 @@ func save_conversation(target_tree: TreeItem, resource_path: String) -> void:
 	
 	if conversation_data["unsaved"]:
 		conversation_data["unsaved"] = false
-		if target_tree.get_text(0) == "[UNSAVED DIALOG](*)":
-			target_tree.set_text(0, resource_path.get_file())
-		else:
-			target_tree.set_text(0, target_tree.get_text(0).trim_suffix("(*)"))
-
-
-func open_save_dialog(save_item: TreeItem, close_on_save: bool = false) -> void:
-	discourse_save_dialog.target_tree = save_item
-	discourse_save_dialog.show()
-	var item_saved: bool = await discourse_save_dialog.finished
-	if item_saved and close_on_save:
-		save_item.free()
+		target_tree.set_text(0, target_tree.get_text(0).trim_suffix("(*)"))
 
 
 # Verified
@@ -529,18 +520,24 @@ func on_file_menu_selected(idx: int) -> void:
 		0: # New
 			on_new_dialog_selected()
 		1: # Open
-			discourse_open_dialog.show()
+			var open_conv := DiscourseResourceDialog.new()
+			open_conv.file_mode = FileDialog.FILE_MODE_OPEN_FILE
+			add_child(open_conv)
+			open_conv.show()
+			
+			var response: Array = await open_conv.dialog_finished
+			
+			if response[0]:
+				on_resource_selected(response[1])
+			
+			open_conv.queue_free()
 		2: # Save Current
 			if current_dialog.get_metadata(0)["unsaved"]:
 				store_current_dialog_data()
-				if current_dialog.get_metadata(0)["path"].is_empty():
-					discourse_save_dialog.target_tree = current_dialog
-					discourse_save_dialog.show()
-				else:
-					save_conversation(current_dialog, current_dialog.get_metadata(0)["path"])
+				save_conversation(current_dialog, current_dialog.get_metadata(0)["path"])
 		3: # Save All
 			current_dialog.get_metadata(0)["data"] = get_current_conversation_data()
-			on_save_resources()
+			_save_called()
 		4: # Close Current
 			if current_dialog != null:
 				var selected_idx: int = current_dialog.get_index()
@@ -551,7 +548,7 @@ func on_file_menu_selected(idx: int) -> void:
 					var confirmation: int = await unsaved_confirmation.option_selected
 					match confirmation:
 						0: #save
-							open_save_dialog(current_dialog, true)
+							save_conversation(current_dialog, current_dialog.get_metadata(0)["path"])
 						1: # Discard
 							confirm_close = true
 						2: # Cancel. Don't close this one.
@@ -1123,18 +1120,28 @@ func on_resource_selected(resource_path: String) -> void:
 
 
 func on_new_dialog_selected() -> void:
-	var new_dialog := DialogData.new()
-	var tree_item: TreeItem = open_dialog_list.add_file("[UNSAVED DIALOG](*)")
-	tree_item.set_metadata(
-			0,
-			{
-				"path": "",
-				"original_data": {"tree": [], "orphans": [], "entry": {}, "entry_offset": Vector2.ZERO},
-				"data": {"tree": [], "orphans": [], "entry": {}, "entry_offset": Vector2()},
-				"unsaved": true,
-				"scroll_offset": null,
-				"zoom": 0.0})
-	on_dialog_selected(tree_item)
+	var conv_saver := DiscourseResourceDialog.new()
+	conv_saver.file_mode = FileDialog.FILE_MODE_SAVE_FILE
+	add_child(conv_saver)
+	conv_saver.show()
+	
+	var response: Array = await conv_saver.dialog_finished
+	
+	if response[0]:
+		var new_conv := DialogData.new()
+		if ResourceSaver.save(new_conv, response[1]) == OK:
+			var tree_item: TreeItem = open_dialog_list.add_file(response[1].get_file())
+			tree_item.set_metadata(
+					0,
+					{
+						"path": response[1],
+						"original_data": {"tree": [], "orphans": [], "entry": {}, "entry_offset": Vector2.ZERO},
+						"data": {"tree": [], "orphans": [], "entry": {}, "entry_offset": Vector2()},
+						"unsaved": false,
+						"scroll_offset": null,
+						"zoom": 0.0})
+			on_dialog_selected(tree_item)
+	conv_saver.queue_free()
 
 
 func store_current_dialog_data() -> void:
@@ -1185,9 +1192,7 @@ func on_dialog_selected(tree_item: TreeItem) -> void:
 			DialogData.DialogType.DIALOG:
 				var dialog_node: DiscourseGraphNode = DIALOG_NODE.instantiate()
 				dialog_graph_edit.add_child(dialog_node)
-				#if dialog_id["clear_on_load"]:
-					#clear_on_load.append(dialog_node)
-					#dialog_node._debug_naming = true
+				
 				dialog_node.node_id = dialog_id["id"]
 				root_nodes.append(dialog_node)
 				id_nodes.add_node(dialog_node)
@@ -1206,7 +1211,7 @@ func on_dialog_selected(tree_item: TreeItem) -> void:
 	
 	# Instantiating and connecting entry
 	if not entry_data.is_empty():
-		match entry_data["type"]:
+		match entry_data["next_type"]:
 			DialogData.NextType.ID:
 				if entry_data["data"]["use_shortcut"]:
 					entry_target = spawn_id_shortcut(
@@ -1258,7 +1263,8 @@ func on_dialog_selected(tree_item: TreeItem) -> void:
 			DialogData.DialogType.RANDOM:
 				spawn_random_select_node(dialog_id)
 			DialogData.DialogType.ID:
-				spawn_id_shortcut(dialog_id["offset"])
+				var short_id := spawn_id_shortcut(dialog_id["offset"])
+				short_id.set_short_id(dialog_id["next"])
 			DialogData.DialogType.COMMENT:
 				spawn_comment_node(dialog_id)
 			_:
@@ -1297,43 +1303,16 @@ func on_center_dialog_called(dialog_id: String) -> void:
 		center_node(target_dialog)
 
 
-func on_save_resources() -> void:
+func _save_called() -> void:
 	for dialog_item:TreeItem in open_dialog_list.get_tree_children():
 		
 		var dialog_metadata: Dictionary = dialog_item.get_metadata(0)
 		var used_ids: Array[String] = []
 		
-		var _skip_file: bool = false
-		
-		for dialog_id:Dictionary in dialog_metadata["data"]["tree"]:
-			var clean_id: String = dialog_id["id"]
-			if clean_id.is_empty():
-				critical_error_dialog.dialog_text = ERROR_TEXT.format([dialog_item.get_text(0)])
-				critical_error_dialog.show()
-				_skip_file = true
-				break
-			elif used_ids.has(clean_id):
-				critical_error_dialog.dialog_text = ERROR_TEXT.format([dialog_item.get_text(0)])
-				critical_error_dialog.show()
-				_skip_file = true
-				break
-			else:
-				used_ids.append(clean_id)
-		
-		if not dialog_metadata["unsaved"] or _skip_file:
+		if not dialog_metadata["unsaved"]:
 			continue # No need to waste time saving unchanged resources.
 
-		if dialog_metadata["path"].is_empty():
-			discourse_save_dialog.target_tree = dialog_item
-			discourse_save_dialog.show()
-		else:
-			save_conversation(dialog_item, dialog_metadata["data"]["path"])
-
-
-func on_save_folder_selected(file_path: String) -> void:
-	save_conversation(
-			discourse_save_dialog.target_tree,
-			file_path)
+		save_conversation(dialog_item, dialog_metadata["path"])
 
 
 #region Spawners
@@ -1392,11 +1371,11 @@ func spawn_dialog_node(dialog_id: String, dialog_dict: Dictionary, target_node: 
 		dialog_node.set_method_call_time(dialog_dict["call"]["call_at_start"])
 	
 	if not dialog_dict["next"].is_empty():
-		if dialog_dict["next"]["type"] == DialogData.NextType.RANDOM:
+		if dialog_dict["next"]["next_type"] == DialogData.NextType.RANDOM:
 			var new_rand := spawn_random_select_node(dialog_dict["next"]["data"])
 			connect_nodes(dialog_node, new_rand, "next")
 		
-		elif dialog_dict["next"]["type"] == DialogData.NextType.CONDITION:
+		elif dialog_dict["next"]["next_type"] == DialogData.NextType.CONDITION:
 			var new_cond := spawn_conditional_split_node(dialog_dict["next"]["data"])
 			connect_nodes(dialog_node, new_cond, "next")
 		
@@ -1404,17 +1383,18 @@ func spawn_dialog_node(dialog_id: String, dialog_dict: Dictionary, target_node: 
 			#var new_options := spawn_reply_selector_node("", dialog_dict["next"]["data"])
 			#connect_nodes(dialog_node, new_options, "next")
 		
-		elif dialog_dict["next"]["type"] == DialogData.NextType.ID:
+		elif dialog_dict["next"]["next_type"] == DialogData.NextType.ID:
 			var connect_to: DiscourseGraphNode
 			
 			if dialog_dict["next"]["data"]["use_shortcut"]:
 				connect_to = spawn_id_shortcut(dialog_dict["next"]["data"]["offset"])
+				connect_to.set_short_id(dialog_dict["next"]["data"]["next"])
 			else:
 				connect_to = get_graph_node_with_id(dialog_dict["next"]["data"]["next"])
 			if connect_to != null:
 				connect_nodes(dialog_node, connect_to, "next")
 		
-		elif dialog_dict["next"]["type"] == DialogData.NextType.END:
+		elif dialog_dict["next"]["next_type"] == DialogData.NextType.END:
 			if not dialog_dict["next"]["data"].is_empty():
 				var new_end := spawn_end_node(dialog_dict["next"]["data"])
 				connect_nodes(dialog_node, new_end, "next")
@@ -1470,40 +1450,42 @@ func spawn_conditional_split_node(split_data: Dictionary, override_offset := fal
 		connect_nodes(comp_node, new_conditional, "result")
 	
 	if not split_data["true"].is_empty():
-		if split_data["true"]["type"] == DialogData.NextType.ID:
+		if split_data["true"]["next_type"] == DialogData.NextType.ID:
 			var next_id_node: DiscourseGraphNode
 			if split_data["true"]["data"]["use_shortcut"]:
 				next_id_node = spawn_id_shortcut(split_data["true"]["data"]["offset"])
+				next_id_node.set_short_id(split_data["true"]["data"]["next"])
 			else:
 				next_id_node = get_graph_node_with_id(split_data["true"]["data"]["next"])
 			if next_id_node != null:
 				connect_nodes_specific(new_conditional, "true", next_id_node, "next")
-		elif split_data["true"]["type"] == DialogData.NextType.RANDOM:
+		elif split_data["true"]["next_type"] == DialogData.NextType.RANDOM:
 			var new_rand := spawn_random_select_node(split_data["true"]["data"])
 			connect_nodes_specific(new_conditional, "true", new_rand, "next")
-		elif split_data["true"]["type"] == DialogData.NextType.CONDITION:
+		elif split_data["true"]["next_type"] == DialogData.NextType.CONDITION:
 			var new_cond_reloaded := spawn_conditional_split_node(split_data["true"]["data"])
 			connect_nodes_specific(new_conditional, "true", new_cond_reloaded, "next")
-		elif split_data["true"]["type"] == DialogData.NextType.END:
+		elif split_data["true"]["next_type"] == DialogData.NextType.END:
 			var new_end := spawn_end_node(split_data["true"]["data"])
 			connect_nodes_specific(new_conditional, "true", new_end, "next")
 		
 	if not split_data["false"].is_empty():
-		if split_data["false"]["type"] == DialogData.NextType.ID:
+		if split_data["false"]["next_type"] == DialogData.NextType.ID:
 			var next_id_node: DiscourseGraphNode
 			if split_data["false"]["data"]["use_shortcut"]:
 				next_id_node = spawn_id_shortcut(split_data["false"]["data"]["offset"])
+				next_id_node.set_short_id(split_data["false"]["data"]["next"])
 			else:
 				next_id_node = get_graph_node_with_id(split_data["false"]["data"]["next"])
 			if next_id_node != null:
 				connect_nodes_specific(new_conditional, "false", next_id_node, "next")
-		elif split_data["false"]["type"] == DialogData.NextType.RANDOM:
+		elif split_data["false"]["next_type"] == DialogData.NextType.RANDOM:
 			var new_rand := spawn_random_select_node(split_data["false"]["data"])
 			connect_nodes_specific(new_conditional, "false", new_rand, "next")
-		elif split_data["false"]["type"] == DialogData.NextType.CONDITION:
+		elif split_data["false"]["next_type"] == DialogData.NextType.CONDITION:
 			var new_cond_reloaded := spawn_conditional_split_node(split_data["false"]["data"])
 			connect_nodes_specific(new_conditional, "false", new_cond_reloaded, "next")
-		elif split_data["false"]["type"] == DialogData.NextType.END:
+		elif split_data["false"]["next_type"] == DialogData.NextType.END:
 			if not split_data["false"]["data"].is_empty():
 				var new_end := spawn_end_node(split_data["false"]["data"])
 				connect_nodes_specific(new_conditional, "false", new_end, "next")
@@ -1525,7 +1507,7 @@ func spawn_random_select_node(random_data: Dictionary, override_offset := false,
 	
 	for opt_idx in range(opt_size):
 		new_rand.set_exit_weigth(opt_idx, random_data["options"][opt_idx]["weight"])
-		if random_data["options"][opt_idx]["next"]["type"] == DialogData.NextType.ID:
+		if random_data["options"][opt_idx]["next"]["next_type"] == DialogData.NextType.ID:
 			if not has_dialog_root(random_data["options"][opt_idx]["next"]["data"]["next"]):
 				continue
 			
@@ -1533,21 +1515,22 @@ func spawn_random_select_node(random_data: Dictionary, override_offset := false,
 			
 			if random_data["options"][opt_idx]["next"]["data"]["use_shortcut"]:
 				target_node = spawn_id_shortcut(random_data["options"][opt_idx]["next"]["data"]["offset"])
+				target_node.set_short_id(random_data["options"][opt_idx]["next"]["data"]["next"])
 			else:
 				target_node = get_graph_node_with_id(random_data["options"][opt_idx]["next"]["data"]["next"])
 			
 			if target_node != null:
 				connect_nodes_specific(new_rand, str(opt_idx), target_node, "next")
 			
-		elif random_data["options"][opt_idx]["next"]["type"] == DialogData.NextType.RANDOM:
+		elif random_data["options"][opt_idx]["next"]["next_type"] == DialogData.NextType.RANDOM:
 			var new_rand_reloaded := spawn_random_select_node(random_data["options"][opt_idx]["next"]["data"])
 			connect_nodes_specific(new_rand, str(opt_idx), new_rand_reloaded, "next")
 			
-		elif random_data["options"][opt_idx]["next"]["type"] == DialogData.NextType.CONDITION:
+		elif random_data["options"][opt_idx]["next"]["next_type"] == DialogData.NextType.CONDITION:
 			var new_cond := spawn_conditional_split_node(random_data["options"][opt_idx]["next"]["data"])
 			connect_nodes_specific(new_rand, str(opt_idx), new_cond, "next")
 		
-		elif random_data["options"][opt_idx]["next"]["type"] == DialogData.NextType.END and not random_data["options"][opt_idx]["next"]["data"].is_empty():
+		elif random_data["options"][opt_idx]["next"]["next_type"] == DialogData.NextType.END and not random_data["options"][opt_idx]["next"]["data"].is_empty():
 			var new_end := spawn_end_node(random_data["options"][opt_idx]["next"]["data"])
 			connect_nodes_specific(new_rand, str(opt_idx), new_end, "next")
 			
@@ -1589,7 +1572,7 @@ func spawn_reply_selector_node(dialog_id: String, options_dict: Dictionary, targ
 			# If the output isn't empty
 			if not options_dict["targets"][option_idx].is_empty():
 				# Forward Connections
-				if options_dict["targets"][option_idx]["type"] == DialogData.NextType.ID:
+				if options_dict["targets"][option_idx]["next_type"] == DialogData.NextType.ID:
 					var target_shortcut: DiscourseGraphNode = null
 					
 					if options_dict["targets"][option_idx]["data"]["use_shortcut"]:
@@ -1600,14 +1583,14 @@ func spawn_reply_selector_node(dialog_id: String, options_dict: Dictionary, targ
 					if target_shortcut != null:
 						connect_nodes_specific(reply_selector, str(option_idx), target_shortcut, "next")
 						
-				elif options_dict["targets"][option_idx]["type"] == DialogData.NextType.RANDOM:
+				elif options_dict["targets"][option_idx]["next_type"] == DialogData.NextType.RANDOM:
 					var random_node: DiscourseGraphNode = spawn_random_select_node(options_dict["targets"][option_idx]["next"])
 					connect_nodes_specific(reply_selector, str(option_idx), random_node, "next")
 					
-				elif options_dict["targets"][option_idx]["type"] == DialogData.NextType.CONDITION:
+				elif options_dict["targets"][option_idx]["next_type"] == DialogData.NextType.CONDITION:
 					var new_cond := spawn_conditional_split_node(options_dict["targets"][option_idx]["data"])
 					connect_nodes_specific(reply_selector, str(option_idx), new_cond, "next")
-				elif options_dict["targets"][option_idx]["type"] == DialogData.NextType.END:
+				elif options_dict["targets"][option_idx]["next_type"] == DialogData.NextType.END:
 					if not options_dict["targets"][option_idx]["data"].is_empty():
 						var new_end := spawn_end_node(options_dict["targets"][option_idx]["data"])
 						connect_nodes_specific(reply_selector, str(option_idx), new_end, "next")
@@ -1841,7 +1824,7 @@ static func get_signal_structure() -> Dictionary:
 # To be used on the "next" of dialogs replies.
 static func get_next_structure() -> Dictionary:
 	return {
-		"type": DialogData.NextType.END,
+		"next_type": DialogData.NextType.END,
 		# get_next_by_id, get_replies_structure, 
 		# get_condition_structure, get_random_select_structure
 		"data": {}
