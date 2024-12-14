@@ -2,7 +2,7 @@ class_name Random
 extends Node
 
 
-static func create_random_weighted_pool() -> Random.RandomWeightedPool:
+static func create_weighted_pool() -> Random.RandomWeightedPool:
 	return RandomWeightedPool.new()
 
 
@@ -18,7 +18,7 @@ class RandomWeightedPool extends RefCounted:
 		_items.append([maxf(0.01, weight), item, 0.0])
 	
 	
-	func get_rand_weighted() -> Variant:
+	func pick_weighted() -> Variant:
 		if not _sorted:
 			_items.sort_custom(_sort_weighted)
 			var cummulative: float = 0.0

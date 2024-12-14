@@ -108,7 +108,6 @@ func set_portrait_frames(new_frames: SpriteFrames) -> void:
 
 func on_frames_updated() -> void:
 	notify_property_list_changed()
-	print("Frames updated")
 	var anim_count: int = portrait_frames.get_animation_names().size()
 	if anim_count == 0:
 		playing = false

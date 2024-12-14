@@ -43,11 +43,13 @@ func has_folder(folder_path: String) -> bool:
 
 ## Returns a variable on [param variable_path] or null if the variable doesn't exist.
 func get_variable(variable_path: String) -> Variant:
-	var _level_mem: Dictionary = variables
 	var path_levels: Array = variable_path.split("/", false)
+	var _level_mem: Dictionary = variables[path_levels[0]]
 	var var_name: String = path_levels.pop_back()
 	
 	for level in path_levels:
+		if level == path_levels.front():
+			continue
 		if _level_mem["subfolders"].has(level):
 			_level_mem = _level_mem[level]["subfolders"]
 		else:
@@ -63,15 +65,17 @@ func get_variable(variable_path: String) -> Variant:
 ## to create the variable.
 func set_variable(variable_path: String, variable: Variant) -> void:
 	var path: Array = variable_path.split("/", false)
+	var level_memory: Dictionary = variables[path[0]]
 	var var_name: String = path.pop_back()
-	var level_memory: Dictionary = variables
 	
 	for folder in path:
+		if folder == path.front():
+			continue
 		if not level_memory.has(folder):
 			level_memory[folder] = {"variables": {}, "subfolders": {}}
 		level_memory = level_memory[folder]["subfolders"]
 	
-	level_memory[var_name] = variable
+	level_memory["variables"][var_name] = variable
 
 
 ## Deletes a variable at the given path.

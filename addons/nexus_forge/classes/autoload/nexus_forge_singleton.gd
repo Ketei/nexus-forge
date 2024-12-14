@@ -16,6 +16,8 @@ var Talents: NFTalentsRes = null
 
 var Callables: NFCallablesRes = null
 
+var Discourse: NFDiscourseTool = null
+
 
 func _ready() -> void:
 	var variables_path: String = ProjectSettings.get_setting(NFVariablesRes.SETTINGS_PATH, "")
@@ -24,6 +26,8 @@ func _ready() -> void:
 	var factions_path: String = ProjectSettings.get_setting(NFFactionRes.SETTINGS_PATH, "")
 	var talents_path: String = ProjectSettings.get_setting(NFTalentsRes.SETTINGS_PATH, "")
 	var items_path: String = ProjectSettings.get_setting(NFItemsRes.SETTINGS_PATH, "")
+	Discourse = NFDiscourseTool.new()
+	add_child(Discourse)
 	
 	if not variables_path.is_empty() and ResourceLoader.exists(variables_path):
 		var _preload: Resource = load(variables_path)

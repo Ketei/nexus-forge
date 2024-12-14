@@ -1,0 +1,166 @@
+[gd_scene load_steps=8 format=3 uid="uid://crc8308qvffn6"]
+
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/discourse_main_script.gd" id="1_mmq6l"]
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/open_conversations_tree.gd" id="2_jt732"]
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/connect_empty_ppmn_script.gd" id="3_3ppp6"]
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/jump_target_tree_script.gd" id="3_rctuu"]
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/issues_tree_script.gd" id="4_8t4by"]
+[ext_resource type="Texture2D" uid="uid://brnxgphloq161" path="res://addons/nexus_forge/common_icons/close_icon.svg" id="4_0458i"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ud2y1"]
+bg_color = Color(0.129412, 0.14902, 0.180392, 1)
+
+[node name="DiscourseMain" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_mmq6l")
+
+[node name="MainContainer" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+
+[node name="PanelsContainer" type="VBoxContainer" parent="MainContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.8
+
+[node name="ConvContainer" type="VBoxContainer" parent="MainContainer/PanelsContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 3.0
+
+[node name="LineEdit" type="LineEdit" parent="MainContainer/PanelsContainer/ConvContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Search Conversation"
+clear_button_enabled = true
+
+[node name="OpenConversations" type="Tree" parent="MainContainer/PanelsContainer/ConvContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+hide_folding = true
+hide_root = true
+script = ExtResource("2_jt732")
+
+[node name="JumpTargetContainer" type="VBoxContainer" parent="MainContainer/PanelsContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 2.0
+
+[node name="Label" type="Label" parent="MainContainer/PanelsContainer/JumpTargetContainer"]
+layout_mode = 2
+text = "Target Nodes"
+horizontal_alignment = 1
+
+[node name="JumpTargetTree" type="Tree" parent="MainContainer/PanelsContainer/JumpTargetContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+hide_folding = true
+hide_root = true
+script = ExtResource("3_rctuu")
+
+[node name="NodesContainer" type="VBoxContainer" parent="MainContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 3.0
+
+[node name="MenuContainer" type="HBoxContainer" parent="MainContainer/NodesContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+
+[node name="MainMnBtn" type="MenuButton" parent="MainContainer/NodesContainer/MenuContainer"]
+layout_mode = 2
+text = "Discourse"
+item_count = 9
+popup/item_0/text = "New Dialog"
+popup/item_1/text = "Open Dialog"
+popup/item_1/id = 1
+popup/item_2/text = "Save"
+popup/item_2/id = 2
+popup/item_3/text = "Save All"
+popup/item_3/id = 3
+popup/item_4/id = 100
+popup/item_4/disabled = true
+popup/item_4/separator = true
+popup/item_5/text = "Check for Issues"
+popup/item_5/id = 6
+popup/item_6/id = 101
+popup/item_6/disabled = true
+popup/item_6/separator = true
+popup/item_7/text = "Close"
+popup/item_7/id = 4
+popup/item_8/text = "Close All"
+popup/item_8/id = 5
+
+[node name="AddGraphMnBtn" type="MenuButton" parent="MainContainer/NodesContainer/MenuContainer"]
+layout_mode = 2
+disabled = true
+text = "Add Node"
+item_count = 3
+popup/item_0/text = "Basic Nodes"
+popup/item_1/text = "Advanced Nodes"
+popup/item_1/id = 1
+popup/item_2/text = "Logic Nodes"
+popup/item_2/id = 2
+
+[node name="GraphPanel" type="PanelContainer" parent="MainContainer/NodesContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="DialogGraphEdit" type="GraphEdit" parent="MainContainer/NodesContainer/GraphPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+right_disconnects = true
+minimap_size = Vector2(160, 120)
+
+[node name="NoConvPanel" type="PanelContainer" parent="MainContainer/NodesContainer/GraphPanel"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_ud2y1")
+
+[node name="Label" type="Label" parent="MainContainer/NodesContainer/GraphPanel/NoConvPanel"]
+layout_mode = 2
+text = "No conversation selected"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="IssuesPanel" type="PanelContainer" parent="MainContainer/NodesContainer"]
+visible = false
+layout_mode = 2
+
+[node name="MainContainer" type="VBoxContainer" parent="MainContainer/NodesContainer/IssuesPanel"]
+layout_mode = 2
+
+[node name="MenuContainer" type="HBoxContainer" parent="MainContainer/NodesContainer/IssuesPanel/MainContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/NodesContainer/IssuesPanel/MainContainer/MenuContainer"]
+layout_mode = 2
+text = "Issues"
+
+[node name="CloseButton" type="Button" parent="MainContainer/NodesContainer/IssuesPanel/MainContainer/MenuContainer"]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+size_flags_horizontal = 10
+icon = ExtResource("4_0458i")
+flat = true
+icon_alignment = 1
+
+[node name="IssuesTree" type="Tree" parent="MainContainer/NodesContainer/IssuesPanel/MainContainer"]
+custom_minimum_size = Vector2(0, 180)
+layout_mode = 2
+hide_folding = true
+hide_root = true
+script = ExtResource("4_8t4by")
+
+[node name="ToEmptyPPMn" type="PopupMenu" parent="."]
+size = Vector2i(20, 10)
+script = ExtResource("3_3ppp6")

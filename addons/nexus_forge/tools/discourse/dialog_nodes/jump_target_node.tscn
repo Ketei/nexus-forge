@@ -1,0 +1,24 @@
+[gd_scene load_steps=2 format=3 uid="uid://rqcqr6xhsv6f"]
+
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/dialog_nodes/jump_target_node_script.gd" id="1_uotwc"]
+
+[node name="JumpTargetGraphNode" type="GraphNode"]
+offset_right = 200.0
+offset_bottom = 87.0
+mouse_filter = 1
+title = "Jump Target"
+slot/0/left_enabled = false
+slot/0/left_type = 0
+slot/0/left_color = Color(1, 1, 1, 1)
+slot/0/left_icon = null
+slot/0/right_enabled = true
+slot/0/right_type = 0
+slot/0/right_color = Color(0.156863, 0.784314, 0, 1)
+slot/0/right_icon = null
+slot/0/draw_stylebox = true
+script = ExtResource("1_uotwc")
+
+[node name="JumpID" type="LineEdit" parent="."]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+placeholder_text = "ID"

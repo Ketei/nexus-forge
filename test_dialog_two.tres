@@ -1,0 +1,65 @@
+[gd_resource type="Resource" script_class="DialogResource" load_steps=2 format=3 uid="uid://bpnqqd7pqaut8"]
+
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/dialog_data.gd" id="1_a5twd"]
+
+[resource]
+script = ExtResource("1_a5twd")
+conversation = Array[Dictionary]([{
+"_offset": Vector2(1100, -60),
+"_size": Vector2(280, 206),
+"_type": 0,
+"character_id": "sabi",
+"next": 2,
+"speed": 0.0,
+"text": "I need to lay down"
+}, {
+"_offset": Vector2(1100, 200),
+"_size": Vector2(280, 206),
+"_type": 0,
+"character_id": "sabi",
+"next": 2,
+"speed": 0.0,
+"text": "Wow, such stamina!"
+}, {
+"_offset": Vector2(1560, 120),
+"_type": 19
+}, {
+"_offset": Vector2(460, 340),
+"_type": 10,
+"a": 5,
+"b": 4,
+"operator": 3
+}, {
+"_offset": Vector2(140, 460),
+"_type": 3,
+"value": "stats/stamina",
+"var_type": 4
+}, {
+"_offset": Vector2(140, 320),
+"_type": 3,
+"value": 10,
+"var_type": 0
+}, {
+"_offset": Vector2(700, 140),
+"_type": 1,
+"choices": Array[Dictionary]([{
+"condition": -1,
+"next": 0,
+"text": "I know!"
+}, {
+"condition": 3,
+"next": 1,
+"text": "Not that much!"
+}]),
+"keep_text": false
+}, {
+"_offset": Vector2(240, 0),
+"_size": Vector2(280, 206),
+"_type": 0,
+"character_id": "Sabi",
+"next": 6,
+"speed": 0.0,
+"text": "Wow! This is overwhelming"
+}])
+entry_index = 7
+entry_offset = Vector2(0, 0)

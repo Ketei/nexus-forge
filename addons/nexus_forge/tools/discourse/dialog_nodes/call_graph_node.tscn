@@ -1,0 +1,23 @@
+[gd_scene load_steps=2 format=3 uid="uid://yo08sgrcc1qu"]
+
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/dialog_nodes/call_graph_node_script.gd" id="1_gboo6"]
+
+[node name="CallGraphNode" type="GraphNode"]
+offset_right = 240.0
+offset_bottom = 89.0
+mouse_filter = 1
+title = "Call Function"
+slot/0/left_enabled = false
+slot/0/left_type = 0
+slot/0/left_color = Color(1, 1, 1, 1)
+slot/0/left_icon = null
+slot/0/right_enabled = true
+slot/0/right_type = 1
+slot/0/right_color = Color(0.337316, 0.530354, 0.892412, 1)
+slot/0/right_icon = null
+slot/0/draw_stylebox = true
+script = ExtResource("1_gboo6")
+
+[node name="CallOptBtn" type="OptionButton" parent="."]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2

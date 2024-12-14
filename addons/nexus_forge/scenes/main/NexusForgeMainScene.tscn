@@ -1,8 +1,8 @@
 [gd_scene load_steps=12 format=3 uid="uid://dykskyw7tvdof"]
 
-[ext_resource type="PackedScene" uid="uid://cx4h4u45kp8vt" path="res://addons/nexus_forge/tools/discourse/scenes/discourse_main.tscn" id="1_4y35a"]
 [ext_resource type="Script" path="res://addons/nexus_forge/scenes/main/nexus_forge_main_scene_script.gd" id="1_15n6i"]
 [ext_resource type="Texture2D" uid="uid://bixkesgcxvbpk" path="res://icon.svg" id="1_j02mv"]
+[ext_resource type="PackedScene" uid="uid://crc8308qvffn6" path="res://addons/nexus_forge/tools/discourse/discourse_main.tscn" id="3_124r1"]
 [ext_resource type="PackedScene" uid="uid://d3qq6j2xbhrgp" path="res://addons/nexus_forge/tools/variables/variables.tscn" id="3_umhp2"]
 [ext_resource type="PackedScene" uid="uid://cvuo0on5wm8qb" path="res://addons/nexus_forge/tools/characters/characters_main.tscn" id="4_xgwoe"]
 [ext_resource type="PackedScene" uid="uid://bn2hjhl25ja30" path="res://addons/nexus_forge/tools/characters/races/races_main.tscn" id="5_dh8bc"]
@@ -50,7 +50,6 @@ size_flags_vertical = 3
 theme_override_styles/panel = SubResource("StyleBoxFlat_fyh28")
 
 [node name="NexusForge" type="Control" parent="MainContainer/ToolContainer"]
-visible = false
 layout_mode = 2
 
 [node name="CenterContainer" type="CenterContainer" parent="MainContainer/ToolContainer/NexusForge"]
@@ -75,7 +74,7 @@ layout_mode = 2
 texture = ExtResource("1_j02mv")
 stretch_mode = 5
 
-[node name="Discourse" parent="MainContainer/ToolContainer" instance=ExtResource("1_4y35a")]
+[node name="Discourse" parent="MainContainer/ToolContainer" instance=ExtResource("3_124r1")]
 visible = false
 layout_mode = 2
 

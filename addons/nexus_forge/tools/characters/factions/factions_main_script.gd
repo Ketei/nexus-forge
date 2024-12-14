@@ -25,7 +25,7 @@ var factions_resource_dialog: FileDialog = null
 @onready var add_fact_button: Button = $MainContainer/FactionDataContainer/FactionIDContainer/HeaderContainer/ButtonsContainer/AddFactButton
 @onready var save_res_button: Button = $MainContainer/FactionDataContainer/HBoxContainer/MenuContainer/SaveResButton
 
-@onready var select_id_panel: PanelContainer = $SelectIDPanel
+#@onready var select_id_panel: PanelContainer = $SelectIDPanel
 
 @onready var main_container: HBoxContainer = $MainContainer
 

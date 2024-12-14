@@ -1,0 +1,72 @@
+[gd_scene load_steps=2 format=3 uid="uid://desai6l74efpx"]
+
+[sub_resource type="GDScript" id="GDScript_7mtcm"]
+resource_name = "test"
+script/source = "extends Control
+
+
+func _ready() -> void:
+	NexusForge.Discourse.dialog_reached.connect(on_dialog_reached)
+	NexusForge.Discourse.choices_reached.connect(on_choices_reached)
+	NexusForge.Discourse.dialog_paused.connect(on_dialog_paused)
+	NexusForge.Discourse.wait_started.connect(on_wait_started)
+	NexusForge.Discourse.conversation_resumed.connect(on_conversation_resumed)
+	NexusForge.Discourse.dialog_finished.connect(on_dialog_finished)
+	NexusForge.Discourse.load_dialog(load(\"res://bear_dialog.tres\"))
+	NexusForge.Discourse.start_dialog()
+
+
+func _unhandled_key_input(event: InputEvent) -> void:
+	if event.is_action_pressed(\"ui_accept\"):
+		NexusForge.Discourse.continue_dialog()
+	elif event.is_action_pressed(\"0\"):
+		NexusForge.Discourse.select_choice(0)
+	elif event.is_action_pressed(\"1\"):
+		NexusForge.Discourse.select_choice(1)
+	elif event.is_action_pressed(\"2\"):
+		NexusForge.Discourse.select_choice(2)
+	elif event.is_action_pressed(\"3\"):
+		NexusForge.Discourse.select_choice(3)
+	elif event.is_action_pressed(\"4\"):
+		NexusForge.Discourse.select_choice(4)
+	elif event.is_action_pressed(\"5\"):
+		NexusForge.Discourse.select_choice(5)
+
+func on_dialog_reached(dialog_text: String, character_id: String, dialog_speed: float) -> void:
+	print(character_id + \":\")
+	print(dialog_text)
+	print(\"Speed: \", dialog_speed)
+
+
+func on_choices_reached(choices: Array[Dictionary]):
+	var choice_string: String = \"\"
+	for choice in choices:
+		choice_string += str(choice[\"id\"], \": \", choice[\"text\"], \"\\n\")
+	print(\"\\n- Choices -\\n\")
+	print(choice_string)
+
+
+func on_dialog_paused() -> void:
+	print(\"\\nDialog paused\\n\")
+
+
+func on_wait_started(time: float) -> void:
+	print(str(\"\\nWaiting for: \", time, \"\\n\"))
+
+
+func on_conversation_resumed() -> void:
+	print(\"\\nContinuing conversation\\n\")
+
+
+func on_dialog_finished() -> void:
+	print(\"\\n - Dialog finished - \\n\")
+"
+
+[node name="Control" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = SubResource("GDScript_7mtcm")

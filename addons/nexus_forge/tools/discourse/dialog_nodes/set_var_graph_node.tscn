@@ -1,0 +1,97 @@
+[gd_scene load_steps=3 format=3 uid="uid://dc01pd02p4vpn"]
+
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/dialog_nodes/set_var_graph_node_script.gd" id="1_mb8h3"]
+[ext_resource type="Texture2D" uid="uid://3wlfpgkekesv" path="res://addons/nexus_forge/common_icons/variables/int.svg" id="2_duci7"]
+
+[node name="SetVarGraphNode" type="GraphNode"]
+offset_right = 220.0
+offset_bottom = 123.0
+mouse_filter = 1
+title = "Set Variable"
+slot/0/left_enabled = false
+slot/0/left_type = 0
+slot/0/left_color = Color(1, 1, 1, 1)
+slot/0/left_icon = null
+slot/0/right_enabled = true
+slot/0/right_type = 2
+slot/0/right_color = Color(0.924463, 0.414764, 0.181431, 1)
+slot/0/right_icon = null
+slot/0/draw_stylebox = true
+slot/1/left_enabled = true
+slot/1/left_type = 4
+slot/1/left_color = Color(0.163204, 0.835511, 0.72867, 1)
+slot/1/left_icon = null
+slot/1/right_enabled = false
+slot/1/right_type = 4
+slot/1/right_color = Color(1, 1, 1, 1)
+slot/1/right_icon = null
+slot/1/draw_stylebox = true
+script = ExtResource("1_mb8h3")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="PathLnEdt" type="LineEdit" parent="HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Variable Path"
+
+[node name="VariantMnBtn" type="MenuButton" parent="HBoxContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+icon = ExtResource("2_duci7")
+flat = false
+icon_alignment = 1
+item_count = 16
+popup/item_0/text = "I"
+popup/item_0/id = 2
+popup/item_1/text = "F"
+popup/item_1/id = 3
+popup/item_2/text = "B"
+popup/item_2/id = 1
+popup/item_3/text = "S"
+popup/item_3/id = 4
+popup/item_4/text = "I"
+popup/item_4/id = 2
+popup/item_5/text = "F"
+popup/item_5/id = 3
+popup/item_6/text = "B"
+popup/item_6/id = 1
+popup/item_7/text = "S"
+popup/item_7/id = 4
+popup/item_8/text = "I"
+popup/item_8/id = 2
+popup/item_9/text = "F"
+popup/item_9/id = 3
+popup/item_10/text = "B"
+popup/item_10/id = 1
+popup/item_11/text = "S"
+popup/item_11/id = 4
+popup/item_12/text = "I"
+popup/item_12/id = 2
+popup/item_13/text = "F"
+popup/item_13/id = 3
+popup/item_14/text = "B"
+popup/item_14/id = 1
+popup/item_15/text = "S"
+popup/item_15/id = 4
+
+[node name="PanelContainer" type="PanelContainer" parent="."]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ValSpnBx" type="SpinBox" parent="PanelContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+allow_greater = true
+allow_lesser = true
+
+[node name="BoolChkBtn" type="CheckButton" parent="PanelContainer"]
+visible = false
+layout_mode = 2
+text = "False"
+
+[node name="StringLnEdt" type="LineEdit" parent="PanelContainer"]
+visible = false
+layout_mode = 2

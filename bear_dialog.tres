@@ -1,0 +1,162 @@
+[gd_resource type="Resource" script_class="DialogResource" load_steps=2 format=3 uid="uid://cwjnfg3m1754v"]
+
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/discourse/dialog_data.gd" id="1_dwf84"]
+
+[resource]
+script = ExtResource("1_dwf84")
+conversation = Array[Dictionary]([{
+"_offset": Vector2(-120, 0),
+"_type": 11,
+"exits": Array[Dictionary]([{
+"next": 2,
+"weight": 80.0
+}, {
+"next": 1,
+"weight": 20.0
+}]),
+"use_weights": false
+}, {
+"_offset": Vector2(200, 180),
+"_size": Vector2(280, 206),
+"_type": 0,
+"character_id": "wulfre",
+"next": 14,
+"speed": 0.0,
+"text": "Hi! I'm bear and horny!"
+}, {
+"_offset": Vector2(200, -60),
+"_size": Vector2(280, 206),
+"_type": 0,
+"character_id": "wulfre",
+"next": 3,
+"speed": 0.0,
+"text": "Hi! I'm bear!"
+}, {
+"_offset": Vector2(560, -60),
+"_type": 1,
+"choices": Array[Dictionary]([{
+"condition": -1,
+"next": 4,
+"text": "Hello bear!"
+}, {
+"condition": -1,
+"next": 5,
+"text": "AAH! A bear!"
+}]),
+"keep_text": false
+}, {
+"_offset": Vector2(980, -200),
+"_size": Vector2(280, 206),
+"_type": 0,
+"character_id": "wulfre",
+"next": 12,
+"speed": 0.0,
+"text": "Hi!"
+}, {
+"_offset": Vector2(980, 40),
+"_size": Vector2(280, 206),
+"_type": 0,
+"character_id": "wulfre",
+"next": 12,
+"speed": 0.0,
+"text": "=w="
+}, {
+"_offset": Vector2(320, 440),
+"_type": 10,
+"a": 7,
+"b": 8,
+"operator": 3
+}, {
+"_offset": Vector2(-20, 440),
+"_type": 3,
+"value": 10,
+"var_type": 0
+}, {
+"_offset": Vector2(-20, 560),
+"_type": 3,
+"value": "stats/stamina",
+"var_type": 4
+}, {
+"_offset": Vector2(600, 720),
+"_type": 3,
+"value": "stats/stamina",
+"var_type": 4
+}, {
+"_offset": Vector2(600, 820),
+"_type": 3,
+"value": 1,
+"var_type": 0
+}, {
+"_offset": Vector2(2520, -60),
+"_type": 19
+}, {
+"_offset": Vector2(2160, -60),
+"_size": Vector2(280, 206),
+"_type": 0,
+"character_id": "wulfre",
+"next": 11,
+"speed": 0.0,
+"text": "Ok, see you later."
+}, {
+"_offset": Vector2(1120, 800),
+"_type": 9,
+"a": 9,
+"b": 10,
+"operator": 11
+}, {
+"_offset": Vector2(580, 380),
+"_type": 1,
+"choices": Array[Dictionary]([{
+"condition": -1,
+"next": 15,
+"text": "I'll leave you to your horny then!"
+}, {
+"condition": 6,
+"next": 19,
+"text": "I'm down for beary things!"
+}]),
+"keep_text": false
+}, {
+"_offset": Vector2(960, 260),
+"_type": 11,
+"exits": Array[Dictionary]([{
+"next": 12,
+"weight": 90.0
+}, {
+"next": 16,
+"weight": 10.0
+}]),
+"use_weights": true
+}, {
+"_offset": Vector2(1300, 400),
+"_size": Vector2(280, 206),
+"_type": 0,
+"character_id": "wulfre",
+"next": 19,
+"speed": 0.0,
+"text": "*growl*"
+}, {
+"_offset": Vector2(1620, 900),
+"_type": 12,
+"direct": false,
+"path": "stats/stamina",
+"value": 13,
+"var_type": 2
+}, {
+"_offset": Vector2(2000, 560),
+"_type": 17,
+"callables": Array[int]([]),
+"next": 12,
+"signals": Array[int]([]),
+"variables": Array[int]([17])
+}, {
+"_offset": Vector2(1640, 620),
+"_size": Vector2(280, 206),
+"_type": 0,
+"character_id": "",
+"next": 18,
+"speed": 0.0,
+"text": "*Bear sex ensues"
+}])
+entry_index = 0
+entry_offset = Vector2(-320, 0)
