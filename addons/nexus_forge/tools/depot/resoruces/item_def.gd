@@ -2,7 +2,7 @@ class_name ItemDefinition
 extends Resource
 
 
-@export var item_id: StringName = &""
+@export var item_id: String = ""
 @export var item_name: String = ""
 @export var item_sprite: String = ""
 @export var item_type: String = ""

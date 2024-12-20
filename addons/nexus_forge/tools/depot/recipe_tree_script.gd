@@ -36,6 +36,7 @@ func create_item_slot() -> void:
 	new_slot.set_cell_mode(2, TreeItem.CELL_MODE_RANGE)
 	
 	new_slot.set_range_config(0, 0, 100_000, 1.0)
+	#new_slot.set_range_config(1, 0, 100_000, 1.0)
 	new_slot.set_range_config(2, 0, MAX_ITEM_COUNT, 1.0)
 	
 	new_slot.set_range(0, new_slot.get_index())

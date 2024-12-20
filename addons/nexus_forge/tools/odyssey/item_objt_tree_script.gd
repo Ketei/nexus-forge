@@ -56,22 +56,22 @@ func search_item(search: String) -> void:
 		item.visible = search.is_empty() or item.get_text(0).containsn(search)
 
 
-func value_to_operator(value: int) -> NFQuestRes.OperatorFlags:
+func value_to_operator(value: int) -> int:
 	match value:
 		0:
-			return NFQuestRes.OperatorFlags.EQUAL
+			return OP_EQUAL
 		1:
-			return NFQuestRes.OperatorFlags.NOT
+			return OP_NOT_EQUAL
 		2:
-			return NFQuestRes.OperatorFlags.LESS_THAN
+			return OP_LESS
 		3:
-			return NFQuestRes.OperatorFlags.MORE_THAN
+			return OP_GREATER
 		4:
-			return NFQuestRes.OperatorFlags.EQUAL_OR_LESS
+			return OP_LESS_EQUAL
 		5:
-			return NFQuestRes.OperatorFlags.EQUAL_OR_MORE
+			return OP_GREATER_EQUAL
 		_:
-			return NFQuestRes.OperatorFlags.EQUAL
+			return OP_EQUAL
 
 
 func get_data() -> Dictionary:

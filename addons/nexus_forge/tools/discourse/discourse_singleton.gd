@@ -27,7 +27,7 @@ var signal_registry: Dictionary = {
 	&"sandwich_eaten": [{"type": TYPE_INT, "name": "Amount"}, {"type": TYPE_STRING, "name": "title"}]
 	}
 
-var alpha_timer: Timer = null
+var delta_timer: DeltaTimer = null
 
 var _next_idx: int = -1
 var _dialog_resource: DialogResource = null
@@ -35,8 +35,8 @@ var _dialog_paused: bool = false
 
 
 func _ready() -> void:
-	alpha_timer = Timer.new()
-	add_child(alpha_timer)
+	delta_timer = DeltaTimer.new()
+	add_child(delta_timer)
 
 
 ## Loads a dialog resource file into Discourse. You can then start the dialog
@@ -200,8 +200,8 @@ func _progress_conversation() -> void:
 ## Use it to continue a conversation when it's paused or when to progress
 ## through a conversation.
 func continue_dialog() -> void:
-	if not alpha_timer.is_stopped():
-		alpha_timer.stop()
+	if not delta_timer.is_stopped():
+		delta_timer.stop()
 	if _dialog_paused:
 		_dialog_paused = false
 		conversation_resumed.emit()
@@ -223,7 +223,7 @@ func is_conversation_paused() -> bool:
 
 ## Returns true if the conversation is paused via a wait event.
 func is_conversation_waiting() -> bool:
-	return not alpha_timer.is_stopped()
+	return not delta_timer.is_stopped()
 
 
 func is_current_choice_index() -> bool:

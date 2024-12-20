@@ -1,18 +1,21 @@
-[gd_scene load_steps=14 format=3 uid="uid://bjjffy4fyjmgn"]
+[gd_scene load_steps=16 format=3 uid="uid://bjjffy4fyjmgn"]
 
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/odyssey/quests_main_script.gd" id="1_m2hh6"]
 [ext_resource type="Texture2D" uid="uid://b8q6di4imiriq" path="res://addons/nexus_forge/common_icons/search_icon.svg" id="1_rueqv"]
 [ext_resource type="Texture2D" uid="uid://c1aelqf557khb" path="res://addons/nexus_forge/common_icons/plus_icon.svg" id="2_3n35v"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/odyssey/quests_tree_script.gd" id="3_7mr1o"]
 [ext_resource type="Texture2D" uid="uid://12lyg7db58dg" path="res://addons/nexus_forge/tools/variables/icons/add_int.svg" id="3_k5s2v"]
+[ext_resource type="Texture2D" uid="uid://bwspmik2qv43f" path="res://addons/nexus_forge/common_icons/new_file.svg" id="3_x78ub"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/odyssey/quest_objtv_tree_script.gd" id="4_26wfg"]
 [ext_resource type="Texture2D" uid="uid://dcgniolhiay6u" path="res://addons/nexus_forge/tools/variables/icons/add_float.svg" id="4_dqq4k"]
-[ext_resource type="Texture2D" uid="uid://cd4jt2ru86e16" path="res://addons/nexus_forge/common_icons/save_file.svg" id="5_j0k76"]
 [ext_resource type="Texture2D" uid="uid://c472l5bho4jpi" path="res://addons/nexus_forge/tools/variables/icons/add_bool.svg" id="5_t0peb"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/odyssey/item_objt_tree_script.gd" id="5_u3gj4"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/odyssey/req_trigger_tree.gd" id="6_l8qk7"]
+[ext_resource type="Texture2D" uid="uid://bx226t88nlc4v" path="res://addons/nexus_forge/common_icons/trash_bin.svg" id="6_pn2ns"]
 [ext_resource type="Texture2D" uid="uid://cxv7veghytl4m" path="res://addons/nexus_forge/tools/variables/icons/add_string.svg" id="6_q0c84"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/odyssey/quest_obj_variable_script.gd" id="11_xj7pk"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_p2386"]
 
 [node name="Quests" type="Control"]
 layout_mode = 3
@@ -34,7 +37,6 @@ grow_vertical = 2
 [node name="QuestsContainer" type="VBoxContainer" parent="MainContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
-size_flags_stretch_ratio = 2.5
 
 [node name="HBoxContainer2" type="HBoxContainer" parent="MainContainer/QuestsContainer"]
 layout_mode = 2
@@ -44,71 +46,32 @@ custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.223182, 0.705086, 0.904884, 1)
 theme_override_font_sizes/font_size = 25
-text = "Quests"
+text = "Odyssey"
 
-[node name="MenuContainer" type="HBoxContainer" parent="MainContainer/QuestsContainer/HBoxContainer2"]
-custom_minimum_size = Vector2(0, 36)
+[node name="MenuButton" type="MenuButton" parent="MainContainer/QuestsContainer/HBoxContainer2"]
 layout_mode = 2
-size_flags_horizontal = 3
-alignment = 2
+size_flags_horizontal = 10
+text = "Menu"
+item_count = 2
+popup/item_0/text = "New Quest"
+popup/item_1/text = "Save Quests"
+popup/item_1/id = 1
 
-[node name="SaveButton" type="Button" parent="MainContainer/QuestsContainer/HBoxContainer2/MenuContainer"]
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 4
-icon = ExtResource("5_j0k76")
-icon_alignment = 1
-expand_icon = true
-
-[node name="SearchPanel" type="PanelContainer" parent="MainContainer/QuestsContainer"]
-layout_mode = 2
-
-[node name="SearchContainer" type="HBoxContainer" parent="MainContainer/QuestsContainer/SearchPanel"]
+[node name="SearchContainer" type="HBoxContainer" parent="MainContainer/QuestsContainer"]
 layout_mode = 2
 theme_override_constants/separation = 0
 
-[node name="SearchLnEdt" type="LineEdit" parent="MainContainer/QuestsContainer/SearchPanel/SearchContainer"]
+[node name="SearchLnEdt" type="LineEdit" parent="MainContainer/QuestsContainer/SearchContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "Search Quest"
 clear_button_enabled = true
 right_icon = ExtResource("1_rueqv")
-flat = true
-
-[node name="CreateQuestBtn" type="Button" parent="MainContainer/QuestsContainer/SearchPanel/SearchContainer"]
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 2
-size_flags_horizontal = 9
-tooltip_text = "Create Quest"
-icon = ExtResource("2_3n35v")
-flat = true
-icon_alignment = 1
-
-[node name="HBoxContainer" type="HBoxContainer" parent="MainContainer/QuestsContainer"]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="MainContainer/QuestsContainer/HBoxContainer"]
-layout_mode = 2
-text = "Quest Type:"
-
-[node name="QuestTypeOptBtn" type="OptionButton" parent="MainContainer/QuestsContainer/HBoxContainer"]
-custom_minimum_size = Vector2(0, 32)
-layout_mode = 2
-size_flags_horizontal = 3
-alignment = 1
-text_overrun_behavior = 3
-selected = 0
-item_count = 2
-popup/item_0/text = "Unique Quests"
-popup/item_1/text = "Boiler Quests"
-popup/item_1/id = 1
 
 [node name="QuestTree" type="Tree" parent="MainContainer/QuestsContainer"]
 layout_mode = 2
 size_flags_vertical = 3
 allow_reselect = true
-hide_folding = true
 hide_root = true
 scroll_horizontal_enabled = false
 script = ExtResource("3_7mr1o")
@@ -117,26 +80,36 @@ default_name = "new_quest"
 [node name="VSeparator" type="VSeparator" parent="MainContainer"]
 layout_mode = 2
 
-[node name="QuestDescContainer" type="VBoxContainer" parent="MainContainer"]
+[node name="QuestPanel" type="PanelContainer" parent="MainContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 3.0
+theme_override_styles/panel = SubResource("StyleBoxEmpty_p2386")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MainContainer/QuestPanel"]
+visible = false
+layout_mode = 2
+
+[node name="QuestDescContainer" type="VBoxContainer" parent="MainContainer/QuestPanel/HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 3.0
 
-[node name="DataContainer" type="VBoxContainer" parent="MainContainer/QuestDescContainer"]
+[node name="DataContainer" type="VBoxContainer" parent="MainContainer/QuestPanel/HBoxContainer/QuestDescContainer"]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="InfoContainer" type="HBoxContainer" parent="MainContainer/QuestDescContainer/DataContainer"]
+[node name="InfoContainer" type="HBoxContainer" parent="MainContainer/QuestPanel/HBoxContainer/QuestDescContainer/DataContainer"]
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 
-[node name="Label" type="Label" parent="MainContainer/QuestDescContainer/DataContainer/InfoContainer"]
+[node name="Label" type="Label" parent="MainContainer/QuestPanel/HBoxContainer/QuestDescContainer/DataContainer/InfoContainer"]
 layout_mode = 2
 size_flags_vertical = 5
 text = "Quest:"
 vertical_alignment = 1
 
-[node name="QuestLabel" type="Label" parent="MainContainer/QuestDescContainer/DataContainer/InfoContainer"]
+[node name="QuestLabel" type="Label" parent="MainContainer/QuestPanel/HBoxContainer/QuestDescContainer/DataContainer/InfoContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 5
@@ -144,65 +117,42 @@ theme_override_colors/font_color = Color(0.465398, 0.873983, 1, 1)
 vertical_alignment = 1
 text_overrun_behavior = 3
 
-[node name="TitleContainer" type="HBoxContainer" parent="MainContainer/QuestDescContainer/DataContainer"]
+[node name="TitleContainer" type="HBoxContainer" parent="MainContainer/QuestPanel/HBoxContainer/QuestDescContainer/DataContainer"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="MainContainer/QuestDescContainer/DataContainer/TitleContainer"]
-custom_minimum_size = Vector2(0, 32)
-layout_mode = 2
-text = "Title"
-vertical_alignment = 1
-
-[node name="QuestTitleLnEdt" type="LineEdit" parent="MainContainer/QuestDescContainer/DataContainer/TitleContainer"]
+[node name="QuestTitleLnEdt" type="LineEdit" parent="MainContainer/QuestPanel/HBoxContainer/QuestDescContainer/DataContainer/TitleContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
+placeholder_text = "Quest Title"
 
-[node name="DescContainer" type="VBoxContainer" parent="MainContainer/QuestDescContainer/DataContainer"]
+[node name="DescContainer" type="VBoxContainer" parent="MainContainer/QuestPanel/HBoxContainer/QuestDescContainer/DataContainer"]
 custom_minimum_size = Vector2(0, 180)
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="Label" type="Label" parent="MainContainer/QuestDescContainer/DataContainer/DescContainer"]
-custom_minimum_size = Vector2(0, 32)
-layout_mode = 2
-text = "Quest Description"
-vertical_alignment = 1
-
-[node name="DescTextEdit" type="TextEdit" parent="MainContainer/QuestDescContainer/DataContainer/DescContainer"]
+[node name="DescTextEdit" type="TextEdit" parent="MainContainer/QuestPanel/HBoxContainer/QuestDescContainer/DataContainer/DescContainer"]
 layout_mode = 2
 size_flags_vertical = 3
+placeholder_text = "Quest Description"
 wrap_mode = 1
 
-[node name="ObjectiveContainer" type="VBoxContainer" parent="MainContainer/QuestDescContainer"]
+[node name="ObjectiveContainer" type="VBoxContainer" parent="MainContainer/QuestPanel/HBoxContainer/QuestDescContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="ObjectiveHeader" type="HBoxContainer" parent="MainContainer/QuestDescContainer/ObjectiveContainer"]
+[node name="ObjectiveHeader" type="HBoxContainer" parent="MainContainer/QuestPanel/HBoxContainer/QuestDescContainer/ObjectiveContainer"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="MainContainer/QuestDescContainer/ObjectiveContainer/ObjectiveHeader"]
+[node name="ObjSrchLnEdt" type="LineEdit" parent="MainContainer/QuestPanel/HBoxContainer/QuestDescContainer/ObjectiveContainer"]
+visible = false
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
-text = "Quest Objectives"
-vertical_alignment = 1
-
-[node name="AddObjBtn" type="Button" parent="MainContainer/QuestDescContainer/ObjectiveContainer/ObjectiveHeader"]
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 2
-size_flags_horizontal = 10
-tooltip_text = "Create Objective"
-disabled = true
-icon = ExtResource("2_3n35v")
-icon_alignment = 1
-
-[node name="ObjSrchLnEdt" type="LineEdit" parent="MainContainer/QuestDescContainer/ObjectiveContainer"]
-custom_minimum_size = Vector2(0, 32)
-layout_mode = 2
-placeholder_text = "Search Objective"
+placeholder_text = "Search Stage"
 editable = false
 
-[node name="ObjectivesTree" type="Tree" parent="MainContainer/QuestDescContainer/ObjectiveContainer"]
+[node name="ObjectivesTree" type="Tree" parent="MainContainer/QuestPanel/HBoxContainer/QuestDescContainer/ObjectiveContainer"]
+visible = false
 layout_mode = 2
 size_flags_vertical = 3
 columns = 2
@@ -213,39 +163,123 @@ scroll_horizontal_enabled = false
 script = ExtResource("4_26wfg")
 default_name = "new_objective"
 
-[node name="VSeparator2" type="VSeparator" parent="MainContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="MainContainer/QuestPanel/HBoxContainer/QuestDescContainer/ObjectiveContainer"]
 layout_mode = 2
 
-[node name="ObjectiveContainer" type="VBoxContainer" parent="MainContainer"]
+[node name="Label" type="Label" parent="MainContainer/QuestPanel/HBoxContainer/QuestDescContainer/ObjectiveContainer/HBoxContainer"]
+custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
-size_flags_horizontal = 3
-size_flags_stretch_ratio = 7.0
+text = "Stage:"
+vertical_alignment = 1
 
-[node name="ObjReqContainer" type="HBoxContainer" parent="MainContainer/ObjectiveContainer"]
-layout_mode = 2
-size_flags_vertical = 3
-size_flags_stretch_ratio = 2.5
-
-[node name="VBoxContainer" type="VBoxContainer" parent="MainContainer/ObjectiveContainer/ObjReqContainer"]
+[node name="OptionButton" type="OptionButton" parent="MainContainer/QuestPanel/HBoxContainer/QuestDescContainer/ObjectiveContainer/HBoxContainer"]
+custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
+disabled = true
+alignment = 1
+selected = 0
+item_count = 1
+popup/item_0/text = "1"
 
-[node name="ObjTitleDescContainer" type="VBoxContainer" parent="MainContainer/ObjectiveContainer/ObjReqContainer/VBoxContainer"]
+[node name="CreateStageBtn" type="Button" parent="MainContainer/QuestPanel/HBoxContainer/QuestDescContainer/ObjectiveContainer/HBoxContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Create Objective"
+disabled = true
+icon = ExtResource("3_x78ub")
+flat = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="DeleteStageBtn" type="Button" parent="MainContainer/QuestPanel/HBoxContainer/QuestDescContainer/ObjectiveContainer/HBoxContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Create Objective"
+disabled = true
+icon = ExtResource("6_pn2ns")
+flat = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="HBoxContainer5" type="HBoxContainer" parent="MainContainer/QuestPanel/HBoxContainer/QuestDescContainer/ObjectiveContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Label" type="Label" parent="MainContainer/QuestPanel/HBoxContainer/QuestDescContainer/ObjectiveContainer/HBoxContainer5"]
+layout_mode = 2
+text = "Pool:"
+
+[node name="OptionButton" type="OptionButton" parent="MainContainer/QuestPanel/HBoxContainer/QuestDescContainer/ObjectiveContainer/HBoxContainer5"]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 1
+selected = 0
+item_count = 1
+popup/item_0/text = "1"
+
+[node name="Button" type="Button" parent="MainContainer/QuestPanel/HBoxContainer/QuestDescContainer/ObjectiveContainer/HBoxContainer5"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+icon = ExtResource("3_x78ub")
+flat = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="Button2" type="Button" parent="MainContainer/QuestPanel/HBoxContainer/QuestDescContainer/ObjectiveContainer/HBoxContainer5"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+icon = ExtResource("6_pn2ns")
+flat = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="HBoxContainer4" type="HBoxContainer" parent="MainContainer/QuestPanel/HBoxContainer/QuestDescContainer/ObjectiveContainer"]
+layout_mode = 2
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="MainContainer/QuestPanel/HBoxContainer/QuestDescContainer/ObjectiveContainer/HBoxContainer4"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/QuestPanel/HBoxContainer/QuestDescContainer/ObjectiveContainer/HBoxContainer4/HBoxContainer2"]
+layout_mode = 2
+text = "Min:"
+
+[node name="SpinBox" type="SpinBox" parent="MainContainer/QuestPanel/HBoxContainer/QuestDescContainer/ObjectiveContainer/HBoxContainer4/HBoxContainer2"]
+layout_mode = 2
+min_value = 1.0
+value = 1.0
+allow_greater = true
+
+[node name="HBoxContainer3" type="HBoxContainer" parent="MainContainer/QuestPanel/HBoxContainer/QuestDescContainer/ObjectiveContainer/HBoxContainer4"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/QuestPanel/HBoxContainer/QuestDescContainer/ObjectiveContainer/HBoxContainer4/HBoxContainer3"]
+layout_mode = 2
+text = "Max:"
+
+[node name="SpinBox" type="SpinBox" parent="MainContainer/QuestPanel/HBoxContainer/QuestDescContainer/ObjectiveContainer/HBoxContainer4/HBoxContainer3"]
+layout_mode = 2
+min_value = 1.0
+value = 1.0
+allow_greater = true
+
+[node name="ObjTitleDescContainer" type="VBoxContainer" parent="MainContainer/QuestPanel/HBoxContainer/QuestDescContainer/ObjectiveContainer"]
 custom_minimum_size = Vector2(0, 180)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="ObjHeader" type="HBoxContainer" parent="MainContainer/ObjectiveContainer/ObjReqContainer/VBoxContainer/ObjTitleDescContainer"]
+[node name="ObjHeader" type="HBoxContainer" parent="MainContainer/QuestPanel/HBoxContainer/QuestDescContainer/ObjectiveContainer/ObjTitleDescContainer"]
+visible = false
 layout_mode = 2
 
-[node name="Label" type="Label" parent="MainContainer/ObjectiveContainer/ObjReqContainer/VBoxContainer/ObjTitleDescContainer/ObjHeader"]
+[node name="Label" type="Label" parent="MainContainer/QuestPanel/HBoxContainer/QuestDescContainer/ObjectiveContainer/ObjTitleDescContainer/ObjHeader"]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 text = "Objective:"
 vertical_alignment = 1
 
-[node name="IDLbl" type="Label" parent="MainContainer/ObjectiveContainer/ObjReqContainer/VBoxContainer/ObjTitleDescContainer/ObjHeader"]
+[node name="IDLbl" type="Label" parent="MainContainer/QuestPanel/HBoxContainer/QuestDescContainer/ObjectiveContainer/ObjTitleDescContainer/ObjHeader"]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -253,82 +287,138 @@ theme_override_colors/font_color = Color(0.466667, 0.87451, 1, 1)
 vertical_alignment = 1
 text_overrun_behavior = 3
 
-[node name="TitleLineEdt" type="HBoxContainer" parent="MainContainer/ObjectiveContainer/ObjReqContainer/VBoxContainer/ObjTitleDescContainer"]
+[node name="TitleLineEdt" type="HBoxContainer" parent="MainContainer/QuestPanel/HBoxContainer/QuestDescContainer/ObjectiveContainer/ObjTitleDescContainer"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="MainContainer/ObjectiveContainer/ObjReqContainer/VBoxContainer/ObjTitleDescContainer/TitleLineEdt"]
+[node name="Label" type="Label" parent="MainContainer/QuestPanel/HBoxContainer/QuestDescContainer/ObjectiveContainer/ObjTitleDescContainer/TitleLineEdt"]
+visible = false
 layout_mode = 2
 text = "Title"
 
-[node name="ObjTitleLnEdt" type="LineEdit" parent="MainContainer/ObjectiveContainer/ObjReqContainer/VBoxContainer/ObjTitleDescContainer/TitleLineEdt"]
+[node name="ObjTitleLnEdt" type="LineEdit" parent="MainContainer/QuestPanel/HBoxContainer/QuestDescContainer/ObjectiveContainer/ObjTitleDescContainer/TitleLineEdt"]
 layout_mode = 2
 size_flags_horizontal = 3
-placeholder_text = "Objective Title"
+placeholder_text = "Stage Title"
 editable = false
 
-[node name="ObjDescTxtEdt" type="TextEdit" parent="MainContainer/ObjectiveContainer/ObjReqContainer/VBoxContainer/ObjTitleDescContainer"]
+[node name="ObjDescTxtEdt" type="TextEdit" parent="MainContainer/QuestPanel/HBoxContainer/QuestDescContainer/ObjectiveContainer/ObjTitleDescContainer"]
 layout_mode = 2
 size_flags_vertical = 3
-placeholder_text = "Objective Description"
+placeholder_text = "Stage Description"
 editable = false
 wrap_mode = 1
 
-[node name="VariablesCotnainer" type="VBoxContainer" parent="MainContainer/ObjectiveContainer/ObjReqContainer/VBoxContainer"]
+[node name="VSeparator2" type="VSeparator" parent="MainContainer/QuestPanel/HBoxContainer"]
+layout_mode = 2
+
+[node name="ObjectiveContainer" type="VBoxContainer" parent="MainContainer/QuestPanel/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 7.0
+
+[node name="ObjReqContainer" type="HBoxContainer" parent="MainContainer/QuestPanel/HBoxContainer/ObjectiveContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 2.5
+
+[node name="ItemsContainer" type="VBoxContainer" parent="MainContainer/QuestPanel/HBoxContainer/ObjectiveContainer/ObjReqContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="VariablesHeader" type="HBoxContainer" parent="MainContainer/ObjectiveContainer/ObjReqContainer/VBoxContainer/VariablesCotnainer"]
+[node name="VBoxContainer2" type="VBoxContainer" parent="MainContainer/QuestPanel/HBoxContainer/ObjectiveContainer/ObjReqContainer/ItemsContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ItemsHeader" type="HBoxContainer" parent="MainContainer/QuestPanel/HBoxContainer/ObjectiveContainer/ObjReqContainer/ItemsContainer/VBoxContainer2"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="MainContainer/ObjectiveContainer/ObjReqContainer/VBoxContainer/VariablesCotnainer/VariablesHeader"]
+[node name="Label" type="Label" parent="MainContainer/QuestPanel/HBoxContainer/ObjectiveContainer/ObjReqContainer/ItemsContainer/VBoxContainer2/ItemsHeader"]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
-text = "Variables"
+text = "Required Items"
 vertical_alignment = 1
 
-[node name="ButtonContainer" type="HBoxContainer" parent="MainContainer/ObjectiveContainer/ObjReqContainer/VBoxContainer/VariablesCotnainer/VariablesHeader"]
+[node name="AddItemBtn" type="Button" parent="MainContainer/QuestPanel/HBoxContainer/ObjectiveContainer/ObjReqContainer/ItemsContainer/VBoxContainer2/ItemsHeader"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+size_flags_horizontal = 10
+tooltip_text = "Add item requirement"
+disabled = true
+icon = ExtResource("2_3n35v")
+icon_alignment = 1
+
+[node name="SearchItemLnEdt" type="LineEdit" parent="MainContainer/QuestPanel/HBoxContainer/ObjectiveContainer/ObjReqContainer/ItemsContainer/VBoxContainer2"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Search Item"
+editable = false
+clear_button_enabled = true
+right_icon = ExtResource("1_rueqv")
+
+[node name="ItemTree" type="Tree" parent="MainContainer/QuestPanel/HBoxContainer/ObjectiveContainer/ObjReqContainer/ItemsContainer/VBoxContainer2"]
+layout_mode = 2
+size_flags_vertical = 3
+columns = 4
+allow_reselect = true
+hide_folding = true
+hide_root = true
+scroll_horizontal_enabled = false
+script = ExtResource("5_u3gj4")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MainContainer/QuestPanel/HBoxContainer/ObjectiveContainer/ObjReqContainer/ItemsContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="VariablesCotnainer" type="VBoxContainer" parent="MainContainer/QuestPanel/HBoxContainer/ObjectiveContainer/ObjReqContainer/ItemsContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="VariablesHeader" type="HBoxContainer" parent="MainContainer/QuestPanel/HBoxContainer/ObjectiveContainer/ObjReqContainer/ItemsContainer/VBoxContainer/VariablesCotnainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/QuestPanel/HBoxContainer/ObjectiveContainer/ObjReqContainer/ItemsContainer/VBoxContainer/VariablesCotnainer/VariablesHeader"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+text = "Item custom data"
+vertical_alignment = 1
+
+[node name="ButtonContainer" type="HBoxContainer" parent="MainContainer/QuestPanel/HBoxContainer/ObjectiveContainer/ObjReqContainer/ItemsContainer/VBoxContainer/VariablesCotnainer/VariablesHeader"]
 layout_mode = 2
 size_flags_horizontal = 3
 alignment = 2
 
-[node name="AddIntBtn" type="Button" parent="MainContainer/ObjectiveContainer/ObjReqContainer/VBoxContainer/VariablesCotnainer/VariablesHeader/ButtonContainer"]
+[node name="AddIntBtn" type="Button" parent="MainContainer/QuestPanel/HBoxContainer/ObjectiveContainer/ObjReqContainer/ItemsContainer/VBoxContainer/VariablesCotnainer/VariablesHeader/ButtonContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 disabled = true
 icon = ExtResource("3_k5s2v")
 icon_alignment = 1
 
-[node name="AddFltBtn" type="Button" parent="MainContainer/ObjectiveContainer/ObjReqContainer/VBoxContainer/VariablesCotnainer/VariablesHeader/ButtonContainer"]
+[node name="AddFltBtn" type="Button" parent="MainContainer/QuestPanel/HBoxContainer/ObjectiveContainer/ObjReqContainer/ItemsContainer/VBoxContainer/VariablesCotnainer/VariablesHeader/ButtonContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 disabled = true
 icon = ExtResource("4_dqq4k")
 icon_alignment = 1
 
-[node name="AddBoolBtn" type="Button" parent="MainContainer/ObjectiveContainer/ObjReqContainer/VBoxContainer/VariablesCotnainer/VariablesHeader/ButtonContainer"]
+[node name="AddBoolBtn" type="Button" parent="MainContainer/QuestPanel/HBoxContainer/ObjectiveContainer/ObjReqContainer/ItemsContainer/VBoxContainer/VariablesCotnainer/VariablesHeader/ButtonContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 disabled = true
 icon = ExtResource("5_t0peb")
 icon_alignment = 1
 
-[node name="AddStrBtn" type="Button" parent="MainContainer/ObjectiveContainer/ObjReqContainer/VBoxContainer/VariablesCotnainer/VariablesHeader/ButtonContainer"]
+[node name="AddStrBtn" type="Button" parent="MainContainer/QuestPanel/HBoxContainer/ObjectiveContainer/ObjReqContainer/ItemsContainer/VBoxContainer/VariablesCotnainer/VariablesHeader/ButtonContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 disabled = true
 icon = ExtResource("6_q0c84")
 icon_alignment = 1
 
-[node name="SearchVarLnEdt" type="LineEdit" parent="MainContainer/ObjectiveContainer/ObjReqContainer/VBoxContainer/VariablesCotnainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-placeholder_text = "Search Variable"
-editable = false
-clear_button_enabled = true
-right_icon = ExtResource("1_rueqv")
-
-[node name="VariablesTree" type="Tree" parent="MainContainer/ObjectiveContainer/ObjReqContainer/VBoxContainer/VariablesCotnainer"]
+[node name="VariablesTree" type="Tree" parent="MainContainer/QuestPanel/HBoxContainer/ObjectiveContainer/ObjReqContainer/ItemsContainer/VBoxContainer/VariablesCotnainer"]
 layout_mode = 2
 size_flags_vertical = 3
 columns = 4
@@ -339,66 +429,25 @@ scroll_horizontal_enabled = false
 script = ExtResource("11_xj7pk")
 default_name = "new_variable"
 
-[node name="ItemTriggerContainer" type="VBoxContainer" parent="MainContainer/ObjectiveContainer/ObjReqContainer"]
+[node name="ItemTriggerContainer" type="VBoxContainer" parent="MainContainer/QuestPanel/HBoxContainer/ObjectiveContainer/ObjReqContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="ItemsContainer" type="VBoxContainer" parent="MainContainer/ObjectiveContainer/ObjReqContainer/ItemTriggerContainer"]
+[node name="TriggerContainer" type="VBoxContainer" parent="MainContainer/QuestPanel/HBoxContainer/ObjectiveContainer/ObjReqContainer/ItemTriggerContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="ItemsHeader" type="HBoxContainer" parent="MainContainer/ObjectiveContainer/ObjReqContainer/ItemTriggerContainer/ItemsContainer"]
+[node name="HeaderContainer" type="HBoxContainer" parent="MainContainer/QuestPanel/HBoxContainer/ObjectiveContainer/ObjReqContainer/ItemTriggerContainer/TriggerContainer"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="MainContainer/ObjectiveContainer/ObjReqContainer/ItemTriggerContainer/ItemsContainer/ItemsHeader"]
+[node name="Label" type="Label" parent="MainContainer/QuestPanel/HBoxContainer/ObjectiveContainer/ObjReqContainer/ItemTriggerContainer/TriggerContainer/HeaderContainer"]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
-text = "Items"
+text = "Required Triggers"
 vertical_alignment = 1
 
-[node name="AddItemBtn" type="Button" parent="MainContainer/ObjectiveContainer/ObjReqContainer/ItemTriggerContainer/ItemsContainer/ItemsHeader"]
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 2
-size_flags_horizontal = 10
-tooltip_text = "Add item requirement"
-disabled = true
-icon = ExtResource("2_3n35v")
-icon_alignment = 1
-
-[node name="SearchItemLnEdt" type="LineEdit" parent="MainContainer/ObjectiveContainer/ObjReqContainer/ItemTriggerContainer/ItemsContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-placeholder_text = "Search Item"
-editable = false
-clear_button_enabled = true
-right_icon = ExtResource("1_rueqv")
-
-[node name="ItemTree" type="Tree" parent="MainContainer/ObjectiveContainer/ObjReqContainer/ItemTriggerContainer/ItemsContainer"]
-layout_mode = 2
-size_flags_vertical = 3
-columns = 4
-allow_reselect = true
-hide_folding = true
-hide_root = true
-scroll_horizontal_enabled = false
-script = ExtResource("5_u3gj4")
-
-[node name="TriggerContainer" type="VBoxContainer" parent="MainContainer/ObjectiveContainer/ObjReqContainer/ItemTriggerContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-
-[node name="HeaderContainer" type="HBoxContainer" parent="MainContainer/ObjectiveContainer/ObjReqContainer/ItemTriggerContainer/TriggerContainer"]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="MainContainer/ObjectiveContainer/ObjReqContainer/ItemTriggerContainer/TriggerContainer/HeaderContainer"]
-custom_minimum_size = Vector2(0, 32)
-layout_mode = 2
-text = "Triggers"
-vertical_alignment = 1
-
-[node name="AddTriggerBtn" type="Button" parent="MainContainer/ObjectiveContainer/ObjReqContainer/ItemTriggerContainer/TriggerContainer/HeaderContainer"]
+[node name="AddTriggerBtn" type="Button" parent="MainContainer/QuestPanel/HBoxContainer/ObjectiveContainer/ObjReqContainer/ItemTriggerContainer/TriggerContainer/HeaderContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 size_flags_horizontal = 10
@@ -407,7 +456,7 @@ disabled = true
 icon = ExtResource("2_3n35v")
 icon_alignment = 1
 
-[node name="SearchTriggerLnEdt" type="LineEdit" parent="MainContainer/ObjectiveContainer/ObjReqContainer/ItemTriggerContainer/TriggerContainer"]
+[node name="SearchTriggerLnEdt" type="LineEdit" parent="MainContainer/QuestPanel/HBoxContainer/ObjectiveContainer/ObjReqContainer/ItemTriggerContainer/TriggerContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "Search Trigger"
@@ -415,7 +464,7 @@ editable = false
 clear_button_enabled = true
 right_icon = ExtResource("1_rueqv")
 
-[node name="TriggerTree" type="Tree" parent="MainContainer/ObjectiveContainer/ObjReqContainer/ItemTriggerContainer/TriggerContainer"]
+[node name="TriggerTree" type="Tree" parent="MainContainer/QuestPanel/HBoxContainer/ObjectiveContainer/ObjReqContainer/ItemTriggerContainer/TriggerContainer"]
 layout_mode = 2
 size_flags_vertical = 3
 columns = 3
@@ -425,3 +474,297 @@ hide_root = true
 scroll_horizontal_enabled = false
 script = ExtResource("6_l8qk7")
 default_name = "new_trigger"
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MainContainer/QuestPanel/HBoxContainer/ObjectiveContainer/ObjReqContainer/ItemTriggerContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="VariablesCotnainer" type="VBoxContainer" parent="MainContainer/QuestPanel/HBoxContainer/ObjectiveContainer/ObjReqContainer/ItemTriggerContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="VariablesHeader" type="HBoxContainer" parent="MainContainer/QuestPanel/HBoxContainer/ObjectiveContainer/ObjReqContainer/ItemTriggerContainer/VBoxContainer/VariablesCotnainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/QuestPanel/HBoxContainer/ObjectiveContainer/ObjReqContainer/ItemTriggerContainer/VBoxContainer/VariablesCotnainer/VariablesHeader"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+text = "Required Variables"
+vertical_alignment = 1
+
+[node name="ButtonContainer" type="HBoxContainer" parent="MainContainer/QuestPanel/HBoxContainer/ObjectiveContainer/ObjReqContainer/ItemTriggerContainer/VBoxContainer/VariablesCotnainer/VariablesHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 2
+
+[node name="AddIntBtn" type="Button" parent="MainContainer/QuestPanel/HBoxContainer/ObjectiveContainer/ObjReqContainer/ItemTriggerContainer/VBoxContainer/VariablesCotnainer/VariablesHeader/ButtonContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+disabled = true
+icon = ExtResource("3_k5s2v")
+icon_alignment = 1
+
+[node name="AddFltBtn" type="Button" parent="MainContainer/QuestPanel/HBoxContainer/ObjectiveContainer/ObjReqContainer/ItemTriggerContainer/VBoxContainer/VariablesCotnainer/VariablesHeader/ButtonContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+disabled = true
+icon = ExtResource("4_dqq4k")
+icon_alignment = 1
+
+[node name="AddBoolBtn" type="Button" parent="MainContainer/QuestPanel/HBoxContainer/ObjectiveContainer/ObjReqContainer/ItemTriggerContainer/VBoxContainer/VariablesCotnainer/VariablesHeader/ButtonContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+disabled = true
+icon = ExtResource("5_t0peb")
+icon_alignment = 1
+
+[node name="AddStrBtn" type="Button" parent="MainContainer/QuestPanel/HBoxContainer/ObjectiveContainer/ObjReqContainer/ItemTriggerContainer/VBoxContainer/VariablesCotnainer/VariablesHeader/ButtonContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+disabled = true
+icon = ExtResource("6_q0c84")
+icon_alignment = 1
+
+[node name="SearchVarLnEdt" type="LineEdit" parent="MainContainer/QuestPanel/HBoxContainer/ObjectiveContainer/ObjReqContainer/ItemTriggerContainer/VBoxContainer/VariablesCotnainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Search Variable"
+editable = false
+clear_button_enabled = true
+right_icon = ExtResource("1_rueqv")
+
+[node name="VariablesTree" type="Tree" parent="MainContainer/QuestPanel/HBoxContainer/ObjectiveContainer/ObjReqContainer/ItemTriggerContainer/VBoxContainer/VariablesCotnainer"]
+layout_mode = 2
+size_flags_vertical = 3
+columns = 4
+allow_reselect = true
+hide_folding = true
+hide_root = true
+scroll_horizontal_enabled = false
+script = ExtResource("11_xj7pk")
+default_name = "new_variable"
+
+[node name="BoilerQuestContainer" type="HBoxContainer" parent="MainContainer/QuestPanel"]
+visible = false
+layout_mode = 2
+
+[node name="QuestDescContainer" type="VBoxContainer" parent="MainContainer/QuestPanel/BoilerQuestContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 3.0
+
+[node name="DataContainer" type="VBoxContainer" parent="MainContainer/QuestPanel/BoilerQuestContainer/QuestDescContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="InfoContainer" type="HBoxContainer" parent="MainContainer/QuestPanel/BoilerQuestContainer/QuestDescContainer/DataContainer"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/QuestPanel/BoilerQuestContainer/QuestDescContainer/DataContainer/InfoContainer"]
+layout_mode = 2
+size_flags_vertical = 5
+text = "Quest:"
+vertical_alignment = 1
+
+[node name="QuestLabel" type="Label" parent="MainContainer/QuestPanel/BoilerQuestContainer/QuestDescContainer/DataContainer/InfoContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 5
+theme_override_colors/font_color = Color(0.465398, 0.873983, 1, 1)
+vertical_alignment = 1
+text_overrun_behavior = 3
+
+[node name="QuestTitleLnEdt" type="LineEdit" parent="MainContainer/QuestPanel/BoilerQuestContainer/QuestDescContainer/DataContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Quest Title"
+
+[node name="DescTextEdit" type="TextEdit" parent="MainContainer/QuestPanel/BoilerQuestContainer/QuestDescContainer/DataContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+placeholder_text = "Quest Description"
+wrap_mode = 1
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MainContainer/QuestPanel/BoilerQuestContainer/QuestDescContainer/DataContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/QuestPanel/BoilerQuestContainer/QuestDescContainer/DataContainer/HBoxContainer"]
+layout_mode = 2
+text = "Max Completions:"
+
+[node name="SpinBox" type="SpinBox" parent="MainContainer/QuestPanel/BoilerQuestContainer/QuestDescContainer/DataContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+suffix = "Times"
+
+[node name="ObjectiveContainer" type="VBoxContainer" parent="MainContainer/QuestPanel/BoilerQuestContainer/QuestDescContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="ObjectiveHeader" type="HBoxContainer" parent="MainContainer/QuestPanel/BoilerQuestContainer/QuestDescContainer/ObjectiveContainer"]
+visible = false
+layout_mode = 2
+
+[node name="ObjSrchLnEdt" type="LineEdit" parent="MainContainer/QuestPanel/BoilerQuestContainer/QuestDescContainer/ObjectiveContainer"]
+visible = false
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+placeholder_text = "Search Stage"
+editable = false
+
+[node name="ObjectivesTree" type="Tree" parent="MainContainer/QuestPanel/BoilerQuestContainer/QuestDescContainer/ObjectiveContainer"]
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+columns = 2
+allow_reselect = true
+hide_folding = true
+hide_root = true
+scroll_horizontal_enabled = false
+script = ExtResource("4_26wfg")
+default_name = "new_objective"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MainContainer/QuestPanel/BoilerQuestContainer/QuestDescContainer/ObjectiveContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/QuestPanel/BoilerQuestContainer/QuestDescContainer/ObjectiveContainer/HBoxContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+text = "Stage:"
+vertical_alignment = 1
+
+[node name="OptionButton" type="OptionButton" parent="MainContainer/QuestPanel/BoilerQuestContainer/QuestDescContainer/ObjectiveContainer/HBoxContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+disabled = true
+alignment = 1
+selected = 0
+item_count = 1
+popup/item_0/text = "1"
+
+[node name="CreateStageBtn" type="Button" parent="MainContainer/QuestPanel/BoilerQuestContainer/QuestDescContainer/ObjectiveContainer/HBoxContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Create Objective"
+disabled = true
+icon = ExtResource("3_x78ub")
+flat = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="DeleteStageBtn" type="Button" parent="MainContainer/QuestPanel/BoilerQuestContainer/QuestDescContainer/ObjectiveContainer/HBoxContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Create Objective"
+disabled = true
+icon = ExtResource("6_pn2ns")
+flat = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="HBoxContainer4" type="HBoxContainer" parent="MainContainer/QuestPanel/BoilerQuestContainer/QuestDescContainer/ObjectiveContainer"]
+layout_mode = 2
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="MainContainer/QuestPanel/BoilerQuestContainer/QuestDescContainer/ObjectiveContainer/HBoxContainer4"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/QuestPanel/BoilerQuestContainer/QuestDescContainer/ObjectiveContainer/HBoxContainer4/HBoxContainer2"]
+layout_mode = 2
+text = "Min:"
+
+[node name="SpinBox" type="SpinBox" parent="MainContainer/QuestPanel/BoilerQuestContainer/QuestDescContainer/ObjectiveContainer/HBoxContainer4/HBoxContainer2"]
+layout_mode = 2
+min_value = 1.0
+value = 1.0
+allow_greater = true
+
+[node name="HBoxContainer3" type="HBoxContainer" parent="MainContainer/QuestPanel/BoilerQuestContainer/QuestDescContainer/ObjectiveContainer/HBoxContainer4"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/QuestPanel/BoilerQuestContainer/QuestDescContainer/ObjectiveContainer/HBoxContainer4/HBoxContainer3"]
+layout_mode = 2
+text = "Max:"
+
+[node name="SpinBox" type="SpinBox" parent="MainContainer/QuestPanel/BoilerQuestContainer/QuestDescContainer/ObjectiveContainer/HBoxContainer4/HBoxContainer3"]
+layout_mode = 2
+min_value = 1.0
+value = 1.0
+allow_greater = true
+
+[node name="HBoxContainer4" type="HBoxContainer" parent="MainContainer/QuestPanel/BoilerQuestContainer/QuestDescContainer/ObjectiveContainer/HBoxContainer4"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Label" type="Label" parent="MainContainer/QuestPanel/BoilerQuestContainer/QuestDescContainer/ObjectiveContainer/HBoxContainer4/HBoxContainer4"]
+layout_mode = 2
+text = "Pool:"
+
+[node name="OptionButton" type="OptionButton" parent="MainContainer/QuestPanel/BoilerQuestContainer/QuestDescContainer/ObjectiveContainer/HBoxContainer4/HBoxContainer4"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Button" type="Button" parent="MainContainer/QuestPanel/BoilerQuestContainer/QuestDescContainer/ObjectiveContainer/HBoxContainer4/HBoxContainer4"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+icon = ExtResource("3_x78ub")
+flat = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="Button2" type="Button" parent="MainContainer/QuestPanel/BoilerQuestContainer/QuestDescContainer/ObjectiveContainer/HBoxContainer4/HBoxContainer4"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+icon = ExtResource("6_pn2ns")
+flat = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="ObjTitleDescContainer" type="VBoxContainer" parent="MainContainer/QuestPanel/BoilerQuestContainer/QuestDescContainer/ObjectiveContainer"]
+custom_minimum_size = Vector2(0, 180)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="ObjHeader" type="HBoxContainer" parent="MainContainer/QuestPanel/BoilerQuestContainer/QuestDescContainer/ObjectiveContainer/ObjTitleDescContainer"]
+visible = false
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/QuestPanel/BoilerQuestContainer/QuestDescContainer/ObjectiveContainer/ObjTitleDescContainer/ObjHeader"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+text = "Objective:"
+vertical_alignment = 1
+
+[node name="IDLbl" type="Label" parent="MainContainer/QuestPanel/BoilerQuestContainer/QuestDescContainer/ObjectiveContainer/ObjTitleDescContainer/ObjHeader"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.466667, 0.87451, 1, 1)
+vertical_alignment = 1
+text_overrun_behavior = 3
+
+[node name="TitleLineEdt" type="HBoxContainer" parent="MainContainer/QuestPanel/BoilerQuestContainer/QuestDescContainer/ObjectiveContainer/ObjTitleDescContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/QuestPanel/BoilerQuestContainer/QuestDescContainer/ObjectiveContainer/ObjTitleDescContainer/TitleLineEdt"]
+visible = false
+layout_mode = 2
+text = "Title"
+
+[node name="ObjTitleLnEdt" type="LineEdit" parent="MainContainer/QuestPanel/BoilerQuestContainer/QuestDescContainer/ObjectiveContainer/ObjTitleDescContainer/TitleLineEdt"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Stage Title"
+editable = false
+
+[node name="ObjDescTxtEdt" type="TextEdit" parent="MainContainer/QuestPanel/BoilerQuestContainer/QuestDescContainer/ObjectiveContainer/ObjTitleDescContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+placeholder_text = "Stage Description"
+editable = false
+wrap_mode = 1

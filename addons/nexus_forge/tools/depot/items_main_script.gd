@@ -469,8 +469,11 @@ func select_type(type_id: String) -> void:
 
 func load_items() -> void:
 	item_tree.clear_items()
-	for item in _items_resource.get_items():
-		item_tree.add_item(item, _items_resource.get_item_path(item))
+	for item in _items_resource.get_item_ids():
+		item_tree.add_item(
+				item,
+				_items_resource.get_item_path(item)
+				)
 
 
 func load_materials() -> void:

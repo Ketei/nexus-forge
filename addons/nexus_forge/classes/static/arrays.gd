@@ -97,3 +97,13 @@ static func sort_custom_alphabetically_asc(string_a: String, string_b: String) -
 ## A non-case_sensitive alphabetical descending string sort.
 static func sort_custom_alphabetically_desc(string_a: String, string_b: String) -> bool:
 	return string_b.naturalnocasecmp_to(string_a) < 0
+
+
+## Removes an item from an array by switching it with the last element.[br]
+## This means that the array WON'T preserve it's order but removing elements
+## is more efficient since there is no index reasignment.
+static func remove_unsorted_at(from: Array, index: int) -> void:
+	var array_size: int = from.size()
+	if 0 < array_size:
+		from[index] = from[-1]
+		from.resize(array_size - 1)

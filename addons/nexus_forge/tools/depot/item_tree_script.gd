@@ -17,6 +17,8 @@ func _ready() -> void:
 	button_clicked.connect(on_button_pressed)
 	item_selected.connect(on_item_selected)
 	item_edited.connect(on_item_edited)
+	
+	set_column_expand(0, true)
 
 
 func is_selected(item_path: String) -> bool:
@@ -29,6 +31,7 @@ func select_item(item_path: String) -> void:
 	for item in root_tree.get_children():
 		if item.get_metadata(0)["path"] == item_path:
 			item.select(0)
+			break
 
 
 func get_items_serialized() -> Array[Dictionary]:
@@ -36,7 +39,7 @@ func get_items_serialized() -> Array[Dictionary]:
 	for item in root_tree.get_children():
 		item_array.append(
 			{
-				"id": item.get_text(0),
+				"key": item.get_text(0),
 				"file": item.get_metadata(0)["path"]
 			}
 		)
@@ -48,10 +51,13 @@ func clear_items() -> void:
 		item.free()
 
 
-func add_item(item_id: String, item_path: String) -> String:
+func add_item(item_key: String, item_path: String) -> String:
 	var new_item: TreeItem = create_item(root_tree)
-	new_item.set_text(0, validate_id(root_tree, item_id, new_item))
-	new_item.set_metadata(0, {"id": item_id, "path": item_path})
+	
+	new_item.set_cell_mode(0, TreeItem.CELL_MODE_STRING)
+	
+	new_item.set_text(0, validate_id(root_tree, item_key, new_item))
+	new_item.set_metadata(0, {"id": item_key, "path": item_path})
 	
 	new_item.set_editable(0, true)
 	
@@ -111,5 +117,7 @@ func on_button_pressed(item: TreeItem, column: int, id: int, mouse_button_index:
 
 
 func search_item(search_value: String) -> void:
+	var search_id: int = -1 if not search_value.is_valid_int() else int(search_value)
+	
 	for item in root_tree.get_children():
-		item.visible = search_value.is_empty() or item.get_text(0).containsn(search_value)
+		item.visible = search_value.is_empty() or item.get_text(1).containsn(search_value) or item.get_range(0) == search_id

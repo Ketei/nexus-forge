@@ -76,16 +76,16 @@ func _sort_currencies(currency_a: String, currency_b: String) -> bool:
 	return _currencies[currency_a]["value"] < _currencies[currency_b]["value"]
 
 
-func create_item(item_id: String, path: String) -> void:
-	_items[item_id] = {"path": path, "resource": null}
+func create_item(item_key: String, path: String) -> void:
+	_items[item_key] = {"path": path, "resource": null}
 
 
-func get_item_types() -> Array:
-	return item_types.keys()
+func get_item_types() -> Array[String]:
+	return Array(item_types.keys(), TYPE_STRING, &"", null)
 
 
-func get_item_subtypes(item_type: String) -> Array:
-	return item_types[item_type]["subtypes"].keys()
+func get_item_subtypes(item_type: String) -> Array[String]:
+	return Array(item_types[item_type]["subtypes"].keys(), TYPE_STRING, &"", null)
 
 
 func get_item_type_name(type_id: String) -> String:
@@ -104,8 +104,8 @@ func get_material_name(material_id: String) -> String:
 	return item_materials[material_id]["name"]
 
 
-func get_items() -> Array:
-	return _items.keys()
+func get_item_ids() -> Array[String]:
+	return Array(_items.keys(), TYPE_STRING, &"", null)
 
 
 func create_crafting_station(station_id: String, station_name: String = "") -> void:
@@ -238,8 +238,8 @@ func get_item_path(item_id: String) -> String:
 	return _items[item_id]["path"]
 
 
-func get_crafting_stations() -> Array:
-	return _recipes.keys()
+func get_crafting_stations() -> Array[String]:
+	return Array(_recipes.keys(), TYPE_STRING, &"", null)
 
 
 func get_recipes_of(station: String) -> Array:
