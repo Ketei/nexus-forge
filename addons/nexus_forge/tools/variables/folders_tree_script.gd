@@ -117,6 +117,11 @@ func on_folder_edited() -> void:
 	#return {"variables": []}
 
 
+func collapse_folders(collapsed: bool = true) -> void:
+	for top_folder in root_tree.get_children():
+		top_folder.set_collapsed_recursive(collapsed)
+
+
 func validate_folder_name(parent_tree: TreeItem, folder_name: String, skip_tree: TreeItem = null) -> String:
 	var ideal_name: String = "new_folder" if folder_name.is_empty() else folder_name
 	var tweaked_name: String = ideal_name

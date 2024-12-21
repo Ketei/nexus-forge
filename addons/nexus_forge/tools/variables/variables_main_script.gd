@@ -146,10 +146,10 @@ func on_folder_renamed(path: String, from: String, to: String) -> void:
 	
 	for path_next in path_array:
 		if not top_skip:
-			current_level = current_level[path_next]
+			current_level = current_level[path_next]["subfolders"]
 			top_skip = true
 			continue
-		current_level = current_level["subfolders"][path]["subfolders"]
+		current_level = current_level[path]["subfolders"]
 	
 	current_level[to] = current_level[from]
 	current_level.erase(from)
@@ -261,6 +261,7 @@ func _load_variables(folder_dict: Dictionary) -> void:
 	_switching_tree = true
 	for folder in folder_dict:
 		folders_tree.load_folder_data(folder, folder_dict[folder])
+	folders_tree.collapse_folders()
 	_switching_tree = false
 
 

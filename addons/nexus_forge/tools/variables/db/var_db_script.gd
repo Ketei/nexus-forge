@@ -44,14 +44,17 @@ func has_folder(folder_path: String) -> bool:
 ## Returns a variable on [param variable_path] or null if the variable doesn't exist.
 func get_variable(variable_path: String) -> Variant:
 	var path_levels: Array = variable_path.split("/", false)
-	var _level_mem: Dictionary = variables[path_levels[0]]
+	var _level_mem: Dictionary = variables
 	var var_name: String = path_levels.pop_back()
+	var top_skip: bool = false
 	
 	for level in path_levels:
-		if level == path_levels.front():
+		if not top_skip:
+			_level_mem = _level_mem[level]
+			top_skip = true
 			continue
 		if _level_mem["subfolders"].has(level):
-			_level_mem = _level_mem[level]["subfolders"]
+			_level_mem = _level_mem["subfolders"][level]
 		else:
 			return null
 	

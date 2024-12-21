@@ -6,7 +6,14 @@
 script = ExtResource("1_o3fyd")
 variables = {
 "quest_data": {
+"subfolders": {
+"guilds": {
 "subfolders": {},
+"variables": {
+"companions": 3
+}
+}
+},
 "variables": {
 "good_quests_completed": 69,
 "good_quests_failed": 24
