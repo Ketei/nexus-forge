@@ -8,6 +8,9 @@ signal quest_deleted(quest_id: String, is_main: bool)
 signal quest_stage_deleted(quest_id: String, stage_idx: int, is_main: bool)
 signal quest_pool_item_deleted(quest_id: String, stage_idx: int, item_idx: int)
 signal quest_created(quest_id: String, is_main: bool)
+signal quest_stage_selected(quest_id: String, stage_idx: int, is_main: bool, pool_idx: int)
+signal quest_stage_created(quest_id: String, quest_idx: int, is_main: bool)
+signal quest_stage_pool_item_created(quest_id: String, stage_id: int, pool_idx: int)
 
 #signal quest_created(quest_id: String)
 #signal quest_renamed(from: String, to: String)
@@ -60,6 +63,7 @@ func _ready() -> void:
 	
 	button_clicked.connect(_on_button_pressed)
 	item_edited.connect(on_item_edited)
+	item_selected.connect(_on_item_selected)
 
 
 func create_main_quest(quest_id: String = "") -> String:
@@ -97,7 +101,7 @@ func create_main_stage(on_quest: TreeItem, stage_title: String = "") -> void:
 	new_stage.set_cell_mode(0, TreeItem.CELL_MODE_STRING)
 	new_stage.set_text(0, stage_title)
 	new_stage.add_button(0, TRASH_BIN, DELETE_STAGE_MAIN, false, "Delete Stage")
-	new_stage.set_metadata(0, {"type": STAGE_ID, "is_pool": false})
+	new_stage.set_metadata(0, {"type": STAGE_ID, "is_main": true})
 	#var item_tree: TreeItem = new_stage.create_child()
 	#var var_tree: TreeItem = new_stage.create_child()
 	#var trigger_tree: TreeItem = new_stage.create_child()
@@ -113,7 +117,7 @@ func create_main_stage(on_quest: TreeItem, stage_title: String = "") -> void:
 	new_stage.collapsed = true
 
 
-func create_boiler_stage_pool(on_quest: TreeItem) -> void:
+func create_boiler_stage_pool(on_quest: TreeItem) -> int:
 	var new_stage: TreeItem = on_quest.create_child()
 	new_stage.set_cell_mode(0, TreeItem.CELL_MODE_STRING)
 	create_boiler_stage(new_stage)
@@ -121,6 +125,7 @@ func create_boiler_stage_pool(on_quest: TreeItem) -> void:
 	new_stage.set_metadata(0, {"type": STAGE_POOL})
 	new_stage.add_button(0, NEW_FILE, NEW_STAGE_BOILER, false, "Add to Pool")
 	new_stage.add_button(0, TRASH_BIN, DELETE_STAGE_BOILER_POOL, false, "Delete Pool")
+	return new_stage.get_index()
 
 
 func create_boiler_stage(on_pool: TreeItem, stage_title: String = "") -> void:
@@ -130,7 +135,7 @@ func create_boiler_stage(on_pool: TreeItem, stage_title: String = "") -> void:
 	#var trigger_tree: TreeItem = new_stage.create_child()
 	
 	new_stage.set_text(0, stage_title if not stage_title.is_empty() else "New Stage")
-	new_stage.set_metadata(0, {"type": STAGE_ID, "is_pool": true})
+	new_stage.set_metadata(0, {"type": STAGE_ID, "is_main": false})
 	
 	#item_tree.set_text(0, "Items")
 	#var_tree.set_text(0, "Variables")
@@ -146,6 +151,7 @@ func create_boiler_stage(on_pool: TreeItem, stage_title: String = "") -> void:
 	
 
 func get_valid_main_id(desired_id: String, skip_tree: TreeItem = null) -> String:
+	desired_id = desired_id.strip_edges()
 	desired_id = desired_id if not desired_id.is_empty() else "main_quest"
 	var modified_id: String = desired_id
 	var iteration: int = 0
@@ -187,15 +193,32 @@ func has_boiler_id(id_string: String, skip_tree: TreeItem) -> bool:
 	return false
 
 
-
-func on_item_selected() -> void:
+func _on_item_selected() -> void:
 	var selected: TreeItem = get_selected()
 	var selected_meta: Dictionary = selected.get_metadata(0)
 	
 	match selected_meta["type"]:
 		QUEST_ID:
 			quest_selected.emit(selected.get_text(0), selected_meta["is_main"])
-			
+		STAGE_ID:
+			quest_stage_selected.emit(
+				selected.get_parent().get_text(0) if selected_meta["is_main"] else selected.get_parent().get_parent().get_text(0),
+				selected.get_index() if selected_meta["is_main"] else selected.get_parent().get_index(),
+				selected_meta["is_main"],
+				-1 if selected_meta["is_main"] else selected.get_index())
+
+
+func select_quest(quest_id: String, is_main: bool) -> void:
+	if is_main:
+		for main_quest in main_header.get_children():
+			if main_quest.get_text(0) == quest_id:
+				main_quest.select(0)
+				break
+	else:
+		for boiler_quest in boiler_header.get_children():
+			if boiler_quest.get_text(0) == quest_id:
+				boiler_quest.select(0)
+				break
 	#if  == -1:
 		#return
 	#elif
@@ -238,15 +261,19 @@ func _on_button_pressed(item: TreeItem, column: int, id: int, mouse_button_index
 		quest_created.emit(create_main_quest(), true)
 	elif id == NEW_STAGE_MAIN:
 		create_main_stage(item, "New Stage")
+		quest_stage_created.emit(item.get_text(0), -1, true)
 	elif id == DELETE_STAGE_MAIN:
 		quest_stage_deleted.emit(item.get_parent().get_text(0), item.get_index(), item.get_parent().get_parent() == main_header)
 		item.free()
 	elif id == NEW_BOILER_QUEST:
 		quest_created.emit(create_boiler_quest(), false)
 	elif id == NEW_STAGE_BOILER_POOL:
-		create_boiler_stage_pool(item)
-	elif id == NEW_STAGE_BOILER:
+		var stage_id: int = create_boiler_stage_pool(item)
+		quest_stage_created.emit(item.get_text(0), -1, false)
+		quest_stage_pool_item_created.emit(item.get_text(0), stage_id, 0)
+	elif id == NEW_STAGE_BOILER: # Boiler Item
 		create_boiler_stage(item)
+		quest_stage_pool_item_created.emit(item.get_parent().get_text(0), item.get_index(), -1)
 	elif id == DELETE_STAGE_BOILER:
 		var item_parent: TreeItem = item.get_parent()
 		quest_pool_item_deleted.emit(
@@ -263,14 +290,6 @@ func _on_button_pressed(item: TreeItem, column: int, id: int, mouse_button_index
 		quest_stage_deleted.emit(item.get_parent().get_text(0), item.get_index(), item.get_parent().get_parent() == main_header)
 		
 
-func _on_item_selected() -> void:
-	var selected_item: TreeItem = get_selected()
-	
-	match selected_item.get_metadata(0)["type"]:
-		QUEST_ID:
-			pass
-		STAGE_ID:
-			pass
 
 
 

@@ -3,21 +3,75 @@ extends Control
 
 
 var quest_resource: NFQuestRes = null
-@onready var tab_container: TabContainer = $MainContainer/QuestPanel/VBoxContainer/TabContainer
+var current_quest: String = "":
+	set(new_quest):
+		current_quest = new_quest
+		quest_id_lbl.text = Strings.title_case(new_quest.replace("_", " "))
+var is_main_quest: bool = true
+var current_stage: int = -1:
+	set(new_stage):
+		current_stage = new_stage
+		quest_tab_container.set_tab_disabled(1, current_stage == -1)
+		if quest_tab_container.is_tab_disabled(1) and quest_tab_container.current_tab == 1:
+			quest_tab_container.current_tab = 0
+
+@onready var quest_tab_container: TabContainer = $MainContainer/QuestPanel/MainContainer/QuestTabContainer
 @onready var quest_id_lbl: Label = $MainContainer/QuestPanel/MainContainer/QuestIDLbl
 @onready var quest_title_ln_edt: LineEdit = $MainContainer/QuestPanel/MainContainer/DataContainer/QuestTitleLnEdt
+@onready var quest_tree: Tree = $MainContainer/QuestsContainer/QuestTree
+@onready var quest_desc_txt_edt: TextEdit = $MainContainer/QuestPanel/MainContainer/DataContainer/QuestDescTxtEdt
+@onready var stage_title_ln_edt: LineEdit = $MainContainer/QuestPanel/MainContainer/QuestTabContainer/StageReqContainer/TitleDescContainer/StageTitleLnEdt
+@onready var stage_desc_txt_edt: TextEdit = $MainContainer/QuestPanel/MainContainer/QuestTabContainer/StageReqContainer/TitleDescContainer/StageDescTxtEdt
 
 
 func _ready() -> void:
-	tab_container.set_tab_title(1, "Stage Requirements")
+	quest_resource = NFQuestRes.new() # Remove once testing is done
+	quest_tab_container.set_tab_title(1, "Stage Requirements")
+	quest_tab_container.set_tab_disabled(1, true)
+	quest_tab_container.current_tab = 0
+	
+	quest_title_ln_edt.focus_exited.connect(_on_title_focus_lost)
+	
+	quest_tree.quest_selected.connect(_on_quest_selected)
+	quest_tree.quest_created.connect(_on_quest_created)
+	quest_tree.quest_stage_created.connect(_on_quest_stage_created)
+	quest_tree.quest_stage_pool_item_created.connect(_on_quest_stage_pool_item_created)
+	quest_tree.quest_stage_selected.connect(_on_quest_stage_selected)
+
+
+func _on_quest_stage_selected(quest_id: String, stage_id: int, is_main: bool, pool_idx: int = -1) -> void:
+	if current_quest != quest_id:
+		#quest_tree.select_quest(quest_id, is_main)
+		_on_quest_selected(quest_id, is_main)
+	
+	current_stage = stage_id
+	
+	if is_main:
+		stage_title_ln_edt.text = quest_resource.get_main_stage_title(quest_id, stage_id)
+		stage_desc_txt_edt.text = quest_resource.get_main_stage_desc(quest_id, stage_id)
+	else:
+		stage_title_ln_edt.text = quest_resource.get_boiler_stage_title(quest_id, stage_id, pool_idx)
+		stage_desc_txt_edt.text = quest_resource.get_boiler_stage_desc(quest_id, stage_id, pool_idx)
 
 
 func _on_quest_selected(quest_id: String, is_main: bool) -> void:
-	quest_id_lbl.text = quest_id
+	if quest_id == current_quest and is_main_quest == is_main:
+		return
+	
+	current_quest = quest_id
+	is_main_quest = is_main
+	
 	if is_main:
-		quest_resource.get_main_quest_title(quest_id)
+		quest_title_ln_edt.text = quest_resource.get_main_quest_title(quest_id)
+		quest_desc_txt_edt.text = quest_resource.get_main_quest_desc(quest_id)
 	else:
-		quest_resource.get_boiler_quest_title(quest_id)
+		quest_title_ln_edt.text = quest_resource.get_boiler_quest_title(quest_id)
+		quest_desc_txt_edt.text = quest_resource.get_boiler_quest_desc(quest_id)
+	
+	quest_title_ln_edt.editable = true
+	quest_desc_txt_edt.editable = true
+	
+	current_stage = -1
 
 
 func _on_quest_created(quest_id: String, is_main: bool) -> void:
@@ -25,6 +79,39 @@ func _on_quest_created(quest_id: String, is_main: bool) -> void:
 		quest_resource.create_main_quest(quest_id)
 	else:
 		quest_resource.create_boiler_quest(quest_id)
+
+
+func _on_quest_stage_created(quest_id: String, quest_idx: int, is_main: bool) -> void:
+	if is_main:
+		quest_resource.create_main_quest_stage(quest_id)
+	else:
+		quest_resource.create_boiler_quest_stage_pool(quest_id)
+
+
+func _on_quest_stage_pool_item_created(quest_id: String, stage_id: int, pool_idx: int) -> void:
+	quest_resource.create_boiler_quest_pool_stage(quest_id, stage_id)
+
+
+func _on_title_focus_lost() -> void:
+	if current_quest.is_empty():
+		return
+	if is_main_quest:
+		quest_resource.set_main_quest_title(current_quest, quest_title_ln_edt.text.strip_edges())
+	else:
+		quest_resource.set_boiler_quest_title(current_quest, quest_title_ln_edt.text.strip_edges())
+
+
+func _on_desc_focus_lost() -> void:
+	if is_main_quest:
+		quest_resource.set_main_quest_desc(current_quest, quest_desc_txt_edt.text.strip_edges())
+	else:
+		quest_resource.set_boiler_quest_desc(current_quest, quest_desc_txt_edt.text.strip_edges())
+
+
+
+
+#func _on_title_focus_lost() -> void:
+	
 
 
 #var current_quest: String = "":

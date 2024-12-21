@@ -186,8 +186,16 @@ func get_main_stage_title(quest_key: String, objective_idx: int) -> String:
 	return quests_main[quest_key]["stages"][objective_idx]["title"]
 
 
-func get_main_stage_desc(quest_key: String, objective_idx: String) -> String:
-	return quests_main[quest_key]["stages"][objective_idx]["description"]
+func get_boiler_stage_title(quest_key: String, stage_idx: int, pool_idx: int) -> String:
+	return quests_boiler[quest_key]["stages"][stage_idx][pool_idx]["title"]
+
+
+func get_main_stage_desc(quest_key: String, stage_id: int) -> String:
+	return quests_main[quest_key]["stages"][stage_id]["description"]
+
+
+func get_boiler_stage_desc(quest_key: String, stage_id: int, pool_idx: int) -> String:
+	return quests_boiler[quest_key]["stages"][stage_id][pool_idx]["description"]
 
 
 func get_main_quest_title(quest_key: String) -> String:
@@ -613,7 +621,7 @@ func create_boiler_quest(quest_key: String, max_completions: int = 1, title: Str
 		"title": title,
 		"description": desc,
 		"max_completions": maxi(1, max_completions),
-		"stages": Array([], TYPE_DICTIONARY, &"", null)}
+		"stages": Array([], TYPE_ARRAY, &"", null)}
 
 
 func has_main_quest(quest_key: String) -> bool:
@@ -785,25 +793,19 @@ func create_main_quest_stage(quest_key: String, stage_title: String = "", stage_
 				})
 
 
-func create_boiler_quest_stage_pool(quest_key: String, pool_min: int, pool_max: int, stage_id: int = -1) -> void:
+func create_boiler_quest_stage_pool(quest_key: String, stage_id: int = -1) -> void:
 	if 0 <= stage_id:
 		quests_boiler[quest_key]["stages"].insert(
 				stage_id,
-				{
-					"min": maxi(1, pool_min),
-					"max": maxi(pool_min, pool_max),
-					"stage_pool": Array([], TYPE_DICTIONARY, &"", null)
-				})
+				Array([], TYPE_DICTIONARY, &"", null)
+				)
 	else:
 		quests_boiler[quest_key]["stages"].append(
-				{
-					"min": maxi(1, pool_min),
-					"max": maxi(pool_min, pool_max),
-					"stage_pool": Array([], TYPE_DICTIONARY, &"", null)
-				})
+				Array([], TYPE_DICTIONARY, &"", null)
+				)
 
 
-func add_boiler_quest_stage(quest_key: String, stage_id: int, stage_title: String = "", stage_desc: String = "", pool_id: int = -1) -> void:
+func create_boiler_quest_pool_stage(quest_key: String, stage_id: int, stage_title: String = "", stage_desc: String = "", pool_id: int = -1) -> void:
 	if 0 <= pool_id:
 		quests_boiler[quest_key]["stages"][stage_id].insert(
 				pool_id,

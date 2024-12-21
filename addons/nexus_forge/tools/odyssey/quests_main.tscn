@@ -105,12 +105,14 @@ custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "Quest Title"
+editable = false
 
 [node name="QuestDescTxtEdt" type="TextEdit" parent="MainContainer/QuestPanel/MainContainer/DataContainer"]
 custom_minimum_size = Vector2(0, 90)
 layout_mode = 2
 size_flags_vertical = 3
 placeholder_text = "Quest Description"
+editable = false
 wrap_mode = 1
 caret_blink = true
 caret_multiple = false
@@ -145,15 +147,15 @@ allow_reselect = true
 hide_root = true
 script = ExtResource("8_k5ys5")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="MainContainer/QuestPanel/MainContainer/QuestTabContainer/StageReqContainer"]
+[node name="TitleDescContainer" type="VBoxContainer" parent="MainContainer/QuestPanel/MainContainer/QuestTabContainer/StageReqContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="StageTitleLnEdt" type="LineEdit" parent="MainContainer/QuestPanel/MainContainer/QuestTabContainer/StageReqContainer/VBoxContainer"]
+[node name="StageTitleLnEdt" type="LineEdit" parent="MainContainer/QuestPanel/MainContainer/QuestTabContainer/StageReqContainer/TitleDescContainer"]
 layout_mode = 2
 placeholder_text = "Stage Title"
 
-[node name="StageDescTxtEdt" type="TextEdit" parent="MainContainer/QuestPanel/MainContainer/QuestTabContainer/StageReqContainer/VBoxContainer"]
+[node name="StageDescTxtEdt" type="TextEdit" parent="MainContainer/QuestPanel/MainContainer/QuestTabContainer/StageReqContainer/TitleDescContainer"]
 layout_mode = 2
 size_flags_vertical = 3
 placeholder_text = "Stage Description"

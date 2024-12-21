@@ -1,8 +1,28 @@
 extends Tree
 
 
+signal required_item_created(item_id: String, item_count: int, operator: int)
+signal required_item_changed(item_idx: int, id: String, operator: int, amount: int)
+signal required_item_deleted(item_idx: int)
+signal required_trigger_created(trigger_id: String, count: int, operator: int)
+signal required_trigger_changed(item_idx: int, id: String, operator: int, count: int)
+signal required_trigger_deleted(item_idx: int)
+signal required_variable_created(variable_path: String, operator: int, value: Variant)
+signal required_variable_changed(var_idx: int, path: String, operator: int, value: Variant)
+signal required_variable_deleted(var_idx: int)
+
 const VAR_RANGE: int = 9999
 const FLOAT_STEP: float = 0.01
+const ICON_PLUS = preload("res://addons/nexus_forge/common_icons/plus_icon.svg")
+const ICON_BOOL = preload("res://addons/nexus_forge/common_icons/variables/bool.svg")
+const ICON_FLOAT = preload("res://addons/nexus_forge/common_icons/variables/float.svg")
+const ICON_INT = preload("res://addons/nexus_forge/common_icons/variables/int.svg")
+const ICON_STRING = preload("res://addons/nexus_forge/common_icons/variables/string.svg")
+const ICON_ADD_BOOL = preload("res://addons/nexus_forge/tools/variables/icons/add_bool.svg")
+const ICON_ADD_FLOAT = preload("res://addons/nexus_forge/tools/variables/icons/add_float.svg")
+const ICON_ADD_INT = preload("res://addons/nexus_forge/tools/variables/icons/add_int.svg")
+const ICON_ADD_STRING = preload("res://addons/nexus_forge/tools/variables/icons/add_string.svg")
+const TRASH_BIN = preload("res://addons/nexus_forge/common_icons/trash_bin.svg")
 
 var root_tree: TreeItem = null
 
@@ -33,6 +53,13 @@ func _ready() -> void:
 	required_triggers.set_text(0, "Triggers")
 	required_variables.set_text(0, "Variables")
 	
+	required_items.add_button(2, ICON_PLUS, 0, false, "Add Item")
+	required_triggers.add_button(2, ICON_PLUS, 1, false, "Add Trigger")
+	required_variables.add_button(2, ICON_ADD_INT, 2, false, "Add Int")
+	required_variables.add_button(2, ICON_ADD_FLOAT, 3, false, "Add Float")
+	required_variables.add_button(2, ICON_ADD_BOOL, 4, false, "Add Bool")
+	required_variables.add_button(2, ICON_ADD_STRING, 5, false, "Add String")
+	
 	required_items.set_selectable(0, false)
 	required_items.set_selectable(1, false)
 	required_items.set_selectable(2, false)
@@ -45,12 +72,10 @@ func _ready() -> void:
 	required_variables.set_selectable(1, false)
 	required_variables.set_selectable(2, false)
 	
-	create_required_item("item_test")
-	create_required_trigger("trigger_test")
-	create_required_variable("stats/stamina", 0, OP_EQUAL)
+	button_clicked.connect(_on_button_clicked)
 
 
-func create_required_variable(var_path: String, var_value: Variant, operator: int) -> void:
+func create_required_variable(var_path: String, var_value: Variant, operator: int = OP_EQUAL) -> void:
 	var new_variable: TreeItem = required_variables.create_child()
 	
 	new_variable.set_cell_mode(0, TreeItem.CELL_MODE_STRING)
@@ -61,23 +86,30 @@ func create_required_variable(var_path: String, var_value: Variant, operator: in
 	
 	match typeof(var_value):
 		TYPE_INT:
+			new_variable.set_icon(0, ICON_INT)
 			new_variable.set_cell_mode(2, TreeItem.CELL_MODE_RANGE)
 			new_variable.set_range_config(2, -VAR_RANGE, VAR_RANGE, 1.0)
 			new_variable.set_range(2, var_value)
 		TYPE_FLOAT:
+			new_variable.set_icon(0, ICON_FLOAT)
 			new_variable.set_cell_mode(2, TreeItem.CELL_MODE_RANGE)
 			new_variable.set_range_config(2, -VAR_RANGE, VAR_RANGE, FLOAT_STEP)
 			new_variable.set_range(2, var_value)
 		TYPE_BOOL:
+			new_variable.set_icon(0, ICON_BOOL)
 			new_variable.set_cell_mode(2, TreeItem.CELL_MODE_CHECK)
+			new_variable.set_text(2, "Enabled")
 			new_variable.set_checked(2, var_value)
 		TYPE_STRING:
+			new_variable.set_icon(0, ICON_STRING)
 			new_variable.set_cell_mode(2, TreeItem.CELL_MODE_STRING)
 			new_variable.set_text(2, var_value)
 	
 	new_variable.set_editable(0, true)
 	new_variable.set_editable(1, true)
 	new_variable.set_editable(2, true)
+	
+	new_variable.add_button(2, TRASH_BIN, 8, false, "Delete Variable")
 
 
 func create_required_item(item_id: String = "", amount: int = 1, operator: int = OP_EQUAL) -> void:
@@ -96,6 +128,8 @@ func create_required_item(item_id: String = "", amount: int = 1, operator: int =
 	new_item.set_editable(0, true)
 	new_item.set_editable(1, true)
 	new_item.set_editable(2, true)
+	
+	new_item.add_button(2, TRASH_BIN, 6, false, "Delete Item")
 
 
 func create_required_trigger(trigger_id: String = "", count: int = 1, operator: int = OP_EQUAL) -> void:
@@ -114,6 +148,8 @@ func create_required_trigger(trigger_id: String = "", count: int = 1, operator: 
 	new_item.set_editable(0, true)
 	new_item.set_editable(1, true)
 	new_item.set_editable(2, true)
+	
+	new_item.add_button(2, TRASH_BIN, 7, false, "Delete Trigger")
 
 
 func operator_to_range(operator: int) -> int:
@@ -161,6 +197,34 @@ func clear_requirements() -> void:
 		req.free()
 
 
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(delta: float) -> void:
-	pass
+func _on_button_clicked(item: TreeItem, column: int, id: int, mouse_button_index: int) -> void:
+	match id:
+		0:
+			create_required_item()
+			required_item_created.emit("", 1, OP_EQUAL)
+		1:
+			create_required_trigger()
+			required_trigger_created.emit("", 1, OP_EQUAL)
+		2:
+			create_required_variable("", 0)
+			required_variable_created.emit("", OP_EQUAL, 0)
+		3:
+			create_required_variable("", 0.0)
+			required_variable_created.emit("", OP_EQUAL, 0.0)
+		4: 
+			create_required_variable("", false)
+			required_variable_created.emit("", OP_EQUAL, false)
+		5:
+			create_required_variable("", "")
+			required_variable_created.emit("", OP_EQUAL, "")
+		6: 
+			required_item_deleted.emit(item.get_index())
+			item.free()
+		7: 
+			required_trigger_deleted.emit(item.get_index())
+			item.free()
+		8: 
+			required_variable_deleted.emit(item.get_index())
+			item.free()
+			
+			

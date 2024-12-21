@@ -86,9 +86,6 @@ func load_folder_data(folder_name: String, top_folder_dict: Dictionary, _folder 
 
 
 func on_item_button_pressed(item: TreeItem, column: int, id: int, mouse_button_index: int) -> void:
-	if column != 1:
-		return
-	
 	match id:
 		CREATE_FOLDER_ID:
 			folder_created.emit(get_path_to_folder(create_folder(item)))

@@ -87,6 +87,7 @@ func _ready() -> void:
 	
 	folders_tree.folder_selected.connect(_on_folder_selected)
 	folders_tree.something_changed.connect(on_something_changed)
+	folders_tree.folder_created.connect(_on_folder_created)
 	variables_tree.something_changed.connect(on_something_changed)
 	variables_tree.variable_updated.connect(_on_variable_updated)
 	variables_tree.variable_renamed.connect(_on_variable_renamed)
