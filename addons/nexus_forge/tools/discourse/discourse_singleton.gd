@@ -37,6 +37,7 @@ var _dialog_paused: bool = false
 func _ready() -> void:
 	delta_timer = DeltaTimer.new()
 	add_child(delta_timer)
+	delta_timer.delta_timeout.connect(_on_delta_timeout)
 
 
 ## Loads a dialog resource file into Discourse. You can then start the dialog
@@ -133,9 +134,11 @@ func _progress_conversation() -> void:
 			_dialog_paused = true
 			choices_reached.emit(choices)
 		DiscourseGraphNode.GraphType.WAIT:
-			wait_started.emit(_dialog_resource.conversation[_next_idx]["wait_time"])
 			_next_idx = _dialog_resource.conversation[_next_idx]["next"]
 			_dialog_paused = true
+			#_start_wait(_dialog_resource.conversation[_next_idx]["wait_time"])
+			delta_timer.start(_dialog_resource.conversation[_next_idx]["wait_time"])
+			wait_started.emit(delta_timer.wait_time)
 		DiscourseGraphNode.GraphType.PAUSE:
 			_dialog_paused = true
 			_next_idx = _dialog_resource.conversation[_next_idx]["next"]
@@ -237,3 +240,7 @@ func get_discourse_signals() -> Array[StringName]:
 
 func get_signal_args(signal_name: StringName) -> Array[Dictionary]:
 	return Array(signal_registry[signal_name].duplicate(), TYPE_DICTIONARY, &"", null)
+
+
+func _on_delta_timeout() -> void:
+	continue_dialog()

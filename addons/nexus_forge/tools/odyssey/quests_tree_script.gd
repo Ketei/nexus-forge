@@ -16,9 +16,9 @@ const TRASH_BIN = preload("res://addons/nexus_forge/common_icons/trash_bin.svg")
 # Row IDs
 const QUEST_ID: int = 0
 const STAGE_ID: int = 1
-const ITEMS_ID: int = 2
-const VARIABLES_ID: int = 3
-const TRIGGERS_ID: int = 4
+#const ITEMS_ID: int = 2
+#const VARIABLES_ID: int = 3
+#const TRIGGERS_ID: int = 4
 const STAGE_POOL: int = 5
 
 # Button IDs
@@ -58,6 +58,8 @@ func _ready() -> void:
 	
 	button_clicked.connect(on_button_pressed)
 	item_edited.connect(on_item_edited)
+	
+	
 
 
 func create_main_quest(quest_id: String = "") -> void:
@@ -94,17 +96,17 @@ func create_main_stage(on_quest: TreeItem, stage_title: String = "") -> void:
 	new_stage.set_text(0, stage_title)
 	new_stage.add_button(0, TRASH_BIN, DELETE_STAGE_MAIN, false, "Delete Stage")
 	new_stage.set_metadata(0, {"type": STAGE_ID, "is_pool": false})
-	var item_tree: TreeItem = new_stage.create_child()
-	var var_tree: TreeItem = new_stage.create_child()
-	var trigger_tree: TreeItem = new_stage.create_child()
+	#var item_tree: TreeItem = new_stage.create_child()
+	#var var_tree: TreeItem = new_stage.create_child()
+	#var trigger_tree: TreeItem = new_stage.create_child()
 	
-	item_tree.set_text(0, "Items")
-	var_tree.set_text(0, "Variables")
-	trigger_tree.set_text(0, "Triggers")
+	#item_tree.set_text(0, "Items")
+	#var_tree.set_text(0, "Variables")
+	#trigger_tree.set_text(0, "Triggers")
 	
-	item_tree.set_metadata(0, {"type": ITEMS_ID})
-	var_tree.set_metadata(0, {"type": VARIABLES_ID})
-	trigger_tree.set_metadata(0, {"type": TRIGGERS_ID})
+	#item_tree.set_metadata(0, {"type": ITEMS_ID})
+	#var_tree.set_metadata(0, {"type": VARIABLES_ID})
+	#trigger_tree.set_metadata(0, {"type": TRIGGERS_ID})
 	
 	new_stage.collapsed = true
 
@@ -112,6 +114,9 @@ func create_main_stage(on_quest: TreeItem, stage_title: String = "") -> void:
 func create_boiler_stage_pool(on_quest: TreeItem) -> void:
 	var new_stage: TreeItem = on_quest.create_child()
 	new_stage.set_cell_mode(0, TreeItem.CELL_MODE_STRING)
+	#new_stage.set_range_config(0, 1, 1, 1)
+	#new_stage.set_range(0, 1)
+	create_boiler_stage(new_stage)
 	new_stage.set_text(0, "Stage Pool")
 	#new_stage.add_button(0, TRASH_BIN, DELETE_STAGE_MAIN, false, "Delete Stage")
 	new_stage.set_metadata(0, {"type": STAGE_POOL})
@@ -121,21 +126,24 @@ func create_boiler_stage_pool(on_quest: TreeItem) -> void:
 
 func create_boiler_stage(on_pool: TreeItem, stage_title: String = "") -> void:
 	var new_stage: TreeItem = on_pool.create_child()
-	var item_tree: TreeItem = new_stage.create_child()
-	var var_tree: TreeItem = new_stage.create_child()
-	var trigger_tree: TreeItem = new_stage.create_child()
+	#var item_tree: TreeItem = new_stage.create_child()
+	#var var_tree: TreeItem = new_stage.create_child()
+	#var trigger_tree: TreeItem = new_stage.create_child()
 	
 	new_stage.set_text(0, stage_title if not stage_title.is_empty() else "New Stage")
 	new_stage.set_metadata(0, {"type": STAGE_ID, "is_pool": true})
 	
-	item_tree.set_text(0, "Items")
-	var_tree.set_text(0, "Variables")
-	trigger_tree.set_text(0, "Triggers")
+	#item_tree.set_text(0, "Items")
+	#var_tree.set_text(0, "Variables")
+	#trigger_tree.set_text(0, "Triggers")
 	
-	item_tree.set_metadata(0, {"type": ITEMS_ID})
-	var_tree.set_metadata(0, {"type": VARIABLES_ID})
-	trigger_tree.set_metadata(0, {"type": TRIGGERS_ID})
+	#item_tree.set_metadata(0, {"type": ITEMS_ID})
+	#var_tree.set_metadata(0, {"type": VARIABLES_ID})
+	#trigger_tree.set_metadata(0, {"type": TRIGGERS_ID})
+	new_stage.add_button(0, TRASH_BIN, DELETE_STAGE_BOILER, false, "Delete Stage")
 	new_stage.collapsed = true
+	
+	on_pool.set_range_config(0, 1, on_pool.get_child_count(), 1)
 	
 
 func get_valid_main_id(desired_id: String, skip_tree: TreeItem = null) -> String:
@@ -245,6 +253,11 @@ func on_button_pressed(item: TreeItem, column: int, id: int, mouse_button_index:
 		create_boiler_stage_pool(item)
 	elif id == NEW_STAGE_BOILER:
 		create_boiler_stage(item)
+	elif id == DELETE_STAGE_BOILER:
+		var item_parent: TreeItem = item.get_parent()
+		item.free()
+		if item_parent.get_child_count() == 0:
+			item_parent.free()
 		
 
 

@@ -1,5 +1,11 @@
 @tool
 extends Control
+@onready var tab_container: TabContainer = $MainContainer/QuestPanel/VBoxContainer/TabContainer
+
+
+func _ready() -> void:
+	tab_container.set_tab_title(1, "Stage Requirements")
+	#tab_container.set_tab_disabled(1, true)
 #
 #
 #var quest_resource: NFQuestRes = null

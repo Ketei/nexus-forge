@@ -8,7 +8,9 @@ extends Node
 
 signal delta_timeout
 
-var wait_time: float = 1.0
+var wait_time: float = 1.0:
+	set(new_wait):
+		wait_time = maxf(0.01, new_wait)
 var elapsed_delta: float = 0.0
 var _finished: bool = false
 var _paused: bool = false
@@ -29,7 +31,7 @@ func start(time: float = 0.0) -> DeltaTimer:
 	var target_time: float = maxf(0, time)
 	elapsed_delta = 0
 	if 0 < time:
-		wait_time = maxf(target_time, 0.01)
+		wait_time = time
 	if not _paused:
 		set_physics_process(true)
 	_finished = false

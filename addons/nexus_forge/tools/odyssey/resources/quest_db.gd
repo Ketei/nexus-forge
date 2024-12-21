@@ -120,7 +120,7 @@ var quest_boiler_tracker_ex: Array[Dictionary] = [
 		"title": "",
 		"description": "",
 		"stage": 0,
-		"stages": [[0,3,5],[1,8],[0]],
+		"stages": [3,8,0], #stage_pool[0][3], stage_pool[1][8], stage_pool[2][0]
 		"active": false
 	}
 ]
@@ -266,16 +266,13 @@ func start_quest_boiler(boiler_data: Dictionary) -> int:
 ## This will generate a boiler quest with randomly selected objectives and
 ## return a dictionary with it which you can use on start_quest_boiler
 func build_quest_boiler_data(boiler_key: String, unique_id: String) -> Dictionary:
-	var objectives: Array[Array] = []
+	var objectives: Array[int] = []
 	
 	for obj_pool in quests_boiler[boiler_key]["stages"]:
-		var possible_idx: Array = range(obj_pool["stage_pool"].size())
-		var new_obj: Array[int] = []
-		for _count in range(randi_range(obj_pool["min"], obj_pool["max"])):
-			if possible_idx.is_empty():
-				break
-			new_obj.append(Arrays.pop_random(possible_idx))
-		objectives.append(new_obj)
+		objectives.append(
+				randi_range(
+						0,
+						obj_pool["stage_pool"].size() - 1))
 	
 	return {
 		"title": quests_boiler[boiler_key]["title"],
@@ -284,7 +281,8 @@ func build_quest_boiler_data(boiler_key: String, unique_id: String) -> Dictionar
 		"boiler": boiler_key,
 		"stage": 0,
 		"stages": objectives,
-		"active": false}
+		"active": false
+		}
 
 
 func set_quest_stage_main(quest_idx: int, quest_stage: int) -> void:
