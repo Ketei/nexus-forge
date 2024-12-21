@@ -37,6 +37,19 @@ func _ready() -> void:
 	quest_tree.quest_stage_created.connect(_on_quest_stage_created)
 	quest_tree.quest_stage_pool_item_created.connect(_on_quest_stage_pool_item_created)
 	quest_tree.quest_stage_selected.connect(_on_quest_stage_selected)
+	quest_tree.quest_id_changed.connect(_on_quest_id_changed)
+
+
+func _on_quest_id_changed(from: String, to: String, is_main: bool) -> void:
+	if is_main:
+		quest_resource.quests_main[to] = quest_resource.quests_main[from]
+		quest_resource.quests_main.erase(from)
+	else:
+		quest_resource.quests_boiler[to] = quest_resource.quests_boiler[from]
+		quest_resource.quests_boiler.erase(from)
+	
+	if current_quest == from and is_main_quest == is_main:
+		current_quest = to
 
 
 func _on_quest_stage_selected(quest_id: String, stage_id: int, is_main: bool, pool_idx: int = -1) -> void:
