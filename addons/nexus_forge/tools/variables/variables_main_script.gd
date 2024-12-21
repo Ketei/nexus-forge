@@ -10,11 +10,12 @@ const NEW_FOLDER_ICON = preload("res://addons/nexus_forge/tools/variables/icons/
 
 var _variables_resource: NFVariablesRes = null
 var _switching_tree: bool = false
-var _switching_variable: bool = false
-var _current_folder: TreeItem = null:
+#var _switching_variable: bool = false
+var _current_folder: String = "":
 	set(new_tree):
 		_current_folder = new_tree
-		var set_disabled: bool = _current_folder == null
+		current_folder_label.text = new_tree
+		var set_disabled: bool = _current_folder.is_empty()
 		add_int_button.disabled = set_disabled
 		add_float_button.disabled = set_disabled
 		add_bool_button.disabled = set_disabled
@@ -84,9 +85,12 @@ func _ready() -> void:
 		no_db_container.visible = true
 		main_split.visible = false
 	
-	folders_tree.item_selected.connect(on_folder_clicked)
+	folders_tree.folder_selected.connect(_on_folder_selected)
 	folders_tree.something_changed.connect(on_something_changed)
 	variables_tree.something_changed.connect(on_something_changed)
+	variables_tree.variable_updated.connect(_on_variable_updated)
+	variables_tree.variable_renamed.connect(_on_variable_renamed)
+	variables_tree.variable_created.connect(_on_variable_created)
 	
 	add_int_button.pressed.connect(on_add_var_int_pressed)
 	add_float_button.pressed.connect(on_add_var_float_pressed)
@@ -99,7 +103,7 @@ func _ready() -> void:
 	folder_search_line.text_changed.connect(on_search_folder_changed)
 	var_search_line.text_changed.connect(on_search_var_changed)
 	
-	folders_tree.delete_folder_request.connect(on_folder_delete_request)
+	folders_tree.folder_deleted.connect(_on_folder_deleted)
 	folders_tree.folder_renamed.connect(on_folder_renamed)
 	
 	data_select_dialog.file_selected.connect(on_data_select_file_selected)
@@ -108,9 +112,54 @@ func _ready() -> void:
 	main_submenu.id_pressed.connect(on_create_variable_pressed)
 
 
-func on_folder_renamed(from: String, to: String, folder: TreeItem) -> void:
-	if folder == _current_folder:
-		current_folder_label.text = folders_tree.get_path_to_folder(folder)
+func _on_variable_created(variable_id: String, value: Variant) -> void:
+	_variables_resource.set_variable(
+			_current_folder + "/" + variable_id,
+			value)
+
+
+func _on_folder_created(path_to_folder: String) -> void:
+	_variables_resource.create_folder(path_to_folder)
+
+
+func _on_variable_renamed(from: String, to: String) -> void:
+	var variable_path: String = _current_folder + "/"
+	_variables_resource.set_variable(
+			variable_path + to,
+			_variables_resource.get_variable(variable_path + from))
+	_variables_resource.delete_variable(variable_path + from)
+
+
+func _on_variable_updated(variable_id: String, value: Variant) -> void:
+	_variables_resource.set_variable(
+			_current_folder + "/" + variable_id,
+			value)
+
+
+func on_folder_renamed(path: String, from: String, to: String) -> void:
+	var path_array: PackedStringArray = path.split("/", false)
+	#var from_folder: String = path_array[-1]
+	var current_level: Dictionary = _variables_resource.variables
+	var top_skip: bool = false
+	#path_array.resize(path_array.size() - 1)
+	
+	for path_next in path_array:
+		if not top_skip:
+			current_level = current_level[path_next]
+			top_skip = true
+			continue
+		current_level = current_level["subfolders"][path]["subfolders"]
+	
+	current_level[to] = current_level[from]
+	current_level.erase(from)
+	
+	var final_path: String = path
+	if not path.is_empty():
+		final_path += "/"
+	#final_path += from
+	
+	if _current_folder == final_path + from:
+		_current_folder = final_path + to
 
 
 func on_create_variable_pressed(id: int) -> void:
@@ -140,7 +189,7 @@ func on_something_changed() -> void:
 
 
 func save_variables() -> void:
-	_variables_resource.variables = build_variable_dictionary()
+	#_variables_resource.variables = build_variable_dictionary()
 	_variables_resource.save()
 	_unsaved = false
 
@@ -178,28 +227,32 @@ func on_data_select_file_selected(path: String) -> void:
 		no_db_container.visible = false
 
 
-func build_variable_dictionary() -> Dictionary:
-	if _current_folder != null:
-		_current_folder.get_metadata(0)["variables"] = variables_tree.get_variables_as_array()
-	
-	return folders_tree.get_full_variables_dict()
+#func build_variable_dictionary() -> Dictionary:
+	#if _current_folder != null:
+		#_current_folder.get_metadata(0)["variables"] = variables_tree.get_variables_as_array()
+	#
+	#return folders_tree.get_full_variables_dict()
 
 
-func on_folder_delete_request(folder: TreeItem) -> void:
-	if _current_folder == folder:
-		_current_folder.get_metadata(0)["variables"] = variables_tree.get_variables_as_array()
-	
-	var delete_folder: bool = true
-	
-	if not folder.get_metadata(0)["variables"].is_empty():
-		delete_folder = await confirmation_dialog.confirm_action().action_taken
-	
-	if delete_folder:
-		if folder == _current_folder:
-			variables_tree.clear_variables()
-			_current_folder = null
-		folder.free()
-		on_something_changed()
+func _on_folder_deleted(folder_path: String) -> void:
+	_variables_resource.delete_folder(folder_path)
+
+
+#func on_folder_delete_request(folder: TreeItem) -> void:
+	#if _current_folder == folder:
+		#_current_folder.get_metadata(0)["variables"] = variables_tree.get_variables_as_array()
+	#
+	#var delete_folder: bool = true
+	#
+	#if not folder.get_metadata(0)["variables"].is_empty():
+		#delete_folder = await confirmation_dialog.confirm_action().action_taken
+	#
+	#if delete_folder:
+		#if folder == _current_folder:
+			#variables_tree.clear_variables()
+			#_current_folder = null
+		#folder.free()
+		#on_something_changed()
 
 
 func _load_variables(folder_dict: Dictionary) -> void:
@@ -228,86 +281,82 @@ func on_search_var_changed(var_search: String) -> void:
 
 
 func on_add_root_folder_pressed() -> void:
-	folders_tree.create_root_folder()
+	_variables_resource.create_folder(folders_tree.create_root_folder())
 
 
 func on_add_var_int_pressed() -> void:
-	variables_tree.create_variable("", TYPE_INT, 0)
+	_variables_resource.set_variable(
+			_current_folder + "/" + variables_tree.create_variable("", 0),
+			0)
+	on_something_changed()
 
 
 func on_add_var_float_pressed() -> void:
-	variables_tree.create_variable("", TYPE_FLOAT, 0.0)
+	#variables_tree.create_variable("", 0.0, true)
+	_variables_resource.set_variable(
+			_current_folder + "/" + variables_tree.create_variable("", 0.0),
+			0.0)
+	on_something_changed()
 
 
 func on_add_var_bool_pressed() -> void:
-	variables_tree.create_variable("", TYPE_BOOL, false)
+	#variables_tree.create_variable("", false, true)
+	_variables_resource.set_variable(
+			_current_folder + "/" + variables_tree.create_variable("", false),
+			false)
+	on_something_changed()
 
 
 func on_add_var_str_pressed() -> void:
-	variables_tree.create_variable("", TYPE_STRING, "")
+	#variables_tree.create_variable("", "", true)
+	_variables_resource.set_variable(
+			_current_folder + "/" + variables_tree.create_variable("", ""),
+			"")
+	on_something_changed()
 
 
-func on_folder_clicked() -> void:
-	if _switching_tree:
-		return
+func _on_folder_selected(path_to_folder: String) -> void:
+	var variables: Dictionary = _variables_resource.get_variables_in_folder(path_to_folder)
 	
-	var target: TreeItem = folders_tree.get_selected()
-	
-	if _current_folder != null:
-		_current_folder.get_metadata(0)["variables"] = variables_tree.get_variables_as_array()
-		
-	_switching_tree = true
-	
-	var_search_line.text = ""
 	variables_tree.clear_variables()
+	var_search_line.clear()
 	
-	var variables: Array = target.get_metadata(0)["variables"]
+	for variable in variables:
+		variables_tree.create_variable(variable, variables[variable])
+
+	#current_folder_label.text = path_to_folder
+	_current_folder = path_to_folder
 	
-	for variable_dict in variables:
-		variables_tree.create_variable(variable_dict["name"], variable_dict["type"], variable_dict["variable"])
-	
-	if not target.is_selected(1):
-		target.select(1)
-	
-	_current_folder = target
-	current_folder_label.text = folders_tree.get_path_to_folder(target)
-	
-	_switching_tree = false
+	folders_tree.select_folder_no_signal(path_to_folder)
 
 
-func on_variable_cpath_button_pressed(item: TreeItem) -> void:
-	var full_path: String = str(folders_tree.get_path_to_folder(_current_folder),"/", item.get_text(0))
-	
-	DisplayServer.clipboard_set(full_path)
+#func on_folder_clicked() -> void:
+	#if _switching_tree:
+		#return
+	#
+	#var target: TreeItem = folders_tree.get_selected()
+	#
+	#if _current_folder != null:
+		#_current_folder.get_metadata(0)["variables"] = variables_tree.get_variables_as_array()
+		#
+	#_switching_tree = true
+	#
+	#var_search_line.text = ""
+	#variables_tree.clear_variables()
+	#
+	#var variables: Array = target.get_metadata(0)["variables"]
+	#
+	#for variable_dict in variables:
+		#variables_tree.create_variable(variable_dict["name"], variable_dict["variable"])
+	#
+	#if not target.is_selected(1):
+		#target.select(1)
+	#
+	#_current_folder = target
+	#current_folder_label.text = folders_tree.get_path_to_folder(target)
+	#
+	#_switching_tree = false
 
 
-func get_int_variable_paths() -> Array[String]:
-	return _get_variables(folders_tree.root_tree, TYPE_INT)
-
-
-func get_float_variable_paths() -> Array[String]:
-	return _get_variables(folders_tree.root_tree, TYPE_FLOAT)
-
-
-func get_bool_variable_paths() -> Array[String]:
-	return _get_variables(folders_tree.root_tree, TYPE_BOOL)
-
-
-func get_string_variable_paths() -> Array[String]:
-	return _get_variables(folders_tree.root_tree, TYPE_STRING)
-
-
-func _get_variables(tree_folder: TreeItem, type_of: int) -> Array[String]:
-	var var_paths: Array[String] = []
-	
-	if _current_folder != null:
-		_current_folder.get_metadata(0)["variables"] = variables_tree.get_variables_as_array()
-	
-	for folder:TreeItem in folders_tree.get_folder_items():
-		var folder_path: String = folders_tree.get_path_to_folder(folder)
-		for variable:Dictionary in folder.get_metadata(0)["variables"]:
-			if variable["type"] == type_of:
-				var_paths.append(str(folder_path, "/", variable["name"]))
-		var_paths.append_array(_get_variables(folder, type_of))
-	
-	return var_paths
+func on_variable_cpath_button_pressed(var_id: String) -> void:
+	DisplayServer.clipboard_set(str(_current_folder, "/", var_id))

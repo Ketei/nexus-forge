@@ -1,14 +1,32 @@
 @tool
 extends Control
+
+
+var quest_resource: NFQuestRes = null
 @onready var tab_container: TabContainer = $MainContainer/QuestPanel/VBoxContainer/TabContainer
+@onready var quest_id_lbl: Label = $MainContainer/QuestPanel/MainContainer/QuestIDLbl
+@onready var quest_title_ln_edt: LineEdit = $MainContainer/QuestPanel/MainContainer/DataContainer/QuestTitleLnEdt
 
 
 func _ready() -> void:
 	tab_container.set_tab_title(1, "Stage Requirements")
-	#tab_container.set_tab_disabled(1, true)
-#
-#
-#var quest_resource: NFQuestRes = null
+
+
+func _on_quest_selected(quest_id: String, is_main: bool) -> void:
+	quest_id_lbl.text = quest_id
+	if is_main:
+		quest_resource.get_main_quest_title(quest_id)
+	else:
+		quest_resource.get_boiler_quest_title(quest_id)
+
+
+func _on_quest_created(quest_id: String, is_main: bool) -> void:
+	if is_main:
+		quest_resource.create_main_quest(quest_id)
+	else:
+		quest_resource.create_boiler_quest(quest_id)
+
+
 #var current_quest: String = "":
 	#set(new_quest):
 		#current_quest = new_quest

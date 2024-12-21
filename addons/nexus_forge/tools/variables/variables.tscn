@@ -33,7 +33,6 @@ script = ExtResource("1_qnbb8")
 metadata/_tab_index = 2
 
 [node name="MainSplit" type="HSplitContainer" parent="."]
-visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -110,7 +109,7 @@ icon_alignment = 1
 [node name="FoldersTree" type="Tree" parent="MainSplit/VBoxContainer/FoldersPanel/FoldersContainer"]
 layout_mode = 2
 size_flags_vertical = 3
-columns = 2
+theme_override_constants/h_separation = 10
 allow_reselect = true
 hide_root = true
 scroll_horizontal_enabled = false
@@ -209,11 +208,11 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_8xo0l")
 [node name="VariablesTree" type="Tree" parent="MainSplit/VBoxContainer2/VariablesPanel"]
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_constants/inner_item_margin_left = 10
+theme_override_constants/h_separation = 10
 theme_override_styles/title_button_hover = SubResource("StyleBoxFlat_xt5km")
 theme_override_styles/title_button_pressed = SubResource("StyleBoxFlat_xt5km")
 theme_override_styles/title_button_normal = SubResource("StyleBoxFlat_xt5km")
-columns = 3
+columns = 2
 column_titles_visible = true
 allow_reselect = true
 hide_folding = true

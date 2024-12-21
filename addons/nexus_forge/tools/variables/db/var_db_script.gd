@@ -61,32 +61,73 @@ func get_variable(variable_path: String) -> Variant:
 		return null
 
 
+func get_variables_in_folder(folder_path: String) -> Dictionary:
+	var levels: PackedStringArray = folder_path.split("/", false)
+	var current_level: Dictionary = variables[levels[0]]
+	var root_skipped: bool = false
+	
+	for level in levels:
+		if not root_skipped:
+			root_skipped = true
+			continue
+		current_level = current_level["subfolders"][level]
+	
+	return current_level["variables"].duplicate()
+
+
 ## Will set a variable with the given path. It'll also create "folders" recursively
 ## to create the variable.
 func set_variable(variable_path: String, variable: Variant) -> void:
-	var path: Array = variable_path.split("/", false)
+	var path: PackedStringArray = variable_path.split("/", false)
 	var level_memory: Dictionary = variables[path[0]]
-	var var_name: String = path.pop_back()
+	var var_name: String = path[-1]
+	path.resize(path.size() - 1)
+	var front_skip: bool = false
 	
 	for folder in path:
-		if folder == path.front():
+		if not front_skip:
+			front_skip = true
 			continue
-		if not level_memory.has(folder):
-			level_memory[folder] = {"variables": {}, "subfolders": {}}
-		level_memory = level_memory[folder]["subfolders"]
+		level_memory = level_memory["subfolders"][folder]
 	
 	level_memory["variables"][var_name] = variable
 
 
-## Deletes a variable at the given path.
-func delete_variable(variable_path: String) -> void:
-	var path: Array = variable_path.split("/", false)
-	var var_name: String = path.pop_back()
-	var level_memory: Dictionary = variables
+## Creates a folder at the given path. It'll recursively create folders
+## until [param folder_path] is reached
+func create_folder(folder_path: String) -> void:
+	var path: PackedStringArray = folder_path.split("/", false)
+	
+	if not variables.has(path[0]):
+		variables[path[0]] = {"variables": {}, "subfolders": {}}
+	
+	var level_memory: Dictionary = variables[path[0]]
+	var front_skip: bool = false
 	
 	for folder in path:
-		if level_memory.has(folder):
-			level_memory = level_memory[folder]["subfolders"]
+		if not front_skip:
+			front_skip = true
+			continue
+		if not level_memory["subfolders"].has(folder):
+			level_memory["subfolders"][folder] = {"variables": {}, "subfolders": {}}
+		level_memory = level_memory["subfolders"][folder]
+
+
+## Deletes a variable at the given path.
+func delete_variable(variable_path: String) -> void:
+	var path: PackedStringArray = variable_path.split("/", false)
+	var var_name: String = path[-1]
+	path.resize(path.size() -1)
+	var level_memory: Dictionary = variables
+	var front_skip: bool = false
+	
+	for folder in path:
+		if not front_skip:
+			level_memory = level_memory[folder]
+			front_skip = true
+			continue
+		if level_memory["subfolders"].has(folder):
+			level_memory = level_memory["subfolders"][folder]
 		else:
 			return
 	

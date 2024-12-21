@@ -34,11 +34,12 @@ var root_tree: TreeItem = null
 var completed_items: TreeItem = null
 var completed_vars: TreeItem = null
 var completed_currency: TreeItem = null
+
 var failed_items: TreeItem = null
 var failed_vars: TreeItem = null
 var failed_currency: TreeItem = null
 
-# Called when the node enters the scene tree for the first time.
+
 func _ready() -> void:
 	root_tree = create_item()
 	
@@ -120,7 +121,7 @@ func _ready() -> void:
 	failure_tree.collapsed = true
 	
 	button_clicked.connect(_on_button_clicked)
-	
+
 
 func create_tree_item(on_tree: TreeItem, item_id: String = "", item_op: int = 0, item_count: int = 1) -> void:
 	var new_item: TreeItem = on_tree.create_child()
@@ -243,6 +244,21 @@ func range_to_operator(range: int) -> int:
 			return OP_SUBTRACT
 		_:
 			return OP_ADD
+
+
+func clear_events() -> void:
+	for event in completed_items.get_children():
+		event.free()
+	for event in completed_currency.get_children():
+		event.free()
+	for event in completed_vars.get_children():
+		event.free()
+	for event in failed_items.get_children():
+		event.free()
+	for event in failed_currency.get_children():
+		event.free()
+	for event in failed_vars.get_children():
+		event.free()
 
 
 func _on_button_clicked(item: TreeItem, column: int, id: int, mouse_button_index: int) -> void:

@@ -2,9 +2,12 @@
 extends Tree
 
 
-signal delete_folder_request(folder_item: TreeItem)
 signal something_changed
-signal folder_renamed(from: String, to: String, tree: TreeItem)
+signal folder_renamed(path: String, to: String)
+signal folder_selected(path_to_folder: String)
+signal folder_deleted(path_to_folder: String)
+signal folder_created(path_to_folder: String)
+#signal delete_folder_request(folder_item: TreeItem)
 
 const FOLDER_ICON = preload("res://addons/nexus_forge/common_icons/folder_icon.svg")
 const NEW_FOLDER_ICON = preload("res://addons/nexus_forge/tools/variables/icons/new_folder.svg")
@@ -18,11 +21,33 @@ var root_tree: TreeItem
 
 func _ready() -> void:
 	root_tree = create_item()
-	set_column_expand(0, false)
-	set_column_expand(1, true)
+	#set_column_expand(0, false)
+	#set_column_expand(1, true)
 	
 	item_edited.connect(on_folder_edited)
 	button_clicked.connect(on_item_button_pressed)
+	item_selected.connect(on_item_selected)
+
+
+func create_root_folder() -> String:
+	return create_folder(root_tree).get_text(0)
+
+
+func select_folder_no_signal(folder_path: String) -> void:
+	var path_names: PackedStringArray = folder_path.split("/", false)
+	var current_folder: TreeItem = root_tree
+	item_selected.disconnect(on_item_selected)
+	
+	for level in path_names:
+		for child in current_folder.get_children():
+			if child.get_text(0) == level:
+				current_folder = child
+				break
+	
+	if current_folder != root_tree:
+		current_folder.select(0)
+	
+	item_selected.connect(on_item_selected)
 
 
 func clear_folders() -> void:
@@ -30,34 +55,24 @@ func clear_folders() -> void:
 		folder.free()
 
 
-func set_folder_name_data(folder_tree: TreeItem, new_name: String) -> void:
-	folder_tree.set_metadata(1, new_name)
-
-
-func create_root_folder() -> void:
-	create_folder(root_tree)
-
-
 func create_folder(target_tree: TreeItem, folder_name: String = "") -> TreeItem:
+	var new_name: String = validate_folder_name(target_tree, folder_name)
 	var new_folder: TreeItem = create_item(target_tree)
-	var new_name: String = validate_folder_name(target_tree, folder_name, new_folder)
 	
-	new_folder.set_metadata(0, get_new_folder_structure())
-	new_folder.set_metadata(1, new_name)
+	new_folder.set_metadata(0, {"variables": [], "id": new_name})
+	#new_folder.set_metadata(1, new_name)
 	
-	new_folder.set_cell_mode(0, TreeItem.CELL_MODE_ICON)
-	new_folder.set_cell_mode(1, TreeItem.CELL_MODE_STRING)
+	#new_folder.set_cell_mode(0, TreeItem.CELL_MODE_ICON)
+	new_folder.set_cell_mode(0, TreeItem.CELL_MODE_STRING)
 	
 	new_folder.set_icon(0, FOLDER_ICON)
-	new_folder.set_text(1, new_name)
+	new_folder.set_text(0, new_name)
 	
-	new_folder.add_button(1, NEW_FOLDER_ICON, 0, false, "Create Subfolder")
-	new_folder.add_button(1, TRASH_BIN, 1, false, "Delete Folder")
+	new_folder.add_button(0, NEW_FOLDER_ICON, 0, false, "Create Subfolder")
+	new_folder.add_button(0, TRASH_BIN, 1, false, "Delete Folder")
 	
-	new_folder.set_editable(0, false)
-	new_folder.set_editable(1, true)
-	
-	something_changed.emit()
+	#new_folder.set_editable(0, false)
+	new_folder.set_editable(0, true)
 	
 	return new_folder
 
@@ -65,15 +80,7 @@ func create_folder(target_tree: TreeItem, folder_name: String = "") -> TreeItem:
 func load_folder_data(folder_name: String, top_folder_dict: Dictionary, _folder := root_tree) -> void:
 	# {"variables": {}, "subfolders": {}} on loop
 	var folder_tree := create_folder(_folder, folder_name)
-	
-	for variable in top_folder_dict["variables"]:
-		var metadata: Dictionary = {
-			"name": variable,
-			"type": typeof(top_folder_dict["variables"][variable]),
-			"variable": top_folder_dict["variables"][variable]}
-		
-		folder_tree.get_metadata(0)["variables"].append(metadata)
-	
+
 	for subfolder in top_folder_dict["subfolders"]:
 		load_folder_data(subfolder, top_folder_dict["subfolders"][subfolder], folder_tree)
 
@@ -84,34 +91,36 @@ func on_item_button_pressed(item: TreeItem, column: int, id: int, mouse_button_i
 	
 	match id:
 		CREATE_FOLDER_ID:
-			create_folder(item)
+			folder_created.emit(get_path_to_folder(create_folder(item)))
 		DELETE_FOLDER_ID:
-			delete_folder_request.emit(item)
+			folder_deleted.emit(get_path_to_folder(item))
+	something_changed.emit()
 
 
 func on_folder_edited() -> void:
 	var item_edited: TreeItem = get_edited()
-	var current_name: String = item_edited.get_text(1)
-	var prev_name: String = item_edited.get_metadata(1)
+	var prev_name: String = item_edited.get_metadata(0)["id"]
 	
+	var tweaked_name: String = validate_folder_name(item_edited.get_parent(), item_edited.get_text(0), item_edited)
+	
+	item_edited.set_text(0, tweaked_name)
+	item_edited.get_metadata(0)["id"] = tweaked_name
+	var prev_path: Array[String] = []
+	var current_node = item_edited.get_parent()
+	
+	while current_node != root_tree:
+		prev_path.push_front(current_node.get_text(0))
+		current_node = current_node.get_parent()
+	
+	folder_renamed.emit("/".join(prev_path), prev_name, tweaked_name)
 	something_changed.emit()
-	
-	if prev_name == current_name:
-		return
-	
-	var tweaked_name: String = validate_folder_name(item_edited.get_parent(), current_name, item_edited)
-	
-	if tweaked_name != current_name:
-		item_edited.set_text(1, tweaked_name)
-	folder_renamed.emit(item_edited.get_metadata(1), tweaked_name, item_edited)
-	item_edited.set_metadata(1, tweaked_name)
 
 
-func get_new_folder_structure() -> Dictionary:
-	return {"variables": []}
+#func get_new_folder_structure() -> Dictionary:
+	#return {"variables": []}
 
 
-func validate_folder_name(parent_tree: TreeItem, folder_name: String, skip_tree: TreeItem) -> String:
+func validate_folder_name(parent_tree: TreeItem, folder_name: String, skip_tree: TreeItem = null) -> String:
 	var ideal_name: String = "new_folder" if folder_name.is_empty() else folder_name
 	var tweaked_name: String = ideal_name
 	var iteration: int = 1
@@ -128,7 +137,7 @@ func has_folder(in_folders:Array[TreeItem], folder_name: String, exception: Tree
 	for child in in_folders:
 		if child == exception:
 			continue
-		if child.get_text(1) == folder_name:
+		if child.get_text(0) == folder_name:
 			return true
 	return false
 
@@ -138,7 +147,7 @@ func get_path_to_folder(folder: TreeItem) -> String:
 	var folder_step: TreeItem = folder
 	
 	while folder_step != root_tree:
-		folder_path.push_front(folder_step.get_text(1))
+		folder_path.push_front(folder_step.get_text(0))
 		folder_step = folder_step.get_parent()
 	
 	return "/".join(folder_path)
@@ -146,7 +155,7 @@ func get_path_to_folder(folder: TreeItem) -> String:
 
 func search_for_folder(string_to_search: String, _starting_tree := root_tree) -> void:
 	for folder in _starting_tree.get_children():
-		if folder.get_text(1).contains(string_to_search):
+		if folder.get_text(0).contains(string_to_search):
 			folder.visible = true
 			if not folder.get_parent().visible:
 				folder.get_parent().visible = true
@@ -176,9 +185,13 @@ func get_full_variables_dict(_folder_item := root_tree) -> Dictionary:
 			folder_dict["variables"][variable["name"]] = variable["variable"]
 		
 		for subfolder in _folder_item.get_children():
-			folder_dict["subfolders"][subfolder.get_text(1)] = get_full_variables_dict(subfolder)
+			folder_dict["subfolders"][subfolder.get_text(0)] = get_full_variables_dict(subfolder)
 	else:
 		for subfolder in _folder_item.get_children():
-			folder_dict[subfolder.get_text(1)] = get_full_variables_dict(subfolder)
+			folder_dict[subfolder.get_text(0)] = get_full_variables_dict(subfolder)
 	
 	return folder_dict
+
+
+func on_item_selected() -> void:
+	folder_selected.emit(get_path_to_folder(get_selected()))

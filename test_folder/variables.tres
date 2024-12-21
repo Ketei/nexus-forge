@@ -5,10 +5,17 @@
 [resource]
 script = ExtResource("1_o3fyd")
 variables = {
+"quest_data": {
+"subfolders": {},
+"variables": {
+"good_quests_completed": 69,
+"good_quests_failed": 24
+}
+},
 "stats": {
 "subfolders": {},
 "variables": {
-"stamina": 11
+"staminax": 11
 }
 }
 }
