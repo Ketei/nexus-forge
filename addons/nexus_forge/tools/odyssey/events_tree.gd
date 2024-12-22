@@ -1,16 +1,6 @@
 extends Tree
 
 
-signal event_item_created(item_id: String, operator: int, on_success: bool)
-signal event_item_changed(item_idx: int, item_id: String, item_op: int, item_count: int, on_success: bool)
-signal event_variable_created(var_path: String, value: Variant, operator: int, on_success: bool)
-signal event_var_changed(var_idx: int, var_path: String, operator: int, on_success: bool)
-signal event_currency_created(currency_id: String, operator: int, on_success: bool)
-signal event_currency_changed(currency_idx: int, currency_id: String, operator: int, on_success: bool)
-signal event_item_removed(item_idx: int, on_success: bool)
-signal event_variable_removed(item_idx: int, on_success: bool)
-signal event_currency_removed(item_idx: int, on_success: bool)
-
 const ICON_ADD = preload("res://addons/nexus_forge/common_icons/plus_icon.svg")
 const ICON_ADD_BOOL = preload("res://addons/nexus_forge/tools/variables/icons/add_bool.svg")
 const ICON_ADD_FLOAT = preload("res://addons/nexus_forge/tools/variables/icons/add_float.svg")
@@ -39,6 +29,18 @@ var failed_items: TreeItem = null
 var failed_vars: TreeItem = null
 var failed_currency: TreeItem = null
 
+var started_items: TreeItem = null
+var started_vars: TreeItem = null
+var started_currency: TreeItem = null
+
+var progressed_items: TreeItem = null
+var progressed_vars: TreeItem = null
+var progressed_currency: TreeItem = null
+
+var finished_items: TreeItem = null
+var finished_vars: TreeItem = null
+var finished_currency: TreeItem = null
+
 
 func _ready() -> void:
 	root_tree = create_item()
@@ -49,19 +51,30 @@ func _ready() -> void:
 	
 	set_column_custom_minimum_width(1, 48)
 	
+	var started_tree: TreeItem = root_tree.create_child()
+	var quest_ended: TreeItem = root_tree.create_child()
+	var quest_progressed: TreeItem = root_tree.create_child()
 	var completion_tree: TreeItem = root_tree.create_child()
 	var failure_tree: TreeItem = root_tree.create_child()
 	
 	completion_tree.set_text(0, "Quest Successful")
 	failure_tree.set_text(0, "Quest Failed")
 	
-	completion_tree.set_selectable(0, false)
-	completion_tree.set_selectable(1, false)
-	completion_tree.set_selectable(2, false)
+	started_tree.set_text(0, "Quest Started")
+	quest_ended.set_text(0, "Quest Ended")
+	quest_progressed.set_text(0, "Quest Progressed")
 	
-	failure_tree.set_selectable(0, false)
-	failure_tree.set_selectable(1, false)
-	failure_tree.set_selectable(2, false)
+	started_items = started_tree.create_child()
+	started_currency = started_tree.create_child()
+	started_vars = started_tree.create_child()
+	
+	progressed_items = quest_progressed.create_child()
+	progressed_currency = quest_progressed.create_child()
+	progressed_vars = quest_progressed.create_child()
+	
+	finished_items = quest_ended.create_child()
+	finished_currency = quest_ended.create_child()
+	finished_vars = quest_ended.create_child()
 	
 	completed_items = completion_tree.create_child()
 	completed_currency = completion_tree.create_child()
@@ -71,56 +84,53 @@ func _ready() -> void:
 	failed_currency = failure_tree.create_child()
 	failed_vars = failure_tree.create_child()
 	
-	completed_items.set_text(0, "Items")
-	completed_vars.set_text(0, "Variables")
-	completed_currency.set_text(0, "Currency")
-	
-	failed_items.set_text(0, "Items")
-	failed_currency.set_text(0, "Currency")
-	failed_vars.set_text(0, "Variables")
-	
-	completed_items.add_button(2, ICON_ADD, 0, false, "Add Item")
-	completed_currency.add_button(2, ICON_ADD, 1, false, "Add Currency")
-	completed_vars.add_button(2, ICON_ADD_INT, 2, false, "Add Integer")
-	completed_vars.add_button(2, ICON_ADD_FLOAT, 3, false, "Add Float")
-	completed_vars.add_button(2, ICON_ADD_BOOL, 4, false, "Add Bool")
-	completed_vars.add_button(2, ICON_ADD_STRING, 5, false, "Add String")
-	
-	failed_items.add_button(2, ICON_ADD, 0, false, "Add Item")
-	failed_currency.add_button(2, ICON_ADD, 1, false, "Add Currency")
-	failed_vars.add_button(2, ICON_ADD_INT, 2, false, "Add Integer")
-	failed_vars.add_button(2, ICON_ADD_FLOAT, 3, false, "Add Float")
-	failed_vars.add_button(2, ICON_ADD_BOOL, 4, false, "Add Bool")
-	failed_vars.add_button(2, ICON_ADD_STRING, 5, false, "Add String")
-	
-	completed_items.set_selectable(0, false)
-	completed_items.set_selectable(1, false)
-	completed_items.set_selectable(2, false)
-	
-	completed_vars.set_selectable(0, false)
-	completed_vars.set_selectable(1, false)
-	completed_vars.set_selectable(2, false)
-	
-	completed_currency.set_selectable(0, false)
-	completed_currency.set_selectable(1, false)
-	completed_currency.set_selectable(2, false)
-	
-	failed_items.set_selectable(0, false)
-	failed_items.set_selectable(1, false)
-	failed_items.set_selectable(2, false)
-	
-	failed_vars.set_selectable(0, false)
-	failed_vars.set_selectable(1, false)
-	failed_vars.set_selectable(2, false)
-	
-	failed_currency.set_selectable(0, false)
-	failed_currency.set_selectable(1, false)
-	failed_currency.set_selectable(2, false)
-	
-	completion_tree.collapsed = true
-	failure_tree.collapsed = true
+	create_event_structure(started_tree, started_items, started_currency, started_vars)
+	create_event_structure(quest_ended, finished_items, finished_currency, finished_vars)
+	create_event_structure(quest_progressed, progressed_items, progressed_currency, progressed_vars)
+	create_event_structure(completion_tree, completed_items, completed_currency, completed_vars)
+	create_event_structure(failure_tree, failed_items, failed_currency, failed_vars)
 	
 	button_clicked.connect(_on_button_clicked)
+
+
+func create_event_structure(on_tree: TreeItem, items: TreeItem, currency: TreeItem, vars: TreeItem) -> void:
+	on_tree.set_selectable(0, false)
+	on_tree.set_selectable(1, false)
+	on_tree.set_selectable(2, false)
+	
+	items.set_text(0, "Items")
+	vars.set_text(0, "Variables")
+	currency.set_text(0, "Currency")
+	
+	items.add_button(2, ICON_ADD, 0, false, "Add Item")
+	currency.add_button(2, ICON_ADD, 1, false, "Add Currency")
+	vars.add_button(2, ICON_ADD_INT, 2, false, "Add Integer")
+	vars.add_button(2, ICON_ADD_FLOAT, 3, false, "Add Float")
+	vars.add_button(2, ICON_ADD_BOOL, 4, false, "Add Bool")
+	vars.add_button(2, ICON_ADD_STRING, 5, false, "Add String")
+	
+	items.set_selectable(0, false)
+	items.set_selectable(1, false)
+	items.set_selectable(2, false)
+	
+	currency.set_selectable(0, false)
+	currency.set_selectable(1, false)
+	currency.set_selectable(2, false)
+	
+	vars.set_selectable(0, false)
+	vars.set_selectable(1, false)
+	vars.set_selectable(2, false)
+	
+	on_tree.collapsed = true
+	
+	
+
+
+#func _on_item_edited() -> void:
+	#var item: TreeItem = get_edited()
+	#match item:
+		#repeat_limit_tree:
+			#completion_limit_updated.emit(repeat_limit_tree.get_range(2))
 
 
 func create_tree_item(on_tree: TreeItem, item_id: String = "", item_op: int = 0, item_count: int = 1) -> void:
@@ -246,47 +256,136 @@ func range_to_operator(range: int) -> int:
 			return OP_ADD
 
 
+#func clear_events() -> void:
+	#for event in completed_items.get_children():
+		#event.free()
+	#for event in completed_currency.get_children():
+		#event.free()
+	#for event in completed_vars.get_children():
+		#event.free()
+	#for event in failed_items.get_children():
+		#event.free()
+	#for event in failed_currency.get_children():
+		#event.free()
+	#for event in failed_vars.get_children():
+		#event.free()
+
+
+func _get_tree_events(item_tree: TreeItem, currency_tree: TreeItem, variables_tree: TreeItem) -> Dictionary:
+	var items: Array[Dictionary] = []
+	var variables: Array[Dictionary] = []
+	var currencies: Array[Dictionary] = []
+	
+	for item in item_tree.get_children():
+		items.append({
+			"item": item.get_text(0),
+			"operator": range_to_operator(item.get_range(1)),
+			"amount": int(item.get_range(2))
+		})
+	
+	for currency in currency_tree.get_children():
+		currencies.append({
+			"currency": currency.get_text(0),
+			"operator": range_to_operator(currency.get_range(1)),
+			"amount": int(currency.get_range(2))
+		})
+	
+	for variable in variables_tree.get_children():
+		var var_val: Variant = null
+		match variable.get_cell_mode(2):
+			TreeItem.CELL_MODE_STRING:
+				var_val = variable.get_text(2)
+			TreeItem.CELL_MODE_RANGE:
+				var_val = int(variable.get_range(2)) if variable.get_range_config(2)["step"] == 1.0 else float(variable.get_range(2))
+			TreeItem.CELL_MODE_CHECK:
+				var_val = variable.is_checked(2)
+		
+		variables.append({
+			"path": variable.get_text(0),
+			"operator": range_to_operator(variable.get_range(1)),
+			"value": var_val
+		})
+	
+	return {
+		"items": items,
+		"currency": currencies,
+		"variables": variables
+		}
+
+
+func _clear_tree(tree_item: TreeItem) -> void:
+	for item in tree_item.get_children():
+		item.free()
+
+
+func get_on_completed_events() -> Dictionary:
+	return _get_tree_events(completed_items, completed_currency, completed_vars)
+
+
+func get_on_finished_events() -> Dictionary:
+	return _get_tree_events(finished_items, finished_currency, finished_vars)
+
+
+func get_on_progressed_events() -> Dictionary:
+	return _get_tree_events(progressed_items, progressed_currency, progressed_vars)
+
+
+func get_on_success_events() -> Dictionary:
+	return _get_tree_events(completed_items, completed_currency, completed_vars)
+
+
+func get_on_failed_events() -> Dictionary:
+	return _get_tree_events(failed_items, failed_currency, failed_vars)
+
+
+func get_on_started_events() -> Dictionary:
+	return _get_tree_events(started_items, started_currency, started_vars)
+
+
 func clear_events() -> void:
-	for event in completed_items.get_children():
-		event.free()
-	for event in completed_currency.get_children():
-		event.free()
-	for event in completed_vars.get_children():
-		event.free()
-	for event in failed_items.get_children():
-		event.free()
-	for event in failed_currency.get_children():
-		event.free()
-	for event in failed_vars.get_children():
-		event.free()
+	_clear_tree(started_items)
+	_clear_tree(started_currency)
+	_clear_tree(started_vars)
+	_clear_tree(finished_items)
+	_clear_tree(finished_currency)
+	_clear_tree(finished_vars)
+	_clear_tree(progressed_items)
+	_clear_tree(progressed_currency)
+	_clear_tree(progressed_vars)
+	_clear_tree(completed_items)
+	_clear_tree(completed_currency)
+	_clear_tree(completed_vars)
+	_clear_tree(failed_items)
+	_clear_tree(failed_currency)
+	_clear_tree(failed_vars)
 
 
 func _on_button_clicked(item: TreeItem, column: int, id: int, mouse_button_index: int) -> void:
 	match id:
 		0:
 			create_tree_item(item)
-			event_item_created.emit("", 0, item == completed_items)
+			#event_item_created.emit("", 0, item == completed_items)
 		1:
 			create_tree_currency(item)
-			event_currency_created.emit("", 0, item == completed_currency)
+			#event_currency_created.emit("", 0, item == completed_currency)
 		2:
 			create_tree_variable(item, "", 0, 0)
-			event_variable_created.emit("", 0, 0, item == completed_vars)
+			#event_variable_created.emit("", 0, 0, item == completed_vars)
 		3:
 			create_tree_variable(item, "", 0, 0.0)
-			event_variable_created.emit("", 0.0, 0, item == completed_vars)
+			#event_variable_created.emit("", 0.0, 0, item == completed_vars)
 		4:
 			create_tree_variable(item, "", 0, false)
-			event_variable_created.emit("", false, 0, item == completed_vars)
+			#event_variable_created.emit("", false, 0, item == completed_vars)
 		5:
 			create_tree_variable(item, "", 0, "")
-			event_variable_created.emit("", "", 0, item == completed_vars)
+			#event_variable_created.emit("", "", 0, item == completed_vars)
 		6:
-			event_item_removed.emit(item.get_index(), item.get_parent() == completed_items)
+			#event_item_removed.emit(item.get_index(), item.get_parent() == completed_items)
 			item.free()
 		7:
-			event_currency_removed.emit(item.get_index(), item.get_parent() == completed_currency)
+			#event_currency_removed.emit(item.get_index(), item.get_parent() == completed_currency)
 			item.free()
 		8:
-			event_variable_removed.emit(item.get_index(), item.get_parent() == completed_vars)
+			#event_variable_removed.emit(item.get_index(), item.get_parent() == completed_vars)
 			item.free()
