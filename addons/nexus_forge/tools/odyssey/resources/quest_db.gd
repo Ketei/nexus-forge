@@ -21,7 +21,7 @@ var quest_ex = {
 				"currency": [], # Array[Dict]
 				"variables": [], # Array[Dict]
 			},
-			"quest_failed": {
+			"quest_finished": {
 				"items": [], # Array[Dict]
 				"currency": [], # Array[Dict]
 				"variables": [], # Array[Dict]
@@ -740,6 +740,42 @@ func create_boiler_quest(quest_key: String, completion_limit: int = 1, title: St
 		"completion_limit": maxi(0, completion_limit),
 		"events": {},
 		"stages": Array([], TYPE_ARRAY, &"", null)}
+
+
+func get_main_quest_events(quest_key: String, event_key: String) -> Dictionary:
+	if quests_main[quest_key]["events"].has(event_key):
+		return quests_main[quest_key]["events"][event_key]
+	return {}
+
+
+func register_main_quest_event(quest_key: String, event_key: String, event_data: Dictionary) -> void:
+	quests_main[quest_key]["events"][event_key] = event_data
+
+
+func has_main_quest_event(quest_key: String, event_key: String) -> bool:
+	return quests_main[quest_key]["events"].has(event_key)
+
+
+func remove_main_quest_event(quest_key: String, event_key: String) -> void:
+	quests_main[quest_key]["events"].erase(event_key)
+
+
+func get_boiler_quest_events(quest_key: String, event_key: String) -> Array[Dictionary]:
+	if quests_boiler[quest_key]["events"].has(event_key):
+		return quests_main[quest_key]["events"][event_key]
+	return Array([], TYPE_DICTIONARY, &"", null)
+
+
+func has_boiler_quest_event(quest_key: String, event_key: String) -> bool:
+	return quests_boiler[quest_key]["events"].has(event_key)
+
+
+func register_boiler_quest_event(quest_key: String, event_key: String, event_data: Dictionary) -> void:
+	quests_boiler[quest_key]["events"][event_key] = event_data
+
+
+func remove_boiler_quest_event(quest_key: String, event_key: String) -> void:
+	quests_boiler[quest_key]["events"].erase(event_key)
 
 
 func has_main_quest(quest_key: String) -> bool:

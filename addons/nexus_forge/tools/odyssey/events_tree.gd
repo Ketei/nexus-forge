@@ -141,6 +141,7 @@ func create_tree_item(on_tree: TreeItem, item_id: String = "", item_op: int = 0,
 	
 	new_item.set_range_config(1, 0, 2, 1)
 	new_item.set_range_config(2, 1, MAX_ITEM_RANGE, 1)
+	new_item.set_range(2, item_count)
 	
 	new_item.set_text(0, item_id)
 	new_item.set_text(1, "=,+,-")
@@ -318,28 +319,95 @@ func _clear_tree(tree_item: TreeItem) -> void:
 		item.free()
 
 
-func get_on_completed_events() -> Dictionary:
-	return _get_tree_events(completed_items, completed_currency, completed_vars)
+func _load_tree_events(item_tree: TreeItem, currency_tree: TreeItem, variable_tree: TreeItem, event_data: Dictionary) -> void:
+	for item in event_data["items"]:
+		create_tree_item(
+				item_tree, item["item"],
+				operator_to_range(item["operator"]),
+				item["amount"])
+	
+	for currency in event_data["currency"]:
+		create_tree_currency(
+				currency_tree,
+				currency["currency"],
+				operator_to_range(currency["operator"]),
+				currency["amount"])
+	
+	for variable in event_data["variables"]:
+		create_tree_variable(
+				variable_tree,
+				variable["path"],
+				variable["operator"],
+				variable["value"])
+	
+
+
+#func load_on_completed_events(event_dict: Dictionary) -> void:
+	#_load_tree_events(completed_items, completed_currency, completed_vars, event_dict)
+#
+#
+#func get_on_completed_events() -> Dictionary:
+	#return _get_tree_events(completed_items, completed_currency, completed_vars)
 
 
 func get_on_finished_events() -> Dictionary:
 	return _get_tree_events(finished_items, finished_currency, finished_vars)
 
 
+func load_on_finished_events(event_dict: Dictionary) -> void:
+	_load_tree_events(finished_items, finished_currency, finished_vars, event_dict)
+
+
+func has_on_finished_events() -> bool:
+	return 0 < finished_items.get_child_count() or 0 < finished_currency.get_child_count() or 0 < finished_vars.get_child_count() 
+
+
 func get_on_progressed_events() -> Dictionary:
 	return _get_tree_events(progressed_items, progressed_currency, progressed_vars)
+
+
+func load_on_progressed_events(event_dict: Dictionary) -> void:
+	_load_tree_events(progressed_items, progressed_currency, progressed_vars, event_dict)
+
+
+func has_on_progressed_events() -> bool:
+	return 0 < progressed_items.get_child_count() or 0 < progressed_currency.get_child_count() or 0 < progressed_vars.get_child_count() 
 
 
 func get_on_success_events() -> Dictionary:
 	return _get_tree_events(completed_items, completed_currency, completed_vars)
 
 
+func load_on_success_events(event_dict: Dictionary) -> void:
+	_load_tree_events(completed_items, completed_currency, completed_vars, event_dict)
+
+
+func has_on_success_events() -> bool:
+	return 0 < completed_items.get_child_count() or 0 < completed_currency.get_child_count() or 0 < completed_vars.get_child_count() 
+
+
 func get_on_failed_events() -> Dictionary:
 	return _get_tree_events(failed_items, failed_currency, failed_vars)
 
 
+func load_on_failed_events(event_dict: Dictionary) -> void:
+	_load_tree_events(failed_items, failed_currency, failed_vars, event_dict)
+
+
+func has_on_failed_events() -> bool:
+	return 0 < failed_items.get_child_count() or 0 < failed_currency.get_child_count() or 0 < failed_vars.get_child_count() 
+
+
 func get_on_started_events() -> Dictionary:
 	return _get_tree_events(started_items, started_currency, started_vars)
+
+
+func load_on_started_events(event_dict: Dictionary) -> void:
+	_load_tree_events(started_items, started_currency, started_vars, event_dict)
+
+
+func has_on_started_events() -> bool:
+	return 0 < started_items.get_child_count() or 0 < started_currency.get_child_count() or 0 < started_vars.get_child_count() 
 
 
 func clear_events() -> void:

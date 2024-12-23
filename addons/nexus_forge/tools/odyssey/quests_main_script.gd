@@ -27,7 +27,7 @@ var pool_idx: int = -1
 @onready var stage_desc_txt_edt: TextEdit = $MainContainer/QuestPanel/MainContainer/QuestTabContainer/StageReqContainer/TitleDescContainer/StageDescTxtEdt
 @onready var events_tree: Tree = $MainContainer/QuestPanel/MainContainer/QuestTabContainer/EventsTree
 @onready var limit_container: HBoxContainer = $MainContainer/QuestPanel/MainContainer/QuestTabContainer/SettingsMargin/SettingsContainer/LimitContainer
-@onready var search_ln_edt: LineEdit = $MainContainer/QuestsContainer/SearchContainer/SearchLnEdt
+@onready var search_ln_edt: LineEdit = $MainContainer/QuestsContainer/SearchLnEdt
 @onready var requirements_tree: Tree = $MainContainer/QuestPanel/MainContainer/QuestTabContainer/StageReqContainer/RequirementsContainer/RequirementsTree
 
 
@@ -123,12 +123,44 @@ func _on_quest_selected(quest_id: String, is_main: bool) -> void:
 	is_main_quest = is_main
 	events_tree.clear_events()
 	
+	
 	if is_main:
 		quest_title_ln_edt.text = quest_resource.get_main_quest_title(quest_id)
 		quest_desc_txt_edt.text = quest_resource.get_main_quest_desc(quest_id)
+		if quest_resource.has_main_quest_event(quest_id, "quest_started"):
+			events_tree.load_on_started_events(
+					quest_resource.get_main_quest_events(quest_id, "quest_started"))
+		if quest_resource.has_main_quest_event(quest_id, "quest_finished"):
+			events_tree.load_on_finished_events(
+					quest_resource.get_main_quest_events(quest_id, "quest_finished"))
+		if quest_resource.has_main_quest_event(quest_id, "quest_progressed"):
+			events_tree.load_on_progressed_events(
+					quest_resource.get_main_quest_events(quest_id, "quest_progressed"))
+		if quest_resource.has_main_quest_event(quest_id, "quest_successful"):
+			events_tree.load_on_success_events(
+					quest_resource.get_main_quest_events(quest_id, "quest_successful"))
+		if quest_resource.has_main_quest_event(quest_id, "quest_failed"):
+			events_tree.load_on_failed_events(
+					quest_resource.get_main_quest_events(quest_id, "quest_failed"))
 	else:
 		quest_title_ln_edt.text = quest_resource.get_boiler_quest_title(quest_id)
 		quest_desc_txt_edt.text = quest_resource.get_boiler_quest_desc(quest_id)
+		completion_limit_spn_bx.value = quest_resource.get_boiler_quest_completion_limit(quest_id)
+		if quest_resource.has_boiler_quest_event(quest_id, "quest_started"):
+			events_tree.load_on_started_events(
+					quest_resource.get_boiler_quest_events(quest_id, "quest_started"))
+		if quest_resource.has_boiler_quest_event(quest_id, "quest_finished"):
+			events_tree.load_on_finished_events(
+					quest_resource.get_boiler_quest_events(quest_id, "quest_finished"))
+		if quest_resource.has_boiler_quest_event(quest_id, "quest_progressed"):
+			events_tree.load_on_progressed_events(
+					quest_resource.get_boiler_quest_events(quest_id, "quest_progressed"))
+		if quest_resource.has_boiler_quest_event(quest_id, "quest_successful"):
+			events_tree.load_on_success_events(
+					quest_resource.get_boiler_quest_events(quest_id, "quest_successful"))
+		if quest_resource.has_boiler_quest_event(quest_id, "quest_failed"):
+			events_tree.load_on_failed_events(
+					quest_resource.get_boiler_quest_events(quest_id, "quest_failed"))
 	
 	quest_title_ln_edt.editable = true
 	quest_desc_txt_edt.editable = true
@@ -137,9 +169,6 @@ func _on_quest_selected(quest_id: String, is_main: bool) -> void:
 	pool_idx = -1
 	
 	limit_container.visible = not is_main
-	
-	if not is_main:
-		completion_limit_spn_bx.value = quest_resource.get_boiler_quest_completion_limit(quest_id)
 
 
 func _on_quest_created(quest_id: String, is_main: bool) -> void:
@@ -176,22 +205,90 @@ func save_current_quest() -> void:
 	if is_main_quest:
 		quest_resource.set_main_quest_title(current_quest, quest_title_ln_edt.text.strip_edges())
 		quest_resource.set_main_quest_desc(current_quest, quest_desc_txt_edt.text.strip_edges())
-		# Setting directly
-		quest_resource.quests_main[current_quest]["events"]["quest_successful"] = events_tree.get_on_success_events()
-		quest_resource.quests_main[current_quest]["events"]["quest_failed"] = events_tree.get_on_failed_events()
-		quest_resource.quests_main[current_quest]["events"]["quest_started"] = events_tree.get_on_started_events()
-		quest_resource.quests_main[current_quest]["events"]["quest_ended"] = events_tree.get_on_finished_events()
-		quest_resource.quests_main[current_quest]["events"]["quest_progressed"] = events_tree.get_on_progressed_events()
+		if events_tree.has_on_started_events():
+			quest_resource.register_main_quest_event(
+					current_quest,
+					"quest_started",
+					events_tree.get_on_started_events())
+		else:
+			if quest_resource.has_main_quest_event(current_quest, "quest_started"):
+				quest_resource.remove_main_quest_event(current_quest, "quest_started")
+		if events_tree.has_on_success_events():
+			quest_resource.register_main_quest_event(
+					current_quest,
+					"quest_successful",
+					events_tree.get_on_success_events())
+		else:
+			if quest_resource.has_main_quest_event(current_quest, "quest_successful"):
+				quest_resource.remove_main_quest_event(current_quest, "quest_successful")
+		if events_tree.has_on_failed_events():
+			quest_resource.register_main_quest_event(
+					current_quest,
+					"quest_failed",
+					events_tree.get_on_failed_events())
+		else:
+			if quest_resource.has_main_quest_event(current_quest, "quest_failed"):
+				quest_resource.remove_main_quest_event(current_quest, "quest_failed")
+		if events_tree.has_on_finished_events():
+			quest_resource.register_main_quest_event(
+					current_quest,
+					"quest_finished",
+					events_tree.get_on_finished_events())
+		else:
+			if quest_resource.has_main_quest_event(current_quest, "quest_finished"):
+				quest_resource.remove_main_quest_event(current_quest, "quest_finished")
+		if events_tree.has_on_progressed_events():
+			quest_resource.register_main_quest_event(
+					current_quest,
+					"quest_progressed",
+					events_tree.get_on_progressed_events())
+		else:
+			if quest_resource.has_main_quest_event(current_quest, "quest_progressed"):
+				quest_resource.remove_main_quest_event(current_quest, "quest_progressed")
 	else:
 		quest_resource.set_boiler_quest_title(current_quest, quest_title_ln_edt.text.strip_edges())
 		quest_resource.set_boiler_quest_desc(current_quest, quest_desc_txt_edt.text.strip_edges())
 		quest_resource.set_boiler_quest_completion_limit(current_quest, completion_limit_spn_bx.value)
-		# Setting Directly
-		quest_resource.quests_boiler[current_quest]["events"]["quest_successful"] = events_tree.get_on_success_events()
-		quest_resource.quests_boiler[current_quest]["events"]["quest_failed"] = events_tree.get_on_failed_events()
-		quest_resource.quests_boiler[current_quest]["events"]["quest_started"] = events_tree.get_on_started_events()
-		quest_resource.quests_boiler[current_quest]["events"]["quest_ended"] = events_tree.get_on_finished_events()
-		quest_resource.quests_boiler[current_quest]["events"]["quest_progressed"] = events_tree.get_on_progressed_events()
+		if events_tree.has_on_started_events():
+			quest_resource.register_boiler_quest_event(
+					current_quest,
+					"quest_started",
+					events_tree.get_on_started_events())
+		else:
+			if quest_resource.has_boiler_quest_event(current_quest, "quest_started"):
+				quest_resource.remove_boiler_quest_event(current_quest, "quest_started")
+		if events_tree.has_on_success_events():
+			quest_resource.register_boiler_quest_event(
+					current_quest,
+					"quest_successful",
+					events_tree.get_on_success_events())
+		else:
+			if quest_resource.has_boiler_quest_event(current_quest, "quest_successful"):
+				quest_resource.remove_boiler_quest_event(current_quest, "quest_successful")
+		if events_tree.has_on_failed_events():
+			quest_resource.register_boiler_quest_event(
+					current_quest,
+					"quest_failed",
+					events_tree.get_on_failed_events())
+		else:
+			if quest_resource.has_boiler_quest_event(current_quest, "quest_failed"):
+				quest_resource.remove_boiler_quest_event(current_quest, "quest_failed")
+		if events_tree.has_on_finished_events():
+			quest_resource.register_boiler_quest_event(
+					current_quest,
+					"quest_finished",
+					events_tree.get_on_finished_events())
+		else:
+			if quest_resource.has_boiler_quest_event(current_quest, "quest_finished"):
+				quest_resource.remove_boiler_quest_event(current_quest, "quest_finished")
+		if events_tree.has_on_progressed_events():
+			quest_resource.register_boiler_quest_event(
+					current_quest,
+					"quest_progressed",
+					events_tree.get_on_progressed_events())
+		else:
+			if quest_resource.has_boiler_quest_event(current_quest, "quest_progressed"):
+				quest_resource.remove_boiler_quest_event(current_quest, "quest_progressed")
 	
 	if current_stage == -1:
 		return

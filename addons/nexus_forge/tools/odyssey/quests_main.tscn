@@ -36,11 +36,7 @@ theme_override_colors/font_color = Color(0.223182, 0.705086, 0.904884, 1)
 theme_override_font_sizes/font_size = 25
 text = "Odyssey"
 
-[node name="SearchContainer" type="HBoxContainer" parent="MainContainer/QuestsContainer"]
-layout_mode = 2
-theme_override_constants/separation = 0
-
-[node name="SearchLnEdt" type="LineEdit" parent="MainContainer/QuestsContainer/SearchContainer"]
+[node name="SearchLnEdt" type="LineEdit" parent="MainContainer/QuestsContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "Search Quest"
@@ -73,6 +69,7 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 25
 
 [node name="QuestTabContainer" type="TabContainer" parent="MainContainer/QuestPanel/MainContainer"]
+visible = false
 layout_mode = 2
 size_flags_vertical = 3
 current_tab = 0
