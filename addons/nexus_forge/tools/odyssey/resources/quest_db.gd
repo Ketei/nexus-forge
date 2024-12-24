@@ -649,17 +649,17 @@ func boiler_quest_stage_achieved(quest_key: String, quest_stage: int, objective_
 
 func get_main_quest_required_item_data(quest_id: String, stage_id: int) -> Array[Dictionary]:
 	var required_items: Array[Dictionary] = []
-	
-	for required_item in quests_main[quest_id]["stages"][stage_id]["requirements"]["items"]:
-		var custom_data_keys: Array[String] = []
-		
-		for custom_key in required_item["custom_data"]:
-			custom_data_keys.append(custom_key["id"])
-		
-		required_items.append({
-			"item": required_item["item"],
-			"amount": required_item["amount"],
-			"custom_data": custom_data_keys})
+	if has_main_quest_requirement(quest_id, stage_id, "items"):
+		for required_item in quests_main[quest_id]["stages"][stage_id]["requirements"]["items"]:
+			var custom_data_keys: Array[String] = []
+			
+			for custom_key in required_item["custom_data"]:
+				custom_data_keys.append(custom_key["id"])
+			
+			required_items.append({
+				"item": required_item["item"],
+				"amount": required_item["amount"],
+				"custom_data": custom_data_keys})
 	
 	return required_items
 
@@ -667,16 +667,17 @@ func get_main_quest_required_item_data(quest_id: String, stage_id: int) -> Array
 func get_boiler_quest_required_item_data(quest_id: String, stage_id: int, pool_idx: int) -> Array[Dictionary]:
 	var required_items: Array[Dictionary] = []
 	
-	for required_item in quests_boiler[quest_id]["stages"][stage_id][pool_idx]["requirements"]["items"]:
-		var custom_data_keys: Array[String] = []
-		
-		for custom_key in required_item["custom_data"]:
-			custom_data_keys.append(custom_key["id"])
-		
-		required_items.append({
-			"item": required_item["item"],
-			"amount": required_item["amount"],
-			"custom_data": custom_data_keys})
+	if has_boiler_quest_requirement(quest_id, stage_id, pool_idx, "items"):
+		for required_item in quests_boiler[quest_id]["stages"][stage_id][pool_idx]["requirements"]["items"]:
+			var custom_data_keys: Array[String] = []
+			
+			for custom_key in required_item["custom_data"]:
+				custom_data_keys.append(custom_key["id"])
+			
+			required_items.append({
+				"item": required_item["item"],
+				"amount": required_item["amount"],
+				"custom_data": custom_data_keys})
 	
 	return required_items
 
@@ -819,14 +820,6 @@ func set_boiler_quest_pool_max(quest_key: String, stage_id: int, pool_id: int, p
 		pool_max)
 
 
-func clear_main_quest_stage_requirements(quest_key: String, stage_id: int, requirement_key: String) -> void:
-	quests_main[quest_key]["stages"][stage_id]["requirements"][requirement_key].clear()
-
-
-func clear_main_quest_stage_requirement(quest_key: String, stage_id: int, requirement_key: String, requirement_idx: int) -> void:
-	quests_main[quest_key]["stages"][stage_id]["requirements"][requirement_key].remove_at(requirement_idx)
-
-
 func set_main_quest_title(quest_key: String, title: String) -> void:
 	quests_main[quest_key]["title"] = title
 
@@ -845,6 +838,30 @@ func set_boiler_quest_desc(boiler_key: String, desc: String) -> void:
 
 func set_main_quest_stage_desc(quest_key: String, stage_id: int, desc: String) -> void:
 	quests_main[quest_key]["stages"][stage_id]["description"] = desc
+
+
+func set_main_quest_requirement(quest_key: String, stage_id: int, requirement_key: String, requirement_data: Array[Dictionary]) -> void:
+	quests_main[quest_key]["stages"][stage_id]["requirements"][requirement_key] = requirement_data
+
+
+func set_boiler_quest_requirement(quest_key: String, stage_id: int, pool_idx: int, requirement_key: String, requirement_data: Array[Dictionary]) -> void:
+	quests_boiler[quest_key]["stages"][stage_id][pool_idx]["requirements"][requirement_key] = requirement_data
+
+
+func has_main_quest_requirement(quest_key: String, stage_id: int, requirement_key: String) -> bool:
+	return quests_main[quest_key]["stages"][stage_id]["requirements"].has(requirement_key)
+
+
+func has_boiler_quest_requirement(quest_key: String, stage_id: int, pool_idx: int, requirement_key: String) -> bool:
+	return quests_boiler[quest_key]["stages"][stage_id][pool_idx]["requirements"].has(requirement_key)
+
+
+func remove_main_quest_requirement(quest_key: String, stage_id: int, requirement_key: String) -> void:
+	quests_main[quest_key]["stages"][stage_id]["requirements"].erase(requirement_key)
+
+
+func remove_boiler_quest_requirement(quest_key: String, stage_id: int, pool_idx: int, requirement_key: String) -> void:
+	quests_boiler[quest_key]["stages"][stage_id][pool_idx]["requirements"].erase(requirement_key)
 
 
 func set_boiler_quest_stage_desc(boiler_key: String, stage_id: int, pool_idx: int, desc: String) -> void:
@@ -913,12 +930,16 @@ func remove_boiler_quest_stage_trigger(quest_key: String, stage_id: int, pool_id
 	quests_boiler[quest_key]["stages"][stage_id]["stage_pool"][pool_id]["requirements"]["triggers"].remove_at(trigger_idx)
 
 
-func get_main_quest_stage_requirements(quest_key: String, stage_id: int) -> Dictionary:
-	return quests_main[quest_key]["stages"][stage_id]["requirements"]
+func get_main_quest_stage_requirements(quest_key: String, stage_id: int, requirement_key: String) -> Variant:
+	if quests_main[quest_key]["stages"][stage_id]["requirements"].has(requirement_key):
+		return quests_main[quest_key]["stages"][stage_id]["requirements"][requirement_key]
+	return null
 
 
-func get_boiler_quest_stage_requirements(quest_key: String, stage_id: int, pool_id: int) -> Dictionary:
-	return quests_boiler[quest_key]["stages"][stage_id]["stage_pool"][pool_id]["requirements"]
+func get_boiler_quest_stage_requirements(quest_key: String, stage_id: int, pool_idx: int, requirement_key: String) -> Variant:
+	if quests_boiler[quest_key]["stages"][stage_id][pool_idx]["requirements"].has(requirement_key):
+		return quests_boiler[quest_key]["stages"][stage_id][pool_idx]["requirements"][requirement_key]
+	return null
 
 
 func create_main_quest_stage(quest_key: String, stage_title: String = "", stage_desc: String = "", stage_id: int = -1) -> void:

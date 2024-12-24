@@ -53,6 +53,11 @@ func _ready() -> void:
 	search_ln_edt.text_changed.connect(_on_search_line_changed)
 
 
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed(&"save_test"):
+		on_save()
+
+
 func _on_search_line_changed(update_text: String) -> void:
 	quest_tree.search_for_text(update_text)
 
@@ -104,9 +109,27 @@ func _on_quest_stage_selected(quest_id: String, stage_id: int, is_main: bool, po
 	if is_main:
 		stage_title_ln_edt.text = quest_resource.get_main_stage_title(quest_id, stage_id)
 		stage_desc_txt_edt.text = quest_resource.get_main_stage_desc(quest_id, stage_id)
+		if quest_resource.has_main_quest_requirement(quest_id, stage_id, "items"):
+			for required_item in quest_resource.get_main_quest_stage_requirements(quest_id, stage_id, "items"):
+				requirements_tree.create_required_item(required_item["item"], required_item["amount"], required_item["operator"], required_item["custom_data"])
+		if quest_resource.has_main_quest_requirement(quest_id, stage_id, "variables"):
+			for required_variable in quest_resource.get_main_quest_stage_requirements(quest_id, stage_id, "variables"):
+				requirements_tree.create_required_variable(required_variable["path"], required_variable["value"], required_variable["operator"])
+		if quest_resource.has_main_quest_requirement(quest_id, stage_id, "triggers"):
+			for required_trigger in quest_resource.get_main_quest_stage_requirements(quest_id, stage_id, "triggers"):
+				requirements_tree.create_required_trigger(required_trigger["trigger"], required_trigger["count"], required_trigger["operator"])
 	else:
 		stage_title_ln_edt.text = quest_resource.get_boiler_stage_title(quest_id, stage_id, pool_idx)
 		stage_desc_txt_edt.text = quest_resource.get_boiler_stage_desc(quest_id, stage_id, pool_idx)
+		if quest_resource.has_boiler_quest_requirement(quest_id, stage_id, pool_item_idx, "items"):
+			for required_item in quest_resource.get_boiler_quest_stage_requirements(quest_id, stage_id, pool_idx, "items"):
+				requirements_tree.create_required_item(required_item["item"], required_item["amount"], required_item["operator"], required_item["custom_data"])
+		if quest_resource.has_boiler_quest_requirement(quest_id, stage_id, pool_item_idx, "variables"):
+			for required_variable in quest_resource.get_boiler_quest_stage_requirements(quest_id, stage_id, pool_idx, "variables"):
+				requirements_tree.create_required_variable(required_variable["path"], required_variable["value"], required_variable["operator"])
+		if quest_resource.has_boiler_quest_requirement(quest_id, stage_id, pool_item_idx, "triggers"):
+			for required_trigger in quest_resource.get_boiler_quest_stage_requirements(quest_id, stage_id, pool_idx, "triggers"):
+				requirements_tree.create_required_trigger(required_trigger["trigger"], required_trigger["count"], required_trigger["operator"])
 	
 	if is_on_stage_settings:
 		quest_tab_container.current_tab = 2
@@ -201,6 +224,11 @@ func _on_title_focus_lost() -> void:
 		quest_tree.set_boiler_quest_stage_title(current_quest, current_stage, pool_idx, stage_title)
 
 
+#func save_current_stage() -> void:
+	#if is_main_quest:
+		#quest_resource.set_quest_stage_main()
+
+
 func save_current_quest() -> void:
 	if is_main_quest:
 		quest_resource.set_main_quest_title(current_quest, quest_title_ln_edt.text.strip_edges())
@@ -293,14 +321,45 @@ func save_current_quest() -> void:
 	if current_stage == -1:
 		return
 	
+	var requirements: Dictionary = requirements_tree.get_requirements()
+	
 	if is_main_quest:
 		quest_resource.set_main_quest_stage_title(current_quest, current_stage, stage_title_ln_edt.text.strip_edges())
 		quest_resource.set_main_quest_stage_desc(current_quest, current_stage, stage_desc_txt_edt.text.strip_edges())
-		quest_resource.quests_main[current_quest]["stages"][current_stage]["requirements"] = requirements_tree.get_requirements()
+		if not requirements["items"].is_empty():
+			quest_resource.set_main_quest_requirement(current_quest, current_stage, "items", requirements["items"])
+		else:
+			if quest_resource.has_main_quest_requirement(current_quest, current_stage, "items"):
+				quest_resource.remove_main_quest_requirement(current_quest, current_stage, "items")
+		if not requirements["variables"].is_empty():
+			quest_resource.set_main_quest_requirement(current_quest, current_stage, "variables", requirements["variables"])
+		else:
+			if quest_resource.has_main_quest_requirement(current_quest, current_stage, "variables"):
+				quest_resource.remove_main_quest_requirement(current_quest, current_stage, "variables")
+		if not requirements["triggers"].is_empty():
+			quest_resource.set_main_quest_requirement(current_quest, current_stage, "triggers", requirements["triggers"])
+		else:
+			if quest_resource.has_main_quest_requirement(current_quest, current_stage, "triggers"):
+				quest_resource.remove_main_quest_requirement(current_quest, current_stage, "triggers")
 	else:
 		quest_resource.set_boiler_quest_stage_title(current_quest, current_stage, pool_idx, stage_title_ln_edt.text.strip_edges())
 		quest_resource.set_boiler_quest_stage_desc(current_quest, current_stage, pool_idx, stage_desc_txt_edt.text.strip_edges())
-		quest_resource.quests_boiler[current_quest]["stages"][current_stage][pool_idx]["requirements"] = requirements_tree.get_requirements()
+		if not requirements["items"].is_empty():
+			quest_resource.set_boiler_quest_requirement(current_quest, current_stage, pool_idx, "items", requirements["items"])
+		else:
+			if quest_resource.has_boiler_quest_requirement(current_quest, current_stage, pool_idx, "items"):
+				quest_resource.remove_boiler_quest_requirement(current_quest, current_stage, pool_idx, "items")
+		if not requirements["variables"].is_empty():
+			quest_resource.set_boiler_quest_requirement(current_quest, current_stage, pool_idx, "variables", requirements["variables"])
+		else:
+			if quest_resource.has_boiler_quest_requirement(current_quest, current_stage, pool_idx, "variables"):
+				quest_resource.remove_boiler_quest_requirement(current_quest, current_stage, pool_idx, "variables")
+		if not requirements["triggers"].is_empty():
+			quest_resource.set_boiler_quest_requirement(current_quest, current_stage, pool_idx, "triggers", requirements["triggers"])
+		else:
+			if quest_resource.has_boiler_quest_requirement(current_quest, current_stage, pool_idx, "triggers"):
+				quest_resource.remove_boiler_quest_requirement(current_quest, current_stage, pool_idx, "triggers")
+		#quest_resource.quests_boiler[current_quest]["stages"][current_stage][pool_idx]["requirements"] = requirements_tree.get_requirements()
 
 
 #func _on_desc_focus_lost() -> void:

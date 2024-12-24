@@ -139,7 +139,7 @@ func create_item_property(on_item: TreeItem, key_name: String, value: Variant, o
 	new_variable.add_button(2, TRASH_BIN, 6, false, "Delete Property")
 
 
-func create_required_item(item_id: String = "", amount: int = 1, operator: int = OP_EQUAL) -> void:
+func create_required_item(item_id: String = "", amount: int = 1, operator: int = OP_EQUAL, item_data: Array[Dictionary] = []) -> void:
 	var new_item: TreeItem = required_items.create_child()
 	new_item.set_cell_mode(0, TreeItem.CELL_MODE_STRING)
 	new_item.set_cell_mode(1, TreeItem.CELL_MODE_RANGE)
@@ -161,6 +161,9 @@ func create_required_item(item_id: String = "", amount: int = 1, operator: int =
 	new_item.add_button(2, ICON_ADD_BOOL, 9, false, "Create bool property")
 	new_item.add_button(2, ICON_ADD_STRING, 10, false, "Create string property")
 	new_item.add_button(2, TRASH_BIN, 6, false, "Delete Item")
+	
+	for data in item_data:
+		create_item_property(new_item, data["id"], data["value"], data["operator"])
 
 
 func create_required_trigger(trigger_id: String = "", count: int = 1, operator: int = OP_EQUAL) -> void:
@@ -181,6 +184,18 @@ func create_required_trigger(trigger_id: String = "", count: int = 1, operator: 
 	new_item.set_editable(2, true)
 	
 	new_item.add_button(2, TRASH_BIN, 6, false, "Delete Trigger")
+
+
+func has_required_items() -> bool:
+	return 0 < required_items.get_child_count()
+
+
+func has_required_triggers() -> bool:
+	return 0 < required_items.get_child_count()
+
+
+func has_required_variables() -> bool:
+	return 0 < required_variables.get_child_count()
 
 
 func operator_to_range(operator: int) -> int:
