@@ -8,6 +8,9 @@ signal rarity_renamed(idx: int, new_name: String)
 signal currency_created(currency_id: String)
 signal currency_id_changed(from: String, to: String)
 signal currency_selected(currency_id: String)
+signal item_category_created(catgory_id: String)
+signal item_category_renamed(from: String, to: String)
+signal item_category_selected(category_id: String)
 
 
 const PLUS_ICON = preload("res://addons/nexus_forge/common_icons/plus_icon.svg")
@@ -16,7 +19,6 @@ const UP_ARROW = preload("res://addons/nexus_forge/common_icons/up_arrow.svg")
 
 enum ButtonIDs {
 	CREATE_CATEGORY,
-	CREATE_ITEM,
 	CREATE_RARITY,
 	SORT_UP,
 	SORT_DOWN,
@@ -32,8 +34,10 @@ enum ButtonIDs {
 #const DELETE_RARITY_BTN: int = 4
 
 enum CellIDs {
-	ITEM,
 	ITEM_CATEGORY,
+	CURRENCY,
+	RARITY
+	
 }
 
 var root_tree: TreeItem = null
@@ -51,13 +55,19 @@ func _ready() -> void:
 	rarity_category= root_tree.create_child()
 	currency_category = root_tree.create_child()
 	
-	items_category.set_text(0, "Items")
+	items_category.set_text(0, "Item Categories")
 	crafting_category.set_text(0, "Crafting")
 	currency_category.set_text(0, "Currency")
 	rarity_category.set_text(0, "Rarity")
 	
+	items_category.set_selectable(0, false)
+	crafting_category.set_selectable(0, false)
+	currency_category.set_selectable(0, false)
+	rarity_category.set_selectable(0, false)
+	
 	rarity_category.set_tooltip_text(0, "Higher = less rare.\nLower = more Rare")
 	
+	items_category.add_button(0, PLUS_ICON, ButtonIDs.CREATE_CATEGORY, false, "Create Item Category")
 	rarity_category.add_button(0, PLUS_ICON, ButtonIDs.CREATE_RARITY, false, "Create Rarity")
 	currency_category.add_button(0, PLUS_ICON, ButtonIDs.CREATE_CURRENCY, false, "Create Currency")
 	
@@ -66,19 +76,19 @@ func _ready() -> void:
 	item_selected.connect(_on_item_selected)
 
 
-func add_category(on_tree: TreeItem, category_name: String = "New Category", items: Array[String] = []) -> TreeItem:
+func create_category(on_tree: TreeItem, category_name: String, items: Array[String] = []) -> TreeItem:
 	var category: TreeItem = on_tree.create_child()
 	category.set_text(0, category_name)
 	category.add_button(0, PLUS_ICON, ButtonIDs.CREATE_CATEGORY, false, "Create Category")
-	category.add_button(0, PLUS_ICON, ButtonIDs.CREATE_ITEM, false, "Create Item")
-	category.set_metadata(0, {"id": CellIDs.ITEM_CATEGORY})
+	category.set_metadata(0, {"row_id": CellIDs.ITEM_CATEGORY, "name": category_name})
+	category.set_editable(0, true)
 	return category
 
 
-func add_item(on_tree: TreeItem, item_id: String = "new_item") -> void:
-	var new_item: TreeItem = on_tree.create_child()
-	new_item.set_text(0, item_id)
-	new_item.set_metadata(0, {"id": CellIDs.ITEM})
+#func add_item(on_tree: TreeItem, item_id: String = "new_item") -> void:
+	#var new_item: TreeItem = on_tree.create_child()
+	#new_item.set_text(0, item_id)
+	#new_item.set_metadata(0, {"id": CellIDs.ITEM})
 
 
 func create_rarity(rarity_name: String) -> void:
@@ -90,6 +100,7 @@ func create_rarity(rarity_name: String) -> void:
 	if 0 < new_rarity.get_index():
 		var prev_rarity: TreeItem = rarity_category.get_child(new_rarity.get_index() - 1)
 		prev_rarity.set_button_disabled(0, 1, false)
+	new_rarity.set_metadata(0, {"row_id": CellIDs.RARITY})
 
 
 func create_currency(currency_id: String, currency_value: int = 1) -> void:
@@ -100,7 +111,7 @@ func create_currency(currency_id: String, currency_value: int = 1) -> void:
 		insert_idx += 1
 	var new_currency: TreeItem = currency_category.create_child(insert_idx)
 	new_currency.set_text(0, currency_id)
-	new_currency.set_metadata(0, {"id": currency_id, "value": currency_value})
+	new_currency.set_metadata(0, {"row_id": CellIDs.CURRENCY, "id": currency_id, "value": currency_value})
 	new_currency.set_editable(0, true)
 
 
@@ -111,19 +122,40 @@ func get_valid_currency_id(desired_id: String = "", skip_tree: TreeItem = null) 
 	var modified_id: String = cleaned_id
 	var iteration: int = 0
 	
-	while has_currency(modified_id, skip_tree):
+	while has_id(currency_category, modified_id, skip_tree):
 		iteration += 1
 		modified_id = cleaned_id + str(iteration)
 	return modified_id
 
 
-func has_currency(currency_id: String, skip_tree: TreeItem) -> bool:
-	for currency in currency_category.get_children():
-		if currency == skip_tree:
+func get_valid_category_id(on_tree: TreeItem, desired_name: String, skip_tree: TreeItem = null) -> String:
+	var clean_string: String = desired_name.strip_edges()
+	if clean_string.is_empty():
+		clean_string = "new_category"
+	var modified_id: String = clean_string
+	var iteration: int = 0
+	while has_id(on_tree, modified_id, skip_tree):
+		iteration += 1
+		modified_id = clean_string + str(iteration)
+	return modified_id
+
+
+func has_id(on_tree: TreeItem, id_string: String, skip_tree: TreeItem) -> bool:
+	for child in on_tree.get_children():
+		if child == skip_tree:
 			continue
-		if currency.get_text(0) == currency_id:
+		if child.get_text(0) == id_string:
 			return true
 	return false
+
+
+#func has_currency(currency_id: String, skip_tree: TreeItem) -> bool:
+	#for currency in currency_category.get_children():
+		#if currency == skip_tree:
+			#continue
+		#if currency.get_text(0) == currency_id:
+			#return true
+	#return false
 
 
 # Sorts the currency depending on it's value
@@ -184,6 +216,10 @@ func _on_button_clicked(item: TreeItem, column: int, id: int, mouse_button_index
 			var currency_id: String = get_valid_currency_id()
 			create_currency(currency_id)
 			currency_created.emit(currency_id)
+		ButtonIDs.CREATE_CATEGORY:
+			var new_cat_id: String = get_valid_category_id(item, "new_category")
+			create_category(item, new_cat_id)
+			item_category_created.emit(new_cat_id)
 
 
 func _on_item_edited() -> void:
@@ -196,10 +232,19 @@ func _on_item_edited() -> void:
 		edited.set_text(0, new_name)
 		currency_id_changed.emit(edited.get_metadata(0)["id"], new_name)
 		edited.get_metadata(0)["id"] = new_name
+	elif edited.get_metadata(0)["row_id"] == CellIDs.ITEM_CATEGORY:
+		var new_id: String = get_valid_category_id(edited.get_parent(), edited.get_text(0), edited)
+		item_category_renamed.emit(edited.get_metadata(0)["name"], new_id)
+		edited.set_text(0, new_id)
+		edited.get_metadata(0)["name"] = new_id
 
 
 func _on_item_selected() -> void:
 	var selected: TreeItem = get_selected()
-	
-	if selected.get_parent() == currency_category:
-		currency_selected.emit(selected.get_text(0))
+	match selected.get_metadata(0)["row_id"]:
+		CellIDs.CURRENCY:
+			currency_selected.emit(selected.get_text(0))
+		CellIDs.ITEM_CATEGORY:
+			item_category_selected.emit(selected.get_text(0))
+		CellIDs.RARITY:
+			pass

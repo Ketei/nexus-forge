@@ -2,31 +2,49 @@
 extends Control
 
 var current_currency: String = ""
+var current_item_category: String = ""
 var items_resource: NFItemsRes = null
-@onready var rarities_opt_btn: OptionButton = $MainContainer/ItemsContainer/DataContainer/ItemDataContainer/RarityContainer/RaritiesOptBtn
+
+
+@onready var rarities_opt_btn: OptionButton = $MainContainer/ItemsContainer/DataContainer/ItemsContainer/ItemMargin/ItemDataContainer/RarityContainer/RaritiesOptBtn
 @onready var depot_tree: Tree = $MainContainer/ItemsContainer/DataContainer/ItemSelectContainer/DepotTree
 
-@onready var item_data_container: VBoxContainer = $MainContainer/ItemsContainer/DataContainer/ItemDataContainer
+@onready var item_data_container: VBoxContainer = $MainContainer/ItemsContainer/DataContainer/ItemsContainer/ItemMargin/ItemDataContainer
 @onready var currency_data_container: VBoxContainer = $MainContainer/ItemsContainer/DataContainer/CurrencyDataContainer
-@onready var item_description: TextEdit = $MainContainer/ItemsContainer/DataContainer/ItemDataContainer/DescContainer/ItemDescription
-@onready var stack_size_spn_bx: SpinBox = $MainContainer/ItemsContainer/DataContainer/ItemDataContainer/StackContainer/StackSizeSpnBx
-@onready var item_name_ln_edt: LineEdit = $MainContainer/ItemsContainer/DataContainer/ItemDataContainer/NameContainer/ItemNameLnEdt
+@onready var item_description: TextEdit = $MainContainer/ItemsContainer/DataContainer/ItemsContainer/ItemMargin/ItemDataContainer/DescContainer/ItemDescription
+@onready var stack_size_spn_bx: SpinBox = $MainContainer/ItemsContainer/DataContainer/ItemsContainer/ItemMargin/ItemDataContainer/StackContainer/StackSizeSpnBx
+@onready var item_name_ln_edt: LineEdit = $MainContainer/ItemsContainer/DataContainer/ItemsContainer/ItemMargin/ItemDataContainer/NameContainer/ItemNameLnEdt
 
 @onready var currency_name_ln_edt: LineEdit = $MainContainer/ItemsContainer/DataContainer/CurrencyDataContainer/NameContainer/CurrencyNameLnEdt
 @onready var currency_desc_text_edit: TextEdit = $MainContainer/ItemsContainer/DataContainer/CurrencyDataContainer/DescContainer/CurrencyDescTextEdit
 @onready var currency_val_spn_bx: SpinBox = $MainContainer/ItemsContainer/DataContainer/CurrencyDataContainer/ValueContainer/CurrencyValSpnBx
 
+@onready var item_cat_txt_edt: TextEdit = $MainContainer/ItemsContainer/DataContainer/ItemsContainer/CategoryDataContainer/CatDescContainer/ItemCatTxtEdt
+@onready var items_tree: Tree = $MainContainer/ItemsContainer/DataContainer/ItemsContainer/CategoryDataContainer/CategoryItemsContainer/ItemsTree
+
+@onready var category_data_container: VBoxContainer = $MainContainer/ItemsContainer/DataContainer/ItemsContainer/CategoryDataContainer
+#@onready var item_data_container: VBoxContainer = $MainContainer/ItemsContainer/DataContainer/ItemsContainer/ItemMargin/ItemDataContainer
+@onready var items_container: HBoxContainer = $MainContainer/ItemsContainer/DataContainer/ItemsContainer
+@onready var category_id_label: Label = $MainContainer/ItemsContainer/DataContainer/ItemsContainer/CategoryDataContainer/CatDescContainer/CategoryIDLabel
+
 
 func _ready() -> void:
+	items_tree.create_item()
+	
 	depot_tree.rarity_created.connect(_on_rarity_created)
 	depot_tree.rarity_reindexed.connect(_on_rarity_reindexed)
 	depot_tree.rarity_deleted.connect(_on_rarity_deleted)
 	depot_tree.rarity_renamed.connect(_on_rarity_renamed)
 	currency_val_spn_bx.value_changed.connect(_on_currency_value_changed)
 	depot_tree.currency_selected.connect(_on_currency_selected)
+	depot_tree.item_category_selected.connect(_on_item_category_selected)
+	set_data_visible(-1)
 
 
 func _input(event: InputEvent) -> void:
+	if not visible:
+		return
+	
 	if event is InputEventKey and event.is_action_pressed(&"ui_focus_next"):
 		if item_description.has_focus():
 			if event.shift_pressed:
@@ -49,8 +67,17 @@ func _on_currency_selected(currency_id: String) -> void:
 	set_data_visible(1)
 
 
+func _on_item_category_selected(category_id: String) -> void:
+	current_item_category = category_id
+	set_data_visible(0)
+	clear_item_tree()
+	category_data_container.visible = true
+	item_data_container.visible = false
+	category_id_label.text = Strings.title_case(category_id.replace("_", " "))
+
+
 func set_data_visible(id: int) -> void:
-	item_data_container.visible = id == 0
+	items_container.visible = id == 0
 	currency_data_container.visible = id == 1
 
 
@@ -81,6 +108,10 @@ func _on_rarity_reindexed(from: int, to: int) -> void:
 		rarities_opt_btn.add_item(rarity)
 	rarities_opt_btn.selected = current_selected
 
+
+func clear_item_tree() -> void:
+	for item in items_tree.get_root().get_children():
+		item.free()
 
 
 #var _current_id: String = ""
