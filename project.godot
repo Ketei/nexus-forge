@@ -19,7 +19,6 @@ config/icon="res://icon.svg"
 [autoload]
 
 NexusForge="*res://addons/nexus_forge/classes/autoload/nexus_forge_singleton.gd"
-InventoryManager="*res://addons/inventory_editor/InventoryManager.gd"
 
 [dialogue_editor]
 

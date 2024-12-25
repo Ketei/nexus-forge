@@ -8,10 +8,10 @@ const ICON_BOOL = preload("res://addons/nexus_forge/common_icons/variables/bool.
 const ICON_FLOAT = preload("res://addons/nexus_forge/common_icons/variables/float.svg")
 const ICON_INT = preload("res://addons/nexus_forge/common_icons/variables/int.svg")
 const ICON_STRING = preload("res://addons/nexus_forge/common_icons/variables/string.svg")
-const ICON_ADD_BOOL = preload("res://addons/nexus_forge/tools/variables/icons/add_bool.svg")
-const ICON_ADD_FLOAT = preload("res://addons/nexus_forge/tools/variables/icons/add_float.svg")
-const ICON_ADD_INT = preload("res://addons/nexus_forge/tools/variables/icons/add_int.svg")
-const ICON_ADD_STRING = preload("res://addons/nexus_forge/tools/variables/icons/add_string.svg")
+const ICON_ADD_BOOL = preload("res://addons/nexus_forge/common_icons/variables/add_bool.svg")
+const ICON_ADD_FLOAT = preload("res://addons/nexus_forge/common_icons/variables/add_float.svg")
+const ICON_ADD_INT = preload("res://addons/nexus_forge/common_icons/variables/add_int.svg")
+const ICON_ADD_STRING = preload("res://addons/nexus_forge/common_icons/variables/add_string.svg")
 const TRASH_BIN = preload("res://addons/nexus_forge/common_icons/trash_bin.svg")
 
 var root_tree: TreeItem = null

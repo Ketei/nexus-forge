@@ -10,7 +10,7 @@ signal folder_created(path_to_folder: String)
 #signal delete_folder_request(folder_item: TreeItem)
 
 const FOLDER_ICON = preload("res://addons/nexus_forge/common_icons/folder_icon.svg")
-const NEW_FOLDER_ICON = preload("res://addons/nexus_forge/tools/variables/icons/new_folder.svg")
+const NEW_FOLDER_ICON = preload("res://addons/nexus_forge/common_icons/new_folder.svg")
 const TRASH_BIN = preload("res://addons/nexus_forge/common_icons/trash_bin.svg")
 
 const CREATE_FOLDER_ID: int = 0

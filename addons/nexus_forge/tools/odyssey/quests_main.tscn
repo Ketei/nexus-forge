@@ -69,12 +69,12 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 25
 
 [node name="QuestTabContainer" type="TabContainer" parent="MainContainer/QuestPanel/MainContainer"]
+visible = false
 layout_mode = 2
 size_flags_vertical = 3
-current_tab = 2
+current_tab = 0
 
 [node name="SettingsMargin" type="MarginContainer" parent="MainContainer/QuestPanel/MainContainer/QuestTabContainer"]
-visible = false
 layout_mode = 2
 theme_override_constants/margin_left = 8
 theme_override_constants/margin_top = 4
@@ -133,6 +133,7 @@ metadata/_tab_index = 1
 metadata/_tab_name = "Quest Events"
 
 [node name="StageReqContainer" type="HBoxContainer" parent="MainContainer/QuestPanel/MainContainer/QuestTabContainer"]
+visible = false
 layout_mode = 2
 metadata/_tab_index = 2
 metadata/_tab_name = "Stage Settings"

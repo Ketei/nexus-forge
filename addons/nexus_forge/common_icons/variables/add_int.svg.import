@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://12lyg7db58dg"
-path="res://.godot/imported/add_int.svg-9499627e1dd4c91a055a72df34c98022.ctex"
+path="res://.godot/imported/add_int.svg-2d70621545ffe934330e610343d8cf3e.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://addons/nexus_forge/tools/variables/icons/add_int.svg"
-dest_files=["res://.godot/imported/add_int.svg-9499627e1dd4c91a055a72df34c98022.ctex"]
+source_file="res://addons/nexus_forge/common_icons/variables/add_int.svg"
+dest_files=["res://.godot/imported/add_int.svg-2d70621545ffe934330e610343d8cf3e.ctex"]
 
 [params]
 

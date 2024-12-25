@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dcgniolhiay6u"
-path="res://.godot/imported/add_float.svg-81e89e435cb3982f8f90b880b3179ba9.ctex"
+uid="uid://b15017jnuba0m"
+path="res://.godot/imported/down_arrow.svg-a4a0368342366252edfb2a1752a50089.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://addons/nexus_forge/tools/variables/icons/add_float.svg"
-dest_files=["res://.godot/imported/add_float.svg-81e89e435cb3982f8f90b880b3179ba9.ctex"]
+source_file="res://addons/nexus_forge/common_icons/down_arrow.svg"
+dest_files=["res://.godot/imported/down_arrow.svg-a4a0368342366252edfb2a1752a50089.ctex"]
 
 [params]
 

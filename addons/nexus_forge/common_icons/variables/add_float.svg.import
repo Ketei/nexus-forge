@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c472l5bho4jpi"
-path="res://.godot/imported/add_bool.svg-ba83a1ca8e07b71c4238816a1c033c82.ctex"
+uid="uid://dcgniolhiay6u"
+path="res://.godot/imported/add_float.svg-61df5d9f472d6868f0eef156497a7dcc.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://addons/nexus_forge/tools/variables/icons/add_bool.svg"
-dest_files=["res://.godot/imported/add_bool.svg-ba83a1ca8e07b71c4238816a1c033c82.ctex"]
+source_file="res://addons/nexus_forge/common_icons/variables/add_float.svg"
+dest_files=["res://.godot/imported/add_float.svg-61df5d9f472d6868f0eef156497a7dcc.ctex"]
 
 [params]
 

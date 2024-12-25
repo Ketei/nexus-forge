@@ -1,19 +1,20 @@
-[gd_scene load_steps=19 format=3 uid="uid://fss7aqmbgj6s"]
+[gd_scene load_steps=20 format=3 uid="uid://fss7aqmbgj6s"]
 
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/depot/items_main_script.gd" id="1_82bi8"]
-[ext_resource type="Texture2D" uid="uid://12lyg7db58dg" path="res://addons/nexus_forge/tools/variables/icons/add_int.svg" id="1_tsjpe"]
+[ext_resource type="Texture2D" uid="uid://12lyg7db58dg" path="res://addons/nexus_forge/common_icons/variables/add_int.svg" id="1_tsjpe"]
 [ext_resource type="Texture2D" uid="uid://xkqkxosnppid" path="res://addons/nexus_forge/common_icons/open_file.svg" id="2_djc7d"]
-[ext_resource type="Texture2D" uid="uid://dcgniolhiay6u" path="res://addons/nexus_forge/tools/variables/icons/add_float.svg" id="2_ib6x0"]
+[ext_resource type="Texture2D" uid="uid://dcgniolhiay6u" path="res://addons/nexus_forge/common_icons/variables/add_float.svg" id="2_ib6x0"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/depot/item_tree_script.gd" id="2_un8xd"]
 [ext_resource type="Texture2D" uid="uid://cd4jt2ru86e16" path="res://addons/nexus_forge/common_icons/save_file.svg" id="2_wq7bt"]
 [ext_resource type="Texture2D" uid="uid://mve5bcrecv8v" path="res://addons/nexus_forge/common_icons/import_icon.svg" id="3_pqhat"]
-[ext_resource type="Texture2D" uid="uid://c472l5bho4jpi" path="res://addons/nexus_forge/tools/variables/icons/add_bool.svg" id="3_ujuwe"]
-[ext_resource type="Texture2D" uid="uid://cxv7veghytl4m" path="res://addons/nexus_forge/tools/variables/icons/add_string.svg" id="4_8td5l"]
+[ext_resource type="Texture2D" uid="uid://c472l5bho4jpi" path="res://addons/nexus_forge/common_icons/variables/add_bool.svg" id="3_ujuwe"]
+[ext_resource type="Texture2D" uid="uid://cxv7veghytl4m" path="res://addons/nexus_forge/common_icons/variables/add_string.svg" id="4_8td5l"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/depot/currencies_tree_script.gd" id="4_m5bf7"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/depot/materials_tree_script.gd" id="4_moi3l"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/depot/item_flag_tree_script.gd" id="5_0ah1r"]
 [ext_resource type="Texture2D" uid="uid://b8q6di4imiriq" path="res://addons/nexus_forge/common_icons/search_icon.svg" id="5_xbb04"]
 [ext_resource type="Texture2D" uid="uid://c1aelqf557khb" path="res://addons/nexus_forge/common_icons/plus_icon.svg" id="6_eml1p"]
+[ext_resource type="Script" path="res://addons/nexus_forge/tools/depot/depot_categories.gd" id="8_bfcx5"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/depot/stations_tree_script.gd" id="9_ox1mw"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/depot/recipe_tree_script.gd" id="11_2psm1"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/depot/custom_data_tree_script.gd" id="11_ri7fi"]
@@ -47,6 +48,7 @@ grow_vertical = 2
 [node name="ItemsContainer" type="VBoxContainer" parent="MainContainer"]
 custom_minimum_size = Vector2(650, 0)
 layout_mode = 2
+size_flags_horizontal = 3
 size_flags_stretch_ratio = 4.0
 
 [node name="DataContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer"]
@@ -80,6 +82,7 @@ icon_alignment = 1
 expand_icon = true
 
 [node name="BarPanelContainer" type="PanelContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemSelectContainer"]
+visible = false
 layout_mode = 2
 
 [node name="ItemContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemSelectContainer/BarPanelContainer"]
@@ -107,6 +110,7 @@ icon_alignment = 1
 expand_icon = true
 
 [node name="ItemTree" type="Tree" parent="MainContainer/ItemsContainer/DataContainer/ItemSelectContainer"]
+visible = false
 custom_minimum_size = Vector2(250, 0)
 layout_mode = 2
 size_flags_vertical = 3
@@ -118,6 +122,7 @@ select_mode = 1
 script = ExtResource("2_un8xd")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemSelectContainer"]
+visible = false
 layout_mode = 2
 size_flags_vertical = 3
 size_flags_stretch_ratio = 2.0
@@ -154,48 +159,62 @@ hide_root = true
 scroll_horizontal_enabled = false
 script = ExtResource("4_m5bf7")
 
+[node name="LineEdit" type="LineEdit" parent="MainContainer/ItemsContainer/DataContainer/ItemSelectContainer"]
+layout_mode = 2
+placeholder_text = "Search..."
+clear_button_enabled = true
+right_icon = ExtResource("5_xbb04")
+
+[node name="DepotTree" type="Tree" parent="MainContainer/ItemsContainer/DataContainer/ItemSelectContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+allow_reselect = true
+hide_root = true
+script = ExtResource("8_bfcx5")
+
 [node name="VSeparator" type="VSeparator" parent="MainContainer/ItemsContainer/DataContainer"]
 layout_mode = 2
 
-[node name="ItemDataContainer" type="VBoxContainer" parent="MainContainer/ItemsContainer/DataContainer"]
+[node name="OldItemDataContainer" type="VBoxContainer" parent="MainContainer/ItemsContainer/DataContainer"]
+visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="NameContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer"]
+[node name="NameContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/OldItemDataContainer"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/NameContainer"]
+[node name="Label" type="Label" parent="MainContainer/ItemsContainer/DataContainer/OldItemDataContainer/NameContainer"]
 custom_minimum_size = Vector2(105, 0)
 layout_mode = 2
 text = "Item Name"
 
-[node name="ItemNameLnEdt" type="LineEdit" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/NameContainer"]
+[node name="ItemNameLnEdt" type="LineEdit" parent="MainContainer/ItemsContainer/DataContainer/OldItemDataContainer/NameContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="SpriteContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer"]
+[node name="SpriteContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/OldItemDataContainer"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/SpriteContainer"]
+[node name="Label" type="Label" parent="MainContainer/ItemsContainer/DataContainer/OldItemDataContainer/SpriteContainer"]
 custom_minimum_size = Vector2(105, 0)
 layout_mode = 2
 text = "Item Sprite"
 
-[node name="PanelContainer" type="PanelContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/SpriteContainer"]
+[node name="PanelContainer" type="PanelContainer" parent="MainContainer/ItemsContainer/DataContainer/OldItemDataContainer/SpriteContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="HBoxContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/SpriteContainer/PanelContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/OldItemDataContainer/SpriteContainer/PanelContainer"]
 layout_mode = 2
 theme_override_constants/separation = 0
 
-[node name="SpritePathLnEdt" type="LineEdit" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/SpriteContainer/PanelContainer/HBoxContainer"]
+[node name="SpritePathLnEdt" type="LineEdit" parent="MainContainer/ItemsContainer/DataContainer/OldItemDataContainer/SpriteContainer/PanelContainer/HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 editable = false
 flat = true
 
-[node name="BrowseSpriteBtn" type="Button" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/SpriteContainer/PanelContainer/HBoxContainer"]
+[node name="BrowseSpriteBtn" type="Button" parent="MainContainer/ItemsContainer/DataContainer/OldItemDataContainer/SpriteContainer/PanelContainer/HBoxContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 icon = ExtResource("2_djc7d")
@@ -203,16 +222,16 @@ flat = true
 icon_alignment = 1
 expand_icon = true
 
-[node name="TypeContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer"]
+[node name="TypeContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/OldItemDataContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Label" type="Label" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/TypeContainer"]
+[node name="Label" type="Label" parent="MainContainer/ItemsContainer/DataContainer/OldItemDataContainer/TypeContainer"]
 custom_minimum_size = Vector2(105, 0)
 layout_mode = 2
 text = "Item Type"
 
-[node name="ItemTypeOptBtn" type="OptionButton" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/TypeContainer"]
+[node name="ItemTypeOptBtn" type="OptionButton" parent="MainContainer/ItemsContainer/DataContainer/OldItemDataContainer/TypeContainer"]
 custom_minimum_size = Vector2(0, 31)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -222,16 +241,16 @@ selected = 0
 item_count = 1
 popup/item_0/text = "weapon"
 
-[node name="SubtypeContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer"]
+[node name="SubtypeContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/OldItemDataContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Label" type="Label" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/SubtypeContainer"]
+[node name="Label" type="Label" parent="MainContainer/ItemsContainer/DataContainer/OldItemDataContainer/SubtypeContainer"]
 custom_minimum_size = Vector2(105, 0)
 layout_mode = 2
 text = "Item Subtype"
 
-[node name="ItemSubtypeOptBtn" type="OptionButton" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/SubtypeContainer"]
+[node name="ItemSubtypeOptBtn" type="OptionButton" parent="MainContainer/ItemsContainer/DataContainer/OldItemDataContainer/SubtypeContainer"]
 custom_minimum_size = Vector2(0, 31)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -241,58 +260,58 @@ selected = 0
 item_count = 1
 popup/item_0/text = "mace"
 
-[node name="ValuesContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer"]
+[node name="ValuesContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/OldItemDataContainer"]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="HBoxContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/ValuesContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/OldItemDataContainer/ValuesContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Label" type="Label" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/ValuesContainer/HBoxContainer"]
+[node name="Label" type="Label" parent="MainContainer/ItemsContainer/DataContainer/OldItemDataContainer/ValuesContainer/HBoxContainer"]
 custom_minimum_size = Vector2(105, 0)
 layout_mode = 2
 text = "Item Level"
 
-[node name="ItemLvlSpnBtn" type="SpinBox" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/ValuesContainer/HBoxContainer"]
+[node name="ItemLvlSpnBtn" type="SpinBox" parent="MainContainer/ItemsContainer/DataContainer/OldItemDataContainer/ValuesContainer/HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 allow_greater = true
 
-[node name="HBoxContainer2" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/ValuesContainer"]
+[node name="HBoxContainer2" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/OldItemDataContainer/ValuesContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Label" type="Label" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/ValuesContainer/HBoxContainer2"]
+[node name="Label" type="Label" parent="MainContainer/ItemsContainer/DataContainer/OldItemDataContainer/ValuesContainer/HBoxContainer2"]
 custom_minimum_size = Vector2(90, 0)
 layout_mode = 2
 text = "Item Value"
 
-[node name="ItemValueSpnBx" type="SpinBox" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/ValuesContainer/HBoxContainer2"]
+[node name="ItemValueSpnBx" type="SpinBox" parent="MainContainer/ItemsContainer/DataContainer/OldItemDataContainer/ValuesContainer/HBoxContainer2"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="TreesContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer"]
+[node name="TreesContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/OldItemDataContainer"]
 layout_mode = 2
 size_flags_vertical = 3
 size_flags_stretch_ratio = 2.0
 
-[node name="MaterialsContainer" type="VBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/TreesContainer"]
+[node name="MaterialsContainer" type="VBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/OldItemDataContainer/TreesContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 2.0
 
-[node name="HBoxContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/TreesContainer/MaterialsContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/OldItemDataContainer/TreesContainer/MaterialsContainer"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/TreesContainer/MaterialsContainer/HBoxContainer"]
+[node name="Label" type="Label" parent="MainContainer/ItemsContainer/DataContainer/OldItemDataContainer/TreesContainer/MaterialsContainer/HBoxContainer"]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Item Materials"
 vertical_alignment = 2
 
-[node name="MaterialsTree" type="Tree" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/TreesContainer/MaterialsContainer"]
+[node name="MaterialsTree" type="Tree" parent="MainContainer/ItemsContainer/DataContainer/OldItemDataContainer/TreesContainer/MaterialsContainer"]
 layout_mode = 2
 size_flags_vertical = 3
 allow_reselect = true
@@ -301,18 +320,18 @@ hide_root = true
 scroll_horizontal_enabled = false
 script = ExtResource("4_moi3l")
 
-[node name="FlagsCotnainer" type="VBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/TreesContainer"]
+[node name="FlagsCotnainer" type="VBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/OldItemDataContainer/TreesContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 2.0
 
-[node name="Label" type="Label" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/TreesContainer/FlagsCotnainer"]
+[node name="Label" type="Label" parent="MainContainer/ItemsContainer/DataContainer/OldItemDataContainer/TreesContainer/FlagsCotnainer"]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 text = "Item Flags"
 vertical_alignment = 2
 
-[node name="ItemFlagTree" type="Tree" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/TreesContainer/FlagsCotnainer"]
+[node name="ItemFlagTree" type="Tree" parent="MainContainer/ItemsContainer/DataContainer/OldItemDataContainer/TreesContainer/FlagsCotnainer"]
 layout_mode = 2
 size_flags_vertical = 3
 hide_folding = true
@@ -320,52 +339,52 @@ hide_root = true
 scroll_horizontal_enabled = false
 script = ExtResource("5_0ah1r")
 
-[node name="CustomDataContainer" type="VBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer"]
+[node name="CustomDataContainer" type="VBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/OldItemDataContainer"]
 layout_mode = 2
 size_flags_vertical = 3
 size_flags_stretch_ratio = 3.0
 
-[node name="CDHeaderContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/CustomDataContainer"]
+[node name="CDHeaderContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/OldItemDataContainer/CustomDataContainer"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/CustomDataContainer/CDHeaderContainer"]
+[node name="Label" type="Label" parent="MainContainer/ItemsContainer/DataContainer/OldItemDataContainer/CustomDataContainer/CDHeaderContainer"]
 layout_mode = 2
 text = "Custom Data"
 
-[node name="AddButtonsContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/CustomDataContainer/CDHeaderContainer"]
+[node name="AddButtonsContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/OldItemDataContainer/CustomDataContainer/CDHeaderContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 alignment = 2
 
-[node name="AddIntButton" type="Button" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer"]
+[node name="AddIntButton" type="Button" parent="MainContainer/ItemsContainer/DataContainer/OldItemDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Create integer variable."
 icon = ExtResource("1_tsjpe")
 icon_alignment = 1
 
-[node name="AddFloatButton" type="Button" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer"]
+[node name="AddFloatButton" type="Button" parent="MainContainer/ItemsContainer/DataContainer/OldItemDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Create float variable."
 icon = ExtResource("2_ib6x0")
 icon_alignment = 1
 
-[node name="AddBoolButton" type="Button" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer"]
+[node name="AddBoolButton" type="Button" parent="MainContainer/ItemsContainer/DataContainer/OldItemDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Create bool variable."
 icon = ExtResource("3_ujuwe")
 icon_alignment = 1
 
-[node name="AddStringButton" type="Button" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer"]
+[node name="AddStringButton" type="Button" parent="MainContainer/ItemsContainer/DataContainer/OldItemDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Create string  variable."
 icon = ExtResource("4_8td5l")
 icon_alignment = 1
 
-[node name="CustomDataSearchLine" type="LineEdit" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/CustomDataContainer"]
+[node name="CustomDataSearchLine" type="LineEdit" parent="MainContainer/ItemsContainer/DataContainer/OldItemDataContainer/CustomDataContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 3.0
@@ -373,7 +392,7 @@ placeholder_text = "Search Custom Data"
 clear_button_enabled = true
 right_icon = ExtResource("5_xbb04")
 
-[node name="CustomDataTree" type="Tree" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/CustomDataContainer"]
+[node name="CustomDataTree" type="Tree" parent="MainContainer/ItemsContainer/DataContainer/OldItemDataContainer/CustomDataContainer"]
 layout_mode = 2
 size_flags_vertical = 3
 columns = 3
@@ -383,10 +402,235 @@ hide_root = true
 scroll_horizontal_enabled = false
 script = ExtResource("11_ri7fi")
 
+[node name="ItemDataContainer" type="VBoxContainer" parent="MainContainer/ItemsContainer/DataContainer"]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="NameContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/NameContainer"]
+custom_minimum_size = Vector2(100, 32)
+layout_mode = 2
+text = "Name"
+vertical_alignment = 1
+
+[node name="LineEdit" type="LineEdit" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/NameContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Item Name"
+
+[node name="DescContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/DescContainer"]
+custom_minimum_size = Vector2(100, 32)
+layout_mode = 2
+text = "Description"
+vertical_alignment = 1
+
+[node name="TextEdit" type="TextEdit" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/DescContainer"]
+custom_minimum_size = Vector2(0, 87)
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Item Description"
+wrap_mode = 1
+
+[node name="StackContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/StackContainer"]
+custom_minimum_size = Vector2(100, 32)
+layout_mode = 2
+text = "Stack Size"
+vertical_alignment = 1
+
+[node name="SpinBox" type="SpinBox" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/StackContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 1.0
+value = 1.0
+allow_greater = true
+
+[node name="ValueContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/ValueContainer"]
+custom_minimum_size = Vector2(100, 32)
+layout_mode = 2
+text = "Value"
+vertical_alignment = 1
+
+[node name="SpinBox" type="SpinBox" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/ValueContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+allow_greater = true
+
+[node name="RarityContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/RarityContainer"]
+custom_minimum_size = Vector2(100, 32)
+layout_mode = 2
+text = "Rarity"
+vertical_alignment = 1
+
+[node name="RaritiesOptBtn" type="OptionButton" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/RarityContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="IconContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/IconContainer"]
+custom_minimum_size = Vector2(100, 32)
+layout_mode = 2
+text = "Icon"
+vertical_alignment = 1
+
+[node name="LineEdit" type="LineEdit" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/IconContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Button" type="Button" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/IconContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+icon = ExtResource("2_djc7d")
+icon_alignment = 1
+expand_icon = true
+
+[node name="CustomDataContainer" type="VBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="CustomDataHeader" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/CustomDataContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/CustomDataContainer/CustomDataHeader"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+text = "Custom Data"
+vertical_alignment = 1
+
+[node name="ButtonContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/CustomDataContainer/CustomDataHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 2
+
+[node name="AddIntBtn" type="Button" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+icon = ExtResource("1_tsjpe")
+icon_alignment = 1
+
+[node name="AddFloatBtn" type="Button" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+icon = ExtResource("2_ib6x0")
+icon_alignment = 1
+
+[node name="AddBoolBtn" type="Button" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+icon = ExtResource("3_ujuwe")
+icon_alignment = 1
+
+[node name="AddStrBtn" type="Button" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+icon = ExtResource("4_8td5l")
+icon_alignment = 1
+
+[node name="ItemDataTree" type="Tree" parent="MainContainer/ItemsContainer/DataContainer/ItemDataContainer/CustomDataContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="CurrencyDataContainer" type="VBoxContainer" parent="MainContainer/ItemsContainer/DataContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="NameContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/CurrencyDataContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/ItemsContainer/DataContainer/CurrencyDataContainer/NameContainer"]
+custom_minimum_size = Vector2(170, 32)
+layout_mode = 2
+text = "Currency Name"
+vertical_alignment = 1
+
+[node name="LineEdit" type="LineEdit" parent="MainContainer/ItemsContainer/DataContainer/CurrencyDataContainer/NameContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Currency Name"
+
+[node name="DescContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/CurrencyDataContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/ItemsContainer/DataContainer/CurrencyDataContainer/DescContainer"]
+custom_minimum_size = Vector2(170, 32)
+layout_mode = 2
+text = "Currency Description"
+vertical_alignment = 1
+
+[node name="TextEdit" type="TextEdit" parent="MainContainer/ItemsContainer/DataContainer/CurrencyDataContainer/DescContainer"]
+custom_minimum_size = Vector2(0, 87)
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Currency Description"
+wrap_mode = 1
+
+[node name="ValueContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/CurrencyDataContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/ItemsContainer/DataContainer/CurrencyDataContainer/ValueContainer"]
+custom_minimum_size = Vector2(170, 32)
+layout_mode = 2
+text = "Currency Value"
+vertical_alignment = 1
+
+[node name="CurrencyValSpnBx" type="SpinBox" parent="MainContainer/ItemsContainer/DataContainer/CurrencyDataContainer/ValueContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 1.0
+value = 1.0
+allow_greater = true
+
+[node name="IconContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/CurrencyDataContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/ItemsContainer/DataContainer/CurrencyDataContainer/IconContainer"]
+custom_minimum_size = Vector2(170, 32)
+layout_mode = 2
+text = "Currency Icon"
+vertical_alignment = 1
+
+[node name="LineEdit" type="LineEdit" parent="MainContainer/ItemsContainer/DataContainer/CurrencyDataContainer/IconContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Button" type="Button" parent="MainContainer/ItemsContainer/DataContainer/CurrencyDataContainer/IconContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+icon = ExtResource("2_djc7d")
+icon_alignment = 1
+expand_icon = true
+
 [node name="VSeparator" type="VSeparator" parent="MainContainer"]
+visible = false
 layout_mode = 2
 
 [node name="RecipesContainer" type="VBoxContainer" parent="MainContainer"]
+visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 5.0

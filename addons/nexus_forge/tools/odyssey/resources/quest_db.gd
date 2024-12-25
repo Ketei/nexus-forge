@@ -413,58 +413,6 @@ func get_tracked_triggers() -> Array[String]:
 	return Array(trigger_tracker.keys(), TYPE_STRING, &"", null)
 
 
-#func set_quest_progress_item_unique(quest_id: String, item: String, value: int) -> void:
-	#active["unique"][quest_id]["progress"]["items"][item] = value
-#
-#
-#func set_quest_progress_item_boiler(quest_id: String, unique_id: String, item: String, value: int) -> void:
-	#active["boiler"][quest_id][unique_id]["progress"]["items"][item] = value
-#
-#
-#func set_quest_progress_trigger_unique(quest_id: String, trigger: String, value: int) -> void:
-	#active["unique"][quest_id]["progress"]["triggers"][trigger] = value
-#
-#
-#func set_quest_progress_trigger_boiler(quest_id: String, unique_id: String, trigger: String, value: int) -> void:
-	#active["boiler"][quest_id][unique_id]["progress"]["triggers"][trigger] = value
-#
-#
-#func get_quest_progress_item_unique(quest_id: String, item: String) -> int:
-	#return active["unique"][quest_id]["progress"]["items"][item]
-#
-#
-#func get_quest_progress_item_boiler(quest_id: String, unique_id: String, item: String) -> int:
-	#return active["boiler"][quest_id][unique_id]["progress"]["items"][item]
-#
-#
-#func get_quest_progress_trigger_unique(quest_id: String, trigger: String) -> int:
-	#return active["unique"][quest_id]["progress"]["triggers"][trigger]
-#
-#
-#func get_quest_progress_trigger_boiler(quest_id: String, unique_id: String, trigger: String) -> int:
-	#return active["boiler"][quest_id][unique_id]["progress"]["triggers"][trigger]
-
-
-#func sum_quest_progress_item_unique(quest_id: String, item: String, value: int) -> void:
-	#var sum: int = get_quest_progress_item_unique(quest_id, item) + value
-	#active["unique"][quest_id]["progress"]["items"][item] = maxi(0, sum)
-#
-#
-#func sum_quest_progress_item_boiler(quest_id: String, unique_id: String, item: String, value: int) -> void:
-	#var sum: int = get_quest_progress_item_boiler(quest_id, unique_id, item) + value
-	#active["boiler"][quest_id][unique_id]["progress"]["items"][item] = maxi(0, sum)
-#
-#
-#func sum_quest_progress_trigger_unique(quest_id: String, trigger: String, value: int) -> void:
-	#var sum: int = get_quest_progress_trigger_unique(quest_id, trigger) + value
-	#active["unique"][quest_id]["progress"]["triggers"][trigger] = maxi(0, sum)
-#
-#
-#func sum_quest_progress_trigger_boiler(quest_id: String, unique_id: String, trigger: String, value: int) -> void:
-	#var sum: int = get_quest_progress_trigger_boiler(quest_id, unique_id, trigger) + value
-	#active["boiler"][quest_id][unique_id]["progress"]["triggers"][trigger] = maxi(0, sum)
-
-
 func main_quest_stage_achieved(quest_key: String, quest_stage: int, quest_data: Dictionary = {}) -> bool:
 	if not quests_main.has(quest_key):
 		return false
@@ -646,7 +594,6 @@ func boiler_quest_stage_achieved(quest_key: String, quest_stage: int, objective_
 # Then you need to build an array[Dict] with similar structure BUT it has
 # to retain the same order as given. EX:
 # [{"item": "peach", "amount": 7, "custom_data": [{"id": "quality", "value": 3}, {"id": "material", "value": "soft", "juicy": true}]}]
-
 func get_main_quest_required_item_data(quest_id: String, stage_id: int) -> Array[Dictionary]:
 	var required_items: Array[Dictionary] = []
 	if has_main_quest_requirement(quest_id, stage_id, "items"):

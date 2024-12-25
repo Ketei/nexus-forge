@@ -2,11 +2,11 @@
 extends Control
 
 const SAVE_FILE_ICON = preload("res://addons/nexus_forge/common_icons/save_file.svg")
-const ADD_BOOL_ICON = preload("res://addons/nexus_forge/tools/variables/icons/add_bool.svg")
-const ADD_FLOAT_ICON = preload("res://addons/nexus_forge/tools/variables/icons/add_float.svg")
-const ADD_INT_ICON = preload("res://addons/nexus_forge/tools/variables/icons/add_int.svg")
-const ADD_STRING_ICON = preload("res://addons/nexus_forge/tools/variables/icons/add_string.svg")
-const NEW_FOLDER_ICON = preload("res://addons/nexus_forge/tools/variables/icons/new_folder.svg")
+const ADD_BOOL_ICON = preload("res://addons/nexus_forge/common_icons/variables/add_bool.svg")
+const ADD_FLOAT_ICON = preload("res://addons/nexus_forge/common_icons/variables/add_float.svg")
+const ADD_INT_ICON = preload("res://addons/nexus_forge/common_icons/variables/add_int.svg")
+const ADD_STRING_ICON = preload("res://addons/nexus_forge/common_icons/variables/add_string.svg")
+const NEW_FOLDER_ICON = preload("res://addons/nexus_forge/common_icons/new_folder.svg")
 
 var _variables_resource: NFVariablesRes = null
 var _switching_tree: bool = false
