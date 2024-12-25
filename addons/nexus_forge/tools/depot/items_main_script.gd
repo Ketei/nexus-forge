@@ -5,6 +5,15 @@ var current_currency: String = ""
 var items_resource: NFItemsRes = null
 @onready var rarities_opt_btn: OptionButton = $MainContainer/ItemsContainer/DataContainer/ItemDataContainer/RarityContainer/RaritiesOptBtn
 @onready var depot_tree: Tree = $MainContainer/ItemsContainer/DataContainer/ItemSelectContainer/DepotTree
+
+@onready var item_data_container: VBoxContainer = $MainContainer/ItemsContainer/DataContainer/ItemDataContainer
+@onready var currency_data_container: VBoxContainer = $MainContainer/ItemsContainer/DataContainer/CurrencyDataContainer
+@onready var item_description: TextEdit = $MainContainer/ItemsContainer/DataContainer/ItemDataContainer/DescContainer/ItemDescription
+@onready var stack_size_spn_bx: SpinBox = $MainContainer/ItemsContainer/DataContainer/ItemDataContainer/StackContainer/StackSizeSpnBx
+@onready var item_name_ln_edt: LineEdit = $MainContainer/ItemsContainer/DataContainer/ItemDataContainer/NameContainer/ItemNameLnEdt
+
+@onready var currency_name_ln_edt: LineEdit = $MainContainer/ItemsContainer/DataContainer/CurrencyDataContainer/NameContainer/CurrencyNameLnEdt
+@onready var currency_desc_text_edit: TextEdit = $MainContainer/ItemsContainer/DataContainer/CurrencyDataContainer/DescContainer/CurrencyDescTextEdit
 @onready var currency_val_spn_bx: SpinBox = $MainContainer/ItemsContainer/DataContainer/CurrencyDataContainer/ValueContainer/CurrencyValSpnBx
 
 
@@ -17,8 +26,32 @@ func _ready() -> void:
 	depot_tree.currency_selected.connect(_on_currency_selected)
 
 
+func _input(event: InputEvent) -> void:
+	if event is InputEventKey and event.is_action_pressed(&"ui_focus_next"):
+		if item_description.has_focus():
+			if event.shift_pressed:
+				item_name_ln_edt.grab_focus()
+				get_viewport().set_input_as_handled()
+			else:
+				stack_size_spn_bx.get_line_edit().grab_focus()
+				get_viewport().set_input_as_handled()
+		elif currency_desc_text_edit.has_focus():
+			if event.shift_pressed:
+				currency_name_ln_edt.grab_focus()
+				get_viewport().set_input_as_handled()
+			else:
+				currency_val_spn_bx.get_line_edit().grab_focus()
+				get_viewport().set_input_as_handled()
+
+
 func _on_currency_selected(currency_id: String) -> void:
 	current_currency = currency_id
+	set_data_visible(1)
+
+
+func set_data_visible(id: int) -> void:
+	item_data_container.visible = id == 0
+	currency_data_container.visible = id == 1
 
 
 func _on_currency_value_changed(new_value: int) -> void:
