@@ -327,7 +327,7 @@ func _on_button_pressed(item: TreeItem, column: int, id: int, mouse_button_index
 		quest_stage_pool_item_created.emit(item.get_text(0), stage_id, 0, "New Stage")
 	elif id == NEW_STAGE_BOILER: # Boiler Item
 		create_boiler_stage(item)
-		quest_stage_pool_item_created.emit(item.get_parent().get_text(0), item.get_index(), -1)
+		quest_stage_pool_item_created.emit(item.get_parent().get_text(0), item.get_index(), -1, "New Stage")
 	elif id == DELETE_STAGE_BOILER:
 		var item_parent: TreeItem = item.get_parent()
 		quest_pool_item_deleted.emit(

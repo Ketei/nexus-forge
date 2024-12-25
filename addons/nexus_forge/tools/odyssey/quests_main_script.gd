@@ -40,6 +40,11 @@ func _ready() -> void:
 	quest_tab_container.set_tab_disabled(2, true)
 	quest_tab_container.visible = false
 	
+	var path_quest_tab: NodePath = quest_tab_container.get_tab_bar().get_path()
+	completion_limit_spn_bx.focus_next = path_quest_tab
+	events_tree.focus_next = path_quest_tab
+	
+	
 	stage_title_ln_edt.focus_exited.connect(_on_title_focus_lost)
 	
 	quest_tree.quest_selected.connect(_on_quest_selected)
@@ -51,6 +56,27 @@ func _ready() -> void:
 	quest_tree.quest_deleted.connect(_on_quest_deleted)
 	
 	search_ln_edt.text_changed.connect(_on_search_line_changed)
+
+
+func _input(event: InputEvent) -> void:
+	if not visible:
+		return
+	if event is InputEventKey and event.is_action_pressed(&"ui_focus_next"):
+		if quest_desc_txt_edt.has_focus():
+			if event.shift_pressed:
+				quest_title_ln_edt.grab_focus()
+			else:
+				if completion_limit_spn_bx.is_visible_in_tree():
+					completion_limit_spn_bx.get_line_edit().grab_focus()
+				else:
+					quest_tab_container.get_tab_bar().grab_focus()
+			get_viewport().set_input_as_handled()
+		elif stage_desc_txt_edt.has_focus():
+			if event.shift_pressed:
+				stage_title_ln_edt.grab_focus()
+			else:
+				quest_tab_container.get_tab_bar().grab_focus()
+			get_viewport().set_input_as_handled()
 
 
 func _unhandled_input(event: InputEvent) -> void:
