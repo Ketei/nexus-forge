@@ -11,18 +11,29 @@ enum ItemFlags {
 
 const SETTINGS_PATH: String = "nexus_forge/items_resource"
 
-@export var item_types: Dictionary = {
-	"weapon": {"name": "armament", "subtypes": {
-		"mace": {"name": "mace"}
-		}
-	}
-}
-@export var item_materials: Dictionary = {
-	"wood": {"name": "Wood"},
-	"stone": {"name": "Stone"},
-	"iron": {"name": "Iron"},
-	"diamond": {"name": "Diamond"}
-	}
+var item_types: Dictionary = {}
+var item_materials: Dictionary = {}
+
+@export var _item_data: Dictionary = {
+	"a_type": {
+		"items": {
+			"item_id": {
+				"name": "",
+				"description": "",
+				"stack": 1,
+				"value": 0,
+				"rarity": 1, #Index on rarities
+				"icon": "res://example_icon.png",
+				"data": {"is_horny": true, "magic_number": 69}
+				}},
+		"subtypes": {"subtype": {"items": {}, "subtypes": {}}}
+	},
+	"another_type": {}}
+
+@export var _rarities: Array[Dictionary] = [
+	#{"name": "Commmon", "icon": "res://one_star.png", "data": {}}
+]
+
 @export var _currencies: Dictionary = {
 	#"gold": {"name": "GC", "value": 1}
 }
@@ -32,6 +43,64 @@ const SETTINGS_PATH: String = "nexus_forge/items_resource"
 @export var _recipes: Dictionary = {}
 
 var _currency_sorted: Array[String] = []
+
+
+func create_rarity(rarity_name: String = "Unnamed Rarity", rarity_idx: int = -1) -> void:
+	var rarity_dict: Dictionary = {
+		"name": rarity_name,
+		"icon": "",
+		"color": Color.WHITE,
+		"data": {}
+		#{"name": "Commmon", "icon": "res://one_star.png", "data": {}}
+	}
+	if 0 <= rarity_idx:
+		_rarities.insert(rarity_idx, rarity_dict)
+	else:
+		_rarities.append(rarity_dict)
+
+
+func set_rarity_name(rarity_idx: int, rarity_name: String) -> void:
+	_rarities[rarity_idx]["name"] = rarity_name
+
+
+func get_rarity_name(rarity_idx: int) -> String:
+	return _rarities[rarity_idx]["name"]
+
+
+func remove_rarity(rarity_idx: int) -> void:
+	_rarities.remove_at(rarity_idx)
+
+
+func set_rarity_color(rarity_idx: int, color: Color) -> void:
+	_rarities[rarity_idx]["color"] = color
+
+
+func get_rarity_color(rarity_idx: int) -> Color:
+	return _rarities[rarity_idx]["color"]
+
+
+func set_rarity_icon_path(rarity_idx: int, path: String) -> void:
+	_rarities[rarity_idx]["icon"] = path
+
+
+func get_rarity_icon_path(rarity_idx: int) -> String:
+	return _rarities[rarity_idx]["icon"]
+
+
+func set_rarity_data(rarity_idx: int, data_key: String, data_value: Variant) -> void:
+	_rarities[rarity_idx]["data"][data_key] = data_value
+
+
+func erase_rarity_data(rarity_idx: int, data_key: String) -> void:
+	_rarities[rarity_idx]["data"].erase(data_key)
+
+
+func get_rarity_keys(rarity_idx: int) -> Array[String]:
+	return Array(_rarities[rarity_idx]["data"].keys(), TYPE_STRING, &"", null)
+
+
+func get_rarity_data(ratity_idx: int, data_key: String) -> Variant:
+	return _rarities[ratity_idx]["data"][data_key]
 
 
 ## Call to load and sort currencie based on value.

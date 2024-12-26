@@ -1,3 +1,4 @@
+@tool
 extends Tree
 
 
@@ -5,6 +6,7 @@ signal rarity_created(rarity_name: String)
 signal rarity_reindexed(from: int, to: int)
 signal rarity_deleted(rarity_idx: int)
 signal rarity_renamed(idx: int, new_name: String)
+signal rarity_selected(rarity_idx: int)
 signal currency_created(currency_id: String)
 signal currency_id_changed(from: String, to: String)
 signal currency_selected(currency_id: String)
@@ -184,6 +186,26 @@ func update_currency_value(currency_id: String, new_value: int) -> void:
 			break
 
 
+func get_item_path_to(item: TreeItem) -> String:
+	var path: String = ""
+	var current_item: TreeItem = item.get_parent()
+	
+	while current_item != items_category:
+		path = current_item.get_text(0) + "/" + path
+		current_item = current_item.get_parent()
+	
+	return path
+
+
+func set_rarity_name(rarity_idx: int, rarity_name: String) -> void:
+	rarity_category.get_child(rarity_idx).set_text(0, rarity_name)
+	#rarity_renamed.emit(rarity_idx, rarity_name)
+
+
+func get_rarity_name(rarity_idx: int) -> String:
+	return rarity_category.get_child(rarity_idx).get_text(0)
+
+
 func _sort_custom_currency_tree(a: TreeItem, b: TreeItem) -> bool:
 	return a.get_metadata(0)["value"] < b.get_metadata(0)["value"]
 
@@ -234,7 +256,8 @@ func _on_item_edited() -> void:
 		edited.get_metadata(0)["id"] = new_name
 	elif edited.get_metadata(0)["row_id"] == CellIDs.ITEM_CATEGORY:
 		var new_id: String = get_valid_category_id(edited.get_parent(), edited.get_text(0), edited)
-		item_category_renamed.emit(edited.get_metadata(0)["name"], new_id)
+		var path: String = get_item_path_to(edited)
+		item_category_renamed.emit(path + edited.get_metadata(0)["name"], path + new_id)
 		edited.set_text(0, new_id)
 		edited.get_metadata(0)["name"] = new_id
 
@@ -245,6 +268,6 @@ func _on_item_selected() -> void:
 		CellIDs.CURRENCY:
 			currency_selected.emit(selected.get_text(0))
 		CellIDs.ITEM_CATEGORY:
-			item_category_selected.emit(selected.get_text(0))
+			item_category_selected.emit(get_item_path_to(selected) + selected.get_text(0))
 		CellIDs.RARITY:
-			pass
+			rarity_selected.emit(selected.get_index())

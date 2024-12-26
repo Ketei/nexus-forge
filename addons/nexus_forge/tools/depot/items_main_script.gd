@@ -1,8 +1,21 @@
 @tool
 extends Control
 
+
+const ICON_BOOL = preload("res://addons/nexus_forge/common_icons/variables/bool.svg")
+const ICON_FLOAT = preload("res://addons/nexus_forge/common_icons/variables/float.svg")
+const ICON_INT = preload("res://addons/nexus_forge/common_icons/variables/int.svg")
+const ICON_STRING = preload("res://addons/nexus_forge/common_icons/variables/string.svg")
+const ITEM_DATA_RANGE: int = 9999
+const ITEM_DATA_FLOAT_STEP: float = 0.01
+
+var current_rarity: int = -1
 var current_currency: String = ""
 var current_item_category: String = ""
+var current_item: String = "":
+	set(new_current):
+		current_item = new_current
+		item_data_container.visible = not current_item.strip_edges().is_empty()
 var items_resource: NFItemsRes = null
 
 
@@ -26,10 +39,35 @@ var items_resource: NFItemsRes = null
 #@onready var item_data_container: VBoxContainer = $MainContainer/ItemsContainer/DataContainer/ItemsContainer/ItemMargin/ItemDataContainer
 @onready var items_container: HBoxContainer = $MainContainer/ItemsContainer/DataContainer/ItemsContainer
 @onready var category_id_label: Label = $MainContainer/ItemsContainer/DataContainer/ItemsContainer/CategoryDataContainer/CatDescContainer/CategoryIDLabel
+@onready var create_item_btn: Button = $MainContainer/ItemsContainer/DataContainer/ItemsContainer/CategoryDataContainer/CategoryItemsContainer/ItemHeaderContainer/CreateItemBtn
+@onready var item_id_label: Label = $MainContainer/ItemsContainer/DataContainer/ItemsContainer/ItemMargin/ItemDataContainer/ItemIDLabel
+
+@onready var item_val_spn_bx: SpinBox = $MainContainer/ItemsContainer/DataContainer/ItemsContainer/ItemMargin/ItemDataContainer/ValueContainer/ItemValSpnBx
+@onready var icon_ln_edt: LineEdit = $MainContainer/ItemsContainer/DataContainer/ItemsContainer/ItemMargin/ItemDataContainer/IconContainer/IconLnEdt
+@onready var browse_icon_btn: Button = $MainContainer/ItemsContainer/DataContainer/ItemsContainer/ItemMargin/ItemDataContainer/IconContainer/BrowseIconBtn
+@onready var add_item_int_btn: Button = $MainContainer/ItemsContainer/DataContainer/ItemsContainer/ItemMargin/ItemDataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer/AddIntBtn
+@onready var add_item_float_btn: Button = $MainContainer/ItemsContainer/DataContainer/ItemsContainer/ItemMargin/ItemDataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer/AddFloatBtn
+@onready var add_item_bool_btn: Button = $MainContainer/ItemsContainer/DataContainer/ItemsContainer/ItemMargin/ItemDataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer/AddBoolBtn
+@onready var add_item_str_btn: Button = $MainContainer/ItemsContainer/DataContainer/ItemsContainer/ItemMargin/ItemDataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer/AddStrBtn
+@onready var item_data_tree: Tree = $MainContainer/ItemsContainer/DataContainer/ItemsContainer/ItemMargin/ItemDataContainer/CustomDataContainer/ItemDataTree
+
+@onready var rarity_name_ln_edt: LineEdit = $MainContainer/ItemsContainer/DataContainer/RarityContainer/RarityNameContainer/RarityNameLnEdt
+@onready var rarity_col_pk_btn: ColorPickerButton = $MainContainer/ItemsContainer/DataContainer/RarityContainer/RarityColContainer/RarityColPkBtn
+@onready var rarity_icon_path_ln_edt: LineEdit = $MainContainer/ItemsContainer/DataContainer/RarityContainer/RarityIconPathContainer/IconPathLnEdt
+@onready var browse_rarity_icon_btn: Button = $MainContainer/ItemsContainer/DataContainer/RarityContainer/RarityIconPathContainer/BrowseRarityIconBtn
+@onready var add_rarity_int_btn: Button = $MainContainer/ItemsContainer/DataContainer/RarityContainer/CustomDataContainer/DataHeader/ButtonContainer/AddRarityIntBtn
+@onready var add_rarity_float_btn: Button = $MainContainer/ItemsContainer/DataContainer/RarityContainer/CustomDataContainer/DataHeader/ButtonContainer/AddRarityFloatBtn
+@onready var add_rarity_bool_btn: Button = $MainContainer/ItemsContainer/DataContainer/RarityContainer/CustomDataContainer/DataHeader/ButtonContainer/AddRarityBoolBtn
+@onready var add_rarity_str_btn: Button = $MainContainer/ItemsContainer/DataContainer/RarityContainer/CustomDataContainer/DataHeader/ButtonContainer/AddRarityStrBtn
+@onready var rarity_data_tree: Tree = $MainContainer/ItemsContainer/DataContainer/RarityContainer/CustomDataContainer/RarityDataTree
+@onready var rarity_container: VBoxContainer = $MainContainer/ItemsContainer/DataContainer/RarityContainer
 
 
 func _ready() -> void:
+	items_resource = NFItemsRes.new() # Remove after testing
 	items_tree.create_item()
+	item_data_tree.create_item()
+	rarity_data_tree.create_item()
 	
 	depot_tree.rarity_created.connect(_on_rarity_created)
 	depot_tree.rarity_reindexed.connect(_on_rarity_reindexed)
@@ -38,6 +76,31 @@ func _ready() -> void:
 	currency_val_spn_bx.value_changed.connect(_on_currency_value_changed)
 	depot_tree.currency_selected.connect(_on_currency_selected)
 	depot_tree.item_category_selected.connect(_on_item_category_selected)
+	depot_tree.item_category_renamed.connect(_on_item_category_renamed)
+	depot_tree.rarity_selected.connect(_on_rarity_selected)
+	
+	items_tree.item_edited.connect(_on_item_changed)
+	items_tree.item_selected.connect(_on_item_selected)
+	
+	add_item_int_btn.pressed.connect(_on_add_item_data_btn_pressed.bind("new_int", 0))
+	add_item_float_btn.pressed.connect(_on_add_item_data_btn_pressed.bind("new_float", 0.0))
+	add_item_bool_btn.pressed.connect(_on_add_item_data_btn_pressed.bind("new_bool", false))
+	add_item_str_btn.pressed.connect(_on_add_item_data_btn_pressed.bind("new_string", ""))
+	
+	rarity_data_tree.item_edited.connect(_on_rarity_data_edited)
+	
+	add_rarity_int_btn.pressed.connect(_on_add_rarity_data_btn_pressed.bind("new_int", 0))
+	add_rarity_float_btn.pressed.connect(_on_add_rarity_data_btn_pressed.bind("new_float", 0.0))
+	add_rarity_bool_btn.pressed.connect(_on_add_rarity_data_btn_pressed.bind("new_bool", false))
+	add_rarity_str_btn.pressed.connect(_on_add_rarity_data_btn_pressed.bind("new_string", ""))
+	
+	rarity_name_ln_edt.focus_exited.connect(_on_rarity_name_focus_lost)
+	rarity_name_ln_edt.text_submitted.connect(_on_rarity_name_text_submitted)
+	
+	item_data_tree.item_edited.connect(_on_item_data_id_edited)
+	
+	create_item_btn.pressed.connect(create_item.bind("new_item"))
+	
 	set_data_visible(-1)
 
 
@@ -62,6 +125,16 @@ func _input(event: InputEvent) -> void:
 				get_viewport().set_input_as_handled()
 
 
+func _on_rarity_name_text_submitted(_submitted_text: String) -> void:
+	rarity_col_pk_btn.grab_focus()
+
+
+func _on_item_category_renamed(from: String, to: String) -> void:
+	if current_item_category == from:
+		current_item_category = to
+		category_id_label.text = Strings.title_case(to.split("/", false)[-1].replace("_", " "))
+
+
 func _on_currency_selected(currency_id: String) -> void:
 	current_currency = currency_id
 	set_data_visible(1)
@@ -73,12 +146,13 @@ func _on_item_category_selected(category_id: String) -> void:
 	clear_item_tree()
 	category_data_container.visible = true
 	item_data_container.visible = false
-	category_id_label.text = Strings.title_case(category_id.replace("_", " "))
+	category_id_label.text = Strings.title_case(category_id.split("/", false)[-1].replace("_", " "))
 
 
 func set_data_visible(id: int) -> void:
 	items_container.visible = id == 0
 	currency_data_container.visible = id == 1
+	rarity_container.visible = id == 2
 
 
 func _on_currency_value_changed(new_value: int) -> void:
@@ -86,14 +160,18 @@ func _on_currency_value_changed(new_value: int) -> void:
 
 
 func _on_rarity_renamed(idx: int, new_name: String) -> void:
+	if current_rarity == idx:
+		rarity_name_ln_edt.text = new_name
 	rarities_opt_btn.set_item_text(idx, new_name)
 
 
 func _on_rarity_deleted(rarity_idx: int) -> void:
+	items_resource.remove_rarity(rarity_idx)
 	rarities_opt_btn.remove_item(rarity_idx)
 
 
 func _on_rarity_created(rarity_name: String) -> void:
+	items_resource.create_rarity(rarity_name)
 	rarities_opt_btn.add_item(rarity_name)
 
 
@@ -109,9 +187,279 @@ func _on_rarity_reindexed(from: int, to: int) -> void:
 	rarities_opt_btn.selected = current_selected
 
 
+func _on_add_item_data_btn_pressed(data_id: String, new_data: Variant) -> void:
+	var new_item: TreeItem = item_data_tree.get_root().create_child()
+	var valid_id: String = get_item_data_valid_id(data_id)
+	
+	new_item.set_cell_mode(0, TreeItem.CELL_MODE_STRING)
+	new_item.set_text(0, valid_id)
+	new_item.set_metadata(0, {"id": valid_id})
+	
+	match typeof(new_data):
+		TYPE_INT:
+			new_item.set_cell_mode(1, TreeItem.CELL_MODE_RANGE)
+			new_item.set_range_config(1, -ITEM_DATA_RANGE, ITEM_DATA_RANGE, 1.0)
+			new_item.set_range(1, new_data)
+			new_item.set_icon(0, ICON_INT)
+		TYPE_FLOAT:
+			new_item.set_cell_mode(1, TreeItem.CELL_MODE_RANGE)
+			new_item.set_range_config(1, -ITEM_DATA_RANGE, ITEM_DATA_RANGE, ITEM_DATA_FLOAT_STEP)
+			new_item.set_range(1, new_data)
+			new_item.set_icon(0, ICON_FLOAT)
+		TYPE_BOOL:
+			new_item.set_cell_mode(1, TreeItem.CELL_MODE_CHECK)
+			new_item.set_text(1, "Enabled")
+			new_item.set_checked(1, new_data)
+			new_item.set_icon(0, ICON_BOOL)
+		TYPE_STRING:
+			new_item.set_cell_mode(1, TreeItem.CELL_MODE_STRING)
+			new_item.set_text(1, new_data)
+			new_item.set_icon(0, ICON_STRING)
+	
+	new_item.set_editable(0, true)
+	new_item.set_editable(1, true)
+
+
+# This is an almost identical to the one on top. Maybe merging it with extra
+# args is better. But for simplicity I'll keep them separate.
+func _on_add_rarity_data_btn_pressed(data_id: String, new_data: Variant) -> void:
+	add_rarity_data(data_id, new_data)
+	items_resource.set_rarity_data(current_rarity, data_id, new_data)
+
+
+func add_rarity_data(data_id: String, new_data: Variant) -> void:
+	var new_item: TreeItem = rarity_data_tree.get_root().create_child()
+	var valid_id: String = get_rarity_data_valid_id(data_id)
+	
+	new_item.set_cell_mode(0, TreeItem.CELL_MODE_STRING)
+	new_item.set_text(0, valid_id)
+	new_item.set_metadata(0, {"id": valid_id})
+	
+	match typeof(new_data):
+		TYPE_INT:
+			new_item.set_cell_mode(1, TreeItem.CELL_MODE_RANGE)
+			new_item.set_range_config(1, -ITEM_DATA_RANGE, ITEM_DATA_RANGE, 1.0)
+			new_item.set_range(1, new_data)
+			new_item.set_icon(0, ICON_INT)
+		TYPE_FLOAT:
+			new_item.set_cell_mode(1, TreeItem.CELL_MODE_RANGE)
+			new_item.set_range_config(1, -ITEM_DATA_RANGE, ITEM_DATA_RANGE, ITEM_DATA_FLOAT_STEP)
+			new_item.set_range(1, new_data)
+			new_item.set_icon(0, ICON_FLOAT)
+		TYPE_BOOL:
+			new_item.set_cell_mode(1, TreeItem.CELL_MODE_CHECK)
+			new_item.set_text(1, "Enabled")
+			new_item.set_checked(1, new_data)
+			new_item.set_icon(0, ICON_BOOL)
+		TYPE_STRING:
+			new_item.set_cell_mode(1, TreeItem.CELL_MODE_STRING)
+			new_item.set_text(1, new_data)
+			new_item.set_icon(0, ICON_STRING)
+	
+	new_item.set_editable(0, true)
+	new_item.set_editable(1, true)
+
+
+func _on_rarity_name_focus_lost() -> void:
+	var rarity_name: String = rarity_name_ln_edt.text.strip_edges()
+	if current_rarity < 0 or rarity_name == depot_tree.get_rarity_name(current_rarity):
+		return
+	rarity_name_ln_edt.text = rarity_name
+	depot_tree.set_rarity_name(current_rarity, rarity_name)
+	items_resource.set_rarity_name(current_rarity, rarity_name)
+
+
+func _on_rarity_selected(rarity_idx: int) -> void:
+	if current_rarity == rarity_idx:
+		return
+	
+	if current_rarity != -1:
+		save_rarity_data()
+		# We're ensuring that the name is properly updated in case that the
+		# pressed signal was emitted faster than the focus lost signal.
+		if depot_tree.get_rarity_name(current_rarity) != rarity_name_ln_edt.text.strip_edges():
+			depot_tree.set_rarity_name(current_rarity, rarity_name_ln_edt.text.strip_edges())
+	
+	current_rarity = rarity_idx
+	
+	clear_rarity_data_tree()
+	
+	rarity_name_ln_edt.text = items_resource.get_rarity_name(rarity_idx)
+	rarity_col_pk_btn.color = items_resource.get_rarity_color(rarity_idx)
+	rarity_icon_path_ln_edt.text = items_resource.get_rarity_icon_path(rarity_idx)
+	
+	for rarity_key in items_resource.get_rarity_keys(rarity_idx):
+		add_rarity_data(
+				rarity_key,
+				items_resource.get_rarity_data(rarity_idx, rarity_key))
+	
+	set_data_visible(2)
+
+
+func _on_rarity_data_edited() -> void:
+	if rarity_data_tree.get_edited_column() != 0:
+		return
+	
+	var edited: TreeItem = rarity_data_tree.get_edited()
+	var new_id: String = get_rarity_data_valid_id(edited.get_text(0), edited)
+	
+	edited.set_text(0, new_id)
+	# Modify in memory
+	edited.get_metadata(0)["id"] = new_id
+
+
+func _on_item_data_id_edited() -> void:
+	if item_data_tree.get_edited_column() != 0:
+		return
+	
+	var edited: TreeItem = item_data_tree.get_edited()
+	var new_id: String = get_item_data_valid_id(edited.get_text(0), edited)
+	
+	edited.set_text(0, new_id)
+	# Modify in memory
+	edited.get_metadata(0)["id"] = new_id
+
+
+func save_rarity_data() -> void:
+	var r_data: Dictionary = {}
+	
+	for rar_tree in rarity_data_tree.get_root().get_children():
+		var tree_data: Variant = null
+		match rar_tree.get_cell_mode(1):
+			TreeItem.CELL_MODE_RANGE:
+				if rar_tree.get_icon(0) == ICON_INT:
+					tree_data = int(rar_tree.get_range(1))
+				else:
+					tree_data = float(rar_tree.get_range(1))
+			TreeItem.CELL_MODE_CHECK:
+				tree_data = rar_tree.is_checked(1)
+			TreeItem.CELL_MODE_STRING:
+				tree_data = rar_tree.get_text(1)
+		r_data[rar_tree.get_text(0)] = tree_data
+	
+	items_resource.set_rarity_name(current_rarity, rarity_name_ln_edt.text.strip_edges())
+	items_resource.set_rarity_color(current_rarity, rarity_col_pk_btn.color)
+	items_resource.set_rarity_icon_path(current_rarity, rarity_icon_path_ln_edt.text)
+	items_resource._rarities[current_rarity]["data"] = r_data
+
+
+func get_item_data_valid_id(desired_id: String, skip_tree: TreeItem = null) -> String:
+	var clean_id: String = desired_id.strip_edges()
+	if clean_id.is_empty():
+		clean_id = "item_data"
+	var modified_id: String = clean_id
+	var iteration: int = 0
+	
+	while has_item_data_id(modified_id, skip_tree):
+		iteration += 1
+		modified_id = clean_id + str(iteration)
+	
+	return modified_id
+
+
+func get_rarity_data_valid_id(desired_id: String, skip_tree: TreeItem = null) -> String:
+	var clean_id: String = desired_id.strip_edges()
+	if clean_id.is_empty():
+		clean_id = "rarity_data"
+	var modified_id: String = clean_id
+	var iteration: int = 0
+	
+	while has_rarity_data_id(modified_id, skip_tree):
+		iteration += 1
+		modified_id = clean_id + str(iteration)
+	
+	return modified_id
+
+
+func has_item_data_id(id: String, skip: TreeItem = null) -> bool:
+	for data in item_data_tree.get_root().get_children():
+		if data == skip:
+			continue
+		if data.get_text(0) == id:
+			return true
+	return false
+
+
+func has_rarity_data_id(id: String, skip: TreeItem = null) -> bool:
+	for data in rarity_data_tree.get_root().get_children():
+		if data == skip:
+			continue
+		if data.get_text(0) == id:
+			return true
+	return false
+
+
+func clear_item_data() -> void:
+	item_name_ln_edt.clear()
+	item_description.clear()
+	stack_size_spn_bx.value = stack_size_spn_bx.min_value
+	item_val_spn_bx.value = 0
+	rarities_opt_btn.select(rarities_opt_btn.item_count - 1)
+	icon_ln_edt.clear()
+	clear_item_data_tree()
+
+
+func clear_item_data_tree() -> void:
+	for item in item_data_tree.get_root().get_children():
+		item.free()
+
+
+func clear_rarity_data_tree() -> void:
+	for data in rarity_data_tree.get_root().get_children():
+		data.free()
+
+
 func clear_item_tree() -> void:
 	for item in items_tree.get_root().get_children():
 		item.free()
+
+
+func create_item(item_id: String) -> void:
+	var valid_id: String = get_valid_item_id(item_id)
+	var new_item: TreeItem = items_tree.get_root().create_child()
+	new_item.set_metadata(0, {"id": valid_id})
+	new_item.set_text(0, valid_id)
+	new_item.set_editable(0, true)
+
+
+func get_valid_item_id(desired_id: String, skip_tree: TreeItem = null) -> String:
+	var cleaned_id: String = desired_id.strip_edges()
+	if cleaned_id.is_empty():
+		cleaned_id = "new_item"
+	var modified_id: String = cleaned_id
+	var iteration: int = 0
+	while has_item_id(modified_id, skip_tree):
+		iteration += 1
+		modified_id = cleaned_id + str(iteration)
+	return modified_id
+
+
+func has_item_id(item_id: String, skip_tree: TreeItem) -> bool:
+	for item in items_tree.get_root().get_children():
+		if item == skip_tree:
+			continue
+		if item.get_text(0) == item_id:
+			return true
+	return false
+
+
+func _on_item_changed() -> void:
+	var edited: TreeItem = items_tree.get_edited()
+	var new_id: String = get_valid_item_id(edited.get_text(0), edited)
+	if edited.get_metadata(0)["id"] == current_item:
+		current_item = new_id
+		item_id_label.text = Strings.title_case(new_id.replace("_", " "))
+	edited.set_text(0, new_id)
+	edited.get_metadata(0)["id"] = new_id
+
+
+func _on_item_selected() -> void:
+	var select: TreeItem = items_tree.get_selected()
+	
+	clear_item_data()
+	
+	current_item = select.get_text(0)
+	item_id_label.text = Strings.title_case(current_item.replace("_", " "))
 
 
 #var _current_id: String = ""
