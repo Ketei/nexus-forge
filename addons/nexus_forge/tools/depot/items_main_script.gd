@@ -201,6 +201,8 @@ func _on_item_category_selected(category_id: String) -> void:
 	
 	if not current_item_category.is_empty():
 		save_item_category_data()
+		if not current_item.is_empty():
+			save_item_data()
 	
 	current_item_category = category_id
 	current_item = ""

@@ -83,6 +83,7 @@ script = ExtResource("8_bfcx5")
 layout_mode = 2
 
 [node name="ItemsContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer"]
+visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 
