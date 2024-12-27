@@ -1,4 +1,4 @@
-[gd_scene load_steps=15 format=3 uid="uid://fss7aqmbgj6s"]
+[gd_scene load_steps=13 format=3 uid="uid://fss7aqmbgj6s"]
 
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/depot/items_main_script.gd" id="1_82bi8"]
 [ext_resource type="Texture2D" uid="uid://12lyg7db58dg" path="res://addons/nexus_forge/common_icons/variables/add_int.svg" id="1_tsjpe"]
@@ -11,17 +11,7 @@
 [ext_resource type="Texture2D" uid="uid://c1aelqf557khb" path="res://addons/nexus_forge/common_icons/plus_icon.svg" id="6_eml1p"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/depot/depot_categories.gd" id="8_bfcx5"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/depot/stations_tree_script.gd" id="9_ox1mw"]
-[ext_resource type="Texture2D" uid="uid://d0fjli5ciirws" path="res://addons/nexus_forge/common_icons/folder_icon.svg" id="11_2k84i"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/depot/recipe_tree_script.gd" id="11_2psm1"]
-
-[sub_resource type="GDScript" id="GDScript_urlnk"]
-script/source = "@tool
-extends FileDialog
-
-
-var item_id: String = \"\"
-var db_mode: bool = false
-"
 
 [node name="Items" type="Control"]
 layout_mode = 3
@@ -93,7 +83,6 @@ script = ExtResource("8_bfcx5")
 layout_mode = 2
 
 [node name="ItemsContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer"]
-visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 
@@ -246,27 +235,6 @@ custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="IconContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemsContainer/ItemMargin/ItemDataContainer"]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="MainContainer/ItemsContainer/DataContainer/ItemsContainer/ItemMargin/ItemDataContainer/IconContainer"]
-custom_minimum_size = Vector2(100, 32)
-layout_mode = 2
-text = "Icon"
-vertical_alignment = 1
-
-[node name="IconLnEdt" type="LineEdit" parent="MainContainer/ItemsContainer/DataContainer/ItemsContainer/ItemMargin/ItemDataContainer/IconContainer"]
-custom_minimum_size = Vector2(0, 32)
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="BrowseIconBtn" type="Button" parent="MainContainer/ItemsContainer/DataContainer/ItemsContainer/ItemMargin/ItemDataContainer/IconContainer"]
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 2
-icon = ExtResource("2_djc7d")
-icon_alignment = 1
-expand_icon = true
-
 [node name="CustomDataContainer" type="VBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemsContainer/ItemMargin/ItemDataContainer"]
 layout_mode = 2
 size_flags_vertical = 3
@@ -393,6 +361,7 @@ icon_alignment = 1
 expand_icon = true
 
 [node name="RarityContainer" type="VBoxContainer" parent="MainContainer/ItemsContainer/DataContainer"]
+visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 
@@ -423,26 +392,6 @@ vertical_alignment = 1
 custom_minimum_size = Vector2(128, 0)
 layout_mode = 2
 color = Color(1, 1, 1, 1)
-
-[node name="RarityIconPathContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/RarityContainer"]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="MainContainer/ItemsContainer/DataContainer/RarityContainer/RarityIconPathContainer"]
-custom_minimum_size = Vector2(55, 32)
-layout_mode = 2
-text = "Icon"
-vertical_alignment = 1
-
-[node name="IconPathLnEdt" type="LineEdit" parent="MainContainer/ItemsContainer/DataContainer/RarityContainer/RarityIconPathContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-placeholder_text = "Icon Path"
-
-[node name="BrowseRarityIconBtn" type="Button" parent="MainContainer/ItemsContainer/DataContainer/RarityContainer/RarityIconPathContainer"]
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 2
-icon = ExtResource("11_2k84i")
-icon_alignment = 1
 
 [node name="CustomDataContainer" type="VBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/RarityContainer"]
 layout_mode = 2
@@ -647,13 +596,3 @@ hide_folding = true
 hide_root = true
 scroll_horizontal_enabled = false
 script = ExtResource("11_2psm1")
-
-[node name="Components" type="Node" parent="."]
-
-[node name="ItemFileDialog" type="FileDialog" parent="Components"]
-auto_translate_mode = 1
-initial_position = 1
-size = Vector2i(500, 350)
-ok_button_text = "Save"
-filters = PackedStringArray("*.tres;Resources")
-script = SubResource("GDScript_urlnk")

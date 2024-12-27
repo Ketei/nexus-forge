@@ -10,7 +10,7 @@ signal rarity_selected(rarity_idx: int)
 signal currency_created(currency_id: String)
 signal currency_id_changed(from: String, to: String)
 signal currency_selected(currency_id: String)
-signal item_category_created(catgory_id: String)
+signal item_category_created(category_path: String, catgory_id: String)
 signal item_category_renamed(from: String, to: String)
 signal item_category_selected(category_id: String)
 
@@ -130,6 +130,13 @@ func get_valid_currency_id(desired_id: String = "", skip_tree: TreeItem = null) 
 	return modified_id
 
 
+func get_currency_value(currency_id: String) -> int:
+	for currency in currency_category.get_children():
+		if currency.get_text(0) == currency_id:
+			return currency.get_metadata(0)["value"]
+	return 0
+
+
 func get_valid_category_id(on_tree: TreeItem, desired_name: String, skip_tree: TreeItem = null) -> String:
 	var clean_string: String = desired_name.strip_edges()
 	if clean_string.is_empty():
@@ -168,13 +175,15 @@ func sort_currencies():
 		return
 	
 	currencies.sort_custom(_sort_custom_currency_tree)
+	
 	var current_idx: int = -1
+	
 	for currency in currencies:
 		current_idx += 1
 		if current_idx == 0:
 			currency.move_before(currency_category.get_first_child())
-			continue
-		currency.move_after(currencies[current_idx - 1])
+		else:
+			currency.move_after(currencies[current_idx - 1])
 
 
 func update_currency_value(currency_id: String, new_value: int) -> void:
@@ -187,14 +196,17 @@ func update_currency_value(currency_id: String, new_value: int) -> void:
 
 
 func get_item_path_to(item: TreeItem) -> String:
+	if item == items_category:
+		return ""
+	
 	var path: String = ""
-	var current_item: TreeItem = item.get_parent()
+	var current_item: TreeItem = item
 	
 	while current_item != items_category:
 		path = current_item.get_text(0) + "/" + path
 		current_item = current_item.get_parent()
 	
-	return path
+	return path.trim_suffix("/")
 
 
 func set_rarity_name(rarity_idx: int, rarity_name: String) -> void:
@@ -231,6 +243,8 @@ func _on_button_clicked(item: TreeItem, column: int, id: int, mouse_button_index
 		ButtonIDs.CREATE_RARITY:
 			create_rarity("New Rarity")
 			rarity_created.emit("New Rarity")
+			if rarity_category.collapsed:
+				rarity_category.collapsed = false
 		ButtonIDs.DELETE_RARITY:
 			rarity_deleted.emit(item.get_index())
 			item.free()
@@ -238,10 +252,14 @@ func _on_button_clicked(item: TreeItem, column: int, id: int, mouse_button_index
 			var currency_id: String = get_valid_currency_id()
 			create_currency(currency_id)
 			currency_created.emit(currency_id)
+			if currency_category.collapsed:
+				currency_category.collapsed = false
 		ButtonIDs.CREATE_CATEGORY:
 			var new_cat_id: String = get_valid_category_id(item, "new_category")
 			create_category(item, new_cat_id)
-			item_category_created.emit(new_cat_id)
+			item_category_created.emit(get_item_path_to(item), new_cat_id)
+			if items_category.collapsed:
+				items_category.collapsed = false
 
 
 func _on_item_edited() -> void:
@@ -256,7 +274,11 @@ func _on_item_edited() -> void:
 		edited.get_metadata(0)["id"] = new_name
 	elif edited.get_metadata(0)["row_id"] == CellIDs.ITEM_CATEGORY:
 		var new_id: String = get_valid_category_id(edited.get_parent(), edited.get_text(0), edited)
-		var path: String = get_item_path_to(edited)
+		var path: String = get_item_path_to(edited.get_parent())
+		#var prev_path: String = ""
+		#var next_path: String = ""
+		if not path.is_empty():
+			path += "/"
 		item_category_renamed.emit(path + edited.get_metadata(0)["name"], path + new_id)
 		edited.set_text(0, new_id)
 		edited.get_metadata(0)["name"] = new_id
@@ -268,6 +290,6 @@ func _on_item_selected() -> void:
 		CellIDs.CURRENCY:
 			currency_selected.emit(selected.get_text(0))
 		CellIDs.ITEM_CATEGORY:
-			item_category_selected.emit(get_item_path_to(selected) + selected.get_text(0))
+			item_category_selected.emit(get_item_path_to(selected))
 		CellIDs.RARITY:
 			rarity_selected.emit(selected.get_index())

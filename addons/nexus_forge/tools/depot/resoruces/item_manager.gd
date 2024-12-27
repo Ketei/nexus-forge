@@ -15,20 +15,21 @@ var item_types: Dictionary = {}
 var item_materials: Dictionary = {}
 
 @export var _item_data: Dictionary = {
-	"a_type": {
-		"items": {
-			"item_id": {
-				"name": "",
-				"description": "",
-				"stack": 1,
-				"value": 0,
-				"rarity": 1, #Index on rarities
-				"icon": "res://example_icon.png",
-				"data": {"is_horny": true, "magic_number": 69}
-				}},
-		"subtypes": {"subtype": {"items": {}, "subtypes": {}}}
-	},
-	"another_type": {}}
+	#"a_type": {
+		#"items": {
+			#"item_id": {
+				#"name": "",
+				#"description": "",
+				#"stack": 1,
+				#"value": 0,
+				#"rarity": 1, #Index on rarities
+				#"icon": "res://example_icon.png",
+				#"data": {"is_horny": true, "magic_number": 69}
+				#}},
+		#"subtypes": {"subtype": {"items": {}, "subtypes": {}}}
+	#},
+	#"another_type": {}
+	}
 
 @export var _rarities: Array[Dictionary] = [
 	#{"name": "Commmon", "icon": "res://one_star.png", "data": {}}
@@ -48,7 +49,6 @@ var _currency_sorted: Array[String] = []
 func create_rarity(rarity_name: String = "Unnamed Rarity", rarity_idx: int = -1) -> void:
 	var rarity_dict: Dictionary = {
 		"name": rarity_name,
-		"icon": "",
 		"color": Color.WHITE,
 		"data": {}
 		#{"name": "Commmon", "icon": "res://one_star.png", "data": {}}
@@ -61,6 +61,10 @@ func create_rarity(rarity_name: String = "Unnamed Rarity", rarity_idx: int = -1)
 
 func set_rarity_name(rarity_idx: int, rarity_name: String) -> void:
 	_rarities[rarity_idx]["name"] = rarity_name
+
+
+func get_rarity_count() -> int:
+	return _rarities.size()
 
 
 func get_rarity_name(rarity_idx: int) -> String:
@@ -79,14 +83,6 @@ func get_rarity_color(rarity_idx: int) -> Color:
 	return _rarities[rarity_idx]["color"]
 
 
-func set_rarity_icon_path(rarity_idx: int, path: String) -> void:
-	_rarities[rarity_idx]["icon"] = path
-
-
-func get_rarity_icon_path(rarity_idx: int) -> String:
-	return _rarities[rarity_idx]["icon"]
-
-
 func set_rarity_data(rarity_idx: int, data_key: String, data_value: Variant) -> void:
 	_rarities[rarity_idx]["data"][data_key] = data_value
 
@@ -103,6 +99,171 @@ func get_rarity_data(ratity_idx: int, data_key: String) -> Variant:
 	return _rarities[ratity_idx]["data"][data_key]
 
 
+func create_item_category(category_path: String, category_id: String) -> void:
+	var target_category: Dictionary = _item_data
+	
+	for subcat in category_path.split("/", false):
+		target_category = target_category[subcat]["subcategories"]
+	
+	target_category[category_id] = {
+		"items": {},
+		"subcategories": {},
+		"name": "",
+		"description": ""
+		}
+
+
+func set_category_name(category_path: String, category_name: String) -> void:
+	get_item_category_dict(category_path)["name"] = category_name
+	#var target_category: Dictionary = _item_data
+	#var first_skip: bool = false
+	#
+	#for subcat in category_path.split("/", false):
+		#if not first_skip:
+			#target_category = target_category[subcat]
+			#first_skip = true
+			#continue
+		#target_category = target_category["subcategories"][subcat]
+	#
+	#target_category["name"] = category_name
+
+
+func set_category_description(category_path: String, category_desc: String) -> void:
+	get_item_category_dict(category_path)["description"] = category_desc
+	#var target_category: Dictionary = _item_data
+	#var first_skip: bool = false
+	#
+	#for subcat in category_path.split("/", false):
+		#if not first_skip:
+			#target_category = target_category[subcat]
+			#first_skip = true
+			#continue
+		#target_category = target_category["subcategories"][subcat]
+	#
+	#target_category["description"] = category_desc
+
+
+func get_category_name(category_path: String) -> String:
+	return get_item_category_dict(category_path)["name"]
+	#var target_category: Dictionary = _item_data
+	#var first_skip: bool = false
+	#
+	#for subcat in category_path.split("/", false):
+		#if not first_skip:
+			#target_category = target_category[subcat]
+			#first_skip = true
+			#continue
+		#target_category = target_category["subcategories"][subcat]
+	#
+	#return target_category["name"]
+
+
+func get_category_item_keys(category_path: String) -> Array[String]:
+	return Array(
+		get_item_category_dict(category_path)["items"].keys(),
+		TYPE_STRING,
+		&"",
+		null)
+
+
+func get_category_description(category_path: String) -> String:
+	return get_item_category_dict(category_path)["description"]
+
+
+func get_item_data_keys(category_path: String, item_key: String) -> Array[String]:
+	return Array(
+			get_item_category_dict(category_path)["items"][item_key]["data"].keys(),
+			TYPE_STRING,
+			&"",
+			null)
+
+
+	#var target_category: Dictionary = _item_data
+	#var first_skip: bool = false
+	#
+	#for subcat in category_path.split("/", false):
+		#if not first_skip:
+			#target_category = target_category[subcat]
+			#first_skip = true
+			#continue
+		#target_category = target_category["subcategories"][subcat]
+	#
+	#return target_category["description"]
+
+
+func get_item_category_dict(category_path: String) -> Dictionary:
+	var target_category: Dictionary = _item_data
+	var first_skip: bool = false
+	
+	for subcat in category_path.split("/", false):
+		if not first_skip:
+			target_category = target_category[subcat]
+			first_skip = true
+			continue
+		target_category = target_category["subcategories"][subcat]
+	
+	return target_category
+
+
+func create_item(category_path: String, item_id: String) -> void:
+	get_item_category_dict(category_path)["items"][item_id] = {
+		"name": "",
+		"description": "",
+		"stack": 1,
+		"value": 0,
+		"rarity": -1  if _rarities.is_empty() else 0,
+		"data": {}}
+
+
+func get_item_name(category_path: String, item_id: String) -> String:
+	return get_item_category_dict(category_path)["items"][item_id]["name"]
+
+
+func get_item_description(category_path: String, item_id: String) -> String:
+	return get_item_category_dict(category_path)["items"][item_id]["description"]
+
+
+func get_item_stack(category_path: String, item_id: String) -> int:
+	return get_item_category_dict(category_path)["items"][item_id]["stack"]
+
+
+func get_item_value(category_path: String, item_id: String) -> int:
+	return get_item_category_dict(category_path)["items"][item_id]["value"]
+
+
+func get_item_rarity(category_path: String, item_id: String) -> int:
+	return get_item_category_dict(category_path)["items"][item_id]["rarity"]
+
+
+func get_item_data(category_path: String, item_id: String, data_key: String) -> Variant:
+	return get_item_category_dict(category_path)["items"][item_id]["data"][data_key]
+
+
+func set_item_name(category_path: String, item_id: String, new_name: String) -> void:
+	get_item_category_dict(category_path)["items"][item_id]["name"] = new_name
+
+
+func set_item_description(category_path: String, item_id: String, description: String) -> void:
+	get_item_category_dict(category_path)["items"][item_id]["description"] = description
+
+func set_item_stack(category_path: String, item_id: String, stack: int) -> void:
+	get_item_category_dict(category_path)["items"][item_id]["stack"] = stack
+
+func set_item_value(category_path: String, item_id: String, value: int) -> void:
+	get_item_category_dict(category_path)["items"][item_id]["value"] = value
+
+func set_item_rarity(category_path: String, item_id: String, rarity: int) -> void:
+	get_item_category_dict(category_path)["items"][item_id]["rarity"] = rarity
+
+
+func set_item_data(category_path: String, item_id: String, data_key: String, data_value: Variant) -> void:
+	get_item_category_dict(category_path)["items"][item_id]["data"][data_key] = data_value
+
+
+func erase_item_data(category_path: String, item_id: String, data_key: String) -> void:
+	get_item_category_dict(category_path)["items"][item_id]["data"].erase(data_key)
+
+
 ## Call to load and sort currencie based on value.
 func load_currencies() -> void:
 	_currency_sorted.assign(_currencies.keys())
@@ -117,6 +278,10 @@ func get_currency_name(currency_id: String) -> String:
 	return _currencies[currency_id]["name"]
 
 
+func get_currency_desc(currency_id: String) -> String:
+	return _currencies[currency_id]["description"]
+
+
 func get_currency_value(currency_id: String) -> int:
 	return _currencies[currency_id]["value"]
 
@@ -126,7 +291,11 @@ func set_currency_name(id: String, new_name: String) -> void:
 
 
 func set_currency_value(id: String, new_value: int) -> void:
-	_currencies[id]["value"] = new_value
+	_currencies[id]["value"] = maxi(1, new_value)
+
+
+func set_currency_desc(id: String, new_desc: String) -> void:
+	_currencies[id]["description"] = new_desc
 
 
 func erase_currency(currency_id: String) -> void:
@@ -137,16 +306,16 @@ func clear_currencies() -> void:
 	_currencies.clear()
 
 
-func create_currency(id: String, name: String, value: int) -> void:
-	_currencies[id] = {"name": name, "value": maxi(1, value)}
+func create_currency(id: String, name: String = "", value: int = 1) -> void:
+	_currencies[id] = {"name": name, "description": "", "value": maxi(1, value)}
 
 
 func _sort_currencies(currency_a: String, currency_b: String) -> bool:
 	return _currencies[currency_a]["value"] < _currencies[currency_b]["value"]
 
 
-func create_item(item_key: String, path: String) -> void:
-	_items[item_key] = {"path": path, "resource": null}
+#func create_item(path: String, item_key: String) -> void:
+	#_items[item_key] = {"path": path, "resource": null}
 
 
 func get_item_types() -> Array[String]:

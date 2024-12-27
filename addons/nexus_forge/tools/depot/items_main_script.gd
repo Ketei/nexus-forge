@@ -12,12 +12,8 @@ const ITEM_DATA_FLOAT_STEP: float = 0.01
 var current_rarity: int = -1
 var current_currency: String = ""
 var current_item_category: String = ""
-var current_item: String = "":
-	set(new_current):
-		current_item = new_current
-		item_data_container.visible = not current_item.strip_edges().is_empty()
+var current_item: String = ""
 var items_resource: NFItemsRes = null
-
 
 @onready var rarities_opt_btn: OptionButton = $MainContainer/ItemsContainer/DataContainer/ItemsContainer/ItemMargin/ItemDataContainer/RarityContainer/RaritiesOptBtn
 @onready var depot_tree: Tree = $MainContainer/ItemsContainer/DataContainer/ItemSelectContainer/DepotTree
@@ -32,6 +28,7 @@ var items_resource: NFItemsRes = null
 @onready var currency_desc_text_edit: TextEdit = $MainContainer/ItemsContainer/DataContainer/CurrencyDataContainer/DescContainer/CurrencyDescTextEdit
 @onready var currency_val_spn_bx: SpinBox = $MainContainer/ItemsContainer/DataContainer/CurrencyDataContainer/ValueContainer/CurrencyValSpnBx
 
+@onready var item_cat_name_ln_edt: LineEdit = $MainContainer/ItemsContainer/DataContainer/ItemsContainer/CategoryDataContainer/CatDescContainer/ItemCatNameLnEdt
 @onready var item_cat_txt_edt: TextEdit = $MainContainer/ItemsContainer/DataContainer/ItemsContainer/CategoryDataContainer/CatDescContainer/ItemCatTxtEdt
 @onready var items_tree: Tree = $MainContainer/ItemsContainer/DataContainer/ItemsContainer/CategoryDataContainer/CategoryItemsContainer/ItemsTree
 
@@ -43,8 +40,8 @@ var items_resource: NFItemsRes = null
 @onready var item_id_label: Label = $MainContainer/ItemsContainer/DataContainer/ItemsContainer/ItemMargin/ItemDataContainer/ItemIDLabel
 
 @onready var item_val_spn_bx: SpinBox = $MainContainer/ItemsContainer/DataContainer/ItemsContainer/ItemMargin/ItemDataContainer/ValueContainer/ItemValSpnBx
-@onready var icon_ln_edt: LineEdit = $MainContainer/ItemsContainer/DataContainer/ItemsContainer/ItemMargin/ItemDataContainer/IconContainer/IconLnEdt
-@onready var browse_icon_btn: Button = $MainContainer/ItemsContainer/DataContainer/ItemsContainer/ItemMargin/ItemDataContainer/IconContainer/BrowseIconBtn
+#@onready var icon_ln_edt: LineEdit = $MainContainer/ItemsContainer/DataContainer/ItemsContainer/ItemMargin/ItemDataContainer/IconContainer/IconLnEdt
+#@onready var browse_icon_btn: Button = $MainContainer/ItemsContainer/DataContainer/ItemsContainer/ItemMargin/ItemDataContainer/IconContainer/BrowseIconBtn
 @onready var add_item_int_btn: Button = $MainContainer/ItemsContainer/DataContainer/ItemsContainer/ItemMargin/ItemDataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer/AddIntBtn
 @onready var add_item_float_btn: Button = $MainContainer/ItemsContainer/DataContainer/ItemsContainer/ItemMargin/ItemDataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer/AddFloatBtn
 @onready var add_item_bool_btn: Button = $MainContainer/ItemsContainer/DataContainer/ItemsContainer/ItemMargin/ItemDataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer/AddBoolBtn
@@ -53,8 +50,8 @@ var items_resource: NFItemsRes = null
 
 @onready var rarity_name_ln_edt: LineEdit = $MainContainer/ItemsContainer/DataContainer/RarityContainer/RarityNameContainer/RarityNameLnEdt
 @onready var rarity_col_pk_btn: ColorPickerButton = $MainContainer/ItemsContainer/DataContainer/RarityContainer/RarityColContainer/RarityColPkBtn
-@onready var rarity_icon_path_ln_edt: LineEdit = $MainContainer/ItemsContainer/DataContainer/RarityContainer/RarityIconPathContainer/IconPathLnEdt
-@onready var browse_rarity_icon_btn: Button = $MainContainer/ItemsContainer/DataContainer/RarityContainer/RarityIconPathContainer/BrowseRarityIconBtn
+#@onready var rarity_icon_path_ln_edt: LineEdit = $MainContainer/ItemsContainer/DataContainer/RarityContainer/RarityIconPathContainer/IconPathLnEdt
+#@onready var browse_rarity_icon_btn: Button = $MainContainer/ItemsContainer/DataContainer/RarityContainer/RarityIconPathContainer/BrowseRarityIconBtn
 @onready var add_rarity_int_btn: Button = $MainContainer/ItemsContainer/DataContainer/RarityContainer/CustomDataContainer/DataHeader/ButtonContainer/AddRarityIntBtn
 @onready var add_rarity_float_btn: Button = $MainContainer/ItemsContainer/DataContainer/RarityContainer/CustomDataContainer/DataHeader/ButtonContainer/AddRarityFloatBtn
 @onready var add_rarity_bool_btn: Button = $MainContainer/ItemsContainer/DataContainer/RarityContainer/CustomDataContainer/DataHeader/ButtonContainer/AddRarityBoolBtn
@@ -69,15 +66,25 @@ func _ready() -> void:
 	item_data_tree.create_item()
 	rarity_data_tree.create_item()
 	
+	rarities_opt_btn.clear()
+	
+	for rarity_idx in range(items_resource.get_rarity_count()):
+		rarities_opt_btn.add_item(items_resource.get_rarity_name(rarity_idx))
+		depot_tree.create_rarity(items_resource.get_rarity_name(rarity_idx))
+	
 	depot_tree.rarity_created.connect(_on_rarity_created)
 	depot_tree.rarity_reindexed.connect(_on_rarity_reindexed)
 	depot_tree.rarity_deleted.connect(_on_rarity_deleted)
 	depot_tree.rarity_renamed.connect(_on_rarity_renamed)
-	currency_val_spn_bx.value_changed.connect(_on_currency_value_changed)
+	#currency_val_spn_bx.value_changed.connect(_on_currency_value_changed)
+	currency_val_spn_bx.get_line_edit().text_changed.connect(_on_currency_text_changed)
 	depot_tree.currency_selected.connect(_on_currency_selected)
+	depot_tree.currency_created.connect(_on_currency_created)
+	depot_tree.currency_id_changed.connect(_on_currency_id_changed)
 	depot_tree.item_category_selected.connect(_on_item_category_selected)
 	depot_tree.item_category_renamed.connect(_on_item_category_renamed)
 	depot_tree.rarity_selected.connect(_on_rarity_selected)
+	depot_tree.item_category_created.connect(_on_item_category_created)
 	
 	items_tree.item_edited.connect(_on_item_changed)
 	items_tree.item_selected.connect(_on_item_selected)
@@ -99,7 +106,7 @@ func _ready() -> void:
 	
 	item_data_tree.item_edited.connect(_on_item_data_id_edited)
 	
-	create_item_btn.pressed.connect(create_item.bind("new_item"))
+	create_item_btn.pressed.connect(_on_create_item_button_pressed)
 	
 	set_data_visible(-1)
 
@@ -112,17 +119,38 @@ func _input(event: InputEvent) -> void:
 		if item_description.has_focus():
 			if event.shift_pressed:
 				item_name_ln_edt.grab_focus()
-				get_viewport().set_input_as_handled()
 			else:
 				stack_size_spn_bx.get_line_edit().grab_focus()
-				get_viewport().set_input_as_handled()
+			get_viewport().set_input_as_handled()
 		elif currency_desc_text_edit.has_focus():
 			if event.shift_pressed:
 				currency_name_ln_edt.grab_focus()
-				get_viewport().set_input_as_handled()
 			else:
 				currency_val_spn_bx.get_line_edit().grab_focus()
-				get_viewport().set_input_as_handled()
+			get_viewport().set_input_as_handled()
+		elif item_cat_txt_edt.has_focus():
+			if event.shift_pressed:
+				item_cat_name_ln_edt.grab_focus()
+			else:
+				create_item_btn.grab_focus()
+			get_viewport().set_input_as_handled()
+
+
+func _on_item_category_created(category_path: String, category_id: String) -> void:
+	items_resource.create_item_category(category_path, category_id)
+
+
+func _on_currency_id_changed(from: String, to: String) -> void:
+	if from == to:
+		return
+	items_resource._currencies[to] = items_resource._currencies[from]
+	items_resource._currencies.erase(from)
+	if current_currency == from:
+		current_currency = to
+
+
+func _on_currency_created(currency_id: String) -> void:
+	items_resource.create_currency(currency_id)
 
 
 func _on_rarity_name_text_submitted(_submitted_text: String) -> void:
@@ -130,20 +158,61 @@ func _on_rarity_name_text_submitted(_submitted_text: String) -> void:
 
 
 func _on_item_category_renamed(from: String, to: String) -> void:
+	var target_category: Dictionary = items_resource._item_data
+	var from_path: PackedStringArray = from.split("/", false)
+	var to_key: String = to.split("/", false)[-1]
+	var from_key: String = from_path[-1]
+	from_path.resize(from_path.size() - 1)
+	
+	for subcat in from_path:
+		target_category = target_category[subcat]["subcategories"]
+	
+	target_category[to_key] = target_category[from_key]
+	target_category.erase(from_key)
+	
 	if current_item_category == from:
 		current_item_category = to
 		category_id_label.text = Strings.title_case(to.split("/", false)[-1].replace("_", " "))
 
 
 func _on_currency_selected(currency_id: String) -> void:
+	if not currency_data_container.visible:
+		set_data_visible(1)
+	
+	if current_currency == currency_id:
+		return
+	
+	if not current_currency.is_empty():
+		save_currency_data()
+	
 	current_currency = currency_id
-	set_data_visible(1)
+	currency_name_ln_edt.text = items_resource.get_currency_name(currency_id)
+	currency_desc_text_edit.text = items_resource.get_currency_desc(currency_id)
+	currency_val_spn_bx.set_value_no_signal(items_resource.get_currency_value(currency_id))
+	currency_val_spn_bx.get_line_edit().text = str(currency_val_spn_bx.value)
 
 
 func _on_item_category_selected(category_id: String) -> void:
+	if not items_container.visible:
+		set_data_visible(0)
+		
+	if current_item_category == category_id:
+		return
+	
+	if not current_item_category.is_empty():
+		save_item_category_data()
+	
 	current_item_category = category_id
-	set_data_visible(0)
+	current_item = ""
+	
 	clear_item_tree()
+	
+	item_cat_name_ln_edt.text = items_resource.get_category_name(category_id)
+	item_cat_txt_edt.text = items_resource.get_category_description(category_id)
+	
+	for item in items_resource.get_category_item_keys(category_id):
+		create_item(item)
+	
 	category_data_container.visible = true
 	item_data_container.visible = false
 	category_id_label.text = Strings.title_case(category_id.split("/", false)[-1].replace("_", " "))
@@ -157,6 +226,13 @@ func set_data_visible(id: int) -> void:
 
 func _on_currency_value_changed(new_value: int) -> void:
 	depot_tree.update_currency_value(current_currency, new_value)
+
+
+func _on_currency_text_changed(new_text: String) -> void:
+	if new_text.is_valid_int():
+		depot_tree.update_currency_value(current_currency, maxi(currency_val_spn_bx.min_value, int(new_text)))
+	else:
+		depot_tree.update_currency_value(current_currency, currency_val_spn_bx.value)
 
 
 func _on_rarity_renamed(idx: int, new_name: String) -> void:
@@ -187,7 +263,7 @@ func _on_rarity_reindexed(from: int, to: int) -> void:
 	rarities_opt_btn.selected = current_selected
 
 
-func _on_add_item_data_btn_pressed(data_id: String, new_data: Variant) -> void:
+func add_item_data(data_id: String, new_data: Variant) -> void:
 	var new_item: TreeItem = item_data_tree.get_root().create_child()
 	var valid_id: String = get_item_data_valid_id(data_id)
 	
@@ -218,6 +294,10 @@ func _on_add_item_data_btn_pressed(data_id: String, new_data: Variant) -> void:
 	
 	new_item.set_editable(0, true)
 	new_item.set_editable(1, true)
+
+
+func _on_add_item_data_btn_pressed(data_id: String, new_data: Variant) -> void:
+	add_item_data(data_id, new_data)
 
 
 # This is an almost identical to the one on top. Maybe merging it with extra
@@ -262,14 +342,20 @@ func add_rarity_data(data_id: String, new_data: Variant) -> void:
 
 func _on_rarity_name_focus_lost() -> void:
 	var rarity_name: String = rarity_name_ln_edt.text.strip_edges()
+	
 	if current_rarity < 0 or rarity_name == depot_tree.get_rarity_name(current_rarity):
 		return
+	
 	rarity_name_ln_edt.text = rarity_name
 	depot_tree.set_rarity_name(current_rarity, rarity_name)
 	items_resource.set_rarity_name(current_rarity, rarity_name)
+	rarities_opt_btn.set_item_text(current_rarity, rarity_name)
 
 
 func _on_rarity_selected(rarity_idx: int) -> void:
+	if not rarity_container.visible:
+		set_data_visible(2)
+	
 	if current_rarity == rarity_idx:
 		return
 	
@@ -286,14 +372,12 @@ func _on_rarity_selected(rarity_idx: int) -> void:
 	
 	rarity_name_ln_edt.text = items_resource.get_rarity_name(rarity_idx)
 	rarity_col_pk_btn.color = items_resource.get_rarity_color(rarity_idx)
-	rarity_icon_path_ln_edt.text = items_resource.get_rarity_icon_path(rarity_idx)
 	
 	for rarity_key in items_resource.get_rarity_keys(rarity_idx):
 		add_rarity_data(
 				rarity_key,
 				items_resource.get_rarity_data(rarity_idx, rarity_key))
 	
-	set_data_visible(2)
 
 
 func _on_rarity_data_edited() -> void:
@@ -320,6 +404,62 @@ func _on_item_data_id_edited() -> void:
 	edited.get_metadata(0)["id"] = new_id
 
 
+func save_item_data() -> void:
+	items_resource.set_item_name(
+			current_item_category,
+			current_item,
+			item_name_ln_edt.text.strip_edges())
+	items_resource.set_item_description(
+			current_item_category,
+			current_item,
+			item_description.text.strip_edges())
+	items_resource.set_item_stack(
+			current_item_category,
+			current_item,
+			stack_size_spn_bx.value)
+	items_resource.set_item_value(
+			current_item_category,
+			current_item,
+			item_val_spn_bx.value)
+	items_resource.set_item_rarity(
+			current_item_category,
+			current_item,
+			rarities_opt_btn.selected)
+	
+	var item_data_dict: Dictionary = {}
+	
+	for item_data in item_data_tree.get_root().get_children():
+		var data: Variant = null
+		match item_data.get_cell_mode(1):
+			TreeItem.CELL_MODE_RANGE:
+				if item_data.get_icon(0) == ICON_INT:
+					data = int(item_data.get_range(1))
+				else:
+					data = float(item_data.get_range(1))
+			TreeItem.CELL_MODE_CHECK:
+				data = item_data.is_checked(1)
+			TreeItem.CELL_MODE_STRING:
+				data = item_data.get_text(0)
+		item_data_dict[item_data.get_text(0)] = data
+	
+	items_resource.get_item_category_dict(current_item_category)["items"][current_item]["data"] = item_data_dict
+
+
+func save_item_category_data() -> void:
+	items_resource.set_category_name(
+			current_item_category,
+			item_cat_name_ln_edt.text.strip_edges())
+	items_resource.set_category_description(
+			current_item_category,
+			item_cat_txt_edt.text.strip_edges())
+
+
+func save_currency_data() -> void:
+	items_resource.set_currency_name(current_currency, currency_name_ln_edt.text.strip_edges())
+	items_resource.set_currency_value(current_currency, depot_tree.get_currency_value(current_currency))#currency_val_spn_bx.value)
+	items_resource.set_currency_desc(current_currency, currency_desc_text_edit.text.strip_edges())
+
+
 func save_rarity_data() -> void:
 	var r_data: Dictionary = {}
 	
@@ -339,7 +479,6 @@ func save_rarity_data() -> void:
 	
 	items_resource.set_rarity_name(current_rarity, rarity_name_ln_edt.text.strip_edges())
 	items_resource.set_rarity_color(current_rarity, rarity_col_pk_btn.color)
-	items_resource.set_rarity_icon_path(current_rarity, rarity_icon_path_ln_edt.text)
 	items_resource._rarities[current_rarity]["data"] = r_data
 
 
@@ -395,7 +534,7 @@ func clear_item_data() -> void:
 	stack_size_spn_bx.value = stack_size_spn_bx.min_value
 	item_val_spn_bx.value = 0
 	rarities_opt_btn.select(rarities_opt_btn.item_count - 1)
-	icon_ln_edt.clear()
+	#icon_ln_edt.clear()
 	clear_item_data_tree()
 
 
@@ -414,12 +553,19 @@ func clear_item_tree() -> void:
 		item.free()
 
 
-func create_item(item_id: String) -> void:
+func _on_create_item_button_pressed() -> void:
+	items_resource.create_item(
+		current_item_category,
+		create_item("new_item"))
+
+
+func create_item(item_id: String) -> String:
 	var valid_id: String = get_valid_item_id(item_id)
 	var new_item: TreeItem = items_tree.get_root().create_child()
 	new_item.set_metadata(0, {"id": valid_id})
 	new_item.set_text(0, valid_id)
 	new_item.set_editable(0, true)
+	return valid_id
 
 
 func get_valid_item_id(desired_id: String, skip_tree: TreeItem = null) -> String:
@@ -446,9 +592,15 @@ func has_item_id(item_id: String, skip_tree: TreeItem) -> bool:
 func _on_item_changed() -> void:
 	var edited: TreeItem = items_tree.get_edited()
 	var new_id: String = get_valid_item_id(edited.get_text(0), edited)
+	var old_id: String = edited.get_metadata(0)["id"]
+	var res_dict: Dictionary = items_resource.get_item_category_dict(current_item_category)["items"]
+	res_dict[new_id] = res_dict[old_id]
+	items_resource.get_item_category_dict(current_item_category)["items"].erase(old_id)
+	
 	if edited.get_metadata(0)["id"] == current_item:
 		current_item = new_id
 		item_id_label.text = Strings.title_case(new_id.replace("_", " "))
+	
 	edited.set_text(0, new_id)
 	edited.get_metadata(0)["id"] = new_id
 
@@ -456,10 +608,47 @@ func _on_item_changed() -> void:
 func _on_item_selected() -> void:
 	var select: TreeItem = items_tree.get_selected()
 	
+	if not current_item.is_empty():
+		save_item_data()
+	
 	clear_item_data()
 	
 	current_item = select.get_text(0)
+	
 	item_id_label.text = Strings.title_case(current_item.replace("_", " "))
+	item_name_ln_edt.text = items_resource.get_item_name(
+			current_item_category,
+			current_item)
+	item_description.text = items_resource.get_item_description(
+			current_item_category,
+			current_item)
+	
+	stack_size_spn_bx.value = items_resource.get_item_stack(
+			current_item_category,
+			current_item)
+	stack_size_spn_bx.get_line_edit().text = str(stack_size_spn_bx.value)
+	
+	item_val_spn_bx.value = items_resource.get_item_value(
+			current_item_category,
+			current_item)
+	item_val_spn_bx.get_line_edit().text = str(item_val_spn_bx.value)
+	
+	rarities_opt_btn.select(
+			mini(
+					rarities_opt_btn.item_count - 1,
+					items_resource.get_item_rarity(
+							current_item_category,
+							current_item)))
+	
+	for data_key in items_resource.get_item_data_keys(current_item_category, current_item):
+		add_item_data(
+				data_key,
+				items_resource.get_item_data(
+						current_item_category,
+						current_item,
+						data_key))
+	
+	item_data_container.visible = true
 
 
 #var _current_id: String = ""
