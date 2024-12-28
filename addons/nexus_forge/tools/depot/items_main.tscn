@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3 uid="uid://fss7aqmbgj6s"]
+[gd_scene load_steps=15 format=3 uid="uid://fss7aqmbgj6s"]
 
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/depot/items_main_script.gd" id="1_82bi8"]
 [ext_resource type="Texture2D" uid="uid://12lyg7db58dg" path="res://addons/nexus_forge/common_icons/variables/add_int.svg" id="1_tsjpe"]
@@ -12,6 +12,8 @@
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/depot/stations_tree_script.gd" id="9_ox1mw"]
 [ext_resource type="Texture2D" uid="uid://c53li367o8i6k" path="res://addons/nexus_forge/common_icons/refresh_icon.svg" id="10_cmnfn"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/depot/recipe_tree_script.gd" id="11_2psm1"]
+[ext_resource type="Texture2D" uid="uid://bdjoxvxliyeev" path="res://addons/nexus_forge/common_icons/recipe_input_icon.svg" id="11_eeat8"]
+[ext_resource type="Texture2D" uid="uid://cysarv7p7x45l" path="res://addons/nexus_forge/common_icons/recipe_output_icon.svg" id="12_7kflu"]
 
 [node name="Items" type="Control"]
 layout_mode = 3
@@ -460,12 +462,14 @@ hide_folding = true
 hide_root = true
 
 [node name="CraftingContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer"]
+visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 
 [node name="StationsContainer" type="VBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/CraftingContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
+size_flags_stretch_ratio = 2.0
 
 [node name="StationIDLabel" type="Label" parent="MainContainer/ItemsContainer/DataContainer/CraftingContainer/StationsContainer"]
 layout_mode = 2
@@ -548,10 +552,11 @@ hide_root = true
 [node name="RecipeMargin" type="MarginContainer" parent="MainContainer/ItemsContainer/DataContainer/CraftingContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
-size_flags_stretch_ratio = 3.0
+size_flags_stretch_ratio = 5.0
 theme_override_constants/margin_left = 10
 
 [node name="RecipeContainer" type="VBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/CraftingContainer/RecipeMargin"]
+visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 3.0
@@ -606,7 +611,17 @@ layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="Label" type="Label" parent="MainContainer/ItemsContainer/DataContainer/CraftingContainer/RecipeMargin/RecipeContainer/PutsContainer/InContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/CraftingContainer/RecipeMargin/RecipeContainer/PutsContainer/InContainer"]
+layout_mode = 2
+
+[node name="TextureRect" type="TextureRect" parent="MainContainer/ItemsContainer/DataContainer/CraftingContainer/RecipeMargin/RecipeContainer/PutsContainer/InContainer/HBoxContainer"]
+custom_minimum_size = Vector2(18, 18)
+layout_mode = 2
+texture = ExtResource("11_eeat8")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="MainContainer/ItemsContainer/DataContainer/CraftingContainer/RecipeMargin/RecipeContainer/PutsContainer/InContainer/HBoxContainer"]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 text = "Input Items"
@@ -624,7 +639,17 @@ layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="Label" type="Label" parent="MainContainer/ItemsContainer/DataContainer/CraftingContainer/RecipeMargin/RecipeContainer/PutsContainer/OutContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/CraftingContainer/RecipeMargin/RecipeContainer/PutsContainer/OutContainer"]
+layout_mode = 2
+
+[node name="TextureRect" type="TextureRect" parent="MainContainer/ItemsContainer/DataContainer/CraftingContainer/RecipeMargin/RecipeContainer/PutsContainer/OutContainer/HBoxContainer"]
+custom_minimum_size = Vector2(18, 18)
+layout_mode = 2
+texture = ExtResource("12_7kflu")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="MainContainer/ItemsContainer/DataContainer/CraftingContainer/RecipeMargin/RecipeContainer/PutsContainer/OutContainer/HBoxContainer"]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 text = "Output Items"

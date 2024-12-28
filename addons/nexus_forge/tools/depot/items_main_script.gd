@@ -22,6 +22,8 @@ var current_rarity: int = -1
 var current_currency: String = ""
 var current_item_category: String = ""
 var current_item: String = ""
+var current_station: String = ""
+var current_recipe: String = ""
 var items_resource: NFItemsRes = null
 
 @onready var rarities_opt_btn: OptionButton = $MainContainer/ItemsContainer/DataContainer/ItemsContainer/ItemMargin/ItemDataContainer/RarityContainer/RaritiesOptBtn
@@ -76,6 +78,7 @@ var items_resource: NFItemsRes = null
 @onready var currency_data_tree: Tree = $MainContainer/ItemsContainer/DataContainer/CurrencyDataContainer/CustomDataContainer/CurrencyDataTree
 
 # --- Crafting ---
+@onready var crafting_container: HBoxContainer = $MainContainer/ItemsContainer/DataContainer/CraftingContainer
 @onready var recipe_id_label: Label = $MainContainer/ItemsContainer/DataContainer/CraftingContainer/RecipeMargin/RecipeContainer/RecipeIDLabel
 @onready var refresh_btn: Button = $MainContainer/ItemsContainer/DataContainer/CraftingContainer/RecipeMargin/RecipeContainer/AllItemContainer/HeaderContainer/RefreshBtn
 @onready var all_item_craft_tree: Tree = $MainContainer/ItemsContainer/DataContainer/CraftingContainer/RecipeMargin/RecipeContainer/AllItemContainer/AllItemCraftTree
@@ -89,6 +92,9 @@ var items_resource: NFItemsRes = null
 @onready var create_recipe_btn: Button = $MainContainer/ItemsContainer/DataContainer/CraftingContainer/StationsContainer/HeaderContainer/CreateRecipeBtn
 @onready var station_recipes_tree: Tree = $MainContainer/ItemsContainer/DataContainer/CraftingContainer/StationsContainer/StationRecipesTree
 @onready var search_rcp_item_ln_edt: LineEdit = $MainContainer/ItemsContainer/DataContainer/CraftingContainer/RecipeMargin/RecipeContainer/AllItemContainer/HeaderContainer/SearchRcpItemLnEdt
+@onready var recipe_container: VBoxContainer = $MainContainer/ItemsContainer/DataContainer/CraftingContainer/RecipeMargin/RecipeContainer
+@onready var station_id_label: Label = $MainContainer/ItemsContainer/DataContainer/CraftingContainer/StationsContainer/StationIDLabel
+#@onready var recipe_id_label: Label = $MainContainer/ItemsContainer/DataContainer/CraftingContainer/RecipeMargin/RecipeContainer/RecipeIDLabel
 
 
 func _ready() -> void:
@@ -113,11 +119,6 @@ func _ready() -> void:
 	out_item_tree.set_column_custom_minimum_width(1, 50)
 	out_item_tree.set_column_custom_minimum_width(2, 250)
 	
-	var test_item: TreeItem = all_item_craft_tree.get_root().create_child()
-	test_item.set_text(0, "armors/iron")
-	test_item.add_button(0, RECIPE_INPUT_ICON, 0, false, "Add to Input")
-	test_item.add_button(0, RECIPE_OUTPUT_ICON, 1, false, "Add to Output")
-	
 	rarities_opt_btn.clear()
 	
 	for rarity_idx in range(items_resource.get_rarity_count()):
@@ -139,6 +140,7 @@ func _ready() -> void:
 	depot_tree.item_category_created.connect(_on_item_category_created)
 	depot_tree.item_category_deleted.connect(_on_item_category_deleted)
 	depot_tree.currency_deleted.connect(_on_currency_deleted)
+	depot_tree.crafting_station_selected.connect(_on_crafting_station_selected)
 	
 	items_tree.item_edited.connect(_on_item_changed)
 	items_tree.item_selected.connect(_on_item_selected)
@@ -184,11 +186,13 @@ func _ready() -> void:
 	
 	create_recipe_btn.pressed.connect(_on_create_recipe_btn_pressed)
 	station_recipes_tree.item_edited.connect(_on_recipe_tree_item_edited)
+	station_recipes_tree.item_selected.connect(_on_crafting_recipe_selected)
 	station_data_tree.item_edited.connect(_on_station_data_item_edited)
 	
 	search_rcp_item_ln_edt.text_submitted.connect(_on_search_recipe_text_submitted)
 	
 	set_data_visible(-1)
+	recipe_container.visible = false
 
 
 func _input(event: InputEvent) -> void:
@@ -214,6 +218,44 @@ func _input(event: InputEvent) -> void:
 			else:
 				create_item_btn.grab_focus()
 			get_viewport().set_input_as_handled()
+
+
+#signal crafting_station_created(station_id: String)
+#signal crafting_station_changed(from: String, to: String)
+#signal crafting_station_deleted(station_id: String)
+#signal crafting_station_selected(station_id: String)
+
+func _on_crafting_station_created(station_id: String) -> void:
+	pass
+
+
+func _on_crafting_station_changed(from: String, to: String) -> void:
+	pass
+
+
+func _on_crafting_station_deleted(station_id: String) -> void:
+	pass
+
+
+func _on_crafting_station_selected(station_id: String) -> void:
+	if not crafting_container.visible:
+		set_data_visible(3)
+	
+	if current_station == station_id:
+		return
+	
+	current_station = station_id
+	station_id_label.text = Strings.title_case(station_id.replace("_", " "))
+	
+	if not current_recipe.is_empty():
+		current_recipe = ""
+		recipe_container.visible = false
+
+
+func _on_crafting_recipe_selected() -> void:
+	var selected: TreeItem = station_recipes_tree.get_selected()
+	current_recipe = selected.get_text(0)
+	recipe_container.visible = true
 
 
 func _on_search_recipe_text_submitted(text: String) -> void:
@@ -271,8 +313,8 @@ func _on_item_refresh_btn_pressed() -> void:
 			
 			new_item.set_cell_mode(0, TreeItem.CELL_MODE_STRING)
 			new_item.set_text(0, cat_path + "/" + item_id)
-			new_item.add_button(0, ICON_BOOL, 0, false, "Add to Input")
-			new_item.add_button(0, ICON_BOOL, 1, false, "Add to Output")
+			new_item.add_button(0, RECIPE_INPUT_ICON, 0, false, "Add to Input")
+			new_item.add_button(0, RECIPE_OUTPUT_ICON, 1, false, "Add to Output")
 
 
 func _on_craft_all_itm_button_clicked(item: TreeItem, column: int, id: int, mouse_button_index: int) -> void:
@@ -526,6 +568,7 @@ func set_data_visible(id: int) -> void:
 	items_container.visible = id == 0
 	currency_data_container.visible = id == 1
 	rarity_container.visible = id == 2
+	crafting_container.visible = id == 3
 
 
 func _on_currency_value_changed(new_value: int) -> void:

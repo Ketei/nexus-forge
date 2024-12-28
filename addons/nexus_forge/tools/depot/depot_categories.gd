@@ -15,6 +15,10 @@ signal item_category_created(category_path: String, catgory_id: String)
 signal item_category_renamed(from: String, to: String)
 signal item_category_selected(category_id: String)
 signal item_category_deleted(category_id: String)
+signal crafting_station_created(station_id: String)
+signal crafting_station_changed(from: String, to: String)
+signal crafting_station_deleted(station_id: String)
+signal crafting_station_selected(station_id: String)
 
 
 const PLUS_ICON = preload("res://addons/nexus_forge/common_icons/plus_icon.svg")
@@ -25,12 +29,14 @@ const TRASH_BIN = preload("res://addons/nexus_forge/common_icons/trash_bin.svg")
 enum ButtonIDs {
 	CREATE_CATEGORY,
 	CREATE_RARITY,
+	CREATE_STATION,
 	SORT_UP,
 	SORT_DOWN,
 	DELETE_RARITY,
 	CREATE_CURRENCY,
 	DELETE_CATEGORY,
 	DELETE_CURRENCY,
+	DELETE_STATION,
 }
 
 #const CREATE_CATEGORY_BTN: int = 0
@@ -43,8 +49,8 @@ enum ButtonIDs {
 enum CellIDs {
 	ITEM_CATEGORY,
 	CURRENCY,
-	RARITY
-	
+	RARITY,
+	CRAFTING,
 }
 
 var root_tree: TreeItem = null
@@ -77,6 +83,7 @@ func _ready() -> void:
 	items_category.add_button(0, PLUS_ICON, ButtonIDs.CREATE_CATEGORY, false, "Create Item Category")
 	rarity_category.add_button(0, PLUS_ICON, ButtonIDs.CREATE_RARITY, false, "Create Rarity")
 	currency_category.add_button(0, PLUS_ICON, ButtonIDs.CREATE_CURRENCY, false, "Create Currency")
+	crafting_category.add_button(0, PLUS_ICON, ButtonIDs.CREATE_STATION, false, "Create Station")
 	
 	button_clicked.connect(_on_button_clicked)
 	item_edited.connect(_on_item_edited)
@@ -91,6 +98,14 @@ func create_category(on_tree: TreeItem, category_name: String, items: Array[Stri
 	category.set_metadata(0, {"row_id": CellIDs.ITEM_CATEGORY, "name": category_name})
 	category.set_editable(0, true)
 	return category
+
+
+func create_crafting_station(station_id: String) -> void:
+	var new_station: TreeItem = crafting_category.create_child()
+	new_station.set_text(0, station_id)
+	new_station.set_metadata(0, {"row_id": CellIDs.CRAFTING, "id": station_id})
+	new_station.set_editable(0, true)
+	new_station.add_button(0, TRASH_BIN, ButtonIDs.DELETE_STATION, false, "Delete Station")
 
 
 #func add_item(on_tree: TreeItem, item_id: String = "new_item") -> void:
@@ -136,6 +151,27 @@ func get_valid_currency_id(desired_id: String = "", skip_tree: TreeItem = null) 
 		iteration += 1
 		modified_id = cleaned_id + str(iteration)
 	return modified_id
+
+
+func get_valid_id(on_tree: TreeItem, desired_id: String, id_column: int = 0, default_id: String = "item", skip_tree: TreeItem = null) -> String:
+	var clean_id: String = desired_id.strip_edges()
+	if clean_id.is_empty():
+		clean_id = default_id
+	var modified_id: String = clean_id
+	var iteration: int = 0
+	while has_valid_id(on_tree, id_column, modified_id, skip_tree):
+		iteration += 1
+		modified_id = clean_id + str(iteration)
+	return modified_id
+
+
+func has_valid_id(on_tree: TreeItem, on_column: int, id: String, skip: TreeItem) -> bool:
+	for id_tree in on_tree.get_children():
+		if id_tree == skip:
+			continue
+		if id_tree.get_text(on_column) == id:
+			return true
+	return false
 
 
 func get_currency_value(currency_id: String) -> int:
@@ -272,6 +308,12 @@ func _on_button_clicked(item: TreeItem, column: int, id: int, mouse_button_index
 			currency_created.emit(currency_id)
 			if currency_category.collapsed:
 				currency_category.collapsed = false
+		ButtonIDs.CREATE_STATION:
+			var station_id: String = get_valid_id(crafting_category, "new_station", 0)
+			create_crafting_station(station_id)
+			crafting_station_created.emit(station_id)
+			if crafting_category.collapsed:
+				crafting_category.collapsed = false
 		ButtonIDs.CREATE_CATEGORY:
 			var new_cat_id: String = get_valid_category_id(item, "new_category")
 			create_category(item, new_cat_id)
@@ -283,6 +325,9 @@ func _on_button_clicked(item: TreeItem, column: int, id: int, mouse_button_index
 			item.free()
 		ButtonIDs.DELETE_CURRENCY:
 			currency_deleted.emit(item.get_text(0))
+			item.free()
+		ButtonIDs.DELETE_STATION:
+			crafting_station_deleted.emit(item.get_text(0))
 			item.free()
 
 
@@ -296,6 +341,11 @@ func _on_item_edited() -> void:
 		edited.set_text(0, new_name)
 		currency_id_changed.emit(edited.get_metadata(0)["id"], new_name)
 		edited.get_metadata(0)["id"] = new_name
+	elif edited.get_parent() == crafting_category:
+		var new_id: String = get_valid_id(crafting_category, edited.get_text(0), 0, "station", edited)
+		crafting_station_changed.emit(edited.get_metadata(0)["id"], new_id)
+		edited.set_text(0, new_id)
+		edited.get_metadata(0)["id"] = new_id
 	elif edited.get_metadata(0)["row_id"] == CellIDs.ITEM_CATEGORY:
 		var new_id: String = get_valid_category_id(edited.get_parent(), edited.get_text(0), edited)
 		var path: String = get_item_path_to(edited.get_parent())
@@ -317,3 +367,5 @@ func _on_item_selected() -> void:
 			item_category_selected.emit(get_item_path_to(selected))
 		CellIDs.RARITY:
 			rarity_selected.emit(selected.get_index())
+		CellIDs.CRAFTING:
+			crafting_station_selected.emit(selected.get_text(0))
