@@ -36,7 +36,7 @@ var item_materials: Dictionary = {}
 ]
 
 @export var _currencies: Dictionary = {
-	#"gold": {"name": "GC", "value": 1}
+	#"gold": {"name": "GC", "value": 1, "data": {}}
 }
 
 
@@ -111,6 +111,14 @@ func create_item_category(category_path: String, category_id: String) -> void:
 		"name": "",
 		"description": ""
 		}
+
+
+func erase_item_category(category_path: String) -> void:
+	var path_array: PackedStringArray = category_path.split("/", false)
+	var category_key: String = path_array[-1]
+	path_array.resize(path_array.size() - 1)
+	
+	get_item_category_dict("/".join(path_array)).erase(category_key)
 
 
 func set_category_name(category_path: String, category_name: String) -> void:
@@ -278,8 +286,8 @@ func get_currency_name(currency_id: String) -> String:
 	return _currencies[currency_id]["name"]
 
 
-func get_currency_desc(currency_id: String) -> String:
-	return _currencies[currency_id]["description"]
+#func get_currency_desc(currency_id: String) -> String:
+	#return _currencies[currency_id]["description"]
 
 
 func get_currency_value(currency_id: String) -> int:
@@ -294,8 +302,25 @@ func set_currency_value(id: String, new_value: int) -> void:
 	_currencies[id]["value"] = maxi(1, new_value)
 
 
-func set_currency_desc(id: String, new_desc: String) -> void:
-	_currencies[id]["description"] = new_desc
+func set_currency_data(id: String, data_key: String, data_value: Variant) -> void:
+	_currencies[id]["data"][data_key] = data_value
+
+
+func get_currency_data(id: String, data_key: String) -> Variant:
+	return _currencies[id]["data"][data_key]
+
+
+func get_currency_data_keys(id: String) -> Array[String]:
+	return Array(
+			_currencies[id]["data"].keys(),
+			TYPE_STRING,
+			&"",
+			null
+			)
+
+
+#func set_currency_desc(id: String, new_desc: String) -> void:
+	#_currencies[id]["description"] = new_desc
 
 
 func erase_currency(currency_id: String) -> void:
@@ -307,7 +332,7 @@ func clear_currencies() -> void:
 
 
 func create_currency(id: String, name: String = "", value: int = 1) -> void:
-	_currencies[id] = {"name": name, "description": "", "value": maxi(1, value)}
+	_currencies[id] = {"name": name, "data": {}, "value": maxi(1, value)}
 
 
 func _sort_currencies(currency_a: String, currency_b: String) -> bool:

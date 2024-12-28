@@ -10,14 +10,17 @@ signal rarity_selected(rarity_idx: int)
 signal currency_created(currency_id: String)
 signal currency_id_changed(from: String, to: String)
 signal currency_selected(currency_id: String)
+signal currency_deleted(currency_id: String)
 signal item_category_created(category_path: String, catgory_id: String)
 signal item_category_renamed(from: String, to: String)
 signal item_category_selected(category_id: String)
+signal item_category_deleted(category_id: String)
 
 
 const PLUS_ICON = preload("res://addons/nexus_forge/common_icons/plus_icon.svg")
 const DOWN_ARROW = preload("res://addons/nexus_forge/common_icons/down_arrow.svg")
 const UP_ARROW = preload("res://addons/nexus_forge/common_icons/up_arrow.svg")
+const TRASH_BIN = preload("res://addons/nexus_forge/common_icons/trash_bin.svg")
 
 enum ButtonIDs {
 	CREATE_CATEGORY,
@@ -26,6 +29,8 @@ enum ButtonIDs {
 	SORT_DOWN,
 	DELETE_RARITY,
 	CREATE_CURRENCY,
+	DELETE_CATEGORY,
+	DELETE_CURRENCY,
 }
 
 #const CREATE_CATEGORY_BTN: int = 0
@@ -58,7 +63,7 @@ func _ready() -> void:
 	currency_category = root_tree.create_child()
 	
 	items_category.set_text(0, "Item Categories")
-	crafting_category.set_text(0, "Crafting")
+	crafting_category.set_text(0, "Crafting Stations")
 	currency_category.set_text(0, "Currency")
 	rarity_category.set_text(0, "Rarity")
 	
@@ -82,6 +87,7 @@ func create_category(on_tree: TreeItem, category_name: String, items: Array[Stri
 	var category: TreeItem = on_tree.create_child()
 	category.set_text(0, category_name)
 	category.add_button(0, PLUS_ICON, ButtonIDs.CREATE_CATEGORY, false, "Create Category")
+	category.add_button(0, TRASH_BIN, ButtonIDs.DELETE_CATEGORY, false, "Delete Category")
 	category.set_metadata(0, {"row_id": CellIDs.ITEM_CATEGORY, "name": category_name})
 	category.set_editable(0, true)
 	return category
@@ -98,6 +104,7 @@ func create_rarity(rarity_name: String) -> void:
 	new_rarity.set_text(0, rarity_name)
 	new_rarity.add_button(0, UP_ARROW, ButtonIDs.SORT_UP, new_rarity.get_index() == 0, "Less Rare")
 	new_rarity.add_button(0, DOWN_ARROW, ButtonIDs.SORT_DOWN, new_rarity.get_index() == rarity_category.get_child_count() - 1, "More Rare")
+	new_rarity.add_button(0, TRASH_BIN, ButtonIDs.DELETE_RARITY, false, "Delete Rarity")
 	new_rarity.set_editable(0, true)
 	if 0 < new_rarity.get_index():
 		var prev_rarity: TreeItem = rarity_category.get_child(new_rarity.get_index() - 1)
@@ -113,6 +120,7 @@ func create_currency(currency_id: String, currency_value: int = 1) -> void:
 		insert_idx += 1
 	var new_currency: TreeItem = currency_category.create_child(insert_idx)
 	new_currency.set_text(0, currency_id)
+	new_currency.add_button(0, TRASH_BIN, ButtonIDs.DELETE_CURRENCY, false, "Delete Currency")
 	new_currency.set_metadata(0, {"row_id": CellIDs.CURRENCY, "id": currency_id, "value": currency_value})
 	new_currency.set_editable(0, true)
 
@@ -209,6 +217,16 @@ func get_item_path_to(item: TreeItem) -> String:
 	return path.trim_suffix("/")
 
 
+func get_all_item_categories(_base: TreeItem = items_category) -> Array[String]:
+	var paths: Array[String] = []
+	for category in _base.get_children():
+		paths.append(get_item_path_to(category))
+		for subcategory in category.get_children():
+			paths.append_array(
+					get_all_item_categories(subcategory))
+	return paths
+
+
 func set_rarity_name(rarity_idx: int, rarity_name: String) -> void:
 	rarity_category.get_child(rarity_idx).set_text(0, rarity_name)
 	#rarity_renamed.emit(rarity_idx, rarity_name)
@@ -260,6 +278,12 @@ func _on_button_clicked(item: TreeItem, column: int, id: int, mouse_button_index
 			item_category_created.emit(get_item_path_to(item), new_cat_id)
 			if items_category.collapsed:
 				items_category.collapsed = false
+		ButtonIDs.DELETE_CATEGORY:
+			item_category_deleted.emit(get_item_path_to(item))
+			item.free()
+		ButtonIDs.DELETE_CURRENCY:
+			currency_deleted.emit(item.get_text(0))
+			item.free()
 
 
 func _on_item_edited() -> void:

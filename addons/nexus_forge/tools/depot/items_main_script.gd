@@ -6,8 +6,17 @@ const ICON_BOOL = preload("res://addons/nexus_forge/common_icons/variables/bool.
 const ICON_FLOAT = preload("res://addons/nexus_forge/common_icons/variables/float.svg")
 const ICON_INT = preload("res://addons/nexus_forge/common_icons/variables/int.svg")
 const ICON_STRING = preload("res://addons/nexus_forge/common_icons/variables/string.svg")
+const ICON_ADD_BOOL = preload("res://addons/nexus_forge/common_icons/variables/add_bool.svg")
+const ICON_ADD_FLOAT = preload("res://addons/nexus_forge/common_icons/variables/add_float.svg")
+const ICON_ADD_INT = preload("res://addons/nexus_forge/common_icons/variables/add_int.svg")
+const ICON_ADD_STRING = preload("res://addons/nexus_forge/common_icons/variables/add_string.svg")
+const TRASH_BIN = preload("res://addons/nexus_forge/common_icons/trash_bin.svg")
+const RECIPE_INPUT_ICON = preload("res://addons/nexus_forge/common_icons/recipe_input_icon.svg")
+const RECIPE_OUTPUT_ICON = preload("res://addons/nexus_forge/common_icons/recipe_output_icon.svg")
+
 const ITEM_DATA_RANGE: int = 9999
 const ITEM_DATA_FLOAT_STEP: float = 0.01
+const CRAFTING_MAX_ITEM: int = 999
 
 var current_rarity: int = -1
 var current_currency: String = ""
@@ -25,7 +34,7 @@ var items_resource: NFItemsRes = null
 @onready var item_name_ln_edt: LineEdit = $MainContainer/ItemsContainer/DataContainer/ItemsContainer/ItemMargin/ItemDataContainer/NameContainer/ItemNameLnEdt
 
 @onready var currency_name_ln_edt: LineEdit = $MainContainer/ItemsContainer/DataContainer/CurrencyDataContainer/NameContainer/CurrencyNameLnEdt
-@onready var currency_desc_text_edit: TextEdit = $MainContainer/ItemsContainer/DataContainer/CurrencyDataContainer/DescContainer/CurrencyDescTextEdit
+#@onready var currency_desc_text_edit: TextEdit = $MainContainer/ItemsContainer/DataContainer/CurrencyDataContainer/DescContainer/CurrencyDescTextEdit
 @onready var currency_val_spn_bx: SpinBox = $MainContainer/ItemsContainer/DataContainer/CurrencyDataContainer/ValueContainer/CurrencyValSpnBx
 
 @onready var item_cat_name_ln_edt: LineEdit = $MainContainer/ItemsContainer/DataContainer/ItemsContainer/CategoryDataContainer/CatDescContainer/ItemCatNameLnEdt
@@ -59,12 +68,55 @@ var items_resource: NFItemsRes = null
 @onready var rarity_data_tree: Tree = $MainContainer/ItemsContainer/DataContainer/RarityContainer/CustomDataContainer/RarityDataTree
 @onready var rarity_container: VBoxContainer = $MainContainer/ItemsContainer/DataContainer/RarityContainer
 
+# --- Currency ---
+@onready var add_crr_int_btn: Button = $MainContainer/ItemsContainer/DataContainer/CurrencyDataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer/AddCrrIntBtn
+@onready var add_crr_float_btn: Button = $MainContainer/ItemsContainer/DataContainer/CurrencyDataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer/AddCrrFloatBtn
+@onready var add_crr_bool_btn: Button = $MainContainer/ItemsContainer/DataContainer/CurrencyDataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer/AddCrrBoolBtn
+@onready var add_crr_str_btn: Button = $MainContainer/ItemsContainer/DataContainer/CurrencyDataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer/AddCrrStrBtn
+@onready var currency_data_tree: Tree = $MainContainer/ItemsContainer/DataContainer/CurrencyDataContainer/CustomDataContainer/CurrencyDataTree
+
+# --- Crafting ---
+@onready var recipe_id_label: Label = $MainContainer/ItemsContainer/DataContainer/CraftingContainer/RecipeMargin/RecipeContainer/RecipeIDLabel
+@onready var refresh_btn: Button = $MainContainer/ItemsContainer/DataContainer/CraftingContainer/RecipeMargin/RecipeContainer/AllItemContainer/HeaderContainer/RefreshBtn
+@onready var all_item_craft_tree: Tree = $MainContainer/ItemsContainer/DataContainer/CraftingContainer/RecipeMargin/RecipeContainer/AllItemContainer/AllItemCraftTree
+@onready var in_item_tree: Tree = $MainContainer/ItemsContainer/DataContainer/CraftingContainer/RecipeMargin/RecipeContainer/PutsContainer/InContainer/InItemTree
+@onready var out_item_tree: Tree = $MainContainer/ItemsContainer/DataContainer/CraftingContainer/RecipeMargin/RecipeContainer/PutsContainer/OutContainer/OutItemTree
+@onready var add_station_int: Button = $MainContainer/ItemsContainer/DataContainer/CraftingContainer/StationsContainer/ButtonContainer/AddStationInt
+@onready var add_station_float: Button = $MainContainer/ItemsContainer/DataContainer/CraftingContainer/StationsContainer/ButtonContainer/AddStationFloat
+@onready var add_station_bool: Button = $MainContainer/ItemsContainer/DataContainer/CraftingContainer/StationsContainer/ButtonContainer/AddStationBool
+@onready var add_station_string: Button = $MainContainer/ItemsContainer/DataContainer/CraftingContainer/StationsContainer/ButtonContainer/AddStationString
+@onready var station_data_tree: Tree = $MainContainer/ItemsContainer/DataContainer/CraftingContainer/StationsContainer/StationDataTree
+@onready var create_recipe_btn: Button = $MainContainer/ItemsContainer/DataContainer/CraftingContainer/StationsContainer/HeaderContainer/CreateRecipeBtn
+@onready var station_recipes_tree: Tree = $MainContainer/ItemsContainer/DataContainer/CraftingContainer/StationsContainer/StationRecipesTree
+@onready var search_rcp_item_ln_edt: LineEdit = $MainContainer/ItemsContainer/DataContainer/CraftingContainer/RecipeMargin/RecipeContainer/AllItemContainer/HeaderContainer/SearchRcpItemLnEdt
+
 
 func _ready() -> void:
 	items_resource = NFItemsRes.new() # Remove after testing
 	items_tree.create_item()
 	item_data_tree.create_item()
 	rarity_data_tree.create_item()
+	currency_data_tree.create_item()
+	all_item_craft_tree.create_item()
+	in_item_tree.create_item()
+	out_item_tree.create_item()
+	station_data_tree.create_item()
+	station_recipes_tree.create_item()
+	
+	in_item_tree.set_column_expand(1, false)
+	in_item_tree.set_column_expand(2, false)
+	in_item_tree.set_column_custom_minimum_width(1, 50)
+	in_item_tree.set_column_custom_minimum_width(2, 250)
+	
+	out_item_tree.set_column_expand(1, false)
+	out_item_tree.set_column_expand(2, false)
+	out_item_tree.set_column_custom_minimum_width(1, 50)
+	out_item_tree.set_column_custom_minimum_width(2, 250)
+	
+	var test_item: TreeItem = all_item_craft_tree.get_root().create_child()
+	test_item.set_text(0, "armors/iron")
+	test_item.add_button(0, RECIPE_INPUT_ICON, 0, false, "Add to Input")
+	test_item.add_button(0, RECIPE_OUTPUT_ICON, 1, false, "Add to Output")
 	
 	rarities_opt_btn.clear()
 	
@@ -85,9 +137,21 @@ func _ready() -> void:
 	depot_tree.item_category_renamed.connect(_on_item_category_renamed)
 	depot_tree.rarity_selected.connect(_on_rarity_selected)
 	depot_tree.item_category_created.connect(_on_item_category_created)
+	depot_tree.item_category_deleted.connect(_on_item_category_deleted)
+	depot_tree.currency_deleted.connect(_on_currency_deleted)
 	
 	items_tree.item_edited.connect(_on_item_changed)
 	items_tree.item_selected.connect(_on_item_selected)
+	
+	in_item_tree.button_clicked.connect(on_put_recipe_button_clicked)
+	out_item_tree.button_clicked.connect(on_put_recipe_button_clicked)
+	
+	in_item_tree.item_edited.connect(_on_put_item_edited.bind(in_item_tree))
+	out_item_tree.item_edited.connect(_on_put_item_edited.bind(out_item_tree))
+	
+	all_item_craft_tree.button_clicked.connect(_on_craft_all_itm_button_clicked)
+	
+	refresh_btn.pressed.connect(_on_item_refresh_btn_pressed)
 	
 	add_item_int_btn.pressed.connect(_on_add_item_data_btn_pressed.bind("new_int", 0))
 	add_item_float_btn.pressed.connect(_on_add_item_data_btn_pressed.bind("new_float", 0.0))
@@ -101,12 +165,28 @@ func _ready() -> void:
 	add_rarity_bool_btn.pressed.connect(_on_add_rarity_data_btn_pressed.bind("new_bool", false))
 	add_rarity_str_btn.pressed.connect(_on_add_rarity_data_btn_pressed.bind("new_string", ""))
 	
+	add_crr_int_btn.pressed.connect(_on_add_currency_data_btn_pressed.bind("new_int", 0))
+	add_crr_float_btn.pressed.connect(_on_add_currency_data_btn_pressed.bind("new_float", 0.0))
+	add_crr_bool_btn.pressed.connect(_on_add_currency_data_btn_pressed.bind("new_bool", false))
+	add_crr_str_btn.pressed.connect(_on_add_currency_data_btn_pressed.bind("new_string", ""))
+	
+	add_station_int.pressed.connect(_on_add_station_data_btn_pressed.bind("new_int", 0))
+	add_station_float.pressed.connect(_on_add_station_data_btn_pressed.bind("new_float", 0.0))
+	add_station_bool.pressed.connect(_on_add_station_data_btn_pressed.bind("new_bool", false))
+	add_station_string.pressed.connect(_on_add_station_data_btn_pressed.bind("new_string", ""))
+	
 	rarity_name_ln_edt.focus_exited.connect(_on_rarity_name_focus_lost)
 	rarity_name_ln_edt.text_submitted.connect(_on_rarity_name_text_submitted)
 	
 	item_data_tree.item_edited.connect(_on_item_data_id_edited)
 	
 	create_item_btn.pressed.connect(_on_create_item_button_pressed)
+	
+	create_recipe_btn.pressed.connect(_on_create_recipe_btn_pressed)
+	station_recipes_tree.item_edited.connect(_on_recipe_tree_item_edited)
+	station_data_tree.item_edited.connect(_on_station_data_item_edited)
+	
+	search_rcp_item_ln_edt.text_submitted.connect(_on_search_recipe_text_submitted)
 	
 	set_data_visible(-1)
 
@@ -122,18 +202,226 @@ func _input(event: InputEvent) -> void:
 			else:
 				stack_size_spn_bx.get_line_edit().grab_focus()
 			get_viewport().set_input_as_handled()
-		elif currency_desc_text_edit.has_focus():
-			if event.shift_pressed:
-				currency_name_ln_edt.grab_focus()
-			else:
-				currency_val_spn_bx.get_line_edit().grab_focus()
-			get_viewport().set_input_as_handled()
+		#elif currency_desc_text_edit.has_focus():
+			#if event.shift_pressed:
+				#currency_name_ln_edt.grab_focus()
+			#else:
+				#currency_val_spn_bx.get_line_edit().grab_focus()
+			#get_viewport().set_input_as_handled()
 		elif item_cat_txt_edt.has_focus():
 			if event.shift_pressed:
 				item_cat_name_ln_edt.grab_focus()
 			else:
 				create_item_btn.grab_focus()
 			get_viewport().set_input_as_handled()
+
+
+func _on_search_recipe_text_submitted(text: String) -> void:
+	var clean_text: String = text.strip_edges()
+	for recipe_id in all_item_craft_tree.get_root().get_children():
+		recipe_id.visible = clean_text.is_empty() or recipe_id.get_text(0).containsn(clean_text)
+
+
+func _on_create_recipe_btn_pressed() -> void:
+	var new_id: String = get_valid_id(
+			station_recipes_tree.get_root(),
+			0,
+			"new_recipe")
+	var new_recipe: TreeItem = station_recipes_tree.get_root().create_child()
+	new_recipe.set_text(0, new_id)
+	new_recipe.set_metadata(0, {"id": new_id})
+	new_recipe.set_editable(0, true)
+
+
+func _on_recipe_tree_item_edited() -> void:
+	var edited: TreeItem = station_recipes_tree.get_edited()
+	var new_name: String = get_valid_id(
+			station_recipes_tree.get_root(),
+			0,
+			edited.get_text(0),
+			edited,
+			"crafting_recipe")
+	edited.set_text(0, new_name)
+	edited.get_metadata(0)["id"] = new_name
+
+
+func _on_station_data_item_edited() -> void:
+	if station_data_tree.get_edited_column() != 0:
+		return
+	
+	var edited: TreeItem = station_data_tree.get_edited()
+	var new_id: String = get_valid_id(
+			station_data_tree.get_root(),
+			0,
+			edited.get_text(0),
+			edited,
+			"station_data")
+	edited.set_text(0, new_id)
+
+
+func _on_item_refresh_btn_pressed() -> void:
+	var items: TreeItem = all_item_craft_tree.get_root()
+	
+	for itm in items.get_children():
+		itm.free()
+	
+	for cat_path in depot_tree.get_all_item_categories():
+		for item_id in items_resource.get_category_item_keys(cat_path):
+			var new_item: TreeItem = items.create_child()
+			
+			new_item.set_cell_mode(0, TreeItem.CELL_MODE_STRING)
+			new_item.set_text(0, cat_path + "/" + item_id)
+			new_item.add_button(0, ICON_BOOL, 0, false, "Add to Input")
+			new_item.add_button(0, ICON_BOOL, 1, false, "Add to Output")
+
+
+func _on_craft_all_itm_button_clicked(item: TreeItem, column: int, id: int, mouse_button_index: int) -> void:
+	var new_craft_itm: TreeItem = null
+	
+	match id:
+		0:
+			if has_recipe_input_id(item.get_text(0)):
+				return
+			new_craft_itm = in_item_tree.get_root().create_child()
+		1:
+			if has_recipe_output_id(item.get_text(0)):
+				return
+			new_craft_itm = out_item_tree.get_root().create_child()
+	
+	new_craft_itm.set_cell_mode(0, TreeItem.CELL_MODE_STRING)
+	new_craft_itm.set_cell_mode(1, TreeItem.CELL_MODE_STRING)
+	#new_craft_itm.set_text(1, "==,!=,<,<=,>,>=")
+	new_craft_itm.set_cell_mode(2, TreeItem.CELL_MODE_RANGE)
+	new_craft_itm.set_range_config(2, 1, CRAFTING_MAX_ITEM, 1)
+	new_craft_itm.set_range(2, 1)
+	
+	new_craft_itm
+	
+	new_craft_itm.set_text(0, item.get_text(0))
+	new_craft_itm.add_button(2, ICON_ADD_INT, 0, false, "Add Integer Data")
+	new_craft_itm.add_button(2, ICON_ADD_FLOAT, 1, false, "Add Float Data")
+	new_craft_itm.add_button(2, ICON_ADD_BOOL, 2, false, "Add Bool Data")
+	new_craft_itm.add_button(2, ICON_ADD_STRING, 3, false, "Add String Data")
+	new_craft_itm.add_button(2, TRASH_BIN, 4, false, "Delete Item")
+	new_craft_itm.set_selectable(0, false)
+	new_craft_itm.set_selectable(1, false)
+	new_craft_itm.set_editable(1, true)
+	new_craft_itm.set_editable(2, true)
+
+
+func _on_put_item_edited(edited_tree: Tree) -> void:
+	if edited_tree.get_edited_column() != 0:
+		return
+	
+	var edited_item: TreeItem = edited_tree.get_edited()
+	var new_valid_id: String = get_valid_id(edited_item.get_parent(), 0, edited_item.get_text(0), edited_item, "data")
+	edited_item.set_text(0, new_valid_id)
+
+
+func get_valid_id(on_item: TreeItem, id_cell: int, desired_id: String, ignore_tree: TreeItem = null, default_id: String = "new_item") -> String:
+	var clean_id: String = desired_id.strip_edges()
+	var iteration: int = 0
+	if clean_id.is_empty():
+		clean_id = default_id
+	var modified_id: String = clean_id
+	while has_tree_id(on_item, id_cell, modified_id, ignore_tree):
+		iteration += 1
+		modified_id = clean_id + str(iteration)
+	return modified_id
+
+
+func has_tree_id(on_item: TreeItem, on_cell: int, id: String, ignore_tree: TreeItem = null) -> bool:
+	for child in on_item.get_children():
+		if child == ignore_tree:
+			continue
+		if child.get_text(on_cell) == id:
+			return true
+	return false
+
+
+func on_put_recipe_button_clicked(item: TreeItem, column: int, id: int, mouse_button_index: int) -> void:
+	match id:
+		0: # Add Int
+			var valid_id: String = get_valid_id(item, 0, "new_int")
+			var new_item: TreeItem = item.create_child()
+			new_item.set_cell_mode(0, TreeItem.CELL_MODE_STRING)
+			new_item.set_cell_mode(1, TreeItem.CELL_MODE_RANGE)
+			new_item.set_cell_mode(2, TreeItem.CELL_MODE_RANGE)
+			new_item.set_text(0, valid_id)
+			new_item.set_text(1, "==,!=,<,<=,>,>=")
+			new_item.set_range_config(2, -ITEM_DATA_RANGE, ITEM_DATA_RANGE, 1.0)
+			new_item.set_range(2, 0)
+			new_item.set_icon(0, ICON_INT)
+			new_item.set_editable(0, true)
+			new_item.set_editable(1, true)
+			new_item.set_editable(2, true)
+		1: # Add Float
+			var valid_id: String = get_valid_id(item, 0, "new_float")
+			var new_item: TreeItem = item.create_child()
+			new_item.set_cell_mode(0, TreeItem.CELL_MODE_STRING)
+			new_item.set_cell_mode(1, TreeItem.CELL_MODE_RANGE)
+			new_item.set_cell_mode(2, TreeItem.CELL_MODE_RANGE)
+			new_item.set_text(0, valid_id)
+			new_item.set_text(1, "==,!=,<,<=,>,>=")
+			new_item.set_range_config(2, -ITEM_DATA_RANGE, ITEM_DATA_RANGE, ITEM_DATA_FLOAT_STEP)
+			new_item.set_range(2, 0)
+			new_item.set_icon(0, ICON_FLOAT)
+			new_item.set_editable(0, true)
+			new_item.set_editable(1, true)
+			new_item.set_editable(2, true)
+		2: # Add Bool
+			var valid_id: String = get_valid_id(item, 0, "new_bool")
+			
+			var new_item: TreeItem = item.create_child()
+			new_item.set_cell_mode(0, TreeItem.CELL_MODE_STRING)
+			new_item.set_cell_mode(1, TreeItem.CELL_MODE_RANGE)
+			new_item.set_cell_mode(2, TreeItem.CELL_MODE_CHECK)
+			new_item.set_text(0, valid_id)
+			new_item.set_text(1, "==")
+			new_item.set_text(2, "Enabled")
+			new_item.set_checked(2, false)
+			new_item.set_icon(0, ICON_BOOL)
+			new_item.set_editable(0, true)
+			new_item.set_editable(1, true)
+			new_item.set_editable(2, true)
+		3: # Add String
+			var valid_id: String = get_valid_id(item, 0, "new_string")
+			var new_item: TreeItem = item.create_child()
+			new_item.set_cell_mode(0, TreeItem.CELL_MODE_STRING)
+			new_item.set_cell_mode(1, TreeItem.CELL_MODE_RANGE)
+			new_item.set_cell_mode(2, TreeItem.CELL_MODE_STRING)
+			new_item.set_text(0, valid_id)
+			new_item.set_text(1, "==, !=")
+			new_item.set_text(2, "")
+			new_item.set_icon(0, ICON_STRING)
+			new_item.set_editable(0, true)
+			new_item.set_editable(1, true)
+			new_item.set_editable(2, true)
+		4: # Delete
+			item.free()
+
+
+func has_recipe_input_id(item_id: String) -> bool:
+	for in_item in in_item_tree.get_root().get_children():
+		if in_item.get_text(0) == item_id:
+			return true
+	return false
+
+
+func has_recipe_output_id(item_id: String) -> bool:
+	for in_item in out_item_tree.get_root().get_children():
+		if in_item.get_text(0) == item_id:
+			return true
+	return false
+
+
+func _on_item_category_deleted(category_id: String) -> void:
+	items_resource.erase_item_category(category_id)
+	if category_id == current_item_category:
+		current_item_category = ""
+		current_item = ""
+		if items_container.visible:
+			set_data_visible(-1)
 
 
 func _on_item_category_created(category_path: String, category_id: String) -> void:
@@ -185,11 +473,25 @@ func _on_currency_selected(currency_id: String) -> void:
 	if not current_currency.is_empty():
 		save_currency_data()
 	
+	clear_currency_tree()
+	
 	current_currency = currency_id
 	currency_name_ln_edt.text = items_resource.get_currency_name(currency_id)
-	currency_desc_text_edit.text = items_resource.get_currency_desc(currency_id)
+	for currency_data_key in items_resource.get_currency_data_keys(currency_id):
+		add_item_data(
+				currency_data_tree.get_root(),
+				currency_data_key,
+				items_resource.get_currency_data(currency_id, currency_data_key))
 	currency_val_spn_bx.set_value_no_signal(items_resource.get_currency_value(currency_id))
 	currency_val_spn_bx.get_line_edit().text = str(currency_val_spn_bx.value)
+
+
+func _on_currency_deleted(currency_id: String) -> void:
+	items_resource.erase_currency(currency_id)
+	if current_currency == currency_id:
+		current_currency = ""
+		if currency_data_container.visible:
+			set_data_visible(-1)
 
 
 func _on_item_category_selected(category_id: String) -> void:
@@ -246,6 +548,10 @@ func _on_rarity_renamed(idx: int, new_name: String) -> void:
 func _on_rarity_deleted(rarity_idx: int) -> void:
 	items_resource.remove_rarity(rarity_idx)
 	rarities_opt_btn.remove_item(rarity_idx)
+	if current_rarity == rarity_idx:
+		current_rarity = -1
+		if rarity_container.visible:
+			set_data_visible(-1)
 
 
 func _on_rarity_created(rarity_name: String) -> void:
@@ -265,9 +571,9 @@ func _on_rarity_reindexed(from: int, to: int) -> void:
 	rarities_opt_btn.selected = current_selected
 
 
-func add_item_data(data_id: String, new_data: Variant) -> void:
-	var new_item: TreeItem = item_data_tree.get_root().create_child()
-	var valid_id: String = get_item_data_valid_id(data_id)
+func add_item_data(on_tree: TreeItem, data_id: String, new_data: Variant) -> void:
+	var new_item: TreeItem = on_tree.create_child()
+	var valid_id: String = get_data_valid_id(on_tree, data_id)
 	
 	new_item.set_cell_mode(0, TreeItem.CELL_MODE_STRING)
 	new_item.set_text(0, valid_id)
@@ -299,7 +605,15 @@ func add_item_data(data_id: String, new_data: Variant) -> void:
 
 
 func _on_add_item_data_btn_pressed(data_id: String, new_data: Variant) -> void:
-	add_item_data(data_id, new_data)
+	add_item_data(item_data_tree.get_root(), data_id, new_data)
+
+
+func _on_add_currency_data_btn_pressed(data_id: String, new_data: Variant) -> void:
+	add_item_data(currency_data_tree.get_root(), data_id, new_data)
+
+
+func _on_add_station_data_btn_pressed(data_id: String, new_data: Variant) -> void:
+	add_item_data(station_data_tree.get_root(), data_id, new_data)
 
 
 # This is an almost identical to the one on top. Maybe merging it with extra
@@ -379,7 +693,6 @@ func _on_rarity_selected(rarity_idx: int) -> void:
 		add_rarity_data(
 				rarity_key,
 				items_resource.get_rarity_data(rarity_idx, rarity_key))
-	
 
 
 func _on_rarity_data_edited() -> void:
@@ -399,7 +712,7 @@ func _on_item_data_id_edited() -> void:
 		return
 	
 	var edited: TreeItem = item_data_tree.get_edited()
-	var new_id: String = get_item_data_valid_id(edited.get_text(0), edited)
+	var new_id: String = get_data_valid_id(item_data_tree.get_root(), edited.get_text(0), edited)
 	
 	edited.set_text(0, new_id)
 	# Modify in memory
@@ -459,7 +772,24 @@ func save_item_category_data() -> void:
 func save_currency_data() -> void:
 	items_resource.set_currency_name(current_currency, currency_name_ln_edt.text.strip_edges())
 	items_resource.set_currency_value(current_currency, depot_tree.get_currency_value(current_currency))#currency_val_spn_bx.value)
-	items_resource.set_currency_desc(current_currency, currency_desc_text_edit.text.strip_edges())
+	
+	var currency_data: Dictionary = {}
+	
+	for curr_tree in currency_data_tree.get_root().get_children():
+		var tree_data: Variant = null
+		match curr_tree.get_cell_mode(1):
+			TreeItem.CELL_MODE_RANGE:
+				if curr_tree.get_icon(0) == ICON_INT:
+					tree_data = int(curr_tree.get_range(1))
+				else:
+					tree_data = float(curr_tree.get_range(1))
+			TreeItem.CELL_MODE_CHECK:
+				tree_data = curr_tree.is_checked(1)
+			TreeItem.CELL_MODE_STRING:
+				tree_data = curr_tree.get_text(1)
+		currency_data[curr_tree.get_text(0)] = tree_data
+	
+	items_resource._currencies[current_currency]["data"] = currency_data
 
 
 func save_rarity_data() -> void:
@@ -484,14 +814,14 @@ func save_rarity_data() -> void:
 	items_resource._rarities[current_rarity]["data"] = r_data
 
 
-func get_item_data_valid_id(desired_id: String, skip_tree: TreeItem = null) -> String:
+func get_data_valid_id(on_tree: TreeItem, desired_id: String, skip_tree: TreeItem = null) -> String:
 	var clean_id: String = desired_id.strip_edges()
 	if clean_id.is_empty():
 		clean_id = "item_data"
 	var modified_id: String = clean_id
 	var iteration: int = 0
 	
-	while has_item_data_id(modified_id, skip_tree):
+	while has_item_data_id(on_tree, modified_id, skip_tree):
 		iteration += 1
 		modified_id = clean_id + str(iteration)
 	
@@ -512,8 +842,8 @@ func get_rarity_data_valid_id(desired_id: String, skip_tree: TreeItem = null) ->
 	return modified_id
 
 
-func has_item_data_id(id: String, skip: TreeItem = null) -> bool:
-	for data in item_data_tree.get_root().get_children():
+func has_item_data_id(on_tree: TreeItem, id: String, skip: TreeItem = null) -> bool:
+	for data in on_tree.get_children():
 		if data == skip:
 			continue
 		if data.get_text(0) == id:
@@ -555,6 +885,11 @@ func clear_item_tree() -> void:
 		item.free()
 
 
+func clear_currency_tree() -> void:
+	for item in currency_data_tree.get_root().get_children():
+		item.free()
+
+
 func _on_create_item_button_pressed() -> void:
 	items_resource.create_item(
 		current_item_category,
@@ -562,7 +897,7 @@ func _on_create_item_button_pressed() -> void:
 
 
 func create_item(item_id: String) -> String:
-	var valid_id: String = get_valid_item_id(item_id)
+	var valid_id: String = get_valid_id(items_tree.get_root(), 0, "new_item")
 	var new_item: TreeItem = items_tree.get_root().create_child()
 	new_item.set_metadata(0, {"id": valid_id})
 	new_item.set_text(0, valid_id)
@@ -570,30 +905,34 @@ func create_item(item_id: String) -> String:
 	return valid_id
 
 
-func get_valid_item_id(desired_id: String, skip_tree: TreeItem = null) -> String:
-	var cleaned_id: String = desired_id.strip_edges()
-	if cleaned_id.is_empty():
-		cleaned_id = "new_item"
-	var modified_id: String = cleaned_id
-	var iteration: int = 0
-	while has_item_id(modified_id, skip_tree):
-		iteration += 1
-		modified_id = cleaned_id + str(iteration)
-	return modified_id
+#func _on_item_tree_button_clicked(item: TreeItem, column: int, id: int, mouse_button_index: int) -> void:
+	#DisplayServer.clipboard_set(current_item_category + "/" + item.get_text(0))
 
 
-func has_item_id(item_id: String, skip_tree: TreeItem) -> bool:
-	for item in items_tree.get_root().get_children():
-		if item == skip_tree:
-			continue
-		if item.get_text(0) == item_id:
-			return true
-	return false
+#func get_valid_item_id(desired_id: String, skip_tree: TreeItem = null) -> String:
+	#var cleaned_id: String = desired_id.strip_edges()
+	#if cleaned_id.is_empty():
+		#cleaned_id = "new_item"
+	#var modified_id: String = cleaned_id
+	#var iteration: int = 0
+	#while has_item_id(modified_id, skip_tree):
+		#iteration += 1
+		#modified_id = cleaned_id + str(iteration)
+	#return modified_id
+
+
+#func has_item_id(item_id: String, skip_tree: TreeItem) -> bool:
+	#for item in items_tree.get_root().get_children():
+		#if item == skip_tree:
+			#continue
+		#if item.get_text(0) == item_id:
+			#return true
+	#return false
 
 
 func _on_item_changed() -> void:
 	var edited: TreeItem = items_tree.get_edited()
-	var new_id: String = get_valid_item_id(edited.get_text(0), edited)
+	var new_id: String = get_valid_id(items_tree.get_root(), 0, edited.get_text(0), edited, "item")
 	var old_id: String = edited.get_metadata(0)["id"]
 	var res_dict: Dictionary = items_resource.get_item_category_dict(current_item_category)["items"]
 	res_dict[new_id] = res_dict[old_id]
@@ -644,6 +983,7 @@ func _on_item_selected() -> void:
 	
 	for data_key in items_resource.get_item_data_keys(current_item_category, current_item):
 		add_item_data(
+				item_data_tree.get_root(),
 				data_key,
 				items_resource.get_item_data(
 						current_item_category,

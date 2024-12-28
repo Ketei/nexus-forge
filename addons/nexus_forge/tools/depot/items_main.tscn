@@ -2,7 +2,6 @@
 
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/depot/items_main_script.gd" id="1_82bi8"]
 [ext_resource type="Texture2D" uid="uid://12lyg7db58dg" path="res://addons/nexus_forge/common_icons/variables/add_int.svg" id="1_tsjpe"]
-[ext_resource type="Texture2D" uid="uid://xkqkxosnppid" path="res://addons/nexus_forge/common_icons/open_file.svg" id="2_djc7d"]
 [ext_resource type="Texture2D" uid="uid://dcgniolhiay6u" path="res://addons/nexus_forge/common_icons/variables/add_float.svg" id="2_ib6x0"]
 [ext_resource type="Texture2D" uid="uid://cd4jt2ru86e16" path="res://addons/nexus_forge/common_icons/save_file.svg" id="2_wq7bt"]
 [ext_resource type="Texture2D" uid="uid://c472l5bho4jpi" path="res://addons/nexus_forge/common_icons/variables/add_bool.svg" id="3_ujuwe"]
@@ -11,6 +10,7 @@
 [ext_resource type="Texture2D" uid="uid://c1aelqf557khb" path="res://addons/nexus_forge/common_icons/plus_icon.svg" id="6_eml1p"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/depot/depot_categories.gd" id="8_bfcx5"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/depot/stations_tree_script.gd" id="9_ox1mw"]
+[ext_resource type="Texture2D" uid="uid://c53li367o8i6k" path="res://addons/nexus_forge/common_icons/refresh_icon.svg" id="10_cmnfn"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/depot/recipe_tree_script.gd" id="11_2psm1"]
 
 [node name="Items" type="Control"]
@@ -307,22 +307,6 @@ layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "Currency Name"
 
-[node name="DescContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/CurrencyDataContainer"]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="MainContainer/ItemsContainer/DataContainer/CurrencyDataContainer/DescContainer"]
-custom_minimum_size = Vector2(170, 32)
-layout_mode = 2
-text = "Currency Description"
-vertical_alignment = 1
-
-[node name="CurrencyDescTextEdit" type="TextEdit" parent="MainContainer/ItemsContainer/DataContainer/CurrencyDataContainer/DescContainer"]
-custom_minimum_size = Vector2(0, 87)
-layout_mode = 2
-size_flags_horizontal = 3
-placeholder_text = "Currency Description"
-wrap_mode = 1
-
 [node name="ValueContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/CurrencyDataContainer"]
 layout_mode = 2
 
@@ -340,26 +324,56 @@ min_value = 1.0
 value = 1.0
 allow_greater = true
 
-[node name="IconContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/CurrencyDataContainer"]
+[node name="CustomDataContainer" type="VBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/CurrencyDataContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="CustomDataHeader" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/CurrencyDataContainer/CustomDataContainer"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="MainContainer/ItemsContainer/DataContainer/CurrencyDataContainer/IconContainer"]
-custom_minimum_size = Vector2(170, 32)
-layout_mode = 2
-text = "Currency Icon"
-vertical_alignment = 1
-
-[node name="LineEdit" type="LineEdit" parent="MainContainer/ItemsContainer/DataContainer/CurrencyDataContainer/IconContainer"]
+[node name="Label" type="Label" parent="MainContainer/ItemsContainer/DataContainer/CurrencyDataContainer/CustomDataContainer/CustomDataHeader"]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
-size_flags_horizontal = 3
+text = "Custom Data"
+vertical_alignment = 1
 
-[node name="Button" type="Button" parent="MainContainer/ItemsContainer/DataContainer/CurrencyDataContainer/IconContainer"]
+[node name="ButtonContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/CurrencyDataContainer/CustomDataContainer/CustomDataHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 2
+
+[node name="AddCrrIntBtn" type="Button" parent="MainContainer/ItemsContainer/DataContainer/CurrencyDataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
-icon = ExtResource("2_djc7d")
+icon = ExtResource("1_tsjpe")
 icon_alignment = 1
-expand_icon = true
+
+[node name="AddCrrFloatBtn" type="Button" parent="MainContainer/ItemsContainer/DataContainer/CurrencyDataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+icon = ExtResource("2_ib6x0")
+icon_alignment = 1
+
+[node name="AddCrrBoolBtn" type="Button" parent="MainContainer/ItemsContainer/DataContainer/CurrencyDataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+icon = ExtResource("3_ujuwe")
+icon_alignment = 1
+
+[node name="AddCrrStrBtn" type="Button" parent="MainContainer/ItemsContainer/DataContainer/CurrencyDataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+icon = ExtResource("4_8td5l")
+icon_alignment = 1
+
+[node name="CurrencyDataTree" type="Tree" parent="MainContainer/ItemsContainer/DataContainer/CurrencyDataContainer/CustomDataContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+columns = 2
+allow_reselect = true
+hide_folding = true
+hide_root = true
 
 [node name="RarityContainer" type="VBoxContainer" parent="MainContainer/ItemsContainer/DataContainer"]
 visible = false
@@ -443,6 +457,184 @@ size_flags_vertical = 3
 columns = 2
 allow_reselect = true
 hide_folding = true
+hide_root = true
+
+[node name="CraftingContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="StationsContainer" type="VBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/CraftingContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="StationIDLabel" type="Label" parent="MainContainer/ItemsContainer/DataContainer/CraftingContainer/StationsContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Current Station"
+
+[node name="StationNameLnEdt" type="LineEdit" parent="MainContainer/ItemsContainer/DataContainer/CraftingContainer/StationsContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+placeholder_text = "Station Name"
+
+[node name="HeaderContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/CraftingContainer/StationsContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/ItemsContainer/DataContainer/CraftingContainer/StationsContainer/HeaderContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Recipes"
+vertical_alignment = 1
+
+[node name="CreateRecipeBtn" type="Button" parent="MainContainer/ItemsContainer/DataContainer/CraftingContainer/StationsContainer/HeaderContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Create new recipe"
+icon = ExtResource("6_eml1p")
+icon_alignment = 1
+
+[node name="StationRecipesTree" type="Tree" parent="MainContainer/ItemsContainer/DataContainer/CraftingContainer/StationsContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 4.0
+allow_reselect = true
+hide_folding = true
+hide_root = true
+
+[node name="ButtonContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/CraftingContainer/StationsContainer"]
+layout_mode = 2
+
+[node name="Label2" type="Label" parent="MainContainer/ItemsContainer/DataContainer/CraftingContainer/StationsContainer/ButtonContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Station Data"
+vertical_alignment = 1
+
+[node name="AddStationInt" type="Button" parent="MainContainer/ItemsContainer/DataContainer/CraftingContainer/StationsContainer/ButtonContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+icon = ExtResource("1_tsjpe")
+icon_alignment = 1
+
+[node name="AddStationFloat" type="Button" parent="MainContainer/ItemsContainer/DataContainer/CraftingContainer/StationsContainer/ButtonContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+icon = ExtResource("2_ib6x0")
+icon_alignment = 1
+
+[node name="AddStationBool" type="Button" parent="MainContainer/ItemsContainer/DataContainer/CraftingContainer/StationsContainer/ButtonContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+icon = ExtResource("3_ujuwe")
+icon_alignment = 1
+
+[node name="AddStationString" type="Button" parent="MainContainer/ItemsContainer/DataContainer/CraftingContainer/StationsContainer/ButtonContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+icon = ExtResource("4_8td5l")
+icon_alignment = 1
+
+[node name="StationDataTree" type="Tree" parent="MainContainer/ItemsContainer/DataContainer/CraftingContainer/StationsContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 3.0
+columns = 2
+allow_reselect = true
+hide_folding = true
+hide_root = true
+
+[node name="RecipeMargin" type="MarginContainer" parent="MainContainer/ItemsContainer/DataContainer/CraftingContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 3.0
+theme_override_constants/margin_left = 10
+
+[node name="RecipeContainer" type="VBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/CraftingContainer/RecipeMargin"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 3.0
+
+[node name="RecipeIDLabel" type="Label" parent="MainContainer/ItemsContainer/DataContainer/CraftingContainer/RecipeMargin/RecipeContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Current Recipe"
+
+[node name="AllItemContainer" type="VBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/CraftingContainer/RecipeMargin/RecipeContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="HeaderContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/CraftingContainer/RecipeMargin/RecipeContainer/AllItemContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/ItemsContainer/DataContainer/CraftingContainer/RecipeMargin/RecipeContainer/AllItemContainer/HeaderContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+text = "All Items"
+vertical_alignment = 1
+
+[node name="SearchRcpItemLnEdt" type="LineEdit" parent="MainContainer/ItemsContainer/DataContainer/CraftingContainer/RecipeMargin/RecipeContainer/AllItemContainer/HeaderContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Search Item"
+
+[node name="RefreshBtn" type="Button" parent="MainContainer/ItemsContainer/DataContainer/CraftingContainer/RecipeMargin/RecipeContainer/AllItemContainer/HeaderContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Refresh Item List"
+icon = ExtResource("10_cmnfn")
+flat = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="AllItemCraftTree" type="Tree" parent="MainContainer/ItemsContainer/DataContainer/CraftingContainer/RecipeMargin/RecipeContainer/AllItemContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+hide_folding = true
+hide_root = true
+
+[node name="PutsContainer" type="VBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/CraftingContainer/RecipeMargin/RecipeContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+size_flags_stretch_ratio = 2.0
+
+[node name="InContainer" type="VBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/CraftingContainer/RecipeMargin/RecipeContainer/PutsContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="Label" type="Label" parent="MainContainer/ItemsContainer/DataContainer/CraftingContainer/RecipeMargin/RecipeContainer/PutsContainer/InContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+text = "Input Items"
+vertical_alignment = 1
+
+[node name="InItemTree" type="Tree" parent="MainContainer/ItemsContainer/DataContainer/CraftingContainer/RecipeMargin/RecipeContainer/PutsContainer/InContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+columns = 3
+allow_reselect = true
+hide_root = true
+
+[node name="OutContainer" type="VBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/CraftingContainer/RecipeMargin/RecipeContainer/PutsContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="Label" type="Label" parent="MainContainer/ItemsContainer/DataContainer/CraftingContainer/RecipeMargin/RecipeContainer/PutsContainer/OutContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+text = "Output Items"
+vertical_alignment = 1
+
+[node name="OutItemTree" type="Tree" parent="MainContainer/ItemsContainer/DataContainer/CraftingContainer/RecipeMargin/RecipeContainer/PutsContainer/OutContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+columns = 3
+allow_reselect = true
 hide_root = true
 
 [node name="VSeparator" type="VSeparator" parent="MainContainer"]
