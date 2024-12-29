@@ -1,9 +1,8 @@
-[gd_scene load_steps=14 format=3 uid="uid://fss7aqmbgj6s"]
+[gd_scene load_steps=13 format=3 uid="uid://fss7aqmbgj6s"]
 
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/depot/items_main_script.gd" id="1_82bi8"]
 [ext_resource type="Texture2D" uid="uid://12lyg7db58dg" path="res://addons/nexus_forge/common_icons/variables/add_int.svg" id="1_tsjpe"]
 [ext_resource type="Texture2D" uid="uid://dcgniolhiay6u" path="res://addons/nexus_forge/common_icons/variables/add_float.svg" id="2_ib6x0"]
-[ext_resource type="Texture2D" uid="uid://cd4jt2ru86e16" path="res://addons/nexus_forge/common_icons/save_file.svg" id="2_wq7bt"]
 [ext_resource type="Texture2D" uid="uid://c472l5bho4jpi" path="res://addons/nexus_forge/common_icons/variables/add_bool.svg" id="3_ujuwe"]
 [ext_resource type="Texture2D" uid="uid://cxv7veghytl4m" path="res://addons/nexus_forge/common_icons/variables/add_string.svg" id="4_8td5l"]
 [ext_resource type="Texture2D" uid="uid://b8q6di4imiriq" path="res://addons/nexus_forge/common_icons/search_icon.svg" id="5_xbb04"]
@@ -50,26 +49,13 @@ size_flags_vertical = 3
 custom_minimum_size = Vector2(250, 0)
 layout_mode = 2
 
-[node name="TitleContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/ItemSelectContainer"]
-layout_mode = 2
-
-[node name="TitleLabel" type="Label" parent="MainContainer/ItemsContainer/DataContainer/ItemSelectContainer/TitleContainer"]
+[node name="TitleLabel" type="Label" parent="MainContainer/ItemsContainer/DataContainer/ItemSelectContainer"]
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.223182, 0.705086, 0.904884, 1)
 theme_override_font_sizes/font_size = 25
 text = "Depot"
 vertical_alignment = 1
-
-[node name="SaveButton" type="Button" parent="MainContainer/ItemsContainer/DataContainer/ItemSelectContainer/TitleContainer"]
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 2
-size_flags_horizontal = 10
-size_flags_vertical = 4
-icon = ExtResource("2_wq7bt")
-flat = true
-icon_alignment = 1
-expand_icon = true
 
 [node name="SearchDepotLnEdt" type="LineEdit" parent="MainContainer/ItemsContainer/DataContainer/ItemSelectContainer"]
 layout_mode = 2

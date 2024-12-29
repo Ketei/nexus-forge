@@ -106,6 +106,8 @@ var items_resource: NFItemsRes = null
 @onready var recipe_data_tree: Tree = $MainContainer/ItemsContainer/DataContainer/CraftingContainer/RecipeMargin/RecipeContainer/MainContainer/DataMargin/RecipeData/DataContainer/RecipeDataTree
 @onready var station_name_ln_edt: LineEdit = $MainContainer/ItemsContainer/DataContainer/CraftingContainer/StationsContainer/StationNameLnEdt
 
+@onready var search_depot_ln_edt: LineEdit = $MainContainer/ItemsContainer/DataContainer/ItemSelectContainer/SearchDepotLnEdt
+
 
 func _ready() -> void:
 	items_resource = NFItemsRes.new() # Remove after testing
@@ -229,6 +231,8 @@ func _ready() -> void:
 	
 	recipe_tab_bar.tab_changed.connect(_on_recipe_tab_bar_tab_changed)
 	
+	search_depot_ln_edt.text_changed.connect(_on_search_depot_text_changed)
+	
 	set_data_visible(-1)
 	recipe_container.visible = false
 
@@ -256,6 +260,10 @@ func _input(event: InputEvent) -> void:
 			else:
 				create_item_btn.grab_focus()
 			get_viewport().set_input_as_handled()
+
+
+func _on_search_depot_text_changed(new_text: String) -> void:
+	depot_tree.search_item(new_text)
 
 
 func _on_recipe_tab_bar_tab_changed(tab: int) -> void:

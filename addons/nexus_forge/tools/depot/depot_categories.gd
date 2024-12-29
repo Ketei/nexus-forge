@@ -369,3 +369,32 @@ func _on_item_selected() -> void:
 			rarity_selected.emit(selected.get_index())
 		CellIDs.CRAFTING:
 			crafting_station_selected.emit(selected.get_text(0))
+
+
+func set_children_visible_if_match(on_item: TreeItem, text: String) -> void:
+	for child in on_item.get_children():
+		child.visible = text.is_empty() or child.get_text(0).containsn(text)
+		if on_item.visible:
+			ensure_item_visible(on_item)
+		for subchild in child.get_children():
+			set_children_visible_if_match(on_item, text)
+
+
+func ensure_item_visible(item: TreeItem) -> void:
+	var on_item: TreeItem = item
+	while item != get_root():
+		if not item.visible:
+			item.visible = true
+		on_item = on_item.get_parent()
+
+
+func search_item(search_text: String) -> void:
+	for category in items_category.get_children():
+		category.visible = search_text.is_empty() or category.get_text(0).containsn(search_text)
+		set_children_visible_if_match(category, search_text)
+	for station in crafting_category.get_children():
+		station.visible = search_text.is_empty() or station.get_text(0).containsn(search_text)
+	for rarity in rarity_category.get_children():
+		rarity.visible = search_text.is_empty() or rarity.get_text(0).containsn(search_text)
+	for currency in currency_category.get_children():
+		currency.visible = search_text.is_empty() or currency.get_text(0).containsn(search_text)
