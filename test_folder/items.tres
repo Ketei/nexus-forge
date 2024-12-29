@@ -4,31 +4,32 @@
 
 [resource]
 script = ExtResource("1_dh6xp")
-item_types = {
-"weapon": {
-"name": "armament",
-"subtypes": {
-"mace": {
-"name": "mace"
-}
-}
-}
-}
-item_materials = {
-"diamond": {
-"name": "Diamond"
-},
-"iron": {
-"name": "Iron"
-},
-"stone": {
-"name": "Stone"
-},
-"wood": {
-"name": "Wood"
-}
-}
+_item_data = {}
+_rarities = Array[Dictionary]([])
 _currencies = {}
+_crafting = {
+"station_id": {
+"data": {},
+"name": ":3",
+"recipes": {
+"recipe_id": {
+"data": {},
+"input": [{
+"amount": 0,
+"data": {
+"data_id": {
+"operator": 0,
+"value": 0
+}
+},
+"item": "item_id"
+}],
+"name": "",
+"output": []
+}
+}
+}
+}
 _items = {
 "test_item_0": {
 "path": "res://test_folder/items/test_item_0.tres",
@@ -36,4 +37,3 @@ _items = {
 }
 }
 _recipes = {}
-_next_id = null
