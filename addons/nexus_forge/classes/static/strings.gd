@@ -71,26 +71,78 @@ static func nocasecmp_equal(string_a: String, string_b: String) -> bool:
 	return string_a.to_upper() == string_b.to_upper()
 
 
-static func random_string(length: int, slice: int) -> String:
-	const RANDOM_UNICODE: Array[int] = [48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122] 
-	var unicode_items: Array[int] = []
+static func begins_with_nocasecmp(what: String, begins_with: String) -> bool:
+	return what.to_upper().begins_with(begins_with.to_upper())
+
+
+static func beautify_int(value: int) -> String:
+	var formatted_number: String = str(value) # Convert the number to a string
+	var count: int = 0
+	var result: String = ""
+
+	for char_idx in range(len(formatted_number) - 1, -1, -1): # Iterate backwards through the string
+		result = formatted_number[char_idx] + result
+		count += 1
+		if count % 3 == 0 and char_idx != 0:
+			result = "," + result # Add a comma every three digits
+
+	return result
+
+
+static func levenshtein_distance(string_1: String, string_2: String) -> float:
+	# Written by ChatGPT
+	var len_1: int = string_1.length()
+	var len_2: int = string_2.length()
 	
-	for _ignore in range(length):
-		unicode_items.append(RANDOM_UNICODE.pick_random())
+	# Empty vs something = completely different
+	if (len_1 == 0 and len_2 != 0) or (len_2 == 0 and len_1 != 0):
+		return 0.0
+
+	# Initialize a 2D array to store the distances
+	var dp: Array[Array] = []
+	for i in range(len_1 + 1):
+		dp.append([])
+		for j in range(len_2 + 1):
+			dp[i].append(0)
 	
-	if 0 < slice:
-		var unicode_groups: Array[String] = []
-		
-		for item_index in range(0, unicode_items.size(), slice):
-			var pair = unicode_items.slice(item_index, item_index + slice)
-			var u_slice: String = ""
-			for uchar in pair:
-				u_slice += char(uchar)
-			unicode_groups.append(u_slice)
-		
-		return "-".join(unicode_groups)
-	else:
-		var full_string: String = ""
-		for uchar in unicode_items:
-			full_string += char(uchar)
-		return full_string
+	# Initialize the first row and column of the array
+	for i in range(len_1 + 1):
+		dp[i][0] = i
+	for j in range(len_2 + 1):
+		dp[0][j] = j
+	
+	# Calculate Levenshtein distance
+	for i in range(1, len_1 + 1):
+		for j in range(1, len_2 + 1):
+			if string_1[i - 1] == string_2[j - 1]:
+				dp[i][j] = dp[i - 1][j - 1]
+			else:
+				dp[i][j] = min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + 1)
+	
+	# Calculate similarity (1 - normalized distance)
+	var distance: int = dp[len_1][len_2]
+	var max_len:int = maxi(len_1, len_2)
+	var similarity: float = 1.0 - float(distance) / float(max_len)
+	return similarity
+
+
+# Random string based on time. Less probability of collission
+static func random_string64() -> String:
+	var random_array: PackedByteArray = var_to_bytes(Time.get_unix_time_from_system())
+	for _a in range(36): # Each 3 adds 4 more characters
+		random_array.append(randi() & 0xFF)
+	
+	return Marshalls.raw_to_base64(random_array).replace("+", "-").replace("/", "_")
+
+
+static func random_string(num_chars: int) -> String:
+	var byte_array := PackedByteArray()
+	
+	for _a in range(num_chars):
+		byte_array.append(randi() & 0xFF)
+	
+	return (Marshalls.raw_to_base64(byte_array)
+		.replace("+", "-")
+		.replace("/", "_")
+		.replace("=", "")
+		.substr(0, num_chars))

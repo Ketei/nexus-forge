@@ -6,8 +6,8 @@ extends Tree
 var id_cell: int = 0
 
 
-func validate_id(root_tree: TreeItem, id: String, skip_tree: TreeItem) -> String:
-	var clean_name: String = id.strip_edges()
+func get_unique_id(root_tree: TreeItem, desired_id: String, skip_tree: TreeItem = null) -> String:
+	var clean_name: String = desired_id.strip_edges()
 	var ideal_name: String = default_name if clean_name.is_empty() else clean_name
 	var tweaked_name: String = ideal_name
 	var iteration: int = 1

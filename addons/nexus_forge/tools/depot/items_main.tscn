@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3 uid="uid://fss7aqmbgj6s"]
+[gd_scene load_steps=14 format=3 uid="uid://fss7aqmbgj6s"]
 
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/depot/items_main_script.gd" id="1_82bi8"]
 [ext_resource type="Texture2D" uid="uid://12lyg7db58dg" path="res://addons/nexus_forge/common_icons/variables/add_int.svg" id="1_tsjpe"]
@@ -8,6 +8,7 @@
 [ext_resource type="Texture2D" uid="uid://b8q6di4imiriq" path="res://addons/nexus_forge/common_icons/search_icon.svg" id="5_xbb04"]
 [ext_resource type="Texture2D" uid="uid://c1aelqf557khb" path="res://addons/nexus_forge/common_icons/plus_icon.svg" id="6_eml1p"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/depot/depot_categories.gd" id="8_bfcx5"]
+[ext_resource type="Script" path="res://addons/nexus_forge/classes/simple_data_tree.gd" id="9_ch0wf"]
 [ext_resource type="Texture2D" uid="uid://c53li367o8i6k" path="res://addons/nexus_forge/common_icons/refresh_icon.svg" id="10_cmnfn"]
 [ext_resource type="Texture2D" uid="uid://bdjoxvxliyeev" path="res://addons/nexus_forge/common_icons/recipe_input_icon.svg" id="11_eeat8"]
 [ext_resource type="Texture2D" uid="uid://cysarv7p7x45l" path="res://addons/nexus_forge/common_icons/recipe_output_icon.svg" id="12_7kflu"]
@@ -278,6 +279,7 @@ columns = 2
 allow_reselect = true
 hide_folding = true
 hide_root = true
+script = ExtResource("9_ch0wf")
 
 [node name="CurrencyDataContainer" type="VBoxContainer" parent="MainContainer/ItemsContainer/DataContainer"]
 visible = false
@@ -315,6 +317,7 @@ size_flags_horizontal = 3
 min_value = 1.0
 value = 1.0
 allow_greater = true
+update_on_text_changed = true
 
 [node name="CustomDataContainer" type="VBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/CurrencyDataContainer"]
 layout_mode = 2
@@ -366,6 +369,7 @@ columns = 2
 allow_reselect = true
 hide_folding = true
 hide_root = true
+script = ExtResource("9_ch0wf")
 
 [node name="RarityContainer" type="VBoxContainer" parent="MainContainer/ItemsContainer/DataContainer"]
 visible = false
@@ -452,6 +456,7 @@ hide_folding = true
 hide_root = true
 
 [node name="CraftingContainer" type="HBoxContainer" parent="MainContainer/ItemsContainer/DataContainer"]
+visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 
@@ -536,6 +541,7 @@ columns = 2
 allow_reselect = true
 hide_folding = true
 hide_root = true
+script = ExtResource("9_ch0wf")
 
 [node name="RecipeMargin" type="MarginContainer" parent="MainContainer/ItemsContainer/DataContainer/CraftingContainer"]
 layout_mode = 2
@@ -544,6 +550,7 @@ size_flags_stretch_ratio = 5.0
 theme_override_constants/margin_left = 10
 
 [node name="RecipeContainer" type="VBoxContainer" parent="MainContainer/ItemsContainer/DataContainer/CraftingContainer/RecipeMargin"]
+visible = false
 layout_mode = 2
 theme_override_constants/separation = 0
 
@@ -645,6 +652,7 @@ columns = 2
 allow_reselect = true
 hide_folding = true
 hide_root = true
+script = ExtResource("9_ch0wf")
 
 [node name="CraftingMargin" type="MarginContainer" parent="MainContainer/ItemsContainer/DataContainer/CraftingContainer/RecipeMargin/RecipeContainer/MainContainer"]
 visible = false

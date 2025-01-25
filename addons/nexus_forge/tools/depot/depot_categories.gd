@@ -87,7 +87,7 @@ func _ready() -> void:
 	
 	button_clicked.connect(_on_button_clicked)
 	item_edited.connect(_on_item_edited)
-	item_selected.connect(_on_item_selected)
+	item_selected.connect(_on_item_selected, CONNECT_DEFERRED)
 
 
 func create_category(on_tree: TreeItem, category_name: String, items: Array[String] = []) -> TreeItem:

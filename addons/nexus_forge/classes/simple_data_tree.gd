@@ -13,6 +13,7 @@ const ICON_BOOL = preload("res://addons/nexus_forge/common_icons/variables/bool.
 const ICON_FLOAT = preload("res://addons/nexus_forge/common_icons/variables/float.svg")
 const ICON_INT = preload("res://addons/nexus_forge/common_icons/variables/int.svg")
 const ICON_STRING = preload("res://addons/nexus_forge/common_icons/variables/string.svg")
+const ICON_VARIABLE = preload("res://addons/nexus_forge/common_icons/variables/variable_icon.svg")
 
 func _ready() -> void:
 	id_cell = 0
@@ -25,8 +26,6 @@ func _ready() -> void:
 	set_column_expand_ratio(1, 3)
 	
 	button_clicked.connect(on_button_pressed)
-	
-	add_data("new_int", 0)
 
 
 func clear_data() -> void:
@@ -63,6 +62,7 @@ func add_data(data_id: String, data: Variant) -> void:
 			new_data.set_icon(0, ICON_BOOL)
 			new_data.set_metadata(1, TYPE_BOOL)
 			new_data.set_cell_mode(1, TreeItem.CELL_MODE_CHECK)
+			new_data.set_text(1, "Enabled")
 			new_data.set_checked(1, data)
 			new_data.set_editable(1, true)
 		TYPE_STRING:
@@ -72,13 +72,32 @@ func add_data(data_id: String, data: Variant) -> void:
 			new_data.set_text(1, data)
 			new_data.set_editable(1, true)
 		_:
+			new_data.set_icon(0, ICON_VARIABLE)
 			new_data.set_metadata(1, TYPE_NIL)
 			metadata["data"] = data
 			new_data.set_cell_mode(1, TreeItem.CELL_MODE_STRING)
 			new_data.set_text(1, type_string(data_type))
 			new_data.set_editable(1, false)
 	
+	new_data.add_button(1, TRASH_BIN, 0, false, "Delete Data")
+	
 	new_data.set_metadata(0, metadata)
+
+
+func get_data_cell_data(cell: TreeItem) -> Variant:
+	match cell.get_metadata(1):
+		TYPE_INT:
+			return int(cell.get_range(1))
+		TYPE_FLOAT:
+			return float(cell.get_range(1))
+		TYPE_BOOL:
+			return cell.is_checked(1)
+		TYPE_STRING:
+			return cell.get_text(1)
+		TYPE_NIL:
+			return cell.get_metadata(0)["data"]
+		_:
+			return null
 
 
 func on_button_pressed(item: TreeItem, column: int, id: int, mouse_button_index: int) -> void:
@@ -106,20 +125,11 @@ func get_data() -> Dictionary:
 	var rank_data: Dictionary = {}
 	
 	for data_item in get_root().get_children():
-		
-		var data: Variant = null
-		match data_item.get_metadata(1):
-			TYPE_INT:
-				data = int(data_item.get_range(1))
-			TYPE_FLOAT:
-				data = float(data_item.get_range(1))
-			TYPE_BOOL:
-				data = data_item.is_checked(1)
-			TYPE_STRING:
-				data = data_item.get_text(1)
-			TYPE_NIL:
-				data = data_item.get_metadata(0)["data"]
-		
-		rank_data[data_item.get_text(0)] = data
+		rank_data[data_item.get_text(0)] = get_data_cell_data(data_item)
 	
 	return rank_data
+
+
+func search_data(data_text: String) -> void:
+	for data in get_root().get_children():
+		data.visible = data_text.is_empty() or data.get_text(0).containsn(data_text) or (data.get_cell_mode(1) == TreeItem.CELL_MODE_STRING and data.get_text(1).containsn(data_text))

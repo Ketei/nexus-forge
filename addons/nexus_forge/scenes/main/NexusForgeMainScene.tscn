@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3 uid="uid://dykskyw7tvdof"]
+[gd_scene load_steps=13 format=3 uid="uid://dykskyw7tvdof"]
 
 [ext_resource type="Script" path="res://addons/nexus_forge/scenes/main/nexus_forge_main_scene_script.gd" id="1_15n6i"]
 [ext_resource type="Texture2D" uid="uid://bixkesgcxvbpk" path="res://icon.svg" id="1_j02mv"]
@@ -13,6 +13,8 @@
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fyh28"]
 bg_color = Color(0.145098, 0.156863, 0.176471, 1)
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_5bout"]
 
 [node name="NexusForgeMainScene" type="Control"]
 layout_mode = 3
@@ -93,6 +95,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxEmpty_5bout")
 tab_alignment = 2
 current_tab = 0
 

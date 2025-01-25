@@ -1,13 +1,15 @@
-[gd_scene load_steps=9 format=3 uid="uid://cu1j8e1hrvu18"]
+[gd_scene load_steps=11 format=3 uid="uid://cu1j8e1hrvu18"]
 
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/characters/factions/factions_main_script.gd" id="1_jen8f"]
 [ext_resource type="Texture2D" uid="uid://c1aelqf557khb" path="res://addons/nexus_forge/common_icons/plus_icon.svg" id="1_q36xt"]
 [ext_resource type="Texture2D" uid="uid://b8q6di4imiriq" path="res://addons/nexus_forge/common_icons/search_icon.svg" id="2_gmc64"]
 [ext_resource type="Texture2D" uid="uid://bx226t88nlc4v" path="res://addons/nexus_forge/common_icons/trash_bin.svg" id="3_cxt1j"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/characters/factions/faction_tree_script.gd" id="4_d1ib7"]
-[ext_resource type="Script" path="res://addons/nexus_forge/tools/characters/factions/faction_rank_tree_script.gd" id="4_fk44b"]
-[ext_resource type="Script" path="res://addons/nexus_forge/tools/characters/factions/flags_tree_script.gd" id="4_q07pq"]
-[ext_resource type="Texture2D" uid="uid://cd4jt2ru86e16" path="res://addons/nexus_forge/common_icons/save_file.svg" id="6_yyyl0"]
+[ext_resource type="Texture2D" uid="uid://12lyg7db58dg" path="res://addons/nexus_forge/common_icons/variables/add_int.svg" id="6_3pite"]
+[ext_resource type="Script" path="res://addons/nexus_forge/classes/simple_data_tree.gd" id="7_0knqj"]
+[ext_resource type="Texture2D" uid="uid://dcgniolhiay6u" path="res://addons/nexus_forge/common_icons/variables/add_float.svg" id="7_uuua2"]
+[ext_resource type="Texture2D" uid="uid://c472l5bho4jpi" path="res://addons/nexus_forge/common_icons/variables/add_bool.svg" id="8_g1mpe"]
+[ext_resource type="Texture2D" uid="uid://cxv7veghytl4m" path="res://addons/nexus_forge/common_icons/variables/add_string.svg" id="9_f5aty"]
 
 [node name="Factions" type="Control"]
 layout_mode = 3
@@ -26,215 +28,244 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="FactionDataContainer" type="VBoxContainer" parent="MainContainer"]
+[node name="FactionsContainer" type="VBoxContainer" parent="MainContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
+size_flags_stretch_ratio = 2.0
 
-[node name="HBoxContainer" type="HBoxContainer" parent="MainContainer/FactionDataContainer"]
-layout_mode = 2
-
-[node name="TitleLabel" type="Label" parent="MainContainer/FactionDataContainer/HBoxContainer"]
+[node name="TitleLabel" type="Label" parent="MainContainer/FactionsContainer"]
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.223182, 0.705086, 0.904884, 1)
 theme_override_font_sizes/font_size = 25
 text = "Factions"
 
-[node name="MenuContainer" type="HBoxContainer" parent="MainContainer/FactionDataContainer/HBoxContainer"]
-custom_minimum_size = Vector2(0, 36)
+[node name="FactionIDContainer" type="VBoxContainer" parent="MainContainer/FactionsContainer"]
 layout_mode = 2
-size_flags_horizontal = 3
-alignment = 2
+size_flags_vertical = 3
 
-[node name="SaveResButton" type="Button" parent="MainContainer/FactionDataContainer/HBoxContainer/MenuContainer"]
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 2
-tooltip_text = "Save factions"
-icon = ExtResource("6_yyyl0")
-flat = true
-icon_alignment = 1
-expand_icon = true
-
-[node name="FactionIDContainer" type="VBoxContainer" parent="MainContainer/FactionDataContainer"]
-layout_mode = 2
-
-[node name="HeaderContainer" type="HBoxContainer" parent="MainContainer/FactionDataContainer/FactionIDContainer"]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="MainContainer/FactionDataContainer/FactionIDContainer/HeaderContainer"]
+[node name="Label" type="Label" parent="MainContainer/FactionsContainer/FactionIDContainer"]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 text = "Faction"
 vertical_alignment = 1
 
-[node name="ButtonsContainer" type="HBoxContainer" parent="MainContainer/FactionDataContainer/FactionIDContainer/HeaderContainer"]
+[node name="FactionSelect" type="HBoxContainer" parent="MainContainer/FactionsContainer/FactionIDContainer"]
+layout_mode = 2
+
+[node name="FactionOptBtn" type="OptionButton" parent="MainContainer/FactionsContainer/FactionIDContainer/FactionSelect"]
+custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
-alignment = 2
 
-[node name="AddFactButton" type="Button" parent="MainContainer/FactionDataContainer/FactionIDContainer/HeaderContainer/ButtonsContainer"]
+[node name="AddFactButton" type="Button" parent="MainContainer/FactionsContainer/FactionIDContainer/FactionSelect"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Create Faction"
 icon = ExtResource("1_q36xt")
 icon_alignment = 1
 
-[node name="FactionSelect" type="HBoxContainer" parent="MainContainer/FactionDataContainer/FactionIDContainer"]
-layout_mode = 2
-
-[node name="FactionOptBtn" type="OptionButton" parent="MainContainer/FactionDataContainer/FactionIDContainer/FactionSelect"]
-custom_minimum_size = Vector2(0, 32)
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="DeleteFactionBtn" type="Button" parent="MainContainer/FactionDataContainer/FactionIDContainer/FactionSelect"]
+[node name="DeleteFactionBtn" type="Button" parent="MainContainer/FactionsContainer/FactionIDContainer/FactionSelect"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
+disabled = true
 icon = ExtResource("3_cxt1j")
 icon_alignment = 1
 
-[node name="FactionLnEdt" type="LineEdit" parent="MainContainer/FactionDataContainer/FactionIDContainer"]
+[node name="FactionNameLnEdt" type="LineEdit" parent="MainContainer/FactionsContainer/FactionIDContainer"]
 layout_mode = 2
 placeholder_text = "Faction Name"
+editable = false
 
-[node name="RanksContainer" type="VBoxContainer" parent="MainContainer/FactionDataContainer"]
+[node name="RelationshipsContainer" type="VBoxContainer" parent="MainContainer/FactionsContainer/FactionIDContainer"]
 layout_mode = 2
+size_flags_horizontal = 3
 size_flags_vertical = 3
-size_flags_stretch_ratio = 6.0
 
-[node name="HeaderContainer" type="HBoxContainer" parent="MainContainer/FactionDataContainer/RanksContainer"]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="MainContainer/FactionDataContainer/RanksContainer/HeaderContainer"]
+[node name="Label" type="Label" parent="MainContainer/FactionsContainer/FactionIDContainer/RelationshipsContainer"]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
-text = "Ranks"
+text = "Faction Relationships"
+horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="ButtonsContainer" type="HBoxContainer" parent="MainContainer/FactionDataContainer/RanksContainer/HeaderContainer"]
+[node name="SearchFacLnEdt" type="LineEdit" parent="MainContainer/FactionsContainer/FactionIDContainer/RelationshipsContainer"]
+layout_mode = 2
+placeholder_text = "Search Factions"
+clear_button_enabled = true
+right_icon = ExtResource("2_gmc64")
+
+[node name="FactionsTree" type="Tree" parent="MainContainer/FactionsContainer/FactionIDContainer/RelationshipsContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+columns = 2
+hide_folding = true
+hide_root = true
+script = ExtResource("4_d1ib7")
+
+[node name="FactionsDataContainer" type="VBoxContainer" parent="MainContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 3.0
+
+[node name="HeaderContainer" type="HBoxContainer" parent="MainContainer/FactionsDataContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/FactionsDataContainer/HeaderContainer"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+text = "Faction Data"
+vertical_alignment = 1
+
+[node name="ButtonsContainer" type="HBoxContainer" parent="MainContainer/FactionsDataContainer/HeaderContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 alignment = 2
 
-[node name="AddRankBtn" type="Button" parent="MainContainer/FactionDataContainer/RanksContainer/HeaderContainer/ButtonsContainer"]
+[node name="AddFacIntBtn" type="Button" parent="MainContainer/FactionsDataContainer/HeaderContainer/ButtonsContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+size_flags_vertical = 4
+disabled = true
+icon = ExtResource("6_3pite")
+flat = true
+icon_alignment = 1
+
+[node name="AddFacFltBtn" type="Button" parent="MainContainer/FactionsDataContainer/HeaderContainer/ButtonsContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+size_flags_vertical = 4
+disabled = true
+icon = ExtResource("7_uuua2")
+flat = true
+icon_alignment = 1
+
+[node name="AddFacBoolBtn" type="Button" parent="MainContainer/FactionsDataContainer/HeaderContainer/ButtonsContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+size_flags_vertical = 4
+disabled = true
+icon = ExtResource("8_g1mpe")
+flat = true
+icon_alignment = 1
+
+[node name="AddFacStrBtn" type="Button" parent="MainContainer/FactionsDataContainer/HeaderContainer/ButtonsContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+size_flags_vertical = 4
+disabled = true
+icon = ExtResource("9_f5aty")
+flat = true
+icon_alignment = 1
+
+[node name="FacDataTree" type="Tree" parent="MainContainer/FactionsDataContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+columns = 2
+allow_reselect = true
+hide_folding = true
+hide_root = true
+script = ExtResource("7_0knqj")
+
+[node name="RanksContainer" type="VBoxContainer" parent="MainContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+size_flags_stretch_ratio = 3.0
+
+[node name="Label" type="Label" parent="MainContainer/RanksContainer"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+text = "Ranks"
+vertical_alignment = 1
+
+[node name="HeaderContainer" type="HBoxContainer" parent="MainContainer/RanksContainer"]
+layout_mode = 2
+
+[node name="RanksOptBtn" type="OptionButton" parent="MainContainer/RanksContainer/HeaderContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+disabled = true
+alignment = 1
+text_overrun_behavior = 3
+
+[node name="ButtonsContainer" type="HBoxContainer" parent="MainContainer/RanksContainer/HeaderContainer"]
+layout_mode = 2
+alignment = 2
+
+[node name="AddRankBtn" type="Button" parent="MainContainer/RanksContainer/HeaderContainer/ButtonsContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Create Rank"
+disabled = true
 icon = ExtResource("1_q36xt")
 icon_alignment = 1
 
-[node name="RankSearchLnEdt" type="LineEdit" parent="MainContainer/FactionDataContainer/RanksContainer"]
+[node name="DeleteFactionBtn" type="Button" parent="MainContainer/RanksContainer/HeaderContainer/ButtonsContainer"]
+custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
-placeholder_text = "Search Rank"
-clear_button_enabled = true
-right_icon = ExtResource("2_gmc64")
+disabled = true
+icon = ExtResource("3_cxt1j")
+icon_alignment = 1
 
-[node name="FactionRankTree" type="Tree" parent="MainContainer/FactionDataContainer/RanksContainer"]
+[node name="RankNameLnEdt" type="LineEdit" parent="MainContainer/RanksContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+placeholder_text = "Rank Name"
+editable = false
+
+[node name="DataHeader" type="HBoxContainer" parent="MainContainer/RanksContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/RanksContainer/DataHeader"]
+layout_mode = 2
+text = "Rank Data"
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="MainContainer/RanksContainer/DataHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 2
+
+[node name="AddRankIntBtn" type="Button" parent="MainContainer/RanksContainer/DataHeader/HBoxContainer2"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+disabled = true
+icon = ExtResource("6_3pite")
+flat = true
+icon_alignment = 1
+
+[node name="AddRankFltBtn" type="Button" parent="MainContainer/RanksContainer/DataHeader/HBoxContainer2"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+disabled = true
+icon = ExtResource("7_uuua2")
+flat = true
+icon_alignment = 1
+
+[node name="AddRankBoolBtn" type="Button" parent="MainContainer/RanksContainer/DataHeader/HBoxContainer2"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+disabled = true
+icon = ExtResource("8_g1mpe")
+flat = true
+icon_alignment = 1
+
+[node name="AddRankStrBtn" type="Button" parent="MainContainer/RanksContainer/DataHeader/HBoxContainer2"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+disabled = true
+icon = ExtResource("9_f5aty")
+flat = true
+icon_alignment = 1
+
+[node name="RankDataTree" type="Tree" parent="MainContainer/RanksContainer"]
 layout_mode = 2
 size_flags_vertical = 3
-columns = 3
-column_titles_visible = true
+columns = 2
 allow_reselect = true
-hide_root = true
-script = ExtResource("4_fk44b")
-default_name = "new_rank"
-
-[node name="Control" type="Control" parent="MainContainer/FactionDataContainer/RanksContainer/FactionRankTree"]
-custom_minimum_size = Vector2(0, 36)
-layout_mode = 3
-anchors_preset = 0
-
-[node name="DescriptionContainer" type="VBoxContainer" parent="MainContainer/FactionDataContainer"]
-layout_mode = 2
-size_flags_vertical = 3
-size_flags_stretch_ratio = 5.0
-
-[node name="Label2" type="Label" parent="MainContainer/FactionDataContainer/DescriptionContainer"]
-layout_mode = 2
-text = "Faction Description"
-
-[node name="FactionDescTextEdt" type="TextEdit" parent="MainContainer/FactionDataContainer/DescriptionContainer"]
-layout_mode = 2
-size_flags_vertical = 3
-wrap_mode = 1
-
-[node name="FlagsContainer" type="VBoxContainer" parent="MainContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="Label" type="Label" parent="MainContainer/FlagsContainer"]
-custom_minimum_size = Vector2(0, 32)
-layout_mode = 2
-text = "Flags"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="FlagsLnEdt" type="LineEdit" parent="MainContainer/FlagsContainer"]
-layout_mode = 2
-placeholder_text = "Search Flags"
-clear_button_enabled = true
-right_icon = ExtResource("2_gmc64")
-
-[node name="FlagsTree" type="Tree" parent="MainContainer/FlagsContainer"]
-layout_mode = 2
-size_flags_vertical = 3
 hide_folding = true
 hide_root = true
-script = ExtResource("4_q07pq")
+script = ExtResource("7_0knqj")
 
-[node name="FactionRelationContainer" type="VBoxContainer" parent="MainContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_stretch_ratio = 2.0
-
-[node name="HBoxContainer" type="HBoxContainer" parent="MainContainer/FactionRelationContainer"]
-layout_mode = 2
-size_flags_vertical = 3
-
-[node name="AllyContainer" type="VBoxContainer" parent="MainContainer/FactionRelationContainer/HBoxContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="Label" type="Label" parent="MainContainer/FactionRelationContainer/HBoxContainer/AllyContainer"]
-custom_minimum_size = Vector2(0, 32)
-layout_mode = 2
-text = "Ally Factions"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="SearchAllyLnEdt" type="LineEdit" parent="MainContainer/FactionRelationContainer/HBoxContainer/AllyContainer"]
-layout_mode = 2
-placeholder_text = "Search Allies"
-clear_button_enabled = true
-right_icon = ExtResource("2_gmc64")
-
-[node name="AllyFactionTree" type="Tree" parent="MainContainer/FactionRelationContainer/HBoxContainer/AllyContainer"]
-layout_mode = 2
-size_flags_vertical = 3
-hide_folding = true
-hide_root = true
-script = ExtResource("4_d1ib7")
-
-[node name="EnemyContainer" type="VBoxContainer" parent="MainContainer/FactionRelationContainer/HBoxContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="Label" type="Label" parent="MainContainer/FactionRelationContainer/HBoxContainer/EnemyContainer"]
-custom_minimum_size = Vector2(0, 32)
-layout_mode = 2
-text = "Enemy Factions"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="SearchEnemyLnEdt" type="LineEdit" parent="MainContainer/FactionRelationContainer/HBoxContainer/EnemyContainer"]
-layout_mode = 2
-placeholder_text = "Search Enemies"
-clear_button_enabled = true
-right_icon = ExtResource("2_gmc64")
-
-[node name="EnemyFactionTree" type="Tree" parent="MainContainer/FactionRelationContainer/HBoxContainer/EnemyContainer"]
-layout_mode = 2
-size_flags_vertical = 3
-hide_folding = true
-hide_root = true
-script = ExtResource("4_d1ib7")
+[node name="FileDialog" type="FileDialog" parent="."]

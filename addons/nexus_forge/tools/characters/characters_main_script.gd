@@ -2,243 +2,117 @@
 extends Control
 
 
-const CharacterDataSelect = preload("res://addons/nexus_forge/tools/characters/character_data_select.gd")
+const LineEditConfirmationDialog = preload("res://addons/nexus_forge/classes/line_edit_confirmation_dialog.gd")
 
-var _characters_resource: NFCharacterDBRes = null
-var _races_resource: NFRacesRes = null:
+var characters_resource: NFCharacterDBRes = null
+var races_resource: NFRacesRes = null:
 	set(new_races):
-		if _races_resource != null:
-			_races_resource.changed.disconnect(on_races_changed)
-		_races_resource = new_races
-		_races_resource.changed.connect(on_races_changed)
+		#if races_resource != null:
+			#races_resource.changed.disconnect(on_races_changed)
+		races_resource = new_races
+		#races_resource.changed.connect(on_races_changed)
 var _factions_resource: NFFactionRes = null:
 	set(new_factions):
-		if _factions_resource != null:
-			_factions_resource.changed.disconnect(on_factions_changed)
+		#if _factions_resource != null:
+			#_factions_resource.changed.disconnect(on_factions_changed)
 		_factions_resource = new_factions
-		_factions_resource.changed.connect(on_factions_changed)
-var _talents_resource: NFTalentsRes = null:
+		#_factions_resource.changed.connect(on_factions_changed)
+var talents_resource: NFTalentsRes = null:
 	set(new_talents):
-		if _talents_resource != null:
-			_talents_resource.changed.disconnect(on_talents_changed)
-			_talents_resource.perk_renamed.disconnect(on_perk_renamed)
-		_talents_resource = new_talents
-		_talents_resource.perk_renamed.connect(on_perk_renamed)
-		_talents_resource.changed.connect(on_talents_changed)
+		#if talents_resource != null:
+			#talents_resource.changed.disconnect(on_talents_changed)
+			#talents_resource.perk_renamed.disconnect(on_perk_renamed)
+		talents_resource = new_talents
+		#talents_resource.perk_renamed.connect(on_perk_renamed)
+		#talents_resource.changed.connect(on_talents_changed)
 
-var current_character: String = ""
-var _block_switch: bool = false
-var character_memory: Dictionary = {}
+var current_character: int = -1
+var current_variant: int = -1
 var no_db_container: PanelContainer = null
 
-@onready var sprite_frame_line: LineEdit = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/PortraitDataContainer/SpriteFrameContainer/LinePanel/LineContainer/SpriteFrameLine
-@onready var select_sprites_button: Button = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/PortraitDataContainer/SpriteFrameContainer/LinePanel/LineContainer/SelectSpritesButton
-@onready var sound_path_line: LineEdit = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/PortraitDataContainer/SoundsContainer/DataContainer/PanelContainer/HBoxContainer/SoundPathLine
-@onready var select_sound_path_button: Button = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/PortraitDataContainer/SoundsContainer/DataContainer/PanelContainer/HBoxContainer/SelectSoundPathButton
-@onready var play_sound_button: Button = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/PortraitDataContainer/SoundsContainer/DataContainer/PlaySoundButton
+@onready var skills_tree: Tree = $DataPanel/MainDataContainer/FactionsContainer/SkillsTree
+@onready var variants_opt_btn: OptionButton = $DataPanel/MainDataContainer/ExtraContainer/VariantsContainer/TitleContainer/VariantsOptBtn
+@onready var add_variant_button: Button = $DataPanel/MainDataContainer/ExtraContainer/VariantsContainer/TitleContainer/AddVariantButton
+@onready var delete_variant_button: Button = $DataPanel/MainDataContainer/ExtraContainer/VariantsContainer/TitleContainer/DeleteVariantButton
+@onready var add_var_int_button: Button = $DataPanel/MainDataContainer/ExtraContainer/VariantsContainer/VariantDataContainer/CDHeaderContainer/AddButtonsContainer/AddVarIntButton
+@onready var add_var_float_button: Button = $DataPanel/MainDataContainer/ExtraContainer/VariantsContainer/VariantDataContainer/CDHeaderContainer/AddButtonsContainer/AddVarFloatButton
+@onready var add_var_bool_button: Button = $DataPanel/MainDataContainer/ExtraContainer/VariantsContainer/VariantDataContainer/CDHeaderContainer/AddButtonsContainer/AddVarBoolButton
+@onready var add_var_string_button: Button = $DataPanel/MainDataContainer/ExtraContainer/VariantsContainer/VariantDataContainer/CDHeaderContainer/AddButtonsContainer/AddVarStringButton
+@onready var custom_data_search_line: LineEdit = $DataPanel/MainDataContainer/ExtraContainer/VariantsContainer/VariantDataContainer/CustomDataSearchLine
+@onready var variant_data_tree: Tree = $DataPanel/MainDataContainer/ExtraContainer/VariantsContainer/VariantDataContainer/VariantDataTree
+@onready var character_option_button: OptionButton = $DataPanel/MainDataContainer/GeneralContainer/ButtonContainer/CharacterOptBtn
+@onready var new_character: Button = $DataPanel/MainDataContainer/GeneralContainer/ButtonContainer/NewCharacter
+@onready var char_name_line: LineEdit = $DataPanel/MainDataContainer/GeneralContainer/CharNameContainer/CharNameLine
+@onready var char_name_color: ColorPickerButton = $DataPanel/MainDataContainer/GeneralContainer/CharNameContainer/CharNameColor
+@onready var species_option_button: OptionButton = $DataPanel/MainDataContainer/GeneralContainer/SpeciesContainer/SpeciesOptionButton
+@onready var race_option_button: OptionButton = $DataPanel/MainDataContainer/GeneralContainer/RaceContainer/RaceOptionButton
+@onready var gender_option_button: OptionButton = $DataPanel/MainDataContainer/GeneralContainer/GenderContainer/GenderOptionButton
+@onready var character_data_tree: Tree = $DataPanel/MainDataContainer/GeneralContainer/CustomDataContainer/CharacterDataTree
+@onready var faction_search_line: LineEdit = $DataPanel/MainDataContainer/FactionsContainer/FactionSearchLine
+@onready var factions_tree: Tree = $DataPanel/MainDataContainer/FactionsContainer/FactionsTree
+@onready var add_chr_int_button: Button = $DataPanel/MainDataContainer/GeneralContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer/AddIntButton
+@onready var add_chr_float_button: Button = $DataPanel/MainDataContainer/GeneralContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer/AddFloatButton
+@onready var add_chr_bool_button: Button = $DataPanel/MainDataContainer/GeneralContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer/AddBoolButton
+@onready var add_chr_string_button: Button = $DataPanel/MainDataContainer/GeneralContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer/AddStringButton
+@onready var delete_character_btn: Button = $DataPanel/MainDataContainer/GeneralContainer/ButtonContainer/DeleteCharBtn
 
-
-@onready var data_set_tabs: TabContainer = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer/DataSetTabs
-
-@onready var no_char_center: CenterContainer = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/NoCharCenter
-
-@onready var chara_id_label: Label = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/HBoxContainer/CharaIDLabel
-
-@onready var copy_id_btn: Button = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/HBoxContainer/CopyIDBtn
-@onready var add_sprite_button: Button = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/SheetsContainer/HeaderContainer/AddSpriteButton
-@onready var add_int_button: Button = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer/AddIntButton
-@onready var add_float_button: Button = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer/AddFloatButton
-@onready var add_bool_button: Button = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer/AddBoolButton
-@onready var add_string_button: Button = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer/AddStringButton
-@onready var new_character: Button = $MainContainer/DataSplitContainer/CharacterSelectorContainer/ButtonContainer/NewCharacter
-@onready var import_character_button: Button = $MainContainer/DataSplitContainer/CharacterSelectorContainer/ButtonContainer/ImportCharacterButton
-@onready var add_stat_btn: Button = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer/DataSetTabs/StatsContainer/HeaderContainer/AddStatBtn
-@onready var add_variant_button: Button = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer/DataSetTabs/VariantsContainer/TitleContainer/AddVariantButton
-#@onready var refresh_button: Button = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer/PortraitContainer/SpriteFrameContainer/Header/RefreshButton
-
-#@onready var animated_chk_btn: CheckButton = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer/PortraitContainer/HBoxContainer/InfoContainer/AnimationContainer/AnimatedChkBtn
-
-@onready var search_character_line: LineEdit = $MainContainer/DataSplitContainer/CharacterSelectorContainer/ButtonContainer/SearchCharacterLine
-@onready var custom_data_search_line: LineEdit = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/CustomDataContainer/CustomDataSearchLine
-@onready var flag_search_line: LineEdit = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/VBoxContainer/FlagsContainer/FlagSearchLine
-@onready var faction_search_line: LineEdit = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/VBoxContainer/FactionsContainer/FactionSearchLine
-@onready var char_name_line: LineEdit = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/CharNameContainer/CharNameLine
-@onready var line_edit: LineEdit = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer/DataSetTabs/StatsContainer/HeaderContainer/LineEdit
-@onready var skill_search_line: LineEdit = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer/DataSetTabs/SkillsContainer/SkillSearchLine
-@onready var search_perk_ln_edt: LineEdit = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer/DataSetTabs/PerksContainer/SearchPerkLnEdt
-@onready var search_variant_ln_edt: LineEdit = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer/DataSetTabs/VariantsContainer/TitleContainer/SearchVariantLnEdt
-#@onready var sprite_frame_line: LineEdit = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer/PortraitContainer/SpriteFrameContainer/LinePanel/LineContainer/SpriteFrameLine
-#@onready var sound_path_line: LineEdit = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer/PortraitContainer/HBoxContainer/InfoContainer/SoundsContainer/DataContainer/PanelContainer/HBoxContainer/SoundPathLine
-
-@onready var characters_tree: Tree = $MainContainer/DataSplitContainer/CharacterSelectorContainer/CharactersTree
-@onready var factions_tree: Tree = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/VBoxContainer/FactionsContainer/FactionsTree
-@onready var sprite_sheets_tree: Tree = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/SheetsContainer/SpriteSheetsTree
-@onready var custom_data_tree: Tree = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/CustomDataContainer/CustomDataTree
-@onready var flags_tree: Tree = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/VBoxContainer/FlagsContainer/FlagsTree
-@onready var stats_tree: Tree = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer/DataSetTabs/StatsContainer/StatsTree
-@onready var skills_tree: Tree = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer/DataSetTabs/SkillsContainer/SkillsTree
-@onready var perks_tree: Tree = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer/DataSetTabs/PerksContainer/PerksTree
-@onready var variants_tree: Tree = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer/DataSetTabs/VariantsContainer/VariantsTree
-
-@onready var char_name_color: ColorPickerButton = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/CharNameContainer/CharNameColor
-@onready var species_option_button: OptionButton = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/SpeciesContainer/SpeciesOptionButton
-@onready var race_option_button: OptionButton = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/RaceContainer/RaceOptionButton
-@onready var gender_option_button: OptionButton = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/GeneralContainer/GenderContainer/GenderOptionButton
-#@onready var anim_opt_btn: OptionButton = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer/PortraitContainer/HBoxContainer/InfoContainer/AnimationContainer/AnimOptBtn
-
-#@onready var fps_spn_bx: SpinBox = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer/PortraitContainer/HBoxContainer/InfoContainer/FPSContainer/FPSSpnBx
-
-#@onready var no_db_container: PanelContainer = $NoDBContainer
-
-@onready var main_container: VBoxContainer = $MainContainer
-
-#@onready var data_select_dialog: FileDialog = $ComponentNode/DataSelectDialog
-#@onready var id_select_panel: PanelContainer = $IDSelectPanel
-
-#@onready var races_missing_container: HBoxContainer = $NoDBContainer/CenterContainer/InfoContainer/RacesMissingContainer
-#@onready var char_db_container: HBoxContainer = $NoDBContainer/CenterContainer/InfoContainer/RacesMissingContainer/CharDBContainer
-#@onready var race_res_container: HBoxContainer = $NoDBContainer/CenterContainer/InfoContainer/RacesMissingContainer/RaceResContainer
-
-#@onready var success_char_texture: TextureRect = $NoDBContainer/CenterContainer/InfoContainer/RacesMissingContainer/CharDBContainer/SuccessCharTexture
-#@onready var failure_char_texture: TextureRect = $NoDBContainer/CenterContainer/InfoContainer/RacesMissingContainer/CharDBContainer/FailureCharTexture
-#@onready var success_races_texture: TextureRect = $NoDBContainer/CenterContainer/InfoContainer/RacesMissingContainer/RaceResContainer/SuccessRacesTexture
-#@onready var failure_races_texture: TextureRect = $NoDBContainer/CenterContainer/InfoContainer/RacesMissingContainer/RaceResContainer/FailureRacesTexture
-#
-#@onready var success_facc_texture: TextureRect = $NoDBContainer/CenterContainer/InfoContainer/RacesMissingContainer/FaccResContainer/SuccessFaccTexture
-#@onready var failure_facc_texture: TextureRect = $NoDBContainer/CenterContainer/InfoContainer/RacesMissingContainer/FaccResContainer/FailureFaccTexture
-
-#@onready var chara_button_container: VBoxContainer = $NoDBContainer/CenterContainer/InfoContainer/ButtonsContainer/CharaButtonContainer
-@onready var data_container: VBoxContainer = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer
-
-#@onready var success_talent_texture: TextureRect = $NoDBContainer/CenterContainer/InfoContainer/RacesMissingContainer/TalentsResContainer/SuccessFaccTexture
-#@onready var failure_talent_texture: TextureRect = $NoDBContainer/CenterContainer/InfoContainer/RacesMissingContainer/TalentsResContainer/FailureFaccTexture
-
-@onready var main_menu: MenuButton = $MainContainer/DataSplitContainer/CharacterSelectorContainer/HBoxContainer/MenusContainer/MainMenu
-@onready var type_stream_player: AudioStreamPlayer = $ComponentNode/TypeStreamPlayer
-
-#@onready var portrait_texture: PortraitTextureRect = $MainContainer/DataSplitContainer/VBoxContainer/DataPanel/DataContainer/MainDataContainer/ExtraContainer/PortraitContainer/HBoxContainer/PortraitTexture
+@onready var data_panel: PanelContainer = $DataPanel
 
 
 func _ready() -> void:
-	var tabs := data_set_tabs.get_tab_bar()
-	tabs.set_tab_title(0, "Stats")
-	tabs.set_tab_title(1, "Skills")
-	tabs.set_tab_title(2, "Perks")
-	tabs.set_tab_title(3, "Variants")
-	
-	if check_for_resources():
-		load_characters()
+	if load_resources():
 		load_races()
 		load_skills()
 		load_factions()
-		main_container.visible = true
+		load_characters()
+		data_panel.visible = true
 	else:
-		main_container.visible = false
+		data_panel.visible = false
 		no_db_container = preload("res://addons/nexus_forge/tools/characters/kinds_no_db.tscn").instantiate()
 		add_child(no_db_container)
 		no_db_container.check_res_pressed.connect(on_check_resources_pressed)
 		no_db_container.load_db_pressed.connect(on_open_char_resource)
 		no_db_container.create_db_pressed.connect(on_create_new_resource)
-		no_db_container.visible = true
-		no_db_container.set_tal_success(_talents_resource != null)
+		no_db_container.set_tal_success(talents_resource != null)
 		no_db_container.set_facc_success(_factions_resource != null)
-		no_db_container.set_race_success(_races_resource != null)
-		no_db_container.set_char_success(_characters_resource != null)
+		no_db_container.set_race_success(races_resource != null)
+		no_db_container.set_char_success(characters_resource != null)
 	
-	main_menu.get_popup().id_pressed.connect(on_menu_pressed)
 	new_character.pressed.connect(on_create_new_character)
-	import_character_button.pressed.connect(on_import_character)
-	copy_id_btn.pressed.connect(on_copy_id_btn_pressed)
 	
-	add_int_button.pressed.connect(create_custom_data.bind(TYPE_INT))
-	add_float_button.pressed.connect(create_custom_data.bind(TYPE_FLOAT))
-	add_bool_button.pressed.connect(create_custom_data.bind(TYPE_BOOL))
-	add_string_button.pressed.connect(create_custom_data.bind(TYPE_STRING))
+	add_var_int_button.pressed.connect(_on_add_variant_data_pressed.bind("new_int", 0))
+	add_var_float_button.pressed.connect(_on_add_variant_data_pressed.bind("new_float", 0.0))
+	add_var_bool_button.pressed.connect(_on_add_variant_data_pressed.bind("new_bool", false))
+	add_var_string_button.pressed.connect(_on_add_variant_data_pressed.bind("new_string", ""))
 	
-	characters_tree.character_selected.connect(on_character_selected)
-	characters_tree.character_removed.connect(on_character_removed)
-	characters_tree.character_id_changed.connect(on_character_id_changed)
+	add_chr_int_button.pressed.connect(_on_add_character_data_pressed.bind("new_int", 0))
+	add_chr_float_button.pressed.connect(_on_add_character_data_pressed.bind("new_float", 0.0))
+	add_chr_bool_button.pressed.connect(_on_add_character_data_pressed.bind("new_bool", false))
+	add_chr_string_button.pressed.connect(_on_add_character_data_pressed.bind("new_string", ""))
 	
 	species_option_button.item_selected.connect(on_species_selected)
-	race_option_button.item_selected.connect(on_race_selected)
-	
-	sprite_sheets_tree.sheets_updated.connect(on_sheets_updated)
-	sprite_sheets_tree.id_edited.connect(on_ref_id_edited)
-	
-	select_sprites_button.pressed.connect(on_load_portrait_pressed)
-	select_sound_path_button.pressed.connect(on_load_sound_pressed)
-	play_sound_button.pressed.connect(on_play_sound_pressed)
-	sound_path_line.text_changed.connect(on_sound_path_set)
-	
-	stats_tree.stat_edited.connect(on_stat_id_edited)
-
-
-func on_character_id_changed(from: String, to: String) -> void:
-	_characters_resource._characters[to] = _characters_resource._characters[from]
-	_characters_resource.remove_character(from)
-	
-	if character_memory.has(from):
-		character_memory[to] = character_memory[from]
-		character_memory.erase(from)
-	
-	if from == current_character:
-		current_character = to
-		chara_id_label.text = Strings.title_case(to)
-
-
-func on_play_sound_pressed() -> void:
-	if sound_path_line.text.is_empty():
-		return
-	
-	if type_stream_player.stream == null:
-		type_stream_player.stream = load(sound_path_line.text)
-	
-	type_stream_player.play()
-	play_sound_button.disabled = true
-	await type_stream_player.finished
-	play_sound_button.disabled = false
-
-
-func on_sound_path_set(path: String) -> void:
-	play_sound_button.disabled = path.is_empty()
-
-
-func on_menu_pressed(id: int) -> void:
-	match id:
-		0:
-			on_create_new_character()
-		1:
-			save_characters()
-		2:
-			on_import_character()
-
-
-func on_perk_renamed(from: String, to: String) -> void:
-	perks_tree.rename_perk(from, to)
+	character_option_button.item_selected.connect(on_character_selected, CONNECT_DEFERRED)
+	variants_opt_btn.item_selected.connect(_on_variant_selected, CONNECT_DEFERRED)
+	add_variant_button.pressed.connect(_on_create_variant_pressed)
+	delete_variant_button.pressed.connect(_on_delete_variant_pressed)
 
 
 func on_talents_changed() -> void:
 	var skill_config: Dictionary = skills_tree.get_skill_data()
-	var perk_config: Dictionary = perks_tree.get_selected_perks()
 
 	load_skills()
-	load_perks()
 	
-	for skill in _talents_resource.get_skills():
+	for skill in talents_resource.get_skills():
 		if skill_config.has(skill):
 			skills_tree.set_skill(
 					skill,
 					skill_config[skill]["level"])
 
-	for perk in _talents_resource.get_perks():
-		if perk_config.has(perk):
-			perks_tree.set_perk(perk, perk_config[perk]["level"])
-
 
 func load_factions() -> void:
 	factions_tree.clear_factions()
 	for faction in _factions_resource.get_factions():
-		factions_tree.add_faction(faction, _factions_resource.get_faction_name(faction))
+		factions_tree.add_faction(faction, _factions_resource.get_faction_rank_count(faction))
 
 
 func on_factions_changed() -> void:
@@ -252,226 +126,140 @@ func on_factions_changed() -> void:
 func on_races_changed() -> void:
 	var current_species: String = ""
 	var current_race: String = ""
-	var current_gender: int = -1
 	var gender_selected: bool = false
 	
 	if species_option_button.selected != -1:
-		current_species = species_option_button.get_item_metadata(species_option_button.selected)
+		current_species = species_option_button.get_item_text(species_option_button.selected)
 	if race_option_button.selected != -1:
-		current_race = race_option_button.get_item_metadata(race_option_button.selected)
-	if gender_option_button.selected != -1:
-		current_gender = gender_option_button.get_item_metadata(gender_option_button.selected)
-		gender_selected = true
+		current_race = race_option_button.get_item_text(race_option_button.selected)
 	
 	load_races()
 	
-	if not current_species.is_empty():
-		for option_idx in range(species_option_button.item_count):
-			if species_option_button.get_item_metadata(option_idx) == current_species:
-				species_option_button.select(option_idx)
-				on_species_selected(option_idx)
+	if not current_species.is_empty() and races_resource.has_species(current_species):
+		for item_idx in range(species_option_button.item_count):
+			if species_option_button.get_item_text(item_idx) == current_species:
+				species_option_button.select(item_idx)
+				on_species_selected(item_idx)
 				break
-	if not current_race.is_empty():
+		
+	if not current_race.is_empty() and races_resource.has_race(current_species, current_race):
 		for race_idx in range(race_option_button.item_count):
-			if race_option_button.get_item_metadata(race_idx) == current_race:
+			if race_option_button.get_item_text(race_idx) == current_race:
 				race_option_button.select(race_idx)
-				on_race_selected(race_idx)
 				break
-	if gender_selected:
-		for gender_idx in range(gender_option_button.item_count):
-			if gender_option_button.get_item_metadata(gender_idx) == current_gender:
-				gender_option_button.select(gender_idx)
-				break
-
-
-func load_perks() -> void:
-	perks_tree.clear_perks()
-	for perk in _talents_resource.get_perks():
-		perks_tree.add_perk(
-				perk,
-				_talents_resource.get_perk_name(perk),
-				_talents_resource.get_perk_level(perk))
 
 
 func load_skills() -> void:
 	skills_tree.clear_skills()
-	perks_tree.clear_perks()
 	
-	for skill in _talents_resource.get_skills():
+	for skill in talents_resource.get_skills():
 		skills_tree.add_skill(
 				skill,
-				_talents_resource.get_skill_name(skill),
-				_talents_resource.get_skill_limit(skill))
-	
-	for perk in _talents_resource.get_perks():
-		perks_tree.add_perk(
-			perk,
-			_talents_resource.get_perk_name(perk),
-			_talents_resource.get_perk_level(perk))
+				talents_resource.get_skill_limit(skill))
 
 
 func on_species_selected(index_selected: int) -> void:
-	var species: String = species_option_button.get_item_metadata(index_selected)
-	var race_id: int = 0
+	var species_id: String = species_option_button.get_item_text(index_selected)
 	race_option_button.clear()
-	for race in _races_resource.get_races(species):
-		race_option_button.add_item(
-				Strings.capitalize(_races_resource.get_race_name(species, race)),
-				race_id)
-		race_option_button.set_item_metadata(
-				race_option_button.get_item_index(race_id),
-				race)
-		race_id += 1
-	if race_id != 0:
+	
+	for race in races_resource.get_races(species_id):
+		race_option_button.add_item(race)
+	
+	if 0 < race_option_button.item_count:
 		race_option_button.select(0)
-		on_race_selected(0)
 
 
-func on_race_selected(index_selected: int) -> void:
-	var species: String = species_option_button.get_item_metadata(species_option_button.selected)
-	var race: String = race_option_button.get_item_metadata(race_option_button.selected)
-	var gender_id: int = 0
+func on_character_selected(character_id: int):
+	if current_character != -1:
+		save_current_character()
 	
-	gender_option_button.clear()
-	
-	for gender in _races_resource.get_race_genders(species, race):
-		gender_option_button.add_item(Strings.capitalize(NFRacesRes.get_gender_name(gender)), gender_id)
-		gender_option_button.set_item_metadata(
-			gender_option_button.get_item_index(gender_id),
-			gender)
-		gender_id += 1
-
-
-func on_copy_id_btn_pressed() -> void:
-	DisplayServer.clipboard_set(chara_id_label.text)
-
-
-func on_character_selected(character_id: String):
-	if _block_switch:
-		return
-	_block_switch = true
 	current_character = character_id
 	load_character(character_id)
-	characters_tree.ensure_selected(character_id)
-	_block_switch = false
 
 
-func load_character(character_id: String) -> void:
-	sprite_sheets_tree.clear_sprite_sheets()
-	custom_data_tree.clear_custom_data()
-	factions_tree.clear_checks()
-	stats_tree.clear_stats()
-	perks_tree.clear_checks()
-	variants_tree.clear_variants()
-	type_stream_player.stream = null
+func load_character(character_idx: int) -> void:
+	character_data_tree.clear_data()
+	factions_tree.reset_factions()
+	variant_data_tree.clear_data()
+	skills_tree.reset_skills()
+	variants_opt_btn.clear()
 	
-	if character_memory.has(character_id):
-		var character_data: CharacterDefinition = character_memory[character_id]
-		chara_id_label.text = Strings.title_case(character_id)
-		char_name_line.text = character_data.character_name
-		char_name_color.color = character_data.character_name_color
-		sprite_frame_line.text = character_data.sprite_frames_path
-		sound_path_line.text = character_data.typing_sound_path
-		play_sound_button.disabled = sound_path_line.text.is_empty()
-		if not character_data.character_species.is_empty():
-			select_species(character_data.character_species)
-		if not character_data.character_species.is_empty():
-			select_race(character_data.character_race)
-		select_gender(character_data.character_gender)
-		flags_tree.set_flags(character_data.flags)
+	delete_character_btn.disabled = character_idx == -1
+	add_chr_int_button.disabled = character_idx == -1
+	add_chr_float_button.disabled = character_idx == -1
+	add_chr_bool_button.disabled = character_idx == -1
+	add_chr_string_button.disabled = character_idx == -1
+	
+	add_var_int_button.disabled = character_idx == -1
+	add_var_float_button.disabled = character_idx == -1
+	add_var_bool_button.disabled = character_idx == -1
+	add_var_string_button.disabled = character_idx == -1
+	add_variant_button.disabled = character_idx == -1
+	
+	if character_idx == -1:
+		char_name_line.clear()
+		char_name_color.color = Color.WHITE
+		if 0 < species_option_button.item_count:
+			select_species(species_option_button.get_item_text(0))
+		else:
+			species_option_button.select(-1)
 		
-		for sheet in character_data.get_sprite_sheet_ids():
-			sprite_sheets_tree.create_sheet_path(
-					sheet,
-					character_data.get_sprite_sheet_path(sheet))
+		if 0 < race_option_button.item_count:
+			select_race(race_option_button.get_item_text(0))
+		else:
+			race_option_button.select(-1)
 		
-		for data in character_data.get_custom_data_ids():
-			custom_data_tree.create_custom_value(
-				character_data.get_custom_data(data),
-				data)
-		
-		for faction in character_data.get_characer_factions():
-			factions_tree.set_faction(
-					faction,
-					true,
-					character_data.get_faction_rank(faction))
-		
-		for stat in character_data.get_stat_ids():
-			stats_tree.create_stat(
-					stat,
-					character_data.get_stat_min(stat),
-					character_data.get_stat_max(stat))
-		
-		for perk in character_data.get_perk_ids():
-			perks_tree.set_perk(
-					perk,
-					character_data.get_perk_level(perk))
-		
-		for skill in character_data.get_skill_ids():
-			skills_tree.set_skill(
-					skill,
-					character_data.get_skill_level(skill))
-		
-		for variant in character_data.get_variants():
-			variants_tree.create_variant(
-					variant,
-					character_data.get_variant_sprite_sheet(variant),
-					character_data.get_variant_mods(variant))
+		if 0 < gender_option_button.item_count:
+			gender_option_button.select(0)
+		else:
+			gender_option_button.select(-1)
+		delete_variant_button.disabled = true
+		load_variant(-1)
+		return
+	
+	var character_id: String = character_option_button.get_item_text(character_idx)
+	
+	char_name_line.text = characters_resource.get_character_name(character_id)
+	char_name_color.color = characters_resource.get_character_color(character_id)
+	
+	select_species(characters_resource.get_character_species(character_id))
+	select_race(characters_resource.get_character_race(character_id))
+	select_gender(characters_resource.get_character_gender(character_id))
+	
+	if characters_resource.has_character_data(character_id, "gender"):
+		gender_option_button.select(characters_resource.get_character_data(character_id, "gender"))
+	
+	for data_key in characters_resource.get_character_data_keys(character_id):
+		character_data_tree.add_data(
+				data_key,
+				characters_resource.get_character_data(character_id, data_key))
+	
+	for faction in characters_resource.get_character_factions(character_id):
+		factions_tree.set_faction(
+				faction,
+				true,
+				characters_resource.get_character_faction_rank(character_id, faction))
+	
+	for skill in characters_resource.get_character_skills(character_id):
+		skills_tree.set_skill(
+				skill,
+				characters_resource.get_character_skill_level(character_id, skill))
+	
+	for variant_key in characters_resource.get_character_variants(character_id):
+		variants_opt_btn.add_item(variant_key)
+	
+	if 0 < variants_opt_btn.item_count:
+		delete_variant_button.disabled = false
+		variants_opt_btn.select(0)
+		load_variant(0)
 	else:
-		var character_data: CharacterDefinition = _characters_resource.get_character(character_id)
-		
-		if character_data == null:
-			printerr("[CHARACTERS] Something went wrong while opening data from: " + character_id)
-			return
-		
-		chara_id_label.text = Strings.title_case(character_id)
-		char_name_line.text = character_data.character_name
-		char_name_color.color = character_data.character_name_color
-		sprite_frame_line.text = character_data.sprite_frames_path
-		sound_path_line.text = character_data.typing_sound_path
-		play_sound_button.disabled = sound_path_line.text.is_empty()
-		if not character_data.character_species.is_empty():
-			select_species(character_data.character_species)
-		if not character_data.character_race.is_empty():
-			select_race(character_data.character_race)
-		select_gender(character_data.character_gender)
-		flags_tree.set_flags(character_data.flags)
-		
-		for sheet in character_data.get_sprite_sheet_ids():
-			sprite_sheets_tree.create_sheet_path(
-					sheet,
-					character_data.get_sprite_sheet_path(sheet))
-		for data in character_data.get_custom_data_ids():
-			custom_data_tree.create_custom_value(
-				character_data.get_custom_data(data),
-				data)
-		for faction in character_data.get_characer_factions():
-			factions_tree.set_faction(
-					faction,
-					true,
-					character_data.get_faction_rank(faction))
-		for stat in character_data.get_stat_ids():
-			var stat_range
-			stats_tree.create_stat(
-					stat,
-					character_data.get_stat_min(stat),
-					character_data.get_stat_max(stat))
-		for perk in character_data.get_perk_ids():
-			perks_tree.set_perk(
-					perk,
-					character_data.get_perk_level(perk))
-		for skill in character_data.get_skill_ids():
-			skills_tree.set_skill(
-					skill,
-					character_data.get_skill_level(skill))
-		for variant in character_data.get_variants():
-			variants_tree.create_variant(
-					variant,
-					character_data.get_variant_sprite_sheet(variant),
-					character_data.get_variant_mods(variant))
+		delete_variant_button.disabled = true
+		load_variant(-1)
+	
+	current_character = character_idx
 
 
-func check_for_resources() -> bool:
+func load_resources() -> bool:
 	var character_path: String = ProjectSettings.get_setting(NFCharacterDBRes.SETTINGS_PATH, "")
 	var race_path: String = ProjectSettings.get_setting(NFRacesRes.SETTINGS_PATH, "")
 	var factions_path: String = ProjectSettings.get_setting(NFFactionRes.SETTINGS_PATH, "")
@@ -480,12 +268,12 @@ func check_for_resources() -> bool:
 	if not character_path.is_empty() and ResourceLoader.exists(character_path):
 		var char_preload: Resource = load(character_path)
 		if char_preload is NFCharacterDBRes:
-			_characters_resource = char_preload
+			characters_resource = char_preload
 	
 	if not race_path.is_empty() and ResourceLoader.exists(race_path):
 		var race_preload: Resource = load(race_path)
 		if race_preload is NFRacesRes:
-			_races_resource = race_preload
+			races_resource = race_preload
 	
 	if not factions_path.is_empty() and ResourceLoader.exists(factions_path):
 		var faction_preload: Resource = load(factions_path)
@@ -495,304 +283,301 @@ func check_for_resources() -> bool:
 	if not talents_path.is_empty() and ResourceLoader.exists(talents_path):
 		var talent_preload: Resource = load(talents_path)
 		if talent_preload is NFTalentsRes:
-			_talents_resource = talent_preload
+			talents_resource = talent_preload
 	
-	if _characters_resource == null or _races_resource == null or _factions_resource == null or _talents_resource == null:
-		if no_db_container != null:
-			no_db_container.set_tal_success(_talents_resource != null)
-			no_db_container.set_facc_success(_factions_resource != null)
-			no_db_container.set_race_success(_races_resource != null)
-			no_db_container.set_char_success(_characters_resource != null)
-		return false
-	else:
-		return true
+	if no_db_container != null:
+		no_db_container.set_tal_success(talents_resource != null)
+		no_db_container.set_facc_success(_factions_resource != null)
+		no_db_container.set_race_success(races_resource != null)
+		no_db_container.set_char_success(characters_resource != null)
+	
+	return characters_resource != null and races_resource != null and _factions_resource != null and talents_resource != null
 
 
 func on_check_resources_pressed() -> void:
-	if check_for_resources():
-		load_characters()
+	if load_resources():
 		load_races()
 		load_skills()
 		load_factions()
-		main_container.visible = true
+		load_characters()
+		data_panel.visible = true
 		no_db_container.visible = false
-	else:
-		main_container.visible = false
-		no_db_container.visible = true
-
-
-func create_sheet(sprite_id: String, sprite_path: String) -> void:
-	sprite_sheets_tree.create_sheet_path(sprite_id, sprite_path)
-	variants_tree.update_refs(sprite_sheets_tree.get_variant_ids())
-
-
-func on_ref_id_edited(from: String, to: String) -> void:
-	variants_tree.update_ref_id(from, to)
-
-
-func on_stat_id_edited(from: String, to: String) -> void:
-	variants_tree.update_stat_id(from, to)
-
-
-func on_sheets_updated() -> void:
-	variants_tree.update_refs(sprite_sheets_tree.get_variant_ids())
+		no_db_container.queue_free()
 
 
 func select_species(species_id: String) -> void:
-	var found: bool = false
 	for species_idx in range(species_option_button.item_count):
 		if species_option_button.get_item_text(species_idx) == species_id:
 			species_option_button.select(species_idx)
 			on_species_selected(species_idx)
-			found = true
 			break
-	if not found:
-		printerr(str("[CHARACTERS] Species \"", species_id, "\" not found."))
 
 
 func select_race(race_id: String) -> void:
-	var found: bool = false
 	for race_idx in range(race_option_button.item_count):
 		if race_option_button.get_item_text(race_idx) == race_id:
 			race_option_button.select(race_idx)
 			on_species_selected(race_idx)
-			found = true
 			break
-	if not found:
-		printerr(str("[CHARACTERS] Species ", race_id, " not found."))
 
 
-func select_gender(gender: int) -> void:
-	var found: bool = false
-	for gender_idx in range(gender_option_button.item_count):
-		if gender_option_button.get_item_metadata(gender_idx) == gender:
-			gender_option_button.select(gender_idx)
-			found = true
+func select_gender(gender_id: String) -> void:
+	for g_idx in range(gender_option_button.item_count):
+		if gender_option_button.get_item_metadata(g_idx) == gender_id:
+			gender_option_button.select(g_idx)
 			break
-	if not found:
-		printerr(str("[CHARACTERS] Gender ", gender, " not found."))
-
-
-
-func on_load_sound_pressed() -> void:
-	var new_dialog := CharacterDataSelect.new()
-	new_dialog.dialog_mode = 2
-	add_child(new_dialog)
-	new_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
-	new_dialog.show()
-	
-	var result: Array = await new_dialog.dialog_finished
-	
-	if result[0]:
-		sound_path_line.text = result[1]
-		play_sound_button.disabled = sound_path_line.text.is_empty()
-	new_dialog.queue_free()
-
-
-func on_load_portrait_pressed() -> void:
-	var new_dialog := CharacterDataSelect.new()
-	new_dialog.dialog_mode = 3
-	add_child(new_dialog)
-	new_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
-	new_dialog.show()
-	
-	var result: Array = await new_dialog.dialog_finished
-	
-	if result[0]:
-		var frames_preload: Resource = load(result[1])
-		if frames_preload is SpriteFrames:
-			sprite_frame_line.text = result[1]
-		else:
-			printerr("[KINDS] Selected resource isn't SpriteFrames")
-	new_dialog.queue_free()
 
 
 func on_create_new_character() -> void:
-	var new_dialog := CharacterDataSelect.new()
-	new_dialog.dialog_mode = 1
-	add_child(new_dialog)
-	new_dialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
-	new_dialog.show()
+	var char_id := LineEditConfirmationDialog.new()
+	char_id.accept_empty = false
+	char_id.clean_string = true
+	char_id.invalid_strings = characters_resource.get_characters()
+	add_child(char_id)
+	char_id.show()
+	char_id.focus_line_edit()
 	
-	var result: Array = await new_dialog.dialog_finished
-	
-	if result[0]:
-		var new_char := CharacterDefinition.new()
-		if ResourceSaver.save(new_char, result[1]) == OK:
-			var character_id: String = characters_tree.get_valid_character_id(result[1].get_file().get_basename())
-			characters_tree.add_character(character_id)
-			_characters_resource.register_character(character_id, result[1])
-			_characters_resource.save()
-		else:
-			printerr("[CHARACERS] There was an error while saving the character.")
-
-	new_dialog.queue_free()
-
-
-func on_import_character() -> void:
-	var new_dialog := CharacterDataSelect.new()
-	new_dialog.dialog_mode = 1
-	add_child(new_dialog)
-	new_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
-	new_dialog.show()
-	
-	var result: Array = await new_dialog.dialog_finished
+	var result = await char_id.dialog_confirmed
 	
 	if result[0]:
-		var res_pre: Resource = load(result[1])
-		
-		if res_pre is CharacterDefinition:
-			var character_id: String = characters_tree.get_valid_character_id(result[1].get_file().get_basename())
-			_characters_resource.register_character(character_id, result[1])
-			_characters_resource.save()
-		else:
-			printerr(str("[CHARACTERS] Resource is not a CharacterDefiniton: ", result[1]))
-	new_dialog.queue_free()
+		character_option_button.add_item(result[1])
+		characters_resource.create_character(result[1])
+		if current_character != -1:
+			save_current_character()
+		character_option_button.select(character_option_button.item_count - 1)
+		load_character(character_option_button.item_count - 1)
+	char_id.queue_free()
 
 
 func on_create_new_resource() -> void:
-	var new_dialog := CharacterDataSelect.new()
-	new_dialog.dialog_mode = 0
-	add_child(new_dialog)
-	new_dialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
-	new_dialog.show()
+	var resource_loader := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").new()
+	resource_loader.file_mode = FileDialog.FILE_MODE_SAVE_FILE
+	resource_loader.title = "Save Characters..."
+	resource_loader.ok_button_text = "Save"
+	add_child(resource_loader)
+	resource_loader.show()
 	
-	var result: Array = await new_dialog.dialog_finished
+	var result = await resource_loader.dialog_finished
 	
 	if result[0]:
-		var new_chara_db := NFCharacterDBRes.new()
-		if ResourceSaver.save(new_chara_db, result[1]) == OK:
-			_characters_resource = new_chara_db
-			ProjectSettings.set_setting(NFCharacterDBRes.SETTINGS_PATH, result[1])
-			ProjectSettings.save()
+		characters_resource = NFCharacterDBRes.new()
+		ResourceSaver.save(characters_resource, result[1])
+		ProjectSettings.set_setting(NFCharacterDBRes.SETTINGS_PATH, result[1])
+		ProjectSettings.save()
+		
+		if load_resources():
+			load_races()
+			load_skills()
+			load_factions()
 			load_characters()
-			
-			if check_for_resources():
-				no_db_container.visible = false
-				no_db_container.queue_free()
-				main_container.visible = true
+			no_db_container.visible = false
+			no_db_container.queue_free()
+			data_panel.visible = true
 	
-	new_dialog.queue_free()
+	resource_loader.queue_free()
 
 
-func on_character_removed(character_id: String) -> void:
-	_characters_resource.remove_character(character_id)
+func _on_character_removed_pressed() -> void:
+	var new_id: int = clampi(current_character, -1, character_option_button.item_count - 2)
+	characters_resource.erase_character(character_option_button.get_item_text(current_character))
+	character_option_button.remove_item(current_character)
+	character_option_button.select(new_id)
+	load_character(new_id)
+
+
+func _on_create_variant_pressed() -> void:
+	var ln_var := LineEditConfirmationDialog.new()
+	add_child(ln_var)
+	ln_var.show()
+	ln_var.focus_line_edit()
+	
+	var result = await ln_var.dialog_confirmed
+	
+	if result[0]:
+		characters_resource.create_character_variant(character_option_button.get_item_text(current_character), result[1])
+		variants_opt_btn.add_item(result[1])
+		if current_variant != -1:
+			save_current_variant()
+		variants_opt_btn.select(variants_opt_btn.item_count - 1)
+		load_variant(variants_opt_btn.item_count - 1)
+
+
+func _on_variant_selected(variant_idx: int) -> void:
+	if current_variant != -1:
+		save_current_variant()
+	load_variant(variant_idx)
+
+
+func _on_delete_variant_pressed() -> void:
+	var new_v: int = clampi(current_variant, -1, variants_opt_btn.item_count - 2)
+	characters_resource.erase_character_variant(
+			character_option_button.get_item_text(current_character),
+			variants_opt_btn.get_item_text(current_variant))
+	variants_opt_btn.remove_item(current_variant)
+	variants_opt_btn.select(new_v)
+	load_variant(new_v)
+
+
+func load_variant(variant_idx: int) -> void:
+	variant_data_tree.clear_data()
+	
+	if variant_idx == -1:
+		delete_variant_button.disabled = true
+		add_var_int_button.disabled = true
+		add_var_float_button.disabled = true
+		add_var_bool_button.disabled = true
+		add_var_string_button.disabled = true
+		current_variant = -1
+		return
+	else:
+		delete_variant_button.disabled = false
+		add_var_int_button.disabled = false
+		add_var_float_button.disabled = false
+		add_var_bool_button.disabled = false
+		add_var_string_button.disabled = false
+	
+	var c_id: String = character_option_button.get_item_text(current_character)
+	var v_id: String = variants_opt_btn.get_item_text(variant_idx)
+	
+	
+	for data_key in characters_resource.get_character_variant_data_keys(c_id, v_id):
+		variant_data_tree.add_data(
+				data_key,
+				characters_resource.get_character_variant_data(c_id, v_id, data_key))
+	 
+	current_variant = variant_idx
 
 
 func on_open_char_resource() -> void:
-	var new_dialog := CharacterDataSelect.new()
-	new_dialog.dialog_mode = 0
-	add_child(new_dialog)
-	new_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
-	new_dialog.show()
+	var resource_loader := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").new()
+	resource_loader.file_mode = FileDialog.FILE_MODE_OPEN_FILE
+	resource_loader.title = "Open Characters..."
+	resource_loader.ok_button_text = "Select"
+	add_child(resource_loader)
 	
-	var result: Array = await new_dialog.dialog_finished
+	var result = await resource_loader.dialog_finished
 	
 	if result[0]:
-		var preload_resource: Resource = load(result[1])
-		if preload_resource is NFCharacterDBRes:
-			_characters_resource = preload_resource
-			_characters_resource.validate_characters()
+		var res_pre: Resource = load(result[1])
+		if res_pre != null and res_pre is NFCharacterDBRes:
+			characters_resource = res_pre
 			ProjectSettings.set_setting(NFCharacterDBRes.SETTINGS_PATH, result[1])
 			ProjectSettings.save()
-			load_characters()
 			
-			if check_for_resources():
+			
+			if load_resources():
+				load_races()
+				load_skills()
+				load_factions()
+				load_characters()
 				no_db_container.visible = false
 				no_db_container.queue_free()
-				main_container.visible = true
-		else:
-			printerr("[CHARACTERS] Selected resource isn't a NFCharacterDBRes.")
-		
-	new_dialog.queue_free()
-
-
-func _has_all_required_resources() -> bool:
-	return _characters_resource != null and _races_resource != null and _factions_resource != null and _talents_resource != null
+				data_panel.visible = true
+	resource_loader.queue_free()
 
 
 func load_races() -> void:
-	gender_option_button.clear()
 	species_option_button.clear()
+	race_option_button.clear()
 	
-	var gender_names = NFRacesRes.Genders.keys()
-	var gender_idx: int = 0
-		
-	for gender in NFRacesRes.Genders.values():
-		if NFRacesRes.GENDER_DATA[gender]["icon"].is_empty():
-			gender_option_button.add_item(
-					Strings.capitalize(gender_names[gender]))
-		else:
-			gender_option_button.add_icon_item(
-					load(NFRacesRes.GENDER_DATA[gender]["icon"]),
-					Strings.capitalize(gender_names[gender]))
-		gender_option_button.set_item_metadata(gender_idx, gender)
-		gender_idx += 1
+	for species in races_resource.get_species():
+		species_option_button.add_item(species)
 	
-	var species_id: int = 0
-	
-	for species in _races_resource.get_species():
-		species_option_button.add_item(Strings.capitalize(_races_resource.get_species_name(species)), species_id)
-		species_option_button.set_item_metadata(species_option_button.get_item_index(species_id), species)
-		species_id += 1
-	
-	if species_id != 0:
+	if 0 < species_option_button.item_count:
 		species_option_button.select(0)
-		on_species_selected(0)
+		for race in races_resource.get_races(species_option_button.get_item_text(0)):
+			race_option_button.add_item(race)
+		if 0 < race_option_button.item_count:
+			race_option_button.select(0)
 
 
-func clear_character() -> void:
+func clear_all() -> void:
 	char_name_line.clear()
 	char_name_color.color = Color.WHITE
-	species_option_button.select(-1)
-	race_option_button.select(-1)
-	gender_option_button.select(-1)
+	species_option_button.select(-1 if species_option_button.item_count == 0 else 0)
+	race_option_button.select(-1 if race_option_button.item_count == 0 else 0)
+	gender_option_button.select(0)
 	custom_data_search_line.clear()
-	sprite_frame_line.clear()
-	sound_path_line.clear()
+	character_data_tree.clear_data()
+	faction_search_line.clear()
+	factions_tree.reset_factions()
+	#skill_search_line.clear()
+	skills_tree.reset_skills()
+	variants_opt_btn.clear()
+	add_variant_button.disabled = true
+	delete_variant_button.disabled = true
+	add_var_int_button.disabled = true
+	add_var_float_button.disabled = true
+	add_var_bool_button.disabled = true
+	add_var_string_button.disabled = true
+	custom_data_search_line.clear()
+	variant_data_tree.clear_data()
 
 
-func create_custom_data(data_type: int) -> void:
-	custom_data_tree.create_custom_value(data_type)
+func _on_add_character_data_pressed(data_name: String, data: Variant) -> void:
+	character_data_tree.add_data(data_name, data)
+
+
+func _on_add_variant_data_pressed(data_name: String, data: Variant) -> void:
+	variant_data_tree.add_data(data_name, data)
 
 
 func load_characters() -> void:
-	characters_tree.clear_characters()
-	for character in _characters_resource.get_characters():
-		characters_tree.add_character(character)
-
-
-func store_current() -> void:
-	var new_chara := CharacterDefinition.new()
-	new_chara.character_name = char_name_line.text.strip_edges()
-	new_chara.character_name_color = char_name_color.color
-	new_chara.sprite_frames_path = sprite_frame_line.text
-	new_chara.typing_sound_path = sound_path_line.text
-	if species_option_button.selected != -1:
-		new_chara.character_species = species_option_button.get_item_text(species_option_button.selected)
-	if race_option_button.selected != -1:
-		new_chara.character_race = race_option_button.get_item_text(race_option_button.selected)
-	new_chara.character_gender = gender_option_button.get_item_metadata(gender_option_button.selected)
-	new_chara.flags = flags_tree.get_flags()
-	new_chara.sprite_sheets = sprite_sheets_tree.get_sprites_data()
-	new_chara.custom_data = custom_data_tree.get_custom_data()
-	new_chara.factions = factions_tree.get_factions()
-	new_chara.stats = stats_tree.get_stats()
-	new_chara.perks = perks_tree.get_selected_perks()
-	new_chara.skills = skills_tree.get_skill_data()
-	new_chara.variants = variants_tree.get_stat_variant_data()
+	character_option_button.clear()
+	gender_option_button.clear()
 	
-	character_memory[current_character] = new_chara
+	var g_idx: int = -1
+	for gender in characters_resource.get_genders():
+		g_idx += 1
+		gender_option_button.add_item(
+				characters_resource.get_gender_name(gender))
+		gender_option_button.set_item_metadata(g_idx, gender)
+	
+	if g_idx != -1:
+		gender_option_button.select(0)
+	
+	for character in characters_resource.get_characters():
+		character_option_button.add_item(character)
+	if 0 < character_option_button.item_count:
+		character_option_button.select(0)
+		load_character(0)
 
 
-func save_characters() -> void:
-	if not current_character.is_empty():
-		store_current()
+func save_current_variant() -> void:
+	var char_id: String = character_option_button.get_item_text(current_character)
+	var var_id: String = variants_opt_btn.get_item_text(current_variant)
+	characters_resource._characters[char_id]["variants"][var_id] = variant_data_tree.get_data()
+
+
+func save_current_character() -> void:
+	if current_variant != -1:
+		save_current_variant()
 	
-	for character in character_memory:
-		ResourceSaver.save(
-			character_memory[character],
-			_characters_resource.get_character_path(character))
+	var char_id: String = character_option_button.get_item_text(current_character)
+	characters_resource.set_character_name(char_id, char_name_line.text.strip_edges())
+	characters_resource.set_character_color(char_id, char_name_color.color)
+	characters_resource.set_character_species(char_id, get_selected_species_id())
+	characters_resource.set_character_race(char_id, get_selected_race_id())
+	characters_resource.set_character_gender(char_id, get_selected_gender_id())
+	characters_resource._characters[char_id]["data"] = character_data_tree.get_data()
+	characters_resource._characters[char_id]["factions"] = factions_tree.get_factions()
+	characters_resource._characters[char_id]["skills"] = skills_tree.get_skill_data()
+
+
+func get_selected_species_id() -> String:
+	return species_option_button.get_item_text(species_option_button.selected) if 0 <= species_option_button.selected else ""
+
+
+func get_selected_race_id() -> String:
+	return race_option_button.get_item_text(race_option_button.selected) if 0 <= race_option_button.selected else ""
+
+
+func get_selected_gender_id() -> String:
+	return gender_option_button.get_item_metadata(gender_option_button.selected) if 0 <= gender_option_button.selected else ""
+
+
+func save() -> void:
+	if current_character != -1:
+		save_current_character()
 	
-	character_memory.clear()
-	_characters_resource.save()
+	characters_resource.save()

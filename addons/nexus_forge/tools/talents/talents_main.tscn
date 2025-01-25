@@ -1,20 +1,15 @@
-[gd_scene load_steps=16 format=3 uid="uid://dt7vndut1j8qv"]
+[gd_scene load_steps=10 format=3 uid="uid://dt7vndut1j8qv"]
 
 [ext_resource type="Texture2D" uid="uid://c1aelqf557khb" path="res://addons/nexus_forge/common_icons/plus_icon.svg" id="1_buyl6"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/talents/talents_main_script.gd" id="1_e4wsj"]
-[ext_resource type="Texture2D" uid="uid://b8q6di4imiriq" path="res://addons/nexus_forge/common_icons/search_icon.svg" id="1_h67ip"]
 [ext_resource type="Texture2D" uid="uid://bx226t88nlc4v" path="res://addons/nexus_forge/common_icons/trash_bin.svg" id="3_2kjm8"]
-[ext_resource type="Texture2D" uid="uid://d0fjli5ciirws" path="res://addons/nexus_forge/common_icons/folder_icon.svg" id="3_de8x4"]
-[ext_resource type="Texture2D" uid="uid://12lyg7db58dg" path="res://addons/nexus_forge/common_icons/variables/add_int.svg" id="3_x82do"]
-[ext_resource type="Texture2D" uid="uid://dcgniolhiay6u" path="res://addons/nexus_forge/common_icons/variables/add_float.svg" id="4_ltayi"]
-[ext_resource type="Texture2D" uid="uid://cd4jt2ru86e16" path="res://addons/nexus_forge/common_icons/save_file.svg" id="5_jswh7"]
-[ext_resource type="Texture2D" uid="uid://c472l5bho4jpi" path="res://addons/nexus_forge/common_icons/variables/add_bool.svg" id="5_nr5b0"]
-[ext_resource type="Script" path="res://addons/nexus_forge/tools/talents/perk_tree_script.gd" id="5_rmgq1"]
-[ext_resource type="Texture2D" uid="uid://cxv7veghytl4m" path="res://addons/nexus_forge/common_icons/variables/add_string.svg" id="6_h36c1"]
-[ext_resource type="Script" path="res://addons/nexus_forge/tools/talents/flags_tree_script.gd" id="6_og1nq"]
-[ext_resource type="Script" path="res://addons/nexus_forge/tools/talents/req_stats_tree.gd" id="7_u5r1e"]
-[ext_resource type="Script" path="res://addons/nexus_forge/tools/talents/req_perk_tree.gd" id="8_34pmq"]
-[ext_resource type="Script" path="res://addons/nexus_forge/tools/talents/req_variables_tree_script.gd" id="13_kkdeb"]
+[ext_resource type="Texture2D" uid="uid://12lyg7db58dg" path="res://addons/nexus_forge/common_icons/variables/add_int.svg" id="4_2dcue"]
+[ext_resource type="Texture2D" uid="uid://dcgniolhiay6u" path="res://addons/nexus_forge/common_icons/variables/add_float.svg" id="5_jte7m"]
+[ext_resource type="Texture2D" uid="uid://c472l5bho4jpi" path="res://addons/nexus_forge/common_icons/variables/add_bool.svg" id="6_pfvga"]
+[ext_resource type="Texture2D" uid="uid://cxv7veghytl4m" path="res://addons/nexus_forge/common_icons/variables/add_string.svg" id="7_ktu3r"]
+[ext_resource type="Script" path="res://addons/nexus_forge/classes/simple_data_tree.gd" id="8_0boio"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_40quh"]
 
 [node name="Talents" type="Control"]
 layout_mode = 3
@@ -32,6 +27,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxEmpty_40quh")
 
 [node name="MainMargin" type="MarginContainer" parent="MainPanel"]
 layout_mode = 2
@@ -70,6 +66,9 @@ size_flags_horizontal = 3
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
+selected = 0
+item_count = 1
+popup/item_0/text = "cooking"
 
 [node name="CreateSkillBtn" type="Button" parent="MainPanel/MainMargin/MainContainer/SkillsContainer/SkillSelectContainer/SkillContainer"]
 custom_minimum_size = Vector2(32, 32)
@@ -97,68 +96,121 @@ custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Cooking"
-
-[node name="HBoxContainer3" type="HBoxContainer" parent="MainPanel/MainMargin/MainContainer/SkillsContainer"]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="MainPanel/MainMargin/MainContainer/SkillsContainer/HBoxContainer3"]
-custom_minimum_size = Vector2(80, 0)
-layout_mode = 2
-text = "Icon"
-vertical_alignment = 1
-
-[node name="IconPathPanel" type="PanelContainer" parent="MainPanel/MainMargin/MainContainer/SkillsContainer/HBoxContainer3"]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="DataContainer" type="HBoxContainer" parent="MainPanel/MainMargin/MainContainer/SkillsContainer/HBoxContainer3/IconPathPanel"]
-layout_mode = 2
-theme_override_constants/separation = 0
-
-[node name="IconPathLnEdt" type="LineEdit" parent="MainPanel/MainMargin/MainContainer/SkillsContainer/HBoxContainer3/IconPathPanel/DataContainer"]
-custom_minimum_size = Vector2(0, 32)
-layout_mode = 2
-size_flags_horizontal = 3
-editable = false
-flat = true
-
-[node name="BrowseIconBtn" type="Button" parent="MainPanel/MainMargin/MainContainer/SkillsContainer/HBoxContainer3/IconPathPanel/DataContainer"]
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 2
-icon = ExtResource("3_de8x4")
-flat = true
-icon_alignment = 1
-
-[node name="LimitContainer" type="HBoxContainer" parent="MainPanel/MainMargin/MainContainer/SkillsContainer"]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="MainPanel/MainMargin/MainContainer/SkillsContainer/LimitContainer"]
-custom_minimum_size = Vector2(80, 0)
-layout_mode = 2
-text = "Max Level"
-vertical_alignment = 1
-
-[node name="SkillLimitSpnBx" type="SpinBox" parent="MainPanel/MainMargin/MainContainer/SkillsContainer/LimitContainer"]
-custom_minimum_size = Vector2(0, 32)
-layout_mode = 2
-size_flags_horizontal = 3
-min_value = 1.0
-max_value = 9999.0
-value = 20.0
+placeholder_text = "Skill Name"
 
 [node name="DesContainer" type="VBoxContainer" parent="MainPanel/MainMargin/MainContainer/SkillsContainer"]
 layout_mode = 2
-size_flags_vertical = 3
 
 [node name="Label" type="Label" parent="MainPanel/MainMargin/MainContainer/SkillsContainer/DesContainer"]
 layout_mode = 2
 text = "Description"
 
-[node name="DescTxtEdt" type="TextEdit" parent="MainPanel/MainMargin/MainContainer/SkillsContainer/DesContainer"]
+[node name="SkillDescTxtEdt" type="TextEdit" parent="MainPanel/MainMargin/MainContainer/SkillsContainer/DesContainer"]
+custom_minimum_size = Vector2(0, 100)
 layout_mode = 2
 size_flags_vertical = 3
-text = "How efficient you're in the kitchen."
+text = "Getting the grill out"
+placeholder_text = "Skill Description"
 wrap_mode = 1
+
+[node name="RangeContainer" type="HBoxContainer" parent="MainPanel/MainMargin/MainContainer/SkillsContainer"]
+layout_mode = 2
+
+[node name="InitialContainer" type="HBoxContainer" parent="MainPanel/MainMargin/MainContainer/SkillsContainer/RangeContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 1
+
+[node name="Label" type="Label" parent="MainPanel/MainMargin/MainContainer/SkillsContainer/RangeContainer/InitialContainer"]
+layout_mode = 2
+text = "Initial Level"
+
+[node name="InitialSkillLevelSpnBx" type="SpinBox" parent="MainPanel/MainMargin/MainContainer/SkillsContainer/RangeContainer/InitialContainer"]
+custom_minimum_size = Vector2(32, 0)
+layout_mode = 2
+value = 1.0
+alignment = 1
+
+[node name="VSeparator" type="VSeparator" parent="MainPanel/MainMargin/MainContainer/SkillsContainer/RangeContainer"]
+layout_mode = 2
+
+[node name="MaxContainer" type="HBoxContainer" parent="MainPanel/MainMargin/MainContainer/SkillsContainer/RangeContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 1
+
+[node name="Label" type="Label" parent="MainPanel/MainMargin/MainContainer/SkillsContainer/RangeContainer/MaxContainer"]
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+text = "Max Level"
+vertical_alignment = 1
+
+[node name="SkillLimitSpnBx" type="SpinBox" parent="MainPanel/MainMargin/MainContainer/SkillsContainer/RangeContainer/MaxContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+min_value = 1.0
+max_value = 9999.0
+value = 20.0
+alignment = 1
+
+[node name="DataContainer" type="VBoxContainer" parent="MainPanel/MainMargin/MainContainer/SkillsContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="DataHeader" type="HBoxContainer" parent="MainPanel/MainMargin/MainContainer/SkillsContainer/DataContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainPanel/MainMargin/MainContainer/SkillsContainer/DataContainer/DataHeader"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Skill Data"
+vertical_alignment = 1
+
+[node name="ButtonContainer" type="HBoxContainer" parent="MainPanel/MainMargin/MainContainer/SkillsContainer/DataContainer/DataHeader"]
+layout_mode = 2
+
+[node name="SkillIntBtn" type="Button" parent="MainPanel/MainMargin/MainContainer/SkillsContainer/DataContainer/DataHeader/ButtonContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Add Integer Data"
+icon = ExtResource("4_2dcue")
+flat = true
+icon_alignment = 1
+
+[node name="SkillFltBtn" type="Button" parent="MainPanel/MainMargin/MainContainer/SkillsContainer/DataContainer/DataHeader/ButtonContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Add Float Data"
+icon = ExtResource("5_jte7m")
+flat = true
+icon_alignment = 1
+
+[node name="SkillBoolBtn" type="Button" parent="MainPanel/MainMargin/MainContainer/SkillsContainer/DataContainer/DataHeader/ButtonContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Add Bool Data"
+icon = ExtResource("6_pfvga")
+flat = true
+icon_alignment = 1
+
+[node name="SkillStrBtn" type="Button" parent="MainPanel/MainMargin/MainContainer/SkillsContainer/DataContainer/DataHeader/ButtonContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Add String Data"
+icon = ExtResource("7_ktu3r")
+flat = true
+icon_alignment = 1
+
+[node name="SkillDataTree" type="Tree" parent="MainPanel/MainMargin/MainContainer/SkillsContainer/DataContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+columns = 2
+column_titles_visible = true
+allow_reselect = true
+hide_folding = true
+hide_root = true
+script = ExtResource("8_0boio")
 
 [node name="VSeparator" type="VSeparator" parent="MainPanel/MainMargin/MainContainer"]
 layout_mode = 2
@@ -169,277 +221,11 @@ layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 2.0
 
-[node name="HBoxContainer" type="HBoxContainer" parent="MainPanel/MainMargin/MainContainer/PerksContainer"]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="MainPanel/MainMargin/MainContainer/PerksContainer/HBoxContainer"]
+[node name="Label" type="Label" parent="MainPanel/MainMargin/MainContainer/PerksContainer"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.223529, 0.705882, 0.905882, 1)
 theme_override_font_sizes/font_size = 25
 text = "Perks"
-
-[node name="SaveBtn" type="Button" parent="MainPanel/MainMargin/MainContainer/PerksContainer/HBoxContainer"]
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 2
-size_flags_horizontal = 10
-icon = ExtResource("5_jswh7")
-flat = true
-icon_alignment = 1
-expand_icon = true
-
-[node name="DataContainer" type="HBoxContainer" parent="MainPanel/MainMargin/MainContainer/PerksContainer"]
-layout_mode = 2
-size_flags_vertical = 3
-
-[node name="LeftContainer" type="VBoxContainer" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_stretch_ratio = 3.0
-
-[node name="PerkAndFlagsContainer" type="HBoxContainer" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/LeftContainer"]
-layout_mode = 2
-size_flags_vertical = 3
-
-[node name="PerksContainer" type="VBoxContainer" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/LeftContainer/PerkAndFlagsContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-size_flags_stretch_ratio = 3.0
-
-[node name="PerkBarContainer" type="HBoxContainer" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/LeftContainer/PerkAndFlagsContainer/PerksContainer"]
-layout_mode = 2
-
-[node name="PerkSearchLnEdt" type="LineEdit" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/LeftContainer/PerkAndFlagsContainer/PerksContainer/PerkBarContainer"]
-custom_minimum_size = Vector2(0, 32)
-layout_mode = 2
-size_flags_horizontal = 3
-placeholder_text = "Search Perk"
-clear_button_enabled = true
-right_icon = ExtResource("1_h67ip")
-
-[node name="CreatePerkBtn" type="Button" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/LeftContainer/PerkAndFlagsContainer/PerksContainer/PerkBarContainer"]
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 2
-tooltip_text = "Create Perk"
-icon = ExtResource("1_buyl6")
-icon_alignment = 1
-
-[node name="PerkTree" type="Tree" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/LeftContainer/PerkAndFlagsContainer/PerksContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-size_flags_stretch_ratio = 3.0
-columns = 3
-column_titles_visible = true
-allow_reselect = true
-hide_folding = true
-hide_root = true
-scroll_horizontal_enabled = false
-script = ExtResource("5_rmgq1")
-default_name = "new_perk"
-
-[node name="PerkInfo" type="HBoxContainer" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/LeftContainer"]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/LeftContainer/PerkInfo"]
-layout_mode = 2
-text = "Current perk:"
-
-[node name="CurrentPerkLbl" type="Label" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/LeftContainer/PerkInfo"]
-custom_minimum_size = Vector2(0, 30)
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.528429, 0.849634, 1, 1)
-vertical_alignment = 1
-text_overrun_behavior = 3
-
-[node name="PerkDescContainer" type="HBoxContainer" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/LeftContainer"]
-layout_mode = 2
-size_flags_vertical = 3
-
-[node name="DataContainer" type="VBoxContainer" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/LeftContainer/PerkDescContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-size_flags_stretch_ratio = 2.0
-
-[node name="Label" type="Label" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/LeftContainer/PerkDescContainer/DataContainer"]
-custom_minimum_size = Vector2(0, 32)
-layout_mode = 2
-text = "Perk Description"
-vertical_alignment = 1
-
-[node name="PerkDescTxtEdt" type="TextEdit" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/LeftContainer/PerkDescContainer/DataContainer"]
-layout_mode = 2
-size_flags_vertical = 3
-wrap_mode = 1
-
-[node name="FlagsContainer" type="VBoxContainer" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/LeftContainer/PerkDescContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-size_flags_stretch_ratio = 2.0
-
-[node name="Label" type="Label" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/LeftContainer/PerkDescContainer/FlagsContainer"]
-custom_minimum_size = Vector2(0, 32)
-layout_mode = 2
-text = "Flags"
-vertical_alignment = 1
-
-[node name="FlagsTree" type="Tree" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/LeftContainer/PerkDescContainer/FlagsContainer"]
-layout_mode = 2
-size_flags_vertical = 3
-hide_folding = true
-hide_root = true
-scroll_horizontal_enabled = false
-script = ExtResource("6_og1nq")
-
-[node name="ReqContainer" type="VBoxContainer" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-size_flags_stretch_ratio = 2.0
-
-[node name="LevelRequirement" type="HBoxContainer" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer"]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer/LevelRequirement"]
-custom_minimum_size = Vector2(0, 32)
-layout_mode = 2
-text = "Requirements"
-vertical_alignment = 1
-
-[node name="LevelContainer" type="HBoxContainer" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer/LevelRequirement"]
-layout_mode = 2
-size_flags_horizontal = 3
-alignment = 2
-
-[node name="Label" type="Label" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer/LevelRequirement/LevelContainer"]
-layout_mode = 2
-text = "Level"
-
-[node name="PerkLvlSpnBx" type="SpinBox" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer/LevelRequirement/LevelContainer"]
-layout_mode = 2
-min_value = 1.0
-max_value = 1.0
-value = 1.0
-alignment = 1
-editable = false
-
-[node name="Stats" type="VBoxContainer" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer"]
-layout_mode = 2
-size_flags_vertical = 3
-size_flags_stretch_ratio = 5.0
-
-[node name="StatLineContainer" type="HBoxContainer" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer/Stats"]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer/Stats/StatLineContainer"]
-custom_minimum_size = Vector2(54, 0)
-layout_mode = 2
-text = "Skills"
-
-[node name="SearchSkillLnEdt" type="LineEdit" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer/Stats/StatLineContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-placeholder_text = "Search Skill"
-editable = false
-clear_button_enabled = true
-right_icon = ExtResource("1_h67ip")
-
-[node name="SkillsReqTree" type="Tree" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer/Stats"]
-layout_mode = 2
-size_flags_vertical = 3
-columns = 3
-allow_reselect = true
-hide_folding = true
-hide_root = true
-scroll_horizontal_enabled = false
-script = ExtResource("7_u5r1e")
-
-[node name="PerksCotainer" type="VBoxContainer" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer"]
-layout_mode = 2
-size_flags_vertical = 3
-size_flags_stretch_ratio = 5.0
-
-[node name="PerkSearchContainer" type="HBoxContainer" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer/PerksCotainer"]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer/PerksCotainer/PerkSearchContainer"]
-custom_minimum_size = Vector2(54, 0)
-layout_mode = 2
-text = "Perks"
-
-[node name="PerkSearchLnEdt" type="LineEdit" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer/PerksCotainer/PerkSearchContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-placeholder_text = "Search Perk"
-editable = false
-clear_button_enabled = true
-right_icon = ExtResource("1_h67ip")
-
-[node name="PerkReqTree" type="Tree" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer/PerksCotainer"]
-layout_mode = 2
-size_flags_vertical = 3
-columns = 3
-hide_root = true
-scroll_horizontal_enabled = false
-script = ExtResource("8_34pmq")
-
-[node name="Variables" type="VBoxContainer" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer"]
-layout_mode = 2
-size_flags_vertical = 3
-size_flags_stretch_ratio = 6.0
-
-[node name="VariableBtnContainer" type="HBoxContainer" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer/Variables"]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer/Variables/VariableBtnContainer"]
-layout_mode = 2
-text = "Variables"
-
-[node name="ButtonContainer" type="HBoxContainer" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer/Variables/VariableBtnContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-alignment = 2
-
-[node name="AddIntBtn" type="Button" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer/Variables/VariableBtnContainer/ButtonContainer"]
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 2
-disabled = true
-icon = ExtResource("3_x82do")
-icon_alignment = 1
-
-[node name="AddFltBtn" type="Button" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer/Variables/VariableBtnContainer/ButtonContainer"]
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 2
-disabled = true
-icon = ExtResource("4_ltayi")
-icon_alignment = 1
-
-[node name="AddBoolBtn" type="Button" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer/Variables/VariableBtnContainer/ButtonContainer"]
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 2
-disabled = true
-icon = ExtResource("5_nr5b0")
-icon_alignment = 1
-
-[node name="AddStrBtn" type="Button" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer/Variables/VariableBtnContainer/ButtonContainer"]
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 2
-disabled = true
-icon = ExtResource("6_h36c1")
-icon_alignment = 1
-
-[node name="VariablesTree" type="Tree" parent="MainPanel/MainMargin/MainContainer/PerksContainer/DataContainer/ReqContainer/Variables"]
-layout_mode = 2
-size_flags_vertical = 3
-columns = 4
-allow_reselect = true
-hide_folding = true
-hide_root = true
-scroll_horizontal_enabled = false
-script = ExtResource("13_kkdeb")
 
 [node name="Components" type="Node" parent="."]
 

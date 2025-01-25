@@ -25,7 +25,7 @@ var current_item: String = ""
 var current_station: String = ""
 var current_recipe: String = ""
 var items_resource: NFItemsRes = null
-
+var _switching: bool = false
 
 
 
@@ -145,7 +145,7 @@ func _ready() -> void:
 	depot_tree.rarity_reindexed.connect(_on_rarity_reindexed)
 	depot_tree.rarity_deleted.connect(_on_rarity_deleted)
 	depot_tree.rarity_renamed.connect(_on_rarity_renamed)
-	currency_val_spn_bx.get_line_edit().text_changed.connect(_on_currency_text_changed)
+	currency_val_spn_bx.value_changed.connect(_on_currency_value_changed)
 	depot_tree.currency_selected.connect(_on_currency_selected)
 	depot_tree.currency_created.connect(_on_currency_created)
 	depot_tree.currency_id_changed.connect(_on_currency_id_changed)
@@ -176,45 +176,45 @@ func _ready() -> void:
 	
 	refresh_btn.pressed.connect(_on_item_refresh_btn_pressed)
 	
-	add_item_int_btn.pressed.connect(_on_add_item_data_btn_pressed.bind("new_int", 0))
-	add_item_float_btn.pressed.connect(_on_add_item_data_btn_pressed.bind("new_float", 0.0))
-	add_item_bool_btn.pressed.connect(_on_add_item_data_btn_pressed.bind("new_bool", false))
-	add_item_str_btn.pressed.connect(_on_add_item_data_btn_pressed.bind("new_string", ""))
+	add_item_int_btn.pressed.connect(_on_add_item_data_pressed.bind("new_int", 0))
+	add_item_float_btn.pressed.connect(_on_add_item_data_pressed.bind("new_float", 0.0))
+	add_item_bool_btn.pressed.connect(_on_add_item_data_pressed.bind("new_bool", false))
+	add_item_str_btn.pressed.connect(_on_add_item_data_pressed.bind("new_string", ""))
 	
 	rarity_data_tree.item_edited.connect(_on_rarity_data_edited)
-	rarity_data_tree.button_clicked.connect(_on_data_tree_button_clicked)
+	#rarity_data_tree.button_clicked.connect(_on_data_tree_button_clicked)
 	
 	currency_data_tree.item_edited.connect(_on_currency_data_edited)
-	currency_data_tree.button_clicked.connect(_on_data_tree_button_clicked)
+	#currency_data_tree.button_clicked.connect(_on_data_tree_button_clicked)
 	
 	add_rarity_int_btn.pressed.connect(_on_add_rarity_data_btn_pressed.bind("new_int", 0))
 	add_rarity_float_btn.pressed.connect(_on_add_rarity_data_btn_pressed.bind("new_float", 0.0))
 	add_rarity_bool_btn.pressed.connect(_on_add_rarity_data_btn_pressed.bind("new_bool", false))
 	add_rarity_str_btn.pressed.connect(_on_add_rarity_data_btn_pressed.bind("new_string", ""))
 	
-	add_crr_int_btn.pressed.connect(_on_add_currency_data_btn_pressed.bind("new_int", 0))
-	add_crr_float_btn.pressed.connect(_on_add_currency_data_btn_pressed.bind("new_float", 0.0))
-	add_crr_bool_btn.pressed.connect(_on_add_currency_data_btn_pressed.bind("new_bool", false))
-	add_crr_str_btn.pressed.connect(_on_add_currency_data_btn_pressed.bind("new_string", ""))
+	add_crr_int_btn.pressed.connect(_on_add_currency_data_pressed.bind("new_int", 0))
+	add_crr_float_btn.pressed.connect(_on_add_currency_data_pressed.bind("new_float", 0.0))
+	add_crr_bool_btn.pressed.connect(_on_add_currency_data_pressed.bind("new_bool", false))
+	add_crr_str_btn.pressed.connect(_on_add_currency_data_pressed.bind("new_string", ""))
 	
-	add_station_int.pressed.connect(_on_add_station_data_btn_pressed.bind("new_int", 0))
-	add_station_float.pressed.connect(_on_add_station_data_btn_pressed.bind("new_float", 0.0))
-	add_station_bool.pressed.connect(_on_add_station_data_btn_pressed.bind("new_bool", false))
-	add_station_string.pressed.connect(_on_add_station_data_btn_pressed.bind("new_string", ""))
+	add_station_int.pressed.connect(_on_add_station_data_pressed.bind("new_int", 0))
+	add_station_float.pressed.connect(_on_add_station_data_pressed.bind("new_float", 0.0))
+	add_station_bool.pressed.connect(_on_add_station_data_pressed.bind("new_bool", false))
+	add_station_string.pressed.connect(_on_add_station_data_pressed.bind("new_string", ""))
 	
 	rarity_name_ln_edt.focus_exited.connect(_on_rarity_name_focus_lost)
 	rarity_name_ln_edt.text_submitted.connect(_on_rarity_name_text_submitted)
 	
-	item_data_tree.item_edited.connect(_on_item_data_id_edited)
-	item_data_tree.button_clicked.connect(_on_data_tree_button_clicked)
+	#item_data_tree.item_edited.connect(_on_item_data_id_edited)
+	#item_data_tree.button_clicked.connect(_on_data_tree_button_clicked)
 	
-	add_recipe_data_int_btn.pressed.connect(_on_add_recipe_data_btn_pressed.bind("new_int", 0))
-	add_recipe_data_flt_btn.pressed.connect(_on_add_recipe_data_btn_pressed.bind("new_float", 0.0))
-	add_recipe_data_bool_btn.pressed.connect(_on_add_recipe_data_btn_pressed.bind("new_bool", false))
-	add_recipe_data_str_btn.pressed.connect(_on_add_recipe_data_btn_pressed.bind("new_string", ""))
+	add_recipe_data_int_btn.pressed.connect(_on_add_recipe_data_pressed.bind("new_int", 0))
+	add_recipe_data_flt_btn.pressed.connect(_on_add_recipe_data_pressed.bind("new_float", 0.0))
+	add_recipe_data_bool_btn.pressed.connect(_on_add_recipe_data_pressed.bind("new_bool", false))
+	add_recipe_data_str_btn.pressed.connect(_on_add_recipe_data_pressed.bind("new_string", ""))
 	
 	recipe_data_tree.item_edited.connect(_on_recipe_item_edited)
-	recipe_data_tree.button_clicked.connect(_on_data_tree_button_clicked)
+	#recipe_data_tree.button_clicked.connect(_on_data_tree_button_clicked)
 	
 	create_item_btn.pressed.connect(_on_create_item_button_pressed)
 	
@@ -224,8 +224,8 @@ func _ready() -> void:
 	station_recipes_tree.item_selected.connect(_on_crafting_recipe_selected)
 	station_recipes_tree.button_clicked.connect(_on_station_recipes_button_clicked)
 	
-	station_data_tree.item_edited.connect(_on_station_data_item_edited)
-	station_data_tree.button_clicked.connect(_on_data_tree_button_clicked)
+	#station_data_tree.item_edited.connect(_on_station_data_item_edited)
+	#station_data_tree.button_clicked.connect(_on_data_tree_button_clicked)
 	
 	search_rcp_item_ln_edt.text_submitted.connect(_on_search_recipe_text_submitted)
 	
@@ -260,6 +260,22 @@ func _input(event: InputEvent) -> void:
 			else:
 				create_item_btn.grab_focus()
 			get_viewport().set_input_as_handled()
+
+
+func _on_add_item_data_pressed(data_name: String, data: Variant) -> void:
+	item_data_tree.add_data(data_name, data)
+
+
+func _on_add_currency_data_pressed(data_name: String, data: Variant) -> void:
+	currency_data_tree.add_data(data_name, data)
+
+
+func _on_add_station_data_pressed(data_name: String, data: Variant) -> void:
+	station_data_tree.add_data(data_name, data)
+
+
+func _on_add_recipe_data_pressed(data_name: String, data: Variant) -> void:
+	recipe_data_tree.add_data(data_name, data)
 
 
 func _on_search_depot_text_changed(new_text: String) -> void:
@@ -508,18 +524,18 @@ func _on_recipe_tree_item_edited() -> void:
 	edited.get_metadata(0)["id"] = new_name
 
 
-func _on_station_data_item_edited() -> void:
-	if station_data_tree.get_edited_column() != 0:
-		return
-	
-	var edited: TreeItem = station_data_tree.get_edited()
-	var new_id: String = get_valid_id(
-			station_data_tree.get_root(),
-			0,
-			edited.get_text(0),
-			edited,
-			"station_data")
-	edited.set_text(0, new_id)
+#func _on_station_data_item_edited() -> void:
+	#if station_data_tree.get_edited_column() != 0:
+		#return
+	#
+	#var edited: TreeItem = station_data_tree.get_edited()
+	#var new_id: String = get_valid_id(
+			#station_data_tree.get_root(),
+			#0,
+			#edited.get_text(0),
+			#edited,
+			#"station_data")
+	#edited.set_text(0, new_id)
 
 
 func _on_item_refresh_btn_pressed() -> void:
@@ -802,9 +818,12 @@ func _on_item_category_renamed(from: String, to: String) -> void:
 func _on_currency_selected(currency_id: String) -> void:
 	if not currency_data_container.visible:
 		set_data_visible(1)
-	
 	if current_currency == currency_id:
 		return
+	
+	if _switching:
+		return
+	_switching = true
 	
 	if not current_currency.is_empty():
 		save_currency_data()
@@ -813,13 +832,16 @@ func _on_currency_selected(currency_id: String) -> void:
 	
 	current_currency = currency_id
 	currency_name_ln_edt.text = items_resource.get_currency_name(currency_id)
+	
 	for currency_data_key in items_resource.get_currency_data_keys(currency_id):
 		add_item_data(
 				currency_data_tree.get_root(),
 				currency_data_key,
-				items_resource.get_currency_data(currency_id, currency_data_key))
+				currency_val_spn_bx.value)
+				#items_resource.get_currency_data(currency_id, currency_data_key))
 	currency_val_spn_bx.set_value_no_signal(items_resource.get_currency_value(currency_id))
 	currency_val_spn_bx.get_line_edit().text = str(currency_val_spn_bx.value)
+	_switching = false
 
 
 func _on_currency_deleted(currency_id: String) -> void:
@@ -866,14 +888,17 @@ func set_data_visible(id: int) -> void:
 
 
 func _on_currency_value_changed(new_value: int) -> void:
+	if _switching:
+		return
 	depot_tree.update_currency_value(current_currency, new_value)
 
 
-func _on_currency_text_changed(new_text: String) -> void:
-	if new_text.is_valid_int():
-		depot_tree.update_currency_value(current_currency, maxi(currency_val_spn_bx.min_value, int(new_text)))
-	else:
-		depot_tree.update_currency_value(current_currency, currency_val_spn_bx.value)
+#func _on_currency_text_changed(new_text: String) -> void:
+	#if new_text.is_valid_int():
+		#depot_tree.update_currency_value(current_currency, maxi(currency_val_spn_bx.min_value, int(new_text)))
+	#else:
+		#depot_tree.update_currency_value(current_currency, currency_val_spn_bx.value)
+	#print(depot_tree.get_currency_value(current_currency))
 
 
 func _on_rarity_renamed(idx: int, new_name: String) -> void:
@@ -954,26 +979,26 @@ func add_item_data(on_tree: TreeItem, data_id: String, new_data: Variant) -> voi
 	new_item.add_button(1, TRASH_BIN, 0, false, "Remove Data")
 
 
-func _on_add_item_data_btn_pressed(data_id: String, new_data: Variant) -> void:
-	add_item_data(item_data_tree.get_root(), data_id, new_data)
+#func _on_add_item_data_btn_pressed(data_id: String, new_data: Variant) -> void:
+	#add_item_data(item_data_tree.get_root(), data_id, new_data)
+#
+#
+#func _on_add_currency_data_btn_pressed(data_id: String, new_data: Variant) -> void:
+	#add_item_data(currency_data_tree.get_root(), data_id, new_data)
+#
+#
+#func _on_add_station_data_btn_pressed(data_id: String, new_data: Variant) -> void:
+	#add_item_data(station_data_tree.get_root(), data_id, new_data)
+#
+#
+#func _on_add_recipe_data_btn_pressed(data_id: String, new_data: Variant) -> void:
+	#add_item_data(recipe_data_tree.get_root(), data_id, new_data)
 
 
-func _on_add_currency_data_btn_pressed(data_id: String, new_data: Variant) -> void:
-	add_item_data(currency_data_tree.get_root(), data_id, new_data)
-
-
-func _on_add_station_data_btn_pressed(data_id: String, new_data: Variant) -> void:
-	add_item_data(station_data_tree.get_root(), data_id, new_data)
-
-
-func _on_add_recipe_data_btn_pressed(data_id: String, new_data: Variant) -> void:
-	add_item_data(recipe_data_tree.get_root(), data_id, new_data)
-
-
-func _on_data_tree_button_clicked(item: TreeItem, column: int, id: int, mouse_button_index: int) -> void:
-	match id:
-		0: # Delete
-			item.free()
+#func _on_data_tree_button_clicked(item: TreeItem, column: int, id: int, mouse_button_index: int) -> void:
+	#match id:
+		#0: # Delete
+			#item.free()
 
 
 # This is an almost identical to the one on top. Maybe merging it with extra
@@ -1044,16 +1069,16 @@ func _on_currency_data_edited() -> void:
 	edited.get_metadata(0)["id"] = new_id
 
 
-func _on_item_data_id_edited() -> void:
-	if item_data_tree.get_edited_column() != 0:
-		return
+#func _on_item_data_id_edited() -> void:
+	#if item_data_tree.get_edited_column() != 0:
+		#return
+	#
+	#var edited: TreeItem = item_data_tree.get_edited()
+	#var new_id: String = get_data_valid_id(item_data_tree.get_root(), edited.get_text(0), edited)
+	#
+	#edited.set_text(0, new_id)
 	
-	var edited: TreeItem = item_data_tree.get_edited()
-	var new_id: String = get_data_valid_id(item_data_tree.get_root(), edited.get_text(0), edited)
-	
-	edited.set_text(0, new_id)
-	# Modify in memory
-	edited.get_metadata(0)["id"] = new_id
+	#edited.get_metadata(0)["id"] = new_id
 
 
 func save_item_data() -> void:
@@ -1091,7 +1116,7 @@ func save_item_data() -> void:
 			TreeItem.CELL_MODE_CHECK:
 				data = item_data.is_checked(1)
 			TreeItem.CELL_MODE_STRING:
-				data = item_data.get_text(0)
+				data = item_data.get_text(1)
 		item_data_dict[item_data.get_text(0)] = data
 	
 	items_resource.get_item_category_dict(current_item_category)["items"][current_item]["data"] = item_data_dict
@@ -1203,13 +1228,12 @@ func clear_item_data() -> void:
 	stack_size_spn_bx.value = stack_size_spn_bx.min_value
 	item_val_spn_bx.value = 0
 	rarities_opt_btn.select(rarities_opt_btn.item_count - 1)
-	#icon_ln_edt.clear()
-	clear_item_data_tree()
+	item_data_tree.clear_data()
 
 
-func clear_item_data_tree() -> void:
-	for item in item_data_tree.get_root().get_children():
-		item.free()
+#func clear_item_data_tree() -> void:
+	#for item in item_data_tree.get_root().get_children():
+		#item.free()
 
 
 func clear_rarity_data_tree() -> void:

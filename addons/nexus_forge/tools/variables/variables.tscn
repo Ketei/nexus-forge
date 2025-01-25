@@ -9,7 +9,7 @@
 [ext_resource type="Texture2D" uid="uid://cd4jt2ru86e16" path="res://addons/nexus_forge/common_icons/save_file.svg" id="5_l8ff6"]
 [ext_resource type="Texture2D" uid="uid://dcgniolhiay6u" path="res://addons/nexus_forge/common_icons/variables/add_float.svg" id="5_o2qef"]
 [ext_resource type="Texture2D" uid="uid://c472l5bho4jpi" path="res://addons/nexus_forge/common_icons/variables/add_bool.svg" id="6_dmfoy"]
-[ext_resource type="Texture2D" uid="uid://bbkubj3vinsms" path="res://addons/nexus_forge/tools/variables/icons/add_variable_icon.svg" id="6_qhc38"]
+[ext_resource type="Texture2D" uid="uid://bbkubj3vinsms" path="res://addons/nexus_forge/common_icons/variables/add_variable_icon.svg" id="6_qhc38"]
 [ext_resource type="Texture2D" uid="uid://cxv7veghytl4m" path="res://addons/nexus_forge/common_icons/variables/add_string.svg" id="7_wd8y6"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/variables/folder_delete_confirm_script.gd" id="10_4j6kw"]
 

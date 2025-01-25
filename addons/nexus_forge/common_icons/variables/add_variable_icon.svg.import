@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bbkubj3vinsms"
-path="res://.godot/imported/add_variable_icon.svg-53d3bfb4db95929cbcc33795a4008d48.ctex"
+path="res://.godot/imported/add_variable_icon.svg-5a2265be0c7bc2cf5c7bca6050b91033.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://addons/nexus_forge/tools/variables/icons/add_variable_icon.svg"
-dest_files=["res://.godot/imported/add_variable_icon.svg-53d3bfb4db95929cbcc33795a4008d48.ctex"]
+source_file="res://addons/nexus_forge/common_icons/variables/add_variable_icon.svg"
+dest_files=["res://.godot/imported/add_variable_icon.svg-5a2265be0c7bc2cf5c7bca6050b91033.ctex"]
 
 [params]
 

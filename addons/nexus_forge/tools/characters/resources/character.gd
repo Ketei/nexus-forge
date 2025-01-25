@@ -2,6 +2,18 @@ class_name CharacterDefinition
 extends Resource
 
 
+var a = {
+	"name": "",
+	"color": Color.WHITE,
+	"species": "",
+	"race": "",
+	"factions": {},
+	"skills": {},
+	"variants": {},
+	"data": {},
+}
+
+
 ## The display name of the character.
 @export var character_name: String = ""
 ## The color the character name will appear as on the textbox.
@@ -12,8 +24,6 @@ extends Resource
 ## The race of this character. The races are contained within the project's
 ## NexusForgeRaces resource.
 @export var character_race: String = ""
-## The gender of the character.
-@export var character_gender := NFRacesRes.Genders.MALE
 ## The flags this character has enabled.
 @export var flags: int = 0
 ## Custom data set by the user.
@@ -282,18 +292,3 @@ func load_portrait_frames() -> SpriteFrames:
 ## Loads the typing sound resource and returns it.
 func load_typing_sound() -> AudioStream:
 	return load(typing_sound_path)
-
-
-## Adds a character flag. Check [enum NexusForgeRaces.Flags] for flags.
-func set_flag(flag: NFRacesRes.Flags) -> void:
-	flags |= 1 << flag
-
-
-## Removes a flag from the character.
-func clear_flag(flag: NFRacesRes.Flags) -> void:
-	flags ^= 1 << flag
-
-
-## Check if this character has a flag.
-func has_flag(flag: NFRacesRes.Flags) -> bool:
-	return (flags & (1 << flag)) != 0

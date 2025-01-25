@@ -2,72 +2,59 @@
 extends Control
 
 
-const SPECIES_DIALOG = preload("res://addons/nexus_forge/tools/characters/races/species_dialog.tscn")
-var _race_resource: NFRacesRes = null
-var species_selected: bool = false:
-	set(is_selected):
-		if is_selected == species_selected:
-			return
-		species_selected = is_selected
+const LineEditConfirmationDialog = preload("res://addons/nexus_forge/classes/line_edit_confirmation_dialog.gd")
+var race_resource: NFRacesRes = null
+var no_race_panel: PanelContainer = null 
+
+
+var current_species: int = -1:
+	set(new_idx):
+		current_species = new_idx
+		var species_selected: bool = 0 <= new_idx
 		species_name_l_edit.editable = species_selected
 		create_race_btn.disabled = not species_selected
 		delete_species_btn.disabled = not species_selected
 		race_opt_btn.disabled = not species_selected
-var race_selected: bool = false:
-	set(is_selected):
-		if is_selected == race_selected:
-			return
-		race_selected = is_selected
-		custom_int_button.disabled = not race_selected
-		custom_float_button.disabled = not race_selected
-		custom_bool_button.disabled = not race_selected
-		custom_string_button.disabled = not race_selected
-		race_name_l_edit.editable = is_selected
-		race_text_edit.editable = is_selected
+		species_int_btn.disabled = not species_selected
+		species_flt_btn.disabled = not species_selected
+		species_bool_btn.disabled = not species_selected
+		species_str_btn.disabled = not species_selected
+var current_race: int = -1:
+	set(new_idx):
+		current_race = new_idx
+		var race_selected: bool = 0 <= new_idx 
+		races_int_btn.disabled = not race_selected
+		races_flt_btn.disabled = not race_selected
+		races_bool_btn.disabled = not race_selected
+		races_str_btn.disabled = not race_selected
+		race_name_l_edit.editable = race_selected
 		delete_race_btn.disabled = not race_selected
-		stats_tree.set_editable(race_selected)
-		genders_tree.set_editable(race_selected)
-var no_race_panel: PanelContainer = null
-# On race/species switch, if this is true then save before switching.
-var _saving_needed: bool = false 
-var _ignore_changes: bool = false
 
 
-@onready var create_species_btn: Button = $MainContainer/SpcRcContainer/SpeciesContainer/SpeciesDataCotnainer/CreateSpeciesBtn
-@onready var delete_species_btn: Button = $MainContainer/SpcRcContainer/SpeciesContainer/SpeciesDataCotnainer/DeleteSpeciesBtn
-@onready var create_race_btn: Button = $MainContainer/SpcRcContainer/RaceContainer/RaceDataContainer/CreateRaceBtn
-@onready var delete_race_btn: Button = $MainContainer/SpcRcContainer/RaceContainer/RaceDataContainer/DeleteRaceBtn
-@onready var custom_int_button: Button = $MainContainer/DataGenderContainer/CustomDataContainer/DataHeader/CustomDataButtonContainer/CustomIntButton
-@onready var custom_float_button: Button = $MainContainer/DataGenderContainer/CustomDataContainer/DataHeader/CustomDataButtonContainer/CustomFloatButton
-@onready var custom_bool_button: Button = $MainContainer/DataGenderContainer/CustomDataContainer/DataHeader/CustomDataButtonContainer/CustomBoolButton
-@onready var custom_string_button: Button = $MainContainer/DataGenderContainer/CustomDataContainer/DataHeader/CustomDataButtonContainer/CustomStringButton
-#@onready var create_db_button: Button = $NoRacePanel/CenterContainer/InfoContainer/ButtonContainer2/CreateDBButton
-#@onready var load_db_button: Button = $NoRacePanel/CenterContainer/InfoContainer/ButtonContainer2/LoadDBButton
-
-@onready var species_name_l_edit: LineEdit = $MainContainer/SpcRcContainer/SpeciesContainer/SpeciesNameLEdit
-@onready var race_name_l_edit: LineEdit = $MainContainer/SpcRcContainer/RaceContainer/RaceNameLEdit
-@onready var stat_search_l_edit: LineEdit = $MainContainer/StatsContainer/StatSearchLEdit
-@onready var perk_search_l_edit: LineEdit = $MainContainer/PerksContainer/PerkSlectorContainer/PerkSearchLEdit
-@onready var custom_data_search_l_edit: LineEdit = $MainContainer/DataGenderContainer/CustomDataContainer/CustomDataSearchLEdit
 
 @onready var species_opt_btn: OptionButton = $MainContainer/SpcRcContainer/SpeciesContainer/SpeciesDataCotnainer/SpeciesOptBtn
-@onready var race_opt_btn: OptionButton = $MainContainer/SpcRcContainer/RaceContainer/RaceDataContainer/RaceOptBtn
+@onready var create_species_btn: Button = $MainContainer/SpcRcContainer/SpeciesContainer/SpeciesDataCotnainer/CreateSpeciesBtn
+@onready var delete_species_btn: Button = $MainContainer/SpcRcContainer/SpeciesContainer/SpeciesDataCotnainer/DeleteSpeciesBtn
+@onready var species_name_l_edit: LineEdit = $MainContainer/SpcRcContainer/SpeciesContainer/SpeciesNameLEdit
+@onready var species_int_btn: Button = $MainContainer/SpcRcContainer/CustomDataContainer/DataHeader/CustomDataButtonContainer/SpeciesIntBtn
+@onready var species_flt_btn: Button = $MainContainer/SpcRcContainer/CustomDataContainer/DataHeader/CustomDataButtonContainer/SpeciesFltBtn
+@onready var species_bool_btn: Button = $MainContainer/SpcRcContainer/CustomDataContainer/DataHeader/CustomDataButtonContainer/SpeciesBoolBtn
+@onready var species_str_btn: Button = $MainContainer/SpcRcContainer/CustomDataContainer/DataHeader/CustomDataButtonContainer/SpeciesStrBtn
+@onready var species_data_search_l_edit: LineEdit = $MainContainer/SpcRcContainer/CustomDataContainer/SpeciesDataSearchLEdit
+@onready var species_data_tree: Tree = $MainContainer/SpcRcContainer/CustomDataContainer/SpeciesDataTree
+@onready var race_opt_btn: OptionButton = $MainContainer/RaceContainer/RaceContainer/RaceDataContainer/RaceOptBtn
+@onready var create_race_btn: Button = $MainContainer/RaceContainer/RaceContainer/RaceDataContainer/CreateRaceBtn
+@onready var delete_race_btn: Button = $MainContainer/RaceContainer/RaceContainer/RaceDataContainer/DeleteRaceBtn
+@onready var race_name_l_edit: LineEdit = $MainContainer/RaceContainer/RaceContainer/RaceNameLEdit
+@onready var races_int_btn: Button = $MainContainer/RaceContainer/CustomDataContainer/DataHeader/CustomDataButtonContainer/RacesIntBtn
+@onready var races_flt_btn: Button = $MainContainer/RaceContainer/CustomDataContainer/DataHeader/CustomDataButtonContainer/RacesFltBtn
+@onready var races_bool_btn: Button = $MainContainer/RaceContainer/CustomDataContainer/DataHeader/CustomDataButtonContainer/RacesBoolBtn
+@onready var races_str_btn: Button = $MainContainer/RaceContainer/CustomDataContainer/DataHeader/CustomDataButtonContainer/RacesStrBtn
+@onready var races_data_search_l_edit: LineEdit = $MainContainer/RaceContainer/CustomDataContainer/RacesDataSearchLEdit
+@onready var races_data_tree: Tree = $MainContainer/RaceContainer/CustomDataContainer/RacesDataTree
 
-@onready var stats_tree: Tree = $MainContainer/StatsContainer/StatsTree
-@onready var perks_tree: Tree = $MainContainer/PerksContainer/PerkSlectorContainer/PerksTree
-@onready var custom_data_tree: Tree = $MainContainer/DataGenderContainer/CustomDataContainer/CustomDataTree
-@onready var genders_tree: Tree = $MainContainer/DataGenderContainer/GenderContainer/GendersTree
-
-@onready var race_text_edit: TextEdit = $MainContainer/SpcRcContainer/RaceTextEdit
-
-@onready var rich_text_label: RichTextLabel = $MainContainer/PerksContainer/PerkDescContainer/RichTextLabel
 
 @onready var main_container: HBoxContainer = $MainContainer
-
-
-#@onready var species_id_select_panel: PanelContainer = $SpeciesIDSelectPanel
-@onready var races_resource_dialog: FileDialog = $Elements/RacesResourceDialog
-#@onready var main_menu: MenuButton k= $MainContainer/SpcRcContainer/HBoxContainer/MenuContainer/MainMenu
 
 
 func _ready() -> void:
@@ -76,19 +63,11 @@ func _ready() -> void:
 	if not races_path.is_empty() and ResourceLoader.exists(races_path):
 		var preload_res: Resource = load(races_path)
 		if preload_res is NFRacesRes:
-			_race_resource = preload_res
+			race_resource = preload_res
 	
-	main_container.visible = _race_resource != null
-	
-	#var menu_popup: PopupMenu = main_menu.get_popup()
-	
-	#menu_popup.clear()
-	#menu_popup.add_icon_item(
-			#load("res://addons/nexus_forge/common_icons/save_file.svg"),
-			#"Save",
-			#0)
-	
-	if _race_resource != null:
+	main_container.visible = race_resource != null
+
+	if race_resource != null:
 		_load_species()
 	else:
 		no_race_panel = preload("res://addons/nexus_forge/scenes/no_db_container.tscn").instantiate()
@@ -98,33 +77,36 @@ func _ready() -> void:
 		no_race_panel.load_resource_pressed.connect(on_load_database_pressed)
 		no_race_panel.visible = true
 	
-	#menu_popup.id_pressed.connect(on_menu_clicled)
-	races_resource_dialog.file_selected.connect(on_file_path_selected)
+	
 	create_species_btn.pressed.connect(on_create_species)
 	create_race_btn.pressed.connect(on_create_race)
-	race_name_l_edit.text_changed.connect(on_line_changed)
-	species_name_l_edit.text_changed.connect(on_line_changed)
-	race_text_edit.text_changed.connect(on_something_changed)
-	stats_tree.item_checked.connect(on_something_changed)
-	custom_data_tree.data_changed.connect(on_something_changed)
-	genders_tree.item_checked.connect(on_something_changed)
 	delete_race_btn.pressed.connect(on_delete_race_pressed)
 	delete_species_btn.pressed.connect(on_delete_species_pressed)
-	custom_int_button.pressed.connect(on_create_custom_data_pressed.bind(0))
-	custom_float_button.pressed.connect(on_create_custom_data_pressed.bind(0.0))
-	custom_bool_button.pressed.connect(on_create_custom_data_pressed.bind(false))
-	custom_string_button.pressed.connect(on_create_custom_data_pressed.bind(""))
-	stat_search_l_edit.text_changed.connect(on_stat_search_changed)
-	custom_data_search_l_edit.text_changed.connect(on_data_search_changed)
+	
+	races_int_btn.pressed.connect(_on_create_race_data_pressed.bind("new_int", 0))
+	races_flt_btn.pressed.connect(_on_create_race_data_pressed.bind("new_flt", 0.0))
+	races_bool_btn.pressed.connect(_on_create_race_data_pressed.bind("new_bool", false))
+	races_str_btn.pressed.connect(_on_create_race_data_pressed.bind("new_str", ""))
+	
+	species_int_btn.pressed.connect(_on_create_species_data_pressed.bind("new_int", 0))
+	species_flt_btn.pressed.connect(_on_create_species_data_pressed.bind("new_flt", 0.0))
+	species_bool_btn.pressed.connect(_on_create_species_data_pressed.bind("new_bool", false))
+	species_str_btn.pressed.connect(_on_create_species_data_pressed.bind("new_str", ""))
+	
+	species_data_search_l_edit.text_changed.connect(_on_species_data_search_changed)
+	races_data_search_l_edit.text_changed.connect(_on_race_data_search_changed)
+	
+	species_opt_btn.item_selected.connect(_on_species_selected)
+	race_opt_btn.item_selected.connect(_on_race_selected)
 
 
 func _load_species() -> void:
 	species_opt_btn.clear()
-	for species in _race_resource.get_species():
+	for species in race_resource.get_species():
 		add_species(species)
 	if species_opt_btn.item_count != 0:
 		species_opt_btn.select(0)
-		on_species_selected(0)
+		load_species(0)
 
 
 func on_delete_species_pressed() -> void:
@@ -137,76 +119,67 @@ func on_delete_race_pressed() -> void:
 	delete_race()
 
 
-func on_species_selected(species_idx: int) -> void:
-	if species_idx == -1:
-		race_opt_btn.clear()
-		on_race_selected(-1)
-		species_name_l_edit.clear()
-		species_selected = false
-		return
-
-	_ignore_changes = true
-	save_active_race()
-	var species_id: String = species_opt_btn.get_item_text(species_idx)
-	species_name_l_edit.text = _race_resource.get_species_name(species_id)
-	species_selected = true
-	stat_search_l_edit.clear()
-	perk_search_l_edit.clear()
-	load_races(species_id)
-	_ignore_changes = false
+func _on_species_selected(species_idx: int) -> void:
+	if current_species != -1:
+		save_current_species()
+	load_species(species_idx)
 
 
-func on_race_selected(race_idx: int) -> void:
-	if race_idx == -1:
-		genders_tree.clear_gender_checks()
-		stats_tree.clear_stat_checks()
-		custom_data_tree.clear_custom_data()
-		race_name_l_edit.clear()
-		race_text_edit.clear()
-		race_selected = false
-		return
-	
-	if _saving_needed:
-		save_active_race()
-	
-	_ignore_changes = true
-	
-	var species_id: String = species_opt_btn.get_item_text(species_opt_btn.selected)
-	var race_id: String = race_opt_btn.get_item_text(race_idx)
-	
-	race_name_l_edit.text = _race_resource.get_race_name(species_id, race_id)
-	race_text_edit.text = _race_resource.get_race_desc(species_id, race_id)
-	
-	genders_tree.clear_gender_checks()
-	
-	for gender in _race_resource.get_race_genders(species_id, race_id):
-		genders_tree.set_gender_chekced(gender, true)
-	
-	stats_tree.clear_stat_checks()
-	
-	for stat in _race_resource.get_race_stats(species_id, race_id):
-		stats_tree.set_stat_checked(stat, true)
-	
-	var custom_data: Dictionary = _race_resource.get_race_custom_data_dict(species_id, race_id)
-	
-	custom_data_tree.clear_custom_data()
-	
-	for data in custom_data:
-		custom_data_tree.create_custom_data(data, custom_data[data])
-	
-	_ignore_changes = false
-	race_selected = true
-
-
-func load_races(species_id: String) -> void:
+func load_species(species_idx: int) -> void:
+	species_data_tree.clear_data()
 	race_opt_btn.clear()
 	
-	for race in _race_resource.get_races(species_id):
+	if species_idx == -1:
+		species_name_l_edit.clear()
+		current_species = -1
+		load_race(-1)
+		return
+
+	var species_id: String = species_opt_btn.get_item_text(species_idx)
+	species_name_l_edit.text = race_resource.get_species_name(species_id)
+	
+	for data_key in race_resource.get_species_data_keys(species_id):
+		species_data_tree.add_data(
+				data_key,
+				race_resource.get_species_data(species_id, data_key))
+	
+	current_species = species_idx
+	
+	for race in race_resource.get_races(species_id):
 		race_opt_btn.add_item(race)
 	 
-	if race_opt_btn.item_count != 0:
+	if 0 < race_opt_btn.item_count:
 		race_opt_btn.select(0)
-		on_race_selected(0)
+		load_race(0)
+	else:
+		load_race(-1)
+
+
+func _on_race_selected(race_idx: int) -> void:
+	if current_race != -1:
+		save_current_race()
+	load_race(race_idx)
+
+
+func load_race(race_idx: int) -> void:
+	races_data_tree.clear_data()
+	
+	if race_idx == -1:
+		race_name_l_edit.clear()
+		current_race = -1
+		return
+	
+	var species_id: String = species_opt_btn.get_item_text(current_species)
+	var race_id: String = race_opt_btn.get_item_text(race_idx)
+	
+	race_name_l_edit.text = race_resource.get_race_name(species_id, race_id)
+	
+	for data_key in race_resource.get_race_data_keys(species_id, race_id):
+		races_data_tree.add_data(
+			data_key,
+			race_resource.get_race_data(species_id, race_id, data_key))
+	
+	current_race = race_idx
 
 
 func add_species(species_id: String) -> void:
@@ -221,137 +194,141 @@ func get_species_index(species_id: String) -> int:
 
 
 func delete_species() -> void:
-	#var index_selected: int = species_opt_btn.selected
-	_race_resource.remove_species(species_opt_btn.get_item_text(species_opt_btn.selected))
-	species_opt_btn.remove_item(species_opt_btn.selected)
-	#var new_index: int = mini(species_opt_btn.item_count - 1, index_selected)
-	#species_opt_btn.select(new_index)
-	#on_species_selected(new_index)
-	on_species_selected(species_opt_btn.selected)
+	var new_species: int = clampi(current_species, -1, species_opt_btn.item_count - 2)
+	race_resource.erase_species(species_opt_btn.get_item_text(current_species))
+	species_opt_btn.remove_item(current_species)
+	species_opt_btn.select(new_species)
+	load_species(new_species)
 
 
 func delete_race() -> void:
-	#var index_selected: int = race_opt_btn.selected
-	_race_resource.remove_race(
-			species_opt_btn.get_item_text(species_opt_btn.selected),
-			race_opt_btn.get_item_text(race_opt_btn.selected))
-	race_opt_btn.remove_item(race_opt_btn.selected)
-	#var new_index: int = mini(race_opt_btn.item_count - 1, index_selected)
-	#race_opt_btn.select(new_index)
-	#on_race_selected(new_index)
-	on_race_selected(race_opt_btn.selected)
+	var new_race: int = clampi(current_race, -1, race_opt_btn.item_count - 2)
+	race_resource.erase_race(
+			species_opt_btn.get_item_text(current_species),
+			race_opt_btn.get_item_text(current_race))
+	race_opt_btn.remove_item(current_race)
+	race_opt_btn.select(new_race)
+	load_race(new_race)
 
 
 func on_create_database_pressed() -> void:
-	races_resource_dialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
-	races_resource_dialog.show()
-
-
-func on_load_database_pressed() -> void:
-	races_resource_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
-	races_resource_dialog.show()
-
-
-func on_create_species() -> void:
-	var new_species := SPECIES_DIALOG.instantiate()
-	new_species.race_resource = _race_resource
-	new_species.species_mode = true
-	add_child(new_species)
-	new_species.show()
-	var result: Array = await new_species.dialog_finished
+	var database_creator := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").new()
+	database_creator.file_mode = FileDialog.FILE_MODE_SAVE_FILE
+	database_creator.show()
+	
+	var result = await database_creator.dialog_finished
+	
 	if result[0]:
-		_race_resource.create_species(result[1])
-		species_opt_btn.add_item(result[1])
-		species_opt_btn.select(species_opt_btn.item_count - 1)
-		on_species_selected(species_opt_btn.item_count - 1)
-	new_species.queue_free()
-
-
-func on_create_race() -> void:
-	var new_race := SPECIES_DIALOG.instantiate()
-	new_race.race_resource = _race_resource
-	new_race.species_mode = false
-	new_race.species_id = species_opt_btn.get_item_text(species_opt_btn.selected)
-	add_child(new_race)
-	new_race.show()
-	var result: Array = await new_race.dialog_finished
-	if result[0]:
-		_race_resource.create_race(new_race.species_id, result[1])
-		race_opt_btn.add_item(result[1])
-		race_opt_btn.select(race_opt_btn.item_count - 1)
-		on_race_selected(race_opt_btn.item_count - 1)
-	new_race.queue_free()
-
-
-func on_file_path_selected(file_path: String) -> void:
-	if races_resource_dialog.file_mode == FileDialog.FileMode.FILE_MODE_SAVE_FILE:
-		var new_races := NFRacesRes.new()
-		if ResourceSaver.save(new_races, file_path) == OK:
-			_race_resource = new_races
-	else:
-		var preload_res: Resource = load(file_path)
-		if preload_res is NFRacesRes:
-			_race_resource = preload_res
-		else:
-			printerr("[RACES] Selected resource isn't NFRacesRes")
-		
-	if _race_resource != null:
-		ProjectSettings.set_setting(NFRacesRes.SETTINGS_PATH, file_path)
+		race_resource = NFRacesRes.new()
+		ResourceSaver.save(race_resource, result[1])
+		ProjectSettings.set_setting(NFRacesRes.SETTINGS_PATH, result[1])
 		ProjectSettings.save()
 		_load_species()
 		main_container.visible = true
 		no_race_panel.visible = false
 		no_race_panel.queue_free()
-
-
-#func on_create_species_pressed() -> void:
-	#create_
-#
-#
-#func on_create_race_pressed() -> void:
-	#species_id_select_panel.create_new_race(
-			#species_opt_btn.get_item_text(species_opt_btn.selected))
-
-
-func on_something_changed() -> void:
-	if not _saving_needed and not _ignore_changes:
-		_saving_needed = true
-
-
-func on_line_changed(_new_text: String) -> void:
-	on_something_changed()
-
-
-func on_create_custom_data_pressed(data_variant: Variant) -> void:
-	custom_data_tree.create_custom_data("", data_variant)
-
-
-func on_stat_search_changed(search_text: String) -> void:
-	stats_tree.search_stat(search_text.strip_edges())
-
-
-func on_data_search_changed(search_text: String) -> void:
-	custom_data_tree.search_data(search_text.strip_edges())
-
-
-func save_active_race() -> void:
-	if species_opt_btn.selected == -1:
-		return
 	
-	var species_id: String = species_opt_btn.get_item_text(species_opt_btn.selected)
+	database_creator.queue_free()
+
+
+func on_load_database_pressed() -> void:
+	var database_creator := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").new()
+	database_creator.file_mode = FileDialog.FILE_MODE_OPEN_FILE
+	database_creator.show()
 	
-	_race_resource.set_species_name(species_id, species_name_l_edit.text.strip_edges())
-		
-	if race_opt_btn.selected != -1:
-		var race_id: String = race_opt_btn.get_item_text(race_opt_btn.selected)
-		_race_resource.set_race_name(species_id, race_id, race_name_l_edit.text.strip_edges())
-		_race_resource.set_race_description(species_id, race_id, race_text_edit.text.strip_edges())
-		_race_resource.assign_race_genders(species_id, race_id, genders_tree.get_gender_data())
-		_race_resource.assign_race_stats(species_id, race_id, stats_tree.get_selected_stats())
-		_race_resource.set_race_custom_data_dict(species_id, race_id, custom_data_tree.get_custom_data_dict())
+	var result = await database_creator.dialog_finished
+	
+	if result[0]:
+		var res_pre: Resource = load(result[1])
+		if res_pre != null and res_pre is NFRacesRes:
+			race_resource = res_pre
+			ProjectSettings.set_setting(NFRacesRes.SETTINGS_PATH, result[1])
+			ProjectSettings.save()
+			_load_species()
+			main_container.visible = true
+			no_race_panel.visible = false
+			no_race_panel.queue_free()
+	
+	database_creator.queue_free()
+
+
+func on_create_species() -> void:
+	var new_species := LineEditConfirmationDialog.new()
+	new_species.accept_empty = false
+	new_species.clean_string = true
+	new_species.invalid_strings = race_resource.get_species()
+	add_child(new_species)
+	new_species.show()
+	new_species.focus_line_edit()
+	
+	var result = await new_species.dialog_confirmed
+	
+	if result[0]:
+		race_resource.create_species(result[1])
+		species_opt_btn.add_item(result[1])
+		if current_species != -1:
+			save_current_species()
+		species_opt_btn.select(species_opt_btn.item_count - 1)
+		load_species(species_opt_btn.item_count - 1)
+	new_species.queue_free()
+
+
+func on_create_race() -> void:
+	var new_race := LineEditConfirmationDialog.new()
+	new_race.accept_empty = false
+	new_race.clean_string = true
+	new_race.invalid_strings = race_resource.get_races(species_opt_btn.get_item_text(current_species))
+	add_child(new_race)
+	new_race.show()
+	new_race.focus_line_edit()
+	
+	var result: Array = await new_race.dialog_confirmed
+	
+	if result[0]:
+		race_resource.create_race(species_opt_btn.get_item_text(current_species), result[1])
+		race_opt_btn.add_item(result[1])
+		if current_race != -1:
+			save_current_race()
+		race_opt_btn.select(race_opt_btn.item_count - 1)
+		load_race(race_opt_btn.item_count - 1)
+	
+	new_race.queue_free()
+
+
+func _on_create_species_data_pressed(data_name: String, data: Variant) -> void:
+	species_data_tree.add_data(data_name, data)
+
+
+func _on_create_race_data_pressed(data_name: String, data: Variant) -> void:
+	races_data_tree.add_data(data_name, data)
+
+
+func _on_race_data_search_changed(search_text: String) -> void:
+	races_data_tree.search_data(search_text.strip_edges())
+
+
+func _on_species_data_search_changed(search_text: String) -> void:
+	species_data_tree.search_data(search_text.strip_edges())
+
+
+func save_current_race() -> void:
+	var species_id: String = species_opt_btn.get_item_text(current_species)
+	var race_id: String = race_opt_btn.get_item_text(current_race)
+	
+	race_resource.set_race_name(species_id, race_id, race_name_l_edit.text.strip_edges())
+	race_resource.species[species_id]["races"][race_id]["data"] = races_data_tree.get_data()
+
+
+func save_current_species() -> void:
+	var species_id: String = species_opt_btn.get_item_text(current_species)
+	race_resource.set_species_name(species_id, species_name_l_edit.text.strip_edges())
+	race_resource.species[species_id]["data"] = species_data_tree.get_data()
+	
+	if current_race != -1:
+		save_current_race()
 
 
 func save() -> void:
-	if _saving_needed:
-		save_active_race()
-	_race_resource.save()
+	if current_species != -1:
+		save_current_species()
+	race_resource.save()

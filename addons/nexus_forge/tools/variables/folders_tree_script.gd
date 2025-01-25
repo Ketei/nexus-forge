@@ -25,8 +25,8 @@ func _ready() -> void:
 	#set_column_expand(1, true)
 	
 	item_edited.connect(on_folder_edited)
-	button_clicked.connect(on_item_button_pressed)
-	item_selected.connect(on_item_selected)
+	button_clicked.connect(on_item_button_pressed, CONNECT_DEFERRED)
+	item_selected.connect(on_item_selected, CONNECT_DEFERRED)
 
 
 func create_root_folder() -> String:

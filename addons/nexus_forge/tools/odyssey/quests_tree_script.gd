@@ -64,7 +64,7 @@ func _ready() -> void:
 	
 	button_clicked.connect(_on_button_pressed)
 	item_edited.connect(on_item_edited)
-	item_selected.connect(_on_item_selected)
+	item_selected.connect(_on_item_selected, CONNECT_DEFERRED)
 
 
 func create_main_quest(quest_id: String = "") -> String:
@@ -299,11 +299,13 @@ func on_item_edited() -> void:
 	match edited_meta["type"]:
 		QUEST_ID:
 			var prev_id: String = edited_meta["id"]
-			if edited_meta["is_main"]:
-				edited.set_text(0, get_valid_main_id(edited.get_text(0), edited))
-			else:
-				edited.set_text(0, get_valid_boiler_id(edited.get_text(0), edited))
-			edited_meta["id"] = edited.get_text(0)
+			var new_id: String = get_valid_main_id(edited.get_text(0), edited) if edited_meta["is_main"] else get_valid_boiler_id(edited.get_text(0), edited)
+			
+			if prev_id == new_id:
+				return
+			
+			edited.set_text(0, new_id)
+			edited_meta["id"] = new_id
 			quest_id_changed.emit(prev_id, edited.get_text(0), edited_meta["is_main"])
 
 

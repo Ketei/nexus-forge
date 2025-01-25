@@ -12,4 +12,3 @@ static func is_comparable(var_a: Variant, var_b: Variant) -> bool:
 			return true
 	
 	return is_same_type(var_a, var_b)
-		
