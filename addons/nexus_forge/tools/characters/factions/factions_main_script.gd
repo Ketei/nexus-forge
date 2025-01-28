@@ -9,6 +9,7 @@ var factions_resource: NFFactionRes = null
 var current_faction: int = -1
 var current_rank: int = -1
 var no_faction_panel: Control = null
+var _unsaved: bool = false
 
 @onready var faction_opt_btn: OptionButton = $MainContainer/FactionsContainer/FactionIDContainer/FactionSelect/FactionOptBtn
 @onready var add_fact_button: Button = $MainContainer/FactionsContainer/FactionIDContainer/FactionSelect/AddFactButton
@@ -75,6 +76,12 @@ func _ready() -> void:
 	delete_rank_btn.pressed.connect(_on_rank_delete_pressed)
 	add_fact_button.pressed.connect(_on_create_faction_pressed)
 	add_rank_btn.pressed.connect(_on_create_rank_pressed)
+	
+	faction_name_ln_edt.text_changed.connect(something_changed)
+	rank_name_ln_edt.text_changed.connect(something_changed)
+	factions_tree.item_edited.connect(something_changed)
+	fac_data_tree.item_edited.connect(something_changed)
+	rank_data_tree.item_edited.connect(something_changed)
 
 
 func _on_create_fac_db_pressed() -> void:
@@ -133,10 +140,17 @@ func _load_data() -> void:
 
 func _on_add_faction_data_pressed(data_name: String, data: Variant) -> void:
 	fac_data_tree.add_data(data_name, data)
+	something_changed()
 
 
 func _on_add_rank_data_pressed(data_name: String, data: Variant) -> void:
 	rank_data_tree.add_data(data_name, data)
+	something_changed()
+
+
+func something_changed(_arg: Variant = null) -> void:
+	if not _unsaved:
+		_unsaved = true
 
 
 func save_current_faction() -> void:
@@ -290,6 +304,7 @@ func _on_rank_delete_pressed():
 	
 	ranks_opt_btn.select(next_rank)
 	load_rank(next_rank)
+	something_changed()
 
 
 func _on_faction_delete_pressed() -> void:
@@ -299,6 +314,7 @@ func _on_faction_delete_pressed() -> void:
 	
 	faction_opt_btn.select(next_faction)
 	load_faction(next_faction)
+	something_changed()
 
 
 func _on_create_faction_pressed() -> void:
@@ -321,6 +337,7 @@ func _on_create_faction_pressed() -> void:
 			save_current_faction()
 		faction_opt_btn.select(faction_opt_btn.item_count - 1)
 		load_faction(faction_opt_btn.item_count - 1)
+		something_changed()
 	
 	fac_conf.queue_free()
 
@@ -334,3 +351,15 @@ func _on_create_rank_pressed() -> void:
 		save_current_rank()
 	ranks_opt_btn.select(ranks_opt_btn.item_count - 1)
 	load_rank(ranks_opt_btn.item_count - 1)
+	something_changed()
+
+
+func has_unsaved_changes() -> bool:
+	return _unsaved
+
+
+func save() -> void:
+	if current_faction != -1:
+		save_current_faction()
+	factions_resource.save()
+	_unsaved = false

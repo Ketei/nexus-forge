@@ -29,6 +29,7 @@ var talents_resource: NFTalentsRes = null:
 var current_character: int = -1
 var current_variant: int = -1
 var no_db_container: PanelContainer = null
+var _unsaved: bool = false
 
 @onready var skills_tree: Tree = $DataPanel/MainDataContainer/FactionsContainer/SkillsTree
 @onready var variants_opt_btn: OptionButton = $DataPanel/MainDataContainer/ExtraContainer/VariantsContainer/TitleContainer/VariantsOptBtn
@@ -95,6 +96,12 @@ func _ready() -> void:
 	variants_opt_btn.item_selected.connect(_on_variant_selected, CONNECT_DEFERRED)
 	add_variant_button.pressed.connect(_on_create_variant_pressed)
 	delete_variant_button.pressed.connect(_on_delete_variant_pressed)
+	
+	char_name_line.text_changed.connect(something_changed)
+	character_data_tree.item_edited.connect(something_changed)
+	factions_tree.item_edited.connect(something_changed)
+	skills_tree.item_edited.connect(something_changed)
+	variant_data_tree.item_edited.connect(something_changed)
 
 
 func on_talents_changed() -> void:
@@ -139,7 +146,7 @@ func on_races_changed() -> void:
 		for item_idx in range(species_option_button.item_count):
 			if species_option_button.get_item_text(item_idx) == current_species:
 				species_option_button.select(item_idx)
-				on_species_selected(item_idx)
+				load_species(item_idx)
 				break
 		
 	if not current_race.is_empty() and races_resource.has_race(current_species, current_race):
@@ -159,9 +166,13 @@ func load_skills() -> void:
 
 
 func on_species_selected(index_selected: int) -> void:
-	var species_id: String = species_option_button.get_item_text(index_selected)
 	race_option_button.clear()
-	
+	load_species(index_selected)
+	something_changed()
+
+
+func load_species(index_selected: int) -> void:
+	var species_id: String = species_option_button.get_item_text(index_selected)
 	for race in races_resource.get_races(species_id):
 		race_option_button.add_item(race)
 	
@@ -346,6 +357,7 @@ func on_create_new_character() -> void:
 			save_current_character()
 		character_option_button.select(character_option_button.item_count - 1)
 		load_character(character_option_button.item_count - 1)
+		something_changed()
 	char_id.queue_free()
 
 
@@ -400,6 +412,9 @@ func _on_create_variant_pressed() -> void:
 			save_current_variant()
 		variants_opt_btn.select(variants_opt_btn.item_count - 1)
 		load_variant(variants_opt_btn.item_count - 1)
+		something_changed()
+	
+	ln_var.queue_free()
 
 
 func _on_variant_selected(variant_idx: int) -> void:
@@ -416,6 +431,7 @@ func _on_delete_variant_pressed() -> void:
 	variants_opt_btn.remove_item(current_variant)
 	variants_opt_btn.select(new_v)
 	load_variant(new_v)
+	something_changed()
 
 
 func load_variant(variant_idx: int) -> void:
@@ -516,10 +532,12 @@ func clear_all() -> void:
 
 func _on_add_character_data_pressed(data_name: String, data: Variant) -> void:
 	character_data_tree.add_data(data_name, data)
+	something_changed()
 
 
 func _on_add_variant_data_pressed(data_name: String, data: Variant) -> void:
 	variant_data_tree.add_data(data_name, data)
+	something_changed()
 
 
 func load_characters() -> void:
@@ -576,8 +594,18 @@ func get_selected_gender_id() -> String:
 	return gender_option_button.get_item_metadata(gender_option_button.selected) if 0 <= gender_option_button.selected else ""
 
 
+func something_changed(_arg: Variant = null) -> void:
+	if not _unsaved:
+		_unsaved = true
+
+
+func has_unsaved_changes() -> bool:
+	return _unsaved
+
+
 func save() -> void:
 	if current_character != -1:
 		save_current_character()
 	
 	characters_resource.save()
+	_unsaved = false

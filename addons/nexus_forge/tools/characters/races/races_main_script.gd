@@ -6,7 +6,6 @@ const LineEditConfirmationDialog = preload("res://addons/nexus_forge/classes/lin
 var race_resource: NFRacesRes = null
 var no_race_panel: PanelContainer = null 
 
-
 var current_species: int = -1:
 	set(new_idx):
 		current_species = new_idx
@@ -29,8 +28,7 @@ var current_race: int = -1:
 		races_str_btn.disabled = not race_selected
 		race_name_l_edit.editable = race_selected
 		delete_race_btn.disabled = not race_selected
-
-
+var _unsaved: bool = false
 
 @onready var species_opt_btn: OptionButton = $MainContainer/SpcRcContainer/SpeciesContainer/SpeciesDataCotnainer/SpeciesOptBtn
 @onready var create_species_btn: Button = $MainContainer/SpcRcContainer/SpeciesContainer/SpeciesDataCotnainer/CreateSpeciesBtn
@@ -98,6 +96,18 @@ func _ready() -> void:
 	
 	species_opt_btn.item_selected.connect(_on_species_selected)
 	race_opt_btn.item_selected.connect(_on_race_selected)
+	
+	species_name_l_edit.text_changed.connect(_on_something_changed)
+	race_name_l_edit.text_changed.connect(_on_something_changed)
+	species_data_tree.item_deleted.connect(_on_something_changed)
+	species_data_tree.item_edited.connect(_on_something_changed)
+	races_data_tree.item_deleted.connect(_on_something_changed)
+	races_data_tree.item_edited.connect(_on_something_changed)
+
+
+func _on_something_changed(_arg: Variant = null) -> void:
+	if _unsaved:
+		_unsaved = true
 
 
 func _load_species() -> void:
@@ -297,10 +307,14 @@ func on_create_race() -> void:
 
 func _on_create_species_data_pressed(data_name: String, data: Variant) -> void:
 	species_data_tree.add_data(data_name, data)
+	if not _unsaved:
+		_unsaved = true
 
 
 func _on_create_race_data_pressed(data_name: String, data: Variant) -> void:
 	races_data_tree.add_data(data_name, data)
+	if not _unsaved:
+		_unsaved = true
 
 
 func _on_race_data_search_changed(search_text: String) -> void:
@@ -317,6 +331,9 @@ func save_current_race() -> void:
 	
 	race_resource.set_race_name(species_id, race_id, race_name_l_edit.text.strip_edges())
 	race_resource.species[species_id]["races"][race_id]["data"] = races_data_tree.get_data()
+	
+	if not _unsaved:
+		_unsaved = true
 
 
 func save_current_species() -> void:
@@ -326,9 +343,17 @@ func save_current_species() -> void:
 	
 	if current_race != -1:
 		save_current_race()
+	
+	if not _unsaved:
+		_unsaved = true
+
+
+func has_unsaved_changes() -> bool:
+	return _unsaved
 
 
 func save() -> void:
 	if current_species != -1:
 		save_current_species()
 	race_resource.save()
+	_unsaved = false

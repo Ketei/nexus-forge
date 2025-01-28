@@ -344,18 +344,3 @@ func _on_button_pressed(item: TreeItem, column: int, id: int, mouse_button_index
 		item.free()
 	elif id == DELETE_STAGE_BOILER_POOL:
 		quest_stage_deleted.emit(item.get_parent().get_text(0), item.get_index(), item.get_parent().get_parent() == main_header)
-		
-
-
-
-
-#func search_item(search: String) -> void:
-	#for quest in root_tree.get_children():
-		#quest.visible = search.is_empty() or quest.get_text(0).containsn(search)
-#
-#
-#func get_quests() -> Array:
-	#var quests: Array = []
-	#for quest in root_tree.get_children():
-		#quests.append(quest.get_text(0))
-	#return quests

@@ -2,7 +2,7 @@
 extends IDTree
 
 
-#signal data_id_changed(from: String, to: String)
+signal item_deleted
 
 const RANGE_MAX: int = 9999
 const RANGE_FLOAT_STEP: float = 0.01
@@ -104,6 +104,7 @@ func on_button_pressed(item: TreeItem, column: int, id: int, mouse_button_index:
 	match id:
 		0:
 			item.free()
+			item_deleted.emit()
 
 
 func on_data_edited() -> void:

@@ -39,8 +39,8 @@ var menu_choices: Array[String] = []
 var basic_nodes_submenu: PopupMenu = null
 var advanced_nodes_submenu: PopupMenu = null
 var logic_nodes_submenu: PopupMenu = null
-var unsaved_changes: bool = false
-var open_conversations: Array[Dictionary] = [] # path: askldjalskjd, resource: Res
+#var unsaved_changes: bool = false
+var open_conversations: Array[Dictionary] = [] # path: askldjalskjd, resource: Res, unsaved: false
 var current_conv: int = -1:
 	set(new_conv):
 		current_conv = new_conv
@@ -1093,8 +1093,11 @@ func on_duplicate_node(target_node: DiscourseGraphNode) -> void:
 
 
 func on_something_changed() -> void:
-	if not unsaved_changes:
-		unsaved_changes = true
+	if current_conv != -1 and not open_conversations[current_conv]["unsaved"]:
+		#unsaved_changes = true
+		open_conversations[current_conv]["unsaved"] = true
+	#if not unsaved_changes:
+		#unsaved_changes = true
 
 
 func _on_main_menu_mnbtn_id_selected(id: int) -> void:
@@ -1111,17 +1114,18 @@ func _on_main_menu_mnbtn_id_selected(id: int) -> void:
 				for idx in range(open_conversations.size()):
 					if open_conversations[idx]["path"] == result[1]:
 						open_conversations[idx]["resource"] = DialogResource.new()
+						open_conversations[idx]["unsaved"] = true
 						conversations_tree.select(idx)
 						new_loader.queue_free()
 						return
-				if current_conv != -1 and unsaved_changes:
+				if current_conv != -1:
 					current_to_memory()
 				var new_res := DialogResource.new()
 				if ResourceSaver.save(new_res, result[1]) == OK:
 					open_conversations.append({
 						"path": result[1],
 						"resource": new_res, # Any unsaved changes will be stored here.
-						"unsaved": false,
+						"unsaved": true,
 						"offset": Vector2(),
 						"zoom": 1.0})
 					conversations_tree.add_conversation(result[1].get_file())
@@ -1129,7 +1133,6 @@ func _on_main_menu_mnbtn_id_selected(id: int) -> void:
 					load_conversation(new_res)
 					current_conv = open_conversations.size() - 1
 					conversations_tree.select_no_signal(current_conv)
-					unsaved_changes = false
 				else:
 					push_error("Couldn't Save File")
 				if no_conv_panel.visible:
@@ -1162,7 +1165,6 @@ func _on_main_menu_mnbtn_id_selected(id: int) -> void:
 					conversations_tree.select_no_signal(current_conv)
 					clear_nodes()
 					load_conversation(res_preload)
-					unsaved_changes = false
 					if no_conv_panel.visible:
 						no_conv_panel.visible = false
 				else:
@@ -1171,9 +1173,9 @@ func _on_main_menu_mnbtn_id_selected(id: int) -> void:
 		2: # Save Current
 			save_current()
 		3: # Save All
-			save_all_resources()
+			save_all()
 		4: # Close Current
-			if unsaved_changes:
+			if is_current_unsaved():
 				var new_warning := UnsavedDialogScript.new()
 				add_child(new_warning)
 				new_warning.show()
@@ -1532,9 +1534,10 @@ func get_conversation_data() -> DialogResource:
 	return conversation
 
 
-func save_all_resources() -> void:
-	if unsaved_changes:
+func save_all() -> void:
+	if is_current_unsaved():
 		save_current()
+	
 	for res_dict in open_conversations:
 		if res_dict["unsaved"]:
 			ResourceSaver.save(res_dict["resource"], res_dict["path"])
@@ -1542,16 +1545,15 @@ func save_all_resources() -> void:
 
 
 func save_current() -> void:
-	if current_conv != -1 and unsaved_changes:
+	if is_current_unsaved():
 		ResourceSaver.save(
 			get_conversation_data(),
 			open_conversations[current_conv]["path"])
-		unsaved_changes = false
+		set_current_unsaved(false)
 
 
 func current_to_memory() -> void:
 	open_conversations[current_conv]["resource"] = get_conversation_data()
-	open_conversations[current_conv]["unsaved"] = unsaved_changes
 	open_conversations[current_conv]["offset"] = dialog_graph_edit.scroll_offset
 	open_conversations[current_conv]["zoom"] = dialog_graph_edit.zoom
 
@@ -1582,7 +1584,7 @@ func on_close_issues_pressed() -> void:
 
 
 func on_conv_selected(conv_id: int) -> void:
-	if unsaved_changes and current_conv != -1:
+	if is_current_unsaved():
 		current_to_memory()
 	current_conv = conv_id
 	clear_nodes()
@@ -1639,3 +1641,20 @@ func check_for_errors() -> void:
 		issues_tree.log_issue("A graph is missing required data.", mis_dat)
 	
 	issues_panel.visible = true
+
+
+func is_current_unsaved() -> bool:
+	if current_conv == -1:
+		return false
+	return open_conversations[current_conv]["unsaved"]
+
+
+func set_current_unsaved(unsaved_status: bool) -> void:
+	open_conversations[current_conv]["unsaved"] = unsaved_status
+
+
+func has_unsaved_changes() -> bool:
+	for open_conv in open_conversations:
+		if open_conv["unsaved"]:
+			return true
+	return false

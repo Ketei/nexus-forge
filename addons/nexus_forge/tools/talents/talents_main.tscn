@@ -128,6 +128,7 @@ text = "Initial Level"
 [node name="InitialSkillLevelSpnBx" type="SpinBox" parent="MainPanel/MainMargin/MainContainer/SkillsContainer/RangeContainer/InitialContainer"]
 custom_minimum_size = Vector2(32, 0)
 layout_mode = 2
+max_value = 20.0
 value = 1.0
 alignment = 1
 

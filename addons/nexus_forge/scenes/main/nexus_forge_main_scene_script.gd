@@ -1,3 +1,4 @@
+@tool
 extends Control
 
 
@@ -8,6 +9,9 @@ extends Control
 @onready var discourse: Control = $MainContainer/ToolContainer/Discourse
 @onready var variables: Control = $MainContainer/ToolContainer/Variables
 @onready var kinds: Control = $MainContainer/ToolContainer/Kinds
+@onready var characters: Control = $MainContainer/ToolContainer/Kinds/TabContainer/Characters
+@onready var races: Control = $MainContainer/ToolContainer/Kinds/TabContainer/Races
+@onready var factions: Control = $MainContainer/ToolContainer/Kinds/TabContainer/Factions
 @onready var talents: Control = $MainContainer/ToolContainer/Talents
 @onready var depot: Control = $MainContainer/ToolContainer/Depot
 @onready var odyssey: Control = $MainContainer/ToolContainer/Odyssey
@@ -28,3 +32,18 @@ func on_tab_changed(tab: int) -> void:
 	talents.visible = tab == 4
 	depot.visible = tab == 5
 	odyssey.visible = tab == 6
+
+
+func has_unsaved_changes() -> bool:
+	return discourse.has_unsaved_changes() or variables.has_unsaved_changes() or characters.has_unsaved_changes() or races.has_unsaved_changes() or factions.has_unsaved_changes() or talents.has_unsaved_changes() or depot.has_unsaved_changes() or odyssey.has_unsaved_changes()
+
+
+func save_resources() -> void:
+	discourse.save_all()
+	variables.save()
+	characters.save()
+	races.save()
+	factions.save()
+	talents.save()
+	depot.save()
+	odyssey.save()

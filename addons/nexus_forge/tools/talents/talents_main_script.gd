@@ -10,6 +10,7 @@ var talents_resource: NFTalentsRes
 var no_talents_panel: PanelContainer = null
 
 var current_skill: int = -1
+var _unsaved: bool = false
 
 @onready var skill_opt_btn: OptionButton = $MainPanel/MainMargin/MainContainer/SkillsContainer/SkillSelectContainer/SkillContainer/SkillOptBtn
 @onready var create_skill_btn: Button = $MainPanel/MainMargin/MainContainer/SkillsContainer/SkillSelectContainer/SkillContainer/CreateSkillBtn
@@ -45,6 +46,12 @@ func _ready() -> void:
 		add_child(no_talents_panel)
 		no_talents_panel.set_resource_type("NFTalentsRes", "Talents", "Talents")
 	
+	skill_ln_edt.text_changed.connect(something_changed)
+	skill_desc_txt_edt.text_changed.connect(something_changed)
+	initial_skill_level_spn_bx.value_changed.connect(something_changed)
+	skill_limit_spn_bx.value_changed.connect(something_changed)
+	skill_limit_spn_bx.value_changed.connect(_on_max_level_changed)
+	
 	delete_skill_btn.pressed.connect(on_skill_deleted)
 	create_skill_btn.pressed.connect(on_create_skill_pressed)
 	skill_int_btn.pressed.connect(_on_add_skill_data_pressed.bind("new_int", 0))
@@ -56,8 +63,18 @@ func _ready() -> void:
 
 func _on_add_skill_data_pressed(data_name: String, data: Variant) -> void:
 	skill_data_tree.add_data(data_name, data)
+	something_changed()
 
 
+func _on_max_level_changed(new_level: float) -> void:
+	initial_skill_level_spn_bx.max_value = new_level
+
+
+func something_changed(_arg: Variant = null) -> void:
+	if not _unsaved:
+		_unsaved = true
+
+ 
 func load_resource() -> void:
 	skill_opt_btn.clear()
 	
@@ -76,6 +93,7 @@ func on_skill_deleted() -> void:
 	skill_opt_btn.remove_item(skill_opt_btn.selected)
 	skill_opt_btn.select(new_current)
 	_on_skill_selected(new_current)
+	something_changed()
 
 
 func _on_skill_selected(skill_idx: int) -> void:
@@ -136,6 +154,7 @@ func on_create_skill_pressed() -> void:
 		skill_opt_btn.add_item(result[1])
 		skill_opt_btn.select(skill_opt_btn.item_count - 1)
 		_on_skill_selected(skill_opt_btn.item_count - 1)
+		something_changed()
 	id_creator.queue_free()
 
 
@@ -148,8 +167,13 @@ func save_current_skill() -> void:
 	talents_resource._skill_data[skill_id]["data"] = skill_data_tree.get_data()
 
 
-func save_talents() -> void:
+func has_unsaved_changes() -> bool:
+	return _unsaved
+
+
+func save() -> void:
 	if skill_opt_btn.selected != -1:
 		save_current_skill()
 	
 	talents_resource.save()
+	_unsaved = false

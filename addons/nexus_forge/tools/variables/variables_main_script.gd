@@ -178,7 +178,7 @@ func on_create_variable_pressed(id: int) -> void:
 func on_menu_button_pressed(id: int) -> void:
 	match id:
 		0:
-			save_variables()
+			save()
 		2:
 			on_add_root_folder_pressed()
 
@@ -189,7 +189,7 @@ func on_something_changed() -> void:
 	_unsaved = true
 
 
-func save_variables() -> void:
+func save() -> void:
 	#_variables_resource.variables = build_variable_dictionary()
 	_variables_resource.save()
 	_unsaved = false
@@ -362,3 +362,7 @@ func _on_folder_selected(path_to_folder: String) -> void:
 
 func on_variable_cpath_button_pressed(var_id: String) -> void:
 	DisplayServer.clipboard_set(str(_current_folder, "/", var_id))
+
+
+func has_unsaved_changes() -> bool:
+	return _unsaved

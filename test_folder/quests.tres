@@ -1,8 +1,0 @@
-[gd_resource type="Resource" script_class="NFQuestRes" load_steps=2 format=3 uid="uid://bd0f2yae8xne8"]
-
-[ext_resource type="Script" path="res://addons/nexus_forge/tools/odyssey/resources/quest_db.gd" id="1_8ogpr"]
-
-[resource]
-script = ExtResource("1_8ogpr")
-quests_main = {}
-quests_boiler = {}

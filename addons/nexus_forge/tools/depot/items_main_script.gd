@@ -26,8 +26,7 @@ var current_station: String = ""
 var current_recipe: String = ""
 var items_resource: NFItemsRes = null
 var _switching: bool = false
-
-
+var _unsaved: bool = false
 
 @onready var rarities_opt_btn: OptionButton = $MainContainer/ItemsContainer/DataContainer/ItemsContainer/ItemMargin/ItemDataContainer/RarityContainer/RaritiesOptBtn
 @onready var depot_tree: Tree = $MainContainer/ItemsContainer/DataContainer/ItemSelectContainer/DepotTree
@@ -158,9 +157,7 @@ func _ready() -> void:
 	depot_tree.crafting_station_selected.connect(_on_crafting_station_selected)
 	depot_tree.crafting_station_changed.connect(_on_crafting_station_changed)
 	depot_tree.crafting_station_created.connect(_on_crafting_station_created)
-	#depot_tree.crafting_station_changed.connect(_on_crafting_station_changed)
 	depot_tree.crafting_station_deleted.connect(_on_crafting_station_deleted)
-	#depot_tree.crafting_station_selected.connect(_on_crafting_station_selected)
 	
 	items_tree.item_edited.connect(_on_item_changed)
 	items_tree.item_selected.connect(_on_item_selected)
@@ -182,10 +179,8 @@ func _ready() -> void:
 	add_item_str_btn.pressed.connect(_on_add_item_data_pressed.bind("new_string", ""))
 	
 	rarity_data_tree.item_edited.connect(_on_rarity_data_edited)
-	#rarity_data_tree.button_clicked.connect(_on_data_tree_button_clicked)
 	
 	currency_data_tree.item_edited.connect(_on_currency_data_edited)
-	#currency_data_tree.button_clicked.connect(_on_data_tree_button_clicked)
 	
 	add_rarity_int_btn.pressed.connect(_on_add_rarity_data_btn_pressed.bind("new_int", 0))
 	add_rarity_float_btn.pressed.connect(_on_add_rarity_data_btn_pressed.bind("new_float", 0.0))
@@ -204,9 +199,8 @@ func _ready() -> void:
 	
 	rarity_name_ln_edt.focus_exited.connect(_on_rarity_name_focus_lost)
 	rarity_name_ln_edt.text_submitted.connect(_on_rarity_name_text_submitted)
-	
-	#item_data_tree.item_edited.connect(_on_item_data_id_edited)
-	#item_data_tree.button_clicked.connect(_on_data_tree_button_clicked)
+	rarity_name_ln_edt.text_changed.connect(something_changed)
+	rarity_col_pk_btn.color_changed.connect(something_changed)
 	
 	add_recipe_data_int_btn.pressed.connect(_on_add_recipe_data_pressed.bind("new_int", 0))
 	add_recipe_data_flt_btn.pressed.connect(_on_add_recipe_data_pressed.bind("new_float", 0.0))
@@ -214,7 +208,6 @@ func _ready() -> void:
 	add_recipe_data_str_btn.pressed.connect(_on_add_recipe_data_pressed.bind("new_string", ""))
 	
 	recipe_data_tree.item_edited.connect(_on_recipe_item_edited)
-	#recipe_data_tree.button_clicked.connect(_on_data_tree_button_clicked)
 	
 	create_item_btn.pressed.connect(_on_create_item_button_pressed)
 	
@@ -223,9 +216,6 @@ func _ready() -> void:
 	station_recipes_tree.item_edited.connect(_on_recipe_tree_item_edited)
 	station_recipes_tree.item_selected.connect(_on_crafting_recipe_selected)
 	station_recipes_tree.button_clicked.connect(_on_station_recipes_button_clicked)
-	
-	#station_data_tree.item_edited.connect(_on_station_data_item_edited)
-	#station_data_tree.button_clicked.connect(_on_data_tree_button_clicked)
 	
 	search_rcp_item_ln_edt.text_submitted.connect(_on_search_recipe_text_submitted)
 	
@@ -264,18 +254,22 @@ func _input(event: InputEvent) -> void:
 
 func _on_add_item_data_pressed(data_name: String, data: Variant) -> void:
 	item_data_tree.add_data(data_name, data)
+	something_changed()
 
 
 func _on_add_currency_data_pressed(data_name: String, data: Variant) -> void:
 	currency_data_tree.add_data(data_name, data)
+	something_changed()
 
 
 func _on_add_station_data_pressed(data_name: String, data: Variant) -> void:
 	station_data_tree.add_data(data_name, data)
+	something_changed()
 
 
 func _on_add_recipe_data_pressed(data_name: String, data: Variant) -> void:
 	recipe_data_tree.add_data(data_name, data)
+	something_changed()
 
 
 func _on_search_depot_text_changed(new_text: String) -> void:
@@ -296,21 +290,15 @@ func _on_recipe_item_edited() -> void:
 			recipe_data_tree.get_root(),
 			edited.get_text(0),
 			edited)
-	#var old_id: String = edited.get_metadata(0)["id"]
-	#
-	#items_resource._crafting[current_station]["recipes"][new_id] = items_resource._crafting[current_station]["recipes"][old_id]
-	#items_resource._crafting[current_station]["recipes"].erase(old_id)
 	
 	edited.set_text(0, new_id)
 	edited.get_metadata(0)["id"] = new_id
-	
-	#if current_recipe == old_id:
-		#current_recipe = new_id
-		#recipe_id_label.text = Strings.title_case(new_id.replace("_", " "))
+	something_changed()
 
 
 func _on_crafting_station_created(station_id: String) -> void:
 	items_resource.create_crafting_station(station_id)
+	something_changed()
 
 
 func _on_crafting_station_changed(from: String, to: String) -> void:
@@ -320,6 +308,7 @@ func _on_crafting_station_changed(from: String, to: String) -> void:
 	if current_station == from:
 		current_station = to
 		station_id_label.text = Strings.title_case(to.replace("_", " "))
+	something_changed()
 
 
 func _on_crafting_station_deleted(station_id: String) -> void:
@@ -328,6 +317,7 @@ func _on_crafting_station_deleted(station_id: String) -> void:
 		current_station = ""
 		current_recipe = ""
 		set_data_visible(-1)
+	something_changed()
 
 
 func _on_crafting_station_selected(station_id: String) -> void:
@@ -492,6 +482,7 @@ func _on_station_recipes_button_clicked(item: TreeItem, column: int, id: int, mo
 		0:
 			items_resource.erase_recipe(current_station, item.get_text(0))
 			item.free()
+			something_changed()
 
 
 func _on_create_recipe_btn_pressed() -> void:
@@ -501,6 +492,7 @@ func _on_create_recipe_btn_pressed() -> void:
 			"new_recipe")
 	add_recipe(new_id)
 	items_resource.create_recipe(current_station, new_id)
+	something_changed()
 
 
 func _on_recipe_tree_item_edited() -> void:
@@ -522,20 +514,7 @@ func _on_recipe_tree_item_edited() -> void:
 	
 	edited.set_text(0, new_name)
 	edited.get_metadata(0)["id"] = new_name
-
-
-#func _on_station_data_item_edited() -> void:
-	#if station_data_tree.get_edited_column() != 0:
-		#return
-	#
-	#var edited: TreeItem = station_data_tree.get_edited()
-	#var new_id: String = get_valid_id(
-			#station_data_tree.get_root(),
-			#0,
-			#edited.get_text(0),
-			#edited,
-			#"station_data")
-	#edited.set_text(0, new_id)
+	something_changed()
 
 
 func _on_item_refresh_btn_pressed() -> void:
@@ -552,6 +531,11 @@ func _on_item_refresh_btn_pressed() -> void:
 			new_item.set_text(0, cat_path + "/" + item_id)
 			new_item.add_button(0, RECIPE_INPUT_ICON, 0, false, "Add to Input")
 			new_item.add_button(0, RECIPE_OUTPUT_ICON, 1, false, "Add to Output")
+
+
+func something_changed(_arg: Variant = null) -> void:
+	if not _unsaved:
+		_unsaved = true
 
 
 func add_input_recipe_item(item_id: String, item_count: int, data: Dictionary = {}) -> void:
@@ -610,6 +594,7 @@ func _on_craft_all_itm_button_clicked(item: TreeItem, column: int, id: int, mous
 		1:
 			if not has_recipe_output_id(item.get_text(0)):
 				add_output_recipe_item(item.get_text(0), 1)
+	something_changed()
 
 
 func _on_put_item_edited(edited_tree: Tree) -> void:
@@ -619,6 +604,7 @@ func _on_put_item_edited(edited_tree: Tree) -> void:
 	var edited_item: TreeItem = edited_tree.get_edited()
 	var new_valid_id: String = get_valid_id(edited_item.get_parent(), 0, edited_item.get_text(0), edited_item, "data")
 	edited_item.set_text(0, new_valid_id)
+	something_changed()
 
 
 func save_crafting_station_data() -> void:
@@ -751,6 +737,7 @@ func on_put_recipe_button_clicked(item: TreeItem, column: int, id: int, mouse_bu
 			add_recipe_item_data(item, valid_id, "")
 		4: # Delete
 			item.free()
+	something_changed()
 
 
 func has_recipe_input_id(item_id: String) -> bool:
@@ -774,10 +761,12 @@ func _on_item_category_deleted(category_id: String) -> void:
 		current_item = ""
 		if items_container.visible:
 			set_data_visible(-1)
+	something_changed()
 
 
 func _on_item_category_created(category_path: String, category_id: String) -> void:
 	items_resource.create_item_category(category_path, category_id)
+	something_changed()
 
 
 func _on_currency_id_changed(from: String, to: String) -> void:
@@ -787,10 +776,12 @@ func _on_currency_id_changed(from: String, to: String) -> void:
 	items_resource._currencies.erase(from)
 	if current_currency == from:
 		current_currency = to
+	something_changed()
 
 
 func _on_currency_created(currency_id: String) -> void:
 	items_resource.create_currency(currency_id)
+	something_changed()
 
 
 func _on_rarity_name_text_submitted(_submitted_text: String) -> void:
@@ -813,6 +804,7 @@ func _on_item_category_renamed(from: String, to: String) -> void:
 	if current_item_category == from:
 		current_item_category = to
 		category_id_label.text = Strings.title_case(to.split("/", false)[-1].replace("_", " "))
+	something_changed()
 
 
 func _on_currency_selected(currency_id: String) -> void:
@@ -850,6 +842,7 @@ func _on_currency_deleted(currency_id: String) -> void:
 		current_currency = ""
 		if currency_data_container.visible:
 			set_data_visible(-1)
+	something_changed()
 
 
 func _on_item_category_selected(category_id: String) -> void:
@@ -891,20 +884,14 @@ func _on_currency_value_changed(new_value: int) -> void:
 	if _switching:
 		return
 	depot_tree.update_currency_value(current_currency, new_value)
-
-
-#func _on_currency_text_changed(new_text: String) -> void:
-	#if new_text.is_valid_int():
-		#depot_tree.update_currency_value(current_currency, maxi(currency_val_spn_bx.min_value, int(new_text)))
-	#else:
-		#depot_tree.update_currency_value(current_currency, currency_val_spn_bx.value)
-	#print(depot_tree.get_currency_value(current_currency))
+	something_changed()
 
 
 func _on_rarity_renamed(idx: int, new_name: String) -> void:
 	if current_rarity == idx:
 		rarity_name_ln_edt.text = new_name
 	rarities_opt_btn.set_item_text(idx, new_name)
+	something_changed()
 
 
 func _on_rarity_deleted(rarity_idx: int) -> void:
@@ -914,11 +901,13 @@ func _on_rarity_deleted(rarity_idx: int) -> void:
 		current_rarity = -1
 		if rarity_container.visible:
 			set_data_visible(-1)
+	something_changed()
 
 
 func _on_rarity_created(rarity_name: String) -> void:
 	items_resource.create_rarity(rarity_name)
 	rarities_opt_btn.add_item(rarity_name)
+	something_changed()
 
 
 func _on_rarity_reindexed(from: int, to: int) -> void:
@@ -931,6 +920,7 @@ func _on_rarity_reindexed(from: int, to: int) -> void:
 	for rarity in rarity_list:
 		rarities_opt_btn.add_item(rarity)
 	rarities_opt_btn.selected = current_selected
+	something_changed()
 
 
 func clear_recipe_fields() -> void:
@@ -979,32 +969,11 @@ func add_item_data(on_tree: TreeItem, data_id: String, new_data: Variant) -> voi
 	new_item.add_button(1, TRASH_BIN, 0, false, "Remove Data")
 
 
-#func _on_add_item_data_btn_pressed(data_id: String, new_data: Variant) -> void:
-	#add_item_data(item_data_tree.get_root(), data_id, new_data)
-#
-#
-#func _on_add_currency_data_btn_pressed(data_id: String, new_data: Variant) -> void:
-	#add_item_data(currency_data_tree.get_root(), data_id, new_data)
-#
-#
-#func _on_add_station_data_btn_pressed(data_id: String, new_data: Variant) -> void:
-	#add_item_data(station_data_tree.get_root(), data_id, new_data)
-#
-#
-#func _on_add_recipe_data_btn_pressed(data_id: String, new_data: Variant) -> void:
-	#add_item_data(recipe_data_tree.get_root(), data_id, new_data)
-
-
-#func _on_data_tree_button_clicked(item: TreeItem, column: int, id: int, mouse_button_index: int) -> void:
-	#match id:
-		#0: # Delete
-			#item.free()
-
-
 # This is an almost identical to the one on top. Maybe merging it with extra
 # args is better. But for simplicity I'll keep them separate.
 func _on_add_rarity_data_btn_pressed(data_id: String, new_data: Variant) -> void:
 	add_item_data(rarity_data_tree.get_root(), data_id, new_data)
+	something_changed()
 
 
 func _on_rarity_name_focus_lost() -> void:
@@ -1056,6 +1025,7 @@ func _on_rarity_data_edited() -> void:
 	
 	edited.set_text(0, new_id)
 	edited.get_metadata(0)["id"] = new_id
+	something_changed()
 
 
 func _on_currency_data_edited() -> void:
@@ -1067,6 +1037,7 @@ func _on_currency_data_edited() -> void:
 	
 	edited.set_text(0, new_id)
 	edited.get_metadata(0)["id"] = new_id
+	something_changed()
 
 
 #func _on_item_data_id_edited() -> void:
@@ -1265,6 +1236,7 @@ func _on_create_item_button_pressed() -> void:
 	var valid_id: String = get_valid_id(items_tree.get_root(), 0, "new_item")
 	create_item(valid_id)
 	items_resource.create_item(current_item_category, valid_id)
+	something_changed()
 
 
 func create_item(item_id: String) -> void:
@@ -1280,6 +1252,7 @@ func _on_item_tree_button_clicked(item: TreeItem, column: int, id: int, mouse_bu
 		0: # Delete Item
 			items_resource.erase_item(current_item_category, item.get_text(0))
 			item.free()
+			something_changed()
 
 
 func _on_item_changed() -> void:
@@ -1296,6 +1269,7 @@ func _on_item_changed() -> void:
 	
 	edited.set_text(0, new_id)
 	edited.get_metadata(0)["id"] = new_id
+	something_changed()
 
 
 func _on_item_selected() -> void:
@@ -1345,7 +1319,11 @@ func _on_item_selected() -> void:
 	item_data_container.visible = true
 
 
-func on_save() -> void:
+func has_unsaved_changes() -> bool:
+	return _unsaved
+
+
+func save() -> void:
 	if not current_item_category.is_empty():
 		save_item_category_data()
 		if not current_item.is_empty():
@@ -1360,3 +1338,4 @@ func on_save() -> void:
 			save_current_recipe()
 	
 	items_resource.save()
+	_unsaved = false
