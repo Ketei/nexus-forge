@@ -10,13 +10,13 @@ static var SINGLETONS: Dictionary = {
 	"main": {"name": "NexusForge", "path": "res://addons/nexus_forge/classes/autoload/nexus_forge_singleton.gd"}
 }
 
-static var SETTINGS_PATHS: Dictionary = {
-	"variables_resource": "",
-	"races_resource": "",
-	"characters_resource": "",
-	"factions_resource": "",
-	"talents_resource": ""
-}
+#static var SETTINGS_PATHS: Dictionary = {
+	#"variables_resource": "",
+	#"races_resource": "",
+	#"characters_resource": "",
+	#"factions_resource": "",
+	#"talents_resource": ""
+#}
 
 var editor_view: Control = null
 
@@ -66,30 +66,33 @@ func _enable_plugin() -> void:
 	
 	var trigger_setting_save: bool = false
 	
-	for category in SETTINGS_PATHS:
-		var setting_path: String = str("nexus_forge/", category)
-		if not ProjectSettings.has_setting(setting_path):
-			ProjectSettings.set_setting(setting_path, SETTINGS_PATHS[category])
-			ProjectSettings.set_initial_value(setting_path, SETTINGS_PATHS[category])
-			if not trigger_setting_save:
-				trigger_setting_save = true
-	
-	if trigger_setting_save:
-		ProjectSettings.save()
+	ProjectSettings.set_initial_value(NFFactionRes.SETTINGS_PATH, "")
+	ProjectSettings.set_initial_value(NFRacesRes.SETTINGS_PATH, "")
+	ProjectSettings.set_initial_value(NFTalentsRes.SETTINGS_PATH, "")
+	ProjectSettings.set_initial_value(NFItemsRes.SETTINGS_PATH, "")
+	ProjectSettings.set_initial_value(NFQuestRes.SETTINGS_PATH, "")
+	ProjectSettings.set_initial_value(NFCharacterDBRes.SETTINGS_PATH, "")
+	ProjectSettings.set_initial_value(NFVariablesRes.SETTINGS_PATH, "")
+	ProjectSettings.save()
 
 
 func _disable_plugin() -> void:
 	for singleton in SINGLETONS:
 		remove_autoload_singleton(SINGLETONS[singleton]["name"])
 	
-	var trigger_setting_save: bool = false
-	for category in SETTINGS_PATHS:
-		for setting in SETTINGS_PATHS[category]:
-			var setting_path: String = str(category, "/", setting["path"])
-			if ProjectSettings.has_setting(setting_path):
-				ProjectSettings.set_setting(setting_path, null)
-				if not trigger_setting_save:
-					trigger_setting_save = true
+	if ProjectSettings.has_setting(NFFactionRes.SETTINGS_PATH):
+		ProjectSettings.set_setting(NFFactionRes.SETTINGS_PATH, null)
+	if ProjectSettings.has_setting(NFRacesRes.SETTINGS_PATH):
+		ProjectSettings.set_setting(NFRacesRes.SETTINGS_PATH, null)
+	if ProjectSettings.has_setting(NFTalentsRes.SETTINGS_PATH):
+		ProjectSettings.set_setting(NFTalentsRes.SETTINGS_PATH, null)
+	if ProjectSettings.has_setting(NFItemsRes.SETTINGS_PATH):
+		ProjectSettings.set_setting(NFItemsRes.SETTINGS_PATH, null)
+	if ProjectSettings.has_setting(NFQuestRes.SETTINGS_PATH):
+		ProjectSettings.set_setting(NFQuestRes.SETTINGS_PATH, null)
+	if ProjectSettings.has_setting(NFCharacterDBRes.SETTINGS_PATH):
+		ProjectSettings.set_setting(NFCharacterDBRes.SETTINGS_PATH, null)
+	if ProjectSettings.has_setting(NFVariablesRes.SETTINGS_PATH):
+		ProjectSettings.set_setting(NFVariablesRes.SETTINGS_PATH, null)
 	
-	if trigger_setting_save:
-		ProjectSettings.save()
+	ProjectSettings.save()

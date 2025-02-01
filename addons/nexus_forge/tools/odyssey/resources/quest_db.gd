@@ -12,49 +12,29 @@ const SETTINGS_PATH: String = "nexus_forge/quests_resource"
 #@export var quests_boiler: Dictionary = {}
 
 var quest_ex = {
-	"kobold_egg": { 
+	"kobold_egg": {
 		"title": "",
 		"description": "",
 		"events": {
 			"quest_successful": {
-				"items": [], # Array[Dict]
-				"currency": [], # Array[Dict]
-				"variables": [], # Array[Dict]
-			},
-			"quest_finished": {
-				"items": [], # Array[Dict]
-				"currency": [], # Array[Dict]
-				"variables": [], # Array[Dict]
-			},
-			"quest_started": {
-				"items": [], # Array[Dict]
-				"currency": [], # Array[Dict]
-				"variables": [], # Array[Dict]
-			},
-			"quest_ended": {
-				"items": [], # Array[Dict]
-				"currency": [], # Array[Dict]
-				"variables": [], # Array[Dict]
-			},
-			"quest_progressed": {
-				"items": [], # Array[Dict]
-				"currency": [], # Array[Dict]
-				"variables": [], # Array[Dict]
-			},
+				"items": {"item_id": {"count": 0, "operator": OP_ADD}},
+				"currency": {"currency_id": {"count": 0, "operator": OP_ADD}},
+				"variables": [{"path": "", "value": null, "operator": OP_EQUAL}],
+				"data": {"data_id": null},
+			}
 		},
 		"stages": [
 			{
 				"title": "",
 				"description": "",
 				"requirements": {
-					"items": [
-						{
-							"item": 0,#"item_id",
+					"items": {
+						"item_id": {
 							"amount": 10,
 							"operator": OP_EQUAL,
-							"custom_data": [{}] # Extra checks we want to make.
-							}
-					],
+							"custom_data": {
+								"data_key": {"operator": OP_EQUAL, "value": 0}
+							}}},
 					"variables": [
 						{
 							"path": "stats/stamina",
@@ -62,19 +42,20 @@ var quest_ex = {
 							"operator": OP_GREATER_EQUAL
 						}
 					],
-					"triggers": [
-						{
-							"trigger": "trigger_id",
+					"triggers": {
+						"trigger_id": {
 							"count": 2,
-							"operator": OP_LESS_EQUAL
-						}
-					],
+							"operator": OP_LESS_EQUAL}},
+					"data": {
+						"data_id": null
+					} # This contains custom data for the dev to parse
 				}
 			}
 		]
 	}
 }
 
+var stages = [{"pool_name": "Stage Pool", "pool_items": []}]
 
 var boiler_ex = { # Example, not required
 	"boiler_a": {
@@ -83,44 +64,48 @@ var boiler_ex = { # Example, not required
 		"completion_limit": 1,
 		"events": {},
 		"stages": [
-			[
-				{
-					"title": "",
-					"description": "",
-					"requirements": {
-						"items": [
-							{
-								"item": "",
-								"amount": 10,
-								"operator": OP_GREATER_EQUAL,
-								"custom_data": [{}],
-							}],
-						"variables": [
-							{
-								"path": "stats/stamina",
-								"value": 10,
-								"operator": OP_GREATER_EQUAL
-							}],
-						"triggers": [
-							{
-								"trigger": &"trigger_id",
-								"count": 0,
-								"operator": OP_EQUAL}]}
-				}
-			]
+			{
+				"pool_name": "",
+				"pool_items": [
+					{
+						"title": "",
+						"description": "",
+						"requirements": {
+							"items": [
+								{
+									"item": "",
+									"amount": 10,
+									"operator": OP_GREATER_EQUAL,
+									"custom_data": [{}],
+								}],
+							"variables": [
+								{
+									"path": "stats/stamina",
+									"value": 10,
+									"operator": OP_GREATER_EQUAL
+								}],
+							"triggers": [
+								{
+									"trigger": &"trigger_id",
+									"count": 0,
+									"operator": OP_EQUAL}],
+							"data": {}}
+							
+					}
+				]
+			}
 		],
 	}
 }
 
 var quest_main_tracker_example: Array[Dictionary] = [{
-		"key": "kobold_egg",
-		"stage": 0, # Current stage the quest is at.
-		"active": false, # For quest markers, etc.
-	}]
+	"id": "kobold_egg",
+	"stage": 0, # Current stage the quest is at.
+}]
 
 var quest_boiler_tracker_ex: Array[Dictionary] = [
 	{
-		"key": "given_id", # The id given to this quest by the creator
+		"id": "given_id", # The id given to this quest by the creator
 		"boiler": "boiler_a", # The key given in the dictionary
 		"title": "",
 		"description": "",
@@ -128,8 +113,7 @@ var quest_boiler_tracker_ex: Array[Dictionary] = [
 		# The index references the stage the quest is at, the second is the
 		# index of the item in the pool array of the boiler quests.
 		# quests_boiler["stages"][this.stage][this.stages[this.stage]]
-		"stages": [3,8,0],
-		"active": false
+		"stages": [3,8,0]
 	}
 ]
 
@@ -155,8 +139,33 @@ var _boiler_tracker: int = 0 # How many active bolier quests there are
 
 func _can_trigger_be_freed(trigger_id: String) -> bool:
 	return trigger_tracker[trigger_id]["referenced"]["main"].is_empty() and\
-			trigger_tracker[trigger_id]["referenced"]["boiler"].is_empty() and\
-			trigger_tracker[trigger_id]["referenced"]["custom"].is_empty()
+		trigger_tracker[trigger_id]["referenced"]["boiler"].is_empty() and\
+		trigger_tracker[trigger_id]["referenced"]["custom"].is_empty()
+
+
+func _get_main_quest_triggers(quest_id: String) -> Array[String]:
+	var triggers: Array[String] = []
+	
+	for stage_dict:Dictionary in quests_main[quest_id]["stages"]:
+		if not stage_dict["requirements"].has("stages"):
+			continue
+		
+		for requirement in stage_dict["requirements"]["triggers"]:
+			triggers.append(requirement["trigger"])
+	
+	return triggers
+
+
+func _get_boiler_quest_triggers(quest_id: String, stage: int, pool_indexes: Array[int]) -> Array[String]:
+	var triggers: Array[String] = []
+	
+	for pool_idx in pool_indexes:
+		if quests_boiler[quest_id]["stages"][stage][pool_idx]["requirements"].has("triggers"):
+			
+			for trigger in quests_boiler[quest_id]["stages"][stage][pool_idx]["requirements"]["triggers"]:
+				triggers.append(trigger["trigger"])
+		
+	return triggers
 
 
 func _add_trigger_quest_tracker(trigger_id: String, quest_id: String, is_main: bool) -> void:
@@ -165,82 +174,123 @@ func _add_trigger_quest_tracker(trigger_id: String, quest_id: String, is_main: b
 		trigger_tracker[trigger_id]["referenced"][type_key].append(quest_id)
 
 
-func get_main_quest_keys() -> Array[String]:
-	return Array(quests_main.keys(), TYPE_STRING, &"", null)
+func _remove_trigger_quest_tracker(trigger_id: String, quest_id: String, is_main: bool) -> void:
+	var type_key: String = "main" if is_main else "boiler"
+	trigger_tracker[trigger_id]["referenced"][type_key].erase(quest_id)
+
+# --- Main ---
+
+func start_quest_main(quest_id: String, stage: int = 0) -> int:
+	for trigger in _get_main_quest_triggers(quest_id):
+		if not has_trigger(trigger):
+			create_trigger(trigger)
+		
+		_add_trigger_quest_tracker(trigger, quest_id, true)
+	
+	active_main_quests.append({
+		"id": quest_id,
+		"stage": stage})
+	
+	_main_tracker += 1
+	return _main_tracker - 1
 
 
-func get_boiler_quest_keys() -> Array[String]:
-	return Array(quests_boiler.keys(), TYPE_STRING, &"", null)
-
-
-func get_main_quest_stage_count(quest_key: String) -> int:
-	return quests_main[quest_key]["stages"].count()
-
-
-func get_main_quest_stage_data(quest_key: String, stage_idx: int) -> Dictionary:
-	return quests_main[quest_key]["stages"][stage_idx]
-
-
-func get_boiler_quest_stage_count(quest_key: String) -> int:
-	return quests_boiler[quest_key]["stages"].count()
-
-
-func get_boiler_quest_stage_pool_count(quest_key: String, stage_idx: int) -> int:
-	return quests_boiler[quest_key]["stages"][stage_idx]["stage_pool"].count()
-
-
-func get_boiler_quest_stage_pool_data(quest_key: String, stage_idx: int, pool_idx: int) -> Dictionary:
-	return quests_main[quest_key]["stages"][stage_idx]
-
-
-func get_boiler_quest_completion_limit(quest_key: String) -> int:
-	return quests_boiler[quest_key]["completion_limit"]
-
-
-func set_boiler_quest_completion_limit(quest_key: String, new_limit: int) -> void:
-	quests_boiler[quest_key]["completion_limit"] = maxi(0, new_limit)
-
-
-func get_main_stage_title(quest_key: String, objective_idx: int) -> String:
-	return quests_main[quest_key]["stages"][objective_idx]["title"]
-
-
-func get_boiler_stage_title(quest_key: String, stage_idx: int, pool_idx: int) -> String:
-	return quests_boiler[quest_key]["stages"][stage_idx][pool_idx]["title"]
-
-
-func get_main_stage_desc(quest_key: String, stage_id: int) -> String:
-	return quests_main[quest_key]["stages"][stage_id]["description"]
-
-
-func get_boiler_stage_desc(quest_key: String, stage_id: int, pool_idx: int) -> String:
-	return quests_boiler[quest_key]["stages"][stage_id][pool_idx]["description"]
-
-
-func get_main_quest_title(quest_key: String) -> String:
-	return quests_main[quest_key]["title"]
-
-
-func get_boiler_quest_title(quest_key: String) -> String:
-	return quests_boiler[quest_key]["title"]
-
-
-func get_main_quest_desc(quest_key: String) -> String:
-	return quests_main[quest_key]["description"]
-
-
-func get_boiler_quest_desc(quest_key: String) -> String:
-	return quests_boiler[quest_key]["description"]
+func is_main_quest_started(quest_key: String) -> bool:
+	for quest in active_main_quests:
+		if quest["id"] == quest_key:
+			return true
+	return false
 
 
 func finish_main_quest(quest_idx: int) -> void:
-	var quest_key: int = active_main_quests[quest_idx]["key"]
-	var finished_idx: int = Arrays.binary_search(finished_unique, quest_key)
+	var quest_id: String = active_main_quests[quest_idx]["id"]
+	
 	Arrays.remove_unsorted_at(active_main_quests, quest_idx)
 	
-	if finished_idx == -1: # If it isn't finished, add it to the finished list.
-		Arrays.insert_sorted_asc(finished_unique, quest_key)
+	if Arrays.binary_search(finished_unique, quest_id) == -1: # If it isn't finished, add it to the finished list.
+		Arrays.insert_sorted_asc(finished_unique, quest_id)
+	
+	for trigger in _get_main_quest_triggers(quest_id):
+		_remove_trigger_quest_tracker(trigger, quest_id, true)
+		if _can_trigger_be_freed(trigger):
+			remove_trigger(trigger)
+	
 	_main_tracker -= 1
+
+
+func main_quest_next_stage(quest_idx: int) -> void:
+	active_main_quests[quest_idx]["stage"] = mini(
+		active_main_quests[quest_idx]["stage"] + 1,
+		quests_main[active_main_quests[quest_idx]["id"]]["stages"].size() - 1)
+
+
+func set_main_quest_stage(quest_idx: int, quest_stage: int) -> void:
+	var quest_key: String = active_main_quests[quest_idx]["id"]
+	
+	var clamped_stage: int = clampi(
+		quest_stage,
+		0,
+		quests_main[quest_key]["stages"].size() - 1)
+	
+	active_main_quests[quest_idx]["stage"] = clamped_stage
+
+
+func get_main_quest_stage(quest_idx: int) -> int:
+	return active_main_quests[quest_idx]["stage"]
+
+
+# --- Boiler ---
+
+## Starts a boiler-quest. Requires an unique_id to be differentiated from the
+## rest of the quests. Check with [method is_boiler_id_free] to check if the id
+## is available.
+func start_quest_boiler(boiler_data: Dictionary) -> int:
+	var required_triggers: Array[String] = []
+	
+	for stage in range(get_boiler_quest_stage_count(boiler_data["id"])):
+		Arrays.append_uniques(
+			required_triggers,
+			_get_boiler_quest_triggers(
+				boiler_data["boiler"],
+				stage,
+				boiler_data["stages"]))
+	
+	for trigger in required_triggers:
+		if not has_trigger(trigger):
+			create_trigger(trigger)
+		_add_trigger_quest_tracker(trigger, boiler_data["id"], false)
+	
+	active_boiler_quests.append(boiler_data)
+	_boiler_tracker += 1
+	return _boiler_tracker - 1
+
+
+func is_boiler_id_free(id: String) -> bool:
+	for quest in active_boiler_quests:
+		if quest["id"] == id:
+			return true
+	return false
+
+
+func boiler_quest_next_stage(quest_idx: int) -> void:
+	active_boiler_quests[quest_idx]["stage"] = mini(
+		active_boiler_quests[quest_idx]["stage"] + 1,
+		quests_boiler[active_boiler_quests[quest_idx]["id"]]["stages"].size() - 1)
+
+
+func set_boiler_quest_stage(quest_idx: int, quest_stage: int) -> void:
+	var quest_key: String = active_boiler_quests[quest_idx]["id"]
+	
+	var clamped_stage: int = clampi(
+		quest_stage,
+		0,
+		quests_boiler[quest_key]["stages"].size() - 1)
+	
+	active_boiler_quests[quest_idx]["stage"] = clamped_stage
+
+
+func get_boiler_quest_stage(quest_idx: int) -> int:
+	return active_boiler_quests[quest_idx]["stage"]
 
 
 ## Finishes a boiler quest with its' unique_id. If the quest was successful
@@ -251,6 +301,26 @@ func finish_boiler_quest(quest_idx: int, successful: bool) -> void:
 		if not finished_boiler.has(boiler_key):
 			finished_boiler[boiler_key] = 0
 		finished_boiler[boiler_key] += 1
+	
+	var triggers: Array[String] = []
+	
+	for stage in range(get_boiler_quest_stage_count(active_boiler_quests[quest_idx]["boiler"])):
+		Arrays.append_uniques(
+			triggers,
+			_get_boiler_quest_triggers(
+				active_boiler_quests[quest_idx]["boiler"],
+				stage,
+				active_boiler_quests[quest_idx]["stages"]))
+	
+	for trigger in triggers:
+		_remove_trigger_quest_tracker(
+			trigger,
+			active_boiler_quests[quest_idx]["id"],
+			false)
+		
+		if _can_trigger_be_freed(trigger):
+			remove_trigger(trigger)
+	
 	Arrays.remove_unsorted_at(active_boiler_quests, quest_idx)
 	_boiler_tracker -= 1
 
@@ -261,102 +331,31 @@ func get_boiler_quest_completed_count(boiler_key: String) -> int:
 	return 0
 
 
-func is_main_quest_started(quest_key: String) -> bool:
-	#var quest_id: int = get_main_quest_id(quest_key)
-	for quest in active_main_quests:
-		if quest["quest_key"] == quest_key:
-			return true
-	return false
-
-
-func start_quest_main(quest_key: String, stage: int = 0, set_active: bool = false) -> int:
-	var required_triggers: Array[String] = []
-	
-	for stage_dict in quests_main[quest_key]["stages"]:
-		for requirement in stage_dict["requirements"]["triggers"]:
-			required_triggers.append(requirement["trigger"])
-	
-	for trigger in required_triggers:
-		if not has_trigger(trigger):
-			create_trigger(trigger)
-		_add_trigger_quest_tracker(trigger, quest_key, true)
-	
-	active_main_quests.append({
-			"key": quest_key,
-			"stage": stage,
-			"active": set_active
-		}
-	)
-	_main_tracker += 1
-	return _main_tracker - 1
-
-
-## Starts a boiler-quest. Requires an unique_id to be differentiated from the
-## rest of the quests. Check with [method is_boiler_id_free] to check if the id
-## is available.
-func start_quest_boiler(boiler_data: Dictionary) -> int:
-	var required_triggers: Array[String] = []
-	
-	var current_stage: int = -1
-	for pool_item in boiler_data["stages"]:
-		current_stage += 1
-		for requirement in quests_boiler[boiler_data["boiler"]]["stages"][current_stage][pool_item]["requirements"]["triggers"]:
-			required_triggers.append(requirement["trigger"])
-	
-	for trigger in required_triggers:
-		if not has_trigger(trigger):
-			create_trigger(trigger)
-		_add_trigger_quest_tracker(trigger, boiler_data["boiler"], false)
-	
-	active_boiler_quests.append(boiler_data)
-	_boiler_tracker += 1
-	return _boiler_tracker - 1
-
-
 ## This will generate a boiler quest with randomly selected objectives and
-## return a dictionary with it which you can use on start_quest_boiler
+## return a dictionary with it which you can use on [method start_quest_boiler]
 func build_quest_boiler_data(boiler_key: String, unique_id: String) -> Dictionary:
 	var objectives: Array[int] = []
 	
 	for obj_pool in quests_boiler[boiler_key]["stages"]:
 		objectives.append(
-				randi_range(
-						0,
-						obj_pool["stage_pool"].size() - 1))
+			randi_range(
+				0,
+				obj_pool["stage_pool"].size() - 1))
 	
 	return {
+		"id": unique_id,
+		"boiler": boiler_key,
 		"title": quests_boiler[boiler_key]["title"],
 		"description": quests_boiler[boiler_key]["description"],
-		"key": unique_id,
-		"boiler": boiler_key,
 		"stage": 0,
-		"stages": objectives,
-		"active": false
+		"stages": objectives
 		}
-
-
-func set_quest_stage_main(quest_idx: int, quest_stage: int) -> void:
-	var quest_key: String = active_main_quests[quest_idx]["key"]
-	for quest in active_main_quests:
-		if quest["key"] == quest_key:
-			quest["stage"] = clampi(
-					quest_stage,
-					0,
-					quests_main[quest_key]["stages"].size())
-			break
-
-
-func get_quest_stage_main(quest_idx: int) -> int:
-	return active_main_quests[quest_idx]["stage"]
-
-
-func get_quest_stage_boiler(quest_idx: int) -> int:
-	return active_boiler_quests[quest_idx]["stage"]
 
 
 func is_boiler_quest_exhausted(quest_key: String) -> bool:
 	return quests_boiler[quest_key] <= get_boiler_quest_completed_count(quest_key)
 
+# --- Triggers ---
 
 func create_trigger(trigger_id: String, set_count: int = 0) -> void:
 	trigger_tracker[trigger_id] = {
@@ -389,8 +388,8 @@ func remove_trigger_reference(trigger_id: String, custom_reference: String) -> v
 	var target_idx: int = trigger_tracker[trigger_id]["referenced"]["custom"].find(custom_reference)
 	if target_idx != -1:
 		Arrays.remove_unsorted_at(
-				trigger_tracker[trigger_id]["referenced"]["custom"],
-				target_idx)
+			trigger_tracker[trigger_id]["referenced"]["custom"],
+			target_idx)
 		if _can_trigger_be_freed(trigger_id):
 			remove_trigger(trigger_id)
 
@@ -409,556 +408,916 @@ func has_trigger(trigger_id: String) -> bool:
 	return trigger_tracker.has(trigger_id)
 
 
-func get_tracked_triggers() -> Array[String]:
-	return Array(trigger_tracker.keys(), TYPE_STRING, &"", null)
+func get_tracked_triggers() -> PackedStringArray:
+	return PackedStringArray(trigger_tracker.keys())
+
+# --- Data Handling ---
+
+#region Main Quests
+
+func get_main_quests() -> PackedStringArray:
+	return PackedStringArray(quests_main.keys())
 
 
-func main_quest_stage_achieved(quest_key: String, quest_stage: int, quest_data: Dictionary = {}) -> bool:
-	if not quests_main.has(quest_key):
+func has_main_quest(quest_id: String) -> bool:
+	return quests_main.has(quest_id)
+
+
+func create_main_quest(quest_id: String) -> void:
+	if not quests_main.has(quest_id):
+		quests_main[quest_id] = {
+			"title": "",
+			"description": "",
+			"events": {},
+			"stages": Array([], TYPE_DICTIONARY, &"", null)}
+
+
+func erase_main_quest(quest_id: String) -> void:
+	if quests_main.has(quest_id):
+		quests_main.erase(quest_id)
+
+
+func get_main_quest_title(quest_id: String) -> String:
+	if quests_main.has(quest_id) and quests_main[quest_id].has("title"):
+		return quests_main[quest_id]["title"]
+	return ""
+
+
+func set_main_quest_title(quest_id: String, title: String) -> void:
+	if quests_main.has(quest_id):
+		quests_main[quest_id]["title"] = title
+
+
+func get_main_quest_description(quest_id: String) -> String:
+	if quests_main.has(quest_id) and quests_main[quest_id].has("description"):
+		return quests_main[quest_id]["description"]
+	return ""
+
+
+func set_main_quest_description(quest_id: String, description: String) -> void:
+	if quests_main.has(quest_id):
+		quests_main[quest_id]["description"] = description
+
+
+#region Events
+
+func create_main_quest_event(quest_id: String, event_id: String) -> void:
+	quests_main[quest_id]["events"][event_id] = {
+		"items": {},
+		"currency": {},
+		"variables": Array([], TYPE_DICTIONARY, &"", null),
+		"data": {}}
+
+
+func has_main_quest_event(quest_id: String, event_id: String) -> bool:
+	return quests_main[quest_id]["events"].has(event_id)
+
+
+func erase_main_quest_event(quest_id: String, event_id: String) -> void:
+	quests_main[quest_id]["events"].erase(event_id)
+
+
+func get_main_quest_events(quest_id: String) -> PackedStringArray:
+	return PackedStringArray(quests_main[quest_id]["events"].keys())
+
+
+func set_main_quest_event_item(quest_id: String, event_id: String, item_id: StringName, count: int, operator: int) -> void:
+	quests_main[quest_id]["events"][event_id]["items"][item_id] = {
+		"count": count,
+		"operator": operator}
+
+
+func has_main_quest_event_item(quest_id: String, event_id: String, item_id: StringName) -> bool:
+	return quests_main[quest_id]["events"][event_id]["items"].has(item_id)
+
+
+func get_main_quest_event_items(quest_id: String, event_id: String) -> PackedStringArray:
+	return PackedStringArray(quests_main[quest_id]["events"][event_id]["items"].keys())
+
+
+func get_main_quest_event_item_count(quest_id: String, event_id: String, item_id: StringName) -> int:
+	return quests_main[quest_id]["events"][event_id]["items"][item_id]["count"]
+
+
+func get_main_quest_event_item_operator(quest_id: String, event_id: String, item_id: StringName) -> int:
+	return quests_main[quest_id]["events"][event_id]["items"][item_id]["operator"]
+
+
+func erase_main_quest_event_item(quest_id: String, event_id: String, item_id: StringName) -> void:
+	return quests_main[quest_id]["events"][event_id]["items"].erase(item_id)
+
+
+func set_main_quest_event_currency(quest_id: String, event_id: String, currency_id: StringName, count: int, operator: int) -> void:
+	quests_main[quest_id]["events"][event_id]["currency"][currency_id] = {
+		"count": count,
+		"operator": operator}
+
+
+func has_main_quest_event_currency(quest_id: String, event_id: String, currency_id: StringName) -> bool:
+	return quests_main[quest_id]["events"][event_id]["currency"].has(currency_id)
+
+
+func get_main_quest_event_currencies(quest_id: String, event_id: String) -> PackedStringArray:
+	return PackedStringArray(quests_main[quest_id]["events"][event_id]["currency"].keys())
+
+
+func get_main_quest_event_currency_count(quest_id: String, event_id: String, currency_id: StringName) -> int:
+	return quests_main[quest_id]["events"][event_id]["currency"][currency_id]["count"]
+
+
+func get_main_quest_event_currency_operator(quest_id: String, event_id: String, currency_id: StringName) -> int:
+	return quests_main[quest_id]["events"][event_id]["currency"][currency_id]["operator"]
+
+
+func erase_main_quest_event_currency(quest_id: String, event_id: String, currency_id: StringName) -> void:
+	return quests_main[quest_id]["events"][event_id]["currency"].erase(currency_id)
+
+
+func set_main_quest_event_variable(quest_id: String, event_id: String, variable_path: String, value: Variant, operator: int) -> void:
+	var var_idx: int = get_main_quest_event_variable_index(quest_id, event_id, variable_path)
+	
+	if var_idx == -1:
+		quests_main[quest_id]["events"][event_id]["variables"].append({
+			"path": variable_path,
+			"value": value,
+			"operator": operator})
+	else:
+		quests_main[quest_id]["events"][event_id]["variables"][var_idx]["value"] = value
+		quests_main[quest_id]["events"][event_id]["variables"][var_idx]["operator"] = operator
+
+
+func get_main_quest_event_variable_index(quest_id: String, event_id: String, variable_path: String) -> int:
+	var idx: int = -1
+	
+	for variable in quests_main[quest_id]["events"][event_id]["variables"]:
+		idx += 1
+		if variable["path"] == variable_path:
+			return idx
+	
+	return -1
+
+
+func get_main_quest_event_variables(quest_id: String, event_id: String) -> PackedStringArray:
+	var paths := PackedStringArray()
+	
+	for variable in quests_main[quest_id]["events"][event_id]["variables"]:
+		paths.append(variable["path"])
+	
+	return paths
+
+
+func get_main_quest_event_variable_value(quest_id: String, event_id: String, variable_path: String) -> Variant:
+	var idx: int = get_main_quest_event_variable_index(quest_id, event_id, variable_path)
+	return quests_main[quest_id]["events"][event_id]["variables"][idx]["value"]
+
+
+func get_main_quest_event_variable_operator(quest_id: String, event_id: String, variable_path: String) -> int:
+	var idx: int = get_main_quest_event_variable_index(quest_id, event_id, variable_path)
+	return quests_main[quest_id]["events"][event_id]["variables"][idx]["operator"]
+
+
+func erase_main_quest_event_variable(quest_id: String, event_id: String, variable_path: StringName) -> void:
+	return quests_main[quest_id]["events"][event_id]["variables"].erase(
+		get_main_quest_event_variable_index(quest_id, event_id, variable_path))
+
+
+func set_main_quest_event_data(quest_id: String, event_id: String, data_key: String, data: Variant) -> void:
+	quests_main[quest_id]["events"][event_id]["data"][data_key] = data
+
+
+func has_main_quest_event_data(quest_id: String, event_id: String, data_key: String) -> bool:
+	return quests_main[quest_id]["events"][event_id]["data"].has(data_key)
+
+
+func get_main_quest_event_data_keys(quest_id: String, event_id: String) -> PackedStringArray:
+	return PackedStringArray(quests_main[quest_id]["events"][event_id]["data"].keys())
+
+
+func get_main_quest_event_data(quest_id: String, event_id: String, data_key: String) -> Variant:
+	return quests_main[quest_id]["events"][event_id]["data"][data_key]
+
+
+func erase_main_quest_event_data(quest_id: String, event_id: String, data_key: String) -> void:
+	quests_main[quest_id]["events"][event_id]["data"].erase(data_key)
+
+#endregion
+
+#region Stages
+
+func get_main_quest_stage_count(quest_id: String) -> int:
+	return quests_main[quest_id]["stages"].size()
+
+
+func create_main_quest_stage(quest_id: String, stage_idx: int = -1) -> int:
+	var size: int = quests_main[quest_id]["stages"].size()
+	if stage_idx < 0:
+		quests_main[quest_id]["stages"].append(
+			{
+				"title":"",
+				"description": "",
+				"requirements": {
+					"items": {},
+					"variables": Array([], TYPE_DICTIONARY, &"", null),
+					"triggers": {},
+					"data": {}}})
+		return size
+	else:
+		var clamped_idx: int = Arrays.clamp_index(
+			quests_main[quest_id]["stages"],
+			stage_idx)
+		quests_main[quest_id]["stages"].insert(clamped_idx)
+		return clamped_idx
+
+
+func erase_main_quest_stage(quest_id: String, stage_idx: int = -1) -> void:
+	quests_main[quest_id]["stages"].remove_at(stage_idx)
+
+
+func set_main_quest_stage_title(quest_id: String, stage: int, title: String) -> void:
+	quests_main[quest_id]["stages"][stage]["title"] = title
+
+
+func get_main_quest_stage_title(quest_id: String, stage: int) -> String:
+	return quests_main[quest_id]["stages"][stage]["title"]
+
+
+func set_main_quest_stage_description(quest_id: String, stage: int, description: String) -> void:
+	quests_main[quest_id]["stages"][stage]["description"] = description
+
+
+func get_main_quest_stage_description(quest_id: String, stage: int) -> String:
+	return quests_main[quest_id]["stages"][stage]["description"]
+
+
+#region Requirements
+
+#region Items
+
+func set_main_quest_item_requirement(quest_id: String, stage_idx: int, item_id: StringName, amount: int, operator: int) -> void:
+	quests_main[quest_id]["stages"][stage_idx]["requirements"]["items"][item_id] = {
+		"amount": amount,
+		"operator": operator,
+		"custom_data": {}}
+
+
+func has_main_quest_item_requirement(quest_id: String, stage_idx: int, item_id: String) -> bool:
+	if not quests_main.has(quest_id):
 		return false
+
+	if stage_idx < 0 or quests_main[quest_id]["stages"].size() <= stage_idx:
+		return false
+
+	return quests_main[quest_id]["stages"][stage_idx]["requirements"]["items"].has(item_id)
+
+
+func erase_main_quest_item_requirement(quest_id: String, stage_idx: int, item_id: String) -> void:
+	quests_main[quest_id]["stages"][stage_idx]["requirements"]["items"].erase(item_id)
+
+
+func set_main_quest_item_amount(quest_id: String, stage_idx: int, item_id: String, amount: int) -> void:
+	quests_main[quest_id]["stages"][stage_idx]["requirements"]["items"][item_id]["amount"] = amount
+
+
+func get_main_quest_item_amount(quest_id: String, stage_idx: int, item_id: String) -> int:
+	return quests_main[quest_id]["stages"][stage_idx]["requirements"]["items"][item_id]["amount"]
+
+
+func set_main_quest_item_operator(quest_id: String, stage_idx: int, item_id: String, operator: int) -> void:
+	quests_main[quest_id]["stages"][stage_idx]["requirements"]["items"][item_id]["operator"] = operator
+
+
+func get_main_quest_item_operator(quest_id: String, stage_idx: int, item_id: String) -> int:
+	return quests_main[quest_id]["stages"][stage_idx]["requirements"]["items"][item_id]["operator"]
+
+#region Custom Data
+
+func create_main_quest_stage_item_custom_data(quest_id: String, stage_idx: int, item_id: String, data_key: String, data: Variant, operator: int) -> void:
+	quests_main[quest_id]["stages"][stage_idx]["requirements"]["items"][item_id]["custom_data"][data_key] = {"value": data, "operator": operator}
+
+
+func set_main_quest_stage_item_custom_data(quest_id: String, stage_idx: int, item_id: String, data_key: String, data: Variant) -> void:
+	quests_main[quest_id]["stages"][stage_idx]["requirements"]["items"][item_id]["custom_data"][data_key]["data"] = data
+
+
+func set_main_quest_stage_item_custom_data_operator(quest_id: String, stage_idx: int, item_id: String, data_key: String, operator: int) -> void:
+	quests_main[quest_id]["stages"][stage_idx]["requirements"]["items"][item_id]["custom_data"][data_key]["operator"] = operator
+
+
+func get_main_quest_stage_item_custom_data(quest_id: String, stage_idx: int, item_id: String, data_key: String) -> Variant:
+	return quests_main[quest_id]["stages"][stage_idx]["requirements"]["items"][item_id]["custom_data"][data_key]["data"]
+
+
+func get_main_quest_stage_item_custom_data_operator(quest_id: String, stage_idx: int, item_id: String, data_key: String) -> Variant:
+	return quests_main[quest_id]["stages"][stage_idx]["requirements"]["items"][item_id]["custom_data"][data_key]["operator"]
+
+
+func has_main_quest_stage_item_custom_data(quest_id: String, stage_idx: int, item_id: String, data_key: String) -> bool:
+	return quests_main[quest_id]["stages"][stage_idx]["requirements"]["items"][item_id]["custom_data"].has(data_key)
+
+
+func erase_main_quest_stage_item_custom_data(quest_id: String, stage_idx: int, item_id: String, data_key: String) -> void:
+	quests_main[quest_id]["stages"][stage_idx]["requirements"]["items"][item_id]["custom_data"].erase(data_key)
+
+
+func get_main_quest_stage_item_custom_data_keys(quest_id: String, stage_idx: int, item_id: String) -> PackedStringArray:
+	return PackedStringArray(quests_main[quest_id]["stages"][stage_idx]["requirements"]["items"][item_id]["custom_data"].keys())
+
+#endregion
+#endregion
+
+#region Variables
+
+func set_main_quest_stage_variable_requirement(quest_id: String, stage_id: String, variable_path: String, value: Variant, operator: int) -> void:
+	var var_idx: int = get_main_quest_stage_variable_index(quest_id, stage_id, variable_path)
 	
-	for req_item in quests_main[quest_key]["stages"][quest_stage]["requirements"]["items"]:
-		for item in quest_data["items"]:
-			if item["id"] != req_item["id"]:
-				continue
-			# We have an array full of dictionaries {id: string, op: int, value: var}
-			# We need to 
-			match req_item["operator"]:
-				OP_EQUAL:
-					if req_item["amount"] != item["amount"]:
-						return false
-				OP_NOT_EQUAL:
-					if req_item["amount"] == item["amount"]:
-						return false
-				OP_LESS:
-					if req_item["amount"] <= item["amount"]:
-						return false
-				OP_LESS_EQUAL:
-					if req_item["amount"] < item["amount"]:
-						return false
-				OP_GREATER:
-					if req_item["amount"] >= item["amount"]:
-						return false
-				OP_GREATER_EQUAL:
-					if req_item["amount"] > item["amount"]:
-						return false
-				_:
-					return false
-			break
+	if var_idx == -1:
+		quests_main[quest_id]["stages"][stage_id]["variables"].append({
+			"path": variable_path,
+			"value": value,
+			"operator": operator})
+	else:
+		quests_main[quest_id]["events"][stage_id]["variables"][var_idx]["value"] = value
+		quests_main[quest_id]["events"][stage_id]["variables"][var_idx]["operator"] = operator
+
+
+func get_main_quest_stage_variable_index(quest_id: String, stage_id: String, variable_path: String) -> int:
+	var idx: int = -1
 	
-	for req_val in quests_main[quest_key]["stages"][quest_stage]["requirements"]["variables"]:
-		for given_val in quest_data["variables"]:
-			if req_val["path"] != given_val["path"]:
-				continue
-			var current_var = NexusForge.Variables.get_variable(req_val["path"])
-			match req_val["operator"]:
-				OP_EQUAL:
-					if req_val["value"] != current_var:
-						return false
-				OP_NOT_EQUAL:
-					if req_val["value"] == current_var:
-						return false
-				OP_LESS:
-					if req_val["value"] <= current_var:
-						return false
-				OP_LESS_EQUAL:
-					if req_val["value"] < current_var:
-						return false
-				OP_GREATER:
-					if req_val["value"] >= current_var:
-						return false
-				OP_GREATER_EQUAL:
-					if req_val["value"] > current_var:
-						return false
-				_:
-					return false
-			break
+	for variable in quests_main[quest_id]["stages"][stage_id]["variables"]:
+		idx += 1
+		if variable["path"] == variable_path:
+			return idx
 	
-	for req_trigg in quests_main[quest_key]["stages"][quest_stage]["requirements"]["triggers"]:
-		for given_trigger in quest_data["triggers"]:
-			if req_trigg["id"] != given_trigger["id"]:
-				continue
-			match req_trigg["operator"]:
-				OP_EQUAL:
-					if req_trigg["count"] != given_trigger["count"]:
-						return false
-				OP_NOT_EQUAL:
-					if req_trigg["count"] == given_trigger["count"]:
-						return false
-				OP_LESS:
-					if req_trigg["count"] <= given_trigger["count"]:
-						return false
-				OP_LESS_EQUAL:
-					if req_trigg["count"] < given_trigger["count"]:
-						return false
-				OP_GREATER:
-					if req_trigg["count"] >= given_trigger["count"]:
-						return false
-				OP_GREATER_EQUAL:
-					if req_trigg["count"] > given_trigger["count"]:
-						return false
-				_:
-					return false
-			break
-	return true
+	return -1
 
 
-func boiler_quest_stage_achieved(quest_key: String, quest_stage: int, objective_id: int, quest_data: Dictionary = {}) -> bool:
-	if quests_boiler.has(quest_key):
-		for req_item in quests_boiler[quest_key]["stages"][quest_stage]["stage_pool"][objective_id]["requirements"]["items"]:
-			for item in quest_data["items"]:
-				if item["id"] != req_item["id"]:
-					continue
-				if req_item["custom_data"] != item["custom_data"]:
-					return false
-				match req_item["operator"]:
-					OP_EQUAL:
-						if req_item["amount"] != item["amount"]:
-							return false
-					OP_NOT_EQUAL:
-						if req_item["amount"] == item["amount"]:
-							return false
-					OP_LESS:
-						if req_item["amount"] <= item["amount"]:
-							return false
-					OP_LESS_EQUAL:
-						if req_item["amount"] < item["amount"]:
-							return false
-					OP_GREATER:
-						if req_item["amount"] >= item["amount"]:
-							return false
-					OP_GREATER_EQUAL:
-						if req_item["amount"] > item["amount"]:
-							return false
-					_:
-						return false
-				break
-		for req_val in quests_boiler[quest_key]["stages"][quest_stage]["stage_pool"][objective_id]["requirements"]["variables"]:
-			for given_val in quest_data["variables"]:
-				if req_val["path"] != given_val["path"]:
-					continue
-				var current_var = NexusForge.Variables.get_variable(req_val["path"])
-				match req_val["operator"]:
-					OP_EQUAL:
-						if req_val["value"] != current_var:
-							return false
-					OP_NOT_EQUAL:
-						if req_val["value"] == current_var:
-							return false
-					OP_LESS:
-						if req_val["value"] <= current_var:
-							return false
-					OP_LESS_EQUAL:
-						if req_val["value"] < current_var:
-							return false
-					OP_GREATER:
-						if req_val["value"] >= current_var:
-							return false
-					OP_GREATER_EQUAL:
-						if req_val["value"] > current_var:
-							return false
-					_:
-						return false
-				break
-		for req_trigg in quests_boiler[quest_key]["stages"][quest_stage]["stage_pool"][objective_id]["requirements"]["triggers"]:
-			for given_trigger in quest_data["triggers"]:
-				if req_trigg["id"] != given_trigger["id"]:
-					continue
-				match req_trigg["operator"]:
-					OP_EQUAL:
-						if req_trigg["count"] != given_trigger["count"]:
-							return false
-					OP_NOT_EQUAL:
-						if req_trigg["count"] == given_trigger["count"]:
-							return false
-					OP_LESS:
-						if req_trigg["count"] <= given_trigger["count"]:
-							return false
-					OP_LESS_EQUAL:
-						if req_trigg["count"] < given_trigger["count"]:
-							return false
-					OP_GREATER:
-						if req_trigg["count"] >= given_trigger["count"]:
-							return false
-					OP_GREATER_EQUAL:
-						if req_trigg["count"] > given_trigger["count"]:
-							return false
-					_:
-						return false
-		return true
-	return false
-
-
-# Returns an array of items to input into *_quest_stage_achieved. Ex:
-# [{"item": "peach", "amount": 12, "with_data": ["quality", "material", "juicy"]}]
-# Then you need to build an array[Dict] with similar structure BUT it has
-# to retain the same order as given. EX:
-# [{"item": "peach", "amount": 7, "custom_data": [{"id": "quality", "value": 3}, {"id": "material", "value": "soft", "juicy": true}]}]
-func get_main_quest_required_item_data(quest_id: String, stage_id: int) -> Array[Dictionary]:
-	var required_items: Array[Dictionary] = []
-	if has_main_quest_requirement(quest_id, stage_id, "items"):
-		for required_item in quests_main[quest_id]["stages"][stage_id]["requirements"]["items"]:
-			var custom_data_keys: Array[String] = []
-			
-			for custom_key in required_item["custom_data"]:
-				custom_data_keys.append(custom_key["id"])
-			
-			required_items.append({
-				"item": required_item["item"],
-				"amount": required_item["amount"],
-				"custom_data": custom_data_keys})
+func get_main_quest_stage_variable_requirements(quest_id: String, stage_id: String) -> PackedStringArray:
+	var paths := PackedStringArray()
 	
-	return required_items
-
-
-func get_boiler_quest_required_item_data(quest_id: String, stage_id: int, pool_idx: int) -> Array[Dictionary]:
-	var required_items: Array[Dictionary] = []
+	for variable in quests_main[quest_id]["stages"][stage_id]["variables"]:
+		paths.append(variable["path"])
 	
-	if has_boiler_quest_requirement(quest_id, stage_id, pool_idx, "items"):
-		for required_item in quests_boiler[quest_id]["stages"][stage_id][pool_idx]["requirements"]["items"]:
-			var custom_data_keys: Array[String] = []
-			
-			for custom_key in required_item["custom_data"]:
-				custom_data_keys.append(custom_key["id"])
-			
-			required_items.append({
-				"item": required_item["item"],
-				"amount": required_item["amount"],
-				"custom_data": custom_data_keys})
-	
-	return required_items
-
-# --------------------------------------------------------------
-
-func main_quest_next_stage(quest_idx: int) -> void:
-	active_main_quests[quest_idx]["stage"] = mini(
-			active_main_quests[quest_idx]["stage"] + 1,
-			active_main_quests[quest_idx]["stages"].size() - 1)
+	return paths
 
 
-func boiler_quest_next_stage(quest_idx: int) -> void:
-	active_boiler_quests[quest_idx]["stage"] = mini(
-			active_boiler_quests[quest_idx]["stage"] + 1,
-			active_boiler_quests[quest_idx]["stage_pool"].size() - 1)
+func get_main_quest_stage_variable_requirement_value(quest_id: String, stage_id: String, variable_path: String) -> Variant:
+	var idx: int = get_main_quest_stage_variable_index(quest_id, stage_id, variable_path)
+	return quests_main[quest_id]["stages"][stage_id]["variables"][idx]["value"]
 
 
-### Returns a dictionary with 3 keys: "items", "triggers" and "variables".
-### This one is used for unique quests only.[br]
-### Each one has a dictionary with 3 keys: "current", "required" and "operator"[br]
-### Ex: {"items": {"apple": {"current": 1, "required": 3, "operator": "EQUAL_OR_MORE"}}}
-#func get_quest_progress_serialized_unique(quest_id: String) -> Dictionary:
-	#var serialized: Dictionary = {
-		#"items": [],
-		#"triggers": [],
-		#"variables": []
-	#}
-	
-	#for item in active["unique"][quest_id]["progress"]["items"]:
-		#serialized["items"][item] = {
-			#"exact": quests_unique[quest_id][active["unique"][quest_id]["stage_id"]]["items"][item]["exact"],
-			#"current": get_quest_progress_item_unique(quest_id, item),
-			#"required": quests_unique[quest_id][active["unique"][quest_id]["stage_id"]]["items"][item]["amount"],
-			#"operator": operator_to_string(quests_unique[quest_id][active["unique"][quest_id]["stage_id"]]["items"][item]["match"])}
-	#for trigger in active["unique"][quest_id]["progress"]["triggers"]:
-		#serialized["triggers"][trigger] = {
-			#"current": get_quest_progress_trigger_unique(quest_id, trigger),
-			#"required": quests_unique[quest_id][active["unique"][quest_id]["stage_id"]]["triggers"][trigger]["amount"],
-			#"operator": operator_to_string(quests_unique[quest_id][active["unique"][quest_id]["stage_id"]]["triggers"][trigger]["match"])}
-	#for variable in quests_unique[quest_id][active["unique"][quest_id]["stage_id"]]["variables"]:
-		#serialized["variables"][variable] = {
-			#"current": NexusForge.Variables.get_variable(variable),
-			#"required": quests_unique[quest_id][active["unique"][quest_id]["stage_id"]]["variables"][variable]["value"],
-			#"operator": operator_to_string(quests_unique[quest_id][active["unique"][quest_id]["stage_id"]]["variables"][variable]["match"])}
-
-	#return serialized
+func get_main_quest_stage_variable_requirement_operator(quest_id: String, stage_id: String, variable_path: String) -> int:
+	var idx: int = get_main_quest_stage_variable_index(quest_id, stage_id, variable_path)
+	return quests_main[quest_id]["stages"][stage_id]["variables"][idx]["operator"]
 
 
-func create_main_quest(quest_key: String, title: String = "", desc: String = "") -> void:
-	quests_main[quest_key] = {
-		"title": title,
-		"description": desc,
+func erase_main_quest_stage_variable_requirement(quest_id: String, stage_id: String, variable_path: StringName) -> void:
+	return quests_main[quest_id]["events"][stage_id]["variables"].erase(
+		get_main_quest_stage_variable_index(quest_id, stage_id, variable_path))
+
+#endregion
+
+#region Triggers
+
+func add_main_quest_stage_trigger_requirement(quest_id: String, stage_idx: int, trigger_id: StringName, count: int, operator: int) -> void:
+	quests_main[quest_id]["stages"][stage_idx]["requirements"]["triggers"][trigger_id] = {
+		"count": count,
+		"operator": operator}
+
+
+func has_main_quest_stage_trigger_requirement(quest_id: String, stage_idx: int, trigger_id: StringName) -> bool:
+	return quests_main[quest_id]["stages"][stage_idx]["requirements"]["triggers"].has(trigger_id)
+
+
+func get_main_quest_stage_trigger_requirements(quest_id: String, stage_idx: int) -> Array[StringName]:
+	return Array(
+		quests_main[quest_id]["stages"][stage_idx]["requirements"]["triggers"].keys(),
+		TYPE_STRING_NAME,
+		&"",
+		null)
+
+
+func erase_main_quest_stage_trigger_requirement(quest_id: String, stage_idx: int, trigger_id: StringName) -> void:
+	quests_main[quest_id]["stages"][stage_idx]["requirements"]["triggers"].erase(trigger_id)
+
+
+func get_main_quest_stage_trigger_count_requirement(quest_id: String, stage_idx: int, trigger_id: StringName) -> int:
+	return quests_main[quest_id]["stages"][stage_idx]["requirements"]["triggers"][trigger_id]["count"]
+
+
+func set_main_quest_stage_trigger_count_requirement(quest_id: String, stage_idx: int, trigger_id: StringName, count: int) -> void:
+	quests_main[quest_id]["stages"][stage_idx]["requirements"]["triggers"][trigger_id]["count"] = count
+
+
+func set_main_quest_stage_trigger_operator_requirement(quest_id: String, stage_idx: int, trigger_id: StringName, operator: int) -> void:
+	quests_main[quest_id]["stages"][stage_idx]["requirements"]["triggers"][trigger_id]["operator"] = operator
+
+
+func get_main_quest_stage_trigger_operator_requirement(quest_id: String, stage_idx: int, trigger_id: StringName) -> int:
+	return quests_main[quest_id]["stages"][stage_idx]["requirements"]["triggers"][trigger_id]["operator"]
+
+#endregion
+
+#region Custom Data
+
+func set_main_quest_stage_data_requirement(quest_id: String, stage_idx: int, data_key: String, data: Variant) -> void:
+	quests_main[quest_id]["stages"][stage_idx]["requirements"]["data"][data_key] = data
+
+
+func has_main_quest_stage_data_requirement(quest_id: String, stage_idx: int, data_key: String) -> bool:
+	return quests_main[quest_id]["stages"][stage_idx]["requirements"]["data"].has(data_key)
+
+
+func get_main_quest_stage_data_requirement_keys(quest_id: String, stage_idx: int, data_key: String) -> PackedStringArray:
+	return PackedStringArray(quests_main[quest_id]["stages"][stage_idx]["requirements"]["data"].keys())
+
+
+func get_main_quest_stage_data_requirement(quest_id: String, stage_idx: int, data_key: String) -> Variant:
+	return quests_main[quest_id]["stages"][stage_idx]["requirements"]["data"][data_key]
+
+
+func erase_main_quest_stage_data_requirement(quest_id: String, stage_idx: int, data_key: String) -> void:
+	quests_main[quest_id]["stages"][stage_idx]["requirements"]["data"].erase(data_key)
+
+#endregion
+#endregion
+#endregion
+#endregion
+
+
+#region Boiler Quests
+
+func create_boiler_quest(boiler_id: String) -> void:
+	quests_boiler[boiler_id] = {
+		"title": "",
+		"description": "",
+		"completion_limit": 1,
 		"events": {},
 		"stages": Array([], TYPE_DICTIONARY, &"", null)}
 
 
-func create_boiler_quest(quest_key: String, completion_limit: int = 1, title: String = "", desc: String = "") -> void:
-	quests_boiler[quest_key] = {
-		"title": title,
-		"description": desc,
-		"completion_limit": maxi(0, completion_limit),
-		"events": {},
-		"stages": Array([], TYPE_ARRAY, &"", null)}
+func has_boiler_quest(boiler_id: String) -> void:
+	return quests_boiler.has(boiler_id)
 
 
-func get_main_quest_events(quest_key: String, event_key: String) -> Dictionary:
-	if quests_main[quest_key]["events"].has(event_key):
-		return quests_main[quest_key]["events"][event_key]
-	return {}
+func get_boiler_quests() -> PackedStringArray:
+	return PackedStringArray(quests_boiler.keys())
 
 
-func register_main_quest_event(quest_key: String, event_key: String, event_data: Dictionary) -> void:
-	quests_main[quest_key]["events"][event_key] = event_data
+func erase_boiler_quest(boiler_id: String) -> void:
+	quests_boiler.erase(boiler_id)
 
 
-func has_main_quest_event(quest_key: String, event_key: String) -> bool:
-	return quests_main[quest_key]["events"].has(event_key)
+func set_boiler_quest_title(boiler_id: String, title: String) -> void:
+	quests_boiler[boiler_id]["title"] = title
 
 
-func remove_main_quest_event(quest_key: String, event_key: String) -> void:
-	quests_main[quest_key]["events"].erase(event_key)
+func get_boiler_quest_title(boiler_id: String) -> String:
+	return quests_boiler[boiler_id]["title"]
 
 
-func get_boiler_quest_events(quest_key: String, event_key: String) -> Array[Dictionary]:
-	if quests_boiler[quest_key]["events"].has(event_key):
-		return quests_main[quest_key]["events"][event_key]
-	return Array([], TYPE_DICTIONARY, &"", null)
+func set_boiler_quest_description(boiler_id: String, description: String) -> void:
+	quests_boiler[boiler_id]["description"] = description
 
 
-func has_boiler_quest_event(quest_key: String, event_key: String) -> bool:
-	return quests_boiler[quest_key]["events"].has(event_key)
+func get_boiler_quest_description(boiler_id: String) -> String:
+	return quests_boiler[boiler_id]["description"]
 
 
-func register_boiler_quest_event(quest_key: String, event_key: String, event_data: Dictionary) -> void:
-	quests_boiler[quest_key]["events"][event_key] = event_data
+func set_boiler_quest_completion_limit(boiler_id: String, completion_limit: int) -> void:
+	quests_boiler[boiler_id]["completion_limit"] = maxi(0, completion_limit)
 
 
-func remove_boiler_quest_event(quest_key: String, event_key: String) -> void:
-	quests_boiler[quest_key]["events"].erase(event_key)
+func get_boiler_quest_completion_limit(boiler_id: String) -> int:
+	return quests_boiler[boiler_id]["completion_limit"]
+
+#region Events
+
+func create_boiler_quest_event(quest_id: String, event_id: String) -> void:
+	quests_boiler[quest_id]["events"][event_id] = {
+		"items": {},
+		"currency": {},
+		"variables": Array([], TYPE_DICTIONARY, &"", null),
+		"data": {}}
 
 
-func has_main_quest(quest_key: String) -> bool:
-	return quests_main.has(quest_key)
+func has_boiler_quest_event(quest_id: String, event_id: String) -> bool:
+	return quests_boiler[quest_id]["events"].has(event_id)
 
 
-func has_boiler_quest(quest_key: String) -> bool:
-	return quests_boiler.has(quest_key)
+func erase_boiler_quest_event(quest_id: String, event_id: String) -> void:
+	quests_boiler[quest_id]["events"].erase(event_id)
 
 
-func erase_main_quest(quest_key: String) -> void:
-	quests_main.erase(quest_key)
+func get_boiler_quest_events(quest_id: String) -> PackedStringArray:
+	return PackedStringArray(quests_boiler[quest_id]["events"].keys())
 
 
-func erase_boiler_quest(quest_key: String) -> void:
-	quests_boiler.erase(quest_key)
+func set_boiler_quest_event_item(quest_id: String, event_id: String, item_id: StringName, count: int, operator: int) -> void:
+	quests_boiler[quest_id]["events"][event_id]["items"][item_id] = {
+		"count": count,
+		"operator": operator}
 
 
-func erase_main_quest_stage(quest_key: String, stage_id: int) -> void:
-	quests_main[quest_key]["stages"].remove_at(stage_id)
+func has_boiler_quest_event_item(quest_id: String, event_id: String, item_id: StringName) -> bool:
+	return quests_boiler[quest_id]["events"][event_id]["items"].has(item_id)
+
+
+func get_boiler_quest_event_items(quest_id: String, event_id: String) -> PackedStringArray:
+	return PackedStringArray(quests_boiler[quest_id]["events"][event_id]["items"].keys())
+
+
+func get_boiler_quest_event_item_count(quest_id: String, event_id: String, item_id: StringName) -> int:
+	return quests_boiler[quest_id]["events"][event_id]["items"][item_id]["count"]
+
+
+func get_boiler_quest_event_item_operator(quest_id: String, event_id: String, item_id: StringName) -> int:
+	return quests_boiler[quest_id]["events"][event_id]["items"][item_id]["operator"]
+
+
+func erase_boiler_quest_event_item(quest_id: String, event_id: String, item_id: StringName) -> void:
+	return quests_boiler[quest_id]["events"][event_id]["items"].erase(item_id)
+
+
+func set_boiler_quest_event_currency(quest_id: String, event_id: String, currency_id: StringName, count: int, operator: int) -> void:
+	quests_boiler[quest_id]["events"][event_id]["currency"][currency_id] = {
+		"count": count,
+		"operator": operator}
+
+
+func has_boiler_quest_event_currency(quest_id: String, event_id: String, currency_id: StringName) -> bool:
+	return quests_boiler[quest_id]["events"][event_id]["currency"].has(currency_id)
+
+
+func get_boiler_quest_event_currencies(quest_id: String, event_id: String) -> PackedStringArray:
+	return PackedStringArray(quests_boiler[quest_id]["events"][event_id]["currency"].keys())
+
+
+func get_boiler_quest_event_currency_count(quest_id: String, event_id: String, currency_id: StringName) -> int:
+	return quests_boiler[quest_id]["events"][event_id]["currency"][currency_id]["count"]
+
+
+func get_boiler_quest_event_currency_operator(quest_id: String, event_id: String, currency_id: StringName) -> int:
+	return quests_boiler[quest_id]["events"][event_id]["currency"][currency_id]["operator"]
+
+
+func erase_boiler_quest_event_currency(quest_id: String, event_id: String, currency_id: StringName) -> void:
+	return quests_boiler[quest_id]["events"][event_id]["currency"].erase(currency_id)
+
+
+func set_boiler_quest_event_variable(quest_id: String, event_id: String, variable_path: String, value: Variant, operator: int) -> void:
+	var var_idx: int = get_boiler_quest_event_variable_index(quest_id, event_id, variable_path)
+	
+	if var_idx == -1:
+		quests_boiler[quest_id]["events"][event_id]["variables"].append({
+			"path": variable_path,
+			"value": value,
+			"operator": operator})
+	else:
+		quests_boiler[quest_id]["events"][event_id]["variables"][var_idx]["value"] = value
+		quests_boiler[quest_id]["events"][event_id]["variables"][var_idx]["operator"] = operator
+
+
+func get_boiler_quest_event_variable_index(quest_id: String, event_id: String, variable_path: String) -> int:
+	var idx: int = -1
+	
+	for variable in quests_boiler[quest_id]["events"][event_id]["variables"]:
+		idx += 1
+		if variable["path"] == variable_path:
+			return idx
+	
+	return -1
+
+
+func get_boiler_quest_event_variables(quest_id: String, event_id: String) -> PackedStringArray:
+	var paths := PackedStringArray()
+	
+	for variable in quests_boiler[quest_id]["events"][event_id]["variables"]:
+		paths.append(variable["path"])
+	
+	return paths
+
+
+func get_boiler_quest_event_variable_value(quest_id: String, event_id: String, variable_path: String) -> Variant:
+	var idx: int = get_boiler_quest_event_variable_index(quest_id, event_id, variable_path)
+	return quests_boiler[quest_id]["events"][event_id]["variables"][idx]["value"]
+
+
+func get_boiler_quest_event_variable_operator(quest_id: String, event_id: String, variable_path: String) -> int:
+	var idx: int = get_boiler_quest_event_variable_index(quest_id, event_id, variable_path)
+	return quests_boiler[quest_id]["events"][event_id]["variables"][idx]["operator"]
+
+
+func erase_boiler_quest_event_variable(quest_id: String, event_id: String, variable_path: StringName) -> void:
+	return quests_boiler[quest_id]["events"][event_id]["variables"].erase(
+		get_boiler_quest_event_variable_index(quest_id, event_id, variable_path))
+
+
+func set_boiler_quest_event_data(quest_id: String, event_id: String, data_key: String, data: Variant) -> void:
+	quests_boiler[quest_id]["events"][event_id]["data"][data_key] = data
+
+
+func has_boiler_quest_event_data(quest_id: String, event_id: String, data_key: String) -> bool:
+	return quests_boiler[quest_id]["events"][event_id]["data"].has(data_key)
+
+
+func get_boiler_quest_event_data_keys(quest_id: String, event_id: String) -> PackedStringArray:
+	return PackedStringArray(quests_boiler[quest_id]["events"][event_id]["data"].keys())
+
+
+func get_boiler_quest_event_data(quest_id: String, event_id: String, data_key: String) -> Variant:
+	return quests_boiler[quest_id]["events"][event_id]["data"][data_key]
+
+
+func erase_boiler_quest_event_data(quest_id: String, event_id: String, data_key: String) -> void:
+	quests_boiler[quest_id]["events"][event_id]["data"].erase(data_key)
+
+#endregion
+
+#region Stages
+
+func get_boiler_quest_stage_count(quest_id: String) -> int:
+	return quests_boiler[quest_id]["stages"].size()
+
+
+func set_boiler_quest_stage_pool_name(quest_id: String, stage: int, new_name: String) -> void:
+	quests_boiler[quest_id]["stages"][stage]["pool_name"] = new_name
+
+
+func get_boiler_quest_stage_pool_name(quest_id: String, stage: int) -> String:
+	return quests_boiler[quest_id]["stages"][stage]["pool_name"]
+
+
+func create_boiler_quest_stage(quest_id: String, stage_idx: int = -1) -> int:
+	var size: int = quests_boiler[quest_id]["stages"].size()
+	
+	if stage_idx < 0:
+		quests_boiler[quest_id]["stages"].append(
+			{
+				"pool_name": "",
+				"pool_items": Array([], TYPE_DICTIONARY, &"", null)
+			})
+		return size
+	else:
+		var clamped_idx: int = Arrays.clamp_index(
+			quests_boiler[quest_id]["stages"],
+			stage_idx)
+		quests_boiler[quest_id]["stages"].insert(
+			{
+				"pool_name": "",
+				"pool_items": Array([], TYPE_DICTIONARY, &"", null)
+			},
+			clamped_idx)
+		return clamped_idx
 
 
 func erase_boiler_quest_stage(quest_key: String, stage_id: int) -> void:
 	quests_boiler[quest_key]["stages"].remove_at(stage_id)
 
 
-func erase_boiler_quest_pool(quest_key: String, stage_id: int, pool_id: int) -> void:
-	quests_boiler[quest_key]["stages"][stage_id]["stage_pool"].remove_at(stage_id)
+func create_boiler_quest_stage_pool_item(quest_id: String, stage_idx: int) -> void:
+	quests_boiler[quest_id]["stages"][stage_idx]["pool_items"].append(
+		{
+			"title":"",
+			"description": "",
+			"requirements": {
+				"items": {},
+				"variables": Array([], TYPE_DICTIONARY, &"", null),
+				"triggers": {},
+				"data": {}}})
 
 
-func set_boiler_quest_pool_min(quest_key: String, stage_id: int, pool_id: int, pool_min: int) -> void:
-	quests_boiler[quest_key]["stages"][stage_id]["stage_pool"][pool_id]["min"] = maxi(1, pool_min)
-	quests_boiler[quest_key]["stages"][stage_id]["stage_pool"][pool_id]["max"] = maxi(
-			pool_min,
-			quests_boiler[quest_key]["stages"][stage_id]["stage_pool"][pool_id]["max"])
+func get_boiler_quest_stage_pool_size(boiler_id: String, stage: int) -> int:
+	return quests_boiler[boiler_id]["stages"][stage]["pool_items"].size()
 
 
-func set_boiler_quest_pool_max(quest_key: String, stage_id: int, pool_id: int, pool_max: int) -> void:
-	quests_boiler[quest_key]["stages"][stage_id]["stage_pool"][pool_id]["max"] = maxi(
-		quests_boiler[quest_key]["stages"][stage_id]["stage_pool"][pool_id]["min"],
-		pool_max)
+func remove_boiler_quest_stage_pool_item(boiler_id: String, stage: int, item_idx: int) -> int:
+	return quests_boiler[boiler_id]["stages"][stage]["pool_items"].remove_at(item_idx)
 
 
-func set_main_quest_title(quest_key: String, title: String) -> void:
-	quests_main[quest_key]["title"] = title
+func set_boiler_quest_pool_item_title(quest_id: String, stage: int, pool_idx: int, title: String) -> void:
+	quests_boiler[quest_id]["stages"][stage]["pool_items"][pool_idx]["title"] = title
 
 
-func set_boiler_quest_title(quest_key: String, title: String) -> void:
-	quests_boiler[quest_key]["title"] = title
+func get_boiler_quest_pool_item_title(quest_id: String, stage: int, pool_idx: int) -> String:
+	return quests_boiler[quest_id]["stages"][stage]["pool_items"][pool_idx]["title"]
 
 
-func set_main_quest_desc(quest_key: String, desc: String) -> void:
-	quests_main[quest_key]["description"] = desc
+func set_boiler_quest_pool_item_description(quest_id: String, stage: int, pool_idx: int, description: String) -> void:
+	quests_boiler[quest_id]["stages"][stage]["pool_items"][pool_idx]["description"] = description
 
 
-func set_boiler_quest_desc(boiler_key: String, desc: String) -> void:
-	quests_boiler[boiler_key]["description"] = desc
+func get_boiler_quest_pool_item_description(quest_id: String, stage: int, pool_idx: int) -> String:
+	return quests_boiler[quest_id]["stages"][stage]["pool_items"][pool_idx]["description"]
 
 
-func set_main_quest_stage_desc(quest_key: String, stage_id: int, desc: String) -> void:
-	quests_main[quest_key]["stages"][stage_id]["description"] = desc
+#region Requirements
+
+#region Items
+
+func set_boiler_quest_pool_item_requirement(quest_id: String, stage_idx: int, item_id: StringName, amount: int, operator: int) -> void:
+	quests_boiler[quest_id]["stages"][stage_idx]["requirements"]["items"][item_id] = {
+		"amount": amount,
+		"operator": operator,
+		"custom_data": {}}
 
 
-func set_main_quest_requirement(quest_key: String, stage_id: int, requirement_key: String, requirement_data: Array[Dictionary]) -> void:
-	quests_main[quest_key]["stages"][stage_id]["requirements"][requirement_key] = requirement_data
+func has_boiler_quest_pool_item_requirement(quest_id: String, stage_idx: int, item_id: String) -> bool:
+	if not quests_boiler.has(quest_id):
+		return false
+
+	if stage_idx < 0 or quests_boiler[quest_id]["stages"].size() <= stage_idx:
+		return false
+
+	return quests_boiler[quest_id]["stages"][stage_idx]["requirements"]["items"].has(item_id)
 
 
-func set_boiler_quest_requirement(quest_key: String, stage_id: int, pool_idx: int, requirement_key: String, requirement_data: Array[Dictionary]) -> void:
-	quests_boiler[quest_key]["stages"][stage_id][pool_idx]["requirements"][requirement_key] = requirement_data
+func erase_boiler_quest_pool_item_requirement(quest_id: String, stage_idx: int, item_id: String) -> void:
+	quests_boiler[quest_id]["stages"][stage_idx]["requirements"]["items"].erase(item_id)
 
 
-func has_main_quest_requirement(quest_key: String, stage_id: int, requirement_key: String) -> bool:
-	return quests_main[quest_key]["stages"][stage_id]["requirements"].has(requirement_key)
+func set_boiler_quest_pool_item_amount(quest_id: String, stage_idx: int, item_id: String, amount: int) -> void:
+	quests_boiler[quest_id]["stages"][stage_idx]["requirements"]["items"][item_id]["amount"] = amount
 
 
-func has_boiler_quest_requirement(quest_key: String, stage_id: int, pool_idx: int, requirement_key: String) -> bool:
-	return quests_boiler[quest_key]["stages"][stage_id][pool_idx]["requirements"].has(requirement_key)
+func get_boiler_quest_pool_item_amount(quest_id: String, stage_idx: int, item_id: String) -> int:
+	return quests_boiler[quest_id]["stages"][stage_idx]["requirements"]["items"][item_id]["amount"]
 
 
-func remove_main_quest_requirement(quest_key: String, stage_id: int, requirement_key: String) -> void:
-	quests_main[quest_key]["stages"][stage_id]["requirements"].erase(requirement_key)
+func set_boiler_quest_pool_item_operator(quest_id: String, stage_idx: int, item_id: String, operator: int) -> void:
+	quests_boiler[quest_id]["stages"][stage_idx]["requirements"]["items"][item_id]["operator"] = operator
 
 
-func remove_boiler_quest_requirement(quest_key: String, stage_id: int, pool_idx: int, requirement_key: String) -> void:
-	quests_boiler[quest_key]["stages"][stage_id][pool_idx]["requirements"].erase(requirement_key)
+func get_boiler_quest_pool_item_operator(quest_id: String, stage_idx: int, item_id: String) -> int:
+	return quests_boiler[quest_id]["stages"][stage_idx]["requirements"]["items"][item_id]["operator"]
+
+#region Custom Data
+
+func add_boiler_quest_stage_item_custom_data(quest_id: String, stage_idx: int, item_id: String, data_key: String, data: Variant, operator: int) -> void:
+	quests_boiler[quest_id]["stages"][stage_idx]["requirements"]["items"][item_id]["custom_data"][data_key] = {"value": data, "operator": operator}
 
 
-func set_boiler_quest_stage_desc(boiler_key: String, stage_id: int, pool_idx: int, desc: String) -> void:
-	quests_boiler[boiler_key]["stages"][stage_id][pool_idx]["description"] = desc
+func set_boiler_quest_stage_item_custom_data(quest_id: String, stage_idx: int, item_id: String, data_key: String, data: Variant) -> void:
+	quests_boiler[quest_id]["stages"][stage_idx]["requirements"]["items"][item_id]["custom_data"][data_key]["value"] = data
 
 
-func set_main_quest_stage_title(quest_key: String, stage_id: int, title: String) -> void:
-	quests_main[quest_key]["stages"][stage_id]["title"] = title
+func set_boiler_quest_stage_item_custom_operator(quest_id: String, stage_idx: int, item_id: String, data_key: String, operator: int) -> void:
+	quests_boiler[quest_id]["stages"][stage_idx]["requirements"]["items"][item_id]["custom_data"][data_key]["operator"] = operator
 
 
-func set_boiler_quest_stage_title(quest_key: String, stage_id: int, pool_idx: int, title: String) -> void:
-	quests_boiler[quest_key]["stages"][stage_id][pool_idx]["title"] = title
+func get_boiler_quest_stage_item_custom_data(quest_id: String, stage_idx: int, item_id: String, data_key: String) -> Variant:
+	return quests_boiler[quest_id]["stages"][stage_idx]["requirements"]["items"][item_id]["custom_data"][data_key]["value"]
 
 
-func add_main_quest_stage_item(quest_key: String, stage_id: int, item_id: String, amount: int, eval: int = OP_EQUAL, custom_data: Array[Dictionary] = []) -> void:
-	quests_main[quest_key]["stages"][stage_id]["requirements"]["items"].append(
-			{
-				"item": item_id,
-				"amount": maxi(0, amount),
-				"operator": eval,
-				"custom_data": custom_data})
+func get_boiler_quest_stage_item_custom_operator(quest_id: String, stage_idx: int, item_id: String, data_key: String) -> int:
+	return quests_boiler[quest_id]["stages"][stage_idx]["requirements"]["items"][item_id]["custom_data"][data_key]["operator"]
 
 
-func add_boiler_quest_stage_item(boiler_key: String, stage_id: int, objective_id: int, item_id: String, amount: int, eval: int = OP_EQUAL, custom_data: Array[Dictionary] = []) -> void:
-	quests_boiler[boiler_key]["stages"][stage_id]["stage_pool"][objective_id]["requirements"]["items"].append(
-			{
-				"item": item_id,
-				"amount": maxi(0, amount),
-				"operator": eval,
-				"custom_data": custom_data})
+func has_boiler_quest_stage_item_custom_data(quest_id: String, stage_idx: int, item_id: String, data_key: String) -> bool:
+	return quests_boiler[quest_id]["stages"][stage_idx]["requirements"]["items"][item_id]["custom_data"].has(data_key)
+
+
+func erase_boiler_quest_stage_item_custom_data(quest_id: String, stage_idx: int, item_id: String, data_key: String) -> void:
+	quests_boiler[quest_id]["stages"][stage_idx]["requirements"]["items"][item_id]["custom_data"].erase(data_key)
+
+
+func get_boiler_quest_stage_item_custom_data_keys(quest_id: String, stage_idx: int, item_id: String) -> PackedStringArray:
+	return PackedStringArray(quests_boiler[quest_id]["stages"][stage_idx]["requirements"]["items"][item_id]["custom_data"].keys())
+
+#endregion
+#endregion
+
+#region Variables
+
+func set_boiler_quest_stage_variable_requirement(quest_id: String, stage: int, pool_idx: int, variable_path: String, value: Variant, operator: int) -> void:
+	var var_idx: int = get_boiler_quest_stage_variable_index(quest_id, stage, pool_idx, variable_path)
 	
-
-func add_main_quest_stage_variable(quest_key: String, stage_id: int, variable_path: String, value: Variant, operator: int = OP_EQUAL) -> void:
-	quests_main[quest_key]["stages"][stage_id]["requirements"]["variables"].append({"path": variable_path, "value": value, "operator": operator})
-
-
-func add_boiler_quest_stage_variable(quest_key: String, stage_id: int, pool_id: int, variable_path: String, value: Variant, operator: int = OP_EQUAL) -> void:
-	quests_boiler[quest_key]["stages"][stage_id]["stage_pool"][pool_id]["requirements"]["variables"].append({"path": variable_path, "value": value, "operator": operator})
-
-
-func add_main_quest_stage_trigger(quest_key: String, stage_id: int, trigger_id: StringName, count: int, operator: int = OP_EQUAL) -> void:
-	quests_main[quest_key]["stages"][stage_id]["requirements"]["triggers"].append({"trigger": trigger_id, "count": count, "operator": operator})
-
-
-func remove_main_quest_stage_item(quest_key: String, stage_id: int, item_idx: String) -> void:
-	quests_main[quest_key]["stages"][stage_id]["requirements"]["items"].remove_at(item_idx)
-
-
-func remove_boiler_quest_stage_item(quest_key: String, stage_id: int, pool_id: int, item_idx: String) -> void:
-	quests_boiler[quest_key]["stages"][stage_id]["stage_pool"][pool_id]["requirements"]["items"].remove_at(item_idx)
-
-
-func remove_main_quest_stage_variable(quest_key: String, stage_id: int, variable_idx: int) -> void:
-	quests_main[quest_key]["stages"][stage_id]["requirements"]["variables"].remove_at(variable_idx)
-
-
-func remove_boiler_quest_stage_variable(quest_key: String, stage_id: int, stage_pool: int, variable_idx: int) -> void:
-	quests_boiler[quest_key]["stages"][stage_id]["stage_pool"][stage_id]["requirements"]["variables"].remove_at(variable_idx)
-
-
-func remove_main_quest_stage_trigger(quest_key: String, stage_id: int, trigger_idx: int) -> void:
-	quests_main[quest_key]["stages"][stage_id]["requirements"]["triggers"].remove_at(trigger_idx)
-
-
-func remove_boiler_quest_stage_trigger(quest_key: String, stage_id: int, pool_id: int, trigger_idx: int) -> void:
-	quests_boiler[quest_key]["stages"][stage_id]["stage_pool"][pool_id]["requirements"]["triggers"].remove_at(trigger_idx)
-
-
-func get_main_quest_stage_requirements(quest_key: String, stage_id: int, requirement_key: String) -> Variant:
-	if quests_main[quest_key]["stages"][stage_id]["requirements"].has(requirement_key):
-		return quests_main[quest_key]["stages"][stage_id]["requirements"][requirement_key]
-	return null
-
-
-func get_boiler_quest_stage_requirements(quest_key: String, stage_id: int, pool_idx: int, requirement_key: String) -> Variant:
-	if quests_boiler[quest_key]["stages"][stage_id][pool_idx]["requirements"].has(requirement_key):
-		return quests_boiler[quest_key]["stages"][stage_id][pool_idx]["requirements"][requirement_key]
-	return null
-
-
-func create_main_quest_stage(quest_key: String, stage_title: String = "", stage_desc: String = "", stage_id: int = -1) -> void:
-	if 0 <= stage_id:
-		quests_main[quest_key]["stages"].insert(
-				stage_id,
-				{
-					"title": stage_title,
-					"description": stage_desc,
-					"events": {},
-					"requirements": {
-						"items": Array([], TYPE_DICTIONARY, &"", null),
-						"variables": Array([], TYPE_DICTIONARY, &"", null),
-						"triggers": Array([], TYPE_DICTIONARY, &"", null)
-					}
-				})
+	if var_idx == -1:
+		quests_boiler[quest_id]["stages"][stage][pool_idx]["variables"].append({
+			"path": variable_path,
+			"value": value,
+			"operator": operator})
 	else:
-		quests_main[quest_key]["stages"].append(
-				{
-					"title": stage_title,
-					"description": stage_desc,
-					"events": {},
-					"requirements": {
-						"items": Array([], TYPE_DICTIONARY, &"", null),
-						"variables": Array([], TYPE_DICTIONARY, &"", null),
-						"triggers": Array([], TYPE_DICTIONARY, &"", null)
-					}
-				})
+		quests_boiler[quest_id]["stages"][stage][pool_idx]["variables"][var_idx]["value"] = value
+		quests_boiler[quest_id]["stages"][stage][pool_idx]["variables"][var_idx]["operator"] = operator
 
 
-func create_boiler_quest_stage_pool(quest_key: String, stage_id: int = -1) -> void:
-	if 0 <= stage_id:
-		quests_boiler[quest_key]["stages"].insert(
-				stage_id,
-				Array([], TYPE_DICTIONARY, &"", null)
-				)
-	else:
-		quests_boiler[quest_key]["stages"].append(
-				Array([], TYPE_DICTIONARY, &"", null)
-				)
+func get_boiler_quest_stage_variable_index(quest_id: String, stage: int, pool_idx: int, variable_path: String) -> int:
+	var idx: int = -1
+	
+	for variable in quests_boiler[quest_id]["stages"][stage][pool_idx]["requirements"]["variables"]:
+		idx += 1
+		if variable["path"] == variable_path:
+			return idx
+	
+	return -1
 
 
-func create_boiler_quest_pool_stage(quest_key: String, stage_id: int, stage_title: String = "", stage_desc: String = "", pool_id: int = -1) -> void:
-	if 0 <= pool_id:
-		quests_boiler[quest_key]["stages"][stage_id].insert(
-				pool_id,
-				{
-					"title": stage_title,
-					"description": stage_desc,
-					"events": {},
-					"requirements": {
-						"items": Array([], TYPE_DICTIONARY, &"", null),
-						"variables": Array([], TYPE_DICTIONARY, &"", null),
-						"triggers": Array([], TYPE_DICTIONARY, &"", null)
-					}
-				})
-	else:
-		quests_boiler[quest_key]["stages"][stage_id].append(
-				{
-					"title": stage_title,
-					"description": stage_desc,
-					"events": {},
-					"requirements": {
-						"items": Array([], TYPE_DICTIONARY, &"", null),
-						"variables": Array([], TYPE_DICTIONARY, &"", null),
-						"triggers": Array([], TYPE_DICTIONARY, &"", null)
-					}
-				})
+func get_boiler_quest_stage_required_variables(quest_id: String, stage: int, pool_idx: int) -> PackedStringArray:
+	var paths := PackedStringArray()
+	
+	for variable in quests_boiler[quest_id]["stages"][stage][pool_idx]["variables"]:
+		paths.append(variable["path"])
+	
+	return paths
 
+
+func set_boiler_quest_stage_variable_requirement_value(quest_id: String, stage: int, pool_idx: int, variable_path: String, value: Variant) -> void:
+	var idx: int = get_boiler_quest_stage_variable_index(quest_id, stage, pool_idx, variable_path)
+	quests_boiler[quest_id]["stages"][stage][pool_idx]["variables"][idx]["value"] = value
+
+
+func get_boiler_quest_stage_variable_requirement_value(quest_id: String, stage: int, pool_idx: int, variable_path: String) -> Variant:
+	var idx: int = get_boiler_quest_stage_variable_index(quest_id, stage, pool_idx, variable_path)
+	return quests_boiler[quest_id]["stages"][stage][pool_idx]["variables"][idx]["value"]
+
+
+func set_boiler_quest_stage_variable_requirement_operator(quest_id: String, stage: int, pool_idx: int, variable_path: String, opertor: int) -> void:
+	var idx: int = get_boiler_quest_stage_variable_index(quest_id, stage, pool_idx, variable_path)
+	quests_boiler[quest_id]["stages"][stage][pool_idx]["variables"][idx]["operator"] = opertor
+
+
+func get_boiler_quest_stage_variable_requirement_operator(quest_id: String, stage: int, pool_idx: int, variable_path: String) -> int:
+	var idx: int = get_boiler_quest_stage_variable_index(quest_id, stage, pool_idx, variable_path)
+	return quests_boiler[quest_id]["stages"][stage][pool_idx]["variables"][idx]["operator"]
+
+
+func erase_boiler_quest_stage_variable_requirement(quest_id: String, stage: int, pool_idx: int, variable_path: String) -> void:
+	return quests_boiler[quest_id]["stages"][stage][pool_idx]["variables"].erase(
+		get_boiler_quest_stage_variable_index(quest_id, stage, pool_idx, variable_path))
+
+#endregion
+
+#region Triggers
+
+func add_boiler_quest_stage_trigger_requirement(quest_id: String, stage: int, pool_idx: int, trigger_id: StringName, count: int, operator: int) -> void:
+	quests_boiler[quest_id]["stages"][stage][pool_idx]["requirements"]["triggers"][trigger_id] = {
+		"count": count,
+		"operator": operator}
+
+
+func has_boiler_quest_stage_trigger_requirement(quest_id: String, stage: int, pool_idx: int, trigger_id: StringName) -> bool:
+	return quests_boiler[quest_id]["stages"][stage][pool_idx]["requirements"]["triggers"].has(trigger_id)
+
+
+func get_boiler_quest_stage_trigger_requirements(quest_id: String, stage: int, pool_idx: int) -> Array[StringName]:
+	return Array(
+		quests_boiler[quest_id]["stages"][stage][pool_idx]["requirements"]["triggers"].keys(),
+		TYPE_STRING_NAME,
+		&"",
+		null)
+
+
+func erase_boiler_quest_stage_trigger_requirement(quest_id: String, stage: int, pool_idx: int, trigger_id: StringName) -> void:
+	quests_boiler[quest_id]["stages"][stage][pool_idx]["requirements"]["triggers"].erase(trigger_id)
+
+
+func get_boiler_quest_stage_trigger_count_requirement(quest_id: String, stage: int, pool_idx: int, trigger_id: StringName) -> int:
+	return quests_boiler[quest_id]["stages"][stage][pool_idx]["requirements"]["triggers"][trigger_id]["count"]
+
+
+func set_boiler_quest_stage_trigger_count_requirement(quest_id: String, stage: int, pool_idx: int, trigger_id: StringName, count: int) -> void:
+	quests_boiler[quest_id]["stages"][stage][pool_idx]["requirements"]["triggers"][trigger_id]["count"] = count
+
+
+func set_boiler_quest_stage_trigger_operator_requirement(quest_id: String, stage: int, pool_idx: int, trigger_id: StringName, operator: int) -> void:
+	quests_boiler[quest_id]["stages"][stage][pool_idx]["requirements"]["triggers"][trigger_id]["operator"] = operator
+
+
+func get_boiler_quest_stage_trigger_operator_requirement(quest_id: String, stage: int, pool_idx: int, trigger_id: StringName) -> int:
+	return quests_boiler[quest_id]["stages"][stage][pool_idx]["requirements"]["triggers"][trigger_id]["operator"]
+
+#endregion
+
+#region Custom Data
+
+func set_boiler_quest_stage_data_requirement(quest_id: String, stage: int, pool_idx: int, data_key: String, data: Variant) -> void:
+	quests_boiler[quest_id]["stages"][stage][pool_idx]["requirements"]["data"][data_key] = data
+
+
+func has_boiler_quest_stage_data_requirement(quest_id: String, stage: int, pool_idx: int, data_key: String) -> bool:
+	return quests_boiler[quest_id]["stages"][stage][pool_idx]["requirements"]["data"].has(data_key)
+
+
+func get_boiler_quest_stage_data_requirement_keys(quest_id: String, stage: int, pool_idx: int, data_key: String) -> PackedStringArray:
+	return PackedStringArray(quests_boiler[quest_id]["stages"][stage][pool_idx]["requirements"]["data"].keys())
+
+
+func get_boiler_quest_stage_data_requirement(quest_id: String, stage: int, pool_idx: int, data_key: String) -> Variant:
+	return quests_boiler[quest_id]["stages"][stage][pool_idx]["requirements"]["data"][data_key]
+
+
+func erase_boiler_quest_stage_data_requirement(quest_id: String, stage: int, pool_idx: int, data_key: String) -> void:
+	quests_boiler[quest_id]["stages"][stage][pool_idx]["requirements"]["data"].erase(data_key)
+
+#endregion
+#endregion
+#endregion
+
+#endregion
+
+# ---------------------
 
 func save() -> void:
 	ResourceSaver.save(
-			self,
-			ProjectSettings.get_setting(SETTINGS_PATH, "res://quests_resource.tres")
-			)
+		self,
+		ProjectSettings.get_setting(SETTINGS_PATH, "res://quests_resource.tres"))

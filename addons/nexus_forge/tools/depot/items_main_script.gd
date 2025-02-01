@@ -27,6 +27,9 @@ var current_recipe: String = ""
 var items_resource: NFItemsRes = null
 var _switching: bool = false
 var _unsaved: bool = false
+var _no_resource_panel: Control = null
+
+@onready var main_container: HBoxContainer = $MainContainer
 
 @onready var rarities_opt_btn: OptionButton = $MainContainer/ItemsContainer/DataContainer/ItemsContainer/ItemMargin/ItemDataContainer/RarityContainer/RaritiesOptBtn
 @onready var depot_tree: Tree = $MainContainer/ItemsContainer/DataContainer/ItemSelectContainer/DepotTree
@@ -109,7 +112,6 @@ var _unsaved: bool = false
 
 
 func _ready() -> void:
-	items_resource = NFItemsRes.new() # Remove after testing
 	items_tree.create_item()
 	item_data_tree.create_item()
 	rarity_data_tree.create_item()
@@ -133,9 +135,18 @@ func _ready() -> void:
 	
 	rarities_opt_btn.clear()
 	
-	for rarity_idx in range(items_resource.get_rarity_count()):
-		rarities_opt_btn.add_item(items_resource.get_rarity_name(rarity_idx))
-		depot_tree.create_rarity(items_resource.get_rarity_name(rarity_idx))
+	if items_resource != null:
+		main_container.visible = true
+		for rarity_idx in range(items_resource.get_rarity_count()):
+			rarities_opt_btn.add_item(items_resource.get_rarity_name(rarity_idx))
+			depot_tree.create_rarity(items_resource.get_rarity_name(rarity_idx))
+	else:
+		main_container.visible = false
+		_no_resource_panel = load("res://addons/nexus_forge/scenes/no_db_container.tscn").instantiate()
+		add_child(_no_resource_panel)
+		_no_resource_panel.load_resource_pressed.connect(_on_load_resource_pressed)
+		_no_resource_panel.create_resource_pressed.connect(_on_create_resource_pressed)
+		_no_resource_panel.set_resource_type("NFItemsRes", "Items", "Items")
 	
 	recipe_tab_bar.current_tab = 0
 	_on_recipe_tab_bar_tab_changed(0)
@@ -353,6 +364,54 @@ func _on_crafting_station_selected(station_id: String) -> void:
 			station_data_tree.get_root(),
 			data_id,
 			items_resource.get_crafting_station_data(station_id, data_id))
+
+
+
+func _on_create_resource_pressed() -> void:
+	var res_loader := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").new()
+	res_loader.file_mode = FileDialog.FILE_MODE_SAVE_FILE
+	res_loader.title = "Create Items"
+	res_loader.ok_button_text = "Save"
+	add_child(res_loader)
+	res_loader.show()
+	
+	var result = await res_loader.dialog_finished
+	
+	if result[0]:
+		items_resource = NFItemsRes.new()
+		ResourceSaver.save(items_resource, result[1])
+		ProjectSettings.set_setting(NFTalentsRes.SETTINGS_PATH, result[1])
+		ProjectSettings.save()
+		main_container.visible = true
+		_no_resource_panel.queue_free()
+		_no_resource_panel.visible = false
+	
+	res_loader.queue_free()
+
+
+func _on_load_resource_pressed() -> void:
+	var res_loader := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").new()
+	res_loader.file_mode = FileDialog.FILE_MODE_OPEN_FILE
+	res_loader.title = "Open Items"
+	res_loader.ok_button_text = "Load"
+	add_child(res_loader)
+	res_loader.show()
+	
+	var result = await res_loader.dialog_finished
+	
+	if result[0]:
+		var res_pre: Resource = load(result[1])
+		if res_pre != null and res_pre is NFTalentsRes:
+			items_resource = res_pre
+			ProjectSettings.set_setting(NFTalentsRes.SETTINGS_PATH, result[1])
+			ProjectSettings.save()
+			main_container.visible = true
+			_no_resource_panel.visible = false
+			_no_resource_panel.queue_free()
+	
+	res_loader.queue_free()
+
+
 
 
 func save_current_recipe() -> void:

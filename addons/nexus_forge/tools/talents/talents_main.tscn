@@ -21,6 +21,7 @@ grow_vertical = 2
 script = ExtResource("1_e4wsj")
 
 [node name="MainPanel" type="PanelContainer" parent="."]
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -227,12 +228,3 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.223529, 0.705882, 0.905882, 1)
 theme_override_font_sizes/font_size = 25
 text = "Perks"
-
-[node name="Components" type="Node" parent="."]
-
-[node name="TalentsResourceDialog" type="FileDialog" parent="Components"]
-auto_translate_mode = 1
-initial_position = 1
-size = Vector2i(500, 350)
-ok_button_text = "Save"
-filters = PackedStringArray("*.tres;Resources")

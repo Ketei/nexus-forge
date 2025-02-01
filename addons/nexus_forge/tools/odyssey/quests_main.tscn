@@ -1,8 +1,9 @@
-[gd_scene load_steps=7 format=3 uid="uid://bjjffy4fyjmgn"]
+[gd_scene load_steps=8 format=3 uid="uid://bjjffy4fyjmgn"]
 
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/odyssey/quests_main_script.gd" id="1_m2hh6"]
 [ext_resource type="Texture2D" uid="uid://b8q6di4imiriq" path="res://addons/nexus_forge/common_icons/search_icon.svg" id="1_rueqv"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/odyssey/quests_tree_script.gd" id="3_7mr1o"]
+[ext_resource type="Texture2D" uid="uid://c1aelqf557khb" path="res://addons/nexus_forge/common_icons/plus_icon.svg" id="4_hsvh8"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/odyssey/events_tree.gd" id="7_n4t02"]
 [ext_resource type="Script" path="res://addons/nexus_forge/tools/odyssey/stage_requirements_tree.gd" id="8_k5ys5"]
 
@@ -118,21 +119,41 @@ text = "Completion Limit: "
 custom_minimum_size = Vector2(150, 32)
 layout_mode = 2
 tooltip_text = "0 = Unlimited"
-focus_next = NodePath("/root/@EditorNode@16886/@Panel@13/@VBoxContainer@14/DockHSplitLeftL/DockHSplitLeftR/DockHSplitMain/@VBoxContainer@25/DockVSplitCenter/@VSplitContainer@52/@VBoxContainer@53/@PanelContainer@98/MainScreen/@CanvasItemEditor@9272/@VSplitContainer@9094/@HSplitContainer@9096/@HSplitContainer@9098/@Control@9099/@SubViewportContainer@9100/@SubViewport@9101/Quests/MainContainer/QuestPanel/MainContainer/QuestTabContainer/@TabBar@20351")
+focus_next = NodePath("/root/@EditorNode@16886/@Panel@13/@VBoxContainer@14/DockHSplitLeftL/DockHSplitLeftR/DockHSplitMain/@VBoxContainer@25/DockVSplitCenter/@VSplitContainer@52/@VBoxContainer@53/@PanelContainer@98/MainScreen/@CanvasItemEditor@9272/@VSplitContainer@9094/@HSplitContainer@9096/@HSplitContainer@9098/@Control@9099/@SubViewportContainer@9100/@SubViewport@9101/Quests/MainContainer/QuestPanel/MainContainer/QuestTabContainer/@TabBar@33288")
 value = 1.0
 allow_greater = true
 
-[node name="EventsTree" type="Tree" parent="MainContainer/QuestPanel/MainContainer/QuestTabContainer"]
+[node name="EventsPanel" type="PanelContainer" parent="MainContainer/QuestPanel/MainContainer/QuestTabContainer"]
 visible = false
 layout_mode = 2
-focus_next = NodePath("/root/@EditorNode@16886/@Panel@13/@VBoxContainer@14/DockHSplitLeftL/DockHSplitLeftR/DockHSplitMain/@VBoxContainer@25/DockVSplitCenter/@VSplitContainer@52/@VBoxContainer@53/@PanelContainer@98/MainScreen/@CanvasItemEditor@9272/@VSplitContainer@9094/@HSplitContainer@9096/@HSplitContainer@9098/@Control@9099/@SubViewportContainer@9100/@SubViewport@9101/Quests/MainContainer/QuestPanel/MainContainer/QuestTabContainer/@TabBar@20351")
+metadata/_tab_index = 1
+metadata/_tab_name = "Quest Events"
+
+[node name="EventsContainer" type="VBoxContainer" parent="MainContainer/QuestPanel/MainContainer/QuestTabContainer/EventsPanel"]
+layout_mode = 2
+
+[node name="HeaderContainer" type="HBoxContainer" parent="MainContainer/QuestPanel/MainContainer/QuestTabContainer/EventsPanel/EventsContainer"]
+layout_mode = 2
+alignment = 2
+
+[node name="CreateEventBtn" type="Button" parent="MainContainer/QuestPanel/MainContainer/QuestTabContainer/EventsPanel/EventsContainer/HeaderContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Create Event"
+icon = ExtResource("4_hsvh8")
+flat = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="EventsTree" type="Tree" parent="MainContainer/QuestPanel/MainContainer/QuestTabContainer/EventsPanel/EventsContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+focus_next = NodePath("/root/@EditorNode@16886/@Panel@13/@VBoxContainer@14/DockHSplitLeftL/DockHSplitLeftR/DockHSplitMain/@VBoxContainer@25/DockVSplitCenter/@VSplitContainer@52/@VBoxContainer@53/@PanelContainer@98/MainScreen/@CanvasItemEditor@9272/@VSplitContainer@9094/@HSplitContainer@9096/@HSplitContainer@9098/@Control@9099/@SubViewportContainer@9100/@SubViewport@9101/Quests/MainContainer/QuestPanel/MainContainer/QuestTabContainer/@TabBar@33288")
 theme_override_constants/h_separation = 10
 columns = 3
 allow_reselect = true
 hide_root = true
 script = ExtResource("7_n4t02")
-metadata/_tab_index = 1
-metadata/_tab_name = "Quest Events"
 
 [node name="StageReqContainer" type="HBoxContainer" parent="MainContainer/QuestPanel/MainContainer/QuestTabContainer"]
 visible = false

@@ -24,6 +24,7 @@ var _unsaved: bool = false
 @onready var skill_flt_btn: Button = $MainPanel/MainMargin/MainContainer/SkillsContainer/DataContainer/DataHeader/ButtonContainer/SkillFltBtn
 @onready var skill_bool_btn: Button = $MainPanel/MainMargin/MainContainer/SkillsContainer/DataContainer/DataHeader/ButtonContainer/SkillBoolBtn
 @onready var skill_str_btn: Button = $MainPanel/MainMargin/MainContainer/SkillsContainer/DataContainer/DataHeader/ButtonContainer/SkillStrBtn
+@onready var main_panel: PanelContainer = $MainPanel
 
 
 func _ready() -> void:
@@ -41,9 +42,13 @@ func _ready() -> void:
 	
 	if talents_resource != null:
 		load_resource()
+		main_panel.visible = true
 	else:
+		main_panel.visible = false
 		no_talents_panel = load("res://addons/nexus_forge/scenes/no_db_container.tscn").instantiate()
 		add_child(no_talents_panel)
+		no_talents_panel.load_resource_pressed.connect(_on_load_resource_pressed)
+		no_talents_panel.create_resource_pressed.connect(_on_create_resource_pressed)
 		no_talents_panel.set_resource_type("NFTalentsRes", "Talents", "Talents")
 	
 	skill_ln_edt.text_changed.connect(something_changed)
@@ -64,6 +69,52 @@ func _ready() -> void:
 func _on_add_skill_data_pressed(data_name: String, data: Variant) -> void:
 	skill_data_tree.add_data(data_name, data)
 	something_changed()
+
+
+func _on_create_resource_pressed() -> void:
+	var res_loader := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").new()
+	res_loader.file_mode = FileDialog.FILE_MODE_SAVE_FILE
+	res_loader.title = "Create Talents"
+	res_loader.ok_button_text = "Save"
+	add_child(res_loader)
+	res_loader.show()
+	
+	var result = await res_loader.dialog_finished
+	
+	if result[0]:
+		talents_resource = NFTalentsRes.new()
+		ResourceSaver.save(talents_resource, result[1])
+		ProjectSettings.set_setting(NFTalentsRes.SETTINGS_PATH, result[1])
+		ProjectSettings.save()
+		main_panel.visible = true
+		no_talents_panel.queue_free()
+		no_talents_panel.visible = false
+	
+	res_loader.queue_free()
+
+
+func _on_load_resource_pressed() -> void:
+	var res_loader := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").new()
+	res_loader.file_mode = FileDialog.FILE_MODE_OPEN_FILE
+	res_loader.title = "Open Talents"
+	res_loader.ok_button_text = "Load"
+	add_child(res_loader)
+	res_loader.show()
+	
+	var result = await res_loader.dialog_finished
+	
+	if result[0]:
+		var res_pre: Resource = load(result[1])
+		if res_pre != null and res_pre is NFTalentsRes:
+			talents_resource = res_pre
+			ProjectSettings.set_setting(NFTalentsRes.SETTINGS_PATH, result[1])
+			ProjectSettings.save()
+			main_panel.visible = true
+			no_talents_panel.queue_free()
+			no_talents_panel.visible = false
+			load_resource()
+	
+	res_loader.queue_free()
 
 
 func _on_max_level_changed(new_level: float) -> void:

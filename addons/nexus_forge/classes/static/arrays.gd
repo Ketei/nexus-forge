@@ -344,6 +344,15 @@ static func append_uniques(array_to_append: Variant, items: Variant) -> void:
 						array_to_append.append(item)
 
 
+static func clamp_index(to_array: Variant, index: int) -> int:
+	var type: int = typeof(to_array)
+	if type < 29 or 38 < type:
+		push_error("Can't insert into non-array")
+		return -1
+	
+	return clampi(index, 0, to_array.size())
+
+
 static func append_uniques_asc(array_to_append: Variant, items: Variant) -> void:
 	match typeof(array_to_append):
 		TYPE_ARRAY:
@@ -425,3 +434,7 @@ static func remove_unsorted_at(array: Variant, position: int) -> void:
 		array[position] = array[-1]
 	
 	array.resize(array.size() - 1)
+
+
+static func create_array_typed(type: int, from: Array = [], class_string: StringName = &"", script: Variant = null) -> Array:
+	return Array(from, type, class_string, script)

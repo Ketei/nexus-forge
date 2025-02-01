@@ -14,7 +14,11 @@ config/name="NexusForge"
 run/main_scene="res://addons/nexus_forge/scenes/main/NexusForgeMainScene.tscn"
 config/features=PackedStringArray("4.3", "GL Compatibility")
 run/low_processor_mode=true
-config/icon="res://icon.svg"
+config/icon="res://addons/nexus_forge/common_icons/temp_icon.svg"
+
+[audio]
+
+buses/default_bus_layout=""
 
 [autoload]
 
@@ -74,13 +78,13 @@ save_test={
 
 [nexus_forge]
 
-variables_resource="res://test_folder/variables.tres"
-factions_resource="res://test_folder/factions.tres"
-races_resource="res://test_folder/races.tres"
-talents_resource="res://test_folder/talents.tres"
-items_resource="res://test_folder/items.tres"
-quests_resource="res://test_folder/quests.tres"
-characters_resource="res://test_folder/characters.tres"
+factions_resource=""
+races_resource=""
+talents_resource=""
+items_resource=""
+quests_resource=""
+characters_resource=""
+variables_resource=""
 
 [rendering]
 
