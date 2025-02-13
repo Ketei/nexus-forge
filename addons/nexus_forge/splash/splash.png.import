@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dc7l0vdedlvan"
-path="res://.godot/imported/splash.png-2ee91abbf4b9a3f99518392182c5c6cd.ctex"
+path="res://.godot/imported/splash.png-a05b00d3573a87e241f7738f1b62d173.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://addons/nexus_forge/splash.png"
-dest_files=["res://.godot/imported/splash.png-2ee91abbf4b9a3f99518392182c5c6cd.ctex"]
+source_file="res://addons/nexus_forge/splash/splash.png"
+dest_files=["res://.godot/imported/splash.png-a05b00d3573a87e241f7738f1b62d173.ctex"]
 
 [params]
 

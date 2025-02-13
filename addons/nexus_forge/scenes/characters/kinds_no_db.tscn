@@ -1,5 +1,6 @@
-[gd_scene load_steps=6 format=3 uid="uid://bn4bd3lilgeth"]
+[gd_scene load_steps=7 format=3 uid="uid://bn4bd3lilgeth"]
 
+[ext_resource type="Theme" uid="uid://bgqlr2f4msogv" path="res://addons/nexus_forge/scenes/default_theme.tres" id="1_iuliw"]
 [ext_resource type="Texture2D" uid="uid://bwspmik2qv43f" path="res://addons/nexus_forge/common_icons/new_file.svg" id="1_vuf36"]
 [ext_resource type="Script" path="res://addons/nexus_forge/scenes/characters/kinds_no_db_script.gd" id="1_yx1tu"]
 [ext_resource type="Texture2D" uid="uid://xkqkxosnppid" path="res://addons/nexus_forge/common_icons/open_file.svg" id="2_v203q"]
@@ -12,6 +13,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = ExtResource("1_iuliw")
 script = ExtResource("1_yx1tu")
 
 [node name="CenterContainer" type="CenterContainer" parent="."]

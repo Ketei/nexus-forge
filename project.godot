@@ -33,6 +33,10 @@ dialogues_selected_dialogue="f8991765-0fff-4d5c-b806-f18501d05346"
 window/size/viewport_width=1280
 window/size/viewport_height=720
 
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/nexus_forge/plugin.cfg")
+
 [input]
 
 left_control_key={

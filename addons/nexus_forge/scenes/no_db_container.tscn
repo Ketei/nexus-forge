@@ -1,6 +1,7 @@
-[gd_scene load_steps=5 format=3 uid="uid://cpmdidd0efjl7"]
+[gd_scene load_steps=6 format=3 uid="uid://cpmdidd0efjl7"]
 
 [ext_resource type="Script" path="res://addons/nexus_forge/scenes/no_db_container_script.gd" id="1_1nmoc"]
+[ext_resource type="Theme" uid="uid://bgqlr2f4msogv" path="res://addons/nexus_forge/scenes/default_theme.tres" id="1_1u72y"]
 [ext_resource type="Texture2D" uid="uid://bwspmik2qv43f" path="res://addons/nexus_forge/common_icons/new_file.svg" id="1_uqm1h"]
 [ext_resource type="Texture2D" uid="uid://xkqkxosnppid" path="res://addons/nexus_forge/common_icons/open_file.svg" id="2_axu0j"]
 
@@ -12,6 +13,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = ExtResource("1_1u72y")
 theme_override_styles/panel = SubResource("StyleBoxEmpty_bpx0y")
 script = ExtResource("1_1nmoc")
 
@@ -26,6 +28,7 @@ layout_mode = 2
 
 [node name="CreateDBButton" type="Button" parent="CenterContainer/InfoContainer/ButtonsContainer"]
 layout_mode = 2
+theme = ExtResource("1_1u72y")
 text = "Create [type] Resource"
 icon = ExtResource("1_uqm1h")
 

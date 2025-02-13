@@ -3,6 +3,7 @@ extends Control
 
 
 @onready var tool_tab_bar: TabBar = $MainContainer/ToolTabBar
+@onready var splash_texture: TextureRect = $MainContainer/ToolContainer/NexusForge/SplashPanel/SplashTexture
 
 # ----- Tools -----
 @onready var nexus_forge: Control = $MainContainer/ToolContainer/NexusForge
@@ -23,8 +24,29 @@ func _ready() -> void:
 	tool_tab_bar.current_tab = 0
 	tool_tab_bar.set_tab_title(0, "")
 	tool_tab_bar.set_tab_icon(0, load("res://addons/nexus_forge/common_icons/temp_icon.svg"))
-	on_tab_changed(0)
+	var potential_splash: Array[String] = []
 	
+	for file in DirAccess.get_files_at("res://addons/nexus_forge/splash/"):
+		var ext: String = file.get_extension()
+		if ext == "png" or ext == "jpg" or ext == "webp":
+			potential_splash.append(file)
+	
+	if not potential_splash.is_empty():
+		var selected_splash: String = potential_splash.pick_random()
+		splash_texture.texture = load("res://addons/nexus_forge/splash/" + selected_splash)
+	
+	on_tab_changed(0)
+
+
+func _input(event: InputEvent) -> void:
+	if visible:
+		if Input.is_action_just_pressed(&"ui_focus_next"):
+			if Input.is_key_pressed(KEY_CTRL):
+				if Input.is_key_pressed(KEY_SHIFT):
+					tool_tab_bar.current_tab = posmod(tool_tab_bar.current_tab - 1, 7)
+				else:
+					tool_tab_bar.current_tab = posmod(tool_tab_bar.current_tab + 1, 7)
+			get_viewport().set_input_as_handled()
 
 
 func on_tab_changed(tab: int) -> void:
