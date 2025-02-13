@@ -1,0 +1,48 @@
+[gd_scene load_steps=2 format=3 uid="uid://djyy2jpca76gx"]
+
+[ext_resource type="Script" path="res://addons/nexus_forge/scenes/discourse/dialog_nodes/random_graph_node.gd" id="1_lphke"]
+
+[node name="RandomGraphNode" type="GraphNode"]
+offset_right = 216.0
+offset_bottom = 121.0
+mouse_filter = 1
+title = "Random"
+slot/0/left_enabled = true
+slot/0/left_type = 0
+slot/0/left_color = Color(0.156863, 0.784314, 0, 1)
+slot/0/left_icon = null
+slot/0/right_enabled = false
+slot/0/right_type = 0
+slot/0/right_color = Color(1, 1, 1, 1)
+slot/0/right_icon = null
+slot/0/draw_stylebox = true
+slot/1/left_enabled = false
+slot/1/left_type = 0
+slot/1/left_color = Color(1, 1, 1, 1)
+slot/1/left_icon = null
+slot/1/right_enabled = false
+slot/1/right_type = 0
+slot/1/right_color = Color(1, 1, 1, 1)
+slot/1/right_icon = null
+slot/1/draw_stylebox = true
+script = ExtResource("1_lphke")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="HBoxContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+text = "Options"
+vertical_alignment = 1
+
+[node name="RandOptSpnBx" type="SpinBox" parent="HBoxContainer"]
+layout_mode = 2
+min_value = 1.0
+value = 1.0
+allow_greater = true
+
+[node name="WeightsChkBtn" type="CheckButton" parent="."]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+text = "Use weights"

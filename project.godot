@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="NexusForge"
-run/main_scene="res://addons/nexus_forge/scenes/main/NexusForgeMainScene.tscn"
+run/main_scene="res://addons/nexus_forge/scenes/NexusForgeMainScene.tscn"
 config/features=PackedStringArray("4.3", "GL Compatibility")
 run/low_processor_mode=true
 config/icon="res://addons/nexus_forge/common_icons/temp_icon.svg"
@@ -75,16 +75,11 @@ save_test={
 "events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":true,"meta_pressed":false,"pressed":false,"keycode":83,"physical_keycode":0,"key_label":0,"unicode":0,"location":0,"echo":false,"script":null)
 ]
 }
-
-[nexus_forge]
-
-factions_resource=""
-races_resource=""
-talents_resource=""
-items_resource=""
-quests_resource=""
-characters_resource=""
-variables_resource=""
+activation_key={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":65,"physical_keycode":0,"key_label":0,"unicode":97,"location":0,"echo":false,"script":null)
+]
+}
 
 [rendering]
 

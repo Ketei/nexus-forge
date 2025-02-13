@@ -1,0 +1,128 @@
+[gd_scene load_steps=15 format=3 uid="uid://dykskyw7tvdof"]
+
+[ext_resource type="Script" path="res://addons/nexus_forge/scenes/nexus_forge_main_scene_script.gd" id="1_15n6i"]
+[ext_resource type="Texture2D" uid="uid://ciucmcbkqf2u6" path="res://addons/nexus_forge/common_icons/temp_icon.svg" id="2_623mc"]
+[ext_resource type="PackedScene" uid="uid://crc8308qvffn6" path="res://addons/nexus_forge/scenes/discourse/discourse_main.tscn" id="3_124r1"]
+[ext_resource type="PackedScene" uid="uid://d3qq6j2xbhrgp" path="res://addons/nexus_forge/scenes/variables/variables_main.tscn" id="3_umhp2"]
+[ext_resource type="Texture2D" uid="uid://dc7l0vdedlvan" path="res://addons/nexus_forge/splash.png" id="3_x4mjh"]
+[ext_resource type="PackedScene" uid="uid://cvuo0on5wm8qb" path="res://addons/nexus_forge/scenes/characters/characters_main.tscn" id="4_xgwoe"]
+[ext_resource type="PackedScene" uid="uid://bn2hjhl25ja30" path="res://addons/nexus_forge/scenes/races/races_main.tscn" id="5_dh8bc"]
+[ext_resource type="PackedScene" uid="uid://cu1j8e1hrvu18" path="res://addons/nexus_forge/scenes/factions/factions_main.tscn" id="6_kwcc3"]
+[ext_resource type="PackedScene" uid="uid://dt7vndut1j8qv" path="res://addons/nexus_forge/scenes/talents/talents_main.tscn" id="7_ot0lo"]
+[ext_resource type="PackedScene" uid="uid://fss7aqmbgj6s" path="res://addons/nexus_forge/scenes/depot/items_main.tscn" id="8_y8g87"]
+[ext_resource type="PackedScene" uid="uid://bjjffy4fyjmgn" path="res://addons/nexus_forge/scenes/odyssey/quests_main.tscn" id="9_rx28i"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fyh28"]
+bg_color = Color(0.145098, 0.156863, 0.176471, 1)
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ikq8n"]
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_5bout"]
+
+[node name="NexusForgeMainScene" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = ExtResource("1_15n6i")
+
+[node name="MainContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 0
+
+[node name="ToolTabBar" type="TabBar" parent="MainContainer"]
+layout_mode = 2
+current_tab = 0
+tab_count = 7
+tab_0/icon = ExtResource("2_623mc")
+tab_1/title = "Discourse"
+tab_2/title = "Variables"
+tab_3/title = "Kinds"
+tab_4/title = "Talents"
+tab_5/title = "Depot"
+tab_6/title = "Odyssey"
+
+[node name="ToolContainer" type="PanelContainer" parent="MainContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_fyh28")
+
+[node name="NexusForge" type="Control" parent="MainContainer/ToolContainer"]
+layout_mode = 2
+
+[node name="SplashPanel" type="PanelContainer" parent="MainContainer/ToolContainer/NexusForge"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxEmpty_ikq8n")
+
+[node name="SplashTexture" type="TextureRect" parent="MainContainer/ToolContainer/NexusForge/SplashPanel"]
+layout_mode = 2
+texture = ExtResource("3_x4mjh")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Discourse" parent="MainContainer/ToolContainer" instance=ExtResource("3_124r1")]
+visible = false
+layout_mode = 2
+
+[node name="Variables" parent="MainContainer/ToolContainer" instance=ExtResource("3_umhp2")]
+visible = false
+layout_mode = 2
+
+[node name="Kinds" type="Control" parent="MainContainer/ToolContainer"]
+visible = false
+layout_mode = 2
+
+[node name="TabContainer" type="TabContainer" parent="MainContainer/ToolContainer/Kinds"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxEmpty_5bout")
+tab_alignment = 2
+current_tab = 0
+
+[node name="Characters" parent="MainContainer/ToolContainer/Kinds/TabContainer" instance=ExtResource("4_xgwoe")]
+layout_mode = 2
+metadata/_tab_index = 0
+
+[node name="Races" parent="MainContainer/ToolContainer/Kinds/TabContainer" instance=ExtResource("5_dh8bc")]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 1
+
+[node name="Factions" parent="MainContainer/ToolContainer/Kinds/TabContainer" instance=ExtResource("6_kwcc3")]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 2
+
+[node name="Talents" parent="MainContainer/ToolContainer" instance=ExtResource("7_ot0lo")]
+visible = false
+layout_mode = 2
+
+[node name="Depot" parent="MainContainer/ToolContainer" instance=ExtResource("8_y8g87")]
+visible = false
+layout_mode = 2
+
+[node name="Odyssey" parent="MainContainer/ToolContainer" instance=ExtResource("9_rx28i")]
+visible = false
+layout_mode = 2

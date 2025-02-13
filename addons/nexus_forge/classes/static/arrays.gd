@@ -28,7 +28,7 @@ static func binary_search(array: Variant, target: Variant) -> int:
 	var type: int = typeof(array)
 	var item_type: int = typeof(target)
 	
-	if type < 29 or 38 < type:
+	if type < 28 or 38 < type:
 		push_error("Provided data isn't Array")
 		return -1
 	
@@ -82,7 +82,7 @@ static func bsearch_array_desc(array: Variant, target: Variant) -> int:
 	var type: int = typeof(array)
 	var item_type: int = typeof(target)
 	
-	if type < 29 or 38 < type:
+	if type < 28 or 38 < type:
 		push_error("Provided data isn't Array")
 		return -1
 	
@@ -149,7 +149,7 @@ static func insert_sorted_asc(array: Variant, item: Variant) -> void:
 	var type: int = typeof(array)
 	var item_type: int = typeof(item)
 	
-	if type < 29 or 38 < type:
+	if type < 28 or 38 < type:
 		push_error("Can't insert into non-array")
 		return
 	
@@ -209,7 +209,7 @@ static func insert_sorted_desc(array: Variant, item: Variant) -> void:
 	var type: int = typeof(array)
 	var item_type: int = typeof(item)
 	
-	if type < 29 or 38 < type:
+	if type < 28 or 38 < type:
 		push_error("Can't insert into non-array")
 		return
 	
@@ -346,7 +346,7 @@ static func append_uniques(array_to_append: Variant, items: Variant) -> void:
 
 static func clamp_index(to_array: Variant, index: int) -> int:
 	var type: int = typeof(to_array)
-	if type < 29 or 38 < type:
+	if type < 28 or 38 < type:
 		push_error("Can't insert into non-array")
 		return -1
 	
@@ -423,7 +423,7 @@ static func difference(array_a: Array, array_b: Array) -> Array:
 static func remove_unsorted_at(array: Variant, position: int) -> void:
 	var type: int = typeof(array)
 	
-	if type < 29 or 38 < type:
+	if type < 28 or 38 < type:
 		push_error("Can't move non-array")
 		return
 	
@@ -438,3 +438,45 @@ static func remove_unsorted_at(array: Variant, position: int) -> void:
 
 static func create_array_typed(type: int, from: Array = [], class_string: StringName = &"", script: Variant = null) -> Array:
 	return Array(from, type, class_string, script)
+
+
+static func create_array_2d(size_x: int, size_y: int, type: int = -1) -> Array[Array]:
+	if size_x <= 0 or size_y <= 0:
+		return create_array_typed(TYPE_ARRAY)
+	
+	var y_array: Array[Array] = []
+	y_array.resize(size_y)
+	
+	if 0 <= type and type < TYPE_MAX:
+		for array_idx in range(size_x):
+			y_array[array_idx] = create_array_typed(type)
+	
+	for array_idx in range(size_y):
+		y_array[array_idx].resize(size_x)
+	
+	return y_array
+
+
+static func resize_array_2d(array: Array[Array], new_width: int, new_height: int) -> void:
+	new_width = maxi(0, new_width)
+	new_height = maxi(0, new_height)
+	
+	if array.size() != new_height:
+		array.resize(new_height)
+	
+	if 0 < new_height:
+		for x_arr in array:
+			x_arr.resize(new_width)
+
+
+static func replace_all(in_array: Variant, find: Variant, replace_with: Variant) -> void:
+	var type: int = typeof(in_array)
+	if type < 28 or 38 < type:
+		push_error("Can't insert into non-array")
+		return
+	
+	var index_found: int = in_array.find(find)
+	
+	while index_found != -1:
+		in_array[index_found] = replace_with
+		index_found = in_array.find(find, index_found)

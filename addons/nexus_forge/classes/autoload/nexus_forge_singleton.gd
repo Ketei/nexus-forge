@@ -1,4 +1,4 @@
-class_name NFHandler
+#class_name NFHandler
 extends Node
 
 
@@ -14,7 +14,7 @@ var Items: NFItemsRes = null
 
 var Talents: NFTalentsRes = null
 
-var Callables: NFCallablesRes = null
+var Callables: NFCallables = null
 
 var Discourse: NFDiscourseTool = null
 
@@ -84,4 +84,4 @@ func _ready() -> void:
 	if Items == null:
 		Items = NFItemsRes.new()
 	
-	Callables = NFCallablesRes.new()
+	Callables = NFCallables.new()

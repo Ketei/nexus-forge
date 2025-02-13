@@ -2,7 +2,7 @@
 extends EditorPlugin
 
 
-const MAIN_SCENE = preload("res://addons/nexus_forge/scenes/main/NexusForgeMainScene.tscn")
+const MAIN_SCENE = preload("res://addons/nexus_forge/scenes/NexusForgeMainScene.tscn")
 const PLUGIN_NAME: String = "NexusForge"
 const PLUGIN_ICON_PATH: String = "res://addons/nexus_forge/common_icons/temp_icon.svg"
 
@@ -10,13 +10,6 @@ static var SINGLETONS: Dictionary = {
 	"main": {"name": "NexusForge", "path": "res://addons/nexus_forge/classes/autoload/nexus_forge_singleton.gd"}
 }
 
-#static var SETTINGS_PATHS: Dictionary = {
-	#"variables_resource": "",
-	#"races_resource": "",
-	#"characters_resource": "",
-	#"factions_resource": "",
-	#"talents_resource": ""
-#}
 
 var editor_view: Control = null
 
@@ -66,13 +59,34 @@ func _enable_plugin() -> void:
 	
 	var trigger_setting_save: bool = false
 	
-	ProjectSettings.set_initial_value(NFFactionRes.SETTINGS_PATH, "")
-	ProjectSettings.set_initial_value(NFRacesRes.SETTINGS_PATH, "")
-	ProjectSettings.set_initial_value(NFTalentsRes.SETTINGS_PATH, "")
-	ProjectSettings.set_initial_value(NFItemsRes.SETTINGS_PATH, "")
-	ProjectSettings.set_initial_value(NFQuestRes.SETTINGS_PATH, "")
-	ProjectSettings.set_initial_value(NFCharacterDBRes.SETTINGS_PATH, "")
-	ProjectSettings.set_initial_value(NFVariablesRes.SETTINGS_PATH, "")
+	if not ProjectSettings.has_setting(NFFactionRes.SETTINGS_PATH):
+		ProjectSettings.set_setting(NFFactionRes.SETTINGS_PATH, "")
+		ProjectSettings.set_initial_value(NFFactionRes.SETTINGS_PATH, "")
+	
+	if not ProjectSettings.has_setting(NFRacesRes.SETTINGS_PATH):
+		ProjectSettings.set_setting(NFRacesRes.SETTINGS_PATH, "")
+		ProjectSettings.set_initial_value(NFRacesRes.SETTINGS_PATH, "")
+	
+	if not ProjectSettings.has_setting(NFTalentsRes.SETTINGS_PATH):
+		ProjectSettings.set_setting(NFTalentsRes.SETTINGS_PATH, "")
+		ProjectSettings.set_initial_value(NFTalentsRes.SETTINGS_PATH, "")
+	
+	if not ProjectSettings.has_setting(NFItemsRes.SETTINGS_PATH):
+		ProjectSettings.set_setting(NFItemsRes.SETTINGS_PATH, "")
+		ProjectSettings.set_initial_value(NFItemsRes.SETTINGS_PATH, "")
+	
+	if not ProjectSettings.has_setting(NFQuestRes.SETTINGS_PATH):
+		ProjectSettings.set_setting(NFQuestRes.SETTINGS_PATH, "")
+		ProjectSettings.set_initial_value(NFQuestRes.SETTINGS_PATH, "")
+	
+	if not ProjectSettings.has_setting(NFCharacterDBRes.SETTINGS_PATH):
+		ProjectSettings.set_setting(NFCharacterDBRes.SETTINGS_PATH, "")
+		ProjectSettings.set_initial_value(NFCharacterDBRes.SETTINGS_PATH, "")
+	
+	if not ProjectSettings.has_setting(NFVariablesRes.SETTINGS_PATH):
+		ProjectSettings.set_setting(NFVariablesRes.SETTINGS_PATH, "")
+		ProjectSettings.set_initial_value(NFVariablesRes.SETTINGS_PATH, "")
+	
 	ProjectSettings.save()
 
 
