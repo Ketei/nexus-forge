@@ -1,9 +1,8 @@
-[gd_scene load_steps=14 format=3 uid="uid://dykskyw7tvdof"]
+[gd_scene load_steps=13 format=3 uid="uid://dykskyw7tvdof"]
 
 [ext_resource type="Script" path="res://addons/nexus_forge/scenes/nexus_forge_main_scene_script.gd" id="1_15n6i"]
 [ext_resource type="Texture2D" uid="uid://ciucmcbkqf2u6" path="res://addons/nexus_forge/common_icons/temp_icon.svg" id="2_623mc"]
 [ext_resource type="PackedScene" uid="uid://crc8308qvffn6" path="res://addons/nexus_forge/scenes/discourse/discourse_main.tscn" id="3_124r1"]
-[ext_resource type="Texture2D" uid="uid://dc7l0vdedlvan" path="res://addons/nexus_forge/splash/splash.png" id="3_tons1"]
 [ext_resource type="PackedScene" uid="uid://d3qq6j2xbhrgp" path="res://addons/nexus_forge/scenes/variables/variables_main.tscn" id="3_umhp2"]
 [ext_resource type="PackedScene" uid="uid://cvuo0on5wm8qb" path="res://addons/nexus_forge/scenes/characters/characters_main.tscn" id="4_xgwoe"]
 [ext_resource type="PackedScene" uid="uid://bn2hjhl25ja30" path="res://addons/nexus_forge/scenes/races/races_main.tscn" id="5_dh8bc"]
@@ -39,6 +38,7 @@ theme_override_constants/separation = 0
 
 [node name="ToolTabBar" type="TabBar" parent="MainContainer"]
 layout_mode = 2
+size_flags_horizontal = 3
 current_tab = 0
 tab_count = 7
 tab_0/icon = ExtResource("2_623mc")
@@ -67,9 +67,23 @@ grow_vertical = 2
 
 [node name="SplashTexture" type="TextureRect" parent="MainContainer/ToolContainer/NexusForge/SplashPanel"]
 layout_mode = 2
-texture = ExtResource("3_tons1")
 expand_mode = 1
 stretch_mode = 5
+
+[node name="ReloadImageBtn" type="Button" parent="MainContainer/ToolContainer/NexusForge/SplashPanel/SplashTexture"]
+custom_minimum_size = Vector2(25, 25)
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -8.0
+offset_top = -8.0
+grow_horizontal = 0
+grow_vertical = 0
+focus_mode = 0
+flat = true
 
 [node name="Discourse" parent="MainContainer/ToolContainer" instance=ExtResource("3_124r1")]
 visible = false

@@ -4,6 +4,7 @@ extends Control
 
 @onready var tool_tab_bar: TabBar = $MainContainer/ToolTabBar
 @onready var splash_texture: TextureRect = $MainContainer/ToolContainer/NexusForge/SplashPanel/SplashTexture
+@onready var reload_image_btn: Button = $MainContainer/ToolContainer/NexusForge/SplashPanel/SplashTexture/ReloadImageBtn
 
 # ----- Tools -----
 @onready var nexus_forge: Control = $MainContainer/ToolContainer/NexusForge
@@ -33,7 +34,11 @@ func _ready() -> void:
 	
 	if not potential_splash.is_empty():
 		var selected_splash: String = potential_splash.pick_random()
-		splash_texture.texture = load("res://addons/nexus_forge/splash/" + selected_splash)
+		splash_texture.texture = ImageTexture.create_from_image(
+				Image.load_from_file(
+						"res://addons/nexus_forge/splash/" + selected_splash))
+	
+	reload_image_btn.pressed.connect(_on_reload_splash_pressed)
 	
 	on_tab_changed(0)
 
@@ -47,6 +52,20 @@ func _input(event: InputEvent) -> void:
 				else:
 					tool_tab_bar.current_tab = posmod(tool_tab_bar.current_tab + 1, 7)
 			get_viewport().set_input_as_handled()
+
+
+func _on_reload_splash_pressed() -> void:
+	var potential_splash: Array[String] = []
+	
+	for file in DirAccess.get_files_at("res://addons/nexus_forge/splash/"):
+		var ext: String = file.get_extension()
+		if ext == "png" or ext == "jpg" or ext == "webp":
+			potential_splash.append(file)
+	
+	if not potential_splash.is_empty():
+		var selected_splash: String = potential_splash.pick_random()
+		splash_texture.texture = load("res://addons/nexus_forge/splash/" + selected_splash)
+	
 
 
 func on_tab_changed(tab: int) -> void:
