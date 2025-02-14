@@ -50,7 +50,13 @@ static func closest_to_zero(numb_a: float, numb_b: float) -> float:
 
 
 ## Sums all the numerical values inside an array.
-static func sum_array(values_array: Array) -> float:
+static func sum_arrayf(values_array: Array) -> float:
+	var type_arg: int = typeof(values_array)
+	
+	if type_arg < 28 or 38 < type_arg:
+		push_error("Can't iterate non-array")
+		return 0
+	
 	var total_value: float = 0
 	for item in values_array:
 		var type: int = typeof(item)
@@ -58,6 +64,22 @@ static func sum_array(values_array: Array) -> float:
 			continue
 		total_value += item
 	return total_value
+
+
+static func sum_arrayi(values_array: Array) -> int:
+	var type_arg: int = typeof(values_array)
+	
+	if type_arg < 28 or 38 < type_arg:
+		push_error("Can't iterate non-array")
+		return 0
+	
+	var total_value: float = 0
+	for item in values_array:
+		var type: int = typeof(item)
+		if type != TYPE_INT and type != TYPE_FLOAT:
+			continue
+		total_value += item
+	return int(total_value)
 
 
 ## Returns the distance between 2 numbers. Typed as float.

@@ -126,7 +126,7 @@ static func levenshtein_distance(string_1: String, string_2: String) -> float:
 	return similarity
 
 
-# Random string based on time. Less probability of collission
+## Random string based on time. Less probability of collission
 static func random_string64() -> String:
 	var random_array: PackedByteArray = var_to_bytes(Time.get_unix_time_from_system())
 	for _a in range(36): # Each 3 adds 4 more characters
@@ -135,6 +135,7 @@ static func random_string64() -> String:
 	return Marshalls.raw_to_base64(random_array).replace("+", "-").replace("/", "_")
 
 
+## Generates a random string with a given length.
 static func random_string(num_chars: int) -> String:
 	var byte_array := PackedByteArray()
 	

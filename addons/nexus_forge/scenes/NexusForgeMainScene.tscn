@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3 uid="uid://dykskyw7tvdof"]
+[gd_scene load_steps=14 format=3 uid="uid://dykskyw7tvdof"]
 
 [ext_resource type="Script" path="res://addons/nexus_forge/scenes/nexus_forge_main_scene_script.gd" id="1_15n6i"]
 [ext_resource type="Texture2D" uid="uid://ciucmcbkqf2u6" path="res://addons/nexus_forge/common_icons/temp_icon.svg" id="2_623mc"]
@@ -12,7 +12,9 @@
 [ext_resource type="PackedScene" uid="uid://bjjffy4fyjmgn" path="res://addons/nexus_forge/scenes/odyssey/quests_main.tscn" id="9_rx28i"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fyh28"]
-bg_color = Color(0.145098, 0.156863, 0.176471, 1)
+bg_color = Color(0.211765, 0.239216, 0.290196, 1)
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ay1bl"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_5bout"]
 
@@ -64,6 +66,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxEmpty_ay1bl")
 
 [node name="SplashTexture" type="TextureRect" parent="MainContainer/ToolContainer/NexusForge/SplashPanel"]
 layout_mode = 2
