@@ -20,10 +20,6 @@ config/icon="res://addons/nexus_forge/common_icons/temp_icon.svg"
 
 buses/default_bus_layout=""
 
-[autoload]
-
-NexusForge="*res://addons/nexus_forge/classes/autoload/nexus_forge_singleton.gd"
-
 [dialogue_editor]
 
 dialogues_selected_dialogue="f8991765-0fff-4d5c-b806-f18501d05346"
@@ -32,10 +28,6 @@ dialogues_selected_dialogue="f8991765-0fff-4d5c-b806-f18501d05346"
 
 window/size/viewport_width=1280
 window/size/viewport_height=720
-
-[editor_plugins]
-
-enabled=PackedStringArray("res://addons/nexus_forge/plugin.cfg")
 
 [input]
 

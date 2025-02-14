@@ -82,7 +82,7 @@ func create_variable(variable_name: String, variable_value: Variant) -> String:
 			#new_variable.set_metadata(1, TYPE_BOOL)
 			new_variable.set_cell_mode(1, TreeItem.CELL_MODE_CHECK)
 			new_variable.set_text(1, "Enabled")
-			new_variable.set_range(1, variable_value)
+			new_variable.set_checked(1, variable_value)
 			#if variable_typeof == TYPE_BOOL:
 		TYPE_STRING:
 			new_variable.set_icon(0, STRING_ICON)
