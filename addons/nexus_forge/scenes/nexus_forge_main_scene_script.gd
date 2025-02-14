@@ -25,20 +25,6 @@ func _ready() -> void:
 	tool_tab_bar.current_tab = 0
 	tool_tab_bar.set_tab_title(0, "")
 	tool_tab_bar.set_tab_icon(0, load("res://addons/nexus_forge/common_icons/temp_icon.svg"))
-	var potential_splash: Array[String] = []
-	
-	for file in DirAccess.get_files_at("res://addons/nexus_forge/splash/"):
-		var ext: String = file.get_extension()
-		if ext == "png" or ext == "jpg" or ext == "webp":
-			potential_splash.append(file)
-	
-	if not potential_splash.is_empty():
-		var selected_splash: String = potential_splash.pick_random()
-		splash_texture.texture = ImageTexture.create_from_image(
-				Image.load_from_file(
-						"res://addons/nexus_forge/splash/" + selected_splash))
-	
-	reload_image_btn.pressed.connect(_on_reload_splash_pressed)
 	
 	on_tab_changed(0)
 
@@ -65,7 +51,23 @@ func _on_reload_splash_pressed() -> void:
 	if not potential_splash.is_empty():
 		var selected_splash: String = potential_splash.pick_random()
 		splash_texture.texture = load("res://addons/nexus_forge/splash/" + selected_splash)
+
+
+func init_load_splash() -> void:
+	var potential_splash: Array[String] = []
 	
+	for file in DirAccess.get_files_at("res://addons/nexus_forge/splash/"):
+		var ext: String = file.get_extension()
+		if ext == "png" or ext == "jpg" or ext == "webp":
+			potential_splash.append(file)
+	
+	if not potential_splash.is_empty():
+		var selected_splash: String = potential_splash.pick_random()
+		splash_texture.texture = ImageTexture.create_from_image(
+				Image.load_from_file(
+						"res://addons/nexus_forge/splash/" + selected_splash))
+	
+	reload_image_btn.pressed.connect(_on_reload_splash_pressed)
 
 
 func on_tab_changed(tab: int) -> void:

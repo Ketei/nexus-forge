@@ -18,6 +18,7 @@ func _enter_tree() -> void:
 	editor_view = MAIN_SCENE.instantiate()
 	editor_view.visible = false
 	get_editor_interface().get_editor_main_screen().add_child(editor_view)
+	editor_view.init_load_splash()
 
 
 func _save_external_data() -> void:
