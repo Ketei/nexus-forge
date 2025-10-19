@@ -427,13 +427,15 @@ static func remove_unsorted_at(array: Variant, position: int) -> void:
 		push_error("Can't move non-array")
 		return
 	
-	if array.size() == 0 or position < 0 or array.size() - 1 < position:
+	var size: int = array.size()
+	
+	if size == 0 or position < 0 or size - 1 < position:
 		return
 	
-	if 2 < array.size():
+	if 2 <= size:
 		array[position] = array[-1]
 	
-	array.resize(array.size() - 1)
+	array.resize(size - 1)
 
 
 static func create_array_typed(type: int, from: Array = [], class_string: StringName = &"", script: Variant = null) -> Array:

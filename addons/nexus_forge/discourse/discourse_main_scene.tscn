@@ -1,0 +1,473 @@
+[gd_scene load_steps=17 format=3 uid="uid://d216eid5mh0ts"]
+
+[ext_resource type="Script" uid="uid://bqico4ogja4xf" path="res://addons/nexus_forge/discourse/discourse_main_panel_script.gd" id="1_viyrt"]
+[ext_resource type="Script" uid="uid://dk607iuh4bkv6" path="res://addons/nexus_forge/discourse/discourse_panel_script.gd" id="2_f5jrf"]
+[ext_resource type="Texture2D" uid="uid://brtp4ypk1wxqu" path="res://addons/nexus_forge/icons/new_language_plus.svg" id="3_f5jrf"]
+[ext_resource type="Script" uid="uid://dqb1etyisx1gu" path="res://addons/nexus_forge/discourse/locales_tree_script.gd" id="4_2wl78"]
+[ext_resource type="Script" uid="uid://d3hqle1cgp15b" path="res://addons/nexus_forge/discourse/localized_nodes_script.gd" id="5_qplns"]
+[ext_resource type="Texture2D" uid="uid://bn6ggyqhhn03o" path="res://addons/nexus_forge/icons/dialog_plus.svg" id="6_nnanj"]
+[ext_resource type="Script" uid="uid://luox625aquk1" path="res://addons/nexus_forge/discourse/localized_phrases_tree.gd" id="6_qsnsk"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_v0h3x"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_v0h3x"]
+content_margin_left = 6.0
+content_margin_right = 6.0
+content_margin_bottom = 0.0
+bg_color = Color(0.180392, 0.180392, 0.180392, 1)
+
+[sub_resource type="GDScript" id="GDScript_58abf"]
+resource_name = "drag_n_drop"
+script/source = "extends Tree
+
+
+func _drop_data(at_position: Vector2, data: Variant) -> void:
+	var at_node: TreeItem = get_item_at_position(at_position)
+	var drop_position: int = get_drop_section_at_position(at_position)
+	if drop_position == -100:
+		data.move_after(get_root().get_child(-1))
+	else:
+		match drop_position:
+			-1: # Above
+				data.move_before(at_node)
+			0: # On (Shouldn't be used)
+				if at_node.get_child_count() == 0:
+					data.get_parent().remove_child(data)
+					at_node.add_child(data)
+				else:
+					data.move_before(at_node.get_child(-1))
+			1: # Below
+				data.move_after(at_node)
+
+
+func _get_drag_data(at_position: Vector2) -> Variant:
+	var selected: TreeItem = get_item_at_position(at_position)
+	if selected == null:
+		return null
+	
+	var data: Label = Label.new()
+	data.text = selected.get_text(0)
+	set_drag_preview(data)
+	return get_selected()
+
+
+func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
+	var item_at_pos: TreeItem = get_item_at_position(at_position)
+	if item_at_pos == null or data is not TreeItem or data == item_at_pos:
+		return false
+	
+	drop_mode_flags = DropModeFlags.DROP_MODE_INBETWEEN
+	
+	if not item_at_pos.get_metadata(0)[\"is_node\"]:
+		drop_mode_flags += DropModeFlags.DROP_MODE_ON_ITEM
+	
+	return belongs_to_tree(data)
+
+
+func belongs_to_tree(item: TreeItem) -> bool:
+	var root: TreeItem = get_root()
+	while item != null:
+		if item == root:
+			return true
+		item = item.get_parent()
+	return false
+
+
+func get_folder_structure(_from: TreeItem = get_root()) -> Array[Dictionary]:
+	var structure: Array[Dictionary] = []
+	for item in _from.get_children():
+		if item.get_metadata(0)[\"is_node\"]:
+			structure.append({
+				\"is_node\": true,
+				\"uuid\": item.get_metadata(0)[\"node\"].get_node_uuid()})
+		else:
+			#structure[\"folders\"].append(get_folder_structure(item))
+			structure.append({
+				\"is_node\": false,
+				\"name\": item.get_text(0),
+				\"items\": get_folder_structure(item)})
+	return structure
+
+
+func create_folder(folder_name: String) -> void:
+	var new_folder: TreeItem = get_root().create_child()
+	new_folder.set_text(0, folder_name)
+	new_folder.set_editable(0, true)
+	new_folder.set_icon(0, get_theme_icon(\"Folder\", \"EditorIcons\"))
+	new_folder.add_button(
+			0,
+			get_theme_icon(\"Remove\", \"EditorIcons\"),
+			-1,
+			false,
+			\"Delete Group\")
+	new_folder.set_metadata(0, {\"is_node\": false})
+
+
+func create_node(node: DiscourseGraphNode) -> void:
+	var new_item: TreeItem = get_root().create_child()
+		
+	new_item.set_text(0, str(node.custom_id))
+	new_item.add_button(
+			0,
+			get_theme_icon(\"Edit\", \"EditorIcons\"),
+			0,
+			false,
+			\"Edit ID\")
+	
+	new_item.set_metadata(0, {\"node\": node, \"is_node\": true, \"uuid\": node.get_node_uuid()})
+	
+	#if node == discourse_window.discourse_graph_edit.entry_node and new_item.get_index() != 0:
+		#new_item.move_before(new_item.get_parent().get_first_child())
+
+
+func remove_dialog_node(uuid: StringName, _on: TreeItem = get_root()) -> bool:
+	for child in _on.get_children():
+		var meta: Dictionary = child.get_metadata(0)
+		if not meta[\"is_node\"]: # Is folder
+			var result: bool = remove_dialog_node(uuid, child)
+			if result:
+				return true
+		elif meta[\"uuid\"] == uuid:
+			child.free()
+			return true
+	return false
+"
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_qux6o"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_y485p"]
+bg_color = Color(0.180392, 0.180392, 0.180392, 1)
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_i2jr7"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_58abf"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_a0o6y"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_4f4qt"]
+content_margin_left = 8.0
+content_margin_top = 8.0
+content_margin_right = 8.0
+content_margin_bottom = 0.0
+
+[node name="DiscourseMainPanelTest" type="PanelContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxEmpty_v0h3x")
+script = ExtResource("1_viyrt")
+
+[node name="MainSplitContainer" type="HSplitContainer" parent="."]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 4.0
+split_offset = -234
+dragger_visibility = 2
+
+[node name="MainSidebar" type="PanelContainer" parent="MainSplitContainer"]
+custom_minimum_size = Vector2(32, 0)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_v0h3x")
+
+[node name="SidebarSplitContainer" type="VSplitContainer" parent="MainSplitContainer/MainSidebar"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="ConversationContainer" type="VBoxContainer" parent="MainSplitContainer/MainSidebar/SidebarSplitContainer"]
+custom_minimum_size = Vector2(0, 200)
+layout_mode = 2
+
+[node name="ConversationTitle" type="Label" parent="MainSplitContainer/MainSidebar/SidebarSplitContainer/ConversationContainer"]
+layout_mode = 2
+text = "Coversations"
+
+[node name="ConversationTree" type="Tree" parent="MainSplitContainer/MainSidebar/SidebarSplitContainer/ConversationContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+hide_root = true
+
+[node name="NodesContainer" type="VBoxContainer" parent="MainSplitContainer/MainSidebar/SidebarSplitContainer"]
+custom_minimum_size = Vector2(0, 232)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="NodesTitl" type="Label" parent="MainSplitContainer/MainSidebar/SidebarSplitContainer/NodesContainer"]
+layout_mode = 2
+text = "Nodes"
+
+[node name="SearchHbox" type="HBoxContainer" parent="MainSplitContainer/MainSidebar/SidebarSplitContainer/NodesContainer"]
+layout_mode = 2
+
+[node name="NodeSearchLnEdt" type="LineEdit" parent="MainSplitContainer/MainSidebar/SidebarSplitContainer/NodesContainer/SearchHbox"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Search Node"
+
+[node name="NewFolderButton" type="Button" parent="MainSplitContainer/MainSidebar/SidebarSplitContainer/NodesContainer/SearchHbox"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+flat = true
+icon_alignment = 1
+
+[node name="NodesTree" type="Tree" parent="MainSplitContainer/MainSidebar/SidebarSplitContainer/NodesContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+allow_reselect = true
+hide_root = true
+script = SubResource("GDScript_58abf")
+
+[node name="DiscourseSplitContainer" type="VSplitContainer" parent="MainSplitContainer"]
+custom_minimum_size = Vector2(680, 300)
+layout_mode = 2
+size_flags_horizontal = 3
+dragger_visibility = 2
+
+[node name="DiscourseWindow" type="PanelContainer" parent="MainSplitContainer/DiscourseSplitContainer"]
+custom_minimum_size = Vector2(0, 250)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxEmpty_qux6o")
+script = ExtResource("2_f5jrf")
+
+[node name="ErrorContainer" type="PanelContainer" parent="MainSplitContainer/DiscourseSplitContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_y485p")
+
+[node name="LocalizationContainer" type="VBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="MainSplitContainer" type="HSplitContainer" parent="LocalizationContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="LeftSplitContainer" type="HSplitContainer" parent="LocalizationContainer/MainSplitContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 2.0
+split_offset = 250
+
+[node name="LanguagesSplitContainer" type="VSplitContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="LanguagesContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LanguagesSplitContainer"]
+custom_minimum_size = Vector2(0, 190)
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 3.5
+
+[node name="HeaderContainer" type="HBoxContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LanguagesSplitContainer/LanguagesContainer"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+
+[node name="LanguagesLbl" type="Label" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LanguagesSplitContainer/LanguagesContainer/HeaderContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Languages"
+vertical_alignment = 2
+
+[node name="NewLanguageBtn" type="Button" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LanguagesSplitContainer/LanguagesContainer/HeaderContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+size_flags_vertical = 8
+icon = ExtResource("3_f5jrf")
+icon_alignment = 1
+expand_icon = true
+
+[node name="SearchLanguageLnEdt" type="LineEdit" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LanguagesSplitContainer/LanguagesContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+placeholder_text = "Search Language"
+
+[node name="LanguagesTree" type="Tree" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LanguagesSplitContainer/LanguagesContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/h_separation = 6
+hide_root = true
+select_mode = 1
+scroll_horizontal_enabled = false
+script = ExtResource("4_2wl78")
+
+[node name="NodesContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LanguagesSplitContainer"]
+custom_minimum_size = Vector2(0, 200)
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 6.0
+
+[node name="NodesTitle" type="Label" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LanguagesSplitContainer/NodesContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+text = "Translated Nodes"
+vertical_alignment = 2
+
+[node name="SearchNodesLnEdt" type="LineEdit" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LanguagesSplitContainer/NodesContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+
+[node name="NodesTree" type="Tree" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LanguagesSplitContainer/NodesContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+script = ExtResource("5_qplns")
+
+[node name="LocaleContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer"]
+custom_minimum_size = Vector2(250, 0)
+layout_mode = 2
+size_flags_stretch_ratio = 2.0
+
+[node name="LocalePanel" type="PanelContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxEmpty_i2jr7")
+
+[node name="LocaleVBoxContainer" type="VSplitContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="BasePanelContainer" type="PanelContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/LocaleVBoxContainer"]
+custom_minimum_size = Vector2(0, 180)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxEmpty_58abf")
+
+[node name="BaseContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/LocaleVBoxContainer/BasePanelContainer"]
+layout_mode = 2
+
+[node name="BaseTitle" type="Label" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/LocaleVBoxContainer/BasePanelContainer/BaseContainer"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+text = "Base Text"
+vertical_alignment = 2
+
+[node name="BaseTextEdt" type="TextEdit" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/LocaleVBoxContainer/BasePanelContainer/BaseContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+editable = false
+wrap_mode = 1
+
+[node name="TranslationPanel" type="PanelContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/LocaleVBoxContainer"]
+custom_minimum_size = Vector2(0, 180)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxEmpty_a0o6y")
+
+[node name="TranslationContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/LocaleVBoxContainer/TranslationPanel"]
+layout_mode = 2
+
+[node name="TranslationLbl" type="Label" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/LocaleVBoxContainer/TranslationPanel/TranslationContainer"]
+custom_minimum_size = Vector2(100, 32)
+layout_mode = 2
+text = "Translation"
+vertical_alignment = 2
+
+[node name="TranslationTxtBox" type="TextEdit" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/LocaleVBoxContainer/TranslationPanel/TranslationContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+wrap_mode = 1
+
+[node name="ChoicesContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel"]
+visible = false
+layout_mode = 2
+
+[node name="Label" type="Label" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+vertical_alignment = 2
+
+[node name="PanelContainer" type="PanelContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer"]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer/PanelContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer/PanelContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Choice"
+horizontal_alignment = 1
+
+[node name="Label2" type="Label" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer/PanelContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 2.0
+text = "Original Text"
+horizontal_alignment = 1
+
+[node name="Label3" type="Label" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer/PanelContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 2.0
+text = "Translation"
+horizontal_alignment = 1
+
+[node name="ChoicesScroller" type="ScrollContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ChoicesContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer/ChoicesScroller"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="PhrasesContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer"]
+custom_minimum_size = Vector2(320, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HeaderPanel" type="PanelContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxEmpty_4f4qt")
+
+[node name="PhrasesHeader" type="HBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/HeaderPanel"]
+layout_mode = 2
+
+[node name="PhrasesLabel" type="Label" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/HeaderPanel/PhrasesHeader"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Words / Phrases"
+vertical_alignment = 2
+
+[node name="CreatePhraseBtn" type="Button" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/HeaderPanel/PhrasesHeader"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+disabled = true
+icon = ExtResource("6_nnanj")
+flat = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="VSeparator" type="VSeparator" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/HeaderPanel/PhrasesHeader"]
+layout_mode = 2
+
+[node name="ReturnDiscourseBtn" type="Button" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/HeaderPanel/PhrasesHeader"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+flat = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="SearchPhraseLnEdt" type="LineEdit" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+placeholder_text = "Search"
+
+[node name="PhrasesTree" type="Tree" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+columns = 2
+allow_reselect = true
+hide_root = true
+select_mode = 1
+script = ExtResource("6_qsnsk")
+
+[node name="LocaleLabel" type="Label" parent="LocalizationContainer"]
+layout_mode = 2
+text = "Current Locale:"

@@ -1,0 +1,111 @@
+[gd_scene load_steps=14 format=3 uid="uid://dykskyw7tvdof"]
+
+[ext_resource type="Script" uid="uid://d0wp8u6btdhsk" path="res://addons/nexus_forge/nexus_forge_main_scene_script.gd" id="1_15n6i"]
+[ext_resource type="Texture2D" uid="uid://ciucmcbkqf2u6" path="res://addons/nexus_forge/icons/plugin_icon.svg" id="2_623mc"]
+[ext_resource type="PackedScene" uid="uid://d3qq6j2xbhrgp" path="res://addons/nexus_forge/variables/variables_main.tscn" id="3_umhp2"]
+[ext_resource type="Texture2D" uid="uid://dc7l0vdedlvan" path="res://addons/nexus_forge/splash/splash.png" id="3_ynryw"]
+[ext_resource type="PackedScene" uid="uid://d216eid5mh0ts" path="res://addons/nexus_forge/discourse/discourse_main_scene.tscn" id="4_yutfl"]
+[ext_resource type="PackedScene" uid="uid://dauhesagd763y" path="res://addons/nexus_forge/characters/new_characters.tscn" id="6_h1eok"]
+[ext_resource type="PackedScene" uid="uid://c0pulhtis8blt" path="res://addons/nexus_forge/species/species_main.tscn" id="7_14xiq"]
+[ext_resource type="PackedScene" uid="uid://dhpg6hwpnth1b" path="res://addons/nexus_forge/recipes/recipes_scene.tscn" id="8_hl74n"]
+[ext_resource type="PackedScene" uid="uid://dt7vndut1j8qv" path="res://addons/nexus_forge/talents/talents_main.tscn" id="8_shwyd"]
+[ext_resource type="PackedScene" uid="uid://dx3tfxh44uxs6" path="res://addons/nexus_forge/depot/depot_scene.tscn" id="9_eiqft"]
+[ext_resource type="PackedScene" uid="uid://djul28onmafsc" path="res://addons/nexus_forge/quests/quest_main_scene.tscn" id="11_ec5tf"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_yutfl"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ay1bl"]
+content_margin_left = 10.0
+content_margin_top = 10.0
+content_margin_right = 10.0
+content_margin_bottom = 10.0
+
+[node name="NexusForgeMainScene" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = ExtResource("1_15n6i")
+
+[node name="MainContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 0
+
+[node name="ToolTabBar" type="TabBar" parent="MainContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+current_tab = 0
+tab_count = 9
+tab_0/icon = ExtResource("2_623mc")
+tab_1/title = "Discourse"
+tab_2/title = "Variables"
+tab_3/title = "Characters"
+tab_4/title = "Species"
+tab_5/title = "Talents"
+tab_6/title = "Items"
+tab_7/title = "Recipes"
+tab_8/title = "Quests"
+
+[node name="ToolContainer" type="PanelContainer" parent="MainContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxEmpty_yutfl")
+
+[node name="NexusForge" type="Control" parent="MainContainer/ToolContainer"]
+visible = false
+layout_mode = 2
+
+[node name="SplashPanel" type="PanelContainer" parent="MainContainer/ToolContainer/NexusForge"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxEmpty_ay1bl")
+
+[node name="SplashTexture" type="TextureRect" parent="MainContainer/ToolContainer/NexusForge/SplashPanel"]
+layout_mode = 2
+texture = ExtResource("3_ynryw")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Discourse" parent="MainContainer/ToolContainer" instance=ExtResource("4_yutfl")]
+visible = false
+layout_mode = 2
+
+[node name="Variables" parent="MainContainer/ToolContainer" instance=ExtResource("3_umhp2")]
+visible = false
+layout_mode = 2
+
+[node name="Characters" parent="MainContainer/ToolContainer" instance=ExtResource("6_h1eok")]
+visible = false
+layout_mode = 2
+
+[node name="Species" parent="MainContainer/ToolContainer" instance=ExtResource("7_14xiq")]
+visible = false
+layout_mode = 2
+
+[node name="Talents" parent="MainContainer/ToolContainer" instance=ExtResource("8_shwyd")]
+visible = false
+layout_mode = 2
+
+[node name="Items" parent="MainContainer/ToolContainer" instance=ExtResource("9_eiqft")]
+visible = false
+layout_mode = 2
+
+[node name="Recipes" parent="MainContainer/ToolContainer" instance=ExtResource("8_hl74n")]
+layout_mode = 2
+
+[node name="Quests" parent="MainContainer/ToolContainer" instance=ExtResource("11_ec5tf")]
+visible = false
+layout_mode = 2

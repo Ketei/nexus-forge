@@ -1,0 +1,554 @@
+[gd_scene load_steps=20 format=3 uid="uid://dx3tfxh44uxs6"]
+
+[ext_resource type="Texture2D" uid="uid://12lyg7db58dg" path="res://addons/nexus_forge/icons/add_int.svg" id="1_e1mk7"]
+[ext_resource type="Script" uid="uid://cuem7gvcvgeia" path="res://addons/nexus_forge/depot/depot_main_script.gd" id="1_l5u5u"]
+[ext_resource type="Script" uid="uid://btsdjfui2ifmp" path="res://addons/nexus_forge/depot/items_script.gd" id="2_evcfd"]
+[ext_resource type="Texture2D" uid="uid://dcgniolhiay6u" path="res://addons/nexus_forge/icons/add_float.svg" id="2_l5u5u"]
+[ext_resource type="Script" uid="uid://cs5j1ud4uufop" path="res://addons/nexus_forge/depot/items_category_tree.gd" id="3_8n7i7"]
+[ext_resource type="Script" uid="uid://de78kcn57q0j6" path="res://addons/nexus_forge/depot/items_tree_script.gd" id="3_etwui"]
+[ext_resource type="Texture2D" uid="uid://c472l5bho4jpi" path="res://addons/nexus_forge/icons/add_bool.svg" id="3_evcfd"]
+[ext_resource type="Texture2D" uid="uid://cxv7veghytl4m" path="res://addons/nexus_forge/icons/add_string.svg" id="4_etwui"]
+[ext_resource type="Texture2D" uid="uid://dbjyls7e856f5" path="res://addons/nexus_forge/icons/chest_icon_plus.svg" id="4_qiph8"]
+[ext_resource type="Script" uid="uid://b3ooglkmjjil4" path="res://addons/nexus_forge/classes/simple_data_tree.gd" id="5_hb3ne"]
+[ext_resource type="Script" uid="uid://yl433uwg7btc" path="res://addons/nexus_forge/depot/currency_tree_script.gd" id="6_dn322"]
+[ext_resource type="Script" uid="uid://d4hij5gpdxqnc" path="res://addons/nexus_forge/depot/categories_container_script.gd" id="10_hb3ne"]
+[ext_resource type="Texture2D" uid="uid://dd1wojqjxqfqn" path="res://addons/nexus_forge/icons/coin_plus.svg" id="11_5hvq2"]
+[ext_resource type="Script" uid="uid://7dmrf5h7co67" path="res://addons/nexus_forge/depot/categories_tree_script.gd" id="11_dn322"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_8n7i7"]
+content_margin_left = 6.0
+content_margin_top = 8.0
+content_margin_right = 6.0
+content_margin_bottom = 6.0
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_qiph8"]
+
+[sub_resource type="Image" id="Image_5hvq2"]
+data = {
+"data": PackedByteArray(255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 0, 255, 92, 92, 127, 255, 92, 92, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 0, 255, 93, 93, 255, 255, 92, 92, 127, 255, 92, 92, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 92, 92, 127, 255, 92, 92, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 92, 92, 127, 255, 92, 92, 0, 255, 92, 92, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 231, 255, 90, 90, 54, 255, 94, 94, 57, 255, 93, 93, 233, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 231, 255, 90, 90, 54, 255, 94, 94, 57, 255, 93, 93, 233, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 0, 255, 93, 93, 0, 255, 91, 91, 0, 255, 91, 91, 0, 255, 91, 91, 42, 255, 90, 90, 0, 255, 94, 94, 0, 255, 91, 91, 42, 255, 93, 93, 233, 255, 92, 92, 232, 255, 93, 93, 41, 255, 90, 90, 0, 255, 94, 94, 0, 255, 91, 91, 42, 255, 93, 93, 233, 255, 92, 92, 232, 255, 92, 92, 0, 255, 92, 92, 0, 255, 91, 91, 0, 255, 91, 91, 0, 255, 91, 91, 0, 255, 91, 91, 45, 255, 93, 93, 44, 255, 91, 91, 0, 255, 91, 91, 42, 255, 91, 91, 42, 255, 93, 93, 0, 255, 91, 91, 45, 255, 93, 93, 44, 255, 91, 91, 0, 255, 91, 91, 42, 255, 91, 91, 42, 255, 91, 91, 0, 255, 91, 91, 0, 255, 91, 91, 0, 255, 91, 91, 0, 255, 91, 91, 45, 255, 92, 92, 235, 255, 92, 92, 234, 255, 89, 89, 43, 255, 91, 91, 0, 255, 91, 91, 0, 255, 91, 91, 45, 255, 92, 92, 235, 255, 92, 92, 234, 255, 89, 89, 43, 255, 91, 91, 0, 255, 91, 91, 0, 255, 91, 91, 0, 255, 91, 91, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 92, 92, 235, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 233, 255, 91, 91, 59, 255, 92, 92, 61, 255, 92, 92, 235, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 233, 255, 91, 91, 59, 255, 92, 92, 61, 255, 92, 92, 0, 255, 92, 92, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0),
+"format": "RGBA8",
+"height": 16,
+"mipmaps": false,
+"width": 16
+}
+
+[sub_resource type="ImageTexture" id="ImageTexture_wqp7e"]
+image = SubResource("Image_5hvq2")
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_bes68"]
+
+[node name="DepotScene" type="PanelContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxEmpty_8n7i7")
+script = ExtResource("1_l5u5u")
+
+[node name="ItemsContainer" type="HBoxContainer" parent="."]
+layout_mode = 2
+script = ExtResource("2_evcfd")
+
+[node name="ItemsPanel" type="PanelContainer" parent="ItemsContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 3.0
+theme_override_styles/panel = SubResource("StyleBoxEmpty_qiph8")
+
+[node name="ItemsContainer" type="HBoxContainer" parent="ItemsContainer/ItemsPanel"]
+layout_mode = 2
+
+[node name="TreeContainer" type="VBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 4.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/TreeContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="HBoxContainer" type="HBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/TreeContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="ItemsContainer/ItemsPanel/ItemsContainer/TreeContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+text = "Categories"
+
+[node name="LineEdit" type="LineEdit" parent="ItemsContainer/ItemsPanel/ItemsContainer/TreeContainer/VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Search Category"
+
+[node name="EditCategoriesBtn" type="Button" parent="ItemsContainer/ItemsPanel/ItemsContainer/TreeContainer/VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Edit Categories"
+icon_alignment = 1
+expand_icon = true
+
+[node name="CategoriesTree" type="Tree" parent="ItemsContainer/ItemsPanel/ItemsContainer/TreeContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+allow_reselect = true
+hide_root = true
+script = ExtResource("3_8n7i7")
+
+[node name="HSeparator" type="HSeparator" parent="ItemsContainer/ItemsPanel/ItemsContainer/TreeContainer"]
+layout_mode = 2
+
+[node name="ItemSearchContainer" type="HBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/TreeContainer"]
+layout_mode = 2
+
+[node name="SearchItemContainer" type="LineEdit" parent="ItemsContainer/ItemsPanel/ItemsContainer/TreeContainer/ItemSearchContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Search Item"
+
+[node name="NewItemBtn" type="Button" parent="ItemsContainer/ItemsPanel/ItemsContainer/TreeContainer/ItemSearchContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Create Item"
+icon = ExtResource("4_qiph8")
+icon_alignment = 1
+expand_icon = true
+
+[node name="ItemsTree" type="Tree" parent="ItemsContainer/ItemsPanel/ItemsContainer/TreeContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 2.0
+allow_reselect = true
+hide_folding = true
+hide_root = true
+script = ExtResource("3_etwui")
+
+[node name="DataContainer" type="VBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer"]
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 5.0
+
+[node name="TitleVContainer" type="VBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/TitleVContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Item"
+horizontal_alignment = 1
+
+[node name="HSeparator" type="HSeparator" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/TitleVContainer"]
+layout_mode = 2
+
+[node name="NameContainer" type="HBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 2.0
+
+[node name="Label" type="Label" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/NameContainer"]
+custom_minimum_size = Vector2(72, 0)
+layout_mode = 2
+text = "Name"
+
+[node name="ItemNameLnEdt" type="LineEdit" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/NameContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 3.0
+placeholder_text = "Item Name"
+
+[node name="RarityContainer" type="HBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Label" type="Label" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/RarityContainer"]
+custom_minimum_size = Vector2(72, 0)
+layout_mode = 2
+text = "Rarity"
+
+[node name="RarityOptBtn" type="OptionButton" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/RarityContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ValueContainer" type="HBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Label" type="Label" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/ValueContainer"]
+custom_minimum_size = Vector2(72, 0)
+layout_mode = 2
+text = "Value"
+
+[node name="ItemValSpnBx" type="SpinBox" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/ValueContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "The base value of the item."
+allow_greater = true
+
+[node name="DescContainer" type="VBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Label" type="Label" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/DescContainer"]
+layout_mode = 2
+text = "Description"
+
+[node name="ItemDescTxtEdt" type="TextEdit" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/DescContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="CustomDataContainer" type="VBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 3.0
+
+[node name="CustomDataHeader" type="HBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/CustomDataContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/CustomDataContainer/CustomDataHeader"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+text = "Custom Data"
+vertical_alignment = 1
+
+[node name="ButtonContainer" type="HBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/CustomDataContainer/CustomDataHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 2
+
+[node name="AddItemFldrBtn" type="Button" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Add folder"
+disabled = true
+icon = SubResource("ImageTexture_wqp7e")
+icon_alignment = 1
+
+[node name="VSeparator" type="VSeparator" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
+layout_mode = 2
+
+[node name="AddItemIntBtn" type="Button" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Add integer"
+disabled = true
+icon = ExtResource("1_e1mk7")
+icon_alignment = 1
+
+[node name="AddItemFloatBtn" type="Button" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Add float"
+disabled = true
+icon = ExtResource("2_l5u5u")
+icon_alignment = 1
+
+[node name="AddItemBoolBtn" type="Button" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Add boolean"
+disabled = true
+icon = ExtResource("3_evcfd")
+icon_alignment = 1
+
+[node name="AddItemStrBtn" type="Button" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Add string"
+disabled = true
+icon = ExtResource("4_etwui")
+icon_alignment = 1
+
+[node name="ItemDataTree" type="Tree" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/CustomDataContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+columns = 2
+allow_reselect = true
+hide_root = true
+script = ExtResource("5_hb3ne")
+allow_drag_and_drop = true
+
+[node name="FlagsContainer" type="VBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 4.0
+
+[node name="TitleVContainer" type="VBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/FlagsContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="ItemsContainer/ItemsPanel/ItemsContainer/FlagsContainer/TitleVContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Flags"
+horizontal_alignment = 1
+
+[node name="HSeparator" type="HSeparator" parent="ItemsContainer/ItemsPanel/ItemsContainer/FlagsContainer/TitleVContainer"]
+layout_mode = 2
+
+[node name="ScrollContainer" type="ScrollContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/FlagsContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="ItemsFlagsContainer" type="VBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/FlagsContainer/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VSeparator" type="VSeparator" parent="ItemsContainer"]
+layout_mode = 2
+
+[node name="CurrencyPanel" type="PanelContainer" parent="ItemsContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxEmpty_bes68")
+
+[node name="CurrencyContainer" type="VBoxContainer" parent="ItemsContainer/CurrencyPanel"]
+layout_mode = 2
+
+[node name="TitleVContainer" type="VBoxContainer" parent="ItemsContainer/CurrencyPanel/CurrencyContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/TitleVContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Currencies"
+horizontal_alignment = 1
+
+[node name="HSeparator" type="HSeparator" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/TitleVContainer"]
+layout_mode = 2
+
+[node name="TreeContainer" type="VBoxContainer" parent="ItemsContainer/CurrencyPanel/CurrencyContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="HeaderContainer" type="HBoxContainer" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/TreeContainer"]
+layout_mode = 2
+
+[node name="SearchCurrLnEdt" type="LineEdit" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/TreeContainer/HeaderContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Search Currencies..."
+clear_button_enabled = true
+
+[node name="CreateCurrencyBtn" type="Button" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/TreeContainer/HeaderContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Create currency"
+icon = ExtResource("11_5hvq2")
+flat = true
+icon_alignment = 1
+
+[node name="CurrencyTree" type="Tree" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/TreeContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+allow_reselect = true
+hide_folding = true
+hide_root = true
+select_mode = 1
+script = ExtResource("6_dn322")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="ItemsContainer/CurrencyPanel/CurrencyContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/HBoxContainer"]
+layout_mode = 2
+text = "Name"
+
+[node name="CurrencyNameLnEdt" type="LineEdit" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/HBoxContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="ItemsContainer/CurrencyPanel/CurrencyContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/HBoxContainer2"]
+layout_mode = 2
+text = "Value"
+
+[node name="CurrencyValueSpnBx" type="SpinBox" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/HBoxContainer2"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="CustomDataContainer" type="VBoxContainer" parent="ItemsContainer/CurrencyPanel/CurrencyContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 2.0
+
+[node name="CustomDataHeader" type="HBoxContainer" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/CustomDataContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/CustomDataContainer/CustomDataHeader"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+text = "Custom Data"
+vertical_alignment = 1
+
+[node name="ButtonContainer" type="HBoxContainer" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/CustomDataContainer/CustomDataHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 2
+
+[node name="AddCurrIntBtn" type="Button" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+disabled = true
+icon = ExtResource("1_e1mk7")
+icon_alignment = 1
+
+[node name="AddCurrFltBtn" type="Button" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+disabled = true
+icon = ExtResource("2_l5u5u")
+icon_alignment = 1
+
+[node name="AddCurrBoolBtn" type="Button" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+disabled = true
+icon = ExtResource("3_evcfd")
+icon_alignment = 1
+
+[node name="AddCurrStrBtn" type="Button" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+disabled = true
+icon = ExtResource("4_etwui")
+icon_alignment = 1
+
+[node name="CurrencyCustomDataTree" type="Tree" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/CustomDataContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+columns = 2
+allow_reselect = true
+hide_root = true
+select_mode = 1
+script = ExtResource("5_hb3ne")
+
+[node name="CategoriesContainer" type="HBoxContainer" parent="."]
+visible = false
+layout_mode = 2
+alignment = 1
+script = ExtResource("10_hb3ne")
+
+[node name="DataContainer" type="VBoxContainer" parent="CategoriesContainer"]
+custom_minimum_size = Vector2(350, 0)
+layout_mode = 2
+
+[node name="TitleVContainer" type="VBoxContainer" parent="CategoriesContainer/DataContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="CategoriesContainer/DataContainer/TitleVContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Categories"
+horizontal_alignment = 1
+
+[node name="HSeparator" type="HSeparator" parent="CategoriesContainer/DataContainer/TitleVContainer"]
+layout_mode = 2
+
+[node name="SearchContainer" type="HBoxContainer" parent="CategoriesContainer/DataContainer"]
+layout_mode = 2
+
+[node name="SearchCatLnEdt" type="LineEdit" parent="CategoriesContainer/DataContainer/SearchContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Search Category"
+
+[node name="NewCategoryBtn" type="Button" parent="CategoriesContainer/DataContainer/SearchContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+
+[node name="CategoriesTree" type="Tree" parent="CategoriesContainer/DataContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 2.0
+columns = 2
+column_titles_visible = true
+allow_reselect = true
+hide_root = true
+select_mode = 1
+script = ExtResource("11_dn322")
+
+[node name="CustomDataContainer" type="VBoxContainer" parent="CategoriesContainer/DataContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 2.0
+
+[node name="CustomDataHeader" type="HBoxContainer" parent="CategoriesContainer/DataContainer/CustomDataContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="CategoriesContainer/DataContainer/CustomDataContainer/CustomDataHeader"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+text = "Custom Data"
+vertical_alignment = 1
+
+[node name="ButtonContainer" type="HBoxContainer" parent="CategoriesContainer/DataContainer/CustomDataContainer/CustomDataHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 2
+
+[node name="AddCatFldrBtn" type="Button" parent="CategoriesContainer/DataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Add folder"
+disabled = true
+icon = SubResource("ImageTexture_wqp7e")
+icon_alignment = 1
+
+[node name="VSeparator" type="VSeparator" parent="CategoriesContainer/DataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
+layout_mode = 2
+
+[node name="AddCatIntBtn" type="Button" parent="CategoriesContainer/DataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Add integer"
+disabled = true
+icon = ExtResource("1_e1mk7")
+icon_alignment = 1
+
+[node name="AddCatFloatBtn" type="Button" parent="CategoriesContainer/DataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Add float"
+disabled = true
+icon = ExtResource("2_l5u5u")
+icon_alignment = 1
+
+[node name="AddCatBoolBtn" type="Button" parent="CategoriesContainer/DataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Add boolean"
+disabled = true
+icon = ExtResource("3_evcfd")
+icon_alignment = 1
+
+[node name="AddCatStrBtn" type="Button" parent="CategoriesContainer/DataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Add string"
+disabled = true
+icon = ExtResource("4_etwui")
+icon_alignment = 1
+
+[node name="ItemDataTree" type="Tree" parent="CategoriesContainer/DataContainer/CustomDataContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+columns = 2
+allow_reselect = true
+hide_root = true
+script = ExtResource("5_hb3ne")
+allow_drag_and_drop = true
+
+[node name="FinishCatBtn" type="Button" parent="CategoriesContainer/DataContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+text = "Done"

@@ -1,7 +1,7 @@
 @tool
 class_name NFCharacterDBRes
 extends Resource
-
+# Unused
 
 const SETTINGS_PATH: String = "nexus_forge/characters_resource"
 

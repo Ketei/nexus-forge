@@ -1,0 +1,282 @@
+[gd_scene load_steps=11 format=3 uid="uid://dauhesagd763y"]
+
+[ext_resource type="Script" uid="uid://dph1lon8t6ojq" path="res://addons/nexus_forge/characters/characters_main_script.gd" id="1_rhcbn"]
+[ext_resource type="Texture2D" uid="uid://bulvfr7x1bwq8" path="res://addons/nexus_forge/icons/add_character_icon.svg" id="2_fqnw0"]
+[ext_resource type="Script" uid="uid://buokvmhiwpxsu" path="res://addons/nexus_forge/characters/characters_tree.gd" id="3_blnre"]
+[ext_resource type="Texture2D" uid="uid://12lyg7db58dg" path="res://addons/nexus_forge/icons/add_int.svg" id="4_jsvfs"]
+[ext_resource type="Texture2D" uid="uid://b0eek675oq2el" path="res://addons/nexus_forge/icons/file_transfer.svg" id="4_w5f8f"]
+[ext_resource type="Texture2D" uid="uid://dcgniolhiay6u" path="res://addons/nexus_forge/icons/add_float.svg" id="5_0ualm"]
+[ext_resource type="Texture2D" uid="uid://c472l5bho4jpi" path="res://addons/nexus_forge/icons/add_bool.svg" id="6_r1c6x"]
+[ext_resource type="Texture2D" uid="uid://cxv7veghytl4m" path="res://addons/nexus_forge/icons/add_string.svg" id="7_3h3ho"]
+[ext_resource type="Script" uid="uid://b3ooglkmjjil4" path="res://addons/nexus_forge/classes/simple_data_tree.gd" id="9_i064r"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_xfmus"]
+content_margin_left = 6.0
+content_margin_top = 8.0
+content_margin_right = 6.0
+content_margin_bottom = 6.0
+
+[node name="Characters" type="PanelContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxEmpty_xfmus")
+script = ExtResource("1_rhcbn")
+
+[node name="CharacterContainer" type="HSplitContainer" parent="."]
+layout_mode = 2
+split_offset = 660
+
+[node name="BasicDataSplit" type="HSplitContainer" parent="CharacterContainer"]
+layout_mode = 2
+size_flags_stretch_ratio = 3.0
+split_offset = 250
+
+[node name="CharacterTreeContainer" type="VBoxContainer" parent="CharacterContainer/BasicDataSplit"]
+custom_minimum_size = Vector2(250, 0)
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="CharacterContainer/BasicDataSplit/CharacterTreeContainer"]
+layout_mode = 2
+
+[node name="SearchCharLnEdt" type="LineEdit" parent="CharacterContainer/BasicDataSplit/CharacterTreeContainer/HBoxContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Search Character"
+
+[node name="CharMenuBtn" type="MenuButton" parent="CharacterContainer/BasicDataSplit/CharacterTreeContainer/HBoxContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+icon = ExtResource("2_fqnw0")
+icon_alignment = 1
+expand_icon = true
+item_count = 2
+popup/item_0/text = "Create Character"
+popup/item_0/id = 0
+popup/item_1/text = "Open Character"
+popup/item_1/id = 1
+
+[node name="CharTree" type="Tree" parent="CharacterContainer/BasicDataSplit/CharacterTreeContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+column_titles_visible = true
+allow_reselect = true
+hide_root = true
+select_mode = 1
+script = ExtResource("3_blnre")
+
+[node name="GeneralContainer" type="VBoxContainer" parent="CharacterContainer/BasicDataSplit"]
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+size_flags_stretch_ratio = 2.0
+
+[node name="TitleLabel" type="Label" parent="CharacterContainer/BasicDataSplit/GeneralContainer"]
+visible = false
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.223182, 0.705086, 0.904884, 1)
+theme_override_font_sizes/font_size = 25
+text = "Characters"
+
+[node name="CharIDContainer" type="HBoxContainer" parent="CharacterContainer/BasicDataSplit/GeneralContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="CharacterContainer/BasicDataSplit/GeneralContainer/CharIDContainer"]
+custom_minimum_size = Vector2(70, 0)
+layout_mode = 2
+size_flags_stretch_ratio = 0.2
+text = "ID"
+
+[node name="CharIDLine" type="LineEdit" parent="CharacterContainer/BasicDataSplit/GeneralContainer/CharIDContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="CharNameContainer" type="HBoxContainer" parent="CharacterContainer/BasicDataSplit/GeneralContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="CharacterContainer/BasicDataSplit/GeneralContainer/CharNameContainer"]
+custom_minimum_size = Vector2(70, 0)
+layout_mode = 2
+size_flags_stretch_ratio = 0.2
+text = "Name"
+
+[node name="CharNameLine" type="LineEdit" parent="CharacterContainer/BasicDataSplit/GeneralContainer/CharNameContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SpeciesContainer" type="HBoxContainer" parent="CharacterContainer/BasicDataSplit/GeneralContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="CharacterContainer/BasicDataSplit/GeneralContainer/SpeciesContainer"]
+custom_minimum_size = Vector2(70, 0)
+layout_mode = 2
+size_flags_stretch_ratio = 0.2
+text = "Type"
+
+[node name="SpeciesOptionButton" type="OptionButton" parent="CharacterContainer/BasicDataSplit/GeneralContainer/SpeciesContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="LoadSpeciesDataBtn" type="Button" parent="CharacterContainer/BasicDataSplit/GeneralContainer/SpeciesContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Import species data"
+icon = ExtResource("4_w5f8f")
+flat = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="GenderContainer" type="HBoxContainer" parent="CharacterContainer/BasicDataSplit/GeneralContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="CharacterContainer/BasicDataSplit/GeneralContainer/GenderContainer"]
+custom_minimum_size = Vector2(70, 0)
+layout_mode = 2
+size_flags_stretch_ratio = 0.2
+text = "Gender"
+
+[node name="GenderOptionButton" type="OptionButton" parent="CharacterContainer/BasicDataSplit/GeneralContainer/GenderContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="CustomDataContainer" type="VBoxContainer" parent="CharacterContainer/BasicDataSplit/GeneralContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 2.5
+
+[node name="CDHeaderContainer" type="HBoxContainer" parent="CharacterContainer/BasicDataSplit/GeneralContainer/CustomDataContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="CharacterContainer/BasicDataSplit/GeneralContainer/CustomDataContainer/CDHeaderContainer"]
+layout_mode = 2
+text = "Character Data"
+
+[node name="AddButtonsContainer" type="HBoxContainer" parent="CharacterContainer/BasicDataSplit/GeneralContainer/CustomDataContainer/CDHeaderContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 2
+
+[node name="AddCharIntButton" type="Button" parent="CharacterContainer/BasicDataSplit/GeneralContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Create integer variable."
+disabled = true
+icon = ExtResource("4_jsvfs")
+icon_alignment = 1
+
+[node name="AddCharFloatButton" type="Button" parent="CharacterContainer/BasicDataSplit/GeneralContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Create float variable."
+disabled = true
+icon = ExtResource("5_0ualm")
+icon_alignment = 1
+
+[node name="AddCharBoolButton" type="Button" parent="CharacterContainer/BasicDataSplit/GeneralContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Create bool variable."
+disabled = true
+icon = ExtResource("6_r1c6x")
+icon_alignment = 1
+
+[node name="AddCharStringButton" type="Button" parent="CharacterContainer/BasicDataSplit/GeneralContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Create string  variable."
+disabled = true
+icon = ExtResource("7_3h3ho")
+icon_alignment = 1
+
+[node name="CharacterCustomDataSearchLine" type="LineEdit" parent="CharacterContainer/BasicDataSplit/GeneralContainer/CustomDataContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 3.0
+placeholder_text = "Search Custom Data"
+clear_button_enabled = true
+
+[node name="CharacterDataTree" type="Tree" parent="CharacterContainer/BasicDataSplit/GeneralContainer/CustomDataContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+columns = 2
+allow_reselect = true
+hide_folding = true
+hide_root = true
+script = ExtResource("9_i064r")
+
+[node name="ValuesSplit" type="HSplitContainer" parent="CharacterContainer"]
+layout_mode = 2
+size_flags_stretch_ratio = 2.0
+split_offset = 325
+
+[node name="ValuesVBox" type="VBoxContainer" parent="CharacterContainer/ValuesSplit"]
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+
+[node name="StatVBox" type="VBoxContainer" parent="CharacterContainer/ValuesSplit/ValuesVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="StatLbl" type="Label" parent="CharacterContainer/ValuesSplit/ValuesVBox/StatVBox"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+text = "Stats"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="StatScroll" type="ScrollContainer" parent="CharacterContainer/ValuesSplit/ValuesVBox/StatVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="CharStatsContainer" type="VBoxContainer" parent="CharacterContainer/ValuesSplit/ValuesVBox/StatVBox/StatScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HSeparator" type="HSeparator" parent="CharacterContainer/ValuesSplit/ValuesVBox"]
+layout_mode = 2
+
+[node name="SkillVBox" type="VBoxContainer" parent="CharacterContainer/ValuesSplit/ValuesVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="StatLbl" type="Label" parent="CharacterContainer/ValuesSplit/ValuesVBox/SkillVBox"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+text = "Skills"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="SkillScroll" type="ScrollContainer" parent="CharacterContainer/ValuesSplit/ValuesVBox/SkillVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="CharSkillContainer" type="VBoxContainer" parent="CharacterContainer/ValuesSplit/ValuesVBox/SkillVBox/SkillScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="TraitsVbox" type="VBoxContainer" parent="CharacterContainer/ValuesSplit"]
+custom_minimum_size = Vector2(220, 0)
+layout_mode = 2
+
+[node name="StatLbl" type="Label" parent="CharacterContainer/ValuesSplit/TraitsVbox"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+text = "Traits"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ScrollContainer" type="ScrollContainer" parent="CharacterContainer/ValuesSplit/TraitsVbox"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="CharTraitsContainer" type="VBoxContainer" parent="CharacterContainer/ValuesSplit/TraitsVbox/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3

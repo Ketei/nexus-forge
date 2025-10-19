@@ -1,0 +1,235 @@
+[gd_scene load_steps=10 format=3 uid="uid://c0pulhtis8blt"]
+
+[ext_resource type="Script" uid="uid://c82ss7sbqg8ld" path="res://addons/nexus_forge/species/races_main_script.gd" id="1_30i28"]
+[ext_resource type="Texture2D" uid="uid://ca385cv4s0bwm" path="res://addons/nexus_forge/icons/dna_plus.svg" id="2_4lijr"]
+[ext_resource type="Texture2D" uid="uid://12lyg7db58dg" path="res://addons/nexus_forge/icons/add_int.svg" id="2_30i28"]
+[ext_resource type="Texture2D" uid="uid://dcgniolhiay6u" path="res://addons/nexus_forge/icons/add_float.svg" id="3_rexu5"]
+[ext_resource type="Script" uid="uid://cu7n61x3rixcl" path="res://addons/nexus_forge/species/races_tree_script.gd" id="3_u68gt"]
+[ext_resource type="Texture2D" uid="uid://c472l5bho4jpi" path="res://addons/nexus_forge/icons/add_bool.svg" id="4_u68gt"]
+[ext_resource type="Texture2D" uid="uid://cxv7veghytl4m" path="res://addons/nexus_forge/icons/add_string.svg" id="5_b0sy4"]
+[ext_resource type="Script" uid="uid://b3ooglkmjjil4" path="res://addons/nexus_forge/classes/simple_data_tree.gd" id="7_aexp2"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_nrtss"]
+content_margin_left = 6.0
+content_margin_top = 8.0
+content_margin_right = 6.0
+content_margin_bottom = 6.0
+
+[node name="Species" type="PanelContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxEmpty_nrtss")
+script = ExtResource("1_30i28")
+
+[node name="RacesContainer" type="HSplitContainer" parent="."]
+layout_mode = 2
+split_offset = 660
+
+[node name="RacesBasicSplit" type="HSplitContainer" parent="RacesContainer"]
+layout_mode = 2
+size_flags_stretch_ratio = 3.0
+split_offset = 250
+
+[node name="RaceTreeContainer" type="VBoxContainer" parent="RacesContainer/RacesBasicSplit"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+
+[node name="SearchRaceContainer" type="HBoxContainer" parent="RacesContainer/RacesBasicSplit/RaceTreeContainer"]
+layout_mode = 2
+
+[node name="SearchRaceLnEdt" type="LineEdit" parent="RacesContainer/RacesBasicSplit/RaceTreeContainer/SearchRaceContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Search Species"
+
+[node name="NewRaceBtn" type="Button" parent="RacesContainer/RacesBasicSplit/RaceTreeContainer/SearchRaceContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Create Species"
+icon = ExtResource("2_4lijr")
+icon_alignment = 1
+expand_icon = true
+
+[node name="RacesTree" type="Tree" parent="RacesContainer/RacesBasicSplit/RaceTreeContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+allow_reselect = true
+hide_folding = true
+hide_root = true
+script = ExtResource("3_u68gt")
+
+[node name="BasicDataContainer" type="VBoxContainer" parent="RacesContainer/RacesBasicSplit"]
+custom_minimum_size = Vector2(250, 0)
+layout_mode = 2
+size_flags_stretch_ratio = 1.5
+
+[node name="NameContainer" type="HBoxContainer" parent="RacesContainer/RacesBasicSplit/BasicDataContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="RacesContainer/RacesBasicSplit/BasicDataContainer/NameContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+text = "Name"
+vertical_alignment = 1
+
+[node name="RaceNameLnEdt" type="LineEdit" parent="RacesContainer/RacesBasicSplit/BasicDataContainer/NameContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="DescContainer" type="VBoxContainer" parent="RacesContainer/RacesBasicSplit/BasicDataContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Label" type="Label" parent="RacesContainer/RacesBasicSplit/BasicDataContainer/DescContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+text = "Description"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="RaceDescTxtEdt" type="TextEdit" parent="RacesContainer/RacesBasicSplit/BasicDataContainer/DescContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="CustomDataContainer" type="VBoxContainer" parent="RacesContainer/RacesBasicSplit/BasicDataContainer"]
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 2.5
+
+[node name="CDHeaderContainer" type="HBoxContainer" parent="RacesContainer/RacesBasicSplit/BasicDataContainer/CustomDataContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="RacesContainer/RacesBasicSplit/BasicDataContainer/CustomDataContainer/CDHeaderContainer"]
+layout_mode = 2
+text = "Custom Data"
+
+[node name="AddButtonsContainer" type="HBoxContainer" parent="RacesContainer/RacesBasicSplit/BasicDataContainer/CustomDataContainer/CDHeaderContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 2
+
+[node name="AddRcIntButton" type="Button" parent="RacesContainer/RacesBasicSplit/BasicDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Create integer variable."
+disabled = true
+icon = ExtResource("2_30i28")
+icon_alignment = 1
+
+[node name="AddRcFloatButton" type="Button" parent="RacesContainer/RacesBasicSplit/BasicDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Create float variable."
+disabled = true
+icon = ExtResource("3_rexu5")
+icon_alignment = 1
+
+[node name="AddRcBoolButton" type="Button" parent="RacesContainer/RacesBasicSplit/BasicDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Create bool variable."
+disabled = true
+icon = ExtResource("4_u68gt")
+icon_alignment = 1
+
+[node name="AddRcStringButton" type="Button" parent="RacesContainer/RacesBasicSplit/BasicDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Create string  variable."
+disabled = true
+icon = ExtResource("5_b0sy4")
+icon_alignment = 1
+
+[node name="RaceCustomDataSearchLine" type="LineEdit" parent="RacesContainer/RacesBasicSplit/BasicDataContainer/CustomDataContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 3.0
+placeholder_text = "Search Custom Data"
+clear_button_enabled = true
+
+[node name="RaceDataTree" type="Tree" parent="RacesContainer/RacesBasicSplit/BasicDataContainer/CustomDataContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+columns = 2
+allow_reselect = true
+hide_folding = true
+hide_root = true
+script = ExtResource("7_aexp2")
+
+[node name="StatTraitSplit" type="HSplitContainer" parent="RacesContainer"]
+layout_mode = 2
+size_flags_stretch_ratio = 3.0
+split_offset = 325
+
+[node name="ValuesContainer" type="VBoxContainer" parent="RacesContainer/StatTraitSplit"]
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+size_flags_stretch_ratio = 1.5
+
+[node name="StatVBox" type="VBoxContainer" parent="RacesContainer/StatTraitSplit/ValuesContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="StatLbl" type="Label" parent="RacesContainer/StatTraitSplit/ValuesContainer/StatVBox"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+text = "Base Stats"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="StatScroll" type="ScrollContainer" parent="RacesContainer/StatTraitSplit/ValuesContainer/StatVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="RaceStatsContainer" type="VBoxContainer" parent="RacesContainer/StatTraitSplit/ValuesContainer/StatVBox/StatScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HSeparator" type="HSeparator" parent="RacesContainer/StatTraitSplit/ValuesContainer"]
+layout_mode = 2
+
+[node name="SkillVBox" type="VBoxContainer" parent="RacesContainer/StatTraitSplit/ValuesContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="StatLbl" type="Label" parent="RacesContainer/StatTraitSplit/ValuesContainer/SkillVBox"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+text = "Base Skills"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="SkillScroll" type="ScrollContainer" parent="RacesContainer/StatTraitSplit/ValuesContainer/SkillVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="RaceSkillContainer" type="VBoxContainer" parent="RacesContainer/StatTraitSplit/ValuesContainer/SkillVBox/SkillScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="TraitsContainer" type="VBoxContainer" parent="RacesContainer/StatTraitSplit"]
+custom_minimum_size = Vector2(220, 0)
+layout_mode = 2
+
+[node name="StatLbl" type="Label" parent="RacesContainer/StatTraitSplit/TraitsContainer"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+text = "Traits"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ScrollContainer" type="ScrollContainer" parent="RacesContainer/StatTraitSplit/TraitsContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="RaceTraitsContainer" type="VBoxContainer" parent="RacesContainer/StatTraitSplit/TraitsContainer/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3

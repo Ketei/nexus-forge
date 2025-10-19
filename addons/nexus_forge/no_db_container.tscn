@@ -1,0 +1,58 @@
+[gd_scene load_steps=4 format=3 uid="uid://cpmdidd0efjl7"]
+
+[ext_resource type="Script" uid="uid://bn32f452jnm26" path="res://addons/nexus_forge/no_db_container_script.gd" id="1_1nmoc"]
+[ext_resource type="Theme" uid="uid://bgqlr2f4msogv" path="res://addons/nexus_forge/default_theme.tres" id="1_1u72y"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_bpx0y"]
+content_margin_left = 10.0
+content_margin_top = 10.0
+content_margin_right = 10.0
+content_margin_bottom = 10.0
+
+[node name="NoDBContainer" type="PanelContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("1_1u72y")
+theme_override_styles/panel = SubResource("StyleBoxEmpty_bpx0y")
+script = ExtResource("1_1nmoc")
+
+[node name="CenterContainer" type="HBoxContainer" parent="."]
+layout_mode = 2
+size_flags_vertical = 4
+alignment = 1
+
+[node name="InfoContainer" type="VBoxContainer" parent="CenterContainer"]
+custom_minimum_size = Vector2(250, 0)
+layout_mode = 2
+
+[node name="ButtonsContainer" type="HBoxContainer" parent="CenterContainer/InfoContainer"]
+layout_mode = 2
+
+[node name="CreateDBButton" type="Button" parent="CenterContainer/InfoContainer/ButtonsContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("1_1u72y")
+text = "Create {0}"
+text_overrun_behavior = 3
+
+[node name="LoadDBButton" type="Button" parent="CenterContainer/InfoContainer/ButtonsContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Load {0}"
+text_overrun_behavior = 3
+
+[node name="HSeparator" type="HSeparator" parent="CenterContainer/InfoContainer"]
+layout_mode = 2
+
+[node name="InfoLabel" type="RichTextLabel" parent="CenterContainer/InfoContainer"]
+layout_mode = 2
+bbcode_enabled = true
+text = "[Tool] uses a resource of type [color=AQUAMARINE][Resource][/color] to store data. You can create one or load one to use in your project. 
+
+Only one resource can be used for the project.
+
+The path to this resource will be saved to your project settings and loaded automatically next time you open the project."
+fit_content = true

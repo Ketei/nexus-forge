@@ -1,5 +1,5 @@
-#extends FileDialog
-extends EditorFileDialog
+extends FileDialog
+#extends EditorFileDialog
 
 
 signal dialog_finished(success: bool, resource_path: String)
