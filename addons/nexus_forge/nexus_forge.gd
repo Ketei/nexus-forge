@@ -35,11 +35,23 @@ var export_plugin: EditorExportPlugin = null
 func _enter_tree() -> void:
 	editor_view = MAIN_SCENE.instantiate()
 	editor_view.visible = false
-	export_plugin = preload("res://addons/nexus_forge/discourse/export_plugins/discourse_export_plugin.gd").new()
+	export_plugin = preload("res://addons/nexus_forge/export_plugin.gd").new()
 	get_editor_interface().get_editor_main_screen().add_child(editor_view)
 	editor_view.init_load_splash()
 	var new_export: EditorExportPlugin = EditorExportPlugin.new()
 	add_export_plugin(export_plugin)
+
+
+func _build() -> bool:
+	var path: String = ProjectSettings.get_setting(
+			get_project_settings_path("discourse")).strip_edges()
+	
+	var valid_path: bool = path != "" and path.is_valid_filename() and path.begins_with("res://") and path.get_extension() == ""
+	
+	if not valid_path:
+		printerr("[ERROR] NexusForge: Discourse needs a valid folder path for localization files on project settings.")
+	
+	return valid_path
 
 
 func _save_external_data() -> void:

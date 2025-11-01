@@ -154,7 +154,7 @@ func _process_logic(uuid: StringName) -> String:
 				return _process_logic(data["case_false"])
 		NodeTypes.EVENT:
 			if not data["variable_path"].is_empty() and not data["value"].is_empty():
-				NexusForge.Variables.set_variable(
+				NexusForge.Blackboard.set_variable(
 						data["variable_path"],
 						data["variable"],
 						data["value"])
@@ -261,7 +261,7 @@ func _get_data(uuid: StringName) -> Variant:
 			else:
 				return data["fallback"]
 		NodeTypes.VARIABLE_GET:
-			return NexusForge.Variables.get_variable(data["path"], data["variable"])
+			return NexusForge.Blackboard.get_variable(data["path"], data["variable"])
 		NodeTypes.CALLABLE_RETURN:
 			var method: Callable = Callable(NexusForge.Discourse.API, data["method"])
 			var args: Array = []
@@ -270,7 +270,7 @@ func _get_data(uuid: StringName) -> Variant:
 			return method.callv(args)
 		NodeTypes.DATA_EVENT:
 			if not data["variable_path"].is_empty() and not data["variable"].is_empty() and not data["value"].is_empty():
-				NexusForge.Variables.set_variable(
+				NexusForge.Blackboard.set_variable(
 						data["variable_path"],
 						data["variable"],
 						_get_data(data["value"]))

@@ -705,8 +705,9 @@ func convert_for_release(localization_uuid: String = "") -> ReleaseDiscourseDial
 
 ## Generates and returns all NEW locale files. All locale files updated
 ## via localization_map won't be returned in the array.
-func generate_localization_files(conversation_id: StringName, localization_map: Dictionary[String, DiscourseDialogLocale] = {}) -> Array[DiscourseDialogLocale]:
+func generate_localization_files(conversation_id: StringName, base_path: String, localization_map: Dictionary[String, DiscourseDialogLocale] = {}) -> Array[DiscourseDialogLocale]:
 	var locale_files: Array[DiscourseDialogLocale] = []
+	
 	for language in locale_map.keys():
 		var new_base_locale: DiscourseDialogLocale = null
 		var return_base: bool = true
@@ -718,10 +719,9 @@ func generate_localization_files(conversation_id: StringName, localization_map: 
 			new_base_locale.language = language
 			new_base_locale.region = "base"
 			var base_locale_path: String = str(
-					"res://localization/",
+					base_path,
 					language,
-					"-base/",
-					"/dialog/",
+					"-base/dialog/",
 					conversation_id,
 					".tres")
 			new_base_locale.resource_path = base_locale_path
@@ -761,6 +761,14 @@ func generate_localization_files(conversation_id: StringName, localization_map: 
 				new_locale = DiscourseDialogLocale.new()
 				new_locale.language = language
 				new_locale.region = region
+				new_locale.resource_path = str(
+					base_path,
+					language,
+					"-",
+					region,
+					"/dialog/",
+					conversation_id,
+					".tres")
 			
 			for locale_format_string_key in format_string_keys:
 				new_locale.set_format_string(

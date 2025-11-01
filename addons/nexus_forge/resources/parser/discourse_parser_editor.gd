@@ -77,7 +77,7 @@ func _process_logic(uuid: StringName) -> String:
 		NodeTypes.EVENT:
 			if data["variable_path"] != "" and data["input_connections"]["variable_value"]["target_node_uuid"] != "":
 				var parts: PackedStringArray = data["variable_path"].rsplit("/", false, 1)
-				NexusForge.Variables.set_variable(
+				NexusForge.Blackboard.set_variable(
 						parts[0],
 						parts[1],
 						_get_data(data["input_connections"]["variable_value"]["target_node_uuid"]))
@@ -188,7 +188,7 @@ func _get_data(from_uuid: StringName) -> Variant:
 				return data["fallback_value"]
 		NodeTypes.VARIABLE_GET:
 			var parts: PackedStringArray = data["variable_path"].rsplit("/", false, 1)
-			return NexusForge.Variables.get_variable(parts[0], parts[1])
+			return NexusForge.Blackboard.get_variable(parts[0], parts[1])
 		NodeTypes.CALLABLE_RETURN:
 			return NexusForge.Discourse.API.callv(
 					data["method"],
@@ -196,7 +196,7 @@ func _get_data(from_uuid: StringName) -> Variant:
 		NodeTypes.DATA_EVENT:
 			if data["variable_path"] != "" and data["input_connections"]["variable_value"] != "":
 				var parts: PackedStringArray = data["variable_path"].rsplit("/", false, 1)
-				NexusForge.Variables.set_variable(
+				NexusForge.Blackboard.set_variable(
 						parts[0],
 						parts[1],
 						_get_data(data["input_connections"]["variable_value"]["target_node_uuid"]))

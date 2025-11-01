@@ -154,8 +154,7 @@ func _on_menu_close_pressed() -> void:
 	
 	if discourse_window.discourse_graph_edit.focus_tween != null:
 		discourse_window.discourse_graph_edit.stop_focus_animation()
-	#print(str("Unsaved: ", active_conversation_item.get_metadata(0)["unsaved"]))
-	#print(str("Offset: ", active_conversation_item.get_metadata(0)["offset_changed"]))
+	
 	if active_conversation_item.get_metadata(0)["unsaved"] or active_conversation_item.get_metadata(0)["offset_changed"]:
 		var unsaved_prompt: AcceptDialog = preload("res://addons/nexus_forge/dialogs/unsaved_dialog_script.gd").new()
 		add_child(unsaved_prompt)

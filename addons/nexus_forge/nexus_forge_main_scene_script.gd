@@ -16,6 +16,7 @@ var recipes_link: EditorItemRecipeLink = EditorItemRecipeLink.new()
 @onready var items: PanelContainer = $MainContainer/ToolContainer/Items
 @onready var recipes: PanelContainer = $MainContainer/ToolContainer/Recipes
 @onready var quests: PanelContainer = $MainContainer/ToolContainer/Quests
+@onready var phrase_maps: PanelContainer = $MainContainer/ToolContainer/PhraseMaps
 
 # -----------------
 
@@ -66,10 +67,11 @@ func _on_tab_changed(tab: int) -> void:
 	items.visible = tab == 6
 	recipes.visible = tab == 7 
 	quests.visible = tab == 8
+	phrase_maps.visible = tab == 9
 
 
 func has_unsaved_changes() -> bool:
-	return discourse.has_unsaved_files() or variables._unsaved or characters.has_unsaved_files() or species._unsaved or talents._unsaved or items._unsaved or recipes._unsaved or quests._unsaved
+	return discourse.has_unsaved_files() or variables._unsaved or characters.has_unsaved_files() or species._unsaved or talents._unsaved or items._unsaved or recipes._unsaved or quests._unsaved or phrase_maps.has_unsaved_files()
 
 
 func save_resources() -> void:
@@ -81,3 +83,4 @@ func save_resources() -> void:
 	items.save()
 	recipes.save()
 	quests.save()
+	phrase_maps.save_all()

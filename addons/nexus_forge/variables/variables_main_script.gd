@@ -10,7 +10,7 @@ extends PanelContainer
 
 const ResourceFileDialog = preload("res://addons/nexus_forge/classes/resource_file_dialog.gd")
 
-var _variables_resource: NFVariablesRes = null
+var _variables_resource: BlackboardData = null
 var _switching_tree: bool = false
 var _current_folder: String = "":
 	set(new_tree):
@@ -49,15 +49,15 @@ func _ready() -> void:
 	folder_search_line.right_icon = get_theme_icon("Search", "EditorIcons")
 	var_search_line.right_icon = get_theme_icon("Search", "EditorIcons")
 	
-	_variables_resource = NFVariablesRes.new()
+	_variables_resource = BlackboardData.new()
 	#var res_path: String = ProjectSettings.get_setting(
 				#EditorNFPlugin.get_project_settings_path("variables"),
 				#"")
 	#
 	#if not res_path.is_empty() and ResourceLoader.exists(res_path):
 		#var res_load: Resource = load(res_path)
-		#if res_load is NFVariablesRes:
-			#if res_load is NFVariablesRes:
+		#if res_load is BlackboardData:
+			#if res_load is BlackboardData:
 				#_variables_resource = res_load
 	
 	if _variables_resource != null:
@@ -67,7 +67,7 @@ func _ready() -> void:
 		var no_db_container: Control = preload("res://addons/nexus_forge/no_db_container.tscn").instantiate()
 		no_db_container.name = &"NoVarResContainer"
 		add_child(no_db_container)
-		no_db_container.set_resource_type("NFVariablesRes", "Variables", "Variables")
+		no_db_container.set_resource_type("BlackboardData", "Variables", "Variables")
 		no_db_container.create_resource_pressed.connect(on_create_resource_pressed)
 		no_db_container.load_resource_pressed.connect(on_load_resource_pressed)
 		no_db_container.visible = true
@@ -157,7 +157,7 @@ func on_create_resource_pressed() -> void:
 	var result = await new_dialog.dialog_finished
 	
 	if result[0]:
-		_variables_resource = NFVariablesRes.new()
+		_variables_resource = BlackboardData.new()
 		_variables_resource.resource_path = result[1]
 		ResourceSaver.save(_variables_resource, result[1])
 		ProjectSettings.set_setting(
@@ -182,7 +182,7 @@ func on_load_resource_pressed() -> void:
 	
 	if result[0]:
 		var res_pre: Resource = load(result[1])
-		if res_pre is NFVariablesRes:
+		if res_pre is BlackboardData:
 			_variables_resource = res_pre
 			ProjectSettings.set_setting(
 					EditorNFPlugin.get_project_settings_path("variables"),
@@ -194,7 +194,7 @@ func on_load_resource_pressed() -> void:
 			no_db_container.queue_free()
 			load_variable_resource()
 		else:
-			printerr("Selected resource is not NFVariablesRes")
+			printerr("Selected resource is not BlackboardData")
 	
 	new_dialog.queue_free()
 

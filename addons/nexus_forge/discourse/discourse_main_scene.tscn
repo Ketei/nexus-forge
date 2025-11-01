@@ -160,7 +160,6 @@ theme_override_styles/panel = SubResource("StyleBoxEmpty_v0h3x")
 script = ExtResource("1_viyrt")
 
 [node name="MainSplitContainer" type="HSplitContainer" parent="."]
-visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 4.0
@@ -241,6 +240,7 @@ layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_y485p")
 
 [node name="LocalizationContainer" type="VBoxContainer" parent="."]
+visible = false
 layout_mode = 2
 
 [node name="MainSplitContainer" type="HSplitContainer" parent="LocalizationContainer"]

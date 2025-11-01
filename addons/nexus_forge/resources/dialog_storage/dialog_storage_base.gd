@@ -172,4 +172,3 @@ static func new_dialog() -> DiscourseDialog:
 
 func _init() -> void:
 	parsed_dialog_cache = Cache.new()
-	print("alksdjlasjdlajsdlkajsdlakjsdlkajdlkajlsdkjalskdjlaksjdlajkdlasj")

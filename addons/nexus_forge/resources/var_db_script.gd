@@ -1,5 +1,5 @@
 @tool
-class_name NFVariablesRes
+class_name BlackboardData
 extends Resource
 ## A resource used to hold variables in a structured manner.
 ##

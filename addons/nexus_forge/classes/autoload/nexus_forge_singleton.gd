@@ -4,7 +4,7 @@ extends Node
 
 var Discourse: DialogParser = null
 
-var Variables: NFVariablesRes = null
+var Blackboard: BlackboardData = null
 
 var Items: ItemCatalog = null
 
@@ -12,8 +12,9 @@ var Items: ItemCatalog = null
 
 var Stats: StatCatalog = null
 var Traits: TraitCatalog = null
-var Skills: SkillCatalog = null
+var Skills: SkillCatalog
 var Species: SpeciesCatalog
+var _phrase_api: PhraseAPI = PhraseAPI.new()
 #var Races: NFRacesRes = null
 
 #var Characters: NFCharacterDBRes = null
@@ -24,12 +25,12 @@ var Species: SpeciesCatalog
 
 
 
-func _ready() -> void:
+func _init() -> void:
 	Discourse = DialogParser.new_parser()
-	Variables = NFVariablesRes.new()
+	Blackboard = BlackboardData.new()
 	Stats = StatCatalog.new()
-	Traits = TraitCatalog.new()
 	Skills = SkillCatalog.new()
+	Traits = TraitCatalog.new()
 	Species = SpeciesCatalog.new()
 	Items = ItemCatalog.new()
 	#Talents = NFTalentsRes.new()

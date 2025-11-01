@@ -24,3 +24,6 @@ desktop.ini
 
 # Crash related
 *.tmp
+
+addons/dialogic/
+addons/explore-editor-theme/

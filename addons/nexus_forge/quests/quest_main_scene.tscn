@@ -1,6 +1,6 @@
 [gd_scene load_steps=11 format=3 uid="uid://djul28onmafsc"]
 
-[ext_resource type="Script" uid="uid://be3gdic2hc526" path="res://addons/nexus_forge/quest_main_scene_script.gd" id="1_a7xra"]
+[ext_resource type="Script" uid="uid://be3gdic2hc526" path="res://addons/nexus_forge/quests/quest_main_scene_script.gd" id="1_a7xra"]
 [ext_resource type="Texture2D" uid="uid://12lyg7db58dg" path="res://addons/nexus_forge/icons/add_int.svg" id="2_2wkcw"]
 [ext_resource type="Texture2D" uid="uid://fi4jffs746wr" path="res://addons/nexus_forge/icons/scroll_plus.svg" id="2_trfqe"]
 [ext_resource type="Script" uid="uid://bek3xiga2b5vm" path="res://addons/nexus_forge/quests/quest_tree_script.gd" id="3_iabjk"]

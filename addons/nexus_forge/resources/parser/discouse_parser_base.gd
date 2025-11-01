@@ -188,7 +188,7 @@ func _parse_dialog(dialog_id: String, dialog: String) -> String:
 func _build_callable_for_format(text: String) -> Callable:
 	# Must pass an argument that starts with ! or $
 	if text.begins_with("$"):
-		var a: Callable = Callable(NexusForge.Variables.get_variable.bind(text.trim_prefix("$")))
+		var a: Callable = Callable(NexusForge.Blackboard.get_variable.bind(text.trim_prefix("$")))
 		return a
 	else: # begins with !
 		var parts: PackedStringArray = text.split("|", false, 1)
@@ -206,7 +206,7 @@ func _build_callable_for_format(text: String) -> Callable:
 			else:
 				final_arguments.append(argument)
 		
-		return Callable(NexusForge.Discourse, method).bind(final_arguments)
+		return Callable(NexusForge.Discourse.API, method).bind(final_arguments)
 
 
 #region Override

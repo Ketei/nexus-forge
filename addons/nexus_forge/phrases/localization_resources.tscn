@@ -1,0 +1,257 @@
+[gd_scene load_steps=6 format=3 uid="uid://c7ia2qjomildo"]
+
+[ext_resource type="Script" uid="uid://cbeggjr4e87v3" path="res://addons/nexus_forge/phrases/localization_resources_script.gd" id="1_rbj3j"]
+[ext_resource type="Texture2D" uid="uid://bn6ggyqhhn03o" path="res://addons/nexus_forge/icons/dialog_plus.svg" id="2_37r36"]
+[ext_resource type="Script" uid="uid://bs265n2xls66q" path="res://addons/nexus_forge/phrases/phrases_file_tree.gd" id="2_nfjyw"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_txndr"]
+content_margin_left = 4.0
+content_margin_top = 6.0
+content_margin_right = 4.0
+content_margin_bottom = 4.0
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_7pkye"]
+content_margin_left = 4.0
+content_margin_top = 6.0
+content_margin_right = 4.0
+
+[node name="LocalizationControl" type="PanelContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxEmpty_txndr")
+script = ExtResource("1_rbj3j")
+
+[node name="MainContainer" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="FilesContainer" type="VBoxContainer" parent="MainContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Label" type="Label" parent="MainContainer/FilesContainer"]
+layout_mode = 2
+text = "Localization"
+
+[node name="SearchContainer" type="HBoxContainer" parent="MainContainer/FilesContainer"]
+layout_mode = 2
+
+[node name="SearchFileLnEdt" type="LineEdit" parent="MainContainer/FilesContainer/SearchContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Search"
+
+[node name="FileMenuButton" type="MenuButton" parent="MainContainer/FilesContainer/SearchContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+item_count = 2
+popup/item_0/text = "New Map"
+popup/item_0/id = 0
+popup/item_1/text = "Open Map"
+popup/item_1/id = 1
+
+[node name="FilesTree" type="Tree" parent="MainContainer/FilesContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+hide_folding = true
+hide_root = true
+script = ExtResource("2_nfjyw")
+
+[node name="LanguageContainer" type="VBoxContainer" parent="MainContainer/FilesContainer"]
+layout_mode = 2
+
+[node name="LangContainer" type="HBoxContainer" parent="MainContainer/FilesContainer/LanguageContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/FilesContainer/LanguageContainer/LangContainer"]
+custom_minimum_size = Vector2(78, 32)
+layout_mode = 2
+text = "Language"
+
+[node name="LanguageLnEdt" type="LineEdit" parent="MainContainer/FilesContainer/LanguageContainer/LangContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+editable = false
+
+[node name="RegionContainer" type="HBoxContainer" parent="MainContainer/FilesContainer/LanguageContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/FilesContainer/LanguageContainer/RegionContainer"]
+custom_minimum_size = Vector2(78, 32)
+layout_mode = 2
+text = "Region"
+
+[node name="RegionLnEdt" type="LineEdit" parent="MainContainer/FilesContainer/LanguageContainer/RegionContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+editable = false
+
+[node name="VSeparator2" type="VSeparator" parent="MainContainer"]
+layout_mode = 2
+
+[node name="TextContainer" type="VBoxContainer" parent="MainContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 2.2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MainContainer/TextContainer"]
+layout_mode = 2
+
+[node name="SearchTextLnEdt" type="LineEdit" parent="MainContainer/TextContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Prefixing a search with \"key:\" will only show entries where
+the key contains the search. With \"text:\" it'll only display
+results that contain the search. Filtering is NOT case-sensitive"
+placeholder_text = "Search | Filters: key:(Key), text:(Text)"
+metadata/current_search = ""
+
+[node name="NewTextButton" type="Button" parent="MainContainer/TextContainer/HBoxContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+disabled = true
+icon = ExtResource("2_37r36")
+
+[node name="HSeparator" type="HSeparator" parent="MainContainer/TextContainer"]
+layout_mode = 2
+
+[node name="KeyHeaderSplit" type="HSplitContainer" parent="MainContainer/TextContainer"]
+layout_mode = 2
+split_offset = 170
+dragging_enabled = false
+
+[node name="Label" type="Label" parent="MainContainer/TextContainer/KeyHeaderSplit"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+text = "Key"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Label2" type="Label" parent="MainContainer/TextContainer/KeyHeaderSplit"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_vertical = 1
+text = "Text"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="KeyScroll" type="ScrollContainer" parent="MainContainer/TextContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxEmpty_7pkye")
+
+[node name="KeySplitContainer" type="HSplitContainer" parent="MainContainer/TextContainer/KeyScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+split_offset = 170
+
+[node name="KeyContainer" type="VBoxContainer" parent="MainContainer/TextContainer/KeyScroll/KeySplitContainer"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+
+[node name="TextContainer" type="VBoxContainer" parent="MainContainer/TextContainer/KeyScroll/KeySplitContainer"]
+custom_minimum_size = Vector2(170, 0)
+layout_mode = 2
+
+[node name="VSeparator" type="VSeparator" parent="MainContainer"]
+layout_mode = 2
+
+[node name="CaseContainer" type="VBoxContainer" parent="MainContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 2.8
+
+[node name="HeaderContainer" type="HBoxContainer" parent="MainContainer/CaseContainer"]
+layout_mode = 2
+
+[node name="SearchCaseLnEdt" type="LineEdit" parent="MainContainer/CaseContainer/HeaderContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 2.5
+tooltip_text = "Prefixing a search with \"case:\" will only show cases where the case
+contains the search. With \"result:\" it'll only display the ones whose
+Result contains the search. Filtering is NOT case-sensitive"
+placeholder_text = "Search | Filters: case:(Case), result:(Result)"
+metadata/current_search = ""
+
+[node name="Control" type="Control" parent="MainContainer/CaseContainer/HeaderContainer"]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 2.5
+mouse_filter = 2
+
+[node name="ArgumentOptBtn" type="OptionButton" parent="MainContainer/CaseContainer/HeaderContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 2.0
+disabled = true
+
+[node name="NewCaseBtn" type="Button" parent="MainContainer/CaseContainer/HeaderContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+focus_neighbor_bottom = NodePath("../../KeyScroll/CasesSplit/ResultContainer/DefaultCaseLnEdt")
+focus_next = NodePath("../../KeyScroll/CasesSplit/ResultContainer/DefaultCaseLnEdt")
+disabled = true
+
+[node name="HSeparator" type="HSeparator" parent="MainContainer/CaseContainer"]
+layout_mode = 2
+
+[node name="CaseHeaderSplit" type="HSplitContainer" parent="MainContainer/CaseContainer"]
+layout_mode = 2
+split_offset = 200
+dragging_enabled = false
+
+[node name="Label" type="Label" parent="MainContainer/CaseContainer/CaseHeaderSplit"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+text = "Case"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Label2" type="Label" parent="MainContainer/CaseContainer/CaseHeaderSplit"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+text = "Result"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="KeyScroll" type="ScrollContainer" parent="MainContainer/CaseContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxEmpty_7pkye")
+
+[node name="CasesSplit" type="HSplitContainer" parent="MainContainer/CaseContainer/KeyScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+split_offset = 200
+
+[node name="CaseContainer" type="VBoxContainer" parent="MainContainer/CaseContainer/KeyScroll/CasesSplit"]
+layout_mode = 2
+
+[node name="Label2" type="Label" parent="MainContainer/CaseContainer/KeyScroll/CasesSplit/CaseContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+text = "Default"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="CaseNodeContainer" type="VBoxContainer" parent="MainContainer/CaseContainer/KeyScroll/CasesSplit/CaseContainer"]
+layout_mode = 2
+
+[node name="ResultContainer" type="VBoxContainer" parent="MainContainer/CaseContainer/KeyScroll/CasesSplit"]
+layout_mode = 2
+
+[node name="DefaultCaseLnEdt" type="LineEdit" parent="MainContainer/CaseContainer/KeyScroll/CasesSplit/ResultContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+focus_neighbor_top = NodePath("../../../../HeaderContainer/NewCaseBtn")
+focus_previous = NodePath("../../../../HeaderContainer/NewCaseBtn")
+placeholder_text = "Default format"
+editable = false
+
+[node name="ResultNodeContainer" type="VBoxContainer" parent="MainContainer/CaseContainer/KeyScroll/CasesSplit/ResultContainer"]
+layout_mode = 2

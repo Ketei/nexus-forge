@@ -1,9 +1,41 @@
 extends EditorExportPlugin
 
 
+const WHITELIST_FOLDERS: Array[String] = [
+	"resources", # Contains all resource definitions
+	"classes" # Contains all code for singletons and utilities
+	]
+
+const EXCLUDED_FILES: Array[String] = [
+	"res://addons/nexus_forge/resources/parser/discourse_parser_editor.gd",
+	"res://addons/nexus_forge/resources/dialog_storage/dialog_storage_editor.gd"
+	]
+
+
 var localization_files: Array[DiscourseDialogLocale] = []
 var localization_map: Dictionary[String, Dictionary] = {}
 var locale_group_uuids: Dictionary[String, String] = {}
+var dialog_path: String = ""
+
+
+func _export_begin(_features: PackedStringArray, _is_debug: bool, _path: String, _flags: int) -> void:
+	var file_base_path: String = ProjectSettings.get_setting(
+			EditorNFPlugin.get_project_settings_path("discourse")).strip_edges()
+	
+	if not file_base_path.ends_with("/"):
+		file_base_path += "/"
+	
+	dialog_path = file_base_path
+
+
+func _export_file(path: String, type: String, features: PackedStringArray) -> void:
+	if not path.begins_with("res://addons/nexus_forge/"):
+		return
+	
+	if WHITELIST_FOLDERS.has(path.get_slice("/", 4)) == false:
+		skip()
+	elif path in EXCLUDED_FILES:
+		skip()
 
 
 func _begin_customize_resources(_platform: EditorExportPlatform, _features: PackedStringArray) -> bool:
@@ -50,6 +82,7 @@ func _customize_resource(resource: Resource, _path: String) -> Resource:
 	# returned.
 	var new_localization: Array[DiscourseDialogLocale] = dialog_resource.generate_localization_files(
 			release_resource.conversation_uuid,
+			dialog_path,
 			localization_group)
 	
 	if uses_locale_group:

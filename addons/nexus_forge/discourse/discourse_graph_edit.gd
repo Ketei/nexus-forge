@@ -827,7 +827,7 @@ func _on_popup_index_pressed(index: int, menu: PopupMenu) -> void:
 	var node_data: Dictionary = new_node._get_node_data()
 	var target_position: Vector2 = Vector2((overall_metadata["release_position"] / zoom) + (scroll_offset / zoom))
 	var frame: GraphFrame = get_element_frame(from_node)
-	#print(str("Data get: ", get_compatible_node_overwrite_data(connection_type, data["flow"], data["target_type"], index)))
+	
 	node_data.merge(get_compatible_node_overwrite_data(connection_type, data["flow"], data["target_type"], 0 if menu == connection_popup else index), true)
 	node_data["position"] = target_position
 	new_node._set_node_data(node_data)

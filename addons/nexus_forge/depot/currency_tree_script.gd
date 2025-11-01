@@ -1,3 +1,4 @@
+@tool
 extends IDTree
 
 #signal currencies_updated
