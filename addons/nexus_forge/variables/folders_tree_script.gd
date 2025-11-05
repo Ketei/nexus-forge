@@ -17,6 +17,8 @@ const DELETE_FOLDER_ID: int = 1
 
 
 func _ready() -> void:
+	if Engine.is_editor_hint() and get_tree().edited_scene_root == self:
+		return
 	#FOLDER_ICON = get_theme_icon("Folder", "EditorIcons")
 	#NEW_FOLDER_ICON = get_theme_icon("FolderCreate", "EditorIcons")
 	#TRASH_BIN = get_theme_icon("Remove", "EditorIcons")

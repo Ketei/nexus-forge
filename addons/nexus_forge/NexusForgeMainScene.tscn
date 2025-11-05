@@ -63,7 +63,6 @@ size_flags_vertical = 3
 theme_override_styles/panel = SubResource("StyleBoxEmpty_yutfl")
 
 [node name="NexusForge" type="Control" parent="MainContainer/ToolContainer"]
-visible = false
 layout_mode = 2
 
 [node name="SplashPanel" type="PanelContainer" parent="MainContainer/ToolContainer/NexusForge"]
@@ -114,4 +113,5 @@ visible = false
 layout_mode = 2
 
 [node name="PhraseMaps" parent="MainContainer/ToolContainer" instance=ExtResource("12_h1eok")]
+visible = false
 layout_mode = 2

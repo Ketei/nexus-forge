@@ -7,8 +7,9 @@ signal map_resource_selected(map: PhraseMap)
 
 
 func _ready() -> void:
-	if get_root() == null:
-		create_item()
+	if Engine.is_editor_hint() and get_tree().edited_scene_root == self:
+		return
+	create_item()
 	button_clicked.connect(_on_button_clicked)
 	item_selected.connect(_on_resource_selected)
 

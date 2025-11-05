@@ -46,6 +46,9 @@ var save_required: bool = false
 
 
 func _ready() -> void:
+	if Engine.is_editor_hint() and get_tree().edited_scene_root == self:
+		return
+	file_menu_button.icon = get_theme_icon("GuiTabMenuHl", "EditorIcons")
 	key_split_container.dragged.connect(_on_scroll_dragged.bind(key_header_split))
 	cases_split.dragged.connect(_on_scroll_dragged.bind(case_header_split))
 	
@@ -235,6 +238,15 @@ func _on_edit_cases_pressed(text_line: LineEdit, key: LineEdit, button: Button) 
 		argument_opt_btn.disabled = true
 		new_case_btn.disabled = true
 		return
+	elif selected_key != null:
+		if selected_format != "":
+			save_current_phrase_key()
+		var old_edit: Button = text_container.get_child(selected_key.get_parent().get_index()).get_child(1)
+		old_edit.get_parent().get_child(0).editable = true
+		old_edit.icon = get_theme_icon("Edit", "EditorIcons")
+		search_case_ln_edt.text = ""
+		search_case_ln_edt.set_meta(&"current_search", "")
+		clear_cases()
 	
 	var phrase_key: StringName = key.get_meta(&"phrase_key")
 	
@@ -265,7 +277,6 @@ func _on_edit_cases_pressed(text_line: LineEdit, key: LineEdit, button: Button) 
 	
 	text_line.editable = false
 	button.icon = get_theme_icon("Unlock", "EditorIcons")
-	selected_key = key
 
 
 func _on_new_key_field_button_pressed() -> void:
@@ -517,6 +528,7 @@ func add_new_case(case: String = "", case_text: String = "") -> void:
 	var case_result: HBoxContainer = new_case_result_node()
 	var result_line: LineEdit = case_result.get_child(0)
 	
+	new_case.caret_blink = true
 	new_case.placeholder_text = "Case"
 	new_case.custom_minimum_size.y = 32.0
 	new_case.text = case
@@ -544,7 +556,6 @@ func add_new_case(case: String = "", case_text: String = "") -> void:
 
 func new_key_container(key: StringName = &"") -> HBoxContainer:
 	var new_key: HBoxContainer = HBoxContainer.new()
-	#var menu: MenuButton = MenuButton.new()
 	var key_line: LineEdit = LineEdit.new()
 	var erase_button: Button = Button.new()
 	
@@ -553,16 +564,11 @@ func new_key_container(key: StringName = &"") -> HBoxContainer:
 	else:
 		key_line.set_meta(&"phrase_key", key)
 	
-	#key_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	key_line.caret_blink = true
 	key_line.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	key_line.custom_minimum_size.y = 32.0
 	key_line.placeholder_text = "Key"
 	key_line.text = String(key)
-	
-	#menu.icon = preload("res://addons/nexus_forge/icons/options_vertical.svg")
-	#menu.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	#delete_button.expand_icon = true
-	#menu.tooltip_text = "Options"
 	
 	erase_button.icon = get_theme_icon("Remove", "EditorIcons")
 	erase_button.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -589,6 +595,7 @@ func new_text_field(text: String = "") -> HBoxContainer:
 	new_text.add_child(new_line)
 	new_text.add_child(edit_button)
 	
+	new_line.caret_blink = true
 	new_line.custom_minimum_size.y = 32.0
 	new_line.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	new_line.placeholder_text = "Phrase Text"
@@ -609,6 +616,7 @@ func new_case_result_node() -> HBoxContainer:
 	var case_text: LineEdit = LineEdit.new()
 	var erase_case_btn: Button = Button.new()
 	
+	case_text.caret_blink = true
 	case_text.placeholder_text = "Case format"
 	case_text.custom_minimum_size.y = 32.0
 	case_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -618,6 +626,7 @@ func new_case_result_node() -> HBoxContainer:
 	erase_case_btn.flat = true
 	erase_case_btn.icon = get_theme_icon("Remove", "EditorIcons")
 	erase_case_btn.custom_minimum_size = Vector2(32.0, 32.0)
+	erase_case_btn.pressed.connect(_on_erase_case_button_pressed.bind(case_text))
 	
 	new_case.add_child(case_text)
 	new_case.add_child(erase_case_btn)
@@ -723,16 +732,28 @@ func save_current_resource(fix_keys: bool = false) -> void:
 		keys[desired] = text_container.get_child(idx).get_child(0).text
 		node_map[desired] = key_line
 	
+	# Duplicate old map for separate key reassignement.
+	var old_phrases: Dictionary[StringName, Dictionary] = map._phrases.duplicate()
+	map._phrases.clear()
+	
+	# Separate key reassignement is important, because if we have {a:{}, b:{}}
+	# And we changed the key a -> b and b -> a, on a single dictionary we would
+	# do Dictionary[b] = [a] Dictionary.erase(a), and then we would only have
+	# {b: {}} so when it came to do b -> a we would've lost data of the original
+	# a. So instead we duplicate the dictionary and assign the new key to the
+	# old value. No data lost.
 	for key in keys.keys():
 		var fixed_key: StringName = StringName(key)
-		if node_map[key].get_meta(&"phrase_key") != fixed_key:
-			var current_key: StringName = node_map[key].get_meta(&"phrase_key")
-			map._phrases[fixed_key] = map._phrases[current_key]
-			map._phrases.erase(current_key)
+		map._phrases[fixed_key] = old_phrases[node_map[key].get_meta(&"phrase_key")]
+	
+	for key in keys.keys():
+		var strnm_key: StringName = StringName(key)
 		
-		if map.get_phrase_text(fixed_key) != keys[key]:
-			map.set_phrase_text(fixed_key, keys[key])
+		
+		if map.get_phrase_text(strnm_key) != keys[key]:
+			map.set_phrase_text(strnm_key, keys[key])
  		
+		node_map[key].set_meta(&"phrase_key", keys[key])
 		if fix_keys and node_map[key].text.strip_edges() != key:
 			node_map[key].text = key
 	

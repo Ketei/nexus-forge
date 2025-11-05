@@ -1,3 +1,4 @@
+@tool
 extends PanelContainer
 
 
@@ -24,14 +25,19 @@ var localization_node_selected: DiscourseGraphNode = null
 var base_language: String = "":
 	set(l):
 		base_language = l
-		phrases_tree.base_language = l
+		#phrases_tree.base_language = l
 		discourse_window.base_language = l
 		languages_tree.set_default_language(l)
+		if active_conversation != null:
+			active_conversation.base_language = l
 
 var localizer_language: String = ""
-var localizer_region: String = ""
+var localizer_region: String = "base"
 
 var listen_offset: bool = true
+
+var selected_key: LineEdit = null
+var selected_format: String = ""
 
 var _unsaved: bool = false
 
@@ -61,29 +67,51 @@ var _unsaved: bool = false
 @onready var localization_nodes_tree: Tree = $LocalizationContainer/MainSplitContainer/LeftSplitContainer/LanguagesSplitContainer/NodesContainer/NodesTree
 @onready var base_text_edt: TextEdit = $LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/LocaleVBoxContainer/BasePanelContainer/BaseContainer/BaseTextEdt
 @onready var translation_txt_box: TextEdit = $LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/LocaleVBoxContainer/TranslationPanel/TranslationContainer/TranslationTxtBox
-@onready var create_phrase_btn: Button = $LocalizationContainer/MainSplitContainer/PhrasesContainer/HeaderPanel/PhrasesHeader/CreatePhraseBtn
-@onready var search_phrase_ln_edt: LineEdit = $LocalizationContainer/MainSplitContainer/PhrasesContainer/SearchPhraseLnEdt
-@onready var phrases_tree: Tree = $LocalizationContainer/MainSplitContainer/PhrasesContainer/PhrasesTree
+#@onready var create_phrase_btn: Button = $LocalizationContainer/MainSplitContainer/PhrasesContainer/HeaderPanel/PhrasesHeader/CreatePhraseBtn
+#@onready var search_phrase_ln_edt: LineEdit = $LocalizationContainer/MainSplitContainer/PhrasesContainer/SearchPhraseLnEdt
+#@onready var phrases_tree: Tree = $LocalizationContainer/MainSplitContainer/PhrasesContainer/PhrasesTree
 @onready var locale_label: Label = $LocalizationContainer/LocaleLabel
 @onready var return_discourse_btn: Button = $LocalizationContainer/MainSplitContainer/PhrasesContainer/HeaderPanel/PhrasesHeader/ReturnDiscourseBtn
 @onready var choices_container: VBoxContainer = $LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer/ChoicesScroller/ChoicesContainer
 
+# --- Phrases ---
+@onready var key_container: VBoxContainer = $LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyScroll/KeySplitContainer/KeyContainer
+@onready var text_container: VBoxContainer = $LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyScroll/KeySplitContainer/TextContainer
+@onready var case_node_container: VBoxContainer = $LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/CaseContainer/CaseNodeContainer
+@onready var result_node_container: VBoxContainer = $LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/ResultContainer/ResultNodeContainer
+@onready var default_case_ln_edt: LineEdit = $LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/ResultContainer/DefaultCaseLnEdt
+@onready var argument_opt_btn: OptionButton = $LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/ArgumentOptBtn
+@onready var new_case_btn: Button = $LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/HeaderContainer/NewCaseBtn
+@onready var new_text_button: Button = $LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer/HBoxContainer/NewTextButton
+@onready var search_case_ln_edt: LineEdit = $LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/HeaderContainer/SearchCaseLnEdt
+@onready var key_display_label: Label = $LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/CaseKeyContainer/KeyDisplayLabel
+@onready var key_box_container: VBoxContainer = $LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer
+@onready var case_box_container: VBoxContainer = $LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer
+@onready var save_case_btn: Button = $LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/CaseKeyContainer/SaveCaseBtn
+@onready var search_text_ln_edt: LineEdit = $LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer/HBoxContainer/SearchTextLnEdt
+@onready var key_header_split: HSplitContainer = $LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyHeaderSplit
+@onready var key_split_container: HSplitContainer = $LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyScroll/KeySplitContainer
+@onready var case_header_split: HSplitContainer = $LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/CaseHeaderSplit
+@onready var cases_split: HSplitContainer = $LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit
+
 
 func _ready() -> void:
+	if Engine.is_editor_hint() and get_tree().edited_scene_root == self:
+		return
+	print("Ready pass! Should be 5 total")
 	var system_lang = OS.get_locale_language()
 	languages_tree.create_language(system_lang, true)
 	discourse_window.add_locale(system_lang)
 	base_language = system_lang
 	
-	phrases_tree.create_locale(system_lang)
-	phrases_tree.base_language = system_lang
+	#phrases_tree.create_locale(system_lang)
+	#phrases_tree.base_language = system_lang
 	
 	discourse_window.set_localization(system_lang)
 	
-	create_phrase_btn.disabled = true
+	#create_phrase_btn.disabled = true
 	
 	conversation_tree.create_item()
-	discourse_nodes_tree.create_item().collapsed = true
 	
 	if discourse_window.discourse_graph_edit.entry_node != null:
 		_on_discourse_node_created(discourse_window.discourse_graph_edit.entry_node)
@@ -94,6 +122,8 @@ func _ready() -> void:
 	new_folder_button.icon = get_theme_icon("FolderCreate", "EditorIcons")
 	
 	return_discourse_btn.icon = get_theme_icon("Back", "EditorIcons")
+	
+	save_case_btn.icon = get_theme_icon("Save", "EditorIcons")
 	
 	discourse_window.discourse_graph_edit.dialog_changed.connect(_on_conversation_changed)
 	discourse_window.discourse_graph_edit.localization_enabled.connect(_on_localize_node)
@@ -110,24 +140,43 @@ func _ready() -> void:
 	discourse_window.change_default_language_pressed.connect(_on_change_default_language_pressed)
 	discourse_window.set_locale_group_pressed.connect(_on_change_locale_group_pressed)
 	return_discourse_btn.pressed.connect(_on_switch_window_pressed)
-	create_phrase_btn.pressed.connect(_on_new_phrase_button_pressed)
+	#create_phrase_btn.pressed.connect(_on_new_phrase_button_pressed)
 	new_language_btn.pressed.connect(_on_new_lang_pressed)
 	#languages_tree.locale_changed.connect(_on_locale_changed)
 	languages_tree.locale_changed.connect(_on_localizer_locale_changed)
 	languages_tree.region_created.connect(_on_region_created)
+	languages_tree.language_deleted.connect(_on_language_deleted)
+	languages_tree.region_deleted.connect(_on_region_deleted)
 	
-	discourse_nodes_tree.button_clicked.connect(_on_discourse_tree_button_clicked)
-	discourse_nodes_tree.item_edited.connect(_on_discourse_item_edited)
+	#discourse_nodes_tree.button_clicked.connect(_on_discourse_tree_button_clicked)
+	discourse_nodes_tree.directory_edited.connect(_on_conversation_changed)
+	discourse_nodes_tree.item_renamed.connect(_on_discourse_item_edited)
+	discourse_nodes_tree.node_activated.connect(_on_discourse_node_activated)
 	localization_nodes_tree.dialog_selected.connect(_on_localizer_node_selected)
 	localization_nodes_tree.node_delocalized.connect(_on_node_delocalized)
-	discourse_nodes_tree.item_activated.connect(_on_discourse_node_activated)
 	localization_nodes_tree.dialog_item_edited.connect(_on_localizer_item_edited)
 	translation_txt_box.text_changed.connect(_on_text_field_changed)
 	translation_txt_box.text_changed.connect(_on_translation_text_changed)
-	phrases_tree.phrase_changed.connect(_on_conversation_changed)
+	#phrases_tree.phrase_changed.connect(_on_conversation_changed)
 	
 	new_folder_button.pressed.connect(_on_new_folder_button_pressed)
 	conversation_tree.item_activated.connect(_on_conversation_activated)
+	
+	save_case_btn.pressed.connect(_on_save_cases_btn_pressed)
+	new_text_button.pressed.connect(_on_new_key_field_button_pressed)
+	new_case_btn.pressed.connect(_on_new_case_button_pressed)
+	search_text_ln_edt.text_changed.connect(_on_key_search_text_changed)
+	search_case_ln_edt.text_changed.connect(_on_case_search_text_changed)
+	
+	key_split_container.dragged.connect(_on_scroll_dragged.bind(key_header_split))
+	cases_split.dragged.connect(_on_scroll_dragged.bind(case_header_split))
+	
+	default_case_ln_edt.text_changed.connect(_on_conversation_changed)
+
+
+func _on_discourse_node_activated(node: DiscourseGraphNode) -> void:
+	discourse_window.discourse_graph_edit.focus_graph_node(node)
+	_on_graph_edit_offset_changed(Vector2.ZERO)
 
 
 func _on_change_locale_group_pressed() -> void:
@@ -219,7 +268,8 @@ func _on_change_default_language_pressed() -> void:
 		if not languages_tree.has_language(result):
 			languages_tree.create_language(result, true)
 			discourse_window.add_locale(result)
-			phrases_tree.create_locale(result)
+			#phrases_tree.create_locale(result)
+			active_conversation.add_locale(result)
 		base_language = result
 	window.queue_free()
 
@@ -248,20 +298,46 @@ func _on_conversation_changed(_arg = null) -> void:
 func _on_localizer_locale_changed(language: String, region: String) -> void:
 	var invalid_language: bool = language.is_empty()
 	localization_nodes_tree.get_root().collapsed = invalid_language
-	create_phrase_btn.disabled = invalid_language
-	phrases_tree.get_root().collapsed = invalid_language
+	#create_phrase_btn.disabled = invalid_language
+	#phrases_tree.get_root().collapsed = invalid_language
+	new_text_button.disabled = invalid_language
 	
 	if region.is_empty():
 		region = "base"
 	
 	set_localization_tip(language, region)
 	
-	if phrases_tree.is_locale_valid():
-		phrases_tree.save_locale()
+	#if phrases_tree.is_locale_valid():
+		#phrases_tree.save_locale()
+	
+	if localizer_language != "":
+		if selected_format != "":
+			save_current_phrase_key()
+		
+		for key_item in key_container.get_children():
+			var key: String = key_item.get_child(1).get_meta(&"phrase_key")
+			var text: String = text_container.get_child(key_item.get_index()).get_child(0).text.strip_edges()
+			
+			active_conversation.set_localized_string(
+					key,
+					text,
+					localizer_language,
+					localizer_region)
+	
+	clear_cases()
+	default_case_ln_edt.text = ""
+	search_case_ln_edt.text = ""
+	search_case_ln_edt.set_meta(&"current_search", "")
+	argument_opt_btn.clear()
+	
+	search_text_ln_edt.text = ""
+	search_text_ln_edt.set_meta(&"current_search", "")
 	
 	if language.is_empty():
 		$LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/LocaleVBoxContainer.visible = false
 		$LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer.visible = false
+		key_box_container.visible = false
+		case_box_container.visible = false
 		set_localizer_locale(language, region)
 		#phrases_tree.set_locale(language, region)
 		#localizer_language = language
@@ -270,11 +346,21 @@ func _on_localizer_locale_changed(language: String, region: String) -> void:
 	
 	var uuid: StringName = localization_nodes_tree.get_active_node_uuid()
 	
+	key_box_container.visible = languages_tree.is_lang_selected()
+	case_box_container.visible = false
+	
+	for item in key_container.get_children():
+		var line: LineEdit = item.get_child(1)
+		var text_field: LineEdit = text_container.get_child(item.get_index()).get_child(0)
+		var key: String = line.get_meta(&"phrase_key")
+		
+		text_field.text = active_conversation.get_localized_string(
+				key,
+				language,
+				region)
+	
 	if uuid.is_empty():
 		set_localizer_locale(language, region)
-		#phrases_tree.set_locale(language, region)
-		#localizer_language = language
-		#localizer_region = region
 		return
 	
 	var active_node: DiscourseGraphNode = localization_nodes_tree.get_active_node()
@@ -294,6 +380,7 @@ func _on_localizer_locale_changed(language: String, region: String) -> void:
 	#var base_lang: String = discourse_window.base_language
 	$LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer.visible = discourse_window.localization[uuid]["node"].node_type == DiscourseGraphNode.DialogueNodeType.OPTIONS
 	$LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/LocaleVBoxContainer.visible = !$LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer.visible
+	
 	#localization[uuid]["localization"][language][country]["dialog/options/text"]
 	
 	#localizer_language = language
@@ -497,7 +584,15 @@ func _on_switch_window_pressed() -> void:
 
 
 func _on_region_created(language: String, region: String) -> void:
+	if localizer_language != "" and localizer_region == "base" and localizer_language == languages_tree.get_default_language():
+		for item in key_container.get_children():
+			active_conversation.set_localized_string(
+					item.get_child(1).get_meta(&"phrase_key"),
+					text_container.get_child(item.get_index()).get_child(0).text.strip_edges(),
+					localizer_language,
+					localizer_region)
 	discourse_window.add_locale(language, region)
+	active_conversation.add_locale(language, region)
 	_on_conversation_changed()
 
 
@@ -523,16 +618,32 @@ func _on_new_lang_pressed() -> void:
 	if result != "":
 		languages_tree.create_language(result)
 		discourse_window.add_locale(result)
-		if phrases_tree.is_locale_valid() and phrases_tree.on_main_language():
-			phrases_tree.save_locale()
-		phrases_tree.create_locale(result)
+		if selected_key != null and selected_format != "":
+			save_current_phrase_key(true)
+		
+		if localizer_language != "" and languages_tree.get_base_language() == localizer_language: #and selected_key != null and selected_format != "":
+			for item in key_container.get_children():
+				active_conversation.set_localized_string(
+						item.get_child(1).get_meta(&"phrase_key"),
+						text_container.get_child(item.get_index()).get_child(0).text.strip_edges(),
+						localizer_language,
+						localizer_region)
+		active_conversation.add_locale(result)
 		_on_conversation_changed()
 	window.queue_free()
 
 
 func _on_language_deleted(language: String) -> void:
-	phrases_tree.remove_locale(language)
 	discourse_window.remove_locale(language)
+	active_conversation.remove_locale(language)
+	if localizer_language == language:
+		set_localizer_locale("")
+		$LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer.visible = false
+
+
+func _on_region_deleted(language: String, region: String) -> void:
+	active_conversation.remove_locale(language, region)
+	discourse_window.remove_locale(language, region)
 
 
 func set_localization_tip(language_code: String, region_code: String) -> void:
@@ -551,29 +662,29 @@ func set_localization_tip(language_code: String, region_code: String) -> void:
 	locale_label.text = locale_text
 
 
-func _on_new_phrase_button_pressed() -> void:
-	var word_window: ConfirmationDialog = preload("res://addons/nexus_forge/dialogs/lineedit_confirmation_dialog.gd").new()
-	word_window.line_placeholder_text = "New Word"
-	word_window.title = "Create Word..."
-	word_window.ok_button_text = "Create"
-	word_window.use_blacklist = true
-	word_window.allow_empty = false
-	word_window.strip_edges = true
-	word_window.character_blacklist.append(" ")
-	word_window.error_line_blacklist_character_msg = "Phrase can't contain\nwhitespaces"
-	word_window.error_line_blacklist_word_msg = "Phrase is already in use"
-	
-	word_window.text_blacklist = phrases_tree.get_used_keys()
-	
-	add_child(word_window)
-	word_window.show()
-	word_window.grab_text_focus()
-	
-	var word: Array = await word_window.dialog_finished
-	if word[0]:
-		phrases_tree.create_key(word[1])
-		_on_conversation_changed()
-	word_window.queue_free()
+#func _on_new_phrase_button_pressed() -> void:
+	#var word_window: ConfirmationDialog = preload("res://addons/nexus_forge/dialogs/lineedit_confirmation_dialog.gd").new()
+	#word_window.line_placeholder_text = "New Word"
+	#word_window.title = "Create Word..."
+	#word_window.ok_button_text = "Create"
+	#word_window.use_blacklist = true
+	#word_window.allow_empty = false
+	#word_window.strip_edges = true
+	#word_window.character_blacklist.append(" ")
+	#word_window.error_line_blacklist_character_msg = "Phrase can't contain\nwhitespaces"
+	#word_window.error_line_blacklist_word_msg = "Phrase is already in use"
+	#
+	#word_window.text_blacklist = phrases_tree.get_used_keys()
+	#
+	#add_child(word_window)
+	#word_window.show()
+	#word_window.grab_text_focus()
+	#
+	#var word: Array = await word_window.dialog_finished
+	#if word[0]:
+		#phrases_tree.create_key(word[1])
+		#_on_conversation_changed()
+	#word_window.queue_free()
 
 
 func _on_conversation_activated() -> void:
@@ -595,7 +706,7 @@ func _on_conversation_activated() -> void:
 		new_dialog.zoom = discourse_window.discourse_graph_edit.zoom
 		new_dialog.scroll_offset = discourse_window.discourse_graph_edit.scroll_offset
 		new_dialog.node_structure = discourse_nodes_tree.get_folder_structure()
-		new_dialog.localized_strings = phrases_tree.get_localization_structure()
+		#new_dialog.localized_strings = phrases_tree.get_localization_structure()
 		
 		# Adding localization data to localized nodes
 		for localized_uuid in localizations.keys():
@@ -763,6 +874,8 @@ func _on_conversation_file_canceled(dialog: FileDialog) -> void:
 
 func _on_conversation_file_saved(path: String, dialog: FileDialog) -> void:
 	var new_conv: EditorDiscourseDialog = EditorDiscourseDialog.new()
+	new_conv.base_language = languages_tree.get_base_language()
+	new_conv.locale_map.assign(languages_tree.as_map())
 	listen_offset = false
 	ResourceSaver.save(
 			new_conv,
@@ -785,27 +898,6 @@ func _on_conversation_file_saved(path: String, dialog: FileDialog) -> void:
 func _on_discourse_node_created(node: DiscourseGraphNode) -> void:
 	discourse_nodes_tree.create_node(node)
 
-
-func _on_discourse_tree_button_clicked(item: TreeItem, _column: int, _id: int, _mouse_button_index: int) -> void:
-	if item.get_metadata(0)["is_node"]:
-		item.select(0)
-		discourse_nodes_tree.edit_selected(true)
-	else: # Deleting folder
-		for sub_item in item.get_children():
-			item.remove_child(sub_item)
-			item.get_parent().add_child(sub_item)
-		item.free()
-		_on_conversation_changed()
-
-
-func _on_discourse_node_activated() -> void:
-	var active: TreeItem = discourse_nodes_tree.get_selected()
-	if active == null:
-		return
-	
-	var node: DiscourseGraphNode = active.get_metadata(0)["node"]
-	discourse_window.discourse_graph_edit.focus_graph_node(node)
-	_on_graph_edit_offset_changed(Vector2.ZERO)
 
 
 func get_unique_name_on_tree(on_tree: TreeItem, desired_name: String, skip_item: TreeItem = null) -> String:
@@ -847,30 +939,30 @@ func set_up_node_structure(structure: Array[Dictionary], level: TreeItem, _map: 
 			set_up_node_structure(item["items"], new_folder, _map)
 
 
-func _on_discourse_item_edited() -> void:
-	var edited: TreeItem = discourse_nodes_tree.get_edited()
-	var is_node: bool = edited.get_metadata(0)["is_node"]
-	if is_node:
-		var node: DiscourseGraphNode = edited.get_metadata(0)["node"]
-		if edited.get_text(0) == node.custom_id:
-			return
-		var new_name: String = get_unique_name_on_tree(edited.get_parent(), edited.get_text(0), edited)
-		node.custom_id = new_name
-		edited.set_text(0, new_name)
-		if node.is_node_localized():
-			match node.node_type:
-				DiscourseGraphNode.DialogueNodeType.DIALOG:
-					localization_nodes_tree.rename_dialog_node(node.get_node_uuid(), new_name)
-				DiscourseGraphNode.DialogueNodeType.OPTIONS:
-					localization_nodes_tree.rename_options_node(node.get_node_uuid(), new_name)
-				DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
-					localization_nodes_tree.rename_text_node(node.get_node_uuid(), new_name)
-	else:
-		var new_name: String = get_unique_name_on_tree(
-				edited.get_parent(),
-				edited.get_text(0),
-				edited)
-		edited.set_text(0, new_name)
+func _on_discourse_item_edited(uuid: StringName, type: DiscourseGraphNode.DialogueNodeType, new_name: String) -> void:
+	#var edited: TreeItem = discourse_nodes_tree.get_edited()
+	#var is_node: bool = edited.get_metadata(0)["is_node"]
+	#if is_node:
+		#var node: DiscourseGraphNode = edited.get_metadata(0)["node"]
+		#if edited.get_text(0) == node.custom_id:
+			#return
+		#var new_name: String = get_unique_name_on_tree(edited.get_parent(), edited.get_text(0), edited)
+		#node.custom_id = new_name
+		#edited.set_text(0, new_name)
+		#if node.is_node_localized():
+	match type:
+		DiscourseGraphNode.DialogueNodeType.DIALOG:
+			localization_nodes_tree.rename_dialog_node(uuid, new_name)
+		DiscourseGraphNode.DialogueNodeType.OPTIONS:
+			localization_nodes_tree.rename_options_node(uuid, new_name)
+		DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
+			localization_nodes_tree.rename_text_node(uuid, new_name)
+	#else:
+		#var new_name: String = get_unique_name_on_tree(
+				#edited.get_parent(),
+				#edited.get_text(0),
+				#edited)
+		#edited.set_text(0, new_name)
 
 #endregion
 
@@ -897,7 +989,21 @@ func open_conversation(conversation: EditorDiscourseDialog) -> void:
 		root.remove_child(item)
 	
 	set_up_node_structure(conversation.node_structure, discourse_nodes_tree.get_root(), node_map)
-	phrases_tree.set_phrase_data(conversation.localized_strings)
+	#phrases_tree.set_phrase_data(conversation.localized_strings)
+	
+	default_case_ln_edt.text = ""
+	search_case_ln_edt.text = ""
+	search_case_ln_edt.set_meta(&"current_search", "")
+	argument_opt_btn.clear()
+	
+	search_text_ln_edt.text = ""
+	search_text_ln_edt.set_meta(&"current_search", "")
+	
+	clear_cases()
+	clear_localized_keys()
+	
+	for localized_key in conversation.localized_strings.keys():
+		add_new_phrase(localized_key, "")
 	
 	for uuid:String in node_map:
 		if node_map[uuid].get_tree() == null:
@@ -909,6 +1015,9 @@ func open_conversation(conversation: EditorDiscourseDialog) -> void:
 		for region in conversation.locale_map[language]:
 			if not languages_tree.has_locale(language, region):
 				languages_tree.create_region(language, region)
+	
+	case_box_container.visible = false
+	key_box_container.visible = languages_tree.is_lang_selected()
 	
 	listen_offset = true
 
@@ -983,11 +1092,14 @@ func _on_save_conversation_pressed() -> void:
 
 
 func _on_godot_save_triggered() -> void:
+	if active_conversation != null:
+		save_phrase_keys(true)
 	save_all_dialogs()
 	set_conversations_saved()
 
 
 func save_current_dialog() -> void:
+	save_phrase_keys(true)
 	if $LocalizationContainer.visible and localization_nodes_tree.get_active_node() != null:
 		save_localizer_data()
 	if not _unsaved and active_conversation_item.get_metadata(0)["offset_changed"]:
@@ -997,18 +1109,19 @@ func save_current_dialog() -> void:
 		active_conversation_item.get_metadata(0)["offset_changed"] = false
 		return
 	
+	# Technically new_dialog is unneded as giving it an active_conversation will return that same one.
 	var new_dialog: EditorDiscourseDialog = discourse_window.discourse_graph_edit.get_conversation_data(active_conversation)
 	# Obtaining localization reference
 	var localizations: Dictionary = discourse_window.localization
 	var locale_map: Dictionary[String, PackedStringArray] = discourse_window.locale_map
 	
-	phrases_tree.save_locale()
+	#phrases_tree.save_locale()
 	
 	new_dialog.base_language = base_language
 	new_dialog.zoom = discourse_window.discourse_graph_edit.zoom
 	new_dialog.scroll_offset = discourse_window.discourse_graph_edit.scroll_offset
 	new_dialog.node_structure = discourse_nodes_tree.get_folder_structure()
-	new_dialog.localized_strings = phrases_tree.get_localization_structure()
+	#new_dialog.localized_strings = phrases_tree.get_localization_structure()
 	new_dialog.locale_map = locale_map.duplicate(true) #discourse_window.locale_map.duplicate(true)
 	
 	# Adding localization data to localized nodes
@@ -1080,7 +1193,7 @@ func save_all_dialogs() -> void:
 			
 			new_dialog.base_language = base_language
 			new_dialog.node_structure = discourse_nodes_tree.get_folder_structure()
-			new_dialog.localized_strings = phrases_tree.get_localization_structure()
+			#new_dialog.localized_strings = phrases_tree.get_localization_structure()
 			
 			# Adding localization data to localized nodes
 			for localized_uuid in localizations.keys():
@@ -1143,8 +1256,8 @@ func set_conversation_active(is_active: bool) -> void:
 
 func set_localizer_locale(language: String, region: String = "base") -> void:
 	localizer_language = language
-	localizer_region = region
-	phrases_tree.set_locale(language, region)
+	localizer_region = region if region != "" else "base"
+	#phrases_tree.set_locale(language, region)
 
 
 func has_unsaved_files() -> bool:
@@ -1159,3 +1272,550 @@ func set_all_files_saved() -> void:
 		if conv_item.get_metadata(0)["unsaved"]:
 			conv_item.get_metadata(0)["unsaved"] = false
 			conv_item.set_text(0, conv_item.get_text(0).trim_suffix("*"))
+
+
+#region Phrases
+
+
+func _on_scroll_dragged(offset: int, container: HSplitContainer) -> void:
+	container.split_offset = offset
+
+
+func _on_key_search_text_changed(text: String) -> void:
+	var clean_text: String = text.strip_edges()
+	
+	if clean_text == search_text_ln_edt.get_meta(&"current_search", ""):
+		return
+	
+	var mode: int = 1 if clean_text.begins_with("key:") else 2 if clean_text.begins_with("text:") else 0
+	
+	if mode != 0:
+		clean_text = clean_text.trim_prefix("key:" if mode == 1 else "text:")
+	
+	var idx: int = -1
+	
+	for key_child in key_container.get_children():
+		idx += 1
+		if clean_text.is_empty():
+			key_child.visible = true
+		else:
+			if mode == 0:
+				key_child.visible = key_child.get_child(1).text.containsn(clean_text) or text_container.get_child(idx).get_child(0).text.containsn(clean_text)
+			elif mode == 1:
+				key_child.visible = key_child.get_child(1).text.containsn(clean_text)
+			elif mode == 2:
+				key_child.visible = text_container.get_child(idx).get_child(0).text.containsn(clean_text)
+		
+		text_container.get_child(idx).visible = key_child.visible
+	
+	search_text_ln_edt.set_meta(&"current_search", clean_text)
+
+
+func _on_case_search_text_changed(text: String) -> void:
+	var clean_text: String = text.strip_edges()
+	
+	if clean_text == search_case_ln_edt.get_meta(&"current_search", ""):
+		return
+	
+	var mode: int = 1 if clean_text.begins_with("case:") else 2 if clean_text.begins_with("result:") else 0
+	
+	if mode != 0:
+		clean_text = clean_text.trim_prefix("case:" if mode == 1 else "result:")
+	
+	
+	var idx: int = -1
+	for case:LineEdit in case_node_container.get_children():
+		idx += 1
+		
+		if clean_text.is_empty():
+			case.visible = true
+		else:
+			if mode == 0:
+				case.visible = case.text.containsn(clean_text) or result_node_container.get_child(idx).get_child(0).text.containsn(clean_text)
+			elif mode == 1:
+				case.visible = case.text.containsn(clean_text)
+			elif mode == 2:
+				case.visible = result_node_container.get_child(idx).get_child(0).text.containsn(clean_text)
+		
+		result_node_container.get_child(idx).visible = case.visible
+	
+	search_case_ln_edt.set_meta(&"current_search", clean_text)
+
+
+func _on_new_case_button_pressed() -> void:
+	add_new_case()
+	_on_conversation_changed()
+
+
+func _on_erase_case_button_pressed(case_line: LineEdit) -> void:
+	erase_case(case_line.get_index())
+	_on_case_line_text_changed()
+
+
+func _on_case_line_text_changed(_text: String = "") -> void:
+	var all_ids: Dictionary[String, Array] = {}
+	
+	for item:LineEdit in case_node_container.get_children():
+		#var line: LineEdit = item
+		var key: String = item.text.strip_edges()
+		
+		if key.is_empty():
+			continue
+		
+		if all_ids.has(key) == false:
+			all_ids[key] = []
+		all_ids[key].append(item)
+	
+	for item_key:String in all_ids.keys():
+		if 1 < all_ids[item_key].size():
+			for item:LineEdit in all_ids[item_key]:
+				item.add_theme_color_override(&"font_color", Color(1.0, 0.29, 0.325))
+		else:
+			for item:LineEdit in all_ids[item_key]:
+				if item.has_theme_color(&"font_color"):
+					item.remove_theme_color_override(&"font_color")
+
+
+func _on_text_line_text_submitted(_text: String, edit_btn: Button) -> void:
+	edit_btn.grab_focus()
+
+
+func _on_save_cases_btn_pressed() -> void:
+	if selected_format != "":
+		save_current_phrase_key()
+		clear_cases()
+		default_case_ln_edt.text = ""
+		search_case_ln_edt.text = ""
+		search_case_ln_edt.set_meta(&"current_search", "")
+		argument_opt_btn.clear()
+	case_box_container.visible = false
+	key_box_container.visible = true
+
+
+func _on_edit_cases_pressed(text_line: LineEdit, key: LineEdit, button: Button) -> void:
+	var phrase_key: StringName = key.get_meta(&"phrase_key")
+	var lang: String = languages_tree.get_active_language()
+	var reg: String = languages_tree.get_active_region()
+	
+	key_display_label.text = key.text.strip_edges()
+	
+	if not active_conversation.localized_strings.has(phrase_key):
+		active_conversation.set_localized_string(
+				phrase_key,
+				text_line.text.strip_edges(),
+				lang,
+				reg)
+
+	if active_conversation.get_localized_string(phrase_key, lang, reg) != text_line.text.strip_edges():
+		active_conversation.set_localized_string(
+				phrase_key,
+				text_line.text.strip_edges(),
+				lang,
+				reg)
+	
+	argument_opt_btn.clear()
+	
+	for existing_key in active_conversation.get_localized_string_formats(phrase_key, lang, reg):
+		argument_opt_btn.add_item(existing_key)
+	
+	selected_key = key
+	default_case_ln_edt.editable = 0 < argument_opt_btn.item_count
+	argument_opt_btn.disabled = not default_case_ln_edt.editable
+	new_case_btn.disabled = argument_opt_btn.disabled
+	
+	if 0 < argument_opt_btn.item_count:
+		var argument_format: String = argument_opt_btn.get_item_text(0)
+		argument_opt_btn.select(0)
+		default_case_ln_edt.text = active_conversation.get_localized_string_argument_default_case(phrase_key, lang, reg, argument_format)
+		
+		for custom_case in active_conversation.localized_strings[phrase_key][lang][reg]["arguments"][argument_format]["custom"].keys():
+			add_new_case(
+					custom_case,
+					active_conversation.localized_strings[phrase_key][lang][reg]["arguments"][argument_format]["custom"][custom_case])
+		selected_format = argument_format
+	
+	case_box_container.visible = true
+	key_box_container.visible = false
+
+
+func _on_key_line_text_changed(_text: String = "") -> void:
+	var all_ids: Dictionary[String, Array] = {}
+	
+	for item in key_container.get_children():
+		var line: LineEdit = item.get_child(1)
+		var key: String = line.text.strip_edges()
+		
+		if key.is_empty():
+			continue
+		
+		if all_ids.has(key) == false:
+			all_ids[key] = []
+		all_ids[key].append(line)
+	
+	for item_key:String in all_ids.keys():
+		if 1 < all_ids[item_key].size():
+			for item:LineEdit in all_ids[item_key]:
+				item.add_theme_color_override(&"font_color", Color(1.0, 0.29, 0.325))
+		else:
+			for item:LineEdit in all_ids[item_key]:
+				if item.has_theme_color(&"font_color"):
+					item.remove_theme_color_override(&"font_color")
+	
+	_on_conversation_changed()
+
+
+func _on_erase_key_button_pressed(key: LineEdit) -> void:
+	if selected_key == key:
+		selected_key = null
+		selected_format = ""
+		clear_cases()
+		default_case_ln_edt.text = ""
+		default_case_ln_edt.editable = false
+		argument_opt_btn.clear()
+		argument_opt_btn.disabled = true
+		new_case_btn.disabled = true
+	
+	active_conversation.localized_strings.erase(key.get_meta(&"phrase_key"))
+	
+	erase_key(
+		key.get_parent().get_index())
+	
+	_on_key_line_text_changed()
+
+
+func _on_new_key_field_button_pressed() -> void:
+	var phrase_key: String = add_new_phrase()
+	active_conversation.create_localized_string(phrase_key, "")
+	print(active_conversation.localized_strings)
+	_on_conversation_changed()
+
+
+func add_new_phrase(key: String = "", text: String = "") -> String:
+	var new_key: HBoxContainer = new_key_container(key)
+	var new_text: = new_text_field(text)
+	
+	key_container.add_child(new_key)
+	text_container.add_child(new_text)
+	
+	var text_edit: LineEdit = new_text.get_child(0)
+	var key_edit: LineEdit = new_key.get_child(1)
+	var text_edit_btn: Button = new_text.get_child(1)
+	
+	if 0 < key_container.get_child_count() - 1:
+		var btn: Button = text_container.get_child(-2).get_child(1)
+		btn.focus_next = key_edit.get_path()
+		key_edit.focus_previous = btn.get_path()
+	else:
+		new_text_button.focus_next = key_edit.get_path()
+		key_edit.focus_previous = new_text_button.get_path()
+	
+	key_edit.focus_next = text_edit.get_path()
+	key_edit.focus_neighbor_right = text_edit.get_path()
+	
+	text_edit.focus_previous = key_edit.get_path()
+	text_edit.focus_neighbor_left = key_edit.get_path()
+	text_edit.focus_next = text_edit_btn.get_path()
+	
+	text_edit_btn.focus_previous = text_edit.get_path()
+	
+	text_edit_btn.pressed.connect(_on_edit_cases_pressed.bind(text_edit, key_edit, text_edit_btn))
+	
+	return key_edit.get_meta(&"phrase_key")
+
+
+func add_new_case(case: String = "", case_text: String = "") -> void:
+	var new_case: LineEdit = LineEdit.new()
+	var case_result: HBoxContainer = new_case_result_node()
+	var result_line: LineEdit = case_result.get_child(0)
+	
+	new_case.placeholder_text = "Case"
+	new_case.custom_minimum_size.y = 32.0
+	new_case.text = case
+	
+	result_line.text = case_text
+	
+	case_node_container.add_child(new_case)
+	result_node_container.add_child(case_result)
+	
+	new_case.focus_neighbor_right = result_line.get_path()
+	result_line.focus_neighbor_left = new_case.get_path()
+	new_case.focus_next = result_line.get_path()
+	result_line.focus_previous = new_case.get_path()
+	
+	if 0 < result_node_container.get_child_count() - 1:
+		var prev_case_result: LineEdit = result_node_container.get_child(-2).get_child(0)
+		prev_case_result.focus_next = new_case.get_path()
+		new_case.focus_previous = prev_case_result.get_path()
+	else:
+		new_case.focus_previous = default_case_ln_edt.get_path()
+		default_case_ln_edt.focus_next = new_case.get_path()
+	
+	new_case.text_changed.connect(_on_case_line_text_changed)
+
+
+func erase_case(index: int) -> void:
+	var case: LineEdit = case_node_container.get_child(index)
+	var text: Control = result_node_container.get_child(index)
+	
+	if case_node_container.get_child_count() - 1 <= 0:
+		new_case_btn.focus_next = ^""
+	else:
+		if index == 0: # It's the first item
+			var target_ln: LineEdit = case_node_container.get_child(1)
+			new_text_button.focus_next = target_ln.get_path()
+			target_ln.focus_previous = new_text_button.get_path()
+		elif case_node_container.get_child_count() - 1 == index: # It's the last item
+			var target_text: LineEdit = result_node_container.get_child(-2).get_child(0)
+			target_text.focus_next = ^""
+		else: # It's between 2 items
+			var line_up: LineEdit = result_node_container.get_child(index - 1).get_child(0)
+			var line_down: LineEdit = case_node_container.get_child(index + 1)
+			line_up.focus_next = line_down.get_path()
+			line_down.focus_previous = line_up.get_path()
+	
+	case_node_container.remove_child(case)
+	result_node_container.remove_child(text)
+	
+	case.queue_free()
+	text.queue_free()
+
+
+func new_key_container(key: String = "") -> HBoxContainer:
+	var new_key: HBoxContainer = HBoxContainer.new()
+	var key_line: LineEdit = LineEdit.new()
+	var erase_button: Button = Button.new()
+	
+	if key.is_empty():
+		key_line.set_meta(&"phrase_key", UUID.generate_new())
+	else:
+		key_line.set_meta(&"phrase_key", key)
+	
+	key_line.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	key_line.custom_minimum_size.y = 32.0
+	key_line.placeholder_text = "Key"
+	key_line.text = String(key)
+	
+	erase_button.icon = get_theme_icon("Remove", "EditorIcons")
+	erase_button.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	erase_button.tooltip_text = "Erase key"
+	erase_button.flat = true
+	erase_button.custom_minimum_size = Vector2(32.0, 32.0)
+	
+	key_line.text_changed.connect(_on_key_line_text_changed)
+	erase_button.pressed.connect(_on_erase_key_button_pressed.bind(key_line))
+	
+	new_key.add_child(erase_button)
+	new_key.add_child(key_line)
+	
+	return new_key
+
+
+func new_case_result_node() -> HBoxContainer:
+	var new_case: HBoxContainer = HBoxContainer.new()
+	var case_text: LineEdit = LineEdit.new()
+	var erase_case_btn: Button = Button.new()
+	
+	case_text.placeholder_text = "Case format"
+	case_text.custom_minimum_size.y = 32.0
+	case_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	
+	erase_case_btn.tooltip_text = "Erase case"
+	erase_case_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	erase_case_btn.flat = true
+	erase_case_btn.icon = get_theme_icon("Remove", "EditorIcons")
+	erase_case_btn.custom_minimum_size = Vector2(32.0, 32.0)
+	erase_case_btn.pressed.connect(_on_erase_case_button_pressed.bind(case_text))
+	
+	new_case.add_child(case_text)
+	new_case.add_child(erase_case_btn)
+	
+	case_text.text_changed.connect(_on_conversation_changed)
+	
+	return new_case
+
+
+func new_text_field(text: String = "") -> HBoxContainer:
+	var new_text: HBoxContainer = HBoxContainer.new()
+	var new_line: LineEdit = LineEdit.new()
+	var edit_button: Button = Button.new()
+	
+	new_line.text = text
+	
+	new_text.add_child(new_line)
+	new_text.add_child(edit_button)
+	
+	new_line.custom_minimum_size.y = 32.0
+	new_line.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	new_line.placeholder_text = "Phrase Text"
+	edit_button.custom_minimum_size = Vector2(32.0, 32.0)
+	edit_button.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	edit_button.flat = true
+	edit_button.icon = get_theme_icon("Edit", "EditorIcons")
+	edit_button.tooltip_text = "Edit Cases"
+	
+	new_line.text_submitted.connect(_on_text_line_text_submitted.bind(edit_button))
+	new_line.text_changed.connect(_on_conversation_changed)
+	
+	return new_text
+
+
+func erase_key(index: int) -> void:
+	var key: Control = key_container.get_child(index)
+	var text: Control = text_container.get_child(index)
+	
+	if key_container.get_child_count() - 1 <= 0:
+		new_text_button.focus_next = ^""
+	else:
+		if index == 0: # It's the first item
+			var target_ln: LineEdit = text_container.get_child(1).get_child(0)
+			new_text_button.focus_next = target_ln.get_path()
+			target_ln.focus_previous = new_text_button.get_path()
+		elif key_container.get_child_count() - 1 == index: # It's the last item
+			var target_btn: Button = text_container.get_child(-2).get_child(1)
+			target_btn.focus_next = ^""
+		else: # It's between 2 items
+			var button_up: Button = text_container.get_child(index - 1).get_child(1)
+			var line_down: LineEdit = text_container.get_child(index + 1).get_child(0)
+			button_up.focus_next = line_down.get_path()
+			line_down.focus_previous = button_up.get_path()
+	
+	key_container.remove_child(key)
+	text_container.remove_child(text)
+	
+	key.queue_free()
+	text.queue_free()
+
+
+func clear_cases() -> void:
+	for case_key in case_node_container.get_children():
+		case_node_container.remove_child(case_key)
+		case_key.queue_free()
+	for case_result in result_node_container.get_children():
+		result_node_container.remove_child(case_result)
+		case_result.queue_free()
+
+
+func clear_localized_keys() -> void:
+	for format_key in key_container.get_children():
+		key_container.remove_child(format_key)
+		format_key.queue_free()
+	for key_text in text_container.get_children():
+		text_container.remove_child(key_text)
+		key_text.queue_free()
+
+
+func save_current_phrase_key(fix_cases: bool = false) -> void:
+	var phrase_key: String = selected_key.get_meta(&"phrase_key")
+	var lang: String = languages_tree.get_active_language()
+	var reg: String = languages_tree.get_active_region()
+	
+	var cases: Dictionary[String, String] = {}
+	var node_map: Dictionary[String, LineEdit] = {}
+	
+	active_conversation.set_localized_string_argument_default_case(
+			phrase_key,
+			lang,
+			reg,
+			selected_format,
+			default_case_ln_edt.text.strip_edges())
+	
+	var case_idx: int = -1
+	var desired: String = ""
+	var modified: String = ""
+	var iteration: int = 0
+	
+	for case_key:LineEdit in case_node_container.get_children():
+		case_idx += 1
+		desired = case_key.text.strip_edges()
+		modified = desired
+		iteration = 0
+		while cases.has(modified):
+			iteration += 1
+			modified = desired + str(iteration)
+		cases[modified] = result_node_container.get_child(case_idx).get_child(0).text
+		node_map[modified] = case_key
+	
+	active_conversation.clear_localized_string_cases(
+			phrase_key,
+			lang,
+			reg,
+			selected_format)
+	
+	for case in cases.keys():
+		active_conversation.set_localized_string_custom_case(
+				phrase_key,
+				lang,
+				reg,
+				selected_format,
+				case,
+				cases[case])
+		
+		if fix_cases and case != node_map[case].text.strip_edges():
+			node_map[case] = case
+	
+	if fix_cases:
+		_on_case_line_text_changed()
+
+
+func save_phrase_keys(fix_keys: bool = false) -> void:
+	if not languages_tree.is_lang_selected():
+		return
+	
+	if selected_format != "":
+		save_current_phrase_key(fix_keys)
+	
+	var lang: String = languages_tree.get_active_language()
+	var reg: String = languages_tree.get_active_region()
+	
+	# Correct key: Current text
+	var keys: Dictionary[String, String] = {}
+	
+	# Correct key: Line field
+	var node_map: Dictionary[String, LineEdit] = {}
+	
+	var idx: int = -1
+	var key_line: LineEdit = null
+	var current_text: String = ""
+	var desired: String = ""
+	var iteration: int = 0
+	
+	for key_node in key_container.get_children():
+		idx += 1
+		key_line = key_node.get_child(1)
+		current_text = key_line.text.strip_edges()
+		desired = current_text
+		iteration = 0
+		while keys.has(desired):
+			iteration += 1
+			desired = current_text + str(iteration)
+		
+		keys[desired] = text_container.get_child(idx).get_child(0).text
+		node_map[desired] = key_line
+	
+	# Duplicate old map for separate key reassignement.
+	var old_phrases: Dictionary[String, Dictionary] = active_conversation.localized_strings.duplicate()
+	
+	active_conversation.localized_strings.clear()
+	
+	# Separate key reassignement is important, because if we have {a:{}, b:{}}
+	# And we changed the key a -> b and b -> a, on a single dictionary we would
+	# do Dictionary[b] = [a] Dictionary.erase(a), and then we would only have
+	# {b: {}} so when it came to do b -> a we would've lost data of the original
+	# a. So instead we duplicate the dictionary and assign the new key to the
+	# old value. No data lost.
+	for key in keys.keys():
+		active_conversation.localized_strings[key] = old_phrases[node_map[key].get_meta(&"phrase_key")]
+		node_map[key].set_meta(&"phrase_key", key)
+	
+	for key in keys.keys():
+		#var strnm_key: StringName = StringName(key)
+		if active_conversation.get_localized_string(key, lang, reg) != keys[key]:
+			active_conversation.set_localized_string(key, keys[key], lang, reg)
+ 		
+		if fix_keys and node_map[key].text.strip_edges() != key:
+			node_map[key].text = key
+	
+	if fix_keys:
+		_on_key_line_text_changed()
+
+#endregion

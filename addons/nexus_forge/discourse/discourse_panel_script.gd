@@ -1,3 +1,4 @@
+@tool
 extends PanelContainer
 
 
@@ -59,7 +60,10 @@ var localization: Dictionary[StringName, Dictionary] = {
 }
 
 
-func _init() -> void:
+func _ready() -> void:
+	if Engine.is_editor_hint() and owner == get_tree().edited_scene_root:
+		return
+	print("Ready pass!")
 	var content_container: VBoxContainer = VBoxContainer.new()
 	var menu_panel: PanelContainer = PanelContainer.new()
 	var menu_container: HBoxContainer = HBoxContainer.new()
@@ -471,6 +475,13 @@ func set_locale_map(new_map: Dictionary[String, PackedStringArray]) -> void:
 			add_locale(language)
 			for region in new_map[language]:
 				add_locale(language, region)
+
+
+func clear_locales() -> void:
+	for locale in locale_map.keys():
+		remove_locale(locale)
+	
+	locale_map.clear()
 
 
 func remove_locale(language: String, region: String = "base") -> void:

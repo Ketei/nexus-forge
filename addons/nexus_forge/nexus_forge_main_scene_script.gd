@@ -1,4 +1,4 @@
-#@tool
+@tool
 extends Control
 
 
@@ -22,7 +22,9 @@ var recipes_link: EditorItemRecipeLink = EditorItemRecipeLink.new()
 
 
 func _ready() -> void:
-	#$MainContainer/ToolContainer.add_theme_stylebox_override(&"panel", get_theme_stylebox("Content", "EditorStyles"))
+	if Engine.is_editor_hint() and get_tree().edited_scene_root == self:
+		return
+	
 	tool_tab_bar.current_tab = 0
 	tool_tab_bar.set_tab_title(0, "")
 	tool_tab_bar.set_tab_icon(0, load("res://addons/nexus_forge/icons/plugin_icon.svg"))

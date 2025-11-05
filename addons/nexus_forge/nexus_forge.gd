@@ -5,7 +5,7 @@ extends EditorPlugin
 
 const MAIN_SCENE = preload("res://addons/nexus_forge/NexusForgeMainScene.tscn")
 const PLUGIN_NAME: String = "NexusForge"
-const PLUGIN_ICON_PATH: String = "res://addons/nexus_forge/common_icons/temp_icon.svg"
+const PLUGIN_ICON_PATH: String = "res://addons/nexus_forge/icons/plugin_icon.svg"
 # Setting_path: default_value
 const SETTINGS_PATHS: Array[Dictionary] = [
 	{"module": "discourse", "setting_path": "nexus_forge/localization_directory", "default_value": "res://localization/"},
@@ -37,7 +37,7 @@ func _enter_tree() -> void:
 	editor_view.visible = false
 	export_plugin = preload("res://addons/nexus_forge/export_plugin.gd").new()
 	get_editor_interface().get_editor_main_screen().add_child(editor_view)
-	editor_view.init_load_splash()
+	#editor_view.init_load_splash()
 	var new_export: EditorExportPlugin = EditorExportPlugin.new()
 	add_export_plugin(export_plugin)
 

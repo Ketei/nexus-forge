@@ -27,6 +27,9 @@ var loaded_species: StringName = &""
 
 
 func _ready() -> void:
+	if Engine.is_editor_hint() and get_tree().edited_scene_root == self:
+		return
+	
 	# For testing
 	_species_resource = SpeciesCatalog.new()
 	# -----------

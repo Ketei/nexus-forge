@@ -1,3 +1,4 @@
+@tool
 class_name SkillSet
 extends Resource
 
@@ -7,14 +8,16 @@ extends Resource
 @export var _custom_skills: Dictionary[StringName, int] = {}
 
 
-func _init() -> void:
+static func new_skill_set() -> SkillSet:
+	var new_set: SkillSet = SkillSet.new()
 	for skill_id in NexusForge.Skills.custom_skills():
-		if _custom_skills.has(skill_id):
+		if new_set._custom_skills.has(skill_id):
 			continue
-		_custom_skills[skill_id] = 0
+		new_set._custom_skills[skill_id] = 0
 	
-	NexusForge.Skills.custom_skill_created.connect(_on_custom_skill_created)
-	NexusForge.Skills.custom_skill_erased.connect(_on_custom_skill_erased)
+	NexusForge.Skills.custom_skill_created.connect(new_set._on_custom_skill_created)
+	NexusForge.Skills.custom_skill_erased.connect(new_set._on_custom_skill_erased)
+	return new_set
 
 
 func _on_custom_skill_created(skill_id: StringName) -> void:

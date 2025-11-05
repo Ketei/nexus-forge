@@ -44,6 +44,8 @@ var _unsaved: bool = false
 
 
 func _ready() -> void:
+	if Engine.is_editor_hint() and get_tree().edited_scene_root == self:
+		return
 	# ----- For testing -----
 	_skills_resource = SkillCatalog.new()
 	_traits_resource = TraitCatalog.new()

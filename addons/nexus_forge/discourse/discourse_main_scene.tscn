@@ -1,12 +1,13 @@
-[gd_scene load_steps=17 format=3 uid="uid://d216eid5mh0ts"]
+[gd_scene load_steps=20 format=3 uid="uid://d216eid5mh0ts"]
 
 [ext_resource type="Script" uid="uid://bqico4ogja4xf" path="res://addons/nexus_forge/discourse/discourse_main_panel_script.gd" id="1_viyrt"]
 [ext_resource type="Script" uid="uid://dk607iuh4bkv6" path="res://addons/nexus_forge/discourse/discourse_panel_script.gd" id="2_f5jrf"]
+[ext_resource type="Script" uid="uid://eh1dhsdbwf8o" path="res://addons/nexus_forge/discourse/discourse_nodes_tree.gd" id="2_nnanj"]
 [ext_resource type="Texture2D" uid="uid://brtp4ypk1wxqu" path="res://addons/nexus_forge/icons/new_language_plus.svg" id="3_f5jrf"]
 [ext_resource type="Script" uid="uid://dqb1etyisx1gu" path="res://addons/nexus_forge/discourse/locales_tree_script.gd" id="4_2wl78"]
 [ext_resource type="Script" uid="uid://d3hqle1cgp15b" path="res://addons/nexus_forge/discourse/localized_nodes_script.gd" id="5_qplns"]
 [ext_resource type="Texture2D" uid="uid://bn6ggyqhhn03o" path="res://addons/nexus_forge/icons/dialog_plus.svg" id="6_nnanj"]
-[ext_resource type="Script" uid="uid://luox625aquk1" path="res://addons/nexus_forge/discourse/localized_phrases_tree.gd" id="6_qsnsk"]
+[ext_resource type="Texture2D" uid="uid://cymtattv7iu68" path="res://addons/nexus_forge/icons/format_plus.svg" id="8_nnanj"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_v0h3x"]
 
@@ -16,124 +17,12 @@ content_margin_right = 6.0
 content_margin_bottom = 0.0
 bg_color = Color(0.180392, 0.180392, 0.180392, 1)
 
-[sub_resource type="GDScript" id="GDScript_58abf"]
-resource_name = "drag_n_drop"
-script/source = "extends Tree
-
-
-func _drop_data(at_position: Vector2, data: Variant) -> void:
-	var at_node: TreeItem = get_item_at_position(at_position)
-	var drop_position: int = get_drop_section_at_position(at_position)
-	if drop_position == -100:
-		data.move_after(get_root().get_child(-1))
-	else:
-		match drop_position:
-			-1: # Above
-				data.move_before(at_node)
-			0: # On (Shouldn't be used)
-				if at_node.get_child_count() == 0:
-					data.get_parent().remove_child(data)
-					at_node.add_child(data)
-				else:
-					data.move_before(at_node.get_child(-1))
-			1: # Below
-				data.move_after(at_node)
-
-
-func _get_drag_data(at_position: Vector2) -> Variant:
-	var selected: TreeItem = get_item_at_position(at_position)
-	if selected == null:
-		return null
-	
-	var data: Label = Label.new()
-	data.text = selected.get_text(0)
-	set_drag_preview(data)
-	return get_selected()
-
-
-func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
-	var item_at_pos: TreeItem = get_item_at_position(at_position)
-	if item_at_pos == null or data is not TreeItem or data == item_at_pos:
-		return false
-	
-	drop_mode_flags = DropModeFlags.DROP_MODE_INBETWEEN
-	
-	if not item_at_pos.get_metadata(0)[\"is_node\"]:
-		drop_mode_flags += DropModeFlags.DROP_MODE_ON_ITEM
-	
-	return belongs_to_tree(data)
-
-
-func belongs_to_tree(item: TreeItem) -> bool:
-	var root: TreeItem = get_root()
-	while item != null:
-		if item == root:
-			return true
-		item = item.get_parent()
-	return false
-
-
-func get_folder_structure(_from: TreeItem = get_root()) -> Array[Dictionary]:
-	var structure: Array[Dictionary] = []
-	for item in _from.get_children():
-		if item.get_metadata(0)[\"is_node\"]:
-			structure.append({
-				\"is_node\": true,
-				\"uuid\": item.get_metadata(0)[\"node\"].get_node_uuid()})
-		else:
-			#structure[\"folders\"].append(get_folder_structure(item))
-			structure.append({
-				\"is_node\": false,
-				\"name\": item.get_text(0),
-				\"items\": get_folder_structure(item)})
-	return structure
-
-
-func create_folder(folder_name: String) -> void:
-	var new_folder: TreeItem = get_root().create_child()
-	new_folder.set_text(0, folder_name)
-	new_folder.set_editable(0, true)
-	new_folder.set_icon(0, get_theme_icon(\"Folder\", \"EditorIcons\"))
-	new_folder.add_button(
-			0,
-			get_theme_icon(\"Remove\", \"EditorIcons\"),
-			-1,
-			false,
-			\"Delete Group\")
-	new_folder.set_metadata(0, {\"is_node\": false})
-
-
-func create_node(node: DiscourseGraphNode) -> void:
-	var new_item: TreeItem = get_root().create_child()
-		
-	new_item.set_text(0, str(node.custom_id))
-	new_item.add_button(
-			0,
-			get_theme_icon(\"Edit\", \"EditorIcons\"),
-			0,
-			false,
-			\"Edit ID\")
-	
-	new_item.set_metadata(0, {\"node\": node, \"is_node\": true, \"uuid\": node.get_node_uuid()})
-	
-	#if node == discourse_window.discourse_graph_edit.entry_node and new_item.get_index() != 0:
-		#new_item.move_before(new_item.get_parent().get_first_child())
-
-
-func remove_dialog_node(uuid: StringName, _on: TreeItem = get_root()) -> bool:
-	for child in _on.get_children():
-		var meta: Dictionary = child.get_metadata(0)
-		if not meta[\"is_node\"]: # Is folder
-			var result: bool = remove_dialog_node(uuid, child)
-			if result:
-				return true
-		elif meta[\"uuid\"] == uuid:
-			child.free()
-			return true
-	return false
-"
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_qux6o"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_nnanj"]
+content_margin_left = 8.0
+content_margin_top = 4.0
+content_margin_right = 8.0
+content_margin_bottom = 8.0
+bg_color = Color(0.212, 0.239, 0.29, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_y485p"]
 bg_color = Color(0.180392, 0.180392, 0.180392, 1)
@@ -149,6 +38,18 @@ content_margin_left = 8.0
 content_margin_top = 8.0
 content_margin_right = 8.0
 content_margin_bottom = 0.0
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_f5jrf"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_nnanj"]
+content_margin_left = 4.0
+content_margin_top = 6.0
+content_margin_right = 4.0
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_2wl78"]
+content_margin_left = 4.0
+content_margin_top = 6.0
+content_margin_right = 4.0
 
 [node name="DiscourseMainPanelTest" type="PanelContainer"]
 anchors_preset = 15
@@ -219,7 +120,7 @@ layout_mode = 2
 size_flags_vertical = 3
 allow_reselect = true
 hide_root = true
-script = SubResource("GDScript_58abf")
+script = ExtResource("2_nnanj")
 
 [node name="DiscourseSplitContainer" type="VSplitContainer" parent="MainSplitContainer"]
 custom_minimum_size = Vector2(680, 300)
@@ -231,7 +132,7 @@ dragger_visibility = 2
 custom_minimum_size = Vector2(0, 250)
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_styles/panel = SubResource("StyleBoxEmpty_qux6o")
+theme_override_styles/panel = SubResource("StyleBoxFlat_nnanj")
 script = ExtResource("2_f5jrf")
 
 [node name="ErrorContainer" type="PanelContainer" parent="MainSplitContainer/DiscourseSplitContainer"]
@@ -316,6 +217,8 @@ layout_mode = 2
 [node name="NodesTree" type="Tree" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LanguagesSplitContainer/NodesContainer"]
 layout_mode = 2
 size_flags_vertical = 3
+allow_reselect = true
+hide_root = true
 script = ExtResource("5_qplns")
 
 [node name="LocaleContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer"]
@@ -435,38 +338,192 @@ size_flags_horizontal = 3
 text = "Words / Phrases"
 vertical_alignment = 2
 
-[node name="CreatePhraseBtn" type="Button" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/HeaderPanel/PhrasesHeader"]
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 2
-disabled = true
-icon = ExtResource("6_nnanj")
-flat = true
-icon_alignment = 1
-expand_icon = true
-
-[node name="VSeparator" type="VSeparator" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/HeaderPanel/PhrasesHeader"]
-layout_mode = 2
-
 [node name="ReturnDiscourseBtn" type="Button" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/HeaderPanel/PhrasesHeader"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 flat = true
 icon_alignment = 1
-expand_icon = true
 
-[node name="SearchPhraseLnEdt" type="LineEdit" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer"]
-custom_minimum_size = Vector2(0, 32)
-layout_mode = 2
-placeholder_text = "Search"
-
-[node name="PhrasesTree" type="Tree" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer"]
+[node name="PanelContainer" type="PanelContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer"]
 layout_mode = 2
 size_flags_vertical = 3
-columns = 2
-allow_reselect = true
-hide_root = true
-select_mode = 1
-script = ExtResource("6_qsnsk")
+theme_override_styles/panel = SubResource("StyleBoxEmpty_f5jrf")
+
+[node name="KeyBoxContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer"]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer"]
+layout_mode = 2
+
+[node name="SearchTextLnEdt" type="LineEdit" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Prefixing a search with \"key:\" will only show entries where
+the key contains the search. With \"text:\" it'll only display
+results that contain the search. Filtering is NOT case-sensitive"
+placeholder_text = "Search | Filters: key:(Key), text:(Text)"
+metadata/current_search = ""
+
+[node name="NewTextButton" type="Button" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+disabled = true
+icon = ExtResource("6_nnanj")
+
+[node name="HSeparator" type="HSeparator" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer"]
+layout_mode = 2
+
+[node name="KeyHeaderSplit" type="HSplitContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer"]
+layout_mode = 2
+split_offset = 170
+dragging_enabled = false
+
+[node name="Label" type="Label" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyHeaderSplit"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+text = "Key"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Label2" type="Label" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyHeaderSplit"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_vertical = 1
+text = "Text"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="KeyScroll" type="ScrollContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxEmpty_nnanj")
+
+[node name="KeySplitContainer" type="HSplitContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+split_offset = 170
+
+[node name="KeyContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyScroll/KeySplitContainer"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+
+[node name="TextContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyScroll/KeySplitContainer"]
+custom_minimum_size = Vector2(170, 0)
+layout_mode = 2
+
+[node name="CaseBoxContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer"]
+visible = false
+layout_mode = 2
+
+[node name="CaseKeyContainer" type="HBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 0
+
+[node name="KeyDisplayLabel" type="Label" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/CaseKeyContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "PHRASE_KEY"
+horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 3
+
+[node name="SaveCaseBtn" type="Button" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/CaseKeyContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "New format case"
+icon = ExtResource("8_nnanj")
+icon_alignment = 1
+
+[node name="VBoxContainer2" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ArgumentOptBtn" type="OptionButton" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 2.0
+disabled = true
+
+[node name="HeaderContainer" type="HBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2"]
+layout_mode = 2
+
+[node name="SearchCaseLnEdt" type="LineEdit" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/HeaderContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 2.5
+tooltip_text = "Prefixing a search with \"case:\" will only show cases where the case
+contains the search. With \"result:\" it'll only display the ones whose
+Result contains the search. Filtering is NOT case-sensitive"
+placeholder_text = "Search | Filters: case:(Case), result:(Result)"
+metadata/current_search = ""
+
+[node name="NewCaseBtn" type="Button" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/HeaderContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+focus_neighbor_bottom = NodePath("../../KeyScroll/CasesSplit/ResultContainer/DefaultCaseLnEdt")
+focus_next = NodePath("../../KeyScroll/CasesSplit/ResultContainer/DefaultCaseLnEdt")
+disabled = true
+
+[node name="HSeparator" type="HSeparator" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2"]
+layout_mode = 2
+
+[node name="CaseHeaderSplit" type="HSplitContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2"]
+layout_mode = 2
+split_offset = 200
+dragging_enabled = false
+
+[node name="Label" type="Label" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/CaseHeaderSplit"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+text = "Case"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Label2" type="Label" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/CaseHeaderSplit"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+text = "Result"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="KeyScroll" type="ScrollContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxEmpty_2wl78")
+
+[node name="CasesSplit" type="HSplitContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+split_offset = 200
+
+[node name="CaseContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit"]
+layout_mode = 2
+
+[node name="Label2" type="Label" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/CaseContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+text = "Default"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="CaseNodeContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/CaseContainer"]
+layout_mode = 2
+
+[node name="ResultContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit"]
+layout_mode = 2
+
+[node name="DefaultCaseLnEdt" type="LineEdit" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/ResultContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+focus_neighbor_top = NodePath("../../../../HeaderContainer/NewCaseBtn")
+focus_previous = NodePath("../../../../HeaderContainer/NewCaseBtn")
+placeholder_text = "Default format"
+editable = false
+
+[node name="ResultNodeContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/ResultContainer"]
+layout_mode = 2
 
 [node name="LocaleLabel" type="Label" parent="LocalizationContainer"]
 layout_mode = 2

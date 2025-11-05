@@ -19,14 +19,16 @@ const DialogNodes = DiscourseGraphNode.DialogueNodeType
 	set(new_zoom):
 		zoom = snappedf(new_zoom, 0.001)
 
-# This is the localization for nodes. EAch UUID represents the node UUID. EAch value
+# This is the localization for nodes. Each UUID represents the node UUID. EAch value
 # changes depending on the node type. THe type can be checked by looking at the
 # nodes[uuid]["node_type"] value.
 # To save storage, the nodes that don't need localization (For example, the ones that use only numbers)
 # will be stored in the _global key. When loading the plugin, the resource will first
 # check if the UUID exists on the node_localization["_global"] dictionary and if not
 # THEN return the specific language localization.
-@export var locale_map: Dictionary[String, PackedStringArray] = {}
+@export var locale_map: Dictionary[String, PackedStringArray] = {
+	#"en": ["US", "GB"]
+}
 
 # Localizations with the same id will be merged toguether on the release file.
 # If empty then each conversation will have it's own unique locale file.
@@ -125,7 +127,16 @@ func get_localized_string(key: String, language: String, region: String = "base"
 			localized_strings[key][language].has(region):
 		return localized_strings[key][language][region]["text"]
 	printerr("No string with key \"", key,"\" and locale ", language + "_" + region, " exists.")
+	print("Current: ", localized_strings)
 	return ""
+
+
+func get_localized_string_formats(key: String, language: String, region: String = "base") -> Array[String]:
+	var keys: Array[String] = []
+	if localized_strings.has(key) and localized_strings[key].has(language):
+		keys.assign(
+				localized_strings[key][language][region]["arguments"].keys())
+	return keys
 
 
 func get_localized_arguments(key: String, language: String, region: String = "base") -> Dictionary[String, Dictionary]:
@@ -144,15 +155,77 @@ func get_editor_localized_strings(language: String, region: String = "base") -> 
 	return data
 
 
-func set_localized_string(key: String, text: String, arguments: Dictionary[String, Dictionary], language: String, region: String = "base") -> void:
+func create_localized_string(key: String, text: String) -> void:
+	if localized_strings.has(key):
+		return
+	
+	var data: Dictionary[String, Dictionary] = {}
+	
+	for language in locale_map.keys():
+		set_localized_string(key, text, language)
+		for region in locale_map[language]:
+			set_localized_string(key, text, language, region)
+
+
+func set_localized_string(key: String, text: String, language: String, region: String = "base") -> void:
 	if not localized_strings.has(key):
-		localized_strings[key] = {}
+		localized_strings[key] = Dictionary({},
+				TYPE_STRING, &"", null,
+				TYPE_DICTIONARY, &"", null)
 	if not localized_strings[key].has(language):
-		localized_strings[key][language] = {}
+		localized_strings[key][language] = Dictionary({}, 
+				TYPE_STRING, &"", null,
+				TYPE_DICTIONARY, &"", null)
+	
 	if not localized_strings[key][language].has(region):
-		localized_strings[key][language][region] = {}
+		var new_reg_dict: Dictionary[String, Variant] = {
+			"text": "",
+			"arguments": Dictionary({},
+					TYPE_STRING, &"", null,
+					TYPE_DICTIONARY, &"", null)}
+		localized_strings[key][language][region] = new_reg_dict
+	
+	if localized_strings[key][language][region]["text"] == text:
+		return
+	
 	localized_strings[key][language][region]["text"] = text
-	localized_strings[key][language][region]["arguments"] = arguments.duplicate(true)
+
+	var arg_data: Array[String] = get_phrase_arguments(text)
+	
+	for existing_key in localized_strings[key][language][region]["arguments"].keys():
+		if not arg_data.has(existing_key):
+			localized_strings[key][language][region]["arguments"].erase(existing_key)
+	
+	for new_key in arg_data:
+		if not localized_strings[key][language][region]["arguments"].has(new_key):
+			var new_key_data: Dictionary[String, Variant] = {
+				"default": "",
+				"custom": Dictionary({},
+						TYPE_STRING, &"", null,
+						TYPE_STRING, &"", null)}
+			localized_strings[key][language][region]["arguments"][new_key] = new_key_data
+
+
+func set_localized_string_argument_default_case(key: String, language: String, region: String, argument: String, default_text: String) -> void:
+	if localized_strings.has(key) and localized_strings[key].has(language) and localized_strings[key][language].has(region) and localized_strings[key][language][region]["arguments"].has(argument):
+		localized_strings[key][language][region]["arguments"][argument]["default"] = default_text
+
+
+func get_localized_string_argument_default_case(key: String, language: String, region: String, argument: String) -> String:
+	if localized_strings.has(key) and localized_strings[key].has(language) and localized_strings[key][language].has(region) and localized_strings[key][language][region]["arguments"].has(argument):
+		return localized_strings[key][language][region]["arguments"][argument]["default"]
+	return ""
+
+
+
+func set_localized_string_custom_case(key: String, language: String, region: String, argument: String, case: String, text: String) -> void:
+	if localized_strings.has(key) and localized_strings[key].has(language) and localized_strings[key][language].has(region) and localized_strings[key][language][region]["arguments"].has(argument):
+		localized_strings[key][language][region]["arguments"][argument]["custom"][case] = text
+
+
+func clear_localized_string_cases(key: String, language: String, region: String, argument: String) -> void:
+	if localized_strings.has(key) and localized_strings[key].has(language) and localized_strings[key][language].has(region) and localized_strings[key][language][region]["arguments"].has(argument):
+		localized_strings[key][language][region]["arguments"][argument]["custom"].clear()
 
 
 func get_node_uuids() -> Array:
@@ -829,4 +902,72 @@ func split_path_variable(path: String) -> Array[StringName]:
 	for path_component in split:
 		path_array.append(StringName(path_component))
 	return path_array
+
+
+func get_phrase_arguments(phrase_text: String) -> Array[String]:
+	var all_arguments: Array[String] = []
+	#var variable_calls: Array[String] = []
+	#var arguments_vals: Array[String] = []
 	
+	#var arguments: Dictionary[String, Array] = {
+		#"functions": function_calls,
+		#"variables": variable_calls}
+	
+	var regex_search: RegEx = RegEx.new()
+	#regex_search.compile("\\{\\-([^\\s\\}]+)\\}")
+	#
+	#for regex_match in regex_search.search_all(phrase_text): # -Argument
+		#arguments_vals.append(regex_match.get_string(1))
+	
+	regex_search.compile("\\{[\\$\\!][^\\s\\}]+\\}")
+	
+	for regex_match in regex_search.search_all(phrase_text): # $variable
+		all_arguments.append(regex_match.get_string())
+	
+	#regex_search.compile("\\{\\!([^\\s\\}]+)\\}")
+	#
+	#for regex_match in regex_search.search_all(phrase_text): # !function
+		#function_calls.append(regex_match.get_string(1))
+	
+	return all_arguments
+
+
+func add_locale(language: String, region: String = "base") -> void:
+	var lang: StringName = StringName(language)
+	
+	if not locale_map.has(lang):
+		locale_map[lang] = PackedStringArray()
+		
+		for localized_entry:String in localized_strings.keys():
+			if not localized_strings[localized_entry].has(language):
+				localized_strings[localized_entry][language] = Dictionary({},
+						TYPE_STRING, &"", null,
+						TYPE_DICTIONARY, &"", null)
+			
+			if not localized_strings[localized_entry][language].has("base"):
+				localized_strings[localized_entry][language]["base"] = localized_strings[localized_entry][base_language]["base"].duplicate(true)
+	
+	if region == "base" or locale_map.has(region):
+		return
+	
+	locale_map[lang].append(region)
+	
+	for localized_entry in localized_strings.keys():
+		if localized_strings[localized_entry][language].has(region):
+			continue
+		localized_strings[localized_entry][language][region] = localized_strings[localized_entry][language]["base"].duplicate(true)
+
+
+func remove_locale(language: String, region: String = "base") -> void:
+	var lang_key: StringName = StringName(language)
+	
+	if not locale_map.has(lang_key):
+		return
+	
+	if region == "base":
+		locale_map.erase(lang_key)
+		for locale_string in localized_strings.keys():
+			localized_strings[locale_string].erase(language)
+	else:
+		for locale_string in localized_strings.keys():
+			localized_strings[locale_string][language].erase(region)

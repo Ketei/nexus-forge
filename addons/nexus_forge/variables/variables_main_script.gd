@@ -42,6 +42,8 @@ var _unsaved: bool = false
 
 
 func _ready() -> void:
+	if Engine.is_editor_hint() and get_tree().edited_scene_root == self:
+		return
 	#SAVE_FILE_ICON = get_theme_icon("Save", "EditorIcons")
 	#NEW_FOLDER_ICON = 
 	

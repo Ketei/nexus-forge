@@ -1,3 +1,4 @@
+@tool
 class_name StatBlock
 extends Resource
 
@@ -8,14 +9,18 @@ extends Resource
 @export var _custom_stats: Dictionary[StringName, int] = {}
 
 
-func _init() -> void:
-	for custom_stat in NexusForge.Stats.custom_stats():
-		if _custom_stats.has(custom_stat):
-			continue
-		_custom_stats[custom_stat] = NexusForge.Stats.get_custom_default_value(custom_stat)
+static func new_stat_block() -> StatBlock:
+	var stat_block: StatBlock = StatBlock.new()
 	
-	NexusForge.Stats.stat_created.connect(_on_custom_stat_created)
-	NexusForge.Stats.stat_erased.connect(_on_custom_stat_erased)
+	for custom_stat in NexusForge.Stats.custom_stats():
+		if stat_block._custom_stats.has(custom_stat):
+			continue
+		stat_block._custom_stats[custom_stat] = NexusForge.Stats.get_custom_default_value(custom_stat)
+	
+	NexusForge.Stats.stat_created.connect(stat_block._on_custom_stat_created)
+	NexusForge.Stats.stat_erased.connect(stat_block._on_custom_stat_erased)
+	
+	return stat_block
 
 
 func _on_custom_stat_created(stat_id: StringName, default_value: int) -> void:

@@ -1,14 +1,27 @@
-[gd_scene load_steps=6 format=3 uid="uid://c7ia2qjomildo"]
+[gd_scene load_steps=9 format=3 uid="uid://c7ia2qjomildo"]
 
 [ext_resource type="Script" uid="uid://cbeggjr4e87v3" path="res://addons/nexus_forge/phrases/localization_resources_script.gd" id="1_rbj3j"]
 [ext_resource type="Texture2D" uid="uid://bn6ggyqhhn03o" path="res://addons/nexus_forge/icons/dialog_plus.svg" id="2_37r36"]
 [ext_resource type="Script" uid="uid://bs265n2xls66q" path="res://addons/nexus_forge/phrases/phrases_file_tree.gd" id="2_nfjyw"]
+[ext_resource type="Texture2D" uid="uid://cymtattv7iu68" path="res://addons/nexus_forge/icons/format_plus.svg" id="4_502er"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_txndr"]
 content_margin_left = 4.0
 content_margin_top = 6.0
 content_margin_right = 4.0
 content_margin_bottom = 4.0
+
+[sub_resource type="Image" id="Image_502er"]
+data = {
+"data": PackedByteArray(255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 0, 255, 92, 92, 127, 255, 92, 92, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 0, 255, 93, 93, 255, 255, 92, 92, 127, 255, 92, 92, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 92, 92, 127, 255, 92, 92, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 92, 92, 127, 255, 92, 92, 0, 255, 92, 92, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 231, 255, 90, 90, 54, 255, 94, 94, 57, 255, 93, 93, 233, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 231, 255, 90, 90, 54, 255, 94, 94, 57, 255, 93, 93, 233, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 0, 255, 93, 93, 0, 255, 91, 91, 0, 255, 91, 91, 0, 255, 91, 91, 42, 255, 90, 90, 0, 255, 94, 94, 0, 255, 91, 91, 42, 255, 93, 93, 233, 255, 92, 92, 232, 255, 93, 93, 41, 255, 90, 90, 0, 255, 94, 94, 0, 255, 91, 91, 42, 255, 93, 93, 233, 255, 92, 92, 232, 255, 92, 92, 0, 255, 92, 92, 0, 255, 91, 91, 0, 255, 91, 91, 0, 255, 91, 91, 0, 255, 91, 91, 45, 255, 93, 93, 44, 255, 91, 91, 0, 255, 91, 91, 42, 255, 91, 91, 42, 255, 93, 93, 0, 255, 91, 91, 45, 255, 93, 93, 44, 255, 91, 91, 0, 255, 91, 91, 42, 255, 91, 91, 42, 255, 91, 91, 0, 255, 91, 91, 0, 255, 91, 91, 0, 255, 91, 91, 0, 255, 91, 91, 45, 255, 92, 92, 235, 255, 92, 92, 234, 255, 89, 89, 43, 255, 91, 91, 0, 255, 91, 91, 0, 255, 91, 91, 45, 255, 92, 92, 235, 255, 92, 92, 234, 255, 89, 89, 43, 255, 91, 91, 0, 255, 91, 91, 0, 255, 91, 91, 0, 255, 91, 91, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 92, 92, 235, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 233, 255, 91, 91, 59, 255, 92, 92, 61, 255, 92, 92, 235, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 233, 255, 91, 91, 59, 255, 92, 92, 61, 255, 92, 92, 0, 255, 92, 92, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0),
+"format": "RGBA8",
+"height": 16,
+"mipmaps": false,
+"width": 16
+}
+
+[sub_resource type="ImageTexture" id="ImageTexture_t2xw8"]
+image = SubResource("Image_502er")
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_7pkye"]
 content_margin_left = 4.0
@@ -46,6 +59,8 @@ placeholder_text = "Search"
 [node name="FileMenuButton" type="MenuButton" parent="MainContainer/FilesContainer/SearchContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
+icon = SubResource("ImageTexture_t2xw8")
+icon_alignment = 1
 item_count = 2
 popup/item_0/text = "New Map"
 popup/item_0/id = 0
@@ -69,6 +84,7 @@ layout_mode = 2
 custom_minimum_size = Vector2(78, 32)
 layout_mode = 2
 text = "Language"
+vertical_alignment = 1
 
 [node name="LanguageLnEdt" type="LineEdit" parent="MainContainer/FilesContainer/LanguageContainer/LangContainer"]
 layout_mode = 2
@@ -82,6 +98,7 @@ layout_mode = 2
 custom_minimum_size = Vector2(78, 32)
 layout_mode = 2
 text = "Region"
+vertical_alignment = 1
 
 [node name="RegionLnEdt" type="LineEdit" parent="MainContainer/FilesContainer/LanguageContainer/RegionContainer"]
 layout_mode = 2
@@ -106,11 +123,13 @@ tooltip_text = "Prefixing a search with \"key:\" will only show entries where
 the key contains the search. With \"text:\" it'll only display
 results that contain the search. Filtering is NOT case-sensitive"
 placeholder_text = "Search | Filters: key:(Key), text:(Text)"
+caret_blink = true
 metadata/current_search = ""
 
 [node name="NewTextButton" type="Button" parent="MainContainer/TextContainer/HBoxContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
+tooltip_text = "New Key-Text pair."
 disabled = true
 icon = ExtResource("2_37r36")
 
@@ -174,6 +193,7 @@ tooltip_text = "Prefixing a search with \"case:\" will only show cases where the
 contains the search. With \"result:\" it'll only display the ones whose
 Result contains the search. Filtering is NOT case-sensitive"
 placeholder_text = "Search | Filters: case:(Case), result:(Result)"
+caret_blink = true
 metadata/current_search = ""
 
 [node name="Control" type="Control" parent="MainContainer/CaseContainer/HeaderContainer"]
@@ -193,9 +213,12 @@ disabled = true
 [node name="NewCaseBtn" type="Button" parent="MainContainer/CaseContainer/HeaderContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
+tooltip_text = "New format case"
 focus_neighbor_bottom = NodePath("../../KeyScroll/CasesSplit/ResultContainer/DefaultCaseLnEdt")
 focus_next = NodePath("../../KeyScroll/CasesSplit/ResultContainer/DefaultCaseLnEdt")
 disabled = true
+icon = ExtResource("4_502er")
+icon_alignment = 1
 
 [node name="HSeparator" type="HSeparator" parent="MainContainer/CaseContainer"]
 layout_mode = 2
@@ -252,6 +275,7 @@ focus_neighbor_top = NodePath("../../../../HeaderContainer/NewCaseBtn")
 focus_previous = NodePath("../../../../HeaderContainer/NewCaseBtn")
 placeholder_text = "Default format"
 editable = false
+caret_blink = true
 
 [node name="ResultNodeContainer" type="VBoxContainer" parent="MainContainer/CaseContainer/KeyScroll/CasesSplit/ResultContainer"]
 layout_mode = 2

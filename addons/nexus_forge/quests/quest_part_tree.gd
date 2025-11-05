@@ -1,3 +1,4 @@
+@tool
 extends Tree
 
 
@@ -9,6 +10,8 @@ signal quest_selected(id: String)
 @export var tree_item_name: String = ""
 
 func _ready() -> void:
+	if Engine.is_editor_hint() and get_tree().edited_scene_root == self:
+		return
 	create_item()
 	
 	button_clicked.connect(_on_button_clicked)

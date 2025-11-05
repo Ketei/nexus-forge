@@ -1,3 +1,4 @@
+@tool
 extends PanelContainer
 
 const LineEditConfirmationDialog = preload("res://addons/nexus_forge/dialogs/lineedit_confirmation_dialog.gd")
@@ -54,6 +55,8 @@ var _unsaved: bool = false
 
 
 func _ready() -> void:
+	if Engine.is_editor_hint() and get_tree().edited_scene_root == self:
+		return
 	add_stg_dict_button.icon = get_theme_icon("FolderCreate", "EditorIcons")
 	add_stp_dict_button.icon = get_theme_icon("FolderCreate", "EditorIcons")
 	add_qst_dict_button.icon = get_theme_icon("FolderCreate", "EditorIcons")

@@ -1,3 +1,4 @@
+@tool
 extends Tree
 
 
@@ -26,6 +27,9 @@ var previous_dialog: String
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
+	if Engine.is_editor_hint() and owner == get_tree().edited_scene_root:
+		return
+	print("Ready pass!")
 	var root: TreeItem = create_item()
 	
 	root.collapsed = true

@@ -1,3 +1,4 @@
+@tool
 extends PanelContainer
 
 
@@ -33,6 +34,8 @@ var ui_enabled: bool = false
 
 
 func _ready() -> void:
+	if Engine.is_editor_hint() and get_tree().edited_scene_root == self:
+		return
 	set_ui_enabled(false)
 	update_genders()
 	update_talent_nodes()

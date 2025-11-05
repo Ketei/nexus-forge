@@ -19,6 +19,8 @@ var _unsaved: bool = false
 
 
 func _ready() -> void:
+	if Engine.is_editor_hint() and get_tree().edited_scene_root == self:
+		return
 	categories_tree.item_selected.connect(_on_category_item_selected)
 	new_category_btn.pressed.connect(_on_new_category_pressed)
 	categories_tree.category_changed.connect(_on_category_changed)

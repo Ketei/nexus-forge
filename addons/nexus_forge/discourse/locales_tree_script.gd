@@ -1,3 +1,4 @@
+@tool
 extends Tree
 
 
@@ -39,6 +40,9 @@ var active_region: TreeItem = null:
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
+	if Engine.is_editor_hint() and owner == get_tree().edited_scene_root:
+		return
+	print("Ready pass!")
 	create_item()
 	
 	button_clicked.connect(_on_language_button_clicked)
@@ -205,9 +209,39 @@ func set_default_language(lang_code: String) -> void:
 		main_language = item
 
 
+func get_default_language() -> String:
+	if main_language == null:
+		return ""
+	return main_language.get_metadata(0)["language_code"]
+
+
 func get_used_language_codes() -> PackedStringArray:
 	var used_codes: PackedStringArray = []
 	
 	for language in get_root().get_children():
 		used_codes.append(language.get_metadata(0)["language_code"])
 	return used_codes
+
+
+func is_lang_selected() -> bool:
+	return active_language != null
+
+
+func as_map() -> Dictionary[StringName, PackedStringArray]:
+	var map: Dictionary[StringName, PackedStringArray] = {}
+	
+	for main_language in get_root().get_children():
+		var regions: PackedStringArray = PackedStringArray()
+		for region in main_language.get_children():
+			regions.append(region.get_metadata(0)["region_code"])
+		map[StringName(main_language.get_metadata(0)["language_code"])] = regions
+	
+	return map
+
+
+func clear_languages() -> void:
+	main_language = null
+	active_language = null
+	active_region = null
+	for item in get_root().get_children():
+		item.free()

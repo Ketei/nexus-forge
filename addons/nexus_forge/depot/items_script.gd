@@ -56,6 +56,8 @@ var _unsaved: bool = false
 
 
 func _ready() -> void:
+	if Engine.is_editor_hint() and get_tree().edited_scene_root == self:
+		return
 	reload_items()
 	reload_currencies()
 	
