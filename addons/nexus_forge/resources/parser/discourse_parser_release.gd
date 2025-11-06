@@ -340,6 +340,23 @@ func _dialog_resource_set(new_resource: DiscourseDialog) -> void:
 		localization = null
 
 
+func _locale_set(new_language: String, new_region: String = "base") -> void:
+	_load_locale(new_language, new_region)
+
+
+func _load_locale(new_language: String, new_region: String) -> void:
+	var locale_path: String = str(
+			"res://localization/", # Project settings base path
+			new_language,
+			"-",
+			new_region,
+			"/dialog/",
+			_dialog_resource.dialog_uuid,
+			".tres")
+	#var _example = "res://localization/en-base/dialog/(dialog_uuid).tres"
+	localization = load(locale_path)
+
+
 func load_dialog(path: String, starting_id: String = "") -> void:
 	if _conversation_cache.is_in_cache(path):
 		_dialog_resource = _conversation_cache.get_resource(path)
@@ -358,20 +375,3 @@ func load_dialog(path: String, starting_id: String = "") -> void:
 		_next_uuid = starting_id
 	else:
 		_next_uuid = _dialog_resource.entry_node
-
-
-func _locale_set(new_language: String, new_region: String = "base") -> void:
-	_load_locale(new_language, new_region)
-
-
-func _load_locale(new_language: String, new_region: String) -> void:
-	var locale_path: String = str(
-			"res://localization/", # Project settings base path
-			new_language,
-			"-",
-			new_region,
-			"/dialog/",
-			_dialog_resource.dialog_uuid,
-			".tres")
-	#var _example = "res://localization/en-base/dialog/(dialog_uuid).tres"
-	localization = load(locale_path)
