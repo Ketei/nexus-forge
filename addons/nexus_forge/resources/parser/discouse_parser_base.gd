@@ -51,15 +51,22 @@ const RANDOM_DEFAULT_WEIGHT: int = 1
 const FLOAT_SNAP: float = 0.01
 
 var API: DiscourseAPI = null
-var language: String = "en"
+var language: String = "en":
+	set(l):
+		language = l
+		_locale_set(language, region)
 var region: String = "base":
 	set(new_region):
 		region = "base" if new_region.is_empty() else new_region
+		_locale_set(language, region)
 
 # Maps UUID: CustomID
 var _dialog_id_map: Dictionary[String, StringName] = {}
 
-var _dialog_resource: DiscourseDialog = null: set = _set_dialog_resource
+var _dialog_resource: DiscourseDialog = null:
+	set(d):
+		_dialog_resource = d
+		_dialog_resource_set(d)
 var _conversation_started: bool = false
 var _next_uuid: String = ""
 var _conversation_cache: ResourceCache = null
@@ -439,14 +446,13 @@ func _get_data(_from_uuid: StringName) -> Variant:
 			#return null
 
 
-func _set_locale(new_language: String, new_region: String = "base") -> void:
-	language = new_language
-	region = new_region
+func _locale_set(new_language: String, new_region: String = "base") -> void:
+	pass
 
 
-func _set_dialog_resource(new_resource: DiscourseDialog) -> void:
+func _dialog_resource_set(new_resource: DiscourseDialog) -> void:
+	pass
 	#_dialog_id_map.clear()
-	_dialog_resource = new_resource
 	#if new_resource != null:
 		#_dialog_id_map.assign(new_resource.get_id_map())
 #endregion

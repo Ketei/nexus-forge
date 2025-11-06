@@ -237,9 +237,8 @@ func _get_data(from_uuid: StringName) -> Variant:
 			return null
 
 
-func _set_dialog_resource(new_resource: DiscourseDialog) -> void:
+func _dialog_resource_set(new_resource: DiscourseDialog) -> void:
 	_dialog_id_map.clear()
-	_dialog_resource = new_resource
 	if new_resource != null:
 		_dialog_id_map.assign(new_resource.get_id_map())
 
