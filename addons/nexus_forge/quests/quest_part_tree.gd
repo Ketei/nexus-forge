@@ -10,7 +10,7 @@ signal quest_selected(id: String)
 @export var tree_item_name: String = ""
 
 func _ready() -> void:
-	if Engine.is_editor_hint() and get_tree().edited_scene_root == self:
+	if Engine.is_editor_hint() and owner == get_tree().edited_scene_root:
 		return
 	create_item()
 	

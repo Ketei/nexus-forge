@@ -47,72 +47,84 @@ func _ready() -> void:
 	if Engine.is_editor_hint() and get_tree().edited_scene_root == self:
 		return
 	# ----- For testing -----
-	_skills_resource = SkillCatalog.new()
-	_traits_resource = TraitCatalog.new()
+	#_skills_resource = SkillCatalog.new()
+	#_traits_resource = TraitCatalog.new()
 	# -----------------------
-	
+	reload_traits(false)
+	reload_skills(false)
 	# ----------------------------- For Release -----------------------------
-	#var stats_path: String = EditorNFPlugin.get_project_settings_path("stats")
-	#var skills_path: String = EditorNFPlugin.get_project_settings_path("skills")
-	#var traits_path: String = EditorNFPlugin.get_project_settings_path("traits")
-	#
-	#if not stats_path.is_empty() and ResourceLoader.exists(stats_path):
-		#var preload_stat_res: Resource = load(stats_path)
-		#if preload_stat_res is StatCatalog:
-			#_stats_resource = preload_stat_res
-	#if not skills_path.is_empty() and ResourceLoader.exists(skills_path):
-		#var preload_skill_res: Resource = load(skills_path)
-		#if preload_skill_res is SkillCatalog:
-			#_skills_resource = preload_skill_res
-	#if not traits_path.is_empty() and ResourceLoader.exists(traits_path):
-		#var preload_traits_res: Resource = load(traits_path)
-		#if preload_traits_res is TraitCatalog:
-			#_traits_resource = preload_traits_res
-	# -----------------------------------------------------------------------
+	var skills_path: String = EditorNFPlugin.get_project_settings_path("skills")
+	var traits_path: String = EditorNFPlugin.get_project_settings_path("traits")
+	
+	if not skills_path.is_empty() and ResourceLoader.exists(skills_path):
+		var preload_skill_res: Resource = load(skills_path)
+		if preload_skill_res is SkillCatalog:
+			_skills_resource = preload_skill_res
+	
+	if not traits_path.is_empty() and ResourceLoader.exists(traits_path):
+		var preload_traits_res: Resource = load(traits_path)
+		if preload_traits_res is TraitCatalog:
+			_traits_resource = preload_traits_res
+	
+	if _skills_resource == null:
+		$MainContainer/SkillsPanel/SkillsContainer.visible = false
+		var no_db = preload("res://addons/nexus_forge/no_db_container.tscn").instantiate()
+		$MainContainer/SkillsPanel.add_child(no_db)
+		no_db.message_minimum_size.x = 450
+		no_db.set_resource_type("SkillCatalog", "Skills", "Skills")
+		no_db.create_resource_pressed.connect(_on_create_skill_resource_pressed.bind(no_db))
+		no_db.load_resource_pressed.connect(_on_load_skill_resource_pressed.bind(no_db))
+	else:
+		$MainContainer/SkillsPanel/SkillsContainer.visible = true
+		load_skills_resource()
+	
+	if _traits_resource == null:
+		$MainContainer/TraitsPanel/TraitsContainerContainer.visible = false
+		var no_db = preload("res://addons/nexus_forge/no_db_container.tscn").instantiate()
+		$MainContainer/TraitsPanel.add_child(no_db)
+		no_db.message_minimum_size.x = 450
+		no_db.set_resource_type("TraitCatalog", "Traits", "Traits")
+		no_db.create_resource_pressed.connect(_on_create_traits_resource_pressed.bind(no_db))
+		no_db.load_resource_pressed.connect(_on_load_traits_resource_pressed.bind(no_db))
+	else:
+		$MainContainer/TraitsPanel/TraitsContainerContainer.visible = true
+		load_traits_resource()
+	
 	trait_dict_btn.icon = get_theme_icon("FolderCreate", "EditorIcons")
 	
 	skill_opt_btn.get_popup().max_size.y = 300
 	trait_opt_btn.get_popup().max_size.y = 300
 
-	var skill_set: SkillSet = SkillSet.new()
-	var trait_block: TraitBlock = TraitBlock.new()
+	#var skill_set: SkillSet = SkillSet.new()
+	#var trait_block: TraitBlock = TraitBlock.new()
 	
-	var skills: Array[StringName] = skill_set.skills()
-	skills.sort_custom(func(a,b): return String(a).naturalnocasecmp_to(String(b)) < 0)
+	#var skills: Array[StringName] = skill_set.skills()
+	#skills.sort_custom(func(a,b): return String(a).naturalnocasecmp_to(String(b)) < 0)
 	
-	skill_opt_btn.clear()
-	for skill_id in skills:
-		skill_opt_btn.add_item(
-				String(skill_id).capitalize())
-		skill_opt_btn.set_item_metadata(-1, skill_id)
-		if _skills_resource != null:
-			if _skills_resource._skills.has(skill_id):
-				continue
-			var data: Dictionary[String, Variant] = {}
-			data.assign(_skills_resource.DEFAULT_DATA)
-			_skills_resource._skills[skill_id] = {
-				"name": "",
-				"description": "",
-				"data": data}
+	#skill_opt_btn.clear()
+	#for skill_id in skills:
+		#skill_opt_btn.add_item(
+				#String(skill_id).capitalize())
+		#skill_opt_btn.set_item_metadata(-1, skill_id)
+		#if _skills_resource != null:
+			#if _skills_resource._skills.has(skill_id):
+				#continue
+			#var data: Dictionary[String, Variant] = {}
+			#data.assign(_skills_resource.DEFAULT_DATA)
+			#_skills_resource._skills[skill_id] = {
+				#"name": "",
+				#"description": "",
+				#"data": data}
 	
-	var traits: Array[StringName] = trait_block.traits()
+	#var traits: Array[StringName] = trait_block.traits()
 	
-	traits.sort_custom(func(a,b): return String(a).naturalnocasecmp_to(String(b)) < 0)
+	#traits.sort_custom(func(a,b): return String(a).naturalnocasecmp_to(String(b)) < 0)
 	
-	trait_opt_btn.clear()
-	for trait_id in traits:
-		trait_opt_btn.add_item(
-				String(trait_id).capitalize())
-		trait_opt_btn.set_item_metadata(-1, trait_id)
-		if _traits_resource != null:
-			if _traits_resource._traits.has(trait_id):
-				continue
-			var data: Dictionary[String, Variant] = {}
-			data.assign(_traits_resource.DEFAULT_DATA)
-			_traits_resource._traits[trait_id] = {
-				"name": "",
-				"description": "",
-				"data": data}
+	#trait_opt_btn.clear()
+	#for trait_id in traits:
+		#trait_opt_btn.add_item(
+				#String(trait_id).capitalize())
+		#trait_opt_btn.set_item_metadata(-1, trait_id)
 	
 	skill_opt_btn.disabled = skill_opt_btn.item_count == 0
 	trait_opt_btn.disabled = trait_opt_btn.item_count == 0
@@ -120,13 +132,13 @@ func _ready() -> void:
 	set_skills_ui_enabled(0 < skill_opt_btn.item_count)
 	set_traits_ui_enabled(0 < trait_opt_btn.item_count)
 	
-	if 0 < skill_opt_btn.item_count:
-		load_skill(skill_opt_btn.get_item_metadata(0))
-		loaded_skill = skill_opt_btn.get_item_metadata(0)
+	#if 0 < skill_opt_btn.item_count:
+		#load_skill(skill_opt_btn.get_item_metadata(0))
+		#loaded_skill = skill_opt_btn.get_item_metadata(0)
 	
-	if 0 < trait_opt_btn.item_count:
-		load_trait(trait_opt_btn.get_item_metadata(0))
-		loaded_trait = trait_opt_btn.get_item_metadata(0)
+	#if 0 < trait_opt_btn.item_count:
+		#load_trait(trait_opt_btn.get_item_metadata(0))
+		#loaded_trait = trait_opt_btn.get_item_metadata(0)
 	
 	skill_ln_edt.text_changed.connect(something_changed)
 	skill_desc_txt_edt.text_changed.connect(something_changed)
@@ -270,7 +282,7 @@ func _ready() -> void:
 #region Skills
 
 func _on_create_skill_resource_pressed(panel: PanelContainer) -> void:
-	var res_loader := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").new()
+	var res_loader := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	res_loader.file_mode = res_loader.FILE_MODE_SAVE_FILE
 	res_loader.title = "Create Talents"
 	res_loader.ok_button_text = "Save"
@@ -286,7 +298,8 @@ func _on_create_skill_resource_pressed(panel: PanelContainer) -> void:
 		ProjectSettings.set_setting(
 				EditorNFPlugin.get_project_settings_path("talents"),
 				result[1])
-		ProjectSettings.save()
+		if Engine.is_editor_hint():
+			ProjectSettings.save()
 		$MainContainer/SkillsPanel/SkillsContainer.visible = true
 		panel.visible = false
 		panel.queue_free()
@@ -295,7 +308,7 @@ func _on_create_skill_resource_pressed(panel: PanelContainer) -> void:
 
 
 func _on_load_skill_resource_pressed(panel: PanelContainer) -> void:
-	var res_loader := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").new()
+	var res_loader := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	res_loader.file_mode = res_loader.FILE_MODE_OPEN_FILE
 	res_loader.title = "Open Talents"
 	res_loader.ok_button_text = "Load"
@@ -311,7 +324,8 @@ func _on_load_skill_resource_pressed(panel: PanelContainer) -> void:
 			ProjectSettings.set_setting(
 					EditorNFPlugin.get_project_settings_path("talents"),
 					result[1])
-			ProjectSettings.save()
+			if Engine.is_editor_hint():
+				ProjectSettings.save()
 			$MainContainer/SkillsPanel/SkillsContainer.visible = true
 			panel.visible = false
 			panel.queue_free()
@@ -412,17 +426,27 @@ func load_skill(skill_id: StringName) -> void:
 
 
 func load_skills_resource() -> void:
-	#skill_opt_btn.clear()
-	
-	#for skill in _skills_resource.skills():
-		#skill_opt_btn.add_item(String(skill))
-		#skill_opt_btn.set_item_metadata(-1, skill)
-		
-	#sort_skills(false)
 	var skills_exist: bool = 0 < skill_opt_btn.item_count
 	var disabled: bool = not skills_exist
 	
-	#skill_opt_btn.disabled = disabled
+	var skill_block: SkillSet = SkillSet.new()
+	var all_skills: Array[StringName] = skill_block.skills()
+	
+	for skill in _skills_resource._skills.keys():
+		if all_skills.has(skill):
+			continue
+		_skills_resource._skills.erase(skill)
+	
+	for new_skill in all_skills:
+		if _skills_resource._skills.has(new_skill):
+			continue
+		var data: Dictionary[String, Variant] = {}
+		data.assign(_skills_resource.DEFAULT_DATA)
+		_skills_resource._skills[new_skill] = {
+			"name": "",
+			"description": "",
+			"data": data}
+	
 	skill_ln_edt.editable = skills_exist
 	skill_desc_txt_edt.editable = skills_exist
 	
@@ -434,6 +458,8 @@ func load_skills_resource() -> void:
 	if skills_exist:
 		skill_opt_btn.select(0)
 		load_skill(skill_opt_btn.get_item_metadata(0))
+		loaded_skill = skill_opt_btn.get_item_metadata(0)
+		
 
 
 func sort_skills(reselect: bool = true) -> void:
@@ -481,19 +507,38 @@ func loaded_skills() -> Dictionary[String, int]:
 
 
 # Call when SkillSet is saved/changed.
-func reload_skills() -> void:
+func reload_skills(reselect: bool = true) -> void:
 	var current_skill: StringName = &"" if skill_opt_btn.selected == -1 else skill_opt_btn.get_item_metadata(skill_opt_btn.selected)
-	var skill_obj: SkillSet = SkillSet.new()
-	var all_skills: Array[StringName] = skill_obj.skills()
+	
+	var all_skills: Array[StringName] = SkillSet.skills()
 	
 	all_skills.sort_custom(func(a,b): return String(a).naturalnocasecmp_to(String(b)) < 0)
-	var new_index: int = all_skills.find(current_skill)
+	var new_index: int = all_skills.find(current_skill) if reselect else -1
+	
+	if _skills_resource != null:
+		for skill in _skills_resource.skills():
+			if all_skills.has(skill):
+				continue
+			_skills_resource._skills.erase(skill)
 	
 	skill_opt_btn.clear()
 	for skill in all_skills:
 		skill_opt_btn.add_item(
 				String(skill).capitalize())
 		skill_opt_btn.set_item_metadata(-1, skill)
+		
+		if _skills_resource != null:
+			if _skills_resource._skills.has(skill):
+				continue
+			var data: Dictionary[String, Variant] = {}
+			data.assign(_skills_resource.DEFAULT_DATA)
+			_skills_resource._skills[skill] = {
+				"name": "",
+				"description": "",
+				"data": data}
+	
+	if _skills_resource == null:
+		return
 	
 	skill_opt_btn.disabled = skill_opt_btn.item_count == 0
 	set_skills_ui_enabled(0 < skill_opt_btn.item_count)
@@ -512,7 +557,7 @@ func reload_skills() -> void:
 #region Traits
 
 func _on_create_traits_resource_pressed(panel: PanelContainer) -> void:
-	var res_loader := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").new()
+	var res_loader := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	res_loader.file_mode = res_loader.FILE_MODE_SAVE_FILE
 	res_loader.title = "Create StatBlock"
 	res_loader.ok_button_text = "Save"
@@ -527,16 +572,19 @@ func _on_create_traits_resource_pressed(panel: PanelContainer) -> void:
 		ProjectSettings.set_setting(
 				EditorNFPlugin.get_project_settings_path("talents"),
 				result[1])
-		ProjectSettings.save()
+		if Engine.is_editor_hint():
+			ProjectSettings.save()
 		$MainContainer/TraitsPanel/TraitsContainerContainer.visible = true
 		panel.visible = false
 		panel.queue_free()
+		reload_traits(false)
+		load_traits_resource()
 	
 	res_loader.queue_free()
 
 
 func _on_load_traits_resource_pressed(panel: PanelContainer) -> void:
-	var res_loader := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").new()
+	var res_loader := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	res_loader.file_mode = res_loader.FILE_MODE_OPEN_FILE
 	res_loader.title = "Open Talents"
 	res_loader.ok_button_text = "Load"
@@ -552,10 +600,12 @@ func _on_load_traits_resource_pressed(panel: PanelContainer) -> void:
 			ProjectSettings.set_setting(
 					EditorNFPlugin.get_project_settings_path("talents"),
 					result[1])
-			ProjectSettings.save()
+			if Engine.is_editor_hint():
+				ProjectSettings.save()
 			$MainContainer/TraitsPanel/TraitsContainerContainer.visible = true
 			panel.visible = false
 			panel.queue_free()
+			reload_traits()
 			load_traits_resource()
 	
 	res_loader.queue_free()
@@ -677,16 +727,6 @@ func save_current_trait() -> void:
 
 
 func load_traits_resource() -> void:
-	#trait_opt_btn.clear()
-	
-	#var traits: Array[StringName] = []
-	#traits.assign(_traits_resource.traits())
-	#
-	#for trait_id in _traits_resource.traits():
-		#trait_opt_btn.add_item(String(trait_id))
-		#trait_opt_btn.set_item_metadata(-1, trait_id)
-	
-	#sort_traits(false)
 	var traits_exist: bool = 0 < trait_opt_btn.item_count
 	var disabled: bool = not traits_exist
 	
@@ -700,9 +740,29 @@ func load_traits_resource() -> void:
 	trait_str_btn.disabled = disabled
 	trait_dict_btn.disabled = disabled
 	
+	var block: TraitBlock = TraitBlock.new()
+	var all_traits: Array[StringName] = block.traits()
+	
+	for existing_trait in _traits_resource._traits.keys():
+		if all_traits.has(existing_trait):
+			continue
+		_traits_resource._traits.erase(existing_trait)
+	
+	for new_trait in all_traits:
+		if _traits_resource._traits.has(new_trait):
+			continue
+		else:
+			var data: Dictionary[String, Variant] = {}
+			data.assign(_traits_resource.DEFAULT_DATA)
+			_traits_resource._traits[new_trait] = {
+				"name": "",
+				"description": "",
+				"data": data}
+	
 	if traits_exist:
 		trait_opt_btn.select(0)
 		load_trait(trait_opt_btn.get_item_metadata(0))
+		loaded_trait = trait_opt_btn.get_item_metadata(0)
 
 
 func sort_traits(reselect: bool = true) -> void:
@@ -740,19 +800,38 @@ func loaded_traits() -> Dictionary[String, int]:
 
 
 # Call when TraitBlock is saved/changed.
-func reload_traits() -> void:
+func reload_traits(reselect: bool = true) -> void:
 	var current_trait: StringName = &"" if trait_opt_btn.selected == -1 else trait_opt_btn.get_item_metadata(trait_opt_btn.selected)
-	var trait_obj: TraitBlock = TraitBlock.new()
-	var all_traits: Array[StringName] = trait_obj.traits()
+	#var trait_obj: TraitBlock = TraitBlock.new()
+	var all_traits: Array[StringName] = TraitBlock.traits()
 	
 	all_traits.sort_custom(func(a,b): return String(a).naturalnocasecmp_to(String(b)) < 0)
-	var new_index: int = all_traits.find(current_trait)
+	var new_index: int = all_traits.find(current_trait) if reselect else -1
 	
-	skill_opt_btn.clear()
+	if _traits_resource != null:
+		for existing_trait in _traits_resource._traits.keys():
+			if all_traits.has(existing_trait):
+				continue
+			_traits_resource._traits.erase(existing_trait)
+	
+	trait_opt_btn.clear()
 	for trait_id in all_traits:
 		trait_opt_btn.add_item(
 				String(trait_id).capitalize())
 		trait_opt_btn.set_item_metadata(-1, trait_id)
+		
+		if _traits_resource != null:
+			if _traits_resource._traits.has(trait_id):
+				continue
+			var data: Dictionary[String, Variant] = {}
+			data.assign(_traits_resource.DEFAULT_DATA)
+			_traits_resource._traits[trait_id] = {
+				"name": "",
+				"description": "",
+				"data": data}
+	
+	if _traits_resource == null:
+		return
 	
 	trait_opt_btn.disabled = trait_opt_btn.item_count == 0
 	set_traits_ui_enabled(0 < trait_opt_btn.item_count)

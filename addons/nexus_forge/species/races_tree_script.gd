@@ -18,7 +18,7 @@ var current_search: String = ""
 
 
 func _ready() -> void:
-	if Engine.is_editor_hint() and get_tree().edited_scene_root == self:
+	if Engine.is_editor_hint() and owner == get_tree().edited_scene_root:
 		return
 	
 	create_item()
@@ -143,7 +143,7 @@ func add_species(race_id: StringName, select: bool = false, on: TreeItem = get_r
 	
 	new_race.add_button(
 			0,
-			preload("res://addons/nexus_forge/icons/add_character_icon.svg"),
+			preload("res://addons/nexus_forge/icons/dna_plus.svg"),
 			0,
 			false,
 			"New subspecies")

@@ -1,5 +1,5 @@
 class_name QuestData
-extends Resource
+extends RefCounted
 
 
 enum QuestType {

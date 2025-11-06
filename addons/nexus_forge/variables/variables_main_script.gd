@@ -44,23 +44,23 @@ var _unsaved: bool = false
 func _ready() -> void:
 	if Engine.is_editor_hint() and get_tree().edited_scene_root == self:
 		return
-	#SAVE_FILE_ICON = get_theme_icon("Save", "EditorIcons")
-	#NEW_FOLDER_ICON = 
 	
 	add_folder_button.icon = get_theme_icon("FolderCreate", "EditorIcons")
 	folder_search_line.right_icon = get_theme_icon("Search", "EditorIcons")
 	var_search_line.right_icon = get_theme_icon("Search", "EditorIcons")
 	
-	_variables_resource = BlackboardData.new()
-	#var res_path: String = ProjectSettings.get_setting(
-				#EditorNFPlugin.get_project_settings_path("variables"),
-				#"")
-	#
-	#if not res_path.is_empty() and ResourceLoader.exists(res_path):
-		#var res_load: Resource = load(res_path)
-		#if res_load is BlackboardData:
-			#if res_load is BlackboardData:
-				#_variables_resource = res_load
+	# --- For Testing ---
+	#_variables_resource = BlackboardData.new()
+	# -------------------
+	var res_path: String = ProjectSettings.get_setting(
+				EditorNFPlugin.get_project_settings_path("variables"),
+				"")
+	
+	if not res_path.is_empty() and ResourceLoader.exists(res_path):
+		var res_load: Resource = load(res_path)
+		if res_load is BlackboardData:
+			if res_load is BlackboardData:
+				_variables_resource = res_load
 	
 	if _variables_resource != null:
 		load_variable_resource()
@@ -69,6 +69,7 @@ func _ready() -> void:
 		var no_db_container: Control = preload("res://addons/nexus_forge/no_db_container.tscn").instantiate()
 		no_db_container.name = &"NoVarResContainer"
 		add_child(no_db_container)
+		no_db_container.message_minimum_size.x = 550
 		no_db_container.set_resource_type("BlackboardData", "Variables", "Variables")
 		no_db_container.create_resource_pressed.connect(on_create_resource_pressed)
 		no_db_container.load_resource_pressed.connect(on_load_resource_pressed)
@@ -151,7 +152,7 @@ func save() -> void:
 
 
 func on_create_resource_pressed() -> void:
-	var new_dialog := ResourceFileDialog.new()
+	var new_dialog := ResourceFileDialog.get_file_browser()
 	new_dialog.file_mode = new_dialog.FILE_MODE_SAVE_FILE
 	add_child(new_dialog)
 	new_dialog.show()
@@ -165,7 +166,8 @@ func on_create_resource_pressed() -> void:
 		ProjectSettings.set_setting(
 				EditorNFPlugin.get_project_settings_path("variables"),
 				result[1])
-		ProjectSettings.save()
+		if Engine.is_editor_hint():
+			ProjectSettings.save()
 		main_split.visible = true
 		var no_db_container = get_node(^"NoVarResContainer")
 		no_db_container.visible = false
@@ -175,7 +177,7 @@ func on_create_resource_pressed() -> void:
 
 
 func on_load_resource_pressed() -> void:
-	var new_dialog := ResourceFileDialog.new()
+	var new_dialog := ResourceFileDialog.get_file_browser()
 	new_dialog.file_mode = new_dialog.FILE_MODE_OPEN_FILE
 	add_child(new_dialog)
 	new_dialog.show()
@@ -189,7 +191,8 @@ func on_load_resource_pressed() -> void:
 			ProjectSettings.set_setting(
 					EditorNFPlugin.get_project_settings_path("variables"),
 					result[1])
-			ProjectSettings.save()
+			if Engine.is_editor_hint():
+				ProjectSettings.save()
 			main_split.visible = true
 			var no_db_container = get_node(^"NoVarResContainer")
 			no_db_container.visible = false

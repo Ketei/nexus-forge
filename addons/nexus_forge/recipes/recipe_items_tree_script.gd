@@ -7,7 +7,7 @@ var sort_column: int = 0
 var current_search: String = ""
 
 func _ready() -> void:
-	if Engine.is_editor_hint() and get_tree().edited_scene_root == self:
+	if Engine.is_editor_hint() and owner == get_tree().edited_scene_root:
 		return
 	create_item()
 	set_column_title(0, "Item ID")

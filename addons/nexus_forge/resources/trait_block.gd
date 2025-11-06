@@ -1,18 +1,27 @@
+@tool
 class_name TraitBlock
 extends Resource
 
 
 @export var bear_resist: int = 0
 
-
 @export var _custom_traits: Dictionary[StringName, int] = {}
+
+
+## Constructor for a new TraitBlock with NexusForge custom traits included.
+static func new_trait_block() -> TraitBlock:
+	var new_block: TraitBlock = TraitBlock.new()
+	for custom_trait in NexusForge.Traits.custom_traits():
+		new_block._custom_traits[custom_trait] = 0
+	return new_block
 
 
 ## Returns an array with the exported traits in this object.[br]
 ## Does NOT include custom traits.
-func traits() -> Array[StringName]:
+static func traits() -> Array[StringName]:
+	var block: TraitBlock = TraitBlock.new()
 	var all_traits: Array[StringName] = []
-	var data: Array[Dictionary] = get_script().get_script_property_list()
+	var data: Array[Dictionary] = block.get_script().get_script_property_list()
 	
 	for item in data:
 		if item["type"] != TYPE_INT or item["usage"] != PROPERTY_USAGE_SCRIPT_VARIABLE + PROPERTY_USAGE_EDITOR + PROPERTY_USAGE_STORAGE:

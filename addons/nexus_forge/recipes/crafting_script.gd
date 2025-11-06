@@ -74,6 +74,7 @@ func _ready() -> void:
 	search_recipe_items_ln_edt.right_icon = get_theme_icon("Search", "EditorIcons")
 	
 	reload_recipes()
+	reload_items()
 	
 	add_rcp_in_int_btn.pressed.connect(_on_recipe_item_add_data_button_pressed.bind(true, "new_int", 0))
 	add_rcp_in_float_btn.pressed.connect(_on_recipe_item_add_data_button_pressed.bind(true, "new_float", 0.0))
@@ -267,7 +268,6 @@ func save() -> void:
 
 func reload_recipes() -> void:
 	recipes_resource = null
-	recipes_resource = RecipeCatalog.new()
 	
 	var path: String = ProjectSettings.get_setting(
 			EditorNFPlugin.get_project_settings_path("recipes"),
@@ -298,19 +298,27 @@ func add_item(item_id: StringName, item_name: String) -> void:
 			item_name)
 
 
-func reload_items() -> void:
+func reload_items(items: ItemCatalog = null) -> void:
 	recipe_items_tree.clear_items()
 	
-	var item_path: String = ProjectSettings.get_setting(
-			EditorNFPlugin.get_project_settings_path("items"),
-			"")
-	if item_path != "" and FileAccess.file_exists(item_path):
-		var res_pre: Resource = load(item_path)
-		if res_pre is ItemCatalog:
-			for item in res_pre.items():
-				recipe_items_tree.add_item(
-						item,
-						res_pre.get_item_name(item))
+	if items == null:
+		var item_path: String = ProjectSettings.get_setting(
+				EditorNFPlugin.get_project_settings_path("items"),
+				"")
+		
+		if item_path != "" and FileAccess.file_exists(item_path):
+			var res_pre: Resource = load(item_path)
+			if res_pre is ItemCatalog:
+				for item in res_pre.items():
+					recipe_items_tree.add_item(
+							item,
+							res_pre.get_item_name(item))
+	else:
+		for item in items.items():
+			recipe_items_tree.add_item(
+					item,
+					items.get_item_name(item))
+		
 
 
 func load_recipe_resource() -> void:
@@ -322,8 +330,9 @@ func load_recipe_resource() -> void:
 
 
 func _on_create_database_pressed(node: Control) -> void:
-	var database_creator := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").new()
+	var database_creator := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	database_creator.file_mode = database_creator.FILE_MODE_SAVE_FILE
+	add_child(database_creator)
 	database_creator.show()
 	
 	var result = await database_creator.dialog_finished
@@ -335,9 +344,10 @@ func _on_create_database_pressed(node: Control) -> void:
 		ProjectSettings.set_setting(
 				EditorNFPlugin.get_project_settings_path("recipes"),
 				result[1])
-		ProjectSettings.save()
+		if Engine.is_editor_hint():
+			ProjectSettings.save()
 		load_recipe_resource()
-		$RacesContainer.visible = true
+		$CraftingContainer.visible = true
 		node.visible = false
 		node.queue_free()
 	
@@ -345,8 +355,9 @@ func _on_create_database_pressed(node: Control) -> void:
 
 
 func _on_load_database_pressed(node: Control) -> void:
-	var database_creator := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").new()
+	var database_creator := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	database_creator.file_mode = database_creator.FILE_MODE_OPEN_FILE
+	add_child(database_creator)
 	database_creator.show()
 	
 	var result = await database_creator.dialog_finished
@@ -358,9 +369,10 @@ func _on_load_database_pressed(node: Control) -> void:
 			ProjectSettings.set_setting(
 					EditorNFPlugin.get_project_settings_path("recipes"),
 					result[1])
-			ProjectSettings.save()
+			if Engine.is_editor_hint():
+				ProjectSettings.save()
 			load_recipe_resource()
-			$RacesContainer.visible = true
+			$CraftingContainer.visible = true
 			node.visible = false
 			node.queue_free()
 	

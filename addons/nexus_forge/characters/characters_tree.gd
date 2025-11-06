@@ -8,7 +8,7 @@ signal character_id_changed(from: StringName, to: StringName)
 
 
 func _ready() -> void:
-	if Engine.is_editor_hint() and get_tree().edited_scene_root == self:
+	if Engine.is_editor_hint() and owner == get_tree().edited_scene_root:
 		return
 	create_item()
 	
@@ -66,6 +66,24 @@ func set_all_saved() -> void:
 func clear_characters() -> void:
 	for characer in get_root().get_children():
 		characer.free()
+
+
+func has_character(resource: CharacterSheet) -> bool:
+	for item in get_root().get_children():
+		if item.get_metadata(0)["resource"] == resource:
+			return true
+	return false
+
+
+func select_character(resource: CharacterSheet, emit_selected: bool = true) -> void:
+	for item in get_root().get_children():
+		if item.get_metadata(0)["resource"] == resource:
+			if emit_selected:
+				item.select(0)
+			else:
+				item_selected.disconnect(_on_item_selected)
+				item.select(0)
+				item_selected.connect(_on_item_selected)
 
 
 func create_character(resource: CharacterSheet, select: bool = false, emit_select: bool = true) -> void:

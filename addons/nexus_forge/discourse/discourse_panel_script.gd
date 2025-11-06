@@ -63,7 +63,6 @@ var localization: Dictionary[StringName, Dictionary] = {
 func _ready() -> void:
 	if Engine.is_editor_hint() and owner == get_tree().edited_scene_root:
 		return
-	print("Ready pass!")
 	var content_container: VBoxContainer = VBoxContainer.new()
 	var menu_panel: PanelContainer = PanelContainer.new()
 	var menu_container: HBoxContainer = HBoxContainer.new()
@@ -155,7 +154,6 @@ func _ready() -> void:
 	discourse_graph_edit = preload("res://addons/nexus_forge/discourse/discourse_graph_edit.gd").new()
 	discourse_graph_edit.name = &"DiscourseGraphEdit"
 	discourse_graph_edit.visible = false
-	#discourse_graph_edit.modulate = Color.TRANSPARENT
 	
 	graph_panel.name = &"GraphPanel"
 	graph_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL

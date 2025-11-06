@@ -1,5 +1,5 @@
 class_name QuestStep
-extends Resource
+extends RefCounted
 
 
 enum StepFlag {

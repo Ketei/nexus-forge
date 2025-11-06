@@ -57,6 +57,7 @@ var _unsaved: bool = false
 func _ready() -> void:
 	if Engine.is_editor_hint() and get_tree().edited_scene_root == self:
 		return
+	
 	add_stg_dict_button.icon = get_theme_icon("FolderCreate", "EditorIcons")
 	add_stp_dict_button.icon = get_theme_icon("FolderCreate", "EditorIcons")
 	add_qst_dict_button.icon = get_theme_icon("FolderCreate", "EditorIcons")
@@ -72,7 +73,7 @@ func _ready() -> void:
 	stage_custom_data_search_ln_edt.right_icon = get_theme_icon("Search", "EditorIcons")
 	step_data_search_ln_edt.right_icon = get_theme_icon("Search", "EditorIcons")
 	
-	_quest_resource = QuestCatalog.new()
+	#_quest_resource = QuestCatalog.new()
 	
 	var res_path: String = EditorNFPlugin.get_project_settings_path("quests")
 	
@@ -209,8 +210,9 @@ func _on_step_search_text_changed(text: String) -> void:
 
 
 func _on_create_database_pressed(node: Control) -> void:
-	var database_creator := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").new()
+	var database_creator := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	database_creator.file_mode = database_creator.FILE_MODE_SAVE_FILE
+	add_child(database_creator)
 	database_creator.show()
 	
 	var result = await database_creator.dialog_finished
@@ -222,7 +224,8 @@ func _on_create_database_pressed(node: Control) -> void:
 		ProjectSettings.set_setting(
 				EditorNFPlugin.get_project_settings_path("quests"),
 				result[1])
-		ProjectSettings.save()
+		if Engine.is_editor_hint():
+			ProjectSettings.save()
 		load_quest_resource()
 		$MainContainer.visible = true
 		node.visible = false
@@ -232,8 +235,9 @@ func _on_create_database_pressed(node: Control) -> void:
 
 
 func _on_load_database_pressed(node: Control) -> void:
-	var database_creator := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").new()
+	var database_creator := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	database_creator.file_mode = database_creator.FILE_MODE_OPEN_FILE
+	add_child(database_creator)
 	database_creator.show()
 	
 	var result = await database_creator.dialog_finished
@@ -245,7 +249,8 @@ func _on_load_database_pressed(node: Control) -> void:
 			ProjectSettings.set_setting(
 					EditorNFPlugin.get_project_settings_path("quests"),
 					result[1])
-			ProjectSettings.save()
+			if Engine.is_editor_hint():
+				ProjectSettings.save()
 			load_quest_resource()
 			$MainContainer.visible = true
 			node.visible = false

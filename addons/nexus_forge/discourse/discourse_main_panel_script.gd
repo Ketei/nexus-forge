@@ -98,7 +98,6 @@ var _unsaved: bool = false
 func _ready() -> void:
 	if Engine.is_editor_hint() and get_tree().edited_scene_root == self:
 		return
-	print("Ready pass! Should be 5 total")
 	var system_lang = OS.get_locale_language()
 	languages_tree.create_language(system_lang, true)
 	discourse_window.add_locale(system_lang)
@@ -687,6 +686,67 @@ func set_localization_tip(language_code: String, region_code: String) -> void:
 	#word_window.queue_free()
 
 
+func save_current_dialog_to_memory() -> void:
+	var new_dialog: EditorDiscourseDialog = discourse_window.discourse_graph_edit.get_conversation_data(active_conversation)
+	
+	# Obtaining localization reference
+	var localizations: Dictionary = discourse_window.localization
+	
+	new_dialog.base_language = base_language
+	new_dialog.zoom = discourse_window.discourse_graph_edit.zoom
+	new_dialog.scroll_offset = discourse_window.discourse_graph_edit.scroll_offset
+	new_dialog.node_structure = discourse_nodes_tree.get_folder_structure()
+	#new_dialog.localized_strings = phrases_tree.get_localization_structure()
+	
+	# Adding localization data to localized nodes
+	for localized_uuid in localizations.keys():
+		# --- If the text is unlocalized ---
+		if localizations[localized_uuid].has("common"):
+			match localized_uuid["node"].node_type:
+				DiscourseGraphNode.DialogueNodeType.DIALOG:
+					new_dialog.set_localization_text(
+						localized_uuid,
+						localizations[localized_uuid]["locaization"]["common"]["dialog"],
+						"common")
+				DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
+					new_dialog.set_localization_text(
+						localized_uuid,
+						localizations[localized_uuid]["locaization"]["common"]["text"],
+						"common")
+				DiscourseGraphNode.DialogueNodeType.OPTIONS:
+					new_dialog.set_localization_choices(
+							localized_uuid,
+							localizations[localized_uuid]["locaization"]["common"]["options"],
+							"common")
+		
+		# --- Or we have a truly localized node ---
+		for language in localizations[localized_uuid]["localization"].keys():
+			for region in localizations[localized_uuid]["localization"][language].keys():
+				match localized_uuid["node"].node_type:
+					DiscourseGraphNode.DialogueNodeType.DIALOG:
+						new_dialog.set_localization_text(
+							localized_uuid,
+							localizations[localized_uuid]["locaization"][language][region]["dialog"],
+							language,
+							region)
+					DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
+						new_dialog.set_localization_text(
+							localized_uuid,
+							localizations[localized_uuid]["locaization"][language][region]["text"],
+							language,
+							region)
+					DiscourseGraphNode.DialogueNodeType.OPTIONS:
+						new_dialog.set_localization_choices(
+								localized_uuid,
+								localizations[localized_uuid]["localization"][language][region]["options"],
+								language,
+								region)
+	
+	if _unsaved or active_conversation_item.get_metadata(0)["offset_changed"]:
+		active_conversation_item.get_metadata(0)["unsaved"] = true
+		active_conversation_item.get_metadata(0)["offset_changed"] = false
+
+
 func _on_conversation_activated() -> void:
 	var item: TreeItem = conversation_tree.get_selected()
 	var conversation: EditorDiscourseDialog = item.get_metadata(0)["resource"]
@@ -697,64 +757,7 @@ func _on_conversation_activated() -> void:
 		new_folder_button.disabled = false
 		
 	if active_conversation != null:
-		var new_dialog: EditorDiscourseDialog = discourse_window.discourse_graph_edit.get_conversation_data(active_conversation)
-		
-		# Obtaining localization reference
-		var localizations: Dictionary = discourse_window.localization
-		
-		new_dialog.base_language = base_language
-		new_dialog.zoom = discourse_window.discourse_graph_edit.zoom
-		new_dialog.scroll_offset = discourse_window.discourse_graph_edit.scroll_offset
-		new_dialog.node_structure = discourse_nodes_tree.get_folder_structure()
-		#new_dialog.localized_strings = phrases_tree.get_localization_structure()
-		
-		# Adding localization data to localized nodes
-		for localized_uuid in localizations.keys():
-			# --- If the text is unlocalized ---
-			if localizations[localized_uuid].has("common"):
-				match localized_uuid["node"].node_type:
-					DiscourseGraphNode.DialogueNodeType.DIALOG:
-						new_dialog.set_localization_text(
-							localized_uuid,
-							localizations[localized_uuid]["locaization"]["common"]["dialog"],
-							"common")
-					DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
-						new_dialog.set_localization_text(
-							localized_uuid,
-							localizations[localized_uuid]["locaization"]["common"]["text"],
-							"common")
-					DiscourseGraphNode.DialogueNodeType.OPTIONS:
-						new_dialog.set_localization_choices(
-								localized_uuid,
-								localizations[localized_uuid]["locaization"]["common"]["options"],
-								"common")
-			
-			# --- Or we have a truly localized node ---
-			for language in localizations[localized_uuid]["localization"].keys():
-				for region in localizations[localized_uuid]["localization"][language].keys():
-					match localized_uuid["node"].node_type:
-						DiscourseGraphNode.DialogueNodeType.DIALOG:
-							new_dialog.set_localization_text(
-								localized_uuid,
-								localizations[localized_uuid]["locaization"][language][region]["dialog"],
-								language,
-								region)
-						DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
-							new_dialog.set_localization_text(
-								localized_uuid,
-								localizations[localized_uuid]["locaization"][language][region]["text"],
-								language,
-								region)
-						DiscourseGraphNode.DialogueNodeType.OPTIONS:
-							new_dialog.set_localization_choices(
-									localized_uuid,
-									localizations[localized_uuid]["localization"][language][region]["options"],
-									language,
-									region)
-		
-		if _unsaved or active_conversation_item.get_metadata(0)["offset_changed"]:
-			active_conversation_item.get_metadata(0)["unsaved"] = true
-			active_conversation_item.get_metadata(0)["offset_changed"] = false
+		save_current_dialog_to_memory()
 	
 	active_conversation = conversation
 	active_conversation_item = item
@@ -832,9 +835,9 @@ func _on_localizer_item_edited(item: TreeItem) -> void:
 
 
 func _on_new_conversation_pressed() -> void:
-	var file_saver: FileDialog = FileDialog.new()
-	file_saver.file_mode = FileDialog.FILE_MODE_SAVE_FILE
-	file_saver.access = FileDialog.ACCESS_RESOURCES
+	var file_saver: AcceptDialog = EditorFileDialog.new() if Engine.is_editor_hint() else FileDialog.new()
+	file_saver.file_mode = file_saver.FILE_MODE_SAVE_FILE
+	file_saver.access = file_saver.ACCESS_RESOURCES
 	file_saver.add_filter("*.tres", "Resources")
 	file_saver.initial_position = Window.WINDOW_INITIAL_POSITION_CENTER_PRIMARY_SCREEN
 	add_child(file_saver)
@@ -844,9 +847,9 @@ func _on_new_conversation_pressed() -> void:
 
 
 func _on_open_conversation_pressed() -> void:
-	var file_opener: FileDialog = FileDialog.new()
-	file_opener.file_mode = FileDialog.FILE_MODE_OPEN_FILE
-	file_opener.access = FileDialog.ACCESS_RESOURCES
+	var file_opener: AcceptDialog = EditorFileDialog.new() if Engine.is_editor_hint() else FileDialog.new()
+	file_opener.file_mode = file_opener.FILE_MODE_OPEN_FILE
+	file_opener.access = file_opener.ACCESS_RESOURCES
 	file_opener.add_filter("*.tres", "Resources")
 	file_opener.initial_position = Window.WINDOW_INITIAL_POSITION_CENTER_PRIMARY_SCREEN
 	add_child(file_opener)
@@ -864,8 +867,40 @@ func _on_conversation_file_selected(path: String, dialog: FileDialog) -> void:
 				discourse_window.set_conversation_options_enabled(true)
 				discourse_nodes_tree.get_root().collapsed = false
 				new_folder_button.disabled = false
-			add_conversation(resource, true)
+			if active_conversation != null:
+				save_current_dialog_to_memory()
+			if is_conversation_open(resource):
+				open_conversation(resource)
+				set_conversation_item_active(resource)
+			else:
+				add_conversation(resource)
 	dialog.queue_free()
+
+
+func set_conversation_item_active(conv: EditorDiscourseDialog) -> void:
+	for item in conversation_tree.get_root().get_children():
+		if item.get_metadata(0)["resource"] == conv:
+			active_conversation_item = item
+			return
+
+
+func plugin_file_selected(file: EditorDiscourseDialog):
+	if not discourse_window.are_conversation_options_enabled():
+		discourse_window.set_graph_edit_visible(true)
+		discourse_window.set_conversation_options_enabled(true)
+		discourse_nodes_tree.get_root().collapsed = false
+		new_folder_button.disabled = false
+	
+	if active_conversation == file:
+		return
+	elif active_conversation != null:
+		save_current_dialog_to_memory()
+	
+	if is_conversation_open(file):
+		open_conversation(file)
+		set_conversation_item_active(file)
+	else:
+		add_conversation(file)
 
 
 func _on_conversation_file_canceled(dialog: FileDialog) -> void:
@@ -873,6 +908,8 @@ func _on_conversation_file_canceled(dialog: FileDialog) -> void:
 
 
 func _on_conversation_file_saved(path: String, dialog: FileDialog) -> void:
+	if active_conversation != null:
+		save_current_dialog_to_memory()
 	var new_conv: EditorDiscourseDialog = EditorDiscourseDialog.new()
 	new_conv.base_language = languages_tree.get_base_language()
 	new_conv.locale_map.assign(languages_tree.as_map())
@@ -968,15 +1005,11 @@ func _on_discourse_item_edited(uuid: StringName, type: DiscourseGraphNode.Dialog
 
 
 # Loads a conversation into discourse
-func open_conversation(conversation: EditorDiscourseDialog) -> void:
+func open_conversation(conversation: EditorDiscourseDialog, set_active: bool = true) -> void:
 	listen_offset = false
 	var disc_root: TreeItem = discourse_nodes_tree.get_root()
 	for item in disc_root.get_children():
 		item.free() # Clear the nodes tree
-	
-	#locale_map.clear()
-	#
-	#locale_map.assign(conversation.locale_map.duplicate(true))
 	
 	discourse_window.load_conversation(conversation) # Load conversation
 	
@@ -989,7 +1022,6 @@ func open_conversation(conversation: EditorDiscourseDialog) -> void:
 		root.remove_child(item)
 	
 	set_up_node_structure(conversation.node_structure, discourse_nodes_tree.get_root(), node_map)
-	#phrases_tree.set_phrase_data(conversation.localized_strings)
 	
 	default_case_ln_edt.text = ""
 	search_case_ln_edt.text = ""
@@ -1019,6 +1051,9 @@ func open_conversation(conversation: EditorDiscourseDialog) -> void:
 	case_box_container.visible = false
 	key_box_container.visible = languages_tree.is_lang_selected()
 	
+	if set_active:
+		active_conversation = conversation
+	
 	listen_offset = true
 
 
@@ -1031,8 +1066,14 @@ func add_conversation(data: EditorDiscourseDialog, open_conv: bool = true) -> vo
 	
 	if open_conv:
 		active_conversation_item = new_conversation
-		active_conversation = data
 		open_conversation(data)
+
+
+func is_conversation_open(conversation: EditorDiscourseDialog) -> bool:
+	for item in conversation_tree.get_root().get_children():
+		if item.get_metadata(0)["resource"] == conversation:
+			return true
+	return false
 
 
 func get_unsaved_conversation_resources() -> Array[EditorDiscourseDialog]:
@@ -1486,7 +1527,6 @@ func _on_erase_key_button_pressed(key: LineEdit) -> void:
 func _on_new_key_field_button_pressed() -> void:
 	var phrase_key: String = add_new_phrase()
 	active_conversation.create_localized_string(phrase_key, "")
-	print(active_conversation.localized_strings)
 	_on_conversation_changed()
 
 

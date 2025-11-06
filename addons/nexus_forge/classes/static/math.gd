@@ -69,7 +69,7 @@ static func sum_arrayf(values_array: Array) -> float:
 static func sum_arrayi(values_array: Array) -> int:
 	var type_arg: int = typeof(values_array)
 	
-	if type_arg < 28 or 38 < type_arg:
+	if type_arg < 28 or 33 < type_arg:
 		push_error("Can't iterate non-array")
 		return 0
 	
@@ -95,10 +95,10 @@ static func distancei(n_1: float, n_2: float) -> int:
 
 ## Returns true if [param value] is between 2 numbers.
 static func is_in_range(what: float, range_a: float, range_b: float) -> bool:
-	var small: float = minf(range_a, range_b)
-	var large: float = maxf(range_a, range_b)
-	
-	return small <= what and what <= large
+	if range_a < range_b:
+		return range_a <= what and what <= range_b
+	else:
+		return range_b <= what and what <= range_a
 
 
 ## [method @GlobalScope.signf] but returns the value as an integer.
@@ -109,7 +109,8 @@ static func signfi(x: float) -> int:
 ## Sets the bit on the index [param bit_index] of the [param on] value
 ## to [param value].
 static func set_bit(on: int, bit_index: int, value: bool) -> int:
-	bit_index = clampi(bit_index, 0, 63)
+	if bit_index < 0 or 63 < bit_index:
+		return 0
 	
 	if value:
 		on |= 1 << bit_index
@@ -132,14 +133,12 @@ static func not_bits(on: int, bits: int) -> int:
 ## Returns true if the bit of [param on] on index [param bit_index]
 ## is set to [param enabled].
 static func is_bit(on: int, bit_index: int, enabled: bool) -> bool:
-	bit_index = clampi(bit_index, 0, 63)
+	if bit_index < 0 or 63 < bit_index:
+		return false
 	
 	var bit_on: bool = (on & (1 << bit_index))
 	
-	if enabled:
-		return bit_on
-	else:
-		return not bit_on
+	return bit_on == enabled
 
 
 ## Will check if the enabled bits on [param mask] are [code]1[/code]
@@ -159,37 +158,42 @@ static func create_bitflags() -> BitFlags:
 
 
 ## An object made to track bit-flags via IDs.
-class BitFlags extends RefCounted:
-	var _bit_store: int = 0
-	var _flag_data: Dictionary = {}
+class BitFlags extends Resource:
+	const MAX_BITMASK: int = 63 # Must be a value between 1 and 64 inclusive.
+	@export var _bit_store: int = 0
+	@export var _flag_data: Dictionary[StringName, int] = {}
+	
+	
+	func _find_next_available_bit() -> int:
+		var _assigned_bits: int = 0
+		
+		for value in _flag_data.values():
+			_assigned_bits += value
+		
+		for index in range(MAX_BITMASK):
+			if ( _assigned_bits & ( 1 << index ) ) == 0:
+				return index
+		return -1
 	
 	
 	## Creates a flag with [param flag_id]. Returns [code]true[/code]
 	## if the flag was created.
-	func create_flag(flag_id: String) -> bool:
-		if is_full():
+	func create_flag(flag_id: StringName) -> bool:
+		if _flag_data.has(flag_id):
 			return false
 		
-		var used_indexes: Array[int] = Array(_flag_data.values(), TYPE_INT, &"", null)
-		used_indexes.sort()
+		var next_bit: int = _find_next_available_bit()
 		
-		for bit_idx in range(64):
-			if Arrays.binary_search(used_indexes, bit_idx) == -1:
-				_flag_data[flag_id] = bit_idx
-				break
+		if next_bit == -1:
+			return false
+		
+		_flag_data[flag_id] = 1 << next_bit
 		
 		return true
 	
 	
-	## Sets [param flag_id] to be the bit index [param flag_index].[br]
-	## [param flag_index] can only be a value between 0 and 63.[br]
-	func assign_flag(flag_index: int, flag_id: String) -> void:
-		flag_index = clampi(flag_index, 0, 63)
-		_flag_data[flag_id] = flag_index
-	
-	
 	## Removes flag_id from the registry.
-	func release_flag(flag_id: String) -> void:
+	func release_flag(flag_id: StringName) -> void:
 		if _flag_data.has(flag_id):
 			_bit_store = Math.set_bit(
 					_bit_store,
@@ -199,32 +203,20 @@ class BitFlags extends RefCounted:
 	
 	
 	## Returns [code]true[/code] if [param flag_id] is registered.
-	func is_assigned(flag_id: String) -> bool:
+	func has_flag(flag_id: StringName) -> bool:
 		return _flag_data.has(flag_id)
 	
 	
-	## Return the bit index of the flag assigned to [param flag_id].
-	## If the flag doesn't exist it'll return [code]-1[/code].
-	func get_assigned_index(flag_id: String) -> int:
-		if _flag_data.has(flag_id):
-			return _flag_data[flag_id]
-		return -1
-	
-	
-	## Returns [code]true[/code] if the [param index] isn't assigned
-	## to any id.
-	func is_index_free(index: int) -> bool:
-		return !( _flag_data.values().has(index) )
-	
-	
 	## Returns an array of all the flags registered.
-	func get_flags() -> Array[String]:
-		return Array(_flag_data.keys(), TYPE_STRING, &"", null)
+	func get_flags() -> Array[StringName]:
+		var all_flags: Array[StringName] = []
+		all_flags.assign(_flag_data.keys())
+		return all_flags
 	
 	
 	## Returns [code]true[/code] if all 64 flags are assigned.
 	func is_full() -> bool:
-		return 64 <= _flag_data.size()
+		return MAX_BITMASK <= _flag_data.size()
 	
 	
 	## Sets the flag assigned to [param flag_id] to [param value].
@@ -235,42 +227,60 @@ class BitFlags extends RefCounted:
 		if value:
 			_bit_store |= 1 << _flag_data[flag_id]
 		else:
-			_bit_store ^= 1 << _flag_data[flag_id]
+			_bit_store ^= 1 << ~_flag_data[flag_id]
 	
 	
 	## Sets an array of [param flags] to value. If a flag is
 	## missing it won't be set.
-	func set_flags(flags: Array[String], value: bool) -> void:
-		var add_flags: int = 0
+	func set_flags(flags: Array[StringName], value: bool) -> void:
+		var combined_mask: int = 0
 		
 		for flag in flags:
 			if _flag_data.has(flag):
-				add_flags = Math.set_bit(add_flags, _flag_data[flag], value)
+				combined_mask |= _flag_data[flag]
 		
-		_bit_store = Math.or_bits(_bit_store, add_flags)
+		if combined_mask == 0:
+			return
+		
+		if value:
+			_bit_store |= combined_mask
+		else:
+			_bit_store &= ~combined_mask
 	
 	
 	## Returns true if [param flag] is set to [param value].
-	func is_flag(flag: String, value: bool) -> bool:
+	func is_flag(flag: StringName, value: bool) -> bool:
 		if not _flag_data.has(flag):
 			return false
 		
-		return Math.is_bit(_bit_store, _flag_data[flag], value)
+		return ( ( _bit_store & _flag_data[flag] ) != 0 ) == value
 	
 	
 	## Returns true if all all the [param flags] match [param value].
-	func are_flags(flags: Array[String], value: bool) -> bool:
+	func are_flags(flags: Array[StringName], value: bool) -> bool:
 		if not _flag_data.has_all(flags):
 			return false
 		
-		var mask: int = 0
+		var combined_mask: int = 0
 		
 		for flag in flags:
-			mask = Math.set_bit(mask, _flag_data[flag], true)
+			if _flag_data.has(flag):
+				combined_mask |= _flag_data[flag]
+			else:
+				return false
 		
-		return Math.are_bits(_bit_store, mask, value)
+		if combined_mask == 0:
+			return false
+		
+		var result: int = _bit_store & combined_mask
+		
+		if value:
+			return result == combined_mask
+		else:
+			return result == 0
 	
 	
 	## Clears all the set flags.
 	func clear_flags() -> void:
 		_bit_store = 0
+		_flag_data.clear()

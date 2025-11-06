@@ -1,3 +1,4 @@
+@tool
 class_name EditorItemRecipeLink
 extends RefCounted
 
@@ -5,7 +6,6 @@ signal item_created(id: StringName, name: String)
 signal item_renamed(id: StringName, new_name: String)
 signal item_id_changed(from: StringName, to: StringName)
 signal item_erased(item_id: StringName)
-
 
 var items: ItemCatalog = null
 var recipes: RecipeCatalog = null

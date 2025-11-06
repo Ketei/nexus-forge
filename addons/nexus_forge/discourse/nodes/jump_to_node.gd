@@ -78,18 +78,18 @@ func _get_issues() -> PackedStringArray:
 	return issues
 
 
-func _clone() -> DiscourseGraphNode:
-	var titlebox: HBoxContainer = get_titlebar_hbox().get_child(-1)
-	var new_node: DiscourseGraphNode = get_script().new(
-			"",
-			theme_type_variation,
-			titlebox.has_node(^"DuplicateBtn"),
-			titlebox.has_node(^"CloseBtn"),
-			titlebox.has_node(^"EditIdBtn"),
-			titlebox.has_node(^"LocalizeBtn"))
-	
-	new_node._set_node_data(_get_node_data())
-	return new_node
+#func _clone() -> DiscourseGraphNode:
+	#var titlebox: HBoxContainer = get_titlebar_hbox().get_child(-1)
+	#var new_node: DiscourseGraphNode = get_script().new(
+			#"",
+			#theme_type_variation,
+			#titlebox.has_node(^"DuplicateBtn"),
+			#titlebox.has_node(^"CloseBtn"),
+			#titlebox.has_node(^"EditIdBtn"),
+			#titlebox.has_node(^"LocalizeBtn"))
+	#
+	#new_node._set_node_data(_get_node_data())
+	#return new_node
 
 
 func select_anchor(uuid: String) -> void:

@@ -7,21 +7,14 @@ var Blackboard: BlackboardData = null
 
 var Items: ItemCatalog = null
 
-#var Talents: NFTalentsRes = null
-
 var Stats: StatCatalog = null
 var Traits: TraitCatalog = null
 var Skills: SkillCatalog
 var Species: SpeciesCatalog
+var Quests: QuestCatalog
+var Currency: CurrencyCatalog
+var Recipes: RecipeCatalog
 var _phrase_api: PhraseAPI = PhraseAPI.new()
-#var Races: NFRacesRes = null
-
-#var Characters: NFCharacterDBRes = null
-
-
-#var Factions: NFFactionRes = null
-
-
 
 
 func _init() -> void:
@@ -34,66 +27,116 @@ func _init() -> void:
 	Items = ItemCatalog.new()
 	#Talents = NFTalentsRes.new()
 
-#func _ready() -> void:
-	#var variables_path: String = ProjectSettings.get_setting(NFVariablesRes.SETTINGS_PATH, "")
-	#var races_path: String = ProjectSettings.get_setting(NFRacesRes.SETTINGS_PATH, "")
-	#var character_path: String = ProjectSettings.get_setting(NFCharacterDBRes.SETTINGS_PATH, "")
-	#var factions_path: String = ProjectSettings.get_setting(NFFactionRes.SETTINGS_PATH, "")
-	#var talents_path: String = ProjectSettings.get_setting("", "")
-	#var items_path: String = ProjectSettings.get_setting(NFItemsRes.SETTINGS_PATH, "")
-	#Discourse = DialogParser.new_parser()
-	#
-	#if not variables_path.is_empty() and ResourceLoader.exists(variables_path):
-		#var _preload: Resource = load(variables_path)
-		#if _preload is NFVariablesRes:
-			#Variables = _preload
-		#else:
-			#printerr("[NEXUS FORGE] Variables resource provided in variables isn't NFVariablesRes")
-	#
-	#if not races_path.is_empty() and ResourceLoader.exists(races_path):
-		#var _preload: Resource = load(races_path)
-		#if _preload is NFRacesRes:
-			#Races = _preload
-		#else:
-			#printerr("[NEXUS FORGE] Race resource provided in variables isn't NFRacesRes")
-	#
-	#if not character_path.is_empty() and ResourceLoader.exists(character_path):
-		#var _preload: Resource = load(character_path)
-		#if _preload is NFCharacterDBRes:
-			#Characters = _preload
-		#else:
-			#printerr("[NEXUS FORGE] Character resource provided in variables isn't NFCharacterDBRes")
-	#
-	#if not factions_path.is_empty() and ResourceLoader.exists(factions_path):
-		#var _preload: Resource = load(factions_path)
-		#if _preload is NFFactionRes:
-			#Factions = _preload
-		#else:
-			#printerr("[NEXUS FORGE] Factions resource provided in variables isn't NFFactionRes")
-	#
-	#if not talents_path.is_empty() and ResourceLoader.exists(talents_path):
-		#var _preload: Resource = load(talents_path)
-		#if _preload is NFTalentsRes:
-			#Talents = _preload
-		#else:
-			#printerr("[NEXUS FORGE] Talents resource provided in variables isn't NFTalentsRes")
-	#
-	#if not items_path.is_empty() and ResourceLoader.exists(items_path):
-		#var _preload: Resource = load(items_path)
-		#if _preload is NFItemsRes:
-			#Items = _preload
-		#else:
-			#printerr("[NEXUS FORGE] Talents resource provided in variables isn't NFItemsRes")
-	#
-	#if Variables == null:
-		#Variables = NFVariablesRes.new()
-	#if Races == null:
-		#Races = NFRacesRes.new()
-	#if Characters == null:
-		#Characters = NFCharacterDBRes.new()
-	#if Factions == null:
-		#Factions = NFFactionRes.new()
-	#if Talents == null:
-		#Talents = NFTalentsRes.new()
-	#if Items == null:
-		#Items = NFItemsRes.new()
+func _ready() -> void:
+	var set_map: Dictionary = {
+		"variables": {"set": &"Blackboard", "class": &"BlackboardData"},
+		"stats": {"set": &"Stats", "class": &"StatCatalog"},
+		"traits": {"set": &"Traits", "class": &""},
+		"skills": {"set": &"Skills", "class": &""},
+		"quests": {"set": &"Quests", "class": &""},
+		"species": {"set": &"Species", "class": &""},
+		"items": {"set": &"Items"},
+		"currency": &"Currency",
+		"recipes": &"Recipes"}
+	
+	var blackboard_path: String = ProjectSettings.get_setting(
+			"nexus_forge/blackboard_path", "")
+	var stats_path: String = ProjectSettings.get_setting(
+			"nexus_forge/statspath", "")
+	var traits_path: String = ProjectSettings.get_setting(
+			"nexus_forge/traits_path", "")
+	var skill_path: String = ProjectSettings.get_setting(
+			"nexus_forge/skills_path", "")
+	var quest_path: String = ProjectSettings.get_setting(
+			"nexus_forge/quests_path", "")
+	var species_path: String = ProjectSettings.get_setting(
+			"nexus_forge/species_path", "")
+	var items_path: String = ProjectSettings.get_setting(
+			"nexus_forge/items_path", "")
+	var currency_path: String = ProjectSettings.get_setting(
+			"nexus_forge/currency_path", "")
+	var recipe_path: String = ProjectSettings.get_setting(
+			"nexus_forge/recipes_path", "")
+	
+	if not blackboard_path.is_empty() and FileAccess.file_exists(blackboard_path):
+		var res_pre: Resource = load(blackboard_path)
+		if res_pre is BlackboardData:
+			Blackboard = res_pre
+		else:
+			printerr("[NEXUS FORGE] ProjectSettings: Invalid Blackboard.")
+	
+	if not stats_path.is_empty() and FileAccess.file_exists(stats_path):
+		var res_pre: Resource = load(stats_path)
+		if res_pre is StatCatalog:
+			Stats = res_pre
+		else:
+			printerr("[NEXUS FORGE] ProjectSettings: Invalid Stats.")
+	
+	if not traits_path.is_empty() and FileAccess.file_exists(traits_path):
+		var res_pre: Resource = load(traits_path)
+		if res_pre is TraitCatalog:
+			Traits = res_pre
+		else:
+			printerr("[NEXUS FORGE] ProjectSettings: Invalid Traits.")
+	
+	if not skill_path.is_empty() and FileAccess.file_exists(skill_path):
+		var res_pre: Resource = load(skill_path)
+		if res_pre is SkillCatalog:
+			Skills = res_pre
+		else:
+			printerr("[NEXUS FORGE] ProjectSettings: Invalid Skills.")
+	
+	if not quest_path.is_empty() and FileAccess.file_exists(quest_path):
+		var res_pre: Resource = load(quest_path)
+		if res_pre is QuestCatalog:
+			Quests = res_pre
+		else:
+			printerr("[NEXUS FORGE] ProjectSettings: Invalid Quests.")
+	
+	if not species_path.is_empty() and FileAccess.file_exists(species_path):
+		var res_pre: Resource = load(species_path)
+		if res_pre is SpeciesCatalog:
+			Species = res_pre
+		else:
+			printerr("[NEXUS FORGE] ProjectSettings: Invalid Species.")
+	
+	if not items_path.is_empty() and FileAccess.file_exists(items_path):
+		var res_pre: Resource = load(items_path)
+		if res_pre is ItemCatalog:
+			Items = res_pre
+		else:
+			printerr("[NEXUS FORGE] ProjectSettings: Invalid Items.")
+	
+	if not currency_path.is_empty() and FileAccess.file_exists(currency_path):
+		var res_pre: Resource = load(currency_path)
+		if res_pre is CurrencyCatalog:
+			Currency = res_pre
+		else:
+			printerr("[NEXUS FORGE] ProjectSettings: Invalid Currency.")
+	
+	if not recipe_path.is_empty() and FileAccess.file_exists(recipe_path):
+		var res_pre: Resource = load(recipe_path)
+		if res_pre is RecipeCatalog:
+			Recipes = res_pre
+		else:
+			printerr("[NEXUS FORGE] ProjectSettings: Invalid Recipes.")
+	
+	if Blackboard == null:
+		Blackboard = BlackboardData.new()
+	if Stats == null:
+		Stats = StatCatalog.new()
+	if Traits == null:
+		Traits = TraitCatalog.new()
+	if Skills == null:
+		Skills = SkillCatalog.new()
+	if Quests == null:
+		Quests = QuestCatalog.new()
+	if Species == null:
+		Species = SpeciesCatalog.new()
+	if Items == null:
+		Items = ItemCatalog.new()
+	if Currency == null:
+		Currency = CurrencyCatalog.new()
+	if Recipes == null:
+		Recipes = RecipeCatalog.new()
+	

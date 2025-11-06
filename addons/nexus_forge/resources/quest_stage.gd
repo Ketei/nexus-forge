@@ -1,5 +1,5 @@
 class_name QuestStage
-extends Resource
+extends RefCounted
 
 
 enum StageType {

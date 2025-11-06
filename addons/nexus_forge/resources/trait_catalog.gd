@@ -1,10 +1,11 @@
+@tool
 class_name TraitCatalog
 extends Resource
 
 
 const DEFAULT_DATA: Dictionary[String, Variant] = {}
 
-var _traits: Dictionary[StringName, Dictionary] = {
+@export var _traits: Dictionary[StringName, Dictionary] = {
 	&"a_trait": {
 		"name": "",
 		"description": "",
@@ -12,6 +13,7 @@ var _traits: Dictionary[StringName, Dictionary] = {
 	}
 }
 var _custom_traits: Dictionary[StringName, Dictionary] = {}
+
 
 #region Defined Traits
 

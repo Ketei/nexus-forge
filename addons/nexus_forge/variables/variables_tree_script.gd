@@ -21,7 +21,7 @@ const FLOAT_STEP: float = 0.01
 var _current_selected: TreeItem = null
 
 func _ready() -> void:
-	if Engine.is_editor_hint() and get_tree().edited_scene_root == self:
+	if Engine.is_editor_hint() and owner == get_tree().edited_scene_root:
 		return
 	#INT_ICON = get_theme_icon("int", "EditorIcons")
 	#FLOAT_ICON = get_theme_icon("float", "EditorIcons")

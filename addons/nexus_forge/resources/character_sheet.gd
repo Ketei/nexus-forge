@@ -13,6 +13,6 @@ enum Gender {
 @export var species: StringName = &""
 @export var gender: Gender = Gender.MALE
 @export var custom_data: Dictionary[String, Variant] = {}
-@export var stats: StatBlock
-@export var skills: SkillSet
-@export var traits: TraitBlock
+@export var stats: StatBlock = StatBlock.new()
+@export var skills: SkillSet = SkillSet.new()
+@export var traits: TraitBlock = TraitBlock.new()

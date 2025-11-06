@@ -36,7 +36,7 @@ var current_search: String = ""
 @export var allow_drag_and_drop: bool = false
 
 func _ready() -> void:
-	if Engine.is_editor_hint() and get_tree().edited_scene_root == self:
+	if Engine.is_editor_hint() and owner == get_tree().edited_scene_root:
 		return
 	TRASH_BIN = get_theme_icon("Remove", "EditorIcons")
 	ICON_BOOL = get_theme_icon("bool", "EditorIcons")

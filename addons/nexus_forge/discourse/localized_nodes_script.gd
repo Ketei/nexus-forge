@@ -29,7 +29,6 @@ var previous_dialog: String
 func _ready() -> void:
 	if Engine.is_editor_hint() and owner == get_tree().edited_scene_root:
 		return
-	print("Ready pass!")
 	var root: TreeItem = create_item()
 	
 	root.collapsed = true

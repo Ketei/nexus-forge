@@ -1,13 +1,17 @@
+@tool
 class_name ItemSheet
 extends RefCounted
 
 enum ItemFlag {
 	SELLABLE,
-	GIFTABLE}
+	GIFTABLE,
+	DROPPABLE}
 
 
 enum Rarity {
 	COMMON,
+	UNCOMMON,
+	RARE
 }
 
 var item_id: StringName = &""

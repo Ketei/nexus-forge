@@ -8,6 +8,8 @@
 
 config_version=5
 
+="res://test_traits.tres"
+
 [application]
 
 config/name="NexusForge"

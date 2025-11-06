@@ -35,9 +35,10 @@ func _on_custom_stat_erased(stat_id: StringName) -> void:
 
 
 ## Returns all the stats in the statblock. This does NOT include custom stats.
-func stats() -> Array[StringName]:
+static func stats() -> Array[StringName]:
+	var block: StatBlock = StatBlock.new()
 	var all_stats: Array[StringName]  = []
-	var data: Array[Dictionary] = get_script().get_script_property_list()
+	var data: Array[Dictionary] = block.get_script().get_script_property_list()
 	
 	for item in data:
 		if item["type"] != TYPE_INT or item["usage"] != PROPERTY_USAGE_SCRIPT_VARIABLE + PROPERTY_USAGE_EDITOR + PROPERTY_USAGE_STORAGE:

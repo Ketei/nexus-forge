@@ -297,7 +297,7 @@ func _on_new_case_button_pressed() -> void:
 
 
 func _on_menu_id_pressed(id: int) -> void:
-	var map_dialog := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").new()
+	var map_dialog := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	
 	if id == 0: # New Map
 		map_dialog.file_mode = map_dialog.FILE_MODE_SAVE_FILE
@@ -405,6 +405,22 @@ func _on_case_search_text_changed(text: String) -> void:
 		result_node_container.get_child(idx).visible = case.visible
 	
 	search_case_ln_edt.set_meta(&"current_search", clean_text)
+
+
+func plugin_open_resource(resource: PhraseMap) -> void:
+	if resource == map:
+		return
+	elif map != null:
+		save_current_resource()
+	
+	if files_tree.has_map(resource):
+		files_tree.select_map(resource, false)
+	else:
+		files_tree.add_map(resource, true, false)
+	
+	load_map(resource)
+	map = resource
+	save_required = false
 
 
 func load_map(new_map: PhraseMap) -> void:

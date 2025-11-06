@@ -1,5 +1,5 @@
 class_name RecipeItem
-extends Resource
+extends RefCounted
 
 const RECIPE_ITEM_DEFAULT_DATA: Dictionary[String, Variant] = {}
 #{"item_id": &"item", "amount": 1, "data": {}}

@@ -8,6 +8,7 @@ var _unsaved: bool = false
 var _species_resource: SpeciesCatalog = null
 var listen_select: bool = true
 var loaded_species: StringName = &""
+var signal_change: bool = false
 
 @onready var search_race_ln_edt: LineEdit = $RacesContainer/RacesBasicSplit/RaceTreeContainer/SearchRaceContainer/SearchRaceLnEdt
 @onready var new_race_btn: Button = $RacesContainer/RacesBasicSplit/RaceTreeContainer/SearchRaceContainer/NewRaceBtn
@@ -31,7 +32,7 @@ func _ready() -> void:
 		return
 	
 	# For testing
-	_species_resource = SpeciesCatalog.new()
+	#_species_resource = SpeciesCatalog.new()
 	# -----------
 	
 	race_custom_data_search_line.right_icon = get_theme_icon("Search", "EditorIcons")
@@ -73,11 +74,20 @@ func _ready() -> void:
 	add_rc_bool_button.pressed.connect(_on_add_data_pressed.bind("new_bool", false))
 	add_rc_string_button.pressed.connect(_on_add_data_pressed.bind("new_string", ""))
 	race_data_tree.data_changed.connect(_on_something_changed)
+	
+	#race_name_ln_edt.text_changed.connect(_on_race_display_changed)
+
+
+func _on_race_display_changed() -> void:
+	if signal_change:
+		return
+	signal_change = true
 
 
 func _on_create_database_pressed(node: Control) -> void:
-	var database_creator := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").new()
+	var database_creator := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	database_creator.file_mode = database_creator.FILE_MODE_SAVE_FILE
+	add_child(database_creator)
 	database_creator.show()
 	
 	var result = await database_creator.dialog_finished
@@ -89,7 +99,8 @@ func _on_create_database_pressed(node: Control) -> void:
 		ProjectSettings.set_setting(
 				EditorNFPlugin.get_project_settings_path("species"),
 				result[1])
-		ProjectSettings.save()
+		if Engine.is_editor_hint():
+			ProjectSettings.save()
 		load_species_resource()
 		$RacesContainer.visible = true
 		node.visible = false
@@ -99,8 +110,9 @@ func _on_create_database_pressed(node: Control) -> void:
 
 
 func _on_load_database_pressed(node: Control) -> void:
-	var database_creator := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").new()
+	var database_creator := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	database_creator.file_mode = database_creator.FILE_MODE_OPEN_FILE
+	add_child(database_creator)
 	database_creator.show()
 	
 	var result = await database_creator.dialog_finished
@@ -112,7 +124,8 @@ func _on_load_database_pressed(node: Control) -> void:
 			ProjectSettings.set_setting(
 					EditorNFPlugin.get_project_settings_path("species"),
 					result[1])
-			ProjectSettings.save()
+			if Engine.is_editor_hint():
+				ProjectSettings.save()
 			load_species_resource()
 			$RacesContainer.visible = true
 			node.visible = false
@@ -134,6 +147,7 @@ func _on_species_id_changed(from: StringName, to: StringName) -> void:
 	if loaded_species == from:
 		loaded_species = to
 	_on_something_changed()
+	_on_race_display_changed()
 
 
 func _on_species_erased(species_id: StringName) -> void:
@@ -146,6 +160,7 @@ func _on_species_erased(species_id: StringName) -> void:
 		default_talents()
 		loaded_species = &""
 	_on_something_changed()
+	_on_race_display_changed()
 
 
 func _on_search_species_text_changed(text: String) -> void:
@@ -163,8 +178,8 @@ func _on_species_created(species_id: StringName, item: TreeItem) -> void:
 	item.select(0)
 	listen_select = true
 	_on_something_changed()
-	print(races_tree.get_species_tree())
 	save()
+	_on_race_display_changed()
 
 
 func _on_species_selected(species_id: StringName) -> void:
@@ -207,6 +222,7 @@ func _on_create_species_pressed() -> void:
 		listen_select = true
 		set_ui_enabled(true)
 		_on_something_changed()
+		_on_race_display_changed()
 		
 	id_creator.queue_free()
 
@@ -389,30 +405,72 @@ func update_talent_nodes() -> void:
 
 	var trait_block: TraitBlock = TraitBlock.new()
 	
-	var stats: Array[StringName] = stat_block.stats()
+	var stats: Array[StringName] = StatBlock.stats()
 	stats.sort_custom(func(a,b): return String(a).naturalnocasecmp_to(String(b)) < 0)
 	
-	clear_talents()
+	var stat_map: Dictionary[StringName, HBoxContainer] = {}
+	for existing_stat in race_stats_container.get_children():
+		race_stats_container.remove_child(existing_stat)
+		if existing_stat.get_meta(&"field_id") in stats:
+			stat_map[existing_stat.get_meta(&"field_id")] = existing_stat
+		else:
+			existing_stat.queue_free()
 	
 	for stat_id in stats:
-		var stat = create_value_field(stat_id, stat_block.get(stat_id))
-		race_stats_container.add_child(stat)
+		if stat_map.has(stat_id):
+			race_stats_container.add_child(stat_map[stat_id])
+			stat_map.erase(stat_id)
+		else:
+			var stat = create_value_field(stat_id, stat_block.get(stat_id))
+			race_stats_container.add_child(stat)
+	for remaining_stat in stat_map:
+		stat_map[remaining_stat].queue_free()
+	
 	
 	var skills: Array[StringName] = skill_set.skills()
 	skills.sort_custom(func(a,b): return String(a).naturalnocasecmp_to(String(b)) < 0)
 	
-	for skill_id in skills:
-		var skill = create_value_field(skill_id, skill_set.get(skill_id))
-		
-		race_skill_container.add_child(skill)
+	var skill_map: Dictionary[StringName, HBoxContainer] = {}
+	for existing_skill in race_skill_container.get_children():
+		race_skill_container.remove_child(existing_skill)
+		if skills.has(existing_skill.get_meta(&"field_id")):
+			skill_map[existing_skill.get_meta(&"field_id")] = existing_skill
+		else:
+			existing_skill.queue_free()
 	
-	var traits: Array[StringName] = trait_block.traits()
+	
+	
+	for skill_id in skills:
+		if skill_map.has(skill_id):
+			race_skill_container.add_child(skill_map[skill_id])
+			skill_map.erase(skill_id)
+		else:
+			var skill = create_value_field(skill_id, skill_set.get(skill_id))
+			race_skill_container.add_child(skill)
+	for remaining_skill in skill_map.keys():
+		skill_map[remaining_skill].queue_free()
+	
+	var traits: Array[StringName] = TraitBlock.traits()
 	
 	traits.sort_custom(func(a,b): return String(a).naturalnocasecmp_to(String(b)) < 0)
 	
+	var trait_map: Dictionary[StringName, HBoxContainer] = {}
+	for existing_trait in race_traits_container.get_children():
+		race_traits_container.remove_child(existing_trait)
+		if traits.has(existing_trait.get_meta(&"trait_id")):
+			trait_map[existing_trait.get_meta(&"trait_id")] = existing_trait
+		else:
+			existing_trait.queue_free()
+	
 	for trait_id in traits:
-		var new_trait: HBoxContainer = create_value_field(trait_id, trait_block.get(trait_id))
-		race_traits_container.add_child(new_trait)
+		if trait_map.has(trait_id):
+			race_traits_container.add_child(trait_map[trait_id])
+			trait_map.erase(trait_id)
+		else:
+			var new_trait: HBoxContainer = create_value_field(trait_id, trait_block.get(trait_id))
+			race_traits_container.add_child(new_trait)
+	for remaining_trait in trait_map.keys():
+		trait_map[remaining_trait].queue_free()
 
 
 func value_field_active(field: HBoxContainer) -> bool:
@@ -435,6 +493,7 @@ func create_value_field(field_id: StringName, default_value: int) -> HBoxContain
 	value.allow_greater = true
 	value.allow_lesser = true
 	value.value = default_value
+	value.editable = loaded_species != &""
 	value.custom_minimum_size.y = 32
 	value.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	value.size_flags_stretch_ratio = 3.0
@@ -452,6 +511,8 @@ func create_value_field(field_id: StringName, default_value: int) -> HBoxContain
 
 
 func save() -> void:
+	if _species_resource == null:
+		return
 	if not loaded_species.is_empty():
 		save_current_species()
 	var species_data: Dictionary = races_tree.get_species_tree()

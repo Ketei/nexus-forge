@@ -90,15 +90,6 @@ func currencies() -> Array[StringName]:
 	return currencies
 
 
-#func get_currency(currency_id: StringName) -> Dictionary:
-	#var data: Dictionary = _currencies[currency_id]
-	#var entry: Dictionary = {
-		#"name": data["name"],
-		#"value": data["value"],
-		#"data": data["data"]}
-	#return entry
-
-
 func erase_currency(currency_id: String) -> void:
 	_currencies.erase(currency_id)
 
@@ -106,7 +97,7 @@ func erase_currency(currency_id: String) -> void:
 # ----- Utility -----
 func convert_currency(from: StringName, to: StringName, amount: int) -> Dictionary:
 	if not _currencies.has_all([from, to]):
-		printerr("Invalid currency names.")
+		printerr("An invalid currency was given: ", from, "/", to)
 		return {from: amount, to: 0}
 
 	var from_value: int = _currencies[from]["value"]
@@ -124,7 +115,7 @@ func maximize_currency(currency_type: StringName, amount: int) -> Dictionary[Str
 	var result: Dictionary[StringName, int] = {}
 	if not _currencies.has(currency_type):
 		result[currency_type] = amount
-		printerr("Invalid currency type.")
+		printerr("Invalid currency type: ", currency_type)
 		return result
 	
 	var denominations: Array[StringName] = []
@@ -159,7 +150,7 @@ func minimize_currency(currency_type: StringName, amount: int) -> Dictionary[Str
 	var result: Dictionary[StringName, int] = {}  # Start with the initial amount
 	
 	if not _currencies.has(currency_type):
-		printerr("Invalid currency type.")
+		printerr("An invalid currency was given: ", currency_type)
 		result[currency_type] = amount
 		return result
 

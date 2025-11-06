@@ -8,6 +8,7 @@ extends Resource
 @export var _custom_skills: Dictionary[StringName, int] = {}
 
 
+## Constructor for a new SkillSet with NexusForge custom skills included.
 static func new_skill_set() -> SkillSet:
 	var new_set: SkillSet = SkillSet.new()
 	for skill_id in NexusForge.Skills.custom_skills():
@@ -32,9 +33,10 @@ func _on_custom_skill_erased(skill_id: StringName) -> void:
 		_custom_skills.erase(skill_id)
 
 
-func skills() -> Array[StringName]:
+static func skills() -> Array[StringName]:
+	var sk_st: SkillSet = SkillSet.new()
 	var all_skills: Array[StringName] = []
-	var data: Array[Dictionary] = get_script().get_script_property_list()
+	var data: Array[Dictionary] = sk_st.get_script().get_script_property_list()
 	
 	for item in data:
 		if item["type"] != TYPE_INT or item["usage"] != PROPERTY_USAGE_SCRIPT_VARIABLE + PROPERTY_USAGE_EDITOR + PROPERTY_USAGE_STORAGE:

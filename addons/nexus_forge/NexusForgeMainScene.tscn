@@ -75,6 +75,7 @@ grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_ay1bl")
 
 [node name="SplashTexture" type="TextureRect" parent="MainContainer/ToolContainer/NexusForge/SplashPanel"]
+texture_filter = 3
 layout_mode = 2
 texture = ExtResource("3_ynryw")
 expand_mode = 1

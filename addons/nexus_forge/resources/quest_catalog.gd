@@ -1,3 +1,4 @@
+@tool
 class_name QuestCatalog
 extends Resource
 ## Resource containing all data related to quests.

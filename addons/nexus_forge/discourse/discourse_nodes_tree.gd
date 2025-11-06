@@ -10,7 +10,6 @@ signal item_renamed(uuid: StringName, type: DiscourseGraphNode.DialogueNodeType,
 func _ready() -> void:
 	if Engine.is_editor_hint() and owner == get_tree().edited_scene_root:
 		return
-	print("Ready pass!")
 	create_item().collapsed = true
 	button_clicked.connect(_on_discourse_tree_button_clicked)
 	item_activated.connect(_on_discourse_node_activated)

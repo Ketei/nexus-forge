@@ -2,6 +2,8 @@
 extends PanelContainer
 
 
+signal items_loaded
+
 var id_changed: Dictionary[StringName, StringName] = {}
 
 var _unsaved: bool = false:
@@ -18,6 +20,7 @@ var _unsaved: bool = false:
 func _ready() -> void:
 	if Engine.is_editor_hint() and get_tree().edited_scene_root == self:
 		return
+	
 	items_container.visible = true
 	categories_container.visible = false
 	edit_categories_btn.icon = get_theme_icon("Edit", "EditorIcons")
@@ -62,6 +65,7 @@ func _on_resource_loaded() -> void:
 			res._categories[category]["data"].duplicate(true))
 	
 	edit_categories_btn.disabled = false
+	items_loaded.emit()
 
 
 func _on_category_edit_pressed() -> void:
@@ -83,10 +87,10 @@ func _on_categories_done_pressed() -> void:
 
 
 func save() -> void:
-	if items_container.item_resource != null:
+	if items_container.item_link.items != null:
 		if items_container.loaded_item != &"":
 			items_container.save_current_item()
-		ResourceSaver.save(items_container.item_resource)
+		ResourceSaver.save(items_container.item_link.items)
 		
 	if items_container.currency_resource != null:
 		if items_container.loaded_currency != &"":

@@ -1,3 +1,4 @@
+@tool
 class_name DiscourseGraphNode
 extends GraphNode
 
@@ -223,18 +224,18 @@ func _set_node_data(data: Dictionary) -> void:
 	position_offset = data["position"]
 
 
-func _clone() -> DiscourseGraphNode:
-	var titlebox: HBoxContainer = get_titlebar_hbox().get_child(-1)
-	var new_node: DiscourseGraphNode = get_script().new(
-			"",
-			theme_type_variation,
-			titlebox.has_node(^"DuplicateBtn"),
-			titlebox.has_node(^"CloseBtn"),
-			titlebox.has_node(^"EditIdBtn"),
-			titlebox.has_node(^"LocalizeBtn"))
-	new_node._set_node_data(_get_node_data())
-	
-	return new_node
+#func _clone() -> DiscourseGraphNode:
+	#var titlebox: HBoxContainer = get_titlebar_hbox().get_child(-1)
+	#var new_node: DiscourseGraphNode = get_script().new(
+			#"",
+			#theme_type_variation,
+			#titlebox.has_node(^"DuplicateBtn"),
+			#titlebox.has_node(^"CloseBtn"),
+			#titlebox.has_node(^"EditIdBtn"),
+			#titlebox.has_node(^"LocalizeBtn"))
+	#new_node._set_node_data(_get_node_data())
+	#
+	#return new_node
 
 
 func _on_localization_toggled(toggle: bool, node: Button) -> void:

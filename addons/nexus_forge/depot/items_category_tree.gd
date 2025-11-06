@@ -7,7 +7,7 @@ signal items_recategorized(new_category: StringName, items: Array[StringName])
 
 
 func _ready() -> void:
-	if Engine.is_editor_hint() and get_tree().edited_scene_root == self:
+	if Engine.is_editor_hint() and owner == get_tree().edited_scene_root:
 		return
 	create_item()
 	item_selected.connect(_on_item_selected)

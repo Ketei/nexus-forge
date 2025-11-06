@@ -22,6 +22,8 @@ var graph_nodes: Array[DiscourseGraphNode] = []
 
 
 func _ready() -> void:
+	if Engine.is_editor_hint() and owner == get_tree().edited_scene_root:
+		return
 	connection_popup = PopupMenu.new()
 	connection_popup.name = &"ConnectionsPopupMenu"
 	connection_popup.visible = false
@@ -245,7 +247,7 @@ func _on_duplicate_nodes_request() -> void:
 	var uuid_equivalences: Dictionary[String, DiscourseGraphNode] = {}
 	var sel_nodes := get_selected_graph_nodes()
 	for node in sel_nodes:
-		var new_node: DiscourseGraphNode = create_dialog_node(node.node_type) #node._clone()
+		var new_node: DiscourseGraphNode = create_dialog_node(node.node_type)
 		var old_data: Dictionary = node._get_node_data()
 		var frame: GraphFrame = get_element_frame(node.name)
 		new_node._set_node_data(old_data)

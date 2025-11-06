@@ -56,7 +56,7 @@ var _unsaved: bool = false
 
 
 func _ready() -> void:
-	if Engine.is_editor_hint() and get_tree().edited_scene_root == self:
+	if Engine.is_editor_hint() and owner == get_tree().edited_scene_root:
 		return
 	reload_items()
 	reload_currencies()
@@ -98,8 +98,9 @@ func _ready() -> void:
 #region Currencies
 
 func _on_create_currency_database_pressed(node: Control) -> void:
-	var database_creator := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").new()
+	var database_creator := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	database_creator.file_mode = database_creator.FILE_MODE_SAVE_FILE
+	add_child(database_creator)
 	database_creator.show()
 	
 	var result = await database_creator.dialog_finished
@@ -112,7 +113,8 @@ func _on_create_currency_database_pressed(node: Control) -> void:
 		ProjectSettings.set_setting(
 				EditorNFPlugin.get_project_settings_path("currency"),
 				result[1])
-		ProjectSettings.save()
+		if Engine.is_editor_hint():
+			ProjectSettings.save()
 		reload_categories()
 		$CurrencyPanel/CurrencyContainer.visible = true
 		node.visible = false
@@ -122,8 +124,9 @@ func _on_create_currency_database_pressed(node: Control) -> void:
 
 
 func _on_load_currency_database_pressed(node: Control) -> void:
-	var database_creator := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").new()
+	var database_creator := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	database_creator.file_mode = database_creator.FILE_MODE_OPEN_FILE
+	add_child(database_creator)
 	database_creator.show()
 	
 	var result = await database_creator.dialog_finished
@@ -135,7 +138,8 @@ func _on_load_currency_database_pressed(node: Control) -> void:
 			ProjectSettings.set_setting(
 					EditorNFPlugin.get_project_settings_path("currency"),
 					result[1])
-			ProjectSettings.save()
+			if Engine.is_editor_hint():
+				ProjectSettings.save()
 			reload_currencies()
 			$CurrencyPanel/CurrencyContainer.visible = true
 			node.visible = false
@@ -207,7 +211,7 @@ func _on_currency_selected(currency_id: StringName) -> void:
 
 func reload_currencies() -> void:
 	currency_resource = null # Release
-	currency_resource = CurrencyCatalog.new() # Debug
+	#currency_resource = CurrencyCatalog.new() # Debug
 	
 	clear_currency_section()
 	
@@ -305,7 +309,7 @@ func _on_items_recategorized(new_category: StringName, items: Array[StringName])
 	if new_category == current_category:
 		return
 	var clean: bool = false
-	#print("from ", current_category, " to ", new_category)
+	
 	if loaded_item in items:
 		save_current_item()
 		clean = true
@@ -354,8 +358,9 @@ func _on_search_item_text_changed(text: String) -> void:
 
 
 func _on_create_database_pressed(node: Control) -> void:
-	var database_creator := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").new()
+	var database_creator := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	database_creator.file_mode = database_creator.FILE_MODE_SAVE_FILE
+	add_child(database_creator)
 	database_creator.show()
 	
 	var result = await database_creator.dialog_finished
@@ -368,7 +373,8 @@ func _on_create_database_pressed(node: Control) -> void:
 		ProjectSettings.set_setting(
 				EditorNFPlugin.get_project_settings_path("quests"),
 				result[1])
-		ProjectSettings.save()
+		if Engine.is_editor_hint():
+			ProjectSettings.save()
 		reload_categories()
 		$ItemsPanel/ItemsContainer.visible = true
 		node.visible = false
@@ -379,8 +385,9 @@ func _on_create_database_pressed(node: Control) -> void:
 
 
 func _on_load_database_pressed(node: Control) -> void:
-	var database_creator := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").new()
+	var database_creator := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	database_creator.file_mode = database_creator.FILE_MODE_OPEN_FILE
+	add_child(database_creator)
 	database_creator.show()
 	
 	var result = await database_creator.dialog_finished
@@ -392,7 +399,8 @@ func _on_load_database_pressed(node: Control) -> void:
 			ProjectSettings.set_setting(
 					EditorNFPlugin.get_project_settings_path("quests"),
 					result[1])
-			ProjectSettings.save()
+			if Engine.is_editor_hint():
+				ProjectSettings.save()
 			reload_categories()
 			$ItemsPanel/ItemsContainer.visible = true
 			node.visible = false
@@ -552,7 +560,7 @@ func _add_category_map(categories: Dictionary[StringName, Dictionary], target: T
 
 func reload_items() -> void:
 	item_link.items = null # Release
-	item_link.items = ItemCatalog.new() # Debug
+	#item_link.items = ItemCatalog.new() # Debug
 	
 	var item_path: String = ProjectSettings.get_setting(
 			EditorNFPlugin.get_project_settings_path("items"),
@@ -579,8 +587,7 @@ func reload_items() -> void:
 		new_item_btn.disabled = true
 	else:
 		reload_categories()
-	
-	resource_loaded.emit()
+		resource_loaded.emit()
 
 
 func reload_categories(reselect: bool = false) -> void:
@@ -622,20 +629,48 @@ func reload_categories(reselect: bool = false) -> void:
 
 
 func reload_fields() -> void:
-	var rarities: Dictionary = ItemSheet.Rarity
-	var item_flags: Dictionary = ItemSheet.ItemFlag
+	var constant_map: Dictionary = ItemSheet.new().get_script().get_script_constant_map()
+	var rarities: Dictionary = constant_map[&"Rarity"]
+	var item_flags: Dictionary = constant_map[&"ItemFlag"]
 	
-	for rarity:String in rarities:
-		rarity_opt_btn.add_item(
-				rarity.capitalize())
+	var selected_rarity: int = -1 if rarity_opt_btn.selected == -1 else rarity_opt_btn.get_selected_metadata()
+	var new_index: int = -1
+	
+	rarity_opt_btn.clear()
+	var idx: int = -1
+	for rarity:String in rarities.keys():
+		idx += 1
+		rarity_opt_btn.add_item(rarity.capitalize())
 		rarity_opt_btn.set_item_metadata(-1, rarities[rarity])
+		if selected_rarity == rarities[rarity]:
+			new_index = idx
+	
+	if new_index != -1:
+		rarity_opt_btn.select(new_index)
 	
 	var sorted_flags: Array = item_flags.keys()
 	sorted_flags.sort_custom(func(a,b): return a.naturalnocasecmp_to(b) < 0)
 	
+	var existing_flags: Dictionary[String, CheckBox] = {}
+	
+	for existing_flag in items_flags_container.get_children():
+		if sorted_flags.has(existing_flag.get_meta(&"flag_id")):
+			existing_flags[existing_flag.get_meta(&"flag_id")] = existing_flag
+			items_flags_container.remove_child(existing_flag)
+		else:
+			items_flags_container.remove_child(existing_flag)
+			existing_flag.queue_free()
+		
 	for flag in sorted_flags:
-		items_flags_container.add_child(
-				create_flag_item(flag, item_flags[flag]))
+		if existing_flags.has(flag):
+			items_flags_container.add_child(existing_flags[flag])
+			existing_flags.erase(flag)
+		else:
+			items_flags_container.add_child(
+					create_flag_item(flag, item_flags[flag]))
+	
+	for remaining_flag in existing_flags.keys():
+		existing_flags[remaining_flag].queue_free()
 	
 	rarity_opt_btn.disabled = rarity_opt_btn.item_count == 0 or not items_ui_enabled
 
@@ -650,6 +685,7 @@ func create_flag_item(flag_id: String, flag_value: ItemSheet.ItemFlag) -> CheckB
 	var new_flag: CheckBox = CheckBox.new()
 	new_flag.text = flag_id.capitalize()
 	new_flag.set_meta(&"flag_value", flag_value)
+	new_flag.set_meta(&"flag_id", flag_id)
 	new_flag.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	new_flag.tooltip_text = new_flag.text
 	new_flag.custom_minimum_size.y = 32.0

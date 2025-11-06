@@ -36,6 +36,7 @@ var ui_enabled: bool = false
 func _ready() -> void:
 	if Engine.is_editor_hint() and get_tree().edited_scene_root == self:
 		return
+	
 	set_ui_enabled(false)
 	update_genders()
 	update_talent_nodes()
@@ -65,12 +66,13 @@ func _something_changed(_arg: Variant = null) -> void:
 	if _unsaved:
 		return
 	_unsaved = true
-	
 
 
 func update_genders() -> void:
 	gender_option_button.clear()
-	var genders: Dictionary = CharacterSheet.Gender
+	var gender_obg: CharacterSheet = CharacterSheet.new()
+	var map: Dictionary = gender_obg.get_script().get_script_constant_map()
+	var genders: Dictionary = map[&"Gender"]
 	
 	for gender:String in genders.keys():
 		gender_option_button.add_item(
@@ -80,22 +82,50 @@ func update_genders() -> void:
 				genders[gender])
 
 
-func update_species_data() -> void:
+func update_species_data(species_catalog: SpeciesCatalog = null) -> void:
+	var currently_selected: StringName = &"" if species_option_button.selected == -1 else species_option_button.get_item_metadata(species_option_button.selected)
+	var new_index: int = -1
+	
 	species_option_button.clear()
+	
 	var species_path: String = EditorNFPlugin.get_project_settings_path("species")
 	
-	if species_path != "" and FileAccess.file_exists(species_path):
-		var pre_res: Resource = load(species_path)
-		if pre_res is SpeciesCatalog:
-			var species:Array[StringName] = pre_res.species()
-			species.sort_custom(func(a,b): return String(a).naturalnocasecmp_to(String(b)) < 0)
-			for species_id in species:
-				species_option_button.add_item(
-						String(species_id).capitalize())
-				species_option_button.set_item_metadata(-1, species_id)
+	if species_catalog == null:
+		if species_path != "" and FileAccess.file_exists(species_path):
+			var pre_res: Resource = load(species_path)
+			if pre_res is SpeciesCatalog:
+				var species:Array[StringName] = pre_res.species()
+				species.sort_custom(func(a,b): return String(a).naturalnocasecmp_to(String(b)) < 0)
+				if not currently_selected.is_empty():
+					new_index = species.find(currently_selected)
+				for species_id in species:
+					var text: String = String(species_id).capitalize()
+					var parent: String = String(pre_res.get_parent_species(species_id))
+					if parent != "":
+						text += " (" + parent + ")"
+					species_option_button.add_item(text)
+					species_option_button.set_item_metadata(-1, species_id)
+	else:
+		var species:Array[StringName] = species_catalog.species()
+		species.sort_custom(func(a,b): return String(a).naturalnocasecmp_to(String(b)) < 0)
+		if not currently_selected.is_empty():
+			new_index = species.find(currently_selected)
+		for species_id in species:
+			var text: String = String(species_id).capitalize()
+			var parent: String = String(species_catalog.get_parent_species(species_id))
+			if parent != "":
+				text += " (" + parent + ")"
+			species_option_button.add_item(text)
+			species_option_button.set_item_metadata(-1, species_id)
 	
 	species_option_button.disabled = not ui_enabled or species_option_button.item_count == 0
 	load_species_data_btn.disabled = species_option_button.disabled
+	
+	if new_index == -1:
+		if 0 < species_option_button.item_count:
+			species_option_button.select(0)
+	else:
+		species_option_button.select(new_index)
 
 
 func update_talent_nodes() -> void:
@@ -105,28 +135,70 @@ func update_talent_nodes() -> void:
 
 	var trait_block: TraitBlock = TraitBlock.new()
 	
-	var stats: Array[StringName] = stat_block.stats()
+	var stats: Array[StringName] = StatBlock.stats()
 	stats.sort_custom(func(a,b): return String(a).naturalnocasecmp_to(String(b)) < 0)
 	
+	var stat_map: Dictionary[StringName, HBoxContainer] = {}
+	for existing_stat in char_stats_container.get_children():
+		char_stats_container.remove_child(existing_stat)
+		if existing_stat.get_meta(&"stat_id") in stats:
+			stat_map[existing_stat.get_meta(&"stat_id")] = existing_stat
+		else:
+			existing_stat.queue_free()
+		
 	for stat_id in stats:
-		var stat = create_stat_item(stat_id, stat_block.get(stat_id))
-		char_stats_container.add_child(stat)
+		if stat_map.has(stat_id):
+			char_stats_container.add_child(stat_map[stat_id])
+			stat_map.erase(stat_id)
+		else:
+			var stat = create_stat_item(stat_id, stat_block.get(stat_id))
+			char_stats_container.add_child(stat)
 	
-	var skills: Array[StringName] = skill_set.skills()
+	for remaining_stat in stat_map:
+		stat_map[remaining_stat].queue_free()
+	
+	var skills: Array[StringName] = SkillSet.skills()
 	skills.sort_custom(func(a,b): return String(a).naturalnocasecmp_to(String(b)) < 0)
 	
+	var skill_map: Dictionary[StringName, HBoxContainer] = {}
+	for existing_skill in char_skill_container.get_children():
+		char_skill_container.remove_child(existing_skill)
+		if skills.has(existing_skill.get_meta(&"skill_id")):
+			skill_map[existing_skill.get_meta(&"skill_id")] = existing_skill
+		else:
+			existing_skill.queue_free()
+	
 	for skill_id in skills:
-		var skill = create_skill_item(skill_id, skill_set.get(skill_id))
-		
-		char_skill_container.add_child(skill)
+		if skill_map.has(skill_id):
+			char_skill_container.add_child(skill_map[skill_id])
+			skill_map.erase(skill_id)
+		else:
+			var skill = create_skill_item(skill_id, skill_set.get(skill_id))
+			char_skill_container.add_child(skill)
 	
-	var traits: Array[StringName] = trait_block.traits()
+	for remaining_skill in skill_map.keys():
+		skill_map[remaining_skill].queue_free()
 	
+	var traits: Array[StringName] = TraitBlock.traits()
 	traits.sort_custom(func(a,b): return String(a).naturalnocasecmp_to(String(b)) < 0)
 	
+	var trait_map: Dictionary[StringName, HBoxContainer] = {}
+	for existing_trait in char_traits_container.get_children():
+		char_traits_container.remove_child(existing_trait)
+		if traits.has(existing_trait.get_meta(&"trait_id")):
+			trait_map[existing_trait.get_meta(&"trait_id")] = existing_trait
+		else:
+			existing_trait.queue_free()
+	
 	for trait_id in traits:
-		var new_trait: HBoxContainer = create_trait_item(trait_id, trait_block.get(trait_id))
-		char_traits_container.add_child(new_trait)
+		if trait_map.has(trait_id):
+			char_traits_container.add_child(trait_map[trait_id])
+			trait_map.erase(trait_id)
+		else:
+			var new_trait: HBoxContainer = create_trait_item(trait_id, trait_block.get(trait_id))
+			char_traits_container.add_child(new_trait)
+	for remaining_trait in trait_map.keys():
+		trait_map[remaining_trait].queue_free()
 
 
 func _on_new_character_pressed() -> void:
@@ -147,7 +219,7 @@ func _on_new_character_pressed() -> void:
 	#set_ui_enabled(true)
 	#return
 	# -----------
-	var resource_selector := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").new()
+	var resource_selector := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	resource_selector.file_mode = resource_selector.FILE_MODE_SAVE_FILE
 	resource_selector.access = resource_selector.ACCESS_RESOURCES
 	resource_selector.title = "Save Character..."
@@ -193,7 +265,7 @@ func _on_open_character_pressed() -> void:
 	#var result: Array = await id_creator.dialog_finished
 	#
 	#if result[0]:
-	var resource_selector := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").new()
+	var resource_selector := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	resource_selector.file_mode = resource_selector.FILE_MODE_OPEN_FILE
 	resource_selector.access = resource_selector.ACCESS_RESOURCES
 	resource_selector.title = "Open Character..."
@@ -216,6 +288,7 @@ func _on_open_character_pressed() -> void:
 			char_tree.create_character(resource_preload, true, false)
 			load_character(resource_preload)
 			current_sheet = resource_preload
+			set_ui_enabled(true)
 			_unsaved = false
 	
 	resource_selector.queue_free()
@@ -397,11 +470,13 @@ func create_stat_item(stat_id: StringName, default: int = 0) -> HBoxContainer:
 	var new_value: SpinBox = SpinBox.new()
 	
 	stat_label.text = String(stat_id).capitalize()
+	stat_label.tooltip_text = stat_label.text
 	stat_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	stat_label.size_flags_stretch_ratio = 2.0
 	stat_label.custom_minimum_size.y = 32
 	stat_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	stat_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	stat_label.mouse_filter = Control.MOUSE_FILTER_STOP
 	
 	new_value.allow_greater = true
 	new_value.allow_lesser = true
@@ -427,11 +502,13 @@ func create_skill_item(skill_id: StringName, default: int = 0) -> HBoxContainer:
 	var new_value: SpinBox = SpinBox.new()
 	
 	skill_label.text = String(skill_id).capitalize()
+	skill_label.tooltip_text = skill_label.text
 	skill_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	skill_label.size_flags_stretch_ratio = 2.0
 	skill_label.custom_minimum_size.y = 32
 	skill_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	skill_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	skill_label.mouse_filter = Control.MOUSE_FILTER_STOP
 	
 	new_value.allow_greater = true
 	new_value.allow_lesser = true
@@ -440,6 +517,7 @@ func create_skill_item(skill_id: StringName, default: int = 0) -> HBoxContainer:
 	new_value.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	new_value.size_flags_stretch_ratio = 3.0
 	new_value.value = default
+	new_value.editable = ui_enabled
 	new_value.value_changed.connect(_something_changed)
 	new_value.set_meta(&"default_value", default)
 	
@@ -457,11 +535,13 @@ func create_trait_item(trait_id: StringName, default: int = 0) -> HBoxContainer:
 	var new_value: SpinBox = SpinBox.new()
 	
 	trait_label.text = String(trait_id).capitalize()
+	trait_label.tooltip_text = trait_label.text
 	trait_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	trait_label.size_flags_stretch_ratio = 2.0
 	trait_label.custom_minimum_size.y = 32
 	trait_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	trait_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	trait_label.mouse_filter = Control.MOUSE_FILTER_STOP
 	
 	new_value.allow_greater = true
 	new_value.allow_lesser = true
@@ -470,6 +550,7 @@ func create_trait_item(trait_id: StringName, default: int = 0) -> HBoxContainer:
 	new_value.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	new_value.size_flags_stretch_ratio = 3.0
 	new_value.value = default
+	new_value.editable = ui_enabled
 	new_value.value_changed.connect(_something_changed)
 	new_value.set_meta(&"default_value", default)
 	
@@ -479,3 +560,27 @@ func create_trait_item(trait_id: StringName, default: int = 0) -> HBoxContainer:
 	new_trait.add_child(new_value)
 	
 	return new_trait
+
+
+func plugin_open_resource(resource: CharacterSheet) -> void:
+	if current_sheet == resource:
+		return
+	
+	if current_sheet != null:
+		save_current_character()
+	
+	if char_tree.has_character(resource):
+		char_tree.select_character(resource)
+	else:
+		if resource.stats == null:
+			resource.stats = StatBlock.new()
+		if resource.skills == null:
+			resource.skills = SkillSet.new()
+		if resource.traits == null:
+			resource.traits = TraitBlock.new()
+		char_tree.create_character(resource, true, false)
+		load_character(resource)
+		current_sheet = resource
+		_unsaved = false
+	
+	set_ui_enabled(true)
