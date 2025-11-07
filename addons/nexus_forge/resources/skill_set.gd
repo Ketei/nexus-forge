@@ -34,12 +34,13 @@ func _on_custom_skill_erased(skill_id: StringName) -> void:
 
 
 static func skills() -> Array[StringName]:
+	const MASK: int = PROPERTY_USAGE_SCRIPT_VARIABLE + PROPERTY_USAGE_STORAGE
 	var sk_st: SkillSet = SkillSet.new()
 	var all_skills: Array[StringName] = []
 	var data: Array[Dictionary] = sk_st.get_script().get_script_property_list()
 	
 	for item in data:
-		if item["type"] != TYPE_INT or item["usage"] != PROPERTY_USAGE_SCRIPT_VARIABLE + PROPERTY_USAGE_EDITOR + PROPERTY_USAGE_STORAGE:
+		if item["type"] != TYPE_INT or not BitUtils.are_bits(item["usage"], MASK, true):
 			continue
 		all_skills.append(StringName(item["name"]))
 	

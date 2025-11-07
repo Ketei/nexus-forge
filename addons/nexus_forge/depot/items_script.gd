@@ -109,7 +109,6 @@ func _on_create_currency_database_pressed(node: Control) -> void:
 		currency_resource = CurrencyCatalog.new()
 		currency_resource.resource_path = result[1]
 		ResourceSaver.save(currency_resource, result[1])
-		currency_resource.resource_path = result[1]
 		ProjectSettings.set_setting(
 				EditorNFPlugin.get_project_settings_path("currency"),
 				result[1])

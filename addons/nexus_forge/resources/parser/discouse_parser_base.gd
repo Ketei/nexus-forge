@@ -4,17 +4,16 @@ extends RefCounted
 
 signal dialog_started
 signal dialog_finished
-@warning_ignore("unused_signal")
+@warning_ignore_start("unused_signal")
 signal dialog_paused
 # "dialog_text": "", "scene": "res://", "font": "res://", "speed": 0.0
 ## Emmited when a dialog event is reached.
-@warning_ignore("unused_signal")
 signal dialog_reached(dialog_data: Dictionary)
 #[
 	#{"unlocked": false, "text": "Available", "target": "uuid"}, 
 	#{"unlocked": true, "text": "Requires more strength", "target": "uuid"}]
-@warning_ignore("unused_signal")
 signal options_reached(options: Array[Dictionary])
+@warning_ignore_restore("unused_signal")
 
 
 enum NodeTypes { 

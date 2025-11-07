@@ -126,6 +126,7 @@ script = ExtResource("2_nnanj")
 custom_minimum_size = Vector2(680, 300)
 layout_mode = 2
 size_flags_horizontal = 3
+dragging_enabled = false
 dragger_visibility = 2
 
 [node name="DiscourseWindow" type="PanelContainer" parent="MainSplitContainer/DiscourseSplitContainer"]
@@ -136,6 +137,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_nnanj")
 script = ExtResource("2_f5jrf")
 
 [node name="ErrorContainer" type="PanelContainer" parent="MainSplitContainer/DiscourseSplitContainer"]
+visible = false
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_y485p")

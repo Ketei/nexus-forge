@@ -19,12 +19,13 @@ static func new_trait_block() -> TraitBlock:
 ## Returns an array with the exported traits in this object.[br]
 ## Does NOT include custom traits.
 static func traits() -> Array[StringName]:
+	const MASK: int = PROPERTY_USAGE_SCRIPT_VARIABLE + PROPERTY_USAGE_STORAGE
 	var block: TraitBlock = TraitBlock.new()
 	var all_traits: Array[StringName] = []
 	var data: Array[Dictionary] = block.get_script().get_script_property_list()
 	
 	for item in data:
-		if item["type"] != TYPE_INT or item["usage"] != PROPERTY_USAGE_SCRIPT_VARIABLE + PROPERTY_USAGE_EDITOR + PROPERTY_USAGE_STORAGE:
+		if item["type"] != TYPE_INT or not BitUtils.are_bits(item["usage"], MASK, true):
 			continue
 		all_traits.append(StringName(item["name"]))
 	

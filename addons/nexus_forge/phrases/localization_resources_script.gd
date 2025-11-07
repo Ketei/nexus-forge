@@ -18,39 +18,54 @@ var map: PhraseMap = null:
 	set(m):
 		map = m
 		new_text_button.disabled = m == null
-		language_ln_edt.editable = m != null
-		region_ln_edt.editable = m != null
+		language_opt_btn.disabled = m == null
+		region_opt_btn.disabled = m == null
 
 var save_required: bool = false
-
 
 @onready var search_file_ln_edt: LineEdit = $MainContainer/FilesContainer/SearchContainer/SearchFileLnEdt
 @onready var file_menu_button: MenuButton = $MainContainer/FilesContainer/SearchContainer/FileMenuButton
 @onready var files_tree: Tree = $MainContainer/FilesContainer/FilesTree
-@onready var language_ln_edt: LineEdit = $MainContainer/FilesContainer/LanguageContainer/LangContainer/LanguageLnEdt
-@onready var region_ln_edt: LineEdit = $MainContainer/FilesContainer/LanguageContainer/RegionContainer/RegionLnEdt
-@onready var search_text_ln_edt: LineEdit = $MainContainer/TextContainer/HBoxContainer/SearchTextLnEdt
-@onready var new_text_button: Button = $MainContainer/TextContainer/HBoxContainer/NewTextButton
-@onready var key_header_split: HSplitContainer = $MainContainer/TextContainer/KeyHeaderSplit
-@onready var search_case_ln_edt: LineEdit = $MainContainer/CaseContainer/HeaderContainer/SearchCaseLnEdt
-@onready var argument_opt_btn: OptionButton = $MainContainer/CaseContainer/HeaderContainer/ArgumentOptBtn
-@onready var new_case_btn: Button = $MainContainer/CaseContainer/HeaderContainer/NewCaseBtn
-@onready var case_header_split: HSplitContainer = $MainContainer/CaseContainer/CaseHeaderSplit
-@onready var cases_split: HSplitContainer = $MainContainer/CaseContainer/KeyScroll/CasesSplit
-@onready var case_node_container: VBoxContainer = $MainContainer/CaseContainer/KeyScroll/CasesSplit/CaseContainer/CaseNodeContainer
-@onready var default_case_ln_edt: LineEdit = $MainContainer/CaseContainer/KeyScroll/CasesSplit/ResultContainer/DefaultCaseLnEdt
-@onready var result_node_container: VBoxContainer = $MainContainer/CaseContainer/KeyScroll/CasesSplit/ResultContainer/ResultNodeContainer
-@onready var key_split_container: HSplitContainer = $MainContainer/TextContainer/KeyScroll/KeySplitContainer
-@onready var key_container: VBoxContainer = $MainContainer/TextContainer/KeyScroll/KeySplitContainer/KeyContainer
-@onready var text_container: VBoxContainer = $MainContainer/TextContainer/KeyScroll/KeySplitContainer/TextContainer
+@onready var language_opt_btn: OptionButton = $MainContainer/FilesContainer/LanguageContainer/LangContainer/LanguageOptBtn
+@onready var region_opt_btn: OptionButton = $MainContainer/FilesContainer/LanguageContainer/RegionContainer/RegionOptBtn
+@onready var search_text_ln_edt: LineEdit = $MainContainer/DataHSplit/TextContainer/HBoxContainer/SearchTextLnEdt
+@onready var new_text_button: Button = $MainContainer/DataHSplit/TextContainer/HBoxContainer/NewTextButton
+@onready var key_header_split: HSplitContainer = $MainContainer/DataHSplit/TextContainer/KeyHeaderSplit
+@onready var key_split_container: HSplitContainer = $MainContainer/DataHSplit/TextContainer/KeyScroll/KeySplitContainer
+@onready var key_container: VBoxContainer = $MainContainer/DataHSplit/TextContainer/KeyScroll/KeySplitContainer/KeyContainer
+@onready var text_container: VBoxContainer = $MainContainer/DataHSplit/TextContainer/KeyScroll/KeySplitContainer/TextContainer
+@onready var search_case_ln_edt: LineEdit = $MainContainer/DataHSplit/CaseContainer/HeaderContainer/SearchCaseLnEdt
+@onready var argument_opt_btn: OptionButton = $MainContainer/DataHSplit/CaseContainer/HeaderContainer/ArgumentOptBtn
+@onready var new_case_btn: Button = $MainContainer/DataHSplit/CaseContainer/HeaderContainer/NewCaseBtn
+@onready var case_header_split: HSplitContainer = $MainContainer/DataHSplit/CaseContainer/CaseHeaderSplit
+@onready var cases_split: HSplitContainer = $MainContainer/DataHSplit/CaseContainer/KeyScroll/CasesSplit
+@onready var case_node_container: VBoxContainer = $MainContainer/DataHSplit/CaseContainer/KeyScroll/CasesSplit/CaseContainer/CaseNodeContainer
+@onready var default_case_ln_edt: LineEdit = $MainContainer/DataHSplit/CaseContainer/KeyScroll/CasesSplit/ResultContainer/DefaultCaseLnEdt
+@onready var result_node_container: VBoxContainer = $MainContainer/DataHSplit/CaseContainer/KeyScroll/CasesSplit/ResultContainer/ResultNodeContainer
 
 
 func _ready() -> void:
 	if Engine.is_editor_hint() and get_tree().edited_scene_root == self:
 		return
+	
+	var locale: PackedStringArray = OS.get_locale().split("_")
+	locale.resize(2)
+	
 	file_menu_button.icon = get_theme_icon("GuiTabMenuHl", "EditorIcons")
 	key_split_container.dragged.connect(_on_scroll_dragged.bind(key_header_split))
 	cases_split.dragged.connect(_on_scroll_dragged.bind(case_header_split))
+	
+	for lang_code in TranslationServer.get_all_languages():
+		language_opt_btn.add_item(TranslationServer.get_language_name(lang_code))
+		language_opt_btn.set_item_metadata(-1, lang_code)
+	
+	select_language(locale[0])
+	
+	for country_code in TranslationServer.get_all_countries():
+		region_opt_btn.add_item(TranslationServer.get_country_name(country_code))
+		region_opt_btn.set_item_metadata(-1, country_code)
+	
+	select_region(locale[1])
 	
 	new_text_button.pressed.connect(_on_new_key_field_button_pressed)
 	new_case_btn.pressed.connect(_on_new_case_button_pressed)
@@ -61,8 +76,8 @@ func _ready() -> void:
 	file_menu_button.get_popup().id_pressed.connect(_on_menu_id_pressed)
 	files_tree.map_close_pressed.connect(_on_map_close_pressed)
 	
-	language_ln_edt.text_changed.connect(_on_file_edited)
-	region_ln_edt.text_changed.connect(_on_file_edited)
+	language_opt_btn.item_selected.connect(_on_file_edited)
+	region_opt_btn.item_selected.connect(_on_file_edited)
 	
 	default_case_ln_edt.text_changed.connect(_on_file_edited)
 	
@@ -215,8 +230,6 @@ func _on_map_close_pressed(closing_map: PhraseMap, requires_save: bool) -> void:
 		argument_opt_btn.disabled = true
 		
 		clear_keys()
-		language_ln_edt.text = ""
-		region_ln_edt.text = ""
 		
 		map = null
 	
@@ -229,6 +242,7 @@ func _on_edit_cases_pressed(text_line: LineEdit, key: LineEdit, button: Button) 
 			save_current_phrase_key()
 		text_line.editable = true
 		button.icon = get_theme_icon("Edit", "EditorIcons")
+		button.tooltip_text = "Edit Cases"
 		selected_key = null
 		selected_format = ""
 		clear_cases()
@@ -244,6 +258,7 @@ func _on_edit_cases_pressed(text_line: LineEdit, key: LineEdit, button: Button) 
 		var old_edit: Button = text_container.get_child(selected_key.get_parent().get_index()).get_child(1)
 		old_edit.get_parent().get_child(0).editable = true
 		old_edit.icon = get_theme_icon("Edit", "EditorIcons")
+		old_edit.tooltip_text = "Edit Cases"
 		search_case_ln_edt.text = ""
 		search_case_ln_edt.set_meta(&"current_search", "")
 		clear_cases()
@@ -277,6 +292,7 @@ func _on_edit_cases_pressed(text_line: LineEdit, key: LineEdit, button: Button) 
 	
 	text_line.editable = false
 	button.icon = get_theme_icon("Unlock", "EditorIcons")
+	button.tooltip_text = "Unlock Text"
 
 
 func _on_new_key_field_button_pressed() -> void:
@@ -284,7 +300,7 @@ func _on_new_key_field_button_pressed() -> void:
 	_on_file_edited()
 
 
-func _on_file_edited(_arg: String = "") -> void:
+func _on_file_edited(_arg = null) -> void:
 	if save_required:
 		return
 	save_required = true
@@ -317,14 +333,13 @@ func _on_file_map_canceled(dialog: FileDialog) -> void:
 	dialog.queue_free()
 
 
-func _on_file_map_selected(path: String, dialog: FileDialog) -> void:
+func _on_file_map_selected(path: String, dialog: ConfirmationDialog) -> void:
 	if dialog.file_mode == dialog.FILE_MODE_SAVE_FILE:
 		if selected_key != null:
 			save_current_resource()
 		var new_map: PhraseMap = PhraseMap.new()
-		ResourceSaver.save(new_map, path)
-		if ResourceLoader.has_cached(path):
-			new_map.take_over_path(path)
+		new_map.language = language_opt_btn.get_selected_metadata()
+		new_map.region = region_opt_btn.get_selected_metadata()
 		new_map.resource_path = path
 		files_tree.add_map(new_map, true, false)
 		load_map(new_map)
@@ -423,12 +438,32 @@ func plugin_open_resource(resource: PhraseMap) -> void:
 	save_required = false
 
 
+func select_language(language_code: String) -> void:
+	if language_code.is_empty():
+		return
+	
+	for idx in range(language_opt_btn.item_count):
+		if language_opt_btn.get_item_metadata(idx) == language_code:
+			language_opt_btn.select(idx)
+			return
+
+
+func select_region(country_code: String) -> void:
+	if country_code.is_empty():
+		return
+	
+	for idx in range(region_opt_btn.item_count):
+		if region_opt_btn.get_item_metadata(idx) == country_code:
+			region_opt_btn.select(idx)
+			return
+
+
 func load_map(new_map: PhraseMap) -> void:
 	clear_keys()
 	search_text_ln_edt.text = ""
 	search_text_ln_edt.set_meta(&"current_search", "")
-	language_ln_edt.text = new_map.language
-	region_ln_edt.text = new_map.region
+	select_language(new_map.language)
+	select_region(new_map.region)
 	clear_cases()
 	search_case_ln_edt.text = ""
 	search_case_ln_edt.set_meta(&"current_search", "")
@@ -718,11 +753,8 @@ func save_current_resource(fix_keys: bool = false) -> void:
 	if selected_format != "":
 		save_current_phrase_key(fix_keys)
 	
-	map.language = language_ln_edt.text.strip_edges()
-	map.region = region_ln_edt.text.strip_edges()
-	
-	language_ln_edt.text = map.language
-	region_ln_edt.text = map.region
+	map.language = language_opt_btn.get_selected_metadata()
+	map.region = region_opt_btn.get_selected_metadata()
 	
 	# Correct key: Current text
 	var keys: Dictionary[String, String] = {}

@@ -1,3 +1,4 @@
+@tool
 class_name PhraseMap
 extends Resource
 ## A resource to hold localized argument-based strings.

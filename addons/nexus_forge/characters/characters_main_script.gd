@@ -129,13 +129,15 @@ func update_species_data(species_catalog: SpeciesCatalog = null) -> void:
 
 
 func update_talent_nodes() -> void:
-	var stat_block: StatBlock = StatBlock.new()
+	#var stat_block: StatBlock = StatBlock.new()
 	
 	var skill_set: SkillSet = SkillSet.new()
 
 	var trait_block: TraitBlock = TraitBlock.new()
 	
-	var stats: Array[StringName] = StatBlock.stats()
+	var stats_data: Dictionary[StringName, int] = StatBlock.stats()
+	var stats: Array[String] = []
+	stats.assign(stats_data.keys())
 	stats.sort_custom(func(a,b): return String(a).naturalnocasecmp_to(String(b)) < 0)
 	
 	var stat_map: Dictionary[StringName, HBoxContainer] = {}
@@ -151,7 +153,7 @@ func update_talent_nodes() -> void:
 			char_stats_container.add_child(stat_map[stat_id])
 			stat_map.erase(stat_id)
 		else:
-			var stat = create_stat_item(stat_id, stat_block.get(stat_id))
+			var stat = create_stat_item(stat_id, stats_data[stat_id])
 			char_stats_container.add_child(stat)
 	
 	for remaining_stat in stat_map:
@@ -179,6 +181,7 @@ func update_talent_nodes() -> void:
 	for remaining_skill in skill_map.keys():
 		skill_map[remaining_skill].queue_free()
 	
+
 	var traits: Array[StringName] = TraitBlock.traits()
 	traits.sort_custom(func(a,b): return String(a).naturalnocasecmp_to(String(b)) < 0)
 	
@@ -368,19 +371,19 @@ func set_ui_enabled(enabled: bool) -> void:
 func reset_stats() -> void:
 	for item in char_stats_container.get_children():
 		if item is HBoxContainer:
-			item.get_child(1).set_value_no_signal(item.get_child(1).get_meta(&"default_value", 0))
+			item.get_child(1).set_value_no_signal(0.0)
 
 
 func reset_skills() -> void:
 	for item in char_skill_container.get_children():
 		if item is HBoxContainer:
-			item.get_child(1).set_value_no_signal(item.get_child(1).get_meta(&"default_value", 0))
+			item.get_child(1).set_value_no_signal(item.get_meta(&"default_value", 0.0))
 
 
 func reset_traits() -> void:
 	for item in char_traits_container.get_children():
 		if item is HBoxContainer:
-			item.get_child(1).set_value_no_signal(item.get_child(1).get_meta(&"default_value", 0))
+			item.get_child(1).set_value_no_signal(item.get_meta(&"default_value", 0.0))
 
 
 func save_current_character() -> void:
@@ -436,8 +439,8 @@ func load_character(sheet: CharacterSheet) -> void:
 	
 	for stat in char_stats_container.get_children():
 		if stat is HBoxContainer:
-			stat.get_child(1).set_value_no_signal(
-					sheet.stats.get(stat.get_meta(&"stat_id")))
+			var stat_range: ValueRange = sheet.stats.get(stat.get_meta(&"stat_id"))
+			stat.get_child(1).set_value_no_signal(stat_range.value if stat_range != null else 1.0)
 	
 	for skill in char_skill_container.get_children():
 		if skill is HBoxContainer:
@@ -463,8 +466,8 @@ func select_gender(gender: CharacterSheet.Gender) -> void:
 			gender_option_button.select(item_idx)
 			break
 
-
-func create_stat_item(stat_id: StringName, default: int = 0) -> HBoxContainer:
+# default must be a numeric value (float/type
+func create_stat_item(stat_id: StringName, type: int) -> HBoxContainer:
 	var new_stat: HBoxContainer = HBoxContainer.new()
 	var stat_label: Label = Label.new()
 	var new_value: SpinBox = SpinBox.new()
@@ -483,10 +486,13 @@ func create_stat_item(stat_id: StringName, default: int = 0) -> HBoxContainer:
 	new_value.custom_minimum_size.y = 32
 	new_value.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	new_value.size_flags_stretch_ratio = 3.0
-	new_value.value = default
+	new_value.value = 0
+	if type == TYPE_INT:
+		new_value.step = 1.0
+	else:
+		new_value.step = 0.01
 	new_value.value_changed.connect(_something_changed)
 	new_value.editable = ui_enabled
-	new_value.set_meta(&"default_value", default)
 	
 	new_stat.set_meta(&"stat_id", stat_id)
 	
@@ -496,7 +502,7 @@ func create_stat_item(stat_id: StringName, default: int = 0) -> HBoxContainer:
 	return new_stat
 
 
-func create_skill_item(skill_id: StringName, default: int = 0) -> HBoxContainer:
+func create_skill_item(skill_id: StringName, default_value: int) -> HBoxContainer:
 	var new_skill: HBoxContainer = HBoxContainer.new()
 	var skill_label: Label = Label.new()
 	var new_value: SpinBox = SpinBox.new()
@@ -512,16 +518,16 @@ func create_skill_item(skill_id: StringName, default: int = 0) -> HBoxContainer:
 	
 	new_value.allow_greater = true
 	new_value.allow_lesser = true
-	new_value.step = 1.0
 	new_value.custom_minimum_size.y = 32
 	new_value.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	new_value.size_flags_stretch_ratio = 3.0
-	new_value.value = default
+	new_value.step = 1.0
+	new_value.value = default_value
 	new_value.editable = ui_enabled
 	new_value.value_changed.connect(_something_changed)
-	new_value.set_meta(&"default_value", default)
 	
 	new_skill.set_meta(&"skill_id", skill_id)
+	new_skill.set_meta(&"default_value", default_value)
 	
 	new_skill.add_child(skill_label)
 	new_skill.add_child(new_value)
@@ -529,7 +535,7 @@ func create_skill_item(skill_id: StringName, default: int = 0) -> HBoxContainer:
 	return new_skill
 
 
-func create_trait_item(trait_id: StringName, default: int = 0) -> HBoxContainer:
+func create_trait_item(trait_id: StringName, default_value: int) -> HBoxContainer:
 	var new_trait: HBoxContainer = HBoxContainer.new()
 	var trait_label: Label = Label.new()
 	var new_value: SpinBox = SpinBox.new()
@@ -546,15 +552,19 @@ func create_trait_item(trait_id: StringName, default: int = 0) -> HBoxContainer:
 	new_value.allow_greater = true
 	new_value.allow_lesser = true
 	new_value.step = 1.0
+	new_value.value = default_value
+	#if type == TYPE_INT:
+	#else:
+		#new_value.step = 0.01
 	new_value.custom_minimum_size.y = 32
 	new_value.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	new_value.size_flags_stretch_ratio = 3.0
-	new_value.value = default
 	new_value.editable = ui_enabled
 	new_value.value_changed.connect(_something_changed)
-	new_value.set_meta(&"default_value", default)
+	#new_value.set_meta(&"default_value", default)
 	
 	new_trait.set_meta(&"trait_id", trait_id)
+	new_trait.set_meta(&"default_value", default_value)
 	
 	new_trait.add_child(trait_label)
 	new_trait.add_child(new_value)

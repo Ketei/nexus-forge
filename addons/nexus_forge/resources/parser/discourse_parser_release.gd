@@ -3,90 +3,90 @@ extends DialogParser
 
 var localization: DiscourseDialogLocale = null 
 # Example of how data will be structured in the dialog resource (Release).
-const store = {
-		NodeTypes.DIALOG: {
-			"node_type": NodeTypes.DIALOG,
-			"character_id": &"",
-			"persist": true,
-			"character_settings": {},
-			"dialog_settings": {},
-			"text_source": &"", # External key source for dialog
-			"text_key": &"", # Refers to the localization
-			"next_node": &""},
-		NodeTypes.OPTIONS: {
-			"node_type": null,
-			"options": [
-				{"next_node": "", "settings": {"available": &"", "locked": &"", "lock_hint": &""}},
-				{"next_node": "", "settings": {}}]},
-		NodeTypes.BRANCH: {
-			"node_type": null,
-			"result": &"", # What node provides the result
-			"case_true": &"",
-			"case_false": &""},
-		NodeTypes.CONDITION_SELECT: {
-			"node_type": null,
-			"result": &"", # What node provides the result
-			"true_value": &"",
-			"false_value": &""},
-		NodeTypes.COMPARATION: {
-			"node_type": null,
-			"operator": OP_EQUAL,
-			"value_a": &"",
-			"value_b": &""},
-		NodeTypes.EVENT: {
-			"variable_path": &"",
-			"variable": &"",
-			"value": &"",
-			"callable": &"",
-			"signal": &"",
-			"next_node": &""},
-		NodeTypes.MATCH: {
-			"case_default": &"",
-			"match_value": &"",
-			"cases": [
-				{"value": 0, "next_node": &""},
-				{"value": "X3", "next_node": &""}]},
-		NodeTypes.PAUSE: {
-			"next_node": &""},
-		NodeTypes.RANDOM: {
-			"default_override": &"",
-			"options": [
-				{"target": &"", "weight": &""}]},
-		NodeTypes.TYPE_GUARD: {
-			"type": TYPE_INT,
-			"value": &"",
-			"fallback": 100},
-		NodeTypes.VALUE: {
-			"value": 50},
-		NodeTypes.SIGNAL: {
-			"signal": &"",
-			"arguments": [&"", &""]}, # Sources for the arguments
-		NodeTypes.CALLABLE: {
-			"method": &"",
-			"arguments": [&""]},
-		NodeTypes.CALLABLE_RETURN: {
-			"method": &"",
-			"arguments": [&"", &""]},
-		NodeTypes.VARIABLE_GET: {
-			"path": &"",
-			"variable": &""},
-		NodeTypes.RANDOM_VALUE: {
-			"random_type": TYPE_BOOL,
-			"min_value": 0.0,
-			"max_value": 100.0,
-			"min_source": &"",
-			"max_source": &""},
-		NodeTypes.RESOURCE: {
-			"uuid": ""},
-		NodeTypes.DATA_EVENT: {
-			"variable_path": &"",
-			"variable": &"",
-			"value": &"",
-			"callable": &"",
-			"signal": &"",
-			"data_source": &""}, # Where is the data to get.
-		NodeTypes.LOCALIZED_TEXT: {
-			"text": &""}} # Key to localization
+#const store = {
+		#NodeTypes.DIALOG: {
+			#"node_type": NodeTypes.DIALOG,
+			#"character_id": &"",
+			#"persist": true,
+			#"character_settings": {},
+			#"dialog_settings": {},
+			#"text_source": &"", # External key source for dialog
+			#"text_key": &"", # Refers to the localization
+			#"next_node": &""},
+		#NodeTypes.OPTIONS: {
+			#"node_type": null,
+			#"options": [
+				#{"next_node": "", "settings": {"available": &"", "locked": &"", "lock_hint": &""}},
+				#{"next_node": "", "settings": {}}]},
+		#NodeTypes.BRANCH: {
+			#"node_type": null,
+			#"result": &"", # What node provides the result
+			#"case_true": &"",
+			#"case_false": &""},
+		#NodeTypes.CONDITION_SELECT: {
+			#"node_type": null,
+			#"result": &"", # What node provides the result
+			#"true_value": &"",
+			#"false_value": &""},
+		#NodeTypes.COMPARATION: {
+			#"node_type": null,
+			#"operator": OP_EQUAL,
+			#"value_a": &"",
+			#"value_b": &""},
+		#NodeTypes.EVENT: {
+			#"variable_path": &"",
+			#"variable": &"",
+			#"value": &"",
+			#"callable": &"",
+			#"signal": &"",
+			#"next_node": &""},
+		#NodeTypes.MATCH: {
+			#"case_default": &"",
+			#"match_value": &"",
+			#"cases": [
+				#{"value": 0, "next_node": &""},
+				#{"value": "X3", "next_node": &""}]},
+		#NodeTypes.PAUSE: {
+			#"next_node": &""},
+		#NodeTypes.RANDOM: {
+			#"default_override": &"",
+			#"options": [
+				#{"target": &"", "weight": &""}]},
+		#NodeTypes.TYPE_GUARD: {
+			#"type": TYPE_INT,
+			#"value": &"",
+			#"fallback": 100},
+		#NodeTypes.VALUE: {
+			#"value": 50},
+		#NodeTypes.SIGNAL: {
+			#"signal": &"",
+			#"arguments": [&"", &""]}, # Sources for the arguments
+		#NodeTypes.CALLABLE: {
+			#"method": &"",
+			#"arguments": [&""]},
+		#NodeTypes.CALLABLE_RETURN: {
+			#"method": &"",
+			#"arguments": [&"", &""]},
+		#NodeTypes.VARIABLE_GET: {
+			#"path": &"",
+			#"variable": &""},
+		#NodeTypes.RANDOM_VALUE: {
+			#"random_type": TYPE_BOOL,
+			#"min_value": 0.0,
+			#"max_value": 100.0,
+			#"min_source": &"",
+			#"max_source": &""},
+		#NodeTypes.RESOURCE: {
+			#"uuid": ""},
+		#NodeTypes.DATA_EVENT: {
+			#"variable_path": &"",
+			#"variable": &"",
+			#"value": &"",
+			#"callable": &"",
+			#"signal": &"",
+			#"data_source": &""}, # Where is the data to get.
+		#NodeTypes.LOCALIZED_TEXT: {
+			#"text": &""}} # Key to localization
 			
 
 
@@ -346,7 +346,7 @@ func _locale_set(new_language: String, new_region: String = "base") -> void:
 
 func _load_locale(new_language: String, new_region: String) -> void:
 	var locale_path: String = str(
-			"res://localization/", # Project settings base path
+			ProjectSettings.get_setting("nexus_forge/localization_directory", "res://localization/"), # Project settings base path
 			new_language,
 			"-",
 			new_region,

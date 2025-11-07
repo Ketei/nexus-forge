@@ -45,100 +45,92 @@ const NodeTypes := DialogParser.NodeTypes
 	#}
 }
 
-
-
-
-
-
-
-
-
+@export var dialog_nodes: Dictionary[StringName, Dictionary] = {}
 
 var parsed_dialog_cache: Cache
-@export var dialog_nodes: Dictionary[StringName, Dictionary] = {}
-var storex = {
-		NodeTypes.DIALOG: {
-			"node_type": NodeTypes.DIALOG,
-			"character_id": &"",
-			"persist": true,
-			"character_settings": {
-				"display_name": "",
-				"portrait_id": "",
-				"display_name_logic": &"",
-				"portrait_id_logic": &""},
-			"dialog_settings": &"",
-			"text_source": &"", # External source for the dialog
-			"next_node": &""},
-		NodeTypes.OPTIONS: {
-			"node_type": null,
-			"options": [{"text": "", "next_node": "", "settings": &""}, {}]},
-		NodeTypes.BRANCH: {
-			"node_type": null,
-			"result": &"", # What node provides the result
-			"case_true": &"",
-			"case_false": &""},
-		NodeTypes.CONDITION_SELECT: {
-			"node_type": null,
-			"result": &"", # What node provides the result
-			"true_value": &"",
-			"false_value": &""},
-		NodeTypes.COMPARATION: {
-			"node_type": null,
-			"operator": OP_EQUAL,
-			"value_a": &"",
-			"value_b": &""},
-		NodeTypes.EVENT: {
-			"variable_path": &"",
-			"variable": &"",
-			"value": &"",
-			"callable": &"",
-			"signal": &"",
-			"next_node": &""},
-		NodeTypes.MATCH: {
-			"case_default": &"",
-			"match_value": &"",
-			"cases": [
-				{"value": 0, "next_node": &""},
-				{"value": "X3", "next_node": &""}]},
-		NodeTypes.PAUSE: {
-			"next_node": &""},
-		NodeTypes.RANDOM: {
-			"default_override": &"",
-			"options": [
-				{"target": &"", "weight": &""}]},
-		NodeTypes.TYPE_GUARD: {
-			"type": TYPE_INT,
-			"value": &"",
-			"fallback": 100},
-		NodeTypes.VALUE: {
-			"value": 50},
-		NodeTypes.SIGNAL: {
-			"signal": &"",
-			"arguments": [&"", &""]}, # Sources for the arguments
-		NodeTypes.CALLABLE: {
-			"method": &"",
-			"arguments": [&""]},
-		NodeTypes.CALLABLE_RETURN: {
-			"method": &"",
-			"arguments": [&"", &""]},
-		NodeTypes.VARIABLE_GET: {
-			"path": &"",
-			"variable": &""},
-		NodeTypes.RANDOM_VALUE: {
-			"random_type": TYPE_BOOL,
-			"min_value": 0.0,
-			"max_value": 100.0,
-			"min_source": &"",
-			"max_source": &""},
-		NodeTypes.RESOURCE: {
-			"uuid": ""},
-		NodeTypes.DATA_EVENT: {
-			"variable_path": &"",
-			"variable": &"",
-			"value": &"",
-			"callable": &"",
-			"signal": &"",
-			"data_source": &""}} # Where is the data to get.
+#var storex = {
+		#NodeTypes.DIALOG: {
+			#"node_type": NodeTypes.DIALOG,
+			#"character_id": &"",
+			#"persist": true,
+			#"character_settings": {
+				#"display_name": "",
+				#"portrait_id": "",
+				#"display_name_logic": &"",
+				#"portrait_id_logic": &""},
+			#"dialog_settings": &"",
+			#"text_source": &"", # External source for the dialog
+			#"next_node": &""},
+		#NodeTypes.OPTIONS: {
+			#"node_type": null,
+			#"options": [{"text": "", "next_node": "", "settings": &""}, {}]},
+		#NodeTypes.BRANCH: {
+			#"node_type": null,
+			#"result": &"", # What node provides the result
+			#"case_true": &"",
+			#"case_false": &""},
+		#NodeTypes.CONDITION_SELECT: {
+			#"node_type": null,
+			#"result": &"", # What node provides the result
+			#"true_value": &"",
+			#"false_value": &""},
+		#NodeTypes.COMPARATION: {
+			#"node_type": null,
+			#"operator": OP_EQUAL,
+			#"value_a": &"",
+			#"value_b": &""},
+		#NodeTypes.EVENT: {
+			#"variable_path": &"",
+			#"variable": &"",
+			#"value": &"",
+			#"callable": &"",
+			#"signal": &"",
+			#"next_node": &""},
+		#NodeTypes.MATCH: {
+			#"case_default": &"",
+			#"match_value": &"",
+			#"cases": [
+				#{"value": 0, "next_node": &""},
+				#{"value": "X3", "next_node": &""}]},
+		#NodeTypes.PAUSE: {
+			#"next_node": &""},
+		#NodeTypes.RANDOM: {
+			#"default_override": &"",
+			#"options": [
+				#{"target": &"", "weight": &""}]},
+		#NodeTypes.TYPE_GUARD: {
+			#"type": TYPE_INT,
+			#"value": &"",
+			#"fallback": 100},
+		#NodeTypes.VALUE: {
+			#"value": 50},
+		#NodeTypes.SIGNAL: {
+			#"signal": &"",
+			#"arguments": [&"", &""]}, # Sources for the arguments
+		#NodeTypes.CALLABLE: {
+			#"method": &"",
+			#"arguments": [&""]},
+		#NodeTypes.CALLABLE_RETURN: {
+			#"method": &"",
+			#"arguments": [&"", &""]},
+		#NodeTypes.VARIABLE_GET: {
+			#"path": &"",
+			#"variable": &""},
+		#NodeTypes.RANDOM_VALUE: {
+			#"random_type": TYPE_BOOL,
+			#"min_value": 0.0,
+			#"max_value": 100.0,
+			#"min_source": &"",
+			#"max_source": &""},
+		#NodeTypes.RESOURCE: {
+			#"uuid": ""},
+		#NodeTypes.DATA_EVENT: {
+			#"variable_path": &"",
+			#"variable": &"",
+			#"value": &"",
+			#"callable": &"",
+			#"signal": &"",
+			#"data_source": &""}} # Where is the data to get.
 #var data: Dictionary = {
 	#&"UUID_A": {"type": DataTypes.DATA, "data": "Hello World"},
 	#&"UUID_B": {

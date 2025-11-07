@@ -147,7 +147,7 @@ func save() -> void:
 			_variables_resource,
 			ProjectSettings.get_setting(
 					EditorNFPlugin.get_project_settings_path("variables"),
-					""))
+					_variables_resource.resource_path))
 	_unsaved = false
 
 

@@ -33,6 +33,7 @@ const DialogNodes = DiscourseGraphNode.DialogueNodeType
 # Localizations with the same id will be merged toguether on the release file.
 # If empty then each conversation will have it's own unique locale file.
 @export var locale_group: String = ""
+
 #@export var node_localization: Dictionary[String, Dictionary] = {
 	#"a809f219-f5e1-4dc2-a041-4d200062dd53": {
 		#"common": {"dialog": "10-5=5"}},
@@ -876,8 +877,8 @@ func generate_localization_files(conversation_id: StringName, base_path: String,
 
 
 # Only call if the resource file already exists in the project directory!
-func save() -> void:
-	ResourceSaver.save(self)
+#func save() -> void:
+	#ResourceSaver.save(self)
 
 
 func get_node_localization_data() -> Dictionary[StringName, Dictionary]:

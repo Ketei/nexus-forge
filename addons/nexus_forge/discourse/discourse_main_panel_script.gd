@@ -918,7 +918,6 @@ func _on_conversation_file_saved(path: String, dialog: FileDialog) -> void:
 			new_conv,
 			path)
 	new_conv.resource_path = path
-	new_conv.resource_name = path.get_basename()
 	if not discourse_window.are_conversation_options_enabled():
 		discourse_window.set_graph_edit_visible(true)
 		discourse_window.set_conversation_options_enabled(true)
@@ -1210,7 +1209,8 @@ func save_current_dialog() -> void:
 								language,
 								region)
 	_unsaved = false
-	active_conversation.save()
+	#active_conversation.save()
+	ResourceSaver.save(active_conversation)
 	active_conversation_item.get_metadata(0)["unsaved"] = false
 	active_conversation_item.get_metadata(0)["offset_changed"] = false
 
@@ -1280,9 +1280,9 @@ func save_all_dialogs() -> void:
 										localizations[localized_uuid]["localization"][language][region]["options"],
 										language,
 										region)
-			active_conversation.save()
+			ResourceSaver.save(active_conversation)
 		else:
-			unsaved_conversation.save()
+			ResourceSaver.save(unsaved_conversation)
 	
 	_unsaved = false
 	set_all_files_saved()

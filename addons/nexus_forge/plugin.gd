@@ -6,7 +6,6 @@ extends EditorPlugin
 const MAIN_SCENE = preload("res://addons/nexus_forge/NexusForgeMainScene.tscn")
 const PLUGIN_NAME: String = "NexusForge"
 const PLUGIN_ICON_PATH: String = "res://addons/nexus_forge/icons/plugin_icon.svg"
-# Setting_path: default_value
 const HANDLED_CLASSES: Array[StringName] = [&"EditorDiscourseDialog", &"CharacterSheet", &"PhraseMap"]
 const SETTINGS_PATHS: Dictionary[String, Dictionary] = {
 	"discourse": {
@@ -53,20 +52,20 @@ static func get_project_settings_path(module: String) -> String:
 
 
 func _enter_tree() -> void:
-	editor_view = MAIN_SCENE.instantiate()
-	editor_view.visible = false
 	export_plugin = preload("res://addons/nexus_forge/export_plugin.gd").new()
 	add_export_plugin(export_plugin)
+	verify_project_settings()
+	editor_view = MAIN_SCENE.instantiate()
+	editor_view.visible = false
 	EditorInterface.get_editor_main_screen().add_child(editor_view)
-	
 	resource_saved.connect(_on_resource_saved)
 
 
 func _build() -> bool:
 	var path: String = ProjectSettings.get_setting(
-			get_project_settings_path("discourse")).strip_edges()
+			get_project_settings_path("discourse"), "res://localization/").strip_edges()
 	
-	var valid_path: bool = path != "" and path.is_valid_filename() and path.begins_with("res://") and path.get_extension() == ""
+	var valid_path: bool = path != "" and path.is_absolute_path() and path.begins_with("res://") and path.get_extension() == ""
 	
 	if not valid_path:
 		printerr("[ERROR] NexusForge: Discourse needs a valid folder path for localization files on project settings.")
@@ -110,6 +109,13 @@ func _make_visible(visible):
 
 
 func _enable_plugin() -> void:
+	add_autoload_singleton(
+			"NexusForge",
+			"res://addons/nexus_forge/classes/autoload/nexus_forge_singleton.gd")
+
+
+func verify_project_settings() -> void:
+	var save_settings: bool = false
 	for tool_id in SETTINGS_PATHS.keys():
 		if not ProjectSettings.has_setting(SETTINGS_PATHS[tool_id]["setting_path"]):
 			ProjectSettings.set_setting(
@@ -118,12 +124,11 @@ func _enable_plugin() -> void:
 			ProjectSettings.set_initial_value(
 					SETTINGS_PATHS[tool_id]["setting_path"],
 					SETTINGS_PATHS[tool_id]["default_value"])
+			if save_settings == false:
+				save_settings = true
 	
-	add_autoload_singleton(
-			"NexusForge",
-			"res://addons/nexus_forge/classes/autoload/nexus_forge_singleton.gd")
-
-	ProjectSettings.save()
+	if save_settings:
+		ProjectSettings.save()
 
 
 func _disable_plugin() -> void:
@@ -147,8 +152,8 @@ func _handles(object: Object) -> bool:
 
 
 func _edit(object: Object) -> void:
-	_make_visible(true)
 	if _editor_ready() and object != null:
+		_make_visible(true)
 		editor_view.handle_resource(object)
 
 

@@ -64,7 +64,7 @@ func _input(event: InputEvent) -> void:
 					tool_tab_bar.current_tab = posmod(tool_tab_bar.current_tab - 1, tool_count)
 				else:
 					tool_tab_bar.current_tab = posmod(tool_tab_bar.current_tab + 1, tool_count)
-			get_viewport().set_input_as_handled()
+				get_viewport().set_input_as_handled()
 
 
 func _on_tab_changed(tab: int) -> void:
@@ -112,15 +112,24 @@ func has_unsaved_changes() -> bool:
 
 
 func save_resources() -> void:
-	discourse.save_all_dialogs()
-	variables.save()
-	characters.save()
-	species.save()
-	talents.save()
-	items.save()
-	recipes.save()
-	quests.save()
-	phrase_maps.save_all()
+	if discourse.has_unsaved_files():
+		discourse.save_all_dialogs()
+	if variables._unsaved:
+		variables.save()
+	if characters.has_unsaved_files():
+		characters.save()
+	if species._unsaved:
+		species.save()
+	if talents._unsaved:
+		talents.save()
+	if items._unsaved:
+		items.save()
+	if recipes._unsaved:
+		recipes.save()
+	if quests._unsaved:
+		quests.save()
+	if phrase_maps.has_unsaved_files():
+		phrase_maps.save_all()
 
 
 func reload_stats() -> void:

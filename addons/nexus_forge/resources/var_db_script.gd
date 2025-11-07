@@ -110,12 +110,3 @@ func is_folder_empty(folder_path: String) -> bool:
 ## Erases all folders and variables.
 func clear() -> void:
 	_variables.clear()
-
-
-# Saves the physical resource, use only on the editor.
-#func save() -> void:
-	#ResourceSaver.save(
-		#self,
-		#ProjectSettings.get_setting(
-			#EditorNFPlugin.get_project_settings_path("variables"),
-			#"res://variables_resource.tres"))

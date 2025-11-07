@@ -37,12 +37,15 @@ grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_txndr")
 script = ExtResource("1_rbj3j")
 
-[node name="MainContainer" type="HBoxContainer" parent="."]
-layout_mode = 2
-
-[node name="FilesContainer" type="VBoxContainer" parent="MainContainer"]
+[node name="MainContainer" type="HSplitContainer" parent="."]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_constants/minimum_grab_thickness = 10
+split_offset = 255
+
+[node name="FilesContainer" type="VBoxContainer" parent="MainContainer"]
+custom_minimum_size = Vector2(180, 0)
+layout_mode = 2
 
 [node name="Label" type="Label" parent="MainContainer/FilesContainer"]
 layout_mode = 2
@@ -86,10 +89,12 @@ layout_mode = 2
 text = "Language"
 vertical_alignment = 1
 
-[node name="LanguageLnEdt" type="LineEdit" parent="MainContainer/FilesContainer/LanguageContainer/LangContainer"]
+[node name="LanguageOptBtn" type="OptionButton" parent="MainContainer/FilesContainer/LanguageContainer/LangContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
-editable = false
+disabled = true
+text_overrun_behavior = 3
+fit_to_longest_item = false
 
 [node name="RegionContainer" type="HBoxContainer" parent="MainContainer/FilesContainer/LanguageContainer"]
 layout_mode = 2
@@ -100,23 +105,28 @@ layout_mode = 2
 text = "Region"
 vertical_alignment = 1
 
-[node name="RegionLnEdt" type="LineEdit" parent="MainContainer/FilesContainer/LanguageContainer/RegionContainer"]
+[node name="RegionOptBtn" type="OptionButton" parent="MainContainer/FilesContainer/LanguageContainer/RegionContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
-editable = false
+disabled = true
+text_overrun_behavior = 3
+fit_to_longest_item = false
 
-[node name="VSeparator2" type="VSeparator" parent="MainContainer"]
+[node name="DataHSplit" type="HSplitContainer" parent="MainContainer"]
 layout_mode = 2
+theme_override_constants/minimum_grab_thickness = 10
+split_offset = -600
 
-[node name="TextContainer" type="VBoxContainer" parent="MainContainer"]
+[node name="TextContainer" type="VBoxContainer" parent="MainContainer/DataHSplit"]
+custom_minimum_size = Vector2(350, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 2.2
 
-[node name="HBoxContainer" type="HBoxContainer" parent="MainContainer/TextContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="MainContainer/DataHSplit/TextContainer"]
 layout_mode = 2
 
-[node name="SearchTextLnEdt" type="LineEdit" parent="MainContainer/TextContainer/HBoxContainer"]
+[node name="SearchTextLnEdt" type="LineEdit" parent="MainContainer/DataHSplit/TextContainer/HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 tooltip_text = "Prefixing a search with \"key:\" will only show entries where
@@ -126,29 +136,29 @@ placeholder_text = "Search | Filters: key:(Key), text:(Text)"
 caret_blink = true
 metadata/current_search = ""
 
-[node name="NewTextButton" type="Button" parent="MainContainer/TextContainer/HBoxContainer"]
+[node name="NewTextButton" type="Button" parent="MainContainer/DataHSplit/TextContainer/HBoxContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "New Key-Text pair."
 disabled = true
 icon = ExtResource("2_37r36")
 
-[node name="HSeparator" type="HSeparator" parent="MainContainer/TextContainer"]
+[node name="HSeparator" type="HSeparator" parent="MainContainer/DataHSplit/TextContainer"]
 layout_mode = 2
 
-[node name="KeyHeaderSplit" type="HSplitContainer" parent="MainContainer/TextContainer"]
+[node name="KeyHeaderSplit" type="HSplitContainer" parent="MainContainer/DataHSplit/TextContainer"]
 layout_mode = 2
 split_offset = 170
 dragging_enabled = false
 
-[node name="Label" type="Label" parent="MainContainer/TextContainer/KeyHeaderSplit"]
+[node name="Label" type="Label" parent="MainContainer/DataHSplit/TextContainer/KeyHeaderSplit"]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 text = "Key"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="Label2" type="Label" parent="MainContainer/TextContainer/KeyHeaderSplit"]
+[node name="Label2" type="Label" parent="MainContainer/DataHSplit/TextContainer/KeyHeaderSplit"]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_vertical = 1
@@ -156,36 +166,33 @@ text = "Text"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="KeyScroll" type="ScrollContainer" parent="MainContainer/TextContainer"]
+[node name="KeyScroll" type="ScrollContainer" parent="MainContainer/DataHSplit/TextContainer"]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("StyleBoxEmpty_7pkye")
 
-[node name="KeySplitContainer" type="HSplitContainer" parent="MainContainer/TextContainer/KeyScroll"]
+[node name="KeySplitContainer" type="HSplitContainer" parent="MainContainer/DataHSplit/TextContainer/KeyScroll"]
 layout_mode = 2
 size_flags_horizontal = 3
 split_offset = 170
 
-[node name="KeyContainer" type="VBoxContainer" parent="MainContainer/TextContainer/KeyScroll/KeySplitContainer"]
+[node name="KeyContainer" type="VBoxContainer" parent="MainContainer/DataHSplit/TextContainer/KeyScroll/KeySplitContainer"]
 custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
 
-[node name="TextContainer" type="VBoxContainer" parent="MainContainer/TextContainer/KeyScroll/KeySplitContainer"]
+[node name="TextContainer" type="VBoxContainer" parent="MainContainer/DataHSplit/TextContainer/KeyScroll/KeySplitContainer"]
 custom_minimum_size = Vector2(170, 0)
 layout_mode = 2
 
-[node name="VSeparator" type="VSeparator" parent="MainContainer"]
+[node name="CaseContainer" type="VBoxContainer" parent="MainContainer/DataHSplit"]
+custom_minimum_size = Vector2(380, 0)
 layout_mode = 2
-
-[node name="CaseContainer" type="VBoxContainer" parent="MainContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
 size_flags_stretch_ratio = 2.8
 
-[node name="HeaderContainer" type="HBoxContainer" parent="MainContainer/CaseContainer"]
+[node name="HeaderContainer" type="HBoxContainer" parent="MainContainer/DataHSplit/CaseContainer"]
 layout_mode = 2
 
-[node name="SearchCaseLnEdt" type="LineEdit" parent="MainContainer/CaseContainer/HeaderContainer"]
+[node name="SearchCaseLnEdt" type="LineEdit" parent="MainContainer/DataHSplit/CaseContainer/HeaderContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 2.5
@@ -196,21 +203,21 @@ placeholder_text = "Search | Filters: case:(Case), result:(Result)"
 caret_blink = true
 metadata/current_search = ""
 
-[node name="Control" type="Control" parent="MainContainer/CaseContainer/HeaderContainer"]
+[node name="Control" type="Control" parent="MainContainer/DataHSplit/CaseContainer/HeaderContainer"]
 visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 2.5
 mouse_filter = 2
 
-[node name="ArgumentOptBtn" type="OptionButton" parent="MainContainer/CaseContainer/HeaderContainer"]
+[node name="ArgumentOptBtn" type="OptionButton" parent="MainContainer/DataHSplit/CaseContainer/HeaderContainer"]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 2.0
 disabled = true
 
-[node name="NewCaseBtn" type="Button" parent="MainContainer/CaseContainer/HeaderContainer"]
+[node name="NewCaseBtn" type="Button" parent="MainContainer/DataHSplit/CaseContainer/HeaderContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "New format case"
@@ -220,55 +227,55 @@ disabled = true
 icon = ExtResource("4_502er")
 icon_alignment = 1
 
-[node name="HSeparator" type="HSeparator" parent="MainContainer/CaseContainer"]
+[node name="HSeparator" type="HSeparator" parent="MainContainer/DataHSplit/CaseContainer"]
 layout_mode = 2
 
-[node name="CaseHeaderSplit" type="HSplitContainer" parent="MainContainer/CaseContainer"]
+[node name="CaseHeaderSplit" type="HSplitContainer" parent="MainContainer/DataHSplit/CaseContainer"]
 layout_mode = 2
 split_offset = 200
 dragging_enabled = false
 
-[node name="Label" type="Label" parent="MainContainer/CaseContainer/CaseHeaderSplit"]
+[node name="Label" type="Label" parent="MainContainer/DataHSplit/CaseContainer/CaseHeaderSplit"]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 text = "Case"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="Label2" type="Label" parent="MainContainer/CaseContainer/CaseHeaderSplit"]
+[node name="Label2" type="Label" parent="MainContainer/DataHSplit/CaseContainer/CaseHeaderSplit"]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 text = "Result"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="KeyScroll" type="ScrollContainer" parent="MainContainer/CaseContainer"]
+[node name="KeyScroll" type="ScrollContainer" parent="MainContainer/DataHSplit/CaseContainer"]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("StyleBoxEmpty_7pkye")
 
-[node name="CasesSplit" type="HSplitContainer" parent="MainContainer/CaseContainer/KeyScroll"]
+[node name="CasesSplit" type="HSplitContainer" parent="MainContainer/DataHSplit/CaseContainer/KeyScroll"]
 layout_mode = 2
 size_flags_horizontal = 3
 split_offset = 200
 
-[node name="CaseContainer" type="VBoxContainer" parent="MainContainer/CaseContainer/KeyScroll/CasesSplit"]
+[node name="CaseContainer" type="VBoxContainer" parent="MainContainer/DataHSplit/CaseContainer/KeyScroll/CasesSplit"]
 layout_mode = 2
 
-[node name="Label2" type="Label" parent="MainContainer/CaseContainer/KeyScroll/CasesSplit/CaseContainer"]
+[node name="Label2" type="Label" parent="MainContainer/DataHSplit/CaseContainer/KeyScroll/CasesSplit/CaseContainer"]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 text = "Default"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="CaseNodeContainer" type="VBoxContainer" parent="MainContainer/CaseContainer/KeyScroll/CasesSplit/CaseContainer"]
+[node name="CaseNodeContainer" type="VBoxContainer" parent="MainContainer/DataHSplit/CaseContainer/KeyScroll/CasesSplit/CaseContainer"]
 layout_mode = 2
 
-[node name="ResultContainer" type="VBoxContainer" parent="MainContainer/CaseContainer/KeyScroll/CasesSplit"]
+[node name="ResultContainer" type="VBoxContainer" parent="MainContainer/DataHSplit/CaseContainer/KeyScroll/CasesSplit"]
 layout_mode = 2
 
-[node name="DefaultCaseLnEdt" type="LineEdit" parent="MainContainer/CaseContainer/KeyScroll/CasesSplit/ResultContainer"]
+[node name="DefaultCaseLnEdt" type="LineEdit" parent="MainContainer/DataHSplit/CaseContainer/KeyScroll/CasesSplit/ResultContainer"]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 focus_neighbor_top = NodePath("../../../../HeaderContainer/NewCaseBtn")
@@ -277,5 +284,5 @@ placeholder_text = "Default format"
 editable = false
 caret_blink = true
 
-[node name="ResultNodeContainer" type="VBoxContainer" parent="MainContainer/CaseContainer/KeyScroll/CasesSplit/ResultContainer"]
+[node name="ResultNodeContainer" type="VBoxContainer" parent="MainContainer/DataHSplit/CaseContainer/KeyScroll/CasesSplit/ResultContainer"]
 layout_mode = 2

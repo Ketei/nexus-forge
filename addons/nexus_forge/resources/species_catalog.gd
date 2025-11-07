@@ -196,13 +196,13 @@ func clear_species_data(species_id: StringName) -> void:
 		_species[species_id]["data"].clear()
 
 
-func get_species_stat(species_id: StringName, stat_id: StringName) -> int:
+func get_species_stat(species_id: StringName, stat_id: StringName) -> float:
 	if _species.has(species_id) and _species[species_id]["stats"].has(stat_id):
 		return _species[species_id]["stats"][stat_id]
 	return 0
 
 
-func set_species_stat(species_id: StringName, stat_id: StringName, value: int) -> void:
+func set_species_stat(species_id: StringName, stat_id: StringName, value: float) -> void:
 	if _species.has(species_id):
 		_species[species_id]["stats"][stat_id] = value
 

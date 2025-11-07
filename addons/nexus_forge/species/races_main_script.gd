@@ -305,11 +305,11 @@ func load_species(species_id: StringName) -> void:
 		if _species_resource.species_has_stat(species_id, stat_id):
 			chk.set_pressed_no_signal(true)
 			spn.editable = true
-			spn.value = _species_resource.get_species_stat(species_id, stat_id)
+			spn.set_value_no_signal(_species_resource.get_species_stat(species_id, stat_id))
 		else:
 			chk.set_pressed_no_signal(false)
 			spn.editable = false
-			spn.value = stat.get_meta(&"default_value")
+			spn.set_value_no_signal(1.0)
 	
 	for skill in race_skill_container.get_children():
 		var skill_id: StringName = skill.get_meta(&"field_id")
@@ -323,7 +323,7 @@ func load_species(species_id: StringName) -> void:
 		else:
 			chk.set_pressed_no_signal(false)
 			spn.editable = false
-			spn.value = skill.get_meta(&"default_value")
+			spn.value = 0.0
 	
 	for trait_child in race_traits_container.get_children():
 		var trait_id: StringName = trait_child.get_meta(&"field_id")
@@ -336,7 +336,7 @@ func load_species(species_id: StringName) -> void:
 		else:
 			chk.set_pressed_no_signal(false)
 			spn.editable = false
-			spn.value = trait_child.get_meta(&"default_value")
+			spn.value = 0.0
 
 
 func clear_talents() -> void:
@@ -359,7 +359,7 @@ func default_talents() -> void:
 		var chk: CheckBox = stat.get_child(0)
 		chk.set_pressed_no_signal(false)
 		spn.editable = false
-		spn.value = stat.get_meta(&"default_value")
+		spn.value = 1.0
 	
 	
 	for skill in race_skill_container.get_children():
@@ -367,14 +367,14 @@ func default_talents() -> void:
 		var chk: CheckBox = skill.get_child(0)
 		chk.set_pressed_no_signal(false)
 		spn.editable = false
-		spn.value = skill.get_meta(&"default_value")
+		spn.value = skill.get_meta(&"default_value", 0.0)
 	
 	for trait_child in race_traits_container.get_children():
 		var spn: SpinBox = trait_child.get_child(1)
 		var chk: CheckBox = trait_child.get_child(0)
 		chk.set_pressed_no_signal(false)
 		spn.editable = false
-		spn.value = trait_child.get_meta(&"default_value")
+		spn.value = trait_child.get_meta(&"default_value", 0.0)
 
 
 func set_ui_enabled(enabled: bool) -> void:
@@ -399,13 +399,13 @@ func set_ui_enabled(enabled: bool) -> void:
 
 
 func update_talent_nodes() -> void:
-	var stat_block: StatBlock = StatBlock.new()
-	
 	var skill_set: SkillSet = SkillSet.new()
-
+	
 	var trait_block: TraitBlock = TraitBlock.new()
 	
-	var stats: Array[StringName] = StatBlock.stats()
+	var stat_data: Dictionary[StringName, int] = StatBlock.stats()
+	var stats: Array[StringName] = []
+	stats.assign(stat_data.keys())
 	stats.sort_custom(func(a,b): return String(a).naturalnocasecmp_to(String(b)) < 0)
 	
 	var stat_map: Dictionary[StringName, HBoxContainer] = {}
@@ -421,13 +421,12 @@ func update_talent_nodes() -> void:
 			race_stats_container.add_child(stat_map[stat_id])
 			stat_map.erase(stat_id)
 		else:
-			var stat = create_value_field(stat_id, stat_block.get(stat_id))
+			var stat = create_value_field(stat_id, stat_data[stat_id], true)
 			race_stats_container.add_child(stat)
 	for remaining_stat in stat_map:
 		stat_map[remaining_stat].queue_free()
 	
-	
-	var skills: Array[StringName] = skill_set.skills()
+	var skills: Array[StringName] = SkillSet.skills()
 	skills.sort_custom(func(a,b): return String(a).naturalnocasecmp_to(String(b)) < 0)
 	
 	var skill_map: Dictionary[StringName, HBoxContainer] = {}
@@ -437,8 +436,6 @@ func update_talent_nodes() -> void:
 			skill_map[existing_skill.get_meta(&"field_id")] = existing_skill
 		else:
 			existing_skill.queue_free()
-	
-	
 	
 	for skill_id in skills:
 		if skill_map.has(skill_id):
@@ -477,7 +474,7 @@ func value_field_active(field: HBoxContainer) -> bool:
 	return field.get_child(0).button_pressed
 
 
-func create_value_field(field_id: StringName, default_value: int) -> HBoxContainer:
+func create_value_field(field_id: StringName, default_value: int, is_type: bool = false) -> HBoxContainer:
 	var new_field: HBoxContainer = HBoxContainer.new()
 	var activatable: CheckBox = CheckBox.new()
 	var value: SpinBox = SpinBox.new()
@@ -489,10 +486,19 @@ func create_value_field(field_id: StringName, default_value: int) -> HBoxContain
 	activatable.size_flags_stretch_ratio = 2.0
 	activatable.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	
-	value.editable = false
 	value.allow_greater = true
 	value.allow_lesser = true
-	value.value = default_value
+	
+	if is_type:
+		if default_value == TYPE_INT:
+			value.step = 1.0
+		else:
+			value.step = 0.01
+		value.value = 0.0
+	else:
+		value.step = 1.0
+		value.value = default_value
+	
 	value.editable = loaded_species != &""
 	value.custom_minimum_size.y = 32
 	value.size_flags_horizontal = Control.SIZE_EXPAND_FILL
