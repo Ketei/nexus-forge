@@ -174,6 +174,7 @@ theme_override_styles/panel = SubResource("StyleBoxEmpty_7pkye")
 [node name="KeySplitContainer" type="HSplitContainer" parent="MainContainer/DataHSplit/TextContainer/KeyScroll"]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_constants/minimum_grab_thickness = 10
 split_offset = 170
 
 [node name="KeyContainer" type="VBoxContainer" parent="MainContainer/DataHSplit/TextContainer/KeyScroll/KeySplitContainer"]
@@ -257,6 +258,7 @@ theme_override_styles/panel = SubResource("StyleBoxEmpty_7pkye")
 [node name="CasesSplit" type="HSplitContainer" parent="MainContainer/DataHSplit/CaseContainer/KeyScroll"]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_constants/minimum_grab_thickness = 10
 split_offset = 200
 
 [node name="CaseContainer" type="VBoxContainer" parent="MainContainer/DataHSplit/CaseContainer/KeyScroll/CasesSplit"]
