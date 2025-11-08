@@ -75,7 +75,7 @@ func _on_item_selected() -> void:
 
 func _on_item_edited() -> void:
 	var edited: TreeItem = get_edited()
-	var valid_name: String = get_valid_id(edited.get_text(0))
+	var valid_name: String = get_valid_id(edited.get_text(0), edited)
 	
 	if valid_name == String(edited.get_metadata(0)):
 		return
@@ -193,10 +193,13 @@ func _search_subspecies(text: String, species: TreeItem) -> bool:
 	return found
 
 
-func get_valid_id(desired: String) -> String:
+func get_valid_id(desired: String, skip_item: TreeItem = null) -> String:
 	var all_species: Array[String] = get_all_species()
 	var modified: String = desired
 	var iteration: int = 0
+	
+	if skip_item != null:
+		all_species.erase(skip_item.get_text(0))
 	
 	while all_species.has(modified):
 		iteration += 1

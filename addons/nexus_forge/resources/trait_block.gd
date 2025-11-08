@@ -5,7 +5,7 @@ extends Resource
 
 @export var bear_resist: int = 0
 
-@export var _custom_traits: Dictionary[StringName, int] = {}
+var _custom_traits: Dictionary[StringName, int] = {}
 
 
 ## Constructor for a new TraitBlock with NexusForge custom traits included.

@@ -53,8 +53,12 @@ func _ready() -> void:
 	reload_traits(false)
 	reload_skills(false)
 	# ----------------------------- For Release -----------------------------
-	var skills_path: String = EditorNFPlugin.get_project_settings_path("skills")
-	var traits_path: String = EditorNFPlugin.get_project_settings_path("traits")
+	var skills_path: String = ProjectSettings.get_setting(
+			EditorNFPlugin.get_project_settings_path("skills"),
+			"")
+	var traits_path: String = ProjectSettings.get_setting(
+			EditorNFPlugin.get_project_settings_path("traits"),
+			"")
 	
 	if not skills_path.is_empty() and ResourceLoader.exists(skills_path):
 		var preload_skill_res: Resource = load(skills_path)

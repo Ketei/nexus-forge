@@ -75,7 +75,9 @@ func _ready() -> void:
 	
 	#_quest_resource = QuestCatalog.new()
 	
-	var res_path: String = EditorNFPlugin.get_project_settings_path("quests")
+	var res_path: String = ProjectSettings.get_setting(
+			EditorNFPlugin.get_project_settings_path("quests"),
+			"")
 	
 	if res_path != "" and FileAccess.file_exists(res_path):
 		var preload_res: Resource = load(res_path)

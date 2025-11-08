@@ -39,11 +39,13 @@ script = ExtResource("1_rhcbn")
 
 [node name="CharacterContainer" type="HSplitContainer" parent="."]
 layout_mode = 2
+theme_override_constants/minimum_grab_thickness = 10
 split_offset = 660
 
 [node name="BasicDataSplit" type="HSplitContainer" parent="CharacterContainer"]
 layout_mode = 2
 size_flags_stretch_ratio = 3.0
+theme_override_constants/minimum_grab_thickness = 10
 split_offset = 250
 
 [node name="CharacterTreeContainer" type="VBoxContainer" parent="CharacterContainer/BasicDataSplit"]
@@ -235,6 +237,7 @@ script = ExtResource("9_i064r")
 [node name="ValuesSplit" type="HSplitContainer" parent="CharacterContainer"]
 layout_mode = 2
 size_flags_stretch_ratio = 2.0
+theme_override_constants/minimum_grab_thickness = 10
 split_offset = 325
 
 [node name="ValuesVBox" type="VBoxContainer" parent="CharacterContainer/ValuesSplit"]

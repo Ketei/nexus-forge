@@ -17,7 +17,7 @@ extends Resource
 ## The region for the language this map is in
 @export var region: String = ""
 
-@export var _phrases: Dictionary[StringName, Dictionary] = {
+@export_storage var _phrases: Dictionary[StringName, Dictionary] = {
 	#&"InventoryStatus": {
 		#"text": "Let's see...{$inventory/is_full}{$inventory/count}{passed_argument}",
 		#"arguments": {

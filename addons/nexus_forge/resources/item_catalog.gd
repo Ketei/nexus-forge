@@ -7,10 +7,10 @@ const ITEM_DEFAULT_DATA: Dictionary[String, Variant] = {}
 const CATEGORY_DEFAULT_DATA: Dictionary[String, Variant] = {}
 
 
-@export var _categories: Dictionary[StringName, Dictionary] = {}
+@export_storage var _categories: Dictionary[StringName, Dictionary] = {}
 
 # Items be stored here
-@export var _items: Dictionary[StringName, Dictionary] = {
+@export_storage var _items: Dictionary[StringName, Dictionary] = {
 	#&"test_item": {
 		#"name": "Test Item",
 		#"category": &"second_class",

@@ -10,7 +10,7 @@ extends Resource
 
 ## A dictionary containing all variables and folders. The first level is always
 ## folders.
-@export var _variables: Dictionary[StringName, Dictionary] = {}
+@export_storage var _variables: Dictionary[StringName, Dictionary] = {}
 
 
 func _clean_folder_path(path: String) -> StringName:

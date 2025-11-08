@@ -9,8 +9,9 @@ signal custom_skill_erased(id: StringName)
 # Only accepts int, float, bool and string as values.
 const DEFAULT_DATA: Dictionary[String, Variant] = {}
 
-@export var _skills: Dictionary[StringName, Dictionary] = {}
-@export var _custom_skills: Dictionary[StringName, Dictionary] = {}
+@export_storage var _skills: Dictionary[StringName, Dictionary] = {}
+
+var _custom_skills: Dictionary[StringName, Dictionary] = {}
 
 #@export var perks: Dictionary = {
 	#"perk_id": {

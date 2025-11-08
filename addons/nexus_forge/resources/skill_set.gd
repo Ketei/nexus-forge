@@ -4,8 +4,9 @@ extends Resource
 
 
 @export var one_handed: int
+@export var bear_handling: int
 
-@export var _custom_skills: Dictionary[StringName, int] = {}
+var _custom_skills: Dictionary[StringName, int] = {}
 
 
 ## Constructor for a new SkillSet with NexusForge custom skills included.

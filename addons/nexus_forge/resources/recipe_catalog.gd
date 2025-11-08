@@ -5,7 +5,7 @@ extends Resource
 
 const RECIPE_DEFAULT_DATA: Dictionary[String, Variant] = {}
 
-@export var _recipes: Dictionary = {}
+@export_storage var _recipes: Dictionary = {}
 	#&"recipe_id": {
 		#"input": Array([{"item_id": &"item", "amount": 1, "data": {}}], TYPE_DICTIONARY, &"", null),
 		#"output": [],

@@ -5,7 +5,7 @@ extends Resource
 
 const DEFAULT_DATA: Dictionary[String, Variant] = {}
 
-@export var _traits: Dictionary[StringName, Dictionary] = {
+@export_storage var _traits: Dictionary[StringName, Dictionary] = {
 	&"a_trait": {
 		"name": "",
 		"description": "",

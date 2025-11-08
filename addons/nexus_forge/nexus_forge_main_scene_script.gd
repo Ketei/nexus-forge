@@ -44,8 +44,13 @@ func _ready() -> void:
 	recipes_link.item_id_changed.connect(recipes.change_item_id)
 	recipes_link.item_erased.connect(recipes._on_item_erased)
 	items.items_loaded.connect(_on_items_loaded)
-	
+	characters.import_species_data_pressed.connect(_on_import_species_data_pressed)
 	tool_tab_bar.tab_changed.connect(_on_tab_changed)
+
+
+func _on_import_species_data_pressed() -> void:
+	if species._species_resource != null:
+		characters.import_species_data(species._species_resource)
 
 
 func _on_items_loaded() -> void:

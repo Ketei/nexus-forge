@@ -14,7 +14,7 @@ const _MAX_INDEX: int = 1
 const _MIN_INDEX: int = 0
 
 # Custom stats where the value is an integer array holding 2 values [min, max]
-@export_storage var _custom_stats: Dictionary[StringName, Array] = {}
+var _custom_stats: Dictionary[StringName, Array] = {}
 
 
 func custom_stats() -> Array[StringName]:

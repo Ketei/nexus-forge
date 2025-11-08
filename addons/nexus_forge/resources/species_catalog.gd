@@ -6,7 +6,7 @@ extends Resource
 const DEFAULT_DATA: Dictionary[String, Variant] = {}
 
 
-var _species: Dictionary[StringName, Dictionary] = {
+@export_storage var _species: Dictionary[StringName, Dictionary] = {
 	#&"human": {
 		#"parent_key": &"",
 		#"name": "Human",
@@ -25,7 +25,7 @@ var _species: Dictionary[StringName, Dictionary] = {
 
 func _species_tree_data(species_id) -> Dictionary[String, Dictionary]:
 	var data: Dictionary[String, Dictionary] = {}
-	var stats: Dictionary[StringName, int] = _species[species_id]["stats"].duplicate()
+	var stats: Dictionary[StringName, float] = _species[species_id]["stats"].duplicate()
 	var skills: Dictionary[StringName, int] = _species[species_id]["skills"].duplicate()
 	var traits: Dictionary[StringName, int] = _species[species_id]["traits"].duplicate()
 	
@@ -101,7 +101,7 @@ func create_species(species_id: StringName) -> void:
 	if _species.has(species_id):
 		return
 	var data: Dictionary[String, Variant] = {}
-	var stats: Dictionary[StringName, int] = {}
+	var stats: Dictionary[StringName, float] = {}
 	var skills: Dictionary[StringName, int] = {}
 	var traits: Dictionary[StringName, int] = {}
 	

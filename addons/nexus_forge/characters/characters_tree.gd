@@ -26,24 +26,6 @@ func _on_button_clicked(item: TreeItem, _column: int, id: int, mouse_button_inde
 		character_closed.emit(meta["resource"], meta["unsaved"])
 
 
-#func _on_item_edited() -> void:
-	#var edited: TreeItem = get_edited()
-	#
-	#if edited.get_text(0) == edited.get_metadata(0):
-		#return
-	#
-	#var new_string: String = get_valid_id(edited.get_text(0), edited)
-	#var old_id: StringName = StringName(edited.get_metadata(0))
-	#var new_id: StringName = StringName(new_string)
-	#
-	#edited.set_text(0, new_string)
-	#edited.set_metadata(0, new_string)
-	#
-	#sort_single_item(edited)
-	#
-	#character_id_changed.emit(old_id, new_id)
-
-
 func _on_item_selected() -> void:
 	var data: Dictionary = get_selected().get_metadata(0)
 	character_selected.emit(

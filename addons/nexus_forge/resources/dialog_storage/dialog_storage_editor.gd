@@ -128,7 +128,6 @@ func get_localized_string(key: String, language: String, region: String = "base"
 			localized_strings[key][language].has(region):
 		return localized_strings[key][language][region]["text"]
 	printerr("No string with key \"", key,"\" and locale ", language + "_" + region, " exists.")
-	print("Current: ", localized_strings)
 	return ""
 
 

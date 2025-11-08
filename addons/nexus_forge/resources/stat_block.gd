@@ -13,13 +13,10 @@ enum StatType {
 
 
 @export var level: RangeInt
-@export var health: RangeFloat
+@export var health: RangeInt
 @export var stamina: RangeInt
-@export var mana: RangeInt
-#@export var lust: RangeInt
 
-
-@export var _custom_stats: Dictionary[StringName, ValueRange] = {}
+var _custom_stats: Dictionary[StringName, ValueRange] = {}
 
 
 ## Builder that will create a new StatBlock with custom stats defined on
@@ -56,8 +53,6 @@ static func stats() -> Dictionary[StringName, int]:
 	
 	for item in data:
 		if not VALID_CLASSES.has(item["class_name"]) or not BitUtils.are_bits(item["usage"], MASK, true):
-			continue
-		if item["name"] == "_custom_stats":
 			continue
 		all_stats[StringName(item["name"])] = TYPE_INT if item["class_name"] == &"RangeInt" else TYPE_FLOAT
 	

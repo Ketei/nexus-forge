@@ -1,6 +1,10 @@
 @tool
 extends PanelContainer
 
+
+signal import_species_data_pressed
+
+
 const LineEditConfirmationDialog = preload("res://addons/nexus_forge/dialogs/lineedit_confirmation_dialog.gd")
 
 var _unsaved: bool = false
@@ -54,7 +58,7 @@ func _ready() -> void:
 	add_char_string_button.pressed.connect(_on_add_data_pressed.bind("new_string", ""))
 	character_data_tree.data_changed.connect(_something_changed)
 	char_tree.character_selected.connect(_on_character_selected)
-	
+	load_species_data_btn.pressed.connect(_on_import_species_data_pressed)
 	char_tree.character_closed.connect(_on_close_character_pressed)
 
 
@@ -172,7 +176,7 @@ func update_talent_nodes() -> void:
 	stats.assign(stats_data.keys())
 	stats.sort_custom(func(a,b): return String(a).naturalnocasecmp_to(String(b)) < 0)
 	
-	var stat_map: Dictionary[StringName, HBoxContainer] = {}
+	var stat_map: Dictionary[StringName, Control] = {}
 	for existing_stat in char_stats_container.get_children():
 		char_stats_container.remove_child(existing_stat)
 		if existing_stat.get_meta(&"stat_id") in stats:
@@ -183,6 +187,12 @@ func update_talent_nodes() -> void:
 	for stat_id in stats:
 		if stat_map.has(stat_id):
 			char_stats_container.add_child(stat_map[stat_id])
+			if stats_data[stat_id] != stat_map[stat_id].get_meta(&"type"):
+				var new_step: float = 1.0 if stats_data[stat_id] == TYPE_INT else 0.01
+				stat_map[stat_id].get_meta(&"value").step = new_step
+				stat_map[stat_id].get_meta(&"max").step = new_step
+				stat_map[stat_id].get_meta(&"min").step = new_step
+				stat_map[stat_id].set_meta(&"type", stats_data[stat_id])
 			stat_map.erase(stat_id)
 		else:
 			var stat = create_stat_item(stat_id, stats_data[stat_id])
@@ -194,7 +204,7 @@ func update_talent_nodes() -> void:
 	var skills: Array[StringName] = SkillSet.skills()
 	skills.sort_custom(func(a,b): return String(a).naturalnocasecmp_to(String(b)) < 0)
 	
-	var skill_map: Dictionary[StringName, HBoxContainer] = {}
+	var skill_map: Dictionary[StringName, Control] = {}
 	for existing_skill in char_skill_container.get_children():
 		char_skill_container.remove_child(existing_skill)
 		if skills.has(existing_skill.get_meta(&"skill_id")):
@@ -217,7 +227,7 @@ func update_talent_nodes() -> void:
 	var traits: Array[StringName] = TraitBlock.traits()
 	traits.sort_custom(func(a,b): return String(a).naturalnocasecmp_to(String(b)) < 0)
 	
-	var trait_map: Dictionary[StringName, HBoxContainer] = {}
+	var trait_map: Dictionary[StringName, Control] = {}
 	for existing_trait in char_traits_container.get_children():
 		char_traits_container.remove_child(existing_trait)
 		if traits.has(existing_trait.get_meta(&"trait_id")):
@@ -276,6 +286,14 @@ func _on_new_character_pressed() -> void:
 			new_resource.skills = SkillSet.new()
 		if new_resource.traits == null:
 			new_resource.traits = TraitBlock.new()
+		
+		for stat in StatBlock.stats():
+			var stat_range: ValueRange = new_resource.stats.get(stat)
+			stat_range.min_value = 0.0
+			stat_range.max_value = 1.0
+			stat_range.allow_greater = true
+			stat_range.allow_lesser = true
+		
 		ResourceSaver.save(new_resource, dialog_result[1])
 		char_tree.create_character(new_resource, true, false)
 		load_character(new_resource)
@@ -354,12 +372,16 @@ func _on_character_menu_id_pressed(id: int) -> void:
 
 
 func _on_import_species_data_pressed() -> void:
+	import_species_data_pressed.emit()
+
+
+func import_species_data(species_sheet: SpeciesCatalog) -> void:
 	if species_option_button.selected == -1:
 		return
 	
-	var data: Dictionary[String, Dictionary] = NexusForge.Species._species_tree_data(species_option_button.get_item_metadata(species_option_button.selected))
+	var data: Dictionary[String, Dictionary] = species_sheet._species_tree_data(species_option_button.get_selected_metadata())
 	
-	var stats: Dictionary[StringName, int] = data["stats"]
+	var stats: Dictionary[StringName, float] = data["stats"]
 	var skills: Dictionary[StringName, int] = data["skills"]
 	var traits: Dictionary[StringName, int] = data["traits"]
 	
@@ -371,12 +393,14 @@ func _on_import_species_data_pressed() -> void:
 	
 	for skill in char_skill_container.get_children():
 		var target_skill: StringName = skill.get_meta(&"skill_id")
-		if stats.has(target_skill):
+		print("setting skill ", target_skill)
+		if skills.has(target_skill):
 			skill.get_child(1).set_value_no_signal(
 				skills[target_skill])
 	
 	for child in char_traits_container.get_children():
 		var target_trait: StringName = child.get_meta(&"trait_id")
+		print("setting trait ", target_trait)
 		if traits.has(target_trait):
 			child.get_child(1).set_value_no_signal(
 					traits[target_trait])
@@ -494,9 +518,36 @@ func load_character(sheet: CharacterSheet) -> void:
 		var stat_range: ValueRange = sheet.stats.get(stat.get_meta(&"stat_id"))
 		if stat_range == null:
 			continue
+		
+		var collapse_btn: Button = stat.get_meta(&"collapse")
+		var flags: int = collapse_btn.get_meta(&"range_flags")
 		var value: SpinBox = stat.get_meta(&"value")
 		
-		value.set_value_no_signal(stat_range.value)
+		flags = BitUtils.set_bit_index(flags, 0, not stat_range.allow_lesser)
+		flags = BitUtils.set_bit_index(flags, 1, not stat_range.allow_greater)
+		collapse_btn.set_meta(&"range_flags", flags)
+		
+		if BitUtils.is_bit_index(flags, 2, true): #Expanded
+			match BitUtils.get_bits(flags, 3):
+				0:
+					collapse_btn.icon = preload("res://addons/nexus_forge/icons/range_uncollapsed_none.svg")
+				1:
+					collapse_btn.icon = preload("res://addons/nexus_forge/icons/range_uncollapsed_min.svg")
+				2:
+					collapse_btn.icon = preload("res://addons/nexus_forge/icons/range_uncollapsed_max.svg")
+				3:
+					collapse_btn.icon = preload("res://addons/nexus_forge/icons/range_uncollapsed_minmax.svg")
+		else:
+			match BitUtils.get_bits(flags, 3):
+				0:
+					collapse_btn.icon = preload("res://addons/nexus_forge/icons/range_collapsed_none.svg")
+				1:
+					collapse_btn.icon = preload("res://addons/nexus_forge/icons/range_collapsed_min.svg")
+				2:
+					collapse_btn.icon = preload("res://addons/nexus_forge/icons/range_collapsed_max.svg")
+				3:
+					collapse_btn.icon = preload("res://addons/nexus_forge/icons/range_collapsed_minmax.svg")
+		
 		value.allow_greater = stat_range.allow_greater
 		value.allow_lesser = stat_range.allow_lesser
 		stat.get_meta(&"use_max").set_pressed_no_signal(not stat_range.allow_greater)
@@ -511,6 +562,8 @@ func load_character(sheet: CharacterSheet) -> void:
 		
 		if not stat_range.allow_lesser and value.value < stat_range.min_value:
 			value.set_value_no_signal(stat_range.min_value)
+		
+		value.set_value_no_signal(stat_range.value)
 	
 	for skill in char_skill_container.get_children():
 		if skill is HBoxContainer:
@@ -566,7 +619,7 @@ func create_stat_item(stat_id: StringName, type: int) -> VBoxContainer:
 	
 	allow_greater.text = "Max"
 	allow_greater.custom_minimum_size = Vector2(62.0, 32.0)
-	allow_lesser.tooltip_text = "Use maximum.\nLeaving unchecked will allow stat\nto go higher indefinitely."
+	allow_greater.tooltip_text = "Use maximum.\nLeaving unchecked will allow stat\nto go higher indefinitely."
 	allow_greater.disabled = current_sheet == null
 	limit_max_spn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	limit_max_spn.allow_lesser = true
@@ -574,10 +627,11 @@ func create_stat_item(stat_id: StringName, type: int) -> VBoxContainer:
 	limit_max_spn.editable = not allow_greater.disabled
 	
 	edit_limits_btn.custom_minimum_size = Vector2(32.0, 32.0)
-	edit_limits_btn.icon = get_theme_icon("GuiVisibilityHidden", "EditorIcons")
+	edit_limits_btn.icon = preload("res://addons/nexus_forge/icons/range_collapsed_none.svg")
 	edit_limits_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	edit_limits_btn.tooltip_text = "Show limits"
 	edit_limits_btn.flat = true
+	edit_limits_btn.focus_mode = Control.FOCUS_CLICK
 	
 	stat_label.text = String(stat_id).capitalize()
 	stat_label.tooltip_text = stat_label.text
@@ -590,14 +644,20 @@ func create_stat_item(stat_id: StringName, type: int) -> VBoxContainer:
 	
 	new_value.allow_greater = true
 	new_value.allow_lesser = true
+	new_value.update_on_text_changed = true
 	new_value.custom_minimum_size.y = 32
 	new_value.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	new_value.size_flags_stretch_ratio = 3.0
 	new_value.value = 0
 	if type == TYPE_INT:
 		new_value.step = 1.0
+		limit_max_spn.step = 1.0
+		limit_min_spn.step = 1.0
 	else:
 		new_value.step = 0.01
+		limit_max_spn.step = 0.01
+		limit_min_spn.step = 0.01
+	
 	new_value.value_changed.connect(_something_changed)
 	new_value.editable = ui_enabled
 	
@@ -607,6 +667,10 @@ func create_stat_item(stat_id: StringName, type: int) -> VBoxContainer:
 	new_stat.set_meta(&"use_min", allow_lesser)
 	new_stat.set_meta(&"max", limit_max_spn)
 	new_stat.set_meta(&"min", limit_min_spn)
+	new_stat.set_meta(&"type", type)
+	new_stat.set_meta(&"collapse", edit_limits_btn)
+	
+	edit_limits_btn.set_meta(&"range_flags", 0)
 	
 	min_container.add_child(allow_lesser)
 	min_container.add_child(limit_min_spn)
@@ -627,14 +691,14 @@ func create_stat_item(stat_id: StringName, type: int) -> VBoxContainer:
 	edit_limits_btn.pressed.connect(_toggle_limit_visibility_pressed.bind(edit_limits_btn, limits_container))
 	limit_max_spn.value_changed.connect(_on_limit_max_changed.bind(new_value))
 	limit_min_spn.value_changed.connect(_on_limit_min_changed.bind(new_value, limit_max_spn))
-	
-	allow_lesser.toggled.connect(_on_toggle_min_stat.bind(new_value, limit_min_spn, limit_max_spn))
-	allow_greater.toggled.connect(_on_toggle_max_stat.bind(new_value, limit_max_spn))
+	# is_enabled: bool, stat: SpinBox, min_spin: SpinBox, max_spin: SpinBox, limit_btn: CheckBox
+	allow_lesser.toggled.connect(_on_toggle_min_stat.bind(new_value, limit_min_spn, limit_max_spn, edit_limits_btn))
+	allow_greater.toggled.connect(_on_toggle_max_stat.bind(new_value, limit_max_spn, edit_limits_btn))
 	
 	return new_stat
 
 
-func _on_toggle_min_stat(is_enabled: bool, stat: SpinBox, min_spin: SpinBox, max_spin: SpinBox) -> void:
+func _on_toggle_min_stat(is_enabled: bool, stat: SpinBox, min_spin: SpinBox, max_spin: SpinBox, limit_btn: Button) -> void:
 	stat.allow_lesser = not is_enabled
 	max_spin.allow_lesser = not is_enabled
 	min_spin.editable = is_enabled
@@ -642,26 +706,97 @@ func _on_toggle_min_stat(is_enabled: bool, stat: SpinBox, min_spin: SpinBox, max
 	if is_enabled and stat.value < min_spin.value:
 		stat.value = min_spin.value
 	
+	var flags: int = limit_btn.get_meta(&"range_flags")
+	flags = BitUtils.set_bit_index(flags, 0, is_enabled)
+	
+	if BitUtils.is_bit_index(flags, 2, true): # Uncollapsed
+		match BitUtils.get_bits(flags, 3):
+			0:
+				limit_btn.icon = preload("res://addons/nexus_forge/icons/range_uncollapsed_none.svg")
+			1:
+				limit_btn.icon = preload("res://addons/nexus_forge/icons/range_uncollapsed_min.svg")
+			2:
+				limit_btn.icon = preload("res://addons/nexus_forge/icons/range_uncollapsed_max.svg")
+			3:
+				limit_btn.icon = preload("res://addons/nexus_forge/icons/range_uncollapsed_minmax.svg")
+	else:
+		match BitUtils.get_bits(flags, 3):
+			0:
+				limit_btn.icon = preload("res://addons/nexus_forge/icons/range_collapsed_none.svg")
+			1:
+				limit_btn.icon = preload("res://addons/nexus_forge/icons/range_collapsed_min.svg")
+			2:
+				limit_btn.icon = preload("res://addons/nexus_forge/icons/range_collapsed_max.svg")
+			3:
+				limit_btn.icon = preload("res://addons/nexus_forge/icons/range_collapsed_minmax.svg")
+	
+	limit_btn.set_meta(&"range_flags", flags)
 	_something_changed()
 
 
-func _on_toggle_max_stat(is_enabled: bool, stat: SpinBox, max_spin: SpinBox) -> void:
+func _on_toggle_max_stat(is_enabled: bool, stat: SpinBox, max_spin: SpinBox, limit_btn: Button) -> void:
+	var flags: int = limit_btn.get_meta(&"range_flags")
+	flags = BitUtils.set_bit_index(flags, 1, is_enabled)
+	
 	stat.allow_greater = not is_enabled
 	max_spin.editable = is_enabled
 	if is_enabled and max_spin.value < stat.value:
 		stat.value = max_spin.value
+	
+	if BitUtils.is_bit_index(flags, 2, true): # Uncollapsed
+		match BitUtils.get_bits(flags, 3):
+			0:
+				limit_btn.icon = preload("res://addons/nexus_forge/icons/range_uncollapsed_none.svg")
+			1:
+				limit_btn.icon = preload("res://addons/nexus_forge/icons/range_uncollapsed_min.svg")
+			2:
+				limit_btn.icon = preload("res://addons/nexus_forge/icons/range_uncollapsed_max.svg")
+			3:
+				limit_btn.icon = preload("res://addons/nexus_forge/icons/range_uncollapsed_minmax.svg")
+	else:
+		match BitUtils.get_bits(flags, 3):
+			0:
+				limit_btn.icon = preload("res://addons/nexus_forge/icons/range_collapsed_none.svg")
+			1:
+				limit_btn.icon = preload("res://addons/nexus_forge/icons/range_collapsed_min.svg")
+			2:
+				limit_btn.icon = preload("res://addons/nexus_forge/icons/range_collapsed_max.svg")
+			3:
+				limit_btn.icon = preload("res://addons/nexus_forge/icons/range_collapsed_minmax.svg")
+	limit_btn.set_meta(&"range_flags", flags)
 	_something_changed()
 
 
 func _toggle_limit_visibility_pressed(toggle_button: Button, limit_container: HBoxContainer) -> void:
-	if limit_container.visible: # Icon should be to show
-		toggle_button.icon = get_theme_icon("GuiVisibilityHidden", "EditorIcons")
-		toggle_button.tooltip_text = "Show limits"
-	else:
-		toggle_button.tooltip_text = "Hide limits"
-		toggle_button.icon = get_theme_icon("GuiVisibilityVisible", "EditorIcons")
+	var flags: int = toggle_button.get_meta(&"range_flags")
 	limit_container.visible = not limit_container.visible
+	flags = BitUtils.set_bit_index(flags, 2, limit_container.visible)
 	
+	var icon: Texture2D = null
+	
+	if BitUtils.is_bit_index(flags, 2, true): # Uncollapsed
+		match BitUtils.get_bits(flags, 3):
+			0:
+				icon = preload("res://addons/nexus_forge/icons/range_uncollapsed_none.svg")
+			1:
+				icon = preload("res://addons/nexus_forge/icons/range_uncollapsed_min.svg")
+			2:
+				icon = preload("res://addons/nexus_forge/icons/range_uncollapsed_max.svg")
+			3:
+				icon = preload("res://addons/nexus_forge/icons/range_uncollapsed_minmax.svg")
+	else:
+		match BitUtils.get_bits(flags, 3):
+			0:
+				icon = preload("res://addons/nexus_forge/icons/range_collapsed_none.svg")
+			1:
+				icon = preload("res://addons/nexus_forge/icons/range_collapsed_min.svg")
+			2:
+				icon = preload("res://addons/nexus_forge/icons/range_collapsed_max.svg")
+			3:
+				icon = preload("res://addons/nexus_forge/icons/range_collapsed_minmax.svg")
+	
+	toggle_button.icon = icon
+	toggle_button.set_meta(&"range_flags", flags)
 
 
 func _on_limit_max_changed(value: float, stat: SpinBox) -> void:
@@ -696,6 +831,7 @@ func create_skill_item(skill_id: StringName, default_value: int) -> HBoxContaine
 	
 	new_value.allow_greater = true
 	new_value.allow_lesser = true
+	new_value.update_on_text_changed = true
 	new_value.custom_minimum_size.y = 32
 	new_value.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	new_value.size_flags_stretch_ratio = 3.0
@@ -729,6 +865,7 @@ func create_trait_item(trait_id: StringName, default_value: int) -> HBoxContaine
 	
 	new_value.allow_greater = true
 	new_value.allow_lesser = true
+	new_value.update_on_text_changed = true
 	new_value.step = 1.0
 	new_value.value = default_value
 	#if type == TYPE_INT:

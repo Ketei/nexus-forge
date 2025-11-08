@@ -37,7 +37,7 @@ func _ready() -> void:
 	
 	race_custom_data_search_line.right_icon = get_theme_icon("Search", "EditorIcons")
 	
-	var res_path: String = EditorNFPlugin.get_project_settings_path("species")
+	var res_path: String = ProjectSettings.get_setting(EditorNFPlugin.get_project_settings_path("species"), "")
 	
 	if res_path != "" and FileAccess.file_exists(res_path):
 		var preload_res: Resource = load(res_path)
@@ -230,8 +230,8 @@ func _on_create_species_pressed() -> void:
 func _on_something_changed(_arg = null) -> void:
 	if _unsaved:
 		return
+	print("Unsaved set to true!")
 	_unsaved = true
-	
 
 
 func _on_value_field_toggled(toggled: bool, spin: SpinBox) -> void:
@@ -420,6 +420,8 @@ func update_talent_nodes() -> void:
 	for stat_id in stats:
 		if stat_map.has(stat_id):
 			race_stats_container.add_child(stat_map[stat_id])
+			if stat_data[stat_id] != stat_map[stat_id].get_meta(&"type"):
+				stat_map[stat_id].get_meta(&"value").step = 1.0 if stat_data[stat_id] == TYPE_INT else 0.01
 			stat_map.erase(stat_id)
 		else:
 			var stat = create_value_field(stat_id, stat_data[stat_id], true)
@@ -496,11 +498,13 @@ func create_value_field(field_id: StringName, default_value: int, is_type: bool 
 		else:
 			value.step = 0.01
 		value.value = 0.0
+		new_field.set_meta(&"type", default_value)
 	else:
 		value.step = 1.0
 		value.value = default_value
 	
-	value.editable = loaded_species != &""
+	value.editable = false
+	value.update_on_text_changed = true
 	value.custom_minimum_size.y = 32
 	value.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	value.size_flags_stretch_ratio = 3.0
@@ -510,9 +514,10 @@ func create_value_field(field_id: StringName, default_value: int, is_type: bool 
 	
 	new_field.set_meta(&"field_id", field_id)
 	new_field.set_meta(&"default_value", default_value)
+	new_field.set_meta(&"value", value)
 	
-	activatable.toggled.connect(_on_something_changed)
 	activatable.toggled.connect(_on_value_field_toggled.bind(value))
+	value.value_changed.connect(_on_something_changed)
 	
 	return new_field
 

@@ -19,7 +19,7 @@ const DEFAULT_STAGE_DATA: Dictionary[String, Variant] = {}
 ## Default data assigned to a step when [method create_step] is called.
 const DEFAULT_STEP_DATA: Dictionary[String, Variant] = {}
 
-var _quests: Dictionary[StringName, Dictionary] = {
+@export_storage var _quests: Dictionary[StringName, Dictionary] = {
 	#&"first_quest": {
 		#"title": "My first quest",
 		#"description": "A quest description",

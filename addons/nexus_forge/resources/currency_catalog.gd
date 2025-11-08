@@ -4,7 +4,7 @@ extends Resource
 
 const CURRENCY_DEFAULT_DATA: Dictionary[String, Variant] = {}
 
-@export var _currencies: Dictionary[StringName, Dictionary] = {
+@export_storage var _currencies: Dictionary[StringName, Dictionary] = {
 	#&"copper": {"name": "CP", "value": 1, "data": null},
 	#&"silver": {"name": "SP", "value": 10, "data": null},
 	#&"electrum": {"name": "EP", "value": 50, "data": null},

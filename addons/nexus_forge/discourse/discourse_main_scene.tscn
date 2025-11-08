@@ -64,6 +64,7 @@ script = ExtResource("1_viyrt")
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 4.0
+theme_override_constants/minimum_grab_thickness = 10
 split_offset = -234
 dragger_visibility = 2
 
@@ -77,6 +78,7 @@ custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 10
+theme_override_constants/minimum_grab_thickness = 10
 
 [node name="ConversationContainer" type="VBoxContainer" parent="MainSplitContainer/MainSidebar/SidebarSplitContainer"]
 custom_minimum_size = Vector2(0, 200)
@@ -149,11 +151,13 @@ layout_mode = 2
 [node name="MainSplitContainer" type="HSplitContainer" parent="LocalizationContainer"]
 layout_mode = 2
 size_flags_vertical = 3
+theme_override_constants/minimum_grab_thickness = 10
 
 [node name="LeftSplitContainer" type="HSplitContainer" parent="LocalizationContainer/MainSplitContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 2.0
+theme_override_constants/minimum_grab_thickness = 10
 split_offset = 250
 
 [node name="LanguagesSplitContainer" type="VSplitContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer"]
@@ -403,6 +407,7 @@ theme_override_styles/panel = SubResource("StyleBoxEmpty_nnanj")
 [node name="KeySplitContainer" type="HSplitContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyScroll"]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_constants/minimum_grab_thickness = 10
 split_offset = 170
 
 [node name="KeyContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyScroll/KeySplitContainer"]
@@ -498,6 +503,7 @@ theme_override_styles/panel = SubResource("StyleBoxEmpty_2wl78")
 [node name="CasesSplit" type="HSplitContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll"]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_constants/minimum_grab_thickness = 10
 split_offset = 200
 
 [node name="CaseContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit"]

@@ -2,6 +2,14 @@ class_name BitUtils
 extends RefCounted
 
 
+## Returns the bits using a mask.[br]
+## Example: get_bits(10, 3) will return 2. This is because:[br]
+## 10 = 0101 and 3 = 1100. This means it'll return the first 2 bits: 01
+## Which has a value of 2
+static func get_bits(from: int, mask: int) -> int:
+	return from & mask
+
+
 ## Sets the bit on the index [param bit_index] of the [param on] value
 ## to [param value].
 static func set_bit_index(on: int, bit_index: int, value: bool) -> int:

@@ -38,11 +38,13 @@ script = ExtResource("1_30i28")
 
 [node name="RacesContainer" type="HSplitContainer" parent="."]
 layout_mode = 2
+theme_override_constants/minimum_grab_thickness = 10
 split_offset = 660
 
 [node name="RacesBasicSplit" type="HSplitContainer" parent="RacesContainer"]
 layout_mode = 2
 size_flags_stretch_ratio = 3.0
+theme_override_constants/minimum_grab_thickness = 10
 split_offset = 250
 
 [node name="RaceTreeContainer" type="VBoxContainer" parent="RacesContainer/RacesBasicSplit"]
@@ -180,12 +182,14 @@ script = ExtResource("7_aexp2")
 [node name="StatTraitSplit" type="HSplitContainer" parent="RacesContainer"]
 layout_mode = 2
 size_flags_stretch_ratio = 3.0
+theme_override_constants/minimum_grab_thickness = 10
 split_offset = 325
 
-[node name="ValuesContainer" type="VBoxContainer" parent="RacesContainer/StatTraitSplit"]
+[node name="ValuesContainer" type="VSplitContainer" parent="RacesContainer/StatTraitSplit"]
 custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 size_flags_stretch_ratio = 1.5
+theme_override_constants/minimum_grab_thickness = 10
 
 [node name="StatVBox" type="VBoxContainer" parent="RacesContainer/StatTraitSplit/ValuesContainer"]
 layout_mode = 2
@@ -206,9 +210,6 @@ horizontal_scroll_mode = 0
 [node name="RaceStatsContainer" type="VBoxContainer" parent="RacesContainer/StatTraitSplit/ValuesContainer/StatVBox/StatScroll"]
 layout_mode = 2
 size_flags_horizontal = 3
-
-[node name="HSeparator" type="HSeparator" parent="RacesContainer/StatTraitSplit/ValuesContainer"]
-layout_mode = 2
 
 [node name="SkillVBox" type="VBoxContainer" parent="RacesContainer/StatTraitSplit/ValuesContainer"]
 layout_mode = 2
