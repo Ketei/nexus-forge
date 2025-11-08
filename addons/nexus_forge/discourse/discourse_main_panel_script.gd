@@ -914,6 +914,8 @@ func _on_conversation_file_saved(path: String, dialog: FileDialog) -> void:
 	new_conv.base_language = languages_tree.get_base_language()
 	new_conv.locale_map.assign(languages_tree.as_map())
 	listen_offset = false
+	if ResourceLoader.has_cached(path):
+		new_conv.take_over_path(path)
 	ResourceSaver.save(
 			new_conv,
 			path)

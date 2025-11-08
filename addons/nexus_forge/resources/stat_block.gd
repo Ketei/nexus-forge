@@ -12,8 +12,12 @@ enum StatType {
 	FLOAT}
 
 
+@export var level: RangeInt
 @export var health: RangeFloat
-@export var experience: RangeInt
+@export var stamina: RangeInt
+@export var mana: RangeInt
+#@export var lust: RangeInt
+
 
 @export var _custom_stats: Dictionary[StringName, ValueRange] = {}
 

@@ -346,6 +346,8 @@ func _on_file_map_selected(path: String, dialog: ConfirmationDialog) -> void:
 		var new_map: PhraseMap = PhraseMap.new()
 		new_map.language = language_opt_btn.get_selected_metadata()
 		new_map.region = region_opt_btn.get_selected_metadata()
+		if ResourceLoader.has_cached(path):
+			new_map.take_over_path(path)
 		new_map.resource_path = path
 		files_tree.add_map(new_map, true, false)
 		load_map(new_map)

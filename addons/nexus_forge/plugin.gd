@@ -162,14 +162,20 @@ func _editor_ready() -> bool:
 
 
 func _on_resource_saved(resource: Resource) -> void:
-	if resource is StatBlock:
+	if resource is not Script:
+		return
+	
+	var script_class: StringName = resource.get_global_name()
+	
+	if script_class.is_empty():
+		return
+	elif script_class == &"StatBlock":
 		editor_view.reload_stats()
-	elif resource is SkillSet:
+	elif script_class == &"SkillSet":
 		editor_view.reload_skills()
-	elif resource is TraitBlock:
+	elif script_class == &"TraitBlock":
 		editor_view.reload_traits()
-	elif resource is CharacterSheet:
+	elif script_class == &"CharacterSheet":
 		editor_view.reload_character_sheet()
-	elif resource is Script:
-		if resource.get_global_name() == &"ItemSheet":
-			editor_view.reload_items()
+	elif script_class == &"ItemSheet":
+		editor_view.reload_items()

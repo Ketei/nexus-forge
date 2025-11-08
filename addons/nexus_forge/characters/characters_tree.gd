@@ -4,7 +4,7 @@ extends Tree
 
 signal character_selected(character_sheet: CharacterSheet, unsaved: bool)
 signal character_closed(resource: CharacterSheet, unsaved: bool)
-signal character_id_changed(from: StringName, to: StringName)
+#signal character_id_changed(from: StringName, to: StringName)
 
 
 func _ready() -> void:
@@ -13,7 +13,7 @@ func _ready() -> void:
 	create_item()
 	
 	button_clicked.connect(_on_button_clicked)
-	item_edited.connect(_on_item_edited)
+	#item_edited.connect(_on_item_edited)
 	item_selected.connect(_on_item_selected)
 
 
@@ -26,22 +26,22 @@ func _on_button_clicked(item: TreeItem, _column: int, id: int, mouse_button_inde
 		character_closed.emit(meta["resource"], meta["unsaved"])
 
 
-func _on_item_edited() -> void:
-	var edited: TreeItem = get_edited()
-	
-	if edited.get_text(0) == edited.get_metadata(0):
-		return
-	
-	var new_string: String = get_valid_id(edited.get_text(0), edited)
-	var old_id: StringName = StringName(edited.get_metadata(0))
-	var new_id: StringName = StringName(new_string)
-	
-	edited.set_text(0, new_string)
-	edited.set_metadata(0, new_string)
-	
-	sort_single_item(edited)
-	
-	character_id_changed.emit(old_id, new_id)
+#func _on_item_edited() -> void:
+	#var edited: TreeItem = get_edited()
+	#
+	#if edited.get_text(0) == edited.get_metadata(0):
+		#return
+	#
+	#var new_string: String = get_valid_id(edited.get_text(0), edited)
+	#var old_id: StringName = StringName(edited.get_metadata(0))
+	#var new_id: StringName = StringName(new_string)
+	#
+	#edited.set_text(0, new_string)
+	#edited.set_metadata(0, new_string)
+	#
+	#sort_single_item(edited)
+	#
+	#character_id_changed.emit(old_id, new_id)
 
 
 func _on_item_selected() -> void:
@@ -60,6 +60,8 @@ func is_any_unsaved() -> bool:
 
 func set_all_saved() -> void:
 	for item in get_root().get_children():
+		if item.get_metadata(0)["unsaved"]:
+			item.set_text(0, item.get_text(0).trim_suffix("*"))
 		item.get_metadata(0)["unsaved"] = false
 
 
@@ -108,9 +110,15 @@ func create_character(resource: CharacterSheet, select: bool = false, emit_selec
 			item_selected.connect(_on_item_selected)
 
 
-func set_unsaved(character_id: StringName, unsaved: bool) -> void:
+func set_unsaved(character_resource: CharacterSheet, unsaved: bool) -> void:
 	for item in get_root().get_children():
-		if item.get_metadata(0)["id"] == character_id:
+		if item.get_metadata(0)["resource"] == character_resource:
+			if unsaved:
+				if not item.get_metadata(0)["unsaved"]:
+					item.set_text(0, item.get_text(0) + "*")
+			else:
+				if item.get_metadata(0)["unsaved"]:
+					item.set_text(0, item.get_text(0).trim_suffix("*"))
 			item.get_metadata(0)["unsaved"] = unsaved
 			return
 
@@ -123,9 +131,9 @@ func get_unsaved() -> Array[CharacterSheet]:
 	return unsaved
 
 
-func remove_character(character_id: StringName) -> void:
+func remove_character(character_sheet: CharacterSheet) -> void:
 	for item in get_root().get_children():
-		if item.get_metadata(0)["resource"].id == character_id:
+		if item.get_metadata(0)["resource"] == character_sheet:
 			item.free()
 			return
 

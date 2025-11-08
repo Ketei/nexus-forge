@@ -12,7 +12,7 @@ extends ValueRange
 ## The maximum value this range can hold.
 @export var max_value: int = 0.0:
 	set(new_max):
-		if new_max < min_value:
+		if  new_max < min_value:
 			new_max = min_value
 		max_value = new_max
 		_fix_value()
@@ -28,18 +28,24 @@ extends ValueRange
 		value = v
 @export_category("Options")
 ## If value can go above [member max_value].
-@export var allow_greater: bool = false
+@export var allow_greater: bool = false:
+	set(a):
+		allow_greater = a
+		if a:
+			_fix_value()
 ## If value can go below [member min_value].
-@export var allow_lesser: bool = false
+@export var allow_lesser: bool = false:
+	set(a):
+		allow_lesser = a
+		if a:
+			_fix_value()
 
 
 func _fix_value() -> void:
-	if value < min_value:
-		if allow_lesser == false:
-			value = min_value
-	elif max_value < value:
-		if allow_greater == false:
-			value = max_value
+	if not allow_lesser and value < min_value:
+		value = min_value
+	if not allow_greater and max_value < value:
+		value = max_value
 
 
 func range_type() -> int:

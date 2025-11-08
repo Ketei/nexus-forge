@@ -1,7 +1,6 @@
 @tool
 extends PanelContainer
 
-
 const LineEditConfirmationDialog = preload("res://addons/nexus_forge/dialogs/lineedit_confirmation_dialog.gd")
 
 var _unsaved: bool = false
@@ -55,6 +54,38 @@ func _ready() -> void:
 	add_char_string_button.pressed.connect(_on_add_data_pressed.bind("new_string", ""))
 	character_data_tree.data_changed.connect(_something_changed)
 	char_tree.character_selected.connect(_on_character_selected)
+	
+	char_tree.character_closed.connect(_on_close_character_pressed)
+
+
+func _on_close_character_pressed(resource: CharacterSheet, unsaved: bool) -> void:
+	if unsaved:
+		var unsaved_dialog := preload("res://addons/nexus_forge/dialogs/unsaved_dialog_script.gd").new()
+		unsaved_dialog.title = "Save Character..."
+		unsaved_dialog.dialog_text = "Character has unsaved changes.\nDo you want to save before closing?"
+		add_child(unsaved_dialog)
+		unsaved_dialog.show()
+		
+		var result: int = await unsaved_dialog.dialog_finished # 0 = save, 1 = don't save, 2 = cancel
+		
+		if result == 0:
+			ResourceSaver.save(resource)
+		elif result == 2:
+			unsaved_dialog.queue_free()
+			return
+		unsaved_dialog.queue_free()
+	
+	if resource == current_sheet:
+		current_sheet = null
+		char_id_line.text = ""
+		char_name_line.text = ""
+		set_ui_enabled(false)
+		character_data_tree.clear_data()
+		reset_skills()
+		reset_stats()
+		reset_traits()
+	
+	char_tree.remove_character(resource)
 
 
 func _on_add_data_pressed(data_key: String, data: Variant) -> void:
@@ -66,6 +97,8 @@ func _something_changed(_arg: Variant = null) -> void:
 	if _unsaved:
 		return
 	_unsaved = true
+	if current_sheet != null:
+		char_tree.set_unsaved(current_sheet, true)
 
 
 func update_genders() -> void:
@@ -129,13 +162,12 @@ func update_species_data(species_catalog: SpeciesCatalog = null) -> void:
 
 
 func update_talent_nodes() -> void:
-	#var stat_block: StatBlock = StatBlock.new()
-	
 	var skill_set: SkillSet = SkillSet.new()
 
 	var trait_block: TraitBlock = TraitBlock.new()
 	
 	var stats_data: Dictionary[StringName, int] = StatBlock.stats()
+	
 	var stats: Array[String] = []
 	stats.assign(stats_data.keys())
 	stats.sort_custom(func(a,b): return String(a).naturalnocasecmp_to(String(b)) < 0)
@@ -235,6 +267,8 @@ func _on_new_character_pressed() -> void:
 		if current_sheet != null:
 			save_current_character()
 		var new_resource: CharacterSheet = CharacterSheet.new()
+		if ResourceLoader.has_cached(dialog_result[1]):
+			new_resource.take_over_path(dialog_result[1])
 		new_resource.resource_path = dialog_result[1]
 		if new_resource.stats == null:
 			new_resource.stats = StatBlock.new()
@@ -288,7 +322,12 @@ func _on_open_character_pressed() -> void:
 				resource_preload.skills = SkillSet.new()
 			if resource_preload.traits == null:
 				resource_preload.traits = TraitBlock.new()
-			char_tree.create_character(resource_preload, true, false)
+			
+			if char_tree.has_character(resource_preload):
+				char_tree.select_character(resource_preload, false)
+			else:
+				char_tree.create_character(resource_preload, true, false)
+			
 			load_character(resource_preload)
 			current_sheet = resource_preload
 			set_ui_enabled(true)
@@ -327,7 +366,7 @@ func _on_import_species_data_pressed() -> void:
 	for stat in char_stats_container.get_children():
 		var target_stat: StringName = stat.get_meta(&"stat_id")
 		if stats.has(target_stat):
-			stat.get_child(1).set_value_no_signal(
+			stat.get_meta(&"value").set_value_no_signal(
 					stats[target_stat])
 	
 	for skill in char_skill_container.get_children():
@@ -354,10 +393,14 @@ func set_ui_enabled(enabled: bool) -> void:
 	add_char_float_button.disabled = disabled
 	add_char_bool_button.disabled = disabled
 	add_char_string_button.disabled = disabled
-	load_species_data_btn.disabled = disabled
+	load_species_data_btn.disabled = species_option_button.disabled
 	
 	for item in char_stats_container.get_children():
-		item.get_child(1).editable = enabled
+		item.get_meta(&"value").editable = enabled
+		item.get_meta(&"use_max").disabled = disabled
+		item.get_meta(&"use_min").disabled = disabled
+		item.get_meta(&"max").editable = item.get_meta(&"use_max").button_pressed
+		item.get_meta(&"min").editable = item.get_meta(&"use_min").button_pressed
 	
 	for item in char_skill_container.get_children():
 		item.get_child(1).editable = enabled
@@ -370,20 +413,25 @@ func set_ui_enabled(enabled: bool) -> void:
 
 func reset_stats() -> void:
 	for item in char_stats_container.get_children():
-		if item is HBoxContainer:
-			item.get_child(1).set_value_no_signal(0.0)
+		var max_spn: SpinBox = item.get_meta(&"max")
+		var min_spn: SpinBox = item.get_meta(&"min")
+		item.get_meta(&"value").set_value_no_signal(0.0)
+		item.get_meta(&"use_max").set_pressed_no_signal(false)
+		item.get_meta(&"use_min").set_pressed_no_signal(false)
+		max_spn.editable = false
+		max_spn.set_value_no_signal(1.0)
+		min_spn.editable = false
+		min_spn.set_value_no_signal(0.0)
 
 
 func reset_skills() -> void:
 	for item in char_skill_container.get_children():
-		if item is HBoxContainer:
-			item.get_child(1).set_value_no_signal(item.get_meta(&"default_value", 0.0))
+		item.get_child(1).set_value_no_signal(item.get_meta(&"default_value", 0.0))
 
 
 func reset_traits() -> void:
 	for item in char_traits_container.get_children():
-		if item is HBoxContainer:
-			item.get_child(1).set_value_no_signal(item.get_meta(&"default_value", 0.0))
+		item.get_child(1).set_value_no_signal(item.get_meta(&"default_value", 0.0))
 
 
 func save_current_character() -> void:
@@ -392,12 +440,17 @@ func save_current_character() -> void:
 	current_sheet.species = &"" if species_option_button.selected == -1 else species_option_button.get_item_metadata(species_option_button.selected)
 	current_sheet.gender = gender_option_button.get_item_metadata(gender_option_button.selected)
 	current_sheet.custom_data.clear()
-	current_sheet.custom_data.assign(
-			character_data_tree.get_data())
+	current_sheet.custom_data.assign(character_data_tree.get_data())
+			
 	
 	for stat in char_stats_container.get_children():
-		current_sheet.stats.set(
-				stat.get_meta(&"stat_id"), int(stat.get_child(1).value))
+		var sheet_stat: ValueRange = current_sheet.stats.get(stat.get_meta(&"stat_id"))
+		
+		sheet_stat.value = stat.get_meta(&"value").value
+		sheet_stat.allow_greater = not stat.get_meta(&"use_max").button_pressed
+		sheet_stat.allow_lesser = not stat.get_meta(&"use_min").button_pressed
+		sheet_stat.min_value = stat.get_meta(&"min").value
+		sheet_stat.max_value = stat.get_meta(&"max").value
 	
 	for skill in char_skill_container.get_children():
 		current_sheet.skills.set(
@@ -409,7 +462,7 @@ func save_current_character() -> void:
 				trait_item.get_meta(&"trait_id"),
 				int(trait_item.get_child(1).value))
 	
-	char_tree.set_unsaved(current_sheet.id, _unsaved)
+	char_tree.set_unsaved(current_sheet, _unsaved)
 
 
 func has_unsaved_files() -> bool:
@@ -421,7 +474,7 @@ func save() -> void:
 		save_current_character()
 	var unsaved_characters: Array[CharacterSheet] = char_tree.get_unsaved()
 	for item in unsaved_characters:
-		ResourceSaver.save(current_sheet)
+		ResourceSaver.save(item)
 	char_tree.set_all_saved()
 	_unsaved = false
 
@@ -438,9 +491,26 @@ func load_character(sheet: CharacterSheet) -> void:
 		character_data_tree.add_data(key, sheet.custom_data[key])
 	
 	for stat in char_stats_container.get_children():
-		if stat is HBoxContainer:
-			var stat_range: ValueRange = sheet.stats.get(stat.get_meta(&"stat_id"))
-			stat.get_child(1).set_value_no_signal(stat_range.value if stat_range != null else 1.0)
+		var stat_range: ValueRange = sheet.stats.get(stat.get_meta(&"stat_id"))
+		if stat_range == null:
+			continue
+		var value: SpinBox = stat.get_meta(&"value")
+		
+		value.set_value_no_signal(stat_range.value)
+		value.allow_greater = stat_range.allow_greater
+		value.allow_lesser = stat_range.allow_lesser
+		stat.get_meta(&"use_max").set_pressed_no_signal(not stat_range.allow_greater)
+		stat.get_meta(&"use_min").set_pressed_no_signal(not stat_range.allow_lesser)
+		stat.get_meta(&"max").value = stat_range.max_value
+		stat.get_meta(&"min").value = stat_range.min_value
+		stat.get_meta(&"max").editable = stat_range.allow_greater
+		stat.get_meta(&"min").editable = stat_range.allow_lesser
+		
+		if not stat_range.allow_greater and stat_range.max_value < value.value:
+			value.set_value_no_signal(stat_range.max_value)
+		
+		if not stat_range.allow_lesser and value.value < stat_range.min_value:
+			value.set_value_no_signal(stat_range.min_value)
 	
 	for skill in char_skill_container.get_children():
 		if skill is HBoxContainer:
@@ -467,10 +537,47 @@ func select_gender(gender: CharacterSheet.Gender) -> void:
 			break
 
 # default must be a numeric value (float/type
-func create_stat_item(stat_id: StringName, type: int) -> HBoxContainer:
-	var new_stat: HBoxContainer = HBoxContainer.new()
+func create_stat_item(stat_id: StringName, type: int) -> VBoxContainer:
+	var new_stat: VBoxContainer = VBoxContainer.new()
+	var data_field: HBoxContainer = HBoxContainer.new()
+	var limits_container: HBoxContainer = HBoxContainer.new()
+	var min_container: HBoxContainer = HBoxContainer.new()
+	var max_container: HBoxContainer = HBoxContainer.new()
 	var stat_label: Label = Label.new()
 	var new_value: SpinBox = SpinBox.new()
+	var edit_limits_btn: Button = Button.new()
+	
+	var limit_max_spn: SpinBox = SpinBox.new()
+	var limit_min_spn: SpinBox = SpinBox.new()
+	var allow_greater: CheckBox = CheckBox.new()
+	var allow_lesser: CheckBox = CheckBox.new()
+	
+	limits_container.visible = false
+	
+	allow_lesser.text = "Min"
+	allow_lesser.custom_minimum_size = Vector2(62.0, 32.0)
+	allow_lesser.tooltip_text = "Use minimum.\nLeaving unchecked will allow stat\nto go lower indefinitely."
+	allow_lesser.disabled = current_sheet == null
+	limit_min_spn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	limit_min_spn.allow_lesser = true
+	limit_min_spn.allow_greater = true
+	limit_min_spn.editable = not allow_lesser.disabled
+	
+	
+	allow_greater.text = "Max"
+	allow_greater.custom_minimum_size = Vector2(62.0, 32.0)
+	allow_lesser.tooltip_text = "Use maximum.\nLeaving unchecked will allow stat\nto go higher indefinitely."
+	allow_greater.disabled = current_sheet == null
+	limit_max_spn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	limit_max_spn.allow_lesser = true
+	limit_max_spn.allow_greater = true
+	limit_max_spn.editable = not allow_greater.disabled
+	
+	edit_limits_btn.custom_minimum_size = Vector2(32.0, 32.0)
+	edit_limits_btn.icon = get_theme_icon("GuiVisibilityHidden", "EditorIcons")
+	edit_limits_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	edit_limits_btn.tooltip_text = "Show limits"
+	edit_limits_btn.flat = true
 	
 	stat_label.text = String(stat_id).capitalize()
 	stat_label.tooltip_text = stat_label.text
@@ -495,11 +602,82 @@ func create_stat_item(stat_id: StringName, type: int) -> HBoxContainer:
 	new_value.editable = ui_enabled
 	
 	new_stat.set_meta(&"stat_id", stat_id)
+	new_stat.set_meta(&"value", new_value)
+	new_stat.set_meta(&"use_max", allow_greater)
+	new_stat.set_meta(&"use_min", allow_lesser)
+	new_stat.set_meta(&"max", limit_max_spn)
+	new_stat.set_meta(&"min", limit_min_spn)
 	
-	new_stat.add_child(stat_label)
-	new_stat.add_child(new_value)
+	min_container.add_child(allow_lesser)
+	min_container.add_child(limit_min_spn)
+	
+	max_container.add_child(allow_greater)
+	max_container.add_child(limit_max_spn)
+	
+	data_field.add_child(edit_limits_btn)
+	data_field.add_child(stat_label)
+	data_field.add_child(new_value)
+	
+	limits_container.add_child(min_container)
+	limits_container.add_child(max_container)
+	
+	new_stat.add_child(data_field)
+	new_stat.add_child(limits_container)
+	
+	edit_limits_btn.pressed.connect(_toggle_limit_visibility_pressed.bind(edit_limits_btn, limits_container))
+	limit_max_spn.value_changed.connect(_on_limit_max_changed.bind(new_value))
+	limit_min_spn.value_changed.connect(_on_limit_min_changed.bind(new_value, limit_max_spn))
+	
+	allow_lesser.toggled.connect(_on_toggle_min_stat.bind(new_value, limit_min_spn, limit_max_spn))
+	allow_greater.toggled.connect(_on_toggle_max_stat.bind(new_value, limit_max_spn))
 	
 	return new_stat
+
+
+func _on_toggle_min_stat(is_enabled: bool, stat: SpinBox, min_spin: SpinBox, max_spin: SpinBox) -> void:
+	stat.allow_lesser = not is_enabled
+	max_spin.allow_lesser = not is_enabled
+	min_spin.editable = is_enabled
+	
+	if is_enabled and stat.value < min_spin.value:
+		stat.value = min_spin.value
+	
+	_something_changed()
+
+
+func _on_toggle_max_stat(is_enabled: bool, stat: SpinBox, max_spin: SpinBox) -> void:
+	stat.allow_greater = not is_enabled
+	max_spin.editable = is_enabled
+	if is_enabled and max_spin.value < stat.value:
+		stat.value = max_spin.value
+	_something_changed()
+
+
+func _toggle_limit_visibility_pressed(toggle_button: Button, limit_container: HBoxContainer) -> void:
+	if limit_container.visible: # Icon should be to show
+		toggle_button.icon = get_theme_icon("GuiVisibilityHidden", "EditorIcons")
+		toggle_button.tooltip_text = "Show limits"
+	else:
+		toggle_button.tooltip_text = "Hide limits"
+		toggle_button.icon = get_theme_icon("GuiVisibilityVisible", "EditorIcons")
+	limit_container.visible = not limit_container.visible
+	
+
+
+func _on_limit_max_changed(value: float, stat: SpinBox) -> void:
+	stat.max_value = value
+	if value < stat.value:
+		stat.value = value
+	
+	_something_changed()
+
+
+func _on_limit_min_changed(value: float, stat: SpinBox, max_spin: SpinBox) -> void:
+	stat.min_value = value
+	max_spin.min_value = value
+	if stat.value < value:
+		stat.value = value
+	_something_changed()
 
 
 func create_skill_item(skill_id: StringName, default_value: int) -> HBoxContainer:

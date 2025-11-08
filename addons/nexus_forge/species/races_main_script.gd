@@ -231,6 +231,7 @@ func _on_something_changed(_arg = null) -> void:
 	if _unsaved:
 		return
 	_unsaved = true
+	
 
 
 func _on_value_field_toggled(toggled: bool, spin: SpinBox) -> void:
@@ -454,8 +455,8 @@ func update_talent_nodes() -> void:
 	var trait_map: Dictionary[StringName, HBoxContainer] = {}
 	for existing_trait in race_traits_container.get_children():
 		race_traits_container.remove_child(existing_trait)
-		if traits.has(existing_trait.get_meta(&"trait_id")):
-			trait_map[existing_trait.get_meta(&"trait_id")] = existing_trait
+		if traits.has(existing_trait.get_meta(&"field_id")):
+			trait_map[existing_trait.get_meta(&"field_id")] = existing_trait
 		else:
 			existing_trait.queue_free()
 	
