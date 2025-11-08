@@ -230,7 +230,7 @@ func _on_create_species_pressed() -> void:
 func _on_something_changed(_arg = null) -> void:
 	if _unsaved:
 		return
-	print("Unsaved set to true!")
+	
 	_unsaved = true
 
 
