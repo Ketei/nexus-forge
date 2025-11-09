@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3 uid="uid://djul28onmafsc"]
+[gd_scene load_steps=11 format=3 uid="uid://djul28onmafsc"]
 
 [ext_resource type="Script" uid="uid://be3gdic2hc526" path="res://addons/nexus_forge/quests/quest_main_scene_script.gd" id="1_a7xra"]
 [ext_resource type="Texture2D" uid="uid://12lyg7db58dg" path="res://addons/nexus_forge/icons/add_int.svg" id="2_2wkcw"]
@@ -15,18 +15,6 @@ content_margin_left = 8.0
 content_margin_top = 6.0
 content_margin_right = 8.0
 content_margin_bottom = 8.0
-
-[sub_resource type="Image" id="Image_d14ys"]
-data = {
-"data": PackedByteArray(255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 0, 255, 92, 92, 127, 255, 92, 92, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 0, 255, 93, 93, 255, 255, 92, 92, 127, 255, 92, 92, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 92, 92, 127, 255, 92, 92, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 92, 92, 127, 255, 92, 92, 0, 255, 92, 92, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 231, 255, 90, 90, 54, 255, 94, 94, 57, 255, 93, 93, 233, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 231, 255, 90, 90, 54, 255, 94, 94, 57, 255, 93, 93, 233, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 0, 255, 93, 93, 0, 255, 91, 91, 0, 255, 91, 91, 0, 255, 91, 91, 42, 255, 90, 90, 0, 255, 94, 94, 0, 255, 91, 91, 42, 255, 93, 93, 233, 255, 92, 92, 232, 255, 93, 93, 41, 255, 90, 90, 0, 255, 94, 94, 0, 255, 91, 91, 42, 255, 93, 93, 233, 255, 92, 92, 232, 255, 92, 92, 0, 255, 92, 92, 0, 255, 91, 91, 0, 255, 91, 91, 0, 255, 91, 91, 0, 255, 91, 91, 45, 255, 93, 93, 44, 255, 91, 91, 0, 255, 91, 91, 42, 255, 91, 91, 42, 255, 93, 93, 0, 255, 91, 91, 45, 255, 93, 93, 44, 255, 91, 91, 0, 255, 91, 91, 42, 255, 91, 91, 42, 255, 91, 91, 0, 255, 91, 91, 0, 255, 91, 91, 0, 255, 91, 91, 0, 255, 91, 91, 45, 255, 92, 92, 235, 255, 92, 92, 234, 255, 89, 89, 43, 255, 91, 91, 0, 255, 91, 91, 0, 255, 91, 91, 45, 255, 92, 92, 235, 255, 92, 92, 234, 255, 89, 89, 43, 255, 91, 91, 0, 255, 91, 91, 0, 255, 91, 91, 0, 255, 91, 91, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 92, 92, 235, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 233, 255, 91, 91, 59, 255, 92, 92, 61, 255, 92, 92, 235, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 233, 255, 91, 91, 59, 255, 92, 92, 61, 255, 92, 92, 0, 255, 92, 92, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0),
-"format": "RGBA8",
-"height": 16,
-"mipmaps": false,
-"width": 16
-}
-
-[sub_resource type="ImageTexture" id="ImageTexture_t2xw8"]
-image = SubResource("Image_d14ys")
 
 [node name="Quests" type="PanelContainer"]
 anchors_preset = 15
@@ -60,7 +48,6 @@ layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "Search Quest"
 clear_button_enabled = true
-right_icon = SubResource("ImageTexture_t2xw8")
 
 [node name="NewQuestBtn" type="Button" parent="MainContainer/TreeContainer/HBoxContainer"]
 custom_minimum_size = Vector2(32, 32)
@@ -155,7 +142,6 @@ custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Create integer variable."
 disabled = true
-icon = SubResource("ImageTexture_t2xw8")
 icon_alignment = 1
 
 [node name="VSeparator" type="VSeparator" parent="MainContainer/BasicContainer/CustomDataContainer/QDHeaderContainer/AddButtonsContainer"]
@@ -200,7 +186,6 @@ size_flags_stretch_ratio = 3.0
 placeholder_text = "Search Custom Data"
 editable = false
 clear_button_enabled = true
-right_icon = SubResource("ImageTexture_t2xw8")
 
 [node name="QuestDataTree" type="Tree" parent="MainContainer/BasicContainer/CustomDataContainer"]
 layout_mode = 2
@@ -234,14 +219,12 @@ size_flags_horizontal = 3
 placeholder_text = "Search Stage"
 editable = false
 clear_button_enabled = true
-right_icon = SubResource("ImageTexture_t2xw8")
 
 [node name="NewStageBtn" type="Button" parent="MainContainer/StageContainer/MainCotnainer/SearchStageContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Create Stage"
 disabled = true
-icon = SubResource("ImageTexture_t2xw8")
 flat = true
 icon_alignment = 1
 
@@ -327,7 +310,6 @@ custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Create integer variable."
 disabled = true
-icon = SubResource("ImageTexture_t2xw8")
 icon_alignment = 1
 
 [node name="VSeparator" type="VSeparator" parent="MainContainer/StageContainer/CustomDataContainer/SDHeaderContainer/AddButtonsContainer"]
@@ -372,7 +354,6 @@ size_flags_stretch_ratio = 3.0
 placeholder_text = "Search Custom Data"
 editable = false
 clear_button_enabled = true
-right_icon = SubResource("ImageTexture_t2xw8")
 
 [node name="StageDataTree" type="Tree" parent="MainContainer/StageContainer/CustomDataContainer"]
 layout_mode = 2
@@ -406,14 +387,12 @@ size_flags_horizontal = 3
 placeholder_text = "Search Step"
 editable = false
 clear_button_enabled = true
-right_icon = SubResource("ImageTexture_t2xw8")
 
 [node name="NewStepBtn" type="Button" parent="MainContainer/StepContainer/StepsContainer/MainContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Create Step"
 disabled = true
-icon = SubResource("ImageTexture_t2xw8")
 flat = true
 icon_alignment = 1
 
@@ -499,7 +478,6 @@ custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Create integer variable."
 disabled = true
-icon = SubResource("ImageTexture_t2xw8")
 icon_alignment = 1
 
 [node name="VSeparator" type="VSeparator" parent="MainContainer/StepContainer/CustomDataContainer/SDHeaderContainer/AddButtonsContainer"]
@@ -544,7 +522,6 @@ size_flags_stretch_ratio = 3.0
 placeholder_text = "Search Custom Data"
 editable = false
 clear_button_enabled = true
-right_icon = SubResource("ImageTexture_t2xw8")
 
 [node name="StepDataTree" type="Tree" parent="MainContainer/StepContainer/CustomDataContainer"]
 layout_mode = 2

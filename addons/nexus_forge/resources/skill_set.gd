@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/nexus_forge/icons/stars.svg")
 class_name SkillSet
 extends Resource
 

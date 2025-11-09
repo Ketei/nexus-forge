@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/nexus_forge/icons/chest_full.svg")
 class_name ItemCatalog
 extends Resource
 

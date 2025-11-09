@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/nexus_forge/icons/star.svg")
 class_name SkillCatalog
 extends Resource
 

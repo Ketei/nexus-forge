@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/nexus_forge/icons/stats.svg")
 class_name StatBlock
 extends Resource
 ## A resource that defines stats for characters.

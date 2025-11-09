@@ -1,3 +1,5 @@
+@tool
+@icon("res://addons/nexus_forge/icons/stat_catalog.svg")
 class_name StatCatalog
 extends Resource
 

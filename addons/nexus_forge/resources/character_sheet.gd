@@ -1,3 +1,5 @@
+@tool
+@icon("res://addons/nexus_forge/icons/character_icon.svg")
 class_name CharacterSheet
 extends Resource
 

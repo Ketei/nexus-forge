@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/nexus_forge/icons/hexagons.svg")
 class_name TraitBlock
 extends Resource
 

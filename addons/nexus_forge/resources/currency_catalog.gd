@@ -1,3 +1,5 @@
+@tool
+@icon("res://addons/nexus_forge/icons/coin_full.svg")
 class_name CurrencyCatalog
 extends Resource
 

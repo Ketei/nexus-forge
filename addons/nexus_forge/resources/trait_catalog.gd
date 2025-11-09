@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/nexus_forge/icons/hexagon.svg")
 class_name TraitCatalog
 extends Resource
 

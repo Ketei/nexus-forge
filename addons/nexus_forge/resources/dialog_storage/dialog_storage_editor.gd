@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/nexus_forge/icons/dialog_full.svg")
 class_name EditorDiscourseDialog
 extends DiscourseDialog
 

@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/nexus_forge/icons/variable_icon.svg")
 class_name BlackboardData
 extends Resource
 ## A resource used to hold variables in a structured manner.

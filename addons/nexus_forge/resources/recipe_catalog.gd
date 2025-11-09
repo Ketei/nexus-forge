@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/nexus_forge/icons/bluepring_fill.svg")
 class_name RecipeCatalog
 extends Resource
 

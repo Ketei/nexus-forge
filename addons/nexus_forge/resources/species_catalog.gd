@@ -1,6 +1,11 @@
 @tool
+@icon("res://addons/nexus_forge/icons/dna.svg")
 class_name SpeciesCatalog
 extends Resource
+## A resource holding species and subspecies data with basic stats
+##
+## A subspecies will inherit all the parent's species skills, traints and stats
+## if the subspecies doesn't have them.[br]
 
 
 const DEFAULT_DATA: Dictionary[String, Variant] = {}

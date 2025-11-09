@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/nexus_forge/icons/scroll_full.svg")
 class_name QuestCatalog
 extends Resource
 ## Resource containing all data related to quests.
