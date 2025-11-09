@@ -287,8 +287,14 @@ func save_current_species() -> void:
 
 
 func load_species_resource() -> void:
-	for species in _species_resource.species():
-		races_tree.add_species(species)
+	var species_tree: Dictionary[StringName, Dictionary] = _species_resource.get_species_map()
+	buid_species_map(species_tree)
+
+
+func buid_species_map(map: Dictionary, _on: TreeItem = races_tree.get_root()) -> void:
+	for top_species in map.keys():
+		var parent_species: TreeItem = races_tree.add_species(top_species, false, _on)
+		buid_species_map(map[top_species], parent_species)
 
 
 func load_species(species_id: StringName) -> void:
@@ -471,6 +477,9 @@ func update_talent_nodes() -> void:
 			race_traits_container.add_child(new_trait)
 	for remaining_trait in trait_map.keys():
 		trait_map[remaining_trait].queue_free()
+	
+	if loaded_species != &"":
+		_on_something_changed()
 
 
 func value_field_active(field: HBoxContainer) -> bool:

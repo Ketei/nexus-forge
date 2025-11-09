@@ -125,7 +125,9 @@ func update_species_data(species_catalog: SpeciesCatalog = null) -> void:
 	
 	species_option_button.clear()
 	
-	var species_path: String = EditorNFPlugin.get_project_settings_path("species")
+	var species_path: String = ProjectSettings.get_setting(
+			EditorNFPlugin.get_project_settings_path("species"),
+			"")
 	
 	if species_catalog == null:
 		if species_path != "" and FileAccess.file_exists(species_path):
@@ -244,6 +246,9 @@ func update_talent_nodes() -> void:
 			char_traits_container.add_child(new_trait)
 	for remaining_trait in trait_map.keys():
 		trait_map[remaining_trait].queue_free()
+	
+	if current_sheet != null:
+		_something_changed()
 
 
 func _on_new_character_pressed() -> void:
@@ -393,14 +398,12 @@ func import_species_data(species_sheet: SpeciesCatalog) -> void:
 	
 	for skill in char_skill_container.get_children():
 		var target_skill: StringName = skill.get_meta(&"skill_id")
-		print("setting skill ", target_skill)
 		if skills.has(target_skill):
 			skill.get_child(1).set_value_no_signal(
 				skills[target_skill])
 	
 	for child in char_traits_container.get_children():
 		var target_trait: StringName = child.get_meta(&"trait_id")
-		print("setting trait ", target_trait)
 		if traits.has(target_trait):
 			child.get_child(1).set_value_no_signal(
 					traits[target_trait])
@@ -439,9 +442,19 @@ func reset_stats() -> void:
 	for item in char_stats_container.get_children():
 		var max_spn: SpinBox = item.get_meta(&"max")
 		var min_spn: SpinBox = item.get_meta(&"min")
+		var btn: Button = item.get_meta(&"collapse")
+		var flags: int = btn.get_meta(&"range_flags")
 		item.get_meta(&"value").set_value_no_signal(0.0)
 		item.get_meta(&"use_max").set_pressed_no_signal(false)
 		item.get_meta(&"use_min").set_pressed_no_signal(false)
+		if BitUtils.is_bit_index(flags, 2, true):
+			btn.icon = preload("res://addons/nexus_forge/icons/range_uncollapsed_none.svg")
+		else:
+			btn.icon = preload("res://addons/nexus_forge/icons/range_collapsed_none.svg")
+		
+		flags = BitUtils.set_bits(flags, 3, false)
+		btn.set_meta(&"range_flags", flags)
+		
 		max_spn.editable = false
 		max_spn.set_value_no_signal(1.0)
 		min_spn.editable = false

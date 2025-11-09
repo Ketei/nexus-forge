@@ -809,7 +809,8 @@ func save_current_resource(fix_keys: bool = false) -> void:
 		if map.get_phrase_text(strnm_key) != keys[key]:
 			map.set_phrase_text(strnm_key, keys[key])
  		
-		node_map[key].set_meta(&"phrase_key", keys[key])
+		node_map[key].set_meta(&"phrase_key", key)
+		
 		if fix_keys and node_map[key].text.strip_edges() != key:
 			node_map[key].text = key
 	

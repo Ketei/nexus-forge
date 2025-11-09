@@ -22,8 +22,9 @@ var graph_nodes: Array[DiscourseGraphNode] = []
 
 
 func _ready() -> void:
-	if Engine.is_editor_hint() and owner == get_tree().edited_scene_root:
-		return
+	#if Engine.is_editor_hint() and owner == get_tree().edited_scene_root:
+		#print("Blocking ready")
+		#return
 	connection_popup = PopupMenu.new()
 	connection_popup.name = &"ConnectionsPopupMenu"
 	connection_popup.visible = false
@@ -715,7 +716,9 @@ func populate_popup(node_type: ConnectionType, port_direction: String) -> void:
 
 
 func _on_connection_to_empty(from_node: StringName, from_port: int, release_position: Vector2) -> void:
+	print("To Empty")
 	if not Input.is_key_pressed(KEY_CTRL):
+		print("NoCTRL")
 		return
 	var port_node: DiscourseGraphNode = get_node(NodePath(from_node))
 	var port_type: ConnectionType = port_node.get_output_port_type(from_port) as ConnectionType
@@ -768,6 +771,7 @@ func _on_connection_to_empty(from_node: StringName, from_port: int, release_posi
 
 
 func _on_connection_from_empty(to_node: StringName, to_port: int, release_position: Vector2) -> void:
+	print("From Empty")
 	if not Input.is_key_pressed(KEY_CTRL):
 		return
 	var to_graph: DiscourseGraphNode = get_node(NodePath(to_node))

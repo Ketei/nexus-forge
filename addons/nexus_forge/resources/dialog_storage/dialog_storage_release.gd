@@ -14,11 +14,11 @@ extends DiscourseDialog
 # generate a new UUID and map it {"my_custom_id": { "uuid": (UUID), "resource": pointer }}
 # Then I simply merge the localization and the format_strings from the _dialog_locale
 # into one file.
-@export var localization_uuid: StringName = &""
+@export_storage var localization_uuid: StringName = &""
 var _dialog_locale: DiscourseDialogLocale = null
 
 # Map of custom IDs for the conversation {"EntryNode": (UUID)}
-@export var id_map: Dictionary[String, StringName] = {}
+@export_storage var id_map: Dictionary[String, StringName] = {}
 
 # Example of how data will be structured.
 #var store = {

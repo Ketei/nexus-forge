@@ -269,3 +269,30 @@ func clear_species_skills(species_id: StringName) -> void:
 func clear_species_traits(species_id: StringName) -> void:
 	if _species.has(species_id):
 		_species[species_id]["traits"].clear()
+
+
+func get_species_map() -> Dictionary[StringName, Dictionary]:
+	var map: Dictionary[StringName, Dictionary] = {}
+	var parent_species: Array[StringName] = []
+	
+	for species_id in _species.keys():
+		if _species[species_id]["parent_key"] == &"":
+			parent_species.append(species_id)
+	
+	for species_id in parent_species:
+		map[species_id] = get_subspecies_of(species_id, species_id)
+	
+	return map
+
+
+func get_subspecies_of(species_id: StringName, _origin: StringName = &"") -> Dictionary[StringName, Dictionary]:
+	var map: Dictionary[StringName, Dictionary] = {}
+	
+	for sub_species in _species.keys():
+		if sub_species == _origin or sub_species == species_id:
+			continue
+		
+		if _species[sub_species]["parent_key"] == species_id:
+			map[sub_species] = get_subspecies_of(sub_species, _origin)
+	
+	return map

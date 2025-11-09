@@ -502,7 +502,7 @@ func add_data_to_active_recipe_item(on_input: bool, data: Variant, data_name: St
 	elif not on_input and _active_output_rcp == null:
 		return
 	
-	var new_data: TreeItem = recipe_input_tree.get_root().get_child(_active_input_rcp) if on_input else recipe_output_tree.get_root().get_child(_active_output_rcp)
+	var new_data: TreeItem = recipe_input_tree.get_root().get_child(_active_input_rcp).create_child() if on_input else recipe_output_tree.get_root().get_child(_active_output_rcp).create_child()
 	var new_id: String = validate_data_id(data_name, new_data)
 	
 	new_data.set_text(0, new_id)

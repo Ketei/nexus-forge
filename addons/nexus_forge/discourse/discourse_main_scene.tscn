@@ -1,6 +1,7 @@
-[gd_scene load_steps=20 format=3 uid="uid://d216eid5mh0ts"]
+[gd_scene load_steps=21 format=3 uid="uid://d216eid5mh0ts"]
 
 [ext_resource type="Script" uid="uid://bqico4ogja4xf" path="res://addons/nexus_forge/discourse/discourse_main_panel_script.gd" id="1_viyrt"]
+[ext_resource type="Script" uid="uid://cnbww5dfg3xls" path="res://addons/nexus_forge/discourse/conversation_tree_script.gd" id="2_2wl78"]
 [ext_resource type="Script" uid="uid://dk607iuh4bkv6" path="res://addons/nexus_forge/discourse/discourse_panel_script.gd" id="2_f5jrf"]
 [ext_resource type="Script" uid="uid://eh1dhsdbwf8o" path="res://addons/nexus_forge/discourse/discourse_nodes_tree.gd" id="2_nnanj"]
 [ext_resource type="Texture2D" uid="uid://brtp4ypk1wxqu" path="res://addons/nexus_forge/icons/new_language_plus.svg" id="3_f5jrf"]
@@ -92,6 +93,7 @@ text = "Coversations"
 layout_mode = 2
 size_flags_vertical = 3
 hide_root = true
+script = ExtResource("2_2wl78")
 
 [node name="NodesContainer" type="VBoxContainer" parent="MainSplitContainer/MainSidebar/SidebarSplitContainer"]
 custom_minimum_size = Vector2(0, 232)

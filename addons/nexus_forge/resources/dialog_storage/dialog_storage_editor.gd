@@ -1,3 +1,4 @@
+@tool
 class_name EditorDiscourseDialog
 extends DiscourseDialog
 
@@ -12,10 +13,10 @@ const DialogNodes = DiscourseGraphNode.DialogueNodeType
 
 #@export var entry_node: String = ""
 #@export var base_language: String = ""
-@export var scroll_offset: Vector2 = Vector2.ZERO:
+@export_storage var scroll_offset: Vector2 = Vector2.ZERO:
 	set(new_scroll):
 		scroll_offset = new_scroll.snappedf(0.001)
-@export var zoom: float = 1.0:
+@export_storage var zoom: float = 1.0:
 	set(new_zoom):
 		zoom = snappedf(new_zoom, 0.001)
 
@@ -26,13 +27,13 @@ const DialogNodes = DiscourseGraphNode.DialogueNodeType
 # will be stored in the _global key. When loading the plugin, the resource will first
 # check if the UUID exists on the node_localization["_global"] dictionary and if not
 # THEN return the specific language localization.
-@export var locale_map: Dictionary[String, PackedStringArray] = {
+@export_storage var locale_map: Dictionary[String, PackedStringArray] = {
 	#"en": ["US", "GB"]
 }
 
 # Localizations with the same id will be merged toguether on the release file.
 # If empty then each conversation will have it's own unique locale file.
-@export var locale_group: String = ""
+@export_storage var locale_group: String = ""
 
 #@export var node_localization: Dictionary[String, Dictionary] = {
 	#"a809f219-f5e1-4dc2-a041-4d200062dd53": {
@@ -50,7 +51,7 @@ const DialogNodes = DiscourseGraphNode.DialogueNodeType
 			#"GB": {"options": ["gray", "green"]}}}
 #}
 
-@export var node_frames: Dictionary[String, Dictionary] = {
+@export_storage var node_frames: Dictionary[String, Dictionary] = {
 	#"e2f420f0-1e9b-4672-bdaf-e926b59945d2": {
 		#"title": "Random Frame",
 		#"position": Vector2(100, 100),
@@ -108,7 +109,7 @@ const DialogNodes = DiscourseGraphNode.DialogueNodeType
 	#}
 #}
 
-@export var node_structure: Array[Dictionary] = [
+@export_storage var node_structure: Array[Dictionary] = [
 	#{"is_node": true, "uuid": "kasdjlaksd"},
 	#{"is_node": false, "name": "Folder", "items": [{"is_node": true, "uuid": "kasjdlasjk"}]}
 ]
@@ -884,7 +885,7 @@ func get_node_localization_data() -> Dictionary[StringName, Dictionary]:
 	var data: Dictionary[StringName, Dictionary] = {}
 	
 	for uuid in node_localization.keys():
-		if node_localization.has("common"):
+		if node_localization[uuid].has("common"):
 			continue
 		data[uuid] = {}
 		for language in node_localization[uuid].keys():

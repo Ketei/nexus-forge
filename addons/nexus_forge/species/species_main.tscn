@@ -71,7 +71,6 @@ expand_icon = true
 layout_mode = 2
 size_flags_vertical = 3
 allow_reselect = true
-hide_folding = true
 hide_root = true
 script = ExtResource("3_u68gt")
 

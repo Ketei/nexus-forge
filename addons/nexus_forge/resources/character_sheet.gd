@@ -5,7 +5,6 @@ extends Resource
 enum Gender {
 	MALE,
 	FEMALE,
-	BEAR
 }
 
 

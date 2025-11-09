@@ -371,7 +371,7 @@ func _on_create_database_pressed(node: Control) -> void:
 		item_resource.resource_path = result[1]
 		item_link.items = item_resource
 		ProjectSettings.set_setting(
-				EditorNFPlugin.get_project_settings_path("quests"),
+				EditorNFPlugin.get_project_settings_path("items"),
 				result[1])
 		if Engine.is_editor_hint():
 			ProjectSettings.save()
@@ -397,7 +397,7 @@ func _on_load_database_pressed(node: Control) -> void:
 		if res_pre != null and res_pre is ItemCatalog:
 			item_link.items = res_pre
 			ProjectSettings.set_setting(
-					EditorNFPlugin.get_project_settings_path("quests"),
+					EditorNFPlugin.get_project_settings_path("items"),
 					result[1])
 			if Engine.is_editor_hint():
 				ProjectSettings.save()

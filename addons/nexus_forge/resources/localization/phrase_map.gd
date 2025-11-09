@@ -320,7 +320,7 @@ func get_text(phrase_key: StringName, override_values: Dictionary[String, String
 							phrase_key,
 							format_key,
 							override_values[format_key]))
-		elif _value_keys[phrase_key].has(format_key):
+		elif _value_keys.has(phrase_key) and _value_keys[phrase_key].has(format_key):
 			case_result.assign(
 					_find_case_callable(
 							phrase_key,

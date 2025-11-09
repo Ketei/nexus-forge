@@ -3,11 +3,11 @@ extends Resource
 
 const NodeTypes := DialogParser.NodeTypes
 
-@export var entry_node: StringName = ""
-@export var base_language: String = ""
+@export_storage var entry_node: StringName = ""
+@export_storage var base_language: String = ""
 
 # THis is editor only.
-@export var node_localization: Dictionary[StringName, Dictionary] = {
+@export_storage var node_localization: Dictionary[StringName, Dictionary] = {
 	#"a809f219-f5e1-4dc2-a041-4d200062dd53": {
 		#"common": {"dialog": "10-5=5"}},
 	#"629de91c-d6c1-4f67-a287-b6899695b0a6": {
@@ -24,7 +24,7 @@ const NodeTypes := DialogParser.NodeTypes
 }
 
 
-@export var localized_strings: Dictionary[String, Dictionary] = {
+@export_storage var localized_strings: Dictionary[String, Dictionary] = {
 	#"TITLE": {
 		#"en": {
 			#"base": {
@@ -45,7 +45,7 @@ const NodeTypes := DialogParser.NodeTypes
 	#}
 }
 
-@export var dialog_nodes: Dictionary[StringName, Dictionary] = {}
+@export_storage var dialog_nodes: Dictionary[StringName, Dictionary] = {}
 
 var parsed_dialog_cache: Cache
 #var storex = {

@@ -14,7 +14,6 @@ enum StatType {
 
 @export var level: RangeInt
 @export var health: RangeInt
-@export var stamina: RangeInt
 
 var _custom_stats: Dictionary[StringName, ValueRange] = {}
 

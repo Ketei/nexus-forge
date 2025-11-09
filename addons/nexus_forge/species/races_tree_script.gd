@@ -97,12 +97,12 @@ func _on_button_clicked(item: TreeItem, _column: int, id: int, mouse_button_inde
 	
 	if id == ButtonID.CREATE_SPECIES:
 		var id_creator := LineEditConfirmationDialog.new()
-		id_creator.line_placeholder_text = "Species ID"
+		id_creator.line_placeholder_text = "Subspecies ID"
 		id_creator.allow_empty = false
 		id_creator.use_blacklist = true
 		id_creator.character_blacklist.append(" ")
 		id_creator.text_blacklist.assign(get_all_species())
-		id_creator.title = "Create Species"
+		id_creator.title = "Create Subspecies"
 		id_creator.ok_button_text = "Create"
 		add_child(id_creator)
 		id_creator.show()

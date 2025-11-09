@@ -7,20 +7,8 @@ enum TreeButtonID {
 	NEW_PHRASE_ARGUMENT,
 	RENAME_LOCALIZED_NODE}
 
-#enum DiscourseNodeType {
-	#GROUP,
-	#NODE}
-
-const SELECTED_COLOR: Color = Color.SKY_BLUE
-
 var active_conversation: EditorDiscourseDialog = null
-var active_conversation_item: TreeItem = null:
-	set(new_conversation):
-		if active_conversation_item != null:
-			active_conversation_item.clear_custom_color(0)
-		active_conversation_item = new_conversation
-		if new_conversation != null:
-			new_conversation.set_custom_color(0, SELECTED_COLOR)
+
 var localization_node_selected: DiscourseGraphNode = null
 var base_language: String = "":
 	set(l):
@@ -110,7 +98,7 @@ func _ready() -> void:
 	
 	#create_phrase_btn.disabled = true
 	
-	conversation_tree.create_item()
+	#conversation_tree.create_item()
 	
 	if discourse_window.discourse_graph_edit.entry_node != null:
 		_on_discourse_node_created(discourse_window.discourse_graph_edit.entry_node)
@@ -159,7 +147,7 @@ func _ready() -> void:
 	#phrases_tree.phrase_changed.connect(_on_conversation_changed)
 	
 	new_folder_button.pressed.connect(_on_new_folder_button_pressed)
-	conversation_tree.item_activated.connect(_on_conversation_activated)
+	conversation_tree.conversation_selected.connect(_on_conversation_selected)
 	
 	save_case_btn.pressed.connect(_on_save_cases_btn_pressed)
 	new_text_button.pressed.connect(_on_new_key_field_button_pressed)
@@ -171,11 +159,11 @@ func _ready() -> void:
 	cases_split.dragged.connect(_on_scroll_dragged.bind(case_header_split))
 	
 	default_case_ln_edt.text_changed.connect(_on_conversation_changed)
+	conversation_tree.conversation_close_pressed.connect(_on_conversation_close_pressed)
 
 
 func _on_discourse_node_activated(node: DiscourseGraphNode) -> void:
 	discourse_window.discourse_graph_edit.focus_graph_node(node)
-	_on_graph_edit_offset_changed(Vector2.ZERO)
 
 
 func _on_change_locale_group_pressed() -> void:
@@ -191,19 +179,60 @@ func _on_change_locale_group_pressed() -> void:
 
 
 func _on_graph_edit_offset_changed(_offset: Vector2) -> void:
-	if not listen_offset or active_conversation_item == null or active_conversation_item.get_metadata(0)["offset_changed"]:
+	if not listen_offset or conversation_tree.active_conversation_item == null or conversation_tree.active_offset_changed:
 		return
-	active_conversation_item.get_metadata(0)["offset_changed"] = true
+	
+	conversation_tree.active_offset_changed = true
+
+
+func _on_conversation_close_pressed(dialog: EditorDiscourseDialog, save_required: bool, offset_changed: bool) -> void:
+	if save_required:
+		var unsaved_prompt: AcceptDialog = preload("res://addons/nexus_forge/dialogs/unsaved_dialog_script.gd").new()
+		add_child(unsaved_prompt)
+		unsaved_prompt.show()
+		var result: int = await unsaved_prompt.dialog_finished
+		if result == 0: # Save
+			ResourceSaver.save(dialog)
+		elif result == 2: # Cancel
+			unsaved_prompt.queue_free()
+			return
+		unsaved_prompt.queue_free()
+	elif offset_changed:
+		if dialog == active_conversation:
+			dialog.scroll_offset = discourse_window.discourse_graph_edit.scroll_offset
+			dialog.zoom = discourse_window.discourse_graph_edit.zoom
+		ResourceSaver.save(dialog)
+	
+	if dialog == active_conversation:
+		var item: TreeItem = conversation_tree.active_conversation_item
+		var total_items: int = conversation_tree.get_root().get_child_count()
+		var new_item: TreeItem = null
+		
+		if 1 < total_items:
+			if item.get_index() == total_items - 1: # Get a -1
+				new_item = conversation_tree.get_root().get_child(item.get_index() - 1)
+			else: # Get the same index
+				new_item = conversation_tree.get_root().get_child(item.get_index() + 1)
+			
+		if new_item == null:
+			active_conversation == null
+			set_conversation_active(false)
+		else:
+			#active_conversation = new_item.get_metadata(0)["resource"]
+			conversation_tree.set_conversation_item_active(new_item)
+			open_conversation(active_conversation)
+	
+	conversation_tree.remove_conversation(dialog)
 
 
 func _on_menu_close_pressed() -> void:
-	if active_conversation_item == null:
+	if active_conversation == null:
 		return
 	
 	if discourse_window.discourse_graph_edit.focus_tween != null:
 		discourse_window.discourse_graph_edit.stop_focus_animation()
 	
-	if active_conversation_item.get_metadata(0)["unsaved"] or active_conversation_item.get_metadata(0)["offset_changed"]:
+	if conversation_tree.active_unsaved:
 		var unsaved_prompt: AcceptDialog = preload("res://addons/nexus_forge/dialogs/unsaved_dialog_script.gd").new()
 		add_child(unsaved_prompt)
 		unsaved_prompt.show()
@@ -214,8 +243,12 @@ func _on_menu_close_pressed() -> void:
 			unsaved_prompt.queue_free()
 			return
 		unsaved_prompt.queue_free()
+	elif conversation_tree.active_offset_changed:
+		active_conversation.scroll_offset = discourse_window.discourse_graph_edit.scroll_offset
+		active_conversation.zoom = discourse_window.discourse_graph_edit.zoom
+		ResourceSaver.save(active_conversation)
 	
-	var item: TreeItem = active_conversation_item
+	var item: TreeItem = conversation_tree.active_conversation_item
 	var total_items: int = conversation_tree.get_root().get_child_count()
 	var new_item: TreeItem = null
 	
@@ -226,11 +259,12 @@ func _on_menu_close_pressed() -> void:
 			new_item = conversation_tree.get_root().get_child(item.get_index() + 1)
 		
 	if new_item == null:
-		active_conversation_item = null
+		#active_conversation_item = null
 		set_conversation_active(false)
+		conversation_tree.remove_conversation(active_conversation)
+		active_conversation = null
 	else:
-		active_conversation = new_item.get_metadata(0)["resource"]
-		active_conversation_item = new_item
+		conversation_tree.set_conversation_item_active(new_item.get_metadata(0)["resource"])
 		open_conversation(active_conversation)
 	
 	item.free()
@@ -289,9 +323,10 @@ func _on_conversation_changed(_arg = null) -> void:
 	
 	_unsaved = true
 	
-	if active_conversation_item != null:
-		active_conversation_item.get_metadata(0)["unsaved"] = true
-		active_conversation_item.set_text(0, active_conversation_item.get_text(0) + "*")
+	if active_conversation != null:
+		#active_conversation_item.get_metadata(0)["unsaved"] = true
+		#active_conversation_item.set_text(0, active_conversation_item.get_text(0) + "*")
+		conversation_tree.active_unsaved = true
 
 
 func _on_localizer_locale_changed(language: String, region: String) -> void:
@@ -742,14 +777,14 @@ func save_current_dialog_to_memory() -> void:
 								language,
 								region)
 	
-	if _unsaved or active_conversation_item.get_metadata(0)["offset_changed"]:
-		active_conversation_item.get_metadata(0)["unsaved"] = true
-		active_conversation_item.get_metadata(0)["offset_changed"] = false
+	#if _unsaved or conversation_tree.active_offset_changed:
+		#active_conversation_item.get_metadata(0)["unsaved"] = true
+		#active_conversation_item.get_metadata(0)["offset_changed"] = false
 
 
-func _on_conversation_activated() -> void:
-	var item: TreeItem = conversation_tree.get_selected()
-	var conversation: EditorDiscourseDialog = item.get_metadata(0)["resource"]
+func _on_conversation_selected(dialog: EditorDiscourseDialog) -> void:
+	#var item: TreeItem = conversation_tree.get_selected()
+	#var conversation: EditorDiscourseDialog = item.get_metadata(0)["resource"]
 	if not discourse_window.are_conversation_options_enabled():
 		discourse_window.set_graph_edit_visible(true)
 		discourse_window.set_conversation_options_enabled(true)
@@ -759,9 +794,10 @@ func _on_conversation_activated() -> void:
 	if active_conversation != null:
 		save_current_dialog_to_memory()
 	
-	active_conversation = conversation
-	active_conversation_item = item
-	open_conversation(conversation)
+	active_conversation = dialog
+	#active_conversation_item = item
+	conversation_tree.set_conversation_item_active(dialog)
+	open_conversation(dialog)
 
 
 func _on_text_field_changed(_arg: Variant = null) -> void:
@@ -835,33 +871,57 @@ func _on_localizer_item_edited(item: TreeItem) -> void:
 
 
 func _on_new_conversation_pressed() -> void:
-	var file_saver: AcceptDialog = EditorFileDialog.new() if Engine.is_editor_hint() else FileDialog.new()
+	var file_saver: AcceptDialog = preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	file_saver.file_mode = file_saver.FILE_MODE_SAVE_FILE
-	file_saver.access = file_saver.ACCESS_RESOURCES
-	file_saver.add_filter("*.tres", "Resources")
-	file_saver.initial_position = Window.WINDOW_INITIAL_POSITION_CENTER_PRIMARY_SCREEN
 	add_child(file_saver)
-	file_saver.file_selected.connect(_on_conversation_file_saved.bind(file_saver))
-	file_saver.canceled.connect(_on_conversation_file_canceled.bind(file_saver))
 	file_saver.show()
+	
+	var result: Array = await file_saver.dialog_finished
+	
+	if result[0]:
+		var wait_visible: bool = discourse_window.no_dialog_label.visible
+		listen_offset = false
+		if active_conversation != null:
+			save_current_dialog_to_memory()
+		var new_conv: EditorDiscourseDialog = EditorDiscourseDialog.new()
+		new_conv.base_language = languages_tree.get_base_language()
+		new_conv.locale_map.assign(languages_tree.as_map())
+		if ResourceLoader.has_cached(result[1]):
+			new_conv.take_over_path(result[1])
+		ResourceSaver.save(
+				new_conv,
+				result[1])
+		new_conv.resource_path = result[1]
+		if not discourse_window.are_conversation_options_enabled():
+			discourse_window.set_graph_edit_visible(true)
+			discourse_window.set_conversation_options_enabled(true)
+			discourse_nodes_tree.get_root().collapsed = false
+		add_conversation(new_conv, true)
+		
+		discourse_window.discourse_graph_edit.fix_scroll_offset_for_new(
+				discourse_window.size)
+		if wait_visible:
+			await get_tree().process_frame
+		listen_offset = true
+	file_saver.queue_free()
 
 
 func _on_open_conversation_pressed() -> void:
-	var file_opener: AcceptDialog = EditorFileDialog.new() if Engine.is_editor_hint() else FileDialog.new()
+	var file_opener: AcceptDialog = preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	file_opener.file_mode = file_opener.FILE_MODE_OPEN_FILE
-	file_opener.access = file_opener.ACCESS_RESOURCES
-	file_opener.add_filter("*.tres", "Resources")
-	file_opener.initial_position = Window.WINDOW_INITIAL_POSITION_CENTER_PRIMARY_SCREEN
+	#file_opener.access = file_opener.ACCESS_RESOURCES
+	#file_opener.add_filter("*.tres", "Resources")
+	#file_opener.initial_position = Window.WINDOW_INITIAL_POSITION_CENTER_PRIMARY_SCREEN
 	add_child(file_opener)
-	file_opener.file_selected.connect(_on_conversation_file_selected.bind(file_opener))
-	file_opener.canceled.connect(_on_conversation_file_canceled.bind(file_opener))
 	file_opener.show()
-
-
-func _on_conversation_file_selected(path: String, dialog: FileDialog) -> void:
-	if FileAccess.file_exists(path):
-		var resource: Resource = load(path)
+	
+	var result: Array = await file_opener.dialog_finished
+	
+	if result[0] and FileAccess.file_exists(result[1]):
+		listen_offset = false
+		var resource: Resource = load(result[1])
 		if resource != null and resource is EditorDiscourseDialog:
+			var wait_visible: bool = discourse_window.no_dialog_label.visible
 			if not discourse_window.are_conversation_options_enabled():
 				discourse_window.set_graph_edit_visible(true)
 				discourse_window.set_conversation_options_enabled(true)
@@ -869,19 +929,40 @@ func _on_conversation_file_selected(path: String, dialog: FileDialog) -> void:
 				new_folder_button.disabled = false
 			if active_conversation != null:
 				save_current_dialog_to_memory()
-			if is_conversation_open(resource):
+			if conversation_tree.is_conversation_open(resource):
 				open_conversation(resource)
-				set_conversation_item_active(resource)
+				conversation_tree.set_conversation_item_active(resource)
 			else:
+				_unsaved = false
 				add_conversation(resource)
-	dialog.queue_free()
+			if wait_visible:
+				await get_tree().process_frame
+		listen_offset = true
+	
+	file_opener.queue_free()
+	
+	#file_opener.file_selected.connect(_on_conversation_file_selected.bind(file_opener))
+	#file_opener.canceled.connect(_on_conversation_file_canceled.bind(file_opener))
 
 
-func set_conversation_item_active(conv: EditorDiscourseDialog) -> void:
-	for item in conversation_tree.get_root().get_children():
-		if item.get_metadata(0)["resource"] == conv:
-			active_conversation_item = item
-			return
+#func _on_conversation_file_selected(path: String, dialog: FileDialog) -> void:
+	#if FileAccess.file_exists(path):
+		#var resource: Resource = load(path)
+		#if resource != null and resource is EditorDiscourseDialog:
+			#if not discourse_window.are_conversation_options_enabled():
+				#discourse_window.set_graph_edit_visible(true)
+				#discourse_window.set_conversation_options_enabled(true)
+				#discourse_nodes_tree.get_root().collapsed = false
+				#new_folder_button.disabled = false
+			#if active_conversation != null:
+				#save_current_dialog_to_memory()
+			#if is_conversation_open(resource):
+				#open_conversation(resource)
+				#set_conversation_item_active(resource)
+			#else:
+				#add_conversation(resource)
+	#dialog.queue_free()
+
 
 
 func plugin_file_selected(file: EditorDiscourseDialog):
@@ -896,40 +977,16 @@ func plugin_file_selected(file: EditorDiscourseDialog):
 	elif active_conversation != null:
 		save_current_dialog_to_memory()
 	
-	if is_conversation_open(file):
+	if conversation_tree.is_conversation_open(file):
 		open_conversation(file)
-		set_conversation_item_active(file)
+		conversation_tree.set_conversation_item_active(file)
 	else:
 		add_conversation(file)
 
 
-func _on_conversation_file_canceled(dialog: FileDialog) -> void:
-	dialog.queue_free()
+#func _on_conversation_file_canceled(dialog: FileDialog) -> void:
+	#dialog.queue_free()
 
-
-func _on_conversation_file_saved(path: String, dialog: FileDialog) -> void:
-	if active_conversation != null:
-		save_current_dialog_to_memory()
-	var new_conv: EditorDiscourseDialog = EditorDiscourseDialog.new()
-	new_conv.base_language = languages_tree.get_base_language()
-	new_conv.locale_map.assign(languages_tree.as_map())
-	listen_offset = false
-	if ResourceLoader.has_cached(path):
-		new_conv.take_over_path(path)
-	ResourceSaver.save(
-			new_conv,
-			path)
-	new_conv.resource_path = path
-	if not discourse_window.are_conversation_options_enabled():
-		discourse_window.set_graph_edit_visible(true)
-		discourse_window.set_conversation_options_enabled(true)
-		discourse_nodes_tree.get_root().collapsed = false
-	add_conversation(new_conv, true)
-	
-	discourse_window.discourse_graph_edit.fix_scroll_offset_for_new(
-			discourse_window.size)
-	dialog.queue_free()
-	listen_offset = true
 
 
 #region Discourse dialog node tree
@@ -1007,7 +1064,6 @@ func _on_discourse_item_edited(uuid: StringName, type: DiscourseGraphNode.Dialog
 
 # Loads a conversation into discourse
 func open_conversation(conversation: EditorDiscourseDialog, set_active: bool = true) -> void:
-	listen_offset = false
 	var disc_root: TreeItem = discourse_nodes_tree.get_root()
 	for item in disc_root.get_children():
 		item.free() # Clear the nodes tree
@@ -1054,44 +1110,35 @@ func open_conversation(conversation: EditorDiscourseDialog, set_active: bool = t
 	
 	if set_active:
 		active_conversation = conversation
-	
-	listen_offset = true
 
 
 # Adds a conversation into the list, can open it.
 func add_conversation(data: EditorDiscourseDialog, open_conv: bool = true) -> void:
-	var new_conversation: TreeItem = conversation_tree.get_root().create_child()
-	var text: String = data.resource_path.trim_prefix("res://")
-	new_conversation.set_text(0, text)
-	new_conversation.set_metadata(0, {"resource": data, "unsaved": false, "offset_changed": false})
+	#var new_conversation: TreeItem = conversation_tree.get_root().create_child()
+	#var text: String = data.resource_path.trim_prefix("res://")
+	#new_conversation.set_text(0, text)
+	#new_conversation.set_metadata(0, {"resource": data, "unsaved": false, "offset_changed": false})
+	#new_conversation.add_button(
+			#0,
+			#get_theme_icon("GuiClose", "EditorIcons"),
+			#0,
+			#false,
+			#close_conversation)
+	conversation_tree.add_conversation(data, open_conv, false)
 	
 	if open_conv:
-		active_conversation_item = new_conversation
+		#active_conversation_item = new_conversation
+		conversation_tree.set_conversation_item_active(data)
 		open_conversation(data)
 
 
-func is_conversation_open(conversation: EditorDiscourseDialog) -> bool:
-	for item in conversation_tree.get_root().get_children():
-		if item.get_metadata(0)["resource"] == conversation:
-			return true
-	return false
 
 
-func get_unsaved_conversation_resources() -> Array[EditorDiscourseDialog]:
-	var unsaved: Array[EditorDiscourseDialog] = []
-	for item in conversation_tree.get_root().get_children():
-		var resource: EditorDiscourseDialog = item.get_metadata(0)["resource"]
-		if item.get_metadata(0)["unsaved"] or resource.active_offset != resource.scroll_offset or resource.active_zoom != resource.zoom:
-			unsaved.append(item.get_metadata(0)["resource"])
-	return unsaved
 
 
-func set_conversations_saved() -> void:
-	for item in conversation_tree.get_root().get_children():
-		if item.get_metadata(0)["unsaved"]:
-			item.set_text(0, item.get_text(0).trim_suffix("*"))
-			item.get_metadata(0)["unsaved"] = false
-			item.get_metadata(0)["offset_changed"] = false
+
+
+
 
 
 func save_localizer_data() -> void:
@@ -1128,27 +1175,30 @@ func _on_save_conversation_pressed() -> void:
 		return
 	
 	save_current_dialog()
-	active_conversation_item.set_text(0, active_conversation_item.get_text(0).trim_suffix("*"))
-	active_conversation_item.get_metadata(0)["unsaved"] = false
-	active_conversation_item.get_metadata(0)["offset_changed"] = false
+	conversation_tree.active_offset_changed = false
+	conversation_tree.active_unsaved = false
+	#active_conversation_item.set_text(0, active_conversation_item.get_text(0).trim_suffix("*"))
+	#active_conversation_item.get_metadata(0)["unsaved"] = false
+	#active_conversation_item.get_metadata(0)["offset_changed"] = false
 
 
 func _on_godot_save_triggered() -> void:
 	if active_conversation != null:
 		save_phrase_keys(true)
 	save_all_dialogs()
-	set_conversations_saved()
+	conversation_tree.set_conversations_saved()
 
 
 func save_current_dialog() -> void:
 	save_phrase_keys(true)
 	if $LocalizationContainer.visible and localization_nodes_tree.get_active_node() != null:
 		save_localizer_data()
-	if not _unsaved and active_conversation_item.get_metadata(0)["offset_changed"]:
+	if not _unsaved and conversation_tree.active_offset_changed:
 		active_conversation.scroll_offset = discourse_window.discourse_graph_edit.scroll_offset
 		active_conversation.zoom = discourse_window.discourse_graph_edit.zoom
 		active_conversation.save()
-		active_conversation_item.get_metadata(0)["offset_changed"] = false
+		#active_conversation_item.get_metadata(0)["offset_changed"] = false
+		conversation_tree.active_offset_changed = false
 		return
 	
 	# Technically new_dialog is unneded as giving it an active_conversation will return that same one.
@@ -1213,8 +1263,10 @@ func save_current_dialog() -> void:
 	_unsaved = false
 	#active_conversation.save()
 	ResourceSaver.save(active_conversation)
-	active_conversation_item.get_metadata(0)["unsaved"] = false
-	active_conversation_item.get_metadata(0)["offset_changed"] = false
+	#active_conversation_item.get_metadata(0)["unsaved"] = false
+	#active_conversation_item.get_metadata(0)["offset_changed"] = false
+	conversation_tree.active_unsaved = false
+	conversation_tree.active_offset_changed = false
 
 
 func save_all_dialogs() -> void:
@@ -1223,11 +1275,11 @@ func save_all_dialogs() -> void:
 		save_localizer_data()
 	
 	if active_conversation != null:
-		active_conversation.active_zoom = discourse_window.discourse_graph_edit.zoom
-		active_conversation.active_offset = discourse_window.discourse_graph_edit.scroll_offset
+		active_conversation.zoom = discourse_window.discourse_graph_edit.zoom
+		active_conversation.scroll_offset = discourse_window.discourse_graph_edit.scroll_offset
 	
 	# Save all unsaved conversations
-	for unsaved_conversation:EditorDiscourseDialog in get_unsaved_conversation_resources():
+	for unsaved_conversation:EditorDiscourseDialog in conversation_tree.get_unsaved_conversation_resources():
 		# Including our active one
 		if unsaved_conversation == active_conversation:
 			var new_dialog: EditorDiscourseDialog = discourse_window.discourse_graph_edit.get_conversation_data(active_conversation)
@@ -1287,7 +1339,7 @@ func save_all_dialogs() -> void:
 			ResourceSaver.save(unsaved_conversation)
 	
 	_unsaved = false
-	set_all_files_saved()
+	conversation_tree.set_all_files_saved()
 
 
 func set_conversation_active(is_active: bool) -> void:
@@ -1308,14 +1360,6 @@ func has_unsaved_files() -> bool:
 		if item.get_metadata(0)["unsaved"]:
 			return true
 	return false
-
-
-func set_all_files_saved() -> void:
-	for conv_item in conversation_tree.get_root().get_children():
-		if conv_item.get_metadata(0)["unsaved"]:
-			conv_item.get_metadata(0)["unsaved"] = false
-			conv_item.set_text(0, conv_item.get_text(0).trim_suffix("*"))
-
 
 #region Phrases
 

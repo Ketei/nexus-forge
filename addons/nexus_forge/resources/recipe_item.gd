@@ -9,4 +9,4 @@ var data: Dictionary[String, Variant]
 
 
 func _init() -> void:
-	data.assign(RECIPE_ITEM_DEFAULT_DATA)
+	data.merge(RECIPE_ITEM_DEFAULT_DATA.duplicate(true))
