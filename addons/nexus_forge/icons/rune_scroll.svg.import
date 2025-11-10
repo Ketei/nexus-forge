@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cpwwpshqluqr5"
-path="res://.godot/imported/options_vertical.svg-3d0b390757c8c5ae290749b14ac09127.ctex"
+uid="uid://dx2qwypnxu4ot"
+path="res://.godot/imported/rune_scroll.svg-8d514bc7d51a50f7b0ea6e7520ec318d.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://addons/nexus_forge/icons/options_vertical.svg"
-dest_files=["res://.godot/imported/options_vertical.svg-3d0b390757c8c5ae290749b14ac09127.ctex"]
+source_file="res://addons/nexus_forge/icons/rune_scroll.svg"
+dest_files=["res://.godot/imported/rune_scroll.svg-8d514bc7d51a50f7b0ea6e7520ec318d.ctex"]
 
 [params]
 

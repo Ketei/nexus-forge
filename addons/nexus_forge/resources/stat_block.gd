@@ -4,9 +4,13 @@ class_name StatBlock
 extends Resource
 ## A resource that defines stats for characters.
 ##
-## A statsheet that will hold ranges for characters. Has a custom _init
-## function that will initialize all null/unassigned RangeFloat and RangeInt
-## variables.
+## To add new stats and make them appear on NexusForge you need to add
+## a new variable with an export flag and type the stat as a [RangeInt] or
+## [RangeFloat] depending on what numerical value you want the stat to be.
+## Example: 
+## [codeblock]
+## @export var new_stat: RangeInt
+## [/codeblock]
 
 enum StatType {
 	INTEGER,
@@ -36,7 +40,8 @@ static func new_stat_block() -> StatBlock:
 		stat_block._custom_stats[custom_stat] = NexusForge.Stats.get_custom_default_value(custom_stat)
 	
 	NexusForge.Stats.stat_created.connect(stat_block._on_custom_stat_created)
-	NexusForge.Stats.stat_erased.connect(stat_block._on_custom_stat_erased)
+	NexusForge.Stats.stat_min_range_changed.connect(stat_block._on_stat_min_range_changed)
+	NexusForge.Stats.stat_max_range_changed.connect(stat_block._on_stat_max_range_changed)
 	
 	return stat_block
 
@@ -61,8 +66,8 @@ static func stats() -> Dictionary[StringName, int]:
 
 # This init will make sure all RangeInt and RangeFloat are not null.
 # Note that initialization (_init) comes BEFORE loading, so once the file
-# is initialized it'll proceed to assign the variables to the file's valies,
-# overwriting the newly initialized values.
+# is initialized it'll proceed to assign the variables to the file's values,
+# overwriting the newly initialized ones.
 func _init() -> void:
 	var variant: StringName = &""
 	for item in get_script().get_script_property_list():
@@ -82,15 +87,25 @@ func _on_custom_stat_created(stat_id: StringName) -> void:
 	
 	var new_range: ValueRange = RangeInt.new() if NexusForge.Stats.custom_stat_type(stat_id) == StatCatalog.StatType.INTEGER else RangeFloat.new()
 	
+	new_range.allow_lesser = NexusForge.Stats.custom_allows_lesser(stat_id)
+	new_range.allow_greater = NexusForge.Stats.custom_allows_greater(stat_id)
 	new_range.min_value = NexusForge.Stats.get_custom_min_value(stat_id)
 	new_range.max_value = NexusForge.Stats.get_custom_max_value(stat_id)
 	
 	_custom_stats[stat_id] = new_range
 
 
-func _on_custom_stat_erased(stat_id: StringName) -> void:
-	if _custom_stats.has(stat_id):
-		_custom_stats.erase(stat_id)
+func _on_stat_min_range_changed(stat_id: StringName, new_min: float) -> void:
+	if not _custom_stats.has(stat_id):
+		return
+	_custom_stats[stat_id].min_value = new_min
+	
+
+
+func _on_stat_max_range_changed(stat_id: StringName, new_max: float) -> void:
+	if not _custom_stats.has(stat_id):
+		return
+	_custom_stats[stat_id].max_value = new_max
 
 
 ## Returns all stats used in the statblock

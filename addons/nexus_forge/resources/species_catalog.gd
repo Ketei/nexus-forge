@@ -18,7 +18,7 @@ const DEFAULT_DATA: Dictionary[String, Variant] = {}
 		#"description": "Clasic Hooman",
 		#"data": {},
 		#"stats": {
-			#&"health": 100},
+			#&"health": 100.0},
 		#"skills": {
 			#&"one_handed": 15},
 		#"traits": {

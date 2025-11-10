@@ -1,19 +1,31 @@
 extends Node
+## NexusForge singleton.
+##
+## Contains subresources designed to parse and provide data from NexusForge's
+## custom resources.
 
 
-var Discourse: DialogParser = null
-
-var Blackboard: BlackboardData = null
-
-var Items: ItemCatalog = null
-
-var Stats: StatCatalog = null
-var Traits: TraitCatalog = null
+## The dialog parser in charge of loading [EditorDiscourseDialog] dialogs.
+var Discourse: DialogParser
+## An object containing globally-accessible variables.
+var Blackboard: BlackboardData
+## A resource containing the game's item definitions.
+var Items: ItemCatalog
+## A resource containing custom stats data.
+var Stats: StatCatalog
+## A resource containing common and custom trait data.
+var Traits: TraitCatalog
+## A resource containing common and custom skill data.
 var Skills: SkillCatalog
+## A resource containing the game's species data.
 var Species: SpeciesCatalog
+## A resource containing the game's quests data.
 var Quests: QuestCatalog
+## A resource containing the game's currency data.
 var Currency: CurrencyCatalog
+## A resource containing the game's crafting recipes.
 var Recipes: RecipeCatalog
+
 var _phrase_api: PhraseAPI = PhraseAPI.new()
 
 
@@ -28,17 +40,6 @@ func _init() -> void:
 	#Talents = NFTalentsRes.new()
 
 func _ready() -> void:
-	var set_map: Dictionary = {
-		"variables": {"set": &"Blackboard", "class": &"BlackboardData"},
-		"stats": {"set": &"Stats", "class": &"StatCatalog"},
-		"traits": {"set": &"Traits", "class": &""},
-		"skills": {"set": &"Skills", "class": &""},
-		"quests": {"set": &"Quests", "class": &""},
-		"species": {"set": &"Species", "class": &""},
-		"items": {"set": &"Items"},
-		"currency": &"Currency",
-		"recipes": &"Recipes"}
-	
 	var blackboard_path: String = ProjectSettings.get_setting(
 			"nexus_forge/blackboard_path", "")
 	var stats_path: String = ProjectSettings.get_setting(

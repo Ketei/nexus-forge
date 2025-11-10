@@ -277,11 +277,3 @@ func _get_subcategories_of(from: StringName, exclude: Array[StringName] = [], ex
 	return map
 
 #endregion
-
-
-func save() -> void:
-	ResourceSaver.save(
-			self,
-			ProjectSettings.get_setting(
-					EditorNFPlugin.get_project_settings_path("items"),
-					"res://item_catalog_resource.tres"))

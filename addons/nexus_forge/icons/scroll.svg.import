@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://d1lt8oenuv3o4"
-path="res://.godot/imported/hexagon.svg-b06e86d63834cd9e585c20696fcb1d72.ctex"
+uid="uid://dnfafwipiljix"
+path="res://.godot/imported/scroll.svg-9521cc91462243573163e678d354b797.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://addons/nexus_forge/icons/hexagon.svg"
-dest_files=["res://.godot/imported/hexagon.svg-b06e86d63834cd9e585c20696fcb1d72.ctex"]
+source_file="res://addons/nexus_forge/icons/scroll.svg"
+dest_files=["res://.godot/imported/scroll.svg-9521cc91462243573163e678d354b797.ctex"]
 
 [params]
 

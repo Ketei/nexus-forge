@@ -4,11 +4,11 @@ extends RefCounted
 
 enum ItemFlag {
 	SELLABLE,
-	GIFTABLE,
-	DROPPABLE}
+	GIFTABLE}
 
 
 enum Rarity {
+	BASIC,
 	COMMON,
 	UNCOMMON,
 	RARE

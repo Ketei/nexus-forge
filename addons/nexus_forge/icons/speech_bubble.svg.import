@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cyxukvwst0oy4"
-path="res://.godot/imported/hexagons.svg-509b58ab86ea3dd670a2a13e8a2b9edd.ctex"
+uid="uid://c6wchabfbxjvv"
+path="res://.godot/imported/speech_bubble.svg-10c2b41b13db0e7bc3e9325ea144bf7e.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://addons/nexus_forge/icons/hexagons.svg"
-dest_files=["res://.godot/imported/hexagons.svg-509b58ab86ea3dd670a2a13e8a2b9edd.ctex"]
+source_file="res://addons/nexus_forge/icons/speech_bubble.svg"
+dest_files=["res://.godot/imported/speech_bubble.svg-10c2b41b13db0e7bc3e9325ea144bf7e.ctex"]
 
 [params]
 

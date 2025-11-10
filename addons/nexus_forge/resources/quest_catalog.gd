@@ -1,8 +1,10 @@
 @tool
-@icon("res://addons/nexus_forge/icons/scroll_full.svg")
+@icon("res://addons/nexus_forge/icons/scroll.svg")
 class_name QuestCatalog
 extends Resource
 ## Resource containing all data related to quests.
+##
+## A quest contains stages and each stage contains steps.
 
 const QuestType := QuestData.QuestType
 const StageType := QuestStage.StageType

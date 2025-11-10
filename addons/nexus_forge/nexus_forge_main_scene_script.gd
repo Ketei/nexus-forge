@@ -160,3 +160,15 @@ func reload_character_sheet() -> void:
 
 func reload_items() -> void:
 	items.items_container.reload_fields() #
+
+
+func reload_quest_data() -> void:
+	quests.reload_quest_types()
+
+
+func reload_quest_stage() -> void:
+	quests.reload_quest_stage()
+
+
+func reload_quest_step() -> void:
+	quests.reload_quest_steps()

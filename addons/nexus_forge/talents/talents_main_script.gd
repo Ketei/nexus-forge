@@ -300,7 +300,7 @@ func _on_create_skill_resource_pressed(panel: PanelContainer) -> void:
 		ResourceSaver.save(_skills_resource, result[1])
 		_skills_resource.resource_path = result[1]
 		ProjectSettings.set_setting(
-				EditorNFPlugin.get_project_settings_path("talents"),
+				EditorNFPlugin.get_project_settings_path("skills"),
 				result[1])
 		if Engine.is_editor_hint():
 			ProjectSettings.save()
@@ -326,7 +326,7 @@ func _on_load_skill_resource_pressed(panel: PanelContainer) -> void:
 		if res_pre != null and res_pre is SkillCatalog:
 			_skills_resource = res_pre
 			ProjectSettings.set_setting(
-					EditorNFPlugin.get_project_settings_path("talents"),
+					EditorNFPlugin.get_project_settings_path("skills"),
 					result[1])
 			if Engine.is_editor_hint():
 				ProjectSettings.save()
@@ -445,7 +445,7 @@ func load_skills_resource() -> void:
 		if _skills_resource._skills.has(new_skill):
 			continue
 		var data: Dictionary[String, Variant] = {}
-		data.assign(_skills_resource.DEFAULT_DATA)
+		data.assign(_skills_resource.DEFAULT_DATA.duplicate(true))
 		_skills_resource._skills[new_skill] = {
 			"name": "",
 			"description": "",
@@ -535,7 +535,7 @@ func reload_skills(reselect: bool = true) -> void:
 			if _skills_resource._skills.has(skill):
 				continue
 			var data: Dictionary[String, Variant] = {}
-			data.assign(_skills_resource.DEFAULT_DATA)
+			data.assign(_skills_resource.DEFAULT_DATA.duplicate(true))
 			_skills_resource._skills[skill] = {
 				"name": "",
 				"description": "",
@@ -574,7 +574,7 @@ func _on_create_traits_resource_pressed(panel: PanelContainer) -> void:
 		_traits_resource = TraitCatalog.new()
 		ResourceSaver.save(_traits_resource, result[1])
 		ProjectSettings.set_setting(
-				EditorNFPlugin.get_project_settings_path("talents"),
+				EditorNFPlugin.get_project_settings_path("traits"),
 				result[1])
 		if Engine.is_editor_hint():
 			ProjectSettings.save()
@@ -602,7 +602,7 @@ func _on_load_traits_resource_pressed(panel: PanelContainer) -> void:
 		if res_pre != null and res_pre is TraitCatalog:
 			_traits_resource = res_pre
 			ProjectSettings.set_setting(
-					EditorNFPlugin.get_project_settings_path("talents"),
+					EditorNFPlugin.get_project_settings_path("traits"),
 					result[1])
 			if Engine.is_editor_hint():
 				ProjectSettings.save()
@@ -757,7 +757,7 @@ func load_traits_resource() -> void:
 			continue
 		else:
 			var data: Dictionary[String, Variant] = {}
-			data.assign(_traits_resource.DEFAULT_DATA)
+			data.assign(_traits_resource.DEFAULT_DATA.duplicate(true))
 			_traits_resource._traits[new_trait] = {
 				"name": "",
 				"description": "",
@@ -828,7 +828,7 @@ func reload_traits(reselect: bool = true) -> void:
 			if _traits_resource._traits.has(trait_id):
 				continue
 			var data: Dictionary[String, Variant] = {}
-			data.assign(_traits_resource.DEFAULT_DATA)
+			data.assign(_traits_resource.DEFAULT_DATA.duplicate(true))
 			_traits_resource._traits[trait_id] = {
 				"name": "",
 				"description": "",

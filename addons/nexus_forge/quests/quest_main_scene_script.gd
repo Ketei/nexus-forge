@@ -97,56 +97,9 @@ func _ready() -> void:
 		$MainContainer.visible = true
 		load_quest_resource()
 	
-	var quest_types: Dictionary = QuestData.QuestType
-	var quest_type_keys: Array = quest_types.keys()
-	
-	quest_type_keys.sort_custom(func(a,b): return a.naturalnocasecmp_to(b) < 0)
-	
-	for type_key:String in quest_type_keys:
-		quest_type_opt_btn.add_item(
-				type_key.capitalize())
-		quest_type_opt_btn.set_item_metadata(
-				-1,
-				quest_types[type_key])
-	
-	var stage_types: Dictionary = QuestStage.StageType
-	var stage_type_keys: Array = stage_types.keys()
-	var stage_flags: Dictionary = QuestStage.StageFlag
-	var stage_flag_keys: Array = stage_flags.keys()
-	
-	stage_type_keys.sort_custom(func(a,b): return a.naturalnocasecmp_to(b) < 0)
-	stage_flag_keys.sort_custom(func(a,b): return a.naturalnocasecmp_to(b) < 0)
-	
-	for stage_type in stage_type_keys:
-		stage_type_opt_btn.add_item(stage_type.capitalize())
-		stage_type_opt_btn.set_item_metadata(
-				-1,
-				stage_types[stage_type])
-	
-	for stage_flag in stage_flag_keys:
-		var flag: CheckBox = new_stage_flag_checkbox(stage_flags[stage_flag])
-		flag.text = stage_flag.capitalize()
-		stage_flags_container.add_child(flag)
-	
-	var step_types: Dictionary = QuestStep.StepType
-	var step_type_keys: Array = step_types.keys()
-	
-	var step_flags: Dictionary = QuestStep.StepFlag
-	var step_flag_keys: Array = step_flags.keys()
-	
-	step_type_keys.sort_custom(func(a,b): return a.naturalnocasecmp_to(b) < 0)
-	step_flag_keys.sort_custom(func(a,b): return a.naturalnocasecmp_to(b) < 0)
-	
-	for step_type in step_type_keys:
-		step_type_opt_btn.add_item(step_type.capitalize())
-		step_type_opt_btn.set_item_metadata(
-			-1,
-			step_types[step_type])
-	
-	for step_flag in step_flag_keys:
-		var flag: CheckBox = new_step_flag_checkbox(step_flags[step_flag])
-		flag.text = step_flag.capitalize()
-		step_flags_container.add_child(flag)
+	reload_quest_types()
+	reload_quest_stage()
+	reload_quest_steps()
 	
 	set_quest_ui_enabled(false)
 	set_stage_ui_enabled(false)
@@ -525,6 +478,130 @@ func something_changed(_arg: Variant = null) -> void:
 		_unsaved = true
 
 
+func reload_quest_types() -> void:
+	var quest: QuestData = QuestData.new()
+	var constants: Dictionary = quest.get_script().get_script_constant_map()
+	var quest_types: Dictionary = constants[&"QuestType"]
+	var quest_type_keys: Array = quest_types.keys()
+	var selected: String = quest_type_opt_btn.get_selected_metadata() if loaded_quest != &"" else &""
+	var new_idx: int = -1
+	
+	quest_type_keys.sort_custom(func(a,b): return a.naturalnocasecmp_to(b) < 0)
+	
+	quest_type_opt_btn.clear()
+	
+	if selected != "":
+		new_idx = quest_type_keys.find(selected)
+	
+	for type_key:String in quest_type_keys:
+		quest_type_opt_btn.add_item(
+				type_key.capitalize())
+		quest_type_opt_btn.set_item_metadata(
+				-1,
+				quest_types[type_key])
+	
+	if new_idx != -1:
+		quest_type_opt_btn.select(new_idx)
+
+
+func reload_quest_stage() -> void:
+	var stage: QuestStage = QuestStage.new()
+	var constants: Dictionary = stage.get_script().get_script_constant_map()
+	var stage_types: Dictionary = constants[&"StageType"]
+	var stage_type_keys: Array = stage_types.keys()
+	var selected_stage: String = stage_type_opt_btn.get_selected_metadata() if loaded_stage != &"" else &""
+	var stage_idx: int = -1
+	var stage_flags: Dictionary = constants[&"StageFlag"]
+	var stage_flag_keys: Array = stage_flags.keys()
+	
+	stage_type_keys.sort_custom(func(a,b): return a.naturalnocasecmp_to(b) < 0)
+	stage_flag_keys.sort_custom(func(a,b): return a.naturalnocasecmp_to(b) < 0)
+	
+	if selected_stage != "":
+		stage_idx = stage_type_keys.find(selected_stage)
+	
+	stage_type_opt_btn.clear()
+	
+	for stage_type in stage_type_keys:
+		stage_type_opt_btn.add_item(stage_type.capitalize())
+		stage_type_opt_btn.set_item_metadata(
+				-1,
+				stage_types[stage_type])
+	
+	if stage_idx != -1:
+		stage_type_opt_btn.select(stage_idx)
+	
+	var flag_map: Dictionary[String, Control] = {}
+	for existing_flag: CheckBox in stage_flags_container.get_children():
+		stage_flags_container.remove_child(existing_flag)
+		var flag_id: String = existing_flag.get_meta(&"stage_id")
+		if stage_flag_keys.has(flag_id):
+			flag_map[flag_id] = existing_flag
+		else:
+			existing_flag.queue_free()
+	
+	for stage_flag in stage_flag_keys:
+		if flag_map.has(stage_flag):
+			stage_flags_container.add_child(flag_map[stage_flag])
+			flag_map.erase(stage_flag)
+		else:
+			var flag: CheckBox = new_stage_flag_checkbox(stage_flag, stage_flags[stage_flag])
+			flag.text = stage_flag.capitalize()
+			stage_flags_container.add_child(flag)
+	
+	for remaining_flag in flag_map.keys():
+		flag_map[remaining_flag].queue_free()
+
+
+func reload_quest_steps() -> void:
+	var types: QuestStep = QuestStep.new()
+	var constants: Dictionary = types.get_script().get_script_constant_map()
+	var step_types: Dictionary = constants[&"StepType"]
+	var step_type_keys: Array = step_types.keys()
+	var selected_type: String = step_type_opt_btn.get_selected_metadata() if loaded_step != &"" else ""
+	var new_index: int = -1
+	
+	var step_flags: Dictionary = constants[&"StepFlag"]
+	var step_flag_keys: Array = step_flags.keys()
+	
+	step_type_keys.sort_custom(func(a,b): return a.naturalnocasecmp_to(b) < 0)
+	step_flag_keys.sort_custom(func(a,b): return a.naturalnocasecmp_to(b) < 0)
+	
+	if selected_type != "":
+		new_index = step_type_keys.find(selected_type)
+	
+	step_type_opt_btn.clear()
+	
+	for step_type in step_type_keys:
+		step_type_opt_btn.add_item(step_type.capitalize())
+		step_type_opt_btn.set_item_metadata(
+			-1,
+			step_types[step_type])
+	
+	if new_index != -1:
+		step_type_opt_btn.select(new_index)
+	
+	var flag_map: Dictionary[String, Control] = {}
+	for existing_flag in step_flags_container.get_children():
+		step_flags_container.remove_child(existing_flag)
+		var step_id: String = existing_flag.get_meta(&"step_id")
+		if step_flag_keys.has(step_id):
+			flag_map[step_id] = existing_flag
+		else:
+			existing_flag.queue_free()
+	
+	for step_flag in step_flag_keys:
+		if flag_map.has(step_flag):
+			step_flags_container.add_child(flag_map[step_flag])
+			flag_map.erase(step_flag)
+		else:
+			var flag: CheckBox = new_step_flag_checkbox(step_flag, step_flags[step_flag])
+			flag.text = step_flag.capitalize()
+			step_flags_container.add_child(flag)
+	for remaining_flag in flag_map.keys():
+		flag_map[remaining_flag].queue_free()
+
+
 func load_quest_resource() -> void:
 	new_quest_btn.disabled = false
 	for existing_quest: StringName in _quest_resource.quests():
@@ -742,19 +819,21 @@ func set_step_flags_checked(checked: bool) -> void:
 			flag.set_pressed_no_signal(checked)
 
 
-func new_stage_flag_checkbox(flag: QuestStage.StageFlag) -> CheckBox:
+func new_stage_flag_checkbox(id: String, flag: QuestStage.StageFlag) -> CheckBox:
 	var new_flag: CheckBox = CheckBox.new()
 	new_flag.toggled.connect(_on_stage_flag_changed.bind(flag))
 	new_flag.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	new_flag.set_meta(&"stage_flag", flag)
+	new_flag.set_meta(&"stage_id", id)
 	return new_flag
 
 
-func new_step_flag_checkbox(flag: QuestStep.StepFlag) -> CheckBox:
+func new_step_flag_checkbox(id: String, flag: QuestStep.StepFlag) -> CheckBox:
 	var new_flag: CheckBox = CheckBox.new()
 	new_flag.toggled.connect(_on_step_flag_changed.bind(flag))
 	new_flag.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	new_flag.set_meta(&"step_flag", flag)
+	new_flag.set_meta(&"step_id", id)
 	return new_flag
 
 

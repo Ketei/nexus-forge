@@ -10,34 +10,58 @@ const HANDLED_CLASSES: Array[StringName] = [&"EditorDiscourseDialog", &"Characte
 const SETTINGS_PATHS: Dictionary[String, Dictionary] = {
 	"discourse": {
 		"setting_path": "nexus_forge/localization_directory",
-		"default_value": "res://localization/"},
+		"default_value": "res://localization/",
+		"type": TYPE_STRING,
+		"hint": PROPERTY_HINT_DIR,
+		"hint_string": ""},
 	"variables": {
 		"setting_path": "nexus_forge/blackboard_path",
-		"default_value": ""},
-	"stats": {
-		"setting_path": "nexus_forge/stats_path",
-		"default_value": ""},
+		"default_value": "",
+		"type": TYPE_STRING,
+		"hint": PROPERTY_HINT_FILE,
+		"hint_string": "*.tres"},
 	"traits": {
 		"setting_path": "nexus_forge/traits_path",
-		"default_value": ""},
+		"default_value": "",
+		"type": TYPE_STRING,
+		"hint": PROPERTY_HINT_FILE,
+		"hint_string": "*.tres"},
 	"skills": {
 		"setting_path": "nexus_forge/skills_path",
-		"default_value": ""},
+		"default_value": "",
+		"type": TYPE_STRING,
+		"hint": PROPERTY_HINT_FILE,
+		"hint_string": "*.tres"},
 	"quests": {
 		"setting_path": "nexus_forge/quests_path",
-		"default_value": ""},
+		"default_value": "",
+		"type": TYPE_STRING,
+		"hint": PROPERTY_HINT_FILE,
+		"hint_string": "*.tres"},
 	"species": {
 		"setting_path": "nexus_forge/species_path",
-		"default_value": ""},
+		"default_value": "",
+		"type": TYPE_STRING,
+		"hint": PROPERTY_HINT_FILE,
+		"hint_string": "*.tres"},
 	"items": {
 		"setting_path": "nexus_forge/items_path",
-		"default_value": ""},
+		"default_value": "",
+		"type": TYPE_STRING,
+		"hint": PROPERTY_HINT_FILE,
+		"hint_string": "*.tres"},
 	"currency": {
 		"setting_path": "nexus_forge/currency_path",
-		"default_value": ""},
+		"default_value": "",
+		"type": TYPE_STRING,
+		"hint": PROPERTY_HINT_FILE,
+		"hint_string": "*.tres"},
 	"recipes": {
 		"setting_path": "nexus_forge/recipes_path",
-		"default_value": ""
+		"default_value": "",
+		"type": TYPE_STRING,
+		"hint": PROPERTY_HINT_FILE,
+		"hint_string": "*.tres"
 	}
 }
 
@@ -115,19 +139,45 @@ func _enable_plugin() -> void:
 
 
 func verify_project_settings() -> void:
+	var setting_order: Array[String] = []
+	setting_order.assign(SETTINGS_PATHS.keys())
+	setting_order.sort_custom(
+			func (a,b): return SETTINGS_PATHS[a]["setting_path"].naturalnocasecmp_to(
+					SETTINGS_PATHS[b]["setting_path"]) < 0)
+	
 	var save_settings: bool = false
-	for tool_id in SETTINGS_PATHS.keys():
-		if not ProjectSettings.has_setting(SETTINGS_PATHS[tool_id]["setting_path"]):
-			ProjectSettings.set_setting(
-					SETTINGS_PATHS[tool_id]["setting_path"],
-					SETTINGS_PATHS[tool_id]["default_value"])
-			ProjectSettings.set_initial_value(
-					SETTINGS_PATHS[tool_id]["setting_path"],
-					SETTINGS_PATHS[tool_id]["default_value"])
-			if save_settings == false:
-				save_settings = true
+	for tool_id in setting_order:
+		if ProjectSettings.has_setting(SETTINGS_PATHS[tool_id]["setting_path"]):
+			continue
+		ProjectSettings.set_setting(
+				SETTINGS_PATHS[tool_id]["setting_path"],
+				SETTINGS_PATHS[tool_id]["default_value"])
+		ProjectSettings.set_initial_value(
+				SETTINGS_PATHS[tool_id]["setting_path"],
+				SETTINGS_PATHS[tool_id]["default_value"])
+		
+		ProjectSettings.set("category/property_name", 0)
+
+		var property_info = {
+			"name": SETTINGS_PATHS[tool_id]["setting_path"],
+			"type": SETTINGS_PATHS[tool_id]["type"],
+			"hint": SETTINGS_PATHS[tool_id]["hint"],
+			"hint_string": SETTINGS_PATHS[tool_id]["hint_string"]}
+
+		ProjectSettings.add_property_info(property_info)
+		ProjectSettings.set_as_basic(
+				SETTINGS_PATHS[tool_id]["setting_path"],
+				true)
+		
+		if save_settings == false:
+			save_settings = true
 	
 	if save_settings:
+		var idx: int = -1
+		for setting in setting_order:
+			idx += 1
+			ProjectSettings.set_order(SETTINGS_PATHS[setting]["setting_path"], idx)
+		
 		ProjectSettings.save()
 
 
@@ -179,3 +229,9 @@ func _on_resource_saved(resource: Resource) -> void:
 		editor_view.reload_character_sheet()
 	elif script_class == &"ItemSheet":
 		editor_view.reload_items()
+	elif script_class == &"QuestData":
+		editor_view.reload_quest_data()
+	elif script_class == &"QuestStage":
+		editor_view.reload_quest_stage()
+	elif script_class == &"QuestStep":
+		editor_view.reload_quest_step()
