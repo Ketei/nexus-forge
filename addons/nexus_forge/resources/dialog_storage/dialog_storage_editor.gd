@@ -281,9 +281,6 @@ func set_localization_text(uuid: StringName, text: String, language: String, reg
 		node_localization[uuid] = {}
 	var localization_level: Dictionary = node_localization[uuid]
 	
-	if language.is_empty():
-		language = "common"
-	
 	if not localization_level.has(language):
 		localization_level[language] = {}
 	localization_level = localization_level[language]
@@ -292,27 +289,6 @@ func set_localization_text(uuid: StringName, text: String, language: String, reg
 		if not localization_level.has(region):
 			localization_level[region] = {}
 		localization_level = localization_level[region]
-	
-	
-	#if region.is_empty():
-		#if localization_level.size() != 1 or not localization_level.has("common"):
-			#localization_level.clear()
-			#localization_level[language] = {}
-		#localization_level = localization_level[language]
-	#else:
-		#if localization_level.has("common"):
-			#localization_level.erase("common")
-		#var localization_path: PackedStringArray = locale.split("_", false)
-		#
-		#for locale_code in localization_path:
-			#if not localization_level.has(locale_code):
-				#localization_level[locale_code] = {}
-			#localization_level = localization_level[locale_code]
-		#
-		#if localization_path.size() == 1:
-			#if not localization_level.has("base"):
-				#localization_level["base"] = {}
-			#localization_level = localization_level["base"]
 	
 	match dialog_nodes[uuid]["node_type"]:
 		DialogNodes.DIALOG:
@@ -337,42 +313,36 @@ func set_unlocalized_text(uuid: StringName, text: String) -> void:
 ## Note: Switching from a localized to an unlocalized node will clear the localization
 ## data completely and viceversa.
 func set_localization_choices(uuid: StringName, options: Array[String], language: String, region: String = "base") -> void:
-	var new_options: Array[String] = options.duplicate()
-	var target_size: int = node_localization[uuid]["options"].size()
-	if new_options.size() != target_size:
-		new_options.resize(target_size)
-		
+	if not node_localization.has(uuid):
+		node_localization[uuid] = {}
+	var exists: bool = true
 	var localization_level: Dictionary = node_localization[uuid]
-	
-	if language.is_empty():
-		language = "common"
-	if region.is_empty():
-		region = "base"
 	
 	if not localization_level.has(language):
 		localization_level[language] = {}
+		exists = false
 	localization_level = localization_level[language]
 	
 	if language != "common":
 		if not localization_level.has(region):
 			localization_level[region] = {}
 		localization_level = localization_level[region]
+		exists = false
 	
-	#if locale.is_empty():
-		#if localization_level.size() != 1 or not localization_level.has("common"):
-			#localization_level.clear()
-			#localization_level["common"] = {}
-		#localization_level = localization_level["common"]
-	#else:
-		#if localization_level.has("common"):
-			#localization_level.erase("common")
-		#var locale_path: PackedStringArray = locale.split("_", false)
-		#for locale_code in locale_path:
-			#if not localization_level.has(locale_code):
-				#localization_level[locale_code] = {}
-			#localization_level = localization_level[locale_code]
+	var new_options: Array[String] = options.duplicate()
+	var target_array: Array[String] = []
 	
-	localization_level["options"] = new_options
+	if exists == false:
+		var clean_options: Array[String] = []
+		localization_level["options"] = clean_options
+		target_array = clean_options
+	elif language == "common":
+		target_array = node_localization[uuid][language]["options"]
+	else:
+		target_array = node_localization[uuid][language][region]["options"]
+	
+	target_array.clear()
+	target_array.assign(new_options)
 	
 	if language != "common" and region != "base":
 		if not locale_map.has(language):

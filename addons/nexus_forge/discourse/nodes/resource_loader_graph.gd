@@ -37,11 +37,13 @@ func _post_init() -> void:
 		resource_container,
 		false,
 		-1,
-		SlotConnectionType.RESOURCE,
-		null,
-		get_theme_icon("Object", "EditorIcons"))
+		SlotConnectionType.RESOURCE)
 	set_slot_color_right(0, COLORS["object"])
 	map_field(&"res_path", "path_line", res_path)
+
+
+func _ready() -> void:
+	set_output_connection_icon(&"res_path", get_theme_icon("Object", "EditorIcons"))
 
 
 func _get_node_data() -> Dictionary:

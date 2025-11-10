@@ -31,9 +31,8 @@ func _post_init() -> void:
 			methods_node,
 			false,
 			-1,
-			SlotConnectionType.VAR_ANY,
-			null,
-			get_theme_icon("Variant", "EditorIcons"))
+			SlotConnectionType.VAR_ANY)
+	
 	
 	set_slot_color_right(0, COLORS["method"])
 	
@@ -44,6 +43,10 @@ func _post_init() -> void:
 		methods_node.disabled = true
 	
 	methods_node.item_selected.connect(_on_method_selected)
+
+
+func _ready() -> void:
+	set_output_connection_icon(&"methods", get_theme_icon("Variant", "EditorIcons"))
 
 
 func _get_issues() -> PackedStringArray:
@@ -184,9 +187,9 @@ func add_input_arg(arg_text: String, arg_type: int) -> void:
 			arg,
 			false,
 			slot_type,
-			-1,
-			input_icon)
+			-1)
 	set_slot_color_left(slot_target, input_color)
+	set_input_connection_icon(field_id, input_icon)
 
 
 func clear_input_args() -> void:

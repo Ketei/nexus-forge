@@ -84,7 +84,7 @@ const COLORS: Dictionary = {
 
 const LOCALIZED_COLOR: Color = Color.LIME_GREEN
 
-var flow_icon: Texture2D = null
+@onready var flow_icon: Texture2D = preload("res://addons/nexus_forge/icons/right_arrow.png")
 
 var node_type: DialogueNodeType = DialogueNodeType.DIALOG
 
@@ -108,10 +108,14 @@ var _output_nodes: Array[Dictionary] = []
 
 func _init(uuid: StringName = &"", theme_variant: StringName = &"", with_duplicate: bool = true, with_close: bool = true, localization: bool = false) -> void:
 	_uuid = StringName(UUID.generate_new()) if uuid.is_empty() else uuid
-	flow_icon = preload("res://addons/nexus_forge/icons/right_arrow.png")
+	#flow_icon = 
 	var _hbox: HBoxContainer = get_titlebar_hbox()
 	var title_label: Label = _hbox.get_child(0)
 	title_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	title_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	title_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_hbox.custom_minimum_size.y = 26
+	#title_label.custom_minimum_size.y = 32
 	#title_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	
 	_icon_rect = TextureRect.new()
@@ -147,38 +151,56 @@ func _init(uuid: StringName = &"", theme_variant: StringName = &"", with_duplica
 		localize_btn.name = &"LocalizeBtn"
 		localize_btn.flat = true
 		localize_btn.toggle_mode = true
-		localize_btn.icon = get_theme_icon("Translation", "EditorIcons")
 		localize_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		localize_btn.custom_minimum_size = Vector2(22.0, 22.0)
 		localize_btn.tooltip_text = "Use Localization"
 		_button_box.add_child(localize_btn)
 		if with_duplicate or with_close:
 			_button_box.add_spacer(false)
+		_ready_localize_icon(localize_btn)
 		localize_btn.toggled.connect(_on_localization_toggled.bind(localize_btn))
 	
 	if with_duplicate:
 		var dup_btn := Button.new()
 		dup_btn.name = &"DuplicateBtn"
 		dup_btn.flat = true
-		dup_btn.icon = get_theme_icon("Duplicate", "EditorIcons")
 		dup_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		dup_btn.custom_minimum_size = Vector2(22, 22)
 		dup_btn.tooltip_text = "Duplicate node"
 		_button_box.add_child(dup_btn)
+		_ready_duplicate_icon(dup_btn)
 		dup_btn.pressed.connect(duplicate_requested.emit.bind(self))
 	
 	if with_close:
 		var close_btn := Button.new()
 		close_btn.name = &"CloseBtn"
 		close_btn.flat = true
-		close_btn.icon = get_theme_icon("Close", "EditorIcons")
 		close_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		close_btn.custom_minimum_size = Vector2(22, 22)
 		close_btn.tooltip_text = "Remove node"
 		_button_box.add_child(close_btn)
+		_ready_close_icon(close_btn)
 		close_btn.pressed.connect(close_requested.emit.bind(self))
 	
 	_post_init()
+
+
+func _ready_localize_icon(localize_btn: Button) -> void:
+	if not is_node_ready():
+		await ready
+	localize_btn.icon = get_theme_icon("Translation", "EditorIcons")
+
+
+func _ready_duplicate_icon(dup_btn: Button) -> void:
+	if not is_node_ready():
+		await ready
+	dup_btn.icon = get_theme_icon("Duplicate", "EditorIcons")
+
+
+func _ready_close_icon(close_btn: Button) -> void:
+	if not is_node_ready():
+		await ready
+	close_btn.icon = get_theme_icon("Close", "EditorIcons")
 
 
 ## Runs once the initiation is done. Used to set up the visual part of the node.
@@ -303,6 +325,22 @@ func set_output_connection_icon(field_id: StringName, icon: Texture2D) -> void:
 			var txrct: TextureRect = node.get_child(2)
 			txrct.texture = icon
 			txrct.visible = icon != null
+			break
+
+
+func set_field_connection_icons(field_id: StringName, input_icon: Texture2D, output_icon: Texture2D) -> void:
+	if field_id.is_empty():
+		return
+	
+	for node in get_children():
+		if node.get_meta(&"field_id", &"") == field_id:
+			var input: TextureRect = node.get_child(0)
+			var output: TextureRect = node.get_child(2)
+			input.texture = input_icon
+			output.texture = output_icon
+			
+			input.visible = input_icon != null
+			output.visible = output_icon != null
 			break
 
 
@@ -608,8 +646,8 @@ func has_recursion(_caller: DiscourseGraphNode = null) -> bool:
 ## Add a new field to the node. [param field] must not be in the tree for it to
 ## be added. Returns the index of the new slot added. -1 if the field couldn't
 ## be added. Left & rigth slot type must be equal or greater than 0 to be enabled.
-func add_field(field_id: StringName, field_node: Control, expand: bool = false, left_slot_type: int = -1, right_slot_type: int = -1, left_icon: Texture2D = null, right_icon: Texture2D = null) -> int:
-	if field_node.is_inside_tree() or field_id.is_empty():
+func add_field(field_id: StringName, field_node: Control, expand: bool = false, left_slot_type: int = -1, right_slot_type: int = -1) -> int:
+	if field_node.is_inside_tree() or field_id.is_empty() or has_field(field_id):
 		return -1
 	
 	var new_index: int = get_child_count()
@@ -632,16 +670,19 @@ func add_field(field_id: StringName, field_node: Control, expand: bool = false, 
 	left_rect.custom_minimum_size = Vector2(16, 16)
 	right_rect.custom_minimum_size = Vector2(16, 16)
 	
+	left_rect.visible = false
+	right_rect.visible = false
+	
 	field_box.add_theme_constant_override(&"separation", 12)
 	
 	left_rect.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	right_rect.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	
-	left_rect.texture = left_icon
-	right_rect.texture = right_icon
-	
-	left_rect.visible = left_icon != null
-	right_rect.visible = right_icon != null
+	#left_rect.texture = left_icon
+	#right_rect.texture = right_icon
+	#
+	#left_rect.visible = left_icon != null
+	#right_rect.visible = right_icon != null
 	
 	if expand:
 		field_box.size_flags_vertical = Control.SIZE_EXPAND_FILL

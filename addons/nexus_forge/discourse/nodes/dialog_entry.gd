@@ -2,6 +2,10 @@
 extends DiscourseGraphNode
 
 
+func _ready() -> void:
+	print("Entry: ", get_titlebar_hbox().size)
+
+
 func _post_init() -> void:
 	name = &"Entry"
 	custom_id = "Entry"
@@ -15,6 +19,7 @@ func _post_init() -> void:
 	entry_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	entry_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	entry_label.size_flags_vertical = Control.SIZE_EXPAND
+	entry_label.custom_minimum_size.y = 32
 	var in_idx: int = add_field(&"connection", entry_label, true, -1, SlotConnectionType.DIALOG)
 	set_slot_color_right(in_idx, COLORS.dialog)
 	set_slot_custom_icon_right(in_idx, flow_icon)

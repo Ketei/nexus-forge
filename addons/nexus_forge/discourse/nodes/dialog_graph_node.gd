@@ -35,7 +35,7 @@ func _post_init() -> void:
 	dialog_textedt.name = &"DialogTxtEdt"
 	persist_check.name = &"PersistChkBx"
 	
-	connection_node.custom_minimum_size = Vector2(0.0, 24.0)
+	connection_node.custom_minimum_size = Vector2(0.0, 32.0)
 	char_id_label.text = "Character"
 	char_id_label.custom_minimum_size = Vector2(80.0, 0.0)
 	char_id_ln_edt.caret_blink = true
@@ -79,8 +79,7 @@ func _post_init() -> void:
 			id_box,
 			false,
 			SlotConnectionType.SETTINGS_CHARACTER,
-			-1,
-			preload("res://addons/nexus_forge/icons/gear_icon.png"))
+			-1)
 	set_slot_color_left(1, COLORS["setting"])
 	map_field(&"character_id", "character_line", char_id_ln_edt)
 	
@@ -89,11 +88,11 @@ func _post_init() -> void:
 			dialog_settings,
 			false,
 			SlotConnectionType.SETTINGS_DIALOG,
-			-1,
-			preload("res://addons/nexus_forge/icons/gear_icon.png"))
+			-1)
 	set_slot_color_left(2, COLORS["setting"])
 	
-	var flgs_idx: int = add_field(&"flags", flags_container, false, SlotConnectionType.VAR_STRING, -1, get_theme_icon("String", "EditorIcons"))
+	var flgs_idx: int = add_field(&"flags", flags_container, false, SlotConnectionType.VAR_STRING, -1)
+	
 	map_field(&"flags", "persist_checkbox", persist_check)
 	add_field(&"dialog_text", dialog_textedt, true)
 	
@@ -103,6 +102,14 @@ func _post_init() -> void:
 	set_slot_custom_icon_left(connection_field, flow_icon)
 	set_slot_custom_icon_right(connection_field, flow_icon)
 	set_slot_color_left(flgs_idx, COLORS.string)
+
+
+func _ready() -> void:
+	set_input_connection_icon(&"character_id", preload("res://addons/nexus_forge/icons/gear_icon.png"))
+	set_input_connection_icon(&"dialog_settings", preload("res://addons/nexus_forge/icons/gear_icon.png"))
+	set_input_connection_icon(&"flags", get_theme_icon("String", "EditorIcons"))
+	
+	print("Dialog: ", get_titlebar_hbox().size)
 
 
 func _on_input_connected(input_port: int, _from_node: DiscourseGraphNode, _from_port: int) -> void:

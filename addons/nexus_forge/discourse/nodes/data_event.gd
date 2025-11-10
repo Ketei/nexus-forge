@@ -55,8 +55,7 @@ func _post_init() -> void:
 			var_panel,
 			false,
 			SlotConnectionType.VAR_ANY,
-			-1,
-			get_theme_icon("Variant", "EditorIcons"))
+			-1)
 	map_field(&"variable", "path", variable_path)
 	
 	add_field(
@@ -64,16 +63,14 @@ func _post_init() -> void:
 			call_label,
 			false,
 			SlotConnectionType.CALL,
-			-1,
-			get_theme_icon("Callable", "EditorIcons"))
+			-1)
 	
 	add_field(
 			&"signal",
 			signal_label,
 			false,
 			SlotConnectionType.SIGNAL,
-			-1,
-			get_theme_icon("Signals", "EditorIcons"))
+			-1)
 	 
 	set_slot_color_left(0, COLORS["any"])
 	set_slot_color_left(1, COLORS["any"])
@@ -81,6 +78,12 @@ func _post_init() -> void:
 	set_slot_color_left(3, COLORS["signal"])
 	
 	variable_path.focus_exited.connect(_on_var_path_focus_lost)
+
+
+func _ready() -> void:
+	set_input_connection_icon(&"variable", get_theme_icon("Variant", "EditorIcons"))
+	set_input_connection_icon(&"callable", get_theme_icon("Callable", "EditorIcons"))
+	set_input_connection_icon(&"signal", get_theme_icon("Signals", "EditorIcons"))
 
 
 func _get_issues() -> PackedStringArray:

@@ -58,12 +58,17 @@ func _post_init() -> void:
 			connection_label,
 			false,
 			SlotConnectionType.VAR_ANY,
-			SlotConnectionType.VAR_GUARD,
-			get_theme_icon("Variant", "EditorIcons"),
-			get_theme_icon("Variant", "EditorIcons"))
+			SlotConnectionType.VAR_GUARD)
 	set_slot_color_left(0, COLORS["any"])
 	set_slot_color_right(0, COLORS["any"])
 	add_field(&"fallback", fallback_panel)
+
+
+func _ready() -> void:
+	set_field_connection_icons(
+			&"connection",
+			get_theme_icon("Variant", "EditorIcons"),
+			get_theme_icon("Variant", "EditorIcons"))
 
 
 func _get_issues() -> PackedStringArray:

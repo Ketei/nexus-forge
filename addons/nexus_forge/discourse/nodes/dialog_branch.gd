@@ -46,8 +46,7 @@ func _post_init() -> void:
 			low_container,
 			false,
 			SlotConnectionType.VAR_BOOL,
-			SlotConnectionType.DIALOG,
-			get_theme_icon("bool", "EditorIcons"))
+			SlotConnectionType.DIALOG)
 	
 	set_slot_color_left(conn_idx, COLORS.dialog)
 	set_slot_color_right(conn_idx, COLORS.dialog)
@@ -57,6 +56,10 @@ func _post_init() -> void:
 	set_slot_custom_icon_right(conn_idx, flow_icon)
 	set_slot_custom_icon_left(conn_idx, flow_icon)
 	set_slot_custom_icon_right(eval_idx, flow_icon)
+
+
+func _ready() -> void:
+	set_input_connection_icon(&"arg_eval", get_theme_icon("bool", "EditorIcons"))
 
 
 func _get_issues() -> PackedStringArray:

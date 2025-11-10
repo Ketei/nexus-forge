@@ -27,14 +27,16 @@ func _post_init() -> void:
 			connection,
 			false,
 			-1,
-			SlotConnectionType.VAR_STRING,
-			null,
-			get_theme_icon("String", "EditorIcons"))
+			SlotConnectionType.VAR_STRING)
 	add_field(
 			&"localized_text",
 			localized_text,
 			true)
 	set_slot_color_right(0, COLORS["string"])
+
+
+func _ready() -> void:
+	set_output_connection_icon(&"connection", get_theme_icon("String", "EditorIcons"))
 
 
 func _get_node_data() -> Dictionary:

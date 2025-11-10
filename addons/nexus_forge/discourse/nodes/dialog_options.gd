@@ -45,8 +45,7 @@ func _post_init() -> void:
 			first_choice,
 			false,
 			SlotConnectionType.SETTINGS_OPTION,
-			SlotConnectionType.DIALOG,
-			preload("res://addons/nexus_forge/icons/gear_icon.png"))
+			SlotConnectionType.DIALOG)
 	
 	set_slot_color_left(next_in_idx, COLORS["dialog"])
 	set_slot_color_right(first_out_idx, COLORS["dialog"])
@@ -56,6 +55,12 @@ func _post_init() -> void:
 	set_slot_custom_icon_right(first_out_idx, flow_icon)
 	
 	choices_spinbox.value_changed.connect(_on_choice_count_changed)
+
+
+func _ready() -> void:
+	set_input_connection_icon(
+			&"choice_1",
+			preload("res://addons/nexus_forge/icons/gear_icon.png"))
 
 
 func _get_issues() -> PackedStringArray:
@@ -79,12 +84,15 @@ func set_choice_count(value: int) -> void:
 	var current: int = get_child_count() - 1
 	if current < value:
 		for extra in range(value - current):
+			var choice_id: StringName = &"choice_" + StringName(str(current + extra + 1))
 			var new_idx: int = add_field(
-					&"choice_" + StringName(str(current + extra + 1)),
+					choice_id,
 					get_choice_node(),
 					false,
 					SlotConnectionType.SETTINGS_OPTION,
-					SlotConnectionType.DIALOG,
+					SlotConnectionType.DIALOG)
+			set_input_connection_icon(
+					choice_id,
 					preload("res://addons/nexus_forge/icons/gear_icon.png"))
 			set_slot_color_right(new_idx, COLORS["dialog"])
 			set_slot_color_left(new_idx, COLORS["setting"])

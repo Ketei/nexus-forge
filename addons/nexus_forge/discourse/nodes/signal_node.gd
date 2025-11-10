@@ -31,9 +31,7 @@ func _post_init() -> void:
 			signals_node,
 			false,
 			-1,
-			SlotConnectionType.SIGNAL,
-			null,
-			get_theme_icon("Signals", "EditorIcons"))
+			SlotConnectionType.SIGNAL)
 	set_slot_color_right(0, COLORS["signal"])
 	
 	if not available_signals.is_empty():
@@ -44,6 +42,10 @@ func _post_init() -> void:
 		signals_node.disabled = true
 	
 	signals_node.item_selected.connect(_on_signal_selected)
+
+
+func _ready() -> void:
+	set_output_connection_icon(&"signals", get_theme_icon("Signals", "EditorIcons"))
 
 
 func _get_issues() -> PackedStringArray:
@@ -137,9 +139,8 @@ func add_input_arg(arg_text: String, arg_type: int) -> void:
 			field_id,
 			arg,
 			false,
-			slot_type,
-			-1,
-			input_icon)
+			slot_type)
+	set_input_connection_icon(field_id, input_icon)
 	set_slot_color_left(slot_target, input_color)
 
 

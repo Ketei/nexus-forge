@@ -1205,6 +1205,7 @@ func save_current_dialog() -> void:
 	var new_dialog: EditorDiscourseDialog = discourse_window.discourse_graph_edit.get_conversation_data(active_conversation)
 	# Obtaining localization reference
 	var localizations: Dictionary = discourse_window.localization
+	
 	var locale_map: Dictionary[String, PackedStringArray] = discourse_window.locale_map
 	
 	#phrases_tree.save_locale()

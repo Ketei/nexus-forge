@@ -33,28 +33,34 @@ func _post_init() -> void:
 			result_val_container,
 			false,
 			SlotConnectionType.VAR_BOOL,
-			SlotConnectionType.VAR_ANY,
-			get_theme_icon("bool", "EditorIcons"),
-			get_theme_icon("Variant", "EditorIcons"))
+			SlotConnectionType.VAR_ANY)
 	var tr_var: int = add_field(
 			&"true_var",
 			true_lbl,
 			false,
 			SlotConnectionType.VAR_ANY,
-			-1,
-			get_theme_icon("Variant", "EditorIcons"))
+			-1)
 	var fs_var: int = add_field(
 			&"false_var",
 			false_lbl,
 			false,
 			SlotConnectionType.VAR_ANY,
-			-1,
-			get_theme_icon("Variant", "EditorIcons"))
+			-1)
 	
 	set_slot_color_left(eval_idx, COLORS["bool"])
 	set_slot_color_right(eval_idx, COLORS["any"])
 	set_slot_color_left(tr_var, COLORS["any"])
 	set_slot_color_left(fs_var, COLORS["any"])
+
+
+func _ready() -> void:
+	set_field_connection_icons(
+			&"evaluation",
+			get_theme_icon("bool", "EditorIcons"),
+			get_theme_icon("Variant", "EditorIcons"))
+	
+	set_input_connection_icon(&"true_var", get_theme_icon("Variant", "EditorIcons"))
+	set_input_connection_icon(&"false_var", get_theme_icon("Variant", "EditorIcons"))
 
 
 func _get_node_data() -> Dictionary:

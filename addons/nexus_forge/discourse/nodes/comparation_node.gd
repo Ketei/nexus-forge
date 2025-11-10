@@ -74,20 +74,25 @@ func _post_init() -> void:
 			a_result_container,
 			false,
 			SlotConnectionType.VAR_ANY,
-			SlotConnectionType.VAR_BOOL,
-			get_theme_icon("Variant", "EditorIcons"),
-			get_theme_icon("bool", "EditorIcons"))
+			SlotConnectionType.VAR_BOOL)
 	var b_idx: int = add_field(
 			&"b_comparation",
 			b_label,
 			false,
 			SlotConnectionType.VAR_ANY,
-			-1,	
-			get_theme_icon("Variant", "EditorIcons"))
-	
+			-1)
 	set_slot_color_left(res_idx, COLORS["any"])
 	set_slot_color_right(res_idx, COLORS["bool"])
 	set_slot_color_left(b_idx, COLORS["any"])
+
+
+func _ready() -> void:
+	set_field_connection_icons(
+			&"result",
+			get_theme_icon("Variant", "EditorIcons"),
+			get_theme_icon("bool", "EditorIcons"))
+	
+	set_input_connection_icon(&"b_comparation", get_theme_icon("Variant", "EditorIcons"))
 
 
 func _get_issues() -> PackedStringArray:

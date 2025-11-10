@@ -88,8 +88,7 @@ func _post_init() -> void:
 			min_container,
 			false,
 			SlotConnectionType.VAR_INT,
-			-1,
-			get_theme_icon("int", "EditorIcons"))
+			-1)
 	set_slot_color_left(1, COLORS["integer"])
 	map_field(&"min_value", "min_spinbox", min_spinbox)
 	map_field(&"min_value", "min_label", min_label)
@@ -99,13 +98,17 @@ func _post_init() -> void:
 			max_container,
 			false,
 			SlotConnectionType.VAR_INT,
-			-1,
-			get_theme_icon("int", "EditorIcons"))
+			-1)
 	set_slot_color_left(2, COLORS["integer"])
 	map_field(&"max_value", "max_spinbox", max_spinbox)
 	
 	min_spinbox.value_changed.connect(_on_min_value_changed.bind(max_spinbox))
 	random_popup.id_pressed.connect(_on_random_type_selected.bind(random_type, min_spinbox, max_spinbox, min_label))
+
+
+func _ready() -> void:
+	set_input_connection_icon(&"min_value", get_theme_icon("int", "EditorIcons"))
+	set_input_connection_icon(&"max_value", get_theme_icon("int", "EditorIcons"))
 
 
 func _on_input_connected(input_port: int, _from_node: DiscourseGraphNode, _from_port: int) -> void:

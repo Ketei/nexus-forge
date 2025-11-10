@@ -42,8 +42,7 @@ func _post_init() -> void:
 			font_resource,
 			false,
 			SlotConnectionType.RESOURCE,
-			-1,
-			get_theme_icon("Object", "EditorIcons"))
+			-1)
 	set_slot_color_left(1, COLORS["object"])
 	
 	add_field(
@@ -51,8 +50,7 @@ func _post_init() -> void:
 			scene_origin,
 			false,
 			SlotConnectionType.RESOURCE,
-			-1,
-			get_theme_icon("PackedScene", "EditorIcons"))
+			-1)
 	set_slot_color_left(2, COLORS["object"])
 	
 	add_field(
@@ -60,9 +58,14 @@ func _post_init() -> void:
 			text_speed,
 			false,
 			SlotConnectionType.VAR_INT,
-			-1,
-			get_theme_icon("int", "EditorIcons"))
+			-1)
 	set_slot_color_left(3, COLORS["integer"])
+
+
+func _ready() -> void:
+	set_input_connection_icon(&"font", get_theme_icon("Object", "EditorIcons"))
+	set_input_connection_icon(&"scene", get_theme_icon("PackedScene", "EditorIcons"))
+	set_input_connection_icon(&"text_speed", get_theme_icon("int", "EditorIcons"))
 
 
 func _get_node_data() -> Dictionary:

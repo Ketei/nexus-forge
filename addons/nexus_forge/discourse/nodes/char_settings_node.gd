@@ -30,28 +30,36 @@ func _post_init() -> void:
 			connect_label,
 			false,
 			-1,
-			SlotConnectionType.SETTINGS_CHARACTER,
-			null,
-			get_theme_icon("CharacterBody2D", "EditorIcons"))
-	set_slot_color_right(0, COLORS["setting"])
+			SlotConnectionType.SETTINGS_CHARACTER)
 	
 	add_field(
 			&"name",
 			display_name_lbl,
 			false,
 			SlotConnectionType.VAR_STRING,
-			-1,
-			get_theme_icon("String", "EditorIcons"))
-	set_slot_color_left(1, COLORS["string"])
+			-1)
 	
 	add_field(
 			&"portrait",
 			portrait_id_lbl,
 			false,
 			SlotConnectionType.VAR_STRING,
-			-1,
-			get_theme_icon("String", "EditorIcons"))
+			-1)
+	set_slot_color_right(0, COLORS["setting"])
+	set_slot_color_left(1, COLORS["string"])
 	set_slot_color_left(2, COLORS["string"])
+
+
+func _ready() -> void:
+	set_output_connection_icon(
+			&"connection",
+			get_theme_icon("CharacterBody2D", "EditorIcons"))
+	set_input_connection_icon(
+			&"name",
+			get_theme_icon("String", "EditorIcons"))
+	set_input_connection_icon(
+			&"portrait",
+			get_theme_icon("String", "EditorIcons"))
 
 
 func _get_node_data() -> Dictionary:

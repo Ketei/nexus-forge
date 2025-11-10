@@ -42,8 +42,7 @@ func _post_init() -> void:
 			option_available,
 			false,
 			SlotConnectionType.VAR_BOOL,
-			-1,
-			get_theme_icon("bool", "EditorIcons"))
+			-1)
 	set_slot_color_left(1, COLORS["bool"])
 	
 	add_field(
@@ -51,8 +50,7 @@ func _post_init() -> void:
 			option_unblocked,
 			false,
 			SlotConnectionType.VAR_BOOL,
-			-1,
-			get_theme_icon("bool", "EditorIcons"))
+			-1)
 	set_slot_color_left(2, COLORS["bool"])
 	
 	add_field(
@@ -60,9 +58,14 @@ func _post_init() -> void:
 			option_hint,
 			false,
 			SlotConnectionType.VAR_STRING,
-			-1,
-			get_theme_icon("String", "EditorIcons"))
+			-1)
 	set_slot_color_left(3, COLORS["string"])
+
+
+func _ready() -> void:
+	set_input_connection_icon(&"available", get_theme_icon("bool", "EditorIcons"))
+	set_input_connection_icon(&"unblocked", get_theme_icon("bool", "EditorIcons"))
+	set_input_connection_icon(&"hint", get_theme_icon("String", "EditorIcons"))
 
 
 func _get_node_data() -> Dictionary:

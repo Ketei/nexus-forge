@@ -98,9 +98,7 @@ func _post_init() -> void:
 		first_random,
 		false,
 		SlotConnectionType.VAR_INT,
-		SlotConnectionType.DIALOG,
-		get_theme_icon("int", "EditorIcons"))
-	
+		SlotConnectionType.DIALOG)
 	
 	set_slot_color_left(0, COLORS["dialog"])
 	set_slot_color_left(1, COLORS["integer"])
@@ -111,6 +109,10 @@ func _post_init() -> void:
 	set_slot_custom_icon_right(2, flow_icon)
 	
 	options_spn.value_changed.connect(_on_random_exit_changed)
+
+
+func _ready() -> void:
+	set_input_connection_icon(&"option_1", get_theme_icon("int", "EditorIcons"))
 
 
 func _get_issues() -> PackedStringArray:
@@ -177,13 +179,14 @@ func set_random_exit_number(target_options: int) -> void:
 			new_random.text = "Weight ??.??%"
 			new_random.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			new_random.horizontal_alignment = HORIZONTAL_ALIGNMENT_FILL
+			var option_id: StringName = &"option_" + StringName(str(int(new_option)))
 			add_field(
-				&"option_" + StringName(str(int(new_option))),
+				option_id,
 				new_random,
 				false,
 				SlotConnectionType.VAR_INT,
-				SlotConnectionType.DIALOG,
-				get_theme_icon("int", "EditorIcons"))
+				SlotConnectionType.DIALOG)
+			set_input_connection_icon(option_id, get_theme_icon("int", "EditorIcons"))
 			set_slot_color_right(
 				new_option + 1,
 				COLORS["dialog"])
