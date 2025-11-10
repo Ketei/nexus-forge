@@ -108,8 +108,6 @@ func _ready() -> void:
 	set_input_connection_icon(&"character_id", preload("res://addons/nexus_forge/icons/gear_icon.png"))
 	set_input_connection_icon(&"dialog_settings", preload("res://addons/nexus_forge/icons/gear_icon.png"))
 	set_input_connection_icon(&"flags", get_theme_icon("String", "EditorIcons"))
-	
-	print("Dialog: ", get_titlebar_hbox().size)
 
 
 func _on_input_connected(input_port: int, _from_node: DiscourseGraphNode, _from_port: int) -> void:

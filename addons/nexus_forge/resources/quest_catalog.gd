@@ -437,7 +437,7 @@ func has_step(on_quest: StringName, on_stage: StringName, step_id: StringName) -
 ## The quest, and both stages need to exist for the stages to be linked.
 func set_step_link(quest_id: StringName, stage_id: StringName, from_step: StringName, to_step: StringName) -> void:
 	if has_step(quest_id, stage_id, from_step) and has_step(quest_id, stage_id, to_step):
-		_quests[quest_id]["stages"][stage_id]["steps"]["step_id"]["next_step"] = to_step
+		_quests[quest_id]["stages"][stage_id]["steps"][from_step]["next_step"] = to_step
 
 
 ## Sets the title of the step [param step_id] on the stage [param on_stage] from

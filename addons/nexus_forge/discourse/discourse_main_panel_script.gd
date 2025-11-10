@@ -215,10 +215,9 @@ func _on_conversation_close_pressed(dialog: EditorDiscourseDialog, save_required
 				new_item = conversation_tree.get_root().get_child(item.get_index() + 1)
 			
 		if new_item == null:
-			active_conversation == null
+			active_conversation = null
 			set_conversation_active(false)
 		else:
-			#active_conversation = new_item.get_metadata(0)["resource"]
 			conversation_tree.set_conversation_item_active(new_item)
 			open_conversation(active_conversation)
 	

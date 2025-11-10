@@ -2,10 +2,6 @@
 extends DiscourseGraphNode
 
 
-func _ready() -> void:
-	print("Entry: ", get_titlebar_hbox().size)
-
-
 func _post_init() -> void:
 	name = &"Entry"
 	custom_id = "Entry"

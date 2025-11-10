@@ -51,13 +51,6 @@ func add_item(item_id: StringName, select: bool = false, with_signal: bool = tru
 	new_item.set_editable(0, true)
 	new_item.add_button(
 			0,
-			get_theme_icon("ArrowRight", "EditorIcons"),
-			1,
-			false,
-			"Change Category"
-	)
-	new_item.add_button(
-			0,
 			get_theme_icon("Remove", "EditorIcons"),
 			0,
 			false,

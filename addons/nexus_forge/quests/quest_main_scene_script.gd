@@ -232,6 +232,7 @@ func _on_quest_selected() -> void:
 	var selected: TreeItem = quest_tree.get_selected()
 	loaded_quest = selected.get_metadata(0)
 	load_quest(loaded_quest)
+	set_quest_ui_enabled(true)
 	set_stage_ui_enabled(true)
 	set_stage_data_ui_enabled(false)
 	set_step_ui_enabled(false)

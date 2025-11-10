@@ -21,6 +21,9 @@ var _unsaved: bool = false
 func _ready() -> void:
 	if Engine.is_editor_hint() and owner == get_tree().edited_scene_root:
 		return
+	
+	new_category_btn.icon = get_theme_icon("Add", "EditorIcons")
+	
 	categories_tree.item_selected.connect(_on_category_item_selected)
 	new_category_btn.pressed.connect(_on_new_category_pressed)
 	categories_tree.category_changed.connect(_on_category_changed)
@@ -41,12 +44,12 @@ func _on_category_changed() -> void:
 
 func _on_new_category_pressed() -> void:
 	var id_creator := preload("res://addons/nexus_forge/dialogs/lineedit_confirmation_dialog.gd").new()
-	id_creator.line_placeholder_text = "Item ID"
+	id_creator.line_placeholder_text = "Category ID"
 	id_creator.allow_empty = false
 	id_creator.use_blacklist = true
 	id_creator.character_blacklist.append(" ")
 	id_creator.text_blacklist.assign(categories_tree.active_categories())
-	id_creator.title = "Create Item"
+	id_creator.title = "Create Category"
 	id_creator.ok_button_text = "Create"
 	add_child(id_creator)
 	id_creator.show()

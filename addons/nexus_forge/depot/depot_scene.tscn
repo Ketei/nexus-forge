@@ -59,6 +59,7 @@ theme_override_styles/panel = SubResource("StyleBoxEmpty_8n7i7")
 script = ExtResource("1_l5u5u")
 
 [node name="ItemsContainer" type="HBoxContainer" parent="."]
+visible = false
 layout_mode = 2
 script = ExtResource("2_evcfd")
 
@@ -452,7 +453,6 @@ select_mode = 1
 script = ExtResource("5_hb3ne")
 
 [node name="CategoriesContainer" type="HBoxContainer" parent="."]
-visible = false
 layout_mode = 2
 alignment = 1
 script = ExtResource("10_hb3ne")
