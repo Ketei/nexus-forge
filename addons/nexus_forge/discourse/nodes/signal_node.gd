@@ -260,7 +260,7 @@ func clear_input_args() -> void:
 		remove_field(field_id, 32)
 
 
-func get_user_signals() -> Dictionary:
+static func get_user_signals() -> Dictionary:
 	var user_signals: Dictionary = {}
 	var signal_blacklist: Array[String] = []
 	var singleton: DiscourseAPI = DiscourseAPI.new()

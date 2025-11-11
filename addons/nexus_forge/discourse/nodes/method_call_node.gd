@@ -282,7 +282,7 @@ func clear_input_args() -> void:
 		remove_field(field_id, 32)
 
 
-func get_user_methods() -> Dictionary:
+static func get_user_methods() -> Dictionary:
 	var methods: Dictionary = {}
 	
 	var method_blacklsit: Array[String] = []

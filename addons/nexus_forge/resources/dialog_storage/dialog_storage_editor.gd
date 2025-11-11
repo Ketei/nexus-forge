@@ -476,6 +476,9 @@ func clear() -> void:
 
 ## Converts this resource to a [ReleaseDiscourseDialog].
 func convert_for_release(localization_uuid: String = "") -> ReleaseDiscourseDialog:
+	var available_methods: Dictionary = preload("res://addons/nexus_forge/discourse/nodes/method_call_node.gd").get_user_methods()
+	var available_signals: Dictionary = preload("res://addons/nexus_forge/discourse/nodes/signal_node.gd").get_user_signals()
+	
 	var release_dialog: ReleaseDiscourseDialog = ReleaseDiscourseDialog.new()
 	var id_map: Dictionary[String, StringName] = {}
 	
@@ -666,8 +669,26 @@ func convert_for_release(localization_uuid: String = "") -> ReleaseDiscourseDial
 				add_id = true
 				var var_val: StringName = StringName(dialog_nodes[node_id]["input_connections"]["variable_value"]["target_node_uuid"])
 				data["value"] = var_val
-				data["callable"] = StringName(dialog_nodes[node_id]["input_connections"]["callable"]["target_node_uuid"])
-				data["signal"] = StringName(dialog_nodes[node_id]["input_connections"]["signal"]["target_node_uuid"])
+				
+				if not dialog_nodes[node_id]["input_connections"]["callable"]["target_node_uuid"].is_empty():
+					var callable_uuid: StringName = dialog_nodes[node_id]["input_connections"]["callable"]["target_node_uuid"]
+					if available_methods.has(dialog_nodes[callable_uuid]["method"]):
+						data["callable"] = StringName(dialog_nodes[node_id]["input_connections"]["callable"]["target_node_uuid"])
+					else:
+						data["callable"] = &""
+						printerr("[Discourse] Warning: Issue when exporting ", resource_path, ". Event ", dialog_nodes[node_id]["name"], " calls an inexistent method.")
+				else:
+					data["callable"] = &""
+				
+				if not dialog_nodes[node_id]["input_connections"]["signal"]["target_node_uuid"].is_empty():
+					var signal_uuid: StringName = dialog_nodes[node_id]["input_connections"]["signal"]["target_node_uuid"]
+					if available_signals.has(dialog_nodes[signal_uuid]["signal"]):
+						data["signal"] = StringName(dialog_nodes[node_id]["input_connections"]["signal"]["target_node_uuid"])
+					else:
+						data["signal"] = &""
+						printerr("[Discourse] Warning: Issue when exporting ", resource_path, ". Event ", dialog_nodes[node_id]["name"], " emits an inexistent signal.")
+				else:
+					data["signal"] = &""
 				data["next_node"] = get_target_lambda.call(StringName(dialog_nodes[node_id]["output_connections"]["next_node"]["target_node_uuid"]))
 				if var_val.is_empty():
 					data["variable_path"] = &""
@@ -781,8 +802,27 @@ func convert_for_release(localization_uuid: String = "") -> ReleaseDiscourseDial
 				add_id = true
 				var var_val: StringName = StringName(dialog_nodes[node_id]["input_connections"]["variable_value"]["target_node_uuid"])
 				data["value"] = var_val
-				data["callable"] = StringName(dialog_nodes[node_id]["input_connections"]["callable"]["target_node_uuid"])
-				data["signal"] = StringName(dialog_nodes[node_id]["input_connections"]["signal"]["target_node_uuid"])
+				
+				if not dialog_nodes[node_id]["input_connections"]["callable"]["target_node_uuid"].is_empty():
+					var callable_uuid: StringName = dialog_nodes[node_id]["input_connections"]["callable"]["target_node_uuid"]
+					if available_methods.has(dialog_nodes[callable_uuid]["method"]):
+						data["callable"] = StringName(dialog_nodes[node_id]["input_connections"]["callable"]["target_node_uuid"])
+					else:
+						data["callable"] = &""
+						printerr("[Discourse] Warning: Issue when exporting ", resource_path, ". Data event ", dialog_nodes[node_id]["name"], " calls an inexistent method.")
+				else:
+					data["callable"] = &""
+				
+				if not dialog_nodes[node_id]["input_connections"]["signal"]["target_node_uuid"].is_empty():
+					var signal_uuid: StringName = dialog_nodes[node_id]["input_connections"]["signal"]["target_node_uuid"]
+					if available_signals.has(dialog_nodes[signal_uuid]["signal"]):
+						data["signal"] = StringName(dialog_nodes[node_id]["input_connections"]["signal"]["target_node_uuid"])
+					else:
+						data["signal"] = &""
+						printerr("[Discourse] Warning: Issue when exporting ", resource_path, ". Data event ", dialog_nodes[node_id]["name"], " emits an inexistent signal.")
+				else:
+					data["signal"] = &""
+				
 				data["data_source"] = StringName(dialog_nodes[node_id]["input_connections"]["data_input"]["target_node_uuid"])
 				if var_val.is_empty():
 					data["variable_path"] = &""
