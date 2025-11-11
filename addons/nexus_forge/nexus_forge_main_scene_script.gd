@@ -29,7 +29,6 @@ func _ready() -> void:
 		return
 	
 	tool_tab_bar.set_tab_title(0, "")
-	tool_tab_bar.set_tab_icon(0, load("res://addons/nexus_forge/icons/plugin_icon.svg"))
 	
 	go_to_tab(0)
 	

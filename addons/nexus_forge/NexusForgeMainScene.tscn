@@ -1,10 +1,9 @@
 [gd_scene load_steps=24 format=3 uid="uid://dykskyw7tvdof"]
 
 [ext_resource type="Script" uid="uid://d0wp8u6btdhsk" path="res://addons/nexus_forge/nexus_forge_main_scene_script.gd" id="1_15n6i"]
-[ext_resource type="Texture2D" uid="uid://ciucmcbkqf2u6" path="res://addons/nexus_forge/icons/plugin_icon.svg" id="2_623mc"]
+[ext_resource type="Texture2D" uid="uid://bohd4742ivr70" path="res://addons/nexus_forge/icons/nexus_forge_small.svg" id="2_efg3d"]
 [ext_resource type="Texture2D" uid="uid://c6wchabfbxjvv" path="res://addons/nexus_forge/icons/speech_bubble.svg" id="3_efg3d"]
 [ext_resource type="PackedScene" uid="uid://d3qq6j2xbhrgp" path="res://addons/nexus_forge/variables/variables_main.tscn" id="3_umhp2"]
-[ext_resource type="Texture2D" uid="uid://dc7l0vdedlvan" path="res://addons/nexus_forge/splash/splash.png" id="3_ynryw"]
 [ext_resource type="Texture2D" uid="uid://corsvngm2e08h" path="res://addons/nexus_forge/icons/variable_icon.svg" id="4_ntiiq"]
 [ext_resource type="PackedScene" uid="uid://d216eid5mh0ts" path="res://addons/nexus_forge/discourse/discourse_main_scene.tscn" id="4_yutfl"]
 [ext_resource type="Texture2D" uid="uid://bh78e7rsycp7y" path="res://addons/nexus_forge/icons/character_icon.svg" id="5_3eso2"]
@@ -19,12 +18,13 @@
 [ext_resource type="Texture2D" uid="uid://cebbn0w43pspb" path="res://addons/nexus_forge/icons/bluepring_fill.svg" id="9_fmp7a"]
 [ext_resource type="Texture2D" uid="uid://dnfafwipiljix" path="res://addons/nexus_forge/icons/scroll.svg" id="10_2qc1w"]
 [ext_resource type="Texture2D" uid="uid://bdw53wt3bshy" path="res://addons/nexus_forge/icons/brackets_speech.svg" id="11_3fnsj"]
+[ext_resource type="Texture2D" uid="uid://dr5siu85och4s" path="res://addons/nexus_forge/icons/nexus_forge_large.svg" id="11_at7in"]
 [ext_resource type="PackedScene" uid="uid://djul28onmafsc" path="res://addons/nexus_forge/quests/quest_main_scene.tscn" id="11_ec5tf"]
 [ext_resource type="PackedScene" uid="uid://c7ia2qjomildo" path="res://addons/nexus_forge/phrases/localization_resources.tscn" id="12_h1eok"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_yutfl"]
 
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ay1bl"]
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_efg3d"]
 content_margin_left = 10.0
 content_margin_top = 10.0
 content_margin_right = 10.0
@@ -53,10 +53,10 @@ theme_override_constants/separation = 0
 [node name="ToolTabBar" type="TabBar" parent="MainContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/icon_max_width = 20
+theme_override_constants/icon_max_width = 22
 current_tab = 0
 tab_count = 10
-tab_0/icon = ExtResource("2_623mc")
+tab_0/icon = ExtResource("2_efg3d")
 tab_1/title = "Discourse"
 tab_1/icon = ExtResource("3_efg3d")
 tab_2/title = "Variables"
@@ -91,12 +91,13 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxEmpty_ay1bl")
+theme_override_styles/panel = SubResource("StyleBoxEmpty_efg3d")
 
 [node name="SplashTexture" type="TextureRect" parent="MainContainer/ToolContainer/NexusForge/SplashPanel"]
-texture_filter = 3
+modulate = Color(0.498354, 0.563604, 0.683898, 1)
+texture_filter = 4
 layout_mode = 2
-texture = ExtResource("3_ynryw")
+texture = ExtResource("11_at7in")
 expand_mode = 1
 stretch_mode = 5
 

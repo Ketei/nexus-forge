@@ -5,7 +5,7 @@ extends EditorPlugin
 
 const MAIN_SCENE = preload("res://addons/nexus_forge/NexusForgeMainScene.tscn")
 const PLUGIN_NAME: String = "NexusForge"
-const PLUGIN_ICON_PATH: String = "res://addons/nexus_forge/icons/plugin_icon.svg"
+const PLUGIN_ICON_PATH: String = "res://addons/nexus_forge/icons/nexus_forge_small.svg"
 const HANDLED_CLASSES: Array[StringName] = [&"EditorDiscourseDialog", &"CharacterSheet", &"PhraseMap"]
 const SETTINGS_PATHS: Dictionary[String, Dictionary] = {
 	"discourse": {
