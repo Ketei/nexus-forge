@@ -16,13 +16,16 @@ func _post_init() -> void:
 	
 	available_signals = get_user_signals()
 	
+	var signal_keys: Array = available_signals.keys()
+	signal_keys.sort_custom(Arrays.sort_custom_alphabetically_asc)
+	
 	var signals_node: OptionButton = OptionButton.new()
 	signals_node.name = &"SignalsOptBtn"
 	signals_node.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	signals_node.fit_to_longest_item = false
 	signals_node.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	
-	for user_signal:String in available_signals.keys():
+	for user_signal:String in signal_keys:
 		signals_node.add_item(user_signal.capitalize())
 		signals_node.set_item_metadata(-1, user_signal)
 	
@@ -91,6 +94,109 @@ func _on_signal_selected(idx: int) -> void:
 	node_updated.emit()
 
 
+func reload_signals() -> void:
+	available_signals = get_user_signals()
+	var opt_btn: OptionButton = get_field(&"signals")
+	var current_signal: String = "" if opt_btn.selected == -1 else opt_btn.get_selected_metadata()
+	var new_signals = available_signals.keys()
+	var new_idx: int = -1
+	var emit_updated: bool = false
+	
+	new_signals.sort_custom(Arrays.sort_custom_alphabetically_asc)
+	
+	if current_signal != "":
+		new_idx = new_signals.find(current_signal)
+	
+	opt_btn.clear()
+	
+	for new_signal:String in new_signals:
+		opt_btn.add_item(new_signal.capitalize())
+		opt_btn.set_item_metadata(-1, new_signal)
+	
+	if new_idx == -1:
+		if opt_btn.item_count == 0:
+			clear_input_args()
+		else:
+			opt_btn.select(0)
+			load_signal(opt_btn.get_item_metadata(0))
+		node_updated.emit()
+		return
+	else:
+		opt_btn.select(new_idx)
+	
+	var arg_idx: int = -1 # With the index
+	for new_arg:Dictionary in available_signals[current_signal]:
+		arg_idx += 1
+		
+		if get_child_count() - 1 <= arg_idx:
+			add_input_arg(new_arg["name"], new_arg["type"])
+			emit_updated = true
+			continue # And we continue
+		
+		#var field_id: StringName = &"argument_" + StringName(str(arg_idx + 1))
+		var current_input_type: int = get_input_port_type(arg_idx)
+		var new_data_type: int = new_arg["type"]
+		var new_port_type: int = 0
+		var new_type_color: String = ""
+		var compatible: bool = false
+		var new_icon: Texture2D = null
+		
+		match new_data_type:
+			TYPE_INT:
+				new_port_type = SlotConnectionType.VAR_INT
+				new_type_color = "integer"
+				new_icon = get_theme_icon("int", "EditorIcons")
+			TYPE_FLOAT:
+				new_port_type = SlotConnectionType.VAR_FLOAT
+				new_type_color = "float"
+				new_icon = get_theme_icon("float", "EditorIcons")
+			TYPE_BOOL:
+				new_port_type = SlotConnectionType.VAR_BOOL
+				new_type_color = "bool"
+				new_icon = get_theme_icon("bool", "EditorIcons")
+			TYPE_STRING:
+				new_port_type = SlotConnectionType.VAR_STRING
+				new_type_color = "string"
+				new_icon = get_theme_icon("String", "EditorIcons")
+			_:
+				new_port_type = SlotConnectionType.VAR_ANY
+				new_type_color = "any"
+				new_icon = get_theme_icon("Variant", "EditorIcons")
+		
+		match current_input_type:
+			SlotConnectionType.VAR_INT:
+				compatible = new_data_type == TYPE_INT
+			SlotConnectionType.VAR_FLOAT:
+				compatible = new_data_type == TYPE_FLOAT
+			SlotConnectionType.VAR_BOOL:
+				compatible = new_data_type == TYPE_BOOL
+			SlotConnectionType.VAR_STRING:
+				compatible = new_data_type == TYPE_STRING
+			SlotConnectionType.VAR_ANY: # The current port accepts anything
+				# We grab the node that connects to the argument
+				var input_target: DiscourseGraphNode = get_node_connected_to_port(PortMode.INPUT, arg_idx)
+				# And grab the port type of that node
+				var output_type: int = -1 if input_target == null else input_target.get_output_port_type(
+						input_target.get_port_connected_to(PortMode.OUTPUT, self, arg_idx))
+				
+				# And it's compatible if the new port type matches the output
+				# port of the node connected to this one or is an "any".
+				compatible = output_type == new_port_type or output_type == SlotConnectionType.VAR_ANY
+		
+		if not compatible: # If it isn't compatible we disconnect it.
+			disconnect_port(PortMode.INPUT, arg_idx)
+			emit_updated = true
+		
+		# If the types don't match we assign the type, change the color and icon.
+		if current_input_type != new_port_type:
+			set_slot_color_left(arg_idx, COLORS[new_type_color])
+			set_slot_type_left(arg_idx, new_port_type)
+			emit_updated = true
+	
+	if emit_updated:
+		node_updated.emit()
+
+
 func load_signal(signal_id: String) -> void:
 	clear_input_args()
 	for arg:Dictionary in available_signals[signal_id]:
@@ -134,6 +240,10 @@ func add_input_arg(arg_text: String, arg_type: int) -> void:
 			slot_type = SlotConnectionType.VAR_STRING
 			input_icon = get_theme_icon("String", "EditorIcons")
 			input_color = COLORS["string"]
+		_:
+			slot_type = SlotConnectionType.VAR_ANY
+			input_icon = get_theme_icon("Variant", "EditorIcons")
+			input_color = COLORS["any"]
 	
 	add_field(
 			field_id,
@@ -153,8 +263,8 @@ func clear_input_args() -> void:
 func get_user_signals() -> Dictionary:
 	var user_signals: Dictionary = {}
 	var signal_blacklist: Array[String] = []
-	var singleton: DialogParser.DiscourseAPI = DialogParser.DiscourseAPI.new()
-	var prev_signals: Array = DialogParser.new().get_signal_list()
+	var singleton: DiscourseAPI = DiscourseAPI.new()
+	var prev_signals: Array = ClassDB.class_get_signal_list(&"RefCounted")
 	
 	for ref_signal in prev_signals:
 		signal_blacklist.append(ref_signal["name"])

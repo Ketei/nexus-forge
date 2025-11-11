@@ -1,7 +1,9 @@
 extends DiscourseGraphNode
 
 
-var available_methods: Dictionary = {}
+var available_methods: Dictionary = {
+	#"a_method": [{"name": "arg_name", "type": TYPE_INT, "has_default": true}]
+}
 
 
 func _post_init() -> void:
@@ -21,8 +23,12 @@ func _post_init() -> void:
 	methods_node.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	methods_node.fit_to_longest_item = false
 	methods_node.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-
-	for method:String in available_methods.keys():
+	
+	var method_keys: Array = available_methods.keys()
+	
+	method_keys.sort_custom(Arrays.sort_custom_alphabetically_asc)
+	
+	for method:String in method_keys:
 		methods_node.add_item(method.capitalize())
 		methods_node.set_item_metadata(-1, method)
 	
@@ -102,6 +108,114 @@ func _on_method_selected(idx: int) -> void:
 	node_updated.emit()
 
 
+func reload_methods() -> void:
+	available_methods = get_user_methods()
+	var opt_btn: OptionButton = get_field(&"methods")
+	var selected_method: String = opt_btn.get_selected_metadata() if opt_btn.selected != -1 else ""
+	var all_methods: Array = available_methods.keys()
+	var new_select: int = -1
+	var emit_updated: bool = false
+	
+	all_methods.sort_custom(Arrays.sort_custom_alphabetically_asc)
+	
+	if selected_method != "":
+		new_select = all_methods.find(selected_method)
+	
+	opt_btn.clear()
+	
+	for method in all_methods:
+		opt_btn.add_item(method)
+		opt_btn.set_item_metadata(-1, method)
+	
+	if new_select != -1:
+		opt_btn.select(new_select)
+	
+	if new_select == -1:
+		if available_methods.size() == 0:
+			clear_input_args()
+		else:
+			opt_btn.select(0)
+			load_method(opt_btn.get_item_metadata(0))
+		node_updated.emit()
+		return # Since there was no equal method we stop here
+	
+	# Since there is an equal named method, we will check all the arguments.
+	var arg_idx: int = -1 # With the index
+	for new_argument:Dictionary in available_methods[selected_method]:
+		arg_idx += 1
+		
+		# If the new index is equal or larger as the child count, we add the argument.
+		# Index 0 to child count 0, means we need to add a new child.
+		if get_child_count() - 1 <= arg_idx:
+			add_input_arg(new_argument["name"], new_argument["type"])
+			emit_updated = true
+			continue # And we continue
+		
+		# We grab the existing argument to repurpose it.
+		#var field_id: StringName = &"argument_" + StringName(str(arg_idx + 1))
+		var current_input_type: int = get_input_port_type(arg_idx)
+		var new_data_type: int = new_argument["type"]
+		var new_port_type: int = 0
+		var new_type_color: String = ""
+		var compatible: bool = false
+		var new_icon: Texture2D = null
+		
+		match new_data_type:
+			TYPE_INT:
+				new_port_type = SlotConnectionType.VAR_INT
+				new_type_color = "integer"
+				new_icon = get_theme_icon("int", "EditorIcons")
+			TYPE_FLOAT:
+				new_port_type = SlotConnectionType.VAR_FLOAT
+				new_type_color = "float"
+				new_icon = get_theme_icon("float", "EditorIcons")
+			TYPE_BOOL:
+				new_port_type = SlotConnectionType.VAR_BOOL
+				new_type_color = "bool"
+				new_icon = get_theme_icon("bool", "EditorIcons")
+			TYPE_STRING:
+				new_port_type = SlotConnectionType.VAR_STRING
+				new_type_color = "string"
+				new_icon = get_theme_icon("String", "EditorIcons")
+			_:
+				new_port_type = SlotConnectionType.VAR_ANY
+				new_type_color = "any"
+				new_icon = get_theme_icon("Variant", "EditorIcons")
+		
+		match current_input_type:
+			SlotConnectionType.VAR_INT:
+				compatible = new_data_type == TYPE_INT
+			SlotConnectionType.VAR_FLOAT:
+				compatible = new_data_type == TYPE_FLOAT
+			SlotConnectionType.VAR_BOOL:
+				compatible = new_data_type == TYPE_BOOL
+			SlotConnectionType.VAR_STRING:
+				compatible = new_data_type == TYPE_STRING
+			SlotConnectionType.VAR_ANY: # The current port accepts anything
+				# We grab the node that connects to the argument
+				var input_target: DiscourseGraphNode = get_node_connected_to_port(PortMode.INPUT, arg_idx)
+				# And grab the port type of that node
+				var output_type: int = -1 if input_target == null else input_target.get_output_port_type(
+						input_target.get_port_connected_to(PortMode.OUTPUT, self, arg_idx))
+				
+				# And it's compatible if the new port type matches the output
+				# port of the node connected to this one or is an "any".
+				compatible = output_type == new_port_type or output_type == SlotConnectionType.VAR_ANY
+		
+		if not compatible: # If it isn't compatible we disconnect it.
+			disconnect_port(PortMode.INPUT, arg_idx)
+			emit_updated = true
+		
+		# If the types don't match we assign the type, change the color and icon.
+		if current_input_type != new_port_type:
+			set_slot_color_left(arg_idx, COLORS[new_type_color])
+			set_slot_type_left(arg_idx, new_port_type)
+			emit_updated = true
+	
+	if emit_updated:
+		node_updated.emit()
+
+
 func get_current_method() -> String:
 	var opt_btn: OptionButton = get_field(&"methods")
 	if opt_btn.selected == -1:
@@ -146,6 +260,10 @@ func add_input_arg(arg_text: String, arg_type: int) -> void:
 			slot_type = SlotConnectionType.VAR_STRING
 			input_icon = get_theme_icon("String", "EditorIcons")
 			input_color = COLORS["string"]
+		_:
+			slot_type = SlotConnectionType.VAR_ANY
+			input_icon = get_theme_icon("Variant", "EditorIcons")
+			input_color = COLORS["any"]
 	
 	add_field(
 			field_id,
@@ -153,6 +271,7 @@ func add_input_arg(arg_text: String, arg_type: int) -> void:
 			false,
 			slot_type,
 			-1)
+	
 	set_input_connection_icon(field_id, input_icon)
 	set_slot_color_left(slot_target, input_color)
 
@@ -167,13 +286,13 @@ func get_user_methods() -> Dictionary:
 	var methods: Dictionary = {}
 	
 	var method_blacklsit: Array[String] = []
-	var singleton: DialogParser.DiscourseAPI = DialogParser.DiscourseAPI.new()
-	var parser: DialogParser = DialogParser.new_parser()
-	var base_methods: Array = parser.get_method_list()
+	var singleton: DiscourseAPI = DiscourseAPI.new()
+	#var parser: DialogParser = DialogParser.new_parser()
+	var base_methods: Array = ClassDB.class_get_method_list(&"RefCounted")
 	
 	for method in base_methods:
 		method_blacklsit.append(method["name"])
-		
+	
 	for method:Dictionary in singleton.get_method_list():
 		if method["name"] in method_blacklsit:
 			continue
@@ -189,5 +308,4 @@ func get_user_methods() -> Dictionary:
 				"type": arg["type"],
 				"has_default": default_index <= arg_idx})
 		methods[method["name"]] = args
-	
 	return methods

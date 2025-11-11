@@ -1,5 +1,11 @@
 class_name EditorDialogParser
 extends DialogParser
+## The [DialogParser] that NexusForge will use while its running in the editor.
+##
+## Within the editor the resources parsed will be [EditorDiscourseDialog] which
+## contain a different structure from the released files.[br]
+## For the release parser see [ReleaseDialogParser].[br]
+## This class will [b]NOT[/b] exist on exported projects.
 
 
 # --- Editor Class ---

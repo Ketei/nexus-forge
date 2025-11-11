@@ -896,6 +896,25 @@ func is_orphan() -> bool:
 			return false
 
 
+func disconnect_port(port_mode: PortMode, port_idx: int, connection_idx: int = 0) -> void:
+	if port_mode == PortMode.INPUT:
+		if port_idx < _input_nodes.size() and connection_idx < _input_nodes[port_idx]["connections"].size():
+			var input_target: DiscourseGraphNode = get_node_connected_to_port(PortMode.INPUT, port_idx, connection_idx)
+			disconnect_requested.emit(
+					input_target.name,
+					input_target.get_port_connected_to(PortMode.OUTPUT, self, port_idx),
+					name,
+					port_idx)
+	elif port_mode == PortMode.OUTPUT:
+		if port_idx < _output_nodes.size() and connection_idx < _output_nodes[port_idx]["connections"].size():
+			var output_target: DiscourseGraphNode = get_node_connected_to_port(PortMode.OUTPUT, port_idx, connection_idx)
+			disconnect_requested.emit(
+				name,
+				port_idx,
+				output_target.name,
+				output_target.get_port_connected_to(PortMode.INPUT, self, port_idx))
+
+
 func disconnect_all() -> void:
 	for input_port in range(_input_nodes.size()):
 		for connection_idx in range(_input_nodes[input_port]["connections"].size()):

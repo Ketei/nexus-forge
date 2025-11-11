@@ -2,18 +2,12 @@
 @icon("res://addons/nexus_forge/icons/dialog_full.svg")
 class_name EditorDiscourseDialog
 extends DiscourseDialog
-
-# These should exist on the base class
-const DialogNodes = DiscourseGraphNode.DialogueNodeType
-#var parsed_dialog_cache: Cache
-
-
-#func _init() -> void:
-	#parsed_dialog_cache = Cache.new()
+## A resource containing a dialog ONLY to be used in the Godot editor.
+##
+## Editor only files. On export, all EditorDiscourseDialog are converted to
+## [ReleaseDiscourseDialog] and the original files are NOT included.
 
 
-#@export var entry_node: String = ""
-#@export var base_language: String = ""
 @export_storage var scroll_offset: Vector2 = Vector2.ZERO:
 	set(new_scroll):
 		scroll_offset = new_scroll.snappedf(0.001)
@@ -36,7 +30,18 @@ const DialogNodes = DiscourseGraphNode.DialogueNodeType
 # If empty then each conversation will have it's own unique locale file.
 @export_storage var locale_group: String = ""
 
-#@export var node_localization: Dictionary[String, Dictionary] = {
+@export_storage var node_frames: Dictionary[String, Dictionary] = {
+	#"e2f420f0-1e9b-4672-bdaf-e926b59945d2": {
+		#"title": "Random Frame",
+		#"position": Vector2(100, 100),
+		#"size": Vector2(200, 200),
+		#"tint_color": Color(0.0, 0.0, 0.0, 0.55),
+		#"nodes": ["629de91c-d6c1-4f67-a287-b6899695b0a6"], # Nodes linked to it.
+	#}
+}
+
+
+@export_storage var node_localization: Dictionary[StringName, Dictionary] = {
 	#"a809f219-f5e1-4dc2-a041-4d200062dd53": {
 		#"common": {"dialog": "10-5=5"}},
 	#"629de91c-d6c1-4f67-a287-b6899695b0a6": {
@@ -50,18 +55,30 @@ const DialogNodes = DiscourseGraphNode.DialogueNodeType
 		#"en": {
 			#"base": {"options": ["grey", "green"]},
 			#"GB": {"options": ["gray", "green"]}}}
-#}
+}
 
-@export_storage var node_frames: Dictionary[String, Dictionary] = {
-	#"e2f420f0-1e9b-4672-bdaf-e926b59945d2": {
-		#"title": "Random Frame",
-		#"position": Vector2(100, 100),
-		#"size": Vector2(200, 200),
-		#"tint_color": Color(0.0, 0.0, 0.0, 0.55),
-		#"nodes": ["629de91c-d6c1-4f67-a287-b6899695b0a6"], # Nodes linked to it.
+@export_storage var localized_strings: Dictionary[String, Dictionary] = {
+	#"TITLE": {
+		#"en": {
+			#"base": {
+				#"text": "Hello {-player}",
+				#"arguments": {
+					#"player": {
+						#"default": ":3",
+						#"custom": {
+							#"wulfre": "bear",
+							#"other": "{player}"}}}},
+			#"US": "Hello burgor",
+			#"GB": "Salutations tea tea"},
+		#"es": {
+			#"base": {
+				#"text": ""
+			#}
+		#}
 	#}
 }
 
+# Example of how data will be structured on dialog_nodes
 #@export var dialog_nodes: Dictionary[String, Dictionary] = {
 	#"629de91c-d6c1-4f67-a287-b6899695b0a6": {
 		#"node_type": DiscourseGraphNode.DialogueNodeType.DIALOG,
@@ -116,14 +133,7 @@ const DialogNodes = DiscourseGraphNode.DialogueNodeType
 ]
 
 
-#var active_offset: Vector2 = Vector2.ZERO:
-	#set(new_offset):
-		#active_offset = new_offset.snappedf(0.001)
-#var active_zoom: float = 1.0:
-	#set(new_zoom):
-		#active_zoom = snappedf(new_zoom, 0.001)
-
-
+## Returns the text of a localized string.
 func get_localized_string(key: String, language: String, region: String = "base") -> String:
 	if localized_strings.has(key) and\
 			localized_strings[key].has(language) and\
@@ -133,6 +143,7 @@ func get_localized_string(key: String, language: String, region: String = "base"
 	return ""
 
 
+## Returns all format keys that the localized string has.
 func get_localized_string_formats(key: String, language: String, region: String = "base") -> Array[String]:
 	var keys: Array[String] = []
 	if localized_strings.has(key) and localized_strings[key].has(language):
@@ -141,6 +152,7 @@ func get_localized_string_formats(key: String, language: String, region: String 
 	return keys
 
 
+## Returns the format keys and the possible formats of a given key.
 func get_localized_arguments(key: String, language: String, region: String = "base") -> Dictionary[String, Dictionary]:
 	if localized_strings.has(key) and\
 			localized_strings[key].has(language) and\
@@ -150,6 +162,7 @@ func get_localized_arguments(key: String, language: String, region: String = "ba
 	return Dictionary({}, TYPE_STRING, &"", null, TYPE_DICTIONARY, &"", null)
 
 
+## Returns strings formatted for NexusForge plugin use.
 func get_editor_localized_strings(language: String, region: String = "base") -> Dictionary[String, Dictionary]:
 	var data: Dictionary[String, Dictionary] = {}
 	for key in localized_strings.keys():
@@ -157,6 +170,7 @@ func get_editor_localized_strings(language: String, region: String = "base") -> 
 	return data
 
 
+## Creates a localized string with the given [param key] unless it already exists.
 func create_localized_string(key: String, text: String) -> void:
 	if localized_strings.has(key):
 		return
@@ -169,6 +183,7 @@ func create_localized_string(key: String, text: String) -> void:
 			set_localized_string(key, text, language, region)
 
 
+## Sets or creates a localized string with the given key.
 func set_localized_string(key: String, text: String, language: String, region: String = "base") -> void:
 	if not localized_strings.has(key):
 		localized_strings[key] = Dictionary({},
@@ -208,36 +223,42 @@ func set_localized_string(key: String, text: String, language: String, region: S
 			localized_strings[key][language][region]["arguments"][new_key] = new_key_data
 
 
+## Sets the default case from a localized string with the given key.
 func set_localized_string_argument_default_case(key: String, language: String, region: String, argument: String, default_text: String) -> void:
 	if localized_strings.has(key) and localized_strings[key].has(language) and localized_strings[key][language].has(region) and localized_strings[key][language][region]["arguments"].has(argument):
 		localized_strings[key][language][region]["arguments"][argument]["default"] = default_text
 
 
+## Returns the default case from a localized string with the given key.
 func get_localized_string_argument_default_case(key: String, language: String, region: String, argument: String) -> String:
 	if localized_strings.has(key) and localized_strings[key].has(language) and localized_strings[key][language].has(region) and localized_strings[key][language][region]["arguments"].has(argument):
 		return localized_strings[key][language][region]["arguments"][argument]["default"]
 	return ""
 
 
-
+## Sets the format case on the given key to [param text].
 func set_localized_string_custom_case(key: String, language: String, region: String, argument: String, case: String, text: String) -> void:
 	if localized_strings.has(key) and localized_strings[key].has(language) and localized_strings[key][language].has(region) and localized_strings[key][language][region]["arguments"].has(argument):
 		localized_strings[key][language][region]["arguments"][argument]["custom"][case] = text
 
 
+## Clears the list of custom cases from the given key.
 func clear_localized_string_cases(key: String, language: String, region: String, argument: String) -> void:
 	if localized_strings.has(key) and localized_strings[key].has(language) and localized_strings[key][language].has(region) and localized_strings[key][language][region]["arguments"].has(argument):
 		localized_strings[key][language][region]["arguments"][argument]["custom"].clear()
 
 
+## Returns all the registered node uuids.
 func get_node_uuids() -> Array:
 	return dialog_nodes.keys()
 
 
+## Returns all the registered frames uuids.
 func get_frames_uuids() -> Array:
 	return node_frames.keys()
 
 
+## Returns the node data from a the node with the given [param uuid] in a specific locale.
 func get_node_data(node_uuid: StringName, language: String, region: String = "") -> Dictionary:
 	if not dialog_nodes.has(node_uuid):
 		return {}
@@ -248,13 +269,13 @@ func get_node_data(node_uuid: StringName, language: String, region: String = "")
 	if region.is_empty():
 		region = "base"
 	
-	match data["node_type"] as DialogNodes:
-		DialogNodes.DIALOG:
+	match data["node_type"] as NodeTypes:
+		NodeTypes.DIALOG:
 			if language == "common" or not data["has_localization"]:
 				data["dialog_text"] = node_localization[node_uuid]["common"]["dialog"]
 			else:
 				data["dialog_text"] = node_localization[node_uuid][language][region]["dialog"]
-		DialogNodes.OPTIONS:
+		NodeTypes.OPTIONS:
 			var options_translated: Array[String] = []
 			if language == "common" or not data["has_localization"]:
 				options_translated.assign(node_localization[node_uuid]["common"]["options"])
@@ -262,7 +283,7 @@ func get_node_data(node_uuid: StringName, language: String, region: String = "")
 			for option:Dictionary in data["options"]:
 				idx += 1
 				option["option_text"] = options_translated[idx]
-		DialogNodes.LOCALIZED_TEXT:
+		NodeTypes.LOCALIZED_TEXT:
 			if language == "common":
 				data["text"] = node_localization[node_uuid]["common"]["text"]
 			else:
@@ -291,9 +312,9 @@ func set_localization_text(uuid: StringName, text: String, language: String, reg
 		localization_level = localization_level[region]
 	
 	match dialog_nodes[uuid]["node_type"]:
-		DialogNodes.DIALOG:
+		NodeTypes.DIALOG:
 			localization_level["dialog"] = text
-		DialogNodes.LOCALIZED_TEXT:
+		NodeTypes.LOCALIZED_TEXT:
 			localization_level["text"] = text
 		_:
 			printerr("Tried to set text of a non-compatible node.")
@@ -350,12 +371,15 @@ func set_localization_choices(uuid: StringName, options: Array[String], language
 		locale_map[language].append(region)
 
 
+## Sets choices unlocalized.
 func set_unlocalized_choices(uuid: StringName, options: Array[String]) -> void:
 	set_localization_choices(uuid, options, "common", "base")
 
 
 ## Sets a single choice for an option node. Specifically the choice with index
-## [param option_index].
+## [param option_index]. To set an unlocalized choice pass [code]common[/code]
+## as the language argument. No region is needed when doing an unlocalized
+## option.
 func update_localization_choice(uuid: StringName, option_index: int, option_text: String, language: String, region: String = "base") -> void:
 	if option_index < 0 or dialog_nodes[uuid]["options"].size() <= option_index:
 		return
@@ -370,8 +394,9 @@ func update_localization_choice(uuid: StringName, option_index: int, option_text
 	base_level["options"][option_index] = option_text
 
 
+## Changes the amount of choices from the given choice node UUID to be [param new_count]
 func set_localization_choice_count(uuid: StringName, new_count: int) -> void:
-	if not dialog_nodes.has(uuid) or dialog_nodes[uuid]["node_type"] != DialogNodes.OPTIONS or new_count < 0:
+	if not dialog_nodes.has(uuid) or dialog_nodes[uuid]["node_type"] != NodeTypes.OPTIONS or new_count < 0:
 		return
 	
 	dialog_nodes[uuid]["options"].resize(new_count)
@@ -387,6 +412,8 @@ func set_localization_choice_count(uuid: StringName, new_count: int) -> void:
 				node_localization[uuid][language_code][country_code]["options"].resize(new_count)
 
 
+## Registers a frame.[br]
+## Note: Always register frames before registering nodes.
 func register_frame(uuid: String, title: String, position: Vector2, size: Vector2, tint: Color) -> void:
 	node_frames[uuid] = {
 		"title": title,
@@ -396,6 +423,7 @@ func register_frame(uuid: String, title: String, position: Vector2, size: Vector
 		"nodes": Array([], TYPE_STRING, &"", null)}
 
 
+## Returns the registered frame data.
 func get_frame_data(uuid: String) -> Dictionary:
 	if node_frames.has(uuid):
 		return node_frames[uuid]
@@ -407,23 +435,29 @@ func get_frame_data(uuid: String) -> Dictionary:
 		"nodes": Array([], TYPE_STRING, &"", null)}
 
 
-# Register frames before registering nodes
+## Registers a node with an uuid and the data.[br]
+## Registering a node will NOT include localizable data like dialog text or options.
+## Use [method set_localization_text], [method set_unlocalized_text],
+## [method set_localization_choices], [method set_unlocalized_choices] and
+## [method update_localization_choice] to save localizable data.
 func register_node(uuid: StringName, data: Dictionary, parent_frame: String = "") -> void:
 	dialog_nodes[uuid] = data.duplicate(true)
 	match data["node_type"]:
-		DialogNodes.DIALOG:
+		NodeTypes.DIALOG:
 			dialog_nodes[uuid].erase("dialog_text")
-		DialogNodes.OPTIONS:
+		NodeTypes.OPTIONS:
 			for option:Dictionary in dialog_nodes[uuid]["options"]:
 				option.erase("option_text")
-		DialogNodes.LOCALIZED_TEXT:
+		NodeTypes.LOCALIZED_TEXT:
 			dialog_nodes[uuid].erase("text")
-		DialogNodes.ENTRY:
+		NodeTypes.ENTRY:
 			entry_node = uuid
 	if not parent_frame.is_empty() and node_frames.has(parent_frame) and not node_frames[parent_frame]["nodes"].has(uuid):
 		node_frames[parent_frame]["nodes"].append(uuid)
 
 
+## Builds and returns the custom ID static UUID relationship between nodes.[br]
+## The returned key is the custom ID, while the values are the unique UUIDs.
 func get_id_map() -> Dictionary[String, StringName]:
 	var map: Dictionary[String, StringName] = {}
 	for node_uuid in dialog_nodes.keys():
@@ -431,6 +465,7 @@ func get_id_map() -> Dictionary[String, StringName]:
 	return map
 
 
+## Clears the resource.
 func clear() -> void:
 	scroll_offset = Vector2.ZERO
 	zoom = 1.0
@@ -439,8 +474,10 @@ func clear() -> void:
 	dialog_nodes.clear()
 
 
+## Converts this resource to a [ReleaseDiscourseDialog].
 func convert_for_release(localization_uuid: String = "") -> ReleaseDiscourseDialog:
 	var release_dialog: ReleaseDiscourseDialog = ReleaseDiscourseDialog.new()
+	var id_map: Dictionary[String, StringName] = {}
 	
 	if localization_uuid.is_empty():
 		release_dialog.localization_uuid = StringName(UUID.generate_new())
@@ -508,13 +545,17 @@ func convert_for_release(localization_uuid: String = "") -> ReleaseDiscourseDial
 		else:
 			continue
 	
+	var add_id: bool = false
+	
 	for node_id in node_uuids:
 		var data: Dictionary[String, Variant] = {
 			"node_type": dialog_nodes[node_id]["node_type"]}
 		match dialog_nodes[node_id]["node_type"]:
-			DialogNodes.ENTRY:
+			NodeTypes.ENTRY:
+				add_id = true
 				data["next_node"] = get_target_lambda.call(node_id)
-			DialogNodes.DIALOG:
+			NodeTypes.DIALOG:
+				add_id = true
 				var character_settings: Dictionary = {
 					"display_name": "",
 					"portrait_id": "",
@@ -571,7 +612,8 @@ func convert_for_release(localization_uuid: String = "") -> ReleaseDiscourseDial
 				data["dialog_settings"] = dialog_settings
 				data["text_source"] = StringName(dialog_nodes[node_id]["input_connections"]["dialog_text_source"]["target_node_uuid"])
 				data["next_node"] = get_target_lambda.call(dialog_nodes[node_id]["output_connections"]["next_node"]["target_node_uuid"])
-			DialogNodes.OPTIONS:
+			NodeTypes.OPTIONS:
+				add_id = true
 				var options: Array[Dictionary] = []
 				for option:Dictionary in dialog_nodes[node_id]["options"]:
 					var new_option: Dictionary[String, Variant] = {
@@ -605,19 +647,23 @@ func convert_for_release(localization_uuid: String = "") -> ReleaseDiscourseDial
 								new_option["settings"]["lock_hint_node"] = StringName(option_settings["input_connections"]["locked_hint"]["target_node_uuid"])
 					options.append(new_option)
 				data["options"] = options
-			DialogNodes.BRANCH:
+			NodeTypes.BRANCH:
+				add_id = true
 				data["result"] = StringName(dialog_nodes[node_id]["input_connections"]["path_direction"]["target_node_uuid"])
 				data["case_true"] = get_target_lambda.call(StringName(dialog_nodes[node_id]["output_connections"]["next_node_true"]["target_node_uuid"]))
 				data["case_false"] = get_target_lambda.call(StringName(dialog_nodes[node_id]["output_connections"]["next_node_false"]["target_node_uuid"]))
-			DialogNodes.CONDITION_SELECT:
+			NodeTypes.CONDITION_SELECT:
+				add_id = true
 				data["result" ] = StringName(dialog_nodes[node_id]["input_connections"]["result"]["target_node_uuid"])
 				data["true_value"] = get_target_lambda.call(StringName(dialog_nodes[node_id]["input_connections"]["true_value"]["target_node_uuid"]))
 				data["false_value"] = get_target_lambda.call(StringName(dialog_nodes[node_id]["input_connections"]["false_value"]["target_node_uuid"]))
-			DialogNodes.COMPARATION:
+			NodeTypes.COMPARATION:
+				add_id = true
 				data["operator"] = dialog_nodes[node_id]["operator"]
 				data["value_a"] = StringName(dialog_nodes[node_id]["input_connections"]["node_a"]["target_node_uuid"])
 				data["value_b"] = StringName(dialog_nodes[node_id]["input_connections"]["node_b"]["target_node_uuid"])
-			DialogNodes.EVENT:
+			NodeTypes.EVENT:
+				add_id = true
 				var var_val: StringName = StringName(dialog_nodes[node_id]["input_connections"]["variable_value"]["target_node_uuid"])
 				data["value"] = var_val
 				data["callable"] = StringName(dialog_nodes[node_id]["input_connections"]["callable"]["target_node_uuid"])
@@ -635,7 +681,8 @@ func convert_for_release(localization_uuid: String = "") -> ReleaseDiscourseDial
 					else:
 						data["variable_path"] = split_vars[0]
 						data["variable"] = split_vars[1]
-			DialogNodes.MATCH:
+			NodeTypes.MATCH:
+				add_id = true
 				var cases: Array[Dictionary] = []
 				
 				for case:Dictionary in dialog_nodes[node_id]["cases"]:
@@ -646,9 +693,11 @@ func convert_for_release(localization_uuid: String = "") -> ReleaseDiscourseDial
 				data["case_default"] = get_target_lambda.call(StringName(dialog_nodes[node_id]["output_connections"]["default"]["target_node_uuid"]))
 				data["match_value"] = StringName(dialog_nodes[node_id]["input_connections"]["match_value_source"]["target_node_uuid"])
 				data["cases"] = cases
-			DialogNodes.PAUSE:
+			NodeTypes.PAUSE:
+				add_id = true
 				data["next_node"] = get_target_lambda.call(StringName(dialog_nodes[node_id]["output_connections"]["next_node"]["target_node_uuid"]))
-			DialogNodes.RANDOM:
+			NodeTypes.RANDOM:
+				add_id = true
 				var options: Array[Dictionary] = []
 				
 				for option:Dictionary in dialog_nodes[node_id]["options"]:
@@ -659,11 +708,13 @@ func convert_for_release(localization_uuid: String = "") -> ReleaseDiscourseDial
 				
 				data["default_override"] = StringName(dialog_nodes[node_id]["input_connections"]["default_weight"]["target_node_uuid"])
 				data["options"] = options
-			DialogNodes.TYPE_GUARD:
+			NodeTypes.TYPE_GUARD:
+				add_id = true
 				data["type"] = typeof(dialog_nodes[node_id]["fallback_value"])
 				data["value"] = StringName(dialog_nodes[node_id]["input_connections"]["value"]["target_node_uuid"])
 				data["fallback"] = dialog_nodes[node_id]["fallback_value"]
-			DialogNodes.SIGNAL:
+			NodeTypes.SIGNAL:
+				add_id = true
 				var arguments: Array[Dictionary] = []
 				for argument:Dictionary in dialog_nodes[node_id]["arguments"]:
 					var new_argument: Dictionary[String, Variant] = {
@@ -677,7 +728,8 @@ func convert_for_release(localization_uuid: String = "") -> ReleaseDiscourseDial
 					arguments.append(new_argument)
 				data["signal"] = StringName(dialog_nodes[node_id]["signal"])
 				data["arguments"] = arguments
-			DialogNodes.CALLABLE:
+			NodeTypes.CALLABLE:
+				add_id = true
 				var arguments: Array[Dictionary] = []
 				for argument:Dictionary in dialog_nodes[node_id]["arguments"]:
 					var new_argument: Dictionary[String, Variant] = {
@@ -690,7 +742,8 @@ func convert_for_release(localization_uuid: String = "") -> ReleaseDiscourseDial
 							new_argument["override"] = StringName(argument["target_node_uuid"])
 				data["method"] = StringName(dialog_nodes[node_id]["method"])
 				data["arguments"] = arguments
-			DialogNodes.CALLABLE_RETURN:
+			NodeTypes.CALLABLE_RETURN:
+				add_id = true
 				var arguments: Array[Dictionary] = []
 				for argument:Dictionary in dialog_nodes[node_id]["arguments"]:
 					var new_argument: Dictionary[String, Variant] = {
@@ -703,7 +756,8 @@ func convert_for_release(localization_uuid: String = "") -> ReleaseDiscourseDial
 							new_argument["override"] = StringName(argument["target_node_uuid"])
 				data["method"] = StringName(dialog_nodes[node_id]["method"])
 				data["arguments"] = arguments
-			DialogNodes.VARIABLE_GET:
+			NodeTypes.VARIABLE_GET:
+				add_id = true
 				var path: StringName = &""
 				var variable: StringName = &""
 				if not dialog_nodes[node_id]["variable_path"].is_empty():
@@ -713,15 +767,18 @@ func convert_for_release(localization_uuid: String = "") -> ReleaseDiscourseDial
 						variable = var_paths[1]
 				data["path"] = path
 				data["variable"] = variable
-			DialogNodes.RANDOM_VALUE:
+			NodeTypes.RANDOM_VALUE:
+				add_id = true
 				data["random_type"] = dialog_nodes[node_id]["mode"]
 				data["min_value"] = dialog_nodes[node_id]["values"]["base"]
 				data["max_value"] = dialog_nodes[node_id]["values"]["max"]
 				data["min_override"] = StringName(dialog_nodes[node_id]["input_connections"]["base_value"]["target_node_uuid"])
 				data["max_override"] = StringName(dialog_nodes[node_id]["input_connections"]["max_value"]["target_node_uuid"])
-			DialogNodes.RESOURCE:
+			NodeTypes.RESOURCE:
+				add_id = true
 				data["path"] = dialog_nodes[node_id]["resource_path"]
-			DialogNodes.DATA_EVENT:
+			NodeTypes.DATA_EVENT:
+				add_id = true
 				var var_val: StringName = StringName(dialog_nodes[node_id]["input_connections"]["variable_value"]["target_node_uuid"])
 				data["value"] = var_val
 				data["callable"] = StringName(dialog_nodes[node_id]["input_connections"]["callable"]["target_node_uuid"])
@@ -739,11 +796,17 @@ func convert_for_release(localization_uuid: String = "") -> ReleaseDiscourseDial
 					else:
 						data["variable_path"] = split_vars[0]
 						data["variable"] = split_vars[1]
-			DialogNodes.LOCALIZED_TEXT:
+			NodeTypes.LOCALIZED_TEXT:
+				add_id = true
 				data["text"] = node_id
-			
+			_:
+				add_id = false
+		
+		if add_id:
+			id_map[String(dialog_nodes[node_id]["name"])] = node_id
 		release_dialog.dialog_nodes[node_id] = data
 	
+	release_dialog.id_map = id_map
 	
 	return release_dialog
 
@@ -852,6 +915,7 @@ func generate_localization_files(conversation_id: StringName, base_path: String,
 	#ResourceSaver.save(self)
 
 
+## Returns localization data of all registered and localized nodes.
 func get_node_localization_data() -> Dictionary[StringName, Dictionary]:
 	var data: Dictionary[StringName, Dictionary] = {}
 	
@@ -867,15 +931,21 @@ func get_node_localization_data() -> Dictionary[StringName, Dictionary]:
 	return data
 
 
+## Returns an array with a split path used for variable access on the Blackboard.
 func split_path_variable(path: String) -> Array[StringName]:
 	var split: PackedStringArray = path.rsplit("/", false, 1)
 	var path_array: Array[StringName] = []
-	
+	var size: int = 0
 	for path_component in split:
 		path_array.append(StringName(path_component))
+		size += 1
+	if size != 2:
+		path_array.resize(2)
 	return path_array
 
 
+## Returns an array with all the format arguments of the prase [param phrase_text].[br]
+## It'll only look for format arguments that start with $ or !.
 func get_phrase_arguments(phrase_text: String) -> Array[String]:
 	var all_arguments: Array[String] = []
 	#var variable_calls: Array[String] = []
@@ -904,6 +974,8 @@ func get_phrase_arguments(phrase_text: String) -> Array[String]:
 	return all_arguments
 
 
+## Adds a locale to the locale map. The locale map is used to track which
+## languages/regions are saved in this plugin.
 func add_locale(language: String, region: String = "base") -> void:
 	var lang: StringName = StringName(language)
 	
@@ -930,6 +1002,7 @@ func add_locale(language: String, region: String = "base") -> void:
 		localized_strings[localized_entry][language][region] = localized_strings[localized_entry][language]["base"].duplicate(true)
 
 
+## Removes a locale from the locale map.
 func remove_locale(language: String, region: String = "base") -> void:
 	var lang_key: StringName = StringName(language)
 	

@@ -1,6 +1,12 @@
 class_name ReleaseDialogParser
 extends DialogParser
+## The [DialogParser] that NexusForge will use while its running on exported projects.
+##
+## On an exported project the resources parsed will be [ReleaseDiscourseDialog]
+## which contain a different structure from the editor files.[br]
+## For the editor parser see [EditorDialogParser].[br]
 
+## The resource containing the localizable data of a dialog.
 var localization: DiscourseDialogLocale = null 
 # Example of how data will be structured in the dialog resource (Release).
 #const store = {
@@ -357,6 +363,9 @@ func _load_locale(new_language: String, new_region: String) -> void:
 	localization = load(locale_path)
 
 
+## Loads a dialog and sets the dialog ID to the start of the conversation
+## unless a valid [param starting_id] is given.[br]
+## It also loads the relevant locale to [member localization].
 func load_dialog(path: String, starting_id: String = "") -> void:
 	if _conversation_cache.is_in_cache(path):
 		_dialog_resource = _conversation_cache.get_resource(path)

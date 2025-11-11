@@ -47,6 +47,8 @@ var _value_keys: Dictionary[StringName, Dictionary] = {
 }
 
 
+## Returns an array containing all the formattable strings that are contained
+## between curly braces. Curly braces are removed.
 static func get_valid_formats(phrase_text: String) -> Array[String]:
 	var all_args: Array[String] = []
 	
@@ -156,6 +158,7 @@ func _find_case_callable(phrase: StringName, on_argument: String, method: Callab
 	return return_result
 
 
+## Returns an array containing all the registered phrase keys.
 func phrases() -> Array[StringName]:
 	var arr: Array[StringName] = []
 	arr.assign(_phrases.keys())
@@ -214,6 +217,8 @@ func get_phrase_text(phrase_key: StringName) -> String:
 	return ""
 
 
+## Returns an array of al the formattable strings from the passed
+## [param phrase_key].
 func get_phrase_format_fields(phrase_key: StringName) -> Array[String]:
 	var formats: Array[String] = []
 	if _phrases.has(phrase_key):
@@ -226,6 +231,7 @@ func has_phrase(phrase_key: StringName):
 	return _phrases.has(phrase_key)
 
 
+## Erases the formattable phrase with the given [param phrase_key].
 func erase_phrase(phrase_key: StringName) -> void:
 	if _phrases.erase(phrase_key):
 		_value_keys.erase(phrase_key)
@@ -274,6 +280,8 @@ func set_phrase_argument_case(phrase_key: StringName, on_argument: String, case:
 	_phrases[phrase_key]["arguments"][on_argument]["custom"][case] = value
 
 
+## Clears the custom cases from the argument [param on_argument] from the phrase
+## with key [param phrase_key].
 func clear_phrase_argument_cases(phrase_key: StringName, on_argument: String) -> void:
 	if not _phrases.has(phrase_key) or not _phrases[phrase_key]["arguments"].has(on_argument):
 		return

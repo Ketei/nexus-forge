@@ -235,3 +235,5 @@ func _on_resource_saved(resource: Resource) -> void:
 		editor_view.reload_quest_stage()
 	elif script_class == &"QuestStep":
 		editor_view.reload_quest_step()
+	elif script_class == &"DiscourseAPI":
+		editor_view.reload_discourse_api()

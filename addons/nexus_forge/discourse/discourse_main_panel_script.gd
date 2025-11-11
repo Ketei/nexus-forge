@@ -983,6 +983,14 @@ func plugin_file_selected(file: EditorDiscourseDialog):
 		add_conversation(file)
 
 
+func reload_signals() -> void:
+	discourse_window.discourse_graph_edit.update_signals()
+
+
+func reload_methods() -> void:
+	discourse_window.discourse_graph_edit.update_methods()
+
+
 #func _on_conversation_file_canceled(dialog: FileDialog) -> void:
 	#dialog.queue_free()
 

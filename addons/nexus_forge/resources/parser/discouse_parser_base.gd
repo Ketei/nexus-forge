@@ -1,5 +1,6 @@
 class_name DialogParser
 extends RefCounted
+## The base class for Discourse dialog parsers.
 
 
 signal dialog_started
@@ -508,39 +509,3 @@ func next_dialog() -> void:
 		_conversation_started = false
 		_next_uuid = _dialog_resource.entry_node
 		dialog_finished.emit()
-
-
-# Custom class for the user to add his own functions and signals that will
-# be discoverable within the editor
-class DiscourseAPI extends RefCounted:
-	signal sandwich_eaten(eaten_whole: bool, time_taken: int)
-	signal bear_poked
-	
-	var rat_startled: bool = false
-	
-	func get_character_display_name(character_id: String) -> String:
-		if has_met_character(character_id):
-			return "James"
-		else:
-			return "??????"
-	
-	func get_james_dialog() -> String:
-		if randi_range(0, 100) <= 90:
-			return "Hello! How are you?"
-		else:
-			rat_startled = true
-			return "Squeeeak!!"
-	
-	func has_met_character(character_id: String) -> bool:
-		return true
-	
-	
-	func poke_wulfre(with_stick: bool, amout: int) -> void:
-		pass
-	
-	func eat_sammich(salsa: bool, pickles: int = 10) -> void:
-		return
-	
-	
-	func sammich(salsa: bool, pickles: int = 10) -> String:
-		return ""

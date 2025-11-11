@@ -1,8 +1,15 @@
 class_name ParsedDialog
 extends RefCounted
+## Contains the parsed data of a [DiscourseDialog].
+##
+## This object will contain data to quickly re-format a [DiscourseDialog]
+## dialog quicker by saving generated lambda functions to access variable data.
 
+## The language this dialog is in.
 var language: String = ""
+## The language's region this dialog is in.
 var region: String = ""
+## The unformatted dialog this parser formats.
 var dialog: String = ""
 var _format_args: Dictionary = {
 	#"$player_name": NexusForge.Variables.get_variable.bindv(["player_name"]),
@@ -35,6 +42,7 @@ func _find_case_callable(on_format: String, on_argument: String, method: Callabl
 	return return_result
 
 
+## Registers a phrase to format [member dialog] with.
 func create_format_phrase(key: String, text: String, arguments: Dictionary) -> void:
 	_phrases_format[key] = {
 		"text": text,
@@ -42,6 +50,7 @@ func create_format_phrase(key: String, text: String, arguments: Dictionary) -> v
 		"format": {}}
 
 
+## Sets the case of a format string from a phrase.
 func set_format_phrase_string(format_key: String, argument: String, case: String) -> void:
 	_phrases_format[format_key]["format"][argument] = _find_case.bind(format_key, argument, case)
 
@@ -51,14 +60,18 @@ func set_format_phrase_callable(format_key: String, argument: String, case: Call
 	_phrases_format[format_key]["format"][argument] =  _find_case_callable.bind(format_key, argument, case)
 
 
+## Sets a static string to be used to find the case when formatting [param key]
+## on the [member dialog].
 func set_format_string(key: String, text: String) -> void:
 	_format_args[key] = text
 
 
+## Sets the callable to be used when obtaining the case to format the [member dialog].
 func set_format_callable(key: String, method: Callable, arguments: Array = []) -> void:
 	_format_args[key] = method.bindv(arguments.duplicate(true))
 
 
+## Returns the formatted dialog.
 func get_dialog() -> String:
 	var format_dict: Dictionary[String, String] = {}
 	

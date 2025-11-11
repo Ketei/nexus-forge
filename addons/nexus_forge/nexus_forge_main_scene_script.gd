@@ -171,3 +171,8 @@ func reload_quest_stage() -> void:
 
 func reload_quest_step() -> void:
 	quests.reload_quest_steps()
+
+
+func reload_discourse_api() -> void:
+	discourse.reload_signals()
+	discourse.reload_methods()

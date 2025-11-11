@@ -14,11 +14,13 @@ const PortFlow = DiscourseGraphNode.PortMode
 
 var compatible_connections: Dictionary = {}
 var focus_tween: Tween = null
-var anchor_pointers: Array[DiscourseGraphNode] = []
 var node_clipboard: Array[Dictionary] = []
 var entry_node: DiscourseGraphNode = null
 var connection_popup: PopupMenu = null
+var anchor_pointers: Array[DiscourseGraphNode] = []
 var graph_nodes: Array[DiscourseGraphNode] = []
+var method_callers: Array[DiscourseGraphNode] = []
+var signalers: Array[DiscourseGraphNode] = []
 
 
 func _ready() -> void:
@@ -428,10 +430,13 @@ func create_dialog_node(node_type: DialogNodes, uuid: String = "") -> DiscourseG
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/value_node.gd").new(uuid, &"TypeData")
 		DialogNodes.SIGNAL:
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/signal_node.gd").new(uuid, &"TypeData")
+			signalers.append(created_node)
 		DialogNodes.CALLABLE:
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/method_call_node.gd").new(uuid, &"TypeData")
+			method_callers.append(created_node)
 		DialogNodes.CALLABLE_RETURN:
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/method_call_return.gd").new(uuid, &"TypeData")
+			method_callers.append(created_node)
 		DialogNodes.VARIABLE_GET:
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/var_getter.gd").new(uuid, &"TypeData")
 		DialogNodes.ANCHOR_POINTER:
@@ -716,9 +721,7 @@ func populate_popup(node_type: ConnectionType, port_direction: String) -> void:
 
 
 func _on_connection_to_empty(from_node: StringName, from_port: int, release_position: Vector2) -> void:
-	print("To Empty")
 	if not Input.is_key_pressed(KEY_CTRL):
-		print("NoCTRL")
 		return
 	var port_node: DiscourseGraphNode = get_node(NodePath(from_node))
 	var port_type: ConnectionType = port_node.get_output_port_type(from_port) as ConnectionType
@@ -771,7 +774,6 @@ func _on_connection_to_empty(from_node: StringName, from_port: int, release_posi
 
 
 func _on_connection_from_empty(to_node: StringName, to_port: int, release_position: Vector2) -> void:
-	print("From Empty")
 	if not Input.is_key_pressed(KEY_CTRL):
 		return
 	var to_graph: DiscourseGraphNode = get_node(NodePath(to_node))
@@ -1112,32 +1114,41 @@ func stop_focus_animation() -> void:
 	focus_tween = null
 
 
-func get_user_signals() -> Array[Dictionary]:
-		var user_signals: Array[Dictionary] = []
-		var singleton: DialogParser.DiscourseAPI = DialogParser.DiscourseAPI.new()
-		var prev_signals: DialogParser = DialogParser.new_parser()
-		
-		var existing_signals: Array[String] = []
-		
-		for parent_signal in prev_signals.get_signal_list():
-			existing_signals.append(parent_signal["name"])
-		
-		for reg_signal:Dictionary in singleton.get_signal_list():
-			if reg_signal["name"] in existing_signals:
-				continue
-			var args: Array[Dictionary] = []
-			for arg: Dictionary in reg_signal["args"]:
-				args.append({
-					"name": arg["name"],
-					"type": arg["type"]
-				})
-			
-			user_signals.append({
-				"name": reg_signal["name"],
-				"args": args
-			})
-		
-		prev_signals.free()
-		singleton.free()
-		
-		return user_signals
+func update_methods() -> void:
+	for node in method_callers:
+		node.reload_methods()
+
+
+func update_signals() -> void:
+	for node in signalers:
+		node.reload_signals()
+
+#func get_user_signals() -> Array[Dictionary]:
+		#var user_signals: Array[Dictionary] = []
+		#var singleton: DiscourseAPI = DiscourseAPI.new()
+		#var prev_signals: DialogParser = DialogParser.new_parser()
+		#
+		#var existing_signals: Array[String] = []
+		#
+		#for parent_signal in prev_signals.get_signal_list():
+			#existing_signals.append(parent_signal["name"])
+		#
+		#for reg_signal:Dictionary in singleton.get_signal_list():
+			#if reg_signal["name"] in existing_signals:
+				#continue
+			#var args: Array[Dictionary] = []
+			#for arg: Dictionary in reg_signal["args"]:
+				#args.append({
+					#"name": arg["name"],
+					#"type": arg["type"]
+				#})
+			#
+			#user_signals.append({
+				#"name": reg_signal["name"],
+				#"args": args
+			#})
+		#
+		#prev_signals.free()
+		#singleton.free()
+		#
+		#return user_signals
