@@ -578,7 +578,10 @@ func convert_for_release(localization_uuid: String = "") -> ReleaseDiscourseDial
 					
 					if not character_settings_data["input_connections"]["display_name"]["target_node_uuid"].is_empty():
 						if data_nodes.has(character_settings_data["input_connections"]["display_name"]["target_node_uuid"]):
-							character_settings["display_name"] = data_nodes[character_settings_data["input_connections"]["display_name"]["target_node_uuid"]]
+							if FileAccess.file_exists(dialog_nodes[character_settings_data["input_connections"]["display_name"]["target_node_uuid"]]["resource_path"]):
+								character_settings["display_name"] = data_nodes[character_settings_data["input_connections"]["display_name"]["target_node_uuid"]]
+							else:
+								printerr("[Discourse] Warning: Warning: Issue when exporting ", resource_path, ". Settings ", character_settings_data["name"], " assigns an inexisting resource.")
 						else:
 							character_settings["display_name_node"] = StringName(character_settings_data["input_connections"]["display_name"]["target_node_uuid"])
 					

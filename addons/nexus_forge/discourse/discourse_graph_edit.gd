@@ -1024,7 +1024,8 @@ func get_connection_dictionary(node_uuid: StringName, node_data: Dictionary) -> 
 	return node_connections
 
 
-func load_conversation_data(conversation: EditorDiscourseDialog, language: String, region: String = "") -> void:
+func load_conversation_data(conversation: EditorDiscourseDialog, language: String, region: String = "") -> bool:
+	var needs_resaving: bool = false
 	clear_dialog_nodes()
 	
 	var node_connections: Array[Dictionary] = []
@@ -1054,6 +1055,12 @@ func load_conversation_data(conversation: EditorDiscourseDialog, language: Strin
 		add_child(d_node)
 		if d_node.node_type == DialogNodes.ENTRY:
 			entry_node = d_node
+		elif d_node.node_type == DialogNodes.CALLABLE or d_node.node_type == DialogNodes.CALLABLE_RETURN:
+			if not d_node.available_methods.has(data["method"]):
+				needs_resaving = true
+		elif d_node.node_type == DialogNodes.SIGNAL:
+			if not d_node.available_signals.has(data["signal"]):
+				needs_resaving = true
 		graph_nodes.append(d_node)
 		if node_relationships.has(node_uuid):
 			attach_graph_element_to_frame(d_node.name, node_relationships[node_uuid].name)
@@ -1085,6 +1092,8 @@ func load_conversation_data(conversation: EditorDiscourseDialog, language: Strin
 	
 	zoom = conversation.zoom
 	scroll_offset = conversation.scroll_offset
+	
+	return needs_resaving
 
 
 func get_discourse_nodes() -> Array[DiscourseGraphNode]:

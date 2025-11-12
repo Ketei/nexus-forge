@@ -219,7 +219,8 @@ func _on_conversation_close_pressed(dialog: EditorDiscourseDialog, save_required
 			set_conversation_active(false)
 		else:
 			conversation_tree.set_conversation_item_active(new_item)
-			open_conversation(active_conversation)
+			if open_conversation(active_conversation):
+				conversation_tree.active_unsaved = true
 	
 	conversation_tree.remove_conversation(dialog)
 
@@ -264,7 +265,8 @@ func _on_menu_close_pressed() -> void:
 		active_conversation = null
 	else:
 		conversation_tree.set_conversation_item_active(new_item.get_metadata(0)["resource"])
-		open_conversation(active_conversation)
+		if open_conversation(active_conversation):
+			conversation_tree.active_unsaved = true
 	
 	item.free()
 
@@ -796,7 +798,8 @@ func _on_conversation_selected(dialog: EditorDiscourseDialog) -> void:
 	active_conversation = dialog
 	#active_conversation_item = item
 	conversation_tree.set_conversation_item_active(dialog)
-	open_conversation(dialog)
+	if open_conversation(dialog):
+		conversation_tree.active_unsaved = true
 
 
 func _on_text_field_changed(_arg: Variant = null) -> void:
@@ -929,8 +932,9 @@ func _on_open_conversation_pressed() -> void:
 			if active_conversation != null:
 				save_current_dialog_to_memory()
 			if conversation_tree.is_conversation_open(resource):
-				open_conversation(resource)
 				conversation_tree.set_conversation_item_active(resource)
+				if open_conversation(resource):
+					conversation_tree.active_unsaved = true
 			else:
 				_unsaved = false
 				add_conversation(resource)
@@ -977,8 +981,9 @@ func plugin_file_selected(file: EditorDiscourseDialog):
 		save_current_dialog_to_memory()
 	
 	if conversation_tree.is_conversation_open(file):
-		open_conversation(file)
 		conversation_tree.set_conversation_item_active(file)
+		if open_conversation(file):
+			conversation_tree.active_unsaved = true
 	else:
 		add_conversation(file)
 
@@ -1070,12 +1075,12 @@ func _on_discourse_item_edited(uuid: StringName, type: DiscourseGraphNode.Dialog
 
 
 # Loads a conversation into discourse
-func open_conversation(conversation: EditorDiscourseDialog, set_active: bool = true) -> void:
+func open_conversation(conversation: EditorDiscourseDialog, set_active: bool = true) -> bool:
 	var disc_root: TreeItem = discourse_nodes_tree.get_root()
 	for item in disc_root.get_children():
 		item.free() # Clear the nodes tree
 	
-	discourse_window.load_conversation(conversation) # Load conversation
+	var reload_needed: bool = discourse_window.load_conversation(conversation) # Load conversation
 	
 	var node_map: Dictionary[String, TreeItem] = {}
 	
@@ -1117,6 +1122,8 @@ func open_conversation(conversation: EditorDiscourseDialog, set_active: bool = t
 	
 	if set_active:
 		active_conversation = conversation
+	
+	return reload_needed
 
 
 # Adds a conversation into the list, can open it.
@@ -1136,16 +1143,8 @@ func add_conversation(data: EditorDiscourseDialog, open_conv: bool = true) -> vo
 	if open_conv:
 		#active_conversation_item = new_conversation
 		conversation_tree.set_conversation_item_active(data)
-		open_conversation(data)
-
-
-
-
-
-
-
-
-
+		if open_conversation(data):
+			conversation_tree.active_unsaved = true
 
 
 func save_localizer_data() -> void:

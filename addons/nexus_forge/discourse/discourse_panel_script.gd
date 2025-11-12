@@ -698,7 +698,7 @@ func set_localization_options(uuid: StringName, options: Array[String], language
 		localization[uuid]["localization"][language][region]["options"] = given_options
 
 
-func load_conversation(conversation: EditorDiscourseDialog) -> void:
+func load_conversation(conversation: EditorDiscourseDialog) -> bool:
 	#for language in conversation.locale_map.keys():
 		#if not has_locale(language):
 			#add_locale(language)
@@ -713,7 +713,7 @@ func load_conversation(conversation: EditorDiscourseDialog) -> void:
 	
 	# Clears the dialog nodes and loads conversation data.
 	# Should trigger registry signals for this node to catch.
-	discourse_graph_edit.load_conversation_data(
+	var needs_resaving: bool = discourse_graph_edit.load_conversation_data(
 			conversation,
 			current_language,
 			current_country)
@@ -726,6 +726,8 @@ func load_conversation(conversation: EditorDiscourseDialog) -> void:
 				localization[node_uuid]["localization"][language] = {}
 			for region in data[node_uuid][language].keys():
 				localization[node_uuid]["localization"][language][region] = data[node_uuid][language][region]
+		
+	return needs_resaving
 
 
 func has_locale(language: String, region: String = "base") -> bool:
