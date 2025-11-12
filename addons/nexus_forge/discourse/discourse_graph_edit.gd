@@ -374,6 +374,7 @@ func _on_connection_drag_started(from_node: StringName, from_port: int, is_outpu
 				from_port,
 				to_graph.name,
 				to_port)
+		dialog_changed.emit()
 	else: # is input
 		if from_graph.is_port_available(DiscourseGraphNode.PortMode.INPUT, from_port):
 			return
@@ -392,6 +393,7 @@ func _on_connection_drag_started(from_node: StringName, from_port: int, is_outpu
 				to_port,
 				from_node,
 				from_port)
+		dialog_changed.emit()
 
 
 ## Creates a dialog node ready to be added. Connected to all relevant signals
@@ -1104,6 +1106,21 @@ func get_discourse_nodes() -> Array[DiscourseGraphNode]:
 			all_nodes.append(node)
 	
 	return all_nodes
+
+
+func get_issues() -> Array[Dictionary]:
+	var issues: Array[Dictionary] = []
+	
+	for node in get_children():
+		if node is not DiscourseGraphNode:
+			continue
+		var node_issues: PackedStringArray = node._get_issues()
+		if not node_issues.is_empty():
+			issues.append({
+				"node": node,
+				"issues": node_issues})
+	
+	return issues
 
 
 func fix_scroll_offset_for_new(new_size: Vector2) -> void:

@@ -9,6 +9,7 @@ signal change_default_language_pressed
 signal close_conversation_pressed
 signal localization_window_pressed
 signal set_locale_group_pressed
+signal check_for_issues_pressed
 
 
 enum DiscourseFileMenuID {
@@ -17,7 +18,8 @@ enum DiscourseFileMenuID {
 	SAVE_DIALOG,
 	CLOSE_DIALOG,
 	CHANGE_LANGUAGE,
-	SET_LOCALE_GROUP}
+	SET_LOCALE_GROUP,
+	CHECK_ISSUES}
 
 var _disabled: bool = true
 
@@ -280,6 +282,9 @@ func _ready() -> void:
 	file_popup.add_item(
 			"Set file locale group",
 			DiscourseFileMenuID.SET_LOCALE_GROUP)
+	file_popup.add_item(
+			"Check for Issues",
+			DiscourseFileMenuID.CHECK_ISSUES)
 	file_popup.add_separator()
 	file_popup.add_item(
 			"Change default language",
@@ -294,6 +299,11 @@ func _ready() -> void:
 			file_popup.get_item_index(
 					DiscourseFileMenuID.SAVE_DIALOG),
 			true)
+	
+	file_popup.set_item_disabled(
+			file_popup.get_item_index(
+					DiscourseFileMenuID.CHECK_ISSUES),
+					true)
 	
 	file_popup.set_item_disabled(
 			file_popup.get_item_index(
@@ -387,6 +397,8 @@ func _on_file_menu_id_pressed(id: int) -> void:
 			change_default_language_pressed.emit()
 		DiscourseFileMenuID.SET_LOCALE_GROUP:
 			set_locale_group_pressed.emit()
+		DiscourseFileMenuID.CHECK_ISSUES:
+			check_for_issues_pressed.emit()
 
 
 func _on_create_dialog_id_pressed(id: int) -> void:
@@ -612,6 +624,11 @@ func set_conversation_options_enabled(are_enabled: bool) -> void:
 	file_popup.set_item_disabled(
 			file_popup.get_item_index(
 					DiscourseFileMenuID.SET_LOCALE_GROUP),
+			disabled)
+	
+	file_popup.set_item_disabled(
+			file_popup.get_item_index(
+					DiscourseFileMenuID.CHECK_ISSUES),
 			disabled)
 	
 	enable_close_dialog(are_enabled)

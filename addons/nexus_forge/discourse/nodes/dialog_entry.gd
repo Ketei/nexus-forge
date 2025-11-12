@@ -33,6 +33,6 @@ func _get_node_data() -> Dictionary:
 
 func _get_issues() -> PackedStringArray:
 	var issues: PackedStringArray = []
-	if not has_any_input(0):
+	if not has_any_output(0):
 		issues.append("Warning: No node connected to entry")
 	return issues

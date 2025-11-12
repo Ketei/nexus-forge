@@ -70,8 +70,8 @@ func _get_issues() -> PackedStringArray:
 		issues.append("Warning: Node is orphan.")
 	
 	for choice in range(1, get_child_count()):
-		if not has_any_output(choice):
-			issues.append(str("Warning: Option ", choice, " has no connection."))
+		if not has_any_output(choice - 1):
+			issues.append(str("Warning: Option ", choice, " has no output connection."))
 	
 	return issues
 

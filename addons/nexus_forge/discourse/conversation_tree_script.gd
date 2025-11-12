@@ -72,7 +72,6 @@ func _on_close_conversation_pressedbutton_clicked(item: TreeItem, column: int, i
 	var data: Dictionary = item.get_metadata(0)
 	if id == 0:
 		conversation_close_pressed.emit(data["resource"], data["unsaved"], data["offset_changed"])
-	
 
 
 func add_conversation(data: EditorDiscourseDialog, select: bool = false, signal_select: bool = true) -> void:

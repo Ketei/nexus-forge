@@ -63,9 +63,9 @@ func _set_node_data(data: Dictionary) -> void:
 
 func _get_issues() -> PackedStringArray:
 	var issues: PackedStringArray = []
+	var res_line: LineEdit = get_mapped_field(&"res_path", "path_line")
 	if is_orphan():
 		issues.append("Warning: Node is orphan.")
-	var res_line: LineEdit = get_mapped_field(&"res_path", "path_line")
 	if not ResourceLoader.exists(res_line.text.strip_edges()):
 		issues.append("Warning: Provided resource {resource} does not exist".format({"resource": get_mapped_field(&"res_path", "path_line").text.strip_edges()}))
 	if has_any_output(0) and res_line.text.is_empty():

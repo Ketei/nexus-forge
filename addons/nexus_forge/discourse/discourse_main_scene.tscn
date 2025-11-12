@@ -1,4 +1,4 @@
-[gd_scene load_steps=21 format=3 uid="uid://d216eid5mh0ts"]
+[gd_scene load_steps=22 format=3 uid="uid://d216eid5mh0ts"]
 
 [ext_resource type="Script" uid="uid://bqico4ogja4xf" path="res://addons/nexus_forge/discourse/discourse_main_panel_script.gd" id="1_viyrt"]
 [ext_resource type="Script" uid="uid://cnbww5dfg3xls" path="res://addons/nexus_forge/discourse/conversation_tree_script.gd" id="2_2wl78"]
@@ -7,6 +7,7 @@
 [ext_resource type="Texture2D" uid="uid://brtp4ypk1wxqu" path="res://addons/nexus_forge/icons/new_language_plus.svg" id="3_f5jrf"]
 [ext_resource type="Script" uid="uid://dqb1etyisx1gu" path="res://addons/nexus_forge/discourse/locales_tree_script.gd" id="4_2wl78"]
 [ext_resource type="Script" uid="uid://d3hqle1cgp15b" path="res://addons/nexus_forge/discourse/localized_nodes_script.gd" id="5_qplns"]
+[ext_resource type="Script" uid="uid://bnwuk6bdi5hm5" path="res://addons/nexus_forge/discourse/issues_tree_script.gd" id="5_qsnsk"]
 [ext_resource type="Texture2D" uid="uid://bn6ggyqhhn03o" path="res://addons/nexus_forge/icons/dialog_plus.svg" id="6_nnanj"]
 [ext_resource type="Texture2D" uid="uid://cymtattv7iu68" path="res://addons/nexus_forge/icons/format_plus.svg" id="8_nnanj"]
 
@@ -130,6 +131,7 @@ script = ExtResource("2_nnanj")
 custom_minimum_size = Vector2(680, 300)
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_constants/minimum_grab_thickness = 10
 dragging_enabled = false
 dragger_visibility = 2
 
@@ -145,6 +147,30 @@ visible = false
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_y485p")
+
+[node name="IssuesVBox" type="VBoxContainer" parent="MainSplitContainer/DiscourseSplitContainer/ErrorContainer"]
+layout_mode = 2
+
+[node name="HeaderContainer" type="HBoxContainer" parent="MainSplitContainer/DiscourseSplitContainer/ErrorContainer/IssuesVBox"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainSplitContainer/DiscourseSplitContainer/ErrorContainer/IssuesVBox/HeaderContainer"]
+layout_mode = 2
+text = "Issues"
+
+[node name="HideIssuesBtn" type="Button" parent="MainSplitContainer/DiscourseSplitContainer/ErrorContainer/IssuesVBox/HeaderContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+size_flags_horizontal = 10
+flat = true
+
+[node name="IssuesTree" type="Tree" parent="MainSplitContainer/DiscourseSplitContainer/ErrorContainer/IssuesVBox"]
+custom_minimum_size = Vector2(0, 180)
+layout_mode = 2
+size_flags_vertical = 3
+hide_folding = true
+hide_root = true
+script = ExtResource("5_qsnsk")
 
 [node name="LocalizationContainer" type="VBoxContainer" parent="."]
 visible = false

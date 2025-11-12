@@ -45,7 +45,10 @@ var _unsaved: bool = false
 @onready var discourse_nodes_tree: Tree = $MainSplitContainer/MainSidebar/SidebarSplitContainer/NodesContainer/NodesTree
 @onready var discourse_window: PanelContainer = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow
 @onready var new_folder_button: Button = $MainSplitContainer/MainSidebar/SidebarSplitContainer/NodesContainer/SearchHbox/NewFolderButton
-
+@onready var hide_issues_btn: Button = $MainSplitContainer/DiscourseSplitContainer/ErrorContainer/IssuesVBox/HeaderContainer/HideIssuesBtn
+@onready var issues_tree: Tree = $MainSplitContainer/DiscourseSplitContainer/ErrorContainer/IssuesVBox/IssuesTree
+@onready var error_container: PanelContainer = $MainSplitContainer/DiscourseSplitContainer/ErrorContainer
+@onready var discourse_split_container: VSplitContainer = $MainSplitContainer/DiscourseSplitContainer
 
 # --- Localization Window ---
 @onready var new_language_btn: Button = $LocalizationContainer/MainSplitContainer/LeftSplitContainer/LanguagesSplitContainer/LanguagesContainer/HeaderContainer/NewLanguageBtn
@@ -112,6 +115,8 @@ func _ready() -> void:
 	
 	save_case_btn.icon = get_theme_icon("Save", "EditorIcons")
 	
+	hide_issues_btn.icon = get_theme_icon("GuiClose", "EditorIcons")
+	
 	discourse_window.discourse_graph_edit.dialog_changed.connect(_on_conversation_changed)
 	discourse_window.discourse_graph_edit.localization_enabled.connect(_on_localize_node)
 	discourse_window.discourse_graph_edit.localized_text_created.connect(_on_localize_node)
@@ -126,6 +131,7 @@ func _ready() -> void:
 	discourse_window.discourse_graph_edit.scroll_offset_changed.connect(_on_graph_edit_offset_changed)
 	discourse_window.change_default_language_pressed.connect(_on_change_default_language_pressed)
 	discourse_window.set_locale_group_pressed.connect(_on_change_locale_group_pressed)
+	discourse_window.check_for_issues_pressed.connect(_on_get_issues_pressed)
 	return_discourse_btn.pressed.connect(_on_switch_window_pressed)
 	#create_phrase_btn.pressed.connect(_on_new_phrase_button_pressed)
 	new_language_btn.pressed.connect(_on_new_lang_pressed)
@@ -160,6 +166,9 @@ func _ready() -> void:
 	
 	default_case_ln_edt.text_changed.connect(_on_conversation_changed)
 	conversation_tree.conversation_close_pressed.connect(_on_conversation_close_pressed)
+	
+	hide_issues_btn.pressed.connect(_on_hide_issues_pressed)
+	issues_tree.issue_activated.connect(_on_issue_activated)
 
 
 func _on_discourse_node_activated(node: DiscourseGraphNode) -> void:
@@ -217,11 +226,12 @@ func _on_conversation_close_pressed(dialog: EditorDiscourseDialog, save_required
 		if new_item == null:
 			active_conversation = null
 			set_conversation_active(false)
+			conversation_tree.active_unsaved = false
 		else:
 			conversation_tree.set_conversation_item_active(new_item)
 			if open_conversation(active_conversation):
 				conversation_tree.active_unsaved = true
-	
+		_unsaved = conversation_tree.active_unsaved
 	conversation_tree.remove_conversation(dialog)
 
 
@@ -263,11 +273,12 @@ func _on_menu_close_pressed() -> void:
 		set_conversation_active(false)
 		conversation_tree.remove_conversation(active_conversation)
 		active_conversation = null
+		conversation_tree.active_unsaved = false
 	else:
 		conversation_tree.set_conversation_item_active(new_item.get_metadata(0)["resource"])
 		if open_conversation(active_conversation):
 			conversation_tree.active_unsaved = true
-	
+	_unsaved = conversation_tree.active_unsaved
 	item.free()
 
 
@@ -319,14 +330,10 @@ func _on_translation_text_changed() -> void:
 
 
 func _on_conversation_changed(_arg = null) -> void:
-	if _unsaved:
-		return
-	
-	_unsaved = true
+	if not _unsaved:
+		_unsaved = true
 	
 	if active_conversation != null:
-		#active_conversation_item.get_metadata(0)["unsaved"] = true
-		#active_conversation_item.set_text(0, active_conversation_item.get_text(0) + "*")
 		conversation_tree.active_unsaved = true
 
 
@@ -679,6 +686,34 @@ func _on_language_deleted(language: String) -> void:
 func _on_region_deleted(language: String, region: String) -> void:
 	active_conversation.remove_locale(language, region)
 	discourse_window.remove_locale(language, region)
+
+
+func _on_issue_activated(issue_node: DiscourseGraphNode) -> void:
+	discourse_window.discourse_graph_edit.focus_graph_node(issue_node)
+
+
+func _on_hide_issues_pressed() -> void:
+	issues_tree.clear_issues()
+	error_container.visible = false
+	discourse_split_container.dragging_enabled = false
+	discourse_split_container.dragger_visibility = SplitContainer.DRAGGER_HIDDEN_COLLAPSED
+
+
+func _on_get_issues_pressed() -> void:
+	issues_tree.clear_issues()
+	var issues: Array[Dictionary] = discourse_window.discourse_graph_edit.get_issues()
+	if not error_container.visible:
+		error_container.visible = true
+		discourse_split_container.dragging_enabled = true
+		discourse_split_container.dragger_visibility = SplitContainer.DRAGGER_VISIBLE
+	
+	if issues.is_empty():
+		issues_tree.add_issue("No issue found", null)
+		return
+	
+	for issue in issues:
+		for node_issue:String in issue["issues"]:
+			issues_tree.add_issue(node_issue, issue["node"])
 
 
 func set_localization_tip(language_code: String, region_code: String) -> void:
