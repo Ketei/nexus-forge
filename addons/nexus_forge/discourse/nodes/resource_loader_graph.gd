@@ -12,7 +12,7 @@ func _post_init() -> void:
 	size = Vector2(260, 83)
 	
 	var resource_container: HBoxContainer = HBoxContainer.new()
-	var res_path: LineEdit = LineEdit.new()
+	var res_path: LineEdit = preload("res://addons/nexus_forge/discourse/res_drop_lineedit.gd").new()
 	var browse_res: Button = Button.new()
 	
 	resource_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
