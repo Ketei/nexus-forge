@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://ciucmcbkqf2u6"
-path="res://.godot/imported/plugin_icon.svg-f02484d34cd1e5f4abe8149039479a41.ctex"
+uid="uid://csrqyr0mhl4d8"
+path="res://.godot/imported/dna_sheet.svg-74e7b8512db383f5c3763fed3c0ed0ad.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://addons/nexus_forge/icons/plugin_icon.svg"
-dest_files=["res://.godot/imported/plugin_icon.svg-f02484d34cd1e5f4abe8149039479a41.ctex"]
+source_file="res://addons/nexus_forge/icons/dna_sheet.svg"
+dest_files=["res://.godot/imported/dna_sheet.svg-74e7b8512db383f5c3763fed3c0ed0ad.ctex"]
 
 [params]
 

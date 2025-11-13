@@ -1,3 +1,4 @@
+@icon("res://addons/nexus_forge/icons/dna_sheet.svg")
 class_name SpeciesSheet
 extends Resource
 

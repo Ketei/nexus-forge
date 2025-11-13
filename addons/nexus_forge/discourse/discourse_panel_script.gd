@@ -280,11 +280,11 @@ func _ready() -> void:
 			DiscourseFileMenuID.SAVE_DIALOG)
 	file_popup.add_separator()
 	file_popup.add_item(
+			"Check for issues",
+			DiscourseFileMenuID.CHECK_ISSUES)
+	file_popup.add_item(
 			"Set file locale group",
 			DiscourseFileMenuID.SET_LOCALE_GROUP)
-	file_popup.add_item(
-			"Check for Issues",
-			DiscourseFileMenuID.CHECK_ISSUES)
 	file_popup.add_separator()
 	file_popup.add_item(
 			"Change default language",

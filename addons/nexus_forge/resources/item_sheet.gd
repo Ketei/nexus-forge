@@ -1,4 +1,5 @@
 @tool
+@icon("res://addons/nexus_forge/icons/sword_icon.svg")
 class_name ItemSheet
 extends RefCounted
 

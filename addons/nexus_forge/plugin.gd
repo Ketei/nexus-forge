@@ -156,8 +156,10 @@ func verify_project_settings() -> void:
 				SETTINGS_PATHS[tool_id]["setting_path"],
 				SETTINGS_PATHS[tool_id]["default_value"])
 		
-		ProjectSettings.set("category/property_name", 0)
-
+		ProjectSettings.set_restart_if_changed(
+				SETTINGS_PATHS[tool_id]["setting_path"],
+				tool_id != "discourse")
+		
 		var property_info = {
 			"name": SETTINGS_PATHS[tool_id]["setting_path"],
 			"type": SETTINGS_PATHS[tool_id]["type"],
