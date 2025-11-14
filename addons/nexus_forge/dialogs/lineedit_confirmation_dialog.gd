@@ -30,6 +30,7 @@ func _init() -> void:
 	_info_label.custom_minimum_size = Vector2(32.0, 32.0)
 	_info_label.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_info_label.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_info_label.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST_WITH_MIPMAPS
 	_dialog_line.custom_minimum_size.y = 32.0
 	_dialog_line.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	size = Vector2i(250, 89)
@@ -47,15 +48,15 @@ func _ready() -> void:
 	_ok_button = get_ok_button()
 	
 	if not allow_empty:
-		_info_label.texture = get_theme_icon("StatusError", "EditorIcons")
+		_info_label.texture = preload("res://addons/nexus_forge/icons/error_red.svg")
 		get_ok_button().disabled = true
 		_info_label.tooltip_text = error_line_empty_msg
 	elif use_blacklist and "" in text_blacklist:
-		_info_label.texture = get_theme_icon("StatusError", "EditorIcons")
+		_info_label.texture = preload("res://addons/nexus_forge/icons/error_red.svg")
 		get_ok_button().disabled = "" in text_blacklist
 		_info_label.tooltip_text = error_line_empty_msg
 	else:
-		_info_label.texture = get_theme_icon("StatusSuccess", "EditorIcons")
+		_info_label.texture = preload("res://addons/nexus_forge/icons/check_green.svg")
 		_info_label.tooltip_text = error_line_ok
 	
 	_dialog_line.text_changed.connect(_on_text_changed)
@@ -73,18 +74,18 @@ func _on_text_changed(text: String) -> void:
 			break
 	if stripped_text.is_empty() and not allow_empty:
 		_ok_button.disabled = true
-		_info_label.texture = get_theme_icon("StatusError", "EditorIcons")
+		_info_label.texture = preload("res://addons/nexus_forge/icons/error_red.svg")
 		_info_label.tooltip_text = error_line_empty_msg
 	elif use_blacklist and stripped_text in text_blacklist:
 		_ok_button.disabled = true
-		_info_label.texture = get_theme_icon("StatusError", "EditorIcons")
+		_info_label.texture = preload("res://addons/nexus_forge/icons/error_red.svg")
 		_info_label.tooltip_text = error_line_blacklist_word_msg
 	elif invalid_char:
 		_ok_button.disabled = true
-		_info_label.texture = get_theme_icon("StatusError", "EditorIcons")
+		_info_label.texture = preload("res://addons/nexus_forge/icons/error_red.svg")
 		_info_label.tooltip_text = error_line_blacklist_character_msg
 	elif _ok_button.disabled:
-		_info_label.texture = get_theme_icon("StatusSuccess", "EditorIcons")
+		_info_label.texture = preload("res://addons/nexus_forge/icons/check_green.svg")
 		_info_label.tooltip_text = error_line_ok
 		_ok_button.disabled = false
 

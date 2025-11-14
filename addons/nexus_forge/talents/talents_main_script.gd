@@ -78,6 +78,7 @@ func _ready() -> void:
 		no_db.set_resource_type("SkillCatalog", "Skills", "Skills")
 		no_db.create_resource_pressed.connect(_on_create_skill_resource_pressed.bind(no_db))
 		no_db.load_resource_pressed.connect(_on_load_skill_resource_pressed.bind(no_db))
+		no_db.resource_dropped.connect(_on_skill_resource_dropped.bind(no_db))
 	else:
 		$MainContainer/SkillsPanel/SkillsContainer.visible = true
 		load_skills_resource()
@@ -90,6 +91,7 @@ func _ready() -> void:
 		no_db.set_resource_type("TraitCatalog", "Traits", "Traits")
 		no_db.create_resource_pressed.connect(_on_create_traits_resource_pressed.bind(no_db))
 		no_db.load_resource_pressed.connect(_on_load_traits_resource_pressed.bind(no_db))
+		no_db.resource_dropped.connect(_on_traits_resource_dropped.bind(no_db))
 	else:
 		$MainContainer/TraitsPanel/TraitsContainerContainer.visible = true
 		load_traits_resource()
@@ -336,6 +338,20 @@ func _on_load_skill_resource_pressed(panel: PanelContainer) -> void:
 			load_skills_resource()
 	
 	res_loader.queue_free()
+
+
+func _on_skill_resource_dropped(resource: Resource, panel: Control) -> void:
+	_skills_resource = resource
+	ProjectSettings.set_setting(
+			EditorNFPlugin.get_project_settings_path("skills"),
+			resource.resource_path)
+	if Engine.is_editor_hint():
+		ProjectSettings.save()
+	panel.visible = false
+	panel.queue_free()
+	$MainContainer/SkillsPanel/SkillsContainer.visible = true
+	load_skills_resource()
+
 
 
 func _on_add_skill_data_pressed(data_name: String, data: Variant) -> void:
@@ -609,10 +625,24 @@ func _on_load_traits_resource_pressed(panel: PanelContainer) -> void:
 			$MainContainer/TraitsPanel/TraitsContainerContainer.visible = true
 			panel.visible = false
 			panel.queue_free()
-			reload_traits()
+			reload_traits(false)
 			load_traits_resource()
 	
 	res_loader.queue_free()
+
+
+func _on_traits_resource_dropped(resource: Resource, panel: Control) -> void:
+	_traits_resource = resource
+	ProjectSettings.set_setting(
+			EditorNFPlugin.get_project_settings_path("traits"),
+			resource.resource_path)
+	if Engine.is_editor_hint():
+		ProjectSettings.save()
+	panel.visible = false
+	panel.queue_free()
+	$MainContainer/TraitsPanel/TraitsContainerContainer.visible = true
+	reload_traits(false)
+	load_traits_resource()
 
 
 func _on_add_trait_data_pressed(data_name: String, data: Variant) -> void:

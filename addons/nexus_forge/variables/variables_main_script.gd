@@ -73,6 +73,7 @@ func _ready() -> void:
 		no_db_container.set_resource_type("BlackboardData", "Variables", "Variables")
 		no_db_container.create_resource_pressed.connect(on_create_resource_pressed)
 		no_db_container.load_resource_pressed.connect(on_load_resource_pressed)
+		no_db_container.resource_dropped.connect(_on_resource_dropped.bind(no_db_container))
 		no_db_container.visible = true
 		main_split.visible = false
 	
@@ -174,6 +175,19 @@ func on_create_resource_pressed() -> void:
 		no_db_container.queue_free()
 	
 	new_dialog.queue_free()
+
+
+func _on_resource_dropped(resource: Resource, panel: Control) -> void:
+	_variables_resource = resource
+	ProjectSettings.set_setting(
+			EditorNFPlugin.get_project_settings_path("variables"),
+			resource.resource_path)
+	if Engine.is_editor_hint():
+		ProjectSettings.save()
+	panel.visible = false
+	panel.queue_free()
+	main_split.visible = true
+	load_variable_resource()
 
 
 func on_load_resource_pressed() -> void:

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://3txkfpbu342g"
-path="res://.godot/imported/coin_full.svg-972eff31f7cb29a583ea763f39d46300.ctex"
+uid="uid://co7fpo2ojw20b"
+path="res://.godot/imported/currency_catalog.svg-afad789a97634532856bf286f9f304ce.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://addons/nexus_forge/icons/coin_full.svg"
-dest_files=["res://.godot/imported/coin_full.svg-972eff31f7cb29a583ea763f39d46300.ctex"]
+source_file="res://addons/nexus_forge/icons/currency_catalog.svg"
+dest_files=["res://.godot/imported/currency_catalog.svg-afad789a97634532856bf286f9f304ce.ctex"]
 
 [params]
 

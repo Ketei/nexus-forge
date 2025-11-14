@@ -148,6 +148,20 @@ func _on_load_currency_database_pressed(node: Control) -> void:
 	database_creator.queue_free()
 
 
+func _on_currency_resource_dropped(resource: Resource, panel: Control) -> void:
+	currency_resource = resource
+	ProjectSettings.set_setting(
+			EditorNFPlugin.get_project_settings_path("currency"),
+			resource.resource_path)
+	if Engine.is_editor_hint():
+		ProjectSettings.save()
+	panel.visible = false
+	panel.queue_free()
+	$CurrencyPanel/CurrencyContainer.visible = true
+	reload_currencies()
+
+
+
 func _on_create_currency_pressed() -> void:
 	var id_creator := preload("res://addons/nexus_forge/dialogs/lineedit_confirmation_dialog.gd").new()
 	id_creator.line_placeholder_text = "Currency ID"
@@ -232,9 +246,10 @@ func reload_currencies() -> void:
 		var no_db := preload("res://addons/nexus_forge/no_db_container.tscn").instantiate()
 		$CurrencyPanel.add_child(no_db)
 		no_db.message_minimum_size.x = 250.0
-		no_db.set_resource_type("Currencies", "Currency", "Currencies")
+		no_db.set_resource_type("CurrencyCatalog", "Currency", "Currencies")
 		no_db.create_resource_pressed.connect(_on_create_currency_database_pressed.bind(no_db))
 		no_db.load_resource_pressed.connect(_on_load_currency_database_pressed.bind(no_db))
+		no_db.resource_dropped.connect(_on_currency_resource_dropped.bind(no_db))
 	else:
 		for currency in currency_resource.currencies():
 			currency_tree.add_currency(currency)
@@ -408,6 +423,20 @@ func _on_load_database_pressed(node: Control) -> void:
 			resource_loaded.emit()
 	
 	database_creator.queue_free()
+
+
+func _on_items_resource_dropped(resource: Resource, panel: Control) -> void:
+	item_link.items = resource
+	ProjectSettings.set_setting(
+			EditorNFPlugin.get_project_settings_path("items"),
+			resource.resource_path)
+	if Engine.is_editor_hint():
+		ProjectSettings.save()
+	panel.visible = false
+	panel.queue_free()
+	$ItemsPanel/ItemsContainer.visible = true
+	reload_categories()
+
 
 
 func _on_item_selected(item_id: StringName) -> void:
@@ -584,6 +613,7 @@ func reload_items() -> void:
 		no_db.set_resource_type("ItemCatalog", "Depot", "Items")
 		no_db.create_resource_pressed.connect(_on_create_database_pressed.bind(no_db))
 		no_db.load_resource_pressed.connect(_on_load_database_pressed.bind(no_db))
+		no_db.resource_dropped.connect(_on_items_resource_dropped.bind(no_db))
 		new_item_btn.disabled = true
 	else:
 		reload_categories()

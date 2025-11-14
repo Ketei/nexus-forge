@@ -5,7 +5,7 @@ func _post_init() -> void:
 	name = &"End"
 	custom_id = "End"
 	title = "End"
-	size = Vector2(160.0, 79.0)
+	size = Vector2(160.0, 80.0)
 	node_type = DialogueNodeType.DIALOG_END
 	parent_mode = PortMode.INPUT
 	parent_port = 0
@@ -14,7 +14,7 @@ func _post_init() -> void:
 	end_label.text = "Dialog End"
 	end_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	end_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	end_label.custom_minimum_size.y = 24
+	end_label.custom_minimum_size.y = 32
 	
 	add_field(
 			&"connection",

@@ -52,6 +52,7 @@ func _ready() -> void:
 		no_db.set_resource_type("SpeciesCatalog", "Species", "Species")
 		no_db.create_resource_pressed.connect(_on_create_database_pressed.bind(no_db))
 		no_db.load_resource_pressed.connect(_on_load_database_pressed.bind(no_db))
+		no_db.resource_dropped.connect(_on_resource_dropped.bind(no_db))
 	else:
 		$RacesContainer.visible = true
 		load_species_resource()
@@ -107,6 +108,19 @@ func _on_create_database_pressed(node: Control) -> void:
 		node.queue_free()
 	
 	database_creator.queue_free()
+
+
+func _on_resource_dropped(resource: Resource, panel: Control) -> void:
+	_species_resource = resource
+	ProjectSettings.set_setting(
+			EditorNFPlugin.get_project_settings_path("species"),
+			resource.resource_path)
+	if Engine.is_editor_hint():
+		ProjectSettings.save()
+	panel.visible = false
+	panel.queue_free()
+	$RacesContainer.visible = true
+	load_species_resource()
 
 
 func _on_load_database_pressed(node: Control) -> void:
