@@ -466,7 +466,6 @@ func save_current_character() -> void:
 				int(trait_item.get_child(1).value))
 	
 	char_tree.set_unsaved(current_sheet, _unsaved)
-	print("Setting ", current_sheet.name, " as needs save: ", _unsaved)
 
 
 func has_unsaved_files() -> bool:
