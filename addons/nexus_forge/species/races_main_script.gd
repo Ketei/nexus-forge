@@ -31,10 +31,6 @@ func _ready() -> void:
 	if Engine.is_editor_hint() and get_tree().edited_scene_root == self:
 		return
 	
-	# For testing
-	#_species_resource = SpeciesCatalog.new()
-	# -----------
-	
 	race_custom_data_search_line.right_icon = get_theme_icon("Search", "EditorIcons")
 	
 	var res_path: String = ProjectSettings.get_setting(EditorNFPlugin.get_project_settings_path("species"), "")
@@ -75,8 +71,6 @@ func _ready() -> void:
 	add_rc_bool_button.pressed.connect(_on_add_data_pressed.bind("new_bool", false))
 	add_rc_string_button.pressed.connect(_on_add_data_pressed.bind("new_string", ""))
 	race_data_tree.data_changed.connect(_on_something_changed)
-	
-	#race_name_ln_edt.text_changed.connect(_on_race_display_changed)
 
 
 func _on_race_display_changed() -> void:

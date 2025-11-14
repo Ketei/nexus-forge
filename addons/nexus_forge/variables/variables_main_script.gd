@@ -1,12 +1,6 @@
 @tool
 extends PanelContainer
 
-#const ADD_BOOL_ICON = preload("res://addons/nexus_forge/icons/add_bool.svg")
-#const ADD_FLOAT_ICON = preload("res://addons/nexus_forge/icons/add_float.svg")
-#const ADD_INT_ICON = preload("res://addons/nexus_forge/icons/add_int.svg")
-#const ADD_STRING_ICON = preload("res://addons/nexus_forge/icons/add_string.svg")
-#var SAVE_FILE_ICON = null
-#var NEW_FOLDER_ICON = null
 
 const ResourceFileDialog = preload("res://addons/nexus_forge/classes/resource_file_dialog.gd")
 
@@ -97,13 +91,6 @@ func _ready() -> void:
 	
 	folders_tree.folder_deleted.connect(_on_folder_deleted)
 	folders_tree.folder_renamed.connect(_on_folder_renamed)
-
-
-#func _input(event: InputEvent) -> void:
-	#if event is InputEventKey:
-		#if event.is_pressed() and event.keycode == KEY_HOME:
-			#save()
-			#get_viewport().set_input_as_handled()
 
 
 func _on_folder_created(path_to_folder: String) -> void:
@@ -315,8 +302,6 @@ func _on_folder_selected(path_to_folder: String) -> void:
 				variable_id)
 	
 	_current_folder = path_to_folder
-	# Shouldn't be needed?
-	#folders_tree.select_folder_no_signal(path_to_folder)
 
 
 func on_variable_cpath_button_pressed(var_id: String) -> void:

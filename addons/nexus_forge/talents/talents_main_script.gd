@@ -14,14 +14,7 @@ var loaded_trait: StringName = &""
 var _unsaved: bool = false
 
 
-#@onready var stat_search_ln_edt: LineEdit = $MainContainer/StatsPanel/StatsContainer/HBoxContainer/StatSearchLnEdt
-#@onready var new_stat_btn: Button = $MainContainer/StatsPanel/StatsContainer/HBoxContainer/NewStatBtn
-#@onready var stats_tree: Tree = $MainContainer/StatsPanel/StatsContainer/StatsTree
-
-
-#@onready var create_skill_btn: Button = $MainContainer/SkillsPanel/SkillsContainer/SkillSelectContainer/SkillContainer/CreateSkillBtn
 @onready var skill_opt_btn: OptionButton = $MainContainer/SkillsPanel/SkillsContainer/SkillSelectContainer/SkillContainer/SkillOptBtn
-#@onready var delete_skill_btn: Button = $MainContainer/SkillsPanel/SkillsContainer/SkillSelectContainer/SkillContainer/DeleteSkillBtn
 @onready var skill_ln_edt: LineEdit = $MainContainer/SkillsPanel/SkillsContainer/NameContainer/SkillLnEdt
 @onready var skill_desc_txt_edt: TextEdit = $MainContainer/SkillsPanel/SkillsContainer/DesContainer/SkillDescTxtEdt
 @onready var skill_data_tree: IDTree = $MainContainer/SkillsPanel/SkillsContainer/DataContainer/SkillDataTree
@@ -30,9 +23,7 @@ var _unsaved: bool = false
 @onready var skill_bool_btn: Button = $MainContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader/ButtonContainer/SkillBoolBtn
 @onready var skill_str_btn: Button = $MainContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader/ButtonContainer/SkillStrBtn
 
-#@onready var create_trait_btn: Button = $MainContainer/TraitsPanel/TraitsContainerContainer/TraitSelectContainer/TraitContainer/CreateTraitBtn
 @onready var trait_opt_btn: OptionButton = $MainContainer/TraitsPanel/TraitsContainerContainer/TraitSelectContainer/TraitContainer/TraitOptBtn
-#@onready var delete_trait_btn: Button = $MainContainer/TraitsPanel/TraitsContainerContainer/TraitSelectContainer/TraitContainer/DeleteTraitBtn
 @onready var trait_ln_edt: LineEdit = $MainContainer/TraitsPanel/TraitsContainerContainer/NameContainer/TraitLnEdt
 @onready var trait_desc_txt_edt: TextEdit = $MainContainer/TraitsPanel/TraitsContainerContainer/DesContainer/TraitDescTxtEdt
 @onready var trait_dict_btn: Button = $MainContainer/TraitsPanel/TraitsContainerContainer/DataContainer/DataHeader/ButtonContainer/TraitDictBtn
@@ -46,13 +37,9 @@ var _unsaved: bool = false
 func _ready() -> void:
 	if Engine.is_editor_hint() and get_tree().edited_scene_root == self:
 		return
-	# ----- For testing -----
-	#_skills_resource = SkillCatalog.new()
-	#_traits_resource = TraitCatalog.new()
-	# -----------------------
 	reload_traits(false)
 	reload_skills(false)
-	# ----------------------------- For Release -----------------------------
+	
 	var skills_path: String = ProjectSettings.get_setting(
 			EditorNFPlugin.get_project_settings_path("skills"),
 			"")
@@ -100,37 +87,6 @@ func _ready() -> void:
 	
 	skill_opt_btn.get_popup().max_size.y = 300
 	trait_opt_btn.get_popup().max_size.y = 300
-
-	#var skill_set: SkillSet = SkillSet.new()
-	#var trait_block: TraitBlock = TraitBlock.new()
-	
-	#var skills: Array[StringName] = skill_set.skills()
-	#skills.sort_custom(func(a,b): return String(a).naturalnocasecmp_to(String(b)) < 0)
-	
-	#skill_opt_btn.clear()
-	#for skill_id in skills:
-		#skill_opt_btn.add_item(
-				#String(skill_id).capitalize())
-		#skill_opt_btn.set_item_metadata(-1, skill_id)
-		#if _skills_resource != null:
-			#if _skills_resource._skills.has(skill_id):
-				#continue
-			#var data: Dictionary[String, Variant] = {}
-			#data.assign(_skills_resource.DEFAULT_DATA)
-			#_skills_resource._skills[skill_id] = {
-				#"name": "",
-				#"description": "",
-				#"data": data}
-	
-	#var traits: Array[StringName] = trait_block.traits()
-	
-	#traits.sort_custom(func(a,b): return String(a).naturalnocasecmp_to(String(b)) < 0)
-	
-	#trait_opt_btn.clear()
-	#for trait_id in traits:
-		#trait_opt_btn.add_item(
-				#String(trait_id).capitalize())
-		#trait_opt_btn.set_item_metadata(-1, trait_id)
 	
 	skill_opt_btn.disabled = skill_opt_btn.item_count == 0
 	trait_opt_btn.disabled = trait_opt_btn.item_count == 0
@@ -138,18 +94,9 @@ func _ready() -> void:
 	set_skills_ui_enabled(0 < skill_opt_btn.item_count)
 	set_traits_ui_enabled(0 < trait_opt_btn.item_count)
 	
-	#if 0 < skill_opt_btn.item_count:
-		#load_skill(skill_opt_btn.get_item_metadata(0))
-		#loaded_skill = skill_opt_btn.get_item_metadata(0)
-	
-	#if 0 < trait_opt_btn.item_count:
-		#load_trait(trait_opt_btn.get_item_metadata(0))
-		#loaded_trait = trait_opt_btn.get_item_metadata(0)
-	
 	skill_ln_edt.text_changed.connect(something_changed)
 	skill_desc_txt_edt.text_changed.connect(something_changed)
 	
-	#create_skill_btn.pressed.connect(_on_create_skill_pressed)
 	skill_int_btn.pressed.connect(_on_add_skill_data_pressed.bind("new_int", 0))
 	skill_flt_btn.pressed.connect(_on_add_skill_data_pressed.bind("new_float", 0.0))
 	skill_bool_btn.pressed.connect(_on_add_skill_data_pressed.bind("new_bool", false))
@@ -162,127 +109,6 @@ func _ready() -> void:
 	trait_bool_btn.pressed.connect(_on_add_trait_data_pressed.bind("new_bool", false))
 	trait_str_btn.pressed.connect(_on_add_trait_data_pressed.bind("new_string", ""))
 	trait_dict_btn.pressed.connect(_on_add_trait_data_pressed.bind("new_group", {}))
-
-
-#region Stats
-
-#func _on_create_stats_resource_pressed(panel: PanelContainer) -> void:
-	#var res_loader := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").new()
-	#res_loader.file_mode = EditorFileDialog.FILE_MODE_SAVE_FILE
-	#res_loader.title = "Create StatBlock"
-	#res_loader.ok_button_text = "Save"
-	#add_child(res_loader)
-	#res_loader.show()
-	#
-	#var result = await res_loader.dialog_finished
-	#
-	#if result[0]:
-		#_stats_resource = StatCatalog.new()
-		#ResourceSaver.save(_stats_resource, result[1])
-		#ProjectSettings.set_setting(
-				#EditorNFPlugin.get_project_settings_path("talents"),
-				#result[1])
-		#ProjectSettings.save()
-		#$MainContainer/StatsPanel/StatsContainer.visible = true
-		#panel.visible = false
-		#panel.queue_free()
-		#load_stats_resource()
-	#
-	#res_loader.queue_free()
-
-
-#func _on_load_stats_resource_pressed(panel: PanelContainer) -> void:
-	#var res_loader := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").new()
-	#res_loader.file_mode = EditorFileDialog.FILE_MODE_OPEN_FILE
-	#res_loader.title = "Open Talents"
-	#res_loader.ok_button_text = "Load"
-	#add_child(res_loader)
-	#res_loader.show()
-	#
-	#var result = await res_loader.dialog_finished
-	#
-	#if result[0]:
-		#var res_pre: Resource = load(result[1])
-		#if res_pre != null and res_pre is StatCatalog:
-			#_stats_resource = res_pre
-			#ProjectSettings.set_setting(
-					#EditorNFPlugin.get_project_settings_path("talents"),
-					#result[1])
-			#ProjectSettings.save()
-			#$MainContainer/StatsPanel/StatsContainer.visible = true
-			#panel.visible = false
-			#panel.queue_free()
-			#load_stats_resource()
-	#
-	#res_loader.queue_free()
-
-
-#func _on_create_stat_pressed() -> void:
-	#var stat_window := LineEditConfirmationDialog.new()
-	#var used_stats: Array[String] = []
-	#
-	#for item in stats_tree.get_root().get_children():
-		#used_stats.append(item.get_text(0))
-	#
-	#stat_window.title = "Create Stat"
-	#stat_window.ok_button_text = "Create"
-	#stat_window.line_placeholder_text = "Stat ID"
-	#stat_window.allow_empty = false
-	#stat_window.use_blacklist = true
-	#stat_window.strip_edges = true
-	#stat_window.character_blacklist.append(" ")
-	#stat_window.text_blacklist.assign(used_stats)
-	#
-	#add_child(stat_window)
-	#stat_window.show()
-	#stat_window.grab_text_focus()
-	#
-	#var result: Array = await stat_window.dialog_finished
-	#
-	#if result[0]:
-		#var id: StringName = StringName(result[1])
-		#_stats_resource.create_stat(id, TYPE_INT)
-		#_stats_resource.set_stat_name(id, "New Stat")
-		#stats_tree.create_stat(result[1], "New Stat", TYPE_INT, true)
-	#
-	#stat_window.queue_free()
-
-
-#func _on_stat_id_changed(from: StringName, to: StringName) -> void:
-	#_stats_resource._stats[to] = _stats_resource._stats[from]
-	#_stats_resource._stats.erase(from)
-
-
-#func _on_stat_renamed(id: StringName, new_name: String) -> void:
-	#_stats_resource.set_stat_name(id, new_name)
-
-
-#func _on_stat_type_changed(id: StringName, type: int) -> void:
-	#_stats_resource.set_stat_type(id, type)
-
-
-#func _on_stat_deleted(id: StringName) -> void:
-	#_stats_resource.erase_stat(id)
-
-
-#func _on_search_stat_text_changed(text: String) -> void:
-	#var search_for: String = text.strip_edges()
-	#stats_tree.search_for(search_for)
-
-
-#func load_stats_resource() -> void:
-	#for stat in _stats_resource.stats():
-		#stats_tree.create_stat(
-				#stat,
-				#_stats_resource.get_stat_name(stat),
-				#_stats_resource.get_stat_type(stat))
-
-
-#func set_stats_ui_enabled(set_enabled: bool) -> void:
-	#new_stat_btn.disabled = not set_enabled
-
-
-#endregion
 
 
 #region Skills
@@ -384,53 +210,6 @@ func _on_skill_selected(skill_idx: int) -> void:
 	
 	load_skill(target_skill)
 	loaded_skill = target_skill
-
-
-#func _on_create_skill_pressed() -> void:
-	#var id_creator := LineEditConfirmationDialog.new()
-	#id_creator.allow_empty = false
-	#id_creator.use_blacklist = true
-	#id_creator.character_blacklist.append(" ")
-	#id_creator.text_blacklist.assign(_skills_resource.skills())
-	#id_creator.title = "Create Skill"
-	#id_creator.ok_button_text = "Create"
-	#add_child(id_creator)
-	#id_creator.show()
-	#id_creator.grab_text_focus()
-	#
-	#var result = await id_creator.dialog_finished
-	#
-	#if result[0]:
-		#skill_opt_btn.disabled = false
-		#delete_skill_btn.disabled = false
-		#skill_ln_edt.editable = true
-		#skill_desc_txt_edt.editable = true
-		#
-		#skill_int_btn.disabled = false
-		#skill_flt_btn.disabled = false
-		#skill_bool_btn.disabled = false
-		#skill_str_btn.disabled = false
-		#
-		#if not loaded_skill.is_empty():
-			#save_current_skill()
-		#
-		#var skill_id: StringName = StringName(result[1])
-		#_skills_resource.create_skill(skill_id)
-		#skill_opt_btn.add_item(result[1])
-		#skill_opt_btn.set_item_metadata(-1, skill_id)
-		#
-		#if 1 < skill_opt_btn.item_count:
-			#sort_skills(false)
-		#
-		#for skill_idx in range(skill_opt_btn.item_count):
-			#if skill_opt_btn.get_item_metadata(skill_idx) == skill_id:
-				#skill_opt_btn.select(skill_idx)
-				#break
-		#
-		#load_skill(skill_id)
-		#loaded_skill = skill_id
-		#something_changed()
-	#id_creator.queue_free()
 
 
 func load_skill(skill_id: StringName) -> void:
@@ -683,60 +462,6 @@ func load_trait(trait_id: StringName) -> void:
 		trait_data_tree.add_data(
 			data_key,
 			_traits_resource.get_trait_data(trait_id, data_key))
-
-
-#func _on_create_trait_pressed() -> void:
-	#var id_creator := LineEditConfirmationDialog.new()
-	#var existing_traits: Array[String] = []
-	#
-	#for trait_key in _traits_resource.traits():
-		#existing_traits.append(String(trait_key))
-	#
-	#id_creator.allow_empty = false
-	#id_creator.use_blacklist = true
-	#id_creator.character_blacklist.append(" ")
-	#id_creator.text_blacklist.assign(existing_traits)
-	#id_creator.title = "Create Trait"
-	#id_creator.ok_button_text = "Create"
-	#add_child(id_creator)
-	#id_creator.show()
-	#id_creator.grab_text_focus()
-	#
-	#var result = await id_creator.dialog_finished
-	#
-	#if result[0]:
-		#trait_opt_btn.disabled = false
-		#delete_trait_btn.disabled = false
-		#trait_ln_edt.editable = true
-		#trait_desc_txt_edt.editable = true
-		#
-		#trait_int_btn.disabled = false
-		#trait_flt_btn.disabled = false
-		#trait_bool_btn.disabled = false
-		#trait_str_btn.disabled = false
-		#trait_dict_btn.disabled = false
-		#
-		#if not loaded_trait.is_empty():
-			#save_current_trait()
-		#
-		#var trait_id: StringName = StringName(result[1])
-		#_traits_resource.create_trait(trait_id)
-		#_traits_resource.set_trait_name(trait_id, "New Trait")
-		#trait_opt_btn.add_item(result[1])
-		#trait_opt_btn.set_item_metadata(-1, trait_id)
-		#
-		#if 1 < trait_opt_btn.item_count:
-			#sort_traits()
-		#
-		#for trait_idx in range(trait_opt_btn.item_count):
-			#if trait_opt_btn.get_item_metadata(trait_idx) == trait_id:
-				#trait_opt_btn.select(trait_idx)
-				#break
-		#
-		#loaded_trait = trait_id
-		#load_trait(trait_id)
-		#something_changed()
-	#id_creator.queue_free()
 
 
 func set_traits_ui_enabled(enabled: bool) -> void:

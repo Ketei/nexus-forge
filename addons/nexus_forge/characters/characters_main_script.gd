@@ -10,14 +10,11 @@ const LineEditConfirmationDialog = preload("res://addons/nexus_forge/dialogs/lin
 var _unsaved: bool = false
 
 var current_sheet: CharacterSheet = null
-#var listen_selected: bool = true
 var ui_enabled: bool = false
 
 
 @onready var char_menu_btn: MenuButton = $CharacterContainer/BasicDataSplit/CharacterTreeContainer/HBoxContainer/CharMenuBtn
 @onready var search_char_ln_edt: LineEdit = $CharacterContainer/BasicDataSplit/CharacterTreeContainer/HBoxContainer/SearchCharLnEdt
-#@onready var new_character: Button = $CharacterContainer/BasicDataSplit/CharacterTreeContainer/HBoxContainer/NewCharacter
-#@onready var open_character: Button = $CharacterContainer/BasicDataSplit/CharacterTreeContainer/HBoxContainer/OpenCharacter
 @onready var char_id_line: LineEdit = $CharacterContainer/BasicDataSplit/GeneralContainer/CharIDContainer/CharIDLine
 @onready var char_name_line: LineEdit = $CharacterContainer/BasicDataSplit/GeneralContainer/CharNameContainer/CharNameLine
 @onready var species_option_button: OptionButton = $CharacterContainer/BasicDataSplit/GeneralContainer/SpeciesContainer/SpeciesOptionButton
@@ -252,23 +249,6 @@ func update_talent_nodes() -> void:
 
 
 func _on_new_character_pressed() -> void:
-	# For testing
-	#listen_selected = false
-	#var test_resource: CharacterSheet = CharacterSheet.new()
-	#test_resource.resource_path = "res://new_character.tres"
-	#if test_resource.stats == null:
-		#test_resource.stats = StatBlock.new()
-	#if test_resource.skills == null:
-		#test_resource.skills = SkillSet.new()
-	#if test_resource.traits == null:
-		#test_resource.traits = TraitBlock.new()
-	#char_tree.create_character(test_resource, true)
-	#load_character(test_resource)
-	#current_sheet = test_resource
-	#listen_selected = true
-	#set_ui_enabled(true)
-	#return
-	# -----------
 	var resource_selector := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	resource_selector.file_mode = resource_selector.FILE_MODE_SAVE_FILE
 	resource_selector.access = resource_selector.ACCESS_RESOURCES
@@ -310,21 +290,6 @@ func _on_new_character_pressed() -> void:
 
 
 func _on_open_character_pressed() -> void:
-	#var id_creator := LineEditConfirmationDialog.new()
-	#id_creator.line_placeholder_text = "Character ID"
-	#id_creator.allow_empty = false
-	#id_creator.use_blacklist = true
-	#id_creator.character_blacklist.append(" ")
-	#id_creator.text_blacklist.assign(_character_resource.characters())
-	#id_creator.title = "Create Character"
-	#id_creator.ok_button_text = "Create"
-	#add_child(id_creator)
-	#id_creator.show()
-	#id_creator.grab_text_focus()
-	#
-	#var result: Array = await id_creator.dialog_finished
-	#
-	#if result[0]:
 	var resource_selector := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	resource_selector.file_mode = resource_selector.FILE_MODE_OPEN_FILE
 	resource_selector.access = resource_selector.ACCESS_RESOURCES

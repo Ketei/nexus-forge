@@ -11,17 +11,8 @@ var language: String = ""
 var region: String = ""
 ## The unformatted dialog this parser formats.
 var dialog: String = ""
-var _format_args: Dictionary = {
-	#"$player_name": NexusForge.Variables.get_variable.bindv(["player_name"]),
-	#"!player_name": _find_case
-}
-var _phrases_format: Dictionary = {
-	#"&EGG_TEST|eggs=10,gender=male" : {
-		#"text": "You've laid {!eggs}, you are {!gender} {$butts}",
-		#"arguments": {"!eggs": {"default": "{eggs} {gender} eggs", "custom": {"0": "none", "10": "Lots"}}},
-		#"format": {"!eggs": _find_case, "!gender": "sissy", "$butts": print.bind(":3")}
-	#}
-}
+var _format_args: Dictionary = {}
+var _phrases_format: Dictionary = {}
 
 
 func _find_case(on_format: String, on_argument: String, case: String) -> String:

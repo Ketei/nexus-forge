@@ -64,6 +64,8 @@ func _ready() -> void:
 	
 	#new_item_btn.icon = get_theme_icon("Add", "EditorIcons")
 	
+	add_item_fldr_btn.icon = get_theme_icon("FolderCreate", "EditorIcons")
+	
 	search_item_container.text_changed.connect(_on_search_item_text_changed)
 	new_item_btn.pressed.connect(_on_create_item_pressed)
 	items_tree.item_id_selected.connect(_on_item_selected, CONNECT_DEFERRED)

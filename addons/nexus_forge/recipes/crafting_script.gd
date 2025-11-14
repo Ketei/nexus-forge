@@ -6,12 +6,6 @@ signal recipes_loaded
 
 const LineEditConfirmationDialog = preload("res://addons/nexus_forge/dialogs/lineedit_confirmation_dialog.gd")
 
-#const BOOL_ICON = preload("res://addons/nexus_forge/common_icons/variables/bool.svg")
-#const FLOAT_ICON = preload("res://addons/nexus_forge/common_icons/variables/float.svg")
-#const INT_ICON = preload("res://addons/nexus_forge/common_icons/variables/int.svg")
-#const STRING_ICON = preload("res://addons/nexus_forge/common_icons/variables/string.svg")
-#const TRASH_BIN_ICON = preload("res://addons/nexus_forge/common_icons/trash_bin.svg")
-
 var recipes_resource: RecipeCatalog = null
 
 var active_recipe: StringName = &"":
@@ -186,12 +180,6 @@ func _on_recipe_item_add_data_button_pressed(on_input: bool, id: String, data: V
 func _on_custom_data_button_pressed(id: String, data: Variant) -> void:
 	recipe_custom_data_tree.add_data(id, data)
 	_something_changed()
-
-
-#func clear_fields() -> void:
-	#clear_recipe_inputs()
-	#clear_recipe_outputs()
-	#recipe_custom_data_tree.clear_data()
 
 
 func _on_item_erased(item_id: StringName) -> void:
@@ -403,29 +391,6 @@ func _on_recipe_erased(recipe_id: StringName) -> void:
 		recipe_input_tree.clear_items()
 		recipe_output_tree.clear_items()
 		recipe_custom_data_tree.clear_data()
-	
-
-
-#func add_recipe(recipe_id: StringName) -> TreeItem:
-	#var recipe: TreeItem = recipe_tree.get_root().create_child()
-	#recipe.set_text(0, String(recipe_id))
-	#recipe.set_metadata(0, recipe_id)
-	#recipe.set_editable(0, true)
-	#recipe.add_button(0, TRASH_BIN_ICON, 0, false, "Delete Recipe")
-	#return recipe
-
-
-#func _on_recipes_button_clicked(item: TreeItem, column: int, id: int, mouse_button_index: int) -> void:
-	#if id == 0:
-		#var recipe_id: StringName = item.get_metadata(0)
-		#if active_recipe == recipe_id:
-			#active_recipe = &""
-			#recipe_input_tree.recipe_selected = false
-			#recipe_output_tree.recipe_selected = false
-			#clear_fields()
-		#item.free()
-		#recipe_deleted.emit(recipe_id)
-		#_something_changed()
 
 
 func load_recipe(recipe_id: StringName) -> void:
@@ -452,47 +417,6 @@ func load_recipe(recipe_id: StringName) -> void:
 		recipe_custom_data_tree.add_data(data_entry, recipe.data[data_entry])
 
 
-#func save_current() -> void:
-	#items_resource.create_recipe(
-			#active_recipe,
-			#{
-				#"input": recipe_input_tree.get_recipe_items(),
-				#"output": recipe_output_tree.get_recipe_items(),
-				#"data": recipe_custom_data_tree.get_data()
-			#}
-	#)
-
-
-#func get_current_recipe_data() -> Dictionary[String, Variant]:
-	#var data: Dictionary[String, Variant] = {}
-	#data["input"] = recipe_input_tree.get_recipe_items()
-	#data["output"] = recipe_output_tree.get_recipe_items()
-	#data["data"] = recipe_custom_data_tree.get_data()
-	#return data
-
-
-#func clear_recipe_inputs() -> void:
-	#_active_input_rcp = -1
-	#recipe_input_tree.clear_items()
-#
-#
-#func clear_recipe_outputs() -> void:
-	#_active_output_rcp = -1
-	#recipe_output_tree.clear_items()
-
-
-#func add_recipe_data(id: String, data: Variant) -> void:
-	
-
-
-#func get_item_row(of_item: TreeItem, is_input: bool) -> TreeItem:
-	#var max_root: TreeItem = recipe_input_tree.get_root() if is_input else recipe_output_tree.get_root()
-	#if of_item.get_parent() != max_root:
-		#return of_item.get_parent()
-	#else:
-		#return of_item
-
-
 func add_recipe_item(to_input: bool, item_id: StringName, input_amount: int = 1, data: Dictionary = {}) -> void:
 	if to_input:
 		recipe_input_tree.add_item(
@@ -500,7 +424,6 @@ func add_recipe_item(to_input: bool, item_id: StringName, input_amount: int = 1,
 				input_amount,
 				data,
 				true)
-		#_active_input_rcp = recipe_input_tree.get_selected().get_index()
 	else:
 		recipe_output_tree.add_item(
 				item_id,

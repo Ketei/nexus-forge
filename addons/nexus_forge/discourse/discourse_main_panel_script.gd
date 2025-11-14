@@ -978,29 +978,6 @@ func _on_open_conversation_pressed() -> void:
 		listen_offset = true
 	
 	file_opener.queue_free()
-	
-	#file_opener.file_selected.connect(_on_conversation_file_selected.bind(file_opener))
-	#file_opener.canceled.connect(_on_conversation_file_canceled.bind(file_opener))
-
-
-#func _on_conversation_file_selected(path: String, dialog: FileDialog) -> void:
-	#if FileAccess.file_exists(path):
-		#var resource: Resource = load(path)
-		#if resource != null and resource is EditorDiscourseDialog:
-			#if not discourse_window.are_conversation_options_enabled():
-				#discourse_window.set_graph_edit_visible(true)
-				#discourse_window.set_conversation_options_enabled(true)
-				#discourse_nodes_tree.get_root().collapsed = false
-				#new_folder_button.disabled = false
-			#if active_conversation != null:
-				#save_current_dialog_to_memory()
-			#if is_conversation_open(resource):
-				#open_conversation(resource)
-				#set_conversation_item_active(resource)
-			#else:
-				#add_conversation(resource)
-	#dialog.queue_free()
-
 
 
 func plugin_file_selected(file: EditorDiscourseDialog):
@@ -1029,11 +1006,6 @@ func reload_signals() -> void:
 
 func reload_methods() -> void:
 	discourse_window.discourse_graph_edit.update_methods()
-
-
-#func _on_conversation_file_canceled(dialog: FileDialog) -> void:
-	#dialog.queue_free()
-
 
 
 #region Discourse dialog node tree
@@ -1082,16 +1054,6 @@ func set_up_node_structure(structure: Array[Dictionary], level: TreeItem, _map: 
 
 
 func _on_discourse_item_edited(uuid: StringName, type: DiscourseGraphNode.DialogueNodeType, new_name: String) -> void:
-	#var edited: TreeItem = discourse_nodes_tree.get_edited()
-	#var is_node: bool = edited.get_metadata(0)["is_node"]
-	#if is_node:
-		#var node: DiscourseGraphNode = edited.get_metadata(0)["node"]
-		#if edited.get_text(0) == node.custom_id:
-			#return
-		#var new_name: String = get_unique_name_on_tree(edited.get_parent(), edited.get_text(0), edited)
-		#node.custom_id = new_name
-		#edited.set_text(0, new_name)
-		#if node.is_node_localized():
 	match type:
 		DiscourseGraphNode.DialogueNodeType.DIALOG:
 			localization_nodes_tree.rename_dialog_node(uuid, new_name)
@@ -1099,12 +1061,6 @@ func _on_discourse_item_edited(uuid: StringName, type: DiscourseGraphNode.Dialog
 			localization_nodes_tree.rename_options_node(uuid, new_name)
 		DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
 			localization_nodes_tree.rename_text_node(uuid, new_name)
-	#else:
-		#var new_name: String = get_unique_name_on_tree(
-				#edited.get_parent(),
-				#edited.get_text(0),
-				#edited)
-		#edited.set_text(0, new_name)
 
 #endregion
 
@@ -1163,16 +1119,6 @@ func open_conversation(conversation: EditorDiscourseDialog, set_active: bool = t
 
 # Adds a conversation into the list, can open it.
 func add_conversation(data: EditorDiscourseDialog, open_conv: bool = true) -> void:
-	#var new_conversation: TreeItem = conversation_tree.get_root().create_child()
-	#var text: String = data.resource_path.trim_prefix("res://")
-	#new_conversation.set_text(0, text)
-	#new_conversation.set_metadata(0, {"resource": data, "unsaved": false, "offset_changed": false})
-	#new_conversation.add_button(
-			#0,
-			#get_theme_icon("GuiClose", "EditorIcons"),
-			#0,
-			#false,
-			#close_conversation)
 	conversation_tree.add_conversation(data, open_conv, false)
 	
 	if open_conv:
@@ -1184,8 +1130,6 @@ func add_conversation(data: EditorDiscourseDialog, open_conv: bool = true) -> vo
 
 func save_localizer_data() -> void:
 	var active_node: DiscourseGraphNode = localization_nodes_tree.get_active_node()
-	#var localizer_language: String = languages_tree.get_active_language()
-	#var localizer_region: String = languages_tree.get_active_region()
 	match active_node.node_type:
 		DiscourseGraphNode.DialogueNodeType.DIALOG:
 			discourse_window.set_localization_dialog(
@@ -1218,9 +1162,6 @@ func _on_save_conversation_pressed() -> void:
 	save_current_dialog()
 	conversation_tree.active_offset_changed = false
 	conversation_tree.active_unsaved = false
-	#active_conversation_item.set_text(0, active_conversation_item.get_text(0).trim_suffix("*"))
-	#active_conversation_item.get_metadata(0)["unsaved"] = false
-	#active_conversation_item.get_metadata(0)["offset_changed"] = false
 
 
 func _on_godot_save_triggered() -> void:
@@ -1303,10 +1244,7 @@ func save_current_dialog() -> void:
 								language,
 								region)
 	_unsaved = false
-	#active_conversation.save()
 	ResourceSaver.save(active_conversation)
-	#active_conversation_item.get_metadata(0)["unsaved"] = false
-	#active_conversation_item.get_metadata(0)["offset_changed"] = false
 	conversation_tree.active_unsaved = false
 	conversation_tree.active_offset_changed = false
 

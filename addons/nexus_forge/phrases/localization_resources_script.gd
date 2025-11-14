@@ -2,15 +2,6 @@
 extends PanelContainer
 
 
-
-# The idea is that all key LineEdit contain a meta called "phrase_key", this
-# contains the ORIGINAL key that came from the file. And it'll be the key we will
-# use to save/load things from the map in memory.
-#
-# When saving the file (or switching files), we will perform a check, and if the
-# meta is different from the text, we will update the file's keys before saving.
-
-
 var selected_key: LineEdit = null
 var selected_format: String = ""
 
