@@ -76,7 +76,6 @@ popup/item_1/id = 1
 [node name="CharTree" type="Tree" parent="CharacterContainer/BasicDataSplit/CharacterTreeContainer"]
 layout_mode = 2
 size_flags_vertical = 3
-allow_reselect = true
 hide_root = true
 select_mode = 1
 script = ExtResource("3_blnre")

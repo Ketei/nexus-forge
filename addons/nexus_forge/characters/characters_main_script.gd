@@ -97,6 +97,7 @@ func _on_add_data_pressed(data_key: String, data: Variant) -> void:
 func _something_changed(_arg: Variant = null) -> void:
 	if _unsaved:
 		return
+	
 	_unsaved = true
 	if current_sheet != null:
 		char_tree.set_unsaved(current_sheet, true)
@@ -465,6 +466,7 @@ func save_current_character() -> void:
 				int(trait_item.get_child(1).value))
 	
 	char_tree.set_unsaved(current_sheet, _unsaved)
+	print("Setting ", current_sheet.name, " as needs save: ", _unsaved)
 
 
 func has_unsaved_files() -> bool:
@@ -500,6 +502,7 @@ func load_character(sheet: CharacterSheet) -> void:
 		var collapse_btn: Button = stat.get_meta(&"collapse")
 		var flags: int = collapse_btn.get_meta(&"range_flags")
 		var value: SpinBox = stat.get_meta(&"value")
+		var max_spinbox: SpinBox = stat.get_meta(&"max")
 		
 		flags = BitUtils.set_bit_index(flags, 0, not stat_range.allow_lesser)
 		flags = BitUtils.set_bit_index(flags, 1, not stat_range.allow_greater)
@@ -530,8 +533,8 @@ func load_character(sheet: CharacterSheet) -> void:
 		value.allow_lesser = stat_range.allow_lesser
 		stat.get_meta(&"use_max").set_pressed_no_signal(not stat_range.allow_greater)
 		stat.get_meta(&"use_min").set_pressed_no_signal(not stat_range.allow_lesser)
-		stat.get_meta(&"max").value = stat_range.max_value
-		stat.get_meta(&"min").value = stat_range.min_value
+		stat.get_meta(&"min").set_value_no_signal(stat_range.min_value)
+		max_spinbox.set_value_no_signal(stat_range.max_value if stat_range.min_value <= stat_range.max_value else stat_range.min_value)
 		stat.get_meta(&"max").editable = stat_range.allow_greater
 		stat.get_meta(&"min").editable = stat_range.allow_lesser
 		
@@ -682,7 +685,7 @@ func _on_toggle_min_stat(is_enabled: bool, stat: SpinBox, min_spin: SpinBox, max
 	min_spin.editable = is_enabled
 	
 	if is_enabled and stat.value < min_spin.value:
-		stat.value = min_spin.value
+		stat.set_value_no_signal(min_spin.value)
 	
 	var flags: int = limit_btn.get_meta(&"range_flags")
 	flags = BitUtils.set_bit_index(flags, 0, is_enabled)
@@ -719,7 +722,7 @@ func _on_toggle_max_stat(is_enabled: bool, stat: SpinBox, max_spin: SpinBox, lim
 	stat.allow_greater = not is_enabled
 	max_spin.editable = is_enabled
 	if is_enabled and max_spin.value < stat.value:
-		stat.value = max_spin.value
+		stat.set_value_no_signal(max_spin.value)
 	
 	if BitUtils.is_bit_index(flags, 2, true): # Uncollapsed
 		match BitUtils.get_bits(flags, 3):
@@ -780,7 +783,7 @@ func _toggle_limit_visibility_pressed(toggle_button: Button, limit_container: HB
 func _on_limit_max_changed(value: float, stat: SpinBox) -> void:
 	stat.max_value = value
 	if value < stat.value:
-		stat.value = value
+		stat.set_value_no_signal(value)
 	
 	_something_changed()
 
@@ -789,7 +792,7 @@ func _on_limit_min_changed(value: float, stat: SpinBox, max_spin: SpinBox) -> vo
 	stat.min_value = value
 	max_spin.min_value = value
 	if stat.value < value:
-		stat.value = value
+		stat.set_value_no_signal(value)
 	_something_changed()
 
 
