@@ -323,7 +323,7 @@ func load_species(species_id: StringName) -> void:
 		if _species_resource.species_has_stat(species_id, stat_id):
 			chk.set_pressed_no_signal(true)
 			spn.editable = true
-			spn.set_value_no_signal(_species_resource.get_species_stat(species_id, stat_id))
+			spn.set_value_no_signal(_species_resource.get_species_stat_value(species_id, stat_id))
 		else:
 			chk.set_pressed_no_signal(false)
 			spn.editable = false
@@ -337,7 +337,7 @@ func load_species(species_id: StringName) -> void:
 		if _species_resource.species_has_skill(species_id, skill_id):
 			chk.set_pressed_no_signal(true)
 			spn.editable = true
-			spn.value = _species_resource.get_species_skill(species_id, skill_id)
+			spn.value = _species_resource.get_species_skill_value(species_id, skill_id)
 		else:
 			chk.set_pressed_no_signal(false)
 			spn.editable = false
@@ -350,7 +350,7 @@ func load_species(species_id: StringName) -> void:
 		if _species_resource.species_has_trait(species_id, trait_id):
 			chk.set_pressed_no_signal(true)
 			spn.editable = true
-			spn.value = _species_resource.get_species_trait(species_id, trait_id)
+			spn.value = _species_resource.get_species_trait_value(species_id, trait_id)
 		else:
 			chk.set_pressed_no_signal(false)
 			spn.editable = false
