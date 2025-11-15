@@ -36,12 +36,14 @@ grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_2bp08")
 script = ExtResource("1_e4wsj")
 
-[node name="MainContainer" type="HBoxContainer" parent="."]
+[node name="MainContainer" type="HSplitContainer" parent="."]
 layout_mode = 2
+theme_override_constants/minimum_grab_thickness = 10
+split_offset = 634
 
 [node name="SkillsPanel" type="PanelContainer" parent="MainContainer"]
+custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
-size_flags_horizontal = 3
 theme_override_styles/panel = SubResource("StyleBoxEmpty_uv4cy")
 
 [node name="SkillsContainer" type="VBoxContainer" parent="MainContainer/SkillsPanel"]
@@ -151,6 +153,7 @@ flat = true
 icon_alignment = 1
 
 [node name="SkillDataTree" type="Tree" parent="MainContainer/SkillsPanel/SkillsContainer/DataContainer"]
+custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
 size_flags_vertical = 3
 columns = 2
@@ -160,13 +163,9 @@ hide_folding = true
 hide_root = true
 script = ExtResource("8_0boio")
 
-[node name="SkillsTraitsSeparator" type="VSeparator" parent="MainContainer"]
-layout_mode = 2
-theme_override_constants/separation = 20
-
 [node name="TraitsPanel" type="PanelContainer" parent="MainContainer"]
+custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
-size_flags_horizontal = 3
 theme_override_styles/panel = SubResource("StyleBoxEmpty_uv4cy")
 
 [node name="TraitsContainerContainer" type="VBoxContainer" parent="MainContainer/TraitsPanel"]
@@ -288,6 +287,7 @@ flat = true
 icon_alignment = 1
 
 [node name="TraitDataTree" type="Tree" parent="MainContainer/TraitsPanel/TraitsContainerContainer/DataContainer"]
+custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
 size_flags_vertical = 3
 columns = 2

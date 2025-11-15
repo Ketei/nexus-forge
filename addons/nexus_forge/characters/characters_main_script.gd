@@ -617,7 +617,7 @@ func create_stat_item(stat_id: StringName, type: int) -> VBoxContainer:
 	stat_label.tooltip_text = stat_label.text
 	stat_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	stat_label.size_flags_stretch_ratio = 2.0
-	stat_label.custom_minimum_size.y = 32
+	stat_label.custom_minimum_size = Vector2(24.0, 32.0)
 	stat_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	stat_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	stat_label.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -812,7 +812,7 @@ func create_skill_item(skill_id: StringName, default_value: int) -> HBoxContaine
 	new_value.allow_greater = true
 	new_value.allow_lesser = true
 	new_value.update_on_text_changed = true
-	new_value.custom_minimum_size.y = 32
+	new_value.custom_minimum_size = Vector2(24.0, 32.0)
 	new_value.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	new_value.size_flags_stretch_ratio = 3.0
 	new_value.step = 1.0
@@ -838,7 +838,7 @@ func create_trait_item(trait_id: StringName, default_value: int) -> HBoxContaine
 	trait_label.tooltip_text = trait_label.text
 	trait_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	trait_label.size_flags_stretch_ratio = 2.0
-	trait_label.custom_minimum_size.y = 32
+	trait_label.custom_minimum_size = Vector2(24.0, 32.0)
 	trait_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	trait_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	trait_label.mouse_filter = Control.MOUSE_FILTER_STOP

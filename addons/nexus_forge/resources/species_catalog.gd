@@ -8,7 +8,9 @@ extends Resource
 ## if the subspecies doesn't have them.[br]
 
 
-const DEFAULT_DATA: Dictionary[String, Variant] = {}
+const DEFAULT_DATA: Dictionary[String, Variant] = {
+	"hornyness": 10
+}
 
 
 @export_storage var _species: Dictionary[StringName, Dictionary] = {

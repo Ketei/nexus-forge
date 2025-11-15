@@ -225,6 +225,7 @@ clear_button_enabled = true
 right_icon = SubResource("ImageTexture_t2xw8")
 
 [node name="CharacterDataTree" type="Tree" parent="CharacterContainer/BasicDataSplit/GeneralContainer/CustomDataContainer"]
+custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
 size_flags_vertical = 3
 columns = 2
@@ -244,6 +245,7 @@ custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 
 [node name="StatVBox" type="VBoxContainer" parent="CharacterContainer/ValuesSplit/ValuesVBox"]
+custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
 size_flags_vertical = 3
 
@@ -267,6 +269,7 @@ size_flags_horizontal = 3
 layout_mode = 2
 
 [node name="SkillVBox" type="VBoxContainer" parent="CharacterContainer/ValuesSplit/ValuesVBox"]
+custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
 size_flags_vertical = 3
 

@@ -31,6 +31,7 @@ content_margin_right = 10.0
 content_margin_bottom = 10.0
 
 [node name="NexusForgeMainScene" type="Control"]
+clip_contents = true
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -76,15 +77,21 @@ tab_8/icon = ExtResource("10_2qc1w")
 tab_9/title = "Phrase Maps"
 tab_9/icon = ExtResource("11_3fnsj")
 
-[node name="ToolContainer" type="PanelContainer" parent="MainContainer"]
+[node name="ToolScroll" type="ScrollContainer" parent="MainContainer"]
 layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ToolContainer" type="PanelContainer" parent="MainContainer/ToolScroll"]
+clip_contents = true
+layout_mode = 2
+size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("StyleBoxEmpty_yutfl")
 
-[node name="NexusForge" type="Control" parent="MainContainer/ToolContainer"]
+[node name="NexusForge" type="Control" parent="MainContainer/ToolScroll/ToolContainer"]
 layout_mode = 2
 
-[node name="SplashPanel" type="PanelContainer" parent="MainContainer/ToolContainer/NexusForge"]
+[node name="SplashPanel" type="PanelContainer" parent="MainContainer/ToolScroll/ToolContainer/NexusForge"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -93,7 +100,7 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_efg3d")
 
-[node name="SplashTexture" type="TextureRect" parent="MainContainer/ToolContainer/NexusForge/SplashPanel"]
+[node name="SplashTexture" type="TextureRect" parent="MainContainer/ToolScroll/ToolContainer/NexusForge/SplashPanel"]
 modulate = Color(0.498354, 0.563604, 0.683898, 1)
 texture_filter = 4
 layout_mode = 2
@@ -101,38 +108,38 @@ texture = ExtResource("11_at7in")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Discourse" parent="MainContainer/ToolContainer" instance=ExtResource("4_yutfl")]
+[node name="Discourse" parent="MainContainer/ToolScroll/ToolContainer" instance=ExtResource("4_yutfl")]
 visible = false
 layout_mode = 2
 
-[node name="Variables" parent="MainContainer/ToolContainer" instance=ExtResource("3_umhp2")]
+[node name="Variables" parent="MainContainer/ToolScroll/ToolContainer" instance=ExtResource("3_umhp2")]
 visible = false
 layout_mode = 2
 
-[node name="Characters" parent="MainContainer/ToolContainer" instance=ExtResource("6_h1eok")]
+[node name="Characters" parent="MainContainer/ToolScroll/ToolContainer" instance=ExtResource("6_h1eok")]
 visible = false
 layout_mode = 2
 
-[node name="Species" parent="MainContainer/ToolContainer" instance=ExtResource("7_14xiq")]
+[node name="Species" parent="MainContainer/ToolScroll/ToolContainer" instance=ExtResource("7_14xiq")]
 visible = false
 layout_mode = 2
 
-[node name="Talents" parent="MainContainer/ToolContainer" instance=ExtResource("8_shwyd")]
+[node name="Talents" parent="MainContainer/ToolScroll/ToolContainer" instance=ExtResource("8_shwyd")]
 visible = false
 layout_mode = 2
 
-[node name="Items" parent="MainContainer/ToolContainer" instance=ExtResource("9_eiqft")]
+[node name="Items" parent="MainContainer/ToolScroll/ToolContainer" instance=ExtResource("9_eiqft")]
 visible = false
 layout_mode = 2
 
-[node name="Recipes" parent="MainContainer/ToolContainer" instance=ExtResource("8_hl74n")]
+[node name="Recipes" parent="MainContainer/ToolScroll/ToolContainer" instance=ExtResource("8_hl74n")]
 visible = false
 layout_mode = 2
 
-[node name="Quests" parent="MainContainer/ToolContainer" instance=ExtResource("11_ec5tf")]
+[node name="Quests" parent="MainContainer/ToolScroll/ToolContainer" instance=ExtResource("11_ec5tf")]
 visible = false
 layout_mode = 2
 
-[node name="PhraseMaps" parent="MainContainer/ToolContainer" instance=ExtResource("12_h1eok")]
+[node name="PhraseMaps" parent="MainContainer/ToolScroll/ToolContainer" instance=ExtResource("12_h1eok")]
 visible = false
 layout_mode = 2

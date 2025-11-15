@@ -199,8 +199,10 @@ layout_mode = 2
 text = "Description"
 
 [node name="ItemDescTxtEdt" type="TextEdit" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/DescContainer"]
+custom_minimum_size = Vector2(0, 35)
 layout_mode = 2
 size_flags_vertical = 3
+text = "4"
 editable = false
 
 [node name="CustomDataContainer" type="VBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer"]
@@ -265,6 +267,7 @@ icon = ExtResource("4_etwui")
 icon_alignment = 1
 
 [node name="ItemDataTree" type="Tree" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/CustomDataContainer"]
+custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -345,6 +348,7 @@ flat = true
 icon_alignment = 1
 
 [node name="CurrencyTree" type="Tree" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/TreeContainer"]
+custom_minimum_size = Vector2(0, 100)
 layout_mode = 2
 size_flags_vertical = 3
 allow_reselect = true
@@ -427,6 +431,7 @@ icon = ExtResource("4_etwui")
 icon_alignment = 1
 
 [node name="CurrencyCustomDataTree" type="Tree" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/CustomDataContainer"]
+custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -471,6 +476,7 @@ custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 
 [node name="CategoriesTree" type="Tree" parent="CategoriesContainer/DataContainer"]
+custom_minimum_size = Vector2(0, 100)
 layout_mode = 2
 size_flags_vertical = 3
 size_flags_stretch_ratio = 2.0
@@ -544,6 +550,7 @@ icon = ExtResource("4_etwui")
 icon_alignment = 1
 
 [node name="ItemDataTree" type="Tree" parent="CategoriesContainer/DataContainer/CustomDataContainer"]
+custom_minimum_size = Vector2(0, 100)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3

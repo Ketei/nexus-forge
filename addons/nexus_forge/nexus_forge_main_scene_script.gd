@@ -4,21 +4,21 @@ extends Control
 
 var recipes_link: EditorItemRecipeLink = EditorItemRecipeLink.new()
 var current_tab: int = 0
-@onready var tool_count: int = $MainContainer/ToolContainer.get_child_count()
+@onready var tool_count: int = $MainContainer/ToolScroll/ToolContainer.get_child_count()
 @onready var tool_tab_bar: TabBar = $MainContainer/ToolTabBar
-@onready var splash_texture: TextureRect = $MainContainer/ToolContainer/NexusForge/SplashPanel/SplashTexture
+@onready var splash_texture: TextureRect = $MainContainer/ToolScroll/ToolContainer/NexusForge/SplashPanel/SplashTexture
 #@onready var reload_image_btn: Button = $MainContainer/ToolContainer/NexusForge/SplashPanel/SplashTexture/ReloadImageBtn
 # ----- Tools -----
-@onready var nexus_forge: Control = $MainContainer/ToolContainer/NexusForge
-@onready var discourse: PanelContainer = $MainContainer/ToolContainer/Discourse
-@onready var variables: PanelContainer = $MainContainer/ToolContainer/Variables
-@onready var characters: PanelContainer = $MainContainer/ToolContainer/Characters
-@onready var species: PanelContainer = $MainContainer/ToolContainer/Species
-@onready var talents: PanelContainer = $MainContainer/ToolContainer/Talents
-@onready var items: PanelContainer = $MainContainer/ToolContainer/Items
-@onready var recipes: PanelContainer = $MainContainer/ToolContainer/Recipes
-@onready var quests: PanelContainer = $MainContainer/ToolContainer/Quests
-@onready var phrase_maps: PanelContainer = $MainContainer/ToolContainer/PhraseMaps
+@onready var nexus_forge: Control = $MainContainer/ToolScroll/ToolContainer/NexusForge
+@onready var discourse: PanelContainer = $MainContainer/ToolScroll/ToolContainer/Discourse
+@onready var variables: PanelContainer = $MainContainer/ToolScroll/ToolContainer/Variables
+@onready var characters: PanelContainer = $MainContainer/ToolScroll/ToolContainer/Characters
+@onready var species: PanelContainer = $MainContainer/ToolScroll/ToolContainer/Species
+@onready var talents: PanelContainer = $MainContainer/ToolScroll/ToolContainer/Talents
+@onready var items: PanelContainer = $MainContainer/ToolScroll/ToolContainer/Items
+@onready var recipes: PanelContainer = $MainContainer/ToolScroll/ToolContainer/Recipes
+@onready var quests: PanelContainer = $MainContainer/ToolScroll/ToolContainer/Quests
+@onready var phrase_maps: PanelContainer = $MainContainer/ToolScroll/ToolContainer/PhraseMaps
 
 # -----------------
 
