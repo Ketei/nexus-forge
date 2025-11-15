@@ -45,6 +45,11 @@ func _ready() -> void:
 	items.items_loaded.connect(_on_items_loaded)
 	characters.import_species_data_pressed.connect(_on_import_species_data_pressed)
 	tool_tab_bar.tab_changed.connect(_on_tab_changed)
+	species.species_loaded.connect(_on_species_loaded)
+
+
+func _on_species_loaded() -> void:
+	characters.update_species_data(species._species_resource)
 
 
 func _on_import_species_data_pressed() -> void:

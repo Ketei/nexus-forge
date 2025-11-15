@@ -2,12 +2,15 @@
 @icon("res://addons/nexus_forge/icons/dna.svg")
 class_name SpeciesCatalog
 extends Resource
-## A resource holding species and subspecies data with basic stats
+## A resource holding species basic data.
 ##
-## A subspecies will inherit all the parent's species skills, traints and stats
-## if the subspecies doesn't have them.[br]
+## This resource holds values for names, description, data, stats, skills and
+## traits in a raw form(String, int, float, etc.)[br]
+## For stats, skills and traits it can hold the values for inexistent properties
+## but these will be ignored when calling a method that returns an object.
 
 
+## Default data that newly created species will have.
 const DEFAULT_DATA: Dictionary[String, Variant] = {}
 
 
@@ -27,8 +30,52 @@ const DEFAULT_DATA: Dictionary[String, Variant] = {}
 }
 
 
+func _species_tree_stats(species_id: StringName) -> Dictionary[StringName, float]:
+	var stats: Dictionary[StringName, float] = _species[species_id]["stats"].duplicate()
+	var current_species: StringName = _species[species_id]["parent_key"]
+	
+	while current_species != &"" and current_species != species_id:
+		for stat in _species[current_species]["stats"].keys():
+			if stats.has(stat):
+				continue
+			stats[stat] = _species[current_species]["stats"][stat]
+		
+		current_species = _species[current_species]["parent_key"]
+	
+	return stats
 
-func _species_tree_data(species_id) -> Dictionary[String, Dictionary]:
+
+func _species_tree_skills(species_id: StringName) -> Dictionary[StringName, int]:
+	var skills: Dictionary[StringName, int] = _species[species_id]["skills"].duplicate()
+	var current_species: StringName = _species[species_id]["parent_key"]
+	
+	while current_species != &"" and current_species != species_id:
+		for skill in _species[current_species]["skills"].keys():
+			if skills.has(skill):
+				continue
+			skills[skill] = _species[current_species]["skills"][skill]
+			
+			current_species = _species[current_species]["parent_key"]
+	
+	return skills
+
+
+func _species_tree_traits(species_id: StringName) -> Dictionary[StringName, int]:
+	var traits: Dictionary[StringName, int] = _species[species_id]["traits"].duplicate()
+	var current_species: StringName = _species[species_id]["parent_key"]
+	
+	while current_species != &"" and current_species != species_id:
+		for trait_id in _species[current_species]["traits"].keys():
+			if traits.has(trait_id):
+				continue
+			traits[trait_id] = _species[current_species]["traits"][trait_id]
+			
+			current_species = _species[current_species]["parent_key"]
+	
+	return traits
+
+
+func _species_tree_data(species_id: StringName) -> Dictionary[String, Dictionary]:
 	var data: Dictionary[String, Dictionary] = {}
 	var stats: Dictionary[StringName, float] = _species[species_id]["stats"].duplicate()
 	var skills: Dictionary[StringName, int] = _species[species_id]["skills"].duplicate()
@@ -61,6 +108,8 @@ func _species_tree_data(species_id) -> Dictionary[String, Dictionary]:
 	return data
 
 
+## Returns a [SpeciesSheet] with data, stats, skills and traits of the species.[br]
+## Stats, skills and traits will have inherited values from the parent species.
 func get_species(species_id: StringName) -> SpeciesSheet:
 	if not _species.has(species_id):
 		return null
@@ -68,40 +117,29 @@ func get_species(species_id: StringName) -> SpeciesSheet:
 	var new_species: SpeciesSheet = SpeciesSheet.new()
 	
 	var data: Dictionary[String, Dictionary] = _species_tree_data(species_id)
-	var stats: Dictionary[StringName, int] = data["stats"]
+	var stats: Dictionary[StringName, float] = data["stats"]
 	var skills: Dictionary[StringName, int] = data["skills"]
 	var traits: Dictionary[StringName, int] = data["traits"]
-	
 	
 	new_species.id = species_id
 	new_species.name = _species[species_id]["name"]
 	new_species.description = _species[species_id]["description"]
 	new_species.data = _species[species_id]["data"].duplicate(true)
-	
-	for stat_property in stats.keys():
-		new_species.stats.set(
-				stat_property,
-				stats[stat_property])
-	
-	for skill_property in skills.keys():
-		new_species.skills.set(
-				skill_property,
-				skills[skill_property])
-	
-	for trait_property in traits.keys():
-		new_species.traits.set(
-				trait_property,
-				traits[trait_property])
+	new_species.stats = get_species_stats(species_id)
+	new_species.skills = get_species_skills(species_id)
+	new_species.traits = get_species_traits(species_id)
 	
 	return new_species
 
 
+## Returns an array of all registered species.
 func species() -> Array[StringName]:
 	var all_species: Array[StringName] = []
 	all_species.assign(_species.keys())
 	return all_species
 
 
+## Creates a new species with [param species_id] unless it already exists.
 func create_species(species_id: StringName) -> void:
 	if _species.has(species_id):
 		return
@@ -124,6 +162,8 @@ func create_species(species_id: StringName) -> void:
 	_species[species_id] = new_species
 
 
+## Erases the given species and clears the link of all subspecies linked
+## to [param species_id].
 func erase_species(species_id: StringName) -> void:
 	if _species.erase(species_id):
 		for remaining_species in _species.keys():
@@ -131,43 +171,54 @@ func erase_species(species_id: StringName) -> void:
 				_species[remaining_species]["parent_key"] = &""
 
 
+## Sets the [param subspecies] to be a subspecies of [param species_id].
 func link_species(species_id: StringName, subspecies: StringName) -> void:
 	if ( species_id.is_empty() or _species.has(species_id) ) and _species.has(subspecies):
 		_species[subspecies]["parent_key"] = species_id
 
 
-func get_parent_species(from_species: StringName) -> StringName:
-	if _species.has(from_species):
-		return _species[from_species]["parent_key"]
+## Returns the parent species of [param of_species].
+func get_parent_species(of_species: StringName) -> StringName:
+	if _species.has(of_species):
+		return _species[of_species]["parent_key"]
 	return &""
 
 
+## Returns [code]true[/code] if [param species_id] is registered.
 func has_species(species_id: StringName) -> bool:
 	return _species.has(species_id)
 
 
+## Returns the name of [param species_id]. Returns an empty string if the species
+## isn't registered.
 func get_species_name(species_id: StringName) -> String:
 	if _species.has(species_id):
 		return _species[species_id]["name"]
 	return ""
 
 
+## Sets the species name of [param species_id] to [param new_name]
 func set_species_name(species_id: StringName, new_name: String) -> void:
 	if _species.has(species_id):
 		_species[species_id]["name"] = new_name
 
 
+## Returns the description of [param species_id]. Returns an empty string if
+## the species isn't registered.
 func get_species_description(species_id: StringName) -> String:
 	if _species.has(species_id):
 		return _species[species_id]["description"]
 	return ""
 
 
+## Sets the description of [param species_id] to [param new_name].
 func set_species_description(species_id: StringName, description: String) -> void:
 	if _species.has(species_id):
 		_species[species_id]["description"] = description
 
 
+## Sets the value of [param data_key] to [param data] of the [param species_id].
+## If [param data] is [code]null[/code] then [param data_key] is erased.
 func set_species_data(species_id: StringName, data_key: String, data: Variant) -> void:
 	if not _species.has(species_id):
 		return
@@ -179,16 +230,21 @@ func set_species_data(species_id: StringName, data_key: String, data: Variant) -
 		_species[species_id]["data"][data_key] = data
 
 
+## Returns the data with [param data_key] from the [param species_id] or
+## [code]null[/code] if the species isn't registered or key doesn't exist.
 func get_species_data(species_id: StringName, data_key: String) -> Variant:
 	if _species.has(species_id) and _species[species_id]["data"].has(data_key):
 		return _species[species_id]["data"][data_key]
 	return null
 
 
+## Returns [code]true[/code] if [param species_id] has custom data with key
+## [param data_key].
 func has_species_data(species_id: StringName, data_key: String) -> bool:
 	return _species.has(species_id) and _species[species_id]["data"].has(data_key)
 
 
+## Returns an array with all custom data keys that [param species_id] has.
 func species_data_keys(species_id: StringName) -> Array[String]:
 	var all_keys: Array[String] = []
 	if _species.has(species_id):
@@ -196,86 +252,168 @@ func species_data_keys(species_id: StringName) -> Array[String]:
 	return all_keys
 
 
+## Clears all the custom data from [param species_id].
 func clear_species_data(species_id: StringName) -> void:
 	if _species.has(species_id):
 		_species[species_id]["data"].clear()
 
 
-func get_species_stat(species_id: StringName, stat_id: StringName) -> float:
+## Returns the value of [param stat_id] assigned to the species with
+## [param species_id] or 0 if the stat isn't assigned on the species.
+func get_species_stat_value(species_id: StringName, stat_id: StringName) -> float:
 	if _species.has(species_id) and _species[species_id]["stats"].has(stat_id):
 		return _species[species_id]["stats"][stat_id]
 	return 0
 
 
+## Returns a [StatBlock] with the stats of the [param species_id].[br]
+## The species will have inherited the stats of the parent species if
+## [param inherit] is [code]true[/code].
+func get_species_stats(species_id: StringName, inherit: bool = true) -> StatBlock:
+	var new_block: StatBlock = StatBlock.new()
+	var data_stats: Dictionary[StringName, float] = _species_tree_stats(species_id) if inherit else _species[species_id]["stats"].duplicate()
+	
+	var properties: Dictionary[StringName, int] = StatBlock.stats()
+	
+	for stat in data_stats.keys():
+		if not properties.has(stat):
+			continue
+		
+		var val_range: ValueRange = new_block.get(stat)
+		if val_range == null:
+			val_range = RangeInt.new() if properties[stat] == TYPE_INT else RangeFloat.new()
+			new_block.set(stat, val_range)
+		
+		val_range.allow_greater = true
+		val_range.allow_lesser = true
+		
+		if properties[stat] == TYPE_INT:
+			val_range.value = int(data_stats[stat])
+		elif properties[stat] == TYPE_FLOAT:
+			val_range.value = data_stats[stat]
+	
+	return new_block
+
+
+## Sets the stat [param stat_id] to [param value] on the [param species_id].
 func set_species_stat(species_id: StringName, stat_id: StringName, value: float) -> void:
 	if _species.has(species_id):
 		_species[species_id]["stats"][stat_id] = value
 
 
+## Returns [code]true[/code] if [param species_id] has [param stat_id] assigned.
 func species_has_stat(species_id: StringName, stat_id: StringName) -> bool:
 	return _species.has(species_id) and _species[species_id]["stats"].has(stat_id)
 
 
+## Removes the [param stat_id] from the [param species_id] if it had it assigned.
 func erase_species_stat(species_id: StringName, stat_id: StringName) -> void:
 	if _species.has(species_id) and _species[species_id]["stats"].has(stat_id):
 		_species[species_id]["stats"].erase(stat_id)
 
 
+## Sets the [param skill_id] to [param value] on [param species_id].
 func set_species_skill(species_id: StringName, skill_id: StringName, value: int) -> void:
 	if _species.has(species_id):
 		_species[species_id]["skills"][skill_id] = value
 
 
-func get_species_skill(species_id: StringName, skill_id: StringName) -> int:
+## Returns the value of [param skill_id] assigned to the species with
+## [param species_id] or 0 if the skill isn't assigned on the species.
+func get_species_skill_value(species_id: StringName, skill_id: StringName) -> int:
 	if _species.has(species_id) and _species[species_id]["skills"].has(skill_id):
 		return _species[species_id]["skills"][skill_id]
 	return 0
 
 
+## Returns a [SkillSet] with the skills of the [param species_id].[br]
+## The species will have inherited the skills of the parent species if
+## [param inherit] is [code]true[/code].
+func get_species_skills(species_id: StringName, inherit: bool = true) -> SkillSet:
+	var new_set: SkillSet = SkillSet.new()
+	var data_stats: Dictionary[StringName, int] = _species_tree_skills(species_id) if inherit else _species[species_id]["skills"].duplicate()
+	
+	var properties: Array[StringName] = SkillSet.skills()
+	
+	for stat in data_stats.keys():
+		if not properties.has(stat):
+			continue
+		new_set.set(stat, data_stats[stat])
+	
+	return new_set
+
+
+## Returns true if [param species_id] has a [param skill_id] assigned.
 func species_has_skill(species_id: StringName, skill_id: StringName) -> bool:
 	return _species.has(species_id) and _species[species_id]["skills"].has(skill_id)
 
 
+## Erases the assigned [param skill_id] from the [param species_id].
 func erase_species_skill(species_id: StringName, skill_id: StringName) -> void:
 	if _species.has(species_id) and _species[species_id]["skills"].has(skill_id):
 		_species[species_id]["skills"].erase(skill_id)
 
 
+## Sets [param trait_id] to [param value] on the [param species_id].
 func set_species_trait(species_id: StringName, trait_id: StringName, value: int) -> void:
 	if _species.has(species_id):
 		_species[species_id]["traits"][trait_id] = value
 
 
-func get_species_trait(species_id: StringName, trait_id: StringName) -> int:
+## Returns the value of [param trait_id] assigned to the species with
+## [param species_id] or 0 if the trait isn't assigned on the species.
+func get_species_trait_value(species_id: StringName, trait_id: StringName) -> int:
 	if _species.has(species_id) and _species[species_id]["traits"].has(trait_id):
 		return _species[species_id]["traits"][trait_id]
 	return 0
 
+## Returns a [TraitBlock] with the traits of the [param species_id].[br]
+## The species will have inherited the traits of the parent species if
+## [param inherit] is [code]true[/code].
+func get_species_traits(species_id: StringName, inherit: bool = true) -> TraitBlock:
+	var new_block: TraitBlock = TraitBlock.new()
+	var data_stats: Dictionary[StringName, int] = _species_tree_traits(species_id) if inherit else _species[species_id]["traits"].duplicate()
+	
+	var properties: Array[StringName] = TraitBlock.traits()
+	
+	for trait_id in data_stats.keys():
+		if not properties.has(trait_id):
+			continue
+		new_block.set(trait_id, data_stats[trait_id])
+	
+	return new_block
 
+
+## Returns [code]true[/code] if [param species_id] has an assigned [param trait_id].
 func species_has_trait(species_id: StringName, trait_id: StringName) -> bool:
 	return _species.has(species_id) and _species[species_id]["traits"].has(trait_id)
 
 
+## Erases the assigned [param trait_id] from the [param species_id].
 func erase_species_trait(species_id: StringName, trait_id: StringName) -> void:
 	if _species.has(species_id) and _species[species_id]["traits"].has(trait_id):
 		_species[species_id]["traits"].erase(trait_id)
 
 
+## Erases all the assigned stats of [param species_id].
 func clear_species_stats(species_id: StringName) -> void:
 	if _species.has(species_id):
 		_species[species_id]["stats"].clear()
 
 
+## Erases all the assigned skills of [param species_id].
 func clear_species_skills(species_id: StringName) -> void:
 	if _species.has(species_id):
 		_species[species_id]["skills"].clear()
 
 
+## Erases all the assigned traits of [param species_id].
 func clear_species_traits(species_id: StringName) -> void:
 	if _species.has(species_id):
 		_species[species_id]["traits"].clear()
 
 
+## Returns a dictionary representing the species tree structure.
 func get_species_map() -> Dictionary[StringName, Dictionary]:
 	var map: Dictionary[StringName, Dictionary] = {}
 	var parent_species: Array[StringName] = []
@@ -290,6 +428,8 @@ func get_species_map() -> Dictionary[StringName, Dictionary]:
 	return map
 
 
+## Returns a dictionary with the species tree structure branching from
+## [param species_id].
 func get_subspecies_of(species_id: StringName, _origin: StringName = &"") -> Dictionary[StringName, Dictionary]:
 	var map: Dictionary[StringName, Dictionary] = {}
 	

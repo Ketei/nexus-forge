@@ -2,6 +2,7 @@
 extends PanelContainer
 
 
+signal species_loaded
 const LineEditConfirmationDialog = preload("res://addons/nexus_forge/dialogs/lineedit_confirmation_dialog.gd")
 
 var _unsaved: bool = false
@@ -158,9 +159,10 @@ func _on_species_id_changed(from: StringName, to: StringName) -> void:
 	_on_race_display_changed()
 
 
-func _on_species_erased(species_id: StringName) -> void:
-	_species_resource.erase_species(species_id)
-	if loaded_species == species_id:
+func _on_species_erased(species: Array[StringName]) -> void:
+	for species_id in species:
+		_species_resource._species.erase(species_id)
+	if species.has(loaded_species):
 		race_name_ln_edt.text = ""
 		race_desc_txt_edt.text = ""
 		race_data_tree.clear_data()
@@ -297,6 +299,7 @@ func save_current_species() -> void:
 func load_species_resource() -> void:
 	var species_tree: Dictionary[StringName, Dictionary] = _species_resource.get_species_map()
 	buid_species_map(species_tree)
+	species_loaded.emit()
 
 
 func buid_species_map(map: Dictionary, _on: TreeItem = races_tree.get_root()) -> void:

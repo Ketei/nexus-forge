@@ -4,7 +4,7 @@ extends Tree
 
 signal species_created(species_id: StringName, item: TreeItem)
 signal species_selected(species_id: StringName)
-signal species_erased(species_id: StringName)
+signal species_erased(species_id: Array[StringName])
 signal species_id_changed(from: StringName, to: StringName)
 
 const LineEditConfirmationDialog = preload("res://addons/nexus_forge/dialogs/lineedit_confirmation_dialog.gd")
@@ -28,6 +28,45 @@ func _ready() -> void:
 	button_clicked.connect(_on_button_clicked)
 
 
+func _gui_input(event: InputEvent) -> void:
+	# Must be keypress
+	# Have focus
+	# Not be an echo
+	# And be the delete key
+	if not event is InputEventKey or not has_focus() or event.is_echo() or not event.keycode == KEY_DELETE:
+		return
+	
+	var selected: TreeItem = get_selected()
+	
+	if event.is_echo() or get_selected() == null:
+		return
+	
+	accept_event()
+	
+	var all_species: Array[StringName] = get_subspecies_of(selected)
+	all_species.append(selected.get_metadata(0))
+	
+	if 0 < selected.get_child_count():
+		var dialog := preload("res://addons/nexus_forge/dialogs/confirmation.gd").new()
+		
+		dialog.title = "Delete species tree..."
+		dialog.dialog_text = str("Delete ", selected.get_text(0),  " and all subspecies?")
+		dialog.ok_button_text = "Delete All"
+		dialog.cancel_button_text = "Cancel"
+		dialog.initial_position = Window.WINDOW_INITIAL_POSITION_CENTER_MAIN_WINDOW_SCREEN
+		add_child(dialog)
+		dialog.show()
+		
+		var delete: bool = await dialog.dialog_finished
+		
+		if not delete:
+			dialog.queue_free()
+			return
+	
+	selected.free()
+	species_erased.emit(all_species)
+
+
 func _get_drag_data(at_position: Vector2) -> Variant:
 	var node: TreeItem = get_item_at_position(at_position)
 	if node == null:
@@ -49,10 +88,13 @@ func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
 	drop_mode_flags = DROP_MODE_ON_ITEM
 	
 	var target_node: TreeItem = get_item_at_position(at_position)
-	return target_node != data["node"] and get_drop_section_at_position(at_position) != -100 and not _has_parent(target_node, data["node"])
+	return target_node != data["node"] and not _has_parent(target_node, data["node"])
 
 
 func _has_parent(item: TreeItem, to: TreeItem) -> bool:
+	if item == null or to == null:
+		return false
+	
 	var current_item: TreeItem = item
 	while current_item.get_parent() != null:
 		if current_item == to:
@@ -62,9 +104,13 @@ func _has_parent(item: TreeItem, to: TreeItem) -> bool:
 
 
 func _drop_data(at_position: Vector2, data: Variant) -> void:
-	var on_node: TreeItem = get_item_at_position(at_position)
-	data["node"].get_parent().remove_child(data["node"])
-	on_node.add_child(data["node"])
+	if get_drop_section_at_position(at_position) == -100:
+		data["node"].get_parent().remove_child(data["node"])
+		get_root().add_child(data["node"])
+	else:
+		var on_node: TreeItem = get_item_at_position(at_position)
+		data["node"].get_parent().remove_child(data["node"])
+		on_node.add_child(data["node"])
 	sort_single_item(data["node"])
 
 
@@ -156,6 +202,16 @@ func add_species(race_id: StringName, select: bool = false, on: TreeItem = get_r
 	return new_race
 
 
+func get_subspecies_of(item: TreeItem) -> Array[StringName]:
+	var subspecies: Array[StringName] = []
+	
+	for species_item in item.get_children():
+		subspecies.append(species_item.get_metadata(0))
+		subspecies.append_array(get_subspecies_of(species_item))
+	
+	return subspecies
+
+
 func get_species_tree(_from: TreeItem = get_root()) -> Dictionary:
 	var species: Dictionary = {}
 	
@@ -224,3 +280,7 @@ func sort_single_item(item: TreeItem) -> void:
 	else:
 		if item.get_index() != item.get_parent().get_child_count() - 1:
 			item.move_after(get_root().get_child(-1))
+
+
+func erase_species_tree() -> void:
+	pass
