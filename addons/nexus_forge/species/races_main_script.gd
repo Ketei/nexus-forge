@@ -253,7 +253,7 @@ func save_current_species() -> void:
 	_species_resource.set_species_name(loaded_species, race_name_ln_edt.text.strip_edges())
 	_species_resource.set_species_description(loaded_species, race_desc_txt_edt.text.strip_edges())
 	_species_resource.clear_species_data(loaded_species)
-	var data: Dictionary[String, Variant] = {}
+	var data: Dictionary[String, Variant] = race_data_tree.get_data()
 	
 	for data_key in data.keys():
 		_species_resource.set_species_data(
