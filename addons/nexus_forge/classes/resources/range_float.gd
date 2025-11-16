@@ -1,3 +1,4 @@
+@icon("res://addons/nexus_forge/classes/resources/range_float.gd")
 class_name RangeFloat
 extends ValueRange
 

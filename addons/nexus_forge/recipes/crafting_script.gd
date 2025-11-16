@@ -145,6 +145,8 @@ func _on_recipe_id_changed(from: StringName, to: StringName) -> void:
 
 
 func _on_recipe_selected(recipe_id: StringName) -> void:
+	if active_recipe == recipe_id:
+		return
 	if not active_recipe.is_empty():
 		save_current_recipe()
 	recipe_input_tree.recipe_selected = true

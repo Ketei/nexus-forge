@@ -165,6 +165,9 @@ func active_categories(_from: TreeItem = get_root()) -> Array[String]:
 	return all_cats
 
 
+#func get_active_id(category_id)
+
+
 func _on_column_title_clicked(column: int, mouse_button_index: int) -> void:
 	if mouse_button_index != MOUSE_BUTTON_LEFT:
 		return

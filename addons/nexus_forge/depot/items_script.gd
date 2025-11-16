@@ -348,6 +348,8 @@ func _on_items_recategorized(new_category: StringName, items: Array[StringName])
 
 
 func _on_category_selected(category: StringName) -> void:
+	if current_category == category:
+		return
 	if not loaded_item.is_empty():
 		save_current_item()
 	
@@ -442,6 +444,8 @@ func _on_items_resource_dropped(resource: Resource, panel: Control) -> void:
 
 
 func _on_item_selected(item_id: StringName) -> void:
+	if loaded_item == item_id:
+		return
 	if not loaded_item.is_empty():
 		save_current_item()
 	load_item(item_id)

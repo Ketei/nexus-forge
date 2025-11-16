@@ -145,6 +145,7 @@ func _on_load_database_pressed(node: Control) -> void:
 
 func _on_add_data_pressed(data_name: String, value: Variant) -> void:
 	race_data_tree.add_data(data_name, value)
+	_on_something_changed()
 
 
 func _on_species_id_changed(from: StringName, to: StringName) -> void:
@@ -240,7 +241,7 @@ func _on_create_species_pressed() -> void:
 func _on_something_changed(_arg = null) -> void:
 	if _unsaved:
 		return
-	
+	print("Changed")
 	_unsaved = true
 
 

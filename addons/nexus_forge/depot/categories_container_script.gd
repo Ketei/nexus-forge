@@ -102,7 +102,6 @@ func _update_keys(item_res: ItemCatalog, from: TreeItem) -> void:
 			item_res.set_category_data(set_id, data_key, data[data_key])
 		
 		_update_keys(item_res, cat_item)
-	
 
 
 func add_data(data_key: String, data: Variant) -> void:

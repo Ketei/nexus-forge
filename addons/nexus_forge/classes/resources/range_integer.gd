@@ -1,3 +1,4 @@
+@icon("res://addons/nexus_forge/icons/range_int.svg")
 class_name RangeInt
 extends ValueRange
 

@@ -241,10 +241,14 @@ func _on_step_flag_changed(is_checked: bool, flag: QuestStep.StepFlag) -> void:
 func _on_quest_selected() -> void:
 	if not listen_quest_selected:
 		return
+	var selected: TreeItem = quest_tree.get_selected()
+	if loaded_quest == selected.get_metadata(0):
+		return
 	if not loaded_quest.is_empty():
 		save_current_quest()
-	var selected: TreeItem = quest_tree.get_selected()
 	loaded_quest = selected.get_metadata(0)
+	loaded_stage = &""
+	loaded_step = &""
 	load_quest(loaded_quest)
 	set_quest_ui_enabled(true)
 	set_stage_ui_enabled(true)
@@ -256,9 +260,13 @@ func _on_stage_selected(stage_id: String) -> void:
 	if not listen_quest_selected:
 		return
 	var stage_key: StringName = StringName(stage_id)
+	if loaded_stage == stage_key:
+		return
+	
 	if not loaded_stage.is_empty():
 		save_current_stage()
 	loaded_stage = stage_key
+	loaded_step = &""
 	load_stage(loaded_quest, stage_key)
 	set_step_ui_enabled(true)
 	set_step_data_ui_enabled(false)
@@ -269,6 +277,8 @@ func _on_step_selected(step_name: String) -> void:
 	if not listen_quest_selected:
 		return
 	var step_id: StringName = StringName(step_name)
+	if loaded_step == step_id:
+		return
 	if not loaded_step.is_empty():
 		save_current_step()
 	loaded_step = step_id
@@ -947,6 +957,7 @@ func save_current_stage() -> void:
 			loaded_stage)
 	
 	var data: Dictionary[String, Variant] = stage_data_tree.get_data()
+	
 	for data_key in data.keys():
 		_quest_resource.set_stage_data(
 				loaded_quest,
