@@ -238,6 +238,7 @@ hide_root = true
 select_mode = 1
 scroll_horizontal_enabled = false
 script = ExtResource("8_bfc5j")
+recipe_mode = 1
 
 [node name="CustomDataContainer" type="VBoxContainer" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer"]
 layout_mode = 2

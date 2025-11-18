@@ -347,7 +347,7 @@ func _on_localizer_locale_changed(language: String, region: String) -> void:
 	
 	if region.is_empty():
 		region = "base"
-	print("aslkdjalskjdlakj")
+	
 	set_localization_tip(language, region)
 	
 	#if phrases_tree.is_locale_valid():
@@ -1272,7 +1272,7 @@ func save_all_dialogs() -> void:
 			new_dialog.base_language = base_language
 			new_dialog.node_structure = discourse_nodes_tree.get_folder_structure()
 			#new_dialog.localized_strings = phrases_tree.get_localization_structure()
-			print(localizations)
+			
 			# Adding localization data to localized nodes
 			for localized_uuid in localizations.keys():
 				# --- If the text is unlocalized ---

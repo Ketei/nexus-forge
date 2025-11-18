@@ -69,17 +69,19 @@ func _drop_data(at_position: Vector2, data: Variant) -> void:
 		if on_item == data["item"]:
 			return
 		elif on_item == null:
-			if get_root().get_child_count() == 0: # Comes from the other tree.
+			if data["origin"] == recipe_mode: # Comes from this tree
+				var item_count: int = get_root().get_child_count()
+				if item_count == 1:
+					return
+				else:
+					if data["item"].get_index() != item_count - 1:
+						data["item"].move_after(get_root().get_child(-1))
+			else: # Comes from the other tree
 				data["item"].get_tree().recipe_item_selected.emit(-1)
 				data["item"].get_parent().remove_child(data["item"])
 				get_root().add_child(data["item"])
-			elif external or data["item"].get_index() != get_root().get_child_count() - 1:
-				# Move it only if it comes from other tree or is not the last item.
-				if external:
-					data["item"].get_tree().recipe_item_selected.emit(-1)
-				data["item"].move_after(get_root().get_child(-1))
 		else:
-			if external:
+			if data["origin"] != recipe_mode:
 				data["item"].get_tree().recipe_item_selected.emit(-1)
 			match get_drop_section_at_position(at_position):
 				-1: #Above
@@ -97,7 +99,7 @@ func _get_drag_data(at_position: Vector2) -> Variant:
 	var label: Label = Label.new()
 	label.text = selected.get_text(0) + " x " + str(int(selected.get_range(1)))
 	set_drag_preview(label)
-	return {"type": "item_id", "item_id": "", "is_new": false, "item": selected}
+	return {"type": "item_id", "item_id": "", "is_new": false, "item": selected, "origin": recipe_mode}
 	
 
 
