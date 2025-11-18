@@ -11,30 +11,30 @@ func _post_init() -> void:
 	parent_port = 0
 	size = Vector2(260, 83)
 	
-	var resource_container: HBoxContainer = HBoxContainer.new()
+	#var resource_container: HBoxContainer = HBoxContainer.new()
 	var res_path: LineEdit = preload("res://addons/nexus_forge/discourse/res_drop_lineedit.gd").new()
-	var browse_res: Button = Button.new()
+	#var browse_res: Button = Button.new()
 	
-	resource_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	#resource_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	
 	res_path.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	res_path.placeholder_text = "Resource Path"
 	res_path.custom_minimum_size.y = 32
 	
-	browse_res.custom_minimum_size = Vector2(32.0, 32.0)
-	browse_res.expand_icon = true
-	browse_res.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	browse_res.flat = true
-	browse_res.icon = get_theme_icon("Folder", "EditorIcons")
-	browse_res.add_theme_constant_override(&"icon_max_width", 24)
-	browse_res.tooltip_text = "Browse for resource"
+	#browse_res.custom_minimum_size = Vector2(32.0, 32.0)
+	#browse_res.expand_icon = true
+	#browse_res.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	#browse_res.flat = true
+	#browse_res.icon = get_theme_icon("Folder", "EditorIcons")
+	#browse_res.add_theme_constant_override(&"icon_max_width", 24)
+	#browse_res.tooltip_text = "Browse for resource"
 	
-	resource_container.add_child(browse_res)
-	resource_container.add_child(res_path)
+	#resource_container.add_child(browse_res)
+	#resource_container.add_child(res_path)
 	
 	add_field(
 		&"res_path",
-		resource_container,
+		res_path,
 		false,
 		-1,
 		SlotConnectionType.RESOURCE)

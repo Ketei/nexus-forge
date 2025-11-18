@@ -1,5 +1,12 @@
 class_name Cache
 extends RefCounted
+## A basic implemetation of a Least Recently Used Cache (LRU Cache)
+##
+## Takes advantage of Godot's references by holding one until it leaves the
+## LRU. This cache can also hold raw data.[br]
+## An LRU has a defined size, and will hold references until the cache is full
+## after that, adding a new item will release the least recently accessed item
+## from the cache, freeing one slot and filling it with the newly cached item.
 
 
 ## Max size of the cache.
@@ -74,6 +81,9 @@ func _add_to_newest(link: CacheLink) -> void:
 	cache_map[link.key] = link
 
 
+## It adds [param data] to the cache with the id param key.[br]
+## If the item was already cached it moves it to the front of the
+## cache (newest used).
 func cache_data(key: String, data: Variant) -> void:
 	if cache_map.has(key):
 		var link: CacheLink = cache_map[key]
@@ -97,20 +107,25 @@ func cache_data(key: String, data: Variant) -> void:
 	_add_to_newest(new_link)
 
 
+## Returns the cached item assigned to [param key] or [code]null[/code] if
+## the item isn't in the cache.
 func get_cache(key: String) -> Variant:
 	if cache_map.has(key):
 		return cache_map[key].data
 	return null
 
 
+## Returns true if an item with key [param key] is in the cache.
 func is_in_cache(key: String) -> bool:
 	return cache_map.has(key)
 
 
+## Returns the current size of the cache.
 func size() -> int:
 	return cache_map.size()
 
 
+## Clears the cache.
 func clear() -> void:
 	for cache_key in cache_map.keys():
 		cache_map[cache_key].clear()

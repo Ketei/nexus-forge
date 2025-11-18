@@ -171,10 +171,10 @@ func erase_species(species_id: StringName) -> void:
 				_species[remaining_species]["parent_key"] = &""
 
 
-## Sets the [param subspecies] to be a subspecies of [param species_id].
-func link_species(species_id: StringName, subspecies: StringName) -> void:
-	if ( species_id.is_empty() or _species.has(species_id) ) and _species.has(subspecies):
-		_species[subspecies]["parent_key"] = species_id
+## Sets the [param species_id] to be a subspecies of [param parent_species].
+func link_species(species_id: StringName, parent_species: StringName) -> void:
+	if ( parent_species.is_empty() or _species.has(parent_species) ) and _species.has(species_id):
+		_species[species_id]["parent_key"] = parent_species
 
 
 ## Returns the parent species of [param of_species].

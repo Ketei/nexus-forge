@@ -4,6 +4,7 @@ class_name RecipeCatalog
 extends Resource
 
 
+## The custom data that all new recipes will have.
 const RECIPE_DEFAULT_DATA: Dictionary[String, Variant] = {}
 
 @export_storage var _recipes: Dictionary = {}
@@ -15,12 +16,14 @@ const RECIPE_DEFAULT_DATA: Dictionary[String, Variant] = {}
 
 #region Crafting Recipes
 
+## Returns an array containing the IDs of the recipes.
 func recipes() -> Array[StringName]:
 	var ids: Array[StringName] = []
 	ids.assign(_recipes.keys())
 	return ids
 
 
+## Overwrites the inputs for [param recipe_id] with [param inputs].
 func set_recipe_inputs(recipe_id: StringName, inputs: Array[RecipeItem]) -> void:
 	var recipe_inputs: Array[Dictionary] = []
 	
@@ -35,6 +38,7 @@ func set_recipe_inputs(recipe_id: StringName, inputs: Array[RecipeItem]) -> void
 	_recipes[recipe_id]["input"] = recipe_inputs
 
 
+## Overwrites the outputs for [param recipe_id] with [param outputs].
 func set_recipe_outputs(recipe_id: StringName, outputs: Array[RecipeItem]) -> void:
 	var recipe_outputs: Array[Dictionary] = []
 	
@@ -49,8 +53,9 @@ func set_recipe_outputs(recipe_id: StringName, outputs: Array[RecipeItem]) -> vo
 	_recipes[recipe_id]["output"] = recipe_outputs
 
 
+## Creates a recipe with param recipe_id unless it already exists.
 func create_recipe(recipe_id: StringName) -> void:
-	if recipe_id.is_empty():
+	if recipe_id.is_empty() or _recipes.has(recipe_id):
 		return
 	
 	var recipe_data: Dictionary[String, Variant] = {}
@@ -64,6 +69,8 @@ func create_recipe(recipe_id: StringName) -> void:
 	_recipes[recipe_id] = recipe
 
 
+## Sets the custom data of [param recipe_id] with key [param data_key]
+## to [param data]. If param data is [code]null[/code] then the key is erased.
 func set_recipe_data(recipe_id: StringName, data_key: String, data: Variant) -> void:
 	if not _recipes.has(recipe_id):
 		return
@@ -75,11 +82,14 @@ func set_recipe_data(recipe_id: StringName, data_key: String, data: Variant) -> 
 		_recipes[recipe_id]["data"][data_key] = data
 
 
+## Clears the custom data of [param recipe_id].
 func clear_recipe_data(recipe_id: StringName) -> void:
 	if _recipes.has(recipe_id):
 		_recipes[recipe_id]["data"].clear()
 
 
+## Returns a [RecipeSheet] of the [param recipe_id] or [code]null[/code]
+## if the recipe doesn't exist.
 func get_recipe(recipe_id: StringName) -> RecipeSheet:
 	if not _recipes.has(recipe_id):
 		return null
@@ -105,9 +115,11 @@ func get_recipe(recipe_id: StringName) -> RecipeSheet:
 	return recipe
 
 
+## Returns [code]true[/code] if param recipe_id is registered.
 func has_recipe(recipe_id: StringName) -> bool:
 	return _recipes.has(recipe_id)
 
 
+## Erases the recipe with id [param recipe_id].
 func erase_recipe(recipe_id: StringName) -> void:
 	_recipes.erase(recipe_id)

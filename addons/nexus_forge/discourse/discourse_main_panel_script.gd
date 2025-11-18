@@ -228,8 +228,9 @@ func _on_conversation_close_pressed(dialog: EditorDiscourseDialog, save_required
 			set_conversation_active(false)
 			conversation_tree.active_unsaved = false
 		else:
-			conversation_tree.set_conversation_item_active(new_item)
-			if open_conversation(active_conversation):
+			var new_conv: EditorDiscourseDialog = new_item.get_metadata(0)["resource"]
+			conversation_tree.set_conversation_item_active(new_conv)
+			if open_conversation(new_conv):
 				conversation_tree.active_unsaved = true
 		_unsaved = conversation_tree.active_unsaved
 	conversation_tree.remove_conversation(dialog)
@@ -346,7 +347,7 @@ func _on_localizer_locale_changed(language: String, region: String) -> void:
 	
 	if region.is_empty():
 		region = "base"
-	
+	print("aslkdjalskjdlakj")
 	set_localization_tip(language, region)
 	
 	#if phrases_tree.is_locale_valid():
@@ -1093,6 +1094,8 @@ func open_conversation(conversation: EditorDiscourseDialog, set_active: bool = t
 	
 	clear_cases()
 	clear_localized_keys()
+	if issues_tree.has_issues():
+		issues_tree.clear_issues()
 	
 	for localized_key in conversation.localized_strings.keys():
 		add_new_phrase(localized_key, "")
@@ -1269,43 +1272,43 @@ func save_all_dialogs() -> void:
 			new_dialog.base_language = base_language
 			new_dialog.node_structure = discourse_nodes_tree.get_folder_structure()
 			#new_dialog.localized_strings = phrases_tree.get_localization_structure()
-			
+			print(localizations)
 			# Adding localization data to localized nodes
 			for localized_uuid in localizations.keys():
 				# --- If the text is unlocalized ---
-				if localizations[localized_uuid].has("common"):
-					match localized_uuid["node"].node_type:
-						DiscourseGraphNode.DialogueNodeType.DIALOG:
-							new_dialog.set_localization_text(
-								localized_uuid,
-								localizations[localized_uuid]["locaization"]["common"]["dialog"],
-								"common")
-						DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
-							new_dialog.set_localization_text(
-								localized_uuid,
-								localizations[localized_uuid]["locaization"]["common"]["text"],
-								"common")
-						DiscourseGraphNode.DialogueNodeType.OPTIONS:
-							new_dialog.set_localization_choices(
-									localized_uuid,
-									localizations[localized_uuid]["locaization"]["common"]["options"],
-									"common")
-					continue
+				#if localizations[localized_uuid]["localization"].has("common"):
+					#match localized_uuid["node"].node_type:
+						#DiscourseGraphNode.DialogueNodeType.DIALOG:
+							#new_dialog.set_localization_text(
+								#localized_uuid,
+								#localizations[localized_uuid]["locaization"]["common"]["dialog"],
+								#"common")
+						#DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
+							#new_dialog.set_localization_text(
+								#localized_uuid,
+								#localizations[localized_uuid]["locaization"]["common"]["text"],
+								#"common")
+						#DiscourseGraphNode.DialogueNodeType.OPTIONS:
+							#new_dialog.set_localization_choices(
+									#localized_uuid,
+									#localizations[localized_uuid]["locaization"]["common"]["options"],
+									#"common")
+					#continue
 				
 				# --- Or we have a truly localized node ---
 				for language in localizations[localized_uuid]["localization"].keys():
 					for region in localizations[localized_uuid]["localization"][language].keys():
-						match localized_uuid["node"].node_type:
+						match localizations[localized_uuid]["node"].node_type:
 							DiscourseGraphNode.DialogueNodeType.DIALOG:
 								new_dialog.set_localization_text(
 									localized_uuid,
-									localizations[localized_uuid]["locaization"][language][region]["dialog"],
+									localizations[localized_uuid]["localization"][language][region]["dialog"],
 									language,
 									region)
 							DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
 								new_dialog.set_localization_text(
 									localized_uuid,
-									localizations[localized_uuid]["locaization"][language][region]["text"],
+									localizations[localized_uuid]["localization"][language][region]["text"],
 									language,
 									region)
 							DiscourseGraphNode.DialogueNodeType.OPTIONS:

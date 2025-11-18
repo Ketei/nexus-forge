@@ -99,12 +99,12 @@ func _post_init() -> void:
 	set_slot_color_left(connection_field, COLORS["dialog"])
 	set_slot_color_right(connection_field, COLORS["dialog"])
 	
-	set_slot_custom_icon_left(connection_field, flow_icon)
-	set_slot_custom_icon_right(connection_field, flow_icon)
 	set_slot_color_left(flgs_idx, COLORS.string)
 
 
 func _ready() -> void:
+	set_slot_custom_icon_left(0, flow_icon)
+	set_slot_custom_icon_right(0, flow_icon)
 	set_input_connection_icon(&"character_id", preload("res://addons/nexus_forge/icons/gear_icon.png"))
 	set_input_connection_icon(&"dialog_settings", preload("res://addons/nexus_forge/icons/gear_icon.png"))
 	set_input_connection_icon(&"flags", get_theme_icon("String", "EditorIcons"))

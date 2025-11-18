@@ -26,6 +26,9 @@ func _process_logic(uuid: StringName) -> String:
 			var font: String = ""
 			var scene: String = ""
 			var speed: float = 0.0
+			var display_name: String = ""
+			var portrait_id: String = ""
+			
 			if data["input_connections"]["dialog_settings"]["target_node_uuid"] != "":
 				var settings: Dictionary = _dialog_resource.get_node_data(data["input_connections"]["dialog_settings"]["target_node_uuid"], language, region)
 				if settings["font_resource"]["target_node_uuid"] != "":
@@ -35,18 +38,29 @@ func _process_logic(uuid: StringName) -> String:
 				if settings["dialog_speed"]["target_node_uuid"] != "":
 					speed = _get_data(settings["dialog_speed"]["target_node_uuid"])
 			
+			if data["input_connections"]["character_settings"]["target_node_uuid"] != "":
+				var settings: Dictionary = _dialog_resource.get_node_data(data["input_connections"]["character_settings"]["target_node_uuid"], language, region)
+				if settings["display_name"]["target_node_uuid"] != "":
+					display_name = _get_data(settings["display_name"]["target_node_uuid"])
+				if settings["portrait_id"]["target_node_uuid"] != "":
+					portrait_id = _get_data(settings["portrait_id"]["target_node_uuid"])
+				
 			if data["input_connections"]["dialog_text_source"]["target_node_uuid"] == "":
 				dialog_reached.emit({
 					"dialog_text": _parse_dialog(uuid, data["dialog_text"]),
 					"font": font,
 					"scene": scene,
-					"speed": speed})
+					"speed": speed,
+					"display_name": display_name,
+					"portrait_id": portrait_id})
 			else:
 				dialog_reached.emit({
 					"dialog_text": _parse_dialog(uuid, _get_data(data["input_connections"]["dialog_text_source"]["target_node_uuid"])),
 					"font": font,
 					"scene": scene,
-					"speed": speed})
+					"speed": speed,
+					"display_name": display_name,
+					"portrait_id": portrait_id})
 			return data["output_connections"]["next_node"]["target_node_uuid"]
 		NodeTypes.OPTIONS:
 			var available_options: Array[Dictionary] = []

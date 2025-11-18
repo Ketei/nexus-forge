@@ -23,7 +23,7 @@ func _get_drag_data(at_position: Vector2) -> Variant:
 	item_label.text = "   " + node.get_text(0)
 	set_drag_preview(item_label)
 	
-	return {"type": "item_id", "item_id": StringName(node.get_text(0))}
+	return {"type": "item_id", "is_new": true, "item_id": StringName(node.get_text(0))}
 
 
 func add_item(item_id: StringName, item_name: String) -> void:

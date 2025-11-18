@@ -16,11 +16,11 @@ signal custom_trait_erased(trait_id: StringName)
 const DEFAULT_DATA: Dictionary[String, Variant] = {}
 
 @export_storage var _traits: Dictionary[StringName, Dictionary] = {
-	&"a_trait": {
-		"name": "",
-		"description": "",
-		"data": {}
-	}
+	#&"a_trait": {
+		#"name": "",
+		#"description": "",
+		#"data": {}
+	#}
 }
 
 var _custom_traits: Dictionary[StringName, Dictionary] = {}

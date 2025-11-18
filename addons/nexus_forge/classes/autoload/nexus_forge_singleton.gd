@@ -28,18 +28,9 @@ var Recipes: RecipeCatalog
 
 var _phrase_api: PhraseAPI = PhraseAPI.new()
 
-
-func _init() -> void:
-	Discourse = DialogParser.new_parser()
-	Blackboard = BlackboardData.new()
-	Stats = StatCatalog.new()
-	Skills = SkillCatalog.new()
-	Traits = TraitCatalog.new()
-	Species = SpeciesCatalog.new()
-	Items = ItemCatalog.new()
-	#Talents = NFTalentsRes.new()
-
 func _ready() -> void:
+	Discourse = DialogParser.new_parser()
+	
 	var blackboard_path: String = ProjectSettings.get_setting(
 			"nexus_forge/blackboard_path", "")
 	var stats_path: String = ProjectSettings.get_setting(

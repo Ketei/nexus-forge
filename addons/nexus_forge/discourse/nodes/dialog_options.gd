@@ -51,13 +51,13 @@ func _post_init() -> void:
 	set_slot_color_right(first_out_idx, COLORS["dialog"])
 	set_slot_color_left(first_out_idx, COLORS["setting"])
 	
-	set_slot_custom_icon_left(next_in_idx, flow_icon)
-	set_slot_custom_icon_right(first_out_idx, flow_icon)
 	
 	choices_spinbox.value_changed.connect(_on_choice_count_changed)
 
 
 func _ready() -> void:
+	set_slot_custom_icon_left(0, flow_icon)
+	set_slot_custom_icon_right(1, flow_icon)
 	set_input_connection_icon(
 			&"choice_1",
 			preload("res://addons/nexus_forge/icons/gear_icon.png"))

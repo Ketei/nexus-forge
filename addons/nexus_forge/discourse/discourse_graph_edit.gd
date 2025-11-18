@@ -879,7 +879,7 @@ func _on_popup_index_pressed(index: int, menu: PopupMenu) -> void:
 func clear_dialog_nodes() -> void:
 	clear_connections()
 	for child in get_children():
-		if child is not DiscourseGraphNode:
+		if child is not DiscourseGraphNode and child is not GraphFrame:
 			continue
 		remove_child(child)
 		child.queue_free()

@@ -58,7 +58,7 @@ func get_flags() -> Array[StringName]:
 	return all_flags
 
 
-## Returns [code]true[/code] if all 64 flags are assigned.
+## Returns [code]true[/code] if the used bits match [constant MAX_BITMASK].
 func is_full() -> bool:
 	return MAX_BITMASK <= _flag_data.size()
 

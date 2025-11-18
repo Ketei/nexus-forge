@@ -1,11 +1,13 @@
 class_name RecipeItem
 extends RefCounted
+## An object representing an item of a recipe
 
+## The default data a recipe item will have.
 const RECIPE_ITEM_DEFAULT_DATA: Dictionary[String, Variant] = {}
-#{"item_id": &"item", "amount": 1, "data": {}}
-var id: StringName
-var amount: int
-var data: Dictionary[String, Variant]
+
+var id: StringName = &""
+var amount: int = 1
+var data: Dictionary[String, Variant] = {}
 
 
 func _init() -> void:

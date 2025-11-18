@@ -40,20 +40,6 @@ func _post_init() -> void:
 	value_menu.expand_icon = false
 	value_menu.focus_mode = Control.FOCUS_ALL
 	
-	menu_popup.add_icon_item(
-			get_theme_icon("int", "EditorIcons"),
-			"",
-			TYPE_INT)
-	menu_popup.add_icon_item(
-			get_theme_icon("float", "EditorIcons"),
-			"",
-			TYPE_FLOAT)
-	menu_popup.add_icon_item(
-			get_theme_icon("String", "EditorIcons"),
-			"",
-			TYPE_STRING)
-	
-	value_menu.icon = get_theme_icon("int", "EditorIcons")
 	value_menu.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	default_label.text = "Default"
 	default_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -105,12 +91,32 @@ func _post_init() -> void:
 	set_slot_color_left(1, COLORS["integer"])
 	set_slot_color_right(2, COLORS["dialog"])
 	set_slot_color_right(3, COLORS["dialog"])
+	
+	cases.value_changed.connect(_on_match_count_changed)
+	menu_popup.id_pressed.connect(_on_value_type_changed)
+
+
+func _ready() -> void:
+	var value_menu: MenuButton = get_field(&"values").get_child(0)
+	var menu_popup: PopupMenu = value_menu.get_popup()
 	set_slot_custom_icon_left(0, flow_icon)
 	set_slot_custom_icon_right(2, flow_icon)
 	set_slot_custom_icon_right(3, flow_icon)
 	
-	cases.value_changed.connect(_on_match_count_changed)
-	menu_popup.id_pressed.connect(_on_value_type_changed)
+	menu_popup.add_icon_item(
+			get_theme_icon("int", "EditorIcons"),
+			"",
+			TYPE_INT)
+	menu_popup.add_icon_item(
+			get_theme_icon("float", "EditorIcons"),
+			"",
+			TYPE_FLOAT)
+	menu_popup.add_icon_item(
+			get_theme_icon("String", "EditorIcons"),
+			"",
+			TYPE_STRING)
+	
+	value_menu.icon = get_theme_icon("int", "EditorIcons")
 
 
 func _get_node_data() -> Dictionary:

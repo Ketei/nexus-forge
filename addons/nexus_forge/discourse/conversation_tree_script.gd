@@ -76,7 +76,8 @@ func _on_close_conversation_pressedbutton_clicked(item: TreeItem, column: int, i
 
 func add_conversation(data: EditorDiscourseDialog, select: bool = false, signal_select: bool = true) -> void:
 	var new_conversation: TreeItem = get_root().create_child()
-	var text: String = data.resource_path.trim_prefix("res://")
+	var text: String = data.resource_path.get_file().get_basename()
+	new_conversation.set_tooltip_text(0, data.resource_path)
 	new_conversation.set_text(0, text)
 	new_conversation.set_metadata(0, {"resource": data, "unsaved": false, "offset_changed": false})
 	new_conversation.add_button(

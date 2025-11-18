@@ -7,7 +7,6 @@ enum ItemFlag {
 	SELLABLE,
 	GIFTABLE}
 
-
 enum Rarity {
 	BASIC,
 	COMMON,

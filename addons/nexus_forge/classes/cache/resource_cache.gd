@@ -16,6 +16,8 @@ func get_resource(path: String) -> Resource:
 	return res
 
 
+## Adds a [param resource] to the cache and marks it as the newest used. 
+##If already in the cache, it'll be marked as the newest used.
 func cache_resource(resource: Resource):
 	if resource == null:
 		return

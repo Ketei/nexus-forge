@@ -38,6 +38,10 @@ func add_issue(issue: String, node: DiscourseGraphNode) -> void:
 			"Remove issue")
 
 
+func has_issues() -> bool:
+	return 0 < get_root().get_child_count()
+
+
 func clear_issues() -> void:
 	for issue in get_root().get_children():
 		issue.free()

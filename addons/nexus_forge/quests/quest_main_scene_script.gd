@@ -997,9 +997,9 @@ func save_current_step() -> void:
 
 
 func save() -> void:
+	_unsaved = false
 	if _quest_resource == null:
 		return
 	if loaded_quest != &"":
 		save_current_quest()
 	ResourceSaver.save(_quest_resource)
-	_unsaved = false

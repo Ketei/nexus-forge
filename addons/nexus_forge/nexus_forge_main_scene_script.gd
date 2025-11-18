@@ -117,6 +117,15 @@ func handle_resource(resource: Resource) -> void:
 
 
 func has_unsaved_changes() -> bool:
+	print("Discourse: ", discourse.has_unsaved_files())
+	print("Blackboard: ", variables._unsaved)
+	print("Characters: ", characters.has_unsaved_files())
+	print("Species: ", species._unsaved)
+	print("Talents: ", talents._unsaved)
+	print("Items: ", items._unsaved)
+	print("Recipes: ", recipes._unsaved)
+	print("Quests: ", quests._unsaved)
+	print("Phrases: ", phrase_maps.has_unsaved_files())
 	return discourse.has_unsaved_files() or variables._unsaved or characters.has_unsaved_files() or species._unsaved or talents._unsaved or items._unsaved or recipes._unsaved or quests._unsaved or phrase_maps.has_unsaved_files()
 
 

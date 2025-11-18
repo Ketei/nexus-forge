@@ -63,6 +63,7 @@ theme_override_styles/panel = SubResource("StyleBoxEmpty_v0h3x")
 script = ExtResource("1_viyrt")
 
 [node name="MainSplitContainer" type="HSplitContainer" parent="."]
+visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 4.0
@@ -173,7 +174,6 @@ hide_root = true
 script = ExtResource("5_qsnsk")
 
 [node name="LocalizationContainer" type="VBoxContainer" parent="."]
-visible = false
 layout_mode = 2
 
 [node name="MainSplitContainer" type="HSplitContainer" parent="LocalizationContainer"]
@@ -384,6 +384,7 @@ size_flags_vertical = 3
 theme_override_styles/panel = SubResource("StyleBoxEmpty_f5jrf")
 
 [node name="KeyBoxContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer"]
+visible = false
 layout_mode = 2
 
 [node name="HBoxContainer" type="HBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer"]
@@ -447,7 +448,6 @@ custom_minimum_size = Vector2(170, 0)
 layout_mode = 2
 
 [node name="CaseBoxContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer"]
-visible = false
 layout_mode = 2
 
 [node name="CaseKeyContainer" type="HBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer"]
@@ -466,8 +466,7 @@ text_overrun_behavior = 3
 [node name="SaveCaseBtn" type="Button" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/CaseKeyContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
-tooltip_text = "New format case"
-icon = ExtResource("8_nnanj")
+tooltip_text = "Save cases"
 icon_alignment = 1
 
 [node name="VBoxContainer2" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer"]
@@ -497,9 +496,11 @@ metadata/current_search = ""
 [node name="NewCaseBtn" type="Button" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/HeaderContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
+tooltip_text = "New format case."
 focus_neighbor_bottom = NodePath("../../KeyScroll/CasesSplit/ResultContainer/DefaultCaseLnEdt")
 focus_next = NodePath("../../KeyScroll/CasesSplit/ResultContainer/DefaultCaseLnEdt")
 disabled = true
+icon = ExtResource("8_nnanj")
 
 [node name="HSeparator" type="HSeparator" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2"]
 layout_mode = 2

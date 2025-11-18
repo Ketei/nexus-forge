@@ -440,6 +440,7 @@ func _on_items_resource_dropped(resource: Resource, panel: Control) -> void:
 	panel.queue_free()
 	$ItemsPanel/ItemsContainer.visible = true
 	reload_categories()
+	resource_loaded.emit()
 
 
 
@@ -558,7 +559,8 @@ func save_current_item() -> void:
 		if flag.button_pressed:
 			flags.append(flag.get_meta(&"flag_value"))
 	
-	item_link.items.set_item_flags(loaded_item, flags)
+	item_link.items.clear_item_flags(loaded_item)
+	item_link.items.set_item_flags(loaded_item, flags, true)
 
 
 func load_item(item_id: StringName) -> void:

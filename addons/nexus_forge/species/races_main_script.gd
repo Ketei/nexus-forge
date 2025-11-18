@@ -552,7 +552,7 @@ func save() -> void:
 	
 	# We clear the top species link, as they are a subspecies of nothing.
 	for top_species in species_data.keys():
-		_species_resource.link_species(&"", top_species)
+		_species_resource.link_species(top_species, &"")
 	
 	_set_species_tree(species_data)
 	ResourceSaver.save(_species_resource)
@@ -562,5 +562,5 @@ func save() -> void:
 func _set_species_tree(tree: Dictionary) -> void:
 	for parent_species in tree.keys():
 		for subspecies in tree[parent_species]:
-			_species_resource.link_species(parent_species, subspecies)
+			_species_resource.link_species(subspecies, parent_species)
 			_set_species_tree(tree[parent_species])

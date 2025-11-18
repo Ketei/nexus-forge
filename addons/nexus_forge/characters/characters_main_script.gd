@@ -42,6 +42,7 @@ func _ready() -> void:
 	update_talent_nodes()
 	update_species_data()
 	
+	char_menu_btn.icon = get_theme_icon("GuiTabMenuHl", "EditorIcons")
 	character_custom_data_search_line.right_icon = get_theme_icon("Search", "EditorIcons")
 	
 	char_menu_btn.get_popup().id_pressed.connect(_on_character_menu_id_pressed)

@@ -90,7 +90,9 @@ func _ready() -> void:
 	add_rcp_fldr_btn.pressed.connect(_on_custom_data_button_pressed.bind("new_folder", {}))
 	
 	recipe_input_tree.item_id_dropped.connect(_on_item_id_dropped.bind(true))
+	recipe_input_tree.items_changed.connect(_something_changed)
 	recipe_output_tree.item_id_dropped.connect(_on_item_id_dropped.bind(false))
+	recipe_output_tree.items_changed.connect(_something_changed)
 	
 	create_recipe_btn.pressed.connect(_on_recipe_create_pressed)
 	
@@ -161,8 +163,8 @@ func _something_changed(arg: Variant = null) -> void:
 	_unsaved = true
 
 
-func _on_item_id_dropped(item_id: StringName, on_input: bool) -> void:
-	add_recipe_item(on_input, item_id)
+func _on_item_id_dropped(item_id: StringName, on_index: int, on_input: bool) -> void:
+	add_recipe_item(on_input, item_id, 1, RecipeItem.RECIPE_ITEM_DEFAULT_DATA.duplicate(true), on_index)
 	_something_changed()
 
 
@@ -419,20 +421,23 @@ func load_recipe(recipe_id: StringName) -> void:
 		recipe_custom_data_tree.add_data(data_entry, recipe.data[data_entry])
 
 
-func add_recipe_item(to_input: bool, item_id: StringName, input_amount: int = 1, data: Dictionary = {}) -> void:
+func add_recipe_item(to_input: bool, item_id: StringName, input_amount: int = 1, data: Dictionary = {}, index: int = -1) -> void:
 	if to_input:
 		recipe_input_tree.add_item(
 				item_id,
 				input_amount,
 				data,
-				true)
+				true,
+				true,
+				index)
 	else:
 		recipe_output_tree.add_item(
 				item_id,
 				input_amount,
 				data,
-				true)
-		#_active_output_rcp = recipe_input_tree.get_selected().get_index()
+				true,
+				true,
+				index)
 
 
 func add_data_to_active_recipe_item(on_input: bool, data: Variant, data_name: String = "new_data") -> void:

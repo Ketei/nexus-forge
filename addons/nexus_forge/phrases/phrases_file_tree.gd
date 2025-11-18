@@ -32,7 +32,8 @@ func _on_button_clicked(item: TreeItem, _column: int, id: int, mouse_button_inde
 
 func add_map(resource: PhraseMap, select: bool = false, emit_select: bool = true) -> void:
 	var new_map: TreeItem = get_root().create_child()
-	new_map.set_text(0, resource.resource_path.get_file())
+	new_map.set_text(0, resource.resource_path.get_file().get_basename())
+	new_map.set_tooltip_text(0, resource.resource_path)
 	new_map.set_metadata(0, {"resource": resource, "save_required": false})
 	new_map.add_button(0, get_theme_icon("GuiClose", "EditorIcons"), 0, false, "Close file")
 	

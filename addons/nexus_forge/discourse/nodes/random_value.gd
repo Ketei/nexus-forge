@@ -8,7 +8,6 @@ func _post_init() -> void:
 	name = &"RandomValue"
 	custom_id = "RandomValue"
 	title = "Random Value"
-	graph_icon = get_theme_icon("RandomNumberGenerator", "EditorIcons")
 	node_type = DialogueNodeType.RANDOM_VALUE
 	parent_mode = PortMode.OUTPUT
 	parent_port = 0
@@ -50,21 +49,6 @@ func _post_init() -> void:
 	max_spinbox.custom_minimum_size = Vector2(90.0, 32.0)
 	max_spinbox.allow_greater = true
 	
-	random_type.icon = get_theme_icon("int", "EditorIcons")
-	
-	random_popup.add_icon_item(
-			get_theme_icon("int", "EditorIcons"),
-			"",
-			TYPE_INT)
-	random_popup.add_icon_item(
-			get_theme_icon("float", "EditorIcons"),
-			"",
-			TYPE_FLOAT)
-	random_popup.add_icon_item(
-			get_theme_icon("bool", "EditorIcons"),
-			"",
-			TYPE_BOOL)
-	
 	header_container.add_child(header_label)
 	header_container.add_child(random_type)
 	
@@ -90,8 +74,9 @@ func _post_init() -> void:
 			SlotConnectionType.VAR_INT,
 			-1)
 	set_slot_color_left(1, COLORS["integer"])
-	map_field(&"min_value", "min_spinbox", min_spinbox)
 	map_field(&"min_value", "min_label", min_label)
+	map_field(&"min_value", "min_spinbox", min_spinbox)
+	map_field(&"min_value", "min_spinbox", min_spinbox)
 	
 	add_field(
 			&"max_value",
@@ -107,6 +92,24 @@ func _post_init() -> void:
 
 
 func _ready() -> void:
+	var random_type: MenuButton = get_mapped_field(&"random_type", "type_button")
+	var random_popup: PopupMenu = random_type.get_popup()
+	graph_icon = get_theme_icon("RandomNumberGenerator", "EditorIcons")
+	random_type.icon = get_theme_icon("int", "EditorIcons")
+	random_popup.add_icon_item(
+			get_theme_icon("int", "EditorIcons"),
+			"",
+			TYPE_INT)
+	random_popup.add_icon_item(
+			get_theme_icon("float", "EditorIcons"),
+			"",
+			TYPE_FLOAT)
+	random_popup.add_icon_item(
+			get_theme_icon("bool", "EditorIcons"),
+			"",
+			TYPE_BOOL)
+	
+	
 	set_input_connection_icon(&"min_value", get_theme_icon("int", "EditorIcons"))
 	set_input_connection_icon(&"max_value", get_theme_icon("int", "EditorIcons"))
 

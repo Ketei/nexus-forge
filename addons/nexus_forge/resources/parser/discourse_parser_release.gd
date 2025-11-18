@@ -112,18 +112,27 @@ func _process_logic(uuid: StringName) -> String:
 		NodeTypes.ENTRY:
 			return _process_logic(data["next_node"])
 		NodeTypes.DIALOG:
+			var font: String = data["dialog_settings"]["font_resource"] if data["dialog_settings"]["font_resource_node"] == &"" else _get_data(data["dialog_settings"]["font_resource_node"])
+			var scene: String = data["dialog_settings"]["dialog_scene"] if data["dialog_settings"]["dialog_scene_node"] == &"" else _get_data(data["dialog_settings"]["dialog_scene_node"])
+			var speed: float = data["dialog_settings"]["dialog_speed"] if data["dialog_settings"]["dialog_speed_node"] == &"" else _get_data(data["dialog_settings"]["dialog_speed_node"])
+			var display_name: String = data["character_settings"]["display_name"] if data["character_settings"]["display_name_node"] == &"" else _get_data(data["character_settings"]["display_name_node"])
+			var portrait_id: String = data["character_settings"]["portrait_id"] if data["character_settings"]["portrait_id_node"] == &"" else _get_data(data["character_settings"]["portrait_id_node"])
 			if data["text_source"].is_empty():
 				dialog_reached.emit({
 					"dialog_text": _parse_dialog(String(uuid), localization.get_text(_dialog_resource.conversation_uuid, uuid)),
-					"font": data["dialog_settings"]["font_resource"],
-					"scene": data["dialog_settings"]["dialog_scene"],
-					"speed": data["dialog_settings"]["dialog_speed"]})
+					"font": font,
+					"scene": scene,
+					"speed": speed,
+					"display_name": display_name,
+					"portrait_id": portrait_id})
 			else:
 				dialog_reached.emit({
 					"dialog_text": _parse_dialog(String(uuid), _get_data(data["dialog_text_source"])),
-					"font": data["dialog_settings"]["font_resource"],
-					"scene": data["dialog_settings"]["dialog_scene"],
-					"speed": data["dialog_settings"]["dialog_speed"]})
+					"font": font,
+					"scene": scene,
+					"speed": speed,
+					"display_name": display_name,
+					"portrait_id": portrait_id})
 			return data["next_node"]
 		NodeTypes.OPTIONS:
 			var available_options: Array[Dictionary] = []
@@ -357,7 +366,7 @@ func _load_locale(new_language: String, new_region: String) -> void:
 			"-",
 			new_region,
 			"/dialog/",
-			_dialog_resource.dialog_uuid,
+			_dialog_resource.localization_uuid,
 			".tres")
 	#var _example = "res://localization/en-base/dialog/(dialog_uuid).tres"
 	localization = load(locale_path)

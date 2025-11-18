@@ -93,7 +93,7 @@ func _update_keys(item_res: ItemCatalog, from: TreeItem) -> void:
 		if not item_res.has_category(set_id):
 			item_res.create_category(set_id)
 			
-		item_res.link_category(parent_category, set_id)
+		item_res.link_category(set_id, parent_category)
 		item_res.set_category_name(set_id, cat_item.get_text(1).strip_edges())
 		
 		item_res.clear_category_data(set_id)

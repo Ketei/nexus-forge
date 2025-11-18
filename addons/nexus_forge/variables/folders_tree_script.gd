@@ -66,7 +66,7 @@ func clear_folders() -> void:
 func create_folder(target_tree: TreeItem = null, folder_name: String = "") -> TreeItem:
 	if target_tree == null:
 		target_tree = get_root()
-	var new_name: String = validate_folder_name(target_tree)
+	var new_name: String = validate_folder_name(target_tree, folder_name)
 	var new_folder: TreeItem = create_item(target_tree)
 	
 	new_folder.set_metadata(0, {"id": new_name})
@@ -87,11 +87,12 @@ func create_folder(target_tree: TreeItem = null, folder_name: String = "") -> Tr
 func load_folder_structure(folder_structure: Dictionary, _target_tree: TreeItem = null) -> void:
 	if _target_tree == null: # The target is a top-level folder.
 		_target_tree = get_root()
-
+	
 	for folder_name: String in folder_structure.keys():
 	 	# We create the top folder
-		var new_folder: TreeItem = _target_tree.create_child()
-		new_folder.set_text(0, folder_name) # Name the folder
+		#var new_folder: TreeItem = _target_tree.create_child()
+		var new_folder: TreeItem = create_folder(_target_tree, folder_name)
+		#new_folder.set_text(0, folder_name) # Name the folder
 		# Call this to ceate subfolders with the top folder as target
 		load_folder_structure(
 				folder_structure[folder_name],
@@ -103,8 +104,19 @@ func _on_item_button_pressed(item: TreeItem, _column: int, id: int, _mouse_butto
 		CREATE_FOLDER_ID:
 			folder_created.emit(get_path_to_folder(create_folder(item)))
 		DELETE_FOLDER_ID:
-			folder_deleted.emit(get_path_to_folder(item))
+			var confirmation := preload("res://addons/nexus_forge/dialogs/confirmation.gd").new()
+			confirmation.title = "Erase folder..."
+			confirmation.dialog_text = "Erase " + item.get_text(0) + " and all subfolders?"
+			confirmation.ok_button_text = "Erase"
+			confirmation.cancel_button_text = "Cancel"
+			var erase: bool = await confirmation.dialog_finished
+			if not erase:
+				confirmation.queue_free()
+				return
+			var path: String = get_path_to_folder(item)
+			confirmation.queue_free()
 			item.free()
+			folder_deleted.emit(path)
 	something_changed.emit()
 
 

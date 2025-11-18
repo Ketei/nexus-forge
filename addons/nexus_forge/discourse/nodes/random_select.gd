@@ -104,14 +104,14 @@ func _post_init() -> void:
 	set_slot_color_left(1, COLORS["integer"])
 	set_slot_color_left(2, COLORS["integer"])
 	set_slot_color_right(2, COLORS["dialog"])
-	set_slot_custom_icon_left(0, flow_icon)
-	
-	set_slot_custom_icon_right(2, flow_icon)
 	
 	options_spn.value_changed.connect(_on_random_exit_changed)
 
 
 func _ready() -> void:
+	set_input_connection_icon(&"weight_default", get_theme_icon("int", "EditorIcons"))
+	set_slot_custom_icon_left(0, flow_icon)
+	set_slot_custom_icon_right(2, flow_icon)
 	set_input_connection_icon(&"option_1", get_theme_icon("int", "EditorIcons"))
 
 

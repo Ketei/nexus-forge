@@ -5,7 +5,6 @@ func _post_init() -> void:
 	name = &"GetVar"
 	title = "Get Variable"
 	custom_id = "GetVar"
-	graph_icon = get_theme_icon("LocalVariable", "EditorIcons")
 	node_type = DialogueNodeType.VARIABLE_GET
 	parent_mode = PortMode.OUTPUT
 	parent_port = 0
@@ -23,9 +22,32 @@ func _post_init() -> void:
 	type_menu.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	type_menu.custom_minimum_size = Vector2(32.0, 32.0)
 	
-	type_menu.icon = get_theme_icon("int", "EditorIcons")
 	type_menu.set_meta(&"current_type", TYPE_INT)
 	
+	path_container.add_child(path_line)
+	path_container.add_child(type_menu)
+	
+	add_field(
+			&"path",
+			path_container,
+			false,
+			-1,
+			SlotConnectionType.VAR_INT)
+	map_field(&"path", "line", path_line)
+	map_field(&"path", "output_type", type_menu)
+	
+	set_slot_color_right(0, COLORS["integer"])
+	
+	path_line.focus_exited.connect(_on_line_edit_focus_lost)
+	path_line.text_changed.connect(_on_value_changed)
+	type_popup.id_pressed.connect(_on_type_selected)
+
+
+func _ready() -> void:
+	var type_menu: MenuButton = get_mapped_field(&"path", "output_type")
+	var type_popup: PopupMenu = type_menu.get_popup()
+	graph_icon = get_theme_icon("LocalVariable", "EditorIcons")
+	type_menu.icon = get_theme_icon("int", "EditorIcons")
 	type_popup.add_icon_item(
 			get_theme_icon("int", "EditorIcons"),
 			"",
@@ -46,24 +68,6 @@ func _post_init() -> void:
 			get_theme_icon("Variant", "EditorIcons"),
 			"",
 			TYPE_NIL)
-	
-	path_container.add_child(path_line)
-	path_container.add_child(type_menu)
-	
-	add_field(
-			&"path",
-			path_container,
-			false,
-			-1,
-			SlotConnectionType.VAR_INT)
-	map_field(&"path", "line", path_line)
-	map_field(&"path", "output_type", type_menu)
-	
-	set_slot_color_right(0, COLORS["integer"])
-	
-	path_line.focus_exited.connect(_on_line_edit_focus_lost)
-	path_line.text_changed.connect(_on_value_changed)
-	type_popup.id_pressed.connect(_on_type_selected)
 
 
 func _get_issues() -> PackedStringArray:

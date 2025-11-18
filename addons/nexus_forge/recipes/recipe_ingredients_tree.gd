@@ -2,7 +2,7 @@
 extends Tree
 
 
-signal item_id_dropped(item_id: StringName)
+signal item_id_dropped(item_id: StringName, on_index: int)
 signal item_erased(id: StringName, on_input: bool)
 signal items_changed
 signal recipe_item_selected(index: int)
@@ -41,13 +41,64 @@ func _ready() -> void:
 
 
 func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
-	if recipe_selected:
-		return typeof(data) == TYPE_DICTIONARY and data.has_all(["type", "item_id"]) and data["type"] == "item_id"
-	return false
+	
+	if not recipe_selected or typeof(data) != TYPE_DICTIONARY or not data.has_all(["type", "item_id", "is_new"]):# and ( data["type"] == "item_id" ):
+		return false
+	
+	drop_mode_flags = DROP_MODE_INBETWEEN
+	return true
 
 
-func _drop_data(_at_position: Vector2, data: Variant) -> void:
-	item_id_dropped.emit(data["item_id"])
+func _drop_data(at_position: Vector2, data: Variant) -> void:
+	if data["is_new"]:
+		var drop_pos: int = get_drop_section_at_position(at_position)
+		var on_item: TreeItem = get_item_at_position(at_position)
+		
+		if drop_pos == 0:
+			drop_pos = 1
+		
+		if drop_pos == -100 or on_item == null:
+			item_id_dropped.emit(data["item_id"], get_root().get_child_count())
+		elif drop_pos == -1:
+			item_id_dropped.emit(data["item_id"], on_item.get_index())
+		elif drop_pos == 1:
+			item_id_dropped.emit(data["item_id"], on_item.get_index() + 1)
+	else:
+		var on_item: TreeItem = get_item_at_position(at_position)
+		var external: bool = data["item"].get_parent() != get_root()
+		if on_item == data["item"]:
+			return
+		elif on_item == null:
+			if get_root().get_child_count() == 0: # Comes from the other tree.
+				data["item"].get_tree().recipe_item_selected.emit(-1)
+				data["item"].get_parent().remove_child(data["item"])
+				get_root().add_child(data["item"])
+			elif external or data["item"].get_index() != get_root().get_child_count() - 1:
+				# Move it only if it comes from other tree or is not the last item.
+				if external:
+					data["item"].get_tree().recipe_item_selected.emit(-1)
+				data["item"].move_after(get_root().get_child(-1))
+		else:
+			if external:
+				data["item"].get_tree().recipe_item_selected.emit(-1)
+			match get_drop_section_at_position(at_position):
+				-1: #Above
+					data["item"].move_before(on_item)
+				0, 1: # Below
+					data["item"].move_after(on_item)
+		
+		items_changed.emit()
+
+
+func _get_drag_data(at_position: Vector2) -> Variant:
+	var selected: TreeItem = get_item_at_position(at_position)
+	if selected == null:
+		return null
+	var label: Label = Label.new()
+	label.text = selected.get_text(0) + " x " + str(int(selected.get_range(1)))
+	set_drag_preview(label)
+	return {"type": "item_id", "item_id": "", "is_new": false, "item": selected}
+	
 
 
 func _on_button_clicked(item: TreeItem, _column: int, id: int, mouse_button_index: int) -> void:
@@ -100,7 +151,7 @@ func get_data_cell_data(cell: TreeItem) -> Variant:
 			return null
 
 
-func add_item(item_id: StringName, input_amount: int = 1, data: Dictionary = {}, select: bool = false, emit_select: bool = true) -> void:
+func add_item(item_id: StringName, input_amount: int = 1, data: Dictionary = {}, select: bool = false, emit_select: bool = true, index: int = -1) -> void:
 	var new_item: TreeItem = get_root().create_child()
 	new_item.set_text(0, String(item_id))
 	new_item.set_cell_mode(1, TreeItem.CELL_MODE_RANGE)
@@ -150,6 +201,13 @@ func add_item(item_id: StringName, input_amount: int = 1, data: Dictionary = {},
 				new_data.set_metadata(1, TYPE_NIL)
 	
 	new_item.add_button(1, get_theme_icon("Remove", "EditorIcons"), ButtonID.RECIPE_ITEM, false, "Remove Item")
+	
+	if -1 < index and new_item.get_index() != index:
+		if 0 == index:
+			new_item.move_before(get_root().get_first_child())
+		elif 0 < index:
+			new_item.move_after(get_root().get_child(index - 1))
+	
 	
 	if select:
 		if emit_select:

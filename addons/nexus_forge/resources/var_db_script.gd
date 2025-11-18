@@ -39,7 +39,7 @@ func get_variable(folder: String, variable: StringName) -> Variant:
 		return null
 
 
-## Returns the dictionary containing the variables in
+## Returns an array containing the variable keys in
 ## the specified [param folder_path]
 func variables(folder_path: String) -> Array[String]:
 	var keys: Array[String] = []
@@ -51,20 +51,21 @@ func variables(folder_path: String) -> Array[String]:
 
 ## Returns a list of folders at [param level]. If empty it'll return all
 ## folders on the top level.
-func folders(level: String = "") -> Array[String]:
-	var clean_level: String = level.simplify_path()
+func folders(at: String = "") -> Array[String]:
+	var clean_level: String = at.simplify_path()
 	var all_folders: Array[String] = []
-	var top_level: bool = clean_level.is_empty()
 	var slice_count: int = clean_level.get_slice_count("/")
 	
-	for folder:StringName in _variables.keys():
-		var path: String = String(folder)
-		var path_slice_count: int = path.get_slice_count("/")
-		if top_level:
-			if path_slice_count == 0:
+	if clean_level.is_empty():
+		for folder:StringName in _variables.keys():
+			var path: String = String(folder)
+			if path.get_slice_count("/") == 0:
 				all_folders.append(path)
-		else:
-			if path.begins_with(clean_level) and slice_count + 1 <= path_slice_count:
+	else:
+		for folder:StringName in _variables.keys():
+			var path: String = String(folder)
+			var path_slice_count: int = path.get_slice_count("/")
+			if path.begins_with(clean_level) and slice_count + 1 == path_slice_count:
 				all_folders.append(clean_level + "/" + path.get_slice("/", 2))
 	
 	return all_folders
@@ -81,22 +82,27 @@ func set_variable(folder_path: String, variable_key: StringName, variable: Varia
 		_variables[clean_path][variable_key] = variable
 
 
-## Creates a folder level.
+## Creates a folder structure.
 func create_folder(folder_path: String) -> void:
 	var clean_path: StringName = _clean_folder_path(folder_path)
+	var slices: Array[String] = []
 	
-	if _variables.has(clean_path):
-		return
+	var slice_path: StringName = &""
 	
-	var new_folder: Dictionary[StringName, Variant] = {}
-	_variables[clean_path] = new_folder
+	for slice in clean_path.split("/"):
+		slice_path += StringName(slice)
+		if not _variables.has(slice_path):
+			var new_vars: Dictionary[StringName, Variant] = {}
+			_variables[slice_path] = new_vars
+		slice_path += &"/"
 
 
-## Deletes a folder in the given path, including all their variables.
-func erase_folder(folder_path: String) -> void:
-	var clean_path: StringName = _clean_folder_path(folder_path)
-	if _variables.has(clean_path):
-		_variables.erase(clean_path)
+## Deletes a folder in the given path, including all their variables and
+## subfolders.
+func erase_folder(folder_path: StringName) -> void:
+	for folder:StringName in _variables.keys():
+		if folder.begins_with(folder_path):
+			_variables.erase(folder)
 
 
 ## Returns true if folder in [param folder_oath] is empty or doesn't exist.

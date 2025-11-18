@@ -82,6 +82,13 @@ func add_currency(currency_id: StringName, select: bool = false, emit_signal: bo
 	
 	new_cr.set_editable(0, true)
 	
+	new_cr.add_button(
+			0,
+			get_theme_icon("Remove", "EditorIcons"),
+			0,
+			false,
+			"Erase currency")
+	
 	sort_single_item(new_cr)
 	
 	if select:

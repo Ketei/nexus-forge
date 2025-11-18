@@ -91,27 +91,9 @@ func _post_init() -> void:
 	data_chk_bx.visible = false
 	data_ln_edt.visible = false
 	
-	data_menu.icon = get_theme_icon("int", "EditorIcons")
 	data_menu.flat = false
 	data_menu.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	data_menu.custom_minimum_size = Vector2(32.0, 32.0)
-	
-	data_popup.add_icon_item(
-			get_theme_icon("int", "EditorIcons"),
-			"",
-			TYPE_INT)
-	data_popup.add_icon_item(
-			get_theme_icon("float", "EditorIcons"),
-			"",
-			TYPE_FLOAT)
-	data_popup.add_icon_item(
-			get_theme_icon("bool", "EditorIcons"),
-			"",
-			TYPE_BOOL)
-	data_popup.add_icon_item(
-			get_theme_icon("String", "EditorIcons"),
-			"",
-			TYPE_STRING)
 	
 	data_panel.add_child(data_spnbx)
 	data_panel.add_child(data_chk_bx)
@@ -136,6 +118,29 @@ func _post_init() -> void:
 	
 	data_popup.id_pressed.connect(_on_data_type_selected)
 	data_spnbx.value_changed.connect(_on_value_changed, CONNECT_DEFERRED)
+
+
+func _ready() -> void:
+	var data_menu: MenuButton = get_field(&"data").get_child(1)
+	var data_popup: PopupMenu = data_menu.get_popup()
+	data_menu.icon = get_theme_icon("int", "EditorIcons")
+	data_popup.add_icon_item(
+			get_theme_icon("int", "EditorIcons"),
+			"",
+			TYPE_INT)
+	data_popup.add_icon_item(
+			get_theme_icon("float", "EditorIcons"),
+			"",
+			TYPE_FLOAT)
+	data_popup.add_icon_item(
+			get_theme_icon("bool", "EditorIcons"),
+			"",
+			TYPE_BOOL)
+	data_popup.add_icon_item(
+			get_theme_icon("String", "EditorIcons"),
+			"",
+			TYPE_STRING)
+	
 
 
 func _get_node_data() -> Dictionary:

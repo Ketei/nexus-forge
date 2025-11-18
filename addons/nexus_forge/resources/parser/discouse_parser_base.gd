@@ -7,7 +7,7 @@ signal dialog_started
 signal dialog_finished
 @warning_ignore_start("unused_signal")
 signal dialog_paused
-# "dialog_text": "", "scene": "res://", "font": "res://", "speed": 0.0
+# "dialog_text": "", "scene": "res://", "font": "res://", "speed": 0.0, display_name: "", "portrait_id": ""
 ## Emmited when a dialog event is reached.
 signal dialog_reached(dialog_data: Dictionary)
 #[

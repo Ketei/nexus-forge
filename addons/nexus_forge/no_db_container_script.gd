@@ -33,7 +33,8 @@ func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
 
 func _drop_data(_at_position: Vector2, data: Variant) -> void:
 	var res_load: Resource = load(data["files"][0])
-	if res_load != null and res_load.get_script().get_global_name() == resource_class:
+	var script: Script = res_load.get_script() if res_load != null else null
+	if res_load != null and script != null and script.get_global_name() == resource_class:
 		resource_dropped.emit(res_load)
 
 
