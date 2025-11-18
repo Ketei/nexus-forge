@@ -1,9 +1,8 @@
-# 🛠️ Nexus Forge - The Comprehensive Godot Data Forge
+# Nexus Forge - A Godot Game Data Manager
 
 
-**Nexus Forge** is a powerful, open-source **Godot Engine plugin** designed to handle the foundational data architecture for your game. Built entirely in **GDScript**, it provides a suite of visual editor tools for managing everything from complex dialogue to player stats, without enforcing any specific UI, giving you maximum creative freedom.
+**Nexus Forge** is a powerful, open-source **Godot Engine plugin** designed to handle the basic data of your game. Built entirely in **GDScript**, it provides a range of visual editor tools for managing everything from complex dialogue, player stats, items, quests and more without enforcing any specific UI, giving you maximum creative freedom.
 
-## ⚠️ Alpha Stage Warning
 > [!IMPORTANT]
 > This plugin is currently in the **Alpha stage**. While the tools are functional the **Graphical User Interface (GUI)** and internal API definitions (class names, function names) may change significantly before the Beta release.
 > **Use of this plugin is recommended for testing, evaluation, or as a VERY bold choice for current projects.** It is not yet considered reliable for production projects, expect bugs.
@@ -12,18 +11,19 @@
 
 Nexus Forge is a data-centric plugin that gives you structured control over your game's content:
 
-* **Dialogue Editor:** Create branching, localized conversations using a visual **GraphEdit** interface. Supports variable and method substitution (e.g., `{$player/name}`), and complex logic using nodes like Random Dialog and Event nodes.
-* **Global State Management:** Easily store and manage global variables. Organize data into folders and variables, with support for all Godot data types in code.
-* **Character and Entity Design:** Dedicated tools for defining **Characters** and managing **Species/Subspecies**. Customize character sheets with user-defined Stats, Skills, Traits, and flexible inheritance logic.
-* **Item and Economy System:** Define **Items** with custom categories, flags, and rarity. Create detailed **Currencies** for robust multi-currency or single-currency economies.
-* **Crafting Recipes:** Use the **Recipes** tool to visually link input and output **Items** via drag-and-drop, making complex crafting systems easy to define.
-* **Quest System (Odyssey):** Structure your game's progression using the hierarchical Quest system (Quests > Stages > Steps), allowing for detailed tracking and management of objectives.
+* **Dialogue Editor:** Create branching, context-aware, localized conversations using a visual **GraphEdit** interface.
+* **Global State Management:** Easily store and manage global variables.
+* **Character Design:** Dedicated tools for defining **Characters**. Customize character sheets with user-defined stats, skills, traits, species, and flexible inheritance logic.
+* **Item and Economy System:** Define **Items** with custom categories, flags, values, and rarities. Create detailed **Currencies** for robust multi-currency or single-currency economies.
+* **Crafting Recipes:** Use the **Recipes** tool to create crafting recipes, making complex crafting systems easy to define.
+* **Quest Creation:** Create detailed quests with stages and steps to follow.
+* **Argument-based text formatting**: Create context aware text that changes based on given arguments.
 
 ## Utility Classes
 
 The plugin also includes several utility classes covering specific, common development needs, which are a valuable asset outside of the main Nexus Forge editor tools:
 
-* **Caching & Optimization:** Includes a basic implementation of a **Least Recently Used (LRU) Cache** and string optimization features.
+* **Caching:** Includes a basic implementation of a **Least Recently Used (LRU) Cache**.
 * **Data Structures:** Helper classes for advanced data handling, such as a **Random Weighted Pool** for controlled chance-based selection, and **BitFlags** for efficient boolean storage.
 * **Low-Level Helpers:** Dedicated classes for efficient **UUID (v4) generation** and **Bitwise operations**.
 
