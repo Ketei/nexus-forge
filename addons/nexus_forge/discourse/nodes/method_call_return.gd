@@ -104,7 +104,7 @@ func reload_methods() -> void:
 	var new_select: int = -1
 	var emit_updated: bool = false
 	
-	all_methods.sort_custom(Arrays.sort_custom_alphabetically_asc)
+	all_methods.sort_custom(ArrayUtils.sort_custom_alphabetically_asc)
 	
 	if selected_method != "":
 		new_select = all_methods.find(selected_method)

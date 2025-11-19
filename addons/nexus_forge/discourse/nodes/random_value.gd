@@ -239,7 +239,7 @@ func set_type_fields(type: int, menu: MenuButton, min_spinbox: SpinBox, max_spin
 		min_spinbox.step = 1.0
 		min_spinbox.allow_lesser = false
 		min_spinbox.allow_greater = false
-		if not Ranges.is_between(min_spinbox.value, 0.0, 100.0):
+		if not RangeUtils.is_between(min_spinbox.value, 0.0, 100.0):
 			min_spinbox.value = clampf(min_spinbox.value, 0.0, 100.0)
 		set_field_visible(&"max_value", false)
 		set_deferred(&"size", Vector2(240.0, 85.0))

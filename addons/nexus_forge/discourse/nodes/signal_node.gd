@@ -17,7 +17,7 @@ func _post_init() -> void:
 	available_signals = get_user_signals()
 	
 	var signal_keys: Array = available_signals.keys()
-	signal_keys.sort_custom(Arrays.sort_custom_alphabetically_asc)
+	signal_keys.sort_custom(ArrayUtils.sort_custom_alphabetically_asc)
 	
 	var signals_node: OptionButton = OptionButton.new()
 	signals_node.name = &"SignalsOptBtn"
@@ -102,7 +102,7 @@ func reload_signals() -> void:
 	var new_idx: int = -1
 	var emit_updated: bool = false
 	
-	new_signals.sort_custom(Arrays.sort_custom_alphabetically_asc)
+	new_signals.sort_custom(ArrayUtils.sort_custom_alphabetically_asc)
 	
 	if current_signal != "":
 		new_idx = new_signals.find(current_signal)

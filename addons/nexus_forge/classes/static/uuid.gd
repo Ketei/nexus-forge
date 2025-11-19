@@ -21,7 +21,7 @@
 # SOFTWARE.
 
 class_name UUID
-extends Node
+extends RefCounted
 ## Godot UUID by Binogure Studio used to generate V4 UUIDs
 ##
 ## Unique identifier generation v4 for Godot Engine

@@ -14,7 +14,6 @@ extends Resource
 
 
 @export var one_handed: int
-@export var ass_wiggling: int
 
 var _custom_skills: Dictionary[StringName, int] = {}
 

@@ -48,6 +48,8 @@ func _process_logic(uuid: StringName) -> String:
 			if data["input_connections"]["dialog_text_source"]["target_node_uuid"] == "":
 				dialog_reached.emit({
 					"dialog_text": _parse_dialog(uuid, data["dialog_text"]),
+					"character_id": data["character_id"],
+					"persist": data["persist"],
 					"font": font,
 					"scene": scene,
 					"speed": speed,
@@ -56,6 +58,8 @@ func _process_logic(uuid: StringName) -> String:
 			else:
 				dialog_reached.emit({
 					"dialog_text": _parse_dialog(uuid, _get_data(data["input_connections"]["dialog_text_source"]["target_node_uuid"])),
+					"character_id": data["character_id"],
+					"persist": data["persist"],
 					"font": font,
 					"scene": scene,
 					"speed": speed,
@@ -306,7 +310,7 @@ func _get_bool_result(from_uuid: String) -> bool:
 			var value_a = _get_data(data["input_connections"]["node_a"])
 			var value_b = _get_data(data["input_connections"]["node_b"])
 			
-			if not Variants.is_comparable(value_a, value_b):
+			if not _can_compare(value_a, value_b):
 				return false
 			
 			match data["operator"]:

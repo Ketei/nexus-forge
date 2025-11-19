@@ -1,26 +1,17 @@
-[gd_scene load_steps=24 format=3 uid="uid://dykskyw7tvdof"]
+[gd_scene load_steps=15 format=3 uid="uid://dykskyw7tvdof"]
 
 [ext_resource type="Script" uid="uid://d0wp8u6btdhsk" path="res://addons/nexus_forge/nexus_forge_main_scene_script.gd" id="1_15n6i"]
 [ext_resource type="Texture2D" uid="uid://bohd4742ivr70" path="res://addons/nexus_forge/icons/nexus_forge_small.svg" id="2_efg3d"]
 [ext_resource type="Texture2D" uid="uid://c6wchabfbxjvv" path="res://addons/nexus_forge/icons/speech_bubble.svg" id="3_efg3d"]
-[ext_resource type="PackedScene" uid="uid://d3qq6j2xbhrgp" path="res://addons/nexus_forge/variables/variables_main.tscn" id="3_umhp2"]
 [ext_resource type="Texture2D" uid="uid://corsvngm2e08h" path="res://addons/nexus_forge/icons/variable_icon.svg" id="4_ntiiq"]
-[ext_resource type="PackedScene" uid="uid://d216eid5mh0ts" path="res://addons/nexus_forge/discourse/discourse_main_scene.tscn" id="4_yutfl"]
 [ext_resource type="Texture2D" uid="uid://bh78e7rsycp7y" path="res://addons/nexus_forge/icons/character_icon.svg" id="5_3eso2"]
-[ext_resource type="PackedScene" uid="uid://dauhesagd763y" path="res://addons/nexus_forge/characters/new_characters.tscn" id="6_h1eok"]
 [ext_resource type="Texture2D" uid="uid://cig8gdultennb" path="res://addons/nexus_forge/icons/dna.svg" id="6_wvf1s"]
-[ext_resource type="PackedScene" uid="uid://c0pulhtis8blt" path="res://addons/nexus_forge/species/species_main.tscn" id="7_14xiq"]
 [ext_resource type="Texture2D" uid="uid://bfgia1pi2gqoq" path="res://addons/nexus_forge/icons/star.svg" id="7_aw3hd"]
-[ext_resource type="PackedScene" uid="uid://dhpg6hwpnth1b" path="res://addons/nexus_forge/recipes/recipes_scene.tscn" id="8_hl74n"]
-[ext_resource type="PackedScene" uid="uid://dt7vndut1j8qv" path="res://addons/nexus_forge/talents/talents_main.tscn" id="8_shwyd"]
 [ext_resource type="Texture2D" uid="uid://bukpwr4hsxrv4" path="res://addons/nexus_forge/icons/chest_full.svg" id="8_yiaq8"]
-[ext_resource type="PackedScene" uid="uid://dx3tfxh44uxs6" path="res://addons/nexus_forge/depot/depot_scene.tscn" id="9_eiqft"]
 [ext_resource type="Texture2D" uid="uid://cebbn0w43pspb" path="res://addons/nexus_forge/icons/bluepring_fill.svg" id="9_fmp7a"]
 [ext_resource type="Texture2D" uid="uid://dnfafwipiljix" path="res://addons/nexus_forge/icons/scroll.svg" id="10_2qc1w"]
 [ext_resource type="Texture2D" uid="uid://bdw53wt3bshy" path="res://addons/nexus_forge/icons/brackets_speech.svg" id="11_3fnsj"]
 [ext_resource type="Texture2D" uid="uid://dr5siu85och4s" path="res://addons/nexus_forge/icons/nexus_forge_large.svg" id="11_at7in"]
-[ext_resource type="PackedScene" uid="uid://djul28onmafsc" path="res://addons/nexus_forge/quests/quest_main_scene.tscn" id="11_ec5tf"]
-[ext_resource type="PackedScene" uid="uid://c7ia2qjomildo" path="res://addons/nexus_forge/phrases/localization_resources.tscn" id="12_h1eok"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_yutfl"]
 
@@ -60,7 +51,7 @@ tab_count = 10
 tab_0/icon = ExtResource("2_efg3d")
 tab_1/title = "Discourse"
 tab_1/icon = ExtResource("3_efg3d")
-tab_2/title = "Variables"
+tab_2/title = "Blackboard"
 tab_2/icon = ExtResource("4_ntiiq")
 tab_3/title = "Characters"
 tab_3/icon = ExtResource("5_3eso2")
@@ -107,39 +98,3 @@ layout_mode = 2
 texture = ExtResource("11_at7in")
 expand_mode = 1
 stretch_mode = 5
-
-[node name="Discourse" parent="MainContainer/ToolScroll/ToolContainer" instance=ExtResource("4_yutfl")]
-visible = false
-layout_mode = 2
-
-[node name="Variables" parent="MainContainer/ToolScroll/ToolContainer" instance=ExtResource("3_umhp2")]
-visible = false
-layout_mode = 2
-
-[node name="Characters" parent="MainContainer/ToolScroll/ToolContainer" instance=ExtResource("6_h1eok")]
-visible = false
-layout_mode = 2
-
-[node name="Species" parent="MainContainer/ToolScroll/ToolContainer" instance=ExtResource("7_14xiq")]
-visible = false
-layout_mode = 2
-
-[node name="Talents" parent="MainContainer/ToolScroll/ToolContainer" instance=ExtResource("8_shwyd")]
-visible = false
-layout_mode = 2
-
-[node name="Items" parent="MainContainer/ToolScroll/ToolContainer" instance=ExtResource("9_eiqft")]
-visible = false
-layout_mode = 2
-
-[node name="Recipes" parent="MainContainer/ToolScroll/ToolContainer" instance=ExtResource("8_hl74n")]
-visible = false
-layout_mode = 2
-
-[node name="Quests" parent="MainContainer/ToolScroll/ToolContainer" instance=ExtResource("11_ec5tf")]
-visible = false
-layout_mode = 2
-
-[node name="PhraseMaps" parent="MainContainer/ToolScroll/ToolContainer" instance=ExtResource("12_h1eok")]
-visible = false
-layout_mode = 2

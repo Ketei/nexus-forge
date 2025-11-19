@@ -10,6 +10,8 @@ enum Gender { # Must ALWAYS have one item.
 	FEMALE,
 }
 
+const DEFAULT_DATA: Dictionary[String, Variant] = {}
+
 ## The unique ID of a character
 @export var id: StringName = &""
 ## The name of a character
@@ -29,7 +31,19 @@ enum Gender { # Must ALWAYS have one item.
 @export var traits: TraitBlock
 
 
-func _init(new_stats: StatBlock = null, new_skills: SkillSet = null, new_traits: TraitBlock = null) -> void:
-	stats = StatBlock.new() if new_stats == null else new_stats
-	skills = SkillSet.new() if new_skills == null else new_skills
-	traits = TraitBlock.new() if new_traits == null else new_traits
+## Custom constructor for the class. Ensures the returned object has
+## [member CharacterSheet.stats], [member CharacterSheet.skills] and
+## [member CharacterSheet.traits] initialized, as well as
+## [member CharacterSheet.custom_data] filled with the
+## [const CharacterSheet.DEFAULT_DATA].
+static func new_character() -> CharacterSheet:
+	var new_sheet: CharacterSheet = CharacterSheet.new()
+	if new_sheet.stats == null:
+		new_sheet.stats = StatBlock.new()
+	if new_sheet.skills == null:
+		new_sheet.skills = SkillSet.new()
+	if new_sheet.traits == null:
+		new_sheet.skills = SkillSet.new()
+	new_sheet.custom_data.assign(CharacterSheet.DEFAULT_DATA.duplicate(true))
+	
+	return new_sheet

@@ -169,7 +169,7 @@ func verify_project_settings() -> void:
 		ProjectSettings.add_property_info(property_info)
 		ProjectSettings.set_as_basic(
 				SETTINGS_PATHS[tool_id]["setting_path"],
-				true)
+				tool_id == "discourse")
 		
 		if save_settings == false:
 			save_settings = true

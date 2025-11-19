@@ -48,6 +48,13 @@ theme_override_constants/minimum_grab_thickness = 10
 layout_mode = 2
 size_flags_horizontal = 3
 
+[node name="TitleLabel" type="Label" parent="CraftingContainer/RecipeSelectContainer"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.223182, 0.705086, 0.904884, 1)
+theme_override_font_sizes/font_size = 25
+text = "Blueprints"
+
 [node name="MainContainer" type="HBoxContainer" parent="CraftingContainer/RecipeSelectContainer"]
 layout_mode = 2
 
@@ -86,8 +93,10 @@ layout_mode = 2
 size_flags_horizontal = 3
 
 [node name="Label" type="Label" parent="CraftingContainer/RecipeDataContainer/RecipeItemTreeContainer"]
+custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 text = "Items"
+vertical_alignment = 1
 
 [node name="SearchRecipeItemsLnEdt" type="LineEdit" parent="CraftingContainer/RecipeDataContainer/RecipeItemTreeContainer"]
 layout_mode = 2
@@ -124,11 +133,15 @@ layout_mode = 2
 size_flags_horizontal = 3
 
 [node name="DataBtnCtnr" type="HBoxContainer" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/InputContainer"]
+custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 
 [node name="Label" type="Label" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/InputContainer/DataBtnCtnr"]
+custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
+size_flags_vertical = 1
 text = "Input"
+vertical_alignment = 1
 
 [node name="ButtonContainer" type="HBoxContainer" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/InputContainer/DataBtnCtnr"]
 layout_mode = 2
@@ -138,6 +151,7 @@ alignment = 2
 [node name="AddRcpInIntBtn" type="Button" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/InputContainer/DataBtnCtnr/ButtonContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
+size_flags_vertical = 4
 tooltip_text = "Add integer"
 disabled = true
 icon = ExtResource("4_rfiew")
@@ -146,6 +160,7 @@ icon_alignment = 1
 [node name="AddRcpInFloatBtn" type="Button" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/InputContainer/DataBtnCtnr/ButtonContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
+size_flags_vertical = 4
 tooltip_text = "Add float"
 disabled = true
 icon = ExtResource("5_hp1rg")
@@ -154,6 +169,7 @@ icon_alignment = 1
 [node name="AddRcpInBoolBtn" type="Button" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/InputContainer/DataBtnCtnr/ButtonContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
+size_flags_vertical = 4
 tooltip_text = "Add boolean"
 disabled = true
 icon = ExtResource("6_nekjn")
@@ -162,6 +178,7 @@ icon_alignment = 1
 [node name="AddRcpInStrBtn" type="Button" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/InputContainer/DataBtnCtnr/ButtonContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
+size_flags_vertical = 4
 tooltip_text = "Add string"
 disabled = true
 icon = ExtResource("7_tx5a0")
@@ -184,11 +201,15 @@ layout_mode = 2
 size_flags_horizontal = 3
 
 [node name="DataBtnCtnr" type="HBoxContainer" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/OutputContainer"]
+custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 
 [node name="Label" type="Label" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/OutputContainer/DataBtnCtnr"]
+custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
+size_flags_vertical = 1
 text = "Output"
+vertical_alignment = 1
 
 [node name="ButtonContainer" type="HBoxContainer" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/OutputContainer/DataBtnCtnr"]
 layout_mode = 2
@@ -198,6 +219,7 @@ alignment = 2
 [node name="AddRcpOutIntBtn" type="Button" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/OutputContainer/DataBtnCtnr/ButtonContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
+size_flags_vertical = 4
 tooltip_text = "Add integer"
 disabled = true
 icon = ExtResource("4_rfiew")
@@ -206,6 +228,7 @@ icon_alignment = 1
 [node name="AddRcpOutFloatBtn" type="Button" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/OutputContainer/DataBtnCtnr/ButtonContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
+size_flags_vertical = 4
 tooltip_text = "Add float"
 disabled = true
 icon = ExtResource("5_hp1rg")
@@ -214,6 +237,7 @@ icon_alignment = 1
 [node name="AddRcpOutBoolBtn" type="Button" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/OutputContainer/DataBtnCtnr/ButtonContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
+size_flags_vertical = 4
 tooltip_text = "Add boolean"
 disabled = true
 icon = ExtResource("6_nekjn")
@@ -222,6 +246,7 @@ icon_alignment = 1
 [node name="AddRcpOutStrBtn" type="Button" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/OutputContainer/DataBtnCtnr/ButtonContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
+size_flags_vertical = 4
 tooltip_text = "Add string"
 disabled = true
 icon = ExtResource("7_tx5a0")

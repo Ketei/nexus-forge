@@ -263,16 +263,10 @@ func _on_new_character_pressed() -> void:
 	if dialog_result[0]:
 		if current_sheet != null:
 			save_current_character()
-		var new_resource: CharacterSheet = CharacterSheet.new()
+		var new_resource: CharacterSheet = CharacterSheet.new_character()
 		if ResourceLoader.has_cached(dialog_result[1]):
 			new_resource.take_over_path(dialog_result[1])
 		new_resource.resource_path = dialog_result[1]
-		if new_resource.stats == null:
-			new_resource.stats = StatBlock.new()
-		if new_resource.skills == null:
-			new_resource.skills = SkillSet.new()
-		if new_resource.traits == null:
-			new_resource.traits = TraitBlock.new()
 		
 		for stat in StatBlock.stats():
 			var stat_range: ValueRange = new_resource.stats.get(stat)

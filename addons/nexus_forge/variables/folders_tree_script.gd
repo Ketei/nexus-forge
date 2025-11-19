@@ -109,6 +109,9 @@ func _on_item_button_pressed(item: TreeItem, _column: int, id: int, _mouse_butto
 			confirmation.dialog_text = "Erase " + item.get_text(0) + " and all subfolders?"
 			confirmation.ok_button_text = "Erase"
 			confirmation.cancel_button_text = "Cancel"
+			confirmation.initial_position = Window.WINDOW_INITIAL_POSITION_CENTER_MAIN_WINDOW_SCREEN
+			add_child(confirmation)
+			confirmation.show()
 			var erase: bool = await confirmation.dialog_finished
 			if not erase:
 				confirmation.queue_free()
@@ -147,6 +150,8 @@ func collapse_folders(collapsed: bool = true) -> void:
 
 
 func validate_folder_name(parent_tree: TreeItem, folder_name: String = "new_folder", skip_tree: TreeItem = null) -> String:
+	if folder_name.is_empty():
+		folder_name = "new_folder"
 	var tweaked_name: String = folder_name
 	var iteration: int = 1
 	var total_folders: Array[TreeItem] = parent_tree.get_children()

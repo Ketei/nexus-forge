@@ -20,6 +20,7 @@ const FLOAT_STEP: float = 0.01
 #var root_tree: TreeItem
 var _current_selected: TreeItem = null
 
+
 func _ready() -> void:
 	if Engine.is_editor_hint() and owner == get_tree().edited_scene_root:
 		return
@@ -47,6 +48,43 @@ func _ready() -> void:
 	set_column_expand_ratio(1, 7)
 	item_edited.connect(_on_item_edited)
 	button_clicked.connect(_on_button_pressed)
+	column_title_clicked.connect(_on_column_title_clicked)
+
+
+func _on_column_title_clicked(column: int, mouse_button_index: int) -> void:
+	if mouse_button_index != MOUSE_BUTTON_LEFT:
+		return
+	
+	var items: Array[TreeItem] = get_root().get_children()
+	var item_size: int = items.size()
+	
+	if item_size < 2:
+		return
+	
+	if column == 0:
+		items.sort_custom(
+				func(a:TreeItem,b: TreeItem):
+						return a.get_text(0).naturalnocasecmp_to(b.get_text(0)) < 0)
+	elif column == 1:
+		items.sort_custom(_sort_data_column)
+	
+	if items[0].get_index() != 0:
+		items[0].move_before(get_root().get_first_child())
+	
+	for item_idx in range(1, item_size):
+		items[item_idx].move_after(items[item_idx - 1])
+
+
+func _sort_data_column(a: TreeItem, b: TreeItem) -> bool:
+	if a.get_metadata(1)["type"] == TYPE_NIL or b.get_metadata(1)["type"] == TYPE_NIL:
+		var a_type: int = typeof(a.get_metadata(1)["data"]) if a.get_metadata(1)["type"] == TYPE_NIL else a.get_metadata(1)["type"]
+		var b_type: int = typeof(b.get_metadata(1)["data"]) if b.get_metadata(1)["type"] == TYPE_NIL else b.get_metadata(1)["type"]
+		if a_type == b_type:
+			return a.get_text(0).naturalnocasecmp_to(b.get_text(0)) < 0
+		else:
+			return a_type < b_type
+	else:
+		return a.get_metadata(1)["type"] < b.get_metadata(1)["type"]
 
 
 func _on_button_pressed(item: TreeItem, column: int, id: int, mouse_button_index: int) -> void:
@@ -116,7 +154,7 @@ func create_variable(variable_value: Variant, variable_name: String = "new_varia
 			editable_value = false
 			new_variable.set_metadata(1, {"type": TYPE_NIL, "data": variable_value})
 			new_variable.set_cell_mode(1, TreeItem.CELL_MODE_STRING)
-			new_variable.set_text(1, Strings.title_case(type_string(typeof(variable_value))))
+			new_variable.set_text(1, StringUtils.title_case(type_string(typeof(variable_value))))
 	# ------------------
 	
 	# Setting editability

@@ -120,6 +120,8 @@ func _process_logic(uuid: StringName) -> String:
 			if data["text_source"].is_empty():
 				dialog_reached.emit({
 					"dialog_text": _parse_dialog(String(uuid), localization.get_text(_dialog_resource.conversation_uuid, uuid)),
+					"character_id": data["character_id"],
+					"persist": data["persist"],
 					"font": font,
 					"scene": scene,
 					"speed": speed,
@@ -127,7 +129,9 @@ func _process_logic(uuid: StringName) -> String:
 					"portrait_id": portrait_id})
 			else:
 				dialog_reached.emit({
-					"dialog_text": _parse_dialog(String(uuid), _get_data(data["dialog_text_source"])),
+					"dialog_text": _parse_dialog(String(uuid), _get_data(data["text_source"])),
+					"character_id": data["character_id"],
+					"persist": data["persist"],
 					"font": font,
 					"scene": scene,
 					"speed": speed,
@@ -316,7 +320,7 @@ func _get_data(uuid: StringName) -> Variant:
 		NodeTypes.COMPARATION:
 			var a = _get_data(data["value_a"])
 			var b = _get_data(data["value_b"])
-			if not Variants.is_comparable(a, b):
+			if not _can_compare(a, b):
 				return false
 			
 			match data["operator"]:

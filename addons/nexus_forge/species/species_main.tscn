@@ -51,6 +51,13 @@ split_offset = 250
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 
+[node name="TitleLabel" type="Label" parent="RacesContainer/RacesBasicSplit/RaceTreeContainer"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.223182, 0.705086, 0.904884, 1)
+theme_override_font_sizes/font_size = 25
+text = "Kindred"
+
 [node name="SearchRaceContainer" type="HBoxContainer" parent="RacesContainer/RacesBasicSplit/RaceTreeContainer"]
 layout_mode = 2
 
@@ -78,6 +85,10 @@ script = ExtResource("3_u68gt")
 custom_minimum_size = Vector2(250, 0)
 layout_mode = 2
 size_flags_stretch_ratio = 1.5
+
+[node name="Control" type="Control" parent="RacesContainer/RacesBasicSplit/BasicDataContainer"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
 
 [node name="NameContainer" type="HBoxContainer" parent="RacesContainer/RacesBasicSplit/BasicDataContainer"]
 layout_mode = 2
@@ -195,7 +206,7 @@ layout_mode = 2
 size_flags_vertical = 3
 
 [node name="StatLbl" type="Label" parent="RacesContainer/StatTraitSplit/ValuesContainer/StatVBox"]
-custom_minimum_size = Vector2(0, 40)
+custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 text = "Base Stats"
 horizontal_alignment = 1
@@ -215,7 +226,7 @@ layout_mode = 2
 size_flags_vertical = 3
 
 [node name="StatLbl" type="Label" parent="RacesContainer/StatTraitSplit/ValuesContainer/SkillVBox"]
-custom_minimum_size = Vector2(0, 40)
+custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 text = "Base Skills"
 horizontal_alignment = 1
@@ -235,7 +246,7 @@ custom_minimum_size = Vector2(220, 0)
 layout_mode = 2
 
 [node name="StatLbl" type="Label" parent="RacesContainer/StatTraitSplit/TraitsContainer"]
-custom_minimum_size = Vector2(0, 40)
+custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 text = "Traits"
 horizontal_alignment = 1

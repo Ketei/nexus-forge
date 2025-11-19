@@ -53,6 +53,7 @@ func variables(folder_path: String) -> Array[String]:
 ## folders on the top level.
 func folders(at: String = "") -> Array[String]:
 	var clean_level: String = at.simplify_path()
+	
 	var all_folders: Array[String] = []
 	var slice_count: int = clean_level.get_slice_count("/")
 	

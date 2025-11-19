@@ -7,7 +7,7 @@ signal dialog_started
 signal dialog_finished
 @warning_ignore_start("unused_signal")
 signal dialog_paused
-# "dialog_text": "", "scene": "res://", "font": "res://", "speed": 0.0, display_name: "", "portrait_id": ""
+# "dialog_text": "", "character_id": &"", "persist": false, "scene": "res://", "font": "res://", "speed": 0.0, display_name: "", "portrait_id": ""
 ## Emmited when a dialog event is reached.
 signal dialog_reached(dialog_data: Dictionary)
 #[
@@ -214,6 +214,18 @@ func _build_callable_for_format(text: String) -> Callable:
 				final_arguments.append(argument)
 		
 		return Callable(NexusForge.Discourse.API, method).bind(final_arguments)
+
+
+func _can_compare(a, b) -> bool:
+	var type_a: int = typeof(a)
+	var type_b: int = typeof(b)
+	
+	if type_a == type_b:
+		return true
+	elif type_a == TYPE_INT or type_a == TYPE_FLOAT:
+		return type_b == TYPE_INT or type_b == TYPE_FLOAT
+	else:
+		return false
 
 
 #region Override

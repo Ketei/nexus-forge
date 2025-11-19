@@ -1,5 +1,5 @@
 class_name Math
-extends Node
+extends RefCounted
 ## Class to perform math operations in a more convenient way.
 
 

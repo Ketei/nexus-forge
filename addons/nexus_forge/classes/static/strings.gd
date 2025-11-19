@@ -1,12 +1,18 @@
-class_name Strings
-extends Node
+class_name StringUtils
+extends RefCounted
 ## A class holding static methods to properly transform strings
 
 
 ## Converts the first letter of a string to uppercase, while the rest
 ## are converted to lower case.
 static func capitalize(string_to_cap: String) -> String:
-	return string_to_cap.left(1).to_upper() + string_to_cap.right(-1).to_lower()
+	var len: int = string_to_cap.length() == 0
+	if string_to_cap.length() == 0:
+		return ""
+	elif len == 1:
+		return string_to_cap.to_upper()
+	else:
+		return string_to_cap.substr(0, 1).to_upper() + string_to_cap.substr(1).to_lower()
 
 
 ## Converts the first and every other letter after a space to uppercase
@@ -19,32 +25,21 @@ static func title_case(string_to_title: String) -> String:
 		return return_string
 	
 	for piece in title_parts:
-		return_string += Strings.capitalize(piece)
-		if piece != title_parts[-1]:
-			return_string += " "
+		return_string += capitalize(piece) + " "
 	
-	return return_string
+	return return_string.trim_suffix(" ")
 
 
+## Returns true if param string is between the [param prefix] and [param suffix].
 static func is_between(string: String, prefix: String, suffix: String) -> bool:
 	return string.begins_with(prefix) and string.ends_with(suffix)
 
 
-## Same as the default slice function but you can use negative numbers to
-## select backwards. -1 will return the last slice. If out of bounds it'll
-## return an empty string.
-static func get_slice_index(string: String, delimiter: String, index: int) -> String:
-	var slices: PackedStringArray = string.split(delimiter, false)
-	var size: int = slices.size()
-	
-	if index < -size - 1 or size < index:
-		return ""
-	return slices[index]
-
-
-static func split_and_strip(string: String, delimeter: String) -> PackedStringArray:
+## Splits [param string] using the given [param delimeter]. Performs
+## [method String.strip_edges] on the results.
+static func split_and_strip(string: String, delimeter: String, allow_empty: bool = true, max_split: int = 0) -> PackedStringArray:
 	var split_pie: PackedStringArray = []
-	for part in string.split(delimeter, false):
+	for part in string.split(delimeter, allow_empty, max_split):
 		split_pie.append(part.strip_edges())
 	return split_pie
 
@@ -67,14 +62,8 @@ static func string_to_variant(string: String) -> Variant:
 		return string
 
 
-static func nocasecmp_equal(string_a: String, string_b: String) -> bool:
-	return string_a.to_upper() == string_b.to_upper()
-
-
-static func begins_with_nocasecmp(what: String, begins_with: String) -> bool:
-	return what.to_upper().begins_with(begins_with.to_upper())
-
-
+## Takes param value and returns a string of the same value but with commas[br]
+## Example: 123456789 -> "123,456,789"
 static func beautify_int(value: int) -> String:
 	var formatted_number: String = str(value) # Convert the number to a string
 	var count: int = 0
@@ -89,6 +78,11 @@ static func beautify_int(value: int) -> String:
 	return result
 
 
+## Quantifies the "textual difference" between [param string_1] and
+## [param string_2]. The closer the return is to [code]0[/code] the more similar
+## they are. The closer it is to [code]1.0[/code] the more different they are.[br]
+## The Levenshtein distance represents the minimum number of single-character
+## edits required to transform [param string_1] into [param string_2].
 static func levenshtein_distance(string_1: String, string_2: String) -> float:
 	# Written by ChatGPT
 	var len_1: int = string_1.length()
@@ -124,26 +118,3 @@ static func levenshtein_distance(string_1: String, string_2: String) -> float:
 	var max_len:int = maxi(len_1, len_2)
 	var similarity: float = 1.0 - float(distance) / float(max_len)
 	return similarity
-
-
-## Random string based on time. Less probability of collission
-static func random_string64() -> String:
-	var random_array: PackedByteArray = var_to_bytes(Time.get_unix_time_from_system())
-	for _a in range(36): # Each 3 adds 4 more characters
-		random_array.append(randi() & 0xFF)
-	
-	return Marshalls.raw_to_base64(random_array).replace("+", "-").replace("/", "_")
-
-
-## Generates a random string with a given length.
-static func random_string(num_chars: int) -> String:
-	var byte_array := PackedByteArray()
-	
-	for _a in range(num_chars):
-		byte_array.append(randi() & 0xFF)
-	
-	return (Marshalls.raw_to_base64(byte_array)
-		.replace("+", "-")
-		.replace("/", "_")
-		.replace("=", "")
-		.substr(0, num_chars))

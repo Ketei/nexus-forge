@@ -108,7 +108,7 @@ custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.223182, 0.705086, 0.904884, 1)
 theme_override_font_sizes/font_size = 25
-text = "Variables"
+text = "Blackboard"
 
 [node name="FoldersPanel" type="PanelContainer" parent="MainSplit/VBoxContainer"]
 custom_minimum_size = Vector2(200, 0)

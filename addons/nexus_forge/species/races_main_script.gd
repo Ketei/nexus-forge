@@ -268,7 +268,7 @@ func save_current_species() -> void:
 		if stat.get_child(0).button_pressed == false:
 			continue
 		
-		_species_resource.set_species_stat(
+		_species_resource.set_species_stat_value(
 				loaded_species,
 				stat.get_meta(&"field_id"),
 				int(stat.get_child(1).value))
@@ -279,7 +279,7 @@ func save_current_species() -> void:
 		if skill.get_child(0).button_pressed == false:
 			continue
 		
-		_species_resource.set_species_skill(
+		_species_resource.set_species_skill_value(
 				loaded_species,
 				skill.get_meta(&"field_id"),
 				int(skill.get_child(1).value))
@@ -290,7 +290,7 @@ func save_current_species() -> void:
 		if trait_child.get_child(0).button_pressed == false:
 			continue
 		
-		_species_resource.set_species_trait(
+		_species_resource.set_species_trait_value(
 				loaded_species,
 				trait_child.get_meta(&"field_id"),
 				int(trait_child.get_child(1).value))

@@ -296,9 +296,23 @@ func get_species_stats(species_id: StringName, inherit: bool = true) -> StatBloc
 
 
 ## Sets the stat [param stat_id] to [param value] on the [param species_id].
-func set_species_stat(species_id: StringName, stat_id: StringName, value: float) -> void:
+func set_species_stat_value(species_id: StringName, stat_id: StringName, value: float) -> void:
 	if _species.has(species_id):
 		_species[species_id]["stats"][stat_id] = value
+
+
+## Sets [param species_id] stats to match the values on [param stats].[br]
+## Stats with a value of 0 are ignored.
+func set_species_stats(species_id: StringName, stats: StatBlock) -> void:
+	if not _species.has(species_id):
+		return
+	
+	var stat_data: Dictionary[StringName, int] = StatBlock.stats()
+	
+	for stat_id in stat_data.keys():
+		var stat_value: float = stats.get(stat_id).value
+		if stat_value != 0:
+			_species[species_id]["stats"][stat_id] = stat_value
 
 
 ## Returns [code]true[/code] if [param species_id] has [param stat_id] assigned.
@@ -313,9 +327,21 @@ func erase_species_stat(species_id: StringName, stat_id: StringName) -> void:
 
 
 ## Sets the [param skill_id] to [param value] on [param species_id].
-func set_species_skill(species_id: StringName, skill_id: StringName, value: int) -> void:
+func set_species_skill_value(species_id: StringName, skill_id: StringName, value: int) -> void:
 	if _species.has(species_id):
 		_species[species_id]["skills"][skill_id] = value
+
+
+## Sets [param species_id] skills to match the values on [param skills].[br]
+## Skills with a value of 0 are ignored.
+func set_species_skills(species_id: StringName, skills: SkillSet) -> void:
+	if not _species.has(species_id):
+		return
+	
+	for skill in SkillSet.skills():
+		var value: int = skills.get(skill)
+		if value != 0:
+			_species[species_id]["skills"][skill] = value
 
 
 ## Returns the value of [param skill_id] assigned to the species with
@@ -355,9 +381,21 @@ func erase_species_skill(species_id: StringName, skill_id: StringName) -> void:
 
 
 ## Sets [param trait_id] to [param value] on the [param species_id].
-func set_species_trait(species_id: StringName, trait_id: StringName, value: int) -> void:
+func set_species_trait_value(species_id: StringName, trait_id: StringName, value: int) -> void:
 	if _species.has(species_id):
 		_species[species_id]["traits"][trait_id] = value
+
+
+## Sets [param species_id] traits to match the values on [param traits].[br]
+## Traits with a value of 0 are ignored.
+func set_species_traits(species_id: StringName, traits: TraitBlock) -> void:
+	if not _species.has(species_id):
+		return
+	
+	for trait_id in TraitBlock.traits():
+		var trait_value: int = traits.get(trait_id)
+		if trait_value != 0:
+			_species[species_id]["traits"][trait_id] = trait_value
 
 
 ## Returns the value of [param trait_id] assigned to the species with

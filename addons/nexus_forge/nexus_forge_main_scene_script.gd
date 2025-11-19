@@ -4,21 +4,21 @@ extends Control
 
 var recipes_link: EditorItemRecipeLink = EditorItemRecipeLink.new()
 var current_tab: int = 0
-@onready var tool_count: int = $MainContainer/ToolScroll/ToolContainer.get_child_count()
+var tool_count: int = 0
 @onready var tool_tab_bar: TabBar = $MainContainer/ToolTabBar
 @onready var splash_texture: TextureRect = $MainContainer/ToolScroll/ToolContainer/NexusForge/SplashPanel/SplashTexture
 #@onready var reload_image_btn: Button = $MainContainer/ToolContainer/NexusForge/SplashPanel/SplashTexture/ReloadImageBtn
 # ----- Tools -----
+var discourse: PanelContainer = null
+var variables: PanelContainer = null
+var characters: PanelContainer = null
+var species: PanelContainer = null
+var talents: PanelContainer = null
+var items: PanelContainer = null
+var recipes: PanelContainer = null
+var quests: PanelContainer = null
+var phrase_maps: PanelContainer = null
 @onready var nexus_forge: Control = $MainContainer/ToolScroll/ToolContainer/NexusForge
-@onready var discourse: PanelContainer = $MainContainer/ToolScroll/ToolContainer/Discourse
-@onready var variables: PanelContainer = $MainContainer/ToolScroll/ToolContainer/Variables
-@onready var characters: PanelContainer = $MainContainer/ToolScroll/ToolContainer/Characters
-@onready var species: PanelContainer = $MainContainer/ToolScroll/ToolContainer/Species
-@onready var talents: PanelContainer = $MainContainer/ToolScroll/ToolContainer/Talents
-@onready var items: PanelContainer = $MainContainer/ToolScroll/ToolContainer/Items
-@onready var recipes: PanelContainer = $MainContainer/ToolScroll/ToolContainer/Recipes
-@onready var quests: PanelContainer = $MainContainer/ToolScroll/ToolContainer/Quests
-@onready var phrase_maps: PanelContainer = $MainContainer/ToolScroll/ToolContainer/PhraseMaps
 
 # -----------------
 
@@ -27,6 +27,30 @@ func _ready() -> void:
 	if Engine.is_editor_hint() and get_tree().edited_scene_root == self:
 		set_process_input(false)
 		return
+	
+	var tool_container: PanelContainer = $MainContainer/ToolScroll/ToolContainer
+	
+	discourse = load("res://addons/nexus_forge/discourse/discourse_main_scene.tscn").instantiate()
+	variables = load("res://addons/nexus_forge/variables/variables_main.tscn").instantiate()
+	characters = load("res://addons/nexus_forge/characters/new_characters.tscn").instantiate()
+	species = load("res://addons/nexus_forge/species/species_main.tscn").instantiate()
+	talents = load("res://addons/nexus_forge/talents/talents_main.tscn").instantiate()
+	items = load("res://addons/nexus_forge/depot/depot_scene.tscn").instantiate()
+	recipes = load("res://addons/nexus_forge/recipes/recipes_scene.tscn").instantiate()
+	quests = load("res://addons/nexus_forge/quests/quest_main_scene.tscn").instantiate()
+	phrase_maps = load("res://addons/nexus_forge/phrases/localization_resources.tscn").instantiate()
+	
+	tool_container.add_child(discourse)
+	tool_container.add_child(variables)
+	tool_container.add_child(characters)
+	tool_container.add_child(species)
+	tool_container.add_child(talents)
+	tool_container.add_child(items)
+	tool_container.add_child(recipes)
+	tool_container.add_child(quests)
+	tool_container.add_child(phrase_maps)
+	
+	tool_count = tool_container.get_child_count()
 	
 	tool_tab_bar.set_tab_title(0, "")
 	

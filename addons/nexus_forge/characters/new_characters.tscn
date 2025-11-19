@@ -51,6 +51,13 @@ split_offset = 250
 custom_minimum_size = Vector2(250, 0)
 layout_mode = 2
 
+[node name="TitleLabel" type="Label" parent="CharacterContainer/BasicDataSplit/CharacterTreeContainer"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.223182, 0.705086, 0.904884, 1)
+theme_override_font_sizes/font_size = 25
+text = "Persona"
+
 [node name="HBoxContainer" type="HBoxContainer" parent="CharacterContainer/BasicDataSplit/CharacterTreeContainer"]
 layout_mode = 2
 
@@ -83,13 +90,9 @@ custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 size_flags_stretch_ratio = 2.0
 
-[node name="TitleLabel" type="Label" parent="CharacterContainer/BasicDataSplit/GeneralContainer"]
-visible = false
-custom_minimum_size = Vector2(0, 40)
+[node name="Control" type="Control" parent="CharacterContainer/BasicDataSplit/GeneralContainer"]
+custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.223182, 0.705086, 0.904884, 1)
-theme_override_font_sizes/font_size = 25
-text = "Characters"
 
 [node name="CharIDContainer" type="HBoxContainer" parent="CharacterContainer/BasicDataSplit/GeneralContainer"]
 layout_mode = 2
@@ -238,17 +241,17 @@ size_flags_stretch_ratio = 2.0
 theme_override_constants/minimum_grab_thickness = 10
 split_offset = 325
 
-[node name="ValuesVBox" type="VBoxContainer" parent="CharacterContainer/ValuesSplit"]
+[node name="ValuesVBox" type="VSplitContainer" parent="CharacterContainer/ValuesSplit"]
 custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
+split_offset = 347
 
 [node name="StatVBox" type="VBoxContainer" parent="CharacterContainer/ValuesSplit/ValuesVBox"]
 custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
-size_flags_vertical = 3
 
 [node name="StatLbl" type="Label" parent="CharacterContainer/ValuesSplit/ValuesVBox/StatVBox"]
-custom_minimum_size = Vector2(0, 40)
+custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 text = "Stats"
 horizontal_alignment = 1
@@ -263,16 +266,12 @@ horizontal_scroll_mode = 0
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="HSeparator" type="HSeparator" parent="CharacterContainer/ValuesSplit/ValuesVBox"]
-layout_mode = 2
-
 [node name="SkillVBox" type="VBoxContainer" parent="CharacterContainer/ValuesSplit/ValuesVBox"]
 custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
-size_flags_vertical = 3
 
 [node name="StatLbl" type="Label" parent="CharacterContainer/ValuesSplit/ValuesVBox/SkillVBox"]
-custom_minimum_size = Vector2(0, 40)
+custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 text = "Skills"
 horizontal_alignment = 1
@@ -292,7 +291,7 @@ custom_minimum_size = Vector2(220, 0)
 layout_mode = 2
 
 [node name="StatLbl" type="Label" parent="CharacterContainer/ValuesSplit/TraitsVbox"]
-custom_minimum_size = Vector2(0, 40)
+custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 text = "Traits"
 horizontal_alignment = 1

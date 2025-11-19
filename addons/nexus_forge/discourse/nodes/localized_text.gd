@@ -5,7 +5,6 @@ func _post_init() -> void:
 	name = &"LocalizedText"
 	custom_id = "LocalizedText"
 	title = "Localized Text"
-	graph_icon = get_theme_icon("Translation", "EditorIcons")
 	node_type = DialogueNodeType.LOCALIZED_TEXT
 	parent_mode = PortMode.OUTPUT
 	parent_port = 0
@@ -36,6 +35,7 @@ func _post_init() -> void:
 
 
 func _ready() -> void:
+	graph_icon = get_theme_icon("Translation", "EditorIcons")
 	set_output_connection_icon(&"connection", get_theme_icon("String", "EditorIcons"))
 
 
