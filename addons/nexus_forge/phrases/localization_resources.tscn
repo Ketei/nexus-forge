@@ -53,7 +53,7 @@ custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.223529, 0.705882, 0.905882, 1)
 theme_override_font_sizes/font_size = 25
-text = "Localization"
+text = "Phrase Maps"
 
 [node name="SearchContainer" type="HBoxContainer" parent="MainContainer/FilesContainer"]
 layout_mode = 2
