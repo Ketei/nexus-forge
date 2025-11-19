@@ -6,10 +6,10 @@
 [ext_resource type="Texture2D" uid="uid://cymtattv7iu68" path="res://addons/nexus_forge/icons/format_plus.svg" id="4_502er"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_txndr"]
-content_margin_left = 4.0
-content_margin_top = 6.0
-content_margin_right = 4.0
-content_margin_bottom = 4.0
+content_margin_left = 6.0
+content_margin_top = 8.0
+content_margin_right = 6.0
+content_margin_bottom = 6.0
 
 [sub_resource type="Image" id="Image_502er"]
 data = {
@@ -49,7 +49,10 @@ custom_minimum_size = Vector2(180, 0)
 layout_mode = 2
 
 [node name="Label" type="Label" parent="MainContainer/FilesContainer"]
+custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
+theme_override_colors/font_color = Color(0.223529, 0.705882, 0.905882, 1)
+theme_override_font_sizes/font_size = 25
 text = "Localization"
 
 [node name="SearchContainer" type="HBoxContainer" parent="MainContainer/FilesContainer"]

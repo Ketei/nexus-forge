@@ -12,10 +12,10 @@
 [ext_resource type="Script" uid="uid://b3ooglkmjjil4" path="res://addons/nexus_forge/classes/simple_data_tree.gd" id="9_iky44"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_f8ser"]
-content_margin_left = 4.0
-content_margin_top = 4.0
-content_margin_right = 4.0
-content_margin_bottom = 4.0
+content_margin_left = 6.0
+content_margin_top = 8.0
+content_margin_right = 6.0
+content_margin_bottom = 6.0
 
 [sub_resource type="Image" id="Image_f8ser"]
 data = {
