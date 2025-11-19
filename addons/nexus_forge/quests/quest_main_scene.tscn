@@ -34,6 +34,13 @@ layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 1.25
 
+[node name="TitleLabel" type="Label" parent="MainContainer/TreeContainer"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.223182, 0.705086, 0.904884, 1)
+theme_override_font_sizes/font_size = 25
+text = "Odyssey"
+
 [node name="HBoxContainer" type="HBoxContainer" parent="MainContainer/TreeContainer"]
 layout_mode = 2
 
@@ -66,6 +73,13 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 1.5
+
+[node name="TitleLbl" type="Label" parent="MainContainer/BasicContainer"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+text = "Quest"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="QuestTitleContainer" type="HBoxContainer" parent="MainContainer/BasicContainer"]
 layout_mode = 2
@@ -197,6 +211,13 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 1.5
+
+[node name="TitleLbl" type="Label" parent="MainContainer/StageContainer"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+text = "Stages"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="MainCotnainer" type="VBoxContainer" parent="MainContainer/StageContainer"]
 layout_mode = 2
@@ -365,6 +386,13 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 1.5
+
+[node name="TitleLbl" type="Label" parent="MainContainer/StepContainer"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+text = "Steps"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="StepsContainer" type="VBoxContainer" parent="MainContainer/StepContainer"]
 layout_mode = 2

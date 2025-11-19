@@ -9,10 +9,10 @@
 [ext_resource type="Texture2D" uid="uid://cxv7veghytl4m" path="res://addons/nexus_forge/icons/add_string.svg" id="7_wd8y6"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_c5wqu"]
-content_margin_left = 8.0
-content_margin_top = 10.0
-content_margin_right = 8.0
-content_margin_bottom = 8.0
+content_margin_left = 6.0
+content_margin_top = 8.0
+content_margin_right = 6.0
+content_margin_bottom = 6.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_jvoa0"]
 bg_color = Color(0.211765, 0.239216, 0.290196, 1)
