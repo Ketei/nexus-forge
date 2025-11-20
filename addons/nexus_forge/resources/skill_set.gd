@@ -67,23 +67,26 @@ func custom_skills() -> Array[StringName]:
 	return all_skills
 
 
-## Registers a new custom skill with id [param skill_id] unless it already exists.[br]
+## Registers a new custom skill with id [param skill_id] if it didn't exist and
+## sets it to [param value].[br]
 ## Custom skills are tracked individually with exception of the custom skills
 ## registered on runtime with [method SkillCatalog.create_custom_skill] on the
 ## [code]NexusForge.Skills[/code] singleton which all SkillSets contain.
-func create_custom(skill_id: StringName) -> void:
-	if _custom_skills.has(skill_id):
-		return
-	_custom_skills[skill_id] = 0
+func set_custom_skill(skill_id: StringName, value: int) -> void:
+	_custom_skills[skill_id] = value
 
 
 ## Gets the value of the custom skill [param skill_id].
-func get_custom(skill_id: StringName) -> int:
+func custom_skill_value(skill_id: StringName) -> int:
 	if _custom_skills.has(skill_id):
 		return _custom_skills[skill_id]
 	return 0
 
 
 ## Returns true if this SkillSet contains the custom skill [param skill_id].
-func has_custom(skill_id: StringName) -> bool:
+func has_custom_skill(skill_id: StringName) -> bool:
 	return _custom_skills.has(skill_id)
+
+
+func erase_custom_skill(skill_id: StringName) -> void:
+	_custom_skills.erase(skill_id)

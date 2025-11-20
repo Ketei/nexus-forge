@@ -60,18 +60,19 @@ func custom_traits() -> Array[StringName]:
 	return all_traits
 
 
-## Adds a custom trait to the block.[br]
+## Adds a custom trait to the block if it doesn't have it and sets it
+## to [param value].[br]
 ## Custom traits are tracked individually with exception of the traits
 ## registered on runtime with [method TraitCatalog.create_custom_trait] on the
 ## [code]NexusForge.Traits[/code] singleton.
-func create_custom(trait_id: StringName) -> void:
+func set_custom_trait(trait_id: StringName, to: int) -> void:
 	if _custom_traits.has(trait_id):
 		return
-	_custom_traits[trait_id] = 0
+	_custom_traits[trait_id] = to
 
 
-## Returns the level of a custom trait or -1 if no trait is found.
-func custom_trait_level(trait_id: StringName) -> int:
+## Returns the value of a custom trait or -1 if no trait is found.
+func custom_trait_value(trait_id: StringName) -> int:
 	if _custom_traits.has(trait_id):
 		return _custom_traits[trait_id]
 	return -1
@@ -80,12 +81,6 @@ func custom_trait_level(trait_id: StringName) -> int:
 ## Returns true if the custom trait [param trait_id] exists.
 func has_custom_trait(trait_id: StringName) -> bool:
 	return _custom_traits.has(trait_id)
-
-
-## Sets the level of custom trait [param trait_id] to [param level] if it exists.
-func set_custom_trait_level(trait_id: StringName, level: int) -> void:
-	if _custom_traits.has(trait_id):
-		_custom_traits[trait_id] = level
 
 
 ## Erases the custom trait [param trait_id].
