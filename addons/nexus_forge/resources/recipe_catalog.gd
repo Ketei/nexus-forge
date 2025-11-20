@@ -55,7 +55,7 @@ func set_recipe_outputs(recipe_id: StringName, outputs: Array[RecipeItem]) -> vo
 
 ## Creates a recipe with param recipe_id unless it already exists.
 func create_recipe(recipe_id: StringName) -> void:
-	if recipe_id.is_empty() or _recipes.has(recipe_id):
+	if _recipes.has(recipe_id):
 		return
 	
 	var recipe_data: Dictionary[String, Variant] = {}
@@ -80,6 +80,46 @@ func set_recipe_data(recipe_id: StringName, data_key: String, data: Variant) -> 
 			_recipes[recipe_id]["data"].erase(data_key)
 	else:
 		_recipes[recipe_id]["data"][data_key] = data
+
+
+## Sets the custom data of an input ingredient in the [param recipe_id]
+## to [param data]. If param data is [code]null[/code] then the key is erased.
+func set_recipe_input_item_data(recipe_id: StringName, ingredient_idx: int, data_key: String, data: Variant) -> void:
+	if ingredient_idx < 0 or not _recipes.has(recipe_id) or not ingredient_idx < _recipes[recipe_id]["input"].size():
+		return
+	
+	if data == null:
+		_recipes[recipe_id]["input"][ingredient_idx]["data"].erase(data_key)
+	else:
+		_recipes[recipe_id]["input"][ingredient_idx]["data"][data_key] = data
+
+
+## Sets the custom data of an output ingredient in the [param recipe_id]
+## to [param data]. If param data is [code]null[/code] then the key is erased.
+func set_recipe_output_item_data(recipe_id: StringName, ingredient_idx: int, data_key: String, data: Variant) -> void:
+	if ingredient_idx < 0 or not _recipes.has(recipe_id) or not ingredient_idx < _recipes[recipe_id]["output"].size():
+		return
+	
+	if data == null:
+		_recipes[recipe_id]["output"][ingredient_idx]["data"].erase(data_key)
+	else:
+		_recipes[recipe_id]["output"][ingredient_idx]["data"][data_key] = data
+
+
+## Clears the custom data from the input ingredient with index [param ingredient_idx]
+## on [param recipe_id].
+func clear_recipe_input_item_data(recipe_id: StringName, ingredient_idx: int) -> void:
+	if ingredient_idx < 0 or not _recipes.has(recipe_id) or not ingredient_idx < _recipes[recipe_id]["input"].size():
+		return
+	_recipes[recipe_id]["input"][ingredient_idx]["data"].clear()
+
+
+## Clears the custom data from the output ingredient with index [param ingredient_idx]
+## on [param recipe_id].
+func clear_recipe_output_item_data(recipe_id: StringName, ingredient_idx: int) -> void:
+	if ingredient_idx < 0 or not _recipes.has(recipe_id) or not ingredient_idx < _recipes[recipe_id]["input"].size():
+		return
+	_recipes[recipe_id]["output"][ingredient_idx]["data"].clear()
 
 
 ## Clears the custom data of [param recipe_id].
