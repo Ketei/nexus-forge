@@ -318,19 +318,13 @@ theme_override_styles/panel = SubResource("StyleBoxEmpty_bes68")
 [node name="CurrencyContainer" type="VBoxContainer" parent="ItemsContainer/CurrencyPanel"]
 layout_mode = 2
 
-[node name="TitleVContainer" type="VBoxContainer" parent="ItemsContainer/CurrencyPanel/CurrencyContainer"]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/TitleVContainer"]
+[node name="Label" type="Label" parent="ItemsContainer/CurrencyPanel/CurrencyContainer"]
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "Currencies"
 horizontal_alignment = 1
 vertical_alignment = 2
-
-[node name="HSeparator" type="HSeparator" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/TitleVContainer"]
-layout_mode = 2
 
 [node name="TreeContainer" type="VBoxContainer" parent="ItemsContainer/CurrencyPanel/CurrencyContainer"]
 layout_mode = 2

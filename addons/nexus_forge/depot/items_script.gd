@@ -285,7 +285,7 @@ func set_currency_ui_enabled(enabled: bool) -> void:
 
 func load_currency(currency_id: StringName) -> void:
 	currency_name_ln_edt.text = currency_resource.get_currency_name(currency_id)
-	currency_value_spn_bx.value = currency_resource.get_currency_value(currency_id)
+	currency_value_spn_bx.set_value_no_signal(currency_resource.get_currency_value(currency_id))
 	currency_custom_data_tree.clear_data()
 	
 	for data_key in currency_resource.currency_data_keys(currency_id):
