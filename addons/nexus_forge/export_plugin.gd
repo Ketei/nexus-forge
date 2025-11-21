@@ -56,9 +56,39 @@ func _get_customization_configuration_hash() -> int:
 
 
 func _customize_resource(resource: Resource, _path: String) -> Resource:
-	if resource is not EditorDiscourseDialog:
-		return null # We don't intend to modify other resources 
+	var resource_class: StringName = resource.get_script().get_global_name()
+	if resource_class == &"EditorDiscourseDialog":
+		return customize_discourse_dialog(resource)
+	elif resource_class == &"SkillCatalog":
+		return customize_skill_catalog(resource)
+	elif resource_class == &"TraitCatalog":
+		return customize_trait_catalog(resource)
+	return null
+
+
+func customize_trait_catalog(catalog: TraitCatalog) -> TraitCatalog:
+	var traits: Array[StringName] = TraitBlock.traits()
 	
+	for saved_trait in catalog._traits.keys():
+		if traits.has(saved_trait):
+			continue
+		catalog._traits.erase(saved_trait)
+	
+	return catalog
+
+
+func customize_skill_catalog(catalog: SkillCatalog) -> SkillCatalog:
+	var skills: Array[StringName] = SkillSet.skills()
+	
+	for saved_skill in catalog._skills.keys():
+		if skills.has(saved_skill):
+			continue
+		catalog._skills.erase(saved_skill)
+	
+	return catalog
+
+
+func customize_discourse_dialog(resource: EditorDiscourseDialog) -> ReleaseDiscourseDialog:
 	# Establishing the class for auto-complete
 	var dialog_resource: EditorDiscourseDialog = resource
 	
