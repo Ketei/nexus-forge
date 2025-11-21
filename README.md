@@ -4,7 +4,7 @@
 **Nexus Forge** is a powerful, open-source **Godot Engine plugin** designed to handle the basic data of your game. Built entirely in **GDScript**, it provides a range of visual editor tools for managing everything from complex dialogue, player stats, items, quests and more without enforcing any specific UI, giving you maximum creative freedom.
 
 > [!IMPORTANT]
-> This plugin is currently in the **Alpha stage**. While the tools are functional the **Graphical User Interface (GUI)** and internal API definitions (class names, function names) may change significantly before the Beta release.
+> This plugin is currently in the **Alpha stage**. While the tools are functional they haven't been throughly tested and the **Graphical User Interface (GUI)**, internal API definitions (class names, function names) and other core properties may change significantly before the Beta release.
 > **Use of this plugin is recommended for testing, evaluation, or as a VERY bold choice for current projects.** It is not yet considered reliable for production projects, expect bugs.
 
 ## Core Features and Tools
