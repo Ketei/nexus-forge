@@ -18,33 +18,11 @@ extends Resource
 ## The region for the language this map is in
 @export var region: String = ""
 
-@export_storage var _phrases: Dictionary[StringName, Dictionary] = {
-	#&"InventoryStatus": {
-		#"text": "Let's see...{$inventory/is_full}{$inventory/count}{passed_argument}",
-		#"arguments": {
-			#"$inventory/is_full": {
-				#"default": "Inventory {$inventory/count} / 50",
-				#"custom": {
-					#"true": "Inventory is FULL!!!"},
-			#"$inventory/count": {
-				#"default": "",
-				#"custom": {}}},
-			#"passed_argument": {
-				#"default": "",
-				#"custom": {}
-			#}
-		#}
-	#}
-}
+@export_storage var _phrases: Dictionary[StringName, Dictionary] = {}
 
 # Not exported as these are generated on-demand. Stored in case of being
 # needed again.
-var _value_keys: Dictionary[StringName, Dictionary] = {
-	#&"InventoryStatus": {
-		#"$inventory/is_full": Callable(), # Dynamically generated
-		#"$inventory/count": Callable()
-	#}
-}
+var _value_keys: Dictionary[StringName, Dictionary] = {}
 
 
 ## Returns an array containing all the formattable strings that are contained

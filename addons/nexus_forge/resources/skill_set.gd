@@ -13,7 +13,7 @@ extends Resource
 ## [/codeblock]
 
 
-@export var one_handed: int
+@export var persuasion: int
 
 var _custom_skills: Dictionary[StringName, int] = {}
 

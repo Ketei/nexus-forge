@@ -13,7 +13,7 @@ extends Resource
 ## [/codeblock]
 
 
-@export var bear_resist: int = 0
+@export var cold_resist: int = 0
 
 var _custom_traits: Dictionary[StringName, int] = {}
 

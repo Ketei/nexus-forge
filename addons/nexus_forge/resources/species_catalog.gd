@@ -14,20 +14,7 @@ extends Resource
 const DEFAULT_DATA: Dictionary[String, Variant] = {}
 
 
-@export_storage var _species: Dictionary[StringName, Dictionary] = {
-	#&"human": {
-		#"parent_key": &"",
-		#"name": "Human",
-		#"description": "Clasic Hooman",
-		#"data": {},
-		#"stats": {
-			#&"health": 100.0},
-		#"skills": {
-			#&"one_handed": 15},
-		#"traits": {
-			#&"bear_resist": 1}
-	#}
-}
+@export_storage var _species: Dictionary[StringName, Dictionary] = {}
 
 
 func _species_tree_stats(species_id: StringName) -> Dictionary[StringName, float]:

@@ -10,18 +10,18 @@ extends RefCounted
 
 
 ## Max size of the cache.
-var max_size: int = 50: # Custom set that resizes cache_map if larger
+var max_size: int = 50: # Custom set that resizes _cache_map if larger
 	set(new_size):
 		var clamped_size: int = maxi(new_size, 1)
 		_resize_cache(clamped_size)
 		max_size = clamped_size
-var cache_map: Dictionary[String, CacheLink] = {}
-var newest_used: CacheLink = null
-var oldest_used: CacheLink = null
+var _cache_map: Dictionary[String, CacheLink] = {}
+var _newest_used: CacheLink = null
+var _oldest_used: CacheLink = null
 
 
 func _resize_cache(target_size: int) -> void:
-	var current_size: int = cache_map.size()
+	var current_size: int = _cache_map.size()
 	if current_size <= target_size:
 		return
 	
@@ -31,20 +31,20 @@ func _resize_cache(target_size: int) -> void:
 
 
 func _remove_oldest() -> void:
-	if oldest_used == null:
+	if _oldest_used == null:
 		return
 	
-	var target_link: CacheLink = oldest_used
+	var target_link: CacheLink = _oldest_used
 	
-	cache_map.erase(target_link.key)
+	_cache_map.erase(target_link.key)
 	
 	if target_link.newer_link != null:
 		target_link.newer_link.older_link = null
 	
-	oldest_used = target_link.newer_link
+	_oldest_used = target_link.newer_link
 	
-	if newest_used == target_link:
-		newest_used = null
+	if _newest_used == target_link:
+		_newest_used = null
 	
 	# Releasing all internal references to prevent memory leaks due to
 	# cyclical referencing.
@@ -52,41 +52,41 @@ func _remove_oldest() -> void:
 
 
 func _move_to_newest(link: CacheLink) -> void:
-	if link == oldest_used:
+	if link == _oldest_used:
 		link.newer_link.older_link = null
-		newest_used.newer_link = link
-		link.older_link = newest_used # Newest used is now the second.
-		oldest_used = link.newer_link # Update oldest
-		newest_used = link # Update newest
+		_newest_used.newer_link = link
+		link.older_link = _newest_used # Newest used is now the second.
+		_oldest_used = link.newer_link # Update oldest
+		_newest_used = link # Update newest
 		link.newer_link = null # link is the newest_sed, so there is no newest
-	elif link != newest_used:
+	elif link != _newest_used:
 		link.older_link.newer_link = link.newer_link
 		link.newer_link.older_link = link.older_link
-		newest_used.newer_link = link
+		_newest_used.newer_link = link
 		link.newer_link = null
-		link.older_link = newest_used
-		newest_used = link
+		link.older_link = _newest_used
+		_newest_used = link
 
 
 func _add_to_newest(link: CacheLink) -> void:
-	if newest_used != null:
-		link.older_link = newest_used
-		newest_used.newer_link = link
+	if _newest_used != null:
+		link.older_link = _newest_used
+		_newest_used.newer_link = link
 		
-	if oldest_used == null:
-		oldest_used = link
+	if _oldest_used == null:
+		_oldest_used = link
 	
-	newest_used = link
+	_newest_used = link
 	
-	cache_map[link.key] = link
+	_cache_map[link.key] = link
 
 
 ## It adds [param data] to the cache with the id param key.[br]
 ## If the item was already cached it moves it to the front of the
 ## cache (newest used).
 func cache_data(key: String, data: Variant) -> void:
-	if cache_map.has(key):
-		var link: CacheLink = cache_map[key]
+	if _cache_map.has(key):
+		var link: CacheLink = _cache_map[key]
 		
 		if link.data != data:
 			link.data = data
@@ -94,7 +94,7 @@ func cache_data(key: String, data: Variant) -> void:
 		_move_to_newest(link)
 		return
 	
-	var current_size: int = cache_map.size()
+	var current_size: int = _cache_map.size()
 	
 	while max_size <= current_size:
 		_remove_oldest()
@@ -110,25 +110,25 @@ func cache_data(key: String, data: Variant) -> void:
 ## Returns the cached item assigned to [param key] or [code]null[/code] if
 ## the item isn't in the cache.
 func get_cache(key: String) -> Variant:
-	if cache_map.has(key):
-		return cache_map[key].data
+	if _cache_map.has(key):
+		return _cache_map[key].data
 	return null
 
 
 ## Returns true if an item with key [param key] is in the cache.
 func is_in_cache(key: String) -> bool:
-	return cache_map.has(key)
+	return _cache_map.has(key)
 
 
 ## Returns the current size of the cache.
 func size() -> int:
-	return cache_map.size()
+	return _cache_map.size()
 
 
 ## Clears the cache.
 func clear() -> void:
-	for cache_key in cache_map.keys():
-		cache_map[cache_key].clear()
-	cache_map.clear()
-	newest_used = null
-	oldest_used = null
+	for cache_key in _cache_map.keys():
+		_cache_map[cache_key].clear()
+	_cache_map.clear()
+	_newest_used = null
+	_oldest_used = null

@@ -8,7 +8,6 @@ signal item_renamed(item_id: StringName, new_name: String)
 signal item_deleted(item_id: StringName)
 
 
-#var item_resource: ItemCatalog = null
 var item_link: EditorItemRecipeLink = EditorItemRecipeLink.new():
 	set(new_link):
 		new_link.items = item_link.items
@@ -24,7 +23,6 @@ var loaded_currency: StringName = &""
 
 var _unsaved: bool = false
 
-#@onready var category_opt_btn: OptionButton = $ItemsPanel/ItemsContainer/TreeContainer/CategoryContainer/CategoryOptBtn
 @onready var search_item_container: LineEdit = $ItemsPanel/ItemsContainer/TreeContainer/ItemSearchContainer/SearchItemContainer
 @onready var new_item_btn: Button = $ItemsPanel/ItemsContainer/TreeContainer/ItemSearchContainer/NewItemBtn
 @onready var items_tree: Tree = $ItemsPanel/ItemsContainer/TreeContainer/ItemsTree
@@ -633,9 +631,6 @@ func reload_categories(reselect: bool = false) -> void:
 	
 	categories_tree.clear_categories()
 	
-	#var categories: Array[StringName] = item_resource.categories()
-	#categories.sort_custom(func(a,b): return String(a).naturalnocasecmp_to(String(b)) < 0)
-	
 	var top_level_categories: Array[StringName] = []
 	
 	for category in item_link.items.categories():
@@ -649,14 +644,6 @@ func reload_categories(reselect: bool = false) -> void:
 	
 	categories_tree.add_category(&"")
 	var new_selection: TreeItem = categories_tree.get_category(current_category) if item_selected else null
-		#idx += 1
-		#category_opt_btn.add_item(String(category).capitalize())
-		#category_opt_btn.set_item_metadata(idx, category)
-		#if category == current_category:
-			#new_selection = idx
-	
-	#category_opt_btn.add_item("(Unassigned)")
-	#category_opt_btn.set_item_metadata(-1, &"")
 	
 	if reselect and new_selection != null:
 		categories_tree.select_no_singal(new_selection)

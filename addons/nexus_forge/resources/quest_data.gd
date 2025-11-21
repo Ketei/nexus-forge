@@ -2,7 +2,7 @@ class_name QuestData
 extends RefCounted
 ## An object containing the data and stages of a given quest.
 
-# Must always contain one item.
+# Must always contain NO_TYPE as an item.
 # Changing this will update NexusForge Quests' types
 enum QuestType {
 	NO_TYPE

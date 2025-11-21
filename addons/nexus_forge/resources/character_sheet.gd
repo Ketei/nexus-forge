@@ -39,7 +39,7 @@ const DEFAULT_DATA: Dictionary[String, Variant] = {}
 static func new_character() -> CharacterSheet:
 	var new_sheet: CharacterSheet = CharacterSheet.new()
 	if new_sheet.stats == null:
-		new_sheet.stats = StatBlock.new()
+		new_sheet.stats = StatBlock.new(true)
 	if new_sheet.skills == null:
 		new_sheet.skills = SkillSet.new()
 	if new_sheet.traits == null:

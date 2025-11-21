@@ -17,8 +17,8 @@ enum StatType {
 	FLOAT}
 
 
-@export var level: RangeInt
 @export var health: RangeInt
+
 
 var _custom_stats: Dictionary[StringName, ValueRange] = {}
 
@@ -68,7 +68,9 @@ static func stats() -> Dictionary[StringName, int]:
 # Note that initialization (_init) comes BEFORE loading, so once the file
 # is initialized it'll proceed to assign the variables to the file's values,
 # overwriting the newly initialized ones.
-func _init() -> void:
+func _init(initialize_ranges: bool = false) -> void:
+	if initialize_ranges == false:
+		return
 	var variant: StringName = &""
 	for item in get_script().get_script_property_list():
 		if item["class_name"] == &"RangeInt":

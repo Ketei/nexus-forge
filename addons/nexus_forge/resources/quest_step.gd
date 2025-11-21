@@ -5,6 +5,8 @@ extends RefCounted
 enum StepFlag {
 	OPTIONAL
 }
+
+# Must always contain NO_TYPE as an item.
 enum StepType {
 	NO_TYPE
 }

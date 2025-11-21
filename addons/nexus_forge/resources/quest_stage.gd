@@ -2,6 +2,7 @@ class_name QuestStage
 extends RefCounted
 
 
+# Must always contain NO_TYPE as an item.
 enum StageType {
 	NO_TYPE
 }

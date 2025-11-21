@@ -8,11 +8,6 @@ extends Resource
 const RECIPE_DEFAULT_DATA: Dictionary[String, Variant] = {}
 
 @export_storage var _recipes: Dictionary = {}
-	#&"recipe_id": {
-		#"input": Array([{"item_id": &"item", "amount": 1, "data": {}}], TYPE_DICTIONARY, &"", null),
-		#"output": [],
-		#"data": {}
-	#}
 
 #region Crafting Recipes
 

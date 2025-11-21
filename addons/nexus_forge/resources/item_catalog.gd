@@ -12,17 +12,7 @@ const CATEGORY_DEFAULT_DATA: Dictionary[String, Variant] = {}
 
 @export_storage var _categories: Dictionary[StringName, Dictionary] = {}
 
-# Items be stored here
-@export_storage var _items: Dictionary[StringName, Dictionary] = {
-	#&"test_item": {
-		#"name": "Test Item",
-		#"category": &"second_class",
-		#"rarity": Rarity.COMMON,
-		#"value": 25,
-		#"description": "This is a test item",
-		#"flags": [ItemFlag.SELLABLE],
-		#"custom_data": null}
-		}
+@export_storage var _items: Dictionary[StringName, Dictionary] = {}
 
 
 #region Items
