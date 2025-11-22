@@ -191,7 +191,12 @@ func _on_data_type_selected(type: int) -> void:
 					0,
 					target.name,
 					target_input)
+	var menu: MenuButton = get_field(&"data").get_child(1)
+	var pop: Popup = menu.get_popup()
+	
+	menu.icon = pop.get_item_icon(pop.get_item_index(type))
 	mode = type
+	
 
 
 func _on_value_changed(_value: Variant = null) -> void:
