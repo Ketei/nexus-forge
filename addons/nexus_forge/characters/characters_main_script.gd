@@ -112,6 +112,8 @@ func get_open_characters() -> Array[String]:
 
 func load_character_files(files: Array[String]) -> void:
 	for file in files:
+		if not FileAccess.file_exists(file):
+			continue
 		var loaded: Resource = load(file)
 		if loaded != null and loaded is CharacterSheet:
 			if char_tree.has_character(loaded):

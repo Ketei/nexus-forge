@@ -764,6 +764,8 @@ func get_open_files() -> Array[String]:
 
 func load_dialog_files(files: Array[String]) -> void:
 	for file in files:
+		if not FileAccess.file_exists(file):
+			continue
 		var loaded: Resource = load(file)
 		if loaded != null and loaded is EditorDiscourseDialog:
 			if conversation_tree.is_conversation_open(loaded):

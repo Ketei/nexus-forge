@@ -443,6 +443,8 @@ func get_open_maps() -> Array[String]:
 
 func open_map_files(files: Array[String]) -> void:
 	for file in files:
+		if not FileAccess.file_exists(file):
+			continue
 		var res_load: Resource = load(file)
 		if res_load != null and res_load is PhraseMap:
 			if files_tree.has_map(res_load):
