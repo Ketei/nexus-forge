@@ -43,7 +43,7 @@ static func new_character() -> CharacterSheet:
 	if new_sheet.skills == null:
 		new_sheet.skills = SkillSet.new()
 	if new_sheet.traits == null:
-		new_sheet.skills = SkillSet.new()
+		new_sheet.traits = TraitBlock.new()
 	new_sheet.custom_data.assign(CharacterSheet.DEFAULT_DATA.duplicate(true))
 	
 	return new_sheet
