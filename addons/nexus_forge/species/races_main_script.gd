@@ -328,7 +328,7 @@ func load_species(species_id: StringName) -> void:
 		else:
 			chk.set_pressed_no_signal(false)
 			spn.editable = false
-			spn.set_value_no_signal(1.0)
+			spn.set_value_no_signal(stat.get_meta(&"default_value", 0.0))
 	
 	for skill in race_skill_container.get_children():
 		var skill_id: StringName = skill.get_meta(&"field_id")
@@ -342,7 +342,7 @@ func load_species(species_id: StringName) -> void:
 		else:
 			chk.set_pressed_no_signal(false)
 			spn.editable = false
-			spn.value = 0.0
+			spn.set_value_no_signal(skill.get_meta(&"default_value", 0.0))
 	
 	for trait_child in race_traits_container.get_children():
 		var trait_id: StringName = trait_child.get_meta(&"field_id")
@@ -355,7 +355,7 @@ func load_species(species_id: StringName) -> void:
 		else:
 			chk.set_pressed_no_signal(false)
 			spn.editable = false
-			spn.value = 0.0
+			spn.set_value_no_signal(trait_child.get_meta(&"default_value", 0.0))
 
 
 func clear_talents() -> void:
@@ -422,6 +422,8 @@ func update_talent_nodes() -> void:
 	
 	var trait_block: TraitBlock = TraitBlock.new()
 	
+	var stat_block: StatBlock = StatBlock.new()
+	
 	var stat_data: Dictionary[StringName, int] = StatBlock.stats()
 	var stats: Array[StringName] = []
 	stats.assign(stat_data.keys())
@@ -436,13 +438,19 @@ func update_talent_nodes() -> void:
 			existing_stat.queue_free()
 	
 	for stat_id in stats:
+		var stat_default: float = 0.0
+		var stat_item: ValueRange = stat_block.get(stat_id)
+		if stat_item != null:
+			stat_default = stat_item.value
+		
 		if stat_map.has(stat_id):
 			race_stats_container.add_child(stat_map[stat_id])
+			stat_map[stat_id].set_meta(&"default_value", stat_default)
 			if stat_data[stat_id] != stat_map[stat_id].get_meta(&"type"):
 				stat_map[stat_id].get_meta(&"value").step = 1.0 if stat_data[stat_id] == TYPE_INT else 0.01
 			stat_map.erase(stat_id)
 		else:
-			var stat = create_value_field(stat_id, stat_data[stat_id], true)
+			var stat = create_value_field(stat_id, stat_default, stat_data[stat_id])
 			race_stats_container.add_child(stat)
 	for remaining_stat in stat_map:
 		stat_map[remaining_stat].queue_free()
@@ -460,6 +468,7 @@ func update_talent_nodes() -> void:
 	
 	for skill_id in skills:
 		if skill_map.has(skill_id):
+			skill_map[skill_id].set_meta(&"default_value", skill_set.get(skill_id))
 			race_skill_container.add_child(skill_map[skill_id])
 			skill_map.erase(skill_id)
 		else:
@@ -482,6 +491,7 @@ func update_talent_nodes() -> void:
 	
 	for trait_id in traits:
 		if trait_map.has(trait_id):
+			trait_map[trait_id].set_meta(&"default_value", trait_block.get(trait_id))
 			race_traits_container.add_child(trait_map[trait_id])
 			trait_map.erase(trait_id)
 		else:
@@ -498,7 +508,7 @@ func value_field_active(field: HBoxContainer) -> bool:
 	return field.get_child(0).button_pressed
 
 
-func create_value_field(field_id: StringName, default_value: int, is_type: bool = false) -> HBoxContainer:
+func create_value_field(field_id: StringName, default_value: int, type: int = TYPE_NIL) -> HBoxContainer:
 	var new_field: HBoxContainer = HBoxContainer.new()
 	var activatable: CheckBox = CheckBox.new()
 	var value: SpinBox = SpinBox.new()
@@ -513,17 +523,17 @@ func create_value_field(field_id: StringName, default_value: int, is_type: bool 
 	value.allow_greater = true
 	value.allow_lesser = true
 	
-	if is_type:
-		if default_value == TYPE_INT:
+	if type != TYPE_NIL:
+		if type == TYPE_INT:
 			value.step = 1.0
 		else:
 			value.step = 0.01
-		value.value = 0.0
-		new_field.set_meta(&"type", default_value)
+		new_field.set_meta(&"type", type)
+		
 	else:
 		value.step = 1.0
-		value.value = default_value
 	
+	value.value = default_value
 	value.editable = false
 	value.update_on_text_changed = true
 	value.custom_minimum_size.y = 32

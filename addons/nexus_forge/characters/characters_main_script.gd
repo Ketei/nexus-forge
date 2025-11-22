@@ -196,6 +196,8 @@ func update_talent_nodes() -> void:
 
 	var trait_block: TraitBlock = TraitBlock.new()
 	
+	var stat_block: StatBlock = StatBlock.new()
+	
 	var stats_data: Dictionary[StringName, int] = StatBlock.stats()
 	
 	var stats: Array[String] = []
@@ -211,8 +213,14 @@ func update_talent_nodes() -> void:
 			existing_stat.queue_free()
 		
 	for stat_id in stats:
+		var stat_default: float = 0.0
+		var stat_item: ValueRange = stat_block.get(stat_id)
+		if stat_item != null:
+			stat_default = stat_item.value
+		
 		if stat_map.has(stat_id):
 			char_stats_container.add_child(stat_map[stat_id])
+			stat_map[stat_id].set_meta(&"default_value", stat_default)
 			if stats_data[stat_id] != stat_map[stat_id].get_meta(&"type"):
 				var new_step: float = 1.0 if stats_data[stat_id] == TYPE_INT else 0.01
 				stat_map[stat_id].get_meta(&"value").step = new_step
@@ -221,7 +229,7 @@ func update_talent_nodes() -> void:
 				stat_map[stat_id].set_meta(&"type", stats_data[stat_id])
 			stat_map.erase(stat_id)
 		else:
-			var stat = create_stat_item(stat_id, stats_data[stat_id])
+			var stat = create_stat_item(stat_id, stats_data[stat_id], stat_default)
 			char_stats_container.add_child(stat)
 	
 	for remaining_stat in stat_map:
@@ -241,6 +249,7 @@ func update_talent_nodes() -> void:
 	for skill_id in skills:
 		if skill_map.has(skill_id):
 			char_skill_container.add_child(skill_map[skill_id])
+			skill_map[skill_id].set_meta(&"default_value", skill_set.get(skill_id))
 			skill_map.erase(skill_id)
 		else:
 			var skill = create_skill_item(skill_id, skill_set.get(skill_id))
@@ -264,6 +273,7 @@ func update_talent_nodes() -> void:
 	for trait_id in traits:
 		if trait_map.has(trait_id):
 			char_traits_container.add_child(trait_map[trait_id])
+			trait_map[trait_id].set_meta(&"default_value", trait_block.get(trait_id))
 			trait_map.erase(trait_id)
 		else:
 			var new_trait: HBoxContainer = create_trait_item(trait_id, trait_block.get(trait_id))
@@ -427,7 +437,7 @@ func reset_stats() -> void:
 		var min_spn: SpinBox = item.get_meta(&"min")
 		var btn: Button = item.get_meta(&"collapse")
 		var flags: int = btn.get_meta(&"range_flags")
-		item.get_meta(&"value").set_value_no_signal(0.0)
+		item.get_meta(&"value").set_value_no_signal(item.get_meta(&"default_value", 0.0))
 		item.get_meta(&"use_max").set_pressed_no_signal(false)
 		item.get_meta(&"use_min").set_pressed_no_signal(false)
 		if BitUtils.is_bit_index(flags, 2, true):
@@ -589,12 +599,17 @@ func load_character(sheet: CharacterSheet) -> void:
 	for skill in char_skill_container.get_children():
 		if skill is HBoxContainer:
 			var skill_value = sheet.skills.get(skill.get_meta(&"skill_id"))
-			skill.get_child(1).set_value_no_signal(skill_value if skill_value != null else 0.0)
-	
+			if skill_value != null:
+				skill.get_child(1).set_value_no_signal(skill_value)
+			else:
+				skill.get_child(1).set_value_no_signal(skill.get_meta(&"default_value"))
 	for child in char_traits_container.get_children():
 		if child is HBoxContainer:
 			var trait_value = sheet.traits.get(child.get_meta(&"trait_id"))
-			child.get_child(1).set_value_no_signal(trait_value if trait_value != null else 0.0)
+			if trait_value == null:
+				child.get_child(1).set_value_no_signal(trait_value)
+			else:
+				child.get_child(1).set_value_no_signal(child.get_meta(&"default_value"))
 
 
 func select_species(type: StringName) -> void:
@@ -611,7 +626,7 @@ func select_gender(gender: CharacterSheet.Gender) -> void:
 			break
 
 # default must be a numeric value (float/type
-func create_stat_item(stat_id: StringName, type: int) -> VBoxContainer:
+func create_stat_item(stat_id: StringName, type: int, default: float) -> VBoxContainer:
 	var new_stat: VBoxContainer = VBoxContainer.new()
 	var data_field: HBoxContainer = HBoxContainer.new()
 	var limits_container: HBoxContainer = HBoxContainer.new()
@@ -669,7 +684,7 @@ func create_stat_item(stat_id: StringName, type: int) -> VBoxContainer:
 	new_value.custom_minimum_size.y = 32
 	new_value.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	new_value.size_flags_stretch_ratio = 3.0
-	new_value.value = 0
+	new_value.value = default
 	if type == TYPE_INT:
 		new_value.step = 1.0
 		limit_max_spn.step = 1.0
@@ -690,6 +705,7 @@ func create_stat_item(stat_id: StringName, type: int) -> VBoxContainer:
 	new_stat.set_meta(&"min", limit_min_spn)
 	new_stat.set_meta(&"type", type)
 	new_stat.set_meta(&"collapse", edit_limits_btn)
+	new_stat.set_meta(&"default_value", default)
 	
 	edit_limits_btn.set_meta(&"range_flags", 0)
 	

@@ -82,7 +82,7 @@ func _enter_tree() -> void:
 	editor_view = MAIN_SCENE.instantiate()
 	editor_view.visible = false
 	EditorInterface.get_editor_main_screen().add_child(editor_view)
-	resource_saved.connect(_on_resource_saved)
+	resource_saved.connect(_on_resource_saved, CONNECT_DEFERRED)
 
 
 func _build() -> bool:
