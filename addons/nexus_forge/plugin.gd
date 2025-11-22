@@ -138,6 +138,27 @@ func _enable_plugin() -> void:
 			"res://addons/nexus_forge/classes/autoload/nexus_forge_singleton.gd")
 
 
+func _get_window_layout(configuration: ConfigFile) -> void:
+	var discourse_open_files: Array[String] = editor_view.discourse.get_open_files()
+	var open_characters: Array[String] = editor_view.characters.get_open_characters()
+	var open_maps: Array[String] = editor_view.phrase_maps.get_open_maps()
+	
+	configuration.set_value("NexusForge", "open_dialogs", discourse_open_files)
+	configuration.set_value("NexusForge", "open_characters", open_characters)
+	configuration.set_value("NexusForge", "open_phrase_maps", open_maps)
+
+
+func _set_window_layout(configuration: ConfigFile) -> void:
+	const empty: Array[String] = []
+	var maps: Array[String] = configuration.get_value("NexusForge", "open_phrase_maps", empty)
+	var characters: Array[String] = configuration.get_value("NexusForge", "open_characters", empty)
+	var dialogs: Array[String] = configuration.get_value("NexusForge", "open_dialogs", empty)
+	
+	editor_view.discourse.load_dialog_files(dialogs)
+	editor_view.characters.load_character_files(characters)
+	editor_view.phrase_maps.open_map_files(maps)
+
+
 func verify_project_settings() -> void:
 	var setting_order: Array[String] = []
 	setting_order.assign(SETTINGS_PATHS.keys())

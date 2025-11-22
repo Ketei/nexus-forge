@@ -758,6 +758,20 @@ func set_localization_tip(language_code: String, region_code: String) -> void:
 	#word_window.queue_free()
 
 
+func get_open_files() -> Array[String]:
+	return conversation_tree.get_open_file_paths()
+
+
+func load_dialog_files(files: Array[String]) -> void:
+	for file in files:
+		var loaded: Resource = load(file)
+		if loaded != null and loaded is EditorDiscourseDialog:
+			if conversation_tree.is_conversation_open(loaded):
+				continue
+			else:
+				add_conversation(loaded, false)
+
+
 func save_current_dialog_to_memory() -> void:
 	var new_dialog: EditorDiscourseDialog = discourse_window.discourse_graph_edit.get_conversation_data(active_conversation)
 	

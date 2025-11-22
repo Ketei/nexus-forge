@@ -71,6 +71,8 @@ func _on_close_character_pressed(resource: CharacterSheet, unsaved: bool) -> voi
 		var result: int = await unsaved_dialog.dialog_finished # 0 = save, 1 = don't save, 2 = cancel
 		
 		if result == 0:
+			if resource == current_sheet:
+				save_current_character()
 			ResourceSaver.save(resource)
 		elif result == 2:
 			unsaved_dialog.queue_free()
@@ -102,6 +104,27 @@ func _something_changed(_arg: Variant = null) -> void:
 	_unsaved = true
 	if current_sheet != null:
 		char_tree.set_unsaved(current_sheet, true)
+
+
+func get_open_characters() -> Array[String]:
+	return char_tree.get_open_paths()
+
+
+func load_character_files(files: Array[String]) -> void:
+	for file in files:
+		var loaded: Resource = load(file)
+		if loaded != null and loaded is CharacterSheet:
+			if char_tree.has_character(loaded):
+				continue
+			
+			if loaded.stats == null:
+				loaded.stats = StatBlock.new(true)
+			if loaded.skills == null:
+				loaded.skills = SkillSet.new()
+			if loaded.traits == null:
+				loaded.traits = TraitBlock.new()
+			
+			char_tree.create_character(loaded, false)
 
 
 func update_genders() -> void:
@@ -245,9 +268,6 @@ func update_talent_nodes() -> void:
 			char_traits_container.add_child(new_trait)
 	for remaining_trait in trait_map.keys():
 		trait_map[remaining_trait].queue_free()
-	
-	if current_sheet != null:
-		_something_changed()
 
 
 func _on_new_character_pressed() -> void:
@@ -444,6 +464,11 @@ func save_current_character() -> void:
 	for stat in char_stats_container.get_children():
 		var sheet_stat: ValueRange = current_sheet.stats.get(stat.get_meta(&"stat_id"))
 		
+		if sheet_stat == null:
+			var new_sheet: ValueRange = RangeInt.new() if stat.get_meta(&"type") == TYPE_INT else RangeFloat.new()
+			current_sheet.stats.set(stat.get_meta(&"stat_id"), new_sheet)
+			sheet_stat = new_sheet
+		
 		sheet_stat.value = stat.get_meta(&"value").value
 		sheet_stat.allow_greater = not stat.get_meta(&"use_max").button_pressed
 		sheet_stat.allow_lesser = not stat.get_meta(&"use_min").button_pressed
@@ -491,6 +516,25 @@ func load_character(sheet: CharacterSheet) -> void:
 	for stat in char_stats_container.get_children():
 		var stat_range: ValueRange = sheet.stats.get(stat.get_meta(&"stat_id"))
 		if stat_range == null:
+			var max_spn: SpinBox = stat.get_meta(&"max")
+			var min_spn: SpinBox = stat.get_meta(&"min")
+			var btn: Button = stat.get_meta(&"collapse")
+			var flags: int = btn.get_meta(&"range_flags")
+			stat.get_meta(&"value").set_value_no_signal(0.0)
+			stat.get_meta(&"use_max").set_pressed_no_signal(false)
+			stat.get_meta(&"use_min").set_pressed_no_signal(false)
+			if BitUtils.is_bit_index(flags, 2, true):
+				btn.icon = preload("res://addons/nexus_forge/icons/range_uncollapsed_none.svg")
+			else:
+				btn.icon = preload("res://addons/nexus_forge/icons/range_collapsed_none.svg")
+			
+			flags = BitUtils.set_bits(flags, 3, false)
+			btn.set_meta(&"range_flags", flags)
+			
+			max_spn.editable = false
+			max_spn.set_value_no_signal(1.0)
+			min_spn.editable = false
+			min_spn.set_value_no_signal(0.0)
 			continue
 		
 		var collapse_btn: Button = stat.get_meta(&"collapse")
@@ -542,13 +586,13 @@ func load_character(sheet: CharacterSheet) -> void:
 	
 	for skill in char_skill_container.get_children():
 		if skill is HBoxContainer:
-			skill.get_child(1).set_value_no_signal(
-					sheet.skills.get(skill.get_meta(&"skill_id")))
+			var skill_value = sheet.skills.get(skill.get_meta(&"skill_id"))
+			skill.get_child(1).set_value_no_signal(skill_value if skill_value != null else 0.0)
 	
 	for child in char_traits_container.get_children():
 		if child is HBoxContainer:
-			child.get_child(1).set_value_no_signal(
-					sheet.traits.get(child.get_meta(&"trait_id")))
+			var trait_value = sheet.traits.get(child.get_meta(&"trait_id"))
+			child.get_child(1).set_value_no_signal(trait_value if trait_value != null else 0.0)
 
 
 func select_species(type: StringName) -> void:

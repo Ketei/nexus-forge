@@ -19,7 +19,6 @@ enum StatType {
 
 @export var health: RangeInt
 
-
 var _custom_stats: Dictionary[StringName, ValueRange] = {}
 
 

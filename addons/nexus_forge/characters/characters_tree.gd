@@ -70,6 +70,14 @@ func select_character(resource: CharacterSheet, emit_selected: bool = true) -> v
 				item_selected.connect(_on_item_selected)
 
 
+func get_open_paths() -> Array[String]:
+	var paths: Array[String] = []
+	
+	for item in get_root().get_children():
+		paths.append(item.get_metadata(0)["resource"].resource_path)
+	return paths
+
+
 func create_character(resource: CharacterSheet, select: bool = false, emit_select: bool = true) -> void:
 	var new_item: TreeItem = get_root().create_child()
 	new_item.set_text(0, resource.resource_path.get_file())

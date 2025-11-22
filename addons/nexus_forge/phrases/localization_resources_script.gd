@@ -437,6 +437,19 @@ func plugin_open_resource(resource: PhraseMap) -> void:
 	save_required = false
 
 
+func get_open_maps() -> Array[String]:
+	return files_tree.get_open_files()
+
+
+func open_map_files(files: Array[String]) -> void:
+	for file in files:
+		var res_load: Resource = load(file)
+		if res_load != null and res_load is PhraseMap:
+			if files_tree.has_map(res_load):
+				continue
+			files_tree.add_map(res_load, false)
+
+
 func select_language(language_code: String) -> void:
 	if language_code.is_empty():
 		return

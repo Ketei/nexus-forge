@@ -74,6 +74,13 @@ func _on_close_conversation_pressedbutton_clicked(item: TreeItem, column: int, i
 		conversation_close_pressed.emit(data["resource"], data["unsaved"], data["offset_changed"])
 
 
+func get_open_file_paths() -> Array[String]:
+	var paths: Array[String] = []
+	for conv in get_root().get_children():
+		paths.append(conv.get_metadata(0)["resource"].resource_path)
+	return paths
+
+
 func add_conversation(data: EditorDiscourseDialog, select: bool = false, signal_select: bool = true) -> void:
 	var new_conversation: TreeItem = get_root().create_child()
 	var text: String = data.resource_path.get_file().get_basename()
