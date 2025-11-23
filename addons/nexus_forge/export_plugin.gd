@@ -63,7 +63,34 @@ func _customize_resource(resource: Resource, _path: String) -> Resource:
 		return customize_skill_catalog(resource)
 	elif resource_class == &"TraitCatalog":
 		return customize_trait_catalog(resource)
+	elif resource_class == &"SpeciesCatalog":
+		return customize_species(resource)
 	return null
+
+
+func customize_species(resource: SpeciesCatalog) -> SpeciesCatalog:
+	var stats: Array[StringName] = []
+	stats.assign(StatBlock.stats().keys())
+	var skills: Array[StringName] = SkillSet.skills()
+	var traits: Array[StringName] = TraitBlock.traits()
+	
+	for species in resource._species.keys():
+		for stat in resource._species[species]["stats"].keys():
+			if stats.has(stat):
+				continue
+			resource._species[species]["stats"].erase(stat)
+		
+		for skill in resource._species[species]["skills"].keys():
+			if skills.has(skill):
+				continue
+			resource._species[species]["skills"].erase(skill)
+		
+		for trait_id in resource._species[species]["traits"].keys():
+			if traits.has(trait_id):
+				continue
+			resource._species[species]["traits"].erase(trait_id)
+	
+	return resource
 
 
 func customize_trait_catalog(catalog: TraitCatalog) -> TraitCatalog:

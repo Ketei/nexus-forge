@@ -1,6 +1,7 @@
 @icon("res://addons/nexus_forge/classes/resources/range_float.gd")
 class_name RangeFloat
 extends ValueRange
+## An object representing a floating point numerical range.
 
 
 ## The minimum value this range can hold.

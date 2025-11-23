@@ -6,7 +6,9 @@ extends Resource
 ##
 ## Common data includes name, description and custom data for each skill.
 
+## Emmited when a new custom skill is created.
 signal custom_skill_created(id: StringName)
+## Emmited when a custom skill is erased.
 signal custom_skill_erased(id: StringName)
 
 

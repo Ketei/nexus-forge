@@ -8,6 +8,7 @@ extends DiscourseDialog
 ## [ReleaseDiscourseDialog] and the original files are NOT included.
 
 
+## Offset for the [GraphEdit] in Discourse.
 @export_storage var scroll_offset: Vector2 = Vector2.ZERO:
 	set(new_scroll):
 		scroll_offset = new_scroll.snappedf(0.001)

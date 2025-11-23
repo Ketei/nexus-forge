@@ -13,7 +13,8 @@ extends Resource
 ## Default data that newly created species will have.
 const DEFAULT_DATA: Dictionary[String, Variant] = {}
 
-
+# This is not meant to be edited manually, as the exporter will clean it,
+# losing any custom species stats/skills/traits added manually.
 @export_storage var _species: Dictionary[StringName, Dictionary] = {}
 
 
@@ -95,8 +96,9 @@ func _species_tree_data(species_id: StringName) -> Dictionary[String, Dictionary
 	return data
 
 
-## Returns a [SpeciesSheet] with data, stats, skills and traits of the species.[br]
-## Stats, skills and traits will have inherited values from the parent species.
+## Returns a [SpeciesSheet] with data, stats, skills and traits of the species.
+## Stats, skills and traits will have inherited values from the parent species.[br]
+## Returns [code]null[/code] if the species is not found.
 func get_species(species_id: StringName) -> SpeciesSheet:
 	if not _species.has(species_id):
 		return null

@@ -75,6 +75,55 @@ static func get_project_settings_path(module: String) -> String:
 	return ""
 
 
+# Forces a recompilation of all scripts that contain documentation. Until
+# Godot fixes the documentation generation, this will be necessary.
+func recompile_script_docs() -> void:
+	const SCRIPT_DOC: Array[String] = [
+		"res://addons/nexus_forge/classes/autoload/nexus_forge_singleton.gd",
+		"res://addons/nexus_forge/classes/cache/cache_system.gd",
+		"res://addons/nexus_forge/classes/cache/resource_cache.gd",
+		"res://addons/nexus_forge/classes/resources/bit_flags.gd",
+		"res://addons/nexus_forge/classes/resources/range_float.gd",
+		"res://addons/nexus_forge/classes/resources/range_integer.gd",
+		"res://addons/nexus_forge/classes/static/array_utils.gd",
+		"res://addons/nexus_forge/classes/static/bit_utils.gd",
+		"res://addons/nexus_forge/classes/static/math.gd",
+		"res://addons/nexus_forge/classes/static/random_weight_pool.gd",
+		"res://addons/nexus_forge/classes/static/ranges.gd",
+		"res://addons/nexus_forge/classes/static/strings.gd",
+		"res://addons/nexus_forge/classes/static/uuid.gd",
+		"res://addons/nexus_forge/resources/dialog_storage/dialog_locale.gd",
+		#"res://addons/nexus_forge/resources/dialog_storage/dialog_storage_base.gd",
+		#"res://addons/nexus_forge/resources/dialog_storage/dialog_storage_editor.gd",
+		#"res://addons/nexus_forge/resources/dialog_storage/dialog_storage_release.gd",
+		"res://addons/nexus_forge/resources/dialog_storage/parsed_dialog.gd",
+		"res://addons/nexus_forge/resources/localization/phrase_map.gd",
+		"res://addons/nexus_forge/resources/parser/discouse_parser_base.gd",
+		"res://addons/nexus_forge/resources/character_sheet.gd",
+		"res://addons/nexus_forge/resources/currency_catalog.gd",
+		"res://addons/nexus_forge/resources/item_catalog.gd",
+		"res://addons/nexus_forge/resources/item_sheet.gd",
+		"res://addons/nexus_forge/resources/quest_catalog.gd",
+		"res://addons/nexus_forge/resources/quest_data.gd",
+		"res://addons/nexus_forge/resources/quest_stage.gd",
+		"res://addons/nexus_forge/resources/quest_step.gd",
+		"res://addons/nexus_forge/resources/recipe_catalog.gd",
+		"res://addons/nexus_forge/resources/recipe_item.gd",
+		"res://addons/nexus_forge/resources/recipe_sheet.gd",
+		"res://addons/nexus_forge/resources/skill_catalog.gd",
+		"res://addons/nexus_forge/resources/skill_set.gd",
+		"res://addons/nexus_forge/resources/species.gd",
+		"res://addons/nexus_forge/resources/species_catalog.gd",
+		"res://addons/nexus_forge/resources/stat_block.gd",
+		"res://addons/nexus_forge/resources/stat_catalog.gd",
+		"res://addons/nexus_forge/resources/trait_block.gd",
+		"res://addons/nexus_forge/resources/trait_catalog.gd",
+		"res://addons/nexus_forge/resources/var_db_script.gd"]
+	
+	for file in SCRIPT_DOC:
+		ResourceSaver.save(load(file))
+
+
 func _enter_tree() -> void:
 	export_plugin = preload("res://addons/nexus_forge/export_plugin.gd").new()
 	add_export_plugin(export_plugin)
@@ -82,6 +131,7 @@ func _enter_tree() -> void:
 	editor_view = MAIN_SCENE.instantiate()
 	editor_view.visible = false
 	EditorInterface.get_editor_main_screen().add_child(editor_view)
+	recompile_script_docs()
 	resource_saved.connect(_on_resource_saved, CONNECT_DEFERRED)
 
 
