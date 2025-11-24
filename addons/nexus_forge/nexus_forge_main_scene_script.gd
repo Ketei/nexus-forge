@@ -91,13 +91,26 @@ func _on_recipes_loaded() -> void:
 
 func _input(event: InputEvent) -> void:
 	if visible and event is InputEventKey:
-		if event.keycode == KEY_TAB and event.is_pressed() and not event.is_echo():
+		if not event.is_pressed() or event.is_echo():
+			return
+		if event.keycode == KEY_TAB:
 			if event.ctrl_pressed:
 				if  event.shift_pressed:
 					tool_tab_bar.current_tab = posmod(tool_tab_bar.current_tab - 1, tool_count)
 				else:
 					tool_tab_bar.current_tab = posmod(tool_tab_bar.current_tab + 1, tool_count)
 				get_viewport().set_input_as_handled()
+		if event.keycode == KEY_W:
+			if event.ctrl_pressed:
+				if discourse.visible:
+					discourse.close_active_conversation()
+					get_viewport().set_input_as_handled()
+				elif characters.visible:
+					characters.close_active_character()
+					get_viewport().set_input_as_handled()
+				elif phrase_maps.visible:
+					phrase_maps.close_active_map()
+					get_viewport().set_input_as_handled()
 
 
 func _on_tab_changed(tab: int) -> void:

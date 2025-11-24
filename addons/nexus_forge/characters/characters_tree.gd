@@ -40,6 +40,13 @@ func is_any_unsaved() -> bool:
 	return false
 
 
+func is_unsaved(character: CharacterSheet) -> bool:
+	for item in get_root().get_children():
+		if item.get_metadata(0)["resource"] == character:
+			return item.get_metadata(0)["unsaved"]
+	return false
+
+
 func set_all_saved() -> void:
 	for item in get_root().get_children():
 		if item.get_metadata(0)["unsaved"]:

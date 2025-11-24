@@ -950,7 +950,6 @@ func plugin_open_resource(resource: CharacterSheet) -> void:
 
 
 func filesystem_resource_removed(res: Resource) -> void:
-	print("Charcter: ", res)
 	if res == null:
 		return
 	
@@ -965,3 +964,38 @@ func filesystem_resource_removed(res: Resource) -> void:
 		reset_stats()
 		reset_traits()
 		_unsaved = false
+
+
+func close_active_character() -> void:
+	if current_sheet == null:
+		return
+		
+	if char_tree.is_unsaved(current_sheet):
+		var unsaved_dialog := preload("res://addons/nexus_forge/dialogs/unsaved_dialog_script.gd").new()
+		unsaved_dialog.title = "Save Character..."
+		unsaved_dialog.dialog_text = "Character has unsaved changes.\nDo you want to save before closing?"
+		add_child(unsaved_dialog)
+		unsaved_dialog.show()
+		
+		var result: int = await unsaved_dialog.dialog_finished # 0 = save, 1 = don't save, 2 = cancel
+		
+		if result == 0:
+			save_current_character()
+			ResourceSaver.save(current_sheet)
+		elif result == 2:
+			unsaved_dialog.queue_free()
+			return
+		unsaved_dialog.queue_free()
+	
+	char_id_line.text = ""
+	char_name_line.text = ""
+	set_ui_enabled(false)
+	character_data_tree.clear_data()
+	reset_skills()
+	reset_stats()
+	reset_traits()
+	_unsaved = false
+	
+	char_tree.remove_character(current_sheet)
+	
+	current_sheet = null

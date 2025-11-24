@@ -242,7 +242,6 @@ func _on_menu_close_pressed() -> void:
 	
 	if discourse_window.discourse_graph_edit.focus_tween != null:
 		discourse_window.discourse_graph_edit.stop_focus_animation()
-	
 	if conversation_tree.active_unsaved:
 		var unsaved_prompt: AcceptDialog = preload("res://addons/nexus_forge/dialogs/unsaved_dialog_script.gd").new()
 		add_child(unsaved_prompt)
@@ -269,18 +268,18 @@ func _on_menu_close_pressed() -> void:
 		else: # Get the same index
 			new_item = conversation_tree.get_root().get_child(item.get_index() + 1)
 		
+	conversation_tree.remove_conversation(active_conversation)
+	
 	if new_item == null:
-		#active_conversation_item = null
 		set_conversation_active(false)
-		conversation_tree.remove_conversation(active_conversation)
 		active_conversation = null
 		conversation_tree.active_unsaved = false
 	else:
 		conversation_tree.set_conversation_item_active(new_item.get_metadata(0)["resource"])
 		if open_conversation(active_conversation):
 			conversation_tree.active_unsaved = true
+	
 	_unsaved = conversation_tree.active_unsaved
-	item.free()
 
 
 func _on_new_folder_button_pressed() -> void:
@@ -1914,3 +1913,8 @@ func filesystem_resource_removed(resource: Resource) -> void:
 		active_conversation = null
 		set_conversation_active(false)
 		_unsaved = false
+
+
+func close_active_conversation() -> void:
+	if active_conversation != null:
+		_on_menu_close_pressed()

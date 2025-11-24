@@ -79,6 +79,13 @@ func select_map(resource: PhraseMap, emit_select: bool = true) -> void:
 			return
 
 
+func requires_save(resource: PhraseMap) -> bool:
+	for item in get_root().get_children():
+		if item.get_metadata(0)["resource"] == resource:
+			return item.get_metadata(0)["save_required"]
+	return false
+
+
 func set_save_required(resource: PhraseMap, save_required: bool) -> void:
 	for item in get_root().get_children():
 		if item.get_metadata(0)["resource"] == resource:

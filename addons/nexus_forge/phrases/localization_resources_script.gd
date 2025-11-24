@@ -838,7 +838,6 @@ func save_all() -> void:
 
 
 func filesystem_resource_removed(resource: Resource) -> void:
-	print("Dialog: ", resource)
 	if resource == null:
 		return
 	files_tree.remove_map(resource)
@@ -850,3 +849,38 @@ func filesystem_resource_removed(resource: Resource) -> void:
 		argument_opt_btn.disabled = true
 		clear_keys()
 		map = null
+
+
+func close_active_map() -> void:
+	if map == null:
+		return
+	
+	if files_tree.requires_save(map):
+		var unsaved_dialog := preload("res://addons/nexus_forge/dialogs/unsaved_dialog_script.gd").new()
+		unsaved_dialog.dialog_text = "File has unsaved changes\nDo you want to save before closing?"
+		unsaved_dialog.title = "Save changes..."
+		add_child(unsaved_dialog)
+		unsaved_dialog.show()
+		
+		var result: int = await unsaved_dialog.dialog_finished
+		# 0 = save, 1 = don't save, 2 = cancel
+		if result == 0: # Save
+			save_current_resource()
+			ResourceSaver.save(map)
+		elif result == 2: # Cancel
+			unsaved_dialog.queue_free()
+			return
+		
+		unsaved_dialog.queue_free()
+	
+	clear_cases()
+	default_case_ln_edt.text = ""
+	default_case_ln_edt.editable = false
+	argument_opt_btn.clear()
+	argument_opt_btn.disabled = true
+	
+	clear_keys()
+	
+	files_tree.remove_map(map)
+	
+	map = null
