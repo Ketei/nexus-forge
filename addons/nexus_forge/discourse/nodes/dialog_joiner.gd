@@ -97,6 +97,7 @@ func set_input_port_count(new_count: int) -> void:
 				SlotConnectionType.DIALOG)
 			set_slot_custom_icon_left(missing_port, flow_icon)
 			set_slot_color_left(field_idx, COLORS["dialog"])
+		_highest_port_connected = new_count - 2
 	else:
 		for extra_ports in range(_highest_port_connected + 1, new_count, -1):
 			if has_any_input(extra_ports - 1):
@@ -117,7 +118,11 @@ func set_input_port_count(new_count: int) -> void:
 				else:
 					_highest_port_connected = port_idx
 					break
-	_highest_port_connected = new_count - 2
+		var port: int = -1
+		for port_idx in range(new_count):
+			if has_any_input(port_idx):
+				port = port_idx
+		_highest_port_connected = port
 
 
 func get_new_merge_node() -> Control:
