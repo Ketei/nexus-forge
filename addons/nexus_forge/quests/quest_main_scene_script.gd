@@ -73,38 +73,10 @@ func _ready() -> void:
 	stage_custom_data_search_ln_edt.right_icon = get_theme_icon("Search", "EditorIcons")
 	step_data_search_ln_edt.right_icon = get_theme_icon("Search", "EditorIcons")
 	
-	#_quest_resource = QuestCatalog.new()
-	
-	var res_path: String = ProjectSettings.get_setting(
-			EditorNFPlugin.get_project_settings_path("quests"),
-			"")
-	
-	if res_path != "" and FileAccess.file_exists(res_path):
-		var preload_res: Resource = load(res_path)
-		if preload_res is QuestCatalog:
-			_quest_resource = preload_res
-	
-	if _quest_resource == null:
-		$MainContainer.visible = false
-		new_quest_btn.disabled = true
-		var no_db = preload("res://addons/nexus_forge/no_db_container.tscn").instantiate()
-		add_child(no_db)
-		no_db.message_minimum_size.x = 450
-		no_db.set_resource_type("QuestCatalog", "Odyssey", "Quests")
-		no_db.create_resource_pressed.connect(_on_create_database_pressed.bind(no_db))
-		no_db.load_resource_pressed.connect(_on_load_database_pressed.bind(no_db))
-		no_db.resource_dropped.connect(_on_resource_dropped.bind(no_db))
-	else:
-		$MainContainer.visible = true
-		load_quest_resource()
-	
+	reload_quest_resource(true)
 	reload_quest_types()
 	reload_quest_stage()
 	reload_quest_steps()
-	
-	set_quest_ui_enabled(false)
-	set_stage_ui_enabled(false)
-	set_step_ui_enabled(false)
 	
 	new_quest_btn.pressed.connect(_on_new_quest_pressed)
 	quest_search_ln_edt.text_changed.connect(_on_quest_search_text_changed)
@@ -151,6 +123,53 @@ func _ready() -> void:
 	add_stp_dict_button.pressed.connect(_on_add_step_data_pressed.bind("new_level", {}))
 	step_data_search_ln_edt.text_changed.connect(_on_search_step_data_text_changed)
 	step_data_tree.data_changed.connect(something_changed)
+
+
+func reload_quest_resource(first_launch: bool = false) -> void:
+	var was_null: bool = _quest_resource == null
+	_quest_resource = null
+	clear_quests()
+	clear_stages()
+	clear_steps()
+	set_stage_flags_checked(false)
+	set_step_flags_checked(false)
+	quest_data_tree.clear_data()
+	stage_data_tree.clear_data()
+	step_data_tree.clear_data()
+	quest_title_ln_edt.text = ""
+	stage_title_ln_edt.text = ""
+	step_title_ln_edt.text = ""
+	select_stage_type(QuestStage.StageType.NO_TYPE)
+	select_step_type(QuestStep.StepType.NO_TYPE)
+	
+	var res_path: String = ProjectSettings.get_setting(
+			EditorNFPlugin.get_project_settings_path("quests"),
+			"")
+	
+	if res_path != "" and FileAccess.file_exists(res_path):
+		var preload_res: Resource = load(res_path)
+		if preload_res is QuestCatalog:
+			_quest_resource = preload_res
+	
+	if _quest_resource == null:
+		if not was_null or first_launch:
+			$MainContainer.visible = false
+			new_quest_btn.disabled = true
+			var no_db = preload("res://addons/nexus_forge/no_db_container.tscn").instantiate()
+			add_child(no_db)
+			no_db.message_minimum_size.x = 450
+			no_db.set_resource_type("QuestCatalog", "Odyssey", "Quests")
+			no_db.create_resource_pressed.connect(_on_create_database_pressed.bind(no_db))
+			no_db.load_resource_pressed.connect(_on_load_database_pressed.bind(no_db))
+			no_db.resource_dropped.connect(_on_resource_dropped.bind(no_db))
+	else:
+		$MainContainer.visible = true
+		load_quest_resource()
+	
+	new_quest_btn.disabled = _quest_resource == null
+	set_quest_ui_enabled(false)
+	set_stage_ui_enabled(false)
+	set_step_ui_enabled(false)
 
 
 func _on_quest_search_text_changed(text: String) -> void:
@@ -628,7 +647,7 @@ func reload_quest_steps() -> void:
 
 
 func load_quest_resource() -> void:
-	new_quest_btn.disabled = false
+	quest_tree.clear_quests()
 	for existing_quest: StringName in _quest_resource.quests():
 		quest_tree.add_quest(existing_quest)
 

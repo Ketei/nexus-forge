@@ -39,37 +39,11 @@ func _ready() -> void:
 	if Engine.is_editor_hint() and get_tree().edited_scene_root == self:
 		return
 	
+	reload_resource(true)
+	
 	add_folder_button.icon = get_theme_icon("FolderCreate", "EditorIcons")
 	folder_search_line.right_icon = get_theme_icon("Search", "EditorIcons")
 	var_search_line.right_icon = get_theme_icon("Search", "EditorIcons")
-	
-	# --- For Testing ---
-	#_variables_resource = BlackboardData.new()
-	# -------------------
-	var res_path: String = ProjectSettings.get_setting(
-				EditorNFPlugin.get_project_settings_path("variables"),
-				"")
-	
-	if not res_path.is_empty() and ResourceLoader.exists(res_path):
-		var res_load: Resource = load(res_path)
-		if res_load is BlackboardData:
-			if res_load is BlackboardData:
-				_variables_resource = res_load
-	
-	if _variables_resource != null:
-		load_variable_resource()
-		main_split.visible = true
-	else:
-		var no_db_container: Control = preload("res://addons/nexus_forge/no_db_container.tscn").instantiate()
-		no_db_container.name = &"NoVarResContainer"
-		add_child(no_db_container)
-		no_db_container.message_minimum_size.x = 550
-		no_db_container.set_resource_type("BlackboardData", "Variables", "Variables")
-		no_db_container.create_resource_pressed.connect(on_create_resource_pressed)
-		no_db_container.load_resource_pressed.connect(on_load_resource_pressed)
-		no_db_container.resource_dropped.connect(_on_resource_dropped.bind(no_db_container))
-		no_db_container.visible = true
-		main_split.visible = false
 	
 	folders_tree.folder_selected.connect(_on_folder_selected)
 	folders_tree.something_changed.connect(on_something_changed)
@@ -91,6 +65,40 @@ func _ready() -> void:
 	
 	folders_tree.folder_deleted.connect(_on_folder_deleted)
 	folders_tree.folder_renamed.connect(_on_folder_renamed)
+
+
+func reload_resource(first_load: bool = false) -> void:
+	var was_null: bool = _variables_resource == null
+	_variables_resource = null
+	
+	folders_tree.clear_folders()
+	variables_tree.clear_variables()
+	
+	var res_path: String = ProjectSettings.get_setting(
+				EditorNFPlugin.get_project_settings_path("variables"),
+				"")
+	
+	if not res_path.is_empty() and ResourceLoader.exists(res_path):
+		var res_load: Resource = load(res_path)
+		if res_load is BlackboardData:
+			if res_load is BlackboardData:
+				_variables_resource = res_load
+	
+	if _variables_resource != null:
+		load_variable_resource()
+		main_split.visible = true
+	else:
+		if first_load or not was_null:
+			var no_db_container: Control = preload("res://addons/nexus_forge/no_db_container.tscn").instantiate()
+			no_db_container.name = &"NoVarResContainer"
+			add_child(no_db_container)
+			no_db_container.message_minimum_size.x = 550
+			no_db_container.set_resource_type("BlackboardData", "Variables", "Variables")
+			no_db_container.create_resource_pressed.connect(on_create_resource_pressed)
+			no_db_container.load_resource_pressed.connect(on_load_resource_pressed)
+			no_db_container.resource_dropped.connect(_on_resource_dropped.bind(no_db_container))
+			no_db_container.visible = true
+			main_split.visible = false
 
 
 func _on_folder_created(path_to_folder: String) -> void:

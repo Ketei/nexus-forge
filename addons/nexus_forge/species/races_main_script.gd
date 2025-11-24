@@ -32,30 +32,10 @@ func _ready() -> void:
 	if Engine.is_editor_hint() and get_tree().edited_scene_root == self:
 		return
 	
-	race_custom_data_search_line.right_icon = get_theme_icon("Search", "EditorIcons")
-	
-	var res_path: String = ProjectSettings.get_setting(EditorNFPlugin.get_project_settings_path("species"), "")
-	
-	if res_path != "" and FileAccess.file_exists(res_path):
-		var preload_res: Resource = load(res_path)
-		if preload_res is SpeciesCatalog:
-			_species_resource = preload_res
-	
-	if _species_resource == null:
-		$RacesContainer.visible = false
-		var no_db = preload("res://addons/nexus_forge/no_db_container.tscn").instantiate()
-		add_child(no_db)
-		no_db.message_minimum_size.x = 450
-		no_db.set_resource_type("SpeciesCatalog", "Species", "Species")
-		no_db.create_resource_pressed.connect(_on_create_database_pressed.bind(no_db))
-		no_db.load_resource_pressed.connect(_on_load_database_pressed.bind(no_db))
-		no_db.resource_dropped.connect(_on_resource_dropped.bind(no_db))
-	else:
-		$RacesContainer.visible = true
-		load_species_resource()
-	
+	reload_resource(true)
 	update_talent_nodes()
-	set_ui_enabled(false)
+	
+	race_custom_data_search_line.right_icon = get_theme_icon("Search", "EditorIcons")
 	
 	search_race_ln_edt.text_changed.connect(_on_search_species_text_changed)
 	new_race_btn.pressed.connect(_on_create_species_pressed)
@@ -72,6 +52,38 @@ func _ready() -> void:
 	add_rc_bool_button.pressed.connect(_on_add_data_pressed.bind("new_bool", false))
 	add_rc_string_button.pressed.connect(_on_add_data_pressed.bind("new_string", ""))
 	race_data_tree.data_changed.connect(_on_something_changed)
+
+
+func reload_resource(first_load: bool = false) -> void:
+	var was_null: bool = _species_resource == null
+	_species_resource = null
+	race_name_ln_edt.text = ""
+	race_desc_txt_edt.text = ""
+	race_data_tree.clear_data()
+	default_talents()
+	
+	var res_path: String = ProjectSettings.get_setting(EditorNFPlugin.get_project_settings_path("species"), "")
+	
+	if res_path != "" and FileAccess.file_exists(res_path):
+		var preload_res: Resource = load(res_path)
+		if preload_res is SpeciesCatalog:
+			_species_resource = preload_res
+	
+	if _species_resource == null:
+		if not was_null or first_load:
+			$RacesContainer.visible = false
+			var no_db = preload("res://addons/nexus_forge/no_db_container.tscn").instantiate()
+			add_child(no_db)
+			no_db.message_minimum_size.x = 450
+			no_db.set_resource_type("SpeciesCatalog", "Species", "Species")
+			no_db.create_resource_pressed.connect(_on_create_database_pressed.bind(no_db))
+			no_db.load_resource_pressed.connect(_on_load_database_pressed.bind(no_db))
+			no_db.resource_dropped.connect(_on_resource_dropped.bind(no_db))
+	else:
+		$RacesContainer.visible = true
+		load_species_resource()
+	
+	set_ui_enabled(false)
 
 
 func _on_race_display_changed() -> void:
@@ -241,7 +253,7 @@ func _on_create_species_pressed() -> void:
 func _on_something_changed(_arg = null) -> void:
 	if _unsaved:
 		return
-	print("Changed")
+	
 	_unsaved = true
 
 
@@ -296,14 +308,18 @@ func save_current_species() -> void:
 				int(trait_child.get_child(1).value))
 
 
-
 func load_species_resource() -> void:
+	race_name_ln_edt.text = ""
+	race_desc_txt_edt.text = ""
+	race_data_tree.clear_data()
+	default_talents()
 	var species_tree: Dictionary[StringName, Dictionary] = _species_resource.get_species_map()
 	buid_species_map(species_tree)
 	species_loaded.emit()
 
 
 func buid_species_map(map: Dictionary, _on: TreeItem = races_tree.get_root()) -> void:
+	races_tree.clear_species()
 	for top_species in map.keys():
 		var parent_species: TreeItem = races_tree.add_species(top_species, false, _on)
 		buid_species_map(map[top_species], parent_species)

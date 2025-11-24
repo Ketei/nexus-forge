@@ -101,3 +101,8 @@ func search_item(text: String) -> void:
 	for item in get_root().get_children():
 		item.visible = text.is_empty() or item.get_text(0).containsn(text)
 	current_search = text
+
+
+func clear_quests() -> void:
+	for item in get_root().get_children():
+		item.free()

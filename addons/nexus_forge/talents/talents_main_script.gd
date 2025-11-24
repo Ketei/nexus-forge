@@ -37,51 +37,12 @@ var _unsaved: bool = false
 func _ready() -> void:
 	if Engine.is_editor_hint() and get_tree().edited_scene_root == self:
 		return
+	
 	reload_traits(false)
 	reload_skills(false)
 	
-	var skills_path: String = ProjectSettings.get_setting(
-			EditorNFPlugin.get_project_settings_path("skills"),
-			"")
-	var traits_path: String = ProjectSettings.get_setting(
-			EditorNFPlugin.get_project_settings_path("traits"),
-			"")
-	
-	if not skills_path.is_empty() and ResourceLoader.exists(skills_path):
-		var preload_skill_res: Resource = load(skills_path)
-		if preload_skill_res is SkillCatalog:
-			_skills_resource = preload_skill_res
-	
-	if not traits_path.is_empty() and ResourceLoader.exists(traits_path):
-		var preload_traits_res: Resource = load(traits_path)
-		if preload_traits_res is TraitCatalog:
-			_traits_resource = preload_traits_res
-	
-	if _skills_resource == null:
-		$MainContainer/SkillsPanel/SkillsContainer.visible = false
-		var no_db = preload("res://addons/nexus_forge/no_db_container.tscn").instantiate()
-		$MainContainer/SkillsPanel.add_child(no_db)
-		no_db.message_minimum_size.x = 450
-		no_db.set_resource_type("SkillCatalog", "Skills", "Skills")
-		no_db.create_resource_pressed.connect(_on_create_skill_resource_pressed.bind(no_db))
-		no_db.load_resource_pressed.connect(_on_load_skill_resource_pressed.bind(no_db))
-		no_db.resource_dropped.connect(_on_skill_resource_dropped.bind(no_db))
-	else:
-		$MainContainer/SkillsPanel/SkillsContainer.visible = true
-		load_skills_resource()
-	
-	if _traits_resource == null:
-		$MainContainer/TraitsPanel/TraitsContainerContainer.visible = false
-		var no_db = preload("res://addons/nexus_forge/no_db_container.tscn").instantiate()
-		$MainContainer/TraitsPanel.add_child(no_db)
-		no_db.message_minimum_size.x = 450
-		no_db.set_resource_type("TraitCatalog", "Traits", "Traits")
-		no_db.create_resource_pressed.connect(_on_create_traits_resource_pressed.bind(no_db))
-		no_db.load_resource_pressed.connect(_on_load_traits_resource_pressed.bind(no_db))
-		no_db.resource_dropped.connect(_on_traits_resource_dropped.bind(no_db))
-	else:
-		$MainContainer/TraitsPanel/TraitsContainerContainer.visible = true
-		load_traits_resource()
+	reload_trait_resource(true)
+	reload_skill_resource(true)
 	
 	trait_dict_btn.icon = get_theme_icon("FolderCreate", "EditorIcons")
 	
@@ -110,6 +71,62 @@ func _ready() -> void:
 	trait_str_btn.pressed.connect(_on_add_trait_data_pressed.bind("new_string", ""))
 	trait_dict_btn.pressed.connect(_on_add_trait_data_pressed.bind("new_group", {}))
 
+
+func reload_skill_resource(first_launch: bool = false) -> void:
+	var was_null: bool = _skills_resource == null
+	_skills_resource = null
+	var skills_path: String = ProjectSettings.get_setting(
+			EditorNFPlugin.get_project_settings_path("skills"),
+			"")
+	
+	if not skills_path.is_empty() and ResourceLoader.exists(skills_path):
+		var preload_skill_res: Resource = load(skills_path)
+		if preload_skill_res is SkillCatalog:
+			_skills_resource = preload_skill_res
+	
+	if _skills_resource == null:
+		if not was_null or first_launch:
+			$MainContainer/SkillsPanel/SkillsContainer.visible = false
+			var no_db = preload("res://addons/nexus_forge/no_db_container.tscn").instantiate()
+			$MainContainer/SkillsPanel.add_child(no_db)
+			no_db.message_minimum_size.x = 450
+			no_db.set_resource_type("SkillCatalog", "Skills", "Skills")
+			no_db.create_resource_pressed.connect(_on_create_skill_resource_pressed.bind(no_db))
+			no_db.load_resource_pressed.connect(_on_load_skill_resource_pressed.bind(no_db))
+			no_db.resource_dropped.connect(_on_skill_resource_dropped.bind(no_db))
+	else:
+		$MainContainer/SkillsPanel/SkillsContainer.visible = true
+		load_skills_resource()
+
+
+func reload_trait_resource(first_launch: bool = false) -> void:
+	var was_null: bool = _traits_resource == null
+	_traits_resource = null
+	trait_ln_edt.text = ""
+	trait_desc_txt_edt.text = ""
+	trait_data_tree.clear_data()
+
+	var traits_path: String = ProjectSettings.get_setting(
+			EditorNFPlugin.get_project_settings_path("traits"),
+			"")
+	if not traits_path.is_empty() and ResourceLoader.exists(traits_path):
+		var preload_traits_res: Resource = load(traits_path)
+		if preload_traits_res is TraitCatalog:
+			_traits_resource = preload_traits_res
+	
+	if _traits_resource == null:
+		if not was_null or first_launch:
+			$MainContainer/TraitsPanel/TraitsContainerContainer.visible = false
+			var no_db = preload("res://addons/nexus_forge/no_db_container.tscn").instantiate()
+			$MainContainer/TraitsPanel.add_child(no_db)
+			no_db.message_minimum_size.x = 450
+			no_db.set_resource_type("TraitCatalog", "Traits", "Traits")
+			no_db.create_resource_pressed.connect(_on_create_traits_resource_pressed.bind(no_db))
+			no_db.load_resource_pressed.connect(_on_load_traits_resource_pressed.bind(no_db))
+			no_db.resource_dropped.connect(_on_traits_resource_dropped.bind(no_db))
+	else:
+		$MainContainer/TraitsPanel/TraitsContainerContainer.visible = true
+		load_traits_resource()
 
 #region Skills
 
@@ -225,6 +242,9 @@ func load_skill(skill_id: StringName) -> void:
 
 
 func load_skills_resource() -> void:
+	skill_ln_edt.text = ""
+	skill_data_tree.clear_data()
+	
 	var skills_exist: bool = 0 < skill_opt_btn.item_count
 	var disabled: bool = not skills_exist
 	
@@ -258,7 +278,6 @@ func load_skills_resource() -> void:
 		skill_opt_btn.select(0)
 		load_skill(skill_opt_btn.get_item_metadata(0))
 		loaded_skill = skill_opt_btn.get_item_metadata(0)
-		
 
 
 func sort_skills(reselect: bool = true) -> void:
@@ -488,6 +507,9 @@ func save_current_trait() -> void:
 func load_traits_resource() -> void:
 	var traits_exist: bool = 0 < trait_opt_btn.item_count
 	var disabled: bool = not traits_exist
+	
+	trait_ln_edt.text = ""
+	trait_data_tree.clear_data()
 	
 	trait_opt_btn.disabled = disabled
 	trait_ln_edt.editable = traits_exist

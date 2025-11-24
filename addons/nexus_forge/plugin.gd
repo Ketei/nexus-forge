@@ -323,3 +323,60 @@ func _on_resource_removed(object: Resource) -> void:
 		editor_view.characters.filesystem_resource_removed(object)
 	elif object is PhraseMap:
 		editor_view.phrase_maps.filesystem_resource_removed(object)
+	elif object is BlackboardData:
+		if editor_view.variables._variables_resource == object:
+			ProjectSettings.set_setting(
+					get_project_settings_path("variables"),
+					"")
+			ProjectSettings.save()
+			editor_view.variables.reload_resource()
+	elif object is SpeciesCatalog:
+		if editor_view.species._species_resource == object:
+			ProjectSettings.set_setting(
+					get_project_settings_path("species"),
+					"")
+			ProjectSettings.save()
+			editor_view.species.reload_resource()
+	elif object is SkillCatalog:
+		if editor_view.talents._skills_resource == object:
+			ProjectSettings.set_setting(
+					get_project_settings_path("skills"),
+					"")
+			ProjectSettings.save()
+			editor_view.talents.reload_skill_resource()
+	elif object is TraitCatalog:
+		if editor_view.talents._traits_resource == object:
+			ProjectSettings.set_setting(
+				get_project_settings_path("traits"),
+				"")
+			ProjectSettings.save()
+			editor_view.talents.reload_trait_resource()
+	elif object is ItemCatalog:
+		if editor_view.recipes_link.items == object:
+			ProjectSettings.set_setting(
+				get_project_settings_path("items"),
+				"")
+			ProjectSettings.save()
+			editor_view.items.items_container.reload_item_resource()
+			editor_view.recipes.reload_items(null)
+	elif object is CurrencyCatalog:
+		if editor_view.items.items_container.currency_resource == object:
+			ProjectSettings.set_setting(
+				get_project_settings_path("currency"),
+				"")
+			ProjectSettings.save()
+			editor_view.items.items_container.reload_currency_resource()
+	elif object is RecipeCatalog:
+		if editor_view.recipes_link.recipes == object:
+			ProjectSettings.set_setting(
+				get_project_settings_path("recipes"),
+				"")
+			ProjectSettings.save()
+			editor_view.recipes.reload_recipe_resource()
+	elif object is QuestCatalog:
+		if editor_view.quests._quest_resource == object:
+			ProjectSettings.set_setting(
+				get_project_settings_path("quests"),
+				"")
+			ProjectSettings.save()
+			editor_view.quests.reload_quest_resource()

@@ -67,7 +67,7 @@ func _ready() -> void:
 	search_recipes_ln_edt.right_icon = get_theme_icon("Search", "EditorIcons")
 	search_recipe_items_ln_edt.right_icon = get_theme_icon("Search", "EditorIcons")
 	
-	reload_recipes()
+	reload_recipe_resource(true)
 	reload_items()
 	
 	add_rcp_in_int_btn.pressed.connect(_on_recipe_item_add_data_button_pressed.bind(true, "new_int", 0))
@@ -258,8 +258,13 @@ func save() -> void:
 	_unsaved = false
 
 
-func reload_recipes() -> void:
+func reload_recipe_resource(first_launch: bool = false) -> void:
+	var was_null: bool = recipes_resource == null
 	recipes_resource = null
+	recipe_tree.clear_recipes()
+	recipe_input_tree.clear_items()
+	recipe_output_tree.clear_items()
+	recipe_custom_data_tree.clear_data()
 	
 	var path: String = ProjectSettings.get_setting(
 			EditorNFPlugin.get_project_settings_path("recipes"),
@@ -274,13 +279,14 @@ func reload_recipes() -> void:
 	create_recipe_btn.disabled = recipes_resource == null
 	
 	if recipes_resource == null:
-		var no_db = preload("res://addons/nexus_forge/no_db_container.tscn").instantiate()
-		add_child(no_db)
-		no_db.message_minimum_size.x = 450
-		no_db.set_resource_type("RecipeCatalog", "Recipes", "Recipes")
-		no_db.create_resource_pressed.connect(_on_create_database_pressed.bind(no_db))
-		no_db.load_resource_pressed.connect(_on_load_database_pressed.bind(no_db))
-		no_db.resource_dropped.connect(_on_resource_dropped.bind(no_db))
+		if not was_null or first_launch:
+			var no_db = preload("res://addons/nexus_forge/no_db_container.tscn").instantiate()
+			add_child(no_db)
+			no_db.message_minimum_size.x = 450
+			no_db.set_resource_type("RecipeCatalog", "Recipes", "Recipes")
+			no_db.create_resource_pressed.connect(_on_create_database_pressed.bind(no_db))
+			no_db.load_resource_pressed.connect(_on_load_database_pressed.bind(no_db))
+			no_db.resource_dropped.connect(_on_resource_dropped.bind(no_db))
 	else:
 		load_recipe_resource()
 

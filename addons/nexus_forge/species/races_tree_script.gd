@@ -282,5 +282,6 @@ func sort_single_item(item: TreeItem) -> void:
 			item.move_after(get_root().get_child(-1))
 
 
-func erase_species_tree() -> void:
-	pass
+func clear_species() -> void:
+	for item in get_root().get_children():
+		item.free()
