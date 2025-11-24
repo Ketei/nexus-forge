@@ -470,6 +470,11 @@ func _dialog_resource_set(new_resource: DiscourseDialog) -> void:
 #endregion
 
 
+## Returns [code]true[/code] if a conversation is loaded and active.
+func is_dialog_active() -> bool:
+	return _dialog_resource != null and _conversation_started
+
+
 ## Loads a dialog and sets the dialog ID to the start of the conversation
 ## unless a valid [param starting_id] is given.
 func load_dialog(path: String, starting_id: String = "") -> void:

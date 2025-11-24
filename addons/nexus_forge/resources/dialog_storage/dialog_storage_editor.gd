@@ -728,7 +728,7 @@ func convert_for_release(localization_uuid: String = "") -> ReleaseDiscourseDial
 				for option:Dictionary in dialog_nodes[node_id]["options"]:
 					var new_option: Dictionary[String, StringName] = {}
 					new_option["target"] = get_target_lambda.call(StringName(option["output_connections"]["next_node"]["target_node_uuid"]))
-					new_option["weight_override"] = StringName(option["output_connections"]["weight"]["target_node_uuid"])
+					new_option["weight_override"] = StringName(option["input_connections"]["weight"]["target_node_uuid"])
 					options.append(new_option)
 				
 				data["default_override"] = StringName(dialog_nodes[node_id]["input_connections"]["default_weight"]["target_node_uuid"])

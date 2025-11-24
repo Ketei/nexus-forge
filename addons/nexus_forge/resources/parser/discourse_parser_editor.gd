@@ -144,7 +144,7 @@ func _process_logic(uuid: StringName) -> String:
 			var choices: Array[Dictionary] = []
 			
 			for choice:Dictionary in data["options"]:
-				var weight: int = defalut_weight if choice["weight"]["target_node_uuid"] == "" else _get_data(choice["weight"]["target_node_uuid"])
+				var weight: int = defalut_weight if choice["input_connections"]["weight"]["target_node_uuid"].is_empty() else _get_data(choice["input_connections"]["weight"]["target_node_uuid"])
 				if weight == 0:
 					continue
 				choices.append({

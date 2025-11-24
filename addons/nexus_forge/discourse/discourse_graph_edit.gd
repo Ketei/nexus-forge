@@ -1,3 +1,4 @@
+@tool
 extends GraphEdit
 
 
@@ -1008,11 +1009,14 @@ func get_connection_dictionary(node_uuid: StringName, node_data: Dictionary) -> 
 			for option in node_data["options"]:
 				if option["output_connections"]["next_node"]["target_node_uuid"].is_empty():
 					continue
+				
 				node_connections.append({
 					"from": node_uuid,
 					"to": option["output_connections"]["next_node"]["target_node_uuid"],
 					"from_port": option["output_connections"]["next_node"]["from_port"],
-					"to_port": option["output_connections"]["next_node"]["to_port"]})
+					"to_port": option["output_connections"]["next_node"]["target_port"]})
+			node_connections.sort_custom(func(a,b): return a["from_port"] < b["from_port"])
+			print(node_connections)
 		_:
 			if node_data.has("output_connections"):
 				for output_connection_key in node_data["output_connections"].keys():
