@@ -81,7 +81,7 @@ func _post_init() -> void:
 			SlotConnectionType.SETTINGS_CHARACTER,
 			-1)
 	set_slot_color_left(1, COLORS["setting"])
-	map_field(&"character_id", "character_line", char_id_ln_edt)
+	map_field(&"character_id", &"character_line", char_id_ln_edt)
 	
 	add_field(
 			&"dialog_settings",
@@ -93,7 +93,7 @@ func _post_init() -> void:
 	
 	var flgs_idx: int = add_field(&"flags", flags_container, false, SlotConnectionType.VAR_STRING, -1)
 	
-	map_field(&"flags", "persist_checkbox", persist_check)
+	map_field(&"flags", &"persist_checkbox", persist_check)
 	add_field(&"dialog_text", dialog_textedt, true)
 	
 	set_slot_color_left(connection_field, COLORS["dialog"])
@@ -136,9 +136,9 @@ func _get_node_data() -> Dictionary:
 	data["node_type"] = node_type
 	data["position"] = position_offset
 	data["size"] = size
-	data["character_id"] = get_mapped_field(&"character_id", "character_line").text
+	data["character_id"] = get_mapped_field(&"character_id", &"character_line").text
 	data["dialog_text"] = get_field(&"dialog_text").text.strip_edges()
-	data["persist"] = get_mapped_field(&"flags", "persist_checkbox").button_pressed
+	data["persist"] = get_mapped_field(&"flags", &"persist_checkbox").button_pressed
 	data["input_connections"] = {
 		"character_settings": get_uuid_and_port_connected_to(PortMode.INPUT, 1),
 		"dialog_settings": get_uuid_and_port_connected_to(PortMode.INPUT, 2),
@@ -150,11 +150,11 @@ func _get_node_data() -> Dictionary:
 
 
 func _set_node_data(data: Dictionary) -> void:
-	get_mapped_field(&"character_id", "character_line").text = data["character_id"]
+	get_mapped_field(&"character_id", &"character_line").text = data["character_id"]
 	get_field(&"dialog_text").text = data["dialog_text"]
 	position_offset = data["position"]
 	size = data["size"]
-	get_mapped_field(&"flags", "persist_checkbox").button_pressed = data["persist"]
+	get_mapped_field(&"flags", &"persist_checkbox").button_pressed = data["persist"]
 
 
 func _on_text_changed(_text: String = "") -> void:

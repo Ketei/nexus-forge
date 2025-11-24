@@ -86,7 +86,7 @@ func _post_init() -> void:
 			options_container,
 			false,
 			SlotConnectionType.DIALOG)
-	map_field(&"options", "count", options_spn)
+	map_field(&"options", &"count", options_spn)
 	
 	add_field(
 			&"weight_default",
@@ -209,7 +209,7 @@ func set_random_exit_number(target_options: int) -> void:
 func _set_node_data(data: Dictionary) -> void:
 	var options: int = data["options"].size()
 	position_offset = data["position"]
-	get_mapped_field(&"options", "count").set_value_no_signal(options)
+	get_mapped_field(&"options", &"count").set_value_no_signal(options)
 	set_random_exit_number(options)
 
 
@@ -217,7 +217,7 @@ func _get_node_data() -> Dictionary:
 	var data: Dictionary = {}
 	var random_outputs: Array[Dictionary] = []
 	
-	for option_number in range(get_mapped_field(&"options", "count").value):
+	for option_number in range(get_mapped_field(&"options", &"count").value):
 		random_outputs.append(
 			{
 				"input_connections": {

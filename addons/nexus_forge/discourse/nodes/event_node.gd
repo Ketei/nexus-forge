@@ -54,7 +54,7 @@ func _post_init() -> void:
 			false,
 			SlotConnectionType.VAR_ANY,
 			-1)
-	map_field(&"variable", "path", variable_path)
+	map_field(&"variable", &"path", variable_path)
 	
 	add_field(
 			&"callable",
@@ -92,7 +92,7 @@ func _get_issues() -> PackedStringArray:
 	var issues: PackedStringArray = []
 	if is_orphan():
 		issues.append("Warning: Node is orphan.")
-	if has_any_input(1) and get_mapped_field(&"variable", "path").text.strip_edges().is_empty():
+	if has_any_input(1) and get_mapped_field(&"variable", &"path").text.strip_edges().is_empty():
 		issues.append("Error: Variable is being set but no path provided.")
 	return issues
 
@@ -115,7 +115,7 @@ func _get_node_data() -> Dictionary:
 	var data: Dictionary = {}
 	data["node_type"] = node_type
 	data["position"] = position_offset
-	data["variable_path"] = get_mapped_field(&"variable", "path").text.strip_edges() if has_any_input(1) else ""
+	data["variable_path"] = get_mapped_field(&"variable", &"path").text.strip_edges() if has_any_input(1) else ""
 	data["output_connections"] = {
 		"next_node": get_uuid_and_port_connected_to(PortMode.OUTPUT, 0)
 	}
@@ -129,10 +129,10 @@ func _get_node_data() -> Dictionary:
 
 
 func _set_node_data(data: Dictionary) -> void:
-	get_mapped_field(&"variable", "path").text = data["variable_path"]
+	get_mapped_field(&"variable", &"path").text = data["variable_path"]
 	position_offset = data["position"]
 
 
 func _on_var_path_focus_lost() -> void:
-	var var_path: LineEdit = get_mapped_field(&"variable", "path")
+	var var_path: LineEdit = get_mapped_field(&"variable", &"path")
 	var_path.tooltip_text = var_path.text.strip_edges()

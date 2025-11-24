@@ -65,7 +65,7 @@ func _post_init() -> void:
 			cases_container,
 			false,
 			SlotConnectionType.DIALOG)
-	map_field(&"cases", "case_count", cases)
+	map_field(&"cases", &"case_count", cases)
 	
 	add_field(
 		&"values",
@@ -197,7 +197,7 @@ func _on_match_text_changed(_text: String) -> void:
 func _set_node_data(data: Dictionary) -> void:
 	var case_count: int = data["cases"].size()
 	position_offset = data["position"]
-	get_mapped_field(&"cases", "case_count").set_value_no_signal(case_count)
+	get_mapped_field(&"cases", &"case_count").set_value_no_signal(case_count)
 	set_match_case_count(case_count)
 	
 	set_current_mode(data["match_data_type"])

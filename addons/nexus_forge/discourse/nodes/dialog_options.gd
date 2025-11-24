@@ -38,7 +38,7 @@ func _post_init() -> void:
 			choice_count_container,
 			false,
 			SlotConnectionType.DIALOG)
-	map_field(&"choice_counter", "choice_count", choices_spinbox)
+	map_field(&"choice_counter", &"choice_count", choices_spinbox)
 	
 	var first_out_idx: int = add_field(
 			&"choice_1",
@@ -139,7 +139,7 @@ func _get_node_data() -> Dictionary:
 func _set_node_data(data: Dictionary) -> void:
 	position_offset = data["position"]
 	var new_choice_count: int = data["options"].size()
-	get_mapped_field(&"choice_counter", "choice_count").set_value_no_signal(new_choice_count)
+	get_mapped_field(&"choice_counter", &"choice_count").set_value_no_signal(new_choice_count)
 	set_choice_count(new_choice_count)
 	for option in range(1, new_choice_count + 1):
 		get_field(&"choice_" + StringName(str(option))).text = data["options"][option - 1]["option_text"]

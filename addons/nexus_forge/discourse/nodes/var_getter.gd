@@ -33,8 +33,8 @@ func _post_init() -> void:
 			false,
 			-1,
 			SlotConnectionType.VAR_INT)
-	map_field(&"path", "line", path_line)
-	map_field(&"path", "output_type", type_menu)
+	map_field(&"path", &"line", path_line)
+	map_field(&"path", &"output_type", type_menu)
 	
 	set_slot_color_right(0, COLORS["integer"])
 	
@@ -44,7 +44,7 @@ func _post_init() -> void:
 
 
 func _ready() -> void:
-	var type_menu: MenuButton = get_mapped_field(&"path", "output_type")
+	var type_menu: MenuButton = get_mapped_field(&"path", &"output_type")
 	var type_popup: PopupMenu = type_menu.get_popup()
 	graph_icon = get_theme_icon("LocalVariable", "EditorIcons")
 	type_menu.icon = get_theme_icon("int", "EditorIcons")
@@ -74,7 +74,7 @@ func _get_issues() -> PackedStringArray:
 	var issues: PackedStringArray = []
 	if is_orphan():
 		issues.append("Warning: Node is orphan.")
-	if has_any_output(0) and get_mapped_field(&"path", "line").text.strip_edges().is_empty():
+	if has_any_output(0) and get_mapped_field(&"path", &"line").text.strip_edges().is_empty():
 		issues.append("Error: Variable is being accessed but no path exists.")
 	return issues
 
@@ -86,8 +86,8 @@ func _get_node_data() -> Dictionary:
 	data["position"] = position_offset
 	data["output_connections"] = {
 		"target": get_uuid_and_port_connected_to(PortMode.OUTPUT, 0)}
-	data["variable_path"] = get_mapped_field(&"path", "line").text.strip_edges()
-	data["variable_type"] = get_mapped_field(&"path", "output_type").get_meta(&"current_type", TYPE_NIL)
+	data["variable_path"] = get_mapped_field(&"path", &"line").text.strip_edges()
+	data["variable_type"] = get_mapped_field(&"path", &"output_type").get_meta(&"current_type", TYPE_NIL)
 	return data
 
 

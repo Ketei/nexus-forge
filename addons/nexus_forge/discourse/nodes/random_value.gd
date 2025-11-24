@@ -65,7 +65,7 @@ func _post_init() -> void:
 			-1,
 			SlotConnectionType.VAR_INT)
 	set_slot_color_right(0, COLORS["integer"])
-	map_field(&"random_type", "type_button", random_type)
+	map_field(&"random_type", &"type_button", random_type)
 	
 	add_field(
 			&"min_value",
@@ -74,9 +74,9 @@ func _post_init() -> void:
 			SlotConnectionType.VAR_INT,
 			-1)
 	set_slot_color_left(1, COLORS["integer"])
-	map_field(&"min_value", "min_label", min_label)
-	map_field(&"min_value", "min_spinbox", min_spinbox)
-	map_field(&"min_value", "min_spinbox", min_spinbox)
+	map_field(&"min_value", &"min_label", min_label)
+	map_field(&"min_value", &"min_spinbox", min_spinbox)
+	map_field(&"min_value", &"min_spinbox", min_spinbox)
 	
 	add_field(
 			&"max_value",
@@ -85,14 +85,14 @@ func _post_init() -> void:
 			SlotConnectionType.VAR_INT,
 			-1)
 	set_slot_color_left(2, COLORS["integer"])
-	map_field(&"max_value", "max_spinbox", max_spinbox)
+	map_field(&"max_value", &"max_spinbox", max_spinbox)
 	
 	min_spinbox.value_changed.connect(_on_min_value_changed.bind(max_spinbox))
 	random_popup.id_pressed.connect(_on_random_type_selected.bind(random_type, min_spinbox, max_spinbox, min_label))
 
 
 func _ready() -> void:
-	var random_type: MenuButton = get_mapped_field(&"random_type", "type_button")
+	var random_type: MenuButton = get_mapped_field(&"random_type", &"type_button")
 	var random_popup: PopupMenu = random_type.get_popup()
 	graph_icon = get_theme_icon("RandomNumberGenerator", "EditorIcons")
 	random_type.icon = get_theme_icon("int", "EditorIcons")

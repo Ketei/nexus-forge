@@ -101,7 +101,7 @@ var graph_icon: Texture2D = null:
 			_icon_rect.texture = new_icon
 			_icon_rect.visible = new_icon != null
 var _icon_rect: TextureRect = null
-var _node_map: Dictionary[StringName, Dictionary] = {}
+#var _node_map: Dictionary[StringName, Dictionary] = {}
 var _input_nodes: Array[Dictionary] = []
 var _output_nodes: Array[Dictionary] = []
 
@@ -715,23 +715,20 @@ func add_field(field_id: StringName, field_node: Control, expand: bool = false, 
 	return new_index
 
 
-func map_field(field_id: StringName, identifier: String, node: Control) -> bool:
+func map_field(field_id: StringName, identifier: StringName, node: Control) -> bool:
 	var field: Control = get_field(field_id)
 	
 	if field == null or identifier.is_empty() or not field.is_ancestor_of(node):
 		return false
 	
-	if not _node_map.has(field_id):
-		_node_map[field_id] = {}
-	
-	_node_map[field_id][identifier] = node
-	
+	field.set_meta(identifier, node)
 	return true
 
 
-func get_mapped_field(field_id: StringName, identifier: String) -> Control:
-	if _node_map.has(field_id) and _node_map[field_id].has(identifier):
-		return _node_map[field_id][identifier]
+func get_mapped_field(field_id: StringName, identifier: StringName) -> Control:
+	var field: Control = get_field(field_id)
+	if field != null and field.has_meta(identifier):
+		return field.get_meta(identifier)
 	return null
 
 

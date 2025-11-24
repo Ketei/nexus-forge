@@ -68,7 +68,7 @@ func _post_init() -> void:
 	a_result_container.add_child(result_label)
 	
 	add_field(&"comparation", comp_container)
-	map_field(&"comparation", "comparation_menu", comparation_menu)
+	map_field(&"comparation", &"comparation_menu", comparation_menu)
 	var res_idx: int = add_field(
 			&"result",
 			a_result_container,
@@ -112,7 +112,7 @@ func _get_node_data() -> Dictionary:
 	data["position"] = position_offset
 	data["operator"] = get_mapped_field(
 			&"comparation",
-			"comparation_menu").get_meta(&"current_operator", 0)
+			&"comparation_menu").get_meta(&"current_operator", 0)
 	data["input_connections"] = {
 		"node_a": get_uuid_and_port_connected_to(PortMode.INPUT, 0),
 		"node_b": get_uuid_and_port_connected_to(PortMode.INPUT, 1)}
@@ -123,7 +123,7 @@ func _get_node_data() -> Dictionary:
 
 
 func _set_node_data(data: Dictionary) -> void:
-	var dropdown: MenuButton = get_mapped_field(&"comparation", "comparation_menu")
+	var dropdown: MenuButton = get_mapped_field(&"comparation", &"comparation_menu")
 	var operator: Variant.Operator = clampi(data["operator"], 0, 5) as Variant.Operator
 	position_offset = data["position"]
 	dropdown.set_meta(&"current_operator", data["operator"])

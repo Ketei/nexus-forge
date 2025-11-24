@@ -108,9 +108,9 @@ func _post_init() -> void:
 			false,
 			-1,
 			SlotConnectionType.VAR_INT)
-	map_field(&"data", "number", data_spnbx)
-	map_field(&"data", "bool", data_chk_bx)
-	map_field(&"data", "text", data_ln_edt)
+	map_field(&"data", &"number", data_spnbx)
+	map_field(&"data", &"bool", data_chk_bx)
+	map_field(&"data", &"text", data_ln_edt)
 	
 	set_slot_color_right(0, COLORS["integer"])
 	
@@ -162,16 +162,16 @@ func _set_node_data(data: Dictionary) -> void:
 	
 	match mode:
 		TYPE_INT:
-			get_mapped_field(&"data", "number").value = data["value"]
+			get_mapped_field(&"data", &"number").value = data["value"]
 			menu.icon = get_theme_icon("int", "EditorIcons")
 		TYPE_FLOAT:
-			get_mapped_field(&"data", "number").value = data["value"]
+			get_mapped_field(&"data", &"number").value = data["value"]
 			menu.icon = get_theme_icon("float", "EditorIcons")
 		TYPE_BOOL:
-			get_mapped_field(&"data", "bool").button_pressed = data["value"]
+			get_mapped_field(&"data", &"bool").button_pressed = data["value"]
 			menu.icon = get_theme_icon("bool", "EditorIcons")
 		TYPE_STRING:
-			get_mapped_field(&"data", "text").text = data["value"]
+			get_mapped_field(&"data", &"text").text = data["value"]
 			menu.icon = get_theme_icon("String", "EditorIcons")
 	
 	position_offset = data["position"]
