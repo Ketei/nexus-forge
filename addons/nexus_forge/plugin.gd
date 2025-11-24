@@ -133,6 +133,7 @@ func _enter_tree() -> void:
 	EditorInterface.get_editor_main_screen().add_child(editor_view)
 	recompile_script_docs()
 	resource_saved.connect(_on_resource_saved, CONNECT_DEFERRED)
+	EditorInterface.get_file_system_dock().resource_removed.connect(_on_resource_removed)
 
 
 func _build() -> bool:
@@ -310,3 +311,15 @@ func _on_resource_saved(resource: Resource) -> void:
 		editor_view.reload_quest_step()
 	elif script_class == &"DiscourseAPI":
 		editor_view.reload_discourse_api()
+
+
+func _on_resource_removed(object: Resource) -> void:
+	if object == null:
+		return
+	
+	if object is EditorDiscourseDialog:
+		editor_view.discourse.filesystem_resource_removed(object)
+	elif object is CharacterSheet:
+		editor_view.characters.filesystem_resource_removed(object)
+	elif object is PhraseMap:
+		editor_view.phrase_maps.filesystem_resource_removed(object)

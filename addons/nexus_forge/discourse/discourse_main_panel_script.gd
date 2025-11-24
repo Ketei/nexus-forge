@@ -1904,3 +1904,13 @@ func save_phrase_keys(fix_keys: bool = false) -> void:
 		_on_key_line_text_changed()
 
 #endregion
+
+
+func filesystem_resource_removed(resource: Resource) -> void:
+	if resource == null:
+		return
+	conversation_tree.remove_conversation(resource)
+	if resource == active_conversation:
+		active_conversation = null
+		set_conversation_active(false)
+		_unsaved = false

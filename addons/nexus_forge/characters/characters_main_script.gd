@@ -88,6 +88,7 @@ func _on_close_character_pressed(resource: CharacterSheet, unsaved: bool) -> voi
 		reset_skills()
 		reset_stats()
 		reset_traits()
+		_unsaved = false
 	
 	char_tree.remove_character(resource)
 
@@ -946,3 +947,21 @@ func plugin_open_resource(resource: CharacterSheet) -> void:
 		_unsaved = false
 	
 	set_ui_enabled(true)
+
+
+func filesystem_resource_removed(res: Resource) -> void:
+	print("Charcter: ", res)
+	if res == null:
+		return
+	
+	char_tree.remove_character(res)
+	if current_sheet == res:
+		current_sheet = null
+		char_id_line.text = ""
+		char_name_line.text = ""
+		set_ui_enabled(false)
+		character_data_tree.clear_data()
+		reset_skills()
+		reset_stats()
+		reset_traits()
+		_unsaved = false

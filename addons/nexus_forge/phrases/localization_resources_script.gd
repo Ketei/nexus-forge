@@ -835,3 +835,18 @@ func save_all() -> void:
 		ResourceSaver.save(resource)
 	files_tree.set_save_required_all(false)
 	save_required = false
+
+
+func filesystem_resource_removed(resource: Resource) -> void:
+	print("Dialog: ", resource)
+	if resource == null:
+		return
+	files_tree.remove_map(resource)
+	if map == resource:
+		clear_cases()
+		default_case_ln_edt.text = ""
+		default_case_ln_edt.editable = false
+		argument_opt_btn.clear()
+		argument_opt_btn.disabled = true
+		clear_keys()
+		map = null
