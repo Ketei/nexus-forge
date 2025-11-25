@@ -574,7 +574,7 @@ func sort_traits(reselect: bool = true) -> void:
 
 # Use for comparing what skills exists when TraitBlock is saved/changed.
 func loaded_traits() -> Dictionary[String, int]:
-	var all_traits: Dictionary[String, int]
+	var all_traits: Dictionary[String, int] = {}
 	for trait_idx in range(trait_opt_btn.item_count):
 		all_traits[String(trait_opt_btn.get_item_metadata(trait_idx))] = trait_idx
 	return all_traits

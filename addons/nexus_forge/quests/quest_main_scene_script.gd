@@ -243,6 +243,7 @@ func _on_resource_dropped(resource: Resource, panel: Control) -> void:
 		ProjectSettings.save()
 	panel.visible = false
 	panel.queue_free()
+	
 	$MainContainer.visible = true
 	load_quest_resource()
 
@@ -648,9 +649,9 @@ func reload_quest_steps() -> void:
 
 func load_quest_resource() -> void:
 	quest_tree.clear_quests()
+	new_quest_btn.disabled = false
 	for existing_quest: StringName in _quest_resource.quests():
 		quest_tree.add_quest(existing_quest)
-
 
 
 func load_quest(quest_id: StringName) -> void:
