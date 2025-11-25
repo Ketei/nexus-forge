@@ -9,8 +9,7 @@ extends Resource
 ## but a variable and a folder can share the same name. All folder paths
 ## are simplified using [method String.simplify_path].
 
-## A dictionary containing all variables and folders. The first level is always
-## folders.
+
 @export_storage var _variables: Dictionary[StringName, Dictionary] = {}
 
 
@@ -83,7 +82,7 @@ func set_variable(folder_path: String, variable_key: StringName, variable: Varia
 		_variables[clean_path][variable_key] = variable
 
 
-## Creates a folder structure.
+## Creates a directory recursively.
 func create_folder(folder_path: String) -> void:
 	var clean_path: StringName = _clean_folder_path(folder_path)
 	var slices: Array[String] = []

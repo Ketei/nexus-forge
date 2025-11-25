@@ -1,5 +1,10 @@
 class_name BitUtils
 extends RefCounted
+## Provides a collection of helper functions for performing common bitwise
+## operations on integers.
+##
+## A static class that takes integers, changes bits and returns the modified
+## integer. It also contains functions to check the state of bits.
 
 
 ## Returns the bits using a mask.[br]

@@ -1,5 +1,9 @@
 class_name BitFlags
 extends Resource
+## An object to store integer-flags and pair them with an identifiable key.
+##
+## A serializable object designed to combine the human-readable StringName keys
+##  with the memory efficiency of bitwise storage.
 
 ## The amount of flags BitFlags can hold. Must be a value between 1 and 64 inclusive.
 const MAX_BITMASK: int = 63

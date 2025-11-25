@@ -83,6 +83,7 @@ func recompile_script_docs() -> void:
 		"res://addons/nexus_forge/classes/cache/cache_system.gd",
 		"res://addons/nexus_forge/classes/cache/resource_cache.gd",
 		"res://addons/nexus_forge/classes/resources/bit_flags.gd",
+		"res://addons/nexus_forge/classes/resources/value_range.gd",
 		"res://addons/nexus_forge/classes/resources/range_float.gd",
 		"res://addons/nexus_forge/classes/resources/range_integer.gd",
 		"res://addons/nexus_forge/classes/static/array_utils.gd",
@@ -92,15 +93,10 @@ func recompile_script_docs() -> void:
 		"res://addons/nexus_forge/classes/static/ranges.gd",
 		"res://addons/nexus_forge/classes/static/strings.gd",
 		"res://addons/nexus_forge/classes/static/uuid.gd",
-		
 		"res://addons/nexus_forge/resources/skill_set.gd",
 		"res://addons/nexus_forge/resources/stat_block.gd",
 		"res://addons/nexus_forge/resources/trait_block.gd",
-		
 		"res://addons/nexus_forge/resources/dialog_storage/dialog_locale.gd",
-		#"res://addons/nexus_forge/resources/dialog_storage/dialog_storage_base.gd",
-		#"res://addons/nexus_forge/resources/dialog_storage/dialog_storage_editor.gd",
-		#"res://addons/nexus_forge/resources/dialog_storage/dialog_storage_release.gd",
 		"res://addons/nexus_forge/resources/dialog_storage/parsed_dialog.gd",
 		"res://addons/nexus_forge/resources/localization/phrase_map.gd",
 		"res://addons/nexus_forge/resources/parser/discouse_parser_base.gd",
