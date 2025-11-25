@@ -210,7 +210,7 @@ func _process_logic(uuid: StringName) -> String:
 			dialog_paused.emit()
 			return data["next_node"]
 		NodeTypes.RANDOM:
-			var total_weight: int = 1
+			var total_weight: int = 0
 			var choices: Array[Dictionary] = []
 			
 			for choice:Dictionary in data["options"]:
