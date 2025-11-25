@@ -198,7 +198,6 @@ func _close_requested(node: DiscourseGraphNode) -> void:
 	node_deleted.emit(node.get_node_uuid())
 	dialog_changed.emit()
 	free_node(node)
-	
 
 
 func free_node(node: DiscourseGraphNode) -> void:
@@ -953,7 +952,6 @@ func get_conversation_data(on_conversation: EditorDiscourseDialog = null) -> Edi
 	
 	for node in nodes:
 		var data: Dictionary = {
-			"name": node.name,
 			"custom_id": node.custom_id,
 			"has_localization": node.is_node_localized()}
 		var frame: GraphFrame = get_element_frame(node.name)
@@ -1016,7 +1014,6 @@ func get_connection_dictionary(node_uuid: StringName, node_data: Dictionary) -> 
 					"from_port": option["output_connections"]["next_node"]["from_port"],
 					"to_port": option["output_connections"]["next_node"]["target_port"]})
 			node_connections.sort_custom(func(a,b): return a["from_port"] < b["from_port"])
-			print(node_connections)
 		_:
 			if node_data.has("output_connections"):
 				for output_connection_key in node_data["output_connections"].keys():
@@ -1055,7 +1052,7 @@ func load_conversation_data(conversation: EditorDiscourseDialog, language: Strin
 		var data: Dictionary = conversation.get_node_data(node_stnm_uuid, language, region)
 		var d_node: DiscourseGraphNode = create_dialog_node(data["node_type"], node_uuid)
 		d_node._set_node_data(data)
-		d_node.name = data["name"]
+		d_node.name = data["custom_id"]
 		d_node.custom_id = data["custom_id"]
 		d_node.set_node_localized(data["has_localization"])
 		add_child(d_node)
