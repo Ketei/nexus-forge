@@ -314,12 +314,12 @@ func load_species_resource() -> void:
 	race_data_tree.clear_data()
 	default_talents()
 	var species_tree: Dictionary[StringName, Dictionary] = _species_resource.get_species_map()
+	races_tree.clear_species()
 	buid_species_map(species_tree)
 	species_loaded.emit()
 
 
 func buid_species_map(map: Dictionary, _on: TreeItem = races_tree.get_root()) -> void:
-	races_tree.clear_species()
 	for top_species in map.keys():
 		var parent_species: TreeItem = races_tree.add_species(top_species, false, _on)
 		buid_species_map(map[top_species], parent_species)
