@@ -127,7 +127,7 @@ func _enter_tree() -> void:
 	add_export_plugin(export_plugin)
 	verify_project_settings()
 	if ProjectSettings.has_setting("autoload/NexusForge"):
-		recompile_script_docs()
+		recompile_script_docs.call_deferred()
 	editor_view = MAIN_SCENE.instantiate()
 	editor_view.visible = false
 	EditorInterface.get_editor_main_screen().add_child(editor_view)
@@ -186,7 +186,7 @@ func _enable_plugin() -> void:
 	add_autoload_singleton(
 			"NexusForge",
 			"res://addons/nexus_forge/classes/autoload/nexus_forge_singleton.gd")
-	recompile_script_docs()
+	recompile_script_docs.call_deferred()
 
 
 func _get_window_layout(configuration: ConfigFile) -> void:
