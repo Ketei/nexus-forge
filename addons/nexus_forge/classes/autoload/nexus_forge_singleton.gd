@@ -5,23 +5,33 @@ extends Node
 ## custom resources.
 
 
-## The dialog parser in charge of loading [EditorDiscourseDialog] dialogs.
+## The dialog parser in charge of loading dialogs.[br]
+## The object notifies of dialog data and events through signals.
 var Discourse: DialogParser
-## An object containing globally-accessible variables.
+## An object containing globally-accessible variables.[br]
+## The variables are nested into a folder-like structure which can also contain
+## folders.
 var Blackboard: BlackboardData
 ## A resource containing the game's item definitions.
 var Items: ItemCatalog
-## A resource containing custom stats data.
+## A resource containing custom stats data.[br]
+## Custom stats will be included in all [StatBlock]'s custom stats instantiated
+## with [method StatBlock.new_stat_block].
 var Stats: StatCatalog
-## A resource containing common and custom trait data.
+## A resource containing common and custom trait data.[br]
+## Custom traits created here will also be included in all instances of
+## [TraitBlock] that were created via [method TraitBlock.new_trait_block].
 var Traits: TraitCatalog
-## A resource containing common and custom skill data.
+## A resource containing common and custom skill data.[br]
+## Custom skill created here will also be included in all instances of
+## [SkillSet] that were created via [method SkillSet.new_skill_set].
 var Skills: SkillCatalog
 ## A resource containing the game's species data.
 var Species: SpeciesCatalog
 ## A resource containing the game's quests data.
 var Quests: QuestCatalog
-## A resource containing the game's currency data.
+## A resource containing the game's currency data and helper methods to manage
+## different currency systems.
 var Currency: CurrencyCatalog
 ## A resource containing the game's crafting recipes.
 var Recipes: RecipeCatalog
