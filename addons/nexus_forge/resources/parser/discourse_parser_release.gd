@@ -143,13 +143,17 @@ func _process_logic(uuid: StringName) -> String:
 			var localized_options: PackedStringArray = localization.get_options(_dialog_resource.conversation_uuid, uuid)
 			
 			var idx: int = -1
+			var option_duuid: String = ""
 			for option:Dictionary in data["options"]:
 				idx += 1
+				option_duuid = String(uuid) + "_" + str(idx)
+				
 				if option["settings"].is_empty():
+					option_duuid += "_unlocked"
 					available_options.append(
 						{
 							"unlocked": true,
-							"text": _parse_dialog(String(uuid), localized_options[idx]),
+							"text": _parse_dialog(option_duuid, localized_options[idx]),
 							"target": option["next_node"]})
 				else:
 					var opt_settings: Dictionary = _dialog_resource.dialog_nodes[option["settings"]]
@@ -158,9 +162,15 @@ func _process_logic(uuid: StringName) -> String:
 					if not show:
 						continue
 					var unlocked: bool = true if opt_settings["unlocked"].is_empty() else _get_data(opt_settings["unlocked"])
+					
+					if unlocked:
+						option_duuid += "_unlocked"
+					else:
+						option_duuid += "_locked"
+					
 					available_options.append({
 						"unlocked": unlocked,
-						"text": _parse_dialog(String(uuid), localized_options[idx] if unlocked else _get_data(opt_settings["lock_hint"])),
+						"text": _parse_dialog(option_duuid, localized_options[idx] if unlocked else _get_data(opt_settings["lock_hint"])),
 						"target": option["next_node"]})
 			
 			options_reached.emit(available_options)
@@ -379,7 +389,7 @@ func _load_locale(new_language: String, new_region: String) -> void:
 ## Loads a dialog and sets the dialog ID to the start of the conversation
 ## unless a valid [param starting_id] is given.[br]
 ## It also loads the relevant locale to [member localization].
-func load_dialog(path: String, starting_id: String = "") -> void:
+func load_dialog(path: String, starting_id: String = "") -> bool:
 	if _conversation_cache.is_in_cache(path):
 		_dialog_resource = _conversation_cache.get_resource(path)
 	else:
@@ -387,7 +397,7 @@ func load_dialog(path: String, starting_id: String = "") -> void:
 		if res == null or res is not ReleaseDiscourseDialog:
 			_next_uuid = ""
 			_dialog_resource = null
-			return
+			return false
 		_conversation_cache.cache_resource(res)
 		_dialog_resource = res
 	
@@ -397,3 +407,5 @@ func load_dialog(path: String, starting_id: String = "") -> void:
 		_next_uuid = starting_id
 	else:
 		_next_uuid = _dialog_resource.entry_node
+	
+	return true

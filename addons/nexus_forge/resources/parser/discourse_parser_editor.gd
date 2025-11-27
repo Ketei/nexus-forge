@@ -8,6 +8,12 @@ extends DialogParser
 ## This class will [b]NOT[/b] exist on exported projects.
 
 
+## Emmited when data is set on the NexusForge.Blackboard singleton.
+signal data_set(folder: String, variable: String, data: Variant)
+## Emmited when a method is called from the DiscourseAPI.
+signal method_called(method_string: String, arguments: Array)
+## Emmited when a signal is emmited from the DiscourseAPI.
+signal signal_emmited(signal_name: String, arguments: Array)
 # --- Editor Class ---
 #const NodeTypes := DiscourseGraphNode.DialogueNodeType
 
@@ -68,25 +74,34 @@ func _process_logic(uuid: StringName) -> String:
 			return data["output_connections"]["next_node"]["target_node_uuid"]
 		NodeTypes.OPTIONS:
 			var available_options: Array[Dictionary] = []
-			
+			var option_idx: int = -1
+			var option_duuid: String = ""
 			for option:Dictionary in data["options"]:
-				if option["input_connections"]["settings"]["target_node_uuid"] != "":
+				option_idx += 1
+				option_duuid = uuid + "_" + str(option_idx)
+				if option["input_connections"]["settings"]["target_node_uuid"].is_empty():
+					option_duuid += "_unlocked"
+					available_options.append(
+						{
+							"locked": false,
+							"text": _parse_dialog(option_duuid, option["option_text"]),
+							"target": option["output_connections"]["next_node"]["target_node_uuid"]})
+				else:
 					var opt_settings: Dictionary = _dialog_resource.get_node_data(option["input_connections"]["settings"]["target_node_uuid"], "common")
-					var show: bool = true if opt_settings["option_available"]["target_node_uuid"] == "" else _get_bool_result(opt_settings["option_available"]["target_node_uuid"])
+					var show: bool = true if opt_settings["option_available"]["target_node_uuid"].is_empty() else _get_bool_result(opt_settings["option_available"]["target_node_uuid"])
 				
 					if not show:
 						continue
-					var locked: bool = false if opt_settings["option_locked"]["target_node_uuid"] == "" else _get_bool_result(opt_settings["option_locked"]["target_node_uuid"])
+					var locked: bool = false if opt_settings["option_locked"]["target_node_uuid"].is_empty() else _get_bool_result(opt_settings["option_locked"]["target_node_uuid"])
+					if locked:
+						option_duuid += "_locked"
+					else:
+						option_duuid += "_unlocked"
+					
 					available_options.append({
 						"locked": locked,
-						"text": _parse_dialog(uuid, option["option_text"] if locked else _get_data(opt_settings["locked_hint"]["target_node_uuid"])),
+						"text": _parse_dialog(option_duuid, option["option_text"] if locked else _get_data(opt_settings["locked_hint"]["target_node_uuid"])),
 						"target": option["output_connections"]["next_node"]["target_node_uuid"]})
-				else:
-					available_options.append(
-						{
-							"locked": true,
-							"text": _parse_dialog(uuid, option["option_text"]),
-							"target": option["output_connections"]["next_node"]["target_node_uuid"]})
 			
 			options_reached.emit(available_options)
 			return uuid
@@ -101,10 +116,12 @@ func _process_logic(uuid: StringName) -> String:
 		NodeTypes.EVENT:
 			if data["variable_path"] != "" and data["input_connections"]["variable_value"]["target_node_uuid"] != "":
 				var parts: PackedStringArray = data["variable_path"].rsplit("/", false, 1)
+				var set_data: Variant = _get_data(data["input_connections"]["variable_value"]["target_node_uuid"])
 				NexusForge.Blackboard.set_variable(
 						parts[0],
 						parts[1],
-						_get_data(data["input_connections"]["variable_value"]["target_node_uuid"]))
+						set_data)
+				data_set.emit(parts[0], parts[1], set_data)
 			if data["input_connections"]["callable"]["target_node_uuid"] != "":
 				var call_data: Dictionary = _dialog_resource.get_node_data(data["input_connections"]["callable"]["target_node_uuid"], language, region)
 				var call_args: Array = []
@@ -116,6 +133,8 @@ func _process_logic(uuid: StringName) -> String:
 				NexusForge.Discourse.API.callv(
 						call_data["method"],
 						call_args)
+				
+				method_called.emit(call_data["method"], call_args.duplicate(true))
 			
 			if data["input_connections"]["signal"]["target_node_uuid"] != "":
 				var signal_data: Dictionary = _dialog_resource.get_node_data(data["input_connections"]["signal"]["target_node_uuid"], language, region)
@@ -127,7 +146,7 @@ func _process_logic(uuid: StringName) -> String:
 				NexusForge.Discourse.API.emit_signal(
 						signal_data["signal"],
 						signal_args)
-				
+				signal_emmited.emit(signal_data["signal"], signal_args)
 			return _process_logic(data["output_connections"]["next_node"]["target_node_uuid"])
 		NodeTypes.MATCH:
 			var data_comp = _get_data(data["input_connections"]["match_value_source"]["target_node_uuid"])

@@ -476,16 +476,18 @@ func is_dialog_active() -> bool:
 
 
 ## Loads a dialog and sets the dialog ID to the start of the conversation
-## unless a valid [param starting_id] is given.
-func load_dialog(path: String, starting_id: String = "") -> void:
+## unless a valid [param starting_id] is given.[br]
+## Returns [code]true[/code] if the dialog was loaded.
+func load_dialog(path: String, starting_id: String = "") -> bool:
 	if _conversation_cache.is_in_cache(path):
 		_dialog_resource = _conversation_cache.get_resource(path)
+		return true
 	else:
 		var res: Resource = load(path)
 		if res == null or res is not EditorDiscourseDialog:
 			_next_uuid = ""
 			_dialog_resource = null
-			return
+			return false
 		_conversation_cache.cache_resource(res)
 		_dialog_resource = res
 	
@@ -495,6 +497,8 @@ func load_dialog(path: String, starting_id: String = "") -> void:
 		_next_uuid = starting_id
 	else:
 		_next_uuid = _dialog_resource.entry_node
+	
+	return true
 
 
 ## Sets the dialog to be at a specific point. [param id] can be the dialog
