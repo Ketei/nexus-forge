@@ -76,7 +76,7 @@ func _get_node_data() -> Dictionary:
 		"option_node": get_uuid_and_port_connected_to(PortMode.OUTPUT, 0)}
 	data["input_connections"] = {
 		"option_available": get_uuid_and_port_connected_to(PortMode.INPUT, 0),
-		"option_locked": get_uuid_and_port_connected_to(PortMode.INPUT, 1),
+		"option_unlocked": get_uuid_and_port_connected_to(PortMode.INPUT, 1),
 		"locked_hint": get_uuid_and_port_connected_to(PortMode.INPUT, 2)}
 	
 	return data
