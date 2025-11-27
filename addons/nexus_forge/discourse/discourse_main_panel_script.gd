@@ -1306,6 +1306,7 @@ func save_all_dialogs() -> void:
 	for unsaved_conversation:EditorDiscourseDialog in conversation_tree.get_unsaved_conversation_resources():
 		# Including our active one
 		if unsaved_conversation == active_conversation:
+			save_phrase_keys(true)
 			var new_dialog: EditorDiscourseDialog = discourse_window.discourse_graph_edit.get_conversation_data(active_conversation)
 			# Obtaining localization reference
 			var localizations: Dictionary = discourse_window.localization
@@ -1499,6 +1500,7 @@ func _on_save_cases_btn_pressed() -> void:
 		search_case_ln_edt.text = ""
 		search_case_ln_edt.set_meta(&"current_search", "")
 		argument_opt_btn.clear()
+		selected_format = ""
 	case_box_container.visible = false
 	key_box_container.visible = true
 
@@ -1927,7 +1929,6 @@ func save_phrase_keys(fix_keys: bool = false) -> void:
 	
 	if fix_keys:
 		_on_key_line_text_changed()
-
 #endregion
 
 
