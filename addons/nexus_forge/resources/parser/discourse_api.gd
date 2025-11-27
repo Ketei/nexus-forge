@@ -12,6 +12,10 @@ signal bear_poked
 var rat_startled: bool = false
 
 
+func get_player_name(override: String = "Shibju") -> String:
+	return override
+
+
 func get_character_display_name(character_id: String) -> String:
 	if has_met_character(character_id):
 		return "James"
