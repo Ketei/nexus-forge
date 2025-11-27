@@ -125,13 +125,22 @@ func _on_folder_renamed(from: String, to: String) -> void:
 	var to_id: StringName = StringName(to)
 	
 	for folder_key:StringName in _variables_resource._variables.keys():
-		if folder_key.begins_with(from_id):
+		if _is_folder_or_subfolder(folder_key, from):
 			var new_key: StringName = to_id + folder_key.trim_prefix(from_id)
 			_variables_resource._variables[new_key] = _variables_resource._variables[folder_key]
 			_variables_resource._variables.erase(folder_key)
 	
 	if _current_folder == from:
 		_current_folder = to
+
+
+func _is_folder_or_subfolder(this: String, from: String) -> bool:
+	if this == from:
+		return true
+	elif this.begins_with(from + "/"):
+		return true
+	else:
+		return false
 
 
 func on_something_changed() -> void:
