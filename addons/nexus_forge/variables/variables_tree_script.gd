@@ -92,6 +92,7 @@ func _on_button_pressed(item: TreeItem, column: int, id: int, mouse_button_index
 		0:
 			copy_path_pressed.emit(item.get_text(0))
 		1:
+			variable_updated.emit(item.get_metadata(0), null)
 			item.free()
 
 
