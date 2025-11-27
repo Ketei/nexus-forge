@@ -4,7 +4,7 @@ extends Tree
 
 signal node_activated(node: DiscourseGraphNode)
 signal directory_edited
-signal item_renamed(uuid: StringName, type: DiscourseGraphNode.DialogueNodeType, new_name: String)
+signal item_renamed(uuid: StringName, type: DiscourseGraphNode.DialogueNodeType, new_name: String, localized: bool)
 
 
 func _ready() -> void:
@@ -13,6 +13,7 @@ func _ready() -> void:
 	create_item().collapsed = true
 	button_clicked.connect(_on_discourse_tree_button_clicked)
 	item_activated.connect(_on_discourse_node_activated)
+	item_edited.connect(_on_discourse_item_edited)
 
 
 func _drop_data(at_position: Vector2, data: Variant) -> void:
@@ -80,15 +81,7 @@ func _on_discourse_item_edited() -> void:
 		var new_name: String = get_unique_name_on_tree(edited.get_text(0), edited)
 		node.custom_id = new_name
 		edited.set_text(0, new_name)
-		if node.is_node_localized():
-			item_renamed.emit(node.get_node_uuid(), node.node_type, new_name)
-			#match node.node_type:
-				#DiscourseGraphNode.DialogueNodeType.DIALOG:
-					#localization_nodes_tree.rename_dialog_node(node.get_node_uuid(), new_name)
-				#DiscourseGraphNode.DialogueNodeType.OPTIONS:
-					#localization_nodes_tree.rename_options_node(node.get_node_uuid(), new_name)
-				#DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
-					#localization_nodes_tree.rename_text_node(node.get_node_uuid(), new_name)
+		item_renamed.emit(node.get_node_uuid(), node.node_type, new_name, node.is_node_localized())
 	else:
 		var new_name: String = get_unique_name_on_tree(
 				edited.get_text(0),

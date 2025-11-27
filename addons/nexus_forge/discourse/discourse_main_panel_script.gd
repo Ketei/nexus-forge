@@ -1095,14 +1095,17 @@ func set_up_node_structure(structure: Array[Dictionary], level: TreeItem, _map: 
 			set_up_node_structure(item["items"], new_folder, _map)
 
 
-func _on_discourse_item_edited(uuid: StringName, type: DiscourseGraphNode.DialogueNodeType, new_name: String) -> void:
-	match type:
-		DiscourseGraphNode.DialogueNodeType.DIALOG:
-			localization_nodes_tree.rename_dialog_node(uuid, new_name)
-		DiscourseGraphNode.DialogueNodeType.OPTIONS:
-			localization_nodes_tree.rename_options_node(uuid, new_name)
-		DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
-			localization_nodes_tree.rename_text_node(uuid, new_name)
+func _on_discourse_item_edited(uuid: StringName, type: DiscourseGraphNode.DialogueNodeType, new_name: String, localized: bool) -> void:
+	if localized:
+		match type:
+			DiscourseGraphNode.DialogueNodeType.DIALOG:
+				localization_nodes_tree.rename_dialog_node(uuid, new_name)
+			DiscourseGraphNode.DialogueNodeType.OPTIONS:
+				localization_nodes_tree.rename_options_node(uuid, new_name)
+			DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
+				localization_nodes_tree.rename_text_node(uuid, new_name)
+	
+	_on_conversation_changed()
 
 #endregion
 
