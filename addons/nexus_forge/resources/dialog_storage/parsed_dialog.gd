@@ -58,15 +58,15 @@ func set_format_string(key: String, text: String) -> void:
 
 
 ## Sets the callable to be used when obtaining the case to format the [member dialog].
-func set_format_callable(key: String, method: Callable, arguments: Array = []) -> void:
-	_format_args[key] = method.bindv(arguments.duplicate(true))
+func set_format_callable(key: String, method: Callable) -> void:
+	_format_args[key] = method
 
 
 ## Returns the formatted dialog.
 func get_dialog() -> String:
 	var format_dict: Dictionary[String, String] = {}
-	
 	for format_key in _phrases_format.keys():
+		
 		var formats: Dictionary = {}
 		var values: Dictionary = {}
 		var phrase_text: String = _phrases_format[format_key]["text"]

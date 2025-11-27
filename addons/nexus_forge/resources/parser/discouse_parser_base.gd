@@ -99,6 +99,7 @@ func _parse_dialog(dialog_id: String, dialog: String) -> String:
 	parsed.language = language
 	parsed.region = region
 	parsed.dialog = dialog
+	
 	var functions_processed: PackedStringArray = []
 	var variables_processed: PackedStringArray = []
 	var phrases_processed: PackedStringArray = []
@@ -106,9 +107,9 @@ func _parse_dialog(dialog_id: String, dialog: String) -> String:
 	var function_regex: RegEx = RegEx.new()
 	var variable_regex: RegEx = RegEx.new()
 	var phrase_regex: RegEx = RegEx.new()
-	function_regex.compile("\\{\\!([^|\\s]+)(?:\\|([^}\\s]+))?\\}")
-	variable_regex.compile("\\{(\\$[^\\s\\}]+)\\}")
-	phrase_regex.compile("\\{\\&([^\\s\\}]+)\\}")
+	function_regex.compile("\\{\\![^\\s\\}]+\\}")
+	variable_regex.compile("\\{\\$[^\\s\\}]+\\}")
+	phrase_regex.compile("\\{\\&[^\\s\\}]+\\}")
 	
 	# Searching for function calls.
 	
@@ -118,72 +119,62 @@ func _parse_dialog(dialog_id: String, dialog: String) -> String:
 		
 		functions_processed.append(rgx_func_result.get_string())
 		
-		#var replace: String = rgx_func_result.get_string().trim_prefix("{").trim_suffix("}")
-		#var method: String = rgx_func_result.get_string(1)
-		var method_args: PackedStringArray = []
-		var string_args: String = rgx_func_result.get_string(2)
-		if not string_args.is_empty():
-			method_args = string_args.split(",", false)
-		
-		#var replacement: String = str(NexusForge.Discourse.API.callv(
-				#StringName(method), method_args))
+		# {!get_name|a,b} -> !get_name|a,b
+		var clean_string: String = rgx_func_result.get_string().trim_prefix("{").trim_suffix("}")
 		
 		parsed.set_format_callable(
-				rgx_func_result.get_string(1),
-				_build_callable_for_format(rgx_func_result.get_string(1)),
-				method_args)
+				clean_string,
+				_build_callable_for_method(clean_string.trim_prefix("!")))
 		
-	
 	# Processing variables
 	
 	for rgx_var_result in variable_regex.search_all(dialog):
-		var key: String = rgx_var_result.get_string(1)
-		if variables_processed.has(key):
+		if variables_processed.has(rgx_var_result.get_string()):
 			continue
 		
-		variables_processed.append(key)
-		#var var_val: String = str(
-				#NexusForge.Variables.get_variable(key))
+		var key: String = rgx_var_result.get_string().trim_prefix("{").trim_suffix("}")
+		variables_processed.append(rgx_var_result.get_string())
+		
+		var callable: Callable = _build_callable_for_variable(key.trim_prefix("{$").trim_suffix("}"))
 		
 		parsed.set_format_callable(
 				key,
-				_build_callable_for_format(key))
-		
+				_build_callable_for_variable(key.trim_prefix("$")))
 	
 	# Revealing the phrase text.
 	for rgx_phrase_result in phrase_regex.search_all(dialog):
-		var phrase_key: String = rgx_phrase_result.get_string(1)
-		if phrases_processed.has(phrase_key):
+		if phrases_processed.has(rgx_phrase_result.get_string()):
 			continue
-		var format_replace = "&" + phrase_key
+		var phrase_key: String = rgx_phrase_result.get_string().trim_prefix("{").trim_suffix("}")
+		var prefix_trim_key: String = phrase_key.trim_prefix("&")
 		phrases_processed.append(phrase_key)
 		
 		var phrase: String = _dialog_resource.get_localized_string(
-				phrase_key,
+				prefix_trim_key,
 				language,
 				region)
 		
 		var argument_cases: Dictionary[String, Dictionary] = _dialog_resource.get_localized_arguments(
-				phrase_key,
+				prefix_trim_key,
 				language,
 				region)
 		
-		parsed.create_format_phrase(format_replace, phrase, argument_cases)
+		parsed.create_format_phrase(phrase_key, phrase, argument_cases)
 		
 		for function_section in function_regex.search_all(phrase):
 		#{!askdjal}
-			var replace: String = function_section.get_string(1)
+			var replace: String = function_section.get_string().trim_prefix("{").trim_suffix("}")
 			parsed.set_format_phrase_callable(
-					format_replace,
+					phrase_key,
 					replace,
-					_build_callable_for_format(replace))
+					_build_callable_for_method(replace.trim_prefix("!")))
 		
 		for variable_section in variable_regex.search_all(phrase):
-			var replace: String = variable_section.get_string(1)
+			var replace: String = variable_section.get_string().trim_prefix("{").trim_suffix("}")
 			parsed.set_format_phrase_callable(
-					format_replace,
+					phrase_key,
 					replace,
-					_build_callable_for_format(replace))
+					_build_callable_for_variable(replace.trim_prefix("$")))
 	
 	_dialog_resource.parsed_dialog_cache.cache_data(
 		DUUID,
@@ -192,28 +183,38 @@ func _parse_dialog(dialog_id: String, dialog: String) -> String:
 	return parsed.get_dialog()
 
 
-func _build_callable_for_format(text: String) -> Callable:
-	# Must pass an argument that starts with ! or $
-	if text.begins_with("$"):
-		var a: Callable = Callable(NexusForge.Blackboard.get_variable.bind(text.trim_prefix("$")))
-		return a
-	else: # begins with !
-		var parts: PackedStringArray = text.split("|", false, 1)
-		var method: StringName = StringName(parts[0].trim_prefix("!"))
-		var arguments: PackedStringArray = []
-		
-		if 1 < parts.size():
-			arguments = parts[1].split(",")
-		
-		var final_arguments: Array = []
-		
-		for argument in arguments:
-			if argument.begins_with("$") or argument.begins_with("!"):
-				final_arguments.append(_build_callable_for_format(argument))
-			else:
-				final_arguments.append(argument)
-		
-		return Callable(NexusForge.Discourse.API, method).bind(final_arguments)
+func _build_callable_for_variable(text: String) -> Callable:
+	var paths: PackedStringArray = text.trim_prefix("$").rsplit("/", false, 1)
+	var callable: Callable = Callable(
+			NexusForge.Blackboard.get_variable.bind(
+					paths[0],
+					StringName(paths[1])))
+	return callable
+
+
+func _build_callable_for_method(text: String) -> Callable:
+	var parts: PackedStringArray = text.split("|", false, 1)
+	var method: StringName = StringName(parts[0].trim_prefix("!"))
+	var arguments: PackedStringArray = []
+	if 1 < parts.size():
+		arguments = parts[1].split(",")
+	
+	var final_arguments: Array = []
+	
+	for argument in arguments:
+		if argument.begins_with("$"):
+			final_arguments.append(_build_callable_for_variable(argument.trim_prefix("$")))
+		elif argument.begins_with("!"):
+			final_arguments.append(_build_callable_for_method(argument.trim_prefix("!")))
+		else:
+			final_arguments.append(argument)
+	
+	var callable: Callable = Callable(NexusForge.Discourse.API, method)
+	
+	if not final_arguments.is_empty():
+		callable = callable.bindv(final_arguments)
+	
+	return callable
 
 
 func _can_compare(a, b) -> bool:

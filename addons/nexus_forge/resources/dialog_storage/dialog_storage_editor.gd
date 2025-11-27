@@ -208,7 +208,7 @@ func set_localized_string(key: String, text: String, language: String, region: S
 	
 	localized_strings[key][language][region]["text"] = text
 
-	var arg_data: Array[String] = get_phrase_arguments(text)
+	var arg_data: Array[String] = get_phrase_arguments(text, true)
 	
 	for existing_key in localized_strings[key][language][region]["arguments"].keys():
 		if not arg_data.has(existing_key):
@@ -990,7 +990,7 @@ func split_path_variable(path: String) -> Array[StringName]:
 
 ## Returns an array with all the format arguments of the prase [param phrase_text].[br]
 ## It'll only look for format arguments that start with $ or !.
-func get_phrase_arguments(phrase_text: String) -> Array[String]:
+func get_phrase_arguments(phrase_text: String, trim_brackets: bool = false) -> Array[String]:
 	var all_arguments: Array[String] = []
 	#var variable_calls: Array[String] = []
 	#var arguments_vals: Array[String] = []
@@ -1007,8 +1007,12 @@ func get_phrase_arguments(phrase_text: String) -> Array[String]:
 	
 	regex_search.compile("\\{[\\$\\!][^\\s\\}]+\\}")
 	
-	for regex_match in regex_search.search_all(phrase_text): # $variable
-		all_arguments.append(regex_match.get_string())
+	if trim_brackets:
+		for regex_match in regex_search.search_all(phrase_text): # $variable
+			all_arguments.append(regex_match.get_string().trim_prefix("{").trim_suffix("}"))
+	else:
+		for regex_match in regex_search.search_all(phrase_text): # $variable
+			all_arguments.append(regex_match.get_string())
 	
 	#regex_search.compile("\\{\\!([^\\s\\}]+)\\}")
 	#
