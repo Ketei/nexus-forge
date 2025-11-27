@@ -1,0 +1,120 @@
+[gd_scene load_steps=3 format=3 uid="uid://csl2ly1viqy7x"]
+
+[ext_resource type="Script" uid="uid://bydc53qr4cjcf" path="res://addons/nexus_forge/discourse/dialog_previewer.gd" id="1_4jrkd"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_eosxw"]
+content_margin_left = 8.0
+content_margin_top = 10.0
+content_margin_right = 8.0
+content_margin_bottom = 8.0
+
+[node name="DialogPreviewer" type="PanelContainer"]
+custom_minimum_size = Vector2(600, 380)
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxEmpty_eosxw")
+script = ExtResource("1_4jrkd")
+
+[node name="MainSplitContainer" type="HSplitContainer" parent="."]
+layout_mode = 2
+
+[node name="ParsedBox" type="VBoxContainer" parent="MainSplitContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 3.0
+
+[node name="DialogOptionSplit" type="VSplitContainer" parent="MainSplitContainer/ParsedBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="DialogBox" type="VBoxContainer" parent="MainSplitContainer/ParsedBox/DialogOptionSplit"]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 3.0
+
+[node name="Label" type="Label" parent="MainSplitContainer/ParsedBox/DialogOptionSplit/DialogBox"]
+layout_mode = 2
+text = "Dialog / Options"
+
+[node name="DialogTextEdit" type="TextEdit" parent="MainSplitContainer/ParsedBox/DialogOptionSplit/DialogBox"]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 3.0
+theme_override_colors/font_readonly_color = Color(0.803922, 0.811765, 0.823529, 1)
+editable = false
+wrap_mode = 1
+
+[node name="ContinueBtn" type="Button" parent="MainSplitContainer/ParsedBox/DialogOptionSplit/DialogBox"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+text = "Start Dialog"
+
+[node name="OptionsContainer" type="VBoxContainer" parent="MainSplitContainer/ParsedBox/DialogOptionSplit"]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 1.5
+
+[node name="Label" type="Label" parent="MainSplitContainer/ParsedBox/DialogOptionSplit/OptionsContainer"]
+layout_mode = 2
+text = "Options"
+
+[node name="OptionsTree" type="Tree" parent="MainSplitContainer/ParsedBox/DialogOptionSplit/OptionsContainer"]
+custom_minimum_size = Vector2(0, 120)
+layout_mode = 2
+size_flags_vertical = 3
+columns = 2
+column_titles_visible = true
+hide_folding = true
+hide_root = true
+select_mode = 1
+
+[node name="DataSplit" type="VSplitContainer" parent="MainSplitContainer"]
+custom_minimum_size = Vector2(250, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="DataContainer" type="VBoxContainer" parent="MainSplitContainer/DataSplit"]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 2.0
+
+[node name="Label" type="Label" parent="MainSplitContainer/DataSplit/DataContainer"]
+layout_mode = 2
+text = "Data received"
+
+[node name="DataTextEdit" type="TextEdit" parent="MainSplitContainer/DataSplit/DataContainer"]
+custom_minimum_size = Vector2(0, 46)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_colors/font_readonly_color = Color(0.803922, 0.811765, 0.823529, 1)
+editable = false
+wrap_mode = 1
+
+[node name="ClearDataBtn" type="Button" parent="MainSplitContainer/DataSplit/DataContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+text = "Clear"
+
+[node name="EventsContainer" type="VBoxContainer" parent="MainSplitContainer/DataSplit"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Label" type="Label" parent="MainSplitContainer/DataSplit/EventsContainer"]
+layout_mode = 2
+text = "Events"
+
+[node name="EventsTextEdit" type="TextEdit" parent="MainSplitContainer/DataSplit/EventsContainer"]
+custom_minimum_size = Vector2(0, 46)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_colors/font_readonly_color = Color(0.803922, 0.811765, 0.823529, 1)
+editable = false
+wrap_mode = 1
+
+[node name="ClearEventsBtn" type="Button" parent="MainSplitContainer/DataSplit/EventsContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+text = "Clear"

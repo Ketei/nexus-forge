@@ -132,6 +132,7 @@ func _ready() -> void:
 	discourse_window.change_default_language_pressed.connect(_on_change_default_language_pressed)
 	discourse_window.set_locale_group_pressed.connect(_on_change_locale_group_pressed)
 	discourse_window.check_for_issues_pressed.connect(_on_get_issues_pressed)
+	discourse_window.play_current_dialog_pressed.connect(_on_play_current_dialog_pressed)
 	return_discourse_btn.pressed.connect(_on_switch_window_pressed)
 	#create_phrase_btn.pressed.connect(_on_new_phrase_button_pressed)
 	new_language_btn.pressed.connect(_on_new_lang_pressed)
@@ -994,6 +995,31 @@ func _on_open_conversation_pressed() -> void:
 		listen_offset = true
 	
 	file_opener.queue_free()
+
+
+func _on_play_current_dialog_pressed() -> void:
+	if active_conversation == null:
+		return
+	var res_path: String = active_conversation.resource_path
+	
+	if res_path.is_empty():
+		printerr("[NexusForge] Discourse: Path of current conversation is empty.")
+		return
+	
+	var cfg: ConfigFile = ConfigFile.new()
+	
+	if FileAccess.file_exists("user://nexus_forge/discourse_settings.cfg"):
+		cfg.load("user://nexus_forge/discourse_settings.cfg")
+	
+	cfg.set_value("Discourse", "active_scene", res_path)
+	
+	if not DirAccess.dir_exists_absolute("user://nexus_forge/"):
+		DirAccess.make_dir_absolute("user://nexus_forge/")
+	
+	cfg.save("user://nexus_forge/discourse_settings.cfg")
+	if conversation_tree.active_unsaved:
+		save_current_dialog()
+	EditorInterface.play_custom_scene("res://addons/nexus_forge/discourse/dialog_previewer.tscn")
 
 
 func plugin_file_selected(file: EditorDiscourseDialog):

@@ -10,6 +10,7 @@ signal close_conversation_pressed
 signal localization_window_pressed
 signal set_locale_group_pressed
 signal check_for_issues_pressed
+signal play_current_dialog_pressed
 
 
 enum DiscourseFileMenuID {
@@ -19,7 +20,9 @@ enum DiscourseFileMenuID {
 	CLOSE_DIALOG,
 	CHANGE_LANGUAGE,
 	SET_LOCALE_GROUP,
-	CHECK_ISSUES}
+	CHECK_ISSUES,
+	PLAY_CURRENT_DIALOG,
+	}
 
 var _disabled: bool = true
 
@@ -28,6 +31,7 @@ var discourse_graph_edit: GraphEdit = null
 var node_menu: MenuButton
 var file_menu: MenuButton
 var save_btn: Button
+var play_current_dialog_btn: Button
 var switch_localization: Button
 var localization_menu: OptionButton
 
@@ -239,6 +243,18 @@ func _ready() -> void:
 	sort_nodes.pressed.connect(_on_sort_nodes_pressed)
 	sort_nodes.add_theme_stylebox_override(&"normal", StyleBoxEmpty.new())
 	
+	play_current_dialog_btn = Button.new()
+	play_current_dialog_btn.icon = get_theme_icon("Play", "EditorIcons")
+	play_current_dialog_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	#sort_nodes.expand_icon = true
+	play_current_dialog_btn.disabled = true
+	play_current_dialog_btn.tooltip_text = "Play current dialog"
+	play_current_dialog_btn.custom_minimum_size = Vector2(32.0, 32.0)
+	play_current_dialog_btn.add_theme_constant_override(&"icon_max_width", 24)
+	play_current_dialog_btn.pressed.connect(_on_play_current_dialog_pressed)
+	play_current_dialog_btn.add_theme_stylebox_override(&"normal", StyleBoxEmpty.new())
+	
+	
 	localization_label.text = "Localization:"
 	
 	localization_menu.flat = true
@@ -280,8 +296,12 @@ func _ready() -> void:
 			DiscourseFileMenuID.SAVE_DIALOG)
 	file_popup.add_separator()
 	file_popup.add_item(
+			"Play current dialog",
+			DiscourseFileMenuID.PLAY_CURRENT_DIALOG)
+	file_popup.add_item(
 			"Check for issues",
 			DiscourseFileMenuID.CHECK_ISSUES)
+	file_popup.add_separator()
 	file_popup.add_item(
 			"Set file locale group",
 			DiscourseFileMenuID.SET_LOCALE_GROUP)
@@ -315,6 +335,11 @@ func _ready() -> void:
 					DiscourseFileMenuID.SET_LOCALE_GROUP),
 			true)
 	
+	file_popup.set_item_disabled(
+			file_popup.get_item_index(
+					DiscourseFileMenuID.PLAY_CURRENT_DIALOG),
+			true)
+	
 	var menu_items: Array = [
 		file_menu,
 		node_menu,
@@ -328,6 +353,8 @@ func _ready() -> void:
 		VSeparator.new(),
 		toggle_minimap,
 		sort_nodes,
+		VSeparator.new(),
+		play_current_dialog_btn,
 		localization_container]
 	
 	localization_container.add_child(localization_label)
@@ -366,6 +393,10 @@ func _ready() -> void:
 	#discourse_graph_edit.fix_scroll_offset_for_new(size)
 	
 
+func _on_play_current_dialog_pressed() -> void:
+	play_current_dialog_pressed.emit()
+
+
 
 func _on_localization_selected(idx: int) -> void:
 	if not current_language.is_empty():
@@ -399,6 +430,8 @@ func _on_file_menu_id_pressed(id: int) -> void:
 			set_locale_group_pressed.emit()
 		DiscourseFileMenuID.CHECK_ISSUES:
 			check_for_issues_pressed.emit()
+		DiscourseFileMenuID.PLAY_CURRENT_DIALOG:
+			play_current_dialog_pressed.emit()
 
 
 func _on_create_dialog_id_pressed(id: int) -> void:
@@ -615,6 +648,8 @@ func set_conversation_options_enabled(are_enabled: bool) -> void:
 	switch_localization.disabled = disabled
 	save_btn.disabled = disabled
 	localization_menu.disabled = disabled
+	play_current_dialog_btn.disabled = disabled
+	
 	
 	file_popup.set_item_disabled(
 			file_popup.get_item_index(
@@ -624,6 +659,11 @@ func set_conversation_options_enabled(are_enabled: bool) -> void:
 	file_popup.set_item_disabled(
 			file_popup.get_item_index(
 					DiscourseFileMenuID.SET_LOCALE_GROUP),
+			disabled)
+	
+	file_popup.set_item_disabled(
+			file_popup.get_item_index(
+					DiscourseFileMenuID.PLAY_CURRENT_DIALOG),
 			disabled)
 	
 	file_popup.set_item_disabled(
