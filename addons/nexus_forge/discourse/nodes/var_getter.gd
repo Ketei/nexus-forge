@@ -47,7 +47,16 @@ func _ready() -> void:
 	var type_menu: MenuButton = get_mapped_field(&"path", &"output_type")
 	var type_popup: PopupMenu = type_menu.get_popup()
 	graph_icon = get_theme_icon("LocalVariable", "EditorIcons")
-	type_menu.icon = get_theme_icon("int", "EditorIcons")
+	
+	match type_menu.get_meta(&"current_type", TYPE_INT):
+		TYPE_INT:
+			type_menu.icon = get_theme_icon("int", "EditorIcons")
+		TYPE_FLOAT:
+			type_menu.icon = get_theme_icon("float", "EditorIcons")
+		TYPE_BOOL:
+			type_menu.icon = get_theme_icon("bool", "EditorIcons")
+		TYPE_STRING:
+			type_menu.icon = get_theme_icon("String", "EditorIcons")
 	type_popup.add_icon_item(
 			get_theme_icon("int", "EditorIcons"),
 			"",
@@ -108,6 +117,7 @@ func _on_line_edit_focus_lost() -> void:
 
 func _on_type_selected(item_id: int) -> void:
 	if get_field(&"path").get_child(1).get_meta(&"current_type", TYPE_INT) == item_id:
+		print("SameType")
 		return
 	
 	if has_any_output(0):
@@ -116,7 +126,7 @@ func _on_type_selected(item_id: int) -> void:
 				name,
 				0,
 				target.name,
-				target.get_input_port_connected_to(self))
+				target.get_port_connected_to(PortMode.INPUT, self, 0))
 	
 	set_node_type(item_id)
 	
