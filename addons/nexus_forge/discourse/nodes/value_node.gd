@@ -70,7 +70,7 @@ func _post_init() -> void:
 	node_type = DialogueNodeType.VALUE
 	parent_mode = PortMode.OUTPUT
 	parent_port = 0
-	size = Vector2(220, 90)
+	size = Vector2(260, 90)
 	
 	var main_container: HBoxContainer = HBoxContainer.new()
 	var data_panel: PanelContainer = PanelContainer.new()
@@ -123,6 +123,7 @@ func _post_init() -> void:
 func _ready() -> void:
 	var data_menu: MenuButton = get_field(&"data").get_child(1)
 	var data_popup: PopupMenu = data_menu.get_popup()
+	
 	data_menu.icon = get_theme_icon("int", "EditorIcons")
 	data_popup.add_icon_item(
 			get_theme_icon("int", "EditorIcons"),
@@ -141,6 +142,7 @@ func _ready() -> void:
 			"",
 			TYPE_STRING)
 	
+	data_menu.icon = data_popup.get_item_icon(data_popup.get_item_index(mode))
 
 
 func _get_node_data() -> Dictionary:
