@@ -83,7 +83,7 @@ func _process_logic(uuid: StringName) -> String:
 					option_duuid += "_unlocked"
 					available_options.append(
 						{
-							"unlocked": false,
+							"unlocked": true,
 							"text": _parse_dialog(option_duuid, option["option_text"]),
 							"target": option["output_connections"]["next_node"]["target_node_uuid"]})
 				else:
@@ -106,7 +106,7 @@ func _process_logic(uuid: StringName) -> String:
 						option_duuid += "_locked"
 					
 					available_options.append({
-						"unlocked": not unlocked,
+						"unlocked": unlocked,
 						"text": _parse_dialog(option_duuid, text),
 						"target": option["output_connections"]["next_node"]["target_node_uuid"]})
 			

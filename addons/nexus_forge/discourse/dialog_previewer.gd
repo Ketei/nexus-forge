@@ -163,10 +163,10 @@ func load_dialog(dialog_path: String) -> void:
 	events_text_edit.set_deferred("scroll_vertical", events_text_edit.get_v_scroll_bar().max_value)
 
 
-func add_option(text: String, locked: bool, target: StringName) -> void:
+func add_option(text: String, unlocked: bool, target: StringName) -> void:
 	var new_opt: TreeItem = options_tree.get_root().create_child()
 	new_opt.set_text(0, text)
-	new_opt.set_text(1, "Locked" if locked else "Unlocked")
+	new_opt.set_text(1, "Unlocked" if unlocked else "Locked")
 	new_opt.set_text_alignment(1, HORIZONTAL_ALIGNMENT_CENTER)
 	new_opt.set_metadata(0, target)
 	new_opt.add_button(
