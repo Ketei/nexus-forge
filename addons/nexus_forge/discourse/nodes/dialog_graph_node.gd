@@ -110,8 +110,13 @@ func _ready() -> void:
 	set_input_connection_icon(&"flags", get_theme_icon("String", "EditorIcons"))
 
 
-func _on_input_connected(input_port: int, _from_node: DiscourseGraphNode, _from_port: int) -> void:
+func _on_input_connected(input_port: int, from_node: DiscourseGraphNode, _from_port: int) -> void:
 	match input_port:
+		0:
+			if from_node.node_type == DialogueNodeType.DIALOG and get_mapped_field(&"character_id", &"character_line").text.strip_edges().is_empty():
+				var from_character_id: String = from_node.get_mapped_field(&"character_id", &"character_line").text
+				if not from_character_id.strip_edges().is_empty():
+					get_mapped_field(&"character_id", &"character_line").text = from_character_id
 		3:
 			free_size = size
 			get_field(&"dialog_text").editable = false
