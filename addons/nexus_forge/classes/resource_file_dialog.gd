@@ -24,11 +24,8 @@ func _ready() -> void:
 
 
 func on_file_selected(file_path: String) -> void:
-	if file_path.get_extension().is_empty():
-		if file_path.ends_with("."):
-			file_path += expected_extension
-		else:
-			file_path += "." + expected_extension
+	if file_path.get_extension() != expected_extension:
+		file_path = file_path.get_basename() + "." + expected_extension
 	dialog_finished.emit(true, file_path)
 
 
