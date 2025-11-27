@@ -36,12 +36,15 @@ func _ready() -> void:
 				success = true
 				load_dialog(path)
 	
-	if not success:
+	if success:
+		continue_btn.grab_focus()
+	else:
 		continue_btn.disabled = not success
 		events_text_edit.text = "--- Active dialog not found ---"
 	
 	continue_btn.pressed.connect(_on_continue_pressed)
 	options_tree.button_clicked.connect(_on_option_button_clicked)
+	options_tree.item_activated.connect(_on_option_activated)
 	clear_data_btn.pressed.connect(_on_clear_data_pressed)
 	clear_events_btn.pressed.connect(_on_clear_events_pressed)
 	NexusForge.Discourse.dialog_reached.connect(_on_dialog_reached)
@@ -75,9 +78,24 @@ func _on_options_reached(options: Array[Dictionary]) -> void:
 	for option in options:
 		add_option(option["text"], option["locked"], option["target"])
 	
-	continue_btn.disabled = true
-	
-	options_container.visible = true
+	if options.is_empty():
+		events_text_edit.text += "Error: No options were received.\n"
+	else:
+		options_tree.grab_focus()
+		options_tree.get_root().get_first_child().select(0)
+		continue_btn.disabled = true
+		options_container.visible = true
+
+
+func _on_option_activated() -> void:
+	var selected: TreeItem = options_tree.get_selected()
+	if selected == null:
+		return
+	NexusForge.Discourse.set_dialog_id(selected.get_metadata(0))
+	NexusForge.Discourse.next_dialog()
+	options_container.visible = false
+	continue_btn.disabled = false
+	continue_btn.grab_focus()
 
 
 func _on_option_button_clicked(item: TreeItem, _column: int, id: int, mouse_button_index: int) -> void:
@@ -89,6 +107,7 @@ func _on_option_button_clicked(item: TreeItem, _column: int, id: int, mouse_butt
 		NexusForge.Discourse.next_dialog()
 		options_container.visible = false
 		continue_btn.disabled = false
+		continue_btn.grab_focus()
 
 
 func _on_continue_pressed() -> void:
