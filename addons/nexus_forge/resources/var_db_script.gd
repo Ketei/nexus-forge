@@ -10,6 +10,17 @@ extends Resource
 ## are simplified using [method String.simplify_path].
 
 
+## Emmited when data is set via [method BlackboardData.set_variable].
+signal data_set(folder: StringName, variable: StringName)
+## Emmited when data is erased via [method BlackboardData.set_variable].
+signal data_erased(folder: StringName, variable: StringName)
+## Emmited only when a folder is created via [method BlackboardData.create_folder].
+## If this function is called but no folder is created the signal won't be emmited.
+signal folder_created(folder_path: StringName)
+## Emmited when a folder is erased.
+signal folder_erased(folder_path: StringName)
+
+
 @export_storage var _variables: Dictionary[StringName, Dictionary] = {}
 
 
@@ -78,13 +89,16 @@ func set_variable(folder_path: String, variable_key: StringName, variable: Varia
 	if variable == null:
 		if _variables.has(clean_path) and _variables[clean_path].has(variable_key):
 			_variables[clean_path].erase(variable_key)
+			data_erased.emit(clean_path, variable_key)
 	else:
 		_variables[clean_path][variable_key] = variable
+		data_set.emit(clean_path, variable_key)
 
 
 ## Creates a directory recursively.
 func create_folder(folder_path: String) -> void:
 	var clean_path: StringName = _clean_folder_path(folder_path)
+	var exists: bool = _variables.has(clean_path)
 	var slices: Array[String] = []
 	
 	var slice_path: StringName = &""
@@ -95,14 +109,22 @@ func create_folder(folder_path: String) -> void:
 			var new_vars: Dictionary[StringName, Variant] = {}
 			_variables[slice_path] = new_vars
 		slice_path += &"/"
+	
+	if not exists:
+		folder_created.emit(folder_path)
 
 
 ## Deletes a folder in the given path, including all their variables and
 ## subfolders.
-func erase_folder(folder_path: StringName) -> void:
+func erase_folder(folder_path: String) -> void:
+	var clean_path: StringName = _clean_folder_path(folder_path)
+	var exists: bool = _variables.has(clean_path)
+	if not exists:
+		return
 	for folder:StringName in _variables.keys():
-		if folder.begins_with(folder_path):
+		if folder.begins_with(clean_path):
 			_variables.erase(folder)
+	folder_erased.emit(folder_path)
 
 
 ## Returns true if folder in [param folder_oath] is empty or doesn't exist.
