@@ -28,7 +28,7 @@ func _post_init() -> void:
 	var_panel.add_child(var_label)
 	var_panel.add_child(variable_path)
 	
-	connection_ctrn.custom_minimum_size.y = 24
+	connection_ctrn.custom_minimum_size.y = 32
 	connection_ctrn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	
 	call_label.text = "Call method"
@@ -79,6 +79,7 @@ func _post_init() -> void:
 	set_slot_custom_icon_left(0, flow_icon)
 	set_slot_custom_icon_right(0, flow_icon)
 	
+	variable_path.text_changed.connect(node_updated.emit)
 	variable_path.focus_exited.connect(_on_var_path_focus_lost)
 
 

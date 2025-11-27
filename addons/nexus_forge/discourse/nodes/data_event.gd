@@ -78,6 +78,7 @@ func _post_init() -> void:
 	set_slot_color_left(3, COLORS["signal"])
 	
 	variable_path.focus_exited.connect(_on_var_path_focus_lost)
+	variable_path.text_changed.connect(node_updated.emit)
 
 
 func _ready() -> void:
