@@ -162,6 +162,12 @@ func _process_logic(uuid: StringName) -> String:
 					if not show:
 						continue
 					var unlocked: bool = true if opt_settings["unlocked"].is_empty() else _get_data(opt_settings["unlocked"])
+					var text: String = localized_options[idx]
+					
+					if not unlocked:
+						var lock_hint: String = _get_data(opt_settings["lock_hint"])
+						if not lock_hint.is_empty():
+							text = lock_hint
 					
 					if unlocked:
 						option_duuid += "_unlocked"
@@ -170,7 +176,7 @@ func _process_logic(uuid: StringName) -> String:
 					
 					available_options.append({
 						"unlocked": unlocked,
-						"text": _parse_dialog(option_duuid, localized_options[idx] if unlocked else _get_data(opt_settings["lock_hint"])),
+						"text": _parse_dialog(option_duuid, text),
 						"target": option["next_node"]})
 			
 			options_reached.emit(available_options)

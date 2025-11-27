@@ -83,24 +83,31 @@ func _process_logic(uuid: StringName) -> String:
 					option_duuid += "_unlocked"
 					available_options.append(
 						{
-							"locked": false,
+							"unlocked": false,
 							"text": _parse_dialog(option_duuid, option["option_text"]),
 							"target": option["output_connections"]["next_node"]["target_node_uuid"]})
 				else:
 					var opt_settings: Dictionary = _dialog_resource.get_node_data(option["input_connections"]["settings"]["target_node_uuid"], "common")
-					var show: bool = true if opt_settings["option_available"]["target_node_uuid"].is_empty() else _get_bool_result(opt_settings["option_available"]["target_node_uuid"])
+					var show: bool = true if opt_settings["input_connections"]["option_available"]["target_node_uuid"].is_empty() else _get_bool_result(opt_settings["input_connections"]["option_available"]["target_node_uuid"])
 				
 					if not show:
 						continue
-					var locked: bool = false if opt_settings["option_locked"]["target_node_uuid"].is_empty() else _get_bool_result(opt_settings["option_locked"]["target_node_uuid"])
-					if locked:
-						option_duuid += "_locked"
-					else:
+					var unlocked: bool = true if opt_settings["input_connections"]["option_unlocked"]["target_node_uuid"].is_empty() else _get_bool_result(opt_settings["input_connections"]["option_unlocked"]["target_node_uuid"])
+					var text: String = option["option_text"]
+					
+					if not unlocked and not opt_settings["input_connections"]["locked_hint"]["target_node_uuid"].is_empty():
+						var lock_hint: String = _get_data(opt_settings["input_connections"]["locked_hint"]["target_node_uuid"])
+						if not lock_hint.is_empty():
+							text = lock_hint
+					
+					if unlocked:
 						option_duuid += "_unlocked"
+					else:
+						option_duuid += "_locked"
 					
 					available_options.append({
-						"locked": locked,
-						"text": _parse_dialog(option_duuid, option["option_text"] if locked else _get_data(opt_settings["locked_hint"]["target_node_uuid"])),
+						"unlocked": not unlocked,
+						"text": _parse_dialog(option_duuid, text),
 						"target": option["output_connections"]["next_node"]["target_node_uuid"]})
 			
 			options_reached.emit(available_options)

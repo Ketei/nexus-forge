@@ -76,7 +76,7 @@ func _on_options_reached(options: Array[Dictionary]) -> void:
 	data_text_edit.set_deferred("scroll_vertical", data_text_edit.get_v_scroll_bar().max_value)
 	clear_options()
 	for option in options:
-		add_option(option["text"], option["locked"], option["target"])
+		add_option(option["text"], option["unlocked"], option["target"])
 	
 	if options.is_empty():
 		events_text_edit.text += "Error: No options were received.\n"
