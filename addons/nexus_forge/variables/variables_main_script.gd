@@ -123,8 +123,12 @@ func _on_variable_updated(variable_id: String, value: Variant) -> void:
 func _on_folder_renamed(from: String, to: String) -> void:
 	var from_id: StringName = StringName(from)
 	var to_id: StringName = StringName(to)
-	_variables_resource._variables[to_id] = _variables_resource._variables[from_id]
-	_variables_resource._variables.erase(from_id)
+	
+	for folder_key:StringName in _variables_resource._variables.keys():
+		if folder_key.begins_with(from_id):
+			var new_key: StringName = folder_key.replace(from_id, to_id)
+			_variables_resource._variables[new_key] = _variables_resource._variables[folder_key]
+			_variables_resource._variables.erase(folder_key)
 	
 	if _current_folder == from:
 		_current_folder = to
@@ -298,7 +302,6 @@ func on_add_var_str_pressed() -> void:
 
 
 func _on_folder_selected(path_to_folder: String) -> void:
-	#var variables: Dictionary[StringName, Variant] = _variables_resource.variables[path_to_folder]
 	var variables: Array[String] = _variables_resource.variables(path_to_folder)
 	
 	variables_tree.clear_variables()
