@@ -922,6 +922,8 @@ func _on_localizer_item_edited(item: TreeItem) -> void:
 	target_item.set_text(0, proper_name)
 	item.set_text(0, proper_name)
 	item.get_metadata(0)["name"] = proper_name
+	
+	_on_conversation_changed()
 
 
 func _on_new_conversation_pressed() -> void:
