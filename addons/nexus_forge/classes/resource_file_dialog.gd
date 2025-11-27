@@ -1,10 +1,11 @@
 @tool
 extends FileDialog
-#extends EditorFileDialog
 
 
 signal dialog_finished(success: bool, resource_path: String)
 
+
+var expected_extension: String = "tres"
 
 static func get_file_browser() -> ConfirmationDialog:
 	if Engine.is_editor_hint():
@@ -23,6 +24,11 @@ func _ready() -> void:
 
 
 func on_file_selected(file_path: String) -> void:
+	if file_path.get_extension().is_empty():
+		if file_path.ends_with("."):
+			file_path += expected_extension
+		else:
+			file_path += "." + expected_extension
 	dialog_finished.emit(true, file_path)
 
 
