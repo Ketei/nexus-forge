@@ -92,6 +92,7 @@ func _process_logic(uuid: StringName) -> String:
 				
 					if not show:
 						continue
+					
 					var unlocked: bool = true if opt_settings["input_connections"]["option_unlocked"]["target_node_uuid"].is_empty() else _get_bool_result(opt_settings["input_connections"]["option_unlocked"]["target_node_uuid"])
 					var text: String = option["option_text"]
 					
@@ -124,6 +125,7 @@ func _process_logic(uuid: StringName) -> String:
 			if data["variable_path"] != "" and data["input_connections"]["variable_value"]["target_node_uuid"] != "":
 				var parts: PackedStringArray = data["variable_path"].rsplit("/", false, 1)
 				var set_data: Variant = _get_data(data["input_connections"]["variable_value"]["target_node_uuid"])
+				
 				NexusForge.Blackboard.set_variable(
 						parts[0],
 						parts[1],
@@ -226,6 +228,7 @@ func _get_data(from_uuid: StringName) -> Variant:
 					var true_range: int = randi_range(
 							1,
 							100 if data["input_connections"]["base_value"]["target_node_uuid"] == "" else _get_data(data["input_connections"]["base_value"]["target_node_uuid"]))
+					
 					return true_range <= data["values"]["base"]
 				_:
 					return null
@@ -297,7 +300,6 @@ func _get_bool_result(from_uuid: String) -> bool:
 		return false
 	
 	var data: Dictionary = _dialog_resource.get_node_data(from_uuid, language, region)
-	
 	match data["node_type"]:
 		NodeTypes.VALUE:
 			var value = data["value"]
@@ -318,7 +320,8 @@ func _get_bool_result(from_uuid: String) -> bool:
 		NodeTypes.TYPE_GUARD:
 			# Will get data if matches type, if not fallback is used
 			var guard_data = _get_data(data["input_connections"]["value"]["target_node_uuid"])
-			var data_type: int = typeof(data)
+			var data_type: int = typeof(guard_data)
+			
 			if data_type  == TYPE_BOOL:
 				return guard_data
 			elif data_type == TYPE_INT or data_type == TYPE_FLOAT:
@@ -326,7 +329,12 @@ func _get_bool_result(from_uuid: String) -> bool:
 			else:
 				return false
 		NodeTypes.VARIABLE_GET:
-			var variable = "Nexusforge"
+			var parts: PackedStringArray = data["variable_path"].rsplit("/", false, 1)
+			
+			if parts.size() != 2:
+				return false
+			var variable = NexusForge.Blackboard.get_variable(parts[0], parts[1])
+			
 			if typeof(variable) in [TYPE_BOOL, TYPE_INT, TYPE_FLOAT]:
 				return bool(variable)
 			else:
