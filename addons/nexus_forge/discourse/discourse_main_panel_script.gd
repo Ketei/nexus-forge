@@ -234,6 +234,8 @@ func _on_conversation_close_pressed(dialog: EditorDiscourseDialog, save_required
 			if open_conversation(new_conv):
 				conversation_tree.active_unsaved = true
 		_unsaved = conversation_tree.active_unsaved
+		selected_key = null
+		selected_format = ""
 	conversation_tree.remove_conversation(dialog)
 
 
@@ -280,6 +282,8 @@ func _on_menu_close_pressed() -> void:
 		if open_conversation(active_conversation):
 			conversation_tree.active_unsaved = true
 	
+	selected_key = null
+	selected_format = ""
 	_unsaved = conversation_tree.active_unsaved
 
 
@@ -287,7 +291,14 @@ func _on_new_folder_button_pressed() -> void:
 	var new_name: String = get_unique_name_on_tree(
 			discourse_nodes_tree.get_root(),
 			"NewGroup")
-	discourse_nodes_tree.create_folder(new_name)
+	
+	var selected_item: TreeItem = discourse_nodes_tree.get_selected()
+	
+	if selected_item != null and discourse_nodes_tree.is_folder(selected_item):
+		discourse_nodes_tree.create_folder(new_name, selected_item)
+	else:
+		discourse_nodes_tree.create_folder(new_name)
+	
 	_on_conversation_changed()
 
 
@@ -1822,6 +1833,9 @@ func clear_localized_keys() -> void:
 
 
 func save_current_phrase_key(fix_cases: bool = false) -> void:
+	if selected_key == null:
+		return
+	
 	var phrase_key: String = selected_key.get_meta(&"phrase_key")
 	var lang: String = languages_tree.get_active_language()
 	var reg: String = languages_tree.get_active_region()
