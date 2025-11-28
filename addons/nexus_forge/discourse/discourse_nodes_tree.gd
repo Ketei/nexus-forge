@@ -128,8 +128,8 @@ func get_folder_structure(_from: TreeItem = get_root()) -> Array[Dictionary]:
 	return structure
 
 
-func create_folder(folder_name: String) -> void:
-	var new_folder: TreeItem = get_root().create_child()
+func create_folder(folder_name: String, on_node: TreeItem = get_root()) -> void:
+	var new_folder: TreeItem = on_node.create_child()
 	new_folder.set_text(0, folder_name)
 	new_folder.set_editable(0, true)
 	new_folder.set_icon(0, get_theme_icon("Folder", "EditorIcons"))
@@ -140,6 +140,13 @@ func create_folder(folder_name: String) -> void:
 			false,
 			"Delete Group")
 	new_folder.set_metadata(0, {"is_node": false})
+
+
+func is_folder(item: TreeItem) -> bool:
+	var data: Dictionary = item.get_metadata(0)
+	if data.has("is_node"):
+		return not data["is_node"]
+	return false
 
 
 func create_node(node: DiscourseGraphNode) -> void:
