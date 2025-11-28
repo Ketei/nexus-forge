@@ -240,7 +240,10 @@ func _get_data(from_uuid: StringName) -> Variant:
 				return data["fallback_value"]
 		NodeTypes.VARIABLE_GET:
 			var parts: PackedStringArray = data["variable_path"].rsplit("/", false, 1)
-			return NexusForge.Blackboard.get_variable(parts[0], parts[1])
+			if parts.size() != 2:
+				return null
+			else:
+				return NexusForge.Blackboard.get_variable(parts[0], parts[1])
 		NodeTypes.CALLABLE_RETURN:
 			return NexusForge.Discourse.API.callv(
 					data["method"],
@@ -340,11 +343,11 @@ func _get_bool_result(from_uuid: String) -> bool:
 			else:
 				return false
 		NodeTypes.COMPARATION:
-			var value_a = _get_data(data["input_connections"]["node_a"])
-			var value_b = _get_data(data["input_connections"]["node_b"])
+			var value_a = _get_data(data["input_connections"]["node_a"]["target_node_uuid"])
+			var value_b = _get_data(data["input_connections"]["node_b"]["target_node_uuid"])
 			
 			if not _can_compare(value_a, value_b):
-				return false
+				return true if data["operator"] == OP_NOT_EQUAL else false
 			
 			match data["operator"]:
 				OP_EQUAL:
