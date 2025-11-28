@@ -67,6 +67,14 @@ func set_trait_data(trait_id: StringName, data_key: String, data: Variant) -> vo
 		_traits[trait_id]["data"][data_key] = data
 
 
+## Returns the data from the trait [param trait_id] with key [param data_key].[br]
+## Returns [code]null[/code] if either the trait or the data don't exist.
+func get_trait_data(trait_id: StringName, data_key: String) -> Variant:
+	if _traits.has(trait_id) and _traits[trait_id]["data"].has(data_key):
+		return _traits[trait_id]["data"][data_key]
+	return null
+
+
 ## Clears the data from trait [param trait_id].
 func clear_trait_data(trait_id: StringName) -> void:
 	if _traits.has(trait_id):
