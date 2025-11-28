@@ -205,6 +205,8 @@ func free_node(node: DiscourseGraphNode) -> void:
 		DiscourseGraphAnchorPointer.remove_anchor(node.get_node_uuid())
 		for anchor_pointer in anchor_pointers:
 			anchor_pointer.reload_anchors()
+	elif node.node_type == DialogNodes.ANCHOR_POINTER:
+		anchor_pointers.erase(node)
 	
 	node.disconnect_all()
 	remove_child(node)
