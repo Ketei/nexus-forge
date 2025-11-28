@@ -44,6 +44,9 @@ func _post_init() -> void:
 	min_spinbox.allow_lesser = true
 	min_spinbox.allow_greater = true
 	
+	min_spinbox.value_changed.connect(node_updated.emit)
+	max_spinbox.value_changed.connect(node_updated.emit)
+	
 	max_label.text = "Max"
 	max_label.custom_minimum_size.x = 35.0
 	max_spinbox.custom_minimum_size = Vector2(90.0, 32.0)
@@ -161,8 +164,8 @@ func _set_node_data(data: Dictionary) -> void:
 	
 	current_mode = data["mode"]
 	set_type_fields(current_mode, type_menu, base, max_value, min_label)
-	base.value = data["values"]["base"]
-	max_value.value = maxf(data["values"]["base"], data["values"]["max"])
+	base.set_value_no_signal(data["values"]["base"])
+	max_value.set_value_no_signal(maxf(data["values"]["base"], data["values"]["max"]))
 
 
 func _on_min_value_changed(min_value: float, max_spinbox: SpinBox) -> void:
@@ -224,7 +227,7 @@ func set_type_fields(type: int, menu: MenuButton, min_spinbox: SpinBox, max_spin
 	
 	if type == TYPE_INT or type == TYPE_FLOAT:
 		if max_spinbox.value < min_spinbox.value:
-			max_spinbox.value = min_spinbox.value
+			max_spinbox.set_value_no_signal(min_spinbox.value)
 		min_spinbox.step = 1.0 if type == TYPE_INT else 0.01
 		min_spinbox.allow_lesser = true
 		min_spinbox.allow_greater = true
@@ -240,6 +243,6 @@ func set_type_fields(type: int, menu: MenuButton, min_spinbox: SpinBox, max_spin
 		min_spinbox.allow_lesser = false
 		min_spinbox.allow_greater = false
 		if not RangeUtils.is_between(min_spinbox.value, 0.0, 100.0):
-			min_spinbox.value = clampf(min_spinbox.value, 0.0, 100.0)
+			min_spinbox.set_value_no_signal(clampf(min_spinbox.value, 0.0, 100.0))
 		set_field_visible(&"max_value", false)
 		set_deferred(&"size", Vector2(240.0, 85.0))
