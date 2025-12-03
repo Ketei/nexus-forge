@@ -213,3 +213,19 @@ func sort_single_item(item: TreeItem) -> void:
 	else:
 		if item.get_index() != item.get_parent().get_child_count() - 1:
 			item.move_after(item.get_parent().get_child(-1))
+
+
+func search_for(text: String) -> void:
+	var is_empty: bool = text.is_empty()
+	for top_category in get_root().get_children():
+		top_category.visible = _search_on_children(top_category, text) or is_empty or top_category.get_text(0).containsn(text)
+
+
+func _search_on_children(from: TreeItem, text: String) -> bool:
+	var empty: bool = text.is_empty()
+	var pattern_found: bool = false
+	for item in from.get_children():
+		item.visible = _search_on_children(item, text) or empty or item.get_text(0).containsn(text)
+		if not pattern_found and item.visible:
+			pattern_found = true
+	return pattern_found

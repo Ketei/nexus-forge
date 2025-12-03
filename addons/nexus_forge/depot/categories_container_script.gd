@@ -34,6 +34,12 @@ func _ready() -> void:
 	add_cat_bool_btn.pressed.connect(add_data.bind("new_bool", false))
 	add_cat_str_btn.pressed.connect(add_data.bind("new_string", ""))
 	add_cat_fldr_btn.pressed.connect(add_data.bind("new_folder", {}))
+	
+	search_cat_ln_edt.text_changed.connect(_on_search_categories_text_changed)
+
+
+func _on_search_categories_text_changed(text: String) -> void:
+	categories_tree.search_for(text.strip_edges())
 
 
 func _on_category_changed() -> void:

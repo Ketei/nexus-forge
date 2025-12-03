@@ -20,6 +20,7 @@ var currency_ui_enabled: bool = true
 var loaded_item: StringName = &""
 var current_category: StringName = &""
 var loaded_currency: StringName = &""
+var noncategory_loaded: bool = false
 
 var _unsaved: bool = false
 
@@ -360,7 +361,7 @@ func _on_items_recategorized(new_category: StringName, items: Array[StringName])
 
 
 func _on_category_selected(category: StringName) -> void:
-	if current_category == category:
+	if noncategory_loaded if category.is_empty() else current_category == category:
 		return
 	if not loaded_item.is_empty():
 		save_current_item()
@@ -369,6 +370,7 @@ func _on_category_selected(category: StringName) -> void:
 	
 	loaded_item = &""
 	current_category = category
+	noncategory_loaded = category.is_empty()
 	new_item_btn.disabled = false
 	
 	for item in item_link.items.items():
@@ -467,7 +469,6 @@ func _on_item_selected(item_id: StringName) -> void:
 
 
 func _on_item_erased(item_id: StringName) -> void:
-	#item_resource.erase_item(item_id)
 	item_link.erase_item(item_id)
 	if loaded_item == item_id:
 		loaded_item = &""
@@ -479,6 +480,7 @@ func _on_item_erased(item_id: StringName) -> void:
 		reset_flags()
 		set_items_ui_enabled(false)
 	item_deleted.emit(item_id)
+	_on_something_changed()
 
 
 func _on_create_item_pressed() -> void:

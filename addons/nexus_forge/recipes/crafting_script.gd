@@ -187,6 +187,8 @@ func _on_custom_data_button_pressed(id: String, data: Variant) -> void:
 
 
 func _on_item_erased(item_id: StringName) -> void:
+	if recipes_resource == null:
+		return
 	recipe_items_tree.remove_item(item_id)
 	recipe_input_tree.remove_item(item_id)
 	recipe_output_tree.remove_item(item_id)
@@ -201,11 +203,11 @@ func change_item_id(old: StringName, new: StringName) -> void:
 	recipe_items_tree.change_id(old, new)
 	recipe_input_tree.change_item_id(old, new)
 	recipe_output_tree.change_item_id(old, new)
-	_something_changed()
 	
 	if recipes_resource == null:
 		return
 	
+	_something_changed()
 	for recipe in recipes_resource.recipes():
 		for input_item in recipes_resource[recipe]["input"]:
 			if input_item["item_id"] == old:
@@ -250,12 +252,12 @@ func save_current_recipe() -> void:
 
 
 func save() -> void:
+	_unsaved = false
 	if recipes_resource == null:
 		return
 	if active_recipe != &"":
 		save_current_recipe()
 	ResourceSaver.save(recipes_resource)
-	_unsaved = false
 
 
 func reload_recipe_resource(first_launch: bool = false) -> void:
