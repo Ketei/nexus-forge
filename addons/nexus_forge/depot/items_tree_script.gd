@@ -160,7 +160,9 @@ func search_for(text: String) -> void:
 	if current_search == text:
 		return
 	
+	var empty: bool = text.strip_edges().is_empty()
+	
 	for item in get_root().get_children():
-		item.visible = text.is_empty() or item.get_text(0).containsn(text)
+		item.visible = empty or item.get_text(0).containsn(text)
 	
 	current_search = text

@@ -82,7 +82,7 @@ layout_mode = 2
 layout_mode = 2
 text = "Categories"
 
-[node name="LineEdit" type="LineEdit" parent="ItemsContainer/ItemsPanel/ItemsContainer/TreeContainer/VBoxContainer/HBoxContainer"]
+[node name="CategorySrchLnEdt" type="LineEdit" parent="ItemsContainer/ItemsPanel/ItemsContainer/TreeContainer/VBoxContainer/HBoxContainer"]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -381,6 +381,7 @@ text = "Value"
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
+allow_greater = true
 editable = false
 
 [node name="CustomDataContainer" type="VBoxContainer" parent="ItemsContainer/CurrencyPanel/CurrencyContainer"]

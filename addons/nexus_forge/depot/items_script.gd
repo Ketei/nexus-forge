@@ -38,6 +38,8 @@ var _unsaved: bool = false
 @onready var item_data_tree: Tree = $ItemsPanel/ItemsContainer/DataContainer/CustomDataContainer/ItemDataTree
 @onready var items_flags_container: VBoxContainer = $ItemsPanel/ItemsContainer/FlagsContainer/ScrollContainer/ItemsFlagsContainer
 @onready var categories_tree: Tree = $ItemsPanel/ItemsContainer/TreeContainer/VBoxContainer/CategoriesTree
+@onready var category_srch_ln_edt: LineEdit = $ItemsPanel/ItemsContainer/TreeContainer/VBoxContainer/HBoxContainer/CategorySrchLnEdt
+
 
 # ------- Currencies -------
 @onready var search_curr_ln_edt: LineEdit = $CurrencyPanel/CurrencyContainer/TreeContainer/HeaderContainer/SearchCurrLnEdt
@@ -81,7 +83,7 @@ func _ready() -> void:
 	add_item_float_btn.pressed.connect(add_item_data.bind("new_float", 0.0))
 	add_item_bool_btn.pressed.connect(add_item_data.bind("new_bool", false))
 	add_item_str_btn.pressed.connect(add_item_data.bind("new_string", ""))
-	add_item_fldr_btn.pressed.connect(add_item_data.bind("new_level", {}))
+	add_item_fldr_btn.pressed.connect(add_item_data.bind("new_folder", {}))
 	
 	create_currency_btn.pressed.connect(_on_create_currency_pressed)
 	currency_tree.currency_selected.connect(_on_currency_selected, CONNECT_DEFERRED)
@@ -94,9 +96,16 @@ func _ready() -> void:
 	add_curr_flt_btn.pressed.connect(add_currency_data.bind("new_float", 0.0))
 	add_curr_bool_btn.pressed.connect(add_currency_data.bind("new_bool", false))
 	add_curr_str_btn.pressed.connect(add_currency_data.bind("new_string", ""))
+	
+	category_srch_ln_edt.text_changed.connect(_on_category_search_text_changed)
+	search_curr_ln_edt.text_changed.connect(_on_currency_search_text_changed)
 
 
 #region Currencies
+
+func _on_currency_search_text_changed(text: String) -> void:
+	currency_tree.search_for(text.strip_edges())
+
 
 func _on_create_currency_database_pressed(node: Control) -> void:
 	var database_creator := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
@@ -312,6 +321,10 @@ func save_current_currency() -> void:
 				data[data_key])
 
 #endregion
+
+
+func _on_category_search_text_changed(text: String) -> void:
+	categories_tree.search_pattern(text.strip_edges())
 
 
 func _on_item_name_focus_lost() -> void:

@@ -133,6 +133,11 @@ func create_category(category_id: String, category_name: String, data: Dictionar
 	return new_category
 
 
+func clear_categories() -> void:
+	for item in get_root().get_children():
+		item.free()
+
+
 func get_valid_id(desired: String, skip: TreeItem = null) -> String:
 	var modified: String = desired
 	var iteration: int = 0

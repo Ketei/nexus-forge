@@ -33,7 +33,7 @@ func _ready() -> void:
 	add_cat_float_btn.pressed.connect(add_data.bind("new_float", 0.0))
 	add_cat_bool_btn.pressed.connect(add_data.bind("new_bool", false))
 	add_cat_str_btn.pressed.connect(add_data.bind("new_string", ""))
-	add_cat_fldr_btn.pressed.connect(add_data.bind("new_level", {}))
+	add_cat_fldr_btn.pressed.connect(add_data.bind("new_folder", {}))
 
 
 func _on_category_changed() -> void:
@@ -87,6 +87,11 @@ func _update_keys(item_res: ItemCatalog, from: TreeItem) -> void:
 	if not item_res.has_category(parent_category):
 		item_res.create_category(parent_category)
 	
+	item_res.clear_category_data(parent_category)
+	var data: Dictionary[String, Variant] = from.get_metadata(0)["data"]
+	for data_key in data.keys():
+		item_res.set_category_data(parent_category, data_key, data[data_key])
+	
 	for cat_item in from.get_children():
 		var set_id: StringName = StringName(cat_item.get_text(0))
 		
@@ -95,11 +100,6 @@ func _update_keys(item_res: ItemCatalog, from: TreeItem) -> void:
 			
 		item_res.link_category(set_id, parent_category)
 		item_res.set_category_name(set_id, cat_item.get_text(1).strip_edges())
-		
-		item_res.clear_category_data(set_id)
-		var data: Dictionary[String, Variant] = cat_item.get_metadata(0)["data"]
-		for data_key in data.keys():
-			item_res.set_category_data(set_id, data_key, data[data_key])
 		
 		_update_keys(item_res, cat_item)
 
@@ -155,3 +155,25 @@ func _on_category_deleted(item: TreeItem) -> void:
 func clean() -> void:
 	categories_tree.erased_categories.clear()
 	_unsaved = false
+
+
+func reload_categories(items: ItemCatalog) -> void:
+	var item_selected: bool = categories_tree.get_selected() != null
+	
+	categories_tree.clear_categories()
+	
+	var top_level_categories: Array[StringName] = []
+	
+	for category in items.categories():
+		if items._categories[category]["parent_key"] == &"":
+			top_level_categories.append(category)
+	
+	for category in top_level_categories:
+		var subcategories: Dictionary[StringName, Dictionary] = items.get_subcategories_of(category)
+		_add_category_map(subcategories, items)
+
+
+func _add_category_map(categories: Dictionary[StringName, Dictionary], data: ItemCatalog, target: TreeItem = categories_tree.get_root()) -> void:
+	for category_id in categories.keys():
+		var new_target: TreeItem = categories_tree.create_category(category_id, data._categories[category_id]["name"], data._categories[category_id]["data"].duplicate(true), target)
+		_add_category_map(categories[category_id], data, new_target)

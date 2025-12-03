@@ -149,3 +149,9 @@ func get_currency_data() -> Dictionary:
 func clear_currencies() -> void:
 	for item in get_root().get_children():
 		item.free()
+
+
+func search_for(text: String) -> void:
+	var empty: bool = text.is_empty()
+	for item in get_root().get_children():
+		item.visible = empty or item.get_text(0).containsn(text)

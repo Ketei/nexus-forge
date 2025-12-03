@@ -58,12 +58,12 @@ func _on_category_id_changed(from: StringName, to: StringName) -> void:
 func _on_resource_loaded() -> void:
 	var res: ItemCatalog = items_container.item_link.items
 	
-	for category in res.categories():
-		categories_container.categories_tree.create_category(
-			String(category),
-			res.get_category_name(category),
-			res._categories[category]["data"].duplicate(true))
-	
+	#for category in res.categories():
+		#categories_container.categories_tree.create_category(
+			#String(category),
+			#res.get_category_name(category),
+			#res._categories[category]["data"].duplicate(true))
+	categories_container.reload_categories(res)
 	edit_categories_btn.disabled = false
 	items_loaded.emit()
 

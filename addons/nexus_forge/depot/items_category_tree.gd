@@ -85,3 +85,19 @@ func select_no_singal(item: TreeItem) -> void:
 	item_selected.disconnect(_on_item_selected)
 	item.select(0)
 	item_selected.connect(_on_item_selected)
+
+
+func search_pattern(text: String) -> void:
+	var empty: bool = text.is_empty()
+	for item in get_root().get_children():
+		item.visible = _search_children_for_pattern(text, item) or empty or item.get_metadata(0) == &"" or item.get_text(0).containsn(text)
+
+
+func _search_children_for_pattern(text: String, of_item: TreeItem) -> bool:
+	var found: bool = false
+	var empty: bool = text.is_empty()
+	for item in of_item.get_children():
+		item.visible = empty or item.get_text(0).containsn(text) or _search_children_for_pattern(text, item)
+		if not found and item.visible:
+			found = true
+	return found
