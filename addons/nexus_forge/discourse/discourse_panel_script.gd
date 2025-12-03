@@ -763,8 +763,13 @@ func load_conversation(conversation: EditorDiscourseDialog) -> bool:
 			#if not has_locale(language, region):
 				#add_locale(language, region)
 	locale_map.clear()
-	locale_map.assign(conversation.locale_map.duplicate(true))
 	localization.clear()
+	
+	if conversation == null:
+		discourse_graph_edit.clear_dialog_nodes()
+		return false
+	
+	locale_map.assign(conversation.locale_map.duplicate(true))
 	#set_locale_map(conversation.locale_map)
 	
 	

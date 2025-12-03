@@ -227,6 +227,7 @@ func _on_conversation_close_pressed(dialog: EditorDiscourseDialog, save_required
 		if new_item == null:
 			active_conversation = null
 			set_conversation_active(false)
+			discourse_window.load_conversation(null)
 			conversation_tree.active_unsaved = false
 		else:
 			var new_conv: EditorDiscourseDialog = new_item.get_metadata(0)["resource"]
@@ -275,6 +276,7 @@ func _on_menu_close_pressed() -> void:
 	
 	if new_item == null:
 		set_conversation_active(false)
+		discourse_window.load_conversation(null)
 		active_conversation = null
 		conversation_tree.active_unsaved = false
 	else:
@@ -1153,9 +1155,12 @@ func open_conversation(conversation: EditorDiscourseDialog, set_active: bool = t
 	clear_localized_keys()
 	if issues_tree.has_issues():
 		issues_tree.clear_issues()
+	var lang: String = languages_tree.get_active_language()
+	var reg: String = languages_tree.get_active_region()
 	
 	for localized_key in conversation.localized_strings.keys():
-		add_new_phrase(localized_key, "")
+		var localized_text: String = "" if lang.is_empty() else conversation.get_localized_string(localized_key, lang, reg)
+		add_new_phrase(localized_key, localized_text)
 	
 	for uuid:String in node_map:
 		if node_map[uuid].get_tree() == null:
@@ -1939,7 +1944,6 @@ func save_phrase_keys(fix_keys: bool = false) -> void:
 		node_map[key].set_meta(&"phrase_key", key)
 	
 	for key in keys.keys():
-		#var strnm_key: StringName = StringName(key)
 		if active_conversation.get_localized_string(key, lang, reg) != keys[key]:
 			active_conversation.set_localized_string(key, keys[key], lang, reg)
  		
