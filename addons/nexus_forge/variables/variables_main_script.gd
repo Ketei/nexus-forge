@@ -150,6 +150,7 @@ func on_something_changed() -> void:
 
 
 func save() -> void:
+	_unsaved = false
 	if _variables_resource == null:
 		return
 	ResourceSaver.save(
@@ -157,7 +158,6 @@ func save() -> void:
 			ProjectSettings.get_setting(
 					EditorNFPlugin.get_project_settings_path("variables"),
 					_variables_resource.resource_path))
-	_unsaved = false
 
 
 func on_create_resource_pressed() -> void:

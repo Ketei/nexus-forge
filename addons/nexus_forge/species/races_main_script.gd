@@ -570,6 +570,7 @@ func create_value_field(field_id: StringName, default_value: int, type: int = TY
 
 
 func save() -> void:
+	_unsaved = false
 	if _species_resource == null:
 		return
 	if not loaded_species.is_empty():
@@ -582,7 +583,6 @@ func save() -> void:
 	
 	_set_species_tree(species_data)
 	ResourceSaver.save(_species_resource)
-	_unsaved = false
 
 
 func _set_species_tree(tree: Dictionary) -> void:
