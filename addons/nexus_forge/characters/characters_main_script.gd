@@ -282,9 +282,9 @@ func update_talent_nodes() -> void:
 	for remaining_trait in trait_map.keys():
 		trait_map[remaining_trait].queue_free()
 	
-	if current_sheet != null:
-		save_current_character()
 	char_tree.update_talent_objects()
+	if current_sheet != null:
+		_unsaved = char_tree.is_unsaved(current_sheet)
 
 
 func _on_new_character_pressed() -> void:
@@ -479,7 +479,6 @@ func save_current_character() -> void:
 	
 	for stat in char_stats_container.get_children():
 		var sheet_stat: ValueRange = current_sheet.stats.get(stat.get_meta(&"stat_id"))
-		
 		if sheet_stat == null:
 			var new_sheet: ValueRange = RangeInt.new() if stat.get_meta(&"type") == TYPE_INT else RangeFloat.new()
 			current_sheet.stats.set(stat.get_meta(&"stat_id"), new_sheet)

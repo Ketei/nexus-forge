@@ -185,12 +185,13 @@ func update_talent_objects() -> void:
 			if range == null:
 				range = RangeInt.new() if stats[stat] == TYPE_INT else RangeFloat.new()
 				sheet.stats.set(stat, range)
-				turn_unsaved = true
 			var data: Dictionary[StringName, Dictionary] = item.get_metadata(0)["stats"]
 			if data.has(stat):
 				range.allow_greater = data[stat]["allow_greater"]
 				range.allow_lesser = data[stat]["allow_lesser"]
 				range.value = data[stat]["value"]
+				if not turn_unsaved and data[stat]["type"] != stats[stat]:
+					turn_unsaved = true
 		
 		for skill in SkillSet.skills():
 			if sheet.skills.get(skill) == null:
@@ -216,7 +217,11 @@ func stats_to_data(block: StatBlock) -> Dictionary[StringName, Dictionary]:
 		if item == null:
 			item = RangeInt.new() if stats[stat] == TYPE_INT else RangeFloat.new()
 			block.set(stat, item)
-		data[stat] = {"allow_greater": item.allow_greater, "allow_lesser": item.allow_lesser, "value": item.value}
+		data[stat] = {
+			"allow_greater": item.allow_greater,
+			"allow_lesser": item.allow_lesser,
+			"value": item.value,
+			"type": stats[stat]}
 	return data
 
 
