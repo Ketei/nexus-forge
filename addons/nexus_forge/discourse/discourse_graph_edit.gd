@@ -886,6 +886,7 @@ func clear_dialog_nodes() -> void:
 		remove_child(child)
 		child.queue_free()
 	graph_nodes.clear()
+	anchor_pointers.clear()
 	entry_node = null
 
 
@@ -998,13 +999,13 @@ func get_connection_dictionary(node_uuid: StringName, node_data: Dictionary) -> 
 					"from_port": node_data["output_connections"]["default"]["from_port"],
 					"to_port": node_data["output_connections"]["default"]["target_port"]})
 			for match_value in node_data["cases"]:
-				if match_value["next_node"]["target_node_uuid"].is_empty():
+				if match_value["output_connections"]["next_node"]["target_node_uuid"].is_empty():
 					continue
 				node_connections.append({
 					"from": node_uuid,
-					"to": match_value["next_node"]["target_node_uuid"],
-					"from_port": match_value["next_node"]["from_port"],
-					"to_port": match_value["next_node"]["target_port"]})
+					"to": match_value["output_connections"]["next_node"]["target_node_uuid"],
+					"from_port": match_value["output_connections"]["next_node"]["from_port"],
+					"to_port": match_value["output_connections"]["next_node"]["target_port"]})
 		DialogNodes.RANDOM:
 			for option in node_data["options"]:
 				if option["output_connections"]["next_node"]["target_node_uuid"].is_empty():
