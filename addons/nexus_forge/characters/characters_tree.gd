@@ -88,7 +88,7 @@ func get_open_paths() -> Array[String]:
 func create_character(resource: CharacterSheet, select: bool = false, emit_select: bool = true) -> void:
 	var new_item: TreeItem = get_root().create_child()
 	new_item.set_text(0, resource.resource_path.get_file())
-	new_item.set_metadata(0, {"resource": resource, "unsaved": false})
+	new_item.set_metadata(0, {"resource": resource, "stats": stats_to_data(resource.stats), "unsaved": false})
 	new_item.add_button(
 			0,
 			get_theme_icon("Close", "EditorIcons"),
@@ -171,3 +171,56 @@ func sort_single_item(item: TreeItem) -> void:
 	else:
 		if item.get_index() != get_root().get_child_count() - 1:
 			item.move_after(get_root().get_child(-1))
+
+
+func update_talent_objects() -> void:
+	var stats: Dictionary[StringName, int] = StatBlock.stats()
+	
+	for item in get_root().get_children():
+		var sheet: CharacterSheet = item.get_metadata(0)["resource"]
+		var turn_unsaved: bool = false
+		
+		for stat in stats.keys():
+			var range: ValueRange = sheet.stats.get(stat)
+			if range == null:
+				range = RangeInt.new() if stats[stat] == TYPE_INT else RangeFloat.new()
+				sheet.stats.set(stat, range)
+				turn_unsaved = true
+			var data: Dictionary[StringName, Dictionary] = item.get_metadata(0)["stats"]
+			if data.has(stat):
+				range.allow_greater = data[stat]["allow_greater"]
+				range.allow_lesser = data[stat]["allow_lesser"]
+				range.value = data[stat]["value"]
+		
+		for skill in SkillSet.skills():
+			if sheet.skills.get(skill) == null:
+				sheet.skills.set(skill, 0)
+		
+		for trait_id in TraitBlock.traits():
+			if sheet.traits.get(trait_id) == null:
+				sheet.traits.set(trait_id, 0)
+		
+		if turn_unsaved and not item.get_metadata(0)["unsaved"]:
+			item.set_text(0, item.get_text(0) + "*")
+			item.get_metadata(0)["unsaved"] = true
+
+
+func stats_to_data(block: StatBlock) -> Dictionary[StringName, Dictionary]:
+	if block == null:
+		block = StatBlock.new(true)
+	var data: Dictionary[StringName, Dictionary] = {}
+	var stats: Dictionary[StringName, int] = StatBlock.stats()
+	
+	for stat in stats.keys():
+		var item: ValueRange = block.get(stat)
+		if item == null:
+			item = RangeInt.new() if stats[stat] == TYPE_INT else RangeFloat.new()
+			block.set(stat, item)
+		data[stat] = {"allow_greater": item.allow_greater, "allow_lesser": item.allow_lesser, "value": item.value}
+	return data
+
+
+func update_sheet(sheet: CharacterSheet) -> void:
+	for item in get_root().get_children():
+		if item.get_metadata(0)["resource"] == sheet:
+			item.get_metadata(0)["stats"] = stats_to_data(sheet.stats)

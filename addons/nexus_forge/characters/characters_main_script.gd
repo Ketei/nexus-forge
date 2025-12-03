@@ -281,6 +281,10 @@ func update_talent_nodes() -> void:
 			char_traits_container.add_child(new_trait)
 	for remaining_trait in trait_map.keys():
 		trait_map[remaining_trait].queue_free()
+	
+	if current_sheet != null:
+		save_current_character()
+	char_tree.update_talent_objects()
 
 
 func _on_new_character_pressed() -> void:
@@ -472,7 +476,6 @@ func save_current_character() -> void:
 	current_sheet.gender = gender_option_button.get_item_metadata(gender_option_button.selected)
 	current_sheet.custom_data.clear()
 	current_sheet.custom_data.assign(character_data_tree.get_data())
-			
 	
 	for stat in char_stats_container.get_children():
 		var sheet_stat: ValueRange = current_sheet.stats.get(stat.get_meta(&"stat_id"))
@@ -498,6 +501,7 @@ func save_current_character() -> void:
 				trait_item.get_meta(&"trait_id"),
 				int(trait_item.get_child(1).value))
 	
+	char_tree.update_sheet(current_sheet)
 	char_tree.set_unsaved(current_sheet, _unsaved)
 
 
