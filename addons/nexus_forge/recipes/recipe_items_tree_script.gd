@@ -31,6 +31,8 @@ func _on_column_title_clicked(column: int, mouse_button_index: int) -> void:
 	if mouse_button_index != MOUSE_BUTTON_LEFT or column == sort_column:
 		return
 	
+	sort_column = column
+	
 	var items: Array[TreeItem] = get_root().get_children()
 	var item_count: int = items.size()
 	
@@ -39,7 +41,7 @@ func _on_column_title_clicked(column: int, mouse_button_index: int) -> void:
 	
 	items.sort_custom(
 			func(a:TreeItem,b:TreeItem): 
-				return a.get_text(sort_column).naturalnocasecmp_to( b.get_text(sort_column)) < 0 )
+				return a.get_text(column).naturalnocasecmp_to( b.get_text(column)) < 0 )
 	
 	if items[0].get_index() != 0:
 		items[0].move_before(get_root().get_first_child())
