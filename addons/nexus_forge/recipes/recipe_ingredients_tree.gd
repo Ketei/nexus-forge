@@ -167,6 +167,13 @@ func add_item(item_id: StringName, input_amount: int = 1, data: Dictionary = {},
 		new_data.set_text(0, data_key)
 		new_data.set_editable(0, true)
 		
+		new_data.add_button(
+			1,
+			get_theme_icon("Remove", "EditorIcons"),
+			1,
+			false,
+			"Delete Data")
+		
 		match typeof(data[data_key]):
 			TYPE_INT:
 				new_data.set_cell_mode(1, TreeItem.CELL_MODE_RANGE)
