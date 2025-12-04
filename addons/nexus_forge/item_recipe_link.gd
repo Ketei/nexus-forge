@@ -36,11 +36,11 @@ func change_item_id(from: StringName, to: StringName) -> void:
 		return
 	
 	for recipe in recipes.recipes():
-		for input in recipes[recipe]["input"]:
+		for input in recipes._recipes[recipe]["input"]:
 			if input["item_id"] == from:
 				input["item_id"] = to
 		
-		for output in recipes[recipe]["output"]:
+		for output in recipes._recipes[recipe]["output"]:
 			if output["item_id"] == from:
 				output["item_id"] = to
 	
