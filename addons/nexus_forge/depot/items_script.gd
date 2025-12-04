@@ -79,7 +79,7 @@ func _ready() -> void:
 	item_data_tree.data_changed.connect(_on_something_changed)
 	categories_tree.category_selected.connect(_on_category_selected)
 	categories_tree.items_recategorized.connect(_on_items_recategorized)
-	item_name_ln_edt.focus_exited.connect(_on_item_name_focus_lost)
+	item_name_ln_edt.focus_exited.connect(_on_item_name_focus_lost, CONNECT_DEFERRED)
 	add_item_int_btn.pressed.connect(add_item_data.bind("new_int", 0))
 	add_item_float_btn.pressed.connect(add_item_data.bind("new_float", 0.0))
 	add_item_bool_btn.pressed.connect(add_item_data.bind("new_bool", false))
