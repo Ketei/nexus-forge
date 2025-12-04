@@ -209,10 +209,10 @@ func change_item_id(old: StringName, new: StringName) -> void:
 	
 	_something_changed()
 	for recipe in recipes_resource.recipes():
-		for input_item in recipes_resource[recipe]["input"]:
+		for input_item in recipes_resource._recipes[recipe]["input"]:
 			if input_item["item_id"] == old:
 				input_item["item_id"] = new
-		for output_item in recipes_resource[recipe]["output"]:
+		for output_item in recipes_resource._recipes[recipe]["output"]:
 			if output_item["item_id"] == old:
 				output_item["item_id"] = new
 
