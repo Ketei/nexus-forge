@@ -75,7 +75,6 @@ func _ready() -> void:
 				preload("res://addons/nexus_forge/icons/add_int.svg"),
 				"",
 				TYPE_INT)
-		mn.set_item_tooltip(mn.get_item_index(TYPE_INT), "Add integer.")
 		mn.add_icon_item(
 				preload("res://addons/nexus_forge/icons/add_float.svg"),
 				"",
@@ -100,7 +99,7 @@ func _ready() -> void:
 		mn.set_item_tooltip(mn.get_item_index(TYPE_DICTIONARY), "Add folder")
 		
 		mn.size.x = 24
-		print(mn.get_contents_minimum_size())
+		
 		mn.id_pressed.connect(_on_compact_menu_id_pressed)
 
 
