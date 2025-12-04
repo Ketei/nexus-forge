@@ -281,6 +281,7 @@ allow_reselect = true
 hide_root = true
 script = ExtResource("5_hb3ne")
 allow_drag_and_drop = true
+compact_mode = true
 
 [node name="FlagsContainer" type="VBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer"]
 layout_mode = 2
@@ -560,6 +561,7 @@ allow_reselect = true
 hide_root = true
 script = ExtResource("5_hb3ne")
 allow_drag_and_drop = true
+compact_mode = true
 
 [node name="FinishCatBtn" type="Button" parent="CategoriesContainer/DataContainer"]
 custom_minimum_size = Vector2(0, 32)

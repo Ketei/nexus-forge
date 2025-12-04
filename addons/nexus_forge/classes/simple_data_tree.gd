@@ -17,10 +17,14 @@ enum ButtonIds {
 	BOOL,
 	STRING,
 	LEVEL,
+	TYPE_MENU,
 }
 
 const RANGE_MAX: int = 9999
 const RANGE_FLOAT_STEP: float = 0.01
+
+@export var allow_drag_and_drop: bool = false
+@export var compact_mode: bool = false
 
 var TRASH_BIN: Texture2D = null
 
@@ -33,11 +37,14 @@ var ICON_FOLDER: Texture2D = null
 
 var current_search: String = ""
 
-@export var allow_drag_and_drop: bool = false
+var mn: PopupMenu = null
+var data_item: TreeItem = null
+
 
 func _ready() -> void:
 	if Engine.is_editor_hint() and owner == get_tree().edited_scene_root:
 		return
+	
 	TRASH_BIN = get_theme_icon("Remove", "EditorIcons")
 	ICON_BOOL = get_theme_icon("bool", "EditorIcons")
 	ICON_FLOAT = get_theme_icon("float", "EditorIcons")
@@ -59,7 +66,74 @@ func _ready() -> void:
 	
 	item_edited.connect(on_data_edited)
 	
-	button_clicked.connect(on_button_pressed)
+	button_clicked.connect(_on_button_clicked)
+	
+	if compact_mode:
+		mn = PopupMenu.new()
+		add_child(mn)
+		mn.add_icon_item(
+				preload("res://addons/nexus_forge/icons/add_int.svg"),
+				"",
+				TYPE_INT)
+		mn.set_item_tooltip(mn.get_item_index(TYPE_INT), "Add integer.")
+		mn.add_icon_item(
+				preload("res://addons/nexus_forge/icons/add_float.svg"),
+				"",
+				TYPE_FLOAT)
+		mn.add_icon_item(
+				preload("res://addons/nexus_forge/icons/add_bool.svg"),
+				"",
+				TYPE_BOOL)
+		mn.add_icon_item(
+				preload("res://addons/nexus_forge/icons/add_string.svg"),
+				"",
+				TYPE_STRING)
+		mn.add_icon_item(
+				get_theme_icon("FolderCreate", "EditorIcons"),
+				"",
+				TYPE_DICTIONARY)
+		
+		mn.set_item_tooltip(mn.get_item_index(TYPE_INT), "Add integer")
+		mn.set_item_tooltip(mn.get_item_index(TYPE_FLOAT), "Add float")
+		mn.set_item_tooltip(mn.get_item_index(TYPE_BOOL), "Add boolean")
+		mn.set_item_tooltip(mn.get_item_index(TYPE_STRING), "Add string")
+		mn.set_item_tooltip(mn.get_item_index(TYPE_DICTIONARY), "Add folder")
+		
+		mn.size.x = 24
+		print(mn.get_contents_minimum_size())
+		mn.id_pressed.connect(_on_compact_menu_id_pressed)
+
+
+func _on_compact_menu_id_pressed(id: int) -> void:
+	if data_item == null:
+		return
+	
+	var data_name: String = "new_"
+	var data_type = null
+	
+	if id == TYPE_INT:
+		data_name += "int"
+		data_type = 0
+	elif id == TYPE_FLOAT:
+		data_name += "float"
+		data_type = 0.0
+	elif id == TYPE_BOOL:
+		data_name += "bool"
+		data_type = false
+	elif id == TYPE_STRING:
+		data_name += "string"
+		data_type = ""
+	elif id == TYPE_DICTIONARY:
+		data_name += "folder"
+		data_type = {}
+	else:
+		data_name += "data"
+	
+	add_data(data_name, data_type, data_item)
+	
+	data_item = null
+	
+	data_changed.emit()
 
 
 func _get_drag_data(at_position: Vector2) -> Variant:
@@ -169,11 +243,19 @@ func add_data(data_id: String, data: Variant, on_node: TreeItem = get_root()) ->
 			new_data.set_editable(0, true)
 			new_data.set_editable(1, false)
 			metadata["type"] = ItemType.FOLDER
-			new_data.add_button(1, preload("res://addons/nexus_forge/icons/add_int.svg"), ButtonIds.INT, false, "Add Integer")
-			new_data.add_button(1, preload("res://addons/nexus_forge/icons/add_float.svg"), ButtonIds.FLOAT, false, "Add Float")
-			new_data.add_button(1, preload("res://addons/nexus_forge/icons/add_bool.svg"), ButtonIds.BOOL, false, "Add Bool")
-			new_data.add_button(1, preload("res://addons/nexus_forge/icons/add_string.svg"), ButtonIds.STRING, false, "Add String")
-			new_data.add_button(1, get_theme_icon("FolderCreate", "EditorIcons"), ButtonIds.LEVEL, false, "Add Level")
+			if compact_mode:
+				new_data.add_button(
+						1,
+						preload("res://addons/nexus_forge/icons/add_variable_icon.svg"),
+						ButtonIds.TYPE_MENU,
+						false,
+						"Add data")
+			else:
+				new_data.add_button(1, preload("res://addons/nexus_forge/icons/add_int.svg"), ButtonIds.INT, false, "Add Integer")
+				new_data.add_button(1, preload("res://addons/nexus_forge/icons/add_float.svg"), ButtonIds.FLOAT, false, "Add Float")
+				new_data.add_button(1, preload("res://addons/nexus_forge/icons/add_bool.svg"), ButtonIds.BOOL, false, "Add Bool")
+				new_data.add_button(1, preload("res://addons/nexus_forge/icons/add_string.svg"), ButtonIds.STRING, false, "Add String")
+				new_data.add_button(1, get_theme_icon("FolderCreate", "EditorIcons"), ButtonIds.LEVEL, false, "Add Level")
 			for subdata in data:
 				add_data(subdata, data[subdata], new_data)
 		_:
@@ -209,7 +291,7 @@ func get_data_cell_data(cell: TreeItem) -> Variant:
 			return null
 
 
-func on_button_pressed(item: TreeItem, column: int, id: int, mouse_button_index: int) -> void:
+func _on_button_clicked(item: TreeItem, column: int, id: int, mouse_button_index: int) -> void:
 	match id:
 		ButtonIds.DELETE:
 			item.free()
@@ -224,6 +306,11 @@ func on_button_pressed(item: TreeItem, column: int, id: int, mouse_button_index:
 			add_data("new_string", "", item)
 		ButtonIds.LEVEL:
 			add_data("new_folder", {}, item)
+		ButtonIds.TYPE_MENU:
+			data_item = item
+			mn.position = DisplayServer.mouse_get_position()
+			mn.popup()
+			return
 	data_changed.emit()
 
 

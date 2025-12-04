@@ -170,7 +170,7 @@ func add_item(item_id: StringName, input_amount: int = 1, data: Dictionary = {},
 		new_data.add_button(
 			1,
 			get_theme_icon("Remove", "EditorIcons"),
-			1,
+			ButtonID.RECIPE_DATA,
 			false,
 			"Delete Data")
 		
