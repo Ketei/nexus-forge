@@ -125,6 +125,7 @@ func _init(uuid: StringName = &"", theme_variant: StringName = &"", with_duplica
 	_icon_rect.custom_minimum_size = Vector2(20, 20)
 	_icon_rect.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	_icon_rect.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_icon_rect.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	_hbox.add_child(_icon_rect)
 	_hbox.move_child(_icon_rect, 0)
 	#_hbox.add_theme_constant_override(&"separation", 20)
