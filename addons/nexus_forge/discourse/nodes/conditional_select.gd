@@ -54,6 +54,7 @@ func _post_init() -> void:
 
 
 func _ready() -> void:
+	graph_icon = preload("res://addons/nexus_forge/icons/x_or_y_icon.svg")
 	set_field_connection_icons(
 			&"evaluation",
 			get_theme_icon("bool", "EditorIcons"),

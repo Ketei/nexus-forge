@@ -8,7 +8,7 @@ func _post_init() -> void:
 	parent_port = 0
 	node_type = DialogueNodeType.BRANCH
 	size = Vector2(200, 110)
-	title = "Dialog Branch"
+	title = "Branch"
 	
 	var true_label: Label = Label.new()
 	var false_label: Label = Label.new()
@@ -59,6 +59,7 @@ func _post_init() -> void:
 
 
 func _ready() -> void:
+	graph_icon = preload("res://addons/nexus_forge/icons/branch_icon.svg")
 	set_input_connection_icon(&"arg_eval", get_theme_icon("bool", "EditorIcons"))
 
 

@@ -49,6 +49,7 @@ func _post_init() -> void:
 
 
 func _ready() -> void:
+	graph_icon = get_theme_icon("Callable", "EditorIcons")
 	set_output_connection_icon(&"methods", get_theme_icon("Callable", "EditorIcons"))
 
 

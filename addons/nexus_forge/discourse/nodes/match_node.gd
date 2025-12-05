@@ -99,6 +99,7 @@ func _post_init() -> void:
 func _ready() -> void:
 	var value_menu: MenuButton = get_field(&"values").get_child(0)
 	var menu_popup: PopupMenu = value_menu.get_popup()
+	graph_icon = preload("res://addons/nexus_forge/icons/match_icon.svg")
 	set_slot_custom_icon_left(0, flow_icon)
 	set_slot_custom_icon_right(2, flow_icon)
 	set_slot_custom_icon_right(3, flow_icon)

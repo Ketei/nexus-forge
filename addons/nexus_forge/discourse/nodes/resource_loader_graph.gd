@@ -5,7 +5,6 @@ func _post_init() -> void:
 	name = &"Resource"
 	custom_id = "Resource"
 	title = "Resource"
-	graph_icon = get_theme_icon("ResourcePreloader", "EditorIcons")
 	node_type = DialogueNodeType.RESOURCE
 	parent_mode = PortMode.OUTPUT
 	parent_port = 0
@@ -38,11 +37,11 @@ func _post_init() -> void:
 		false,
 		-1,
 		SlotConnectionType.RESOURCE)
-	set_slot_color_right(0, COLORS["object"])
-	#map_field(&"res_path", &"path_line", res_path)
 
 
 func _ready() -> void:
+	graph_icon = get_theme_icon("ResourcePreloader", "EditorIcons")
+	set_slot_color_right(0, COLORS["object"])
 	set_output_connection_icon(&"res_path", get_theme_icon("Object", "EditorIcons"))
 
 
