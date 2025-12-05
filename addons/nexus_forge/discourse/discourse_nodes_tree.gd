@@ -7,6 +7,48 @@ signal directory_edited
 signal item_renamed(uuid: StringName, type: DiscourseGraphNode.DialogueNodeType, new_name: String, localized: bool)
 
 
+const DATA_COLOR: Color = Color(0.557, 0.937, 0.592)
+const DIALOG_COLOR: Color = Color(0.553, 0.647, 0.953)
+const SETTINGS_COLOR: Color = Color(0.99, 0.808, 0.495)
+const RESOURCE_COLOR: Color = Color(0.988, 0.498, 0.498)
+
+const DIALOG: Array[DialogParser.NodeTypes] = [
+		DialogParser.NodeTypes.ENTRY,
+		DialogParser.NodeTypes.DIALOG,
+		DialogParser.NodeTypes.OPTIONS,
+		DialogParser.NodeTypes.BRANCH,
+		DialogParser.NodeTypes.CONDITION_SELECT,
+		DialogParser.NodeTypes.COMPARATION,
+		DialogParser.NodeTypes.EVENT,
+		DialogParser.NodeTypes.MATCH,
+		DialogParser.NodeTypes.PAUSE,
+		DialogParser.NodeTypes.RANDOM,
+		DialogParser.NodeTypes.ANCHOR_POINTER,
+		DialogParser.NodeTypes.ANCHOR,
+		DialogParser.NodeTypes.DIALOG_END,
+		DialogParser.NodeTypes.DIALOG_MERGE,
+		DialogParser.NodeTypes.LOCALIZED_TEXT]
+	
+const DATA: Array[DialogParser.NodeTypes] = [
+		DialogParser.NodeTypes.TYPE_GUARD,
+		DialogParser.NodeTypes.VALUE,
+		DialogParser.NodeTypes.SIGNAL,
+		DialogParser.NodeTypes.CALLABLE,
+		DialogParser.NodeTypes.CALLABLE_RETURN,
+		DialogParser.NodeTypes.VARIABLE_GET,
+		DialogParser.NodeTypes.RANDOM_VALUE,
+		DialogParser.NodeTypes.DATA_EVENT,
+		DialogParser.NodeTypes.LOCALIZED_TEXT]
+	
+const SETTINGS: Array[DialogParser.NodeTypes] = [
+		DialogParser.NodeTypes.SETTINGS_CHARACTER,
+		DialogParser.NodeTypes.SETTINGS_DIALOG,
+		DialogParser.NodeTypes.SETTINGS_OPTION]
+	
+const RESOURCES: Array[DialogParser.NodeTypes] = [
+		DialogParser.NodeTypes.RESOURCE]
+
+
 func _ready() -> void:
 	if Engine.is_editor_hint() and owner == get_tree().edited_scene_root:
 		return
@@ -151,7 +193,10 @@ func is_folder(item: TreeItem) -> bool:
 
 func create_node(node: DiscourseGraphNode) -> void:
 	var new_item: TreeItem = get_root().create_child()
-		
+	var type: int = 0 if node.node_type in DIALOG else 1 if node.node_type in DATA else 2 if node.node_type in SETTINGS else 3 if node.node_type in RESOURCES else -1
+	new_item.set_icon(0, preload("res://addons/nexus_forge/icons/node_icon.svg"))
+	if 0 <= type:
+		new_item.set_icon_modulate(0, DIALOG_COLOR if type == 0 else DATA_COLOR if type == 1 else SETTINGS_COLOR if type == 2 else RESOURCE_COLOR)
 	new_item.set_text(0, str(node.custom_id))
 	new_item.add_button(
 			0,

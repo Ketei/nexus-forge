@@ -8,7 +8,6 @@ func _post_init() -> void:
 	name = &"Signal"
 	custom_id = "Signal"
 	title = "Signal"
-	graph_icon = get_theme_icon("Signal", "EditorIcons")
 	node_type = DialogueNodeType.SIGNAL
 	parent_mode = PortMode.OUTPUT
 	parent_port = 0
@@ -48,6 +47,7 @@ func _post_init() -> void:
 
 
 func _ready() -> void:
+	graph_icon = get_theme_icon("Signal", "EditorIcons")
 	set_output_connection_icon(&"signals", get_theme_icon("Signals", "EditorIcons"))
 
 
