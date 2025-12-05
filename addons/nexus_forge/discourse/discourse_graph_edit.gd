@@ -8,6 +8,7 @@ signal anchor_created(anchor: DiscourseGraphNode)
 signal localization_enabled(node: DiscourseGraphNode)
 signal localized_text_created(node: DiscourseGraphNode)
 signal node_deleted(uuid: StringName)
+signal discourse_node_selected(node: DiscourseGraphNode)
 
 const DialogNodes = DialogParser.NodeTypes
 const ConnectionType = DiscourseGraphNode.SlotConnectionType
@@ -25,9 +26,6 @@ var signalers: Array[DiscourseGraphNode] = []
 
 
 func _ready() -> void:
-	#if Engine.is_editor_hint() and owner == get_tree().edited_scene_root:
-		#print("Blocking ready")
-		#return
 	connection_popup = PopupMenu.new()
 	connection_popup.name = &"ConnectionsPopupMenu"
 	connection_popup.visible = false
@@ -46,21 +44,6 @@ func _ready() -> void:
 	show_minimap_button = false
 	show_arrange_button = false
 	
-	# -- Debug --
-	#var nodes: Array[DiscourseGraphNode] = []
-	#for type in DialogNodes.values():
-		#var node: DiscourseGraphNode = create_dialog_node(type)
-		#if node != null:
-			#
-	#
-	#var frame = create_node_frame()
-	#frame.name = &"Frame"
-	#frame.position_offset = Vector2(400.0, 400.0)
-	#add_child(frame)
-	#
-	#for node in nodes:
-		#add_child(node)
-	# -----------
 	add_valid_connection_type(
 			ConnectionType.VAR_INT,
 			ConnectionType.VAR_ANY)
@@ -112,6 +95,18 @@ func _ready() -> void:
 	copy_nodes_request.connect(_on_copy_nodes_request)
 	cut_nodes_request.connect(_on_cut_nodes_request)
 	paste_nodes_request.connect(_on_paste_nodes_request)
+	node_selected.connect(_on_node_selected)
+
+
+func _on_node_selected(node: GraphNode) -> void:
+	var select_count: int = 0
+	for graph_node in get_children():
+		if graph_node is not DiscourseGraphNode or not graph_node.selected:
+			continue
+		select_count += 1
+		if 1 < select_count:
+			return
+	discourse_node_selected.emit(node)
 
 
 func _on_copy_nodes_request() -> void:

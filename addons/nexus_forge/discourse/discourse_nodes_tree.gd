@@ -211,6 +211,27 @@ func create_node(node: DiscourseGraphNode) -> void:
 		#new_item.move_before(new_item.get_parent().get_first_child())
 
 
+func select_node(node: DiscourseGraphNode) -> void:
+	for root_item in get_root().get_children():
+		if root_item.get_metadata(0)["is_node"] and root_item.get_metadata(0)["node"] == node:
+			root_item.select(0)
+			ensure_cursor_is_visible()
+			return
+		elif _select_on_children(root_item, node):
+			return
+
+
+func _select_on_children(on_tree: TreeItem, node: DiscourseGraphNode) -> bool:
+	for child in on_tree.get_children():
+		if child.get_metadata(0)["is_node"] and child.get_metadata(0)["node"] == node:
+			child.select(0)
+			ensure_cursor_is_visible()
+			return true
+		elif _select_on_children(child, node):
+			return true
+	return false
+
+
 func remove_dialog_node(uuid: StringName, _on: TreeItem = get_root()) -> bool:
 	for child in _on.get_children():
 		var meta: Dictionary = child.get_metadata(0)

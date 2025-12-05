@@ -127,6 +127,7 @@ func _ready() -> void:
 	discourse_window.save_conversation_pressed.connect(_on_save_conversation_pressed)
 	discourse_window.close_conversation_pressed.connect(_on_menu_close_pressed)
 	
+	discourse_window.discourse_graph_edit.discourse_node_selected.connect(_on_discourse_node_selected)
 	discourse_window.discourse_graph_edit.node_deleted.connect(_on_node_deleted)
 	discourse_window.discourse_graph_edit.scroll_offset_changed.connect(_on_graph_edit_offset_changed)
 	discourse_window.change_default_language_pressed.connect(_on_change_default_language_pressed)
@@ -171,6 +172,10 @@ func _ready() -> void:
 	
 	hide_issues_btn.pressed.connect(_on_hide_issues_pressed)
 	issues_tree.issue_activated.connect(_on_issue_activated)
+
+
+func _on_discourse_node_selected(node: DiscourseGraphNode) -> void:
+	discourse_nodes_tree.select_node(node)
 
 
 func _on_discourse_node_search_text_changed(text: String) -> void:
