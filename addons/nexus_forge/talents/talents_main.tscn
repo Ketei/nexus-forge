@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3 uid="uid://dt7vndut1j8qv"]
+[gd_scene load_steps=9 format=3 uid="uid://dt7vndut1j8qv"]
 
 [ext_resource type="Script" uid="uid://q0u2jk8yaia" path="res://addons/nexus_forge/talents/talents_main_script.gd" id="1_e4wsj"]
 [ext_resource type="Texture2D" uid="uid://12lyg7db58dg" path="res://addons/nexus_forge/icons/add_int.svg" id="4_2dcue"]
@@ -14,18 +14,6 @@ content_margin_right = 6.0
 content_margin_bottom = 6.0
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_uv4cy"]
-
-[sub_resource type="Image" id="Image_nx1d4"]
-data = {
-"data": PackedByteArray(255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 0, 255, 92, 92, 127, 255, 92, 92, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 0, 255, 93, 93, 255, 255, 92, 92, 127, 255, 92, 92, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 92, 92, 127, 255, 92, 92, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 92, 92, 127, 255, 92, 92, 0, 255, 92, 92, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 231, 255, 90, 90, 54, 255, 94, 94, 57, 255, 93, 93, 233, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 231, 255, 90, 90, 54, 255, 94, 94, 57, 255, 93, 93, 233, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 0, 255, 93, 93, 0, 255, 91, 91, 0, 255, 91, 91, 0, 255, 91, 91, 42, 255, 90, 90, 0, 255, 94, 94, 0, 255, 91, 91, 42, 255, 93, 93, 233, 255, 92, 92, 232, 255, 93, 93, 41, 255, 90, 90, 0, 255, 94, 94, 0, 255, 91, 91, 42, 255, 93, 93, 233, 255, 92, 92, 232, 255, 92, 92, 0, 255, 92, 92, 0, 255, 91, 91, 0, 255, 91, 91, 0, 255, 91, 91, 0, 255, 91, 91, 45, 255, 93, 93, 44, 255, 91, 91, 0, 255, 91, 91, 42, 255, 91, 91, 42, 255, 93, 93, 0, 255, 91, 91, 45, 255, 93, 93, 44, 255, 91, 91, 0, 255, 91, 91, 42, 255, 91, 91, 42, 255, 91, 91, 0, 255, 91, 91, 0, 255, 91, 91, 0, 255, 91, 91, 0, 255, 91, 91, 45, 255, 92, 92, 235, 255, 92, 92, 234, 255, 89, 89, 43, 255, 91, 91, 0, 255, 91, 91, 0, 255, 91, 91, 45, 255, 92, 92, 235, 255, 92, 92, 234, 255, 89, 89, 43, 255, 91, 91, 0, 255, 91, 91, 0, 255, 91, 91, 0, 255, 91, 91, 0, 255, 92, 92, 0, 255, 92, 92, 0, 255, 92, 92, 235, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 233, 255, 91, 91, 59, 255, 92, 92, 61, 255, 92, 92, 235, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 233, 255, 91, 91, 59, 255, 92, 92, 61, 255, 92, 92, 0, 255, 92, 92, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0, 255, 93, 93, 0),
-"format": "RGBA8",
-"height": 16,
-"mipmaps": false,
-"width": 16
-}
-
-[sub_resource type="ImageTexture" id="ImageTexture_t2xw8"]
-image = SubResource("Image_nx1d4")
 
 [node name="Talents" type="PanelContainer"]
 anchors_preset = 15
@@ -120,12 +108,21 @@ vertical_alignment = 1
 [node name="ButtonContainer" type="HBoxContainer" parent="MainContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader"]
 layout_mode = 2
 
+[node name="AddDictButton" type="Button" parent="MainContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader/ButtonContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Add folder"
+disabled = true
+icon_alignment = 1
+
+[node name="VSeparator" type="VSeparator" parent="MainContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader/ButtonContainer"]
+layout_mode = 2
+
 [node name="SkillIntBtn" type="Button" parent="MainContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader/ButtonContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add Integer Data"
 icon = ExtResource("4_2dcue")
-flat = true
 icon_alignment = 1
 
 [node name="SkillFltBtn" type="Button" parent="MainContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader/ButtonContainer"]
@@ -133,7 +130,6 @@ custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add Float Data"
 icon = ExtResource("5_jte7m")
-flat = true
 icon_alignment = 1
 
 [node name="SkillBoolBtn" type="Button" parent="MainContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader/ButtonContainer"]
@@ -141,7 +137,6 @@ custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add Bool Data"
 icon = ExtResource("6_pfvga")
-flat = true
 icon_alignment = 1
 
 [node name="SkillStrBtn" type="Button" parent="MainContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader/ButtonContainer"]
@@ -149,7 +144,6 @@ custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add String Data"
 icon = ExtResource("7_ktu3r")
-flat = true
 icon_alignment = 1
 
 [node name="SkillDataTree" type="Tree" parent="MainContainer/SkillsPanel/SkillsContainer/DataContainer"]
@@ -245,10 +239,8 @@ layout_mode = 2
 [node name="TraitDictBtn" type="Button" parent="MainContainer/TraitsPanel/TraitsContainerContainer/DataContainer/DataHeader/ButtonContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
-tooltip_text = "Add Group"
+tooltip_text = "Add folder"
 disabled = true
-icon = SubResource("ImageTexture_t2xw8")
-flat = true
 icon_alignment = 1
 
 [node name="VSeparator" type="VSeparator" parent="MainContainer/TraitsPanel/TraitsContainerContainer/DataContainer/DataHeader/ButtonContainer"]
@@ -259,7 +251,6 @@ custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add Integer Data"
 icon = ExtResource("4_2dcue")
-flat = true
 icon_alignment = 1
 
 [node name="TraitFltBtn" type="Button" parent="MainContainer/TraitsPanel/TraitsContainerContainer/DataContainer/DataHeader/ButtonContainer"]
@@ -267,7 +258,6 @@ custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add Float Data"
 icon = ExtResource("5_jte7m")
-flat = true
 icon_alignment = 1
 
 [node name="TraitBoolBtn" type="Button" parent="MainContainer/TraitsPanel/TraitsContainerContainer/DataContainer/DataHeader/ButtonContainer"]
@@ -275,7 +265,6 @@ custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add Bool Data"
 icon = ExtResource("6_pfvga")
-flat = true
 icon_alignment = 1
 
 [node name="TraitStrBtn" type="Button" parent="MainContainer/TraitsPanel/TraitsContainerContainer/DataContainer/DataHeader/ButtonContainer"]
@@ -283,7 +272,6 @@ custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add String Data"
 icon = ExtResource("7_ktu3r")
-flat = true
 icon_alignment = 1
 
 [node name="TraitDataTree" type="Tree" parent="MainContainer/TraitsPanel/TraitsContainerContainer/DataContainer"]

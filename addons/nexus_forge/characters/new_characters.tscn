@@ -173,6 +173,16 @@ layout_mode = 2
 size_flags_horizontal = 3
 alignment = 2
 
+[node name="AddDictButton" type="Button" parent="CharacterContainer/BasicDataSplit/GeneralContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Add folder"
+disabled = true
+icon_alignment = 1
+
+[node name="VSeparator" type="VSeparator" parent="CharacterContainer/BasicDataSplit/GeneralContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer"]
+layout_mode = 2
+
 [node name="AddCharIntButton" type="Button" parent="CharacterContainer/BasicDataSplit/GeneralContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
@@ -221,6 +231,7 @@ allow_reselect = true
 hide_folding = true
 hide_root = true
 script = ExtResource("9_i064r")
+compact_mode = true
 
 [node name="ValuesSplit" type="HSplitContainer" parent="CharacterContainer"]
 layout_mode = 2

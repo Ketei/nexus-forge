@@ -52,6 +52,7 @@ var _unsaved: bool = false
 @onready var add_curr_flt_btn: Button = $CurrencyPanel/CurrencyContainer/CustomDataContainer/CustomDataHeader/ButtonContainer/AddCurrFltBtn
 @onready var add_curr_bool_btn: Button = $CurrencyPanel/CurrencyContainer/CustomDataContainer/CustomDataHeader/ButtonContainer/AddCurrBoolBtn
 @onready var add_curr_str_btn: Button = $CurrencyPanel/CurrencyContainer/CustomDataContainer/CustomDataHeader/ButtonContainer/AddCurrStrBtn
+@onready var add_curr_dict_button: Button = $CurrencyPanel/CurrencyContainer/CustomDataContainer/CustomDataHeader/ButtonContainer/AddDictButton
 @onready var currency_custom_data_tree: Tree = $CurrencyPanel/CurrencyContainer/CustomDataContainer/CurrencyCustomDataTree
 # --------------------------
 
@@ -66,6 +67,7 @@ func _ready() -> void:
 	#new_item_btn.icon = get_theme_icon("Add", "EditorIcons")
 	
 	add_item_fldr_btn.icon = get_theme_icon("FolderCreate", "EditorIcons")
+	add_curr_dict_button.icon = get_theme_icon("FolderCreate", "EditorIcons")
 	
 	search_item_container.text_changed.connect(_on_search_item_text_changed)
 	new_item_btn.pressed.connect(_on_create_item_pressed)
@@ -97,6 +99,7 @@ func _ready() -> void:
 	add_curr_flt_btn.pressed.connect(add_currency_data.bind("new_float", 0.0))
 	add_curr_bool_btn.pressed.connect(add_currency_data.bind("new_bool", false))
 	add_curr_str_btn.pressed.connect(add_currency_data.bind("new_string", ""))
+	add_curr_dict_button.pressed.connect(add_currency_data.bind("new_folder", {}))
 	
 	category_srch_ln_edt.text_changed.connect(_on_category_search_text_changed)
 	search_curr_ln_edt.text_changed.connect(_on_currency_search_text_changed)
@@ -288,6 +291,7 @@ func set_currency_ui_enabled(enabled: bool) -> void:
 	add_curr_flt_btn.disabled = disabled
 	add_curr_bool_btn.disabled = disabled
 	add_curr_str_btn.disabled = disabled
+	add_curr_dict_button.disabled = disabled
 	
 	currency_ui_enabled = enabled
 

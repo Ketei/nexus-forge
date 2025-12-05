@@ -22,6 +22,8 @@ var _unsaved: bool = false
 @onready var skill_flt_btn: Button = $MainContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader/ButtonContainer/SkillFltBtn
 @onready var skill_bool_btn: Button = $MainContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader/ButtonContainer/SkillBoolBtn
 @onready var skill_str_btn: Button = $MainContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader/ButtonContainer/SkillStrBtn
+@onready var skill_dict_button: Button = $MainContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader/ButtonContainer/AddDictButton
+
 
 @onready var trait_opt_btn: OptionButton = $MainContainer/TraitsPanel/TraitsContainerContainer/TraitSelectContainer/TraitContainer/TraitOptBtn
 @onready var trait_ln_edt: LineEdit = $MainContainer/TraitsPanel/TraitsContainerContainer/NameContainer/TraitLnEdt
@@ -45,6 +47,7 @@ func _ready() -> void:
 	reload_skill_resource(true)
 	
 	trait_dict_btn.icon = get_theme_icon("FolderCreate", "EditorIcons")
+	skill_dict_button.icon = get_theme_icon("FolderCreate", "EditorIcons")
 	
 	skill_opt_btn.get_popup().max_size.y = 300
 	trait_opt_btn.get_popup().max_size.y = 300
@@ -62,14 +65,15 @@ func _ready() -> void:
 	skill_flt_btn.pressed.connect(_on_add_skill_data_pressed.bind("new_float", 0.0))
 	skill_bool_btn.pressed.connect(_on_add_skill_data_pressed.bind("new_bool", false))
 	skill_str_btn.pressed.connect(_on_add_skill_data_pressed.bind("new_string", ""))
+	skill_dict_button.pressed.connect(_on_add_skill_data_pressed.bind("new_folder", {}))
 	skill_opt_btn.item_selected.connect(_on_skill_selected, CONNECT_DEFERRED)
 	
-	trait_opt_btn.item_selected.connect(_on_trait_selected)
+	trait_opt_btn.item_selected.connect(_on_trait_selected, CONNECT_DEFERRED)
 	trait_int_btn.pressed.connect(_on_add_trait_data_pressed.bind("new_int", 0))
 	trait_flt_btn.pressed.connect(_on_add_trait_data_pressed.bind("new_float", 0.0))
 	trait_bool_btn.pressed.connect(_on_add_trait_data_pressed.bind("new_bool", false))
 	trait_str_btn.pressed.connect(_on_add_trait_data_pressed.bind("new_string", ""))
-	trait_dict_btn.pressed.connect(_on_add_trait_data_pressed.bind("new_group", {}))
+	trait_dict_btn.pressed.connect(_on_add_trait_data_pressed.bind("new_folder", {}))
 
 
 func reload_skill_resource(first_launch: bool = false) -> void:
@@ -217,6 +221,7 @@ func _on_skill_selected(skill_idx: int) -> void:
 	skill_flt_btn.disabled = disabled
 	skill_bool_btn.disabled = disabled
 	skill_str_btn.disabled = disabled
+	skill_dict_button.disabled = disabled
 	
 	if disabled:
 		skill_ln_edt.clear()
@@ -273,6 +278,7 @@ func load_skills_resource() -> void:
 	skill_flt_btn.disabled = disabled
 	skill_bool_btn.disabled = disabled
 	skill_str_btn.disabled = disabled
+	skill_dict_button.disabled = disabled
 	
 	if skills_exist:
 		skill_opt_btn.select(0)
@@ -314,6 +320,7 @@ func set_skills_ui_enabled(set_enabled: bool) -> void:
 	skill_flt_btn.disabled = disabled
 	skill_bool_btn.disabled = disabled
 	skill_str_btn.disabled = disabled
+	skill_dict_button.disabled = disabled
 
 
 # Use for comparing what skills exists when SkillSet is saved/changed.

@@ -23,6 +23,7 @@ var ui_enabled: bool = false
 @onready var add_char_float_button: Button = $CharacterContainer/BasicDataSplit/GeneralContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer/AddCharFloatButton
 @onready var add_char_bool_button: Button = $CharacterContainer/BasicDataSplit/GeneralContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer/AddCharBoolButton
 @onready var add_char_string_button: Button = $CharacterContainer/BasicDataSplit/GeneralContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer/AddCharStringButton
+@onready var add_dict_button: Button = $CharacterContainer/BasicDataSplit/GeneralContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer/AddDictButton
 @onready var character_custom_data_search_line: LineEdit = $CharacterContainer/BasicDataSplit/GeneralContainer/CustomDataContainer/CharacterCustomDataSearchLine
 @onready var character_data_tree: Tree = $CharacterContainer/BasicDataSplit/GeneralContainer/CustomDataContainer/CharacterDataTree
 @onready var load_species_data_btn: Button = $CharacterContainer/BasicDataSplit/GeneralContainer/SpeciesContainer/LoadSpeciesDataBtn
@@ -42,6 +43,7 @@ func _ready() -> void:
 	update_talent_nodes()
 	update_species_data()
 	
+	add_dict_button.icon = get_theme_icon("FolderCreate", "EditorIcons")
 	char_menu_btn.icon = get_theme_icon("GuiTabMenuHl", "EditorIcons")
 	character_custom_data_search_line.right_icon = get_theme_icon("Search", "EditorIcons")
 	
@@ -54,6 +56,7 @@ func _ready() -> void:
 	add_char_float_button.pressed.connect(_on_add_data_pressed.bind("new_float", 0.0))
 	add_char_bool_button.pressed.connect(_on_add_data_pressed.bind("new_bool", false))
 	add_char_string_button.pressed.connect(_on_add_data_pressed.bind("new_string", ""))
+	add_dict_button.pressed.connect(_on_add_data_pressed.bind("new_folder", {}))
 	character_data_tree.data_changed.connect(_something_changed)
 	char_tree.character_selected.connect(_on_character_selected)
 	load_species_data_btn.pressed.connect(_on_import_species_data_pressed)
@@ -418,6 +421,7 @@ func set_ui_enabled(enabled: bool) -> void:
 	add_char_float_button.disabled = disabled
 	add_char_bool_button.disabled = disabled
 	add_char_string_button.disabled = disabled
+	add_dict_button.disabled = disabled
 	load_species_data_btn.disabled = species_option_button.disabled
 	
 	for item in char_stats_container.get_children():

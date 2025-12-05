@@ -404,9 +404,20 @@ layout_mode = 2
 size_flags_horizontal = 3
 alignment = 2
 
+[node name="AddDictButton" type="Button" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Add folder"
+disabled = true
+icon_alignment = 1
+
+[node name="VSeparator" type="VSeparator" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
+layout_mode = 2
+
 [node name="AddCurrIntBtn" type="Button" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
+tooltip_text = "Add integer"
 disabled = true
 icon = ExtResource("1_e1mk7")
 icon_alignment = 1
@@ -414,6 +425,7 @@ icon_alignment = 1
 [node name="AddCurrFltBtn" type="Button" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
+tooltip_text = "Add float"
 disabled = true
 icon = ExtResource("2_l5u5u")
 icon_alignment = 1
@@ -421,6 +433,7 @@ icon_alignment = 1
 [node name="AddCurrBoolBtn" type="Button" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
+tooltip_text = "Add boolean"
 disabled = true
 icon = ExtResource("3_evcfd")
 icon_alignment = 1
@@ -428,6 +441,7 @@ icon_alignment = 1
 [node name="AddCurrStrBtn" type="Button" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
+tooltip_text = "Add string"
 disabled = true
 icon = ExtResource("4_etwui")
 icon_alignment = 1
@@ -442,6 +456,7 @@ allow_reselect = true
 hide_root = true
 select_mode = 1
 script = ExtResource("5_hb3ne")
+compact_mode = true
 
 [node name="CategoriesContainer" type="HBoxContainer" parent="."]
 visible = false

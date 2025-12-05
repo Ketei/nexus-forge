@@ -20,6 +20,7 @@ var signal_change: bool = false
 @onready var add_rc_float_button: Button = $RacesContainer/RacesBasicSplit/BasicDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer/AddRcFloatButton
 @onready var add_rc_bool_button: Button = $RacesContainer/RacesBasicSplit/BasicDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer/AddRcBoolButton
 @onready var add_rc_string_button: Button = $RacesContainer/RacesBasicSplit/BasicDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer/AddRcStringButton
+@onready var add_dict_button: Button = $RacesContainer/RacesBasicSplit/BasicDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer/AddDictButton
 @onready var race_custom_data_search_line: LineEdit = $RacesContainer/RacesBasicSplit/BasicDataContainer/CustomDataContainer/RaceCustomDataSearchLine
 @onready var race_data_tree: Tree = $RacesContainer/RacesBasicSplit/BasicDataContainer/CustomDataContainer/RaceDataTree
 @onready var race_stats_container: VBoxContainer = $RacesContainer/StatTraitSplit/ValuesContainer/StatVBox/StatScroll/RaceStatsContainer
@@ -35,6 +36,7 @@ func _ready() -> void:
 	reload_resource(true)
 	update_talent_nodes()
 	
+	add_dict_button.icon = get_theme_icon("FolderCreate", "EditorIcons")
 	race_custom_data_search_line.right_icon = get_theme_icon("Search", "EditorIcons")
 	
 	search_race_ln_edt.text_changed.connect(_on_search_species_text_changed)
@@ -51,6 +53,7 @@ func _ready() -> void:
 	add_rc_float_button.pressed.connect(_on_add_data_pressed.bind("new_float", 0.0))
 	add_rc_bool_button.pressed.connect(_on_add_data_pressed.bind("new_bool", false))
 	add_rc_string_button.pressed.connect(_on_add_data_pressed.bind("new_string", ""))
+	add_dict_button.pressed.connect(_on_add_data_pressed.bind("new_folder", {}))
 	race_data_tree.data_changed.connect(_on_something_changed)
 
 
@@ -422,6 +425,7 @@ func set_ui_enabled(enabled: bool) -> void:
 	add_rc_float_button.disabled = disabled
 	add_rc_bool_button.disabled = disabled
 	add_rc_string_button.disabled = disabled
+	add_dict_button.disabled = disabled
 	
 	for child in race_stats_container.get_children():
 		child.get_child(0).disabled = disabled
