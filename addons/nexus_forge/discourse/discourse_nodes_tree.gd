@@ -17,7 +17,6 @@ const DIALOG: Array[DialogParser.NodeTypes] = [
 		DialogParser.NodeTypes.DIALOG,
 		DialogParser.NodeTypes.OPTIONS,
 		DialogParser.NodeTypes.BRANCH,
-		DialogParser.NodeTypes.CONDITION_SELECT,
 		DialogParser.NodeTypes.COMPARATION,
 		DialogParser.NodeTypes.EVENT,
 		DialogParser.NodeTypes.MATCH,
@@ -30,6 +29,7 @@ const DIALOG: Array[DialogParser.NodeTypes] = [
 		DialogParser.NodeTypes.LOCALIZED_TEXT]
 	
 const DATA: Array[DialogParser.NodeTypes] = [
+		DialogParser.NodeTypes.CONDITION_SELECT,
 		DialogParser.NodeTypes.TYPE_GUARD,
 		DialogParser.NodeTypes.VALUE,
 		DialogParser.NodeTypes.SIGNAL,
@@ -242,3 +242,19 @@ func has_text_on_tree(text: String, column: int, skip_item: TreeItem = null) -> 
 		if item.get_text(column) == text:
 			return true
 	return false
+
+
+func search_for_node(pattern: String) -> void:
+	var is_empty: bool = pattern.is_empty()
+	for item in get_root().get_children():
+		item.visible = _search_on_children(item, pattern) or is_empty or item.get_text(0).containsn(pattern)
+
+
+func _search_on_children(from: TreeItem, pattern: String) -> bool:
+	var found: bool = false
+	var is_empty: bool = pattern.is_empty()
+	for child in from.get_children():
+		child.visible = _search_on_children(child, pattern) or is_empty or child.get_text(0).containsn(pattern)
+		if not found and child.visible:
+			found = true
+	return found

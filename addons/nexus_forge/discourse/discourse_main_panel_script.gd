@@ -134,6 +134,7 @@ func _ready() -> void:
 	discourse_window.check_for_issues_pressed.connect(_on_get_issues_pressed)
 	discourse_window.play_current_dialog_pressed.connect(_on_play_current_dialog_pressed)
 	return_discourse_btn.pressed.connect(_on_switch_window_pressed)
+	node_search_ln_edt.text_changed.connect(_on_discourse_node_search_text_changed)
 	#create_phrase_btn.pressed.connect(_on_new_phrase_button_pressed)
 	new_language_btn.pressed.connect(_on_new_lang_pressed)
 	#languages_tree.locale_changed.connect(_on_locale_changed)
@@ -170,6 +171,10 @@ func _ready() -> void:
 	
 	hide_issues_btn.pressed.connect(_on_hide_issues_pressed)
 	issues_tree.issue_activated.connect(_on_issue_activated)
+
+
+func _on_discourse_node_search_text_changed(text: String) -> void:
+	discourse_nodes_tree.search_for_node(text.strip_edges())
 
 
 func _on_discourse_node_activated(node: DiscourseGraphNode) -> void:
