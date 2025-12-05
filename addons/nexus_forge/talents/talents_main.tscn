@@ -121,28 +121,32 @@ layout_mode = 2
 [node name="SkillIntBtn" type="Button" parent="MainContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader/ButtonContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
-tooltip_text = "Add Integer Data"
+tooltip_text = "Add integer"
+disabled = true
 icon = ExtResource("4_2dcue")
 icon_alignment = 1
 
 [node name="SkillFltBtn" type="Button" parent="MainContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader/ButtonContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
-tooltip_text = "Add Float Data"
+tooltip_text = "Add float"
+disabled = true
 icon = ExtResource("5_jte7m")
 icon_alignment = 1
 
 [node name="SkillBoolBtn" type="Button" parent="MainContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader/ButtonContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
-tooltip_text = "Add Bool Data"
+tooltip_text = "Add boolean"
+disabled = true
 icon = ExtResource("6_pfvga")
 icon_alignment = 1
 
 [node name="SkillStrBtn" type="Button" parent="MainContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader/ButtonContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
-tooltip_text = "Add String Data"
+tooltip_text = "Add string"
+disabled = true
 icon = ExtResource("7_ktu3r")
 icon_alignment = 1
 
@@ -249,28 +253,32 @@ layout_mode = 2
 [node name="TraitIntBtn" type="Button" parent="MainContainer/TraitsPanel/TraitsContainerContainer/DataContainer/DataHeader/ButtonContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
-tooltip_text = "Add Integer Data"
+tooltip_text = "Add integer"
+disabled = true
 icon = ExtResource("4_2dcue")
 icon_alignment = 1
 
 [node name="TraitFltBtn" type="Button" parent="MainContainer/TraitsPanel/TraitsContainerContainer/DataContainer/DataHeader/ButtonContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
-tooltip_text = "Add Float Data"
+tooltip_text = "Add float"
+disabled = true
 icon = ExtResource("5_jte7m")
 icon_alignment = 1
 
 [node name="TraitBoolBtn" type="Button" parent="MainContainer/TraitsPanel/TraitsContainerContainer/DataContainer/DataHeader/ButtonContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
-tooltip_text = "Add Bool Data"
+tooltip_text = "Add boolean"
+disabled = true
 icon = ExtResource("6_pfvga")
 icon_alignment = 1
 
 [node name="TraitStrBtn" type="Button" parent="MainContainer/TraitsPanel/TraitsContainerContainer/DataContainer/DataHeader/ButtonContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
-tooltip_text = "Add String Data"
+tooltip_text = "Add string"
+disabled = true
 icon = ExtResource("7_ktu3r")
 icon_alignment = 1
 
