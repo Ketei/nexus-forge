@@ -27,7 +27,10 @@ func _post_init() -> void:
 			false,
 			-1,
 			SlotConnectionType.DIALOG)
-	
+
+
+func _ready() -> void:
+	graph_icon = preload("res://addons/nexus_forge/icons/dialog_entry.svg")
 	set_slot_color_right(0, COLORS["dialog"])
 	set_slot_custom_icon_right(0, flow_icon)
 

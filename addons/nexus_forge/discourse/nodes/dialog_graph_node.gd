@@ -103,6 +103,7 @@ func _post_init() -> void:
 
 
 func _ready() -> void:
+	graph_icon = preload("res://addons/nexus_forge/icons/speech_bubble.svg")
 	set_slot_custom_icon_left(0, flow_icon)
 	set_slot_custom_icon_right(0, flow_icon)
 	set_input_connection_icon(&"character_id", preload("res://addons/nexus_forge/icons/gear_icon.png"))

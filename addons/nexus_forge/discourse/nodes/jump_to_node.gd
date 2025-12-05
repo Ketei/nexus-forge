@@ -34,7 +34,7 @@ static func get_available_id(desired_id: String) -> String:
 func _post_init() -> void:
 	name = &"AnchorPointer"
 	custom_id = "AnchroPointer"
-	title = "Go To Anchor"
+	title = "Go To"
 	node_type = DialogueNodeType.ANCHOR_POINTER
 	parent_mode = PortMode.INPUT
 	parent_port = 0
@@ -50,9 +50,13 @@ func _post_init() -> void:
 			shortcuts,
 			false,
 			SlotConnectionType.DIALOG)
+	reload_anchors()
+
+
+func _ready() -> void:
+	graph_icon = preload("res://addons/nexus_forge/icons/dialog_exit.svg")
 	set_slot_custom_icon_left(0, flow_icon)
 	set_slot_color_left(0, COLORS["dialog"])
-	reload_anchors()
 
 
 func _get_node_data() -> Dictionary:

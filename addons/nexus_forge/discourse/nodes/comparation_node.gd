@@ -87,6 +87,7 @@ func _post_init() -> void:
 
 
 func _ready() -> void:
+	graph_icon = preload("res://addons/nexus_forge/icons/compare_icon.svg")
 	set_field_connection_icons(
 			&"result",
 			get_theme_icon("Variant", "EditorIcons"),

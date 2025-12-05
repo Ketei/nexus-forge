@@ -51,9 +51,6 @@ func _post_init() -> void:
 
 
 func _ready() -> void:
-	set_output_connection_icon(
-			&"connection",
-			get_theme_icon("CharacterBody2D", "EditorIcons"))
 	set_input_connection_icon(
 			&"name",
 			get_theme_icon("String", "EditorIcons"))

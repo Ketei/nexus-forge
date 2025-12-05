@@ -84,6 +84,7 @@ func _post_init() -> void:
 
 
 func _ready() -> void:
+	graph_icon = preload("res://addons/nexus_forge/icons/bulb_icon.svg")
 	set_input_connection_icon(&"variable", get_theme_icon("Variant", "EditorIcons"))
 	set_input_connection_icon(&"callable", get_theme_icon("Callable", "EditorIcons"))
 	set_input_connection_icon(&"signal", get_theme_icon("Signals", "EditorIcons"))

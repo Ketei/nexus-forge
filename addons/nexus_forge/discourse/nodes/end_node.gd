@@ -23,3 +23,7 @@ func _post_init() -> void:
 			SlotConnectionType.DIALOG)
 	set_slot_color_left(0, COLORS["dialog"])
 	set_slot_custom_icon_left(0, flow_icon)
+
+
+func _ready() -> void:
+	graph_icon = get_theme_icon("Stop", "EditorIcons")

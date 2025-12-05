@@ -21,6 +21,10 @@ func _post_init() -> void:
 	set_slot_custom_icon_right(in_idx, flow_icon)
 
 
+func _ready() -> void:
+	graph_icon = get_theme_icon("Play", "EditorIcons")
+
+
 func _get_node_data() -> Dictionary:
 	var graph_data: Dictionary = {}
 	graph_data["node_type"] = node_type

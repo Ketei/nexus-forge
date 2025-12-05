@@ -121,6 +121,7 @@ func _post_init() -> void:
 
 
 func _ready() -> void:
+	graph_icon = preload("res://addons/nexus_forge/icons/variable_icon.svg")
 	var data_menu: MenuButton = get_field(&"data").get_child(1)
 	var data_popup: PopupMenu = data_menu.get_popup()
 	

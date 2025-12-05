@@ -47,8 +47,8 @@ func update_weights() -> void:
 
 func _post_init() -> void:
 	name = &"RandomSelect"
-	custom_id = "RandomSelect"
-	title = "Random Select"
+	custom_id = "RandomPath"
+	title = "Random"
 	size = Vector2(200.0, 146.0)
 	parent_mode = PortMode.INPUT
 	parent_port = 0
@@ -109,6 +109,7 @@ func _post_init() -> void:
 
 
 func _ready() -> void:
+	graph_icon = get_theme_icon("RandomNumberGenerator", "EditorIcons")
 	set_input_connection_icon(&"weight_default", get_theme_icon("int", "EditorIcons"))
 	set_slot_custom_icon_left(0, flow_icon)
 	set_slot_custom_icon_right(2, flow_icon)

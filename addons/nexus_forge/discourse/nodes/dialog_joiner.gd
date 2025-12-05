@@ -6,8 +6,8 @@ var _highest_port_connected: int = -1
 
 func _post_init() -> void:
 	name = &"DialogMerge"
-	custom_id = "DialogMerge"
-	title = "Dialog Merge"
+	custom_id = "PathMerge"
+	title = "Path Merge"
 	size = Vector2(200.0, 79.0)
 	node_type = DialogueNodeType.DIALOG_MERGE
 	parent_mode = PortMode.INPUT
@@ -30,6 +30,7 @@ func _post_init() -> void:
 
 
 func _ready() -> void:
+	graph_icon = preload("res://addons/nexus_forge/icons/merge_icon.svg")
 	for child_idx in range(get_child_count()):
 		set_slot_custom_icon_left(child_idx, flow_icon)
 	
