@@ -58,7 +58,9 @@ func _get_node_data() -> Dictionary:
 
 func _set_node_data(data: Dictionary) -> void:
 	get_field(&"anchor").text = data["anchor_id"]
-	current_id = data["anchor_id"]
+	if current_id != data["anchor_id"]:
+		current_id = data["anchor_id"]
+		id_changed.emit(_uuid, data["anchor_id"])
 	position_offset = data["position"]
 
 

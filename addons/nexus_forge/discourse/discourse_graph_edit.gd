@@ -184,6 +184,7 @@ func _on_paste_nodes_request() -> void:
 func _on_anchor_id_changed(uuid: String, new_id: String) -> void:
 	var valid_id: String = DiscourseGraphAnchorPointer.get_available_id(new_id)
 	DiscourseGraphAnchorPointer.update_anchor(uuid, valid_id)
+	
 	for anchor in anchor_pointers:
 		anchor.reload_anchors()
 
@@ -441,6 +442,7 @@ func create_dialog_node(node_type: DialogNodes, uuid: String = "") -> DiscourseG
 		DialogNodes.ANCHOR_POINTER:
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/jump_to_node.gd").new(uuid)
 			anchor_pointers.append(created_node)
+			created_node.go_to_anchor_pressed.connect(_on_go_to_node_pressed)
 		DialogNodes.ANCHOR:
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/jump_target_node.gd").new(uuid)
 			var valid_id: String = DiscourseGraphAnchorPointer.get_available_id("anchor")
@@ -546,6 +548,13 @@ func snap_graph_to_grid(target_node: DiscourseGraphNode) -> void:
 	if not snapping_enabled:
 		return
 	target_node.position_offset = target_node.position_offset.snappedf(snapping_distance)
+
+
+func _on_go_to_node_pressed(uuid: StringName) -> void:
+	for node in graph_nodes:
+		if node._uuid == uuid:
+			focus_graph_node(node)
+			return
 
 
 ## Focuses the child node in the graph node.

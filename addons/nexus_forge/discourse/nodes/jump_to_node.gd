@@ -2,12 +2,15 @@ class_name DiscourseGraphAnchorPointer
 extends DiscourseGraphNode
 
 
+signal go_to_anchor_pressed(node_uuid: StringName)
 # UUID, ID
 static var jump_targets: Dictionary[StringName, String] = {}
 
 
 static func add_anchor(target_uuid: StringName, target_text: String) -> void:
+	print("Adding: ", target_text)
 	jump_targets[target_uuid] = target_text
+	print(jump_targets)
 
 
 static func update_anchor(target_uuid: StringName, new_text: String) -> void:
@@ -40,31 +43,50 @@ func _post_init() -> void:
 	parent_port = 0
 	size = Vector2(260.0, 87.0)
 	
+	var fields: HBoxContainer = HBoxContainer.new()
+	fields.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	fields.custom_minimum_size.y = 32.0
+	
 	var shortcuts: OptionButton = OptionButton.new()
 	shortcuts.disabled = true
 	shortcuts.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	shortcuts.custom_minimum_size.y = 32
 	
+	var go_to_btn: Button = Button.new()
+	go_to_btn.custom_minimum_size = Vector2(32.0, 32.0)
+	go_to_btn.disabled = true
+	go_to_btn.tooltip_text = "Go to anchor"
+	
+	go_to_btn.pressed.connect(_on_go_to_anchor_pressed)
+	
+	fields.add_child(shortcuts)
+	fields.add_child(go_to_btn)
+	
 	add_field(
-			&"shortcuts",
-			shortcuts,
+			&"fields",
+			fields,
 			false,
 			SlotConnectionType.DIALOG)
+	
+	map_field(&"fields", &"shortcuts", shortcuts)
+	map_field(&"fields", &"button", go_to_btn)
 	reload_anchors()
 
 
 func _ready() -> void:
+	var menu: OptionButton = get_mapped_field(&"fields", &"shortcuts")
 	graph_icon = preload("res://addons/nexus_forge/icons/dialog_exit.svg")
 	set_slot_custom_icon_left(0, flow_icon)
 	set_slot_color_left(0, COLORS["dialog"])
+	get_mapped_field(&"fields", &"button").icon = preload("res://addons/nexus_forge/icons/go_to_icon.svg")
 
 
 func _get_node_data() -> Dictionary:
-	var menu: OptionButton = get_field(&"shortcuts")
+	var menu: OptionButton = get_mapped_field(&"fields", &"shortcuts")
 	var data: Dictionary = {}
 	data["node_type"] = node_type
 	data["position"] = position_offset
-	data["anchor_target"] = menu.get_item_metadata(menu.selected) if 0 <= menu.selected else ""
+	data["anchor_target"] = menu.get_selected_metadata() if 0 <= menu.selected else ""
 	return data
 
 
@@ -82,25 +104,18 @@ func _get_issues() -> PackedStringArray:
 	return issues
 
 
-#func _clone() -> DiscourseGraphNode:
-	#var titlebox: HBoxContainer = get_titlebar_hbox().get_child(-1)
-	#var new_node: DiscourseGraphNode = get_script().new(
-			#"",
-			#theme_type_variation,
-			#titlebox.has_node(^"DuplicateBtn"),
-			#titlebox.has_node(^"CloseBtn"),
-			#titlebox.has_node(^"EditIdBtn"),
-			#titlebox.has_node(^"LocalizeBtn"))
-	#
-	#new_node._set_node_data(_get_node_data())
-	#return new_node
+func _on_go_to_anchor_pressed() -> void:
+	var menu: OptionButton = get_mapped_field(&"fields", &"shortcuts")
+	if menu.selected == -1:
+		return
+	go_to_anchor_pressed.emit(menu.get_selected_metadata())
 
 
 func select_anchor(uuid: String) -> void:
 	if not jump_targets.has(uuid):
 		return
 	
-	var menu: OptionButton = get_field(&"shortcuts")
+	var menu: OptionButton = get_mapped_field(&"fields", &"shortcuts")
 	
 	for idx in range(menu.item_count):
 		if menu.get_item_metadata(idx) == uuid:
@@ -109,7 +124,8 @@ func select_anchor(uuid: String) -> void:
 
 
 func reload_anchors() -> void:
-	var menu: OptionButton = get_field(&"shortcuts")
+	var menu: OptionButton = get_mapped_field(&"fields", &"shortcuts")
+	var go_to_btn: Button = get_mapped_field(&"fields", &"button")
 	var current_uuid: String = menu.get_item_metadata(menu.selected) if 0 <= menu.selected else ""
 	
 	menu.clear()
@@ -126,6 +142,7 @@ func reload_anchors() -> void:
 			menu.select(index)
 	
 	menu.disabled = menu.item_count == 0
+	go_to_btn.disabled = menu.disabled
 
 
 func sort_custom_uuids(uuid_a: String, uuid_b: String) -> bool:
