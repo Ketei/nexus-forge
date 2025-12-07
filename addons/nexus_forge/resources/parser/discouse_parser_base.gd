@@ -531,3 +531,11 @@ func next_dialog() -> void:
 		_conversation_started = false
 		_next_uuid = _dialog_resource.entry_node
 		dialog_finished.emit()
+
+
+# Clears teh whole cache. Used on exit to prevent leaked resources
+func _clear_cache() -> void:
+	if _dialog_resource != null:
+		_dialog_resource.parsed_dialog_cache.clear()
+	_parser_cache.clear()
+	_conversation_cache.clear()
