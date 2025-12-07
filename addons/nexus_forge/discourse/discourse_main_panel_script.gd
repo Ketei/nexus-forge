@@ -1117,7 +1117,7 @@ func set_up_node_structure(structure: Array[Dictionary], level: TreeItem, _map: 
 					false,
 					"Delete Group")
 			new_folder.set_metadata(0, {"is_node": false})
-			set_up_node_structure(item["items"], new_folder, _map)
+			set_up_node_structure(Array(item["items"], TYPE_DICTIONARY, &"", null), new_folder, _map)
 
 
 func _on_discourse_item_edited(uuid: StringName, type: DiscourseGraphNode.DialogueNodeType, new_name: String, localized: bool) -> void:
