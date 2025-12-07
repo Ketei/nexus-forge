@@ -158,7 +158,7 @@ func get_localized_arguments(key: String, language: String, region: String = "ba
 	if localized_strings.has(key) and\
 			localized_strings[key].has(language) and\
 			localized_strings[key][language].has(region):
-		return localized_strings[key][language][region]["arguments"].duplicate(true)
+		return Dictionary(localized_strings[key][language][region]["arguments"].duplicate(true), TYPE_STRING, &"", null, TYPE_DICTIONARY, &"", null)
 	printerr("No arguments with key \"", key,"\" and locale ", language + "_" + region, " exist.")
 	return Dictionary({}, TYPE_STRING, &"", null, TYPE_DICTIONARY, &"", null)
 
@@ -481,6 +481,8 @@ func convert_for_release(localization_uuid: String = "") -> ReleaseDiscourseDial
 	var available_signals: Dictionary = preload("res://addons/nexus_forge/discourse/nodes/signal_node.gd").get_user_signals()
 	
 	var release_dialog: ReleaseDiscourseDialog = ReleaseDiscourseDialog.new()
+	release_dialog.entry_node = entry_node
+	release_dialog.base_language = base_language
 	var id_map: Dictionary[String, StringName] = {}
 	
 	if localization_uuid.is_empty():
@@ -493,7 +495,7 @@ func convert_for_release(localization_uuid: String = "") -> ReleaseDiscourseDial
 	# generated through the value node which is unchanging. This is to
 	# skip one jump from a node to a data node and instead store the data
 	# directly.
-	var data_nodes: Dictionary[StringName, Variant] = {}
+	#var data_nodes: Dictionary[StringName, Variant] = {}
 	
 	# UUID(Anchor pointer): UUID(Anchor Target)
 	# Example "123"(anchor pointer uuid) -> "456"(Anchor) -> "789"(Anchor connection)
@@ -507,25 +509,26 @@ func convert_for_release(localization_uuid: String = "") -> ReleaseDiscourseDial
 	
 	# Declaration of the recursive lambda. Required as I can't call recursively
 	# inside of the delcaration
-	var get_target_lambda: Callable = Callable()
+	#var get_target_lambda: Callable = Callable()
+	var target_finder: RefCounted = preload("res://addons/nexus_forge/discourse/exporter_target.gd").new()
 	# Recursive function to find the final target of an UUID. Basically unfucks
 	# whatever spaghetti connections there might be between nodes, joiners and
 	# anchors
-	get_target_lambda = func(lambda_uuid: StringName, _origin: StringName = &"", _iteration: int = 0):
-		if _origin == lambda_uuid or 100 <= _iteration:
-			if 100 <= _iteration:
-				printerr("Error: Over 99 anchor/joiner direct connections found. Breaking connection.\nAt this point, I'm pretty sure you're just drawing a picture of a worm. Please stop drawing worms.")
-			return &""
-		
-		if _origin.is_empty():
-			_origin = lambda_uuid
-		
-		if anchor_nodes.has(lambda_uuid):
-			return get_target_lambda.call(anchor_nodes[lambda_uuid], _origin, _iteration + 1)
-		elif dialog_mergers.has(lambda_uuid):
-			return get_target_lambda.call(dialog_mergers[lambda_uuid], _origin, _iteration + 1)
-		else:
-			return lambda_uuid
+	#get_target_lambda = func(lambda_uuid: StringName, _origin: StringName = &"", _iteration: int = 0):
+		#if _origin == lambda_uuid or 100 <= _iteration:
+			#if 100 <= _iteration:
+				#printerr("Error: Over 99 anchor/joiner direct connections found. Breaking connection.\nAt this point, I'm pretty sure you're just drawing a picture of a worm. Please stop drawing worms.")
+			#return &""
+		#
+		#if _origin.is_empty():
+			#_origin = lambda_uuid
+		#
+		#if anchor_nodes.has(lambda_uuid):
+			#return get_target_lambda.call(anchor_nodes[lambda_uuid], _origin, _iteration + 1)
+		#elif dialog_mergers.has(lambda_uuid):
+			#return get_target_lambda.call(dialog_mergers[lambda_uuid], _origin, _iteration + 1)
+		#else:
+			#return lambda_uuid
 	
 	#var get_target_lambda: Callable = func (uuid: StringName) -> StringName:
 		#return _get_target_uuid.call(uuid, _get_target_uuid)
@@ -534,9 +537,9 @@ func convert_for_release(localization_uuid: String = "") -> ReleaseDiscourseDial
 	node_uuids.assign(dialog_nodes.keys())
 	
 	for node_uuid in node_uuids:
-		if dialog_nodes[node_uuid]["node_type"] == NodeTypes.VALUE:
-			data_nodes[node_uuid] = dialog_nodes[node_uuid]["value"]
-		elif dialog_nodes[node_uuid]["node_type"] == NodeTypes.ANCHOR_POINTER:
+		#if dialog_nodes[node_uuid]["node_type"] == NodeTypes.VALUE:
+			#data_nodes[node_uuid] = dialog_nodes[node_uuid]["value"]
+		if dialog_nodes[node_uuid]["node_type"] == NodeTypes.ANCHOR_POINTER:
 			var target_node: StringName = &""
 			if not dialog_nodes[node_uuid]["anchor_target"].is_empty():
 				target_node = dialog_nodes[dialog_nodes[node_uuid]["anchor_target"]]["output_connections"]["next_node"]
@@ -549,6 +552,9 @@ func convert_for_release(localization_uuid: String = "") -> ReleaseDiscourseDial
 		else:
 			continue
 	
+	target_finder.anchor_nodes.assign(anchor_nodes)
+	target_finder.dialog_mergers.assign(dialog_mergers)
+	
 	var add_id: bool = false
 	
 	for node_id in node_uuids:
@@ -557,113 +563,78 @@ func convert_for_release(localization_uuid: String = "") -> ReleaseDiscourseDial
 		match dialog_nodes[node_id]["node_type"]:
 			NodeTypes.ENTRY:
 				add_id = true
-				data["next_node"] = get_target_lambda.call(node_id)
+				data["next_node"] = target_finder.get_target(dialog_nodes[node_id]["output_connections"]["next_node"]["target_node_uuid"]) #get_target_lambda.call(node_id)
 			NodeTypes.DIALOG:
 				add_id = true
 				var character_settings: Dictionary = {
-					"display_name": "",
-					"portrait_id": "",
-					"display_name_node": &"",
-					"portrait_id_node": &""}
+					"display_name": &"",
+					"portrait_id": &""}
 				
 				var dialog_settings: Dictionary = {
-					"font_resource": "",
-					"dialog_scene": "",
-					"dialog_speed": 0,
-					"font_resource_node": &"",
-					"dialog_scene_node": &"",
-					"dialog_speed_node": &""}
+					"font_resource": &"",
+					"dialog_scene": &"",
+					"dialog_speed": &""}
 				
 				if not dialog_nodes[node_id]["input_connections"]["dialog_settings"]["target_node_uuid"].is_empty():
 					var character_settings_data: Dictionary = dialog_nodes[dialog_nodes[node_id]["input_connections"]["dialog_settings"]["target_node_uuid"]]
 					
 					if not character_settings_data["input_connections"]["display_name"]["target_node_uuid"].is_empty():
-						if data_nodes.has(character_settings_data["input_connections"]["display_name"]["target_node_uuid"]):
-							if FileAccess.file_exists(dialog_nodes[character_settings_data["input_connections"]["display_name"]["target_node_uuid"]]["resource_path"]):
-								character_settings["display_name"] = data_nodes[character_settings_data["input_connections"]["display_name"]["target_node_uuid"]]
-							else:
-								printerr("[Discourse] Warning: Warning: Issue when exporting ", resource_path, ". Settings ", character_settings_data["name"], " assigns an inexisting resource.")
-						else:
-							character_settings["display_name_node"] = StringName(character_settings_data["input_connections"]["display_name"]["target_node_uuid"])
+						character_settings["display_name"] = StringName(character_settings_data["input_connections"]["display_name"]["target_node_uuid"])
 					
 					if not character_settings_data["input_connections"]["portrait_id"]["target_node_uuid"].is_empty():
-						if data_nodes.has(character_settings_data["input_connections"]["portrait_id"]["target_node_uuid"]):
-							character_settings["portrait_id"] = data_nodes[character_settings_data["input_connections"]["display_name"]["target_node_uuid"]]
-						else:
-							character_settings["portrait_id_node"] = StringName(character_settings_data["input_connections"]["display_name"]["target_node_uuid"])
+						character_settings["portrait_id_node"] = StringName(character_settings_data["input_connections"]["display_name"]["target_node_uuid"])
 				
 				if not dialog_nodes[node_id]["input_connections"]["character_settings"]["target_node_uuid"].is_empty():
 					var dialog_settings_data: Dictionary = dialog_nodes[dialog_nodes[node_id]["input_connections"]["character_settings"]["target_node_uuid"]]
 					
 					if not dialog_settings_data["input_connections"]["font_resource"]["target_node_uuid"].is_empty():
-						if data_nodes.has(dialog_settings_data["input_connections"]["font_resource"]["target_node_uuid"]):
-							dialog_settings["font_resource"] = data_nodes[dialog_settings_data["input_connections"]["font_resource"]["target_node_uuid"]]
-						else:
-							dialog_settings["font_resource_node"] = StringName(dialog_settings_data["input_connections"]["font_resource"]["target_node_uuid"])
+						dialog_settings["font_resource"] = StringName(dialog_settings_data["input_connections"]["font_resource"]["target_node_uuid"])
 					
 					if not dialog_settings_data["input_connections"]["dialog_scene"]["target_node_uuid"].is_empty():
-						if data_nodes.has(dialog_settings_data["input_connections"]["dialog_scene"]["target_node_uuid"]):
-							dialog_settings["dialog_scene"] = data_nodes[dialog_settings_data["input_connections"]["dialog_scene"]["target_node_uuid"]]
-						else:
-							dialog_settings["dialog_scene_node"] = StringName(dialog_settings_data["input_connections"]["dialog_scene"]["target_node_uuid"])
+						dialog_settings["dialog_scene"] = StringName(dialog_settings_data["input_connections"]["dialog_scene"]["target_node_uuid"])
 					
 					if not dialog_settings_data["input_connections"]["dialog_speed"]["target_node_uuid"].is_empty():
-						if data_nodes.has(dialog_settings_data["input_connections"]["dialog_speed"]["target_node_uuid"]):
-							dialog_settings["dialog_speed"] = data_nodes[dialog_settings_data["input_connections"]["dialog_speed"]["target_node_uuid"]]
-						else:
-							dialog_settings["dialog_speed_node"] = StringName(dialog_settings_data["input_connections"]["dialog_speed"]["target_node_uuid"])
+						dialog_settings["dialog_speed"] = StringName(dialog_settings_data["input_connections"]["dialog_speed"]["target_node_uuid"])
 
 				data["character_id"] = dialog_nodes[node_id]["character_id"]
 				data["persist"] = dialog_nodes[node_id]["persist"]
 				data["character_settings"] = character_settings
 				data["dialog_settings"] = dialog_settings
 				data["text_source"] = StringName(dialog_nodes[node_id]["input_connections"]["dialog_text_source"]["target_node_uuid"])
-				data["next_node"] = get_target_lambda.call(dialog_nodes[node_id]["output_connections"]["next_node"]["target_node_uuid"])
+				data["next_node"] = target_finder.get_target(dialog_nodes[node_id]["output_connections"]["next_node"]["target_node_uuid"]) #get_target_lambda.call(dialog_nodes[node_id]["output_connections"]["next_node"]["target_node_uuid"])
 			NodeTypes.OPTIONS:
 				add_id = true
 				var options: Array[Dictionary] = []
 				for option:Dictionary in dialog_nodes[node_id]["options"]:
 					var new_option: Dictionary[String, Variant] = {
-						"next_node": get_target_lambda.call(StringName(option["output_connections"]["next_node"]["target_node_uuid"])),
+						"next_node": target_finder.get_target(StringName(option["output_connections"]["next_node"]["target_node_uuid"])), #get_target_lambda.call(StringName(option["output_connections"]["next_node"]["target_node_uuid"])),
 						"settings": {
-							"available": true,
-							"locked": false,
-							"lock_hint": "",
-							"available_node": &"",
-							"locked_node": &"",
-							"lock_hint_node": &""}}
+							"available": &"",
+							"unlocked": &"",
+							"lock_hint": &""}}
 					
 					if not option["input_connections"]["settings"]["target_node_uuid"].is_empty():
 						var option_settings: Dictionary = dialog_nodes[option["input_connections"]["settings"]["target_node_uuid"]]
 						if not option_settings["input_connections"]["option_available"]["target_node_uuid"].is_empty():
-							if data_nodes.has(option_settings["input_connections"]["option_available"]["target_node_uuid"]):
-								new_option["settings"]["available"] = data_nodes[option_settings["input_connections"]["option_available"]["target_node_uuid"]]
-							else:
-								new_option["settings"]["available_node"] = StringName(option_settings["input_connections"]["option_available"]["target_node_uuid"])
+							new_option["settings"]["available"] = StringName(option_settings["input_connections"]["option_available"]["target_node_uuid"])
 						
-						if not option_settings["input_connections"]["option_locked"]["target_node_uuid"].is_empty():
-							if data_nodes.has(option_settings["input_connections"]["option_locked"]["target_node_uuid"]):
-								new_option["settings"]["locked"] = data_nodes[option_settings["input_connections"]["option_locked"]["target_node_uuid"]]
-							else:
-								new_option["settings"]["locked_node"] = StringName(option_settings["input_connections"]["option_locked"]["target_node_uuid"])
+						if not option_settings["input_connections"]["option_unlocked"]["target_node_uuid"].is_empty():
+							new_option["settings"]["unlocked"] = StringName(option_settings["input_connections"]["option_unlocked"]["target_node_uuid"])
 		
 						if not option_settings["input_connections"]["locked_hint"]["target_node_uuid"].is_empty():
-							if data_nodes.has(option_settings["input_connections"]["locked_hint"]["target_node_uuid"]):
-								new_option["settings"]["lock_hint"] = data_nodes[option_settings["input_connections"]["locked_hint"]["target_node_uuid"]]
-							else:
-								new_option["settings"]["lock_hint_node"] = StringName(option_settings["input_connections"]["locked_hint"]["target_node_uuid"])
+							new_option["settings"]["lock_hint"] = StringName(option_settings["input_connections"]["locked_hint"]["target_node_uuid"])
 					options.append(new_option)
 				data["options"] = options
 			NodeTypes.BRANCH:
 				add_id = true
 				data["result"] = StringName(dialog_nodes[node_id]["input_connections"]["path_direction"]["target_node_uuid"])
-				data["case_true"] = get_target_lambda.call(StringName(dialog_nodes[node_id]["output_connections"]["next_node_true"]["target_node_uuid"]))
-				data["case_false"] = get_target_lambda.call(StringName(dialog_nodes[node_id]["output_connections"]["next_node_false"]["target_node_uuid"]))
+				data["case_true"] = target_finder.get_target(StringName(dialog_nodes[node_id]["output_connections"]["next_node_true"]["target_node_uuid"]))
+				data["case_false"] = target_finder.get_target(StringName(dialog_nodes[node_id]["output_connections"]["next_node_false"]["target_node_uuid"]))
 			NodeTypes.CONDITION_SELECT:
 				add_id = true
-				data["result" ] = StringName(dialog_nodes[node_id]["input_connections"]["result"]["target_node_uuid"])
-				data["true_value"] = get_target_lambda.call(StringName(dialog_nodes[node_id]["input_connections"]["true_value"]["target_node_uuid"]))
-				data["false_value"] = get_target_lambda.call(StringName(dialog_nodes[node_id]["input_connections"]["false_value"]["target_node_uuid"]))
+				data["result"] = StringName(dialog_nodes[node_id]["input_connections"]["result"]["target_node_uuid"])
+				data["true_value"] = target_finder.get_target(StringName(dialog_nodes[node_id]["input_connections"]["true_value"]["target_node_uuid"]))
+				data["false_value"] = target_finder.get_target(StringName(dialog_nodes[node_id]["input_connections"]["false_value"]["target_node_uuid"]))
 			NodeTypes.COMPARATION:
 				add_id = true
 				data["operator"] = dialog_nodes[node_id]["operator"]
@@ -693,7 +664,7 @@ func convert_for_release(localization_uuid: String = "") -> ReleaseDiscourseDial
 						printerr("[Discourse] Warning: Issue when exporting ", resource_path, ". Event ", dialog_nodes[node_id]["name"], " emits an inexistent signal.")
 				else:
 					data["signal"] = &""
-				data["next_node"] = get_target_lambda.call(StringName(dialog_nodes[node_id]["output_connections"]["next_node"]["target_node_uuid"]))
+				data["next_node"] = target_finder.get_target(StringName(dialog_nodes[node_id]["output_connections"]["next_node"]["target_node_uuid"]))
 				if var_val.is_empty():
 					data["variable_path"] = &""
 					data["variable"] = &""
@@ -713,21 +684,21 @@ func convert_for_release(localization_uuid: String = "") -> ReleaseDiscourseDial
 				for case:Dictionary in dialog_nodes[node_id]["cases"]:
 					var new_case: Dictionary[String, Variant] = {}
 					new_case["value"] = case["value"]
-					new_case["next_node"] = get_target_lambda.call(StringName(case["output_connections"]["next_node"]["target_node_uuid"]))
+					new_case["next_node"] = target_finder.get_target(StringName(case["output_connections"]["next_node"]["target_node_uuid"]))
 				
-				data["case_default"] = get_target_lambda.call(StringName(dialog_nodes[node_id]["output_connections"]["default"]["target_node_uuid"]))
+				data["case_default"] = target_finder.get_target(StringName(dialog_nodes[node_id]["output_connections"]["default"]["target_node_uuid"]))
 				data["match_value"] = StringName(dialog_nodes[node_id]["input_connections"]["match_value_source"]["target_node_uuid"])
 				data["cases"] = cases
 			NodeTypes.PAUSE:
 				add_id = true
-				data["next_node"] = get_target_lambda.call(StringName(dialog_nodes[node_id]["output_connections"]["next_node"]["target_node_uuid"]))
+				data["next_node"] = target_finder.get_target(StringName(dialog_nodes[node_id]["output_connections"]["next_node"]["target_node_uuid"]))
 			NodeTypes.RANDOM:
 				add_id = true
 				var options: Array[Dictionary] = []
 				
 				for option:Dictionary in dialog_nodes[node_id]["options"]:
 					var new_option: Dictionary[String, StringName] = {}
-					new_option["target"] = get_target_lambda.call(StringName(option["output_connections"]["next_node"]["target_node_uuid"]))
+					new_option["target"] = target_finder.get_target(StringName(option["output_connections"]["next_node"]["target_node_uuid"]))
 					new_option["weight_override"] = StringName(option["input_connections"]["weight"]["target_node_uuid"])
 					options.append(new_option)
 				
@@ -740,45 +711,47 @@ func convert_for_release(localization_uuid: String = "") -> ReleaseDiscourseDial
 				data["fallback"] = dialog_nodes[node_id]["fallback_value"]
 			NodeTypes.SIGNAL:
 				add_id = true
-				var arguments: Array[Dictionary] = []
+				var arguments: Array[StringName] = []
 				for argument:Dictionary in dialog_nodes[node_id]["arguments"]:
-					var new_argument: Dictionary[String, Variant] = {
-						"data": null,
-						"override": &""}
-					if not argument["target_node_uuid"].is_empty():
-						if data_nodes.has(argument["target_node_uuid"]):
-							new_argument["data"] = data_nodes[argument["target_node_uuid"]]
-						else:
-							new_argument["override"] = StringName(argument["target_node_uuid"])
-					arguments.append(new_argument)
+					#var new_argument: Dictionary[String, Variant] = {
+						#"data": null,
+						#"override": &""}
+					#if not argument["target_node_uuid"].is_empty():
+						#if data_nodes.has(argument["target_node_uuid"]):
+							#new_argument["data"] = data_nodes[argument["target_node_uuid"]]
+						#else:
+							#new_argument["override"] = StringName(argument["target_node_uuid"])
+					arguments.append(StringName(argument["target_node_uuid"]))
 				data["signal"] = StringName(dialog_nodes[node_id]["signal"])
 				data["arguments"] = arguments
 			NodeTypes.CALLABLE:
 				add_id = true
-				var arguments: Array[Dictionary] = []
+				var arguments: Array[StringName] = []
 				for argument:Dictionary in dialog_nodes[node_id]["arguments"]:
-					var new_argument: Dictionary[String, Variant] = {
-						"data": null,
-						"override": &""}
-					if not argument["target_node_uuid"].is_empty():
-						if data_nodes.has(argument["target_node_uuid"]):
-							new_argument["data"] = data_nodes[argument["target_node_uuid"]]
-						else:
-							new_argument["override"] = StringName(argument["target_node_uuid"])
+					arguments.append(StringName(argument["target_node_uuid"]))
+					#var new_argument: Dictionary[String, Variant] = {
+						#"data": null,
+						#"override": &""}
+					#if not argument["target_node_uuid"].is_empty():
+						#if data_nodes.has(argument["target_node_uuid"]):
+							#new_argument["data"] = data_nodes[argument["target_node_uuid"]]
+						#else:
+							#new_argument["override"] = StringName(argument["target_node_uuid"])
 				data["method"] = StringName(dialog_nodes[node_id]["method"])
 				data["arguments"] = arguments
 			NodeTypes.CALLABLE_RETURN:
 				add_id = true
-				var arguments: Array[Dictionary] = []
+				var arguments: Array[StringName] = []
 				for argument:Dictionary in dialog_nodes[node_id]["arguments"]:
-					var new_argument: Dictionary[String, Variant] = {
-						"data": null,
-						"override": &""}
-					if not argument["target_node_uuid"].is_empty():
-						if data_nodes.has(argument["target_node_uuid"]):
-							new_argument["data"] = data_nodes[argument["target_node_uuid"]]
-						else:
-							new_argument["override"] = StringName(argument["target_node_uuid"])
+					arguments.append(StringName(argument["target_node_uuid"]))
+					#var new_argument: Dictionary[String, Variant] = {
+						#"data": null,
+						#"override": &""}
+					#if not argument["target_node_uuid"].is_empty():
+						#if data_nodes.has(argument["target_node_uuid"]):
+							#new_argument["data"] = data_nodes[argument["target_node_uuid"]]
+						#else:
+							#new_argument["override"] = StringName(argument["target_node_uuid"])
 				data["method"] = StringName(dialog_nodes[node_id]["method"])
 				data["arguments"] = arguments
 			NodeTypes.VARIABLE_GET:
@@ -843,11 +816,14 @@ func convert_for_release(localization_uuid: String = "") -> ReleaseDiscourseDial
 			NodeTypes.LOCALIZED_TEXT:
 				add_id = true
 				data["text"] = node_id
+			NodeTypes.VALUE:
+				add_id = false
+				data["value"] = dialog_nodes[node_id]["value"]
 			_:
 				add_id = false
 		
 		if add_id:
-			id_map[String(dialog_nodes[node_id]["name"])] = node_id
+			id_map[String(dialog_nodes[node_id]["custom_id"])] = node_id
 		release_dialog.dialog_nodes[node_id] = data
 	
 	release_dialog.id_map = id_map
@@ -875,9 +851,9 @@ func generate_localization_files(conversation_id: StringName, base_path: String,
 					language,
 					"-base/dialog/",
 					conversation_id,
-					".tres")
+					".res")
 			new_base_locale.resource_path = base_locale_path
-		
+			
 		var node_keys: Array = node_localization.keys()
 		var format_string_keys: Array = localized_strings.keys()
 		
@@ -888,17 +864,32 @@ func generate_localization_files(conversation_id: StringName, base_path: String,
 			else:
 				target_data = node_localization[node_uuid][language]["base"]
 			
+			if not new_base_locale.localization.has(conversation_id):
+				new_base_locale.localization[conversation_id] = {}
+			if not new_base_locale.localization[conversation_id].has(node_uuid):
+				new_base_locale.localization[conversation_id][node_uuid] = {}
 			if target_data.has("dialog"):
-				new_base_locale.set_text(conversation_id, node_uuid, target_data["dialog"])
+				new_base_locale.localization[conversation_id][node_uuid]["dialog"] = target_data["dialog"]
+				#new_base_locale.set_text(conversation_id, node_uuid, target_data["dialog"])
 			else:
-				new_base_locale.set_options(conversation_id, node_uuid, PackedStringArray(target_data["options"]))
+				new_base_locale.localization[conversation_id][node_uuid]["options"] = PackedStringArray(target_data["options"])
+				#new_base_locale.set_options(conversation_id, node_uuid, PackedStringArray(target_data["options"]))
 			
 		for format_string_key in format_string_keys:
+			if not new_base_locale.format_strings.has(conversation_id):
+				new_base_locale.format_strings[conversation_id] = {}
+			if not new_base_locale.format_strings[conversation_id].has(format_string_key):
+				new_base_locale.format_strings[conversation_id][format_string_key] = {}
+			
+			var arguments: Dictionary[String, Dictionary] = {}
+			arguments.assign(localized_strings[format_string_key][language]["base"]["arguments"])
+			
 			new_base_locale.set_format_string(
 					conversation_id,
 					format_string_key,
 					localized_strings[format_string_key][language]["base"]["text"],
-					localized_strings[format_string_key][language]["base"]["arguments"])
+					arguments)
+					#localized_strings[format_string_key][language]["base"]["arguments"])
 		
 		if return_base:
 			locale_files.append(new_base_locale)
@@ -920,7 +911,7 @@ func generate_localization_files(conversation_id: StringName, base_path: String,
 					region,
 					"/dialog/",
 					conversation_id,
-					".tres")
+					".res")
 			
 			for locale_format_string_key in format_string_keys:
 				new_locale.set_format_string(

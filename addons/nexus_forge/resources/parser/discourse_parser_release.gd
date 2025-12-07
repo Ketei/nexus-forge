@@ -107,19 +107,18 @@ func _process_logic(uuid: StringName) -> String:
 		return ""
 	
 	var data: Dictionary = _dialog_resource.dialog_nodes[uuid]
-	
 	match data["node_type"]:
 		NodeTypes.ENTRY:
 			return _process_logic(data["next_node"])
 		NodeTypes.DIALOG:
-			var font: String = data["dialog_settings"]["font_resource"] if data["dialog_settings"]["font_resource_node"] == &"" else _get_data(data["dialog_settings"]["font_resource_node"])
-			var scene: String = data["dialog_settings"]["dialog_scene"] if data["dialog_settings"]["dialog_scene_node"] == &"" else _get_data(data["dialog_settings"]["dialog_scene_node"])
-			var speed: float = data["dialog_settings"]["dialog_speed"] if data["dialog_settings"]["dialog_speed_node"] == &"" else _get_data(data["dialog_settings"]["dialog_speed_node"])
-			var display_name: String = data["character_settings"]["display_name"] if data["character_settings"]["display_name_node"] == &"" else _get_data(data["character_settings"]["display_name_node"])
-			var portrait_id: String = data["character_settings"]["portrait_id"] if data["character_settings"]["portrait_id_node"] == &"" else _get_data(data["character_settings"]["portrait_id_node"])
+			var font: String = _get_data(data["dialog_settings"]["font_resource"], "")
+			var scene: String = _get_data(data["dialog_settings"]["dialog_scene"], "")
+			var speed: float = _get_data(data["dialog_settings"]["dialog_speed"], 0.0)
+			var display_name: String = _get_data(data["character_settings"]["display_name"], "")
+			var portrait_id: String = _get_data(data["character_settings"]["portrait_id"], "")
 			if data["text_source"].is_empty():
 				dialog_reached.emit({
-					"dialog_text": _parse_dialog(String(uuid), localization.get_text(_dialog_resource.conversation_uuid, uuid)),
+					"dialog_text": _parse_dialog(String(uuid), localization.get_text(_dialog_resource.localization_uuid, uuid)),
 					"character_id": data["character_id"],
 					"persist": data["persist"],
 					"font": font,
@@ -140,7 +139,7 @@ func _process_logic(uuid: StringName) -> String:
 			return data["next_node"]
 		NodeTypes.OPTIONS:
 			var available_options: Array[Dictionary] = []
-			var localized_options: PackedStringArray = localization.get_options(_dialog_resource.conversation_uuid, uuid)
+			var localized_options: PackedStringArray = localization.get_options(_dialog_resource.localization_uuid, uuid)
 			
 			var idx: int = -1
 			var option_duuid: String = ""
@@ -156,16 +155,16 @@ func _process_logic(uuid: StringName) -> String:
 							"text": _parse_dialog(option_duuid, localized_options[idx]),
 							"target": option["next_node"]})
 				else:
-					var opt_settings: Dictionary = _dialog_resource.dialog_nodes[option["settings"]]
-					var show: bool = true if opt_settings["available"].is_empty() else _get_data(opt_settings["available"])
+					var opt_settings: Dictionary = option["settings"]
+					var show: bool = _get_data(opt_settings["available"], true)
 				
 					if not show:
 						continue
-					var unlocked: bool = true if opt_settings["unlocked"].is_empty() else _get_data(opt_settings["unlocked"])
+					var unlocked: bool = _get_data(opt_settings["unlocked"], true)
 					var text: String = localized_options[idx]
 					
 					if not unlocked:
-						var lock_hint: String = _get_data(opt_settings["lock_hint"])
+						var lock_hint: String = _get_data(opt_settings["lock_hint"], "")
 						if not lock_hint.is_empty():
 							text = lock_hint
 					
@@ -182,7 +181,7 @@ func _process_logic(uuid: StringName) -> String:
 			options_reached.emit(available_options)
 			return uuid
 		NodeTypes.BRANCH:
-			var use_a: bool = _get_data(data["result"])
+			var use_a: bool = _get_data(data["result"], true)
 			if use_a:
 				return _process_logic(data["case_true"])
 			else:
@@ -192,7 +191,7 @@ func _process_logic(uuid: StringName) -> String:
 				NexusForge.Blackboard.set_variable(
 						data["variable_path"],
 						data["variable"],
-						data["value"])
+						_get_data(data["value"]))
 			if not data["callable"].is_empty():
 				var call_data: Dictionary = _dialog_resource.dialog_nodes[data["callable"]]
 				var call_args: Array = []
@@ -256,10 +255,9 @@ func _process_logic(uuid: StringName) -> String:
 			return ""
 
 
-func _get_data(uuid: StringName) -> Variant:
+func _get_data(uuid: StringName, default = null) -> Variant:
 	if _dialog_resource == null or not _dialog_resource.dialog_nodes.has(uuid):
-		return null
-	
+		return default
 	var data: Dictionary = _dialog_resource.dialog_nodes[uuid]
 	
 	match data["node_type"]:
@@ -268,25 +266,28 @@ func _get_data(uuid: StringName) -> Variant:
 		NodeTypes.RANDOM_VALUE:
 			match data["random_type"]:
 				TYPE_INT:
-					var min_value: int = data["min_value"] if data["min_source"].is_empty() else _get_data(data["min_source"])
-					var max_value: int = data["max_value"] if data["max_source"].is_empty() else _get_data(data["max_source"])
+					var min_value: int = data["min_value"] if data["min_override"].is_empty() else _get_data(data["min_override"])
+					var max_value: int = data["max_value"] if data["max_override"].is_empty() else _get_data(data["max_override"])
 					return randi_range(min_value, max_value)
 				TYPE_FLOAT:
-					var min_value: float = data["min_value"] if data["min_source"].is_empty() else _get_data(data["min_source"])
-					var max_value: float = data["max_value"] if data["max_source"].is_empty() else _get_data(data["max_source"])
+					var min_value: float = data["min_value"] if data["min_override"].is_empty() else _get_data(data["min_override"])
+					var max_value: float = data["max_value"] if data["max_override"].is_empty() else _get_data(data["max_override"])
 					return snappedf(
 							randf_range(
 									min_value,
 									max_value),
 							FLOAT_SNAP)
 				TYPE_BOOL:
-					var true_probability: int = data["min_value"] if data["min_source"].is_empty() else _get_data(data["min_source"])
+					var true_probability: int = data["min_value"] if data["min_override"].is_empty() else _get_data(data["min_override"], 100)
 					if true_probability == 0:
 						return false
-					var true_range: int = randi_range(
-							1,
-							100)
-					return true_range <= true_probability
+					elif true_probability == 100:
+						return true
+					else:
+						var true_range: int = randi_range(
+								1,
+								100)
+						return true_range <= true_probability
 				_:
 					return null
 		NodeTypes.TYPE_GUARD:
@@ -332,7 +333,7 @@ func _get_data(uuid: StringName) -> Variant:
 						signal_args)
 			return _get_data(data["data_source"])
 		NodeTypes.LOCALIZED_TEXT:
-			return localization.get_text(_dialog_resource.conversation_uuid, data["text"])
+			return localization.get_text(_dialog_resource.localization_uuid, data["text"])
 		NodeTypes.COMPARATION:
 			var a = _get_data(data["value_a"])
 			var b = _get_data(data["value_b"])
@@ -363,7 +364,7 @@ func _get_data(uuid: StringName) -> Variant:
 		NodeTypes.RESOURCE:
 			return data["resource_path"]
 		_:
-			return null
+			return default
 
 
 func _dialog_resource_set(new_resource: DiscourseDialog) -> void:
@@ -387,9 +388,109 @@ func _load_locale(new_language: String, new_region: String) -> void:
 			new_region,
 			"/dialog/",
 			_dialog_resource.localization_uuid,
-			".tres")
-	#var _example = "res://localization/en-base/dialog/(dialog_uuid).tres"
-	localization = load(locale_path)
+			".json")
+	
+	var file: FileAccess = FileAccess.open(locale_path, FileAccess.READ)
+	
+	if file != null:
+		localization = DiscourseDialogLocale.new_from_json(file.get_as_text())
+
+
+func _parse_dialog(dialog_id: String, dialog: String) -> String:
+	var DUUID: String = dialog_id + "/" + language + "_" + region
+	# (UUID)/en_US
+	if _dialog_resource.parsed_dialog_cache.is_in_cache(DUUID):
+		var cached_data: ParsedDialog = _dialog_resource.parsed_dialog_cache.get_cache(DUUID)
+		return cached_data.get_dialog()
+	
+	var parsed: ParsedDialog = ParsedDialog.new()
+	parsed.language = language
+	parsed.region = region
+	parsed.dialog = dialog
+	
+	var functions_processed: PackedStringArray = []
+	var variables_processed: PackedStringArray = []
+	var phrases_processed: PackedStringArray = []
+	
+	var function_regex: RegEx = RegEx.new()
+	var variable_regex: RegEx = RegEx.new()
+	var phrase_regex: RegEx = RegEx.new()
+	function_regex.compile("\\{\\![^\\s\\}]+\\}")
+	variable_regex.compile("\\{\\$[^\\s\\}]+\\}")
+	phrase_regex.compile("\\{\\&[^\\s\\}]+\\}")
+	
+	# Searching for function calls.
+	
+	for rgx_func_result in function_regex.search_all(dialog):
+		if functions_processed.has(rgx_func_result.get_string()):
+			continue
+		
+		functions_processed.append(rgx_func_result.get_string())
+		
+		# {!get_name|a,b} -> !get_name|a,b
+		var clean_string: String = rgx_func_result.get_string().trim_prefix("{").trim_suffix("}")
+		
+		parsed.set_format_callable(
+				clean_string,
+				_build_callable_for_method(clean_string.trim_prefix("!")))
+		
+	# Processing variables
+	
+	for rgx_var_result in variable_regex.search_all(dialog):
+		if variables_processed.has(rgx_var_result.get_string()):
+			continue
+		
+		var key: String = rgx_var_result.get_string().trim_prefix("{").trim_suffix("}")
+		variables_processed.append(rgx_var_result.get_string())
+		
+		var callable: Callable = _build_callable_for_variable(key.trim_prefix("{$").trim_suffix("}"))
+		
+		parsed.set_format_callable(
+				key,
+				_build_callable_for_variable(key.trim_prefix("$")))
+	
+	# Revealing the phrase text.
+	for rgx_phrase_result in phrase_regex.search_all(dialog):
+		if phrases_processed.has(rgx_phrase_result.get_string()):
+			continue
+		var phrase_key: String = rgx_phrase_result.get_string().trim_prefix("{").trim_suffix("}")
+		var prefix_trim_key: String = phrase_key.trim_prefix("&")
+		phrases_processed.append(phrase_key)
+		
+		#var phrase: String = _dialog_resource.get_localized_string(
+				#prefix_trim_key,
+				#language,
+				#region)
+		var phrase: String = localization.get_format_string_text(
+				_dialog_resource.localization_uuid,
+				prefix_trim_key)
+		
+		var argument_cases: Dictionary[String, Dictionary] = localization.get_format_string_args(
+			_dialog_resource.localization_uuid,
+			prefix_trim_key)
+		
+		parsed.create_format_phrase(phrase_key, phrase, argument_cases)
+		
+		for function_section in function_regex.search_all(phrase):
+		#{!askdjal}
+			var replace: String = function_section.get_string().trim_prefix("{").trim_suffix("}")
+			parsed.set_format_phrase_callable(
+					phrase_key,
+					replace,
+					_build_callable_for_method(replace.trim_prefix("!")))
+		
+		for variable_section in variable_regex.search_all(phrase):
+			var replace: String = variable_section.get_string().trim_prefix("{").trim_suffix("}")
+			parsed.set_format_phrase_callable(
+					phrase_key,
+					replace,
+					_build_callable_for_variable(replace.trim_prefix("$")))
+	
+	_dialog_resource.parsed_dialog_cache.cache_data(
+		DUUID,
+		parsed)
+	
+	return parsed.get_dialog()
 
 
 ## Loads a dialog and sets the dialog ID to the start of the conversation
