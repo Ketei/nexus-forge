@@ -8,9 +8,7 @@ static var jump_targets: Dictionary[StringName, String] = {}
 
 
 static func add_anchor(target_uuid: StringName, target_text: String) -> void:
-	print("Adding: ", target_text)
 	jump_targets[target_uuid] = target_text
-	print(jump_targets)
 
 
 static func update_anchor(target_uuid: StringName, new_text: String) -> void:
