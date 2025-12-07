@@ -35,6 +35,55 @@ extends Resource
 }
 
 
+static func new_from_json(json_string: String) -> DiscourseDialogLocale:
+	var data = JSON.parse_string(json_string)
+	
+	if data == null or typeof(data) != TYPE_DICTIONARY or not data.has_all(["localization", "format_strings"]):
+		return null
+	
+	var new_locale: DiscourseDialogLocale = DiscourseDialogLocale.new()
+	
+	for localization_key:String in data["localization"].keys():
+		var locale_data: Dictionary[String, Dictionary] = {}
+		
+		for node_uuid in data["localization"][localization_key].keys():
+			locale_data[node_uuid] = {}
+			if data["localization"][localization_key][node_uuid].has("dialog"):
+				locale_data[node_uuid]["dialog"] = data["localization"][localization_key][node_uuid]["dialog"]
+			else:
+				locale_data[node_uuid]["options"] = PackedStringArray(data["localization"][localization_key][node_uuid]["options"])
+		
+		new_locale.localization[StringName(localization_key)] = locale_data
+	
+	for conversation_uuid in data["format_strings"].keys():
+		var conversation_data: Dictionary[String, Dictionary] = {}
+		for format_key in data["format_strings"][conversation_uuid].keys():
+			var arguments: Dictionary[String, Dictionary] = {}
+			
+			for argument_key in data["format_strings"][conversation_uuid][format_key]["arguments"].keys():
+				var custom_args: Dictionary[String, String] = {}
+				for custom_arg in data["format_strings"][conversation_uuid][format_key]["arguments"][argument_key]["custom"].keys():
+					custom_args[custom_arg] = data["format_strings"][conversation_uuid][format_key]["arguments"][argument_key]["custom"][custom_arg]
+			
+				arguments[argument_key] = {
+					"custom": custom_args,
+					"default": data["format_strings"][conversation_uuid][format_key]["arguments"][argument_key]["default"]}
+			conversation_data[format_key] = {
+				"arguments": arguments,
+				"text": data["format_strings"][conversation_uuid][format_key]["text"]}
+		new_locale.format_strings[conversation_uuid] = conversation_data
+	return new_locale
+
+
+func as_json() -> String:
+	var data: Dictionary = {
+		"language": language,
+		"region": region,
+		"localization": localization,
+		"format_strings": format_strings}
+	return JSON.stringify(data)
+
+
 ## Returns the options of the given [param uuid] from the [param conversation] .
 func get_options(conversation: StringName, uuid: StringName) -> PackedStringArray:
 	if localization.has(conversation) and localization[conversation].has(uuid) and localization[conversation][uuid].has("options"):
@@ -93,4 +142,3 @@ func set_format_string(conversation: StringName, key: String, text: String, argu
 	if format_strings.has(conversation) and format_strings[conversation].has(key):
 		format_strings[conversation][key]["text"] = text
 		format_strings[conversation][key]["arguments"] = arguments.duplicate(true)
-		format_strings[conversation] = {}
