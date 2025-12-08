@@ -5,7 +5,6 @@ extends DialogParser
 ## Within the editor the resources parsed will be [EditorDiscourseDialog] which
 ## contain a different structure from the released files.[br]
 ## For the release parser see [ReleaseDialogParser].[br]
-## This class will [b]NOT[/b] exist on exported projects.
 
 
 ## Emmited when data is set on the NexusForge.Blackboard singleton.
