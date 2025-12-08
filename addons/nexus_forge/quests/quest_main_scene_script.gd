@@ -52,6 +52,10 @@ var _unsaved: bool = false
 @onready var step_data_search_ln_edt: LineEdit = $MainContainer/StepContainer/CustomDataContainer/StepDataSearchLnEdt
 @onready var step_data_tree: Tree = $MainContainer/StepContainer/CustomDataContainer/StepDataTree
 @onready var step_flags_container: VBoxContainer = $MainContainer/StepContainer/FlagsContainer/FlagsScroll/StepFlagsContainer
+@onready var edit_quest_script_btn: Button = $MainContainer/BasicContainer/TitleLbl/EditQuestScriptBtn
+@onready var edit_stage_script_btn: Button = $MainContainer/StageContainer/TitleLbl/EditStageScriptBtn
+@onready var edit_step_script_btn: Button = $MainContainer/StepContainer/TitleLbl/EditStepScriptBtn
+
 
 
 func _ready() -> void:
@@ -72,6 +76,10 @@ func _ready() -> void:
 	
 	stage_custom_data_search_ln_edt.right_icon = get_theme_icon("Search", "EditorIcons")
 	step_data_search_ln_edt.right_icon = get_theme_icon("Search", "EditorIcons")
+	
+	edit_quest_script_btn.icon = get_theme_icon("Edit", "EditorIcons")
+	edit_stage_script_btn.icon = get_theme_icon("Edit", "EditorIcons")
+	edit_step_script_btn.icon = get_theme_icon("Edit", "EditorIcons")
 	
 	reload_quest_resource(true)
 	reload_quest_types()
@@ -123,6 +131,27 @@ func _ready() -> void:
 	add_stp_dict_button.pressed.connect(_on_add_step_data_pressed.bind("new_level", {}))
 	step_data_search_ln_edt.text_changed.connect(_on_search_step_data_text_changed)
 	step_data_tree.data_changed.connect(something_changed)
+	edit_quest_script_btn.pressed.connect(_on_edit_quest_script_pressed)
+	edit_stage_script_btn.pressed.connect(_on_edit_stage_script_pressed)
+	edit_step_script_btn.pressed.connect(_on_edit_step_script_pressed)
+
+
+func _on_edit_quest_script_pressed() -> void:
+	EditorInterface.edit_script(QuestData.new().get_script())
+	if not EditorInterface.get_editor_settings().get_setting("text_editor/external/use_external_editor"):
+		EditorInterface.set_main_screen_editor("Script")
+
+
+func _on_edit_stage_script_pressed() -> void:
+	EditorInterface.edit_script(QuestStage.new().get_script())
+	if not EditorInterface.get_editor_settings().get_setting("text_editor/external/use_external_editor"):
+		EditorInterface.set_main_screen_editor("Script")
+
+
+func _on_edit_step_script_pressed() -> void:
+	EditorInterface.edit_script(QuestStep.new().get_script())
+	if not EditorInterface.get_editor_settings().get_setting("text_editor/external/use_external_editor"):
+		EditorInterface.set_main_screen_editor("Script")
 
 
 func reload_quest_resource(first_launch: bool = false) -> void:

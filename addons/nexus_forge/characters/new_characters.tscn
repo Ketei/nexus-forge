@@ -156,6 +156,13 @@ popup/item_0/id = 0
 popup/item_1/text = "Female"
 popup/item_1/id = 1
 
+[node name="EditGendersBtn" type="Button" parent="CharacterContainer/BasicDataSplit/GeneralContainer/GenderContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Edit StatBlock script"
+flat = true
+icon_alignment = 1
+
 [node name="CustomDataContainer" type="VBoxContainer" parent="CharacterContainer/BasicDataSplit/GeneralContainer"]
 layout_mode = 2
 size_flags_vertical = 3
@@ -255,6 +262,23 @@ text = "Stats"
 horizontal_alignment = 1
 vertical_alignment = 1
 
+[node name="EditStatBlockBtn" type="Button" parent="CharacterContainer/ValuesSplit/ValuesVBox/StatVBox/StatLbl"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -32.0
+offset_top = -16.0
+offset_bottom = 16.0
+grow_horizontal = 0
+grow_vertical = 2
+tooltip_text = "Edit StatBlock script"
+flat = true
+icon_alignment = 1
+
 [node name="StatScroll" type="ScrollContainer" parent="CharacterContainer/ValuesSplit/ValuesVBox/StatVBox"]
 layout_mode = 2
 size_flags_vertical = 3
@@ -275,6 +299,23 @@ text = "Skills"
 horizontal_alignment = 1
 vertical_alignment = 1
 
+[node name="EditSkillSetBtn" type="Button" parent="CharacterContainer/ValuesSplit/ValuesVBox/SkillVBox/StatLbl"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -32.0
+offset_top = -16.0
+offset_bottom = 16.0
+grow_horizontal = 0
+grow_vertical = 2
+tooltip_text = "Edit SkillSet script"
+flat = true
+icon_alignment = 1
+
 [node name="SkillScroll" type="ScrollContainer" parent="CharacterContainer/ValuesSplit/ValuesVBox/SkillVBox"]
 layout_mode = 2
 size_flags_vertical = 3
@@ -294,6 +335,23 @@ layout_mode = 2
 text = "Traits"
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="EditTraitBlockBtn" type="Button" parent="CharacterContainer/ValuesSplit/TraitsVbox/StatLbl"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -32.0
+offset_top = -16.0
+offset_bottom = 16.0
+grow_horizontal = 0
+grow_vertical = 2
+tooltip_text = "Edit TraitBlock script"
+flat = true
+icon_alignment = 1
 
 [node name="ScrollContainer" type="ScrollContainer" parent="CharacterContainer/ValuesSplit/TraitsVbox"]
 layout_mode = 2

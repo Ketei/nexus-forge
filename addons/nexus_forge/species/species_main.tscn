@@ -209,6 +209,23 @@ text = "Base Stats"
 horizontal_alignment = 1
 vertical_alignment = 1
 
+[node name="EditStatBlockBtn" type="Button" parent="RacesContainer/StatTraitSplit/ValuesContainer/StatVBox/StatLbl"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -32.0
+offset_top = -16.0
+offset_bottom = 16.0
+grow_horizontal = 0
+grow_vertical = 2
+tooltip_text = "Edit StatBlock script"
+flat = true
+icon_alignment = 1
+
 [node name="StatScroll" type="ScrollContainer" parent="RacesContainer/StatTraitSplit/ValuesContainer/StatVBox"]
 layout_mode = 2
 size_flags_vertical = 3
@@ -229,6 +246,23 @@ text = "Base Skills"
 horizontal_alignment = 1
 vertical_alignment = 1
 
+[node name="EditSkillSetBtn" type="Button" parent="RacesContainer/StatTraitSplit/ValuesContainer/SkillVBox/StatLbl"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -32.0
+offset_top = -16.0
+offset_bottom = 16.0
+grow_horizontal = 0
+grow_vertical = 2
+tooltip_text = "Edit SkillSet script"
+flat = true
+icon_alignment = 1
+
 [node name="SkillScroll" type="ScrollContainer" parent="RacesContainer/StatTraitSplit/ValuesContainer/SkillVBox"]
 layout_mode = 2
 size_flags_vertical = 3
@@ -248,6 +282,23 @@ layout_mode = 2
 text = "Traits"
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="EditTraitBlockBtn" type="Button" parent="RacesContainer/StatTraitSplit/TraitsContainer/StatLbl"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -32.0
+offset_top = -16.0
+offset_bottom = 16.0
+grow_horizontal = 0
+grow_vertical = 2
+tooltip_text = "Edit TraitBlock script"
+flat = true
+icon_alignment = 1
 
 [node name="ScrollContainer" type="ScrollContainer" parent="RacesContainer/StatTraitSplit/TraitsContainer"]
 layout_mode = 2

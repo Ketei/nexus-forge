@@ -27,6 +27,10 @@ var signal_change: bool = false
 @onready var race_skill_container: VBoxContainer = $RacesContainer/StatTraitSplit/ValuesContainer/SkillVBox/SkillScroll/RaceSkillContainer
 @onready var race_traits_container: VBoxContainer = $RacesContainer/StatTraitSplit/TraitsContainer/ScrollContainer/RaceTraitsContainer
 
+@onready var edit_stat_block_btn: Button = $RacesContainer/StatTraitSplit/ValuesContainer/StatVBox/StatLbl/EditStatBlockBtn
+@onready var edit_skill_set_btn: Button = $RacesContainer/StatTraitSplit/ValuesContainer/SkillVBox/StatLbl/EditSkillSetBtn
+@onready var edit_trait_block_btn: Button = $RacesContainer/StatTraitSplit/TraitsContainer/StatLbl/EditTraitBlockBtn
+
 
 
 func _ready() -> void:
@@ -38,6 +42,9 @@ func _ready() -> void:
 	
 	add_dict_button.icon = get_theme_icon("FolderCreate", "EditorIcons")
 	race_custom_data_search_line.right_icon = get_theme_icon("Search", "EditorIcons")
+	edit_stat_block_btn.icon = get_theme_icon("Edit", "EditorIcons")
+	edit_skill_set_btn.icon = get_theme_icon("Edit", "EditorIcons")
+	edit_trait_block_btn.icon = get_theme_icon("Edit", "EditorIcons")
 	
 	search_race_ln_edt.text_changed.connect(_on_search_species_text_changed)
 	new_race_btn.pressed.connect(_on_create_species_pressed)
@@ -55,6 +62,28 @@ func _ready() -> void:
 	add_rc_string_button.pressed.connect(_on_add_data_pressed.bind("new_string", ""))
 	add_dict_button.pressed.connect(_on_add_data_pressed.bind("new_folder", {}))
 	race_data_tree.data_changed.connect(_on_something_changed)
+	
+	edit_stat_block_btn.pressed.connect(_on_edit_statblock_pressed)
+	edit_skill_set_btn.pressed.connect(_on_edit_skillset_pressed)
+	edit_trait_block_btn.pressed.connect(_on_edit_traitblock_pressed)
+
+
+func _on_edit_statblock_pressed() -> void:
+	EditorInterface.edit_script(StatBlock.new().get_script())
+	if not EditorInterface.get_editor_settings().get_setting("text_editor/external/use_external_editor"):
+		EditorInterface.set_main_screen_editor("Script")
+
+
+func _on_edit_skillset_pressed() -> void:
+	EditorInterface.edit_script(SkillSet.new().get_script())
+	if not EditorInterface.get_editor_settings().get_setting("text_editor/external/use_external_editor"):
+		EditorInterface.set_main_screen_editor("Script")
+
+
+func _on_edit_traitblock_pressed() -> void:
+	EditorInterface.edit_script(TraitBlock.new().get_script())
+	if not EditorInterface.get_editor_settings().get_setting("text_editor/external/use_external_editor"):
+		EditorInterface.set_main_screen_editor("Script")
 
 
 func reload_resource(first_load: bool = false) -> void:

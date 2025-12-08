@@ -35,6 +35,9 @@ var _unsaved: bool = false
 @onready var trait_str_btn: Button = $MainContainer/TraitsPanel/TraitsContainerContainer/DataContainer/DataHeader/ButtonContainer/TraitStrBtn
 @onready var trait_data_tree: Tree = $MainContainer/TraitsPanel/TraitsContainerContainer/DataContainer/TraitDataTree
 
+@onready var edit_skills_btn: Button = $MainContainer/SkillsPanel/SkillsContainer/SkillSelectContainer/SkillContainer/EditSkillsBtn
+@onready var edit_traits_btn: Button = $MainContainer/TraitsPanel/TraitsContainerContainer/TraitSelectContainer/TraitContainer/EditTraitsBtn
+
 
 func _ready() -> void:
 	if Engine.is_editor_hint() and get_tree().edited_scene_root == self:
@@ -48,6 +51,8 @@ func _ready() -> void:
 	
 	trait_dict_btn.icon = get_theme_icon("FolderCreate", "EditorIcons")
 	skill_dict_button.icon = get_theme_icon("FolderCreate", "EditorIcons")
+	edit_skills_btn.icon = get_theme_icon("Edit", "EditorIcons")
+	edit_traits_btn.icon = get_theme_icon("Edit", "EditorIcons")
 	
 	skill_opt_btn.get_popup().max_size.y = 300
 	trait_opt_btn.get_popup().max_size.y = 300
@@ -74,6 +79,21 @@ func _ready() -> void:
 	trait_bool_btn.pressed.connect(_on_add_trait_data_pressed.bind("new_bool", false))
 	trait_str_btn.pressed.connect(_on_add_trait_data_pressed.bind("new_string", ""))
 	trait_dict_btn.pressed.connect(_on_add_trait_data_pressed.bind("new_folder", {}))
+	
+	edit_skills_btn.pressed.connect(_on_edit_skillset_pressed)
+	edit_traits_btn.pressed.connect(_on_edit_traitblock_pressed)
+
+
+func _on_edit_skillset_pressed() -> void:
+	EditorInterface.edit_script(SkillSet.new().get_script())
+	if not EditorInterface.get_editor_settings().get_setting("text_editor/external/use_external_editor"):
+		EditorInterface.set_main_screen_editor("Script")
+
+
+func _on_edit_traitblock_pressed() -> void:
+	EditorInterface.edit_script(TraitBlock.new().get_script())
+	if not EditorInterface.get_editor_settings().get_setting("text_editor/external/use_external_editor"):
+		EditorInterface.set_main_screen_editor("Script")
 
 
 func reload_skill_resource(first_launch: bool = false) -> void:

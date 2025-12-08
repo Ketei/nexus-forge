@@ -40,6 +40,7 @@ var _unsaved: bool = false
 @onready var items_flags_container: VBoxContainer = $ItemsPanel/ItemsContainer/FlagsContainer/ScrollContainer/ItemsFlagsContainer
 @onready var categories_tree: Tree = $ItemsPanel/ItemsContainer/TreeContainer/VBoxContainer/CategoriesTree
 @onready var category_srch_ln_edt: LineEdit = $ItemsPanel/ItemsContainer/TreeContainer/VBoxContainer/HBoxContainer/CategorySrchLnEdt
+@onready var edit_item_script_btn: Button = $ItemsPanel/ItemsContainer/DataContainer/TitleVContainer/Label/EditItemScriptBtn
 
 
 # ------- Currencies -------
@@ -68,6 +69,7 @@ func _ready() -> void:
 	
 	add_item_fldr_btn.icon = get_theme_icon("FolderCreate", "EditorIcons")
 	add_curr_dict_button.icon = get_theme_icon("FolderCreate", "EditorIcons")
+	edit_item_script_btn.icon = get_theme_icon("Edit", "EditorIcons")
 	
 	search_item_container.text_changed.connect(_on_search_item_text_changed)
 	new_item_btn.pressed.connect(_on_create_item_pressed)
@@ -103,6 +105,13 @@ func _ready() -> void:
 	
 	category_srch_ln_edt.text_changed.connect(_on_category_search_text_changed)
 	search_curr_ln_edt.text_changed.connect(_on_currency_search_text_changed)
+	edit_item_script_btn.pressed.connect(_on_edit_item_script_pressed)
+
+
+func _on_edit_item_script_pressed() -> void:
+	EditorInterface.edit_script(ItemSheet.new().get_script())
+	if not EditorInterface.get_editor_settings().get_setting("text_editor/external/use_external_editor"):
+		EditorInterface.set_main_screen_editor("Script")
 
 
 #region Currencies

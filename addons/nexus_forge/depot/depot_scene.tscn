@@ -92,6 +92,7 @@ placeholder_text = "Search Category"
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Edit Categories"
+flat = true
 icon_alignment = 1
 
 [node name="CategoriesTree" type="Tree" parent="ItemsContainer/ItemsPanel/ItemsContainer/TreeContainer/VBoxContainer"]
@@ -146,6 +147,23 @@ theme_override_font_sizes/font_size = 20
 text = "Item"
 horizontal_alignment = 1
 vertical_alignment = 2
+
+[node name="EditItemScriptBtn" type="Button" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/TitleVContainer/Label"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -32.0
+offset_top = -16.0
+offset_bottom = 16.0
+grow_horizontal = 0
+grow_vertical = 2
+tooltip_text = "Edit ItemSheet script"
+flat = true
+icon_alignment = 1
 
 [node name="NameContainer" type="HBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer"]
 layout_mode = 2

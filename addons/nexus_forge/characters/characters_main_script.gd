@@ -33,6 +33,11 @@ var ui_enabled: bool = false
 @onready var char_tree: Tree = $CharacterContainer/BasicDataSplit/CharacterTreeContainer/CharTree
 @onready var char_traits_container: VBoxContainer = $CharacterContainer/ValuesSplit/TraitsVbox/ScrollContainer/CharTraitsContainer
 
+@onready var edit_stat_block_btn: Button = $CharacterContainer/ValuesSplit/ValuesVBox/StatVBox/StatLbl/EditStatBlockBtn
+@onready var edit_skill_set_btn: Button = $CharacterContainer/ValuesSplit/ValuesVBox/SkillVBox/StatLbl/EditSkillSetBtn
+@onready var edit_trait_block_btn: Button = $CharacterContainer/ValuesSplit/TraitsVbox/StatLbl/EditTraitBlockBtn
+@onready var edit_genders_btn: Button = $CharacterContainer/BasicDataSplit/GeneralContainer/GenderContainer/EditGendersBtn
+
 
 func _ready() -> void:
 	if Engine.is_editor_hint() and get_tree().edited_scene_root == self:
@@ -45,6 +50,11 @@ func _ready() -> void:
 	
 	add_dict_button.icon = get_theme_icon("FolderCreate", "EditorIcons")
 	char_menu_btn.icon = get_theme_icon("GuiTabMenuHl", "EditorIcons")
+	edit_stat_block_btn.icon = get_theme_icon("Edit", "EditorIcons")
+	edit_skill_set_btn.icon = get_theme_icon("Edit", "EditorIcons")
+	edit_trait_block_btn.icon = get_theme_icon("Edit", "EditorIcons")
+	edit_genders_btn.icon = get_theme_icon("Edit", "EditorIcons")
+	
 	character_custom_data_search_line.right_icon = get_theme_icon("Search", "EditorIcons")
 	
 	char_menu_btn.get_popup().id_pressed.connect(_on_character_menu_id_pressed)
@@ -61,6 +71,35 @@ func _ready() -> void:
 	char_tree.character_selected.connect(_on_character_selected)
 	load_species_data_btn.pressed.connect(_on_import_species_data_pressed)
 	char_tree.character_closed.connect(_on_close_character_pressed)
+	
+	edit_stat_block_btn.pressed.connect(_on_edit_statblock_pressed)
+	edit_skill_set_btn.pressed.connect(_on_edit_skillset_pressed)
+	edit_trait_block_btn.pressed.connect(_on_edit_traitblock_pressed)
+	edit_genders_btn.pressed.connect(_on_edit_genders_pressed)
+
+
+func _on_edit_genders_pressed() -> void:
+	EditorInterface.edit_script(CharacterSheet.new().get_script())
+	if not EditorInterface.get_editor_settings().get_setting("text_editor/external/use_external_editor"):
+		EditorInterface.set_main_screen_editor("Script")
+
+
+func _on_edit_statblock_pressed() -> void:
+	EditorInterface.edit_script(StatBlock.new().get_script())
+	if not EditorInterface.get_editor_settings().get_setting("text_editor/external/use_external_editor"):
+		EditorInterface.set_main_screen_editor("Script")
+
+
+func _on_edit_skillset_pressed() -> void:
+	EditorInterface.edit_script(SkillSet.new().get_script())
+	if not EditorInterface.get_editor_settings().get_setting("text_editor/external/use_external_editor"):
+		EditorInterface.set_main_screen_editor("Script")
+
+
+func _on_edit_traitblock_pressed() -> void:
+	EditorInterface.edit_script(TraitBlock.new().get_script())
+	if not EditorInterface.get_editor_settings().get_setting("text_editor/external/use_external_editor"):
+		EditorInterface.set_main_screen_editor("Script")
 
 
 func _on_close_character_pressed(resource: CharacterSheet, unsaved: bool) -> void:

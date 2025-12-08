@@ -81,6 +81,23 @@ text = "Quest"
 horizontal_alignment = 1
 vertical_alignment = 1
 
+[node name="EditQuestScriptBtn" type="Button" parent="MainContainer/BasicContainer/TitleLbl"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -32.0
+offset_top = -16.0
+offset_bottom = 16.0
+grow_horizontal = 0
+grow_vertical = 2
+tooltip_text = "Edit QuestData script"
+flat = true
+icon_alignment = 1
+
 [node name="QuestTitleContainer" type="HBoxContainer" parent="MainContainer/BasicContainer"]
 layout_mode = 2
 
@@ -219,6 +236,23 @@ layout_mode = 2
 text = "Stages"
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="EditStageScriptBtn" type="Button" parent="MainContainer/StageContainer/TitleLbl"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -32.0
+offset_top = -16.0
+offset_bottom = 16.0
+grow_horizontal = 0
+grow_vertical = 2
+tooltip_text = "Edit QuestStage script"
+flat = true
+icon_alignment = 1
 
 [node name="MainCotnainer" type="VBoxContainer" parent="MainContainer/StageContainer"]
 layout_mode = 2
@@ -395,6 +429,23 @@ layout_mode = 2
 text = "Steps"
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="EditStepScriptBtn" type="Button" parent="MainContainer/StepContainer/TitleLbl"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -32.0
+offset_top = -16.0
+offset_bottom = 16.0
+grow_horizontal = 0
+grow_vertical = 2
+tooltip_text = "Edit QuestStep script"
+flat = true
+icon_alignment = 1
 
 [node name="StepsContainer" type="VBoxContainer" parent="MainContainer/StepContainer"]
 layout_mode = 2
