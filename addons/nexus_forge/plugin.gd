@@ -197,6 +197,9 @@ func _get_window_layout(configuration: ConfigFile) -> void:
 	configuration.set_value("NexusForge", "open_dialogs", discourse_open_files)
 	configuration.set_value("NexusForge", "open_characters", open_characters)
 	configuration.set_value("NexusForge", "open_phrase_maps", open_maps)
+	
+	configuration.set_value("NexusForge", "blackboard_folder_layout", editor_view.variables.get_folder_layout())
+	configuration.set_value("NexusForge", "blackboard_sort_column", editor_view.variables.get_sorting_column())
 
 
 func _set_window_layout(configuration: ConfigFile) -> void:
@@ -204,10 +207,14 @@ func _set_window_layout(configuration: ConfigFile) -> void:
 	var maps: Array[String] = configuration.get_value("NexusForge", "open_phrase_maps", empty)
 	var characters: Array[String] = configuration.get_value("NexusForge", "open_characters", empty)
 	var dialogs: Array[String] = configuration.get_value("NexusForge", "open_dialogs", empty)
+	var folder_layout: Dictionary = configuration.get_value("NexusForge", "blackboard_folder_layout", {})
+	var black_sorting_column: int = configuration.get_value("NexusForge", "blackboard_sort_column", 0)
 	
 	editor_view.discourse.load_dialog_files(dialogs)
 	editor_view.characters.load_character_files(characters)
 	editor_view.phrase_maps.open_map_files(maps)
+	editor_view.variables.set_folder_layout(folder_layout)
+	editor_view.variables.set_sorting_column(black_sorting_column)
 
 
 func verify_project_settings() -> void:

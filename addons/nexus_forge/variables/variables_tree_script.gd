@@ -19,18 +19,13 @@ const VALUE_MAX_RANGE: int = 9999
 const FLOAT_STEP: float = 0.01
 #var root_tree: TreeItem
 var _current_selected: TreeItem = null
+var current_folder: String = ""
+var sorting_column: int = 0
 
 
 func _ready() -> void:
 	if Engine.is_editor_hint() and owner == get_tree().edited_scene_root:
 		return
-	#INT_ICON = get_theme_icon("int", "EditorIcons")
-	#FLOAT_ICON = get_theme_icon("float", "EditorIcons")
-	#BOOL_ICON = get_theme_icon("bool", "EditorIcons")
-	#STRING_ICON = get_theme_icon("String", "EditorIcons")
-	#COPY_ICON = get_theme_icon("ActionCopy", "EditorIcons")
-	#DELETE_ICON = get_theme_icon("Remove", "EditorIcons")
-	#any_icon = get_theme_icon("Variant", "EditorIcons")
 	
 	add_theme_stylebox_override(&"title_button_normal", get_theme_stylebox("title_button_normal", "Tree"))
 	add_theme_stylebox_override(&"title_button_hover", get_theme_stylebox("title_button_hover", "Tree"))
@@ -51,8 +46,19 @@ func _ready() -> void:
 	column_title_clicked.connect(_on_column_title_clicked)
 
 
+func _get_drag_data(at_position: Vector2) -> Variant:
+	var item: TreeItem = get_item_at_position(at_position)
+	if item == null:
+		return null
+	var preview: Label = Label.new()
+	preview.text = "  Variable: " + item.get_text(0)
+	set_drag_preview(preview)
+	
+	return {"type": "blackboard_item", "class": "variable", "item": item, "folder": current_folder}
+
+
 func _on_column_title_clicked(column: int, mouse_button_index: int) -> void:
-	if mouse_button_index != MOUSE_BUTTON_LEFT:
+	if mouse_button_index != MOUSE_BUTTON_LEFT or sorting_column == column:
 		return
 	
 	var items: Array[TreeItem] = get_root().get_children()
@@ -73,18 +79,27 @@ func _on_column_title_clicked(column: int, mouse_button_index: int) -> void:
 	
 	for item_idx in range(1, item_size):
 		items[item_idx].move_after(items[item_idx - 1])
+	
+	sorting_column = column
 
 
 func _sort_data_column(a: TreeItem, b: TreeItem) -> bool:
-	if a.get_metadata(1)["type"] == TYPE_NIL or b.get_metadata(1)["type"] == TYPE_NIL:
-		var a_type: int = typeof(a.get_metadata(1)["data"]) if a.get_metadata(1)["type"] == TYPE_NIL else a.get_metadata(1)["type"]
-		var b_type: int = typeof(b.get_metadata(1)["data"]) if b.get_metadata(1)["type"] == TYPE_NIL else b.get_metadata(1)["type"]
-		if a_type == b_type:
-			return a.get_text(0).naturalnocasecmp_to(b.get_text(0)) < 0
-		else:
-			return a_type < b_type
+	var a_type: int = get_variable_type(a) #typeof(a.get_metadata(1)["data"]) if a.get_metadata(1)["type"] == TYPE_NIL else a.get_metadata(1)["type"]
+	var b_type: int = get_variable_type(b)#typeof(b.get_metadata(1)["data"]) if b.get_metadata(1)["type"] == TYPE_NIL else b.get_metadata(1)["type"]
+	
+	if a_type == b_type:
+		return a.get_text(0).naturalnocasecmp_to(b.get_text(0)) < 0
 	else:
-		return a.get_metadata(1)["type"] < b.get_metadata(1)["type"]
+		return a_type < b_type
+
+		#if a_type != b_type:
+			#return a_type < b_type
+		#elif a_type == TYPE_STRING and b_type == TYPE_STRING:
+			#return a.get_text(1).naturalnocasecmp_to(b.get_text(1)) < 0
+		#elif a_type == TYPE_BOOL and b_type == TYPE_BOOL:
+			#return int(a.is_checked(1)) < int(b.is_checked(1))
+		#else:
+			#return a.get_range(1) < b.get_range(1)
 
 
 func _on_button_pressed(item: TreeItem, column: int, id: int, mouse_button_index: int) -> void:
@@ -106,6 +121,9 @@ func _on_item_edited() -> void:
 			edited.set_text(0, valid_name)
 			variable_renamed.emit(edited.get_metadata(0), valid_name)
 			edited.set_metadata(0, valid_name)
+			if sorting_column == 0:
+				sort_single_item(edited)
+				ensure_cursor_is_visible()
 		1: # Var value changed
 			variable_updated.emit(edited.get_text(0), get_tree_variant(edited))
 	something_changed.emit()
@@ -168,6 +186,8 @@ func create_variable(variable_value: Variant, variable_name: String = "new_varia
 	new_variable.add_button(1, get_theme_icon("Remove", "EditorIcons"), 1, false, "Delete variable.")
 	# -------------
 	
+	sort_single_item(new_variable)
+	
 	return unique_name
 
 
@@ -180,7 +200,7 @@ func validate_var_name(var_name: String, skip_tree: TreeItem = null) -> String:
 	if var_name.is_empty():
 		var_name = "new_variable"
 	
-	var tweaked_name: String = var_name
+	var tweaked_name: String = var_name.replace("/", "_")
 	var iteration: int = 0
 	
 	while has_variable(tweaked_name, skip_tree):
@@ -239,9 +259,9 @@ func get_tree_variant(tree_var: TreeItem) -> Variant:
 
 func get_variable_type(variable_cell: TreeItem) -> int:
 	if variable_cell.get_metadata(1)["type"] == TYPE_NIL:
-		return typeof(variable_cell.get_metadata(0)["data"])
+		return typeof(variable_cell.get_metadata(1)["data"])
 	else:
-		return variable_cell.get_metadata(0)["type"]
+		return variable_cell.get_metadata(1)["type"]
 
 
 func search_for_var(text_to_search: String) -> void:
@@ -277,3 +297,45 @@ func search_for_pattern(pattern: String) -> void:
 func show_all_vars() -> void:
 	for var_tree in get_root().get_children():
 		var_tree.visible = true
+
+
+func sort_single_item(item: TreeItem) -> void:
+	var before_item: TreeItem = null
+	
+	if sorting_column == 0:
+		for child in item.get_parent().get_children():
+			if child == item:
+				continue # We ignore the item we just added
+			
+			if item.get_text(0).naturalnocasecmp_to(child.get_text(0)) < 0:
+				before_item = child
+				break
+	else:
+		for child in item.get_parent().get_children():
+			if child == item:
+				continue
+			
+			var a_type: int = get_variable_type(child)
+			var b_type: int = get_variable_type(item)
+			
+			if a_type == b_type:
+				if item.get_text(0).naturalnocasecmp_to(child.get_text(0)) < 0:
+					before_item = child
+					break
+			else:
+				if b_type < a_type:
+					before_item = child
+					break
+	
+	if before_item != null:
+		item.move_before(before_item)
+	else:
+		if item.get_index() != item.get_parent().get_child_count() - 1:
+			item.move_after(get_root().get_child(-1))
+
+
+func remove_variable(variable_id: String) -> void:
+	for item in get_root().get_children():
+		if item.get_text(0) == variable_id:
+			item.free()
+			return

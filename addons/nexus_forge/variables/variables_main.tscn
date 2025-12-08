@@ -129,7 +129,6 @@ layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "Search Folders"
 clear_button_enabled = true
-right_icon = SubResource("ImageTexture_t2xw8")
 
 [node name="FolderButtons" type="HBoxContainer" parent="MainSplit/VBoxContainer/FoldersPanel/FoldersContainer/TitleContainer"]
 layout_mode = 2
@@ -138,7 +137,6 @@ layout_mode = 2
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Create Folder"
-icon = SubResource("ImageTexture_t2xw8")
 icon_alignment = 1
 
 [node name="FoldersTree" type="Tree" parent="MainSplit/VBoxContainer/FoldersPanel/FoldersContainer"]

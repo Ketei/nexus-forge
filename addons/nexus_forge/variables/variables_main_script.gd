@@ -48,6 +48,8 @@ func _ready() -> void:
 	folders_tree.folder_selected.connect(_on_folder_selected)
 	folders_tree.something_changed.connect(on_something_changed)
 	folders_tree.folder_created.connect(_on_folder_created)
+	folders_tree.folder_moved.connect(_on_folder_moved)
+	folders_tree.variable_dropped.connect(_on_variable_dropped)
 	variables_tree.something_changed.connect(on_something_changed)
 	variables_tree.variable_updated.connect(_on_variable_updated)
 	variables_tree.variable_renamed.connect(_on_variable_renamed)
@@ -316,6 +318,8 @@ func _on_folder_selected(path_to_folder: String) -> void:
 	variables_tree.clear_variables()
 	var_search_line.clear()
 	
+	variables_tree.current_folder = path_to_folder
+	
 	for variable_id in variables:
 		variables_tree.create_variable(
 				_variables_resource.get_variable(path_to_folder, variable_id),
@@ -330,3 +334,40 @@ func on_variable_cpath_button_pressed(var_id: String) -> void:
 
 func has_unsaved_changes() -> bool:
 	return _unsaved
+
+
+func get_folder_layout() -> Dictionary:
+	return folders_tree.get_folder_order()
+
+
+func set_folder_layout(layout_data: Dictionary) -> void:
+	folders_tree.set_folder_order(layout_data)
+
+
+func _on_folder_moved(original_path: String, new_path: String) -> void:
+	var original_key: StringName = StringName(original_path)
+	var start_path: String = original_path + "/"
+	var new_prefix: String = new_path + "/"
+	_variables_resource._variables[StringName(new_path)] = _variables_resource._variables[original_key]
+	_variables_resource._variables.erase(original_key)
+	
+	for folder_key:StringName in _variables_resource._variables.keys():
+		if folder_key.begins_with(start_path):
+			var new_folder_path: StringName = StringName(new_prefix + folder_key.trim_prefix(start_path))
+			_variables_resource._variables[new_folder_path] = _variables_resource._variables[folder_key]
+			_variables_resource._variables.erase(folder_key)
+
+
+func _on_variable_dropped(var_folder: String, variable: String, new_folder: String) -> void:
+	_variables_resource.set_variable(new_folder, variable, _variables_resource.get_variable(var_folder, variable))
+	_variables_resource.set_variable(var_folder, variable, null)
+	variables_tree.remove_variable(variable)
+	on_something_changed()
+
+
+func set_sorting_column(column: int) -> void:
+	variables_tree.sorting_column = clampi(column, 0, 1)
+
+
+func get_sorting_column() -> int:
+	return variables_tree.sorting_column
