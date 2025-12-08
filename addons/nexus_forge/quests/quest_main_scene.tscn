@@ -55,7 +55,6 @@ custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Create Quest"
 icon = ExtResource("2_trfqe")
-flat = true
 icon_alignment = 1
 
 [node name="QuestTree" type="Tree" parent="MainContainer/TreeContainer"]
@@ -275,7 +274,6 @@ custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Create Stage"
 disabled = true
-flat = true
 icon_alignment = 1
 
 [node name="StagesTree" type="Tree" parent="MainContainer/StageContainer/MainCotnainer"]
@@ -468,7 +466,6 @@ custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Create Step"
 disabled = true
-flat = true
 icon_alignment = 1
 
 [node name="StepsTree" type="Tree" parent="MainContainer/StepContainer/StepsContainer"]
