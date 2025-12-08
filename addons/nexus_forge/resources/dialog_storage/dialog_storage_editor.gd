@@ -12,6 +12,7 @@ extends DiscourseDialog
 @export_storage var scroll_offset: Vector2 = Vector2.ZERO:
 	set(new_scroll):
 		scroll_offset = new_scroll.snappedf(0.001)
+## Zoom for the [GraphEdit] in Discourse.
 @export_storage var zoom: float = 1.0:
 	set(new_zoom):
 		zoom = snappedf(new_zoom, 0.001)
