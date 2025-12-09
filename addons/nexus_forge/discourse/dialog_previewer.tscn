@@ -37,7 +37,7 @@ size_flags_stretch_ratio = 3.0
 
 [node name="Label" type="Label" parent="MainSplitContainer/ParsedBox/DialogOptionSplit/DialogBox"]
 layout_mode = 2
-text = "Dialog / Options"
+text = "Dialog"
 
 [node name="DialogTextEdit" type="TextEdit" parent="MainSplitContainer/ParsedBox/DialogOptionSplit/DialogBox"]
 layout_mode = 2
