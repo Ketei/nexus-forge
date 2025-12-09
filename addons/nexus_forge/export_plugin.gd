@@ -1,31 +1,14 @@
 extends EditorExportPlugin
 
 
-const WHITELIST_FOLDERS: Array[String] = [
-	"resources", # Contains all resource definitions
-	"classes", # Contains all code for singletons and utilities
-	"icons"
-	]
-
-const EXCLUDED_FILES: Array[String] = [
-	"res://addons/nexus_forge/resources/parser/discourse_parser_editor.gd",
-	"res://addons/nexus_forge/resources/dialog_storage/dialog_storage_editor.gd"
-	]
-
-
 var localization_paths: Array[Dictionary] = []
 var localization_map: Dictionary[String, Dictionary] = {}
 
 
-var locale_group_uuids: Dictionary[String, String] = {}#"Village": "uuid"}
-var localization_files: Dictionary[String, DiscourseDialogLocale] = {
-	#"uuid": DiscourseDialogLocale.new()
-}
-var release_files: Dictionary[String, ReleaseDiscourseDialog] = {
-	#"res://test.tres": ReleaseDiscourseDialog.new()
-}
+var locale_group_uuids: Dictionary[String, String] = {}
+var localization_files: Dictionary[String, DiscourseDialogLocale] = {}
+var release_files: Dictionary[String, ReleaseDiscourseDialog] = {}
 
-#var dialog_files: Dictionary
 var dialog_path: String = ""
 var export_temp_dir: DirAccess = null
 
@@ -56,14 +39,6 @@ func _export_file(path: String, type: String, features: PackedStringArray) -> vo
 		var file: Resource = load(path)
 		if file is EditorDiscourseDialog:
 			release_files[path] = process_editor_discourse_dialog(file)
-	
-	#if not path.begins_with("res://addons/nexus_forge/"):
-		#return
-	#
-	#if WHITELIST_FOLDERS.has(path.get_slice("/", 4)) == false:
-		#skip()
-	#elif path in EXCLUDED_FILES:
-		#skip()
 
 
 func _begin_customize_resources(_platform: EditorExportPlatform, _features: PackedStringArray) -> bool:
@@ -81,13 +56,6 @@ func _get_customization_configuration_hash() -> int:
 
 
 func _customize_resource(resource: Resource, _path: String) -> Resource:
-	#var resource_script: Script = resource.get_script()
-	
-	#if resource_script == null:
-		#return null
-	#
-	#var resource_class: StringName = resource_script.get_global_name()
-	
 	if resource is EditorDiscourseDialog:# == &"EditorDiscourseDialog":
 		if release_files.has(resource.resource_path):
 			#print("Returned a previously generated resource")
@@ -98,36 +66,27 @@ func _customize_resource(resource: Resource, _path: String) -> Resource:
 				var file_path: String = export_temp_dir.get_current_dir() + "/" + locale_file.resource_path.get_file().get_basename() + ".json"
 				var file: FileAccess = FileAccess.open(file_path, FileAccess.WRITE_READ)
 				file.store_string(locale_file.as_json())
-				#print("Data stored: ", file.get_as_text())
 				file.close()
 				
 				if file != null:
-					print("file added: ", virtual_path)
 					add_file(
 							virtual_path,
 							FileAccess.get_file_as_bytes(file_path),
 							false)
 					localization_files.erase(release_files[resource.resource_path].localization_uuid)
-				#else:
-					#print("Localization file couldn't be added :(")
 			return release_files[resource.resource_path]
 		else:
-			#print("You shouldn't be seeing this")
 			return null
-		#return customize_discourse_dialog(resource)
-	elif resource is SkillCatalog:# == &"SkillCatalog":
+	elif resource is SkillCatalog:
 		return customize_skill_catalog(resource)
-	elif resource is TraitCatalog:# resource_class == &"TraitCatalog":
+	elif resource is TraitCatalog:
 		return customize_trait_catalog(resource)
-	elif resource is SpeciesCatalog:# resource_class == &"SpeciesCatalog":
+	elif resource is SpeciesCatalog:
 		return customize_species(resource)
 	return null
 
 
 func process_editor_discourse_dialog(dialog_resource: EditorDiscourseDialog) -> ReleaseDiscourseDialog:
-	# Establishing the class for auto-complete
-	#var dialog_resource: EditorDiscourseDialog = file
-	
 	# Assigning an UUID if the group already exists, if not remains empty so
 	# EditorDiscourseDialog.convert_for_release() generates an unique one.
 	var locale_uuid: String = locale_group_uuids[dialog_resource.locale_group] if locale_group_uuids.has(dialog_resource.locale_group) else ""
