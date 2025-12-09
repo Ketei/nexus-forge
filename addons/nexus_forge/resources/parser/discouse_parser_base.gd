@@ -103,13 +103,30 @@ func _parse_dialog(dialog_id: String, dialog: String) -> String:
 	var functions_processed: PackedStringArray = []
 	var variables_processed: PackedStringArray = []
 	var phrases_processed: PackedStringArray = []
+	var random_processed: PackedStringArray = []
 	
 	var function_regex: RegEx = RegEx.new()
 	var variable_regex: RegEx = RegEx.new()
 	var phrase_regex: RegEx = RegEx.new()
+	var random_regex: RegEx = RegEx.new()
 	function_regex.compile("\\{\\![^\\s\\}]+\\}")
 	variable_regex.compile("\\{\\$[^\\s\\}]+\\}")
 	phrase_regex.compile("\\{\\&[^\\s\\}]+\\}")
+	random_regex.compile("\\{\\?[^\\}]+\\}")
+	
+	for rgx_rand_result in random_regex.search_all(dialog):
+		if random_processed.has(rgx_rand_result.get_string()):
+			continue
+		
+		random_processed.append(rgx_rand_result.get_string())
+		
+		var clean_string: String = rgx_rand_result.get_string().trim_prefix("{").trim_suffix("}")
+		var options: Array[String] = []
+		options.assign(clean_string.trim_prefix("?").split("|", false))
+		
+		parsed.set_format_callable(
+			clean_string,
+			options.pick_random)
 	
 	# Searching for function calls.
 	
@@ -160,6 +177,15 @@ func _parse_dialog(dialog_id: String, dialog: String) -> String:
 				region)
 		
 		parsed.create_format_phrase(phrase_key, phrase, argument_cases)
+		
+		for random_section in random_regex.search_all(phrase):
+			var replace: String = random_section.get_string().trim_prefix("{").trim_suffix("}")
+			var items: Array[String] = []
+			items.assign(replace.trim_prefix("?").split("|", false))
+			parsed.set_format_phrase_callable(
+					phrase_key,
+					replace,
+					items.pick_random)
 		
 		for function_section in function_regex.search_all(phrase):
 		#{!askdjal}
