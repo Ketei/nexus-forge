@@ -92,7 +92,6 @@ placeholder_text = "Search Category"
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Edit Categories"
-flat = true
 icon_alignment = 1
 
 [node name="CategoriesTree" type="Tree" parent="ItemsContainer/ItemsPanel/ItemsContainer/TreeContainer/VBoxContainer"]
@@ -162,6 +161,7 @@ offset_bottom = 16.0
 grow_horizontal = 0
 grow_vertical = 2
 tooltip_text = "Edit ItemSheet script"
+focus_mode = 1
 flat = true
 icon_alignment = 1
 

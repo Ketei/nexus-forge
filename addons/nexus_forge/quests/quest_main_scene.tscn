@@ -94,6 +94,7 @@ offset_bottom = 16.0
 grow_horizontal = 0
 grow_vertical = 2
 tooltip_text = "Edit QuestData script"
+focus_mode = 1
 flat = true
 icon_alignment = 1
 
@@ -250,6 +251,7 @@ offset_bottom = 16.0
 grow_horizontal = 0
 grow_vertical = 2
 tooltip_text = "Edit QuestStage script"
+focus_mode = 1
 flat = true
 icon_alignment = 1
 
@@ -442,6 +444,7 @@ offset_bottom = 16.0
 grow_horizontal = 0
 grow_vertical = 2
 tooltip_text = "Edit QuestStep script"
+focus_mode = 1
 flat = true
 icon_alignment = 1
 

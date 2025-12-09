@@ -66,6 +66,7 @@ size_flags_horizontal = 3
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Edit SkillSet script"
+focus_mode = 1
 flat = true
 icon_alignment = 1
 
@@ -204,6 +205,7 @@ size_flags_horizontal = 3
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Edit TraitBlock script"
+focus_mode = 1
 flat = true
 icon_alignment = 1
 
