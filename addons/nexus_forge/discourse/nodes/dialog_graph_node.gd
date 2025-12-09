@@ -22,7 +22,7 @@ func _post_init() -> void:
 	var char_id_ln_edt: LineEdit = LineEdit.new()
 	var dialog_label: Label = Label.new()
 	var dialog_settings: Label = Label.new()
-	var dialog_textedt: TextEdit = TextEdit.new()
+	var dialog_textedt: TextEdit = preload("res://addons/nexus_forge/discourse/dialog_node_textedit.gd").new()
 	var persist_check: CheckBox = CheckBox.new()
 	var flags_container: HBoxContainer = HBoxContainer.new()
 	

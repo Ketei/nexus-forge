@@ -11,7 +11,7 @@ func _post_init() -> void:
 	size = Vector2(250.0, 120.0)
 	custom_minimum_size = Vector2(250.0, 120.0)
 	resizable = true
-	var localized_text: TextEdit = TextEdit.new()
+	var localized_text: TextEdit = preload("res://addons/nexus_forge/discourse/dialog_node_textedit.gd").new()
 	var connection: Label = Label.new()
 	
 	connection.text = "Text"

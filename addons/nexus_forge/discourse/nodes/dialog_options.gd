@@ -1,3 +1,4 @@
+@tool
 extends DiscourseGraphNode
 
 
@@ -12,7 +13,7 @@ func _post_init() -> void:
 	var choice_count_container: HBoxContainer = HBoxContainer.new()
 	var choices_label: Label = Label.new()
 	var choices_spinbox: SpinBox = SpinBox.new()
-	var first_choice: LineEdit = LineEdit.new()
+	var first_choice: LineEdit = preload("res://addons/nexus_forge/discourse/choice_node_lineedit.gd").new()
 	
 	choices_label.text = "Choices"
 	choices_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -147,7 +148,7 @@ func _set_node_data(data: Dictionary) -> void:
 
 
 func get_choice_node() -> LineEdit:
-	var new_choice: LineEdit = LineEdit.new()
+	var new_choice: LineEdit = preload("res://addons/nexus_forge/discourse/choice_node_lineedit.gd").new()
 	new_choice.placeholder_text = "Choice Text"
 	new_choice.custom_minimum_size.y = 32.0
 	new_choice.size_flags_horizontal = Control.SIZE_EXPAND_FILL
