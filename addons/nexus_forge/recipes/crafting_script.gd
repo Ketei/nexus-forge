@@ -139,6 +139,8 @@ func _on_recipe_create_pressed() -> void:
 
 
 func _on_recipe_id_changed(from: StringName, to: StringName) -> void:
+	if from == to:
+		return
 	recipes_resource._recipes[to] = recipes_resource._recipes[from]
 	recipes_resource._recipes.erase(from)
 	if active_recipe == from:
@@ -403,6 +405,7 @@ func _on_recipe_erased(recipe_id: StringName) -> void:
 		recipe_input_tree.clear_items()
 		recipe_output_tree.clear_items()
 		recipe_custom_data_tree.clear_data()
+	_something_changed()
 
 
 func load_recipe(recipe_id: StringName) -> void:
@@ -454,54 +457,68 @@ func add_data_to_active_recipe_item(on_input: bool, data: Variant, data_name: St
 	elif not on_input and _active_output_rcp == null:
 		return
 	
-	var new_data: TreeItem = recipe_input_tree.get_root().get_child(_active_input_rcp).create_child() if on_input else recipe_output_tree.get_root().get_child(_active_output_rcp).create_child()
-	var new_id: String = validate_data_id(data_name, new_data)
+	var target_item: TreeItem = recipe_input_tree.get_root().get_child(_active_input_rcp) if on_input else recipe_output_tree.get_root().get_child(_active_output_rcp)
 	
-	new_data.set_text(0, new_id)
+	if on_input:
+		recipe_input_tree.add_data_to(
+				recipe_input_tree.get_root().get_child(_active_input_rcp),
+				data,
+				data_name)
+	else:
+		recipe_output_tree.add_data_to(
+				recipe_output_tree.get_root().get_child(_active_output_rcp),
+				data,
+				data_name)
 	
-	match typeof(data):
-		TYPE_INT:
-			new_data.set_cell_mode(1, TreeItem.CELL_MODE_RANGE)
-			new_data.set_range_config(1, -9999, 9999, 1.0)
-			new_data.set_range(1, data)
-			new_data.set_icon(0, get_theme_icon("int", "EditorIcons"))
-			new_data.set_editable(1, true)
-			new_data.set_metadata(1, TYPE_INT)
-		TYPE_FLOAT:
-			new_data.set_cell_mode(1, TreeItem.CELL_MODE_RANGE)
-			new_data.set_range_config(1, -9999, 9999, 0.01)
-			new_data.set_range(1, data)
-			new_data.set_icon(0, get_theme_icon("float", "EditorIcons"))
-			new_data.set_editable(1, true)
-			new_data.set_metadata(1, TYPE_FLOAT)
-		TYPE_BOOL:
-			new_data.set_cell_mode(1, TreeItem.CELL_MODE_CHECK)
-			new_data.set_checked(1, data)
-			new_data.set_text(1, "Enabled")
-			new_data.set_icon(0, get_theme_icon("bool", "EditorIcons"))
-			new_data.set_editable(1, true)
-			new_data.set_metadata(1, TYPE_BOOL)
-		TYPE_STRING:
-			new_data.set_cell_mode(1, TreeItem.CELL_MODE_STRING)
-			new_data.set_text(1, data)
-			new_data.set_icon(0, get_theme_icon("String", "EditorIcons"))
-			new_data.set_editable(1, true)
-			new_data.set_metadata(1, TYPE_STRING)
-		_:
-			new_data.set_cell_mode(1, TreeItem.CELL_MODE_STRING)
-			new_data.set_text(1, "Data")
-			new_data.set_metadata(0, {"data": data})
-			new_data.set_editable(1, false)
-			new_data.set_metadata(1, TYPE_NIL)
 	
-	new_data.set_editable(0, true)
-	
-	new_data.add_button(
-			1,
-			get_theme_icon("Remove", "EditorIcons"),
-			1,
-			false,
-			"Delete Data")
+	#var new_data: TreeItem = recipe_input_tree.get_root().get_child(_active_input_rcp).create_child() if on_input else recipe_output_tree.get_root().get_child(_active_output_rcp).create_child()
+	#var new_id: String = validate_data_id(data_name, new_data)
+	#
+	#new_data.set_text(0, new_id)
+	#
+	#match typeof(data):
+		#TYPE_INT:
+			#new_data.set_cell_mode(1, TreeItem.CELL_MODE_RANGE)
+			#new_data.set_range_config(1, -9999, 9999, 1.0)
+			#new_data.set_range(1, data)
+			#new_data.set_icon(0, get_theme_icon("int", "EditorIcons"))
+			#new_data.set_editable(1, true)
+			#new_data.set_metadata(1, TYPE_INT)
+		#TYPE_FLOAT:
+			#new_data.set_cell_mode(1, TreeItem.CELL_MODE_RANGE)
+			#new_data.set_range_config(1, -9999, 9999, 0.01)
+			#new_data.set_range(1, data)
+			#new_data.set_icon(0, get_theme_icon("float", "EditorIcons"))
+			#new_data.set_editable(1, true)
+			#new_data.set_metadata(1, TYPE_FLOAT)
+		#TYPE_BOOL:
+			#new_data.set_cell_mode(1, TreeItem.CELL_MODE_CHECK)
+			#new_data.set_checked(1, data)
+			#new_data.set_text(1, "Enabled")
+			#new_data.set_icon(0, get_theme_icon("bool", "EditorIcons"))
+			#new_data.set_editable(1, true)
+			#new_data.set_metadata(1, TYPE_BOOL)
+		#TYPE_STRING:
+			#new_data.set_cell_mode(1, TreeItem.CELL_MODE_STRING)
+			#new_data.set_text(1, data)
+			#new_data.set_icon(0, get_theme_icon("String", "EditorIcons"))
+			#new_data.set_editable(1, true)
+			#new_data.set_metadata(1, TYPE_STRING)
+		#_:
+			#new_data.set_cell_mode(1, TreeItem.CELL_MODE_STRING)
+			#new_data.set_text(1, "Data")
+			#new_data.set_metadata(0, {"data": data})
+			#new_data.set_editable(1, false)
+			#new_data.set_metadata(1, TYPE_NIL)
+	#
+	#new_data.set_editable(0, true)
+	#
+	#new_data.add_button(
+			#1,
+			#get_theme_icon("Remove", "EditorIcons"),
+			#1,
+			#false,
+			#"Delete Data")
 
 
 func validate_data_id(desired_id: String, item: TreeItem = null) -> String:
