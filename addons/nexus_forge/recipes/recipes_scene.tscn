@@ -67,6 +67,7 @@ allow_reselect = true
 hide_folding = true
 hide_root = true
 script = ExtResource("2_f8ser")
+default_name = "new_recipe"
 
 [node name="RecipeDataContainer" type="HSplitContainer" parent="CraftingContainer"]
 layout_mode = 2
