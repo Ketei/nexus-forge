@@ -38,6 +38,7 @@ func _ready() -> void:
 	zoom_min = 0.2
 	zoom_max = 2.0
 	show_menu = true
+	panning_scheme = GraphEdit.SCROLL_PANS
 	show_zoom_label = true
 	show_zoom_buttons = true
 	show_grid_buttons = false
