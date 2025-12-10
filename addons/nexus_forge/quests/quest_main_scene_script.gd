@@ -454,6 +454,7 @@ func _on_quest_erased(quest_id: StringName) -> void:
 		set_quest_ui_enabled(false)
 		set_stage_ui_enabled(false)
 		set_step_ui_enabled(false)
+	something_changed()
 
 
 func _on_quest_id_changed(from: StringName, to: StringName) -> void:
@@ -544,7 +545,7 @@ func _on_step_erased(id: String) -> void:
 		set_step_flags_checked(false)
 		step_data_tree.clear_data()
 		set_step_data_ui_enabled(false)
-		
+	something_changed()
 
 
 func something_changed(_arg: Variant = null) -> void:
@@ -557,22 +558,32 @@ func reload_quest_types() -> void:
 	var constants: Dictionary = quest.get_script().get_script_constant_map()
 	var quest_types: Dictionary = constants[&"QuestType"]
 	var quest_type_keys: Array = quest_types.keys()
-	var selected: String = quest_type_opt_btn.get_selected_metadata() if loaded_quest != &"" else &""
+	var reselect: bool = 0 <= quest_type_opt_btn.selected and not loaded_quest.is_empty()
+	var selected: int = quest_type_opt_btn.get_selected_metadata() if reselect else 0
 	var new_idx: int = -1
 	
-	quest_type_keys.sort_custom(func(a,b): return a.naturalnocasecmp_to(b) < 0)
+	quest_type_keys.sort_custom(func(a,b):
+		if a == "NO_TYPE":
+			return true
+		elif b == "NO_TYPE":
+			return false
+		else:
+			return a.naturalnocasecmp_to(b) < 0)
 	
 	quest_type_opt_btn.clear()
 	
-	if selected != "":
-		new_idx = quest_type_keys.find(selected)
-	
-	for type_key:String in quest_type_keys:
+	#if selected != -1:
+		#new_idx = quest_type_keys.find(selected)
+	var idx: int = -1
+	for type_key in quest_type_keys:
+		idx += 1
 		quest_type_opt_btn.add_item(
 				type_key.capitalize())
 		quest_type_opt_btn.set_item_metadata(
-				-1,
+				idx,
 				quest_types[type_key])
+		if reselect and quest_types[type_key] == selected:
+			new_idx = idx
 	
 	if new_idx != -1:
 		quest_type_opt_btn.select(new_idx)
@@ -583,24 +594,32 @@ func reload_quest_stage() -> void:
 	var constants: Dictionary = stage.get_script().get_script_constant_map()
 	var stage_types: Dictionary = constants[&"StageType"]
 	var stage_type_keys: Array = stage_types.keys()
-	var selected_stage: String = stage_type_opt_btn.get_selected_metadata() if loaded_stage != &"" else &""
+	var reselect: bool = 0 <= stage_type_opt_btn.selected and not loaded_stage.is_empty()
+	var selected_stage: int = stage_type_opt_btn.get_selected_metadata() if reselect else 0
 	var stage_idx: int = -1
 	var stage_flags: Dictionary = constants[&"StageFlag"]
 	var stage_flag_keys: Array = stage_flags.keys()
 	
-	stage_type_keys.sort_custom(func(a,b): return a.naturalnocasecmp_to(b) < 0)
+	stage_type_keys.sort_custom(func(a,b):
+		if a == "NO_TYPE":
+			return true
+		elif b == "NO_TYPE":
+			return false
+		else:
+			return a.naturalnocasecmp_to(b) < 0)
 	stage_flag_keys.sort_custom(func(a,b): return a.naturalnocasecmp_to(b) < 0)
-	
-	if selected_stage != "":
-		stage_idx = stage_type_keys.find(selected_stage)
 	
 	stage_type_opt_btn.clear()
 	
+	var idx: int = -1
 	for stage_type in stage_type_keys:
+		idx += 1
 		stage_type_opt_btn.add_item(stage_type.capitalize())
 		stage_type_opt_btn.set_item_metadata(
-				-1,
+				idx,
 				stage_types[stage_type])
+		if reselect and stage_types[stage_type] == selected_stage:
+			stage_idx = idx
 	
 	if stage_idx != -1:
 		stage_type_opt_btn.select(stage_idx)
@@ -632,25 +651,33 @@ func reload_quest_steps() -> void:
 	var constants: Dictionary = types.get_script().get_script_constant_map()
 	var step_types: Dictionary = constants[&"StepType"]
 	var step_type_keys: Array = step_types.keys()
-	var selected_type: String = step_type_opt_btn.get_selected_metadata() if loaded_step != &"" else ""
+	var reselect: bool = 0 <= step_type_opt_btn.selected and loaded_step != &""
+	var selected_type: int = step_type_opt_btn.get_selected_metadata() if reselect else 0
 	var new_index: int = -1
 	
 	var step_flags: Dictionary = constants[&"StepFlag"]
 	var step_flag_keys: Array = step_flags.keys()
 	
-	step_type_keys.sort_custom(func(a,b): return a.naturalnocasecmp_to(b) < 0)
+	step_type_keys.sort_custom(func(a,b):
+			if a == "NO_TYPE":
+				return true
+			elif b == "NO_TYPE":
+				return false
+			else:
+				return a.naturalnocasecmp_to(b) < 0)
 	step_flag_keys.sort_custom(func(a,b): return a.naturalnocasecmp_to(b) < 0)
-	
-	if selected_type != "":
-		new_index = step_type_keys.find(selected_type)
 	
 	step_type_opt_btn.clear()
 	
+	var idx: int = -1
 	for step_type in step_type_keys:
+		idx += 1
 		step_type_opt_btn.add_item(step_type.capitalize())
 		step_type_opt_btn.set_item_metadata(
-			-1,
+			idx,
 			step_types[step_type])
+		if reselect and step_types[step_type] == selected_type:
+			new_index = idx
 	
 	if new_index != -1:
 		step_type_opt_btn.select(new_index)
