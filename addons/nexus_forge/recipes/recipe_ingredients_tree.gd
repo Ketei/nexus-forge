@@ -3,7 +3,7 @@ extends Tree
 
 
 signal item_id_dropped(item_id: StringName, on_index: int)
-signal item_erased(id: StringName, on_input: bool)
+#signal item_erased(id: StringName, on_input: bool)
 signal items_changed
 signal recipe_item_selected(index: int)
 
@@ -15,6 +15,12 @@ enum RecipeMode {
 enum ButtonID {
 	RECIPE_ITEM = 0,
 	RECIPE_DATA = 1 }
+
+enum ItemType {
+	RECIPE_ITEM,
+	ITEM_DATA,
+	MAX_ITEM,
+}
 
 #const BOOL_ICON = preload("res://addons/nexus_forge/common_icons/variables/bool.svg")
 #const FLOAT_ICON = preload("res://addons/nexus_forge/common_icons/variables/float.svg")
@@ -41,22 +47,59 @@ func _ready() -> void:
 
 
 func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
+	if not recipe_selected or typeof(data) != TYPE_DICTIONARY or not data.has_all(["type", "item_id", "is_new"]):
+		return false
+	#"type": "item_id"
+	#"type": "item_data"
+	var item_at_pos: TreeItem = get_item_at_position(at_position)
+	var section: int = get_drop_section_at_position(at_position)
+	var item_type: ItemType = item_at_pos.get_meta(&"item_type", ItemType.MAX_ITEM) if item_at_pos != null else ItemType.MAX_ITEM
 	
-	if not recipe_selected or typeof(data) != TYPE_DICTIONARY or not data.has_all(["type", "item_id", "is_new"]):# and ( data["type"] == "item_id" ):
+	if data["type"] == "item_id":
+		drop_mode_flags = DROP_MODE_INBETWEEN
+	else:
+		drop_mode_flags = DROP_MODE_INBETWEEN if item_type == ItemType.ITEM_DATA else DROP_MODE_ON_ITEM
+	#drop_mode_flags = DROP_MODE_INBETWEEN if data["type"] == "item_id" else DROP_MODE_ON_ITEM
+	
+	if data["is_new"]:
+		if item_at_pos == null:
+			return true
+		else:
+			if 0 < item_at_pos.get_child_count() and not item_at_pos.collapsed and section == 1:
+				return false
+			else:
+				return item_type == ItemType.RECIPE_ITEM 
+	
+	if item_type == ItemType.MAX_ITEM:
 		return false
 	
-	drop_mode_flags = DROP_MODE_INBETWEEN
+	if data["type"] == "item_data":
+		if data["item"].get_parent() == item_at_pos:#.get_parent():# or data["item"].get_parent() == item_at_pos:
+			return false
+		else:
+			return true
+	else:
+		if data["item"].get_meta(&"item_type", ItemType.MAX_ITEM) != item_type:
+			return false
+	
 	return true
 
 
+func _is_item_child_of(item: TreeItem, parent: TreeItem) -> bool:
+	if item == parent:
+		return true
+	var next_parent: TreeItem = item.get_parent()
+	while next_parent != null:
+		if next_parent == parent:
+			return true
+		next_parent = next_parent.get_parent()
+	return false
+
+
 func _drop_data(at_position: Vector2, data: Variant) -> void:
+	var on_item: TreeItem = get_item_at_position(at_position)
+	var drop_pos: int = get_drop_section_at_position(at_position)
 	if data["is_new"]:
-		var drop_pos: int = get_drop_section_at_position(at_position)
-		var on_item: TreeItem = get_item_at_position(at_position)
-		
-		if drop_pos == 0:
-			drop_pos = 1
-		
 		if drop_pos == -100 or on_item == null:
 			item_id_dropped.emit(data["item_id"], get_root().get_child_count())
 		elif drop_pos == -1:
@@ -64,30 +107,39 @@ func _drop_data(at_position: Vector2, data: Variant) -> void:
 		elif drop_pos == 1:
 			item_id_dropped.emit(data["item_id"], on_item.get_index() + 1)
 	else:
-		var on_item: TreeItem = get_item_at_position(at_position)
-		var external: bool = data["item"].get_parent() != get_root()
-		if on_item == data["item"]:
-			return
-		elif on_item == null:
-			if data["origin"] == recipe_mode: # Comes from this tree
-				var item_count: int = get_root().get_child_count()
-				if item_count == 1:
-					return
-				else:
-					if data["item"].get_index() != item_count - 1:
-						data["item"].move_after(get_root().get_child(-1))
-			else: # Comes from the other tree
-				data["item"].get_tree().recipe_item_selected.emit(-1)
-				data["item"].get_parent().remove_child(data["item"])
-				get_root().add_child(data["item"])
+		if data["type"] == "item_id":
+			if on_item == data["item"]:
+				return
+			elif on_item == null:
+				if data["origin"] == recipe_mode: # Comes from this tree
+					var item_count: int = get_root().get_child_count()
+					if item_count == 1:
+						return
+					else:
+						if data["item"].get_index() != item_count - 1:
+							data["item"].move_after(get_root().get_child(-1))
+				else: # Comes from the other tree
+					data["item"].get_tree().recipe_item_selected.emit(-1)
+					data["item"].get_parent().remove_child(data["item"])
+					get_root().add_child(data["item"])
+			else:
+				if data["origin"] != recipe_mode:
+					data["item"].get_tree().recipe_item_selected.emit(-1)
+				match get_drop_section_at_position(at_position):
+					-1: #Above
+						data["item"].move_before(on_item)
+					0, 1: # Below
+						data["item"].move_after(on_item)
 		else:
-			if data["origin"] != recipe_mode:
-				data["item"].get_tree().recipe_item_selected.emit(-1)
-			match get_drop_section_at_position(at_position):
-				-1: #Above
-					data["item"].move_before(on_item)
-				0, 1: # Below
-					data["item"].move_after(on_item)
+			if data["item"] == on_item:
+				return
+			if drop_pos == 0:
+				data["item"].get_parent().remove_child(data["item"])
+				on_item.add_child(data["item"])
+			elif drop_pos == -1:
+				data["item"].move_before(on_item)
+			else:
+				data["item"].move_after(on_item)
 		
 		items_changed.emit()
 
@@ -97,9 +149,12 @@ func _get_drag_data(at_position: Vector2) -> Variant:
 	if selected == null:
 		return null
 	var label: Label = Label.new()
-	label.text = selected.get_text(0) + " x " + str(int(selected.get_range(1)))
+	if selected.get_meta(&"item_type", ItemType.MAX_ITEM) == ItemType.RECIPE_ITEM:
+		label.text = "   " + selected.get_text(0) + " x " + str(int(selected.get_range(1)))
+	else:
+		label.text = "   " + selected.get_text(0)
 	set_drag_preview(label)
-	return {"type": "item_id", "item_id": "", "is_new": false, "item": selected, "origin": recipe_mode}
+	return {"type": "item_id" if selected.get_parent() == get_root() else "item_data", "item_id": "", "is_new": false, "item": selected, "origin": recipe_mode}
 	
 
 
@@ -107,7 +162,8 @@ func _on_button_clicked(item: TreeItem, _column: int, id: int, mouse_button_inde
 	if mouse_button_index != MOUSE_BUTTON_LEFT:
 		return
 	if id == ButtonID.RECIPE_ITEM:
-		item_erased.emit(item.get_metadata(0), recipe_mode == RecipeMode.INPUT)
+		items_changed.emit()
+		#item_erased.emit(item.get_metadata(0), recipe_mode == RecipeMode.INPUT)
 	elif id == ButtonID.RECIPE_DATA:
 		items_changed.emit()
 	item.free()
@@ -115,6 +171,57 @@ func _on_button_clicked(item: TreeItem, _column: int, id: int, mouse_button_inde
 
 func _on_item_selected() -> void:
 	recipe_item_selected.emit(get_selected().get_index())
+
+
+func add_data_to(item: TreeItem, data: Variant, data_name: String = "new_data") -> void:
+	var new_data: TreeItem = item.create_child()
+	var new_id: String = validate_id(data_name, item)#validate_data_id(data_name, new_data)
+	new_data.set_meta(&"item_type", ItemType.ITEM_DATA)
+	new_data.set_text(0, new_id)
+	
+	match typeof(data):
+		TYPE_INT:
+			new_data.set_cell_mode(1, TreeItem.CELL_MODE_RANGE)
+			new_data.set_range_config(1, -9999, 9999, 1.0)
+			new_data.set_range(1, data)
+			new_data.set_icon(0, get_theme_icon("int", "EditorIcons"))
+			new_data.set_editable(1, true)
+			new_data.set_metadata(1, TYPE_INT)
+		TYPE_FLOAT:
+			new_data.set_cell_mode(1, TreeItem.CELL_MODE_RANGE)
+			new_data.set_range_config(1, -9999, 9999, 0.01)
+			new_data.set_range(1, data)
+			new_data.set_icon(0, get_theme_icon("float", "EditorIcons"))
+			new_data.set_editable(1, true)
+			new_data.set_metadata(1, TYPE_FLOAT)
+		TYPE_BOOL:
+			new_data.set_cell_mode(1, TreeItem.CELL_MODE_CHECK)
+			new_data.set_checked(1, data)
+			new_data.set_text(1, "Enabled")
+			new_data.set_icon(0, get_theme_icon("bool", "EditorIcons"))
+			new_data.set_editable(1, true)
+			new_data.set_metadata(1, TYPE_BOOL)
+		TYPE_STRING:
+			new_data.set_cell_mode(1, TreeItem.CELL_MODE_STRING)
+			new_data.set_text(1, data)
+			new_data.set_icon(0, get_theme_icon("String", "EditorIcons"))
+			new_data.set_editable(1, true)
+			new_data.set_metadata(1, TYPE_STRING)
+		_:
+			new_data.set_cell_mode(1, TreeItem.CELL_MODE_STRING)
+			new_data.set_text(1, "Data")
+			new_data.set_metadata(0, {"data": data})
+			new_data.set_editable(1, false)
+			new_data.set_metadata(1, TYPE_NIL)
+	
+	new_data.set_editable(0, true)
+	
+	new_data.add_button(
+			1,
+			get_theme_icon("Remove", "EditorIcons"),
+			1,
+			false,
+			"Delete Data")
 
 
 func get_recipe_items() -> Array[Dictionary]:
@@ -161,12 +268,14 @@ func add_item(item_id: StringName, input_amount: int = 1, data: Dictionary = {},
 	new_item.set_range(1, input_amount)
 	new_item.set_editable(1, true)
 	new_item.set_metadata(0, item_id)
+	new_item.set_meta(&"item_type", ItemType.RECIPE_ITEM)
 	
 	for data_key in data:
 		var new_data: TreeItem = new_item.create_child()
 		new_data.set_text(0, data_key)
 		new_data.set_editable(0, true)
 		
+		new_data.set_meta(&"item_type", ItemType.ITEM_DATA)
 		new_data.add_button(
 			1,
 			get_theme_icon("Remove", "EditorIcons"),
@@ -244,3 +353,19 @@ func change_item_id(from: StringName, to: StringName) -> void:
 func clear_items() -> void:
 	for item in get_root().get_children():
 		item.free()
+
+
+func validate_id(desired_id: String, item: TreeItem) -> String:
+	var used_ids: PackedStringArray = []
+	
+	for tree_item in item.get_parent().get_children():
+		if tree_item == item:
+			continue
+		used_ids.append(tree_item.get_text(0))
+	
+	var current_index: int = 0
+	var fixed_id: String = desired_id
+	while used_ids.has(fixed_id):
+		current_index += 1
+		fixed_id = desired_id + "_" + str(current_index)
+	return fixed_id
