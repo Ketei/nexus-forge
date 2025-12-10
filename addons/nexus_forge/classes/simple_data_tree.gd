@@ -156,16 +156,16 @@ func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
 		return false
 	
 	if data.has_all(["tree", "type"]) and data["tree"] is TreeItem and data["type"] is ItemType:
-		var target_node: TreeItem = get_item_at_position(at_position.round())
-		if target_node == null or target_node == data["tree"] or (data["type"] == ItemType.FOLDER and target_node.get_parent() == data["tree"]):
+		var target_node: TreeItem = get_item_at_position(at_position)
+		if target_node == data["tree"] or (data["type"] == ItemType.FOLDER and target_node.get_parent() == data["tree"]):
 			drop_mode_flags = DROP_MODE_DISABLED
 			return false
 		
+		if target_node == null:
+			return true
+		
 		if target_node.get_metadata(0)["type"] == ItemType.FOLDER:
-			if data["type"] == ItemType.FOLDER:
-				drop_mode_flags = DROP_MODE_ON_ITEM + DROP_MODE_INBETWEEN
-			else:
-				drop_mode_flags = DROP_MODE_ON_ITEM
+			drop_mode_flags = DROP_MODE_ON_ITEM + DROP_MODE_INBETWEEN
 		else:
 			drop_mode_flags = DROP_MODE_INBETWEEN
 		return true
@@ -179,17 +179,31 @@ func _drop_data(at_position: Vector2, data: Variant) -> void:
 		return
 	
 	var target: TreeItem = get_item_at_position(at_position)
-	var drop_position: int = get_drop_section_at_position(at_position)
 	var object: TreeItem = data["tree"]
 	
-	match drop_position:
-		-1: # Above
-			object.move_before(target)
-		0: # On
-			object.get_parent().remove_child(object)
-			target.add_child(object)
-		1: # Below
-			object.move_after(target)
+	if target == null:
+		var root_count: int = get_root().get_child_count()
+		if object.get_parent() == get_root():
+			if 0 < root_count - 1 and object.get_index() < root_count - 1:
+				object.move_after(get_root().get_child(-1))
+		else:
+			if 0 < root_count:
+				object.move_after(get_root().get_child(-1))
+			else:
+				object.get_parent().remove_child(object)
+				get_root().add_child(object)
+	else:
+		var drop_position: int = get_drop_section_at_position(at_position)
+		
+		match drop_position:
+			-1: # Above
+				object.move_before(target)
+			0: # On
+				object.get_parent().remove_child(object)
+				target.add_child(object)
+			1: # Below
+				object.move_after(target)
+	data_changed.emit()
 
 
 func clear_data() -> void:
