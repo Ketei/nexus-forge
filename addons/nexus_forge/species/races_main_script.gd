@@ -193,6 +193,8 @@ func _on_add_data_pressed(data_name: String, value: Variant) -> void:
 
 
 func _on_species_id_changed(from: StringName, to: StringName) -> void:
+	if from == to:
+		return
 	_species_resource._species[to] = _species_resource._species[from]
 	_species_resource._species.erase(from)
 	for species in _species_resource._species.keys():

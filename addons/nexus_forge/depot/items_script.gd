@@ -394,6 +394,8 @@ func _on_category_selected(category: StringName) -> void:
 
 
 func _on_item_id_changed(from: StringName, to: StringName) -> void:
+	if from == to:
+		return
 	item_link.change_item_id(from, to)
 	if loaded_item == from:
 		loaded_item = to

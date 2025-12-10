@@ -36,6 +36,9 @@ func _ready() -> void:
 
 
 func _on_category_id_changed(from: StringName, to: StringName) -> void:
+	if from == to:
+		return
+	
 	var items: ItemCatalog = items_container.item_link.items
 	
 	if not items.has_category(from):
