@@ -320,44 +320,40 @@ func _on_menu_id_pressed(id: int) -> void:
 		map_dialog.file_mode = map_dialog.FILE_MODE_OPEN_FILE
 		map_dialog.title = "Open map"
 	
-	map_dialog.file_selected.connect(_on_file_map_selected.bind(map_dialog))
-	map_dialog.canceled.connect(_on_file_map_canceled.bind(map_dialog))
 	add_child(map_dialog)
 	map_dialog.show()
-
-
-func _on_file_map_canceled(dialog: FileDialog) -> void:
-	dialog.queue_free()
-
-
-func _on_file_map_selected(path: String, dialog: ConfirmationDialog) -> void:
-	if dialog.file_mode == dialog.FILE_MODE_SAVE_FILE:
-		if selected_key != null:
-			save_current_resource()
-		var new_map: PhraseMap = PhraseMap.new()
-		new_map.language = language_opt_btn.get_selected_metadata()
-		new_map.region = region_opt_btn.get_selected_metadata()
-		if ResourceLoader.has_cached(path):
-			new_map.take_over_path(path)
-		new_map.resource_path = path
-		files_tree.add_map(new_map, true, false)
-		load_map(new_map)
-		map = new_map
-		save_required = false
-	else:
-		var res_pre: Resource = load(path)
-		if res_pre is PhraseMap:
+	
+	var result: Array = await map_dialog.dialog_finished # (success: bool, resource_path: String)
+	
+	if result[0]:
+		if id == 0: # New file
 			if selected_key != null:
 				save_current_resource()
-			
-			if files_tree.has_map(res_pre):
-				files_tree.select_map(res_pre, false)
-			else:
-				files_tree.add_map(res_pre, true, false)
-			load_map(res_pre)
-			map = res_pre
+			var new_map: PhraseMap = PhraseMap.new()
+			new_map.language = language_opt_btn.get_selected_metadata()
+			new_map.region = region_opt_btn.get_selected_metadata()
+			if ResourceLoader.has_cached(result[1]):
+				new_map.take_over_path(result[1])
+			new_map.resource_path = result[1]
+			ResourceSaver.save(new_map, result[1])
+			files_tree.add_map(new_map, true, false)
+			load_map(new_map)
+			map = new_map
 			save_required = false
-	dialog.queue_free()
+		elif id == 1:
+			var res_pre: Resource = load(result[1])
+			if res_pre is PhraseMap:
+				if selected_key != null:
+					save_current_resource()
+				
+				if files_tree.has_map(res_pre):
+					files_tree.select_map(res_pre, false)
+				else:
+					files_tree.add_map(res_pre, true, false)
+				load_map(res_pre)
+				map = res_pre
+				save_required = false
+	map_dialog.queue_free()
 
 
 func _on_key_search_text_changed(text: String) -> void:
@@ -652,7 +648,7 @@ func new_key_container(key: StringName = &"") -> HBoxContainer:
 
 func new_text_field(text: String = "") -> HBoxContainer:
 	var new_text: HBoxContainer = HBoxContainer.new()
-	var new_line: LineEdit = LineEdit.new()
+	var new_line: LineEdit = preload("res://addons/nexus_forge/discourse/choice_node_lineedit.gd").new()
 	var edit_button: Button = Button.new()
 	
 	new_line.text = text
@@ -678,7 +674,7 @@ func new_text_field(text: String = "") -> HBoxContainer:
 
 func new_case_result_node() -> HBoxContainer:
 	var new_case: HBoxContainer = HBoxContainer.new()
-	var case_text: LineEdit = LineEdit.new()
+	var case_text: LineEdit = preload("res://addons/nexus_forge/discourse/choice_node_lineedit.gd").new()
 	var erase_case_btn: Button = Button.new()
 	
 	case_text.caret_blink = true
@@ -753,14 +749,6 @@ func erase_key(index: int) -> void:
 	
 	key.queue_free()
 	text.queue_free()
-
-
-#func used_keys() -> Array[String]:
-	#var keys: Array[String] = []
-	#for item in key_container.get_children():
-		#keys.append(
-				#item.get_child(1).text)
-	#return keys
 
 
 func save_current_resource(fix_keys: bool = false) -> void:

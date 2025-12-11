@@ -1,9 +1,10 @@
-[gd_scene load_steps=7 format=3 uid="uid://c7ia2qjomildo"]
+[gd_scene load_steps=8 format=3 uid="uid://c7ia2qjomildo"]
 
 [ext_resource type="Script" uid="uid://cbeggjr4e87v3" path="res://addons/nexus_forge/phrases/localization_resources_script.gd" id="1_rbj3j"]
 [ext_resource type="Texture2D" uid="uid://bn6ggyqhhn03o" path="res://addons/nexus_forge/icons/dialog_plus.svg" id="2_37r36"]
 [ext_resource type="Script" uid="uid://bs265n2xls66q" path="res://addons/nexus_forge/phrases/phrases_file_tree.gd" id="2_nfjyw"]
 [ext_resource type="Texture2D" uid="uid://cymtattv7iu68" path="res://addons/nexus_forge/icons/format_plus.svg" id="4_502er"]
+[ext_resource type="Script" uid="uid://oupchre5ahvr" path="res://addons/nexus_forge/discourse/choice_node_lineedit.gd" id="5_xhh83"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_txndr"]
 content_margin_left = 6.0
@@ -276,6 +277,7 @@ focus_previous = NodePath("../../../../HeaderContainer/NewCaseBtn")
 placeholder_text = "Default format"
 editable = false
 caret_blink = true
+script = ExtResource("5_xhh83")
 
 [node name="ResultNodeContainer" type="VBoxContainer" parent="MainContainer/DataHSplit/CaseContainer/KeyScroll/CasesSplit/ResultContainer"]
 layout_mode = 2
