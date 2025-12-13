@@ -220,6 +220,7 @@ allow_reselect = true
 hide_folding = true
 hide_root = true
 script = ExtResource("7_2xjq5")
+allow_drag_and_drop = true
 compact_mode = true
 
 [node name="VSeparator2" type="VSeparator" parent="MainContainer"]
@@ -413,6 +414,7 @@ allow_reselect = true
 hide_folding = true
 hide_root = true
 script = ExtResource("7_2xjq5")
+allow_drag_and_drop = true
 compact_mode = true
 
 [node name="VSeparator3" type="VSeparator" parent="MainContainer"]
@@ -606,4 +608,5 @@ allow_reselect = true
 hide_folding = true
 hide_root = true
 script = ExtResource("7_2xjq5")
+allow_drag_and_drop = true
 compact_mode = true

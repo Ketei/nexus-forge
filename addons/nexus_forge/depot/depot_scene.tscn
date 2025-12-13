@@ -474,6 +474,7 @@ allow_reselect = true
 hide_root = true
 select_mode = 1
 script = ExtResource("5_hb3ne")
+allow_drag_and_drop = true
 compact_mode = true
 
 [node name="CategoriesContainer" type="HBoxContainer" parent="."]

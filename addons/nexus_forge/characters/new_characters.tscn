@@ -239,6 +239,7 @@ allow_reselect = true
 hide_folding = true
 hide_root = true
 script = ExtResource("9_i064r")
+allow_drag_and_drop = true
 compact_mode = true
 
 [node name="ValuesSplit" type="HSplitContainer" parent="CharacterContainer"]
