@@ -345,6 +345,9 @@ func set_folder_layout(layout_data: Dictionary) -> void:
 
 
 func _on_folder_moved(original_path: String, new_path: String) -> void:
+	if original_path == new_path:
+		return
+	
 	var original_key: StringName = StringName(original_path)
 	var start_path: String = original_path + "/"
 	var new_prefix: String = new_path + "/"
@@ -356,6 +359,8 @@ func _on_folder_moved(original_path: String, new_path: String) -> void:
 			var new_folder_path: StringName = StringName(new_prefix + folder_key.trim_prefix(start_path))
 			_variables_resource._variables[new_folder_path] = _variables_resource._variables[folder_key]
 			_variables_resource._variables.erase(folder_key)
+	
+	on_something_changed()
 
 
 func _on_variable_dropped(var_folder: String, variable: String, new_folder: String) -> void:
