@@ -51,7 +51,7 @@ func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
 		drop_mode_flags += DROP_MODE_INBETWEEN
 	
 	if get_drop_section_at_position(at_position) == -100:
-		return false
+		return true
 	
 	var target_folder: TreeItem = get_item_at_position(at_position)
 	
@@ -70,30 +70,57 @@ func _drop_data(at_position: Vector2, data: Variant) -> void:
 	var section: int = get_drop_section_at_position(at_position)
 	
 	if data["class"] == "folder":
+		if item == null:
+			if data["item"].get_parent() == get_root():
+				return
+			else:
+				data["item"].move_after(get_root().get_child(-1))
+				folder_moved.emit(
+					data["original_path"],
+					data["item"].get_text(0))
+				return
+		
 		var target: String = ""
 		
 		if section == 0:
 			target = get_path_to_folder(item)
+		elif section == 1: # Below
+			var parent_folder: TreeItem = item.get_parent()
+			if not parent_folder.collapsed and 0 < parent_folder.get_child_count():
+				target = get_path_to_folder(item)
+			else:
+				target = get_path_to_folder(item.get_parent())
+				
 		else:
 			target = get_path_to_folder(item.get_parent())
 		
 		if target == get_path_to_folder(data["item"].get_parent()):
+			var parent: TreeItem = data["item"].get_parent()
 			if section == -1:
 				data["item"].move_before(item)
 			elif section == 1:
-				data["item"].move_after(item)
+				if not parent.collapsed and 0 < parent.get_child_count():
+					data["item"].move_before(parent.get_first_child())
+				else:
+					data["item"].move_after(item)
 		else:
 			if section == 0:
 				data["item"].get_parent().remove_child(data["item"])
 				item.add_child(data["item"])
 			elif section == -1:
-				data["item"].move_before(target)
+				data["item"].move_before(item)
 			else:
-				data["item"].move_after(target)
-				
+				if not item.collapsed and 0 < item.get_child_count():
+					data["item"].move_before(item.get_first_child())
+				else:
+					data["item"].move_after(item)
+			
+			if not target.is_empty():
+				target += "/"
+			
 			folder_moved.emit(
 					data["original_path"],
-					target + "/" + data["item"].get_text(0))
+					target + data["item"].get_text(0))
 	else:
 		variable_dropped.emit(
 			data["folder"],
