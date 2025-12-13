@@ -98,13 +98,14 @@ func _ready() -> void:
 	add_qst_float_button.pressed.connect(_on_add_quest_data_pressed.bind("new_float", 0.0))
 	add_qst_bool_button.pressed.connect(_on_add_quest_data_pressed.bind("new_bool", false))
 	add_qst_string_button.pressed.connect(_on_add_quest_data_pressed.bind("new_string", ""))
-	add_qst_dict_button.pressed.connect(_on_add_quest_data_pressed.bind("new_level", {}))
+	add_qst_dict_button.pressed.connect(_on_add_quest_data_pressed.bind("new_folder", {}))
 	quest_custom_data_search_line.text_changed.connect(_on_search_quest_data_text_changed)
 	quest_data_tree.data_changed.connect(something_changed)
 	
 	new_stage_btn.pressed.connect(_on_new_stage_pressed)
 	search_stg_ln_edt.text_changed.connect(_on_stage_search_text_changed)
 	stages_tree.quest_id_changed.connect(_on_stage_id_changed)
+	stages_tree.quest_updated.connect(something_changed)
 	stages_tree.quest_erased.connect(_on_stage_erased)
 	stages_tree.quest_selected.connect(_on_stage_selected)
 	stage_title_ln_edt.text_changed.connect(something_changed)
@@ -113,7 +114,7 @@ func _ready() -> void:
 	add_stg_float_button.pressed.connect(_on_add_stage_data_pressed.bind("new_float", 0.0))
 	add_stg_bool_button.pressed.connect(_on_add_stage_data_pressed.bind("new_bool", false))
 	add_stg_string_button.pressed.connect(_on_add_stage_data_pressed.bind("new_string", ""))
-	add_stg_dict_button.pressed.connect(_on_add_stage_data_pressed.bind("new_level", {}))
+	add_stg_dict_button.pressed.connect(_on_add_stage_data_pressed.bind("new_folder", {}))
 	stage_custom_data_search_ln_edt.text_changed.connect(_on_search_stage_data_text_changed)
 	stage_data_tree.data_changed.connect(something_changed)
 	
@@ -124,11 +125,12 @@ func _ready() -> void:
 	steps_tree.quest_selected.connect(_on_step_selected)
 	step_title_ln_edt.text_changed.connect(something_changed)
 	step_type_opt_btn.item_selected.connect(something_changed)
+	steps_tree.quest_updated.connect(something_changed)
 	add_stp_int_button.pressed.connect(_on_add_step_data_pressed.bind("new_integer", 0))
 	add_stp_float_button.pressed.connect(_on_add_step_data_pressed.bind("new_float", 0.0))
 	add_stp_bool_button.pressed.connect(_on_add_step_data_pressed.bind("new_bool", false))
 	add_stp_string_button.pressed.connect(_on_add_step_data_pressed.bind("new_string", ""))
-	add_stp_dict_button.pressed.connect(_on_add_step_data_pressed.bind("new_level", {}))
+	add_stp_dict_button.pressed.connect(_on_add_step_data_pressed.bind("new_folder", {}))
 	step_data_search_ln_edt.text_changed.connect(_on_search_step_data_text_changed)
 	step_data_tree.data_changed.connect(something_changed)
 	edit_quest_script_btn.pressed.connect(_on_edit_quest_script_pressed)
@@ -458,7 +460,7 @@ func _on_quest_erased(quest_id: StringName) -> void:
 
 
 func _on_quest_id_changed(from: StringName, to: StringName) -> void:
-	_quest_resource._quests[to] = _quest_resource._quest_resource[from]
+	_quest_resource._quests[to] = _quest_resource._quests[from]
 	_quest_resource._quests.erase(from)
 	if loaded_quest == from:
 		loaded_quest = to
