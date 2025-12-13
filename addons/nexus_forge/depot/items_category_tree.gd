@@ -10,7 +10,7 @@ func _ready() -> void:
 	if Engine.is_editor_hint() and owner == get_tree().edited_scene_root:
 		return
 	create_item()
-	item_selected.connect(_on_item_selected)
+	item_selected.connect(_on_item_selected, CONNECT_DEFERRED)
 
 
 func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
@@ -77,8 +77,8 @@ func sort_single_item(item: TreeItem) -> void:
 
 
 func clear_categories() -> void:
-	for item in get_root().get_children():
-		item.free()
+	clear()
+	create_item()
 
 
 func select_no_singal(item: TreeItem) -> void:

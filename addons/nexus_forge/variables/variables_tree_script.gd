@@ -192,8 +192,8 @@ func create_variable(variable_value: Variant, variable_name: String = "new_varia
 
 
 func clear_variables() -> void:
-	for child in get_root().get_children():
-		child.free()
+	clear()
+	create_item()
 
 
 func validate_var_name(var_name: String, skip_tree: TreeItem = null) -> String:

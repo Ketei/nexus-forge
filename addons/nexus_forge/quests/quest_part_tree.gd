@@ -5,6 +5,7 @@ extends Tree
 signal quest_id_changed(from: String, to: String)
 signal quest_erased(id: String)
 signal quest_selected(id: String)
+signal quest_updated
 
 @export var quest_tree_id: String = ""
 @export var tree_item_name: String = ""
@@ -34,12 +35,17 @@ func _get_drag_data(at_position: Vector2) -> Variant:
 
 
 func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
-	if typeof(data) != TYPE_DICTIONARY or not data.has_all(["type", "node"]) or data["type"] != quest_tree_id:
+	if typeof(data) != TYPE_DICTIONARY or not data.has_all(["type", "node"]) or typeof(data["type"]) != TYPE_STRING or data["type"] != quest_tree_id or typeof(data["node"]) != TYPE_OBJECT:
 		return false
 	
 	drop_mode_flags = DROP_MODE_INBETWEEN
 	
-	return get_item_at_position(at_position) != data["node"] and get_drop_section_at_position(at_position) != -100
+	var item: TreeItem = get_item_at_position(at_position)
+	var section: int = get_drop_section_at_position(at_position)
+	
+	if item == null or data["node"] is not TreeItem or item == data["node"] or section == -100:
+		return false
+	return true
 
 
 func _drop_data(at_position: Vector2, data: Variant) -> void:
@@ -49,6 +55,7 @@ func _drop_data(at_position: Vector2, data: Variant) -> void:
 		data["node"].move_before(get_item_at_position(at_position))
 	elif drop_position == 1:
 		data["node"].move_after(get_item_at_position(at_position))
+	quest_updated.emit()
 
 
 func _on_item_edited() -> void:
@@ -64,7 +71,6 @@ func _on_item_edited() -> void:
 
 
 func _on_button_clicked(item: TreeItem, _column: int, id: int, _mouse_button_index: int) -> void:
-	print("Clicked")
 	if id != 0:
 		return
 	quest_erased.emit(item.get_text(0))
@@ -121,8 +127,8 @@ func has_id(id: String, ignore: TreeItem = null) -> bool:
 
 
 func clear_quests() -> void:
-	for item in get_root().get_children():
-		item.free()
+	clear()
+	create_item()
 
 
 func get_quests() -> Array[StringName]:

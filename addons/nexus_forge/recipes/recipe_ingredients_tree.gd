@@ -3,9 +3,9 @@ extends Tree
 
 
 signal item_id_dropped(item_id: StringName, on_index: int)
-#signal item_erased(id: StringName, on_input: bool)
 signal items_changed
 signal recipe_item_selected(index: int)
+signal item_moved
 
 
 enum RecipeMode {
@@ -30,6 +30,7 @@ enum ItemType {
 
 @export var recipe_mode: RecipeMode = RecipeMode.INPUT
 var recipe_selected: bool = false
+var selected_item: TreeItem = null
 
 
 func _ready() -> void:
@@ -71,7 +72,7 @@ func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
 				return item_type == ItemType.RECIPE_ITEM 
 	
 	if item_type == ItemType.MAX_ITEM:
-		return false
+		return data["type"] == "item_id"
 	
 	if data["type"] == "item_data":
 		if data["item"].get_parent() == item_at_pos:#.get_parent():# or data["item"].get_parent() == item_at_pos:
@@ -155,22 +156,24 @@ func _get_drag_data(at_position: Vector2) -> Variant:
 		label.text = "   " + selected.get_text(0)
 	set_drag_preview(label)
 	return {"type": "item_id" if selected.get_parent() == get_root() else "item_data", "item_id": "", "is_new": false, "item": selected, "origin": recipe_mode}
-	
 
 
 func _on_button_clicked(item: TreeItem, _column: int, id: int, mouse_button_index: int) -> void:
 	if mouse_button_index != MOUSE_BUTTON_LEFT:
 		return
 	if id == ButtonID.RECIPE_ITEM:
+		if item == selected_item:
+			selected_item = null
+			recipe_item_selected.emit(-1)
 		items_changed.emit()
-		#item_erased.emit(item.get_metadata(0), recipe_mode == RecipeMode.INPUT)
 	elif id == ButtonID.RECIPE_DATA:
 		items_changed.emit()
 	item.free()
 
 
 func _on_item_selected() -> void:
-	recipe_item_selected.emit(get_selected().get_index())
+	selected_item = get_selected()
+	recipe_item_selected.emit(selected_item.get_index())
 
 
 func add_data_to(item: TreeItem, data: Variant, data_name: String = "new_data") -> void:
@@ -351,8 +354,8 @@ func change_item_id(from: StringName, to: StringName) -> void:
 
 
 func clear_items() -> void:
-	for item in get_root().get_children():
-		item.free()
+	clear()
+	create_item()
 
 
 func validate_id(desired_id: String, item: TreeItem) -> String:

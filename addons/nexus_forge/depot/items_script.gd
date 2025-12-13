@@ -74,15 +74,15 @@ func _ready() -> void:
 	search_item_container.text_changed.connect(_on_search_item_text_changed)
 	new_item_btn.pressed.connect(_on_create_item_pressed)
 	items_tree.item_id_selected.connect(_on_item_selected, CONNECT_DEFERRED)
-	items_tree.item_id_changed.connect(_on_item_id_changed)
+	items_tree.item_id_changed.connect(_on_item_id_changed, CONNECT_DEFERRED)
 	items_tree.item_erased.connect(_on_item_erased, CONNECT_DEFERRED)
 	item_name_ln_edt.text_changed.connect(_on_something_changed)
 	rarity_opt_btn.item_selected.connect(_on_something_changed)
 	item_val_spn_bx.value_changed.connect(_on_something_changed)
 	item_desc_txt_edt.text_changed.connect(_on_something_changed)
 	item_data_tree.data_changed.connect(_on_something_changed)
-	categories_tree.category_selected.connect(_on_category_selected)
-	categories_tree.items_recategorized.connect(_on_items_recategorized)
+	categories_tree.category_selected.connect(_on_category_selected, CONNECT_DEFERRED)
+	categories_tree.items_recategorized.connect(_on_items_recategorized, CONNECT_DEFERRED)
 	item_name_ln_edt.focus_exited.connect(_on_item_name_focus_lost, CONNECT_DEFERRED)
 	add_item_int_btn.pressed.connect(add_item_data.bind("new_int", 0))
 	add_item_float_btn.pressed.connect(add_item_data.bind("new_float", 0.0))
@@ -365,7 +365,7 @@ func _on_items_recategorized(new_category: StringName, items: Array[StringName])
 	if clean:
 		loaded_item = &""
 		item_name_ln_edt.text = ""
-		rarity_opt_btn.select(0)
+		rarity_opt_btn.select(rarity_opt_btn.item_count - 1)
 		item_val_spn_bx.set_value_no_signal(0)
 		item_desc_txt_edt.text = ""
 		item_data_tree.clear_data()
@@ -378,9 +378,7 @@ func _on_category_selected(category: StringName) -> void:
 		return
 	if not loaded_item.is_empty():
 		save_current_item()
-	
 	clear_all_fields()
-	
 	loaded_item = &""
 	current_category = category
 	noncategory_loaded = category.is_empty()
@@ -389,7 +387,6 @@ func _on_category_selected(category: StringName) -> void:
 	for item in item_link.items.items():
 		if item_link.items._items[item]["category"] == category:
 			items_tree.add_item(item)
-	
 	set_items_ui_enabled(false)
 
 
@@ -477,6 +474,7 @@ func _on_item_selected(item_id: StringName) -> void:
 	if loaded_item == item_id:
 		return
 	if not loaded_item.is_empty():
+		print("Trying to save: ", loaded_item)
 		save_current_item()
 	load_item(item_id)
 	loaded_item = item_id
@@ -489,7 +487,7 @@ func _on_item_erased(item_id: StringName) -> void:
 		loaded_item = &""
 		item_name_ln_edt.text = ""
 		item_desc_txt_edt.text = ""
-		rarity_opt_btn.select(0)
+		rarity_opt_btn.select(rarity_opt_btn.item_count - 1)
 		item_val_spn_bx.set_value_no_signal(0)
 		item_data_tree.clear_data()
 		reset_flags()
@@ -562,7 +560,7 @@ func set_items_ui_enabled(enabled: bool) -> void:
 func clear_all_fields() -> void:
 	items_tree.clear_items()
 	item_name_ln_edt.text = ""
-	rarity_opt_btn.select(0)
+	rarity_opt_btn.select(rarity_opt_btn.item_count - 1)
 	item_val_spn_bx.set_value_no_signal(0)
 	item_desc_txt_edt.text = ""
 	item_data_tree.clear_data()
@@ -573,7 +571,8 @@ func save_current_item() -> void:
 	item_link.set_item_name(loaded_item, item_name_ln_edt.text.strip_edges())
 	item_link.items.set_item_description(loaded_item, item_desc_txt_edt.text.strip_edges())
 	item_link.items.set_item_category(loaded_item, current_category)
-	item_link.items.set_item_rarity(loaded_item, rarity_opt_btn.get_item_metadata(rarity_opt_btn.selected))
+	if -1 < rarity_opt_btn.selected:
+		item_link.items.set_item_rarity(loaded_item,  rarity_opt_btn.get_selected_metadata())
 	item_link.items.set_item_value(loaded_item, int(item_val_spn_bx.value))
 	
 	item_link.items.clear_item_data(loaded_item)
@@ -594,6 +593,9 @@ func save_current_item() -> void:
 
 func load_item(item_id: StringName) -> void:
 	var item: ItemSheet = item_link.items.get_item(item_id)
+	
+	if item == null:
+		printerr("[NexusForge] Depot: An error ocourred while trying to load item: ", item_id)
 	
 	item_name_ln_edt.text = item.name
 	select_rarity(item.rarity)

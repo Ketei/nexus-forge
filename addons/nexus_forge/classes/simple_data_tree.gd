@@ -157,7 +157,7 @@ func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
 	
 	if data.has_all(["tree", "type"]) and data["tree"] is TreeItem and data["type"] is ItemType:
 		var target_node: TreeItem = get_item_at_position(at_position)
-		if target_node == data["tree"] or (data["type"] == ItemType.FOLDER and target_node.get_parent() == data["tree"]):
+		if target_node == data["tree"] or (data["type"] == ItemType.FOLDER and _is_item_child_of(target_node, data["tree"])): #target_node.get_parent() == data["tree"]):
 			drop_mode_flags = DROP_MODE_DISABLED
 			return false
 		
@@ -172,6 +172,19 @@ func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
 	else: 
 		drop_mode_flags = DROP_MODE_DISABLED
 		return false
+
+
+func _is_item_child_of(item: TreeItem, parent: TreeItem) -> bool:
+	if item == null or parent == null:
+		return false
+	elif item == parent:
+		return true
+	var next_parent: TreeItem = item.get_parent()
+	while next_parent != null:
+		if next_parent == parent:
+			return true
+		next_parent = next_parent.get_parent()
+	return false
 
 
 func _drop_data(at_position: Vector2, data: Variant) -> void:
@@ -207,8 +220,8 @@ func _drop_data(at_position: Vector2, data: Variant) -> void:
 
 
 func clear_data() -> void:
-	for data in get_root().get_children():
-		data.free()
+	clear()
+	create_item()
 
 
 func add_data(data_id: String, data: Variant, on_node: TreeItem = get_root()) -> void:

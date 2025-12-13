@@ -72,9 +72,11 @@ func select_item_no_signal(item: TreeItem) -> void:
 
 
 func remove_items(items: Array[StringName]) -> void:
-	for item in get_root().get_children():
-		if items.has(item.get_metadata(0)):
-			item.free()
+	for item in items:
+		for child in get_root().get_children():
+			if child.get_metadata(0) == item:
+				child.free()
+				break
 
 
 func _on_button_clicked(item: TreeItem, _column: int, id: int, mouse_button_index: int) -> void:
@@ -152,8 +154,8 @@ func get_items() -> Array[String]:
 
 
 func clear_items() -> void:
-	for item in get_root().get_children():
-		item.free()
+	clear()
+	create_item()
 
 
 func search_for(text: String) -> void:
