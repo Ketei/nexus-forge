@@ -186,6 +186,7 @@ hide_folding = true
 hide_root = true
 script = ExtResource("7_aexp2")
 allow_drag_and_drop = true
+compact_mode = true
 
 [node name="StatTraitSplit" type="HSplitContainer" parent="RacesContainer"]
 layout_mode = 2
