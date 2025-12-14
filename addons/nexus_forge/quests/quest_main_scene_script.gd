@@ -820,6 +820,7 @@ func set_quest_ui_enabled(enabled: bool) -> void:
 	add_qst_string_button.disabled = disabled
 	add_qst_dict_button.disabled = disabled
 	quest_custom_data_search_line.editable = enabled
+	quest_data_tree.enabled = enabled
 
 
 func set_stage_ui_enabled(enabled: bool) -> void:
@@ -852,6 +853,7 @@ func set_stage_data_ui_enabled(enabled: bool) -> void:
 	add_stg_string_button.disabled = disabled
 	add_stg_dict_button.disabled = disabled
 	stage_custom_data_search_ln_edt.editable = enabled
+	stage_data_tree.enabled = enabled
 	
 	for existing_flag in stage_flags_container.get_children():
 		if existing_flag is CheckBox:
@@ -888,6 +890,7 @@ func set_step_data_ui_enabled(enabled: bool) -> void:
 	add_stp_string_button.disabled = disabled
 	add_stp_dict_button.disabled = disabled
 	step_data_search_ln_edt.editable = enabled
+	step_data_tree.enabled = enabled
 	
 	for existing_flag in step_flags_container.get_children():
 		if existing_flag is CheckBox:

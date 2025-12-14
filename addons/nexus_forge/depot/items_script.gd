@@ -301,6 +301,7 @@ func set_currency_ui_enabled(enabled: bool) -> void:
 	add_curr_bool_btn.disabled = disabled
 	add_curr_str_btn.disabled = disabled
 	add_curr_dict_button.disabled = disabled
+	currency_custom_data_tree.enabled = enabled
 	
 	currency_ui_enabled = enabled
 
@@ -550,6 +551,7 @@ func set_items_ui_enabled(enabled: bool) -> void:
 	add_item_bool_btn.disabled = disabled
 	add_item_str_btn.disabled = disabled
 	add_item_fldr_btn.disabled = disabled
+	item_data_tree.enabled = enabled
 	
 	for flag:CheckBox in items_flags_container.get_children():
 		flag.disabled = disabled

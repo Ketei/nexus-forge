@@ -22,6 +22,7 @@ func _ready() -> void:
 	if Engine.is_editor_hint() and owner == get_tree().edited_scene_root:
 		return
 	
+	item_data_tree.enabled = true
 	new_category_btn.icon = get_theme_icon("Add", "EditorIcons")
 	
 	categories_tree.item_selected.connect(_on_category_item_selected)

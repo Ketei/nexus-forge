@@ -26,7 +26,7 @@ func _get_drag_data(at_position: Vector2) -> Variant:
 		return null
 	
 	var data: Dictionary = {
-		"type": quest_tree_id,
+		"source": quest_tree_id,
 		"node": node}
 	var preview: Label = Label.new()
 	preview.text = "   " + node.get_text(0)
@@ -35,7 +35,7 @@ func _get_drag_data(at_position: Vector2) -> Variant:
 
 
 func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
-	if typeof(data) != TYPE_DICTIONARY or not data.has_all(["type", "node"]) or typeof(data["type"]) != TYPE_STRING or data["type"] != quest_tree_id or typeof(data["node"]) != TYPE_OBJECT:
+	if typeof(data) != TYPE_DICTIONARY or not data.has_all(["source", "node"]) or typeof(data["source"]) != TYPE_STRING or data["source"] != quest_tree_id or typeof(data["node"]) != TYPE_OBJECT:
 		return false
 	
 	drop_mode_flags = DROP_MODE_INBETWEEN

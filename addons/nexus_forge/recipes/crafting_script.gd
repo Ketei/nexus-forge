@@ -19,6 +19,7 @@ var active_recipe: StringName = &"":
 		add_rcp_bool_btn.disabled = not valid
 		add_rcp_str_btn.disabled = not valid
 		add_rcp_fldr_btn.disabled = not valid
+		recipe_custom_data_tree.enabled = valid
 var _active_input_rcp: int = -1:
 	set(active_item):
 		_active_input_rcp = active_item

@@ -36,6 +36,7 @@ var ICON_VARIABLE: Texture2D = null
 var ICON_FOLDER: Texture2D = null
 
 var current_search: String = ""
+var enabled: bool = false
 
 var mn: PopupMenu = null
 var data_item: TreeItem = null
@@ -144,18 +145,18 @@ func _get_drag_data(at_position: Vector2) -> Variant:
 	var preview: Label = Label.new()
 	preview.text = "    " + item.get_text(0)
 	set_drag_preview(preview)
-	return {"tree": item, "type": item.get_metadata(0)["type"]}
+	return {"tree": item, "type": item.get_metadata(0)["type"], "source": "data_tree"}
 
 
 func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
-	if not allow_drag_and_drop:
+	if not allow_drag_and_drop or not enabled:
 		return false
 	
 	if typeof(data) != TYPE_DICTIONARY:
 		drop_mode_flags = DROP_MODE_DISABLED
 		return false
 	
-	if data.has_all(["tree", "type"]) and data["tree"] is TreeItem and data["type"] is ItemType:
+	if data.has_all(["tree", "type", "source"]) and data["tree"] is TreeItem and data["type"] is ItemType and typeof(data["source"]) == TYPE_INT and data["source"] == "data_tree":
 		var target_node: TreeItem = get_item_at_position(at_position)
 		if target_node == data["tree"] or (data["type"] == ItemType.FOLDER and _is_item_child_of(target_node, data["tree"])): #target_node.get_parent() == data["tree"]):
 			drop_mode_flags = DROP_MODE_DISABLED

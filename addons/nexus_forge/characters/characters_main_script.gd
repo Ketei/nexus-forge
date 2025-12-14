@@ -462,6 +462,7 @@ func set_ui_enabled(enabled: bool) -> void:
 	add_char_string_button.disabled = disabled
 	add_dict_button.disabled = disabled
 	load_species_data_btn.disabled = species_option_button.disabled
+	character_data_tree.enabled = enabled
 	
 	for item in char_stats_container.get_children():
 		item.get_meta(&"value").editable = enabled

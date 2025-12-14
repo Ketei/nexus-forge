@@ -457,6 +457,7 @@ func set_ui_enabled(enabled: bool) -> void:
 	add_rc_bool_button.disabled = disabled
 	add_rc_string_button.disabled = disabled
 	add_dict_button.disabled = disabled
+	race_data_tree.enabled = enabled
 	
 	for child in race_stats_container.get_children():
 		child.get_child(0).disabled = disabled

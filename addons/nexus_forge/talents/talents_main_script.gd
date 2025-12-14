@@ -341,6 +341,7 @@ func set_skills_ui_enabled(set_enabled: bool) -> void:
 	skill_bool_btn.disabled = disabled
 	skill_str_btn.disabled = disabled
 	skill_dict_button.disabled = disabled
+	skill_data_tree.enabled = set_enabled
 
 
 # Use for comparing what skills exists when SkillSet is saved/changed.
@@ -519,6 +520,7 @@ func set_traits_ui_enabled(enabled: bool) -> void:
 	trait_flt_btn.disabled = disabled
 	trait_bool_btn.disabled = disabled
 	trait_str_btn.disabled = disabled
+	trait_data_tree.enabled = enabled
 
 
 func save_current_trait() -> void:
