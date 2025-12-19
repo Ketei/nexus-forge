@@ -72,6 +72,7 @@ caret_blink = true
 [node name="NewQuestBtn" type="Button" parent="MainContainer/DataContainer/NavigationContainer/FileBarContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
+tooltip_text = "Create quest file"
 icon = ExtResource("2_ct1fh")
 
 [node name="NavigationSplitContainer" type="VSplitContainer" parent="MainContainer/DataContainer/NavigationContainer"]
