@@ -24,6 +24,7 @@ func _ready() -> void:
 	
 	item_data_tree.enabled = true
 	new_category_btn.icon = get_theme_icon("Add", "EditorIcons")
+	add_cat_fldr_btn.icon = get_theme_icon("FolderCreate", "EditorIcons")
 	
 	categories_tree.item_selected.connect(_on_category_item_selected)
 	new_category_btn.pressed.connect(_on_new_category_pressed)
