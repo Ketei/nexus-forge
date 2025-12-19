@@ -6,7 +6,7 @@ extends EditorPlugin
 const MAIN_SCENE = preload("res://addons/nexus_forge/NexusForgeMainScene.tscn")
 const PLUGIN_NAME: String = "NexusForge"
 const PLUGIN_ICON_PATH: String = "res://addons/nexus_forge/icons/nexus_forge_small.svg"
-const HANDLED_CLASSES: Array[StringName] = [&"EditorDiscourseDialog", &"CharacterSheet", &"PhraseMap"]
+const HANDLED_CLASSES: Array[StringName] = [&"EditorDiscourseDialog", &"CharacterSheet", &"PhraseMap", &"Quest"]
 const SETTINGS_PATHS: Dictionary[String, Dictionary] = {
 	"discourse": {
 		"setting_path": "nexus_forge/localization_directory",
@@ -28,12 +28,6 @@ const SETTINGS_PATHS: Dictionary[String, Dictionary] = {
 		"hint_string": "*.tres"},
 	"skills": {
 		"setting_path": "nexus_forge/skills_path",
-		"default_value": "",
-		"type": TYPE_STRING,
-		"hint": PROPERTY_HINT_FILE,
-		"hint_string": "*.tres"},
-	"quests": {
-		"setting_path": "nexus_forge/quests_path",
 		"default_value": "",
 		"type": TYPE_STRING,
 		"hint": PROPERTY_HINT_FILE,
@@ -102,15 +96,19 @@ func recompile_script_docs() -> void:
 		"res://addons/nexus_forge/resources/parser/discouse_parser_base.gd",
 		"res://addons/nexus_forge/resources/character_sheet.gd",
 		"res://addons/nexus_forge/resources/item_sheet.gd",
-		"res://addons/nexus_forge/resources/quest_step.gd",
+		"res://addons/nexus_forge/resources/quest_objective.gd",
 		"res://addons/nexus_forge/resources/quest_stage.gd",
-		"res://addons/nexus_forge/resources/quest_data.gd",
+		"res://addons/nexus_forge/resources/quest_resource.gd",
+		"res://addons/nexus_forge/resources/quest_manager.gd",
+		#"res://addons/nexus_forge/resources/quest_step.gd",
+		#"res://addons/nexus_forge/resources/quest_stage.gd",
+		#"res://addons/nexus_forge/resources/quest_data.gd",
 		"res://addons/nexus_forge/resources/recipe_item.gd",
 		"res://addons/nexus_forge/resources/recipe_sheet.gd",
 		"res://addons/nexus_forge/resources/species.gd",
 		"res://addons/nexus_forge/resources/currency_catalog.gd",
 		"res://addons/nexus_forge/resources/item_catalog.gd",
-		"res://addons/nexus_forge/resources/quest_catalog.gd",
+		#"res://addons/nexus_forge/resources/quest_catalog.gd",
 		"res://addons/nexus_forge/resources/recipe_catalog.gd",
 		"res://addons/nexus_forge/resources/skill_catalog.gd",
 		"res://addons/nexus_forge/resources/species_catalog.gd",
@@ -310,12 +308,12 @@ func _on_resource_saved(resource: Resource) -> void:
 		editor_view.reload_character_sheet()
 	elif script_class == &"ItemSheet":
 		editor_view.reload_items()
-	elif script_class == &"QuestData":
-		editor_view.reload_quest_data()
+	elif script_class == &"Quest":
+		editor_view.reload_quest_data_types()
 	elif script_class == &"QuestStage":
-		editor_view.reload_quest_stage()
-	elif script_class == &"QuestStep":
-		editor_view.reload_quest_step()
+		editor_view.reload_quest_stage_types()
+	elif script_class == &"QuestObjective":
+		editor_view.reload_quest_objective_types()
 	elif script_class == &"DiscourseAPI":
 		editor_view.reload_discourse_api()
 
@@ -323,13 +321,14 @@ func _on_resource_saved(resource: Resource) -> void:
 func _on_resource_removed(object: Resource) -> void:
 	if object == null:
 		return
-	
 	if object is EditorDiscourseDialog:
 		editor_view.discourse.filesystem_resource_removed(object)
 	elif object is CharacterSheet:
 		editor_view.characters.filesystem_resource_removed(object)
 	elif object is PhraseMap:
 		editor_view.phrase_maps.filesystem_resource_removed(object)
+	elif object is Quest:
+		editor_view.quests.filesystem_resource_removed(object)
 	elif object is BlackboardData:
 		if editor_view.variables._variables_resource == object:
 			ProjectSettings.set_setting(
@@ -380,10 +379,10 @@ func _on_resource_removed(object: Resource) -> void:
 				"")
 			ProjectSettings.save()
 			editor_view.recipes.reload_recipe_resource()
-	elif object is QuestCatalog:
-		if editor_view.quests._quest_resource == object:
-			ProjectSettings.set_setting(
-				get_project_settings_path("quests"),
-				"")
-			ProjectSettings.save()
-			editor_view.quests.reload_quest_resource()
+	#elif object is QuestCatalog:
+		#if editor_view.quests._quest_resource == object:
+			#ProjectSettings.set_setting(
+				#get_project_settings_path("quests"),
+				#"")
+			#ProjectSettings.save()
+			#editor_view.quests.reload_quest_resource()
