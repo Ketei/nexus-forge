@@ -156,7 +156,7 @@ func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
 		drop_mode_flags = DROP_MODE_DISABLED
 		return false
 	
-	if data.has_all(["tree", "type", "source"]) and data["tree"] is TreeItem and data["type"] is ItemType and typeof(data["source"]) == TYPE_INT and data["source"] == "data_tree":
+	if data.has_all(["tree", "type", "source"]) and typeof(data["source"]) == TYPE_STRING and data["source"] == "data_tree":
 		var target_node: TreeItem = get_item_at_position(at_position)
 		if target_node == data["tree"] or (data["type"] == ItemType.FOLDER and _is_item_child_of(target_node, data["tree"])): #target_node.get_parent() == data["tree"]):
 			drop_mode_flags = DROP_MODE_DISABLED
@@ -225,7 +225,7 @@ func clear_data() -> void:
 	create_item()
 
 
-func add_data(data_id: String, data: Variant, on_node: TreeItem = get_root()) -> void:
+func add_data(data_id: String, data: Variant, on_node: TreeItem = get_root(), id_editable: bool = true, value_editable: bool = true, can_delete: bool = true) -> void:
 	var data_type: int = typeof(data)
 	var new_name: String = get_unique_id(on_node, data_id)
 	var new_data: TreeItem = on_node.create_child()
@@ -233,7 +233,7 @@ func add_data(data_id: String, data: Variant, on_node: TreeItem = get_root()) ->
 	
 	new_data.set_cell_mode(0, TreeItem.CELL_MODE_STRING)
 	new_data.set_text(0, new_name)
-	new_data.set_editable(0, true)
+	new_data.set_editable(0, id_editable)
 	
 	match data_type:
 		TYPE_INT:
@@ -242,32 +242,32 @@ func add_data(data_id: String, data: Variant, on_node: TreeItem = get_root()) ->
 			new_data.set_cell_mode(1, TreeItem.CELL_MODE_RANGE)
 			new_data.set_range_config(1, -RANGE_MAX, RANGE_MAX, 1.0)
 			new_data.set_range(1, data)
-			new_data.set_editable(1, true)
+			new_data.set_editable(1, value_editable)
 		TYPE_FLOAT:
 			new_data.set_icon(0, ICON_FLOAT)
 			new_data.set_metadata(1, TYPE_FLOAT)
 			new_data.set_cell_mode(1, TreeItem.CELL_MODE_RANGE)
 			new_data.set_range_config(1, -RANGE_MAX, RANGE_MAX, RANGE_FLOAT_STEP)
 			new_data.set_range(1, data)
-			new_data.set_editable(1, true)
+			new_data.set_editable(1, value_editable)
 		TYPE_BOOL:
 			new_data.set_icon(0, ICON_BOOL)
 			new_data.set_metadata(1, TYPE_BOOL)
 			new_data.set_cell_mode(1, TreeItem.CELL_MODE_CHECK)
 			new_data.set_text(1, "Enabled")
 			new_data.set_checked(1, data)
-			new_data.set_editable(1, true)
+			new_data.set_editable(1, value_editable)
 		TYPE_STRING:
 			new_data.set_icon(0, ICON_STRING)
 			new_data.set_metadata(1, TYPE_STRING)
 			new_data.set_cell_mode(1, TreeItem.CELL_MODE_STRING)
 			new_data.set_text(1, data)
-			new_data.set_editable(1, true)
+			new_data.set_editable(1, value_editable)
 		TYPE_DICTIONARY:
 			new_data.set_icon(0, ICON_FOLDER)
 			new_data.set_metadata(1, TYPE_DICTIONARY)
 			new_data.set_selectable(1, false)
-			new_data.set_editable(0, true)
+			new_data.set_editable(0, id_editable)
 			new_data.set_editable(1, false)
 			metadata["type"] = ItemType.FOLDER
 			if compact_mode:
@@ -292,7 +292,9 @@ func add_data(data_id: String, data: Variant, on_node: TreeItem = get_root()) ->
 			new_data.set_cell_mode(1, TreeItem.CELL_MODE_STRING)
 			new_data.set_text(1, type_string(data_type))
 			new_data.set_editable(1, false)
-	new_data.add_button(1, TRASH_BIN, ButtonIds.DELETE, false, "Delete Data")
+	
+	if can_delete:
+		new_data.add_button(1, TRASH_BIN, ButtonIds.DELETE, false, "Delete Data")
 	
 	new_data.set_metadata(0, metadata)
 
@@ -370,6 +372,30 @@ func get_data() -> Dictionary[String, Variant]:
 func search_data(data_text: String) -> void:
 	if current_search == data_text:
 		return
+	var is_empty: bool = data_text.is_empty()
 	for data in get_root().get_children():
-		data.visible = data_text.is_empty() or data.get_text(0).containsn(data_text) or (data.get_cell_mode(1) == TreeItem.CELL_MODE_STRING and data.get_text(1).containsn(data_text))
+		data.visible = _child_has_data(data, data_text) or is_empty or data.get_text(0).containsn(data_text) or _data_cell_to_string(data).containsn(data_text)
 	current_search = data_text
+
+
+func _child_has_data(item: TreeItem, text: String) -> bool:
+	var is_empty: bool = text.is_empty()
+	var result_visible: bool = false
+	for child in item.get_children():
+		child.visible = _child_has_data(child, text) or is_empty or child.get_text(0).containsn(text) or _data_cell_to_string(child).containsn(text)
+		if result_visible == false and child.visible:
+			result_visible = true
+	return result_visible
+
+
+func _data_cell_to_string(item: TreeItem) -> String:
+	match item.get_cell_mode(1):
+		TreeItem.CELL_MODE_STRING:
+			return item.get_text(1)
+		TreeItem.CELL_MODE_RANGE:
+			return str(item.get_range(1))
+		TreeItem.CELL_MODE_CHECK:
+			return "true" if item.is_checked(1) else "false"
+		_:
+			return ""
+	
