@@ -1,60 +1,102 @@
+@tool
+@icon("res://addons/nexus_forge/icons/sign_icon.svg")
 class_name QuestStage
-extends RefCounted
+extends Resource
 
 
-# Must always contain NO_TYPE as an item.
-enum StageType {
-	NO_TYPE
-}
+enum StageType {}
 
-enum StageFlag {
-	HIDE_STEPS
-}
+## The ID of the stage.
+@export var id: StringName = &""
+## The title of the stage.
+@export var title: String = ""
+## The description of the stage.
+@export var description: String = ""
+## The type of the stage.
+@export var type: StageType
+## CUstom data assigned to the stage.
+@export var custom_data: Dictionary[String, Variant] = {}
 
-## ID of the stage
-var id: StringName = &""
-## Title of the stage
-var title: String = ""
-## Type of the stage
-var type: StageType
-## Flags of the stage
-var flags: Array[StageFlag] = []
-## Data for the stage
-var data: Dictionary[String, Variant] = {}
-## An array containing the stage steps in order.
-var steps: Array[QuestStep] = []
+## The ID of the next stage should this complete successfully. An empty value
+## signifies the end of the quest this is in.
+@export var success_stage_id: StringName = &""
+## The ID of the next stage should this be failed. An empty value
+## signifies the end of the quest this is in.
+@export var failure_stage_id: StringName = &""
 
+## Events to be signaled by the [QuestManager] if the stage is completed
+## successfully.
+@export var on_success_events: Dictionary[String, Variant] = {}
+## Events to be signaled by the [QuestManager] if the stage is failed
+@export var on_failure_events: Dictionary[String, Variant] = {}
 
-## Returns all the steps IDs in the stage.
-func get_steps() -> Array[StringName]:
-	var steps_id: Array[StringName] = []
-	for step in steps:
-		steps_id.append(step.id)
-	return steps_id
+@export var _objectives: Dictionary[StringName, Dictionary] = {}
 
 
-## Returns the first stage of a quest.
-func get_first_step() -> QuestStep:
-	return null if steps.is_empty() else steps[0]
+
+## Returns an array with all the IDs of registered objectives.
+func objectives() -> Array[StringName]:
+	var obj: Array[StringName] = []
+	obj.assign(_objectives.keys())
+	return obj
 
 
-## Returns a QuestStage object matching [param stage_id]. If it isn't found
-## it returns [code]null[/code].
-func get_step(step_id: StringName) -> QuestStep:
-	for step in steps:
-		if step.id == step_id:
-			return step
+## Creates a new objective for this stage. If an objective with id
+## [method QuestObjective.id] already exists it won't be added.[br]
+## [param required] will define if this objective is required to complete
+## the stage.
+func add_objective(objective: QuestObjective, required: bool) -> void:
+	if _objectives.has(objective.id):
+		return
+	_objectives[objective.id] = {
+		"objective": objective,
+		"required": required}
+
+
+## Removes the objective with id [param objective_id].
+func remove_objective(objective_id: StringName) -> void:
+	_objectives.erase(objective_id)
+
+
+## Returns true if [param objective_id] is registered in this stage.
+func has_objective(objective_id: StringName) -> bool:
+	return _objectives.has(objective_id)
+
+
+## Sets the existing [param objective_id] to be [param required] or not.
+func set_objective_required(objective_id: StringName, required: bool) -> void:
+	if _objectives.has(objective_id):
+		_objectives[objective_id]["required"] = required
+
+
+## Returns [code]true[/code] if [param objective_id] exists and is required to
+## complete the stage.
+func is_objective_required(objective_id: StringName) -> bool:
+	if _objectives.has(objective_id):
+		return _objectives[objective_id]["required"]
+	return false
+
+
+## Returns [code]true[/code] if all the required objectives have been completed.
+func can_complete_stage() -> bool:
+	for objective_id in _objectives:
+		var a: QuestObjective
+		if _objectives[objective_id]["required"] and not _objectives[objective_id]["objective"].is_objective_complete():
+			return false
+	return true
+
+
+## Returns the objective object assigned to [param objective_id]. Returns
+## [code]null[/code] if the objective isn't registered.
+func get_objective(objective_id: StringName) -> QuestObjective:
+	if _objectives.has(objective_id):
+		return _objectives[objective_id]["objective"]
 	return null
 
 
-## Gets the next step from [param step_id]. If [param step_id] is the last
-## step it returns [code]null[/code].
-func get_next_step(step_id: StringName) -> QuestStep:
-	var idx: int = -1
-	for step in steps:
-		if step.id == step_id:
-			if idx + 1 < steps.size():
-				return steps[idx + 1]
-			else:
-				return null
-	return null
+## Returns if [param objective_id] is completed. Will return [code]false[/code] if
+## the objective isn't registered.
+func is_objective_complete(objective_id: StringName) -> bool:
+	if _objectives.has(objective_id):
+		return _objectives[objective_id]["objective"].is_objective_complete()
+	return false
