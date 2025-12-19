@@ -12,6 +12,9 @@ var release_files: Dictionary[String, ReleaseDiscourseDialog] = {}
 var dialog_path: String = ""
 var export_temp_dir: DirAccess = null
 
+var character_ids: Dictionary[StringName, String] = {}
+var quest_ids: Dictionary[StringName, String] = {}
+
 
 func _get_name() -> String:
 	return "NexusForgeExporter"
@@ -27,6 +30,8 @@ func _export_begin(_features: PackedStringArray, _is_debug: bool, _path: String,
 	locale_group_uuids.clear()
 	localization_files.clear()
 	release_files.clear()
+	character_ids.clear()
+	quest_ids.clear()
 	
 	if not file_base_path.ends_with("/"):
 		file_base_path += "/"
@@ -55,7 +60,7 @@ func _get_customization_configuration_hash() -> int:
 	return randi()
 
 
-func _customize_resource(resource: Resource, _path: String) -> Resource:
+func _customize_resource(resource: Resource, path: String) -> Resource:
 	if resource is EditorDiscourseDialog:# == &"EditorDiscourseDialog":
 		if release_files.has(resource.resource_path):
 			#print("Returned a previously generated resource")
@@ -83,6 +88,19 @@ func _customize_resource(resource: Resource, _path: String) -> Resource:
 		return customize_trait_catalog(resource)
 	elif resource is SpeciesCatalog:
 		return customize_species(resource)
+	elif resource is CharacterSheet:
+		if character_ids.has(resource.id):
+			push_warning("[NexusForge] Character on resource ", path,  " has the same ID of: ", character_ids[resource.id])
+		else:
+			character_ids[resource.id] = path
+	elif resource is Quest:
+		if quest_ids.has(resource.id):
+			push_warning("[NexusForge] Quest on resource ", path,  " has the same ID of: ", quest_ids[resource.id])
+		else:
+			quest_ids[resource.id] = path
+		
+		if not resource.has_stage(resource.entry_stage):
+			push_warning("[NexusForge] Quest \"", path, "\" entry stage \"", resource.entry_stage, "\" is not valid.")
 	return null
 
 
@@ -222,3 +240,5 @@ func _export_end() -> void:
 	locale_group_uuids.clear()
 	localization_files.clear()
 	release_files.clear()
+	character_ids.clear()
+	quest_ids.clear()
