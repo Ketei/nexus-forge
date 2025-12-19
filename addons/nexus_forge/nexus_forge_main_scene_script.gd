@@ -5,6 +5,7 @@ extends Control
 var recipes_link: EditorItemRecipeLink = EditorItemRecipeLink.new()
 var current_tab: int = 0
 var tool_count: int = 0
+@onready var tool_container: PanelContainer = $MainContainer/ToolScroll/ToolContainer
 @onready var tool_tab_bar: TabBar = $MainContainer/ToolTabBar
 @onready var splash_texture: TextureRect = $MainContainer/ToolScroll/ToolContainer/NexusForge/SplashPanel/SplashTexture
 #@onready var reload_image_btn: Button = $MainContainer/ToolContainer/NexusForge/SplashPanel/SplashTexture/ReloadImageBtn
@@ -28,7 +29,7 @@ func _ready() -> void:
 		set_process_input(false)
 		return
 	
-	var tool_container: PanelContainer = $MainContainer/ToolScroll/ToolContainer
+	#var tool_container: PanelContainer = $MainContainer/ToolScroll/ToolContainer
 	
 	discourse = load("res://addons/nexus_forge/discourse/discourse_main_scene.tscn").instantiate()
 	variables = load("res://addons/nexus_forge/variables/variables_main.tscn").instantiate()
@@ -37,7 +38,7 @@ func _ready() -> void:
 	talents = load("res://addons/nexus_forge/talents/talents_main.tscn").instantiate()
 	items = load("res://addons/nexus_forge/depot/depot_scene.tscn").instantiate()
 	recipes = load("res://addons/nexus_forge/recipes/recipes_scene.tscn").instantiate()
-	quests = load("res://addons/nexus_forge/quests/quest_main_scene.tscn").instantiate()
+	quests = load("res://addons/nexus_forge/quests/new_quests.tscn").instantiate()
 	phrase_maps = load("res://addons/nexus_forge/phrases/localization_resources.tscn").instantiate()
 	
 	tool_container.add_child(discourse)
@@ -118,16 +119,21 @@ func _on_tab_changed(tab: int) -> void:
 		if species.signal_change:
 			species.signal_change = false
 			characters.update_species_data(species._species_resource)
-	nexus_forge.visible = tab == nexus_forge.get_index()
-	discourse.visible = tab == discourse.get_index()
-	variables.visible = tab == variables.get_index()
-	characters.visible = tab == characters.get_index()
-	species.visible = tab == species.get_index()
-	talents.visible = tab == talents.get_index()
-	items.visible = tab == items.get_index()
-	recipes.visible = tab == recipes.get_index()
-	quests.visible = tab == quests.get_index()
-	phrase_maps.visible = tab == phrase_maps.get_index()
+	
+	var idx: int = -1
+	for node in tool_container.get_children():
+		idx += 1
+		node.visible = idx == tab
+	#nexus_forge.visible = tab == nexus_forge.get_index()
+	#discourse.visible = tab == discourse.get_index()
+	#variables.visible = tab == variables.get_index()
+	#characters.visible = tab == characters.get_index()
+	#species.visible = tab == species.get_index()
+	#talents.visible = tab == talents.get_index()
+	#items.visible = tab == items.get_index()
+	#recipes.visible = tab == recipes.get_index()
+	#quests.visible = tab == quests.get_index()
+	#phrase_maps.visible = tab == phrase_maps.get_index()
 	current_tab = tab
 
 
@@ -146,6 +152,9 @@ func handle_resource(resource: Resource) -> void:
 	elif resource is PhraseMap:
 		go_to_tab(phrase_maps.get_index())
 		phrase_maps.plugin_open_resource(resource)
+	elif resource is Quest:
+		go_to_tab(quests.get_index())
+		quests.plugin_handle_resource(resource)
 	else:
 		if resource == null:
 			print("This is null for some reason")
@@ -154,7 +163,7 @@ func handle_resource(resource: Resource) -> void:
 
 
 func has_unsaved_changes() -> bool:
-	return discourse.has_unsaved_files() or variables._unsaved or characters.has_unsaved_files() or species._unsaved or talents._unsaved or items._unsaved or recipes._unsaved or quests._unsaved or phrase_maps.has_unsaved_files()
+	return discourse.has_unsaved_files() or variables._unsaved or characters.has_unsaved_files() or species._unsaved or talents._unsaved or items._unsaved or recipes._unsaved or quests.has_unsaved_files() or phrase_maps.has_unsaved_files()
 
 
 func save_resources() -> void:
@@ -172,8 +181,8 @@ func save_resources() -> void:
 		items.save()
 	if recipes._unsaved:
 		recipes.save()
-	if quests._unsaved:
-		quests.save()
+	if quests.has_unsaved_files():
+		quests.save_resource()
 	if phrase_maps.has_unsaved_files():
 		phrase_maps.save_all()
 
@@ -203,16 +212,16 @@ func reload_items() -> void:
 	items.items_container.reload_fields() #
 
 
-func reload_quest_data() -> void:
-	quests.reload_quest_types()
+func reload_quest_data_types() -> void:
+	quests.update_type_button(1)
 
 
-func reload_quest_stage() -> void:
-	quests.reload_quest_stage()
+func reload_quest_stage_types() -> void:
+	quests.update_type_button(2)
 
 
-func reload_quest_step() -> void:
-	quests.reload_quest_steps()
+func reload_quest_objective_types() -> void:
+	quests.update_type_button(3)
 
 
 func reload_discourse_api() -> void:
