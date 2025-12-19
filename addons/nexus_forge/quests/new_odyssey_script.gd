@@ -108,6 +108,7 @@ func _ready() -> void:
 	failure_pointer_opt_btn.item_selected.connect(_on_something_changed)
 
 
+
 func filesystem_resource_removed(quest: Quest) -> void:
 	if files_tree.has_quest(quest):
 		files_tree.close_quest(quest)
@@ -739,6 +740,8 @@ func _on_quest_close_pressed(quest: Quest, requires_save: bool) -> void:
 	
 	if quest == quest_resource:
 		crumbs_label.text = ""
+		title_ln_edt.text = ""
+		description_txt_edt.text = ""
 		quest_resource = null
 		quest_mode = QuestModeType.NONE
 		set_quest_mode(QuestModeType.NONE)
