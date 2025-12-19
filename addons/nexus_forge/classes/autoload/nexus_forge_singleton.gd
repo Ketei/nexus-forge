@@ -29,7 +29,7 @@ var Skills: SkillCatalog
 ## A resource containing the game's species data.
 var Species: SpeciesCatalog
 ## A resource containing the game's quests data.
-var Quests: QuestCatalog
+var Quests: QuestManager
 ## A resource containing the game's currency data and helper methods to manage
 ## different currency systems.
 var Currency: CurrencyCatalog
@@ -40,6 +40,7 @@ var _phrase_api: PhraseAPI = PhraseAPI.new()
 
 func _ready() -> void:
 	Discourse = DialogParser.new_parser()
+	Quests = QuestManager.new()
 	
 	var blackboard_path: String = ProjectSettings.get_setting(
 			"nexus_forge/blackboard_path", "")
@@ -88,12 +89,12 @@ func _ready() -> void:
 		else:
 			printerr("[NEXUS FORGE] ProjectSettings: Invalid Skills.")
 	
-	if not quest_path.is_empty() and ResourceLoader.exists(quest_path):
-		var res_pre: Resource = load(quest_path)
-		if res_pre is QuestCatalog:
-			Quests = res_pre
-		else:
-			printerr("[NEXUS FORGE] ProjectSettings: Invalid Quests.")
+	#if not quest_path.is_empty() and ResourceLoader.exists(quest_path):
+		#var res_pre: Resource = load(quest_path)
+		#if res_pre is QuestManager:
+			#Quests = res_pre
+		#else:
+			#printerr("[NEXUS FORGE] ProjectSettings: Invalid Quests.")
 	
 	if not species_path.is_empty() and ResourceLoader.exists(species_path):
 		var res_pre: Resource = load(species_path)
@@ -131,8 +132,8 @@ func _ready() -> void:
 		Traits = TraitCatalog.new()
 	if Skills == null:
 		Skills = SkillCatalog.new()
-	if Quests == null:
-		Quests = QuestCatalog.new()
+	#if Quests == null:
+		#Quests = QuestCatalog.new()
 	if Species == null:
 		Species = SpeciesCatalog.new()
 	if Items == null:
