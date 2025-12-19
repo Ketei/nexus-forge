@@ -163,9 +163,11 @@ func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
 			return false
 		
 		if target_node == null:
-			return true
+			return false
 		
-		if target_node.get_metadata(0)["type"] == ItemType.FOLDER:
+		if target_node.get_parent() == get_root():
+			drop_mode_flags = DROP_MODE_ON_ITEM
+		elif target_node.get_metadata(0)["type"] == ItemType.FOLDER:
 			drop_mode_flags = DROP_MODE_ON_ITEM + DROP_MODE_INBETWEEN
 		else:
 			drop_mode_flags = DROP_MODE_INBETWEEN
