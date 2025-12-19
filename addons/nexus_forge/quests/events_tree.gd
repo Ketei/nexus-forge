@@ -140,7 +140,7 @@ func _get_drag_data(at_position: Vector2) -> Variant:
 	if not allow_drag_and_drop:
 		return null
 	var item: TreeItem = get_item_at_position(at_position)
-	if item == null:
+	if item == null or item.get_parent() == get_root():
 		return null
 	var preview: Label = Label.new()
 	preview.text = "    " + item.get_text(0)
@@ -225,7 +225,7 @@ func clear_data() -> void:
 	create_item()
 
 
-func add_data(data_id: String, data: Variant, on_node: TreeItem = get_root()) -> void:
+func add_data(data_id: String, data: Variant, on_node: TreeItem = get_root(), id_editable: bool = true, value_editable: bool = true, can_delete: bool = true) -> void:
 	var data_type: int = typeof(data)
 	var new_name: String = get_unique_id(on_node, data_id)
 	var new_data: TreeItem = on_node.create_child()
@@ -233,7 +233,7 @@ func add_data(data_id: String, data: Variant, on_node: TreeItem = get_root()) ->
 	
 	new_data.set_cell_mode(0, TreeItem.CELL_MODE_STRING)
 	new_data.set_text(0, new_name)
-	new_data.set_editable(0, true)
+	new_data.set_editable(0, id_editable)
 	
 	match data_type:
 		TYPE_INT:
@@ -242,32 +242,32 @@ func add_data(data_id: String, data: Variant, on_node: TreeItem = get_root()) ->
 			new_data.set_cell_mode(1, TreeItem.CELL_MODE_RANGE)
 			new_data.set_range_config(1, -RANGE_MAX, RANGE_MAX, 1.0)
 			new_data.set_range(1, data)
-			new_data.set_editable(1, true)
+			new_data.set_editable(1, value_editable)
 		TYPE_FLOAT:
 			new_data.set_icon(0, ICON_FLOAT)
 			new_data.set_metadata(1, TYPE_FLOAT)
 			new_data.set_cell_mode(1, TreeItem.CELL_MODE_RANGE)
 			new_data.set_range_config(1, -RANGE_MAX, RANGE_MAX, RANGE_FLOAT_STEP)
 			new_data.set_range(1, data)
-			new_data.set_editable(1, true)
+			new_data.set_editable(1, value_editable)
 		TYPE_BOOL:
 			new_data.set_icon(0, ICON_BOOL)
 			new_data.set_metadata(1, TYPE_BOOL)
 			new_data.set_cell_mode(1, TreeItem.CELL_MODE_CHECK)
 			new_data.set_text(1, "Enabled")
 			new_data.set_checked(1, data)
-			new_data.set_editable(1, true)
+			new_data.set_editable(1, value_editable)
 		TYPE_STRING:
 			new_data.set_icon(0, ICON_STRING)
 			new_data.set_metadata(1, TYPE_STRING)
 			new_data.set_cell_mode(1, TreeItem.CELL_MODE_STRING)
 			new_data.set_text(1, data)
-			new_data.set_editable(1, true)
+			new_data.set_editable(1, value_editable)
 		TYPE_DICTIONARY:
 			new_data.set_icon(0, ICON_FOLDER)
 			new_data.set_metadata(1, TYPE_DICTIONARY)
 			new_data.set_selectable(1, false)
-			new_data.set_editable(0, true)
+			new_data.set_editable(0, id_editable)
 			new_data.set_editable(1, false)
 			metadata["type"] = ItemType.FOLDER
 			if compact_mode:
@@ -293,7 +293,8 @@ func add_data(data_id: String, data: Variant, on_node: TreeItem = get_root()) ->
 			new_data.set_text(1, type_string(data_type))
 			new_data.set_editable(1, false)
 	
-	new_data.add_button(1, TRASH_BIN, ButtonIds.DELETE, false, "Delete Data")
+	if can_delete:
+		new_data.add_button(1, TRASH_BIN, ButtonIds.DELETE, false, "Delete Data")
 	
 	new_data.set_metadata(0, metadata)
 

@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3 uid="uid://drut1mwhf4l0o"]
+[gd_scene load_steps=13 format=3 uid="uid://drut1mwhf4l0o"]
 
 [ext_resource type="Script" uid="uid://wlf7tvxp0fmx" path="res://addons/nexus_forge/quests/new_odyssey_script.gd" id="1_ikrww"]
 [ext_resource type="Texture2D" uid="uid://12lyg7db58dg" path="res://addons/nexus_forge/icons/add_int.svg" id="1_xhnnm"]
@@ -9,6 +9,7 @@
 [ext_resource type="Texture2D" uid="uid://cxv7veghytl4m" path="res://addons/nexus_forge/icons/add_string.svg" id="4_46oj0"]
 [ext_resource type="Script" uid="uid://bbmddairfvl6c" path="res://addons/nexus_forge/quests/quest_hierarchy_tree.gd" id="4_w3bsy"]
 [ext_resource type="Script" uid="uid://b3ooglkmjjil4" path="res://addons/nexus_forge/classes/simple_data_tree.gd" id="5_v44ms"]
+[ext_resource type="Script" uid="uid://c0bnp3v0qfte3" path="res://addons/nexus_forge/quests/events_tree.gd" id="10_n6p0u"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ct1fh"]
 content_margin_left = 6.0
@@ -333,6 +334,6 @@ size_flags_vertical = 3
 columns = 2
 allow_reselect = true
 hide_root = true
-script = ExtResource("5_v44ms")
+script = ExtResource("10_n6p0u")
 allow_drag_and_drop = true
 compact_mode = true
