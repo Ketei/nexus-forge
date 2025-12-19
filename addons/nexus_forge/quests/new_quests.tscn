@@ -1,0 +1,338 @@
+[gd_scene load_steps=12 format=3 uid="uid://drut1mwhf4l0o"]
+
+[ext_resource type="Script" uid="uid://wlf7tvxp0fmx" path="res://addons/nexus_forge/quests/new_odyssey_script.gd" id="1_ikrww"]
+[ext_resource type="Texture2D" uid="uid://12lyg7db58dg" path="res://addons/nexus_forge/icons/add_int.svg" id="1_xhnnm"]
+[ext_resource type="Texture2D" uid="uid://fi4jffs746wr" path="res://addons/nexus_forge/icons/scroll_plus.svg" id="2_ct1fh"]
+[ext_resource type="Texture2D" uid="uid://dcgniolhiay6u" path="res://addons/nexus_forge/icons/add_float.svg" id="2_ikrww"]
+[ext_resource type="Texture2D" uid="uid://c472l5bho4jpi" path="res://addons/nexus_forge/icons/add_bool.svg" id="3_ct1fh"]
+[ext_resource type="Script" uid="uid://dvfptxxjhty4u" path="res://addons/nexus_forge/quests/quest_files_tree.gd" id="3_ncoao"]
+[ext_resource type="Texture2D" uid="uid://cxv7veghytl4m" path="res://addons/nexus_forge/icons/add_string.svg" id="4_46oj0"]
+[ext_resource type="Script" uid="uid://bbmddairfvl6c" path="res://addons/nexus_forge/quests/quest_hierarchy_tree.gd" id="4_w3bsy"]
+[ext_resource type="Script" uid="uid://b3ooglkmjjil4" path="res://addons/nexus_forge/classes/simple_data_tree.gd" id="5_v44ms"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ct1fh"]
+content_margin_left = 6.0
+content_margin_top = 8.0
+content_margin_right = 6.0
+content_margin_bottom = 6.0
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_xhnnm"]
+
+[node name="QuestsOdyssey" type="PanelContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxEmpty_ct1fh")
+script = ExtResource("1_ikrww")
+
+[node name="MainContainer" type="VBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="TitleContainer" type="HBoxContainer" parent="MainContainer"]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="MainContainer/TitleContainer"]
+custom_minimum_size = Vector2(250, 36)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.223182, 0.705086, 0.904884, 1)
+theme_override_font_sizes/font_size = 25
+text = "Odyssey"
+
+[node name="CrumbsContainer" type="VBoxContainer" parent="MainContainer/TitleContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="CrumbsLabel" type="Label" parent="MainContainer/TitleContainer/CrumbsContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 3
+
+[node name="DataContainer" type="HBoxContainer" parent="MainContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="NavigationContainer" type="VBoxContainer" parent="MainContainer/DataContainer"]
+custom_minimum_size = Vector2(250, 0)
+layout_mode = 2
+
+[node name="FileBarContainer" type="HBoxContainer" parent="MainContainer/DataContainer/NavigationContainer"]
+layout_mode = 2
+
+[node name="FileSearchLnEdt" type="LineEdit" parent="MainContainer/DataContainer/NavigationContainer/FileBarContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Search Files"
+caret_blink = true
+
+[node name="NewQuestBtn" type="Button" parent="MainContainer/DataContainer/NavigationContainer/FileBarContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+icon = ExtResource("2_ct1fh")
+
+[node name="NavigationSplitContainer" type="VSplitContainer" parent="MainContainer/DataContainer/NavigationContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+split_offset = 150
+
+[node name="FilesTree" type="Tree" parent="MainContainer/DataContainer/NavigationContainer/NavigationSplitContainer"]
+layout_mode = 2
+hide_folding = true
+hide_root = true
+script = ExtResource("3_ncoao")
+
+[node name="QuestsContainer" type="VBoxContainer" parent="MainContainer/DataContainer/NavigationContainer/NavigationSplitContainer"]
+layout_mode = 2
+
+[node name="QuestSearchLnEdit" type="LineEdit" parent="MainContainer/DataContainer/NavigationContainer/NavigationSplitContainer/QuestsContainer"]
+layout_mode = 2
+placeholder_text = "Search on Quest"
+caret_blink = true
+
+[node name="QuestTree" type="Tree" parent="MainContainer/DataContainer/NavigationContainer/NavigationSplitContainer/QuestsContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+allow_reselect = true
+allow_rmb_select = true
+script = ExtResource("4_w3bsy")
+
+[node name="DataContainer" type="HSplitContainer" parent="MainContainer/DataContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+split_offset = 400
+
+[node name="BasicDataContainer" type="VBoxContainer" parent="MainContainer/DataContainer/DataContainer"]
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+
+[node name="TypeContainer" type="HBoxContainer" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/TypeContainer"]
+custom_minimum_size = Vector2(40, 0)
+layout_mode = 2
+text = "Type"
+
+[node name="TypeOptBtn" type="OptionButton" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/TypeContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+disabled = true
+
+[node name="TitleContainer" type="HBoxContainer" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/TitleContainer"]
+custom_minimum_size = Vector2(40, 0)
+layout_mode = 2
+text = "Title"
+
+[node name="TitleLnEdt" type="LineEdit" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/TitleContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+editable = false
+caret_blink = true
+
+[node name="DescContainer" type="VBoxContainer" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer"]
+custom_minimum_size = Vector2(0, 140)
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/DescContainer"]
+layout_mode = 2
+text = "Description"
+
+[node name="DescriptionTxtEdt" type="TextEdit" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/DescContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+editable = false
+wrap_mode = 1
+caret_blink = true
+
+[node name="CustomDataContainer" type="VBoxContainer" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 2.5
+
+[node name="CDHeaderContainer" type="HBoxContainer" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/CustomDataContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/CustomDataContainer/CDHeaderContainer"]
+layout_mode = 2
+text = "Custom Data"
+
+[node name="AddButtonsContainer" type="HBoxContainer" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/CustomDataContainer/CDHeaderContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 2
+
+[node name="AddDictButton" type="Button" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Add folder"
+disabled = true
+icon_alignment = 1
+
+[node name="VSeparator" type="VSeparator" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer"]
+layout_mode = 2
+
+[node name="AddIntButton" type="Button" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Create integer variable."
+disabled = true
+icon = ExtResource("1_xhnnm")
+icon_alignment = 1
+
+[node name="AddFloatButton" type="Button" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Create float variable."
+disabled = true
+icon = ExtResource("2_ikrww")
+icon_alignment = 1
+
+[node name="AddBoolButton" type="Button" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Create bool variable."
+disabled = true
+icon = ExtResource("3_ct1fh")
+icon_alignment = 1
+
+[node name="AddStringButton" type="Button" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Create string  variable."
+disabled = true
+icon = ExtResource("4_46oj0")
+icon_alignment = 1
+
+[node name="CustomDataSearchLine" type="LineEdit" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/CustomDataContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 3.0
+placeholder_text = "Search Custom Data"
+clear_button_enabled = true
+caret_blink = true
+
+[node name="CustomDataTree" type="Tree" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/CustomDataContainer"]
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+size_flags_vertical = 3
+columns = 2
+allow_reselect = true
+hide_root = true
+script = ExtResource("5_v44ms")
+allow_drag_and_drop = true
+compact_mode = true
+
+[node name="LogicContainer" type="VSplitContainer" parent="MainContainer/DataContainer/DataContainer"]
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+
+[node name="DynamicLogicPanel" type="PanelContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxEmpty_xhnnm")
+
+[node name="TargetLogicContainer" type="VBoxContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel"]
+visible = false
+layout_mode = 2
+
+[node name="ObjReqChkBx" type="CheckBox" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer"]
+layout_mode = 2
+tooltip_text = "If to complete the stage you need
+to complete this objective's requirements."
+text = "Objective Required"
+alignment = 1
+
+[node name="HSeparator" type="HSeparator" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer"]
+layout_mode = 2
+
+[node name="RequirementsCotnainer" type="VBoxContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer"]
+layout_mode = 2
+
+[node name="HeaderContainer" type="HBoxContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/HeaderContainer"]
+layout_mode = 2
+text = "Requirements"
+
+[node name="RequirementSearchLnEdt" type="LineEdit" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/HeaderContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Search Requirements"
+
+[node name="AddRequirementBtn" type="Button" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/HeaderContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+size_flags_horizontal = 8
+icon_alignment = 1
+
+[node name="RequirementsScroll" type="ScrollContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer"]
+custom_minimum_size = Vector2(250, 150)
+layout_mode = 2
+
+[node name="RequirementsContainer" type="VBoxContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/RequirementsScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="StageLogicContainer" type="VBoxContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel"]
+layout_mode = 2
+
+[node name="SuccessContainer" type="HBoxContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/StageLogicContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/StageLogicContainer/SuccessContainer"]
+custom_minimum_size = Vector2(116, 0)
+layout_mode = 2
+text = "Success Target"
+
+[node name="SuccessPointerOptBtn" type="OptionButton" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/StageLogicContainer/SuccessContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="FailureContainer" type="HBoxContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/StageLogicContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/StageLogicContainer/FailureContainer"]
+custom_minimum_size = Vector2(116, 0)
+layout_mode = 2
+text = "Failure Target"
+
+[node name="FailurePointerOptBtn" type="OptionButton" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/StageLogicContainer/FailureContainer"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="EventsContainer" type="VBoxContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="EventsHeader" type="HBoxContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer/EventsContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/DataContainer/DataContainer/LogicContainer/EventsContainer/EventsHeader"]
+layout_mode = 2
+text = "Quest Events"
+
+[node name="SearchEventLnEdt" type="LineEdit" parent="MainContainer/DataContainer/DataContainer/LogicContainer/EventsContainer/EventsHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Search Event"
+
+[node name="EventsTree" type="Tree" parent="MainContainer/DataContainer/DataContainer/LogicContainer/EventsContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+columns = 2
+allow_reselect = true
+hide_root = true
+script = ExtResource("5_v44ms")
+allow_drag_and_drop = true
+compact_mode = true
