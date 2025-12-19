@@ -475,7 +475,6 @@ func _on_item_selected(item_id: StringName) -> void:
 	if loaded_item == item_id:
 		return
 	if not loaded_item.is_empty():
-		print("Trying to save: ", loaded_item)
 		save_current_item()
 	load_item(item_id)
 	loaded_item = item_id
