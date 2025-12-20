@@ -521,6 +521,20 @@ func add_requirement(id: String, operator: int, value) -> void:
 	new_item.erase_requirement_pressed.connect(_on_erased_requirement_pressed)
 
 
+func get_open_files() -> Array[String]:
+	return files_tree.get_open_quest_paths()
+
+
+func open_files(paths: Array[String]) -> void:
+	for path in paths:
+		if not ResourceLoader.exists(path):
+			continue
+		var res: Resource = load(path)
+		if res is Quest:
+			files_tree.add_quest(res)
+
+
+
 func _on_erased_requirement_pressed(item: Control) -> void:
 	var child_count: int = requirements_container.get_child_count()
 	var index: int = item.get_index()
