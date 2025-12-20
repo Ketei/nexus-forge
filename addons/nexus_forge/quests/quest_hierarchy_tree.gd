@@ -412,6 +412,7 @@ func _on_popup_id_pressed(id: int) -> void:
 		PopupItemID.SET_ENTRY:
 			if not target.get_metadata(0)["is_entry"]:
 				set_entry_stage(target.get_metadata(0)["id"])
+				entry_stage_selected.emit(target.get_metadata(0)["id"])
 
 
 func _on_item_edited() -> void:
