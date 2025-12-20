@@ -776,4 +776,3 @@ func _on_add_custom_data_pressed(id: String, data) -> void:
 func _on_entry_stage_selected(stage_id: StringName) -> void:
 	quest_resource.entry_stage = stage_id
 	_on_something_changed()
-	print("aslkdjasldj")
