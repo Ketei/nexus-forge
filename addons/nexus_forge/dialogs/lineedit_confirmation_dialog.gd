@@ -114,8 +114,11 @@ func grab_text_focus() -> void:
 	_dialog_line.grab_focus()
 
 
-func set_line_text(text: String) -> void:
+func set_line_text(text: String, caret_pos: int = -1) -> void:
 	_dialog_line.text = text
+	if -1 < caret_pos:
+		_dialog_line.caret_column = caret_pos
+	_on_text_changed(text)
 
 
 func select_all_text() -> void:
