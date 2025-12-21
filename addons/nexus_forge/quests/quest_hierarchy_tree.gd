@@ -20,6 +20,9 @@ signal objective_erased(from_stage: StringName, objective_id: StringName)
 
 signal entry_stage_selected(stage_id: StringName)
 
+signal stage_duplicated(from: StringName, duplicate_id: StringName)
+signal objective_duplicated(from_stage: StringName, objective: StringName, duplicate_id: StringName)
+
 
 enum ItemType {
 	QUEST,
@@ -33,6 +36,7 @@ enum ButtonID {
 enum PopupItemID{
 	ADD_ITEM,
 	EDIT_ITEM,
+	DUPLICATE,
 	REMOVE_ITEM,
 	SET_ENTRY,
 }
@@ -53,6 +57,7 @@ func _ready() -> void:
 	#quest_popup.add_item("Add", PopupItemID.ADD_ITEM)
 	quest_popup.add_icon_item(get_theme_icon("Add", "EditorIcons"), "Add", PopupItemID.ADD_ITEM)
 	quest_popup.add_icon_item(get_theme_icon("Edit", "EditorIcons"), "Edit ID", PopupItemID.EDIT_ITEM)
+	quest_popup.add_icon_item(get_theme_icon("Duplicate", "EditorIcons"), "Duplicate", PopupItemID.DUPLICATE)
 	quest_popup.add_icon_item(get_theme_icon("Remove", "EditorIcons"), "Remove", PopupItemID.REMOVE_ITEM)
 	quest_popup.add_separator()
 	quest_popup.add_item("Set as entry", PopupItemID.SET_ENTRY)
@@ -183,7 +188,7 @@ func set_quest(quest: Quest, select: bool = false, emit_select: bool = true) -> 
 			item_mouse_selected.connect(_on_item_clicked, CONNECT_DEFERRED)
 
 
-func add_stage(stage_id: String) -> void:
+func add_stage(stage_id: String) -> TreeItem:
 	var stage_item: TreeItem = root.create_child()
 	stage_item.set_text(0, stage_id)
 	stage_item.set_editable(0, true)
@@ -196,6 +201,7 @@ func add_stage(stage_id: String) -> void:
 			"Create objective")
 	stage_item.set_metadata(0, {"id": StringName(stage_id), "type": ItemType.STAGE, "is_entry": false})
 	sort_single_item(stage_item)
+	return stage_item
 
 
 func select_stage(stage_id: StringName, emit_select: bool = true) -> void:
@@ -382,6 +388,9 @@ func _on_item_clicked(mouse_position: Vector2, mouse_button_index: int) -> void:
 		quest_popup.set_item_disabled(
 				quest_popup.get_item_index(PopupItemID.SET_ENTRY),
 				selected.get_metadata(0)["type"] != ItemType.STAGE)
+		quest_popup.set_item_disabled(
+				quest_popup.get_item_index(PopupItemID.DUPLICATE),
+				selected.get_metadata(0)["type"] == ItemType.QUEST)
 		
 		quest_popup.popup()
 
@@ -413,6 +422,35 @@ func _on_popup_id_pressed(id: int) -> void:
 			if not target.get_metadata(0)["is_entry"]:
 				set_entry_stage(target.get_metadata(0)["id"])
 				entry_stage_selected.emit(target.get_metadata(0)["id"])
+		PopupItemID.DUPLICATE:
+			var dialog := preload("res://addons/nexus_forge/dialogs/lineedit_confirmation_dialog.gd").new()
+			var type: ItemType = target.get_metadata(0)["type"]
+			var new_id: String = get_unique_id(target.get_text(0) + "_copy", target.get_parent())
+			dialog.allow_empty = false
+			dialog.use_blacklist = true
+			dialog.title = "Duplicate stage" if type == ItemType.STAGE else "Duplicate objective"
+			dialog.line_placeholder_text = "Stage ID" if type == ItemType.STAGE else "Objective ID"
+			for stage in target.get_parent().get_children():
+				dialog.text_blacklist.append(stage.get_text(0))
+			add_child(dialog)
+			dialog.set_line_text(new_id, new_id.length())
+			dialog.popup()
+			dialog.grab_text_focus()
+			dialog.select_all_text()
+			
+			var result: Array = await dialog.dialog_finished
+			
+			if result[0]:
+				if type == ItemType.STAGE:
+					var dupe_stage: TreeItem = add_stage(result[1])
+					for obj in target.get_children():
+						add_objective(dupe_stage, obj.get_text(0))
+					stage_duplicated.emit(target.get_metadata(0)["id"], StringName(result[1]))
+				else:
+					add_objective(target.get_parent(), result[1])
+					objective_duplicated.emit(target.get_parent().get_metadata(0)["id"], target.get_metadata(0)["id"], StringName(result[1]))
+				
+			dialog.queue_free()
 
 
 func _on_item_edited() -> void:

@@ -39,7 +39,7 @@ var selected_objective: StringName = &""
 @onready var failure_pointer_opt_btn: OptionButton = $MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/StageLogicContainer/FailureContainer/FailurePointerOptBtn
 @onready var search_event_ln_edt: LineEdit = $MainContainer/DataContainer/DataContainer/LogicContainer/EventsContainer/EventsHeader/SearchEventLnEdt
 @onready var requirement_search_ln_edt: LineEdit = $MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/HeaderContainer/RequirementSearchLnEdt
-
+@onready var edit_types_btn: Button = $MainContainer/DataContainer/DataContainer/BasicDataContainer/TypeContainer/EditTypesBtn
 
 @onready var target_logic_container: VBoxContainer = $MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer
 @onready var stage_logic_container: VBoxContainer = $MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/StageLogicContainer
@@ -56,6 +56,7 @@ func _ready() -> void:
 	search_event_ln_edt.right_icon = get_theme_icon("Search", "EditorIcons")
 	requirement_search_ln_edt.right_icon = get_theme_icon("Search", "EditorIcons")
 	add_requirement_btn.icon = get_theme_icon("Add", "EditorIcons")
+	edit_types_btn.icon = get_theme_icon("Edit", "EditorIcons")
 	
 	success_pointer_opt_btn.add_item("Quest End")
 	failure_pointer_opt_btn.add_item("Quest End")
@@ -84,6 +85,10 @@ func _ready() -> void:
 	quest_tree.stage_erased.connect(_on_stage_erased)
 	quest_tree.objective_erased.connect(_on_objective_erased)
 	quest_tree.entry_stage_selected.connect(_on_entry_stage_selected)
+	quest_tree.stage_duplicated.connect(_on_stage_duplicated)
+	quest_tree.objective_duplicated.connect(_on_objective_duplicated)
+	
+	edit_types_btn.pressed.connect(_on_edit_types_pressed)
 	
 	add_int_button.pressed.connect(_on_add_custom_data_pressed.bind("new_int", 0))
 	add_float_button.pressed.connect(_on_add_custom_data_pressed.bind("new_float", 0.0))
@@ -228,6 +233,7 @@ func set_ui_enabled(enabled: bool) -> void:
 	description_txt_edt.editable = enabled
 	custom_data_tree.enabled = enabled
 	events_tree.enabled = enabled
+	edit_types_btn.disabled = disabled
 	
 	custom_data_tree.enabled = enabled
 	add_int_button.disabled = disabled
@@ -789,4 +795,36 @@ func _on_add_custom_data_pressed(id: String, data) -> void:
 
 func _on_entry_stage_selected(stage_id: StringName) -> void:
 	quest_resource.entry_stage = stage_id
+	_on_something_changed()
+
+
+func _on_edit_types_pressed() -> void:
+	match quest_mode:
+		QuestModeType.QUEST:
+			EditorInterface.edit_script(Quest.new().get_script())
+			if not EditorInterface.get_editor_settings().get_setting("text_editor/external/use_external_editor"):
+				EditorInterface.set_main_screen_editor("Script")
+		QuestModeType.STAGE:
+			EditorInterface.edit_script(QuestStage.new().get_script())
+			if not EditorInterface.get_editor_settings().get_setting("text_editor/external/use_external_editor"):
+				EditorInterface.set_main_screen_editor("Script")
+		QuestModeType.OBJECTIVE:
+			EditorInterface.edit_script(QuestObjective.new().get_script())
+			if not EditorInterface.get_editor_settings().get_setting("text_editor/external/use_external_editor"):
+				EditorInterface.set_main_screen_editor("Script")
+
+
+func _on_stage_duplicated(from: StringName, duplicate_id: StringName) -> void:
+	var stage: QuestStage = quest_resource.get_stage(from).duplicate(true)
+	stage.id = duplicate_id
+	quest_resource.add_stage(stage)
+	_on_something_changed()
+
+
+func _on_objective_duplicated(from_stage: StringName, objective_id: StringName, duplicate_id: StringName) -> void:
+	var stage: QuestStage = quest_resource.get_stage(from_stage)
+	var objective: QuestObjective = stage.get_objective(objective_id).duplicate(true)
+	objective.id = duplicate_id
+	
+	stage.add_objective(objective, stage.is_objective_required(objective_id))
 	_on_something_changed()

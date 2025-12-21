@@ -126,6 +126,12 @@ layout_mode = 2
 size_flags_horizontal = 3
 disabled = true
 
+[node name="EditTypesBtn" type="Button" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/TypeContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Edit types (Script)"
+icon_alignment = 1
+
 [node name="TitleContainer" type="HBoxContainer" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer"]
 layout_mode = 2
 
