@@ -111,6 +111,7 @@ func _ready() -> void:
 	obj_req_chk_bx.pressed.connect(_on_something_changed)
 	success_pointer_opt_btn.item_selected.connect(_on_something_changed)
 	failure_pointer_opt_btn.item_selected.connect(_on_something_changed)
+	quest_tree.tree_changed.connect(_on_something_changed)
 
 
 
@@ -378,17 +379,29 @@ func save_current_data() -> void:
 func plugin_handle_resource(quest: Quest) -> void:
 	if quest_resource != null:
 		save_current_data()
-	
+		files_tree.set_quest_structure(quest_tree.get_quest_structure())
 	
 	if files_tree.has_quest(quest):
 		files_tree.select_quest(quest)
 	else:
+		var cfg: ConfigFile = ConfigFile.new()
+		var filepath: String = quest.resource_path
+		var filename: String = filepath.get_file()
+		var path_hash: String = filepath.md5_text()
+		var absolute_path: String ="res://.godot/editor/"
+		var cfg_filename: String = str(filename, "-treestate-", path_hash, ".cfg")
+		var end_path: String = absolute_path.path_join(cfg_filename)
+		if FileAccess.file_exists(end_path):
+			cfg.load(end_path)
+		var structure: Array[Dictionary] = cfg.get_value("Layout", "quest_structure", ArrayUtils.create_array_typed(TYPE_DICTIONARY))
+		
 		var pointers: Array[StringName] = []
 		pointers.assign(quest.stages())
 		pointers.sort_custom(ArrayUtils.sort_custom_alphabetically_asc)
 		set_stage_target_pointers(pointers)
 		files_tree.add_quest(quest, true, false)
 		quest_tree.set_quest(quest)
+		quest_tree.set_quest_structure(structure)
 		quest_resource = quest
 		set_quest_mode(QuestModeType.QUEST)
 		load_quest()
@@ -498,10 +511,27 @@ func has_unsaved_files() -> bool:
 func save_resource() -> void:
 	if quest_resource != null:
 		save_current_data()
+		files_tree.set_quest_structure(quest_resource, quest_tree.get_quest_structure())
 	
-	for quest_file:Quest in files_tree.get_unsaved_files():
-		ResourceSaver.save(quest_file)
+	for quest_file:Dictionary in files_tree.get_unsaved_files():
+		_save_cfg_for(quest_file["resource"].resource_path, quest_file["structure"])
+		ResourceSaver.save(quest_file["resource"])
 	files_tree.set_all_saved()
+
+
+func _save_cfg_for(filepath: String, structure: Array[Dictionary]) -> void:
+	var cfg: ConfigFile = ConfigFile.new()
+	cfg.set_value("Layout", "quest_structure", structure)
+	var filename: String = filepath.get_file()
+	var path_hash: String = filepath.md5_text()
+	var absolute_path: String ="res://.godot/editor/"
+	var cfg_filename: String = str(filename, "-treestate-", path_hash, ".cfg")
+	
+	if not DirAccess.dir_exists_absolute(absolute_path):
+		DirAccess.make_dir_recursive_absolute(absolute_path)
+	
+	if cfg.save(absolute_path.path_join(cfg_filename)) != OK:
+		push_error("Error saving editor state on: ", absolute_path.path_join(cfg_filename))
 
 
 func _on_add_requirement_pressed() -> void:
@@ -537,8 +567,19 @@ func open_files(paths: Array[String]) -> void:
 			continue
 		var res: Resource = load(path)
 		if res is Quest:
+			var cfg: ConfigFile = ConfigFile.new()
+			var filepath: String = res.resource_path
+			var filename: String = filepath.get_file()
+			var path_hash: String = filepath.md5_text()
+			var absolute_path: String ="res://.godot/editor/"
+			var cfg_filename: String = str(filename, "-treestate-", path_hash, ".cfg")
+			var end_path: String = absolute_path.path_join(cfg_filename)
+			if FileAccess.file_exists(end_path):
+				cfg.load(end_path)
+			var structure: Array[Dictionary] = cfg.get_value("Layout", "quest_structure", ArrayUtils.create_array_typed(TYPE_DICTIONARY))
+			
 			files_tree.add_quest(res)
-
+			files_tree.set_quest_structure(res, structure)
 
 
 func _on_erased_requirement_pressed(item: Control) -> void:
@@ -657,12 +698,14 @@ func _on_objective_id_changed(on_stage: StringName, from: StringName, to: String
 	_on_something_changed()
 
 
-func _on_quest_resource_selected(quest: Quest) -> void:
+func _on_quest_resource_selected(quest: Quest, structure: Array[Dictionary]) -> void:
 	if quest_resource != null:
 		save_current_data()
+		files_tree.set_quest_structure(quest_tree.get_quest_structure())
 	
 	quest_resource = quest
 	quest_tree.set_quest(quest, true, false)
+	quest_tree.set_quest_structure(structure)
 	
 	load_quest()
 
@@ -689,7 +732,7 @@ func _on_new_quest_file_pressed() -> void:
 	if result[0]:
 		if quest_resource != null:
 			save_current_data()
-			quest_resource.entry_stage = quest_tree.get_entry_stage()
+			files_tree.set_quest_structure(quest_resource, quest_tree.get_quest_structure())
 		if ResourceLoader.exists(result[1]):
 			files_tree.close_with_path(result[1])
 		var new_quest: Quest = Quest.new()
@@ -737,7 +780,7 @@ func _on_search_requirement_text_changed(text: String) -> void:
 		requirement.visible = empty or requirement.has_text(clean_text)
 
 
-func _on_quest_close_pressed(quest: Quest, requires_save: bool) -> void:
+func _on_quest_close_pressed(quest: Quest, requires_save: bool, structure: Array[Dictionary]) -> void:
 	if requires_save:
 		var confirm_dialog := preload("res://addons/nexus_forge/dialogs/unsaved_dialog_script.gd").new()
 		confirm_dialog.dialog_text = "File has unsaved changes. Save before closing?"
@@ -751,6 +794,10 @@ func _on_quest_close_pressed(quest: Quest, requires_save: bool) -> void:
 		if result == 0:
 			if quest == quest_resource:
 				save_current_data()
+			
+			_save_cfg_for(quest.resource_path, structure)
+			
+			
 			ResourceSaver.save(quest)
 		elif result == 2:
 			confirm_dialog.queue_free()

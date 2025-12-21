@@ -23,6 +23,8 @@ signal entry_stage_selected(stage_id: StringName)
 signal stage_duplicated(from: StringName, duplicate_id: StringName)
 signal objective_duplicated(from_stage: StringName, objective: StringName, duplicate_id: StringName)
 
+signal tree_changed
+
 
 enum ItemType {
 	QUEST,
@@ -70,46 +72,89 @@ func _ready() -> void:
 
 func _get_drag_data(at_position: Vector2) -> Variant:
 	var item: TreeItem = get_item_at_position(at_position)
-	if item == null or item.get_metadata(0)["type"] != ItemType.OBJECTIVE:
+	if item == null or item.get_metadata(0)["type"] == ItemType.QUEST:
 		return null
 	
 	var preview: Label = Label.new()
 	preview.text = "   " + item.get_text(0)
 	set_drag_preview(preview)
 	
-	return {"type": "quest_objective", "item": item, "origin_stage": item.get_parent().get_metadata(0)["id"]}
+	return {"type": "quest_item", "item": item}#, "origin_stage": item.get_parent().get_metadata(0)["id"]}
 
 
 func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
-	if typeof(data) != TYPE_DICTIONARY or not data.has_all(["type", "item"]) or typeof(data["type"]) != TYPE_STRING or typeof(data["item"]) != TYPE_OBJECT or data["item"] is not TreeItem or data["type"] != "quest_objective":
+	if typeof(data) != TYPE_DICTIONARY or not data.has_all(["type", "item"]) or typeof(data["type"]) != TYPE_STRING or typeof(data["item"]) != TYPE_OBJECT or data["item"] is not TreeItem or data["type"] != "quest_item":
+		drop_mode_flags = DROP_MODE_DISABLED
 		return false
 	
 	var target: TreeItem = get_item_at_position(at_position)
 	
-	if target == null or target.get_metadata(0)["type"] == ItemType.QUEST or target == data["item"].get_parent() or target.get_parent() == data["item"].get_parent():
+	if target == null or target == data["item"]:
+		drop_mode_flags = DROP_MODE_DISABLED
 		return false
 	
-	drop_mode_flags = DROP_MODE_INBETWEEN if target.get_metadata(0)["type"] == ItemType.OBJECTIVE else DROP_MODE_ON_ITEM
+	var compatible: bool = false
 	
-	return true
+	match data["item"].get_metadata(0)["type"]:
+		ItemType.OBJECTIVE:
+			if target.get_metadata(0)["type"] == ItemType.STAGE:
+				compatible = true
+				drop_mode_flags = DROP_MODE_ON_ITEM
+			elif target.get_metadata(0)["type"] == ItemType.OBJECTIVE:
+				compatible = true
+				drop_mode_flags = DROP_MODE_INBETWEEN
+		ItemType.STAGE:
+			if target.get_metadata(0)["type"] == ItemType.STAGE:
+				compatible = true
+				drop_mode_flags = DROP_MODE_INBETWEEN
+			elif target.get_metadata(0)["type"] == ItemType.QUEST:
+				compatible = true
+				drop_mode_flags = DROP_MODE_ON_ITEM
+	
+	if not compatible:
+		drop_mode_flags = DROP_MODE_DISABLED
+	
+	return compatible
 
 
 func _drop_data(at_position: Vector2, data: Variant) -> void:
 	var on_item: TreeItem = get_item_at_position(at_position)
-	var target_stage: StringName = &""
-	
-	if on_item.get_metadata(0)["type"] == ItemType.STAGE:
-		data["item"].get_parent().remove_child(data["item"])
-		on_item.add_child(data["item"])
-		target_stage = on_item.get_metadata(0)["id"]
+	var section: int = get_drop_section_at_position(at_position)
+	var item_count: int = 0# data["item"].get_parent().get_child_count()
+	if on_item.get_metadata(0)["type"] == ItemType.QUEST:
+		item_count = root.get_child_count()
+		if 1 < item_count and data["item"].get_index() < item_count - 1:
+			data["item"].move_after(root.get_child(item_count - 1))
+			tree_changed.emit()
+	elif on_item.get_metadata(0)["type"] == ItemType.STAGE:
+		if section == 0: # on
+			var is_changed: bool = data["item"].get_parent() != on_item
+			var origin_stage: String = data["item"].get_parent().get_metadata(0)["id"]
+			data["item"].get_parent().remove_child(data["item"])
+			on_item.add_child(data["item"])
+			if is_changed:
+				objective_rearranged.emit(origin_stage, on_item.get_metadata(0)["id"], data["item"].get_metadata(0)["id"])
+		elif section == -1: # Above
+			data["item"].move_before(on_item)
+			tree_changed.emit()
+		elif section == 1: # Below
+			data["item"].move_after(on_item)
+			tree_changed.emit()
 	else:
-		var target: TreeItem = on_item.get_parent()
-		data["item"].get_parent().remove_child(data["item"])
-		target.add_child(data["item"])
-		target_stage = target.get_metadata(0)["id"]
-	sort_single_item(data["item"])
-	
-	objective_rearranged.emit(data["origin_stage"], target_stage, data["item"].get_metadata(0)["id"])
+		if section == 1:
+			data["item"].move_after(on_item)
+		else:
+			data["item"].move_before(on_item)
+		tree_changed.emit()
+		
+		
+		#var target: TreeItem = on_item.get_parent()
+		#data["item"].get_parent().remove_child(data["item"])
+		#target.add_child(data["item"])
+		#target_stage = target.get_metadata(0)["id"]
+	#sort_single_item(data["item"])
+	#
+	#objective_rearranged.emit(data["origin_stage"], target_stage, data["item"].get_metadata(0)["id"])
 
 
 func get_entry_stage() -> StringName:
@@ -177,8 +222,6 @@ func set_quest(quest: Quest, select: bool = false, emit_select: bool = true) -> 
 			objective_item.set_icon(0, preload("res://addons/nexus_forge/icons/target_icon.svg"))
 			objective_item.set_metadata(0, {"id": objective_id, "type": ItemType.OBJECTIVE})
 	
-	sort_all()
-	
 	if select:
 		if emit_select:
 			root.select(0)
@@ -200,7 +243,7 @@ func add_stage(stage_id: String) -> TreeItem:
 			false,
 			"Create objective")
 	stage_item.set_metadata(0, {"id": StringName(stage_id), "type": ItemType.STAGE, "is_entry": false})
-	sort_single_item(stage_item)
+	
 	return stage_item
 
 
@@ -222,7 +265,6 @@ func add_objective(on_item: TreeItem, objective_id: String) -> void:
 	objective_item.set_editable(0, true)
 	objective_item.set_icon(0, preload("res://addons/nexus_forge/icons/target_icon.svg"))
 	objective_item.set_metadata(0, {"id": StringName(objective_id), "type": ItemType.OBJECTIVE})
-	sort_single_item(objective_item)
 
 
 func sort_all() -> void:
@@ -303,6 +345,76 @@ func search_for(text: String) -> void:
 			if obj_visible == false and objective.visible:
 				obj_visible = true
 		stage.visible = obj_visible or is_empty or stage.get_text(0).containsn(text)
+
+
+func get_quest_structure() -> Array[Dictionary]:
+	var structure: Array[Dictionary] = [
+		#{"stage": "abd", "objectives": ["a", "b"]}
+	]
+	
+	for stage in root.get_children():
+		var objectives: Array = []
+		for objective in stage.get_children():
+			objectives.append(objective.get_text(0))
+		structure.append({
+			"stage": stage.get_text(0),
+			"objectives": objectives})
+	
+	return structure
+
+
+func set_quest_structure(structure: Array[Dictionary]) -> void:
+	if root == null or structure.is_empty():
+		sort_all()
+		return
+	
+	var stage_ids: Array[String] = []
+	var objectives: Dictionary[String, Array] = {}
+	
+	for item in structure:
+		stage_ids.append(item["stage"])
+		objectives[item["stage"]] = ArrayUtils.create_array_typed(TYPE_STRING, item["objectives"].duplicate())
+	
+	var stages: Array[TreeItem] = root.get_children()
+	var stage_count: int = stages.size()
+	
+	if 1 < stage_count: # Only sort stages if there are more than 2.
+		stages.sort_custom(_sort_from_cfg.bind(stage_ids))
+		
+		if stages[0] != root.get_first_child():
+			stages[0].move_before(root.get_first_child())
+		
+		for stage_idx in range(1, stage_count):
+			stages[stage_idx].move_after(stages[stage_idx - 1])
+	
+	for stage_item in stages: # Only sort objectives on stages if there are more than 2
+		if not objectives.has(stage_item.get_text(0)):
+			continue
+		var objective_items: Array[TreeItem] = stage_item.get_children()
+		var objective_count: int = objective_items.size()
+		
+		if objective_count < 2:
+			continue
+		
+		objective_items.sort_custom(_sort_from_cfg.bind(objectives[stage_item.get_text(0)]))
+		
+		if objective_items[0] != stage_item.get_first_child():
+			objective_items[0].move_before(stage_item.get_first_child())
+		
+		for item_idx in range(1, objective_count):
+			objective_items[item_idx].move_after(objective_items[item_idx - 1])
+
+
+func _sort_from_cfg(a: TreeItem, b: TreeItem, elements: Array[String]) -> bool:
+	var a_idx: int = elements.find(a.get_text(0))
+	var b_idx: int = elements.find(b.get_text(0))
+	
+	if -1 < a_idx and -1 < b_idx:
+		return a_idx < b_idx
+	elif -1 < a_idx or -1 < b_idx:
+		return -1 < a_idx # If a is in the list, returns true. If b, returns false
+	else:
+		return a.get_text(0).nocasecmp_to(b.get_text(0)) < 0 # Sort alphabetically at the end
 
 
 func _on_button_clicked(item: TreeItem, _column: int, id: int, mouse_button_index: int) -> void:

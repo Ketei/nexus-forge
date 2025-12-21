@@ -3,7 +3,7 @@ extends Tree
 
 
 signal quest_selected(quest: Quest)
-signal quest_close_pressed(quest: Quest, requires_save: bool)
+signal quest_close_pressed(quest: Quest, requires_save: bool, structure: Array[Dictionary])
 
 
 var _active: TreeItem = null
@@ -23,7 +23,7 @@ func add_quest(quest: Quest, select: bool = false, emit_select: bool = true) -> 
 	
 	quest_item.set_text(0, quest.resource_path.get_file().get_basename())
 	quest_item.set_tooltip_text(0, quest.resource_path)
-	quest_item.set_metadata(0, {"resource": quest, "save_required": false})
+	quest_item.set_metadata(0, {"resource": quest, "save_required": false, "structure": ArrayUtils.create_array_typed(TYPE_DICTIONARY)})
 	
 	quest_item.add_button(
 			0,
@@ -132,11 +132,12 @@ func has_unsaved_files() -> bool:
 	return false
 
 
-func get_unsaved_files() -> Array[Quest]:
-	var files: Array[Quest] = []
+func get_unsaved_files() -> Array[Dictionary]:
+	var files: Array[Dictionary] = []
 	for item in get_root().get_children():
 		if item.get_metadata(0)["save_required"]:
-			files.append(item.get_metadata(0)["resource"])
+			var metadata: Dictionary = item.get_metadata(0)
+			files.append({"resource": metadata["resource"], "structure": metadata["structure"]})#item.get_metadata(0)["resource"])
 	return files
 
 
@@ -146,9 +147,17 @@ func search_for(text: String) -> void:
 		item.visible = empty or item.get_metadata(0)["resource"].resource_path.containsn(text)
 
 
+func set_quest_structure(on_quest: Quest, structure: Array[Dictionary]) -> void:
+	for item in get_root().get_children():
+		var metadata: Dictionary = item.get_metadata(0)
+		if metadata["resource"] == on_quest:
+			metadata["structure"].assign(structure)
+			return
+
+
 func _on_item_selected() -> void:
 	_active = get_selected()
-	quest_selected.emit(_active.get_metadata(0)["resource"])
+	quest_selected.emit(_active.get_metadata(0)["resource"], _active.get_metadata(0)["structure"])
 
 
 func _on_button_clicked(item: TreeItem, _column: int, id: int, mouse_button_index: int) -> void:
@@ -156,4 +165,4 @@ func _on_button_clicked(item: TreeItem, _column: int, id: int, mouse_button_inde
 		return
 	
 	if id == 0:
-		quest_close_pressed.emit(item.get_metadata(0)["resource"], item.get_metadata(0)["save_required"])
+		quest_close_pressed.emit(item.get_metadata(0)["resource"], item.get_metadata(0)["save_required"], item.get_metadata(0)["structure"])
