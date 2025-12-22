@@ -127,6 +127,7 @@ func _enter_tree() -> void:
 	EditorInterface.get_editor_main_screen().add_child(editor_view)
 	resource_saved.connect(_on_resource_saved, CONNECT_DEFERRED)
 	EditorInterface.get_file_system_dock().resource_removed.connect(_on_resource_removed)
+	EditorInterface.get_file_system_dock().files_moved.connect(_on_files_moved, CONNECT_DEFERRED)
 
 
 func _build() -> bool:
@@ -319,6 +320,20 @@ func _on_resource_saved(resource: Resource) -> void:
 		editor_view.reload_quest_objective_types()
 	elif script_class == &"DiscourseAPI":
 		editor_view.reload_discourse_api()
+
+
+func _on_files_moved(old_file: String, new_file: String) -> void:
+	if old_file.get_extension() != "tres" or load(new_file) is not Quest:
+		return
+	
+	var md5: String = old_file.md5_text()
+	var file: String = old_file.get_file() + "-treestate-" + md5 + ".cfg"
+	var path: String = "res://.godot/editor/".path_join(file)
+	if FileAccess.file_exists(path):
+		var new_md5: String = new_file.md5_text()
+		var new_path: String = "res://.godot/editor/".path_join(new_file.get_file() + "-treestate-" + new_md5 + ".cfg")
+		DirAccess.rename_absolute(old_file, new_path)
+
 
 
 func _on_resource_removed(object: Resource) -> void:
