@@ -26,6 +26,7 @@ enum ObjectiveType {}
 @export var _requirements: Dictionary[String, Dictionary] = {}
 
 var _progress: Dictionary[String, Variant] = {}
+var _completed: bool = false
 
 
 func _get_default_value_of_type(type_id: int) -> Variant:
@@ -187,6 +188,9 @@ func get_requirement_progress(requirement: String) -> Dictionary:
 
 ## Returns [code]true[/code] if all the requirements in the objective have been met.
 func is_objective_complete() -> bool:
+	if _completed:
+		return true
+	
 	for requirement_id in _requirements.keys():
 		if not _progress.has(requirement_id):
 			return false
@@ -222,3 +226,9 @@ func has_requirement(requirement_id: String) -> bool:
 func clear_requirements() -> void:
 	_requirements.clear()
 	_progress.clear()
+
+
+## Forces the status of completed on the objective, even if the requirements
+## haven't been met.
+func set_completed(is_completed: bool) -> void:
+	_completed = is_completed

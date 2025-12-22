@@ -62,7 +62,8 @@ func get_quests_data() -> Dictionary:
 		for stage:StringName in _active_quests[quest]["quest"].stages():
 			quest_progress[stage] = {}
 			for objective in _active_quests[quest]["quest"].get_stage(stage).objectives():
-				quest_progress[stage][objective] = _active_quests[quest]["quest"].get_stage(stage).get_objective(objective)._progress.duplicate(true)
+				var obj: QuestObjective = _active_quests[quest]["quest"].get_stage(stage).get_objective(objective)
+				quest_progress[stage][objective] = {"completed": obj._completed, "progress": obj._progress.duplicate(true)}
 			
 		active_quests[quest] = {
 			"quest": _active_quests[quest]["quest"].duplicate(true),
@@ -90,7 +91,9 @@ func set_quests_data(data: Dictionary) -> void:
 		
 		for stage_id in data["progress"][quest_id].keys():
 			for objective_id in data["progress"][quest_id].keys():
-				_active_quests[quest_id]["quest"].get_stage(stage_id).get_objective(objective_id)._progress = data["progress"][quest_id][objective_id].duplicate(true)
+				var obj: QuestObjective = _active_quests[quest_id]["quest"].get_stage(stage_id).get_objective(objective_id)
+				obj._progress = data["progress"][quest_id][objective_id]["progress"].duplicate(true)
+				obj._completed = data["progress"][quest_id][objective_id]["completed"]
 
 
 ## Starts a quest. If [param auto_advance_stages] is [code]true[/code]
@@ -199,15 +202,18 @@ func objective_success_status(quest_id: StringName, stage_id: StringName, object
 ## objectives' progress through this method instead of directly to the QuestObjective
 ## object directly.
 func set_objective_progress(quest_id: StringName, stage_id: StringName, objective_id: StringName, requirement_id: String, progress_value) -> void:
-	if not _active_quests.has(quest_id) or not _active_quests[quest_id].has_stage(stage_id) or not _active_quests[quest_id].get_stage(stage_id).has_objective(objective_id) or not _active_quests[quest_id].get_stage(stage_id).get_objective(objective_id).has_requirement(requirement_id):
+	if not _active_quests.has(quest_id) or not _active_quests[quest_id]["quest"].has_stage(stage_id) or not _active_quests[quest_id]["quest"].get_stage(stage_id).has_objective(objective_id) or not _active_quests[quest_id]["quest"].get_stage(stage_id).get_objective(objective_id).has_requirement(requirement_id):
 		return
 	
-	var quest_objective: QuestObjective = _active_quests[quest_id].get_stage(stage_id).get_objective(objective_id)
+	var quest_objective: QuestObjective = _active_quests[quest_id]["quest"].get_stage(stage_id).get_objective(objective_id)
 	quest_objective.set_progress(requirement_id, progress_value)
 	
 	if quest_objective.is_objective_complete():
-		var quest_stage: QuestStage = _active_quests[quest_id].get_stage(stage_id)
+		quest_objective.set_completed(true)
+		_log_objective_complete(quest_id, stage_id, quest_objective, true)
 		objective_completed.emit(quest_id, stage_id, objective_id, true)
+		
+		var quest_stage: QuestStage = _active_quests[quest_id]["quest"].get_stage(stage_id)
 		
 		if not _active_quests[quest_id]["auto_advance_stages"] or not quest_stage.can_complete_stage():
 			return
@@ -217,7 +223,7 @@ func set_objective_progress(quest_id: StringName, stage_id: StringName, objectiv
 			_active_quests.erase(quest_id)
 			quest_finished.emit(quest_id)
 		else:
-			_set_stage_complete(quest_id, stage_id, true)
+			_log_stage_complete(quest_id, quest_stage, true)
 			_active_quests[quest_id]["current_stage"] = quest_stage.success_stage_id
 			stage_completed.emit(quest_id, stage_id, true)
 			quest_progressed.emit(quest_id, quest_stage.success_stage_id)
@@ -230,11 +236,13 @@ func set_objective_progress(quest_id: StringName, stage_id: StringName, objectiv
 ## will never progress and [signal stage_completed] won't be emmited if all
 ## objectives were completed so it must be progressed using [method complete_stage].
 func complete_objective(quest_id: StringName, stage_id: StringName, objective_id: StringName, success: bool) -> void:
-	if not _active_quests.has(quest_id) or not _active_quests[quest_id].has_stage(stage_id) or not _active_quests[quest_id].get_stage(stage_id).has_objective(objective_id):
+	if not _active_quests.has(quest_id) or not _active_quests[quest_id]["quest"].has_stage(stage_id) or not _active_quests[quest_id]["quest"].get_stage(stage_id).has_objective(objective_id):
 		return
-	var stage: QuestStage = _active_quests[quest_id].get_stage(stage_id)
+	var stage: QuestStage = _active_quests[quest_id]["quest"].get_stage(stage_id)
 	_set_objective_complete(quest_id, stage_id, objective_id, success)
+	
 	var can_complete_stage: bool = stage.can_complete_stage()
+	
 	objective_completed.emit(quest_id, stage_id, objective_id, success)
 	
 	if can_complete_stage:
@@ -258,7 +266,7 @@ func complete_objective(quest_id: StringName, stage_id: StringName, objective_id
 ## If a quest is set to auto-advance it'll continue to the next stage based
 ## on [param success].
 func complete_stage(quest_id: StringName, stage_id: StringName, success: bool) -> void:
-	if not _active_quests.has(quest_id) or not _active_quests[quest_id].has_stage(stage_id):
+	if not _active_quests.has(quest_id) or not _active_quests[quest_id]["quest"].has_stage(stage_id):
 		return
 	_set_stage_complete(quest_id, stage_id, success)
 	
@@ -267,7 +275,7 @@ func complete_stage(quest_id: StringName, stage_id: StringName, success: bool) -
 	if not _active_quests[quest_id]["auto_advance_stages"]:
 		return
 	
-	var stage: QuestStage = _active_quests[quest_id].get_stage(stage_id)
+	var stage: QuestStage = _active_quests[quest_id]["quest"].get_stage(stage_id)
 	var next_stage_id: StringName = stage.success_stage_id if success else stage.failure_stage_id
 	
 	if next_stage_id.is_empty():
@@ -302,7 +310,7 @@ func _set_quest_complete(quest_id: StringName, success: bool, emit_events: bool 
 
 
 func _set_stage_complete(quest_id: StringName, stage_id: StringName, success: bool, emit_events: bool = true) -> void:
-	var stage: QuestStage = _active_quests[quest_id].get_stage(stage_id)
+	var stage: QuestStage = _active_quests[quest_id]["quest"].get_stage(stage_id)
 	_quest_logs[quest_id]["stages"][stage_id]["success"] = SuccessStatus.SUCCESS if success else SuccessStatus.FAILURE
 	
 	if not emit_events:
@@ -314,12 +322,35 @@ func _set_stage_complete(quest_id: StringName, stage_id: StringName, success: bo
 
 
 func _set_objective_complete(quest_id: StringName, stage_id: StringName, objective_id: StringName, success: bool, emit_events: bool = true) -> void:
-	var objective: QuestObjective = _active_quests[quest_id].get_stage(stage_id).get_objective(objective_id)
+	var objective: QuestObjective = _active_quests[quest_id]["quest"].get_stage(stage_id).get_objective(objective_id)
+	objective.set_completed(true)
 	_quest_logs[quest_id]["stages"][stage_id]["objectives"][objective_id] = SuccessStatus.SUCCESS if success else SuccessStatus.FAILURE
 	
 	if not emit_events:
 		return
 	
 	var events: Dictionary = objective.on_success_events if success else objective.on_failure_events
+	for event_id in events.keys():
+		quest_event_triggered.emit(event_id, events[event_id])
+
+
+func _log_objective_complete(quest_id: StringName, stage_id: StringName, objective: QuestObjective, success: bool, emit_events: bool = true) -> void:
+	_quest_logs[quest_id]["stages"][stage_id]["objectives"][objective.id] = SuccessStatus.SUCCESS if success else SuccessStatus.FAILURE
+	
+	if not emit_events:
+		return
+	
+	var events: Dictionary = objective.on_success_events if success else objective.on_failure_events
+	for event_id in events.keys():
+		quest_event_triggered.emit(event_id, events[event_id])
+
+
+func _log_stage_complete(quest_id: StringName, stage: QuestStage, success: bool, emit_events: bool = true) -> void:
+	_quest_logs[quest_id]["stages"][stage.id]["success"] = SuccessStatus.SUCCESS if success else SuccessStatus.FAILURE
+	
+	if not emit_events:
+		return
+	
+	var events: Dictionary[String, Variant] = stage.on_success_events if success else stage.on_failure_events
 	for event_id in events.keys():
 		quest_event_triggered.emit(event_id, events[event_id])
