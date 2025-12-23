@@ -11,21 +11,56 @@ const LineEditConfirmationDialog = preload("res://addons/nexus_forge/dialogs/lin
 
 enum ButtonID {
 	CREATE_SPECIES,
-	ERASE_SPECIES
+	ERASE_SPECIES}
+
+enum PopUpID {
+	CREATE_SPECIES,
+	ERASE_SPECIES,
+	CHANGE_ID
 }
 
 var current_search: String = ""
+var _races_menu: PopupMenu
+var _popup_pos: Vector2 = Vector2.ZERO
 
 
 func _ready() -> void:
 	if Engine.is_editor_hint() and owner == get_tree().edited_scene_root:
 		return
 	
+	_races_menu = PopupMenu.new()
+	_races_menu.add_icon_item(
+			preload("res://addons/nexus_forge/icons/dna_plus.svg"),
+			"Add Subspecies",
+			PopUpID.CREATE_SPECIES)
+	_races_menu.add_icon_item(
+			get_theme_icon("Edit", "EditorIcons"),
+			"Edit ID",
+			PopUpID.CHANGE_ID)
+	_races_menu.add_icon_item(
+			get_theme_icon("Remove", "EditorIcons"),
+			"Remove Species",
+			PopUpID.ERASE_SPECIES)
+	_races_menu.size = Vector2i.ZERO
+	add_child(_races_menu)
 	create_item()
 	
 	item_edited.connect(_on_item_edited)
-	item_selected.connect(_on_item_selected)
+	item_mouse_selected.connect(_on_item_mouse_selected, CONNECT_DEFERRED)
 	button_clicked.connect(_on_button_clicked)
+	_races_menu.id_pressed.connect(_on_popup_id_pressed)
+
+
+func _on_popup_id_pressed(id: int) -> void:
+	var target: TreeItem = get_item_at_position(_popup_pos)
+	
+	match id:
+		PopUpID.CREATE_SPECIES:
+			_on_button_clicked(target, 0, ButtonID.CREATE_SPECIES, MOUSE_BUTTON_LEFT)
+		PopUpID.CHANGE_ID:
+			edit_selected()
+		PopUpID.ERASE_SPECIES:
+			_on_button_clicked(target, 0, ButtonID.ERASE_SPECIES, MOUSE_BUTTON_LEFT)
 
 
 func _gui_input(event: InputEvent) -> void:
@@ -114,8 +149,14 @@ func _drop_data(at_position: Vector2, data: Variant) -> void:
 	sort_single_item(data["node"])
 
 
-func _on_item_selected() -> void:
+func _on_item_mouse_selected(mouse_position: Vector2, mouse_button_index: int) -> void:
 	var selected: TreeItem = get_selected()
+	
+	if mouse_button_index == MOUSE_BUTTON_RIGHT:
+		_popup_pos = mouse_position
+		_races_menu.position = DisplayServer.mouse_get_position()
+		_races_menu.popup()
+	
 	species_selected.emit(selected.get_metadata(0))
 
 
@@ -165,7 +206,8 @@ func _on_button_clicked(item: TreeItem, _column: int, id: int, mouse_button_inde
 		
 		id_creator.queue_free()
 	elif id == ButtonID.ERASE_SPECIES:
-		species_erased.emit(item.get_metadata(0))
+		var types: Array[StringName] = [item.get_metadata(0)]
+		species_erased.emit(types)
 		item.free()
 
 
