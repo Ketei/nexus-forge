@@ -61,11 +61,9 @@ func _get_customization_configuration_hash() -> int:
 
 
 func _customize_resource(resource: Resource, path: String) -> Resource:
-	if resource is EditorDiscourseDialog:# == &"EditorDiscourseDialog":
+	if resource is EditorDiscourseDialog:
 		if release_files.has(resource.resource_path):
-			#print("Returned a previously generated resource")
 			if localization_files.has(release_files[resource.resource_path].localization_uuid):
-				#print("Localization file exists!")
 				var locale_file: DiscourseDialogLocale = localization_files[release_files[resource.resource_path].localization_uuid]
 				var virtual_path: String = locale_file.resource_path.get_basename() + ".json"
 				var file_path: String = export_temp_dir.get_current_dir() + "/" + locale_file.resource_path.get_file().get_basename() + ".json"
