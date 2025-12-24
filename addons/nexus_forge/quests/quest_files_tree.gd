@@ -103,6 +103,8 @@ func close_with_path(path: String) -> void:
 func select_quest(quest: Quest, emit_select: bool = true) -> void:
 	for item in get_root().get_children():
 		if item.get_metadata(0)["resource"] == quest:
+			if _active == item:
+				return
 			_active = item
 			if emit_select:
 				item.select(0)

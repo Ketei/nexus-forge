@@ -377,9 +377,9 @@ func save_current_data() -> void:
 
 
 func plugin_handle_resource(quest: Quest) -> void:
-	if quest_resource != null:
+	if quest_resource != null and quest != quest_resource:
 		save_current_data()
-		files_tree.set_quest_structure(quest_tree.get_quest_structure())
+		files_tree.set_quest_structure(quest_resource, quest_tree.get_quest_structure())
 	
 	if files_tree.has_quest(quest):
 		files_tree.select_quest(quest)

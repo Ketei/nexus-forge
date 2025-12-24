@@ -186,7 +186,8 @@ func get_requirement_progress(requirement: String) -> Dictionary:
 	return progress
 
 
-## Returns [code]true[/code] if all the requirements in the objective have been met.
+## Returns [code]true[/code] if all the requirements in the objective have been met
+## or if [method set_completed] was called with [code]true[/code].
 func is_objective_complete() -> bool:
 	if _completed:
 		return true

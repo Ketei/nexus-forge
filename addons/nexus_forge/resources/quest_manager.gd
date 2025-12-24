@@ -53,7 +53,7 @@ var _quest_logs: Dictionary = {
 }
 
 
-## Returns all the tracked quest data. Useful for creating save files.
+## Returns all the active quest data and the quest logs. Useful for creating save files.
 func get_quests_data() -> Dictionary:
 	var active_quests: Dictionary = {}
 	
@@ -79,7 +79,7 @@ func get_quests_data() -> Dictionary:
 
 
 # TODO: Test if all the quest data (Quests, stages & objectives) saves properly.
-## Loads all quest data. Useful for loading save files.
+## Loads all quest data and quest logs. Useful for loading save files.
 func set_quests_data(data: Dictionary) -> void:
 	_quest_logs = data["quest_log"].duplicate(true)
 	
@@ -155,8 +155,16 @@ func get_quest(quest_id: StringName) -> Quest:
 	return null
 
 
+## Returns the current [QuestStage] object of the param quest_id or
+## [code]null[/code] if the quest doesn't exist.
+func get_quest_current_stage(quest_id: StringName) -> QuestStage:
+	if _active_quests.has(quest_id):
+		return _active_quests[quest_id]["quest"].get_stage(_active_quests[quest_id]["current_stage"])
+	return null
+
+
 ## Returns the ID of the stage [param quest_id] is in.
-func get_quest_current_stage(quest_id: StringName) -> StringName:
+func get_quest_current_stage_id(quest_id: StringName) -> StringName:
 	if _active_quests.has(quest_id):
 		return _active_quests[quest_id]["current_stage"]
 	return &""

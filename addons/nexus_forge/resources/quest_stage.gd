@@ -92,11 +92,3 @@ func get_objective(objective_id: StringName) -> QuestObjective:
 	if _objectives.has(objective_id):
 		return _objectives[objective_id]["objective"]
 	return null
-
-
-## Returns if [param objective_id] is completed. Will return [code]false[/code] if
-## the objective isn't registered.
-func is_objective_complete(objective_id: StringName) -> bool:
-	if _objectives.has(objective_id):
-		return _objectives[objective_id]["objective"].is_objective_complete()
-	return false
