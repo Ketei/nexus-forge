@@ -10,8 +10,6 @@ enum Gender { # Must ALWAYS have one item.
 	FEMALE,
 }
 
-const DEFAULT_DATA: Dictionary[String, Variant] = {}
-
 ## The unique ID of a character
 @export var id: StringName = &""
 ## The name of a character
@@ -44,6 +42,5 @@ static func new_character() -> CharacterSheet:
 		new_sheet.skills = SkillSet.new()
 	if new_sheet.traits == null:
 		new_sheet.traits = TraitBlock.new()
-	new_sheet.custom_data.assign(CharacterSheet.DEFAULT_DATA.duplicate(true))
 	
 	return new_sheet

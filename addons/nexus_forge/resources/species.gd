@@ -11,7 +11,7 @@ extends Resource
 ## The description of the species.
 @export var description: String = ""
 ## The custom data of the species.
-@export var data: Dictionary[String, Variant] = {}
+@export var custom_data: Dictionary[String, Variant] = {}
 ## The stats of the species.
 @export var stats: StatBlock = StatBlock.new(true)
 ## The skills of the species.
