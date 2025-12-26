@@ -10,9 +10,6 @@ extends Resource
 ## but these will be ignored when calling a method that returns an object.
 
 
-## Default data that newly created species will have.
-const DEFAULT_DATA: Dictionary[String, Variant] = {}
-
 # This is not meant to be edited manually, as the exporter will clean it,
 # losing any custom species stats/skills/traits added manually.
 @export_storage var _species: Dictionary[StringName, Dictionary] = {}
@@ -113,7 +110,7 @@ func get_species(species_id: StringName) -> SpeciesSheet:
 	new_species.id = species_id
 	new_species.name = _species[species_id]["name"]
 	new_species.description = _species[species_id]["description"]
-	new_species.data = _species[species_id]["data"].duplicate(true)
+	new_species.custom_data = _species[species_id]["data"].duplicate(true)
 	new_species.stats = get_species_stats(species_id)
 	new_species.skills = get_species_skills(species_id)
 	new_species.traits = get_species_traits(species_id)
@@ -136,8 +133,9 @@ func create_species(species_id: StringName) -> void:
 	var stats: Dictionary[StringName, float] = {}
 	var skills: Dictionary[StringName, int] = {}
 	var traits: Dictionary[StringName, int] = {}
+	var default_data: Dictionary = SpeciesSheet.new().custom_data.duplicate(true)
 	
-	data.assign(DEFAULT_DATA)
+	data.assign(default_data)
 	
 	var new_species: Dictionary[String, Variant] = {
 		"parent_key": &"",
@@ -149,6 +147,53 @@ func create_species(species_id: StringName) -> void:
 		"traits": traits}
 	
 	_species[species_id] = new_species
+
+
+## Creates a new species using a [SpeciesSheet]. Creation will fail if the species
+## already exists.[br]
+## [param subspecies_of] will allow you to set [param species_sheet] as a subspecies
+## as long as [param subspecies_of] exists. If not it'll be set as a "top-level"
+## species.
+func register_species(species_sheet: SpeciesSheet, subspecies_of: StringName = &"") -> void:
+	if _species.has(species_sheet.id):
+		return
+	
+	var stats: Dictionary[StringName, float] = {}
+	var skills: Dictionary[StringName, int] = {}
+	var traits: Dictionary[StringName, int] = {}
+	
+	if species_sheet.stats != null:
+		var stat_block: Dictionary[StringName, int] = StatBlock.stats()
+		for stat_id in stat_block.keys():
+			var stat_value = species_sheet.stats.get(stat_id)
+			if stat_value == null or 0 == stat_value:
+				continue
+			stats[stat_id] = stat_value
+	
+	if species_sheet.skills != null:
+		for skill_id in SkillSet.skills():
+			var skill_value = species_sheet.skills.get(skill_id)
+			if skill_value == null or 0 == skill_value:
+				continue
+			skills[skill_id] = int(skill_value)
+	
+	if species_sheet.traits != null:
+		for trait_id in TraitBlock.traits():
+			var trait_value = species_sheet.traits.get(trait_id)
+			if trait_value == null or 0 == trait_value:
+				continue
+			traits[trait_id] = int(trait_value)
+	
+	var new_species: Dictionary[String, Variant] = {
+		"parent_key": subspecies_of if _species.has(subspecies_of) else &"",
+		"name": species_sheet.name,
+		"description": species_sheet.description,
+		"data": species_sheet.custom_data.duplicate(true),
+		"stats":stats,
+		"skills": skills,
+		"traits": traits}
+	
+	_species[species_sheet.id] = new_species
 
 
 ## Erases the given species and clears the link of all subspecies linked
