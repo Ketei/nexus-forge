@@ -149,7 +149,7 @@ func _on_text_line_text_submitted(_text: String, edit_btn: Button) -> void:
 
 
 func _on_erase_case_button_pressed(case_line: LineEdit) -> void:
-	erase_case(case_line.get_index())
+	erase_case(case_line.get_parent().get_index())
 	_on_case_line_text_changed()
 
 
@@ -529,7 +529,7 @@ func save_current_phrase_key(fix_cases: bool = false) -> void:
 				cases[case])
 		
 		if fix_cases and case != node_map[case].text.strip_edges():
-			node_map[case] = case
+			node_map[case].text = case
 	
 	if fix_cases:
 		_on_case_line_text_changed()
