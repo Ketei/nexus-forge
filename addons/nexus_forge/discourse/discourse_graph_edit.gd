@@ -900,22 +900,22 @@ func show_connection_popup_at(new_position: Vector2i):
 	var popup_size: Vector2i = Vector2i(connection_popup.get_contents_minimum_size())
 
 	# Get the viewport size
-	var viewport_size: Vector2i = get_viewport().size
+	#var viewport_size: Vector2i = get_viewport().size
 
 	# Calculate the bottom-right corner of the PopupMenu
-	var popup_bottom_right: Vector2i = new_position + popup_size
+	#var popup_bottom_right: Vector2i = new_position + popup_size
 
 	# Calculate the offset needed to keep the PopupMenu inside the viewport
-	var offset: Vector2i = Vector2i.ZERO
+	#var offset: Vector2i = Vector2i.ZERO
 	
-	if popup_bottom_right.x > viewport_size.x:
-		offset.x = viewport_size.x - popup_bottom_right.x
-	if popup_bottom_right.y > viewport_size.y:
-		offset.y = viewport_size.y - popup_bottom_right.y
+	#if popup_bottom_right.x > viewport_size.x:
+		#offset.x = viewport_size.x - popup_bottom_right.x
+	#if popup_bottom_right.y > viewport_size.y:
+		#offset.y = viewport_size.y - popup_bottom_right.y
 	
 	# Apply the offset to the PopupMenu's position
-	connection_popup.position = new_position + offset
-	connection_popup.show()
+	connection_popup.position = DisplayServer.mouse_get_position()#new_position + offset
+	connection_popup.popup()
 
 
 func get_selected_graph_nodes(include_start: bool = false) -> Array[DiscourseGraphNode]:

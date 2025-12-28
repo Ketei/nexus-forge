@@ -194,7 +194,8 @@ func _on_format_item_selected(idx: int) -> void:
 
 
 func _on_map_resource_selected(new_map: PhraseMap) -> void:
-	save_current_resource()
+	if map != null:
+		save_current_resource()
 	load_map(new_map)
 	map = new_map
 	save_required = false
