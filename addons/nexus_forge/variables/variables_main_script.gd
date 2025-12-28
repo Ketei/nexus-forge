@@ -108,6 +108,8 @@ func _on_folder_created(path_to_folder: String) -> void:
 
 
 func _on_variable_renamed(from: String, to: String) -> void:
+	if from == to:
+		return
 	var folder_id: StringName = StringName(_current_folder)
 	var from_id: StringName = StringName(from)
 	var to_id: StringName = StringName(to)
@@ -223,7 +225,7 @@ func on_load_resource_pressed() -> void:
 			no_db_container.queue_free()
 			load_variable_resource()
 		else:
-			printerr("Selected resource is not BlackboardData")
+			push_error("Selected resource is not BlackboardData")
 	
 	new_dialog.queue_free()
 
@@ -360,6 +362,8 @@ func _on_folder_moved(original_path: String, new_path: String) -> void:
 			_variables_resource._variables[new_folder_path] = _variables_resource._variables[folder_key]
 			_variables_resource._variables.erase(folder_key)
 	
+	if original_path == _current_folder:
+		_current_folder = new_path
 	on_something_changed()
 
 
