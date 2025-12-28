@@ -2,6 +2,13 @@
 @icon("res://addons/nexus_forge/icons/currency_catalog.svg")
 class_name CurrencyCatalog
 extends Resource
+## A resource holding data and values for a currency system.
+##
+## This object is designed to hold currency data, relative values and help with
+## the management of currency conversion in case of a multi-currency system
+## is implemented.[br][br]
+## In order for the system to work properly a currency of value 1 must be provided
+## and no two currencies should share the same value.
 
 
 ## Data that all newly created currencies will have.
@@ -169,7 +176,7 @@ func substract_value(from: Dictionary[StringName, int], substract: Dictionary[St
 
 ## Returns the total value of the currencies provided in [param currencies].[br]
 ## Currencies need to be provided with key-value:[br]
-## [code]currency id[/code]: [code]currency amount[/code]
+## [code]{currency id: currency amount}[/code]
 func currency_value(currency:Dictionary[StringName, int]) -> int:
 	var total_value: int = 0
 	
@@ -183,8 +190,8 @@ func currency_value(currency:Dictionary[StringName, int]) -> int:
 
 ## Converts an [param amount] currency [param from] a type [param to] another.[br]
 ## The returned dictionary cotnains 2 keys:[br]
-## [param from] which will contain the remainder.[br]
-## [param to] which will contain the converted amount.
+## Key [param from] which will contain the remainder.[br]
+## Key [param to] which will contain the converted amount.
 func convert_currency(from: StringName, to: StringName, amount: int) -> Dictionary[StringName, int]:
 	if not _currencies.has_all([from, to]):
 		printerr("An invalid currency was given: ", from, "/", to)
