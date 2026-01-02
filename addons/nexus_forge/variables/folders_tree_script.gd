@@ -72,6 +72,8 @@ func _drop_data(at_position: Vector2, data: Variant) -> void:
 	if data["class"] == "folder":
 		if item == null:
 			if data["item"].get_parent() == get_root():
+				if data["item"].get_index() < get_root().get_child_count() - 1:
+					data["item"].move_after(get_root().get_child(-1))
 				return
 			else:
 				data["item"].move_after(get_root().get_child(-1))
@@ -85,12 +87,10 @@ func _drop_data(at_position: Vector2, data: Variant) -> void:
 		if section == 0:
 			target = get_path_to_folder(item)
 		elif section == 1: # Below
-			var parent_folder: TreeItem = item.get_parent()
-			if not parent_folder.collapsed and 0 < parent_folder.get_child_count():
+			if not item.collapsed and 0 < item.get_child_count():
 				target = get_path_to_folder(item)
 			else:
 				target = get_path_to_folder(item.get_parent())
-				
 		else:
 			target = get_path_to_folder(item.get_parent())
 		
@@ -99,10 +99,7 @@ func _drop_data(at_position: Vector2, data: Variant) -> void:
 			if section == -1:
 				data["item"].move_before(item)
 			elif section == 1:
-				if not parent.collapsed and 0 < parent.get_child_count():
-					data["item"].move_before(parent.get_first_child())
-				else:
-					data["item"].move_after(item)
+				data["item"].move_after(item)
 		else:
 			if section == 0:
 				data["item"].get_parent().remove_child(data["item"])
@@ -201,9 +198,7 @@ func load_folder_structure(folder_structure: Dictionary, _target_tree: TreeItem 
 	
 	for folder_name: String in folder_structure.keys():
 	 	# We create the top folder
-		#var new_folder: TreeItem = _target_tree.create_child()
 		var new_folder: TreeItem = create_folder(_target_tree, folder_name)
-		#new_folder.set_text(0, folder_name) # Name the folder
 		# Call this to ceate subfolders with the top folder as target
 		load_folder_structure(
 				folder_structure[folder_name],
