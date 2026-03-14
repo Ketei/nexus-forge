@@ -988,9 +988,6 @@ func _on_new_conversation_pressed() -> void:
 func _on_open_conversation_pressed() -> void:
 	var file_opener: AcceptDialog = preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	file_opener.file_mode = file_opener.FILE_MODE_OPEN_FILE
-	#file_opener.access = file_opener.ACCESS_RESOURCES
-	#file_opener.add_filter("*.tres", "Resources")
-	#file_opener.initial_position = Window.WINDOW_INITIAL_POSITION_CENTER_PRIMARY_SCREEN
 	add_child(file_opener)
 	file_opener.show()
 	
@@ -1163,6 +1160,8 @@ func open_conversation(conversation: EditorDiscourseDialog, set_active: bool = t
 	
 	clear_cases()
 	clear_localized_keys()
+	localization_nodes_tree.clear_nodes()
+	
 	if issues_tree.has_issues():
 		issues_tree.clear_issues()
 	var lang: String = languages_tree.get_active_language()
