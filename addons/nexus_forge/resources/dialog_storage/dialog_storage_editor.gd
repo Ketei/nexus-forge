@@ -17,16 +17,14 @@ extends DiscourseDialog
 	set(new_zoom):
 		zoom = snappedf(new_zoom, 0.001)
 
-# This is the localization for nodes. Each UUID represents the node UUID. EAch value
-# changes depending on the node type. THe type can be checked by looking at the
-# nodes[uuid]["node_type"] value.
-# To save storage, the nodes that don't need localization (For example, the ones that use only numbers)
-# will be stored in the _global key. When loading the plugin, the resource will first
-# check if the UUID exists on the node_localization["_global"] dictionary and if not
-# THEN return the specific language localization.
-@export_storage var locale_map: Dictionary[String, PackedStringArray] = {
-	#"en": ["US", "GB"]
+# A map of all languages that will be exported and used. If localization data
+# is set but the locale isn't registered in here then the export plugin
+# will ignore that data.
+@export_storage var locale_map: Dictionary[String, Dictionary] = {
+	#"en": {"US": null, "GB": null}
 }
+
+@export var dialog_id: String = ""
 
 # Localizations with the same id will be merged toguether on the release file.
 # If empty then each conversation will have it's own unique locale file.
@@ -42,39 +40,62 @@ extends DiscourseDialog
 	#}
 }
 
-
-@export_storage var node_localization: Dictionary[StringName, Dictionary] = {
-	#"a809f219-f5e1-4dc2-a041-4d200062dd53": {
-		#"common": {"dialog": "10-5=5"}},
-	#"629de91c-d6c1-4f67-a287-b6899695b0a6": {
-		#"en": {
-			#"base": {"dialog": "Common English"},
-			#"US": {"dialog": "American English, bro!"},
-			#"GB": {"dialog": "British English, sir."}},
-		#"es": {
-			#"base": {"dialog": "Ingles comun."}}},
-	#"fccfaeaa-6014-4841-ab77-770775afd4e7": {
-		#"en": {
-			#"base": {"options": ["grey", "green"]},
-			#"GB": {"options": ["gray", "green"]}}}
+@export_storage var node_data: Dictionary[StringName, Dictionary] = {
+	#&"9156f183-6761-4259-9dde-1a81d12fb047": {
+		#"name": &"Greeting",
+		#"output_connections": {},
+		#"input_connections": {},
+		#"metadata": {
+			#"character_id": "ABC", # On save
+			#"persist": true, # On save
+			#"size": Vector2.ZERO,
+			#"position": Vector2.ZERO
+		#}
+	#}
 }
 
-@export_storage var localized_strings: Dictionary[String, Dictionary] = {
-	#"TITLE": {
+@export_storage var localization: Dictionary[StringName, Dictionary] = {
+	#&"9156f183-6761-4259-9dde-1a81d12fb047": {
+		#"type": LocalizationType.DIALOG,
+		#"unlocalized": ":3", # This is when the node is unlocalized. This or locales is used.
+		#"locales": {
+			#"en": "Hello!",
+			#"es": "Hola",
+			#"en-US": "Howdy!"
+		#}
+	#},
+	#&"8baeaa95-264b-44e7-b483-4076635f6216" : {
+		#"type": LocalizationType.CHOICES,
+		#"unlocalized": [{}, {}, {}],
+		#"locales": {
+			#"en": ["option one", "option two", "option three"],
+			#"es-MX": ["opcion uno", "opcion dos", "option tres"],
+			#"fr-CA": ["option une", "option deux", "option trois"]
+		#}
+	#}
+}
+
+@export_storage var format_strings: Dictionary[String, Dictionary] = {
+	#"GREETINGS": {
 		#"en": {
-			#"base": {
-				#"text": "Hello {-player}",
-				#"arguments": {
-					#"player": {
-						#"default": ":3",
-						#"custom": {
-							#"wulfre": "bear",
-							#"other": "{player}"}}}},
-			#"US": "Hello burgor",
-			#"GB": "Salutations tea tea"},
-		#"es": {
-			#"base": {
-				#"text": ""
+			#"base_string": "Hemlo!",
+			#"format": {
+				#"player": {
+					#"default": "",
+					#"cases": {
+						#"ketei": "Doggie",
+						#"wulfre": "variables/player/name",
+					#}
+				#},
+				#"daytime": {
+					#"default": "",
+					#"cases": {
+						#"type": LocalizationFormat.METHOD_CALL,
+						#"value": "get_time_string"}},
+				#"fruit": {
+					#"type": LocalizationFormat.STRING,
+					#"value": "Banana"
+				#}
 			#}
 		#}
 	#}
@@ -129,130 +150,115 @@ extends DiscourseDialog
 	#}
 #}
 
+# Node folder structure
 @export_storage var node_structure: Array[Dictionary] = [
 	#{"is_node": true, "uuid": "kasdjlaksd"},
 	#{"is_node": false, "name": "Folder", "items": [{"is_node": true, "uuid": "kasjdlasjk"}]}
 ]
 
 
+
 ## Returns the text of a localized string.
-func get_localized_string(key: String, language: String, region: String = "base") -> String:
-	if localized_strings.has(key) and\
-			localized_strings[key].has(language) and\
-			localized_strings[key][language].has(region):
-		return localized_strings[key][language][region]["text"]
-	printerr("No string with key \"", key,"\" and locale ", language + "_" + region, " exists.")
-	return ""
+func get_format_string(key: String, locale: String) -> String:
+	locale = TranslationServer.standardize_locale(locale)
+	
+	return DictUtils.get_nested_value(
+			format_strings,
+			[key, locale, "base_string"],
+			"")
 
 
 ## Returns all format keys that the localized string has.
-func get_localized_string_formats(key: String, language: String, region: String = "base") -> Array[String]:
-	var keys: Array[String] = []
-	if localized_strings.has(key) and localized_strings[key].has(language):
-		keys.assign(
-				localized_strings[key][language][region]["arguments"].keys())
-	return keys
+func get_format_string_formats(key: String, language: String, region: String = "") -> Array[String]:
+	var lang_code: String = TranslationServer.standardize_locale(language if region.is_empty() else language + "_" + region)
+	var format_data = DictUtils.get_nested_value(
+			format_strings,
+			[key, lang_code, "format"])
+	
+	if typeof(format_data) != TYPE_DICTIONARY:
+		return []
+	
+	return Array(format_data.keys(), TYPE_STRING, &"", null)
 
 
 ## Returns the format keys and the possible formats of a given key.
-func get_localized_arguments(key: String, language: String, region: String = "base") -> Dictionary[String, Dictionary]:
-	if localized_strings.has(key) and\
-			localized_strings[key].has(language) and\
-			localized_strings[key][language].has(region):
-		return Dictionary(localized_strings[key][language][region]["arguments"].duplicate(true), TYPE_STRING, &"", null, TYPE_DICTIONARY, &"", null)
-	printerr("No arguments with key \"", key,"\" and locale ", language + "_" + region, " exist.")
-	return Dictionary({}, TYPE_STRING, &"", null, TYPE_DICTIONARY, &"", null)
+func get_format_string_arguments(key: String, language: String, region: String = "") -> Dictionary[String, Dictionary]:
+	var lang_code: String = TranslationServer.standardize_locale(language if region.is_empty() else language + "_" + region)
+	var formats = DictUtils.get_nested_value(
+			format_strings,
+			[key, lang_code, "format"])
+	
+	if typeof(formats) == TYPE_DICTIONARY:
+		return formats.duplicate(true)
+	else:
+		return Dictionary({}, TYPE_STRING, &"", null, TYPE_DICTIONARY, &"", null)
 
 
 ## Returns strings formatted for NexusForge plugin use.
-func get_editor_localized_strings(language: String, region: String = "base") -> Dictionary[String, Dictionary]:
+func get_editor_localized_strings(language: String, region: String = "") -> Dictionary[String, Dictionary]:
+	var lang_code: String = TranslationServer.standardize_locale(language if region.is_empty() else language + "_" + region)
 	var data: Dictionary[String, Dictionary] = {}
-	for key in localized_strings.keys():
-		data[key] = localized_strings[key][language][region].duplicate(true)
+	
+	for key in format_strings.keys():
+		data[key] = format_strings[key][lang_code].duplicate(true)
 	return data
 
 
-## Creates a localized string with the given [param key] unless it already exists.
-func create_localized_string(key: String, text: String) -> void:
-	if localized_strings.has(key):
-		return
-	
-	var data: Dictionary[String, Dictionary] = {}
-	
-	for language in locale_map.keys():
-		set_localized_string(key, text, language)
-		for region in locale_map[language]:
-			set_localized_string(key, text, language, region)
-
-
 ## Sets or creates a localized string with the given key.
-func set_localized_string(key: String, text: String, language: String, region: String = "base") -> void:
-	if not localized_strings.has(key):
-		localized_strings[key] = Dictionary({},
-				TYPE_STRING, &"", null,
-				TYPE_DICTIONARY, &"", null)
-	if not localized_strings[key].has(language):
-		localized_strings[key][language] = Dictionary({}, 
-				TYPE_STRING, &"", null,
-				TYPE_DICTIONARY, &"", null)
+func set_format_string(key: String, text: String, locale: String) -> void:
+	locale = TranslationServer.standardize_locale(locale)
 	
-	if not localized_strings[key][language].has(region):
-		var new_reg_dict: Dictionary[String, Variant] = {
-			"text": "",
-			"arguments": Dictionary({},
-					TYPE_STRING, &"", null,
-					TYPE_DICTIONARY, &"", null)}
-		localized_strings[key][language][region] = new_reg_dict
+	var text_set: bool = DictUtils.set_nested_value(format_strings, [key, locale, "base_string"], text, false)
 	
-	if localized_strings[key][language][region]["text"] == text:
-		return
-	
-	localized_strings[key][language][region]["text"] = text
+	if not text_set:
+		DictUtils.set_nested_value(
+					format_strings,
+					[key, locale],
+					{"base_string": text, "format": {}})
 
-	var arg_data: Array[String] = get_phrase_arguments(text, true)
-	
-	for existing_key in localized_strings[key][language][region]["arguments"].keys():
-		if not arg_data.has(existing_key):
-			localized_strings[key][language][region]["arguments"].erase(existing_key)
-	
-	for new_key in arg_data:
-		if not localized_strings[key][language][region]["arguments"].has(new_key):
-			var new_key_data: Dictionary[String, Variant] = {
-				"default": "",
-				"custom": Dictionary({},
-						TYPE_STRING, &"", null,
-						TYPE_STRING, &"", null)}
-			localized_strings[key][language][region]["arguments"][new_key] = new_key_data
+
+func set_format_string_case(key: String, locale: String, format: String, case: String, value: String) -> void:
+	locale = TranslationServer.standardize_locale(locale)
+	var cases = DictUtils.set_nested_value(
+			format_strings,
+			[key, locale, "format", format, "cases", case],
+			value,
+			false)
 
 
 ## Sets the default case from a localized string with the given key.
-func set_localized_string_argument_default_case(key: String, language: String, region: String, argument: String, default_text: String) -> void:
-	if localized_strings.has(key) and localized_strings[key].has(language) and localized_strings[key][language].has(region) and localized_strings[key][language][region]["arguments"].has(argument):
-		localized_strings[key][language][region]["arguments"][argument]["default"] = default_text
+func set_format_string_default_case(key: String, locale: String, format: String, default_text: String) -> void:
+	locale = TranslationServer.standardize_locale(locale)
+	DictUtils.set_nested_value(
+			format_strings,
+			[key, locale, "format", format, "default"],
+			default_text,
+			false)
 
 
 ## Returns the default case from a localized string with the given key.
-func get_localized_string_argument_default_case(key: String, language: String, region: String, argument: String) -> String:
-	if localized_strings.has(key) and localized_strings[key].has(language) and localized_strings[key][language].has(region) and localized_strings[key][language][region]["arguments"].has(argument):
-		return localized_strings[key][language][region]["arguments"][argument]["default"]
-	return ""
-
-
-## Sets the format case on the given key to [param text].
-func set_localized_string_custom_case(key: String, language: String, region: String, argument: String, case: String, text: String) -> void:
-	if localized_strings.has(key) and localized_strings[key].has(language) and localized_strings[key][language].has(region) and localized_strings[key][language][region]["arguments"].has(argument):
-		localized_strings[key][language][region]["arguments"][argument]["custom"][case] = text
+func get_format_string_default_case(key: String, locale: String, argument: String) -> String:
+	locale = TranslationServer.standardize_locale(locale)
+	return DictUtils.get_nested_value(
+			format_strings,
+			[key, locale, "format", argument, "default"],
+			"")
 
 
 ## Clears the list of custom cases from the given key.
-func clear_localized_string_cases(key: String, language: String, region: String, argument: String) -> void:
-	if localized_strings.has(key) and localized_strings[key].has(language) and localized_strings[key][language].has(region) and localized_strings[key][language][region]["arguments"].has(argument):
-		localized_strings[key][language][region]["arguments"][argument]["custom"].clear()
+func clear_format_string_cases(key: String, locale: String, format: String) -> void:
+	locale = TranslationServer.standardize_locale(locale)
+	var cases = DictUtils.get_nested_value(
+			format_strings,
+			[key, locale, "format", format, "cases"])
+	
+	if typeof(cases) == TYPE_DICTIONARY:
+		cases.clear()
 
 
 ## Returns all the registered node uuids.
 func get_node_uuids() -> Array:
-	return dialog_nodes.keys()
+	return node_data.keys()
 
 
 ## Returns all the registered frames uuids.
@@ -260,38 +266,65 @@ func get_frames_uuids() -> Array:
 	return node_frames.keys()
 
 
+func get_text_entry(node_uuid: StringName, locale: String = "", fallback: String = "[ENTRY NOT FOUND]") -> String:
+	locale = TranslationServer.standardize_locale(locale)
+	var localization_data = localization.get(node_uuid)
+	
+	if localization_data == null or localization_data["type"] != LocalizationType.TEXT:
+		return fallback
+	
+	if locale.is_empty():
+		return localization_data["unlocalized"]
+	else:
+		return DictUtils.get_nested_value(
+				localization_data,
+				["locales", locale],
+				fallback)
+
+
+func get_choices_entry(node_uuid: StringName, locale: String = "", fallback: Array = ["[ENTRY NOT FOUND]"]) -> Array:
+	locale = TranslationServer.standardize_locale(locale)
+	
+	if not localization.has(node_uuid) or  localization[node_uuid]["type"] != LocalizationType.CHOICES:
+		return fallback
+	
+	var localization_data: Dictionary = localization[node_uuid]
+	
+	if locale.is_empty():
+		return localization_data["unlocalized"].duplicate(true)
+	else:
+		return DictUtils.get_nested_value(
+				localization_data,
+				["locales", locale],
+				fallback).duplicate(true)
+
+
 ## Returns the node data from a the node with the given [param uuid] in a specific locale.
-func get_node_data(node_uuid: StringName, language: String, region: String = "") -> Dictionary:
-	if not dialog_nodes.has(node_uuid):
+func get_node_data(node_uuid: StringName, locale: String = "") -> Dictionary:
+	if not node_data.has(node_uuid):
 		return {}
-	var data: Dictionary = dialog_nodes[node_uuid].duplicate(true)
-	#var fixed_region: String = "common" if region.is_empty() else region
-	if language.is_empty():
-		language = "common"
-	if region.is_empty():
-		region = "base"
 	
-	match data["node_type"] as NodeTypes:
-		NodeTypes.DIALOG:
-			if language == "common" or not data["has_localization"]:
-				data["dialog_text"] = node_localization[node_uuid]["common"]["dialog"]
-			else:
-				data["dialog_text"] = node_localization[node_uuid][language][region]["dialog"]
-		NodeTypes.OPTIONS:
-			var options_translated: Array[String] = []
-			if language == "common" or not data["has_localization"]:
-				options_translated.assign(node_localization[node_uuid]["common"]["options"])
+	var base_data: Dictionary = node_data[node_uuid].duplicate(true)
+	var metadata_merge: Dictionary = {}
+	
+	match base_data["type"]:
+		NodeType.DIALOG:
+			metadata_merge = {
+				"dialog_text": get_text_entry(node_uuid, locale)}
+		NodeType.OPTIONS:
+			var options_translated: Array[Dictionary] = get_choices_entry(node_uuid, locale)
 			var idx: int = -1
-			for option:Dictionary in data["options"]:
+			for option_translated in options_translated:
 				idx += 1
-				option["option_text"] = options_translated[idx]
-		NodeTypes.LOCALIZED_TEXT:
-			if language == "common":
-				data["text"] = node_localization[node_uuid]["common"]["text"]
-			else:
-				data["text"] = node_localization[node_uuid][language][region]["text"]
+				base_data["metadata"]["choices"][idx]["text"] = option_translated["choice"]
+		NodeType.LOCALIZED_TEXT:
+			metadata_merge = {
+				"text": get_text_entry(node_uuid, locale)}
 	
-	return data
+	if not metadata_merge.is_empty():
+		base_data["metadata"].merge(metadata_merge, true)
+	
+	return base_data
 
 
 ## Sets the locale for text (Dialogs & localized text nodes). Passing [code]""[/code]
@@ -299,119 +332,77 @@ func get_node_data(node_uuid: StringName, language: String, region: String = "")
 ## be the same on all localizations.[br]
 ## Note: Switching from a localized to an unlocalized node will clear the localization
 ## data completely and viceversa.
-func set_localization_text(uuid: StringName, text: String, language: String, region: String = "base") -> void:
-	if not node_localization.has(uuid):
-		node_localization[uuid] = {}
-	var localization_level: Dictionary = node_localization[uuid]
+func set_text_entry(uuid: StringName, text: String, locale: String = "") -> void:
+	locale = TranslationServer.standardize_locale(locale)
+	var localization_level: Dictionary = localization.get_or_add(uuid, {"type": LocalizationType.TEXT, "unlocalized": "", "locales": {}})
 	
-	if not localization_level.has(language):
-		localization_level[language] = {}
-	localization_level = localization_level[language]
+	if localization_level["type"] != LocalizationType.TEXT:
+		return
 	
-	if language != "common":
-		if not localization_level.has(region):
-			localization_level[region] = {}
-		localization_level = localization_level[region]
+	if locale.is_empty():
+		localization_level["unlocalized"] = text
+		localization_level["locales"].clear()
+		return
+	else:
+		localization_level["unlocalized"] = ""
 	
-	match dialog_nodes[uuid]["node_type"]:
-		NodeTypes.DIALOG:
-			localization_level["dialog"] = text
-		NodeTypes.LOCALIZED_TEXT:
-			localization_level["text"] = text
-		_:
-			printerr("Tried to set text of a non-compatible node.")
-			return
 	
-	if language != "common" and region != "base":
-		if not locale_map.has(language):
-			locale_map[language] = PackedStringArray()
-		locale_map[language].append(region)
+	localization_level["locales"][locale] = text
 
-
-func set_unlocalized_text(uuid: StringName, text: String) -> void:
-	set_localization_text(uuid, text, "common", "base")
 
 ## Sets ALL the choices for an option node. Passing an empty string on [param locale]
 ## will set the options as unlocalized.[br]
 ## Note: Switching from a localized to an unlocalized node will clear the localization
 ## data completely and viceversa.
-func set_localization_choices(uuid: StringName, options: Array[String], language: String, region: String = "base") -> void:
-	if not node_localization.has(uuid):
-		node_localization[uuid] = {}
-	var exists: bool = true
-	var localization_level: Dictionary = node_localization[uuid]
+func set_choices_entry(uuid: StringName, options: Array, locale: String = "") -> void:
+	# --- Data validation ---
+	locale = TranslationServer.standardize_locale(locale)
+	for option in options:
+		if typeof(option) != TYPE_STRING:
+			return
+	# -----------------------
 	
-	if not localization_level.has(language):
-		localization_level[language] = {}
-		exists = false
-	localization_level = localization_level[language]
+	var localization_level: Dictionary = localization.get_or_add(uuid, {"type": LocalizationType.CHOICES, "unlocalized": [], "locales": {}})
 	
-	if language != "common":
-		if not localization_level.has(region):
-			localization_level[region] = {}
-		localization_level = localization_level[region]
-		exists = false
+	if localization_level["type"] != LocalizationType.CHOICES:
+		return
 	
-	var new_options: Array[String] = options.duplicate()
-	var target_array: Array[String] = []
-	
-	if exists == false:
-		var clean_options: Array[String] = []
-		localization_level["options"] = clean_options
-		target_array = clean_options
-	elif language == "common":
-		target_array = node_localization[uuid][language]["options"]
+	if locale.is_empty():
+		localization_level["unlocalized"] = options.duplicate(true)
+		localization_level["locales"].clear()
+		return
 	else:
-		target_array = node_localization[uuid][language][region]["options"]
+		localization_level["unlocalized"].clear()
 	
-	target_array.clear()
-	target_array.assign(new_options)
-	
-	if language != "common" and region != "base":
-		if not locale_map.has(language):
-			locale_map[language] = PackedStringArray()
-		locale_map[language].append(region)
-
-
-## Sets choices unlocalized.
-func set_unlocalized_choices(uuid: StringName, options: Array[String]) -> void:
-	set_localization_choices(uuid, options, "common", "base")
+	DictUtils.set_nested_value(
+			localization_level,
+			["locales", locale],
+			options.duplicate(true))
 
 
 ## Sets a single choice for an option node. Specifically the choice with index
 ## [param option_index]. To set an unlocalized choice pass [code]common[/code]
 ## as the language argument. No region is needed when doing an unlocalized
 ## option.
-func update_localization_choice(uuid: StringName, option_index: int, option_text: String, language: String, region: String = "base") -> void:
-	if option_index < 0 or dialog_nodes[uuid]["options"].size() <= option_index:
+func update_choice_entry(uuid: StringName, option_index: int, text: String, locale: String = "") -> void:
+	if not localization.has(uuid) or localization[uuid]["type"] != LocalizationType.CHOICES:
 		return
 	
-	var base_level: Dictionary = node_localization[uuid]
+	var base_level: Dictionary = localization[uuid]
 	
-	if language == "common":
-		base_level = base_level["common"]
+	if locale.is_empty():
+		if base_level["unlocalized"].size() < option_index + 1:
+			return
+		base_level["unlocalized"][option_index] = text
 	else:
-		base_level = base_level[language][region]
-	
-	base_level["options"][option_index] = option_text
-
-
-## Changes the amount of choices from the given choice node UUID to be [param new_count]
-func set_localization_choice_count(uuid: StringName, new_count: int) -> void:
-	if not dialog_nodes.has(uuid) or dialog_nodes[uuid]["node_type"] != NodeTypes.OPTIONS or new_count < 0:
-		return
-	
-	dialog_nodes[uuid]["options"].resize(new_count)
-	
-	if not node_localization.has(uuid):
-		return
-	
-	if node_localization[uuid].has("common"):
-		node_localization[uuid]["common"]["options"].resize(new_count)
-	else:
-		for language_code in node_localization[uuid].keys():
-			for country_code in node_localization[uuid][language_code].keys():
-				node_localization[uuid][language_code][country_code]["options"].resize(new_count)
+		locale = TranslationServer.standardize_locale(locale)
+		
+		var locale_array = DictUtils.get_nested_value(
+				base_level,
+				["locales", locale])
+		if typeof(locale_array) != TYPE_ARRAY or locale_array.size() + 1 < option_index:
+			return
+		locale_array[option_index] = text
 
 
 ## Registers a frame.[br]
@@ -442,28 +433,37 @@ func get_frame_data(uuid: String) -> Dictionary:
 ## Use [method set_localization_text], [method set_unlocalized_text],
 ## [method set_localization_choices], [method set_unlocalized_choices] and
 ## [method update_localization_choice] to save localizable data.
-func register_node(uuid: StringName, data: Dictionary, parent_frame: String = "") -> void:
-	dialog_nodes[uuid] = data.duplicate(true)
-	match data["node_type"]:
-		NodeTypes.DIALOG:
-			dialog_nodes[uuid].erase("dialog_text")
-		NodeTypes.OPTIONS:
-			for option:Dictionary in dialog_nodes[uuid]["options"]:
-				option.erase("option_text")
-		NodeTypes.LOCALIZED_TEXT:
-			dialog_nodes[uuid].erase("text")
-		NodeTypes.ENTRY:
-			entry_node = uuid
+func register_node(node: DiscourseGraphNode, parent_frame: String = "") -> void:
+	var uuid: StringName = node.get_node_uuid()
+	var data: Dictionary = node._get_node_data()
+	
+	if node.node_type == NodeType.DIALOG:
+		data["metadata"].erase("dialog_text")
+	elif node.node_type == NodeType.OPTIONS:
+		for choice in data["metadata"]["choices"]:
+			choice.erase("text")
+	elif node.node_type == NodeType.LOCALIZED_TEXT:
+		data["metadata"].erase("text")
+	elif node.node_type == NodeType.ENTRY:
+		entry_node = uuid
+	
+	node_data[uuid] = data
+	
 	if not parent_frame.is_empty() and node_frames.has(parent_frame) and not node_frames[parent_frame]["nodes"].has(uuid):
 		node_frames[parent_frame]["nodes"].append(uuid)
 
 
+func remove_node(node_uuid: StringName) -> void:
+	node_data.erase(node_uuid)
+	localization.erase(node_uuid)
+
+
 ## Builds and returns the custom ID static UUID relationship between nodes.[br]
 ## The returned key is the custom ID, while the values are the unique UUIDs.
-func get_id_map() -> Dictionary[String, StringName]:
-	var map: Dictionary[String, StringName] = {}
-	for node_uuid in dialog_nodes.keys():
-		map[dialog_nodes[node_uuid]["custom_id"]] = node_uuid
+func get_id_map() -> Dictionary[StringName, StringName]:
+	var map: Dictionary[StringName, StringName] = {}
+	for node_uuid in node_data.keys():
+		map[node_data[node_uuid]["name"]] = node_uuid
 	return map
 
 
@@ -471,32 +471,23 @@ func get_id_map() -> Dictionary[String, StringName]:
 func clear() -> void:
 	scroll_offset = Vector2.ZERO
 	zoom = 1.0
-	node_localization.clear()
+	localization.clear()
 	node_frames.clear()
-	dialog_nodes.clear()
+	node_data.clear()
+	format_strings.clear()
 
 
-## Converts this resource to a [ReleaseDiscourseDialog].
-func convert_for_release(localization_uuid: String = "") -> ReleaseDiscourseDialog:
+## Grabs all data, strips it of the editor information and returns its
+## [DiscourseDialog] version for release. Inteded ONLY to be used by the 
+## NexusForge export plugin.
+func convert_for_release() -> DiscourseDialog:
 	var available_methods: Dictionary = preload("res://addons/nexus_forge/discourse/nodes/method_call_node.gd").get_user_methods()
 	var available_signals: Dictionary = preload("res://addons/nexus_forge/discourse/nodes/signal_node.gd").get_user_signals()
 	
-	var release_dialog: ReleaseDiscourseDialog = ReleaseDiscourseDialog.new()
+	var release_dialog: DiscourseDialog = DiscourseDialog.new()
 	release_dialog.entry_node = entry_node
-	release_dialog.base_language = base_language
-	var id_map: Dictionary[String, StringName] = {}
 	
-	if localization_uuid.is_empty():
-		release_dialog.localization_uuid = StringName(UUID.generate_new())
-	else:
-		release_dialog.localization_uuid = StringName(localization_uuid)
-	
-	# UUID: Value of the node.
-	# This dictionary will only hold data that is STATIC, such as the data
-	# generated through the value node which is unchanging. This is to
-	# skip one jump from a node to a data node and instead store the data
-	# directly.
-	#var data_nodes: Dictionary[StringName, Variant] = {}
+	var new_id_map: Dictionary[StringName, StringName] = {}
 	
 	# UUID(Anchor pointer): UUID(Anchor Target)
 	# Example "123"(anchor pointer uuid) -> "456"(Anchor) -> "789"(Anchor connection)
@@ -508,47 +499,22 @@ func convert_for_release(localization_uuid: String = "") -> ReleaseDiscourseDial
 	# UUID(merger_id): UUID(merger_next_node)
 	var dialog_mergers: Dictionary[StringName, StringName] = {}
 	
-	# Declaration of the recursive lambda. Required as I can't call recursively
-	# inside of the delcaration
-	#var get_target_lambda: Callable = Callable()
 	var target_finder: RefCounted = preload("res://addons/nexus_forge/discourse/exporter_target.gd").new()
-	# Recursive function to find the final target of an UUID. Basically unfucks
-	# whatever spaghetti connections there might be between nodes, joiners and
-	# anchors
-	#get_target_lambda = func(lambda_uuid: StringName, _origin: StringName = &"", _iteration: int = 0):
-		#if _origin == lambda_uuid or 100 <= _iteration:
-			#if 100 <= _iteration:
-				#printerr("Error: Over 99 anchor/joiner direct connections found. Breaking connection.\nAt this point, I'm pretty sure you're just drawing a picture of a worm. Please stop drawing worms.")
-			#return &""
-		#
-		#if _origin.is_empty():
-			#_origin = lambda_uuid
-		#
-		#if anchor_nodes.has(lambda_uuid):
-			#return get_target_lambda.call(anchor_nodes[lambda_uuid], _origin, _iteration + 1)
-		#elif dialog_mergers.has(lambda_uuid):
-			#return get_target_lambda.call(dialog_mergers[lambda_uuid], _origin, _iteration + 1)
-		#else:
-			#return lambda_uuid
-	
-	#var get_target_lambda: Callable = func (uuid: StringName) -> StringName:
-		#return _get_target_uuid.call(uuid, _get_target_uuid)
 	
 	var node_uuids: Array[StringName] = []
-	node_uuids.assign(dialog_nodes.keys())
+	node_uuids.assign(node_data.keys())
 	
 	for node_uuid in node_uuids:
-		#if dialog_nodes[node_uuid]["node_type"] == NodeTypes.VALUE:
-			#data_nodes[node_uuid] = dialog_nodes[node_uuid]["value"]
-		if dialog_nodes[node_uuid]["node_type"] == NodeTypes.ANCHOR_POINTER:
+		var metadata: Dictionary = node_data[node_uuid]["metadata"]
+		if node_data[node_uuid]["type"] == NodeType.ANCHOR_POINTER:
 			var target_node: StringName = &""
-			if not dialog_nodes[node_uuid]["anchor_target"].is_empty():
-				target_node = dialog_nodes[dialog_nodes[node_uuid]["anchor_target"]]["output_connections"]["next_node"]
+			if not metadata["anchor_target"].is_empty():
+				target_node = node_data[metadata["anchor_target"]]["output_connections"]["next_node"]
 			anchor_nodes[node_uuid] = target_node
-		elif dialog_nodes[node_uuid]["node_type"] == NodeTypes.DIALOG_MERGE:
+		elif node_data[node_uuid]["type"] == NodeType.DIALOG_MERGE:
 			var target_node: StringName = &""
-			if not dialog_nodes[node_uuid]["output_connections"]["next_node"]["target_node_uuid"].is_empty():
-				target_node = StringName(dialog_nodes[node_uuid]["output_connections"]["next_node"]["target_node_uuid"])
+			if not node_data[node_uuid]["output_connections"]["next_node"]["target_node_uuid"].is_empty():
+				target_node = StringName(node_data[node_uuid]["output_connections"]["next_node"]["target_node_uuid"])
 			dialog_mergers[node_uuid] = target_node
 		else:
 			continue
@@ -556,17 +522,16 @@ func convert_for_release(localization_uuid: String = "") -> ReleaseDiscourseDial
 	target_finder.anchor_nodes.assign(anchor_nodes)
 	target_finder.dialog_mergers.assign(dialog_mergers)
 	
-	var add_id: bool = false
+	var add_id: bool = true
 	
 	for node_id in node_uuids:
 		var data: Dictionary[String, Variant] = {
-			"node_type": dialog_nodes[node_id]["node_type"]}
-		match dialog_nodes[node_id]["node_type"]:
-			NodeTypes.ENTRY:
-				add_id = true
-				data["next_node"] = target_finder.get_target(dialog_nodes[node_id]["output_connections"]["next_node"]["target_node_uuid"]) #get_target_lambda.call(node_id)
-			NodeTypes.DIALOG:
-				add_id = true
+			"type": node_data[node_id]["type"]}
+		var metadata: Dictionary = node_data[node_id]["metadata"]
+		match node_data[node_id]["type"]:
+			NodeType.ENTRY:
+				data["next_node"] = target_finder.get_target(node_data[node_id]["output_connections"]["next_node"]["target_node_uuid"]) #get_target_lambda.call(node_id)
+			NodeType.DIALOG:
 				var character_settings: Dictionary = {
 					"display_name": &"",
 					"portrait_id": &""}
@@ -576,8 +541,8 @@ func convert_for_release(localization_uuid: String = "") -> ReleaseDiscourseDial
 					"dialog_scene": &"",
 					"dialog_speed": &""}
 				
-				if not dialog_nodes[node_id]["input_connections"]["dialog_settings"]["target_node_uuid"].is_empty():
-					var character_settings_data: Dictionary = dialog_nodes[dialog_nodes[node_id]["input_connections"]["dialog_settings"]["target_node_uuid"]]
+				if not node_data[node_id]["input_connections"]["dialog_settings"]["target_node_uuid"].is_empty():
+					var character_settings_data: Dictionary = node_data[node_data[node_id]["input_connections"]["dialog_settings"]["target_node_uuid"]]
 					
 					if not character_settings_data["input_connections"]["display_name"]["target_node_uuid"].is_empty():
 						character_settings["display_name"] = StringName(character_settings_data["input_connections"]["display_name"]["target_node_uuid"])
@@ -585,8 +550,8 @@ func convert_for_release(localization_uuid: String = "") -> ReleaseDiscourseDial
 					if not character_settings_data["input_connections"]["portrait_id"]["target_node_uuid"].is_empty():
 						character_settings["portrait_id_node"] = StringName(character_settings_data["input_connections"]["display_name"]["target_node_uuid"])
 				
-				if not dialog_nodes[node_id]["input_connections"]["character_settings"]["target_node_uuid"].is_empty():
-					var dialog_settings_data: Dictionary = dialog_nodes[dialog_nodes[node_id]["input_connections"]["character_settings"]["target_node_uuid"]]
+				if not node_data[node_id]["input_connections"]["character_settings"]["target_node_uuid"].is_empty():
+					var dialog_settings_data: Dictionary = node_data[node_data[node_id]["input_connections"]["character_settings"]["target_node_uuid"]]
 					
 					if not dialog_settings_data["input_connections"]["font_resource"]["target_node_uuid"].is_empty():
 						dialog_settings["font_resource"] = StringName(dialog_settings_data["input_connections"]["font_resource"]["target_node_uuid"])
@@ -597,16 +562,15 @@ func convert_for_release(localization_uuid: String = "") -> ReleaseDiscourseDial
 					if not dialog_settings_data["input_connections"]["dialog_speed"]["target_node_uuid"].is_empty():
 						dialog_settings["dialog_speed"] = StringName(dialog_settings_data["input_connections"]["dialog_speed"]["target_node_uuid"])
 
-				data["character_id"] = dialog_nodes[node_id]["character_id"]
-				data["persist"] = dialog_nodes[node_id]["persist"]
+				data["character_id"] = metadata["character_id"]
+				data["persist"] = metadata["persist"]
 				data["character_settings"] = character_settings
 				data["dialog_settings"] = dialog_settings
-				data["text_source"] = StringName(dialog_nodes[node_id]["input_connections"]["dialog_text_source"]["target_node_uuid"])
-				data["next_node"] = target_finder.get_target(dialog_nodes[node_id]["output_connections"]["next_node"]["target_node_uuid"]) #get_target_lambda.call(dialog_nodes[node_id]["output_connections"]["next_node"]["target_node_uuid"])
-			NodeTypes.OPTIONS:
-				add_id = true
+				data["text_source"] = StringName(node_data[node_id]["input_connections"]["dialog_text_source"]["target_node_uuid"])
+				data["next_node"] = target_finder.get_target(node_data[node_id]["output_connections"]["next_node"]["target_node_uuid"]) #get_target_lambda.call(dialog_nodes[node_id]["output_connections"]["next_node"]["target_node_uuid"])
+			NodeType.OPTIONS:
 				var options: Array[Dictionary] = []
-				for option:Dictionary in dialog_nodes[node_id]["options"]:
+				for option:Dictionary in metadata["options"]:
 					var new_option: Dictionary[String, Variant] = {
 						"next_node": target_finder.get_target(StringName(option["output_connections"]["next_node"]["target_node_uuid"])), #get_target_lambda.call(StringName(option["output_connections"]["next_node"]["target_node_uuid"])),
 						"settings": {
@@ -615,7 +579,7 @@ func convert_for_release(localization_uuid: String = "") -> ReleaseDiscourseDial
 							"lock_hint": &""}}
 					
 					if not option["input_connections"]["settings"]["target_node_uuid"].is_empty():
-						var option_settings: Dictionary = dialog_nodes[option["input_connections"]["settings"]["target_node_uuid"]]
+						var option_settings: Dictionary = node_data[option["input_connections"]["settings"]["target_node_uuid"]]
 						if not option_settings["input_connections"]["option_available"]["target_node_uuid"].is_empty():
 							new_option["settings"]["available"] = StringName(option_settings["input_connections"]["option_available"]["target_node_uuid"])
 						
@@ -626,356 +590,404 @@ func convert_for_release(localization_uuid: String = "") -> ReleaseDiscourseDial
 							new_option["settings"]["lock_hint"] = StringName(option_settings["input_connections"]["locked_hint"]["target_node_uuid"])
 					options.append(new_option)
 				data["options"] = options
-			NodeTypes.BRANCH:
-				add_id = true
-				data["result"] = StringName(dialog_nodes[node_id]["input_connections"]["path_direction"]["target_node_uuid"])
-				data["case_true"] = target_finder.get_target(StringName(dialog_nodes[node_id]["output_connections"]["next_node_true"]["target_node_uuid"]))
-				data["case_false"] = target_finder.get_target(StringName(dialog_nodes[node_id]["output_connections"]["next_node_false"]["target_node_uuid"]))
-			NodeTypes.CONDITION_SELECT:
-				add_id = true
-				data["result"] = StringName(dialog_nodes[node_id]["input_connections"]["result"]["target_node_uuid"])
-				data["true_value"] = target_finder.get_target(StringName(dialog_nodes[node_id]["input_connections"]["true_value"]["target_node_uuid"]))
-				data["false_value"] = target_finder.get_target(StringName(dialog_nodes[node_id]["input_connections"]["false_value"]["target_node_uuid"]))
-			NodeTypes.COMPARATION:
-				add_id = true
-				data["operator"] = dialog_nodes[node_id]["operator"]
-				data["value_a"] = StringName(dialog_nodes[node_id]["input_connections"]["node_a"]["target_node_uuid"])
-				data["value_b"] = StringName(dialog_nodes[node_id]["input_connections"]["node_b"]["target_node_uuid"])
-			NodeTypes.EVENT:
-				add_id = true
-				var var_val: StringName = StringName(dialog_nodes[node_id]["input_connections"]["variable_value"]["target_node_uuid"])
+			NodeType.BRANCH:
+				data["result"] = StringName(node_data[node_id]["input_connections"]["path_direction"]["target_node_uuid"])
+				data["case_true"] = target_finder.get_target(StringName(node_data[node_id]["output_connections"]["next_node_true"]["target_node_uuid"]))
+				data["case_false"] = target_finder.get_target(StringName(node_data[node_id]["output_connections"]["next_node_false"]["target_node_uuid"]))
+			NodeType.CONDITION_SELECT:
+				data["result"] = StringName(node_data[node_id]["input_connections"]["result"]["target_node_uuid"])
+				data["true_value"] = target_finder.get_target(StringName(node_data[node_id]["input_connections"]["true_value"]["target_node_uuid"]))
+				data["false_value"] = target_finder.get_target(StringName(node_data[node_id]["input_connections"]["false_value"]["target_node_uuid"]))
+			NodeType.COMPARATION:
+				data["operator"] = metadata["operator"]
+				data["value_a"] = StringName(node_data[node_id]["input_connections"]["node_a"]["target_node_uuid"])
+				data["value_b"] = StringName(node_data[node_id]["input_connections"]["node_b"]["target_node_uuid"])
+			NodeType.EVENT:
+				var var_val: StringName = StringName(node_data[node_id]["input_connections"]["variable_value"]["target_node_uuid"])
 				data["value"] = var_val
 				
-				if not dialog_nodes[node_id]["input_connections"]["callable"]["target_node_uuid"].is_empty():
-					var callable_uuid: StringName = dialog_nodes[node_id]["input_connections"]["callable"]["target_node_uuid"]
-					if available_methods.has(dialog_nodes[callable_uuid]["method"]):
-						data["callable"] = StringName(dialog_nodes[node_id]["input_connections"]["callable"]["target_node_uuid"])
+				if not node_data[node_id]["input_connections"]["callable"]["target_node_uuid"].is_empty():
+					var callable_uuid: StringName = node_data[node_id]["input_connections"]["callable"]["target_node_uuid"]
+					if available_methods.has(node_data[callable_uuid]["metadata"]["method"]):
+						data["callable"] = StringName(node_data[node_id]["input_connections"]["callable"]["target_node_uuid"])
 					else:
 						data["callable"] = &""
-						printerr("[Discourse] Warning: Issue when exporting ", resource_path, ". Event ", dialog_nodes[node_id]["name"], " calls an inexistent method.")
+						printerr("[Discourse] Warning: Issue when exporting ", resource_path, ". Event ", node_data[node_id]["name"], " calls an inexistent method.")
 				else:
 					data["callable"] = &""
 				
-				if not dialog_nodes[node_id]["input_connections"]["signal"]["target_node_uuid"].is_empty():
-					var signal_uuid: StringName = dialog_nodes[node_id]["input_connections"]["signal"]["target_node_uuid"]
-					if available_signals.has(dialog_nodes[signal_uuid]["signal"]):
-						data["signal"] = StringName(dialog_nodes[node_id]["input_connections"]["signal"]["target_node_uuid"])
+				if not node_data[node_id]["input_connections"]["signal"]["target_node_uuid"].is_empty():
+					var signal_uuid: StringName = node_data[node_id]["input_connections"]["signal"]["target_node_uuid"]
+					if available_signals.has(node_data[signal_uuid]["metadata"]["signal"]):
+						data["signal"] = StringName(node_data[node_id]["input_connections"]["signal"]["target_node_uuid"])
 					else:
 						data["signal"] = &""
-						printerr("[Discourse] Warning: Issue when exporting ", resource_path, ". Event ", dialog_nodes[node_id]["name"], " emits an inexistent signal.")
+						printerr("[Discourse] Warning: Issue when exporting ", resource_path, ". Event ", node_data[node_id]["name"], " emits an inexistent signal.")
 				else:
 					data["signal"] = &""
-				data["next_node"] = target_finder.get_target(StringName(dialog_nodes[node_id]["output_connections"]["next_node"]["target_node_uuid"]))
+				data["next_node"] = target_finder.get_target(StringName(node_data[node_id]["output_connections"]["next_node"]["target_node_uuid"]))
 				if var_val.is_empty():
 					data["variable_path"] = &""
 					data["variable"] = &""
 				else:
 					var split_vars: Array[StringName] = split_path_variable(
-							dialog_nodes[node_id]["variable_path"])
-					if split_vars.size() < 2:
+							metadata["variable_path"])
+					if split_vars.size() != 2:
 						data["variable_path"] = &""
 						data["variable"] = &""
 					else:
 						data["variable_path"] = split_vars[0]
 						data["variable"] = split_vars[1]
-			NodeTypes.MATCH:
-				add_id = true
+			NodeType.MATCH:
 				var cases: Array[Dictionary] = []
 				
-				for case:Dictionary in dialog_nodes[node_id]["cases"]:
+				for case:Dictionary in metadata["cases"]:
 					var new_case: Dictionary[String, Variant] = {}
 					new_case["value"] = case["value"]
 					new_case["next_node"] = target_finder.get_target(StringName(case["output_connections"]["next_node"]["target_node_uuid"]))
 				
-				data["case_default"] = target_finder.get_target(StringName(dialog_nodes[node_id]["output_connections"]["default"]["target_node_uuid"]))
-				data["match_value"] = StringName(dialog_nodes[node_id]["input_connections"]["match_value_source"]["target_node_uuid"])
+				data["case_default"] = target_finder.get_target(StringName(node_data[node_id]["output_connections"]["default"]["target_node_uuid"]))
+				data["match_value"] = StringName(node_data[node_id]["input_connections"]["match_value_source"]["target_node_uuid"])
 				data["cases"] = cases
-			NodeTypes.PAUSE:
-				add_id = true
-				data["next_node"] = target_finder.get_target(StringName(dialog_nodes[node_id]["output_connections"]["next_node"]["target_node_uuid"]))
-			NodeTypes.RANDOM:
-				add_id = true
+			NodeType.PAUSE:
+				data["next_node"] = target_finder.get_target(StringName(node_data[node_id]["output_connections"]["next_node"]["target_node_uuid"]))
+			NodeType.RANDOM:
 				var options: Array[Dictionary] = []
 				
-				for option:Dictionary in dialog_nodes[node_id]["options"]:
+				for option:Dictionary in metadata["options"]:
 					var new_option: Dictionary[String, StringName] = {}
 					new_option["target"] = target_finder.get_target(StringName(option["output_connections"]["next_node"]["target_node_uuid"]))
 					new_option["weight_override"] = StringName(option["input_connections"]["weight"]["target_node_uuid"])
 					options.append(new_option)
 				
-				data["default_override"] = StringName(dialog_nodes[node_id]["input_connections"]["default_weight"]["target_node_uuid"])
+				data["default_override"] = StringName(node_data[node_id]["input_connections"]["default_weight"]["target_node_uuid"])
 				data["options"] = options
-			NodeTypes.TYPE_GUARD:
-				add_id = true
-				data["type"] = typeof(dialog_nodes[node_id]["fallback_value"])
-				data["value"] = StringName(dialog_nodes[node_id]["input_connections"]["value"]["target_node_uuid"])
-				data["fallback"] = dialog_nodes[node_id]["fallback_value"]
-			NodeTypes.SIGNAL:
-				add_id = true
+			NodeType.TYPE_GUARD:
+				data["type"] = typeof(metadata["fallback_value"])
+				data["value"] = StringName(node_data[node_id]["input_connections"]["value"]["target_node_uuid"])
+				data["fallback"] = metadata["fallback_value"]
+			NodeType.SIGNAL:
 				var arguments: Array[StringName] = []
-				for argument:Dictionary in dialog_nodes[node_id]["arguments"]:
-					#var new_argument: Dictionary[String, Variant] = {
-						#"data": null,
-						#"override": &""}
-					#if not argument["target_node_uuid"].is_empty():
-						#if data_nodes.has(argument["target_node_uuid"]):
-							#new_argument["data"] = data_nodes[argument["target_node_uuid"]]
-						#else:
-							#new_argument["override"] = StringName(argument["target_node_uuid"])
+				for argument:Dictionary in metadata["arguments"]:
 					arguments.append(StringName(argument["target_node_uuid"]))
-				data["signal"] = StringName(dialog_nodes[node_id]["signal"])
+				data["signal"] = StringName(metadata["signal"])
 				data["arguments"] = arguments
-			NodeTypes.CALLABLE:
-				add_id = true
+			NodeType.CALLABLE:
 				var arguments: Array[StringName] = []
-				for argument:Dictionary in dialog_nodes[node_id]["arguments"]:
+				for argument:Dictionary in metadata["arguments"]:
 					arguments.append(StringName(argument["target_node_uuid"]))
-					#var new_argument: Dictionary[String, Variant] = {
-						#"data": null,
-						#"override": &""}
-					#if not argument["target_node_uuid"].is_empty():
-						#if data_nodes.has(argument["target_node_uuid"]):
-							#new_argument["data"] = data_nodes[argument["target_node_uuid"]]
-						#else:
-							#new_argument["override"] = StringName(argument["target_node_uuid"])
-				data["method"] = StringName(dialog_nodes[node_id]["method"])
+				data["method"] = StringName(metadata["method"])
 				data["arguments"] = arguments
-			NodeTypes.CALLABLE_RETURN:
-				add_id = true
+			NodeType.CALLABLE_RETURN:
 				var arguments: Array[StringName] = []
-				for argument:Dictionary in dialog_nodes[node_id]["arguments"]:
+				for argument:Dictionary in metadata["arguments"]:
 					arguments.append(StringName(argument["target_node_uuid"]))
-					#var new_argument: Dictionary[String, Variant] = {
-						#"data": null,
-						#"override": &""}
-					#if not argument["target_node_uuid"].is_empty():
-						#if data_nodes.has(argument["target_node_uuid"]):
-							#new_argument["data"] = data_nodes[argument["target_node_uuid"]]
-						#else:
-							#new_argument["override"] = StringName(argument["target_node_uuid"])
-				data["method"] = StringName(dialog_nodes[node_id]["method"])
+				data["method"] = StringName(metadata["method"])
 				data["arguments"] = arguments
-			NodeTypes.VARIABLE_GET:
-				add_id = true
+			NodeType.VARIABLE_GET:
 				var path: StringName = &""
 				var variable: StringName = &""
-				if not dialog_nodes[node_id]["variable_path"].is_empty():
-					var var_paths: Array[StringName] = split_path_variable(dialog_nodes[node_id]["variable_path"])
+				if not metadata["variable_path"].is_empty():
+					var var_paths: Array[StringName] = split_path_variable(metadata["variable_path"])
 					if var_paths.size() == 2:
 						path = var_paths[0]
 						variable = var_paths[1]
 				data["path"] = path
 				data["variable"] = variable
-			NodeTypes.RANDOM_VALUE:
-				add_id = true
-				data["random_type"] = dialog_nodes[node_id]["mode"]
-				data["min_value"] = dialog_nodes[node_id]["values"]["base"]
-				data["max_value"] = dialog_nodes[node_id]["values"]["max"]
-				data["min_override"] = StringName(dialog_nodes[node_id]["input_connections"]["base_value"]["target_node_uuid"])
-				data["max_override"] = StringName(dialog_nodes[node_id]["input_connections"]["max_value"]["target_node_uuid"])
-			NodeTypes.RESOURCE:
-				add_id = true
-				data["path"] = dialog_nodes[node_id]["resource_path"]
-			NodeTypes.DATA_EVENT:
-				add_id = true
-				var var_val: StringName = StringName(dialog_nodes[node_id]["input_connections"]["variable_value"]["target_node_uuid"])
+			NodeType.RANDOM_VALUE:
+				data["random_type"] = metadata["mode"]
+				data["min_value"] = metadata["values"]["base"]
+				data["max_value"] = metadata["values"]["max"]
+				data["min_override"] = StringName(node_data[node_id]["input_connections"]["base_value"]["target_node_uuid"])
+				data["max_override"] = StringName(node_data[node_id]["input_connections"]["max_value"]["target_node_uuid"])
+			NodeType.RESOURCE:
+				data["path"] = metadata["resource_path"]
+			NodeType.DATA_EVENT:
+				var var_val: StringName = StringName(node_data[node_id]["input_connections"]["variable_value"]["target_node_uuid"])
 				data["value"] = var_val
 				
-				if not dialog_nodes[node_id]["input_connections"]["callable"]["target_node_uuid"].is_empty():
-					var callable_uuid: StringName = dialog_nodes[node_id]["input_connections"]["callable"]["target_node_uuid"]
-					if available_methods.has(dialog_nodes[callable_uuid]["method"]):
-						data["callable"] = StringName(dialog_nodes[node_id]["input_connections"]["callable"]["target_node_uuid"])
+				if not node_data[node_id]["input_connections"]["callable"]["target_node_uuid"].is_empty():
+					var callable_uuid: StringName = node_data[node_id]["input_connections"]["callable"]["target_node_uuid"]
+					if available_methods.has(node_data[callable_uuid]["metadata"]["method"]):
+						data["callable"] = StringName(node_data[node_id]["input_connections"]["callable"]["target_node_uuid"])
 					else:
 						data["callable"] = &""
-						printerr("[Discourse] Warning: Issue when exporting ", resource_path, ". Data event ", dialog_nodes[node_id]["name"], " calls an inexistent method.")
+						printerr("[Discourse] Warning: Issue when exporting ", resource_path, ". Data event ", node_data[node_id]["name"], " calls an inexistent method.")
 				else:
 					data["callable"] = &""
 				
-				if not dialog_nodes[node_id]["input_connections"]["signal"]["target_node_uuid"].is_empty():
-					var signal_uuid: StringName = dialog_nodes[node_id]["input_connections"]["signal"]["target_node_uuid"]
-					if available_signals.has(dialog_nodes[signal_uuid]["signal"]):
-						data["signal"] = StringName(dialog_nodes[node_id]["input_connections"]["signal"]["target_node_uuid"])
+				if not node_data[node_id]["input_connections"]["signal"]["target_node_uuid"].is_empty():
+					var signal_uuid: StringName = node_data[node_id]["input_connections"]["signal"]["target_node_uuid"]
+					if available_signals.has(node_data[signal_uuid]["metadata"]["signal"]):
+						data["signal"] = StringName(node_data[node_id]["input_connections"]["signal"]["target_node_uuid"])
 					else:
 						data["signal"] = &""
-						printerr("[Discourse] Warning: Issue when exporting ", resource_path, ". Data event ", dialog_nodes[node_id]["name"], " emits an inexistent signal.")
+						printerr("[Discourse] Warning: Issue when exporting ", resource_path, ". Data event ", node_data[node_id]["name"], " emits an inexistent signal.")
 				else:
 					data["signal"] = &""
 				
-				data["data_source"] = StringName(dialog_nodes[node_id]["input_connections"]["data_input"]["target_node_uuid"])
+				data["data_source"] = StringName(node_data[node_id]["input_connections"]["data_input"]["target_node_uuid"])
 				if var_val.is_empty():
 					data["variable_path"] = &""
 					data["variable"] = &""
 				else:
 					var split_vars: Array[StringName] = split_path_variable(
-							dialog_nodes[node_id]["variable_path"])
-					if split_vars.size() < 2:
+							metadata["variable_path"])
+					if split_vars.size() != 2:
 						data["variable_path"] = &""
 						data["variable"] = &""
 					else:
 						data["variable_path"] = split_vars[0]
 						data["variable"] = split_vars[1]
-			NodeTypes.LOCALIZED_TEXT:
-				add_id = true
-				data["text"] = node_id
-			NodeTypes.VALUE:
+			NodeType.LOCALIZED_TEXT:
+				pass
+			NodeType.VALUE:
 				add_id = false
-				data["value"] = dialog_nodes[node_id]["value"]
+				data["value"] = metadata["value"]
 			_:
 				add_id = false
 		
 		if add_id:
-			id_map[String(dialog_nodes[node_id]["custom_id"])] = node_id
-		release_dialog.dialog_nodes[node_id] = data
+			new_id_map[StringName(node_data[node_id]["name"])] = node_id
+		release_dialog.node_logic[node_id] = data
 	
-	release_dialog.id_map = id_map
+	release_dialog.id_map = new_id_map
 	
 	return release_dialog
 
 
-## Generates and returns all NEW locale files. All locale files updated
-## via localization_map won't be returned in the array.
-func generate_localization_files(conversation_id: StringName, base_path: String, localization_map: Dictionary[String, DiscourseDialogLocale] = {}) -> Array[DiscourseDialogLocale]:
-	var locale_files: Array[DiscourseDialogLocale] = []
+## Generates and returns all NEW locale files. Inteded ONLY to be used by the 
+## NexusForge export plugin.
+func generate_localization_files(localization_id: String, base_path: String, filename: String, localization_groups: Dictionary = {}) -> Array[Dictionary]:
+	# Should never be the case, but just in case
+	if resource_path.is_empty():
+		push_error("[DISCOURSE - EXPORT ERROR] Tried to generate localization of a file with no path.")
+		return []
 	
+	var new_files: Array[Dictionary] = []
+	#var md5_hash: String = resource_path.to_lower().md5_text().substr(0, 12)
+	var md5_fragment: String = filename.substr(0, 2)
+	var used_locales: Dictionary = {}
+	
+	# Given how Discourse works, there is ALWAYS a base language.
 	for language in locale_map.keys():
-		var new_base_locale: DiscourseDialogLocale = null
-		var return_base: bool = true
-		if localization_map.has(language + "-" + "base"):
-			new_base_locale = localization_map[language + "-" + "base"]
-			return_base = false
+		var lang_key: String = TranslationServer.standardize_locale(language)
+		var lang_path: String = StringUtils.make_path(
+				[base_path,
+				lang_key,
+				md5_fragment,
+				filename])
+		
+		var lang_file: DiscourseDialogLocale = null
+		
+		if locale_group.is_empty():
+			lang_file = DiscourseDialogLocale.new()
+			lang_file.locale = lang_key
+		elif DictUtils.has_nested_path(localization_groups, [locale_group, lang_key]):
+			lang_file = localization_groups[locale_group][lang_key]
 		else:
-			new_base_locale = DiscourseDialogLocale.new()
-			new_base_locale.language = language
-			new_base_locale.region = "base"
-			var base_locale_path: String = str(
-					base_path,
-					language,
-					"-base/dialog/",
-					conversation_id,
-					".res")
-			new_base_locale.resource_path = base_locale_path
-			
-		var node_keys: Array = node_localization.keys()
-		var format_string_keys: Array = localized_strings.keys()
+			lang_file = DiscourseDialogLocale.new()
+			lang_file.locale = lang_key
+			DictUtils.set_nested_value(
+						localization_groups,
+						[locale_group, lang_key],
+						lang_file)
+			new_files.append({
+				"file": lang_file,
+				"path": lang_path})
 		
-		for node_uuid in node_keys:
-			var target_data: Dictionary = {}
-			if node_localization[node_uuid].has("common"):
-				target_data = node_localization[node_uuid]["common"]
-			else:
-				target_data = node_localization[node_uuid][language]["base"]
-			
-			if not new_base_locale.localization.has(conversation_id):
-				new_base_locale.localization[conversation_id] = {}
-			if not new_base_locale.localization[conversation_id].has(node_uuid):
-				new_base_locale.localization[conversation_id][node_uuid] = {}
-			if target_data.has("dialog"):
-				new_base_locale.localization[conversation_id][node_uuid]["dialog"] = target_data["dialog"]
-				#new_base_locale.set_text(conversation_id, node_uuid, target_data["dialog"])
-			else:
-				new_base_locale.localization[conversation_id][node_uuid]["options"] = PackedStringArray(target_data["options"])
-				#new_base_locale.set_options(conversation_id, node_uuid, PackedStringArray(target_data["options"]))
-			
-		for format_string_key in format_string_keys:
-			if not new_base_locale.format_strings.has(conversation_id):
-				new_base_locale.format_strings[conversation_id] = {}
-			if not new_base_locale.format_strings[conversation_id].has(format_string_key):
-				new_base_locale.format_strings[conversation_id][format_string_key] = {}
-			
-			var arguments: Dictionary[String, Dictionary] = {}
-			arguments.assign(localized_strings[format_string_key][language]["base"]["arguments"])
-			
-			new_base_locale.set_format_string(
-					conversation_id,
-					format_string_key,
-					localized_strings[format_string_key][language]["base"]["text"],
-					arguments)
-					#localized_strings[format_string_key][language]["base"]["arguments"])
+		_add_locale_data(lang_file, localization_id, lang_key)
+		used_locales[lang_key] = null
 		
-		if return_base:
-			locale_files.append(new_base_locale)
-		
-		for region in locale_map[language]:
-			var new_locale: DiscourseDialogLocale = null
-			var return_region: bool = true
-			if localization_map.has(language + "-" + region):
-				new_locale = localization_map[language + "-" + region]
-				return_region = false
+		for region_code in locale_map.keys():
+			var locale_key: String = TranslationServer.standardize_locale(lang_key + "_" + region_code)
+			var lang_locale_file: DiscourseDialogLocale = null
+			var locale_path: String = StringUtils.make_path([
+				base_path, locale_key, md5_fragment, filename])
+			
+			if DictUtils.has_nested_path(localization_groups, [locale_group, locale_key]):
+				lang_locale_file = localization_groups[locale_group][locale_key]
 			else:
-				new_locale = DiscourseDialogLocale.new()
-				new_locale.language = language
-				new_locale.region = region
-				new_locale.resource_path = str(
-					base_path,
-					language,
-					"-",
-					region,
-					"/dialog/",
-					conversation_id,
-					".res")
+				lang_locale_file = DiscourseDialogLocale.new()
+				lang_locale_file.locale = locale_key
+				DictUtils.set_nested_value(
+						localization_groups,
+						[locale_group, locale_key],
+						lang_locale_file)
+				new_files.append({
+					"file": lang_locale_file,
+					"path": locale_path})
 			
-			for locale_format_string_key in format_string_keys:
-				new_locale.set_format_string(
-						conversation_id,
-						locale_format_string_key,
-						localized_strings[locale_format_string_key][language][region]["text"],
-						localized_strings[locale_format_string_key][language][region]["arguments"])
-			
-			for node_uuid in node_keys:
-				var target_data: Dictionary = {}
-				
-				if node_localization[node_uuid].has("common"):
-					target_data = node_localization[node_uuid]["common"]
-				else:
-					target_data = node_localization[node_uuid][language][region]
-				
-				if target_data.has("dialog"):
-					new_locale.set_text(
-							conversation_id,
-							node_uuid,
-							target_data["dialog"])
-				else:
-					new_locale.set_options(
-							conversation_id,
-							node_uuid,
-							PackedStringArray(target_data["options"]))
-			
-			if return_region:
-				locale_files.append(new_locale)
+			_add_locale_data(lang_locale_file, localization_id, locale_key)
+			used_locales[locale_key] = null
 	
-	return locale_files
-
-
-# Only call if the resource file already exists in the project directory!
-#func save() -> void:
-	#ResourceSaver.save(self)
-
-
-## Returns localization data of all registered and localized nodes.
-func get_node_localization_data() -> Dictionary[StringName, Dictionary]:
-	var data: Dictionary[StringName, Dictionary] = {}
+	# Check to warn in case that file has more localization data than map.
 	
-	for uuid in node_localization.keys():
-		if node_localization[uuid].has("common"):
+	var extra_data_warned: bool = false
+	
+	for localization_key in localization.keys():
+		var localization_locales = DictUtils.get_nested_value(localization, [localization_key, "locales"], {})
+		if typeof(localization_locales) != TYPE_DICTIONARY:
 			continue
-		data[uuid] = {}
-		for language in node_localization[uuid].keys():
-			data[uuid][language] = {}
-			for region in node_localization[uuid][language].keys():
-				data[uuid][language][region] = node_localization[uuid][language][region].duplicate(true)
+		var localization_keys = localization_locales.keys()
+		
+		if not used_locales.has_all(localization_keys):
+			push_warning(
+				"[DISCOUSE] File contains more localization data than is being exported: " + resource_path + "\n. Verify locale map.")
+		extra_data_warned = true
+		break
 	
-	return data
+	if extra_data_warned:
+		return new_files
+	
+	for string_key in format_strings.keys():
+		var used_string_locales = format_strings[string_key].keys()
+		if not used_locales.has_all(used_string_locales):
+			push_warning(
+				"[DISCOUSE] File contains more localization data than is being exported: " + resource_path + "\n. Verify locale map.")
+			break
+	
+	return new_files
+
+
+func _add_locale_data(file: DiscourseDialogLocale, localization_id: String, locale: String) -> void:
+	for node_id in localization.keys():
+		var data = localization[node_id]
+		
+		if not data.has_all(["type", "unlocalized", "locales"]) or typeof("unlocalized") != TYPE_STRING or typeof(data["type"]) != TYPE_INT or typeof(data["locales"]) != TYPE_DICTIONARY:
+			push_error(
+					"[DISCOURSE] Incomplete or corrupt data for node with UID \"" + node_id + "\" - type/unlocalized/locales check.")
+		var localized: bool = data["unlocalized"].is_empty()
+		
+		if data["type"] == LocalizationType.TEXT:
+			var warn: bool = typeof(DictUtils.get_nested_value(data, ["locales", locale])) != TYPE_STRING if localized else false
+			DictUtils.set_nested_value(
+					file.localization,
+					[localization_id, node_id, "dialog"],
+					DictUtils.get_nested_value(
+							data,
+							["locales", locale],
+							"") if localized else data["unlocalized"])
+			if warn:
+				if localized:
+					push_warning("[DISCOURSE] Unlocalized data for node UID \"" + node_id + "\" is missing.")
+				else:
+					push_warning("[DISCOURSE] Localization data for node UID \"" + node_id + "\" for locale \"" + locale + "\" is missing.")
+		
+		elif data["type"] == LocalizationType.CHOICES:
+			var warn: bool = typeof(DictUtils.get_nested_value(data, ["locales", locale])) != TYPE_ARRAY if data["unlocalized"].is_empty() else typeof(data["unlocalized"]) != TYPE_ARRAY
+			
+			if warn:
+				if localized:
+					push_warning("[DISCOURSE] Localization data for node UID \"" + node_id + "\" for locale \"" + locale + "\" is missing.")
+				else:
+					push_warning("[DISCOURSE] Unlocalized data for node UID \"" + node_id + "\" is missing.")
+			
+			var choices: Array[String] = []
+			
+			var idx: int = -1
+			
+			if localized:
+				for data_entry in data["unlocalized"]:
+					idx += 1
+					if typeof(data_entry) == TYPE_STRING:
+						choices.append(data_entry)
+					else:
+						choices.append("")
+						push_error("[DISCORUSE] Unlocalized choice with index " + str(idx) + " isn't a string.")
+			else:
+				var choice_entry = DictUtils.get_nested_value(
+						data, ["locales", locale])
+				if typeof(choice_entry) == TYPE_ARRAY:
+					for data_entry in choice_entry:
+						idx += 1
+						if typeof(data_entry) == TYPE_STRING:
+							choices.append(data_entry)
+						else:
+							choices.append("")
+							push_warning("[DISCORUSE] Choice with index " + str(idx) + " on locale " + locale + " isn't a string.")
+			
+			var choice_size: int = choices.size()
+			var target_size: int = 0
+			
+			var choice_data = DictUtils.get_nested_value(node_data, [node_id, "metadata", "choices"])
+			if typeof(choice_data) == TYPE_ARRAY:
+				target_size = choice_data.size()
+			else:
+				push_warning(
+						"[DISCOURSE] Localization for node UID " + node_id + " included, but node data is missing or corrupt.")
+				target_size = choice_size
+			
+			if choice_size != target_size:
+				push_warning(
+						"[DISCOURSE] Localized choice count for dialog \" " + resource_path + "\" is different from the registered data. Localized Choices: " + str(choice_size) + ", Data target: " + str(target_size) + ". Exported localization will be resized to respect data.")
+				choices.resize(target_size)
+			
+			file.set_choices(
+					localization_id,
+					node_id,
+					choices)
+		else:
+			push_warning(
+					"[DISCOURSE] Localization export for node with UID \"" + node_id + "\" couldn't define type.")
+			var nameless_id = DictUtils.get_nested_value(node_data, [node_id, "name"])
+			if typeof(nameless_id) == TYPE_STRING_NAME:
+				push_warning("[DISCOURSE - INFO] ID for typeless node found: \"" + String(nameless_id) + "\"")
+	
+	for format_key in format_strings.keys():
+		if not format_strings[format_key].has(locale) or typeof(format_strings[format_key][locale]) != TYPE_DICTIONARY:
+			push_warning("[DISCOURSE] Format string with key " + format_key + " doesn't have valid localization data for language: " + locale + ". Skipping")
+			continue
+		
+		var data: Dictionary = format_strings[format_key][locale]
+		
+		if not data.has_all(["base_string", "format"]) or typeof(data["base_string"]) != TYPE_STRING or typeof(data["format"]) != TYPE_DICTIONARY:
+			push_error("[DISCOURSE] Format string with key " + format_key + " doesn't have valid localization data for language: " + locale + ". Skipping")
+			continue
+		
+		var valid_formats: Dictionary = {}
+		
+		for format_slice in data["format"].keys():
+			var valid_cases: Dictionary = {}
+			
+			if typeof(data["format"][format_slice]) != TYPE_DICTIONARY or not data["format"][format_slice].has_all(["default", "cases"]) or typeof(data["format"][format_slice]["default"]) != TYPE_STRING or typeof(data["format"][format_slice]["cases"]) != TYPE_DICTIONARY:
+				push_error("[DISCOURSE] Format string with key " + format_key + " format " + format_slice + " has missing or corrupt data. Skipping")
+				continue
+			
+			var formats: Dictionary = data["format"][format_slice]
+			
+			for case in formats["cases"].keys():
+				if typeof(case) != TYPE_STRING or typeof(case) != TYPE_STRING_NAME:
+					push_error("[DISCOURSE] Case is not of type string. Exception on: " + "/".join([format_key, locale, format_slice]))
+					continue
+				
+				if typeof(formats["cases"][case]) != TYPE_STRING:
+					push_error("[DISCOURSE] Case of format string with key " + format_key + " format " + format_slice + " case " + case + " is not of type string. Patching with warning string.")
+					valid_cases[case] = "[CASE NOT IMPLEMENTED]"
+				else:
+					valid_cases[case] = formats["cases"][case]
+			
+			valid_formats[format_slice] = {
+				"default": data["format"][format_slice]["default"] if typeof(data["format"][format_slice]["default"]) == TYPE_STRING else "",
+				"cases": valid_cases}
+		
+		var full_data: Dictionary = {
+			"base_string": data["base_string"],
+			"format": valid_formats}
+		
+		DictUtils.set_nested_value(
+				file.format_strings,
+				[localization_id, format_key],
+				full_data)
 
 
 ## Returns an array with a split path used for variable access on the Blackboard.
 func split_path_variable(path: String) -> Array[StringName]:
 	var split: PackedStringArray = path.rsplit("/", false, 1)
 	var path_array: Array[StringName] = []
-	var size: int = 0
 	for path_component in split:
 		path_array.append(StringName(path_component))
-		size += 1
-	if size != 2:
+	if split.size() != 2:
 		path_array.resize(2)
 	return path_array
 
@@ -1015,44 +1027,79 @@ func get_phrase_arguments(phrase_text: String, trim_brackets: bool = false) -> A
 
 
 ## Adds a locale to the locale map. The locale map is used to track which
-## languages/regions are saved in this plugin.
-func add_locale(language: String, region: String = "base") -> void:
-	var lang: StringName = StringName(language)
-	
-	if not locale_map.has(lang):
-		locale_map[lang] = PackedStringArray()
-		
-		for localized_entry:String in localized_strings.keys():
-			if not localized_strings[localized_entry].has(language):
-				localized_strings[localized_entry][language] = Dictionary({},
-						TYPE_STRING, &"", null,
-						TYPE_DICTIONARY, &"", null)
-			
-			if not localized_strings[localized_entry][language].has("base"):
-				localized_strings[localized_entry][language]["base"] = localized_strings[localized_entry][base_language]["base"].duplicate(true)
-	
-	if region == "base" or locale_map.has(region):
+## languages/regions are valid and will be exported/used.[br]
+## If text is missing the localization it'll throw an error on export.[br]
+## If there is localization data of locales not registered through here it'll
+## warn that the data isn't going to be used during runtime.
+func add_locale(locale: String) -> void:
+	locale = TranslationServer.standardize_locale(locale)
+	if locale.is_empty():
 		return
 	
-	locale_map[lang].append(region)
+	var locale_parts: PackedStringArray = locale.split("_", false, 1)
+	var language: String = locale_parts[0]
+	var region: String = locale_parts[1] if locale_parts.size() == 2 else ""
 	
-	for localized_entry in localized_strings.keys():
-		if localized_strings[localized_entry][language].has(region):
-			continue
-		localized_strings[localized_entry][language][region] = localized_strings[localized_entry][language]["base"].duplicate(true)
+	if not locale_map.has(language):
+		locale_map[language] = {}
+		if not region.is_empty():
+			locale_map[language][region] = null
+	else:
+		if not region.is_empty() and not locale_map[language].has(region):
+			locale_map[language][region] = null
 
 
 ## Removes a locale from the locale map.
-func remove_locale(language: String, region: String = "base") -> void:
-	var lang_key: StringName = StringName(language)
+func remove_locale(locale: String) -> void:
+	locale = TranslationServer.standardize_locale(locale)
+	if locale.is_empty():
+		return
+	var locale_parts: PackedStringArray = locale.split("_", false, 1)
+	var language: String = locale_parts[0]
+	var region: String = locale_parts[1] if locale_parts.size() == 2 else ""
 	
-	if not locale_map.has(lang_key):
+	if not locale_map.has(language):
 		return
 	
-	if region == "base":
-		locale_map.erase(lang_key)
-		for locale_string in localized_strings.keys():
-			localized_strings[locale_string].erase(language)
+	var locale_code: String = language if region.is_empty() else language + "_" + region
+	
+	if region.is_empty():
+		locale_map.erase(language)
 	else:
-		for locale_string in localized_strings.keys():
-			localized_strings[locale_string][language].erase(region)
+		locale_map[language].erase(region)
+	
+	for format_key in format_strings.keys():
+		format_strings[format_key].erase(locale_code)
+	for node_uuid in localization.keys():
+		localization[node_uuid]["locales"].erase(locale_code)
+
+
+func get_display_localization_data(locale: String) -> Dictionary:
+	var data: Dictionary = {}
+	
+	for code in localization.keys():
+		if localization[code]["locales"].has(locale):
+			if localization[code]["type"] == LocalizationType.TEXT:
+				data[code] = localization[code]["locales"][locale]
+			else:
+				data[code] = localization[code]["locales"][locale].duplicate()
+	return data
+	
+
+
+func get_id_target(id: StringName) -> StringName:
+	for entry in node_data.keys():
+		if entry["name"] == id:
+			return entry
+	return &""
+
+
+func has_id(id: String) -> bool:
+	for entry in node_data.keys():
+		if entry["name"] == id:
+			return true
+	return false
+
+
+func link_id(id: String, uuid: StringName) -> bool:
+	return false

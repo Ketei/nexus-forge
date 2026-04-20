@@ -3,7 +3,6 @@ extends DiscourseGraphNode
 
 func _post_init() -> void:
 	name = &"DialogSettings"
-	custom_id = "DialogSettings"
 	title = "Dialog"
 	graph_icon = preload("res://addons/nexus_forge/icons/gear_icon.png")
 	node_type = DialogueNodeType.SETTINGS_DIALOG
@@ -69,14 +68,11 @@ func _ready() -> void:
 
 
 func _get_node_data() -> Dictionary:
-	var data: Dictionary = {}
-	data["node_type"] = node_type
-	data["position"] = position_offset
-	data["output_connections"] = {
+	var output_connections: Dictionary = {
 		"dialog_node": get_uuid_and_port_connected_to(PortMode.OUTPUT, 0)}
-	data["input_connections"] = {
+	var input_connections: Dictionary = {
 		"font_resource": get_uuid_and_port_connected_to(PortMode.INPUT, 0),
 		"dialog_scene": get_uuid_and_port_connected_to(PortMode.INPUT, 1),
 		"dialog_speed": get_uuid_and_port_connected_to(PortMode.INPUT, 2)}
 	
-	return data
+	return _build_node_data({}, output_connections, input_connections)

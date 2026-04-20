@@ -66,7 +66,6 @@ var mode: int = TYPE_INT:
 func _post_init() -> void:
 	name = &"Value"
 	title = "Value"
-	custom_id = "Value"
 	node_type = DialogueNodeType.VALUE
 	parent_mode = PortMode.OUTPUT
 	parent_port = 0
@@ -147,22 +146,34 @@ func _ready() -> void:
 
 
 func _get_node_data() -> Dictionary:
-	var data: Dictionary = {}
-	data["node_type"] = node_type
-	data["position"] = position_offset
-	data["value"] = get_current_value()
-	data["output_connections"] = {
+	var metadata: Dictionary = {
+		"value": get_current_value()}
+	var output_connections: Dictionary = {
 		"next_node": get_uuid_and_port_connected_to(
 				PortMode.OUTPUT,
-				0)
-	}
-	return data
+				0)}
+	return _build_node_data(metadata, output_connections)
 
 
 func _set_node_data(data: Dictionary) -> void:
-	var menu: MenuButton = get_field(&"data").get_child(1)
-	mode = typeof(data["value"])
+	var data_name = data.get("name")
+	var metadata = data.get("metadata")
+	if typeof(data_name) == TYPE_STRING_NAME:
+		name = data_name
 	
+	if typeof(metadata) != TYPE_DICTIONARY:
+		return
+	
+	var pos = metadata.get("position")
+	if typeof(pos) == TYPE_VECTOR2:
+		position_offset = pos
+	
+	var data_value = metadata.get("value")
+	if typeof(data_value) == TYPE_NIL:
+		return
+	
+	var menu: MenuButton = get_field(&"data").get_child(1)
+	mode = typeof(data_value)
 	match mode:
 		TYPE_INT:
 			get_mapped_field(&"data", &"number").value = data["value"]
@@ -176,8 +187,6 @@ func _set_node_data(data: Dictionary) -> void:
 		TYPE_STRING:
 			get_mapped_field(&"data", &"text").text = data["value"]
 			menu.icon = get_theme_icon("String", "EditorIcons")
-	
-	position_offset = data["position"]
 
 
 func _on_data_type_selected(type: int) -> void:

@@ -4,7 +4,6 @@ extends DiscourseGraphNode
 
 func _post_init() -> void:
 	name = &"Choices"
-	custom_id = "Choices"
 	title = "Choices"
 	node_type = DialogueNodeType.OPTIONS
 	parent_mode = PortMode.INPUT
@@ -115,16 +114,16 @@ func _on_choice_count_changed(value: int) -> void:
 
 
 func _get_node_data() -> Dictionary:
-	var data: Dictionary = {"position": position_offset, "node_type": node_type}
 	var options: Array[Dictionary] = []
-	
+	var metadata: Dictionary = {"choices": options}
+		
 	for choice in range(1, get_child_count()):
 		var field_id: StringName = &"choice_" + StringName(str(int(choice)))
 		var field: LineEdit = get_field(field_id)
 		
 		options.append(
 				{
-					"option_text": field.text.strip_edges(),
+					"text": field.text.strip_edges(),
 					"output_connections":{
 						"next_node":  get_uuid_and_port_connected_to(PortMode.OUTPUT, choice - 1)
 					},
@@ -133,18 +132,41 @@ func _get_node_data() -> Dictionary:
 					}
 				})
 	
-	data["options"] = options
-	
-	return data
+	return _build_node_data(metadata)
 
 
 func _set_node_data(data: Dictionary) -> void:
-	position_offset = data["position"]
-	var new_choice_count: int = data["options"].size()
+	var data_name = data.get("name")
+	var metadata = data.get("metadata")
+	if typeof(data_name) == TYPE_STRING_NAME:
+		name = data_name
+	
+	if typeof(metadata) != TYPE_DICTIONARY:
+		return
+	
+	var pos = metadata.get("position")
+	if typeof(pos) == TYPE_VECTOR2:
+		position_offset = pos
+	
+	var options = metadata.get("options")
+	if typeof(options) != TYPE_ARRAY:
+		return
+	
+	var true_options: Array = []
+	for option in options:
+		if typeof(option) != TYPE_DICTIONARY or typeof(option.get("option_text")) != TYPE_STRING:
+			continue
+		true_options.append(option)
+	
+	var new_choice_count: int = true_options.size()
 	get_mapped_field(&"choice_counter", &"choice_count").set_value_no_signal(new_choice_count)
 	set_choice_count(new_choice_count)
 	for option in range(1, new_choice_count + 1):
-		get_field(&"choice_" + StringName(str(option))).text = data["options"][option - 1]["option_text"]
+		get_field(&"choice_" + StringName(str(option))).text = true_options[option - 1]["option_text"]
+
+
+func choice_count() -> int:
+	return get_mapped_field(&"choice_counter", &"choice_count").value
 
 
 func get_choice_node() -> LineEdit:

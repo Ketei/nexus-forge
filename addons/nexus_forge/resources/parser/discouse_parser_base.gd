@@ -1,6 +1,10 @@
 class_name DialogParser
 extends RefCounted
-## The base class for Discourse dialog parsers.
+## The parser that NexusForge will use while its running on exported projects.
+##
+## The resources parsed by this object are [DiscourseDialog] which
+## contain a different structure from the editor files.[br]
+## For the editor parser see [EditorDialogParser].[br]
 
 
 signal dialog_started
@@ -51,19 +55,14 @@ const RANDOM_DEFAULT_WEIGHT: int = 1
 const FLOAT_SNAP: float = 0.01
 
 var API: DiscourseAPI = null
-var language: String = "en":
-	set(l):
-		language = l
-		_locale_set(language, region)
-var region: String = "base":
-	set(new_region):
-		region = "base" if new_region.is_empty() else new_region
-		_locale_set(language, region)
+var locale: String = "en":
+	set(new_locale):
+		locale = TranslationServer.standardize_locale(new_locale.strip_edges())
 
 # Maps UUID: CustomID
 var _dialog_id_map: Dictionary[String, StringName] = {}
 
-var _dialog_resource: DiscourseDialog = null:
+var _dialog_resource: EditorDiscourseDialog = null:
 	set(d):
 		_dialog_resource = d
 		_dialog_resource_set(d)
@@ -72,13 +71,99 @@ var _next_uuid: String = ""
 var _conversation_cache: ResourceCache = null
 var _parser_cache: Cache = null
 
+## The [DialogParser] that NexusForge will use while its running on exported projects.
+##
+## On an exported project the resources parsed will be [ReleaseDiscourseDialog]
+## which contain a different structure from the editor files.[br]
+## For the editor parser see [EditorDialogParser].[br]
 
-## Call instead of new() to get a proper parser.
-static func new_parser() -> DialogParser:
-	if OS.has_feature("editor"):
-		return EditorDialogParser.new()
-	else:
-		return ReleaseDialogParser.new()
+## The resource containing the localizable data of a dialog.
+var localization: DiscourseDialogLocale = null 
+# Example of how data will be structured in the dialog resource (Release).
+#const store = {
+		#UUID - NodeTypes.DIALOG: { # <- UUUID used to access localization if text_source is empty
+			#"node_type": NodeTypes.DIALOG,
+			#"character_id": &"",
+			#"persist": true,
+			#"character_settings": {},
+			#"dialog_settings": {},
+			#"text_source": &"", # External key source for dialog
+			#"next_node": &""},
+		#NodeTypes.OPTIONS: {
+			#"node_type": null,
+			#"options": [
+				#{"next_node": "", "settings": {"available": &"", "locked": &"", "lock_hint": &""}},
+				#{"next_node": "", "settings": {}}]},
+		#NodeTypes.BRANCH: {
+			#"node_type": null,
+			#"result": &"", # What node provides the result
+			#"case_true": &"",
+			#"case_false": &""},
+		#NodeTypes.CONDITION_SELECT: {
+			#"node_type": null,
+			#"result": &"", # What node provides the result
+			#"true_value": &"",
+			#"false_value": &""},
+		#NodeTypes.COMPARATION: {
+			#"node_type": null,
+			#"operator": OP_EQUAL,
+			#"value_a": &"",
+			#"value_b": &""},
+		#NodeTypes.EVENT: {
+			#"variable_path": &"",
+			#"variable": &"",
+			#"value": &"",
+			#"callable": &"",
+			#"signal": &"",
+			#"next_node": &""},
+		#NodeTypes.MATCH: {
+			#"case_default": &"",
+			#"match_value": &"",
+			#"cases": [
+				#{"value": 0, "next_node": &""},
+				#{"value": "X3", "next_node": &""}]},
+		#NodeTypes.PAUSE: {
+			#"next_node": &""},
+		#NodeTypes.RANDOM: {
+			#"default_override": &"",
+			#"options": [
+				#{"target": &"", "weight": &""}]},
+		#NodeTypes.TYPE_GUARD: {
+			#"type": TYPE_INT,
+			#"value": &"",
+			#"fallback": 100},
+		#NodeTypes.VALUE: {
+			#"value": 50},
+		#NodeTypes.SIGNAL: {
+			#"signal": &"",
+			#"arguments": [&"", &""]}, # Sources for the arguments
+		#NodeTypes.CALLABLE: {
+			#"method": &"",
+			#"arguments": [&""]},
+		#NodeTypes.CALLABLE_RETURN: {
+			#"method": &"",
+			#"arguments": [&"", &""]},
+		#NodeTypes.VARIABLE_GET: {
+			#"path": &"",
+			#"variable": &""},
+		#NodeTypes.RANDOM_VALUE: {
+			#"random_type": TYPE_BOOL,
+			#"min_value": 0.0,
+			#"max_value": 100.0,
+			#"min_source": &"",
+			#"max_source": &""},
+		#NodeTypes.RESOURCE: {
+			#"uuid": ""},
+		#NodeTypes.DATA_EVENT: {
+			#"variable_path": &"",
+			#"variable": &"",
+			#"value": &"",
+			#"callable": &"",
+			#"signal": &"",
+			#"data_source": &""}, # Where is the data to get.
+		#NodeTypes.LOCALIZED_TEXT: {
+			#"type": NodeTypes.LOCALIZED_TEXT,
+			#"text": &""}} # Key to localization
 
 
 func _init() -> void:
@@ -89,15 +174,15 @@ func _init() -> void:
 
 ## Function to parse the dialog in a custom manner. Modify if needed.
 func _parse_dialog(dialog_id: String, dialog: String) -> String:
-	var DUUID: String = dialog_id + "/" + language + "_" + region
+	var DUUID: String = dialog_id# + "/" + language + "_" + region
 	# (UUID)/en_US
 	if _dialog_resource.parsed_dialog_cache.is_in_cache(DUUID):
 		var cached_data: ParsedDialog = _dialog_resource.parsed_dialog_cache.get_cache(DUUID)
 		return cached_data.get_dialog()
 	
 	var parsed: ParsedDialog = ParsedDialog.new()
-	parsed.language = language
-	parsed.region = region
+	#parsed.language = language
+	#parsed.region = region
 	parsed.dialog = dialog
 	
 	var functions_processed: PackedStringArray = []
@@ -166,15 +251,17 @@ func _parse_dialog(dialog_id: String, dialog: String) -> String:
 		var prefix_trim_key: String = phrase_key.trim_prefix("&")
 		phrases_processed.append(phrase_key)
 		
-		var phrase: String = _dialog_resource.get_localized_string(
-				prefix_trim_key,
-				language,
-				region)
+		#var phrase: String = _dialog_resource.get_localized_string(
+				#prefix_trim_key,
+				#language,
+				#region)
+		var phrase: String = localization.get_format_string_text(
+				_dialog_resource.localization_uuid,
+				prefix_trim_key)
 		
-		var argument_cases: Dictionary[String, Dictionary] = _dialog_resource.get_localized_arguments(
-				prefix_trim_key,
-				language,
-				region)
+		var argument_cases: Dictionary[String, Dictionary] = localization.get_format_string_args(
+			_dialog_resource.localization_uuid,
+			prefix_trim_key)
 		
 		parsed.create_format_phrase(phrase_key, phrase, argument_cases)
 		
@@ -257,8 +344,157 @@ func _can_compare(a, b) -> bool:
 
 #region Override
 ## Returns the UUID of the next dialog.
-func _process_logic(_uuid: StringName) -> String:
-	return ""
+func _process_logic(uuid: StringName) -> String:
+	if uuid.is_empty():
+		return ""
+	
+	var data: Dictionary = _dialog_resource.dialog_nodes[uuid]
+	match data["node_type"]:
+		NodeTypes.ENTRY:
+			return _process_logic(data["next_node"])
+		NodeTypes.DIALOG:
+			var font: String = _get_data(data["dialog_settings"]["font_resource"], "")
+			var scene: String = _get_data(data["dialog_settings"]["dialog_scene"], "")
+			var speed: float = _get_data(data["dialog_settings"]["dialog_speed"], 0.0)
+			var display_name: String = _get_data(data["character_settings"]["display_name"], "")
+			var portrait_id: String = _get_data(data["character_settings"]["portrait_id"], "")
+			if data["text_source"].is_empty():
+				dialog_reached.emit({
+					"dialog_text": _parse_dialog(String(uuid), localization.get_text(_dialog_resource.localization_uuid, uuid)),
+					"character_id": data["character_id"],
+					"persist": data["persist"],
+					"font": font,
+					"scene": scene,
+					"speed": speed,
+					"display_name": display_name,
+					"portrait_id": portrait_id})
+			else:
+				dialog_reached.emit({
+					"dialog_text": _parse_dialog(String(uuid), _get_data(data["text_source"])),
+					"character_id": data["character_id"],
+					"persist": data["persist"],
+					"font": font,
+					"scene": scene,
+					"speed": speed,
+					"display_name": display_name,
+					"portrait_id": portrait_id})
+			return data["next_node"]
+		NodeTypes.OPTIONS:
+			var available_options: Array[Dictionary] = []
+			var localized_options: PackedStringArray = localization.get_options(_dialog_resource.localization_uuid, uuid)
+			
+			var idx: int = -1
+			var option_duuid: String = ""
+			for option:Dictionary in data["options"]:
+				idx += 1
+				option_duuid = String(uuid) + "_" + str(idx)
+				
+				if option["settings"].is_empty():
+					option_duuid += "_unlocked"
+					available_options.append(
+						{
+							"unlocked": true,
+							"text": _parse_dialog(option_duuid, localized_options[idx]),
+							"target": option["next_node"]})
+				else:
+					var opt_settings: Dictionary = option["settings"]
+					var show: bool = _get_data(opt_settings["available"], true)
+				
+					if not show:
+						continue
+					var unlocked: bool = _get_data(opt_settings["unlocked"], true)
+					var text: String = localized_options[idx]
+					
+					if not unlocked:
+						var lock_hint: String = _get_data(opt_settings["lock_hint"], "")
+						if not lock_hint.is_empty():
+							text = lock_hint
+					
+					if unlocked:
+						option_duuid += "_unlocked"
+					else:
+						option_duuid += "_locked"
+					
+					available_options.append({
+						"unlocked": unlocked,
+						"text": _parse_dialog(option_duuid, text),
+						"target": option["next_node"]})
+			
+			options_reached.emit(available_options)
+			return uuid
+		NodeTypes.BRANCH:
+			var use_a: bool = _get_data(data["result"], true)
+			if use_a:
+				return _process_logic(data["case_true"])
+			else:
+				return _process_logic(data["case_false"])
+		NodeTypes.EVENT:
+			if not data["variable_path"].is_empty() and not data["value"].is_empty():
+				NexusForge.Blackboard.set_variable(
+						data["variable_path"],
+						data["variable"],
+						_get_data(data["value"]))
+			if not data["callable"].is_empty():
+				var call_data: Dictionary = _dialog_resource.dialog_nodes[data["callable"]]
+				var call_args: Array = []
+				
+				for argument_key in call_data["arguments"]:
+					call_args.append(_get_data(argument_key))
+				
+				NexusForge.Discourse.API.callv(
+						call_data["method"],
+						call_args)
+			
+			if not data["signal"].is_empty():
+				var signal_data: Dictionary = _dialog_resource.dialog_nodes[data["signal"]]
+				var signal_args: Array = []
+				
+				for argument_key in signal_data["arguments"]:
+					signal_args.append(_get_data(argument_key))
+				
+				NexusForge.Discourse.API.emit_signal(
+						data["signal"],
+						signal_args)
+				
+			return _process_logic(data["next_node"])
+		NodeTypes.MATCH:
+			var match_data = _get_data(data["match_value"])
+			for case:Dictionary in data["cases"]:
+				if case["value"] == match_data:
+					return _process_logic(case["next_node"])
+			return _process_logic(data["case_default"])
+		NodeTypes.PAUSE:
+			dialog_paused.emit()
+			return data["next_node"]
+		NodeTypes.RANDOM:
+			var total_weight: int = 0
+			var choices: Array[Dictionary] = []
+			
+			for choice:Dictionary in data["options"]:
+				var weight: int = RANDOM_DEFAULT_WEIGHT if choice["weight_override"].is_empty() else _get_data(choice["weight_override"])
+				if weight == 0:
+					continue
+				choices.append({
+					"next": choice["target"],
+					"weight": weight})
+				total_weight += weight
+			
+			if choices.is_empty():
+				return ""
+			
+			choices.sort_custom(func(a, b): return a["weight"] > b["weight"])
+			var random_select: int = randi_range(1, total_weight)
+			
+			var current_weight: int = 0
+			for choice in choices:
+				current_weight += choice["weight"]
+				if random_select <= current_weight:
+					return _process_logic(choice["next"])
+			return _process_logic(choices[-1]["next"]) # In case of loop error
+		NodeTypes.DIALOG_END:
+			return ""
+		_:
+			return ""
 	#if uuid.is_empty():
 		#return ""
 	#
@@ -402,98 +638,145 @@ func _process_logic(_uuid: StringName) -> String:
 			#return ""
 
 
-func _get_data(_from_uuid: StringName) -> Variant:
-	return null
-	#if _dialog_resource == null or not _dialog_resource.dialog_nodes.has(from_uuid):
-		#return null
-	#
-	#var data: Dictionary = _dialog_resource.get_node_data(from_uuid, language, region)
-	#
-	#match data["node_type"]:
-		#NODE_TYPES.VALUE:
-			#return data["value"]
-		#NODE_TYPES.RANDOM_VALUE:
-			#match data["mode"]:
-				#TYPE_INT:
-					#return randi_range(
-							#data["values"]["base"],
-							#data["values"]["max"])
-				#TYPE_FLOAT:
-					#return snappedf(
-							#randf_range(
-									#data["values"]["base"],
-									#data["values"]["max"]),
-							#0.01)
-				#TYPE_BOOL:
-					#var true_range: int = randi_range(
-							#1,
-							#100 if data["input_connections"]["base_value"]["target_node_uuid"] == "" else _get_data(data["input_connections"]["base_value"]["target_node_uuid"]))
-					#return true_range <= data["values"]["base"]
-				#_:
-					#return null
-		#NODE_TYPES.TYPE_GUARD:
-			#var guard_data = _get_data(data["input_connections"]["value"]["target_node_uuid"])
-			#if typeof(guard_data) == typeof(data["fallback_value"]):
-				#return guard_data
-			#else:
-				#return data["fallback_value"]
-		#NODE_TYPES.VARIABLE_GET:
-			#return NexusForge.Variables.get_variable(data["variable_path"])
-		#NODE_TYPES.CALLABLE_RETURN:
-			#return NexusForge.Discourse.API.callv(
-					#data["method"],
-					#data["arguments"])
-		#NODE_TYPES.DATA_EVENT:
-			#if data["variable_path"] != "" and data["input_connections"]["variable_value"] != "":
-				#NexusForge.Variables.set_variable(
-						#data["variable_path"],
-						#_get_data(data["input_connections"]["variable_value"]["target_node_uuid"]))
-			#if data["input_connections"]["callable"]["target_node_uuid"] != "":
-				#var call_data: Dictionary = _dialog_resource.get_node_data(data["input_connections"]["callable"]["target_node_uuid"], language, region)
-				#var call_args: Array = []
-				#
-				#for arg_connection in call_data["arguments"]:
-					#call_args.append(
-							#_get_data(arg_connection["target_node_uuid"]))
-				#
-				#NexusForge.Discourse.API.callv(
-						#data["method"],
-						#call_args)
-			#
-			#if data["input_connections"]["signal"]["target_node_uuid"] != "":
-				#var signal_data: Dictionary = _dialog_resource.get_node_data(data["input_connections"]["signal"]["target_node_uuid"], language, region)
-				#var signal_args: Array = []
-				#
-				#for arg_connection in signal_data["arguments"]:
-					#signal_args.append(_get_data(arg_connection["target_node_uuid"]))
-				#
-				#NexusForge.Discourse.API.emit_signal(
-						#data["signal"],
-						#signal_args)
-			#return _get_data(data["input_connections"]["data_input"]["target_node_uuid"])
-		#NODE_TYPES.LOCALIZED_TEXT:
-			#return data["text"]
-		#NODE_TYPES.CONDITION_SELECT:
-			#var true_value: bool = _get_bool_result(data["input_connections"]["result"]["target_node_uuid"])
-			#if true_value:
-				#return _get_data(data["input_connections"]["true_value"]["target_node_uuid"])
-			#else:
-				#return _get_data(data["input_connections"]["false_value"]["target_node_uuid"])
-		#NODE_TYPES.RESOURCE:
-			#return data["resource_path"]
-		#_:
-			#return null
+func _get_data(uuid: StringName, fallback = null) -> Variant:
+	if _dialog_resource == null or not _dialog_resource.dialog_nodes.has(uuid):
+		return fallback
+	var data: Dictionary = _dialog_resource.dialog_nodes[uuid]
+	
+	match data["node_type"]:
+		NodeTypes.VALUE:
+			return data["value"]
+		NodeTypes.RANDOM_VALUE:
+			match data["random_type"]:
+				TYPE_INT:
+					var min_value: int = data["min_value"] if data["min_override"].is_empty() else _get_data(data["min_override"])
+					var max_value: int = data["max_value"] if data["max_override"].is_empty() else _get_data(data["max_override"])
+					return randi_range(min_value, max_value)
+				TYPE_FLOAT:
+					var min_value: float = data["min_value"] if data["min_override"].is_empty() else _get_data(data["min_override"])
+					var max_value: float = data["max_value"] if data["max_override"].is_empty() else _get_data(data["max_override"])
+					return snappedf(
+							randf_range(
+									min_value,
+									max_value),
+							FLOAT_SNAP)
+				TYPE_BOOL:
+					var true_probability: int = data["min_value"] if data["min_override"].is_empty() else _get_data(data["min_override"], 100)
+					if true_probability == 0:
+						return false
+					elif true_probability == 100:
+						return true
+					else:
+						var true_range: int = randi_range(
+								1,
+								100)
+						return true_range <= true_probability
+				_:
+					return null
+		NodeTypes.TYPE_GUARD:
+			var guard_data = _get_data(data["value"])
+			if typeof(guard_data) == typeof(data["type"]):
+				return guard_data
+			else:
+				return data["fallback"]
+		NodeTypes.VARIABLE_GET:
+			return NexusForge.Blackboard.get_variable(data["path"], data["variable"])
+		NodeTypes.CALLABLE_RETURN:
+			var method: Callable = Callable(NexusForge.Discourse.API, data["method"])
+			var args: Array = []
+			for arg:StringName in data["arguments"]:
+				args.append(_get_data(arg))
+			return method.callv(args)
+		NodeTypes.DATA_EVENT:
+			if not data["variable_path"].is_empty() and not data["variable"].is_empty() and not data["value"].is_empty():
+				NexusForge.Blackboard.set_variable(
+						data["variable_path"],
+						data["variable"],
+						_get_data(data["value"]))
+			if not data["callable"].is_empty():
+				var call_data: Dictionary = _dialog_resource.dialog_nodes[data["callable"]]
+				var call_args: Array = []
+				
+				for argument_id in call_data["arguments"]:
+					call_args.append(_get_data(argument_id))
+				
+				NexusForge.Discourse.API.callv(
+						call_data["method"],
+						call_args)
+			
+			if not data["signal"].is_empty():
+				var signal_data: Dictionary = _dialog_resource.dialog_nodes[data["signal"]]
+				var signal_args: Array = []
+				
+				for argument_key in signal_data["arguments"]:
+					signal_args.append(_get_data(argument_key))
+				
+				NexusForge.Discourse.API.emit_signal(
+						data["signal"],
+						signal_args)
+			return _get_data(data["data_source"])
+		NodeTypes.LOCALIZED_TEXT:
+			return localization.get_text(_dialog_resource.localization_uuid, data["text"])
+		NodeTypes.COMPARATION:
+			var a = _get_data(data["value_a"])
+			var b = _get_data(data["value_b"])
+			if not _can_compare(a, b):
+				return false
+			
+			match data["operator"]:
+				OP_EQUAL:
+					return a == b
+				OP_NOT_EQUAL:
+					return a != b
+				OP_LESS:
+					return a < b
+				OP_LESS_EQUAL:
+					return a <= b
+				OP_GREATER:
+					return a > b
+				OP_GREATER_EQUAL:
+					return a >= b
+				_:
+					return false
+		NodeTypes.CONDITION_SELECT:
+			var condition: bool = _get_data(data["result"])
+			if condition:
+				return _get_data(data["true_value"])
+			else:
+				return _get_data(data["false_value"])
+		NodeTypes.RESOURCE:
+			return data["resource_path"]
+		_:
+			return fallback
+
+
+func _load_locale(new_language: String, new_region: String) -> void:
+	var locale_path: String = str(
+			ProjectSettings.get_setting("nexus_forge/localization_directory", "res://localization/"), # Project settings base path
+			new_language,
+			"-",
+			new_region,
+			"/dialog/",
+			_dialog_resource.localization_uuid,
+			".json")
+	
+	var file: FileAccess = FileAccess.open(locale_path, FileAccess.READ)
+	
+	if file != null:
+		localization = DiscourseDialogLocale.new_from_json(file.get_as_text())
 
 
 func _locale_set(new_language: String, new_region: String = "base") -> void:
-	pass
+	_load_locale(new_language, new_region)
 
 
 func _dialog_resource_set(new_resource: DiscourseDialog) -> void:
-	pass
-	#_dialog_id_map.clear()
-	#if new_resource != null:
-		#_dialog_id_map.assign(new_resource.get_id_map())
+	_dialog_id_map.clear()
+	if new_resource != null:
+		_dialog_id_map.assign(new_resource.id_map)
+		#_load_locale(language, region)
+	else:
+		localization = null
 #endregion
 
 
@@ -508,10 +791,9 @@ func is_dialog_active() -> bool:
 func load_dialog(path: String, starting_id: String = "") -> bool:
 	if _conversation_cache.is_in_cache(path):
 		_dialog_resource = _conversation_cache.get_resource(path)
-		return true
 	else:
 		var res: Resource = load(path)
-		if res == null or res is not EditorDiscourseDialog:
+		if res == null or res is not ReleaseDiscourseDialog:
 			_next_uuid = ""
 			_dialog_resource = null
 			return false
@@ -559,7 +841,7 @@ func next_dialog() -> void:
 		dialog_finished.emit()
 
 
-# Clears teh whole cache. Used on exit to prevent leaked resources
+# Clears the whole cache. Used on exit to prevent leaked resources
 func _clear_cache() -> void:
 	if _dialog_resource != null:
 		_dialog_resource.parsed_dialog_cache.clear()

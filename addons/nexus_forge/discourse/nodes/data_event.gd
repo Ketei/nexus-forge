@@ -3,7 +3,6 @@ extends DiscourseGraphNode
 
 func _post_init() -> void:
 	name = &"DataEvent"
-	custom_id = "DataEvent"
 	title = "Event (Data)"
 	size = Vector2(240.0, 196.0)
 	node_type = DialogueNodeType.DATA_EVENT
@@ -130,26 +129,36 @@ func _on_input_disconnected(input_port: int, _from_node: DiscourseGraphNode, _fr
 
 
 func _get_node_data() -> Dictionary:
-	var data: Dictionary = {}
-	data["node_type"] = node_type
-	data["position"] = position_offset
-	data["variable_path"] = get_mapped_field(&"variable", &"path").text.strip_edges() if has_any_input(1) else ""
-	data["output_connections"] = {
-		"data_output": get_uuid_and_port_connected_to(PortMode.OUTPUT, 0)
-	}
-	data["input_connections"] = {
+	var metadata: Dictionary = {
+		"variable_path": get_mapped_field(&"variable", &"path").text.strip_edges() if has_any_input(1) else ""}
+	
+	var output_connections: Dictionary = {
+		"data_output": get_uuid_and_port_connected_to(PortMode.OUTPUT, 0)}
+	
+	var input_connections: Dictionary = {
 		"data_input": get_uuid_and_port_connected_to(PortMode.INPUT, 0),
 		"variable_value": get_uuid_and_port_connected_to(PortMode.INPUT, 1),
 		"callable": get_uuid_and_port_connected_to(PortMode.INPUT, 2),
-		"signal": get_uuid_and_port_connected_to(PortMode.INPUT, 3)
-	}
+		"signal": get_uuid_and_port_connected_to(PortMode.INPUT, 3)}
 	
-	return data
+	return _build_node_data(metadata, output_connections, input_connections)
 
 
 func _set_node_data(data: Dictionary) -> void:
-	get_mapped_field(&"variable", &"path").text = data["variable_path"]
-	position_offset = data["position"]
+	var _name = data.get("name")
+	if typeof(_name) == TYPE_STRING_NAME:
+		name = _name
+	
+	var pos = data.get("position")
+	if typeof(pos) == TYPE_VECTOR2:
+		position_offset = pos
+	
+	var metadata = data.get("metadata")
+	if typeof(metadata) != TYPE_DICTIONARY:
+		return
+	var path = metadata.get("variable_path")
+	if typeof(path) == TYPE_STRING:
+		get_mapped_field(&"variable", &"path").text = path
 
 
 func _on_var_path_focus_lost() -> void:

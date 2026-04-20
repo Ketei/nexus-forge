@@ -3,7 +3,6 @@ extends DiscourseGraphNode
 
 func _post_init() -> void:
 	name = &"ConditionalValue"
-	custom_id = "ConditionalValue"
 	title = "Conditional Value"
 	node_type = DialogueNodeType.CONDITION_SELECT
 	parent_mode = PortMode.OUTPUT
@@ -65,17 +64,14 @@ func _ready() -> void:
 
 
 func _get_node_data() -> Dictionary:
-	var graph_data: Dictionary = {}
-	graph_data["node_type"] = node_type
-	graph_data["position"] = position_offset
-	graph_data["input_connections"] = {
+	var in_connections: Dictionary = {
 		"result": get_uuid_and_port_connected_to(PortMode.INPUT, 0),
 		"true_value": get_uuid_and_port_connected_to(PortMode.INPUT, 1),
 		"false_value": get_uuid_and_port_connected_to(PortMode.INPUT, 2)}
-	graph_data["output_connections"] = {
+	var out_connections = {
 		"output_value": get_uuid_and_port_connected_to(PortMode.OUTPUT, 0)}
 	
-	return graph_data
+	return _build_node_data({}, out_connections, in_connections)
 
 
 func _get_issues() -> PackedStringArray:

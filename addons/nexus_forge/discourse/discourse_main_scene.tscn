@@ -1,8 +1,7 @@
-[gd_scene load_steps=22 format=3 uid="uid://d216eid5mh0ts"]
+[gd_scene format=3 uid="uid://d216eid5mh0ts"]
 
 [ext_resource type="Script" uid="uid://bqico4ogja4xf" path="res://addons/nexus_forge/discourse/discourse_main_panel_script.gd" id="1_viyrt"]
 [ext_resource type="Script" uid="uid://cnbww5dfg3xls" path="res://addons/nexus_forge/discourse/conversation_tree_script.gd" id="2_2wl78"]
-[ext_resource type="Script" uid="uid://dk607iuh4bkv6" path="res://addons/nexus_forge/discourse/discourse_panel_script.gd" id="2_f5jrf"]
 [ext_resource type="Script" uid="uid://eh1dhsdbwf8o" path="res://addons/nexus_forge/discourse/discourse_nodes_tree.gd" id="2_nnanj"]
 [ext_resource type="Texture2D" uid="uid://brtp4ypk1wxqu" path="res://addons/nexus_forge/icons/new_language_plus.svg" id="3_f5jrf"]
 [ext_resource type="Script" uid="uid://dqb1etyisx1gu" path="res://addons/nexus_forge/discourse/locales_tree_script.gd" id="4_2wl78"]
@@ -19,13 +18,6 @@ content_margin_top = 8.0
 content_margin_right = 6.0
 content_margin_bottom = 6.0
 bg_color = Color(0.180392, 0.180392, 0.180392, 1)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_nnanj"]
-content_margin_left = 8.0
-content_margin_top = 8.0
-content_margin_right = 6.0
-content_margin_bottom = 6.0
-bg_color = Color(0.212, 0.239, 0.29, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_y485p"]
 content_margin_right = 6.0
@@ -56,7 +48,7 @@ content_margin_left = 4.0
 content_margin_top = 6.0
 content_margin_right = 4.0
 
-[node name="DiscourseMainPanelTest" type="PanelContainer"]
+[node name="DiscourseMainPanelTest" type="PanelContainer" unique_id=1767773244]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -65,72 +57,73 @@ grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_v0h3x")
 script = ExtResource("1_viyrt")
 
-[node name="MainSplitContainer" type="HSplitContainer" parent="."]
+[node name="MainSplitContainer" type="HSplitContainer" parent="." unique_id=944148545]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 4.0
 theme_override_constants/minimum_grab_thickness = 10
-split_offset = -234
+split_offsets = PackedInt32Array(-234)
 dragger_visibility = 2
+split_offset = -234
 
-[node name="MainSidebar" type="PanelContainer" parent="MainSplitContainer"]
+[node name="MainSidebar" type="PanelContainer" parent="MainSplitContainer" unique_id=1791491811]
 custom_minimum_size = Vector2(32, 0)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_v0h3x")
 
-[node name="SidebarSplitContainer" type="VSplitContainer" parent="MainSplitContainer/MainSidebar"]
+[node name="SidebarSplitContainer" type="VSplitContainer" parent="MainSplitContainer/MainSidebar" unique_id=1065360492]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 10
 theme_override_constants/minimum_grab_thickness = 10
 
-[node name="ConversationContainer" type="VBoxContainer" parent="MainSplitContainer/MainSidebar/SidebarSplitContainer"]
+[node name="ConversationContainer" type="VBoxContainer" parent="MainSplitContainer/MainSidebar/SidebarSplitContainer" unique_id=358258325]
 custom_minimum_size = Vector2(0, 200)
 layout_mode = 2
 
-[node name="ConversationTitle" type="Label" parent="MainSplitContainer/MainSidebar/SidebarSplitContainer/ConversationContainer"]
+[node name="ConversationTitle" type="Label" parent="MainSplitContainer/MainSidebar/SidebarSplitContainer/ConversationContainer" unique_id=674743112]
 layout_mode = 2
 text = "Coversations"
 
-[node name="ConversationTree" type="Tree" parent="MainSplitContainer/MainSidebar/SidebarSplitContainer/ConversationContainer"]
+[node name="ConversationTree" type="Tree" parent="MainSplitContainer/MainSidebar/SidebarSplitContainer/ConversationContainer" unique_id=1746628233]
 layout_mode = 2
 size_flags_vertical = 3
 hide_root = true
 script = ExtResource("2_2wl78")
 
-[node name="NodesContainer" type="VBoxContainer" parent="MainSplitContainer/MainSidebar/SidebarSplitContainer"]
+[node name="NodesContainer" type="VBoxContainer" parent="MainSplitContainer/MainSidebar/SidebarSplitContainer" unique_id=1968210879]
 custom_minimum_size = Vector2(0, 232)
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="NodesTitl" type="Label" parent="MainSplitContainer/MainSidebar/SidebarSplitContainer/NodesContainer"]
+[node name="NodesTitl" type="Label" parent="MainSplitContainer/MainSidebar/SidebarSplitContainer/NodesContainer" unique_id=654592895]
 layout_mode = 2
 text = "Nodes"
 
-[node name="SearchHbox" type="HBoxContainer" parent="MainSplitContainer/MainSidebar/SidebarSplitContainer/NodesContainer"]
+[node name="SearchHbox" type="HBoxContainer" parent="MainSplitContainer/MainSidebar/SidebarSplitContainer/NodesContainer" unique_id=2041708232]
 layout_mode = 2
 
-[node name="NodeSearchLnEdt" type="LineEdit" parent="MainSplitContainer/MainSidebar/SidebarSplitContainer/NodesContainer/SearchHbox"]
+[node name="NodeSearchLnEdt" type="LineEdit" parent="MainSplitContainer/MainSidebar/SidebarSplitContainer/NodesContainer/SearchHbox" unique_id=2102686027]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "Search Node"
 
-[node name="NewFolderButton" type="Button" parent="MainSplitContainer/MainSidebar/SidebarSplitContainer/NodesContainer/SearchHbox"]
+[node name="NewFolderButton" type="Button" parent="MainSplitContainer/MainSidebar/SidebarSplitContainer/NodesContainer/SearchHbox" unique_id=1530657014]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 flat = true
 icon_alignment = 1
 
-[node name="NodesTree" type="Tree" parent="MainSplitContainer/MainSidebar/SidebarSplitContainer/NodesContainer"]
+[node name="NodesTree" type="Tree" parent="MainSplitContainer/MainSidebar/SidebarSplitContainer/NodesContainer" unique_id=1400680793]
 layout_mode = 2
 size_flags_vertical = 3
 allow_reselect = true
 hide_root = true
 script = ExtResource("2_nnanj")
 
-[node name="DiscourseSplitContainer" type="VSplitContainer" parent="MainSplitContainer"]
+[node name="DiscourseSplitContainer" type="VSplitContainer" parent="MainSplitContainer" unique_id=20032675]
 custom_minimum_size = Vector2(680, 300)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -138,36 +131,29 @@ theme_override_constants/minimum_grab_thickness = 10
 dragging_enabled = false
 dragger_visibility = 2
 
-[node name="DiscourseWindow" type="PanelContainer" parent="MainSplitContainer/DiscourseSplitContainer"]
-custom_minimum_size = Vector2(0, 250)
-layout_mode = 2
-size_flags_vertical = 3
-theme_override_styles/panel = SubResource("StyleBoxFlat_nnanj")
-script = ExtResource("2_f5jrf")
-
-[node name="ErrorContainer" type="PanelContainer" parent="MainSplitContainer/DiscourseSplitContainer"]
+[node name="ErrorContainer" type="PanelContainer" parent="MainSplitContainer/DiscourseSplitContainer" unique_id=1745504276]
 visible = false
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_y485p")
 
-[node name="IssuesVBox" type="VBoxContainer" parent="MainSplitContainer/DiscourseSplitContainer/ErrorContainer"]
+[node name="IssuesVBox" type="VBoxContainer" parent="MainSplitContainer/DiscourseSplitContainer/ErrorContainer" unique_id=434955922]
 layout_mode = 2
 
-[node name="HeaderContainer" type="HBoxContainer" parent="MainSplitContainer/DiscourseSplitContainer/ErrorContainer/IssuesVBox"]
+[node name="HeaderContainer" type="HBoxContainer" parent="MainSplitContainer/DiscourseSplitContainer/ErrorContainer/IssuesVBox" unique_id=969232551]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="MainSplitContainer/DiscourseSplitContainer/ErrorContainer/IssuesVBox/HeaderContainer"]
+[node name="Label" type="Label" parent="MainSplitContainer/DiscourseSplitContainer/ErrorContainer/IssuesVBox/HeaderContainer" unique_id=1840146345]
 layout_mode = 2
 text = "Issues"
 
-[node name="HideIssuesBtn" type="Button" parent="MainSplitContainer/DiscourseSplitContainer/ErrorContainer/IssuesVBox/HeaderContainer"]
+[node name="HideIssuesBtn" type="Button" parent="MainSplitContainer/DiscourseSplitContainer/ErrorContainer/IssuesVBox/HeaderContainer" unique_id=1075201827]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 size_flags_horizontal = 10
 flat = true
 
-[node name="IssuesTree" type="Tree" parent="MainSplitContainer/DiscourseSplitContainer/ErrorContainer/IssuesVBox"]
+[node name="IssuesTree" type="Tree" parent="MainSplitContainer/DiscourseSplitContainer/ErrorContainer/IssuesVBox" unique_id=272066784]
 custom_minimum_size = Vector2(0, 180)
 layout_mode = 2
 size_flags_vertical = 3
@@ -175,45 +161,46 @@ hide_folding = true
 hide_root = true
 script = ExtResource("5_qsnsk")
 
-[node name="LocalizationContainer" type="VBoxContainer" parent="."]
+[node name="LocalizationContainer" type="VBoxContainer" parent="." unique_id=1935855900]
 visible = false
 layout_mode = 2
 
-[node name="MainSplitContainer" type="HSplitContainer" parent="LocalizationContainer"]
+[node name="MainSplitContainer" type="HSplitContainer" parent="LocalizationContainer" unique_id=62086458]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/minimum_grab_thickness = 10
 
-[node name="LeftSplitContainer" type="HSplitContainer" parent="LocalizationContainer/MainSplitContainer"]
+[node name="LeftSplitContainer" type="HSplitContainer" parent="LocalizationContainer/MainSplitContainer" unique_id=643207171]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 2.0
 theme_override_constants/minimum_grab_thickness = 10
+split_offsets = PackedInt32Array(250)
 split_offset = 250
 
-[node name="LanguagesSplitContainer" type="VSplitContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer"]
+[node name="LanguagesSplitContainer" type="VSplitContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer" unique_id=1259816346]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="LanguagesContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LanguagesSplitContainer"]
+[node name="LanguagesContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LanguagesSplitContainer" unique_id=1196933623]
 custom_minimum_size = Vector2(0, 190)
 layout_mode = 2
 size_flags_vertical = 3
 size_flags_stretch_ratio = 3.5
 
-[node name="HeaderContainer" type="HBoxContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LanguagesSplitContainer/LanguagesContainer"]
+[node name="HeaderContainer" type="HBoxContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LanguagesSplitContainer/LanguagesContainer" unique_id=1357617826]
 custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 
-[node name="LanguagesLbl" type="Label" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LanguagesSplitContainer/LanguagesContainer/HeaderContainer"]
+[node name="LanguagesLbl" type="Label" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LanguagesSplitContainer/LanguagesContainer/HeaderContainer" unique_id=51196567]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Languages"
 vertical_alignment = 2
 
-[node name="NewLanguageBtn" type="Button" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LanguagesSplitContainer/LanguagesContainer/HeaderContainer"]
+[node name="NewLanguageBtn" type="Button" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LanguagesSplitContainer/LanguagesContainer/HeaderContainer" unique_id=1348083219]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 size_flags_vertical = 8
@@ -221,12 +208,12 @@ icon = ExtResource("3_f5jrf")
 icon_alignment = 1
 expand_icon = true
 
-[node name="SearchLanguageLnEdt" type="LineEdit" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LanguagesSplitContainer/LanguagesContainer"]
+[node name="SearchLanguageLnEdt" type="LineEdit" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LanguagesSplitContainer/LanguagesContainer" unique_id=1483522758]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 placeholder_text = "Search Language"
 
-[node name="LanguagesTree" type="Tree" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LanguagesSplitContainer/LanguagesContainer"]
+[node name="LanguagesTree" type="Tree" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LanguagesSplitContainer/LanguagesContainer" unique_id=411835079]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/h_separation = 6
@@ -235,164 +222,164 @@ select_mode = 1
 scroll_horizontal_enabled = false
 script = ExtResource("4_2wl78")
 
-[node name="NodesContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LanguagesSplitContainer"]
+[node name="NodesContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LanguagesSplitContainer" unique_id=1333535303]
 custom_minimum_size = Vector2(0, 200)
 layout_mode = 2
 size_flags_vertical = 3
 size_flags_stretch_ratio = 6.0
 
-[node name="NodesTitle" type="Label" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LanguagesSplitContainer/NodesContainer"]
+[node name="NodesTitle" type="Label" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LanguagesSplitContainer/NodesContainer" unique_id=1472311001]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 text = "Translated Nodes"
 vertical_alignment = 2
 
-[node name="SearchNodesLnEdt" type="LineEdit" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LanguagesSplitContainer/NodesContainer"]
+[node name="SearchNodesLnEdt" type="LineEdit" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LanguagesSplitContainer/NodesContainer" unique_id=1558393334]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 
-[node name="NodesTree" type="Tree" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LanguagesSplitContainer/NodesContainer"]
+[node name="NodesTree" type="Tree" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LanguagesSplitContainer/NodesContainer" unique_id=581466048]
 layout_mode = 2
 size_flags_vertical = 3
 allow_reselect = true
 hide_root = true
 script = ExtResource("5_qplns")
 
-[node name="LocaleContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer"]
+[node name="LocaleContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer" unique_id=1152910355]
 custom_minimum_size = Vector2(250, 0)
 layout_mode = 2
 size_flags_stretch_ratio = 2.0
 
-[node name="LocalePanel" type="PanelContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer"]
+[node name="LocalePanel" type="PanelContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer" unique_id=1422149153]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("StyleBoxEmpty_i2jr7")
 
-[node name="LocaleVBoxContainer" type="VSplitContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel"]
+[node name="LocaleVBoxContainer" type="VSplitContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel" unique_id=1768773901]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="BasePanelContainer" type="PanelContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/LocaleVBoxContainer"]
+[node name="BasePanelContainer" type="PanelContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/LocaleVBoxContainer" unique_id=1965526542]
 custom_minimum_size = Vector2(0, 180)
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("StyleBoxEmpty_58abf")
 
-[node name="BaseContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/LocaleVBoxContainer/BasePanelContainer"]
+[node name="BaseContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/LocaleVBoxContainer/BasePanelContainer" unique_id=969773523]
 layout_mode = 2
 
-[node name="BaseTitle" type="Label" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/LocaleVBoxContainer/BasePanelContainer/BaseContainer"]
+[node name="BaseTitle" type="Label" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/LocaleVBoxContainer/BasePanelContainer/BaseContainer" unique_id=1065448598]
 custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 text = "Base Text"
 vertical_alignment = 2
 
-[node name="BaseTextEdt" type="TextEdit" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/LocaleVBoxContainer/BasePanelContainer/BaseContainer"]
+[node name="BaseTextEdt" type="TextEdit" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/LocaleVBoxContainer/BasePanelContainer/BaseContainer" unique_id=1919966152]
 layout_mode = 2
 size_flags_vertical = 3
 editable = false
 wrap_mode = 1
 
-[node name="TranslationPanel" type="PanelContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/LocaleVBoxContainer"]
+[node name="TranslationPanel" type="PanelContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/LocaleVBoxContainer" unique_id=1683816907]
 custom_minimum_size = Vector2(0, 180)
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("StyleBoxEmpty_a0o6y")
 
-[node name="TranslationContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/LocaleVBoxContainer/TranslationPanel"]
+[node name="TranslationContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/LocaleVBoxContainer/TranslationPanel" unique_id=315712446]
 layout_mode = 2
 
-[node name="TranslationLbl" type="Label" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/LocaleVBoxContainer/TranslationPanel/TranslationContainer"]
+[node name="TranslationLbl" type="Label" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/LocaleVBoxContainer/TranslationPanel/TranslationContainer" unique_id=1975149522]
 custom_minimum_size = Vector2(100, 32)
 layout_mode = 2
 text = "Translation"
 vertical_alignment = 2
 
-[node name="TranslationTxtBox" type="TextEdit" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/LocaleVBoxContainer/TranslationPanel/TranslationContainer"]
+[node name="TranslationTxtBox" type="TextEdit" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/LocaleVBoxContainer/TranslationPanel/TranslationContainer" unique_id=119204642]
 layout_mode = 2
 size_flags_vertical = 3
 wrap_mode = 1
 
-[node name="ChoicesContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel"]
+[node name="ChoicesContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel" unique_id=1401980047]
 visible = false
 layout_mode = 2
 
-[node name="Label" type="Label" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer"]
+[node name="Label" type="Label" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer" unique_id=633839810]
 custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 vertical_alignment = 2
 
-[node name="PanelContainer" type="PanelContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer"]
+[node name="PanelContainer" type="PanelContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer" unique_id=2135294344]
 layout_mode = 2
 
-[node name="HBoxContainer" type="HBoxContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer/PanelContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer/PanelContainer" unique_id=2007218186]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer/PanelContainer/HBoxContainer"]
+[node name="Label" type="Label" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer/PanelContainer/HBoxContainer" unique_id=197389653]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Choice"
 horizontal_alignment = 1
 
-[node name="Label2" type="Label" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer/PanelContainer/HBoxContainer"]
+[node name="Label2" type="Label" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer/PanelContainer/HBoxContainer" unique_id=1740187775]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 2.0
 text = "Original Text"
 horizontal_alignment = 1
 
-[node name="Label3" type="Label" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer/PanelContainer/HBoxContainer"]
+[node name="Label3" type="Label" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer/PanelContainer/HBoxContainer" unique_id=2122250795]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 2.0
 text = "Translation"
 horizontal_alignment = 1
 
-[node name="ChoicesScroller" type="ScrollContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer"]
+[node name="ChoicesScroller" type="ScrollContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer" unique_id=1745411832]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="ChoicesContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer/ChoicesScroller"]
+[node name="ChoicesContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer/ChoicesScroller" unique_id=2056610882]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="PhrasesContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer"]
+[node name="PhrasesContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer" unique_id=289837326]
 custom_minimum_size = Vector2(320, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="HeaderPanel" type="PanelContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer"]
+[node name="HeaderPanel" type="PanelContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer" unique_id=178674628]
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_4f4qt")
 
-[node name="PhrasesHeader" type="HBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/HeaderPanel"]
+[node name="PhrasesHeader" type="HBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/HeaderPanel" unique_id=1458106508]
 layout_mode = 2
 
-[node name="PhrasesLabel" type="Label" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/HeaderPanel/PhrasesHeader"]
+[node name="PhrasesLabel" type="Label" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/HeaderPanel/PhrasesHeader" unique_id=1962010745]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Words / Phrases"
 vertical_alignment = 2
 
-[node name="ReturnDiscourseBtn" type="Button" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/HeaderPanel/PhrasesHeader"]
+[node name="ReturnDiscourseBtn" type="Button" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/HeaderPanel/PhrasesHeader" unique_id=145472771]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 flat = true
 icon_alignment = 1
 
-[node name="PanelContainer" type="PanelContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer"]
+[node name="PanelContainer" type="PanelContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer" unique_id=817777439]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("StyleBoxEmpty_f5jrf")
 
-[node name="KeyBoxContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer"]
+[node name="KeyBoxContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer" unique_id=4643979]
 layout_mode = 2
 
-[node name="HBoxContainer" type="HBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer" unique_id=392302311]
 layout_mode = 2
 
-[node name="SearchTextLnEdt" type="LineEdit" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer/HBoxContainer"]
+[node name="SearchTextLnEdt" type="LineEdit" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer/HBoxContainer" unique_id=958596456]
 layout_mode = 2
 size_flags_horizontal = 3
 tooltip_text = "Prefixing a search with \"key:\" will only show entries where
@@ -401,28 +388,29 @@ results that contain the search. Filtering is NOT case-sensitive"
 placeholder_text = "Search | Filters: key:(Key), text:(Text)"
 metadata/current_search = ""
 
-[node name="NewTextButton" type="Button" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer/HBoxContainer"]
+[node name="NewTextButton" type="Button" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer/HBoxContainer" unique_id=1858354893]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 disabled = true
 icon = ExtResource("6_nnanj")
 
-[node name="HSeparator" type="HSeparator" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer"]
+[node name="HSeparator" type="HSeparator" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer" unique_id=907746606]
 layout_mode = 2
 
-[node name="KeyHeaderSplit" type="HSplitContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer"]
+[node name="KeyHeaderSplit" type="HSplitContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer" unique_id=739595676]
 layout_mode = 2
-split_offset = 170
+split_offsets = PackedInt32Array(170)
 dragging_enabled = false
+split_offset = 170
 
-[node name="Label" type="Label" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyHeaderSplit"]
+[node name="Label" type="Label" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyHeaderSplit" unique_id=310942432]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 text = "Key"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="Label2" type="Label" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyHeaderSplit"]
+[node name="Label2" type="Label" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyHeaderSplit" unique_id=1129427830]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_vertical = 1
@@ -430,34 +418,35 @@ text = "Text"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="KeyScroll" type="ScrollContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer"]
+[node name="KeyScroll" type="ScrollContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer" unique_id=991101405]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("StyleBoxEmpty_nnanj")
 
-[node name="KeySplitContainer" type="HSplitContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyScroll"]
+[node name="KeySplitContainer" type="HSplitContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyScroll" unique_id=649655750]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/minimum_grab_thickness = 10
+split_offsets = PackedInt32Array(170)
 split_offset = 170
 
-[node name="KeyContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyScroll/KeySplitContainer"]
+[node name="KeyContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyScroll/KeySplitContainer" unique_id=74455098]
 custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
 
-[node name="TextContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyScroll/KeySplitContainer"]
+[node name="TextContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyScroll/KeySplitContainer" unique_id=531142233]
 custom_minimum_size = Vector2(170, 0)
 layout_mode = 2
 
-[node name="CaseBoxContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer"]
+[node name="CaseBoxContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer" unique_id=2105573717]
 visible = false
 layout_mode = 2
 
-[node name="CaseKeyContainer" type="HBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer"]
+[node name="CaseKeyContainer" type="HBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer" unique_id=656232469]
 layout_mode = 2
 size_flags_vertical = 0
 
-[node name="KeyDisplayLabel" type="Label" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/CaseKeyContainer"]
+[node name="KeyDisplayLabel" type="Label" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/CaseKeyContainer" unique_id=1661003872]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -466,27 +455,27 @@ horizontal_alignment = 1
 vertical_alignment = 1
 text_overrun_behavior = 3
 
-[node name="SaveCaseBtn" type="Button" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/CaseKeyContainer"]
+[node name="SaveCaseBtn" type="Button" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/CaseKeyContainer" unique_id=1187345534]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Save cases"
 icon_alignment = 1
 
-[node name="VBoxContainer2" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer"]
+[node name="VBoxContainer2" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer" unique_id=1158771321]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="ArgumentOptBtn" type="OptionButton" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2"]
+[node name="ArgumentOptBtn" type="OptionButton" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2" unique_id=748898503]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 2.0
 disabled = true
 
-[node name="HeaderContainer" type="HBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2"]
+[node name="HeaderContainer" type="HBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2" unique_id=1735916459]
 layout_mode = 2
 
-[node name="SearchCaseLnEdt" type="LineEdit" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/HeaderContainer"]
+[node name="SearchCaseLnEdt" type="LineEdit" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/HeaderContainer" unique_id=2113021098]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 2.5
@@ -496,7 +485,7 @@ Result contains the search. Filtering is NOT case-sensitive"
 placeholder_text = "Search | Filters: case:(Case), result:(Result)"
 metadata/current_search = ""
 
-[node name="NewCaseBtn" type="Button" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/HeaderContainer"]
+[node name="NewCaseBtn" type="Button" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/HeaderContainer" unique_id=820722763]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "New format case."
@@ -505,56 +494,58 @@ focus_next = NodePath("../../KeyScroll/CasesSplit/ResultContainer/DefaultCaseLnE
 disabled = true
 icon = ExtResource("8_nnanj")
 
-[node name="HSeparator" type="HSeparator" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2"]
+[node name="HSeparator" type="HSeparator" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2" unique_id=1883197593]
 layout_mode = 2
 
-[node name="CaseHeaderSplit" type="HSplitContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2"]
+[node name="CaseHeaderSplit" type="HSplitContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2" unique_id=2095544501]
 layout_mode = 2
-split_offset = 200
+split_offsets = PackedInt32Array(200)
 dragging_enabled = false
+split_offset = 200
 
-[node name="Label" type="Label" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/CaseHeaderSplit"]
+[node name="Label" type="Label" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/CaseHeaderSplit" unique_id=1598774511]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 text = "Case"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="Label2" type="Label" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/CaseHeaderSplit"]
+[node name="Label2" type="Label" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/CaseHeaderSplit" unique_id=1215493753]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 text = "Result"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="KeyScroll" type="ScrollContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2"]
+[node name="KeyScroll" type="ScrollContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2" unique_id=257803663]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("StyleBoxEmpty_2wl78")
 
-[node name="CasesSplit" type="HSplitContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll"]
+[node name="CasesSplit" type="HSplitContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll" unique_id=144409916]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/minimum_grab_thickness = 10
+split_offsets = PackedInt32Array(200)
 split_offset = 200
 
-[node name="CaseContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit"]
+[node name="CaseContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit" unique_id=2083139575]
 layout_mode = 2
 
-[node name="Label2" type="Label" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/CaseContainer"]
+[node name="Label2" type="Label" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/CaseContainer" unique_id=1842241121]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 text = "Default"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="CaseNodeContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/CaseContainer"]
+[node name="CaseNodeContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/CaseContainer" unique_id=344811814]
 layout_mode = 2
 
-[node name="ResultContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit"]
+[node name="ResultContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit" unique_id=1094924636]
 layout_mode = 2
 
-[node name="DefaultCaseLnEdt" type="LineEdit" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/ResultContainer"]
+[node name="DefaultCaseLnEdt" type="LineEdit" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/ResultContainer" unique_id=388670428]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 focus_neighbor_top = NodePath("../../../../HeaderContainer/NewCaseBtn")
@@ -562,9 +553,9 @@ focus_previous = NodePath("../../../../HeaderContainer/NewCaseBtn")
 placeholder_text = "Default format"
 editable = false
 
-[node name="ResultNodeContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/ResultContainer"]
+[node name="ResultNodeContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/ResultContainer" unique_id=1812833210]
 layout_mode = 2
 
-[node name="LocaleLabel" type="Label" parent="LocalizationContainer"]
+[node name="LocaleLabel" type="Label" parent="LocalizationContainer" unique_id=1707051692]
 layout_mode = 2
 text = "Current Locale:"

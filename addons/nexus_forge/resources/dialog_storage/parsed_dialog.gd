@@ -6,9 +6,7 @@ extends RefCounted
 ## dialog quicker by saving generated lambda functions to access variable data.
 
 ## The language this dialog is in.
-var language: String = ""
-## The language's region this dialog is in.
-var region: String = ""
+var locale: String = ""
 ## The unformatted dialog this parser formats.
 var dialog: String = ""
 var _format_args: Dictionary = {}

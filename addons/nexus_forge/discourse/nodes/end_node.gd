@@ -3,7 +3,6 @@ extends DiscourseGraphNode
 
 func _post_init() -> void:
 	name = &"End"
-	custom_id = "End"
 	title = "End"
 	size = Vector2(160.0, 80.0)
 	node_type = DialogueNodeType.DIALOG_END
@@ -21,9 +20,9 @@ func _post_init() -> void:
 			end_label,
 			false,
 			SlotConnectionType.DIALOG)
-	set_slot_color_left(0, COLORS["dialog"])
-	set_slot_custom_icon_left(0, flow_icon)
 
 
 func _ready() -> void:
+	set_slot_custom_icon_left(0, flow_icon)
+	set_slot_color_left(0, COLORS["dialog"])
 	graph_icon = get_theme_icon("Stop", "EditorIcons")

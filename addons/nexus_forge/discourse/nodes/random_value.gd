@@ -6,7 +6,6 @@ var current_mode: int = TYPE_INT
 
 func _post_init() -> void:
 	name = &"RandomValue"
-	custom_id = "RandomValue"
 	title = "Random Value"
 	node_type = DialogueNodeType.RANDOM_VALUE
 	parent_mode = PortMode.OUTPUT
@@ -140,32 +139,55 @@ func _on_input_disconnected(input_port: int, _from_node: DiscourseGraphNode, _fr
 
 
 func _get_node_data() -> Dictionary:
-	var data: Dictionary = {}
-	data["node_type"] = node_type
-	data["position"] = position_offset
-	data["mode"] = current_mode
-	data["values"] = {
-		"base": get_mapped_field(&"min_value", "min_spinbox").value,
-		"max": get_mapped_field(&"max_value", "max_spinbox").value}
-	data["input_connections"] = {
+	var metadata: Dictionary = {
+		"mode": current_mode,
+		"values": {
+			"base": get_mapped_field(&"min_value", "min_spinbox").value,
+			"max": get_mapped_field(&"max_value", "max_spinbox").value}}
+	var input_connections: Dictionary = {
 		"base_value": get_uuid_and_port_connected_to(PortMode.INPUT, 0),
 		"max_value": get_uuid_and_port_connected_to(PortMode.INPUT, 1)}
-	data["output_connections"] = {
+	var output_connections: Dictionary = {
 		"next_node": get_uuid_and_port_connected_to(PortMode.OUTPUT, 0)}
-	return data
+	
+	return _build_node_data(metadata, output_connections, input_connections)
 
 
 func _set_node_data(data: Dictionary) -> void:
-	position_offset = data["position"]
+	var data_name = data.get("name")
+	var metadata = data.get("metadata")
+	if typeof(data_name) == TYPE_STRING_NAME:
+		name = data_name
+	
+	if typeof(metadata) != TYPE_DICTIONARY:
+		return
+	
+	var pos = metadata.get("position")
+	if typeof(pos) == TYPE_VECTOR2:
+		position_offset = pos
+	
 	var base: SpinBox = get_mapped_field(&"min_value", "min_spinbox")
 	var max_value: SpinBox = get_mapped_field(&"max_value", "max_spinbox")
 	var min_label: Label = get_mapped_field(&"min_value", "min_label")
 	var type_menu: MenuButton = get_mapped_field(&"random_type", "type_button")
 	
-	current_mode = data["mode"]
+	var mode = metadata.get("mode")
+	if typeof(mode) == TYPE_INT:
+		current_mode = mode
+	
 	set_type_fields(current_mode, type_menu, base, max_value, min_label)
-	base.set_value_no_signal(data["values"]["base"])
-	max_value.set_value_no_signal(maxf(data["values"]["base"], data["values"]["max"]))
+	var values = metadata.get("values")
+	if typeof(values) != TYPE_DICTIONARY:
+		return
+	
+	var base_value = values.get("base")
+	var max_value_data = values.get("max")
+	var base_value_type: int = typeof(base_value)
+	var max_value_type = typeof(max_value_data)
+	if base_value_type == TYPE_FLOAT || base_value_type == TYPE_INT:
+		base.set_value_no_signal(base_value)
+		if max_value_type == TYPE_FLOAT || max_value_type == TYPE_INT:
+			max_value.set_value_no_signal(maxf(base_value, max_value_data))
 
 
 func _on_min_value_changed(min_value: float, max_spinbox: SpinBox) -> void:

@@ -3,9 +3,10 @@ extends Tree
 
 
 signal region_created(language: String, region: String)
-signal locale_changed(language: String, region: String)
-signal region_deleted(language: String, region: String)
-signal language_deleted(language: String)
+signal locale_changed(from: String, to: String)
+#signal region_deleted(language: String, region: String)
+#signal language_deleted(language: String)
+signal locale_deleted(locale: String)
 
 #var NEW_REGION_BUTTON: Texture2D = get_theme_icon("New", "EditorIcons")
 
@@ -53,27 +54,36 @@ func _on_language_button_clicked(item: TreeItem, _column: int, id: int, _mouse_b
 		0:
 			_on_create_region_pressed(item.get_metadata(0)["language_code"])
 		1:
+			var old_locale: String = get_active_locale()
+			
 			if item.get_parent() == get_root():
-				language_deleted.emit(
-						item.get_metadata(0)["language_code"])
+				locale_deleted.emit(TranslationServer.standardize_locale(item.get_metadata(0)["language_code"]))
+				#language_deleted.emit(
+						#item.get_metadata(0)["language_code"])
 			else:
-				region_deleted.emit(
-						item.get_parent().get_metadata(0)["language_code"],
-						item.get_metadata(0)["region_code"])
+				locale_deleted.emit(TranslationServer.standardize_locale(
+						item.get_parent().get_metadata(0)["language_code"] +\
+						"_" +\
+						item.get_metadata(0)["region_code"]))
+				#region_deleted.emit(
+						#item.get_parent().get_metadata(0)["language_code"],
+						#item.get_metadata(0)["region_code"])
 			
 			if item == active_region:
 				active_region = null
-				locale_changed.emit(active_language.get_text(0), "")
+				locale_changed.emit(old_locale, get_active_locale())
 			elif item == active_language:
 				active_language = null
 				active_region = null
-				locale_changed.emit("", "")
+				locale_changed.emit(old_locale, "")
 			item.free()
 
 
 func _on_lang_item_activated() -> void:
+	var old_locale: String = get_active_locale()
 	var activated: TreeItem = get_selected()
 	var is_language: bool = activated.get_parent() == get_root()
+	
 	if is_language:
 		if active_language == activated and active_region == null:
 			return
@@ -81,15 +91,16 @@ func _on_lang_item_activated() -> void:
 			active_region = null
 		active_language = activated
 	else:
-		if active_region == activated:
+		if active_language == activated.get_parent() and active_region == activated:
 			return
 		var language: TreeItem = activated.get_parent()
 		if language != active_language:
 			active_language = language
 		active_region = activated
+	
 	locale_changed.emit(
-		active_language.get_metadata(0)["language_code"] if active_language != null else "",
-		active_region.get_metadata(0)["region_code"] if active_region != null else "")
+		old_locale,
+		get_active_locale())
 
 
 func _on_create_region_pressed(at_lang: String) -> void:
@@ -130,17 +141,26 @@ func get_active_language() -> String:
 
 func get_active_region() -> String:
 	if active_region == null:
-		return "base" if active_language != null else ""
+		return ""
 	return active_region.get_metadata(0)["region_code"]
+
+
+func get_active_locale() -> String:
+	var lang: String = get_active_language()
+	var reg: String = get_active_region()
+	var code: String = lang if reg.is_empty() else lang + "_" + reg
+	return TranslationServer.standardize_locale(code)
 
 
 func get_base_language() -> String:
 	if main_language == null:
 		return ""
-	return main_language.get_metadata(0)["language_code"]
+	return TranslationServer.standardize_locale(main_language.get_metadata(0)["language_code"])
 
 
 func create_language(language_code: String, is_main: bool = false) -> void:
+	language_code = TranslationServer.standardize_locale(language_code)
+	
 	var root: TreeItem = get_root()
 	var new_language: TreeItem = root.create_child()
 	
@@ -162,10 +182,10 @@ func has_language(language: String) -> bool:
 	return false
 
 
-func has_locale(language: String, region: String = "base") -> bool:
+func has_locale(language: String, region: String = "") -> bool:
 	for item in get_root().get_children():
 		if item.get_metadata(0)["language_code"] == language:
-			if region == "base":
+			if region.is_empty():
 				return true
 			else:
 				for region_item in item.get_children():
@@ -226,13 +246,13 @@ func is_lang_selected() -> bool:
 	return active_language != null
 
 
-func as_map() -> Dictionary[StringName, PackedStringArray]:
-	var map: Dictionary[StringName, PackedStringArray] = {}
+func as_map() -> Dictionary[StringName, Dictionary]:
+	var map: Dictionary[StringName, Dictionary] = {}
 	
 	for main_language in get_root().get_children():
-		var regions: PackedStringArray = PackedStringArray()
+		var regions: Dictionary[StringName, Variant] = {}
 		for region in main_language.get_children():
-			regions.append(region.get_metadata(0)["region_code"])
+			regions[StringName(region.get_metadata(0)["region_code"])] = null
 		map[StringName(main_language.get_metadata(0)["language_code"])] = regions
 	
 	return map

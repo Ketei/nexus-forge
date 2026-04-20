@@ -118,3 +118,13 @@ static func levenshtein_distance(string_1: String, string_2: String) -> float:
 	var max_len:int = maxi(len_1, len_2)
 	var similarity: float = 1.0 - float(distance) / float(max_len)
 	return similarity
+
+
+static func make_path(parts: Array) -> String:
+	var full_path: String = ""
+	
+	for item in parts:
+		if typeof(item) != TYPE_STRING:
+			continue
+		full_path = full_path.path_join(item)
+	return full_path

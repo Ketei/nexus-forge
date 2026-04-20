@@ -46,8 +46,7 @@ func update_weights() -> void:
 
 
 func _post_init() -> void:
-	name = &"RandomSelect"
-	custom_id = "RandomPath"
+	name = &"RandomPath"
 	title = "Random"
 	size = Vector2(200.0, 146.0)
 	parent_mode = PortMode.INPUT
@@ -210,14 +209,27 @@ func set_random_exit_number(target_options: int) -> void:
 
 
 func _set_node_data(data: Dictionary) -> void:
-	var options: int = data["options"].size()
-	position_offset = data["position"]
-	get_mapped_field(&"options", &"count").set_value_no_signal(options)
-	set_random_exit_number(options)
+	var data_name = data.get("name")
+	var metadata = data.get("metadata")
+	if typeof(data_name) == TYPE_STRING_NAME:
+		name = data_name
+	
+	if typeof(metadata) != TYPE_DICTIONARY:
+		return
+	
+	var pos = metadata.get("position")
+	if typeof(pos) == TYPE_VECTOR2:
+		position_offset = pos
+	
+	var options = metadata.get("options")
+	if typeof(options) != TYPE_ARRAY:
+		return
+	var option_size: int = options.size()
+	get_mapped_field(&"options", &"count").set_value_no_signal(option_size)
+	set_random_exit_number(option_size)
 
 
 func _get_node_data() -> Dictionary:
-	var data: Dictionary = {}
 	var random_outputs: Array[Dictionary] = []
 	
 	for option_number in range(get_mapped_field(&"options", &"count").value):
@@ -234,11 +246,9 @@ func _get_node_data() -> Dictionary:
 			}
 		)
 	
-	data["input_connections"] = {
-		"default_weight": get_uuid_and_port_connected_to(PortMode.INPUT, 1)
-	}
-	data["options"] = random_outputs
-	data["node_type"] = node_type
-	data["position"] = position_offset
+	var input_connections: Dictionary = { # TODO: Check if we need this
+		"default_weight": get_uuid_and_port_connected_to(PortMode.INPUT, 1)}
 	
-	return data
+	var metadata: Dictionary = {"options": random_outputs}
+	
+	return _build_node_data(metadata, {}, input_connections)

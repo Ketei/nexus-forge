@@ -10,7 +10,6 @@ var _uuid: String = ""
 
 func _init(uuid: String = "") -> void:
 	_uuid = UUID.generate_new() if uuid.is_empty() else uuid
-	#theme = preload("res://test_frame_theme.tres")
 	var title_frame: HBoxContainer = get_titlebar_hbox()
 	var title_label: Label = title_frame.get_child(0)
 	var centering_spacer: Control = Control.new()
@@ -161,8 +160,19 @@ func get_frame_uuid() -> String:
 
 
 func set_frame_data(data: Dictionary) -> void:
-	get_titlebar_hbox().get_child(2).get_child(0).color = data["tint_color"]
-	tint_color = data["tint_color"]
-	position_offset = data["position"]
-	title = data["title"]
-	size = data["size"]
+	var tint = data.get("tint_color")
+	if typeof(tint) == TYPE_COLOR:
+		get_titlebar_hbox().get_child(2).get_child(0).color = tint
+		tint_color = tint
+	
+	var pos_offset = data.get("position")
+	if typeof(pos_offset) == TYPE_VECTOR2:
+		position_offset = pos_offset
+	
+	var _title = data.get("title")
+	if typeof(_title) == TYPE_STRING:
+		title = _title
+	
+	var _size = data.get("size")
+	if typeof(_size) == TYPE_VECTOR2:
+		size = _size

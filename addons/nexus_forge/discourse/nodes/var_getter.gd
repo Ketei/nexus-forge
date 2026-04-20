@@ -4,7 +4,6 @@ extends DiscourseGraphNode
 func _post_init() -> void:
 	name = &"GetVar"
 	title = "Get Variable"
-	custom_id = "GetVar"
 	node_type = DialogueNodeType.VARIABLE_GET
 	parent_mode = PortMode.OUTPUT
 	parent_port = 0
@@ -89,21 +88,36 @@ func _get_issues() -> PackedStringArray:
 
 
 func _get_node_data() -> Dictionary:
-	#var path_panel: HBoxContainer = get_field(&"path")
-	var data: Dictionary = {}
-	data["node_type"] = node_type
-	data["position"] = position_offset
-	data["output_connections"] = {
+	var output_connections: Dictionary = {
 		"target": get_uuid_and_port_connected_to(PortMode.OUTPUT, 0)}
-	data["variable_path"] = get_mapped_field(&"path", &"line").text.strip_edges()
-	data["variable_type"] = get_mapped_field(&"path", &"output_type").get_meta(&"current_type", TYPE_NIL)
-	return data
+	var metadata: Dictionary = {
+		"variable_path": get_mapped_field(&"path", &"line").text.strip_edges(),
+		"variable_type": get_mapped_field(&"path", &"output_type").get_meta(&"current_type", TYPE_NIL)}
+	
+	return _build_node_data(metadata, output_connections)
 
 
 func _set_node_data(data: Dictionary) -> void:
-	get_field(&"path").get_child(0).text = data["variable_path"]
-	set_node_type(data["variable_type"])
-	position_offset = data["position"]
+	var data_name = data.get("name")
+	var metadata = data.get("metadata")
+	if typeof(data_name) == TYPE_STRING_NAME:
+		name = data_name
+	
+	if typeof(metadata) != TYPE_DICTIONARY:
+		return
+	
+	var pos = metadata.get("position")
+	if typeof(pos) == TYPE_VECTOR2:
+		position_offset = pos
+	
+	var path = metadata.get("variable_path")
+	if typeof(path) == TYPE_STRING:
+		get_field(&"path").get_child(0).text = path
+		var type = metadata.get("variable_type")
+		if typeof(type) == TYPE_INT:
+			set_node_type(type)
+		else:
+			set_node_type(TYPE_NIL)
 
 
 func _on_value_changed(_arg: Variant = null) -> void:
@@ -155,7 +169,7 @@ func set_node_type(item_id: int) -> void:
 			menu.icon = get_theme_icon("String", "EditorIcons")
 			set_slot_color_right(0, COLORS["string"])
 			set_slot_type_right(0, SlotConnectionType.VAR_STRING)
-		TYPE_NIL:
+		_:
 			menu.icon = get_theme_icon("Variant", "EditorIcons")
 			set_slot_color_right(0, COLORS["any"])
 			set_slot_type_right(0, SlotConnectionType.VAR_ANY)

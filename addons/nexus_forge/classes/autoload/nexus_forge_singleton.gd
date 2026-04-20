@@ -39,7 +39,7 @@ var Recipes: RecipeCatalog
 var _phrase_api: PhraseAPI = PhraseAPI.new()
 
 func _ready() -> void:
-	Discourse = DialogParser.new_parser()
+	Discourse = EditorDialogParser.new()
 	Quests = QuestManager.new()
 	
 	var blackboard_path: String = ProjectSettings.get_setting(

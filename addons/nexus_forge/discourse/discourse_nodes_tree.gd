@@ -48,6 +48,8 @@ const SETTINGS: Array[DialogParser.NodeTypes] = [
 const RESOURCES: Array[DialogParser.NodeTypes] = [
 		DialogParser.NodeTypes.RESOURCE]
 
+var nodes: Array[TreeItem] = []
+
 
 func _ready() -> void:
 	if Engine.is_editor_hint() and owner == get_tree().edited_scene_root:
@@ -106,9 +108,11 @@ func _on_discourse_tree_button_clicked(item: TreeItem, _column: int, _id: int, _
 		item.select(0)
 		edit_selected(true)
 	else: # Deleting folder
+		var parent: TreeItem = item.get_parent()
 		for sub_item in item.get_children():
 			item.remove_child(sub_item)
-			item.get_parent().add_child(sub_item)
+			parent.add_child(sub_item)
+		
 		item.free()
 		directory_edited.emit()
 
@@ -116,12 +120,14 @@ func _on_discourse_tree_button_clicked(item: TreeItem, _column: int, _id: int, _
 func _on_discourse_item_edited() -> void:
 	var edited: TreeItem = get_edited()
 	var is_node: bool = edited.get_metadata(0)["is_node"]
+	
 	if is_node:
 		var node: DiscourseGraphNode = edited.get_metadata(0)["node"]
-		if edited.get_text(0) == node.custom_id:
+		if edited.get_text(0) == String(node.name):
 			return
-		var new_name: String = get_unique_name_on_tree(edited.get_text(0), edited)
-		node.custom_id = new_name
+		
+		var new_name: String = get_unique_name_for_node(edited.get_text(0), edited)#get_unique_name_on_tree(edited.get_text(0), edited)
+		node.name = StringName(new_name)
 		edited.set_text(0, new_name)
 		item_renamed.emit(node.get_node_uuid(), node.node_type, new_name, node.is_node_localized())
 	else:
@@ -131,7 +137,6 @@ func _on_discourse_item_edited() -> void:
 		edited.set_text(0, new_name)
 	
 	directory_edited.emit()
-
 
 
 func _on_discourse_node_activated() -> void:
@@ -191,13 +196,13 @@ func is_folder(item: TreeItem) -> bool:
 	return false
 
 
-func create_node(node: DiscourseGraphNode) -> void:
-	var new_item: TreeItem = get_root().create_child()
+func create_node(node: DiscourseGraphNode, on: TreeItem = get_root()) -> void:
+	var new_item: TreeItem = on.create_child()
 	var type: int = 0 if node.node_type in DIALOG else 1 if node.node_type in DATA else 2 if node.node_type in SETTINGS else 3 if node.node_type in RESOURCES else -1
 	new_item.set_icon(0, preload("res://addons/nexus_forge/icons/node_icon.svg"))
 	if 0 <= type:
 		new_item.set_icon_modulate(0, DIALOG_COLOR if type == 0 else DATA_COLOR if type == 1 else SETTINGS_COLOR if type == 2 else RESOURCE_COLOR)
-	new_item.set_text(0, str(node.custom_id))
+	new_item.set_text(0, str(node.name))
 	new_item.add_button(
 			0,
 			get_theme_icon("Edit", "EditorIcons"),
@@ -207,6 +212,7 @@ func create_node(node: DiscourseGraphNode) -> void:
 	
 	new_item.set_metadata(0, {"node": node, "is_node": true, "uuid": node.get_node_uuid()})
 	
+	nodes.append(new_item)
 	#if node == discourse_window.discourse_graph_edit.entry_node and new_item.get_index() != 0:
 		#new_item.move_before(new_item.get_parent().get_first_child())
 
@@ -243,16 +249,33 @@ func ensure_expanded(node: TreeItem) -> void:
 
 
 func remove_dialog_node(uuid: StringName, _on: TreeItem = get_root()) -> bool:
-	for child in _on.get_children():
-		var meta: Dictionary = child.get_metadata(0)
-		if not meta["is_node"]: # Is folder
-			var result: bool = remove_dialog_node(uuid, child)
-			if result:
-				return true
-		elif meta["uuid"] == uuid:
-			child.free()
-			return true
+	for node_idx in range(nodes.size()):
+		var meta: Dictionary = nodes[node_idx].get_metadata(0)
+		if not meta["is_node"] or meta["uuid"] != uuid:
+			continue
+		
+		nodes[node_idx].free()
+		nodes[node_idx] = nodes[-1]
+		nodes.pop_back()
+		return true
 	return false
+
+
+func get_unique_name_for_node(desired_name: String, skip_item: TreeItem = null) -> String:
+	var iteration: int = 0
+	var all_names: Dictionary = {}
+	var edited_name: String = desired_name
+	
+	for node in nodes:
+		if node == skip_item:
+			continue
+		all_names[node.get_text(0)] = null
+	
+	while all_names.has(edited_name):
+		iteration += 1
+		edited_name = desired_name + str(iteration)
+	
+	return edited_name
 
 
 func get_unique_name_on_tree(desired_name: String, skip_item: TreeItem = null) -> String:
@@ -289,3 +312,12 @@ func _search_on_children(from: TreeItem, pattern: String) -> bool:
 		if not found and child.visible:
 			found = true
 	return found
+
+
+func clear_tree() -> void:
+	var root: TreeItem = get_root()
+	if root != null:
+		var collapsed: bool = root.collapsed
+		root.free()
+		create_item().collapsed = collapsed
+	nodes.clear()

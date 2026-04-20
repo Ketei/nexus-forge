@@ -4,7 +4,10 @@ class_name Quest
 extends Resource
 
 
-enum QuestType {ONE}
+enum QuestType {
+	MAIN_QUEST,
+	SIDE_QUEST
+}
 
 ## ID of the quest.
 @export var id: StringName = &""

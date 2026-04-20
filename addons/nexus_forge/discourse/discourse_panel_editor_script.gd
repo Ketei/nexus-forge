@@ -12,6 +12,8 @@ signal set_locale_group_pressed
 signal check_for_issues_pressed
 signal play_current_dialog_pressed
 
+signal locale_changed(from: String, to: String)
+
 
 enum DiscourseFileMenuID {
 	NEW_DIALOG,
@@ -36,21 +38,23 @@ var switch_localization: Button
 var localization_menu: OptionButton
 
 var base_language: String = ""
-var current_language: String = ""
-var current_country: String = "base":
-	set(new_country):
-		current_country = "base" if new_country.is_empty() else new_country
+var current_locale: String = ""
+#var current_language: String = ""
+#var current_country: String = "base":
+	#set(new_country):
+		#current_country = "base" if new_country.is_empty() else new_country
 
-var locale_map: Dictionary[String, PackedStringArray] = {}
+var locale_map: Dictionary[String, Dictionary] = {}
 
 
-func _on_node_deleted(uuid: StringName) -> void:
-	if localization.has(uuid):
-		localization.erase(uuid)
+#func _on_node_deleted(uuid: StringName) -> void:
+	#node_deleted.emit(uuid)
+	#if localization.has(uuid):
+		#localization.erase(uuid)
 		#conversation_changed.emit()
 
 
-var localization: Dictionary[StringName, Dictionary] = {
+#var _localization: Dictionary[StringName, Dictionary] = {
 	#"uuid": {
 		#"node": "nodepath",
 		#"localization": {
@@ -63,7 +67,7 @@ var localization: Dictionary[StringName, Dictionary] = {
 		#"node": "node",
 		#"lcoalization": {
 			#"common": {"dialog": "2 + 2"}}}}
-}
+#}
 
 
 func _ready() -> void:
@@ -374,9 +378,9 @@ func _ready() -> void:
 	
 	add_child(content_container)
 	
-	discourse_graph_edit.node_deleted.connect(_on_node_deleted)
-	discourse_graph_edit.localization_enabled.connect(_on_node_localized)
-	discourse_graph_edit.localized_text_created.connect(_on_node_localized)
+	#discourse_graph_edit.node_deleted.connect(_on_node_deleted)
+	#discourse_graph_edit.localization_enabled.connect(_on_node_localized)
+	#discourse_graph_edit.localized_text_created.connect(_on_node_localized)
 	dialogs_submenu.id_pressed.connect(_on_create_dialog_id_pressed)
 	data_submenu.id_pressed.connect(_on_create_dialog_id_pressed)
 	setting_submenu.id_pressed.connect(_on_create_dialog_id_pressed)
@@ -397,21 +401,22 @@ func _on_play_current_dialog_pressed() -> void:
 	play_current_dialog_pressed.emit()
 
 
-
 func _on_localization_selected(idx: int) -> void:
-	if not current_language.is_empty():
-		save_current_locale()
+	#if not current_language.is_empty():
+		#save_current_locale()
+	var old_locale: String = current_locale
 	
 	if idx == -1:
-		current_language = ""
-		current_country = ""
 		localization_menu.tooltip_text = ""
+		current_locale = ""
 	else:
 		var locale_data: Dictionary = localization_menu.get_item_metadata(idx)
-		current_language = locale_data["language_code"]
-		current_country = locale_data["country_code"]
-		set_localization(locale_data["language_code"], locale_data["country_code"])
+		current_locale = TranslationServer.standardize_locale(locale_data["language_code"] if locale_data["country_code"].is_empty() else locale_data["language_code"] + "_" + locale_data["country_code"])
+		#current_locale = locale
 		localization_menu.tooltip_text = localization_menu.get_item_text(idx)
+	
+	locale_changed.emit(old_locale, current_locale)
+	
 
 
 func _on_file_menu_id_pressed(id: int) -> void:
@@ -465,28 +470,28 @@ func _on_sort_nodes_pressed() -> void:
 	#conversation_changed.emit()
 
 
-func _on_node_localized(node: DiscourseGraphNode) -> void:
-	var uuid: StringName = node.get_node_uuid()
-	var original_data: Dictionary = {}
-	var localization_data: Dictionary = {}
+#func _on_node_localized(node: DiscourseGraphNode) -> void:
+	#var uuid: StringName = node.get_node_uuid()
+	#var original_data: Dictionary = {}
+	#var localization_data: Dictionary = {}
+	#
+	#match node.node_type:
+		#DiscourseGraphNode.DialogueNodeType.DIALOG:
+			#original_data["dialog"] = node.get_dialog_text()
+		#DiscourseGraphNode.DialogueNodeType.OPTIONS:
+			#original_data["options"] = node.get_options()
+		#DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
+			#original_data["text"] = node.get_text()
+	#
+	#for language in locale_map.keys():
+		#localization_data[language] = {"base": original_data.duplicate(true)}
+		#
+		#for country in locale_map[language]:
+			#localization_data[language][country] = original_data.duplicate(true)
 	
-	match node.node_type:
-		DiscourseGraphNode.DialogueNodeType.DIALOG:
-			original_data["dialog"] = node.get_dialog_text()
-		DiscourseGraphNode.DialogueNodeType.OPTIONS:
-			original_data["options"] = node.get_options()
-		DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
-			original_data["text"] = node.get_text()
-	
-	for language in locale_map.keys():
-		localization_data[language] = {"base": original_data.duplicate(true)}
-		
-		for country in locale_map[language]:
-			localization_data[language][country] = original_data.duplicate(true)
-	
-	localization[uuid] = {
-		"node": node,
-		"localization": localization_data}
+	#localization[uuid] = {
+		#"node": node,
+		#"localization": localization_data}
 	
 	#conversation_changed.emit()
 
@@ -500,24 +505,25 @@ func _locale_sort_custom(locale_a: Dictionary, locale_b: Dictionary):
 		return language_comp < 0
 
 
-func set_locale_map(new_map: Dictionary[String, PackedStringArray]) -> void:
+func set_locale_map(new_map: Dictionary[String, Dictionary]) -> void:
 	for existing_language in locale_map.keys():
 		if not new_map.has(existing_language):
 			remove_locale(existing_language)
 		else:
-			for existing_region in locale_map[existing_language]:
+			for existing_region in locale_map[existing_language].keys():
 				if not new_map[existing_language].has(existing_region):
 					remove_locale(existing_language, existing_region)
 	
 	for language in new_map.keys():
-		if locale_map.has(language):
-			for region in new_map:
-				if not locale_map[language].has(region):
-					add_locale(language, region)
+		var lang_code: String = TranslationServer.standardize_locale(language)
+		if locale_map.has(lang_code):
+			for region in new_map[lang_code].keys():
+				if not locale_map[lang_code].has(region):
+					add_locale(TranslationServer.standardize_locale(lang_code + "_" + region))
 		else:
-			add_locale(language)
+			add_locale(lang_code)
 			for region in new_map[language]:
-				add_locale(language, region)
+				add_locale(TranslationServer.standardize_locale(lang_code + "_" + region))
 
 
 func clear_locales() -> void:
@@ -527,11 +533,11 @@ func clear_locales() -> void:
 	locale_map.clear()
 
 
-func remove_locale(language: String, region: String = "base") -> void:
+func remove_locale(language: String, region: String = "") -> void:
 	if not locale_map.has(language) or not locale_map[language].has(region):
 		return
 	
-	if region == "base":
+	if region.is_empty():
 		var current: int = localization_menu.selected
 		var new_index: int = localization_menu.selected
 		var item_count: int = localization_menu.item_count
@@ -551,16 +557,18 @@ func remove_locale(language: String, region: String = "base") -> void:
 			if new_index != -1:
 				var metadata: Dictionary = localization_menu.get_item_metadata(new_index)
 				localization_menu.select(new_index)
-				current_language = metadata["language_code"]
-				current_country = metadata["country_code"]
-				set_localization(current_language, current_country)
+				current_locale = TranslationServer.standardize_locale(metadata["language_code"] if metadata["country_code"].is_empty() else metadata["language_code"] + "_" + metadata["country_code"])
+				#current_language = metadata["language_code"]
+				#current_country = metadata["country_code"]
+				#set_localization(current_language, current_country)
 				localization_menu.tooltip_text = localization_menu.get_item_text(new_index)
 			else:
-				current_language = base_language
-				current_country = "base"
+				current_locale = ""
+				#current_language = base_language
+				#current_country = "base"
 				localization_menu.tooltip_text = ""
 	else:
-		locale_map[language].remove_at(locale_map[language].find(region))
+		locale_map[language].erase(region)
 		for item_idx in range(localization_menu.item_count):
 			var mtdt: Dictionary = localization_menu.get_item_metadata(item_idx)
 			if mtdt["language_code"] != language or mtdt["country_code"] != region:
@@ -572,21 +580,26 @@ func remove_locale(language: String, region: String = "base") -> void:
 						localization_menu.item_count - 2)
 				if new_idx != -1:
 					localization_menu.select(new_idx)
-					current_language = mtdt["language_code"]
-					current_country = mtdt["country_code"]
-					set_localization(current_language, current_country)
+					current_locale = TranslationServer.standardize_locale(mtdt["language_code"] if mtdt["country_code"].is_empty() else mtdt["language_code"] + "_" + mtdt["country_code"])
+					#current_language = mtdt["language_code"]
+					#current_country = mtdt["country_code"]
+					#set_localization(current_language, current_country)
 					localization_menu.tooltip_text = localization_menu.get_item_text(new_idx)
 				else:
-					current_language = ""
-					current_country = ""
+					current_locale = ""
+					#current_language = ""
+					#current_country = ""
 					localization_menu.tooltip_text = ""
 			localization_menu.remove_item(item_idx)
 			break
 
 
-func add_locale(language: String, region: String = "base") -> void:
-	if current_language == base_language and current_country == "base":
-		save_current_locale()
+func add_locale(locale_code: String) -> void:
+	#if current_language == base_language and current_country == "base":
+		#save_current_locale()
+	var locale_parts: PackedStringArray = locale_code.split("_", false, 1)
+	var language: String = locale_parts[0]
+	var region: String = locale_parts[1] if locale_parts.size() == 2 else ""
 	
 	var selected_language: String = ""
 	var selected_country: String = ""
@@ -615,7 +628,7 @@ func add_locale(language: String, region: String = "base") -> void:
 	var idx: int = -1
 	for existing_locale in existing_locales:
 		var display_text: String = existing_locale["language_name"] if\
-				existing_locale["country_code"] == "base" else\
+				existing_locale["country_code"].is_empty() else\
 				existing_locale["language_name"] + " (" + existing_locale["country_code"] + ")"
 		idx += 1
 		localization_menu.add_item(display_text)
@@ -627,16 +640,16 @@ func add_locale(language: String, region: String = "base") -> void:
 	if selected_language.is_empty() and selected_country.is_empty():
 		localization_menu.tooltip_text = localization_menu.get_item_text(0)
 	
-	for uuid in localization.keys():
-		if not localization[uuid]["localization"].has(language):
-			localization[uuid]["localization"][language] = {}
-		match localization[uuid]["node"].node_type:
-			DiscourseGraphNode.DialogueNodeType.DIALOG:
-				localization[uuid]["localization"][language][region] = {"dialog": localization[uuid]["localization"][base_language]["base"]["dialog"]}
-			DiscourseGraphNode.DialogueNodeType.OPTIONS:
-				localization[uuid]["localization"][language][region] = {"options": localization[uuid]["localization"][base_language]["base"]["options"].duplicate()}
-			DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
-				localization[uuid]["localization"][language][region] = {"text": localization[uuid]["localization"][base_language]["base"]["text"]}
+	#for uuid in localization.keys():
+		#if not localization[uuid]["localization"].has(language):
+			#localization[uuid]["localization"][language] = {}
+		#match localization[uuid]["node"].node_type:
+			#DiscourseGraphNode.DialogueNodeType.DIALOG:
+				#localization[uuid]["localization"][language][region] = {"dialog": localization[uuid]["localization"][base_language]["base"]["dialog"]}
+			#DiscourseGraphNode.DialogueNodeType.OPTIONS:
+				#localization[uuid]["localization"][language][region] = {"options": localization[uuid]["localization"][base_language]["base"]["options"].duplicate()}
+			#DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
+				#localization[uuid]["localization"][language][region] = {"text": localization[uuid]["localization"][base_language]["base"]["text"]}
 
 
 # Sets options relevant to having a conversation loaded or not (ex. save/close)
@@ -691,68 +704,76 @@ func set_base_language(language: String) -> void:
 	base_language = language
 
 
-func erase_localization(uuid: StringName) -> void:
-	localization.erase(uuid)
+func update_localization_display(data: Dictionary) -> void:
+	discourse_graph_edit.set_localization_data(data)
 
 
-func set_localization(language: String, country: String = "") -> void:
-	current_language = language
-	current_country = country
+#func erase_localization(uuid: StringName) -> void:
+	#localization.erase(uuid)
+
+
+#func set_localization(locale: String) -> void:
+	#current_locale = locale
+	# --------- No longer in use -----------
+	#current_language = language
+	#current_country = country
 	
-	if country.is_empty():
-		country = "base"
+	#if country.is_empty():
+		#country = "base"
 	
-	for uuid in localization.keys():
-		var node: DiscourseGraphNode = localization[uuid]["node"]
-		match node.node_type:
-			DiscourseGraphNode.DialogueNodeType.DIALOG:
-				node.set_dialog_text(localization[uuid]["localization"][language][country]["dialog"])
-			DiscourseGraphNode.DialogueNodeType.OPTIONS:
-				for option_idx in range(localization[uuid]["localization"][language][country]["options"].size()):
-					node.set_option_text(
-							option_idx + 1,
-							localization[uuid]["localization"][language][country]["options"][option_idx])
-			DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
-				node.set_text(
-						localization[uuid]["localization"][language][country]["text"])
-			_:
-				continue
+	#for uuid in localization.keys():
+		#var node: DiscourseGraphNode = localization[uuid]["node"]
+		#match node.node_type:
+			#DiscourseGraphNode.DialogueNodeType.DIALOG:
+				#node.set_dialog_text(localization[uuid]["localization"][language][country]["dialog"])
+			#DiscourseGraphNode.DialogueNodeType.OPTIONS:
+				#for option_idx in range(localization[uuid]["localization"][language][country]["options"].size()):
+					#node.set_option_text(
+							#option_idx + 1,
+							#localization[uuid]["localization"][language][country]["options"][option_idx])
+			#DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
+				#node.set_text(
+						#localization[uuid]["localization"][language][country]["text"])
+			#_:
+				#continue
 
 
-func set_localization_dialog(uuid: StringName, dialog: String, language: String, region: String = "base") -> void:
-	if language.is_empty():
-		localization[uuid]["localization"]["common"]["dialog"] = dialog
-	else:
-		localization[uuid]["localization"][language][region]["dialog"] = dialog
+#func set_localization_dialog(uuid: StringName, dialog: String, language: String, region: String = "base") -> void:
+	#if language.is_empty():
+		#localization[uuid]["localization"]["common"]["dialog"] = dialog
+	#else:
+		#localization[uuid]["localization"][language][region]["dialog"] = dialog
 
 
-func set_localization_text(uuid: StringName, text: String, language: String, region: String = "base") -> void:
-	if language.is_empty():
-		localization[uuid]["localization"]["common"]["text"] = text
-	else:
-		localization[uuid]["localization"][language][region]["text"] = text
+#func set_localization_text(uuid: StringName, text: String, language: String, region: String = "base") -> void:
+	#pass
+	#if language.is_empty():
+		#localization[uuid]["localization"]["common"]["text"] = text
+	#else:
+		#localization[uuid]["localization"][language][region]["text"] = text
 
 
-func set_localization_options(uuid: StringName, options: Array[String], language: String, region: String = "base") -> void:
-	var current_count: int = 0
-	var given_count: int = options.size()
-	var given_options: Array[String] = options.duplicate()
-	if language.is_empty():
-		current_count = localization[uuid]["localization"]["common"]["options"].size()
-		if current_count < given_count:
-			given_options.resize(current_count)
-		elif given_count < current_count:
-			for missing in range(given_count, current_count):
-				given_options.append(localization[uuid]["localization"]["common"]["options"][missing])
-		localization[uuid]["localization"]["common"]["options"] = given_options
-	else:
-		current_count = localization[uuid]["localization"][language][region]["options"].size()
-		if current_count < given_count:
-			given_options.resize(current_count)
-		elif given_count < current_count:
-			for missing in range(given_count, current_count):
-				given_options.append(localization[uuid]["localization"][language][region]["options"][missing])
-		localization[uuid]["localization"][language][region]["options"] = given_options
+#func set_localization_options(uuid: StringName, options: Array[String], language: String, region: String = "base") -> void:
+	#pass
+	#var current_count: int = 0
+	#var given_count: int = options.size()
+	#var given_options: Array[String] = options.duplicate()
+	#if language.is_empty():
+		#current_count = localization[uuid]["localization"]["common"]["options"].size()
+		#if current_count < given_count:
+			#given_options.resize(current_count)
+		#elif given_count < current_count:
+			#for missing in range(given_count, current_count):
+				#given_options.append(localization[uuid]["localization"]["common"]["options"][missing])
+		#localization[uuid]["localization"]["common"]["options"] = given_options
+	#else:
+		#current_count = localization[uuid]["localization"][language][region]["options"].size()
+		#if current_count < given_count:
+			#given_options.resize(current_count)
+		#elif given_count < current_count:
+			#for missing in range(given_count, current_count):
+				#given_options.append(localization[uuid]["localization"][language][region]["options"][missing])
+		#localization[uuid]["localization"][language][region]["options"] = given_options
 
 
 func load_conversation(conversation: EditorDiscourseDialog) -> bool:
@@ -763,7 +784,7 @@ func load_conversation(conversation: EditorDiscourseDialog) -> bool:
 			#if not has_locale(language, region):
 				#add_locale(language, region)
 	locale_map.clear()
-	localization.clear()
+	#localization.clear()
 	
 	if conversation == null:
 		discourse_graph_edit.clear_dialog_nodes()
@@ -777,17 +798,16 @@ func load_conversation(conversation: EditorDiscourseDialog) -> bool:
 	# Should trigger registry signals for this node to catch.
 	var needs_resaving: bool = discourse_graph_edit.load_conversation_data(
 			conversation,
-			current_language,
-			current_country)
+			current_locale)
 	
-	var data: Dictionary[StringName, Dictionary] = conversation.get_node_localization_data()
-	
-	for node_uuid in data.keys():
-		for language in data[node_uuid].keys():
-			if not localization[node_uuid]["localization"].has(language):
-				localization[node_uuid]["localization"][language] = {}
-			for region in data[node_uuid][language].keys():
-				localization[node_uuid]["localization"][language][region] = data[node_uuid][language][region]
+	#var data: Dictionary[StringName, Dictionary] = conversation.get_node_localization_data()
+	#
+	#for node_uuid in data.keys():
+		#for language in data[node_uuid].keys():
+			#if not localization[node_uuid]["localization"].has(language):
+				#localization[node_uuid]["localization"][language] = {}
+			#for region in data[node_uuid][language].keys():
+				#localization[node_uuid]["localization"][language][region] = data[node_uuid][language][region]
 		
 	return needs_resaving
 
@@ -798,39 +818,39 @@ func has_locale(language: String, region: String = "base") -> bool:
 	return false
 
 
-func get_localization_argument(uuid: StringName, language: String, region: String = "base") -> Variant:
-	if region.is_empty():
-		region = "base"
-	match localization[uuid]["node"].node_type:
-		DiscourseGraphNode.DialogueNodeType.DIALOG:
-			if language.is_empty():
-				return localization[uuid]["localization"]["common"]["dialog"]
-			else:
-				return localization[uuid]["localization"][language][region]["dialog"]
-		DiscourseGraphNode.DialogueNodeType.OPTIONS:
-			if language.is_empty():
-				return localization[uuid]["localization"]["common"]["options"]
-			else:
-				return localization[uuid]["localization"][language][region]["options"]
-		DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
-			if language.is_empty():
-				return localization[uuid]["localization"]["common"]["text"]
-			else:
-				return localization[uuid]["localization"][language][region]["text"]
-		_:
-			return ""
+#func get_localization_argument(uuid: StringName, language: String, region: String = "base") -> Variant:
+	#if region.is_empty():
+		#region = "base"
+	#match localization[uuid]["node"].node_type:
+		#DiscourseGraphNode.DialogueNodeType.DIALOG:
+			#if language.is_empty():
+				#return localization[uuid]["localization"]["common"]["dialog"]
+			#else:
+				#return localization[uuid]["localization"][language][region]["dialog"]
+		#DiscourseGraphNode.DialogueNodeType.OPTIONS:
+			#if language.is_empty():
+				#return localization[uuid]["localization"]["common"]["options"]
+			#else:
+				#return localization[uuid]["localization"][language][region]["options"]
+		#DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
+			#if language.is_empty():
+				#return localization[uuid]["localization"]["common"]["text"]
+			#else:
+				#return localization[uuid]["localization"][language][region]["text"]
+		#_:
+			#return ""
 
 
-func save_current_locale() -> void:
-	for uuid in localization.keys():
-		var node: DiscourseGraphNode = localization[uuid]["node"]
-		match node.node_type:
-			DiscourseGraphNode.DialogueNodeType.DIALOG:
-				localization[uuid]["localization"][current_language][current_country]["dialog"] = node.get_dialog_text()
-			DiscourseGraphNode.DialogueNodeType.OPTIONS:
-				localization[uuid]["localization"][current_language][current_country]["options"] = node.get_options()
-			DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
-				localization[uuid]["localization"][current_language][current_country]["text"] = node.get_text()
+#func save_current_locale() -> void:
+	#for uuid in localization.keys():
+		#var node: DiscourseGraphNode = localization[uuid]["node"]
+		#match node.node_type:
+			#DiscourseGraphNode.DialogueNodeType.DIALOG:
+				#localization[uuid]["localization"][current_language][current_country]["dialog"] = node.get_dialog_text()
+			#DiscourseGraphNode.DialogueNodeType.OPTIONS:
+				#localization[uuid]["localization"][current_language][current_country]["options"] = node.get_options()
+			#DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
+				#localization[uuid]["localization"][current_language][current_country]["text"] = node.get_text()
 
 
 func enable_close_dialog(enabled: bool) -> void:

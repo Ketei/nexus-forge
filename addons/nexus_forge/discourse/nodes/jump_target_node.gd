@@ -8,7 +8,6 @@ var current_id: String = ""
 
 func _post_init() -> void:
 	name = &"Anchor"
-	custom_id = "Anchor"
 	title = "Anchor"
 	node_type = DialogueNodeType.ANCHOR
 	parent_mode = PortMode.OUTPUT
@@ -45,23 +44,35 @@ func _get_issues() -> PackedStringArray:
 
 
 func _get_node_data() -> Dictionary:
-	var data: Dictionary = {}
-	data["node_type"] = node_type
-	data["position"] = position_offset
-	data["anchor_id"] = current_id
-	data["output_connections"] = {
-		"next_node": get_uuid_and_port_connected_to(PortMode.OUTPUT, 0)
-	}
+	var metadata: Dictionary = {
+		"anchor_id": current_id}
 	
-	return data
+	var output_connections: Dictionary = {
+		"next_node": get_uuid_and_port_connected_to(PortMode.OUTPUT, 0)}
+	
+	return _build_node_data(metadata, output_connections)
 
 
 func _set_node_data(data: Dictionary) -> void:
+	var data_name = data.get("name")
+	var metadata = data.get("metadata")
+	if typeof(data_name) == TYPE_STRING_NAME:
+		name = data_name
+	
+	if typeof(metadata) != TYPE_DICTIONARY:
+		return
+	
+	var pos = metadata.get("position")
+	if typeof(pos) == TYPE_VECTOR2:
+		position_offset = pos
+	
+	var anchor = metadata.get("anchor_id")
+	if typeof(anchor) != TYPE_STRING:
+		return
 	get_field(&"anchor").text = data["anchor_id"]
-	if current_id != data["anchor_id"]:
-		current_id = data["anchor_id"]
-		id_changed.emit(_uuid, data["anchor_id"])
-	position_offset = data["position"]
+	if current_id != anchor:
+		current_id = anchor
+		id_changed.emit(_uuid, anchor)
 
 
 func _on_line_text_submitted(_text: String, line: LineEdit):

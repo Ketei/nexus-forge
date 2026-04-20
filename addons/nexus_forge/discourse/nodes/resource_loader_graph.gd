@@ -3,7 +3,6 @@ extends DiscourseGraphNode
 
 func _post_init() -> void:
 	name = &"Resource"
-	custom_id = "Resource"
 	title = "Resource"
 	node_type = DialogueNodeType.RESOURCE
 	parent_mode = PortMode.OUTPUT
@@ -46,18 +45,30 @@ func _ready() -> void:
 
 
 func _get_node_data() -> Dictionary:
-	var data: Dictionary = {}
-	data["node_type"] = node_type
-	data["position"] = position_offset
-	data["resource_path"] = get_field(&"res_path").text.strip_edges()
-	data["output_connections"] = {
+	var metadata: Dictionary = {
+		"resource_path": get_field(&"res_path").text.strip_edges()}
+	var output_connections: Dictionary = {
 		"resource_target": get_uuid_and_port_connected_to(PortMode.OUTPUT, 0)}
-	return data
+	
+	return _build_node_data(metadata, output_connections)
 
 
 func _set_node_data(data: Dictionary) -> void:
-	position_offset = data["position"]
-	get_field(&"res_path").text = data["resource_path"]
+	var data_name = data.get("name")
+	var metadata = data.get("metadata")
+	if typeof(data_name) == TYPE_STRING_NAME:
+		name = data_name
+	
+	if typeof(metadata) != TYPE_DICTIONARY:
+		return
+	
+	var pos = metadata.get("position")
+	if typeof(pos) == TYPE_VECTOR2:
+		position_offset = pos
+	
+	var path = metadata.get("resource_path")
+	if typeof(path) == TYPE_STRING:
+		get_field(&"res_path").text = path
 
 
 func _get_issues() -> PackedStringArray:

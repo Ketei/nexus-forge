@@ -2,9 +2,8 @@ class_name EditorDialogParser
 extends DialogParser
 ## The [DialogParser] that NexusForge will use while its running in the editor.
 ##
-## Within the editor the resources parsed will be [EditorDiscourseDialog] which
+## The resources parsed by this object are [EditorDiscourseDialog] which
 ## contain a different structure from the released files.[br]
-## For the release parser see [ReleaseDialogParser].[br]
 
 
 ## Emmited when data is set on the NexusForge.Blackboard singleton.
@@ -13,15 +12,37 @@ signal data_set(folder: String, variable: String, data: Variant)
 signal method_called(method_string: String, arguments: Array)
 ## Emmited when a signal is emmited from the DiscourseAPI.
 signal signal_emmited(signal_name: String, arguments: Array)
-# --- Editor Class ---
-#const NodeTypes := DiscourseGraphNode.DialogueNodeType
+
+
+func load_dialog(path: String, starting_id: String = "") -> bool:
+	if _conversation_cache.is_in_cache(path):
+		_dialog_resource = _conversation_cache.get_resource(path)
+		return true
+	else:
+		var res: Resource = load(path)
+		if res == null or res is not EditorDiscourseDialog:
+			_next_uuid = ""
+			_dialog_resource = null
+			return false
+		_conversation_cache.cache_resource(res)
+		_dialog_resource = res
+	
+	if _dialog_id_map.has(starting_id):
+		_next_uuid = _dialog_id_map[starting_id]
+	elif _dialog_resource.dialog_nodes.has(starting_id):
+		_next_uuid = starting_id
+	else:
+		_next_uuid = _dialog_resource.entry_node
+	
+	return true
 
 
 func _process_logic(uuid: StringName) -> String:
 	if uuid.is_empty():
 		return ""
 	
-	var data: Dictionary = _dialog_resource.get_node_data(uuid, language, region)
+	var data: Dictionary = _dialog_resource.get_node_data(uuid, locale)
+	var metadata: Dictionary = data["metadata"]
 	
 	match data["node_type"]:
 		NodeTypes.ENTRY:
@@ -34,27 +55,27 @@ func _process_logic(uuid: StringName) -> String:
 			var display_name: String = ""
 			var portrait_id: String = ""
 			
-			if data["input_connections"]["dialog_settings"]["target_node_uuid"] != "":
-				var settings: Dictionary = _dialog_resource.get_node_data(data["input_connections"]["dialog_settings"]["target_node_uuid"], language, region)
-				if settings["font_resource"]["target_node_uuid"] != "":
+			if not data["input_connections"]["dialog_settings"]["target_node_uuid"].is_empty():
+				var settings: Dictionary = _dialog_resource.get_node_data(data["input_connections"]["dialog_settings"]["target_node_uuid"], locale)
+				if not settings["font_resource"]["target_node_uuid"].is_empty():
 					font = _get_data(settings["font_resource"]["target_node_uuid"])
-				if settings["dialog_scene"]["target_node_uuid"] != "":
+				if not settings["dialog_scene"]["target_node_uuid"].is_empty():
 					scene = _get_data(settings["dialog_scene"]["target_node_uuid"])
-				if settings["dialog_speed"]["target_node_uuid"] != "":
+				if not settings["dialog_speed"]["target_node_uuid"].is_empty():
 					speed = _get_data(settings["dialog_speed"]["target_node_uuid"])
 			
-			if data["input_connections"]["character_settings"]["target_node_uuid"] != "":
-				var settings: Dictionary = _dialog_resource.get_node_data(data["input_connections"]["character_settings"]["target_node_uuid"], language, region)
-				if settings["display_name"]["target_node_uuid"] != "":
+			if not data["input_connections"]["character_settings"]["target_node_uuid"].is_empty():
+				var settings: Dictionary = _dialog_resource.get_node_data(data["input_connections"]["character_settings"]["target_node_uuid"], locale)
+				if not settings["display_name"]["target_node_uuid"].is_empty():
 					display_name = _get_data(settings["display_name"]["target_node_uuid"])
-				if settings["portrait_id"]["target_node_uuid"] != "":
+				if not settings["portrait_id"]["target_node_uuid"].is_empty():
 					portrait_id = _get_data(settings["portrait_id"]["target_node_uuid"])
 				
-			if data["input_connections"]["dialog_text_source"]["target_node_uuid"] == "":
+			if data["input_connections"]["dialog_text_source"]["target_node_uuid"].is_empty():
 				dialog_reached.emit({
 					"dialog_text": _parse_dialog(uuid, data["dialog_text"]),
-					"character_id": data["character_id"],
-					"persist": data["persist"],
+					"character_id": metadata["character_id"],
+					"persist": metadata["persist"],
 					"font": font,
 					"scene": scene,
 					"speed": speed,
@@ -63,8 +84,8 @@ func _process_logic(uuid: StringName) -> String:
 			else:
 				dialog_reached.emit({
 					"dialog_text": _parse_dialog(uuid, _get_data(data["input_connections"]["dialog_text_source"]["target_node_uuid"])),
-					"character_id": data["character_id"],
-					"persist": data["persist"],
+					"character_id": metadata["character_id"],
+					"persist": metadata["persist"],
 					"font": font,
 					"scene": scene,
 					"speed": speed,
@@ -75,7 +96,7 @@ func _process_logic(uuid: StringName) -> String:
 			var available_options: Array[Dictionary] = []
 			var option_idx: int = -1
 			var option_duuid: String = ""
-			for option:Dictionary in data["options"]:
+			for option:Dictionary in metadata["choices"]:
 				option_idx += 1
 				option_duuid = uuid + "_" + str(option_idx)
 				if option["input_connections"]["settings"]["target_node_uuid"].is_empty():
@@ -83,17 +104,17 @@ func _process_logic(uuid: StringName) -> String:
 					available_options.append(
 						{
 							"unlocked": true,
-							"text": _parse_dialog(option_duuid, option["option_text"]),
+							"text": _parse_dialog(option_duuid, option["text"]),
 							"target": option["output_connections"]["next_node"]["target_node_uuid"]})
 				else:
-					var opt_settings: Dictionary = _dialog_resource.get_node_data(option["input_connections"]["settings"]["target_node_uuid"], "common")
+					var opt_settings: Dictionary = _dialog_resource.get_node_data(option["input_connections"]["settings"]["target_node_uuid"])
 					var show: bool = true if opt_settings["input_connections"]["option_available"]["target_node_uuid"].is_empty() else _get_bool_result(opt_settings["input_connections"]["option_available"]["target_node_uuid"])
 				
 					if not show:
 						continue
 					
 					var unlocked: bool = true if opt_settings["input_connections"]["option_unlocked"]["target_node_uuid"].is_empty() else _get_bool_result(opt_settings["input_connections"]["option_unlocked"]["target_node_uuid"])
-					var text: String = option["option_text"]
+					var text: String = option["text"]
 					
 					if not unlocked and not opt_settings["input_connections"]["locked_hint"]["target_node_uuid"].is_empty():
 						var lock_hint: String = _get_data(opt_settings["input_connections"]["locked_hint"]["target_node_uuid"])
@@ -121,7 +142,7 @@ func _process_logic(uuid: StringName) -> String:
 				return _process_logic(
 						data["output_connections"]["next_node_false"]["target_node_uuid"])
 		NodeTypes.EVENT:
-			if data["variable_path"] != "" and data["input_connections"]["variable_value"]["target_node_uuid"] != "":
+			if not metadata["variable_path"].is_empty() and not data["input_connections"]["variable_value"]["target_node_uuid"].is_empty():
 				var parts: PackedStringArray = data["variable_path"].rsplit("/", false, 1)
 				var set_data: Variant = _get_data(data["input_connections"]["variable_value"]["target_node_uuid"])
 				
@@ -131,7 +152,7 @@ func _process_logic(uuid: StringName) -> String:
 						set_data)
 				data_set.emit(parts[0], parts[1], set_data)
 			if data["input_connections"]["callable"]["target_node_uuid"] != "":
-				var call_data: Dictionary = _dialog_resource.get_node_data(data["input_connections"]["callable"]["target_node_uuid"], language, region)
+				var call_data: Dictionary = _dialog_resource.get_node_data(data["input_connections"]["callable"]["target_node_uuid"])
 				var call_args: Array = []
 				
 				for arg_connection in call_data["arguments"]:
@@ -145,7 +166,7 @@ func _process_logic(uuid: StringName) -> String:
 				method_called.emit(call_data["method"], call_args.duplicate(true))
 			
 			if data["input_connections"]["signal"]["target_node_uuid"] != "":
-				var signal_data: Dictionary = _dialog_resource.get_node_data(data["input_connections"]["signal"]["target_node_uuid"], language, region)
+				var signal_data: Dictionary = _dialog_resource.get_node_data(data["input_connections"]["signal"]["target_node_uuid"])
 				var signal_args: Array = []
 				
 				for arg_connection in signal_data["arguments"]:
@@ -158,7 +179,7 @@ func _process_logic(uuid: StringName) -> String:
 			return _process_logic(data["output_connections"]["next_node"]["target_node_uuid"])
 		NodeTypes.MATCH:
 			var data_comp = _get_data(data["input_connections"]["match_value_source"]["target_node_uuid"])
-			for case:Dictionary in data["cases"]:
+			for case:Dictionary in metadata["cases"]:
 				if case["value"] == data_comp:
 					return _process_logic(case["output_connections"]["next_node"]["target_node_uuid"])
 			return _process_logic(data["output_connections"]["default"]["target_node_uuid"])
@@ -169,7 +190,7 @@ func _process_logic(uuid: StringName) -> String:
 			var total_weight: int = 0
 			var choices: Array[Dictionary] = []
 			
-			for choice:Dictionary in data["options"]:
+			for choice:Dictionary in metadata["options"]:
 				var weight: int = DialogParser.RANDOM_DEFAULT_WEIGHT if choice["input_connections"]["weight"]["target_node_uuid"].is_empty() else _get_data(choice["input_connections"]["weight"]["target_node_uuid"])
 				if weight == 0:
 					continue
@@ -191,7 +212,7 @@ func _process_logic(uuid: StringName) -> String:
 					return _process_logic(choice["next"])
 			return _process_logic(choices[-1]["next"]) # In case of loop error
 		NodeTypes.ANCHOR_POINTER:
-			return _process_logic(data["anchor_target"])
+			return _process_logic(metadata["anchor_target"])
 		NodeTypes.ANCHOR:
 			return _process_logic(data["output_connections"]["next_node"]["target_node_uuid"])
 		NodeTypes.DIALOG_END:
@@ -202,83 +223,84 @@ func _process_logic(uuid: StringName) -> String:
 			return ""
 
 
-func _get_data(from_uuid: StringName) -> Variant:
+func _get_data(from_uuid: StringName, fallback = null) -> Variant:
 	if _dialog_resource == null or not _dialog_resource.dialog_nodes.has(from_uuid):
 		return null
 	
-	var data: Dictionary = _dialog_resource.get_node_data(from_uuid, language, region)
+	var data: Dictionary = _dialog_resource.get_node_data(from_uuid, locale)
+	var metadata: Dictionary = data["metadata"]
 	
 	match data["node_type"]:
 		NodeTypes.VALUE:
-			return data["value"]
+			return metadata["value"]
 		NodeTypes.RANDOM_VALUE:
-			match data["mode"]:
+			match metadata["mode"]:
 				TYPE_INT:
 					return randi_range(
-							data["values"]["base"],
-							data["values"]["max"])
+							metadata["values"]["base"],
+							metadata["values"]["max"])
 				TYPE_FLOAT:
 					return snappedf(
 							randf_range(
-									data["values"]["base"],
-									data["values"]["max"]),
+									metadata["values"]["base"],
+									metadata["values"]["max"]),
 							0.01)
 				TYPE_BOOL:
 					var true_range: int = randi_range(
 							1,
 							100 if data["input_connections"]["base_value"]["target_node_uuid"] == "" else _get_data(data["input_connections"]["base_value"]["target_node_uuid"]))
 					
-					return true_range <= data["values"]["base"]
+					return true_range <= metadata["values"]["base"]
 				_:
 					return null
 		NodeTypes.TYPE_GUARD:
 			var guard_data = _get_data(data["input_connections"]["value"]["target_node_uuid"])
-			if typeof(guard_data) == typeof(data["fallback_value"]):
+			if typeof(guard_data) == typeof(metadata["fallback_value"]):
 				return guard_data
 			else:
-				return data["fallback_value"]
+				return metadata["fallback_value"]
 		NodeTypes.VARIABLE_GET:
-			var parts: PackedStringArray = data["variable_path"].rsplit("/", false, 1)
+			var parts: PackedStringArray = metadata["variable_path"].rsplit("/", false, 1)
 			if parts.size() != 2:
 				return null
 			else:
 				return NexusForge.Blackboard.get_variable(parts[0], parts[1])
 		NodeTypes.CALLABLE_RETURN:
 			return NexusForge.Discourse.API.callv(
-					data["method"],
-					data["arguments"])
+					metadata["method"],
+					metadata["arguments"])
 		NodeTypes.DATA_EVENT:
-			if data["variable_path"] != "" and data["input_connections"]["variable_value"] != "":
-				var parts: PackedStringArray = data["variable_path"].rsplit("/", false, 1)
+			if metadata["variable_path"] != "" and data["input_connections"]["variable_value"] != "":
+				var parts: PackedStringArray = metadata["variable_path"].rsplit("/", false, 1)
 				NexusForge.Blackboard.set_variable(
 						parts[0],
 						parts[1],
 						_get_data(data["input_connections"]["variable_value"]["target_node_uuid"]))
 			if data["input_connections"]["callable"]["target_node_uuid"] != "":
-				var call_data: Dictionary = _dialog_resource.get_node_data(data["input_connections"]["callable"]["target_node_uuid"], language, region)
+				var call_data: Dictionary = _dialog_resource.get_node_data(data["input_connections"]["callable"]["target_node_uuid"], locale)
 				var call_args: Array = []
 				
-				for arg_connection in call_data["arguments"]:
+				for arg_connection in call_data["metadata"]["arguments"]:
 					call_args.append(
 							_get_data(arg_connection["target_node_uuid"]))
 				
 				NexusForge.Discourse.API.callv(
-						call_data["method"],
+						call_data["metadata"]["method"],
 						call_args)
 			
 			if data["input_connections"]["signal"]["target_node_uuid"] != "":
-				var signal_data: Dictionary = _dialog_resource.get_node_data(data["input_connections"]["signal"]["target_node_uuid"], language, region)
+				var signal_data: Dictionary = _dialog_resource.get_node_data(data["input_connections"]["signal"]["target_node_uuid"], locale)
 				var signal_args: Array = []
 				
-				for arg_connection in signal_data["arguments"]:
+				for arg_connection in signal_data["metadata"]["arguments"]:
 					signal_args.append(_get_data(arg_connection["target_node_uuid"]))
 				
 				NexusForge.Discourse.API.emit_signal(
-						signal_data["signal"],
+						signal_data["metadata"]["signal"],
 						signal_args)
 			return _get_data(data["input_connections"]["data_input"]["target_node_uuid"])
 		NodeTypes.LOCALIZED_TEXT:
-			return data["text"]
+			return metadata["text"]
 		NodeTypes.CONDITION_SELECT:
 			var true_value: bool = _get_bool_result(data["input_connections"]["result"]["target_node_uuid"])
 			if true_value:
@@ -286,7 +308,7 @@ func _get_data(from_uuid: StringName) -> Variant:
 			else:
 				return _get_data(data["input_connections"]["false_value"]["target_node_uuid"])
 		NodeTypes.RESOURCE:
-			return data["resource_path"]
+			return metadata["resource_path"]
 		_:
 			return null
 
@@ -297,26 +319,153 @@ func _dialog_resource_set(new_resource: DiscourseDialog) -> void:
 		_dialog_id_map.assign(new_resource.get_id_map())
 
 
+func _parse_dialog(dialog_id: String, dialog: String) -> String:
+	var DUUID: String = dialog_id + "/" + locale
+	# (UUID)/en_US
+	if _dialog_resource.parsed_dialog_cache.is_in_cache(DUUID):
+		var cached_data: ParsedDialog = _dialog_resource.parsed_dialog_cache.get_cache(DUUID)
+		return cached_data.get_dialog()
+	
+	var parsed: ParsedDialog = ParsedDialog.new()
+	parsed.locale = locale
+	parsed.dialog = dialog
+	
+	var functions_processed: PackedStringArray = []
+	var variables_processed: PackedStringArray = []
+	var phrases_processed: PackedStringArray = []
+	var random_processed: PackedStringArray = []
+	
+	var function_regex: RegEx = RegEx.new()
+	var variable_regex: RegEx = RegEx.new()
+	var phrase_regex: RegEx = RegEx.new()
+	var random_regex: RegEx = RegEx.new()
+	function_regex.compile("\\{\\![^\\s\\}]+\\}")
+	variable_regex.compile("\\{\\$[^\\s\\}]+\\}")
+	phrase_regex.compile("\\{\\&[^\\s\\}]+\\}")
+	random_regex.compile("\\{\\?[^\\}]+\\}")
+	
+	for rgx_rand_result in random_regex.search_all(dialog):
+		if random_processed.has(rgx_rand_result.get_string()):
+			continue
+		
+		random_processed.append(rgx_rand_result.get_string())
+		
+		var clean_string: String = rgx_rand_result.get_string().trim_prefix("{").trim_suffix("}")
+		var options: Array[String] = []
+		options.assign(clean_string.trim_prefix("?").split("|", false))
+		
+		parsed.set_format_callable(
+			clean_string,
+			options.pick_random)
+	
+	# Searching for function calls.
+	
+	for rgx_func_result in function_regex.search_all(dialog):
+		if functions_processed.has(rgx_func_result.get_string()):
+			continue
+		
+		functions_processed.append(rgx_func_result.get_string())
+		
+		# {!get_name|a,b} -> !get_name|a,b
+		var clean_string: String = rgx_func_result.get_string().trim_prefix("{").trim_suffix("}")
+		
+		parsed.set_format_callable(
+				clean_string,
+				_build_callable_for_method(clean_string.trim_prefix("!")))
+		
+	# Processing variables
+	
+	for rgx_var_result in variable_regex.search_all(dialog):
+		if variables_processed.has(rgx_var_result.get_string()):
+			continue
+		
+		var key: String = rgx_var_result.get_string().trim_prefix("{").trim_suffix("}")
+		variables_processed.append(rgx_var_result.get_string())
+		
+		var callable: Callable = _build_callable_for_variable(key.trim_prefix("{$").trim_suffix("}"))
+		
+		parsed.set_format_callable(
+				key,
+				_build_callable_for_variable(key.trim_prefix("$")))
+	
+	# Revealing the phrase text.
+	for rgx_phrase_result in phrase_regex.search_all(dialog):
+		if phrases_processed.has(rgx_phrase_result.get_string()):
+			continue
+		var phrase_key: String = rgx_phrase_result.get_string().trim_prefix("{").trim_suffix("}")
+		var prefix_trim_key: String = phrase_key.trim_prefix("&")
+		phrases_processed.append(phrase_key)
+		
+		var phrase: String = _dialog_resource.get_localized_format_string(
+				prefix_trim_key,
+				locale)
+		
+		var argument_cases: Dictionary[String, Dictionary] = _dialog_resource.get_localized_format_string_arguments(
+				prefix_trim_key,
+				locale)
+		
+		parsed.create_format_phrase(phrase_key, phrase, argument_cases)
+		
+		for random_section in random_regex.search_all(phrase):
+			var replace: String = random_section.get_string().trim_prefix("{").trim_suffix("}")
+			var items: Array[String] = []
+			items.assign(replace.trim_prefix("?").split("|", false))
+			parsed.set_format_phrase_callable(
+					phrase_key,
+					replace,
+					items.pick_random)
+		
+		for function_section in function_regex.search_all(phrase):
+		#{!askdjal}
+			var replace: String = function_section.get_string().trim_prefix("{").trim_suffix("}")
+			parsed.set_format_phrase_callable(
+					phrase_key,
+					replace,
+					_build_callable_for_method(replace.trim_prefix("!")))
+		
+		for variable_section in variable_regex.search_all(phrase):
+			var replace: String = variable_section.get_string().trim_prefix("{").trim_suffix("}")
+			parsed.set_format_phrase_callable(
+					phrase_key,
+					replace,
+					_build_callable_for_variable(replace.trim_prefix("$")))
+	
+	_dialog_resource.parsed_dialog_cache.cache_data(
+		DUUID,
+		parsed)
+	
+	return parsed.get_dialog()
+
+
+func _locale_set(new_language: String, new_region: String = "base") -> void:
+	return
+
+
+func _load_locale(new_language: String, new_region: String) -> void:
+	return
+
+
 func _get_bool_result(from_uuid: String) -> bool:
 	if _dialog_resource == null or from_uuid.is_empty() or not _dialog_resource.dialog_nodes.has(from_uuid):
 		return false
 	
-	var data: Dictionary = _dialog_resource.get_node_data(from_uuid, language, region)
+	var data: Dictionary = _dialog_resource.get_node_data(from_uuid, locale)
+	var metadata: Dictionary = data["metadata"]
 	match data["node_type"]:
 		NodeTypes.VALUE:
-			var value = data["value"]
+			var value = metadata["value"]
 			if typeof(value) in [TYPE_BOOL, TYPE_INT, TYPE_FLOAT]:
 				return bool(value)
 			else:
 				return false
 		NodeTypes.RANDOM_VALUE:
-			if data["mode"] == TYPE_BOOL:
+			if metadata["mode"] == TYPE_BOOL:
 				var result: int = randi_range(1, 100)
-				return data["values"]["base"] <= result
-			elif data["mode"] in [TYPE_INT, TYPE_FLOAT]:
+				return metadata["values"]["base"] <= result
+			elif metadata["mode"] in [TYPE_INT, TYPE_FLOAT]:
 				return randi_range(
-						 data["values"]["base"],
-						 data["values"]["max"]) != 0
+						 metadata["values"]["base"],
+						 metadata["values"]["max"]) != 0
 			else:
 				return false
 		NodeTypes.TYPE_GUARD:
@@ -331,7 +480,7 @@ func _get_bool_result(from_uuid: String) -> bool:
 			else:
 				return false
 		NodeTypes.VARIABLE_GET:
-			var parts: PackedStringArray = data["variable_path"].rsplit("/", false, 1)
+			var parts: PackedStringArray = metadata["variable_path"].rsplit("/", false, 1)
 			
 			if parts.size() != 2:
 				return false
@@ -346,7 +495,7 @@ func _get_bool_result(from_uuid: String) -> bool:
 			var value_b = _get_data(data["input_connections"]["node_b"]["target_node_uuid"])
 			
 			if not _can_compare(value_a, value_b):
-				return true if data["operator"] == OP_NOT_EQUAL else false
+				return metadata["operator"] == OP_NOT_EQUAL
 			
 			match data["operator"]:
 				OP_EQUAL:

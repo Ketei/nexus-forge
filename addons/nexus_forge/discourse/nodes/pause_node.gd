@@ -4,7 +4,6 @@ extends DiscourseGraphNode
 ## Runs once the initiation is done. Used to set up the visual part of the node.
 func _post_init() -> void:
 	name = &"Pause"
-	custom_id = "Pause"
 	title = "Pause"
 	size = Vector2(200.0, 90.0)
 	node_type = DialogueNodeType.PAUSE
@@ -34,9 +33,6 @@ func _ready() -> void:
 
 
 func _get_node_data() -> Dictionary:
-	var data: Dictionary = {}
-	data["node_type"] = node_type
-	data["position"] = position_offset
-	data["output_connections"] = {
+	var output_connections: Dictionary = {
 		"next_node": get_uuid_and_port_connected_to(PortMode.OUTPUT, 0)}
-	return data
+	return _build_node_data({}, output_connections)

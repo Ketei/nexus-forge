@@ -1,13 +1,19 @@
 extends EditorExportPlugin
 
 
-var localization_paths: Array[Dictionary] = []
-var localization_map: Dictionary[String, Dictionary] = {}
+# Generate the release files on export begin. These will be used later on _customize_resource
+# The key is the path of the file, the value is the resource that will replace it.
+var release_files: Dictionary[String, DiscourseDialog] = {}
+var localization_groups: Dictionary = {}
 
+# {"file_path": ["file": DiscourseDialogLocale, "path": res://i18n/en/aa/aaasdajlkd-my_file.json]}
+var localization_files: Dictionary[String, Array] = {}
 
-var locale_group_uuids: Dictionary[String, String] = {}
-var localization_files: Dictionary[String, DiscourseDialogLocale] = {}
-var release_files: Dictionary[String, ReleaseDiscourseDialog] = {}
+# Final map where the files are assigned to a non-conflicting ID.
+var dialog_file_to_id: Dictionary[String, String] = {}
+
+# Final map where non-conflicting IDs are assigned to a localization file.
+var id_to_localization: Dictionary[String, String] = {}
 
 var dialog_path: String = ""
 var export_temp_dir: DirAccess = null
@@ -25,11 +31,9 @@ func _export_begin(_features: PackedStringArray, _is_debug: bool, _path: String,
 	var file_base_path: String = ProjectSettings.get_setting(
 			EditorNFPlugin.get_project_settings_path("discourse")).strip_edges()
 	
-	localization_paths.clear()
-	localization_map.clear()
-	locale_group_uuids.clear()
-	localization_files.clear()
 	release_files.clear()
+	dialog_file_to_id.clear()
+	id_to_localization.clear()
 	character_ids.clear()
 	quest_ids.clear()
 	
@@ -39,11 +43,41 @@ func _export_begin(_features: PackedStringArray, _is_debug: bool, _path: String,
 	dialog_path = file_base_path
 
 
+func _get_new_dialog_id_for(path: String) -> String:
+	var slug: String = path.get_basename().trim_prefix("res://").replace("/", ".").replace("\\", ".")
+	
+	return path.md5_text() if id_to_localization.has(slug) else slug
+
+
 func _export_file(path: String, type: String, features: PackedStringArray) -> void:
-	if path.get_extension() == "tres":
-		var file: Resource = load(path)
-		if file is EditorDiscourseDialog:
-			release_files[path] = process_editor_discourse_dialog(file)
+	if path.get_extension() != "tres":
+		return
+	
+	var file: Resource = load(path)
+	if file is not EditorDiscourseDialog:
+		return
+	
+	var new_id: String = ""
+	var md5_hash: String = path.to_lower().md5_text().substr(0, 12)
+	var localization_filename: String = md5_hash + "-" + path.get_file().get_basename() + ".json"
+	
+	if file.dialog_id.is_empty():
+		new_id = _get_new_dialog_id_for(path)
+	elif id_to_localization.has(file.dialog_id):
+		var culprit: String = ""
+		for filepath in dialog_file_to_id.keys():
+			if dialog_file_to_id[filepath] == file.dialog_id:
+				culprit = filepath
+				break
+		new_id = path.md5_text()
+		push_warning("[NEXUSFORGE EXPORTPLUGIN] Dialog ID " + file.dialog_id + " already in use by " + culprit + ". Changing ID of file " + path + " to " + new_id)
+	else:
+		new_id = file.dialog_id
+		
+	dialog_file_to_id[path] = new_id
+	id_to_localization[new_id] = localization_filename
+	
+	release_files[path] = process_editor_discourse_dialog(file, new_id, localization_filename)
 
 
 func _begin_customize_resources(_platform: EditorExportPlatform, _features: PackedStringArray) -> bool:
@@ -62,24 +96,36 @@ func _get_customization_configuration_hash() -> int:
 
 func _customize_resource(resource: Resource, path: String) -> Resource:
 	if resource is EditorDiscourseDialog:
-		if release_files.has(resource.resource_path):
-			if localization_files.has(release_files[resource.resource_path].localization_uuid):
-				var locale_file: DiscourseDialogLocale = localization_files[release_files[resource.resource_path].localization_uuid]
-				var virtual_path: String = locale_file.resource_path.get_basename() + ".json"
-				var file_path: String = export_temp_dir.get_current_dir() + "/" + locale_file.resource_path.get_file().get_basename() + ".json"
-				var file: FileAccess = FileAccess.open(file_path, FileAccess.WRITE_READ)
-				file.store_string(locale_file.as_json())
-				file.close()
-				
-				if file != null:
-					add_file(
-							virtual_path,
-							FileAccess.get_file_as_bytes(file_path),
-							false)
-					localization_files.erase(release_files[resource.resource_path].localization_uuid)
-			return release_files[resource.resource_path]
-		else:
+		if not release_files.has(path):
 			return null
+		
+		if not localization_files.has(path):
+			return release_files[path]
+		
+		for locale_entry:Dictionary in localization_files[path]:
+			if locale_entry["path"].is_empty() or locale_entry["file"] == null:
+				push_error("[DISCOURSE] Failed to generate locale entry or path for: " + path)
+				continue
+				
+			#if localization_files.has(release_files[resource.resource_path].localization_uuid):
+			var locale_file: DiscourseDialogLocale = locale_entry["file"]
+			var virtual_path: String = locale_entry["path"]
+			var file_path: String = export_temp_dir.get_current_dir().path_join(virtual_path.get_file())
+			
+			var file: FileAccess = FileAccess.open(file_path, FileAccess.WRITE_READ)
+			file.store_string(locale_file.as_json())
+			file.close()
+			
+			if file != null:
+				add_file(
+						virtual_path,
+						FileAccess.get_file_as_bytes(file_path),
+						false)
+				localization_files.erase(path)
+			else:
+				push_error("Couldn't generate localization file.")
+		
+		return release_files[resource.resource_path]
 	elif resource is SkillCatalog:
 		return customize_skill_catalog(resource)
 	elif resource is TraitCatalog:
@@ -102,40 +148,37 @@ func _customize_resource(resource: Resource, path: String) -> Resource:
 	return null
 
 
-func process_editor_discourse_dialog(dialog_resource: EditorDiscourseDialog) -> ReleaseDiscourseDialog:
-	# Assigning an UUID if the group already exists, if not remains empty so
-	# EditorDiscourseDialog.convert_for_release() generates an unique one.
-	var locale_uuid: String = locale_group_uuids[dialog_resource.locale_group] if locale_group_uuids.has(dialog_resource.locale_group) else ""
-	var release_resource: ReleaseDiscourseDialog = dialog_resource.convert_for_release(locale_uuid)
+func _end_customize_resources() -> void:
+	var bridge_data: Dictionary = {
+		"file_to_id": dialog_file_to_id,
+		"id_to_locale_file": id_to_localization}
+	
+	var virtual_path: String = dialog_path.path_join("dialog_locale_map.json")
+	var file_path: String = export_temp_dir.get_current_dir().path_join(virtual_path.get_file())
+	
+	var file: FileAccess = FileAccess.open(file_path, FileAccess.WRITE_READ)
+	file.store_string(JSON.stringify(bridge_data))
+	file.close()
+	
+	if file != null:
+		add_file(
+				virtual_path,
+				FileAccess.get_file_as_bytes(file_path),
+				false)
+	else:
+		printerr("[NEXUSFORGE EXPORTPLUGIN] Error while generating dialog locale map.")
+
+
+func process_editor_discourse_dialog(dialog_resource: EditorDiscourseDialog, dialog_id: String, expected_name: String) -> DiscourseDialog:
+	var release_resource: DiscourseDialog = dialog_resource.convert_for_release()
 	release_files[dialog_resource.resource_path] = release_resource
-	# If there is a locale_group but it is not mapped yet, then map it.
-	if not dialog_resource.locale_group.is_empty() and not locale_group_uuids.has(dialog_resource.locale_group):
-		locale_group_uuids[dialog_resource.locale_group] = release_resource.localization_uuid
 	
-	var localization_group: Dictionary[String, DiscourseDialogLocale] = {}
-	var uses_locale_group: bool = not dialog_resource.locale_group.is_empty()
+	var localizations: Array[Dictionary] = dialog_resource.generate_localization_files(dialog_id, dialog_path, expected_name, localization_groups)
 	
-	 # For the purposes of updating.
-	if localization_map.has(dialog_resource.locale_group):
-		localization_group = localization_map[dialog_resource.locale_group]
+	if not localization_files.has(dialog_resource.resource_path):
+		localization_files[dialog_resource.resource_path] = Array([], TYPE_DICTIONARY, &"", null)
 	
-	 # dialog_resource.generate_localization_files return array will ONLY contain
-	 # newly created files, the ones updated through localization_group won't be
-	 # returned.
-	var new_localization: Array[DiscourseDialogLocale] = dialog_resource.generate_localization_files(
-			release_resource.localization_uuid,
-			dialog_path,
-			localization_group)
-	
-	if uses_locale_group:
-		if not localization_map.has(dialog_resource.locale_group):
-			var new_map: Dictionary[String, DiscourseDialogLocale] = {}
-			localization_map[dialog_resource.locale_group] = new_map
-		for locale in new_localization:
-			localization_map[dialog_resource.locale_group][locale.language + "-" + locale.region] = locale
-	
-	for locale_file in new_localization:
-		localization_files[release_resource.localization_uuid] = locale_file
+	localization_files[dialog_resource.resource_path].append_array(localizations)
 	
 	return release_resource
 
@@ -187,56 +230,13 @@ func customize_skill_catalog(catalog: SkillCatalog) -> SkillCatalog:
 	return catalog
 
 
-func customize_discourse_dialog(resource: EditorDiscourseDialog) -> ReleaseDiscourseDialog:
-	# Establishing the class for auto-complete
-	var dialog_resource: EditorDiscourseDialog = resource
-	
-	# Assigning an UUID if the group already exists, if not remains empty so
-	# EditorDiscourseDialog.convert_for_release() generates an unique one.
-	var locale_uuid: String = locale_group_uuids[dialog_resource.locale_group] if locale_group_uuids.has(dialog_resource.locale_group) else ""
-	var release_resource: ReleaseDiscourseDialog = dialog_resource.convert_for_release(locale_uuid)
-	# If there is a locale_group but it is not mapped yet, then map it.
-	if not dialog_resource.locale_group.is_empty() and not locale_group_uuids.has(dialog_resource.locale_group):
-		locale_group_uuids[dialog_resource.locale_group] = release_resource.localization_uuid
-	
-	var localization_group: Dictionary[String, DiscourseDialogLocale] = {}
-	var uses_locale_group: bool = not dialog_resource.locale_group.is_empty()
-	
-	 # For the purposes of updating.
-	if localization_map.has(dialog_resource.locale_group):
-		localization_group = localization_map[dialog_resource.locale_group]
-	
-	 # dialog_resource.generate_localization_files return array will ONLY contain
-	 # newly created files, the ones updated through localization_group won't be
-	 # returned.
-	var new_localization: Array[DiscourseDialogLocale] = dialog_resource.generate_localization_files(
-			release_resource.localization_uuid,
-			dialog_path,
-			localization_group)
-	
-	if uses_locale_group:
-		if not localization_map.has(dialog_resource.locale_group):
-			var new_map: Dictionary[String, DiscourseDialogLocale] = {}
-			localization_map[dialog_resource.locale_group] = new_map
-		for locale in new_localization:
-			localization_map[dialog_resource.locale_group][locale.language + "-" + locale.region] = locale
-	
-	#localization_files.append_array(new_localization)
-	for file in new_localization:
-		localization_paths.append({
-			"path": file.resource_path,
-			"file": file})
-		file.resource_path = ""
-	
-	return release_resource
-
-
 func _export_end() -> void:
 	export_temp_dir = null
-	localization_paths.clear()
-	localization_map.clear()
-	locale_group_uuids.clear()
+	release_files.clear()
+	localization_groups.clear()
 	localization_files.clear()
+	dialog_file_to_id.clear()
+	id_to_localization.clear()
 	release_files.clear()
 	character_ids.clear()
 	quest_ids.clear()

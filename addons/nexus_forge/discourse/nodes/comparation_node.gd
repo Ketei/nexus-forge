@@ -3,7 +3,6 @@ extends DiscourseGraphNode
 
 func _post_init() -> void:
 	name = &"Comparation"
-	custom_id = "Comparation"
 	title = "Comparation"
 	size = Vector2(200.0, 150.0)
 	node_type = DialogueNodeType.COMPARATION
@@ -109,25 +108,39 @@ func _get_issues() -> PackedStringArray:
 
 func _get_node_data() -> Dictionary:
 	var data: Dictionary = {}
-	data["node_type"] = node_type
-	data["position"] = position_offset
-	data["operator"] = get_mapped_field(
+	
+	var metadata: Dictionary = {
+		"operator": get_mapped_field(
 			&"comparation",
-			&"comparation_menu").get_meta(&"current_operator", 0)
-	data["input_connections"] = {
+			&"comparation_menu").get_meta(&"current_operator", 0)}
+	var in_connections: Dictionary = {
 		"node_a": get_uuid_and_port_connected_to(PortMode.INPUT, 0),
 		"node_b": get_uuid_and_port_connected_to(PortMode.INPUT, 1)}
-	data["output_connections"] = {
+	var out_connections: Dictionary = {
 		"result": get_uuid_and_port_connected_to(PortMode.OUTPUT, 0)}
 	
-	return data
+	return _build_node_data(metadata, out_connections, in_connections)
 
 
 func _set_node_data(data: Dictionary) -> void:
+	var _name = data.get("name")
+	if typeof(_name) == TYPE_STRING_NAME:
+		name = _name
+	
+	var _pos_off = data.get("position")
+	if typeof(_pos_off) == TYPE_VECTOR2:
+		position_offset = _pos_off
+	
+	var metadata = data.get("metadata")
+	if typeof(metadata) != TYPE_DICTIONARY:
+		return
+	
+	var opr = metadata.get("operator")
+	if typeof(opr) != TYPE_INT:
+		return
+	
 	var dropdown: MenuButton = get_mapped_field(&"comparation", &"comparation_menu")
 	var operator: Variant.Operator = clampi(data["operator"], 0, 5) as Variant.Operator
-	position_offset = data["position"]
-	dropdown.set_meta(&"current_operator", data["operator"])
 	match operator:
 		OP_EQUAL:
 			dropdown.text = "=="
@@ -141,6 +154,7 @@ func _set_node_data(data: Dictionary) -> void:
 			dropdown.text = ">"
 		OP_GREATER_EQUAL:
 			dropdown.text = ">="
+	dropdown.set_meta(&"current_operator", operator)
 
 
 func _on_comparation_changed(id: int) -> void:

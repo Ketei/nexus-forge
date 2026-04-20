@@ -6,7 +6,6 @@ var filter_mode: int = TYPE_NIL
 
 func _post_init() -> void:
 	name = &"TypeGuard"
-	custom_id = "TypeGuard"
 	title = "Type Guard"
 	node_type = DialogueNodeType.TYPE_GUARD
 	parent_mode = PortMode.OUTPUT
@@ -80,19 +79,29 @@ func _get_issues() -> PackedStringArray:
 
 
 func _get_node_data() -> Dictionary:
-	var data: Dictionary = {}
-	data["node_type"] = node_type
-	data["position"] = position_offset
-	data["input_connections"] = {
+	var input_connections: Dictionary = {
 		"value": get_uuid_and_port_connected_to(PortMode.INPUT, 0)}
-	data["output_connections"] = {
+	var output_connections: Dictionary = {
 		"output": get_uuid_and_port_connected_to(PortMode.OUTPUT, 0)}
-	data["fallback_value"] = get_active_data_type()
-	return data
+	var metadata: Dictionary = {"fallback_value": get_active_data_type()}
+	
+	return _build_node_data(metadata, output_connections, input_connections)
 
 
 func _set_node_data(data: Dictionary) -> void:
-	position_offset = data["position"]
+	var data_name = data.get("name")
+	var metadata = data.get("metadata")
+	if typeof(data_name) == TYPE_STRING_NAME:
+		name = data_name
+	
+	if typeof(metadata) != TYPE_DICTIONARY:
+		return
+	
+	var pos = metadata.get("position")
+	if typeof(pos) == TYPE_VECTOR2:
+		position_offset = pos
+	
+	var fallback_value = metadata.get("fallback_value")
 	match typeof(data["fallback_value"]):
 		TYPE_INT:
 			get_field(&"fallback").get_child(0).get_child(1).value = data["fallback_value"]
@@ -102,6 +111,8 @@ func _set_node_data(data: Dictionary) -> void:
 			get_field(&"fallback").get_child(1).button_pressed = data["fallback_value"]
 		TYPE_STRING:
 			get_field(&"fallback").get_child(2).text = data["fallback_value"]
+		_:
+			return
 
 
 func _on_output_connected(output: int, to_node: DiscourseGraphNode, _to_port: int) -> void:

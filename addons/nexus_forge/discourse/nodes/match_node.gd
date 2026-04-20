@@ -6,7 +6,6 @@ var current_mode: int = TYPE_INT
 
 func _post_init() -> void:
 	name = &"Match"
-	custom_id = "Match"
 	title = "Match"
 	size = Vector2(240.0, 204.0)
 	parent_mode = PortMode.INPUT
@@ -121,7 +120,6 @@ func _ready() -> void:
 
 
 func _get_node_data() -> Dictionary:
-	var data: Dictionary = {}
 	var cases: Array[Dictionary] = []
 	
 	for case in range(1, get_child_count() - 2):
@@ -139,16 +137,16 @@ func _get_node_data() -> Dictionary:
 				case_data["value"] = control.text
 		cases.append(case_data)
 	
-	data["node_type"] = node_type
-	data["position"] = position_offset
-	data["output_connections"] = {
-		"default": get_uuid_and_port_connected_to(PortMode.OUTPUT, 0)}
-	data["input_connections"] = {
-		"match_value_source": get_uuid_and_port_connected_to(PortMode.INPUT, 1)}
-	data["match_data_type"] = current_mode
-	data["cases"] = cases
+	var metadata: Dictionary = {
+		"match_data_type": current_mode,
+		"cases": cases}
 	
-	return data
+	var output_connections: Dictionary = {
+		"default": get_uuid_and_port_connected_to(PortMode.OUTPUT, 0)}
+	var input_connections: Dictionary = {
+		"match_value_source": get_uuid_and_port_connected_to(PortMode.INPUT, 1)}
+	
+	return _build_node_data(metadata, output_connections, input_connections)
 
 
 func set_current_mode(mode: int) -> void:
@@ -196,22 +194,41 @@ func _on_match_text_changed(_text: String) -> void:
 
 
 func _set_node_data(data: Dictionary) -> void:
+	var data_name = data.get("name")
+	var metadata = data.get("metadata")
+	if typeof(data_name) == TYPE_STRING_NAME:
+		name = data_name
+	
+	if typeof(metadata) != TYPE_DICTIONARY:
+		return
+	
+	var pos = metadata.get("position")
+	if typeof(pos) == TYPE_VECTOR2:
+		position_offset = pos
+	
+	var cases = metadata.get("cases")
+	if typeof(cases) != TYPE_ARRAY:
+		return
+	
 	var case_count: int = data["cases"].size()
-	position_offset = data["position"]
 	get_mapped_field(&"cases", &"case_count").set_value_no_signal(case_count)
 	set_match_case_count(case_count)
 	
-	set_current_mode(data["match_data_type"])
+	var mode = metadata.get("match_data_type")
+	if typeof(mode) == TYPE_INT:
+		set_current_mode(mode)
 	
 	for match_option in range(1, case_count + 1):
 		var case_id: StringName = &"case_" + StringName(str(int(match_option)))
 		var field: Control = get_field(case_id)
-		match current_mode:
-			TYPE_STRING:
-				field.get_child(1).text = data["cases"][match_option - 1]["value"]
-			_:
-				field.get_child(0).value = data["cases"][match_option - 1]["value"]
-	position_offset = data["position"]
+		var val = cases[match_option - 1].get("value")
+		var val_type = typeof(val)
+		if current_mode == TYPE_STRING:
+			if val_type == TYPE_STRING:
+				field.get_child(1).text = val
+		else:
+			if val_type == TYPE_FLOAT or val_type == TYPE_INT:
+				field.get_child(0).value = val
 
 
 func _get_issues() -> PackedStringArray:

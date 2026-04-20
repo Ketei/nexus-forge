@@ -6,7 +6,6 @@ var available_signals: Dictionary = {}
 
 func _post_init() -> void:
 	name = &"Signal"
-	custom_id = "Signal"
 	title = "Signal"
 	node_type = DialogueNodeType.SIGNAL
 	parent_mode = PortMode.OUTPUT
@@ -64,27 +63,42 @@ func _get_issues() -> PackedStringArray:
 
 
 func _get_node_data() -> Dictionary:
-	var data: Dictionary = {}
 	var arguments: Array[Dictionary] = []
 	for arg_idx in range(get_child_count() - 1):
 		arguments.append(get_uuid_and_port_connected_to(PortMode.INPUT, arg_idx))
 	
-	data["node_type"] = node_type
-	data["position"] = position_offset
-	data["output_connectons"] = {
+	var output_connectons: Dictionary = {
 		"signaler": get_uuid_and_port_connected_to(PortMode.OUTPUT, 0)}
-	data["signal"] = get_current_signal()
-	data["arguments"] = arguments
-	return data
+	var metadata: Dictionary = {
+		"signal": get_current_signal(),
+		"arguments": arguments}
+	
+	return _build_node_data(metadata, output_connectons)
 
 
 func _set_node_data(data: Dictionary) -> void:
+	var data_name = data.get("name")
+	var metadata = data.get("metadata")
+	if typeof(data_name) == TYPE_STRING_NAME:
+		name = data_name
+	
+	if typeof(metadata) != TYPE_DICTIONARY:
+		return
+	
+	var pos = metadata.get("position")
+	if typeof(pos) == TYPE_VECTOR2:
+		position_offset = pos
+	
+	var signal_id = metadata.get("signal")
+	if typeof(signal_id) != TYPE_STRING:
+		return
+	
 	var sign_btn: OptionButton = get_field(&"signals")
-	position_offset = data["position"]
+
 	for idx in range(sign_btn.item_count):
-		if sign_btn.get_item_metadata(idx) == data["signal"]:
+		if sign_btn.get_item_metadata(idx) == signal_id:
 			sign_btn.select(idx)
-			load_signal(data["signal"])
+			load_signal(signal_id)
 			break
 
 

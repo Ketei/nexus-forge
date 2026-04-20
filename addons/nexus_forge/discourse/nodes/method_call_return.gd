@@ -6,7 +6,6 @@ var available_methods: Dictionary = {}
 
 func _post_init() -> void:
 	name = &"CallWithReturn"
-	custom_id = "CallWithReturn"
 	title = "Call Method (Return)"
 	graph_icon = get_theme_icon("MemberMethod", "EditorIcons")
 	node_type = DialogueNodeType.CALLABLE_RETURN
@@ -71,23 +70,39 @@ func _get_node_data() -> Dictionary:
 		inputs.append(get_uuid_and_port_connected_to(
 							PortMode.INPUT,
 							arg_idx))
-	data["output_connections"] = {
+	var output_connections: Dictionary = {
 		"caller": get_uuid_and_port_connected_to(PortMode.OUTPUT, 0)}
-	data["node_type"] = node_type
-	data["position"] = position_offset
-	data["method"] = get_current_method()
-	data["arguments"] = inputs
-	return data
+	var metadata: Dictionary = {
+		"method": get_current_method(),
+		"arguments": inputs}
+	
+	return _build_node_data(metadata, output_connections)
 
 
 func _set_node_data(data: Dictionary) -> void:
+	var data_name = data.get("name")
+	var metadata = data.get("metadata")
+	if typeof(data_name) == TYPE_STRING_NAME:
+		name = data_name
+	
+	if typeof(metadata) != TYPE_DICTIONARY:
+		return
+	
+	var pos = metadata.get("position")
+	if typeof(pos) == TYPE_VECTOR2:
+		position_offset = pos
+	
+	var method = metadata.get("method")
+	if typeof(method) != TYPE_STRING:
+		return
+	
 	var method_opt_btn: OptionButton = get_field(&"methods")
-	position_offset = data["position"]
 	for idx in range(method_opt_btn.item_count):
-		if method_opt_btn.get_item_metadata(idx) == data["method"]:
-			method_opt_btn.select(idx)
-			load_method(data["method"])
-			break
+		if method_opt_btn.get_item_metadata(idx) != method:
+			continue
+		method_opt_btn.select(idx)
+		load_method(method)
+		break
 
 
 func _on_method_selected(idx: int) -> void:

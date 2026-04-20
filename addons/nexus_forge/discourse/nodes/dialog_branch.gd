@@ -3,7 +3,6 @@ extends DiscourseGraphNode
 
 func _post_init() -> void:
 	name = &"DialogBranch"
-	custom_id = "DialogBranch"
 	parent_mode = PortMode.INPUT
 	parent_port = 0
 	node_type = DialogueNodeType.BRANCH
@@ -73,12 +72,9 @@ func _get_issues() -> PackedStringArray:
 
 
 func _get_node_data() -> Dictionary:
-	var data: Dictionary = {}
-	data["node_type"] = node_type
-	data["position"] = position_offset
-	data["input_connections"] = {
+	var input_connections: Dictionary = {
 		"path_direction": get_uuid_and_port_connected_to(PortMode.INPUT, 1)}
-	data["output_connections"] = {
+	var output_connections: Dictionary = {
 		"next_node_true": get_uuid_and_port_connected_to(PortMode.OUTPUT, 0),
 		"next_node_false": get_uuid_and_port_connected_to(PortMode.OUTPUT, 1)}
-	return data
+	return _build_node_data({}, output_connections, input_connections)

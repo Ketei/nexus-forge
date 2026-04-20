@@ -6,7 +6,6 @@ var free_size: Vector2 = Vector2(400.0, 300.0)
 
 func _post_init() -> void:
 	name = &"Dialog"
-	custom_id = "Dialog"
 	title = "Dialog"
 	node_type = DialogueNodeType.DIALOG
 	parent_mode = PortMode.INPUT
@@ -138,49 +137,53 @@ func _on_input_disconnected(input_port: int, _from_node: DiscourseGraphNode, _fr
 
 
 func _get_node_data() -> Dictionary:
-	var data: Dictionary = {}
-	data["node_type"] = node_type
-	data["position"] = position_offset
-	data["size"] = size
-	data["character_id"] = get_mapped_field(&"character_id", &"character_line").text
-	data["dialog_text"] = get_field(&"dialog_text").text.strip_edges()
-	data["persist"] = get_mapped_field(&"flags", &"persist_checkbox").button_pressed
-	data["input_connections"] = {
+	var input_connections: Dictionary = {
 		"character_settings": get_uuid_and_port_connected_to(PortMode.INPUT, 1),
 		"dialog_settings": get_uuid_and_port_connected_to(PortMode.INPUT, 2),
 		"dialog_text_source": get_uuid_and_port_connected_to(PortMode.INPUT, 3)}
-	data["output_connections"] = {
+	var output_connections: Dictionary = {
 		"next_node": get_uuid_and_port_connected_to(PortMode.OUTPUT, 0)}
 	
-	return data
+	var metadata: Dictionary = {
+		"character_id": get_mapped_field(&"character_id", &"character_line").text,
+		"persist": get_mapped_field(&"flags", &"persist_checkbox").button_pressed,
+		"size": size,
+		"dialog_text": get_field(&"dialog_text").text.strip_edges()}
+	
+	return _build_node_data(metadata, output_connections, input_connections)
 
 
 func _set_node_data(data: Dictionary) -> void:
-	get_mapped_field(&"character_id", &"character_line").text = data["character_id"]
-	get_field(&"dialog_text").text = data["dialog_text"]
-	position_offset = data["position"]
-	size = data["size"]
-	get_mapped_field(&"flags", &"persist_checkbox").button_pressed = data["persist"]
+	var _name = data.get("name")
+	if typeof(_name) == TYPE_STRING_NAME:
+		name = _name
+	
+	var _meta = data.get("metadata", {})
+	var metadata: Dictionary = _meta if typeof(_meta) == TYPE_DICTIONARY else {}
+	
+	var _size = metadata.get("size")
+	if typeof(_size) == TYPE_VECTOR2:
+		size = _size
+	
+	var _pos_offset = metadata.get("position")
+	if typeof(_pos_offset) == TYPE_VECTOR2:
+		position_offset = _pos_offset
+	
+	var char_id = metadata.get("character_id")
+	if typeof(char_id) == TYPE_STRING:
+		get_mapped_field(&"character_id", &"character_line").text = char_id
+	
+	var dialog = metadata.get("dialog_text")
+	if typeof(dialog) == TYPE_STRING:
+		get_field(&"dialog_text").text = dialog
+	
+	var persist = metadata.get("persist")
+	if typeof(persist) == TYPE_BOOL:
+		get_mapped_field(&"flags", &"persist_checkbox").button_pressed = persist
 
 
 func _on_text_changed(_text: String = "") -> void:
 	node_updated.emit()
-
-
-#func _clone() -> DiscourseGraphNode:
-	#var titlebox: HBoxContainer = get_titlebar_hbox().get_child(-1)
-	#var new_node: DiscourseGraphNode = get_script().new(
-			#"",
-			#theme_type_variation,
-			#titlebox.has_node(^"DuplicateBtn"),
-			#titlebox.has_node(^"CloseBtn"),
-			#titlebox.has_node(^"EditIdBtn"),
-			#titlebox.has_node(^"LocalizeBtn"))
-	#var data: Dictionary = _get_node_data()
-	#data["dialog_text"] = get_field(&"dialog_text").text
-	#new_node._set_node_data(data)
-	#
-	#return new_node
 
 
 func set_dialog_text(text: String) -> void:

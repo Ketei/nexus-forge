@@ -7,7 +7,7 @@ extends DialogParser
 ## For the editor parser see [EditorDialogParser].[br]
 
 ## The resource containing the localizable data of a dialog.
-var localization: DiscourseDialogLocale = null 
+#var localization: DiscourseDialogLocale = null 
 # Example of how data will be structured in the dialog resource (Release).
 #const store = {
 		#NodeTypes.DIALOG: {
@@ -371,7 +371,7 @@ func _dialog_resource_set(new_resource: DiscourseDialog) -> void:
 	_dialog_id_map.clear()
 	if new_resource != null:
 		_dialog_id_map.assign(new_resource.id_map)
-		_load_locale(language, region)
+		#_load_locale(language, region)
 	else:
 		localization = null
 
@@ -397,15 +397,15 @@ func _load_locale(new_language: String, new_region: String) -> void:
 
 
 func _parse_dialog(dialog_id: String, dialog: String) -> String:
-	var DUUID: String = dialog_id + "/" + language + "_" + region
+	var DUUID: String = dialog_id# + "/" + language + "_" + region
 	# (UUID)/en_US
 	if _dialog_resource.parsed_dialog_cache.is_in_cache(DUUID):
 		var cached_data: ParsedDialog = _dialog_resource.parsed_dialog_cache.get_cache(DUUID)
 		return cached_data.get_dialog()
 	
 	var parsed: ParsedDialog = ParsedDialog.new()
-	parsed.language = language
-	parsed.region = region
+	#parsed.language = language
+	#parsed.region = region
 	parsed.dialog = dialog
 	
 	var functions_processed: PackedStringArray = []

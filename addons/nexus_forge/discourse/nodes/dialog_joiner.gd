@@ -6,8 +6,7 @@ var _highest_port_connected: int = -1
 
 func _post_init() -> void:
 	name = &"DialogMerge"
-	custom_id = "PathMerge"
-	title = "Path Merge"
+	title = "Dialog Merge"
 	size = Vector2(200.0, 79.0)
 	node_type = DialogueNodeType.DIALOG_MERGE
 	parent_mode = PortMode.INPUT
@@ -68,19 +67,30 @@ func _on_input_disconnected(input_port: int, _from_node: DiscourseGraphNode, _fr
 
 
 func _get_node_data() -> Dictionary:
-	var data: Dictionary = {}
-	data["node_type"] = node_type
-	data["position"] = position_offset
-	data["port_count"] = get_child_count()
-	data["output_connections"] = {
-		"next_node": get_uuid_and_port_connected_to(PortMode.OUTPUT, 0)
-	}
-	return data
+	var metadata: Dictionary = {
+		"port_count": get_child_count()}
+	var output_connections: Dictionary = {
+		"next_node": get_uuid_and_port_connected_to(PortMode.OUTPUT, 0)}
+	
+	return _build_node_data(metadata, output_connections)
 
 
 func _set_node_data(data: Dictionary) -> void:
-	position_offset = data["position"]
-	set_input_port_count(data["port_count"])
+	var data_name = data.get("name")
+	var metadata = data.get("metadata")
+	if typeof(data_name) == TYPE_STRING_NAME:
+		name = data_name
+	
+	if typeof(metadata) != TYPE_DICTIONARY:
+		return
+	
+	var pos = metadata.get("position")
+	if typeof(pos) == TYPE_VECTOR2:
+		position_offset = pos
+	
+	var port_count = metadata.get("port_count")
+	if typeof(port_count) == TYPE_INT:
+		set_input_port_count(port_count)
 
 
 func disconnect_all() -> void:

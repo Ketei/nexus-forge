@@ -16,37 +16,6 @@ enum PortMode {
 	OUTPUT, ## The node's parent is an output.
 }
 
-#enum DialogueNodeType {
-	#ENTRY = 0, ## The entry for a conversation.
-	#DIALOG = 1, ## A generic dialog node
-	#OPTIONS = 2, ## A collection of dialog options.
-	#BRANCH = 3, ## A dialog split via if/else comparison.
-	#CONDITION_SELECT = 4, ## An if-else statement that outputs a variable.
-	#COMPARATION = 5, ## A direct comparation between 2 values.
-	#EVENT = 6, ## Triggers a method call, a variable set or a signal emit.
-	#MATCH = 7, ## Compares and selects the matching, if none match, uses default.
-	#PAUSE = 8, ## Pauses dialog execution until told to continue
-	#RANDOM = 9, ## Selects a random dialog. Weights can be passed around.
-	#TYPE_GUARD = 10, ## Verifies outputs.
-	#VALUE = 11, ## Represents specific data type
-	#SIGNAL = 12, ## Represents a registered signal
-	#CALLABLE = 13, ## Represents a method that can be called
-	#CALLABLE_RETURN = 14, ## Represents a method that can be called
-	#VARIABLE_GET = 15,
-	#ANCHOR_POINTER = 16, ## A pointer that directs to a SHORTCUT_OUT.
-	#ANCHOR = 17, ## A node for SHORTCUT_IN to point to.
-	#DIALOG_END = 18,
-	#DIALOG_MERGE = 19,
-	#COMMENT = 20, ## A node that exists to explain something.
-	#SETTINGS_CHARACTER = 21,
-	#SETTINGS_DIALOG = 22,
-	#SETTINGS_OPTION = 23,
-	#RANDOM_VALUE = 24,
-	#RESOURCE = 25,
-	#DATA_EVENT = 26,
-	#LOCALIZED_TEXT = 27,
-#}
-
 enum SlotConnectionType {
 	DIALOG, ## Output Dialog
 	CALL,
@@ -89,9 +58,7 @@ const LOCALIZED_COLOR: Color = Color.LIME_GREEN
 var node_type: DialogueNodeType = DialogueNodeType.DIALOG
 
 var _uuid: StringName = &""
-#var _subtitle_label: Label = null # Remove
 var _uses_localization: bool = false
-var custom_id: String = ""
 var parent_mode: PortMode = PortMode.INPUT
 var parent_port: int = 0
 var graph_icon: Texture2D = null:
@@ -100,23 +67,20 @@ var graph_icon: Texture2D = null:
 		if _icon_rect != null:
 			_icon_rect.texture = new_icon
 			_icon_rect.visible = new_icon != null
+
 var _icon_rect: TextureRect = null
-#var _node_map: Dictionary[StringName, Dictionary] = {}
 var _input_nodes: Array[Dictionary] = []
 var _output_nodes: Array[Dictionary] = []
 
 
 func _init(uuid: StringName = &"", theme_variant: StringName = &"", with_duplicate: bool = true, with_close: bool = true, localization: bool = false) -> void:
 	_uuid = StringName(UUID.generate_new()) if uuid.is_empty() else uuid
-	#flow_icon = 
 	var _hbox: HBoxContainer = get_titlebar_hbox()
 	var title_label: Label = _hbox.get_child(0)
 	title_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	title_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	title_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_hbox.custom_minimum_size.y = 26
-	#title_label.custom_minimum_size.y = 32
-	#title_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	
 	_icon_rect = TextureRect.new()
 	_icon_rect.name = &"GraphIcon"
@@ -128,7 +92,7 @@ func _init(uuid: StringName = &"", theme_variant: StringName = &"", with_duplica
 	_icon_rect.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	_hbox.add_child(_icon_rect)
 	_hbox.move_child(_icon_rect, 0)
-	#_hbox.add_theme_constant_override(&"separation", 20)
+	
 	if graph_icon != null:
 		_icon_rect.texture = graph_icon
 	else:
@@ -147,41 +111,39 @@ func _init(uuid: StringName = &"", theme_variant: StringName = &"", with_duplica
 	_button_box.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	_hbox.add_child(_button_box)
 	
-	if localization:
-		var localize_btn: Button = Button.new()
-		localize_btn.name = &"LocalizeBtn"
-		localize_btn.flat = true
-		localize_btn.toggle_mode = true
-		localize_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		localize_btn.custom_minimum_size = Vector2(22.0, 22.0)
-		localize_btn.tooltip_text = "Use Localization"
-		_button_box.add_child(localize_btn)
-		if with_duplicate or with_close:
-			_button_box.add_spacer(false)
-		_ready_localize_icon(localize_btn)
-		localize_btn.toggled.connect(_on_localization_toggled.bind(localize_btn))
+	var localize_btn: Button = Button.new()
+	localize_btn.visible = localization
+	localize_btn.name = &"LocalizeBtn"
+	localize_btn.flat = true
+	localize_btn.toggle_mode = true
+	localize_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	localize_btn.custom_minimum_size = Vector2(22.0, 22.0)
+	localize_btn.tooltip_text = "Use Localization"
+	_button_box.add_child(localize_btn)
+	_ready_localize_icon(localize_btn)
+	localize_btn.toggled.connect(_on_localization_toggled)
 	
-	if with_duplicate:
-		var dup_btn := Button.new()
-		dup_btn.name = &"DuplicateBtn"
-		dup_btn.flat = true
-		dup_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		dup_btn.custom_minimum_size = Vector2(22, 22)
-		dup_btn.tooltip_text = "Duplicate node"
-		_button_box.add_child(dup_btn)
-		_ready_duplicate_icon(dup_btn)
-		dup_btn.pressed.connect(duplicate_requested.emit.bind(self))
+	var dup_btn := Button.new()
+	dup_btn.visible = with_duplicate
+	dup_btn.name = &"DuplicateBtn"
+	dup_btn.flat = true
+	dup_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	dup_btn.custom_minimum_size = Vector2(22, 22)
+	dup_btn.tooltip_text = "Duplicate node"
+	_button_box.add_child(dup_btn)
+	_ready_duplicate_icon(dup_btn)
+	dup_btn.pressed.connect(duplicate_requested.emit.bind(self))
 	
-	if with_close:
-		var close_btn := Button.new()
-		close_btn.name = &"CloseBtn"
-		close_btn.flat = true
-		close_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		close_btn.custom_minimum_size = Vector2(22, 22)
-		close_btn.tooltip_text = "Remove node"
-		_button_box.add_child(close_btn)
-		_ready_close_icon(close_btn)
-		close_btn.pressed.connect(close_requested.emit.bind(self))
+	var close_btn := Button.new()
+	close_btn.visible = with_close
+	close_btn.name = &"CloseBtn"
+	close_btn.flat = true
+	close_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	close_btn.custom_minimum_size = Vector2(22, 22)
+	close_btn.tooltip_text = "Remove node"
+	_button_box.add_child(close_btn)
+	_ready_close_icon(close_btn)
+	close_btn.pressed.connect(close_requested.emit.bind(self))
 	
 	_post_init()
 
@@ -196,6 +158,43 @@ func _ready_duplicate_icon(dup_btn: Button) -> void:
 	if not is_node_ready():
 		await ready
 	dup_btn.icon = get_theme_icon("Duplicate", "EditorIcons")
+
+
+func _get_localize_button() -> Button:
+	var hbox: HBoxContainer = get_titlebar_hbox()
+	var button_box: Control = hbox.get_node_or_null(^"GraphButtonsNode")
+	
+	if button_box == null:
+		return null
+	
+	var btn: Control = button_box.get_node_or_null(^"LocalizeBtn")
+	
+	return btn if btn is Button else null
+
+
+func _get_duplicate_button() -> Button:
+	var hbox: HBoxContainer = get_titlebar_hbox()
+	var button_box: Control = hbox.get_node_or_null(^"GraphButtonsNode")
+	
+	if button_box == null:
+		return null
+	
+	var btn: Control = button_box.get_node_or_null(^"DuplicateBtn")
+	
+	return btn if btn is Button else null
+
+
+func _get_close_button() -> Button:
+	var hbox: HBoxContainer = get_titlebar_hbox()
+	var button_box: Control = hbox.get_node_or_null(^"GraphButtonsNode")
+	
+	if button_box == null:
+		return null
+	
+	var btn: Control = button_box.get_node_or_null(^"CloseBtn")
+	
+	return btn if btn is Button else null
+
 
 
 func _ready_close_icon(close_btn: Button) -> void:
@@ -234,34 +233,43 @@ func _get_issues() -> PackedStringArray:
 	return issues
 
 
-## Use to get data from the node
-func _get_node_data() -> Dictionary:
-	var data: Dictionary = {}
-	data["node_type"] = node_type
-	data["position"] = position_offset
+func _build_node_data(metadata: Dictionary = {}, output_connections: Dictionary = {}, input_connections: Dictionary = {}) -> Dictionary:
+	var meta: Dictionary = {"position": position_offset}
+	var data: Dictionary = {"name": name, "type": node_type, "metadata": meta}
+	
+	if not metadata.is_empty():
+		meta.merge(metadata, true)
+	if not output_connections.is_empty():
+		data.set("output_connections", output_connections)
+	if not input_connections.is_empty():
+		data.set("input_connections", input_connections)
+	
 	return data
+
+
+func _get_node_data() -> Dictionary:
+	return _build_node_data()
 
 
 ## Use to set data on the node
 func _set_node_data(data: Dictionary) -> void:
-	position_offset = data["position"]
+	var data_name = data.get("name")
+	var metadata = data.get("metadata")
+	if typeof(data_name) == TYPE_STRING_NAME:
+		name = data_name
+	
+	if typeof(metadata) != TYPE_DICTIONARY:
+		return
+	
+	var pos = metadata.get("position")
+	if typeof(pos) == TYPE_VECTOR2:
+		position_offset = pos
 
 
-#func _clone() -> DiscourseGraphNode:
-	#var titlebox: HBoxContainer = get_titlebar_hbox().get_child(-1)
-	#var new_node: DiscourseGraphNode = get_script().new(
-			#"",
-			#theme_type_variation,
-			#titlebox.has_node(^"DuplicateBtn"),
-			#titlebox.has_node(^"CloseBtn"),
-			#titlebox.has_node(^"EditIdBtn"),
-			#titlebox.has_node(^"LocalizeBtn"))
-	#new_node._set_node_data(_get_node_data())
-	#
-	#return new_node
-
-
-func _on_localization_toggled(toggle: bool, node: Button) -> void:
+func _on_localization_toggled(toggle: bool) -> void:
+	var node: Button = _get_localize_button()
+	if node == null:
+		return
 	node.disabled = true
 	node.modulate = LOCALIZED_COLOR if toggle else Color.WHITE
 	_uses_localization = toggle
@@ -271,38 +279,26 @@ func _on_localization_toggled(toggle: bool, node: Button) -> void:
 
 func set_node_localized(is_localized: bool) -> void:
 	_uses_localization = is_localized
-	if not get_titlebar_hbox().has_node(^"GraphButtonsNode"):
+	var localization_button: Button = _get_localize_button()
+	if localization_button == null:
 		return
-	var titlebox: HBoxContainer = get_titlebar_hbox().get_child(-1)
-	var btn: Button = titlebox.get_node_or_null(^"LocalizeBtn") if titlebox.has_node(^"LocalizeBtn") else null
-	if btn != null:
-		btn.set_pressed_no_signal(is_localized)
-		btn.disabled = is_localized
-		btn.modulate = LOCALIZED_COLOR if is_localized else Color.WHITE
+	localization_button.set_pressed_no_signal(is_localized)
+	localization_button.disabled = is_localized
+	localization_button.modulate = LOCALIZED_COLOR if is_localized else Color.WHITE
 
 
 func set_localization_enabled(enable: bool) -> void:
-	var titlebox: HBoxContainer = get_titlebar_hbox().get_child(-1)
-	var btn: Button = titlebox.get_node_or_null(^"LocalizeBtn") if titlebox.has_node(^"LocalizeBtn") else null
-	if enable and btn == null:
-		btn = Button.new()
-		btn.name = &"LocalizeBtn"
-		btn.flat = true
-		btn.toggle_mode = true
-		btn.icon = get_theme_icon("Translation", "EditorIcons")
-		btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		btn.custom_minimum_size = Vector2(22, 22)
-		btn.tooltip_text = "Use Localization"
-		if not titlebox.has_node(^"EditIdBtn"):
-			titlebox.add_spacer(true)
-		titlebox.add_child(btn)
-		titlebox.move_child(btn, 0)
-		btn.toggled.connect(_on_localization_toggled.bind(btn))
-	elif not enable and btn != null:
+	var btn: Button = _get_localize_button()
+	if btn == null:
+		return
+	
+	btn.visible = enable
+	
+	if enable:
+		btn.toggled.connect(_on_localization_toggled)
+	else:
 		if btn.toggled.is_connected(_on_localization_toggled):
 			btn.toggled.disconnect(_on_localization_toggled)
-		titlebox.remove_child(btn)
-		btn.queue_free()
 
 
 func set_input_connection_icon(field_id: StringName, icon: Texture2D) -> void:
@@ -318,31 +314,29 @@ func set_input_connection_icon(field_id: StringName, icon: Texture2D) -> void:
 
 
 func set_output_connection_icon(field_id: StringName, icon: Texture2D) -> void:
-	if field_id.is_empty():
+	var field: Control = get_field(field_id)
+	
+	if field == null:
 		return
 	
-	for node in get_children():
-		if node.get_meta(&"field_id", &"") == field_id:
-			var txrct: TextureRect = node.get_child(2)
-			txrct.texture = icon
-			txrct.visible = icon != null
-			break
+	var txrct: TextureRect = field.get_child(2)
+	txrct.texture = icon
+	txrct.visible = icon != null
 
 
 func set_field_connection_icons(field_id: StringName, input_icon: Texture2D, output_icon: Texture2D) -> void:
-	if field_id.is_empty():
+	var field: Control = get_field(field_id)
+	
+	if field == null:
 		return
 	
-	for node in get_children():
-		if node.get_meta(&"field_id", &"") == field_id:
-			var input: TextureRect = node.get_child(0)
-			var output: TextureRect = node.get_child(2)
-			input.texture = input_icon
-			output.texture = output_icon
-			
-			input.visible = input_icon != null
-			output.visible = output_icon != null
-			break
+	var input: TextureRect = field.get_child(0)
+	var output: TextureRect = field.get_child(2)
+	input.texture = input_icon
+	output.texture = output_icon
+
+	input.visible = input_icon != null
+	output.visible = output_icon != null
 
 
 ## Call when an input was connected/disconnected from a node.
@@ -352,7 +346,6 @@ func set_input_connection(input: int, from_output: DiscourseGraphNode, from_port
 		
 	if is_connection:
 		if can_input_multiple(input):
-			#_input_nodes[input]["connections"].append(from_output)
 			_input_nodes[input]["connections"].append({
 				"target_node": from_output,
 				"target_port": from_port})
@@ -409,15 +402,15 @@ func set_output_connection(output: int, to_input: DiscourseGraphNode, to_port: i
 
 
 func set_input_allow_multiple(input_idx: int, allow_multiple_inputs: bool) -> void:
-	_input_nodes[input_idx]["multicon"] = allow_multiple_inputs
+	_input_nodes[input_idx]["multi_connection"] = allow_multiple_inputs
 
 
 func set_output_allow_multiple(input_idx: int, allow_multiple_inputs: bool) -> void:
-	_output_nodes[input_idx]["multicon"] = allow_multiple_inputs
+	_output_nodes[input_idx]["multi_connection"] = allow_multiple_inputs
 
 
 func can_input_multiple(input_idx: int) -> bool:
-	return _input_nodes[input_idx]["multicon"]
+	return _input_nodes[input_idx]["multi_connection"]
 
 
 func is_port_available(port_type: PortMode, port: int) -> bool:
@@ -436,15 +429,11 @@ func is_port_available(port_type: PortMode, port: int) -> bool:
 
 
 func can_output_multiple(output_idx: int) -> bool:
-	return _output_nodes[output_idx]["multicon"]
+	return _output_nodes[output_idx]["multi_connection"]
 
 
 func get_input_connection_count(input_port: int) -> int:
 	return _input_nodes[input_port]["connections"].size()
-
-
-#func get_node_connected_to_input_port(input_idx: int, connection_idx: int = 0) -> DiscourseGraphNode:
-	#return _input_nodes[input_idx]["connections"][connection_idx]["target_node"]
 
 
 func get_node_connected_to_port(port_type: PortMode, port: int, connection_index: int = 0) -> DiscourseGraphNode:
@@ -467,14 +456,16 @@ func get_target_port_connected_to_port(port_type: PortMode, port:int, connection
 
 func has_any_input(input_idx: int) -> bool:
 	var input_count: int = _input_nodes.size()
-	if input_count == 0 or input_idx < 0 or input_count <= input_idx:
+	if input_count <= 0 or input_idx < 0 or input_count <= input_idx:
 		return false
 	return not _input_nodes[input_idx]["connections"].is_empty()
 
 
 func has_input_on(input_port: int, input_idx: int = 0) -> bool:
+	if input_port < 0 or input_idx < 0 or _input_nodes.size() - 1 < input_port:
+		return false
 	var input_size: int = _input_nodes[input_port]["connections"].size()
-	return 0 <= input_idx and 0 < input_size and input_idx < input_size
+	return 0 < input_size and input_idx < input_size
 
 
 func get_target_node_uuid(port_mode: PortMode, port: int, connection_index: int = 0) -> String:
@@ -500,10 +491,6 @@ func is_connected_to_input(input_idx: int, node: DiscourseGraphNode) -> bool:
 		if item["target_node"] == node:
 			return true
 	return false
-
-
-#func get_node_connected_to_output_port(output_idx: int, connection_idx: int = 0) -> DiscourseGraphNode:
-	#return _output_nodes[output_idx]["connections"][connection_idx]["target_node"]
 
 
 func has_any_output(output_idx: int) -> bool:
@@ -644,23 +631,10 @@ func has_recursion(_caller: DiscourseGraphNode = null) -> bool:
 			return false
 
 
-## Add a new field to the node. [param field] must not be in the tree for it to
-## be added. Returns the index of the new slot added. -1 if the field couldn't
-## be added. Left & rigth slot type must be equal or greater than 0 to be enabled.
-func add_field(field_id: StringName, field_node: Control, expand: bool = false, left_slot_type: int = -1, right_slot_type: int = -1) -> int:
-	if field_node.is_inside_tree() or field_id.is_empty() or has_field(field_id):
-		return -1
-	
-	var new_index: int = get_child_count()
-	
+func _create_field(main_field: Control) -> HBoxContainer:
 	var field_box: HBoxContainer = HBoxContainer.new()
 	var left_rect: TextureRect = TextureRect.new()
 	var right_rect: TextureRect = TextureRect.new()
-	var input_slot: int = -1
-	var output_slot: int = -1
-	
-	field_box.set_meta(&"field_id", field_id)
-	field_box.name = field_id
 	
 	left_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	left_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
@@ -679,36 +653,46 @@ func add_field(field_id: StringName, field_node: Control, expand: bool = false, 
 	left_rect.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	right_rect.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	
-	#left_rect.texture = left_icon
-	#right_rect.texture = right_icon
-	#
-	#left_rect.visible = left_icon != null
-	#right_rect.visible = right_icon != null
+	add_child(field_box)
+	field_box.add_child(left_rect)
+	field_box.add_child(main_field)
+	field_box.add_child(right_rect)
+	
+	return field_box
+
+
+## Add a new field to the node. [param field] must not be in the tree for it to
+## be added. Returns the index of the new slot added. -1 if the field couldn't
+## be added. Left & rigth slot type must be equal or greater than 0 to be enabled.
+func add_field(field_id: StringName, field_node: Control, expand: bool = false, left_slot_type: int = -1, right_slot_type: int = -1) -> int:
+	if field_node.is_inside_tree() or field_id.is_empty() or has_field(field_id):
+		return -1
+	
+	var new_index: int = get_child_count()
+	var field_box: HBoxContainer = _create_field(field_node)
+	
+	# Getting the port count directly is bugged, let's grab data instead.
+	var input_slot: int = -1 if left_slot_type < 0 else _input_nodes.size()
+	var output_slot: int = -1 if right_slot_type < 0 else _output_nodes.size()
+	
+	field_box.name = field_id
 	
 	if expand:
 		field_box.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	
-	add_child(field_box)
-	field_box.add_child(left_rect)
-	field_box.add_child(field_node)
-	field_box.add_child(right_rect)
-	
 	if 0 <= left_slot_type:
 		set_slot_enabled_left(new_index, true)
 		set_slot_type_left(new_index, left_slot_type)
-		input_slot = _input_nodes.size() # Graphs are so bugged, let's use this
 		_input_nodes.append({
-			"multicon": false,
+			"multi_connection": false,
 			"connections": Array([], TYPE_DICTIONARY, &"", null)})
 	
 	if 0 <= right_slot_type:
 		set_slot_enabled_right(new_index, true)
 		set_slot_type_right(new_index, right_slot_type)
-		output_slot = _output_nodes.size() # Graphs are so bugged, let's use this
 		_output_nodes.append({
-					"multicon": false,
-					"connections": Array([], TYPE_DICTIONARY, &"", null)
-		})
+					"multi_connection": false,
+					"connections": Array([], TYPE_DICTIONARY, &"", null)})
 	
 	field_box.set_meta(&"input_slot", input_slot)
 	field_box.set_meta(&"output_slot", output_slot)
@@ -736,28 +720,35 @@ func get_mapped_field(field_id: StringName, identifier: StringName) -> Control:
 func set_field_visible(field_id: StringName, field_visible: bool) -> void:
 	if field_id.is_empty():
 		return
-	for child in get_children():
-		if child.get_meta(&"field_id", &"") == field_id:
-			if not field_visible:
-				var slot: int = child.get_index()
-				var in_port: int = child.get_meta(&"input_slot")
-				var out_port: int = child.get_meta(&"input_slot")
-				if is_slot_enabled_left(slot) and has_any_input(in_port):
-					var from_graph: DiscourseGraphNode = get_node_connected_to_port(PortMode.INPUT, in_port)
-					disconnect_requested.emit(
-						from_graph.name,
-						from_graph.get_port_connected_to(PortMode.OUTPUT, self, in_port),
-						name,
-						in_port)
-				if is_slot_enabled_right(slot) and has_any_output(out_port):
-					var to_graph: DiscourseGraphNode = get_node_connected_to_port(PortMode.OUTPUT, out_port)
-					disconnect_requested.emit(
-							name,
-							out_port,
-							to_graph.name,
-							to_graph.get_port_connected_to(PortMode.INPUT, self, out_port))
-			child.visible = field_visible
-			break
+		
+	var field = get_field(field_id)
+	
+	if field == null:
+		return
+	
+	if field_visible:
+		field.visible = field_visible
+		return
+	
+	var slot: int = field.get_index()
+	var in_port: int = field.get_meta(&"input_slot")
+	var out_port: int = field.get_meta(&"input_slot")
+	if is_slot_enabled_left(slot) and has_any_input(in_port):
+		var from_graph: DiscourseGraphNode = get_node_connected_to_port(PortMode.INPUT, in_port)
+		disconnect_requested.emit(
+			from_graph.name,
+			from_graph.get_port_connected_to(PortMode.OUTPUT, self, in_port),
+			name,
+			in_port)
+	if is_slot_enabled_right(slot) and has_any_output(out_port):
+		var to_graph: DiscourseGraphNode = get_node_connected_to_port(PortMode.OUTPUT, out_port)
+		disconnect_requested.emit(
+				name,
+				out_port,
+				to_graph.name,
+				to_graph.get_port_connected_to(PortMode.INPUT, self, out_port))
+	
+	field.visible = field_visible
 
 
 func has_field(field_id: StringName) -> bool:
@@ -765,7 +756,7 @@ func has_field(field_id: StringName) -> bool:
 		return false
 	
 	for child in get_children():
-		if child.get_meta(&"field_id", &"") == field_id:
+		if child.name == field_id:
 			return true
 	return false
 
@@ -774,30 +765,34 @@ func has_any_field_output(field_id: StringName) -> bool:
 	if field_id.is_empty():
 		return false
 	
-	for child in get_children():
-		if child.get_meta(&"field_id", &"") == field_id:
-			var output_port: int = child.get_meta(&"output_slot", -1)
-			if output_port == -1:
-				return false
-			else:
-				return not _input_nodes[output_port]["connections"].is_empty()
+	var field = get_field(field_id)
 	
-	return false
+	if field == null:
+		return false
+	
+	var output_port: int = field.get_meta(&"output_slot", -1)
+	
+	if output_port <= -1:
+		return false
+	else:
+		return not _input_nodes[output_port]["connections"].is_empty()
 
 
 func has_any_field_input(field_id: StringName) -> bool:
 	if field_id.is_empty():
 		return false
 	
-	for child in get_children():
-		if child.get_meta(&"field_id", &"") == field_id:
-			var input_port: int = child.get_meta(&"output_slot", -1)
-			if input_port == -1:
-				return false
-			else:
-				return not _input_nodes[input_port]["connections"].is_empty()
+	var field = get_field(field_id)
 	
-	return false
+	if field == null:
+		return false
+	
+	var input_port: int = field.get_meta(&"output_slot", -1)
+	
+	if input_port <= -1:
+		return false
+	else:
+		return not _input_nodes[input_port]["connections"].is_empty()
 
 
 func get_field(field_id: StringName) -> Control:
@@ -805,7 +800,7 @@ func get_field(field_id: StringName) -> Control:
 		return null
 	
 	for node:Control in get_children():
-		if node.get_meta(&"field_id", &"") == field_id:
+		if node.name == field_id:
 			return node.get_child(1)
 	return null
 
@@ -814,32 +809,25 @@ func get_field_input_slot(field_id: StringName) -> int:
 	if field_id.is_empty():
 		return -1
 	
-	for node:Control in get_children():
-		if node.get_meta(&"field_id", &"") == field_id:
-			return node.get_meta(&"input_slot", -1)
-	return -1
+	var node = get_field(field_id)
+	
+	return -1 if node == null else node.get_meta(&"input_slot", -1)
 
 
 func get_field_output_slot(field_id: StringName) -> int:
 	if field_id.is_empty():
 		return -1
 	
-	for node:Control in get_children():
-		if node.get_meta(&"field_id", &"") == field_id:
-			return node.get_meta(&"output_slot", -1)
-	return -1
+	var node = get_field(field_id)
+	
+	return -1 if node == null else node.get_meta(&"output_slot", -1)
 
 
 func remove_field(field_id: StringName, size_change: int = 0) -> void:
 	if field_id.is_empty():
 		return
 	
-	var node: Control = null
-	
-	for child in get_children():
-		if child.get_meta(&"field_id", &"") == field_id:
-			node = child
-			break
+	var node: Control = get_field(field_id)
 	
 	if node == null:
 		return

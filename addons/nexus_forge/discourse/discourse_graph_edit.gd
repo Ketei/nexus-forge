@@ -480,19 +480,19 @@ func create_dialog_node(node_type: DialogNodes, uuid: String = "") -> DiscourseG
 	created_node.localize_node_toggled.connect(_on_localize_node_toggled)
 	
 	created_node.name = get_unique_node_name(created_node.name)
-	created_node.custom_id = get_unique_node_id(created_node.custom_id)
+	#created_node.custom_id = get_unique_node_id(created_node.custom_id)
 	
 	return created_node
 
 
-func get_unique_node_id(desired: String) -> String:
-	var edited: String = desired
-	var iteration: int = 0
-	
-	while has_node_id(edited):
-		iteration += 1
-		edited = desired + str(iteration)
-	return edited
+#func get_unique_node_id(desired: String) -> String:
+	#var edited: String = desired
+	#var iteration: int = 0
+	#
+	#while has_node_id(edited):
+		#iteration += 1
+		#edited = desired + str(iteration)
+	#return edited
 
 
 func get_unique_node_name(desired: StringName) -> StringName:
@@ -935,11 +935,35 @@ func sort_clipboard_custom(item_a: Dictionary, item_b: Dictionary) -> bool:
 	return item_a["position"] < item_b["position"]
 
 
-func get_conversation_data(on_conversation: EditorDiscourseDialog = null) -> EditorDiscourseDialog:
+func update_localization_data(dialog: EditorDiscourseDialog, for_locale: String) -> void:
+	for node in get_discourse_nodes():
+		if not node.is_node_localized():
+			continue
+		
+		if node.node_type == DialogNodes.DIALOG:
+			dialog.set_text_entry(
+					node.get_node_uuid(),
+					node.get_dialog_text(),
+					for_locale)
+		elif node.node_type == DialogNodes.OPTIONS:
+			dialog.set_choices_entry(
+					node.get_node_uuid(),
+					node.get_options(),
+					for_locale)
+		elif node.node_type == DialogNodes.LOCALIZED_TEXT:
+			dialog.set_text_entry(
+					node.get_node_uuid(),
+					node.get_text(),
+					for_locale)
+
+
+func get_conversation_data(on_conversation: EditorDiscourseDialog = null, current_locale: String = "") -> EditorDiscourseDialog:
 	var convo: EditorDiscourseDialog = DiscourseDialog.new_dialog() if on_conversation == null else on_conversation
 	
-	if on_conversation != null:
-		convo.clear()
+	#if on_conversation != null:
+		#convo.clear()
+		#convo.node_frames.clear()
+		#convo.node_data.clear()
 	
 	var frames: Array[GraphFrame] = []
 	var nodes: Array[DiscourseGraphNode] = []
@@ -959,26 +983,28 @@ func get_conversation_data(on_conversation: EditorDiscourseDialog = null) -> Edi
 				frame.tint_color)
 	
 	for node in nodes:
-		var data: Dictionary = {
-			"custom_id": node.custom_id,
-			"has_localization": node.is_node_localized()}
+		var node_data: Dictionary = node._get_node_data()
+		node_data["metadata"]["has_localization"] = node.is_node_localized()
 		var frame: GraphFrame = get_element_frame(node.name)
 		var frame_uuid: String = "" if frame == null else frame.get_frame_uuid()
-		data.merge(node._get_node_data())
 		
-		convo.register_node(
-				node.get_node_uuid(),
-				data,
-				frame_uuid)
+		convo.register_node(node, frame_uuid)
 		
-		if node.node_type == DialogNodes.DIALOG and not node.is_node_localized():
-			convo.set_unlocalized_text(
+		if node.node_type == DialogNodes.DIALOG:
+			convo.set_text_entry(
 					node.get_node_uuid(),
-					node.get_dialog_text())
-		elif node.node_type == DialogNodes.OPTIONS and not node.is_node_localized():
-			convo.set_unlocalized_choices(
+					node.get_dialog_text(),
+					current_locale)
+		elif node.node_type == DialogNodes.OPTIONS:
+			convo.set_choices_entry(
 					node.get_node_uuid(),
-					node.get_options())
+					node.get_options(),
+					current_locale)
+		elif node.node_type == DialogNodes.LOCALIZED_TEXT:
+			convo.set_text_entry(
+					node.get_node_uuid(),
+					node.get_text(),
+					current_locale)
 	
 	return convo
 
@@ -1035,7 +1061,7 @@ func get_connection_dictionary(node_uuid: StringName, node_data: Dictionary) -> 
 	return node_connections
 
 
-func load_conversation_data(conversation: EditorDiscourseDialog, language: String, region: String = "") -> bool:
+func load_conversation_data(conversation: EditorDiscourseDialog, locale: String) -> bool:
 	var needs_resaving: bool = false
 	clear_dialog_nodes()
 	
@@ -1057,7 +1083,7 @@ func load_conversation_data(conversation: EditorDiscourseDialog, language: Strin
 	
 	for node_stnm_uuid:StringName in conversation.get_node_uuids():
 		var node_uuid: String = String(node_stnm_uuid)
-		var data: Dictionary = conversation.get_node_data(node_stnm_uuid, language, region)
+		var data: Dictionary = conversation.get_node_data(node_stnm_uuid, locale)
 		var d_node: DiscourseGraphNode = create_dialog_node(data["node_type"], node_uuid)
 		d_node._set_node_data(data)
 		d_node.name = data["custom_id"]
@@ -1115,6 +1141,31 @@ func get_discourse_nodes() -> Array[DiscourseGraphNode]:
 			all_nodes.append(node)
 	
 	return all_nodes
+
+
+func set_localization_data(localization: Dictionary) -> void:
+	#var structure: Dictionary = {
+		#&"uuid": "text",
+		#&"uuid2": ["option", "option"]}
+	
+	for node in get_discourse_nodes():
+		var uuid: StringName = node.get_node_uuid()
+		if not node.is_node_localized() or not localization.has(uuid):
+			continue
+		if node.node_type == DialogNodes.DIALOG:
+			if typeof(localization[uuid]) == TYPE_STRING:
+				node.set_dialog_text(localization[uuid])
+		elif node.node_type == DialogNodes.OPTIONS:
+			if typeof(localization[uuid]) == TYPE_ARRAY:
+				var idx: int = 0
+				for choice in localization[uuid]:
+					idx += 1
+					node.set_option_text(idx, choice)
+		elif node.node_type == DialogNodes.LOCALIZED_TEXT:
+			if typeof(localization[uuid]) == TYPE_STRING:
+				node.set_text(localization[uuid])
+	
+	
 
 
 func get_issues() -> Array[Dictionary]:

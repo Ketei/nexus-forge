@@ -34,7 +34,6 @@ static func get_available_id(desired_id: String) -> String:
 
 func _post_init() -> void:
 	name = &"AnchorPointer"
-	custom_id = "AnchroPointer"
 	title = "Go To"
 	node_type = DialogueNodeType.ANCHOR_POINTER
 	parent_mode = PortMode.INPUT
@@ -81,16 +80,28 @@ func _ready() -> void:
 
 func _get_node_data() -> Dictionary:
 	var menu: OptionButton = get_mapped_field(&"fields", &"shortcuts")
-	var data: Dictionary = {}
-	data["node_type"] = node_type
-	data["position"] = position_offset
-	data["anchor_target"] = menu.get_selected_metadata() if 0 <= menu.selected else ""
-	return data
+	
+	var metadata: Dictionary = {
+		"anchor_target": menu.get_selected_metadata() if 0 <= menu.selected else ""}
+	return _build_node_data(metadata)
 
 
 func _set_node_data(data: Dictionary) -> void:
-	position_offset = data["position"]
-	select_anchor(data["anchor_target"])
+	var data_name = data.get("name")
+	var metadata = data.get("metadata")
+	if typeof(data_name) == TYPE_STRING_NAME:
+		name = data_name
+	
+	if typeof(metadata) != TYPE_DICTIONARY:
+		return
+	
+	var pos = metadata.get("position")
+	if typeof(pos) == TYPE_VECTOR2:
+		position_offset = pos
+	
+	var target = metadata.get("anchor_target")
+	if typeof(target) == TYPE_STRING:
+		select_anchor(target)
 
 
 func _get_issues() -> PackedStringArray:

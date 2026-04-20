@@ -22,7 +22,7 @@ extends DiscourseDialog
 
 # Map of custom IDs for the conversation {"EntryNode": (UUID)}
 ## A dictionary that maps user-given IDs to the node's UUIDs.
-@export_storage var id_map: Dictionary[String, StringName] = {}
+#@export_storage var id_map: Dictionary[String, StringName] = {}
 var _dialog_locale: DiscourseDialogLocale = null
 
 # Example of how data will be structured on dialog_nodes.
@@ -125,9 +125,9 @@ func is_id_mapped(id: String) -> bool:
 ## if the assignment was successful. If the UUID doesn't exist it'll return
 ## [code]false[/code].
 func map_id_to(id: String, uuid: StringName) -> bool:
-	if dialog_nodes.has(uuid):
-		id_map[id] = uuid
-		return true
+	#if dialog_nodes.has(uuid):
+		#id_map[id] = uuid
+		#return true
 	return false
 
 
