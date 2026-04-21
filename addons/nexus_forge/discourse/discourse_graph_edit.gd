@@ -155,7 +155,7 @@ func _on_paste_nodes_request() -> void:
 	for node_data in node_clipboard:
 		var new_data: Dictionary = node_data.duplicate(true)
 		new_data["position"] = new_data["position"] - current_offset + center_scroll_offset
-		var pasted_node: DiscourseGraphNode = create_dialog_node(new_data["node_type"])
+		var pasted_node: DiscourseGraphNode = create_dialog_node(new_data["type"])
 		pasted_node._set_node_data(new_data)
 		add_child(pasted_node)
 		graph_nodes.append(pasted_node)
@@ -984,7 +984,7 @@ func get_conversation_data(on_conversation: EditorDiscourseDialog = null, curren
 	
 	for node in nodes:
 		var node_data: Dictionary = node._get_node_data()
-		node_data["metadata"]["has_localization"] = node.is_node_localized()
+		node_data["metadata"]["localized"] = node.is_node_localized()
 		var frame: GraphFrame = get_element_frame(node.name)
 		var frame_uuid: String = "" if frame == null else frame.get_frame_uuid()
 		
@@ -1012,7 +1012,7 @@ func get_conversation_data(on_conversation: EditorDiscourseDialog = null, curren
 func get_connection_dictionary(node_uuid: StringName, node_data: Dictionary) -> Array[Dictionary]:
 	var node_connections: Array[Dictionary] = []
 	
-	match node_data["node_type"] as DialogNodes:
+	match node_data["type"] as DialogNodes:
 		DialogNodes.OPTIONS:
 			for option in node_data["options"]:
 				if option["output_connections"]["next_node"]["target_node_uuid"].is_empty():
@@ -1084,20 +1084,24 @@ func load_conversation_data(conversation: EditorDiscourseDialog, locale: String)
 	for node_stnm_uuid:StringName in conversation.get_node_uuids():
 		var node_uuid: String = String(node_stnm_uuid)
 		var data: Dictionary = conversation.get_node_data(node_stnm_uuid, locale)
-		var d_node: DiscourseGraphNode = create_dialog_node(data["node_type"], node_uuid)
+		var metadata: Dictionary = data["metadata"]
+		var d_node: DiscourseGraphNode = create_dialog_node(data["type"], node_uuid)
 		d_node._set_node_data(data)
-		d_node.name = data["custom_id"]
-		d_node.custom_id = data["custom_id"]
-		d_node.set_node_localized(data["has_localization"])
+		if data.has("name"):
+			d_node.name = data["name"]
+		if metadata.has("localized"):
+			d_node.set_node_localized(metadata["localized"])
 		add_child(d_node)
 		if d_node.node_type == DialogNodes.ENTRY:
 			entry_node = d_node
 		elif d_node.node_type == DialogNodes.CALLABLE or d_node.node_type == DialogNodes.CALLABLE_RETURN:
-			if not d_node.available_methods.has(data["method"]):
-				needs_resaving = true
+			if metadata.has("method"):
+				if not d_node.available_methods.has(metadata["method"]):
+					needs_resaving = true
 		elif d_node.node_type == DialogNodes.SIGNAL:
-			if not d_node.available_signals.has(data["signal"]):
-				needs_resaving = true
+			if metadata.has("signal"):
+				if not d_node.available_signals.has(metadata["signal"]):
+					needs_resaving = true
 		graph_nodes.append(d_node)
 		if node_relationships.has(node_uuid):
 			attach_graph_element_to_frame(d_node.name, node_relationships[node_uuid].name)

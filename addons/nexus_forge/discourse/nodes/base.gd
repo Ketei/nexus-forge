@@ -234,7 +234,7 @@ func _get_issues() -> PackedStringArray:
 
 
 func _build_node_data(metadata: Dictionary = {}, output_connections: Dictionary = {}, input_connections: Dictionary = {}) -> Dictionary:
-	var meta: Dictionary = {"position": position_offset}
+	var meta: Dictionary = {"position": position_offset, "localized": is_node_localized()}
 	var data: Dictionary = {"name": name, "type": node_type, "metadata": meta}
 	
 	if not metadata.is_empty():
