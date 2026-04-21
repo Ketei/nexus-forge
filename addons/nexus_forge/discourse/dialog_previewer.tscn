@@ -1,4 +1,4 @@
-[gd_scene load_steps=3 format=3 uid="uid://csl2ly1viqy7x"]
+[gd_scene format=3 uid="uid://csl2ly1viqy7x"]
 
 [ext_resource type="Script" uid="uid://bydc53qr4cjcf" path="res://addons/nexus_forge/discourse/dialog_previewer.gd" id="1_4jrkd"]
 
@@ -8,7 +8,7 @@ content_margin_top = 10.0
 content_margin_right = 8.0
 content_margin_bottom = 8.0
 
-[node name="DialogPreviewer" type="PanelContainer"]
+[node name="DialogPreviewer" type="PanelContainer" unique_id=1815985249]
 custom_minimum_size = Vector2(600, 380)
 anchors_preset = 15
 anchor_right = 1.0
@@ -18,28 +18,28 @@ grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_eosxw")
 script = ExtResource("1_4jrkd")
 
-[node name="MainSplitContainer" type="HSplitContainer" parent="."]
+[node name="MainSplitContainer" type="HSplitContainer" parent="." unique_id=849144389]
 layout_mode = 2
 
-[node name="ParsedBox" type="VBoxContainer" parent="MainSplitContainer"]
+[node name="ParsedBox" type="VBoxContainer" parent="MainSplitContainer" unique_id=2036263951]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 3.0
 
-[node name="DialogOptionSplit" type="VSplitContainer" parent="MainSplitContainer/ParsedBox"]
+[node name="DialogOptionSplit" type="VSplitContainer" parent="MainSplitContainer/ParsedBox" unique_id=1031961131]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="DialogBox" type="VBoxContainer" parent="MainSplitContainer/ParsedBox/DialogOptionSplit"]
+[node name="DialogBox" type="VBoxContainer" parent="MainSplitContainer/ParsedBox/DialogOptionSplit" unique_id=143387963]
 layout_mode = 2
 size_flags_vertical = 3
 size_flags_stretch_ratio = 3.0
 
-[node name="Label" type="Label" parent="MainSplitContainer/ParsedBox/DialogOptionSplit/DialogBox"]
+[node name="Label" type="Label" parent="MainSplitContainer/ParsedBox/DialogOptionSplit/DialogBox" unique_id=1189506004]
 layout_mode = 2
 text = "Dialog"
 
-[node name="DialogTextEdit" type="TextEdit" parent="MainSplitContainer/ParsedBox/DialogOptionSplit/DialogBox"]
+[node name="DialogTextEdit" type="TextEdit" parent="MainSplitContainer/ParsedBox/DialogOptionSplit/DialogBox" unique_id=902589683]
 layout_mode = 2
 size_flags_vertical = 3
 size_flags_stretch_ratio = 3.0
@@ -47,21 +47,21 @@ theme_override_colors/font_readonly_color = Color(0.803922, 0.811765, 0.823529, 
 editable = false
 wrap_mode = 1
 
-[node name="ContinueBtn" type="Button" parent="MainSplitContainer/ParsedBox/DialogOptionSplit/DialogBox"]
+[node name="ContinueBtn" type="Button" parent="MainSplitContainer/ParsedBox/DialogOptionSplit/DialogBox" unique_id=1333817552]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 text = "Start Dialog"
 
-[node name="OptionsContainer" type="VBoxContainer" parent="MainSplitContainer/ParsedBox/DialogOptionSplit"]
+[node name="OptionsContainer" type="VBoxContainer" parent="MainSplitContainer/ParsedBox/DialogOptionSplit" unique_id=420439112]
 layout_mode = 2
 size_flags_vertical = 3
 size_flags_stretch_ratio = 1.5
 
-[node name="Label" type="Label" parent="MainSplitContainer/ParsedBox/DialogOptionSplit/OptionsContainer"]
+[node name="Label" type="Label" parent="MainSplitContainer/ParsedBox/DialogOptionSplit/OptionsContainer" unique_id=1456851618]
 layout_mode = 2
 text = "Options"
 
-[node name="OptionsTree" type="Tree" parent="MainSplitContainer/ParsedBox/DialogOptionSplit/OptionsContainer"]
+[node name="OptionsTree" type="Tree" parent="MainSplitContainer/ParsedBox/DialogOptionSplit/OptionsContainer" unique_id=1657804356]
 custom_minimum_size = Vector2(0, 120)
 layout_mode = 2
 size_flags_vertical = 3
@@ -71,21 +71,21 @@ hide_folding = true
 hide_root = true
 select_mode = 1
 
-[node name="DataSplit" type="VSplitContainer" parent="MainSplitContainer"]
+[node name="DataSplit" type="VSplitContainer" parent="MainSplitContainer" unique_id=170390946]
 custom_minimum_size = Vector2(250, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="DataContainer" type="VBoxContainer" parent="MainSplitContainer/DataSplit"]
+[node name="DataContainer" type="VBoxContainer" parent="MainSplitContainer/DataSplit" unique_id=2054913903]
 layout_mode = 2
 size_flags_vertical = 3
 size_flags_stretch_ratio = 2.0
 
-[node name="Label" type="Label" parent="MainSplitContainer/DataSplit/DataContainer"]
+[node name="Label" type="Label" parent="MainSplitContainer/DataSplit/DataContainer" unique_id=41504138]
 layout_mode = 2
 text = "Data received"
 
-[node name="DataTextEdit" type="TextEdit" parent="MainSplitContainer/DataSplit/DataContainer"]
+[node name="DataTextEdit" type="TextEdit" parent="MainSplitContainer/DataSplit/DataContainer" unique_id=1951155627]
 custom_minimum_size = Vector2(0, 46)
 layout_mode = 2
 size_flags_vertical = 3
@@ -93,20 +93,20 @@ theme_override_colors/font_readonly_color = Color(0.803922, 0.811765, 0.823529, 
 editable = false
 wrap_mode = 1
 
-[node name="ClearDataBtn" type="Button" parent="MainSplitContainer/DataSplit/DataContainer"]
+[node name="ClearDataBtn" type="Button" parent="MainSplitContainer/DataSplit/DataContainer" unique_id=284823896]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 text = "Clear"
 
-[node name="EventsContainer" type="VBoxContainer" parent="MainSplitContainer/DataSplit"]
+[node name="EventsContainer" type="VBoxContainer" parent="MainSplitContainer/DataSplit" unique_id=139311247]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="Label" type="Label" parent="MainSplitContainer/DataSplit/EventsContainer"]
+[node name="Label" type="Label" parent="MainSplitContainer/DataSplit/EventsContainer" unique_id=322973589]
 layout_mode = 2
 text = "Events"
 
-[node name="EventsTextEdit" type="TextEdit" parent="MainSplitContainer/DataSplit/EventsContainer"]
+[node name="EventsTextEdit" type="TextEdit" parent="MainSplitContainer/DataSplit/EventsContainer" unique_id=2041237497]
 custom_minimum_size = Vector2(0, 46)
 layout_mode = 2
 size_flags_vertical = 3
@@ -114,7 +114,7 @@ theme_override_colors/font_readonly_color = Color(0.803922, 0.811765, 0.823529, 
 editable = false
 wrap_mode = 1
 
-[node name="ClearEventsBtn" type="Button" parent="MainSplitContainer/DataSplit/EventsContainer"]
+[node name="ClearEventsBtn" type="Button" parent="MainSplitContainer/DataSplit/EventsContainer" unique_id=1093267734]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 text = "Clear"

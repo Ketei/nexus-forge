@@ -1,4 +1,4 @@
-[gd_scene load_steps=18 format=3 uid="uid://dx3tfxh44uxs6"]
+[gd_scene format=3 uid="uid://dx3tfxh44uxs6"]
 
 [ext_resource type="Texture2D" uid="uid://12lyg7db58dg" path="res://addons/nexus_forge/icons/add_int.svg" id="1_e1mk7"]
 [ext_resource type="Script" uid="uid://cuem7gvcvgeia" path="res://addons/nexus_forge/depot/depot_main_script.gd" id="1_l5u5u"]
@@ -25,7 +25,7 @@ content_margin_bottom = 6.0
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_bes68"]
 
-[node name="DepotScene" type="PanelContainer"]
+[node name="DepotScene" type="PanelContainer" unique_id=654987090]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -34,73 +34,73 @@ grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_8n7i7")
 script = ExtResource("1_l5u5u")
 
-[node name="ItemsContainer" type="HBoxContainer" parent="."]
+[node name="ItemsContainer" type="HBoxContainer" parent="." unique_id=1849763466]
 layout_mode = 2
 script = ExtResource("2_evcfd")
 
-[node name="ItemsPanel" type="PanelContainer" parent="ItemsContainer"]
+[node name="ItemsPanel" type="PanelContainer" parent="ItemsContainer" unique_id=1064040569]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 3.0
 theme_override_styles/panel = SubResource("StyleBoxEmpty_qiph8")
 
-[node name="ItemsContainer" type="HBoxContainer" parent="ItemsContainer/ItemsPanel"]
+[node name="ItemsContainer" type="HBoxContainer" parent="ItemsContainer/ItemsPanel" unique_id=1397127582]
 layout_mode = 2
 
-[node name="TreeContainer" type="VBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer"]
+[node name="TreeContainer" type="VBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer" unique_id=742999156]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 4.0
 
-[node name="TitleLabel" type="Label" parent="ItemsContainer/ItemsPanel/ItemsContainer/TreeContainer"]
+[node name="TitleLabel" type="Label" parent="ItemsContainer/ItemsPanel/ItemsContainer/TreeContainer" unique_id=1863889304]
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.223182, 0.705086, 0.904884, 1)
 theme_override_font_sizes/font_size = 25
 text = "Depot"
 
-[node name="VBoxContainer" type="VBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/TreeContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/TreeContainer" unique_id=1447035205]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="HBoxContainer" type="HBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/TreeContainer/VBoxContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/TreeContainer/VBoxContainer" unique_id=499885426]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="ItemsContainer/ItemsPanel/ItemsContainer/TreeContainer/VBoxContainer/HBoxContainer"]
+[node name="Label" type="Label" parent="ItemsContainer/ItemsPanel/ItemsContainer/TreeContainer/VBoxContainer/HBoxContainer" unique_id=2087454888]
 layout_mode = 2
 text = "Categories"
 
-[node name="CategorySrchLnEdt" type="LineEdit" parent="ItemsContainer/ItemsPanel/ItemsContainer/TreeContainer/VBoxContainer/HBoxContainer"]
+[node name="CategorySrchLnEdt" type="LineEdit" parent="ItemsContainer/ItemsPanel/ItemsContainer/TreeContainer/VBoxContainer/HBoxContainer" unique_id=262575755]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "Search Category"
 
-[node name="EditCategoriesBtn" type="Button" parent="ItemsContainer/ItemsPanel/ItemsContainer/TreeContainer/VBoxContainer/HBoxContainer"]
+[node name="EditCategoriesBtn" type="Button" parent="ItemsContainer/ItemsPanel/ItemsContainer/TreeContainer/VBoxContainer/HBoxContainer" unique_id=1838958386]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Edit Categories"
 icon_alignment = 1
 
-[node name="CategoriesTree" type="Tree" parent="ItemsContainer/ItemsPanel/ItemsContainer/TreeContainer/VBoxContainer"]
+[node name="CategoriesTree" type="Tree" parent="ItemsContainer/ItemsPanel/ItemsContainer/TreeContainer/VBoxContainer" unique_id=1252475135]
 layout_mode = 2
 size_flags_vertical = 3
 allow_reselect = true
 hide_root = true
 script = ExtResource("3_8n7i7")
 
-[node name="HSeparator" type="HSeparator" parent="ItemsContainer/ItemsPanel/ItemsContainer/TreeContainer"]
+[node name="HSeparator" type="HSeparator" parent="ItemsContainer/ItemsPanel/ItemsContainer/TreeContainer" unique_id=1292300583]
 layout_mode = 2
 
-[node name="ItemSearchContainer" type="HBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/TreeContainer"]
+[node name="ItemSearchContainer" type="HBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/TreeContainer" unique_id=1835264378]
 layout_mode = 2
 
-[node name="SearchItemContainer" type="LineEdit" parent="ItemsContainer/ItemsPanel/ItemsContainer/TreeContainer/ItemSearchContainer"]
+[node name="SearchItemContainer" type="LineEdit" parent="ItemsContainer/ItemsPanel/ItemsContainer/TreeContainer/ItemSearchContainer" unique_id=1892178740]
 layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "Search Item"
 
-[node name="NewItemBtn" type="Button" parent="ItemsContainer/ItemsPanel/ItemsContainer/TreeContainer/ItemSearchContainer"]
+[node name="NewItemBtn" type="Button" parent="ItemsContainer/ItemsPanel/ItemsContainer/TreeContainer/ItemSearchContainer" unique_id=1584290267]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Create Item"
@@ -109,7 +109,7 @@ icon = ExtResource("4_qiph8")
 icon_alignment = 1
 expand_icon = true
 
-[node name="ItemsTree" type="Tree" parent="ItemsContainer/ItemsPanel/ItemsContainer/TreeContainer"]
+[node name="ItemsTree" type="Tree" parent="ItemsContainer/ItemsPanel/ItemsContainer/TreeContainer" unique_id=1206274038]
 layout_mode = 2
 size_flags_vertical = 3
 size_flags_stretch_ratio = 2.0
@@ -118,16 +118,16 @@ hide_folding = true
 hide_root = true
 script = ExtResource("3_etwui")
 
-[node name="DataContainer" type="VBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer"]
+[node name="DataContainer" type="VBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer" unique_id=1058249425]
 custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 5.0
 
-[node name="TitleVContainer" type="VBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer"]
+[node name="TitleVContainer" type="VBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer" unique_id=2002484281]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/TitleVContainer"]
+[node name="Label" type="Label" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/TitleVContainer" unique_id=1288854780]
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
@@ -135,7 +135,7 @@ text = "Item"
 horizontal_alignment = 1
 vertical_alignment = 2
 
-[node name="EditItemScriptBtn" type="Button" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/TitleVContainer/Label"]
+[node name="EditItemScriptBtn" type="Button" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/TitleVContainer/Label" unique_id=1074496262]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 1
 anchors_preset = 6
@@ -153,17 +153,17 @@ focus_mode = 1
 flat = true
 icon_alignment = 1
 
-[node name="NameContainer" type="HBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer"]
+[node name="NameContainer" type="HBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer" unique_id=1829187045]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 2.0
 
-[node name="Label" type="Label" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/NameContainer"]
+[node name="Label" type="Label" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/NameContainer" unique_id=289202352]
 custom_minimum_size = Vector2(72, 0)
 layout_mode = 2
 text = "Name"
 
-[node name="ItemNameLnEdt" type="LineEdit" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/NameContainer"]
+[node name="ItemNameLnEdt" type="LineEdit" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/NameContainer" unique_id=1532036003]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -171,81 +171,81 @@ size_flags_stretch_ratio = 3.0
 placeholder_text = "Item Name"
 editable = false
 
-[node name="RarityContainer" type="HBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer"]
+[node name="RarityContainer" type="HBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer" unique_id=563817139]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Label" type="Label" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/RarityContainer"]
+[node name="Label" type="Label" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/RarityContainer" unique_id=373368640]
 custom_minimum_size = Vector2(72, 0)
 layout_mode = 2
 text = "Rarity"
 
-[node name="RarityOptBtn" type="OptionButton" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/RarityContainer"]
+[node name="RarityOptBtn" type="OptionButton" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/RarityContainer" unique_id=383571325]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
 disabled = true
 
-[node name="ValueContainer" type="HBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer"]
+[node name="ValueContainer" type="HBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer" unique_id=117491121]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Label" type="Label" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/ValueContainer"]
+[node name="Label" type="Label" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/ValueContainer" unique_id=1878360125]
 custom_minimum_size = Vector2(72, 0)
 layout_mode = 2
 text = "Value"
 
-[node name="ItemValSpnBx" type="SpinBox" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/ValueContainer"]
+[node name="ItemValSpnBx" type="SpinBox" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/ValueContainer" unique_id=982012606]
 layout_mode = 2
 size_flags_horizontal = 3
 tooltip_text = "The base value of the item."
 allow_greater = true
 editable = false
 
-[node name="DescContainer" type="VBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer"]
+[node name="DescContainer" type="VBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer" unique_id=209568863]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="Label" type="Label" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/DescContainer"]
+[node name="Label" type="Label" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/DescContainer" unique_id=1293280244]
 layout_mode = 2
 text = "Description"
 
-[node name="ItemDescTxtEdt" type="TextEdit" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/DescContainer"]
+[node name="ItemDescTxtEdt" type="TextEdit" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/DescContainer" unique_id=1150363777]
 custom_minimum_size = Vector2(0, 35)
 layout_mode = 2
 size_flags_vertical = 3
 editable = false
 
-[node name="CustomDataContainer" type="VBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer"]
+[node name="CustomDataContainer" type="VBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer" unique_id=1075825907]
 layout_mode = 2
 size_flags_vertical = 3
 size_flags_stretch_ratio = 3.0
 
-[node name="CustomDataHeader" type="HBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/CustomDataContainer"]
+[node name="CustomDataHeader" type="HBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/CustomDataContainer" unique_id=1911082162]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/CustomDataContainer/CustomDataHeader"]
+[node name="Label" type="Label" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/CustomDataContainer/CustomDataHeader" unique_id=1604574702]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 text = "Custom Data"
 vertical_alignment = 1
 
-[node name="ButtonContainer" type="HBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/CustomDataContainer/CustomDataHeader"]
+[node name="ButtonContainer" type="HBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/CustomDataContainer/CustomDataHeader" unique_id=1941605664]
 layout_mode = 2
 size_flags_horizontal = 3
 alignment = 2
 
-[node name="AddItemFldrBtn" type="Button" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
+[node name="AddItemFldrBtn" type="Button" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer" unique_id=293167902]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add folder"
 disabled = true
 icon_alignment = 1
 
-[node name="VSeparator" type="VSeparator" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
+[node name="VSeparator" type="VSeparator" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer" unique_id=149128565]
 layout_mode = 2
 
-[node name="AddItemIntBtn" type="Button" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
+[node name="AddItemIntBtn" type="Button" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer" unique_id=1707953116]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add integer"
@@ -253,7 +253,7 @@ disabled = true
 icon = ExtResource("1_e1mk7")
 icon_alignment = 1
 
-[node name="AddItemFloatBtn" type="Button" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
+[node name="AddItemFloatBtn" type="Button" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer" unique_id=688033983]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add float"
@@ -261,7 +261,7 @@ disabled = true
 icon = ExtResource("2_l5u5u")
 icon_alignment = 1
 
-[node name="AddItemBoolBtn" type="Button" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
+[node name="AddItemBoolBtn" type="Button" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer" unique_id=314864795]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add boolean"
@@ -269,7 +269,7 @@ disabled = true
 icon = ExtResource("3_evcfd")
 icon_alignment = 1
 
-[node name="AddItemStrBtn" type="Button" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
+[node name="AddItemStrBtn" type="Button" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer" unique_id=1778633642]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add string"
@@ -277,7 +277,7 @@ disabled = true
 icon = ExtResource("4_etwui")
 icon_alignment = 1
 
-[node name="ItemDataTree" type="Tree" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/CustomDataContainer"]
+[node name="ItemDataTree" type="Tree" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/CustomDataContainer" unique_id=1828990506]
 custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -289,15 +289,15 @@ script = ExtResource("5_hb3ne")
 allow_drag_and_drop = true
 compact_mode = true
 
-[node name="FlagsContainer" type="VBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer"]
+[node name="FlagsContainer" type="VBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer" unique_id=228560577]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 4.0
 
-[node name="TitleVContainer" type="VBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/FlagsContainer"]
+[node name="TitleVContainer" type="VBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/FlagsContainer" unique_id=1064703598]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="ItemsContainer/ItemsPanel/ItemsContainer/FlagsContainer/TitleVContainer"]
+[node name="Label" type="Label" parent="ItemsContainer/ItemsPanel/ItemsContainer/FlagsContainer/TitleVContainer" unique_id=1949353119]
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
@@ -305,27 +305,27 @@ text = "Flags"
 horizontal_alignment = 1
 vertical_alignment = 2
 
-[node name="ScrollContainer" type="ScrollContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/FlagsContainer"]
+[node name="ScrollContainer" type="ScrollContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/FlagsContainer" unique_id=987043105]
 layout_mode = 2
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
-[node name="ItemsFlagsContainer" type="VBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/FlagsContainer/ScrollContainer"]
+[node name="ItemsFlagsContainer" type="VBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/FlagsContainer/ScrollContainer" unique_id=76253522]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="VSeparator" type="VSeparator" parent="ItemsContainer"]
+[node name="VSeparator" type="VSeparator" parent="ItemsContainer" unique_id=908955390]
 layout_mode = 2
 
-[node name="CurrencyPanel" type="PanelContainer" parent="ItemsContainer"]
+[node name="CurrencyPanel" type="PanelContainer" parent="ItemsContainer" unique_id=67974714]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/panel = SubResource("StyleBoxEmpty_bes68")
 
-[node name="CurrencyContainer" type="VBoxContainer" parent="ItemsContainer/CurrencyPanel"]
+[node name="CurrencyContainer" type="VBoxContainer" parent="ItemsContainer/CurrencyPanel" unique_id=29206942]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="ItemsContainer/CurrencyPanel/CurrencyContainer"]
+[node name="Label" type="Label" parent="ItemsContainer/CurrencyPanel/CurrencyContainer" unique_id=1513842517]
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
@@ -333,20 +333,20 @@ text = "Currencies"
 horizontal_alignment = 1
 vertical_alignment = 2
 
-[node name="TreeContainer" type="VBoxContainer" parent="ItemsContainer/CurrencyPanel/CurrencyContainer"]
+[node name="TreeContainer" type="VBoxContainer" parent="ItemsContainer/CurrencyPanel/CurrencyContainer" unique_id=1926087722]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="HeaderContainer" type="HBoxContainer" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/TreeContainer"]
+[node name="HeaderContainer" type="HBoxContainer" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/TreeContainer" unique_id=340570987]
 layout_mode = 2
 
-[node name="SearchCurrLnEdt" type="LineEdit" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/TreeContainer/HeaderContainer"]
+[node name="SearchCurrLnEdt" type="LineEdit" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/TreeContainer/HeaderContainer" unique_id=639092054]
 layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "Search Currencies..."
 clear_button_enabled = true
 
-[node name="CreateCurrencyBtn" type="Button" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/TreeContainer/HeaderContainer"]
+[node name="CreateCurrencyBtn" type="Button" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/TreeContainer/HeaderContainer" unique_id=1259045453]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Create currency"
@@ -354,7 +354,7 @@ icon = ExtResource("11_5hvq2")
 flat = true
 icon_alignment = 1
 
-[node name="CurrencyTree" type="Tree" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/TreeContainer"]
+[node name="CurrencyTree" type="Tree" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/TreeContainer" unique_id=1611382498]
 custom_minimum_size = Vector2(0, 100)
 layout_mode = 2
 size_flags_vertical = 3
@@ -364,63 +364,63 @@ hide_root = true
 select_mode = 1
 script = ExtResource("6_dn322")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="ItemsContainer/CurrencyPanel/CurrencyContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="ItemsContainer/CurrencyPanel/CurrencyContainer" unique_id=980059132]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/HBoxContainer"]
+[node name="Label" type="Label" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/HBoxContainer" unique_id=1501710788]
 layout_mode = 2
 text = "Name"
 
-[node name="CurrencyNameLnEdt" type="LineEdit" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/HBoxContainer"]
+[node name="CurrencyNameLnEdt" type="LineEdit" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/HBoxContainer" unique_id=853544974]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
 editable = false
 
-[node name="HBoxContainer2" type="HBoxContainer" parent="ItemsContainer/CurrencyPanel/CurrencyContainer"]
+[node name="HBoxContainer2" type="HBoxContainer" parent="ItemsContainer/CurrencyPanel/CurrencyContainer" unique_id=1922278973]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/HBoxContainer2"]
+[node name="Label" type="Label" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/HBoxContainer2" unique_id=276348949]
 layout_mode = 2
 text = "Value"
 
-[node name="CurrencyValueSpnBx" type="SpinBox" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/HBoxContainer2"]
+[node name="CurrencyValueSpnBx" type="SpinBox" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/HBoxContainer2" unique_id=1391915614]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
 allow_greater = true
 editable = false
 
-[node name="CustomDataContainer" type="VBoxContainer" parent="ItemsContainer/CurrencyPanel/CurrencyContainer"]
+[node name="CustomDataContainer" type="VBoxContainer" parent="ItemsContainer/CurrencyPanel/CurrencyContainer" unique_id=544171885]
 layout_mode = 2
 size_flags_vertical = 3
 size_flags_stretch_ratio = 2.0
 
-[node name="CustomDataHeader" type="HBoxContainer" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/CustomDataContainer"]
+[node name="CustomDataHeader" type="HBoxContainer" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/CustomDataContainer" unique_id=1405951069]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/CustomDataContainer/CustomDataHeader"]
+[node name="Label" type="Label" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/CustomDataContainer/CustomDataHeader" unique_id=2058135272]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 text = "Custom Data"
 vertical_alignment = 1
 
-[node name="ButtonContainer" type="HBoxContainer" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/CustomDataContainer/CustomDataHeader"]
+[node name="ButtonContainer" type="HBoxContainer" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/CustomDataContainer/CustomDataHeader" unique_id=385585966]
 layout_mode = 2
 size_flags_horizontal = 3
 alignment = 2
 
-[node name="AddDictButton" type="Button" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
+[node name="AddDictButton" type="Button" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/CustomDataContainer/CustomDataHeader/ButtonContainer" unique_id=943377522]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add folder"
 disabled = true
 icon_alignment = 1
 
-[node name="VSeparator" type="VSeparator" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
+[node name="VSeparator" type="VSeparator" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/CustomDataContainer/CustomDataHeader/ButtonContainer" unique_id=1791563642]
 layout_mode = 2
 
-[node name="AddCurrIntBtn" type="Button" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
+[node name="AddCurrIntBtn" type="Button" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/CustomDataContainer/CustomDataHeader/ButtonContainer" unique_id=875959683]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add integer"
@@ -428,7 +428,7 @@ disabled = true
 icon = ExtResource("1_e1mk7")
 icon_alignment = 1
 
-[node name="AddCurrFltBtn" type="Button" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
+[node name="AddCurrFltBtn" type="Button" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/CustomDataContainer/CustomDataHeader/ButtonContainer" unique_id=1170544397]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add float"
@@ -436,7 +436,7 @@ disabled = true
 icon = ExtResource("2_l5u5u")
 icon_alignment = 1
 
-[node name="AddCurrBoolBtn" type="Button" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
+[node name="AddCurrBoolBtn" type="Button" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/CustomDataContainer/CustomDataHeader/ButtonContainer" unique_id=384299472]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add boolean"
@@ -444,7 +444,7 @@ disabled = true
 icon = ExtResource("3_evcfd")
 icon_alignment = 1
 
-[node name="AddCurrStrBtn" type="Button" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
+[node name="AddCurrStrBtn" type="Button" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/CustomDataContainer/CustomDataHeader/ButtonContainer" unique_id=1042141512]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add string"
@@ -452,7 +452,7 @@ disabled = true
 icon = ExtResource("4_etwui")
 icon_alignment = 1
 
-[node name="CurrencyCustomDataTree" type="Tree" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/CustomDataContainer"]
+[node name="CurrencyCustomDataTree" type="Tree" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/CustomDataContainer" unique_id=587709000]
 custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -465,41 +465,41 @@ script = ExtResource("5_hb3ne")
 allow_drag_and_drop = true
 compact_mode = true
 
-[node name="CategoriesContainer" type="HBoxContainer" parent="."]
+[node name="CategoriesContainer" type="HBoxContainer" parent="." unique_id=1510395103]
 visible = false
 layout_mode = 2
 alignment = 1
 script = ExtResource("10_hb3ne")
 
-[node name="DataContainer" type="VBoxContainer" parent="CategoriesContainer"]
+[node name="DataContainer" type="VBoxContainer" parent="CategoriesContainer" unique_id=1950818601]
 custom_minimum_size = Vector2(350, 0)
 layout_mode = 2
 
-[node name="TitleVContainer" type="VBoxContainer" parent="CategoriesContainer/DataContainer"]
+[node name="TitleVContainer" type="VBoxContainer" parent="CategoriesContainer/DataContainer" unique_id=406168349]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="CategoriesContainer/DataContainer/TitleVContainer"]
+[node name="Label" type="Label" parent="CategoriesContainer/DataContainer/TitleVContainer" unique_id=1146168242]
 layout_mode = 2
 theme_override_font_sizes/font_size = 24
 text = "Categories"
 horizontal_alignment = 1
 
-[node name="HSeparator" type="HSeparator" parent="CategoriesContainer/DataContainer/TitleVContainer"]
+[node name="HSeparator" type="HSeparator" parent="CategoriesContainer/DataContainer/TitleVContainer" unique_id=524864747]
 layout_mode = 2
 
-[node name="SearchContainer" type="HBoxContainer" parent="CategoriesContainer/DataContainer"]
+[node name="SearchContainer" type="HBoxContainer" parent="CategoriesContainer/DataContainer" unique_id=1761346173]
 layout_mode = 2
 
-[node name="SearchCatLnEdt" type="LineEdit" parent="CategoriesContainer/DataContainer/SearchContainer"]
+[node name="SearchCatLnEdt" type="LineEdit" parent="CategoriesContainer/DataContainer/SearchContainer" unique_id=905574499]
 layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "Search Category"
 
-[node name="NewCategoryBtn" type="Button" parent="CategoriesContainer/DataContainer/SearchContainer"]
+[node name="NewCategoryBtn" type="Button" parent="CategoriesContainer/DataContainer/SearchContainer" unique_id=1713597529]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 
-[node name="CategoriesTree" type="Tree" parent="CategoriesContainer/DataContainer"]
+[node name="CategoriesTree" type="Tree" parent="CategoriesContainer/DataContainer" unique_id=2090913382]
 custom_minimum_size = Vector2(0, 100)
 layout_mode = 2
 size_flags_vertical = 3
@@ -511,36 +511,36 @@ hide_root = true
 select_mode = 1
 script = ExtResource("11_dn322")
 
-[node name="CustomDataContainer" type="VBoxContainer" parent="CategoriesContainer/DataContainer"]
+[node name="CustomDataContainer" type="VBoxContainer" parent="CategoriesContainer/DataContainer" unique_id=316780227]
 layout_mode = 2
 size_flags_vertical = 3
 size_flags_stretch_ratio = 2.0
 
-[node name="CustomDataHeader" type="HBoxContainer" parent="CategoriesContainer/DataContainer/CustomDataContainer"]
+[node name="CustomDataHeader" type="HBoxContainer" parent="CategoriesContainer/DataContainer/CustomDataContainer" unique_id=2081854766]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="CategoriesContainer/DataContainer/CustomDataContainer/CustomDataHeader"]
+[node name="Label" type="Label" parent="CategoriesContainer/DataContainer/CustomDataContainer/CustomDataHeader" unique_id=1645362114]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 text = "Custom Data"
 vertical_alignment = 1
 
-[node name="ButtonContainer" type="HBoxContainer" parent="CategoriesContainer/DataContainer/CustomDataContainer/CustomDataHeader"]
+[node name="ButtonContainer" type="HBoxContainer" parent="CategoriesContainer/DataContainer/CustomDataContainer/CustomDataHeader" unique_id=240553785]
 layout_mode = 2
 size_flags_horizontal = 3
 alignment = 2
 
-[node name="AddCatFldrBtn" type="Button" parent="CategoriesContainer/DataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
+[node name="AddCatFldrBtn" type="Button" parent="CategoriesContainer/DataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer" unique_id=333296173]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add folder"
 disabled = true
 icon_alignment = 1
 
-[node name="VSeparator" type="VSeparator" parent="CategoriesContainer/DataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
+[node name="VSeparator" type="VSeparator" parent="CategoriesContainer/DataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer" unique_id=950260666]
 layout_mode = 2
 
-[node name="AddCatIntBtn" type="Button" parent="CategoriesContainer/DataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
+[node name="AddCatIntBtn" type="Button" parent="CategoriesContainer/DataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer" unique_id=1146941942]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add integer"
@@ -548,7 +548,7 @@ disabled = true
 icon = ExtResource("1_e1mk7")
 icon_alignment = 1
 
-[node name="AddCatFloatBtn" type="Button" parent="CategoriesContainer/DataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
+[node name="AddCatFloatBtn" type="Button" parent="CategoriesContainer/DataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer" unique_id=1435447944]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add float"
@@ -556,7 +556,7 @@ disabled = true
 icon = ExtResource("2_l5u5u")
 icon_alignment = 1
 
-[node name="AddCatBoolBtn" type="Button" parent="CategoriesContainer/DataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
+[node name="AddCatBoolBtn" type="Button" parent="CategoriesContainer/DataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer" unique_id=701533575]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add boolean"
@@ -564,7 +564,7 @@ disabled = true
 icon = ExtResource("3_evcfd")
 icon_alignment = 1
 
-[node name="AddCatStrBtn" type="Button" parent="CategoriesContainer/DataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
+[node name="AddCatStrBtn" type="Button" parent="CategoriesContainer/DataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer" unique_id=1653393041]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add string"
@@ -572,7 +572,7 @@ disabled = true
 icon = ExtResource("4_etwui")
 icon_alignment = 1
 
-[node name="ItemDataTree" type="Tree" parent="CategoriesContainer/DataContainer/CustomDataContainer"]
+[node name="ItemDataTree" type="Tree" parent="CategoriesContainer/DataContainer/CustomDataContainer" unique_id=1274450263]
 custom_minimum_size = Vector2(0, 100)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -584,7 +584,7 @@ script = ExtResource("5_hb3ne")
 allow_drag_and_drop = true
 compact_mode = true
 
-[node name="FinishCatBtn" type="Button" parent="CategoriesContainer/DataContainer"]
+[node name="FinishCatBtn" type="Button" parent="CategoriesContainer/DataContainer" unique_id=1502378209]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 text = "Done"

@@ -253,10 +253,10 @@ func remove_dialog_node(uuid: StringName, _on: TreeItem = get_root()) -> bool:
 		var meta: Dictionary = nodes[node_idx].get_metadata(0)
 		if not meta["is_node"] or meta["uuid"] != uuid:
 			continue
-		
-		nodes[node_idx].free()
+		var node: TreeItem = nodes[node_idx]
 		nodes[node_idx] = nodes[-1]
-		nodes.pop_back()
+		nodes.resize(nodes.size() - 1)
+		node.free()
 		return true
 	return false
 

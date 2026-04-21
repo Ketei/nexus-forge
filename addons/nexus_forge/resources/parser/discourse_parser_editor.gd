@@ -29,7 +29,7 @@ func load_dialog(path: String, starting_id: String = "") -> bool:
 	
 	if _dialog_id_map.has(starting_id):
 		_next_uuid = _dialog_id_map[starting_id]
-	elif _dialog_resource.dialog_nodes.has(starting_id):
+	elif _dialog_resource.node_data.has(starting_id):
 		_next_uuid = starting_id
 	else:
 		_next_uuid = _dialog_resource.entry_node
@@ -43,8 +43,7 @@ func _process_logic(uuid: StringName) -> String:
 	
 	var data: Dictionary = _dialog_resource.get_node_data(uuid, locale)
 	var metadata: Dictionary = data["metadata"]
-	
-	match data["node_type"]:
+	match data["type"]:
 		NodeTypes.ENTRY:
 			return _process_logic(
 					data["output_connections"]["next_node"]["target_node_uuid"])
@@ -73,7 +72,7 @@ func _process_logic(uuid: StringName) -> String:
 				
 			if data["input_connections"]["dialog_text_source"]["target_node_uuid"].is_empty():
 				dialog_reached.emit({
-					"dialog_text": _parse_dialog(uuid, data["dialog_text"]),
+					"dialog_text": _parse_dialog(uuid, metadata["dialog_text"]),
 					"character_id": metadata["character_id"],
 					"persist": metadata["persist"],
 					"font": font,

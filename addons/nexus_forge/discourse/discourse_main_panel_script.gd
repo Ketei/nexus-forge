@@ -95,24 +95,19 @@ func _ready() -> void:
 		return
 	
 	discourse_window = load("res://addons/nexus_forge/discourse/discourse_panel_editor_script.gd").new()
+	discourse_window.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	discourse_split_container.add_child(discourse_window)
 	discourse_split_container.move_child(discourse_window, 0)
-	discourse_window.add_theme_stylebox_override(&"panel", load("res://addons/nexus_forge/discourse/discourse_editor_stylebox.tres"))
+	var style: StyleBoxFlat = load("res://addons/nexus_forge/discourse/discourse_editor_stylebox.tres")
+	
+	style.bg_color = get_theme_color("base_color", "Editor")
+	discourse_window.add_theme_stylebox_override(&"panel", style)
 	
 	var system_lang = OS.get_locale_language()
 	languages_tree.create_language(system_lang, true)
 	discourse_window.add_locale(system_lang)
 	discourse_window.base_language = system_lang
 	languages_tree.set_default_language(system_lang)
-	
-	#phrases_tree.create_locale(system_lang)
-	#phrases_tree.base_language = system_lang
-	
-	#discourse_window.set_localization(system_lang)
-	
-	#create_phrase_btn.disabled = true
-	
-	#conversation_tree.create_item()
 	
 	if discourse_window.discourse_graph_edit.entry_node != null:
 		_on_discourse_node_created(discourse_window.discourse_graph_edit.entry_node)
@@ -149,15 +144,11 @@ func _ready() -> void:
 	discourse_window.display_dialog_id_toggled.connect(_on_display_dialog_id_toggled)
 	return_discourse_btn.pressed.connect(_on_switch_window_pressed)
 	node_search_ln_edt.text_changed.connect(_on_discourse_node_search_text_changed)
-	#create_phrase_btn.pressed.connect(_on_new_phrase_button_pressed)
 	new_language_btn.pressed.connect(_on_new_lang_pressed)
-	#languages_tree.locale_changed.connect(_on_locale_changed)
 	languages_tree.locale_changed.connect(_on_side_editor_locale_changed)
 	languages_tree.region_created.connect(_on_region_created)
 	languages_tree.locale_deleted.connect(_on_locale_deleted)
-	#languages_tree.region_deleted.connect(_on_region_deleted)
 	
-	#discourse_nodes_tree.button_clicked.connect(_on_discourse_tree_button_clicked)
 	discourse_nodes_tree.directory_edited.connect(_on_conversation_changed)
 	discourse_nodes_tree.item_renamed.connect(_on_discourse_item_edited)
 	discourse_nodes_tree.node_activated.connect(_on_discourse_node_activated)
@@ -166,7 +157,6 @@ func _ready() -> void:
 	localization_nodes_tree.dialog_item_edited.connect(_on_localizer_item_edited)
 	translation_txt_box.text_changed.connect(_on_text_field_changed)
 	translation_txt_box.text_changed.connect(_on_translation_text_changed)
-	#phrases_tree.phrase_changed.connect(_on_conversation_changed)
 	
 	new_folder_button.pressed.connect(_on_new_folder_button_pressed)
 	conversation_tree.conversation_selected.connect(_on_conversation_selected)
@@ -824,8 +814,8 @@ func _on_get_issues_pressed() -> void:
 
 func set_localization_tip(locale: String) -> void:
 	var locale_parts: PackedStringArray = locale.split("_", false, 1)
-	var language: String = locale[0]
-	var region: String = locale[1] if locale_parts.size() == 2 else ""
+	var language: String = locale_parts[0]
+	var region: String = locale_parts[1] if locale_parts.size() == 2 else ""
 	
 	var language_name: String = TranslationServer.get_language_name(language)
 	
@@ -1056,7 +1046,6 @@ func _on_new_conversation_pressed() -> void:
 		ResourceSaver.save(
 				new_conv,
 				result[1])
-		ResourceSaver.set_uid(result[1], ResourceUID.create_id())
 		new_conv.resource_path = result[1]
 		if not discourse_window.are_conversation_options_enabled():
 			discourse_window.set_graph_edit_visible(true)

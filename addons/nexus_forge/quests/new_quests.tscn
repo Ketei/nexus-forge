@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3 uid="uid://drut1mwhf4l0o"]
+[gd_scene format=3 uid="uid://drut1mwhf4l0o"]
 
 [ext_resource type="Script" uid="uid://wlf7tvxp0fmx" path="res://addons/nexus_forge/quests/new_odyssey_script.gd" id="1_ikrww"]
 [ext_resource type="Texture2D" uid="uid://12lyg7db58dg" path="res://addons/nexus_forge/icons/add_int.svg" id="1_xhnnm"]
@@ -19,7 +19,7 @@ content_margin_bottom = 6.0
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_xhnnm"]
 
-[node name="QuestsOdyssey" type="PanelContainer"]
+[node name="QuestsOdyssey" type="PanelContainer" unique_id=123000176]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -28,168 +28,170 @@ grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_ct1fh")
 script = ExtResource("1_ikrww")
 
-[node name="MainContainer" type="VBoxContainer" parent="."]
+[node name="MainContainer" type="VBoxContainer" parent="." unique_id=792297115]
 layout_mode = 2
 
-[node name="TitleContainer" type="HBoxContainer" parent="MainContainer"]
+[node name="TitleContainer" type="HBoxContainer" parent="MainContainer" unique_id=1621845295]
 layout_mode = 2
 
-[node name="TitleLabel" type="Label" parent="MainContainer/TitleContainer"]
+[node name="TitleLabel" type="Label" parent="MainContainer/TitleContainer" unique_id=589995054]
 custom_minimum_size = Vector2(250, 36)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.223182, 0.705086, 0.904884, 1)
 theme_override_font_sizes/font_size = 25
 text = "Odyssey"
 
-[node name="CrumbsContainer" type="VBoxContainer" parent="MainContainer/TitleContainer"]
+[node name="CrumbsContainer" type="VBoxContainer" parent="MainContainer/TitleContainer" unique_id=116834700]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="CrumbsLabel" type="Label" parent="MainContainer/TitleContainer/CrumbsContainer"]
+[node name="CrumbsLabel" type="Label" parent="MainContainer/TitleContainer/CrumbsContainer" unique_id=1489295625]
 layout_mode = 2
 size_flags_vertical = 3
 horizontal_alignment = 1
 vertical_alignment = 1
 text_overrun_behavior = 3
 
-[node name="DataContainer" type="HBoxContainer" parent="MainContainer"]
+[node name="DataContainer" type="HBoxContainer" parent="MainContainer" unique_id=2105276095]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="NavigationContainer" type="VBoxContainer" parent="MainContainer/DataContainer"]
+[node name="NavigationContainer" type="VBoxContainer" parent="MainContainer/DataContainer" unique_id=458839420]
 custom_minimum_size = Vector2(250, 0)
 layout_mode = 2
 
-[node name="FileBarContainer" type="HBoxContainer" parent="MainContainer/DataContainer/NavigationContainer"]
+[node name="FileBarContainer" type="HBoxContainer" parent="MainContainer/DataContainer/NavigationContainer" unique_id=824083035]
 layout_mode = 2
 
-[node name="FileSearchLnEdt" type="LineEdit" parent="MainContainer/DataContainer/NavigationContainer/FileBarContainer"]
+[node name="FileSearchLnEdt" type="LineEdit" parent="MainContainer/DataContainer/NavigationContainer/FileBarContainer" unique_id=335492721]
 layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "Search Files"
 caret_blink = true
 
-[node name="NewQuestBtn" type="Button" parent="MainContainer/DataContainer/NavigationContainer/FileBarContainer"]
+[node name="NewQuestBtn" type="Button" parent="MainContainer/DataContainer/NavigationContainer/FileBarContainer" unique_id=1327845413]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Create quest file"
 icon = ExtResource("2_ct1fh")
 
-[node name="NavigationSplitContainer" type="VSplitContainer" parent="MainContainer/DataContainer/NavigationContainer"]
+[node name="NavigationSplitContainer" type="VSplitContainer" parent="MainContainer/DataContainer/NavigationContainer" unique_id=23107170]
 layout_mode = 2
 size_flags_vertical = 3
+split_offsets = PackedInt32Array(150)
 split_offset = 150
 
-[node name="FilesTree" type="Tree" parent="MainContainer/DataContainer/NavigationContainer/NavigationSplitContainer"]
+[node name="FilesTree" type="Tree" parent="MainContainer/DataContainer/NavigationContainer/NavigationSplitContainer" unique_id=111949881]
 layout_mode = 2
 hide_folding = true
 hide_root = true
 script = ExtResource("3_ncoao")
 
-[node name="QuestsContainer" type="VBoxContainer" parent="MainContainer/DataContainer/NavigationContainer/NavigationSplitContainer"]
+[node name="QuestsContainer" type="VBoxContainer" parent="MainContainer/DataContainer/NavigationContainer/NavigationSplitContainer" unique_id=1885620743]
 layout_mode = 2
 
-[node name="QuestSearchLnEdit" type="LineEdit" parent="MainContainer/DataContainer/NavigationContainer/NavigationSplitContainer/QuestsContainer"]
+[node name="QuestSearchLnEdit" type="LineEdit" parent="MainContainer/DataContainer/NavigationContainer/NavigationSplitContainer/QuestsContainer" unique_id=988555834]
 layout_mode = 2
 placeholder_text = "Search on Quest"
 caret_blink = true
 
-[node name="QuestTree" type="Tree" parent="MainContainer/DataContainer/NavigationContainer/NavigationSplitContainer/QuestsContainer"]
+[node name="QuestTree" type="Tree" parent="MainContainer/DataContainer/NavigationContainer/NavigationSplitContainer/QuestsContainer" unique_id=485845633]
 layout_mode = 2
 size_flags_vertical = 3
 allow_reselect = true
 allow_rmb_select = true
 script = ExtResource("4_w3bsy")
 
-[node name="DataContainer" type="HSplitContainer" parent="MainContainer/DataContainer"]
+[node name="DataContainer" type="HSplitContainer" parent="MainContainer/DataContainer" unique_id=1469897451]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_constants/minimum_grab_thickness = 10
+split_offsets = PackedInt32Array(400)
 split_offset = 400
 
-[node name="BasicDataContainer" type="VBoxContainer" parent="MainContainer/DataContainer/DataContainer"]
+[node name="BasicDataContainer" type="VBoxContainer" parent="MainContainer/DataContainer/DataContainer" unique_id=593018397]
 custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 
-[node name="TypeContainer" type="HBoxContainer" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer"]
+[node name="TypeContainer" type="HBoxContainer" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer" unique_id=1940074021]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/TypeContainer"]
+[node name="Label" type="Label" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/TypeContainer" unique_id=1829635899]
 custom_minimum_size = Vector2(40, 0)
 layout_mode = 2
 text = "Type"
 
-[node name="TypeOptBtn" type="OptionButton" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/TypeContainer"]
+[node name="TypeOptBtn" type="OptionButton" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/TypeContainer" unique_id=1976239251]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
 disabled = true
 
-[node name="EditTypesBtn" type="Button" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/TypeContainer"]
+[node name="EditTypesBtn" type="Button" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/TypeContainer" unique_id=1484734059]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Edit types (Script)"
 icon_alignment = 1
 
-[node name="TitleContainer" type="HBoxContainer" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer"]
+[node name="TitleContainer" type="HBoxContainer" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer" unique_id=1269841432]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/TitleContainer"]
+[node name="Label" type="Label" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/TitleContainer" unique_id=1218445711]
 custom_minimum_size = Vector2(40, 0)
 layout_mode = 2
 text = "Title"
 
-[node name="TitleLnEdt" type="LineEdit" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/TitleContainer"]
+[node name="TitleLnEdt" type="LineEdit" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/TitleContainer" unique_id=1236201884]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
 editable = false
 caret_blink = true
 
-[node name="DescContainer" type="VBoxContainer" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer"]
+[node name="DescContainer" type="VBoxContainer" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer" unique_id=1603222565]
 custom_minimum_size = Vector2(0, 140)
 layout_mode = 2
 
-[node name="Label" type="Label" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/DescContainer"]
+[node name="Label" type="Label" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/DescContainer" unique_id=1774195252]
 layout_mode = 2
 text = "Description"
 
-[node name="DescriptionTxtEdt" type="TextEdit" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/DescContainer"]
+[node name="DescriptionTxtEdt" type="TextEdit" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/DescContainer" unique_id=1060324723]
 layout_mode = 2
 size_flags_vertical = 3
 editable = false
 wrap_mode = 1
 caret_blink = true
 
-[node name="CustomDataContainer" type="VBoxContainer" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer"]
+[node name="CustomDataContainer" type="VBoxContainer" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer" unique_id=1548585605]
 layout_mode = 2
 size_flags_vertical = 3
 size_flags_stretch_ratio = 2.5
 
-[node name="CDHeaderContainer" type="HBoxContainer" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/CustomDataContainer"]
+[node name="CDHeaderContainer" type="HBoxContainer" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/CustomDataContainer" unique_id=1337733049]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/CustomDataContainer/CDHeaderContainer"]
+[node name="Label" type="Label" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/CustomDataContainer/CDHeaderContainer" unique_id=793254096]
 layout_mode = 2
 text = "Custom Data"
 
-[node name="AddButtonsContainer" type="HBoxContainer" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/CustomDataContainer/CDHeaderContainer"]
+[node name="AddButtonsContainer" type="HBoxContainer" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/CustomDataContainer/CDHeaderContainer" unique_id=777607512]
 layout_mode = 2
 size_flags_horizontal = 3
 alignment = 2
 
-[node name="AddDictButton" type="Button" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer"]
+[node name="AddDictButton" type="Button" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer" unique_id=1633470156]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add folder"
 disabled = true
 icon_alignment = 1
 
-[node name="VSeparator" type="VSeparator" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer"]
+[node name="VSeparator" type="VSeparator" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer" unique_id=1330852067]
 layout_mode = 2
 
-[node name="AddIntButton" type="Button" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer"]
+[node name="AddIntButton" type="Button" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer" unique_id=1593656985]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Create integer variable."
@@ -197,7 +199,7 @@ disabled = true
 icon = ExtResource("1_xhnnm")
 icon_alignment = 1
 
-[node name="AddFloatButton" type="Button" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer"]
+[node name="AddFloatButton" type="Button" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer" unique_id=313964157]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Create float variable."
@@ -205,7 +207,7 @@ disabled = true
 icon = ExtResource("2_ikrww")
 icon_alignment = 1
 
-[node name="AddBoolButton" type="Button" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer"]
+[node name="AddBoolButton" type="Button" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer" unique_id=1165394649]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Create bool variable."
@@ -213,7 +215,7 @@ disabled = true
 icon = ExtResource("3_ct1fh")
 icon_alignment = 1
 
-[node name="AddStringButton" type="Button" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer"]
+[node name="AddStringButton" type="Button" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer" unique_id=1982300936]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Create string  variable."
@@ -221,7 +223,7 @@ disabled = true
 icon = ExtResource("4_46oj0")
 icon_alignment = 1
 
-[node name="CustomDataSearchLine" type="LineEdit" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/CustomDataContainer"]
+[node name="CustomDataSearchLine" type="LineEdit" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/CustomDataContainer" unique_id=816330905]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 3.0
@@ -229,7 +231,7 @@ placeholder_text = "Search Custom Data"
 clear_button_enabled = true
 caret_blink = true
 
-[node name="CustomDataTree" type="Tree" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/CustomDataContainer"]
+[node name="CustomDataTree" type="Tree" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/CustomDataContainer" unique_id=720283617]
 custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
 size_flags_vertical = 3
@@ -240,104 +242,104 @@ script = ExtResource("5_v44ms")
 allow_drag_and_drop = true
 compact_mode = true
 
-[node name="LogicContainer" type="VSplitContainer" parent="MainContainer/DataContainer/DataContainer"]
+[node name="LogicContainer" type="VSplitContainer" parent="MainContainer/DataContainer/DataContainer" unique_id=149868027]
 custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 theme_override_constants/minimum_grab_thickness = 10
 
-[node name="DynamicLogicPanel" type="PanelContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer"]
+[node name="DynamicLogicPanel" type="PanelContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer" unique_id=2049745596]
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_xhnnm")
 
-[node name="TargetLogicContainer" type="VBoxContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel"]
+[node name="TargetLogicContainer" type="VBoxContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel" unique_id=776476219]
 visible = false
 layout_mode = 2
 
-[node name="ObjReqChkBx" type="CheckBox" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer"]
+[node name="ObjReqChkBx" type="CheckBox" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer" unique_id=320927627]
 layout_mode = 2
 tooltip_text = "If to complete the stage you need
 to complete this objective's requirements."
 text = "Objective Required"
 alignment = 1
 
-[node name="HSeparator" type="HSeparator" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer"]
+[node name="HSeparator" type="HSeparator" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer" unique_id=845331765]
 layout_mode = 2
 
-[node name="RequirementsCotnainer" type="VBoxContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer"]
+[node name="RequirementsCotnainer" type="VBoxContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer" unique_id=2009779705]
 layout_mode = 2
 
-[node name="HeaderContainer" type="HBoxContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer"]
+[node name="HeaderContainer" type="HBoxContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer" unique_id=1255664651]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/HeaderContainer"]
+[node name="Label" type="Label" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/HeaderContainer" unique_id=367719645]
 layout_mode = 2
 text = "Requirements"
 
-[node name="RequirementSearchLnEdt" type="LineEdit" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/HeaderContainer"]
+[node name="RequirementSearchLnEdt" type="LineEdit" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/HeaderContainer" unique_id=619637067]
 layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "Search Requirements"
 
-[node name="AddRequirementBtn" type="Button" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/HeaderContainer"]
+[node name="AddRequirementBtn" type="Button" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/HeaderContainer" unique_id=1008152467]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 size_flags_horizontal = 8
 icon_alignment = 1
 
-[node name="RequirementsScroll" type="ScrollContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer"]
+[node name="RequirementsScroll" type="ScrollContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer" unique_id=1180624870]
 custom_minimum_size = Vector2(250, 150)
 layout_mode = 2
 
-[node name="RequirementsContainer" type="VBoxContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/RequirementsScroll"]
+[node name="RequirementsContainer" type="VBoxContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/RequirementsScroll" unique_id=1829913642]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="StageLogicContainer" type="VBoxContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel"]
+[node name="StageLogicContainer" type="VBoxContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel" unique_id=1334727168]
 layout_mode = 2
 
-[node name="SuccessContainer" type="HBoxContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/StageLogicContainer"]
+[node name="SuccessContainer" type="HBoxContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/StageLogicContainer" unique_id=207953490]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/StageLogicContainer/SuccessContainer"]
+[node name="Label" type="Label" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/StageLogicContainer/SuccessContainer" unique_id=2014491163]
 custom_minimum_size = Vector2(116, 0)
 layout_mode = 2
 text = "Success Target"
 
-[node name="SuccessPointerOptBtn" type="OptionButton" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/StageLogicContainer/SuccessContainer"]
+[node name="SuccessPointerOptBtn" type="OptionButton" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/StageLogicContainer/SuccessContainer" unique_id=681355]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="FailureContainer" type="HBoxContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/StageLogicContainer"]
+[node name="FailureContainer" type="HBoxContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/StageLogicContainer" unique_id=1865185976]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/StageLogicContainer/FailureContainer"]
+[node name="Label" type="Label" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/StageLogicContainer/FailureContainer" unique_id=351896019]
 custom_minimum_size = Vector2(116, 0)
 layout_mode = 2
 text = "Failure Target"
 
-[node name="FailurePointerOptBtn" type="OptionButton" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/StageLogicContainer/FailureContainer"]
+[node name="FailurePointerOptBtn" type="OptionButton" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/StageLogicContainer/FailureContainer" unique_id=1329432021]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="EventsContainer" type="VBoxContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer"]
+[node name="EventsContainer" type="VBoxContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer" unique_id=54403602]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="EventsHeader" type="HBoxContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer/EventsContainer"]
+[node name="EventsHeader" type="HBoxContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer/EventsContainer" unique_id=1184923930]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="MainContainer/DataContainer/DataContainer/LogicContainer/EventsContainer/EventsHeader"]
+[node name="Label" type="Label" parent="MainContainer/DataContainer/DataContainer/LogicContainer/EventsContainer/EventsHeader" unique_id=1361518937]
 layout_mode = 2
 text = "Quest Events"
 
-[node name="SearchEventLnEdt" type="LineEdit" parent="MainContainer/DataContainer/DataContainer/LogicContainer/EventsContainer/EventsHeader"]
+[node name="SearchEventLnEdt" type="LineEdit" parent="MainContainer/DataContainer/DataContainer/LogicContainer/EventsContainer/EventsHeader" unique_id=1414330455]
 layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "Search Event"
 
-[node name="EventsTree" type="Tree" parent="MainContainer/DataContainer/DataContainer/LogicContainer/EventsContainer"]
+[node name="EventsTree" type="Tree" parent="MainContainer/DataContainer/DataContainer/LogicContainer/EventsContainer" unique_id=277766728]
 layout_mode = 2
 size_flags_vertical = 3
 columns = 2

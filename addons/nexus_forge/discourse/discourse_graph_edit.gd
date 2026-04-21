@@ -733,7 +733,10 @@ func _on_connection_to_empty(from_node: StringName, from_port: int, release_posi
 		var to_data: Dictionary = to_graph._get_node_data()
 		if to_info.has("data"):
 			to_data.merge(to_info["data"], true)
-		to_data["position"] = Vector2((release_position / zoom) + (scroll_offset / zoom))
+		DictUtils.set_nested_value(
+				to_data,
+				["metadata", "position"],
+				Vector2((release_position / zoom) + (scroll_offset / zoom)))
 		to_graph._set_node_data(to_data)
 		add_child(to_graph)
 		graph_nodes.append(to_graph)
@@ -835,7 +838,7 @@ func _on_popup_index_pressed(index: int, menu: PopupMenu) -> void:
 	var frame: GraphFrame = get_element_frame(from_node)
 	
 	node_data.merge(get_compatible_node_overwrite_data(connection_type, data["flow"], data["target_type"], 0 if menu == connection_popup else index), true)
-	node_data["position"] = target_position
+	node_data["metadata"]["position"] = target_position
 	new_node._set_node_data(node_data)
 	add_child(new_node)
 	graph_nodes.append(new_node)

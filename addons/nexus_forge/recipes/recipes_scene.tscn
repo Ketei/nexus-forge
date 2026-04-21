@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3 uid="uid://dhpg6hwpnth1b"]
+[gd_scene format=3 uid="uid://dhpg6hwpnth1b"]
 
 [ext_resource type="Script" uid="uid://t3fgaxxvtygy" path="res://addons/nexus_forge/recipes/crafting_script.gd" id="1_eph7l"]
 [ext_resource type="Texture2D" uid="uid://beqmpm7tqugu7" path="res://addons/nexus_forge/icons/blueprint_plus.svg" id="2_bep6v"]
@@ -17,7 +17,7 @@ content_margin_top = 8.0
 content_margin_right = 6.0
 content_margin_bottom = 6.0
 
-[node name="CraftingScene" type="PanelContainer"]
+[node name="CraftingScene" type="PanelContainer" unique_id=1330047521]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -27,39 +27,39 @@ mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_f8ser")
 script = ExtResource("1_eph7l")
 
-[node name="CraftingContainer" type="HSplitContainer" parent="."]
+[node name="CraftingContainer" type="HSplitContainer" parent="." unique_id=2107406093]
 layout_mode = 2
 theme_override_constants/separation = 12
 theme_override_constants/minimum_grab_thickness = 10
 
-[node name="RecipeSelectContainer" type="VBoxContainer" parent="CraftingContainer"]
+[node name="RecipeSelectContainer" type="VBoxContainer" parent="CraftingContainer" unique_id=1759489960]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="TitleLabel" type="Label" parent="CraftingContainer/RecipeSelectContainer"]
+[node name="TitleLabel" type="Label" parent="CraftingContainer/RecipeSelectContainer" unique_id=926624033]
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.223182, 0.705086, 0.904884, 1)
 theme_override_font_sizes/font_size = 25
 text = "Blueprints"
 
-[node name="MainContainer" type="HBoxContainer" parent="CraftingContainer/RecipeSelectContainer"]
+[node name="MainContainer" type="HBoxContainer" parent="CraftingContainer/RecipeSelectContainer" unique_id=1247629787]
 layout_mode = 2
 
-[node name="SearchRecipesLnEdt" type="LineEdit" parent="CraftingContainer/RecipeSelectContainer/MainContainer"]
+[node name="SearchRecipesLnEdt" type="LineEdit" parent="CraftingContainer/RecipeSelectContainer/MainContainer" unique_id=272892119]
 layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "Search Recipe"
 clear_button_enabled = true
 
-[node name="CreateRecipeBtn" type="Button" parent="CraftingContainer/RecipeSelectContainer/MainContainer"]
+[node name="CreateRecipeBtn" type="Button" parent="CraftingContainer/RecipeSelectContainer/MainContainer" unique_id=1424801742]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "New Recipe"
 icon = ExtResource("2_bep6v")
 icon_alignment = 1
 
-[node name="RecipeTree" type="Tree" parent="CraftingContainer/RecipeSelectContainer"]
+[node name="RecipeTree" type="Tree" parent="CraftingContainer/RecipeSelectContainer" unique_id=2053343583]
 custom_minimum_size = Vector2(200, 150)
 layout_mode = 2
 size_flags_vertical = 3
@@ -69,30 +69,30 @@ hide_root = true
 script = ExtResource("2_f8ser")
 default_name = "new_recipe"
 
-[node name="RecipeDataContainer" type="HSplitContainer" parent="CraftingContainer"]
+[node name="RecipeDataContainer" type="HSplitContainer" parent="CraftingContainer" unique_id=756310504]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 3.0
 theme_override_constants/separation = 6
 theme_override_constants/minimum_grab_thickness = 10
 
-[node name="RecipeItemTreeContainer" type="VBoxContainer" parent="CraftingContainer/RecipeDataContainer"]
+[node name="RecipeItemTreeContainer" type="VBoxContainer" parent="CraftingContainer/RecipeDataContainer" unique_id=345031397]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Label" type="Label" parent="CraftingContainer/RecipeDataContainer/RecipeItemTreeContainer"]
+[node name="Label" type="Label" parent="CraftingContainer/RecipeDataContainer/RecipeItemTreeContainer" unique_id=450301322]
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 text = "Items"
 vertical_alignment = 1
 
-[node name="SearchRecipeItemsLnEdt" type="LineEdit" parent="CraftingContainer/RecipeDataContainer/RecipeItemTreeContainer"]
+[node name="SearchRecipeItemsLnEdt" type="LineEdit" parent="CraftingContainer/RecipeDataContainer/RecipeItemTreeContainer" unique_id=1883758257]
 layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "Search Items"
 clear_button_enabled = true
 
-[node name="RecipeItemsTree" type="Tree" parent="CraftingContainer/RecipeDataContainer/RecipeItemTreeContainer"]
+[node name="RecipeItemsTree" type="Tree" parent="CraftingContainer/RecipeDataContainer/RecipeItemTreeContainer" unique_id=892599843]
 custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
 size_flags_vertical = 3
@@ -103,39 +103,39 @@ hide_root = true
 select_mode = 1
 script = ExtResource("3_bep6v")
 
-[node name="RecipeRecipeeContainer" type="VSplitContainer" parent="CraftingContainer/RecipeDataContainer"]
+[node name="RecipeRecipeeContainer" type="VSplitContainer" parent="CraftingContainer/RecipeDataContainer" unique_id=78762600]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 2.0
 theme_override_constants/separation = 6
 theme_override_constants/minimum_grab_thickness = 10
 
-[node name="IOContainer" type="HBoxContainer" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer"]
+[node name="IOContainer" type="HBoxContainer" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer" unique_id=115860847]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 6
 
-[node name="InputContainer" type="VBoxContainer" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer"]
+[node name="InputContainer" type="VBoxContainer" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer" unique_id=783394723]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="DataBtnCtnr" type="HBoxContainer" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/InputContainer"]
+[node name="DataBtnCtnr" type="HBoxContainer" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/InputContainer" unique_id=438784355]
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 
-[node name="Label" type="Label" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/InputContainer/DataBtnCtnr"]
+[node name="Label" type="Label" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/InputContainer/DataBtnCtnr" unique_id=1319694517]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_vertical = 1
 text = "Input"
 vertical_alignment = 1
 
-[node name="ButtonContainer" type="HBoxContainer" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/InputContainer/DataBtnCtnr"]
+[node name="ButtonContainer" type="HBoxContainer" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/InputContainer/DataBtnCtnr" unique_id=100791281]
 layout_mode = 2
 size_flags_horizontal = 3
 alignment = 2
 
-[node name="AddRcpInIntBtn" type="Button" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/InputContainer/DataBtnCtnr/ButtonContainer"]
+[node name="AddRcpInIntBtn" type="Button" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/InputContainer/DataBtnCtnr/ButtonContainer" unique_id=1769154840]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 size_flags_vertical = 4
@@ -144,7 +144,7 @@ disabled = true
 icon = ExtResource("4_rfiew")
 icon_alignment = 1
 
-[node name="AddRcpInFloatBtn" type="Button" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/InputContainer/DataBtnCtnr/ButtonContainer"]
+[node name="AddRcpInFloatBtn" type="Button" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/InputContainer/DataBtnCtnr/ButtonContainer" unique_id=1756071822]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 size_flags_vertical = 4
@@ -153,7 +153,7 @@ disabled = true
 icon = ExtResource("5_hp1rg")
 icon_alignment = 1
 
-[node name="AddRcpInBoolBtn" type="Button" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/InputContainer/DataBtnCtnr/ButtonContainer"]
+[node name="AddRcpInBoolBtn" type="Button" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/InputContainer/DataBtnCtnr/ButtonContainer" unique_id=493595853]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 size_flags_vertical = 4
@@ -162,7 +162,7 @@ disabled = true
 icon = ExtResource("6_nekjn")
 icon_alignment = 1
 
-[node name="AddRcpInStrBtn" type="Button" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/InputContainer/DataBtnCtnr/ButtonContainer"]
+[node name="AddRcpInStrBtn" type="Button" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/InputContainer/DataBtnCtnr/ButtonContainer" unique_id=783352087]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 size_flags_vertical = 4
@@ -171,7 +171,7 @@ disabled = true
 icon = ExtResource("7_tx5a0")
 icon_alignment = 1
 
-[node name="RecipeInputTree" type="Tree" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/InputContainer"]
+[node name="RecipeInputTree" type="Tree" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/InputContainer" unique_id=944297983]
 custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
 size_flags_vertical = 3
@@ -183,27 +183,27 @@ select_mode = 1
 scroll_horizontal_enabled = false
 script = ExtResource("8_bfc5j")
 
-[node name="OutputContainer" type="VBoxContainer" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer"]
+[node name="OutputContainer" type="VBoxContainer" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer" unique_id=1595776819]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="DataBtnCtnr" type="HBoxContainer" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/OutputContainer"]
+[node name="DataBtnCtnr" type="HBoxContainer" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/OutputContainer" unique_id=946957657]
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 
-[node name="Label" type="Label" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/OutputContainer/DataBtnCtnr"]
+[node name="Label" type="Label" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/OutputContainer/DataBtnCtnr" unique_id=1584273433]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_vertical = 1
 text = "Output"
 vertical_alignment = 1
 
-[node name="ButtonContainer" type="HBoxContainer" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/OutputContainer/DataBtnCtnr"]
+[node name="ButtonContainer" type="HBoxContainer" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/OutputContainer/DataBtnCtnr" unique_id=543688565]
 layout_mode = 2
 size_flags_horizontal = 3
 alignment = 2
 
-[node name="AddRcpOutIntBtn" type="Button" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/OutputContainer/DataBtnCtnr/ButtonContainer"]
+[node name="AddRcpOutIntBtn" type="Button" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/OutputContainer/DataBtnCtnr/ButtonContainer" unique_id=656062698]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 size_flags_vertical = 4
@@ -212,7 +212,7 @@ disabled = true
 icon = ExtResource("4_rfiew")
 icon_alignment = 1
 
-[node name="AddRcpOutFloatBtn" type="Button" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/OutputContainer/DataBtnCtnr/ButtonContainer"]
+[node name="AddRcpOutFloatBtn" type="Button" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/OutputContainer/DataBtnCtnr/ButtonContainer" unique_id=1639134923]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 size_flags_vertical = 4
@@ -221,7 +221,7 @@ disabled = true
 icon = ExtResource("5_hp1rg")
 icon_alignment = 1
 
-[node name="AddRcpOutBoolBtn" type="Button" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/OutputContainer/DataBtnCtnr/ButtonContainer"]
+[node name="AddRcpOutBoolBtn" type="Button" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/OutputContainer/DataBtnCtnr/ButtonContainer" unique_id=2131643557]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 size_flags_vertical = 4
@@ -230,7 +230,7 @@ disabled = true
 icon = ExtResource("6_nekjn")
 icon_alignment = 1
 
-[node name="AddRcpOutStrBtn" type="Button" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/OutputContainer/DataBtnCtnr/ButtonContainer"]
+[node name="AddRcpOutStrBtn" type="Button" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/OutputContainer/DataBtnCtnr/ButtonContainer" unique_id=1202945152]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 size_flags_vertical = 4
@@ -239,7 +239,7 @@ disabled = true
 icon = ExtResource("7_tx5a0")
 icon_alignment = 1
 
-[node name="RecipeOutputTree" type="Tree" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/OutputContainer"]
+[node name="RecipeOutputTree" type="Tree" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/OutputContainer" unique_id=556456299]
 custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
 size_flags_vertical = 3
@@ -252,35 +252,35 @@ scroll_horizontal_enabled = false
 script = ExtResource("8_bfc5j")
 recipe_mode = 1
 
-[node name="CustomDataContainer" type="VBoxContainer" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer"]
+[node name="CustomDataContainer" type="VBoxContainer" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer" unique_id=591404939]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="CustomDataHeader" type="HBoxContainer" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/CustomDataContainer"]
+[node name="CustomDataHeader" type="HBoxContainer" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/CustomDataContainer" unique_id=1209218089]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/CustomDataContainer/CustomDataHeader"]
+[node name="Label" type="Label" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/CustomDataContainer/CustomDataHeader" unique_id=1292969399]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 text = "Custom Data"
 vertical_alignment = 1
 
-[node name="ButtonContainer" type="HBoxContainer" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/CustomDataContainer/CustomDataHeader"]
+[node name="ButtonContainer" type="HBoxContainer" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/CustomDataContainer/CustomDataHeader" unique_id=1692597449]
 layout_mode = 2
 size_flags_horizontal = 3
 alignment = 2
 
-[node name="AddRcpFldrBtn" type="Button" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
+[node name="AddRcpFldrBtn" type="Button" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/CustomDataContainer/CustomDataHeader/ButtonContainer" unique_id=1399690348]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add folder"
 disabled = true
 icon_alignment = 1
 
-[node name="VSeparator" type="VSeparator" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
+[node name="VSeparator" type="VSeparator" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/CustomDataContainer/CustomDataHeader/ButtonContainer" unique_id=50089658]
 layout_mode = 2
 
-[node name="AddRcpIntBtn" type="Button" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
+[node name="AddRcpIntBtn" type="Button" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/CustomDataContainer/CustomDataHeader/ButtonContainer" unique_id=2119055880]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add integer"
@@ -288,7 +288,7 @@ disabled = true
 icon = ExtResource("4_rfiew")
 icon_alignment = 1
 
-[node name="AddRcpFloatBtn" type="Button" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
+[node name="AddRcpFloatBtn" type="Button" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/CustomDataContainer/CustomDataHeader/ButtonContainer" unique_id=1257793183]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add float"
@@ -296,7 +296,7 @@ disabled = true
 icon = ExtResource("5_hp1rg")
 icon_alignment = 1
 
-[node name="AddRcpBoolBtn" type="Button" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
+[node name="AddRcpBoolBtn" type="Button" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/CustomDataContainer/CustomDataHeader/ButtonContainer" unique_id=1339868252]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add boolean"
@@ -304,7 +304,7 @@ disabled = true
 icon = ExtResource("6_nekjn")
 icon_alignment = 1
 
-[node name="AddRcpStrBtn" type="Button" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/CustomDataContainer/CustomDataHeader/ButtonContainer"]
+[node name="AddRcpStrBtn" type="Button" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/CustomDataContainer/CustomDataHeader/ButtonContainer" unique_id=1601156545]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add string"
@@ -312,7 +312,7 @@ disabled = true
 icon = ExtResource("7_tx5a0")
 icon_alignment = 1
 
-[node name="RecipeCustomDataTree" type="Tree" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/CustomDataContainer"]
+[node name="RecipeCustomDataTree" type="Tree" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/CustomDataContainer" unique_id=359401690]
 custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
 size_flags_horizontal = 3

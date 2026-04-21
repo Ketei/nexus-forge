@@ -273,7 +273,7 @@ func get_text_entry(node_uuid: StringName, locale: String = "", fallback: String
 	if localization_data == null or localization_data["type"] != LocalizationType.TEXT:
 		return fallback
 	
-	if locale.is_empty():
+	if locale.is_empty() or not localization_data["unlocalized"].is_empty():
 		return localization_data["unlocalized"]
 	else:
 		return DictUtils.get_nested_value(

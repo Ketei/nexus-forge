@@ -69,14 +69,6 @@ func _post_init() -> void:
 			SlotConnectionType.SIGNAL,
 			-1)
 	
-	set_slot_color_left(0, COLORS["dialog"])
-	set_slot_color_right(0, COLORS["dialog"])
-	set_slot_color_left(1, COLORS["any"])
-	set_slot_color_left(2, COLORS["method"])
-	set_slot_color_left(3, COLORS["signal"])
-	
-	set_slot_custom_icon_left(0, flow_icon)
-	set_slot_custom_icon_right(0, flow_icon)
 	
 	variable_path.text_changed.connect(node_updated.emit)
 	variable_path.focus_exited.connect(_on_var_path_focus_lost)
@@ -87,6 +79,14 @@ func _ready() -> void:
 	set_input_connection_icon(&"variable", get_theme_icon("Variant", "EditorIcons"))
 	set_input_connection_icon(&"callable", get_theme_icon("Callable", "EditorIcons"))
 	set_input_connection_icon(&"signal", get_theme_icon("Signals", "EditorIcons"))
+	set_slot_color_left(0, COLORS["dialog"])
+	set_slot_color_right(0, COLORS["dialog"])
+	set_slot_color_left(1, COLORS["any"])
+	set_slot_color_left(2, COLORS["method"])
+	set_slot_color_left(3, COLORS["signal"])
+	
+	set_slot_custom_icon_left(0, flow_icon)
+	set_slot_custom_icon_right(0, flow_icon)
 
 
 func _get_issues() -> PackedStringArray:

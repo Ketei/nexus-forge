@@ -49,29 +49,6 @@ var current_locale: String = ""
 var locale_map: Dictionary[String, Dictionary] = {}
 
 
-#func _on_node_deleted(uuid: StringName) -> void:
-	#node_deleted.emit(uuid)
-	#if localization.has(uuid):
-		#localization.erase(uuid)
-		#conversation_changed.emit()
-
-
-#var _localization: Dictionary[StringName, Dictionary] = {
-	#"uuid": {
-		#"node": "nodepath",
-		#"localization": {
-			#"en": {
-				#"base": {"dialog": "Butts"},
-				#"UK": {"options": ["Butts"]},
-				#"US": {"dialog": "Hello World"}
-			#}},
-	#"uuid_2": {
-		#"node": "node",
-		#"lcoalization": {
-			#"common": {"dialog": "2 + 2"}}}}
-#}
-
-
 func _ready() -> void:
 	if Engine.is_editor_hint() and owner == get_tree().edited_scene_root:
 		return

@@ -10,14 +10,11 @@
 [ext_resource type="Texture2D" uid="uid://bn6ggyqhhn03o" path="res://addons/nexus_forge/icons/dialog_plus.svg" id="6_nnanj"]
 [ext_resource type="Texture2D" uid="uid://cymtattv7iu68" path="res://addons/nexus_forge/icons/format_plus.svg" id="8_nnanj"]
 
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_v0h3x"]
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_v0h3x"]
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_qplns"]
 content_margin_left = 6.0
 content_margin_top = 8.0
 content_margin_right = 6.0
 content_margin_bottom = 6.0
-bg_color = Color(0.180392, 0.180392, 0.180392, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_y485p"]
 content_margin_right = 6.0
@@ -54,7 +51,6 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxEmpty_v0h3x")
 script = ExtResource("1_viyrt")
 
 [node name="MainSplitContainer" type="HSplitContainer" parent="." unique_id=944148545]
@@ -69,7 +65,7 @@ split_offset = -234
 [node name="MainSidebar" type="PanelContainer" parent="MainSplitContainer" unique_id=1791491811]
 custom_minimum_size = Vector2(32, 0)
 layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_v0h3x")
+theme_override_styles/panel = SubResource("StyleBoxEmpty_qplns")
 
 [node name="SidebarSplitContainer" type="VSplitContainer" parent="MainSplitContainer/MainSidebar" unique_id=1065360492]
 custom_minimum_size = Vector2(200, 0)
@@ -142,8 +138,10 @@ custom_minimum_size = Vector2(680, 300)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/minimum_grab_thickness = 10
+split_offsets = PackedInt32Array(-72)
 dragging_enabled = false
 dragger_visibility = 2
+split_offset = -72
 
 [node name="ErrorContainer" type="PanelContainer" parent="MainSplitContainer/DiscourseSplitContainer" unique_id=1745504276]
 visible = false
@@ -219,8 +217,8 @@ custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 size_flags_vertical = 8
 icon = ExtResource("3_f5jrf")
+flat = true
 icon_alignment = 1
-expand_icon = true
 
 [node name="SearchLanguageLnEdt" type="LineEdit" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LanguagesSplitContainer/LanguagesContainer" unique_id=1483522758]
 custom_minimum_size = Vector2(0, 32)
@@ -407,6 +405,7 @@ custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 disabled = true
 icon = ExtResource("6_nnanj")
+flat = true
 
 [node name="HSeparator" type="HSeparator" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer" unique_id=907746606]
 layout_mode = 2

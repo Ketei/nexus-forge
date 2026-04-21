@@ -34,30 +34,28 @@ func _post_init() -> void:
 	low_container.add_child(result_label)
 	low_container.add_child(false_label)
 	
-	var conn_idx: int = add_field(
+	add_field(
 			&"connection",
 			true_label,
 			false,
 			SlotConnectionType.DIALOG,
 			SlotConnectionType.DIALOG)
-	var eval_idx: int = add_field(
+	add_field(
 			&"arg_eval",
 			low_container,
 			false,
 			SlotConnectionType.VAR_BOOL,
 			SlotConnectionType.DIALOG)
-	
-	set_slot_color_left(conn_idx, COLORS.dialog)
-	set_slot_color_right(conn_idx, COLORS.dialog)
-	set_slot_color_left(eval_idx, COLORS.bool)
-	set_slot_color_right(eval_idx, COLORS.dialog)
-	
-	set_slot_custom_icon_right(conn_idx, flow_icon)
-	set_slot_custom_icon_left(conn_idx, flow_icon)
-	set_slot_custom_icon_right(eval_idx, flow_icon)
 
 
 func _ready() -> void:
+	set_slot_color_left(0, COLORS.dialog)
+	set_slot_color_right(0, COLORS.dialog)
+	set_slot_custom_icon_right(0, flow_icon)
+	set_slot_custom_icon_left(0, flow_icon)
+	set_slot_color_left(1, COLORS.bool)
+	set_slot_color_right(1, COLORS.dialog)
+	set_slot_custom_icon_right(1, flow_icon)
 	graph_icon = preload("res://addons/nexus_forge/icons/branch_icon.svg")
 	set_input_connection_icon(&"arg_eval", get_theme_icon("bool", "EditorIcons"))
 

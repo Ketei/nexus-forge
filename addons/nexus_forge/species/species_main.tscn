@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3 uid="uid://c0pulhtis8blt"]
+[gd_scene format=3 uid="uid://c0pulhtis8blt"]
 
 [ext_resource type="Script" uid="uid://c82ss7sbqg8ld" path="res://addons/nexus_forge/species/races_main_script.gd" id="1_30i28"]
 [ext_resource type="Texture2D" uid="uid://ca385cv4s0bwm" path="res://addons/nexus_forge/icons/dna_plus.svg" id="2_4lijr"]
@@ -15,7 +15,7 @@ content_margin_top = 8.0
 content_margin_right = 6.0
 content_margin_bottom = 6.0
 
-[node name="Species" type="PanelContainer"]
+[node name="Species" type="PanelContainer" unique_id=1802372984]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -24,37 +24,39 @@ grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_nrtss")
 script = ExtResource("1_30i28")
 
-[node name="RacesContainer" type="HSplitContainer" parent="."]
+[node name="RacesContainer" type="HSplitContainer" parent="." unique_id=162451513]
 layout_mode = 2
 theme_override_constants/minimum_grab_thickness = 10
+split_offsets = PackedInt32Array(660)
 split_offset = 660
 
-[node name="RacesBasicSplit" type="HSplitContainer" parent="RacesContainer"]
+[node name="RacesBasicSplit" type="HSplitContainer" parent="RacesContainer" unique_id=1198612605]
 layout_mode = 2
 size_flags_stretch_ratio = 3.0
 theme_override_constants/minimum_grab_thickness = 10
+split_offsets = PackedInt32Array(250)
 split_offset = 250
 
-[node name="RaceTreeContainer" type="VBoxContainer" parent="RacesContainer/RacesBasicSplit"]
+[node name="RaceTreeContainer" type="VBoxContainer" parent="RacesContainer/RacesBasicSplit" unique_id=1418026191]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 
-[node name="TitleLabel" type="Label" parent="RacesContainer/RacesBasicSplit/RaceTreeContainer"]
+[node name="TitleLabel" type="Label" parent="RacesContainer/RacesBasicSplit/RaceTreeContainer" unique_id=1399228054]
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.223182, 0.705086, 0.904884, 1)
 theme_override_font_sizes/font_size = 25
 text = "Kindred"
 
-[node name="SearchRaceContainer" type="HBoxContainer" parent="RacesContainer/RacesBasicSplit/RaceTreeContainer"]
+[node name="SearchRaceContainer" type="HBoxContainer" parent="RacesContainer/RacesBasicSplit/RaceTreeContainer" unique_id=1512145286]
 layout_mode = 2
 
-[node name="SearchRaceLnEdt" type="LineEdit" parent="RacesContainer/RacesBasicSplit/RaceTreeContainer/SearchRaceContainer"]
+[node name="SearchRaceLnEdt" type="LineEdit" parent="RacesContainer/RacesBasicSplit/RaceTreeContainer/SearchRaceContainer" unique_id=1994362179]
 layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "Search Species"
 
-[node name="NewRaceBtn" type="Button" parent="RacesContainer/RacesBasicSplit/RaceTreeContainer/SearchRaceContainer"]
+[node name="NewRaceBtn" type="Button" parent="RacesContainer/RacesBasicSplit/RaceTreeContainer/SearchRaceContainer" unique_id=585675769]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Create Species"
@@ -62,7 +64,7 @@ icon = ExtResource("2_4lijr")
 icon_alignment = 1
 expand_icon = true
 
-[node name="RacesTree" type="Tree" parent="RacesContainer/RacesBasicSplit/RaceTreeContainer"]
+[node name="RacesTree" type="Tree" parent="RacesContainer/RacesBasicSplit/RaceTreeContainer" unique_id=418501273]
 layout_mode = 2
 size_flags_vertical = 3
 allow_reselect = true
@@ -70,75 +72,75 @@ allow_rmb_select = true
 hide_root = true
 script = ExtResource("3_u68gt")
 
-[node name="BasicDataContainer" type="VBoxContainer" parent="RacesContainer/RacesBasicSplit"]
+[node name="BasicDataContainer" type="VBoxContainer" parent="RacesContainer/RacesBasicSplit" unique_id=1276630153]
 custom_minimum_size = Vector2(250, 0)
 layout_mode = 2
 size_flags_stretch_ratio = 1.5
 
-[node name="Control" type="Control" parent="RacesContainer/RacesBasicSplit/BasicDataContainer"]
+[node name="Control" type="Control" parent="RacesContainer/RacesBasicSplit/BasicDataContainer" unique_id=609789387]
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 
-[node name="NameContainer" type="HBoxContainer" parent="RacesContainer/RacesBasicSplit/BasicDataContainer"]
+[node name="NameContainer" type="HBoxContainer" parent="RacesContainer/RacesBasicSplit/BasicDataContainer" unique_id=298967438]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="RacesContainer/RacesBasicSplit/BasicDataContainer/NameContainer"]
+[node name="Label" type="Label" parent="RacesContainer/RacesBasicSplit/BasicDataContainer/NameContainer" unique_id=291916485]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 text = "Name"
 vertical_alignment = 1
 
-[node name="RaceNameLnEdt" type="LineEdit" parent="RacesContainer/RacesBasicSplit/BasicDataContainer/NameContainer"]
+[node name="RaceNameLnEdt" type="LineEdit" parent="RacesContainer/RacesBasicSplit/BasicDataContainer/NameContainer" unique_id=1464824755]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
 editable = false
 
-[node name="DescContainer" type="VBoxContainer" parent="RacesContainer/RacesBasicSplit/BasicDataContainer"]
+[node name="DescContainer" type="VBoxContainer" parent="RacesContainer/RacesBasicSplit/BasicDataContainer" unique_id=936388411]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="Label" type="Label" parent="RacesContainer/RacesBasicSplit/BasicDataContainer/DescContainer"]
+[node name="Label" type="Label" parent="RacesContainer/RacesBasicSplit/BasicDataContainer/DescContainer" unique_id=694454893]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 text = "Description"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="RaceDescTxtEdt" type="TextEdit" parent="RacesContainer/RacesBasicSplit/BasicDataContainer/DescContainer"]
+[node name="RaceDescTxtEdt" type="TextEdit" parent="RacesContainer/RacesBasicSplit/BasicDataContainer/DescContainer" unique_id=602770989]
 layout_mode = 2
 size_flags_vertical = 3
 editable = false
 
-[node name="CustomDataContainer" type="VBoxContainer" parent="RacesContainer/RacesBasicSplit/BasicDataContainer"]
+[node name="CustomDataContainer" type="VBoxContainer" parent="RacesContainer/RacesBasicSplit/BasicDataContainer" unique_id=435973997]
 custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 size_flags_vertical = 3
 size_flags_stretch_ratio = 2.5
 
-[node name="CDHeaderContainer" type="HBoxContainer" parent="RacesContainer/RacesBasicSplit/BasicDataContainer/CustomDataContainer"]
+[node name="CDHeaderContainer" type="HBoxContainer" parent="RacesContainer/RacesBasicSplit/BasicDataContainer/CustomDataContainer" unique_id=934890009]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="RacesContainer/RacesBasicSplit/BasicDataContainer/CustomDataContainer/CDHeaderContainer"]
+[node name="Label" type="Label" parent="RacesContainer/RacesBasicSplit/BasicDataContainer/CustomDataContainer/CDHeaderContainer" unique_id=56320194]
 layout_mode = 2
 text = "Custom Data"
 
-[node name="AddButtonsContainer" type="HBoxContainer" parent="RacesContainer/RacesBasicSplit/BasicDataContainer/CustomDataContainer/CDHeaderContainer"]
+[node name="AddButtonsContainer" type="HBoxContainer" parent="RacesContainer/RacesBasicSplit/BasicDataContainer/CustomDataContainer/CDHeaderContainer" unique_id=1753936872]
 layout_mode = 2
 size_flags_horizontal = 3
 alignment = 2
 
-[node name="AddDictButton" type="Button" parent="RacesContainer/RacesBasicSplit/BasicDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer"]
+[node name="AddDictButton" type="Button" parent="RacesContainer/RacesBasicSplit/BasicDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer" unique_id=97598385]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add folder"
 disabled = true
 icon_alignment = 1
 
-[node name="VSeparator" type="VSeparator" parent="RacesContainer/RacesBasicSplit/BasicDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer"]
+[node name="VSeparator" type="VSeparator" parent="RacesContainer/RacesBasicSplit/BasicDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer" unique_id=236046053]
 layout_mode = 2
 
-[node name="AddRcIntButton" type="Button" parent="RacesContainer/RacesBasicSplit/BasicDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer"]
+[node name="AddRcIntButton" type="Button" parent="RacesContainer/RacesBasicSplit/BasicDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer" unique_id=1959858809]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add integer"
@@ -146,7 +148,7 @@ disabled = true
 icon = ExtResource("2_30i28")
 icon_alignment = 1
 
-[node name="AddRcFloatButton" type="Button" parent="RacesContainer/RacesBasicSplit/BasicDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer"]
+[node name="AddRcFloatButton" type="Button" parent="RacesContainer/RacesBasicSplit/BasicDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer" unique_id=1298736331]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add float"
@@ -154,7 +156,7 @@ disabled = true
 icon = ExtResource("3_rexu5")
 icon_alignment = 1
 
-[node name="AddRcBoolButton" type="Button" parent="RacesContainer/RacesBasicSplit/BasicDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer"]
+[node name="AddRcBoolButton" type="Button" parent="RacesContainer/RacesBasicSplit/BasicDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer" unique_id=783470169]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add boolean"
@@ -162,7 +164,7 @@ disabled = true
 icon = ExtResource("4_u68gt")
 icon_alignment = 1
 
-[node name="AddRcStringButton" type="Button" parent="RacesContainer/RacesBasicSplit/BasicDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer"]
+[node name="AddRcStringButton" type="Button" parent="RacesContainer/RacesBasicSplit/BasicDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer" unique_id=1067952266]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add string"
@@ -170,7 +172,7 @@ disabled = true
 icon = ExtResource("5_b0sy4")
 icon_alignment = 1
 
-[node name="RaceCustomDataSearchLine" type="LineEdit" parent="RacesContainer/RacesBasicSplit/BasicDataContainer/CustomDataContainer"]
+[node name="RaceCustomDataSearchLine" type="LineEdit" parent="RacesContainer/RacesBasicSplit/BasicDataContainer/CustomDataContainer" unique_id=338424709]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 3.0
@@ -178,7 +180,7 @@ placeholder_text = "Search Custom Data"
 editable = false
 clear_button_enabled = true
 
-[node name="RaceDataTree" type="Tree" parent="RacesContainer/RacesBasicSplit/BasicDataContainer/CustomDataContainer"]
+[node name="RaceDataTree" type="Tree" parent="RacesContainer/RacesBasicSplit/BasicDataContainer/CustomDataContainer" unique_id=369099317]
 layout_mode = 2
 size_flags_vertical = 3
 columns = 2
@@ -189,30 +191,31 @@ script = ExtResource("7_aexp2")
 allow_drag_and_drop = true
 compact_mode = true
 
-[node name="StatTraitSplit" type="HSplitContainer" parent="RacesContainer"]
+[node name="StatTraitSplit" type="HSplitContainer" parent="RacesContainer" unique_id=1192178565]
 layout_mode = 2
 size_flags_stretch_ratio = 3.0
 theme_override_constants/minimum_grab_thickness = 10
+split_offsets = PackedInt32Array(325)
 split_offset = 325
 
-[node name="ValuesContainer" type="VSplitContainer" parent="RacesContainer/StatTraitSplit"]
+[node name="ValuesContainer" type="VSplitContainer" parent="RacesContainer/StatTraitSplit" unique_id=1672771378]
 custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 size_flags_stretch_ratio = 1.5
 theme_override_constants/minimum_grab_thickness = 10
 
-[node name="StatVBox" type="VBoxContainer" parent="RacesContainer/StatTraitSplit/ValuesContainer"]
+[node name="StatVBox" type="VBoxContainer" parent="RacesContainer/StatTraitSplit/ValuesContainer" unique_id=1763904641]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="StatLbl" type="Label" parent="RacesContainer/StatTraitSplit/ValuesContainer/StatVBox"]
+[node name="StatLbl" type="Label" parent="RacesContainer/StatTraitSplit/ValuesContainer/StatVBox" unique_id=1467331583]
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 text = "Base Stats"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="EditStatBlockBtn" type="Button" parent="RacesContainer/StatTraitSplit/ValuesContainer/StatVBox/StatLbl"]
+[node name="EditStatBlockBtn" type="Button" parent="RacesContainer/StatTraitSplit/ValuesContainer/StatVBox/StatLbl" unique_id=753543702]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 1
 anchors_preset = 6
@@ -230,27 +233,27 @@ focus_mode = 1
 flat = true
 icon_alignment = 1
 
-[node name="StatScroll" type="ScrollContainer" parent="RacesContainer/StatTraitSplit/ValuesContainer/StatVBox"]
+[node name="StatScroll" type="ScrollContainer" parent="RacesContainer/StatTraitSplit/ValuesContainer/StatVBox" unique_id=816140230]
 layout_mode = 2
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
-[node name="RaceStatsContainer" type="VBoxContainer" parent="RacesContainer/StatTraitSplit/ValuesContainer/StatVBox/StatScroll"]
+[node name="RaceStatsContainer" type="VBoxContainer" parent="RacesContainer/StatTraitSplit/ValuesContainer/StatVBox/StatScroll" unique_id=844959338]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="SkillVBox" type="VBoxContainer" parent="RacesContainer/StatTraitSplit/ValuesContainer"]
+[node name="SkillVBox" type="VBoxContainer" parent="RacesContainer/StatTraitSplit/ValuesContainer" unique_id=703960207]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="StatLbl" type="Label" parent="RacesContainer/StatTraitSplit/ValuesContainer/SkillVBox"]
+[node name="StatLbl" type="Label" parent="RacesContainer/StatTraitSplit/ValuesContainer/SkillVBox" unique_id=1103218344]
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 text = "Base Skills"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="EditSkillSetBtn" type="Button" parent="RacesContainer/StatTraitSplit/ValuesContainer/SkillVBox/StatLbl"]
+[node name="EditSkillSetBtn" type="Button" parent="RacesContainer/StatTraitSplit/ValuesContainer/SkillVBox/StatLbl" unique_id=1995241850]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 1
 anchors_preset = 6
@@ -268,27 +271,27 @@ focus_mode = 1
 flat = true
 icon_alignment = 1
 
-[node name="SkillScroll" type="ScrollContainer" parent="RacesContainer/StatTraitSplit/ValuesContainer/SkillVBox"]
+[node name="SkillScroll" type="ScrollContainer" parent="RacesContainer/StatTraitSplit/ValuesContainer/SkillVBox" unique_id=1362384189]
 layout_mode = 2
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
-[node name="RaceSkillContainer" type="VBoxContainer" parent="RacesContainer/StatTraitSplit/ValuesContainer/SkillVBox/SkillScroll"]
+[node name="RaceSkillContainer" type="VBoxContainer" parent="RacesContainer/StatTraitSplit/ValuesContainer/SkillVBox/SkillScroll" unique_id=1168143616]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="TraitsContainer" type="VBoxContainer" parent="RacesContainer/StatTraitSplit"]
+[node name="TraitsContainer" type="VBoxContainer" parent="RacesContainer/StatTraitSplit" unique_id=1029512103]
 custom_minimum_size = Vector2(220, 0)
 layout_mode = 2
 
-[node name="StatLbl" type="Label" parent="RacesContainer/StatTraitSplit/TraitsContainer"]
+[node name="StatLbl" type="Label" parent="RacesContainer/StatTraitSplit/TraitsContainer" unique_id=423419249]
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 text = "Traits"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="EditTraitBlockBtn" type="Button" parent="RacesContainer/StatTraitSplit/TraitsContainer/StatLbl"]
+[node name="EditTraitBlockBtn" type="Button" parent="RacesContainer/StatTraitSplit/TraitsContainer/StatLbl" unique_id=1828064642]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 1
 anchors_preset = 6
@@ -306,11 +309,11 @@ focus_mode = 1
 flat = true
 icon_alignment = 1
 
-[node name="ScrollContainer" type="ScrollContainer" parent="RacesContainer/StatTraitSplit/TraitsContainer"]
+[node name="ScrollContainer" type="ScrollContainer" parent="RacesContainer/StatTraitSplit/TraitsContainer" unique_id=1496877957]
 layout_mode = 2
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
-[node name="RaceTraitsContainer" type="VBoxContainer" parent="RacesContainer/StatTraitSplit/TraitsContainer/ScrollContainer"]
+[node name="RaceTraitsContainer" type="VBoxContainer" parent="RacesContainer/StatTraitSplit/TraitsContainer/ScrollContainer" unique_id=1680876144]
 layout_mode = 2
 size_flags_horizontal = 3

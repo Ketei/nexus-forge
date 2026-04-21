@@ -1,57 +1,19 @@
 [gd_resource type="Theme" format=3 uid="uid://bgqlr2f4msogv"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_lu5ae"]
+[sub_resource type="GDScript" id="GDScript_wxuij"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_0yhqm"]
 content_margin_left = 4.0
-content_margin_top = 5.0
+content_margin_top = 4.0
 content_margin_right = 4.0
-content_margin_bottom = 5.0
-bg_color = Color(0.6, 0.6, 0.6, 0)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.439216, 0.729412, 0.980392, 1)
-corner_radius_top_left = 5
-corner_radius_top_right = 5
-corner_radius_bottom_right = 5
-corner_radius_bottom_left = 5
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_qggyr"]
-content_margin_left = 5.0
-content_margin_top = 4.0
-content_margin_right = 5.0
 content_margin_bottom = 4.0
-bg_color = Color(0.305745, 0.33533, 0.38182, 1)
-corner_radius_top_left = 5
-corner_radius_top_right = 5
-corner_radius_bottom_right = 5
-corner_radius_bottom_left = 5
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ssui2"]
-content_margin_left = 5.0
-content_margin_top = 4.0
-content_margin_right = 5.0
-content_margin_bottom = 4.0
-bg_color = Color(0.27451, 0.301961, 0.345098, 1)
-corner_radius_top_left = 5
-corner_radius_top_right = 5
-corner_radius_bottom_right = 5
-corner_radius_bottom_left = 5
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_w3306"]
-content_margin_left = 5.0
-content_margin_top = 4.0
-content_margin_right = 5.0
-content_margin_bottom = 4.0
-bg_color = Color(0.341581, 0.403816, 0.442787, 1)
-corner_radius_top_left = 5
-corner_radius_top_right = 5
-corner_radius_bottom_right = 5
-corner_radius_bottom_left = 5
+bg_color = Color(0.101960786, 0.101960786, 0.101960786, 0.78431374)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+corner_detail = 5
+script = SubResource("GDScript_wxuij")
 
 [resource]
-Button/colors/font_pressed_color = Color(0.439216, 0.729412, 0.980392, 1)
-Button/styles/focus = SubResource("StyleBoxFlat_lu5ae")
-Button/styles/hover = SubResource("StyleBoxFlat_qggyr")
-Button/styles/normal = SubResource("StyleBoxFlat_ssui2")
-Button/styles/pressed = SubResource("StyleBoxFlat_w3306")
+Tree/styles/panel = SubResource("StyleBoxFlat_0yhqm")

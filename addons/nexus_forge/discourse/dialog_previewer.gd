@@ -40,7 +40,7 @@ func _ready() -> void:
 		continue_btn.grab_focus()
 	else:
 		continue_btn.disabled = not success
-		events_text_edit.text = "--- Active dialog not found ---"
+		events_text_edit.text = "[ERROR] Dialog resource not found"
 	
 	continue_btn.pressed.connect(_on_continue_pressed)
 	options_tree.button_clicked.connect(_on_option_button_clicked)
@@ -79,7 +79,7 @@ func _on_options_reached(options: Array[Dictionary]) -> void:
 		add_option(option["text"], option["unlocked"], option["target"])
 	
 	if options.is_empty():
-		events_text_edit.text += "Error: No options were received.\n"
+		events_text_edit.text += "[WARNING] No options were received\n"
 	else:
 		options_tree.grab_focus()
 		options_tree.get_root().get_first_child().select(0)
@@ -120,7 +120,7 @@ func _on_data_set(folder: String, variable: String, data: Variant) -> void:
 
 func _on_method_called(method_string: String, arguments: Array) -> void:
 	events_text_edit.text += str(
-			"Method ",
+			"[EVENT] Method ",
 			method_string,
 			" called with arguments: ",
 			var_to_str(arguments),
@@ -129,7 +129,7 @@ func _on_method_called(method_string: String, arguments: Array) -> void:
 
 func _on_signal_emmited(signal_name: String, arguments: Array) -> void:
 	events_text_edit.text += str(
-			"Signal ",
+			"[EVENT] Signal ",
 			signal_name,
 			" emmited with arguments ",
 			arguments)
@@ -138,18 +138,18 @@ func _on_signal_emmited(signal_name: String, arguments: Array) -> void:
 
 
 func _on_dialog_started() -> void:
-	events_text_edit.text += "--- Signal: Dialog started ---\n"
+	events_text_edit.text += "[SIGNAL] Dialog started\n"
 	continue_btn.text = "Continue Dialog"
 	events_text_edit.set_deferred("scroll_vertical", events_text_edit.get_v_scroll_bar().max_value)
 
 
 func _on_dialog_paused() -> void:
-	events_text_edit.text += "--- Signal: Dialog paused ---\n"
+	events_text_edit.text += "[SIGNAL] Dialog paused\n"
 	events_text_edit.set_deferred("scroll_vertical", events_text_edit.get_v_scroll_bar().max_value)
 
 
 func _on_dialog_finished() -> void:
-	events_text_edit.text += "--- Signal: Dialog finished ---\n"
+	events_text_edit.text += "[SIGNAL] Dialog finished\n"
 	dialog_text_edit.text = ""
 	continue_btn.text = "Start Dialog"
 	events_text_edit.set_deferred("scroll_vertical", events_text_edit.get_v_scroll_bar().max_value)
@@ -157,9 +157,9 @@ func _on_dialog_finished() -> void:
 
 func load_dialog(dialog_path: String) -> void:
 	if NexusForge.Discourse.load_dialog(dialog_path):
-		events_text_edit.text += "Dialog loaded: " + dialog_path + "\n"
+		events_text_edit.text += "[INFO] Dialog loaded: " + dialog_path + "\n"
 	else:
-		events_text_edit.text += "Dialog couldn't be loaded\n"
+		events_text_edit.text += "[ERROR] Dialog couldn't be loaded\n"
 	events_text_edit.set_deferred("scroll_vertical", events_text_edit.get_v_scroll_bar().max_value)
 
 
