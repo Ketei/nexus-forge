@@ -168,6 +168,7 @@ func _ready() -> void:
 	save_btn.icon = get_theme_icon("Save", "EditorIcons")
 	save_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	save_btn.expand_icon = true
+	save_btn.flat = true
 	save_btn.tooltip_text = "Save Dialog"
 	save_btn.custom_minimum_size = Vector2(32.0, 32.0)
 	save_btn.add_theme_constant_override(&"icon_max_width", 24)
@@ -176,6 +177,7 @@ func _ready() -> void:
 	open_btn.icon = get_theme_icon("Load", "EditorIcons")
 	open_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	open_btn.expand_icon = true
+	open_btn.flat = true
 	open_btn.tooltip_text = "Open Dialog"
 	open_btn.custom_minimum_size = Vector2(32.0, 32.0)
 	open_btn.add_theme_constant_override(&"icon_max_width", 24)
