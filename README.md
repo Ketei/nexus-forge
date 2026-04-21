@@ -38,6 +38,10 @@ The plugin also includes several utility classes covering specific, common devel
 
 ## Documentation
 
-All custom classes within Nexus Forge include comprehensive **built-in documentation**, accessible directly through the Godot editor's **F1 help menu**.
+### In-Engine Documentation
+All custom classes within Nexus Forge include comprehensive **built-in documentation**, accessible directly through the Godot editor's **F1 help menu**. Written manually to assist the developer
 
-For detailed setup instructions and usage guides, please refer to the project's [Wiki/Documentation Link Here].
+### GitHub Wiki
+A wiki with detailed setup instructions and usage guides can be found on the project's [Wiki/Documentation Link Here].
+Please note that the GitHub Wiki has been generated with the assitance of AI but was reviewed in its totallity by me.
+A rewrite is planned for the future once I can dedicate less time to the code.
