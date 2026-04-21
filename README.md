@@ -6,6 +6,7 @@
 > [!IMPORTANT]
 > This plugin is currently in the **Alpha stage**. While the tools are functional they haven't been throughly tested and the **Graphical User Interface (GUI)**, internal API definitions (class names, function names) and other core properties may change significantly before the Beta release.
 > **Use of this plugin is recommended for testing, evaluation, or as a VERY bold choice for current projects.** It is not yet considered reliable for production projects, expect bugs.
+> This plugin started as a personal tool which means some things might be tailored for my personal intended use. This, however, doesn't mean I won't change or tweak them for general use in the future.
 
 > [!WARNING]
 > Nexus Forge does NOT implement an **UndoRedo** system, meaning that any action taken in the plugin can't be undone.
@@ -34,7 +35,7 @@ The plugin also includes several utility classes covering specific, common devel
 
 * **Engine:** Godot Engine 4.4+ (Written in GDScript).
 * **Requirement:** Requires Godot 4.4 or later due to the use of typed dictionaries.
-* **Recommended Resolution:** The plugin GUI is designed for **1920x1080 resolution**. It is usable at smaller resolutions, but you may encounter horizontal and vertical scrollbars which can make navigation more difficult.
+* **Recommended Resolution:** The plugin GUI is designed for **1920x1080 resolution**. It is usable at smaller resolutions, but you will encounter horizontal and vertical scrollbars which can make navigation more difficult.
 
 ## Documentation
 
