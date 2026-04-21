@@ -4,9 +4,9 @@
 **Nexus Forge** is a powerful, open-source **Godot Engine plugin** designed to handle the basic data of your game. Built entirely in **GDScript**, it provides a range of visual editor tools for managing everything from complex dialogue, player stats, items, quests and more without enforcing any specific UI, giving you maximum creative freedom.
 
 > [!IMPORTANT]
-> This plugin is currently in the **Alpha stage**. While the tools are functional they haven't been throughly tested and the **Graphical User Interface (GUI)**, internal API definitions (class names, function names) and other core properties may change significantly before the Beta release.
-> **Use of this plugin is recommended for testing, evaluation, or as a VERY bold choice for current projects.** It is not yet considered reliable for production projects, expect bugs.
-> This plugin started as a personal tool which means some things might be tailored for my personal intended use. This, however, doesn't mean I won't change or tweak them for general use in the future.
+> * This plugin is currently in the **Alpha stage**. While the tools are functional they haven't been throughly tested and the **Graphical User Interface (GUI)**, internal API definitions (class names, function names) and other core properties may change significantly before the Beta release.</br>
+> * **Use of this plugin is recommended for testing, evaluation, or as a VERY bold choice for current projects.** It is not yet considered reliable for production projects, expect bugs.</br>
+> * This plugin started as a personal tool which means some things might be tailored for my personal intended use. This, however, doesn't mean I won't change or tweak them for general use in the future.</br>
 
 > [!WARNING]
 > Nexus Forge does NOT implement an **UndoRedo** system, meaning that any action taken in the plugin can't be undone.
