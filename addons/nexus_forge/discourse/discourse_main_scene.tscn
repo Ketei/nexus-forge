@@ -97,6 +97,20 @@ custom_minimum_size = Vector2(0, 232)
 layout_mode = 2
 size_flags_vertical = 3
 
+[node name="DialogIDContainer" type="HBoxContainer" parent="MainSplitContainer/MainSidebar/SidebarSplitContainer/NodesContainer" unique_id=526898935]
+visible = false
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainSplitContainer/MainSidebar/SidebarSplitContainer/NodesContainer/DialogIDContainer" unique_id=935652540]
+layout_mode = 2
+text = "ID"
+
+[node name="DialogIDLnEdt" type="LineEdit" parent="MainSplitContainer/MainSidebar/SidebarSplitContainer/NodesContainer/DialogIDContainer" unique_id=1289791754]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Dialog ID"
+editable = false
+
 [node name="NodesTitl" type="Label" parent="MainSplitContainer/MainSidebar/SidebarSplitContainer/NodesContainer" unique_id=654592895]
 layout_mode = 2
 text = "Nodes"

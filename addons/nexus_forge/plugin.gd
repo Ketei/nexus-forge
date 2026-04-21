@@ -185,11 +185,13 @@ func _enable_plugin() -> void:
 
 
 func _get_window_layout(configuration: ConfigFile) -> void:
+	var discourse_id_visible: bool = editor_view.discourse.display_dialog_id_checked()
 	var discourse_open_files: Array[String] = editor_view.discourse.get_open_files()
 	var open_characters: Array[String] = editor_view.characters.get_open_characters()
 	var open_maps: Array[String] = editor_view.phrase_maps.get_open_maps()
 	var open_quests: Array[String] = editor_view.quests.get_open_files()
 	
+	configuration.set_value("NexusForge", "discourse_show_id", discourse_id_visible)
 	configuration.set_value("NexusForge", "open_dialogs", discourse_open_files)
 	configuration.set_value("NexusForge", "open_characters", open_characters)
 	configuration.set_value("NexusForge", "open_phrase_maps", open_maps)
@@ -208,10 +210,12 @@ func _set_window_layout(configuration: ConfigFile) -> void:
 	var folder_layout: Dictionary = configuration.get_value("NexusForge", "blackboard_folder_layout", {})
 	var black_sorting_column: int = configuration.get_value("NexusForge", "blackboard_sort_column", 0)
 	var open_quests: Array[String] = configuration.get_value("NexusForge", "open_quests", empty)
+	var discourse_display_id: bool = configuration.get_value("NexusForge", "discourse_show_id", false)
 	var tab: int = configuration.get_value("NexusForge", "active_tab", 0)
 	
 	editor_view.go_to_tab(tab)
 	editor_view.discourse.load_dialog_files(dialogs)
+	editor_view.discourse.set_display_dialog_id_checked(discourse_display_id)
 	editor_view.characters.load_character_files(characters)
 	editor_view.phrase_maps.open_map_files(maps)
 	editor_view.quests.open_files(open_quests)

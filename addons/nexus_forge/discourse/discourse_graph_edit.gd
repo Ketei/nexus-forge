@@ -480,19 +480,8 @@ func create_dialog_node(node_type: DialogNodes, uuid: String = "") -> DiscourseG
 	created_node.localize_node_toggled.connect(_on_localize_node_toggled)
 	
 	created_node.name = get_unique_node_name(created_node.name)
-	#created_node.custom_id = get_unique_node_id(created_node.custom_id)
 	
 	return created_node
-
-
-#func get_unique_node_id(desired: String) -> String:
-	#var edited: String = desired
-	#var iteration: int = 0
-	#
-	#while has_node_id(edited):
-		#iteration += 1
-		#edited = desired + str(iteration)
-	#return edited
 
 
 func get_unique_node_name(desired: StringName) -> StringName:
@@ -959,11 +948,6 @@ func update_localization_data(dialog: EditorDiscourseDialog, for_locale: String)
 
 func get_conversation_data(on_conversation: EditorDiscourseDialog = null, current_locale: String = "") -> EditorDiscourseDialog:
 	var convo: EditorDiscourseDialog = DiscourseDialog.new_dialog() if on_conversation == null else on_conversation
-	
-	#if on_conversation != null:
-		#convo.clear()
-		#convo.node_frames.clear()
-		#convo.node_data.clear()
 	
 	var frames: Array[GraphFrame] = []
 	var nodes: Array[DiscourseGraphNode] = []

@@ -11,6 +11,7 @@ signal localization_window_pressed
 signal set_locale_group_pressed
 signal check_for_issues_pressed
 signal play_current_dialog_pressed
+signal display_dialog_id_toggled(display_field: bool)
 
 signal locale_changed(from: String, to: String)
 
@@ -24,6 +25,7 @@ enum DiscourseFileMenuID {
 	SET_LOCALE_GROUP,
 	CHECK_ISSUES,
 	PLAY_CURRENT_DIALOG,
+	DISPLAY_DIALOG_ID_FIELD,
 	}
 
 var _disabled: bool = true
@@ -181,6 +183,7 @@ func _ready() -> void:
 	file_menu.switch_on_hover = true
 	file_menu.text = "Discourse"
 	
+	
 	node_menu.name = &"NodeMenuButton"
 	node_menu.switch_on_hover = true
 	node_menu.text = "Create"
@@ -286,6 +289,7 @@ func _ready() -> void:
 	
 	add_theme_stylebox_override(&"panel", new_style)
 	
+	file_popup.hide_on_checkable_item_selection = false
 	file_popup.add_icon_item(
 			null,
 			"New",
@@ -310,6 +314,9 @@ func _ready() -> void:
 			"Set file locale group",
 			DiscourseFileMenuID.SET_LOCALE_GROUP)
 	file_popup.add_separator()
+	file_popup.add_check_item(
+			"Dialog ID field visible",
+			DiscourseFileMenuID.DISPLAY_DIALOG_ID_FIELD)
 	file_popup.add_item(
 			"Change default language",
 			DiscourseFileMenuID.CHANGE_LANGUAGE)
@@ -416,7 +423,6 @@ func _on_localization_selected(idx: int) -> void:
 		localization_menu.tooltip_text = localization_menu.get_item_text(idx)
 	
 	locale_changed.emit(old_locale, current_locale)
-	
 
 
 func _on_file_menu_id_pressed(id: int) -> void:
@@ -437,6 +443,26 @@ func _on_file_menu_id_pressed(id: int) -> void:
 			check_for_issues_pressed.emit()
 		DiscourseFileMenuID.PLAY_CURRENT_DIALOG:
 			play_current_dialog_pressed.emit()
+		DiscourseFileMenuID.DISPLAY_DIALOG_ID_FIELD:
+			var menu: PopupMenu = file_menu.get_popup()
+			var idx: int = menu.get_item_index(id)
+			var display: bool = !menu.is_item_checked(idx)
+			menu.set_item_checked(idx, display)
+			
+			display_dialog_id_toggled.emit(display)
+
+
+func set_dialog_display_checked(set_checked: bool) -> void:
+	var menu: PopupMenu = file_menu.get_popup()
+	var idx: int = menu.get_item_index(DiscourseFileMenuID.DISPLAY_DIALOG_ID_FIELD)
+	menu.set_item_checked(idx, set_checked)
+
+
+func is_dialog_display_checked() -> bool:
+	var menu: PopupMenu = file_menu.get_popup()
+	var idx: int = menu.get_item_index(DiscourseFileMenuID.DISPLAY_DIALOG_ID_FIELD)
+	
+	return menu.is_item_checked(idx)
 
 
 func _on_create_dialog_id_pressed(id: int) -> void:

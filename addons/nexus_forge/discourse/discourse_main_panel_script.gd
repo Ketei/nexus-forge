@@ -51,6 +51,8 @@ var discourse_window: PanelContainer = null
 @onready var issues_tree: Tree = $MainSplitContainer/DiscourseSplitContainer/ErrorContainer/IssuesVBox/IssuesTree
 @onready var error_container: PanelContainer = $MainSplitContainer/DiscourseSplitContainer/ErrorContainer
 @onready var discourse_split_container: VSplitContainer = $MainSplitContainer/DiscourseSplitContainer
+@onready var dialog_id_container: HBoxContainer = $MainSplitContainer/MainSidebar/SidebarSplitContainer/NodesContainer/DialogIDContainer
+@onready var dialog_id_ln_edt: LineEdit = $MainSplitContainer/MainSidebar/SidebarSplitContainer/NodesContainer/DialogIDContainer/DialogIDLnEdt
 
 # --- Localization Window ---
 @onready var new_language_btn: Button = $LocalizationContainer/MainSplitContainer/LeftSplitContainer/LanguagesSplitContainer/LanguagesContainer/HeaderContainer/NewLanguageBtn
@@ -144,6 +146,7 @@ func _ready() -> void:
 	discourse_window.check_for_issues_pressed.connect(_on_get_issues_pressed)
 	discourse_window.play_current_dialog_pressed.connect(_on_play_current_dialog_pressed)
 	discourse_window.locale_changed.connect(_on_graph_editor_locale_changed)
+	discourse_window.display_dialog_id_toggled.connect(_on_display_dialog_id_toggled)
 	return_discourse_btn.pressed.connect(_on_switch_window_pressed)
 	node_search_ln_edt.text_changed.connect(_on_discourse_node_search_text_changed)
 	#create_phrase_btn.pressed.connect(_on_new_phrase_button_pressed)
@@ -182,6 +185,12 @@ func _ready() -> void:
 	
 	hide_issues_btn.pressed.connect(_on_hide_issues_pressed)
 	issues_tree.issue_activated.connect(_on_issue_activated)
+	
+	dialog_id_ln_edt.text_changed.connect(_on_conversation_changed)
+
+
+func _on_display_dialog_id_toggled(id_line_visible: bool) -> void:
+	dialog_id_container.visible = id_line_visible
 
 
 func _on_discourse_node_selected(node: DiscourseGraphNode) -> void:
@@ -883,6 +892,7 @@ func save_current_dialog_to_memory() -> void:
 	new_dialog.zoom = discourse_window.discourse_graph_edit.zoom
 	new_dialog.scroll_offset = discourse_window.discourse_graph_edit.scroll_offset
 	new_dialog.node_structure = discourse_nodes_tree.get_folder_structure()
+	new_dialog.dialog_id = dialog_id_ln_edt.text.strip_edges()
 	#new_dialog.localized_strings = phrases_tree.get_localization_structure()
 	
 	# Adding localization data to localized nodes
@@ -941,6 +951,7 @@ func _on_conversation_selected(dialog: EditorDiscourseDialog) -> void:
 		discourse_window.set_conversation_options_enabled(true)
 		discourse_nodes_tree.get_root().collapsed = false
 		new_folder_button.disabled = false
+		dialog_id_ln_edt.editable = true
 		
 	if active_conversation != null:
 		save_current_dialog_to_memory()
@@ -1052,6 +1063,7 @@ func _on_new_conversation_pressed() -> void:
 			discourse_window.set_conversation_options_enabled(true)
 			discourse_nodes_tree.get_root().collapsed = false
 			new_folder_button.disabled = false
+			dialog_id_ln_edt.editable = true
 		add_conversation(new_conv, true)
 		
 		discourse_window.discourse_graph_edit.fix_scroll_offset_for_new(
@@ -1080,6 +1092,7 @@ func _on_open_conversation_pressed() -> void:
 				discourse_window.set_conversation_options_enabled(true)
 				discourse_nodes_tree.get_root().collapsed = false
 				new_folder_button.disabled = false
+				dialog_id_ln_edt.editable = true
 			if active_conversation != null:
 				save_current_dialog_to_memory()
 			if conversation_tree.is_conversation_open(resource):
@@ -1127,6 +1140,7 @@ func plugin_file_selected(file: EditorDiscourseDialog):
 		discourse_window.set_conversation_options_enabled(true)
 		discourse_nodes_tree.get_root().collapsed = false
 		new_folder_button.disabled = false
+		dialog_id_ln_edt.editable = true
 	
 	if active_conversation == file:
 		return
@@ -1213,6 +1227,8 @@ func _on_discourse_item_edited(uuid: StringName, type: DiscourseGraphNode.Dialog
 
 # Loads a conversation into discourse
 func open_conversation(conversation: EditorDiscourseDialog, set_active: bool = true) -> bool:
+	dialog_id_ln_edt.text = conversation.dialog_id
+	
 	# Clears discourse_nodes_tree's items
 	discourse_nodes_tree.clear_tree()
 	
@@ -1359,6 +1375,7 @@ func save_current_dialog() -> void:
 	new_dialog.node_structure = discourse_nodes_tree.get_folder_structure()
 	#new_dialog.localized_strings = phrases_tree.get_localization_structure()
 	new_dialog.locale_map = locale_map.duplicate(true) #discourse_window.locale_map.duplicate(true)
+	new_dialog.dialog_id = dialog_id_ln_edt.text.strip_edges()
 	
 	# We no longer need this as the localization is actively saved minus the
 	# las edit, which is saved when setting the variable new_dialog
@@ -1429,6 +1446,7 @@ func save_all_dialogs() -> void:
 		if unsaved_conversation == active_conversation:
 			save_phrase_keys(true)
 			var new_dialog: EditorDiscourseDialog = discourse_window.discourse_graph_edit.get_conversation_data(active_conversation, discourse_window.current_locale)
+			new_dialog.dialog_id = dialog_id_ln_edt.text.strip_edges()
 			# Obtaining localization reference
 			#var localizations: Dictionary = discourse_window.localization
 			
@@ -2067,3 +2085,12 @@ func filesystem_resource_removed(resource: Resource) -> void:
 func close_active_conversation() -> void:
 	if active_conversation != null:
 		_on_menu_close_pressed()
+
+
+func display_dialog_id_checked() -> bool:
+	return discourse_window.is_dialog_display_checked()
+
+
+func set_display_dialog_id_checked(set_checked: bool) -> void:
+	discourse_window.set_dialog_display_checked(set_checked)
+	dialog_id_container.visible = set_checked
