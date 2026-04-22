@@ -903,7 +903,7 @@ func update_localization_data(dialog: EditorDiscourseDialog, for_locale: String)
 
 
 func get_conversation_data(on_conversation: EditorDiscourseDialog = null, current_locale: String = "") -> EditorDiscourseDialog:
-	var convo: EditorDiscourseDialog = DiscourseDialog.new_dialog() if on_conversation == null else on_conversation
+	var convo: EditorDiscourseDialog = EditorDiscourseDialog.new() if on_conversation == null else on_conversation
 	
 	var frames: Array[GraphFrame] = []
 	var nodes: Array[DiscourseGraphNode] = []
