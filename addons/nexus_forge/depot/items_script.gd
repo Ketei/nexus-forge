@@ -369,7 +369,7 @@ func _on_items_recategorized(new_category: StringName, items: Array[StringName])
 	if clean:
 		loaded_item = &""
 		item_name_ln_edt.text = ""
-		rarity_opt_btn.select(rarity_opt_btn.item_count - 1)
+		rarity_opt_btn.select(0 if 0 < rarity_opt_btn.item_count else -1)
 		item_val_spn_bx.set_value_no_signal(0)
 		item_desc_txt_edt.text = ""
 		item_data_tree.clear_data()
@@ -490,7 +490,7 @@ func _on_item_erased(item_id: StringName) -> void:
 		loaded_item = &""
 		item_name_ln_edt.text = ""
 		item_desc_txt_edt.text = ""
-		rarity_opt_btn.select(rarity_opt_btn.item_count - 1)
+		rarity_opt_btn.select(0 if 0 < rarity_opt_btn.item_count else -1)
 		item_val_spn_bx.set_value_no_signal(0)
 		item_data_tree.clear_data()
 		reset_flags()
@@ -564,7 +564,7 @@ func set_items_ui_enabled(enabled: bool) -> void:
 func clear_all_fields() -> void:
 	items_tree.clear_items()
 	item_name_ln_edt.text = ""
-	rarity_opt_btn.select(rarity_opt_btn.item_count - 1)
+	rarity_opt_btn.select(0 if 0 < rarity_opt_btn.item_count else -1)
 	item_val_spn_bx.set_value_no_signal(0)
 	item_desc_txt_edt.text = ""
 	item_data_tree.clear_data()
