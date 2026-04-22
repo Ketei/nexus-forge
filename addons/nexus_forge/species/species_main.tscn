@@ -61,6 +61,7 @@ custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Create Species"
 icon = ExtResource("2_4lijr")
+flat = true
 icon_alignment = 1
 expand_icon = true
 

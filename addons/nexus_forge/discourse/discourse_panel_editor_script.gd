@@ -225,6 +225,7 @@ func _ready() -> void:
 	play_current_dialog_btn.icon = get_theme_icon("Play", "EditorIcons")
 	play_current_dialog_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	play_current_dialog_btn.disabled = true
+	play_current_dialog_btn.flat = true
 	play_current_dialog_btn.tooltip_text = "Play current dialog"
 	play_current_dialog_btn.custom_minimum_size = Vector2(32.0, 32.0)
 	play_current_dialog_btn.add_theme_constant_override(&"icon_max_width", 24)
