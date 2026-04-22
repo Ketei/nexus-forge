@@ -14,7 +14,7 @@ static func has_nested_path(dict: Dictionary, keys: Array) -> bool:
 
 
 static func get_nested_value(from: Dictionary, keys: Array, default = null) -> Variant:
-	var current: = from
+	var current = from
 	
 	for key_value in keys:
 		if typeof(current) == TYPE_DICTIONARY and current.has(key_value):
