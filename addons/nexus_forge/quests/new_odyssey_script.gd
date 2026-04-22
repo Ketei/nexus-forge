@@ -47,9 +47,6 @@ var selected_objective: StringName = &""
 
 
 func _ready() -> void:
-	if Engine.is_editor_hint() and get_tree().edited_scene_root == self:
-		return
-	
 	add_dict_button.icon = get_theme_icon("FolderCreate", "EditorIcons")
 	file_search_ln_edt.right_icon = get_theme_icon("Search", "EditorIcons")
 	quest_search_ln_edit.right_icon = get_theme_icon("Search", "EditorIcons")

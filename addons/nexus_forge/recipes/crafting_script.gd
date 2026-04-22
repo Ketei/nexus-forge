@@ -62,8 +62,6 @@ var _unsaved: bool = false
 
 
 func _ready() -> void:
-	if Engine.is_editor_hint() and get_tree().edited_scene_root == self:
-		return
 	add_rcp_fldr_btn.icon = get_theme_icon("FolderCreate", "EditorIcons")
 	search_recipes_ln_edt.right_icon = get_theme_icon("Search", "EditorIcons")
 	search_recipe_items_ln_edt.right_icon = get_theme_icon("Search", "EditorIcons")

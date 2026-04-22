@@ -44,8 +44,6 @@ var current_locale: String = ""
 
 
 func _ready() -> void:
-	if Engine.is_editor_hint() and owner == get_tree().edited_scene_root:
-		return
 	var content_container: VBoxContainer = VBoxContainer.new()
 	var menu_panel: PanelContainer = PanelContainer.new()
 	var menu_container: HBoxContainer = HBoxContainer.new()

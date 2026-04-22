@@ -125,6 +125,9 @@ func _enter_tree() -> void:
 	editor_view = MAIN_SCENE.instantiate()
 	editor_view.visible = false
 	EditorInterface.get_editor_main_screen().add_child(editor_view)
+	if not editor_view.is_node_ready():
+		await editor_view.ready
+	editor_view.ready_plugin()
 	resource_saved.connect(_on_resource_saved, CONNECT_DEFERRED)
 	EditorInterface.get_file_system_dock().resource_removed.connect(_on_resource_removed)
 	EditorInterface.get_file_system_dock().files_moved.connect(_on_files_moved, CONNECT_DEFERRED)

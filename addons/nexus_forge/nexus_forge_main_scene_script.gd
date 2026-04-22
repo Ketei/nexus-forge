@@ -25,11 +25,11 @@ var phrase_maps: PanelContainer = null
 
 
 func _ready() -> void:
-	if Engine.is_editor_hint() and get_tree().edited_scene_root == self:
-		set_process_input(false)
-		return
-	
-	#var tool_container: PanelContainer = $MainContainer/ToolScroll/ToolContainer
+	set_process_input(false)
+
+
+func ready_plugin() -> void:
+	set_process_input(true)
 	
 	discourse = load("res://addons/nexus_forge/discourse/discourse_main_scene.tscn").instantiate()
 	variables = load("res://addons/nexus_forge/variables/variables_main.tscn").instantiate()
@@ -124,16 +124,6 @@ func _on_tab_changed(tab: int) -> void:
 	for node in tool_container.get_children():
 		idx += 1
 		node.visible = idx == tab
-	#nexus_forge.visible = tab == nexus_forge.get_index()
-	#discourse.visible = tab == discourse.get_index()
-	#variables.visible = tab == variables.get_index()
-	#characters.visible = tab == characters.get_index()
-	#species.visible = tab == species.get_index()
-	#talents.visible = tab == talents.get_index()
-	#items.visible = tab == items.get_index()
-	#recipes.visible = tab == recipes.get_index()
-	#quests.visible = tab == quests.get_index()
-	#phrase_maps.visible = tab == phrase_maps.get_index()
 	current_tab = tab
 
 

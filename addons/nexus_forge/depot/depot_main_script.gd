@@ -18,9 +18,6 @@ var _unsaved: bool = false:
 
 
 func _ready() -> void:
-	if Engine.is_editor_hint() and get_tree().edited_scene_root == self:
-		return
-	
 	items_container.visible = true
 	categories_container.visible = false
 	edit_categories_btn.icon = get_theme_icon("Edit", "EditorIcons")

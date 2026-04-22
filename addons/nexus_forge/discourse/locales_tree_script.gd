@@ -41,8 +41,6 @@ var active_region: TreeItem = null:
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
-	if Engine.is_editor_hint() and owner == get_tree().edited_scene_root:
-		return
 	create_item()
 	
 	button_clicked.connect(_on_language_button_clicked)

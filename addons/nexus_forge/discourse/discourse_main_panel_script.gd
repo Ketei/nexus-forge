@@ -66,9 +66,6 @@ var discourse_window: PanelContainer = null
 
 
 func _ready() -> void:
-	if Engine.is_editor_hint() and get_tree().edited_scene_root == self:
-		return
-	
 	discourse_window = load("res://addons/nexus_forge/discourse/discourse_panel_editor_script.gd").new()
 	discourse_window.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	discourse_split_container.add_child(discourse_window)
