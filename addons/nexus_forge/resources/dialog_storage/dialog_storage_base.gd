@@ -56,15 +56,6 @@ const NodeType := DialogParser.NodeTypes
 var parsed_dialog_cache: Cache
 var locale_file # File that contains localized dialogs
 
-## Returns a new DiscourseDialog depending if the game is running in release
-## mode or editor mode.
-static func new_dialog() -> DiscourseDialog:
-	if OS.has_feature("editor"):
-		#return EditorDiscourseDialog.new()
-		return null
-	else:
-		return ReleaseDiscourseDialog.new()
-
 
 func _init() -> void:
 	parsed_dialog_cache = Cache.new()

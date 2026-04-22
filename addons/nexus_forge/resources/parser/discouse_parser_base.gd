@@ -793,7 +793,7 @@ func load_dialog(path: String, starting_id: String = "") -> bool:
 		_dialog_resource = _conversation_cache.get_resource(path)
 	else:
 		var res: Resource = load(path)
-		if res == null or res is not ReleaseDiscourseDialog:
+		if res == null or res is not DiscourseDialog:
 			_next_uuid = ""
 			_dialog_resource = null
 			return false
