@@ -81,6 +81,7 @@ custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Edit Categories"
 disabled = true
+flat = true
 icon_alignment = 1
 
 [node name="CategoriesTree" type="Tree" parent="ItemsContainer/ItemsPanel/ItemsContainer/TreeContainer/VBoxContainer" unique_id=1252475135]
@@ -107,6 +108,7 @@ layout_mode = 2
 tooltip_text = "Create Item"
 disabled = true
 icon = ExtResource("4_qiph8")
+flat = true
 icon_alignment = 1
 expand_icon = true
 
