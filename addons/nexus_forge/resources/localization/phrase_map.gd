@@ -13,10 +13,8 @@ extends Resource
 ## the variable {$folder/variable} in the blackboard. And {this} needs to be
 ## passed as override through get_text."[/code]
 
-## The language this map is in.
-@export var language: String = ""
-## The region for the language this map is in
-@export var region: String = ""
+## The locale code this map is in.
+@export var locale: String = ""
 
 @export_storage var _phrases: Dictionary[StringName, Dictionary] = {}
 
