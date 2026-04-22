@@ -112,177 +112,155 @@ func _generate_callables(dialog_id: StringName) -> void:
 		_value_keys[dialog_id][value_key] = _build_variable_callable(value_key.trim_prefix("$"))
 
 
-func _find_case(phrase: StringName, on_argument: String, case: String) -> Dictionary[String, String]:
-	var return_result: Dictionary[String, String] = {"case": case, "value": ""}
-	
-	if _phrases[phrase]["arguments"][on_argument]["custom"].has(case):
-		return_result["value"] = _phrases[phrase]["arguments"][on_argument]["custom"][case]
-	else:
-		return_result["value"] =  _phrases[phrase]["arguments"][on_argument]["default"]
+func _find_case(phrase: StringName, format: String, case: String) -> Dictionary[String, String]:
+	var return_result: Dictionary[String, String] = {
+		"case": case,
+		"value": DictUtils.get_nested_value(
+				_phrases,
+				[phrase, "formats", format, "cases", case],
+				DictUtils.get_nested_value(
+						_phrases,
+						[phrase, "formats", format, "default"],
+						""))}
 	
 	return return_result
 
 
 func _find_case_callable(phrase: StringName, on_argument: String, method: Callable) -> Dictionary[String, String]:
 	var case: String = str(method.call())
-	var return_result: Dictionary[String, String] = {"case": case, "value": ""}
-	if _phrases[phrase]["arguments"][on_argument]["custom"].has(case):
-		return_result["value"] = _phrases[phrase]["arguments"][on_argument]["custom"][case]
-	else:
-		return_result["value"] = _phrases[phrase]["arguments"][on_argument]["default"]
-	
+	var return_result: Dictionary[String, String] = {
+		"case": case,
+		"value": DictUtils.get_nested_value(
+				_phrases,
+				[phrase, "formats", on_argument, "cases", case],
+				DictUtils.get_nested_value(
+						_phrases,
+						[phrase, "formats", on_argument, "default"],
+						""))}
 	return return_result
 
 
 ## Returns an array containing all the registered phrase keys.
-func phrases() -> Array[StringName]:
+func entries() -> Array[StringName]:
 	var arr: Array[StringName] = []
 	arr.assign(_phrases.keys())
 	return arr
 
 
-## Creates a phrase and sets its text to [param text].
-func create_phrase(phrase_key: StringName, text: String = "") -> void:
-	if _phrases.has(phrase_key):
-		return
+## Sets the phrase's [param key] text to [param text].
+func set_entry(key: StringName, text: String) -> void:
+	var formats: Dictionary = {}
+	for format in get_valid_formats(text):
+		formats[format] = {
+			"default": DictUtils.get_nested_value(_phrases, [key, "text"], ""),
+			"cases": DictUtils.get_nested_value(_phrases, [key, "cases"], {})}
 	
-	var arguments: Dictionary[String, Dictionary] = {}
-	
-	if not text.is_empty():
-		var formats: Array[String] = get_valid_formats(text)
-		
-		for format in formats:
-			var new_arg: Dictionary[String, Variant] = {
-				"default": "",
-				"custom": Dictionary({}, TYPE_STRING, &"", null, TYPE_STRING, &"", null)}
-			arguments[format] = new_arg
-	
-	_phrases[phrase_key] = {
+	_phrases[key] = {
 		"text": text,
-		"arguments": arguments}
+		"formats": formats}
 
 
-## Sets the phrase's [param phrase_key] text to [param text].
-func set_phrase_text(phrase_key: StringName, text: String) -> void:
-	if not _phrases.has(phrase_key):
-		return
-	
-	_phrases[phrase_key]["text"] = text
-	
-	if text.is_empty():
-		_phrases[phrase_key]["arguments"].clear()
-	else:
-		var formats: Array[String] = get_valid_formats(text)
-		
-		for existing_format in _phrases[phrase_key]["arguments"].keys():
-			if not formats.has(existing_format):
-				_phrases[phrase_key]["arguments"].erase(existing_format)
-		
-		for new_format in formats:
-			if not _phrases[phrase_key]["arguments"].has(new_format):
-				_phrases[phrase_key]["arguments"][new_format] = {
-					"default": "",
-					"custom": Dictionary({}, TYPE_STRING, &"", null, TYPE_STRING, &"", null)}
-
-
-## Returns the text that the phrase [param phrase_key] is set to or an empty
+## Returns the text that the phrase [param key] is set to or an empty
 ## string if the phrase doesn't exist.
-func get_phrase_text(phrase_key: StringName) -> String:
-	if _phrases.has(phrase_key):
-		return _phrases[phrase_key]["text"]
-	return ""
+func get_entry(key: StringName) -> String:
+	print("Looking for " + key + " / text on " + str(_phrases))
+	print("Has " + key + ": " + str(_phrases.has(key)))
+	print("Has " + key + " and \"text\": " + str(_phrases.has(key) and _phrases[key].has("text")))
+	return DictUtils.get_nested_value(
+			_phrases,
+			[key, "text"],
+			"")
 
 
-## Returns an array of al the formattable strings from the passed
-## [param phrase_key].
-func get_phrase_format_fields(phrase_key: StringName) -> Array[String]:
+## Returns an array of al the formattable arguments from the passed
+## [param key].
+func get_formats(key: StringName) -> Array[String]:
 	var formats: Array[String] = []
-	if _phrases.has(phrase_key):
-		formats.assign(_phrases[phrase_key]["arguments"].keys())
+	if _phrases.has(key):
+		formats.assign(_phrases[key]["formats"].keys())
 	return formats
 
 
 ## Returns true if [param phrase_key] exists in this map.
-func has_phrase(phrase_key: StringName):
-	return _phrases.has(phrase_key)
+func has_entry(key: StringName):
+	return _phrases.has(key)
 
 
 ## Erases the formattable phrase with the given [param phrase_key].
-func erase_phrase(phrase_key: StringName) -> void:
-	if _phrases.erase(phrase_key):
-		_value_keys.erase(phrase_key)
+func erase_entry(key: StringName) -> void:
+	if _phrases.erase(key):
+		_value_keys.erase(key)
 
 
-## Returns true if [param phrase_key] has an argument of [param argument].
-func phrase_has_argument(phrase_key: StringName, argument: String) -> bool:
-	return _phrases.has(phrase_key) and _phrases[phrase_key]["arguments"].has(argument)
+## Returns true if [param key] has a format [param format].
+func has_format(key: StringName, format: String) -> bool:
+	return DictUtils.has_nested_path(
+			_phrases,
+			[key, "formats", format])
 
 
 ## Sets the phrase [param phrase_key] default case for argument [param on_argument]
 ## to [param default_value].
-func set_phrase_argument_default(phrase_key: StringName, on_argument: String,  default_value: String) -> void:
-	if not _phrases.has(phrase_key):
-		return
-	
-	if not _phrases[phrase_key]["arguments"].has(on_argument):
-		var argument_data: Dictionary[String, Variant] = {
-			"default": "",
-			"custom": Dictionary({}, TYPE_STRING, &"", null, TYPE_STRING, &"", null)}
-		_phrases[phrase_key]["arguments"][on_argument] = argument_data
-	
-	_phrases[phrase_key]["arguments"][on_argument]["default"] = default_value
+func set_format_default(key: StringName, format: String,  default: String) -> void:
+	if not DictUtils.set_nested_value(
+			_phrases,
+			[key, "formats", format, "default"],
+			default,
+			false):
+		_phrases[key]["formats"][format] = {
+			"default": default,
+			"cases": {}}
 
 
 ## Returns the phrase [param phrase_key] default case for argument [param on_argument]
 ## or an empty string if the argument doesn't exist.
-func get_phrase_argument_default(phrase_key: StringName, on_argument: String) -> String:
-	if _phrases.has(phrase_key) and _phrases[phrase_key]["arguments"].has(on_argument):
-		return _phrases[phrase_key]["arguments"][on_argument]["default"]
-	return ""
+func get_case_default(key: StringName, format: String) -> String:
+	return DictUtils.get_nested_value(
+			_phrases,
+			[key, "formats", format, "default"],
+			"")
 
 
-## Sets the case on the phrase [param phrase_key] on the argument [param on_argument]
-## to be [param value].
-func set_phrase_argument_case(phrase_key: StringName, on_argument: String, case: String, value: String) -> void:
-	if _phrases.has(phrase_key) == false:
+## Sets the case on the phrase [param key] of the argument [param on_argument]
+## to [param value].
+func set_case(key: StringName, format: String, case: String, value: String) -> void:
+	if not _phrases.has(key):
 		return
 	
-	if not _phrases[phrase_key]["arguments"].has(on_argument):
-		var argument_data: Dictionary[String, Variant] = {
-			"default": "",
-			"custom": Dictionary({}, TYPE_STRING, &"", null, TYPE_STRING, &"", null)}
-		_phrases[phrase_key]["arguments"][on_argument] = argument_data
-	
-	_phrases[phrase_key]["arguments"][on_argument]["custom"][case] = value
+	DictUtils.set_nested_value(
+			_phrases,
+			[key, "formats", format, "cases", case],
+			value)
 
 
-## Clears the custom cases from the argument [param on_argument] from the phrase
-## with key [param phrase_key].
-func clear_phrase_argument_cases(phrase_key: StringName, on_argument: String) -> void:
-	if not _phrases.has(phrase_key) or not _phrases[phrase_key]["arguments"].has(on_argument):
+## Clears the custom cases of the [param format] from the phrase
+## with [param key].
+func clear_cases(key: StringName, format: String) -> void:
+	if not DictUtils.has_nested_path(_phrases, [key, "formats", format, "cases"]):
 		return
-	_phrases[phrase_key]["arguments"][on_argument]["custom"].clear()
+	_phrases[key]["formats"][format]["cases"].clear()
 
 
-## Returns the case on the phrase [param phrase_key] on the argument [param on_argument]
+## Returns the case from the phrase [param key] of the [param format]
 ## or an empty string if the case doesn't exist.
-func get_phrase_argument_case(phrase_key: StringName, on_argument: String, case: String) -> String:
-	if _phrases.has(phrase_key) and _phrases[phrase_key]["arguments"].has(on_argument) and _phrases[phrase_key]["arguments"][on_argument]["custom"].has(case):
-		return _phrases[phrase_key]["arguments"][on_argument]["custom"][case]
-	return ""
+func get_case(key: StringName, format: String, case: String) -> String:
+	return DictUtils.get_nested_value(
+			_phrases,
+			[key, "formats", format, "cases", case],
+			"")
 
 
-## Returns true if [param case] exists on the argument [param on_argument] from
-## the phrase [param phrase_key].
-func has_phrase_argument_case(phrase_key: StringName, on_argument: String, case: String) -> bool:
-	return _phrases.has(phrase_key) and _phrases[phrase_key]["arguments"].has(on_argument) and _phrases[phrase_key]["arguments"][on_argument]["custom"].has(case)
+## Returns true if the [param case] exists on the [param format] in
+## the phrase [param key].
+func has_case(key: StringName, format: String, case: String) -> bool:
+	return DictUtils.has_nested_path(_phrases, [key, "formats", format, "cases", case])
 
 
 ## Returns the formatted text of phrase [param phrase_key]. Optionally you can pass
 ## [param override_values] that will be used instead of Blackboard or callable
 ## data (if applicable) to get the appropiate case for formatting the phrase's text.
 func get_text(phrase_key: StringName, override_values: Dictionary[String, String] = {}) -> String:
-	if _phrases.has(phrase_key) == false:
+	if not _phrases.has(phrase_key):
 		return ""
 	
 	# Will be working with text "Let's see: {$inventory/is_full}{$inventory/count}"
@@ -294,7 +272,7 @@ func get_text(phrase_key: StringName, override_values: Dictionary[String, String
 	var formats: Dictionary[String, String] = {}
 	var values: Dictionary[String, String] = {}
 	
-	for format_key in _phrases[phrase_key]["arguments"].keys():
+	for format_key in _phrases[phrase_key]["formats"].keys():
 		# format_key = $inventory/is_full
 		
 		var case_result: Dictionary[String, String] = {}
@@ -313,7 +291,7 @@ func get_text(phrase_key: StringName, override_values: Dictionary[String, String
 							_value_keys[phrase_key][format_key]))
 		else:
 			case_result["case"] = ""
-			case_result["value"] = _phrases[phrase_key]["arguments"][format_key]["default"]
+			case_result["value"] = _phrases[phrase_key]["formats"][format_key]["default"]
 
 		# case_result = { "case": "false", "value": "Inventory {$inventory/count} / 50" }
 		

@@ -166,7 +166,7 @@ func _on_erase_key_button_pressed(key: LineEdit) -> void:
 		argument_opt_btn.disabled = true
 		new_case_btn.disabled = true
 	
-	map.erase_phrase(key.get_meta(&"phrase_key"))
+	map.erase_entry(key.get_meta(&"phrase_key"))
 	
 	erase_key(
 		key.get_parent().get_index())
@@ -185,12 +185,12 @@ func _on_format_item_selected(idx: int) -> void:
 	var phrase_key: StringName = selected_key.get_meta(&"phrase_key")
 	var format_argument: String = argument_opt_btn.get_item_text(idx)
 	
-	default_case_ln_edt.text = map.get_phrase_argument_default(phrase_key, format_argument)
+	default_case_ln_edt.text = map.get_case_default(phrase_key, format_argument)
 	
-	for case in map._phrases[phrase_key]["arguments"][format_argument]["custom"].keys():
+	for case in map._phrases[phrase_key]["formats"][format_argument]["cases"].keys():
 		add_new_case(
 				case,
-				map._phrases[phrase_key]["arguments"][format_argument]["custom"][case])
+				map._phrases[phrase_key]["formats"][format_argument]["cases"][case])
 	
 	selected_format = format_argument
 
@@ -265,14 +265,12 @@ func _on_edit_cases_pressed(text_line: LineEdit, key: LineEdit, button: Button) 
 	
 	var phrase_key: StringName = key.get_meta(&"phrase_key")
 	
-	if not map.has_phrase(phrase_key):
-		map.create_phrase(phrase_key, text_line.text.strip_edges())
-	elif map.get_phrase_text(phrase_key) != text_line.text.strip_edges():
-		map.set_phrase_text(phrase_key, text_line.text.strip_edges())
+	if not map.has_entry(phrase_key) or map.get_entry(phrase_key) != text_line.text.strip_edges():
+		map.set_entry(phrase_key, text_line.text.strip_edges())
 	
 	argument_opt_btn.clear()
 	
-	for existing_key in map.get_phrase_format_fields(phrase_key):
+	for existing_key in map.get_formats(phrase_key):
 		argument_opt_btn.add_item(existing_key)
 	
 	selected_key = key
@@ -283,11 +281,11 @@ func _on_edit_cases_pressed(text_line: LineEdit, key: LineEdit, button: Button) 
 	if 0 < argument_opt_btn.item_count:
 		var argument_format: String = argument_opt_btn.get_item_text(0)
 		argument_opt_btn.select(0)
-		default_case_ln_edt.text = map.get_phrase_argument_default(phrase_key, argument_format)
-		for custom_case in map._phrases[phrase_key]["arguments"][argument_format]["custom"].keys():
+		default_case_ln_edt.text = map.get_case_default(phrase_key, argument_format)
+		for custom_case in map._phrases[phrase_key]["formats"][argument_format]["cases"].keys():
 			add_new_case(
 					custom_case,
-					map._phrases[phrase_key]["arguments"][argument_format]["custom"][custom_case])
+					map._phrases[phrase_key]["formats"][argument_format]["cases"][custom_case])
 		selected_format = argument_format
 	
 	text_line.editable = false
@@ -498,10 +496,10 @@ func load_map(new_map: PhraseMap) -> void:
 	selected_key = null
 	selected_format = ""
 	
-	for key:StringName in new_map.phrases():
+	for key:StringName in new_map.entries():
 		add_new_phrase(
 				key,
-				new_map.get_phrase_text(key))
+				new_map.get_entry(key))
 
 
 func save_current_phrase_key(fix_cases: bool = false) -> void:
@@ -510,7 +508,7 @@ func save_current_phrase_key(fix_cases: bool = false) -> void:
 	var cases: Dictionary[String, String] = {}
 	var node_map: Dictionary[String, LineEdit] = {}
 	
-	map.set_phrase_argument_default(
+	map.set_format_default(
 			phrase_key,
 			selected_format,
 			default_case_ln_edt.text.strip_edges())
@@ -531,10 +529,10 @@ func save_current_phrase_key(fix_cases: bool = false) -> void:
 		cases[modified] = result_node_container.get_child(case_idx).get_child(0).text
 		node_map[modified] = case_key
 	
-	map.clear_phrase_argument_cases(phrase_key, selected_format)
+	map.clear_cases(phrase_key, selected_format)
 	
 	for case in cases.keys():
-		map.set_phrase_argument_case(
+		map.set_case(
 				phrase_key,
 				selected_format,
 				case,
@@ -815,8 +813,8 @@ func save_current_resource(fix_keys: bool = false) -> void:
 		var strnm_key: StringName = StringName(key)
 		
 		
-		if map.get_phrase_text(strnm_key) != keys[key]:
-			map.set_phrase_text(strnm_key, keys[key])
+		if map.get_entry(strnm_key) != keys[key]:
+			map.set_entry(strnm_key, keys[key])
  		
 		node_map[key].set_meta(&"phrase_key", key)
 		
