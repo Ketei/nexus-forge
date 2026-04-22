@@ -35,7 +35,10 @@ var _unsaved: bool = false
 @onready var current_folder_label: Label = $MainSplit/VBoxContainer2/TitleContainer/FolderPathContainer/CurrentFolderLabel
 
 
-func _ready() -> void:
+func ready_plugin() -> void:
+	folders_tree.ready_plugin()
+	variables_tree.ready_plugin()
+	
 	reload_resource(true)
 	
 	add_folder_button.icon = get_theme_icon("FolderCreate", "EditorIcons")

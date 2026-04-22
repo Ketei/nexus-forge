@@ -46,7 +46,12 @@ var selected_objective: StringName = &""
 @onready var dynamic_logic_panel: PanelContainer = $MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel
 
 
-func _ready() -> void:
+func ready_plugin() -> void:
+	files_tree.ready_plugin()
+	quest_tree.ready_plugin()
+	events_tree.ready_plugin()
+	custom_data_tree.ready_plugin()
+	
 	add_dict_button.icon = get_theme_icon("FolderCreate", "EditorIcons")
 	file_search_ln_edt.right_icon = get_theme_icon("Search", "EditorIcons")
 	quest_search_ln_edit.right_icon = get_theme_icon("Search", "EditorIcons")

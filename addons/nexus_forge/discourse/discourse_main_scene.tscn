@@ -21,6 +21,10 @@ content_margin_right = 6.0
 content_margin_bottom = 6.0
 bg_color = Color(0.180392, 0.180392, 0.180392, 1)
 
+[sub_resource type="DPITexture" id="DPITexture_xhh83"]
+_source = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\"><path fill=\"#ff5d5d\" d=\"M2 1v8.586l1.293-1.293a1 1 0 0 1 1.414 0L7 10.587l2.293-2.293a1 1 0 0 1 1.414 0L13 10.586l1-1V6H9V1H2zm8 0v4h4zm-6 9.414-2 2V15h12v-2.586l-.293.293a1 1 0 0 1-1.414 0L10 10.414l-2.293 2.293a1 1 0 0 1-1.414 0L4 10.414z\"/></svg>
+"
+
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_i2jr7"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_58abf"]
@@ -123,6 +127,7 @@ placeholder_text = "Search Node"
 [node name="NewFolderButton" type="Button" parent="MainSplitContainer/MainSidebar/SidebarSplitContainer/NodesContainer/SearchHbox" unique_id=1530657014]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
+disabled = true
 flat = true
 icon_alignment = 1
 
@@ -163,6 +168,7 @@ text = "Issues"
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 size_flags_horizontal = 10
+icon = SubResource("DPITexture_xhh83")
 flat = true
 
 [node name="IssuesTree" type="Tree" parent="MainSplitContainer/DiscourseSplitContainer/ErrorContainer/IssuesVBox" unique_id=272066784]
@@ -472,6 +478,7 @@ text_overrun_behavior = 3
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Save cases"
+icon = SubResource("DPITexture_xhh83")
 icon_alignment = 1
 
 [node name="VBoxContainer2" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer" unique_id=1158771321]

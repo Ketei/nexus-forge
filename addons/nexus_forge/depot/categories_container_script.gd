@@ -18,9 +18,9 @@ var _unsaved: bool = false
 @onready var item_data_tree: Tree = $DataContainer/CustomDataContainer/ItemDataTree
 
 
-func _ready() -> void:
-	if Engine.is_editor_hint() and owner == get_tree().edited_scene_root:
-		return
+func ready_plugin() -> void:
+	categories_tree.ready_plugin()
+	item_data_tree.ready_plugin()
 	
 	item_data_tree.enabled = true
 	new_category_btn.icon = get_theme_icon("Add", "EditorIcons")

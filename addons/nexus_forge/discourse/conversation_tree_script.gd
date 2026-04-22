@@ -52,7 +52,7 @@ var active_unsaved: bool = false:
 		return false
 
 
-func _ready() -> void:
+func ready_plugin() -> void:
 	create_item()
 	
 	item_selected.connect(_on_conversation_selected)

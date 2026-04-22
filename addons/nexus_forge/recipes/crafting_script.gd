@@ -61,7 +61,13 @@ var _unsaved: bool = false
 @onready var recipe_custom_data_tree: Tree = $CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/CustomDataContainer/RecipeCustomDataTree
 
 
-func _ready() -> void:
+func ready_plugin() -> void:
+	recipe_tree.ready_plugin()
+	recipe_items_tree.ready_plugin()
+	recipe_input_tree.ready_plugin()
+	recipe_output_tree.ready_plugin()
+	recipe_custom_data_tree.ready_plugin()
+	
 	add_rcp_fldr_btn.icon = get_theme_icon("FolderCreate", "EditorIcons")
 	search_recipes_ln_edt.right_icon = get_theme_icon("Search", "EditorIcons")
 	search_recipe_items_ln_edt.right_icon = get_theme_icon("Search", "EditorIcons")

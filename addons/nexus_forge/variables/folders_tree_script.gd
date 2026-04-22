@@ -18,13 +18,7 @@ const CREATE_FOLDER_ID: int = 0
 const DELETE_FOLDER_ID: int = 1
 
 
-func _ready() -> void:
-	if Engine.is_editor_hint() and owner == get_tree().edited_scene_root:
-		return
-	#FOLDER_ICON = get_theme_icon("Folder", "EditorIcons")
-	#NEW_FOLDER_ICON = get_theme_icon("FolderCreate", "EditorIcons")
-	#TRASH_BIN = get_theme_icon("Remove", "EditorIcons")
-	
+func ready_plugin() -> void:
 	create_item()
 	
 	item_edited.connect(_on_folder_edited)

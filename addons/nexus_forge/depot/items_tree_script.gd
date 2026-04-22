@@ -10,9 +10,7 @@ signal item_erased(item_id: StringName)
 var current_search: String = ""
 
 
-func _ready() -> void:
-	if Engine.is_editor_hint() and owner == get_tree().edited_scene_root:
-		return
+func ready_plugin() -> void:
 	create_item()
 	
 	item_selected.connect(_on_item_selected)

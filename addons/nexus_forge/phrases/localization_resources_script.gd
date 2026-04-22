@@ -35,7 +35,9 @@ var save_required: bool = false
 @onready var result_node_container: VBoxContainer = $MainContainer/DataHSplit/CaseContainer/KeyScroll/CasesSplit/ResultContainer/ResultNodeContainer
 
 
-func _ready() -> void:
+func ready_plugin() -> void:
+	files_tree.ready_plugin()
+	
 	language_opt_btn.get_popup().min_size = Vector2i.ZERO
 	region_opt_btn.get_popup().min_size = Vector2i.ZERO
 	
@@ -55,11 +57,14 @@ func _ready() -> void:
 	
 	select_language(locale[0])
 	
+	region_opt_btn.add_item("- N/A -")
+	region_opt_btn.set_item_metadata(0, "")
+	
 	for country_code in TranslationServer.get_all_countries():
 		region_opt_btn.add_item(TranslationServer.get_country_name(country_code))
 		region_opt_btn.set_item_metadata(-1, country_code)
 	
-	select_region(locale[1])
+	region_opt_btn.select(0)
 	
 	new_text_button.pressed.connect(_on_new_key_field_button_pressed)
 	new_case_btn.pressed.connect(_on_new_case_button_pressed)
@@ -325,11 +330,15 @@ func _on_menu_id_pressed(id: int) -> void:
 	
 	if result[0]:
 		if id == 0: # New file
+			var lang: String = language_opt_btn.get_selected_metadata().to_lower()
+			var reg: String = region_opt_btn.get_selected_metadata().to_upper()
+			var locale_code: String = lang if reg.is_empty() else lang + "_" + reg
+			
 			if selected_key != null:
 				save_current_resource()
 			var new_map: PhraseMap = PhraseMap.new()
-			new_map.language = language_opt_btn.get_selected_metadata()
-			new_map.region = region_opt_btn.get_selected_metadata()
+			new_map.locale = locale_code
+			
 			if ResourceLoader.has_cached(result[1]):
 				new_map.take_over_path(result[1])
 			new_map.resource_path = result[1]
@@ -458,6 +467,7 @@ func select_language(language_code: String) -> void:
 
 func select_region(country_code: String) -> void:
 	if country_code.is_empty():
+		region_opt_btn.select(0)
 		return
 	
 	for idx in range(region_opt_btn.item_count):
@@ -467,11 +477,15 @@ func select_region(country_code: String) -> void:
 
 
 func load_map(new_map: PhraseMap) -> void:
+	var locale_parts: PackedStringArray = new_map.locale.split("_", false, 1)
+	var parts_size: int = locale_parts.size()
+	var lang: String = locale_parts[0] if 0 < parts_size else language_opt_btn.get_selected_metadata()
+	var reg: String = locale_parts[1] if parts_size == 2 else ""
 	clear_keys()
 	search_text_ln_edt.text = ""
 	search_text_ln_edt.set_meta(&"current_search", "")
-	select_language(new_map.language)
-	select_region(new_map.region)
+	select_language(lang)
+	select_region(reg)
 	clear_cases()
 	search_case_ln_edt.text = ""
 	search_case_ln_edt.set_meta(&"current_search", "")
@@ -753,8 +767,11 @@ func save_current_resource(fix_keys: bool = false) -> void:
 	if selected_format != "":
 		save_current_phrase_key(fix_keys)
 	
-	map.language = language_opt_btn.get_selected_metadata()
-	map.region = region_opt_btn.get_selected_metadata()
+	var lang: String = language_opt_btn.get_selected_metadata().to_lower()
+	var reg: String = region_opt_btn.get_selected_metadata().to_upper()
+	var locale_code: String = lang if reg.is_empty() else lang + "_" + reg
+	
+	map.locale = locale_code
 	
 	# Correct key: Current text
 	var keys: Dictionary[String, String] = {}

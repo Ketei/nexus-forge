@@ -9,9 +9,7 @@ signal currency_deleted(currency_id: StringName)
 #signal currency_value_changed(id: StringName, value: int)
 
 
-func _ready() -> void:
-	if Engine.is_editor_hint() and get_tree().edited_scene_root == self:
-		return
+func ready_plugin() -> void:
 	create_item()
 	
 	item_selected.connect(_on_item_selected)

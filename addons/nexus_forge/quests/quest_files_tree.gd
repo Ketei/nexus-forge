@@ -9,9 +9,7 @@ signal quest_close_pressed(quest: Quest, requires_save: bool, structure: Array[D
 var _active: TreeItem = null
 
 
-func _ready() -> void:
-	if Engine.is_editor_hint() and owner == get_tree().edited_scene_root:
-		return
+func ready_plugin() -> void:
 	create_item()
 	
 	item_selected.connect(_on_item_selected, CONNECT_DEFERRED)

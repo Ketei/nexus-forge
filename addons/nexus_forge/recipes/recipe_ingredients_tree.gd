@@ -33,9 +33,7 @@ var recipe_selected: bool = false
 var selected_item: TreeItem = null
 
 
-func _ready() -> void:
-	if Engine.is_editor_hint() and owner == get_tree().edited_scene_root:
-		return
+func ready_plugin() -> void:
 	create_item()
 	
 	set_column_expand_ratio(0, 2)

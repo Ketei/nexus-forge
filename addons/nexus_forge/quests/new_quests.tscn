@@ -19,6 +19,10 @@ content_margin_bottom = 6.0
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_xhnnm"]
 
+[sub_resource type="DPITexture" id="DPITexture_xhh83"]
+_source = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\"><path fill=\"#ff5d5d\" d=\"M2 1v8.586l1.293-1.293a1 1 0 0 1 1.414 0L7 10.587l2.293-2.293a1 1 0 0 1 1.414 0L13 10.586l1-1V6H9V1H2zm8 0v4h4zm-6 9.414-2 2V15h12v-2.586l-.293.293a1 1 0 0 1-1.414 0L10 10.414l-2.293 2.293a1 1 0 0 1-1.414 0L4 10.414z\"/></svg>
+"
+
 [node name="QuestsOdyssey" type="PanelContainer" unique_id=123000176]
 anchors_preset = 15
 anchor_right = 1.0
@@ -133,6 +137,7 @@ disabled = true
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Edit types (Script)"
+disabled = true
 flat = true
 icon_alignment = 1
 
@@ -255,6 +260,7 @@ layout_mode = 2
 theme_override_constants/minimum_grab_thickness = 10
 
 [node name="DynamicLogicPanel" type="PanelContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer" unique_id=2049745596]
+visible = false
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_xhnnm")
 
@@ -286,11 +292,13 @@ text = "Requirements"
 layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "Search Requirements"
+right_icon = SubResource("DPITexture_xhh83")
 
 [node name="AddRequirementBtn" type="Button" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/HeaderContainer" unique_id=1008152467]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 size_flags_horizontal = 8
+icon = SubResource("DPITexture_xhh83")
 icon_alignment = 1
 
 [node name="RequirementsScroll" type="ScrollContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer" unique_id=1180624870]
@@ -302,6 +310,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 
 [node name="StageLogicContainer" type="VBoxContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel" unique_id=1334727168]
+visible = false
 layout_mode = 2
 
 [node name="SuccessContainer" type="HBoxContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/StageLogicContainer" unique_id=207953490]
@@ -316,6 +325,10 @@ text = "Success Target"
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
+selected = 0
+item_count = 1
+popup/item_0/text = "Quest End"
+popup/item_0/id = 0
 
 [node name="FailureContainer" type="HBoxContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/StageLogicContainer" unique_id=1865185976]
 layout_mode = 2
@@ -329,6 +342,10 @@ text = "Failure Target"
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
+selected = 0
+item_count = 1
+popup/item_0/text = "Quest End"
+popup/item_0/id = 0
 
 [node name="EventsContainer" type="VBoxContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer" unique_id=54403602]
 layout_mode = 2

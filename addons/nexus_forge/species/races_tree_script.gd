@@ -24,10 +24,7 @@ var _races_menu: PopupMenu
 var _popup_pos: Vector2 = Vector2.ZERO
 
 
-func _ready() -> void:
-	if Engine.is_editor_hint() and owner == get_tree().edited_scene_root:
-		return
-	
+func ready_plugin() -> void:
 	_races_menu = PopupMenu.new()
 	_races_menu.add_icon_item(
 			preload("res://addons/nexus_forge/icons/dna_plus.svg"),

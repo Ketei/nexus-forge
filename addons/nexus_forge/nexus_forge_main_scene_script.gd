@@ -51,6 +51,16 @@ func ready_plugin() -> void:
 	tool_container.add_child(quests)
 	tool_container.add_child(phrase_maps)
 	
+	discourse.ready_plugin()
+	variables.ready_plugin()
+	characters.ready_plugin()
+	species.ready_plugin()
+	talents.ready_plugin()
+	items.ready_plugin()
+	recipes.ready_plugin()
+	quests.ready_plugin()
+	phrase_maps.ready_plugin()
+	
 	tool_count = tool_container.get_child_count()
 	
 	tool_tab_bar.set_tab_title(0, "")

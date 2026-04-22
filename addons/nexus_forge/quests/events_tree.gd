@@ -42,10 +42,7 @@ var mn: PopupMenu = null
 var data_item: TreeItem = null
 
 
-func _ready() -> void:
-	if Engine.is_editor_hint() and owner == get_tree().edited_scene_root:
-		return
-	
+func ready_plugin() -> void:
 	TRASH_BIN = get_theme_icon("Remove", "EditorIcons")
 	ICON_BOOL = get_theme_icon("bool", "EditorIcons")
 	ICON_FLOAT = get_theme_icon("float", "EditorIcons")

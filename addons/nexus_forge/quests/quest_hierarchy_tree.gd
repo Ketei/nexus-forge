@@ -50,9 +50,7 @@ var quest_popup: PopupMenu
 var right_position: Vector2 = Vector2.ZERO
 
 
-func _ready() -> void:
-	if Engine.is_editor_hint() and owner == get_tree().edited_scene_root:
-		return
+func ready_plugin() -> void:
 	quest_popup = PopupMenu.new()
 	quest_popup.size = Vector2i(145, 10)
 	add_child(quest_popup)

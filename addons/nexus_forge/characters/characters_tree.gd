@@ -7,9 +7,7 @@ signal character_closed(resource: CharacterSheet, unsaved: bool)
 #signal character_id_changed(from: StringName, to: StringName)
 
 
-func _ready() -> void:
-	if Engine.is_editor_hint() and owner == get_tree().edited_scene_root:
-		return
+func ready_plugin() -> void:
 	create_item()
 	
 	button_clicked.connect(_on_button_clicked)

@@ -23,10 +23,7 @@ var current_folder: String = ""
 var sorting_column: int = 0
 
 
-func _ready() -> void:
-	if Engine.is_editor_hint() and owner == get_tree().edited_scene_root:
-		return
-	
+func ready_plugin() -> void:
 	add_theme_stylebox_override(&"title_button_normal", get_theme_stylebox("title_button_normal", "Tree"))
 	add_theme_stylebox_override(&"title_button_hover", get_theme_stylebox("title_button_hover", "Tree"))
 	add_theme_stylebox_override(&"title_button_pressed", get_theme_stylebox("title_button_pressed", "Tree"))

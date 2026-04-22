@@ -39,7 +39,10 @@ var _unsaved: bool = false
 @onready var edit_traits_btn: Button = $MainContainer/TraitsPanel/TraitsContainerContainer/TraitSelectContainer/TraitContainer/EditTraitsBtn
 
 
-func _ready() -> void:
+func ready_plugin() -> void:
+	skill_data_tree.ready_plugin()
+	trait_data_tree.ready_plugin()
+	
 	reload_traits(false)
 	reload_skills(false)
 	

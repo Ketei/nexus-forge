@@ -40,7 +40,7 @@ var active_region: TreeItem = null:
 
 
 # Called when the node enters the scene tree for the first time.
-func _ready() -> void:
+func ready_plugin() -> void:
 	create_item()
 	
 	button_clicked.connect(_on_language_button_clicked)

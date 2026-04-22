@@ -15,6 +15,10 @@ content_margin_top = 8.0
 content_margin_right = 6.0
 content_margin_bottom = 6.0
 
+[sub_resource type="DPITexture" id="DPITexture_xhh83"]
+_source = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\"><path fill=\"#ff5d5d\" d=\"M2 1v8.586l1.293-1.293a1 1 0 0 1 1.414 0L7 10.587l2.293-2.293a1 1 0 0 1 1.414 0L13 10.586l1-1V6H9V1H2zm8 0v4h4zm-6 9.414-2 2V15h12v-2.586l-.293.293a1 1 0 0 1-1.414 0L10 10.414l-2.293 2.293a1 1 0 0 1-1.414 0L4 10.414z\"/></svg>
+"
+
 [node name="Characters" type="PanelContainer" unique_id=1625132505]
 anchors_preset = 15
 anchor_right = 1.0
@@ -151,12 +155,6 @@ custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
 disabled = true
-selected = 0
-item_count = 2
-popup/item_0/text = "Male"
-popup/item_0/id = 0
-popup/item_1/text = "Female"
-popup/item_1/id = 1
 
 [node name="EditGendersBtn" type="Button" parent="CharacterContainer/BasicDataSplit/GeneralContainer/GenderContainer" unique_id=1173069879]
 custom_minimum_size = Vector2(32, 32)
@@ -188,7 +186,7 @@ custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add folder"
 disabled = true
-flat = true
+icon = SubResource("DPITexture_xhh83")
 icon_alignment = 1
 
 [node name="VSeparator" type="VSeparator" parent="CharacterContainer/BasicDataSplit/GeneralContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer" unique_id=842254128]

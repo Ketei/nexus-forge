@@ -17,9 +17,13 @@ var _unsaved: bool = false:
 @onready var categories_tree: Tree = $CategoriesContainer/DataContainer/CategoriesTree
 
 
-func _ready() -> void:
+func ready_plugin() -> void:
+	items_container.ready_plugin()
+	categories_container.ready_plugin()
+	
 	items_container.visible = true
 	categories_container.visible = false
+	
 	edit_categories_btn.icon = get_theme_icon("Edit", "EditorIcons")
 	items_container.resource_loaded.connect(_on_resource_loaded)
 	edit_categories_btn.pressed.connect(_on_category_edit_pressed)

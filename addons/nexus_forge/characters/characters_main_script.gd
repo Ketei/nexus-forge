@@ -39,7 +39,13 @@ var ui_enabled: bool = false
 @onready var edit_genders_btn: Button = $CharacterContainer/BasicDataSplit/GeneralContainer/GenderContainer/EditGendersBtn
 
 
-func _ready() -> void:
+func ready_plugin() -> void:
+	char_tree.ready_plugin()
+	character_data_tree.ready_plugin()
+	
+	search_char_ln_edt.right_icon = get_theme_icon("Search", "EditorIcons")
+	character_custom_data_search_line.right_icon = get_theme_icon("Search", "EditorIcons")
+	
 	set_ui_enabled(false)
 	update_genders()
 	update_talent_nodes()

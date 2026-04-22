@@ -51,9 +51,7 @@ const RESOURCES: Array[DialogParser.NodeTypes] = [
 var nodes: Array[TreeItem] = []
 
 
-func _ready() -> void:
-	if Engine.is_editor_hint() and owner == get_tree().edited_scene_root:
-		return
+func ready_plugin() -> void:
 	create_item().collapsed = true
 	button_clicked.connect(_on_discourse_tree_button_clicked)
 	item_activated.connect(_on_discourse_node_activated)

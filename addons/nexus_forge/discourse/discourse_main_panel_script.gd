@@ -65,7 +65,14 @@ var discourse_window: PanelContainer = null
 @onready var cases_split: HSplitContainer = $LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit
 
 
-func _ready() -> void:
+func ready_plugin() -> void:
+	conversation_tree.ready_plugin()
+	discourse_nodes_tree.ready_plugin()
+	issues_tree.ready_plugin()
+	
+	languages_tree.ready_plugin()
+	localization_nodes_tree.ready_plugin()
+	
 	discourse_window = load("res://addons/nexus_forge/discourse/discourse_panel_editor_script.gd").new()
 	discourse_window.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	discourse_split_container.add_child(discourse_window)

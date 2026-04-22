@@ -33,9 +33,14 @@ var signal_change: bool = false
 
 
 
-func _ready() -> void:
+func ready_plugin() -> void:
+	races_tree.ready_plugin()
+	race_data_tree.ready_plugin()
+	
 	reload_resource(true)
 	update_talent_nodes()
+	
+	search_race_ln_edt.right_icon = get_theme_icon("Search", "EditorIcons")
 	
 	add_dict_button.icon = get_theme_icon("FolderCreate", "EditorIcons")
 	race_custom_data_search_line.right_icon = get_theme_icon("Search", "EditorIcons")

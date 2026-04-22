@@ -80,6 +80,7 @@ placeholder_text = "Search Category"
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Edit Categories"
+disabled = true
 icon_alignment = 1
 
 [node name="CategoriesTree" type="Tree" parent="ItemsContainer/ItemsPanel/ItemsContainer/TreeContainer/VBoxContainer" unique_id=1252475135]

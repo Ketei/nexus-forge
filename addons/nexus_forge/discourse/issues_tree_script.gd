@@ -5,7 +5,7 @@ extends Tree
 signal issue_activated(issue_node: DiscourseGraphNode)
 
 
-func _ready() -> void:
+func ready_plugin() -> void:
 	create_item()
 	
 	item_activated.connect(_on_issue_activated)

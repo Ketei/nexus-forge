@@ -58,14 +58,17 @@ var _unsaved: bool = false
 # --------------------------
 
 
-func _ready() -> void:
-	if Engine.is_editor_hint() and owner == get_tree().edited_scene_root:
-		return
+func ready_plugin() -> void:
+	categories_tree.ready_plugin()
+	items_tree.ready_plugin()
+	item_data_tree.ready_plugin()
+	currency_tree.ready_plugin()
+	currency_custom_data_tree.ready_plugin()
 	
+	category_srch_ln_edt.right_icon = get_theme_icon("Search", "EditorIcons")
+	search_curr_ln_edt.right_icon = get_theme_icon("Search", "EditorIcons")
 	reload_item_resource(true)
 	reload_currency_resource(true)
-	
-	#new_item_btn.icon = get_theme_icon("Add", "EditorIcons")
 	
 	add_item_fldr_btn.icon = get_theme_icon("FolderCreate", "EditorIcons")
 	add_curr_dict_button.icon = get_theme_icon("FolderCreate", "EditorIcons")
