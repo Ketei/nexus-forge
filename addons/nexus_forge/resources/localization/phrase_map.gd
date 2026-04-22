@@ -163,9 +163,6 @@ func set_entry(key: StringName, text: String) -> void:
 ## Returns the text that the phrase [param key] is set to or an empty
 ## string if the phrase doesn't exist.
 func get_entry(key: StringName) -> String:
-	print("Looking for " + key + " / text on " + str(_phrases))
-	print("Has " + key + ": " + str(_phrases.has(key)))
-	print("Has " + key + " and \"text\": " + str(_phrases.has(key) and _phrases[key].has("text")))
 	return DictUtils.get_nested_value(
 			_phrases,
 			[key, "text"],
