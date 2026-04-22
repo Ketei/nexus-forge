@@ -57,6 +57,7 @@ custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "New Recipe"
 icon = ExtResource("2_bep6v")
+flat = true
 icon_alignment = 1
 
 [node name="RecipeTree" type="Tree" parent="CraftingContainer/RecipeSelectContainer" unique_id=2053343583]
@@ -142,6 +143,7 @@ size_flags_vertical = 4
 tooltip_text = "Add integer"
 disabled = true
 icon = ExtResource("4_rfiew")
+flat = true
 icon_alignment = 1
 
 [node name="AddRcpInFloatBtn" type="Button" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/InputContainer/DataBtnCtnr/ButtonContainer" unique_id=1756071822]
@@ -151,6 +153,7 @@ size_flags_vertical = 4
 tooltip_text = "Add float"
 disabled = true
 icon = ExtResource("5_hp1rg")
+flat = true
 icon_alignment = 1
 
 [node name="AddRcpInBoolBtn" type="Button" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/InputContainer/DataBtnCtnr/ButtonContainer" unique_id=493595853]
@@ -160,6 +163,7 @@ size_flags_vertical = 4
 tooltip_text = "Add boolean"
 disabled = true
 icon = ExtResource("6_nekjn")
+flat = true
 icon_alignment = 1
 
 [node name="AddRcpInStrBtn" type="Button" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/InputContainer/DataBtnCtnr/ButtonContainer" unique_id=783352087]
@@ -169,6 +173,7 @@ size_flags_vertical = 4
 tooltip_text = "Add string"
 disabled = true
 icon = ExtResource("7_tx5a0")
+flat = true
 icon_alignment = 1
 
 [node name="RecipeInputTree" type="Tree" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/InputContainer" unique_id=944297983]
@@ -210,6 +215,7 @@ size_flags_vertical = 4
 tooltip_text = "Add integer"
 disabled = true
 icon = ExtResource("4_rfiew")
+flat = true
 icon_alignment = 1
 
 [node name="AddRcpOutFloatBtn" type="Button" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/OutputContainer/DataBtnCtnr/ButtonContainer" unique_id=1639134923]
@@ -219,6 +225,7 @@ size_flags_vertical = 4
 tooltip_text = "Add float"
 disabled = true
 icon = ExtResource("5_hp1rg")
+flat = true
 icon_alignment = 1
 
 [node name="AddRcpOutBoolBtn" type="Button" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/OutputContainer/DataBtnCtnr/ButtonContainer" unique_id=2131643557]
@@ -228,6 +235,7 @@ size_flags_vertical = 4
 tooltip_text = "Add boolean"
 disabled = true
 icon = ExtResource("6_nekjn")
+flat = true
 icon_alignment = 1
 
 [node name="AddRcpOutStrBtn" type="Button" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/OutputContainer/DataBtnCtnr/ButtonContainer" unique_id=1202945152]
@@ -237,6 +245,7 @@ size_flags_vertical = 4
 tooltip_text = "Add string"
 disabled = true
 icon = ExtResource("7_tx5a0")
+flat = true
 icon_alignment = 1
 
 [node name="RecipeOutputTree" type="Tree" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/OutputContainer" unique_id=556456299]
@@ -275,6 +284,7 @@ custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add folder"
 disabled = true
+flat = true
 icon_alignment = 1
 
 [node name="VSeparator" type="VSeparator" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/CustomDataContainer/CustomDataHeader/ButtonContainer" unique_id=50089658]
@@ -286,6 +296,7 @@ layout_mode = 2
 tooltip_text = "Add integer"
 disabled = true
 icon = ExtResource("4_rfiew")
+flat = true
 icon_alignment = 1
 
 [node name="AddRcpFloatBtn" type="Button" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/CustomDataContainer/CustomDataHeader/ButtonContainer" unique_id=1257793183]
@@ -294,6 +305,7 @@ layout_mode = 2
 tooltip_text = "Add float"
 disabled = true
 icon = ExtResource("5_hp1rg")
+flat = true
 icon_alignment = 1
 
 [node name="AddRcpBoolBtn" type="Button" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/CustomDataContainer/CustomDataHeader/ButtonContainer" unique_id=1339868252]
@@ -302,6 +314,7 @@ layout_mode = 2
 tooltip_text = "Add boolean"
 disabled = true
 icon = ExtResource("6_nekjn")
+flat = true
 icon_alignment = 1
 
 [node name="AddRcpStrBtn" type="Button" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/CustomDataContainer/CustomDataHeader/ButtonContainer" unique_id=1601156545]
@@ -310,6 +323,7 @@ layout_mode = 2
 tooltip_text = "Add string"
 disabled = true
 icon = ExtResource("7_tx5a0")
+flat = true
 icon_alignment = 1
 
 [node name="RecipeCustomDataTree" type="Tree" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/CustomDataContainer" unique_id=359401690]

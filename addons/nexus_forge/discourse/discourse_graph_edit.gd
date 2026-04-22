@@ -145,7 +145,7 @@ func _on_cut_nodes_request() -> void:
 func _on_paste_nodes_request() -> void:
 	if node_clipboard.is_empty():
 		return
-	# {"from": original_uuid, "to": original_uuid, "to_port": 0, "from_port": 0}
+	
 	var new_connections: Array[Dictionary] = [] 
 	# original uuid : new_node_pointer
 	var uuid_equivalences: Dictionary[StringName, DiscourseGraphNode] = {}
@@ -217,8 +217,6 @@ func _on_duplicate_node_button_pressed(node: DiscourseGraphNode) -> void:
 	new_node._set_node_data(node._get_node_data())
 	new_node.position_offset += Vector2(100.0, 100.0)
 	
-	#if new_node.node_type == DialogNodes.ANCHOR_POINTER:
-		#anchor_pointers.append(new_node)
 	if new_node.node_type == DialogNodes.ANCHOR:
 		var cloned_id: String = new_node.get_anchor_id()
 		var new_id: String = DiscourseGraphAnchorPointer.get_available_id(cloned_id)
@@ -226,14 +224,7 @@ func _on_duplicate_node_button_pressed(node: DiscourseGraphNode) -> void:
 		DiscourseGraphAnchorPointer.update_anchor(new_node.get_node_uuid(), new_id)
 		
 		new_node.set_anchor_id(new_id)
-		
-		#for anchor_pointer in anchor_pointers:
-			#anchor_pointer.reload_anchors()
-		
-		#new_node.id_changed.connect(_on_anchor_id_changed)
-	#new_node.disconnect_requested.connect(_on_disconnection_request)
-	#new_node.duplicate_requested.connect(_on_duplicate_node_button_pressed)
-	#new_node.close_requested.connect(_close_requested)
+	
 	add_child(new_node)
 	graph_nodes.append(new_node)
 	if frame != null:
@@ -243,9 +234,7 @@ func _on_duplicate_node_button_pressed(node: DiscourseGraphNode) -> void:
 
 
 func _on_duplicate_nodes_request() -> void:
-	# {"from": original_uuid, "to": original_uuid, "to_port": 0, "from_port": 0}
-	var new_connections: Array[Dictionary] = [] 
-	# original uuid : new_node_pointer
+	var new_connections: Array[Dictionary] = []
 	var uuid_equivalences: Dictionary[String, DiscourseGraphNode] = {}
 	var sel_nodes := get_selected_graph_nodes()
 	for node in sel_nodes:
@@ -752,11 +741,6 @@ func _on_connection_to_empty(from_node: StringName, from_port: int, release_posi
 				from_port,
 				to_graph.name,
 				to_info["ports"][0]["port"])
-		#_on_connection_request(
-				#from_node,
-				#from_port,
-				#to_graph.name,
-				#to_info["ports"][0]["port"])
 		if frame != null:
 			attach_graph_element_to_frame(to_graph.name, frame.name)
 		node_created.emit(to_graph)
@@ -764,7 +748,6 @@ func _on_connection_to_empty(from_node: StringName, from_port: int, release_posi
 		return
 	var popup_meta: Dictionary = connection_popup.get_meta(&"release_data")
 	
-	#connection_popup.position = release_position
 	populate_popup(port_type, "output")
 	
 	popup_meta["from_node"] = from_node
@@ -805,11 +788,6 @@ func _on_connection_from_empty(to_node: StringName, to_port: int, release_positi
 				from_info["ports"][0]["port"],
 				to_node,
 				to_port)
-		#_on_connection_request(
-				#from_graph.name,
-				#from_info["ports"][0]["port"],
-				#to_node,
-				#to_port)
 		if frame != null:
 			attach_graph_element_to_frame(from_graph.name, frame.name)
 		node_created.emit(from_graph)
@@ -851,22 +829,12 @@ func _on_popup_index_pressed(index: int, menu: PopupMenu) -> void:
 				data["target_port"],
 				from_node,
 				from_port)
-		#_on_connection_request(
-			#new_node.name,
-			#data["target_port"],
-			#from_node,
-			#from_port)
 	else:
 		connect_nodes(
 				from_node,
 				from_port,
 				new_node.name,
 				data["target_port"])
-		#_on_connection_request(
-				#from_node,
-				#from_port,
-				#new_node.name,
-				#data["target_port"])
 	
 	if frame != null:
 		attach_graph_element_to_frame(new_node.name, frame.name)
@@ -890,22 +858,7 @@ func clear_dialog_nodes() -> void:
 func show_connection_popup_at(new_position: Vector2i):
 	# Get the PopupMenu's global size
 	var popup_size: Vector2i = Vector2i(connection_popup.get_contents_minimum_size())
-
-	# Get the viewport size
-	#var viewport_size: Vector2i = get_viewport().size
-
-	# Calculate the bottom-right corner of the PopupMenu
-	#var popup_bottom_right: Vector2i = new_position + popup_size
-
-	# Calculate the offset needed to keep the PopupMenu inside the viewport
-	#var offset: Vector2i = Vector2i.ZERO
 	
-	#if popup_bottom_right.x > viewport_size.x:
-		#offset.x = viewport_size.x - popup_bottom_right.x
-	#if popup_bottom_right.y > viewport_size.y:
-		#offset.y = viewport_size.y - popup_bottom_right.y
-	
-	# Apply the offset to the PopupMenu's position
 	connection_popup.position = DisplayServer.mouse_get_position()#new_position + offset
 	connection_popup.popup()
 
@@ -1135,10 +1088,6 @@ func get_discourse_nodes() -> Array[DiscourseGraphNode]:
 
 
 func set_localization_data(localization: Dictionary) -> void:
-	#var structure: Dictionary = {
-		#&"uuid": "text",
-		#&"uuid2": ["option", "option"]}
-	
 	for node in get_discourse_nodes():
 		var uuid: StringName = node.get_node_uuid()
 		if not node.is_node_localized() or not localization.has(uuid):
@@ -1155,8 +1104,6 @@ func set_localization_data(localization: Dictionary) -> void:
 		elif node.node_type == DialogNodes.LOCALIZED_TEXT:
 			if typeof(localization[uuid]) == TYPE_STRING:
 				node.set_text(localization[uuid])
-	
-	
 
 
 func get_issues() -> Array[Dictionary]:
@@ -1199,33 +1146,3 @@ func update_methods() -> void:
 func update_signals() -> void:
 	for node in signalers:
 		node.reload_signals()
-
-#func get_user_signals() -> Array[Dictionary]:
-		#var user_signals: Array[Dictionary] = []
-		#var singleton: DiscourseAPI = DiscourseAPI.new()
-		#var prev_signals: DialogParser = DialogParser.new_parser()
-		#
-		#var existing_signals: Array[String] = []
-		#
-		#for parent_signal in prev_signals.get_signal_list():
-			#existing_signals.append(parent_signal["name"])
-		#
-		#for reg_signal:Dictionary in singleton.get_signal_list():
-			#if reg_signal["name"] in existing_signals:
-				#continue
-			#var args: Array[Dictionary] = []
-			#for arg: Dictionary in reg_signal["args"]:
-				#args.append({
-					#"name": arg["name"],
-					#"type": arg["type"]
-				#})
-			#
-			#user_signals.append({
-				#"name": reg_signal["name"],
-				#"args": args
-			#})
-		#
-		#prev_signals.free()
-		#singleton.free()
-		#
-		#return user_signals

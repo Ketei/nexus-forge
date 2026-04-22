@@ -1,4 +1,4 @@
-[gd_scene load_steps=15 format=3 uid="uid://d3qq6j2xbhrgp"]
+[gd_scene format=3 uid="uid://d3qq6j2xbhrgp"]
 
 [ext_resource type="Script" uid="uid://bht1a34kfgyvk" path="res://addons/nexus_forge/variables/variables_main_script.gd" id="1_qnbb8"]
 [ext_resource type="Script" uid="uid://d1usgkp27ttf1" path="res://addons/nexus_forge/variables/folders_tree_script.gd" id="3_ylv6p"]
@@ -14,30 +14,16 @@ content_margin_top = 8.0
 content_margin_right = 6.0
 content_margin_bottom = 6.0
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_jvoa0"]
-bg_color = Color(0.211765, 0.239216, 0.290196, 1)
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_8hme2"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_8xo0l"]
-bg_color = Color(0.211765, 0.239216, 0.290196, 1)
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_t2xw8"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_383o2"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_nayyy"]
 content_margin_left = 4.0
 content_margin_top = 4.0
 content_margin_right = 4.0
-content_margin_bottom = 4.0
+content_margin_bottom = 5.0
 bg_color = Color(0.1, 0.1, 0.1, 0.6)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
-corner_detail = 5
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_elhta"]
-content_margin_left = 4.0
-content_margin_top = 4.0
-content_margin_right = 4.0
-content_margin_bottom = 4.0
-bg_color = Color(0.225, 0.225, 0.225, 0.6)
 corner_radius_top_left = 3
 corner_radius_top_right = 3
 corner_radius_bottom_right = 3
@@ -56,11 +42,23 @@ corner_radius_bottom_right = 3
 corner_radius_bottom_left = 3
 corner_detail = 5
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_nayyy"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_elhta"]
 content_margin_left = 4.0
 content_margin_top = 4.0
 content_margin_right = 4.0
-content_margin_bottom = 5.0
+content_margin_bottom = 4.0
+bg_color = Color(0.225, 0.225, 0.225, 0.6)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+corner_detail = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_383o2"]
+content_margin_left = 4.0
+content_margin_top = 4.0
+content_margin_right = 4.0
+content_margin_bottom = 4.0
 bg_color = Color(0.1, 0.1, 0.1, 0.6)
 corner_radius_top_left = 3
 corner_radius_top_right = 3
@@ -68,7 +66,7 @@ corner_radius_bottom_right = 3
 corner_radius_bottom_left = 3
 corner_detail = 5
 
-[node name="Variables" type="PanelContainer"]
+[node name="Variables" type="PanelContainer" unique_id=491784281]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -78,56 +76,56 @@ theme_override_styles/panel = SubResource("StyleBoxEmpty_c5wqu")
 script = ExtResource("1_qnbb8")
 metadata/_tab_index = 2
 
-[node name="MainSplit" type="HSplitContainer" parent="."]
+[node name="MainSplit" type="HSplitContainer" parent="." unique_id=617124004]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 10
 
-[node name="VBoxContainer" type="VBoxContainer" parent="MainSplit"]
+[node name="VBoxContainer" type="VBoxContainer" parent="MainSplit" unique_id=200626182]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="HBoxContainer" type="HBoxContainer" parent="MainSplit/VBoxContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="MainSplit/VBoxContainer" unique_id=1860480446]
 custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 
-[node name="TitleLabel" type="Label" parent="MainSplit/VBoxContainer/HBoxContainer"]
+[node name="TitleLabel" type="Label" parent="MainSplit/VBoxContainer/HBoxContainer" unique_id=658885744]
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.223182, 0.705086, 0.904884, 1)
 theme_override_font_sizes/font_size = 25
 text = "Blackboard"
 
-[node name="FoldersPanel" type="PanelContainer" parent="MainSplit/VBoxContainer"]
+[node name="FoldersPanel" type="PanelContainer" parent="MainSplit/VBoxContainer" unique_id=517796267]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-theme_override_styles/panel = SubResource("StyleBoxFlat_jvoa0")
+theme_override_styles/panel = SubResource("StyleBoxEmpty_8hme2")
 
-[node name="FoldersContainer" type="VBoxContainer" parent="MainSplit/VBoxContainer/FoldersPanel"]
+[node name="FoldersContainer" type="VBoxContainer" parent="MainSplit/VBoxContainer/FoldersPanel" unique_id=367123294]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="TitleContainer" type="HBoxContainer" parent="MainSplit/VBoxContainer/FoldersPanel/FoldersContainer"]
+[node name="TitleContainer" type="HBoxContainer" parent="MainSplit/VBoxContainer/FoldersPanel/FoldersContainer" unique_id=1475145641]
 layout_mode = 2
 
-[node name="FolderSearchLine" type="LineEdit" parent="MainSplit/VBoxContainer/FoldersPanel/FoldersContainer/TitleContainer"]
+[node name="FolderSearchLine" type="LineEdit" parent="MainSplit/VBoxContainer/FoldersPanel/FoldersContainer/TitleContainer" unique_id=1731670774]
 layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "Search Folders"
 clear_button_enabled = true
 
-[node name="FolderButtons" type="HBoxContainer" parent="MainSplit/VBoxContainer/FoldersPanel/FoldersContainer/TitleContainer"]
+[node name="FolderButtons" type="HBoxContainer" parent="MainSplit/VBoxContainer/FoldersPanel/FoldersContainer/TitleContainer" unique_id=1435195208]
 layout_mode = 2
 
-[node name="AddFolderButton" type="Button" parent="MainSplit/VBoxContainer/FoldersPanel/FoldersContainer/TitleContainer/FolderButtons"]
+[node name="AddFolderButton" type="Button" parent="MainSplit/VBoxContainer/FoldersPanel/FoldersContainer/TitleContainer/FolderButtons" unique_id=1984542797]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Create Folder"
 icon_alignment = 1
 
-[node name="FoldersTree" type="Tree" parent="MainSplit/VBoxContainer/FoldersPanel/FoldersContainer"]
+[node name="FoldersTree" type="Tree" parent="MainSplit/VBoxContainer/FoldersPanel/FoldersContainer" unique_id=380917059]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/h_separation = 10
@@ -136,26 +134,26 @@ hide_root = true
 scroll_horizontal_enabled = false
 script = ExtResource("3_ylv6p")
 
-[node name="VBoxContainer2" type="VBoxContainer" parent="MainSplit"]
+[node name="VBoxContainer2" type="VBoxContainer" parent="MainSplit" unique_id=1969417216]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 4.0
 
-[node name="TitleContainer" type="HBoxContainer" parent="MainSplit/VBoxContainer2"]
+[node name="TitleContainer" type="HBoxContainer" parent="MainSplit/VBoxContainer2" unique_id=1611886379]
 custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 
-[node name="FolderPathContainer" type="HBoxContainer" parent="MainSplit/VBoxContainer2/TitleContainer"]
+[node name="FolderPathContainer" type="HBoxContainer" parent="MainSplit/VBoxContainer2/TitleContainer" unique_id=1692279515]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="Label" type="Label" parent="MainSplit/VBoxContainer2/TitleContainer/FolderPathContainer"]
+[node name="Label" type="Label" parent="MainSplit/VBoxContainer2/TitleContainer/FolderPathContainer" unique_id=1269331900]
 layout_mode = 2
 size_flags_vertical = 1
 text = "Current Folder:"
 vertical_alignment = 1
 
-[node name="CurrentFolderLabel" type="Label" parent="MainSplit/VBoxContainer2/TitleContainer/FolderPathContainer"]
+[node name="CurrentFolderLabel" type="Label" parent="MainSplit/VBoxContainer2/TitleContainer/FolderPathContainer" unique_id=2027811704]
 custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -163,11 +161,11 @@ size_flags_vertical = 1
 vertical_alignment = 1
 text_overrun_behavior = 3
 
-[node name="VSeparator3" type="VSeparator" parent="MainSplit/VBoxContainer2/TitleContainer"]
+[node name="VSeparator3" type="VSeparator" parent="MainSplit/VBoxContainer2/TitleContainer" unique_id=1178760409]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="VarSearchLine" type="LineEdit" parent="MainSplit/VBoxContainer2/TitleContainer"]
+[node name="VarSearchLine" type="LineEdit" parent="MainSplit/VBoxContainer2/TitleContainer" unique_id=634808582]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -175,65 +173,69 @@ size_flags_vertical = 4
 placeholder_text = "Search Variables"
 clear_button_enabled = true
 
-[node name="VSeparator" type="VSeparator" parent="MainSplit/VBoxContainer2/TitleContainer"]
+[node name="VSeparator" type="VSeparator" parent="MainSplit/VBoxContainer2/TitleContainer" unique_id=283444941]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="AddButtonsContainer" type="HBoxContainer" parent="MainSplit/VBoxContainer2/TitleContainer"]
+[node name="AddButtonsContainer" type="HBoxContainer" parent="MainSplit/VBoxContainer2/TitleContainer" unique_id=397494492]
 layout_mode = 2
 
-[node name="AddIntButton" type="Button" parent="MainSplit/VBoxContainer2/TitleContainer/AddButtonsContainer"]
+[node name="AddIntButton" type="Button" parent="MainSplit/VBoxContainer2/TitleContainer/AddButtonsContainer" unique_id=1683115820]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 size_flags_vertical = 4
 tooltip_text = "Create integer variable."
 disabled = true
 icon = ExtResource("4_2tem4")
+flat = true
 icon_alignment = 1
 
-[node name="AddFloatButton" type="Button" parent="MainSplit/VBoxContainer2/TitleContainer/AddButtonsContainer"]
+[node name="AddFloatButton" type="Button" parent="MainSplit/VBoxContainer2/TitleContainer/AddButtonsContainer" unique_id=702650522]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 size_flags_vertical = 4
 tooltip_text = "Create float variable."
 disabled = true
 icon = ExtResource("5_o2qef")
+flat = true
 icon_alignment = 1
 
-[node name="AddBoolButton" type="Button" parent="MainSplit/VBoxContainer2/TitleContainer/AddButtonsContainer"]
+[node name="AddBoolButton" type="Button" parent="MainSplit/VBoxContainer2/TitleContainer/AddButtonsContainer" unique_id=953210883]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 size_flags_vertical = 4
 tooltip_text = "Create bool variable."
 disabled = true
 icon = ExtResource("6_dmfoy")
+flat = true
 icon_alignment = 1
 
-[node name="AddStringButton" type="Button" parent="MainSplit/VBoxContainer2/TitleContainer/AddButtonsContainer"]
+[node name="AddStringButton" type="Button" parent="MainSplit/VBoxContainer2/TitleContainer/AddButtonsContainer" unique_id=1315963805]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 size_flags_vertical = 4
 tooltip_text = "Create string  variable."
 disabled = true
 icon = ExtResource("7_wd8y6")
+flat = true
 icon_alignment = 1
 
-[node name="VariablesPanel" type="PanelContainer" parent="MainSplit/VBoxContainer2"]
+[node name="VariablesPanel" type="PanelContainer" parent="MainSplit/VBoxContainer2" unique_id=1321794732]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 size_flags_stretch_ratio = 4.0
-theme_override_styles/panel = SubResource("StyleBoxFlat_8xo0l")
+theme_override_styles/panel = SubResource("StyleBoxEmpty_t2xw8")
 
-[node name="VariablesTree" type="Tree" parent="MainSplit/VBoxContainer2/VariablesPanel"]
+[node name="VariablesTree" type="Tree" parent="MainSplit/VBoxContainer2/VariablesPanel" unique_id=337479366]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/h_separation = 10
-theme_override_styles/title_button_hover = SubResource("StyleBoxFlat_383o2")
-theme_override_styles/title_button_pressed = SubResource("StyleBoxFlat_elhta")
-theme_override_styles/title_button_normal = SubResource("StyleBoxFlat_7wepn")
 theme_override_styles/panel = SubResource("StyleBoxFlat_nayyy")
+theme_override_styles/title_button_normal = SubResource("StyleBoxFlat_7wepn")
+theme_override_styles/title_button_pressed = SubResource("StyleBoxFlat_elhta")
+theme_override_styles/title_button_hover = SubResource("StyleBoxFlat_383o2")
 columns = 2
 column_titles_visible = true
 allow_reselect = true

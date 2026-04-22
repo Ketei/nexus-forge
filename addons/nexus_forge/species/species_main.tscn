@@ -135,6 +135,7 @@ custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add folder"
 disabled = true
+flat = true
 icon_alignment = 1
 
 [node name="VSeparator" type="VSeparator" parent="RacesContainer/RacesBasicSplit/BasicDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer" unique_id=236046053]
@@ -146,6 +147,7 @@ layout_mode = 2
 tooltip_text = "Add integer"
 disabled = true
 icon = ExtResource("2_30i28")
+flat = true
 icon_alignment = 1
 
 [node name="AddRcFloatButton" type="Button" parent="RacesContainer/RacesBasicSplit/BasicDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer" unique_id=1298736331]
@@ -154,6 +156,7 @@ layout_mode = 2
 tooltip_text = "Add float"
 disabled = true
 icon = ExtResource("3_rexu5")
+flat = true
 icon_alignment = 1
 
 [node name="AddRcBoolButton" type="Button" parent="RacesContainer/RacesBasicSplit/BasicDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer" unique_id=783470169]
@@ -162,6 +165,7 @@ layout_mode = 2
 tooltip_text = "Add boolean"
 disabled = true
 icon = ExtResource("4_u68gt")
+flat = true
 icon_alignment = 1
 
 [node name="AddRcStringButton" type="Button" parent="RacesContainer/RacesBasicSplit/BasicDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer" unique_id=1067952266]
@@ -170,6 +174,7 @@ layout_mode = 2
 tooltip_text = "Add string"
 disabled = true
 icon = ExtResource("5_b0sy4")
+flat = true
 icon_alignment = 1
 
 [node name="RaceCustomDataSearchLine" type="LineEdit" parent="RacesContainer/RacesBasicSplit/BasicDataContainer/CustomDataContainer" unique_id=338424709]

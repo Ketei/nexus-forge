@@ -240,6 +240,7 @@ custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add folder"
 disabled = true
+flat = true
 icon_alignment = 1
 
 [node name="VSeparator" type="VSeparator" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer" unique_id=149128565]
@@ -251,6 +252,7 @@ layout_mode = 2
 tooltip_text = "Add integer"
 disabled = true
 icon = ExtResource("1_e1mk7")
+flat = true
 icon_alignment = 1
 
 [node name="AddItemFloatBtn" type="Button" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer" unique_id=688033983]
@@ -259,6 +261,7 @@ layout_mode = 2
 tooltip_text = "Add float"
 disabled = true
 icon = ExtResource("2_l5u5u")
+flat = true
 icon_alignment = 1
 
 [node name="AddItemBoolBtn" type="Button" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer" unique_id=314864795]
@@ -267,6 +270,7 @@ layout_mode = 2
 tooltip_text = "Add boolean"
 disabled = true
 icon = ExtResource("3_evcfd")
+flat = true
 icon_alignment = 1
 
 [node name="AddItemStrBtn" type="Button" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer" unique_id=1778633642]
@@ -275,6 +279,7 @@ layout_mode = 2
 tooltip_text = "Add string"
 disabled = true
 icon = ExtResource("4_etwui")
+flat = true
 icon_alignment = 1
 
 [node name="ItemDataTree" type="Tree" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/CustomDataContainer" unique_id=1828990506]
@@ -415,6 +420,7 @@ custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add folder"
 disabled = true
+flat = true
 icon_alignment = 1
 
 [node name="VSeparator" type="VSeparator" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/CustomDataContainer/CustomDataHeader/ButtonContainer" unique_id=1791563642]
@@ -426,6 +432,7 @@ layout_mode = 2
 tooltip_text = "Add integer"
 disabled = true
 icon = ExtResource("1_e1mk7")
+flat = true
 icon_alignment = 1
 
 [node name="AddCurrFltBtn" type="Button" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/CustomDataContainer/CustomDataHeader/ButtonContainer" unique_id=1170544397]
@@ -434,6 +441,7 @@ layout_mode = 2
 tooltip_text = "Add float"
 disabled = true
 icon = ExtResource("2_l5u5u")
+flat = true
 icon_alignment = 1
 
 [node name="AddCurrBoolBtn" type="Button" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/CustomDataContainer/CustomDataHeader/ButtonContainer" unique_id=384299472]
@@ -442,6 +450,7 @@ layout_mode = 2
 tooltip_text = "Add boolean"
 disabled = true
 icon = ExtResource("3_evcfd")
+flat = true
 icon_alignment = 1
 
 [node name="AddCurrStrBtn" type="Button" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/CustomDataContainer/CustomDataHeader/ButtonContainer" unique_id=1042141512]
@@ -450,6 +459,7 @@ layout_mode = 2
 tooltip_text = "Add string"
 disabled = true
 icon = ExtResource("4_etwui")
+flat = true
 icon_alignment = 1
 
 [node name="CurrencyCustomDataTree" type="Tree" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/CustomDataContainer" unique_id=587709000]

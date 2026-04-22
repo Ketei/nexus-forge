@@ -122,6 +122,7 @@ custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add folder"
 disabled = true
+flat = true
 icon_alignment = 1
 
 [node name="VSeparator" type="VSeparator" parent="MainContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader/ButtonContainer" unique_id=1427721570]
@@ -133,6 +134,7 @@ layout_mode = 2
 tooltip_text = "Add integer"
 disabled = true
 icon = ExtResource("4_2dcue")
+flat = true
 icon_alignment = 1
 
 [node name="SkillFltBtn" type="Button" parent="MainContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader/ButtonContainer" unique_id=1847557245]
@@ -141,6 +143,7 @@ layout_mode = 2
 tooltip_text = "Add float"
 disabled = true
 icon = ExtResource("5_jte7m")
+flat = true
 icon_alignment = 1
 
 [node name="SkillBoolBtn" type="Button" parent="MainContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader/ButtonContainer" unique_id=1232422128]
@@ -149,6 +152,7 @@ layout_mode = 2
 tooltip_text = "Add boolean"
 disabled = true
 icon = ExtResource("6_pfvga")
+flat = true
 icon_alignment = 1
 
 [node name="SkillStrBtn" type="Button" parent="MainContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader/ButtonContainer" unique_id=711406031]
@@ -157,6 +161,7 @@ layout_mode = 2
 tooltip_text = "Add string"
 disabled = true
 icon = ExtResource("7_ktu3r")
+flat = true
 icon_alignment = 1
 
 [node name="SkillDataTree" type="Tree" parent="MainContainer/SkillsPanel/SkillsContainer/DataContainer" unique_id=642974697]
@@ -262,6 +267,7 @@ custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add folder"
 disabled = true
+flat = true
 icon_alignment = 1
 
 [node name="VSeparator" type="VSeparator" parent="MainContainer/TraitsPanel/TraitsContainerContainer/DataContainer/DataHeader/ButtonContainer" unique_id=65279949]
@@ -273,6 +279,7 @@ layout_mode = 2
 tooltip_text = "Add integer"
 disabled = true
 icon = ExtResource("4_2dcue")
+flat = true
 icon_alignment = 1
 
 [node name="TraitFltBtn" type="Button" parent="MainContainer/TraitsPanel/TraitsContainerContainer/DataContainer/DataHeader/ButtonContainer" unique_id=639160429]
@@ -281,6 +288,7 @@ layout_mode = 2
 tooltip_text = "Add float"
 disabled = true
 icon = ExtResource("5_jte7m")
+flat = true
 icon_alignment = 1
 
 [node name="TraitBoolBtn" type="Button" parent="MainContainer/TraitsPanel/TraitsContainerContainer/DataContainer/DataHeader/ButtonContainer" unique_id=123275103]
@@ -289,6 +297,7 @@ layout_mode = 2
 tooltip_text = "Add boolean"
 disabled = true
 icon = ExtResource("6_pfvga")
+flat = true
 icon_alignment = 1
 
 [node name="TraitStrBtn" type="Button" parent="MainContainer/TraitsPanel/TraitsContainerContainer/DataContainer/DataHeader/ButtonContainer" unique_id=927139336]
@@ -297,6 +306,7 @@ layout_mode = 2
 tooltip_text = "Add string"
 disabled = true
 icon = ExtResource("7_ktu3r")
+flat = true
 icon_alignment = 1
 
 [node name="TraitDataTree" type="Tree" parent="MainContainer/TraitsPanel/TraitsContainerContainer/DataContainer" unique_id=459194844]

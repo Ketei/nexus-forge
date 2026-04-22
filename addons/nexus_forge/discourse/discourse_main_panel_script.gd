@@ -10,19 +10,6 @@ enum TreeButtonID {
 var active_conversation: EditorDiscourseDialog = null
 
 var localization_node_selected: DiscourseGraphNode = null
-#var base_language: String = "":
-	#set(l):
-		#base_language = l
-		##phrases_tree.base_language = l
-		#discourse_window.base_language = l
-		#languages_tree.set_default_language(l)
-		#if active_conversation != null:
-			#active_conversation.base_language = l
-
-#var localizer_language: String = ""
-#var localizer_region: String = ""
-
-#var active_locale: String = ""
 
 var listen_offset: bool = true
 
@@ -30,16 +17,6 @@ var selected_key: LineEdit = null
 var selected_format: String = ""
 
 var _unsaved: bool = false
-
-#var _unsaved: bool = false:
-	#get():
-		#return not get_unsaved_conversation_resources().is_empty()
-
-
-#var current_language: String = ""
-#var current_region: String = ""
-#var locale_map: Dictionary[String, PackedStringArray] = {}
-#var registered_locales
 
 # --- Discourse Graph ---
 @onready var conversation_tree: Tree = $MainSplitContainer/MainSidebar/SidebarSplitContainer/ConversationContainer/ConversationTree
@@ -62,9 +39,7 @@ var discourse_window: PanelContainer = null
 @onready var localization_nodes_tree: Tree = $LocalizationContainer/MainSplitContainer/LeftSplitContainer/LanguagesSplitContainer/NodesContainer/NodesTree
 @onready var base_text_edt: TextEdit = $LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/LocaleVBoxContainer/BasePanelContainer/BaseContainer/BaseTextEdt
 @onready var translation_txt_box: TextEdit = $LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/LocaleVBoxContainer/TranslationPanel/TranslationContainer/TranslationTxtBox
-#@onready var create_phrase_btn: Button = $LocalizationContainer/MainSplitContainer/PhrasesContainer/HeaderPanel/PhrasesHeader/CreatePhraseBtn
-#@onready var search_phrase_ln_edt: LineEdit = $LocalizationContainer/MainSplitContainer/PhrasesContainer/SearchPhraseLnEdt
-#@onready var phrases_tree: Tree = $LocalizationContainer/MainSplitContainer/PhrasesContainer/PhrasesTree
+
 @onready var locale_label: Label = $LocalizationContainer/LocaleLabel
 @onready var return_discourse_btn: Button = $LocalizationContainer/MainSplitContainer/PhrasesContainer/HeaderPanel/PhrasesHeader/ReturnDiscourseBtn
 @onready var choices_container: VBoxContainer = $LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer/ChoicesScroller/ChoicesContainer
@@ -346,7 +321,6 @@ func _on_change_default_language_pressed() -> void:
 		if not languages_tree.has_language(result):
 			languages_tree.create_language(result, true)
 			discourse_window.add_locale(result)
-			#phrases_tree.create_locale(result)
 			active_conversation.add_locale(result)
 			
 			
@@ -403,7 +377,6 @@ func _on_side_editor_locale_changed(from: String, to: String) -> void:
 					text,
 					from)
 		
-		# Update the nodes if we were on the same locale and we just switched.
 		if active_node != null and from == discourse_window.current_locale:
 			var uuid: StringName = active_node.get_node_uuid()
 			match active_node.node_type:
@@ -417,9 +390,6 @@ func _on_side_editor_locale_changed(from: String, to: String) -> void:
 						active_node.set_option_text(choice_n, choice)
 				DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
 					active_node.set_text(translation_txt_box.text.strip_edges())
-			#$LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer.visible = discourse_window.localization[uuid]["node"].node_type == DiscourseGraphNode.DialogueNodeType.OPTIONS
-			#$LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/LocaleVBoxContainer.visible = !$LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer.visible
-			#var type: DiscourseGraphNode.DialogueNodeType = discourse_window.localization[uuid]["node"].node_type
 	
 	clear_cases()
 	default_case_ln_edt.text = ""
@@ -435,10 +405,6 @@ func _on_side_editor_locale_changed(from: String, to: String) -> void:
 		$LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer.visible = false
 		key_box_container.visible = false
 		case_box_container.visible = false
-		#set_localizer_locale(to)
-		#phrases_tree.set_locale(language, region)
-		#localizer_language = language
-		#localizer_region = region
 		return
 	
 	key_box_container.visible = languages_tree.is_lang_selected()
@@ -452,20 +418,6 @@ func _on_side_editor_locale_changed(from: String, to: String) -> void:
 		text_field.text = active_conversation.get_localized_string(
 				key,
 				from)
-	
-	#if uuid.is_empty():
-		#set_localizer_locale(from)
-		#return
-	
-	#$LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer.visible = discourse_window.localization[uuid]["node"].node_type == DiscourseGraphNode.DialogueNodeType.OPTIONS
-	#$LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/LocaleVBoxContainer.visible = !$LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer.visible
-	
-	#localization[uuid]["localization"][language][country]["dialog/options/text"]
-	
-	#localizer_language = language
-	#localizer_region = region
-	#phrases_tree.set_locale(language, region)
-	#set_localizer_locale(to)
 	
 	if active_node == null:
 		return
@@ -549,25 +501,24 @@ func _on_localizer_node_selected(uuid: StringName) -> void:
 	
 	match new_node.node_type:
 		DiscourseGraphNode.DialogueNodeType.DIALOG:
-			#base_text_edt.text = discourse_window.localization[uuid]["localization"][base_lang]["base"]["dialog"]
 			base_text_edt.text = active_conversation.get_text_entry(
 					uuid,
-					base_language)#discourse_window.get_localization_argument(uuid, base_language)
+					base_language)
 			translation_txt_box.text = active_conversation.get_text_entry(
 					uuid,
-					active_locale) #discourse_window.get_localization_argument(uuid, active_locale)
-			#translation_txt_box.text = discourse_window.localization[uuid]["localization"][language][region]["dialog"]
+					active_locale)
+			
 		DiscourseGraphNode.DialogueNodeType.OPTIONS:
 			clear_localized_options()
-			var options_base: Array[String] = active_conversation.get_choices_entry(uuid, base_language) #discourse_window.get_localization_argument(uuid, base_language)
-			var options_localized: Array[String] = active_conversation.get_choices_entry(uuid, active_locale) #discourse_window.get_localization_argument(uuid, active_locale)
+			var options_base: Array[String] = active_conversation.get_choices_entry(uuid, base_language)
+			var options_localized: Array[String] = active_conversation.get_choices_entry(uuid, active_locale)
 			for option_idx in range(options_base.size()):
 				create_choice_node(
 						options_base[option_idx],
 						options_localized[option_idx])
 		DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
-			base_text_edt.text = active_conversation.get_text_entry(uuid, base_language) #discourse_window.get_localization_argument(uuid, base_language)
-			translation_txt_box.text = active_conversation.get_text_entry(uuid, active_locale)#discourse_window.get_localization_argument(uuid, active_locale)
+			base_text_edt.text = active_conversation.get_text_entry(uuid, base_language)
+			translation_txt_box.text = active_conversation.get_text_entry(uuid, active_locale)
 	
 	localization_node_selected = new_node
 
@@ -726,13 +677,7 @@ func _on_switch_window_pressed() -> void:
 
 func _on_region_created(language: String, region: String) -> void:
 	var locale_code: String = TranslationServer.standardize_locale(language if region.is_empty() else language + "_" + region)
-	#if not localizer_language.is_empty() and localizer_region.is_empty() and localizer_language == languages_tree.get_default_language():
-		#for item in key_container.get_children():
-			#active_conversation.set_localized_string(
-					#item.get_child(1).get_meta(&"phrase_key"),
-					#text_container.get_child(item.get_index()).get_child(0).text.strip_edges(),
-					#localizer_language,
-					#localizer_region)
+	
 	discourse_window.add_locale(locale_code)
 	active_conversation.add_locale(locale_code)
 	_on_conversation_changed()
@@ -763,13 +708,6 @@ func _on_new_lang_pressed() -> void:
 		if selected_key != null and selected_format != "":
 			save_current_phrase_key(true)
 		
-		#if localizer_language != "" and languages_tree.get_base_language() == localizer_language: #and selected_key != null and selected_format != "":
-			#for item in key_container.get_children():
-				#active_conversation.set_localized_string(
-						#item.get_child(1).get_meta(&"phrase_key"),
-						#text_container.get_child(item.get_index()).get_child(0).text.strip_edges(),
-						#localizer_language,
-						#localizer_region)
 		active_conversation.add_locale(result)
 		_on_conversation_changed()
 	window.queue_free()
@@ -778,10 +716,6 @@ func _on_new_lang_pressed() -> void:
 func _on_locale_deleted(locale: String) -> void:
 	discourse_window.remove_locale(locale)
 	active_conversation.remove_locale(locale)
-	
-	#if localizer_language == language:
-		#set_localizer_locale("")
-		#$LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer.visible = false
 
 
 func _on_issue_activated(issue_node: DiscourseGraphNode) -> void:
@@ -836,31 +770,6 @@ func set_localization_tip(locale: String) -> void:
 	locale_label.text = locale_text
 
 
-#func _on_new_phrase_button_pressed() -> void:
-	#var word_window: ConfirmationDialog = preload("res://addons/nexus_forge/dialogs/lineedit_confirmation_dialog.gd").new()
-	#word_window.line_placeholder_text = "New Word"
-	#word_window.title = "Create Word..."
-	#word_window.ok_button_text = "Create"
-	#word_window.use_blacklist = true
-	#word_window.allow_empty = false
-	#word_window.strip_edges = true
-	#word_window.character_blacklist.append(" ")
-	#word_window.error_line_blacklist_character_msg = "Phrase can't contain\nwhitespaces"
-	#word_window.error_line_blacklist_word_msg = "Phrase is already in use"
-	#
-	#word_window.text_blacklist = phrases_tree.get_used_keys()
-	#
-	#add_child(word_window)
-	#word_window.show()
-	#word_window.grab_text_focus()
-	#
-	#var word: Array = await word_window.dialog_finished
-	#if word[0]:
-		#phrases_tree.create_key(word[1])
-		#_on_conversation_changed()
-	#word_window.queue_free()
-
-
 func get_open_files() -> Array[String]:
 	return conversation_tree.get_open_file_paths()
 
@@ -887,59 +796,9 @@ func save_current_dialog_to_memory() -> void:
 	new_dialog.scroll_offset = discourse_window.discourse_graph_edit.scroll_offset
 	new_dialog.node_structure = discourse_nodes_tree.get_folder_structure()
 	new_dialog.dialog_id = dialog_id_ln_edt.text.strip_edges()
-	#new_dialog.localized_strings = phrases_tree.get_localization_structure()
-	
-	# Adding localization data to localized nodes
-	#for localized_uuid in localizations.keys():
-		## --- If the text is unlocalized ---
-		#if localizations[localized_uuid].has("common"):
-			#match localized_uuid["node"].node_type:
-				#DiscourseGraphNode.DialogueNodeType.DIALOG:
-					#new_dialog.set_unlocalized_text(
-						#localized_uuid,
-						#localizations[localized_uuid]["locaization"]["common"]["dialog"])
-				#DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
-					#new_dialog.set_localization_text(
-						#localized_uuid,
-						#localizations[localized_uuid]["locaization"]["common"]["text"],
-						#"common")
-				#DiscourseGraphNode.DialogueNodeType.OPTIONS:
-					#new_dialog.set_localization_choices(
-							#localized_uuid,
-							#localizations[localized_uuid]["locaization"]["common"]["options"],
-							#"common")
-		#
-		## --- Or we have a truly localized node ---
-		#for language in localizations[localized_uuid]["localization"].keys():
-			#for region in localizations[localized_uuid]["localization"][language].keys():
-				#match localized_uuid["node"].node_type:
-					#DiscourseGraphNode.DialogueNodeType.DIALOG:
-						#new_dialog.set_localization_text(
-							#localized_uuid,
-							#localizations[localized_uuid]["locaization"][language][region]["dialog"],
-							#language,
-							#region)
-					#DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
-						#new_dialog.set_localization_text(
-							#localized_uuid,
-							#localizations[localized_uuid]["locaization"][language][region]["text"],
-							#language,
-							#region)
-					#DiscourseGraphNode.DialogueNodeType.OPTIONS:
-						#new_dialog.set_localization_choices(
-								#localized_uuid,
-								#localizations[localized_uuid]["localization"][language][region]["options"],
-								#language,
-								#region)
-	
-	#if _unsaved or conversation_tree.active_offset_changed:
-		#active_conversation_item.get_metadata(0)["unsaved"] = true
-		#active_conversation_item.get_metadata(0)["offset_changed"] = false
 
 
 func _on_conversation_selected(dialog: EditorDiscourseDialog) -> void:
-	#var item: TreeItem = conversation_tree.get_selected()
-	#var conversation: EditorDiscourseDialog = item.get_metadata(0)["resource"]
 	if not discourse_window.are_conversation_options_enabled():
 		discourse_window.set_graph_edit_visible(true)
 		discourse_window.set_conversation_options_enabled(true)
@@ -951,7 +810,6 @@ func _on_conversation_selected(dialog: EditorDiscourseDialog) -> void:
 		save_current_dialog_to_memory()
 	
 	active_conversation = dialog
-	#active_conversation_item = item
 	conversation_tree.set_conversation_item_active(dialog)
 	if open_conversation(dialog):
 		conversation_tree.active_unsaved = true
@@ -1043,7 +901,6 @@ func _on_new_conversation_pressed() -> void:
 		if active_conversation != null:
 			save_current_dialog_to_memory()
 		var new_conv: EditorDiscourseDialog = EditorDiscourseDialog.new()
-		#new_conv.base_language = languages_tree.get_base_language()
 		new_conv.locale_map.assign(languages_tree.as_map())
 		if ResourceLoader.has_cached(result[1]):
 			new_conv.take_over_path(result[1])
@@ -1259,16 +1116,10 @@ func open_conversation(conversation: EditorDiscourseDialog, set_active: bool = t
 		issues_tree.clear_issues()
 	var graphs_locale: String = discourse_window.current_locale
 	var side_locale: String = languages_tree.get_active_locale()
-	#var lang: String = languages_tree.get_active_language()
-	#var reg: String = languages_tree.get_active_region()
 	
 	for localized_key in conversation.format_strings.keys():
 		var localized_text: String = "" if side_locale.is_empty() else conversation.get_format_string(localized_key, side_locale)
 		add_new_phrase(localized_key, localized_text)
-	
-	#for uuid:String in node_map:
-		#if node_map[uuid].get_tree() == null:
-			#root.add_child(node_map[uuid])
 	
 	for language in conversation.locale_map.keys():
 		if not discourse_window.has_locale(language):
@@ -1355,74 +1206,19 @@ func save_current_dialog() -> void:
 		active_conversation.scroll_offset = discourse_window.discourse_graph_edit.scroll_offset
 		active_conversation.zoom = discourse_window.discourse_graph_edit.zoom
 		active_conversation.save()
-		#active_conversation_item.get_metadata(0)["offset_changed"] = false
 		conversation_tree.active_offset_changed = false
 		return
 	
 	# Technically new_dialog is unneded as giving it an active_conversation will return that same one.
 	var new_dialog: EditorDiscourseDialog = discourse_window.discourse_graph_edit.get_conversation_data(active_conversation, discourse_window.current_locale)
-	# Obtaining localization reference
-	#var localizations: Dictionary = discourse_window.localization
-	
+
 	var locale_map: Dictionary[String, Dictionary] = languages_tree.as_map()
 	
-	#phrases_tree.save_locale()
-	
-	#new_dialog.base_language = base_language
 	new_dialog.zoom = discourse_window.discourse_graph_edit.zoom
 	new_dialog.scroll_offset = discourse_window.discourse_graph_edit.scroll_offset
 	new_dialog.node_structure = discourse_nodes_tree.get_folder_structure()
-	#new_dialog.localized_strings = phrases_tree.get_localization_structure()
-	new_dialog.locale_map = locale_map.duplicate(true) #discourse_window.locale_map.duplicate(true)
+	new_dialog.locale_map = locale_map.duplicate(true)
 	new_dialog.dialog_id = dialog_id_ln_edt.text.strip_edges()
-	
-	# We no longer need this as the localization is actively saved minus the
-	# las edit, which is saved when setting the variable new_dialog
-	
-	# Adding localization data to localized nodes
-	#for localized_uuid in active_conversation.localization.keys():
-		## --- If the text is unlocalized ---
-		#if localizations[localized_uuid].has("common"):
-			#match localized_uuid["node"].node_type:
-				#DiscourseGraphNode.DialogueNodeType.DIALOG:
-					#new_dialog.set_localization_text(
-						#localized_uuid,
-						#localizations[localized_uuid]["locaization"]["common"]["dialog"],
-						#"common")
-				#DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
-					#new_dialog.set_localization_text(
-						#localized_uuid,
-						#localizations[localized_uuid]["locaization"]["common"]["text"],
-						#"common")
-				#DiscourseGraphNode.DialogueNodeType.OPTIONS:
-					#new_dialog.set_localization_choices(
-							#localized_uuid,
-							#localizations[localized_uuid]["locaization"]["common"]["options"],
-							#"common")
-			#continue
-		#
-		 #--- Or we have a truly localized node ---
-		#for language in localizations[localized_uuid]["localization"].keys():
-			#for region in localizations[localized_uuid]["localization"][language].keys():
-				#match localizations[localized_uuid]["node"].node_type:
-					#DiscourseGraphNode.DialogueNodeType.DIALOG:
-						#new_dialog.set_localization_text(
-							#localized_uuid,
-							#localizations[localized_uuid]["localization"][language][region]["dialog"],
-							#language,
-							#region)
-					#DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
-						#new_dialog.set_localization_text(
-							#localized_uuid,
-							#localizations[localized_uuid]["localization"][language][region]["text"],
-							#language,
-							#region)
-					#DiscourseGraphNode.DialogueNodeType.OPTIONS:
-						#new_dialog.set_localization_choices(
-								#localized_uuid,
-								#localizations[localized_uuid]["localization"][language][region]["options"],
-								#language,
-								#region)
 	
 	_unsaved = false
 	ResourceSaver.save(active_conversation)
@@ -1431,7 +1227,6 @@ func save_current_dialog() -> void:
 
 
 func save_all_dialogs() -> void:
-	# Update localization active node if on that window.
 	if $LocalizationContainer.visible and localization_nodes_tree.get_active_node() != null:
 		save_localizer_data()
 	
@@ -1446,57 +1241,9 @@ func save_all_dialogs() -> void:
 			save_phrase_keys(true)
 			var new_dialog: EditorDiscourseDialog = discourse_window.discourse_graph_edit.get_conversation_data(active_conversation, discourse_window.current_locale)
 			new_dialog.dialog_id = dialog_id_ln_edt.text.strip_edges()
-			# Obtaining localization reference
-			#var localizations: Dictionary = discourse_window.localization
 			
-			#new_dialog.base_language = base_language
 			new_dialog.node_structure = discourse_nodes_tree.get_folder_structure()
-			#new_dialog.localized_strings = phrases_tree.get_localization_structure()
 			
-			# Adding localization data to localized nodes
-			#for localized_uuid in localizations.keys():
-				# --- If the text is unlocalized ---
-				#if localizations[localized_uuid]["localization"].has("common"):
-					#match localized_uuid["node"].node_type:
-						#DiscourseGraphNode.DialogueNodeType.DIALOG:
-							#new_dialog.set_localization_text(
-								#localized_uuid,
-								#localizations[localized_uuid]["locaization"]["common"]["dialog"],
-								#"common")
-						#DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
-							#new_dialog.set_localization_text(
-								#localized_uuid,
-								#localizations[localized_uuid]["locaization"]["common"]["text"],
-								#"common")
-						#DiscourseGraphNode.DialogueNodeType.OPTIONS:
-							#new_dialog.set_localization_choices(
-									#localized_uuid,
-									#localizations[localized_uuid]["locaization"]["common"]["options"],
-									#"common")
-					#continue
-				
-				# --- Or we have a truly localized node ---
-				#for language in localizations[localized_uuid]["localization"].keys():
-					#for region in localizations[localized_uuid]["localization"][language].keys():
-						#match localizations[localized_uuid]["node"].node_type:
-							#DiscourseGraphNode.DialogueNodeType.DIALOG:
-								#new_dialog.set_localization_text(
-									#localized_uuid,
-									#localizations[localized_uuid]["localization"][language][region]["dialog"],
-									#language,
-									#region)
-							#DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
-								#new_dialog.set_localization_text(
-									#localized_uuid,
-									#localizations[localized_uuid]["localization"][language][region]["text"],
-									#language,
-									#region)
-							#DiscourseGraphNode.DialogueNodeType.OPTIONS:
-								#new_dialog.set_localization_choices(
-										#localized_uuid,
-										#localizations[localized_uuid]["localization"][language][region]["options"],
-										#language,
-										#region)
 			ResourceSaver.save(active_conversation)
 		else:
 			ResourceSaver.save(unsaved_conversation)
@@ -1510,13 +1257,6 @@ func set_conversation_active(is_active: bool) -> void:
 	discourse_window.set_graph_edit_visible(is_active)
 	discourse_window.set_conversation_options_enabled(is_active)
 	new_folder_button.disabled = not is_active
-
-
-#func set_localizer_locale(locale: String) -> void:
-	
-	#localizer_language = language
-	#localizer_region = region if region != "" else "base"
-	#phrases_tree.set_locale(language, region)
 
 
 func has_unsaved_files() -> bool:
@@ -1960,8 +1700,6 @@ func save_current_phrase_key(fix_cases: bool = false) -> void:
 		return
 	
 	var phrase_key: String = selected_key.get_meta(&"phrase_key")
-	#var lang: String = languages_tree.get_active_language()
-	#var reg: String = languages_tree.get_active_region()
 	var locale_code = languages_tree.get_active_locale()
 	
 	var cases: Dictionary[String, String] = {}

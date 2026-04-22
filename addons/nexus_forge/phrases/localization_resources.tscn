@@ -136,6 +136,7 @@ layout_mode = 2
 tooltip_text = "New Key-Text pair."
 disabled = true
 icon = ExtResource("2_37r36")
+flat = true
 
 [node name="HSeparator" type="HSeparator" parent="MainContainer/DataHSplit/TextContainer" unique_id=1611203618]
 layout_mode = 2
@@ -222,6 +223,7 @@ focus_neighbor_bottom = NodePath("../../KeyScroll/CasesSplit/ResultContainer/Def
 focus_next = NodePath("../../KeyScroll/CasesSplit/ResultContainer/DefaultCaseLnEdt")
 disabled = true
 icon = ExtResource("4_502er")
+flat = true
 icon_alignment = 1
 
 [node name="HSeparator" type="HSeparator" parent="MainContainer/DataHSplit/CaseContainer" unique_id=1970672214]

@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3 uid="uid://dauhesagd763y"]
+[gd_scene format=3 uid="uid://dauhesagd763y"]
 
 [ext_resource type="Script" uid="uid://dph1lon8t6ojq" path="res://addons/nexus_forge/characters/characters_main_script.gd" id="1_rhcbn"]
 [ext_resource type="Script" uid="uid://buokvmhiwpxsu" path="res://addons/nexus_forge/characters/characters_tree.gd" id="3_blnre"]
@@ -15,7 +15,7 @@ content_margin_top = 8.0
 content_margin_right = 6.0
 content_margin_bottom = 6.0
 
-[node name="Characters" type="PanelContainer"]
+[node name="Characters" type="PanelContainer" unique_id=1625132505]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -24,38 +24,40 @@ grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_xfmus")
 script = ExtResource("1_rhcbn")
 
-[node name="CharacterContainer" type="HSplitContainer" parent="."]
+[node name="CharacterContainer" type="HSplitContainer" parent="." unique_id=1511977583]
 layout_mode = 2
 theme_override_constants/minimum_grab_thickness = 10
+split_offsets = PackedInt32Array(660)
 split_offset = 660
 
-[node name="BasicDataSplit" type="HSplitContainer" parent="CharacterContainer"]
+[node name="BasicDataSplit" type="HSplitContainer" parent="CharacterContainer" unique_id=1608768905]
 layout_mode = 2
 size_flags_stretch_ratio = 3.0
 theme_override_constants/minimum_grab_thickness = 10
+split_offsets = PackedInt32Array(250)
 split_offset = 250
 
-[node name="CharacterTreeContainer" type="VBoxContainer" parent="CharacterContainer/BasicDataSplit"]
+[node name="CharacterTreeContainer" type="VBoxContainer" parent="CharacterContainer/BasicDataSplit" unique_id=741724589]
 custom_minimum_size = Vector2(250, 0)
 layout_mode = 2
 
-[node name="TitleLabel" type="Label" parent="CharacterContainer/BasicDataSplit/CharacterTreeContainer"]
+[node name="TitleLabel" type="Label" parent="CharacterContainer/BasicDataSplit/CharacterTreeContainer" unique_id=1989228913]
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.223182, 0.705086, 0.904884, 1)
 theme_override_font_sizes/font_size = 25
 text = "Persona"
 
-[node name="HBoxContainer" type="HBoxContainer" parent="CharacterContainer/BasicDataSplit/CharacterTreeContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="CharacterContainer/BasicDataSplit/CharacterTreeContainer" unique_id=2021633170]
 layout_mode = 2
 
-[node name="SearchCharLnEdt" type="LineEdit" parent="CharacterContainer/BasicDataSplit/CharacterTreeContainer/HBoxContainer"]
+[node name="SearchCharLnEdt" type="LineEdit" parent="CharacterContainer/BasicDataSplit/CharacterTreeContainer/HBoxContainer" unique_id=2034967008]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "Search Character"
 
-[node name="CharMenuBtn" type="MenuButton" parent="CharacterContainer/BasicDataSplit/CharacterTreeContainer/HBoxContainer"]
+[node name="CharMenuBtn" type="MenuButton" parent="CharacterContainer/BasicDataSplit/CharacterTreeContainer/HBoxContainer" unique_id=26782834]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 icon_alignment = 1
@@ -66,66 +68,66 @@ popup/item_0/id = 0
 popup/item_1/text = "Open Character"
 popup/item_1/id = 1
 
-[node name="CharTree" type="Tree" parent="CharacterContainer/BasicDataSplit/CharacterTreeContainer"]
+[node name="CharTree" type="Tree" parent="CharacterContainer/BasicDataSplit/CharacterTreeContainer" unique_id=1888743812]
 layout_mode = 2
 size_flags_vertical = 3
 hide_root = true
 select_mode = 1
 script = ExtResource("3_blnre")
 
-[node name="GeneralContainer" type="VBoxContainer" parent="CharacterContainer/BasicDataSplit"]
+[node name="GeneralContainer" type="VBoxContainer" parent="CharacterContainer/BasicDataSplit" unique_id=854937442]
 custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 size_flags_stretch_ratio = 2.0
 
-[node name="Control" type="Control" parent="CharacterContainer/BasicDataSplit/GeneralContainer"]
+[node name="Control" type="Control" parent="CharacterContainer/BasicDataSplit/GeneralContainer" unique_id=927329738]
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 
-[node name="CharIDContainer" type="HBoxContainer" parent="CharacterContainer/BasicDataSplit/GeneralContainer"]
+[node name="CharIDContainer" type="HBoxContainer" parent="CharacterContainer/BasicDataSplit/GeneralContainer" unique_id=1917398107]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="CharacterContainer/BasicDataSplit/GeneralContainer/CharIDContainer"]
+[node name="Label" type="Label" parent="CharacterContainer/BasicDataSplit/GeneralContainer/CharIDContainer" unique_id=463978034]
 custom_minimum_size = Vector2(70, 0)
 layout_mode = 2
 size_flags_stretch_ratio = 0.2
 text = "ID"
 
-[node name="CharIDLine" type="LineEdit" parent="CharacterContainer/BasicDataSplit/GeneralContainer/CharIDContainer"]
+[node name="CharIDLine" type="LineEdit" parent="CharacterContainer/BasicDataSplit/GeneralContainer/CharIDContainer" unique_id=82698212]
 layout_mode = 2
 size_flags_horizontal = 3
 editable = false
 
-[node name="CharNameContainer" type="HBoxContainer" parent="CharacterContainer/BasicDataSplit/GeneralContainer"]
+[node name="CharNameContainer" type="HBoxContainer" parent="CharacterContainer/BasicDataSplit/GeneralContainer" unique_id=2061867974]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="CharacterContainer/BasicDataSplit/GeneralContainer/CharNameContainer"]
+[node name="Label" type="Label" parent="CharacterContainer/BasicDataSplit/GeneralContainer/CharNameContainer" unique_id=2089727587]
 custom_minimum_size = Vector2(70, 0)
 layout_mode = 2
 size_flags_stretch_ratio = 0.2
 text = "Name"
 
-[node name="CharNameLine" type="LineEdit" parent="CharacterContainer/BasicDataSplit/GeneralContainer/CharNameContainer"]
+[node name="CharNameLine" type="LineEdit" parent="CharacterContainer/BasicDataSplit/GeneralContainer/CharNameContainer" unique_id=410619086]
 layout_mode = 2
 size_flags_horizontal = 3
 editable = false
 
-[node name="SpeciesContainer" type="HBoxContainer" parent="CharacterContainer/BasicDataSplit/GeneralContainer"]
+[node name="SpeciesContainer" type="HBoxContainer" parent="CharacterContainer/BasicDataSplit/GeneralContainer" unique_id=1293566963]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="CharacterContainer/BasicDataSplit/GeneralContainer/SpeciesContainer"]
+[node name="Label" type="Label" parent="CharacterContainer/BasicDataSplit/GeneralContainer/SpeciesContainer" unique_id=12597922]
 custom_minimum_size = Vector2(70, 0)
 layout_mode = 2
 size_flags_stretch_ratio = 0.2
 text = "Type"
 
-[node name="SpeciesOptionButton" type="OptionButton" parent="CharacterContainer/BasicDataSplit/GeneralContainer/SpeciesContainer"]
+[node name="SpeciesOptionButton" type="OptionButton" parent="CharacterContainer/BasicDataSplit/GeneralContainer/SpeciesContainer" unique_id=725459146]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
 disabled = true
 
-[node name="LoadSpeciesDataBtn" type="Button" parent="CharacterContainer/BasicDataSplit/GeneralContainer/SpeciesContainer"]
+[node name="LoadSpeciesDataBtn" type="Button" parent="CharacterContainer/BasicDataSplit/GeneralContainer/SpeciesContainer" unique_id=1275425636]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Import species data"
@@ -135,16 +137,16 @@ flat = true
 icon_alignment = 1
 expand_icon = true
 
-[node name="GenderContainer" type="HBoxContainer" parent="CharacterContainer/BasicDataSplit/GeneralContainer"]
+[node name="GenderContainer" type="HBoxContainer" parent="CharacterContainer/BasicDataSplit/GeneralContainer" unique_id=455742598]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="CharacterContainer/BasicDataSplit/GeneralContainer/GenderContainer"]
+[node name="Label" type="Label" parent="CharacterContainer/BasicDataSplit/GeneralContainer/GenderContainer" unique_id=438441252]
 custom_minimum_size = Vector2(70, 0)
 layout_mode = 2
 size_flags_stretch_ratio = 0.2
 text = "Gender"
 
-[node name="GenderOptionButton" type="OptionButton" parent="CharacterContainer/BasicDataSplit/GeneralContainer/GenderContainer"]
+[node name="GenderOptionButton" type="OptionButton" parent="CharacterContainer/BasicDataSplit/GeneralContainer/GenderContainer" unique_id=1954954651]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -156,7 +158,7 @@ popup/item_0/id = 0
 popup/item_1/text = "Female"
 popup/item_1/id = 1
 
-[node name="EditGendersBtn" type="Button" parent="CharacterContainer/BasicDataSplit/GeneralContainer/GenderContainer"]
+[node name="EditGendersBtn" type="Button" parent="CharacterContainer/BasicDataSplit/GeneralContainer/GenderContainer" unique_id=1173069879]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Edit StatBlock script"
@@ -164,73 +166,78 @@ focus_mode = 1
 flat = true
 icon_alignment = 1
 
-[node name="CustomDataContainer" type="VBoxContainer" parent="CharacterContainer/BasicDataSplit/GeneralContainer"]
+[node name="CustomDataContainer" type="VBoxContainer" parent="CharacterContainer/BasicDataSplit/GeneralContainer" unique_id=2072486438]
 layout_mode = 2
 size_flags_vertical = 3
 size_flags_stretch_ratio = 2.5
 
-[node name="CDHeaderContainer" type="HBoxContainer" parent="CharacterContainer/BasicDataSplit/GeneralContainer/CustomDataContainer"]
+[node name="CDHeaderContainer" type="HBoxContainer" parent="CharacterContainer/BasicDataSplit/GeneralContainer/CustomDataContainer" unique_id=305734337]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="CharacterContainer/BasicDataSplit/GeneralContainer/CustomDataContainer/CDHeaderContainer"]
+[node name="Label" type="Label" parent="CharacterContainer/BasicDataSplit/GeneralContainer/CustomDataContainer/CDHeaderContainer" unique_id=848746605]
 layout_mode = 2
 text = "Character Data"
 
-[node name="AddButtonsContainer" type="HBoxContainer" parent="CharacterContainer/BasicDataSplit/GeneralContainer/CustomDataContainer/CDHeaderContainer"]
+[node name="AddButtonsContainer" type="HBoxContainer" parent="CharacterContainer/BasicDataSplit/GeneralContainer/CustomDataContainer/CDHeaderContainer" unique_id=135412387]
 layout_mode = 2
 size_flags_horizontal = 3
 alignment = 2
 
-[node name="AddDictButton" type="Button" parent="CharacterContainer/BasicDataSplit/GeneralContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer"]
+[node name="AddDictButton" type="Button" parent="CharacterContainer/BasicDataSplit/GeneralContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer" unique_id=1684175237]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add folder"
 disabled = true
+flat = true
 icon_alignment = 1
 
-[node name="VSeparator" type="VSeparator" parent="CharacterContainer/BasicDataSplit/GeneralContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer"]
+[node name="VSeparator" type="VSeparator" parent="CharacterContainer/BasicDataSplit/GeneralContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer" unique_id=842254128]
 layout_mode = 2
 
-[node name="AddCharIntButton" type="Button" parent="CharacterContainer/BasicDataSplit/GeneralContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer"]
+[node name="AddCharIntButton" type="Button" parent="CharacterContainer/BasicDataSplit/GeneralContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer" unique_id=1242146419]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Create integer variable."
 disabled = true
 icon = ExtResource("4_jsvfs")
+flat = true
 icon_alignment = 1
 
-[node name="AddCharFloatButton" type="Button" parent="CharacterContainer/BasicDataSplit/GeneralContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer"]
+[node name="AddCharFloatButton" type="Button" parent="CharacterContainer/BasicDataSplit/GeneralContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer" unique_id=597383212]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Create float variable."
 disabled = true
 icon = ExtResource("5_0ualm")
+flat = true
 icon_alignment = 1
 
-[node name="AddCharBoolButton" type="Button" parent="CharacterContainer/BasicDataSplit/GeneralContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer"]
+[node name="AddCharBoolButton" type="Button" parent="CharacterContainer/BasicDataSplit/GeneralContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer" unique_id=523099320]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Create bool variable."
 disabled = true
 icon = ExtResource("6_r1c6x")
+flat = true
 icon_alignment = 1
 
-[node name="AddCharStringButton" type="Button" parent="CharacterContainer/BasicDataSplit/GeneralContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer"]
+[node name="AddCharStringButton" type="Button" parent="CharacterContainer/BasicDataSplit/GeneralContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer" unique_id=208582012]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Create string  variable."
 disabled = true
 icon = ExtResource("7_3h3ho")
+flat = true
 icon_alignment = 1
 
-[node name="CharacterCustomDataSearchLine" type="LineEdit" parent="CharacterContainer/BasicDataSplit/GeneralContainer/CustomDataContainer"]
+[node name="CharacterCustomDataSearchLine" type="LineEdit" parent="CharacterContainer/BasicDataSplit/GeneralContainer/CustomDataContainer" unique_id=496826355]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 3.0
 placeholder_text = "Search Custom Data"
 clear_button_enabled = true
 
-[node name="CharacterDataTree" type="Tree" parent="CharacterContainer/BasicDataSplit/GeneralContainer/CustomDataContainer"]
+[node name="CharacterDataTree" type="Tree" parent="CharacterContainer/BasicDataSplit/GeneralContainer/CustomDataContainer" unique_id=2113808504]
 custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
 size_flags_vertical = 3
@@ -242,29 +249,31 @@ script = ExtResource("9_i064r")
 allow_drag_and_drop = true
 compact_mode = true
 
-[node name="ValuesSplit" type="HSplitContainer" parent="CharacterContainer"]
+[node name="ValuesSplit" type="HSplitContainer" parent="CharacterContainer" unique_id=825121379]
 layout_mode = 2
 size_flags_stretch_ratio = 2.0
 theme_override_constants/minimum_grab_thickness = 10
+split_offsets = PackedInt32Array(325)
 split_offset = 325
 
-[node name="ValuesVBox" type="VSplitContainer" parent="CharacterContainer/ValuesSplit"]
+[node name="ValuesVBox" type="VSplitContainer" parent="CharacterContainer/ValuesSplit" unique_id=2135928504]
 custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
+split_offsets = PackedInt32Array(347)
 split_offset = 347
 
-[node name="StatVBox" type="VBoxContainer" parent="CharacterContainer/ValuesSplit/ValuesVBox"]
+[node name="StatVBox" type="VBoxContainer" parent="CharacterContainer/ValuesSplit/ValuesVBox" unique_id=1717465470]
 custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
 
-[node name="StatLbl" type="Label" parent="CharacterContainer/ValuesSplit/ValuesVBox/StatVBox"]
+[node name="StatLbl" type="Label" parent="CharacterContainer/ValuesSplit/ValuesVBox/StatVBox" unique_id=1966373458]
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 text = "Stats"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="EditStatBlockBtn" type="Button" parent="CharacterContainer/ValuesSplit/ValuesVBox/StatVBox/StatLbl"]
+[node name="EditStatBlockBtn" type="Button" parent="CharacterContainer/ValuesSplit/ValuesVBox/StatVBox/StatLbl" unique_id=703243574]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 1
 anchors_preset = 6
@@ -282,27 +291,27 @@ focus_mode = 1
 flat = true
 icon_alignment = 1
 
-[node name="StatScroll" type="ScrollContainer" parent="CharacterContainer/ValuesSplit/ValuesVBox/StatVBox"]
+[node name="StatScroll" type="ScrollContainer" parent="CharacterContainer/ValuesSplit/ValuesVBox/StatVBox" unique_id=42365849]
 layout_mode = 2
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
-[node name="CharStatsContainer" type="VBoxContainer" parent="CharacterContainer/ValuesSplit/ValuesVBox/StatVBox/StatScroll"]
+[node name="CharStatsContainer" type="VBoxContainer" parent="CharacterContainer/ValuesSplit/ValuesVBox/StatVBox/StatScroll" unique_id=924840307]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="SkillVBox" type="VBoxContainer" parent="CharacterContainer/ValuesSplit/ValuesVBox"]
+[node name="SkillVBox" type="VBoxContainer" parent="CharacterContainer/ValuesSplit/ValuesVBox" unique_id=433208567]
 custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
 
-[node name="StatLbl" type="Label" parent="CharacterContainer/ValuesSplit/ValuesVBox/SkillVBox"]
+[node name="StatLbl" type="Label" parent="CharacterContainer/ValuesSplit/ValuesVBox/SkillVBox" unique_id=678383075]
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 text = "Skills"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="EditSkillSetBtn" type="Button" parent="CharacterContainer/ValuesSplit/ValuesVBox/SkillVBox/StatLbl"]
+[node name="EditSkillSetBtn" type="Button" parent="CharacterContainer/ValuesSplit/ValuesVBox/SkillVBox/StatLbl" unique_id=822625440]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 1
 anchors_preset = 6
@@ -320,27 +329,27 @@ focus_mode = 1
 flat = true
 icon_alignment = 1
 
-[node name="SkillScroll" type="ScrollContainer" parent="CharacterContainer/ValuesSplit/ValuesVBox/SkillVBox"]
+[node name="SkillScroll" type="ScrollContainer" parent="CharacterContainer/ValuesSplit/ValuesVBox/SkillVBox" unique_id=1846237522]
 layout_mode = 2
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
-[node name="CharSkillContainer" type="VBoxContainer" parent="CharacterContainer/ValuesSplit/ValuesVBox/SkillVBox/SkillScroll"]
+[node name="CharSkillContainer" type="VBoxContainer" parent="CharacterContainer/ValuesSplit/ValuesVBox/SkillVBox/SkillScroll" unique_id=1664229235]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="TraitsVbox" type="VBoxContainer" parent="CharacterContainer/ValuesSplit"]
+[node name="TraitsVbox" type="VBoxContainer" parent="CharacterContainer/ValuesSplit" unique_id=891300441]
 custom_minimum_size = Vector2(220, 0)
 layout_mode = 2
 
-[node name="StatLbl" type="Label" parent="CharacterContainer/ValuesSplit/TraitsVbox"]
+[node name="StatLbl" type="Label" parent="CharacterContainer/ValuesSplit/TraitsVbox" unique_id=549285367]
 custom_minimum_size = Vector2(0, 36)
 layout_mode = 2
 text = "Traits"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="EditTraitBlockBtn" type="Button" parent="CharacterContainer/ValuesSplit/TraitsVbox/StatLbl"]
+[node name="EditTraitBlockBtn" type="Button" parent="CharacterContainer/ValuesSplit/TraitsVbox/StatLbl" unique_id=1589489934]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 1
 anchors_preset = 6
@@ -358,11 +367,11 @@ focus_mode = 1
 flat = true
 icon_alignment = 1
 
-[node name="ScrollContainer" type="ScrollContainer" parent="CharacterContainer/ValuesSplit/TraitsVbox"]
+[node name="ScrollContainer" type="ScrollContainer" parent="CharacterContainer/ValuesSplit/TraitsVbox" unique_id=1419956115]
 layout_mode = 2
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
-[node name="CharTraitsContainer" type="VBoxContainer" parent="CharacterContainer/ValuesSplit/TraitsVbox/ScrollContainer"]
+[node name="CharTraitsContainer" type="VBoxContainer" parent="CharacterContainer/ValuesSplit/TraitsVbox/ScrollContainer" unique_id=370966905]
 layout_mode = 2
 size_flags_horizontal = 3

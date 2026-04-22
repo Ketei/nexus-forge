@@ -74,6 +74,7 @@ custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Create quest file"
 icon = ExtResource("2_ct1fh")
+flat = true
 
 [node name="NavigationSplitContainer" type="VSplitContainer" parent="MainContainer/DataContainer/NavigationContainer" unique_id=23107170]
 layout_mode = 2
@@ -132,6 +133,7 @@ disabled = true
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Edit types (Script)"
+flat = true
 icon_alignment = 1
 
 [node name="TitleContainer" type="HBoxContainer" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer" unique_id=1269841432]
@@ -186,6 +188,7 @@ custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add folder"
 disabled = true
+flat = true
 icon_alignment = 1
 
 [node name="VSeparator" type="VSeparator" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer" unique_id=1330852067]
@@ -197,6 +200,7 @@ layout_mode = 2
 tooltip_text = "Create integer variable."
 disabled = true
 icon = ExtResource("1_xhnnm")
+flat = true
 icon_alignment = 1
 
 [node name="AddFloatButton" type="Button" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer" unique_id=313964157]
@@ -205,6 +209,7 @@ layout_mode = 2
 tooltip_text = "Create float variable."
 disabled = true
 icon = ExtResource("2_ikrww")
+flat = true
 icon_alignment = 1
 
 [node name="AddBoolButton" type="Button" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer" unique_id=1165394649]
@@ -213,6 +218,7 @@ layout_mode = 2
 tooltip_text = "Create bool variable."
 disabled = true
 icon = ExtResource("3_ct1fh")
+flat = true
 icon_alignment = 1
 
 [node name="AddStringButton" type="Button" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/CustomDataContainer/CDHeaderContainer/AddButtonsContainer" unique_id=1982300936]
@@ -221,6 +227,7 @@ layout_mode = 2
 tooltip_text = "Create string  variable."
 disabled = true
 icon = ExtResource("4_46oj0")
+flat = true
 icon_alignment = 1
 
 [node name="CustomDataSearchLine" type="LineEdit" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer/CustomDataContainer" unique_id=816330905]
