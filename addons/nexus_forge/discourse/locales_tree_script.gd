@@ -246,14 +246,14 @@ func is_lang_selected() -> bool:
 	return active_language != null
 
 
-func as_map() -> Dictionary[StringName, Dictionary]:
-	var map: Dictionary[StringName, Dictionary] = {}
+func as_map() -> Dictionary[String, Dictionary]:
+	var map: Dictionary[String, Dictionary] = {}
 	
 	for main_language in get_root().get_children():
-		var regions: Dictionary[StringName, Variant] = {}
+		var regions: Dictionary[String, Variant] = {}
 		for region in main_language.get_children():
-			regions[StringName(region.get_metadata(0)["region_code"])] = null
-		map[StringName(main_language.get_metadata(0)["language_code"])] = regions
+			regions[region.get_metadata(0)["region_code"]] = null
+		map[main_language.get_metadata(0)["language_code"]] = regions
 	
 	return map
 

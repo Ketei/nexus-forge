@@ -813,6 +813,10 @@ func _on_get_issues_pressed() -> void:
 
 
 func set_localization_tip(locale: String) -> void:
+	if locale.is_empty():
+		locale_label.text = "Current Locale:"
+		return
+	
 	var locale_parts: PackedStringArray = locale.split("_", false, 1)
 	var language: String = locale_parts[0]
 	var region: String = locale_parts[1] if locale_parts.size() == 2 else ""
@@ -1214,7 +1218,8 @@ func _on_discourse_item_edited(uuid: StringName, type: DiscourseGraphNode.Dialog
 #endregion
 
 
-# Loads a conversation into discourse
+# Loads a conversation into discourse. Also what do I mean by "set_active"?
+# THe point of OPENING it is to set active. Past me...wtf?!
 func open_conversation(conversation: EditorDiscourseDialog, set_active: bool = true) -> bool:
 	dialog_id_ln_edt.text = conversation.dialog_id
 	
@@ -1266,11 +1271,16 @@ func open_conversation(conversation: EditorDiscourseDialog, set_active: bool = t
 			#root.add_child(node_map[uuid])
 	
 	for language in conversation.locale_map.keys():
+		if not discourse_window.has_locale(language):
+			discourse_window.add_locale(language)
 		if not languages_tree.has_locale(language):
 			languages_tree.create_language(language)
 		for region in conversation.locale_map[language].keys():
 			if not languages_tree.has_locale(language, region):
 				languages_tree.create_region(language, region)
+			var lang_code: String = language.to_lower() + "_" + region.to_upper()
+			if not discourse_window.has_locale(lang_code):
+				discourse_window.add_locale(lang_code)
 	
 	case_box_container.visible = false
 	key_box_container.visible = languages_tree.is_lang_selected()
@@ -1354,7 +1364,7 @@ func save_current_dialog() -> void:
 	# Obtaining localization reference
 	#var localizations: Dictionary = discourse_window.localization
 	
-	var locale_map: Dictionary[String, Dictionary] = discourse_window.locale_map
+	var locale_map: Dictionary[String, Dictionary] = languages_tree.as_map()
 	
 	#phrases_tree.save_locale()
 	

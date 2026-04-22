@@ -46,7 +46,7 @@ var current_locale: String = ""
 	#set(new_country):
 		#current_country = "base" if new_country.is_empty() else new_country
 
-var locale_map: Dictionary[String, Dictionary] = {}
+#var locale_map: Dictionary[String, Dictionary] = {}
 
 
 func _ready() -> void:
@@ -511,92 +511,160 @@ func _locale_sort_custom(locale_a: Dictionary, locale_b: Dictionary):
 
 
 func set_locale_map(new_map: Dictionary[String, Dictionary]) -> void:
-	for existing_language in locale_map.keys():
-		if not new_map.has(existing_language):
-			remove_locale(existing_language)
-		else:
-			for existing_region in locale_map[existing_language].keys():
-				if not new_map[existing_language].has(existing_region):
-					remove_locale(existing_language, existing_region)
+	var locale_selected: String = ""
 	
-	for language in new_map.keys():
-		var lang_code: String = TranslationServer.standardize_locale(language)
-		if locale_map.has(lang_code):
-			for region in new_map[lang_code].keys():
-				if not locale_map[lang_code].has(region):
-					add_locale(TranslationServer.standardize_locale(lang_code + "_" + region))
-		else:
-			add_locale(lang_code)
-			for region in new_map[language]:
-				add_locale(TranslationServer.standardize_locale(lang_code + "_" + region))
+	if 0 <= localization_menu.selected:
+		var metadata: Dictionary = localization_menu.get_item_metadata(localization_menu.selected)
+		locale_selected = metadata["language_code"] if metadata["country_code"].is_empty() else metadata["language_code"] + "_" + metadata["country_code"]
+	
+	clear_locales()
+	
+	for lang_code in new_map.keys():
+		add_locale(lang_code.to_lower())
+		for reg_code in new_map[lang_code].keys():
+			var locale_code: String = lang_code.to_lower() + "_" + reg_code.to_upper()
+			add_locale(locale_code)
+	
+	if not locale_selected.is_empty():
+		for idx in range(localization_menu.item_count):
+			var metadata: Dictionary = localization_menu.get_item_metadata(localization_menu.selected)
+			var locale_code: String = metadata["language_code"] + "_" + metadata["country_code"]
+			if locale_selected == locale_code:
+				localization_menu.select(idx)
+				return
+	
+	#for existing_language in locale_map.keys():
+		#if not new_map.has(existing_language):
+			#remove_locale(existing_language)
+		#else:
+			#for existing_region in locale_map[existing_language].keys():
+				#if not new_map[existing_language].has(existing_region):
+					#remove_locale(existing_language + "_" + existing_region)
+	#
+	#for language in new_map.keys():
+		#var lang_code: String = TranslationServer.standardize_locale(language)
+		#if locale_map.has(lang_code):
+			#for region in new_map[lang_code].keys():
+				#if not locale_map[lang_code].has(region):
+					#add_locale(TranslationServer.standardize_locale(lang_code + "_" + region))
+		#else:
+			#add_locale(lang_code)
+			#for region in new_map[language]:
+				#add_locale(TranslationServer.standardize_locale(lang_code + "_" + region))
 
 
 func clear_locales() -> void:
-	for locale in locale_map.keys():
-		remove_locale(locale)
-	
-	locale_map.clear()
+	localization_menu.clear()
+	localization_menu.select(-1)
 
 
-func remove_locale(language: String, region: String = "") -> void:
-	if not locale_map.has(language) or not locale_map[language].has(region):
+func remove_locale(locale: String) -> void:
+	if locale.is_empty():
 		return
 	
-	if region.is_empty():
-		var current: int = localization_menu.selected
-		var new_index: int = localization_menu.selected
-		var item_count: int = localization_menu.item_count
-		locale_map.erase(language)
-		for item_idx in range(localization_menu.item_count):
-			var mtdt: Dictionary = localization_menu.get_item_metadata(item_idx)
-			if mtdt["language_code"] != language:
-				continue
-			if new_index == item_idx:
-				new_index = clampi(
-					item_idx - 1,
-					-1 if localization_menu.item_count == 1 else 0,
-					item_count - 2)
-			localization_menu.remove_item(item_idx)
+	var parts: PackedStringArray = TranslationServer.standardize_locale(locale).split("_")
+	var lang: String = parts[0]
+	var reg: String = parts[1] if parts.size() == 2 else ""
+	
+	#if reg.is_empty():
+		#locale_map.erase(lang)
+	#else:
+		#locale_map[lang].erase(reg)
+	
+	var current: int = localization_menu.selected
+	var new_index: int = current
+	var item_count: int = localization_menu.item_count 
+	
+	for item_idx in range(localization_menu.item_count):
+		var mtdt: Dictionary = localization_menu.get_item_metadata(item_idx)
 		
-		if current != new_index:
-			if new_index != -1:
-				var metadata: Dictionary = localization_menu.get_item_metadata(new_index)
-				localization_menu.select(new_index)
-				current_locale = TranslationServer.standardize_locale(metadata["language_code"] if metadata["country_code"].is_empty() else metadata["language_code"] + "_" + metadata["country_code"])
-				#current_language = metadata["language_code"]
-				#current_country = metadata["country_code"]
+		if mtdt["language_code"] != lang or mtdt["country_code"] != reg:
+			continue
+		localization_menu.remove_item(item_idx)
+		
+		if item_idx == current:
+			var new_idx: int = clampi(
+					item_idx - 1,
+					-1 if item_count == 1 else 0,
+					item_count - 2)
+			
+			if new_idx != -1:
+				localization_menu.select(new_idx)
+				current_locale = TranslationServer.standardize_locale(mtdt["language_code"] if mtdt["country_code"].is_empty() else mtdt["language_code"] + "_" + mtdt["country_code"])
+				#current_language = mtdt["language_code"]
+				#current_country = mtdt["country_code"]
 				#set_localization(current_language, current_country)
-				localization_menu.tooltip_text = localization_menu.get_item_text(new_index)
+				localization_menu.tooltip_text = localization_menu.get_item_text(new_idx)
 			else:
 				current_locale = ""
-				#current_language = base_language
-				#current_country = "base"
+				#current_language = ""
+				#current_country = ""
 				localization_menu.tooltip_text = ""
-	else:
-		locale_map[language].erase(region)
-		for item_idx in range(localization_menu.item_count):
-			var mtdt: Dictionary = localization_menu.get_item_metadata(item_idx)
-			if mtdt["language_code"] != language or mtdt["country_code"] != region:
-				continue
-			if item_idx == localization_menu.selected:
-				var new_idx: int = clampi(
-						item_idx - 1,
-						-1 if localization_menu.item_count == 1 else 0,
-						localization_menu.item_count - 2)
-				if new_idx != -1:
-					localization_menu.select(new_idx)
-					current_locale = TranslationServer.standardize_locale(mtdt["language_code"] if mtdt["country_code"].is_empty() else mtdt["language_code"] + "_" + mtdt["country_code"])
-					#current_language = mtdt["language_code"]
-					#current_country = mtdt["country_code"]
-					#set_localization(current_language, current_country)
-					localization_menu.tooltip_text = localization_menu.get_item_text(new_idx)
-				else:
-					current_locale = ""
-					#current_language = ""
-					#current_country = ""
-					localization_menu.tooltip_text = ""
-			localization_menu.remove_item(item_idx)
-			break
+			
+			localization_menu.select(new_idx)
+		
+		return
+	
+	
+	
+	
+	
+	#if reg.is_empty():
+		#var current: int = localization_menu.selected
+		#var new_index: int = current
+		#var item_count: int = localization_menu.item_count
+		#locale_map.erase(lang)
+		#for item_idx in range(localization_menu.item_count):
+			#var mtdt: Dictionary = localization_menu.get_item_metadata(item_idx)
+			#if mtdt["language_code"] != lang:
+				#continue
+			#if new_index == item_idx:
+				#new_index = clampi(
+					#item_idx - 1,
+					#-1 if localization_menu.item_count == 1 else 0,
+					#item_count - 2)
+			#localization_menu.remove_item(item_idx)
+			#break
+		#
+		#if current != new_index:
+			#if new_index != -1:
+				#var metadata: Dictionary = localization_menu.get_item_metadata(new_index)
+				#localization_menu.select(new_index)
+				#current_locale = TranslationServer.standardize_locale(metadata["language_code"] if metadata["country_code"].is_empty() else metadata["language_code"] + "_" + metadata["country_code"])
+				##current_language = metadata["language_code"]
+				##current_country = metadata["country_code"]
+				##set_localization(current_language, current_country)
+				#localization_menu.tooltip_text = localization_menu.get_item_text(new_index)
+			#else:
+				#current_locale = ""
+				##current_language = base_language
+				##current_country = "base"
+				#localization_menu.tooltip_text = ""
+	#else:
+		#locale_map[lang].erase(reg)
+		#for item_idx in range(localization_menu.item_count):
+			#var mtdt: Dictionary = localization_menu.get_item_metadata(item_idx)
+			#if mtdt["language_code"] != language or mtdt["country_code"] != region:
+				#continue
+			#if item_idx == localization_menu.selected:
+				#var new_idx: int = clampi(
+						#item_idx - 1,
+						#-1 if localization_menu.item_count == 1 else 0,
+						#localization_menu.item_count - 2)
+				#if new_idx != -1:
+					#localization_menu.select(new_idx)
+					#current_locale = TranslationServer.standardize_locale(mtdt["language_code"] if mtdt["country_code"].is_empty() else mtdt["language_code"] + "_" + mtdt["country_code"])
+					##current_language = mtdt["language_code"]
+					##current_country = mtdt["country_code"]
+					##set_localization(current_language, current_country)
+					#localization_menu.tooltip_text = localization_menu.get_item_text(new_idx)
+				#else:
+					#current_locale = ""
+					##current_language = ""
+					##current_country = ""
+					#localization_menu.tooltip_text = ""
+			#localization_menu.remove_item(item_idx)
+			#break
 
 
 func add_locale(locale_code: String) -> void:
@@ -605,7 +673,6 @@ func add_locale(locale_code: String) -> void:
 	var locale_parts: PackedStringArray = locale_code.split("_", false, 1)
 	var language: String = locale_parts[0]
 	var region: String = locale_parts[1] if locale_parts.size() == 2 else ""
-	
 	var selected_language: String = ""
 	var selected_country: String = ""
 	var existing_locales: Array[Dictionary] = []
@@ -644,7 +711,7 @@ func add_locale(locale_code: String) -> void:
 	
 	if selected_language.is_empty() and selected_country.is_empty():
 		localization_menu.tooltip_text = localization_menu.get_item_text(0)
-	
+	#locale_map
 	#for uuid in localization.keys():
 		#if not localization[uuid]["localization"].has(language):
 			#localization[uuid]["localization"][language] = {}
@@ -788,14 +855,14 @@ func load_conversation(conversation: EditorDiscourseDialog) -> bool:
 		#for region in conversation.locale_map[language]:
 			#if not has_locale(language, region):
 				#add_locale(language, region)
-	locale_map.clear()
+	#locale_map.clear()
 	#localization.clear()
 	
 	if conversation == null:
 		discourse_graph_edit.clear_dialog_nodes()
 		return false
 	
-	locale_map.assign(conversation.locale_map.duplicate(true))
+	#locale_map.assign(conversation.locale_map.duplicate(true))
 	#set_locale_map(conversation.locale_map)
 	
 	
@@ -817,9 +884,18 @@ func load_conversation(conversation: EditorDiscourseDialog) -> bool:
 	return needs_resaving
 
 
-func has_locale(language: String, region: String = "base") -> bool:
-	if locale_map.has(language):
-		return region == "base" or locale_map[language].has(region)
+func has_locale(locale: String) -> bool:
+	if locale.is_empty():
+		return false
+	
+	var parts: PackedStringArray = TranslationServer.standardize_locale(locale).split("_", false, 1)
+	var lang_code: String = parts[0]
+	var reg_code: String = parts[1] if parts.size() == 2 else ""
+	
+	for option_idx in range(localization_menu.item_count):
+		var metadata: Dictionary = localization_menu.get_item_metadata(option_idx)
+		if metadata["language_code"] == lang_code and metadata["country_code"] == reg_code:
+			return true
 	return false
 
 
