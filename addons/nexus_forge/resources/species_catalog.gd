@@ -16,7 +16,13 @@ extends Resource
 
 
 func _species_tree_stats(species_id: StringName) -> Dictionary[StringName, float]:
-	var stats: Dictionary[StringName, float] = _species[species_id]["stats"].duplicate()
+	var stats: Dictionary[StringName, float] = {}
+	
+	if not _species.has(species_id):
+		return stats
+	
+	stats.assign(_species[species_id]["stats"])
+	
 	var current_species: StringName = _species[species_id]["parent_key"]
 	
 	while current_species != &"" and current_species != species_id:
@@ -31,7 +37,13 @@ func _species_tree_stats(species_id: StringName) -> Dictionary[StringName, float
 
 
 func _species_tree_skills(species_id: StringName) -> Dictionary[StringName, int]:
-	var skills: Dictionary[StringName, int] = _species[species_id]["skills"].duplicate()
+	var skills: Dictionary[StringName, int] = {}
+	
+	if not _species.has(species_id):
+		return skills
+	
+	skills.assign(_species[species_id]["skills"])
+	
 	var current_species: StringName = _species[species_id]["parent_key"]
 	
 	while current_species != &"" and current_species != species_id:
@@ -46,7 +58,11 @@ func _species_tree_skills(species_id: StringName) -> Dictionary[StringName, int]
 
 
 func _species_tree_traits(species_id: StringName) -> Dictionary[StringName, int]:
-	var traits: Dictionary[StringName, int] = _species[species_id]["traits"].duplicate()
+	var traits: Dictionary[StringName, int] = {}
+	if not _species.has(species_id):
+		return traits
+	
+	traits.assign(_species[species_id]["traits"])
 	var current_species: StringName = _species[species_id]["parent_key"]
 	
 	while current_species != &"" and current_species != species_id:
@@ -61,10 +77,20 @@ func _species_tree_traits(species_id: StringName) -> Dictionary[StringName, int]
 
 
 func _species_tree_data(species_id: StringName) -> Dictionary[String, Dictionary]:
-	var data: Dictionary[String, Dictionary] = {}
-	var stats: Dictionary[StringName, float] = _species[species_id]["stats"].duplicate()
-	var skills: Dictionary[StringName, int] = _species[species_id]["skills"].duplicate()
-	var traits: Dictionary[StringName, int] = _species[species_id]["traits"].duplicate()
+	var stats: Dictionary[StringName, float] = {}
+	var skills: Dictionary[StringName, int] = {}
+	var traits: Dictionary[StringName, int] = {}
+	var data: Dictionary[String, Dictionary] = {
+		"skills": skills,
+		"stats": stats,
+		"traits": traits}
+	
+	if not _species.has(species_id):
+		return data
+	
+	stats.assign(_species[species_id]["stats"])
+	skills.assign(_species[species_id]["skills"])
+	traits.assign(_species[species_id]["traits"])
 	
 	var current_species: StringName = _species[species_id]["parent_key"]
 	
@@ -85,10 +111,6 @@ func _species_tree_data(species_id: StringName) -> Dictionary[String, Dictionary
 			traits[trait_id] = _species[current_species]["traits"][trait_id]
 		
 		current_species = _species[current_species]["parent_key"]
-	
-	data["stats"] = stats
-	data["skills"] = skills
-	data["traits"] = traits
 	
 	return data
 
@@ -126,7 +148,7 @@ func species() -> Array[StringName]:
 
 
 ## Creates a new species with [param species_id] unless it already exists.
-func create_species(species_id: StringName) -> void:
+func create_species(species_id: StringName, parent_species: StringName = &"") -> void:
 	if _species.has(species_id):
 		return
 	var data: Dictionary[String, Variant] = {}
@@ -138,7 +160,7 @@ func create_species(species_id: StringName) -> void:
 	data.assign(default_data)
 	
 	var new_species: Dictionary[String, Variant] = {
-		"parent_key": &"",
+		"parent_key": parent_species,
 		"name": "",
 		"description": "",
 		"data": data,
@@ -185,7 +207,7 @@ func register_species(species_sheet: SpeciesSheet, subspecies_of: StringName = &
 			traits[trait_id] = int(trait_value)
 	
 	var new_species: Dictionary[String, Variant] = {
-		"parent_key": subspecies_of if _species.has(subspecies_of) else &"",
+		"parent_key": subspecies_of,
 		"name": species_sheet.name,
 		"description": species_sheet.description,
 		"data": species_sheet.custom_data.duplicate(true),

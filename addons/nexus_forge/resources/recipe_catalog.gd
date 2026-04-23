@@ -49,16 +49,32 @@ func set_recipe_outputs(recipe_id: StringName, outputs: Array[RecipeItem]) -> vo
 
 
 ## Creates a recipe with param recipe_id unless it already exists.
-func create_recipe(recipe_id: StringName) -> void:
+func create_recipe(recipe_id: StringName, from: RecipeSheet = null) -> void:
 	if _recipes.has(recipe_id):
 		return
 	
-	var recipe_data: Dictionary[String, Variant] = {}
-	recipe_data.assign(RECIPE_DEFAULT_DATA)
+	var clean_data: bool = from == null
+	
+	var recipe_data: Dictionary[String, Variant] = RECIPE_DEFAULT_DATA.duplicate(true) if clean_data else from.data.duplicate(true)
+	var inputs: Array[Dictionary] = []
+	var outputs: Array[Dictionary] = []
+	
+	if not clean_data:
+		for input in from.input:
+			inputs.append({
+				"item_id": input.id,
+				"amount": input.amount,
+				"data": input.data.duplicate(true)})
+		
+		for output in from.output:
+			outputs.append({
+				"item_id": output.id,
+				"amount": output.amount,
+				"data": output.data.duplicate(true)})
 	
 	var recipe: Dictionary = {
-		"input": Array([], TYPE_DICTIONARY, &"", null),
-		"output": Array([], TYPE_DICTIONARY, &"", null),
+		"input": inputs,
+		"output": outputs,
 		"data": recipe_data}
 
 	_recipes[recipe_id] = recipe

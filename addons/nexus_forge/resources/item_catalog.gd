@@ -42,21 +42,22 @@ func clear_item_data(item_id: StringName) -> void:
 	_items[item_id]["data"].clear()
 
 
-## Creates an item with id [param item_id] unless it already exists.
-func create_item(item_id: StringName) -> void:
+## Creates an item with id [param item_id] unless it already exists.[br]
+## If [param item_data] isn't null, it'll create the item with the data from it.
+func create_item(item_id: StringName, item_data: ItemSheet = null) -> void:
 	if _items.has(item_id):
 		return
 	
-	var item_custom_data: Dictionary[String, Variant] = {}
-	var flags: Array[ItemSheet.ItemFlag] = []
-	item_custom_data.assign(ITEM_DEFAULT_DATA)
+	var clean_data: bool = item_data == null
+	var item_custom_data: Dictionary[String, Variant] = ITEM_DEFAULT_DATA.duplicate(true) if clean_data else item_data.data.duplicate(true)
+	var flags: Array[ItemSheet.ItemFlag] = [] if clean_data else item_data.flags.duplicate()
 	
 	var new_entry: Dictionary = {
-		"name": "",
-		"category": &"",
-		"rarity": ItemSheet.Rarity.COMMON,
-		"value": 0,
-		"description": "",
+		"name": "" if clean_data else item_data.name,
+		"category": &"" if clean_data else item_data.category,
+		"rarity": ItemSheet.Rarity.COMMON if clean_data else item_data.rarity,
+		"value": 0 if clean_data else item_data.value,
+		"description": "" if clean_data else item_data.description,
 		"flags": flags,
 		"data": item_custom_data}
 	
