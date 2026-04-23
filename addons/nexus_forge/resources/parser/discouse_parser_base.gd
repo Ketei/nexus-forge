@@ -60,9 +60,9 @@ var locale: String = "en":
 		locale = TranslationServer.standardize_locale(new_locale.strip_edges())
 
 # Maps UUID: CustomID
-var _dialog_id_map: Dictionary[String, StringName] = {}
+#var _dialog_id_map: Dictionary[StringName, StringName] = {}
 
-var _dialog_resource: EditorDiscourseDialog = null:
+var _dialog_resource: DiscourseDialog = null:
 	set(d):
 		_dialog_resource = d
 		_dialog_resource_set(d)
@@ -70,6 +70,23 @@ var _conversation_started: bool = false
 var _next_uuid: String = ""
 var _conversation_cache: ResourceCache = null
 var _parser_cache: Cache = null
+
+var _path_to_id: Dictionary[StringName, StringName] = {}
+# {"dialogs.village.mayor": {"data_path": "res://asdas", "locale_file": "---.json"}
+var _id_to_data: Dictionary[StringName, Dictionary] = {}
+
+var _logic_overrides: Dictionary[String, String] = {}
+var _locale_overrides: Dictionary = {
+	#"dialog_id": {"locale_code": "new_path"}
+	}
+var _dialog_edits: Dictionary = {
+	#"locale": {
+		#"dialogs.village.greet": {
+			#"UUID OF SAID THING": "Hello Mr. Bear",
+			#"UUID OF THAT OTHER THING": ["Hi!", "Hello", "..."]
+		#},
+	#}
+}
 
 ## The [DialogParser] that NexusForge will use while its running on exported projects.
 ##
@@ -170,6 +187,29 @@ func _init() -> void:
 	_conversation_cache = ResourceCache.new()
 	_parser_cache = Cache.new()
 	API = DiscourseAPI.new()
+	
+	var file: FileAccess = FileAccess.open(
+			StringUtils.make_path([
+				ProjectSettings.get_setting(
+					"nexus_forge/localization_directory",
+					"res://localization/"),
+				"dialog_locale_map.json"]),
+			FileAccess.READ)
+	
+	if file == null:
+		return
+	
+	var data = JSON.parse_string(file.get_as_text())
+	
+	if typeof(data) != TYPE_DICTIONARY or not data.has_all(["file_to_id", "id_to_locale_file"]):
+		return
+	
+	for file_path in data.keys():
+		if typeof(file_path) != TYPE_STRING or not data["id_to_locale_file"].has(file_path) or typeof(data["id_to_locale_file"][file_path]) != TYPE_STRING:
+			continue
+		var file_id: String = data["file_to_id"][file_path]
+		_path_to_id[file_path] = file_id
+		_id_to_data[data["file_to_id"][file_id]] = data["id_to_locale_file"][file_id]
 
 
 ## Function to parse the dialog in a custom manner. Modify if needed.
@@ -348,6 +388,7 @@ func _process_logic(uuid: StringName) -> String:
 	if uuid.is_empty():
 		return ""
 	
+	var dialog_id: String = _path_to_id[_dialog_resource.resource_path]
 	var data: Dictionary = _dialog_resource.dialog_nodes[uuid]
 	match data["node_type"]:
 		NodeTypes.ENTRY:
@@ -360,7 +401,7 @@ func _process_logic(uuid: StringName) -> String:
 			var portrait_id: String = _get_data(data["character_settings"]["portrait_id"], "")
 			if data["text_source"].is_empty():
 				dialog_reached.emit({
-					"dialog_text": _parse_dialog(String(uuid), localization.get_text(_dialog_resource.localization_uuid, uuid)),
+					"dialog_text": _parse_dialog(String(uuid), _get_text_for(dialog_id, uuid)),
 					"character_id": data["character_id"],
 					"persist": data["persist"],
 					"font": font,
@@ -370,7 +411,7 @@ func _process_logic(uuid: StringName) -> String:
 					"portrait_id": portrait_id})
 			else:
 				dialog_reached.emit({
-					"dialog_text": _parse_dialog(String(uuid), _get_data(data["text_source"])),
+					"dialog_text": _parse_dialog(String(uuid), _get_data(data["text_source"], "")),
 					"character_id": data["character_id"],
 					"persist": data["persist"],
 					"font": font,
@@ -381,7 +422,11 @@ func _process_logic(uuid: StringName) -> String:
 			return data["next_node"]
 		NodeTypes.OPTIONS:
 			var available_options: Array[Dictionary] = []
-			var localized_options: PackedStringArray = localization.get_options(_dialog_resource.localization_uuid, uuid)
+			var localized_options: PackedStringArray = _get_choices_for(dialog_id, uuid)
+			var target_size: int = data["options"].size()
+			
+			if localized_options.size() != target_size:
+				localized_options.resize(target_size)
 			
 			var idx: int = -1
 			var option_duuid: String = ""
@@ -495,147 +540,6 @@ func _process_logic(uuid: StringName) -> String:
 			return ""
 		_:
 			return ""
-	#if uuid.is_empty():
-		#return ""
-	#
-	#var data: Dictionary = _dialog_resource.get_node_data(uuid, language, region)
-	#
-	#match data["node_type"]:
-		#NODE_TYPES.ENTRY:
-			#return _process_logic(
-					#data["output_connections"]["next_node"]["target_node_uuid"])
-		#NODE_TYPES.DIALOG:
-			#var font: String = ""
-			#var scene: String = ""
-			#var speed: float = 0.0
-			#if data["input_connections"]["dialog_settings"]["target_node_uuid"] != "":
-				#var settings: Dictionary = _dialog_resource.get_node_data(data["input_connections"]["dialog_settings"]["target_node_uuid"], language, region)
-				#if settings["font_resource"]["target_node_uuid"] != "":
-					#font = _get_data(settings["font_resource"]["target_node_uuid"])
-				#if settings["dialog_scene"]["target_node_uuid"] != "":
-					#scene = _get_data(settings["dialog_scene"]["target_node_uuid"])
-				#if settings["dialog_speed"]["target_node_uuid"] != "":
-					#speed = _get_data(settings["dialog_speed"]["target_node_uuid"])
-			#
-			#if data["input_connections"]["dialog_text_source"]["target_node_uuid"] == "":
-				#dialog_reached.emit({
-					#"dialog_text": _parse_dialog(uuid, data["dialog_text"]),
-					#"font": font,
-					#"scene": scene,
-					#"speed": speed})
-			#else:
-				#dialog_reached.emit({
-					#"dialog_text": _parse_dialog(uuid, _get_data(data["input_connections"]["dialog_text_source"]["target_node_uuid"])),
-					#"font": font,
-					#"scene": scene,
-					#"speed": speed})
-			#return data["output_connections"]["next_node"]["target_node_uuid"]
-		#NODE_TYPES.OPTIONS:
-			#var available_options: Array[Dictionary] = []
-			#
-			#for option:Dictionary in data["options"]:
-				#if option["input_connections"]["settings"]["target_node_uuid"] != "":
-					#var opt_settings: Dictionary = _dialog_resource.get_node_data(option["input_connections"]["settings"]["target_node_uuid"], "common")
-					#var show: bool = true if opt_settings["option_available"]["target_node_uuid"] == "" else _get_bool_result(opt_settings["option_available"]["target_node_uuid"])
-				#
-					#if not show:
-						#continue
-					#var unlocked: bool = true if opt_settings["option_unlocked"]["target_node_uuid"] == "" else _get_bool_result(opt_settings["option_unlocked"]["target_node_uuid"])
-					#available_options.append({
-						#"unlocked": unlocked,
-						#"text": _parse_dialog(uuid, option["option_text"] if unlocked else _get_data(opt_settings["locked_hint"]["target_node_uuid"])),
-						#"target": option["output_connections"]["next_node"]["target_node_uuid"]})
-				#else:
-					#available_options.append(
-						#{
-							#"unlocked": true,
-							#"text": _parse_dialog(uuid, option["option_text"]),
-							#"target": option["output_connections"]["next_node"]["target_node_uuid"]})
-			#
-			#options_reached.emit(available_options)
-			#return uuid
-		#NODE_TYPES.BRANCH:
-			#var use_a: bool = _get_bool_result(data["input_connections"]["path_direction"]["target_node_uuid"])
-			#if use_a:
-				#return _process_logic(
-						#data["output_connections"]["next_node_true"]["target_node_uuid"])
-			#else:
-				#return _process_logic(
-						#data["output_connections"]["next_node_false"]["target_node_uuid"])
-		#NODE_TYPES.EVENT:
-			#if data["variable_path"] != "" and data["input_connections"]["variable_value"]["target_node_uuid"] != "":
-				#NexusForge.Variables.set_variable(
-						#data["variable_path"],
-						#_get_data(data["input_connections"]["variable_value"]["target_node_uuid"]))
-			#if data["input_connections"]["callable"]["target_node_uuid"] != "":
-				#var call_data: Dictionary = _dialog_resource.get_node_data(data["input_connections"]["callable"]["target_node_uuid"], language, region)
-				#var call_args: Array = []
-				#
-				#for arg_connection in call_data["arguments"]:
-					#call_args.append(
-							#_get_data(arg_connection["target_node_uuid"]))
-				#
-				#NexusForge.Discourse.API.callv(
-						#data["method"],
-						#call_args)
-			#
-			#if data["input_connections"]["signal"]["target_node_uuid"] != "":
-				#var signal_data: Dictionary = _dialog_resource.get_node_data(data["input_connections"]["signal"]["target_node_uuid"], language, region)
-				#var signal_args: Array = []
-				#
-				#for arg_connection in signal_data["arguments"]:
-					#signal_args.append(_get_data(arg_connection["target_node_uuid"]))
-				#
-				#NexusForge.Discourse.API.emit_signal(
-						#data["signal"],
-						#signal_args)
-				#
-			#return _process_logic(data["output_connections"]["next_node"]["target_node_uuid"])
-		#NODE_TYPES.MATCH:
-			#var data_comp = _get_data(data["input_connections"]["match_value_source"]["target_node_uuid"])
-			#for case:Dictionary in data["cases"]:
-				#if case["value"] == data_comp:
-					#return _process_logic(case["output_connections"]["next_node"]["target_node_uuid"])
-			#return _process_logic(data["output_connections"]["default"]["target_node_uuid"])
-		#NODE_TYPES.PAUSE:
-			#dialog_paused.emit()
-			#return data["output_connections"]["next_node"]["target_node_uuid"]
-		#NODE_TYPES.RANDOM:
-			#var defalut_weight: int = preload("res://random_select.gd").DEFAULT_WEIGHT
-			#var total_weight: int = 1
-			#var choices: Array[Dictionary] = []
-			#
-			#for choice:Dictionary in data["options"]:
-				#var weight: int = defalut_weight if choice["weight"]["target_node_uuid"] == "" else _get_data(choice["weight"]["target_node_uuid"])
-				#if weight == 0:
-					#continue
-				#choices.append({
-					#"next": choice["output_connections"]["next_node"]["target_node_uuid"],
-					#"weight": weight})
-				#total_weight += weight
-			#
-			#if choices.is_empty():
-				#return ""
-			#
-			#choices.sort_custom(func(a, b): return a["weight"] > b["weight"])
-			#var random_select: int = randi_range(1, total_weight)
-			#
-			#var current_weight: int = 0
-			#for choice in choices:
-				#current_weight += choice["weight"]
-				#if random_select <= current_weight:
-					#return _process_logic(choice["next"])
-			#return _process_logic(choices[-1]["next"]) # In case of loop error
-		#NODE_TYPES.ANCHOR_POINTER:
-			#return _process_logic(data["anchor_target"])
-		#NODE_TYPES.ANCHOR:
-			#return _process_logic(data["output_connections"]["next_node"]["target_node_uuid"])
-		#NODE_TYPES.DIALOG_END:
-			#return ""
-		#NODE_TYPES.DIALOG_MERGE:
-			#return _process_logic(data["output_connections"]["next_node"]["target_node_uuid"])
-		#_:
-			#return ""
 
 
 func _get_data(uuid: StringName, fallback = null) -> Variant:
@@ -716,7 +620,7 @@ func _get_data(uuid: StringName, fallback = null) -> Variant:
 						signal_args)
 			return _get_data(data["data_source"])
 		NodeTypes.LOCALIZED_TEXT:
-			return localization.get_text(_dialog_resource.localization_uuid, data["text"])
+			return _get_text_for(_path_to_id[_dialog_resource.resource_path], uuid)
 		NodeTypes.COMPARATION:
 			var a = _get_data(data["value_a"])
 			var b = _get_data(data["value_b"])
@@ -750,31 +654,70 @@ func _get_data(uuid: StringName, fallback = null) -> Variant:
 			return fallback
 
 
-func _load_locale(new_language: String, new_region: String) -> void:
-	var locale_path: String = str(
-			ProjectSettings.get_setting("nexus_forge/localization_directory", "res://localization/"), # Project settings base path
-			new_language,
-			"-",
-			new_region,
-			"/dialog/",
-			_dialog_resource.localization_uuid,
-			".json")
+func _load_locale(locale_code: String) -> void:
+	var locale_id: String = DictUtils.get_nested_value(
+			_path_to_id,
+			[_dialog_resource.resource_path],
+			"")
+	
+	if DictUtils.has_nested_path(_locale_overrides, [locale_id, locale]):
+		var file: FileAccess = FileAccess.open(
+				_locale_overrides[locale_id][locale],
+				FileAccess.READ)
+	
+		if file != null:
+			var res: DiscourseDialogLocale = DiscourseDialogLocale.new_from_json(file.get_as_text())
+			_dialog_resource._store_locale(locale_code, res)
+			localization = res
+			return
+	
+	var base_locale_path: String = ""
+	
+	# Register modded conversations
+	if _dialog_resource is ModDiscourseDialog:
+		base_locale_path = _dialog_resource.localization_folder
+		if not _path_to_id.has(StringName(_dialog_resource.resource_path)):
+			var path_strn: StringName = StringName(_dialog_resource.resource_path)
+			var id: StringName = StringName(_dialog_resource.dialog_id)
+			_path_to_id[path_strn] = id
+			_id_to_data[id] = {
+				"data_path": path_strn,
+				"locale_file": _dialog_resource.resource_path.to_lower().md5_text().substr(0, 12) + "-" + _dialog_resource.resource_path.get_file().get_basename() + ".json"}
+	else:
+		base_locale_path = ProjectSettings.get_setting(
+					"nexus_forge/localization_directory",
+					"res://localization/")
+	
+	var localization_filename: String = _id_to_data[locale_id]["locale_file"]
+	var hash_slice: String = localization_filename.substr(0, 2)
+	
+	var locale_path: String = StringUtils.make_path([
+			base_locale_path,
+			locale_code,
+			hash_slice,
+			localization_filename])
 	
 	var file: FileAccess = FileAccess.open(locale_path, FileAccess.READ)
 	
 	if file != null:
-		localization = DiscourseDialogLocale.new_from_json(file.get_as_text())
+		var res: DiscourseDialogLocale = DiscourseDialogLocale.new_from_json(file.get_as_text())
+		_dialog_resource._store_locale(locale_code, res)
+		localization = res
 
 
-func _locale_set(new_language: String, new_region: String = "base") -> void:
-	_load_locale(new_language, new_region)
+func _locale_set(locale_code: String) -> void:
+	if _dialog_resource._has_locale(locale_code):
+		localization = _dialog_resource._get_locale(locale_code)
+	else:
+		_load_locale(locale_code)
 
 
 func _dialog_resource_set(new_resource: DiscourseDialog) -> void:
-	_dialog_id_map.clear()
 	if new_resource != null:
-		_dialog_id_map.assign(new_resource.id_map)
-		#_load_locale(language, region)
+		if new_resource._has_locale(locale):
+			localization = new_resource._get_locale(locale)
+		else:
+			_load_locale(locale)
 	else:
 		localization = null
 #endregion
@@ -789,10 +732,12 @@ func is_dialog_active() -> bool:
 ## unless a valid [param starting_id] is given.[br]
 ## Returns [code]true[/code] if the dialog was loaded.
 func load_dialog(path: String, starting_id: String = "") -> bool:
-	if _conversation_cache.is_in_cache(path):
-		_dialog_resource = _conversation_cache.get_resource(path)
+	var target_path: String = _logic_overrides[path] if _logic_overrides.has(path) else path
+	
+	if _conversation_cache.is_in_cache(target_path):
+		_dialog_resource = _conversation_cache.get_resource(target_path)
 	else:
-		var res: Resource = load(path)
+		var res: Resource = load(target_path)
 		if res == null or res is not DiscourseDialog:
 			_next_uuid = ""
 			_dialog_resource = null
@@ -800,8 +745,8 @@ func load_dialog(path: String, starting_id: String = "") -> bool:
 		_conversation_cache.cache_resource(res)
 		_dialog_resource = res
 	
-	if _dialog_id_map.has(starting_id):
-		_next_uuid = _dialog_id_map[starting_id]
+	if _dialog_resource.id_map.has(starting_id):
+		_next_uuid = _dialog_resource.id_map[starting_id]
 	elif _dialog_resource.dialog_nodes.has(starting_id):
 		_next_uuid = starting_id
 	else:
@@ -816,8 +761,8 @@ func set_dialog_id(id: String) -> void:
 	if _dialog_resource == null:
 		return
 	
-	if _dialog_id_map.has(id):
-		_next_uuid = _dialog_id_map[id]
+	if _dialog_resource.id_map.has(id):
+		_next_uuid = _dialog_resource.id_map[id]
 	elif _dialog_resource.dialog_nodes.has(id):
 		_next_uuid = id
 	else:
@@ -841,9 +786,123 @@ func next_dialog() -> void:
 		dialog_finished.emit()
 
 
+## Overrides the logic file. When a dialog data is loaded, the file provided in
+## [param override_path] will be used instead. This does NOT change the localization
+## file used.
+func override_dialog_data(dialog_id: String, override_path: String) -> void:
+	override_path = override_path.strip_edges().simplify_path()
+	
+	if override_path.is_empty():
+		_logic_overrides.erase(dialog_id)
+	else:
+		_logic_overrides[_id_to_data[dialog_id]["data_path"]] = override_path
+
+
+## Overrides a complete localization file. When a dialog file is loaded, the file
+## provided in [param path] will be used for localization instead of the original
+## one.
+func override_dialog_locale(dialog_id: String, locale_code: String, path: String) -> void:
+	if path.is_empty():
+		if _locale_overrides.has(dialog_id):
+			_locale_overrides[dialog_id].erase(locale_code)
+			if _locale_overrides[dialog_id].is_empty():
+				_locale_overrides.erase(dialog_id)
+		return
+	
+	DictUtils.set_nested_value(
+			_locale_overrides,
+			[dialog_id, locale_code],
+			path)
+
+
+## Adds an override for a specific dialog on a specific locale.[br]
+## Data needs to be either a PackedStringArray or a string. If you pass
+## [code]null[/code] to [param data] the edited dialog will be removed and the
+## original used instead.
+func edit_dialog(dialog_id: String, locale_code: String, node_id: String, data) -> void:
+	var type: int = typeof(data)
+	if type == TYPE_NIL:
+		if DictUtils.has_nested_path(_dialog_edits, [locale_code, dialog_id, node_id]):
+			if _dialog_edits[locale_code][dialog_id].erase(node_id):
+				if _dialog_edits[locale_code][dialog_id].is_empty():
+					_dialog_edits[locale_code].erase(dialog_id)
+					if _dialog_edits[locale_code].is_empty():
+						_dialog_edits.erase(locale_code)
+		return
+	elif type != TYPE_STRING and type != TYPE_PACKED_STRING_ARRAY:
+		return
+	
+	if not _dialog_edits.has(locale_code):
+		_dialog_edits[locale_code] = {}
+		
+	if not _dialog_edits[locale_code].has(dialog_id):
+		_dialog_edits[locale_code][dialog_id] = {}
+	
+	if type == TYPE_STRING:
+		_dialog_edits[locale_code][dialog_id][node_id] = data
+	elif type == TYPE_PACKED_STRING_ARRAY:
+		var responses: PackedStringArray = []
+		for item in data:
+			if typeof(item) == TYPE_STRING:
+				responses.append(item)
+			else:
+				responses.append(str(data))
+		_dialog_edits[locale_code][dialog_id][node_id] = responses
+
+
+func edit_choice(dialog_id: String, locale_code: String, node_id: String, choice_index: int, data: String) -> void:
+	if not _dialog_edits.has(locale_code):
+		_dialog_edits[locale_code] = {}
+		
+	if not _dialog_edits[locale_code].has(dialog_id):
+		_dialog_edits[locale_code][dialog_id] = {}
+	
+	if not _dialog_edits[locale_code][dialog_id].has(node_id) or not typeof(_dialog_edits[locale_code][dialog_id][node_id]) == TYPE_PACKED_STRING_ARRAY:
+		_dialog_edits[locale_code][dialog_id][node_id] = PackedStringArray()
+	
+	var target: PackedStringArray = _dialog_edits[locale_code][dialog_id][node_id]
+	
+	if target.size() < choice_index + 1:
+		target.resize(choice_index + 1)
+	
+	target[choice_index] = data
+
+
 # Clears the whole cache. Used on exit to prevent leaked resources
 func _clear_cache() -> void:
 	if _dialog_resource != null:
 		_dialog_resource.parsed_dialog_cache.clear()
 	_parser_cache.clear()
 	_conversation_cache.clear()
+
+
+func _get_text_for(dialog_id: String, uid: StringName) -> String:
+	var id: String = _dialog_resource._get_id_from_uid(uid)
+	
+	if id.is_empty():
+		return ""
+	
+	var result = DictUtils.get_nested_value(
+			_dialog_edits,
+			[locale, dialog_id, id],
+			localization.get_text(dialog_id, uid))
+	
+	if typeof(result) != TYPE_STRING:
+		return ""
+	
+	return result
+
+
+func _get_choices_for(dialog_id: String, uid: StringName) -> PackedStringArray:
+	var id: String = _dialog_resource._get_id_from_uid(uid)
+	if id.is_empty():
+		return PackedStringArray()
+	
+	var result = DictUtils.get_nested_value(
+			_dialog_edits,
+			[locale, dialog_id, id],
+			localization.get_choices(dialog_id, uid))
+	
+	if typeof(result) != TYPE_PACKED_STRING_ARRAY:
+		return PackedStringArray()
+	return result

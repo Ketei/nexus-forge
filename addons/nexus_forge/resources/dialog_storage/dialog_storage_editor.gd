@@ -312,11 +312,17 @@ func get_node_data(node_uuid: StringName, locale: String = "") -> Dictionary:
 			metadata_merge = {
 				"dialog_text": get_text_entry(node_uuid, locale)}
 		NodeType.OPTIONS:
-			var options_translated: Array[Dictionary] = get_choices_entry(node_uuid, locale)
+			var options_translated: Array[String] = []
+			options_translated.assign(get_choices_entry(node_uuid, locale))
+			var target_size: int = base_data["metadata"]["choices"].size()
+			if options_translated.size() != target_size:
+				push_warning("[DISCOURSE] Choice data of node {node_id} size is different from the {locale_code} localization data. Data size: {data_size}, locale size: {locale_size}".format({"data_size": target_size, "locale_size": options_translated.size(), "locale_code": locale, "node_id": base_data["name"]}) )
+				options_translated.resize(target_size)
+			
 			var idx: int = -1
 			for option_translated in options_translated:
 				idx += 1
-				base_data["metadata"]["choices"][idx]["text"] = option_translated["choice"]
+				base_data["metadata"]["choices"][idx]["text"] = option_translated
 		NodeType.LOCALIZED_TEXT:
 			metadata_merge = {
 				"text": get_text_entry(node_uuid, locale)}

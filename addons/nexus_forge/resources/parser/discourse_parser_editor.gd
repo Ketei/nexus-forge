@@ -27,8 +27,8 @@ func load_dialog(path: String, starting_id: String = "") -> bool:
 		_conversation_cache.cache_resource(res)
 		_dialog_resource = res
 	
-	if _dialog_id_map.has(starting_id):
-		_next_uuid = _dialog_id_map[starting_id]
+	if _dialog_resource.id_map.has(starting_id):
+		_next_uuid = _dialog_resource.id_map[starting_id]
 	elif _dialog_resource.node_data.has(starting_id):
 		_next_uuid = starting_id
 	else:
@@ -313,9 +313,7 @@ func _get_data(from_uuid: StringName, fallback = null) -> Variant:
 
 
 func _dialog_resource_set(new_resource: DiscourseDialog) -> void:
-	_dialog_id_map.clear()
-	if new_resource != null:
-		_dialog_id_map.assign(new_resource.get_id_map())
+	return
 
 
 func _parse_dialog(dialog_id: String, dialog: String) -> String:
@@ -440,7 +438,7 @@ func _locale_set(new_language: String, new_region: String = "base") -> void:
 	return
 
 
-func _load_locale(new_language: String, new_region: String) -> void:
+func _load_locale(_locale_code: String) -> void:
 	return
 
 
