@@ -3,7 +3,7 @@ extends RefCounted
 
 
 static func has_nested_path(dict: Dictionary, keys: Array) -> bool:
-	var current: = dict
+	var current = dict
 	
 	for next_key in keys:
 		if typeof(current) != TYPE_DICTIONARY or not current.has(next_key):
