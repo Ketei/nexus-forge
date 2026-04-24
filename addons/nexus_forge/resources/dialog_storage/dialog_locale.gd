@@ -36,6 +36,8 @@ extends Resource
 	#}
 }
 
+var json_file: String = ""
+
 
 static func new_from_json(json_string: String) -> DiscourseDialogLocale:
 	var data = JSON.parse_string(json_string)

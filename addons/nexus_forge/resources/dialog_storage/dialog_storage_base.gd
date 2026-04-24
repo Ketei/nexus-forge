@@ -29,6 +29,7 @@ const LOCALE_STORE_MAX: int = 3
 # Generated on export
 @export_storage var node_logic: Dictionary[StringName, Dictionary] = {
 	#&"9156f183-6761-4259-9dde-1a81d12fb047": {
+		#"id": "This is the ID",
 		#"type": NodeType.DIALOG, # On save
 		#"character_id": "ABC", # On save
 		#"persist": true, # On save
@@ -58,8 +59,13 @@ var _uid_to_id: Dictionary[StringName, StringName] = {
 	#&"9156f183-6761-4259-9dde-1a81d12fb047": &"Greeting"
 }
 
+# "Greeting": []/""
+var dialog_overrides: Dictionary = {}
+
 var parsed_dialog_cache: Cache
 var _loaded_locales: Cache
+var _active_locale: DiscourseDialogLocale = null
+var _active_locale_code: String = ""
 
 
 func _init() -> void:
@@ -70,6 +76,8 @@ func _init() -> void:
 
 func _store_locale(locale_code: String, new_locale: DiscourseDialogLocale) -> void:
 	_loaded_locales.cache_data(locale_code, new_locale)
+	if locale_code == _active_locale_code:
+		_active_locale = new_locale
 
 
 func _get_locale(locale_code: String) -> DiscourseDialogLocale:
@@ -78,19 +86,37 @@ func _get_locale(locale_code: String) -> DiscourseDialogLocale:
 	return null
 
 
+func _set_locale(locale_code: String) -> void:
+	_active_locale = _get_locale(locale_code)
+	_active_locale_code = locale_code
+
+
 func _has_locale(locale_code: String) -> bool:
 	return _loaded_locales.is_in_cache(locale_code)
 
 
-func _get_id_from_uid(uid: StringName) -> String:
-	if _uid_to_id.has(uid):
-		return _uid_to_id[uid]
+func _get_text(dialog_id: String, uuid: String) -> String:
+	if _active_locale == null:
+		return ""
 	
-	for id in id_map.keys():
-		if id_map[id] == uid:
-			_uid_to_id[uid] = id
-			return id
-	return ""
+	var locale: String = _active_locale.locale
+	
+	if DictUtils.has_nested_path(dialog_overrides, [locale, node_logic[uuid]["id"]]):
+		return dialog_overrides[locale][node_logic[uuid]["id"]]
+	else:
+		return _active_locale.get_text(dialog_id, uuid)
+
+
+func _get_choices(dialog_id: String, uuid: String) -> PackedStringArray:
+	if _active_locale == null:
+		return PackedStringArray()
+	
+	var locale: String = _active_locale.locale
+	
+	if DictUtils.has_nested_path(dialog_overrides, [locale, node_logic[uuid]["id"]]):
+		return dialog_overrides[locale][node_logic[uuid]["id"]]
+	else:
+		return _active_locale.get_choices(dialog_id, uuid)
 
 
 ## Returns the dialog UUID assiged to the custom [param id].

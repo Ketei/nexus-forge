@@ -754,11 +754,12 @@ func convert_for_release() -> DiscourseDialog:
 				add_id = false
 		
 		if add_id:
+			data["id"] = node_data[node_id]["name"]
 			new_id_map[StringName(node_data[node_id]["name"])] = node_id
 		release_dialog.node_logic[node_id] = data
+		add_id = true
 	
 	release_dialog.id_map = new_id_map
-	
 	return release_dialog
 
 

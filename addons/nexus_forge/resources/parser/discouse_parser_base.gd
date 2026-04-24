@@ -80,12 +80,11 @@ var _locale_overrides: Dictionary = {
 	#"dialog_id": {"locale_code": "new_path"}
 	}
 var _dialog_edits: Dictionary = {
-	#"locale": {
-		#"dialogs.village.greet": {
-			#"UUID OF SAID THING": "Hello Mr. Bear",
-			#"UUID OF THAT OTHER THING": ["Hi!", "Hello", "..."]
-		#},
-	#}
+	"dialogs.village.greet": {
+		"en": {
+			"NodeID": "Hello there!"
+		}
+	}
 }
 
 ## The [DialogParser] that NexusForge will use while its running on exported projects.
@@ -95,7 +94,7 @@ var _dialog_edits: Dictionary = {
 ## For the editor parser see [EditorDialogParser].[br]
 
 ## The resource containing the localizable data of a dialog.
-var localization: DiscourseDialogLocale = null 
+#var localization: DiscourseDialogLocale = null 
 # Example of how data will be structured in the dialog resource (Release).
 #const store = {
 		#UUID - NodeTypes.DIALOG: { # <- UUUID used to access localization if text_source is empty
@@ -295,11 +294,12 @@ func _parse_dialog(dialog_id: String, dialog: String) -> String:
 				#prefix_trim_key,
 				#language,
 				#region)
-		var phrase: String = localization.get_format_string_text(
+		#var phrase: String = localization.get_format_string_text(
+		var phrase: String = _dialog_resource._active_locale.get_format_string_text(
 				_dialog_resource.localization_uuid,
 				prefix_trim_key)
 		
-		var argument_cases: Dictionary[String, Dictionary] = localization.get_format_string_args(
+		var argument_cases: Dictionary[String, Dictionary] = _dialog_resource._active_locale.get_format_string_args(
 			_dialog_resource.localization_uuid,
 			prefix_trim_key)
 		
@@ -401,7 +401,7 @@ func _process_logic(uuid: StringName) -> String:
 			var portrait_id: String = _get_data(data["character_settings"]["portrait_id"], "")
 			if data["text_source"].is_empty():
 				dialog_reached.emit({
-					"dialog_text": _parse_dialog(String(uuid), _get_text_for(dialog_id, uuid)),
+					"dialog_text": _parse_dialog(String(uuid), _dialog_resource._get_text(dialog_id, uuid)),
 					"character_id": data["character_id"],
 					"persist": data["persist"],
 					"font": font,
@@ -422,7 +422,7 @@ func _process_logic(uuid: StringName) -> String:
 			return data["next_node"]
 		NodeTypes.OPTIONS:
 			var available_options: Array[Dictionary] = []
-			var localized_options: PackedStringArray = _get_choices_for(dialog_id, uuid)
+			var localized_options: PackedStringArray = _dialog_resource._get_choices(dialog_id, uuid)#_get_choices_for(dialog_id, uuid)
 			var target_size: int = data["options"].size()
 			
 			if localized_options.size() != target_size:
@@ -620,7 +620,7 @@ func _get_data(uuid: StringName, fallback = null) -> Variant:
 						signal_args)
 			return _get_data(data["data_source"])
 		NodeTypes.LOCALIZED_TEXT:
-			return _get_text_for(_path_to_id[_dialog_resource.resource_path], uuid)
+			return _dialog_resource._get_text(_path_to_id[_dialog_resource.resource_path], uuid)
 		NodeTypes.COMPARATION:
 			var a = _get_data(data["value_a"])
 			var b = _get_data(data["value_b"])
@@ -660,15 +660,18 @@ func _load_locale(locale_code: String) -> void:
 			[_dialog_resource.resource_path],
 			"")
 	
+	_dialog_resource._set_locale(locale_code)
+	
 	if DictUtils.has_nested_path(_locale_overrides, [locale_id, locale]):
+		#var res: DiscourseDialogLocale = _load_json_locale(_locale_overrides[locale_id][locale])
 		var file: FileAccess = FileAccess.open(
 				_locale_overrides[locale_id][locale],
 				FileAccess.READ)
 	
 		if file != null:
 			var res: DiscourseDialogLocale = DiscourseDialogLocale.new_from_json(file.get_as_text())
+			res.json_file = _locale_overrides[locale_id][locale].get_file()
 			_dialog_resource._store_locale(locale_code, res)
-			localization = res
 			return
 	
 	var base_locale_path: String = ""
@@ -701,25 +704,18 @@ func _load_locale(locale_code: String) -> void:
 	
 	if file != null:
 		var res: DiscourseDialogLocale = DiscourseDialogLocale.new_from_json(file.get_as_text())
+		res.json_file = localization_filename
 		_dialog_resource._store_locale(locale_code, res)
-		localization = res
-
-
-func _locale_set(locale_code: String) -> void:
-	if _dialog_resource._has_locale(locale_code):
-		localization = _dialog_resource._get_locale(locale_code)
-	else:
-		_load_locale(locale_code)
 
 
 func _dialog_resource_set(new_resource: DiscourseDialog) -> void:
-	if new_resource != null:
-		if new_resource._has_locale(locale):
-			localization = new_resource._get_locale(locale)
-		else:
-			_load_locale(locale)
+	if new_resource == null:
+		return
+		
+	if new_resource._has_locale(locale):
+		new_resource._set_locale(locale)
 	else:
-		localization = null
+		_load_locale(locale)
 #endregion
 
 
@@ -735,13 +731,29 @@ func load_dialog(path: String, starting_id: String = "") -> bool:
 	var target_path: String = _logic_overrides[path] if _logic_overrides.has(path) else path
 	
 	if _conversation_cache.is_in_cache(target_path):
-		_dialog_resource = _conversation_cache.get_resource(target_path)
+		var dialog_id: String = DictUtils.get_nested_value(_path_to_id, [path], "")
+		var data: DiscourseDialog = _conversation_cache.get_resource(target_path)
+		var locale_data: DiscourseDialogLocale = data._get_locale(locale)
+		var reload_locale: bool = locale_data != null and locale_data.json_file != _id_to_data[dialog_id]["locale_file"]
+		
+		_dialog_resource = data
+		
+		if _dialog_edits.has(dialog_id) and _dialog_resource.dialog_overrides != _dialog_edits[dialog_id]:
+			_dialog_resource.dialog_overrides = _dialog_edits[dialog_id]
+		
+		if reload_locale:
+			_load_locale(locale)
 	else:
 		var res: Resource = load(target_path)
+		var id: String = DictUtils.get_nested_value(_path_to_id, [path], "")
+		
 		if res == null or res is not DiscourseDialog:
 			_next_uuid = ""
 			_dialog_resource = null
 			return false
+			
+		if _dialog_edits.has(id):
+			res.dialog_overrides = _dialog_edits[id]
 		_conversation_cache.cache_resource(res)
 		_dialog_resource = res
 	
@@ -819,27 +831,23 @@ func override_dialog_locale(dialog_id: String, locale_code: String, path: String
 ## Data needs to be either a PackedStringArray or a string. If you pass
 ## [code]null[/code] to [param data] the edited dialog will be removed and the
 ## original used instead.
-func edit_dialog(dialog_id: String, locale_code: String, node_id: String, data) -> void:
+func edit_dialog(locale_code: String, dialog_id: String, node_id: String, data) -> void:
 	var type: int = typeof(data)
 	if type == TYPE_NIL:
-		if DictUtils.has_nested_path(_dialog_edits, [locale_code, dialog_id, node_id]):
-			if _dialog_edits[locale_code][dialog_id].erase(node_id):
-				if _dialog_edits[locale_code][dialog_id].is_empty():
-					_dialog_edits[locale_code].erase(dialog_id)
-					if _dialog_edits[locale_code].is_empty():
-						_dialog_edits.erase(locale_code)
+		if DictUtils.has_nested_path(_dialog_edits, [dialog_id, locale_code, node_id]):
+			_dialog_edits[dialog_id][locale_code].erase(node_id)
 		return
 	elif type != TYPE_STRING and type != TYPE_PACKED_STRING_ARRAY:
 		return
 	
-	if not _dialog_edits.has(locale_code):
-		_dialog_edits[locale_code] = {}
+	if not _dialog_edits.has(dialog_id):
+		_dialog_edits[dialog_id] = {}
 		
-	if not _dialog_edits[locale_code].has(dialog_id):
-		_dialog_edits[locale_code][dialog_id] = {}
+	if not _dialog_edits[dialog_id].has(locale_code):
+		_dialog_edits[dialog_id][locale_code] = {}
 	
 	if type == TYPE_STRING:
-		_dialog_edits[locale_code][dialog_id][node_id] = data
+		_dialog_edits[dialog_id][locale_code][node_id] = data
 	elif type == TYPE_PACKED_STRING_ARRAY:
 		var responses: PackedStringArray = []
 		for item in data:
@@ -847,20 +855,20 @@ func edit_dialog(dialog_id: String, locale_code: String, node_id: String, data) 
 				responses.append(item)
 			else:
 				responses.append(str(data))
-		_dialog_edits[locale_code][dialog_id][node_id] = responses
+		_dialog_edits[dialog_id][locale_code][node_id] = responses
 
 
 func edit_choice(dialog_id: String, locale_code: String, node_id: String, choice_index: int, data: String) -> void:
-	if not _dialog_edits.has(locale_code):
-		_dialog_edits[locale_code] = {}
+	if not _dialog_edits.has(dialog_id):
+		_dialog_edits[dialog_id] = {}
 		
-	if not _dialog_edits[locale_code].has(dialog_id):
-		_dialog_edits[locale_code][dialog_id] = {}
+	if not _dialog_edits[dialog_id].has(locale_code):
+		_dialog_edits[dialog_id][locale_code] = {}
 	
-	if not _dialog_edits[locale_code][dialog_id].has(node_id) or not typeof(_dialog_edits[locale_code][dialog_id][node_id]) == TYPE_PACKED_STRING_ARRAY:
-		_dialog_edits[locale_code][dialog_id][node_id] = PackedStringArray()
+	if not _dialog_edits[dialog_id][locale_code].has(node_id) or not typeof(_dialog_edits[dialog_id][locale_code][node_id]) == TYPE_PACKED_STRING_ARRAY:
+		_dialog_edits[dialog_id][locale_code][node_id] = PackedStringArray()
 	
-	var target: PackedStringArray = _dialog_edits[locale_code][dialog_id][node_id]
+	var target: PackedStringArray = _dialog_edits[dialog_id][locale_code][node_id]
 	
 	if target.size() < choice_index + 1:
 		target.resize(choice_index + 1)
@@ -874,35 +882,3 @@ func _clear_cache() -> void:
 		_dialog_resource.parsed_dialog_cache.clear()
 	_parser_cache.clear()
 	_conversation_cache.clear()
-
-
-func _get_text_for(dialog_id: String, uid: StringName) -> String:
-	var id: String = _dialog_resource._get_id_from_uid(uid)
-	
-	if id.is_empty():
-		return ""
-	
-	var result = DictUtils.get_nested_value(
-			_dialog_edits,
-			[locale, dialog_id, id],
-			localization.get_text(dialog_id, uid))
-	
-	if typeof(result) != TYPE_STRING:
-		return ""
-	
-	return result
-
-
-func _get_choices_for(dialog_id: String, uid: StringName) -> PackedStringArray:
-	var id: String = _dialog_resource._get_id_from_uid(uid)
-	if id.is_empty():
-		return PackedStringArray()
-	
-	var result = DictUtils.get_nested_value(
-			_dialog_edits,
-			[locale, dialog_id, id],
-			localization.get_choices(dialog_id, uid))
-	
-	if typeof(result) != TYPE_PACKED_STRING_ARRAY:
-		return PackedStringArray()
-	return result
