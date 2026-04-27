@@ -66,6 +66,8 @@ var discourse_window: PanelContainer = null
 
 
 func ready_plugin() -> void:
+	search_nodes_ln_edt.right_icon = get_theme_icon("Search", "EditorIcons")
+	
 	conversation_tree.ready_plugin()
 	discourse_nodes_tree.ready_plugin()
 	issues_tree.ready_plugin()

@@ -40,14 +40,15 @@ extends DiscourseDialog
 	#}
 }
 
+# Generated on export
 @export_storage var node_data: Dictionary[StringName, Dictionary] = {
 	#&"9156f183-6761-4259-9dde-1a81d12fb047": {
 		#"name": &"Greeting",
 		#"output_connections": {},
 		#"input_connections": {},
 		#"metadata": {
-			#"character_id": "ABC", # On save
-			#"persist": true, # On save
+			#"character_id": "ABC",
+			#"persist": true,
 			#"size": Vector2.ZERO,
 			#"position": Vector2.ZERO
 		#}
@@ -57,7 +58,7 @@ extends DiscourseDialog
 @export_storage var localization: Dictionary[StringName, Dictionary] = {
 	#&"9156f183-6761-4259-9dde-1a81d12fb047": {
 		#"type": LocalizationType.DIALOG,
-		#"unlocalized": ":3", # This is when the node is unlocalized. This or locales is used.
+		#"unlocalized": "",
 		#"locales": {
 			#"en": "Hello!",
 			#"es": "Hola",
@@ -66,7 +67,7 @@ extends DiscourseDialog
 	#},
 	#&"8baeaa95-264b-44e7-b483-4076635f6216" : {
 		#"type": LocalizationType.CHOICES,
-		#"unlocalized": [{}, {}, {}],
+		#"unlocalized": [],
 		#"locales": {
 			#"en": ["option one", "option two", "option three"],
 			#"es-MX": ["opcion uno", "opcion dos", "option tres"],
@@ -101,61 +102,11 @@ extends DiscourseDialog
 	#}
 }
 
-# Example of how data will be structured on dialog_nodes
-#@export var dialog_nodes: Dictionary[String, Dictionary] = {
-	#"629de91c-d6c1-4f67-a287-b6899695b0a6": {
-		#"node_type": DiscourseGraphNode.DialogueNodeType.DIALOG,
-		#"position": Vector2(0, 100),
-		#"size": Vector2(200, 100),
-		#"character_id": "Player",
-		#"persist": true,
-		#"output_connections": {
-			#"next_node": {
-				#"target_node_uuid": "fccfaeaa-6014-4841-ab77-770775afd4e7",
-				#"target_port": 0
-			#}
-		#}
-	#},
-	#"629de91c-d6c1-4f67-a287-b6899695b0a7": {
-		#"node_type": DiscourseGraphNode.DialogueNodeType.OPTIONS,
-		#"position": Vector2(0, 100),
-		#"options": [
-			#{
-				#"option_text": "Hello!",
-				#"output_connections": {"next_node": {}},
-				#"input_connections": {"settings": {}}}
-		#],
-	#}
-#}
-
-
-#@export var localized_strings: Dictionary[String, Dictionary] = {
-	#"TITLE": {
-		#"en": {
-			#"base": {
-				#"text": "Hello {-player}",
-				#"arguments": {
-					#"player": {
-						#"default": ":3",
-						#"custom": {
-							#"wulfre": "bear",
-							#"other": "{player}"}}}},
-			#"US": "Hello burgor",
-			#"GB": "Salutations tea tea"},
-		#"es": {
-			#"base": {
-				#"text": ""
-			#}
-		#}
-	#}
-#}
 
 # Node folder structure
-@export_storage var node_structure: Array[Dictionary] = [
-	#{"is_node": true, "uuid": "kasdjlaksd"},
-	#{"is_node": false, "name": "Folder", "items": [{"is_node": true, "uuid": "kasjdlasjk"}]}
-]
-
+# {"is_node": true, "uuid": ""}
+# {"is_node": false, "name": "", "items": {}}
+@export_storage var node_structure: Array[Dictionary] = []
 
 
 ## Returns the text of a localized string.
@@ -266,6 +217,9 @@ func get_frames_uuids() -> Array:
 	return node_frames.keys()
 
 
+## Gets the text of a node with [param node_uuid] of a specific [param locale].
+## If the node isn't of a type that supports text or it is not found it'll
+## return [param fallback].
 func get_text_entry(node_uuid: StringName, locale: String = "", fallback: String = "[ENTRY NOT FOUND]") -> String:
 	locale = TranslationServer.standardize_locale(locale)
 	var localization_data = localization.get(node_uuid)
@@ -282,6 +236,9 @@ func get_text_entry(node_uuid: StringName, locale: String = "", fallback: String
 				fallback)
 
 
+## Gets the array of choices of a node with [param node_uuid] of a specific [param locale].
+## If the node isn't of a type that supports choices or it is not found it'll
+## return [param fallback].
 func get_choices_entry(node_uuid: StringName, locale: String = "", fallback: Array = ["[ENTRY NOT FOUND]"]) -> Array:
 	locale = TranslationServer.standardize_locale(locale)
 	
@@ -1091,7 +1048,6 @@ func get_display_localization_data(locale: String) -> Dictionary:
 			else:
 				data[code] = localization[code]["locales"][locale].duplicate()
 	return data
-	
 
 
 func get_id_target(id: StringName) -> StringName:
