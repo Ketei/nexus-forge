@@ -102,7 +102,7 @@ func _set_node_data(data: Dictionary) -> void:
 		position_offset = pos
 	
 	var fallback_value = metadata.get("fallback_value")
-	match typeof(data["fallback_value"]):
+	match typeof(metadata["fallback_value"]):
 		TYPE_INT:
 			get_field(&"fallback").get_child(0).get_child(1).value = data["fallback_value"]
 		TYPE_FLOAT:

@@ -306,7 +306,7 @@ func set_input_connection_icon(field_id: StringName, icon: Texture2D) -> void:
 		return
 	
 	for node in get_children():
-		if node.get_meta(&"field_id", &"") == field_id:
+		if node.name == field_id:
 			var txrct: TextureRect = node.get_child(0)
 			txrct.texture = icon
 			txrct.visible = icon != null
@@ -314,18 +314,21 @@ func set_input_connection_icon(field_id: StringName, icon: Texture2D) -> void:
 
 
 func set_output_connection_icon(field_id: StringName, icon: Texture2D) -> void:
-	var field: Control = get_field(field_id)
-	
-	if field == null:
-		return
-	
-	var txrct: TextureRect = field.get_child(2)
-	txrct.texture = icon
-	txrct.visible = icon != null
+	for node in get_children():
+		if node.name != field_id:
+			continue
+		var txtrct: TextureRect = node.get_child(2)
+		txtrct.texture = icon
+		txtrct.visible = icon != null
 
 
 func set_field_connection_icons(field_id: StringName, input_icon: Texture2D, output_icon: Texture2D) -> void:
-	var field: Control = get_field(field_id)
+	var field: Control = null
+	
+	for child in get_children():
+		if child.name == field_id:
+			field = child
+			break
 	
 	if field == null:
 		return
@@ -648,7 +651,7 @@ func _create_field(main_field: Control) -> HBoxContainer:
 	left_rect.visible = false
 	right_rect.visible = false
 	
-	field_box.add_theme_constant_override(&"separation", 12)
+	field_box.add_theme_constant_override(&"separation", 4)
 	
 	left_rect.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	right_rect.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
@@ -827,10 +830,13 @@ func remove_field(field_id: StringName, size_change: int = 0) -> void:
 	if field_id.is_empty():
 		return
 	
-	var node: Control = get_field(field_id)
+	var node: Control = null
 	
-	if node == null:
-		return
+	for child in get_children():
+		if child.name != field_id:
+			continue
+		node = child
+		break
 	
 	var slot_index: int = node.get_index()
 	

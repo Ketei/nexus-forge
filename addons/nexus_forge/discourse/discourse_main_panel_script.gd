@@ -536,20 +536,20 @@ func _on_localize_node(node: DiscourseGraphNode) -> void:
 					node.get_node_uuid(),
 					node.get_dialog_text(),
 					discourse_window.current_locale)
-			localization_nodes_tree.create_dialog_node(node.custom_id, node)
+			localization_nodes_tree.create_dialog_node(node.name, node)
 		DiscourseGraphNode.DialogueNodeType.OPTIONS:
 			var text_options: Array[String] = node.get_options()
 			active_conversation.set_choices_entry(
 					node.get_node_uuid(),
 					text_options,
 					discourse_window.current_locale)
-			localization_nodes_tree.create_options_node(node.custom_id, node)
+			localization_nodes_tree.create_options_node(node.name, node)
 		DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
 			active_conversation.set_text_entry(
 					node.get_node_uuid(),
 					node.get_text(),
 					discourse_window.current_locale)
-			localization_nodes_tree.create_localized_text_node(node.custom_id, node)
+			localization_nodes_tree.create_localized_text_node(node.name, node)
 
 
 func _on_node_delocalized(node: DiscourseGraphNode) -> void:

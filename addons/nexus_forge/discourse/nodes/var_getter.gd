@@ -150,26 +150,29 @@ func _on_type_selected(item_id: int) -> void:
 func set_node_type(item_id: int) -> void:
 	var menu: MenuButton = get_field(&"path").get_child(1)
 	
-	menu.set_meta(&"current_type", item_id)
-	
 	match item_id:
 		TYPE_INT:
 			menu.icon = get_theme_icon("int", "EditorIcons")
 			set_slot_color_right(0, COLORS["integer"])
 			set_slot_type_right(0, SlotConnectionType.VAR_INT)
+			menu.set_meta(&"current_type", TYPE_INT)
 		TYPE_FLOAT:
 			menu.icon = get_theme_icon("float", "EditorIcons")
 			set_slot_color_right(0, COLORS["float"])
 			set_slot_type_right(0, SlotConnectionType.VAR_FLOAT)
+			menu.set_meta(&"current_type", TYPE_FLOAT)
 		TYPE_BOOL:
 			menu.icon = get_theme_icon("bool", "EditorIcons")
 			set_slot_color_right(0, COLORS["bool"])
 			set_slot_type_right(0, SlotConnectionType.VAR_BOOL)
+			menu.set_meta(&"current_type", TYPE_BOOL)
 		TYPE_STRING:
 			menu.icon = get_theme_icon("String", "EditorIcons")
 			set_slot_color_right(0, COLORS["string"])
 			set_slot_type_right(0, SlotConnectionType.VAR_STRING)
+			menu.set_meta(&"current_type", TYPE_STRING)
 		_:
 			menu.icon = get_theme_icon("Variant", "EditorIcons")
 			set_slot_color_right(0, COLORS["any"])
 			set_slot_type_right(0, SlotConnectionType.VAR_ANY)
+			menu.set_meta(&"current_type", TYPE_NIL)

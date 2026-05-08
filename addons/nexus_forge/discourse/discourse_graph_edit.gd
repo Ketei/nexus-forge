@@ -753,6 +753,7 @@ func _on_connection_to_empty(from_node: StringName, from_port: int, release_posi
 	popup_meta["from_node"] = from_node
 	popup_meta["from_port"] = from_port
 	popup_meta["release_position"] = release_position
+	popup_meta["target_type"] = port_node.get_input_port_type(port_node.get_input_port_slot(from_port))
 	
 	show_connection_popup_at(get_global_mouse_position())
 
@@ -773,7 +774,11 @@ func _on_connection_from_empty(to_node: StringName, to_port: int, release_positi
 		var frame: GraphFrame = get_element_frame(to_node)
 		if from_info.has("data"):
 			from_data.merge(from_info["data"], true)
-		from_data["position"] = Vector2((release_position / zoom) + (scroll_offset / zoom))
+		DictUtils.set_nested_value(
+				from_data,
+				["metadata", "position"],
+				Vector2((release_position / zoom) + (scroll_offset / zoom)))
+		
 		from_graph._set_node_data(from_data)
 		add_child(from_graph)
 		graph_nodes.append(from_graph)
@@ -800,6 +805,7 @@ func _on_connection_from_empty(to_node: StringName, to_port: int, release_positi
 	popup_meta["from_node"] = to_node
 	popup_meta["from_port"] = to_port
 	popup_meta["release_position"] = release_position
+	popup_meta["target_type"] = to_graph.get_input_port_type(to_graph.get_input_port_slot(to_port))
 	
 	show_connection_popup_at(get_global_mouse_position())
 
@@ -811,6 +817,7 @@ func _on_popup_index_pressed(index: int, menu: PopupMenu) -> void:
 	var data: Dictionary = menu.get_item_metadata(index)
 	var connection_type = menu.get_item_id(index)
 	var new_node: DiscourseGraphNode = create_dialog_node(data["target_type"])
+	
 	var node_data: Dictionary = new_node._get_node_data()
 	var target_position: Vector2 = Vector2((overall_metadata["release_position"] / zoom) + (scroll_offset / zoom))
 	var frame: GraphFrame = get_element_frame(from_node)
@@ -824,6 +831,11 @@ func _on_popup_index_pressed(index: int, menu: PopupMenu) -> void:
 	snap_graph_to_grid(new_node)
 	
 	if data["flow"] == "input":
+		if new_node.node_type == DialogNodes.VALUE:
+			new_node.set_mode(overall_metadata["target_type"])
+		elif new_node.node_type == DialogNodes.VARIABLE_GET:
+			new_node.set_node_type(overall_metadata["target_type"])
+		
 		connect_nodes(
 				new_node.name,
 				data["target_port"],
@@ -951,10 +963,11 @@ func get_conversation_data(on_conversation: EditorDiscourseDialog = null, curren
 
 func get_connection_dictionary(node_uuid: StringName, node_data: Dictionary) -> Array[Dictionary]:
 	var node_connections: Array[Dictionary] = []
+	var meta = node_data["metadata"]
 	
 	match node_data["type"] as DialogNodes:
 		DialogNodes.OPTIONS:
-			for option in node_data["options"]:
+			for option in meta["choices"]:
 				if option["output_connections"]["next_node"]["target_node_uuid"].is_empty():
 					continue
 				node_connections.append({
@@ -978,7 +991,7 @@ func get_connection_dictionary(node_uuid: StringName, node_data: Dictionary) -> 
 					"from_port": match_value["output_connections"]["next_node"]["from_port"],
 					"to_port": match_value["output_connections"]["next_node"]["target_port"]})
 		DialogNodes.RANDOM:
-			for option in node_data["options"]:
+			for option in meta["options"]:
 				if option["output_connections"]["next_node"]["target_node_uuid"].is_empty():
 					continue
 				

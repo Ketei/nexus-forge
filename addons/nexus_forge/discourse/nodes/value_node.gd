@@ -176,16 +176,16 @@ func _set_node_data(data: Dictionary) -> void:
 	mode = typeof(data_value)
 	match mode:
 		TYPE_INT:
-			get_mapped_field(&"data", &"number").value = data["value"]
+			get_mapped_field(&"data", &"number").value = metadata["value"]
 			menu.icon = get_theme_icon("int", "EditorIcons")
 		TYPE_FLOAT:
-			get_mapped_field(&"data", &"number").value = data["value"]
+			get_mapped_field(&"data", &"number").value = metadata["value"]
 			menu.icon = get_theme_icon("float", "EditorIcons")
 		TYPE_BOOL:
-			get_mapped_field(&"data", &"bool").button_pressed = data["value"]
+			get_mapped_field(&"data", &"bool").button_pressed = metadata["value"]
 			menu.icon = get_theme_icon("bool", "EditorIcons")
 		TYPE_STRING:
-			get_mapped_field(&"data", &"text").text = data["value"]
+			get_mapped_field(&"data", &"text").text = metadata["value"]
 			menu.icon = get_theme_icon("String", "EditorIcons")
 
 
@@ -208,7 +208,6 @@ func _on_data_type_selected(type: int) -> void:
 	
 	menu.icon = pop.get_item_icon(pop.get_item_index(type))
 	mode = type
-	
 
 
 func _on_value_changed(_value: Variant = null) -> void:
@@ -255,3 +254,17 @@ func clamp_range(min_value: float, max_value: float, allow_lesser: bool = false,
 	
 	if reconnect:
 		range_box.value_changed.connect(_on_value_changed)
+
+
+func set_mode(new_mode: int) -> void:
+	var menu: MenuButton = get_field(&"data").get_child(1)
+	mode = new_mode
+	match mode:
+		TYPE_INT:
+			menu.icon = get_theme_icon("int", "EditorIcons")
+		TYPE_FLOAT:
+			menu.icon = get_theme_icon("float", "EditorIcons")
+		TYPE_BOOL:
+			menu.icon = get_theme_icon("bool", "EditorIcons")
+		TYPE_STRING:
+			menu.icon = get_theme_icon("String", "EditorIcons")

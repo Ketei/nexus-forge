@@ -58,7 +58,8 @@ func _post_init() -> void:
 func _ready() -> void:
 	graph_icon = preload("res://addons/nexus_forge/icons/list_icon.svg")
 	set_slot_custom_icon_left(0, flow_icon)
-	set_slot_custom_icon_right(1, flow_icon)
+	for child_idx in range(1, get_child_count()):
+		set_slot_custom_icon_right(child_idx, flow_icon)
 	set_input_connection_icon(
 			&"choice_1",
 			preload("res://addons/nexus_forge/icons/gear_icon.png"))
@@ -83,6 +84,9 @@ func _on_option_text_changed(_text: String) -> void:
 
 func set_choice_count(value: int) -> void:
 	var current: int = get_child_count() - 1
+	if value == current:
+		return
+	
 	if current < value:
 		for extra in range(value - current):
 			var choice_id: StringName = &"choice_" + StringName(str(current + extra + 1))
@@ -107,7 +111,6 @@ func _on_choice_count_changed(value: int) -> void:
 	var current: int = get_child_count() - 1
 	if value == current:
 		return
-	
 	set_choice_count(value)
 	
 	node_updated.emit()
@@ -148,21 +151,22 @@ func _set_node_data(data: Dictionary) -> void:
 	if typeof(pos) == TYPE_VECTOR2:
 		position_offset = pos
 	
-	var options = metadata.get("options")
+	var options = metadata.get("choices")
 	if typeof(options) != TYPE_ARRAY:
 		return
 	
 	var true_options: Array = []
 	for option in options:
-		if typeof(option) != TYPE_DICTIONARY or typeof(option.get("option_text")) != TYPE_STRING:
+		if typeof(option) != TYPE_DICTIONARY or typeof(option.get("text")) != TYPE_STRING:
 			continue
 		true_options.append(option)
 	
-	var new_choice_count: int = true_options.size()
-	get_mapped_field(&"choice_counter", &"choice_count").set_value_no_signal(new_choice_count)
-	set_choice_count(new_choice_count)
-	for option in range(1, new_choice_count + 1):
-		get_field(&"choice_" + StringName(str(option))).text = true_options[option - 1]["option_text"]
+	var choice_size: int = true_options.size()
+	var choice_count: int = max(1, choice_size)
+	get_mapped_field(&"choice_counter", &"choice_count").set_value_no_signal(choice_count)
+	set_choice_count(choice_count)
+	for option in range(1, choice_size + 1):
+		get_field(&"choice_" + StringName(str(option))).text = true_options[option - 1]["text"]
 
 
 func choice_count() -> int:
