@@ -86,9 +86,9 @@ func _ready() -> void:
 	add_child(entry_node)
 	graph_nodes.append(entry_node)
 	
-	connection_drag_started.connect(_on_connection_drag_started)
+	connection_drag_started.connect(_on_connection_drag_started, CONNECT_DEFERRED)
 	begin_node_move.connect(_on_node_move_start)
-	connection_request.connect(_on_connection_request)
+	connection_request.connect(_on_connection_request, CONNECT_DEFERRED)
 	graph_elements_linked_to_frame_request.connect(_on_graph_elements_linked_to_frame_request)
 	connection_to_empty.connect(_on_connection_to_empty)
 	connection_from_empty.connect(_on_connection_from_empty)
@@ -191,10 +191,15 @@ func _on_anchor_id_changed(uuid: String, new_id: String) -> void:
 
 
 func _close_requested(node: DiscourseGraphNode) -> void:
+	print("Removing from array")
 	graph_nodes.erase(node)
+	print("Emiting deletion")
 	node_deleted.emit(node.get_node_uuid())
+	print("Emiting change")
 	dialog_changed.emit()
+	print("Freeing process")
 	free_node(node)
+	print("Done")
 
 
 func free_node(node: DiscourseGraphNode) -> void:
@@ -205,9 +210,12 @@ func free_node(node: DiscourseGraphNode) -> void:
 	elif node.node_type == DialogNodes.ANCHOR_POINTER:
 		anchor_pointers.erase(node)
 	
+	print("- Disconnecting all -")
 	node.disconnect_all()
+	print("- Removing child -")
 	remove_child(node)
 	
+	print("Queue Freeing")
 	node.queue_free()
 
 
@@ -270,18 +278,38 @@ func _on_duplicate_nodes_request() -> void:
 	dialog_changed.emit()
 
 
-func _on_disconnection_request(from_node: StringName, from_port: int, to_node: StringName, to_port: int) -> void:
-	get_node(NodePath(to_node)).set_input_connection(
+func _on_metadata_port_removed(port_removed: int, port_node: DiscourseGraphNode) -> void:
+	return
+
+func _on_disconnection_request(from_node: StringName, from_port: int, to_node: StringName, to_port: int, caller: DiscourseGraphNode) -> void:
+	print("Disconnect request received")
+	var output_node: DiscourseGraphNode = get_node(NodePath(from_node))
+	var input_node: DiscourseGraphNode = get_node(NodePath(to_node))
+	
+	if output_node == null:
+		print("Error, output is null. Tried looking for ", from_node)
+	else:
+		print("Output is NOT null")
+	if input_node == null:
+		print("Error, input is null")
+	else:
+		print("Input is NOT null")
+	
+	print("Disconnecting input port ", to_port, " connected to ", output_node.name, " on the port ", from_port)
+	input_node.set_input_connection(
 			to_port,
-			get_node(NodePath(from_node)),
+			output_node,
 			from_port,
 			false)
-	get_node(NodePath(from_node)).set_output_connection(
+	
+	output_node.set_output_connection(
 			from_port,
-			get_node(NodePath(to_node)),
+			input_node,
 			to_port,
 			false)
+	
 	disconnect_node(from_node, from_port, to_node, to_port)
+	caller.node_disconnected.emit()
 	dialog_changed.emit()
 
 
@@ -461,9 +489,11 @@ func create_dialog_node(node_type: DialogNodes, uuid: String = "") -> DiscourseG
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/data_event.gd").new(uuid, &"TypeData")
 		DialogNodes.LOCALIZED_TEXT:
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/localized_text.gd").new(uuid)
+		DialogNodes.METADATA:
+			created_node = preload("res://addons/nexus_forge/discourse/nodes/metadata_node.gd").new(uuid, &"TypeData")
 	
 	created_node.node_updated.connect(dialog_changed.emit)
-	created_node.disconnect_requested.connect(_on_disconnection_request)
+	created_node.disconnect_requested.connect(_on_disconnection_request, CONNECT_DEFERRED)
 	created_node.close_requested.connect(_close_requested)
 	created_node.duplicate_requested.connect(_on_duplicate_node_button_pressed)
 	created_node.localize_node_toggled.connect(_on_localize_node_toggled)
@@ -615,6 +645,12 @@ func setup_compatible_nodes() -> void:
 			{"name": "Anchor", "type": DialogNodes.ANCHOR, "ports": [{"port": 0}]},
 			{"name": "Dialog Merge", "type": DialogNodes.DIALOG_MERGE, "ports": [{"port": 0}]},
 			{"name": "Pause", "type": DialogNodes.PAUSE, "ports": [{"port": 0}]}], TYPE_DICTIONARY, &"", null)}
+	
+	compatible_connections[ConnectionType.METADATA] = {
+		"input": Array([
+			{"name": "Metadata", "type": DialogNodes.METADATA, "ports": [{"port": "0"}]}
+		], TYPE_DICTIONARY, &"", null)
+	}
 	
 	compatible_connections[ConnectionType.VAR_STRING] = {
 		"input": Array([

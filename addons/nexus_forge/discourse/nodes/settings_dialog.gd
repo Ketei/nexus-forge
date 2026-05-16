@@ -14,6 +14,7 @@ func _post_init() -> void:
 	var font_resource: Label = Label.new()
 	var scene_origin: Label = Label.new()
 	var text_speed: Label = Label.new()
+	var metadata_label: Label = Label.new()
 	
 	dialog_connection.text = "Dialog"
 	dialog_connection.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -27,6 +28,8 @@ func _post_init() -> void:
 	
 	text_speed.text = "Speed"
 	text_speed.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	
+	metadata_label.text = "Metadata"
 	
 	add_field(
 			&"connection",
@@ -59,12 +62,20 @@ func _post_init() -> void:
 			SlotConnectionType.VAR_INT,
 			-1)
 	set_slot_color_left(3, COLORS["integer"])
+	
+	add_field(
+			&"dialog_metadata",
+			metadata_label,
+			false,
+			SlotConnectionType.METADATA)
 
 
 func _ready() -> void:
 	set_input_connection_icon(&"font", get_theme_icon("Object", "EditorIcons"))
 	set_input_connection_icon(&"scene", get_theme_icon("PackedScene", "EditorIcons"))
 	set_input_connection_icon(&"text_speed", get_theme_icon("int", "EditorIcons"))
+	set_input_connection_icon(&"dialog_metadata", preload("res://addons/nexus_forge/icons/metadata_icon.svg"))
+	set_slot_color_left(4, COLORS["metadata"])
 
 
 func _get_node_data() -> Dictionary:

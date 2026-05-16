@@ -105,6 +105,8 @@ func _ready() -> void:
 	data_submenu.add_item("Method Return", DiscourseGraphNode.DialogueNodeType.CALLABLE_RETURN)
 	data_submenu.add_separator()
 	data_submenu.add_item("Type Guard", DiscourseGraphNode.DialogueNodeType.TYPE_GUARD)
+	data_submenu.add_separator()
+	data_submenu.add_item("Metadata", DiscourseGraphNode.DialogueNodeType.METADATA)
 	
 	setting_submenu.add_item("Dialog", DiscourseGraphNode.DialogueNodeType.SETTINGS_DIALOG)
 	setting_submenu.add_item("Character", DiscourseGraphNode.DialogueNodeType.SETTINGS_CHARACTER)
@@ -231,7 +233,6 @@ func _ready() -> void:
 	play_current_dialog_btn.add_theme_constant_override(&"icon_max_width", 24)
 	play_current_dialog_btn.pressed.connect(_on_play_current_dialog_pressed)
 	play_current_dialog_btn.add_theme_stylebox_override(&"normal", StyleBoxEmpty.new())
-	
 	
 	localization_label.text = "Localization:"
 	

@@ -335,27 +335,28 @@ func set_folder_order(order: Dictionary) -> void:
 
 
 func _set_order_of_folder(folder: TreeItem, folder_structure: Dictionary) -> void:
-	var order: Array = folder_structure["order"]
-	var items: Array[TreeItem] = folder.get_children()
-	var items_size: int = items.size()
-	
-	if 1 < items_size:
-		items.sort_custom(
-				func(a:TreeItem,b:TreeItem):
-						var idx_a: int = order.find(a.get_text(0))
-						var idx_b: int = order.find(b.get_text(0))
-						
-						if idx_a == -1:
-							return false
-						elif idx_b == -1:
-							return true
-						else:
-							return idx_a < idx_b)
-		if items[0].get_index() != 0:
-			items[0].move_before(folder.get_first_child())
+	if folder_structure.has("folder"):
+		var order: Array = folder_structure["order"]
+		var items: Array[TreeItem] = folder.get_children()
+		var items_size: int = items.size()
 		
-		for item_idx in range(1, items_size):
-			items[item_idx].move_after(items[item_idx - 1])
+		if 1 < items_size:
+			items.sort_custom(
+					func(a:TreeItem,b:TreeItem):
+							var idx_a: int = order.find(a.get_text(0))
+							var idx_b: int = order.find(b.get_text(0))
+							
+							if idx_a == -1:
+								return false
+							elif idx_b == -1:
+								return true
+							else:
+								return idx_a < idx_b)
+			if items[0].get_index() != 0:
+				items[0].move_before(folder.get_first_child())
+			
+			for item_idx in range(1, items_size):
+				items[item_idx].move_after(items[item_idx - 1])
 	
 	for subfolder in folder.get_children():
 		if folder_structure["subfolders"].has(subfolder.get_text(0)):
@@ -363,6 +364,8 @@ func _set_order_of_folder(folder: TreeItem, folder_structure: Dictionary) -> voi
 
 
 func get_folder_order() -> Dictionary:
+	if get_root() == null:
+		return {"order": {}, "subfolders": Array([], TYPE_STRING, &"", null)}
 	return _get_order_of_folder(get_root())
 
 
@@ -373,4 +376,5 @@ func _get_order_of_folder(folder: TreeItem) -> Dictionary:
 	for item in folder.get_children():
 		order.append(item.get_text(0))
 		subfolders[item.get_text(0)] = _get_order_of_folder(item)
+	
 	return {"order": order, "subfolders": subfolders}

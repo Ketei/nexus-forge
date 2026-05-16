@@ -116,6 +116,9 @@ func select_quest(quest: Quest, emit_select: bool = true) -> void:
 func get_open_quest_paths() -> Array[String]:
 	var paths: Array[String] = []
 	
+	if get_root() == null:
+		return paths
+	
 	for item in get_root().get_children():
 		var path: String = item.get_metadata(0)["resource"].resource_path
 		if path.is_empty():

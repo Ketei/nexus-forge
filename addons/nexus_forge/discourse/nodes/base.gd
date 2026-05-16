@@ -3,11 +3,12 @@ class_name DiscourseGraphNode
 extends GraphNode
 
 
-signal disconnect_requested(from: StringName, out_port: int, to: StringName, in_port: int)
+signal disconnect_requested(from: StringName, out_port: int, to: StringName, in_port: int, caller: DiscourseGraphNode)
 signal close_requested(node: DiscourseGraphNode)
 signal duplicate_requested(node: DiscourseGraphNode)
 signal localize_node_toggled(toggled_on: bool, node: DiscourseGraphNode)
 signal node_updated
+signal node_disconnected
 
 
 enum PortMode {
@@ -31,6 +32,7 @@ enum SlotConnectionType {
 	SETTINGS_DIALOG,
 	SETTINGS_OPTION,
 	RESOURCE,
+	METADATA,
 }
 
 enum IssueLevel {
@@ -49,7 +51,8 @@ const COLORS: Dictionary = {
 	"method": Color(0.18, 0.581, 1.0), # Deep-Blue
 	"signal": Color(0.825, 0.433, 0.261), # Orange
 	"object": Color(1.0, 0.418, 0.789), # Pink
-	"setting": Color(0.853, 0.55, 0.379)} # Light-Orange/Gold
+	"setting": Color(0.853, 0.55, 0.379),
+	"metadata": Color(0.541, 0.624, 0.82)} # Light-Orange/Gold
 
 const LOCALIZED_COLOR: Color = Color.LIME_GREEN
 
@@ -277,6 +280,54 @@ func _on_localization_toggled(toggle: bool) -> void:
 	node_updated.emit()
 
 
+func get_node_state() -> Dictionary:
+	var data: Dictionary = _get_node_data()
+	var input_connections: Dictionary = {}
+	var output_connections: Dictionary = {}
+	
+	var state: Dictionary = {
+		"data": data,
+		"input_connections": input_connections,
+		"output_connections": output_connections}
+	
+	var fields: Array[StringName] = []
+	var field_nodes: Array[Node] = get_children()
+	
+	field_nodes.sort_custom(func (a:Control,b: Control): return a.get_index() < b.get_index())
+	
+	for field in field_nodes:
+		fields.append(field.name)
+	
+	var port: int = -1
+	for input_connection in _input_nodes:
+		port += 1
+		var slot: int = fields.find(input_connection["field_id"])
+		var connections: Array[Dictionary] = []
+		
+		for connection_index in input_connection["connections"].size():
+			connections.append(
+					get_uuid_and_port_connected_to(PortMode.INPUT, port, connection_index))
+		input_connections[input_connection["field_id"]] = {
+			"port": port, # Port ID
+			"slot": slot, # Slot Index,
+			"connections": connections}
+	port = -1
+	for output_connection in _output_nodes:
+		port += 1
+		var slot: int = fields.find(output_connection["field_id"])
+		var connections: Array[Dictionary] = []
+		for connection_index in output_connection["connections"].size():
+			connections.append(
+					get_uuid_and_port_connected_to(PortMode.OUTPUT, port, connection_index))
+		
+		output_connections[output_connection["field_id"]] = {
+			"port": port,
+			"slot": slot,
+			"connections": connections}
+	
+	return state
+
+
 func set_node_localized(is_localized: bool) -> void:
 	_uses_localization = is_localized
 	var localization_button: Button = _get_localize_button()
@@ -343,34 +394,34 @@ func set_field_connection_icons(field_id: StringName, input_icon: Texture2D, out
 
 
 ## Call when an input was connected/disconnected from a node.
-func set_input_connection(input: int, from_output: DiscourseGraphNode, from_port: int, is_connection: bool) -> void:
+func set_input_connection(input_port: int, from_output: DiscourseGraphNode, from_port: int, is_connection: bool) -> void:
 	if from_output == null:
 		return
 		
 	if is_connection:
-		if can_input_multiple(input):
-			_input_nodes[input]["connections"].append({
+		if can_input_multiple(input_port):
+			_input_nodes[input_port]["connections"].append({
 				"target_node": from_output,
 				"target_port": from_port})
-			_on_input_connected(input, from_output, from_port)
+			_on_input_connected(input_port, from_output, from_port)
 		else:
-			if has_any_input(input):
-				for input_item:Dictionary in _input_nodes[input]["connections"]:
+			if has_any_input(input_port):
+				for input_item:Dictionary in _input_nodes[input_port]["connections"]:
 					_on_input_disconnected(
-							input,
-							input_item["target_node"],
-							input_item["target_port"])
-				_input_nodes[input]["connections"].clear()
-			_input_nodes[input]["connections"].append({
+						input_port,
+						input_item["target_node"],
+						input_item["target_port"])
+				_input_nodes[input_port]["connections"].clear()
+			_input_nodes[input_port]["connections"].append({
 				"target_node": from_output,
 				"target_port": from_port
 			})
-			_on_input_connected(input, from_output, from_port)
+			_on_input_connected(input_port, from_output, from_port)
 	else:
-		var connextion_index: int = get_connection_index(PortMode.INPUT, input, from_output, from_port)
+		var connextion_index: int = get_connection_index(PortMode.INPUT, input_port, from_output, from_port)
 		if connextion_index != -1:
-			_input_nodes[input]["connections"].remove_at(connextion_index)
-			_on_input_disconnected(input, from_output, from_port)
+			_input_nodes[input_port]["connections"].remove_at(connextion_index)
+			_on_input_disconnected(input_port, from_output, from_port)
 
 
 ## Call when an output was connected/disconnected from a node.
@@ -389,9 +440,9 @@ func set_output_connection(output: int, to_input: DiscourseGraphNode, to_port: i
 			if has_any_output(output):
 				for output_item:Dictionary in _output_nodes[output]["connections"]:
 					_on_output_disconnected(
-							output,
-							output_item["target_node"],
-							output_item["target_port"])
+						output,
+						output_item["target_node"],
+						output_item["target_port"])
 				_output_nodes[output]["connections"].clear()
 			_output_nodes[output]["connections"].append({
 				"target_node": to_input,
@@ -569,7 +620,7 @@ func get_uuid_and_port_connected_to(port_mode: PortMode, port: int, connection_i
 	var data: Dictionary[String, Variant] = {
 		"target_node_uuid": &"",
 		"target_port": -1,
-		"from_port": -1}
+		"from_port": port}
 	
 	match port_mode:
 		PortMode.INPUT:
@@ -577,13 +628,11 @@ func get_uuid_and_port_connected_to(port_mode: PortMode, port: int, connection_i
 				var node: DiscourseGraphNode = get_node_connected_to_port(PortMode.INPUT, port, connection_index)
 				data["target_node_uuid"] = node.get_node_uuid()
 				data["target_port"] = get_target_port_connected_to_port(PortMode.INPUT, port, connection_index)
-				data["from_port"] = port
 		PortMode.OUTPUT:
 			if has_output_on(port, connection_index):
 				var node: DiscourseGraphNode = get_node_connected_to_port(PortMode.OUTPUT, port, connection_index)
 				data["target_node_uuid"] = node.get_node_uuid()
 				data["target_port"] = get_target_port_connected_to_port(PortMode.OUTPUT, port, connection_index)
-				data["from_port"] = port
 	
 	return data
 
@@ -687,6 +736,7 @@ func add_field(field_id: StringName, field_node: Control, expand: bool = false, 
 		set_slot_enabled_left(new_index, true)
 		set_slot_type_left(new_index, left_slot_type)
 		_input_nodes.append({
+			"field_id": field_id,
 			"multi_connection": false,
 			"connections": Array([], TYPE_DICTIONARY, &"", null)})
 	
@@ -694,8 +744,9 @@ func add_field(field_id: StringName, field_node: Control, expand: bool = false, 
 		set_slot_enabled_right(new_index, true)
 		set_slot_type_right(new_index, right_slot_type)
 		_output_nodes.append({
-					"multi_connection": false,
-					"connections": Array([], TYPE_DICTIONARY, &"", null)})
+			"field_id": field_id,
+			"multi_connection": false,
+			"connections": Array([], TYPE_DICTIONARY, &"", null)})
 	
 	field_box.set_meta(&"input_slot", input_slot)
 	field_box.set_meta(&"output_slot", output_slot)
@@ -739,18 +790,21 @@ func set_field_visible(field_id: StringName, field_visible: bool) -> void:
 	if is_slot_enabled_left(slot) and has_any_input(in_port):
 		var from_graph: DiscourseGraphNode = get_node_connected_to_port(PortMode.INPUT, in_port)
 		disconnect_requested.emit(
-			from_graph.name,
+			from_graph.get_node_uuid(),
 			from_graph.get_port_connected_to(PortMode.OUTPUT, self, in_port),
-			name,
-			in_port)
+			get_node_uuid(),
+			in_port,
+			self)
+		await node_disconnected
 	if is_slot_enabled_right(slot) and has_any_output(out_port):
 		var to_graph: DiscourseGraphNode = get_node_connected_to_port(PortMode.OUTPUT, out_port)
 		disconnect_requested.emit(
-				name,
-				out_port,
-				to_graph.name,
-				to_graph.get_port_connected_to(PortMode.INPUT, self, out_port))
-	
+			get_node_uuid(),
+			out_port,
+			to_graph.get_node_uuid(),
+			to_graph.get_port_connected_to(PortMode.INPUT, self, out_port),
+			self)
+		await node_disconnected
 	field.visible = field_visible
 
 
@@ -808,6 +862,13 @@ func get_field(field_id: StringName) -> Control:
 	return null
 
 
+func get_index_field(field_index: int) -> Control:
+	if field_index < 0 or get_child_count() <= field_index:
+		return null
+	
+	return get_child(field_index).get_child(1)
+
+
 func get_field_input_slot(field_id: StringName) -> int:
 	if field_id.is_empty():
 		return -1
@@ -826,6 +887,9 @@ func get_field_output_slot(field_id: StringName) -> int:
 	return -1 if node == null else node.get_meta(&"output_slot", -1)
 
 
+var resizing: bool = false
+var size_change: int = 0
+
 func remove_field(field_id: StringName, size_change: int = 0) -> void:
 	if field_id.is_empty():
 		return
@@ -838,42 +902,140 @@ func remove_field(field_id: StringName, size_change: int = 0) -> void:
 		node = child
 		break
 	
+	if node == null:
+		return
+	
 	var slot_index: int = node.get_index()
 	
 	if is_slot_enabled_left(slot_index): # Checking if input enabled
 		if has_any_input(node.get_meta(&"input_slot")):
-			#var in_target: DiscourseGraphNode = get_node_connected_to_input_port(node.get_meta(&"input_slot"))
 			var in_target: DiscourseGraphNode = get_node_connected_to_port(PortMode.INPUT, node.get_meta(&"input_slot"))
 			var target_slot: int = in_target.get_port_connected_to(PortMode.OUTPUT, self, node.get_meta(&"input_slot"))
 			disconnect_requested.emit(
-				in_target.name,
+				in_target.get_node_uuid(),
 				target_slot,
-				name,
-				node.get_meta(&"input_slot"))
+				get_node_uuid(),
+				node.get_meta(&"input_slot"),
+				self)
+			await node_disconnected
+			await get_tree().process_frame
 		_input_nodes.remove_at(
-				node.get_meta(&"input_slot"))
-	
+			node.get_meta(&"input_slot"))
+		
 	if is_slot_enabled_right(slot_index):
 		var output_slot: int = node.get_meta(&"output_slot")
 		if has_any_output(output_slot):
 			var out_target: DiscourseGraphNode = get_node_connected_to_port(PortMode.OUTPUT, node.get_meta(&"output_slot"))
 			var target_slot: int = out_target.get_port_connected_to(PortMode.INPUT, self, node.get_meta(&"output_slot"))
 			disconnect_requested.emit(
-					name,
-					node.get_meta(&"output_slot"),
-					out_target.name,
-					target_slot)
+				get_node_uuid(),
+				node.get_meta(&"output_slot"),
+				out_target.get_node_uuid(),
+				target_slot,
+				self)
+			await node_disconnected
+			await get_tree().process_frame
 		_output_nodes.remove_at(
-				node.get_meta(&"output_slot"))
+			node.get_meta(&"output_slot"))
 	
-	remove_child(node)
-	
+	#remove_child(node)
+	var node_size: Vector2 = node.size
+	#var field_idx: int = node.get_index()
+	#set_slot(field_idx, false, -1, Color.BLACK, false, -1, Color.BLACK, null, null)
 	if 0 < size_change:
 		size.y -= size_change
+		#deferred_resizing(size_change)
+	elif size_change < 0:
+		size.y = 0
 	else:
-		size.y -= node.size.y + (get_theme_constant("separation") if 0 < get_child_count() else 0)
+		size.y -= node_size.y + (get_theme_constant("separation") if 0 < get_child_count() else 0)
+		#deferred_resizing(node.size.y + (get_theme_constant("separation") if 0 < get_child_count() else 0))
+	node.free()
+	#node.queue_free()
+	#node.visible = false
+
+
+func remove_fields(field_ids: Array[StringName], size_change: int = 0) -> void:
+	if field_ids.is_empty():
+		return
 	
-	node.queue_free()
+	var target_nodes: Array[Control] = []
+	var compound_size: float = 0.0
+	
+	for child in get_children():
+		if field_ids.has(child.name):
+			target_nodes.append(child)
+	
+	if target_nodes.is_empty():
+		return
+	
+	target_nodes.sort_custom(func (a:Control,b:Control): return b.get_index() < a.get_index())
+	
+	for node in target_nodes:
+		var slot_index: int = node.get_index()
+		
+		if is_slot_enabled_left(slot_index): # Checking if input enabled
+			if has_any_input(node.get_meta(&"input_slot")):
+				var in_target: DiscourseGraphNode = get_node_connected_to_port(PortMode.INPUT, node.get_meta(&"input_slot"))
+				var target_slot: int = in_target.get_port_connected_to(PortMode.OUTPUT, self, node.get_meta(&"input_slot"))
+				disconnect_requested.emit(
+					in_target.get_node_uuid(),
+					target_slot,
+					get_node_uuid(),
+					node.get_meta(&"input_slot"),
+					self)
+				await node_disconnected
+				await get_tree().process_frame
+			_input_nodes.remove_at(
+				node.get_meta(&"input_slot"))
+			
+		if is_slot_enabled_right(slot_index):
+			var output_slot: int = node.get_meta(&"output_slot")
+			if has_any_output(output_slot):
+				var out_target: DiscourseGraphNode = get_node_connected_to_port(PortMode.OUTPUT, node.get_meta(&"output_slot"))
+				var target_slot: int = out_target.get_port_connected_to(PortMode.INPUT, self, node.get_meta(&"output_slot"))
+				disconnect_requested.emit(
+					get_node_uuid(),
+					node.get_meta(&"output_slot"),
+					out_target.get_node_uuid(),
+					target_slot,
+					self)
+				await node_disconnected
+				await get_tree().process_frame
+			_output_nodes.remove_at(
+				node.get_meta(&"output_slot"))
+		compound_size += node.size.y
+	#remove_child(node)
+	
+	#var field_idx: int = node.get_index()
+	#set_slot(field_idx, false, -1, Color.BLACK, false, -1, Color.BLACK, null, null)
+	if 0 < size_change:
+		size.y -= size_change
+		#deferred_resizing(size_change)
+	elif size_change < 0:
+		size.y = 0
+	else:
+		size.y -= compound_size + (get_theme_constant("separation") * (target_nodes.size() - 1) if 0 < target_nodes.size() else 0)
+		#deferred_resizing(node.size.y + (get_theme_constant("separation") if 0 < get_child_count() else 0))
+	for node in target_nodes:
+		node.free()
+	#node.queue_free()
+	#node.visible = false
+
+
+func deferred_resizing(amount: int) -> void:
+	size_change += amount
+	if not resizing:
+		resizing = true
+		ress.call_deferred()
+
+
+func ress() -> void:
+	resizing = false
+	size.y -= size_change
+	size_change = 0
+	
+
 
 
 func is_orphan() -> bool:
@@ -893,18 +1055,20 @@ func disconnect_port(port_mode: PortMode, port_idx: int, connection_idx: int = 0
 		if port_idx < _input_nodes.size() and connection_idx < _input_nodes[port_idx]["connections"].size():
 			var input_target: DiscourseGraphNode = get_node_connected_to_port(PortMode.INPUT, port_idx, connection_idx)
 			disconnect_requested.emit(
-					input_target.name,
-					input_target.get_port_connected_to(PortMode.OUTPUT, self, port_idx),
-					name,
-					port_idx)
+				input_target.get_node_uuid(),
+				input_target.get_port_connected_to(PortMode.OUTPUT, self, port_idx),
+				get_node_uuid(),
+				port_idx,
+				self)
 	elif port_mode == PortMode.OUTPUT:
 		if port_idx < _output_nodes.size() and connection_idx < _output_nodes[port_idx]["connections"].size():
 			var output_target: DiscourseGraphNode = get_node_connected_to_port(PortMode.OUTPUT, port_idx, connection_idx)
 			disconnect_requested.emit(
-				name,
+				get_node_uuid(),
 				port_idx,
-				output_target.name,
-				output_target.get_port_connected_to(PortMode.INPUT, self, port_idx))
+				output_target.get_node_uuid(),
+				output_target.get_port_connected_to(PortMode.INPUT, self, port_idx),
+				self)
 
 
 func disconnect_all() -> void:
@@ -912,19 +1076,21 @@ func disconnect_all() -> void:
 		for connection_idx in range(_input_nodes[input_port]["connections"].size()):
 			var input_target: DiscourseGraphNode = get_node_connected_to_port(PortMode.INPUT, input_port, connection_idx)
 			disconnect_requested.emit(
-					input_target.name,
-					input_target.get_port_connected_to(PortMode.OUTPUT, self, input_port),
-					name,
-					input_port)
+				input_target.get_node_uuid(),
+				input_target.get_port_connected_to(PortMode.OUTPUT, self, input_port),
+				get_node_uuid(),
+				input_port,
+				self)
 	
 	for output_port in range(_output_nodes.size()):
 		for connection_idx in range(_output_nodes[output_port]["connections"].size()):
 			var output_target: DiscourseGraphNode = get_node_connected_to_port(PortMode.OUTPUT, output_port, connection_idx)
 			disconnect_requested.emit(
-				name,
+				get_node_uuid(),
 				output_port,
-				output_target.name,
-				output_target.get_port_connected_to(PortMode.INPUT, self, output_port))
+				output_target.get_node_uuid(),
+				output_target.get_port_connected_to(PortMode.INPUT, self, output_port),
+				self)
 
 
 func is_node_localized() -> bool:

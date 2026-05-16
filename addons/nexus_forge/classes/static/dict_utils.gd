@@ -2,6 +2,13 @@ class_name DictUtils
 extends RefCounted
 
 
+static func has_any(dict: Dictionary, keys: Array) -> bool:
+	for key in keys:
+		if dict.has(key):
+			return true
+	return false
+
+
 static func has_nested_path(dict: Dictionary, keys: Array) -> bool:
 	var current = dict
 	

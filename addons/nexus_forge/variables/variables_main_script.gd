@@ -343,7 +343,8 @@ func get_folder_layout() -> Dictionary:
 
 
 func set_folder_layout(layout_data: Dictionary) -> void:
-	folders_tree.set_folder_order(layout_data)
+	if not layout_data.is_empty() and folders_tree.get_root() != null:
+		folders_tree.set_folder_order(layout_data)
 
 
 func _on_folder_moved(original_path: String, new_path: String) -> void:

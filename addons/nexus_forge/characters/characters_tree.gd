@@ -76,6 +76,9 @@ func select_character(resource: CharacterSheet, emit_selected: bool = true) -> v
 
 
 func get_open_paths() -> Array[String]:
+	if get_root() == null:
+		return []
+	
 	var paths: Array[String] = []
 	
 	for item in get_root().get_children():

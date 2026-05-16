@@ -1,4 +1,4 @@
-@tool
+#@tool
 extends PanelContainer
 
 
@@ -6,6 +6,20 @@ enum TreeButtonID {
 	DELETE,
 	NEW_PHRASE_ARGUMENT,
 	RENAME_LOCALIZED_NODE}
+
+# ------------------
+enum DiscourseFileMenuID {
+	NEW_DIALOG,
+	OPEN_DIALOG,
+	SAVE_DIALOG,
+	CLOSE_DIALOG,
+	CHANGE_LANGUAGE,
+	SET_LOCALE_GROUP,
+	CHECK_ISSUES,
+	PLAY_CURRENT_DIALOG,
+	DISPLAY_DIALOG_ID_FIELD,
+	}
+# ------------------
 
 var active_conversation: EditorDiscourseDialog = null
 
@@ -18,11 +32,17 @@ var selected_format: String = ""
 
 var _unsaved: bool = false
 
+# ----------------------------
+var _conversation_options_disabled: bool = true
+
+var base_language: String = ""
+var current_locale: String = ""
+# ----------------------------
+
 # --- Discourse Graph ---
 @onready var conversation_tree: Tree = $MainSplitContainer/MainSidebar/SidebarSplitContainer/ConversationContainer/ConversationTree
 @onready var node_search_ln_edt: LineEdit = $MainSplitContainer/MainSidebar/SidebarSplitContainer/NodesContainer/SearchHbox/NodeSearchLnEdt
 @onready var discourse_nodes_tree: Tree = $MainSplitContainer/MainSidebar/SidebarSplitContainer/NodesContainer/NodesTree
-var discourse_window: PanelContainer = null
 @onready var new_folder_button: Button = $MainSplitContainer/MainSidebar/SidebarSplitContainer/NodesContainer/SearchHbox/NewFolderButton
 @onready var hide_issues_btn: Button = $MainSplitContainer/DiscourseSplitContainer/ErrorContainer/IssuesVBox/HeaderContainer/HideIssuesBtn
 @onready var issues_tree: Tree = $MainSplitContainer/DiscourseSplitContainer/ErrorContainer/IssuesVBox/IssuesTree
@@ -64,8 +84,188 @@ var discourse_window: PanelContainer = null
 @onready var case_header_split: HSplitContainer = $LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/CaseHeaderSplit
 @onready var cases_split: HSplitContainer = $LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit
 
+# ----------------------------------------------
+
+@onready var no_dialog_label: Label = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/GraphPanel/NoDialogLbl
+@onready var discourse_graph_edit: GraphEdit = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/GraphPanel/DiscourseGraphEdit
+@onready var node_popup: PopupMenu = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/MenuBar/NodeMenu
+@onready var file_popup: PopupMenu = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/MenuBar/FileMenu
+@onready var save_btn: Button = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/SaveBtn
+@onready var play_current_dialog_btn: Button = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/PlayDialogBtn
+@onready var switch_localization: Button = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/LocalizationContainer/SwitchLocaleBtn
+@onready var localization_menu: OptionButton = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/LocalizationContainer/LocalizationMenu
+@onready var tool_menu: MenuBar = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/MenuBar
+@onready var snap_distance_spn_bx: SpinBox = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/SnapDistanceSpnBx
+
+
+func _ready() -> void:
+	ready_plugin()
+
 
 func ready_plugin() -> void:
+	#var file_popup: PopupMenu = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuVBox/MenuBar/FileMenu
+	#var node_popup: PopupMenu = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuVBox/MenuBar/NodeMenu
+	var open_btn: Button = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/OpenBtn
+	var toggle_grid_btn: Button = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/ToggleGridBtn
+	var toggle_snap_btn: Button = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/ToggleSnapBtn
+	var toggle_minimap_btn: Button = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/ToggleMinimapBtn
+	var sort_nodes_btn: Button = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/SortNodesBtn
+	
+	tool_menu.set_menu_title(0, "Discourse")
+	tool_menu.set_menu_title(1, "Create")
+	
+	tool_menu.set_menu_disabled(1, true)
+	#node_menu.disabled = true
+	
+	# --- Node Menu Items ---
+	var dialogs_submenu: PopupMenu = PopupMenu.new()
+	var data_submenu: PopupMenu = PopupMenu.new()
+	var setting_submenu: PopupMenu = PopupMenu.new()
+	
+	dialogs_submenu.min_size.x = 120
+	
+	dialogs_submenu.add_item("Dialog", DiscourseGraphNode.DialogueNodeType.DIALOG)
+	dialogs_submenu.add_item("Options", DiscourseGraphNode.DialogueNodeType.OPTIONS)
+	dialogs_submenu.add_separator("Flow")
+	dialogs_submenu.add_item("Random", DiscourseGraphNode.DialogueNodeType.RANDOM)
+	dialogs_submenu.add_item("Branch", DiscourseGraphNode.DialogueNodeType.BRANCH)
+	dialogs_submenu.add_item("Match", DiscourseGraphNode.DialogueNodeType.MATCH)
+	dialogs_submenu.add_item("Merge", DiscourseGraphNode.DialogueNodeType.DIALOG_MERGE)
+	dialogs_submenu.add_item("Pause", DiscourseGraphNode.DialogueNodeType.PAUSE)
+	dialogs_submenu.add_separator("Anchors")
+	dialogs_submenu.add_item("Pointer", DiscourseGraphNode.DialogueNodeType.ANCHOR_POINTER)
+	dialogs_submenu.add_item("Target", DiscourseGraphNode.DialogueNodeType.ANCHOR)
+	dialogs_submenu.add_separator()
+	dialogs_submenu.add_item("Event", DiscourseGraphNode.DialogueNodeType.EVENT)
+	dialogs_submenu.add_item("End", DiscourseGraphNode.DialogueNodeType.DIALOG_END)
+	
+	data_submenu.add_item("Value", DiscourseGraphNode.DialogueNodeType.VALUE)
+	data_submenu.add_item("Variable", DiscourseGraphNode.DialogueNodeType.VARIABLE_GET)
+	data_submenu.add_item("Random", DiscourseGraphNode.DialogueNodeType.RANDOM_VALUE)
+	data_submenu.add_item("Localized Text", DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT)
+	data_submenu.add_separator()
+	data_submenu.add_item("Condition Value", DiscourseGraphNode.DialogueNodeType.CONDITION_SELECT)
+	data_submenu.add_item("Comparation", DiscourseGraphNode.DialogueNodeType.COMPARATION)
+	data_submenu.add_separator()
+	data_submenu.add_item("Event", DiscourseGraphNode.DialogueNodeType.DATA_EVENT)
+	data_submenu.add_item("Signal", DiscourseGraphNode.DialogueNodeType.SIGNAL)
+	data_submenu.add_item("Method", DiscourseGraphNode.DialogueNodeType.CALLABLE)
+	data_submenu.add_item("Method Return", DiscourseGraphNode.DialogueNodeType.CALLABLE_RETURN)
+	data_submenu.add_separator()
+	data_submenu.add_item("Type Guard", DiscourseGraphNode.DialogueNodeType.TYPE_GUARD)
+	data_submenu.add_separator()
+	data_submenu.add_item("Metadata", DiscourseGraphNode.DialogueNodeType.METADATA)
+	
+	setting_submenu.add_item("Dialog", DiscourseGraphNode.DialogueNodeType.SETTINGS_DIALOG)
+	setting_submenu.add_item("Character", DiscourseGraphNode.DialogueNodeType.SETTINGS_CHARACTER)
+	setting_submenu.add_item("Option", DiscourseGraphNode.DialogueNodeType.SETTINGS_OPTION)
+	
+	node_popup.add_submenu_node_item(
+			"Conversation",
+			dialogs_submenu,
+			100)
+	node_popup.add_submenu_node_item(
+			"Data",
+			data_submenu,
+			100)
+	node_popup.add_submenu_node_item(
+			"Settings",
+			setting_submenu,
+			100)
+	node_popup.add_separator()
+	node_popup.add_item("Comment", DiscourseGraphNode.DialogueNodeType.COMMENT)
+	node_popup.add_item("Resource", DiscourseGraphNode.DialogueNodeType.RESOURCE)
+	node_popup.add_separator()
+	node_popup.add_item("Frame", 1000)
+	
+	save_btn.icon = get_theme_icon("Save", "EditorIcons")
+	
+	open_btn.icon = get_theme_icon("Load", "EditorIcons")
+	
+	toggle_grid_btn.icon = get_theme_icon("GridToggle", "EditorIcons")
+	
+	toggle_grid_btn.toggled.connect(_on_show_grid_toggled)
+	
+	toggle_snap_btn.icon = get_theme_icon("SnapGrid", "EditorIcons")
+	
+	toggle_snap_btn.toggled.connect(_on_grid_snapping_toggled)
+	
+	snap_distance_spn_bx.value_changed.connect(_on_snapping_distance_value_changed)
+	
+	toggle_minimap_btn.icon = get_theme_icon("GridMinimap", "EditorIcons")
+	
+	toggle_minimap_btn.toggled.connect(_on_minimap_toggled)
+	
+	sort_nodes_btn.icon = get_theme_icon("layout", "GraphEdit")
+	
+	sort_nodes_btn.pressed.connect(_on_sort_nodes_pressed)
+	
+	play_current_dialog_btn.pressed.connect(_on_play_current_dialog_pressed)
+	
+	switch_localization.icon = get_theme_icon("Translation", "EditorIcons")
+	
+	file_popup.add_icon_item(
+			null,
+			"New",
+			DiscourseFileMenuID.NEW_DIALOG)
+	file_popup.add_icon_item(
+			null,
+			"Open",
+			DiscourseFileMenuID.OPEN_DIALOG)
+	file_popup.add_icon_item(
+			null,
+			"Save",
+			DiscourseFileMenuID.SAVE_DIALOG)
+	file_popup.add_separator()
+	file_popup.add_item(
+			"Play current dialog",
+			DiscourseFileMenuID.PLAY_CURRENT_DIALOG)
+	file_popup.add_item(
+			"Check for issues",
+			DiscourseFileMenuID.CHECK_ISSUES)
+	file_popup.add_separator()
+	file_popup.add_item(
+			"Set file locale group",
+			DiscourseFileMenuID.SET_LOCALE_GROUP)
+	file_popup.add_separator()
+	file_popup.add_check_item(
+			"Dialog ID field visible",
+			DiscourseFileMenuID.DISPLAY_DIALOG_ID_FIELD)
+	file_popup.add_item(
+			"Change default language",
+			DiscourseFileMenuID.CHANGE_LANGUAGE)
+	file_popup.add_separator()
+	file_popup.add_icon_item(
+			null,
+			"Close",
+			DiscourseFileMenuID.CLOSE_DIALOG)
+	
+	file_popup.set_item_disabled(
+			file_popup.get_item_index(
+					DiscourseFileMenuID.SAVE_DIALOG),
+			true)
+	
+	file_popup.set_item_disabled(
+			file_popup.get_item_index(
+					DiscourseFileMenuID.CHECK_ISSUES),
+					true)
+	
+	file_popup.set_item_disabled(
+			file_popup.get_item_index(
+					DiscourseFileMenuID.CLOSE_DIALOG),
+			true)
+	
+	file_popup.set_item_disabled(
+			file_popup.get_item_index(
+					DiscourseFileMenuID.SET_LOCALE_GROUP),
+			true)
+	
+	file_popup.set_item_disabled(
+			file_popup.get_item_index(
+					DiscourseFileMenuID.PLAY_CURRENT_DIALOG),
+			true)
+	# --------------------------------------------------------
+	
 	search_nodes_ln_edt.right_icon = get_theme_icon("Search", "EditorIcons")
 	
 	conversation_tree.ready_plugin()
@@ -75,23 +275,23 @@ func ready_plugin() -> void:
 	languages_tree.ready_plugin()
 	localization_nodes_tree.ready_plugin()
 	
-	discourse_window = load("res://addons/nexus_forge/discourse/discourse_panel_editor_script.gd").new()
-	discourse_window.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	discourse_split_container.add_child(discourse_window)
-	discourse_split_container.move_child(discourse_window, 0)
+	var discourse_panel: PanelContainer = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/GraphPanel
+	#discourse_window.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	#discourse_split_container.add_child(discourse_window)
+	#discourse_split_container.move_child(discourse_window, 0)
 	var style: StyleBoxFlat = load("res://addons/nexus_forge/discourse/discourse_editor_stylebox.tres")
 	
 	style.bg_color = get_theme_color("base_color", "Editor")
-	discourse_window.add_theme_stylebox_override(&"panel", style)
+	discourse_panel.add_theme_stylebox_override(&"panel", style)
 	
 	var system_lang = OS.get_locale_language()
 	languages_tree.create_language(system_lang, true)
-	discourse_window.add_locale(system_lang)
-	discourse_window.base_language = system_lang
+	add_locale(system_lang)
+	base_language = system_lang
 	languages_tree.set_default_language(system_lang)
 	
-	if discourse_window.discourse_graph_edit.entry_node != null:
-		_on_discourse_node_created(discourse_window.discourse_graph_edit.entry_node)
+	if discourse_graph_edit.entry_node != null:
+		_on_discourse_node_created(discourse_graph_edit.entry_node)
 	
 	$MainSplitContainer.visible = true
 	$LocalizationContainer.visible = false
@@ -104,25 +304,25 @@ func ready_plugin() -> void:
 	
 	hide_issues_btn.icon = get_theme_icon("GuiClose", "EditorIcons")
 	
-	discourse_window.discourse_graph_edit.dialog_changed.connect(_on_conversation_changed)
-	discourse_window.discourse_graph_edit.localization_enabled.connect(_on_localize_node)
-	discourse_window.discourse_graph_edit.localized_text_created.connect(_on_localize_node)
-	discourse_window.discourse_graph_edit.node_created.connect(_on_discourse_node_created)
-	discourse_window.localization_window_pressed.connect(_on_switch_window_pressed)
-	discourse_window.new_conversation_pressed.connect(_on_new_conversation_pressed)
-	discourse_window.open_conversation_pressed.connect(_on_open_conversation_pressed)
-	discourse_window.save_conversation_pressed.connect(_on_save_conversation_pressed)
-	discourse_window.close_conversation_pressed.connect(_on_menu_close_pressed)
+	# --------------------------------------------------------
+	dialogs_submenu.id_pressed.connect(_on_create_dialog_id_pressed)
+	data_submenu.id_pressed.connect(_on_create_dialog_id_pressed)
+	setting_submenu.id_pressed.connect(_on_create_dialog_id_pressed)
+	node_popup.id_pressed.connect(_on_create_dialog_id_pressed)
+	switch_localization.pressed.connect(_on_switch_window_pressed)
+	file_popup.id_pressed.connect(_on_file_menu_id_pressed)
+	localization_menu.item_selected.connect(_on_localization_selected)
+	# --------------------------------------------------------
 	
-	discourse_window.discourse_graph_edit.discourse_node_selected.connect(_on_discourse_node_selected)
-	discourse_window.discourse_graph_edit.node_deleted.connect(_on_node_deleted)
-	discourse_window.discourse_graph_edit.scroll_offset_changed.connect(_on_graph_edit_offset_changed)
-	discourse_window.change_default_language_pressed.connect(_on_change_default_language_pressed)
-	discourse_window.set_locale_group_pressed.connect(_on_change_locale_group_pressed)
-	discourse_window.check_for_issues_pressed.connect(_on_get_issues_pressed)
-	discourse_window.play_current_dialog_pressed.connect(_on_play_current_dialog_pressed)
-	discourse_window.locale_changed.connect(_on_graph_editor_locale_changed)
-	discourse_window.display_dialog_id_toggled.connect(_on_display_dialog_id_toggled)
+	discourse_graph_edit.dialog_changed.connect(_on_conversation_changed)
+	discourse_graph_edit.localization_enabled.connect(_on_localize_node)
+	#discourse_graph_edit.localized_text_created.connect(_on_localize_node)
+	discourse_graph_edit.node_created.connect(_on_discourse_node_created)
+	
+	discourse_graph_edit.discourse_node_selected.connect(_on_discourse_node_selected)
+	discourse_graph_edit.node_deleted.connect(_on_node_deleted)
+	discourse_graph_edit.scroll_offset_changed.connect(_on_graph_edit_offset_changed)
+	
 	return_discourse_btn.pressed.connect(_on_switch_window_pressed)
 	node_search_ln_edt.text_changed.connect(_on_discourse_node_search_text_changed)
 	new_language_btn.pressed.connect(_on_new_lang_pressed)
@@ -160,6 +360,299 @@ func ready_plugin() -> void:
 	dialog_id_ln_edt.text_changed.connect(_on_conversation_changed)
 
 
+func add_locale(locale_code: String) -> void:
+	var locale_parts: PackedStringArray = locale_code.split("_", false, 1)
+	var language: String = locale_parts[0]
+	var region: String = locale_parts[1] if locale_parts.size() == 2 else ""
+	var selected_language: String = ""
+	var selected_country: String = ""
+	var existing_locales: Array[Dictionary] = []
+	
+	if localization_menu.selected != -1:
+		var item_meta: Dictionary = localization_menu.get_item_metadata(localization_menu.selected)
+		selected_language = item_meta["language_code"]
+		selected_country = item_meta["country_code"]
+	
+	for item in range(localization_menu.item_count):
+		var item_meta: Dictionary = localization_menu.get_item_metadata(item)
+		if item_meta["language_code"] == language and item_meta["country_code"] == region:
+			return
+		existing_locales.append(item_meta)
+	
+	existing_locales.append({
+		"language_code" = language,
+		"language_name" = TranslationServer.get_language_name(language),
+		"country_code" = region})
+	
+	existing_locales.sort_custom(_locale_sort_custom)
+	
+	localization_menu.clear()
+	
+	var idx: int = -1
+	for existing_locale in existing_locales:
+		var display_text: String = existing_locale["language_name"] if\
+				existing_locale["country_code"].is_empty() else\
+				existing_locale["language_name"] + " (" + existing_locale["country_code"] + ")"
+		idx += 1
+		localization_menu.add_item(display_text)
+		localization_menu.set_item_metadata(idx, existing_locale)
+		if existing_locale["language_code"] == selected_language and existing_locale["country_code"] == selected_country:
+			localization_menu.select(idx)
+			localization_menu.tooltip_text = display_text
+	
+	if selected_language.is_empty() and selected_country.is_empty():
+		localization_menu.tooltip_text = localization_menu.get_item_text(0)
+
+
+func has_locale(locale: String) -> bool:
+	if locale.is_empty():
+		return false
+	
+	var parts: PackedStringArray = TranslationServer.standardize_locale(locale).split("_", false, 1)
+	var lang_code: String = parts[0]
+	var reg_code: String = parts[1] if parts.size() == 2 else ""
+	
+	for option_idx in range(localization_menu.item_count):
+		var metadata: Dictionary = localization_menu.get_item_metadata(option_idx)
+		if metadata["language_code"] == lang_code and metadata["country_code"] == reg_code:
+			return true
+	return false
+
+
+func remove_locale(locale: String) -> void:
+	if locale.is_empty():
+		return
+	
+	var parts: PackedStringArray = TranslationServer.standardize_locale(locale).split("_")
+	var lang: String = parts[0]
+	var reg: String = parts[1] if parts.size() == 2 else ""
+	
+	var current: int = localization_menu.selected
+	var new_index: int = current
+	var item_count: int = localization_menu.item_count 
+	
+	for item_idx in range(localization_menu.item_count):
+		var mtdt: Dictionary = localization_menu.get_item_metadata(item_idx)
+		
+		if mtdt["language_code"] != lang or mtdt["country_code"] != reg:
+			continue
+		localization_menu.remove_item(item_idx)
+		
+		if item_idx == current:
+			var new_idx: int = clampi(
+					item_idx - 1,
+					-1 if item_count == 1 else 0,
+					item_count - 2)
+			
+			if new_idx != -1:
+				localization_menu.select(new_idx)
+				current_locale = TranslationServer.standardize_locale(mtdt["language_code"] if mtdt["country_code"].is_empty() else mtdt["language_code"] + "_" + mtdt["country_code"])
+				localization_menu.tooltip_text = localization_menu.get_item_text(new_idx)
+			else:
+				current_locale = ""
+				localization_menu.tooltip_text = ""
+			
+			localization_menu.select(new_idx)
+		
+		return
+
+
+func set_graph_edit_visible(graph_visible: bool) -> void:
+	no_dialog_label.visible = not graph_visible
+	discourse_graph_edit.visible = graph_visible
+	if graph_visible and discourse_graph_edit.size != size:
+		discourse_graph_edit.size = size
+
+
+func set_conversation_options_enabled(are_enabled: bool) -> void:
+	var disabled: bool = !are_enabled
+	#node_menu.disabled = disabled
+	tool_menu.set_menu_conversation_options_disabled(1, disabled)
+	switch_localization.disabled = disabled
+	save_btn.disabled = disabled
+	localization_menu.disabled = disabled
+	play_current_dialog_btn.disabled = disabled
+	snap_distance_spn_bx.editable = are_enabled
+	
+	file_popup.set_item_conversation_options_disabled(
+			file_popup.get_item_index(
+					DiscourseFileMenuID.SAVE_DIALOG),
+					disabled)
+	
+	file_popup.set_item_conversation_options_disabled(
+			file_popup.get_item_index(
+					DiscourseFileMenuID.SET_LOCALE_GROUP),
+			disabled)
+	
+	file_popup.set_item_conversation_options_disabled(
+			file_popup.get_item_index(
+					DiscourseFileMenuID.PLAY_CURRENT_DIALOG),
+			disabled)
+	
+	file_popup.set_item_conversation_options_disabled(
+			file_popup.get_item_index(
+					DiscourseFileMenuID.CHECK_ISSUES),
+			disabled)
+	
+	file_popup.set_item_conversation_options_disabled(
+			file_popup.get_item_index(
+					DiscourseFileMenuID.CLOSE_DIALOG),
+					disabled)
+	
+	_conversation_options_disabled = disabled
+
+
+func load_conversation(conversation: EditorDiscourseDialog) -> bool:
+	if conversation == null:
+		discourse_graph_edit.clear_dialog_nodes()
+		return false
+	
+	# -----------------------------
+	var needs_resaving: bool = false
+	discourse_graph_edit.clear_dialog_nodes()
+	
+	var node_connections: Array[Dictionary] = []
+	var graph_map: Dictionary[String, DiscourseGraphNode] = {}
+	
+	var node_relationships: Dictionary[String, GraphFrame] = {}
+	
+	for frame_uuid:String in conversation.get_frames_uuids():
+		var frame_data: Dictionary = conversation.get_frame_data(frame_uuid)
+		var frame: GraphFrame = discourse_graph_edit.spawn_frame(frame_uuid, frame_data["position"])
+		frame.title = frame_data["title"]
+		frame.size = frame_data["size"]
+		frame.tint_color = frame_data["tint_color"]
+		for child_node:String in frame_data["nodes"]:
+			node_relationships[child_node] = frame
+	
+	for node_stnm_uuid:StringName in conversation.get_node_uuids():
+		var node_uuid: String = String(node_stnm_uuid)
+		var data: Dictionary = conversation.get_node_data(node_stnm_uuid, current_locale)
+		var metadata: Dictionary = data["metadata"]
+		var d_node: DiscourseGraphNode = discourse_graph_edit.spawn_node(data["type"], node_stnm_uuid, data)
+		
+		if d_node.node_type == DiscourseGraphNode.DialogueNodeType.CALLABLE or d_node.node_type == DiscourseGraphNode.DialogueNodeType.CALLABLE_RETURN:
+			if metadata.has("method"):
+				if not d_node.available_methods.has(metadata["method"]):
+					needs_resaving = true
+		elif d_node.node_type == DiscourseGraphNode.DialogueNodeType.SIGNAL:
+			if metadata.has("signal"):
+				if not d_node.available_signals.has(metadata["signal"]):
+					needs_resaving = true
+		
+		if node_relationships.has(node_uuid):
+			discourse_graph_edit.set_node_in_frame(node_stnm_uuid, node_relationships[node_uuid].get_frame_uuid())
+		graph_map[node_uuid] = d_node
+		var new_connections: Array[Dictionary] = discourse_graph_edit.get_connection_dictionary(
+				node_stnm_uuid,
+				data)
+		if not new_connections.is_empty():
+			node_connections.append_array(new_connections)
+		
+		if d_node.is_node_localized():
+			_on_localize_node(d_node)
+	
+	for output_connection in node_connections:
+		if not graph_map.has(output_connection["from"]) or not graph_map.has(output_connection["to"]):
+			continue
+		discourse_graph_edit.connect_discourse_nodes(
+				graph_map[output_connection["from"]].get_node_uuid(),
+				output_connection["from_port"],
+				graph_map[output_connection["to"]].get_node_uuid(),
+				output_connection["to_port"])
+	
+	if discourse_graph_edit.entry_node == null:
+		var en_node: DiscourseGraphNode = discourse_graph_edit.spawn_node(DiscourseGraphNode.DialogueNodeType.ENTRY)
+		en_node.name = &"Entry"
+	
+	discourse_graph_edit.zoom = conversation.zoom
+	discourse_graph_edit.scroll_offset = conversation.scroll_offset
+	
+	return needs_resaving
+
+
+func update_localization_display(data: Dictionary) -> void:
+	discourse_graph_edit.set_localization_data(data)
+
+
+func _locale_sort_custom(locale_a: Dictionary, locale_b: Dictionary):
+	var language_comp: int = locale_a["language_name"].naturalnocasecmp_to(locale_b["language_name"])
+	
+	if language_comp == 0:
+		return locale_a["country_code"].naturalnocasecmp_to(locale_b["country_code"]) < 0
+	else:
+		return language_comp < 0
+
+
+func _on_localization_selected(idx: int) -> void:
+	var old_locale: String = current_locale
+	
+	if idx == -1:
+		localization_menu.tooltip_text = ""
+		current_locale = ""
+	else:
+		var locale_data: Dictionary = localization_menu.get_item_metadata(idx)
+		current_locale = TranslationServer.standardize_locale(locale_data["language_code"] if locale_data["country_code"].is_empty() else locale_data["language_code"] + "_" + locale_data["country_code"])
+		localization_menu.tooltip_text = localization_menu.get_item_text(idx)
+	
+	_on_graph_editor_locale_changed(old_locale, current_locale)
+
+
+func _on_file_menu_id_pressed(id: int) -> void:
+	match id as DiscourseFileMenuID:
+		DiscourseFileMenuID.NEW_DIALOG:
+			_on_new_conversation_pressed()
+		DiscourseFileMenuID.OPEN_DIALOG:
+			_on_open_conversation_pressed()
+		DiscourseFileMenuID.SAVE_DIALOG:
+			_on_save_conversation_pressed()
+		DiscourseFileMenuID.CLOSE_DIALOG:
+			_on_menu_close_pressed()
+		DiscourseFileMenuID.CHANGE_LANGUAGE:
+			_on_change_default_language_pressed()
+		DiscourseFileMenuID.SET_LOCALE_GROUP:
+			_on_change_locale_group_pressed()
+		DiscourseFileMenuID.CHECK_ISSUES:
+			_on_get_issues_pressed()
+		DiscourseFileMenuID.PLAY_CURRENT_DIALOG:
+			_on_play_current_dialog_pressed()
+		DiscourseFileMenuID.DISPLAY_DIALOG_ID_FIELD:
+			#var menu: PopupMenu = file_menu.get_popup()
+			var idx: int = file_popup.get_item_index(id)
+			var display: bool = !file_popup.is_item_checked(idx)
+			file_popup.set_item_checked(idx, display)
+			
+			_on_display_dialog_id_toggled(display)
+
+
+func _on_create_dialog_id_pressed(id: int) -> void:
+	if id != 1000:
+		discourse_graph_edit.spawn_node_at_center(
+				id as DiscourseGraphNode.DialogueNodeType)
+	else:
+		discourse_graph_edit.spawn_frame_at_center()
+
+
+func _on_show_grid_toggled(toggle: bool) -> void:
+	discourse_graph_edit.show_grid = toggle
+
+
+func _on_grid_snapping_toggled(toggle: bool) -> void:
+	discourse_graph_edit.snapping_enabled = toggle
+
+
+func _on_snapping_distance_value_changed(distance: int) -> void:
+	discourse_graph_edit.snapping_distance = distance
+
+
+func _on_minimap_toggled(toggle: bool) -> void:
+	discourse_graph_edit.minimap_enabled = toggle
+
+
+func _on_sort_nodes_pressed() -> void:
+	discourse_graph_edit.arrange_nodes()
+
+
 func _on_display_dialog_id_toggled(id_line_visible: bool) -> void:
 	dialog_id_container.visible = id_line_visible
 
@@ -173,7 +666,7 @@ func _on_discourse_node_search_text_changed(text: String) -> void:
 
 
 func _on_discourse_node_activated(node: DiscourseGraphNode) -> void:
-	discourse_window.discourse_graph_edit.focus_graph_node(node)
+	discourse_graph_edit.focus_graph_node(node)
 
 
 func _on_change_locale_group_pressed() -> void:
@@ -209,8 +702,8 @@ func _on_conversation_close_pressed(dialog: EditorDiscourseDialog, save_required
 		unsaved_prompt.queue_free()
 	elif offset_changed:
 		if dialog == active_conversation:
-			dialog.scroll_offset = discourse_window.discourse_graph_edit.scroll_offset
-			dialog.zoom = discourse_window.discourse_graph_edit.zoom
+			dialog.scroll_offset = discourse_graph_edit.scroll_offset
+			dialog.zoom = discourse_graph_edit.zoom
 		ResourceSaver.save(dialog)
 	
 	if dialog == active_conversation:
@@ -227,7 +720,7 @@ func _on_conversation_close_pressed(dialog: EditorDiscourseDialog, save_required
 		if new_item == null:
 			active_conversation = null
 			set_conversation_active(false)
-			discourse_window.load_conversation(null)
+			load_conversation(null)
 			conversation_tree.active_unsaved = false
 		else:
 			var new_conv: EditorDiscourseDialog = new_item.get_metadata(0)["resource"]
@@ -244,8 +737,8 @@ func _on_menu_close_pressed() -> void:
 	if active_conversation == null:
 		return
 	
-	if discourse_window.discourse_graph_edit.focus_tween != null:
-		discourse_window.discourse_graph_edit.stop_focus_animation()
+	if discourse_graph_edit.focus_tween != null:
+		discourse_graph_edit.stop_focus_animation()
 	if conversation_tree.active_unsaved:
 		var unsaved_prompt: AcceptDialog = preload("res://addons/nexus_forge/dialogs/unsaved_dialog_script.gd").new()
 		add_child(unsaved_prompt)
@@ -258,8 +751,8 @@ func _on_menu_close_pressed() -> void:
 			return
 		unsaved_prompt.queue_free()
 	elif conversation_tree.active_offset_changed:
-		active_conversation.scroll_offset = discourse_window.discourse_graph_edit.scroll_offset
-		active_conversation.zoom = discourse_window.discourse_graph_edit.zoom
+		active_conversation.scroll_offset = discourse_graph_edit.scroll_offset
+		active_conversation.zoom = discourse_graph_edit.zoom
 		ResourceSaver.save(active_conversation)
 	
 	var item: TreeItem = conversation_tree.active_conversation_item
@@ -276,7 +769,7 @@ func _on_menu_close_pressed() -> void:
 	
 	if new_item == null:
 		set_conversation_active(false)
-		discourse_window.load_conversation(null)
+		load_conversation(null)
 		active_conversation = null
 		conversation_tree.active_unsaved = false
 	else:
@@ -326,11 +819,11 @@ func _on_change_default_language_pressed() -> void:
 	if result != "":
 		if not languages_tree.has_language(result):
 			languages_tree.create_language(result, true)
-			discourse_window.add_locale(result)
+			add_locale(result)
 			active_conversation.add_locale(result)
 			
 			
-		discourse_window.base_language = result
+		base_language = result
 		languages_tree.set_default_language(result)
 	window.queue_free()
 
@@ -356,10 +849,10 @@ func _on_conversation_changed(_arg = null) -> void:
 
 func _on_graph_editor_locale_changed(from: String, to: String) -> void:
 	if not from.is_empty():
-		discourse_window.discourse_graph_edit.update_localization_data(active_conversation, from)
+		discourse_graph_edit.update_localization_data(active_conversation, from)
 	if not to.is_empty():
 		var data: Dictionary = active_conversation.get_display_localization_data(to)
-		discourse_window.update_localization_display(data)
+		update_localization_display(data)
 
 
 func _on_side_editor_locale_changed(from: String, to: String) -> void:
@@ -383,7 +876,7 @@ func _on_side_editor_locale_changed(from: String, to: String) -> void:
 					text,
 					from)
 		
-		if active_node != null and from == discourse_window.current_locale:
+		if active_node != null and from == current_locale:
 			var uuid: StringName = active_node.get_node_uuid()
 			match active_node.node_type:
 				DiscourseGraphNode.DialogueNodeType.DIALOG:
@@ -467,7 +960,7 @@ func _on_localizer_node_selected(uuid: StringName) -> void:
 	
 	# Save previous node if needed.
 	if old_node != null:
-		var update_node: bool = active_locale == discourse_window.active_locale
+		var update_node: bool = active_locale == current_locale
 		# Save data to localization dictionary and update node if needed.
 		match old_node.node_type:
 			DiscourseGraphNode.DialogueNodeType.DIALOG:
@@ -535,20 +1028,20 @@ func _on_localize_node(node: DiscourseGraphNode) -> void:
 			active_conversation.set_text_entry(
 					node.get_node_uuid(),
 					node.get_dialog_text(),
-					discourse_window.current_locale)
+					current_locale)
 			localization_nodes_tree.create_dialog_node(node.name, node)
 		DiscourseGraphNode.DialogueNodeType.OPTIONS:
 			var text_options: Array[String] = node.get_options()
 			active_conversation.set_choices_entry(
 					node.get_node_uuid(),
 					text_options,
-					discourse_window.current_locale)
+					current_locale)
 			localization_nodes_tree.create_options_node(node.name, node)
 		DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
 			active_conversation.set_text_entry(
 					node.get_node_uuid(),
 					node.get_text(),
-					discourse_window.current_locale)
+					current_locale)
 			localization_nodes_tree.create_localized_text_node(node.name, node)
 
 
@@ -577,7 +1070,7 @@ func _on_node_delocalized(node: DiscourseGraphNode) -> void:
 					text)
 	
 	node.set_node_localized(false)
-	discourse_window.erase_localization(node.get_node_uuid())
+	#discourse_window.erase_localization(node.get_node_uuid())
 	
 	if localization_node_selected == node:
 		localization_node_selected = null
@@ -586,14 +1079,14 @@ func _on_node_delocalized(node: DiscourseGraphNode) -> void:
 func _on_switch_window_pressed() -> void:
 	var to_localizer: bool = $MainSplitContainer.visible
 	var localizer_locale: String = languages_tree.get_active_locale()
-	var on_same_locale: bool = localizer_locale == discourse_window.current_locale
+	var on_same_locale: bool = localizer_locale == current_locale
 	var active_node: DiscourseGraphNode = localization_nodes_tree.get_active_node()
 	
 	# --- This part is storing the data from the graphedit/localizer onto the file ---
 	if to_localizer: # If we travel to side window
 		# Update the active conversation from the node data if a localization exist.
-		if not discourse_window.current_locale.is_empty():
-			discourse_window.discourse_graph_edit.update_localization_data(active_conversation, discourse_window.current_locale)
+		if not current_locale.is_empty():
+			discourse_graph_edit.update_localization_data(active_conversation, current_locale)
 	else: # We travel to main window
 		# Update the active node on the active file if a lang and node is selected.
 		if not localizer_locale.is_empty() and active_node != null:
@@ -662,7 +1155,7 @@ func _on_switch_window_pressed() -> void:
 	else:
 		# If no active node was selected or no locale is selected we stop to prevent
 		# bad data assignation.
-		if active_node == null or discourse_window.current_locale.is_empty():
+		if active_node == null or current_locale.is_empty():
 			return
 		
 		if active_node.node_type == DiscourseGraphNode.DialogueNodeType.DIALOG:
@@ -684,7 +1177,7 @@ func _on_switch_window_pressed() -> void:
 func _on_region_created(language: String, region: String) -> void:
 	var locale_code: String = TranslationServer.standardize_locale(language if region.is_empty() else language + "_" + region)
 	
-	discourse_window.add_locale(locale_code)
+	add_locale(locale_code)
 	active_conversation.add_locale(locale_code)
 	_on_conversation_changed()
 
@@ -710,7 +1203,7 @@ func _on_new_lang_pressed() -> void:
 	
 	if result != "":
 		languages_tree.create_language(result)
-		discourse_window.add_locale(result)
+		add_locale(result)
 		if selected_key != null and selected_format != "":
 			save_current_phrase_key(true)
 		
@@ -720,12 +1213,12 @@ func _on_new_lang_pressed() -> void:
 
 
 func _on_locale_deleted(locale: String) -> void:
-	discourse_window.remove_locale(locale)
+	remove_locale(locale)
 	active_conversation.remove_locale(locale)
 
 
-func _on_issue_activated(issue_node: DiscourseGraphNode) -> void:
-	discourse_window.discourse_graph_edit.focus_graph_node(issue_node)
+func _on_issue_activated(issue_uuid: StringName) -> void:
+	discourse_graph_edit.focus_graph_node(issue_uuid)
 
 
 func _on_hide_issues_pressed() -> void:
@@ -737,7 +1230,7 @@ func _on_hide_issues_pressed() -> void:
 
 func _on_get_issues_pressed() -> void:
 	issues_tree.clear_issues()
-	var issues: Array[Dictionary] = discourse_window.discourse_graph_edit.get_issues()
+	var issues: Array[Dictionary] = discourse_graph_edit.get_issues()
 	if not error_container.visible:
 		error_container.visible = true
 		discourse_split_container.dragging_enabled = true
@@ -795,19 +1288,19 @@ func load_dialog_files(files: Array[String]) -> void:
 func save_current_dialog_to_memory() -> void:
 	# Saves the current unsaved node data to the file and assings the localized
 	# data to the current selected dropdown locale.
-	var new_dialog: EditorDiscourseDialog = discourse_window.discourse_graph_edit.get_conversation_data(active_conversation, discourse_window.current_locale)
+	discourse_graph_edit.update_conversation_file(active_conversation, current_locale)
 	
-	new_dialog.base_language = languages_tree.get_base_language()
-	new_dialog.zoom = discourse_window.discourse_graph_edit.zoom
-	new_dialog.scroll_offset = discourse_window.discourse_graph_edit.scroll_offset
-	new_dialog.node_structure = discourse_nodes_tree.get_folder_structure()
-	new_dialog.dialog_id = dialog_id_ln_edt.text.strip_edges()
+	active_conversation.base_language = languages_tree.get_base_language()
+	active_conversation.zoom = discourse_graph_edit.zoom
+	active_conversation.scroll_offset = discourse_graph_edit.scroll_offset
+	active_conversation.node_structure = discourse_nodes_tree.get_folder_structure()
+	active_conversation.dialog_id = dialog_id_ln_edt.text.strip_edges()
 
 
 func _on_conversation_selected(dialog: EditorDiscourseDialog) -> void:
-	if not discourse_window.are_conversation_options_enabled():
-		discourse_window.set_graph_edit_visible(true)
-		discourse_window.set_conversation_options_enabled(true)
+	if not _conversation_options_disabled:
+		set_graph_edit_visible(true)
+		set_conversation_options_enabled(true)
 		discourse_nodes_tree.get_root().collapsed = false
 		new_folder_button.disabled = false
 		dialog_id_ln_edt.editable = true
@@ -902,7 +1395,7 @@ func _on_new_conversation_pressed() -> void:
 	var result: Array = await file_saver.dialog_finished
 	
 	if result[0]:
-		var wait_visible: bool = discourse_window.no_dialog_label.visible
+		var wait_visible: bool = no_dialog_label.visible
 		listen_offset = false
 		if active_conversation != null:
 			save_current_dialog_to_memory()
@@ -914,16 +1407,16 @@ func _on_new_conversation_pressed() -> void:
 				new_conv,
 				result[1])
 		new_conv.resource_path = result[1]
-		if not discourse_window.are_conversation_options_enabled():
-			discourse_window.set_graph_edit_visible(true)
-			discourse_window.set_conversation_options_enabled(true)
+		if _conversation_options_disabled:
+			set_graph_edit_visible(true)
+			set_conversation_options_enabled(true)
 			discourse_nodes_tree.get_root().collapsed = false
 			new_folder_button.disabled = false
 			dialog_id_ln_edt.editable = true
 		add_conversation(new_conv, true)
 		
-		discourse_window.discourse_graph_edit.fix_scroll_offset_for_new(
-				discourse_window.size)
+		discourse_graph_edit.reset_scroll_offset(
+				$MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/GraphPanel.size)
 		if wait_visible:
 			await get_tree().process_frame
 		listen_offset = true
@@ -942,10 +1435,10 @@ func _on_open_conversation_pressed() -> void:
 		listen_offset = false
 		var resource: Resource = load(result[1])
 		if resource != null and resource is EditorDiscourseDialog:
-			var wait_visible: bool = discourse_window.no_dialog_label.visible
-			if not discourse_window.are_conversation_options_enabled():
-				discourse_window.set_graph_edit_visible(true)
-				discourse_window.set_conversation_options_enabled(true)
+			var wait_visible: bool = no_dialog_label.visible
+			if _conversation_options_disabled:
+				set_graph_edit_visible(true)
+				set_conversation_options_enabled(true)
 				discourse_nodes_tree.get_root().collapsed = false
 				new_folder_button.disabled = false
 				dialog_id_ln_edt.editable = true
@@ -991,9 +1484,9 @@ func _on_play_current_dialog_pressed() -> void:
 
 
 func plugin_file_selected(file: EditorDiscourseDialog):
-	if not discourse_window.are_conversation_options_enabled():
-		discourse_window.set_graph_edit_visible(true)
-		discourse_window.set_conversation_options_enabled(true)
+	if _conversation_options_disabled:
+		set_graph_edit_visible(true)
+		set_conversation_options_enabled(true)
 		discourse_nodes_tree.get_root().collapsed = false
 		new_folder_button.disabled = false
 		dialog_id_ln_edt.editable = true
@@ -1012,16 +1505,18 @@ func plugin_file_selected(file: EditorDiscourseDialog):
 
 
 func reload_signals() -> void:
-	discourse_window.discourse_graph_edit.update_signals()
+	discourse_graph_edit.update_signals()
 
 
 func reload_methods() -> void:
-	discourse_window.discourse_graph_edit.update_methods()
+	discourse_graph_edit.update_methods()
 
 
 #region Discourse dialog node tree
 func _on_discourse_node_created(node: DiscourseGraphNode) -> void:
 	discourse_nodes_tree.create_node(node)
+	if node.node_type == DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
+		_on_localize_node(node)
 
 
 
@@ -1083,14 +1578,14 @@ func _on_discourse_item_edited(uuid: StringName, type: DiscourseGraphNode.Dialog
 
 # Loads a conversation into discourse. Also what do I mean by "set_active"?
 # THe point of OPENING it is to set active. Past me...wtf?!
-func open_conversation(conversation: EditorDiscourseDialog, set_active: bool = true) -> bool:
+func open_conversation(conversation: EditorDiscourseDialog) -> bool:
 	dialog_id_ln_edt.text = conversation.dialog_id
 	
 	# Clears discourse_nodes_tree's items
 	discourse_nodes_tree.clear_tree()
 	
 	# This fills the discourse_nodes_tree with items
-	var reload_needed: bool = discourse_window.load_conversation(conversation) # Load conversation
+	var reload_needed: bool = load_conversation(conversation) # Load conversation
 	
 	# We put them in a dictionary for sorting.
 	if not conversation.node_structure.is_empty():
@@ -1120,7 +1615,7 @@ func open_conversation(conversation: EditorDiscourseDialog, set_active: bool = t
 	
 	if issues_tree.has_issues():
 		issues_tree.clear_issues()
-	var graphs_locale: String = discourse_window.current_locale
+	var graphs_locale: String = current_locale
 	var side_locale: String = languages_tree.get_active_locale()
 	
 	for localized_key in conversation.format_strings.keys():
@@ -1128,22 +1623,21 @@ func open_conversation(conversation: EditorDiscourseDialog, set_active: bool = t
 		add_new_phrase(localized_key, localized_text)
 	
 	for language in conversation.locale_map.keys():
-		if not discourse_window.has_locale(language):
-			discourse_window.add_locale(language)
+		if not has_locale(language):
+			add_locale(language)
 		if not languages_tree.has_locale(language):
 			languages_tree.create_language(language)
 		for region in conversation.locale_map[language].keys():
 			if not languages_tree.has_locale(language, region):
 				languages_tree.create_region(language, region)
 			var lang_code: String = language.to_lower() + "_" + region.to_upper()
-			if not discourse_window.has_locale(lang_code):
-				discourse_window.add_locale(lang_code)
+			if not has_locale(lang_code):
+				add_locale(lang_code)
 	
 	case_box_container.visible = false
 	key_box_container.visible = languages_tree.is_lang_selected()
 	
-	if set_active:
-		active_conversation = conversation
+	active_conversation = conversation
 	
 	return reload_needed
 
@@ -1209,22 +1703,21 @@ func save_current_dialog() -> void:
 	if $LocalizationContainer.visible and localization_nodes_tree.get_active_node() != null:
 		save_localizer_data()
 	if not _unsaved and conversation_tree.active_offset_changed:
-		active_conversation.scroll_offset = discourse_window.discourse_graph_edit.scroll_offset
-		active_conversation.zoom = discourse_window.discourse_graph_edit.zoom
+		active_conversation.scroll_offset = discourse_graph_edit.scroll_offset
+		active_conversation.zoom = discourse_graph_edit.zoom
 		active_conversation.save()
 		conversation_tree.active_offset_changed = false
 		return
 	
-	# Technically new_dialog is unneded as giving it an active_conversation will return that same one.
-	var new_dialog: EditorDiscourseDialog = discourse_window.discourse_graph_edit.get_conversation_data(active_conversation, discourse_window.current_locale)
+	discourse_graph_edit.update_conversation_file(active_conversation, current_locale)
 
 	var locale_map: Dictionary[String, Dictionary] = languages_tree.as_map()
 	
-	new_dialog.zoom = discourse_window.discourse_graph_edit.zoom
-	new_dialog.scroll_offset = discourse_window.discourse_graph_edit.scroll_offset
-	new_dialog.node_structure = discourse_nodes_tree.get_folder_structure()
-	new_dialog.locale_map = locale_map.duplicate(true)
-	new_dialog.dialog_id = dialog_id_ln_edt.text.strip_edges()
+	active_conversation.zoom = discourse_graph_edit.zoom
+	active_conversation.scroll_offset = discourse_graph_edit.scroll_offset
+	active_conversation.node_structure = discourse_nodes_tree.get_folder_structure()
+	active_conversation.locale_map = locale_map.duplicate(true)
+	active_conversation.dialog_id = dialog_id_ln_edt.text.strip_edges()
 	
 	_unsaved = false
 	ResourceSaver.save(active_conversation)
@@ -1237,18 +1730,18 @@ func save_all_dialogs() -> void:
 		save_localizer_data()
 	
 	if active_conversation != null:
-		active_conversation.zoom = discourse_window.discourse_graph_edit.zoom
-		active_conversation.scroll_offset = discourse_window.discourse_graph_edit.scroll_offset
+		active_conversation.zoom = discourse_graph_edit.zoom
+		active_conversation.scroll_offset = discourse_graph_edit.scroll_offset
 	
 	# Save all unsaved conversations
 	for unsaved_conversation:EditorDiscourseDialog in conversation_tree.get_unsaved_conversation_resources():
 		# Including our active one
 		if unsaved_conversation == active_conversation:
 			save_phrase_keys(true)
-			var new_dialog: EditorDiscourseDialog = discourse_window.discourse_graph_edit.get_conversation_data(active_conversation, discourse_window.current_locale)
-			new_dialog.dialog_id = dialog_id_ln_edt.text.strip_edges()
+			discourse_graph_edit.update_conversation_file(active_conversation, current_locale)
+			active_conversation.dialog_id = dialog_id_ln_edt.text.strip_edges()
 			
-			new_dialog.node_structure = discourse_nodes_tree.get_folder_structure()
+			active_conversation.node_structure = discourse_nodes_tree.get_folder_structure()
 			
 			ResourceSaver.save(active_conversation)
 		else:
@@ -1260,8 +1753,8 @@ func save_all_dialogs() -> void:
 
 func set_conversation_active(is_active: bool) -> void:
 	discourse_nodes_tree.get_root().collapsed = not is_active
-	discourse_window.set_graph_edit_visible(is_active)
-	discourse_window.set_conversation_options_enabled(is_active)
+	set_graph_edit_visible(is_active)
+	set_conversation_options_enabled(is_active)
 	new_folder_button.disabled = not is_active
 
 
@@ -1271,8 +1764,8 @@ func has_unsaved_files() -> bool:
 			return true
 	return false
 
-#region Phrases
 
+#region Phrases
 
 func _on_scroll_dragged(offset: int, container: HSplitContainer) -> void:
 	container.split_offset = offset
@@ -1814,7 +2307,6 @@ func save_phrase_keys(fix_keys: bool = false) -> void:
 		_on_key_line_text_changed()
 #endregion
 
-
 func filesystem_resource_removed(resource: Resource) -> void:
 	if resource == null:
 		return
@@ -1831,9 +2323,12 @@ func close_active_conversation() -> void:
 
 
 func display_dialog_id_checked() -> bool:
-	return discourse_window.is_dialog_display_checked()
+	var idx: int = file_popup.get_item_index(DiscourseFileMenuID.DISPLAY_DIALOG_ID_FIELD)
+	return file_popup.is_item_checked(idx)
 
 
 func set_display_dialog_id_checked(set_checked: bool) -> void:
-	discourse_window.set_dialog_display_checked(set_checked)
+	var idx: int = file_popup.get_item_index(DiscourseFileMenuID.DISPLAY_DIALOG_ID_FIELD)
+	file_popup.set_item_checked(idx, set_checked)
+	
 	dialog_id_container.visible = set_checked

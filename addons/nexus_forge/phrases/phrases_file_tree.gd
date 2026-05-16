@@ -30,6 +30,10 @@ func _on_button_clicked(item: TreeItem, _column: int, id: int, mouse_button_inde
 
 func get_open_files() -> Array[String]:
 	var paths: Array[String] = []
+	
+	if get_root() == null:
+		return paths
+	
 	for item in get_root().get_children():
 		paths.append(item.get_metadata(0)["resource"].resource_path)
 	return paths
