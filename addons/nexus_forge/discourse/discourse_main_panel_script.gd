@@ -101,8 +101,8 @@ var file_popup: PopupMenu = null
 @onready var snap_distance_spn_bx: SpinBox = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/SnapDistanceSpnBx
 
 
-#func _ready() -> void:
-	#ready_plugin()
+func _ready() -> void:
+	ready_plugin()
 
 
 func ready_plugin() -> void:
@@ -317,7 +317,7 @@ func ready_plugin() -> void:
 	
 	discourse_graph_edit.dialog_changed.connect(_on_conversation_changed)
 	discourse_graph_edit.localization_enabled.connect(_on_localize_node)
-	#discourse_graph_edit.localized_text_created.connect(_on_localize_node)
+	discourse_graph_edit.nodes_removed.connect(_on_nodes_removed)
 	discourse_graph_edit.node_created.connect(_on_discourse_node_created)
 	
 	discourse_graph_edit.discourse_node_selected.connect(_on_discourse_node_selected)
@@ -592,16 +592,16 @@ func _on_display_dialog_id_toggled(id_line_visible: bool) -> void:
 	dialog_id_container.visible = id_line_visible
 
 
-func _on_discourse_node_selected(node: DiscourseGraphNode) -> void:
-	discourse_nodes_tree.select_node(node)
+func _on_discourse_node_selected(node_uuid: StringName) -> void:
+	discourse_nodes_tree.select_node(node_uuid)
 
 
 func _on_discourse_node_search_text_changed(text: String) -> void:
 	discourse_nodes_tree.search_for_node(text.strip_edges())
 
 
-func _on_discourse_node_activated(node: DiscourseGraphNode) -> void:
-	discourse_graph_edit.focus_graph_node(node)
+func _on_discourse_node_activated(node_uuid: StringName) -> void:
+	discourse_graph_edit.focus_graph_node(node_uuid)
 
 
 func _on_change_locale_group_pressed() -> void:
@@ -1496,9 +1496,14 @@ func set_up_node_structure(structure: Array, level: TreeItem, _map: Dictionary[S
 			set_up_node_structure(item["items"], new_folder, _map)
 
 
-func _on_discourse_item_edited(uuid: StringName, type: DiscourseGraphNode.DialogueNodeType, new_name: String, localized: bool) -> void:
-	if localized:
-		match type:
+func _on_discourse_item_edited(uuid: StringName, new_name: String) -> void:
+	var node: DiscourseGraphNode = discourse_graph_edit.get_discourse_node(uuid)
+	var new_named: StringName = StringName(new_name)
+	if node == null or node.name == new_named:
+		return
+	node.name = new_named
+	if node.is_node_localized():
+		match node.node_type:
 			DiscourseGraphNode.DialogueNodeType.DIALOG:
 				localization_nodes_tree.rename_dialog_node(uuid, new_name)
 			DiscourseGraphNode.DialogueNodeType.OPTIONS:
@@ -1772,6 +1777,11 @@ func has_unsaved_files() -> bool:
 		if item.get_metadata(0)["unsaved"]:
 			return true
 	return false
+
+
+func _on_nodes_removed(nodes_data: Dictionary) -> void:
+	for node_uuid in nodes_data.keys():
+		discourse_nodes_tree.remove_dialog_node(node_uuid)
 
 
 #region Phrases

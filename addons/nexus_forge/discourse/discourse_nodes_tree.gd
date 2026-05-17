@@ -2,9 +2,9 @@
 extends Tree
 
 
-signal node_activated(node: DiscourseGraphNode)
+signal node_activated(node: StringName)
 signal directory_edited
-signal item_renamed(uuid: StringName, type: DiscourseGraphNode.DialogueNodeType, new_name: String, localized: bool)
+signal item_renamed(uuid: StringName, new_name: String)
 
 
 const DATA_COLOR: Color = Color(0.557, 0.937, 0.592)
@@ -121,14 +121,13 @@ func _on_discourse_item_edited() -> void:
 	var is_node: bool = edited.get_metadata(0)["is_node"]
 	
 	if is_node:
-		var node: DiscourseGraphNode = edited.get_metadata(0)["node"]
-		if edited.get_text(0) == String(node.name):
-			return
-		
+		var uuid: StringName = edited.get_metadata(0)["uuid"]
+		#if edited.get_text(0) == String(node.name):
+			#return
 		var new_name: String = get_unique_name_for_node(edited.get_text(0), edited)#get_unique_name_on_tree(edited.get_text(0), edited)
-		node.name = StringName(new_name)
+		#node.name = StringName(new_name)
 		edited.set_text(0, new_name)
-		item_renamed.emit(node.get_node_uuid(), node.node_type, new_name, node.is_node_localized())
+		item_renamed.emit(uuid, new_name)
 	else:
 		var new_name: String = get_unique_name_on_tree(
 				edited.get_text(0),
@@ -144,7 +143,7 @@ func _on_discourse_node_activated() -> void:
 		return
 	
 	#var node: DiscourseGraphNode = active.get_metadata(0)["node"]
-	node_activated.emit(active.get_metadata(0)["node"])
+	node_activated.emit(active.get_metadata(0)["uuid"])
 	#discourse_window.discourse_graph_edit.focus_graph_node(node)
 	#_on_graph_edit_offset_changed(Vector2.ZERO)
 
@@ -164,7 +163,7 @@ func get_folder_structure(_from: TreeItem = get_root()) -> Array[Dictionary]:
 		if item.get_metadata(0)["is_node"]:
 			structure.append({
 				"is_node": true,
-				"uuid": item.get_metadata(0)["node"].get_node_uuid()})
+				"uuid": item.get_metadata(0)["uuid"]})
 		else:
 			#structure["folders"].append(get_folder_structure(item))
 			structure.append({
@@ -209,32 +208,32 @@ func create_node(node: DiscourseGraphNode, on: TreeItem = get_root()) -> void:
 			false,
 			"Edit ID")
 	
-	new_item.set_metadata(0, {"node": node, "is_node": true, "uuid": node.get_node_uuid()})
+	new_item.set_metadata(0, {"is_node": true, "uuid": node.get_node_uuid()})
 	
 	nodes.append(new_item)
 	#if node == discourse_window.discourse_graph_edit.entry_node and new_item.get_index() != 0:
 		#new_item.move_before(new_item.get_parent().get_first_child())
 
 
-func select_node(node: DiscourseGraphNode) -> void:
+func select_node(node_uuid: StringName) -> void:
 	for root_item in get_root().get_children():
-		if root_item.get_metadata(0)["is_node"] and root_item.get_metadata(0)["node"] == node:
+		if root_item.get_metadata(0)["is_node"] and root_item.get_metadata(0)["uuid"] == node_uuid:
 			ensure_expanded(root_item)
 			root_item.select(0)
 			ensure_cursor_is_visible()
 			return
-		elif _select_on_children(root_item, node):
+		elif _select_on_children(root_item, node_uuid):
 			return
 
 
-func _select_on_children(on_tree: TreeItem, node: DiscourseGraphNode) -> bool:
+func _select_on_children(on_tree: TreeItem, node_uuid: StringName) -> bool:
 	for child in on_tree.get_children():
-		if child.get_metadata(0)["is_node"] and child.get_metadata(0)["node"] == node:
+		if child.get_metadata(0)["is_node"] and child.get_metadata(0)["uuid"] == node_uuid:
 			ensure_expanded(child)
 			child.select(0)
 			ensure_cursor_is_visible()
 			return true
-		elif _select_on_children(child, node):
+		elif _select_on_children(child, node_uuid):
 			return true
 	return false
 
@@ -247,7 +246,7 @@ func ensure_expanded(node: TreeItem) -> void:
 		current_node = current_node.get_parent()
 
 
-func remove_dialog_node(uuid: StringName, _on: TreeItem = get_root()) -> bool:
+func remove_dialog_node(uuid: StringName) -> bool:
 	for node_idx in range(nodes.size()):
 		var meta: Dictionary = nodes[node_idx].get_metadata(0)
 		if not meta["is_node"] or meta["uuid"] != uuid:

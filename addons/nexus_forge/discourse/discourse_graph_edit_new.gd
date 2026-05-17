@@ -12,7 +12,7 @@ signal localization_enabled(node: DiscourseGraphNode)
 # When a node is deleted
 signal node_deleted(uuid: StringName)
 # When a node is selected. Useful for highlithing the node in the menu tree.
-signal discourse_node_selected(node: DiscourseGraphNode)
+signal discourse_node_selected(node_uuid: StringName)
 # When nodes need to be duplicated
 signal node_duplication_requested(nodes: Array[DiscourseGraphNode])
 # When a node movement finished and the movement it made. If substracted from
@@ -363,6 +363,7 @@ func _ready() -> void:
 	cut_nodes_request.connect(_on_cut_nodes_requested)
 	paste_nodes_request.connect(_on_paste_nodes_requested)
 	duplicate_nodes_request.connect(_on_graph_edit_keyboard_duplicate_pressed)
+	delete_nodes_request.connect(_on_delete_nodes_request)
 	
 	connection_request.connect(_on_connection_request, CONNECT_DEFERRED)
 	connection_popup.index_pressed.connect(_on_popup_index_pressed.bind(connection_popup))
@@ -746,8 +747,20 @@ func remove_node(node_uuid: StringName) -> void:
 
 
 func remove_nodes(node_uuids: Array[StringName]) -> void:
-	for item in node_uuids:
+	if node_uuids.is_empty():
+		return
+	
+	var status_data: Dictionary = {}
+	
+	for node in node_uuids:
+		if not graph_nodes.has(node):
+			continue
+		status_data[node] = graph_nodes[node].get_node_state()
+	
+	for item in status_data.keys():
 		remove_node(item)
+	
+	nodes_removed.emit(status_data)
 
 
 func remove_frame(frame_uuid: StringName) -> void:
@@ -1145,6 +1158,24 @@ func disconnect_all_node_connections(for_uuid: StringName) -> void:
 #region UI Actions / Listeners
 
 
+func _on_delete_nodes_request(nodes: Array[StringName]) -> void:
+	var nodes_to_remove: Dictionary = {}
+	var node_uuids: Array[StringName] = []
+	for selected_node in nodes:
+		var node: Control = get_node(NodePath(selected_node))
+		if node is DiscourseGraphNode:
+			if node.node_type == DiscourseGraphNode.DialogueNodeType.ENTRY:
+				continue
+			nodes_to_remove[node.get_node_uuid()] = node.get_node_state()
+			node_uuids.append(node.get_node_uuid())
+	
+	if node_uuids.is_empty():
+		return
+	
+	remove_nodes(node_uuids)
+	nodes_removed.emit(nodes_to_remove)
+
+
 func set_node_in_frame(node_uuid: StringName, frame: StringName) -> void:
 	if not graph_nodes.has(node_uuid) or not node_frames.has(frame) or get_element_frame(graph_nodes[node_uuid].name) == node_frames[frame]:
 		return
@@ -1388,9 +1419,9 @@ func _on_connection_from_empty(to_node: StringName, to_port: int, release_positi
 	show_connection_popup_at(get_global_mouse_position())
 
 
-func _on_node_selected(node: GraphNode) -> void:
+func _on_node_selected(node: DiscourseGraphNode) -> void:
 	if 1 == get_selected_graph_nodes(true).size():
-		discourse_node_selected.emit(node)
+		discourse_node_selected.emit(node.get_node_uuid())
 
 
 # TODO: Check if this triggers with panels.
@@ -1459,7 +1490,10 @@ func _on_localize_node_toggled(is_pressed: bool, node: DiscourseGraphNode) -> vo
 
 
 func _close_requested(node: DiscourseGraphNode) -> void:
+	var node_data: Dictionary = {
+		node.get_node_uuid(): node.get_node_state()}
 	remove_node(node.get_node_uuid())
+	nodes_removed.emit(node_data)
 	dialog_changed.emit()
 
 
