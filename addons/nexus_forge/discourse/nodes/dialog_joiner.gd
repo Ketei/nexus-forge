@@ -8,6 +8,7 @@ func _post_init() -> void:
 	name = &"DialogMerge"
 	title = "Dialog Merge"
 	size = Vector2(200.0, 79.0)
+	custom_minimum_size.y = 79.0
 	node_type = DialogueNodeType.DIALOG_MERGE
 	parent_mode = PortMode.INPUT
 	parent_port = 0
@@ -49,21 +50,49 @@ func _on_input_connected(input_port: int, _from_node: DiscourseGraphNode, _from_
 
 
 func _on_input_disconnected(input_port: int, _from_node: DiscourseGraphNode, _from_port: int) -> void:
-	if input_port == _highest_port_connected:
-		var target_remove: StringName = &"merge_" + StringName(str(input_port + 1))
-		remove_field(target_remove)
+	if input_port != _highest_port_connected:
+		return
+	
+	remove_unused_fields()
+	
+	if _highest_port_connected == 0 and not has_any_input(0):
+		_highest_port_connected = -1
+	
+	var target_remove: StringName = &"merge_" + StringName(str(input_port + 1))
+	remove_field(target_remove)
+	_highest_port_connected -= 1
+	
+	for port_idx in range(_highest_port_connected, -1, -1):
+		if port_idx == 0:
+			_highest_port_connected = 0 if has_any_input(0) else -1
+			break
+		elif not has_any_input(port_idx):
+			var field_id: StringName = &"merge_" + StringName(str(port_idx))
+			remove_field(field_id, 29)
+		else:
+			_highest_port_connected = port_idx
+			break
+	update_size.call_deferred()
+
+
+func remove_unused_fields() -> void:
+	var last_port: int = -1
+	var target_fields: Array[StringName] = []
+	for port in range(get_child_count() - 1, 0, -1):
+		if has_any_input(port - 1):
+			last_port = port + 1
+			break
+		var id: StringName = StringName("merge_" + str(port))
+		target_fields.append(id)
 		_highest_port_connected -= 1
-		
-		for port_idx in range(_highest_port_connected, -1, -1):
-			if port_idx == 0:
-				_highest_port_connected = 0 if has_any_input(0) else -1
-				break
-			elif not has_any_input(port_idx):
-				var field_id: StringName = &"merge_" + StringName(str(port_idx))
-				remove_field(field_id, 29)
-			else:
-				_highest_port_connected = port_idx
-				break
+	
+	remove_fields(target_fields, -1)
+	
+	update_size.call_deferred()
+
+
+func update_size() -> void:
+	size.y = 0
 
 
 func _get_node_data() -> Dictionary:

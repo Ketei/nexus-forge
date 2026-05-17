@@ -7,6 +7,7 @@ func _post_init() -> void:
 	name = &"Metadata"
 	title = "Metadata"
 	size = Vector2(250.0, 121.0)
+	custom_minimum_size.y = 121.0
 	graph_icon = preload("res://addons/nexus_forge/icons/metadata_icon.svg")
 	parent_mode = PortMode.OUTPUT
 	parent_port = 0

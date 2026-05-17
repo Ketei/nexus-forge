@@ -258,6 +258,7 @@ func _get_node_data() -> Dictionary:
 func _set_node_data(data: Dictionary) -> void:
 	var data_name = data.get("name")
 	var metadata = data.get("metadata")
+	
 	if typeof(data_name) == TYPE_STRING_NAME:
 		name = data_name
 	
@@ -950,8 +951,8 @@ func remove_field(field_id: StringName, size_change: int = 0) -> void:
 	else:
 		size.y -= node_size.y + (get_theme_constant("separation") if 0 < get_child_count() else 0)
 		#deferred_resizing(node.size.y + (get_theme_constant("separation") if 0 < get_child_count() else 0))
-	node.free()
-	#node.queue_free()
+	#node.free()
+	node.queue_free()
 	#node.visible = false
 
 

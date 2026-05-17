@@ -38,7 +38,8 @@ const DATA: Array[DialogParser.NodeTypes] = [
 		DialogParser.NodeTypes.VARIABLE_GET,
 		DialogParser.NodeTypes.RANDOM_VALUE,
 		DialogParser.NodeTypes.DATA_EVENT,
-		DialogParser.NodeTypes.LOCALIZED_TEXT]
+		DialogParser.NodeTypes.LOCALIZED_TEXT,
+		DialogParser.NodeTypes.METADATA]
 	
 const SETTINGS: Array[DialogParser.NodeTypes] = [
 		DialogParser.NodeTypes.SETTINGS_CHARACTER,

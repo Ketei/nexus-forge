@@ -398,9 +398,10 @@ func _ready() -> void:
 			ConnectionType.VAR_STRING,
 			ConnectionType.VAR_FORWARD)
 	
-	entry_node = new_dialog_node(DialogNodes.ENTRY)
-	add_child(entry_node)
-	graph_nodes[entry_node.get_node_uuid()] = entry_node
+	entry_node = spawn_node(DialogNodes.ENTRY)
+	#new_dialog_node(DialogNodes.ENTRY)
+	#add_child(entry_node)
+	#graph_nodes[entry_node.get_node_uuid()] = entry_node
 	
 	begin_node_move.connect(_on_begin_node_move)
 	end_node_move.connect(_on_end_node_move)
@@ -414,8 +415,10 @@ func _ready() -> void:
 	connection_request.connect(_on_connection_request, CONNECT_DEFERRED)
 	connection_popup.index_pressed.connect(_on_popup_index_pressed.bind(connection_popup))
 	connection_drag_started.connect(_on_connection_drag_started, CONNECT_DEFERRED)
-	connection_to_empty.connect(_on_connection_to_empty)
-	connection_from_empty.connect(_on_connection_from_empty)
+	
+	connection_to_empty.connect(_on_connection_to_empty, CONNECT_DEFERRED)
+	connection_from_empty.connect(_on_connection_from_empty, CONNECT_DEFERRED)
+	connection_drag_ended.connect(_on_connection_drag_ended, CONNECT_DEFERRED)
 
 
 ## Creates a dialog node ready to be added. Connected to all relevant signals
@@ -538,8 +541,8 @@ func spawn_node(node_type: DialogNodes, uuid: StringName = &\"\", data: Dictiona
 		var overwrite_data: Dictionary = new_node._get_node_data()
 		overwrite_data.merge(data, true)
 		new_node._set_node_data(overwrite_data)
-	graph_nodes[new_node.get_node_uuid()] = new_node
 	add_child(new_node)
+	graph_nodes[new_node.get_node_uuid()] = new_node
 	return new_node
 
 
@@ -805,16 +808,22 @@ func remove_frame(frame_uuid: StringName) -> void:
 	frame.queue_free()
 
 
-func clear_dialog_nodes() -> void:
+func clear_dialog_nodes(recreate_entry: bool = true) -> void:
 	clear_connections()
-	for node in graph_nodes.values():
+	for node:DiscourseGraphNode in graph_nodes.values():
+		remove_child(node)
 		node.queue_free()
 	for frame in node_frames.values():
+		remove_child(frame)
 		frame.queue_free()
 	graph_nodes.clear()
 	node_frames.clear()
 	anchor_pointers.clear()
 	entry_node = null
+	if recreate_entry:
+		entry_node = spawn_node(DialogNodes.ENTRY, &\"\", {\"name\": &\"Entry\"})
+		print(\"Entry Name: \", entry_node.name)
+		node_created.emit(entry_node)
 
 #endregion
 
@@ -1100,10 +1109,12 @@ func connect_discourse_nodes(from_node_uuid: StringName, from_port: int, to_node
 	var from_type: int = from_graph.get_slot_type_right(from_graph.get_output_port_slot(from_port))
 	var to_type: int = to_graph.get_slot_type_left(to_graph.get_input_port_slot(to_port))
 	
+	var from_port_ghost_disconnect: bool = _pending_connection_change.has_all([\"from_node\", \"from_port\"]) and _pending_connection_change[\"from_node\"] == from_node_uuid and _pending_connection_change[\"from_port\"] == from_port
+	
 	var can_connect: bool = \\
-			from_graph.is_port_available(
+			(from_graph.is_port_available(
 					DiscourseGraphNode.PortMode.OUTPUT,
-					from_port) and\\
+					from_port) or from_port_ghost_disconnect) and\\
 			to_graph.is_port_available(
 					DiscourseGraphNode.PortMode.INPUT,
 					to_port) and \\
@@ -1156,7 +1167,9 @@ func disconnect_all_node_connections(for_uuid: StringName) -> void:
 	var target: DiscourseGraphNode = graph_nodes[for_uuid]
 	
 	for input_port in range(target._input_nodes.size()):
-		for connection_idx in range(target._input_nodes[input_port][\"connections\"].size()):
+		if not target.has_any_input(input_port):
+			continue
+		for connection_idx in range(target._input_nodes[input_port][\"connections\"].size() - 1, -1, -1):
 			var input_target: DiscourseGraphNode = target.get_node_connected_to_port(PortFlow.INPUT, input_port, connection_idx)
 			disconnect_discourse_nodes(
 					input_target.get_node_uuid(),
@@ -1164,7 +1177,9 @@ func disconnect_all_node_connections(for_uuid: StringName) -> void:
 					target.get_node_uuid(),
 					input_port)
 	
-	for output_port in range(target._output_nodes.size()):
+	for output_port in range(target._output_nodes.size() - 1, -1, -1):
+		if not target.has_any_output(output_port):
+			continue
 		for connection_idx in range(target._output_nodes[output_port][\"connections\"].size()):
 			var output_target: DiscourseGraphNode = target.get_node_connected_to_port(PortFlow.OUTPUT, output_port, connection_idx)
 			disconnect_discourse_nodes(
@@ -1284,7 +1299,7 @@ func _on_connection_request(from_node: StringName, from_port: int, to_node: Stri
 	var to: DiscourseGraphNode = get_node(NodePath(to_node))
 	
 	var has_type: bool = _pending_connection_change.has(\"type\")
-	var switch_disconnect: bool = _pending_connection_change[\"type\"] == ConnectionChangeType.SWITCH_DISCONNECT
+	var switch_disconnect: bool = _pending_connection_change[\"type\"] == ConnectionChangeType.SWITCH_DISCONNECT if has_type else false
 	if has_type and switch_disconnect:
 		var same_origin: bool = from.get_node_uuid() == _pending_connection_change[\"from_node\"] and from_port == _pending_connection_change[\"from_port\"]
 		var same_destination: bool = to.get_node_uuid() == _pending_connection_change[\"to_node\"] and to_port == _pending_connection_change[\"to_port\"]
@@ -1315,6 +1330,11 @@ func _on_connection_request(from_node: StringName, from_port: int, to_node: Stri
 			to_port):
 		node_connected.emit(from.get_node_uuid(), from_port, to.get_node_uuid(), to_port)
 		dialog_changed.emit()
+
+
+func _on_connection_drag_ended() -> void:
+	if _pending_connection_change.has(\"type\") and _pending_connection_change[\"type\"] == ConnectionChangeType.SWITCH_DISCONNECT:
+		commit_disconnection()
 
 
 func _on_connection_to_empty(from_node: StringName, from_port: int, release_position: Vector2) -> void:
@@ -1428,7 +1448,7 @@ func _on_begin_node_move() -> void:
 	if not selected_nodes.is_empty():
 		movement_data[\"nodes\"] = selected_nodes
 		movement_data[\"reference\"] = selected_nodes[0]
-		movement_data[\"starting_position\"] = selected_nodes[0]
+		movement_data[\"starting_position\"] = selected_nodes[0].position_offset
 	
 	if not Input.is_key_pressed(KEY_ALT):
 		return
@@ -1607,12 +1627,12 @@ func commit_disconnection() -> void:
 	var from: DiscourseGraphNode = graph_nodes[_pending_connection_change[\"from_node\"]]
 	var to: DiscourseGraphNode = graph_nodes[_pending_connection_change[\"to_node\"]]
 	
-	from.set_input_connection(
+	from.set_output_connection(
 			_pending_connection_change[\"from_port\"],
 			to,
 			_pending_connection_change[\"to_port\"],
 			false)
-	to.set_output_connection(
+	to.set_input_connection(
 			_pending_connection_change[\"to_port\"],
 			from,
 			_pending_connection_change[\"from_port\"],
@@ -1692,6 +1712,7 @@ func sort_clipboard_custom(item_a: Dictionary, item_b: Dictionary) -> bool:
 func spawn_node_at_center(node_type: DialogNodes, uuid: String = \"\") -> void:
 	var new_node: DiscourseGraphNode = spawn_node(node_type, uuid)
 	new_node.position_offset = get_center_offset() - (new_node.size / 2.0)
+	node_created.emit(new_node)
 
 
 func spawn_frame_at_center(uuid: String = \"\") -> void:
@@ -1847,6 +1868,7 @@ layout_mode = 2
 
 [node name="MenuBar" type="MenuBar" parent="MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox" unique_id=800961546]
 layout_mode = 2
+flat = true
 
 [node name="FileMenu" type="PopupMenu" parent="MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/MenuBar" unique_id=388181903]
 hide_on_checkable_item_selection = false
@@ -1873,7 +1895,6 @@ layout_mode = 2
 tooltip_text = "Open Dialog"
 theme_override_constants/icon_max_width = 24
 theme_override_styles/normal = SubResource("StyleBoxEmpty_qsnsk")
-disabled = true
 flat = true
 icon_alignment = 1
 expand_icon = true
@@ -1887,7 +1908,6 @@ layout_mode = 2
 tooltip_text = "Toggle Grid"
 theme_override_constants/icon_max_width = 24
 theme_override_styles/normal = SubResource("StyleBoxEmpty_qsnsk")
-disabled = true
 toggle_mode = true
 button_pressed = true
 flat = true
@@ -1900,7 +1920,6 @@ layout_mode = 2
 tooltip_text = "Toggle grid snap"
 theme_override_constants/icon_max_width = 24
 theme_override_styles/normal = SubResource("StyleBoxEmpty_qsnsk")
-disabled = true
 toggle_mode = true
 button_pressed = true
 flat = true
@@ -1924,7 +1943,6 @@ layout_mode = 2
 tooltip_text = "Toggle minimap"
 theme_override_constants/icon_max_width = 24
 theme_override_styles/normal = SubResource("StyleBoxEmpty_qsnsk")
-disabled = true
 toggle_mode = true
 button_pressed = true
 flat = true
@@ -1937,7 +1955,6 @@ layout_mode = 2
 tooltip_text = "Arrange nodes"
 theme_override_constants/icon_max_width = 24
 theme_override_styles/normal = SubResource("StyleBoxEmpty_qsnsk")
-disabled = true
 flat = true
 icon_alignment = 1
 expand_icon = true

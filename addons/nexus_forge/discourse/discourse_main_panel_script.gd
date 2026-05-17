@@ -467,34 +467,35 @@ func set_graph_edit_visible(graph_visible: bool) -> void:
 func set_conversation_options_enabled(are_enabled: bool) -> void:
 	var disabled: bool = !are_enabled
 	#node_menu.disabled = disabled
-	tool_menu.set_menu_conversation_options_disabled(1, disabled)
+	tool_menu.set_menu_disabled(1, disabled)
 	switch_localization.disabled = disabled
 	save_btn.disabled = disabled
 	localization_menu.disabled = disabled
 	play_current_dialog_btn.disabled = disabled
 	snap_distance_spn_bx.editable = are_enabled
 	
-	file_popup.set_item_conversation_options_disabled(
+	
+	file_popup.set_item_disabled(
 			file_popup.get_item_index(
 					DiscourseFileMenuID.SAVE_DIALOG),
 					disabled)
 	
-	file_popup.set_item_conversation_options_disabled(
+	file_popup.set_item_disabled(
 			file_popup.get_item_index(
 					DiscourseFileMenuID.SET_LOCALE_GROUP),
 			disabled)
 	
-	file_popup.set_item_conversation_options_disabled(
+	file_popup.set_item_disabled(
 			file_popup.get_item_index(
 					DiscourseFileMenuID.PLAY_CURRENT_DIALOG),
 			disabled)
 	
-	file_popup.set_item_conversation_options_disabled(
+	file_popup.set_item_disabled(
 			file_popup.get_item_index(
 					DiscourseFileMenuID.CHECK_ISSUES),
 			disabled)
 	
-	file_popup.set_item_conversation_options_disabled(
+	file_popup.set_item_disabled(
 			file_popup.get_item_index(
 					DiscourseFileMenuID.CLOSE_DIALOG),
 					disabled)
@@ -502,73 +503,6 @@ func set_conversation_options_enabled(are_enabled: bool) -> void:
 	_conversation_options_disabled = disabled
 
 
-func load_conversation(conversation: EditorDiscourseDialog) -> bool:
-	if conversation == null:
-		discourse_graph_edit.clear_dialog_nodes()
-		return false
-	
-	# -----------------------------
-	var needs_resaving: bool = false
-	discourse_graph_edit.clear_dialog_nodes()
-	
-	var node_connections: Array[Dictionary] = []
-	var graph_map: Dictionary[String, DiscourseGraphNode] = {}
-	
-	var node_relationships: Dictionary[String, GraphFrame] = {}
-	
-	for frame_uuid:String in conversation.get_frames_uuids():
-		var frame_data: Dictionary = conversation.get_frame_data(frame_uuid)
-		var frame: GraphFrame = discourse_graph_edit.spawn_frame(frame_uuid, frame_data["position"])
-		frame.title = frame_data["title"]
-		frame.size = frame_data["size"]
-		frame.tint_color = frame_data["tint_color"]
-		for child_node:String in frame_data["nodes"]:
-			node_relationships[child_node] = frame
-	
-	for node_stnm_uuid:StringName in conversation.get_node_uuids():
-		var node_uuid: String = String(node_stnm_uuid)
-		var data: Dictionary = conversation.get_node_data(node_stnm_uuid, current_locale)
-		var metadata: Dictionary = data["metadata"]
-		var d_node: DiscourseGraphNode = discourse_graph_edit.spawn_node(data["type"], node_stnm_uuid, data)
-		
-		if d_node.node_type == DiscourseGraphNode.DialogueNodeType.CALLABLE or d_node.node_type == DiscourseGraphNode.DialogueNodeType.CALLABLE_RETURN:
-			if metadata.has("method"):
-				if not d_node.available_methods.has(metadata["method"]):
-					needs_resaving = true
-		elif d_node.node_type == DiscourseGraphNode.DialogueNodeType.SIGNAL:
-			if metadata.has("signal"):
-				if not d_node.available_signals.has(metadata["signal"]):
-					needs_resaving = true
-		
-		if node_relationships.has(node_uuid):
-			discourse_graph_edit.set_node_in_frame(node_stnm_uuid, node_relationships[node_uuid].get_frame_uuid())
-		graph_map[node_uuid] = d_node
-		var new_connections: Array[Dictionary] = discourse_graph_edit.get_connection_dictionary(
-				node_stnm_uuid,
-				data)
-		if not new_connections.is_empty():
-			node_connections.append_array(new_connections)
-		
-		if d_node.is_node_localized():
-			_on_localize_node(d_node)
-	
-	for output_connection in node_connections:
-		if not graph_map.has(output_connection["from"]) or not graph_map.has(output_connection["to"]):
-			continue
-		discourse_graph_edit.connect_discourse_nodes(
-				graph_map[output_connection["from"]].get_node_uuid(),
-				output_connection["from_port"],
-				graph_map[output_connection["to"]].get_node_uuid(),
-				output_connection["to_port"])
-	
-	if discourse_graph_edit.entry_node == null:
-		var en_node: DiscourseGraphNode = discourse_graph_edit.spawn_node(DiscourseGraphNode.DialogueNodeType.ENTRY)
-		en_node.name = &"Entry"
-	
-	discourse_graph_edit.zoom = conversation.zoom
-	discourse_graph_edit.scroll_offset = conversation.scroll_offset
-	
-	return needs_resaving
 
 
 func update_localization_display(data: Dictionary) -> void:
@@ -720,7 +654,7 @@ func _on_conversation_close_pressed(dialog: EditorDiscourseDialog, save_required
 		if new_item == null:
 			active_conversation = null
 			set_conversation_active(false)
-			load_conversation(null)
+			display_conversation(null)
 			conversation_tree.active_unsaved = false
 		else:
 			var new_conv: EditorDiscourseDialog = new_item.get_metadata(0)["resource"]
@@ -769,7 +703,7 @@ func _on_menu_close_pressed() -> void:
 	
 	if new_item == null:
 		set_conversation_active(false)
-		load_conversation(null)
+		display_conversation(null)
 		active_conversation = null
 		conversation_tree.active_unsaved = false
 	else:
@@ -1282,7 +1216,7 @@ func load_dialog_files(files: Array[String]) -> void:
 			if conversation_tree.is_conversation_open(loaded):
 				continue
 			else:
-				add_conversation(loaded, false)
+				load_conversation(loaded, false)
 
 
 func save_current_dialog_to_memory() -> void:
@@ -1413,7 +1347,7 @@ func _on_new_conversation_pressed() -> void:
 			discourse_nodes_tree.get_root().collapsed = false
 			new_folder_button.disabled = false
 			dialog_id_ln_edt.editable = true
-		add_conversation(new_conv, true)
+		load_conversation(new_conv, true)
 		
 		discourse_graph_edit.reset_scroll_offset(
 				$MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/GraphPanel.size)
@@ -1450,7 +1384,7 @@ func _on_open_conversation_pressed() -> void:
 					conversation_tree.active_unsaved = true
 			else:
 				_unsaved = false
-				add_conversation(resource)
+				load_conversation(resource)
 			if wait_visible:
 				await get_tree().process_frame
 		listen_offset = true
@@ -1501,7 +1435,7 @@ func plugin_file_selected(file: EditorDiscourseDialog):
 		if open_conversation(file):
 			conversation_tree.active_unsaved = true
 	else:
-		add_conversation(file)
+		load_conversation(file)
 
 
 func reload_signals() -> void:
@@ -1575,9 +1509,76 @@ func _on_discourse_item_edited(uuid: StringName, type: DiscourseGraphNode.Dialog
 
 #endregion
 
+func display_conversation(conversation: EditorDiscourseDialog) -> bool:
+	if conversation == null:
+		discourse_graph_edit.clear_dialog_nodes()
+		return false
+	
+	# -----------------------------
+	var needs_resaving: bool = false
+	discourse_graph_edit.clear_dialog_nodes()
+	
+	var node_connections: Array[Dictionary] = []
+	var graph_map: Dictionary[String, DiscourseGraphNode] = {}
+	
+	var node_relationships: Dictionary[String, GraphFrame] = {}
+	
+	for frame_uuid:String in conversation.get_frames_uuids():
+		var frame_data: Dictionary = conversation.get_frame_data(frame_uuid)
+		var frame: GraphFrame = discourse_graph_edit.spawn_frame(frame_uuid, frame_data["position"])
+		frame.title = frame_data["title"]
+		frame.size = frame_data["size"]
+		frame.tint_color = frame_data["tint_color"]
+		for child_node:String in frame_data["nodes"]:
+			node_relationships[child_node] = frame
+	
+	for node_stnm_uuid:StringName in conversation.get_node_uuids():
+		var node_uuid: String = String(node_stnm_uuid)
+		var data: Dictionary = conversation.get_node_data(node_stnm_uuid, current_locale)
+		var metadata: Dictionary = data["metadata"]
+		var d_node: DiscourseGraphNode = discourse_graph_edit.spawn_node(data["type"], node_stnm_uuid, data)
+		
+		if d_node.node_type == DiscourseGraphNode.DialogueNodeType.CALLABLE or d_node.node_type == DiscourseGraphNode.DialogueNodeType.CALLABLE_RETURN:
+			if metadata.has("method"):
+				if not d_node.available_methods.has(metadata["method"]):
+					needs_resaving = true
+		elif d_node.node_type == DiscourseGraphNode.DialogueNodeType.SIGNAL:
+			if metadata.has("signal"):
+				if not d_node.available_signals.has(metadata["signal"]):
+					needs_resaving = true
+		
+		if node_relationships.has(node_uuid):
+			discourse_graph_edit.set_node_in_frame(node_stnm_uuid, node_relationships[node_uuid].get_frame_uuid())
+		graph_map[node_uuid] = d_node
+		var new_connections: Array[Dictionary] = discourse_graph_edit.get_connection_dictionary(
+				node_stnm_uuid,
+				data)
+		if not new_connections.is_empty():
+			node_connections.append_array(new_connections)
+		
+		if d_node.is_node_localized():
+			_on_localize_node(d_node)
+	
+	for output_connection in node_connections:
+		if not graph_map.has(output_connection["from"]) or not graph_map.has(output_connection["to"]):
+			continue
+		discourse_graph_edit.connect_discourse_nodes(
+				graph_map[output_connection["from"]].get_node_uuid(),
+				output_connection["from_port"],
+				graph_map[output_connection["to"]].get_node_uuid(),
+				output_connection["to_port"])
+	
+	if discourse_graph_edit.entry_node == null:
+		var en_node: DiscourseGraphNode = discourse_graph_edit.spawn_node(DiscourseGraphNode.DialogueNodeType.ENTRY)
+		en_node.name = &"Entry"
+	
+	discourse_graph_edit.zoom = conversation.zoom
+	discourse_graph_edit.scroll_offset = conversation.scroll_offset
+	
+	return needs_resaving
 
-# Loads a conversation into discourse. Also what do I mean by "set_active"?
-# THe point of OPENING it is to set active. Past me...wtf?!
+
+# Loads a conversation into discourse.
 func open_conversation(conversation: EditorDiscourseDialog) -> bool:
 	dialog_id_ln_edt.text = conversation.dialog_id
 	
@@ -1585,7 +1586,7 @@ func open_conversation(conversation: EditorDiscourseDialog) -> bool:
 	discourse_nodes_tree.clear_tree()
 	
 	# This fills the discourse_nodes_tree with items
-	var reload_needed: bool = load_conversation(conversation) # Load conversation
+	var reload_needed: bool = display_conversation(conversation) # Load conversation
 	
 	# We put them in a dictionary for sorting.
 	if not conversation.node_structure.is_empty():
@@ -1643,7 +1644,7 @@ func open_conversation(conversation: EditorDiscourseDialog) -> bool:
 
 
 # Adds a conversation into the list, can open it.
-func add_conversation(data: EditorDiscourseDialog, open_conv: bool = true) -> void:
+func load_conversation(data: EditorDiscourseDialog, open_conv: bool = true) -> void:
 	conversation_tree.add_conversation(data, open_conv, false)
 	
 	if open_conv:
