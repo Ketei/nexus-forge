@@ -58,29 +58,13 @@ func _on_input_disconnected(input_port: int, _from_node: DiscourseGraphNode, _fr
 	if _highest_port_connected == 0 and not has_any_input(0):
 		_highest_port_connected = -1
 	
-	var target_remove: StringName = &"merge_" + StringName(str(input_port + 1))
-	remove_field(target_remove)
-	_highest_port_connected -= 1
-	
-	for port_idx in range(_highest_port_connected, -1, -1):
-		if port_idx == 0:
-			_highest_port_connected = 0 if has_any_input(0) else -1
-			break
-		elif not has_any_input(port_idx):
-			var field_id: StringName = &"merge_" + StringName(str(port_idx))
-			remove_field(field_id, 29)
-		else:
-			_highest_port_connected = port_idx
-			break
 	update_size.call_deferred()
 
 
 func remove_unused_fields() -> void:
-	var last_port: int = -1
 	var target_fields: Array[StringName] = []
 	for port in range(get_child_count() - 1, 0, -1):
 		if has_any_input(port - 1):
-			last_port = port + 1
 			break
 		var id: StringName = StringName("merge_" + str(port))
 		target_fields.append(id)
@@ -157,7 +141,7 @@ func set_input_port_count(new_count: int) -> void:
 				SlotConnectionType.DIALOG)
 			set_slot_custom_icon_left(missing_port, flow_icon)
 			set_slot_color_left(field_idx, COLORS["dialog"])
-		_highest_port_connected = new_count - 2
+		_highest_port_connected = new_count - 1
 	else:
 		for extra_ports in range(_highest_port_connected + 1, new_count, -1):
 			if has_any_input(extra_ports - 1):
