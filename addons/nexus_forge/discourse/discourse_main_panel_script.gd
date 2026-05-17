@@ -1,4 +1,4 @@
-#@tool
+@tool
 extends PanelContainer
 
 
@@ -101,8 +101,8 @@ var file_popup: PopupMenu = null
 @onready var snap_distance_spn_bx: SpinBox = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/SnapDistanceSpnBx
 
 
-func _ready() -> void:
-	ready_plugin()
+#func _ready() -> void:
+	#ready_plugin()
 
 
 func ready_plugin() -> void:
