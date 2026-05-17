@@ -1517,6 +1517,7 @@ func display_conversation(conversation: EditorDiscourseDialog) -> bool:
 	
 	# -----------------------------
 	var needs_resaving: bool = false
+	
 	discourse_graph_edit.clear_dialog_nodes(false)
 	
 	var node_connections: Array[Dictionary] = []
@@ -1547,6 +1548,8 @@ func display_conversation(conversation: EditorDiscourseDialog) -> bool:
 			if metadata.has("signal"):
 				if not d_node.available_signals.has(metadata["signal"]):
 					needs_resaving = true
+		elif d_node.node_type == DiscourseGraphNode.DialogueNodeType.ENTRY:
+			discourse_graph_edit.entry_node = d_node
 		
 		if node_relationships.has(node_uuid):
 			discourse_graph_edit.set_node_in_frame(node_stnm_uuid, node_relationships[node_uuid].get_frame_uuid())
@@ -1574,6 +1577,8 @@ func display_conversation(conversation: EditorDiscourseDialog) -> bool:
 	if discourse_graph_edit.entry_node == null:
 		var en_node: DiscourseGraphNode = discourse_graph_edit.spawn_node(DiscourseGraphNode.DialogueNodeType.ENTRY)
 		en_node.name = &"Entry"
+		discourse_graph_edit.entry_node = en_node
+		_on_discourse_node_created(en_node)
 	
 	discourse_graph_edit.zoom = conversation.zoom
 	discourse_graph_edit.scroll_offset = conversation.scroll_offset
