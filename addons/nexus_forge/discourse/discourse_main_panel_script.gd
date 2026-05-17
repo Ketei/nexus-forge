@@ -88,13 +88,16 @@ var current_locale: String = ""
 
 @onready var no_dialog_label: Label = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/GraphPanel/NoDialogLbl
 @onready var discourse_graph_edit: GraphEdit = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/GraphPanel/DiscourseGraphEdit
-@onready var node_popup: PopupMenu = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/MenuBar/NodeMenu
-@onready var file_popup: PopupMenu = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/MenuBar/FileMenu
+var node_popup: PopupMenu = null
+var file_popup: PopupMenu = null
+@onready var node_menu_btn: MenuButton = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/NodeMenuBtn
 @onready var save_btn: Button = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/SaveBtn
 @onready var play_current_dialog_btn: Button = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/PlayDialogBtn
 @onready var switch_localization: Button = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/LocalizationContainer/SwitchLocaleBtn
 @onready var localization_menu: OptionButton = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/LocalizationContainer/LocalizationMenu
-@onready var tool_menu: MenuBar = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/MenuBar
+#@onready var tool_menu: MenuBar = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/MenuBar
+
+
 @onready var snap_distance_spn_bx: SpinBox = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/SnapDistanceSpnBx
 
 
@@ -103,6 +106,8 @@ func _ready() -> void:
 
 
 func ready_plugin() -> void:
+	node_popup = node_menu_btn.get_popup()
+	file_popup = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/FileMenuBtn.get_popup()
 	#var file_popup: PopupMenu = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuVBox/MenuBar/FileMenu
 	#var node_popup: PopupMenu = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuVBox/MenuBar/NodeMenu
 	var open_btn: Button = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/OpenBtn
@@ -110,12 +115,6 @@ func ready_plugin() -> void:
 	var toggle_snap_btn: Button = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/ToggleSnapBtn
 	var toggle_minimap_btn: Button = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/ToggleMinimapBtn
 	var sort_nodes_btn: Button = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/SortNodesBtn
-	
-	tool_menu.set_menu_title(0, "Discourse")
-	tool_menu.set_menu_title(1, "Create")
-	
-	tool_menu.set_menu_disabled(1, true)
-	#node_menu.disabled = true
 	
 	# --- Node Menu Items ---
 	var dialogs_submenu: PopupMenu = PopupMenu.new()
@@ -203,6 +202,8 @@ func ready_plugin() -> void:
 	play_current_dialog_btn.pressed.connect(_on_play_current_dialog_pressed)
 	
 	switch_localization.icon = get_theme_icon("Translation", "EditorIcons")
+	
+	file_popup.hide_on_checkable_item_selection = false
 	
 	file_popup.add_icon_item(
 			null,
@@ -467,7 +468,7 @@ func set_graph_edit_visible(graph_visible: bool) -> void:
 func set_conversation_options_enabled(are_enabled: bool) -> void:
 	var disabled: bool = !are_enabled
 	#node_menu.disabled = disabled
-	tool_menu.set_menu_disabled(1, disabled)
+	node_menu_btn.disabled = disabled
 	switch_localization.disabled = disabled
 	save_btn.disabled = disabled
 	localization_menu.disabled = disabled
@@ -1516,7 +1517,7 @@ func display_conversation(conversation: EditorDiscourseDialog) -> bool:
 	
 	# -----------------------------
 	var needs_resaving: bool = false
-	discourse_graph_edit.clear_dialog_nodes()
+	discourse_graph_edit.clear_dialog_nodes(false)
 	
 	var node_connections: Array[Dictionary] = []
 	var graph_map: Dictionary[String, DiscourseGraphNode] = {}
@@ -1555,6 +1556,8 @@ func display_conversation(conversation: EditorDiscourseDialog) -> bool:
 				data)
 		if not new_connections.is_empty():
 			node_connections.append_array(new_connections)
+		
+		_on_discourse_node_created(d_node)
 		
 		if d_node.is_node_localized():
 			_on_localize_node(d_node)
@@ -1706,7 +1709,7 @@ func save_current_dialog() -> void:
 	if not _unsaved and conversation_tree.active_offset_changed:
 		active_conversation.scroll_offset = discourse_graph_edit.scroll_offset
 		active_conversation.zoom = discourse_graph_edit.zoom
-		active_conversation.save()
+		ResourceSaver.save(active_conversation)
 		conversation_tree.active_offset_changed = false
 		return
 	

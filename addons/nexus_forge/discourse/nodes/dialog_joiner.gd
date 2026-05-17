@@ -106,24 +106,26 @@ func _set_node_data(data: Dictionary) -> void:
 		set_input_port_count(port_count)
 
 
-func disconnect_all() -> void:
-	for input_port in range(_input_nodes.size() - 1):
-		for connection_idx in range(_input_nodes[input_port]["connections"].size()):
-			var input_target: DiscourseGraphNode = get_node_connected_to_port(PortMode.INPUT, input_port, connection_idx)
-			disconnect_requested.emit(
-					input_target.name,
-					input_target.get_port_connected_to(PortMode.OUTPUT, self, input_port),
-					name,
-					input_port)
-	
-	for output_port in range(_output_nodes.size()):
-		for connection_idx in range(_output_nodes[output_port]["connections"].size()):
-			var output_target: DiscourseGraphNode = get_node_connected_to_port(PortMode.OUTPUT, output_port, connection_idx)
-			disconnect_requested.emit(
-				name,
-				output_port,
-				output_target.name,
-				output_target.get_port_connected_to(PortMode.INPUT, self, output_port))
+#func disconnect_all() -> void:
+	#for input_port in range(_input_nodes.size() - 1):
+		#for connection_idx in range(_input_nodes[input_port]["connections"].size()):
+			#var input_target: DiscourseGraphNode = get_node_connected_to_port(PortMode.INPUT, input_port, connection_idx)
+			#disconnect_requested.emit(
+					#input_target.name,
+					#input_target.get_port_connected_to(PortMode.OUTPUT, self, input_port),
+					#name,
+					#input_port,
+					#self)
+	#
+	#for output_port in range(_output_nodes.size()):
+		#for connection_idx in range(_output_nodes[output_port]["connections"].size()):
+			#var output_target: DiscourseGraphNode = get_node_connected_to_port(PortMode.OUTPUT, output_port, connection_idx)
+			#disconnect_requested.emit(
+				#name,
+				#output_port,
+				#output_target.name,
+				#output_target.get_port_connected_to(PortMode.INPUT, self, output_port),
+				#self)
 
 
 func set_input_port_count(new_count: int) -> void:

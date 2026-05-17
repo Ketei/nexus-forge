@@ -49,7 +49,7 @@ func _on_input_connected(input_port: int, _from_node: DiscourseGraphNode, _from_
 	var id: StringName = StringName("metadata_" + str(input_port))
 	var port_field: PanelContainer = get_field(id)
 	var metadata_id: LineEdit = port_field.get_child(0)
-	metadata_id.text = ""
+	#metadata_id.text = ""
 	metadata_id.visible = true
 	if on_last:
 		add_metadata_port()
@@ -97,15 +97,18 @@ func _get_node_data() -> Dictionary:
 	
 	var metadata: Dictionary = {"metadata_connections": metadata_connections}
 	var input_connections: Dictionary = {}
-	
+	print("Medatada count: ", get_metadata_count())
 	if 0 < get_metadata_count():
 		for port_index in range(get_metadata_count()):
-			if not has_any_input(port_index - 1):
+			if not has_any_input(port_index):
 				continue
 			
-			var field: Control = get_index_field(port_index)
+			var field_id: StringName = StringName("metadata_" + str(port_index))
+			var field: Control = get_field(field_id)
+			
 			if field == null:
 				continue
+			
 			var metadata_id: String = field.get_child(0).text
 			if has_any_input(port_index):
 				input_connections[metadata_id] = get_uuid_and_port_connected_to(PortMode.INPUT, port_index)
@@ -133,15 +136,29 @@ func _set_node_data(data: Dictionary) -> void:
 		return
 	
 	var metadata_size: int = metadata["metadata_connections"].size()
-	
-	if 0 < metadata_size and get_metadata_count() != metadata_size:
-		for _a in range(metadata_size - get_metadata_count()):
+	var current_meta_size: int = get_child_count() - 1
+	print("Connections size: ", metadata_size)
+	print("Current size: ", current_meta_size)
+	if current_meta_size < metadata_size:
+		for _a in range(metadata_size - current_meta_size):
+			print("Adding a port")
 			add_metadata_port()
+	elif metadata_size < current_meta_size:
+		var fields_to_remove: Array[StringName] = []
+		for port in range(current_meta_size - 1, metadata_size, -1):
+			fields_to_remove.append(StringName("metadata_" + str(port)))
+		remove_fields(fields_to_remove, -1)
+		update_size.call_deferred()
 	
+	print("Setting data: ", metadata["metadata_connections"])
 	for metadata_data:Dictionary in metadata["metadata_connections"]:
-		var field: Control = get_index_field(metadata_data["port"])
+		var field_id: StringName = StringName("metadata_" + str(metadata_data["port"]))
+		print("Setting metadata for field ", field_id)
+		var field: Control = get_field(field_id)
 		if field == null:
+			print("Field returned null")
 			continue
+		print("Field set to ", metadata_data["id"])
 		var line: LineEdit = field.get_child(0)
 		line.text = metadata_data["id"]
 
@@ -170,6 +187,10 @@ func _on_metadata_line_focus_lost(edited: LineEdit) -> void:
 
 func _on_metadata_text_submit(_text: String, submit_line: LineEdit) -> void:
 	submit_line.release_focus()
+
+
+func _on_metadata_id_text_changed(_text: String) -> void:
+	node_updated.emit()
 
 
 func sanitize_ids() -> void:
@@ -224,6 +245,7 @@ func add_metadata_port() -> void:
 	
 	metadata_line.focus_exited.connect(_on_metadata_line_focus_lost.bind(metadata_line))
 	metadata_line.text_submitted.connect(_on_metadata_text_submit.bind(metadata_line))
+	metadata_line.text_changed.connect(_on_metadata_id_text_changed)
 	
 	var slot_idx: int = add_field(field_id, new_port, false, SlotConnectionType.VAR_ANY)
 	set_slot_color_left(slot_idx, COLORS["any"])

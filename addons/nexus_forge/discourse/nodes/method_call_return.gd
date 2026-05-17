@@ -139,11 +139,13 @@ func reload_methods() -> void:
 			clear_input_args()
 			if has_any_output(0):
 				var target: DiscourseGraphNode = get_node_connected_to_port(PortMode.OUTPUT, 0)
-				disconnect_requested.emit(
-					name,
-					0,
-					target.name,
-					target.get_input_port_connected_to(self))
+				disconnect_port(PortMode.OUTPUT, 0)
+				#disconnect_requested.emit(
+					#name,
+					#0,
+					#target.name,
+					#target.get_input_port_connected_to(self),
+					#self)
 		else:
 			opt_btn.select(0)
 			load_method(opt_btn.get_item_metadata(0))
@@ -298,17 +300,38 @@ func load_method(method_id: String) -> void:
 	for argument:Dictionary in available_methods[method_id]["arguments"]:
 		add_input_arg(argument["name"], argument["type"])
 	
-	if has_any_output(0) and get_slot_type_right(0) != type:
+	if has_any_output(0):
+		 #and get_slot_type_right(0) != type:
 		var target: DiscourseGraphNode = get_node_connected_to_port(PortMode.OUTPUT, 0)
-		disconnect_requested.emit(
-			name,
-			0,
-			target.name,
-			target.get_input_port_connected_to(self))
+		var target_port_type: int = target.get_input_port_type(get_target_port_connected_to_self(PortMode.OUTPUT, 0))
+		
+		if not is_port_type_value_compatible(target_port_type, type):
+			disconnect_port(PortMode.OUTPUT, 0)
+			#disconnect_requested.emit(
+				#name,
+				#0,
+				#target.name,
+				#target.get_input_port_connected_to(self),
+				#self)
 	
 	set_slot_type_right(0, type)
 	set_slot_color_right(0, var_color)
 	set_output_connection_icon(&"methods", icon)
+
+
+func is_port_type_value_compatible(port_type: int, value: int) -> bool:
+	if port_type == SlotConnectionType.VAR_ANY:
+		return true
+	elif port_type == SlotConnectionType.VAR_INT and value == TYPE_INT:
+		return true
+	elif port_type == SlotConnectionType.VAR_FLOAT and value == TYPE_FLOAT:
+		return true
+	elif port_type == SlotConnectionType.VAR_BOOL and value == TYPE_BOOL:
+		return true
+	elif port_type == SlotConnectionType.VAR_STRING and value == TYPE_STRING:
+		return true
+	else:
+		return false
 
 
 func get_current_method() -> String:

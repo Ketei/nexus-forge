@@ -113,12 +113,14 @@ func _on_input_connected(input_port: int, from_node: DiscourseGraphNode, from_po
 func _on_input_disconnected(input_port: int, _from_node: DiscourseGraphNode, _from_port: int) -> void:
 	if input_port == 0:
 		if has_any_output(0):
-			var to_node: DiscourseGraphNode = get_node_connected_to_port(PortMode.OUTPUT, 0)
-			disconnect_requested.emit(
-					name,
-					0,
-					to_node.name,
-					to_node.get_port_connected_to(PortMode.INPUT, self, 0))
+			#var to_node: DiscourseGraphNode = get_node_connected_to_port(PortMode.OUTPUT, 0)
+			disconnect_port(PortMode.OUTPUT, 0)
+			#disconnect_requested.emit(
+					#name,
+					#0,
+					#to_node.name,
+					#to_node.get_port_connected_to(PortMode.INPUT, self, 0),
+					#self)
 		set_slot_color_right(0, Color.TRANSPARENT)
 		set_slot_color_left(0, COLORS["any"])
 		set_slot_type_right(0, -1)

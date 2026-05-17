@@ -1,8 +1,8 @@
 extends DiscourseGraphNode
 
 
-signal value_changed
-signal data_type_changed
+#signal value_changed
+#signal data_type_changed
 
 
 var active_value: Control = null
@@ -60,7 +60,7 @@ var mode: int = TYPE_INT:
 				set_slot_type_right(0, SlotConnectionType.VAR_STRING)
 				set_slot_color_right(0, COLORS["string"])
 				#set_output_connection_icon(&"data", get_theme_icon("String", "EditorIcons"))
-		data_type_changed.emit()
+		#data_type_changed.emit()
 
 
 func _post_init() -> void:
@@ -195,23 +195,43 @@ func _on_data_type_selected(type: int) -> void:
 	
 	if has_any_output(0):
 		var target: DiscourseGraphNode = get_node_connected_to_port(PortMode.OUTPUT, 0)
-		var target_input: int = target.get_port_connected_to(PortMode.INPUT, self, 0)
-		var port_type: int = target.get_slot_type_left(target_input)
-		if port_type != SlotConnectionType.VAR_ANY:
-			disconnect_requested.emit(
-					name,
-					0,
-					target.name,
-					target_input)
+		var port_type: int = target.get_input_port_type(get_target_port_connected_to_self(PortMode.OUTPUT, 0))
+		
+		#if port_type != SlotConnectionType.VAR_ANY:
+		if not is_port_type_value_compatible(port_type, type):
+			#var target_input: int = target.get_port_connected_to(PortMode.INPUT, self, 0)
+			disconnect_port(PortMode.OUTPUT, 0)
+			#disconnect_requested.emit(
+					#name,
+					#0,
+					#target.name,
+					#target_input,
+					#self)
 	var menu: MenuButton = get_field(&"data").get_child(1)
 	var pop: Popup = menu.get_popup()
 	
 	menu.icon = pop.get_item_icon(pop.get_item_index(type))
 	mode = type
+	node_updated.emit()
 
 
 func _on_value_changed(_value: Variant = null) -> void:
-	value_changed.emit()
+	node_updated.emit()
+
+
+func is_port_type_value_compatible(port_type: int, value: int) -> bool:
+	if port_type == SlotConnectionType.VAR_ANY:
+		return true
+	elif port_type == SlotConnectionType.VAR_INT and value == TYPE_INT:
+		return true
+	elif port_type == SlotConnectionType.VAR_FLOAT and value == TYPE_FLOAT:
+		return true
+	elif port_type == SlotConnectionType.VAR_BOOL and value == TYPE_BOOL:
+		return true
+	elif port_type == SlotConnectionType.VAR_STRING and value == TYPE_STRING:
+		return true
+	else:
+		return false
 
 
 func get_current_value(default: Variant = null) -> Variant:

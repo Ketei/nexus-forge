@@ -1072,26 +1072,26 @@ func disconnect_port(port_mode: PortMode, port_idx: int, connection_idx: int = 0
 				self)
 
 
-func disconnect_all() -> void:
-	for input_port in range(_input_nodes.size()):
-		for connection_idx in range(_input_nodes[input_port]["connections"].size()):
-			var input_target: DiscourseGraphNode = get_node_connected_to_port(PortMode.INPUT, input_port, connection_idx)
-			disconnect_requested.emit(
-				input_target.get_node_uuid(),
-				input_target.get_port_connected_to(PortMode.OUTPUT, self, input_port),
-				get_node_uuid(),
-				input_port,
-				self)
-	
-	for output_port in range(_output_nodes.size()):
-		for connection_idx in range(_output_nodes[output_port]["connections"].size()):
-			var output_target: DiscourseGraphNode = get_node_connected_to_port(PortMode.OUTPUT, output_port, connection_idx)
-			disconnect_requested.emit(
-				get_node_uuid(),
-				output_port,
-				output_target.get_node_uuid(),
-				output_target.get_port_connected_to(PortMode.INPUT, self, output_port),
-				self)
+#func disconnect_all() -> void:
+	#for input_port in range(_input_nodes.size()):
+		#for connection_idx in range(_input_nodes[input_port]["connections"].size()):
+			#var input_target: DiscourseGraphNode = get_node_connected_to_port(PortMode.INPUT, input_port, connection_idx)
+			#disconnect_requested.emit(
+				#input_target.get_node_uuid(),
+				#input_target.get_port_connected_to(PortMode.OUTPUT, self, input_port),
+				#get_node_uuid(),
+				#input_port,
+				#self)
+	#
+	#for output_port in range(_output_nodes.size()):
+		#for connection_idx in range(_output_nodes[output_port]["connections"].size()):
+			#var output_target: DiscourseGraphNode = get_node_connected_to_port(PortMode.OUTPUT, output_port, connection_idx)
+			#disconnect_requested.emit(
+				#get_node_uuid(),
+				#output_port,
+				#output_target.get_node_uuid(),
+				#output_target.get_port_connected_to(PortMode.INPUT, self, output_port),
+				#self)
 
 
 func is_node_localized() -> bool:

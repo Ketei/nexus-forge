@@ -130,21 +130,37 @@ func _on_line_edit_focus_lost() -> void:
 
 
 func _on_type_selected(item_id: int) -> void:
-	if get_field(&"path").get_child(1).get_meta(&"current_type", TYPE_INT) == item_id:
-		print("SameType")
-		return
-	
 	if has_any_output(0):
 		var target: DiscourseGraphNode = get_node_connected_to_port(PortMode.OUTPUT, 0)
-		disconnect_requested.emit(
-				name,
-				0,
-				target.name,
-				target.get_port_connected_to(PortMode.INPUT, self, 0))
+		var target_port_type: int = target.get_input_port_type(get_target_port_connected_to_self(PortMode.OUTPUT, 0))
+		
+		if not is_port_type_value_compatible(target_port_type, item_id):
+			disconnect_port(PortMode.OUTPUT, 0)
+			#disconnect_requested.emit(
+					#name,
+					#0,
+					#target.name,
+					#target.get_port_connected_to(PortMode.INPUT, self, 0),
+					#self)
 	
 	set_node_type(item_id)
 	
 	node_updated.emit()
+
+
+func is_port_type_value_compatible(port_type: int, value: int) -> bool:
+	if port_type == SlotConnectionType.VAR_ANY:
+		return true
+	elif port_type == SlotConnectionType.VAR_INT and value == TYPE_INT:
+		return true
+	elif port_type == SlotConnectionType.VAR_FLOAT and value == TYPE_FLOAT:
+		return true
+	elif port_type == SlotConnectionType.VAR_BOOL and value == TYPE_BOOL:
+		return true
+	elif port_type == SlotConnectionType.VAR_STRING and value == TYPE_STRING:
+		return true
+	else:
+		return false
 
 
 func set_node_type(item_id: int) -> void:

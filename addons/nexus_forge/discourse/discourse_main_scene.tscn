@@ -541,6 +541,7 @@ func spawn_node(node_type: DialogNodes, uuid: StringName = &\"\", data: Dictiona
 		var overwrite_data: Dictionary = new_node._get_node_data()
 		overwrite_data.merge(data, true)
 		new_node._set_node_data(overwrite_data)
+	#if not new_node.is_inside_tree():
 	add_child(new_node)
 	graph_nodes[new_node.get_node_uuid()] = new_node
 	return new_node
@@ -822,7 +823,6 @@ func clear_dialog_nodes(recreate_entry: bool = true) -> void:
 	entry_node = null
 	if recreate_entry:
 		entry_node = spawn_node(DialogNodes.ENTRY, &\"\", {\"name\": &\"Entry\"})
-		print(\"Entry Name: \", entry_node.name)
 		node_created.emit(entry_node)
 
 #endregion
@@ -1866,14 +1866,16 @@ theme_override_styles/panel = SubResource("StyleBoxEmpty_28hkv")
 [node name="MenuVBox" type="HBoxContainer" parent="MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel" unique_id=2037182340]
 layout_mode = 2
 
-[node name="MenuBar" type="MenuBar" parent="MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox" unique_id=800961546]
+[node name="FileMenuBtn" type="MenuButton" parent="MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox" unique_id=678684407]
 layout_mode = 2
-flat = true
+text = "Discourse"
+switch_on_hover = true
 
-[node name="FileMenu" type="PopupMenu" parent="MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/MenuBar" unique_id=388181903]
-hide_on_checkable_item_selection = false
-
-[node name="NodeMenu" type="PopupMenu" parent="MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/MenuBar" unique_id=654829157]
+[node name="NodeMenuBtn" type="MenuButton" parent="MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox" unique_id=1551682206]
+layout_mode = 2
+disabled = true
+text = "Create"
+switch_on_hover = true
 
 [node name="VSeparator" type="VSeparator" parent="MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox" unique_id=1378179260]
 layout_mode = 2
