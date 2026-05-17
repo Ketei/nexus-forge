@@ -97,7 +97,6 @@ func _get_node_data() -> Dictionary:
 	
 	var metadata: Dictionary = {"metadata_connections": metadata_connections}
 	var input_connections: Dictionary = {}
-	print("Medatada count: ", get_metadata_count())
 	if 0 < get_metadata_count():
 		for port_index in range(get_metadata_count()):
 			if not has_any_input(port_index):
@@ -137,11 +136,8 @@ func _set_node_data(data: Dictionary) -> void:
 	
 	var metadata_size: int = metadata["metadata_connections"].size()
 	var current_meta_size: int = get_child_count() - 1
-	print("Connections size: ", metadata_size)
-	print("Current size: ", current_meta_size)
 	if current_meta_size < metadata_size:
 		for _a in range(metadata_size - current_meta_size):
-			print("Adding a port")
 			add_metadata_port()
 	elif metadata_size < current_meta_size:
 		var fields_to_remove: Array[StringName] = []
@@ -150,15 +146,11 @@ func _set_node_data(data: Dictionary) -> void:
 		remove_fields(fields_to_remove, -1)
 		update_size.call_deferred()
 	
-	print("Setting data: ", metadata["metadata_connections"])
 	for metadata_data:Dictionary in metadata["metadata_connections"]:
 		var field_id: StringName = StringName("metadata_" + str(metadata_data["port"]))
-		print("Setting metadata for field ", field_id)
 		var field: Control = get_field(field_id)
 		if field == null:
-			print("Field returned null")
 			continue
-		print("Field set to ", metadata_data["id"])
 		var line: LineEdit = field.get_child(0)
 		line.text = metadata_data["id"]
 
