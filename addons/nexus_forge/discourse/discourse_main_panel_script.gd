@@ -1610,7 +1610,7 @@ func open_conversation(conversation: EditorDiscourseDialog) -> bool:
 		var node_map: Dictionary[String, TreeItem] = {}
 		var root: TreeItem = discourse_nodes_tree.get_root()
 		for item in root.get_children():
-			node_map[item.get_metadata(0)["node"].get_node_uuid()] = item
+			node_map[item.get_metadata(0)["uuid"]] = item
 			root.remove_child(item)
 		
 		set_up_node_structure(conversation.node_structure, discourse_nodes_tree.get_root(), node_map)
