@@ -477,13 +477,29 @@ func get_unique_node_name(desired: StringName) -> StringName:
 	for node in graph_nodes.values():
 		names.append(node.name)
 		
-	var base: String = str(desired)
-	var edited: StringName = desired
-	var iteration: int = 0
+	var base: String = str(desired).strip_edges()
+	var trailing_data: Dictionary = get_trailing_integer(base)
+	var iteration: int = trailing_data["integer"]
+	if trailing_data["has_integer"]:
+		base = base.trim_suffix(str(iteration))
+	var edited: StringName = base
 	while names.has(edited):
 		iteration += 1
 		edited = StringName(base + str(iteration))
 	return edited
+
+
+func get_trailing_integer(text: String) -> Dictionary:
+	var regex = RegEx.new()
+	
+	regex.compile("\\d+$") 
+	
+	var match_result:RegExMatch = regex.search(text)
+	
+	if match_result != null:
+		return {"has_integer": true, "integer": match_result.get_string().to_int()}
+	
+	return {"has_integer": false, "integer": 0}
 
 
 #region Spawners / Removers
@@ -554,7 +570,7 @@ func paste_node_clipboard(clipboard: Array[Dictionary], uuid_map: Dictionary[Str
 	# original uuid : new_node_pointer
 	var uuid_equivalences: Dictionary[StringName, DiscourseGraphNode] = {}
 	
-	var current_offset: Vector2 = clipboard[0]["position"]
+	var current_offset: Vector2 = clipboard[0]["state"]["data"]["metadata"]["position"]
 	var center_scroll_offset: Vector2 = get_center_offset()
 	for clipboard_data in clipboard:
 		if not uuid_map.has(clipboard_data["node_uuid"]):
@@ -562,20 +578,23 @@ func paste_node_clipboard(clipboard: Array[Dictionary], uuid_map: Dictionary[Str
 		
 		var node_data: Dictionary = clipboard_data["state"]["data"]
 		var node_meta: Dictionary = node_data["metadata"]
+		var new_name: StringName = get_unique_node_name(node_data["name"])
 		var new_data: Dictionary = node_data.duplicate(true)
-		node_meta["position"] = node_meta["position"] - current_offset + center_scroll_offset
+		new_data["name"] = new_name
+		#node_meta["position"] = node_meta["position"] - current_offset + center_scroll_offset
 		var pasted_node: DiscourseGraphNode = spawn_node(
 				new_data["type"],
 				uuid_map[clipboard_data["node_uuid"]],
 				new_data)
+		pasted_node.position_offset = get_center_offset() - (pasted_node.size / 2.0) + (pasted_node.position_offset - current_offset)
 		#pasted_node._set_node_data(new_data)
 		#add_child(pasted_node)
 		#graph_nodes[pasted_node.get_node_uuid()] = pasted_node
 		#pasted_node.position_offset -= pasted_node.size / 2.0
-		uuid_equivalences[new_data["node_uuid"]] = pasted_node
+		uuid_equivalences[clipboard_data["node_uuid"]] = pasted_node
 	
 		var _new_connections: Array[Dictionary] = get_connection_dictionary(
-				new_data["node_uuid"],
+				clipboard_data["node_uuid"],
 				new_data)
 		
 		if not _new_connections.is_empty():
@@ -594,22 +613,6 @@ func paste_node_clipboard(clipboard: Array[Dictionary], uuid_map: Dictionary[Str
 	dialog_changed.emit()
 
 
-# TODO: Move this to the top node.
-func _on_graph_edit_paste_requested() -> void:
-	var uuid_map: Dictionary[StringName, StringName] = {}
-	var clipboard: Array[Dictionary] = node_clipboard.duplicate(true) # Change to grab the clipboard from the GraphEdit
-	
-	for clipboard_data in clipboard:
-		if graph_nodes.has(clipboard_data["node_uuid"]): # Change to reference the GraphEdit
-			uuid_map[clipboard_data["node_uuid"]] = StringName(UUID.generate_new())
-		else:
-			uuid_map[clipboard_data["node_uuid"]] = clipboard_data["node_uuid"]
-	
-	# TODO: Write the undoredo action
-	# with the below being the "do" action v
-	paste_node_clipboard(clipboard, uuid_map) # This method in the GraphEdit takes data and puts it on itself. Similar to restore_nodes but takes a map.
-
-
 func _on_duplicate_node_button_pressed(node: DiscourseGraphNode) -> void:
 	var node_array: Array[StringName] = [node.get_node_uuid()]
 	node_duplication_requested.emit(node_array)
@@ -620,22 +623,6 @@ func _on_graph_edit_keyboard_duplicate_pressed() -> void:
 	for node in get_selected_graph_nodes():
 		uid_array.append(node.get_node_uuid())
 	node_duplication_requested.emit(uid_array)
-
-# TODO: Move this to the top as to work with UNDO-REDO.
-func _on_graph_edit_node_duplication_requested(uuids: Array[StringName]) -> void:
-	var uuid_size: int = uuids.size()
-	if uuid_size == 0:
-		return
-	elif uuid_size == 1:
-		var new_uuid: StringName = StringName(UUID.generate_new())
-		_duplicate_single(uuids[0], new_uuid)
-	else:
-		var uuid_map: Dictionary[StringName, StringName] = {}
-		for uuid in uuids:
-			uuid_map[uuid] = StringName(UUID.generate_new())
-		var undo_targets: Array[StringName] = []
-		undo_targets.assign(uuid_map.values())
-		_duplicate_multiple(uuid_map)
 
 
 func _duplicate_single(node_uuid: StringName, new_uuid: StringName) -> void:
@@ -1692,7 +1679,7 @@ func copy_selected_to_clipboard() -> void:
 
 
 func sort_clipboard_custom(item_a: Dictionary, item_b: Dictionary) -> bool:
-	return item_a["data"]["data"]["metadata"]["position"] < item_b["data"]["data"]["metadata"]["position"]
+	return item_a["state"]["data"]["metadata"]["position"] < item_b["state"]["data"]["metadata"]["position"]
 
 
 func spawn_node_at_center(node_type: DialogNodes, uuid: String = "") -> void:
