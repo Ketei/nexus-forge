@@ -18,6 +18,7 @@ Nexus Forge is a data-centric plugin that gives you structured control over your
 * **Dialogue Editor:** Create branching, context-aware, localized conversations using a visual **GraphEdit** interface.
 * **Global State Management:** Easily store and manage global variables.
 * **Character Design:** Dedicated tools for defining **Characters**. Customize character sheets with user-defined stats, skills, traits, species, and flexible inheritance logic.
+* **Species Management:** A tool for setting up species and racial traits. As well as a sub-species inheritance system where it inherits the traits of the parent species unless defined.
 * **Item and Economy System:** Define **Items** with custom categories, flags, values, and rarities. Create detailed **Currencies** for robust multi-currency or single-currency economies.
 * **Crafting Recipes:** Use the **Recipes** tool to create crafting recipes, making complex crafting systems easy to define.
 * **Quest Creation:** Create detailed quests with stages and steps to follow.
