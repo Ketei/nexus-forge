@@ -20,7 +20,6 @@ var recipes: PanelContainer = null
 var quests: PanelContainer = null
 var phrase_maps: PanelContainer = null
 @onready var nexus_forge: Control = $MainContainer/ToolScroll/ToolContainer/NexusForge
-
 # -----------------
 
 
@@ -28,38 +27,72 @@ func _ready() -> void:
 	set_process_input(false)
 
 
-func ready_plugin() -> void:
+func ready_plugin(use_discourse: bool, use_characters: bool, use_species: bool, use_talents: bool, use_items: bool, use_recipes: bool, use_quests: bool, use_phrases: bool) -> void:
 	set_process_input(true)
 	
-	discourse = load("res://addons/nexus_forge/discourse/discourse_main_scene.tscn").instantiate()
 	variables = load("res://addons/nexus_forge/variables/variables_main.tscn").instantiate()
-	characters = load("res://addons/nexus_forge/characters/new_characters.tscn").instantiate()
-	species = load("res://addons/nexus_forge/species/species_main.tscn").instantiate()
-	talents = load("res://addons/nexus_forge/talents/talents_main.tscn").instantiate()
-	items = load("res://addons/nexus_forge/depot/depot_scene.tscn").instantiate()
-	recipes = load("res://addons/nexus_forge/recipes/recipes_scene.tscn").instantiate()
-	quests = load("res://addons/nexus_forge/quests/new_quests.tscn").instantiate()
-	phrase_maps = load("res://addons/nexus_forge/phrases/localization_resources.tscn").instantiate()
 	
-	tool_container.add_child(discourse)
+	if use_discourse:
+		discourse = load("res://addons/nexus_forge/discourse/discourse_main_scene.tscn").instantiate()
+	if use_characters:
+		characters = load("res://addons/nexus_forge/characters/new_characters.tscn").instantiate()
+	if use_species:
+		species = load("res://addons/nexus_forge/species/species_main.tscn").instantiate()
+	if use_talents:
+		talents = load("res://addons/nexus_forge/talents/talents_main.tscn").instantiate()
+	if use_items:
+		items = load("res://addons/nexus_forge/depot/depot_scene.tscn").instantiate()
+	if use_recipes:
+		recipes = load("res://addons/nexus_forge/recipes/recipes_scene.tscn").instantiate()
+	if use_quests:
+		quests = load("res://addons/nexus_forge/quests/new_quests.tscn").instantiate()
+	if use_phrases:
+		phrase_maps = load("res://addons/nexus_forge/phrases/localization_resources.tscn").instantiate()
+	
+	if discourse != null:
+		tool_container.add_child(discourse)
+		tool_tab_bar.add_tab("Discourse", load("res://addons/nexus_forge/icons/speech_bubble.svg"))
 	tool_container.add_child(variables)
-	tool_container.add_child(characters)
-	tool_container.add_child(species)
-	tool_container.add_child(talents)
-	tool_container.add_child(items)
-	tool_container.add_child(recipes)
-	tool_container.add_child(quests)
-	tool_container.add_child(phrase_maps)
+	tool_tab_bar.add_tab("Blackboard", load("res://addons/nexus_forge/icons/speech_bubble.svg"))
+	if characters != null:
+		tool_container.add_child(characters)
+		tool_tab_bar.add_tab("Characters", load("res://addons/nexus_forge/icons/character_icon.svg"))
+	if species != null:
+		tool_container.add_child(species)
+		tool_tab_bar.add_tab("Species", load("res://addons/nexus_forge/icons/dna.svg"))
+	if talents != null:
+		tool_container.add_child(talents)
+		tool_tab_bar.add_tab("Talents", load("res://addons/nexus_forge/icons/star.svg"))
+	if items != null:
+		tool_container.add_child(items)
+		tool_tab_bar.add_tab("Items", load("res://addons/nexus_forge/icons/chest_full.svg"))
+	if recipes != null:
+		tool_container.add_child(recipes)
+		tool_tab_bar.add_tab("Recipes", load("res://addons/nexus_forge/icons/bluepring_fill.svg"))
+	if quests != null:
+		tool_container.add_child(quests)
+		tool_tab_bar.add_tab("Quests", load("res://addons/nexus_forge/icons/scroll.svg"))
+	if phrase_maps != null:
+		tool_container.add_child(phrase_maps)
+		tool_tab_bar.add_tab("Phrase Maps", load("res://addons/nexus_forge/icons/brackets_speech.svg"))
 	
-	discourse.ready_plugin()
+	if discourse != null:
+		discourse.ready_plugin()
 	variables.ready_plugin()
-	characters.ready_plugin()
-	species.ready_plugin()
-	talents.ready_plugin()
-	items.ready_plugin()
-	recipes.ready_plugin()
-	quests.ready_plugin()
-	phrase_maps.ready_plugin()
+	if characters != null:
+		characters.ready_plugin()
+	if species != null:
+		species.ready_plugin()
+	if talents != null:
+		talents.ready_plugin()
+	if items != null:
+		items.ready_plugin()
+	if recipes != null:
+		recipes.ready_plugin()
+	if quests != null:
+		quests.ready_plugin()
+	if phrase_maps != null:
+		phrase_maps.ready_plugin()
 	
 	tool_count = tool_container.get_child_count()
 	
@@ -67,37 +100,48 @@ func ready_plugin() -> void:
 	
 	go_to_tab(0)
 	
-	if recipes.recipes_resource != null:
-		recipes_link.recipes = recipes.recipes_resource
+	if recipes != null:
+		if recipes.recipes_resource != null:
+			recipes_link.recipes = recipes.recipes_resource
+		recipes.recipes_loaded.connect(_on_recipes_loaded)
+		recipes_link.item_created.connect(recipes.add_item)
+		recipes_link.item_renamed.connect(recipes.change_item_name)
+		recipes_link.item_id_changed.connect(recipes.change_item_id)
+		recipes_link.item_erased.connect(recipes._on_item_erased)
 	
-	items.items_container.item_link = recipes_link
+	if items != null:
+		items.items_container.item_link = recipes_link
+		items.items_loaded.connect(_on_items_loaded)
 	
-	recipes.recipes_loaded.connect(_on_recipes_loaded)
-	recipes_link.item_created.connect(recipes.add_item)
-	recipes_link.item_renamed.connect(recipes.change_item_name)
-	recipes_link.item_id_changed.connect(recipes.change_item_id)
-	recipes_link.item_erased.connect(recipes._on_item_erased)
-	items.items_loaded.connect(_on_items_loaded)
-	characters.import_species_data_pressed.connect(_on_import_species_data_pressed)
+	if characters != null:
+		characters.import_species_data_pressed.connect(_on_import_species_data_pressed)
+	
+	if species != null:
+		species.species_loaded.connect(_on_species_loaded)
+	
 	tool_tab_bar.tab_changed.connect(_on_tab_changed)
-	species.species_loaded.connect(_on_species_loaded)
 
 
 func _on_species_loaded() -> void:
-	characters.update_species_data(species._species_resource)
+	if characters != null and species != null:
+		characters.update_species_data(species._species_resource)
 
 
 func _on_import_species_data_pressed() -> void:
+	if species == null or characters == null:
+		return
 	if species._species_resource != null:
 		characters.import_species_data(species._species_resource)
 
 
 func _on_items_loaded() -> void:
-	recipes.reload_items(recipes_link.items)
+	if recipes != null:
+		recipes.reload_items(recipes_link.items)
 
 
 func _on_recipes_loaded() -> void:
-	recipes_link.recipes = recipes.recipes_resource
+	if recipes != null:
+		recipes_link.recipes = recipes.recipes_resource
 
 
 func _input(event: InputEvent) -> void:
@@ -113,22 +157,23 @@ func _input(event: InputEvent) -> void:
 				get_viewport().set_input_as_handled()
 		if event.keycode == KEY_W:
 			if event.ctrl_pressed:
-				if discourse.visible:
+				if discourse != null and discourse.visible:
 					discourse.close_active_conversation()
 					get_viewport().set_input_as_handled()
-				elif characters.visible:
+				elif characters != null and characters.visible:
 					characters.close_active_character()
 					get_viewport().set_input_as_handled()
-				elif phrase_maps.visible:
+				elif phrase_maps != null and phrase_maps.visible:
 					phrase_maps.close_active_map()
 					get_viewport().set_input_as_handled()
 
 
 func _on_tab_changed(tab: int) -> void:
-	if current_tab == species.get_index():
+	if species != null and current_tab == species.get_index():
 		if species.signal_change:
 			species.signal_change = false
-			characters.update_species_data(species._species_resource)
+			if characters != null:
+				characters.update_species_data(species._species_resource)
 	
 	var idx: int = -1
 	for node in tool_container.get_children():
@@ -138,23 +183,40 @@ func _on_tab_changed(tab: int) -> void:
 
 
 func go_to_tab(tab: int) -> void:
+	tab = mini(tab, tool_tab_bar.tab_count - 1)
 	tool_tab_bar.current_tab = tab
 	_on_tab_changed(tab)
 
 
 func handle_resource(resource: Resource) -> void:
 	if resource is EditorDiscourseDialog:
-		go_to_tab(discourse.get_index())
+		if discourse == null:
+			push_warning(
+					"[NexusForge] Discourse is disabled. Can't edit resource.")
+		else:
+			go_to_tab(discourse.get_index())
 		discourse.plugin_file_selected(resource)
 	elif resource is CharacterSheet:
-		go_to_tab(characters.get_index())
-		characters.plugin_open_resource(resource)
+		if characters == null:
+			push_warning(
+					"[NexusForge] Characters are disabled. Can't edit resource.")
+		else:
+			go_to_tab(characters.get_index())
+			characters.plugin_open_resource(resource)
 	elif resource is PhraseMap:
-		go_to_tab(phrase_maps.get_index())
-		phrase_maps.plugin_open_resource(resource)
+		if PhraseMap == null:
+			push_warning(
+					"[NexusForge] Phrase Maps are disabled. Can't edit resource.")
+		else:
+			go_to_tab(phrase_maps.get_index())
+			phrase_maps.plugin_open_resource(resource)
 	elif resource is Quest:
-		go_to_tab(quests.get_index())
-		quests.plugin_handle_resource(resource)
+		if discourse == null:
+			push_warning(
+					"[NexusForge] Quests are disabled. Can't edit resource.")
+		else:
+			go_to_tab(quests.get_index())
+			quests.plugin_handle_resource(resource)
 	else:
 		if resource == null:
 			print("This is null for some reason")
@@ -163,67 +225,90 @@ func handle_resource(resource: Resource) -> void:
 
 
 func has_unsaved_changes() -> bool:
-	return discourse.has_unsaved_files() or variables._unsaved or characters.has_unsaved_files() or species._unsaved or talents._unsaved or items._unsaved or recipes._unsaved or quests.has_unsaved_files() or phrase_maps.has_unsaved_files()
+	var discourse_unsaved: bool = discourse.has_unsaved_files() if discourse != null else false
+	var characters_unsaved: bool = characters.has_unsaved_files() if characters != null else false
+	var species_unsaved: bool = species._unsaved if species != null else false
+	var talents_unsaved: bool = talents._unsaved if talents != null else false
+	var items_unsaved: bool = items._unsaved if items != null else false
+	var recipes_unsaved: bool = recipes._unsaved if recipes != null else false
+	var quests_unsaved: bool = quests.has_unsaved_files() if quests != null else false
+	var phrases_unsaved: bool = phrase_maps.has_unsaved_files() if phrase_maps != null else false
+	
+	return discourse_unsaved or variables._unsaved or characters_unsaved or species_unsaved or talents_unsaved or items_unsaved or recipes_unsaved or quests_unsaved or phrases_unsaved
 
 
 func save_resources() -> void:
-	if discourse.has_unsaved_files():
+	if discourse != null and discourse.has_unsaved_files():
 		discourse.save_all_dialogs()
 	if variables._unsaved:
 		variables.save()
-	if characters.has_unsaved_files():
+	if characters != null and characters.has_unsaved_files():
 		characters.save()
-	if species._unsaved:
+	if species != null and species._unsaved:
 		species.save()
-	if talents._unsaved:
+	if talents != null and talents._unsaved:
 		talents.save()
-	if items._unsaved:
+	if items != null and items._unsaved:
 		items.save()
-	if recipes._unsaved:
+	if recipes != null and recipes._unsaved:
 		recipes.save()
-	if quests.has_unsaved_files():
+	if quests != null and quests.has_unsaved_files():
 		quests.save_resource()
-	if phrase_maps.has_unsaved_files():
+	if phrase_maps != null and phrase_maps.has_unsaved_files():
 		phrase_maps.save_all()
 
 
 func reload_stats() -> void:
-	characters.update_talent_nodes() # 
-	species.update_talent_nodes()#
+	if characters != null:
+		characters.update_talent_nodes()
+	if species != null:
+		species.update_talent_nodes()
 
 
 func reload_traits() -> void:
-	characters.update_talent_nodes()#
-	species.update_talent_nodes()#
-	talents.reload_traits()
+	if characters != null:
+		characters.update_talent_nodes()
+	if species != null:
+		species.update_talent_nodes()
+	if talents != null:
+		talents.reload_traits()
 
 
 func reload_skills() -> void:
-	characters.update_talent_nodes() #
-	species.update_talent_nodes()#
-	talents.reload_skills()
+	if characters != null:
+		characters.update_talent_nodes()
+	if species != null:
+		species.update_talent_nodes()
+	if talents != null:
+		talents.reload_skills()
 
 
 func reload_character_sheet() -> void:
-	characters.update_genders() #
+	if characters != null:
+		characters.update_genders()
 
 
 func reload_items() -> void:
-	items.items_container.reload_fields() #
+	if items != null:
+		items.items_container.reload_fields()
 
 
 func reload_quest_data_types() -> void:
-	quests.update_type_button(1)
+	if quests != null:
+		quests.update_type_button(1)
 
 
 func reload_quest_stage_types() -> void:
-	quests.update_type_button(2)
+	if quests != null:
+		quests.update_type_button(2)
 
 
 func reload_quest_objective_types() -> void:
-	quests.update_type_button(3)
+	if quests != null:
+		quests.update_type_button(3)
 
 
 func reload_discourse_api() -> void:
-	discourse.reload_signals()
-	discourse.reload_methods()
+	if discourse != null:
+		discourse.reload_signals()
+		discourse.reload_methods()

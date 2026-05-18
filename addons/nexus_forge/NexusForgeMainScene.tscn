@@ -3,15 +3,6 @@
 [ext_resource type="Theme" uid="uid://bgqlr2f4msogv" path="res://addons/nexus_forge/default_theme.tres" id="1_14xiq"]
 [ext_resource type="Script" uid="uid://d0wp8u6btdhsk" path="res://addons/nexus_forge/nexus_forge_main_scene_script.gd" id="1_15n6i"]
 [ext_resource type="Texture2D" uid="uid://bohd4742ivr70" path="res://addons/nexus_forge/icons/nexus_forge_small.svg" id="2_efg3d"]
-[ext_resource type="Texture2D" uid="uid://c6wchabfbxjvv" path="res://addons/nexus_forge/icons/speech_bubble.svg" id="3_efg3d"]
-[ext_resource type="Texture2D" uid="uid://corsvngm2e08h" path="res://addons/nexus_forge/icons/variable_icon.svg" id="4_ntiiq"]
-[ext_resource type="Texture2D" uid="uid://bh78e7rsycp7y" path="res://addons/nexus_forge/icons/character_icon.svg" id="5_3eso2"]
-[ext_resource type="Texture2D" uid="uid://cig8gdultennb" path="res://addons/nexus_forge/icons/dna.svg" id="6_wvf1s"]
-[ext_resource type="Texture2D" uid="uid://bfgia1pi2gqoq" path="res://addons/nexus_forge/icons/star.svg" id="7_aw3hd"]
-[ext_resource type="Texture2D" uid="uid://bukpwr4hsxrv4" path="res://addons/nexus_forge/icons/chest_full.svg" id="8_yiaq8"]
-[ext_resource type="Texture2D" uid="uid://cebbn0w43pspb" path="res://addons/nexus_forge/icons/bluepring_fill.svg" id="9_fmp7a"]
-[ext_resource type="Texture2D" uid="uid://dnfafwipiljix" path="res://addons/nexus_forge/icons/scroll.svg" id="10_2qc1w"]
-[ext_resource type="Texture2D" uid="uid://bdw53wt3bshy" path="res://addons/nexus_forge/icons/brackets_speech.svg" id="11_3fnsj"]
 [ext_resource type="Texture2D" uid="uid://dr5siu85och4s" path="res://addons/nexus_forge/icons/nexus_forge_large.svg" id="11_at7in"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_yutfl"]
@@ -49,26 +40,8 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/icon_max_width = 22
 current_tab = 0
-tab_count = 10
+tab_count = 1
 tab_0/icon = ExtResource("2_efg3d")
-tab_1/title = "Discourse"
-tab_1/icon = ExtResource("3_efg3d")
-tab_2/title = "Blackboard"
-tab_2/icon = ExtResource("4_ntiiq")
-tab_3/title = "Characters"
-tab_3/icon = ExtResource("5_3eso2")
-tab_4/title = "Species"
-tab_4/icon = ExtResource("6_wvf1s")
-tab_5/title = "Talents"
-tab_5/icon = ExtResource("7_aw3hd")
-tab_6/title = "Items"
-tab_6/icon = ExtResource("8_yiaq8")
-tab_7/title = "Recipes"
-tab_7/icon = ExtResource("9_fmp7a")
-tab_8/title = "Quests"
-tab_8/icon = ExtResource("10_2qc1w")
-tab_9/title = "Phrase Maps"
-tab_9/icon = ExtResource("11_3fnsj")
 
 [node name="ToolScroll" type="ScrollContainer" parent="MainContainer" unique_id=1052498294]
 layout_mode = 2

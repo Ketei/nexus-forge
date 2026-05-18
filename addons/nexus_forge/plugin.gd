@@ -8,50 +8,121 @@ const PLUGIN_NAME: String = "NexusForge"
 const PLUGIN_ICON_PATH: String = "res://addons/nexus_forge/icons/nexus_forge_small.svg"
 const HANDLED_CLASSES: Array[StringName] = [&"EditorDiscourseDialog", &"CharacterSheet", &"PhraseMap", &"Quest"]
 const SETTINGS_PATHS: Dictionary[String, Dictionary] = {
+	"discourse_enabled": {
+		"setting_path": "nexus_forge/enabled_modules/discourse_enabled",
+		"default_value": true,
+		"type": TYPE_BOOL,
+		"hint": PROPERTY_HINT_NONE,
+		"hint_string": ""
+	},
+	"characters_enabled": {
+		"setting_path": "nexus_forge/enabled_modules/characters_enabled",
+		"default_value": true,
+		"type": TYPE_BOOL,
+		"hint": PROPERTY_HINT_NONE,
+		"hint_string": ""
+	},
+	"species_enabled": {
+		"setting_path": "nexus_forge/enabled_modules/species_enabled",
+		"default_value": true,
+		"type": TYPE_BOOL,
+		"hint": PROPERTY_HINT_NONE,
+		"hint_string": ""
+	},
+	"talents_enabled": {
+		"setting_path": "nexus_forge/enabled_modules/talents_enabled",
+		"default_value": true,
+		"type": TYPE_BOOL,
+		"hint": PROPERTY_HINT_NONE,
+		"hint_string": ""
+	},
+	"items_enabled": {
+		"setting_path": "nexus_forge/enabled_modules/items_enabled",
+		"default_value": true,
+		"type": TYPE_BOOL,
+		"hint": PROPERTY_HINT_NONE,
+		"hint_string": ""
+	},
+	"recipes_enabled": {
+		"setting_path": "nexus_forge/enabled_modules/recipes_enabled",
+		"default_value": true,
+		"type": TYPE_BOOL,
+		"hint": PROPERTY_HINT_NONE,
+		"hint_string": ""
+	},
+	"quests_enabled": {
+		"setting_path": "nexus_forge/enabled_modules/quests_enabled",
+		"default_value": true,
+		"type": TYPE_BOOL,
+		"hint": PROPERTY_HINT_NONE,
+		"hint_string": ""
+	},
+	"phrases_enabled": {
+		"setting_path": "nexus_forge/enabled_modules/phrase_maps_enabled",
+		"default_value": true,
+		"type": TYPE_BOOL,
+		"hint": PROPERTY_HINT_NONE,
+		"hint_string": ""},
+	"recompile_documentation": {
+		"setting_path": "nexus_forge/settings/recompile_documentation_on_start",
+		"default_value": false,
+		"type": TYPE_BOOL,
+		"hint": PROPERTY_HINT_NONE,
+		"hint_string": "",
+		"restart_required": false},
+	"discourse_custom_dialog_debug_scene": {
+		"setting_path": "nexus_forge/settings/custom_dialog_debug_scene",
+		"default_value": "",
+		"type": TYPE_STRING,
+		"hint": PROPERTY_HINT_FILE,
+		"hint_string": "*.tres",
+		"restart_required": false},
 	"discourse": {
-		"setting_path": "nexus_forge/localization_directory",
+		"setting_path": "nexus_forge/export/localization_directory",
 		"default_value": "res://localization/",
 		"type": TYPE_STRING,
 		"hint": PROPERTY_HINT_DIR,
-		"hint_string": ""},
+		"hint_string": "",
+		"is_basic": false,
+		"restart_required": false},
 	"variables": {
-		"setting_path": "nexus_forge/blackboard_path",
+		"setting_path": "nexus_forge/paths/blackboard_path",
 		"default_value": "",
 		"type": TYPE_STRING,
 		"hint": PROPERTY_HINT_FILE,
 		"hint_string": "*.tres"},
 	"traits": {
-		"setting_path": "nexus_forge/traits_path",
+		"setting_path": "nexus_forge/paths/traits_path",
 		"default_value": "",
 		"type": TYPE_STRING,
 		"hint": PROPERTY_HINT_FILE,
 		"hint_string": "*.tres"},
 	"skills": {
-		"setting_path": "nexus_forge/skills_path",
+		"setting_path": "nexus_forge/paths/skills_path",
 		"default_value": "",
 		"type": TYPE_STRING,
 		"hint": PROPERTY_HINT_FILE,
 		"hint_string": "*.tres"},
 	"species": {
-		"setting_path": "nexus_forge/species_path",
+		"setting_path": "nexus_forge/paths/species_path",
 		"default_value": "",
 		"type": TYPE_STRING,
 		"hint": PROPERTY_HINT_FILE,
 		"hint_string": "*.tres"},
 	"items": {
-		"setting_path": "nexus_forge/items_path",
+		"setting_path": "nexus_forge/paths/items_path",
 		"default_value": "",
 		"type": TYPE_STRING,
 		"hint": PROPERTY_HINT_FILE,
 		"hint_string": "*.tres"},
 	"currency": {
-		"setting_path": "nexus_forge/currency_path",
+		"setting_path": "nexus_forge/paths/currency_path",
 		"default_value": "",
 		"type": TYPE_STRING,
 		"hint": PROPERTY_HINT_FILE,
 		"hint_string": "*.tres"},
 	"recipes": {
-		"setting_path": "nexus_forge/recipes_path",
+		"setting_path": "nexus_forge/paths/recipes_path",
 		"default_value": "",
 		"type": TYPE_STRING,
 		"hint": PROPERTY_HINT_FILE,
@@ -69,8 +140,8 @@ static func get_project_settings_path(module: String) -> String:
 	return ""
 
 
-# Forces a recompilation of all scripts that contain documentation. Until
-# Godot fixes the documentation generation, this will be necessary.
+# Earlier versions of godot had an issue where documentation wouldn't show
+# unless recompiled. This forces a recompilation. Adds to load time.
 func recompile_script_docs() -> void:
 	const SCRIPT_DOC: Array[String] = [
 		"res://addons/nexus_forge/classes/autoload/nexus_forge_singleton.gd",
@@ -120,14 +191,22 @@ func _enter_tree() -> void:
 	export_plugin = preload("res://addons/nexus_forge/export_plugin.gd").new()
 	add_export_plugin(export_plugin)
 	verify_project_settings()
-	if ProjectSettings.has_setting("autoload/NexusForge"):
+	if ProjectSettings.has_setting("autoload/NexusForge") and ProjectSettings.get_setting(get_project_settings_path("recompile_documentation"), false):
 		recompile_script_docs.call_deferred()
 	editor_view = MAIN_SCENE.instantiate()
 	editor_view.visible = false
 	EditorInterface.get_editor_main_screen().add_child(editor_view)
 	if not editor_view.is_node_ready():
 		await editor_view.ready
-	editor_view.ready_plugin()
+	var use_discourse: bool = ProjectSettings.get_setting(get_project_settings_path("discourse_enabled"), true)
+	var use_characters: bool = ProjectSettings.get_setting(get_project_settings_path("characters_enabled"), true)
+	var use_species: bool = ProjectSettings.get_setting(get_project_settings_path("species_enabled"), true)
+	var use_talents: bool = ProjectSettings.get_setting(get_project_settings_path("talents_enabled"), true)
+	var use_items: bool = ProjectSettings.get_setting(get_project_settings_path("items_enabled"), true)
+	var use_recipes: bool = ProjectSettings.get_setting(get_project_settings_path("recipes_enabled"), true)
+	var use_quests: bool = ProjectSettings.get_setting(get_project_settings_path("quests_enabled"), true)
+	var use_phrases: bool = ProjectSettings.get_setting(get_project_settings_path("phrases_enabled"), true)
+	editor_view.ready_plugin(use_discourse, use_characters, use_species, use_talents, use_items, use_recipes, use_quests, use_phrases)
 	resource_saved.connect(_on_resource_saved, CONNECT_DEFERRED)
 	EditorInterface.get_file_system_dock().resource_removed.connect(_on_resource_removed)
 	EditorInterface.get_file_system_dock().files_moved.connect(_on_files_moved, CONNECT_DEFERRED)
@@ -184,15 +263,16 @@ func _enable_plugin() -> void:
 	add_autoload_singleton(
 			"NexusForge",
 			"res://addons/nexus_forge/classes/autoload/nexus_forge_singleton.gd")
-	recompile_script_docs.call_deferred()
+	if ProjectSettings.get_setting(get_project_settings_path("recompile_documentation"), false):
+		recompile_script_docs.call_deferred()
 
 
 func _get_window_layout(configuration: ConfigFile) -> void:
-	var discourse_id_visible: bool = editor_view.discourse.display_dialog_id_checked()
-	var discourse_open_files: Array[String] = editor_view.discourse.get_open_files()
-	var open_characters: Array[String] = editor_view.characters.get_open_characters()
-	var open_maps: Array[String] = editor_view.phrase_maps.get_open_maps()
-	var open_quests: Array[String] = editor_view.quests.get_open_files()
+	var discourse_id_visible: bool = editor_view.discourse.display_dialog_id_checked() if editor_view.discourse != null else false
+	var discourse_open_files: Array[String] = editor_view.discourse.get_open_files() if editor_view.discourse != null else Array([], TYPE_STRING, &"", null)
+	var open_characters: Array[String] = editor_view.characters.get_open_characters() if editor_view.characters != null else Array([], TYPE_STRING, &"", null)
+	var open_maps: Array[String] = editor_view.phrase_maps.get_open_maps() if editor_view.phrase_maps != null else Array([], TYPE_STRING, &"", null)
+	var open_quests: Array[String] = editor_view.quests.get_open_files() if editor_view.quests != null else Array([], TYPE_STRING, &"", null)
 	
 	configuration.set_value("NexusForge", "discourse_show_id", discourse_id_visible)
 	configuration.set_value("NexusForge", "open_dialogs", discourse_open_files)
@@ -217,13 +297,18 @@ func _set_window_layout(configuration: ConfigFile) -> void:
 	var tab: int = configuration.get_value("NexusForge", "active_tab", 0)
 	
 	editor_view.go_to_tab(tab)
-	editor_view.discourse.load_dialog_files(dialogs)
-	editor_view.discourse.set_display_dialog_id_checked(discourse_display_id)
-	editor_view.characters.load_character_files(characters)
-	editor_view.phrase_maps.open_map_files(maps)
-	editor_view.quests.open_files(open_quests)
 	editor_view.variables.set_folder_layout(folder_layout)
 	editor_view.variables.set_sorting_column(black_sorting_column)
+	
+	if editor_view.discourse != null:
+		editor_view.discourse.load_dialog_files(dialogs)
+		editor_view.discourse.set_display_dialog_id_checked(discourse_display_id)
+	if editor_view.characters != null:
+		editor_view.characters.load_character_files(characters)
+	if editor_view.phrase_maps != null:
+		editor_view.phrase_maps.open_map_files(maps)
+	if editor_view.quests != null:
+		editor_view.quests.open_files(open_quests)
 
 
 func verify_project_settings() -> void:
@@ -235,18 +320,18 @@ func verify_project_settings() -> void:
 	
 	var save_settings: bool = false
 	for tool_id in setting_order:
-		if ProjectSettings.has_setting(SETTINGS_PATHS[tool_id]["setting_path"]):
-			continue
-		ProjectSettings.set_setting(
+		if not ProjectSettings.has_setting(SETTINGS_PATHS[tool_id]["setting_path"]):
+			ProjectSettings.set_setting(
 				SETTINGS_PATHS[tool_id]["setting_path"],
 				SETTINGS_PATHS[tool_id]["default_value"])
+		
 		ProjectSettings.set_initial_value(
 				SETTINGS_PATHS[tool_id]["setting_path"],
 				SETTINGS_PATHS[tool_id]["default_value"])
 		
 		ProjectSettings.set_restart_if_changed(
 				SETTINGS_PATHS[tool_id]["setting_path"],
-				tool_id != "discourse")
+				SETTINGS_PATHS[tool_id]["restart_required"] if SETTINGS_PATHS[tool_id].has("restart_required") else true)
 		
 		var property_info = {
 			"name": SETTINGS_PATHS[tool_id]["setting_path"],
@@ -257,18 +342,14 @@ func verify_project_settings() -> void:
 		ProjectSettings.add_property_info(property_info)
 		ProjectSettings.set_as_basic(
 				SETTINGS_PATHS[tool_id]["setting_path"],
-				tool_id == "discourse")
-		
-		if save_settings == false:
-			save_settings = true
+				SETTINGS_PATHS[tool_id]["is_basic"] if SETTINGS_PATHS[tool_id].has("is_basic") else true)
 	
-	if save_settings:
-		var idx: int = -1
-		for setting in setting_order:
-			idx += 1
-			ProjectSettings.set_order(SETTINGS_PATHS[setting]["setting_path"], idx)
+	var idx: int = -1
+	for setting in setting_order:
+		idx += 1
+		ProjectSettings.set_order(SETTINGS_PATHS[setting]["setting_path"], idx)
 		
-		ProjectSettings.save()
+	ProjectSettings.save()
 
 
 func _disable_plugin() -> void:
@@ -284,11 +365,27 @@ func _disable_plugin() -> void:
 
 
 func _handles(object: Object) -> bool:
-	if object is Resource and object != null:
-		var script: Script = object.get_script()
-		if script != null:
-			return HANDLED_CLASSES.has(script.get_global_name())
-	return false
+	if object is not Resource or object == null:
+		return false
+	
+	var script: Script = object.get_script()
+	if script == null:
+		return false
+		
+	var script_global_name: StringName = script.get_global_name()
+	var tool_available: bool = false
+	
+	match script_global_name:
+		&"EditorDiscourseDialog":
+			tool_available = editor_view.discourse != null
+		&"CharacterSheet":
+			tool_available = editor_view.characters != null
+		&"PhraseMap":
+			tool_available = editor_view.phrase_maps != null
+		&"Quest":
+			tool_available = editor_view.quests != null
+	
+	return HANDLED_CLASSES.has(script_global_name) and tool_available
 
 
 func _edit(object: Object) -> void:
@@ -340,7 +437,6 @@ func _on_files_moved(old_file: String, new_file: String) -> void:
 		var new_md5: String = new_file.md5_text()
 		var new_path: String = "res://.godot/editor/".path_join(new_file.get_file() + "-treestate-" + new_md5 + ".cfg")
 		DirAccess.rename_absolute(old_file, new_path)
-
 
 
 func _on_resource_removed(object: Resource) -> void:

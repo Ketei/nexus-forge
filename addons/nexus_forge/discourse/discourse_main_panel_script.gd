@@ -1399,6 +1399,8 @@ func _on_play_current_dialog_pressed() -> void:
 	if active_conversation == null:
 		return
 	var res_path: String = active_conversation.resource_path
+	var custom_scene: String = ProjectSettings.get_setting(EditorNFPlugin.get_project_settings_path("discourse_custom_dialog_debug_scene"), "").strip_edges()
+	var scene_path: String = "res://addons/nexus_forge/discourse/dialog_previewer.tscn" if custom_scene.is_empty() or not FileAccess.file_exists(custom_scene) else custom_scene
 	
 	if res_path.is_empty():
 		printerr("[NexusForge] Discourse: Path of current conversation is empty.")
@@ -1417,7 +1419,7 @@ func _on_play_current_dialog_pressed() -> void:
 	cfg.save("user://nexus_forge/discourse_settings.cfg")
 	if conversation_tree.active_unsaved:
 		save_current_dialog()
-	EditorInterface.play_custom_scene("res://addons/nexus_forge/discourse/dialog_previewer.tscn")
+	EditorInterface.play_custom_scene(scene_path)
 
 
 func plugin_file_selected(file: EditorDiscourseDialog):
