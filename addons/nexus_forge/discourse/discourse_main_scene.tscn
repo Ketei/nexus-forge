@@ -6,6 +6,7 @@
 [ext_resource type="Texture2D" uid="uid://brtp4ypk1wxqu" path="res://addons/nexus_forge/icons/new_language_plus.svg" id="3_f5jrf"]
 [ext_resource type="Script" uid="uid://dqb1etyisx1gu" path="res://addons/nexus_forge/discourse/locales_tree_script.gd" id="4_2wl78"]
 [ext_resource type="Script" uid="uid://d1mmh7jus0avs" path="res://addons/nexus_forge/discourse/discourse_graph_edit_new.gd" id="4_qplns"]
+[ext_resource type="StyleBox" uid="uid://dv4amlr1n6jci" path="res://addons/nexus_forge/discourse/discourse_editor_stylebox.tres" id="4_qsnsk"]
 [ext_resource type="Script" uid="uid://d3hqle1cgp15b" path="res://addons/nexus_forge/discourse/localized_nodes_script.gd" id="5_qplns"]
 [ext_resource type="Script" uid="uid://bnwuk6bdi5hm5" path="res://addons/nexus_forge/discourse/issues_tree_script.gd" id="5_qsnsk"]
 [ext_resource type="Texture2D" uid="uid://bn6ggyqhhn03o" path="res://addons/nexus_forge/icons/dialog_plus.svg" id="6_nnanj"]
@@ -16,18 +17,6 @@ content_margin_left = 6.0
 content_margin_top = 8.0
 content_margin_right = 6.0
 content_margin_bottom = 6.0
-
-[sub_resource type="Image" id="Image_qplns"]
-data = {
-"data": PackedByteArray(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 0, 0, 0, 0, 255, 92, 92, 127, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 0, 0, 0, 0, 255, 93, 93, 255, 255, 92, 92, 127, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 0, 0, 0, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 92, 92, 127, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 0, 0, 0, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 92, 92, 127, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 93, 93, 231, 255, 90, 90, 54, 255, 94, 94, 57, 255, 93, 93, 233, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 231, 255, 90, 90, 54, 255, 94, 94, 57, 255, 93, 93, 233, 255, 93, 93, 255, 255, 93, 93, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 91, 91, 42, 0, 0, 0, 0, 0, 0, 0, 0, 255, 91, 91, 42, 255, 93, 93, 233, 255, 92, 92, 232, 255, 93, 93, 41, 0, 0, 0, 0, 0, 0, 0, 0, 255, 91, 91, 42, 255, 93, 93, 233, 255, 92, 92, 232, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 91, 91, 45, 255, 93, 93, 44, 0, 0, 0, 0, 255, 91, 91, 42, 255, 91, 91, 42, 0, 0, 0, 0, 255, 91, 91, 45, 255, 93, 93, 44, 0, 0, 0, 0, 255, 91, 91, 42, 255, 91, 91, 42, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 91, 91, 45, 255, 92, 92, 235, 255, 92, 92, 234, 255, 89, 89, 43, 0, 0, 0, 0, 0, 0, 0, 0, 255, 91, 91, 45, 255, 92, 92, 235, 255, 92, 92, 234, 255, 89, 89, 43, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 92, 92, 235, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 233, 255, 91, 91, 59, 255, 92, 92, 61, 255, 92, 92, 235, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 233, 255, 91, 91, 59, 255, 92, 92, 61, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 255, 93, 93, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
-"format": "RGBA8",
-"height": 16,
-"mipmaps": false,
-"width": 16
-}
-
-[sub_resource type="ImageTexture" id="ImageTexture_qplns"]
-image = SubResource("Image_qplns")
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_oqsni"]
 content_margin_left = 8.0
@@ -43,12 +32,14 @@ content_margin_bottom = 4.0
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_y6bvq"]
 
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_fy748"]
-
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_y485p"]
 content_margin_right = 6.0
 content_margin_bottom = 6.0
 bg_color = Color(0.180392, 0.180392, 0.180392, 1)
+
+[sub_resource type="DPITexture" id="DPITexture_y6bvq"]
+_source = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\"><path fill=\"#ff5d5d\" d=\"M2 1v8.586l1.293-1.293a1 1 0 0 1 1.414 0L7 10.587l2.293-2.293a1 1 0 0 1 1.414 0L13 10.586l1-1V6H9V1H2zm8 0v4h4zm-6 9.414-2 2V15h12v-2.586l-.293.293a1 1 0 0 1-1.414 0L10 10.414l-2.293 2.293a1 1 0 0 1-1.414 0L4 10.414z\"/></svg>
+"
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_i2jr7"]
 
@@ -153,7 +144,6 @@ placeholder_text = "Search Node"
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 disabled = true
-icon = SubResource("ImageTexture_qplns")
 flat = true
 icon_alignment = 1
 
@@ -326,7 +316,7 @@ icon_alignment = 1
 [node name="GraphPanel" type="PanelContainer" parent="MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox" unique_id=1402343114]
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_styles/panel = SubResource("StyleBoxEmpty_fy748")
+theme_override_styles/panel = ExtResource("4_qsnsk")
 
 [node name="NoDialogLbl" type="Label" parent="MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/GraphPanel" unique_id=1928266496]
 layout_mode = 2
@@ -367,7 +357,7 @@ text = "Issues"
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 size_flags_horizontal = 10
-icon = SubResource("ImageTexture_qplns")
+icon = SubResource("DPITexture_y6bvq")
 flat = true
 
 [node name="IssuesTree" type="Tree" parent="MainSplitContainer/DiscourseSplitContainer/ErrorContainer/IssuesVBox" unique_id=20958801]
@@ -454,7 +444,6 @@ vertical_alignment = 2
 [node name="SearchNodesLnEdt" type="LineEdit" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LanguagesSplitContainer/NodesContainer" unique_id=743885036]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
-right_icon = SubResource("ImageTexture_qplns")
 
 [node name="NodesTree" type="Tree" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LanguagesSplitContainer/NodesContainer" unique_id=517603300]
 layout_mode = 2
@@ -583,7 +572,6 @@ vertical_alignment = 2
 [node name="ReturnDiscourseBtn" type="Button" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/HeaderPanel/PhrasesHeader" unique_id=339804660]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
-icon = SubResource("ImageTexture_qplns")
 flat = true
 icon_alignment = 1
 
@@ -679,7 +667,7 @@ text_overrun_behavior = 3
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Save cases"
-icon = SubResource("ImageTexture_qplns")
+icon = SubResource("DPITexture_y6bvq")
 icon_alignment = 1
 
 [node name="VBoxContainer2" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer" unique_id=64134643]

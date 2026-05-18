@@ -101,8 +101,8 @@ var file_popup: PopupMenu = null
 @onready var snap_distance_spn_bx: SpinBox = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/SnapDistanceSpnBx
 
 
-func _ready() -> void:
-	ready_plugin()
+#func _ready() -> void:
+	#ready_plugin()
 
 
 func ready_plugin() -> void:
@@ -319,6 +319,8 @@ func ready_plugin() -> void:
 	discourse_graph_edit.localization_enabled.connect(_on_localize_node)
 	discourse_graph_edit.nodes_removed.connect(_on_nodes_removed)
 	discourse_graph_edit.node_created.connect(_on_discourse_node_created)
+	discourse_graph_edit.node_duplication_requested.connect(_on_graph_edit_node_duplication_requested)
+	discourse_graph_edit.paste_nodes_requested.connect(_on_graph_edit_paste_requested)
 	
 	discourse_graph_edit.discourse_node_selected.connect(_on_discourse_node_selected)
 	discourse_graph_edit.node_deleted.connect(_on_node_deleted)
@@ -1782,6 +1784,37 @@ func has_unsaved_files() -> bool:
 func _on_nodes_removed(nodes_data: Dictionary) -> void:
 	for node_uuid in nodes_data.keys():
 		discourse_nodes_tree.remove_dialog_node(node_uuid)
+
+
+func _on_graph_edit_node_duplication_requested(uuids: Array[StringName]) -> void:
+	var uuid_size: int = uuids.size()
+	if uuid_size == 0:
+		return
+	elif uuid_size == 1:
+		var new_uuid: StringName = StringName(UUID.generate_new())
+		discourse_graph_edit._duplicate_single(uuids[0], new_uuid)
+	else:
+		var uuid_map: Dictionary[StringName, StringName] = {}
+		for uuid in uuids:
+			uuid_map[uuid] = StringName(UUID.generate_new())
+		var undo_targets: Array[StringName] = []
+		undo_targets.assign(uuid_map.values())
+		discourse_graph_edit._duplicate_multiple(uuid_map)
+
+
+func _on_graph_edit_paste_requested() -> void:
+	var uuid_map: Dictionary[StringName, StringName] = {}
+	var clipboard: Array[Dictionary] = discourse_graph_edit.node_clipboard.duplicate(true)
+	
+	for clipboard_data in clipboard:
+		if discourse_graph_edit.graph_nodes.has(clipboard_data["node_uuid"]): # Change to reference the GraphEdit
+			uuid_map[clipboard_data["node_uuid"]] = StringName(UUID.generate_new())
+		else:
+			uuid_map[clipboard_data["node_uuid"]] = clipboard_data["node_uuid"]
+	
+	# TODO: Write the undoredo action
+	# with the below being the "do" action v
+	discourse_graph_edit.paste_node_clipboard(clipboard, uuid_map)
 
 
 #region Phrases
