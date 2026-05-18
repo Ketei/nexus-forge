@@ -542,6 +542,9 @@ func get_target_node_uuid(port_mode: PortMode, port: int, connection_index: int 
 
 
 func is_connected_to_input(input_idx: int, node: DiscourseGraphNode) -> bool:
+	if _input_nodes.size() <= input_idx:
+		return false
+	
 	for item in _input_nodes[input_idx]["connections"]:
 		if item["target_node"] == node:
 			return true
@@ -556,11 +559,16 @@ func has_any_output(output_idx: int) -> bool:
 
 
 func has_output_on(output_port: int, output_idx: int = 0) -> bool:
+	if output_idx < 0:
+		return false
 	var output_size: int = _output_nodes[output_port]["connections"].size()
-	return 0 <= output_idx and 0 < output_size and output_idx < output_size
+	return output_idx < output_size
 
 
 func is_connected_to_output(output_idx: int, node: DiscourseGraphNode) -> bool:
+	if _output_nodes.size() <= output_idx:
+		return false
+	
 	for item in _output_nodes[output_idx]["connections"]:
 		if item["target_node"] == node:
 			return true

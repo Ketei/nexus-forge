@@ -1096,6 +1096,9 @@ func disconnect_discourse_nodes(from_node_uuid: StringName, from_port: int, to_n
 	var output_node: DiscourseGraphNode = graph_nodes[from_node_uuid]
 	var input_node: DiscourseGraphNode = graph_nodes[to_node_uuid]
 	
+	if not input_node.is_connected_to_output(from_port, output_node):
+		return
+	
 	input_node.set_input_connection(
 			to_port,
 			output_node,
