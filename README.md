@@ -6,7 +6,7 @@
 > [!IMPORTANT]
 > * This plugin is currently in the **Alpha stage**. While the tools are functional they haven't been throughly tested and the **Graphical User Interface (GUI)**, internal API definitions (class names, function names) and other core properties may change significantly before the Beta release.</br>
 > * **ALPHA STATE: Use of this plugin is **ONLY** for testing, evaluation, or as a VERY bold choice for current projects.** It is not yet considered reliable for production projects, expect bugs.</br>
-> * This plugin started as a personal tool which means some things might be tailored for my personal intended use. This, however, doesn't mean I won't change or tweak them for general use in the future.</br>
+> * This plugin started as a personal tool which means some things might be tailored for my personal intended use which is why it comes with and uses some pre-made static helper classes.</br>
 
 > [!WARNING]
 > Nexus Forge does NOT implement an **UndoRedo** system, meaning that any action taken in the plugin can't be undone.
