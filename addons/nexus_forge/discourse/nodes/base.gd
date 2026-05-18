@@ -709,7 +709,7 @@ func _create_field(main_field: Control) -> HBoxContainer:
 	left_rect.visible = false
 	right_rect.visible = false
 	
-	field_box.add_theme_constant_override(&"separation", 4)
+	field_box.add_theme_constant_override(&"separation", 8)
 	
 	left_rect.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	right_rect.size_flags_horizontal = Control.SIZE_SHRINK_CENTER

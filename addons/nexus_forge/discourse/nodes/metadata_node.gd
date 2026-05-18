@@ -41,7 +41,9 @@ func _ready() -> void:
 	set_slot_color_right(0, COLORS["metadata"])
 	set_output_connection_icon(&"metadata_connection", load("res://addons/nexus_forge/icons/metadata_icon.svg"))
 	set_slot_color_left(1, COLORS["any"])
-	set_input_connection_icon(&"metadata_0", get_theme_icon("Variant", "EditorIcons"))
+	for port_idx in range(get_child_count() - 1):
+		var id: StringName = StringName("metadata_" + str(port_idx))
+		set_input_connection_icon(id, get_theme_icon("Variant", "EditorIcons"))
 
 
 func _on_input_connected(input_port: int, _from_node: DiscourseGraphNode, _from_port: int) -> void:
