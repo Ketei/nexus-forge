@@ -846,36 +846,51 @@ func override_dialog_locale(dialog_id: String, locale_code: String, path: String
 
 
 ## Adds an override for a specific dialog on a specific locale.[br]
-## Data needs to be either a PackedStringArray or a string. If you pass
+## [param data] needs to be either a String or [code]null[/code]. If you pass
 ## [code]null[/code] to [param data] the edited dialog will be removed and the
 ## original used instead.
-func edit_dialog(locale_code: String, dialog_id: String, node_id: String, data) -> void:
-	var type: int = typeof(data)
+func edit_dialog(locale_code: String, dialog_id: String, node_id: String, new_dialog) -> void:
+	var type: int = typeof(new_dialog)
 	if type == TYPE_NIL:
 		if DictUtils.has_nested_path(_dialog_edits, [dialog_id, locale_code, node_id]):
 			_dialog_edits[dialog_id][locale_code].erase(node_id)
 		return
-	elif type != TYPE_STRING and type != TYPE_PACKED_STRING_ARRAY:
+	elif type != TYPE_STRING:
 		return
 	
-	if not _dialog_edits.has(dialog_id):
-		_dialog_edits[dialog_id] = {}
-		
-	if not _dialog_edits[dialog_id].has(locale_code):
-		_dialog_edits[dialog_id][locale_code] = {}
+	DictUtils.set_nested_value(
+			_dialog_edits,
+			[dialog_id, locale_code, node_id],
+			new_dialog)
+
+
+## Adds an override for a specific set of choices on a specific locale.[br]
+## [param data] needs to be either an Array, PackedStringArray or [code]null[/code].
+## If you pass [code]null[/code] to [param data] the edited dialog will be 
+## removed and the original used instead.
+func edit_choices(locale_code: String, dialog_id: String, node_id: String, new_choices) -> void:
+	var type: int = typeof(new_choices)
+	if type == TYPE_NIL:
+		if DictUtils.has_nested_path(_dialog_edits, [dialog_id, locale_code, node_id]):
+			_dialog_edits[dialog_id][locale_code].erase(node_id)
+		return
+	elif type != TYPE_PACKED_STRING_ARRAY or type != TYPE_ARRAY:
+		return
 	
-	if type == TYPE_STRING:
-		_dialog_edits[dialog_id][locale_code][node_id] = data
-	elif type == TYPE_PACKED_STRING_ARRAY:
-		var responses: PackedStringArray = []
-		for item in data:
-			if typeof(item) == TYPE_STRING:
-				responses.append(item)
-			else:
-				responses.append(str(data))
-		_dialog_edits[dialog_id][locale_code][node_id] = responses
+	var responses: PackedStringArray = []
+	for item in new_choices:
+		if typeof(item) == TYPE_STRING:
+			responses.append(item)
+		else:
+			responses.append("")
+	
+	DictUtils.set_nested_value(
+		_dialog_edits,
+		[dialog_id, locale_code, node_id],
+		responses)
 
 
+## Adds an override for a specific choice on a specific locale.
 func edit_choice(dialog_id: String, locale_code: String, node_id: String, choice_index: int, data: String) -> void:
 	if not _dialog_edits.has(dialog_id):
 		_dialog_edits[dialog_id] = {}

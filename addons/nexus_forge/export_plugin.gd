@@ -60,19 +60,24 @@ func _export_file(path: String, type: String, features: PackedStringArray) -> vo
 	var new_id: String = ""
 	var md5_hash: String = path.to_lower().md5_text().substr(0, 12)
 	var localization_filename: String = md5_hash + "-" + path.get_file().get_basename() + ".json"
+	var dialog_id: String = file.dialog_id.strip_edges().replace(" ", "_")
 	
-	if file.dialog_id.is_empty():
-		new_id = _get_new_dialog_id_for(path)
-	elif id_to_localization.has(file.dialog_id):
+	if dialog_id.is_empty():
+		var slug_id: String = _get_new_dialog_id_for(path)
+		if id_to_localization.has(slug_id):
+			new_id = path.md5_text()
+		else:
+			new_id = slug_id
+	elif id_to_localization.has(dialog_id):
 		var culprit: String = ""
 		for filepath in dialog_file_to_id.keys():
-			if dialog_file_to_id[filepath] == file.dialog_id:
+			if dialog_file_to_id[filepath] == dialog_id:
 				culprit = filepath
 				break
 		new_id = path.md5_text()
 		push_warning("[NEXUSFORGE EXPORTPLUGIN] Dialog ID " + file.dialog_id + " already in use by " + culprit + ". Changing ID of file " + path + " to " + new_id)
 	else:
-		new_id = file.dialog_id
+		new_id = dialog_id
 		
 	dialog_file_to_id[path] = new_id
 	id_to_localization[new_id] = localization_filename
