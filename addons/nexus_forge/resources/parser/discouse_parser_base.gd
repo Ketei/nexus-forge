@@ -891,7 +891,7 @@ func edit_choices(locale_code: String, dialog_id: String, node_id: String, new_c
 
 
 ## Adds an override for a specific choice on a specific locale.
-func edit_choice(dialog_id: String, locale_code: String, node_id: String, choice_index: int, data: String) -> void:
+func edit_choice(locale_code: String, dialog_id: String, node_id: String, choice_index: int, data: String) -> void:
 	if not _dialog_edits.has(dialog_id):
 		_dialog_edits[dialog_id] = {}
 		
