@@ -99,6 +99,10 @@ func _get_node_data() -> Dictionary:
 	
 	var metadata: Dictionary = {"metadata_connections": metadata_connections}
 	var input_connections: Dictionary = {}
+	var output_connections: Dictionary = {
+		"metadata_target": get_uuid_and_port_connected_to(PortMode.OUTPUT, 0)
+	}
+	
 	if 0 < get_metadata_count():
 		for port_index in range(get_metadata_count()):
 			if not has_any_input(port_index):
@@ -117,7 +121,7 @@ func _get_node_data() -> Dictionary:
 				"id": metadata_id,
 				"port": port_index})
 	
-	return _build_node_data(metadata, {}, input_connections)
+	return _build_node_data(metadata, output_connections, input_connections)
 
 
 func _set_node_data(data: Dictionary) -> void:

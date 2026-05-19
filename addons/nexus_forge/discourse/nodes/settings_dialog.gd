@@ -84,6 +84,7 @@ func _get_node_data() -> Dictionary:
 	var input_connections: Dictionary = {
 		"font_resource": get_uuid_and_port_connected_to(PortMode.INPUT, 0),
 		"dialog_scene": get_uuid_and_port_connected_to(PortMode.INPUT, 1),
-		"dialog_speed": get_uuid_and_port_connected_to(PortMode.INPUT, 2)}
+		"dialog_speed": get_uuid_and_port_connected_to(PortMode.INPUT, 2),
+		"metadata": get_uuid_and_port_connected_to(PortMode.INPUT, 3)}
 	
 	return _build_node_data({}, output_connections, input_connections)

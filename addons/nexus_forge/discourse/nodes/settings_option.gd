@@ -14,6 +14,7 @@ func _post_init() -> void:
 	var option_available: Label = Label.new()
 	var option_unblocked: Label = Label.new()
 	var option_hint: Label = Label.new()
+	var metadata_label: Label = Label.new()
 	
 	option_connection.text = "Option"
 	option_connection.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -28,13 +29,15 @@ func _post_init() -> void:
 	option_hint.text = "Locked Hint"
 	option_hint.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	
+	metadata_label.text = "Metadata"
+	option_hint.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	
 	add_field(
 			&"connection",
 			option_connection,
 			false,
 			-1,
 			SlotConnectionType.SETTINGS_OPTION)
-	set_slot_color_right(0, COLORS["setting"])
 
 	add_field(
 			&"available",
@@ -42,7 +45,6 @@ func _post_init() -> void:
 			false,
 			SlotConnectionType.VAR_BOOL,
 			-1)
-	set_slot_color_left(1, COLORS["bool"])
 	
 	add_field(
 			&"unblocked",
@@ -50,7 +52,6 @@ func _post_init() -> void:
 			false,
 			SlotConnectionType.VAR_BOOL,
 			-1)
-	set_slot_color_left(2, COLORS["bool"])
 	
 	add_field(
 			&"hint",
@@ -58,13 +59,25 @@ func _post_init() -> void:
 			false,
 			SlotConnectionType.VAR_STRING,
 			-1)
-	set_slot_color_left(3, COLORS["string"])
+	
+	add_field(
+			&"metadata",
+			metadata_label,
+			false,
+			SlotConnectionType.METADATA)
 
 
 func _ready() -> void:
 	set_input_connection_icon(&"available", get_theme_icon("bool", "EditorIcons"))
 	set_input_connection_icon(&"unblocked", get_theme_icon("bool", "EditorIcons"))
 	set_input_connection_icon(&"hint", get_theme_icon("String", "EditorIcons"))
+	set_input_connection_icon(&"metadata", load("res://addons/nexus_forge/icons/metadata_icon.svg"))
+	
+	set_slot_color_right(0, COLORS["setting"])
+	set_slot_color_left(1, COLORS["bool"])
+	set_slot_color_left(2, COLORS["bool"])
+	set_slot_color_left(3, COLORS["string"])
+	set_slot_color_left(4, COLORS["metadata"])
 
 
 func _get_node_data() -> Dictionary:
@@ -73,6 +86,7 @@ func _get_node_data() -> Dictionary:
 	var input_connections: Dictionary = {
 		"option_available": get_uuid_and_port_connected_to(PortMode.INPUT, 0),
 		"option_unlocked": get_uuid_and_port_connected_to(PortMode.INPUT, 1),
-		"locked_hint": get_uuid_and_port_connected_to(PortMode.INPUT, 2)}
+		"locked_hint": get_uuid_and_port_connected_to(PortMode.INPUT, 2),
+		"metadata": get_uuid_and_port_connected_to(PortMode.INPUT, 3)}
 	
 	return _build_node_data({}, output_connections, input_connections)
