@@ -53,6 +53,7 @@ func _process_logic(uuid: StringName) -> String:
 			var speed: float = 0.0
 			var display_name: String = ""
 			var portrait_id: String = ""
+			var dialog_metadata: Dictionary[String, Variant] = {}
 			
 			if not data["input_connections"]["dialog_settings"]["target_node_uuid"].is_empty():
 				var settings: Dictionary = _dialog_resource.get_node_data(data["input_connections"]["dialog_settings"]["target_node_uuid"], locale)
@@ -62,6 +63,16 @@ func _process_logic(uuid: StringName) -> String:
 					scene = _get_data(settings["dialog_scene"]["target_node_uuid"])
 				if not settings["dialog_speed"]["target_node_uuid"].is_empty():
 					speed = _get_data(settings["dialog_speed"]["target_node_uuid"])
+				if not settings["metadata"]["target_node_uuid"].is_empty():
+					var metadata_node: Dictionary = _dialog_resource.get_node_data(settings["metadata"])
+					if metadata_node.has_all(["input_connections", "metadata"]) and metadata_node["metadata"].has("metadata_connections"):
+						for meta_key in metadata_node["metadata"]["metadata_connections"].keys():
+							if not metadata_node["input_connections"].has(meta_key):
+								push_error(
+										"[NexusForge] Metadata connection missing for metadata \"", meta_key, "\" on node \"", metadata_node["name"], "\" on resoruce \"", _dialog_resource.resource_path, "\"")
+								dialog_metadata[meta_key] = null
+							else:
+								dialog_metadata[meta_key] = _get_data(metadata_node["input_connections"][meta_key]["target_node_uuid"])
 			
 			if not data["input_connections"]["character_settings"]["target_node_uuid"].is_empty():
 				var settings: Dictionary = _dialog_resource.get_node_data(data["input_connections"]["character_settings"]["target_node_uuid"], locale)
@@ -69,7 +80,7 @@ func _process_logic(uuid: StringName) -> String:
 					display_name = _get_data(settings["display_name"]["target_node_uuid"])
 				if not settings["portrait_id"]["target_node_uuid"].is_empty():
 					portrait_id = _get_data(settings["portrait_id"]["target_node_uuid"])
-				
+			
 			if data["input_connections"]["dialog_text_source"]["target_node_uuid"].is_empty():
 				dialog_reached.emit({
 					"dialog_text": _parse_dialog(uuid, metadata["dialog_text"]),

@@ -502,7 +502,8 @@ func convert_for_release() -> DiscourseDialog:
 				var dialog_settings: Dictionary = {
 					"font_resource": &"",
 					"dialog_scene": &"",
-					"dialog_speed": &""}
+					"dialog_speed": &"",
+					"metadata": {}}
 				
 				if not node_data[node_id]["input_connections"]["dialog_settings"]["target_node_uuid"].is_empty():
 					var character_settings_data: Dictionary = node_data[node_data[node_id]["input_connections"]["dialog_settings"]["target_node_uuid"]]
@@ -524,7 +525,18 @@ func convert_for_release() -> DiscourseDialog:
 					
 					if not dialog_settings_data["input_connections"]["dialog_speed"]["target_node_uuid"].is_empty():
 						dialog_settings["dialog_speed"] = StringName(dialog_settings_data["input_connections"]["dialog_speed"]["target_node_uuid"])
-
+				
+				if not node_data[node_id]["input_connections"]["metadata"]["target_node_uuid"].is_empty():
+					var dialog_metadata_node: Dictionary = node_data[node_data[node_id]["input_connections"]["metadata"]["target_node_uuid"]]
+					var dialog_metadata: Dictionary = dialog_metadata_node["metadata"]
+					for meta_field in dialog_metadata:
+						if not dialog_metadata_node["input_connections"].has(meta_field["id"]):
+							push_error(
+								"[DISCOURSE] Metadata node ", dialog_metadata_node["name"], " on file ", resource_path, " registered metadata with ID ", meta_field["id"], " on port ", meta_field["port"], " but the port isn't available. Setting to null.")
+							dialog_metadata["metadata"][meta_field["id"]] = null
+						else:
+							dialog_settings["metadata"][meta_field["id"]] = dialog_metadata_node["input_connections"][meta_field["id"]]["target_node_uuid"]
+				
 				data["character_id"] = metadata["character_id"]
 				data["persist"] = metadata["persist"]
 				data["character_settings"] = character_settings
@@ -539,7 +551,8 @@ func convert_for_release() -> DiscourseDialog:
 						"settings": {
 							"available": &"",
 							"unlocked": &"",
-							"lock_hint": &""}}
+							"lock_hint": &"",
+							"metadata": {}}}
 					
 					if not option["input_connections"]["settings"]["target_node_uuid"].is_empty():
 						var option_settings: Dictionary = node_data[option["input_connections"]["settings"]["target_node_uuid"]]
@@ -551,6 +564,18 @@ func convert_for_release() -> DiscourseDialog:
 		
 						if not option_settings["input_connections"]["locked_hint"]["target_node_uuid"].is_empty():
 							new_option["settings"]["lock_hint"] = StringName(option_settings["input_connections"]["locked_hint"]["target_node_uuid"])
+					
+					if not node_data[node_id]["input_connections"]["metadata"]["target_node_uuid"].is_empty():
+						var dialog_metadata_node: Dictionary = node_data[node_data[node_id]["input_connections"]["metadata"]["target_node_uuid"]]
+						var dialog_metadata: Dictionary = dialog_metadata_node["metadata"]
+						for meta_field in dialog_metadata:
+							if not dialog_metadata_node["input_connections"].has(meta_field["id"]):
+								push_error(
+									"[DISCOURSE] Metadata node ", dialog_metadata_node["name"], " on file ", resource_path, " registered metadata with ID ", meta_field["id"], " on port ", meta_field["port"], " but the port isn't available. Setting to null.")
+								new_option["metadata"][meta_field["id"]] = null
+							else:
+								new_option["metadata"][meta_field["id"]] = dialog_metadata_node["input_connections"][meta_field["id"]]["target_node_uuid"]
+					
 					options.append(new_option)
 				data["options"] = options
 			NodeType.BRANCH:

@@ -187,11 +187,13 @@ func _init() -> void:
 	_conversation_cache = ResourceCache.new()
 	_parser_cache = Cache.new()
 	API = DiscourseAPI.new()
-	
+
+
+func generate_locale_map() -> void:
 	var file: FileAccess = FileAccess.open(
 			StringUtils.make_path([
 				ProjectSettings.get_setting(
-					"nexus_forge/localization_directory",
+					EditorNFPlugin.get_project_settings_path("discourse"),
 					"res://localization/"),
 				"dialog_locale_map.json"]),
 			FileAccess.READ)
@@ -400,6 +402,12 @@ func _process_logic(uuid: StringName) -> String:
 			var speed: float = _get_data(data["dialog_settings"]["dialog_speed"], 0.0)
 			var display_name: String = _get_data(data["character_settings"]["display_name"], "")
 			var portrait_id: String = _get_data(data["character_settings"]["portrait_id"], "")
+			var metadata: Dictionary[String, Variant] = {}
+			
+			if DictUtils.has_nested_path(data, ["dialog_settings", "metadata"]):
+				for meta_key in data["dialog_settings"]["metadata"].keys():
+					metadata[meta_key] = _get_data(data["dialog_settings"]["metadata"][meta_key])
+			
 			if data["text_source"].is_empty():
 				dialog_reached.emit({
 					"dialog_text": _parse_dialog(String(uuid), _dialog_resource._get_text(dialog_id, uuid)),
@@ -409,7 +417,8 @@ func _process_logic(uuid: StringName) -> String:
 					"scene": scene,
 					"speed": speed,
 					"display_name": display_name,
-					"portrait_id": portrait_id})
+					"portrait_id": portrait_id,
+					"metadata": metadata})
 			else:
 				dialog_reached.emit({
 					"dialog_text": _parse_dialog(String(uuid), _get_data(data["text_source"], "")),
@@ -419,7 +428,8 @@ func _process_logic(uuid: StringName) -> String:
 					"scene": scene,
 					"speed": speed,
 					"display_name": display_name,
-					"portrait_id": portrait_id})
+					"portrait_id": portrait_id,
+					"metadata": metadata})
 			return data["next_node"]
 		NodeTypes.OPTIONS:
 			var available_options: Array[Dictionary] = []
@@ -441,7 +451,8 @@ func _process_logic(uuid: StringName) -> String:
 						{
 							"unlocked": true,
 							"text": _parse_dialog(option_duuid, localized_options[idx]),
-							"target": option["next_node"]})
+							"target": option["next_node"],
+							"metadata": {}})
 				else:
 					var opt_settings: Dictionary = option["settings"]
 					var show: bool = _get_data(opt_settings["available"], true)
@@ -450,6 +461,11 @@ func _process_logic(uuid: StringName) -> String:
 						continue
 					var unlocked: bool = _get_data(opt_settings["unlocked"], true)
 					var text: String = localized_options[idx]
+					var metadata: Dictionary[String, Variant] = {}
+					
+					if opt_settings.has("metadata"):
+						for meta_key in opt_settings["metadata"].keys():
+							metadata[meta_key] = _get_data(opt_settings["metadata"][meta_key])
 					
 					if not unlocked:
 						var lock_hint: String = _get_data(opt_settings["lock_hint"], "")
@@ -464,7 +480,8 @@ func _process_logic(uuid: StringName) -> String:
 					available_options.append({
 						"unlocked": unlocked,
 						"text": _parse_dialog(option_duuid, text),
-						"target": option["next_node"]})
+						"target": option["next_node"],
+						"metadata": metadata})
 			
 			options_reached.emit(available_options)
 			return uuid
@@ -546,7 +563,7 @@ func _process_logic(uuid: StringName) -> String:
 func _get_data(uuid: StringName, fallback = null) -> Variant:
 	if _dialog_resource == null or not _dialog_resource.dialog_nodes.has(uuid):
 		return fallback
-	var data: Dictionary = _dialog_resource.dialog_nodes[uuid]
+	var data: Dictionary = _dialog_resource.node_logic[uuid]
 	
 	match data["node_type"]:
 		NodeTypes.VALUE:
