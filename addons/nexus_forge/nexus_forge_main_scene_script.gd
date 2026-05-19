@@ -240,7 +240,7 @@ func has_unsaved_changes() -> bool:
 func save_resources() -> void:
 	if discourse != null and discourse.has_unsaved_files():
 		discourse.save_all_dialogs()
-	if variables._unsaved:
+	if variables.has_unsaved_changes():
 		variables.save()
 	if characters != null and characters.has_unsaved_files():
 		characters.save()

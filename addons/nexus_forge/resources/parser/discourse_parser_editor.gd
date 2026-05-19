@@ -57,29 +57,29 @@ func _process_logic(uuid: StringName) -> String:
 			
 			if not data["input_connections"]["dialog_settings"]["target_node_uuid"].is_empty():
 				var settings: Dictionary = _dialog_resource.get_node_data(data["input_connections"]["dialog_settings"]["target_node_uuid"], locale)
-				if not settings["font_resource"]["target_node_uuid"].is_empty():
-					font = _get_data(settings["font_resource"]["target_node_uuid"])
-				if not settings["dialog_scene"]["target_node_uuid"].is_empty():
-					scene = _get_data(settings["dialog_scene"]["target_node_uuid"])
-				if not settings["dialog_speed"]["target_node_uuid"].is_empty():
-					speed = _get_data(settings["dialog_speed"]["target_node_uuid"])
-				if not settings["metadata"]["target_node_uuid"].is_empty():
-					var metadata_node: Dictionary = _dialog_resource.get_node_data(settings["metadata"])
+				if not settings["input_connections"]["font_resource"]["target_node_uuid"].is_empty():
+					font = _get_data(settings["input_connections"]["font_resource"]["target_node_uuid"])
+				if not settings["input_connections"]["dialog_scene"]["target_node_uuid"].is_empty():
+					scene = _get_data(settings["input_connections"]["dialog_scene"]["target_node_uuid"])
+				if not settings["input_connections"]["dialog_speed"]["target_node_uuid"].is_empty():
+					speed = _get_data(settings["input_connections"]["dialog_speed"]["target_node_uuid"])
+				if not settings["input_connections"]["metadata"]["target_node_uuid"].is_empty():
+					var metadata_node: Dictionary = _dialog_resource.get_node_data(settings["input_connections"]["metadata"]["target_node_uuid"])
 					if metadata_node.has_all(["input_connections", "metadata"]) and metadata_node["metadata"].has("metadata_connections"):
-						for meta_key in metadata_node["metadata"]["metadata_connections"].keys():
-							if not metadata_node["input_connections"].has(meta_key):
+						for meta_entry: Dictionary in metadata_node["metadata"]["metadata_connections"]:
+							if not metadata_node["input_connections"].has(meta_entry["id"]):
 								push_error(
-										"[NexusForge] Metadata connection missing for metadata \"", meta_key, "\" on node \"", metadata_node["name"], "\" on resoruce \"", _dialog_resource.resource_path, "\"")
-								dialog_metadata[meta_key] = null
+										"[NexusForge] Metadata connection missing for metadata \"", meta_entry["id"], "\" on node \"", metadata_node["name"], "\" on resoruce \"", _dialog_resource.resource_path, "\"")
+								dialog_metadata[meta_entry["id"]] = null
 							else:
-								dialog_metadata[meta_key] = _get_data(metadata_node["input_connections"][meta_key]["target_node_uuid"])
+								dialog_metadata[meta_entry["id"]] = _get_data(metadata_node["input_connections"][meta_entry["id"]]["target_node_uuid"])
 			
 			if not data["input_connections"]["character_settings"]["target_node_uuid"].is_empty():
 				var settings: Dictionary = _dialog_resource.get_node_data(data["input_connections"]["character_settings"]["target_node_uuid"], locale)
-				if not settings["display_name"]["target_node_uuid"].is_empty():
-					display_name = _get_data(settings["display_name"]["target_node_uuid"])
-				if not settings["portrait_id"]["target_node_uuid"].is_empty():
-					portrait_id = _get_data(settings["portrait_id"]["target_node_uuid"])
+				if not settings["input_connections"]["display_name"]["target_node_uuid"].is_empty():
+					display_name = _get_data(settings["input_connections"]["display_name"]["target_node_uuid"])
+				if not settings["input_connections"]["portrait_id"]["target_node_uuid"].is_empty():
+					portrait_id = _get_data(settings["input_connections"]["portrait_id"]["target_node_uuid"])
 			
 			if data["input_connections"]["dialog_text_source"]["target_node_uuid"].is_empty():
 				dialog_reached.emit({
@@ -90,7 +90,8 @@ func _process_logic(uuid: StringName) -> String:
 					"scene": scene,
 					"speed": speed,
 					"display_name": display_name,
-					"portrait_id": portrait_id})
+					"portrait_id": portrait_id,
+					"metadata": dialog_metadata})
 			else:
 				dialog_reached.emit({
 					"dialog_text": _parse_dialog(uuid, _get_data(data["input_connections"]["dialog_text_source"]["target_node_uuid"])),
@@ -100,7 +101,8 @@ func _process_logic(uuid: StringName) -> String:
 					"scene": scene,
 					"speed": speed,
 					"display_name": display_name,
-					"portrait_id": portrait_id})
+					"portrait_id": portrait_id,
+					"metadata": dialog_metadata})
 			return data["output_connections"]["next_node"]["target_node_uuid"]
 		NodeTypes.OPTIONS:
 			var available_options: Array[Dictionary] = []
@@ -115,7 +117,8 @@ func _process_logic(uuid: StringName) -> String:
 						{
 							"unlocked": true,
 							"text": _parse_dialog(option_duuid, option["text"]),
-							"target": option["output_connections"]["next_node"]["target_node_uuid"]})
+							"target": option["output_connections"]["next_node"]["target_node_uuid"],
+							"metadata": {}})
 				else:
 					var opt_settings: Dictionary = _dialog_resource.get_node_data(option["input_connections"]["settings"]["target_node_uuid"])
 					var show: bool = true if opt_settings["input_connections"]["option_available"]["target_node_uuid"].is_empty() else _get_bool_result(opt_settings["input_connections"]["option_available"]["target_node_uuid"])
@@ -125,11 +128,22 @@ func _process_logic(uuid: StringName) -> String:
 					
 					var unlocked: bool = true if opt_settings["input_connections"]["option_unlocked"]["target_node_uuid"].is_empty() else _get_bool_result(opt_settings["input_connections"]["option_unlocked"]["target_node_uuid"])
 					var text: String = option["text"]
+					var option_metadata: Dictionary[String, Variant] = {}
 					
 					if not unlocked and not opt_settings["input_connections"]["locked_hint"]["target_node_uuid"].is_empty():
 						var lock_hint: String = _get_data(opt_settings["input_connections"]["locked_hint"]["target_node_uuid"])
 						if not lock_hint.is_empty():
 							text = lock_hint
+					if not opt_settings["input_connections"]["metadata"]["target_node_uuid"].is_empty():
+						var metadata_node: Dictionary = _dialog_resource.get_node_data(opt_settings["input_connections"]["metadata"]["target_node_uuid"])
+						if metadata_node.has_all(["input_connections", "metadata"]) and metadata_node["metadata"].has("metadata_connections"):
+							for meta_entry: Dictionary in metadata_node["metadata"]["metadata_connections"]:
+								if not metadata_node["input_connections"].has(meta_entry["id"]):
+									push_error(
+											"[NexusForge] Metadata connection missing for metadata \"", meta_entry["id"], "\" on node \"", metadata_node["name"], "\" on resoruce \"", _dialog_resource.resource_path, "\"")
+									option_metadata[meta_entry["id"]] = null
+								else:
+									option_metadata[meta_entry["id"]] = _get_data(metadata_node["input_connections"][meta_entry["id"]]["target_node_uuid"])
 					
 					if unlocked:
 						option_duuid += "_unlocked"
@@ -139,7 +153,8 @@ func _process_logic(uuid: StringName) -> String:
 					available_options.append({
 						"unlocked": unlocked,
 						"text": _parse_dialog(option_duuid, text),
-						"target": option["output_connections"]["next_node"]["target_node_uuid"]})
+						"target": option["output_connections"]["next_node"]["target_node_uuid"],
+						"metadata": option_metadata})
 			
 			options_reached.emit(available_options)
 			return uuid
@@ -153,7 +168,7 @@ func _process_logic(uuid: StringName) -> String:
 						data["output_connections"]["next_node_false"]["target_node_uuid"])
 		NodeTypes.EVENT:
 			if not metadata["variable_path"].is_empty() and not data["input_connections"]["variable_value"]["target_node_uuid"].is_empty():
-				var parts: PackedStringArray = data["variable_path"].rsplit("/", false, 1)
+				var parts: PackedStringArray = metadata["variable_path"].rsplit("/", false, 1)
 				var set_data: Variant = _get_data(data["input_connections"]["variable_value"]["target_node_uuid"])
 				
 				NexusForge.Blackboard.set_variable(
@@ -163,29 +178,31 @@ func _process_logic(uuid: StringName) -> String:
 				data_set.emit(parts[0], parts[1], set_data)
 			if data["input_connections"]["callable"]["target_node_uuid"] != "":
 				var call_data: Dictionary = _dialog_resource.get_node_data(data["input_connections"]["callable"]["target_node_uuid"])
+				var call_metadata: Dictionary = call_data["metadata"]
 				var call_args: Array = []
 				
-				for arg_connection in call_data["arguments"]:
+				for arg_connection in call_metadata["arguments"]:
 					call_args.append(
 							_get_data(arg_connection["target_node_uuid"]))
 				
 				NexusForge.Discourse.API.callv(
-						call_data["method"],
+						call_metadata["method"],
 						call_args)
 				
-				method_called.emit(call_data["method"], call_args.duplicate(true))
+				method_called.emit(call_metadata["method"], call_args.duplicate(true))
 			
 			if data["input_connections"]["signal"]["target_node_uuid"] != "":
 				var signal_data: Dictionary = _dialog_resource.get_node_data(data["input_connections"]["signal"]["target_node_uuid"])
+				var signal_metadata: Dictionary = signal_data["metadata"]
 				var signal_args: Array = []
 				
-				for arg_connection in signal_data["arguments"]:
+				for arg_connection in signal_metadata["arguments"]:
 					signal_args.append(_get_data(arg_connection["target_node_uuid"]))
 				
 				NexusForge.Discourse.API.emit_signal(
-						signal_data["signal"],
+						signal_metadata["signal"],
 						signal_args)
-				signal_emmited.emit(signal_data["signal"], signal_args)
+				signal_emmited.emit(signal_metadata["signal"], signal_args)
 			return _process_logic(data["output_connections"]["next_node"]["target_node_uuid"])
 		NodeTypes.MATCH:
 			var data_comp = _get_data(data["input_connections"]["match_value_source"]["target_node_uuid"])
@@ -234,13 +251,13 @@ func _process_logic(uuid: StringName) -> String:
 
 
 func _get_data(from_uuid: StringName, fallback = null) -> Variant:
-	if _dialog_resource == null or not _dialog_resource.dialog_nodes.has(from_uuid):
+	if _dialog_resource == null or not _dialog_resource.node_data.has(from_uuid):
 		return null
 	
 	var data: Dictionary = _dialog_resource.get_node_data(from_uuid, locale)
 	var metadata: Dictionary = data["metadata"]
 	
-	match data["node_type"]:
+	match data["type"]:
 		NodeTypes.VALUE:
 			return metadata["value"]
 		NodeTypes.RANDOM_VALUE:

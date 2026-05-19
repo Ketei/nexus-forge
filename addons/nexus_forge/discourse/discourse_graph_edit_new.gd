@@ -9,8 +9,6 @@ signal dialog_changed
 signal nodes_attatched_to_frame(frame_uuid: StringName, nodes: Array[StringName])
 # When a node has been localized. Main window needs to update other elements
 signal localization_enabled(node: DiscourseGraphNode)
-# When a node is deleted
-signal node_deleted(uuid: StringName)
 # When a node is selected. Useful for highlithing the node in the menu tree.
 signal discourse_node_selected(node_uuid: StringName)
 # When nodes need to be duplicated
@@ -719,7 +717,9 @@ func _duplicate_multiple(duplicate_targets: Dictionary[StringName, StringName]) 
 func remove_node(node_uuid: StringName) -> void:
 	if not graph_nodes.has(node_uuid):
 		return
+	
 	var target: DiscourseGraphNode = graph_nodes[node_uuid]
+	
 	disconnect_all_node_connections(node_uuid)
 	
 	if target.node_type == DialogNodes.ANCHOR:
@@ -849,6 +849,12 @@ func get_conversation_file(current_locale: String = "") -> EditorDiscourseDialog
 
 
 func update_conversation_file(on_file: EditorDiscourseDialog, current_locale: String = "") -> void:
+	if on_file == null:
+		return
+	
+	on_file.node_frames.clear()
+	on_file.node_data.clear()
+	
 	for frame_uuid in node_frames.keys():
 		var frame: GraphFrame = node_frames[frame_uuid]
 		on_file.register_frame(
@@ -1096,7 +1102,7 @@ func disconnect_discourse_nodes(from_node_uuid: StringName, from_port: int, to_n
 	var output_node: DiscourseGraphNode = graph_nodes[from_node_uuid]
 	var input_node: DiscourseGraphNode = graph_nodes[to_node_uuid]
 	
-	if not input_node.is_connected_to_output(from_port, output_node):
+	if not output_node.is_connected_to_output(from_port, input_node):
 		return
 	
 	input_node.set_input_connection(
@@ -1121,7 +1127,7 @@ func disconnect_all_node_connections(for_uuid: StringName) -> void:
 	
 	var target: DiscourseGraphNode = graph_nodes[for_uuid]
 	
-	for input_port in range(target._input_nodes.size()):
+	for input_port in range(target._input_nodes.size() - 1, -1, -1):
 		if not target.has_any_input(input_port):
 			continue
 		for connection_idx in range(target._input_nodes[input_port]["connections"].size() - 1, -1, -1):
@@ -1135,6 +1141,7 @@ func disconnect_all_node_connections(for_uuid: StringName) -> void:
 	for output_port in range(target._output_nodes.size() - 1, -1, -1):
 		if not target.has_any_output(output_port):
 			continue
+		
 		for connection_idx in range(target._output_nodes[output_port]["connections"].size()):
 			var output_target: DiscourseGraphNode = target.get_node_connected_to_port(PortFlow.OUTPUT, output_port, connection_idx)
 			disconnect_discourse_nodes(

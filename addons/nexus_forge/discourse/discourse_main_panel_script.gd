@@ -307,6 +307,8 @@ func ready_plugin() -> void:
 	
 	discourse_graph_edit.panning_scheme = GraphEdit.SCROLL_PANS if ProjectSettings.get_setting(EditorNFPlugin.get_project_settings_path("discourse_panning_scheme"), true) else GraphEdit.SCROLL_ZOOMS
 	
+	play_current_dialog_btn.icon = get_theme_icon("MainPlay", "EditorIcons")
+	
 	# --------------------------------------------------------
 	dialogs_submenu.id_pressed.connect(_on_create_dialog_id_pressed)
 	data_submenu.id_pressed.connect(_on_create_dialog_id_pressed)
@@ -325,7 +327,6 @@ func ready_plugin() -> void:
 	discourse_graph_edit.paste_nodes_requested.connect(_on_graph_edit_paste_requested)
 	
 	discourse_graph_edit.discourse_node_selected.connect(_on_discourse_node_selected)
-	discourse_graph_edit.node_deleted.connect(_on_node_deleted)
 	discourse_graph_edit.scroll_offset_changed.connect(_on_graph_edit_offset_changed)
 	
 	return_discourse_btn.pressed.connect(_on_switch_window_pressed)
@@ -765,12 +766,6 @@ func _on_change_default_language_pressed() -> void:
 		base_language = result
 		languages_tree.set_default_language(result)
 	window.queue_free()
-
-
-func _on_node_deleted(uuid: StringName) -> void:
-	localization_nodes_tree.remove_node(uuid)
-	discourse_nodes_tree.remove_dialog_node(uuid)
-	active_conversation.remove_node(uuid)
 
 
 func _on_translation_text_changed() -> void:
@@ -1788,6 +1783,8 @@ func has_unsaved_files() -> bool:
 func _on_nodes_removed(nodes_data: Dictionary) -> void:
 	for node_uuid in nodes_data.keys():
 		discourse_nodes_tree.remove_dialog_node(node_uuid)
+		localization_nodes_tree.remove_node(node_uuid)
+		active_conversation.remove_node(node_uuid)
 
 
 func _on_graph_edit_node_duplication_requested(uuids: Array[StringName]) -> void:
