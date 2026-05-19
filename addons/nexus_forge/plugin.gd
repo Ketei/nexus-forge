@@ -77,6 +77,12 @@ const SETTINGS_PATHS: Dictionary[String, Dictionary] = {
 		"hint": PROPERTY_HINT_FILE,
 		"hint_string": "*.tres",
 		"restart_required": false},
+	"discourse_panning_scheme": {
+		"setting_path": "nexus_forge/settings/discourse_scroll_wheel_pans",
+		"default_value": true,
+		"type": TYPE_BOOL,
+		"hint": PROPERTY_HINT_NONE,
+		"hint_string": ""},
 	"discourse": {
 		"setting_path": "nexus_forge/export/localization_directory",
 		"default_value": "res://localization/",

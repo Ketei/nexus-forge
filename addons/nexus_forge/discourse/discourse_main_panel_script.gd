@@ -305,6 +305,8 @@ func ready_plugin() -> void:
 	
 	hide_issues_btn.icon = get_theme_icon("GuiClose", "EditorIcons")
 	
+	discourse_graph_edit.panning_scheme = GraphEdit.SCROLL_PANS if ProjectSettings.get_setting(EditorNFPlugin.get_project_settings_path("discourse_panning_scheme"), true) else GraphEdit.SCROLL_ZOOMS
+	
 	# --------------------------------------------------------
 	dialogs_submenu.id_pressed.connect(_on_create_dialog_id_pressed)
 	data_submenu.id_pressed.connect(_on_create_dialog_id_pressed)
