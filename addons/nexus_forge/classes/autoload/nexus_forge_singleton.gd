@@ -39,27 +39,18 @@ var Recipes: RecipeCatalog
 var _phrase_api: PhraseAPI = PhraseAPI.new()
 
 func _ready() -> void:
-	Discourse = EditorDialogParser.new()
-	Quests = QuestManager.new()
+	var use_discourse: bool = ProjectSettings.get_setting(EditorNFPlugin.get_project_settings_path("discourse_enabled"), true)
 	
 	var blackboard_path: String = ProjectSettings.get_setting(
-			"nexus_forge/blackboard_path", "")
-	var stats_path: String = ProjectSettings.get_setting(
-			"nexus_forge/statspath", "")
-	var traits_path: String = ProjectSettings.get_setting(
-			"nexus_forge/traits_path", "")
-	var skill_path: String = ProjectSettings.get_setting(
-			"nexus_forge/skills_path", "")
-	var quest_path: String = ProjectSettings.get_setting(
-			"nexus_forge/quests_path", "")
+			EditorNFPlugin.get_project_settings_path("variables"), "")
 	var species_path: String = ProjectSettings.get_setting(
-			"nexus_forge/species_path", "")
+			EditorNFPlugin.get_project_settings_path("species"), "")
 	var items_path: String = ProjectSettings.get_setting(
-			"nexus_forge/items_path", "")
+			EditorNFPlugin.get_project_settings_path("items"), "")
 	var currency_path: String = ProjectSettings.get_setting(
-			"nexus_forge/currency_path", "")
+			EditorNFPlugin.get_project_settings_path("currency"), "")
 	var recipe_path: String = ProjectSettings.get_setting(
-			"nexus_forge/recipes_path", "")
+			EditorNFPlugin.get_project_settings_path("recipes"), "")
 	
 	if not blackboard_path.is_empty() and ResourceLoader.exists(blackboard_path):
 		var res_pre: Resource = load(blackboard_path)
@@ -67,34 +58,6 @@ func _ready() -> void:
 			Blackboard = res_pre
 		else:
 			printerr("[NEXUS FORGE] ProjectSettings: Invalid Blackboard.")
-	
-	if not stats_path.is_empty() and ResourceLoader.exists(stats_path):
-		var res_pre: Resource = load(stats_path)
-		if res_pre is StatCatalog:
-			Stats = res_pre
-		else:
-			printerr("[NEXUS FORGE] ProjectSettings: Invalid Stats.")
-	
-	if not traits_path.is_empty() and ResourceLoader.exists(traits_path):
-		var res_pre: Resource = load(traits_path)
-		if res_pre is TraitCatalog:
-			Traits = res_pre
-		else:
-			printerr("[NEXUS FORGE] ProjectSettings: Invalid Traits.")
-	
-	if not skill_path.is_empty() and ResourceLoader.exists(skill_path):
-		var res_pre: Resource = load(skill_path)
-		if res_pre is SkillCatalog:
-			Skills = res_pre
-		else:
-			printerr("[NEXUS FORGE] ProjectSettings: Invalid Skills.")
-	
-	#if not quest_path.is_empty() and ResourceLoader.exists(quest_path):
-		#var res_pre: Resource = load(quest_path)
-		#if res_pre is QuestManager:
-			#Quests = res_pre
-		#else:
-			#printerr("[NEXUS FORGE] ProjectSettings: Invalid Quests.")
 	
 	if not species_path.is_empty() and ResourceLoader.exists(species_path):
 		var res_pre: Resource = load(species_path)
@@ -124,6 +87,10 @@ func _ready() -> void:
 		else:
 			printerr("[NEXUS FORGE] ProjectSettings: Invalid Recipes.")
 	
+	if Discourse == null:
+		Discourse = EditorDialogParser.new()
+		if use_discourse:
+			Discourse.generate_locale_map()
 	if Blackboard == null:
 		Blackboard = BlackboardData.new()
 	if Stats == null:
@@ -132,8 +99,8 @@ func _ready() -> void:
 		Traits = TraitCatalog.new()
 	if Skills == null:
 		Skills = SkillCatalog.new()
-	#if Quests == null:
-		#Quests = QuestCatalog.new()
+	if Quests == null:
+		Quests = QuestManager.new()
 	if Species == null:
 		Species = SpeciesCatalog.new()
 	if Items == null:
