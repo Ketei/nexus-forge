@@ -21,9 +21,9 @@
 
 Nexus Forge provides dedicated editors to structure your game's content:
 
-* **Dialogue Editor:** A GraphEdit-based tool for branching conversations featuring context-aware, Fluent-style string formatting (e.g., `Hello {$player/name}`).
-* **Global State:** A centralized blackboard to store and manage global variables.
-* **Character & Species Data:** Build complex character sheets with custom stats, skills, and traits. Includes a robust Species/Sub-species inheritance system.
+* **Dialogue Editor:** A GraphEdit-based tool for branching conversations featuring context-aware string formatting.
+* **Global State:** A blackboard for data storage and managing global variables.
+* **Character & Species Data:** Complex character sheets with custom stats, skills, and traits. Includes a robust Species/Sub-species inheritance system.
 * **Items & Economy:** Define items with custom categories, flags, and rarities. Build single or multi-currency economies.
 * **Crafting & Quests:** Construct multi-stage quests and define complex crafting recipes.
 
