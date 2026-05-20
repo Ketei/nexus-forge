@@ -1221,7 +1221,6 @@ func load_dialog_files(files: Array[String]) -> void:
 
 
 func save_current_dialog_to_memory() -> void:
-	print("save_current_dialog_to_memory")
 	# Saves the current unsaved node data to the file and assings the localized
 	# data to the current selected dropdown locale.
 	discourse_graph_edit.update_conversation_file(active_conversation, current_locale)
@@ -1680,7 +1679,6 @@ func save_localizer_data() -> void:
 		return
 	
 	var current_locale: String = languages_tree.get_active_locale()
-	print("Saving localized data for locale ", current_locale)
 	var active_node: DiscourseGraphNode = localization_nodes_tree.get_active_node()
 	match active_node.node_type:
 		DiscourseGraphNode.DialogueNodeType.DIALOG:
@@ -1721,7 +1719,7 @@ func _on_godot_save_triggered() -> void:
 
 
 func save_current_dialog() -> void:
-	print("save_current_dialog")
+	
 	save_phrase_keys(true)
 	if $LocalizationContainer.visible and localization_nodes_tree.get_active_node() != null:
 		save_localizer_data()
@@ -1731,7 +1729,7 @@ func save_current_dialog() -> void:
 		ResourceSaver.save(active_conversation)
 		conversation_tree.active_offset_changed = false
 		return
-	print("Updating with: ", current_locale)
+	
 	discourse_graph_edit.update_conversation_file(active_conversation, current_locale)
 
 	var locale_map: Dictionary[String, Dictionary] = languages_tree.as_map()
@@ -1749,7 +1747,6 @@ func save_current_dialog() -> void:
 
 
 func save_all_dialogs() -> void:
-	print("save_all_dialogs")
 	if $LocalizationContainer.visible and localization_nodes_tree.get_active_node() != null:
 		save_localizer_data()
 	

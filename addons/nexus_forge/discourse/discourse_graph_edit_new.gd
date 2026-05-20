@@ -889,7 +889,6 @@ func update_conversation_file(on_file: EditorDiscourseDialog, current_locale: St
 		on_file.register_node(node, frame_uuid)
 		
 		if node.node_type == DialogNodes.DIALOG:
-			print("Saving dialog for locale:\"", current_locale, "\"" )
 			on_file.set_text_entry(
 					node_uuid,
 					node.get_dialog_text(),
