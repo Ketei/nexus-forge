@@ -52,8 +52,8 @@ func _init(uuid: String = "") -> void:
 	label_editor.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	label_editor.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	
+	color_picker.name = &"ColorPickerBtn"
 	color_picker.tooltip_text = "Frame tint color"
-	color_picker.icon = get_theme_icon("ColorPick", "EditorIcons")
 	#color_picker.expand_icon = true
 	#color_picker.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	color_picker.custom_minimum_size = Vector2(32.0, 32.0) # 32 is the title height
@@ -64,15 +64,15 @@ func _init(uuid: String = "") -> void:
 	#color_picker.deferred_mode = true
 	color_picker.self_modulate = Color.TRANSPARENT
 	
+	color_picker_icon.name = &"ColorPickerTextureRect"
 	color_picker_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	color_picker_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	color_picker_icon.custom_minimum_size = Vector2(16.0, 16.0)
 	color_picker_icon.position = Vector2(8.0, 8.0)
-	color_picker_icon.texture = get_theme_icon("ColorPick", "EditorIcons")
 	color_picker_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	color_picker.add_child(color_picker_icon)
 	
-	close_button.icon = get_theme_icon("Close", "EditorIcons")
+	close_button.name = &"CloseFrameBtn"
 	close_button.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	close_button.expand_icon = true
 	close_button.custom_minimum_size = Vector2(32.0, 32.0) # 32 is the title height
@@ -80,6 +80,7 @@ func _init(uuid: String = "") -> void:
 	close_button.tooltip_text = "Remove frame"
 	close_button.add_theme_constant_override(&"icon_max_width", 16)
 	
+	buttons_container.name = &"ButtonContainerHBox"
 	buttons_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	
 	buttons_container.add_child(color_picker)
@@ -96,6 +97,23 @@ func _init(uuid: String = "") -> void:
 	
 	#color_cont.color_changed.connect(_on_color_changed)
 	close_button.pressed.connect(_on_close_frame_pressed)
+
+
+func _ready() -> void:
+	var title_frame: HBoxContainer = get_titlebar_hbox()
+	var container: HBoxContainer = title_frame.get_node_or_null(^"ButtonContainerHBox")
+	if container == null:
+		return
+	var color_picker: ColorPickerButton = container.get_node_or_null(^"ColorPickerBtn")
+	var close_button: Button = container.get_node_or_null(^"CloseFrameBtn")
+	if close_button != null:
+		close_button.icon = get_theme_icon("Close", "EditorIcons")
+	
+	if color_picker != null:
+		color_picker.icon = get_theme_icon("ColorPick", "EditorIcons")
+		var color_picker_icon: TextureRect = color_picker.get_node_or_null(^"ColorPickerTextureRect")
+		if color_picker_icon != null:
+			color_picker_icon.texture = get_theme_icon("ColorPick", "EditorIcons")
 
 
 func _input(event: InputEvent) -> void:

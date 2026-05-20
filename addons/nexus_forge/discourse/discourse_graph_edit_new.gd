@@ -517,7 +517,7 @@ func spawn_node(node_type: DialogNodes, uuid: StringName = &"", data: Dictionary
 func spawn_frame(uuid: StringName = &"", frame_position: Vector2 = Vector2.ZERO) -> GraphFrame:
 	var new_frame: GraphFrame = new_node_frame(uuid)
 	add_child(new_frame)
-	node_frames[uuid] = new_frame
+	node_frames[new_frame.get_frame_uuid()] = new_frame
 	new_frame.position_offset = frame_position
 	return new_frame
 	#get_center_offset() - ( new_frame.size / 2.0 )
@@ -792,6 +792,24 @@ func get_selected_graph_nodes(include_start: bool = false) -> Array[DiscourseGra
 		
 		selected_nodes.append(node)
 	return selected_nodes
+
+
+func get_selected_graph_elements(include_start: bool = false) -> Array[GraphElement]:
+	var selected_nodes: Array[GraphElement] = []
+	
+	for node:DiscourseGraphNode in graph_nodes.values():
+		if not node.selected:
+			continue
+		
+		if node.node_type == DialogNodes.ENTRY and not include_start:
+			continue
+		
+		selected_nodes.append(node)
+	return selected_nodes
+	
+	for frame:GraphFrame in node_frames.values():
+		if frame.selected:
+			selected_nodes.append(frame)
 
 #endregion
 
@@ -1413,17 +1431,17 @@ func _on_connection_from_empty(to_node: StringName, to_port: int, release_positi
 	show_connection_popup_at(get_global_mouse_position())
 
 
-func _on_node_selected(node: DiscourseGraphNode) -> void:
-	if 1 == get_selected_graph_nodes(true).size():
-		discourse_node_selected.emit(node.get_node_uuid())
+func _on_node_selected(node: GraphElement) -> void:
+	if node is DiscourseGraphNode:
+		if 1 == get_selected_graph_nodes(true).size():
+			discourse_node_selected.emit(node.get_node_uuid())
 
 
-# TODO: Check if this triggers with panels.
 func _on_begin_node_move() -> void:
-	var selected_nodes: Array[DiscourseGraphNode] = get_selected_graph_nodes(true)
+	var selected_nodes: Array[GraphElement] = get_selected_graph_elements(true)
 	
 	if not selected_nodes.is_empty():
-		movement_data["nodes"] = selected_nodes
+		movement_data["nodes"].assign(selected_nodes)
 		movement_data["reference"] = selected_nodes[0]
 		movement_data["starting_position"] = selected_nodes[0].position_offset
 	
@@ -1435,7 +1453,6 @@ func _on_begin_node_move() -> void:
 			detach_graph_element_from_frame(node.name)
 
 
-# TODO: Check if this triggers with panels.
 func _on_end_node_move() -> void:
 	dialog_changed.emit()
 	var reference_node: DiscourseGraphNode = movement_data["reference"]
@@ -1445,6 +1462,11 @@ func _on_end_node_move() -> void:
 	var difference: Vector2 = reference_node.position_offset - movement_data["starting_position"]
 	for node:DiscourseGraphNode in movement_data["nodes"]:
 		node_uuids.append(node.get_node_uuid())
+	
+	movement_data["nodes"].clear()
+	movement_data["reference"] = null
+	movement_data["starting_position"] = Vector2.ZERO
+	
 	nodes_moved.emit(node_uuids, difference)
 
 
