@@ -83,6 +83,12 @@ const SETTINGS_PATHS: Dictionary[String, Dictionary] = {
 		"type": TYPE_BOOL,
 		"hint": PROPERTY_HINT_NONE,
 		"hint_string": ""},
+	"discourse_base_language": {
+		"setting_path": "nexus_forge/settings/discourse_base_language",
+		"default_value": "",
+		"type": TYPE_STRING,
+		"hint": PROPERTY_HINT_NONE,
+		"hint_string": ""},
 	"discourse": {
 		"setting_path": "nexus_forge/export/localization_directory",
 		"default_value": "res://localization/",
@@ -213,7 +219,17 @@ func _enter_tree() -> void:
 	var use_recipes: bool = ProjectSettings.get_setting(get_project_settings_path("recipes_enabled"), true)
 	var use_quests: bool = ProjectSettings.get_setting(get_project_settings_path("quests_enabled"), true)
 	var use_phrases: bool = ProjectSettings.get_setting(get_project_settings_path("phrases_enabled"), true)
-	editor_view.ready_plugin(use_discourse, use_characters, use_species, use_talents, use_items, use_recipes, use_quests, use_phrases)
+	var discourse_base_lang: String = ProjectSettings.get_setting(get_project_settings_path("discourse_base_language"), OS.get_locale_language())
+	editor_view.ready_plugin(
+			use_discourse,
+			use_characters,
+			use_species,
+			use_talents,
+			use_items,
+			use_recipes,
+			use_quests,
+			use_phrases,
+			discourse_base_lang)
 	resource_saved.connect(_on_resource_saved, CONNECT_DEFERRED)
 	EditorInterface.get_file_system_dock().resource_removed.connect(_on_resource_removed)
 	EditorInterface.get_file_system_dock().files_moved.connect(_on_files_moved, CONNECT_DEFERRED)
@@ -330,11 +346,11 @@ func verify_project_settings() -> void:
 		if not ProjectSettings.has_setting(SETTINGS_PATHS[tool_id]["setting_path"]):
 			ProjectSettings.set_setting(
 				SETTINGS_PATHS[tool_id]["setting_path"],
-				SETTINGS_PATHS[tool_id]["default_value"])
+				SETTINGS_PATHS[tool_id]["default_value"] if tool_id != "discourse_base_language" else OS.get_locale_language())
 		
 		ProjectSettings.set_initial_value(
 				SETTINGS_PATHS[tool_id]["setting_path"],
-				SETTINGS_PATHS[tool_id]["default_value"])
+				SETTINGS_PATHS[tool_id]["default_value"] if tool_id != "discourse_base_language" else OS.get_locale_language())
 		
 		ProjectSettings.set_restart_if_changed(
 				SETTINGS_PATHS[tool_id]["setting_path"],

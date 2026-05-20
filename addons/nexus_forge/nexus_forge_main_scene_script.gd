@@ -27,7 +27,7 @@ func _ready() -> void:
 	set_process_input(false)
 
 
-func ready_plugin(use_discourse: bool, use_characters: bool, use_species: bool, use_talents: bool, use_items: bool, use_recipes: bool, use_quests: bool, use_phrases: bool) -> void:
+func ready_plugin(use_discourse: bool, use_characters: bool, use_species: bool, use_talents: bool, use_items: bool, use_recipes: bool, use_quests: bool, use_phrases: bool, discourse_base_lang: String) -> void:
 	set_process_input(true)
 	
 	variables = load("res://addons/nexus_forge/variables/variables_main.tscn").instantiate()
@@ -77,7 +77,7 @@ func ready_plugin(use_discourse: bool, use_characters: bool, use_species: bool, 
 		tool_tab_bar.add_tab("Phrase Maps", load("res://addons/nexus_forge/icons/brackets_speech.svg"))
 	
 	if discourse != null:
-		discourse.ready_plugin()
+		discourse.ready_plugin(discourse_base_lang)
 	variables.ready_plugin()
 	if characters != null:
 		characters.ready_plugin()

@@ -8,8 +8,6 @@ signal locale_changed(from: String, to: String)
 #signal language_deleted(language: String)
 signal locale_deleted(locale: String)
 
-#var NEW_REGION_BUTTON: Texture2D = get_theme_icon("New", "EditorIcons")
-
 const ACTIVE_COLOR: Color = Color.SKY_BLUE
 
 var main_language: TreeItem = null:
@@ -25,7 +23,7 @@ var main_language: TreeItem = null:
 			new_main.set_button_disabled(0, 1, true)
 var active_language: TreeItem = null:
 	set(new_lang):
-		if active_language != null:
+		if active_language != null and active_language:
 			active_language.clear_custom_color(0)
 		active_language = new_lang
 		if new_lang != null:
@@ -256,9 +254,15 @@ func as_map() -> Dictionary[String, Dictionary]:
 	return map
 
 
-func clear_languages() -> void:
-	main_language = null
+func clear_languages(clear_main: bool = true) -> void:
+	var main_pointer: TreeItem = main_language
 	active_language = null
 	active_region = null
+	if clear_main:
+		main_language = null
+	
 	for item in get_root().get_children():
+		if item == main_pointer and not clear_main:
+			continue
 		item.free()
+	

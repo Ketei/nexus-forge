@@ -105,7 +105,8 @@ var file_popup: PopupMenu = null
 	#ready_plugin()
 
 
-func ready_plugin() -> void:
+func ready_plugin(base_locale: String = "") -> void:
+	base_locale = TranslationServer.standardize_locale(base_locale)
 	node_popup = node_menu_btn.get_popup()
 	file_popup = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/FileMenuBtn.get_popup()
 	#var file_popup: PopupMenu = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuVBox/MenuBar/FileMenu
@@ -285,7 +286,7 @@ func ready_plugin() -> void:
 	style.bg_color = get_theme_color("base_color", "Editor")
 	discourse_panel.add_theme_stylebox_override(&"panel", style)
 	
-	var system_lang = OS.get_locale_language()
+	var system_lang = OS.get_locale_language() if base_locale.is_empty() else base_locale
 	languages_tree.create_language(system_lang, true)
 	add_locale(system_lang)
 	base_language = system_lang
@@ -424,6 +425,20 @@ func has_locale(locale: String) -> bool:
 		if metadata["language_code"] == lang_code and metadata["country_code"] == reg_code:
 			return true
 	return false
+
+
+func clear_locales() -> void:
+	for index in range(localization_menu.item_count - 1, -1, -1):
+		var meta: Dictionary = localization_menu.get_item_metadata(index)
+		var lang: String = meta["language_code"]
+		var reg: String = meta["country_code"]
+		var locale: String = TranslationServer.standardize_locale(lang if reg.is_empty() else lang + "_" + reg)
+		if locale == base_language:
+			continue
+		else:
+			localization_menu.remove_item(index)
+	current_locale = base_language
+	languages_tree.clear_languages(false)
 
 
 func remove_locale(locale: String) -> void:
@@ -763,7 +778,11 @@ func _on_change_default_language_pressed() -> void:
 			add_locale(result)
 			active_conversation.add_locale(result)
 			
-			
+		ProjectSettings.set_setting(
+				EditorNFPlugin.get_project_settings_path(
+						"discourse_base_language"),
+				result)
+		ProjectSettings.save()
 		base_language = result
 		languages_tree.set_default_language(result)
 	window.queue_free()
@@ -931,7 +950,7 @@ func _on_localizer_node_selected(uuid: StringName) -> void:
 	$LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer.visible = new_node.node_type == DiscourseGraphNode.DialogueNodeType.OPTIONS
 	$LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/LocaleVBoxContainer.visible = !$LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer.visible
 	# Get the data & set to localizer
-	var base_language: String = languages_tree.get_default_language()
+	#var tree_default_language: String = languages_tree.get_default_language()
 	
 	match new_node.node_type:
 		DiscourseGraphNode.DialogueNodeType.DIALOG:
@@ -1616,6 +1635,9 @@ func open_conversation(conversation: EditorDiscourseDialog) -> bool:
 	clear_cases()
 	clear_localized_keys()
 	localization_nodes_tree.clear_nodes()
+	if issues_tree.has_issues():
+		issues_tree.clear_issues()
+	clear_locales()
 	
 	# This fills the discourse_nodes_tree with items
 	var reload_needed: bool = display_conversation(conversation) # Load conversation
@@ -1634,8 +1656,6 @@ func open_conversation(conversation: EditorDiscourseDialog) -> bool:
 			for node_uuid in node_map.keys():
 				root.add_child(node_map[node_uuid])
 	
-	if issues_tree.has_issues():
-		issues_tree.clear_issues()
 	var graphs_locale: String = current_locale
 	var side_locale: String = languages_tree.get_active_locale()
 	
@@ -1654,6 +1674,16 @@ func open_conversation(conversation: EditorDiscourseDialog) -> bool:
 			var lang_code: String = language.to_lower() + "_" + region.to_upper()
 			if not has_locale(lang_code):
 				add_locale(lang_code)
+	
+	if localization_menu.item_count == 0:
+		add_locale(base_language)
+		current_locale = base_language
+	else:
+		localization_menu.select(0)
+		var meta: Dictionary = localization_menu.get_item_metadata(0)["language_code"]
+		var lang: String = meta["language_code"]
+		var reg: String = meta["country_code"]
+		current_locale = TranslationServer.standardize_locale(lang if reg.is_empty() else lang + "_" + reg)
 	
 	case_box_container.visible = false
 	key_box_container.visible = languages_tree.is_lang_selected()
