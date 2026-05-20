@@ -1,49 +1,47 @@
-# Nexus Forge - A Godot Game Data Manager
+<div align="center">
+  <img alt="Logo" src="https://github.com/Ketei/nexus_forge/blob/main/logo.svg" width="300"/>
+  <h1 align="center"> Nexus Forge </h1>
+  <p>A game toolset plugin for Godot</p>
+</div>
 
+**Nexus Forge** is a data-driven, headless game data manager for Godot 4.4+. Built entirely in GDScript, it provides node-based visual editors for managing your game's core data—dialogue, stats, items, and quests—without forcing any specific UI on your project. You build the front-end; Nexus Forge handles the backend.
 
-**Nexus Forge** is a powerful, open-source **Godot Engine plugin** designed to handle the basic data of your game. Built entirely in **GDScript**, it provides a range of visual editor tools for managing everything from complex dialogue, player stats, items, quests and more without enforcing any specific UI, giving you maximum creative freedom.
+**Nexus Forge editor component is modular** and through Godot's Project Settings you can selectively enable or disable individual modules. The plugin will only load the specific tools you need, keeping the editor free of clutter.
 
 > [!IMPORTANT]
-> * This plugin is currently in the **Alpha stage**. While the tools are functional they haven't been throughly tested and the **Graphical User Interface (GUI)**, internal API definitions (class names, function names) and other core properties may change significantly before the Beta release.</br>
-> * **ALPHA STATE: Use of this plugin is **ONLY** for testing, evaluation, or as a VERY bold choice for current projects.** It is not yet considered reliable for production projects, expect bugs.</br>
-> * This plugin started as a personal tool which means some things might be tailored for my personal intended use which is why it comes with and uses some pre-made static helper classes.</br>
+> **Alpha State:** The plugin is functional, but APIs, class names, and GUI layouts will likely undergo breaking changes before the Beta release. Use this for testing, evaluation, or as a bold choice for an early-stage project. Bugs are expected.
+> 
+> *Context: This began as an internal studio tool, so it includes a few specific static helper classes tailored for my personal workflow.*
+
 
 > [!WARNING]
-> Nexus Forge does NOT implement an **UndoRedo** system, meaning that any action taken in the plugin can't be undone.
+> **No Undo/Redo yet:** Nexus Forge does not currently implement an Undo/Redo system. Actions taken in the editor cannot be reversed via `Ctrl+Z`.
 
-## Core Features and Tools
+## Core Systems
 
-Nexus Forge is a data-centric plugin that gives you structured control over your game's content:
+Nexus Forge provides dedicated editors to structure your game's content:
 
-* **Dialogue Editor:** Create branching, context-aware, localized conversations using a visual **GraphEdit** interface.
-* **Global State Management:** Easily store and manage global variables.
-* **Character Design:** Dedicated tools for defining **Characters**. Customize character sheets with user-defined stats, skills, traits, species, and flexible inheritance logic.
-* **Species Management:** A tool for setting up species and racial traits. As well as a sub-species inheritance system where it inherits the traits of the parent species unless defined.
-* **Item and Economy System:** Define **Items** with custom categories, flags, values, and rarities. Create detailed **Currencies** for robust multi-currency or single-currency economies.
-* **Crafting Recipes:** Use the **Recipes** tool to create crafting recipes, making complex crafting systems easy to define.
-* **Quest Creation:** Create detailed quests with stages and steps to follow.
-* **Argument-based text formatting**: Create context aware text that changes based on given arguments.
+* **Dialogue Editor:** A GraphEdit-based tool for branching conversations featuring context-aware, Fluent-style string formatting (e.g., `Hello {$player/name}`).
+* **Global State:** A centralized blackboard to store and manage global variables.
+* **Character & Species Data:** Build complex character sheets with custom stats, skills, and traits. Includes a robust Species/Sub-species inheritance system.
+* **Items & Economy:** Define items with custom categories, flags, and rarities. Build single or multi-currency economies.
+* **Crafting & Quests:** Construct multi-stage quests and define complex crafting recipes.
 
-## Utility Classes
+## Standalone Utility Classes
 
-The plugin also includes several utility classes covering specific, common development needs, which are a valuable asset outside of the main Nexus Forge editor tools:
+Beyond the visual editors, the plugin includes several computer science data structures that can be used independently in your code:
 
-* **Caching:** Includes a basic implementation of a **Least Recently Used (LRU) Cache**.
-* **Data Structures:** Helper classes for advanced data handling, such as a **Random Weighted Pool** for controlled chance-based selection, and **BitFlags** for efficient boolean storage.
-* **Low-Level Helpers:** Dedicated classes for efficient **UUID (v4) generation** and **Bitwise operations**.
+* **Caching:** A Least Recently Used (LRU) Cache implementation.
+* **Advanced Data Structures:** A Random Weighted Pool for probability and BitFlags for efficient boolean states.
+* **Low-Level Helpers:** Fast UUID (v4) generation and bitwise operations.
 
-## Compatibility and Recommended Use
+## Compatibility
 
-* **Engine:** Godot Engine 4.4+ (Written in GDScript).
-* **Requirement:** Requires Godot 4.4 or later due to the use of typed dictionaries.
-* **Recommended Resolution:** The plugin GUI is designed for **1920x1080 resolution**. It is usable at smaller resolutions, but you will encounter horizontal and vertical scrollbars which can make navigation more difficult.
+* **Engine:** Godot Engine 4.4+ (Strictly required due to reliance on Typed Dictionaries).
+* **Resolution:** The editor GUI is optimized for 1920x1080. Smaller resolutions are supported but will trigger scrollbars.
 
 ## Documentation
 
-### Built-in Documentation
-All custom classes within Nexus Forge include comprehensive, manually written **built-in documentation**, accessible directly through the Godot editor's **F1 help menu**.
-
-### GitHub Wiki
-A wiki with detailed setup instructions and usage guides can be found on the project's [Wiki/Documentation Link Here].
-Please note that the GitHub Wiki has been generated with the assitance of AI but was reviewed in its totallity by me.
-A rewrite is planned for the future once I can dedicate less time to the code.
+* **Built-in (F1):** All custom classes include manually written documentation accessible directly inside the Godot editor's F1 help menu.
+* **GitHub Wiki:** Setup instructions and guides are available on the [Wiki/Documentation Link Here]. 
+*(Note: The wiki was initially AI-assisted but manually reviewed. A full rewrite is planned for the Beta release once the API stabilizes).*
