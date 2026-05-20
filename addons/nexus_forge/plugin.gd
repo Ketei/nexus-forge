@@ -159,6 +159,7 @@ func recompile_script_docs() -> void:
 		"res://addons/nexus_forge/classes/resources/range_integer.gd",
 		"res://addons/nexus_forge/classes/static/array_utils.gd",
 		"res://addons/nexus_forge/classes/static/bit_utils.gd",
+		"res://addons/nexus_forge/classes/static/dict_utils.gd",
 		"res://addons/nexus_forge/classes/static/math.gd",
 		"res://addons/nexus_forge/classes/static/random_weight_pool.gd",
 		"res://addons/nexus_forge/classes/static/ranges.gd",
