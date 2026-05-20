@@ -27,6 +27,12 @@ Nexus Forge provides dedicated editors to structure your game's content:
 * **Items & Economy:** Define items with custom categories, flags, and rarities. Build single or multi-currency economies.
 * **Crafting & Quests:** Construct multi-stage quests and define complex crafting recipes.
 
+<img alt="Dialog Example" src="https://github.com/user-attachments/assets/c7198887-cb6c-4981-9123-75b088626780" />
+<img alt="Quest Example" src="https://github.com/user-attachments/assets/17ec2fc0-06ea-4515-8a8a-f9bffedbf5fa" />
+
+
+
+
 ## Standalone Utility Classes
 
 Beyond the visual editors, the plugin includes several computer science data structures that can be used independently in your code:
