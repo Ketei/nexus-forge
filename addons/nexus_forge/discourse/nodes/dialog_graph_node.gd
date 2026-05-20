@@ -158,28 +158,28 @@ func _set_node_data(data: Dictionary) -> void:
 	if typeof(_name) == TYPE_STRING_NAME:
 		name = _name
 	
-	var _meta = data.get("metadata", {})
-	var metadata: Dictionary = _meta if typeof(_meta) == TYPE_DICTIONARY else {}
+	if not data.has("metadata"):
+		return
 	
-	var _size = metadata.get("size")
-	if typeof(_size) == TYPE_VECTOR2:
-		size = _size
+	var metadata: Dictionary = data["metadata"]
 	
-	var _pos_offset = metadata.get("position")
-	if typeof(_pos_offset) == TYPE_VECTOR2:
-		position_offset = _pos_offset
+	if metadata.has("size"):
+		size = metadata["size"]
 	
-	var char_id = metadata.get("character_id")
-	if typeof(char_id) == TYPE_STRING:
-		get_mapped_field(&"character_id", &"character_line").text = char_id
+	if metadata.has("position"):
+		position_offset = metadata["position"]
 	
-	var dialog = metadata.get("dialog_text")
-	if typeof(dialog) == TYPE_STRING:
-		get_field(&"dialog_text").text = dialog
+	if metadata.has("character_id"):
+		get_mapped_field(&"character_id", &"character_line").text = metadata["character_id"]
 	
-	var persist = metadata.get("persist")
-	if typeof(persist) == TYPE_BOOL:
-		get_mapped_field(&"flags", &"persist_checkbox").button_pressed = persist
+	if metadata.has("dialog_text"):
+		get_field(&"dialog_text").text = metadata["dialog_text"]
+	
+	if metadata.has("persist"):
+		get_mapped_field(&"flags", &"persist_checkbox").button_pressed = metadata["persist"]
+	
+	if metadata.has("localized"):
+		set_node_localized(metadata["localized"])
 
 
 func _on_text_changed(_text: String = "") -> void:

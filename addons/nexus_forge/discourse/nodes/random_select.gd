@@ -27,12 +27,14 @@ func update_weights() -> void:
 							weights.append(clamped_weight)
 							if 0 <= clamped_weight:
 								total_weight += clamped_weight
+						else:
+							weights.append(-1)
 					_:
 						weights.append(-1)
 			else:
 				weights.append(base_weight)
 				total_weight += base_weight
-			labels.append(get_child(node).get_child(1))
+			labels.append(get_field(StringName("option_" + str(node - 1))))
 		
 		var idx: int = -1
 		for label in labels:
@@ -43,6 +45,11 @@ func update_weights() -> void:
 				var weight: float = snappedf(( weights[idx] / float(total_weight) * 100.0 ), 0.01 )
 				@warning_ignore("incompatible_ternary")
 				label.text = "Weight " + str( weight if 0 < step_decimals(weight) else int(weight) ) + "%"
+
+
+func _on_value_node_weight_changed(type: int, value) -> void:
+	if type == TYPE_INT:
+		update_weights()
 
 
 func _post_init() -> void:
@@ -137,8 +144,8 @@ func _on_input_disconnected(input_port: int, from_node: DiscourseGraphNode, _fro
 		update_weights()
 	
 	if from_node.node_type == DialogueNodeType.VALUE:
-		if from_node.value_changed.is_connected(update_weights):
-			from_node.value_changed.disconnect(update_weights)
+		if from_node.value_changed.is_connected(_on_value_node_weight_changed):
+			from_node.value_changed.disconnect(_on_value_node_weight_changed)
 		from_node.clamp_range(0.0, 100.0, true, true)
 
 
@@ -147,8 +154,8 @@ func _on_input_connected(input_port: int, from_node: DiscourseGraphNode, _from_p
 		return
 	
 	if from_node.node_type == DialogueNodeType.VALUE:
-		if not from_node.value_changed.is_connected(update_weights):
-			from_node.value_changed.connect(update_weights)
+		if not from_node.value_changed.is_connected(_on_value_node_weight_changed):
+			from_node.value_changed.connect(_on_value_node_weight_changed)
 		from_node.clamp_range(0.0, 100.0, false, true)
 	
 	if input_port == 1:
@@ -160,7 +167,6 @@ func _on_input_connected(input_port: int, from_node: DiscourseGraphNode, _from_p
 				custom_default_weight = 0
 	else:
 		update_weights()
-
 
 
 func _on_random_exit_changed(target_options: int) -> void:

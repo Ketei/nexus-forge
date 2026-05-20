@@ -13,7 +13,8 @@ func _post_init() -> void:
 	node_type = DialogueNodeType.CALLABLE
 	parent_mode = PortMode.OUTPUT
 	parent_port = 0
-	size = Vector2(280, 83)
+	size = Vector2(280, 84)
+	custom_minimum_size.y = 84
 	
 	available_methods = get_user_methods()
 	
@@ -291,9 +292,17 @@ func add_input_arg(arg_text: String, arg_type: int) -> void:
 
 
 func clear_input_args() -> void:
+	var fields_to_remove: Array[StringName] = []
 	for item in range(get_child_count() - 1, 0, -1):
 		var field_id: StringName = &"argument_" + StringName(str(item))
-		remove_field(field_id, 32)
+		fields_to_remove.append(field_id)
+	if not fields_to_remove.is_empty():
+		remove_fields(fields_to_remove)
+		update_node_size.call_deferred()
+
+
+func update_node_size() -> void:
+	size.y = 0 
 
 
 static func get_user_methods() -> Dictionary:

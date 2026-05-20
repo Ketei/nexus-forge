@@ -1,8 +1,8 @@
 extends DiscourseGraphNode
 
 
-#signal value_changed
-#signal data_type_changed
+signal value_changed(type, value)
+signal data_type_changed
 
 
 var active_value: Control = null
@@ -17,12 +17,16 @@ var mode: int = TYPE_INT:
 			match mode:
 				TYPE_INT:
 					active_value.value_changed.disconnect(_on_value_changed)
+					active_value.value_changed.disconnect(_on_field_changed)
 				TYPE_FLOAT:
 					active_value.value_changed.disconnect(_on_value_changed)
+					active_value.value_changed.disconnect(_on_field_changed)
 				TYPE_BOOL:
 					active_value.toggled.disconnect(_on_value_changed)
+					active_value.value_changed.disconnect(_on_field_changed)
 				TYPE_STRING:
 					active_value.text_changed.disconnect(_on_value_changed)
+					active_value.value_changed.disconnect(_on_field_changed)
 		
 		mode = new_mode
 		
@@ -35,6 +39,7 @@ var mode: int = TYPE_INT:
 				active_value.step = 1.0
 				active_value.visible = true
 				active_value.value_changed.connect(_on_value_changed, CONNECT_DEFERRED)
+				active_value.value_changed.connect(_on_field_changed, CONNECT_DEFERRED)
 				set_slot_type_right(0, SlotConnectionType.VAR_INT)
 				set_slot_color_right(0, COLORS["integer"])
 				#set_output_connection_icon(&"data", get_theme_icon("int", "EditorIcons"))
@@ -43,6 +48,7 @@ var mode: int = TYPE_INT:
 				active_value.visible = true
 				active_value.step = 0.01
 				active_value.value_changed.connect(_on_value_changed, CONNECT_DEFERRED)
+				active_value.value_changed.connect(_on_field_changed, CONNECT_DEFERRED)
 				set_slot_type_right(0, SlotConnectionType.VAR_FLOAT)
 				set_slot_color_right(0, COLORS["float"])
 				#set_output_connection_icon(&"data", get_theme_icon("float", "EditorIcons"))
@@ -50,6 +56,7 @@ var mode: int = TYPE_INT:
 				active_value = get_field(&"data").get_child(0).get_child(1)
 				active_value.visible = true
 				active_value.toggled.connect(_on_value_changed, CONNECT_DEFERRED)
+				active_value.toggled.connect(_on_field_changed, CONNECT_DEFERRED)
 				set_slot_type_right(0, SlotConnectionType.VAR_BOOL)
 				set_slot_color_right(0, COLORS["bool"])
 				#set_output_connection_icon(&"data", get_theme_icon("bool", "EditorIcons"))
@@ -57,10 +64,11 @@ var mode: int = TYPE_INT:
 				active_value = get_field(&"data").get_child(0).get_child(2)
 				active_value.visible = true
 				active_value.text_changed.connect(_on_value_changed, CONNECT_DEFERRED)
+				active_value.text_changed.connect(_on_field_changed, CONNECT_DEFERRED)
 				set_slot_type_right(0, SlotConnectionType.VAR_STRING)
 				set_slot_color_right(0, COLORS["string"])
 				#set_output_connection_icon(&"data", get_theme_icon("String", "EditorIcons"))
-		#data_type_changed.emit()
+		data_type_changed.emit()
 
 
 func _post_init() -> void:
@@ -117,6 +125,7 @@ func _post_init() -> void:
 	
 	data_popup.id_pressed.connect(_on_data_type_selected)
 	data_spnbx.value_changed.connect(_on_value_changed, CONNECT_DEFERRED)
+	data_spnbx.value_changed.connect(_on_field_changed, CONNECT_DEFERRED)
 
 
 func _ready() -> void:
@@ -217,6 +226,11 @@ func _on_data_type_selected(type: int) -> void:
 
 func _on_value_changed(_value: Variant = null) -> void:
 	node_updated.emit()
+
+
+func _on_field_changed(value = null) -> void:
+	value_changed.emit(mode, value)
+	
 
 
 func is_port_type_value_compatible(port_type: int, value: int) -> bool:

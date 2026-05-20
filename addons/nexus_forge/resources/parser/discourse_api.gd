@@ -33,6 +33,9 @@ func has_met_character(character_id: String) -> bool:
 	return true
 
 
+func start_quest(quest_id: String) -> void:
+	return
+
 func poke_wulfre(with_stick: bool, amout: int) -> void:
 	pass
 

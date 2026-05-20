@@ -50,7 +50,7 @@ func create_item(item_id: StringName, item_data: ItemSheet = null) -> void:
 	
 	var clean_data: bool = item_data == null
 	var item_custom_data: Dictionary[String, Variant] = ITEM_DEFAULT_DATA.duplicate(true) if clean_data else item_data.data.duplicate(true)
-	var flags: Array[ItemSheet.ItemFlag] = [] if clean_data else item_data.flags.duplicate()
+	var flags: Array[ItemSheet.ItemFlag] = ArrayUtils.create_array_typed(TYPE_INT) if clean_data else item_data.flags.duplicate()
 	
 	var new_entry: Dictionary = {
 		"name": "" if clean_data else item_data.name,

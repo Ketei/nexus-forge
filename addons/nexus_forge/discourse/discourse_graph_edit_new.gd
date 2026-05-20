@@ -889,15 +889,16 @@ func update_conversation_file(on_file: EditorDiscourseDialog, current_locale: St
 		on_file.register_node(node, frame_uuid)
 		
 		if node.node_type == DialogNodes.DIALOG:
+			print("Saving dialog for locale:\"", current_locale, "\"" )
 			on_file.set_text_entry(
 					node_uuid,
 					node.get_dialog_text(),
-					current_locale)
+					current_locale if node.is_node_localized() else "")
 		elif node.node_type == DialogNodes.OPTIONS:
 			on_file.set_choices_entry(
 					node_uuid,
 					node.get_options(),
-					current_locale)
+					current_locale if node.is_node_localized() else "")
 		elif node.node_type == DialogNodes.LOCALIZED_TEXT:
 			on_file.set_text_entry(
 					node_uuid,
@@ -1213,7 +1214,7 @@ func _on_popup_index_pressed(index: int, menu: PopupMenu) -> void:
 			connection_type,
 			data["flow"],
 			data["target_type"],
-			0 if menu == connection_popup else index)
+			0 if menu == connection_popup else index).duplicate(true)
 	
 	DictUtils.set_nested_value(
 			node_data,
@@ -1229,7 +1230,8 @@ func _on_popup_index_pressed(index: int, menu: PopupMenu) -> void:
 	
 	if data["flow"] == "input":
 		if new_node.node_type == DialogNodes.VALUE:
-			new_node.set_mode(release_data["target_type"])
+			var port
+			new_node.set_mode(port_type_to_var_type(release_data["target_type"]))
 		elif new_node.node_type == DialogNodes.VARIABLE_GET:
 			new_node.set_node_type(release_data["target_type"])
 		
@@ -1251,6 +1253,19 @@ func _on_popup_index_pressed(index: int, menu: PopupMenu) -> void:
 	node_created.emit(new_node)
 	dialog_changed.emit()
 
+
+func port_type_to_var_type(port_type: int) -> int:
+	match port_type:
+		ConnectionType.VAR_BOOL:
+			return TYPE_BOOL
+		ConnectionType.VAR_STRING:
+			return TYPE_STRING
+		ConnectionType.VAR_INT:
+			return TYPE_INT
+		ConnectionType.VAR_FLOAT:
+			return TYPE_FLOAT
+		_:
+			return TYPE_NIL
 
 func _on_connection_drag_started(from_node: StringName, from_port: int, is_output: bool) -> void:
 	var from_graph: DiscourseGraphNode = get_node(NodePath(from_node))
@@ -1338,8 +1353,9 @@ func _on_connection_to_empty(from_node: StringName, from_port: int, release_posi
 	
 	if not Input.is_key_pressed(KEY_CTRL):
 		return
+	
 	var port_node: DiscourseGraphNode = get_node(NodePath(from_node))
-	var port_type: ConnectionType = port_node.get_output_port_type(from_port) as ConnectionType
+	var port_type: int = port_node.get_output_port_type(from_port)
 	var node_count: int = get_compatible_node_count(port_type, "output")
 	
 	if node_count == 0:
@@ -1377,7 +1393,7 @@ func _on_connection_to_empty(from_node: StringName, from_port: int, release_posi
 	release_data["from_node"] = port_node.get_node_uuid()
 	release_data["from_port"] = from_port
 	release_data["release_position"] = release_position
-	release_data["target_type"] = port_node.get_input_port_type(port_node.get_input_port_slot(from_port))
+	release_data["target_type"] = port_node.get_output_port_type(from_port)
 	
 	show_connection_popup_at(get_global_mouse_position())
 
@@ -1426,7 +1442,7 @@ func _on_connection_from_empty(to_node: StringName, to_port: int, release_positi
 	release_data["from_node"] = to_graph.get_node_uuid()
 	release_data["from_port"] = to_port
 	release_data["release_position"] = release_position
-	release_data["target_type"] = to_graph.get_input_port_type(to_graph.get_input_port_slot(to_port))
+	release_data["target_type"] = to_graph.get_input_port_type(to_port)
 	
 	show_connection_popup_at(get_global_mouse_position())
 

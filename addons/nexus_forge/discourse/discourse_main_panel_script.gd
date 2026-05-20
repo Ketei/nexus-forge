@@ -290,6 +290,7 @@ func ready_plugin() -> void:
 	add_locale(system_lang)
 	base_language = system_lang
 	languages_tree.set_default_language(system_lang)
+	current_locale = system_lang
 	
 	if discourse_graph_edit.entry_node != null:
 		_on_discourse_node_created(discourse_graph_edit.entry_node)
@@ -1220,6 +1221,7 @@ func load_dialog_files(files: Array[String]) -> void:
 
 
 func save_current_dialog_to_memory() -> void:
+	print("save_current_dialog_to_memory")
 	# Saves the current unsaved node data to the file and assings the localized
 	# data to the current selected dropdown locale.
 	discourse_graph_edit.update_conversation_file(active_conversation, current_locale)
@@ -1569,7 +1571,12 @@ func display_conversation(conversation: EditorDiscourseDialog) -> bool:
 		_on_discourse_node_created(d_node)
 		
 		if d_node.is_node_localized():
-			_on_localize_node(d_node)
+			if d_node.node_type == DiscourseGraphNode.DialogueNodeType.DIALOG:
+				localization_nodes_tree.create_dialog_node(d_node.name, d_node)
+			elif d_node.node_type == DiscourseGraphNode.DialogueNodeType.OPTIONS:
+				localization_nodes_tree.create_options_node(d_node.name, d_node)
+			elif d_node.node_type == DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
+				localization_nodes_tree.create_localized_text_node(d_node.name, d_node)
 	
 	for output_connection in node_connections:
 		if not graph_map.has(output_connection["from"]) or not graph_map.has(output_connection["to"]):
@@ -1599,6 +1606,18 @@ func open_conversation(conversation: EditorDiscourseDialog) -> bool:
 	# Clears discourse_nodes_tree's items
 	discourse_nodes_tree.clear_tree()
 	
+	default_case_ln_edt.text = ""
+	search_case_ln_edt.text = ""
+	search_case_ln_edt.set_meta(&"current_search", "")
+	argument_opt_btn.clear()
+	
+	search_text_ln_edt.text = ""
+	search_text_ln_edt.set_meta(&"current_search", "")
+	
+	clear_cases()
+	clear_localized_keys()
+	localization_nodes_tree.clear_nodes()
+	
 	# This fills the discourse_nodes_tree with items
 	var reload_needed: bool = display_conversation(conversation) # Load conversation
 	
@@ -1615,18 +1634,6 @@ func open_conversation(conversation: EditorDiscourseDialog) -> bool:
 		if not node_map.is_empty(): # We left some nodes outside the tree
 			for node_uuid in node_map.keys():
 				root.add_child(node_map[node_uuid])
-	
-	default_case_ln_edt.text = ""
-	search_case_ln_edt.text = ""
-	search_case_ln_edt.set_meta(&"current_search", "")
-	argument_opt_btn.clear()
-	
-	search_text_ln_edt.text = ""
-	search_text_ln_edt.set_meta(&"current_search", "")
-	
-	clear_cases()
-	clear_localized_keys()
-	localization_nodes_tree.clear_nodes()
 	
 	if issues_tree.has_issues():
 		issues_tree.clear_issues()
@@ -1673,7 +1680,7 @@ func save_localizer_data() -> void:
 		return
 	
 	var current_locale: String = languages_tree.get_active_locale()
-	
+	print("Saving localized data for locale ", current_locale)
 	var active_node: DiscourseGraphNode = localization_nodes_tree.get_active_node()
 	match active_node.node_type:
 		DiscourseGraphNode.DialogueNodeType.DIALOG:
@@ -1714,6 +1721,7 @@ func _on_godot_save_triggered() -> void:
 
 
 func save_current_dialog() -> void:
+	print("save_current_dialog")
 	save_phrase_keys(true)
 	if $LocalizationContainer.visible and localization_nodes_tree.get_active_node() != null:
 		save_localizer_data()
@@ -1723,7 +1731,7 @@ func save_current_dialog() -> void:
 		ResourceSaver.save(active_conversation)
 		conversation_tree.active_offset_changed = false
 		return
-	
+	print("Updating with: ", current_locale)
 	discourse_graph_edit.update_conversation_file(active_conversation, current_locale)
 
 	var locale_map: Dictionary[String, Dictionary] = languages_tree.as_map()
@@ -1741,6 +1749,7 @@ func save_current_dialog() -> void:
 
 
 func save_all_dialogs() -> void:
+	print("save_all_dialogs")
 	if $LocalizationContainer.visible and localization_nodes_tree.get_active_node() != null:
 		save_localizer_data()
 	
@@ -2335,9 +2344,9 @@ func save_phrase_keys(fix_keys: bool = false) -> void:
 		node_map[desired] = key_line
 	
 	# Duplicate old map for separate key reassignement.
-	var old_phrases: Dictionary[String, Dictionary] = active_conversation.localized_strings.duplicate()
+	var old_phrases: Dictionary[String, Dictionary] = active_conversation.format_strings.duplicate()
 	
-	active_conversation.localized_strings.clear()
+	active_conversation.format_strings.clear()
 	
 	# Separate key reassignement is important, because if we have {a:{}, b:{}}
 	# And we changed the key a -> b and b -> a, on a single dictionary we would
