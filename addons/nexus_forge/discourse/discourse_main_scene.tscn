@@ -463,6 +463,7 @@ size_flags_vertical = 3
 theme_override_styles/panel = SubResource("StyleBoxEmpty_i2jr7")
 
 [node name="LocaleVBoxContainer" type="VSplitContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel" unique_id=2074585726]
+visible = false
 layout_mode = 2
 size_flags_vertical = 3
 

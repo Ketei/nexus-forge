@@ -439,6 +439,7 @@ func clear_locales() -> void:
 			localization_menu.remove_item(index)
 	current_locale = base_language
 	languages_tree.clear_languages(false)
+	localization_nodes_tree.get_root().collapsed = true
 
 
 func remove_locale(locale: String) -> void:
@@ -1638,6 +1639,11 @@ func open_conversation(conversation: EditorDiscourseDialog) -> bool:
 	if issues_tree.has_issues():
 		issues_tree.clear_issues()
 	clear_locales()
+	base_text_edt.text = ""
+	translation_txt_box.text = ""
+	clear_localized_options()
+	$LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/LocaleVBoxContainer.visible = false
+	$LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer.visible = false
 	
 	# This fills the discourse_nodes_tree with items
 	var reload_needed: bool = display_conversation(conversation) # Load conversation
