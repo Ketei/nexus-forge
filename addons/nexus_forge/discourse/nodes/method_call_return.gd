@@ -47,6 +47,20 @@ func _post_init() -> void:
 func _ready() -> void:
 	graph_icon = get_theme_icon("Callable", "EditorIcons")
 	set_output_connection_icon(&"methods", get_theme_icon("Variant", "EditorIcons"))
+	
+	for arg_port in range(get_child_count() - 1):
+		var id: StringName = StringName("argument_" + str(arg_port + 1))
+		match get_input_port_type(arg_port):
+			SlotConnectionType.VAR_INT:
+				set_input_connection_icon(id, get_theme_icon("int", "EditorIcons"))
+			SlotConnectionType.VAR_FLOAT:
+				set_input_connection_icon(id, get_theme_icon("float", "EditorIcons"))
+			SlotConnectionType.VAR_BOOL:
+				set_input_connection_icon(id, get_theme_icon("bool", "EditorIcons"))
+			SlotConnectionType.VAR_STRING:
+				set_input_connection_icon(id, get_theme_icon("String", "EditorIcons"))
+			_:
+				set_input_connection_icon(id, get_theme_icon("Variant", "EditorIcons"))
 
 
 func _get_issues() -> PackedStringArray:
