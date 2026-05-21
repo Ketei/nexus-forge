@@ -572,6 +572,7 @@ vertical_alignment = 2
 [node name="ReturnDiscourseBtn" type="Button" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/HeaderPanel/PhrasesHeader" unique_id=339804660]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
+tooltip_text = "Close localization window"
 flat = true
 icon_alignment = 1
 

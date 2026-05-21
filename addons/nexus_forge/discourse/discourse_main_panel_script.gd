@@ -301,7 +301,7 @@ func ready_plugin(base_locale: String = "") -> void:
 	new_folder_button.disabled = true
 	new_folder_button.icon = get_theme_icon("FolderCreate", "EditorIcons")
 	
-	return_discourse_btn.icon = get_theme_icon("Back", "EditorIcons")
+	return_discourse_btn.icon = get_theme_icon("GuiClose", "EditorIcons")
 	
 	save_case_btn.icon = get_theme_icon("Save", "EditorIcons")
 	
@@ -1680,7 +1680,7 @@ func open_conversation(conversation: EditorDiscourseDialog) -> bool:
 		current_locale = base_language
 	else:
 		localization_menu.select(0)
-		var meta: Dictionary = localization_menu.get_item_metadata(0)["language_code"]
+		var meta: Dictionary = localization_menu.get_item_metadata(0)
 		var lang: String = meta["language_code"]
 		var reg: String = meta["country_code"]
 		current_locale = TranslationServer.standardize_locale(lang if reg.is_empty() else lang + "_" + reg)
