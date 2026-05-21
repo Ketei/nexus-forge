@@ -49,5 +49,5 @@ Beyond the visual editors, the plugin includes several computer science data str
 ## Documentation
 
 * **Built-in (F1):** All custom classes include manually written documentation accessible directly inside the Godot editor's F1 help menu.
-* **GitHub Wiki:** Setup instructions and guides are available on the [Wiki/Documentation Link Here]. 
+* **GitHub Wiki:** Setup instructions and guides are available on the [Wiki](https://github.com/Ketei/nexus-forge/wiki). 
 *(Note: The wiki was initially AI-assisted but manually reviewed. A full rewrite is planned for the Beta release once the API stabilizes).*
