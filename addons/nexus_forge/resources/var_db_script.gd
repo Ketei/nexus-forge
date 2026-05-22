@@ -86,6 +86,11 @@ func folders(at: String = "") -> Array[String]:
 ## will erase the variable if it exists
 func set_variable(folder_path: String, variable_key: StringName, variable: Variant) -> void:
 	var clean_path: StringName = _clean_folder_path(folder_path)
+	
+	if not _variables.has(clean_path):
+		push_error("[NEXUS FORGE] Blackboard - Tried to set variable ", variable, " in an inexistent path:\" ", clean_path, "\"")
+		return
+	
 	if variable == null:
 		if _variables.has(clean_path) and _variables[clean_path].has(variable_key):
 			_variables[clean_path].erase(variable_key)
