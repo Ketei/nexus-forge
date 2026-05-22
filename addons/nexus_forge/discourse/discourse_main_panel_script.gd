@@ -822,6 +822,7 @@ func _on_side_editor_locale_changed(from: String, to: String) -> void:
 	set_localization_tip(to)
 	
 	if not from.is_empty():
+		
 		if not selected_format.is_empty():
 			save_current_phrase_key()
 		
@@ -834,19 +835,36 @@ func _on_side_editor_locale_changed(from: String, to: String) -> void:
 					text,
 					from)
 		
-		if active_node != null and from == current_locale:
+		if active_node != null:
 			var uuid: StringName = active_node.get_node_uuid()
 			match active_node.node_type:
 				DiscourseGraphNode.DialogueNodeType.DIALOG:
-					active_node.set_dialog_text(translation_txt_box.text.strip_edges())
+					var text: String = translation_txt_box.text.strip_edges()
+					active_conversation.set_text_entry(
+							uuid,
+							text,
+							from)
+					if from == current_locale:
+						active_node.set_dialog_text(text)
 				DiscourseGraphNode.DialogueNodeType.OPTIONS:
 					var choices: = get_localizer_choices()
-					var choice_n: int = 0
-					for choice in choices:
-						choice_n += 1
-						active_node.set_option_text(choice_n, choice)
+					active_conversation.set_choices_entry(
+							uuid,
+							choices,
+							from)
+					if from == current_locale:
+						var choice_n: int = 0
+						for choice in choices:
+							choice_n += 1
+							active_node.set_option_text(choice_n, choice)
 				DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
-					active_node.set_text(translation_txt_box.text.strip_edges())
+					var text: String = translation_txt_box.text.strip_edges()
+					active_conversation.set_text_entry(
+							uuid,
+							text,
+							from)
+					if current_locale == from:
+						active_node.set_text(translation_txt_box.text.strip_edges())
 	
 	clear_cases()
 	default_case_ln_edt.text = ""
@@ -895,6 +913,13 @@ func _on_side_editor_locale_changed(from: String, to: String) -> void:
 		var localized_options: Array[String] = active_conversation.get_choices_entry(
 				active_node.get_node_uuid(),
 				to)
+		
+		var base_size: int = base_options.size()
+		var localized_size: int = localized_options.size()
+		
+		if localized_size < base_size:
+			localized_options.append_array(base_options.slice(localized_size))
+		
 		for option_idx in range(base_options.size()):
 			create_choice_node(
 					base_options[option_idx],
@@ -929,9 +954,7 @@ func _on_localizer_node_selected(uuid: StringName) -> void:
 				if update_node:
 					old_node.set_dialog_text(translation_txt_box.text)
 			DiscourseGraphNode.DialogueNodeType.OPTIONS:
-				var options: Array[String] = []
-				for option_child in choices_container.get_children():
-					options.append(option_child.get_child(2).text)
+				var options: Array[String] = get_localizer_choices()
 				
 				active_conversation.set_choices_entry(
 						old_node.get_node_uuid(),
@@ -969,6 +992,12 @@ func _on_localizer_node_selected(uuid: StringName) -> void:
 			clear_localized_options()
 			var options_base: Array[String] = active_conversation.get_choices_entry(uuid, base_language)
 			var options_localized: Array[String] = active_conversation.get_choices_entry(uuid, active_locale)
+			var base_size: int = options_base.size()
+			var localized_size: int = options_localized.size()
+			
+			if localized_size < base_size:
+				options_localized.append_array(options_base.slice(localized_size))
+			
 			for option_idx in range(options_base.size()):
 				create_choice_node(
 						options_base[option_idx],
@@ -1358,7 +1387,7 @@ func _on_new_conversation_pressed() -> void:
 		if active_conversation != null:
 			save_current_dialog_to_memory()
 		var new_conv: EditorDiscourseDialog = EditorDiscourseDialog.new()
-		new_conv.locale_map.assign(languages_tree.as_map())
+		new_conv.locale_map.assign(get_settings_languages_as_map())
 		if ResourceLoader.has_cached(result[1]):
 			new_conv.take_over_path(result[1])
 		ResourceSaver.save(
@@ -1379,6 +1408,39 @@ func _on_new_conversation_pressed() -> void:
 			await get_tree().process_frame
 		listen_offset = true
 	file_saver.queue_free()
+
+
+func get_settings_languages_as_map() -> Dictionary:
+	var language_map: Dictionary[String, Dictionary] = {
+		base_language: {}}
+	
+	var locale_settings: PackedStringArray = StringUtils.split_and_strip(
+			ProjectSettings.get_setting(
+					EditorNFPlugin.get_project_settings_path("discourse_use_languages"), ""),
+			",")
+	
+	for entry in locale_settings:
+		var cleaned_locale: String = TranslationServer.standardize_locale(entry)
+		var parts: PackedStringArray = cleaned_locale.split("_", false)
+		var part_size: int = parts.size()
+		if part_size == 0:
+			continue
+		elif 2 < part_size:
+			push_warning(
+				"[NEXUS FORGE] Discourse - Discourse languages only support language + region: " + entry)
+		
+		if not language_map.has(parts[0]):
+			language_map[parts[0]] = {}
+		
+		if 1 < part_size:
+			var region: String = ""
+			for part_index in range(1, part_size):
+				if parts[part_index].length() == 2:
+					region = parts[part_index]
+					break
+			if not region.is_empty():
+				language_map[parts[0]][region] = null
+	return language_map
 
 
 func _on_open_conversation_pressed() -> void:

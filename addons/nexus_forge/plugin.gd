@@ -87,8 +87,15 @@ const SETTINGS_PATHS: Dictionary[String, Dictionary] = {
 		"setting_path": "nexus_forge/settings/discourse_base_language",
 		"default_value": "",
 		"type": TYPE_STRING,
-		"hint": PROPERTY_HINT_NONE,
+		"hint": PROPERTY_HINT_LOCALE_ID,
 		"hint_string": ""},
+	"discourse_use_languages": {
+		"setting_path": "nexus_forge/settings/discourse_use_languages",
+		"default_value": "",
+		"type": TYPE_STRING,
+		"hint": PROPERTY_HINT_NONE,
+		"hint_string": "",
+		"restart_required": false},
 	"discourse": {
 		"setting_path": "nexus_forge/export/localization_directory",
 		"default_value": "res://localization/",
@@ -348,6 +355,57 @@ func verify_project_settings() -> void:
 				SETTINGS_PATHS[tool_id]["setting_path"],
 				SETTINGS_PATHS[tool_id]["default_value"] if tool_id != "discourse_base_language" else OS.get_locale_language())
 		
+		if tool_id == "discourse_base_language":
+			var set_setting: String = TranslationServer.standardize_locale(ProjectSettings.get_setting(SETTINGS_PATHS[tool_id]["setting_path"], ""))
+			if not set_setting.is_empty():
+				var parts: PackedStringArray = set_setting.split("_", false)
+				var language: String = parts[0]
+				var region: String = ""
+				
+				for part in range(1, parts.size()):
+					if parts[part].length() != 2:
+						continue
+					region = parts[part]
+					break
+				
+				var final_locale: String = language if region.is_empty() else language + "_" + region
+				
+				if final_locale != set_setting:
+					ProjectSettings.set_setting(
+					SETTINGS_PATHS[tool_id]["setting_path"],
+					final_locale)
+			else:
+				ProjectSettings.set_setting(
+					SETTINGS_PATHS[tool_id]["setting_path"],
+					OS.get_locale_language())
+		elif tool_id == "discourse_use_languages":
+			var set_setting: String = ProjectSettings.get_setting(SETTINGS_PATHS[tool_id]["setting_path"], "")
+			if not set_setting.is_empty():
+				var locales: PackedStringArray = StringUtils.split_and_strip(set_setting, ",", false)
+				var valid_locales: Dictionary[String, Variant] = {}
+				
+				for locale in locales:
+					var valid_code: String = TranslationServer.standardize_locale(locale)
+					if valid_code.is_empty():
+						continue
+					
+					var parts: PackedStringArray = locale.split("_", false)
+					var lang: String = parts[0]
+					var region: String = ""
+					for idx in range(1, parts.size()):
+						if parts[idx].length() == 2:
+							region = parts[idx]
+							break
+					
+					var locale_code: String = lang if region.is_empty() else lang + "_" + region
+					
+					if not valid_locales.has(locale_code):
+						valid_locales[locale_code] = null
+				
+				ProjectSettings.set_setting(
+						SETTINGS_PATHS[tool_id]["setting_path"],
+						", ".join(PackedStringArray(valid_locales.keys())))
+			
 		ProjectSettings.set_initial_value(
 				SETTINGS_PATHS[tool_id]["setting_path"],
 				SETTINGS_PATHS[tool_id]["default_value"] if tool_id != "discourse_base_language" else OS.get_locale_language())

@@ -262,7 +262,7 @@ func clear_languages(clear_main: bool = true) -> void:
 		main_language = null
 	
 	for item in get_root().get_children():
-		if item == main_pointer and not clear_main:
+		if main_pointer != null and item == main_pointer and not clear_main:
 			continue
 		item.free()
 	

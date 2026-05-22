@@ -241,19 +241,24 @@ func get_text_entry(node_uuid: StringName, locale: String = "", fallback: String
 ## return [param fallback].
 func get_choices_entry(node_uuid: StringName, locale: String = "", fallback: Array = ["[ENTRY NOT FOUND]"]) -> Array:
 	locale = TranslationServer.standardize_locale(locale)
+	var return_array: Array[String] = []
 	
 	if not localization.has(node_uuid) or  localization[node_uuid]["type"] != LocalizationType.CHOICES:
+		return_array.assign(fallback)
 		return fallback
 	
 	var localization_data: Dictionary = localization[node_uuid]
 	
 	if locale.is_empty():
-		return localization_data["unlocalized"].duplicate(true)
+		return_array.assign(localization_data["unlocalized"])
 	else:
-		return DictUtils.get_nested_value(
-				localization_data,
-				["locales", locale],
-				fallback).duplicate(true)
+		return_array.assign(
+				DictUtils.get_nested_value(
+						localization_data,
+						["locales", locale],
+						[]))
+	
+	return return_array
 
 
 ## Returns the node data from a the node with the given [param uuid] in a specific locale.
