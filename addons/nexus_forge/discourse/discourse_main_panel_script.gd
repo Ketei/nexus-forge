@@ -36,6 +36,7 @@ var _unsaved: bool = false
 var _conversation_options_disabled: bool = true
 
 var base_language: String = ""
+var _included_languages: Dictionary[String, Variant] = {}
 var current_locale: String = ""
 # ----------------------------
 
@@ -293,6 +294,25 @@ func ready_plugin(base_locale: String = "") -> void:
 	languages_tree.set_default_language(system_lang)
 	current_locale = system_lang
 	
+	var locale_settings: PackedStringArray = StringUtils.split_and_strip(
+			ProjectSettings.get_setting(
+					EditorNFPlugin.get_project_settings_path("discourse_use_languages"), ""),
+			",")
+	
+	for entry in locale_settings:
+		var parts: PackedStringArray = entry.split("_", false)
+		var part_size: int = parts.size()
+		if part_size <= 0 or 2 < part_size:
+			push_warning(
+				"[NEXUS FORGE] Discourse - Discourse languages only support language + region: " + entry)
+			continue
+		
+		if not _included_languages.has(parts[0]):
+			_included_languages[parts[0]] = {}
+		
+		if 1 < part_size:
+			_included_languages[parts[0]][parts[1]] = null
+	print("Included langusges: ", _included_languages)
 	if discourse_graph_edit.entry_node != null:
 		_on_discourse_node_created(discourse_graph_edit.entry_node)
 	
@@ -1417,35 +1437,10 @@ func _on_new_conversation_pressed() -> void:
 
 
 func get_settings_languages_as_map() -> Dictionary:
-	var language_map: Dictionary[String, Dictionary] = {
-		base_language: {}}
+	var language_map: Dictionary[String, Dictionary] = _included_languages.duplicate(true)
+	if not language_map.has(base_language):
+		language_map[base_language] = {}
 	
-	var locale_settings: PackedStringArray = StringUtils.split_and_strip(
-			ProjectSettings.get_setting(
-					EditorNFPlugin.get_project_settings_path("discourse_use_languages"), ""),
-			",")
-	
-	for entry in locale_settings:
-		var cleaned_locale: String = TranslationServer.standardize_locale(entry)
-		var parts: PackedStringArray = cleaned_locale.split("_", false)
-		var part_size: int = parts.size()
-		if part_size == 0:
-			continue
-		elif 2 < part_size:
-			push_warning(
-				"[NEXUS FORGE] Discourse - Discourse languages only support language + region: " + entry)
-		
-		if not language_map.has(parts[0]):
-			language_map[parts[0]] = {}
-		
-		if 1 < part_size:
-			var region: String = ""
-			for part_index in range(1, part_size):
-				if parts[part_index].length() == 2:
-					region = parts[part_index]
-					break
-			if not region.is_empty():
-				language_map[parts[0]][region] = null
 	return language_map
 
 

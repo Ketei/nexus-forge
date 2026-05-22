@@ -94,8 +94,7 @@ const SETTINGS_PATHS: Dictionary[String, Dictionary] = {
 		"default_value": "",
 		"type": TYPE_STRING,
 		"hint": PROPERTY_HINT_NONE,
-		"hint_string": "",
-		"restart_required": false},
+		"hint_string": ""},
 	"discourse": {
 		"setting_path": "nexus_forge/export/localization_directory",
 		"default_value": "res://localization/",
@@ -348,7 +347,6 @@ func verify_project_settings() -> void:
 			func (a,b): return SETTINGS_PATHS[a]["setting_path"].naturalnocasecmp_to(
 					SETTINGS_PATHS[b]["setting_path"]) < 0)
 	
-	var save_settings: bool = false
 	for tool_id in setting_order:
 		if not ProjectSettings.has_setting(SETTINGS_PATHS[tool_id]["setting_path"]):
 			ProjectSettings.set_setting(
@@ -389,7 +387,7 @@ func verify_project_settings() -> void:
 					if valid_code.is_empty():
 						continue
 					
-					var parts: PackedStringArray = locale.split("_", false)
+					var parts: PackedStringArray = valid_code.split("_", false)
 					var lang: String = parts[0]
 					var region: String = ""
 					for idx in range(1, parts.size()):
