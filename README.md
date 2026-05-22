@@ -51,3 +51,15 @@ Beyond the visual editors, the plugin includes several computer science data str
 * **Built-in (F1):** All custom classes include manually written documentation accessible directly inside the Godot editor's F1 help menu.
 * **GitHub Wiki:** Setup instructions and guides are available on the [Wiki](https://github.com/Ketei/nexus-forge/wiki). 
 *(Note: The wiki was initially AI-assisted but manually reviewed. A full rewrite is planned for the Beta release once the API stabilizes).*
+
+## Roadmap
+Features that are planned to be implemented in the future:
+### Alpha:
+- [ ] **Core:** Skip instantiating singleton modules based on editor modules enabled
+- [ ] **Discourse:** Use your own scene to test dialogs
+
+### Beta & Beyond
+- [ ] UndoRedo for all modules
+- [ ] Import/Export CSV files for localization
+
+_And maybe more!_
