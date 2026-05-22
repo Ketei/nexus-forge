@@ -910,11 +910,15 @@ func _on_side_editor_locale_changed(from: String, to: String) -> void:
 		var base_options: Array[String] = active_conversation.get_choices_entry(
 				active_node.get_node_uuid(),
 				base_locale)
+		var base_size: int = base_options.size()
+		
+		if base_size != active_node.choice_count():
+			base_options.resize(active_node.choice_count())
+		
 		var localized_options: Array[String] = active_conversation.get_choices_entry(
 				active_node.get_node_uuid(),
 				to)
 		
-		var base_size: int = base_options.size()
 		var localized_size: int = localized_options.size()
 		
 		if localized_size < base_size:
@@ -991,8 +995,10 @@ func _on_localizer_node_selected(uuid: StringName) -> void:
 		DiscourseGraphNode.DialogueNodeType.OPTIONS:
 			clear_localized_options()
 			var options_base: Array[String] = active_conversation.get_choices_entry(uuid, base_language)
-			var options_localized: Array[String] = active_conversation.get_choices_entry(uuid, active_locale)
 			var base_size: int = options_base.size()
+			if base_size != new_node.choice_count():
+				options_base.resize(new_node.choice_count())
+			var options_localized: Array[String] = active_conversation.get_choices_entry(uuid, active_locale)
 			var localized_size: int = options_localized.size()
 			
 			if localized_size < base_size:
