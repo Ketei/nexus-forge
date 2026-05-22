@@ -185,13 +185,13 @@ func _set_node_data(data: Dictionary) -> void:
 	mode = typeof(data_value)
 	match mode:
 		TYPE_INT:
-			get_mapped_field(&"data", &"number").value = metadata["value"]
+			get_mapped_field(&"data", &"number").set_value_no_signal(metadata["value"])
 			menu.icon = get_theme_icon("int", "EditorIcons")
 		TYPE_FLOAT:
-			get_mapped_field(&"data", &"number").value = metadata["value"]
+			get_mapped_field(&"data", &"number").set_value_no_signal(metadata["value"])
 			menu.icon = get_theme_icon("float", "EditorIcons")
 		TYPE_BOOL:
-			get_mapped_field(&"data", &"bool").button_pressed = metadata["value"]
+			get_mapped_field(&"data", &"bool").set_pressed_no_signal(metadata["value"])
 			menu.icon = get_theme_icon("bool", "EditorIcons")
 		TYPE_STRING:
 			get_mapped_field(&"data", &"text").text = metadata["value"]
