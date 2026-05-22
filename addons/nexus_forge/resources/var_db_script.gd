@@ -87,17 +87,17 @@ func folders(at: String = "") -> Array[String]:
 func set_variable(folder_path: String, variable_key: StringName, variable: Variant) -> void:
 	var clean_path: StringName = _clean_folder_path(folder_path)
 	
-	if not _variables.has(clean_path):
-		push_error("[NEXUS FORGE] Blackboard - Tried to set variable ", variable, " in an inexistent path:\" ", clean_path, "\"")
-		return
 	
 	if variable == null:
 		if _variables.has(clean_path) and _variables[clean_path].has(variable_key):
 			_variables[clean_path].erase(variable_key)
 			data_erased.emit(clean_path, variable_key)
 	else:
-		_variables[clean_path][variable_key] = variable
-		data_set.emit(clean_path, variable_key)
+		if _variables.has(clean_path):
+			_variables[clean_path][variable_key] = variable
+			data_set.emit(clean_path, variable_key)
+		else:
+			push_error("[NEXUS FORGE] Blackboard - Tried to set variable ", variable, " in an inexistent path:\" ", clean_path, "\"")
 
 
 ## Creates a directory recursively.
