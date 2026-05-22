@@ -321,6 +321,9 @@ func ready_plugin(base_locale: String = "") -> void:
 	localization_menu.item_selected.connect(_on_localization_selected)
 	# --------------------------------------------------------
 	
+	open_btn.pressed.connect(_on_open_conversation_pressed)
+	save_btn.pressed.connect(_on_save_conversation_pressed)
+	
 	discourse_graph_edit.dialog_changed.connect(_on_conversation_changed)
 	discourse_graph_edit.localization_enabled.connect(_on_localize_node)
 	discourse_graph_edit.nodes_removed.connect(_on_nodes_removed)
