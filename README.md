@@ -56,7 +56,7 @@ Beyond the visual editors, the plugin includes several computer science data str
 Features that are planned to be implemented in the future:
 ### Alpha:
 - [ ] **Core:** Skip instantiating singleton modules based on editor modules enabled
-- [ ] **Discourse:** Use your own scene to test dialogs
+- [x] **Discourse:** Use your own scene to test dialogs
 
 ### Beta & Beyond
 - [ ] UndoRedo for all modules
