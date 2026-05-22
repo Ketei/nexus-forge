@@ -1137,6 +1137,7 @@ func _on_region_created(language: String, region: String) -> void:
 	
 	add_locale(locale_code)
 	active_conversation.add_locale(locale_code)
+	
 	_on_conversation_changed()
 
 
@@ -1340,7 +1341,6 @@ func _on_localizer_item_edited(item: TreeItem) -> void:
 	target_item.set_text(0, proper_name)
 	item.set_text(0, proper_name)
 	item.get_metadata(0)["name"] = proper_name
-	
 	_on_conversation_changed()
 
 
@@ -1411,6 +1411,7 @@ func _on_open_conversation_pressed() -> void:
 				load_conversation(resource)
 			if wait_visible:
 				await get_tree().process_frame
+		
 		listen_offset = true
 	
 	file_opener.queue_free()
@@ -1838,14 +1839,15 @@ func _on_graph_edit_node_duplication_requested(uuids: Array[StringName]) -> void
 		return
 	elif uuid_size == 1:
 		var new_uuid: StringName = StringName(UUID.generate_new())
-		discourse_graph_edit._duplicate_single(uuids[0], new_uuid)
+		discourse_graph_edit.duplicate_single(uuids[0], new_uuid)
 	else:
 		var uuid_map: Dictionary[StringName, StringName] = {}
 		for uuid in uuids:
 			uuid_map[uuid] = StringName(UUID.generate_new())
 		var undo_targets: Array[StringName] = []
 		undo_targets.assign(uuid_map.values())
-		discourse_graph_edit._duplicate_multiple(uuid_map)
+		discourse_graph_edit.duplicate_multiple(uuid_map)
+	_on_conversation_changed()
 
 
 func _on_graph_edit_paste_requested() -> void:
@@ -1861,6 +1863,7 @@ func _on_graph_edit_paste_requested() -> void:
 	# TODO: Write the undoredo action
 	# with the below being the "do" action v
 	discourse_graph_edit.paste_node_clipboard(clipboard, uuid_map)
+	_on_conversation_changed()
 
 
 #region Phrases
@@ -2049,7 +2052,6 @@ func _on_key_line_text_changed(_text: String = "") -> void:
 			for item:LineEdit in all_ids[item_key]:
 				if item.has_theme_color(&"font_color"):
 					item.remove_theme_color_override(&"font_color")
-	
 	_on_conversation_changed()
 
 
