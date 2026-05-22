@@ -118,10 +118,14 @@ func _ready() -> void:
 	graph_icon = get_theme_icon("RandomNumberGenerator", "EditorIcons")
 	set_input_connection_icon(&"weight_default", get_theme_icon("int", "EditorIcons"))
 	set_slot_custom_icon_left(0, flow_icon)
-	set_slot_custom_icon_right(2, flow_icon)
+	
 	for conn_idx in range(1, get_child_count() - 1):
 		var id: StringName = &"option_" + StringName(str(conn_idx))
 		set_input_connection_icon(id, get_theme_icon("int", "EditorIcons"))
+	
+	for slot_index in range(2, get_child_count()):
+		set_slot_custom_icon_right(slot_index, flow_icon)
+		
 
 
 func _get_issues() -> PackedStringArray:
