@@ -471,12 +471,12 @@ func _load_locale(_locale_code: String) -> void:
 
 
 func _get_bool_result(from_uuid: String) -> bool:
-	if _dialog_resource == null or from_uuid.is_empty() or not _dialog_resource.dialog_nodes.has(from_uuid):
+	if _dialog_resource == null or from_uuid.is_empty() or not _dialog_resource.node_data.has(from_uuid):
 		return false
 	
 	var data: Dictionary = _dialog_resource.get_node_data(from_uuid, locale)
 	var metadata: Dictionary = data["metadata"]
-	match data["node_type"]:
+	match data["type"]:
 		NodeTypes.VALUE:
 			var value = metadata["value"]
 			if typeof(value) in [TYPE_BOOL, TYPE_INT, TYPE_FLOAT]:
@@ -506,9 +506,9 @@ func _get_bool_result(from_uuid: String) -> bool:
 				return false
 		NodeTypes.VARIABLE_GET:
 			var parts: PackedStringArray = metadata["variable_path"].rsplit("/", false, 1)
-			
 			if parts.size() != 2:
 				return false
+			
 			var variable = NexusForge.Blackboard.get_variable(parts[0], parts[1])
 			
 			if typeof(variable) in [TYPE_BOOL, TYPE_INT, TYPE_FLOAT]:
