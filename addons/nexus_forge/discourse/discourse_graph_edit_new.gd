@@ -551,7 +551,6 @@ func restore_node(uuid: String, state: Dictionary):
 							connection_data["target_port"])
 	
 	node_created.emit(new_node)
-	dialog_changed.emit()
 
 
 func restore_nodes(node_data: Dictionary[StringName, Dictionary]) -> void:
@@ -607,8 +606,6 @@ func paste_node_clipboard(clipboard: Array[Dictionary], uuid_map: Dictionary[Str
 				output_connection["from_port"],
 				uuid_equivalences[output_connection["to"]].get_node_uuid(),
 				output_connection["to_port"])
-	
-	dialog_changed.emit()
 
 
 func _on_duplicate_node_button_pressed(node: DiscourseGraphNode) -> void:
@@ -623,7 +620,7 @@ func _on_graph_edit_keyboard_duplicate_pressed() -> void:
 	node_duplication_requested.emit(uid_array)
 
 
-func _duplicate_single(node_uuid: StringName, new_uuid: StringName) -> void:
+func duplicate_single(node_uuid: StringName, new_uuid: StringName) -> void:
 	if not graph_nodes.has(node_uuid):
 		return
 	
@@ -655,12 +652,11 @@ func _duplicate_single(node_uuid: StringName, new_uuid: StringName) -> void:
 		attach_graph_element_to_frame(new_node.name, frame.name)
 	
 	node_created.emit(new_node)
-	dialog_changed.emit()
 
 
 # Used for the Ctrl+D signal with undo-redo. Key = node to be duplicated
 # value = new UUID to be assigned to it.
-func _duplicate_multiple(duplicate_targets: Dictionary[StringName, StringName]) -> void:
+func duplicate_multiple(duplicate_targets: Dictionary[StringName, StringName]) -> void:
 	var nodes_to_duplicate: Array[Dictionary] = []
 	
 	for uuid in duplicate_targets.keys():
@@ -711,7 +707,6 @@ func _duplicate_multiple(duplicate_targets: Dictionary[StringName, StringName]) 
 				output_connection["from_port"],
 				uuid_equivalences[output_connection["to"]].get_node_uuid(),
 				output_connection["to_port"])
-	dialog_changed.emit()
 
 
 func remove_node(node_uuid: StringName) -> void:
@@ -1133,7 +1128,6 @@ func disconnect_discourse_nodes(from_node_uuid: StringName, from_port: int, to_n
 			false)
 	
 	disconnect_node(output_node.name, from_port, input_node.name, to_port)
-	dialog_changed.emit()
 
 
 func disconnect_all_node_connections(for_uuid: StringName) -> void:
@@ -1328,6 +1322,7 @@ func _on_connection_request(from_node: StringName, from_port: int, to_node: Stri
 					_pending_connection_change["from_port"],
 					_pending_connection_change["to_node"],
 					_pending_connection_change["to_port"])
+			
 			dialog_changed.emit()
 		_pending_connection_change.clear()
 		return
