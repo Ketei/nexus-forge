@@ -312,7 +312,7 @@ func ready_plugin(base_locale: String = "") -> void:
 		
 		if 1 < part_size:
 			_included_languages[parts[0]][parts[1]] = null
-	print("Included langusges: ", _included_languages)
+	
 	if discourse_graph_edit.entry_node != null:
 		_on_discourse_node_created(discourse_graph_edit.entry_node)
 	
