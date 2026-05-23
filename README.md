@@ -62,7 +62,8 @@ Features that are planned to be implemented in the future:
 - [ ] Publish on Godot's Asset Library/Asset Store
 
 ### Beta & Beyond
-- [ ] UndoRedo for all modules
-- [ ] Import/Export CSV files for localization
+- [ ] **Core:** UndoRedo for all modules
+- [ ] **Discourse:** Import/Export CSV files for localization
+- [ ] Github Wiki: Rewrite the Wiki and include examples using screenshots/gifs
 
 _And maybe more!_
