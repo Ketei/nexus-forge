@@ -63,8 +63,9 @@ Nexus Forge provides editors to structure your game's content:
 * **Quests:** Construct quests with multiple stages and objectives.
 * **Economy:** Build single or multi-currency economies.
 
-<img alt="Dialog Example" src="https://github.com/user-attachments/assets/c7198887-cb6c-4981-9123-75b088626780" />
-<img alt="Quest Example" src="https://github.com/user-attachments/assets/17ec2fc0-06ea-4515-8a8a-f9bffedbf5fa" />
+<img alt="Dialog Example" src="https://github.com/user-attachments/assets/d92ba731-fc55-44cf-9995-b187f7f8d932" />
+<img alt="Quest Example" src="https://github.com/user-attachments/assets/6d3d3022-3b87-4a28-905b-6e0e7306ded2" />
+
 
 ### Static Utility Classes
 
