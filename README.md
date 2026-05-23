@@ -49,7 +49,7 @@ Nexus Forge makes use of [several class names](https://github.com/Ketei/nexus-fo
 1. Download the [latest build](https://github.com/Ketei/nexus-forge/releases/latest) or the a copy of the [main branch](https://github.com/Ketei/nexus-forge/archive/refs/heads/main.zip).
 2. Extract the zip file and copy `path` to your project's `res://addons` directory.
 3. Go to `Project` → `Project Settings` → `Plugins` and enable NexusForge
-4. **(Optional)** Go to `Project` → `Project Settings` → `General` and in the Nexus Forge category configure to your needs
+4. **(Optional)** Go to `Project` → `Project Settings` → `General` and in the Nexus Forge category configure the plugin. For more information go to the [Config Section](https://github.com/Ketei/nexus-forge/wiki/00.-Configuration) of the wiki.
 5. Restart Godot/Reload your project to ensure the plugin is working correctly
 
 ## Features
