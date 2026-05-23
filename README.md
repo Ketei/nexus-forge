@@ -13,20 +13,46 @@
   <br>
 </div>
 
-**Nexus Forge** is a data-driven, headless game data manager for Godot 4.4+. Built entirely in GDScript, it provides node-based visual editors for managing your game's core data, dialogue, stats, items, and quests without forcing any specific UI on your project. You build the front-end; Nexus Forge handles the backend.
-
-**Nexus Forge editor component is modular** and through Godot's Project Settings you can selectively enable or disable individual modules. The plugin will only load the specific tools you need, keeping the editor free of clutter.
-
 > [!IMPORTANT]
 > **Alpha State:** The plugin is functional, but APIs, class names, and GUI layouts will likely undergo breaking changes before the Beta release. Use this for testing, evaluation, or as a bold choice for an early-stage project. Bugs are expected.
 > 
 > *Context: This began as an internal studio tool, so it includes a few specific static helper classes tailored for my personal workflow.*
 
-
 > [!WARNING]
 > **No Undo/Redo yet:** Nexus Forge does not currently implement an Undo/Redo system. Actions taken in the editor cannot be reversed via `Ctrl+Z`.
 
-## Core Systems
+## Contents
+
+- [About](#about)
+- [Installation](#installation)
+  - [Compatibilty](#compatibility)
+- [Features](#features)
+  - [Utility Classes](#static-utility-classes)
+- [Documentation](#documentation)
+- [Roadmap](#roadmap)
+
+## About
+**Nexus Forge** is a data-driven, headless game data manager for Godot 4.4+. Built entirely in GDScript, it provides node-based visual editors for managing your game's core data, dialogue, stats, items, and quests without forcing any specific UI on your project. You build the front-end; Nexus Forge handles the backend.
+
+**Nexus Forge editor component is modular** and through Godot's Project Settings you can selectively enable or disable individual modules. The plugin will only load the specific tools you need, keeping the editor free of clutter.
+
+## Installation
+### Compatibility
+
+* **Engine:** Godot Engine 4.4+ (Strictly required due to reliance on Typed Dictionaries).
+* **Resolution:** The editor GUI is optimized for 1920x1080. Smaller resolutions are supported but will trigger scrollbars.
+
+### Reserved Classes
+Nexus Forge makes use of [several class names](https://github.com/Ketei/nexus-forge/wiki#reserved-class-names). Make sure you have them available before installing.
+
+### Installation Steps
+1. Download the [latest build](https://github.com/Ketei/nexus-forge/releases/latest) or the a copy of the [main branch](https://github.com/Ketei/nexus-forge/archive/refs/heads/main.zip).
+2. Extract the zip file and copy `path` to your project's `res://addons` directory.
+3. Go to `Project` → `Project Settings` → `Plugins` and enable NexusForge
+4. **(Optional)** Go to `Project` → `Project Settings` → `General` and in the Nexus Forge category configure to your needs
+5. Restart Godot/Reload your project to ensure the plugin is working correctly
+
+## Features
 
 Nexus Forge provides dedicated editors to structure your game's content:
 
@@ -39,21 +65,13 @@ Nexus Forge provides dedicated editors to structure your game's content:
 <img alt="Dialog Example" src="https://github.com/user-attachments/assets/c7198887-cb6c-4981-9123-75b088626780" />
 <img alt="Quest Example" src="https://github.com/user-attachments/assets/17ec2fc0-06ea-4515-8a8a-f9bffedbf5fa" />
 
-
-
-
-## Standalone Utility Classes
+### Static Utility Classes
 
 Beyond the visual editors, the plugin includes several computer science data structures that can be used independently in your code:
 
 * **Caching:** A Least Recently Used (LRU) Cache implementation.
 * **Advanced Data Structures:** A Random Weighted Pool for probability and BitFlags for efficient boolean states.
 * **Low-Level Helpers:** Fast UUID (v4) generation and bitwise operations.
-
-## Compatibility
-
-* **Engine:** Godot Engine 4.4+ (Strictly required due to reliance on Typed Dictionaries).
-* **Resolution:** The editor GUI is optimized for 1920x1080. Smaller resolutions are supported but will trigger scrollbars.
 
 ## Documentation
 
