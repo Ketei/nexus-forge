@@ -16,7 +16,7 @@
 > [!IMPORTANT]
 > **Alpha State:** The plugin is functional, but APIs, class names, and GUI layouts will likely undergo breaking changes before the Beta release. Use this for testing, evaluation, or as a bold choice for an early-stage project. Bugs are expected.
 > 
-> *Context: This began as an internal studio tool, so it includes a few specific static helper classes tailored for my personal workflow.*
+> This began as a personal tool, so it includes a few specific static helper classes tailored for my own workflow.*
 
 > [!WARNING]
 > **No Undo/Redo yet:** Nexus Forge does not currently implement an Undo/Redo system. Actions taken in the editor cannot be reversed via `Ctrl+Z`.
