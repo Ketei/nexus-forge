@@ -26,6 +26,8 @@
 - [About](#about)
 - [Installation](#installation)
   - [Compatibilty](#compatibility)
+  - [Reserved Classes](#reserved-classes)
+  - [Installation Steps](#installation-steps)
 - [Features](#features)
   - [Utility Classes](#static-utility-classes)
 - [Documentation](#documentation)
