@@ -1,5 +1,5 @@
 <div align="center">
-  <img alt="Logo" src="https://github.com/Ketei/nexus-forge/blob/main/logo.svg" width="300"/>
+  <img alt="Logo" src="/logo.svg" width="300"/>
   <h1 align="center"> Nexus Forge </h1>
   <p>A game toolset plugin for Godot</p>
 </div>
