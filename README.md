@@ -63,6 +63,15 @@ Features that are planned to be implemented in the future:
 
 ### Beta & Beyond
 - [ ] **Core:** UndoRedo for all modules
+  - [ ] Discourse (Dialogs)
+  - [ ] Blackboard (Variables)
+  - [ ] Persona (Characters)
+  - [ ] Kindred (Species)
+  - [ ] Talents (Skills & Traits)
+  - [ ] Depot (Items & Currencies)
+  - [ ] Blueprints (Recipes)
+  - [ ] Odyssey (Quests)
+  - [ ] Phrase Maps
 - [ ] **Discourse:** Import/Export CSV files for localization
 - [ ] **Github Wiki:** Rewrite the Wiki and include examples using screenshots/gifs
 
