@@ -12,7 +12,7 @@
 </div>
 
 > [!IMPORTANT]
-> **Alpha State:** The plugin is functional, but APIs, class names, and GUI layouts will likely undergo breaking changes before the Beta release. Use this for testing, evaluation, or as a bold choice for an early-stage project. Expect bugs.
+> **Alpha State:** The plugin is functional, but APIs, class names and GUI layouts will likely undergo breaking changes before the Beta release. Use this for testing, evaluation, or as a bold choice for an early-stage project. Expect bugs.
 > 
 > This began as a personal tool, so it includes a few specific static helper classes tailored for my own workflow.
 
@@ -32,7 +32,7 @@
 - [Roadmap](#roadmap)
 
 ## About
-**Nexus Forge** is a headless game data manager for Godot 4.4+. It provides visual editors for managing your game's data, dialogue, stats, items, and quests without forcing any specific UI on your project.
+**Nexus Forge** is a headless game data manager for Godot 4.4+. It provides visual editors for managing your game's data, dialogue, stats, items and quests without forcing any specific UI on your project.
 
 **Nexus Forge editor component is modular.** Tthrough Godot's Project Settings you can selectively enable or disable individual modules. The plugin will only load the specific tools you need, keeping the editor clutter-free.
 
@@ -59,7 +59,7 @@ Nexus Forge provides editors to structure your game's content:
 * **Dialogue Editor:** A powerful easy-to-use graph-based visual tool for creating dialogs.
 * **Global State:** A blackboard for global data storage and access.
 * **Character & Species Data:** Complex character sheets with custom stats, skills and traits. Plus a robust Species/Sub-Species inheritance system.
-* **Items & Crafting:** Define items with custom categories, flags, and rarities. Define complex crafting recipes.
+* **Items & Crafting:** Define items with custom categories, flags and rarities. Define complex crafting recipes.
 * **Quests:** Construct quests with multiple stages and objectives.
 * **Economy:** Build single or multi-currency economies.
 
