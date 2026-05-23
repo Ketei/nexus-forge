@@ -57,6 +57,8 @@ Features that are planned to be implemented in the future:
 ### Alpha:
 - [ ] **Core:** Skip instantiating singleton modules based on editor modules enabled
 - [x] **Discourse:** Use your own scene to test dialogs
+- [ ] **Depot(Items):** Allow for name & description to be formatted using Blackboard's variables on settings.
+- [ ] **Odyssey(Quests):** Allow for title & description to be formatted using Blackboard's variables on settings.
 
 ### Beta & Beyond
 - [ ] UndoRedo for all modules
