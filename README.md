@@ -59,6 +59,7 @@ Features that are planned to be implemented in the future:
 - [x] **Discourse:** Use your own scene to test dialogs
 - [ ] **Depot(Items):** Allow for name & description to be formatted using Blackboard's variables on settings.
 - [ ] **Odyssey(Quests):** Allow for title & description to be formatted using Blackboard's variables on settings.
+- [ ] Publish on Godot's Asset Library/Asset Store
 
 ### Beta & Beyond
 - [ ] UndoRedo for all modules
