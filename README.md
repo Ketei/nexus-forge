@@ -34,15 +34,15 @@
 - [Roadmap](#roadmap)
 
 ## About
-**Nexus Forge** is a data-driven, headless game data manager for Godot 4.4+. Built entirely in GDScript, it provides node-based visual editors for managing your game's core data, dialogue, stats, items, and quests without forcing any specific UI on your project. You build the front-end; Nexus Forge handles the backend.
+**Nexus Forge** is a headless game data manager for Godot 4.4+. Built in GDScript, it provides visual editors for managing your game's core data, dialogue, stats, items, and quests without forcing any specific UI on your project. You build the front-end; Nexus Forge handles the backend.
 
-**Nexus Forge editor component is modular** and through Godot's Project Settings you can selectively enable or disable individual modules. The plugin will only load the specific tools you need, keeping the editor free of clutter.
+**Nexus Forge editor component is modular** and through Godot's Project Settings you can selectively enable or disable individual modules. The plugin will only load the specific tools you need, keeping the editor clutter-free.
 
 ## Installation
 ### Compatibility
 
-* **Engine:** Godot Engine 4.4+ (Strictly required due to reliance on Typed Dictionaries).
-* **Resolution:** The editor GUI is optimized for 1920x1080. Smaller resolutions are supported but will trigger scrollbars.
+* **Engine:** Godot Engine 4.4+
+* **Resolution:** The editor GUI is designed for a 1920x1080 resolution. Smaller resolutions are supported but will trigger scrollbars.
 
 ### Reserved Classes
 Nexus Forge makes use of [several class names](https://github.com/Ketei/nexus-forge/wiki#reserved-class-names). Make sure you have them available before installing.
