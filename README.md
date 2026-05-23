@@ -4,6 +4,15 @@
   <p>A game toolset plugin for Godot</p>
 </div>
 
+<div align="center">
+  <a href="https://godotengine.org/download/" target="_blank" style="text-decoration:none"><img alt="Godot Badge" src="https://img.shields.io/badge/Godot-4.4+-478CBF?logo=godotengine&logoColor=white"/></a>
+  <img alt="GDScript Badge" src="https://img.shields.io/badge/Language-GDScript-blue"/>
+  <img alt="Alpha Status Badge" src="https://img.shields.io/badge/Status-Alpha-red"/>
+  <img alt="MIT License Badge" src="https://img.shields.io/badge/License-MIT-green"/>
+  <br>
+  <br>
+</div>
+
 **Nexus Forge** is a data-driven, headless game data manager for Godot 4.4+. Built entirely in GDScript, it provides node-based visual editors for managing your game's core data—dialogue, stats, items, and quests—without forcing any specific UI on your project. You build the front-end; Nexus Forge handles the backend.
 
 **Nexus Forge editor component is modular** and through Godot's Project Settings you can selectively enable or disable individual modules. The plugin will only load the specific tools you need, keeping the editor free of clutter.
