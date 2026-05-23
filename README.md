@@ -103,6 +103,7 @@ Features that are planned to be implemented in the future:
 - [ ] **Core:** Implement an automatic [mod loader](#modding)
 - [ ] **Discourse:** Import/Export CSV files for localization
 - [ ] **Github Wiki:** Rewrite the Wiki and include examples using screenshots/gifs
+- [ ] **GUI:** Improved GUI for smaller resolutions
 
 _And more! ... maybe_
 
