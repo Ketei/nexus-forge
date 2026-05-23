@@ -9,14 +9,12 @@
   <img alt="GDScript Badge" src="https://img.shields.io/badge/Language-GDScript-blue"/>
   <img alt="Alpha Status Badge" src="https://img.shields.io/badge/Status-Alpha-red"/>
   <img alt="MIT License Badge" src="https://img.shields.io/badge/License-MIT-green"/>
-  <br>
-  <br>
 </div>
 
 > [!IMPORTANT]
 > **Alpha State:** The plugin is functional, but APIs, class names, and GUI layouts will likely undergo breaking changes before the Beta release. Use this for testing, evaluation, or as a bold choice for an early-stage project. Expect bugs.
 > 
-> This began as a personal tool, so it includes a few specific static helper classes tailored for my own workflow.*
+> This began as a personal tool, so it includes a few specific static helper classes tailored for my own workflow.
 
 > [!WARNING]
 > **No Undo/Redo yet:** Nexus Forge does not currently implement an Undo/Redo system. Actions taken in the editor cannot be reversed via `Ctrl+Z`.
