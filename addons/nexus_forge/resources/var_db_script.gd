@@ -97,7 +97,7 @@ func set_variable(folder_path: String, variable_key: StringName, variable: Varia
 			_variables[clean_path][variable_key] = variable
 			data_set.emit(clean_path, variable_key)
 		else:
-			push_error("[NEXUS FORGE] Blackboard - Tried to set variable ", variable, " in an inexistent path:\" ", clean_path, "\"")
+			push_error("[NEXUS FORGE] Blackboard - Tried to set variable ", variable_key, " with (", variable, ") in an inexistent path:\" ", clean_path, "\"")
 
 
 ## Creates a directory recursively.
