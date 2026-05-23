@@ -58,7 +58,7 @@ Nexus Forge provides editors to structure your game's content:
 
 * **Dialogue Editor:** A powerful easy-to-use graph-based visual tool for creating dialogs.
 * **Global State:** A blackboard for global data storage and access.
-* **Character & Species Data:** Complex character sheets with custom stats, skills, and traits and a robust Species/Sub-Species inheritance system.
+* **Character & Species Data:** Complex character sheets with custom stats, skills and traits. Plus a robust Species/Sub-Species inheritance system.
 * **Items & Crafting:** Define items with custom categories, flags, and rarities. Define complex crafting recipes.
 * **Quests:** Construct quests with multiple stages and objectives.
 * **Economy:** Build single or multi-currency economies.
