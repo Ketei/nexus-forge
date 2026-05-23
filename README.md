@@ -72,8 +72,11 @@ Features that are planned to be implemented in the future:
   - [ ] Blueprints (Recipes)
   - [ ] Odyssey (Quests)
   - [ ] Phrase Maps
-- [ ] **Core:** Implement an automatic mod loader.
+- [ ] **Core:** Implement an automatic [mod loader](#modding)
 - [ ] **Discourse:** Import/Export CSV files for localization
 - [ ] **Github Wiki:** Rewrite the Wiki and include examples using screenshots/gifs
 
 _And maybe more!_
+
+#### Modding
+All core data APIs are exposed at runtime, allowing developers to easily implement post-export modding. A mod loader would automatically scan a defined directory and apply all changes.
