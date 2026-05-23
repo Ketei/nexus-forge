@@ -14,7 +14,7 @@
 </div>
 
 > [!IMPORTANT]
-> **Alpha State:** The plugin is functional, but APIs, class names, and GUI layouts will likely undergo breaking changes before the Beta release. Use this for testing, evaluation, or as a bold choice for an early-stage project. Bugs are expected.
+> **Alpha State:** The plugin is functional, but APIs, class names, and GUI layouts will likely undergo breaking changes before the Beta release. Use this for testing, evaluation, or as a bold choice for an early-stage project. Expect bugs.
 > 
 > This began as a personal tool, so it includes a few specific static helper classes tailored for my own workflow.*
 
@@ -34,9 +34,9 @@
 - [Roadmap](#roadmap)
 
 ## About
-**Nexus Forge** is a headless game data manager for Godot 4.4+. Built in GDScript, it provides visual editors for managing your game's core data, dialogue, stats, items, and quests without forcing any specific UI on your project. You build the front-end; Nexus Forge handles the backend.
+**Nexus Forge** is a headless game data manager for Godot 4.4+. It provides visual editors for managing your game's data, dialogue, stats, items, and quests without forcing any specific UI on your project.
 
-**Nexus Forge editor component is modular** and through Godot's Project Settings you can selectively enable or disable individual modules. The plugin will only load the specific tools you need, keeping the editor clutter-free.
+**Nexus Forge editor component is modular.** Tthrough Godot's Project Settings you can selectively enable or disable individual modules. The plugin will only load the specific tools you need, keeping the editor clutter-free.
 
 ## Installation
 ### Compatibility
@@ -56,24 +56,25 @@ Nexus Forge makes use of [several class names](https://github.com/Ketei/nexus-fo
 
 ## Features
 
-Nexus Forge provides dedicated editors to structure your game's content:
+Nexus Forge provides editors to structure your game's content:
 
-* **Dialogue Editor:** A GraphEdit-based tool for branching conversations featuring context-aware string formatting.
-* **Global State:** A blackboard for data storage and managing global variables.
-* **Character & Species Data:** Complex character sheets with custom stats, skills, and traits. Includes a robust Species/Sub-species inheritance system.
-* **Items & Economy:** Define items with custom categories, flags, and rarities. Build single or multi-currency economies.
-* **Crafting & Quests:** Construct multi-stage quests and define complex crafting recipes.
+* **Dialogue Editor:** A powerful easy-to-use graph-based visual tool for creating dialogs.
+* **Global State:** A blackboard for global data storage and access.
+* **Character & Species Data:** Complex character sheets with custom stats, skills, and traits and a robust Species/Sub-Species inheritance system.
+* **Items & Crafting:** Define items with custom categories, flags, and rarities. Define complex crafting recipes.
+* **Quests:** Construct quests with multiple stages and objectives.
+* **Economy:** Build single or multi-currency economies.
 
 <img alt="Dialog Example" src="https://github.com/user-attachments/assets/c7198887-cb6c-4981-9123-75b088626780" />
 <img alt="Quest Example" src="https://github.com/user-attachments/assets/17ec2fc0-06ea-4515-8a8a-f9bffedbf5fa" />
 
 ### Static Utility Classes
 
-Beyond the visual editors, the plugin includes several computer science data structures that can be used independently in your code:
+Besides the editors, the plugin includes several objects that can be used independently in your code:
 
 * **Caching:** A Least Recently Used (LRU) Cache implementation.
-* **Advanced Data Structures:** A Random Weighted Pool for probability and BitFlags for efficient boolean states.
-* **Low-Level Helpers:** Fast UUID (v4) generation and bitwise operations.
+* **Data Pools and Selectors:** A Random Weighted Pool for random or weighted draws.
+* **Other Helpers:** BitFlags, UUID (v4) generation and bitwise operations.
 
 ## Documentation
 
@@ -105,7 +106,7 @@ Features that are planned to be implemented in the future:
 - [ ] **Discourse:** Import/Export CSV files for localization
 - [ ] **Github Wiki:** Rewrite the Wiki and include examples using screenshots/gifs
 
-_And maybe more!_
+_And more! ... maybe_
 
 #### Modding
-All core data APIs are exposed at runtime, allowing developers to easily implement post-export modding. A mod loader would automatically scan a defined directory and apply all changes.
+All core data APIs are exposed at runtime, allowing developers to easily implement modding. A mod loader would automatically scan a defined directory and apply all changes from mods.
