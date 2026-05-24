@@ -366,9 +366,6 @@ func _sort_custom_settings(a: String, b: String) -> bool:
 func verify_project_settings() -> void:
 	var setting_order: Array[String] = []
 	setting_order.assign(SETTINGS_PATHS.keys())
-	#setting_order.sort_custom(
-			#func (a,b): return SETTINGS_PATHS[a]["setting_path"].naturalnocasecmp_to(
-					#SETTINGS_PATHS[b]["setting_path"]) < 0)
 	setting_order.sort_custom(_sort_custom_settings)
 	
 	for tool_id in setting_order:
@@ -382,20 +379,11 @@ func verify_project_settings() -> void:
 			if not set_setting.is_empty():
 				var parts: PackedStringArray = set_setting.split("_", false)
 				var language: String = parts[0]
-				var region: String = ""
 				
-				for part in range(1, parts.size()):
-					if parts[part].length() != 2:
-						continue
-					region = parts[part]
-					break
-				
-				var final_locale: String = language if region.is_empty() else language + "_" + region
-				
-				if final_locale != set_setting:
+				if language != set_setting:
 					ProjectSettings.set_setting(
 					SETTINGS_PATHS[tool_id]["setting_path"],
-					final_locale)
+					language)
 			else:
 				ProjectSettings.set_setting(
 					SETTINGS_PATHS[tool_id]["setting_path"],
