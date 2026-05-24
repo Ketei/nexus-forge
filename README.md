@@ -1,7 +1,7 @@
 <div align="center">
-  <img alt="Logo" src="https://github.com/Ketei/nexus_forge/blob/main/logo.svg" width="300"/>
+  <img alt="Logo" src="/logo.svg" width="300"/>
   <h1 align="center"> Nexus Forge </h1>
-  <p>A game toolset plugin for Godot</p>
+  <p>A headless toolset plugin for Godot</p>
 </div>
 
 <div align="center">
@@ -47,7 +47,7 @@ Nexus Forge makes use of [several class names](https://github.com/Ketei/nexus-fo
 
 ### Installation Steps
 1. Download the [latest build](https://github.com/Ketei/nexus-forge/releases/latest) or the a copy of the [main branch](https://github.com/Ketei/nexus-forge/archive/refs/heads/main.zip).
-2. Extract the zip file and copy `path` to your project's `res://addons` directory.
+2. Extract the zip file and extract the `addons/nexus_forge` folder to your project's `res://addons` directory.
 3. Go to `Project` → `Project Settings` → `Plugins` and enable NexusForge
 4. **(Optional)** Go to `Project` → `Project Settings` → `General` and in the Nexus Forge category configure the plugin. For more information go to the [Config Section](https://github.com/Ketei/nexus-forge/wiki/00.-Configuration) of the wiki.
 5. Restart Godot/Reload your project to ensure the plugin is working correctly
@@ -63,8 +63,9 @@ Nexus Forge provides editors to structure your game's content:
 * **Quests:** Construct quests with multiple stages and objectives.
 * **Economy:** Build single or multi-currency economies.
 
-<img alt="Dialog Example" src="https://github.com/user-attachments/assets/c7198887-cb6c-4981-9123-75b088626780" />
-<img alt="Quest Example" src="https://github.com/user-attachments/assets/17ec2fc0-06ea-4515-8a8a-f9bffedbf5fa" />
+<img alt="Dialog Example" src="https://github.com/user-attachments/assets/d92ba731-fc55-44cf-9995-b187f7f8d932" />
+<img alt="Quest Example" src="https://github.com/user-attachments/assets/6d3d3022-3b87-4a28-905b-6e0e7306ded2" />
+
 
 ### Static Utility Classes
 
