@@ -27,6 +27,9 @@ func _ready() -> void:
 	
 	var success: bool = false
 	
+	if NexusForge.Discourse == null:
+		NexusForge.Discourse = EditorDialogParser.new()
+	
 	if FileAccess.file_exists("user://nexus_forge/discourse_settings.cfg"):
 		var cfg: ConfigFile = ConfigFile.new()
 		cfg.load("user://nexus_forge/discourse_settings.cfg")
