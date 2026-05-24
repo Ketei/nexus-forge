@@ -13,6 +13,7 @@ extends Resource
 ## [/codeblock]
 
 enum StatType {
+	NIL,
 	INTEGER,
 	FLOAT}
 
@@ -100,7 +101,6 @@ func _on_stat_min_range_changed(stat_id: StringName, new_min: float) -> void:
 	if not _custom_stats.has(stat_id):
 		return
 	_custom_stats[stat_id].min_value = new_min
-	
 
 
 func _on_stat_max_range_changed(stat_id: StringName, new_max: float) -> void:
@@ -116,11 +116,20 @@ func custom_stats() -> Array[StringName]:
 	return all_stats
 
 
-## Adds a custom [param stat] to the stat block. [param type] must
-func create_custom(stat_id: StringName, type: StatType) -> void:
+## Adds a custom [param type] [param stat] to the stat block and returns the
+## created object.[br]
+## If [param stat_id] already exists and the [param type] matches the stat
+## type, it returns the object, otherwise returns [code]null[/code]
+func create_custom(stat_id: StringName, type: StatType) -> ValueRange:
 	if _custom_stats.has(stat_id):
-		return
+		var class_type: int = TYPE_INT if type == StatType.INTEGER else TYPE_FLOAT
+		if _custom_stats[stat_id].range_type() == class_type:
+			return _custom_stats[stat_id]
+		else:
+			return null
+	
 	_custom_stats[stat_id] = RangeInt.new() if type == StatType.INTEGER else RangeFloat.new()
+	return _custom_stats[stat_id]
 
 
 ## Gets the range of the custom [param stat_id]. Returns [RangeInt] or [RangeFloat]
@@ -132,9 +141,17 @@ func get_custom(stat_id: StringName) -> ValueRange:
 	return null
 
 
-## Returns true if the custom stat [param stat_id] exists.
-func has_custom(stat_id: StringName) -> bool:
-	return _custom_stats.has(stat_id)
+## Returns true if the custom stat [param stat_id] exists. If [param type] is set
+## to a type, it'll also check if the stat is of the stated type.
+func has_custom(stat_id: StringName, type: StatType = StatType.NIL) -> bool:
+	if not _custom_stats.has(stat_id):
+		return false
+	
+	if type == StatType.NIL:
+		return true
+	else:
+		var class_type = TYPE_INT if type == StatType.INTEGER else TYPE_FLOAT
+		return _custom_stats[stat_id].range_type() == class_type
 
 
 ## Returns the stat type that [param stat_id] is.[br]
