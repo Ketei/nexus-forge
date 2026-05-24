@@ -13,7 +13,7 @@ const SETTINGS_PATHS: Dictionary[String, Dictionary] = {
 		"default_value": true,
 		"type": TYPE_BOOL,
 		"hint": PROPERTY_HINT_NONE,
-		"hint_string": ""
+		"hint_string": "",
 	},
 	"characters_enabled": {
 		"setting_path": "nexus_forge/enabled_modules/characters_enabled",
@@ -57,6 +57,12 @@ const SETTINGS_PATHS: Dictionary[String, Dictionary] = {
 		"hint": PROPERTY_HINT_NONE,
 		"hint_string": ""
 	},
+	"currencies_enabled": {
+		"setting_path": "nexus_forge/enabled_modules/currencies_enabled",
+		"default_value": true,
+		"type": TYPE_BOOL,
+		"hint": PROPERTY_HINT_NONE,
+		"hint_string": ""},
 	"phrases_enabled": {
 		"setting_path": "nexus_forge/enabled_modules/phrase_maps_enabled",
 		"default_value": true,
@@ -95,6 +101,15 @@ const SETTINGS_PATHS: Dictionary[String, Dictionary] = {
 		"type": TYPE_STRING,
 		"hint": PROPERTY_HINT_NONE,
 		"hint_string": ""},
+	"use_disabled_modules": {
+		"setting_path": "nexus_forge/settings/instantiate_disabled_modules",
+		"default_value": true,
+		"type": TYPE_BOOL,
+		"hint": PROPERTY_HINT_NONE,
+		"hint_string": "",
+		"restart_required": false,
+		"sort_string": "nexus_forge/settings/aaa_instantiate_disabled_modules"
+	},
 	"discourse": {
 		"setting_path": "nexus_forge/export/localization_directory",
 		"default_value": "res://localization/",
@@ -222,6 +237,7 @@ func _enter_tree() -> void:
 	var use_species: bool = ProjectSettings.get_setting(get_project_settings_path("species_enabled"), true)
 	var use_talents: bool = ProjectSettings.get_setting(get_project_settings_path("talents_enabled"), true)
 	var use_items: bool = ProjectSettings.get_setting(get_project_settings_path("items_enabled"), true)
+	var use_currencies: bool = ProjectSettings.get_setting(get_project_settings_path("currencies_enabled"), true)
 	var use_recipes: bool = ProjectSettings.get_setting(get_project_settings_path("recipes_enabled"), true)
 	var use_quests: bool = ProjectSettings.get_setting(get_project_settings_path("quests_enabled"), true)
 	var use_phrases: bool = ProjectSettings.get_setting(get_project_settings_path("phrases_enabled"), true)
@@ -232,6 +248,7 @@ func _enter_tree() -> void:
 			use_species,
 			use_talents,
 			use_items,
+			use_currencies,
 			use_recipes,
 			use_quests,
 			use_phrases,
@@ -340,12 +357,19 @@ func _set_window_layout(configuration: ConfigFile) -> void:
 		editor_view.quests.open_files(open_quests)
 
 
+func _sort_custom_settings(a: String, b: String) -> bool:
+	var a_string: String = SETTINGS_PATHS[a]["sort_string"] if SETTINGS_PATHS[a].has("sort_string") else SETTINGS_PATHS[a]["setting_path"]
+	var b_string: String = SETTINGS_PATHS[b]["sort_string"] if SETTINGS_PATHS[b].has("sort_string") else SETTINGS_PATHS[b]["setting_path"]
+	return a_string < b_string
+
+
 func verify_project_settings() -> void:
 	var setting_order: Array[String] = []
 	setting_order.assign(SETTINGS_PATHS.keys())
-	setting_order.sort_custom(
-			func (a,b): return SETTINGS_PATHS[a]["setting_path"].naturalnocasecmp_to(
-					SETTINGS_PATHS[b]["setting_path"]) < 0)
+	#setting_order.sort_custom(
+			#func (a,b): return SETTINGS_PATHS[a]["setting_path"].naturalnocasecmp_to(
+					#SETTINGS_PATHS[b]["setting_path"]) < 0)
+	setting_order.sort_custom(_sort_custom_settings)
 	
 	for tool_id in setting_order:
 		if not ProjectSettings.has_setting(SETTINGS_PATHS[tool_id]["setting_path"]):

@@ -327,7 +327,7 @@ layout_mode = 2
 
 [node name="CurrencyPanel" type="PanelContainer" parent="ItemsContainer" unique_id=67974714]
 layout_mode = 2
-size_flags_horizontal = 3
+size_flags_horizontal = 6
 theme_override_styles/panel = SubResource("StyleBoxEmpty_bes68")
 
 [node name="CurrencyContainer" type="VBoxContainer" parent="ItemsContainer/CurrencyPanel" unique_id=29206942]

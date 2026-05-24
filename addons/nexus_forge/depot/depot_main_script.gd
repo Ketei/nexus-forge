@@ -17,12 +17,17 @@ var _unsaved: bool = false:
 @onready var categories_tree: Tree = $CategoriesContainer/DataContainer/CategoriesTree
 
 
-func ready_plugin() -> void:
-	items_container.ready_plugin()
-	categories_container.ready_plugin()
+func ready_plugin(use_items: bool, use_currencies: bool) -> void:
+	items_container.ready_plugin(use_items, use_currencies)
+	if use_items:
+		categories_container.ready_plugin()
 	
 	items_container.visible = true
 	categories_container.visible = false
+	
+	$ItemsContainer/ItemsPanel.visible = use_items
+	$ItemsContainer/CurrencyPanel.visible = use_currencies
+	$ItemsContainer/VSeparator. visible = use_items and use_currencies
 	
 	edit_categories_btn.icon = get_theme_icon("Edit", "EditorIcons")
 	items_container.resource_loaded.connect(_on_resource_loaded)

@@ -58,21 +58,23 @@ var _unsaved: bool = false
 # --------------------------
 
 
-func ready_plugin() -> void:
-	categories_tree.ready_plugin()
-	items_tree.ready_plugin()
-	item_data_tree.ready_plugin()
-	currency_tree.ready_plugin()
-	currency_custom_data_tree.ready_plugin()
-	
+func ready_plugin(use_items: bool, use_currencies: bool) -> void:
 	category_srch_ln_edt.right_icon = get_theme_icon("Search", "EditorIcons")
 	search_curr_ln_edt.right_icon = get_theme_icon("Search", "EditorIcons")
-	reload_item_resource(true)
-	reload_currency_resource(true)
 	
 	add_item_fldr_btn.icon = get_theme_icon("FolderCreate", "EditorIcons")
 	add_curr_dict_button.icon = get_theme_icon("FolderCreate", "EditorIcons")
 	edit_item_script_btn.icon = get_theme_icon("Edit", "EditorIcons")
+	
+	if use_items:
+		categories_tree.ready_plugin()
+		items_tree.ready_plugin()
+		item_data_tree.ready_plugin()
+		reload_item_resource(true)
+	if use_currencies:
+		currency_tree.ready_plugin()
+		currency_custom_data_tree.ready_plugin()
+		reload_currency_resource(true)
 	
 	search_item_container.text_changed.connect(_on_search_item_text_changed)
 	new_item_btn.pressed.connect(_on_create_item_pressed)

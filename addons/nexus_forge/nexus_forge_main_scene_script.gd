@@ -27,7 +27,7 @@ func _ready() -> void:
 	set_process_input(false)
 
 
-func ready_plugin(use_discourse: bool, use_characters: bool, use_species: bool, use_talents: bool, use_items: bool, use_recipes: bool, use_quests: bool, use_phrases: bool, discourse_base_lang: String) -> void:
+func ready_plugin(use_discourse: bool, use_characters: bool, use_species: bool, use_talents: bool, use_items: bool, use_currencies: bool, use_recipes: bool, use_quests: bool, use_phrases: bool, discourse_base_lang: String) -> void:
 	set_process_input(true)
 	
 	variables = load("res://addons/nexus_forge/variables/variables_main.tscn").instantiate()
@@ -40,7 +40,7 @@ func ready_plugin(use_discourse: bool, use_characters: bool, use_species: bool, 
 		species = load("res://addons/nexus_forge/species/species_main.tscn").instantiate()
 	if use_talents:
 		talents = load("res://addons/nexus_forge/talents/talents_main.tscn").instantiate()
-	if use_items:
+	if use_items or use_currencies:
 		items = load("res://addons/nexus_forge/depot/depot_scene.tscn").instantiate()
 	if use_recipes:
 		recipes = load("res://addons/nexus_forge/recipes/recipes_scene.tscn").instantiate()
@@ -86,7 +86,7 @@ func ready_plugin(use_discourse: bool, use_characters: bool, use_species: bool, 
 	if talents != null:
 		talents.ready_plugin()
 	if items != null:
-		items.ready_plugin()
+		items.ready_plugin(use_items, use_currencies)
 	if recipes != null:
 		recipes.ready_plugin()
 	if quests != null:
