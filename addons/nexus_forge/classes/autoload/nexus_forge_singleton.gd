@@ -99,7 +99,7 @@ func _ready() -> void:
 	
 	if Discourse == null:
 		if instantiate_disabled or use_discourse:
-			Discourse = EditorDialogParser.new()
+			Discourse = EditorDialogParser.new() if OS.has_feature("editor") else DialogParser.new()
 			if use_discourse:
 				Discourse.generate_locale_map()
 	else:
