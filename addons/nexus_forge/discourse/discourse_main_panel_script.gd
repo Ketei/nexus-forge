@@ -297,7 +297,8 @@ func ready_plugin(base_locale: String = "") -> void:
 	var locale_settings: PackedStringArray = StringUtils.split_and_strip(
 			ProjectSettings.get_setting(
 					EditorNFPlugin.get_project_settings_path("discourse_use_languages"), ""),
-			",")
+			",",
+			false)
 	
 	for entry in locale_settings:
 		var parts: PackedStringArray = entry.split("_", false)
