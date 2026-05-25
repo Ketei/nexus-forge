@@ -86,8 +86,8 @@ Features that are planned to be implemented in the future:
 ### Alpha:
 - [x] **Core:** Skip instantiating singleton modules based on editor modules enabled
 - [x] **Discourse:** Use your own scene to test dialogs
-- [ ] **Depot(Items):** Allow for name & description to be formatted using Blackboard's variables on settings.
-- [ ] **Odyssey(Quests):** Allow for title & description to be formatted using Blackboard's variables on settings.
+- [x] **Depot(Items):** Allow for name & description to be formatted using Blackboard's variables on settings.
+- [x] **Odyssey(Quests):** Allow for title & description to be formatted using Blackboard's variables on settings.
 - [ ] **On Beta Release:** Publish on Godot's Asset Library/Asset Store
 
 ### Beta & Beyond
