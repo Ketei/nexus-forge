@@ -24,6 +24,11 @@ desktop.ini
 
 # Crash related
 *.tmp
-
-addons/dialogic/
-addons/explore-editor-theme/
+	
+addons/*
+!addons/nexus_forge
+tests/
+editorconfig
+logo.png.import
+logo.svg.import
+project.godot
