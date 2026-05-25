@@ -2,12 +2,13 @@ extends DiscourseGraphNode
 
 
 var current_mode: int = TYPE_INT
-
+var _match_size_update_queed: bool = false
 
 func _post_init() -> void:
 	name = &"Match"
 	title = "Match"
 	size = Vector2(240.0, 204.0)
+	custom_minimum_size.y = 204.0
 	parent_mode = PortMode.INPUT
 	parent_port = 0
 	node_type = DialogueNodeType.MATCH
@@ -257,21 +258,35 @@ func set_match_case_count(new_count: int) -> void:
 			set_slot_color_right(field_idx, COLORS["dialog"])
 			set_slot_custom_icon_right(field_idx, flow_icon)
 	else:
+		var target_fields: Array[StringName] = []
 		for over in range(current - new_count):
-			remove_match(current - over)
+			target_fields.append(StringName(
+					"case_" + str(current - over)))
+		remove_match_fields(target_fields)
 
 
 func _on_match_count_changed(new_count: int) -> void:
-	set_match_case_count(new_count)
+	if _match_size_update_queed:
+		return
+	_match_size_update_queed = true
+	_update_match_case_value.call_deferred()
+
+
+func _update_match_case_value() -> void:
+	var case_size: int = get_mapped_field(&"cases", &"case_count").value
+	set_match_case_count(case_size)
+	_match_size_update_queed = false
+	size.y = 0
 	node_updated.emit()
 
 
-func remove_match(match_option: int) -> void:
-	var field_id: StringName = &"case_" + StringName(str(match_option))
-	var child: Control = get_child(match_option + 2)
-	child.get_child(1).get_child(0).value_changed.disconnect(_on_match_value_changed)
-	child.get_child(1).get_child(1).text_changed.disconnect(_on_match_text_changed)
-	remove_field(field_id, 40)
+func remove_match_fields(fields: Array[StringName]) -> void:
+	for id in fields:
+		var field: Control = get_field(id)
+		field.get_child(0).value_changed.disconnect(_on_match_value_changed)
+		field.get_child(1).text_changed.disconnect(_on_match_text_changed)
+	
+	remove_fields(fields, -1)
 
 
 func get_new_match_field() -> PanelContainer:

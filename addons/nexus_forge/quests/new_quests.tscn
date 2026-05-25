@@ -8,7 +8,9 @@
 [ext_resource type="Script" uid="uid://dvfptxxjhty4u" path="res://addons/nexus_forge/quests/quest_files_tree.gd" id="3_ncoao"]
 [ext_resource type="Texture2D" uid="uid://cxv7veghytl4m" path="res://addons/nexus_forge/icons/add_string.svg" id="4_46oj0"]
 [ext_resource type="Script" uid="uid://bbmddairfvl6c" path="res://addons/nexus_forge/quests/quest_hierarchy_tree.gd" id="4_w3bsy"]
+[ext_resource type="Script" uid="uid://blbqpddxjenwk" path="res://addons/nexus_forge/item_quest_lineedit_script.gd" id="5_1j52m"]
 [ext_resource type="Script" uid="uid://b3ooglkmjjil4" path="res://addons/nexus_forge/classes/simple_data_tree.gd" id="5_v44ms"]
+[ext_resource type="Script" uid="uid://chkgp073iaf1d" path="res://addons/nexus_forge/item_quest_description_script.gd" id="6_vnr1c"]
 [ext_resource type="Script" uid="uid://c0bnp3v0qfte3" path="res://addons/nexus_forge/quests/events_tree.gd" id="10_n6p0u"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ct1fh"]
@@ -155,6 +157,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 editable = false
 caret_blink = true
+script = ExtResource("5_1j52m")
 
 [node name="DescContainer" type="VBoxContainer" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer" unique_id=1603222565]
 custom_minimum_size = Vector2(0, 140)
@@ -170,6 +173,7 @@ size_flags_vertical = 3
 editable = false
 wrap_mode = 1
 caret_blink = true
+script = ExtResource("6_vnr1c")
 
 [node name="CustomDataContainer" type="VBoxContainer" parent="MainContainer/DataContainer/DataContainer/BasicDataContainer" unique_id=1548585605]
 layout_mode = 2

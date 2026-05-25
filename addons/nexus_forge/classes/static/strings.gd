@@ -120,6 +120,7 @@ static func levenshtein_distance(string_1: String, string_2: String) -> float:
 	return similarity
 
 
+## Takes an array of strings and converts them to a valid path.
 static func make_path(parts: Array) -> String:
 	var full_path: String = ""
 	

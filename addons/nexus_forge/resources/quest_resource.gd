@@ -31,6 +31,70 @@ enum QuestType {
 
 @export var _stages: Dictionary[StringName, QuestStage] = {}
 
+var _title_builder: Callable = Callable()
+var _description_builder: Callable = Callable()
+
+## Returns the quest [member Quest.title]. Formats it if [code]Format Quest Strings with Blackboard[/code]
+## is [code]On[/code] on [code]Project Settings[/code].
+func get_quest_title() -> String:
+	if not ProjectSettings.get_setting(EditorNFPlugin.get_project_settings_path("items_format_strings"), false):
+		return title
+	
+	if _title_builder.is_valid():
+		return _title_builder.call()
+	
+	var _regex_formatter: RegEx
+	
+	_regex_formatter = RegEx.new()
+	_regex_formatter.compile("\\{\\$[^\\s\\}]+\\}")
+	
+	var title_formats: Dictionary = {}
+	
+	for format_title in _regex_formatter.search_all(title):
+		var string_path: String = format_title.get_string().trim_prefix("{$").trim_suffix("}")
+		var var_parts: PackedStringArray = string_path.rsplit("/", false, 1)
+		if var_parts.size() != 2:
+			continue
+		
+		var variable: Callable = NexusForge.Blackboard.get_variable.bind(var_parts[0], var_parts[1], string_path)
+		
+		title_formats["$" + string_path] = variable
+	
+	_title_builder = _build_format.bind(title, title_formats)
+	
+	return _build_format(title, title_formats)
+
+
+## Returns the item [member Quest.description]. Formats it if [code]Format Quest Strings with Blackboard[/code]
+## is [code]On[/code] on [code]Project Settings[/code].
+func get_quest_description() -> String:
+	if not ProjectSettings.get_setting(EditorNFPlugin.get_project_settings_path("items_format_strings"), false):
+		return description
+	
+	if _description_builder.is_valid():
+		return _description_builder.call()
+	
+	var _regex_formatter: RegEx
+	
+	_regex_formatter = RegEx.new()
+	_regex_formatter.compile("\\{\\$[^\\s\\}]+\\}")
+	
+	var desc_formats: Dictionary = {}
+	
+	for description_item in _regex_formatter.search_all(description):
+		var string_path: String = description_item.get_string().trim_prefix("{$").trim_suffix("}")
+		var var_parts: PackedStringArray = string_path.rsplit("/", false, 1)
+		if var_parts.size() != 2:
+			continue
+		
+		var variable: Callable = NexusForge.Blackboard.get_variable.bind(var_parts[0], var_parts[1], string_path)
+		
+		desc_formats["$" + string_path] = variable
+	
+	_description_builder = _build_format.bind(description, desc_formats)
+	
+	return _build_format(description, desc_formats)
+
 
 ## Returns an array with all the IDs of the stages on this quest.
 func stages() -> Array[StringName]:
@@ -62,3 +126,28 @@ func get_stage(stage_id: StringName) -> QuestStage:
 	if _stages.has(stage_id):
 		return _stages[stage_id]
 	return null
+
+
+func _set_quest_title(new_title: String) -> void:
+	if new_title == title:
+			return
+	title = new_title
+	if _title_builder.is_valid():
+		_title_builder = Callable()
+
+
+func _set_item_description(new_desc: String) -> void:
+	if new_desc == description:
+		return
+	description = new_desc
+	if _description_builder.is_valid():
+		_description_builder = Callable()
+
+
+func _build_format(string: String, call_formats: Dictionary[String, Callable]) -> String:
+	var new_format: Dictionary[String, String] = {}
+	
+	for key in call_formats.keys():
+		new_format[key] = call_formats[key].call()
+	
+	return string.format(new_format)

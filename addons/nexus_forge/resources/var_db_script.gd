@@ -41,12 +41,12 @@ func has_folder(folder_path: String) -> bool:
 
 
 ## Returns a variable on [param variable_path] or null if the variable doesn't exist.
-func get_variable(folder: String, variable: StringName) -> Variant:
+func get_variable(folder: String, variable: StringName, fallback: Variant = null) -> Variant:
 	var clean_folder: StringName = _clean_folder_path(folder)
 	if _variables.has(clean_folder) and _variables[clean_folder].has(variable):
 		return _variables[clean_folder][variable]
 	else:
-		return null
+		return fallback
 
 
 ## Returns an array containing the variable keys in

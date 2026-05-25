@@ -41,8 +41,7 @@ const SETTINGS_PATHS: Dictionary[String, Dictionary] = {
 		"default_value": true,
 		"type": TYPE_BOOL,
 		"hint": PROPERTY_HINT_NONE,
-		"hint_string": ""
-	},
+		"hint_string": ""},
 	"recipes_enabled": {
 		"setting_path": "nexus_forge/enabled_modules/recipes_enabled",
 		"default_value": true,
@@ -108,8 +107,21 @@ const SETTINGS_PATHS: Dictionary[String, Dictionary] = {
 		"hint": PROPERTY_HINT_NONE,
 		"hint_string": "",
 		"restart_required": false,
-		"sort_string": "nexus_forge/settings/aaa_instantiate_disabled_modules"
-	},
+		"sort_string": "nexus_forge/settings/aaa_instantiate_disabled_modules"},
+	"items_format_strings": {
+		"setting_path": "nexus_forge/settings/format_item_strings_with_blackboard",
+		"default_value": false,
+		"type": TYPE_BOOL,
+		"hint": PROPERTY_HINT_NONE,
+		"hint_string": "",
+		"restart_required": false},
+	"quests_format_strings": {
+		"setting_path": "nexus_forge/settings/format_quest_strings_with_blackboard",
+		"default_value": false,
+		"type": TYPE_BOOL,
+		"hint": PROPERTY_HINT_NONE,
+		"hint_string": "",
+		"restart_required": false},
 	"discourse": {
 		"setting_path": "nexus_forge/export/localization_directory",
 		"default_value": "res://localization/",

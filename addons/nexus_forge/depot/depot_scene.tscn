@@ -10,7 +10,9 @@
 [ext_resource type="Texture2D" uid="uid://cxv7veghytl4m" path="res://addons/nexus_forge/icons/add_string.svg" id="4_etwui"]
 [ext_resource type="Texture2D" uid="uid://dbjyls7e856f5" path="res://addons/nexus_forge/icons/chest_icon_plus.svg" id="4_qiph8"]
 [ext_resource type="Script" uid="uid://b3ooglkmjjil4" path="res://addons/nexus_forge/classes/simple_data_tree.gd" id="5_hb3ne"]
+[ext_resource type="Script" uid="uid://blbqpddxjenwk" path="res://addons/nexus_forge/item_quest_lineedit_script.gd" id="6_bes68"]
 [ext_resource type="Script" uid="uid://yl433uwg7btc" path="res://addons/nexus_forge/depot/currency_tree_script.gd" id="6_dn322"]
+[ext_resource type="Script" uid="uid://chkgp073iaf1d" path="res://addons/nexus_forge/item_quest_description_script.gd" id="7_6mxt2"]
 [ext_resource type="Script" uid="uid://d4hij5gpdxqnc" path="res://addons/nexus_forge/depot/categories_container_script.gd" id="10_hb3ne"]
 [ext_resource type="Texture2D" uid="uid://dd1wojqjxqfqn" path="res://addons/nexus_forge/icons/coin_plus.svg" id="11_5hvq2"]
 [ext_resource type="Script" uid="uid://7dmrf5h7co67" path="res://addons/nexus_forge/depot/categories_tree_script.gd" id="11_dn322"]
@@ -173,6 +175,7 @@ size_flags_horizontal = 3
 size_flags_stretch_ratio = 3.0
 placeholder_text = "Item Name"
 editable = false
+script = ExtResource("6_bes68")
 
 [node name="RarityContainer" type="HBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer" unique_id=563817139]
 layout_mode = 2
@@ -218,6 +221,8 @@ custom_minimum_size = Vector2(0, 35)
 layout_mode = 2
 size_flags_vertical = 3
 editable = false
+wrap_mode = 1
+script = ExtResource("7_6mxt2")
 
 [node name="CustomDataContainer" type="VBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer" unique_id=1075825907]
 layout_mode = 2

@@ -994,7 +994,7 @@ func remove_fields(field_ids: Array[StringName], size_change: int = 0) -> void:
 					node.get_meta(&"input_slot"),
 					self)
 				await node_disconnected
-				await get_tree().process_frame
+				#await get_tree().process_frame
 			_input_nodes.remove_at(
 				node.get_meta(&"input_slot"))
 			
@@ -1010,12 +1010,15 @@ func remove_fields(field_ids: Array[StringName], size_change: int = 0) -> void:
 					target_slot,
 					self)
 				await node_disconnected
-				await get_tree().process_frame
+				#await get_tree().process_frame
 			_output_nodes.remove_at(
 				node.get_meta(&"output_slot"))
 		compound_size += node.size.y
 	#remove_child(node)
+	for node in target_nodes:
+		node.free()
 	
+	#await get_tree().process_frame
 	#var field_idx: int = node.get_index()
 	#set_slot(field_idx, false, -1, Color.BLACK, false, -1, Color.BLACK, null, null)
 	if 0 < size_change:
@@ -1026,8 +1029,6 @@ func remove_fields(field_ids: Array[StringName], size_change: int = 0) -> void:
 	else:
 		size.y -= compound_size + (get_theme_constant("separation") * (target_nodes.size() - 1) if 0 < target_nodes.size() else 0)
 		#deferred_resizing(node.size.y + (get_theme_constant("separation") if 0 < get_child_count() else 0))
-	for node in target_nodes:
-		node.free()
 	#node.queue_free()
 	#node.visible = false
 

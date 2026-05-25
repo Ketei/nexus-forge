@@ -2,6 +2,7 @@ extends DiscourseGraphNode
 
 
 var _highest_port_connected: int = -1
+var _connection_updates_disabled: bool = true
 
 
 func _post_init() -> void:
@@ -33,23 +34,32 @@ func _ready() -> void:
 	graph_icon = preload("res://addons/nexus_forge/icons/merge_icon.svg")
 	for child_idx in range(get_child_count()):
 		set_slot_custom_icon_left(child_idx, flow_icon)
-	
 	set_slot_custom_icon_right(0, flow_icon)
 
 
 func _on_input_connected(input_port: int, _from_node: DiscourseGraphNode, _from_port: int) -> void:
-	if _highest_port_connected < input_port:
-		_highest_port_connected = input_port
-		var field_idx: int = add_field(
-				&"merge_" + StringName(str(_highest_port_connected + 1)),
-				get_new_merge_node(),
-				false,
-				SlotConnectionType.DIALOG)
-		set_slot_custom_icon_left(field_idx, flow_icon)
-		set_slot_color_left(field_idx, COLORS["dialog"])
+	if _connection_updates_disabled:
+		if _highest_port_connected < input_port:
+			_highest_port_connected = input_port
+		return
+	
+	if input_port < _highest_port_connected:
+		return
+	
+	_highest_port_connected = input_port
+	var field_idx: int = add_field(
+			&"merge_" + StringName(str(_highest_port_connected + 1)),
+			get_new_merge_node(),
+			false,
+			SlotConnectionType.DIALOG)
+	set_slot_custom_icon_left(field_idx, flow_icon)
+	set_slot_color_left(field_idx, COLORS["dialog"])
 
 
 func _on_input_disconnected(input_port: int, _from_node: DiscourseGraphNode, _from_port: int) -> void:
+	if _connection_updates_disabled:
+		return
+	
 	if input_port != _highest_port_connected:
 		return
 	
@@ -106,28 +116,6 @@ func _set_node_data(data: Dictionary) -> void:
 		set_input_port_count(port_count)
 
 
-#func disconnect_all() -> void:
-	#for input_port in range(_input_nodes.size() - 1):
-		#for connection_idx in range(_input_nodes[input_port]["connections"].size()):
-			#var input_target: DiscourseGraphNode = get_node_connected_to_port(PortMode.INPUT, input_port, connection_idx)
-			#disconnect_requested.emit(
-					#input_target.name,
-					#input_target.get_port_connected_to(PortMode.OUTPUT, self, input_port),
-					#name,
-					#input_port,
-					#self)
-	#
-	#for output_port in range(_output_nodes.size()):
-		#for connection_idx in range(_output_nodes[output_port]["connections"].size()):
-			#var output_target: DiscourseGraphNode = get_node_connected_to_port(PortMode.OUTPUT, output_port, connection_idx)
-			#disconnect_requested.emit(
-				#name,
-				#output_port,
-				#output_target.name,
-				#output_target.get_port_connected_to(PortMode.INPUT, self, output_port),
-				#self)
-
-
 func set_input_port_count(new_count: int) -> void:
 	new_count = maxi(new_count, 1)
 	var current_count: int = get_child_count()
@@ -143,7 +131,6 @@ func set_input_port_count(new_count: int) -> void:
 				SlotConnectionType.DIALOG)
 			set_slot_custom_icon_left(missing_port, flow_icon)
 			set_slot_color_left(field_idx, COLORS["dialog"])
-		_highest_port_connected = new_count - 1
 	else:
 		for extra_ports in range(_highest_port_connected + 1, new_count, -1):
 			if has_any_input(extra_ports - 1):
@@ -162,13 +149,13 @@ func set_input_port_count(new_count: int) -> void:
 					var field_id: StringName = &"merge_" + StringName(str(port_idx))
 					remove_field(field_id, 29)
 				else:
-					_highest_port_connected = port_idx
+					_highest_port_connected = port_idx - 1
 					break
-		var port: int = -1
-		for port_idx in range(new_count):
-			if has_any_input(port_idx):
-				port = port_idx
-		_highest_port_connected = port
+		#var port: int = -1
+		#for port_idx in range(new_count):
+			#if has_any_input(port_idx):
+				#port = port_idx
+		#_highest_port_connected = port
 
 
 func get_new_merge_node() -> Control:

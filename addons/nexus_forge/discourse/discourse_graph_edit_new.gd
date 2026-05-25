@@ -1339,11 +1339,13 @@ func _on_connection_request(from_node: StringName, from_port: int, to_node: Stri
 func _on_connection_drag_ended() -> void:
 	if _pending_connection_change.has("type") and _pending_connection_change["type"] == ConnectionChangeType.SWITCH_DISCONNECT:
 		commit_disconnection()
+		dialog_changed.emit()
 
 
 func _on_connection_to_empty(from_node: StringName, from_port: int, release_position: Vector2) -> void:
 	if _pending_connection_change.has("type") and _pending_connection_change["type"] == ConnectionChangeType.SWITCH_DISCONNECT:
 		commit_disconnection()
+		dialog_changed.emit()
 	
 	if not Input.is_key_pressed(KEY_CTRL):
 		return

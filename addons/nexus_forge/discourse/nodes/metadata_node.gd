@@ -1,7 +1,7 @@
 extends DiscourseGraphNode
 
 var meta_fields: int = 1
-
+var _connection_updates_disabled: bool = false
 
 func _post_init() -> void:
 	name = &"Metadata"
@@ -47,6 +47,8 @@ func _ready() -> void:
 
 
 func _on_input_connected(input_port: int, _from_node: DiscourseGraphNode, _from_port: int) -> void:
+	if _connection_updates_disabled:
+		return
 	var on_last: bool = input_port == get_child_count() - 2
 	var id: StringName = StringName("metadata_" + str(input_port))
 	var port_field: PanelContainer = get_field(id)
@@ -58,6 +60,8 @@ func _on_input_connected(input_port: int, _from_node: DiscourseGraphNode, _from_
 
 
 func _on_input_disconnected(input_port: int, _from_node: DiscourseGraphNode, _from_port: int) -> void:
+	if _connection_updates_disabled:
+		return
 	if input_port == get_child_count() - 3:
 		remove_unused_fields.call_deferred()
 

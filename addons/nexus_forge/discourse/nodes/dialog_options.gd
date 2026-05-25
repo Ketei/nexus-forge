@@ -2,6 +2,9 @@
 extends DiscourseGraphNode
 
 
+var _updating_choices: bool = false
+
+
 func _post_init() -> void:
 	name = &"Choices"
 	title = "Choices"
@@ -103,16 +106,25 @@ func set_choice_count(value: int) -> void:
 			set_slot_color_left(new_idx, COLORS["setting"])
 			set_slot_custom_icon_right(new_idx, flow_icon)
 	else:
+		var choices_to_remove: Array[StringName] = []
 		for over in range(current - value):
-			remove_choice(current - over)
+			choices_to_remove.append(StringName("choice_" + str(current - over)))
+		remove_choices(choices_to_remove)
 
 
 func _on_choice_count_changed(value: int) -> void:
-	var current: int = get_child_count() - 1
-	if value == current:
+	if _updating_choices or value == get_child_count() - 1:
 		return
-	set_choice_count(value)
 	
+	_updating_choices = true
+	
+	_update_value_to_spinbox.call_deferred()
+
+
+func _update_value_to_spinbox() -> void:
+	set_choice_count(
+			get_mapped_field(&"choice_counter", &"choice_count").value)
+	_updating_choices = false
 	node_updated.emit()
 
 
@@ -187,6 +199,17 @@ func remove_choice(idx: int) -> void:
 	var choice: LineEdit = get_field(field_id)
 	choice.text_changed.disconnect(_on_option_text_changed)
 	remove_field(field_id, 40)
+
+
+func remove_choices(choices: Array[StringName]) -> void:
+	if choices.is_empty():
+		return
+	
+	for choice_id in choices:
+		var choice: LineEdit = get_field(choice_id)
+		choice.text_changed.disconnect(_on_option_text_changed)
+	
+	remove_fields(choices, -1)
 
 
 func set_option_text(option: int, text: String) -> void:

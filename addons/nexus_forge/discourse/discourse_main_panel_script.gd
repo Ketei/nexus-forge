@@ -1629,6 +1629,8 @@ func display_conversation(conversation: EditorDiscourseDialog) -> bool:
 		for child_node:String in frame_data["nodes"]:
 			node_relationships[child_node] = frame
 	
+	var connection_deaf_nodes: Array[DiscourseGraphNode] = []
+	
 	for node_stnm_uuid:StringName in conversation.get_node_uuids():
 		var node_uuid: String = String(node_stnm_uuid)
 		var data: Dictionary = conversation.get_node_data(node_stnm_uuid, current_locale)
@@ -1645,7 +1647,9 @@ func display_conversation(conversation: EditorDiscourseDialog) -> bool:
 					needs_resaving = true
 		elif d_node.node_type == DiscourseGraphNode.DialogueNodeType.ENTRY:
 			discourse_graph_edit.entry_node = d_node
-		
+		elif d_node.node_type == DiscourseGraphNode.DialogueNodeType.DIALOG_MERGE or d_node.node_type == DiscourseGraphNode.DialogueNodeType.METADATA:
+			d_node._connection_updates_disabled = true
+			connection_deaf_nodes.append(d_node)
 		if node_relationships.has(node_uuid):
 			discourse_graph_edit.set_node_in_frame(node_stnm_uuid, node_relationships[node_uuid].get_frame_uuid())
 		graph_map[node_uuid] = d_node
@@ -1679,6 +1683,9 @@ func display_conversation(conversation: EditorDiscourseDialog) -> bool:
 		en_node.name = &"Entry"
 		discourse_graph_edit.entry_node = en_node
 		_on_discourse_node_created(en_node)
+	
+	for node in connection_deaf_nodes:
+		node._connection_updates_disabled = false
 	
 	discourse_graph_edit.zoom = conversation.zoom
 	discourse_graph_edit.scroll_offset = conversation.scroll_offset
