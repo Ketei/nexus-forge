@@ -746,6 +746,7 @@ func add_field(field_id: StringName, field_node: Control, expand: bool = false, 
 		set_slot_type_left(new_index, left_slot_type)
 		_input_nodes.append({
 			"field_id": field_id,
+			"slot": new_index,
 			"multi_connection": false,
 			"connections": Array([], TYPE_DICTIONARY, &"", null)})
 	
@@ -754,6 +755,7 @@ func add_field(field_id: StringName, field_node: Control, expand: bool = false, 
 		set_slot_type_right(new_index, right_slot_type)
 		_output_nodes.append({
 			"field_id": field_id,
+			"slot": new_index,
 			"multi_connection": false,
 			"connections": Array([], TYPE_DICTIONARY, &"", null)})
 	
@@ -878,13 +880,33 @@ func get_index_field(field_index: int) -> Control:
 	return get_child(field_index).get_child(1)
 
 
-func get_field_input_slot(field_id: StringName) -> int:
+func get_field_input_port(field_id: StringName) -> int:
 	if field_id.is_empty():
 		return -1
 	
 	var node = get_field(field_id)
 	
 	return -1 if node == null else node.get_meta(&"input_slot", -1)
+
+
+func get_field_input_slot(field_id: StringName) -> int:
+	if field_id.is_empty():
+		return -1
+	
+	var node = get_field(field_id)
+	
+	return -1 if node == null else node.get_index()
+
+
+func get_slot_from_port(mode: PortMode, port: int) -> int:
+	if mode == PortMode.INPUT:
+		if _input_nodes.size() <= port:
+			return -1
+		return _input_nodes[port]["slot"]
+	else:
+		if _output_nodes.size() <= port:
+			return -1
+		return _output_nodes[port]["slot"]
 
 
 func get_field_output_slot(field_id: StringName) -> int:

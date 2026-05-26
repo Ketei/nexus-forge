@@ -37,7 +37,7 @@ func _post_init() -> void:
 	
 	if not available_methods.is_empty():
 		methods_node.select(0)
-		_on_method_selected(0)
+		load_method(methods_node.get_item_metadata(0))
 	else:
 		methods_node.disabled = true
 	
@@ -154,12 +154,6 @@ func reload_methods() -> void:
 			if has_any_output(0):
 				var target: DiscourseGraphNode = get_node_connected_to_port(PortMode.OUTPUT, 0)
 				disconnect_port(PortMode.OUTPUT, 0)
-				#disconnect_requested.emit(
-					#name,
-					#0,
-					#target.name,
-					#target.get_input_port_connected_to(self),
-					#self)
 		else:
 			opt_btn.select(0)
 			load_method(opt_btn.get_item_metadata(0))
@@ -168,7 +162,8 @@ func reload_methods() -> void:
 	
 	# Since there is an equal named method, we will check all the arguments.
 	var arg_idx: int = -1 # With the index
-	for new_argument:Dictionary in available_methods[selected_method]:
+	
+	for new_argument:Dictionary in available_methods[selected_method]["arguments"]:
 		arg_idx += 1
 		
 		# If the new index is equal or larger as the child count, we add the argument.
@@ -179,69 +174,68 @@ func reload_methods() -> void:
 			continue # And we continue
 		
 		# We grab the existing argument to repurpose it.
-		#var field_id: StringName = &"argument_" + StringName(str(arg_idx + 1))
-		var current_input_type: int = get_input_port_type(arg_idx)
+		var field_id: StringName = &"argument_" + StringName(str(arg_idx + 1))
+		var current_input_type: int = get_slot_type_left(arg_idx + 1)
 		var new_data_type: int = new_argument["type"]
 		var new_port_type: int = 0
 		var new_type_color: String = ""
 		var compatible: bool = false
 		var new_icon: Texture2D = null
 		
-		match new_data_type:
-			TYPE_INT:
-				new_port_type = SlotConnectionType.VAR_INT
-				new_type_color = "integer"
-				new_icon = get_theme_icon("int", "EditorIcons")
-			TYPE_FLOAT:
-				new_port_type = SlotConnectionType.VAR_FLOAT
-				new_type_color = "float"
-				new_icon = get_theme_icon("float", "EditorIcons")
-			TYPE_BOOL:
-				new_port_type = SlotConnectionType.VAR_BOOL
-				new_type_color = "bool"
-				new_icon = get_theme_icon("bool", "EditorIcons")
-			TYPE_STRING:
-				new_port_type = SlotConnectionType.VAR_STRING
-				new_type_color = "string"
-				new_icon = get_theme_icon("String", "EditorIcons")
-			_:
-				new_port_type = SlotConnectionType.VAR_ANY
-				new_type_color = "any"
-				new_icon = get_theme_icon("Variant", "EditorIcons")
+		if has_any_input(arg_idx):
+			match new_data_type:
+				TYPE_INT:
+					new_port_type = SlotConnectionType.VAR_INT
+					new_type_color = "integer"
+					new_icon = get_theme_icon("int", "EditorIcons")
+				TYPE_FLOAT:
+					new_port_type = SlotConnectionType.VAR_FLOAT
+					new_type_color = "float"
+					new_icon = get_theme_icon("float", "EditorIcons")
+				TYPE_BOOL:
+					new_port_type = SlotConnectionType.VAR_BOOL
+					new_type_color = "bool"
+					new_icon = get_theme_icon("bool", "EditorIcons")
+				TYPE_STRING:
+					new_port_type = SlotConnectionType.VAR_STRING
+					new_type_color = "string"
+					new_icon = get_theme_icon("String", "EditorIcons")
+				_:
+					new_port_type = SlotConnectionType.VAR_ANY
+					new_type_color = "any"
+					new_icon = get_theme_icon("Variant", "EditorIcons")
+			
+			match current_input_type:
+				SlotConnectionType.VAR_INT:
+					compatible = new_data_type == TYPE_INT
+				SlotConnectionType.VAR_FLOAT:
+					compatible = new_data_type == TYPE_FLOAT
+				SlotConnectionType.VAR_BOOL:
+					compatible = new_data_type == TYPE_BOOL
+				SlotConnectionType.VAR_STRING:
+					compatible = new_data_type == TYPE_STRING
+				SlotConnectionType.VAR_ANY: # The current port accepts anything
+					# We grab the node that connects to the argument
+					var input_target: DiscourseGraphNode = get_node_connected_to_port(PortMode.INPUT, arg_idx)
+					# And grab the port type of that node
+					var output_type: int = -1 if input_target == null else input_target.get_output_port_type(
+							input_target.get_port_connected_to(PortMode.OUTPUT, self, arg_idx))
+					
+					# And it's compatible if the new port type matches the output
+					# port of the node connected to this one or is an "any".
+					compatible = output_type == new_port_type or output_type == SlotConnectionType.VAR_ANY
+			
+			if not compatible: # If it isn't compatible we disconnect it.
+				disconnect_port(PortMode.INPUT, arg_idx)
+				emit_updated = true
 		
-		match current_input_type:
-			SlotConnectionType.VAR_INT:
-				compatible = new_data_type == TYPE_INT
-			SlotConnectionType.VAR_FLOAT:
-				compatible = new_data_type == TYPE_FLOAT
-			SlotConnectionType.VAR_BOOL:
-				compatible = new_data_type == TYPE_BOOL
-			SlotConnectionType.VAR_STRING:
-				compatible = new_data_type == TYPE_STRING
-			SlotConnectionType.VAR_ANY: # The current port accepts anything
-				# We grab the node that connects to the argument
-				var input_target: DiscourseGraphNode = get_node_connected_to_port(PortMode.INPUT, arg_idx)
-				# And grab the port type of that node
-				var output_type: int = -1 if input_target == null else input_target.get_output_port_type(
-						input_target.get_port_connected_to(PortMode.OUTPUT, self, arg_idx))
-				
-				# And it's compatible if the new port type matches the output
-				# port of the node connected to this one or is an "any".
-				compatible = output_type == new_port_type or output_type == SlotConnectionType.VAR_ANY
-		
-		if not compatible: # If it isn't compatible we disconnect it.
-			disconnect_port(PortMode.INPUT, arg_idx)
-			emit_updated = true
+		get_field(field_id).text = new_argument["name"]
 		
 		# If the types don't match we assign the type, change the color and icon.
 		if current_input_type != new_port_type:
 			set_slot_color_left(arg_idx, COLORS[new_type_color])
 			set_slot_type_left(arg_idx, new_port_type)
-	
-	if not has_any_output(0):
-		if emit_updated:
-			node_updated.emit()
-		return
+			emit_updated = true
 	
 	# Now we fix the output slot
 	var new_output_type: int = -1
@@ -268,18 +262,28 @@ func reload_methods() -> void:
 			new_output_type = SlotConnectionType.VAR_ANY
 			new_output_color = COLORS["any"]
 	
-	if get_slot_type_right(0) == new_output_type or new_output_type == SlotConnectionType.VAR_ANY:
+	if get_slot_type_right(0) != new_output_type:
+		set_slot_type_right(0, new_output_type)
+		set_slot_color_right(0, new_output_color)
+		set_output_connection_icon(&"methods", icon)
+	
+	if not has_any_output(0):
 		if emit_updated:
 			node_updated.emit()
 		return
+	var compatible: bool = true
+	var target: DiscourseGraphNode = get_node_connected_to_port(PortMode.OUTPUT, 0)
+	var slot_idx: int = target.get_slot_from_port(PortMode.INPUT, get_target_port_connected_to_self(PortMode.OUTPUT, 0))
+	var input_type: int = target.get_slot_type_left(slot_idx)
 	
-	set_slot_type_right(0, new_output_type)
-	set_slot_color_right(0, new_output_color)
-	set_output_connection_icon(&"methods", icon)
+	compatible = new_output_type == input_type or input_type == SlotConnectionType.VAR_ANY
 	
-	disconnect_port(PortMode.OUTPUT, 0)
+	if not compatible:
+		disconnect_port(PortMode.OUTPUT, 0)
+		emit_updated = true
 	
-	node_updated.emit()
+	if emit_updated:
+		node_updated.emit()
 
 
 func load_method(method_id: String) -> void:
@@ -404,9 +408,11 @@ func add_input_arg(arg_text: String, arg_type: int) -> void:
 
 
 func clear_input_args() -> void:
+	var field_ids: Array[StringName] = []
 	for item in range(get_child_count() - 1, 0, -1):
 		var field_id: StringName = &"argument_" + StringName(str(item))
-		remove_field(field_id, 32)
+		field_ids.append(field_id)
+	remove_fields(field_ids, -1)
 
 
 static func get_user_methods() -> Dictionary:
