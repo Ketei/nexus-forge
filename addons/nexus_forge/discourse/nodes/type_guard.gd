@@ -90,29 +90,29 @@ func _get_node_data() -> Dictionary:
 
 func _set_node_data(data: Dictionary) -> void:
 	var data_name = data.get("name")
-	var metadata = data.get("metadata")
-	if typeof(data_name) == TYPE_STRING_NAME:
+	if data.has("name") and typeof(data_name) == TYPE_STRING_NAME:
 		name = data_name
 	
-	if typeof(metadata) != TYPE_DICTIONARY:
+	if not data.has("metadata") or typeof(data["metadata"]) != TYPE_DICTIONARY:
 		return
 	
-	var pos = metadata.get("position")
-	if typeof(pos) == TYPE_VECTOR2:
-		position_offset = pos
+	var metadata: Dictionary = data["metadata"]
 	
-	var fallback_value = metadata.get("fallback_value")
-	match typeof(metadata["fallback_value"]):
-		TYPE_INT:
-			get_field(&"fallback").get_child(0).get_child(1).value = data["fallback_value"]
-		TYPE_FLOAT:
-			get_field(&"fallback").get_child(0).get_child(1).value = data["fallback_value"]
-		TYPE_BOOL:
-			get_field(&"fallback").get_child(1).button_pressed = data["fallback_value"]
-		TYPE_STRING:
-			get_field(&"fallback").get_child(2).text = data["fallback_value"]
-		_:
-			return
+	if metadata.has("position"):
+		position_offset = metadata["position"]
+	
+	if metadata.has("fallback_value"):
+		match typeof(metadata["fallback_value"]):
+			TYPE_INT:
+				get_field(&"fallback").get_child(0).get_child(1).value = metadata["fallback_value"]
+			TYPE_FLOAT:
+				get_field(&"fallback").get_child(0).get_child(1).value = metadata["fallback_value"]
+			TYPE_BOOL:
+				get_field(&"fallback").get_child(1).button_pressed = metadata["fallback_value"]
+			TYPE_STRING:
+				get_field(&"fallback").get_child(2).text = metadata["fallback_value"]
+			_:
+				return
 
 
 func _on_output_connected(output: int, to_node: DiscourseGraphNode, _to_port: int) -> void:

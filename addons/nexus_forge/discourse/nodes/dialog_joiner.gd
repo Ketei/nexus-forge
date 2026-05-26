@@ -2,7 +2,7 @@ extends DiscourseGraphNode
 
 
 var _highest_port_connected: int = -1
-var _connection_updates_disabled: bool = true
+var _connection_updates_disabled: bool = false
 
 
 func _post_init() -> void:

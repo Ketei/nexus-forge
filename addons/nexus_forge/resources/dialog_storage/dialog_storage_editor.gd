@@ -243,20 +243,20 @@ func get_choices_entry(node_uuid: StringName, locale: String = "", fallback: Arr
 	locale = TranslationServer.standardize_locale(locale)
 	var return_array: Array[String] = []
 	
-	if not localization.has(node_uuid) or  localization[node_uuid]["type"] != LocalizationType.CHOICES:
+	if not localization.has(node_uuid) or localization[node_uuid]["type"] != LocalizationType.CHOICES:
 		return_array.assign(fallback)
 		return fallback
 	
 	var localization_data: Dictionary = localization[node_uuid]
 	
-	if locale.is_empty():
-		return_array.assign(localization_data["unlocalized"])
-	else:
+	if localization_data["unlocalized"].is_empty():
 		return_array.assign(
 				DictUtils.get_nested_value(
 						localization_data,
 						["locales", locale],
 						[]))
+	else:
+		return_array.assign(localization_data["unlocalized"])
 	
 	return return_array
 
@@ -277,6 +277,7 @@ func get_node_data(node_uuid: StringName, locale: String = "") -> Dictionary:
 			var options_translated: Array[String] = []
 			options_translated.assign(get_choices_entry(node_uuid, locale))
 			var target_size: int = base_data["metadata"]["choices"].size()
+			
 			if options_translated.size() != target_size:
 				push_warning("[DISCOURSE] Choice data of node {node_id} size is different from the {locale_code} localization data. Data size: {data_size}, locale size: {locale_size}".format({"data_size": target_size, "locale_size": options_translated.size(), "locale_code": locale, "node_id": base_data["name"]}) )
 				options_translated.resize(target_size)

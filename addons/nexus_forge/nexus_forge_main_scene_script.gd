@@ -310,5 +310,5 @@ func reload_quest_objective_types() -> void:
 
 func reload_discourse_api() -> void:
 	if discourse != null:
-		discourse.reload_signals()
-		discourse.reload_methods()
+		discourse.reload_signals.call_deferred()
+		discourse.reload_methods.call_deferred()

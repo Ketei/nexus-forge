@@ -6,6 +6,8 @@ var custom_default_weight: int = -1:
 		custom_default_weight = new_default
 		update_weights()
 
+var _exits_update_queued: bool = false
+
 
 func update_weights() -> void:
 	if custom_default_weight == 0:
@@ -56,6 +58,7 @@ func _post_init() -> void:
 	name = &"RandomPath"
 	title = "Random"
 	size = Vector2(200.0, 146.0)
+	custom_minimum_size.y = 146.0
 	parent_mode = PortMode.INPUT
 	parent_port = 0
 	node_type = DialogueNodeType.RANDOM
@@ -125,7 +128,6 @@ func _ready() -> void:
 	
 	for slot_index in range(2, get_child_count()):
 		set_slot_custom_icon_right(slot_index, flow_icon)
-		
 
 
 func _get_issues() -> PackedStringArray:
@@ -173,8 +175,18 @@ func _on_input_connected(input_port: int, from_node: DiscourseGraphNode, _from_p
 		update_weights()
 
 
-func _on_random_exit_changed(target_options: int) -> void:
-	set_random_exit_number(target_options)
+func _on_random_exit_changed(_target_options: int) -> void:
+	if _exits_update_queued:
+		return
+	_exits_update_queued = true
+	_update_exits_with_value.call_deferred()
+
+
+func _update_exits_with_value() -> void:
+	var exit_size: int = get_mapped_field(&"options", &"count").value
+	set_random_exit_number(exit_size)
+	_exits_update_queued = false
+	size.y = 0
 	node_updated.emit()
 
 
@@ -211,9 +223,11 @@ func set_random_exit_number(target_options: int) -> void:
 					new_option + 1,
 					flow_icon)
 	else:
+		var fields_to_remove: Array[StringName] = []
 		for extra_option in range(current_options, target_options, -1):
 			var port_id: StringName = &"option_" + StringName(str(int(extra_option)))
-			remove_field(port_id, 31)
+			fields_to_remove.append(port_id)
+		remove_fields(fields_to_remove)
 	
 	update_weights()
 

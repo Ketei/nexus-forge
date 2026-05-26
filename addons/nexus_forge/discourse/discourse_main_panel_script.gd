@@ -36,7 +36,7 @@ var _unsaved: bool = false
 var _conversation_options_disabled: bool = true
 
 var base_language: String = ""
-var _included_languages: Dictionary[String, Variant] = {}
+var _included_languages: Dictionary[String, Dictionary] = {}
 var current_locale: String = ""
 # ----------------------------
 

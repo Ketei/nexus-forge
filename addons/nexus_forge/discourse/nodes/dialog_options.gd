@@ -11,6 +11,8 @@ func _post_init() -> void:
 	node_type = DialogueNodeType.OPTIONS
 	parent_mode = PortMode.INPUT
 	parent_port = 0
+	size = Vector2(220.0, 124.0)
+	custom_minimum_size.y = 124.0
 	
 	var choice_count_container: HBoxContainer = HBoxContainer.new()
 	var choices_label: Label = Label.new()
@@ -32,8 +34,6 @@ func _post_init() -> void:
 	choice_count_container.add_child(choices_label)
 	choice_count_container.add_child(choices_spinbox)
 	
-	size = Vector2(320.0, 130.0)
-	custom_minimum_size = Vector2(320.0, 124.0)
 	first_choice.text_changed.connect(_on_option_text_changed)
 	
 	var next_in_idx: int = add_field(

@@ -767,6 +767,8 @@ func clear_dialog_nodes(recreate_entry: bool = true) -> void:
 	graph_nodes.clear()
 	node_frames.clear()
 	anchor_pointers.clear()
+	method_callers.clear()
+	signalers.clear()
 	entry_node = null
 	if recreate_entry:
 		entry_node = spawn_node(DialogNodes.ENTRY, &"", {"name": &"Entry"})

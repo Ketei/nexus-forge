@@ -1,7 +1,7 @@
 extends DiscourseGraphNode
 
 
-var free_size: Vector2 = Vector2(400.0, 300.0)
+var free_size: Vector2 = Vector2(350.0, 300.0)
 
 
 func _post_init() -> void:
@@ -10,8 +10,8 @@ func _post_init() -> void:
 	node_type = DialogueNodeType.DIALOG
 	parent_mode = PortMode.INPUT
 	parent_port = 0
-	size = Vector2(400.0, 340.0)
-	custom_minimum_size = Vector2(400.0, 340.0)
+	size = Vector2(350.0, 300.0)
+	custom_minimum_size = Vector2(250.0, 270.0)
 	resizable = true
 	
 	var connection_node: Control = Control.new()
@@ -123,7 +123,7 @@ func _on_input_connected(input_port: int, from_node: DiscourseGraphNode, _from_p
 			get_child(4).visible = false
 			custom_minimum_size.y = 160.0
 			resizable = false
-			set_deferred(&"size", Vector2(400.0, 190.0))
+			set_deferred(&"size", Vector2(size.x, 0))
 
 
 func _on_input_disconnected(input_port: int, _from_node: DiscourseGraphNode, _from_port: int) -> void:
@@ -131,7 +131,7 @@ func _on_input_disconnected(input_port: int, _from_node: DiscourseGraphNode, _fr
 		3:
 			get_field(&"dialog_text").editable = true
 			get_child(4).visible = true
-			custom_minimum_size.y = 340.0
+			custom_minimum_size.y = 270.0
 			resizable = true
 			set_deferred(&"size", free_size)
 
