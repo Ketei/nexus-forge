@@ -32,6 +32,3 @@ editorconfig
 logo.png.import
 logo.svg.import
 project.godot
-
-# API should remain empty. Adding as I change it for testing
-addons/nexus_forge/resources/parser/discourse_api.gd
