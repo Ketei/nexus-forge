@@ -88,7 +88,8 @@ func get_open_paths() -> Array[String]:
 
 func create_character(resource: CharacterSheet, select: bool = false, emit_select: bool = true) -> void:
 	var new_item: TreeItem = get_root().create_child()
-	new_item.set_text(0, resource.resource_path.get_file())
+	new_item.set_text(0, resource.resource_path.get_file().get_basename())
+	new_item.set_tooltip_text(0, resource.resource_path)
 	new_item.set_metadata(0, {"resource": resource, "stats": stats_to_data(resource.stats), "unsaved": false})
 	new_item.add_button(
 			0,

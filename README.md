@@ -88,6 +88,7 @@ Features that are planned to be implemented in the future:
 - [x] **Discourse:** Use your own scene to test dialogs
 - [x] **Depot(Items):** Allow for name & description to be formatted using Blackboard's variables on settings.
 - [x] **Odyssey(Quests):** Allow for title & description to be formatted using Blackboard's variables on settings.
+- [ ] **Kindred(Species):** Hybridization system.
 - [ ] **On Beta Release:** Publish on Godot's Asset Library/Asset Store
 
 ### Beta & Beyond
