@@ -2,7 +2,7 @@ extends DiscourseGraphNode
 
 
 func _post_init() -> void:
-	name = &"ConditionalValue"
+	set_node_id(&"ConditionalValue")
 	title = "Conditional Value"
 	node_type = DialogueNodeType.CONDITION_SELECT
 	parent_mode = PortMode.OUTPUT

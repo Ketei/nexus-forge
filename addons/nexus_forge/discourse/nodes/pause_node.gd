@@ -3,7 +3,7 @@ extends DiscourseGraphNode
 
 ## Runs once the initiation is done. Used to set up the visual part of the node.
 func _post_init() -> void:
-	name = &"Pause"
+	set_node_id(&"Pause")
 	title = "Pause"
 	size = Vector2(200.0, 90.0)
 	node_type = DialogueNodeType.PAUSE

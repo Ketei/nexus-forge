@@ -2,7 +2,7 @@ extends DiscourseGraphNode
 
 
 func _post_init() -> void:
-	name = &"DialogBranch"
+	set_node_id(&"DialogBranch")
 	parent_mode = PortMode.INPUT
 	parent_port = 0
 	node_type = DialogueNodeType.BRANCH

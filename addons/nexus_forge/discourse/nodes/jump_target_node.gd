@@ -7,7 +7,7 @@ var current_id: String = ""
 
 
 func _post_init() -> void:
-	name = &"Anchor"
+	set_node_id(&"Anchor")
 	title = "Anchor"
 	node_type = DialogueNodeType.ANCHOR
 	parent_mode = PortMode.OUTPUT
@@ -54,25 +54,23 @@ func _get_node_data() -> Dictionary:
 
 
 func _set_node_data(data: Dictionary) -> void:
-	var data_name = data.get("name")
-	var metadata = data.get("metadata")
-	if typeof(data_name) == TYPE_STRING_NAME:
-		name = data_name
+	if data.has("name") and typeof(data["name"]) == TYPE_STRING_NAME:
+		_node_id = data["name"]
 	
-	if typeof(metadata) != TYPE_DICTIONARY:
+	if not data.has("metadata") or typeof(data["metadata"]) != TYPE_DICTIONARY:
+		return
+	var metadata: Dictionary = data["metadata"]
+	
+	if metadata.has("position") and typeof(metadata["position"]) == TYPE_VECTOR2:
+		position_offset = metadata["position"]
+	
+	if not metadata.has("anchor_id") or typeof(metadata["anchor_id"]) != TYPE_STRING:
 		return
 	
-	var pos = metadata.get("position")
-	if typeof(pos) == TYPE_VECTOR2:
-		position_offset = pos
-	
-	var anchor = metadata.get("anchor_id")
-	if typeof(anchor) != TYPE_STRING:
-		return
-	get_field(&"anchor").text = data["anchor_id"]
-	if current_id != anchor:
-		current_id = anchor
-		id_changed.emit(_uuid, anchor)
+	get_field(&"anchor").text = metadata["anchor_id"]
+	if current_id != metadata["anchor_id"]:
+		current_id = metadata["anchor_id"]
+		id_changed.emit(_uuid, metadata["anchor_id"])
 
 
 func _on_line_text_submitted(_text: String, line: LineEdit):

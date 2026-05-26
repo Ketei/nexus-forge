@@ -2,7 +2,7 @@ extends DiscourseGraphNode
 
 
 func _post_init() -> void:
-	name = &"CharacterSettings"
+	set_node_id(&"CharacterSettings")
 	title = "Character"
 	graph_icon = preload("res://addons/nexus_forge/icons/gear_icon.png")
 	node_type = DialogueNodeType.SETTINGS_CHARACTER

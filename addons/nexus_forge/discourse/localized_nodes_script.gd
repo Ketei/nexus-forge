@@ -4,7 +4,7 @@ extends Tree
 
 signal node_delocalized(node: DiscourseGraphNode)
 signal dialog_selected(node_uuid: StringName)
-signal dialog_item_edited(new_id: TreeItem)
+signal dialog_item_edited(node_uuid: StringName, desired_id: String)
 
 enum ButtonID {
 	DELETE,
@@ -15,6 +15,8 @@ const SELECTED_COLOR: Color = Color.SKY_BLUE
 var _dialog_tree: TreeItem
 var _options_tree: TreeItem
 var _text_tree: TreeItem
+
+var all_nodes: Dictionary[StringName, TreeItem] = {}
 
 var active_dialog: TreeItem = null:
 	set(new_dialog):
@@ -74,10 +76,12 @@ func _on_item_activated() -> void:
 func _on_node_edited() -> void:
 	var edited: TreeItem = get_edited()
 	
+	edited.set_text(0, edited.get_text(0).strip_edges())
+	
 	if edited.get_text(0) == edited.get_metadata(0)["name"]:
 		return
 	
-	dialog_item_edited.emit(edited)
+	dialog_item_edited.emit(edited.get_metadata(0)["uuid"], edited.get_text(0))
 
 
 func clear_nodes() -> void:
@@ -146,9 +150,8 @@ func get_active_node() -> DiscourseGraphNode:
 
 
 func create_node_on(tree: TreeItem, node_name: String, node: DiscourseGraphNode, default_name: String) -> void:
-	var new_name: String = get_unique_name_on(tree, node_name, default_name)
 	var new_node: TreeItem = tree.create_child()
-	new_node.set_text(0, new_name)
+	new_node.set_text(0, node_name)
 	new_node.add_button(
 			0,
 			get_theme_icon("Edit", "EditorIcons"),
@@ -161,30 +164,8 @@ func create_node_on(tree: TreeItem, node_name: String, node: DiscourseGraphNode,
 			ButtonID.DELETE,
 			node.node_type == DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT,
 			"Delocalize Node")
-	new_node.set_metadata(0, {"name": new_name, "node": node, "uuid": node.get_node_uuid()})
-
-
-func get_unique_name_on(tree_item: TreeItem, desired_name: String, default_name: String = "LocalizedNode", skip_item: TreeItem = null) -> String:
-	desired_name = desired_name.strip_edges()
-	if desired_name.is_empty():
-		desired_name = default_name
-	var modified_name: String = desired_name
-	
-	
-	var iteration: int = -1
-	while tree_has_name(tree_item, 0, modified_name, skip_item):
-		iteration += 1
-		modified_name = desired_name + str(iteration)
-	return modified_name
-
-
-func tree_has_name(tree: TreeItem, column: int, item_name: String, skip: TreeItem = null) -> bool:
-	for item in tree.get_children():
-		if item == skip:
-			continue
-		if item.get_text(column) == item_name:
-			return true
-	return false
+	new_node.set_metadata(0, {"name": node_name, "node": node, "uuid": node.get_node_uuid()})
+	all_nodes[node.get_node_uuid()] = new_node
 
 
 func select_node(uuid: StringName) -> void:
@@ -196,3 +177,12 @@ func select_node(uuid: StringName) -> void:
 			if language_node.get_metadata(0)["node"].get_node_uuid() == uuid:
 				language_node.select(0)
 				return
+
+
+func set_node_name(node_uuid: StringName, new_name: String) -> void:
+	if not all_nodes.has(node_uuid):
+		return
+	var target: TreeItem = all_nodes[node_uuid]
+	
+	target.set_text(0, new_name)
+	target.get_metadata(0)["name"] = new_name

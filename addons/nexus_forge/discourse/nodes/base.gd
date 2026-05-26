@@ -61,6 +61,7 @@ const LOCALIZED_COLOR: Color = Color.LIME_GREEN
 var node_type: DialogueNodeType = DialogueNodeType.DIALOG
 
 var _uuid: StringName = &""
+var _node_id: StringName = &""
 var _uses_localization: bool = false
 var parent_mode: PortMode = PortMode.INPUT
 var parent_port: int = 0
@@ -238,7 +239,7 @@ func _get_issues() -> PackedStringArray:
 
 func _build_node_data(metadata: Dictionary = {}, output_connections: Dictionary = {}, input_connections: Dictionary = {}) -> Dictionary:
 	var meta: Dictionary = {"position": position_offset, "localized": is_node_localized()}
-	var data: Dictionary = {"name": name, "type": node_type, "metadata": meta}
+	var data: Dictionary = {"name": _node_id, "type": node_type, "metadata": meta}
 	
 	if not metadata.is_empty():
 		meta.merge(metadata, true)
@@ -260,7 +261,7 @@ func _set_node_data(data: Dictionary) -> void:
 	var metadata = data.get("metadata")
 	
 	if typeof(data_name) == TYPE_STRING_NAME:
-		name = data_name
+		_node_id = data_name
 	
 	if typeof(metadata) != TYPE_DICTIONARY:
 		return
@@ -563,6 +564,15 @@ func has_output_on(output_port: int, output_idx: int = 0) -> bool:
 		return false
 	var output_size: int = _output_nodes[output_port]["connections"].size()
 	return output_idx < output_size
+
+
+func has_port(mode: PortMode, idx: int) -> bool:
+	if mode == PortMode.INPUT:
+		return idx < _input_nodes.size()
+	elif mode == PortMode.OUTPUT:
+		return idx < _output_nodes.size()
+	else:
+		return false
 
 
 func is_connected_to_output(output_idx: int, node: DiscourseGraphNode) -> bool:
@@ -903,10 +913,12 @@ func get_slot_from_port(mode: PortMode, port: int) -> int:
 		if _input_nodes.size() <= port:
 			return -1
 		return _input_nodes[port]["slot"]
-	else:
+	elif mode == PortMode.OUTPUT:
 		if _output_nodes.size() <= port:
 			return -1
 		return _output_nodes[port]["slot"]
+	else:
+		return -1
 
 
 func get_field_output_slot(field_id: StringName) -> int:
@@ -1131,3 +1143,11 @@ func is_node_localized() -> bool:
 
 func get_node_uuid() -> StringName:
 	return _uuid
+
+
+func get_node_id() -> StringName:
+	return _node_id
+
+
+func set_node_id(new_id: StringName) -> void:
+	_node_id = new_id

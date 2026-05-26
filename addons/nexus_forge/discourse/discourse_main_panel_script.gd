@@ -363,11 +363,11 @@ func ready_plugin(base_locale: String = "") -> void:
 	languages_tree.locale_deleted.connect(_on_locale_deleted)
 	
 	discourse_nodes_tree.directory_edited.connect(_on_conversation_changed)
-	discourse_nodes_tree.item_renamed.connect(_on_discourse_item_edited)
+	discourse_nodes_tree.item_renamed.connect(_on_discourse_item_renamed)
 	discourse_nodes_tree.node_activated.connect(_on_discourse_node_activated)
 	localization_nodes_tree.dialog_selected.connect(_on_localizer_node_selected)
 	localization_nodes_tree.node_delocalized.connect(_on_node_delocalized)
-	localization_nodes_tree.dialog_item_edited.connect(_on_localizer_item_edited)
+	localization_nodes_tree.dialog_item_edited.connect(_on_localizer_item_renamed)
 	translation_txt_box.text_changed.connect(_on_text_field_changed)
 	translation_txt_box.text_changed.connect(_on_translation_text_changed)
 	
@@ -1043,20 +1043,20 @@ func _on_localize_node(node: DiscourseGraphNode) -> void:
 					node.get_node_uuid(),
 					node.get_dialog_text(),
 					current_locale)
-			localization_nodes_tree.create_dialog_node(node.name, node)
+			localization_nodes_tree.create_dialog_node(node.get_node_id(), node)
 		DiscourseGraphNode.DialogueNodeType.OPTIONS:
 			var text_options: Array[String] = node.get_options()
 			active_conversation.set_choices_entry(
 					node.get_node_uuid(),
 					text_options,
 					current_locale)
-			localization_nodes_tree.create_options_node(node.name, node)
+			localization_nodes_tree.create_options_node(node.get_node_id(), node)
 		DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
 			active_conversation.set_text_entry(
 					node.get_node_uuid(),
 					node.get_text(),
 					current_locale)
-			localization_nodes_tree.create_localized_text_node(node.name, node)
+			localization_nodes_tree.create_localized_text_node(node.get_node_id(), node)
 
 
 func _on_node_delocalized(node: DiscourseGraphNode) -> void:
@@ -1379,24 +1379,21 @@ func get_localizer_choices() -> Array[String]:
 	return choices
 
 
-func _on_localizer_item_edited(item: TreeItem) -> void:
-	var target_item: TreeItem = null
-	var node: DiscourseGraphNode = item.get_metadata(0)["node"]
+func _on_localizer_item_renamed(node_uuid: StringName, desired_id: String) -> void:
+	var node: DiscourseGraphNode = discourse_nodes_tree.get_discourse_node(node_uuid)
 	
-	for discourse_item in discourse_nodes_tree.get_root().get_children():
-		if node == discourse_item.get_metadata(0)["node"]:
-			target_item = discourse_item
-			break
+	if node == null:
+		return
 	
-	var proper_name: String = get_unique_name_on_tree(
-			discourse_nodes_tree.get_root(),
-			item.get_text(0),
-			target_item)
+	var proper_name: StringName = discourse_graph_edit.get_unique_node_name(
+			StringName(desired_id))
+	var proper_string: String = String(proper_name)
 	
-	node.custom_id = proper_name
-	target_item.set_text(0, proper_name)
-	item.set_text(0, proper_name)
-	item.get_metadata(0)["name"] = proper_name
+	node.set_node_id(proper_name)
+	
+	localization_nodes_tree.set_node_name(node_uuid, proper_string)
+	discourse_nodes_tree.set_node_id(node_uuid, proper_string)
+	
 	_on_conversation_changed()
 
 
@@ -1586,12 +1583,14 @@ func set_up_node_structure(structure: Array, level: TreeItem, _map: Dictionary[S
 			set_up_node_structure(item["items"], new_folder, _map)
 
 
-func _on_discourse_item_edited(uuid: StringName, new_name: String) -> void:
+func _on_discourse_item_renamed(uuid: StringName, new_name: String) -> void:
 	var node: DiscourseGraphNode = discourse_graph_edit.get_discourse_node(uuid)
 	var new_named: StringName = StringName(new_name)
-	if node == null or node.name == new_named:
+	if node == null or node.get_node_id() == new_named:
 		return
-	node.name = new_named
+	
+	node.set_node_id(new_name)
+	
 	if node.is_node_localized():
 		match node.node_type:
 			DiscourseGraphNode.DialogueNodeType.DIALOG:
@@ -1638,11 +1637,11 @@ func display_conversation(conversation: EditorDiscourseDialog) -> bool:
 		var d_node: DiscourseGraphNode = discourse_graph_edit.spawn_node(data["type"], node_stnm_uuid, data)
 		
 		if d_node.node_type == DiscourseGraphNode.DialogueNodeType.CALLABLE or d_node.node_type == DiscourseGraphNode.DialogueNodeType.CALLABLE_RETURN:
-			if metadata.has("method"):
+			if metadata.has("method") and not metadata["method"].is_empty():
 				if not d_node.available_methods.has(metadata["method"]):
 					needs_resaving = true
 		elif d_node.node_type == DiscourseGraphNode.DialogueNodeType.SIGNAL:
-			if metadata.has("signal"):
+			if metadata.has("signal") and not metadata["signal"].is_empty():
 				if not d_node.available_signals.has(metadata["signal"]):
 					needs_resaving = true
 		elif d_node.node_type == DiscourseGraphNode.DialogueNodeType.ENTRY:
@@ -1653,6 +1652,7 @@ func display_conversation(conversation: EditorDiscourseDialog) -> bool:
 		if node_relationships.has(node_uuid):
 			discourse_graph_edit.set_node_in_frame(node_stnm_uuid, node_relationships[node_uuid].get_frame_uuid())
 		graph_map[node_uuid] = d_node
+		
 		var new_connections: Array[Dictionary] = discourse_graph_edit.get_connection_dictionary(
 				node_stnm_uuid,
 				data)
@@ -1663,24 +1663,25 @@ func display_conversation(conversation: EditorDiscourseDialog) -> bool:
 		
 		if d_node.is_node_localized():
 			if d_node.node_type == DiscourseGraphNode.DialogueNodeType.DIALOG:
-				localization_nodes_tree.create_dialog_node(d_node.name, d_node)
+				localization_nodes_tree.create_dialog_node(d_node.get_node_id(), d_node)
 			elif d_node.node_type == DiscourseGraphNode.DialogueNodeType.OPTIONS:
-				localization_nodes_tree.create_options_node(d_node.name, d_node)
+				localization_nodes_tree.create_options_node(d_node.get_node_id(), d_node)
 			elif d_node.node_type == DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
-				localization_nodes_tree.create_localized_text_node(d_node.name, d_node)
+				localization_nodes_tree.create_localized_text_node(d_node.get_node_id(), d_node)
 	
 	for output_connection in node_connections:
 		if not graph_map.has(output_connection["from"]) or not graph_map.has(output_connection["to"]):
 			continue
-		discourse_graph_edit.connect_discourse_nodes(
+		if not discourse_graph_edit.connect_discourse_nodes(
 				graph_map[output_connection["from"]].get_node_uuid(),
 				output_connection["from_port"],
 				graph_map[output_connection["to"]].get_node_uuid(),
-				output_connection["to_port"])
+				output_connection["to_port"]):
+			needs_resaving = true
 	
 	if discourse_graph_edit.entry_node == null:
 		var en_node: DiscourseGraphNode = discourse_graph_edit.spawn_node(DiscourseGraphNode.DialogueNodeType.ENTRY)
-		en_node.name = &"Entry"
+		en_node.set_node_id(&"Entry")
 		discourse_graph_edit.entry_node = en_node
 		_on_discourse_node_created(en_node)
 	

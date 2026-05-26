@@ -5,7 +5,7 @@ var current_mode: int = TYPE_INT
 
 
 func _post_init() -> void:
-	name = &"RandomValue"
+	set_node_id(&"RandomValue")
 	title = "Random Value"
 	node_type = DialogueNodeType.RANDOM_VALUE
 	parent_mode = PortMode.OUTPUT
@@ -154,34 +154,31 @@ func _get_node_data() -> Dictionary:
 
 
 func _set_node_data(data: Dictionary) -> void:
-	var data_name = data.get("name")
-	var metadata = data.get("metadata")
-	if typeof(data_name) == TYPE_STRING_NAME:
-		name = data_name
+	if data.has("name") and typeof(data["name"]) == TYPE_STRING_NAME:
+		_node_id = data["name"]
 	
-	if typeof(metadata) != TYPE_DICTIONARY:
+	if not data.has("metadata") or typeof(data["metadata"]) != TYPE_DICTIONARY:
 		return
+	var metadata: Dictionary = data["metadata"]
 	
-	var pos = metadata.get("position")
-	if typeof(pos) == TYPE_VECTOR2:
-		position_offset = pos
+	if metadata.has("position") and typeof(metadata["position"]) == TYPE_VECTOR2:
+		position_offset = metadata["position"]
 	
 	var base: SpinBox = get_mapped_field(&"min_value", "min_spinbox")
 	var max_value: SpinBox = get_mapped_field(&"max_value", "max_spinbox")
 	var min_label: Label = get_mapped_field(&"min_value", "min_label")
 	var type_menu: MenuButton = get_mapped_field(&"random_type", "type_button")
 	
-	var mode = metadata.get("mode")
-	if typeof(mode) == TYPE_INT:
-		current_mode = mode
+	if metadata.has("mode") and typeof(metadata["mode"]) == TYPE_INT:
+		current_mode = metadata["mode"]
 	
 	set_type_fields(current_mode, type_menu, base, max_value, min_label)
-	var values = metadata.get("values")
-	if typeof(values) != TYPE_DICTIONARY:
+	
+	if not metadata.has("values") or typeof(metadata["values"]) != TYPE_DICTIONARY or not metadata["values"].has_all(["base", "max"]):
 		return
 	
-	var base_value = values.get("base")
-	var max_value_data = values.get("max")
+	var base_value = metadata["values"]["base"]
+	var max_value_data = metadata["values"]["max"]
 	var base_value_type: int = typeof(base_value)
 	var max_value_type = typeof(max_value_data)
 	if base_value_type == TYPE_FLOAT || base_value_type == TYPE_INT:

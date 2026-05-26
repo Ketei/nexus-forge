@@ -7,7 +7,7 @@ var available_methods: Dictionary = {
 
 
 func _post_init() -> void:
-	name = &"Call"
+	set_node_id(&"Call")
 	title = "Call Method"
 	graph_icon = get_theme_icon("MemberMethod", "EditorIcons")
 	node_type = DialogueNodeType.CALLABLE
@@ -98,27 +98,24 @@ func _get_node_data() -> Dictionary:
 
 
 func _set_node_data(data: Dictionary) -> void:
-	var data_name = data.get("name")
-	var metadata = data.get("metadata")
-	if typeof(data_name) == TYPE_STRING_NAME:
-		name = data_name
+	if data.has("name") and typeof(data["name"]) == TYPE_STRING_NAME:
+		_node_id = data["name"]
 	
-	if typeof(metadata) != TYPE_DICTIONARY:
+	if not data.has("metadata") or typeof(data["metadata"]) != TYPE_DICTIONARY:
 		return
+	var metadata: Dictionary = data["metadata"]
 	
-	var pos = metadata.get("position")
-	if typeof(pos) == TYPE_VECTOR2:
-		position_offset = pos
+	if metadata.has("position") and typeof(metadata["position"]) == TYPE_VECTOR2:
+		position_offset = metadata["position"]
 	
-	var method = metadata.get("method")
-	if typeof(method) != TYPE_STRING:
+	if not metadata.has("method") or typeof(metadata["method"]) != TYPE_STRING:
 		return
 	
 	var method_opt_btn: OptionButton = get_field(&"methods")
 	for idx in range(method_opt_btn.item_count):
-		if method_opt_btn.get_item_metadata(idx) == method:
+		if method_opt_btn.get_item_metadata(idx) == metadata["method"]:
 			method_opt_btn.select(idx)
-			load_method(method)
+			load_method(metadata["method"])
 			break
 
 

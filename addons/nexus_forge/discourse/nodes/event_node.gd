@@ -2,7 +2,7 @@ extends DiscourseGraphNode
 
 
 func _post_init() -> void:
-	name = &"DialogEvent"
+	set_node_id(&"DialogEvent")
 	title = "Event"
 	size = Vector2(240.0, 196.0)
 	node_type = DialogueNodeType.EVENT
@@ -128,21 +128,18 @@ func _get_node_data() -> Dictionary:
 
 
 func _set_node_data(data: Dictionary) -> void:
-	var data_name = data.get("name")
-	var metadata = data.get("metadata")
-	if typeof(data_name) == TYPE_STRING_NAME:
-		name = data_name
+	if data.has("name") and typeof(data["name"]) == TYPE_STRING_NAME:
+		_node_id = data["name"]
 	
-	if typeof(metadata) != TYPE_DICTIONARY:
+	if not data.has("metadata") or typeof(data["metadata"]) != TYPE_DICTIONARY:
 		return
+	var metadata: Dictionary = data["metadata"]
 	
-	var pos = metadata.get("position")
-	if typeof(pos) == TYPE_VECTOR2:
-		position_offset = pos
+	if metadata.has("position") and typeof(metadata["position"]) == TYPE_VECTOR2:
+		position_offset = metadata["position"]
 	
-	var path = metadata.get("variable_path")
-	if typeof(path) == TYPE_STRING:
-		get_mapped_field(&"variable", &"path").text = path
+	if metadata.has("variable_path") and typeof(metadata["variable_path"]) == TYPE_STRING:
+		get_mapped_field(&"variable", &"path").text = metadata["variable_path"]
 
 
 func _on_var_path_focus_lost() -> void:

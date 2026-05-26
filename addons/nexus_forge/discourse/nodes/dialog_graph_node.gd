@@ -5,7 +5,7 @@ var free_size: Vector2 = Vector2(350.0, 300.0)
 
 
 func _post_init() -> void:
-	name = &"Dialog"
+	set_node_id(&"Dialog")
 	title = "Dialog"
 	node_type = DialogueNodeType.DIALOG
 	parent_mode = PortMode.INPUT
@@ -154,20 +154,19 @@ func _get_node_data() -> Dictionary:
 
 
 func _set_node_data(data: Dictionary) -> void:
-	var _name = data.get("name")
-	if typeof(_name) == TYPE_STRING_NAME:
-		name = _name
+	if data.has("name") and typeof(data["name"]) == TYPE_STRING_NAME:
+		_node_id = data["name"]
 	
-	if not data.has("metadata"):
+	if not data.has("metadata") or typeof(data["metadata"]) != TYPE_DICTIONARY:
 		return
 	
 	var metadata: Dictionary = data["metadata"]
 	
+	if metadata.has("position") and typeof(metadata["position"]) == TYPE_VECTOR2:
+		position_offset = metadata["position"]
+	
 	if metadata.has("size"):
 		size = metadata["size"]
-	
-	if metadata.has("position"):
-		position_offset = metadata["position"]
 	
 	if metadata.has("character_id"):
 		get_mapped_field(&"character_id", &"character_line").text = metadata["character_id"]

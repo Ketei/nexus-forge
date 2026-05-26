@@ -5,7 +5,7 @@ var filter_mode: int = TYPE_NIL
 
 
 func _post_init() -> void:
-	name = &"TypeGuard"
+	set_node_id(&"TypeGuard")
 	title = "Type Guard"
 	node_type = DialogueNodeType.TYPE_GUARD
 	parent_mode = PortMode.OUTPUT
@@ -89,16 +89,14 @@ func _get_node_data() -> Dictionary:
 
 
 func _set_node_data(data: Dictionary) -> void:
-	var data_name = data.get("name")
-	if data.has("name") and typeof(data_name) == TYPE_STRING_NAME:
-		name = data_name
+	if data.has("name") and typeof(data["name"]) == TYPE_STRING_NAME:
+		_node_id = data["name"]
 	
 	if not data.has("metadata") or typeof(data["metadata"]) != TYPE_DICTIONARY:
 		return
-	
 	var metadata: Dictionary = data["metadata"]
 	
-	if metadata.has("position"):
+	if metadata.has("position") and typeof(metadata["position"]) == TYPE_VECTOR2:
 		position_offset = metadata["position"]
 	
 	if metadata.has("fallback_value"):

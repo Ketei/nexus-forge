@@ -5,7 +5,7 @@ var current_mode: int = TYPE_INT
 var _match_size_update_queed: bool = false
 
 func _post_init() -> void:
-	name = &"Match"
+	set_node_id(&"Match")
 	title = "Match"
 	size = Vector2(240.0, 204.0)
 	custom_minimum_size.y = 204.0
@@ -195,23 +195,20 @@ func _on_match_text_changed(_text: String) -> void:
 
 
 func _set_node_data(data: Dictionary) -> void:
-	var data_name = data.get("name")
-	var metadata = data.get("metadata")
-	if typeof(data_name) == TYPE_STRING_NAME:
-		name = data_name
+	if data.has("name") and typeof(data["name"]) == TYPE_STRING_NAME:
+		_node_id = data["name"]
 	
-	if typeof(metadata) != TYPE_DICTIONARY:
+	if not data.has("metadata") or typeof(data["metadata"]) != TYPE_DICTIONARY:
+		return
+	var metadata: Dictionary = data["metadata"]
+	
+	if metadata.has("position") and typeof(metadata["position"]) == TYPE_VECTOR2:
+		position_offset = metadata["position"]
+	
+	if not metadata.has("cases") or typeof(metadata["cases"]) != TYPE_ARRAY:
 		return
 	
-	var pos = metadata.get("position")
-	if typeof(pos) == TYPE_VECTOR2:
-		position_offset = pos
-	
-	var cases = metadata.get("cases")
-	if typeof(cases) != TYPE_ARRAY:
-		return
-	
-	var case_count: int = data["cases"].size()
+	var case_count: int = metadata["cases"].size()
 	get_mapped_field(&"cases", &"case_count").set_value_no_signal(case_count)
 	set_match_case_count(case_count)
 	
@@ -222,7 +219,7 @@ func _set_node_data(data: Dictionary) -> void:
 	for match_option in range(1, case_count + 1):
 		var case_id: StringName = &"case_" + StringName(str(int(match_option)))
 		var field: Control = get_field(case_id)
-		var val = cases[match_option - 1].get("value")
+		var val = metadata["cases"][match_option - 1].get("value")
 		var val_type = typeof(val)
 		if current_mode == TYPE_STRING:
 			if val_type == TYPE_STRING:

@@ -55,7 +55,7 @@ func _on_value_node_weight_changed(type: int, value) -> void:
 
 
 func _post_init() -> void:
-	name = &"RandomPath"
+	set_node_id(&"RandomPath")
 	title = "Random"
 	size = Vector2(200.0, 146.0)
 	custom_minimum_size.y = 146.0
@@ -233,22 +233,20 @@ func set_random_exit_number(target_options: int) -> void:
 
 
 func _set_node_data(data: Dictionary) -> void:
-	var data_name = data.get("name")
-	var metadata = data.get("metadata")
-	if typeof(data_name) == TYPE_STRING_NAME:
-		name = data_name
+	if data.has("name") and typeof(data["name"]) == TYPE_STRING_NAME:
+		_node_id = data["name"]
 	
-	if typeof(metadata) != TYPE_DICTIONARY:
+	if not data.has("metadata") or typeof(data["metadata"]) != TYPE_DICTIONARY:
+		return
+	var metadata: Dictionary = data["metadata"]
+	
+	if metadata.has("position") and typeof(metadata["position"]) == TYPE_VECTOR2:
+		position_offset = metadata["position"]
+	
+	if not metadata.has("options") or typeof(metadata["options"]) != TYPE_ARRAY:
 		return
 	
-	var pos = metadata.get("position")
-	if typeof(pos) == TYPE_VECTOR2:
-		position_offset = pos
-	
-	var options = metadata.get("options")
-	if typeof(options) != TYPE_ARRAY:
-		return
-	var option_size: int = options.size()
+	var option_size: int = metadata["options"].size()
 	get_mapped_field(&"options", &"count").set_value_no_signal(option_size)
 	set_random_exit_number(option_size)
 

@@ -2,7 +2,7 @@ extends DiscourseGraphNode
 
 
 func _post_init() -> void:
-	name = &"End"
+	set_node_id(&"End")
 	title = "End"
 	size = Vector2(160.0, 80.0)
 	node_type = DialogueNodeType.DIALOG_END

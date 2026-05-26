@@ -2,7 +2,7 @@ extends DiscourseGraphNode
 
 
 func _post_init() -> void:
-	name = &"Comparation"
+	set_node_id(&"Comparation")
 	title = "Comparation"
 	size = Vector2(200.0, 150.0)
 	node_type = DialogueNodeType.COMPARATION
@@ -123,24 +123,22 @@ func _get_node_data() -> Dictionary:
 
 
 func _set_node_data(data: Dictionary) -> void:
-	var _name = data.get("name")
-	if typeof(_name) == TYPE_STRING_NAME:
-		name = _name
+	if data.has("name") and typeof(data["name"]) == TYPE_STRING_NAME:
+		_node_id = data["name"]
 	
-	var _pos_off = data.get("position")
-	if typeof(_pos_off) == TYPE_VECTOR2:
-		position_offset = _pos_off
-	
-	var metadata = data.get("metadata")
-	if typeof(metadata) != TYPE_DICTIONARY:
+	if not data.has("metadata") or typeof(data["metadata"]) != TYPE_DICTIONARY:
 		return
 	
-	var opr = metadata.get("operator")
-	if typeof(opr) != TYPE_INT:
+	var metadata: Dictionary = data["metadata"]
+	
+	if metadata.has("position") and typeof(metadata["position"]) == TYPE_VECTOR2:
+		position_offset = metadata["position"]
+	
+	if not metadata.has("operator") or typeof(metadata["operator"]) != TYPE_INT:
 		return
 	
 	var dropdown: MenuButton = get_mapped_field(&"comparation", &"comparation_menu")
-	var operator: Variant.Operator = clampi(data["operator"], 0, 5) as Variant.Operator
+	var operator: Variant.Operator = clampi(metadata["operator"], 0, 5) as Variant.Operator
 	match operator:
 		OP_EQUAL:
 			dropdown.text = "=="

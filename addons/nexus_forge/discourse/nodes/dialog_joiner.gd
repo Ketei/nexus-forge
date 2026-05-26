@@ -6,7 +6,7 @@ var _connection_updates_disabled: bool = false
 
 
 func _post_init() -> void:
-	name = &"DialogMerge"
+	set_node_id(&"DialogMerge")
 	title = "Dialog Merge"
 	size = Vector2(200.0, 79.0)
 	custom_minimum_size.y = 79.0
@@ -99,21 +99,18 @@ func _get_node_data() -> Dictionary:
 
 
 func _set_node_data(data: Dictionary) -> void:
-	var data_name = data.get("name")
-	var metadata = data.get("metadata")
-	if typeof(data_name) == TYPE_STRING_NAME:
-		name = data_name
+	if data.has("name") and typeof(data["name"]) == TYPE_STRING_NAME:
+		_node_id = data["name"]
 	
-	if typeof(metadata) != TYPE_DICTIONARY:
+	if not data.has("metadata") or typeof(data["metadata"]) != TYPE_DICTIONARY:
 		return
+	var metadata: Dictionary = data["metadata"]
 	
-	var pos = metadata.get("position")
-	if typeof(pos) == TYPE_VECTOR2:
-		position_offset = pos
+	if metadata.has("position") and typeof(metadata["position"]) == TYPE_VECTOR2:
+		position_offset = metadata["position"]
 	
-	var port_count = metadata.get("port_count")
-	if typeof(port_count) == TYPE_INT:
-		set_input_port_count(port_count)
+	if metadata.has("port_count") and typeof(metadata["port_count"]) == TYPE_INT:
+		set_input_port_count(metadata["port_count"])
 
 
 func set_input_port_count(new_count: int) -> void:

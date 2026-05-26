@@ -72,7 +72,7 @@ var mode: int = TYPE_INT:
 
 
 func _post_init() -> void:
-	name = &"Value"
+	set_node_id(&"Value")
 	title = "Value"
 	node_type = DialogueNodeType.VALUE
 	parent_mode = PortMode.OUTPUT
@@ -165,24 +165,21 @@ func _get_node_data() -> Dictionary:
 
 
 func _set_node_data(data: Dictionary) -> void:
-	var data_name = data.get("name")
-	var metadata = data.get("metadata")
-	if typeof(data_name) == TYPE_STRING_NAME:
-		name = data_name
+	if data.has("name") and typeof(data["name"]) == TYPE_STRING_NAME:
+		_node_id = data["name"]
 	
-	if typeof(metadata) != TYPE_DICTIONARY:
+	if not data.has("metadata") or typeof(data["metadata"]) != TYPE_DICTIONARY:
 		return
+	var metadata: Dictionary = data["metadata"]
 	
-	var pos = metadata.get("position")
-	if typeof(pos) == TYPE_VECTOR2:
-		position_offset = pos
+	if metadata.has("position") and typeof(metadata["position"]) == TYPE_VECTOR2:
+		position_offset = metadata["position"]
 	
-	var data_value = metadata.get("value")
-	if typeof(data_value) == TYPE_NIL:
+	if not metadata.has("value") or typeof(metadata["value"]) == TYPE_NIL:
 		return
 	
 	var menu: MenuButton = get_field(&"data").get_child(1)
-	mode = typeof(data_value)
+	mode = typeof(metadata["value"])
 	match mode:
 		TYPE_INT:
 			get_mapped_field(&"data", &"number").set_value_no_signal(metadata["value"])

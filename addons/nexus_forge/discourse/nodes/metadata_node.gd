@@ -4,7 +4,7 @@ var meta_fields: int = 1
 var _connection_updates_disabled: bool = false
 
 func _post_init() -> void:
-	name = &"Metadata"
+	set_node_id(&"Metadata")
 	title = "Metadata"
 	size = Vector2(250.0, 121.0)
 	custom_minimum_size.y = 121.0
@@ -129,17 +129,15 @@ func _get_node_data() -> Dictionary:
 
 
 func _set_node_data(data: Dictionary) -> void:
-	var data_name = data.get("name")
-	var metadata = data.get("metadata")
-	if typeof(data_name) == TYPE_STRING_NAME:
-		name = data_name
+	if data.has("name") and typeof(data["name"]) == TYPE_STRING_NAME:
+		_node_id = data["name"]
 	
-	if typeof(metadata) != TYPE_DICTIONARY:
+	if not data.has("metadata") or typeof(data["metadata"]) != TYPE_DICTIONARY:
 		return
+	var metadata: Dictionary = data["metadata"]
 	
-	var pos = metadata.get("position")
-	if typeof(pos) == TYPE_VECTOR2:
-		position_offset = pos
+	if metadata.has("position") and typeof(metadata["position"]) == TYPE_VECTOR2:
+		position_offset = metadata["position"]
 		
 	if not metadata.has("metadata_connections"):
 		return

@@ -49,7 +49,7 @@ const SETTINGS: Array[DialogParser.NodeTypes] = [
 const RESOURCES: Array[DialogParser.NodeTypes] = [
 		DialogParser.NodeTypes.RESOURCE]
 
-var nodes: Array[TreeItem] = []
+var nodes: Dictionary[StringName, TreeItem] = {}
 
 
 func ready_plugin() -> void:
@@ -200,7 +200,7 @@ func create_node(node: DiscourseGraphNode, on: TreeItem = get_root()) -> void:
 	new_item.set_icon(0, preload("res://addons/nexus_forge/icons/node_icon.svg"))
 	if 0 <= type:
 		new_item.set_icon_modulate(0, DIALOG_COLOR if type == 0 else DATA_COLOR if type == 1 else SETTINGS_COLOR if type == 2 else RESOURCE_COLOR)
-	new_item.set_text(0, str(node.name))
+	new_item.set_text(0, str(node.get_node_id()))
 	new_item.add_button(
 			0,
 			get_theme_icon("Edit", "EditorIcons"),
@@ -210,7 +210,7 @@ func create_node(node: DiscourseGraphNode, on: TreeItem = get_root()) -> void:
 	
 	new_item.set_metadata(0, {"is_node": true, "uuid": node.get_node_uuid()})
 	
-	nodes.append(new_item)
+	nodes[node.get_node_uuid()] = new_item
 	#if node == discourse_window.discourse_graph_edit.entry_node and new_item.get_index() != 0:
 		#new_item.move_before(new_item.get_parent().get_first_child())
 
@@ -247,16 +247,13 @@ func ensure_expanded(node: TreeItem) -> void:
 
 
 func remove_dialog_node(uuid: StringName) -> bool:
-	for node_idx in range(nodes.size()):
-		var meta: Dictionary = nodes[node_idx].get_metadata(0)
-		if not meta["is_node"] or meta["uuid"] != uuid:
-			continue
-		var node: TreeItem = nodes[node_idx]
-		nodes[node_idx] = nodes[-1]
-		nodes.resize(nodes.size() - 1)
-		node.free()
-		return true
-	return false
+	if not nodes.has(uuid):
+		return false
+	
+	var node: TreeItem = nodes[uuid]
+	nodes.erase(uuid)
+	node.free()
+	return true
 
 
 func get_unique_name_for_node(desired_name: String, skip_item: TreeItem = null) -> String:
@@ -264,7 +261,7 @@ func get_unique_name_for_node(desired_name: String, skip_item: TreeItem = null) 
 	var all_names: Dictionary = {}
 	var edited_name: String = desired_name
 	
-	for node in nodes:
+	for node in nodes.values():
 		if node == skip_item:
 			continue
 		all_names[node.get_text(0)] = null
@@ -300,6 +297,12 @@ func search_for_node(pattern: String) -> void:
 	var is_empty: bool = pattern.is_empty()
 	for item in get_root().get_children():
 		item.visible = _search_on_children(item, pattern) or is_empty or item.get_text(0).containsn(pattern)
+
+
+func set_node_id(uuid: StringName, id: String) -> void:
+	if not nodes.has(uuid):
+		return
+	nodes[uuid].set_text(0, id)
 
 
 func _search_on_children(from: TreeItem, pattern: String) -> bool:

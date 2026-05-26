@@ -2,7 +2,7 @@ extends DiscourseGraphNode
 
 
 func _post_init() -> void:
-	name = &"LocalizedText"
+	set_node_id(&"LocalizedText")
 	title = "Localized Text"
 	node_type = DialogueNodeType.LOCALIZED_TEXT
 	parent_mode = PortMode.OUTPUT
@@ -44,21 +44,18 @@ func _get_node_data() -> Dictionary:
 
 
 func _set_node_data(data: Dictionary) -> void:
-	var data_name = data.get("name")
-	var metadata = data.get("metadata")
-	if typeof(data_name) == TYPE_STRING_NAME:
-		name = data_name
+	if data.has("name") and typeof(data["name"]) == TYPE_STRING_NAME:
+		_node_id = data["name"]
 	
-	if typeof(metadata) != TYPE_DICTIONARY:
+	if not data.has("metadata") or typeof(data["metadata"]) != TYPE_DICTIONARY:
 		return
+	var metadata: Dictionary = data["metadata"]
 	
-	var pos = metadata.get("position")
-	if typeof(pos) == TYPE_VECTOR2:
-		position_offset = pos
+	if metadata.has("position") and typeof(metadata["position"]) == TYPE_VECTOR2:
+		position_offset = metadata["position"]
 	
-	var text = metadata.get("text")
-	if typeof(text) == TYPE_STRING:
-		get_field(&"localized_text").text = text
+	if metadata.has("text") and typeof(metadata["text"]) == TYPE_STRING:
+		get_field(&"localized_text").text = metadata["text"]
 
 
 func set_text(new_text: String) -> void:

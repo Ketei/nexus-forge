@@ -5,7 +5,7 @@ var available_methods: Dictionary = {}
 
 
 func _post_init() -> void:
-	name = &"CallWithReturn"
+	set_node_id(&"CallWithReturn")
 	title = "Call Method (Return)"
 	graph_icon = get_theme_icon("MemberMethod", "EditorIcons")
 	node_type = DialogueNodeType.CALLABLE_RETURN
@@ -20,6 +20,7 @@ func _post_init() -> void:
 	methods_node.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	methods_node.fit_to_longest_item = false
 	methods_node.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	methods_node.custom_minimum_size.y = 32
 
 	for method:String in available_methods.keys():
 		methods_node.add_item(method.capitalize())
@@ -94,28 +95,25 @@ func _get_node_data() -> Dictionary:
 
 
 func _set_node_data(data: Dictionary) -> void:
-	var data_name = data.get("name")
-	var metadata = data.get("metadata")
-	if typeof(data_name) == TYPE_STRING_NAME:
-		name = data_name
+	if data.has("name") and typeof(data["name"]) == TYPE_STRING_NAME:
+		_node_id = data["name"]
 	
-	if typeof(metadata) != TYPE_DICTIONARY:
+	if not data.has("metadata") or typeof(data["metadata"]) != TYPE_DICTIONARY:
 		return
+	var metadata: Dictionary = data["metadata"]
 	
-	var pos = metadata.get("position")
-	if typeof(pos) == TYPE_VECTOR2:
-		position_offset = pos
+	if metadata.has("position") and typeof(metadata["position"]) == TYPE_VECTOR2:
+		position_offset = metadata["position"]
 	
-	var method = metadata.get("method")
-	if typeof(method) != TYPE_STRING:
+	if not metadata.has("method") or typeof(metadata["method"]) != TYPE_STRING:
 		return
 	
 	var method_opt_btn: OptionButton = get_field(&"methods")
 	for idx in range(method_opt_btn.item_count):
-		if method_opt_btn.get_item_metadata(idx) != method:
+		if method_opt_btn.get_item_metadata(idx) != metadata["method"]:
 			continue
 		method_opt_btn.select(idx)
-		load_method(method)
+		load_method(metadata["method"])
 		break
 
 
@@ -127,6 +125,7 @@ func _on_method_selected(idx: int) -> void:
 
 
 func reload_methods() -> void:
+	print("Reload")
 	available_methods = get_user_methods()
 	var opt_btn: OptionButton = get_field(&"methods")
 	var selected_method: String = opt_btn.get_selected_metadata() if opt_btn.selected != -1 else ""
@@ -284,6 +283,7 @@ func reload_methods() -> void:
 	
 	if emit_updated:
 		node_updated.emit()
+	print("+++++")
 
 
 func load_method(method_id: String) -> void:

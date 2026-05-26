@@ -2,7 +2,7 @@ extends DiscourseGraphNode
 
 
 func _post_init() -> void:
-	name = &"Comment"
+	set_node_id(&"Comment")
 	title = "Comment"
 	size = Vector2(300.0, 180.0)
 	custom_minimum_size = Vector2(300.0, 180.0)
@@ -27,18 +27,16 @@ func _get_node_data() -> Dictionary:
 
 
 func _set_node_data(data: Dictionary) -> void:
-	var _name = data.get("name")
-	if typeof(_name) == TYPE_STRING_NAME:
-		name = _name
+	if data.has("name"):
+		_node_id = data["name"]
 	
-	var meta = data.get("metadata")
-	if typeof(meta) != TYPE_DICTIONARY:
+	if not data.has("metadata") or typeof(data["metadata"]) != TYPE_DICTIONARY:
 		return
 	
-	var pos = meta.get("position")
-	if typeof(pos) == TYPE_VECTOR2:
-		position_offset = pos
+	var meta: Dictionary = data["metadata"]
 	
-	var comm = meta.get("comment")
-	if typeof(comm) == TYPE_STRING:
-		get_field(&"comment").text = comm
+	if meta.has("position") and typeof(meta["position"]) == TYPE_VECTOR2:
+		position_offset = meta["position"]
+	
+	if meta.has("comment") and typeof(meta["comment"]) == TYPE_STRING:
+		get_field(&"comment").text = meta["comment"]

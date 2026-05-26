@@ -458,7 +458,8 @@ func new_dialog_node(node_type: DialogNodes, uuid: StringName = &"") -> Discours
 	created_node.duplicate_requested.connect(_on_duplicate_node_button_pressed, CONNECT_DEFERRED)
 	created_node.localize_node_toggled.connect(_on_localize_node_toggled, CONNECT_DEFERRED)
 	
-	created_node.name = get_unique_node_name(created_node.name)
+	#created_node.name = get_unique_node_name(created_node.name)
+	created_node.set_node_id(get_unique_node_name(created_node.get_node_id()))
 	
 	return created_node
 
@@ -470,10 +471,10 @@ func new_node_frame(uuid: StringName = &"") -> GraphFrame:
 
 
 func get_unique_node_name(desired: StringName) -> StringName:
-	var names: Array[StringName] = []
+	var names: Dictionary[StringName, Variant] = {}
 	
 	for node in graph_nodes.values():
-		names.append(node.name)
+		names[node.get_node_id()] = null
 		
 	var base: String = str(desired).strip_edges()
 	var trailing_data: Dictionary = get_trailing_integer(base)
@@ -626,7 +627,7 @@ func duplicate_single(node_uuid: StringName, new_uuid: StringName) -> void:
 	
 	var node: DiscourseGraphNode = graph_nodes[node_uuid]
 	var data: Dictionary = node._get_node_data()
-	var new_name: StringName = get_unique_node_name(node.name)
+	var new_name: StringName = get_unique_node_name(node.get_node_id())
 	data["name"] = new_name
 	DictUtils.set_nested_value(
 			data,
@@ -672,7 +673,7 @@ func duplicate_multiple(duplicate_targets: Dictionary[StringName, StringName]) -
 	var uuid_equivalences: Dictionary[String, DiscourseGraphNode] = {}
 	for node_data in nodes_to_duplicate:
 		var node: DiscourseGraphNode = node_data["node"]
-		var new_name: StringName = get_unique_node_name(node.name)
+		var new_name: StringName = get_unique_node_name(node.get_node_id())
 		var old_data: Dictionary = node._get_node_data()
 		old_data["name"] = new_name
 		DictUtils.set_nested_value(
@@ -1073,11 +1074,15 @@ func localize_node(node_uuid: StringName, set_localized: bool) -> void:
 func connect_discourse_nodes(from_node_uuid: StringName, from_port: int, to_node_uuid: StringName, to_port: int) -> bool:
 	if from_node_uuid == to_node_uuid or not graph_nodes.has_all([from_node_uuid, to_node_uuid]):
 		return false
-	
+
 	var to_graph: DiscourseGraphNode = graph_nodes[to_node_uuid]
 	var from_graph: DiscourseGraphNode = graph_nodes[from_node_uuid]
-	var from_type: int = from_graph.get_slot_type_right(from_graph.get_output_port_slot(from_port))
-	var to_type: int = to_graph.get_slot_type_left(to_graph.get_input_port_slot(to_port))
+
+	if not from_graph.has_port(PortFlow.OUTPUT, from_port) or not to_graph.has_port(PortFlow.INPUT, to_port):
+		return false
+	
+	var from_type: int = from_graph.get_slot_type_right(from_graph.get_slot_from_port(PortFlow.OUTPUT, from_port))#from_graph.get_output_port_slot(from_port))
+	var to_type: int = to_graph.get_slot_type_left(to_graph.get_slot_from_port(PortFlow.INPUT, to_port))#to_graph.get_input_port_slot(to_port))
 	
 	var from_port_ghost_disconnect: bool = _pending_connection_change.has_all(["from_node", "from_port"]) and _pending_connection_change["from_node"] == from_node_uuid and _pending_connection_change["from_port"] == from_port
 	
