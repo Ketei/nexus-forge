@@ -165,19 +165,19 @@ func _set_node_data(data: Dictionary) -> void:
 	if metadata.has("position") and typeof(metadata["position"]) == TYPE_VECTOR2:
 		position_offset = metadata["position"]
 	
-	if metadata.has("size"):
+	if metadata.has("size") and typeof(metadata["size"]) == TYPE_VECTOR2:
 		size = metadata["size"]
 	
-	if metadata.has("character_id"):
+	if metadata.has("character_id") and typeof(metadata["character_id"]) == TYPE_STRING:
 		get_mapped_field(&"character_id", &"character_line").text = metadata["character_id"]
 	
-	if metadata.has("dialog_text"):
+	if metadata.has("dialog_text") and typeof(metadata["dialog_text"]) == TYPE_STRING:
 		get_field(&"dialog_text").text = metadata["dialog_text"]
 	
-	if metadata.has("persist"):
+	if metadata.has("persist") and typeof(metadata["persist"]) == TYPE_BOOL:
 		get_mapped_field(&"flags", &"persist_checkbox").button_pressed = metadata["persist"]
 	
-	if metadata.has("localized"):
+	if metadata.has("localized") and typeof(metadata["localized"]) == TYPE_BOOL:
 		set_node_localized(metadata["localized"])
 
 

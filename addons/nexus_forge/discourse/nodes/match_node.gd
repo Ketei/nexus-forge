@@ -212,9 +212,8 @@ func _set_node_data(data: Dictionary) -> void:
 	get_mapped_field(&"cases", &"case_count").set_value_no_signal(case_count)
 	set_match_case_count(case_count)
 	
-	var mode = metadata.get("match_data_type")
-	if typeof(mode) == TYPE_INT:
-		set_current_mode(mode)
+	if metadata.has("match_data_type") and typeof(metadata["match_data_type"]) == TYPE_INT:
+		set_current_mode(metadata["match_data_type"])
 	
 	for match_option in range(1, case_count + 1):
 		var case_id: StringName = &"case_" + StringName(str(int(match_option)))

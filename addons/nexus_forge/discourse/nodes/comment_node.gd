@@ -27,7 +27,7 @@ func _get_node_data() -> Dictionary:
 
 
 func _set_node_data(data: Dictionary) -> void:
-	if data.has("name"):
+	if data.has("name") and typeof(data["name"]) == TYPE_STRING_NAME:
 		_node_id = data["name"]
 	
 	if not data.has("metadata") or typeof(data["metadata"]) != TYPE_DICTIONARY:

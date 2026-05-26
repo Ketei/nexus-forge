@@ -23,6 +23,7 @@ func _post_init() -> void:
 	methods_node.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	methods_node.fit_to_longest_item = false
 	methods_node.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	methods_node.custom_minimum_size.y = 32
 	
 	var method_keys: Array = available_methods.keys()
 	
