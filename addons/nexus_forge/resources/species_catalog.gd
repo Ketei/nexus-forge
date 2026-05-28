@@ -21,9 +21,17 @@ func _species_tree_stats(species_id: StringName) -> Dictionary[StringName, float
 	if not _species.has(species_id):
 		return stats
 	
+	var hybrid: bool = not _species[species_id]["parent_recessive"].is_empty()
 	stats.assign(_species[species_id]["stats"])
 	
-	var current_species: StringName = _species[species_id]["parent_key"]
+	if hybrid:
+		var recessive_stats: Dictionary[StringName, float] = _species[_species[species_id]["parent_recessive"]]["stats"]
+		for stat_id in recessive_stats.keys():
+			if not stats.has(stat_id):
+				stats[stat_id] = 0.0
+			stats[stat_id] += roundf(recessive_stats[stat_id] / 2.0)
+	
+	var current_species: StringName = _species[species_id]["parent_dominant"]
 	
 	while current_species != &"" and current_species != species_id:
 		for stat in _species[current_species]["stats"].keys():
@@ -31,7 +39,7 @@ func _species_tree_stats(species_id: StringName) -> Dictionary[StringName, float
 				continue
 			stats[stat] = _species[current_species]["stats"][stat]
 		
-		current_species = _species[current_species]["parent_key"]
+		current_species = _species[current_species]["parent_dominant"]
 	
 	return stats
 
@@ -42,9 +50,17 @@ func _species_tree_skills(species_id: StringName) -> Dictionary[StringName, int]
 	if not _species.has(species_id):
 		return skills
 	
+	var hybrid: bool = not _species[species_id]["parent_recessive"].is_empty()
 	skills.assign(_species[species_id]["skills"])
 	
-	var current_species: StringName = _species[species_id]["parent_key"]
+	if hybrid:
+		var recessive_skills: Dictionary[StringName, int] = _species[_species[species_id]["parent_recessive"]]["skills"]
+		for skill_id in recessive_skills.keys():
+			if not skills.has(skill_id):
+				skills[skill_id] = 0
+			skills[skill_id] += roundi(recessive_skills[skill_id] / 2.0)
+	
+	var current_species: StringName = _species[species_id]["parent_dominant"]
 	
 	while current_species != &"" and current_species != species_id:
 		for skill in _species[current_species]["skills"].keys():
@@ -52,7 +68,7 @@ func _species_tree_skills(species_id: StringName) -> Dictionary[StringName, int]
 				continue
 			skills[skill] = _species[current_species]["skills"][skill]
 			
-			current_species = _species[current_species]["parent_key"]
+			current_species = _species[current_species]["parent_dominant"]
 	
 	return skills
 
@@ -62,8 +78,17 @@ func _species_tree_traits(species_id: StringName) -> Dictionary[StringName, int]
 	if not _species.has(species_id):
 		return traits
 	
+	var hybrid: bool = not _species[species_id]["parent_recessive"].is_empty()
 	traits.assign(_species[species_id]["traits"])
-	var current_species: StringName = _species[species_id]["parent_key"]
+	
+	if hybrid:
+		var recessive_traits: Dictionary[StringName, int] = _species[_species[species_id]["parent_recessive"]]["traits"]
+		for trait_id in recessive_traits.keys():
+			if not traits.has(trait_id):
+				traits[trait_id] = 0
+			traits[trait_id] += roundi(recessive_traits[trait_id] / 2.0)
+	
+	var current_species: StringName = _species[species_id]["parent_dominant"]
 	
 	while current_species != &"" and current_species != species_id:
 		for trait_id in _species[current_species]["traits"].keys():
@@ -71,7 +96,7 @@ func _species_tree_traits(species_id: StringName) -> Dictionary[StringName, int]
 				continue
 			traits[trait_id] = _species[current_species]["traits"][trait_id]
 			
-			current_species = _species[current_species]["parent_key"]
+			current_species = _species[current_species]["parent_dominant"]
 	
 	return traits
 
@@ -88,29 +113,9 @@ func _species_tree_data(species_id: StringName) -> Dictionary[String, Dictionary
 	if not _species.has(species_id):
 		return data
 	
-	stats.assign(_species[species_id]["stats"])
-	skills.assign(_species[species_id]["skills"])
-	traits.assign(_species[species_id]["traits"])
-	
-	var current_species: StringName = _species[species_id]["parent_key"]
-	
-	while current_species != &"" and current_species != species_id:
-		for stat in _species[current_species]["stats"].keys():
-			if stats.has(stat):
-				continue
-			stats[stat] = _species[current_species]["stats"][stat]
-		
-		for skill in _species[current_species]["skills"].keys():
-			if skills.has(skill):
-				continue
-			skills[skill] = _species[current_species]["skills"][skill]
-		
-		for trait_id in _species[current_species]["traits"].keys():
-			if traits.has(trait_id):
-				continue
-			traits[trait_id] = _species[current_species]["traits"][trait_id]
-		
-		current_species = _species[current_species]["parent_key"]
+	stats.assign(_species_tree_stats(species_id))
+	skills.assign(_species_tree_skills(species_id))
+	traits.assign(_species_tree_traits(species_id))
 	
 	return data
 
@@ -148,7 +153,7 @@ func species() -> Array[StringName]:
 
 
 ## Creates a new species with [param species_id] unless it already exists.
-func create_species(species_id: StringName, parent_species: StringName = &"") -> void:
+func create_species(species_id: StringName, parent_species: StringName = &"", recessive_species: StringName = &"") -> void:
 	if _species.has(species_id):
 		return
 	var data: Dictionary[String, Variant] = {}
@@ -160,7 +165,8 @@ func create_species(species_id: StringName, parent_species: StringName = &"") ->
 	data.assign(default_data)
 	
 	var new_species: Dictionary[String, Variant] = {
-		"parent_key": parent_species,
+		"parent_dominant": parent_species,
+		"parent_recessive": recessive_species,
 		"name": "",
 		"description": "",
 		"data": data,
@@ -176,7 +182,7 @@ func create_species(species_id: StringName, parent_species: StringName = &"") ->
 ## [param subspecies_of] will allow you to set [param species_sheet] as a subspecies
 ## as long as [param subspecies_of] exists. If not it'll be set as a "top-level"
 ## species.
-func register_species(species_sheet: SpeciesSheet, subspecies_of: StringName = &"") -> void:
+func register_species(species_sheet: SpeciesSheet, subspecies_of: StringName = &"", recessive_subspecies: StringName = &"") -> void:
 	if _species.has(species_sheet.id):
 		return
 	
@@ -207,7 +213,8 @@ func register_species(species_sheet: SpeciesSheet, subspecies_of: StringName = &
 			traits[trait_id] = int(trait_value)
 	
 	var new_species: Dictionary[String, Variant] = {
-		"parent_key": subspecies_of,
+		"parent_dominant": subspecies_of,
+		"parent_recessive": recessive_subspecies,
 		"name": species_sheet.name,
 		"description": species_sheet.description,
 		"data": species_sheet.custom_data.duplicate(true),
@@ -223,20 +230,33 @@ func register_species(species_sheet: SpeciesSheet, subspecies_of: StringName = &
 func erase_species(species_id: StringName) -> void:
 	if _species.erase(species_id):
 		for remaining_species in _species.keys():
-			if _species[remaining_species]["parent_key"] == species_id:
-				_species[remaining_species]["parent_key"] = &""
+			if _species[remaining_species]["parent_dominant"] == species_id:
+				_species[remaining_species]["parent_dominant"] = &""
+			if _species[remaining_species]["parent_recessive"] == species_id:
+				_species[remaining_species]["parent_recessive"] = &""
 
 
 ## Sets the [param species_id] to be a subspecies of [param parent_species].
-func link_species(species_id: StringName, parent_species: StringName) -> void:
-	if ( parent_species.is_empty() or _species.has(parent_species) ) and _species.has(species_id):
-		_species[species_id]["parent_key"] = parent_species
+func link_species(species_id: StringName, parent_species: StringName, recessive_species: StringName = &"") -> void:
+	if not _species.has_all([species_id, parent_species]):
+		return
+	
+	_species[species_id]["parent_dominant"] = parent_species
+	
+	if not recessive_species.is_empty() and _species.has(recessive_species):
+		_species[species_id]["parent_recessive"] = recessive_species
 
 
 ## Returns the parent species of [param of_species].
-func get_parent_species(of_species: StringName) -> StringName:
-	if _species.has(of_species):
-		return _species[of_species]["parent_key"]
+func get_dominant_species_of(species_id: StringName) -> StringName:
+	if _species.has(species_id):
+		return _species[species_id]["parent_dominant"]
+	return &""
+
+
+func get_recessive_species_of(species_id: StringName) -> StringName:
+	if _species.has(species_id):
+		return _species[species_id]["parent_recessive"]
 	return &""
 
 
@@ -505,33 +525,3 @@ func clear_species_skills(species_id: StringName) -> void:
 func clear_species_traits(species_id: StringName) -> void:
 	if _species.has(species_id):
 		_species[species_id]["traits"].clear()
-
-
-## Returns a dictionary representing the species tree structure.
-func get_species_map() -> Dictionary[StringName, Dictionary]:
-	var map: Dictionary[StringName, Dictionary] = {}
-	var parent_species: Array[StringName] = []
-	
-	for species_id in _species.keys():
-		if _species[species_id]["parent_key"] == &"":
-			parent_species.append(species_id)
-	
-	for species_id in parent_species:
-		map[species_id] = get_subspecies_of(species_id, species_id)
-	
-	return map
-
-
-## Returns a dictionary with the species tree structure branching from
-## [param species_id].
-func get_subspecies_of(species_id: StringName, _origin: StringName = &"") -> Dictionary[StringName, Dictionary]:
-	var map: Dictionary[StringName, Dictionary] = {}
-	
-	for sub_species in _species.keys():
-		if sub_species == _origin or sub_species == species_id:
-			continue
-		
-		if _species[sub_species]["parent_key"] == species_id:
-			map[sub_species] = get_subspecies_of(sub_species, _origin)
-	
-	return map

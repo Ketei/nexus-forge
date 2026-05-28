@@ -10,6 +10,7 @@ var _species_resource: SpeciesCatalog = null
 var listen_select: bool = true
 var loaded_species: StringName = &""
 var signal_change: bool = false
+var _current_species: Array[StringName] = []
 
 @onready var search_race_ln_edt: LineEdit = $RacesContainer/RacesBasicSplit/RaceTreeContainer/SearchRaceContainer/SearchRaceLnEdt
 @onready var new_race_btn: Button = $RacesContainer/RacesBasicSplit/RaceTreeContainer/SearchRaceContainer/NewRaceBtn
@@ -31,6 +32,15 @@ var signal_change: bool = false
 @onready var edit_skill_set_btn: Button = $RacesContainer/StatTraitSplit/ValuesContainer/SkillVBox/StatLbl/EditSkillSetBtn
 @onready var edit_trait_block_btn: Button = $RacesContainer/StatTraitSplit/TraitsContainer/StatLbl/EditTraitBlockBtn
 
+@onready var manage_hybrid: Button = $RacesContainer/RacesBasicSplit/BasicDataContainer/ManageHybrid
+@onready var hybridization_panel: PanelContainer = $HybridizationPanel
+@onready var dom_opt_btn: OptionButton = $HybridizationPanel/CenterContainer/MainPanel/ItemVBox/DominantSpecies/DomOptBtn
+@onready var sub_opt_btn: OptionButton = $HybridizationPanel/CenterContainer/MainPanel/ItemVBox/RecessiveSpecies/SubOptBtn
+@onready var cancel_hybrid: Button = $HybridizationPanel/CenterContainer/MainPanel/ItemVBox/ButtonBox/CancelHybrid
+@onready var commit_hybrid: Button = $HybridizationPanel/CenterContainer/MainPanel/ItemVBox/ButtonBox/CommitHybrid
+@onready var hybrid_info_container: HBoxContainer = $RacesContainer/RacesBasicSplit/BasicDataContainer/HybridInfoContainer
+@onready var hybrid_a: Label = $RacesContainer/RacesBasicSplit/BasicDataContainer/HybridInfoContainer/HybridA
+@onready var hybrid_b: Label = $RacesContainer/RacesBasicSplit/BasicDataContainer/HybridInfoContainer/HybridB
 
 
 func ready_plugin() -> void:
@@ -48,6 +58,10 @@ func ready_plugin() -> void:
 	edit_skill_set_btn.icon = get_theme_icon("Edit", "EditorIcons")
 	edit_trait_block_btn.icon = get_theme_icon("Edit", "EditorIcons")
 	
+	manage_hybrid.pressed.connect(_on_hybridize_pressed)
+	commit_hybrid.pressed.connect(_on_hybridize_confirmed)
+	cancel_hybrid.pressed.connect(_on_hybridize_cancelled)
+	
 	search_race_ln_edt.text_changed.connect(_on_search_species_text_changed)
 	new_race_btn.pressed.connect(_on_create_species_pressed)
 	
@@ -55,6 +69,8 @@ func ready_plugin() -> void:
 	races_tree.species_selected.connect(_on_species_selected, CONNECT_DEFERRED)
 	races_tree.species_erased.connect(_on_species_erased, CONNECT_DEFERRED)
 	races_tree.species_id_changed.connect(_on_species_id_changed, CONNECT_DEFERRED)
+	races_tree.something_changed.connect(_on_something_changed)
+	races_tree.species_dehibridized.connect(_on_species_dehibridized)
 	race_name_ln_edt.text_changed.connect(_on_something_changed)
 	race_desc_txt_edt.text_changed.connect(_on_something_changed)
 	
@@ -68,6 +84,8 @@ func ready_plugin() -> void:
 	edit_stat_block_btn.pressed.connect(_on_edit_statblock_pressed)
 	edit_skill_set_btn.pressed.connect(_on_edit_skillset_pressed)
 	edit_trait_block_btn.pressed.connect(_on_edit_traitblock_pressed)
+	
+	dom_opt_btn.item_selected.connect(_on_dominant_gene_selected)
 
 
 func _on_edit_statblock_pressed() -> void:
@@ -86,6 +104,97 @@ func _on_edit_traitblock_pressed() -> void:
 	EditorInterface.edit_script(TraitBlock.new().get_script())
 	if not EditorInterface.get_editor_settings().get_setting("text_editor/external/use_external_editor"):
 		EditorInterface.set_main_screen_editor("Script")
+
+
+func _on_hybridize_pressed() -> void:
+	hybridization_panel.visible = true
+	
+	dom_opt_btn.clear()
+	sub_opt_btn.clear()
+	_current_species.clear()
+	
+	sub_opt_btn.add_item("- None -")
+	sub_opt_btn.set_item_metadata(0, &"")
+	
+	var species: Array[String] = races_tree.get_all_species()
+	species.sort()
+	
+	var parent_species: StringName = races_tree.get_parent_species_of(loaded_species)
+	
+	for id in species:
+		var strn_id: StringName = StringName(id)
+		_current_species.append(strn_id)
+		if strn_id == loaded_species:
+			continue
+		dom_opt_btn.add_item(id)
+		dom_opt_btn.set_item_metadata(-1, strn_id)
+	
+	for idx in range(dom_opt_btn.item_count):
+		if dom_opt_btn.get_item_metadata(idx) == parent_species:
+			dom_opt_btn.select(idx)
+			break
+	
+	var dom_metadata: StringName = dom_opt_btn.get_selected_metadata()
+	
+	for id in _current_species:
+		if id == loaded_species or id == dom_metadata:
+			continue
+		sub_opt_btn.add_item(String(id))
+		sub_opt_btn.set_item_metadata(-1, id)
+	
+	sub_opt_btn.grab_focus()
+
+
+func _on_dominant_gene_selected(idx: int) -> void:
+	var dom_gene: StringName = dom_opt_btn.get_item_metadata(idx)
+	var sub_selected: StringName = sub_opt_btn.get_selected_metadata()
+	var new_idx: int = 0
+	sub_opt_btn.clear()
+	
+	sub_opt_btn.add_item("- None -")
+	sub_opt_btn.set_item_metadata(0, &"")
+	
+	var index: int = 0
+	for item in _current_species:
+		if item == loaded_species or item == dom_gene:
+			continue
+		index += 1
+		sub_opt_btn.add_item(String(item))
+		sub_opt_btn.set_item_metadata(index, item)
+		if item == sub_selected:
+			new_idx = index
+	
+	if sub_selected != dom_gene:
+		sub_opt_btn.select(new_idx)
+	else:
+		sub_opt_btn.select(0)
+
+
+func _on_hybridize_confirmed() -> void:
+	hybridization_panel.visible = false
+	
+	if sub_opt_btn.get_selected_metadata().is_empty():
+		if races_tree.is_species_hybrid(loaded_species):
+			var species_id: StringName = dom_opt_btn.get_selected_metadata()
+			races_tree.set_species_as_subspecies_of(
+					loaded_species,
+					dom_opt_btn.get_selected_metadata())
+			hybrid_info_container.visible = false
+		return
+	
+	races_tree.hybridize_species(loaded_species, StringName(dom_opt_btn.get_selected_metadata()), StringName(sub_opt_btn.get_selected_metadata()))
+	hybrid_a.text = dom_opt_btn.get_selected_metadata()
+	hybrid_b.text = sub_opt_btn.get_selected_metadata()
+	hybrid_info_container.visible = true
+
+
+func _on_hybridize_cancelled() -> void:
+	hybridization_panel.visible = false
+
+
+func _on_species_dehibridized(species_id: StringName) -> void:
+	if species_id == loaded_species and hybrid_info_container.visible:
+		hybrid_info_container.visible = false
 
 
 func reload_resource(first_load: bool = false) -> void:
@@ -218,6 +327,7 @@ func _on_species_erased(species: Array[StringName]) -> void:
 		set_ui_enabled(false)
 		default_talents()
 		loaded_species = &""
+	manage_hybrid.disabled = _species_resource._species.size() <= 1
 	_on_something_changed()
 	_on_race_display_changed()
 
@@ -249,6 +359,7 @@ func _on_species_selected(species_id: StringName) -> void:
 		save_current_species()
 	
 	load_species(species_id)
+	manage_hybrid.disabled = _species_resource._species.size() <= 1
 	loaded_species = species_id
 	set_ui_enabled(true)
 
@@ -349,22 +460,59 @@ func load_species_resource() -> void:
 	race_desc_txt_edt.text = ""
 	race_data_tree.clear_data()
 	default_talents()
-	var species_tree: Dictionary[StringName, Dictionary] = _species_resource.get_species_map()
+	var top_species: Array[StringName] = []
+	var subspecies: Dictionary[StringName, Array] = {}
+	var hybrid_species: Array[Dictionary] = []
+	
+	for species_key in _species_resource._species.keys():
+		if _species_resource._species[species_key]["parent_dominant"].is_empty():
+			top_species.append(species_key)
+		else:
+		#elif _species_resource[species_key]["parent_recessive"].is_empty():
+			if not subspecies.has(_species_resource._species[species_key]["parent_dominant"]):
+				subspecies[_species_resource._species[species_key]["parent_dominant"]] = []
+			subspecies[_species_resource._species[species_key]["parent_dominant"]].append(species_key)
+		
+		if not _species_resource._species[species_key]["parent_recessive"].is_empty():
+			hybrid_species.append({
+				"dom": _species_resource._species[species_key]["parent_dominant"],
+				"sub": _species_resource._species[species_key]["parent_recessive"],
+				"hybrid": species_key})
+			
 	races_tree.clear_species()
-	buid_species_map(species_tree)
+	
+	for id in top_species:
+		races_tree.create_species(id)
+		if subspecies.has(id):
+			for sub_id in subspecies[id]:
+				_build_branch(sub_id, id, subspecies)
+	
+	for hybrid_data in hybrid_species:
+		races_tree.hybridize_species(
+				hybrid_data["hybrid"],
+				hybrid_data["dom"],
+				hybrid_data["sub"])
+	
 	species_loaded.emit()
 
-
-func buid_species_map(map: Dictionary, _on: TreeItem = races_tree.get_root()) -> void:
-	for top_species in map.keys():
-		var parent_species: TreeItem = races_tree.add_species(top_species, false, _on)
-		buid_species_map(map[top_species], parent_species)
+func _build_branch(species: StringName, parent_of: StringName, subspecies_list: Dictionary[StringName, Array]) -> void:
+	races_tree.create_species(species, parent_of)
+	if subspecies_list.has(species):
+		for sub_id in subspecies_list[species]:
+			_build_branch(sub_id, species, subspecies_list)
 
 
 func load_species(species_id: StringName) -> void:
 	race_name_ln_edt.text = _species_resource.get_species_name(species_id)
 	race_desc_txt_edt.text = _species_resource.get_species_description(species_id)
 	race_data_tree.clear_data()
+	
+	if races_tree.is_species_hybrid(species_id):
+		hybrid_info_container.visible = true
+		hybrid_a.text = races_tree.get_dominant_gene(species_id)
+		hybrid_b.text = races_tree.get_recessive_gene(species_id)
+	else:
+		hybrid_info_container.visible = false
 	
 	for data_key in _species_resource.species_data_keys(species_id):
 		race_data_tree.add_data(data_key, _species_resource.get_species_data(species_id, data_key))
@@ -613,18 +761,16 @@ func save() -> void:
 		return
 	if not loaded_species.is_empty():
 		save_current_species()
-	var species_data: Dictionary = races_tree.get_species_tree()
+	var species_data: Array[Dictionary] = races_tree.get_species_map()
+	var top_species: Array[StringName] = []
+	var sub_species: Array[Dictionary] = []
 	
 	# We clear the top species link, as they are a subspecies of nothing.
-	for top_species in species_data.keys():
-		_species_resource.link_species(top_species, &"")
-	
-	_set_species_tree(species_data)
+	for species in species_data:
+		var id: StringName = species["species_id"]
+		var dom: StringName = species["dominant_species"]
+		var sub: StringName = species["recessive_species"]
+		
+		_species_resource.link_species(id, dom, sub)
+		
 	ResourceSaver.save(_species_resource)
-
-
-func _set_species_tree(tree: Dictionary) -> void:
-	for parent_species in tree.keys():
-		for subspecies in tree[parent_species]:
-			_species_resource.link_species(subspecies, parent_species)
-			_set_species_tree(tree[parent_species])

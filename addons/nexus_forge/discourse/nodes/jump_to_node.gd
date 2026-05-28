@@ -75,7 +75,7 @@ func _ready() -> void:
 	graph_icon = preload("res://addons/nexus_forge/icons/dialog_exit.svg")
 	set_slot_custom_icon_left(0, flow_icon)
 	set_slot_color_left(0, COLORS["dialog"])
-	get_mapped_field(&"fields", &"button").icon = preload("res://addons/nexus_forge/icons/go_to_icon.svg")
+	get_mapped_field(&"fields", &"button").icon = get_theme_icon("ExternalLink", "EditorIcons")
 
 
 func _get_node_data() -> Dictionary:

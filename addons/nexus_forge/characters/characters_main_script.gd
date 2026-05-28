@@ -209,7 +209,7 @@ func update_species_data(species_catalog: SpeciesCatalog = null) -> void:
 					new_index = species.find(currently_selected)
 				for species_id in species:
 					var text: String = String(species_id).capitalize()
-					var parent: String = String(pre_res.get_parent_species(species_id))
+					var parent: String = String(pre_res._species[species_id]["parent_dominant"])
 					if parent != "":
 						text += " (" + parent + ")"
 					species_option_button.add_item(text)
@@ -221,7 +221,7 @@ func update_species_data(species_catalog: SpeciesCatalog = null) -> void:
 			new_index = species.find(currently_selected)
 		for species_id in species:
 			var text: String = String(species_id).capitalize()
-			var parent: String = String(species_catalog.get_parent_species(species_id))
+			var parent: String = String(species_catalog._species[species_id]["parent_dominant"])
 			if parent != "":
 				text += " (" + parent + ")"
 			species_option_button.add_item(text)

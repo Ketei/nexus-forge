@@ -15,6 +15,23 @@ content_margin_top = 8.0
 content_margin_right = 6.0
 content_margin_bottom = 6.0
 
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_dyume"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dyume"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.15487596, 0.154876, 0.15487587, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
 [node name="Species" type="PanelContainer" unique_id=1802372984]
 anchors_preset = 15
 anchor_right = 1.0
@@ -63,11 +80,16 @@ tooltip_text = "Create Species"
 icon = ExtResource("2_4lijr")
 flat = true
 icon_alignment = 1
-expand_icon = true
 
 [node name="RacesTree" type="Tree" parent="RacesContainer/RacesBasicSplit/RaceTreeContainer" unique_id=418501273]
 layout_mode = 2
 size_flags_vertical = 3
+theme_override_constants/inner_item_margin_left = 4
+theme_override_constants/draw_guides = 0
+theme_override_constants/draw_relationship_lines = 1
+theme_override_constants/relationship_line_width = 1
+theme_override_constants/parent_hl_line_width = 2
+theme_override_constants/children_hl_line_width = 2
 allow_reselect = true
 allow_rmb_select = true
 hide_root = true
@@ -197,6 +219,35 @@ script = ExtResource("7_aexp2")
 allow_drag_and_drop = true
 compact_mode = true
 
+[node name="HybridInfoContainer" type="HBoxContainer" parent="RacesContainer/RacesBasicSplit/BasicDataContainer" unique_id=437152497]
+visible = false
+layout_mode = 2
+
+[node name="HybridLbl" type="Label" parent="RacesContainer/RacesBasicSplit/BasicDataContainer/HybridInfoContainer" unique_id=31755318]
+layout_mode = 2
+text = "Hybrid:"
+
+[node name="HybridA" type="Label" parent="RacesContainer/RacesBasicSplit/BasicDataContainer/HybridInfoContainer" unique_id=161201459]
+layout_mode = 2
+size_flags_horizontal = 3
+horizontal_alignment = 1
+text_overrun_behavior = 3
+
+[node name="VSeparator" type="VSeparator" parent="RacesContainer/RacesBasicSplit/BasicDataContainer/HybridInfoContainer" unique_id=598515680]
+layout_mode = 2
+
+[node name="HybridB" type="Label" parent="RacesContainer/RacesBasicSplit/BasicDataContainer/HybridInfoContainer" unique_id=215868111]
+layout_mode = 2
+size_flags_horizontal = 3
+horizontal_alignment = 1
+text_overrun_behavior = 3
+
+[node name="ManageHybrid" type="Button" parent="RacesContainer/RacesBasicSplit/BasicDataContainer" unique_id=1142070237]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+disabled = true
+text = "Hybridize"
+
 [node name="StatTraitSplit" type="HSplitContainer" parent="RacesContainer" unique_id=1192178565]
 layout_mode = 2
 size_flags_stretch_ratio = 3.0
@@ -323,3 +374,59 @@ horizontal_scroll_mode = 0
 [node name="RaceTraitsContainer" type="VBoxContainer" parent="RacesContainer/StatTraitSplit/TraitsContainer/ScrollContainer" unique_id=1680876144]
 layout_mode = 2
 size_flags_horizontal = 3
+
+[node name="HybridizationPanel" type="PanelContainer" parent="." unique_id=254687749]
+visible = false
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxEmpty_dyume")
+
+[node name="CenterContainer" type="CenterContainer" parent="HybridizationPanel" unique_id=1031896567]
+layout_mode = 2
+
+[node name="MainPanel" type="PanelContainer" parent="HybridizationPanel/CenterContainer" unique_id=1385029975]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_dyume")
+
+[node name="ItemVBox" type="VBoxContainer" parent="HybridizationPanel/CenterContainer/MainPanel" unique_id=1848521287]
+layout_mode = 2
+
+[node name="DominantSpecies" type="HBoxContainer" parent="HybridizationPanel/CenterContainer/MainPanel/ItemVBox" unique_id=876218828]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="HybridizationPanel/CenterContainer/MainPanel/ItemVBox/DominantSpecies" unique_id=358343521]
+custom_minimum_size = Vector2(85, 0)
+layout_mode = 2
+text = "Dominant:"
+
+[node name="DomOptBtn" type="OptionButton" parent="HybridizationPanel/CenterContainer/MainPanel/ItemVBox/DominantSpecies" unique_id=979875395]
+custom_minimum_size = Vector2(200, 32)
+layout_mode = 2
+fit_to_longest_item = false
+
+[node name="RecessiveSpecies" type="HBoxContainer" parent="HybridizationPanel/CenterContainer/MainPanel/ItemVBox" unique_id=1695339088]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="HybridizationPanel/CenterContainer/MainPanel/ItemVBox/RecessiveSpecies" unique_id=648736434]
+custom_minimum_size = Vector2(85, 0)
+layout_mode = 2
+text = "Recessive:"
+
+[node name="SubOptBtn" type="OptionButton" parent="HybridizationPanel/CenterContainer/MainPanel/ItemVBox/RecessiveSpecies" unique_id=1680558290]
+custom_minimum_size = Vector2(200, 32)
+layout_mode = 2
+fit_to_longest_item = false
+
+[node name="ButtonBox" type="HBoxContainer" parent="HybridizationPanel/CenterContainer/MainPanel/ItemVBox" unique_id=737449048]
+layout_mode = 2
+
+[node name="CancelHybrid" type="Button" parent="HybridizationPanel/CenterContainer/MainPanel/ItemVBox/ButtonBox" unique_id=1018104148]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Cancel"
+
+[node name="CommitHybrid" type="Button" parent="HybridizationPanel/CenterContainer/MainPanel/ItemVBox/ButtonBox" unique_id=2119117287]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Apply"
