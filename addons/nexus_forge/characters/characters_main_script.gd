@@ -71,9 +71,9 @@ func ready_plugin() -> void:
 	add_char_string_button.pressed.connect(_on_add_data_pressed.bind("new_string", ""))
 	add_dict_button.pressed.connect(_on_add_data_pressed.bind("new_folder", {}))
 	character_data_tree.data_changed.connect(_something_changed)
-	char_tree.character_selected.connect(_on_character_selected)
+	char_tree.character_selected.connect(_on_character_selected, CONNECT_DEFERRED)
 	load_species_data_btn.pressed.connect(_on_import_species_data_pressed)
-	char_tree.character_closed.connect(_on_close_character_pressed)
+	char_tree.character_closed.connect(_on_close_character_pressed, CONNECT_DEFERRED)
 	
 	edit_stat_block_btn.pressed.connect(_on_edit_statblock_pressed)
 	edit_skill_set_btn.pressed.connect(_on_edit_skillset_pressed)

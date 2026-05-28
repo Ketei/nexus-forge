@@ -1305,7 +1305,7 @@ func save_current_dialog_to_memory() -> void:
 	# data to the current selected dropdown locale.
 	discourse_graph_edit.update_conversation_file(active_conversation, current_locale)
 	
-	active_conversation.base_language = languages_tree.get_base_language()
+	#active_conversation.base_language = languages_tree.get_base_language()
 	active_conversation.zoom = discourse_graph_edit.zoom
 	active_conversation.scroll_offset = discourse_graph_edit.scroll_offset
 	active_conversation.node_structure = discourse_nodes_tree.get_folder_structure()
@@ -1313,7 +1313,7 @@ func save_current_dialog_to_memory() -> void:
 
 
 func _on_conversation_selected(dialog: EditorDiscourseDialog) -> void:
-	if not _conversation_options_disabled:
+	if _conversation_options_disabled:
 		set_graph_edit_visible(true)
 		set_conversation_options_enabled(true)
 		discourse_nodes_tree.get_root().collapsed = false

@@ -102,6 +102,10 @@ Features that are planned to be implemented in the future:
   - [ ] Blueprints (Recipes)
   - [ ] Odyssey (Quests)
   - [ ] Phrase Maps
+- [ ] **Editor:** Enum editor without having to open the script file
+  - [ ] Character's Gender
+  - [ ] Item's Rarity
+  - [ ] Quest's Type
 - [ ] **Core:** Implement an automatic [mod loader](#modding)
 - [ ] **Discourse:** Import/Export CSV files for localization
 - [ ] **Github Wiki:** Rewrite the Wiki and include examples using screenshots/gifs

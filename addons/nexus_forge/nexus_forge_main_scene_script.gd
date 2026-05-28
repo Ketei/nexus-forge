@@ -131,6 +131,8 @@ func _on_import_species_data_pressed() -> void:
 	if species == null or characters == null:
 		return
 	if species._species_resource != null:
+		if not species.loaded_species.is_empty():
+			species.save_current_species()
 		characters.import_species_data(species._species_resource)
 
 

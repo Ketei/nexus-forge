@@ -187,29 +187,21 @@ func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
 	var grabbed_id: StringName = data["node"].get_metadata(0)["id"]
 	var is_grabbed_pointer: bool = data["node"].get_metadata(0)["is_pointer"]
 	var target_id: StringName = target_node.get_metadata(0)["id"]
-	var target_pointer: bool = target_node.get_metadata(0)["is_pointer"]
+	var is_target_pointer: bool = target_node.get_metadata(0)["is_pointer"]
 	
-	return not species_has_subspecies(target_id, grabbed_id) and can_link_species(grabbed_id, target_id) and not target_pointer and target_node != data["node"] and not _has_parent(target_node, data["node"])
-
-
-func _has_parent(item: TreeItem, to: TreeItem) -> bool:
-	if item == null or to == null:
-		return false
-	
-	var current_item: TreeItem = item
-	while current_item.get_parent() != null:
-		if current_item == to:
-			return true
-		current_item = current_item.get_parent()
-	return false
+	return not species_has_subspecies(target_id, grabbed_id) and can_link_species(grabbed_id, target_id) and not is_target_pointer and target_node != data["node"] and not species_has_ancestor(target_id, grabbed_id)
 
 
 func _drop_data(at_position: Vector2, data: Variant) -> void:
 	if get_drop_section_at_position(at_position) == -100:
+		if data["node"].get_parent() == get_root():
+			return
 		data["node"].get_parent().remove_child(data["node"])
 		get_root().add_child(data["node"])
 	else:
 		var on_node: TreeItem = get_item_at_position(at_position)
+		if data["node"].get_parent() == on_node:
+			return
 		data["node"].get_parent().remove_child(data["node"])
 		on_node.add_child(data["node"])
 	sort_single_item(data["node"])
@@ -312,6 +304,22 @@ func _on_button_clicked(item: TreeItem, _column: int, id: int, mouse_button_inde
 
 func is_species_hybrid(species_id: StringName) -> bool:
 	return _hybrid_pointers.has(species_id)
+
+
+func species_has_ancestor(species: StringName, ancestor: StringName) -> bool:
+	if not _species_trees.has_all([species, ancestor]):
+		return false
+	elif species == ancestor:
+		return true
+	
+	var current: TreeItem = _species_trees[species].get_parent()
+	var root: TreeItem = get_root()
+	while current != root and current != null:
+		if current.get_metadata(0)["id"] == ancestor:
+			return true
+		current = current.get_parent()
+	
+	return false
 
 
 func can_link_species(which: StringName, to: StringName) -> bool:
