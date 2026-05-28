@@ -14,7 +14,7 @@ signal method_called(method_string: String, arguments: Array)
 signal signal_emmited(signal_name: String, arguments: Array)
 
 
-func load_dialog(path: String, starting_id: String = "") -> bool:
+func load_dialog(path: String, starting_id: StringName = &"") -> bool:
 	if _conversation_cache.is_in_cache(path):
 		_dialog_resource = _conversation_cache.get_resource(path)
 		return true
@@ -44,11 +44,7 @@ func set_dialog_id(id: StringName) -> void:
 	if _dialog_resource.node_data.has(id):
 		_next_uuid = id
 	else:
-		var uid_from_id: StringName = get_uuid_from_id(id)
-		if uid_from_id.is_empty():
-			_next_uuid = _dialog_resource.entry_node
-		else:
-			_next_uuid = uid_from_id
+		_next_uuid = get_uuid_from_id(id)
 
 
 func get_uuid_from_id(id: StringName) -> StringName:
@@ -58,9 +54,9 @@ func get_uuid_from_id(id: StringName) -> StringName:
 	return &""
 
 
-func _process_logic(uuid: StringName) -> String:
+func _process_logic(uuid: StringName) -> StringName:
 	if uuid.is_empty():
-		return ""
+		return &""
 	
 	var data: Dictionary = _dialog_resource.get_node_data(uuid, locale)
 	var metadata: Dictionary = data["metadata"]
@@ -250,7 +246,7 @@ func _process_logic(uuid: StringName) -> String:
 				total_weight += weight
 			
 			if choices.is_empty():
-				return ""
+				return &""
 			
 			choices.sort_custom(func(a, b): return a["weight"] > b["weight"])
 			var random_select: int = randi_range(1, total_weight)
@@ -266,11 +262,11 @@ func _process_logic(uuid: StringName) -> String:
 		NodeTypes.ANCHOR:
 			return _process_logic(data["output_connections"]["next_node"]["target_node_uuid"])
 		NodeTypes.DIALOG_END:
-			return ""
+			return &""
 		NodeTypes.DIALOG_MERGE:
 			return _process_logic(data["output_connections"]["next_node"]["target_node_uuid"])
 		_:
-			return ""
+			return &""
 
 
 func _get_data(from_uuid: StringName, fallback = null) -> Variant:
