@@ -1252,7 +1252,7 @@ func _on_get_issues_pressed() -> void:
 		discourse_split_container.dragger_visibility = SplitContainer.DRAGGER_VISIBLE
 	
 	if issues.is_empty():
-		issues_tree.add_issue("No issue found", null)
+		issues_tree.add_issue("No issue found", &"")
 		return
 	
 	for issue in issues:

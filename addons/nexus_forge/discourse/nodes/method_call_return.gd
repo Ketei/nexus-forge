@@ -67,13 +67,18 @@ func _ready() -> void:
 func _get_issues() -> PackedStringArray:
 	var issues: PackedStringArray = []
 	if is_orphan():
-		issues.append("Warning: Node is orphan.")
+		issues.append("WARNING: Node is orphan.")
 	if available_methods.is_empty() and has_any_output(0):
-		issues.append("Warning: Method is connected but no Method is available.")
+		issues.append("WARNING: Method is connected but no Method is available.")
 	var method: String = get_current_method()
+	var skipped_previous: bool = false
 	for arg_idx in range(0, get_child_count() - 1):
-		if not has_any_input(arg_idx) and not has_default_arg(method, arg_idx):
-			issues.append("Error: Missing method argument " + str(arg_idx) + ".")
+		var has_input: bool = has_any_input(arg_idx)
+		if not has_input and not has_default_arg(method, arg_idx):
+			issues.append("ERROR: Missing method argument " + str(arg_idx) + ".")
+		if has_input:
+			if skipped_previous:
+				issues.append("ERROR: Passed an argument on index " + str(arg_idx) +" but previous indexes don't have a value.")
 	return issues
 
 
@@ -125,7 +130,6 @@ func _on_method_selected(idx: int) -> void:
 
 
 func reload_methods() -> void:
-	print("Reload")
 	available_methods = get_user_methods()
 	var opt_btn: OptionButton = get_field(&"methods")
 	var selected_method: String = opt_btn.get_selected_metadata() if opt_btn.selected != -1 else ""
@@ -283,7 +287,6 @@ func reload_methods() -> void:
 	
 	if emit_updated:
 		node_updated.emit()
-	print("+++++")
 
 
 func load_method(method_id: String) -> void:

@@ -24,7 +24,7 @@ const NodeType := DialogParser.NodeTypes
 const LOCALE_STORE_MAX: int = 3
 
 ## The UUID of the entry node.
-@export_storage var entry_node: StringName = ""
+@export_storage var entry_node: StringName = &""
 
 # Generated on export
 @export_storage var node_logic: Dictionary[StringName, Dictionary] = {

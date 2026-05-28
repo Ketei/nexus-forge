@@ -68,7 +68,7 @@ var _dialog_resource: DiscourseDialog = null:
 		_dialog_resource = d
 		_dialog_resource_set(d)
 var _conversation_started: bool = false
-var _next_uuid: String = ""
+var _next_uuid: StringName = &""
 var _conversation_cache: ResourceCache = null
 var _parser_cache: Cache = null
 
@@ -387,12 +387,12 @@ func _can_compare(a, b) -> bool:
 
 #region Override
 ## Returns the UUID of the next dialog.
-func _process_logic(uuid: StringName) -> String:
+func _process_logic(uuid: StringName) -> StringName:
 	if uuid.is_empty():
-		return ""
+		return &""
 	
 	var dialog_id: String = _path_to_id[_dialog_resource.resource_path]
-	var data: Dictionary = _dialog_resource.dialog_nodes[uuid]
+	var data: Dictionary = _dialog_resource.node_logic[uuid]
 	match data["node_type"]:
 		NodeTypes.ENTRY:
 			return _process_logic(data["next_node"])
@@ -745,7 +745,7 @@ func is_dialog_active() -> bool:
 ## Loads a dialog and sets the dialog ID to the start of the conversation
 ## unless a valid [param starting_id] is given.[br]
 ## Returns [code]true[/code] if the dialog was loaded.
-func load_dialog(path: String, starting_id: String = "") -> bool:
+func load_dialog(path: String, starting_id: StringName = &"") -> bool:
 	var target_path: String = _logic_overrides[path] if _logic_overrides.has(path) else path
 	
 	if _conversation_cache.is_in_cache(target_path):
@@ -766,7 +766,7 @@ func load_dialog(path: String, starting_id: String = "") -> bool:
 		var id: String = DictUtils.get_nested_value(_path_to_id, [path], "")
 		
 		if res == null or res is not DiscourseDialog:
-			_next_uuid = ""
+			_next_uuid = &""
 			_dialog_resource = null
 			return false
 			
@@ -787,16 +787,16 @@ func load_dialog(path: String, starting_id: String = "") -> bool:
 
 ## Sets the dialog to be at a specific point. [param id] can be the dialog
 ## id or the UUID. If invalid it'll set the dialog to be at the beggining.
-func set_dialog_id(id: String) -> void:
+func set_dialog_id(id: StringName) -> void:
 	if _dialog_resource == null:
 		return
 	
 	if _dialog_resource.id_map.has(id):
 		_next_uuid = _dialog_resource.id_map[id]
-	elif _dialog_resource.dialog_nodes.has(id):
+	elif _dialog_resource.node_logic.has(id):
 		_next_uuid = id
 	else:
-		_next_uuid = _dialog_resource.entry_node
+		_next_uuid = &""
 
 
 ## Progresses the conversation

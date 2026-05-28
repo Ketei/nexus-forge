@@ -454,6 +454,12 @@ func convert_for_release() -> DiscourseDialog:
 	var available_signals: Dictionary = preload("res://addons/nexus_forge/discourse/nodes/signal_node.gd").get_user_signals()
 	
 	var release_dialog: DiscourseDialog = DiscourseDialog.new()
+	var api: DiscourseAPI = DiscourseAPI.new()
+	var api_methods: Dictionary[StringName, Dictionary] = {} 
+	
+	for method in api.get_method_list():
+		api_methods[StringName(method["name"])] = method
+	
 	release_dialog.entry_node = entry_node
 	
 	var new_id_map: Dictionary[StringName, StringName] = {}
@@ -667,16 +673,58 @@ func convert_for_release() -> DiscourseDialog:
 				data["signal"] = StringName(metadata["signal"])
 				data["arguments"] = arguments
 			NodeType.CALLABLE:
+				var method_id: StringName = StringName(metadata["method"])
+				var default_args_size: int = 0
+				
+				if not api_methods.has(method_id):
+					push_error(
+							"[DISCOURSE] Callable node ", data["name"], " on file ", resource_path, " calls for inexisting method: ", method_id)
+				else:
+					default_args_size = api_methods[method_id]["default_args"].size()
+				
 				var arguments: Array[StringName] = []
+				var arg_idx: int = -1
+				var skipped_previous: bool = false
 				for argument:Dictionary in metadata["arguments"]:
+					arg_idx += 1
 					arguments.append(StringName(argument["target_node_uuid"]))
-				data["method"] = StringName(metadata["method"])
+					if not argument["target_node_uuid"].is_empty():
+						if skipped_previous:
+							push_error(
+								"[DISCOURSE] Callable node ", data["name"], " on file ", resource_path, " passed an argument on index ", arg_idx, " but a previous index doesn't have a value.")
+					else:
+						skipped_previous = true
+						if default_args_size <= arg_idx:
+							push_error(
+								"[DISCOURSE] Callable node ", data["name"], " on file ", resource_path, " is missing a required argument value on index ", arg_idx)
+				data["method"] = method_id
 				data["arguments"] = arguments
 			NodeType.CALLABLE_RETURN:
+				var method_id: StringName = StringName(metadata["method"])
+				var default_args_size: int = 0
+				
+				if not api_methods.has(method_id):
+					push_error(
+							"[DISCOURSE] Callable node ", data["name"], " on file ", resource_path, " calls for inexisting method: ", method_id)
+				else:
+					default_args_size = api_methods[method_id]["default_args"].size()
+				
 				var arguments: Array[StringName] = []
+				var arg_idx: int = -1
+				var skipped_previous: bool = false
 				for argument:Dictionary in metadata["arguments"]:
+					arg_idx += 1
 					arguments.append(StringName(argument["target_node_uuid"]))
-				data["method"] = StringName(metadata["method"])
+					if not argument["target_node_uuid"].is_empty():
+						if skipped_previous:
+							push_error(
+								"[DISCOURSE] Callable node ", data["name"], " on file ", resource_path, " passed an argument on index ", arg_idx, " but a previous index doesn't have a value.")
+					else:
+						skipped_previous = true
+						if default_args_size <= arg_idx:
+							push_error(
+								"[DISCOURSE] Callable node ", data["name"], " on file ", resource_path, " is missing a required argument value on index ", arg_idx)
+				data["method"] = method_id
 				data["arguments"] = arguments
 			NodeType.VARIABLE_GET:
 				var path: StringName = &""

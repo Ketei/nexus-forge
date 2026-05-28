@@ -37,6 +37,27 @@ func load_dialog(path: String, starting_id: String = "") -> bool:
 	return true
 
 
+func set_dialog_id(id: StringName) -> void:
+	if _dialog_resource == null:
+		return
+	
+	if _dialog_resource.node_data.has(id):
+		_next_uuid = id
+	else:
+		var uid_from_id: StringName = get_uuid_from_id(id)
+		if uid_from_id.is_empty():
+			_next_uuid = _dialog_resource.entry_node
+		else:
+			_next_uuid = uid_from_id
+
+
+func get_uuid_from_id(id: StringName) -> StringName:
+	for entry in _dialog_resource.node_data.keys():
+		if _dialog_resource.node_data[entry]["name"] == id:
+			return entry
+	return &""
+
+
 func _process_logic(uuid: StringName) -> String:
 	if uuid.is_empty():
 		return ""
@@ -182,6 +203,8 @@ func _process_logic(uuid: StringName) -> String:
 				var call_args: Array = []
 				
 				for arg_connection in call_metadata["arguments"]:
+					if arg_connection["target_node_uuid"].is_empty():
+						continue
 					call_args.append(
 							_get_data(arg_connection["target_node_uuid"]))
 				

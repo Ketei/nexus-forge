@@ -70,13 +70,20 @@ func _ready() -> void:
 func _get_issues() -> PackedStringArray:
 	var issues: PackedStringArray = []
 	if is_orphan():
-		issues.append("Warning: Node is orphan.")
+		issues.append("WARNING: Node is orphan.")
 	if available_methods.is_empty() and has_any_output(0):
-		issues.append("Warning: Method is connected but no Method is available.")
+		issues.append("WARNING: Method is connected but no Method is available.")
 	var method: String = get_current_method()
+	var skipped_previous: bool = false
 	for arg_idx in range(0, get_child_count() - 1):
-		if not has_any_input(arg_idx) and not has_default_arg(method, arg_idx):
-			issues.append("Error: Missing method argument " + str(arg_idx) + ".")
+		var has_input: bool = has_any_input(arg_idx)
+		if has_input:
+			if skipped_previous:
+				issues.append("ERROR: Passed an argument on index " + str(arg_idx) +" but previous indexes don't have a value.")
+		else:
+			skipped_previous = true
+		if not has_input and not has_default_arg(method, arg_idx):
+			issues.append("ERROR: Missing method argument " + str(arg_idx) + ".")
 	return issues
 
 
@@ -326,7 +333,6 @@ static func get_user_methods() -> Dictionary:
 	var singleton: DiscourseAPI = DiscourseAPI.new()
 	#var parser: DialogParser = DialogParser.new_parser()
 	var base_methods: Array = ClassDB.class_get_method_list(&"RefCounted")
-	
 	for method in base_methods:
 		method_blacklsit.append(method["name"])
 	

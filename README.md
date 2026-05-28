@@ -1,7 +1,7 @@
 <div align="center">
   <img alt="Logo" src="/logo.svg" width="300"/>
   <h1 align="center"> Nexus Forge </h1>
-  <p>A headless toolset plugin for Godot</p>
+  <p>A headless modular toolset plugin for Godot</p>
 </div>
 
 <div align="center">
