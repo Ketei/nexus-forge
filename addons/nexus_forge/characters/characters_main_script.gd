@@ -210,8 +210,12 @@ func update_species_data(species_catalog: SpeciesCatalog = null) -> void:
 				for species_id in species:
 					var text: String = String(species_id).capitalize()
 					var parent: String = String(pre_res._species[species_id]["parent_dominant"])
-					if parent != "":
-						text += " (" + parent + ")"
+					var recessive: String = String(pre_res._species[species_id]["parent_recessive"])
+					if not parent.is_empty():
+						text += " (" + parent
+						if not recessive.is_empty():
+							text += " / " + recessive
+						text += ")"
 					species_option_button.add_item(text)
 					species_option_button.set_item_metadata(-1, species_id)
 	else:
