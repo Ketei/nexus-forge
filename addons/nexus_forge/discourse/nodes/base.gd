@@ -150,6 +150,13 @@ func _init(uuid: StringName = &"", theme_variant: StringName = &"", with_duplica
 	close_btn.pressed.connect(close_requested.emit.bind(self))
 	
 	_post_init()
+	
+	if resizable:
+		resize_end.connect(_on_resize_end)
+
+
+func _on_resize_end(_new_size: Vector2) -> void:
+	node_updated.emit()
 
 
 func _ready_localize_icon(localize_btn: Button) -> void:
@@ -794,7 +801,12 @@ func set_field_visible(field_id: StringName, field_visible: bool) -> void:
 	if field_id.is_empty():
 		return
 		
-	var field = get_field(field_id)
+	var field = null
+	
+	for child in get_children():
+		if child.name == field_id:
+			field = child
+			break
 	
 	if field == null:
 		return

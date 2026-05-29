@@ -101,54 +101,54 @@ func _get_default_value_of_type(type_id: int) -> Variant:
 			return null
 
 
-## Returns an array containing all the IDs of the requirements.
+## Returns an array containing all the paths of the requirements.
 func requirements() -> Array[String]:
 	var rq: Array[String] = []
 	rq.assign(_requirements.keys())
 	return rq
 
 
-## Returns the data type of the [param requirement_id]. Returns [code]TYPE_NIL[/code]
-## if [param requirement_id] isn't registered.
-func get_requirement_type(requirement_id) -> int:
-	if not _requirements.has(requirement_id):
+## Returns the data type of the [param requirement_path]. Returns [code]TYPE_NIL[/code]
+## if [param requirement_path] isn't registered.
+func get_requirement_type(requirement_path: String) -> int:
+	if not _requirements.has(requirement_path):
 		return TYPE_NIL
-	return typeof(_requirements[requirement_id]["value"])
+	return typeof(_requirements[requirement_path]["value"])
 
 
-## Returns the value of [param requirement_id] or [code]null[/code] if the requirement
+## Returns the value of [param requirement_path] or [code]null[/code] if the requirement
 ## doesn't exist.
-func get_requirement_value(requirement_id: String) -> Variant:
-	if _requirements.has(requirement_id):
-		return _requirements[requirement_id]["value"]
+func get_requirement_value(requirement_path: String) -> Variant:
+	if _requirements.has(requirement_path):
+		return _requirements[requirement_path]["value"]
 	return null
 
 
-## Returns the operator used when [param requirement_id] is checked for completion.
-func get_requirement_mode(requirement_id: String) -> int:
-	if _requirements.has(requirement_id):
-		return _requirements[requirement_id]["operator"]
+## Returns the operator used when [param requirement_path] is checked for completion.
+func get_requirement_mode(requirement_path: String) -> int:
+	if _requirements.has(requirement_path):
+		return _requirements[requirement_path]["operator"]
 	return OP_MAX
 
 
-## Sets a requirement to complete this objective with [param requirement_id].[br]
+## Sets a requirement to complete this objective with [param requirement_path].[br]
 ## If any progress has been set but the type of [param completion_value] is
 ## different to the one being tracked then the progress will be reset.
-func set_requirement(requirement_id: String, completion_operator: int, completion_value) -> void:
-	_requirements[requirement_id] = {
+func set_requirement(requirement_path: String, completion_operator: int, completion_value) -> void:
+	_requirements[requirement_path] = {
 		"operator": completion_operator,
 		"value": completion_value}
-	if _progress.has(requirement_id) and typeof(_progress[requirement_id]) != get_requirement_type(requirement_id):
-		_progress.erase(requirement_id)
+	if _progress.has(requirement_path) and typeof(_progress[requirement_path]) != get_requirement_type(requirement_path):
+		_progress.erase(requirement_path)
 
 
-## Sets the progress of [param requirement_id] to [param progress_value].[br]
+## Sets the progress of [param requirement_path] to [param progress_value].[br]
 ## [b]Important:[/b] The type of [param progress_value] must match the type of the
 ## requirement otherwise the progress won't be set.
-func set_progress(requirement_id: String, progress_value) -> void:
-	if not _requirements.has(requirement_id) or typeof(_requirements[requirement_id]["value"]) != typeof(progress_value):
+func set_progress(requirement_path: String, progress_value) -> void:
+	if not _requirements.has(requirement_path) or typeof(_requirements[requirement_path]["value"]) != typeof(progress_value):
 		return
-	_progress[requirement_id] = progress_value
+	_progress[requirement_path] = progress_value
 
 
 ## Returns a dicitionary with the progress for all requirements and their current mode.
@@ -192,35 +192,35 @@ func is_objective_complete() -> bool:
 	if _completed:
 		return true
 	
-	for requirement_id in _requirements.keys():
-		if not _progress.has(requirement_id):
+	for requirement_path in _requirements.keys():
+		if not _progress.has(requirement_path):
 			return false
-		match _requirements[requirement_id]["operator"]:
+		match _requirements[requirement_path]["operator"]:
 			OP_EQUAL:
-				if _progress[requirement_id] != _requirements[requirement_id]["value"]:
+				if _progress[requirement_path] != _requirements[requirement_path]["value"]:
 					return false
 			OP_NOT_EQUAL:
-				if _progress[requirement_id] == _requirements[requirement_id]["value"]:
+				if _progress[requirement_path] == _requirements[requirement_path]["value"]:
 					return false
 			OP_LESS:
-				if _requirements[requirement_id]["value"] <= _progress[requirement_id]:
+				if _requirements[requirement_path]["value"] <= _progress[requirement_path]:
 					return false
 			OP_LESS_EQUAL:
-				if _requirements[requirement_id]["value"] < _progress[requirement_id]:
+				if _requirements[requirement_path]["value"] < _progress[requirement_path]:
 					return false
 			OP_GREATER:
-				if _progress[requirement_id] <= _requirements[requirement_id]["value"]:
+				if _progress[requirement_path] <= _requirements[requirement_path]["value"]:
 					return false
 			OP_GREATER_EQUAL:
-				if _progress[requirement_id] < _requirements[requirement_id]["value"]:
+				if _progress[requirement_path] < _requirements[requirement_path]["value"]:
 					return false
 	
 	return true
 
 
-## Returns if the objective has the requirement with [param requirement_id].
-func has_requirement(requirement_id: String) -> bool:
-	return _requirements.has(requirement_id)
+## Returns if the objective has the requirement with [param requirement_path].
+func has_requirement(requirement_path: String) -> bool:
+	return _requirements.has(requirement_path)
 
 
 ## Clears all requirements from the objective.

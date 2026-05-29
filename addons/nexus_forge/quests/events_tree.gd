@@ -96,7 +96,12 @@ func ready_plugin() -> void:
 		mn.set_item_tooltip(mn.get_item_index(TYPE_STRING), "Add string")
 		mn.set_item_tooltip(mn.get_item_index(TYPE_DICTIONARY), "Add folder")
 		
-		mn.size.x = 24
+		mn.add_theme_constant_override(&"h_separation", -8)
+		mn.add_theme_constant_override(&"item_start_padding", 2)
+		mn.add_theme_constant_override(&"item_end_padding", 2)
+		mn.add_theme_constant_override(&"icon_max_width", 16)
+		
+		mn.size.x = 28
 		
 		mn.id_pressed.connect(_on_compact_menu_id_pressed)
 

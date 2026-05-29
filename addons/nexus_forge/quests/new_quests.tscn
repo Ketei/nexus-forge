@@ -12,6 +12,7 @@
 [ext_resource type="Script" uid="uid://b3ooglkmjjil4" path="res://addons/nexus_forge/classes/simple_data_tree.gd" id="5_v44ms"]
 [ext_resource type="Script" uid="uid://chkgp073iaf1d" path="res://addons/nexus_forge/item_quest_description_script.gd" id="6_vnr1c"]
 [ext_resource type="Script" uid="uid://c0bnp3v0qfte3" path="res://addons/nexus_forge/quests/events_tree.gd" id="10_n6p0u"]
+[ext_resource type="Script" uid="uid://smqobwvo4r1t" path="res://addons/nexus_forge/quests/obj_req_tree_script.gd" id="12_vnr1c"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ct1fh"]
 content_margin_left = 6.0
@@ -20,10 +21,6 @@ content_margin_right = 6.0
 content_margin_bottom = 6.0
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_xhnnm"]
-
-[sub_resource type="DPITexture" id="DPITexture_xhh83"]
-_source = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\"><path fill=\"#ff5d5d\" d=\"M2 1v8.586l1.293-1.293a1 1 0 0 1 1.414 0L7 10.587l2.293-2.293a1 1 0 0 1 1.414 0L13 10.586l1-1V6H9V1H2zm8 0v4h4zm-6 9.414-2 2V15h12v-2.586l-.293.293a1 1 0 0 1-1.414 0L10 10.414l-2.293 2.293a1 1 0 0 1-1.414 0L4 10.414z\"/></svg>
-"
 
 [node name="QuestsOdyssey" type="PanelContainer" unique_id=123000176]
 anchors_preset = 15
@@ -296,22 +293,67 @@ text = "Requirements"
 layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "Search Requirements"
-right_icon = SubResource("DPITexture_xhh83")
 
-[node name="AddRequirementBtn" type="Button" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/HeaderContainer" unique_id=1008152467]
+[node name="VSeparator" type="VSeparator" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/HeaderContainer" unique_id=822339052]
+layout_mode = 2
+
+[node name="AddButtonsContainer" type="HBoxContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/HeaderContainer" unique_id=909905357]
+layout_mode = 2
+alignment = 2
+
+[node name="AddReqDictButton" type="Button" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/HeaderContainer/AddButtonsContainer" unique_id=915280456]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
-size_flags_horizontal = 8
-icon = SubResource("DPITexture_xhh83")
+tooltip_text = "Add folder"
+flat = true
 icon_alignment = 1
 
-[node name="RequirementsScroll" type="ScrollContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer" unique_id=1180624870]
-custom_minimum_size = Vector2(250, 150)
+[node name="VSeparator" type="VSeparator" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/HeaderContainer/AddButtonsContainer" unique_id=1559110256]
 layout_mode = 2
 
-[node name="RequirementsContainer" type="VBoxContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/RequirementsScroll" unique_id=1829913642]
+[node name="AddReqIntButton" type="Button" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/HeaderContainer/AddButtonsContainer" unique_id=1193691853]
+custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
-size_flags_horizontal = 3
+tooltip_text = "Create integer variable."
+icon = ExtResource("1_xhnnm")
+flat = true
+icon_alignment = 1
+
+[node name="AddReqFloatButton" type="Button" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/HeaderContainer/AddButtonsContainer" unique_id=518155339]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Create float variable."
+icon = ExtResource("2_ikrww")
+flat = true
+icon_alignment = 1
+
+[node name="AddReqBoolButton" type="Button" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/HeaderContainer/AddButtonsContainer" unique_id=804374421]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Create bool variable."
+icon = ExtResource("3_ct1fh")
+flat = true
+icon_alignment = 1
+
+[node name="AddReqStringButton" type="Button" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/HeaderContainer/AddButtonsContainer" unique_id=867876473]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Create string  variable."
+icon = ExtResource("4_46oj0")
+flat = true
+icon_alignment = 1
+
+[node name="ObjReqTree" type="Tree" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer" unique_id=1084377534]
+custom_minimum_size = Vector2(250, 150)
+layout_mode = 2
+columns = 3
+allow_reselect = true
+hide_root = true
+script = ExtResource("12_vnr1c")
+allow_drag_and_drop = true
+compact_mode = true
+default_name = "new_requirement"
+metadata/_custom_type_script = "uid://rnhehey4dp1u"
 
 [node name="StageLogicContainer" type="VBoxContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel" unique_id=1334727168]
 visible = false

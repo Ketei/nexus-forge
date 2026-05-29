@@ -38,7 +38,7 @@ func _post_init() -> void:
 	node_type = DialogueNodeType.ANCHOR_POINTER
 	parent_mode = PortMode.INPUT
 	parent_port = 0
-	size = Vector2(260.0, 87.0)
+	size = Vector2(200.0, 87.0)
 	
 	var fields: HBoxContainer = HBoxContainer.new()
 	fields.size_flags_horizontal = Control.SIZE_EXPAND_FILL

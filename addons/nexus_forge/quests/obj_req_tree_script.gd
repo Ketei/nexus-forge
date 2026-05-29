@@ -54,13 +54,16 @@ func ready_plugin() -> void:
 	
 	create_item()
 	set_column_title(0, "Data ID")
-	set_column_title(1, "Data Value")
+	set_column_title(2, "Data Value")
 	
 	set_column_expand(0, true)
-	set_column_expand(1, true)
+	set_column_expand(1, false)
+	set_column_expand(2, true)
 	
 	set_column_expand_ratio(0, 2)
-	set_column_expand_ratio(1, 3)
+	set_column_expand_ratio(2, 3)
+	
+	set_column_custom_minimum_width(1, 60)
 	
 	item_edited.connect(on_data_edited)
 	
@@ -131,7 +134,7 @@ func _on_compact_menu_id_pressed(id: int) -> void:
 	else:
 		data_name += "data"
 	
-	add_data(data_name, data_type, data_item)
+	add_data(data_name, data_type, OP_EQUAL, data_item)
 	
 	data_item = null
 	
@@ -227,11 +230,11 @@ func clear_data() -> void:
 	create_item()
 
 
-func add_data(data_id: String, data: Variant, on_node: TreeItem = get_root()) -> void:
+func add_data(data_id: String, data: Variant, operator: int = OP_EQUAL, on_node: TreeItem = get_root()) -> TreeItem:
 	var data_type: int = typeof(data)
 	var new_name: String = get_unique_id(on_node, data_id)
 	var new_data: TreeItem = on_node.create_child()
-	var metadata: Dictionary = {"name": new_name, "type": ItemType.DATA}
+	var metadata: Dictionary = {"name": new_name, "type": ItemType.DATA, "operator": OP_EQUAL}
 	
 	new_data.set_cell_mode(0, TreeItem.CELL_MODE_STRING)
 	new_data.set_text(0, new_name)
@@ -240,85 +243,137 @@ func add_data(data_id: String, data: Variant, on_node: TreeItem = get_root()) ->
 	match data_type:
 		TYPE_INT:
 			new_data.set_icon(0, ICON_INT)
-			new_data.set_metadata(1, TYPE_INT)
-			new_data.set_cell_mode(1, TreeItem.CELL_MODE_RANGE)
-			new_data.set_range_config(1, -RANGE_MAX, RANGE_MAX, 1.0)
-			new_data.set_range(1, data)
-			new_data.set_editable(1, true)
+			new_data.set_metadata(2, TYPE_INT)
+			new_data.set_cell_mode(2, TreeItem.CELL_MODE_RANGE)
+			new_data.set_range_config(2, -RANGE_MAX, RANGE_MAX, 1.0)
+			new_data.set_range(2, data)
+			new_data.set_editable(2, true)
 		TYPE_FLOAT:
 			new_data.set_icon(0, ICON_FLOAT)
-			new_data.set_metadata(1, TYPE_FLOAT)
-			new_data.set_cell_mode(1, TreeItem.CELL_MODE_RANGE)
-			new_data.set_range_config(1, -RANGE_MAX, RANGE_MAX, RANGE_FLOAT_STEP)
-			new_data.set_range(1, data)
-			new_data.set_editable(1, true)
+			new_data.set_metadata(2, TYPE_FLOAT)
+			new_data.set_cell_mode(2, TreeItem.CELL_MODE_RANGE)
+			new_data.set_range_config(2, -RANGE_MAX, RANGE_MAX, RANGE_FLOAT_STEP)
+			new_data.set_range(2, data)
+			new_data.set_editable(2, true)
 		TYPE_BOOL:
 			new_data.set_icon(0, ICON_BOOL)
-			new_data.set_metadata(1, TYPE_BOOL)
-			new_data.set_cell_mode(1, TreeItem.CELL_MODE_CHECK)
-			new_data.set_text(1, "Enabled")
-			new_data.set_checked(1, data)
-			new_data.set_editable(1, true)
+			new_data.set_metadata(2, TYPE_BOOL)
+			new_data.set_cell_mode(2, TreeItem.CELL_MODE_CHECK)
+			new_data.set_text(2, "Enabled")
+			new_data.set_checked(2, data)
+			new_data.set_editable(2, true)
 		TYPE_STRING:
 			new_data.set_icon(0, ICON_STRING)
-			new_data.set_metadata(1, TYPE_STRING)
-			new_data.set_cell_mode(1, TreeItem.CELL_MODE_STRING)
-			new_data.set_text(1, data)
-			new_data.set_editable(1, true)
+			new_data.set_metadata(2, TYPE_STRING)
+			new_data.set_cell_mode(2, TreeItem.CELL_MODE_STRING)
+			new_data.set_text(2, data)
+			new_data.set_editable(2, true)
 		TYPE_DICTIONARY:
 			new_data.set_icon(0, ICON_FOLDER)
-			new_data.set_metadata(1, TYPE_DICTIONARY)
-			new_data.set_selectable(1, false)
+			new_data.set_metadata(2, TYPE_DICTIONARY)
+			new_data.set_selectable(2, false)
 			new_data.set_editable(0, true)
-			new_data.set_editable(1, false)
+			new_data.set_editable(2, false)
 			metadata["type"] = ItemType.FOLDER
 			if compact_mode:
 				new_data.add_button(
-						1,
+						2,
 						preload("res://addons/nexus_forge/icons/add_variable_icon.svg"),
 						ButtonIds.TYPE_MENU,
 						false,
 						"Add data")
 			else:
-				new_data.add_button(1, preload("res://addons/nexus_forge/icons/add_int.svg"), ButtonIds.INT, false, "Add Integer")
-				new_data.add_button(1, preload("res://addons/nexus_forge/icons/add_float.svg"), ButtonIds.FLOAT, false, "Add Float")
-				new_data.add_button(1, preload("res://addons/nexus_forge/icons/add_bool.svg"), ButtonIds.BOOL, false, "Add Bool")
-				new_data.add_button(1, preload("res://addons/nexus_forge/icons/add_string.svg"), ButtonIds.STRING, false, "Add String")
-				new_data.add_button(1, get_theme_icon("FolderCreate", "EditorIcons"), ButtonIds.LEVEL, false, "Add Level")
-			for subdata in data:
-				add_data(subdata, data[subdata], new_data)
+				new_data.add_button(2, preload("res://addons/nexus_forge/icons/add_int.svg"), ButtonIds.INT, false, "Add Integer")
+				new_data.add_button(2, preload("res://addons/nexus_forge/icons/add_float.svg"), ButtonIds.FLOAT, false, "Add Float")
+				new_data.add_button(2, preload("res://addons/nexus_forge/icons/add_bool.svg"), ButtonIds.BOOL, false, "Add Bool")
+				new_data.add_button(2, preload("res://addons/nexus_forge/icons/add_string.svg"), ButtonIds.STRING, false, "Add String")
+				new_data.add_button(2, get_theme_icon("FolderCreate", "EditorIcons"), ButtonIds.LEVEL, false, "Add Level")
+			for subdata in data.keys():
+				add_data(subdata, data[subdata], OP_EQUAL, new_data)
 		_:
 			new_data.set_icon(0, ICON_VARIABLE)
-			new_data.set_metadata(1, TYPE_NIL)
+			new_data.set_metadata(2, TYPE_NIL)
 			metadata["data"] = data
-			new_data.set_cell_mode(1, TreeItem.CELL_MODE_STRING)
-			new_data.set_text(1, type_string(data_type))
-			new_data.set_editable(1, false)
+			new_data.set_cell_mode(2, TreeItem.CELL_MODE_STRING)
+			new_data.set_text(2, type_string(data_type))
+			new_data.set_editable(2, false)
 	
-	new_data.add_button(1, TRASH_BIN, ButtonIds.DELETE, false, "Delete Data")
+	if data_type != TYPE_DICTIONARY:
+		new_data.set_cell_mode(1, TreeItem.CELL_MODE_RANGE)
+		if data_type == TYPE_BOOL or data_type == TYPE_STRING:
+			new_data.set_range_config(1, 0, 1, 1)
+			new_data.set_text(1, "==,!=")
+		else:
+			new_data.set_range_config(1, 0, 5, 1)
+			new_data.set_text(1, "==,!=,<,<=,>,>=")
+		new_data.set_range(1, operator_to_range(operator))
+		new_data.set_editable(1, true)
+	else:
+		new_data.set_cell_mode(1, TreeItem.CELL_MODE_STRING)
+		new_data.set_editable(1, false)
+	
+	new_data.add_button(2, TRASH_BIN, ButtonIds.DELETE, false, "Delete Data")
 	
 	new_data.set_metadata(0, metadata)
+	
+	return new_data
 
 
-func get_data_cell_data(cell: TreeItem) -> Variant:
-	match cell.get_metadata(1):
-		TYPE_INT:
-			return int(cell.get_range(1))
-		TYPE_FLOAT:
-			return float(cell.get_range(1))
-		TYPE_BOOL:
-			return cell.is_checked(1)
-		TYPE_STRING:
-			return cell.get_text(1)
-		TYPE_DICTIONARY:
-			var subfolder: Dictionary = {}
-			for sub_data in cell.get_children():
-				subfolder[sub_data.get_text(0)] = get_data_cell_data(sub_data)
-			return subfolder
-		TYPE_NIL:
-			return cell.get_metadata(0)["data"]
+func range_to_operator(range: int) -> int:
+	match range:
+		0:
+			return OP_EQUAL
+		1:
+			return OP_NOT_EQUAL
+		2:
+			return OP_LESS
+		3:
+			return OP_LESS_EQUAL
+		4:
+			return OP_GREATER
+		5:
+			return OP_GREATER_EQUAL
 		_:
-			return null
+			return OP_EQUAL
+
+
+func operator_to_range(operator: int) -> int:
+	match operator:
+		OP_EQUAL:
+			return 0
+		OP_NOT_EQUAL:
+			return 1
+		OP_LESS:
+			return 2
+		OP_LESS_EQUAL:
+			return 3
+		OP_GREATER:
+			return 4
+		OP_GREATER_EQUAL:
+			return 5
+		_:
+			return 0
+
+
+func get_cell_value(cell: TreeItem) -> Dictionary:
+	match cell.get_metadata(2):
+		TYPE_INT:
+			return {"operator": range_to_operator(cell.get_range(1)) , "value": int(cell.get_range(2))}
+		TYPE_FLOAT:
+			return {"operator": range_to_operator(cell.get_range(1)), "value": float(cell.get_range(2))}
+		TYPE_BOOL:
+			return {"operator": range_to_operator(cell.get_range(1)), "value": cell.is_checked(2)}
+		TYPE_STRING:
+			return {"operator": range_to_operator(cell.get_range(1)), "value": cell.get_text(2)}
+		#TYPE_DICTIONARY:
+			#var subfolder: Dictionary = {}
+			#for sub_data in cell.get_children():
+				#subfolder[sub_data.get_text(0)] = get_data_cell_data(sub_data)
+			#return subfolder
+		#TYPE_NIL:
+			#return cell.get_metadata(0)["data"]
+		_:
+			return {}
 
 
 func _on_button_clicked(item: TreeItem, column: int, id: int, mouse_button_index: int) -> void:
@@ -327,15 +382,15 @@ func _on_button_clicked(item: TreeItem, column: int, id: int, mouse_button_index
 			item.free()
 			item_deleted.emit()
 		ButtonIds.INT:
-			add_data("new_int", 0, item)
+			add_data("new_int", 0, OP_EQUAL, item)
 		ButtonIds.FLOAT:
-			add_data("new_float", 0.0, item)
+			add_data("new_float", 0.0, OP_EQUAL, item)
 		ButtonIds.BOOL:
-			add_data("new_bool", false, item)
+			add_data("new_bool", false, OP_EQUAL, item)
 		ButtonIds.STRING:
-			add_data("new_string", "", item)
+			add_data("new_string", "", OP_EQUAL, item)
 		ButtonIds.LEVEL:
-			add_data("new_folder", {}, item)
+			add_data("new_folder", {}, OP_EQUAL, item)
 		ButtonIds.TYPE_MENU:
 			data_item = item
 			mn.position = DisplayServer.mouse_get_position()
@@ -361,13 +416,91 @@ func on_data_edited() -> void:
 	data_changed.emit()
 
 
-func get_data() -> Dictionary[String, Variant]:
-	var rank_data: Dictionary[String, Variant] = {}
+func set_data(flat_data: Dictionary[String, Dictionary]) -> void:
+	clear_data()
+	# This dictionary will store our created folder TreeItems.
+	# Key: "folder/path", Value: TreeItem reference
+	var folder_cache: Dictionary = {}
 	
-	for data_item in get_root().get_children():
-		rank_data[data_item.get_text(0)] = get_data_cell_data(data_item)
+	# Assuming get_root() is accessible in this script scope
+	var root_node: TreeItem = get_root()
 	
-	return rank_data
+	for full_path in flat_data.keys():
+		var item_data: Dictionary = flat_data[full_path]
+		
+		var segments: Array[String] = ArrayUtils.create_array_typed(TYPE_STRING, Array(full_path.split("/")))
+		
+		var item_name: String = segments.pop_back()
+		
+		var current_parent: TreeItem = root_node
+		var running_path: String = ""
+		
+		# 1. Reconstruct the folder hierarchy
+		for segment in segments:
+			# Build the cumulative path to check our cache
+			running_path = running_path.path_join(segment)
+			
+			# If we haven't created this folder yet, make it and cache it
+			if not folder_cache.has(running_path):
+				# Pass an empty {} to force add_data to just create the folder node
+				var new_folder: TreeItem = add_data(segment, {}, OP_EQUAL, current_parent)
+				folder_cache[running_path] = new_folder
+			# Step down into the folder for the next iteration
+			current_parent = folder_cache[running_path]
+		
+		# 2. Add the actual data item
+		# We safely extract the value and operator, providing fallbacks just in case
+		var val: Variant = item_data.get("value")
+		var op: int = item_data.get("operator", OP_EQUAL)
+		
+		add_data(item_name, val, op, current_parent)
+
+
+func get_data() -> Dictionary[String, Dictionary]:
+	var result_dict: Dictionary[String, Dictionary] = {}
+	
+	for item in get_root().get_children():
+		_traverse_and_collect(item, result_dict)
+		
+	return result_dict
+
+
+func _traverse_and_collect(item: TreeItem, result_dict: Dictionary) -> void:
+	var meta: Dictionary = item.get_metadata(0)
+	
+	if meta == null or typeof(meta) != TYPE_DICTIONARY or not meta.has("type"):
+		return
+	
+	if meta["type"] == ItemType.DATA:
+		# 1. Get the path using your method
+		var item_path: String = get_path_from(item)
+		
+		# 2. Directly assign the dictionary from your custom getter
+		# This automatically includes both "value" and "operator" keys
+		result_dict[item_path] = get_cell_value(item)
+		
+	elif meta["type"] == ItemType.FOLDER:
+		# Recursively process folder children
+		for child in item.get_children(): # Calling get_children() on a TreeItem returns an Array[TreeItem] with all containing children.
+			_traverse_and_collect(child, result_dict)
+
+
+func get_path_from(item: TreeItem) -> String:
+	var path_items: Array[String] = []
+	
+	var level: TreeItem = item
+	var root: TreeItem = get_root()
+	
+	while level != root and level != null:
+		path_items.append(level.get_text(0))
+		level = level.get_parent()
+	
+	path_items.reverse()
+	
+	if path_items.is_empty():
+		return ""
+	else:
+		return StringUtils.make_path(path_items)
 
 
 func search_data(data_text: String) -> void:

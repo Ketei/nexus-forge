@@ -15,8 +15,8 @@ var quest_resource: Quest = null
 var selected_stage: StringName = &""
 var selected_objective: StringName = &""
 
-@onready var requirements_container: VBoxContainer = $MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/RequirementsScroll/RequirementsContainer
-@onready var add_requirement_btn: Button = $MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/HeaderContainer/AddRequirementBtn
+#@onready var requirements_container: VBoxContainer = $MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/RequirementsScroll/RequirementsContainer
+#@onready var add_requirement_btn: Button = $MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/HeaderContainer/AddRequirementBtn
 @onready var obj_req_chk_bx: CheckBox = $MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/ObjReqChkBx
 @onready var crumbs_label: Label = $MainContainer/TitleContainer/CrumbsContainer/CrumbsLabel
 @onready var file_search_ln_edt: LineEdit = $MainContainer/DataContainer/NavigationContainer/FileBarContainer/FileSearchLnEdt
@@ -45,19 +45,28 @@ var selected_objective: StringName = &""
 @onready var stage_logic_container: VBoxContainer = $MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/StageLogicContainer
 @onready var dynamic_logic_panel: PanelContainer = $MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel
 
+@onready var add_req_dict_button: Button = $MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/HeaderContainer/AddButtonsContainer/AddReqDictButton
+@onready var add_req_int_button: Button = $MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/HeaderContainer/AddButtonsContainer/AddReqIntButton
+@onready var add_req_float_button: Button = $MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/HeaderContainer/AddButtonsContainer/AddReqFloatButton
+@onready var add_req_bool_button: Button = $MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/HeaderContainer/AddButtonsContainer/AddReqBoolButton
+@onready var add_req_string_button: Button = $MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/HeaderContainer/AddButtonsContainer/AddReqStringButton
+@onready var obj_req_tree: Tree = $MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/ObjReqTree
+
 
 func ready_plugin() -> void:
+	obj_req_tree.ready_plugin()
 	files_tree.ready_plugin()
 	quest_tree.ready_plugin()
 	events_tree.ready_plugin()
 	custom_data_tree.ready_plugin()
 	
+	add_req_dict_button.icon = get_theme_icon("FolderCreate", "EditorIcons")
 	add_dict_button.icon = get_theme_icon("FolderCreate", "EditorIcons")
 	file_search_ln_edt.right_icon = get_theme_icon("Search", "EditorIcons")
 	quest_search_ln_edit.right_icon = get_theme_icon("Search", "EditorIcons")
 	search_event_ln_edt.right_icon = get_theme_icon("Search", "EditorIcons")
 	requirement_search_ln_edt.right_icon = get_theme_icon("Search", "EditorIcons")
-	add_requirement_btn.icon = get_theme_icon("Add", "EditorIcons")
+	#add_requirement_btn.icon = get_theme_icon("Add", "EditorIcons")
 	edit_types_btn.icon = get_theme_icon("Edit", "EditorIcons")
 	
 	success_pointer_opt_btn.add_item("Quest End")
@@ -101,10 +110,17 @@ func ready_plugin() -> void:
 	custom_data_search_line.text_changed.connect(_on_custom_data_search_text_changed)
 	
 	requirement_search_ln_edt.text_changed.connect(_on_search_requirement_text_changed)
-	add_requirement_btn.pressed.connect(_on_add_requirement_pressed)
+	#add_requirement_btn.pressed.connect(_on_add_requirement_pressed)
 	search_event_ln_edt.text_changed.connect(_on_search_event_text_changed)
 	
+	add_req_dict_button.pressed.connect(_add_quest_requirement_data_pressed.bind({}))
+	add_req_int_button.pressed.connect(_add_quest_requirement_data_pressed.bind(0))
+	add_req_float_button.pressed.connect(_add_quest_requirement_data_pressed.bind(0.0))
+	add_req_bool_button.pressed.connect(_add_quest_requirement_data_pressed.bind(false))
+	add_req_string_button.pressed.connect(_add_quest_requirement_data_pressed.bind(""))
+	
 	# Unsaved triggers
+	obj_req_tree.data_changed.connect(_on_something_changed)
 	custom_data_tree.data_changed.connect(_on_something_changed)
 	events_tree.data_changed.connect(_on_something_changed)
 	type_opt_btn.item_selected.connect(_on_something_changed)
@@ -366,16 +382,7 @@ func save_current_data() -> void:
 				selected_objective,
 				obj_req_chk_bx.button_pressed)
 		
-		var requirements: Dictionary = {}
-		
-		for requirement_item in requirements_container.get_children():
-			requirements.merge(requirement_item.get_requirement())
-		
-		for requirement_key in requirements.keys():
-			objective.set_requirement(
-					requirement_key,
-					requirements[requirement_key]["operator"],
-					requirements[requirement_key]["value"])
+		objective._requirements = obj_req_tree.get_data()
 
 
 func plugin_handle_resource(quest: Quest) -> void:
@@ -480,17 +487,7 @@ func load_objective(stage_id: StringName, objective_id: StringName) -> void:
 	events_tree.clear_data()
 	custom_data_tree.clear_data()
 	
-	for requirement in requirements_container.get_children():
-		requirements_container.remove_child(requirement)
-		requirement.requirement_changed.disconnect(_on_something_changed)
-		requirement.erase_requirement_pressed.disconnect(_on_erased_requirement_pressed)
-		requirement.queue_free()
-	
-	for requirement in objective.requirements():
-		add_requirement(
-			requirement,
-			objective.get_requirement_mode(requirement),
-			objective.get_requirement_value(requirement))
+	obj_req_tree.set_data(objective._requirements)
 	
 	for data_key in objective.custom_data.keys():
 		custom_data_tree.add_data(data_key, objective.custom_data[data_key])
@@ -536,27 +533,27 @@ func _save_cfg_for(filepath: String, structure: Array[Dictionary]) -> void:
 		push_error("Error saving editor state on: ", absolute_path.path_join(cfg_filename))
 
 
-func _on_add_requirement_pressed() -> void:
-	add_requirement("", OP_EQUAL, 0)
-	_on_something_changed()
+#func _on_add_requirement_pressed() -> void:
+	#add_requirement("", OP_EQUAL, 0)
+	#_on_something_changed()
 
 
-func add_requirement(id: String, operator: int, value) -> void:
-	var prev_item: Control = null if requirements_container.get_child_count() == 0 else requirements_container.get_child(-1)
-	var new_item: HBoxContainer = preload("res://addons/nexus_forge/quests/objective_requirement_script.gd").new()
-	requirements_container.add_child(new_item)
-	
-	new_item.set_requirement({
-			id: {"operator": operator, "value": value}})
-	if prev_item == null:
-		new_item.set_focus_previous_requirement(obj_req_chk_bx)
-		add_requirement_btn.focus_next = new_item.req_ln_edt.get_path()
-	else:
-		new_item.set_focus_previous_requirement(prev_item.erase_btn)
-		prev_item.set_focus_next_requirement(new_item.req_ln_edt)
-	
-	new_item.requirement_changed.connect(_on_something_changed)
-	new_item.erase_requirement_pressed.connect(_on_erased_requirement_pressed)
+#func add_requirement(id: String, operator: int, value) -> void:
+	#var prev_item: Control = null if requirements_container.get_child_count() == 0 else requirements_container.get_child(-1)
+	#var new_item: HBoxContainer = preload("res://addons/nexus_forge/quests/objective_requirement_script.gd").new()
+	#requirements_container.add_child(new_item)
+	#
+	#new_item.set_requirement({
+			#id: {"operator": operator, "value": value}})
+	#if prev_item == null:
+		#new_item.set_focus_previous_requirement(obj_req_chk_bx)
+		#add_requirement_btn.focus_next = new_item.req_ln_edt.get_path()
+	#else:
+		#new_item.set_focus_previous_requirement(prev_item.erase_btn)
+		#prev_item.set_focus_next_requirement(new_item.req_ln_edt)
+	#
+	#new_item.requirement_changed.connect(_on_something_changed)
+	#new_item.erase_requirement_pressed.connect(_on_erased_requirement_pressed)
 
 
 func get_open_files() -> Array[String]:
@@ -584,32 +581,36 @@ func open_files(paths: Array[String]) -> void:
 			files_tree.set_quest_structure(res, structure)
 
 
-func _on_erased_requirement_pressed(item: Control) -> void:
-	var child_count: int = requirements_container.get_child_count()
-	var index: int = item.get_index()
-	if index == 0: # First item
-		var next: Control = requirements_container.get_child(1) if 1 < child_count else null
-		
-		if next != null:
-			add_requirement_btn.focus_next = next.get_path()
-			next.set_focus_previous_requirement(obj_req_chk_bx)
-		else:
-			add_requirement_btn.focus_next = ^""
-	
-	elif index == requirements_container.get_child_count() - 1: # Last item
-		var prev: Control = requirements_container.get_child(index - 1)
-		prev.set_focus_next_requirement(null)
-	else: # Sandwich item
-		var prev: Control = requirements_container.get_child(index - 1)
-		var next: Control = requirements_container.get_child(index + 1)
-		
-		prev.set_focus_next_requirement(next.req_ln_edt)
-		next.set_focus_previous_requirement(prev.erase_btn)
-	
-	requirements_container.remove_child(item)
-	item.requirement_changed.disconnect(_on_something_changed)
-	item.erase_requirement_pressed.disconnect(_on_erased_requirement_pressed)
-	item.queue_free()
+#func _on_erased_requirement_pressed(item: Control) -> void:
+	#var child_count: int = requirements_container.get_child_count()
+	#var index: int = item.get_index()
+	#if index == 0: # First item
+		#var next: Control = requirements_container.get_child(1) if 1 < child_count else null
+		#
+		#if next != null:
+			#add_requirement_btn.focus_next = next.get_path()
+			#next.set_focus_previous_requirement(obj_req_chk_bx)
+		#else:
+			#add_requirement_btn.focus_next = ^""
+	#
+	#elif index == requirements_container.get_child_count() - 1: # Last item
+		#var prev: Control = requirements_container.get_child(index - 1)
+		#prev.set_focus_next_requirement(null)
+	#else: # Sandwich item
+		#var prev: Control = requirements_container.get_child(index - 1)
+		#var next: Control = requirements_container.get_child(index + 1)
+		#
+		#prev.set_focus_next_requirement(next.req_ln_edt)
+		#next.set_focus_previous_requirement(prev.erase_btn)
+	#
+	#requirements_container.remove_child(item)
+	#item.requirement_changed.disconnect(_on_something_changed)
+	#item.erase_requirement_pressed.disconnect(_on_erased_requirement_pressed)
+	#item.queue_free()
+
+
+func _add_quest_requirement_data_pressed(data: Variant) -> void:
+	obj_req_tree.add_data("new_requirement", data)
 
 
 func _on_something_changed(_arg = null) -> void:
@@ -709,6 +710,11 @@ func _on_quest_resource_selected(quest: Quest, structure: Array[Dictionary]) -> 
 	quest_tree.set_quest(quest, true, false)
 	quest_tree.set_quest_structure(structure)
 	
+	var stages: Array[StringName] = quest.stages()
+	stages.sort_custom(func(a:StringName,b:StringName): return String(a) < String(b))
+	
+	set_stage_target_pointers(stages)
+	
 	load_quest()
 
 
@@ -777,9 +783,7 @@ func _on_search_event_text_changed(text: String) -> void:
 
 func _on_search_requirement_text_changed(text: String) -> void:
 	var clean_text: String = text.strip_edges()
-	var empty: bool = text.is_empty()
-	for requirement in requirements_container.get_children():
-		requirement.visible = empty or requirement.has_text(clean_text)
+	obj_req_tree.search_data(clean_text)
 
 
 func _on_quest_close_pressed(quest: Quest, requires_save: bool, structure: Array[Dictionary]) -> void:

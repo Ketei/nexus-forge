@@ -48,6 +48,19 @@ func _post_init() -> void:
 func _ready() -> void:
 	graph_icon = get_theme_icon("Signal", "EditorIcons")
 	set_output_connection_icon(&"signals", get_theme_icon("Signals", "EditorIcons"))
+	for arg_port in range(get_child_count() - 1):
+		var id: StringName = StringName("argument_" + str(arg_port + 1))
+		match get_input_port_type(arg_port):
+			SlotConnectionType.VAR_INT:
+				set_input_connection_icon(id, get_theme_icon("int", "EditorIcons"))
+			SlotConnectionType.VAR_FLOAT:
+				set_input_connection_icon(id, get_theme_icon("float", "EditorIcons"))
+			SlotConnectionType.VAR_BOOL:
+				set_input_connection_icon(id, get_theme_icon("bool", "EditorIcons"))
+			SlotConnectionType.VAR_STRING:
+				set_input_connection_icon(id, get_theme_icon("String", "EditorIcons"))
+			_:
+				set_input_connection_icon(id, get_theme_icon("Variant", "EditorIcons"))
 
 
 func _get_issues() -> PackedStringArray:
@@ -266,9 +279,16 @@ func add_input_arg(arg_text: String, arg_type: int) -> void:
 
 
 func clear_input_args() -> void:
+	var fields: Array[StringName] = []
 	for item in range(get_child_count() - 1, 0, -1):
 		var field_id: StringName = &"argument_" + StringName(str(item))
-		remove_field(field_id, 32)
+		fields.append(field_id)
+	remove_fields(fields, -1)
+	_reset_height.call_deferred()
+
+
+func _reset_height() -> void:
+	size.y = 0
 
 
 static func get_user_signals() -> Dictionary:

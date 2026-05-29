@@ -12,7 +12,7 @@ func _post_init() -> void:
 	node_type = DialogueNodeType.ANCHOR
 	parent_mode = PortMode.OUTPUT
 	parent_port = 0
-	size = Vector2(260.0, 87.0)
+	size = Vector2(200.0, 87.0)
 	
 	var anchor_id_lnedt: LineEdit = LineEdit.new()
 	anchor_id_lnedt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
