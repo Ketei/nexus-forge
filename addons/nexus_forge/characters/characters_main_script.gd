@@ -427,15 +427,15 @@ func _on_import_species_data_pressed() -> void:
 	import_species_data_pressed.emit()
 
 
-func import_species_data(species_sheet: SpeciesCatalog) -> void:
-	if species_option_button.selected == -1:
+func import_species_data(species_sheet: SpeciesCatalog, with_inheritance: bool) -> void:
+	if species_option_button.selected == -1 or not species_sheet.has_species(species_option_button.get_selected_metadata()):
 		return
 	
-	var data: Dictionary[String, Dictionary] = species_sheet._species_tree_data(species_option_button.get_selected_metadata())
+	var species_selected: StringName = species_option_button.get_selected_metadata()
 	
-	var stats: Dictionary[StringName, float] = data["stats"]
-	var skills: Dictionary[StringName, int] = data["skills"]
-	var traits: Dictionary[StringName, int] = data["traits"]
+	var stats: Dictionary[StringName, float] = species_sheet._species_stat_data(species_selected, with_inheritance)
+	var skills: Dictionary[StringName, int] = species_sheet._species_skill_data(species_selected, with_inheritance)
+	var traits: Dictionary[StringName, int] = species_sheet._species_trait_data(species_selected, with_inheritance)
 	
 	for stat in char_stats_container.get_children():
 		var target_stat: StringName = stat.get_meta(&"stat_id")
@@ -454,6 +454,8 @@ func import_species_data(species_sheet: SpeciesCatalog) -> void:
 		if traits.has(target_trait):
 			child.get_child(1).set_value_no_signal(
 					traits[target_trait])
+	
+	_something_changed()
 
 
 func set_ui_enabled(enabled: bool) -> void:

@@ -33,13 +33,17 @@ static func has_nested_path(dict: Dictionary, keys: Array) -> bool:
 ## Returns the value of a key from a path of nested dictionaries in [param from].
 ## The keys path follows the order in [param keys]. And if the path doesn't
 ## exist, or there is no value for the last key then [param default] is returned.[br]
+## If match_default_type is set to [code]true[/code] then the data type of the value
+## must match that of [param default] to be returned, if not [param default] will
+## be returned instead.[br]
 ## [codeblock]
 ## var dict = { "fruits": { "orange": {"amount": 621} } }
 ## DictUtils.get_nested_value(dict, ["fruits", "orange", "amount"]) # Returns 621
 ## DictUtils.get_nested_value(dict, ["fruits", "orange", "count"]) # Returns null
 ## DictUtils.get_nested_value(dict, ["fruits", "apples"], 10) # Returns 10
+## DictUtils.get_nested_value(dict, ["fruits", "apples"], Vector2i(0,0)) # Returns Vector2i(0,0)
 ## [/codeblock]
-static func get_nested_value(from: Dictionary, keys: Array, default = null) -> Variant:
+static func get_nested_value(from: Dictionary, keys: Array, default = null, match_default_type: bool = false) -> Variant:
 	var current = from
 	
 	for key_value in keys:
@@ -48,7 +52,10 @@ static func get_nested_value(from: Dictionary, keys: Array, default = null) -> V
 		else:
 			return default
 	
-	return current
+	if match_default_type:
+		return current if typeof(current) == typeof(default) else default
+	else:
+		return current
 
 
 ## Returns [code]true[/code] if it was able to set the value, otherwise returns

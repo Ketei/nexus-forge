@@ -197,7 +197,7 @@ func is_folder(item: TreeItem) -> bool:
 func create_node(node: DiscourseGraphNode, on: TreeItem = get_root()) -> void:
 	var new_item: TreeItem = on.create_child()
 	var type: int = 0 if node.node_type in DIALOG else 1 if node.node_type in DATA else 2 if node.node_type in SETTINGS else 3 if node.node_type in RESOURCES else -1
-	new_item.set_icon(0, preload("res://addons/nexus_forge/icons/node_icon.svg"))
+	new_item.set_icon(0, preload("res://addons/nexus_forge/icons/node_icon.svg") if node.graph_icon == null else node.graph_icon)
 	if 0 <= type:
 		new_item.set_icon_modulate(0, DIALOG_COLOR if type == 0 else DATA_COLOR if type == 1 else SETTINGS_COLOR if type == 2 else RESOURCE_COLOR)
 	new_item.set_text(0, str(node.get_node_id()))

@@ -85,25 +85,32 @@ func _on_category_edit_pressed() -> void:
 
 func _on_categories_done_pressed() -> void:
 	categories_container.save_category_data(items_container.item_link.items)
-	#if items_container.loaded_item != &"":
-		#items_container.save_current_item()
 	items_container.reload_categories(true)
-	if categories_container._unsaved:
-		items_container._unsaved = true
+	if categories_container.categories_edited:
+		items_container._items_unsaved = true
+		categories_container.categories_edited = false
 	
 	items_container.visible = true
 	categories_container.visible = false
 
 
+func has_unsaved_changes() -> bool:
+	return items_container._items_unsaved or items_container._currency_unsaved
+
+
 func save() -> void:
-	if items_container.item_link.items != null:
-		if items_container.loaded_item != &"":
+	if not items_container._items_unsaved and not items_container._currency_unsaved:
+		return
+	
+	if items_container._items_unsaved:
+		if items_container.item_link.items != null and not items_container.loaded_item.is_empty():
 			items_container.save_current_item()
 		ResourceSaver.save(items_container.item_link.items)
-		
-	if items_container.currency_resource != null:
-		if items_container.loaded_currency != &"":
+	
+	if items_container._currency_unsaved:
+		if items_container.currency_resource != null and not items_container.loaded_currency.is_empty():
 			items_container.save_current_currency()
 		ResourceSaver.save(items_container.currency_resource)
 	
-	items_container._unsaved = false
+	items_container._items_unsaved = false
+	items_container._currency_unsaved = false

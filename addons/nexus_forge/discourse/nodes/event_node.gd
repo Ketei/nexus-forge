@@ -4,7 +4,7 @@ extends DiscourseGraphNode
 func _post_init() -> void:
 	set_node_id(&"DialogEvent")
 	title = "Event"
-	size = Vector2(240.0, 196.0)
+	size = Vector2(200.0, 200.0)
 	node_type = DialogueNodeType.EVENT
 	parent_mode = PortMode.INPUT
 	parent_port = 0

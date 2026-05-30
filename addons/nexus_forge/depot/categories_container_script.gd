@@ -5,7 +5,7 @@ extends HBoxContainer
 var active_category_item: TreeItem = null
 var listen_category_selected: bool = true
 
-var _unsaved: bool = false
+var categories_edited: bool = false
 
 @onready var search_cat_ln_edt: LineEdit = $DataContainer/SearchContainer/SearchCatLnEdt
 @onready var new_category_btn: Button = $DataContainer/SearchContainer/NewCategoryBtn
@@ -45,9 +45,9 @@ func _on_search_categories_text_changed(text: String) -> void:
 
 
 func _on_category_changed() -> void:
-	if _unsaved:
+	if categories_edited:
 		return
-	_unsaved = true
+	categories_edited = true
 
 
 func _on_new_category_pressed() -> void:
@@ -91,9 +91,10 @@ func _on_new_category_pressed() -> void:
 
 func _update_keys(item_res: ItemCatalog, from: TreeItem) -> void:
 	var parent_category: StringName = StringName(from.get_text(0))
-	
 	if not item_res.has_category(parent_category):
 		item_res.create_category(parent_category)
+	
+	item_res.set_category_name(parent_category, from.get_text(1).strip_edges())
 	
 	item_res.clear_category_data(parent_category)
 	var data: Dictionary[String, Variant] = from.get_metadata(0)["data"]
@@ -162,7 +163,6 @@ func _on_category_deleted(item: TreeItem) -> void:
 
 func clean() -> void:
 	categories_tree.erased_categories.clear()
-	_unsaved = false
 
 
 func reload_categories(items: ItemCatalog) -> void:

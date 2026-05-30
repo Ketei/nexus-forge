@@ -16,6 +16,7 @@
 [ext_resource type="Script" uid="uid://d4hij5gpdxqnc" path="res://addons/nexus_forge/depot/categories_container_script.gd" id="10_hb3ne"]
 [ext_resource type="Texture2D" uid="uid://dd1wojqjxqfqn" path="res://addons/nexus_forge/icons/coin_plus.svg" id="11_5hvq2"]
 [ext_resource type="Script" uid="uid://7dmrf5h7co67" path="res://addons/nexus_forge/depot/categories_tree_script.gd" id="11_dn322"]
+[ext_resource type="Script" uid="uid://cmq4neoitl5cj" path="res://addons/nexus_forge/depot/currency_calculator.gd" id="15_6mxt2"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_8n7i7"]
 content_margin_left = 6.0
@@ -332,7 +333,7 @@ layout_mode = 2
 
 [node name="CurrencyPanel" type="PanelContainer" parent="ItemsContainer" unique_id=67974714]
 layout_mode = 2
-size_flags_horizontal = 6
+size_flags_horizontal = 3
 theme_override_styles/panel = SubResource("StyleBoxEmpty_bes68")
 
 [node name="CurrencyContainer" type="VBoxContainer" parent="ItemsContainer/CurrencyPanel" unique_id=29206942]
@@ -482,6 +483,61 @@ select_mode = 1
 script = ExtResource("5_hb3ne")
 allow_drag_and_drop = true
 compact_mode = true
+
+[node name="GoToCalcBtn" type="Button" parent="ItemsContainer/CurrencyPanel/CurrencyContainer" unique_id=1946392894]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+text = "Currency Calculator"
+
+[node name="CurrencyCalc" type="VBoxContainer" parent="ItemsContainer/CurrencyPanel" unique_id=31039189]
+visible = false
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="ItemsContainer/CurrencyPanel/CurrencyCalc" unique_id=1963323893]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="ItemsContainer/CurrencyPanel/CurrencyCalc/HBoxContainer" unique_id=859953203]
+layout_mode = 2
+text = "Currency Calculator"
+
+[node name="ResetCalculatorBtn" type="Button" parent="ItemsContainer/CurrencyPanel/CurrencyCalc/HBoxContainer" unique_id=252608524]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+size_flags_horizontal = 10
+
+[node name="CurrenciesTee" type="Tree" parent="ItemsContainer/CurrencyPanel/CurrencyCalc" unique_id=559562033]
+layout_mode = 2
+size_flags_vertical = 3
+columns = 2
+column_titles_visible = true
+allow_reselect = true
+hide_root = true
+script = ExtResource("15_6mxt2")
+
+[node name="InfoContainer" type="HBoxContainer" parent="ItemsContainer/CurrencyPanel/CurrencyCalc" unique_id=708703482]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="ItemsContainer/CurrencyPanel/CurrencyCalc/InfoContainer" unique_id=506829745]
+layout_mode = 2
+text = "Total value:"
+
+[node name="ValueLnEdt" type="LineEdit" parent="ItemsContainer/CurrencyPanel/CurrencyCalc/InfoContainer" unique_id=922363764]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "0"
+placeholder_text = "Result"
+editable = false
+
+[node name="CopyValBtn" type="Button" parent="ItemsContainer/CurrencyPanel/CurrencyCalc/InfoContainer" unique_id=1285821437]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+flat = true
+icon_alignment = 1
+
+[node name="ReturnCurrencyBtn" type="Button" parent="ItemsContainer/CurrencyPanel/CurrencyCalc" unique_id=825087201]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+text = "Return"
 
 [node name="CategoriesContainer" type="HBoxContainer" parent="." unique_id=1510395103]
 visible = false

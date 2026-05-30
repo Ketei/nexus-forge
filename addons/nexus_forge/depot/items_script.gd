@@ -22,7 +22,8 @@ var current_category: StringName = &""
 var loaded_currency: StringName = &""
 var noncategory_loaded: bool = false
 
-var _unsaved: bool = false
+var _items_unsaved: bool = false
+var _currency_unsaved: bool = false
 
 @onready var search_item_container: LineEdit = $ItemsPanel/ItemsContainer/TreeContainer/ItemSearchContainer/SearchItemContainer
 @onready var new_item_btn: Button = $ItemsPanel/ItemsContainer/TreeContainer/ItemSearchContainer/NewItemBtn
@@ -55,6 +56,14 @@ var _unsaved: bool = false
 @onready var add_curr_str_btn: Button = $CurrencyPanel/CurrencyContainer/CustomDataContainer/CustomDataHeader/ButtonContainer/AddCurrStrBtn
 @onready var add_curr_dict_button: Button = $CurrencyPanel/CurrencyContainer/CustomDataContainer/CustomDataHeader/ButtonContainer/AddDictButton
 @onready var currency_custom_data_tree: Tree = $CurrencyPanel/CurrencyContainer/CustomDataContainer/CurrencyCustomDataTree
+
+@onready var currencies_tee: Tree = $CurrencyPanel/CurrencyCalc/CurrenciesTee
+@onready var reset_calculator_btn: Button = $CurrencyPanel/CurrencyCalc/HBoxContainer/ResetCalculatorBtn
+@onready var value_ln_edt: LineEdit = $CurrencyPanel/CurrencyCalc/InfoContainer/ValueLnEdt
+@onready var copy_val_btn: Button = $CurrencyPanel/CurrencyCalc/InfoContainer/CopyValBtn
+@onready var return_currency_btn: Button = $CurrencyPanel/CurrencyCalc/ReturnCurrencyBtn
+@onready var go_to_calc_btn: Button = $CurrencyPanel/CurrencyContainer/GoToCalcBtn
+
 # --------------------------
 
 
@@ -65,6 +74,9 @@ func ready_plugin(use_items: bool, use_currencies: bool) -> void:
 	add_item_fldr_btn.icon = get_theme_icon("FolderCreate", "EditorIcons")
 	add_curr_dict_button.icon = get_theme_icon("FolderCreate", "EditorIcons")
 	edit_item_script_btn.icon = get_theme_icon("Edit", "EditorIcons")
+	reset_calculator_btn.icon = get_theme_icon("Reload", "EditorIcons")
+	copy_val_btn.icon = get_theme_icon("ActionCopy", "EditorIcons")
+	
 	
 	if use_items:
 		categories_tree.ready_plugin()
@@ -74,6 +86,7 @@ func ready_plugin(use_items: bool, use_currencies: bool) -> void:
 	if use_currencies:
 		currency_tree.ready_plugin()
 		currency_custom_data_tree.ready_plugin()
+		currencies_tee.ready_plugin()
 		reload_currency_resource(true)
 	
 	search_item_container.text_changed.connect(_on_search_item_text_changed)
@@ -81,11 +94,11 @@ func ready_plugin(use_items: bool, use_currencies: bool) -> void:
 	items_tree.item_id_selected.connect(_on_item_selected, CONNECT_DEFERRED)
 	items_tree.item_id_changed.connect(_on_item_id_changed, CONNECT_DEFERRED)
 	items_tree.item_erased.connect(_on_item_erased, CONNECT_DEFERRED)
-	item_name_ln_edt.text_changed.connect(_on_something_changed)
-	rarity_opt_btn.item_selected.connect(_on_something_changed)
-	item_val_spn_bx.value_changed.connect(_on_something_changed)
-	item_desc_txt_edt.text_changed.connect(_on_something_changed)
-	item_data_tree.data_changed.connect(_on_something_changed)
+	item_name_ln_edt.text_changed.connect(_on_items_changed)
+	rarity_opt_btn.item_selected.connect(_on_items_changed)
+	item_val_spn_bx.value_changed.connect(_on_items_changed)
+	item_desc_txt_edt.text_changed.connect(_on_items_changed)
+	item_data_tree.data_changed.connect(_on_items_changed)
 	categories_tree.category_selected.connect(_on_category_selected, CONNECT_DEFERRED)
 	categories_tree.items_recategorized.connect(_on_items_recategorized, CONNECT_DEFERRED)
 	item_name_ln_edt.focus_exited.connect(_on_item_name_focus_lost, CONNECT_DEFERRED)
@@ -99,8 +112,8 @@ func ready_plugin(use_items: bool, use_currencies: bool) -> void:
 	currency_tree.currency_selected.connect(_on_currency_selected, CONNECT_DEFERRED)
 	currency_tree.currency_id_changed.connect(_on_currency_id_changed)
 	currency_tree.currency_deleted.connect(_on_currency_deleted)
-	currency_name_ln_edt.text_changed.connect(_on_something_changed)
-	currency_value_spn_bx.value_changed.connect(_on_something_changed)
+	currency_name_ln_edt.text_changed.connect(_on_currency_changed)
+	currency_value_spn_bx.value_changed.connect(_on_currency_value_changed, CONNECT_DEFERRED)
 	
 	add_curr_int_btn.pressed.connect(add_currency_data.bind("new_int", 0))
 	add_curr_flt_btn.pressed.connect(add_currency_data.bind("new_float", 0.0))
@@ -111,6 +124,11 @@ func ready_plugin(use_items: bool, use_currencies: bool) -> void:
 	category_srch_ln_edt.text_changed.connect(_on_category_search_text_changed)
 	search_curr_ln_edt.text_changed.connect(_on_currency_search_text_changed)
 	edit_item_script_btn.pressed.connect(_on_edit_item_script_pressed)
+	currencies_tee.calculation_updated.connect(_on_calculation_updated)
+	copy_val_btn.pressed.connect(_on_copy_value_button_pressed, CONNECT_DEFERRED)
+	reset_calculator_btn.pressed.connect(_on_reset_calculator_pressed)
+	return_currency_btn.pressed.connect(_on_return_calculator_button_pressed)
+	go_to_calc_btn.pressed.connect(_on_go_to_calculator_pressed)
 
 
 func _on_edit_item_script_pressed() -> void:
@@ -208,13 +226,22 @@ func _on_create_currency_pressed() -> void:
 			save_current_currency()
 		
 		var currency_id: StringName = StringName(result[1])
-		currency_resource.create_currency(currency_id)
+		currency_resource.create_currency(currency_id, 0, "New Currency")
 		currency_tree.add_currency(currency_id, true, false)
+		currencies_tee.add_currency(currency_id, "New Currency", 0)
 		load_currency(currency_id)
 		loaded_currency = currency_id
 		set_currency_ui_enabled(true)
-		_on_something_changed()
+		_on_currency_changed()
 	id_creator.queue_free()
+
+
+func _on_currency_value_changed(new_value: int) -> void:
+	if loaded_currency.is_empty():
+		return
+	
+	currencies_tee.update_currency_value(loaded_currency, new_value)
+	_on_currency_changed()
 
 
 func _on_currency_deleted(currency_id: StringName) -> void:
@@ -227,7 +254,7 @@ func _on_currency_deleted(currency_id: StringName) -> void:
 		currency_custom_data_tree.clear_data()
 		set_currency_ui_enabled(false)
 	
-	_on_something_changed()
+	_on_currency_changed()
 
 
 func _on_currency_id_changed(from: StringName, to: StringName) -> void:
@@ -237,7 +264,7 @@ func _on_currency_id_changed(from: StringName, to: StringName) -> void:
 	if loaded_currency == from:
 		loaded_currency = to
 	
-	_on_something_changed()
+	_on_currency_changed()
 
 
 func _on_currency_selected(currency_id: StringName) -> void:
@@ -281,6 +308,10 @@ func reload_currency_resource(first_launch: bool = false) -> void:
 	else:
 		for currency in currency_resource.currencies():
 			currency_tree.add_currency(currency)
+			currencies_tee.add_currency(
+					currency,
+					currency_resource.get_currency_name(currency),
+					currency_resource.get_currency_value(currency))
 
 
 func clear_currency_section() -> void:
@@ -341,6 +372,29 @@ func save_current_currency() -> void:
 				data[data_key])
 
 #endregion
+
+
+
+func _on_go_to_calculator_pressed() -> void:
+	$CurrencyPanel/CurrencyContainer.visible = false
+	$CurrencyPanel/CurrencyCalc.visible = true
+
+
+func _on_return_calculator_button_pressed() -> void:
+	$CurrencyPanel/CurrencyContainer.visible = true
+	$CurrencyPanel/CurrencyCalc.visible = false
+
+
+func _on_reset_calculator_pressed() -> void:
+	currencies_tee.reset_table()
+
+
+func _on_calculation_updated(new_value: int) -> void:
+	value_ln_edt.text = str(new_value)
+
+
+func _on_copy_value_button_pressed() -> void:
+	DisplayServer.clipboard_set(value_ln_edt.text)
 
 
 func _on_category_search_text_changed(text: String) -> void:
@@ -498,7 +552,7 @@ func _on_item_erased(item_id: StringName) -> void:
 		reset_flags()
 		set_items_ui_enabled(false)
 	item_deleted.emit(item_id)
-	_on_something_changed()
+	_on_items_changed()
 
 
 func _on_create_item_pressed() -> void:
@@ -533,7 +587,7 @@ func _on_create_item_pressed() -> void:
 		loaded_item = item_id
 		set_items_ui_enabled(true)
 		item_created.emit(item_id, "New Item")
-		_on_something_changed()
+		_on_items_changed()
 	id_creator.queue_free()
 
 
@@ -743,10 +797,16 @@ func reload_fields() -> void:
 	rarity_opt_btn.disabled = rarity_opt_btn.item_count == 0 or not items_ui_enabled
 
 
-func _on_something_changed(arg = null) -> void:
-	if _unsaved:
+func _on_items_changed(arg = null) -> void:
+	if _items_unsaved:
 		return
-	_unsaved = true
+	_items_unsaved = true
+
+
+func _on_currency_changed(arg = null) -> void:
+	if _currency_unsaved:
+		return
+	_currency_unsaved = true
 
 
 func create_flag_item(flag_id: String, flag_value: ItemSheet.ItemFlag) -> CheckBox:
@@ -758,7 +818,7 @@ func create_flag_item(flag_id: String, flag_value: ItemSheet.ItemFlag) -> CheckB
 	new_flag.tooltip_text = new_flag.text
 	new_flag.custom_minimum_size.y = 32.0
 	new_flag.disabled = not items_ui_enabled
-	new_flag.toggled.connect(_on_something_changed)
+	new_flag.toggled.connect(_on_items_changed)
 	
 	return new_flag
 

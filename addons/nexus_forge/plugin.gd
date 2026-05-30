@@ -115,6 +115,13 @@ const SETTINGS_PATHS: Dictionary[String, Dictionary] = {
 		"hint": PROPERTY_HINT_NONE,
 		"hint_string": "",
 		"restart_required": false},
+	"species_genetic_dilution": {
+		"setting_path": "nexus_forge/settings/species_genetic_dilution",
+		"default_value": 0.0,
+		"type": TYPE_FLOAT,
+		"hint": PROPERTY_HINT_RANGE,
+		"hint_string": "0,1",
+		"restart_required": false},
 	"quests_format_strings": {
 		"setting_path": "nexus_forge/settings/format_quest_strings_with_blackboard",
 		"default_value": false,

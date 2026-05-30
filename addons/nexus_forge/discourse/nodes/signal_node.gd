@@ -10,7 +10,7 @@ func _post_init() -> void:
 	node_type = DialogueNodeType.SIGNAL
 	parent_mode = PortMode.OUTPUT
 	parent_port = 0
-	size = Vector2(260, 83)
+	size = Vector2(230, 83)
 	
 	available_signals = get_user_signals()
 	
@@ -46,7 +46,7 @@ func _post_init() -> void:
 
 
 func _ready() -> void:
-	graph_icon = get_theme_icon("Signal", "EditorIcons")
+	graph_icon = get_theme_icon("Signals", "EditorIcons")
 	set_output_connection_icon(&"signals", get_theme_icon("Signals", "EditorIcons"))
 	for arg_port in range(get_child_count() - 1):
 		var id: StringName = StringName("argument_" + str(arg_port + 1))

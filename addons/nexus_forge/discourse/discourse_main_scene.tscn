@@ -150,6 +150,7 @@ icon_alignment = 1
 [node name="NodesTree" type="Tree" parent="MainSplitContainer/MainSidebar/SidebarSplitContainer/NodesContainer" unique_id=138829445]
 layout_mode = 2
 size_flags_vertical = 3
+theme_override_constants/icon_max_width = 16
 allow_reselect = true
 hide_root = true
 script = ExtResource("2_nnanj")

@@ -933,7 +933,7 @@ func get_connection_dictionary(node_uuid: StringName, node_data: Dictionary) -> 
 					"to": node_data["output_connections"]["default"]["target_node_uuid"],
 					"from_port": node_data["output_connections"]["default"]["from_port"],
 					"to_port": node_data["output_connections"]["default"]["target_port"]})
-			for match_value in node_data["cases"]:
+			for match_value in meta["cases"]:
 				if match_value["output_connections"]["next_node"]["target_node_uuid"].is_empty():
 					continue
 				node_connections.append({

@@ -11,7 +11,7 @@ func _post_init() -> void:
 	node_type = DialogueNodeType.CALLABLE_RETURN
 	parent_mode = PortMode.OUTPUT
 	parent_port = 0
-	size = Vector2(280, 83)
+	size = Vector2(240, 83)
 	
 	available_methods = get_user_methods()
 	

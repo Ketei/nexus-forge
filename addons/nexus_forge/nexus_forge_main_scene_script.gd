@@ -128,12 +128,25 @@ func _on_species_loaded() -> void:
 
 
 func _on_import_species_data_pressed() -> void:
-	if species == null or characters == null:
+	if species == null or characters == null or species._species_resource == null:
 		return
-	if species._species_resource != null:
-		if not species.loaded_species.is_empty():
-			species.save_current_species()
-		characters.import_species_data(species._species_resource)
+
+	var confirmation_dialog: ConfirmationDialog = preload("res://addons/nexus_forge/characters/import_stat_data_cdialog.gd").new()
+	add_child(confirmation_dialog)
+	confirmation_dialog.popup_centered()
+	
+	var use_inheritance : int = await confirmation_dialog.dialog_finished
+	
+	if use_inheritance == 0:
+		confirmation_dialog.queue_free()
+		return
+	
+	if not species.loaded_species.is_empty():
+		species.save_current_species()
+	
+	characters.import_species_data(species._species_resource, use_inheritance == 1)
+	
+	confirmation_dialog.queue_free()
 
 
 func _on_items_loaded() -> void:
@@ -231,7 +244,7 @@ func has_unsaved_changes() -> bool:
 	var characters_unsaved: bool = characters.has_unsaved_files() if characters != null else false
 	var species_unsaved: bool = species._unsaved if species != null else false
 	var talents_unsaved: bool = talents._unsaved if talents != null else false
-	var items_unsaved: bool = items._unsaved if items != null else false
+	var items_unsaved: bool = items.has_unsaved_changes() if items != null else false
 	var recipes_unsaved: bool = recipes._unsaved if recipes != null else false
 	var quests_unsaved: bool = quests.has_unsaved_files() if quests != null else false
 	var phrases_unsaved: bool = phrase_maps.has_unsaved_files() if phrase_maps != null else false
@@ -241,23 +254,23 @@ func has_unsaved_changes() -> bool:
 
 func save_resources() -> void:
 	if discourse != null and discourse.has_unsaved_files():
-		discourse.save_all_dialogs()
+		discourse.save_all_dialogs.call_deferred()
 	if variables.has_unsaved_changes():
-		variables.save()
+		variables.save.call_deferred()
 	if characters != null and characters.has_unsaved_files():
-		characters.save()
+		characters.save.call_deferred()
 	if species != null and species._unsaved:
-		species.save()
+		species.save.call_deferred()
 	if talents != null and talents._unsaved:
-		talents.save()
-	if items != null and items._unsaved:
-		items.save()
+		talents.save.call_deferred()
+	if items != null and items.has_unsaved_changes():
+		items.save.call_deferred()
 	if recipes != null and recipes._unsaved:
-		recipes.save()
+		recipes.save.call_deferred()
 	if quests != null and quests.has_unsaved_files():
-		quests.save_resource()
+		quests.save_resource.call_deferred()
 	if phrase_maps != null and phrase_maps.has_unsaved_files():
-		phrase_maps.save_all()
+		phrase_maps.save_all.call_deferred()
 
 
 func reload_stats() -> void:

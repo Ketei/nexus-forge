@@ -24,15 +24,15 @@ const CURRENCY_DEFAULT_DATA: Dictionary[String, Variant] = {}
 
 
 ## Creates a new currency with [param currency_id] unless it already exists.
-func create_currency(currency_id: StringName) -> void:
+func create_currency(currency_id: StringName, value: int = 0, name: String = "") -> void:
 	if _currencies.has(currency_id):
 		return
 	var currency_data: Dictionary[String, Variant] = {}
 	currency_data.assign(CURRENCY_DEFAULT_DATA)
 	
 	var new_entry: Dictionary = {
-		"name": "",
-		"value": 0,
+		"name": name,
+		"value": value,
 		"data": currency_data}
 	_currencies[currency_id] = new_entry
 	

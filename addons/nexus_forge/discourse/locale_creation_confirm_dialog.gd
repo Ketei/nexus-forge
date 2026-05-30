@@ -17,12 +17,14 @@ func _init() -> void:
 
 
 func _ready() -> void:
+	var cancel_button: Button = get_cancel_button()
 	size = Vector2i(220, 89)
 	initial_position = Window.WINDOW_INITIAL_POSITION_CENTER_MAIN_WINDOW_SCREEN
 	get_ok_button().focus_previous = _code_opt_btn.get_path()
-	get_cancel_button().focus_next = _code_opt_btn.get_path()
+	cancel_button.focus_next = _code_opt_btn.get_path()
+	cancel_button.get_parent().move_child(cancel_button, 0)
 	_code_opt_btn.focus_next = get_ok_button().get_path()
-	_code_opt_btn.focus_previous = get_cancel_button().get_path()
+	_code_opt_btn.focus_previous = cancel_button.get_path()
 	confirmed.connect(_on_confirmed)
 	canceled.connect(_on_canceled)
 
@@ -36,6 +38,13 @@ func set_codes(codes: Array[Dictionary]) -> void:
 		_code_opt_btn.add_item(item["name"])
 		_code_opt_btn.set_item_disabled(idx, item["disabled"])
 		_code_opt_btn.set_item_metadata(idx, item["code"])
+
+
+func select_language(lang: String) -> void:
+	for idx in range(_code_opt_btn.item_count):
+		if _code_opt_btn.get_item_metadata(idx) == lang:
+			_code_opt_btn.select(idx)
+			return
 
 
 func _on_confirmed() -> void:

@@ -792,8 +792,9 @@ func _on_change_default_language_pressed() -> void:
 	window.title = "Select Language..."
 	window.ok_button_text = "Set default"
 	window.set_codes(language_options)
+	window.select_language(base_language)
 	add_child(window)
-	window.show()
+	window.popup()
 	window.focus_option_button()
 	var result: String = await window.dialog_finished
 	
@@ -1052,6 +1053,8 @@ func _on_localize_node(node: DiscourseGraphNode) -> void:
 					current_locale)
 			localization_nodes_tree.create_options_node(node.get_node_id(), node)
 		DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
+			print("Stack: ")
+			print_stack()
 			active_conversation.set_text_entry(
 					node.get_node_uuid(),
 					node.get_text(),
@@ -1659,7 +1662,7 @@ func display_conversation(conversation: EditorDiscourseDialog) -> bool:
 		if not new_connections.is_empty():
 			node_connections.append_array(new_connections)
 		
-		_on_discourse_node_created(d_node)
+		discourse_nodes_tree.create_node(d_node)
 		
 		if d_node.is_node_localized():
 			if d_node.node_type == DiscourseGraphNode.DialogueNodeType.DIALOG:
