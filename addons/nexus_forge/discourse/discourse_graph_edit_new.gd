@@ -267,6 +267,7 @@ var connection_popup: PopupMenu = null
 # when an anchor is updated. Much better than iterating through the entire node
 # collection.
 var anchor_pointers: Array[DiscourseGraphNode] = []
+var anchor_targets: Array[DiscourseGraphNode] = []
 # All of the spawned graph nodes. More straightforward since get_children also
 # returns the connection nodes
 var graph_nodes: Dictionary[StringName, DiscourseGraphNode] = {}
@@ -421,14 +422,18 @@ func new_dialog_node(node_type: DialogNodes, uuid: StringName = &"") -> Discours
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/jump_to_node.gd").new(uuid)
 			anchor_pointers.append(created_node)
 			created_node.go_to_anchor_pressed.connect(_on_go_to_node_pressed, CONNECT_DEFERRED)
+			
+			for anchor in anchor_targets:
+				created_node.add_anchor(anchor.get_node_uuid(), anchor.current_id)
+			
 		DialogNodes.ANCHOR:
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/jump_target_node.gd").new(uuid)
-			var valid_id: String = DiscourseGraphAnchorPointer.get_available_id("anchor")
-			DiscourseGraphAnchorPointer.add_anchor(created_node.get_node_uuid(), valid_id)
+			var valid_id: String = get_valid_anchor_id("anchor", created_node)
 			created_node.set_anchor_id(valid_id)
-			created_node.id_changed.connect(_on_anchor_id_changed, CONNECT_DEFERRED)
+			created_node.id_changed.connect(_on_anchor_id_changed.bind(created_node), CONNECT_DEFERRED)
+			anchor_targets.append(created_node)
 			for anchor in anchor_pointers:
-				anchor.reload_anchors()
+				anchor.add_anchor(created_node.get_node_uuid(), valid_id)
 		DialogNodes.DIALOG_END:
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/end_node.gd").new(uuid)
 		DialogNodes.DIALOG_MERGE:
@@ -643,11 +648,12 @@ func duplicate_single(node_uuid: StringName, new_uuid: StringName) -> void:
 	
 	if new_node.node_type == DialogNodes.ANCHOR:
 		var cloned_id: String = new_node.get_anchor_id()
-		var new_id: String = DiscourseGraphAnchorPointer.get_available_id(cloned_id)
-		
-		DiscourseGraphAnchorPointer.update_anchor(new_node.get_node_uuid(), new_id)
+		var new_id: String = get_valid_anchor_id(cloned_id, new_node)
 		
 		new_node.set_anchor_id(new_id)
+		
+		for existing_anchor in anchor_pointers:
+			existing_anchor.add_anchor(new_uuid, new_id)
 	
 	if frame != null:
 		attach_graph_element_to_frame(new_node.name, frame.name)
@@ -719,14 +725,33 @@ func remove_node(node_uuid: StringName) -> void:
 	disconnect_all_node_connections(node_uuid)
 	
 	if target.node_type == DialogNodes.ANCHOR:
-		DiscourseGraphAnchorPointer.remove_anchor(target.get_node_uuid())
-		for anchor_pointer in anchor_pointers:
-			anchor_pointer.reload_anchors()
+		
+		for pointer in anchor_pointers:
+			pointer.remove_anchor(node_uuid)
+		
 	elif target.node_type == DialogNodes.ANCHOR_POINTER:
 		anchor_pointers.erase(target)
 	
 	graph_nodes.erase(node_uuid)
 	target.queue_free()
+
+
+func get_valid_anchor_id(desired_id: String, skip: DiscourseGraphNode = null) -> String:
+	var modified: String = desired_id
+	var existing_ids: Array[StringName] = []
+	
+	for item in anchor_targets:
+		if item == skip:
+			continue
+		existing_ids.append(item.current_id)
+	
+	var iteration: int = 0
+	
+	while existing_ids.has(modified):
+		iteration += 1
+		modified = modified + str(iteration)
+	
+	return modified
 
 
 func remove_nodes(node_uuids: Array[StringName]) -> void:
@@ -768,6 +793,7 @@ func clear_dialog_nodes(recreate_entry: bool = true) -> void:
 	graph_nodes.clear()
 	node_frames.clear()
 	anchor_pointers.clear()
+	anchor_targets.clear()
 	method_callers.clear()
 	signalers.clear()
 	entry_node = null
@@ -1195,12 +1221,15 @@ func set_node_in_frame(node_uuid: StringName, frame: StringName) -> void:
 	attach_graph_element_to_frame(graph_nodes[node_uuid].name, node_frames[frame].name)
 
 
-func _on_anchor_id_changed(uuid: String, new_id: String) -> void:
-	var valid_id: String = DiscourseGraphAnchorPointer.get_available_id(new_id)
-	DiscourseGraphAnchorPointer.update_anchor(uuid, valid_id)
+func _on_anchor_id_changed(uuid: String, new_id: String, source: DiscourseGraphNode) -> void:
+	var valid_id: String = get_valid_anchor_id(new_id, source)
+
+	source.set_anchor_id(valid_id)
 	
 	for anchor in anchor_pointers:
-		anchor.reload_anchors()
+		anchor.update_anchor(uuid, valid_id)
+	
+	dialog_changed.emit()
 
 
 func _on_popup_index_pressed(index: int, menu: PopupMenu) -> void:

@@ -90,7 +90,6 @@ func _on_id_focus_lost(line: LineEdit) -> void:
 func set_anchor_id(new_id: String) -> void:
 	get_field(&"anchor").text = new_id
 	current_id = new_id
-	id_changed.emit(_uuid, new_id)
 
 
 func get_anchor_id() -> String:
