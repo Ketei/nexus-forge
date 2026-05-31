@@ -89,9 +89,12 @@ Features that are planned to be implemented in the future:
 - [x] **Depot(Items):** Allow for name & description to be formatted using Blackboard's variables on settings.
 - [x] **Odyssey(Quests):** Allow for title & description to be formatted using Blackboard's variables on settings.
 - [x] **Kindred(Species):** Hybridization system.
-- [ ] **On Beta Release:** Publish on Godot's Asset Library/Asset Store
+- [ ] **Core:** Fix all the critical bugs and stabilize the API, making the plugin usable on projects.
+- [ ] Release Beta.
+
 
 ### Beta & Beyond
+- [ ] **On Release:** Publish on Godot's Asset Library/Asset Store
 - [ ] **Core:** UndoRedo for all modules
   - [ ] Discourse (Dialogs)
   - [ ] Blackboard (Variables)
@@ -102,10 +105,6 @@ Features that are planned to be implemented in the future:
   - [ ] Blueprints (Recipes)
   - [ ] Odyssey (Quests)
   - [ ] Phrase Maps
-- [ ] **Editor:** Enum editor without having to open the script file
-  - [ ] Character's Gender
-  - [ ] Item's Rarity
-  - [ ] Quest's Type
 - [ ] **Core:** Implement an automatic [mod loader](#modding)
 - [ ] **Discourse:** Import/Export CSV files for localization
 - [ ] **Github Wiki:** Rewrite the Wiki and include examples using screenshots/gifs
