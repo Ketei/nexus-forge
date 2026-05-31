@@ -8,9 +8,7 @@ extends Resource
 enum Gender { # Must ALWAYS have one item.
 	MALE,
 	FEMALE,
-	GYNOMORPH,
-	
-}
+	GYNOMORPH,}
 
 ## The unique ID of a character
 @export var id: StringName = &""

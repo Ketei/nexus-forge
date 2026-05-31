@@ -141,24 +141,6 @@ text = "Item"
 horizontal_alignment = 1
 vertical_alignment = 2
 
-[node name="EditItemScriptBtn" type="Button" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/TitleVContainer/Label" unique_id=1074496262]
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 1
-anchors_preset = 6
-anchor_left = 1.0
-anchor_top = 0.5
-anchor_right = 1.0
-anchor_bottom = 0.5
-offset_left = -32.0
-offset_top = -16.0
-offset_bottom = 16.0
-grow_horizontal = 0
-grow_vertical = 2
-tooltip_text = "Edit ItemSheet script"
-focus_mode = 1
-flat = true
-icon_alignment = 1
-
 [node name="NameContainer" type="HBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer" unique_id=1829187045]
 layout_mode = 2
 size_flags_horizontal = 3
@@ -187,11 +169,22 @@ custom_minimum_size = Vector2(72, 0)
 layout_mode = 2
 text = "Rarity"
 
-[node name="RarityOptBtn" type="OptionButton" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/RarityContainer" unique_id=383571325]
+[node name="RarityContainer" type="HBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/RarityContainer" unique_id=96957616]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="RarityOptBtn" type="OptionButton" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/RarityContainer/RarityContainer" unique_id=383571325]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
 disabled = true
+
+[node name="EditRaritiesBtn" type="Button" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/RarityContainer/RarityContainer" unique_id=1290520514]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Edit Rarities"
+flat = true
+icon_alignment = 1
 
 [node name="ValueContainer" type="HBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer" unique_id=117491121]
 layout_mode = 2
@@ -318,6 +311,19 @@ theme_override_font_sizes/font_size = 20
 text = "Flags"
 horizontal_alignment = 1
 vertical_alignment = 2
+
+[node name="EditFlagsBtn" type="Button" parent="ItemsContainer/ItemsPanel/ItemsContainer/FlagsContainer/TitleVContainer/Label" unique_id=907272906]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -8.0
+offset_bottom = 8.0
+grow_horizontal = 0
+tooltip_text = "Edit Flags"
+flat = true
+icon_alignment = 1
 
 [node name="ScrollContainer" type="ScrollContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/FlagsContainer" unique_id=987043105]
 layout_mode = 2

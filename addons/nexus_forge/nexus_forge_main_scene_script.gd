@@ -243,7 +243,7 @@ func has_unsaved_changes() -> bool:
 	var discourse_unsaved: bool = discourse.has_unsaved_files() if discourse != null else false
 	var characters_unsaved: bool = characters.has_unsaved_files() if characters != null else false
 	var species_unsaved: bool = species._unsaved if species != null else false
-	var talents_unsaved: bool = talents._unsaved if talents != null else false
+	var talents_unsaved: bool = talents.has_unsaved_changes() if talents != null else false
 	var items_unsaved: bool = items.has_unsaved_changes() if items != null else false
 	var recipes_unsaved: bool = recipes._unsaved if recipes != null else false
 	var quests_unsaved: bool = quests.has_unsaved_files() if quests != null else false
@@ -261,7 +261,7 @@ func save_resources() -> void:
 		characters.save.call_deferred()
 	if species != null and species._unsaved:
 		species.save.call_deferred()
-	if talents != null and talents._unsaved:
+	if talents != null and talents.has_unsaved_changes():
 		talents.save.call_deferred()
 	if items != null and items.has_unsaved_changes():
 		items.save.call_deferred()

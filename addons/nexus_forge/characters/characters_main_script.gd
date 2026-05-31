@@ -82,7 +82,38 @@ func ready_plugin() -> void:
 
 
 func _on_edit_genders_pressed() -> void:
-	EditorInterface.edit_script(CharacterSheet.new().get_script())
+	var sheet_script: Script = CharacterSheet.new().get_script()
+	var source_code: String = sheet_script.source_code
+	
+	if source_code.is_empty():
+		return
+	
+	var pattern: String = "enum\\s+Gender\\s*\\{[^}]*\\}"
+	var regex: RegEx = RegEx.new()
+	regex.compile(pattern)
+	
+	var regex_match: RegExMatch = regex.search(source_code)
+	
+	if regex_match == null:
+		return
+	
+	var match_start: int = regex_match.get_start()
+	var match_string: String = regex_match.get_string()
+	var brace_open_idx: int = match_start + match_string.find("{")
+	var brace_close_index: int = regex_match.get_end() - 1
+	
+	var inner_length: int = brace_close_index - brace_open_idx - 1
+	var inner_text: String = source_code.substr(brace_open_idx + 1, inner_length)
+	var stripped_text: String = inner_text.strip_edges(false)
+	
+	var target_idx: int = brace_open_idx + stripped_text.length() + 1
+	var text_before_target: String = source_code.substr(0, target_idx)
+	
+	var line: int  = text_before_target.count("\n") + 1
+	var last_newline_idx: int = text_before_target.rfind("\n")
+	var column: int = text_before_target.length() - last_newline_idx
+	EditorInterface.edit_script(sheet_script, line, column)
+	
 	if not EditorInterface.get_editor_settings().get_setting("text_editor/external/use_external_editor"):
 		EditorInterface.set_main_screen_editor("Script")
 
@@ -656,17 +687,18 @@ func load_character(sheet: CharacterSheet) -> void:
 	for skill in char_skill_container.get_children():
 		if skill is HBoxContainer:
 			var skill_value = sheet.skills.get(skill.get_meta(&"skill_id"))
-			if skill_value != null:
-				skill.get_child(1).set_value_no_signal(skill_value)
-			else:
+			if skill_value == null:
 				skill.get_child(1).set_value_no_signal(skill.get_meta(&"default_value"))
+			else:
+				skill.get_child(1).set_value_no_signal(skill_value)
+	
 	for child in char_traits_container.get_children():
 		if child is HBoxContainer:
 			var trait_value = sheet.traits.get(child.get_meta(&"trait_id"))
 			if trait_value == null:
-				child.get_child(1).set_value_no_signal(trait_value)
-			else:
 				child.get_child(1).set_value_no_signal(child.get_meta(&"default_value"))
+			else:
+				child.get_child(1).set_value_no_signal(trait_value)
 
 
 func select_species(type: StringName) -> void:

@@ -11,8 +11,8 @@ var _traits_resource: TraitCatalog
 
 var loaded_skill: StringName = &""
 var loaded_trait: StringName = &""
-var _unsaved: bool = false
-
+var _skills_unsaved: bool = false
+var _traits_unsaved: bool = false
 
 @onready var skill_opt_btn: OptionButton = $MainContainer/SkillsPanel/SkillsContainer/SkillSelectContainer/SkillContainer/SkillOptBtn
 @onready var skill_ln_edt: LineEdit = $MainContainer/SkillsPanel/SkillsContainer/NameContainer/SkillLnEdt
@@ -23,7 +23,6 @@ var _unsaved: bool = false
 @onready var skill_bool_btn: Button = $MainContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader/ButtonContainer/SkillBoolBtn
 @onready var skill_str_btn: Button = $MainContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader/ButtonContainer/SkillStrBtn
 @onready var skill_dict_button: Button = $MainContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader/ButtonContainer/AddDictButton
-
 
 @onready var trait_opt_btn: OptionButton = $MainContainer/TraitsPanel/TraitsContainerContainer/TraitSelectContainer/TraitContainer/TraitOptBtn
 @onready var trait_ln_edt: LineEdit = $MainContainer/TraitsPanel/TraitsContainerContainer/NameContainer/TraitLnEdt
@@ -63,8 +62,11 @@ func ready_plugin() -> void:
 	set_skills_ui_enabled(0 < skill_opt_btn.item_count)
 	set_traits_ui_enabled(0 < trait_opt_btn.item_count)
 	
-	skill_ln_edt.text_changed.connect(something_changed)
-	skill_desc_txt_edt.text_changed.connect(something_changed)
+	skill_ln_edt.text_changed.connect(skills_changed)
+	skill_desc_txt_edt.text_changed.connect(skills_changed)
+	
+	trait_ln_edt.text_changed.connect(traits_changed)
+	trait_desc_txt_edt.text_changed.connect(traits_changed)
 	
 	skill_int_btn.pressed.connect(_on_add_skill_data_pressed.bind("new_int", 0))
 	skill_flt_btn.pressed.connect(_on_add_skill_data_pressed.bind("new_float", 0.0))
@@ -82,6 +84,9 @@ func ready_plugin() -> void:
 	
 	edit_skills_btn.pressed.connect(_on_edit_skillset_pressed)
 	edit_traits_btn.pressed.connect(_on_edit_traitblock_pressed)
+	
+	skill_data_tree.data_changed.connect(skills_changed)
+	trait_data_tree.data_changed.connect(traits_changed)
 
 
 func _on_edit_skillset_pressed() -> void:
@@ -168,6 +173,8 @@ func _on_create_skill_resource_pressed(panel: PanelContainer) -> void:
 		_skills_resource = SkillCatalog.new()
 		ResourceSaver.save(_skills_resource, result[1])
 		_skills_resource.resource_path = result[1]
+		if ResourceLoader.has_cached(result[1]):
+			_skills_resource.take_over_path(result[1])
 		ProjectSettings.set_setting(
 				EditorNFPlugin.get_project_settings_path("skills"),
 				result[1])
@@ -176,6 +183,7 @@ func _on_create_skill_resource_pressed(panel: PanelContainer) -> void:
 		$MainContainer/SkillsPanel/SkillsContainer.visible = true
 		panel.visible = false
 		panel.queue_free()
+		load_skills_resource()
 	
 	res_loader.queue_free()
 
@@ -223,7 +231,7 @@ func _on_skill_resource_dropped(resource: Resource, panel: Control) -> void:
 
 func _on_add_skill_data_pressed(data_name: String, data: Variant) -> void:
 	skill_data_tree.add_data(data_name, data)
-	something_changed()
+	skills_changed()
 
 
 func _on_skill_selected(skill_idx: int) -> void:
@@ -415,6 +423,9 @@ func _on_create_traits_resource_pressed(panel: PanelContainer) -> void:
 	if result[0]:
 		_traits_resource = TraitCatalog.new()
 		ResourceSaver.save(_traits_resource, result[1])
+		_traits_resource.resource_path = result[1]
+		if ResourceLoader.has_cached(result[1]):
+			_traits_resource.take_over_path(result[1])
 		ProjectSettings.set_setting(
 				EditorNFPlugin.get_project_settings_path("traits"),
 				result[1])
@@ -473,7 +484,7 @@ func _on_traits_resource_dropped(resource: Resource, panel: Control) -> void:
 
 func _on_add_trait_data_pressed(data_name: String, data: Variant) -> void:
 	trait_data_tree.add_data(data_name, data)
-	something_changed()
+	traits_changed()
 
 
 func _on_trait_selected(trait_idx: int) -> void:
@@ -524,7 +535,6 @@ func set_traits_ui_enabled(enabled: bool) -> void:
 
 
 func save_current_trait() -> void:
-	#var trait_id: StringName = trait_opt_btn.get_item_metadata(trait_opt_btn.selected)
 	var trait_data: Dictionary[String, Variant] = trait_data_tree.get_data()
 	_traits_resource.set_trait_name(loaded_trait, trait_ln_edt.text.strip_edges())
 	_traits_resource.set_trait_description(loaded_trait, trait_desc_txt_edt.text.strip_edges())
@@ -658,13 +668,14 @@ func reload_traits(reselect: bool = true) -> void:
 #endregion
 
 
-func something_changed(_arg: Variant = null) -> void:
-	if not _unsaved:
-		_unsaved = true
+func skills_changed(_arg: Variant = null) -> void:
+	if not _skills_unsaved:
+		_skills_unsaved = true
 
 
-func set_ui_enabled(enabled: bool) -> void:
-	var disabled: bool = not enabled
+func traits_changed(_arg: Variant = null) -> void:
+	if not _traits_unsaved:
+		_traits_unsaved = true
 
 
 func save_current_skill() -> void:
@@ -677,18 +688,19 @@ func save_current_skill() -> void:
 
 
 func has_unsaved_changes() -> bool:
-	return _unsaved
+	return _traits_unsaved or _skills_unsaved
 
 
 func save() -> void:
-	if _skills_resource != null:
+	if _skills_resource != null and _skills_unsaved:
 		if skill_opt_btn.selected != -1:
 			save_current_skill()
 		ResourceSaver.save(_skills_resource)
 	
-	if _traits_resource != null:
+	if _traits_resource != null and _traits_unsaved:
 		if trait_opt_btn.selected != -1:
 			save_current_trait()
 		ResourceSaver.save(_traits_resource)
 	
-	_unsaved = false
+	_skills_unsaved = false
+	_traits_unsaved = false
