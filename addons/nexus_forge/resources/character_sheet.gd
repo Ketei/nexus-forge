@@ -5,10 +5,9 @@ extends Resource
 ## A resource holding a character's data.
 
 ## Possible genders of a character.
-enum Gender { # Must ALWAYS have one item.
+enum Gender {
 	MALE,
-	FEMALE,
-	GYNOMORPH,}
+	FEMALE}
 
 ## The unique ID of a character
 @export var id: StringName = &""

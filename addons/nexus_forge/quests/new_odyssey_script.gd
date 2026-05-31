@@ -157,10 +157,15 @@ func update_type_button(type: int) -> void:
 
 
 func set_quest_types(reselect: bool = false) -> void:
+	var quest_constants: Dictionary = Quest.new().get_script().get_script_constant_map()
+	
+	if not quest_constants.has(&"QuestType"):
+		type_opt_btn.clear()
+		return
+	
 	var select: bool = 0 <= type_opt_btn.selected if reselect else false
 	var selected: int = type_opt_btn.get_selected_metadata() if select else 0
 	var new_index: int = -1
-	var quest_constants: Dictionary = Quest.new().get_script().get_script_constant_map()
 	var quest_types: Dictionary = quest_constants[&"QuestType"]
 	var type_keys: Array = quest_types.keys()
 	
@@ -181,10 +186,15 @@ func set_quest_types(reselect: bool = false) -> void:
 
 
 func set_stage_types(reselect: bool = false) -> void:
+	var stage_constants: Dictionary = QuestStage.new().get_script().get_script_constant_map()
+	
+	if not stage_constants.has(&"StageType"):
+		type_opt_btn.clear()
+		return
+	
 	var select: bool = 0 <= type_opt_btn.selected if reselect else false
 	var selected: int = type_opt_btn.get_selected_metadata() if select else 0
 	var new_index: int = -1
-	var stage_constants: Dictionary = QuestStage.new().get_script().get_script_constant_map()
 	var stage_types: Dictionary = stage_constants[&"StageType"]
 	var type_keys: Array = stage_types.keys()
 	
@@ -205,10 +215,15 @@ func set_stage_types(reselect: bool = false) -> void:
 
 
 func set_objective_types(reselect: bool = false) -> void:
+	var objectitve_constants: Dictionary = QuestObjective.new().get_script().get_script_constant_map()
+	
+	if not objectitve_constants.has(&"ObjectiveType"):
+		type_opt_btn.clear()
+		return
+	
 	var select: bool = 0 <= type_opt_btn.selected if reselect else false
 	var selected: int = type_opt_btn.get_selected_metadata() if select else 0
 	var new_index: int = -1
-	var objectitve_constants: Dictionary = QuestObjective.new().get_script().get_script_constant_map()
 	var objectitve_types: Dictionary = objectitve_constants[&"ObjectiveType"]
 	var type_keys: Array = objectitve_types.keys()
 	

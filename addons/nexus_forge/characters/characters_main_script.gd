@@ -210,6 +210,11 @@ func update_genders() -> void:
 	gender_option_button.clear()
 	var gender_obg: CharacterSheet = CharacterSheet.new()
 	var map: Dictionary = gender_obg.get_script().get_script_constant_map()
+	
+	if not map.has(&"Gender"):
+		gender_option_button.disabled = true
+		return
+	
 	var genders: Dictionary = map[&"Gender"]
 	
 	for gender:String in genders.keys():
@@ -218,6 +223,8 @@ func update_genders() -> void:
 		gender_option_button.set_item_metadata(
 				-1,
 				genders[gender])
+	
+	gender_option_button.disabled = gender_option_button.item_count == 0
 
 
 func update_species_data(species_catalog: SpeciesCatalog = null) -> void:
@@ -557,7 +564,10 @@ func save_current_character() -> void:
 	current_sheet.id = StringName(char_id_line.text.strip_edges())
 	current_sheet.name = char_name_line.text.strip_edges()
 	current_sheet.species = &"" if species_option_button.selected == -1 else species_option_button.get_item_metadata(species_option_button.selected)
-	current_sheet.gender = gender_option_button.get_item_metadata(gender_option_button.selected)
+	if -1 < gender_option_button.selected:
+		current_sheet.gender = gender_option_button.get_item_metadata(gender_option_button.selected)
+	else:
+		current_sheet.gender = 0
 	current_sheet.custom_data.clear()
 	current_sheet.custom_data.assign(character_data_tree.get_data())
 	

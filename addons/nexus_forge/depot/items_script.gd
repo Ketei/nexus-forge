@@ -705,6 +705,9 @@ func save_current_item() -> void:
 	item_link.items.set_item_category(loaded_item, current_category)
 	if -1 < rarity_opt_btn.selected:
 		item_link.items.set_item_rarity(loaded_item,  rarity_opt_btn.get_selected_metadata())
+	else:
+		item_link.items.set_item_rarity(loaded_item, 0)
+	
 	item_link.items.set_item_value(loaded_item, int(item_val_spn_bx.value))
 	
 	item_link.items.clear_item_data(loaded_item)
@@ -824,49 +827,52 @@ func reload_categories(reselect: bool = false) -> void:
 
 func reload_fields() -> void:
 	var constant_map: Dictionary = ItemSheet.new().get_script().get_script_constant_map()
-	var rarities: Dictionary = constant_map[&"Rarity"]
-	var item_flags: Dictionary = constant_map[&"ItemFlag"]
 	
-	var selected_rarity: int = -1 if rarity_opt_btn.selected == -1 else rarity_opt_btn.get_selected_metadata()
-	var new_index: int = -1
-	
-	rarity_opt_btn.clear()
-	var idx: int = -1
-	for rarity:String in rarities.keys():
-		idx += 1
-		rarity_opt_btn.add_item(rarity.capitalize())
-		rarity_opt_btn.set_item_metadata(-1, rarities[rarity])
-		if selected_rarity == rarities[rarity]:
-			new_index = idx
-	
-	if new_index != -1:
-		rarity_opt_btn.select(new_index)
-	
-	var sorted_flags: Array = item_flags.keys()
-	sorted_flags.sort_custom(func(a,b): return a.naturalnocasecmp_to(b) < 0)
-	
-	var existing_flags: Dictionary[String, CheckBox] = {}
-	
-	for existing_flag in items_flags_container.get_children():
-		if sorted_flags.has(existing_flag.get_meta(&"flag_id")):
-			existing_flags[existing_flag.get_meta(&"flag_id")] = existing_flag
-			items_flags_container.remove_child(existing_flag)
-		else:
-			items_flags_container.remove_child(existing_flag)
-			existing_flag.queue_free()
+	if constant_map.has(&"Rarity"):
+		var rarities: Dictionary = constant_map[&"Rarity"]
+		var selected_rarity: int = -1 if rarity_opt_btn.selected == -1 else rarity_opt_btn.get_selected_metadata()
+		var new_index: int = -1
+		rarity_opt_btn.clear()
+		var idx: int = -1
+		for rarity:String in rarities.keys():
+			idx += 1
+			rarity_opt_btn.add_item(rarity.capitalize())
+			rarity_opt_btn.set_item_metadata(-1, rarities[rarity])
+			if selected_rarity == rarities[rarity]:
+				new_index = idx
 		
-	for flag in sorted_flags:
-		if existing_flags.has(flag):
-			items_flags_container.add_child(existing_flags[flag])
-			existing_flags.erase(flag)
-		else:
-			items_flags_container.add_child(
-					create_flag_item(flag, item_flags[flag]))
-	
-	for remaining_flag in existing_flags.keys():
-		existing_flags[remaining_flag].queue_free()
+		if new_index != -1:
+			rarity_opt_btn.select(new_index)
+	else:
+		rarity_opt_btn.clear()
 	
 	rarity_opt_btn.disabled = rarity_opt_btn.item_count == 0 or not items_ui_enabled
+	
+	if constant_map.has(&"ItemFlag"):
+		var item_flags: Dictionary = constant_map[&"ItemFlag"]
+		var sorted_flags: Array = item_flags.keys()
+		sorted_flags.sort_custom(func(a,b): return a.naturalnocasecmp_to(b) < 0)
+		
+		var existing_flags: Dictionary[String, CheckBox] = {}
+		
+		for existing_flag in items_flags_container.get_children():
+			if sorted_flags.has(existing_flag.get_meta(&"flag_id")):
+				existing_flags[existing_flag.get_meta(&"flag_id")] = existing_flag
+				items_flags_container.remove_child(existing_flag)
+			else:
+				items_flags_container.remove_child(existing_flag)
+				existing_flag.queue_free()
+			
+		for flag in sorted_flags:
+			if existing_flags.has(flag):
+				items_flags_container.add_child(existing_flags[flag])
+				existing_flags.erase(flag)
+			else:
+				items_flags_container.add_child(
+						create_flag_item(flag, item_flags[flag]))
+		
+		for remaining_flag in existing_flags.keys():
+			existing_flags[remaining_flag].queue_free()
 
 
 func _on_items_changed(arg = null) -> void:
