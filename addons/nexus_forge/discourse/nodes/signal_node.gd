@@ -158,7 +158,7 @@ func reload_signals() -> void:
 			continue # And we continue
 		
 		#var field_id: StringName = &"argument_" + StringName(str(arg_idx + 1))
-		var current_input_type: int = get_input_port_type(arg_idx)
+		var current_input_type: int = get_slot_type_left(arg_idx + 1)
 		var new_data_type: int = new_arg["type"]
 		var new_port_type: int = 0
 		var new_type_color: String = ""
