@@ -224,7 +224,7 @@ func update_genders() -> void:
 				-1,
 				genders[gender])
 	
-	gender_option_button.disabled = gender_option_button.item_count == 0
+	gender_option_button.disabled = gender_option_button.item_count == 0 or current_sheet == null
 
 
 func update_species_data(species_catalog: SpeciesCatalog = null) -> void:

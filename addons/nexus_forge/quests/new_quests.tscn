@@ -20,8 +20,6 @@ content_margin_top = 8.0
 content_margin_right = 6.0
 content_margin_bottom = 6.0
 
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_xhnnm"]
-
 [node name="QuestsOdyssey" type="PanelContainer" unique_id=123000176]
 anchors_preset = 15
 anchor_right = 1.0
@@ -259,59 +257,57 @@ compact_mode = true
 custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 theme_override_constants/minimum_grab_thickness = 10
+collapsed = true
 
-[node name="DynamicLogicPanel" type="PanelContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer" unique_id=2049745596]
+[node name="TargetLogicContainer" type="VBoxContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer" unique_id=776476219]
 visible = false
 layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxEmpty_xhnnm")
+size_flags_vertical = 3
 
-[node name="TargetLogicContainer" type="VBoxContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel" unique_id=776476219]
-visible = false
-layout_mode = 2
-
-[node name="ObjReqChkBx" type="CheckBox" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer" unique_id=320927627]
+[node name="ObjReqChkBx" type="CheckBox" parent="MainContainer/DataContainer/DataContainer/LogicContainer/TargetLogicContainer" unique_id=320927627]
 layout_mode = 2
 tooltip_text = "If to complete the stage you need
 to complete this objective's requirements."
 text = "Objective Required"
 alignment = 1
 
-[node name="HSeparator" type="HSeparator" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer" unique_id=845331765]
+[node name="HSeparator" type="HSeparator" parent="MainContainer/DataContainer/DataContainer/LogicContainer/TargetLogicContainer" unique_id=845331765]
 layout_mode = 2
 
-[node name="RequirementsCotnainer" type="VBoxContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer" unique_id=2009779705]
+[node name="RequirementsCotnainer" type="VBoxContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer/TargetLogicContainer" unique_id=2009779705]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="HeaderContainer" type="HBoxContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer/TargetLogicContainer/RequirementsCotnainer" unique_id=1255664651]
 layout_mode = 2
 
-[node name="HeaderContainer" type="HBoxContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer" unique_id=1255664651]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/HeaderContainer" unique_id=367719645]
+[node name="Label" type="Label" parent="MainContainer/DataContainer/DataContainer/LogicContainer/TargetLogicContainer/RequirementsCotnainer/HeaderContainer" unique_id=367719645]
 layout_mode = 2
 text = "Requirements"
 
-[node name="RequirementSearchLnEdt" type="LineEdit" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/HeaderContainer" unique_id=619637067]
+[node name="RequirementSearchLnEdt" type="LineEdit" parent="MainContainer/DataContainer/DataContainer/LogicContainer/TargetLogicContainer/RequirementsCotnainer/HeaderContainer" unique_id=619637067]
 layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "Search Requirements"
 
-[node name="VSeparator" type="VSeparator" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/HeaderContainer" unique_id=822339052]
+[node name="VSeparator" type="VSeparator" parent="MainContainer/DataContainer/DataContainer/LogicContainer/TargetLogicContainer/RequirementsCotnainer/HeaderContainer" unique_id=822339052]
 layout_mode = 2
 
-[node name="AddButtonsContainer" type="HBoxContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/HeaderContainer" unique_id=909905357]
+[node name="AddButtonsContainer" type="HBoxContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer/TargetLogicContainer/RequirementsCotnainer/HeaderContainer" unique_id=909905357]
 layout_mode = 2
 alignment = 2
 
-[node name="AddReqDictButton" type="Button" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/HeaderContainer/AddButtonsContainer" unique_id=915280456]
+[node name="AddReqDictButton" type="Button" parent="MainContainer/DataContainer/DataContainer/LogicContainer/TargetLogicContainer/RequirementsCotnainer/HeaderContainer/AddButtonsContainer" unique_id=915280456]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add folder"
 flat = true
 icon_alignment = 1
 
-[node name="VSeparator" type="VSeparator" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/HeaderContainer/AddButtonsContainer" unique_id=1559110256]
+[node name="VSeparator" type="VSeparator" parent="MainContainer/DataContainer/DataContainer/LogicContainer/TargetLogicContainer/RequirementsCotnainer/HeaderContainer/AddButtonsContainer" unique_id=1559110256]
 layout_mode = 2
 
-[node name="AddReqIntButton" type="Button" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/HeaderContainer/AddButtonsContainer" unique_id=1193691853]
+[node name="AddReqIntButton" type="Button" parent="MainContainer/DataContainer/DataContainer/LogicContainer/TargetLogicContainer/RequirementsCotnainer/HeaderContainer/AddButtonsContainer" unique_id=1193691853]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Create integer variable."
@@ -319,7 +315,7 @@ icon = ExtResource("1_xhnnm")
 flat = true
 icon_alignment = 1
 
-[node name="AddReqFloatButton" type="Button" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/HeaderContainer/AddButtonsContainer" unique_id=518155339]
+[node name="AddReqFloatButton" type="Button" parent="MainContainer/DataContainer/DataContainer/LogicContainer/TargetLogicContainer/RequirementsCotnainer/HeaderContainer/AddButtonsContainer" unique_id=518155339]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Create float variable."
@@ -327,7 +323,7 @@ icon = ExtResource("2_ikrww")
 flat = true
 icon_alignment = 1
 
-[node name="AddReqBoolButton" type="Button" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/HeaderContainer/AddButtonsContainer" unique_id=804374421]
+[node name="AddReqBoolButton" type="Button" parent="MainContainer/DataContainer/DataContainer/LogicContainer/TargetLogicContainer/RequirementsCotnainer/HeaderContainer/AddButtonsContainer" unique_id=804374421]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Create bool variable."
@@ -335,7 +331,7 @@ icon = ExtResource("3_ct1fh")
 flat = true
 icon_alignment = 1
 
-[node name="AddReqStringButton" type="Button" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/HeaderContainer/AddButtonsContainer" unique_id=867876473]
+[node name="AddReqStringButton" type="Button" parent="MainContainer/DataContainer/DataContainer/LogicContainer/TargetLogicContainer/RequirementsCotnainer/HeaderContainer/AddButtonsContainer" unique_id=867876473]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Create string  variable."
@@ -343,9 +339,10 @@ icon = ExtResource("4_46oj0")
 flat = true
 icon_alignment = 1
 
-[node name="ObjReqTree" type="Tree" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer" unique_id=1084377534]
-custom_minimum_size = Vector2(250, 150)
+[node name="ObjReqTree" type="Tree" parent="MainContainer/DataContainer/DataContainer/LogicContainer/TargetLogicContainer/RequirementsCotnainer" unique_id=1084377534]
+custom_minimum_size = Vector2(250, 80)
 layout_mode = 2
+size_flags_vertical = 3
 columns = 3
 allow_reselect = true
 hide_root = true
@@ -355,19 +352,19 @@ compact_mode = true
 default_name = "new_requirement"
 metadata/_custom_type_script = "uid://rnhehey4dp1u"
 
-[node name="StageLogicContainer" type="VBoxContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel" unique_id=1334727168]
+[node name="StageLogicContainer" type="VBoxContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer" unique_id=1334727168]
 visible = false
 layout_mode = 2
 
-[node name="SuccessContainer" type="HBoxContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/StageLogicContainer" unique_id=207953490]
+[node name="SuccessContainer" type="HBoxContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer/StageLogicContainer" unique_id=207953490]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/StageLogicContainer/SuccessContainer" unique_id=2014491163]
+[node name="Label" type="Label" parent="MainContainer/DataContainer/DataContainer/LogicContainer/StageLogicContainer/SuccessContainer" unique_id=2014491163]
 custom_minimum_size = Vector2(116, 0)
 layout_mode = 2
 text = "Success Target"
 
-[node name="SuccessPointerOptBtn" type="OptionButton" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/StageLogicContainer/SuccessContainer" unique_id=681355]
+[node name="SuccessPointerOptBtn" type="OptionButton" parent="MainContainer/DataContainer/DataContainer/LogicContainer/StageLogicContainer/SuccessContainer" unique_id=681355]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -376,15 +373,15 @@ item_count = 1
 popup/item_0/text = "Quest End"
 popup/item_0/id = 0
 
-[node name="FailureContainer" type="HBoxContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/StageLogicContainer" unique_id=1865185976]
+[node name="FailureContainer" type="HBoxContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer/StageLogicContainer" unique_id=1865185976]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/StageLogicContainer/FailureContainer" unique_id=351896019]
+[node name="Label" type="Label" parent="MainContainer/DataContainer/DataContainer/LogicContainer/StageLogicContainer/FailureContainer" unique_id=351896019]
 custom_minimum_size = Vector2(116, 0)
 layout_mode = 2
 text = "Failure Target"
 
-[node name="FailurePointerOptBtn" type="OptionButton" parent="MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/StageLogicContainer/FailureContainer" unique_id=1329432021]
+[node name="FailurePointerOptBtn" type="OptionButton" parent="MainContainer/DataContainer/DataContainer/LogicContainer/StageLogicContainer/FailureContainer" unique_id=1329432021]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -396,6 +393,7 @@ popup/item_0/id = 0
 [node name="EventsContainer" type="VBoxContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer" unique_id=54403602]
 layout_mode = 2
 size_flags_vertical = 3
+size_flags_stretch_ratio = 2.0
 
 [node name="EventsHeader" type="HBoxContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer/EventsContainer" unique_id=1184923930]
 layout_mode = 2

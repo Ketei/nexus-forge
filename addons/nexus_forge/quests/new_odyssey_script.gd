@@ -14,10 +14,11 @@ var quest_resource: Quest = null
 
 var selected_stage: StringName = &""
 var selected_objective: StringName = &""
+var _logic_offset: int = 225
 
 #@onready var requirements_container: VBoxContainer = $MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/RequirementsScroll/RequirementsContainer
 #@onready var add_requirement_btn: Button = $MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/HeaderContainer/AddRequirementBtn
-@onready var obj_req_chk_bx: CheckBox = $MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/ObjReqChkBx
+@onready var obj_req_chk_bx: CheckBox = $MainContainer/DataContainer/DataContainer/LogicContainer/TargetLogicContainer/ObjReqChkBx
 @onready var crumbs_label: Label = $MainContainer/TitleContainer/CrumbsContainer/CrumbsLabel
 @onready var file_search_ln_edt: LineEdit = $MainContainer/DataContainer/NavigationContainer/FileBarContainer/FileSearchLnEdt
 @onready var new_quest_btn: Button = $MainContainer/DataContainer/NavigationContainer/FileBarContainer/NewQuestBtn
@@ -35,22 +36,22 @@ var selected_objective: StringName = &""
 @onready var custom_data_search_line: LineEdit = $MainContainer/DataContainer/DataContainer/BasicDataContainer/CustomDataContainer/CustomDataSearchLine
 @onready var custom_data_tree: Tree = $MainContainer/DataContainer/DataContainer/BasicDataContainer/CustomDataContainer/CustomDataTree
 @onready var events_tree: Tree = $MainContainer/DataContainer/DataContainer/LogicContainer/EventsContainer/EventsTree
-@onready var success_pointer_opt_btn: OptionButton = $MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/StageLogicContainer/SuccessContainer/SuccessPointerOptBtn
-@onready var failure_pointer_opt_btn: OptionButton = $MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/StageLogicContainer/FailureContainer/FailurePointerOptBtn
+@onready var success_pointer_opt_btn: OptionButton = $MainContainer/DataContainer/DataContainer/LogicContainer/StageLogicContainer/SuccessContainer/SuccessPointerOptBtn
+@onready var failure_pointer_opt_btn: OptionButton = $MainContainer/DataContainer/DataContainer/LogicContainer/StageLogicContainer/FailureContainer/FailurePointerOptBtn
 @onready var search_event_ln_edt: LineEdit = $MainContainer/DataContainer/DataContainer/LogicContainer/EventsContainer/EventsHeader/SearchEventLnEdt
-@onready var requirement_search_ln_edt: LineEdit = $MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/HeaderContainer/RequirementSearchLnEdt
+@onready var requirement_search_ln_edt: LineEdit = $MainContainer/DataContainer/DataContainer/LogicContainer/TargetLogicContainer/RequirementsCotnainer/HeaderContainer/RequirementSearchLnEdt
 @onready var edit_types_btn: Button = $MainContainer/DataContainer/DataContainer/BasicDataContainer/TypeContainer/EditTypesBtn
 
-@onready var target_logic_container: VBoxContainer = $MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer
-@onready var stage_logic_container: VBoxContainer = $MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/StageLogicContainer
-@onready var dynamic_logic_panel: PanelContainer = $MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel
+@onready var target_logic_container: VBoxContainer = $MainContainer/DataContainer/DataContainer/LogicContainer/TargetLogicContainer
+@onready var stage_logic_container: VBoxContainer = $MainContainer/DataContainer/DataContainer/LogicContainer/StageLogicContainer
+#@onready var dynamic_logic_panel: PanelContainer = $MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel
 
-@onready var add_req_dict_button: Button = $MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/HeaderContainer/AddButtonsContainer/AddReqDictButton
-@onready var add_req_int_button: Button = $MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/HeaderContainer/AddButtonsContainer/AddReqIntButton
-@onready var add_req_float_button: Button = $MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/HeaderContainer/AddButtonsContainer/AddReqFloatButton
-@onready var add_req_bool_button: Button = $MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/HeaderContainer/AddButtonsContainer/AddReqBoolButton
-@onready var add_req_string_button: Button = $MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/HeaderContainer/AddButtonsContainer/AddReqStringButton
-@onready var obj_req_tree: Tree = $MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/ObjReqTree
+@onready var add_req_dict_button: Button = $MainContainer/DataContainer/DataContainer/LogicContainer/TargetLogicContainer/RequirementsCotnainer/HeaderContainer/AddButtonsContainer/AddReqDictButton
+@onready var add_req_int_button: Button = $MainContainer/DataContainer/DataContainer/LogicContainer/TargetLogicContainer/RequirementsCotnainer/HeaderContainer/AddButtonsContainer/AddReqIntButton
+@onready var add_req_float_button: Button = $MainContainer/DataContainer/DataContainer/LogicContainer/TargetLogicContainer/RequirementsCotnainer/HeaderContainer/AddButtonsContainer/AddReqFloatButton
+@onready var add_req_bool_button: Button = $MainContainer/DataContainer/DataContainer/LogicContainer/TargetLogicContainer/RequirementsCotnainer/HeaderContainer/AddButtonsContainer/AddReqBoolButton
+@onready var add_req_string_button: Button = $MainContainer/DataContainer/DataContainer/LogicContainer/TargetLogicContainer/RequirementsCotnainer/HeaderContainer/AddButtonsContainer/AddReqStringButton
+@onready var obj_req_tree: Tree = $MainContainer/DataContainer/DataContainer/LogicContainer/TargetLogicContainer/RequirementsCotnainer/ObjReqTree
 
 
 func ready_plugin() -> void:
@@ -130,7 +131,6 @@ func ready_plugin() -> void:
 	success_pointer_opt_btn.item_selected.connect(_on_something_changed)
 	failure_pointer_opt_btn.item_selected.connect(_on_something_changed)
 	quest_tree.tree_changed.connect(_on_something_changed)
-
 
 
 func filesystem_resource_removed(quest: Quest) -> void:
@@ -246,7 +246,7 @@ func set_objective_types(reselect: bool = false) -> void:
 func set_quest_mode(mode: QuestModeType) -> void:
 	target_logic_container.visible = mode == QuestModeType.OBJECTIVE
 	stage_logic_container.visible = mode == QuestModeType.STAGE
-	dynamic_logic_panel.visible = mode != QuestModeType.NONE and mode != QuestModeType.QUEST
+	$MainContainer/DataContainer/DataContainer/LogicContainer.collapsed = mode != QuestModeType.OBJECTIVE
 	
 	if mode == QuestModeType.QUEST:
 		set_quest_types()
