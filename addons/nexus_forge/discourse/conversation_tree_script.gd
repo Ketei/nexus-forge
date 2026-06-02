@@ -57,8 +57,6 @@ func ready_plugin() -> void:
 	
 	item_selected.connect(_on_conversation_selected)
 	button_clicked.connect(_on_close_conversation_pressedbutton_clicked)
-	
-	
 
 
 func _on_conversation_selected() -> void:

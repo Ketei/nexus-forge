@@ -119,9 +119,13 @@ func get_format_string(key: String, locale: String) -> String:
 			"")
 
 
+func has_format_string(key: String) -> bool:
+	return format_strings.has(key)
+
+
 ## Returns all format keys that the localized string has.
-func get_format_string_formats(key: String, language: String, region: String = "") -> Array[String]:
-	var lang_code: String = TranslationServer.standardize_locale(language if region.is_empty() else language + "_" + region)
+func get_format_string_formats(key: String, locale_code: String) -> Array[String]:
+	var lang_code: String = TranslationServer.standardize_locale(locale_code)
 	var format_data = DictUtils.get_nested_value(
 			format_strings,
 			[key, lang_code, "format"])
@@ -133,8 +137,8 @@ func get_format_string_formats(key: String, language: String, region: String = "
 
 
 ## Returns the format keys and the possible formats of a given key.
-func get_format_string_arguments(key: String, language: String, region: String = "") -> Dictionary[String, Dictionary]:
-	var lang_code: String = TranslationServer.standardize_locale(language if region.is_empty() else language + "_" + region)
+func get_format_string_arguments(key: String, locale_code: String) -> Dictionary[String, Dictionary]:
+	var lang_code: String = TranslationServer.standardize_locale(locale_code)
 	var formats = DictUtils.get_nested_value(
 			format_strings,
 			[key, lang_code, "format"])
@@ -146,8 +150,8 @@ func get_format_string_arguments(key: String, language: String, region: String =
 
 
 ## Returns strings formatted for NexusForge plugin use.
-func get_editor_localized_strings(language: String, region: String = "") -> Dictionary[String, Dictionary]:
-	var lang_code: String = TranslationServer.standardize_locale(language if region.is_empty() else language + "_" + region)
+func get_editor_localized_strings(locale_code: String) -> Dictionary[String, Dictionary]:
+	var lang_code: String = TranslationServer.standardize_locale(locale_code)
 	var data: Dictionary[String, Dictionary] = {}
 	
 	for key in format_strings.keys():

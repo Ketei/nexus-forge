@@ -129,3 +129,28 @@ static func make_path(parts: Array) -> String:
 			continue
 		full_path = full_path.path_join(item)
 	return full_path
+
+
+## Gets the integer at the end of a string. Returns it as a dictionary with
+## 2 keys:[br]
+## [code]has_integer[/code] contains a boolean representing if the string
+## had an integer.[br]
+## [code]integer[/code] is the integer that was found. If not found it'll be zero.
+static func get_trailing_integer(text: String) -> Dictionary:
+	var clean_text: String = text.strip_edges()
+	var data: Dictionary = {"has_integer": false, "integer": 0}
+	
+	if clean_text.is_empty():
+		return data
+	
+	var regex = RegEx.new()
+	
+	regex.compile("\\d+$") 
+	
+	var match_result:RegExMatch = regex.search(text)
+	
+	if match_result != null:
+		data["has_integer"] = true
+		data["integer"] = match_result.get_string().to_int()
+	
+	return data

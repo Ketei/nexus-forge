@@ -70,7 +70,6 @@ func _set_node_data(data: Dictionary) -> void:
 	get_field(&"anchor").text = metadata["anchor_id"]
 	if current_id != metadata["anchor_id"]:
 		current_id = metadata["anchor_id"]
-		id_changed.emit(_uuid, metadata["anchor_id"])
 
 
 func _on_line_text_submitted(_text: String, line: LineEdit):

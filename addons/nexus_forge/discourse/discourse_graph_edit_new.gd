@@ -475,35 +475,31 @@ func new_node_frame(uuid: StringName = &"") -> GraphFrame:
 	return new_frame
 
 
-func get_unique_node_name(desired: StringName) -> StringName:
+func get_unique_node_name(desired: StringName, skip_uuid: StringName = &"") -> StringName:
 	var names: Dictionary[StringName, Variant] = {}
 	
 	for node in graph_nodes.values():
+		if node.get_node_uuid() == skip_uuid:
+			continue
 		names[node.get_node_id()] = null
 		
-	var base: String = str(desired).strip_edges()
-	var trailing_data: Dictionary = get_trailing_integer(base)
+	var desired_string: String = String(desired).strip_edges()
+	var desired_stringname: StringName = StringName(desired_string)
+	
+	if not names.has(desired_stringname):
+		return StringName(desired_stringname)
+	
+	var trailing_data: Dictionary = StringUtils.get_trailing_integer(desired_string)
 	var iteration: int = trailing_data["integer"]
+	var base: String = desired_string
 	if trailing_data["has_integer"]:
 		base = base.trim_suffix(str(iteration))
-	var edited: StringName = base
+	
+	var edited: StringName = desired_stringname
 	while names.has(edited):
 		iteration += 1
 		edited = StringName(base + str(iteration))
 	return edited
-
-
-func get_trailing_integer(text: String) -> Dictionary:
-	var regex = RegEx.new()
-	
-	regex.compile("\\d+$") 
-	
-	var match_result:RegExMatch = regex.search(text)
-	
-	if match_result != null:
-		return {"has_integer": true, "integer": match_result.get_string().to_int()}
-	
-	return {"has_integer": false, "integer": 0}
 
 
 #region Spawners / Removers

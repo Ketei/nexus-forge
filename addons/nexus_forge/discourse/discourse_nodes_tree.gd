@@ -105,7 +105,7 @@ func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
 func _on_discourse_tree_button_clicked(item: TreeItem, _column: int, _id: int, _mouse_button_index: int) -> void:
 	if item.get_metadata(0)["is_node"]:
 		item.select(0)
-		edit_selected(true)
+		edit_selected.call_deferred(true)
 	else: # Deleting folder
 		var parent: TreeItem = item.get_parent()
 		for sub_item in item.get_children():
@@ -122,10 +122,7 @@ func _on_discourse_item_edited() -> void:
 	
 	if is_node:
 		var uuid: StringName = edited.get_metadata(0)["uuid"]
-		#if edited.get_text(0) == String(node.name):
-			#return
-		var new_name: String = get_unique_name_for_node(edited.get_text(0), edited)#get_unique_name_on_tree(edited.get_text(0), edited)
-		#node.name = StringName(new_name)
+		var new_name: String = get_unique_name_for_node(edited.get_text(0), edited)
 		edited.set_text(0, new_name)
 		item_renamed.emit(uuid, new_name)
 	else:
@@ -257,25 +254,32 @@ func remove_dialog_node(uuid: StringName) -> bool:
 
 
 func get_unique_name_for_node(desired_name: String, skip_item: TreeItem = null) -> String:
-	var iteration: int = 0
+	var trailing_data: Dictionary = StringUtils.get_trailing_integer(desired_name)
+	var iteration: int = trailing_data["integer"]
 	var all_names: Dictionary = {}
-	var edited_name: String = desired_name
+	var base_name: String = desired_name
+	
+	if trailing_data["has_integer"]:
+		base_name = desired_name.trim_suffix(str(iteration))
 	
 	for node in nodes.values():
 		if node == skip_item:
 			continue
 		all_names[node.get_text(0)] = null
 	
-	while all_names.has(edited_name):
-		iteration += 1
-		edited_name = desired_name + str(iteration)
+	if all_names.has(desired_name):
+		var edited_name: String = desired_name
+		while all_names.has(edited_name):
+			iteration += 1
+			edited_name = base_name + str(iteration)
+		base_name = edited_name
 	
-	return edited_name
+	return base_name
 
 
 func get_unique_name_on_tree(desired_name: String, skip_item: TreeItem = null) -> String:
 	var edited_name: String = desired_name
-	var iteration: int = 0
+	var iteration: int = StringUtils.get_trailing_integer(desired_name)["integer"]
 	
 	while has_text_on_tree(edited_name, 0, skip_item):
 		iteration += 1

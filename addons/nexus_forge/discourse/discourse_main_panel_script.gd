@@ -912,7 +912,7 @@ func _on_side_editor_locale_changed(from: String, to: String) -> void:
 		var text_field: LineEdit = text_container.get_child(item.get_index()).get_child(0)
 		var key: String = line.get_meta(&"phrase_key")
 		
-		text_field.text = active_conversation.get_localized_string(
+		text_field.text = active_conversation.get_format_string(
 				key,
 				from)
 	
@@ -1053,8 +1053,6 @@ func _on_localize_node(node: DiscourseGraphNode) -> void:
 					current_locale)
 			localization_nodes_tree.create_options_node(node.get_node_id(), node)
 		DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
-			print("Stack: ")
-			print_stack()
 			active_conversation.set_text_entry(
 					node.get_node_uuid(),
 					node.get_text(),
@@ -1223,7 +1221,7 @@ func _on_new_lang_pressed() -> void:
 		languages_tree.create_language(result)
 		add_locale(result)
 		if selected_key != null and selected_format != "":
-			save_current_phrase_key(true)
+			save_current_phrase_key()
 		
 		active_conversation.add_locale(result)
 		_on_conversation_changed()
@@ -1389,7 +1387,9 @@ func _on_localizer_item_renamed(node_uuid: StringName, desired_id: String) -> vo
 		return
 	
 	var proper_name: StringName = discourse_graph_edit.get_unique_node_name(
-			StringName(desired_id))
+			StringName(desired_id),
+			node_uuid)
+	
 	var proper_string: String = String(proper_name)
 	
 	node.set_node_id(proper_name)
@@ -1489,7 +1489,7 @@ func _on_play_current_dialog_pressed() -> void:
 	var scene_path: String = "res://addons/nexus_forge/discourse/dialog_previewer.tscn" if custom_scene.is_empty() or not FileAccess.file_exists(custom_scene) else custom_scene
 	
 	if res_path.is_empty():
-		printerr("[NexusForge] Discourse: Path of current conversation is empty.")
+		push_error("[NexusForge] Discourse: Path of current conversation is empty.")
 		return
 	
 	var cfg: ConfigFile = ConfigFile.new()
@@ -1642,10 +1642,12 @@ func display_conversation(conversation: EditorDiscourseDialog) -> bool:
 		if d_node.node_type == DiscourseGraphNode.DialogueNodeType.CALLABLE or d_node.node_type == DiscourseGraphNode.DialogueNodeType.CALLABLE_RETURN:
 			if metadata.has("method") and not metadata["method"].is_empty():
 				if not d_node.available_methods.has(metadata["method"]):
+					push_warning("Node ", data["name"], " calls method ", metadata["method"], " but the method isn't available.")
 					needs_resaving = true
 		elif d_node.node_type == DiscourseGraphNode.DialogueNodeType.SIGNAL:
 			if metadata.has("signal") and not metadata["signal"].is_empty():
 				if not d_node.available_signals.has(metadata["signal"]):
+					push_warning("Node ", data["name"], " calls signal ", metadata["signal"], " but the signal isn't available.")
 					needs_resaving = true
 		elif d_node.node_type == DiscourseGraphNode.DialogueNodeType.ENTRY:
 			discourse_graph_edit.entry_node = d_node
@@ -1680,6 +1682,16 @@ func display_conversation(conversation: EditorDiscourseDialog) -> bool:
 				output_connection["from_port"],
 				graph_map[output_connection["to"]].get_node_uuid(),
 				output_connection["to_port"]):
+			push_warning(
+				"Connection from node ",
+				graph_map[output_connection["from"]].get_node_id(),
+				" from port ",
+				output_connection["from_port"],
+				 " to node ",
+				graph_map[output_connection["to"]].get_node_id(),
+				" to port ",
+				output_connection["to_port"],
+				" failed.")
 			needs_resaving = true
 	
 	if discourse_graph_edit.entry_node == null:
@@ -1746,7 +1758,7 @@ func open_conversation(conversation: EditorDiscourseDialog) -> bool:
 	
 	for localized_key in conversation.format_strings.keys():
 		var localized_text: String = "" if side_locale.is_empty() else conversation.get_format_string(localized_key, side_locale)
-		add_new_phrase(localized_key, localized_text)
+		add_new_phrase(localized_key, localized_text, false)
 	
 	for language in conversation.locale_map.keys():
 		if not has_locale(language):
@@ -1828,14 +1840,13 @@ func _on_save_conversation_pressed() -> void:
 
 func _on_godot_save_triggered() -> void:
 	if active_conversation != null:
-		save_phrase_keys(true)
+		save_phrase_keys()
 	save_all_dialogs()
 	conversation_tree.set_conversations_saved()
 
 
 func save_current_dialog() -> void:
-	
-	save_phrase_keys(true)
+	save_phrase_keys()
 	if $LocalizationContainer.visible and localization_nodes_tree.get_active_node() != null:
 		save_localizer_data()
 	if not _unsaved and conversation_tree.active_offset_changed:
@@ -1873,7 +1884,7 @@ func save_all_dialogs() -> void:
 	for unsaved_conversation:EditorDiscourseDialog in conversation_tree.get_unsaved_conversation_resources():
 		# Including our active one
 		if unsaved_conversation == active_conversation:
-			save_phrase_keys(true)
+			save_phrase_keys()
 			discourse_graph_edit.update_conversation_file(active_conversation, current_locale)
 			active_conversation.dialog_id = dialog_id_ln_edt.text.strip_edges()
 			
@@ -2061,28 +2072,26 @@ func _on_save_cases_btn_pressed() -> void:
 
 func _on_edit_cases_pressed(text_line: LineEdit, key: LineEdit, button: Button) -> void:
 	var phrase_key: StringName = key.get_meta(&"phrase_key")
-	var lang: String = languages_tree.get_active_language()
-	var reg: String = languages_tree.get_active_region()
+	var clean_string: String = text_line.text.strip_edges()
+	var locale_code: String = languages_tree.get_active_locale()
 	
 	key_display_label.text = key.text.strip_edges()
 	
-	if not active_conversation.localized_strings.has(phrase_key):
-		active_conversation.set_localized_string(
+	if not active_conversation.has_format_string(phrase_key):
+		active_conversation.set_format_string(
 				phrase_key,
-				text_line.text.strip_edges(),
-				lang,
-				reg)
+				clean_string,
+				locale_code)
 
-	if active_conversation.get_localized_string(phrase_key, lang, reg) != text_line.text.strip_edges():
-		active_conversation.set_localized_string(
+	if active_conversation.get_format_string(phrase_key, locale_code) != clean_string:
+		active_conversation.set_format_string(
 				phrase_key,
-				text_line.text.strip_edges(),
-				lang,
-				reg)
+				clean_string,
+				locale_code)
 	
 	argument_opt_btn.clear()
 	
-	for existing_key in active_conversation.get_localized_string_formats(phrase_key, lang, reg):
+	for existing_key in active_conversation.get_format_string_formats(phrase_key, locale_code):
 		argument_opt_btn.add_item(existing_key)
 	
 	selected_key = key
@@ -2093,12 +2102,12 @@ func _on_edit_cases_pressed(text_line: LineEdit, key: LineEdit, button: Button) 
 	if 0 < argument_opt_btn.item_count:
 		var argument_format: String = argument_opt_btn.get_item_text(0)
 		argument_opt_btn.select(0)
-		default_case_ln_edt.text = active_conversation.get_localized_string_argument_default_case(phrase_key, lang, reg, argument_format)
+		default_case_ln_edt.text = active_conversation.get_format_string_default_case(phrase_key, locale_code, argument_format)
 		
-		for custom_case in active_conversation.localized_strings[phrase_key][lang][reg]["arguments"][argument_format]["custom"].keys():
+		for custom_case in active_conversation.format_strings[phrase_key][locale_code]["arguments"][argument_format]["custom"].keys():
 			add_new_case(
 					custom_case,
-					active_conversation.localized_strings[phrase_key][lang][reg]["arguments"][argument_format]["custom"][custom_case])
+					active_conversation.format_strings[phrase_key][locale_code]["arguments"][argument_format]["custom"][custom_case])
 		selected_format = argument_format
 	
 	case_box_container.visible = true
@@ -2151,13 +2160,12 @@ func _on_erase_key_button_pressed(key: LineEdit) -> void:
 
 func _on_new_key_field_button_pressed() -> void:
 	var phrase_key: String = add_new_phrase()
-	active_conversation.create_localized_string(phrase_key, "")
 	_on_conversation_changed()
 
 
-func add_new_phrase(key: String = "", text: String = "") -> String:
-	var new_key: HBoxContainer = new_key_container(key)
-	var new_text: = new_text_field(text)
+func add_new_phrase(key: String = "", text: String = "", unsaved: bool = true) -> String:
+	var new_key: HBoxContainer = new_key_container(key, unsaved)
+	var new_text: HBoxContainer = new_text_field(text)
 	
 	key_container.add_child(new_key)
 	text_container.add_child(new_text)
@@ -2245,15 +2253,16 @@ func erase_case(index: int) -> void:
 	text.queue_free()
 
 
-func new_key_container(key: String = "") -> HBoxContainer:
+func new_key_container(key: String = "", unsaved: bool = true) -> HBoxContainer:
 	var new_key: HBoxContainer = HBoxContainer.new()
 	var key_line: LineEdit = LineEdit.new()
 	var erase_button: Button = Button.new()
 	
 	if key.is_empty():
-		key_line.set_meta(&"phrase_key", UUID.generate_new())
-	else:
-		key_line.set_meta(&"phrase_key", key)
+		key = UUID.generate_new()
+	
+	key_line.set_meta(&"phrase_key", key)
+	key_line.set_meta(&"unsaved", unsaved)
 	
 	key_line.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	key_line.custom_minimum_size.y = 32.0
@@ -2369,15 +2378,12 @@ func clear_localized_keys() -> void:
 		key_text.queue_free()
 
 
-func save_current_phrase_key(fix_cases: bool = false) -> void:
+func save_current_phrase_key() -> void:
 	if selected_key == null:
 		return
 	
 	var phrase_key: String = selected_key.get_meta(&"phrase_key")
 	var locale_code = languages_tree.get_active_locale()
-	
-	var cases: Dictionary[String, String] = {}
-	var node_map: Dictionary[String, LineEdit] = {}
 	
 	active_conversation.set_format_string_default_case(
 		phrase_key,
@@ -2385,101 +2391,141 @@ func save_current_phrase_key(fix_cases: bool = false) -> void:
 		selected_format,
 		default_case_ln_edt.text.strip_edges())
 	
-	var case_idx: int = -1
+	var case_idx: int = 0
 	var desired: String = ""
 	var modified: String = ""
 	var iteration: int = 0
 	
+	var cases: Array[Dictionary] = []
+	
+	# Fixing the cases:
 	for case_key:LineEdit in case_node_container.get_children():
+		case_key.text = case_key.text.strip_edges()
+		cases.append({
+			"key_line": case_key,
+			"text_line": result_node_container.get_child(case_idx).get_child(0)})
 		case_idx += 1
-		desired = case_key.text.strip_edges()
+	
+	var assigned_keys: Dictionary[String, Variant] = {}
+	var keys_changed: bool = false
+	for item_index in range(cases.size()):
+		desired = cases[item_index]["key_line"].text
+		
+		if not _phrase_key_used(desired, cases, item_index):
+			continue
+		
+		var trailing_data: Dictionary = StringUtils.get_trailing_integer(desired)
+		var base: String = desired
+		iteration = trailing_data["integer"]
+		if trailing_data["has_integer"]:
+			base = base.trim_suffix(str(iteration))
 		modified = desired
-		iteration = 0
-		while cases.has(modified):
+		while _phrase_key_used(modified, cases, item_index):
 			iteration += 1
-			modified = desired + str(iteration)
-		cases[modified] = result_node_container.get_child(case_idx).get_child(0).text
-		node_map[modified] = case_key
+			modified = base + str(iteration)
+	
+		cases[item_index]["key_line"].text = modified
+		if not keys_changed:
+			keys_changed = true
 	
 	active_conversation.clear_format_string_cases(
 			phrase_key,
 			locale_code,
 			selected_format)
 	
-	for case in cases.keys():
+	for case in cases:
 		active_conversation.set_format_string_case(
 			phrase_key,
 			locale_code,
 			selected_format,
-			case,
-			cases[case])
-		
-		if fix_cases and case != node_map[case].text.strip_edges():
-			node_map[case] = case
+			case["key_line"].text,
+			case["text_line"].text)
 	
-	if fix_cases:
+	if keys_changed:
 		_on_case_line_text_changed()
 
 
-func save_phrase_keys(fix_keys: bool = false) -> void:
+func save_phrase_keys() -> void:
 	if not languages_tree.is_lang_selected():
 		return
 	
-	if selected_format != "":
-		save_current_phrase_key(fix_keys)
+	var locale: String = languages_tree.get_active_locale()
 	
-	var lang: String = languages_tree.get_active_language()
-	var reg: String = languages_tree.get_active_region()
+	var current_items: Array[Dictionary] = []
 	
-	# Correct key: Current text
-	var keys: Dictionary[String, String] = {}
-	
-	# Correct key: Line field
-	var node_map: Dictionary[String, LineEdit] = {}
-	
-	var idx: int = -1
-	var key_line: LineEdit = null
-	var current_text: String = ""
-	var desired: String = ""
-	var iteration: int = 0
-	
-	for key_node in key_container.get_children():
+	var idx: int = 0
+	for key_child in key_container.get_children():
+		var item: LineEdit = key_child.get_child(1)
+		item.text = item.text.strip_edges()
+		current_items.append({
+			"key_line": item,
+			"text_line": text_container.get_child(idx).get_child(0)})
 		idx += 1
-		key_line = key_node.get_child(1)
-		current_text = key_line.text.strip_edges()
-		desired = current_text
-		iteration = 0
-		while keys.has(desired):
-			iteration += 1
-			desired = current_text + str(iteration)
+	
+	var claimed_keys: Dictionary[String, Variant] = {}
+	for item_index in range(current_items.size()):
+		var item: Dictionary = current_items[item_index]
+		var key_line: LineEdit = item["key_line"]
+		var text_line: LineEdit = item["text_line"]
 		
-		keys[desired] = text_container.get_child(idx).get_child(0).text
-		node_map[desired] = key_line
+		var unsaved: bool = key_line.get_meta(&"unsaved", false)
+		var old_key: String = key_line.get_meta(&"phrase_key", "")
+		
+		var clean: String = key_line.text.strip_edges()
+		if clean.is_empty():
+			clean = "phrase_key"
+		
+		if _phrase_key_used(clean, current_items, item_index):
+			var base_name: String = clean
+			var trailing_data: Dictionary = StringUtils.get_trailing_integer(clean)
+			var iteration: int = trailing_data["integer"]
+			if trailing_data["has_integer"]:
+				base_name = clean.trim_suffix(str(iteration))
+			
+			var modified: String = clean
+			
+			while _phrase_key_used(modified, current_items, item_index):
+				iteration += 1
+				modified = base_name + str(iteration)
+			
+			clean = modified
+		
+		if unsaved: # Create the key-value entry. Set as created
+			key_line.set_meta(&"unsaved", false)
+			active_conversation.set_format_string(
+					clean,
+					item["text_line"].text,
+					locale)
+		elif old_key != clean: # Move the value to the new key, clean the old key.
+			active_conversation.format_strings[clean] = active_conversation.format_strings[old_key]
+			active_conversation.format_strings.erase(old_key)
+		
+			key_line.set_meta(&"phrase_key", clean)
+			key_line.text = clean
+		
+		claimed_keys[clean] = null
 	
-	# Duplicate old map for separate key reassignement.
-	var old_phrases: Dictionary[String, Dictionary] = active_conversation.format_strings.duplicate()
+	# Remove keys no longer used
+	for existing_key in active_conversation.format_strings.keys():
+		if claimed_keys.has(existing_key):
+			continue
+		active_conversation.format_strings.erase(existing_key)
 	
-	active_conversation.format_strings.clear()
-	
-	# Separate key reassignement is important, because if we have {a:{}, b:{}}
-	# And we changed the key a -> b and b -> a, on a single dictionary we would
-	# do Dictionary[b] = [a] Dictionary.erase(a), and then we would only have
-	# {b: {}} so when it came to do b -> a we would've lost data of the original
-	# a. So instead we duplicate the dictionary and assign the new key to the
-	# old value. No data lost.
-	for key in keys.keys():
-		active_conversation.localized_strings[key] = old_phrases[node_map[key].get_meta(&"phrase_key")]
-		node_map[key].set_meta(&"phrase_key", key)
-	
-	for key in keys.keys():
-		if active_conversation.get_localized_string(key, lang, reg) != keys[key]:
-			active_conversation.set_localized_string(key, keys[key], lang, reg)
- 		
-		if fix_keys and node_map[key].text.strip_edges() != key:
-			node_map[key].text = key
-	
-	if fix_keys:
-		_on_key_line_text_changed()
+	# Saving this last because keys could shift above OR new keys could be
+	# assigned.
+	if not selected_format.is_empty():
+		save_current_phrase_key()
+
+
+func _phrase_key_used(desired: String, items: Array[Dictionary], skip_index: int = -1) -> bool:
+	for index in range(items.size()):
+		if index == skip_index:
+			continue
+		if items[index]["key_line"].text == desired:
+			return true
+	return false
+
+
 #endregion
 
 func filesystem_resource_removed(resource: Resource) -> void:
