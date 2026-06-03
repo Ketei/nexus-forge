@@ -670,7 +670,6 @@ text_overrun_behavior = 3
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Save cases"
-icon = SubResource("DPITexture_y6bvq")
 icon_alignment = 1
 
 [node name="VBoxContainer2" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer" unique_id=64134643]

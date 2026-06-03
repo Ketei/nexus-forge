@@ -119,8 +119,11 @@ func get_format_string(key: String, locale: String) -> String:
 			"")
 
 
-func has_format_string(key: String) -> bool:
-	return format_strings.has(key)
+func has_format_string(key: String, locale: String = "") -> bool:
+	if locale.is_empty():
+		return format_strings.has(key)
+	else:
+		return format_strings.has(key) and format_strings[key].has(locale)
 
 
 ## Returns all format keys that the localized string has.
@@ -173,6 +176,9 @@ func set_format_string(key: String, text: String, locale: String) -> void:
 
 
 func set_format_string_case(key: String, locale: String, format: String, case: String, value: String) -> void:
+	if not DictUtils.has_nested_path(format_strings, [key, locale]):
+		return
+	
 	locale = TranslationServer.standardize_locale(locale)
 	var cases = DictUtils.set_nested_value(
 			format_strings,
@@ -181,10 +187,19 @@ func set_format_string_case(key: String, locale: String, format: String, case: S
 			false)
 
 
+func get_format_string_case(key: String, locale: String, format: String, case: String) -> String:
+	return DictUtils.get_nested_value(
+			format_strings,
+			[key, locale, "format", format, "cases", case],
+			"",
+			true)
+
+
 ## Sets the default case from a localized string with the given key.
 func set_format_string_default_case(key: String, locale: String, format: String, default_text: String) -> void:
 	locale = TranslationServer.standardize_locale(locale)
-	DictUtils.set_nested_value(
+	
+	var res = DictUtils.set_nested_value(
 			format_strings,
 			[key, locale, "format", format, "default"],
 			default_text,
@@ -1041,20 +1056,10 @@ func split_path_variable(path: String) -> Array[StringName]:
 
 ## Returns an array with all the format arguments of the prase [param phrase_text].[br]
 ## It'll only look for format arguments that start with $ or !.
-func get_phrase_arguments(phrase_text: String, trim_brackets: bool = false) -> Array[String]:
+static func get_phrase_arguments(phrase_text: String, trim_brackets: bool = false) -> Array[String]:
 	var all_arguments: Array[String] = []
-	#var variable_calls: Array[String] = []
-	#var arguments_vals: Array[String] = []
-	
-	#var arguments: Dictionary[String, Array] = {
-		#"functions": function_calls,
-		#"variables": variable_calls}
 	
 	var regex_search: RegEx = RegEx.new()
-	#regex_search.compile("\\{\\-([^\\s\\}]+)\\}")
-	#
-	#for regex_match in regex_search.search_all(phrase_text): # -Argument
-		#arguments_vals.append(regex_match.get_string(1))
 	
 	regex_search.compile("\\{[\\$\\!][^\\s\\}]+\\}")
 	
@@ -1064,11 +1069,6 @@ func get_phrase_arguments(phrase_text: String, trim_brackets: bool = false) -> A
 	else:
 		for regex_match in regex_search.search_all(phrase_text): # $variable
 			all_arguments.append(regex_match.get_string())
-	
-	#regex_search.compile("\\{\\!([^\\s\\}]+)\\}")
-	#
-	#for regex_match in regex_search.search_all(phrase_text): # !function
-		#function_calls.append(regex_match.get_string(1))
 	
 	return all_arguments
 

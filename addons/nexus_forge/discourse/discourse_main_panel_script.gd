@@ -844,49 +844,24 @@ func _on_side_editor_locale_changed(from: String, to: String) -> void:
 	set_localization_tip(to)
 	
 	if not from.is_empty():
+		save_phrase_keys()
+		save_localizer_data()
 		
-		if not selected_format.is_empty():
-			save_current_phrase_key()
-		
-		for key_item in key_container.get_children():
-			var key: String = key_item.get_child(1).get_meta(&"phrase_key")
-			var text: String = text_container.get_child(key_item.get_index()).get_child(0).text.strip_edges()
-			
-			active_conversation.set_format_string(
-					key,
-					text,
-					from)
-		
-		if active_node != null:
+		if active_node != null and from == current_locale:
 			var uuid: StringName = active_node.get_node_uuid()
 			match active_node.node_type:
 				DiscourseGraphNode.DialogueNodeType.DIALOG:
 					var text: String = translation_txt_box.text.strip_edges()
-					active_conversation.set_text_entry(
-							uuid,
-							text,
-							from)
-					if from == current_locale:
-						active_node.set_dialog_text(text)
+					active_node.set_dialog_text(text)
 				DiscourseGraphNode.DialogueNodeType.OPTIONS:
 					var choices: = get_localizer_choices()
-					active_conversation.set_choices_entry(
-							uuid,
-							choices,
-							from)
-					if from == current_locale:
-						var choice_n: int = 0
-						for choice in choices:
-							choice_n += 1
-							active_node.set_option_text(choice_n, choice)
+					var choice_n: int = 0
+					for choice in choices:
+						choice_n += 1
+						active_node.set_option_text(choice_n, choice)
 				DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
 					var text: String = translation_txt_box.text.strip_edges()
-					active_conversation.set_text_entry(
-							uuid,
-							text,
-							from)
-					if current_locale == from:
-						active_node.set_text(translation_txt_box.text.strip_edges())
+					active_node.set_text(translation_txt_box.text.strip_edges())
 	
 	clear_cases()
 	default_case_ln_edt.text = ""
@@ -907,14 +882,14 @@ func _on_side_editor_locale_changed(from: String, to: String) -> void:
 	key_box_container.visible = languages_tree.is_lang_selected()
 	case_box_container.visible = false
 	
-	for item in key_container.get_children():
-		var line: LineEdit = item.get_child(1)
-		var text_field: LineEdit = text_container.get_child(item.get_index()).get_child(0)
+	for item_index in range(key_container.get_child_count()):
+		var line: LineEdit = key_container.get_child(item_index).get_child(1)
+		var text_field: LineEdit = text_container.get_child(item_index).get_child(0)
 		var key: String = line.get_meta(&"phrase_key")
 		
 		text_field.text = active_conversation.get_format_string(
 				key,
-				from)
+				to)
 	
 	if active_node == null:
 		return
@@ -1805,25 +1780,26 @@ func save_localizer_data() -> void:
 	if active_conversation == null:
 		return
 	
-	var current_locale: String = languages_tree.get_active_locale()
 	var active_node: DiscourseGraphNode = localization_nodes_tree.get_active_node()
+	
+	if active_node == null:
+		return
+	
+	var current_locale: String = languages_tree.get_active_locale()
 	match active_node.node_type:
 		DiscourseGraphNode.DialogueNodeType.DIALOG:
-			active_conversation.set_localization_text(
+			active_conversation.set_text_entry(
 					active_node.get_node_uuid(),
 					translation_txt_box.text,
 					current_locale)
 		DiscourseGraphNode.DialogueNodeType.OPTIONS:
-			var options: Array[String] = []
-			for option_child in choices_container.get_children():
-				options.append(option_child.get_child(2).text)
-			
-			active_conversation.set_localization_choices(
+			var options: Array[String] = get_localizer_choices()
+			active_conversation.set_choices_entry(
 					active_node.get_node_uuid(),
 					options,
 					current_locale)
 		DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
-			active_conversation.set_localization_text(
+			active_conversation.set_text_entry(
 					active_node.get_node_uuid(),
 					translation_txt_box.text,
 					current_locale)
@@ -2058,16 +2034,19 @@ func _on_text_line_text_submitted(_text: String, edit_btn: Button) -> void:
 
 
 func _on_save_cases_btn_pressed() -> void:
-	if selected_format != "":
-		save_current_phrase_key()
-		clear_cases()
-		default_case_ln_edt.text = ""
-		search_case_ln_edt.text = ""
-		search_case_ln_edt.set_meta(&"current_search", "")
-		argument_opt_btn.clear()
-		selected_format = ""
 	case_box_container.visible = false
 	key_box_container.visible = true
+	
+	if selected_format.is_empty():
+		return
+	
+	save_current_phrase_key()
+	clear_cases()
+	default_case_ln_edt.text = ""
+	search_case_ln_edt.text = ""
+	search_case_ln_edt.set_meta(&"current_search", "")
+	argument_opt_btn.clear()
+	selected_format = ""
 
 
 func _on_edit_cases_pressed(text_line: LineEdit, key: LineEdit, button: Button) -> void:
@@ -2077,12 +2056,12 @@ func _on_edit_cases_pressed(text_line: LineEdit, key: LineEdit, button: Button) 
 	
 	key_display_label.text = key.text.strip_edges()
 	
-	if not active_conversation.has_format_string(phrase_key):
+	if not active_conversation.has_format_string(phrase_key, locale_code):
 		active_conversation.set_format_string(
 				phrase_key,
 				clean_string,
 				locale_code)
-
+	
 	if active_conversation.get_format_string(phrase_key, locale_code) != clean_string:
 		active_conversation.set_format_string(
 				phrase_key,
@@ -2091,7 +2070,7 @@ func _on_edit_cases_pressed(text_line: LineEdit, key: LineEdit, button: Button) 
 	
 	argument_opt_btn.clear()
 	
-	for existing_key in active_conversation.get_format_string_formats(phrase_key, locale_code):
+	for existing_key in EditorDiscourseDialog.get_phrase_arguments(clean_string, true):
 		argument_opt_btn.add_item(existing_key)
 	
 	selected_key = key
@@ -2104,11 +2083,16 @@ func _on_edit_cases_pressed(text_line: LineEdit, key: LineEdit, button: Button) 
 		argument_opt_btn.select(0)
 		default_case_ln_edt.text = active_conversation.get_format_string_default_case(phrase_key, locale_code, argument_format)
 		
-		for custom_case in active_conversation.format_strings[phrase_key][locale_code]["arguments"][argument_format]["custom"].keys():
-			add_new_case(
-					custom_case,
-					active_conversation.format_strings[phrase_key][locale_code]["arguments"][argument_format]["custom"][custom_case])
+		if DictUtils.has_nested_path(active_conversation.format_strings, [phrase_key, locale_code, "format", argument_format, "cases"]):
+			for custom_case in active_conversation.format_strings[phrase_key][locale_code]["format"][argument_format]["cases"].keys():
+				add_new_case(
+						custom_case,
+						active_conversation.get_format_string_case(phrase_key, locale_code, argument_format, custom_case))
+						#active_conversation.format_strings[phrase_key][locale_code]["arguments"][argument_format]["custom"][custom_case])
+		
 		selected_format = argument_format
+	else:
+		selected_format = ""
 	
 	case_box_container.visible = true
 	key_box_container.visible = false
@@ -2499,6 +2483,15 @@ func save_phrase_keys() -> void:
 		elif old_key != clean: # Move the value to the new key, clean the old key.
 			active_conversation.format_strings[clean] = active_conversation.format_strings[old_key]
 			active_conversation.format_strings.erase(old_key)
+			active_conversation.set_format_string(
+					clean,
+					item["text_line"].text,
+					locale)
+		else:
+			active_conversation.set_format_string(
+					clean,
+					item["text_line"].text,
+					locale)
 		
 			key_line.set_meta(&"phrase_key", clean)
 			key_line.text = clean
