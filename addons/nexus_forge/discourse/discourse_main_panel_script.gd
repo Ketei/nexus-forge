@@ -2062,7 +2062,18 @@ func _on_edit_cases_pressed(text_line: LineEdit, key: LineEdit, button: Button) 
 				clean_string,
 				locale_code)
 	
-	if active_conversation.get_format_string(phrase_key, locale_code) != clean_string:
+	#if active_conversation.get_format_string(phrase_key, locale_code) != clean_string:
+	var new_cases: Dictionary[String, Variant] = {}
+	
+	for existing_case in EditorDiscourseDialog.get_phrase_arguments(clean_string, true):
+		new_cases[existing_case] = null
+	for format in active_conversation.get_format_string_formats(phrase_key, locale_code):
+		if not new_cases.has(format):
+			active_conversation.erase_format_string_format(
+					phrase_key,
+					locale_code,
+					format)
+		
 		active_conversation.set_format_string(
 				phrase_key,
 				clean_string,
@@ -2270,7 +2281,7 @@ func new_key_container(key: String = "", unsaved: bool = true) -> HBoxContainer:
 
 func new_case_result_node() -> HBoxContainer:
 	var new_case: HBoxContainer = HBoxContainer.new()
-	var case_text: LineEdit = LineEdit.new()
+	var case_text: LineEdit = load("res://addons/nexus_forge/item_quest_lineedit_script.gd").new()
 	var erase_case_btn: Button = Button.new()
 	
 	case_text.placeholder_text = "Case format"

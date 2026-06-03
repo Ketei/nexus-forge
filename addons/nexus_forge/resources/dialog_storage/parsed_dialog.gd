@@ -23,10 +23,16 @@ func _find_case(on_format: String, on_argument: String, case: String) -> String:
 func _find_case_callable(on_format: String, on_argument: String, method: Callable) -> Dictionary[String, String]:
 	var case: String = str(method.call())
 	var return_result: Dictionary[String, String] = {"case": case, "value": ""}
-	if _phrases_format[on_format]["arguments"][on_argument]["custom"].has(case):
-		return_result["value"] = _phrases_format[on_format]["arguments"][on_argument]["custom"][case]
+	if not DictUtils.has_nested_path(
+			_phrases_format,
+			[on_format, "arguments", on_argument]):
+		return_result["value"] = on_argument
+		return return_result
+	
+	if _phrases_format[on_format]["arguments"][on_argument]["cases"].has(case):
+		return_result["value"] = _phrases_format[on_format]["arguments"][on_argument]["cases"][case]
 	else:
-		return_result["value"] = _phrases_format[on_format]["arguments"][on_argument]["default"]
+		return_result["value"] =_phrases_format[on_format]["arguments"][on_argument]["default"]
 	
 	return return_result
 

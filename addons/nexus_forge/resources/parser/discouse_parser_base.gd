@@ -345,6 +345,7 @@ func _build_callable_for_variable(text: String) -> Callable:
 			NexusForge.Blackboard.get_variable.bind(
 					paths[0],
 					StringName(paths[1])))
+	
 	return callable
 
 
@@ -368,9 +369,19 @@ func _build_callable_for_method(text: String) -> Callable:
 	var callable: Callable = Callable(NexusForge.Discourse.API, method)
 	
 	if not final_arguments.is_empty():
-		callable = callable.bindv(final_arguments)
+		return _build_lazy_wrapper.bind(callable, final_arguments)
 	
 	return callable
+
+
+func _build_lazy_wrapper(target_method: Callable, args: Array) -> Variant:
+	var resolved_args: Array = []
+	for arg in args:
+		if arg is Callable:
+			resolved_args.append(arg.call())
+		else:
+			resolved_args.append(arg)
+	return target_method.callv(resolved_args)
 
 
 func _can_compare(a, b) -> bool:

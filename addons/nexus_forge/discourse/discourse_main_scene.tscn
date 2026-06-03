@@ -11,6 +11,7 @@
 [ext_resource type="Script" uid="uid://bnwuk6bdi5hm5" path="res://addons/nexus_forge/discourse/issues_tree_script.gd" id="5_qsnsk"]
 [ext_resource type="Texture2D" uid="uid://bn6ggyqhhn03o" path="res://addons/nexus_forge/icons/dialog_plus.svg" id="6_nnanj"]
 [ext_resource type="Texture2D" uid="uid://cymtattv7iu68" path="res://addons/nexus_forge/icons/format_plus.svg" id="8_nnanj"]
+[ext_resource type="Script" uid="uid://blbqpddxjenwk" path="res://addons/nexus_forge/item_quest_lineedit_script.gd" id="12_y6bvq"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_qplns"]
 content_margin_left = 6.0
@@ -584,6 +585,7 @@ size_flags_vertical = 3
 theme_override_styles/panel = SubResource("StyleBoxEmpty_f5jrf")
 
 [node name="KeyBoxContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer" unique_id=1672426893]
+visible = false
 layout_mode = 2
 
 [node name="HBoxContainer" type="HBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer" unique_id=193262834]
@@ -650,7 +652,6 @@ custom_minimum_size = Vector2(170, 0)
 layout_mode = 2
 
 [node name="CaseBoxContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer" unique_id=617905448]
-visible = false
 layout_mode = 2
 
 [node name="CaseKeyContainer" type="HBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer" unique_id=754420715]
@@ -763,6 +764,7 @@ focus_neighbor_top = NodePath("../../../../HeaderContainer/NewCaseBtn")
 focus_previous = NodePath("../../../../HeaderContainer/NewCaseBtn")
 placeholder_text = "Default format"
 editable = false
+script = ExtResource("12_y6bvq")
 
 [node name="ResultNodeContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/ResultContainer" unique_id=779032831]
 layout_mode = 2

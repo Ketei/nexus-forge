@@ -440,11 +440,11 @@ func _parse_dialog(dialog_id: String, dialog: String) -> String:
 		var prefix_trim_key: String = phrase_key.trim_prefix("&")
 		phrases_processed.append(phrase_key)
 		
-		var phrase: String = _dialog_resource.get_localized_format_string(
+		var phrase: String = _dialog_resource.get_format_string(
 				prefix_trim_key,
 				locale)
 		
-		var argument_cases: Dictionary[String, Dictionary] = _dialog_resource.get_localized_format_string_arguments(
+		var argument_cases: Dictionary[String, Dictionary] = _dialog_resource.get_format_string_arguments(
 				prefix_trim_key,
 				locale)
 		
