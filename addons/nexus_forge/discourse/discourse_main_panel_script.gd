@@ -2,6 +2,8 @@
 extends PanelContainer
 
 
+signal code_editor_variables_requested(path: String)
+
 enum TreeButtonID {
 	DELETE,
 	NEW_PHRASE_ARGUMENT,
@@ -38,6 +40,7 @@ var _conversation_options_disabled: bool = true
 var base_language: String = ""
 var _included_languages: Dictionary[String, Dictionary] = {}
 var current_locale: String = ""
+var text_editor: Window = null
 # ----------------------------
 
 # --- Discourse Graph ---
@@ -71,7 +74,8 @@ var current_locale: String = ""
 @onready var case_node_container: VBoxContainer = $LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/CaseContainer/CaseNodeContainer
 @onready var result_node_container: VBoxContainer = $LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/ResultContainer/ResultNodeContainer
 @onready var default_case_ln_edt: LineEdit = $LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/ResultContainer/DefaultCaseLnEdt
-@onready var argument_opt_btn: OptionButton = $LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/ArgumentOptBtn
+@onready var argument_opt_btn: OptionButton = $LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/ArgumentContainer/ArgumentOptBtn
+@onready var copy_arg_btn: Button = $LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/ArgumentContainer/CopyArgBtn
 @onready var new_case_btn: Button = $LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/HeaderContainer/NewCaseBtn
 @onready var new_text_button: Button = $LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer/HBoxContainer/NewTextButton
 @onready var search_case_ln_edt: LineEdit = $LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/HeaderContainer/SearchCaseLnEdt
@@ -332,6 +336,8 @@ func ready_plugin(base_locale: String = "") -> void:
 	
 	play_current_dialog_btn.icon = get_theme_icon("MainPlay", "EditorIcons")
 	
+	copy_arg_btn.icon = get_theme_icon("ActionCopy", "EditorIcons")
+	
 	# --------------------------------------------------------
 	dialogs_submenu.id_pressed.connect(_on_create_dialog_id_pressed)
 	data_submenu.id_pressed.connect(_on_create_dialog_id_pressed)
@@ -351,6 +357,7 @@ func ready_plugin(base_locale: String = "") -> void:
 	discourse_graph_edit.node_created.connect(_on_discourse_node_created)
 	discourse_graph_edit.node_duplication_requested.connect(_on_graph_edit_node_duplication_requested)
 	discourse_graph_edit.paste_nodes_requested.connect(_on_graph_edit_paste_requested)
+	discourse_graph_edit.use_code_editor_requested.connect(_on_open_code_editor_graph_request)
 	
 	discourse_graph_edit.discourse_node_selected.connect(_on_discourse_node_selected)
 	discourse_graph_edit.scroll_offset_changed.connect(_on_graph_edit_offset_changed)
@@ -390,6 +397,8 @@ func ready_plugin(base_locale: String = "") -> void:
 	issues_tree.issue_activated.connect(_on_issue_activated)
 	
 	dialog_id_ln_edt.text_changed.connect(_on_conversation_changed)
+	
+	copy_arg_btn.pressed.connect(_on_copy_format_pressed, CONNECT_DEFERRED)
 
 
 func add_locale(locale_code: String) -> void:
@@ -2000,9 +2009,91 @@ func _on_new_case_button_pressed() -> void:
 	_on_conversation_changed()
 
 
-func _on_erase_case_button_pressed(case_line: LineEdit) -> void:
+func _on_erase_case_button_pressed(case_line: Control) -> void:
 	erase_case(case_line.get_index())
 	_on_case_line_text_changed()
+
+
+func _on_open_discourse_text_editor_pressed(target: LineEdit) -> void:
+	if text_editor != null:
+		return
+	
+	var method_strings: Array[String] = []
+	var var_strings: Array[String] = []
+	var plain_formats: Array[String] = []
+	
+	for idx in range(argument_opt_btn.item_count):
+		var text: String = argument_opt_btn.get_item_text(idx)
+		if text.begins_with("!"):
+			method_strings.append(text.trim_prefix("!"))
+		elif text.begins_with("$"):
+			var_strings.append(text.trim_prefix("$"))
+		else:
+			plain_formats.append(text)
+	
+	text_editor = preload("res://addons/nexus_forge/discourse/discourse_text_editor.tscn").instantiate()
+	add_child(text_editor)
+	text_editor.signal_variables = false
+	text_editor.plain_formats = plain_formats
+	text_editor.methods = method_strings
+	text_editor.variables = var_strings
+	
+	text_editor.set_code_text(target.text)
+	text_editor.connect_signals()
+	text_editor.popup_centered()
+	text_editor.grab_code_focus()
+	
+	var result = await text_editor.action_finished
+	
+	if result[0]:
+		target.text = result[1]
+	
+	text_editor.queue_free()
+	text_editor = null
+
+
+func _on_open_code_editor_graph_request(target: Control, initial_text: String) -> void:
+	if text_editor != null:
+		return
+	
+	var api_methods: Dictionary = get_api_user_methods()
+	var method_strings: Array[String] = []
+	method_strings.assign(api_methods.keys())
+	var string_keys: Array[String] = []
+	string_keys.assign(active_conversation.format_strings.keys())
+	
+	text_editor = preload("res://addons/nexus_forge/discourse/discourse_text_editor.tscn").instantiate()
+	add_child(text_editor)
+	text_editor.phrase_keys = string_keys
+	text_editor.methods = method_strings
+	text_editor.variable_called.connect(_on_editor_variable_called)
+	text_editor.set_code_text(initial_text)
+	text_editor.connect_signals()
+	text_editor.popup_centered()
+	text_editor.grab_code_focus()
+	
+	var result = await text_editor.action_finished
+	
+	if result[0]:
+		if target is LineEdit:
+			target.text = result[1]
+		elif target is TextEdit:
+			target.text = result[1]
+	
+	text_editor.queue_free()
+	text_editor = null
+
+
+
+func _on_editor_variable_called(path: String) -> void:
+	code_editor_variables_requested.emit(path.strip_edges().simplify_path())
+
+
+func set_text_code_editor_variable_paths(paths: Array[Dictionary]) -> void:
+	if text_editor == null:
+		return
+	
+	text_editor.display_completion_options_variables(paths)
 
 
 func _on_case_line_text_changed(_text: String = "") -> void:
@@ -2062,18 +2153,18 @@ func _on_edit_cases_pressed(text_line: LineEdit, key: LineEdit, button: Button) 
 				clean_string,
 				locale_code)
 	
-	#if active_conversation.get_format_string(phrase_key, locale_code) != clean_string:
-	var new_cases: Dictionary[String, Variant] = {}
-	
-	for existing_case in EditorDiscourseDialog.get_phrase_arguments(clean_string, true):
-		new_cases[existing_case] = null
-	for format in active_conversation.get_format_string_formats(phrase_key, locale_code):
-		if not new_cases.has(format):
-			active_conversation.erase_format_string_format(
-					phrase_key,
-					locale_code,
-					format)
+	if active_conversation.get_format_string(phrase_key, locale_code) != clean_string:
+		var new_cases: Dictionary[String, Variant] = {}
 		
+		for existing_case in EditorDiscourseDialog.get_phrase_arguments(clean_string, true):
+			new_cases[existing_case] = null
+		for format in active_conversation.get_format_string_formats(phrase_key, locale_code):
+			if not new_cases.has(format):
+				active_conversation.erase_format_string_format(
+						phrase_key,
+						locale_code,
+						format)
+			
 		active_conversation.set_format_string(
 				phrase_key,
 				clean_string,
@@ -2193,16 +2284,29 @@ func add_new_phrase(key: String = "", text: String = "", unsaved: bool = true) -
 
 func add_new_case(case: String = "", case_text: String = "") -> void:
 	var new_case: LineEdit = LineEdit.new()
+	var erase_case_btn: Button = Button.new()
 	var case_result: HBoxContainer = new_case_result_node()
 	var result_line: LineEdit = case_result.get_child(0)
+	var case_container: HBoxContainer = HBoxContainer.new()
+	
+	erase_case_btn.tooltip_text = "Erase case"
+	erase_case_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	erase_case_btn.flat = true
+	erase_case_btn.icon = get_theme_icon("Remove", "EditorIcons")
+	erase_case_btn.custom_minimum_size = Vector2(32.0, 32.0)
+	erase_case_btn.pressed.connect(_on_erase_case_button_pressed.bind(case_container))
 	
 	new_case.placeholder_text = "Case"
 	new_case.custom_minimum_size.y = 32.0
 	new_case.text = case
+	new_case.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	
 	result_line.text = case_text
 	
-	case_node_container.add_child(new_case)
+	case_container.add_child(erase_case_btn)
+	case_container.add_child(new_case)
+	
+	case_node_container.add_child(case_container)
 	result_node_container.add_child(case_result)
 	
 	new_case.focus_neighbor_right = result_line.get_path()
@@ -2282,21 +2386,21 @@ func new_key_container(key: String = "", unsaved: bool = true) -> HBoxContainer:
 func new_case_result_node() -> HBoxContainer:
 	var new_case: HBoxContainer = HBoxContainer.new()
 	var case_text: LineEdit = load("res://addons/nexus_forge/item_quest_lineedit_script.gd").new()
-	var erase_case_btn: Button = Button.new()
+	var open_editor_btn: Button = Button.new()
 	
 	case_text.placeholder_text = "Case format"
 	case_text.custom_minimum_size.y = 32.0
 	case_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	
-	erase_case_btn.tooltip_text = "Erase case"
-	erase_case_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	erase_case_btn.flat = true
-	erase_case_btn.icon = get_theme_icon("Remove", "EditorIcons")
-	erase_case_btn.custom_minimum_size = Vector2(32.0, 32.0)
-	erase_case_btn.pressed.connect(_on_erase_case_button_pressed.bind(case_text))
+	open_editor_btn.tooltip_text = "Open Editor"
+	open_editor_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	open_editor_btn.flat = true
+	open_editor_btn.icon = get_theme_icon("DistractionFree", "EditorIcons")
+	open_editor_btn.custom_minimum_size = Vector2(32.0, 32.0)
+	open_editor_btn.pressed.connect(_on_open_discourse_text_editor_pressed.bind(case_text))
 	
 	new_case.add_child(case_text)
-	new_case.add_child(erase_case_btn)
+	new_case.add_child(open_editor_btn)
 	
 	case_text.text_changed.connect(_on_conversation_changed)
 	
@@ -2394,7 +2498,8 @@ func save_current_phrase_key() -> void:
 	var cases: Array[Dictionary] = []
 	
 	# Fixing the cases:
-	for case_key:LineEdit in case_node_container.get_children():
+	for case_container:HBoxContainer in case_node_container.get_children():
+		var case_key: LineEdit = case_container.get_child(1)
 		case_key.text = case_key.text.strip_edges()
 		cases.append({
 			"key_line": case_key,
@@ -2557,3 +2662,41 @@ func set_display_dialog_id_checked(set_checked: bool) -> void:
 	file_popup.set_item_checked(idx, set_checked)
 	
 	dialog_id_container.visible = set_checked
+
+
+func _on_copy_format_pressed() -> void:
+	if argument_opt_btn.selected == -1:
+		return
+	
+	var selected_text: String = argument_opt_btn.get_item_text(argument_opt_btn.selected)
+	
+	DisplayServer.clipboard_set("{" + selected_text + "}")
+
+
+func get_api_user_methods() -> Dictionary:
+	var methods: Dictionary = {}
+	
+	var method_blacklsit: Array[String] = []
+	var singleton: DiscourseAPI = DiscourseAPI.new()
+	var base_methods: Array = ClassDB.class_get_method_list(&"RefCounted")
+	
+	for method in base_methods:
+		method_blacklsit.append(method["name"])
+		
+	for method:Dictionary in singleton.get_method_list():
+		if method["name"] in method_blacklsit or method["return"]["type"] == TYPE_NIL:
+			continue
+		
+		var default_count: int = method["default_args"].size()
+		var default_index: int = method["args"].size() - default_count
+		var args: Array[Dictionary] = []
+		var arg_idx: int = -1
+		for arg: Dictionary in method["args"]:
+			arg_idx += 1
+			args.append({
+				"name": arg["name"],
+				"type": arg["type"],
+				"has_default": default_index <= arg_idx})
+		methods[method["name"]] = {"return_type": method["return"]["type"], "arguments": args}
+	
+	return methods

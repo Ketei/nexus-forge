@@ -22,6 +22,7 @@ signal nodes_removed(nodes_data: Dictionary)
 signal node_connected(from_node: StringName, from_port: int, to_node: StringName, to_port: int)
 signal node_disconnected(from_node: StringName, from_port: int, to_node: StringName, to_port: int)
 signal node_connection_switched(origian_ports: Dictionary, new_node: StringName, new_port: int)
+signal use_code_editor_requested(target_control: Control, text: String)
 
 
 signal paste_nodes_requested
@@ -387,6 +388,7 @@ func new_dialog_node(node_type: DialogNodes, uuid: StringName = &"") -> Discours
 				return entry_node
 		DialogNodes.DIALOG:
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/dialog_graph_node.gd").new(uuid, &"", true, true, true)
+			created_node.use_code_editor_pressed.connect(_on_use_code_editor_requested)
 		DialogNodes.OPTIONS:
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/dialog_options.gd").new(uuid, &"", true, true, true)
 		DialogNodes.BRANCH:
@@ -727,6 +729,9 @@ func remove_node(node_uuid: StringName) -> void:
 		
 	elif target.node_type == DialogNodes.ANCHOR_POINTER:
 		anchor_pointers.erase(target)
+	
+	elif target.node_type == DialogNodes.DIALOG:
+		target.use_code_editor_pressed.disconnect(_on_use_code_editor_requested)
 	
 	graph_nodes.erase(node_uuid)
 	target.queue_free()
@@ -1191,6 +1196,10 @@ func disconnect_all_node_connections(for_uuid: StringName) -> void:
 #endregion
 
 #region UI Actions / Listeners
+
+
+func _on_use_code_editor_requested(target_node: Control, text: String) -> void:
+	use_code_editor_requested.emit(target_node, text)
 
 
 func _on_delete_nodes_request(nodes: Array[StringName]) -> void:

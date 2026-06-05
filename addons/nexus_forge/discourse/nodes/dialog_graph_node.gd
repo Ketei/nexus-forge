@@ -1,6 +1,8 @@
 extends DiscourseGraphNode
 
 
+signal use_code_editor_pressed(target: TextEdit, text: String)
+
 var free_size: Vector2 = Vector2(350.0, 300.0)
 
 
@@ -21,10 +23,13 @@ func _post_init() -> void:
 	var char_id_ln_edt: LineEdit = LineEdit.new()
 	var dialog_label: Label = Label.new()
 	var dialog_settings: Label = Label.new()
+	var settings_box: HBoxContainer = HBoxContainer.new()
 	var dialog_textedt: TextEdit = preload("res://addons/nexus_forge/discourse/dialog_node_textedit.gd").new()
 	var persist_check: CheckBox = CheckBox.new()
 	var flags_container: HBoxContainer = HBoxContainer.new()
+	var use_code_editor_btn: Button = Button.new()
 	
+	use_code_editor_btn.name = &"UseCodeEditorBtn"
 	connection_node.name = &"Connection"
 	id_box.name = &"IDContainer"
 	dialog_box.name = &"DialogContainer"
@@ -43,6 +48,7 @@ func _post_init() -> void:
 	char_id_ln_edt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	dialog_label.text = "Dialog"
 	dialog_label.custom_minimum_size = Vector2(0.0, 24.0)
+	dialog_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	dialog_textedt.placeholder_text = "Character Dialog"
 	dialog_textedt.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	dialog_textedt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -53,6 +59,15 @@ func _post_init() -> void:
 	flags_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	dialog_settings.text = "Settings"
 	dialog_settings.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	settings_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	
+	use_code_editor_btn.custom_minimum_size = Vector2(32.0, 32.0)
+	use_code_editor_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	use_code_editor_btn.tooltip_text = "Open Focus Editor"
+	use_code_editor_btn.pressed.connect(_on_use_code_editor_pressed)
+	
+	settings_box.add_child(dialog_settings)
+	settings_box.add_child(persist_check)
 	
 	char_id_ln_edt.text_changed.connect(_on_text_changed)
 	dialog_textedt.text_changed.connect(_on_text_changed)
@@ -61,7 +76,7 @@ func _post_init() -> void:
 	id_box.add_child(char_id_ln_edt)
 	
 	flags_container.add_child(dialog_label)
-	flags_container.add_child(persist_check)
+	flags_container.add_child(use_code_editor_btn)
 	
 	id_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	dialog_box.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -84,7 +99,7 @@ func _post_init() -> void:
 	
 	add_field(
 			&"dialog_settings",
-			dialog_settings,
+			settings_box,
 			false,
 			SlotConnectionType.SETTINGS_DIALOG,
 			-1)
@@ -92,7 +107,8 @@ func _post_init() -> void:
 	
 	var flgs_idx: int = add_field(&"flags", flags_container, false, SlotConnectionType.VAR_STRING, -1)
 	
-	map_field(&"flags", &"persist_checkbox", persist_check)
+	map_field(&"dialog_settings", &"persist_checkbox", persist_check)
+	map_field(&"flags", &"code_edit_button", use_code_editor_btn)
 	add_field(&"dialog_text", dialog_textedt, true)
 	
 	set_slot_color_left(connection_field, COLORS["dialog"])
@@ -108,6 +124,7 @@ func _ready() -> void:
 	set_input_connection_icon(&"character_id", preload("res://addons/nexus_forge/icons/gear_icon.png"))
 	set_input_connection_icon(&"dialog_settings", preload("res://addons/nexus_forge/icons/gear_icon.png"))
 	set_input_connection_icon(&"flags", get_theme_icon("String", "EditorIcons"))
+	get_mapped_field(&"flags", &"code_edit_button").icon = get_theme_icon("DistractionFree", "EditorIcons")
 
 
 func _on_input_connected(input_port: int, from_node: DiscourseGraphNode, _from_port: int) -> void:
@@ -120,6 +137,7 @@ func _on_input_connected(input_port: int, from_node: DiscourseGraphNode, _from_p
 		3:
 			free_size = size
 			get_field(&"dialog_text").editable = false
+			get_mapped_field(&"flags", &"code_edit_button").disabled = true
 			get_child(4).visible = false
 			custom_minimum_size.y = 160.0
 			resizable = false
@@ -130,6 +148,7 @@ func _on_input_disconnected(input_port: int, _from_node: DiscourseGraphNode, _fr
 	match input_port:
 		3:
 			get_field(&"dialog_text").editable = true
+			get_mapped_field(&"flags", &"code_edit_button").disabled = false
 			get_child(4).visible = true
 			custom_minimum_size.y = 270.0
 			resizable = true
@@ -146,7 +165,7 @@ func _get_node_data() -> Dictionary:
 	
 	var metadata: Dictionary = {
 		"character_id": get_mapped_field(&"character_id", &"character_line").text,
-		"persist": get_mapped_field(&"flags", &"persist_checkbox").button_pressed,
+		"persist": get_mapped_field(&"dialog_settings", &"persist_checkbox").button_pressed,
 		"size": size,
 		"dialog_text": get_field(&"dialog_text").text.strip_edges()}
 	
@@ -175,7 +194,7 @@ func _set_node_data(data: Dictionary) -> void:
 		get_field(&"dialog_text").text = metadata["dialog_text"]
 	
 	if metadata.has("persist") and typeof(metadata["persist"]) == TYPE_BOOL:
-		get_mapped_field(&"flags", &"persist_checkbox").button_pressed = metadata["persist"]
+		get_mapped_field(&"dialog_settings", &"persist_checkbox").button_pressed = metadata["persist"]
 	
 	if metadata.has("localized") and typeof(metadata["localized"]) == TYPE_BOOL:
 		set_node_localized(metadata["localized"])
@@ -183,6 +202,13 @@ func _set_node_data(data: Dictionary) -> void:
 
 func _on_text_changed(_text: String = "") -> void:
 	node_updated.emit()
+
+
+func _on_use_code_editor_pressed() -> void:
+	var field: TextEdit = get_field(&"dialog_text")
+	use_code_editor_pressed.emit(
+			field,
+			field.text)
 
 
 func set_dialog_text(text: String) -> void:

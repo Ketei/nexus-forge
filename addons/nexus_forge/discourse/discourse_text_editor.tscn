@@ -1,0 +1,61 @@
+[gd_scene format=3 uid="uid://bu4b17ren13fu"]
+
+[ext_resource type="Script" uid="uid://drdg7tqhf06l2" path="res://addons/nexus_forge/discourse/discourse_code_editor_script.gd" id="1_ru4ik"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ru4ik"]
+content_margin_left = 8.0
+content_margin_top = 8.0
+content_margin_right = 8.0
+content_margin_bottom = 8.0
+bg_color = Color(0, 0, 0, 1)
+
+[node name="DiscourseCodeEditor" type="Window" unique_id=1371967701]
+oversampling_override = 1.0
+title = "Edit Text"
+position = Vector2i(0, 36)
+size = Vector2i(400, 300)
+transient = true
+exclusive = true
+script = ExtResource("1_ru4ik")
+
+[node name="MainPanel" type="PanelContainer" parent="." unique_id=1790510752]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_ru4ik")
+
+[node name="MainContainer" type="VBoxContainer" parent="MainPanel" unique_id=1800856303]
+layout_mode = 2
+
+[node name="TextCodeEdit" type="CodeEdit" parent="MainPanel/MainContainer" unique_id=381932016]
+layout_mode = 2
+size_flags_vertical = 3
+wrap_mode = 1
+caret_blink = true
+caret_multiple = false
+code_completion_enabled = true
+auto_brace_completion_enabled = true
+auto_brace_completion_highlight_matching = true
+
+[node name="ButtonContainer" type="HBoxContainer" parent="MainPanel/MainContainer" unique_id=159321114]
+layout_mode = 2
+
+[node name="CancelButton" type="Button" parent="MainPanel/MainContainer/ButtonContainer" unique_id=146666131]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 2.0
+text = "Cancel"
+
+[node name="AcceptButton" type="Button" parent="MainPanel/MainContainer/ButtonContainer" unique_id=910900862]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 3.0
+text = "Accept"
+
+[node name="DebounceTimer" type="Timer" parent="." unique_id=2106754852]
+wait_time = 0.3
+one_shot = true

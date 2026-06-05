@@ -70,7 +70,7 @@ func folders(at: String = "") -> Array[String]:
 	if clean_level.is_empty():
 		for folder:StringName in _variables.keys():
 			var path: String = String(folder)
-			if path.get_slice_count("/") == 0:
+			if path.get_slice_count("/") == 1:
 				all_folders.append(path)
 	else:
 		for folder:StringName in _variables.keys():

@@ -585,7 +585,6 @@ size_flags_vertical = 3
 theme_override_styles/panel = SubResource("StyleBoxEmpty_f5jrf")
 
 [node name="KeyBoxContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer" unique_id=1672426893]
-visible = false
 layout_mode = 2
 
 [node name="HBoxContainer" type="HBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer" unique_id=193262834]
@@ -652,6 +651,7 @@ custom_minimum_size = Vector2(170, 0)
 layout_mode = 2
 
 [node name="CaseBoxContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer" unique_id=617905448]
+visible = false
 layout_mode = 2
 
 [node name="CaseKeyContainer" type="HBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer" unique_id=754420715]
@@ -677,12 +677,22 @@ icon_alignment = 1
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="ArgumentOptBtn" type="OptionButton" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2" unique_id=752786820]
+[node name="ArgumentContainer" type="HBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2" unique_id=2051821177]
+layout_mode = 2
+
+[node name="ArgumentOptBtn" type="OptionButton" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/ArgumentContainer" unique_id=752786820]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 2.0
 disabled = true
+
+[node name="CopyArgBtn" type="Button" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/ArgumentContainer" unique_id=350484722]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Copy format for use"
+flat = true
+icon_alignment = 1
 
 [node name="HeaderContainer" type="HBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2" unique_id=599422883]
 layout_mode = 2

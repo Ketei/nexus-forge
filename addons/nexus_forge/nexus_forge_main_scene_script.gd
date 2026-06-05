@@ -51,6 +51,7 @@ func ready_plugin(use_discourse: bool, use_characters: bool, use_species: bool, 
 	
 	if discourse != null:
 		tool_container.add_child(discourse)
+		discourse.code_editor_variables_requested.connect(_on_discourse_code_editor_variables_requested)
 		tool_tab_bar.add_tab("Discourse", load("res://addons/nexus_forge/icons/speech_bubble.svg"))
 	tool_container.add_child(variables)
 	tool_tab_bar.add_tab("Blackboard", load("res://addons/nexus_forge/icons/speech_bubble.svg"))
@@ -120,6 +121,30 @@ func ready_plugin(use_discourse: bool, use_characters: bool, use_species: bool, 
 		species.species_loaded.connect(_on_species_loaded)
 	
 	tool_tab_bar.tab_changed.connect(_on_tab_changed)
+
+
+func _on_discourse_code_editor_variables_requested(path: String) -> void:
+	var paths: Array[Dictionary] = [] # is_folder, path
+	
+	if variables._variables_resource == null:
+		discourse.set_text_code_editor_variable_paths(paths)
+	
+	var data: BlackboardData = variables._variables_resource
+	
+	for folder_path in data.folders():
+		if folder_path.begins_with(path):
+			paths.append({"is_folder": true, "path": folder_path})
+	
+	for variable in data.variables(path):
+		paths.append({"is_folder": false, "path": path.path_join(variable)})
+	
+	paths.sort_custom(
+		func(a:Dictionary, b:Dictionary):
+			var distance_a: float = StringUtils.levenshtein_distance(a["path"], path)
+			var distance_b: float = StringUtils.levenshtein_distance(b["path"], path)
+			return distance_a < distance_b)
+	
+	discourse.set_text_code_editor_variable_paths(paths)
 
 
 func _on_species_loaded() -> void:
