@@ -188,39 +188,48 @@ func _process_logic(uuid: StringName) -> StringName:
 				var path: String = metadata["variable_path"]
 				var set_data: Variant = _get_data(data["input_connections"]["variable_value"]["target_node_uuid"])
 				
-				NexusForge.Blackboard.set_variable(
-						path,
-						set_data)
-				data_set.emit(path, set_data)
+				NexusForge.Blackboard.set_variable(path, set_data)
+				if NexusForge.Blackboard.has_variable(path):
+					data_set.emit(path, set_data)
+				else:
+					push_error("[DISCOURSE] Node ", data["name"], " couldn't set data on path: ", path.strip_edges().simplify_path())
 			if data["input_connections"]["callable"]["target_node_uuid"] != "":
 				var call_data: Dictionary = _dialog_resource.get_node_data(data["input_connections"]["callable"]["target_node_uuid"])
 				var call_metadata: Dictionary = call_data["metadata"]
-				var call_args: Array = []
 				
-				for arg_connection in call_metadata["arguments"]:
-					if arg_connection["target_node_uuid"].is_empty():
-						continue
-					call_args.append(
-							_get_data(arg_connection["target_node_uuid"]))
-				
-				NexusForge.Discourse.API.callv(
-						call_metadata["method"],
-						call_args)
-				
-				method_called.emit(call_metadata["method"], call_args.duplicate(true))
+				if NexusForge.Discourse.API.has_method(call_metadata["method"]):
+					var call_args: Array = []
+					
+					for arg_connection in call_metadata["arguments"]:
+						if arg_connection["target_node_uuid"].is_empty():
+							continue
+						call_args.append(
+								_get_data(arg_connection["target_node_uuid"]))
+					
+					NexusForge.Discourse.API.callv(
+							call_metadata["method"],
+							call_args)
+					
+					method_called.emit(call_metadata["method"], call_args.duplicate(true))
+				else:
+					push_error("[DISCOURSE] Node ", data["name"], " attemted to call inexistent method: ", call_metadata["method"])
 			
 			if data["input_connections"]["signal"]["target_node_uuid"] != "":
 				var signal_data: Dictionary = _dialog_resource.get_node_data(data["input_connections"]["signal"]["target_node_uuid"])
 				var signal_metadata: Dictionary = signal_data["metadata"]
-				var signal_args: Array = []
 				
-				for arg_connection in signal_metadata["arguments"]:
-					signal_args.append(_get_data(arg_connection["target_node_uuid"]))
-				
-				NexusForge.Discourse.API.emit_signal(
-						signal_metadata["signal"],
-						signal_args)
-				signal_emmited.emit(signal_metadata["signal"], signal_args)
+				if NexusForge.Discourse.API.has_method(signal_metadata["signal"]):
+					var signal_args: Array = []
+					
+					for arg_connection in signal_metadata["arguments"]:
+						signal_args.append(_get_data(arg_connection["target_node_uuid"]))
+					
+					NexusForge.Discourse.API.emit_signal(
+							signal_metadata["signal"],
+							signal_args)
+					signal_emmited.emit(signal_metadata["signal"], signal_args)
+				else:
+					push_error("[DISCOURSE] Node ", data["name"], " attempted to emit an inexistent signal: ", signal_metadata["signal"])
 			return _process_logic(data["output_connections"]["next_node"]["target_node_uuid"])
 		NodeTypes.MATCH:
 			var data_comp = _get_data(data["input_connections"]["match_value_source"]["target_node_uuid"])
@@ -314,31 +323,46 @@ func _get_data(from_uuid: StringName, fallback = null) -> Variant:
 		NodeTypes.DATA_EVENT:
 			if metadata["variable_path"] != "" and data["input_connections"]["variable_value"] != "":
 				var path: String = metadata["variable_path"]
+				var data_conn = _get_data(data["input_connections"]["variable_value"]["target_node_uuid"])
 				NexusForge.Blackboard.set_variable(
 						path,
-						_get_data(data["input_connections"]["variable_value"]["target_node_uuid"]))
+						data_conn)
+				if NexusForge.Blackboard.has_variable(path):
+					data_set.emit(path, data_conn)
+				else:
+					push_error("[DISCOURSE] Node ", data["name"], " couldn't set data on path: ", path.strip_edges().simplify_path())
 			if data["input_connections"]["callable"]["target_node_uuid"] != "":
 				var call_data: Dictionary = _dialog_resource.get_node_data(data["input_connections"]["callable"]["target_node_uuid"], locale)
-				var call_args: Array = []
 				
-				for arg_connection in call_data["metadata"]["arguments"]:
-					call_args.append(
-							_get_data(arg_connection["target_node_uuid"]))
-				
-				NexusForge.Discourse.API.callv(
-						call_data["metadata"]["method"],
-						call_args)
+				if NexusForge.Discourse.API.has_method(call_data["metadata"]["method"]):
+					var call_args: Array = []
+					
+					for arg_connection in call_data["metadata"]["arguments"]:
+						call_args.append(
+								_get_data(arg_connection["target_node_uuid"]))
+					
+					NexusForge.Discourse.API.callv(
+							call_data["metadata"]["method"],
+							call_args)
+					method_called.emit(call_data["metadata"]["method"], call_args.duplicate(true))
+				else:
+					push_error("[DISCOURSE] Node ", data["name"], " attemted to call inexistent method: ", call_data["metadata"]["method"])
 			
 			if data["input_connections"]["signal"]["target_node_uuid"] != "":
 				var signal_data: Dictionary = _dialog_resource.get_node_data(data["input_connections"]["signal"]["target_node_uuid"], locale)
-				var signal_args: Array = []
 				
-				for arg_connection in signal_data["metadata"]["arguments"]:
-					signal_args.append(_get_data(arg_connection["target_node_uuid"]))
-				
-				NexusForge.Discourse.API.emit_signal(
-						signal_data["metadata"]["signal"],
-						signal_args)
+				if NexusForge.Discourse.API.has_method(signal_data["metadata"]["signal"]):
+					var signal_args: Array = []
+					
+					for arg_connection in signal_data["metadata"]["arguments"]:
+						signal_args.append(_get_data(arg_connection["target_node_uuid"]))
+					
+					NexusForge.Discourse.API.emit_signal(
+							signal_data["metadata"]["signal"],
+							signal_args)
+					signal_emmited.emit(signal_data["metadata"]["signal"], signal_args)
+				else:
+						push_error("[DISCOURSE] Node ", data["name"], " attempted to emit an inexistent signal: ", signal_data["metadata"]["signal"])
 			return _get_data(data["input_connections"]["data_input"]["target_node_uuid"])
 		NodeTypes.LOCALIZED_TEXT:
 			return metadata["text"]
