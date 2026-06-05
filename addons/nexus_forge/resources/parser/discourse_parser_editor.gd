@@ -188,8 +188,7 @@ func _process_logic(uuid: StringName) -> StringName:
 				var path: String = metadata["variable_path"]
 				var set_data: Variant = _get_data(data["input_connections"]["variable_value"]["target_node_uuid"])
 				
-				NexusForge.Blackboard.set_variable(path, set_data)
-				if NexusForge.Blackboard.has_variable(path):
+				if NexusForge.Blackboard.set_variable(path, set_data):
 					data_set.emit(path, set_data)
 				else:
 					push_error("[DISCOURSE] Node ", data["name"], " couldn't set data on path: ", path.strip_edges().simplify_path())
@@ -324,10 +323,9 @@ func _get_data(from_uuid: StringName, fallback = null) -> Variant:
 			if metadata["variable_path"] != "" and data["input_connections"]["variable_value"] != "":
 				var path: String = metadata["variable_path"]
 				var data_conn = _get_data(data["input_connections"]["variable_value"]["target_node_uuid"])
-				NexusForge.Blackboard.set_variable(
+				if NexusForge.Blackboard.set_variable(
 						path,
-						data_conn)
-				if NexusForge.Blackboard.has_variable(path):
+						data_conn):
 					data_set.emit(path, data_conn)
 				else:
 					push_error("[DISCOURSE] Node ", data["name"], " couldn't set data on path: ", path.strip_edges().simplify_path())

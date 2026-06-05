@@ -99,13 +99,14 @@ func folders(at: String = "") -> Array[String]:
 
 
 ## Will set a variable with the given path. Setting a variable to [code]null[/code]
-## will erase the variable if it exists
-func set_variable(variable_path: String, value: Variant) -> void:
+## will erase the variable if it exists.[br]
+## Returns [code]true[/code] if the value was set correctly
+func set_variable(variable_path: String, value: Variant) -> bool:
 	var parts: Dictionary[String, Variant] = _get_folder_parts(variable_path)
 	
 	if not parts["parsed"] or not _variables.has(parts["folder"]):
 		push_error("[NEXUS FORGE] Blackboard - Tried to set variable with (", value, ") in an invalid or inexistent path:\" ", parts["path"], "\"")
-		return
+		return false
 	
 	if value == null:
 		if _variables[parts["folder"]].erase(parts["variable"]):
@@ -113,6 +114,7 @@ func set_variable(variable_path: String, value: Variant) -> void:
 	else:
 		_variables[parts["folder"]][parts["variable"]] = value
 		data_set.emit(parts["path"])
+	return true
 
 
 ## Creates a directory recursively.
