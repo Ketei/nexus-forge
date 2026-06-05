@@ -14,9 +14,9 @@ enum QuestType {
 ## Type of the quest.
 @export var type: QuestType
 ## The title of the quest.
-@export var title: String = ""
+@export var title: String = "": set = _set_quest_title
 ## The description of the quest.
-@export var description: String = ""
+@export var description: String = "": set = _set_quest_description
 ## Custom data assigned to the quest.
 @export var custom_data: Dictionary[String, Variant] = {}
 
@@ -136,7 +136,7 @@ func _set_quest_title(new_title: String) -> void:
 		_title_builder = Callable()
 
 
-func _set_item_description(new_desc: String) -> void:
+func _set_quest_description(new_desc: String) -> void:
 	if new_desc == description:
 		return
 	description = new_desc

@@ -548,29 +548,6 @@ func _save_cfg_for(filepath: String, structure: Array[Dictionary]) -> void:
 		push_error("Error saving editor state on: ", absolute_path.path_join(cfg_filename))
 
 
-#func _on_add_requirement_pressed() -> void:
-	#add_requirement("", OP_EQUAL, 0)
-	#_on_something_changed()
-
-
-#func add_requirement(id: String, operator: int, value) -> void:
-	#var prev_item: Control = null if requirements_container.get_child_count() == 0 else requirements_container.get_child(-1)
-	#var new_item: HBoxContainer = preload("res://addons/nexus_forge/quests/objective_requirement_script.gd").new()
-	#requirements_container.add_child(new_item)
-	#
-	#new_item.set_requirement({
-			#id: {"operator": operator, "value": value}})
-	#if prev_item == null:
-		#new_item.set_focus_previous_requirement(obj_req_chk_bx)
-		#add_requirement_btn.focus_next = new_item.req_ln_edt.get_path()
-	#else:
-		#new_item.set_focus_previous_requirement(prev_item.erase_btn)
-		#prev_item.set_focus_next_requirement(new_item.req_ln_edt)
-	#
-	#new_item.requirement_changed.connect(_on_something_changed)
-	#new_item.erase_requirement_pressed.connect(_on_erased_requirement_pressed)
-
-
 func get_open_files() -> Array[String]:
 	return files_tree.get_open_quest_paths()
 

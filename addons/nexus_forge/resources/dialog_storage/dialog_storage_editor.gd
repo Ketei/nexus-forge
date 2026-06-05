@@ -9,11 +9,11 @@ extends DiscourseDialog
 
 
 ## Offset for the [GraphEdit] in Discourse.
-@export_storage var scroll_offset: Vector2 = Vector2.ZERO:
+var scroll_offset: Vector2 = Vector2.ZERO:
 	set(new_scroll):
 		scroll_offset = new_scroll.snappedf(0.001)
 ## Zoom for the [GraphEdit] in Discourse.
-@export_storage var zoom: float = 1.0:
+var zoom: float = 1.0:
 	set(new_zoom):
 		zoom = snappedf(new_zoom, 0.001)
 
@@ -660,18 +660,12 @@ func convert_for_release() -> DiscourseDialog:
 				else:
 					data["signal"] = &""
 				data["next_node"] = target_finder.get_target(StringName(node_data[node_id]["output_connections"]["next_node"]["target_node_uuid"]))
+				
 				if var_val.is_empty():
-					data["variable_path"] = &""
-					data["variable"] = &""
+					data["variable_path"] = ""
 				else:
-					var split_vars: Array[StringName] = split_path_variable(
-							metadata["variable_path"])
-					if split_vars.size() != 2:
-						data["variable_path"] = &""
-						data["variable"] = &""
-					else:
-						data["variable_path"] = split_vars[0]
-						data["variable"] = split_vars[1]
+					var clean_path: String = metadata["variable_path"].strip_edged().simplify_path()
+					data["variable_path"] = clean_path
 			NodeType.MATCH:
 				var cases: Array[Dictionary] = []
 				
@@ -761,15 +755,13 @@ func convert_for_release() -> DiscourseDialog:
 				data["method"] = method_id
 				data["arguments"] = arguments
 			NodeType.VARIABLE_GET:
-				var path: StringName = &""
-				var variable: StringName = &""
-				if not metadata["variable_path"].is_empty():
-					var var_paths: Array[StringName] = split_path_variable(metadata["variable_path"])
-					if var_paths.size() == 2:
-						path = var_paths[0]
-						variable = var_paths[1]
-				data["path"] = path
-				data["variable"] = variable
+				var meta_path: String = ""
+				if metadata.has("variable_path"):
+					meta_path = metadata["variable_path"].strip_edges().simplify_path()
+				else:
+					push_warning("[DISCOURSE] Node ", data["name"], " has missing Blackboard data path. Using empty path instead")
+				
+				data["path"] = meta_path
 			NodeType.RANDOM_VALUE:
 				data["random_type"] = metadata["mode"]
 				data["min_value"] = metadata["values"]["base"]
@@ -804,17 +796,13 @@ func convert_for_release() -> DiscourseDialog:
 				
 				data["data_source"] = StringName(node_data[node_id]["input_connections"]["data_input"]["target_node_uuid"])
 				if var_val.is_empty():
-					data["variable_path"] = &""
-					data["variable"] = &""
+					data["variable_path"] = ""
 				else:
-					var split_vars: Array[StringName] = split_path_variable(
-							metadata["variable_path"])
-					if split_vars.size() != 2:
-						data["variable_path"] = &""
-						data["variable"] = &""
-					else:
-						data["variable_path"] = split_vars[0]
-						data["variable"] = split_vars[1]
+					var meta_path: String = ""
+					if metadata.has("variable_path"):
+						meta_path = metadata["variable_path"].strip_edges().simplify_path()
+					
+					data["variable_path"] = meta_path
 			NodeType.LOCALIZED_TEXT:
 				pass
 			NodeType.VALUE:

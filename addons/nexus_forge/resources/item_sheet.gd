@@ -45,10 +45,10 @@ func get_item_name() -> String:
 	
 	for format_title in _regex_formatter.search_all(name):
 		var string_path: String = format_title.get_string().trim_prefix("{$").trim_suffix("}")
-		var var_parts: PackedStringArray = string_path.rsplit("/", false, 1)
-		if var_parts.size() != 2:
-			continue
-		var black_callable: Callable = NexusForge.Blackboard.get_variable.bind(var_parts[0], var_parts[1], string_path)
+		var path_simplified: String = string_path.simplify_path()
+		#var var_parts: PackedStringArray = string_path.rsplit("/", false, 1)
+		
+		var black_callable: Callable = NexusForge.Blackboard.get_variable.bind(path_simplified, path_simplified)
 		
 		title_formats["$" + string_path] = black_callable
 	

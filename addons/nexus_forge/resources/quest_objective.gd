@@ -9,9 +9,9 @@ enum ObjectiveType {}
 ## The ID of the objective.
 @export var id: StringName = &""
 ## The title of the objective.
-@export var title: String = ""
+@export var title: String = "": set = _set_objective_title
 ## The description of the objective.
-@export var description: String = ""
+@export var description: String = "": set = _set_objective_description
 ## The objective type.
 @export var type: ObjectiveType
 ## Custom data assigned to this objective.
@@ -27,6 +27,8 @@ enum ObjectiveType {}
 
 var _progress: Dictionary[String, Variant] = {}
 var _completed: bool = false
+var _title_builder: Callable = Callable()
+var _description_builder: Callable = Callable()
 
 
 func _get_default_value_of_type(type_id: int) -> Variant:
@@ -99,6 +101,92 @@ func _get_default_value_of_type(type_id: int) -> Variant:
 			return PackedVector4Array()
 		_:
 			return null
+
+
+func _set_objective_title(new_title: String) -> void:
+	if new_title == title:
+			return
+	title = new_title
+	if _title_builder.is_valid():
+		_title_builder = Callable()
+
+
+func _set_objective_description(new_desc: String) -> void:
+	if new_desc == description:
+		return
+	description = new_desc
+	if _description_builder.is_valid():
+		_description_builder = Callable()
+
+
+func _build_format(string: String, call_formats: Dictionary[String, Callable]) -> String:
+	var new_format: Dictionary[String, String] = {}
+	
+	for key in call_formats.keys():
+		new_format[key] = call_formats[key].call()
+	
+	return string.format(new_format)
+
+
+## Returns the quest [member QuestObjective.title]. Formats it if [code]Format Quest Strings with Blackboard[/code]
+## is [code]On[/code] on [code]Project Settings[/code].
+func get_objective_title() -> String:
+	if not ProjectSettings.get_setting(EditorNFPlugin.get_project_settings_path("quests_format_strings"), false):
+		return title
+	
+	if _title_builder.is_valid():
+		return _title_builder.call()
+	
+	var _regex_formatter: RegEx
+	
+	_regex_formatter = RegEx.new()
+	_regex_formatter.compile("\\{\\$[^\\s\\}]+\\}")
+	
+	var title_formats: Dictionary[String, Callable] = {}
+	
+	for format_title in _regex_formatter.search_all(title):
+		var string_path: String = format_title.get_string().trim_prefix("{$").trim_suffix("}")
+		var path_simplified: String = string_path.simplify_path()
+		#var var_parts: PackedStringArray = string_path.rsplit("/", false, 1)
+		
+		var black_callable: Callable = NexusForge.Blackboard.get_variable.bind(path_simplified, path_simplified)
+		
+		title_formats["$" + string_path] = black_callable
+	
+	_title_builder = _build_format.bind(title, title_formats)
+	
+	return _build_format(title, title_formats)
+
+
+## Returns the quest [member QuestObjective.description]. Formats it if [code]Format Quest Strings with Blackboard[/code]
+## is [code]On[/code] on [code]Project Settings[/code].
+func get_objective_description() -> String:
+	if not ProjectSettings.get_setting(EditorNFPlugin.get_project_settings_path("items_format_strings"), false):
+		return description
+	
+	if _description_builder.is_valid():
+		return _description_builder.call()
+	
+	var _regex_formatter: RegEx
+	
+	_regex_formatter = RegEx.new()
+	_regex_formatter.compile("\\{\\$[^\\s\\}]+\\}")
+	
+	var desc_formats: Dictionary[String, Callable] = {}
+	
+	for description_item in _regex_formatter.search_all(description):
+		var string_path: String = description_item.get_string().trim_prefix("{$").trim_suffix("}")
+		var var_parts: PackedStringArray = string_path.rsplit("/", false, 1)
+		if var_parts.size() != 2:
+			continue
+		
+		var variable: Callable = NexusForge.Blackboard.get_variable.bind(var_parts[0], var_parts[1], string_path)
+		
+		desc_formats["$" + string_path] = variable
+	
+	_description_builder = _build_format.bind(description, desc_formats)
+	
+	return _build_format(description, desc_formats)
 
 
 ## Returns an array containing all the paths of the requirements.

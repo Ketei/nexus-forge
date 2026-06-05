@@ -7,7 +7,7 @@ extends DialogParser
 
 
 ## Emmited when data is set on the NexusForge.Blackboard singleton.
-signal data_set(folder: String, variable: String, data: Variant)
+signal data_set(path: String, data: Variant)
 ## Emmited when a method is called from the DiscourseAPI.
 signal method_called(method_string: String, arguments: Array)
 ## Emmited when a signal is emmited from the DiscourseAPI.
@@ -185,14 +185,13 @@ func _process_logic(uuid: StringName) -> StringName:
 						data["output_connections"]["next_node_false"]["target_node_uuid"])
 		NodeTypes.EVENT:
 			if not metadata["variable_path"].is_empty() and not data["input_connections"]["variable_value"]["target_node_uuid"].is_empty():
-				var parts: PackedStringArray = metadata["variable_path"].rsplit("/", false, 1)
+				var path: String = metadata["variable_path"]
 				var set_data: Variant = _get_data(data["input_connections"]["variable_value"]["target_node_uuid"])
 				
 				NexusForge.Blackboard.set_variable(
-						parts[0],
-						parts[1],
+						path,
 						set_data)
-				data_set.emit(parts[0], parts[1], set_data)
+				data_set.emit(path, set_data)
 			if data["input_connections"]["callable"]["target_node_uuid"] != "":
 				var call_data: Dictionary = _dialog_resource.get_node_data(data["input_connections"]["callable"]["target_node_uuid"])
 				var call_metadata: Dictionary = call_data["metadata"]
@@ -306,21 +305,17 @@ func _get_data(from_uuid: StringName, fallback = null) -> Variant:
 			else:
 				return metadata["fallback_value"]
 		NodeTypes.VARIABLE_GET:
-			var parts: PackedStringArray = metadata["variable_path"].rsplit("/", false, 1)
-			if parts.size() != 2:
-				return null
-			else:
-				return NexusForge.Blackboard.get_variable(parts[0], parts[1])
+			var path: String = metadata["variable_path"]
+			return NexusForge.Blackboard.get_variable(path)
 		NodeTypes.CALLABLE_RETURN:
 			return NexusForge.Discourse.API.callv(
 					metadata["method"],
 					metadata["arguments"])
 		NodeTypes.DATA_EVENT:
 			if metadata["variable_path"] != "" and data["input_connections"]["variable_value"] != "":
-				var parts: PackedStringArray = metadata["variable_path"].rsplit("/", false, 1)
+				var path: String = metadata["variable_path"]
 				NexusForge.Blackboard.set_variable(
-						parts[0],
-						parts[1],
+						path,
 						_get_data(data["input_connections"]["variable_value"]["target_node_uuid"]))
 			if data["input_connections"]["callable"]["target_node_uuid"] != "":
 				var call_data: Dictionary = _dialog_resource.get_node_data(data["input_connections"]["callable"]["target_node_uuid"], locale)
@@ -524,11 +519,9 @@ func _get_bool_result(from_uuid: String) -> bool:
 			else:
 				return false
 		NodeTypes.VARIABLE_GET:
-			var parts: PackedStringArray = metadata["variable_path"].rsplit("/", false, 1)
-			if parts.size() != 2:
-				return false
+			var path: String = metadata["variable_path"]
 			
-			var variable = NexusForge.Blackboard.get_variable(parts[0], parts[1])
+			var variable = NexusForge.Blackboard.get_variable(path)
 			
 			if typeof(variable) in [TYPE_BOOL, TYPE_INT, TYPE_FLOAT]:
 				return bool(variable)

@@ -679,48 +679,79 @@ func _on_graph_edit_offset_changed(_offset: Vector2) -> void:
 
 
 func _on_conversation_close_pressed(dialog: EditorDiscourseDialog, save_required: bool, offset_changed: bool) -> void:
+	var close_current: bool = dialog == active_conversation
 	if save_required:
 		var unsaved_prompt: AcceptDialog = preload("res://addons/nexus_forge/dialogs/unsaved_dialog_script.gd").new()
 		add_child(unsaved_prompt)
 		unsaved_prompt.show()
 		var result: int = await unsaved_prompt.dialog_finished
 		if result == 0: # Save
-			ResourceSaver.save(dialog)
+			if close_current:
+				save_current_dialog()
+		elif result == 1: # Don't save
+			offset_changed = false
 		elif result == 2: # Cancel
 			unsaved_prompt.queue_free()
 			return
 		unsaved_prompt.queue_free()
-	elif offset_changed:
-		if dialog == active_conversation:
-			dialog.scroll_offset = discourse_graph_edit.scroll_offset
-			dialog.zoom = discourse_graph_edit.zoom
-		ResourceSaver.save(dialog)
 	
-	if dialog == active_conversation:
-		var item: TreeItem = conversation_tree.active_conversation_item
-		var total_items: int = conversation_tree.get_root().get_child_count()
-		var new_item: TreeItem = null
+	if offset_changed:
+		var layout_data: Dictionary[String, Variant] = {
+			"zoom": discourse_graph_edit.zoom if close_current else dialog.zoom,
+			"scroll_offset": discourse_graph_edit.scroll_offset if close_current else dialog.scroll_offset}
 		
-		if 1 < total_items:
-			if item.get_index() == total_items - 1: # Get a -1
-				new_item = conversation_tree.get_root().get_child(item.get_index() - 1)
-			else: # Get the same index
-				new_item = conversation_tree.get_root().get_child(item.get_index() + 1)
-			
-		if new_item == null:
-			active_conversation = null
-			set_conversation_active(false)
-			display_conversation(null)
-			conversation_tree.active_unsaved = false
-		else:
-			var new_conv: EditorDiscourseDialog = new_item.get_metadata(0)["resource"]
-			conversation_tree.set_conversation_item_active(new_conv)
-			if open_conversation(new_conv):
-				conversation_tree.active_unsaved = true
-		_unsaved = conversation_tree.active_unsaved
+		_save_file_layout_for(
+				dialog.resource_path,
+				layout_data)
+	
+	conversation_tree.remove_conversation(dialog)
+	
+	if not close_current:
+		return
+	
+	if conversation_tree.active_conversation_item == null:
+		active_conversation = null
+		set_conversation_active(false)
+		display_conversation(null)
+		conversation_tree.active_unsaved = false
 		selected_key = null
 		selected_format = ""
-	conversation_tree.remove_conversation(dialog)
+		return
+	
+	var new_resource: EditorDiscourseDialog = conversation_tree.get_active_resource()
+	
+	if open_conversation(new_resource):
+		conversation_tree.active_unsaved = true
+	
+	_unsaved = conversation_tree.active_unsaved
+	selected_key = null
+	selected_format = ""
+	#conversation_tree.remove_conversation(dialog)
+	
+	#var item: TreeItem = conversation_tree.active_conversation_item
+	#var total_items: int = conversation_tree.get_root().get_child_count()
+	#var new_item: TreeItem = null
+	#
+	#if 1 < total_items:
+		#if item.get_index() == total_items - 1: # Get a -1
+			#new_item = conversation_tree.get_root().get_child(item.get_index() - 1)
+		#else: # Get the same index
+			#new_item = conversation_tree.get_root().get_child(item.get_index() + 1)
+		
+	#if new_item == null:
+		#active_conversation = null
+		#set_conversation_active(false)
+		#display_conversation(null)
+		#conversation_tree.active_unsaved = false
+	#else:
+		#var new_conv: EditorDiscourseDialog = new_item.get_metadata(0)["resource"]
+		#conversation_tree.set_conversation_item_active(new_conv)
+		#if open_conversation(new_conv):
+			#conversation_tree.active_unsaved = true
+	#_unsaved = conversation_tree.active_unsaved
+	#selected_key = null
+	#selected_format = ""
+	#conversation_tree.remove_conversation(dialog)
 
 
 func _on_menu_close_pressed() -> void:
@@ -729,6 +760,7 @@ func _on_menu_close_pressed() -> void:
 	
 	if discourse_graph_edit.focus_tween != null:
 		discourse_graph_edit.stop_focus_animation()
+	
 	if conversation_tree.active_unsaved:
 		var unsaved_prompt: AcceptDialog = preload("res://addons/nexus_forge/dialogs/unsaved_dialog_script.gd").new()
 		add_child(unsaved_prompt)
@@ -736,40 +768,40 @@ func _on_menu_close_pressed() -> void:
 		var result: int = await unsaved_prompt.dialog_finished
 		if result == 0: # Save
 			save_current_dialog()
+		elif result == 1: # Don't save
+			pass
 		elif result == 2: # Cancel
 			unsaved_prompt.queue_free()
 			return
 		unsaved_prompt.queue_free()
 	elif conversation_tree.active_offset_changed:
-		active_conversation.scroll_offset = discourse_graph_edit.scroll_offset
-		active_conversation.zoom = discourse_graph_edit.zoom
-		ResourceSaver.save(active_conversation)
-	
-	var item: TreeItem = conversation_tree.active_conversation_item
-	var total_items: int = conversation_tree.get_root().get_child_count()
-	var new_item: TreeItem = null
-	
-	if 1 < total_items:
-		if item.get_index() == total_items - 1: # Get a -1
-			new_item = conversation_tree.get_root().get_child(item.get_index() - 1)
-		else: # Get the same index
-			new_item = conversation_tree.get_root().get_child(item.get_index() + 1)
+		var layout_data: Dictionary[String, Variant] = {
+			"zoom": discourse_graph_edit.zoom,
+			"scroll_offset": discourse_graph_edit.scroll_offset}
 		
+		_save_file_layout_for(
+				active_conversation.resource_path,
+				layout_data)
+	
 	conversation_tree.remove_conversation(active_conversation)
 	
-	if new_item == null:
+	if conversation_tree.active_conversation_item == null:
+		active_conversation = null
 		set_conversation_active(false)
 		display_conversation(null)
-		active_conversation = null
 		conversation_tree.active_unsaved = false
-	else:
-		conversation_tree.set_conversation_item_active(new_item.get_metadata(0)["resource"])
-		if open_conversation(active_conversation):
-			conversation_tree.active_unsaved = true
+		selected_key = null
+		selected_format = ""
+		return
 	
+	var new_resource: EditorDiscourseDialog = conversation_tree.get_active_resource()
+	
+	if open_conversation(new_resource):
+		conversation_tree.active_unsaved = true
+	
+	_unsaved = conversation_tree.active_unsaved
 	selected_key = null
 	selected_format = ""
-	_unsaved = conversation_tree.active_unsaved
 
 
 func _on_new_folder_button_pressed() -> void:
@@ -1279,6 +1311,19 @@ func load_dialog_files(files: Array[String]) -> void:
 			continue
 		var loaded: Resource = load(file)
 		if loaded != null and loaded is EditorDiscourseDialog:
+			var filename: String = file.get_file()
+			var path_hash: String = file.md5_text()
+			var absolute_path: String = ProjectSettings.globalize_path("res://.godot/editor/")
+			var config_filename: String = filename + "-graphstate-" + path_hash + ".cfg"
+			var full_path: String = absolute_path.path_join(config_filename)
+			if FileAccess.file_exists(full_path):
+				var cfg: ConfigFile = ConfigFile.new()
+				if cfg.load(full_path) == OK:
+					var position_offset: Vector2 = cfg.get_value("Layout", "scroll_offset", Vector2.ZERO)
+					var zoom: float = cfg.get_value("Layout", "zoom", 1.0)
+					loaded.position_offset = position_offset
+					loaded.zoom = zoom
+			
 			if conversation_tree.is_conversation_open(loaded):
 				continue
 			else:
@@ -1441,6 +1486,19 @@ func _on_open_conversation_pressed() -> void:
 		listen_offset = false
 		var resource: Resource = load(result[1])
 		if resource != null and resource is EditorDiscourseDialog:
+			var filename: String = result[1].get_file()
+			var path_hash: String = result[1].md5_text()
+			var absolute_path: String = ProjectSettings.globalize_path("res://.godot/editor/")
+			var config_filename: String = filename + "-graphstate-" + path_hash + ".cfg"
+			var full_path: String = absolute_path.path_join(config_filename)
+			if FileAccess.file_exists(full_path):
+				var cfg: ConfigFile = ConfigFile.new()
+				if cfg.load(full_path) == OK:
+					var position_offset: Vector2 = cfg.get_value("Layout", "scroll_offset", Vector2.ZERO)
+					var zoom: float = cfg.get_value("Layout", "zoom", 1.0)
+					resource.scroll_offset = position_offset
+					resource.zoom = zoom
+			
 			var wait_visible: bool = no_dialog_label.visible
 			if _conversation_options_disabled:
 				set_graph_edit_visible(true)
@@ -1450,6 +1508,7 @@ func _on_open_conversation_pressed() -> void:
 				dialog_id_ln_edt.editable = true
 			if active_conversation != null:
 				save_current_dialog_to_memory()
+			
 			if conversation_tree.is_conversation_open(resource):
 				conversation_tree.set_conversation_item_active(resource)
 				if open_conversation(resource):
@@ -1826,6 +1885,7 @@ func _on_save_conversation_pressed() -> void:
 func _on_godot_save_triggered() -> void:
 	if active_conversation != null:
 		save_phrase_keys()
+	
 	save_all_dialogs()
 	conversation_tree.set_conversations_saved()
 
@@ -1834,19 +1894,24 @@ func save_current_dialog() -> void:
 	save_phrase_keys()
 	if $LocalizationContainer.visible and localization_nodes_tree.get_active_node() != null:
 		save_localizer_data()
-	if not _unsaved and conversation_tree.active_offset_changed:
-		active_conversation.scroll_offset = discourse_graph_edit.scroll_offset
-		active_conversation.zoom = discourse_graph_edit.zoom
-		ResourceSaver.save(active_conversation)
+	
+	if conversation_tree.active_offset_changed:
+		var layout_data: Dictionary[String, Variant] = {
+			"zoom": active_conversation.zoom,
+			"scroll_offset": active_conversation.scroll_offset}
+		
+		_save_file_layout_for(
+				active_conversation.resource_path,
+				layout_data)
 		conversation_tree.active_offset_changed = false
+	
+	if not _unsaved:
 		return
 	
 	discourse_graph_edit.update_conversation_file(active_conversation, current_locale)
-
+	
 	var locale_map: Dictionary[String, Dictionary] = languages_tree.as_map()
 	
-	active_conversation.zoom = discourse_graph_edit.zoom
-	active_conversation.scroll_offset = discourse_graph_edit.scroll_offset
 	active_conversation.node_structure = discourse_nodes_tree.get_folder_structure()
 	active_conversation.locale_map = locale_map.duplicate(true)
 	active_conversation.dialog_id = dialog_id_ln_edt.text.strip_edges()
@@ -1860,10 +1925,6 @@ func save_current_dialog() -> void:
 func save_all_dialogs() -> void:
 	if $LocalizationContainer.visible and localization_nodes_tree.get_active_node() != null:
 		save_localizer_data()
-	
-	if active_conversation != null:
-		active_conversation.zoom = discourse_graph_edit.zoom
-		active_conversation.scroll_offset = discourse_graph_edit.scroll_offset
 	
 	# Save all unsaved conversations
 	for unsaved_conversation:EditorDiscourseDialog in conversation_tree.get_unsaved_conversation_resources():
@@ -1879,8 +1940,28 @@ func save_all_dialogs() -> void:
 		else:
 			ResourceSaver.save(unsaved_conversation)
 	
+	for unsaved_layout: EditorDiscourseDialog in conversation_tree.get_unsaved_layout_resources():
+		var layout_data: Dictionary[String, Variant] = {
+			"zoom": unsaved_layout.zoom,
+			"scroll_offset": unsaved_layout.scroll_offset}
+		
+		_save_file_layout_for(
+				unsaved_layout.resource_path,
+				layout_data)
+	
 	_unsaved = false
 	conversation_tree.set_all_files_saved()
+
+
+func save_layouts() -> void:
+	for unsaved_layout: EditorDiscourseDialog in conversation_tree.get_unsaved_layout_resources():
+		var layout_data: Dictionary[String, Variant] = {
+			"zoom": unsaved_layout.zoom,
+			"scroll_offset": unsaved_layout.scroll_offset}
+		
+		_save_file_layout_for(
+				unsaved_layout.resource_path,
+				layout_data)
 
 
 func set_conversation_active(is_active: bool) -> void:
@@ -1935,6 +2016,26 @@ func _on_graph_edit_paste_requested() -> void:
 	# with the below being the "do" action v
 	discourse_graph_edit.paste_node_clipboard(clipboard, uuid_map)
 	_on_conversation_changed()
+
+
+func _save_file_layout_for(file_path: String, keys: Dictionary[String, Variant]) -> void:
+	if file_path.is_empty():
+		push_error("[DISCOURSE] Can't save data for an empty filepath")
+		return
+	
+	var cfg: ConfigFile = ConfigFile.new()
+	for key in keys.keys():
+		cfg.set_value("Layout", key, keys[key])
+	var file: String = file_path.get_file()
+	var path_hash: String = file_path.md5_text()
+	var absolute_path: String = ProjectSettings.globalize_path("res://.godot/editor/")
+	var config_filename: String = file + "-graphstate-" + path_hash + ".cfg"
+	
+	if not DirAccess.dir_exists_absolute(absolute_path):
+		DirAccess.make_dir_recursive_absolute(absolute_path)
+	
+	if cfg.save(absolute_path.path_join(config_filename)) != OK:
+		push_warning("[DISCOURSE] Couldn't save layout settings for file \"", file_path, "\"")
 
 
 #region Phrases

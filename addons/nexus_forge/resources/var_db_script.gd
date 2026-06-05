@@ -11,40 +11,56 @@ extends Resource
 
 
 ## Emmited when data is set via [method BlackboardData.set_variable].
-signal data_set(folder: StringName, variable: StringName)
+signal data_set(variable_path: String)
 ## Emmited when data is erased via [method BlackboardData.set_variable].
-signal data_erased(folder: StringName, variable: StringName)
+signal data_erased(variable_path: String)
 ## Emmited only when a folder is created via [method BlackboardData.create_folder].
 ## If this function is called but no folder is created the signal won't be emmited.
-signal folder_created(folder_path: StringName)
+signal folder_created(folder_path: String)
 ## Emmited when a folder is erased.
-signal folder_erased(folder_path: StringName)
+signal folder_erased(folder_path: String)
 
 
 @export_storage var _variables: Dictionary[StringName, Dictionary] = {}
 
 
-func _clean_folder_path(path: String) -> StringName:
-	return StringName(path.simplify_path())
+func _get_folder_parts(path: String) -> Dictionary[String, Variant]:
+	path = path.simplify_path()
+	var pieces: PackedStringArray = path.rsplit("/", false, 1)
+	var parts: Dictionary[String, Variant] = {
+		"folder": &"",
+		"variable": &"",
+		"path": path,
+		"parsed": false}
+	
+	if pieces.size() != 2:
+		return parts
+	
+	parts["folder"] = StringName(pieces[0])
+	parts["variable"] = StringName(pieces[1])
+	parts["parsed"] = true
+	
+	return parts
 
 
-## Returns true if a variable exist with the path [param var_path]
-func has_variable(folder: String, variable: StringName) -> bool:
-	var clean_path: StringName = _clean_folder_path(folder)
-	return _variables.has(clean_path) and _variables[clean_path].has(variable)
+## Returns true if a variable exist with the path [param path]
+func has_variable(path: StringName) -> bool:
+	var parts: Dictionary[String, Variant] = _get_folder_parts(path)
+	return parts["parsed"] and _variables.has(parts["folder"]) and _variables[parts["folder"]].has(parts["variable"])
 
 
 ## Returns true if the folder on [param folder_path] exists. This is different from
 ## checking if a variable exists.
 func has_folder(folder_path: String) -> bool:
-	return _variables.has(_clean_folder_path(folder_path))
+	var path: StringName = StringName(folder_path.simplify_path())
+	return _variables.has(path)
 
 
 ## Returns a variable on [param variable_path] or null if the variable doesn't exist.
-func get_variable(folder: String, variable: StringName, fallback: Variant = null) -> Variant:
-	var clean_folder: StringName = _clean_folder_path(folder)
-	if _variables.has(clean_folder) and _variables[clean_folder].has(variable):
-		return _variables[clean_folder][variable]
+func get_variable(path: String, fallback: Variant = null) -> Variant:
+	var parts: Dictionary[String, Variant] = _get_folder_parts(path)
+	if parts["parsed"] and _variables.has(parts["folder"]) and _variables[parts["folder"]].has(parts["variable"]):
+		return _variables[parts["folder"]][parts["variable"]]
 	else:
 		return fallback
 
@@ -53,7 +69,7 @@ func get_variable(folder: String, variable: StringName, fallback: Variant = null
 ## the specified [param folder_path]
 func variables(folder_path: String) -> Array[String]:
 	var keys: Array[String] = []
-	var clean_path: StringName = _clean_folder_path(folder_path)
+	var clean_path: StringName = StringName(folder_path.simplify_path())
 	if _variables.has(clean_path):
 		keys.assign(_variables[clean_path].keys())
 	return keys
@@ -84,25 +100,24 @@ func folders(at: String = "") -> Array[String]:
 
 ## Will set a variable with the given path. Setting a variable to [code]null[/code]
 ## will erase the variable if it exists
-func set_variable(folder_path: String, variable_key: StringName, variable: Variant) -> void:
-	var clean_path: StringName = _clean_folder_path(folder_path)
+func set_variable(variable_path: String, value: Variant) -> void:
+	var parts: Dictionary[String, Variant] = _get_folder_parts(variable_path)
 	
+	if not parts["parsed"] or not _variables.has(parts["folder"]):
+		push_error("[NEXUS FORGE] Blackboard - Tried to set variable with (", value, ") in an invalid or inexistent path:\" ", parts["path"], "\"")
+		return
 	
-	if variable == null:
-		if _variables.has(clean_path) and _variables[clean_path].has(variable_key):
-			_variables[clean_path].erase(variable_key)
-			data_erased.emit(clean_path, variable_key)
+	if value == null:
+		if _variables[parts["folder"]].erase(parts["variable"]):
+			data_erased.emit(parts["path"])
 	else:
-		if _variables.has(clean_path):
-			_variables[clean_path][variable_key] = variable
-			data_set.emit(clean_path, variable_key)
-		else:
-			push_error("[NEXUS FORGE] Blackboard - Tried to set variable ", variable_key, " with (", variable, ") in an inexistent path:\" ", clean_path, "\"")
+		_variables[parts["folder"]][parts["variable"]] = value
+		data_set.emit(parts["path"])
 
 
 ## Creates a directory recursively.
 func create_folder(folder_path: String) -> void:
-	var clean_path: StringName = _clean_folder_path(folder_path)
+	var clean_path: StringName = folder_path.simplify_path()
 	var exists: bool = _variables.has(clean_path)
 	var slices: Array[String] = []
 	
@@ -116,25 +131,25 @@ func create_folder(folder_path: String) -> void:
 		slice_path += &"/"
 	
 	if not exists:
-		folder_created.emit(folder_path)
+		folder_created.emit(clean_path)
 
 
 ## Deletes a folder in the given path, including all their variables and
 ## subfolders.
 func erase_folder(folder_path: String) -> void:
-	var clean_path: StringName = _clean_folder_path(folder_path)
-	var exists: bool = _variables.has(clean_path)
+	var clean_path: String = folder_path.simplify_path()
+	var exists: bool = _variables.has(StringName(clean_path))
 	if not exists:
 		return
 	for folder:StringName in _variables.keys():
 		if folder.begins_with(clean_path):
 			_variables.erase(folder)
-	folder_erased.emit(folder_path)
+	folder_erased.emit(clean_path)
 
 
 ## Returns true if folder in [param folder_oath] is empty or doesn't exist.
 func is_folder_empty(folder_path: String) -> bool:
-	var clean_path: StringName = _clean_folder_path(folder_path)
+	var clean_path: StringName = StringName(folder_path.simplify_path())
 	if _variables.has(clean_path):
 		return _variables[clean_path].is_empty()
 	else:

@@ -122,8 +122,8 @@ func _on_continue_pressed() -> void:
 	NexusForge.Discourse.next_dialog()
 
 
-func _on_data_set(folder: String, variable: String, data: Variant) -> void:
-	events_text_edit.text += str("Variable ", variable, " set on path ", folder, " to ", var_to_str(data), "\n")
+func _on_data_set(path: String, data: Variant) -> void:
+	events_text_edit.text += str("Variable on path ", path, " set to ", var_to_str(data), "\n")
 
 
 func _on_method_called(method_string: String, arguments: Array) -> void:

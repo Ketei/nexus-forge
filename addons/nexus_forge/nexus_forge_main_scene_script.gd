@@ -222,6 +222,11 @@ func _on_tab_changed(tab: int) -> void:
 	current_tab = tab
 
 
+func save_layouts() -> void:
+	if discourse != null:
+		discourse.save_layouts()
+
+
 func go_to_tab(tab: int) -> void:
 	tab = mini(tab, tool_tab_bar.tab_count - 1)
 	tool_tab_bar.current_tab = tab

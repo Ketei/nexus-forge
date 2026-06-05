@@ -340,11 +340,10 @@ func _parse_dialog(dialog_id: String, dialog: String) -> String:
 
 
 func _build_callable_for_variable(text: String) -> Callable:
-	var paths: PackedStringArray = text.trim_prefix("$").rsplit("/", false, 1)
+	var clean_text: String = text.trim_prefix("$")
 	var callable: Callable = Callable(
 			NexusForge.Blackboard.get_variable.bind(
-					paths[0],
-					StringName(paths[1])))
+					clean_text))
 	
 	return callable
 
@@ -506,7 +505,6 @@ func _process_logic(uuid: StringName) -> StringName:
 			if not data["variable_path"].is_empty() and not data["value"].is_empty():
 				NexusForge.Blackboard.set_variable(
 						data["variable_path"],
-						data["variable"],
 						_get_data(data["value"]))
 			if not data["callable"].is_empty():
 				var call_data: Dictionary = _dialog_resource.dialog_nodes[data["callable"]]
@@ -613,7 +611,7 @@ func _get_data(uuid: StringName, fallback = null) -> Variant:
 			else:
 				return data["fallback"]
 		NodeTypes.VARIABLE_GET:
-			return NexusForge.Blackboard.get_variable(data["path"], data["variable"])
+			return NexusForge.Blackboard.get_variable(data["path"])
 		NodeTypes.CALLABLE_RETURN:
 			var method: Callable = Callable(NexusForge.Discourse.API, data["method"])
 			var args: Array = []
@@ -621,10 +619,9 @@ func _get_data(uuid: StringName, fallback = null) -> Variant:
 				args.append(_get_data(arg))
 			return method.callv(args)
 		NodeTypes.DATA_EVENT:
-			if not data["variable_path"].is_empty() and not data["variable"].is_empty() and not data["value"].is_empty():
+			if not data["variable_path"].is_empty() and not data["value"].is_empty():
 				NexusForge.Blackboard.set_variable(
 						data["variable_path"],
-						data["variable"],
 						_get_data(data["value"]))
 			if not data["callable"].is_empty():
 				var call_data: Dictionary = _dialog_resource.dialog_nodes[data["callable"]]

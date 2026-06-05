@@ -12,6 +12,7 @@ var active_conversation_item: TreeItem = null:
 	set(new_conversation):
 		if active_conversation_item != null:
 			active_conversation_item.clear_custom_color(0)
+			_last_opened = active_conversation_item
 		active_conversation_item = new_conversation
 		if new_conversation != null:
 			new_conversation.set_custom_color(0, SELECTED_COLOR)
@@ -50,7 +51,7 @@ var active_unsaved: bool = false:
 		if active_conversation_item != null:
 			return active_conversation_item.get_metadata(0)["unsaved"]
 		return false
-
+var _last_opened: TreeItem = null
 
 func ready_plugin() -> void:
 	create_item()
@@ -72,6 +73,12 @@ func _on_close_conversation_pressedbutton_clicked(item: TreeItem, column: int, i
 	var data: Dictionary = item.get_metadata(0)
 	if id == 0:
 		conversation_close_pressed.emit(data["resource"], data["unsaved"], data["offset_changed"])
+
+
+func get_active_resource() -> EditorDiscourseDialog:
+	if active_conversation_item == null:
+		return null
+	return active_conversation_item.get_metadata(0)["resource"]
 
 
 func get_open_file_paths() -> Array[String]:
@@ -126,7 +133,16 @@ func get_unsaved_conversation_resources() -> Array[EditorDiscourseDialog]:
 	var unsaved: Array[EditorDiscourseDialog] = []
 	for item in get_root().get_children():
 		var resource: EditorDiscourseDialog = item.get_metadata(0)["resource"]
-		if item.get_metadata(0)["unsaved"] or item.get_metadata(0)["offset_changed"]:
+		if item.get_metadata(0)["unsaved"]:
+			unsaved.append(item.get_metadata(0)["resource"])
+	return unsaved
+
+
+func get_unsaved_layout_resources() -> Array[EditorDiscourseDialog]:
+	var unsaved: Array[EditorDiscourseDialog] = []
+	for item in get_root().get_children():
+		var resource: EditorDiscourseDialog = item.get_metadata(0)["resource"]
+		if item.get_metadata(0)["offset_changed"]:
 			unsaved.append(item.get_metadata(0)["resource"])
 	return unsaved
 
@@ -139,15 +155,32 @@ func set_conversations_saved() -> void:
 			item.get_metadata(0)["offset_changed"] = false
 
 
-func remove_conversation(dialog: EditorDiscourseDialog) -> void:
+func remove_conversation(dialog: EditorDiscourseDialog, select_previous: bool = true) -> void:
 	if active_conversation_item != null and active_conversation_item.get_metadata(0)["resource"] == dialog:
-		active_unsaved = false
-		active_offset_changed = false
-		active_conversation_item.free()
+		var target: TreeItem = active_conversation_item
+		var last_opened: TreeItem = _last_opened
+		
 		active_conversation_item = null
+		_last_opened = null
+		
+		if last_opened != null and select_previous:
+			var meta: Dictionary = last_opened.get_metadata(0)
+			active_unsaved = meta["unsaved"]
+			active_offset_changed = meta["offset_changed"]
+			active_conversation_item = last_opened
+			item_selected.disconnect(_on_conversation_selected)
+			last_opened.select(0)
+			item_selected.connect(_on_conversation_selected)
+		else:
+			active_unsaved = false
+			active_offset_changed = false
+		
+		target.free()
 	else:
 		for item in get_root().get_children():
 			if item.get_metadata(0)["resource"] == dialog:
+				if item == _last_opened:
+					_last_opened = null
 				item.free()
 				return
 

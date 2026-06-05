@@ -339,6 +339,8 @@ func _get_window_layout(configuration: ConfigFile) -> void:
 	var open_maps: Array[String] = editor_view.phrase_maps.get_open_maps() if editor_view.phrase_maps != null else Array([], TYPE_STRING, &"", null)
 	var open_quests: Array[String] = editor_view.quests.get_open_files() if editor_view.quests != null else Array([], TYPE_STRING, &"", null)
 	
+	editor_view.save_layouts()
+	
 	configuration.set_value("NexusForge", "discourse_show_id", discourse_id_visible)
 	configuration.set_value("NexusForge", "open_dialogs", discourse_open_files)
 	configuration.set_value("NexusForge", "open_characters", open_characters)
