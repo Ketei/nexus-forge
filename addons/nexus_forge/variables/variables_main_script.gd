@@ -45,7 +45,7 @@ func ready_plugin() -> void:
 	folder_search_line.right_icon = get_theme_icon("Search", "EditorIcons")
 	var_search_line.right_icon = get_theme_icon("Search", "EditorIcons")
 	
-	folders_tree.folder_selected.connect(_on_folder_selected)
+	folders_tree.folder_selected.connect(_on_folder_selected, CONNECT_DEFERRED)
 	folders_tree.something_changed.connect(on_something_changed)
 	folders_tree.folder_created.connect(_on_folder_created)
 	folders_tree.folder_moved.connect(_on_folder_moved)
@@ -118,10 +118,8 @@ func _on_variable_renamed(from: String, to: String) -> void:
 
 
 func _on_variable_updated(variable_id: String, value: Variant) -> void:
-	_variables_resource.set_variable(
-			_current_folder,
-			variable_id,
-			value)
+	var path: String = _current_folder.path_join(variable_id)
+	_variables_resource.set_variable(path, value)
 
 
 func _on_folder_renamed(from: String, to: String) -> void:
@@ -276,38 +274,30 @@ func _on_add_root_folder_pressed() -> void:
 
 
 func on_add_var_int_pressed() -> void:
-	var variable_key: StringName = StringName(variables_tree.create_variable(0))
-	_variables_resource.set_variable(
-			_current_folder,
-			variable_key,
-			0)
+	var var_name: String = variables_tree.create_variable(0)
+	var path: String = _current_folder.path_join(var_name)
+	_variables_resource.set_variable(path, 0)
 	on_something_changed()
 
 
 func on_add_var_float_pressed() -> void:
-	var variable_key: StringName = StringName(variables_tree.create_variable(0.0))
-	_variables_resource.set_variable(
-			_current_folder,
-			variable_key,
-			0.0)
+	var variable_key: String = variables_tree.create_variable(0.0)
+	var path: String = _current_folder.path_join(variable_key)
+	_variables_resource.set_variable(path, 0.0)
 	on_something_changed()
 
 
 func on_add_var_bool_pressed() -> void:
-	var variable_key: StringName = StringName(variables_tree.create_variable(false))
-	_variables_resource.set_variable(
-			_current_folder,
-			variable_key,
-			false)
+	var variable_key: String = variables_tree.create_variable(false)
+	var path: String = _current_folder.path_join(variable_key)
+	_variables_resource.set_variable(path, false)
 	on_something_changed()
 
 
 func on_add_var_str_pressed() -> void:
 	var variable_key: StringName = StringName(variables_tree.create_variable(""))
-	_variables_resource.set_variable(
-			_current_folder,
-			variable_key,
-			"")
+	var path: String = _current_folder.path_join(variable_key)
+	_variables_resource.set_variable(path, "")
 	on_something_changed()
 
 
@@ -320,8 +310,9 @@ func _on_folder_selected(path_to_folder: String) -> void:
 	variables_tree.current_folder = path_to_folder
 	
 	for variable_id in variables:
+		var variable_path: String = path_to_folder.path_join(variable_id)
 		variables_tree.create_variable(
-				_variables_resource.get_variable(path_to_folder, variable_id),
+				_variables_resource.get_variable(variable_path),
 				variable_id)
 	
 	_current_folder = path_to_folder
@@ -366,8 +357,10 @@ func _on_folder_moved(original_path: String, new_path: String) -> void:
 
 
 func _on_variable_dropped(var_folder: String, variable: String, new_folder: String) -> void:
-	_variables_resource.set_variable(new_folder, variable, _variables_resource.get_variable(var_folder, variable))
-	_variables_resource.set_variable(var_folder, variable, null)
+	var new_path: String = new_folder.path_join(variable)
+	var old_path: String = var_folder.path_join(variable)
+	_variables_resource.set_variable(new_path, _variables_resource.get_variable(old_path))
+	_variables_resource.set_variable(old_path, null)
 	variables_tree.remove_variable(variable)
 	on_something_changed()
 

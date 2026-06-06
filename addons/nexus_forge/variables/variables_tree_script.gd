@@ -7,17 +7,9 @@ signal variable_updated(variable_id: String, value: Variant)
 signal variable_renamed(from: String, to: String)
 signal something_changed
 
-#var INT_ICON: Texture2D = null
-#var FLOAT_ICON: Texture2D = null
-#var BOOL_ICON: Texture2D = null
-#var STRING_ICON: Texture2D = null
-#var DELETE_ICON: Texture2D = null
-#var COPY_ICON: Texture2D = null
-#var any_icon: Texture2D = null
-
 const VALUE_MAX_RANGE: int = 9999
 const FLOAT_STEP: float = 0.01
-#var root_tree: TreeItem
+
 var _current_selected: TreeItem = null
 var current_folder: String = ""
 var sorting_column: int = 0
@@ -81,22 +73,21 @@ func _on_column_title_clicked(column: int, mouse_button_index: int) -> void:
 
 
 func _sort_data_column(a: TreeItem, b: TreeItem) -> bool:
-	var a_type: int = get_variable_type(a) #typeof(a.get_metadata(1)["data"]) if a.get_metadata(1)["type"] == TYPE_NIL else a.get_metadata(1)["type"]
-	var b_type: int = get_variable_type(b)#typeof(b.get_metadata(1)["data"]) if b.get_metadata(1)["type"] == TYPE_NIL else b.get_metadata(1)["type"]
+	var a_type: int = get_variable_type(a)
+	var b_type: int = get_variable_type(b)
 	
 	if a_type == b_type:
-		return a.get_text(0).naturalnocasecmp_to(b.get_text(0)) < 0
+		match a_type:
+			TYPE_STRING:
+				return a.get_text(1).naturalnocasecmp_to(b.get_text(1)) < 0
+			TYPE_INT, TYPE_FLOAT:
+				return a.get_range(1) < b.get_range(1)
+			TYPE_BOOL:
+				return a.is_checked(1) < b.is_checked(1)
+			_:
+				return a_type < b_type
 	else:
 		return a_type < b_type
-
-		#if a_type != b_type:
-			#return a_type < b_type
-		#elif a_type == TYPE_STRING and b_type == TYPE_STRING:
-			#return a.get_text(1).naturalnocasecmp_to(b.get_text(1)) < 0
-		#elif a_type == TYPE_BOOL and b_type == TYPE_BOOL:
-			#return int(a.is_checked(1)) < int(b.is_checked(1))
-		#else:
-			#return a.get_range(1) < b.get_range(1)
 
 
 func _on_button_pressed(item: TreeItem, column: int, id: int, mouse_button_index: int) -> void:

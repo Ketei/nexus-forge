@@ -284,23 +284,23 @@ func has_unsaved_changes() -> bool:
 
 func save_resources() -> void:
 	if discourse != null and discourse.has_unsaved_files():
-		discourse.save_all_dialogs.call_deferred()
+		discourse.save_all_dialogs()
 	if variables.has_unsaved_changes():
-		variables.save.call_deferred()
+		variables.save()
 	if characters != null and characters.has_unsaved_files():
-		characters.save.call_deferred()
+		characters.save()
 	if species != null and species._unsaved:
-		species.save.call_deferred()
+		species.save()
 	if talents != null and talents.has_unsaved_changes():
-		talents.save.call_deferred()
+		talents.save()
 	if items != null and items.has_unsaved_changes():
-		items.save.call_deferred()
+		items.save()
 	if recipes != null and recipes._unsaved:
-		recipes.save.call_deferred()
+		recipes.save()
 	if quests != null and quests.has_unsaved_files():
-		quests.save_resource.call_deferred()
+		quests.save_resource()
 	if phrase_maps != null and phrase_maps.has_unsaved_files():
-		phrase_maps.save_all.call_deferred()
+		phrase_maps.save_all()
 
 
 func reload_stats() -> void:

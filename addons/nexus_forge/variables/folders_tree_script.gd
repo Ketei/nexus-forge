@@ -10,10 +10,6 @@ signal folder_created(path_to_folder: String)
 signal folder_moved(original_path: String, target_folder: String)
 signal variable_dropped(var_folder: String, variable: String, new_folder: String)
 
-#var FOLDER_ICON = preload("res://addons/nexus_forge/common_icons/folder_icon.svg")
-#var NEW_FOLDER_ICON = preload("res://addons/nexus_forge/common_icons/new_folder.svg")
-#var TRASH_BIN = preload("res://addons/nexus_forge/common_icons/trash_bin.svg")
-
 const CREATE_FOLDER_ID: int = 0
 const DELETE_FOLDER_ID: int = 1
 
@@ -165,9 +161,10 @@ func clear_folders() -> void:
 		folder.free()
 
 
-func create_folder(target_tree: TreeItem = null, folder_name: String = "") -> TreeItem:
+func create_folder(target_tree: TreeItem = null, folder_name: String = "", expand: bool = false, select: bool = false) -> TreeItem:
 	if target_tree == null:
 		target_tree = get_root()
+	
 	var new_name: String = validate_folder_name(target_tree, folder_name)
 	var new_folder: TreeItem = create_item(target_tree)
 	
@@ -182,6 +179,13 @@ func create_folder(target_tree: TreeItem = null, folder_name: String = "") -> Tr
 	new_folder.add_button(0, get_theme_icon("Remove", "EditorIcons"), 1, false, "Delete Folder")
 	
 	new_folder.set_editable(0, true)
+	
+	if expand and target_tree.collapsed:
+		target_tree.collapsed = false
+	
+	if select:
+		new_folder.select(0)
+		ensure_cursor_is_visible()
 	
 	return new_folder
 
@@ -202,7 +206,7 @@ func load_folder_structure(folder_structure: Dictionary, _target_tree: TreeItem 
 func _on_item_button_pressed(item: TreeItem, _column: int, id: int, _mouse_button_index: int) -> void:
 	match id:
 		CREATE_FOLDER_ID:
-			folder_created.emit(get_path_to_folder(create_folder(item)))
+			folder_created.emit(get_path_to_folder(create_folder(item, "", true, true)))
 		DELETE_FOLDER_ID:
 			var confirmation := preload("res://addons/nexus_forge/dialogs/confirmation.gd").new()
 			confirmation.title = "Erase folder..."
@@ -277,7 +281,7 @@ func get_path_to_folder(folder: TreeItem) -> String:
 	var folder_step: TreeItem = folder
 	var root: TreeItem = get_root()
 	
-	while folder_step != root: # Prevent going to a level we're not supposed to
+	while folder_step != root and folder_step != null: # Prevent going to a level we're not supposed to
 		folder_path.append(folder_step.get_text(0))
 		folder_step = folder_step.get_parent()
 	
@@ -300,30 +304,6 @@ func show_all_folders(_folder_root: TreeItem = get_root()) -> void:
 	for folder in _folder_root.get_children():
 		folder.visible = true
 		show_all_folders(folder)
-
-
-#func get_folder_items() -> Array[TreeItem]:
-	#return root_tree.get_children()
-
-
-# Should no longer be necessary
-#func get_full_variables_dict(_folder_item: TreeItem = get_root()) -> Dictionary:
-	#var folder_dict: Dictionary = {}
-	#
-	#if _folder_item != get_root():
-		#folder_dict["variables"] = {}
-		#folder_dict["subfolders"] = {}
-	#
-		#for variable in _folder_item.get_metadata(0)["variables"]:
-			#folder_dict["variables"][variable["name"]] = variable["variable"]
-		#
-		#for subfolder in _folder_item.get_children():
-			#folder_dict["subfolders"][subfolder.get_text(0)] = get_full_variables_dict(subfolder)
-	#else:
-		#for subfolder in _folder_item.get_children():
-			#folder_dict[subfolder.get_text(0)] = get_full_variables_dict(subfolder)
-	#
-	#return folder_dict
 
 
 func _on_item_selected() -> void:
