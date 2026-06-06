@@ -34,7 +34,7 @@
 ## About
 **Nexus Forge** is a headless game data manager for Godot 4.4+. It provides visual editors for managing your game's data, dialogue, stats, items and quests without forcing any specific UI on your project.
 
-**Nexus Forge editor component is modular.** Tthrough Godot's Project Settings you can selectively enable or disable individual modules. The plugin will only load the specific tools you need, keeping the editor clutter-free.
+**Nexus Forge editor component is modular.** Through Godot's Project Settings you can selectively enable or disable individual modules. The plugin will only load the specific tools you need, keeping the editor clutter-free.
 
 ## Installation
 ### Compatibility
