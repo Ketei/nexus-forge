@@ -335,6 +335,7 @@ func _enable_plugin() -> void:
 func _get_window_layout(configuration: ConfigFile) -> void:
 	var discourse_id_visible: bool = editor_view.discourse.display_dialog_id_checked() if editor_view.discourse != null else false
 	var discourse_open_files: Array[String] = editor_view.discourse.get_open_files() if editor_view.discourse != null else Array([], TYPE_STRING, &"", null)
+	var discourse_recent_files: Array[String] = editor_view.discourse.get_recenlty_opened_files() if editor_view.discourse != null else ArrayUtils.create_array_typed(TYPE_STRING)
 	var open_characters: Array[String] = editor_view.characters.get_open_characters() if editor_view.characters != null else Array([], TYPE_STRING, &"", null)
 	var open_maps: Array[String] = editor_view.phrase_maps.get_open_maps() if editor_view.phrase_maps != null else Array([], TYPE_STRING, &"", null)
 	var open_quests: Array[String] = editor_view.quests.get_open_files() if editor_view.quests != null else Array([], TYPE_STRING, &"", null)
@@ -343,6 +344,7 @@ func _get_window_layout(configuration: ConfigFile) -> void:
 	
 	configuration.set_value("NexusForge", "discourse_show_id", discourse_id_visible)
 	configuration.set_value("NexusForge", "open_dialogs", discourse_open_files)
+	configuration.set_value("NexusForge", "recent_dialogs", discourse_recent_files)
 	configuration.set_value("NexusForge", "open_characters", open_characters)
 	configuration.set_value("NexusForge", "open_phrase_maps", open_maps)
 	configuration.set_value("NexusForge", "open_quests", open_quests)
@@ -357,6 +359,7 @@ func _set_window_layout(configuration: ConfigFile) -> void:
 	var maps: Array[String] = configuration.get_value("NexusForge", "open_phrase_maps", empty)
 	var characters: Array[String] = configuration.get_value("NexusForge", "open_characters", empty)
 	var dialogs: Array[String] = configuration.get_value("NexusForge", "open_dialogs", empty)
+	var recent_dialogs: Array[String] = configuration.get_value("NexusForge", "recent_dialogs", empty)
 	var folder_layout: Dictionary = configuration.get_value("NexusForge", "blackboard_folder_layout", {})
 	var black_sorting_column: int = configuration.get_value("NexusForge", "blackboard_sort_column", 0)
 	var open_quests: Array[String] = configuration.get_value("NexusForge", "open_quests", empty)
@@ -369,6 +372,7 @@ func _set_window_layout(configuration: ConfigFile) -> void:
 	
 	if editor_view.discourse != null:
 		editor_view.discourse.load_dialog_files(dialogs)
+		editor_view.discourse.set_recently_opened_files(recent_dialogs)
 		editor_view.discourse.set_display_dialog_id_checked(discourse_display_id)
 	if editor_view.characters != null:
 		editor_view.characters.load_character_files(characters)
@@ -539,15 +543,74 @@ func _on_resource_saved(resource: Resource) -> void:
 
 
 func _on_files_moved(old_file: String, new_file: String) -> void:
-	if old_file.get_extension() != "tres" or load(new_file) is not Quest:
+	if old_file.get_extension() != "tres":
+		return
+	
+	if ProjectSettings.get_setting(
+			get_project_settings_path("discourse"), "") == old_file:
+		ProjectSettings.set_setting(
+				get_project_settings_path("discourse"), new_file)
+		ProjectSettings.save()
+		return
+	elif ProjectSettings.get_setting(
+			get_project_settings_path("variables"), "") == old_file:
+		ProjectSettings.set_setting(
+				get_project_settings_path("variables"), new_file)
+		ProjectSettings.save()
+		return
+	elif ProjectSettings.get_setting(
+			get_project_settings_path("traits"), "") == old_file:
+		ProjectSettings.set_setting(
+				get_project_settings_path("traits"), new_file)
+		ProjectSettings.save()
+		return
+	elif ProjectSettings.get_setting(
+			get_project_settings_path("skills"), "") == old_file:
+		ProjectSettings.set_setting(
+				get_project_settings_path("skills"), new_file)
+		ProjectSettings.save()
+		return
+	elif ProjectSettings.get_setting(
+			get_project_settings_path("species"), "") == old_file:
+		ProjectSettings.set_setting(
+				get_project_settings_path("species"), new_file)
+		ProjectSettings.save()
+		return
+	elif ProjectSettings.get_setting(
+			get_project_settings_path("items"), "") == old_file:
+		ProjectSettings.set_setting(
+				get_project_settings_path("items"), new_file)
+		ProjectSettings.save()
+		return
+	elif ProjectSettings.get_setting(
+			get_project_settings_path("currency"), "") == old_file:
+		ProjectSettings.set_setting(
+				get_project_settings_path("currency"), new_file)
+		ProjectSettings.save()
+		return
+	elif ProjectSettings.get_setting(
+			get_project_settings_path("recipes"), "") == old_file:
+		ProjectSettings.set_setting(
+				get_project_settings_path("recipes"), new_file)
+		ProjectSettings.save()
+		return
+	
+	var file = load(new_file)
+	var mode: String = ""
+	
+	if file is Quest:
+		mode = "-treestate-"
+	elif file is EditorDiscourseDialog:
+		mode = "-graphstate-"
+	else:
 		return
 	
 	var md5: String = old_file.md5_text()
-	var file: String = old_file.get_file() + "-treestate-" + md5 + ".cfg"
-	var path: String = "res://.godot/editor/".path_join(file)
+	var config_file: String = old_file.get_file() + mode + md5 + ".cfg"
+	var path: String = "res://.godot/editor/".path_join(config_file)
 	if FileAccess.file_exists(path):
 		var new_md5: String = new_file.md5_text()
-		var new_path: String = "res://.godot/editor/".path_join(new_file.get_file() + "-treestate-" + new_md5 + ".cfg")
+		var new_path: String = "res://.godot/editor/".path_join(new_file.get_file() + mode + new_md5 + ".cfg")
 		DirAccess.rename_absolute(old_file, new_path)
 
 

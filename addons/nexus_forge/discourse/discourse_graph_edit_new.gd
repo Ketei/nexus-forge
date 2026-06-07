@@ -1619,9 +1619,8 @@ func focus_graph_node(node_uuid: StringName, animate: bool = true) -> void:
 		scroll_offset = target_position
 
 
-func reset_scroll_offset(new_size: Vector2) -> void:
-	size = new_size
-	var target_size: Vector2 = -Vector2(new_size.x / 4.0, new_size.y / 2.0) + Vector2(entry_node.size.x, entry_node.size.y / 2.0)
+func reset_scroll_offset() -> void:
+	var target_size: Vector2 = -Vector2(size.x / 4.0, size.y / 2.0) + Vector2(entry_node.size.x, entry_node.size.y / 2.0)
 	scroll_offset = target_size
 
 

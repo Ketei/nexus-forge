@@ -111,6 +111,9 @@ func add_conversation(data: EditorDiscourseDialog, select: bool = false, signal_
 
 
 func select_conversation(data: EditorDiscourseDialog, emit_select: bool = true) -> void:
+	if get_active_resource() == data:
+		return
+	
 	for item in get_root().get_children():
 		if item.get_metadata(0)["resource"] == data:
 			if emit_select:

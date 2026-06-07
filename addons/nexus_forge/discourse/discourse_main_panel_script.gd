@@ -20,8 +20,11 @@ enum DiscourseFileMenuID {
 	CHECK_ISSUES,
 	PLAY_CURRENT_DIALOG,
 	DISPLAY_DIALOG_ID_FIELD,
+	RECENT_OPEN_FILES,
 	}
 # ------------------
+
+const RECENT_FILE_AMOUNT_MAX: int = 10
 
 var active_conversation: EditorDiscourseDialog = null
 
@@ -41,6 +44,8 @@ var base_language: String = ""
 var _included_languages: Dictionary[String, Dictionary] = {}
 var current_locale: String = ""
 var text_editor: Window = null
+var _recently_opened_files: Array[String] = []
+var _recently_opened_popup: PopupMenu = null
 # ----------------------------
 
 # --- Discourse Graph ---
@@ -100,22 +105,14 @@ var file_popup: PopupMenu = null
 @onready var play_current_dialog_btn: Button = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/PlayDialogBtn
 @onready var switch_localization: Button = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/LocalizationContainer/SwitchLocaleBtn
 @onready var localization_menu: OptionButton = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/LocalizationContainer/LocalizationMenu
-#@onready var tool_menu: MenuBar = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/MenuBar
-
 
 @onready var snap_distance_spn_bx: SpinBox = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/SnapDistanceSpnBx
-
-
-#func _ready() -> void:
-	#ready_plugin()
 
 
 func ready_plugin(base_locale: String = "") -> void:
 	base_locale = TranslationServer.standardize_locale(base_locale)
 	node_popup = node_menu_btn.get_popup()
 	file_popup = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/FileMenuBtn.get_popup()
-	#var file_popup: PopupMenu = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuVBox/MenuBar/FileMenu
-	#var node_popup: PopupMenu = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuVBox/MenuBar/NodeMenu
 	var open_btn: Button = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/OpenBtn
 	var toggle_grid_btn: Button = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/ToggleGridBtn
 	var toggle_snap_btn: Button = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/ToggleSnapBtn
@@ -126,6 +123,10 @@ func ready_plugin(base_locale: String = "") -> void:
 	var dialogs_submenu: PopupMenu = PopupMenu.new()
 	var data_submenu: PopupMenu = PopupMenu.new()
 	var setting_submenu: PopupMenu = PopupMenu.new()
+	_recently_opened_popup = PopupMenu.new()
+	
+	_recently_opened_popup.size = Vector2.ZERO
+	_recently_opened_popup.max_size.x = 250
 	
 	dialogs_submenu.min_size.x = 120
 	
@@ -219,6 +220,10 @@ func ready_plugin(base_locale: String = "") -> void:
 			null,
 			"Open",
 			DiscourseFileMenuID.OPEN_DIALOG)
+	file_popup.add_submenu_node_item(
+			"Recent",
+			_recently_opened_popup,
+			DiscourseFileMenuID.RECENT_OPEN_FILES)
 	file_popup.add_icon_item(
 			null,
 			"Save",
@@ -254,6 +259,11 @@ func ready_plugin(base_locale: String = "") -> void:
 	
 	file_popup.set_item_disabled(
 			file_popup.get_item_index(
+					DiscourseFileMenuID.RECENT_OPEN_FILES),
+			_recently_opened_files.is_empty())
+	
+	file_popup.set_item_disabled(
+			file_popup.get_item_index(
 					DiscourseFileMenuID.CHECK_ISSUES),
 					true)
 	
@@ -283,9 +293,6 @@ func ready_plugin(base_locale: String = "") -> void:
 	localization_nodes_tree.ready_plugin()
 	
 	var discourse_panel: PanelContainer = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/GraphPanel
-	#discourse_window.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	#discourse_split_container.add_child(discourse_window)
-	#discourse_split_container.move_child(discourse_window, 0)
 	var style: StyleBoxFlat = load("res://addons/nexus_forge/discourse/discourse_editor_stylebox.tres")
 	
 	style.bg_color = get_theme_color("base_color", "Editor")
@@ -342,6 +349,7 @@ func ready_plugin(base_locale: String = "") -> void:
 	dialogs_submenu.id_pressed.connect(_on_create_dialog_id_pressed)
 	data_submenu.id_pressed.connect(_on_create_dialog_id_pressed)
 	setting_submenu.id_pressed.connect(_on_create_dialog_id_pressed)
+	_recently_opened_popup.index_pressed.connect(_on_recent_file_index_pressed)
 	node_popup.id_pressed.connect(_on_create_dialog_id_pressed)
 	switch_localization.pressed.connect(_on_switch_window_pressed)
 	file_popup.id_pressed.connect(_on_file_menu_id_pressed)
@@ -522,7 +530,6 @@ func set_graph_edit_visible(graph_visible: bool) -> void:
 
 func set_conversation_options_enabled(are_enabled: bool) -> void:
 	var disabled: bool = !are_enabled
-	#node_menu.disabled = disabled
 	node_menu_btn.disabled = disabled
 	switch_localization.disabled = disabled
 	save_btn.disabled = disabled
@@ -607,7 +614,6 @@ func _on_file_menu_id_pressed(id: int) -> void:
 		DiscourseFileMenuID.PLAY_CURRENT_DIALOG:
 			_on_play_current_dialog_pressed()
 		DiscourseFileMenuID.DISPLAY_DIALOG_ID_FIELD:
-			#var menu: PopupMenu = file_menu.get_popup()
 			var idx: int = file_popup.get_item_index(id)
 			var display: bool = !file_popup.is_item_checked(idx)
 			file_popup.set_item_checked(idx, display)
@@ -726,32 +732,6 @@ func _on_conversation_close_pressed(dialog: EditorDiscourseDialog, save_required
 	_unsaved = conversation_tree.active_unsaved
 	selected_key = null
 	selected_format = ""
-	#conversation_tree.remove_conversation(dialog)
-	
-	#var item: TreeItem = conversation_tree.active_conversation_item
-	#var total_items: int = conversation_tree.get_root().get_child_count()
-	#var new_item: TreeItem = null
-	#
-	#if 1 < total_items:
-		#if item.get_index() == total_items - 1: # Get a -1
-			#new_item = conversation_tree.get_root().get_child(item.get_index() - 1)
-		#else: # Get the same index
-			#new_item = conversation_tree.get_root().get_child(item.get_index() + 1)
-		
-	#if new_item == null:
-		#active_conversation = null
-		#set_conversation_active(false)
-		#display_conversation(null)
-		#conversation_tree.active_unsaved = false
-	#else:
-		#var new_conv: EditorDiscourseDialog = new_item.get_metadata(0)["resource"]
-		#conversation_tree.set_conversation_item_active(new_conv)
-		#if open_conversation(new_conv):
-			#conversation_tree.active_unsaved = true
-	#_unsaved = conversation_tree.active_unsaved
-	#selected_key = null
-	#selected_format = ""
-	#conversation_tree.remove_conversation(dialog)
 
 
 func _on_menu_close_pressed() -> void:
@@ -913,7 +893,7 @@ func _on_side_editor_locale_changed(from: String, to: String) -> void:
 	search_text_ln_edt.text = ""
 	search_text_ln_edt.set_meta(&"current_search", "")
 	
-	if to.is_empty(): # TEST: This was from.is_empty. If fails, revert.
+	if to.is_empty():
 		$LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/LocaleVBoxContainer.visible = false
 		$LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer.visible = false
 		key_box_container.visible = false
@@ -1019,7 +999,6 @@ func _on_localizer_node_selected(uuid: StringName) -> void:
 	$LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer.visible = new_node.node_type == DiscourseGraphNode.DialogueNodeType.OPTIONS
 	$LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/LocaleVBoxContainer.visible = !$LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer.visible
 	# Get the data & set to localizer
-	#var tree_default_language: String = languages_tree.get_default_language()
 	
 	match new_node.node_type:
 		DiscourseGraphNode.DialogueNodeType.DIALOG:
@@ -1101,7 +1080,6 @@ func _on_node_delocalized(node: DiscourseGraphNode) -> void:
 					text)
 	
 	node.set_node_localized(false)
-	#discourse_window.erase_localization(node.get_node_uuid())
 	
 	if localization_node_selected == node:
 		localization_node_selected = null
@@ -1305,6 +1283,53 @@ func get_open_files() -> Array[String]:
 	return conversation_tree.get_open_file_paths()
 
 
+func get_recenlty_opened_files() -> Array[String]:
+	return _recently_opened_files.duplicate()
+
+
+func set_recently_opened_files(new_files: Array[String]) -> void:
+	var files: Array[String] = []
+	
+	if RECENT_FILE_AMOUNT_MAX < new_files.size():
+		files.assign(new_files.slice(0, RECENT_FILE_AMOUNT_MAX))
+	else:
+		files.assign(new_files)
+	
+	_recently_opened_files.assign(files)
+	update_recently_opened_files()
+
+
+func update_recently_opened_files() -> void:
+	var existing_items: Dictionary[String, String] = {}
+	
+	for existing_idx in range(_recently_opened_popup.item_count):
+		existing_items[_recently_opened_popup.get_item_metadata(existing_idx)] = _recently_opened_popup.get_item_text(existing_idx)
+	
+	_recently_opened_popup.clear()
+	
+	for path_index in range(_recently_opened_files.size() - 1, -1, -1):
+		var display: String = ""
+		var filepath: String = _recently_opened_files[path_index]
+		
+		if existing_items.has(filepath):
+			display = existing_items[filepath]
+		else:
+			var file_name: String = filepath.get_file().get_basename()
+			var full_string: String = file_name + " [" + filepath + "]"
+			display = _truncate_with_elipsis(full_string, 200)
+		
+		_recently_opened_popup.add_item(display)
+		_recently_opened_popup.set_item_metadata(-1, filepath)
+		_recently_opened_popup.set_item_tooltip(-1, filepath)
+	
+	file_popup.set_item_disabled(
+			file_popup.get_item_index(
+					DiscourseFileMenuID.RECENT_OPEN_FILES),
+			_recently_opened_files.is_empty())
+	
+	_reset_recent_popup_size.call_deferred()
+
+
 func load_dialog_files(files: Array[String]) -> void:
 	for file in files:
 		if not FileAccess.file_exists(file):
@@ -1335,7 +1360,6 @@ func save_current_dialog_to_memory() -> void:
 	# data to the current selected dropdown locale.
 	discourse_graph_edit.update_conversation_file(active_conversation, current_locale)
 	
-	#active_conversation.base_language = languages_tree.get_base_language()
 	active_conversation.zoom = discourse_graph_edit.zoom
 	active_conversation.scroll_offset = discourse_graph_edit.scroll_offset
 	active_conversation.node_structure = discourse_nodes_tree.get_folder_structure()
@@ -1433,12 +1457,11 @@ func _on_new_conversation_pressed() -> void:
 	var file_saver: AcceptDialog = preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	file_saver.file_mode = file_saver.FILE_MODE_SAVE_FILE
 	add_child(file_saver)
-	file_saver.show()
+	file_saver.popup_centered()
 	
 	var result: Array = await file_saver.dialog_finished
 	
 	if result[0]:
-		var wait_visible: bool = no_dialog_label.visible
 		listen_offset = false
 		if active_conversation != null:
 			save_current_dialog_to_memory()
@@ -1458,11 +1481,12 @@ func _on_new_conversation_pressed() -> void:
 			dialog_id_ln_edt.editable = true
 		load_conversation(new_conv, true)
 		
-		discourse_graph_edit.reset_scroll_offset(
-				$MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/GraphPanel.size)
-		if wait_visible:
-			await get_tree().process_frame
-		listen_offset = true
+		discourse_graph_edit.reset_scroll_offset.call_deferred()
+		
+		set_deferred(&"listen_offset", true)
+		
+		add_to_recently_opened_files(result[1])
+		
 	file_saver.queue_free()
 
 
@@ -1474,11 +1498,39 @@ func get_settings_languages_as_map() -> Dictionary:
 	return language_map
 
 
+func load_dialog_from_file(file_path: String) -> EditorDiscourseDialog:
+	var resource = load(file_path)
+	if resource == null or not resource is EditorDiscourseDialog:
+		return null
+	var dialog_resource: EditorDiscourseDialog = resource
+	
+	if conversation_tree.is_conversation_open(dialog_resource):
+		return dialog_resource
+	
+	var filename: String = file_path.get_file()
+	var path_hash: String = file_path.md5_text()
+	var absolute_path: String = ProjectSettings.globalize_path("res://.godot/editor/")
+	var config_filename: String = filename + "-graphstate-" + path_hash + ".cfg"
+	var full_path: String = absolute_path.path_join(config_filename)
+	
+	if FileAccess.file_exists(full_path):
+		var cfg: ConfigFile = ConfigFile.new()
+		if cfg.load(full_path) == OK:
+			var position_offset: Vector2 = cfg.get_value("Layout", "scroll_offset", Vector2.ZERO)
+			var zoom: float = cfg.get_value("Layout", "zoom", 1.0)
+			resource.scroll_offset = position_offset
+			resource.zoom = zoom
+	
+	load_conversation(dialog_resource, false)
+	
+	return dialog_resource
+
+
 func _on_open_conversation_pressed() -> void:
 	var file_opener: AcceptDialog = preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	file_opener.file_mode = file_opener.FILE_MODE_OPEN_FILE
 	add_child(file_opener)
-	file_opener.show()
+	file_opener.popup_centered()
 	
 	var result: Array = await file_opener.dialog_finished
 	
@@ -1499,7 +1551,6 @@ func _on_open_conversation_pressed() -> void:
 					resource.scroll_offset = position_offset
 					resource.zoom = zoom
 			
-			var wait_visible: bool = no_dialog_label.visible
 			if _conversation_options_disabled:
 				set_graph_edit_visible(true)
 				set_conversation_options_enabled(true)
@@ -1516,10 +1567,10 @@ func _on_open_conversation_pressed() -> void:
 			else:
 				_unsaved = false
 				load_conversation(resource)
-			if wait_visible:
-				await get_tree().process_frame
+			
+			add_to_recently_opened_files(result[1])
 		
-		listen_offset = true
+		set_deferred(&"listen_offset", true)
 	
 	file_opener.queue_free()
 
@@ -1838,7 +1889,6 @@ func load_conversation(data: EditorDiscourseDialog, open_conv: bool = true) -> v
 	conversation_tree.add_conversation(data, open_conv, false)
 	
 	if open_conv:
-		#active_conversation_item = new_conversation
 		conversation_tree.set_conversation_item_active(data)
 		if open_conversation(data):
 			conversation_tree.active_unsaved = true
@@ -2201,7 +2251,6 @@ func _on_case_line_text_changed(_text: String = "") -> void:
 	var all_ids: Dictionary[String, Array] = {}
 	
 	for item:LineEdit in case_node_container.get_children():
-		#var line: LineEdit = item
 		var key: String = item.text.strip_edges()
 		
 		if key.is_empty():
@@ -2291,7 +2340,6 @@ func _on_edit_cases_pressed(text_line: LineEdit, key: LineEdit, button: Button) 
 				add_new_case(
 						custom_case,
 						active_conversation.get_format_string_case(phrase_key, locale_code, argument_format, custom_case))
-						#active_conversation.format_strings[phrase_key][locale_code]["arguments"][argument_format]["custom"][custom_case])
 		
 		selected_format = argument_format
 	else:
@@ -2737,6 +2785,66 @@ func _phrase_key_used(desired: String, items: Array[Dictionary], skip_index: int
 
 
 #endregion
+
+
+func _on_recent_file_index_pressed(index: int) -> void:
+	var file_path: String = _recently_opened_popup.get_item_metadata(index)
+	
+	if FileAccess.file_exists(file_path):
+		var file: EditorDiscourseDialog = load_dialog_from_file(file_path)
+		if file == null:
+			push_error("[DISCOURSE]: Couldn't open \"", file_path, "\"")
+			return
+		conversation_tree.select_conversation.call_deferred(file)
+		add_to_recently_opened_files(file_path)
+	else:
+		push_error("[DISCOURSE]: File not found: \"", file_path, "\"")
+		_recently_opened_files.erase(file_path)
+		_recently_opened_popup.remove_item(index)
+		_reset_recent_popup_size.call_deferred()
+
+
+func _reset_recent_popup_size() -> void:
+	_recently_opened_popup.size = Vector2i.ZERO
+
+
+func add_to_recently_opened_files(file: String) -> void:
+	if _recently_opened_files.has(file):
+		var index: int = _recently_opened_files.find(file)
+		_recently_opened_files.remove_at(index)
+	elif RECENT_FILE_AMOUNT_MAX < _recently_opened_files.size():
+		_recently_opened_files.resize(RECENT_FILE_AMOUNT_MAX - 1)
+	
+	_recently_opened_files.append(file)
+	
+	update_recently_opened_files()
+
+
+func _truncate_with_elipsis(text: String, max_size: int, elipsis: String = "...") -> String:
+	if max_size <= 0:
+		return ""
+	
+	var font: Font = _recently_opened_popup.get_theme_font("font")
+	var font_size: int = _recently_opened_popup.get_theme_font_size("font_size")
+	
+	if font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x < max_size:
+		return text
+	
+	var ellipsis_width: float = font.get_string_size(elipsis, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
+	var available_width: float = max_size - ellipsis_width
+	
+	var truncated: String = ""
+	for char_index in range(text.length()):
+		var test_string: String = text.substr(0, char_index)
+		var current_width: int = font.get_string_size(test_string, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
+		
+		if current_width <= available_width:
+			truncated = test_string
+		else:
+			break
+			
+	return truncated + elipsis
+
 
 func filesystem_resource_removed(resource: Resource) -> void:
 	if resource == null:
