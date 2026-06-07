@@ -140,7 +140,8 @@ func _on_signal_emmited(signal_name: String, arguments: Array) -> void:
 			"[EVENT] Signal ",
 			signal_name,
 			" emmited with arguments ",
-			arguments)
+			arguments,
+			"\n")
 	
 	events_text_edit.set_deferred("scroll_vertical", events_text_edit.get_v_scroll_bar().max_value)
 

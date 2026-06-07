@@ -217,7 +217,7 @@ func _process_logic(uuid: StringName) -> StringName:
 				var signal_data: Dictionary = _dialog_resource.get_node_data(data["input_connections"]["signal"]["target_node_uuid"])
 				var signal_metadata: Dictionary = signal_data["metadata"]
 				
-				if NexusForge.Discourse.API.has_method(signal_metadata["signal"]):
+				if NexusForge.Discourse.API.has_signal(signal_metadata["signal"]):
 					var signal_args: Array = []
 					
 					for arg_connection in signal_metadata["arguments"]:
@@ -349,7 +349,7 @@ func _get_data(from_uuid: StringName, fallback = null) -> Variant:
 			if data["input_connections"]["signal"]["target_node_uuid"] != "":
 				var signal_data: Dictionary = _dialog_resource.get_node_data(data["input_connections"]["signal"]["target_node_uuid"], locale)
 				
-				if NexusForge.Discourse.API.has_method(signal_data["metadata"]["signal"]):
+				if NexusForge.Discourse.API.has_signal(signal_data["metadata"]["signal"]):
 					var signal_args: Array = []
 					
 					for arg_connection in signal_data["metadata"]["arguments"]:
@@ -556,7 +556,7 @@ func _get_bool_result(from_uuid: String) -> bool:
 			if not _can_compare(value_a, value_b):
 				return metadata["operator"] == OP_NOT_EQUAL
 			
-			match data["operator"]:
+			match metadata["operator"]:
 				OP_EQUAL:
 					return value_a == value_b
 				OP_NOT_EQUAL:

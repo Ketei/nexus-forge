@@ -124,7 +124,7 @@ const compatible_connections: Dictionary = {
 			{
 				"name": "Metadata",
 				"type": DialogNodes.METADATA,
-				"ports": [{"port": "0"}]}
+				"ports": [{"port": 0}]}
 		], TYPE_DICTIONARY, &"", null)},
 	ConnectionType.VAR_STRING: {
 		"input": Array([
@@ -1461,6 +1461,7 @@ func _on_connection_from_empty(to_node: StringName, to_port: int, release_positi
 				data)
 		
 		graph_nodes[from_graph.get_node_uuid()] = from_graph
+		
 		from_graph.position_offset -= from_graph.get_output_port_position(from_info["ports"][0]["port"])
 		snap_node_to_grid(from_graph)
 		connect_discourse_nodes(

@@ -2226,10 +2226,16 @@ func _on_open_code_editor_graph_request(target: Control, initial_text: String) -
 	var result = await text_editor.action_finished
 	
 	if result[0]:
+		var notify_change: bool = false
 		if target is LineEdit:
+			notify_change = target.text != result[1]
 			target.text = result[1]
 		elif target is TextEdit:
+			notify_change = target.text != result[1]
 			target.text = result[1]
+		
+		if notify_change:
+			_on_conversation_changed()
 	
 	text_editor.queue_free()
 	text_editor = null
@@ -2250,7 +2256,8 @@ func set_text_code_editor_variable_paths(paths: Array[Dictionary]) -> void:
 func _on_case_line_text_changed(_text: String = "") -> void:
 	var all_ids: Dictionary[String, Array] = {}
 	
-	for item:LineEdit in case_node_container.get_children():
+	for container:HBoxContainer in case_node_container.get_children():
+		var item: LineEdit = container.get_child(1)
 		var key: String = item.text.strip_edges()
 		
 		if key.is_empty():
@@ -2385,7 +2392,7 @@ func _on_erase_key_button_pressed(key: LineEdit) -> void:
 		argument_opt_btn.disabled = true
 		new_case_btn.disabled = true
 	
-	active_conversation.localized_strings.erase(key.get_meta(&"phrase_key"))
+	active_conversation.format_strings.erase(key.get_meta(&"phrase_key"))
 	
 	erase_key(
 		key.get_parent().get_index())
@@ -2505,9 +2512,12 @@ func new_key_container(key: String = "", unsaved: bool = true) -> HBoxContainer:
 	var new_key: HBoxContainer = HBoxContainer.new()
 	var key_line: LineEdit = LineEdit.new()
 	var erase_button: Button = Button.new()
+	var empty_key: bool = key.is_empty()
 	
 	if key.is_empty():
-		key = UUID.generate_new()
+		key = get_valid_format_key_id()
+	else:
+		key= get_valid_format_key_id(key)
 	
 	key_line.set_meta(&"phrase_key", key)
 	key_line.set_meta(&"unsaved", unsaved)
@@ -2530,6 +2540,31 @@ func new_key_container(key: String = "", unsaved: bool = true) -> HBoxContainer:
 	new_key.add_child(key_line)
 	
 	return new_key
+
+
+func get_valid_format_key_id(desired_id: String = "NEW_PHRASE") -> String:
+	var used_keys: Dictionary[String, Variant] = {}
+	
+	for container in key_container.get_children():
+		var line: LineEdit = container.get_child(1)
+		var assigned_key: String = line.get_meta(&"phrase_key", "")
+		used_keys[assigned_key] = null
+	
+	if not used_keys.has(desired_id):
+		return desired_id
+	
+	var base: String = desired_id
+	var modified: String = desired_id
+	var trailing_data: Dictionary = StringUtils.get_trailing_integer(desired_id)
+	var iteration: int = trailing_data["integer"]
+	if trailing_data["has_integer"]:
+		base = desired_id.trim_suffix(str(iteration))
+	
+	while used_keys.has(modified):
+		iteration += 1
+		modified = base + str(iteration)
+	
+	return modified
 
 
 func new_case_result_node() -> HBoxContainer:
