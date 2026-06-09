@@ -130,7 +130,6 @@ func _drop_data(at_position: Vector2, data: Variant) -> void:
 	if drop_position == -100:
 		data.get_parent().remove_child(data)
 		get_root().add_child(data)
-		node_structure_changed.emit()
 	else:
 		match drop_position:
 			-1: # Above
