@@ -441,7 +441,7 @@ func new_dialog_node(node_type: DialogNodes, uuid: StringName = &"") -> Discours
 		DialogNodes.DIALOG_MERGE:
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/dialog_joiner.gd").new(uuid)
 		DialogNodes.COMMENT:
-			created_node = preload("res://addons/nexus_forge/discourse/nodes/comment_node.gd").new(uuid)
+			created_node = preload("res://addons/nexus_forge/discourse/nodes/comment_node.gd").new(uuid, &"TypeMisc")
 		DialogNodes.SETTINGS_CHARACTER:
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/char_settings_node.gd").new(uuid, &"TypeSettings")
 		DialogNodes.SETTINGS_DIALOG:

@@ -64,6 +64,7 @@ func _post_init() -> void:
 	use_code_editor_btn.custom_minimum_size = Vector2(32.0, 32.0)
 	use_code_editor_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	use_code_editor_btn.tooltip_text = "Open Focus Editor"
+	use_code_editor_btn.flat = true
 	use_code_editor_btn.pressed.connect(_on_use_code_editor_pressed)
 	
 	settings_box.add_child(dialog_settings)

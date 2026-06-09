@@ -54,7 +54,7 @@ func ready_plugin(use_discourse: bool, use_characters: bool, use_species: bool, 
 		discourse.code_editor_variables_requested.connect(_on_discourse_code_editor_variables_requested)
 		tool_tab_bar.add_tab("Discourse", load("res://addons/nexus_forge/icons/speech_bubble.svg"))
 	tool_container.add_child(variables)
-	tool_tab_bar.add_tab("Blackboard", load("res://addons/nexus_forge/icons/speech_bubble.svg"))
+	tool_tab_bar.add_tab("Blackboard", load("res://addons/nexus_forge/icons/variable_icon.svg"))
 	if characters != null:
 		tool_container.add_child(characters)
 		tool_tab_bar.add_tab("Characters", load("res://addons/nexus_forge/icons/character_icon.svg"))

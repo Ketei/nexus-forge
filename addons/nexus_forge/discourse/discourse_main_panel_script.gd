@@ -129,42 +129,46 @@ func ready_plugin(base_locale: String = "") -> void:
 	_recently_opened_popup.max_size.x = 250
 	
 	dialogs_submenu.min_size.x = 120
+	dialogs_submenu.add_theme_constant_override(&"icon_max_width", 16)
+	data_submenu.add_theme_constant_override(&"icon_max_width", 16)
+	setting_submenu.add_theme_constant_override(&"icon_max_width", 16)
+	node_popup.add_theme_constant_override(&"icon_max_width", 16)
 	
-	dialogs_submenu.add_item("Dialog", DiscourseGraphNode.DialogueNodeType.DIALOG)
-	dialogs_submenu.add_item("Options", DiscourseGraphNode.DialogueNodeType.OPTIONS)
+	dialogs_submenu.add_icon_item(load("res://addons/nexus_forge/icons/speech_bubble.svg"), "Dialog", DiscourseGraphNode.DialogueNodeType.DIALOG)
+	dialogs_submenu.add_icon_item(load("res://addons/nexus_forge/icons/list_icon.svg"), "Options", DiscourseGraphNode.DialogueNodeType.OPTIONS)
 	dialogs_submenu.add_separator("Flow")
-	dialogs_submenu.add_item("Random", DiscourseGraphNode.DialogueNodeType.RANDOM)
-	dialogs_submenu.add_item("Branch", DiscourseGraphNode.DialogueNodeType.BRANCH)
-	dialogs_submenu.add_item("Match", DiscourseGraphNode.DialogueNodeType.MATCH)
-	dialogs_submenu.add_item("Merge", DiscourseGraphNode.DialogueNodeType.DIALOG_MERGE)
-	dialogs_submenu.add_item("Pause", DiscourseGraphNode.DialogueNodeType.PAUSE)
+	dialogs_submenu.add_icon_item(get_theme_icon("RandomNumberGenerator", "EditorIcons"), "Random", DiscourseGraphNode.DialogueNodeType.RANDOM)
+	dialogs_submenu.add_icon_item(load("res://addons/nexus_forge/icons/branch_icon.svg"), "Branch", DiscourseGraphNode.DialogueNodeType.BRANCH)
+	dialogs_submenu.add_icon_item(load("res://addons/nexus_forge/icons/match_icon.svg"), "Match", DiscourseGraphNode.DialogueNodeType.MATCH)
+	dialogs_submenu.add_icon_item(load("res://addons/nexus_forge/icons/merge_icon.svg"), "Merge", DiscourseGraphNode.DialogueNodeType.DIALOG_MERGE)
+	dialogs_submenu.add_icon_item(get_theme_icon("Pause", "EditorIcons"), "Pause", DiscourseGraphNode.DialogueNodeType.PAUSE)
 	dialogs_submenu.add_separator("Anchors")
-	dialogs_submenu.add_item("Pointer", DiscourseGraphNode.DialogueNodeType.ANCHOR_POINTER)
-	dialogs_submenu.add_item("Target", DiscourseGraphNode.DialogueNodeType.ANCHOR)
+	dialogs_submenu.add_icon_item(load("res://addons/nexus_forge/icons/dialog_entry.svg"), "Pointer", DiscourseGraphNode.DialogueNodeType.ANCHOR_POINTER)
+	dialogs_submenu.add_icon_item(load("res://addons/nexus_forge/icons/dialog_exit.svg"), "Target", DiscourseGraphNode.DialogueNodeType.ANCHOR)
 	dialogs_submenu.add_separator()
-	dialogs_submenu.add_item("Event", DiscourseGraphNode.DialogueNodeType.EVENT)
-	dialogs_submenu.add_item("End", DiscourseGraphNode.DialogueNodeType.DIALOG_END)
+	dialogs_submenu.add_icon_item(load("res://addons/nexus_forge/icons/bulb_icon.svg"), "Event", DiscourseGraphNode.DialogueNodeType.EVENT)
+	dialogs_submenu.add_icon_item(get_theme_icon("Stop", "EditorIcons"), "End", DiscourseGraphNode.DialogueNodeType.DIALOG_END)
 	
-	data_submenu.add_item("Value", DiscourseGraphNode.DialogueNodeType.VALUE)
-	data_submenu.add_item("Variable", DiscourseGraphNode.DialogueNodeType.VARIABLE_GET)
-	data_submenu.add_item("Random", DiscourseGraphNode.DialogueNodeType.RANDOM_VALUE)
-	data_submenu.add_item("Localized Text", DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT)
+	data_submenu.add_icon_item(load("res://addons/nexus_forge/icons/variable_icon.svg"), "Value", DiscourseGraphNode.DialogueNodeType.VALUE)
+	data_submenu.add_icon_item(get_theme_icon("LocalVariable", "EditorIcons"), "Variable", DiscourseGraphNode.DialogueNodeType.VARIABLE_GET)
+	data_submenu.add_icon_item(get_theme_icon("RandomNumberGenerator", "EditorIcons"), "Random", DiscourseGraphNode.DialogueNodeType.RANDOM_VALUE)
+	data_submenu.add_icon_item(get_theme_icon("Translation", "EditorIcons"), "Localized Text", DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT)
 	data_submenu.add_separator()
-	data_submenu.add_item("Condition Value", DiscourseGraphNode.DialogueNodeType.CONDITION_SELECT)
-	data_submenu.add_item("Comparation", DiscourseGraphNode.DialogueNodeType.COMPARATION)
+	data_submenu.add_icon_item(load("res://addons/nexus_forge/icons/x_or_y_icon.svg"), "Condition Value", DiscourseGraphNode.DialogueNodeType.CONDITION_SELECT)
+	data_submenu.add_icon_item(load("res://addons/nexus_forge/icons/scale_icon.svg"), "Comparation", DiscourseGraphNode.DialogueNodeType.COMPARATION)
 	data_submenu.add_separator()
-	data_submenu.add_item("Event", DiscourseGraphNode.DialogueNodeType.DATA_EVENT)
-	data_submenu.add_item("Signal", DiscourseGraphNode.DialogueNodeType.SIGNAL)
-	data_submenu.add_item("Method", DiscourseGraphNode.DialogueNodeType.CALLABLE)
-	data_submenu.add_item("Method Return", DiscourseGraphNode.DialogueNodeType.CALLABLE_RETURN)
+	data_submenu.add_icon_item(load("res://addons/nexus_forge/icons/bulb_icon.svg"), "Event", DiscourseGraphNode.DialogueNodeType.DATA_EVENT)
+	data_submenu.add_icon_item(get_theme_icon("Signals", "EditorIcons"), "Signal", DiscourseGraphNode.DialogueNodeType.SIGNAL)
+	data_submenu.add_icon_item(get_theme_icon("Callable", "EditorIcons"), "Method", DiscourseGraphNode.DialogueNodeType.CALLABLE)
+	data_submenu.add_icon_item(load("res://addons/nexus_forge/icons/callable_return_icon.svg"), "Method Return", DiscourseGraphNode.DialogueNodeType.CALLABLE_RETURN)
 	data_submenu.add_separator()
-	data_submenu.add_item("Type Guard", DiscourseGraphNode.DialogueNodeType.TYPE_GUARD)
+	data_submenu.add_icon_item(load("res://addons/nexus_forge/icons/shield_icon.svg"), "Type Guard", DiscourseGraphNode.DialogueNodeType.TYPE_GUARD)
 	data_submenu.add_separator()
-	data_submenu.add_item("Metadata", DiscourseGraphNode.DialogueNodeType.METADATA)
+	data_submenu.add_icon_item(load("res://addons/nexus_forge/icons/metadata_icon.svg"), "Metadata", DiscourseGraphNode.DialogueNodeType.METADATA)
 	
-	setting_submenu.add_item("Dialog", DiscourseGraphNode.DialogueNodeType.SETTINGS_DIALOG)
-	setting_submenu.add_item("Character", DiscourseGraphNode.DialogueNodeType.SETTINGS_CHARACTER)
-	setting_submenu.add_item("Option", DiscourseGraphNode.DialogueNodeType.SETTINGS_OPTION)
+	setting_submenu.add_icon_item(load("res://addons/nexus_forge/icons/gear_icon.png"), "Dialog", DiscourseGraphNode.DialogueNodeType.SETTINGS_DIALOG)
+	setting_submenu.add_icon_item(load("res://addons/nexus_forge/icons/gear_icon.png"), "Character", DiscourseGraphNode.DialogueNodeType.SETTINGS_CHARACTER)
+	setting_submenu.add_icon_item(load("res://addons/nexus_forge/icons/gear_icon.png"), "Option", DiscourseGraphNode.DialogueNodeType.SETTINGS_OPTION)
 	
 	node_popup.add_submenu_node_item(
 			"Conversation",
@@ -179,10 +183,10 @@ func ready_plugin(base_locale: String = "") -> void:
 			setting_submenu,
 			100)
 	node_popup.add_separator()
-	node_popup.add_item("Comment", DiscourseGraphNode.DialogueNodeType.COMMENT)
-	node_popup.add_item("Resource", DiscourseGraphNode.DialogueNodeType.RESOURCE)
+	node_popup.add_icon_item(load("res://addons/nexus_forge/icons/comment_icon.svg"), "Comment", DiscourseGraphNode.DialogueNodeType.COMMENT)
+	node_popup.add_icon_item(get_theme_icon("ResourcePreloader", "EditorIcons"), "Resource", DiscourseGraphNode.DialogueNodeType.RESOURCE)
 	node_popup.add_separator()
-	node_popup.add_item("Frame", 1000)
+	node_popup.add_icon_item(load("res://addons/nexus_forge/icons/frame_icon.svg"), "Frame", 1000)
 	
 	save_btn.icon = get_theme_icon("Save", "EditorIcons")
 	
@@ -213,11 +217,11 @@ func ready_plugin(base_locale: String = "") -> void:
 	file_popup.hide_on_checkable_item_selection = false
 	
 	file_popup.add_icon_item(
-			null,
+			get_theme_icon("New", "EditorIcons"),
 			"New",
 			DiscourseFileMenuID.NEW_DIALOG)
 	file_popup.add_icon_item(
-			null,
+			get_theme_icon("Load", "EditorIcons"),
 			"Open",
 			DiscourseFileMenuID.OPEN_DIALOG)
 	file_popup.add_submenu_node_item(
@@ -225,11 +229,12 @@ func ready_plugin(base_locale: String = "") -> void:
 			_recently_opened_popup,
 			DiscourseFileMenuID.RECENT_OPEN_FILES)
 	file_popup.add_icon_item(
-			null,
+			get_theme_icon("Save", "EditorIcons"),
 			"Save",
 			DiscourseFileMenuID.SAVE_DIALOG)
 	file_popup.add_separator()
-	file_popup.add_item(
+	file_popup.add_icon_item(
+			get_theme_icon("Play", "EditorIcons"),
 			"Play current dialog",
 			DiscourseFileMenuID.PLAY_CURRENT_DIALOG)
 	file_popup.add_item(
@@ -248,7 +253,7 @@ func ready_plugin(base_locale: String = "") -> void:
 			DiscourseFileMenuID.CHANGE_LANGUAGE)
 	file_popup.add_separator()
 	file_popup.add_icon_item(
-			null,
+			get_theme_icon("Close", "EditorIcons"),
 			"Close",
 			DiscourseFileMenuID.CLOSE_DIALOG)
 	
@@ -379,7 +384,9 @@ func ready_plugin(base_locale: String = "") -> void:
 	
 	discourse_nodes_tree.directory_edited.connect(_on_conversation_changed)
 	discourse_nodes_tree.item_renamed.connect(_on_discourse_item_renamed)
+	discourse_nodes_tree.node_structure_changed.connect(_on_conversation_changed)
 	discourse_nodes_tree.node_activated.connect(_on_discourse_node_activated)
+	discourse_nodes_tree.collapsed_state_changed.connect(_on_collapsed_state_changed)
 	localization_nodes_tree.dialog_selected.connect(_on_localizer_node_selected)
 	localization_nodes_tree.node_delocalized.connect(_on_node_delocalized)
 	localization_nodes_tree.dialog_item_edited.connect(_on_localizer_item_renamed)
@@ -677,6 +684,13 @@ func _on_change_locale_group_pressed() -> void:
 	line_confirmation.queue_free()
 
 
+func _on_collapsed_state_changed() -> void:
+	if not listen_offset or conversation_tree.active_conversation_item == null or conversation_tree.active_offset_changed:
+		return
+	
+	conversation_tree.active_offset_changed = true
+
+
 func _on_graph_edit_offset_changed(_offset: Vector2) -> void:
 	if not listen_offset or conversation_tree.active_conversation_item == null or conversation_tree.active_offset_changed:
 		return
@@ -703,6 +717,7 @@ func _on_conversation_close_pressed(dialog: EditorDiscourseDialog, save_required
 	
 	if offset_changed:
 		var layout_data: Dictionary[String, Variant] = {
+			"collapsed_state": discourse_nodes_tree.get_collapsed_folders() if close_current else dialog.collapsed_state,
 			"zoom": discourse_graph_edit.zoom if close_current else dialog.zoom,
 			"scroll_offset": discourse_graph_edit.scroll_offset if close_current else dialog.scroll_offset}
 		
@@ -756,6 +771,7 @@ func _on_menu_close_pressed() -> void:
 		unsaved_prompt.queue_free()
 	elif conversation_tree.active_offset_changed:
 		var layout_data: Dictionary[String, Variant] = {
+			"collapsed_state": discourse_nodes_tree.get_collapsed_folders(),
 			"zoom": discourse_graph_edit.zoom,
 			"scroll_offset": discourse_graph_edit.scroll_offset}
 		
@@ -1346,8 +1362,15 @@ func load_dialog_files(files: Array[String]) -> void:
 				if cfg.load(full_path) == OK:
 					var position_offset: Vector2 = cfg.get_value("Layout", "scroll_offset", Vector2.ZERO)
 					var zoom: float = cfg.get_value("Layout", "zoom", 1.0)
-					loaded.position_offset = position_offset
+					var collapsed_state: Dictionary[String, bool] = {}
+					var cfg_collapsed = cfg.get_value("Layout", "collapsed_state", {})
+					if typeof(cfg_collapsed) == TYPE_DICTIONARY:
+						for key in cfg_collapsed.keys():
+							if typeof(key) == TYPE_STRING and typeof(cfg_collapsed[key]) == TYPE_BOOL:
+								collapsed_state[key] = cfg_collapsed[key]
+					loaded.scroll_offset = position_offset
 					loaded.zoom = zoom
+					loaded.collapsed_state.assign(collapsed_state)
 			
 			if conversation_tree.is_conversation_open(loaded):
 				continue
@@ -1360,6 +1383,7 @@ func save_current_dialog_to_memory() -> void:
 	# data to the current selected dropdown locale.
 	discourse_graph_edit.update_conversation_file(active_conversation, current_locale)
 	
+	active_conversation.collapsed_state = discourse_nodes_tree.get_collapsed_folders()
 	active_conversation.zoom = discourse_graph_edit.zoom
 	active_conversation.scroll_offset = discourse_graph_edit.scroll_offset
 	active_conversation.node_structure = discourse_nodes_tree.get_folder_structure()
@@ -1502,6 +1526,7 @@ func load_dialog_from_file(file_path: String) -> EditorDiscourseDialog:
 	var resource = load(file_path)
 	if resource == null or not resource is EditorDiscourseDialog:
 		return null
+	
 	var dialog_resource: EditorDiscourseDialog = resource
 	
 	if conversation_tree.is_conversation_open(dialog_resource):
@@ -1518,8 +1543,17 @@ func load_dialog_from_file(file_path: String) -> EditorDiscourseDialog:
 		if cfg.load(full_path) == OK:
 			var position_offset: Vector2 = cfg.get_value("Layout", "scroll_offset", Vector2.ZERO)
 			var zoom: float = cfg.get_value("Layout", "zoom", 1.0)
-			resource.scroll_offset = position_offset
-			resource.zoom = zoom
+			var collapsed_state: Dictionary[String, bool] = {}
+			var cfg_collapsed = cfg.get_value("Layout", "collapsed_state", {})
+			
+			if typeof(cfg_collapsed) == TYPE_DICTIONARY:
+				for key in cfg_collapsed.keys():
+					if typeof(key) == TYPE_STRING and typeof(cfg_collapsed[key]) == TYPE_BOOL:
+						collapsed_state[key] = cfg_collapsed[key]
+			
+			dialog_resource.collapsed_state.assign(collapsed_state)
+			dialog_resource.scroll_offset = position_offset
+			dialog_resource.zoom = zoom
 	
 	load_conversation(dialog_resource, false)
 	
@@ -1548,6 +1582,15 @@ func _on_open_conversation_pressed() -> void:
 				if cfg.load(full_path) == OK:
 					var position_offset: Vector2 = cfg.get_value("Layout", "scroll_offset", Vector2.ZERO)
 					var zoom: float = cfg.get_value("Layout", "zoom", 1.0)
+					var collapsed_state: Dictionary[String, bool] = {}
+					var cfg_collapsed = cfg.get_value("Layout", "collapsed_state", {})
+					
+					if typeof(cfg_collapsed) == TYPE_DICTIONARY:
+						for key in cfg_collapsed.keys():
+							if typeof(key) == TYPE_STRING and typeof(cfg_collapsed[key]) == TYPE_BOOL:
+								collapsed_state[key] = cfg_collapsed[key]
+					
+					resource.collapsed_state.assign(collapsed_state)
 					resource.scroll_offset = position_offset
 					resource.zoom = zoom
 			
@@ -1662,14 +1705,26 @@ func has_text_on_tree(on_tree: TreeItem, text: String, column: int, skip_item: T
 func set_up_node_structure(structure: Array, level: TreeItem, _map: Dictionary[String, TreeItem]) -> void:
 	#Remove from _map as we add them.
 	for item:Dictionary in structure: # Order has the order.
+		if not item.has("is_node"):
+			continue
+		
 		if item["is_node"]:
-			level.add_child(_map[item["uuid"]])
-			_map.erase(item["uuid"])
+			if item.has("uuid"):
+				level.add_child(_map[item["uuid"]])
+				_map.erase(item["uuid"])
 		else:
 			var new_folder: TreeItem = level.create_child()
-			new_folder.set_text(0, item["name"])
+			new_folder.set_text(
+					0,
+					discourse_nodes_tree.get_unique_name_on_tree(
+							level,
+							item["name"] if item.has("name") else "new_folder",
+							new_folder))
+			
 			new_folder.set_editable(0, true)
 			new_folder.set_icon(0, get_theme_icon("Folder", "EditorIcons"))
+			if item.has("collapsed"):
+				new_folder.collapsed = item["collapsed"]
 			new_folder.add_button(
 					0,
 					get_theme_icon("Remove", "EditorIcons"),
@@ -1677,7 +1732,8 @@ func set_up_node_structure(structure: Array, level: TreeItem, _map: Dictionary[S
 					false,
 					"Delete Group")
 			new_folder.set_metadata(0, {"is_node": false})
-			set_up_node_structure(item["items"], new_folder, _map)
+			if item.has("items"):
+				set_up_node_structure(item["items"], new_folder, _map)
 
 
 func _on_discourse_item_renamed(uuid: StringName, new_name: String) -> void:
@@ -1847,6 +1903,9 @@ func open_conversation(conversation: EditorDiscourseDialog) -> bool:
 			for node_uuid in node_map.keys():
 				root.add_child(node_map[node_uuid])
 	
+	discourse_nodes_tree.set_collapsed_folders(
+			conversation.collapsed_state)
+	
 	var graphs_locale: String = current_locale
 	var side_locale: String = languages_tree.get_active_locale()
 	
@@ -1947,6 +2006,7 @@ func save_current_dialog() -> void:
 	
 	if conversation_tree.active_offset_changed:
 		var layout_data: Dictionary[String, Variant] = {
+			"collapsed_state": discourse_nodes_tree.get_collapsed_folders(),
 			"zoom": active_conversation.zoom,
 			"scroll_offset": active_conversation.scroll_offset}
 		
@@ -1992,6 +2052,7 @@ func save_all_dialogs() -> void:
 	
 	for unsaved_layout: EditorDiscourseDialog in conversation_tree.get_unsaved_layout_resources():
 		var layout_data: Dictionary[String, Variant] = {
+			"collapsed_state": unsaved_layout.collapsed_state,
 			"zoom": unsaved_layout.zoom,
 			"scroll_offset": unsaved_layout.scroll_offset}
 		
@@ -2006,6 +2067,7 @@ func save_all_dialogs() -> void:
 func save_layouts() -> void:
 	for unsaved_layout: EditorDiscourseDialog in conversation_tree.get_unsaved_layout_resources():
 		var layout_data: Dictionary[String, Variant] = {
+			"collapsed_state": unsaved_layout.collapsed_state,
 			"zoom": unsaved_layout.zoom,
 			"scroll_offset": unsaved_layout.scroll_offset}
 		

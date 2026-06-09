@@ -46,7 +46,7 @@ func _post_init() -> void:
 
 
 func _ready() -> void:
-	graph_icon = get_theme_icon("Callable", "EditorIcons")
+	graph_icon = load("res://addons/nexus_forge/icons/callable_return_icon.svg")
 	set_output_connection_icon(&"methods", get_theme_icon("Variant", "EditorIcons"))
 	
 	for arg_port in range(get_child_count() - 1):

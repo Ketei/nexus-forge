@@ -102,6 +102,57 @@ expand_margin_top = 2.0
 expand_margin_right = 2.0
 anti_aliasing = false
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_of4i2"]
+content_margin_left = 0.0
+content_margin_top = 8.0
+content_margin_right = 0.0
+content_margin_bottom = 8.0
+bg_color = Color(0.25, 0.25, 0.25, 1)
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_byikc"]
+content_margin_left = 14.0
+content_margin_top = 8.0
+content_margin_right = 14.0
+content_margin_bottom = 8.0
+bg_color = Color(0.35, 0.35, 0.35, 1)
+border_width_left = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.72, 0.72, 0.72, 1)
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+expand_margin_left = 2.0
+expand_margin_right = 2.0
+expand_margin_bottom = 2.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_3goly"]
+content_margin_left = 10.0
+content_margin_top = 6.0
+content_margin_right = 10.0
+content_margin_bottom = 6.0
+bg_color = Color(0.35, 0.35, 0.35, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_5irj0"]
+content_margin_left = 10.0
+content_margin_top = 6.0
+content_margin_right = 10.0
+content_margin_bottom = 6.0
+bg_color = Color(0.45, 0.45, 0.45, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_color = Color(0.72, 0.72, 0.72, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+expand_margin_left = 2.0
+expand_margin_top = 2.0
+expand_margin_right = 2.0
+anti_aliasing = false
+
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_gi8n5"]
 content_margin_left = 0.0
 content_margin_top = 8.0
@@ -141,7 +192,7 @@ content_margin_left = 10.0
 content_margin_top = 6.0
 content_margin_right = 10.0
 content_margin_bottom = 6.0
-bg_color = Color(0.45, 0.135, 0.21375, 1)
+bg_color = Color(0.6455276, 0.21154335, 0.31964022, 1)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
@@ -216,6 +267,11 @@ TypeData/styles/panel = SubResource("StyleBoxFlat_8ra8b")
 TypeData/styles/panel_selected = SubResource("StyleBoxFlat_bh215")
 TypeData/styles/titlebar = SubResource("StyleBoxFlat_e4g72")
 TypeData/styles/titlebar_selected = SubResource("StyleBoxFlat_vm57b")
+TypeMisc/base_type = &"GraphNode"
+TypeMisc/styles/panel = SubResource("StyleBoxFlat_of4i2")
+TypeMisc/styles/panel_selected = SubResource("StyleBoxFlat_byikc")
+TypeMisc/styles/titlebar = SubResource("StyleBoxFlat_3goly")
+TypeMisc/styles/titlebar_selected = SubResource("StyleBoxFlat_5irj0")
 TypeObject/base_type = &"GraphNode"
 TypeObject/styles/panel = SubResource("StyleBoxFlat_gi8n5")
 TypeObject/styles/panel_selected = SubResource("StyleBoxFlat_34fpe")

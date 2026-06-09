@@ -54,7 +54,7 @@ func ready_plugin() -> void:
 	quest_popup = PopupMenu.new()
 	quest_popup.size = Vector2i(145, 10)
 	add_child(quest_popup)
-	#quest_popup.add_item("Add", PopupItemID.ADD_ITEM)
+	
 	quest_popup.add_icon_item(get_theme_icon("Add", "EditorIcons"), "Add", PopupItemID.ADD_ITEM)
 	quest_popup.add_icon_item(get_theme_icon("Edit", "EditorIcons"), "Edit ID", PopupItemID.EDIT_ITEM)
 	quest_popup.add_icon_item(get_theme_icon("Duplicate", "EditorIcons"), "Duplicate", PopupItemID.DUPLICATE)

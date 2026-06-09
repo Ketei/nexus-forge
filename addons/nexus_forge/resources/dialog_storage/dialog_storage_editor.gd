@@ -16,6 +16,7 @@ var scroll_offset: Vector2 = Vector2.ZERO:
 var zoom: float = 1.0:
 	set(new_zoom):
 		zoom = snappedf(new_zoom, 0.001)
+var collapsed_state: Dictionary[String, bool] = {}
 
 # A map of all languages that will be exported and used. If localization data
 # is set but the locale isn't registered in here then the export plugin
