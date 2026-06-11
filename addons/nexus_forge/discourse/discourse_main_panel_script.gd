@@ -33,7 +33,6 @@ var localization_node_selected: DiscourseGraphNode = null
 var listen_offset: bool = true
 
 var selected_key: LineEdit = null
-var selected_format: String = ""
 
 var _unsaved: bool = false
 
@@ -736,7 +735,7 @@ func _on_conversation_close_pressed(dialog: EditorDiscourseDialog, save_required
 		display_conversation(null)
 		conversation_tree.active_unsaved = false
 		selected_key = null
-		selected_format = ""
+		#selected_format = ""
 		return
 	
 	var new_resource: EditorDiscourseDialog = conversation_tree.get_active_resource()
@@ -746,7 +745,7 @@ func _on_conversation_close_pressed(dialog: EditorDiscourseDialog, save_required
 	
 	_unsaved = conversation_tree.active_unsaved
 	selected_key = null
-	selected_format = ""
+	#selected_format = ""
 
 
 func _on_menu_close_pressed() -> void:
@@ -787,7 +786,7 @@ func _on_menu_close_pressed() -> void:
 		display_conversation(null)
 		conversation_tree.active_unsaved = false
 		selected_key = null
-		selected_format = ""
+		#selected_format = ""
 		return
 	
 	var new_resource: EditorDiscourseDialog = conversation_tree.get_active_resource()
@@ -797,7 +796,7 @@ func _on_menu_close_pressed() -> void:
 	
 	_unsaved = conversation_tree.active_unsaved
 	selected_key = null
-	selected_format = ""
+	#selected_format = ""
 
 
 func _on_new_folder_button_pressed() -> void:
@@ -881,7 +880,7 @@ func _on_side_editor_locale_changed(from: String, to: String) -> void:
 	set_localization_tip(to)
 	
 	if not from.is_empty():
-		save_phrase_keys()
+		save_phrase_keys(from)
 		save_localizer_data()
 		
 		if active_node != null and from == current_locale:
@@ -1230,8 +1229,9 @@ func _on_new_lang_pressed() -> void:
 	if result != "":
 		languages_tree.create_language(result)
 		add_locale(result)
-		if selected_key != null and selected_format != "":
-			save_current_phrase_key()
+		var active_locale: String = languages_tree.get_active_locale()
+		if selected_key != null and argument_opt_btn.selected != -1 and not active_locale.is_empty():# selected_format != "":
+			save_current_phrase_key(active_locale)
 		
 		active_conversation.add_locale(result)
 		_on_conversation_changed()
@@ -1993,14 +1993,14 @@ func _on_save_conversation_pressed() -> void:
 
 func _on_godot_save_triggered() -> void:
 	if active_conversation != null:
-		save_phrase_keys()
+		save_phrase_keys(current_locale)
 	
 	save_all_dialogs()
 	conversation_tree.set_conversations_saved()
 
 
 func save_current_dialog() -> void:
-	save_phrase_keys()
+	save_phrase_keys(current_locale)
 	if $LocalizationContainer.visible and localization_nodes_tree.get_active_node() != null:
 		save_localizer_data()
 	
@@ -2040,7 +2040,7 @@ func save_all_dialogs() -> void:
 	for unsaved_conversation:EditorDiscourseDialog in conversation_tree.get_unsaved_conversation_resources():
 		# Including our active one
 		if unsaved_conversation == active_conversation:
-			save_phrase_keys()
+			save_phrase_keys(current_locale)
 			discourse_graph_edit.update_conversation_file(active_conversation, current_locale)
 			active_conversation.dialog_id = dialog_id_ln_edt.text.strip_edges()
 			
@@ -2347,16 +2347,16 @@ func _on_save_cases_btn_pressed() -> void:
 	case_box_container.visible = false
 	key_box_container.visible = true
 	
-	if selected_format.is_empty():
+	if argument_opt_btn.selected == -1:# selected_format.is_empty():
 		return
 	
-	save_current_phrase_key()
+	save_current_phrase_key(languages_tree.get_active_locale())
 	clear_cases()
 	default_case_ln_edt.text = ""
 	search_case_ln_edt.text = ""
 	search_case_ln_edt.set_meta(&"current_search", "")
 	argument_opt_btn.clear()
-	selected_format = ""
+	#selected_format = ""
 
 
 func _on_edit_cases_pressed(text_line: LineEdit, key: LineEdit, button: Button) -> void:
@@ -2390,6 +2390,7 @@ func _on_edit_cases_pressed(text_line: LineEdit, key: LineEdit, button: Button) 
 				locale_code)
 	
 	argument_opt_btn.clear()
+	clear_cases()
 	
 	for existing_key in EditorDiscourseDialog.get_phrase_arguments(clean_string, true):
 		argument_opt_btn.add_item(existing_key)
@@ -2409,10 +2410,6 @@ func _on_edit_cases_pressed(text_line: LineEdit, key: LineEdit, button: Button) 
 				add_new_case(
 						custom_case,
 						active_conversation.get_format_string_case(phrase_key, locale_code, argument_format, custom_case))
-		
-		selected_format = argument_format
-	else:
-		selected_format = ""
 	
 	case_box_container.visible = true
 	key_box_container.visible = false
@@ -2446,7 +2443,7 @@ func _on_key_line_text_changed(_text: String = "") -> void:
 func _on_erase_key_button_pressed(key: LineEdit) -> void:
 	if selected_key == key:
 		selected_key = null
-		selected_format = ""
+		#selected_format = ""
 		clear_cases()
 		default_case_ln_edt.text = ""
 		default_case_ln_edt.editable = false
@@ -2723,12 +2720,12 @@ func clear_localized_keys() -> void:
 		key_text.queue_free()
 
 
-func save_current_phrase_key() -> void:
+func save_current_phrase_key(locale_code: String) -> void:
 	if selected_key == null:
 		return
-	
 	var phrase_key: String = selected_key.get_meta(&"phrase_key")
-	var locale_code = languages_tree.get_active_locale()
+	#var locale_code = languages_tree.get_active_locale()
+	var selected_format: String = argument_opt_btn.get_item_text(argument_opt_btn.selected)
 	
 	active_conversation.set_format_string_default_case(
 		phrase_key,
@@ -2791,11 +2788,9 @@ func save_current_phrase_key() -> void:
 		_on_case_line_text_changed()
 
 
-func save_phrase_keys() -> void:
+func save_phrase_keys(locale: String) -> void:
 	if not languages_tree.is_lang_selected():
 		return
-	
-	var locale: String = languages_tree.get_active_locale()
 	
 	var current_items: Array[Dictionary] = []
 	
@@ -2838,25 +2833,18 @@ func save_phrase_keys() -> void:
 		
 		if unsaved: # Create the key-value entry. Set as created
 			key_line.set_meta(&"unsaved", false)
-			active_conversation.set_format_string(
-					clean,
-					item["text_line"].text,
-					locale)
+		
 		elif old_key != clean: # Move the value to the new key, clean the old key.
 			active_conversation.format_strings[clean] = active_conversation.format_strings[old_key]
 			active_conversation.format_strings.erase(old_key)
-			active_conversation.set_format_string(
-					clean,
-					item["text_line"].text,
-					locale)
-		else:
-			active_conversation.set_format_string(
-					clean,
-					item["text_line"].text,
-					locale)
 		
-			key_line.set_meta(&"phrase_key", clean)
-			key_line.text = clean
+		active_conversation.set_format_string(
+				clean,
+				item["text_line"].text,
+				locale)
+		
+		key_line.set_meta(&"phrase_key", clean)
+		key_line.text = clean
 		
 		claimed_keys[clean] = null
 	
@@ -2868,8 +2856,8 @@ func save_phrase_keys() -> void:
 	
 	# Saving this last because keys could shift above OR new keys could be
 	# assigned.
-	if not selected_format.is_empty():
-		save_current_phrase_key()
+	if -1 < argument_opt_btn.selected:# not selected_format.is_empty():
+		save_current_phrase_key(locale)
 
 
 func _phrase_key_used(desired: String, items: Array[Dictionary], skip_index: int = -1) -> bool:

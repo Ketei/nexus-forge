@@ -289,6 +289,113 @@ func get_path_to_folder(folder: TreeItem) -> String:
 	return "/".join(folder_path)
 
 
+func get_state_path_to_folder(folder: TreeItem) -> String:
+	var folder_path: Array[String] = []
+	var folder_step: TreeItem = folder
+	var root: TreeItem = get_root()
+	
+	while folder_step != root and folder_step != null: # Prevent going to a level we're not supposed to
+		folder_path.append(folder_step.get_text(0))
+		folder_step = folder_step.get_parent()
+	
+	folder_path.append("root")
+	folder_path.reverse()
+	return "/".join(folder_path)
+
+
+func get_folder_state() -> Array[Dictionary]:
+	var state: Array[Dictionary] = []
+	var folders: Dictionary[String, TreeItem] = get_folder_items()
+	for item_path in folders.keys():
+		state.append({
+			"path": item_path,
+			"collapsed": folders[item_path].collapsed,
+			"index": folders[item_path].get_index()})
+	return state
+
+
+func set_folder_state(state: Array[Dictionary]) -> void:
+	var folders: Dictionary[String, TreeItem] = get_folder_items()
+	var processed_items: Dictionary[String, Variant] = {}
+	var indexes: Dictionary[String, int] = {}
+	
+	# We don't need a deep copy as we're only going to change the indexes
+	var sorted_state: Array[Dictionary] = state.duplicate(false)
+	sorted_state.sort_custom(_sort_custom_state_folders)
+	
+	for state_data in sorted_state:
+		var index_path: String = state_data["path"].substr(0, state_data["path"].rfind("/"))
+		if not indexes.has(index_path):
+			indexes[index_path] = -1
+		
+		if not folders.has(state_data["path"]):
+			continue
+		
+		processed_items[state_data["path"]] = null
+		indexes[index_path] += 1
+		
+		var idx: int = indexes[index_path]
+		var item: TreeItem = folders[state_data["path"]]
+		
+		if state_data.has("collapsed"):
+			item.collapsed = state_data["collapsed"]
+		
+		if item.get_index() == idx: # We don't need to move
+			continue
+		
+		if idx == 0:
+			item.move_before(item.get_parent().get_first_child())
+		else:
+			item.move_after(item.get_parent().get_child(idx - 1))
+	
+	# Sorting last items
+	for path in folders.keys():
+		if processed_items.has(path):
+			continue
+		sort_single_item(folders[path])
+
+
+func sort_single_item(item: TreeItem) -> void:
+	var before_item: TreeItem = null
+	
+	for child in item.get_parent().get_children():
+		if child == item:
+			continue # We ignore the item we want to sort
+		
+		if item.get_text(0) < child.get_text(0):
+			before_item = child
+			break
+	
+	if before_item != null:
+		item.move_before(before_item)
+	else:
+		if item.get_index() != item.get_parent().get_child_count() - 1:
+			item.move_after(item.get_parent().get_child(-1))
+
+
+func _sort_custom_state_folders(a: Dictionary, b: Dictionary) -> bool:
+	var parent_a: String = a["path"].substr(0, a["path"].rfind("/"))
+	var parent_b: String = b["path"].substr(0, b["path"].rfind("/"))
+	if parent_a == parent_b:
+		return a["index"] < b["index"]
+	else:
+		return a["path"] < b["path"]
+
+
+func get_folder_items() -> Dictionary[String, TreeItem]:
+	var items: Dictionary[String, TreeItem] = {}
+	for top_item in get_root().get_children():
+		items[get_state_path_to_folder(top_item)] = top_item
+		_set_subfolder_items_of(top_item, items)
+	return items
+
+
+func _set_subfolder_items_of(folder: TreeItem, on: Dictionary[String, TreeItem]) -> void:
+	for subfolder in folder.get_children():
+		on[get_state_path_to_folder(subfolder)] = subfolder
+		_set_subfolder_items_of(subfolder, on)
+
+
 func search_for_folder(string_to_search: String, _starting_tree: TreeItem = get_root()) -> void:
 	for folder in _starting_tree.get_children():
 		if folder.get_text(0).containsn(string_to_search):

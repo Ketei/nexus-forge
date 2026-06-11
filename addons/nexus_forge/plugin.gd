@@ -369,6 +369,7 @@ func _set_window_layout(configuration: ConfigFile) -> void:
 	editor_view.go_to_tab(tab)
 	editor_view.variables.set_folder_layout(folder_layout)
 	editor_view.variables.set_sorting_column(black_sorting_column)
+	editor_view.variables.restore_layout()
 	
 	if editor_view.discourse != null:
 		editor_view.discourse.load_dialog_files(dialogs)

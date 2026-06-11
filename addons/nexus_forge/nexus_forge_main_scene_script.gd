@@ -225,6 +225,7 @@ func _on_tab_changed(tab: int) -> void:
 func save_layouts() -> void:
 	if discourse != null:
 		discourse.save_layouts()
+	variables.save_layout()
 
 
 func go_to_tab(tab: int) -> void:

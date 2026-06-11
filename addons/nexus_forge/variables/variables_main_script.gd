@@ -159,6 +159,51 @@ func save() -> void:
 	ResourceSaver.save(_variables_resource)
 
 
+func save_layout() -> void:
+	var layout_data: Array[Dictionary] = folders_tree.get_folder_state()
+	
+	var layout_cfg: ConfigFile = ConfigFile.new()
+	layout_cfg.set_value(
+			"State",
+			"folder_order",
+			layout_data)
+	
+	
+	var absolute_path: String = ProjectSettings.globalize_path("res://.godot/editor/nexus_forge_blackboard_layout.cfg")
+	
+	if layout_cfg.save(absolute_path) != OK:
+		push_warning("[NEXUS_FORGE] Blackboard: Failed saving layout")
+
+
+func restore_layout() -> void:
+	var absolute_path: String = ProjectSettings.globalize_path("res://.godot/editor/nexus_forge_blackboard_layout.cfg")
+	
+	if not FileAccess.file_exists(absolute_path):
+		return
+	
+	var layout_cfg: ConfigFile = ConfigFile.new()
+	
+	if layout_cfg.load(absolute_path) != OK:
+		return
+	
+	if not layout_cfg.has_section_key("State", "folder_order"):
+		return
+	
+	var data = layout_cfg.get_value("State", "folder_order", [])
+	
+	if typeof(data) != TYPE_ARRAY or data.is_empty():
+		return
+	
+	var valid_data: Array[Dictionary] = []
+	
+	for item in data:
+		if typeof(item) != TYPE_DICTIONARY or not item.has_all(["collapsed", "index", "path"]):
+			continue
+		valid_data.append(item)
+	
+	folders_tree.set_folder_state(valid_data)
+
+
 func on_create_resource_pressed() -> void:
 	var new_dialog := ResourceFileDialog.get_file_browser()
 	new_dialog.file_mode = new_dialog.FILE_MODE_SAVE_FILE
