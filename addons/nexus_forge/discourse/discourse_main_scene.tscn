@@ -399,6 +399,7 @@ hide_root = true
 script = ExtResource("5_qsnsk")
 
 [node name="PhrasesContainer" type="VBoxContainer" parent="MainSplitContainer/ActiveWindowSplit" unique_id=1529701258]
+visible = false
 custom_minimum_size = Vector2(330, 0)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -528,13 +529,6 @@ layout_mode = 2
 layout_mode = 2
 size_flags_vertical = 0
 
-[node name="SaveCaseBtn" type="Button" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/CaseKeyContainer" unique_id=1650272479]
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 2
-tooltip_text = "Return"
-flat = true
-icon_alignment = 1
-
 [node name="KeyDisplayLabel" type="Label" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/CaseKeyContainer" unique_id=1162996701]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
@@ -582,8 +576,8 @@ metadata/current_search = ""
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "New format case."
-focus_neighbor_bottom = NodePath("../../KeyScroll/CasesSplit/ResultContainer/DefaultCaseLnEdt")
-focus_next = NodePath("../../KeyScroll/CasesSplit/ResultContainer/DefaultCaseLnEdt")
+focus_neighbor_bottom = NodePath("../../KeyScroll/CasesSplit/ResultContainer/DefaultContainer/DefaultCaseLnEdt")
+focus_next = NodePath("../../KeyScroll/CasesSplit/ResultContainer/DefaultContainer/DefaultCaseLnEdt")
 disabled = true
 icon = ExtResource("8_nnanj")
 
@@ -638,17 +632,32 @@ layout_mode = 2
 [node name="ResultContainer" type="VBoxContainer" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit" unique_id=1552565991]
 layout_mode = 2
 
-[node name="DefaultCaseLnEdt" type="LineEdit" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/ResultContainer" unique_id=351618324]
+[node name="DefaultContainer" type="HBoxContainer" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/ResultContainer" unique_id=617232666]
+layout_mode = 2
+
+[node name="DefaultCaseLnEdt" type="LineEdit" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/ResultContainer/DefaultContainer" unique_id=351618324]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
-focus_neighbor_top = NodePath("../../../../HeaderContainer/NewCaseBtn")
-focus_previous = NodePath("../../../../HeaderContainer/NewCaseBtn")
+size_flags_horizontal = 3
+focus_neighbor_top = NodePath("../../../../../HeaderContainer/NewCaseBtn")
+focus_previous = NodePath("../../../../../HeaderContainer/NewCaseBtn")
 placeholder_text = "Default format"
 editable = false
 script = ExtResource("12_y6bvq")
 
+[node name="DefaultExpandButton" type="Button" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/ResultContainer/DefaultContainer" unique_id=89173855]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+flat = true
+icon_alignment = 1
+
 [node name="ResultNodeContainer" type="VBoxContainer" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/ResultContainer" unique_id=1767288564]
 layout_mode = 2
+
+[node name="SaveCaseBtn" type="Button" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer" unique_id=1253882866]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+text = "Done"
 
 [node name="LocalizationContainer" type="VBoxContainer" parent="." unique_id=1736821772]
 visible = false

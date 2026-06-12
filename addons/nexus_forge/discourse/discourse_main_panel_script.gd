@@ -80,7 +80,7 @@ var phrases_index: int = -1
 @onready var text_container: VBoxContainer = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyScroll/KeySplitContainer/TextContainer
 @onready var case_node_container: VBoxContainer = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/CaseContainer/CaseNodeContainer
 @onready var result_node_container: VBoxContainer = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/ResultContainer/ResultNodeContainer
-@onready var default_case_ln_edt: LineEdit = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/ResultContainer/DefaultCaseLnEdt
+@onready var default_case_ln_edt: LineEdit = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/ResultContainer/DefaultContainer/DefaultCaseLnEdt
 @onready var argument_opt_btn: OptionButton = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/ArgumentContainer/ArgumentOptBtn
 @onready var copy_arg_btn: Button = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/ArgumentContainer/CopyArgBtn
 @onready var new_case_btn: Button = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/HeaderContainer/NewCaseBtn
@@ -89,7 +89,7 @@ var phrases_index: int = -1
 @onready var key_display_label: Label = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/CaseKeyContainer/KeyDisplayLabel
 @onready var key_box_container: VBoxContainer = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer
 @onready var case_box_container: VBoxContainer = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer
-@onready var save_case_btn: Button = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/CaseKeyContainer/SaveCaseBtn
+@onready var save_case_btn: Button = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/SaveCaseBtn
 @onready var search_text_ln_edt: LineEdit = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer/HBoxContainer/SearchTextLnEdt
 @onready var key_header_split: HSplitContainer = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyHeaderSplit
 @onready var key_split_container: HSplitContainer = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyScroll/KeySplitContainer
@@ -106,7 +106,6 @@ var locale_popup: PopupMenu = null
 @onready var node_menu_btn: MenuButton = $MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/NodeMenuBtn
 @onready var save_btn: Button = $MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/SaveBtn
 @onready var play_current_dialog_btn: Button = $MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/PlayDialogBtn
-#@onready var localization_menu: OptionButton = $MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/LocalizationContainer/LocalizationMenu
 @onready var close_localizer_btn: Button = $LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/HeaderContainer/CloseLocalizerBtn
 @onready var snap_distance_spn_bx: SpinBox = $MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/SnapDistanceSpnBx
 @onready var dialog_scene_previewer: PanelContainer = $LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/DialogScenePreviewer
@@ -137,6 +136,7 @@ func ready_plugin(base_locale: String = "") -> void:
 	var collapse_previewer: Button = $LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/DialogScenePreviewer/HBoxContainer/ButtonContaienr/CollapsePreviewBtn
 	var auto_update_previewer: Button = $LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/DialogScenePreviewer/HBoxContainer/ButtonContaienr/AutoUpdateBtn
 	var play_previewer: Button = $LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/DialogScenePreviewer/HBoxContainer/ButtonContaienr/PlayTextBtn
+	var default_expand_button: Button = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/ResultContainer/DefaultContainer/DefaultExpandButton
 	# --- Node Menu Items ---
 	var dialogs_submenu: PopupMenu = PopupMenu.new()
 	var data_submenu: PopupMenu = PopupMenu.new()
@@ -372,10 +372,6 @@ func ready_plugin(base_locale: String = "") -> void:
 	new_folder_button.disabled = true
 	new_folder_button.icon = get_theme_icon("FolderCreate", "EditorIcons")
 	
-	#return_discourse_btn.icon = get_theme_icon("GuiClose", "EditorIcons")
-	
-	save_case_btn.icon = get_theme_icon("ArrowLeft", "EditorIcons")
-	
 	hide_issues_btn.icon = get_theme_icon("GuiClose", "EditorIcons")
 	
 	discourse_graph_edit.panning_scheme = GraphEdit.SCROLL_PANS if ProjectSettings.get_setting(EditorNFPlugin.get_project_settings_path("discourse_panning_scheme"), true) else GraphEdit.SCROLL_ZOOMS
@@ -399,6 +395,7 @@ func ready_plugin(base_locale: String = "") -> void:
 	
 	$MainSplitContainer/ActiveWindowSplit/PhrasesContainer.visible = false
 	
+	default_expand_button.icon = get_theme_icon("DistractionFree", "EditorIcons")
 	
 	# --------------------------------------------------------
 	dialogs_submenu.id_pressed.connect(_on_create_dialog_id_pressed)
@@ -473,6 +470,8 @@ func ready_plugin(base_locale: String = "") -> void:
 	
 	phrases_lang_menu.item_selected.connect(_on_phrase_button_item_selected)
 	$LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/DialogScenePreviewer/HBoxContainer/ButtonContaienr/AutoUpdateBtn.toggled.connect(_on_auto_update_toggled)
+	
+	default_expand_button.pressed.connect(_on_default_case_focus_pressed)
 
 
 func get_column_left() -> Control:
@@ -3357,4 +3356,7 @@ func _on_auto_update_toggled(toggled_on: bool) -> void:
 	else:
 		dialog_previewer.set_choices(
 				get_localizer_choices())
-		
+
+
+func _on_default_case_focus_pressed() -> void:
+	_on_open_discourse_text_editor_pressed(default_case_ln_edt)
