@@ -260,6 +260,10 @@ func clear_languages(clear_main: bool = true) -> void:
 	active_region = null
 	if clear_main:
 		main_language = null
+	else:
+		if main_pointer != null:
+			for sublang in main_pointer.get_children():
+				sublang.free()
 	
 	for item in get_root().get_children():
 		if main_pointer != null and item == main_pointer and not clear_main:

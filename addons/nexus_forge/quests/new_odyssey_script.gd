@@ -16,8 +16,6 @@ var selected_stage: StringName = &""
 var selected_objective: StringName = &""
 var _logic_offset: int = 225
 
-#@onready var requirements_container: VBoxContainer = $MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/RequirementsScroll/RequirementsContainer
-#@onready var add_requirement_btn: Button = $MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel/TargetLogicContainer/RequirementsCotnainer/HeaderContainer/AddRequirementBtn
 @onready var obj_req_chk_bx: CheckBox = $MainContainer/DataContainer/DataContainer/LogicContainer/TargetLogicContainer/ObjReqChkBx
 @onready var crumbs_label: Label = $MainContainer/TitleContainer/CrumbsContainer/CrumbsLabel
 @onready var file_search_ln_edt: LineEdit = $MainContainer/DataContainer/NavigationContainer/FileBarContainer/FileSearchLnEdt
@@ -44,7 +42,6 @@ var _logic_offset: int = 225
 
 @onready var target_logic_container: VBoxContainer = $MainContainer/DataContainer/DataContainer/LogicContainer/TargetLogicContainer
 @onready var stage_logic_container: VBoxContainer = $MainContainer/DataContainer/DataContainer/LogicContainer/StageLogicContainer
-#@onready var dynamic_logic_panel: PanelContainer = $MainContainer/DataContainer/DataContainer/LogicContainer/DynamicLogicPanel
 
 @onready var add_req_dict_button: Button = $MainContainer/DataContainer/DataContainer/LogicContainer/TargetLogicContainer/RequirementsCotnainer/HeaderContainer/AddButtonsContainer/AddReqDictButton
 @onready var add_req_int_button: Button = $MainContainer/DataContainer/DataContainer/LogicContainer/TargetLogicContainer/RequirementsCotnainer/HeaderContainer/AddButtonsContainer/AddReqIntButton
@@ -67,7 +64,6 @@ func ready_plugin() -> void:
 	quest_search_ln_edit.right_icon = get_theme_icon("Search", "EditorIcons")
 	search_event_ln_edt.right_icon = get_theme_icon("Search", "EditorIcons")
 	requirement_search_ln_edt.right_icon = get_theme_icon("Search", "EditorIcons")
-	#add_requirement_btn.icon = get_theme_icon("Add", "EditorIcons")
 	edit_types_btn.icon = get_theme_icon("Edit", "EditorIcons")
 	
 	success_pointer_opt_btn.add_item("Quest End")
@@ -111,7 +107,6 @@ func ready_plugin() -> void:
 	custom_data_search_line.text_changed.connect(_on_custom_data_search_text_changed)
 	
 	requirement_search_ln_edt.text_changed.connect(_on_search_requirement_text_changed)
-	#add_requirement_btn.pressed.connect(_on_add_requirement_pressed)
 	search_event_ln_edt.text_changed.connect(_on_search_event_text_changed)
 	
 	add_req_dict_button.pressed.connect(_add_quest_requirement_data_pressed.bind({}))
@@ -573,34 +568,6 @@ func open_files(paths: Array[String]) -> void:
 			files_tree.set_quest_structure(res, structure)
 
 
-#func _on_erased_requirement_pressed(item: Control) -> void:
-	#var child_count: int = requirements_container.get_child_count()
-	#var index: int = item.get_index()
-	#if index == 0: # First item
-		#var next: Control = requirements_container.get_child(1) if 1 < child_count else null
-		#
-		#if next != null:
-			#add_requirement_btn.focus_next = next.get_path()
-			#next.set_focus_previous_requirement(obj_req_chk_bx)
-		#else:
-			#add_requirement_btn.focus_next = ^""
-	#
-	#elif index == requirements_container.get_child_count() - 1: # Last item
-		#var prev: Control = requirements_container.get_child(index - 1)
-		#prev.set_focus_next_requirement(null)
-	#else: # Sandwich item
-		#var prev: Control = requirements_container.get_child(index - 1)
-		#var next: Control = requirements_container.get_child(index + 1)
-		#
-		#prev.set_focus_next_requirement(next.req_ln_edt)
-		#next.set_focus_previous_requirement(prev.erase_btn)
-	#
-	#requirements_container.remove_child(item)
-	#item.requirement_changed.disconnect(_on_something_changed)
-	#item.erase_requirement_pressed.disconnect(_on_erased_requirement_pressed)
-	#item.queue_free()
-
-
 func _add_quest_requirement_data_pressed(data: Variant) -> void:
 	obj_req_tree.add_data("new_requirement", data)
 
@@ -619,7 +586,7 @@ func _on_quest_selected(_quest_id: StringName) -> void:
 func _on_stage_selected(stage_id: StringName) -> void:
 	if quest_resource == null or (selected_stage == stage_id and selected_objective == &""):
 		return
-	#if quest_resource.has_stage(stage_id):
+	
 	save_current_data()
 	load_stage(stage_id)
 	set_stage_target_disabled(String(stage_id))
@@ -629,7 +596,6 @@ func _on_objective_selected(stage_id: StringName, objective_id: StringName) -> v
 	if quest_resource == null or (selected_stage == stage_id and selected_objective == objective_id):
 		return
 	
-	#if quest_resource.has_stage(stage_id) and quest_resource.get_stage(stage_id).has_objective(objective_id):
 	save_current_data()
 	
 	load_objective(stage_id, objective_id)
@@ -679,7 +645,6 @@ func _on_objective_id_changed(on_stage: StringName, from: StringName, to: String
 	if from == to:
 		return
 	
-	#var obj_dict: Dictionary[StringName, Dictionary] = quest_resource.get_stage(on_stage)._objectives
 	var obj_dict: Dictionary = quest_resource.get_stage(on_stage)._objectives
 	obj_dict[from]["objective"].id = to
 	obj_dict[to] = obj_dict[from]

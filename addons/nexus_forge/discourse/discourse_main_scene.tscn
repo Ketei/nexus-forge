@@ -2,16 +2,23 @@
 
 [ext_resource type="Script" uid="uid://bqico4ogja4xf" path="res://addons/nexus_forge/discourse/discourse_main_panel_script.gd" id="1_viyrt"]
 [ext_resource type="Script" uid="uid://cnbww5dfg3xls" path="res://addons/nexus_forge/discourse/conversation_tree_script.gd" id="2_2wl78"]
+[ext_resource type="Texture2D" uid="uid://3wbwatxrsg2n" path="res://addons/nexus_forge/icons/collapse_vertical_right.svg" id="2_28hkv"]
 [ext_resource type="Script" uid="uid://eh1dhsdbwf8o" path="res://addons/nexus_forge/discourse/discourse_nodes_tree.gd" id="2_nnanj"]
 [ext_resource type="Texture2D" uid="uid://brtp4ypk1wxqu" path="res://addons/nexus_forge/icons/new_language_plus.svg" id="3_f5jrf"]
 [ext_resource type="Script" uid="uid://dqb1etyisx1gu" path="res://addons/nexus_forge/discourse/locales_tree_script.gd" id="4_2wl78"]
 [ext_resource type="Script" uid="uid://d1mmh7jus0avs" path="res://addons/nexus_forge/discourse/discourse_graph_edit_new.gd" id="4_qplns"]
 [ext_resource type="StyleBox" uid="uid://dv4amlr1n6jci" path="res://addons/nexus_forge/discourse/discourse_editor_stylebox.tres" id="4_qsnsk"]
+[ext_resource type="Texture2D" uid="uid://dd852gatfoxjb" path="res://addons/nexus_forge/icons/expand_vertical_right.svg" id="5_oqsni"]
 [ext_resource type="Script" uid="uid://d3hqle1cgp15b" path="res://addons/nexus_forge/discourse/localized_nodes_script.gd" id="5_qplns"]
 [ext_resource type="Script" uid="uid://bnwuk6bdi5hm5" path="res://addons/nexus_forge/discourse/issues_tree_script.gd" id="5_qsnsk"]
 [ext_resource type="Texture2D" uid="uid://bn6ggyqhhn03o" path="res://addons/nexus_forge/icons/dialog_plus.svg" id="6_nnanj"]
+[ext_resource type="Texture2D" uid="uid://cs028qrb244bx" path="res://addons/nexus_forge/icons/uncollapse_vertical_left.svg" id="6_rd8yp"]
 [ext_resource type="Texture2D" uid="uid://cymtattv7iu68" path="res://addons/nexus_forge/icons/format_plus.svg" id="8_nnanj"]
+[ext_resource type="Texture2D" uid="uid://ml3oqkmlxlbq" path="res://addons/nexus_forge/icons/collapse_vertical_left.svg" id="10_d1wp1"]
 [ext_resource type="Script" uid="uid://blbqpddxjenwk" path="res://addons/nexus_forge/item_quest_lineedit_script.gd" id="12_y6bvq"]
+[ext_resource type="Texture2D" uid="uid://djfghegbsgg4f" path="res://addons/nexus_forge/icons/collapse_up.svg" id="17_ronv0"]
+[ext_resource type="Texture2D" uid="uid://bkgn1c5b6vjcq" path="res://addons/nexus_forge/icons/sync_icon.svg" id="18_00i6d"]
+[ext_resource type="Texture2D" uid="uid://ggg4p1253a43" path="res://addons/nexus_forge/icons/uncollapse_up.svg" id="19_qigvn"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_qplns"]
 content_margin_left = 6.0
@@ -42,14 +49,7 @@ bg_color = Color(0.180392, 0.180392, 0.180392, 1)
 _source = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\"><path fill=\"#ff5d5d\" d=\"M2 1v8.586l1.293-1.293a1 1 0 0 1 1.414 0L7 10.587l2.293-2.293a1 1 0 0 1 1.414 0L13 10.586l1-1V6H9V1H2zm8 0v4h4zm-6 9.414-2 2V15h12v-2.586l-.293.293a1 1 0 0 1-1.414 0L10 10.414l-2.293 2.293a1 1 0 0 1-1.414 0L4 10.414z\"/></svg>
 "
 
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_i2jr7"]
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_58abf"]
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_a0o6y"]
-
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_4f4qt"]
-content_margin_left = 8.0
 content_margin_top = 8.0
 content_margin_right = 8.0
 content_margin_bottom = 0.0
@@ -66,6 +66,12 @@ content_margin_left = 4.0
 content_margin_top = 6.0
 content_margin_right = 4.0
 
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_58abf"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_a0o6y"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_rd8yp"]
+
 [node name="DiscourseMainPanelTest" type="PanelContainer" unique_id=787887382]
 anchors_preset = 15
 anchor_right = 1.0
@@ -79,9 +85,9 @@ layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 4.0
 theme_override_constants/minimum_grab_thickness = 10
-split_offsets = PackedInt32Array(-234)
+split_offsets = PackedInt32Array(212)
 dragger_visibility = 2
-split_offset = -234
+split_offset = 212
 
 [node name="MainSidebar" type="PanelContainer" parent="MainSplitContainer" unique_id=1353345816]
 custom_minimum_size = Vector2(32, 0)
@@ -99,9 +105,21 @@ theme_override_constants/minimum_grab_thickness = 10
 custom_minimum_size = Vector2(0, 200)
 layout_mode = 2
 
-[node name="ConversationTitle" type="Label" parent="MainSplitContainer/MainSidebar/SidebarSplitContainer/ConversationContainer" unique_id=1668543593]
+[node name="HeaderContainer" type="HBoxContainer" parent="MainSplitContainer/MainSidebar/SidebarSplitContainer/ConversationContainer" unique_id=84819589]
+layout_mode = 2
+
+[node name="ConversationTitle" type="Label" parent="MainSplitContainer/MainSidebar/SidebarSplitContainer/ConversationContainer/HeaderContainer" unique_id=1668543593]
 layout_mode = 2
 text = "Coversations"
+
+[node name="CollapseLeftBtn" type="Button" parent="MainSplitContainer/MainSidebar/SidebarSplitContainer/ConversationContainer/HeaderContainer" unique_id=1842931766]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+size_flags_horizontal = 10
+tooltip_text = "Collapse Column"
+icon = ExtResource("2_28hkv")
+flat = true
+icon_alignment = 1
 
 [node name="ConversationTree" type="Tree" parent="MainSplitContainer/MainSidebar/SidebarSplitContainer/ConversationContainer" unique_id=158400888]
 layout_mode = 2
@@ -157,46 +175,68 @@ allow_rmb_select = true
 hide_root = true
 script = ExtResource("2_nnanj")
 
-[node name="DiscourseSplitContainer" type="VSplitContainer" parent="MainSplitContainer" unique_id=853625450]
-custom_minimum_size = Vector2(680, 300)
+[node name="ActiveWindowSplit" type="HSplitContainer" parent="MainSplitContainer" unique_id=1905704490]
 layout_mode = 2
 size_flags_horizontal = 3
+
+[node name="DiscourseSplitContainer" type="VSplitContainer" parent="MainSplitContainer/ActiveWindowSplit" unique_id=853625450]
+custom_minimum_size = Vector2(0, 300)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 2.0
 theme_override_constants/minimum_grab_thickness = 10
-split_offsets = PackedInt32Array(-72)
+split_offsets = PackedInt32Array(217)
 dragging_enabled = false
 dragger_visibility = 2
-split_offset = -72
+split_offset = 217
 
-[node name="DiscourseWindow" type="PanelContainer" parent="MainSplitContainer/DiscourseSplitContainer" unique_id=1329590596]
+[node name="DiscourseWindow" type="PanelContainer" parent="MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer" unique_id=1329590596]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("StyleBoxEmpty_oqsni")
 
-[node name="ContentVBox" type="VBoxContainer" parent="MainSplitContainer/DiscourseSplitContainer/DiscourseWindow" unique_id=1028013346]
+[node name="ContentVBox" type="VBoxContainer" parent="MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow" unique_id=1028013346]
 layout_mode = 2
 
-[node name="MenuPanel" type="PanelContainer" parent="MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox" unique_id=1179875603]
+[node name="MenuPanel" type="PanelContainer" parent="MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox" unique_id=1179875603]
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_28hkv")
 
-[node name="MenuVBox" type="HBoxContainer" parent="MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel" unique_id=2037182340]
+[node name="MenuVBox" type="HBoxContainer" parent="MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel" unique_id=2037182340]
 layout_mode = 2
 
-[node name="FileMenuBtn" type="MenuButton" parent="MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox" unique_id=678684407]
+[node name="UncollapseButton" type="Button" parent="MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox" unique_id=643865637]
+visible = false
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+size_flags_horizontal = 8
+size_flags_vertical = 0
+tooltip_text = "Uncollapse Column"
+icon = ExtResource("5_oqsni")
+flat = true
+icon_alignment = 1
+
+[node name="FileMenuBtn" type="MenuButton" parent="MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox" unique_id=678684407]
 layout_mode = 2
 text = "Discourse"
 switch_on_hover = true
 
-[node name="NodeMenuBtn" type="MenuButton" parent="MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox" unique_id=1551682206]
+[node name="NodeMenuBtn" type="MenuButton" parent="MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox" unique_id=1551682206]
 layout_mode = 2
 disabled = true
 text = "Create"
 switch_on_hover = true
 
-[node name="VSeparator" type="VSeparator" parent="MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox" unique_id=1378179260]
+[node name="LocaleMenuBtn" type="MenuButton" parent="MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox" unique_id=481372108]
+layout_mode = 2
+disabled = true
+text = "Locale"
+switch_on_hover = true
+
+[node name="VSeparator" type="VSeparator" parent="MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox" unique_id=1378179260]
 layout_mode = 2
 
-[node name="SaveBtn" type="Button" parent="MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox" unique_id=1088340681]
+[node name="SaveBtn" type="Button" parent="MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox" unique_id=1088340681]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Save Dialog"
@@ -207,7 +247,7 @@ flat = true
 icon_alignment = 1
 expand_icon = true
 
-[node name="OpenBtn" type="Button" parent="MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox" unique_id=1421994304]
+[node name="OpenBtn" type="Button" parent="MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox" unique_id=1421994304]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Open Dialog"
@@ -217,10 +257,10 @@ flat = true
 icon_alignment = 1
 expand_icon = true
 
-[node name="VSeparator2" type="VSeparator" parent="MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox" unique_id=1591335461]
+[node name="VSeparator2" type="VSeparator" parent="MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox" unique_id=1591335461]
 layout_mode = 2
 
-[node name="ToggleGridBtn" type="Button" parent="MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox" unique_id=1788614844]
+[node name="ToggleGridBtn" type="Button" parent="MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox" unique_id=1788614844]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Toggle Grid"
@@ -232,7 +272,7 @@ flat = true
 icon_alignment = 1
 expand_icon = true
 
-[node name="ToggleSnapBtn" type="Button" parent="MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox" unique_id=683456051]
+[node name="ToggleSnapBtn" type="Button" parent="MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox" unique_id=683456051]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Toggle grid snap"
@@ -244,7 +284,7 @@ flat = true
 icon_alignment = 1
 expand_icon = true
 
-[node name="SnapDistanceSpnBx" type="SpinBox" parent="MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox" unique_id=1719610910]
+[node name="SnapDistanceSpnBx" type="SpinBox" parent="MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox" unique_id=1719610910]
 layout_mode = 2
 tooltip_text = "Snapping distance"
 min_value = 5.0
@@ -252,10 +292,10 @@ max_value = 20.0
 value = 5.0
 editable = false
 
-[node name="VSeparator3" type="VSeparator" parent="MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox" unique_id=1613444918]
+[node name="VSeparator3" type="VSeparator" parent="MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox" unique_id=1613444918]
 layout_mode = 2
 
-[node name="ToggleMinimapBtn" type="Button" parent="MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox" unique_id=231100337]
+[node name="ToggleMinimapBtn" type="Button" parent="MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox" unique_id=231100337]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Toggle minimap"
@@ -267,7 +307,7 @@ flat = true
 icon_alignment = 1
 expand_icon = true
 
-[node name="SortNodesBtn" type="Button" parent="MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox" unique_id=1984543918]
+[node name="SortNodesBtn" type="Button" parent="MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox" unique_id=1984543918]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Arrange nodes"
@@ -277,10 +317,10 @@ flat = true
 icon_alignment = 1
 expand_icon = true
 
-[node name="VSeparator4" type="VSeparator" parent="MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox" unique_id=1494792306]
+[node name="VSeparator4" type="VSeparator" parent="MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox" unique_id=1494792306]
 layout_mode = 2
 
-[node name="PlayDialogBtn" type="Button" parent="MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox" unique_id=337109637]
+[node name="PlayDialogBtn" type="Button" parent="MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox" unique_id=337109637]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Play current dialog"
@@ -291,42 +331,26 @@ flat = true
 icon_alignment = 1
 expand_icon = true
 
-[node name="LocalizationContainer" type="HBoxContainer" parent="MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox" unique_id=226759523]
-layout_mode = 2
-size_flags_horizontal = 10
-alignment = 2
-
-[node name="LocalizationLabel" type="Label" parent="MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/LocalizationContainer" unique_id=414862931]
-layout_mode = 2
-text = "Localization:"
-
-[node name="LocalizationMenu" type="OptionButton" parent="MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/LocalizationContainer" unique_id=499366364]
-custom_minimum_size = Vector2(140, 32)
-layout_mode = 2
-disabled = true
-flat = true
-text_overrun_behavior = 3
-fit_to_longest_item = false
-
-[node name="SwitchLocaleBtn" type="Button" parent="MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/LocalizationContainer" unique_id=1870095188]
+[node name="UncollapseRightBtn" type="Button" parent="MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox" unique_id=1280522074]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
-tooltip_text = "Switch to localization window"
+size_flags_horizontal = 10
+tooltip_text = "Open Phrases"
 theme_override_styles/normal = SubResource("StyleBoxEmpty_y6bvq")
-disabled = true
+icon = ExtResource("6_rd8yp")
 icon_alignment = 1
 
-[node name="GraphPanel" type="PanelContainer" parent="MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox" unique_id=1402343114]
+[node name="GraphPanel" type="PanelContainer" parent="MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox" unique_id=1402343114]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_styles/panel = ExtResource("4_qsnsk")
 
-[node name="NoDialogLbl" type="Label" parent="MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/GraphPanel" unique_id=1928266496]
+[node name="NoDialogLbl" type="Label" parent="MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/GraphPanel" unique_id=1928266496]
 layout_mode = 2
 text = "No conversation selected"
 horizontal_alignment = 1
 
-[node name="DiscourseGraphEdit" type="GraphEdit" parent="MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/GraphPanel" unique_id=658722421]
+[node name="DiscourseGraphEdit" type="GraphEdit" parent="MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/GraphPanel" unique_id=658722421]
 visible = false
 layout_mode = 2
 grid_pattern = 1
@@ -340,36 +364,291 @@ show_minimap_button = false
 show_arrange_button = false
 script = ExtResource("4_qplns")
 
-[node name="ErrorContainer" type="PanelContainer" parent="MainSplitContainer/DiscourseSplitContainer" unique_id=1532002556]
+[node name="GraphLocaleLbl" type="Label" parent="MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox" unique_id=251367822]
+layout_mode = 2
+
+[node name="ErrorContainer" type="PanelContainer" parent="MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer" unique_id=1532002556]
 visible = false
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_y485p")
 
-[node name="IssuesVBox" type="VBoxContainer" parent="MainSplitContainer/DiscourseSplitContainer/ErrorContainer" unique_id=387500756]
+[node name="IssuesVBox" type="VBoxContainer" parent="MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/ErrorContainer" unique_id=387500756]
 layout_mode = 2
 
-[node name="HeaderContainer" type="HBoxContainer" parent="MainSplitContainer/DiscourseSplitContainer/ErrorContainer/IssuesVBox" unique_id=990504796]
+[node name="HeaderContainer" type="HBoxContainer" parent="MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/ErrorContainer/IssuesVBox" unique_id=990504796]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="MainSplitContainer/DiscourseSplitContainer/ErrorContainer/IssuesVBox/HeaderContainer" unique_id=312333317]
+[node name="Label" type="Label" parent="MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/ErrorContainer/IssuesVBox/HeaderContainer" unique_id=312333317]
 layout_mode = 2
 text = "Issues"
 
-[node name="HideIssuesBtn" type="Button" parent="MainSplitContainer/DiscourseSplitContainer/ErrorContainer/IssuesVBox/HeaderContainer" unique_id=1458777201]
+[node name="HideIssuesBtn" type="Button" parent="MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/ErrorContainer/IssuesVBox/HeaderContainer" unique_id=1458777201]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 size_flags_horizontal = 10
 icon = SubResource("DPITexture_y6bvq")
 flat = true
 
-[node name="IssuesTree" type="Tree" parent="MainSplitContainer/DiscourseSplitContainer/ErrorContainer/IssuesVBox" unique_id=20958801]
+[node name="IssuesTree" type="Tree" parent="MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/ErrorContainer/IssuesVBox" unique_id=20958801]
 custom_minimum_size = Vector2(0, 180)
 layout_mode = 2
 size_flags_vertical = 3
 hide_folding = true
 hide_root = true
 script = ExtResource("5_qsnsk")
+
+[node name="PhrasesContainer" type="VBoxContainer" parent="MainSplitContainer/ActiveWindowSplit" unique_id=1529701258]
+custom_minimum_size = Vector2(330, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="HeaderPanel" type="PanelContainer" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer" unique_id=2069035517]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxEmpty_4f4qt")
+
+[node name="PhrasesHeader" type="HBoxContainer" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/HeaderPanel" unique_id=1908124684]
+layout_mode = 2
+
+[node name="CollapseRigthBtn" type="Button" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/HeaderPanel/PhrasesHeader" unique_id=305498815]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Collapse phrases"
+icon = ExtResource("10_d1wp1")
+flat = true
+icon_alignment = 1
+
+[node name="PhrasesLabel" type="Label" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/HeaderPanel/PhrasesHeader" unique_id=452221952]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Words / Phrases"
+vertical_alignment = 1
+
+[node name="PhrasesLangMenu" type="OptionButton" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/HeaderPanel/PhrasesHeader" unique_id=1814651075]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+size_flags_horizontal = 10
+disabled = true
+
+[node name="PanelContainer" type="PanelContainer" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer" unique_id=188917968]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxEmpty_f5jrf")
+
+[node name="KeyBoxContainer" type="VBoxContainer" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer" unique_id=1480479123]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer" unique_id=396476913]
+layout_mode = 2
+
+[node name="SearchTextLnEdt" type="LineEdit" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer/HBoxContainer" unique_id=1733872059]
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Prefixing a search with \"key:\" will only show entries where
+the key contains the search. With \"text:\" it'll only display
+results that contain the search. Filtering is NOT case-sensitive"
+placeholder_text = "Search | Filters: key:(Key), text:(Text)"
+metadata/current_search = ""
+
+[node name="NewTextButton" type="Button" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer/HBoxContainer" unique_id=737861922]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+disabled = true
+icon = ExtResource("6_nnanj")
+flat = true
+
+[node name="HSeparator" type="HSeparator" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer" unique_id=1758267224]
+layout_mode = 2
+
+[node name="KeyHeaderSplit" type="HSplitContainer" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer" unique_id=1541194474]
+layout_mode = 2
+split_offsets = PackedInt32Array(170)
+dragging_enabled = false
+split_offset = 170
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyHeaderSplit" unique_id=1610878380]
+layout_mode = 2
+
+[node name="Control" type="Control" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyHeaderSplit/HBoxContainer" unique_id=1957511038]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyHeaderSplit/HBoxContainer" unique_id=1355842677]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Key"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyHeaderSplit" unique_id=1997336120]
+layout_mode = 2
+
+[node name="Label2" type="Label" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyHeaderSplit/HBoxContainer2" unique_id=1700079168]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 1
+text = "Text"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Control" type="Control" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyHeaderSplit/HBoxContainer2" unique_id=1982103812]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+
+[node name="KeyScroll" type="ScrollContainer" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer" unique_id=2127715806]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxEmpty_nnanj")
+horizontal_scroll_mode = 0
+
+[node name="KeySplitContainer" type="HSplitContainer" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyScroll" unique_id=836410647]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/minimum_grab_thickness = 10
+split_offsets = PackedInt32Array(170)
+split_offset = 170
+
+[node name="KeyContainer" type="VBoxContainer" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyScroll/KeySplitContainer" unique_id=344064397]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+
+[node name="TextContainer" type="VBoxContainer" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyScroll/KeySplitContainer" unique_id=795235324]
+custom_minimum_size = Vector2(170, 0)
+layout_mode = 2
+
+[node name="CaseBoxContainer" type="VBoxContainer" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer" unique_id=774319691]
+visible = false
+layout_mode = 2
+
+[node name="CaseKeyContainer" type="HBoxContainer" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer" unique_id=1561245276]
+layout_mode = 2
+size_flags_vertical = 0
+
+[node name="SaveCaseBtn" type="Button" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/CaseKeyContainer" unique_id=1650272479]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Return"
+flat = true
+icon_alignment = 1
+
+[node name="KeyDisplayLabel" type="Label" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/CaseKeyContainer" unique_id=1162996701]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "PHRASE_KEY"
+horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 3
+
+[node name="VBoxContainer2" type="VBoxContainer" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer" unique_id=243946247]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ArgumentContainer" type="HBoxContainer" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2" unique_id=1660141811]
+layout_mode = 2
+
+[node name="ArgumentOptBtn" type="OptionButton" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/ArgumentContainer" unique_id=1840105277]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 2.0
+disabled = true
+
+[node name="CopyArgBtn" type="Button" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/ArgumentContainer" unique_id=595702694]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Copy format for use"
+flat = true
+icon_alignment = 1
+
+[node name="HeaderContainer" type="HBoxContainer" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2" unique_id=902464406]
+layout_mode = 2
+
+[node name="SearchCaseLnEdt" type="LineEdit" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/HeaderContainer" unique_id=1734327737]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 2.5
+tooltip_text = "Prefixing a search with \"case:\" will only show cases where the case
+contains the search. With \"result:\" it'll only display the ones whose
+Result contains the search. Filtering is NOT case-sensitive"
+placeholder_text = "Search | Filters: case:(Case), result:(Result)"
+metadata/current_search = ""
+
+[node name="NewCaseBtn" type="Button" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/HeaderContainer" unique_id=254993319]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "New format case."
+focus_neighbor_bottom = NodePath("../../KeyScroll/CasesSplit/ResultContainer/DefaultCaseLnEdt")
+focus_next = NodePath("../../KeyScroll/CasesSplit/ResultContainer/DefaultCaseLnEdt")
+disabled = true
+icon = ExtResource("8_nnanj")
+
+[node name="HSeparator" type="HSeparator" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2" unique_id=192491382]
+layout_mode = 2
+
+[node name="CaseHeaderSplit" type="HSplitContainer" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2" unique_id=116790872]
+layout_mode = 2
+split_offsets = PackedInt32Array(200)
+dragging_enabled = false
+split_offset = 200
+
+[node name="Label" type="Label" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/CaseHeaderSplit" unique_id=1360314592]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+text = "Case"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Label2" type="Label" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/CaseHeaderSplit" unique_id=1417106322]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+text = "Result"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="KeyScroll" type="ScrollContainer" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2" unique_id=101567025]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxEmpty_2wl78")
+
+[node name="CasesSplit" type="HSplitContainer" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll" unique_id=218609996]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/minimum_grab_thickness = 10
+split_offsets = PackedInt32Array(200)
+split_offset = 200
+
+[node name="CaseContainer" type="VBoxContainer" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit" unique_id=814243706]
+layout_mode = 2
+
+[node name="Label2" type="Label" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/CaseContainer" unique_id=323294842]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+text = "Default"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="CaseNodeContainer" type="VBoxContainer" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/CaseContainer" unique_id=445177330]
+layout_mode = 2
+
+[node name="ResultContainer" type="VBoxContainer" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit" unique_id=1552565991]
+layout_mode = 2
+
+[node name="DefaultCaseLnEdt" type="LineEdit" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/ResultContainer" unique_id=351618324]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+focus_neighbor_top = NodePath("../../../../HeaderContainer/NewCaseBtn")
+focus_previous = NodePath("../../../../HeaderContainer/NewCaseBtn")
+placeholder_text = "Default format"
+editable = false
+script = ExtResource("12_y6bvq")
+
+[node name="ResultNodeContainer" type="VBoxContainer" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/ResultContainer" unique_id=1767288564]
+layout_mode = 2
 
 [node name="LocalizationContainer" type="VBoxContainer" parent="." unique_id=1736821772]
 visible = false
@@ -414,6 +693,7 @@ vertical_alignment = 2
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 size_flags_vertical = 8
+tooltip_text = "Add language"
 icon = ExtResource("3_f5jrf")
 flat = true
 icon_alignment = 1
@@ -460,19 +740,28 @@ custom_minimum_size = Vector2(250, 0)
 layout_mode = 2
 size_flags_stretch_ratio = 2.0
 
-[node name="LocalePanel" type="PanelContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer" unique_id=34352263]
+[node name="HeaderContainer" type="HBoxContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer" unique_id=1335041185]
+layout_mode = 2
+alignment = 2
+
+[node name="CloseLocalizerBtn" type="Button" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/HeaderContainer" unique_id=42101104]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Close localization window"
+flat = true
+
+[node name="LocalePanel" type="VSplitContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer" unique_id=2023306027]
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_styles/panel = SubResource("StyleBoxEmpty_i2jr7")
 
-[node name="LocaleVBoxContainer" type="VSplitContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel" unique_id=2074585726]
-visible = false
+[node name="LocaleVBoxContainer" type="HSplitContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel" unique_id=1435033164]
 layout_mode = 2
 size_flags_vertical = 3
 
 [node name="BasePanelContainer" type="PanelContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/LocaleVBoxContainer" unique_id=1221893350]
 custom_minimum_size = Vector2(0, 180)
 layout_mode = 2
+size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("StyleBoxEmpty_58abf")
 
@@ -494,6 +783,7 @@ wrap_mode = 1
 [node name="TranslationPanel" type="PanelContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/LocaleVBoxContainer" unique_id=975187163]
 custom_minimum_size = Vector2(0, 180)
 layout_mode = 2
+size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("StyleBoxEmpty_a0o6y")
 
@@ -514,8 +804,10 @@ wrap_mode = 1
 [node name="ChoicesContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel" unique_id=1502503225]
 visible = false
 layout_mode = 2
+size_flags_vertical = 3
 
 [node name="Label" type="Label" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer" unique_id=35873671]
+visible = false
 custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 vertical_alignment = 2
@@ -554,232 +846,54 @@ size_flags_vertical = 3
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="PhrasesContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer" unique_id=1348489553]
-custom_minimum_size = Vector2(320, 0)
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="HeaderPanel" type="PanelContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer" unique_id=733609456]
-layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxEmpty_4f4qt")
-
-[node name="PhrasesHeader" type="HBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/HeaderPanel" unique_id=211440940]
-layout_mode = 2
-
-[node name="PhrasesLabel" type="Label" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/HeaderPanel/PhrasesHeader" unique_id=962644487]
-custom_minimum_size = Vector2(0, 32)
-layout_mode = 2
-size_flags_horizontal = 3
-text = "Words / Phrases"
-vertical_alignment = 2
-
-[node name="ReturnDiscourseBtn" type="Button" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/HeaderPanel/PhrasesHeader" unique_id=339804660]
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 2
-tooltip_text = "Close localization window"
-flat = true
-icon_alignment = 1
-
-[node name="PanelContainer" type="PanelContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer" unique_id=97357207]
-layout_mode = 2
-size_flags_vertical = 3
-theme_override_styles/panel = SubResource("StyleBoxEmpty_f5jrf")
-
-[node name="KeyBoxContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer" unique_id=1672426893]
-layout_mode = 2
-
-[node name="HBoxContainer" type="HBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer" unique_id=193262834]
-layout_mode = 2
-
-[node name="SearchTextLnEdt" type="LineEdit" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer/HBoxContainer" unique_id=1612746900]
-layout_mode = 2
-size_flags_horizontal = 3
-tooltip_text = "Prefixing a search with \"key:\" will only show entries where
-the key contains the search. With \"text:\" it'll only display
-results that contain the search. Filtering is NOT case-sensitive"
-placeholder_text = "Search | Filters: key:(Key), text:(Text)"
-metadata/current_search = ""
-
-[node name="NewTextButton" type="Button" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer/HBoxContainer" unique_id=160778598]
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 2
-disabled = true
-icon = ExtResource("6_nnanj")
-flat = true
-
-[node name="HSeparator" type="HSeparator" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer" unique_id=1448665559]
-layout_mode = 2
-
-[node name="KeyHeaderSplit" type="HSplitContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer" unique_id=663253854]
-layout_mode = 2
-split_offsets = PackedInt32Array(170)
-dragging_enabled = false
-split_offset = 170
-
-[node name="Label" type="Label" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyHeaderSplit" unique_id=1705324361]
-custom_minimum_size = Vector2(0, 32)
-layout_mode = 2
-text = "Key"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="Label2" type="Label" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyHeaderSplit" unique_id=348520698]
-custom_minimum_size = Vector2(0, 32)
-layout_mode = 2
-size_flags_vertical = 1
-text = "Text"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="KeyScroll" type="ScrollContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer" unique_id=1989696241]
-layout_mode = 2
-size_flags_vertical = 3
-theme_override_styles/panel = SubResource("StyleBoxEmpty_nnanj")
-
-[node name="KeySplitContainer" type="HSplitContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyScroll" unique_id=372375706]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_constants/minimum_grab_thickness = 10
-split_offsets = PackedInt32Array(170)
-split_offset = 170
-
-[node name="KeyContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyScroll/KeySplitContainer" unique_id=1189973601]
-custom_minimum_size = Vector2(150, 0)
-layout_mode = 2
-
-[node name="TextContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyScroll/KeySplitContainer" unique_id=1081553640]
-custom_minimum_size = Vector2(170, 0)
-layout_mode = 2
-
-[node name="CaseBoxContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer" unique_id=617905448]
+[node name="DialogScenePreviewer" type="PanelContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel" unique_id=1422276109]
 visible = false
 layout_mode = 2
-
-[node name="CaseKeyContainer" type="HBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer" unique_id=754420715]
-layout_mode = 2
-size_flags_vertical = 0
-
-[node name="KeyDisplayLabel" type="Label" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/CaseKeyContainer" unique_id=755999937]
-custom_minimum_size = Vector2(0, 32)
-layout_mode = 2
-size_flags_horizontal = 3
-text = "PHRASE_KEY"
-horizontal_alignment = 1
-vertical_alignment = 1
-text_overrun_behavior = 3
-
-[node name="SaveCaseBtn" type="Button" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/CaseKeyContainer" unique_id=816870929]
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 2
-tooltip_text = "Save cases"
-icon_alignment = 1
-
-[node name="VBoxContainer2" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer" unique_id=64134643]
-layout_mode = 2
 size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxEmpty_rd8yp")
 
-[node name="ArgumentContainer" type="HBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2" unique_id=2051821177]
+[node name="HBoxContainer" type="HBoxContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/DialogScenePreviewer" unique_id=964010624]
 layout_mode = 2
 
-[node name="ArgumentOptBtn" type="OptionButton" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/ArgumentContainer" unique_id=752786820]
-custom_minimum_size = Vector2(0, 32)
+[node name="PreviewPanel" type="PanelContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/DialogScenePreviewer/HBoxContainer" unique_id=648208743]
 layout_mode = 2
 size_flags_horizontal = 3
-size_flags_stretch_ratio = 2.0
-disabled = true
 
-[node name="CopyArgBtn" type="Button" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/ArgumentContainer" unique_id=350484722]
+[node name="ButtonContaienr" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/DialogScenePreviewer/HBoxContainer" unique_id=35472399]
+layout_mode = 2
+
+[node name="CollapsePreviewBtn" type="Button" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/DialogScenePreviewer/HBoxContainer/ButtonContaienr" unique_id=322358803]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
-tooltip_text = "Copy format for use"
+icon = ExtResource("17_ronv0")
 flat = true
 icon_alignment = 1
 
-[node name="HeaderContainer" type="HBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2" unique_id=599422883]
-layout_mode = 2
-
-[node name="SearchCaseLnEdt" type="LineEdit" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/HeaderContainer" unique_id=1727013976]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_stretch_ratio = 2.5
-tooltip_text = "Prefixing a search with \"case:\" will only show cases where the case
-contains the search. With \"result:\" it'll only display the ones whose
-Result contains the search. Filtering is NOT case-sensitive"
-placeholder_text = "Search | Filters: case:(Case), result:(Result)"
-metadata/current_search = ""
-
-[node name="NewCaseBtn" type="Button" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/HeaderContainer" unique_id=1021128866]
+[node name="AutoUpdateBtn" type="Button" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/DialogScenePreviewer/HBoxContainer/ButtonContaienr" unique_id=819252484]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
-tooltip_text = "New format case."
-focus_neighbor_bottom = NodePath("../../KeyScroll/CasesSplit/ResultContainer/DefaultCaseLnEdt")
-focus_next = NodePath("../../KeyScroll/CasesSplit/ResultContainer/DefaultCaseLnEdt")
-disabled = true
-icon = ExtResource("8_nnanj")
+toggle_mode = true
+icon = ExtResource("18_00i6d")
+flat = true
+icon_alignment = 1
 
-[node name="HSeparator" type="HSeparator" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2" unique_id=1063276223]
+[node name="PlayTextBtn" type="Button" parent="LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/DialogScenePreviewer/HBoxContainer/ButtonContaienr" unique_id=724555264]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+flat = true
+icon_alignment = 1
+
+[node name="FooterContainer" type="HBoxContainer" parent="LocalizationContainer" unique_id=1008963895]
 layout_mode = 2
 
-[node name="CaseHeaderSplit" type="HSplitContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2" unique_id=1401711276]
-layout_mode = 2
-split_offsets = PackedInt32Array(200)
-dragging_enabled = false
-split_offset = 200
-
-[node name="Label" type="Label" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/CaseHeaderSplit" unique_id=933311073]
-custom_minimum_size = Vector2(0, 32)
-layout_mode = 2
-text = "Case"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="Label2" type="Label" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/CaseHeaderSplit" unique_id=1525541564]
-custom_minimum_size = Vector2(0, 32)
-layout_mode = 2
-text = "Result"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="KeyScroll" type="ScrollContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2" unique_id=198395023]
-layout_mode = 2
-size_flags_vertical = 3
-theme_override_styles/panel = SubResource("StyleBoxEmpty_2wl78")
-
-[node name="CasesSplit" type="HSplitContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll" unique_id=1135117146]
+[node name="LocaleLabel" type="Label" parent="LocalizationContainer/FooterContainer" unique_id=1355073893]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/minimum_grab_thickness = 10
-split_offsets = PackedInt32Array(200)
-split_offset = 200
-
-[node name="CaseContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit" unique_id=1793537847]
-layout_mode = 2
-
-[node name="Label2" type="Label" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/CaseContainer" unique_id=1863344535]
-custom_minimum_size = Vector2(0, 32)
-layout_mode = 2
-text = "Default"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="CaseNodeContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/CaseContainer" unique_id=213231952]
-layout_mode = 2
-
-[node name="ResultContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit" unique_id=2044303127]
-layout_mode = 2
-
-[node name="DefaultCaseLnEdt" type="LineEdit" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/ResultContainer" unique_id=897489397]
-custom_minimum_size = Vector2(0, 32)
-layout_mode = 2
-focus_neighbor_top = NodePath("../../../../HeaderContainer/NewCaseBtn")
-focus_previous = NodePath("../../../../HeaderContainer/NewCaseBtn")
-placeholder_text = "Default format"
-editable = false
-script = ExtResource("12_y6bvq")
-
-[node name="ResultNodeContainer" type="VBoxContainer" parent="LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/ResultContainer" unique_id=779032831]
-layout_mode = 2
-
-[node name="LocaleLabel" type="Label" parent="LocalizationContainer" unique_id=1355073893]
-layout_mode = 2
 text = "Current Locale:"
+
+[node name="UncollapsePreviewBtn" type="Button" parent="LocalizationContainer/FooterContainer" unique_id=522607819]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+icon = ExtResource("19_qigvn")
+flat = true
+icon_alignment = 1

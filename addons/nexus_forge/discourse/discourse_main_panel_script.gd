@@ -17,6 +17,7 @@ enum DiscourseFileMenuID {
 	CLOSE_DIALOG,
 	CHANGE_LANGUAGE,
 	SET_LOCALE_GROUP,
+	LOCALIZATION_WINDOW,
 	CHECK_ISSUES,
 	PLAY_CURRENT_DIALOG,
 	DISPLAY_DIALOG_ID_FIELD,
@@ -45,6 +46,8 @@ var current_locale: String = ""
 var text_editor: Window = null
 var _recently_opened_files: Array[String] = []
 var _recently_opened_popup: PopupMenu = null
+
+var phrases_index: int = -1
 # ----------------------------
 
 # --- Discourse Graph ---
@@ -52,10 +55,10 @@ var _recently_opened_popup: PopupMenu = null
 @onready var node_search_ln_edt: LineEdit = $MainSplitContainer/MainSidebar/SidebarSplitContainer/NodesContainer/SearchHbox/NodeSearchLnEdt
 @onready var discourse_nodes_tree: Tree = $MainSplitContainer/MainSidebar/SidebarSplitContainer/NodesContainer/NodesTree
 @onready var new_folder_button: Button = $MainSplitContainer/MainSidebar/SidebarSplitContainer/NodesContainer/SearchHbox/NewFolderButton
-@onready var hide_issues_btn: Button = $MainSplitContainer/DiscourseSplitContainer/ErrorContainer/IssuesVBox/HeaderContainer/HideIssuesBtn
-@onready var issues_tree: Tree = $MainSplitContainer/DiscourseSplitContainer/ErrorContainer/IssuesVBox/IssuesTree
-@onready var error_container: PanelContainer = $MainSplitContainer/DiscourseSplitContainer/ErrorContainer
-@onready var discourse_split_container: VSplitContainer = $MainSplitContainer/DiscourseSplitContainer
+@onready var hide_issues_btn: Button = $MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/ErrorContainer/IssuesVBox/HeaderContainer/HideIssuesBtn
+@onready var issues_tree: Tree = $MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/ErrorContainer/IssuesVBox/IssuesTree
+@onready var error_container: PanelContainer = $MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/ErrorContainer
+@onready var discourse_split_container: VSplitContainer = $MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer
 @onready var dialog_id_container: HBoxContainer = $MainSplitContainer/MainSidebar/SidebarSplitContainer/NodesContainer/DialogIDContainer
 @onready var dialog_id_ln_edt: LineEdit = $MainSplitContainer/MainSidebar/SidebarSplitContainer/NodesContainer/DialogIDContainer/DialogIDLnEdt
 
@@ -68,56 +71,72 @@ var _recently_opened_popup: PopupMenu = null
 @onready var base_text_edt: TextEdit = $LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/LocaleVBoxContainer/BasePanelContainer/BaseContainer/BaseTextEdt
 @onready var translation_txt_box: TextEdit = $LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/LocaleVBoxContainer/TranslationPanel/TranslationContainer/TranslationTxtBox
 
-@onready var locale_label: Label = $LocalizationContainer/LocaleLabel
-@onready var return_discourse_btn: Button = $LocalizationContainer/MainSplitContainer/PhrasesContainer/HeaderPanel/PhrasesHeader/ReturnDiscourseBtn
+@onready var locale_label: Label = $LocalizationContainer/FooterContainer/LocaleLabel
+#@onready var return_discourse_btn: Button = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/HeaderPanel/PhrasesHeader/ReturnDiscourseBtn
 @onready var choices_container: VBoxContainer = $LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer/ChoicesScroller/ChoicesContainer
 
 # --- Phrases ---
-@onready var key_container: VBoxContainer = $LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyScroll/KeySplitContainer/KeyContainer
-@onready var text_container: VBoxContainer = $LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyScroll/KeySplitContainer/TextContainer
-@onready var case_node_container: VBoxContainer = $LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/CaseContainer/CaseNodeContainer
-@onready var result_node_container: VBoxContainer = $LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/ResultContainer/ResultNodeContainer
-@onready var default_case_ln_edt: LineEdit = $LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/ResultContainer/DefaultCaseLnEdt
-@onready var argument_opt_btn: OptionButton = $LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/ArgumentContainer/ArgumentOptBtn
-@onready var copy_arg_btn: Button = $LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/ArgumentContainer/CopyArgBtn
-@onready var new_case_btn: Button = $LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/HeaderContainer/NewCaseBtn
-@onready var new_text_button: Button = $LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer/HBoxContainer/NewTextButton
-@onready var search_case_ln_edt: LineEdit = $LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/HeaderContainer/SearchCaseLnEdt
-@onready var key_display_label: Label = $LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/CaseKeyContainer/KeyDisplayLabel
-@onready var key_box_container: VBoxContainer = $LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer
-@onready var case_box_container: VBoxContainer = $LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer
-@onready var save_case_btn: Button = $LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/CaseKeyContainer/SaveCaseBtn
-@onready var search_text_ln_edt: LineEdit = $LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer/HBoxContainer/SearchTextLnEdt
-@onready var key_header_split: HSplitContainer = $LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyHeaderSplit
-@onready var key_split_container: HSplitContainer = $LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyScroll/KeySplitContainer
-@onready var case_header_split: HSplitContainer = $LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/CaseHeaderSplit
-@onready var cases_split: HSplitContainer = $LocalizationContainer/MainSplitContainer/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit
+@onready var key_container: VBoxContainer = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyScroll/KeySplitContainer/KeyContainer
+@onready var text_container: VBoxContainer = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyScroll/KeySplitContainer/TextContainer
+@onready var case_node_container: VBoxContainer = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/CaseContainer/CaseNodeContainer
+@onready var result_node_container: VBoxContainer = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/ResultContainer/ResultNodeContainer
+@onready var default_case_ln_edt: LineEdit = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/ResultContainer/DefaultCaseLnEdt
+@onready var argument_opt_btn: OptionButton = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/ArgumentContainer/ArgumentOptBtn
+@onready var copy_arg_btn: Button = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/ArgumentContainer/CopyArgBtn
+@onready var new_case_btn: Button = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/HeaderContainer/NewCaseBtn
+@onready var new_text_button: Button = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer/HBoxContainer/NewTextButton
+@onready var search_case_ln_edt: LineEdit = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/HeaderContainer/SearchCaseLnEdt
+@onready var key_display_label: Label = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/CaseKeyContainer/KeyDisplayLabel
+@onready var key_box_container: VBoxContainer = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer
+@onready var case_box_container: VBoxContainer = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer
+@onready var save_case_btn: Button = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/CaseKeyContainer/SaveCaseBtn
+@onready var search_text_ln_edt: LineEdit = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer/HBoxContainer/SearchTextLnEdt
+@onready var key_header_split: HSplitContainer = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyHeaderSplit
+@onready var key_split_container: HSplitContainer = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyScroll/KeySplitContainer
+@onready var case_header_split: HSplitContainer = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/CaseHeaderSplit
+@onready var cases_split: HSplitContainer = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit
 
 # ----------------------------------------------
 
-@onready var no_dialog_label: Label = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/GraphPanel/NoDialogLbl
-@onready var discourse_graph_edit: GraphEdit = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/GraphPanel/DiscourseGraphEdit
+@onready var no_dialog_label: Label = $MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/GraphPanel/NoDialogLbl
+@onready var discourse_graph_edit: GraphEdit = $MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/GraphPanel/DiscourseGraphEdit
 var node_popup: PopupMenu = null
 var file_popup: PopupMenu = null
-@onready var node_menu_btn: MenuButton = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/NodeMenuBtn
-@onready var save_btn: Button = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/SaveBtn
-@onready var play_current_dialog_btn: Button = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/PlayDialogBtn
-@onready var switch_localization: Button = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/LocalizationContainer/SwitchLocaleBtn
-@onready var localization_menu: OptionButton = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/LocalizationContainer/LocalizationMenu
+var locale_popup: PopupMenu = null
+@onready var node_menu_btn: MenuButton = $MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/NodeMenuBtn
+@onready var save_btn: Button = $MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/SaveBtn
+@onready var play_current_dialog_btn: Button = $MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/PlayDialogBtn
+#@onready var localization_menu: OptionButton = $MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/LocalizationContainer/LocalizationMenu
+@onready var close_localizer_btn: Button = $LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/HeaderContainer/CloseLocalizerBtn
+@onready var snap_distance_spn_bx: SpinBox = $MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/SnapDistanceSpnBx
+@onready var dialog_scene_previewer: PanelContainer = $LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/DialogScenePreviewer
+@onready var phrases_lang_menu: OptionButton = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/HeaderPanel/PhrasesHeader/PhrasesLangMenu
 
-@onready var snap_distance_spn_bx: SpinBox = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/SnapDistanceSpnBx
+
+var dialog_previewer: Node = null
 
 
 func ready_plugin(base_locale: String = "") -> void:
 	base_locale = TranslationServer.standardize_locale(base_locale)
 	node_popup = node_menu_btn.get_popup()
-	file_popup = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/FileMenuBtn.get_popup()
-	var open_btn: Button = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/OpenBtn
-	var toggle_grid_btn: Button = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/ToggleGridBtn
-	var toggle_snap_btn: Button = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/ToggleSnapBtn
-	var toggle_minimap_btn: Button = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/ToggleMinimapBtn
-	var sort_nodes_btn: Button = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/SortNodesBtn
+	locale_popup = $MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/LocaleMenuBtn.get_popup()
+	file_popup = $MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/FileMenuBtn.get_popup()
+	locale_popup.max_size.y = 150
+	phrases_lang_menu.get_popup().max_size.y = 250
+	var open_btn: Button = $MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/OpenBtn
+	var toggle_grid_btn: Button = $MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/ToggleGridBtn
+	var toggle_snap_btn: Button = $MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/ToggleSnapBtn
+	var toggle_minimap_btn: Button = $MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/ToggleMinimapBtn
+	var sort_nodes_btn: Button = $MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/SortNodesBtn
+	var collapse_left_btn: Button = $MainSplitContainer/MainSidebar/SidebarSplitContainer/ConversationContainer/HeaderContainer/CollapseLeftBtn
+	var uncollapse_left_button: Button = $MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/UncollapseButton
+	var collapse_right_btn: Button = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/HeaderPanel/PhrasesHeader/CollapseRigthBtn
+	var uncollapse_right_btn: Button = $MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/UncollapseRightBtn
 	
+	var uncollapse_previewer: Button = $LocalizationContainer/FooterContainer/UncollapsePreviewBtn
+	var collapse_previewer: Button = $LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/DialogScenePreviewer/HBoxContainer/ButtonContaienr/CollapsePreviewBtn
+	var auto_update_previewer: Button = $LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/DialogScenePreviewer/HBoxContainer/ButtonContaienr/AutoUpdateBtn
+	var play_previewer: Button = $LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/DialogScenePreviewer/HBoxContainer/ButtonContaienr/PlayTextBtn
 	# --- Node Menu Items ---
 	var dialogs_submenu: PopupMenu = PopupMenu.new()
 	var data_submenu: PopupMenu = PopupMenu.new()
@@ -128,6 +147,7 @@ func ready_plugin(base_locale: String = "") -> void:
 	_recently_opened_popup.max_size.x = 250
 	
 	dialogs_submenu.min_size.x = 120
+	
 	dialogs_submenu.add_theme_constant_override(&"icon_max_width", 16)
 	data_submenu.add_theme_constant_override(&"icon_max_width", 16)
 	setting_submenu.add_theme_constant_override(&"icon_max_width", 16)
@@ -211,7 +231,7 @@ func ready_plugin(base_locale: String = "") -> void:
 	
 	play_current_dialog_btn.pressed.connect(_on_play_current_dialog_pressed)
 	
-	switch_localization.icon = get_theme_icon("Translation", "EditorIcons")
+	close_localizer_btn.icon = get_theme_icon("GuiClose", "EditorIcons")
 	
 	file_popup.hide_on_checkable_item_selection = false
 	
@@ -240,6 +260,10 @@ func ready_plugin(base_locale: String = "") -> void:
 			"Check for issues",
 			DiscourseFileMenuID.CHECK_ISSUES)
 	file_popup.add_separator()
+	file_popup.add_icon_item(
+			get_theme_icon("Translation", "EditorIcons"),
+			"Localization Window",
+			DiscourseFileMenuID.LOCALIZATION_WINDOW)
 	file_popup.add_item(
 			"Set file locale group",
 			DiscourseFileMenuID.SET_LOCALE_GROUP)
@@ -285,7 +309,16 @@ func ready_plugin(base_locale: String = "") -> void:
 			file_popup.get_item_index(
 					DiscourseFileMenuID.PLAY_CURRENT_DIALOG),
 			true)
+	
+	file_popup.set_item_disabled(
+			file_popup.get_item_index(
+					DiscourseFileMenuID.LOCALIZATION_WINDOW),
+			true)
+	
+	play_previewer.icon = get_theme_icon("Play", "EditorIcons")
 	# --------------------------------------------------------
+	
+	#update_localization_button_compact.call_deferred()
 	
 	search_nodes_ln_edt.right_icon = get_theme_icon("Search", "EditorIcons")
 	
@@ -296,7 +329,7 @@ func ready_plugin(base_locale: String = "") -> void:
 	languages_tree.ready_plugin()
 	localization_nodes_tree.ready_plugin()
 	
-	var discourse_panel: PanelContainer = $MainSplitContainer/DiscourseSplitContainer/DiscourseWindow/ContentVBox/GraphPanel
+	var discourse_panel: PanelContainer = $MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/GraphPanel
 	var style: StyleBoxFlat = load("res://addons/nexus_forge/discourse/discourse_editor_stylebox.tres")
 	
 	style.bg_color = get_theme_color("base_color", "Editor")
@@ -308,6 +341,8 @@ func ready_plugin(base_locale: String = "") -> void:
 	base_language = system_lang
 	languages_tree.set_default_language(system_lang)
 	current_locale = system_lang
+	set_graph_locale_tip(system_lang)
+	set_phrase_button_locale(system_lang)
 	
 	var locale_settings: PackedStringArray = StringUtils.split_and_strip(
 			ProjectSettings.get_setting(
@@ -337,9 +372,9 @@ func ready_plugin(base_locale: String = "") -> void:
 	new_folder_button.disabled = true
 	new_folder_button.icon = get_theme_icon("FolderCreate", "EditorIcons")
 	
-	return_discourse_btn.icon = get_theme_icon("GuiClose", "EditorIcons")
+	#return_discourse_btn.icon = get_theme_icon("GuiClose", "EditorIcons")
 	
-	save_case_btn.icon = get_theme_icon("Save", "EditorIcons")
+	save_case_btn.icon = get_theme_icon("ArrowLeft", "EditorIcons")
 	
 	hide_issues_btn.icon = get_theme_icon("GuiClose", "EditorIcons")
 	
@@ -349,15 +384,32 @@ func ready_plugin(base_locale: String = "") -> void:
 	
 	copy_arg_btn.icon = get_theme_icon("ActionCopy", "EditorIcons")
 	
+	if EditorNFPlugin.is_preview_scene_valid(false):
+		var path: String = ProjectSettings.get_setting(EditorNFPlugin.get_project_settings_path("discourse_localization_preview_scene"))
+		uncollapse_previewer.visible = true
+		dialog_previewer = load(path).instantiate()
+		$LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/DialogScenePreviewer/HBoxContainer/PreviewPanel.add_child(dialog_previewer)
+	else:
+		uncollapse_previewer.visible = false
+	
+	var lambda: Callable = func() -> void:
+		key_header_split.split_offset = key_split_container.split_offset
+	
+	lambda.call_deferred()
+	
+	$MainSplitContainer/ActiveWindowSplit/PhrasesContainer.visible = false
+	
+	
 	# --------------------------------------------------------
 	dialogs_submenu.id_pressed.connect(_on_create_dialog_id_pressed)
 	data_submenu.id_pressed.connect(_on_create_dialog_id_pressed)
 	setting_submenu.id_pressed.connect(_on_create_dialog_id_pressed)
 	_recently_opened_popup.index_pressed.connect(_on_recent_file_index_pressed)
 	node_popup.id_pressed.connect(_on_create_dialog_id_pressed)
-	switch_localization.pressed.connect(_on_switch_window_pressed)
+	close_localizer_btn.pressed.connect(_on_switch_window_pressed)
 	file_popup.id_pressed.connect(_on_file_menu_id_pressed)
-	localization_menu.item_selected.connect(_on_localization_selected)
+	#localization_menu.item_selected.connect(_on_localization_selected)
+	#localization_menu.resized.connect(_on_localization_resized)
 	# --------------------------------------------------------
 	
 	open_btn.pressed.connect(_on_open_conversation_pressed)
@@ -374,10 +426,9 @@ func ready_plugin(base_locale: String = "") -> void:
 	discourse_graph_edit.discourse_node_selected.connect(_on_discourse_node_selected)
 	discourse_graph_edit.scroll_offset_changed.connect(_on_graph_edit_offset_changed)
 	
-	return_discourse_btn.pressed.connect(_on_switch_window_pressed)
 	node_search_ln_edt.text_changed.connect(_on_discourse_node_search_text_changed)
 	new_language_btn.pressed.connect(_on_new_lang_pressed)
-	languages_tree.locale_changed.connect(_on_side_editor_locale_changed)
+	languages_tree.locale_changed.connect(_on_side_editor_locale_changed, CONNECT_DEFERRED)
 	languages_tree.region_created.connect(_on_region_created)
 	languages_tree.locale_deleted.connect(_on_locale_deleted)
 	
@@ -413,6 +464,119 @@ func ready_plugin(base_locale: String = "") -> void:
 	dialog_id_ln_edt.text_changed.connect(_on_conversation_changed)
 	
 	copy_arg_btn.pressed.connect(_on_copy_format_pressed, CONNECT_DEFERRED)
+	
+	collapse_left_btn.pressed.connect(_on_collapse_left_pressed)
+	uncollapse_left_button.pressed.connect(_on_uncollapse_left_pressed)
+	
+	collapse_right_btn.pressed.connect(_on_collapse_right_pressed)
+	uncollapse_right_btn.pressed.connect(_on_uncollapse_right_pressed)
+	
+	phrases_lang_menu.item_selected.connect(_on_phrase_button_item_selected)
+	$LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/DialogScenePreviewer/HBoxContainer/ButtonContaienr/AutoUpdateBtn.toggled.connect(_on_auto_update_toggled)
+
+
+func get_column_left() -> Control:
+	return $MainSplitContainer/MainSidebar
+
+
+func _add_locale_phrase_menu(lang: String, country: String) -> void:
+	# Title, code
+	var entries: Dictionary[String, String] = {}
+	var entry_found: bool = false
+	var locale_code: String = lang if country.is_empty() else lang + "_" + country
+	
+	for item_idx in range(phrases_lang_menu.item_count):
+		var code: String = phrases_lang_menu.get_item_metadata(item_idx)
+		entries[phrases_lang_menu.get_item_text(item_idx)] = code
+		if code == locale_code:
+			entry_found = true
+	
+	if entry_found:
+		return
+	
+	var selected: String = phrases_lang_menu.get_item_text(phrases_lang_menu.selected) if phrases_lang_menu.selected != -1 else ""
+	var item_selected: bool = phrases_lang_menu.selected != -1
+	var title: String = TranslationServer.get_language_name(lang)
+	if not country.is_empty():
+		title += " (" + TranslationServer.get_country_name(country) + ")"
+	
+	entries[title] = locale_code
+	
+	var all_titles: Array[String] = []
+	all_titles.assign(entries.keys())
+	all_titles.sort()
+	
+	phrases_lang_menu.clear()
+	
+	for item in all_titles:
+		phrases_lang_menu.add_item(item)
+		phrases_lang_menu.set_item_metadata(-1, entries[item])
+	
+	if item_selected:
+		phrases_index = all_titles.find(selected)
+		phrases_lang_menu.select(phrases_index)
+	else:
+		phrases_lang_menu.select(-1)
+		phrases_index = -1
+
+
+func _remove_locale_phrase_menu(lang: String, country: String) -> void:
+	var locale: String = lang if country.is_empty() else lang + "_" + country
+	var new_select: int = -1
+	var selected: String = "" if phrases_lang_menu.selected == -1 else phrases_lang_menu.get_selected_metadata()
+	var entries: Dictionary[String, String] = {}
+	var reload: bool = false
+	
+	for idx in range(phrases_lang_menu.item_count):
+		entries[phrases_lang_menu.get_item_metadata(idx)] = phrases_lang_menu.get_item_text(idx)
+	
+	if not entries.has(locale):
+		return
+	
+	entries.erase(locale)
+	
+	var codes: Array[String] = []
+	codes.assign(entries.keys())
+	codes.sort_custom(func(a,b): return entries[a] < entries[b])
+	
+	phrases_lang_menu.clear()
+	new_select = codes.find(selected)
+	
+	for locale_code in codes:
+		phrases_lang_menu.add_item(entries[locale_code])
+		phrases_lang_menu.set_item_metadata(-1, locale_code)
+	
+	phrases_lang_menu.select(new_select)
+
+
+func set_phrase_button_locale(locale: String) -> void:
+	for idx in range(phrases_lang_menu.item_count):
+		if phrases_lang_menu.get_item_metadata(idx) == locale:
+			phrases_lang_menu.select(idx)
+			phrases_lang_menu.text = locale
+			phrases_index = idx
+			return
+
+
+func _on_phrase_button_item_selected(idx: int) -> void:
+	var locale: String = phrases_lang_menu.get_item_metadata(idx)
+	var prev_locale: String = "" if phrases_index == -1 else phrases_lang_menu.get_item_metadata(phrases_index)
+	phrases_lang_menu.text = locale
+	phrases_lang_menu.tooltip_text = phrases_lang_menu.get_item_text(idx)
+	save_phrase_keys(prev_locale)
+	set_phrases_locale(locale)
+	phrases_index = idx
+
+
+func set_phrases_locale(locale: String) -> void:
+	for item_index in range(key_container.get_child_count()):
+		var line: LineEdit = key_container.get_child(item_index).get_child(1)
+		var text_field: LineEdit = text_container.get_child(item_index).get_child(0)
+		var key: String = line.get_meta(&"phrase_key")
+		
+		text_field.text = active_conversation.get_format_string(
+				key,
+				locale)
 
 
 func add_locale(locale_code: String) -> void:
@@ -423,40 +587,82 @@ func add_locale(locale_code: String) -> void:
 	var selected_country: String = ""
 	var existing_locales: Array[Dictionary] = []
 	
-	if localization_menu.selected != -1:
-		var item_meta: Dictionary = localization_menu.get_item_metadata(localization_menu.selected)
-		selected_language = item_meta["language_code"]
-		selected_country = item_meta["country_code"]
+	var lang_index: int = -1
 	
-	for item in range(localization_menu.item_count):
-		var item_meta: Dictionary = localization_menu.get_item_metadata(item)
-		if item_meta["language_code"] == language and item_meta["country_code"] == region:
-			return
-		existing_locales.append(item_meta)
+	for idx in range(locale_popup.item_count):
+		if locale_popup.get_item_metadata(idx) == language:
+			lang_index = idx
+			break
 	
-	existing_locales.append({
-		"language_code" = language,
-		"language_name" = TranslationServer.get_language_name(language),
-		"country_code" = region})
+	if lang_index == -1:
+		var lang_name: String = TranslationServer.get_language_name(language)
+		var items: Dictionary[String, Dictionary] = {
+			language: {"name": lang_name, "popup": _new_lang_submenu()}}
+		var orphans: Array[PopupMenu] = []
+		
+		for item_idx in range(locale_popup.item_count):
+			var lang_code: String = locale_popup.get_item_metadata(item_idx)
+			var popup: PopupMenu = locale_popup.get_item_submenu_node(item_idx)
+			if items.has(lang_code):
+				orphans.append(popup)
+			else:
+				items[lang_code] = {
+					"name": locale_popup.get_item_text(item_idx),
+					"popup": popup}
+		
+		var existing_menus: Array[String] = []
+		existing_menus.assign(items.keys())
+		existing_menus.sort()
+		
+		locale_popup.clear(false)
+		for orp in orphans:
+			orp.free()
+		
+		for lang_code in existing_menus:
+			locale_popup.add_submenu_node_item(
+					items[lang_code]["name"],
+					items[lang_code]["popup"])
+			locale_popup.set_item_metadata(-1, lang_code)
+		
+		lang_index = existing_menus.find(language)
 	
-	existing_locales.sort_custom(_locale_sort_custom)
+	_add_locale_phrase_menu(language, region)
 	
-	localization_menu.clear()
+	if region.is_empty():
+		return
 	
-	var idx: int = -1
-	for existing_locale in existing_locales:
-		var display_text: String = existing_locale["language_name"] if\
-				existing_locale["country_code"].is_empty() else\
-				existing_locale["language_name"] + " (" + existing_locale["country_code"] + ")"
-		idx += 1
-		localization_menu.add_item(display_text)
-		localization_menu.set_item_metadata(idx, existing_locale)
-		if existing_locale["language_code"] == selected_language and existing_locale["country_code"] == selected_country:
-			localization_menu.select(idx)
-			localization_menu.tooltip_text = display_text
+	var submenu: PopupMenu = locale_popup.get_item_submenu_node(lang_index)
+	var found: bool = false
 	
-	if selected_language.is_empty() and selected_country.is_empty():
-		localization_menu.tooltip_text = localization_menu.get_item_text(0)
+	for idx in range(submenu.item_count):
+		if submenu.get_item_metadata(0) == region:
+			found = true
+			break
+	
+	if not found:
+		var existing_items: Dictionary[String, String] = {
+			region: TranslationServer.get_country_name(region)}
+		for idx in range(submenu.item_count):
+			existing_items[submenu.get_item_metadata(idx)] = submenu.get_item_text(idx)
+		
+		submenu.clear()
+		var items: Array[String] = []
+		items.assign(existing_items.keys())
+		items.sort()
+		
+		for lang_code in items:
+			submenu.add_item(existing_items[lang_code])
+			submenu.set_item_metadata(-1, lang_code)
+
+
+func _new_lang_submenu() -> PopupMenu:
+	var pop: PopupMenu = PopupMenu.new()
+	pop.add_item("Base")
+	pop.set_item_metadata(0, "")
+	pop.size = Vector2i.ZERO
+	pop.index_pressed.connect(_on_locale_submenu_idx_pressed.bind(pop))
+	pop.max_size.y = 150
+	return pop
 
 
 func has_locale(locale: String) -> bool:
@@ -467,25 +673,27 @@ func has_locale(locale: String) -> bool:
 	var lang_code: String = parts[0]
 	var reg_code: String = parts[1] if parts.size() == 2 else ""
 	
-	for option_idx in range(localization_menu.item_count):
-		var metadata: Dictionary = localization_menu.get_item_metadata(option_idx)
-		if metadata["language_code"] == lang_code and metadata["country_code"] == reg_code:
-			return true
+	for idx in range(locale_popup.item_count):
+		if locale_popup.get_item_metadata(idx) == lang_code:
+			if reg_code.is_empty():
+				return true
+			else:
+				var sub: PopupMenu = locale_popup.get_item_submenu_node(idx)
+				for sub_idx in range(sub.item_count):
+					if sub.get_item_metadata(sub_idx) == reg_code:
+						return true
+			break
+	
 	return false
 
 
-func clear_locales() -> void:
-	for index in range(localization_menu.item_count - 1, -1, -1):
-		var meta: Dictionary = localization_menu.get_item_metadata(index)
-		var lang: String = meta["language_code"]
-		var reg: String = meta["country_code"]
-		var locale: String = TranslationServer.standardize_locale(lang if reg.is_empty() else lang + "_" + reg)
-		if locale == base_language:
-			continue
-		else:
-			localization_menu.remove_item(index)
-	current_locale = base_language
-	languages_tree.clear_languages(false)
+func clear_locales(clear_main: bool = true) -> void:
+	locale_popup.clear(true)
+	if not clear_main:
+		add_locale(base_language)
+	
+	current_locale = "" if clear_main else base_language
+	languages_tree.clear_languages(clear_main)
 	localization_nodes_tree.get_root().collapsed = true
 
 
@@ -497,34 +705,30 @@ func remove_locale(locale: String) -> void:
 	var lang: String = parts[0]
 	var reg: String = parts[1] if parts.size() == 2 else ""
 	
-	var current: int = localization_menu.selected
-	var new_index: int = current
-	var item_count: int = localization_menu.item_count 
+	_remove_locale_phrase_menu(lang, reg)
 	
-	for item_idx in range(localization_menu.item_count):
-		var mtdt: Dictionary = localization_menu.get_item_metadata(item_idx)
-		
-		if mtdt["language_code"] != lang or mtdt["country_code"] != reg:
-			continue
-		localization_menu.remove_item(item_idx)
-		
-		if item_idx == current:
-			var new_idx: int = clampi(
-					item_idx - 1,
-					-1 if item_count == 1 else 0,
-					item_count - 2)
-			
-			if new_idx != -1:
-				localization_menu.select(new_idx)
-				current_locale = TranslationServer.standardize_locale(mtdt["language_code"] if mtdt["country_code"].is_empty() else mtdt["language_code"] + "_" + mtdt["country_code"])
-				localization_menu.tooltip_text = localization_menu.get_item_text(new_idx)
+	if locale == current_locale:
+		current_locale = base_language
+		set_graph_locale_tip(base_language)
+		_on_graph_editor_locale_changed("", base_language)
+	
+	if phrases_index != -1 and phrases_lang_menu.get_selected_metadata() == locale:
+		set_phrases_locale(base_language)
+		set_phrase_button_locale(base_language)
+	
+	for idx in range(locale_popup.item_count):
+		if locale_popup.get_item_metadata(idx) == lang:
+			if reg.is_empty():
+				locale_popup.get_item_submenu_node(idx).free()
+				locale_popup.remove_item(idx)
+				break
 			else:
-				current_locale = ""
-				localization_menu.tooltip_text = ""
-			
-			localization_menu.select(new_idx)
-		
-		return
+				var sub: PopupMenu = locale_popup.get_item_submenu_node(idx)
+				for sub_idx in range(sub.item_count):
+					if sub.get_item_metadata(sub_idx) == reg:
+						sub.remove_item(sub_idx)
+						break
+			break
 
 
 func set_graph_edit_visible(graph_visible: bool) -> void:
@@ -537,12 +741,11 @@ func set_graph_edit_visible(graph_visible: bool) -> void:
 func set_conversation_options_enabled(are_enabled: bool) -> void:
 	var disabled: bool = !are_enabled
 	node_menu_btn.disabled = disabled
-	switch_localization.disabled = disabled
+	$MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/LocaleMenuBtn.disabled = disabled
 	save_btn.disabled = disabled
-	localization_menu.disabled = disabled
 	play_current_dialog_btn.disabled = disabled
 	snap_distance_spn_bx.editable = are_enabled
-	
+	phrases_lang_menu.disabled = disabled
 	
 	file_popup.set_item_disabled(
 			file_popup.get_item_index(
@@ -569,9 +772,12 @@ func set_conversation_options_enabled(are_enabled: bool) -> void:
 					DiscourseFileMenuID.CLOSE_DIALOG),
 					disabled)
 	
+	file_popup.set_item_disabled(
+			file_popup.get_item_index(
+					DiscourseFileMenuID.LOCALIZATION_WINDOW),
+					disabled)
+	
 	_conversation_options_disabled = disabled
-
-
 
 
 func update_localization_display(data: Dictionary) -> void:
@@ -587,18 +793,72 @@ func _locale_sort_custom(locale_a: Dictionary, locale_b: Dictionary):
 		return language_comp < 0
 
 
-func _on_localization_selected(idx: int) -> void:
-	var old_locale: String = current_locale
+#func _on_localization_selected(idx: int) -> void:
+	#var old_locale: String = current_locale
+	#
+	#if idx == -1:
+		#localization_menu.tooltip_text = ""
+		#current_locale = ""
+	#else:
+		#var locale_data: Dictionary = localization_menu.get_item_metadata(idx)
+		#var lang_code: String = locale_data["language_code"]
+		#var count_code: String = locale_data["country_code"]
+		#if locale_button_compact:
+			#if count_code.is_empty():
+				#localization_menu.text = lang_code
+			#else:
+				#localization_menu.text = lang_code + "_" + count_code
+		#current_locale = TranslationServer.standardize_locale(lang_code if count_code.is_empty() else lang_code + "_" + count_code)
+		#localization_menu.tooltip_text = localization_menu.get_item_text(idx)
+	#
+	#_on_graph_editor_locale_changed(old_locale, current_locale)
+
+
+func _on_locale_submenu_idx_pressed(idx: int, submenu: PopupMenu) -> void:
+	var from: String = current_locale
+	var count: String = submenu.get_item_metadata(idx)
+	var lang: String = ""
 	
-	if idx == -1:
-		localization_menu.tooltip_text = ""
-		current_locale = ""
-	else:
-		var locale_data: Dictionary = localization_menu.get_item_metadata(idx)
-		current_locale = TranslationServer.standardize_locale(locale_data["language_code"] if locale_data["country_code"].is_empty() else locale_data["language_code"] + "_" + locale_data["country_code"])
-		localization_menu.tooltip_text = localization_menu.get_item_text(idx)
+	for item_idx in range(locale_popup.item_count):
+		if locale_popup.get_item_submenu_node(item_idx) == submenu:
+			lang = locale_popup.get_item_metadata(item_idx)
+			break
 	
-	_on_graph_editor_locale_changed(old_locale, current_locale)
+	if lang.is_empty():
+		push_error("[DISCOURSE] ERROR SELECTING LOCALE")
+		return
+	
+	var to: String = lang if count.is_empty() else lang + "_" + count
+	
+	set_graph_locale_tip(to)
+	_on_graph_editor_locale_changed(from, to)
+	current_locale = to
+
+
+func set_graph_locale_tip(locale: String) -> void:
+	var label: Label = $MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/GraphLocaleLbl
+	
+	if locale.is_empty():
+		label.text = "Current Locale:"
+		return
+	
+	var locale_parts: PackedStringArray = locale.split("_", false, 1)
+	var language: String = locale_parts[0]
+	var region: String = locale_parts[1] if locale_parts.size() == 2 else ""
+	
+	var language_name: String = TranslationServer.get_language_name(language)
+	
+	var locale_text: String = "" if region.is_empty() else TranslationServer.get_country_name(region) 
+	
+	if not locale_text.is_empty():
+		if locale_text.to_lower().ends_with("s"):
+			locale_text += "' "
+		else:
+			locale_text += "'s "
+	
+	locale_text += language_name
+	
+	label.text = "Current Locale: " + locale_text
 
 
 func _on_file_menu_id_pressed(id: int) -> void:
@@ -625,6 +885,8 @@ func _on_file_menu_id_pressed(id: int) -> void:
 			file_popup.set_item_checked(idx, display)
 			
 			_on_display_dialog_id_toggled(display)
+		DiscourseFileMenuID.LOCALIZATION_WINDOW:
+			_on_switch_window_pressed()
 
 
 func _on_create_dialog_id_pressed(id: int) -> void:
@@ -729,13 +991,18 @@ func _on_conversation_close_pressed(dialog: EditorDiscourseDialog, save_required
 	if not close_current:
 		return
 	
+	key_box_container.visible = true
+	case_box_container.visible = false
+	
 	if conversation_tree.active_conversation_item == null:
 		active_conversation = null
 		set_conversation_active(false)
 		display_conversation(null)
+		clear_localized_keys()
+		clear_cases()
 		conversation_tree.active_unsaved = false
 		selected_key = null
-		#selected_format = ""
+		new_text_button.disabled = true
 		return
 	
 	var new_resource: EditorDiscourseDialog = conversation_tree.get_active_resource()
@@ -745,7 +1012,6 @@ func _on_conversation_close_pressed(dialog: EditorDiscourseDialog, save_required
 	
 	_unsaved = conversation_tree.active_unsaved
 	selected_key = null
-	#selected_format = ""
 
 
 func _on_menu_close_pressed() -> void:
@@ -778,15 +1044,19 @@ func _on_menu_close_pressed() -> void:
 				active_conversation.resource_path,
 				layout_data)
 	
+	key_box_container.visible = true
+	case_box_container.visible = false
 	conversation_tree.remove_conversation(active_conversation)
 	
 	if conversation_tree.active_conversation_item == null:
 		active_conversation = null
 		set_conversation_active(false)
 		display_conversation(null)
+		clear_localized_keys()
+		clear_cases()
 		conversation_tree.active_unsaved = false
 		selected_key = null
-		#selected_format = ""
+		new_text_button.disabled = true
 		return
 	
 	var new_resource: EditorDiscourseDialog = conversation_tree.get_active_resource()
@@ -851,8 +1121,9 @@ func _on_change_default_language_pressed() -> void:
 
 
 func _on_translation_text_changed() -> void:
-	if languages_tree.get_base_language() == languages_tree.get_active_language() and languages_tree.get_active_region() == "base":
+	if languages_tree.get_active_locale() == base_language:
 		base_text_edt.text = translation_txt_box.text
+	_on_text_changed_sync(translation_txt_box.text)
 
 
 func _on_conversation_changed(_arg = null) -> void:
@@ -866,22 +1137,35 @@ func _on_conversation_changed(_arg = null) -> void:
 func _on_graph_editor_locale_changed(from: String, to: String) -> void:
 	if not from.is_empty():
 		discourse_graph_edit.update_localization_data(active_conversation, from)
-	if not to.is_empty():
-		var data: Dictionary = active_conversation.get_display_localization_data(to)
-		update_localization_display(data)
+		#save_phrase_keys(from)
+	
+	clear_cases()
+	default_case_ln_edt.text = ""
+	search_case_ln_edt.text = ""
+	search_case_ln_edt.set_meta(&"current_search", "")
+	argument_opt_btn.clear()
+	
+	search_text_ln_edt.text = ""
+	search_text_ln_edt.set_meta(&"current_search", "")
+	
+	if to.is_empty():
+		return
+	
+	var data: Dictionary = active_conversation.get_display_localization_data(to)
+	update_localization_display(data)
+	
 
 
 func _on_side_editor_locale_changed(from: String, to: String) -> void:
 	var invalid_language: bool = to.is_empty()
 	var active_node: DiscourseGraphNode = localization_nodes_tree.get_active_node()
 	localization_nodes_tree.get_root().collapsed = invalid_language
-	new_text_button.disabled = invalid_language
 	
 	set_localization_tip(to)
 	
 	if not from.is_empty():
-		save_phrase_keys(from)
-		save_localizer_data()
+		#save_phrase_keys(from)
+		save_localizer_data(from)
 		
 		if active_node != null and from == current_locale:
 			var uuid: StringName = active_node.get_node_uuid()
@@ -898,34 +1182,29 @@ func _on_side_editor_locale_changed(from: String, to: String) -> void:
 				DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
 					var text: String = translation_txt_box.text.strip_edges()
 					active_node.set_text(translation_txt_box.text.strip_edges())
-	
-	clear_cases()
-	default_case_ln_edt.text = ""
-	search_case_ln_edt.text = ""
-	search_case_ln_edt.set_meta(&"current_search", "")
-	argument_opt_btn.clear()
-	
-	search_text_ln_edt.text = ""
-	search_text_ln_edt.set_meta(&"current_search", "")
+	#save_phrase_keys(from)
+	#clear_cases()
+	#default_case_ln_edt.text = ""
+	#search_case_ln_edt.text = ""
+	#search_case_ln_edt.set_meta(&"current_search", "")
+	#argument_opt_btn.clear()
+	#
+	#search_text_ln_edt.text = ""
+	#search_text_ln_edt.set_meta(&"current_search", "")
 	
 	if to.is_empty():
 		$LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/LocaleVBoxContainer.visible = false
 		$LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer.visible = false
-		key_box_container.visible = false
-		case_box_container.visible = false
 		return
 	
-	key_box_container.visible = languages_tree.is_lang_selected()
-	case_box_container.visible = false
-	
-	for item_index in range(key_container.get_child_count()):
-		var line: LineEdit = key_container.get_child(item_index).get_child(1)
-		var text_field: LineEdit = text_container.get_child(item_index).get_child(0)
-		var key: String = line.get_meta(&"phrase_key")
-		
-		text_field.text = active_conversation.get_format_string(
-				key,
-				to)
+	#for item_index in range(key_container.get_child_count()):
+		#var line: LineEdit = key_container.get_child(item_index).get_child(1)
+		#var text_field: LineEdit = text_container.get_child(item_index).get_child(0)
+		#var key: String = line.get_meta(&"phrase_key")
+		#
+		#text_field.text = active_conversation.get_format_string(
+				#key,
+				#to)
 	
 	if active_node == null:
 		return
@@ -1111,6 +1390,7 @@ func _on_switch_window_pressed() -> void:
 		# Update the active conversation from the node data if a localization exist.
 		if not current_locale.is_empty():
 			discourse_graph_edit.update_localization_data(active_conversation, current_locale)
+		
 	else: # We travel to main window
 		# Update the active node on the active file if a lang and node is selected.
 		if not localizer_locale.is_empty() and active_node != null:
@@ -1167,6 +1447,10 @@ func _on_switch_window_pressed() -> void:
 				create_choice_node(
 						base_lang[option_idx],
 						options[option_idx])
+			
+			if dialog_previewer != null:
+				dialog_previewer.set_choices(options)
+				
 		else: # Either dialog or localized text. Same method can be used.
 			var text: String = active_conversation.get_text_entry(
 					active_node.get_node_uuid(),
@@ -1176,6 +1460,9 @@ func _on_switch_window_pressed() -> void:
 					active_node.get_node_uuid(),
 					languages_tree.get_base_language())
 			translation_txt_box.text = text
+			
+			if dialog_previewer != null:
+				dialog_previewer.set_dialog(text)
 	else:
 		# If no active node was selected or no locale is selected we stop to prevent
 		# bad data assignation.
@@ -1446,6 +1733,8 @@ func create_choice_node(base_text: String, localized_text: String) -> void:
 	new_container.add_child(new_choice_count)
 	new_container.add_child(base_text_label)
 	new_container.add_child(localization_lnedt)
+	
+	localization_lnedt.text_changed.connect(_on_choice_text_changed.bind(new_container.get_index()))
 
 
 func get_localizer_choices() -> Array[String]:
@@ -1879,7 +2168,8 @@ func open_conversation(conversation: EditorDiscourseDialog) -> bool:
 	localization_nodes_tree.clear_nodes()
 	if issues_tree.has_issues():
 		issues_tree.clear_issues()
-	clear_locales()
+	clear_locales(false)
+	languages_tree.clear_languages(false)
 	base_text_edt.text = ""
 	translation_txt_box.text = ""
 	clear_localized_options()
@@ -1910,7 +2200,11 @@ func open_conversation(conversation: EditorDiscourseDialog) -> bool:
 	var side_locale: String = languages_tree.get_active_locale()
 	
 	for localized_key in conversation.format_strings.keys():
-		var localized_text: String = "" if side_locale.is_empty() else conversation.get_format_string(localized_key, side_locale)
+		var localized_text: String = ""
+		if not current_locale.is_empty():
+			localized_text = conversation.get_format_string(
+					localized_key,
+					current_locale)
 		add_new_phrase(localized_key, localized_text, false)
 	
 	for language in conversation.locale_map.keys():
@@ -1925,18 +2219,12 @@ func open_conversation(conversation: EditorDiscourseDialog) -> bool:
 			if not has_locale(lang_code):
 				add_locale(lang_code)
 	
-	if localization_menu.item_count == 0:
+	if locale_popup.item_count == 0:
 		add_locale(base_language)
-		current_locale = base_language
-	else:
-		localization_menu.select(0)
-		var meta: Dictionary = localization_menu.get_item_metadata(0)
-		var lang: String = meta["language_code"]
-		var reg: String = meta["country_code"]
-		current_locale = TranslationServer.standardize_locale(lang if reg.is_empty() else lang + "_" + reg)
+	current_locale = base_language
+	set_graph_locale_tip(base_language)
 	
-	case_box_container.visible = false
-	key_box_container.visible = languages_tree.is_lang_selected()
+	new_text_button.disabled = current_locale.is_empty()
 	
 	active_conversation = conversation
 	
@@ -1953,7 +2241,7 @@ func load_conversation(data: EditorDiscourseDialog, open_conv: bool = true) -> v
 			conversation_tree.active_unsaved = true
 
 
-func save_localizer_data() -> void:
+func save_localizer_data(for_locale: String) -> void:
 	if active_conversation == null:
 		return
 	
@@ -1962,24 +2250,24 @@ func save_localizer_data() -> void:
 	if active_node == null:
 		return
 	
-	var current_locale: String = languages_tree.get_active_locale()
+	#var current_locale: String = languages_tree.get_active_locale()
 	match active_node.node_type:
 		DiscourseGraphNode.DialogueNodeType.DIALOG:
 			active_conversation.set_text_entry(
 					active_node.get_node_uuid(),
 					translation_txt_box.text,
-					current_locale)
+					for_locale)
 		DiscourseGraphNode.DialogueNodeType.OPTIONS:
 			var options: Array[String] = get_localizer_choices()
 			active_conversation.set_choices_entry(
 					active_node.get_node_uuid(),
 					options,
-					current_locale)
+					for_locale)
 		DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
 			active_conversation.set_text_entry(
 					active_node.get_node_uuid(),
 					translation_txt_box.text,
-					current_locale)
+					for_locale)
 
 
 func _on_save_conversation_pressed() -> void:
@@ -1992,17 +2280,18 @@ func _on_save_conversation_pressed() -> void:
 
 
 func _on_godot_save_triggered() -> void:
-	if active_conversation != null:
-		save_phrase_keys(current_locale)
+	if active_conversation != null and phrases_lang_menu.selected != -1:
+		save_phrase_keys(phrases_lang_menu.get_selected_metadata())
 	
 	save_all_dialogs()
 	conversation_tree.set_conversations_saved()
 
 
 func save_current_dialog() -> void:
-	save_phrase_keys(current_locale)
+	if phrases_lang_menu.selected != -1:
+		save_phrase_keys(phrases_lang_menu.get_selected_metadata())
 	if $LocalizationContainer.visible and localization_nodes_tree.get_active_node() != null:
-		save_localizer_data()
+		save_localizer_data(languages_tree.get_active_locale())
 	
 	if conversation_tree.active_offset_changed:
 		var layout_data: Dictionary[String, Variant] = {
@@ -2034,13 +2323,14 @@ func save_current_dialog() -> void:
 
 func save_all_dialogs() -> void:
 	if $LocalizationContainer.visible and localization_nodes_tree.get_active_node() != null:
-		save_localizer_data()
+		save_localizer_data(languages_tree.get_active_locale())
 	
 	# Save all unsaved conversations
 	for unsaved_conversation:EditorDiscourseDialog in conversation_tree.get_unsaved_conversation_resources():
 		# Including our active one
 		if unsaved_conversation == active_conversation:
-			save_phrase_keys(current_locale)
+			if phrases_lang_menu.selected != -1:
+				save_phrase_keys(phrases_lang_menu.get_selected_metadata())
 			discourse_graph_edit.update_conversation_file(active_conversation, current_locale)
 			active_conversation.dialog_id = dialog_id_ln_edt.text.strip_edges()
 			
@@ -2346,6 +2636,7 @@ func _on_text_line_text_submitted(_text: String, edit_btn: Button) -> void:
 func _on_save_cases_btn_pressed() -> void:
 	case_box_container.visible = false
 	key_box_container.visible = true
+	phrases_lang_menu.disabled = false
 	
 	if argument_opt_btn.selected == -1:# selected_format.is_empty():
 		return
@@ -2362,8 +2653,13 @@ func _on_save_cases_btn_pressed() -> void:
 func _on_edit_cases_pressed(text_line: LineEdit, key: LineEdit, button: Button) -> void:
 	var phrase_key: StringName = key.get_meta(&"phrase_key")
 	var clean_string: String = text_line.text.strip_edges()
-	var locale_code: String = languages_tree.get_active_locale()
+	var locale_code: String = phrases_lang_menu.get_selected_metadata()
 	
+	if locale_code.is_empty():
+		push_error("[DISCOURSE] OPTIONMENU LOCALE CODE EMPTY. CAN'T LOAD ITEMS")
+		return
+	
+	phrases_lang_menu.disabled = true
 	key_display_label.text = key.text.strip_edges()
 	
 	if not active_conversation.has_format_string(phrase_key, locale_code):
@@ -2789,7 +3085,7 @@ func save_current_phrase_key(locale_code: String) -> void:
 
 
 func save_phrase_keys(locale: String) -> void:
-	if not languages_tree.is_lang_selected():
+	if locale.is_empty():
 		return
 	
 	var current_items: Array[Dictionary] = []
@@ -2994,3 +3290,71 @@ func get_api_user_methods() -> Dictionary:
 		methods[method["name"]] = {"return_type": method["return"]["type"], "arguments": args}
 	
 	return methods
+
+
+func _on_collapse_left_pressed() -> void:
+	var column: Control = get_column_left()
+	var uncollapse: Button = $MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/UncollapseButton
+	column.visible = false
+	uncollapse.visible = true
+
+
+func _on_uncollapse_left_pressed() -> void:
+	var column: Control = get_column_left()
+	var uncollapse: Button = $MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/UncollapseButton
+	column.visible = true
+	uncollapse.visible = false
+
+
+func _on_uncollapse_right_pressed() -> void:
+	$MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/UncollapseRightBtn.visible = false
+	$MainSplitContainer/ActiveWindowSplit/PhrasesContainer/HeaderPanel/PhrasesHeader/CollapseRigthBtn.visible = true
+	$MainSplitContainer/ActiveWindowSplit/PhrasesContainer.visible = true
+
+
+func _on_collapse_right_pressed() -> void:
+	$MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/UncollapseRightBtn.visible = true
+	$MainSplitContainer/ActiveWindowSplit/PhrasesContainer/HeaderPanel/PhrasesHeader/CollapseRigthBtn.visible = false
+	$MainSplitContainer/ActiveWindowSplit/PhrasesContainer.visible = false
+
+
+func _on_uncollapse_previewer_pressed() -> void:
+	dialog_scene_previewer.visible = true
+	$LocalizationContainer/FooterContainer/UncollapsePreviewBtn.visible = false
+
+
+func _on_collapse_previewer_pressed() -> void:
+	dialog_scene_previewer.visible = true
+	$LocalizationContainer/FooterContainer/UncollapsePreviewBtn.visible = false
+
+
+func _on_text_changed_sync(text: String) -> void:
+	if dialog_previewer == null or not dialog_scene_previewer.visible or not $LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/DialogScenePreviewer/HBoxContainer/ButtonContaienr/AutoUpdateBtn.button_pressed:
+		return
+	
+	dialog_previewer.dialog_text_changed.emit(text)
+
+
+func _on_choice_text_changed(text: String, index: int) -> void:
+	if dialog_previewer == null or not dialog_scene_previewer.visible or not $LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/DialogScenePreviewer/HBoxContainer/ButtonContaienr/AutoUpdateBtn.button_pressed:
+		return
+	
+	dialog_previewer.choice_text_changed.emit(text, index)
+
+
+func _on_auto_update_toggled(toggled_on: bool) -> void:
+	if not toggled_on or dialog_previewer == null:
+		return
+	
+	var node: DiscourseGraphNode = localization_nodes_tree.get_active_node()
+	
+	if node == null:
+		return
+	
+	if node.node_type == DiscourseGraphNode.DialogueNodeType.DIALOG:
+		dialog_previewer.set_dialog(
+				translation_txt_box.text)
+	else:
+		dialog_previewer.set_choices(
+				get_localizer_choices())
+		

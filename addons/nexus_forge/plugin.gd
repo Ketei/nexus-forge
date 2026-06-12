@@ -82,6 +82,12 @@ const SETTINGS_PATHS: Dictionary[String, Dictionary] = {
 		"hint": PROPERTY_HINT_FILE,
 		"hint_string": "*.tres",
 		"restart_required": false},
+	"discourse_localization_preview_scene": {
+		"setting_path": "nexus_forge/settings/localization_preview_scene",
+		"default_value": "",
+		"type": TYPE_STRING,
+		"hint": PROPERTY_HINT_FILE,
+		"hint_string": "*.tres"},
 	"discourse_panning_scheme": {
 		"setting_path": "nexus_forge/settings/discourse_scroll_wheel_pans",
 		"default_value": true,
@@ -389,6 +395,105 @@ func _sort_custom_settings(a: String, b: String) -> bool:
 	return a_string < b_string
 
 
+static func is_preview_scene_valid(print_errors: bool = true) -> bool:
+	var path: String = ProjectSettings.get_setting(get_project_settings_path("discourse_localization_preview_scene"), "")
+	
+	if path.is_empty():
+		return false
+	
+	if not FileAccess.file_exists(path):
+		if print_errors:
+			push_error(
+				"[NEXUS FORGE] Localization preview scene \"", path, "\" was not found.")
+		return false
+	
+	var scene = load(path)
+	if scene == null or not scene is PackedScene or not scene.can_instantiate():
+		if print_errors:
+			push_error(
+				"[NEXUS FORGE] Error validating instantiation of scene \"", path, "\"")
+		return false
+	
+	var instance: Node = scene.instantiate()
+	var scene_script: Script = instance.get_script()
+	if scene_script == null:
+		if print_errors:
+			push_error(
+					"[NEXUS FORGE] Localization preview scene \"", path, " has no script attatched")
+		instance.free()
+		return false
+	
+	var errors: Array[String] = []
+	var static_methods: Array[Dictionary] = scene_script.get_script_method_list()
+	var static_signals: Array[Dictionary] = scene_script.get_script_signal_list()
+	var has_d_txt: bool = false
+	var has_c_txt: bool = false
+	var has_set_d: bool = false
+	var has_set_c: bool = false
+	
+	for item_signal in static_signals:
+		if item_signal["name"] == "dialog_text_changed":
+			if item_signal["args"].size() == 1:
+				var arg: Dictionary = item_signal["args"][0]
+				has_d_txt = arg["type"] == TYPE_NIL or arg["type"] == TYPE_STRING
+		elif item_signal["name"] == "choice_text_changed":
+			if item_signal["args"].size() == 2:
+				var arg_1: Dictionary = item_signal["args"][0]
+				var arg_2: Dictionary = item_signal["args"][1]
+				
+				var arg_1_valid: bool = arg_1["type"] == TYPE_NIL or arg_1["type"] == TYPE_STRING
+				var arg_2_valid: bool = arg_2["type"] == TYPE_NIL or arg_2["type"] == TYPE_INT
+				
+				has_c_txt = arg_1_valid and arg_2_valid
+		
+		if has_d_txt and has_c_txt:
+			break
+	
+	for method in static_methods:
+		if method["name"] == "set_choices":
+			if not method["args"].is_empty():
+				var arg: Dictionary = method["args"][0]
+				var extra_valid: bool = true
+				
+				if 1 < method["args"].size():
+					var default_size: int = method["default_args"].size()
+					extra_valid = method["args"].size() - 1 <= default_size
+				
+				if arg["type"] == TYPE_NIL:
+					has_set_c = extra_valid
+				elif arg["type"] == TYPE_ARRAY:
+					has_set_c = extra_valid and ( arg["hint_string"].is_empty() or arg["hint_string"] == "String" )
+		elif method["name"] == "set_dialog":
+			if not method["args"].is_empty():
+				var arg: Dictionary = method["args"][0]
+				var extra_valid: bool = true
+				
+				if 1 < method["args"].size():
+					var default_size: int = method["default_args"].size()
+					extra_valid = method["args"].size() - 1 <= default_size
+				
+				has_set_d = extra_valid and ( arg["type"] == TYPE_NIL or arg["type"] == TYPE_STRING )
+		
+		if has_set_c and has_set_d:
+			break
+	
+	if not has_d_txt:
+		errors.append("Scene has no valid \"dialog_text_changed\" signal")
+	if not has_c_txt:
+		errors.append("Scene has no valid \"choice_text_changed\" signal")
+	if not has_set_d:
+		errors.append("Scene has no valid \"set_dialog\" method")
+	if not has_set_c:
+		errors.append("Scene has no valid \"set_choices\" method")
+	
+	if not errors.is_empty() and print_errors:
+		push_error(
+			"[NEXUS FORGE] Localization preview scene \"", path, " has errors: ", ", ".join(errors))
+	
+	instance.free()
+	return has_d_txt and has_c_txt and has_set_c and has_set_d
+
+
 func verify_project_settings() -> void:
 	var setting_order: Array[String] = []
 	setting_order.assign(SETTINGS_PATHS.keys())
@@ -441,7 +546,15 @@ func verify_project_settings() -> void:
 				ProjectSettings.set_setting(
 						SETTINGS_PATHS[tool_id]["setting_path"],
 						", ".join(PackedStringArray(valid_locales.keys())))
+		elif tool_id == "discourse_custom_dialog_debug_scene":
+			var path: String = ProjectSettings.get_setting(SETTINGS_PATHS[tool_id]["setting_path"], "")
+			if not path.is_empty() and not FileAccess.file_exists(path):
+				push_error(
+						"[NEXUS FORGE] Custom debug scene \"" + path + "\" was not found.")
+		elif tool_id == "discourse_localization_preview_scene":
+			is_preview_scene_valid()
 			
+		
 		ProjectSettings.set_initial_value(
 				SETTINGS_PATHS[tool_id]["setting_path"],
 				SETTINGS_PATHS[tool_id]["default_value"] if tool_id != "discourse_base_language" else OS.get_locale_language())

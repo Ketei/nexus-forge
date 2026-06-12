@@ -140,7 +140,7 @@ func get_unsaved_files() -> Array[Dictionary]:
 	for item in get_root().get_children():
 		if item.get_metadata(0)["save_required"]:
 			var metadata: Dictionary = item.get_metadata(0)
-			files.append({"resource": metadata["resource"], "structure": metadata["structure"]})#item.get_metadata(0)["resource"])
+			files.append({"resource": metadata["resource"], "structure": metadata["structure"]})
 	return files
 
 
