@@ -2581,12 +2581,12 @@ func _on_open_code_editor_graph_request(target: Control, initial_text: String) -
 	if result[0]:
 		var notify_change: bool = false
 		if target is LineEdit:
-			var clean_text: String = "".replace("\n", " ").strip_edges()
-			if target.text != clean_text:
+			var clean_text: String = result[1].replace("\n", " ").strip_edges()
+			if initial_text != clean_text:
 				notify_change = true
-				target.text = result[1]
+				target.text = clean_text
 		elif target is TextEdit:
-			if target.text != result[1]:
+			if initial_text != result[1]:
 				notify_change = true
 				target.text = result[1]
 		

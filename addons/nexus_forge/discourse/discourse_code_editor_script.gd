@@ -27,6 +27,18 @@ func _ready() -> void:
 	panel.add_theme_stylebox_override(&"panel", style)
 
 
+func _input(event: InputEvent) -> void:
+	if event is not InputEventKey:
+		return
+	
+	if event.echo or not event.pressed:
+		return
+	
+	if event.keycode == KEY_ENTER and event.ctrl_pressed:
+		_on_confirmed.call_deferred()
+		get_viewport().set_input_as_handled()
+
+
 func connect_signals() -> void:
 	text_code_edit.clear_string_delimiters()
 	debounce_timer.timeout.connect(_on_debounce_timeout)
