@@ -72,65 +72,52 @@ func check_for_code_completion_on_caret() -> void:
 	var current_syntax: String = line_text.substr(open_brace_idx)
 	
 	if current_syntax.begins_with("{!"):
-		if methods.is_empty():
-			return
-		var clean_syntax: String = current_syntax.substr(2).strip_edges(false)
-		var new_sort: Array[String] = methods.duplicate()
-		new_sort.sort_custom(
-			func (a:String,b:String):
-				var dist_a: float = StringUtils.levenshtein_distance(a, clean_syntax)
-				var dist_b: float = StringUtils.levenshtein_distance(b, clean_syntax)
-				return dist_a < dist_b)
+		var inner_text: String = current_syntax.substr(2)
+		var last_pipe_idx: int = inner_text.rfind("|")
 		
-		for method in new_sort:
-			text_code_edit.add_code_completion_option(CodeEdit.KIND_FUNCTION, method, method)
-		text_code_edit.update_code_completion_options(true)
+		if last_pipe_idx != -1:
+			var active_arg: String = inner_text.substr(last_pipe_idx + 1)
+			
+			if active_arg.begins_with("!"):
+				var clean_syntax: String = active_arg.substr(1).strip_edges(false)
+				sort_and_set_completion_options(clean_syntax, methods)
+			elif active_arg.begins_with("$"):
+				var clean_syntax: String = active_arg.substr(1).strip_edges(false)
+				if signal_variables:
+					variable_called.emit(clean_syntax)
+				else:
+					sort_and_set_completion_options(clean_syntax, variables)
+		else:
+			var clean_syntax: String = current_syntax.substr(2).strip_edges(false)
+			sort_and_set_completion_options(clean_syntax, methods)
 	elif current_syntax.begins_with("{$"):
 		if signal_variables:
 			variable_called.emit(current_syntax.substr(2))
-			return
 		else:
-			if variables.is_empty():
-				return
-		var clean_syntax: String = current_syntax.substr(2).strip_edges(false)
-		var new_sort: Array[String] = variables.duplicate()
-		new_sort.sort_custom(
-			func (a:String,b:String):
-				var dist_a: float = StringUtils.levenshtein_distance(a, clean_syntax)
-				var dist_b: float = StringUtils.levenshtein_distance(b, clean_syntax)
-				return dist_a < dist_b)
-		
-		for var_path in new_sort:
-			text_code_edit.add_code_completion_option(CodeEdit.KIND_FUNCTION, var_path, var_path)
-		text_code_edit.update_code_completion_options(true)
+			var clean_syntax: String = current_syntax.substr(2).strip_edges(false)
+			sort_and_set_completion_options(clean_syntax, variables)
 	elif current_syntax.begins_with("{&"):
-		if phrase_keys.is_empty():
-			return
 		var clean_syntax: String = current_syntax.substr(2).strip_edges(false)
-		var new_sort: Array[String] = phrase_keys.duplicate()
-		new_sort.sort_custom(
-			func (a:String,b:String):
-				var dist_a: float = StringUtils.levenshtein_distance(a, clean_syntax)
-				var dist_b: float = StringUtils.levenshtein_distance(b, clean_syntax)
-				return dist_a < dist_b)
-		
-		for method in new_sort:
-			text_code_edit.add_code_completion_option(CodeEdit.KIND_FUNCTION, method, method)
-		text_code_edit.update_code_completion_options(true)
+		sort_and_set_completion_options(clean_syntax, phrase_keys)
 	elif current_syntax.begins_with("{"):
-		if plain_formats.is_empty():
-			return
 		var clean_syntax: String = current_syntax.substr(1).strip_edges(false)
-		var new_sort: Array[String] = plain_formats.duplicate()
-		new_sort.sort_custom(
-			func (a:String,b:String):
-				var dist_a: float = StringUtils.levenshtein_distance(a, clean_syntax)
-				var dist_b: float = StringUtils.levenshtein_distance(b, clean_syntax)
-				return dist_a < dist_b)
-		
-		for format in new_sort:
-			text_code_edit.add_code_completion_option(CodeEdit.KIND_FUNCTION, format, format)
-		text_code_edit.update_code_completion_options(true)
+		sort_and_set_completion_options(clean_syntax, plain_formats)
+
+
+func sort_and_set_completion_options(clean_syntax: String, options: Array[String]) -> void:
+	if options.is_empty():
+		return
+	
+	var new_sort: Array[String] = options.duplicate()
+	new_sort.sort_custom(
+		func (a:String,b:String):
+			var dist_a: float = StringUtils.levenshtein_distance(a, clean_syntax)
+			var dist_b: float = StringUtils.levenshtein_distance(b, clean_syntax)
+			return dist_a < dist_b)
+	
+	for var_path in new_sort:
+		text_code_edit.add_code_completion_option(CodeEdit.KIND_FUNCTION, var_path, var_path)
+	text_code_edit.update_code_completion_options(true)
 
 
 func display_completion_options_variables(variables: Array[Dictionary]) -> void:

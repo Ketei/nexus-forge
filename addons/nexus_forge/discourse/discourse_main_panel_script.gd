@@ -688,6 +688,8 @@ func has_locale(locale: String) -> bool:
 
 func clear_locales(clear_main: bool = true) -> void:
 	locale_popup.clear(true)
+	phrases_lang_menu.clear()
+	
 	if not clear_main:
 		add_locale(base_language)
 	
@@ -2045,7 +2047,7 @@ func _on_discourse_item_renamed(uuid: StringName, new_name: String) -> void:
 
 #endregion
 
-func display_conversation(conversation: EditorDiscourseDialog) -> bool:
+func display_conversation(conversation: EditorDiscourseDialog, with_locale: String = current_locale) -> bool:
 	if conversation == null:
 		discourse_graph_edit.clear_dialog_nodes()
 		return false
@@ -2073,7 +2075,7 @@ func display_conversation(conversation: EditorDiscourseDialog) -> bool:
 	
 	for node_stnm_uuid:StringName in conversation.get_node_uuids():
 		var node_uuid: String = String(node_stnm_uuid)
-		var data: Dictionary = conversation.get_node_data(node_stnm_uuid, current_locale)
+		var data: Dictionary = conversation.get_node_data(node_stnm_uuid, with_locale)
 		var metadata: Dictionary = data["metadata"]
 		var d_node: DiscourseGraphNode = discourse_graph_edit.spawn_node(data["type"], node_stnm_uuid, data)
 		
@@ -2176,7 +2178,7 @@ func open_conversation(conversation: EditorDiscourseDialog) -> bool:
 	$LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer.visible = false
 	
 	# This fills the discourse_nodes_tree with items
-	var reload_needed: bool = display_conversation(conversation) # Load conversation
+	var reload_needed: bool = display_conversation(conversation, base_language) # Load conversation
 	
 	# We put them in a dictionary for sorting.
 	if not conversation.node_structure.is_empty():
@@ -2195,15 +2197,10 @@ func open_conversation(conversation: EditorDiscourseDialog) -> bool:
 	discourse_nodes_tree.set_collapsed_folders(
 			conversation.collapsed_state)
 	
-	var graphs_locale: String = current_locale
-	var side_locale: String = languages_tree.get_active_locale()
-	
 	for localized_key in conversation.format_strings.keys():
-		var localized_text: String = ""
-		if not current_locale.is_empty():
-			localized_text = conversation.get_format_string(
-					localized_key,
-					current_locale)
+		var localized_text: String = conversation.get_format_string(
+				localized_key,
+				base_language)
 		add_new_phrase(localized_key, localized_text, false)
 	
 	for language in conversation.locale_map.keys():
@@ -2220,8 +2217,10 @@ func open_conversation(conversation: EditorDiscourseDialog) -> bool:
 	
 	if locale_popup.item_count == 0:
 		add_locale(base_language)
+	
 	current_locale = base_language
 	set_graph_locale_tip(base_language)
+	set_phrase_button_locale(base_language)
 	
 	new_text_button.disabled = current_locale.is_empty()
 	
@@ -2548,7 +2547,10 @@ func _on_open_discourse_text_editor_pressed(target: LineEdit) -> void:
 	var result = await text_editor.action_finished
 	
 	if result[0]:
-		target.text = result[1]
+		var clean_text: String = result[1].replace("\n", " ").strip_edges()
+		if target.text != clean_text:
+			target.text = clean_text
+			_on_conversation_changed()
 	
 	text_editor.queue_free()
 	text_editor = null
@@ -2579,11 +2581,14 @@ func _on_open_code_editor_graph_request(target: Control, initial_text: String) -
 	if result[0]:
 		var notify_change: bool = false
 		if target is LineEdit:
-			notify_change = target.text != result[1]
-			target.text = result[1]
+			var clean_text: String = "".replace("\n", " ").strip_edges()
+			if target.text != clean_text:
+				notify_change = true
+				target.text = result[1]
 		elif target is TextEdit:
-			notify_change = target.text != result[1]
-			target.text = result[1]
+			if target.text != result[1]:
+				notify_change = true
+				target.text = result[1]
 		
 		if notify_change:
 			_on_conversation_changed()
@@ -2770,6 +2775,115 @@ func add_new_phrase(key: String = "", text: String = "", unsaved: bool = true) -
 	var key_edit: LineEdit = new_key.get_child(1)
 	var text_edit_btn: Button = new_text.get_child(1)
 	
+	var text_menu: PopupMenu = text_edit.get_menu()
+	var submenus: Dictionary[int, PopupMenu] = {}
+	
+	for idx in range(text_menu.item_count):
+		var submenu: PopupMenu = text_menu.get_item_submenu_node(idx)
+		if submenu != null:
+			submenus[text_menu.get_item_id(idx)] = submenu
+	
+	text_menu.clear(false)
+	
+	const MENU_MAX: int = LineEdit.MenuItems.MENU_MAX
+	
+	text_menu.add_icon_item(get_theme_icon("DistractionFree", "EditorIcons"), "Open Editor", MENU_MAX + 1)
+	text_menu.add_separator()
+	text_menu.add_item("Emoji & Symbols", LineEdit.MenuItems.MENU_EMOJI_AND_SYMBOL)
+	text_menu.add_separator()
+	text_menu.add_item("Cut", LineEdit.MenuItems.MENU_CUT)
+	text_menu.add_item("Copy", LineEdit.MenuItems.MENU_COPY)
+	text_menu.add_item("Paste", LineEdit.MenuItems.MENU_PASTE)
+	text_menu.add_separator()
+	text_menu.add_item("Select All", LineEdit.MenuItems.MENU_SELECT_ALL)
+	text_menu.add_item("Clear", LineEdit.MenuItems.MENU_CLEAR)
+	text_menu.add_separator()
+	text_menu.add_item("Undo", LineEdit.MenuItems.MENU_UNDO)
+	text_menu.add_item("Redo", LineEdit.MenuItems.MENU_REDO)
+	text_menu.add_separator()
+	if submenus.has(LineEdit.MenuItems.MENU_SUBMENU_TEXT_DIR):
+		text_menu.add_submenu_node_item("Text Writing Direction", submenus[LineEdit.MenuItems.MENU_SUBMENU_TEXT_DIR],  LineEdit.MenuItems.MENU_SUBMENU_TEXT_DIR)
+		text_menu.add_separator()
+	text_menu.add_check_item("Display Control Characters", LineEdit.MenuItems.MENU_DISPLAY_UCC)
+	if submenus.has(LineEdit.MenuItems.MENU_SUBMENU_INSERT_UCC):
+		text_menu.add_submenu_node_item("Insert Control Character", submenus[LineEdit.MenuItems.MENU_SUBMENU_INSERT_UCC], LineEdit.MenuItems.MENU_SUBMENU_INSERT_UCC)
+	
+	var cut_shortcut: Shortcut = Shortcut.new()
+	var copy_shortcut: Shortcut = Shortcut.new()
+	var paste_shortcut: Shortcut = Shortcut.new()
+	var select_all: Shortcut = Shortcut.new()
+	var undo_shortcut: Shortcut = Shortcut.new()
+	var redo_shortcut: Shortcut = Shortcut.new()
+	
+	var cut_event: InputEventKey = InputEventKey.new()
+	var copy_event: InputEventKey = InputEventKey.new()
+	var paste_event: InputEventKey = InputEventKey.new()
+	var select_all_event: InputEventKey = InputEventKey.new()
+	var undo_event: InputEventKey = InputEventKey.new()
+	var redo_event: InputEventKey = InputEventKey.new()
+	
+	cut_event.keycode = KEY_X
+	cut_event.ctrl_pressed = true
+	cut_event.device = -1
+	
+	copy_event.keycode = KEY_C
+	copy_event.ctrl_pressed = true
+	copy_event.device = -1
+	
+	paste_event.keycode = KEY_V
+	paste_event.ctrl_pressed = true
+	paste_event.device = -1
+	
+	select_all_event.keycode = KEY_A
+	select_all_event.ctrl_pressed = true
+	select_all_event.device = -1
+	
+	undo_event.keycode = KEY_Z
+	undo_event.ctrl_pressed = true
+	undo_event.device = -1
+	
+	redo_event.keycode = KEY_Z
+	redo_event.ctrl_pressed = true
+	redo_event.shift_pressed = true
+	redo_event.device = -1
+	
+	cut_shortcut.events = [cut_event]
+	copy_shortcut.events = [copy_event]
+	paste_shortcut.events = [paste_event]
+	select_all.events = [select_all_event]
+	undo_shortcut.events = [undo_event]
+	redo_shortcut.events = [redo_event]
+	
+	text_menu.set_item_shortcut(
+			text_menu.get_item_index(
+					LineEdit.MenuItems.MENU_CUT),
+			cut_shortcut)
+	
+	text_menu.set_item_shortcut(
+			text_menu.get_item_index(
+					LineEdit.MenuItems.MENU_COPY),
+			copy_shortcut)
+	
+	text_menu.set_item_shortcut(
+			text_menu.get_item_index(
+					LineEdit.MenuItems.MENU_PASTE),
+			paste_shortcut)
+	
+	text_menu.set_item_shortcut(
+			text_menu.get_item_index(
+					LineEdit.MenuItems.MENU_SELECT_ALL),
+			select_all)
+	
+	text_menu.set_item_shortcut(
+			text_menu.get_item_index(
+					LineEdit.MenuItems.MENU_UNDO),
+			undo_shortcut)
+	
+	text_menu.set_item_shortcut(
+			text_menu.get_item_index(
+					LineEdit.MenuItems.MENU_REDO),
+			redo_shortcut)
+	
 	if 0 < key_container.get_child_count() - 1:
 		var btn: Button = text_container.get_child(-2).get_child(1)
 		btn.focus_next = key_edit.get_path()
@@ -2789,7 +2903,19 @@ func add_new_phrase(key: String = "", text: String = "", unsaved: bool = true) -
 	
 	text_edit_btn.pressed.connect(_on_edit_cases_pressed.bind(text_edit, key_edit, text_edit_btn))
 	
+	text_menu.id_pressed.connect(_on_phrase_menu_id_pressed.bind(text_edit))
+	
 	return key_edit.get_meta(&"phrase_key")
+
+
+func _on_phrase_menu_id_pressed(id: int, line: LineEdit) -> void:
+	if id <= LineEdit.MenuItems.MENU_MAX:
+		return
+	
+	const MENU_MAX: int = LineEdit.MenuItems.MENU_MAX
+	
+	if id == MENU_MAX + 1:
+		_on_open_code_editor_graph_request(line, line.text)
 
 
 func add_new_case(case: String = "", case_text: String = "") -> void:
