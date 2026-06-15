@@ -13,29 +13,25 @@ const SETTINGS_PATHS: Dictionary[String, Dictionary] = {
 		"default_value": true,
 		"type": TYPE_BOOL,
 		"hint": PROPERTY_HINT_NONE,
-		"hint_string": "",
-	},
+		"hint_string": ""},
 	"characters_enabled": {
 		"setting_path": "nexus_forge/enabled_modules/characters_enabled",
 		"default_value": true,
 		"type": TYPE_BOOL,
 		"hint": PROPERTY_HINT_NONE,
-		"hint_string": ""
-	},
+		"hint_string": ""},
 	"species_enabled": {
 		"setting_path": "nexus_forge/enabled_modules/species_enabled",
 		"default_value": true,
 		"type": TYPE_BOOL,
 		"hint": PROPERTY_HINT_NONE,
-		"hint_string": ""
-	},
+		"hint_string": ""},
 	"talents_enabled": {
 		"setting_path": "nexus_forge/enabled_modules/talents_enabled",
 		"default_value": true,
 		"type": TYPE_BOOL,
 		"hint": PROPERTY_HINT_NONE,
-		"hint_string": ""
-	},
+		"hint_string": ""},
 	"items_enabled": {
 		"setting_path": "nexus_forge/enabled_modules/items_enabled",
 		"default_value": true,
@@ -47,15 +43,13 @@ const SETTINGS_PATHS: Dictionary[String, Dictionary] = {
 		"default_value": true,
 		"type": TYPE_BOOL,
 		"hint": PROPERTY_HINT_NONE,
-		"hint_string": ""
-	},
+		"hint_string": ""},
 	"quests_enabled": {
 		"setting_path": "nexus_forge/enabled_modules/quests_enabled",
 		"default_value": true,
 		"type": TYPE_BOOL,
 		"hint": PROPERTY_HINT_NONE,
-		"hint_string": ""
-	},
+		"hint_string": ""},
 	"currencies_enabled": {
 		"setting_path": "nexus_forge/enabled_modules/currencies_enabled",
 		"default_value": true,
@@ -135,6 +129,13 @@ const SETTINGS_PATHS: Dictionary[String, Dictionary] = {
 		"hint": PROPERTY_HINT_NONE,
 		"hint_string": "",
 		"restart_required": false},
+	"discourse_sync_locale": {
+		"setting_path": "nexus_forge/settings/update_discourse_locale_with_godot",
+		"default_value": true,
+		"type": TYPE_BOOL,
+		"hint": PROPERTY_HINT_NONE,
+		"hint_string": "",
+		"restart_required": false},
 	"discourse": {
 		"setting_path": "nexus_forge/export/localization_directory",
 		"default_value": "res://localization/",
@@ -184,8 +185,7 @@ const SETTINGS_PATHS: Dictionary[String, Dictionary] = {
 		"default_value": "",
 		"type": TYPE_STRING,
 		"hint": PROPERTY_HINT_FILE,
-		"hint_string": "*.tres"
-	}
+		"hint_string": "*.tres"}
 }
 
 var editor_view: Control = null

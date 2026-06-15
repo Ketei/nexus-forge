@@ -51,7 +51,7 @@ func _ready() -> void:
 	clear_data_btn.pressed.connect(_on_clear_data_pressed)
 	clear_events_btn.pressed.connect(_on_clear_events_pressed)
 	NexusForge.Discourse.dialog_reached.connect(_on_dialog_reached)
-	NexusForge.Discourse.options_reached.connect(_on_options_reached)
+	NexusForge.Discourse.choices_reached.connect(_on_options_reached)
 	NexusForge.Discourse.dialog_started.connect(_on_dialog_started)
 	NexusForge.Discourse.dialog_paused.connect(_on_dialog_paused)
 	NexusForge.Discourse.dialog_finished.connect(_on_dialog_finished)

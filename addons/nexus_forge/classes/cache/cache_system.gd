@@ -1,3 +1,4 @@
+@icon("res://addons/nexus_forge/icons/cache_icon.svg")
 class_name Cache
 extends RefCounted
 ## A basic implemetation of a Least Recently Used Cache (LRU Cache)
@@ -7,6 +8,13 @@ extends RefCounted
 ## An LRU has a defined size, and will hold references until the cache is full
 ## after that, adding a new item will release the least recently accessed item
 ## from the cache, freeing one slot and filling it with the newly cached item.
+## [br]
+## [br]
+## [b]IMPORTANT:[/b] While [Cache] will automatically clean itself
+## when its reference counter drops to 0 it is highly recommended to
+## manually call [method Cache.clear] as soon as you no longer need the [Cache].
+## This ensures that it clears all its references and allows
+## the memory to be safely released.
 
 
 ## Max size of the cache.
@@ -52,20 +60,28 @@ func _remove_oldest() -> void:
 
 
 func _move_to_newest(link: CacheLink) -> void:
-	if link == _oldest_used:
-		link.newer_link.older_link = null
-		_newest_used.newer_link = link
-		link.older_link = _newest_used # Newest used is now the second.
-		_oldest_used = link.newer_link # Update oldest
-		_newest_used = link # Update newest
-		link.newer_link = null # link is the newest_sed, so there is no newest
-	elif link != _newest_used:
+	if link == _newest_used:
+		return
+	
+	if link.older_link != null:
 		link.older_link.newer_link = link.newer_link
+	
+	if link.newer_link != null:
 		link.newer_link.older_link = link.older_link
+	
+	if link == _oldest_used:
+		_oldest_used = link.newer_link
+	
+	link.older_link = _newest_used
+	link.newer_link = null
+	
+	if _newest_used != null:
 		_newest_used.newer_link = link
-		link.newer_link = null
-		link.older_link = _newest_used
-		_newest_used = link
+	
+	_newest_used = link
+	
+	if _oldest_used == null:
+		_oldest_used = link
 
 
 func _add_to_newest(link: CacheLink) -> void:
@@ -85,6 +101,11 @@ func _add_to_newest(link: CacheLink) -> void:
 ## If the item was already cached it moves it to the front of the
 ## cache (newest used).
 func cache_data(key: String, data: Variant) -> void:
+	if data == self:
+		push_warning(
+			"[Cache] Attempted to cache a Cache within itself. Operation ignored to prevent memory leaks from cyclical referencing.")
+		return
+	
 	if _cache_map.has(key):
 		var link: CacheLink = _cache_map[key]
 		
@@ -132,3 +153,8 @@ func clear() -> void:
 	_cache_map.clear()
 	_newest_used = null
 	_oldest_used = null
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE:
+		clear()

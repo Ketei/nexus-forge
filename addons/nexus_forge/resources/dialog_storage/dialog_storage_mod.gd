@@ -3,8 +3,7 @@ class_name ModDiscourseDialog
 ## A resource containing a new modded conversation.
 ##
 ## This resource only contains the "logic" part of a conversation to be parsed
-## by Discourse on project export. This file is intended for dialogs that are NOT
-## in the base game and is intended to add new conversations to the game.
+## by Discourse on project export.
 
 ## [b]REQUIRED[/b][br]
 ## An ID for the dialog. Giving this a distinct ID that can ensure that

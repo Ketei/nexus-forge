@@ -44,19 +44,20 @@ func set_dialog_id(id: StringName) -> void:
 	if _dialog_resource.node_data.has(id):
 		_next_uuid = id
 	else:
-		_next_uuid = get_uuid_from_id(id)
+		_next_uuid = _get_uuid_from_id(id)
 
 
-func get_uuid_from_id(id: StringName) -> StringName:
+func _get_uuid_from_id(id: StringName) -> StringName:
 	for entry in _dialog_resource.node_data.keys():
 		if _dialog_resource.node_data[entry]["name"] == id:
 			return entry
 	return &""
 
 
-func _process_logic(uuid: StringName) -> StringName:
+func _process_logic(uuid: StringName) -> Dictionary[String, StringName]:
+	var target: Dictionary[String, StringName] = {"current": &"", "next": &""}
 	if uuid.is_empty():
-		return &""
+		return target
 	
 	var data: Dictionary = _dialog_resource.get_node_data(uuid, locale)
 	var metadata: Dictionary = data["metadata"]
@@ -120,7 +121,11 @@ func _process_logic(uuid: StringName) -> StringName:
 					"display_name": display_name,
 					"portrait_id": portrait_id,
 					"metadata": dialog_metadata})
-			return data["output_connections"]["next_node"]["target_node_uuid"]
+			
+			target["current"] = uuid
+			target["next"] = data["output_connections"]["next_node"]["target_node_uuid"]
+			
+			return target
 		NodeTypes.OPTIONS:
 			var available_options: Array[Dictionary] = []
 			var option_idx: int = -1
@@ -173,8 +178,12 @@ func _process_logic(uuid: StringName) -> StringName:
 						"target": option["output_connections"]["next_node"]["target_node_uuid"],
 						"metadata": option_metadata})
 			
-			options_reached.emit(available_options)
-			return uuid
+			choices_reached.emit(available_options)
+			
+			target["current"] = uuid
+			target["next"] = uuid
+			
+			return target
 		NodeTypes.BRANCH:
 			var use_a: bool = _get_bool_result(data["input_connections"]["path_direction"]["target_node_uuid"])
 			if use_a:
@@ -238,7 +247,9 @@ func _process_logic(uuid: StringName) -> StringName:
 			return _process_logic(data["output_connections"]["default"]["target_node_uuid"])
 		NodeTypes.PAUSE:
 			dialog_paused.emit()
-			return data["output_connections"]["next_node"]["target_node_uuid"]
+			target["current"] = uuid
+			target["next"] = data["output_connections"]["next_node"]["target_node_uuid"]
+			return target
 		NodeTypes.RANDOM:
 			var total_weight: int = 0
 			var choices: Array[Dictionary] = []
@@ -253,7 +264,7 @@ func _process_logic(uuid: StringName) -> StringName:
 				total_weight += weight
 			
 			if choices.is_empty():
-				return &""
+				return target
 			
 			choices.sort_custom(func(a, b): return a["weight"] > b["weight"])
 			var random_select: int = randi_range(1, total_weight)
@@ -269,11 +280,11 @@ func _process_logic(uuid: StringName) -> StringName:
 		NodeTypes.ANCHOR:
 			return _process_logic(data["output_connections"]["next_node"]["target_node_uuid"])
 		NodeTypes.DIALOG_END:
-			return &""
+			return target
 		NodeTypes.DIALOG_MERGE:
 			return _process_logic(data["output_connections"]["next_node"]["target_node_uuid"])
 		_:
-			return &""
+			return target
 
 
 func _get_data(from_uuid: StringName, fallback = null) -> Variant:
@@ -498,11 +509,7 @@ func _parse_dialog(dialog_id: String, dialog: String) -> String:
 	return parsed.get_dialog()
 
 
-func _locale_set(new_language: String, new_region: String = "base") -> void:
-	return
-
-
-func _load_locale(_locale_code: String) -> void:
+func _load_locale_to_active_dialog(_locale_code: String) -> void:
 	return
 
 

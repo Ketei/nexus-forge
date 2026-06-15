@@ -132,3 +132,17 @@ func _ready() -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST:
 		Discourse._clear_cache() # Clearing discourse cache to prevent leaked resources.
+	elif what == NOTIFICATION_TRANSLATION_CHANGED:
+		if not ProjectSettings.get_setting(
+				EditorNFPlugin.get_project_settings_path("discourse_sync_locale"),
+				true):
+			return
+		
+		if not is_node_ready():
+			await ready
+		
+		if Discourse == null:
+			return
+		
+		Discourse.locale = TranslationServer.get_locale()
+		Discourse.refresh()
