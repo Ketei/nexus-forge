@@ -245,7 +245,6 @@ theme_override_styles/normal = SubResource("StyleBoxEmpty_qsnsk")
 disabled = true
 flat = true
 icon_alignment = 1
-expand_icon = true
 
 [node name="OpenBtn" type="Button" parent="MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox" unique_id=1421994304]
 custom_minimum_size = Vector2(32, 32)
@@ -255,7 +254,6 @@ theme_override_constants/icon_max_width = 24
 theme_override_styles/normal = SubResource("StyleBoxEmpty_qsnsk")
 flat = true
 icon_alignment = 1
-expand_icon = true
 
 [node name="VSeparator2" type="VSeparator" parent="MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox" unique_id=1591335461]
 layout_mode = 2
@@ -270,7 +268,6 @@ toggle_mode = true
 button_pressed = true
 flat = true
 icon_alignment = 1
-expand_icon = true
 
 [node name="ToggleSnapBtn" type="Button" parent="MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox" unique_id=683456051]
 custom_minimum_size = Vector2(32, 32)
@@ -282,7 +279,6 @@ toggle_mode = true
 button_pressed = true
 flat = true
 icon_alignment = 1
-expand_icon = true
 
 [node name="SnapDistanceSpnBx" type="SpinBox" parent="MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox" unique_id=1719610910]
 layout_mode = 2
@@ -305,7 +301,6 @@ toggle_mode = true
 button_pressed = true
 flat = true
 icon_alignment = 1
-expand_icon = true
 
 [node name="SortNodesBtn" type="Button" parent="MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox" unique_id=1984543918]
 custom_minimum_size = Vector2(32, 32)
@@ -315,7 +310,6 @@ theme_override_constants/icon_max_width = 24
 theme_override_styles/normal = SubResource("StyleBoxEmpty_qsnsk")
 flat = true
 icon_alignment = 1
-expand_icon = true
 
 [node name="VSeparator4" type="VSeparator" parent="MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox" unique_id=1494792306]
 layout_mode = 2
@@ -329,7 +323,6 @@ theme_override_styles/normal = SubResource("StyleBoxEmpty_qsnsk")
 disabled = true
 flat = true
 icon_alignment = 1
-expand_icon = true
 
 [node name="UncollapseRightBtn" type="Button" parent="MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox" unique_id=1280522074]
 custom_minimum_size = Vector2(32, 32)

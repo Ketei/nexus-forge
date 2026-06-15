@@ -89,6 +89,7 @@ Features that are planned to be implemented in the future:
 - [x] **Depot(Items):** Allow for name & description to be formatted using Blackboard's variables on settings.
 - [x] **Odyssey(Quests):** Allow for title & description to be formatted using Blackboard's variables on settings.
 - [x] **Kindred(Species):** Hybridization system.
+- [x] **Odyssey(Quests):** Modding API.
 - [ ] **Core:** Fix all the critical bugs and stabilize the API, making the plugin usable on projects.
 - [ ] Release Beta.
 
