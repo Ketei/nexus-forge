@@ -8,7 +8,7 @@ var _updating_choices: bool = false
 func _post_init() -> void:
 	set_node_id(&"Choices")
 	title = "Choices"
-	node_type = DialogueNodeType.OPTIONS
+	node_type = DialogueNodeType.CHOICES
 	parent_mode = PortMode.INPUT
 	parent_port = 0
 	size = Vector2(220.0, 124.0)

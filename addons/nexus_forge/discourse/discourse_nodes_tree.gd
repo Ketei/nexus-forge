@@ -22,7 +22,7 @@ const RESOURCE_COLOR: Color = Color(0.988, 0.498, 0.498)
 const DIALOG: Array[DialogParser.NodeTypes] = [
 		DialogParser.NodeTypes.ENTRY,
 		DialogParser.NodeTypes.DIALOG,
-		DialogParser.NodeTypes.OPTIONS,
+		DialogParser.NodeTypes.CHOICES,
 		DialogParser.NodeTypes.BRANCH,
 		DialogParser.NodeTypes.COMPARATION,
 		DialogParser.NodeTypes.EVENT,

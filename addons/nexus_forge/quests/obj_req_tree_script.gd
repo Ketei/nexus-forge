@@ -428,7 +428,7 @@ func set_data(flat_data: Dictionary[String, Dictionary]) -> void:
 	for full_path in flat_data.keys():
 		var item_data: Dictionary = flat_data[full_path]
 		
-		var segments: Array[String] = ArrayUtils.create_array_typed(TYPE_STRING, Array(full_path.split("/")))
+		var segments: Array[String] = ArrayUtils.create_typed(TYPE_STRING, Array(full_path.split("/")))
 		
 		var item_name: String = segments.pop_back()
 		

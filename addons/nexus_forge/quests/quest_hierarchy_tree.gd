@@ -371,7 +371,7 @@ func set_quest_structure(structure: Array[Dictionary]) -> void:
 	
 	for item in structure:
 		stage_ids.append(item["stage"])
-		objectives[item["stage"]] = ArrayUtils.create_array_typed(TYPE_STRING, item["objectives"].duplicate())
+		objectives[item["stage"]] = ArrayUtils.create_typed(TYPE_STRING, item["objectives"].duplicate())
 	
 	var stages: Array[TreeItem] = root.get_children()
 	var stage_count: int = stages.size()

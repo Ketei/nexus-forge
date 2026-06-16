@@ -131,9 +131,9 @@ func has_format_string(key: String, locale: String = "") -> bool:
 func get_format_string_formats(key: String, locale_code: String) -> Array[String]:
 	var lang_code: String = TranslationServer.standardize_locale(locale_code)
 	if DictUtils.has_nested_path(format_strings, [key, lang_code, "format"]):
-		return ArrayUtils.create_array_typed(TYPE_STRING, format_strings[key][lang_code]["format"].keys())
+		return ArrayUtils.create_typed(TYPE_STRING, format_strings[key][lang_code]["format"].keys())
 	else:
-		return ArrayUtils.create_array_typed(TYPE_STRING)
+		return ArrayUtils.create_typed(TYPE_STRING)
 
 
 ## Returns the format keys and the possible formats of a given key.
@@ -308,7 +308,7 @@ func get_node_data(node_uuid: StringName, locale: String = "") -> Dictionary:
 		NodeType.DIALOG:
 			metadata_merge = {
 				"dialog_text": get_text_entry(node_uuid, locale)}
-		NodeType.OPTIONS:
+		NodeType.CHOICES:
 			var options_translated: Array[String] = []
 			options_translated.assign(get_choices_entry(node_uuid, locale))
 			var target_size: int = base_data["metadata"]["choices"].size()
@@ -443,7 +443,7 @@ func register_node(node: DiscourseGraphNode, parent_frame: String = "") -> void:
 	
 	if node.node_type == NodeType.DIALOG:
 		data["metadata"].erase("dialog_text")
-	elif node.node_type == NodeType.OPTIONS:
+	elif node.node_type == NodeType.CHOICES:
 		for choice in data["metadata"]["choices"]:
 			choice.erase("text")
 	elif node.node_type == NodeType.LOCALIZED_TEXT:
@@ -590,7 +590,7 @@ func convert_for_release() -> DiscourseDialog:
 				data["dialog_settings"] = dialog_settings
 				data["text_source"] = StringName(node_data[node_id]["input_connections"]["dialog_text_source"]["target_node_uuid"])
 				data["next_node"] = target_finder.get_target(node_data[node_id]["output_connections"]["next_node"]["target_node_uuid"]) #get_target_lambda.call(dialog_nodes[node_id]["output_connections"]["next_node"]["target_node_uuid"])
-			NodeType.OPTIONS:
+			NodeType.CHOICES:
 				var options: Array[Dictionary] = []
 				for option:Dictionary in metadata["options"]:
 					var new_option: Dictionary[String, Variant] = {

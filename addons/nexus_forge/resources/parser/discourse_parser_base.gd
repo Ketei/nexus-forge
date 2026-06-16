@@ -23,7 +23,7 @@ signal choices_reached(options: Array[Dictionary])
 enum NodeTypes { 
 	ENTRY = 0, ## The entry for a conversation.
 	DIALOG = 1, ## A generic dialog node
-	OPTIONS = 2, ## A collection of dialog options.
+	CHOICES = 2, ## A collection of dialog options.
 	BRANCH = 3, ## A dialog split via if/else comparison.
 	CONDITION_SELECT = 4, ## An if-else statement that outputs a variable.
 	COMPARATION = 5, ## A direct comparation between 2 values.
@@ -109,7 +109,7 @@ var _dialog_edits: Dictionary = {
 			#"dialog_settings": {},
 			#"text_source": &"", # External key source for dialog
 			#"next_node": &""},
-		#NodeTypes.OPTIONS: {
+		#NodeTypes.CHOICES: {
 			#"node_type": null,
 			#"options": [
 				#{"next_node": "", "settings": {"available": &"", "locked": &"", "lock_hint": &""}},
@@ -403,7 +403,7 @@ func _can_compare(a, b) -> bool:
 # "next" uuid for processing
 func _process_logic(uuid: StringName) -> Dictionary[String, StringName]:
 	var target: Dictionary[String, StringName] = {"current": &"", "next": &""}
-	if uuid.is_empty():
+	if uuid.is_empty() or not _dialog_resource.node_logic.has(uuid):
 		return target
 	
 	var dialog_id: String = _path_to_id[_dialog_resource.resource_path]
@@ -450,7 +450,7 @@ func _process_logic(uuid: StringName) -> Dictionary[String, StringName]:
 			target["next"] = data["next_node"]
 			
 			return target
-		NodeTypes.OPTIONS:
+		NodeTypes.CHOICES:
 			var available_options: Array[Dictionary] = []
 			var localized_options: PackedStringArray = _dialog_resource._get_choices(dialog_id, uuid)#_get_choices_for(dialog_id, uuid)
 			var target_size: int = data["options"].size()
@@ -859,104 +859,13 @@ func advance() -> void:
 ## [b]Note:[/b] This only reprocesses the current node if it is a dialog
 ## or choices node and does not re-trigger previous nodes leading up to it.
 func refresh() -> void:
-	if _dialog_resource == null or _current_uuid.is_empty():
+	if _dialog_resource == null or _current_uuid.is_empty() or not _dialog_resource.node_logic.has(_current_uuid):
 		return
 	
 	var dialog_type: NodeTypes = _dialog_resource.node_logic[_current_uuid]["node_type"]
 	
-	if dialog_type == NodeTypes.DIALOG:
-		var data: Dictionary = _dialog_resource.node_logic[_current_uuid]
-		var dialog_id: String = _path_to_id[_dialog_resource.resource_path]
-		
-		var font: String = _get_data(data["dialog_settings"]["font_resource"], "")
-		var scene: String = _get_data(data["dialog_settings"]["dialog_scene"], "")
-		var speed: float = _get_data(data["dialog_settings"]["dialog_speed"], 0.0)
-		var display_name: String = _get_data(data["character_settings"]["display_name"], "")
-		var portrait_id: String = _get_data(data["character_settings"]["portrait_id"], "")
-		var metadata: Dictionary[String, Variant] = {}
-		
-		if DictUtils.has_nested_path(data, ["dialog_settings", "metadata"]):
-			for meta_key in data["dialog_settings"]["metadata"].keys():
-				metadata[meta_key] = _get_data(data["dialog_settings"]["metadata"][meta_key])
-		
-		if data["text_source"].is_empty():
-			dialog_reached.emit({
-				"dialog_text": _parse_dialog(String(_current_uuid), _dialog_resource._get_text(dialog_id, _current_uuid)),
-				"character_id": data["character_id"],
-				"persist": data["persist"],
-				"font": font,
-				"scene": scene,
-				"speed": speed,
-				"display_name": display_name,
-				"portrait_id": portrait_id,
-				"metadata": metadata})
-		else:
-			dialog_reached.emit({
-				"dialog_text": _parse_dialog(String(_current_uuid), _get_data(data["text_source"], "")),
-				"character_id": data["character_id"],
-				"persist": data["persist"],
-				"font": font,
-				"scene": scene,
-				"speed": speed,
-				"display_name": display_name,
-				"portrait_id": portrait_id,
-				"metadata": metadata})
-	elif dialog_type == NodeTypes.OPTIONS:
-		var data: Dictionary = _dialog_resource.node_logic[_current_uuid]
-		var dialog_id: String = _path_to_id[_dialog_resource.resource_path]
-		
-		var available_options: Array[Dictionary] = []
-		var localized_options: PackedStringArray = _dialog_resource._get_choices(dialog_id, _current_uuid)#_get_choices_for(dialog_id, uuid)
-		var target_size: int = data["options"].size()
-		
-		if localized_options.size() != target_size:
-			localized_options.resize(target_size)
-		
-		var idx: int = -1
-		var option_duuid: String = ""
-		for option:Dictionary in data["options"]:
-			idx += 1
-			option_duuid = String(_current_uuid) + "_" + str(idx)
-			
-			if option["settings"].is_empty():
-				option_duuid += "_unlocked"
-				available_options.append(
-					{
-						"unlocked": true,
-						"text": _parse_dialog(option_duuid, localized_options[idx]),
-						"target": option["next_node"],
-						"metadata": {}})
-			else:
-				var opt_settings: Dictionary = option["settings"]
-				var show: bool = _get_data(opt_settings["available"], true)
-			
-				if not show:
-					continue
-				var unlocked: bool = _get_data(opt_settings["unlocked"], true)
-				var text: String = localized_options[idx]
-				var metadata: Dictionary[String, Variant] = {}
-				
-				if opt_settings.has("metadata"):
-					for meta_key in opt_settings["metadata"].keys():
-						metadata[meta_key] = _get_data(opt_settings["metadata"][meta_key])
-				
-				if not unlocked:
-					var lock_hint: String = _get_data(opt_settings["lock_hint"], "")
-					if not lock_hint.is_empty():
-						text = lock_hint
-				
-				if unlocked:
-					option_duuid += "_unlocked"
-				else:
-					option_duuid += "_locked"
-				
-				available_options.append({
-					"unlocked": unlocked,
-					"text": _parse_dialog(option_duuid, text),
-					"target": option["next_node"],
-					"metadata": metadata})
-		
-		choices_reached.emit(available_options)
+	if dialog_type == NodeTypes.DIALOG or dialog_type == NodeTypes.CHOICES:
+		_process_logic(_current_uuid)
 
 
 ## Overrides the logic file. When a dialog data is loaded, the file provided in

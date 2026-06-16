@@ -92,3 +92,8 @@ static func set_nested_value(on: Dictionary, keys: Array, value, create_dictiona
 	current[keys[-1]] = value
 	
 	return true
+
+
+## Costructor for a dictionary with default parameters set.
+static func create_typed(key_type: int, value_type: int, base: Dictionary, key_class_name: StringName = &"", key_script: Variant = null, value_class_name: StringName = &"", value_script: Variant = null) -> Dictionary:
+	return Dictionary(base, key_type, key_class_name, key_script, value_type, value_class_name, value_script)

@@ -53,6 +53,9 @@ var _quest_logs: Dictionary = {
 }
 
 
+var _quest_modifiers: Dictionary[StringName, Dictionary] = {}
+
+
 ## Returns all the active quest data and the quest logs. Useful for creating save files.
 func get_quests_data() -> Dictionary:
 	var active_quests: Dictionary = {}
@@ -106,6 +109,11 @@ func set_quests_data(data: Dictionary) -> void:
 func start_quest(quest: Quest, auto_advance_stages: bool) -> void:
 	if _active_quests.has(quest.id) or not quest.has_stage(quest.entry_stage):
 		return
+	
+	if _quest_modifiers.has(quest.id):
+		for id in _quest_modifiers[quest.id]["order"]:
+			if _quest_modifiers[quest.id]["mods"][id]["callable"].is_valid():
+				_quest_modifiers[quest.id]["mods"][id]["callable"].call(quest)
 	
 	_active_quests[quest.id] = {
 		"quest": quest,
@@ -210,10 +218,15 @@ func objective_success_status(quest_id: StringName, stage_id: StringName, object
 ## objectives' progress through this method instead of directly to the QuestObjective
 ## object directly.
 func set_objective_progress(quest_id: StringName, stage_id: StringName, objective_id: StringName, requirement_id: String, progress_value) -> void:
-	if not _active_quests.has(quest_id) or not _active_quests[quest_id]["quest"].has_stage(stage_id) or not _active_quests[quest_id]["quest"].get_stage(stage_id).has_objective(objective_id) or not _active_quests[quest_id]["quest"].get_stage(stage_id).get_objective(objective_id).has_requirement(requirement_id):
+	if not DictUtils.has_nested_path(_active_quests, [quest_id, "quest"]):
 		return
 	
-	var quest_objective: QuestObjective = _active_quests[quest_id]["quest"].get_stage(stage_id).get_objective(objective_id)
+	var quest: Quest = _active_quests[quest_id]["quest"]
+	
+	if not quest.has_stage(stage_id) or not quest.get_stage(stage_id).has_objective(objective_id) or not quest.get_stage(stage_id).get_objective(objective_id).has_requirement(requirement_id):
+		return
+	
+	var quest_objective: QuestObjective = quest.get_stage(stage_id).get_objective(objective_id)
 	quest_objective.set_progress(requirement_id, progress_value)
 	
 	if quest_objective.is_objective_complete():
@@ -221,7 +234,7 @@ func set_objective_progress(quest_id: StringName, stage_id: StringName, objectiv
 		_log_objective_complete(quest_id, stage_id, quest_objective, true)
 		objective_completed.emit(quest_id, stage_id, objective_id, true)
 		
-		var quest_stage: QuestStage = _active_quests[quest_id]["quest"].get_stage(stage_id)
+		var quest_stage: QuestStage = quest.get_stage(stage_id)
 		
 		if not _active_quests[quest_id]["auto_advance_stages"] or not quest_stage.can_complete_stage():
 			return
@@ -303,6 +316,77 @@ func complete_quest(quest_id: StringName, success: bool) -> void:
 		quest_finished.emit(quest_id)
 
 
+## Registers a [Callable] with ID [param mod_id] to modify [param quest_id]
+## before it's tracked with [method QuestManager.start_quest].
+## The callable must have a single argument of type [Quest]. Modifications
+## must be done directly to the object in-place.[br]
+## The [param order] argument can be passed which will determine
+## the execution sequence. A value less than 0 will append the modifier
+## to the end of the execution order.[br]
+## The param after_mod argument can be used to ensure the given callable
+## executes after another modification. The order will be respected.
+func register_quest_modifier(quest_id: StringName, mod_id: StringName, mod_callable: Callable, order: int = -1, after_mod: StringName = &"") -> void:
+	if mod_id.is_empty():
+		push_error("[ODYSSEY] Mod ID can't be empty.")
+		return
+	
+	if _is_dependency_circular(quest_id, mod_id, after_mod):
+		push_error("[ODYSSEY] Circular dependency detected when adding mod %s to %s. Skipping mod registry." % [mod_id, quest_id])
+		return
+		
+	
+	if not _quest_modifiers.has(quest_id):
+		_quest_modifiers[quest_id] = {
+			"order": ArrayUtils.create_typed(TYPE_STRING_NAME),
+			"mods": DictUtils.create_typed(TYPE_STRING_NAME, TYPE_DICTIONARY)}
+	
+	
+	var new_mod: bool = not _quest_modifiers[quest_id]["mods"].has(mod_id)
+	var trigger_sort: bool = true if new_mod else _quest_modifiers[quest_id]["mods"][mod_id]["order"] != order
+	
+	DictUtils.set_nested_value(
+			_quest_modifiers, # ID
+			[quest_id, "mods", mod_id], # Key path
+			{"order": order, "callable": mod_callable, "dependency": after_mod}, # Value set to
+			true) # Create the mod_id dictionary if it doesn't exist
+	
+	if new_mod:
+		_quest_modifiers[quest_id]["order"].append(mod_id)
+	
+	if trigger_sort:
+		_sort_mods(quest_id)
+
+
+## Returns how many mods are registered for the quest with id [param quest_id].
+func get_quest_modifier_count(quest_id: StringName) -> int:
+	if _quest_modifiers.has(quest_id):
+		return _quest_modifiers[quest_id]["mods"].size()
+	return 0
+
+
+## Returns an array with the registered mod IDs for [param for_quest]
+## in the order they are executed.
+func get_quest_modifiers(for_quest: StringName) -> Array[StringName]:
+	var mods: Array[StringName] = []
+	if _quest_modifiers.has(for_quest):
+		mods.assign(_quest_modifiers[for_quest]["order"]) # Return the sorted list
+	return mods
+
+
+## Returns [code]true[/code] if the modifier [param mod_id] exists for quest
+## [param on_quest].
+func has_quest_modifier(on_quest: StringName, mod_id: StringName) -> bool:
+	return _quest_modifiers.has(on_quest) and _quest_modifiers[on_quest]["mods"].has(mod_id)
+
+
+## Removes a quest modifier with [param mod_id] for the quest [param for_quest].
+func remove_quest_modifier(for_quest: StringName, mod_id: StringName) -> void:
+	if not _quest_modifiers.has(for_quest):
+		return
+	if _quest_modifiers[for_quest]["mods"].erase(mod_id):
+		_quest_modifiers[for_quest]["order"].erase(mod_id)
+
+
 func _set_quest_complete(quest_id: StringName, success: bool, emit_events: bool = true) -> void:
 	var quest: Quest = _active_quests[quest_id]["quest"]
 	
@@ -362,3 +446,76 @@ func _log_stage_complete(quest_id: StringName, stage: QuestStage, success: bool,
 	var events: Dictionary[String, Variant] = stage.on_success_events if success else stage.on_failure_events
 	for event_id in events.keys():
 		quest_event_triggered.emit(event_id, events[event_id])
+
+
+func _sort_mods(for_quest: StringName) -> void:
+	var mods_with_dependencies: Dictionary[StringName, Array] = {}
+	var independent_mods: Array[StringName] = []
+	var mods: Dictionary[StringName, Dictionary] = _quest_modifiers[for_quest]["mods"]
+	var final_order: Array[StringName] = []
+	var sorting_lambda: Callable = func(a:StringName,b:StringName) -> bool:
+		var order_a: int = mods[a]["order"]
+		var order_b: int = mods[b]["order"]
+		if order_a == order_b:
+			return false
+		elif order_a < 0:
+			return false
+		elif order_b < 0:
+			return true
+		else:
+			return order_a < order_b
+	var process_mod: Callable = func(current_id: StringName, self_ref: Callable) -> void:
+			if final_order.has(current_id):
+				return
+			
+			final_order.append(current_id)
+			
+			if mods_with_dependencies.has(current_id):
+				for child_id in mods_with_dependencies[current_id]:
+					self_ref.call(child_id, self_ref)
+	
+	for mod_id in mods.keys():
+		var dependency: StringName = mods[mod_id]["dependency"]
+		if dependency.is_empty() or not mods.has(dependency):
+			independent_mods.append(mod_id)
+		else:
+			if not mods_with_dependencies.has(dependency):
+				mods_with_dependencies[dependency] = []
+			mods_with_dependencies[dependency].append(mod_id)
+	
+	independent_mods.sort_custom(sorting_lambda)
+	for after_id in mods_with_dependencies.keys():
+		mods_with_dependencies[after_id].sort_custom(sorting_lambda)
+	
+	for mod_id in independent_mods:
+		process_mod.call(mod_id, process_mod)
+	
+	if final_order.size() < mods.size():
+		for mod_id in mods.keys():
+			if not final_order.has(mod_id):
+				push_warning("[ODYSSEY] Circular dependency detected for mod '%s'. Forcing to end of execution order." % mod_id)
+				final_order.append(mod_id)
+	
+	_quest_modifiers[for_quest]["order"] = final_order
+
+
+func _is_dependency_circular(on_quest: StringName, mod_id: StringName, depends_on: StringName, _visited: Array[StringName] = []) -> bool:
+	if depends_on.is_empty() or not _quest_modifiers.has(on_quest) or not _quest_modifiers[on_quest]["mods"].has(depends_on):
+		return false
+	
+	if _visited.has(depends_on):
+		push_warning("[ODYSSEY] Pre-existing cycle detected at '%s'. Aborting check." % depends_on)
+		return true
+	
+	_visited.append(depends_on)
+	
+	var mods: Dictionary[StringName, Dictionary] = _quest_modifiers[on_quest]["mods"]
+	
+	var dependency: StringName = mods[depends_on]["dependency"]
+	
+	if dependency.is_empty():
+		return false
+	elif dependency == mod_id:
+		return true
+	else:
+		return _is_dependency_circular(on_quest, mod_id, dependency, _visited)

@@ -154,7 +154,7 @@ func ready_plugin(base_locale: String = "") -> void:
 	node_popup.add_theme_constant_override(&"icon_max_width", 16)
 	
 	dialogs_submenu.add_icon_item(load("res://addons/nexus_forge/icons/speech_bubble.svg"), "Dialog", DiscourseGraphNode.DialogueNodeType.DIALOG)
-	dialogs_submenu.add_icon_item(load("res://addons/nexus_forge/icons/list_icon.svg"), "Options", DiscourseGraphNode.DialogueNodeType.OPTIONS)
+	dialogs_submenu.add_icon_item(load("res://addons/nexus_forge/icons/list_icon.svg"), "Options", DiscourseGraphNode.DialogueNodeType.CHOICES)
 	dialogs_submenu.add_separator("Flow")
 	dialogs_submenu.add_icon_item(get_theme_icon("RandomNumberGenerator", "EditorIcons"), "Random", DiscourseGraphNode.DialogueNodeType.RANDOM)
 	dialogs_submenu.add_icon_item(load("res://addons/nexus_forge/icons/branch_icon.svg"), "Branch", DiscourseGraphNode.DialogueNodeType.BRANCH)
@@ -1174,7 +1174,7 @@ func _on_side_editor_locale_changed(from: String, to: String) -> void:
 				DiscourseGraphNode.DialogueNodeType.DIALOG:
 					var text: String = translation_txt_box.text.strip_edges()
 					active_node.set_dialog_text(text)
-				DiscourseGraphNode.DialogueNodeType.OPTIONS:
+				DiscourseGraphNode.DialogueNodeType.CHOICES:
 					var choices: = get_localizer_choices()
 					var choice_n: int = 0
 					for choice in choices:
@@ -1218,7 +1218,7 @@ func _on_side_editor_locale_changed(from: String, to: String) -> void:
 		translation_txt_box.text = active_conversation.get_text_entry(
 				active_node.get_node_uuid(),
 				to)
-	elif active_node.node_type == DiscourseGraphNode.DialogueNodeType.OPTIONS:
+	elif active_node.node_type == DiscourseGraphNode.DialogueNodeType.CHOICES:
 		clear_localized_options()
 		var base_options: Array[String] = active_conversation.get_choices_entry(
 				active_node.get_node_uuid(),
@@ -1270,7 +1270,7 @@ func _on_localizer_node_selected(uuid: StringName) -> void:
 						active_locale)
 				if update_node:
 					old_node.set_dialog_text(translation_txt_box.text)
-			DiscourseGraphNode.DialogueNodeType.OPTIONS:
+			DiscourseGraphNode.DialogueNodeType.CHOICES:
 				var options: Array[String] = get_localizer_choices()
 				
 				active_conversation.set_choices_entry(
@@ -1291,7 +1291,7 @@ func _on_localizer_node_selected(uuid: StringName) -> void:
 				if update_node:
 					old_node.set_text(translation_txt_box.text)
 	
-	$LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer.visible = new_node.node_type == DiscourseGraphNode.DialogueNodeType.OPTIONS
+	$LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer.visible = new_node.node_type == DiscourseGraphNode.DialogueNodeType.CHOICES
 	$LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/LocaleVBoxContainer.visible = !$LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer.visible
 	# Get the data & set to localizer
 	
@@ -1304,7 +1304,7 @@ func _on_localizer_node_selected(uuid: StringName) -> void:
 					uuid,
 					active_locale)
 			
-		DiscourseGraphNode.DialogueNodeType.OPTIONS:
+		DiscourseGraphNode.DialogueNodeType.CHOICES:
 			clear_localized_options()
 			var options_base: Array[String] = active_conversation.get_choices_entry(uuid, base_language)
 			var base_size: int = options_base.size()
@@ -1335,7 +1335,7 @@ func _on_localize_node(node: DiscourseGraphNode) -> void:
 					node.get_dialog_text(),
 					current_locale)
 			localization_nodes_tree.create_dialog_node(node.get_node_id(), node)
-		DiscourseGraphNode.DialogueNodeType.OPTIONS:
+		DiscourseGraphNode.DialogueNodeType.CHOICES:
 			var text_options: Array[String] = node.get_options()
 			active_conversation.set_choices_entry(
 					node.get_node_uuid(),
@@ -1359,7 +1359,7 @@ func _on_node_delocalized(node: DiscourseGraphNode) -> void:
 			active_conversation.set_text_entry(
 					node.get_node_uuid(),
 					dialog)
-		DiscourseGraphNode.DialogueNodeType.OPTIONS:
+		DiscourseGraphNode.DialogueNodeType.CHOICES:
 			var options: Array[String] = []
 			options.assign(
 					active_conversation.get_choices_entry(
@@ -1405,7 +1405,7 @@ func _on_switch_window_pressed() -> void:
 						active_node.get_node_uuid(),
 						translation_txt_box.text.strip_edges(),
 						localizer_locale)
-			elif active_node.node_type == DiscourseGraphNode.DialogueNodeType.OPTIONS:
+			elif active_node.node_type == DiscourseGraphNode.DialogueNodeType.CHOICES:
 				var choices: Array[String] = get_localizer_choices()
 				var target_size: int = active_node.choice_count()
 				if choices.size() != target_size:
@@ -1429,7 +1429,7 @@ func _on_switch_window_pressed() -> void:
 		if active_node == null or localizer_locale.is_empty():
 			return
 		# Node is option. Specific method call is needed
-		if active_node.node_type == DiscourseGraphNode.DialogueNodeType.OPTIONS:
+		if active_node.node_type == DiscourseGraphNode.DialogueNodeType.CHOICES:
 			var target_choices: int = active_node.choice_count()
 			var options: Array[String] = active_conversation.get_choices_entry(
 					active_node.get_node_uuid(),
@@ -1473,7 +1473,7 @@ func _on_switch_window_pressed() -> void:
 		if active_node.node_type == DiscourseGraphNode.DialogueNodeType.DIALOG:
 			active_node.set_dialog_text(
 					translation_txt_box.text.strip_edges())
-		elif active_node.node_type == DiscourseGraphNode.DialogueNodeType.OPTIONS:
+		elif active_node.node_type == DiscourseGraphNode.DialogueNodeType.CHOICES:
 			var option_number: int = 0
 			for option_node in choices_container.get_children():
 				option_number += 1
@@ -2038,7 +2038,7 @@ func _on_discourse_item_renamed(uuid: StringName, new_name: String) -> void:
 		match node.node_type:
 			DiscourseGraphNode.DialogueNodeType.DIALOG:
 				localization_nodes_tree.rename_dialog_node(uuid, new_name)
-			DiscourseGraphNode.DialogueNodeType.OPTIONS:
+			DiscourseGraphNode.DialogueNodeType.CHOICES:
 				localization_nodes_tree.rename_options_node(uuid, new_name)
 			DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
 				localization_nodes_tree.rename_text_node(uuid, new_name)
@@ -2109,7 +2109,7 @@ func display_conversation(conversation: EditorDiscourseDialog, with_locale: Stri
 		if d_node.is_node_localized():
 			if d_node.node_type == DiscourseGraphNode.DialogueNodeType.DIALOG:
 				localization_nodes_tree.create_dialog_node(d_node.get_node_id(), d_node)
-			elif d_node.node_type == DiscourseGraphNode.DialogueNodeType.OPTIONS:
+			elif d_node.node_type == DiscourseGraphNode.DialogueNodeType.CHOICES:
 				localization_nodes_tree.create_options_node(d_node.get_node_id(), d_node)
 			elif d_node.node_type == DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
 				localization_nodes_tree.create_localized_text_node(d_node.get_node_id(), d_node)
@@ -2255,7 +2255,7 @@ func save_localizer_data(for_locale: String) -> void:
 					active_node.get_node_uuid(),
 					translation_txt_box.text,
 					for_locale)
-		DiscourseGraphNode.DialogueNodeType.OPTIONS:
+		DiscourseGraphNode.DialogueNodeType.CHOICES:
 			var options: Array[String] = get_localizer_choices()
 			active_conversation.set_choices_entry(
 					active_node.get_node_uuid(),

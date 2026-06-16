@@ -191,21 +191,21 @@ static func swap_remove(array: Array, index: int) -> void:
 
 
 ## Costructor for an array with default parameters set.
-static func create_array_typed(type: int, from: Array = [], class_string: StringName = &"", script: Variant = null) -> Array:
+static func create_typed(type: int, from: Array = [], class_string: StringName = &"", script: Variant = null) -> Array:
 	return Array(from, type, class_string, script)
 
 
 ## Constructor for a 2D array.
-static func create_array_2d(size_x: int, size_y: int, type: int = -1) -> Array[Array]:
+static func create_2d(size_x: int, size_y: int, type: int = -1) -> Array[Array]:
 	if size_x <= 0 or size_y <= 0:
-		return create_array_typed(TYPE_ARRAY)
+		return create_typed(TYPE_ARRAY)
 	
 	var y_array: Array[Array] = []
 	y_array.resize(size_y)
 	
 	if 0 <= type and type < TYPE_MAX:
 		for array_idx in range(size_x):
-			var x_array: Array = create_array_typed(type) if type != -1 else []
+			var x_array: Array = create_typed(type) if type != -1 else []
 			x_array.resize(size_x)
 			y_array[array_idx] = x_array
 	
@@ -213,7 +213,7 @@ static func create_array_2d(size_x: int, size_y: int, type: int = -1) -> Array[A
 
 
 ## Resizes a 2D array.
-static func resize_array_2d(array: Array[Array], new_width: int, new_height: int) -> void:
+static func resize_2d(array: Array[Array], new_width: int, new_height: int) -> void:
 	new_width = maxi(0, new_width)
 	new_height = maxi(0, new_height)
 	

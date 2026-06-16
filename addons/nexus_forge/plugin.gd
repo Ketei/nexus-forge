@@ -341,7 +341,7 @@ func _enable_plugin() -> void:
 func _get_window_layout(configuration: ConfigFile) -> void:
 	var discourse_id_visible: bool = editor_view.discourse.display_dialog_id_checked() if editor_view.discourse != null else false
 	var discourse_open_files: Array[String] = editor_view.discourse.get_open_files() if editor_view.discourse != null else Array([], TYPE_STRING, &"", null)
-	var discourse_recent_files: Array[String] = editor_view.discourse.get_recenlty_opened_files() if editor_view.discourse != null else ArrayUtils.create_array_typed(TYPE_STRING)
+	var discourse_recent_files: Array[String] = editor_view.discourse.get_recenlty_opened_files() if editor_view.discourse != null else ArrayUtils.create_typed(TYPE_STRING)
 	var open_characters: Array[String] = editor_view.characters.get_open_characters() if editor_view.characters != null else Array([], TYPE_STRING, &"", null)
 	var open_maps: Array[String] = editor_view.phrase_maps.get_open_maps() if editor_view.phrase_maps != null else Array([], TYPE_STRING, &"", null)
 	var open_quests: Array[String] = editor_view.quests.get_open_files() if editor_view.quests != null else Array([], TYPE_STRING, &"", null)

@@ -44,7 +44,7 @@ const compatible_connections: Dictionary = {
 				"ports": [{"port": 0}]},
 			{
 				"name": "Choices",
-				"type": DialogNodes.OPTIONS,
+				"type": DialogNodes.CHOICES,
 				"ports": [{"port": 0}]},
 			{
 				"name": "Event",
@@ -85,7 +85,7 @@ const compatible_connections: Dictionary = {
 				"ports": [{"port": 0}]},
 			{
 				"name": "Choices",
-				"type": DialogNodes.OPTIONS,
+				"type": DialogNodes.CHOICES,
 				"ports": [{"port": 0}]},
 			{
 				"name": "Event",
@@ -389,7 +389,7 @@ func new_dialog_node(node_type: DialogNodes, uuid: StringName = &"") -> Discours
 		DialogNodes.DIALOG:
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/dialog_graph_node.gd").new(uuid, &"", true, true, true)
 			created_node.use_code_editor_pressed.connect(_on_use_code_editor_requested)
-		DialogNodes.OPTIONS:
+		DialogNodes.CHOICES:
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/dialog_options.gd").new(uuid, &"", true, true, true)
 		DialogNodes.BRANCH:
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/dialog_branch.gd").new(uuid)
@@ -877,7 +877,7 @@ func get_conversation_file(current_locale: String = "") -> EditorDiscourseDialog
 					node_uuid,
 					node.get_dialog_text(),
 					current_locale)
-		elif node.node_type == DialogNodes.OPTIONS:
+		elif node.node_type == DialogNodes.CHOICES:
 			convo.set_choices_entry(
 					node_uuid,
 					node.get_options(),
@@ -918,7 +918,7 @@ func update_conversation_file(on_file: EditorDiscourseDialog, current_locale: St
 					node_uuid,
 					node.get_dialog_text(),
 					current_locale if node.is_node_localized() else "")
-		elif node.node_type == DialogNodes.OPTIONS:
+		elif node.node_type == DialogNodes.CHOICES:
 			on_file.set_choices_entry(
 					node_uuid,
 					node.get_options(),
@@ -944,7 +944,7 @@ func get_connection_dictionary(node_uuid: StringName, node_data: Dictionary) -> 
 	var meta = node_data["metadata"]
 	
 	match node_data["type"] as DialogNodes:
-		DialogNodes.OPTIONS:
+		DialogNodes.CHOICES:
 			for option in meta["choices"]:
 				if option["output_connections"]["next_node"]["target_node_uuid"].is_empty():
 					continue
@@ -1045,7 +1045,7 @@ func set_localization_data(localization: Dictionary) -> void:
 		if node.node_type == DialogNodes.DIALOG:
 			if typeof(localization[node_uuid]) == TYPE_STRING:
 				node.set_dialog_text(localization[node_uuid])
-		elif node.node_type == DialogNodes.OPTIONS:
+		elif node.node_type == DialogNodes.CHOICES:
 			if typeof(localization[node_uuid]) == TYPE_ARRAY:
 				var idx: int = 0
 				for choice in localization[node_uuid]:
@@ -1066,7 +1066,7 @@ func update_localization_data(dialog: EditorDiscourseDialog, for_locale: String)
 					node.get_node_uuid(),
 					node.get_dialog_text(),
 					for_locale)
-		elif node.node_type == DialogNodes.OPTIONS:
+		elif node.node_type == DialogNodes.CHOICES:
 			dialog.set_choices_entry(
 					node.get_node_uuid(),
 					node.get_options(),
@@ -1343,17 +1343,17 @@ func _on_connection_request(from_node: StringName, from_port: int, to_node: Stri
 	var to: DiscourseGraphNode = get_node(NodePath(to_node))
 	
 	var has_type: bool = _pending_connection_change.has("type")
-	var switch_disconnect: bool = _pending_connection_change["type"] == ConnectionChangeType.SWITCH_DISCONNECT if has_type else false
-	if has_type and switch_disconnect:
+	if has_type:
 		var same_origin: bool = from.get_node_uuid() == _pending_connection_change["from_node"] and from_port == _pending_connection_change["from_port"]
 		var same_destination: bool = to.get_node_uuid() == _pending_connection_change["to_node"] and to_port == _pending_connection_change["to_port"]
+		var switch_disconnect: bool = _pending_connection_change["type"] == ConnectionChangeType.SWITCH_DISCONNECT
 		
 		if same_origin and same_destination:
 			rollback_disconnection()
 		else:
+			commit_disconnection()
 			# Was the connection successful?
 			var con_success: bool = connect_discourse_nodes(from.get_node_uuid(), from_port, to.get_node_uuid(), to_port)
-			commit_disconnection()
 			
 			if con_success:
 				node_connection_switched.emit(_pending_connection_change.duplicate(), to.get_node_uuid(), to_port)
@@ -1365,7 +1365,6 @@ func _on_connection_request(from_node: StringName, from_port: int, to_node: Stri
 					_pending_connection_change["to_port"])
 			
 			dialog_changed.emit()
-		_pending_connection_change.clear()
 		return
 	
 	if connect_discourse_nodes(
@@ -1378,15 +1377,16 @@ func _on_connection_request(from_node: StringName, from_port: int, to_node: Stri
 
 
 func _on_connection_drag_ended() -> void:
-	if _pending_connection_change.has("type") and _pending_connection_change["type"] == ConnectionChangeType.SWITCH_DISCONNECT:
+	if _pending_connection_change.has("type"):
 		commit_disconnection()
 		dialog_changed.emit()
 
 
 func _on_connection_to_empty(from_node: StringName, from_port: int, release_position: Vector2) -> void:
-	if _pending_connection_change.has("type") and _pending_connection_change["type"] == ConnectionChangeType.SWITCH_DISCONNECT:
+	if _pending_connection_change.has("type"):
 		commit_disconnection()
-		dialog_changed.emit()
+		if _pending_connection_change["type"] == ConnectionChangeType.SWITCH_DISCONNECT:
+			dialog_changed.emit()
 	
 	if not Input.is_key_pressed(KEY_CTRL):
 		return
@@ -1436,8 +1436,12 @@ func _on_connection_to_empty(from_node: StringName, from_port: int, release_posi
 
 
 func _on_connection_from_empty(to_node: StringName, to_port: int, release_position: Vector2) -> void:
+	if _pending_connection_change.has("type"):
+		commit_disconnection()
+	
 	if not Input.is_key_pressed(KEY_CTRL):
 		return
+	
 	var to_graph: DiscourseGraphNode = get_node(NodePath(to_node))
 	var port_type: ConnectionType = to_graph.get_input_port_type(to_port) as ConnectionType
 	var node_count: int = get_compatible_node_count(port_type, "input")

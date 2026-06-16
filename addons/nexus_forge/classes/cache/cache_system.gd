@@ -101,11 +101,6 @@ func _add_to_newest(link: CacheLink) -> void:
 ## If the item was already cached it moves it to the front of the
 ## cache (newest used).
 func cache_data(key: String, data: Variant) -> void:
-	if data == self:
-		push_warning(
-			"[Cache] Attempted to cache a Cache within itself. Operation ignored to prevent memory leaks from cyclical referencing.")
-		return
-	
 	if _cache_map.has(key):
 		var link: CacheLink = _cache_map[key]
 		
@@ -149,7 +144,9 @@ func size() -> int:
 ## Clears the cache.
 func clear() -> void:
 	for cache_key in _cache_map.keys():
-		_cache_map[cache_key].clear()
+		var link = _cache_map[cache_key]
+		if is_instance_valid(link):
+			_cache_map[cache_key].clear()
 	_cache_map.clear()
 	_newest_used = null
 	_oldest_used = null
@@ -157,4 +154,8 @@ func clear() -> void:
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_PREDELETE:
-		clear()
+		for cache_key in _cache_map.keys():
+			_cache_map[cache_key].clear()
+		_cache_map.clear()
+		_newest_used = null
+		_oldest_used = null

@@ -412,7 +412,7 @@ func plugin_handle_resource(quest: Quest) -> void:
 		var end_path: String = absolute_path.path_join(cfg_filename)
 		if FileAccess.file_exists(end_path):
 			cfg.load(end_path)
-		var structure: Array[Dictionary] = cfg.get_value("Layout", "quest_structure", ArrayUtils.create_array_typed(TYPE_DICTIONARY))
+		var structure: Array[Dictionary] = cfg.get_value("Layout", "quest_structure", ArrayUtils.create_typed(TYPE_DICTIONARY))
 		
 		var pointers: Array[StringName] = []
 		pointers.assign(quest.stages())
@@ -562,7 +562,7 @@ func open_files(paths: Array[String]) -> void:
 			var end_path: String = absolute_path.path_join(cfg_filename)
 			if FileAccess.file_exists(end_path):
 				cfg.load(end_path)
-			var structure: Array[Dictionary] = cfg.get_value("Layout", "quest_structure", ArrayUtils.create_array_typed(TYPE_DICTIONARY))
+			var structure: Array[Dictionary] = cfg.get_value("Layout", "quest_structure", ArrayUtils.create_typed(TYPE_DICTIONARY))
 			
 			files_tree.add_quest(res)
 			files_tree.set_quest_structure(res, structure)

@@ -60,6 +60,14 @@ func _process_logic(uuid: StringName) -> Dictionary[String, StringName]:
 		return target
 	
 	var data: Dictionary = _dialog_resource.get_node_data(uuid, locale)
+	
+	if data.is_empty():
+		push_error(
+			"[DISCOURSE] DATA FOR NODE WITH UUID \"",
+			uuid,
+			"\" WAS NOT FOUND")
+		return target
+	
 	var metadata: Dictionary = data["metadata"]
 	match data["type"]:
 		NodeTypes.ENTRY:
@@ -126,7 +134,7 @@ func _process_logic(uuid: StringName) -> Dictionary[String, StringName]:
 			target["next"] = data["output_connections"]["next_node"]["target_node_uuid"]
 			
 			return target
-		NodeTypes.OPTIONS:
+		NodeTypes.CHOICES:
 			var available_options: Array[Dictionary] = []
 			var option_idx: int = -1
 			var option_duuid: String = ""

@@ -21,7 +21,7 @@ func add_quest(quest: Quest, select: bool = false, emit_select: bool = true) -> 
 	
 	quest_item.set_text(0, quest.resource_path.get_file().get_basename())
 	quest_item.set_tooltip_text(0, quest.resource_path)
-	quest_item.set_metadata(0, {"resource": quest, "save_required": false, "structure": ArrayUtils.create_array_typed(TYPE_DICTIONARY)})
+	quest_item.set_metadata(0, {"resource": quest, "save_required": false, "structure": ArrayUtils.create_typed(TYPE_DICTIONARY)})
 	
 	quest_item.add_button(
 			0,
