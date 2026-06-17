@@ -97,7 +97,7 @@ func _has_locale(locale_code: String) -> bool:
 
 func _get_text(dialog_id: String, uuid: String) -> String:
 	if _active_locale == null:
-		return ""
+		return "[MISSING LOCALIZATION DATA]"
 	
 	var locale: String = _active_locale.locale
 	

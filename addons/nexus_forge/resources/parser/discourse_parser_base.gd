@@ -60,7 +60,12 @@ var locale: String = "en":
 		if locale == new_locale:
 			return
 		locale = TranslationServer.standardize_locale(new_locale.strip_edges())
-		_load_locale_to_active_dialog(locale)
+		
+		if _dialog_resource != null:
+			if _dialog_resource._has_locale(locale):
+				_dialog_resource._set_locale(locale)
+			else:
+				_load_locale_to_active_dialog(locale)
 
 # Maps UUID: CustomID
 #var _dialog_id_map: Dictionary[StringName, StringName] = {}
@@ -234,12 +239,12 @@ func _parse_dialog(dialog_id: String, dialog: String) -> String:
 	var random_processed: Dictionary[String,Variant] = {}
 	
 	var regex_search: RegEx = RegEx.new()
-	regex_search.compile("\\{([\\!\\$\\&\\?][^\\s\\}]+)\\}")
+	regex_search.compile("\\{((?:\\![^\\}\\s]+)|(?:[\\?\\&\\$][^\\}]+))\\}")
 	
 	for rgx_result in regex_search.search_all(dialog):
 		var slice: String = rgx_result.get_string(1)
 		var token: String = slice[0]
-	
+		
 		if token == "?":
 			if random_processed.has(rgx_result.get_string()):
 				continue
@@ -430,8 +435,13 @@ func _process_logic(uuid: StringName) -> Dictionary[String, StringName]:
 			var available_options: Array[Dictionary] = []
 			var localized_options: PackedStringArray = _dialog_resource._get_choices(dialog_id, uuid)#_get_choices_for(dialog_id, uuid)
 			var target_size: int = data["options"].size()
+			var current_size: int = localized_options.size()
 			
-			if localized_options.size() != target_size:
+			if current_size < target_size:
+				var err_msg: String = "[MISSING LOCALIZATION DATA]"
+				for _step in range(target_size - current_size):
+					localized_options.append(err_msg)
+			elif target_size < current_size:
 				localized_options.resize(target_size)
 			
 			var idx: int = -1

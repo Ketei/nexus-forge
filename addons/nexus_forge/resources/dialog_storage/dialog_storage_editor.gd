@@ -647,7 +647,7 @@ func convert_for_release() -> DiscourseDialog:
 						data["callable"] = StringName(node_data[node_id]["input_connections"]["callable"]["target_node_uuid"])
 					else:
 						data["callable"] = &""
-						printerr("[Discourse] Warning: Issue when exporting ", resource_path, ". Event ", node_data[node_id]["name"], " calls an inexistent method.")
+						printerr("[DISCOURSE] Warning: Issue when exporting ", resource_path, ". Event ", node_data[node_id]["name"], " calls an inexistent method.")
 				else:
 					data["callable"] = &""
 				
@@ -657,7 +657,7 @@ func convert_for_release() -> DiscourseDialog:
 						data["signal"] = StringName(node_data[node_id]["input_connections"]["signal"]["target_node_uuid"])
 					else:
 						data["signal"] = &""
-						printerr("[Discourse] Warning: Issue when exporting ", resource_path, ". Event ", node_data[node_id]["name"], " emits an inexistent signal.")
+						printerr("[DISCOURSE] Warning: Issue when exporting ", resource_path, ". Event ", node_data[node_id]["name"], " emits an inexistent signal.")
 				else:
 					data["signal"] = &""
 				data["next_node"] = target_finder.get_target(StringName(node_data[node_id]["output_connections"]["next_node"]["target_node_uuid"]))
@@ -781,7 +781,7 @@ func convert_for_release() -> DiscourseDialog:
 						data["callable"] = StringName(node_data[node_id]["input_connections"]["callable"]["target_node_uuid"])
 					else:
 						data["callable"] = &""
-						printerr("[Discourse] Warning: Issue when exporting ", resource_path, ". Data event ", node_data[node_id]["name"], " calls an inexistent method.")
+						printerr("[DISCOURSE] Warning: Issue when exporting ", resource_path, ". Data event ", node_data[node_id]["name"], " calls an inexistent method.")
 				else:
 					data["callable"] = &""
 				
@@ -791,7 +791,7 @@ func convert_for_release() -> DiscourseDialog:
 						data["signal"] = StringName(node_data[node_id]["input_connections"]["signal"]["target_node_uuid"])
 					else:
 						data["signal"] = &""
-						printerr("[Discourse] Warning: Issue when exporting ", resource_path, ". Data event ", node_data[node_id]["name"], " emits an inexistent signal.")
+						printerr("[DISCOURSE] Warning: Issue when exporting ", resource_path, ". Data event ", node_data[node_id]["name"], " emits an inexistent signal.")
 				else:
 					data["signal"] = &""
 				
@@ -918,22 +918,52 @@ func generate_localization_files(localization_id: String, base_path: String, fil
 
 func _add_locale_data(file: DiscourseDialogLocale, localization_id: String, locale: String) -> void:
 	for node_id in localization.keys():
+		if not node_data.has(node_id):
+			push_warning("[DISCOURSE] Orphaned localization with ID '%s'. Skipping." % node_id)
+			continue
+		
 		var data = localization[node_id]
 		
 		if not data.has_all(["type", "unlocalized", "locales"]) or typeof("unlocalized") != TYPE_STRING or typeof(data["type"]) != TYPE_INT or typeof(data["locales"]) != TYPE_DICTIONARY:
 			push_error(
 					"[DISCOURSE] Incomplete or corrupt data for node with UID \"" + node_id + "\" - type/unlocalized/locales check.")
-		var localized: bool = data["unlocalized"].is_empty()
+			continue
+		
+		if _localization_type_mismatch(node_id):
+			var type: int = node_data[node_id]["type"]
+			push_error(
+					"[DISCOURSE] Type mismatch for node & localization with id '%s'" % node_id)
+			if type == NodeType.DIALOG or type == NodeType.LOCALIZED_TEXT:
+				DictUtils.set_nested_value(
+					file.localization,
+					[localization_id, node_id, "dialog"],
+					"",
+					true)
+			elif type == NodeType.CHOICES:
+				var choice_size: int = node_data[node_id]["metadata"]["choices"].size()
+				var choices: PackedStringArray = []
+				choices.resize(choice_size)
+				for idx in range(choice_size):
+					choices[idx] = "[MISSING LOCALIZATION DATA]"
+				DictUtils.set_nested_value(
+						file.localization,
+						[localization_id, node_id, "choices"],
+						choices,
+						true)
+			continue
+		
+		var localized: bool = node_data[node_id]["metadata"]["localized"]
 		
 		if data["type"] == LocalizationType.TEXT:
-			var warn: bool = typeof(DictUtils.get_nested_value(data, ["locales", locale])) != TYPE_STRING if localized else false
+			var warn: bool = typeof(DictUtils.get_nested_value(data, ["locales", locale])) != TYPE_STRING if localized else typeof(data["unlocalized"]) != TYPE_STRING
 			DictUtils.set_nested_value(
 					file.localization,
 					[localization_id, node_id, "dialog"],
 					DictUtils.get_nested_value(
 							data,
 							["locales", locale],
-							"") if localized else data["unlocalized"])
+							"[MISSING LOCALIZATION DATA]",
+							true) if localized else DictUtils.get_nested_value(data, ["unlocalized"], "[MISSING LOCALIZATION DATA]", true))
 			if warn:
 				if localized:
 					push_warning("[DISCOURSE] Unlocalized data for node UID \"" + node_id + "\" is missing.")
@@ -941,58 +971,58 @@ func _add_locale_data(file: DiscourseDialogLocale, localization_id: String, loca
 					push_warning("[DISCOURSE] Localization data for node UID \"" + node_id + "\" for locale \"" + locale + "\" is missing.")
 		
 		elif data["type"] == LocalizationType.CHOICES:
-			var warn: bool = typeof(DictUtils.get_nested_value(data, ["locales", locale])) != TYPE_ARRAY if data["unlocalized"].is_empty() else typeof(data["unlocalized"]) != TYPE_ARRAY
+			var data_exists: bool = false
+			var choice_size: int = node_data[node_id]["metadata"]["choices"].size()
+			var base: Array[String] = []
 			
-			if warn:
+			if localized:
+				data_exists = data["locales"].has(locale) and typeof(data["locales"][locale]) == TYPE_ARRAY
+				if data_exists:
+					for idx in range(data["locales"][locale].size()):
+						if typeof(data["locales"][locale][idx]) == TYPE_STRING:
+							base.append(data["locales"][locale][idx])
+						else:
+							push_warning("[DISCORUSE] Choice with index " + str(idx) + " on locale " + locale + " isn't a string.")
+							base.append("[INVALID TEXT]")
+				else:
+					base.resize(choice_size)
+			else:
+				data_exists = typeof(data["unlocalized"]) == TYPE_ARRAY
+				if data_exists:
+					for idx in range(data["unlocalized"].size()):
+						if typeof(data["unlocalized"][idx]) == TYPE_STRING:
+							base.append(data["unlocalized"][idx])
+						else:
+							push_warning("[DISCORUSE] Choice with index " + str(idx) + " on locale " + locale + " isn't a string.")
+							base.append("[INVALID TEXT]")
+				else:
+					base.resize(choice_size)
+			
+			if not data_exists:
 				if localized:
 					push_warning("[DISCOURSE] Localization data for node UID \"" + node_id + "\" for locale \"" + locale + "\" is missing.")
 				else:
 					push_warning("[DISCOURSE] Unlocalized data for node UID \"" + node_id + "\" is missing.")
+				var err_string: String = "[MISSING LOCALIZATION DATA]"
+				base.resize(choice_size)
+				for idx in range(choice_size):
+					base[idx] = err_string
 			
-			var choices: Array[String] = []
+			DictUtils.set_nested_value(
+					file.localization,
+					[localization_id, node_id, "choices"],
+					PackedStringArray(base),
+					true)
 			
-			var idx: int = -1
-			
-			if localized:
-				for data_entry in data["unlocalized"]:
-					idx += 1
-					if typeof(data_entry) == TYPE_STRING:
-						choices.append(data_entry)
-					else:
-						choices.append("")
-						push_error("[DISCORUSE] Unlocalized choice with index " + str(idx) + " isn't a string.")
-			else:
-				var choice_entry = DictUtils.get_nested_value(
-						data, ["locales", locale])
-				if typeof(choice_entry) == TYPE_ARRAY:
-					for data_entry in choice_entry:
-						idx += 1
-						if typeof(data_entry) == TYPE_STRING:
-							choices.append(data_entry)
-						else:
-							choices.append("")
-							push_warning("[DISCORUSE] Choice with index " + str(idx) + " on locale " + locale + " isn't a string.")
-			
-			var choice_size: int = choices.size()
-			var target_size: int = 0
-			
-			var choice_data = DictUtils.get_nested_value(node_data, [node_id, "metadata", "choices"])
-			if typeof(choice_data) == TYPE_ARRAY:
-				target_size = choice_data.size()
-			else:
+			var current_size: int = base.size()
+			if choice_size != current_size:
 				push_warning(
-						"[DISCOURSE] Localization for node UID " + node_id + " included, but node data is missing or corrupt.")
-				target_size = choice_size
-			
-			if choice_size != target_size:
-				push_warning(
-						"[DISCOURSE] Localized choice count for dialog \" " + resource_path + "\" is different from the registered data. Localized Choices: " + str(choice_size) + ", Data target: " + str(target_size) + ". Exported localization will be resized to respect data.")
-				choices.resize(target_size)
-			
-			file.set_choices(
-					localization_id,
-					node_id,
-					choices)
+					"[DISCOURSE] Localization choice count on node %s differs from data choice count: %s vs %s. Patching to match data size." % [node_id, current_size, choice_size])
+				base.resize(choice_size)
+				if current_size < choice_size:
+					push_warning("[DISCOURSE] Localization count is smaller. Applying placeholders.")
+					for missing_idx in range(current_size, choice_size):
+						base[missing_idx] = "[MISSING LOCALIZATION DATA]"
 		else:
 			push_warning(
 					"[DISCOURSE] Localization export for node with UID \"" + node_id + "\" couldn't define type.")
@@ -1045,6 +1075,19 @@ func _add_locale_data(file: DiscourseDialogLocale, localization_id: String, loca
 				file.format_strings,
 				[localization_id, format_key],
 				full_data)
+
+
+func _localization_type_mismatch(uuid: StringName) -> bool:
+	if not node_data.has(uuid) or not localization.has(uuid):
+		return false
+	
+	var node_type: NodeType = node_data[uuid]["type"]
+	var locale_type: LocalizationType = localization[uuid]["type"]
+	
+	if locale_type == LocalizationType.TEXT:
+		return node_type == NodeType.DIALOG or node_type == NodeType.LOCALIZED_TEXT
+	else:
+		return node_type == NodeType.CHOICES
 
 
 ## Returns an array with a split path used for variable access on the Blackboard.

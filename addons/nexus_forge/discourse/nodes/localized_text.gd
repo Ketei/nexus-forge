@@ -58,6 +58,10 @@ func _set_node_data(data: Dictionary) -> void:
 		get_field(&"localized_text").text = metadata["text"]
 
 
+func is_node_localized() -> bool:
+	return true
+
+
 func set_text(new_text: String) -> void:
 	get_field(&"localized_text").text = new_text
 

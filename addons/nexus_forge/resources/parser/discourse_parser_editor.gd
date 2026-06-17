@@ -416,7 +416,7 @@ func _parse_dialog(dialog_id: String, dialog: String) -> String:
 	var random_processed: Dictionary[String,Variant] = {}
 	
 	var regex_search: RegEx = RegEx.new()
-	regex_search.compile("\\{([\\!\\$\\&\\?][^\\s\\}]+)\\}")
+	regex_search.compile("\\{((?:\\![^\\}\\s]+)|(?:[\\?\\&\\$][^\\}]+))\\}")
 	
 	for reg_result in regex_search.search_all(dialog):
 		var format_key: String = reg_result.get_string(1)

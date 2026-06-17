@@ -30,20 +30,29 @@ func _ready() -> void:
 	if NexusForge.Discourse == null:
 		NexusForge.Discourse = EditorDialogParser.new()
 	
+	var empty_path: bool = false
+	var empty_locale: bool = false
+	
 	if FileAccess.file_exists("user://nexus_forge/discourse_settings.cfg"):
 		var cfg: ConfigFile = ConfigFile.new()
 		cfg.load("user://nexus_forge/discourse_settings.cfg")
 		if cfg.has_section_key("Discourse", "active_scene"):
 			var path: String = cfg.get_value("Discourse", "active_scene", "")
-			if not path.is_empty() and FileAccess.file_exists(path):
+			var locale: String = cfg.get_value("Discourse", "target_locale", "")
+			empty_path = path.is_empty()
+			empty_locale = locale.is_empty()
+			if not empty_path and not empty_locale and FileAccess.file_exists(path):
 				success = true
-				load_dialog(path)
+				load_dialog(path, locale)
 	
 	if success:
 		continue_btn.grab_focus()
 	else:
 		continue_btn.disabled = not success
-		events_text_edit.text = "[ERROR] Dialog resource not found"
+		if empty_path:
+			events_text_edit.text += "[ERROR] Dialog resource not found.\n"
+		if empty_locale:
+			events_text_edit.text += "[ERROR] Locale not specified.\n"
 	
 	continue_btn.pressed.connect(_on_continue_pressed)
 	options_tree.button_clicked.connect(_on_option_button_clicked)
@@ -100,7 +109,7 @@ func _on_option_activated() -> void:
 	if selected == null:
 		return
 	NexusForge.Discourse.set_dialog_id(selected.get_metadata(0))
-	NexusForge.Discourse.next_dialog()
+	NexusForge.Discourse.advance()
 	options_container.visible = false
 	continue_btn.disabled = false
 	continue_btn.grab_focus()
@@ -112,14 +121,14 @@ func _on_option_button_clicked(item: TreeItem, _column: int, id: int, mouse_butt
 	
 	if id == 0:
 		NexusForge.Discourse.set_dialog_id(item.get_metadata(0))
-		NexusForge.Discourse.next_dialog()
+		NexusForge.Discourse.advance()
 		options_container.visible = false
 		continue_btn.disabled = false
 		continue_btn.grab_focus()
 
 
 func _on_continue_pressed() -> void:
-	NexusForge.Discourse.next_dialog()
+	NexusForge.Discourse.advance()
 
 
 func _on_data_set(path: String, data: Variant) -> void:
@@ -164,7 +173,8 @@ func _on_dialog_finished() -> void:
 	events_text_edit.set_deferred("scroll_vertical", events_text_edit.get_v_scroll_bar().max_value)
 
 
-func load_dialog(dialog_path: String) -> void:
+func load_dialog(dialog_path: String, locale: String) -> void:
+	NexusForge.Discourse.locale = locale
 	if NexusForge.Discourse.load_dialog(dialog_path):
 		events_text_edit.text += "[INFO] Dialog loaded: " + dialog_path + "\n"
 	else:

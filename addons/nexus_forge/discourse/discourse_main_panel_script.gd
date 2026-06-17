@@ -1220,13 +1220,13 @@ func _on_side_editor_locale_changed(from: String, to: String) -> void:
 				to)
 	elif active_node.node_type == DiscourseGraphNode.DialogueNodeType.CHOICES:
 		clear_localized_options()
+		var choice_size: int = active_node.choice_count()
 		var base_options: Array[String] = active_conversation.get_choices_entry(
 				active_node.get_node_uuid(),
 				base_locale)
-		var base_size: int = base_options.size()
 		
-		if base_size != active_node.choice_count():
-			base_options.resize(active_node.choice_count())
+		if base_options.size() != choice_size:
+			base_options.resize(choice_size)
 		
 		var localized_options: Array[String] = active_conversation.get_choices_entry(
 				active_node.get_node_uuid(),
@@ -1234,7 +1234,7 @@ func _on_side_editor_locale_changed(from: String, to: String) -> void:
 		
 		var localized_size: int = localized_options.size()
 		
-		if localized_size < base_size:
+		if localized_size < choice_size:
 			localized_options.append_array(base_options.slice(localized_size))
 		
 		for option_idx in range(base_options.size()):
@@ -1305,15 +1305,15 @@ func _on_localizer_node_selected(uuid: StringName) -> void:
 					active_locale)
 			
 		DiscourseGraphNode.DialogueNodeType.CHOICES:
+			var choice_count: int = new_node.choice_count()
 			clear_localized_options()
 			var options_base: Array[String] = active_conversation.get_choices_entry(uuid, base_language)
 			var base_size: int = options_base.size()
-			if base_size != new_node.choice_count():
-				options_base.resize(new_node.choice_count())
+			if base_size != choice_count:
+				options_base.resize(choice_count)
 			var options_localized: Array[String] = active_conversation.get_choices_entry(uuid, active_locale)
 			var localized_size: int = options_localized.size()
-			
-			if localized_size < base_size:
+			if localized_size < choice_count:
 				options_localized.append_array(options_base.slice(localized_size))
 			
 			for option_idx in range(options_base.size()):
@@ -1925,6 +1925,7 @@ func _on_play_current_dialog_pressed() -> void:
 		cfg.load("user://nexus_forge/discourse_settings.cfg")
 	
 	cfg.set_value("Discourse", "active_scene", res_path)
+	cfg.set_value("Discourse", "target_locale", current_locale)
 	
 	if not DirAccess.dir_exists_absolute("user://nexus_forge/"):
 		DirAccess.make_dir_absolute("user://nexus_forge/")

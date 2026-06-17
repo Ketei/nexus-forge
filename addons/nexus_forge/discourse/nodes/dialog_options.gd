@@ -161,6 +161,9 @@ func _set_node_data(data: Dictionary) -> void:
 	if metadata.has("position") and typeof(metadata["position"]) == TYPE_VECTOR2:
 		position_offset = metadata["position"]
 	
+	if metadata.has("localized") and typeof(metadata["localized"]) == TYPE_BOOL:
+		set_node_localized(metadata["localized"])
+	
 	if not metadata.has("choices") or typeof(metadata["choices"]) != TYPE_ARRAY:
 		return
 	
