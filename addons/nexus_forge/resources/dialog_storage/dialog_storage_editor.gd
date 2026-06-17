@@ -923,9 +923,14 @@ func _add_locale_data(file: DiscourseDialogLocale, localization_id: String, loca
 			continue
 		
 		var data = localization[node_id]
+		var localized: bool = DictUtils.get_nested_value(
+				node_data,
+				[node_id, "metadata", "localized"],
+				false,
+				true)
 		
-		var data_complete: bool = _is_localization_data_complete(data)
 		var type_mismatch: bool = _localization_type_mismatch(node_id)
+		var data_complete: bool = _is_localization_data_complete(data, localized)
 		
 		if type_mismatch or not data_complete:
 			var type: int = node_data[node_id]["type"]
@@ -955,10 +960,6 @@ func _add_locale_data(file: DiscourseDialogLocale, localization_id: String, loca
 						[localization_id, node_id, "choices"],
 						choices,
 						true)
-				
-			
-		
-		var localized: bool = node_data[node_id]["metadata"]["localized"]
 		
 		if data["type"] == LocalizationType.TEXT:
 			var warn: bool = typeof(DictUtils.get_nested_value(data, ["locales", locale])) != TYPE_STRING if localized else typeof(data["unlocalized"]) != TYPE_STRING
@@ -1083,11 +1084,17 @@ func _add_locale_data(file: DiscourseDialogLocale, localization_id: String, loca
 				full_data)
 
 
-func _is_localization_data_complete(data: Dictionary) -> bool:
+func _is_localization_data_complete(data: Dictionary, localized: bool) -> bool:
 	if data.is_empty():
 		return false
 	
-	if not data.has_all(["type", "unlocalized", "locales"]):
+	var keys: Array = ["type"]
+	if localized:
+		keys.append("locales")
+	else:
+		keys.append("unlocalized")
+	
+	if not data.has_all(keys):
 		push_warning("[DISCOURSE] Localization data missing.")
 		return false
 	
@@ -1095,7 +1102,7 @@ func _is_localization_data_complete(data: Dictionary) -> bool:
 		push_warning("[DISCOURSE] Localization data type missing.")
 		return false
 	
-	if typeof(data["locales"]) != TYPE_DICTIONARY:
+	if localized and typeof(data["locales"]) != TYPE_DICTIONARY:
 		push_warning("[DISCOURSE] Localization text data mismatch.")
 		return false
 	
