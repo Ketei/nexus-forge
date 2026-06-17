@@ -924,15 +924,20 @@ func _add_locale_data(file: DiscourseDialogLocale, localization_id: String, loca
 		
 		var data = localization[node_id]
 		
-		if not data.has_all(["type", "unlocalized", "locales"]) or typeof("unlocalized") != TYPE_STRING or typeof(data["type"]) != TYPE_INT or typeof(data["locales"]) != TYPE_DICTIONARY:
-			push_error(
-					"[DISCOURSE] Incomplete or corrupt data for node with UID \"" + node_id + "\" - type/unlocalized/locales check.")
-			continue
+		var data_complete: bool = _is_localization_data_complete(data)
+		var type_mismatch: bool = _localization_type_mismatch(node_id)
 		
-		if _localization_type_mismatch(node_id):
+		if type_mismatch or not data_complete:
 			var type: int = node_data[node_id]["type"]
-			push_error(
-					"[DISCOURSE] Type mismatch for node & localization with id '%s'" % node_id)
+			if not data_complete:
+				push_error(
+						"[DISCOURSE] Incomplete or corrupt data for node with UID '%s' " % node_id)
+			if type_mismatch:
+				push_error(
+						"[DISCOURSE] Type mismatch for node & localization with UID '%s'" % node_id)
+			
+			push_warning("[DISCOURSE] Patching data with placeholder entries.")
+			
 			if type == NodeType.DIALOG or type == NodeType.LOCALIZED_TEXT:
 				DictUtils.set_nested_value(
 					file.localization,
@@ -950,7 +955,8 @@ func _add_locale_data(file: DiscourseDialogLocale, localization_id: String, loca
 						[localization_id, node_id, "choices"],
 						choices,
 						true)
-			continue
+				
+			
 		
 		var localized: bool = node_data[node_id]["metadata"]["localized"]
 		
@@ -993,16 +999,16 @@ func _add_locale_data(file: DiscourseDialogLocale, localization_id: String, loca
 						if typeof(data["unlocalized"][idx]) == TYPE_STRING:
 							base.append(data["unlocalized"][idx])
 						else:
-							push_warning("[DISCORUSE] Choice with index " + str(idx) + " on locale " + locale + " isn't a string.")
+							push_warning("[DISCORUSE] Choice with index %s on locale '%s' isn't a string." % [idx, locale])
 							base.append("[INVALID TEXT]")
 				else:
 					base.resize(choice_size)
 			
 			if not data_exists:
 				if localized:
-					push_warning("[DISCOURSE] Localization data for node UID \"" + node_id + "\" for locale \"" + locale + "\" is missing.")
+					push_warning("[DISCOURSE] Localization data for node UID '%s' for locale '%s' is missing." % [node_id, locale])
 				else:
-					push_warning("[DISCOURSE] Unlocalized data for node UID \"" + node_id + "\" is missing.")
+					push_warning("[DISCOURSE] Unlocalized data for node UID '%s' is missing." % node_id)
 				var err_string: String = "[MISSING LOCALIZATION DATA]"
 				base.resize(choice_size)
 				for idx in range(choice_size):
@@ -1017,7 +1023,7 @@ func _add_locale_data(file: DiscourseDialogLocale, localization_id: String, loca
 			var current_size: int = base.size()
 			if choice_size != current_size:
 				push_warning(
-					"[DISCOURSE] Localization choice count on node %s differs from data choice count: %s vs %s. Patching to match data size." % [node_id, current_size, choice_size])
+					"[DISCOURSE] Localization choice count on node UID %s differs from data choice count: %s vs %s. Patching to match data size." % [node_id, current_size, choice_size])
 				base.resize(choice_size)
 				if current_size < choice_size:
 					push_warning("[DISCOURSE] Localization count is smaller. Applying placeholders.")
@@ -1025,20 +1031,20 @@ func _add_locale_data(file: DiscourseDialogLocale, localization_id: String, loca
 						base[missing_idx] = "[MISSING LOCALIZATION DATA]"
 		else:
 			push_warning(
-					"[DISCOURSE] Localization export for node with UID \"" + node_id + "\" couldn't define type.")
+					"[DISCOURSE] Localization export for node with UID '%s' couldn't define type." % node_id)
 			var nameless_id = DictUtils.get_nested_value(node_data, [node_id, "name"])
 			if typeof(nameless_id) == TYPE_STRING_NAME:
-				push_warning("[DISCOURSE - INFO] ID for typeless node found: \"" + String(nameless_id) + "\"")
+				push_warning("[DISCOURSE - INFO] ID for typeless node found: %s\"" % String(nameless_id))
 	
 	for format_key in format_strings.keys():
 		if not format_strings[format_key].has(locale) or typeof(format_strings[format_key][locale]) != TYPE_DICTIONARY:
-			push_warning("[DISCOURSE] Format string with key " + format_key + " doesn't have valid localization data for language: " + locale + ". Skipping")
+			push_warning("[DISCOURSE] Format string with key '%s' doesn't have valid localization data for locale '%s'. Skipping" % [format_key, locale])
 			continue
 		
 		var data: Dictionary = format_strings[format_key][locale]
 		
 		if not data.has_all(["base_string", "format"]) or typeof(data["base_string"]) != TYPE_STRING or typeof(data["format"]) != TYPE_DICTIONARY:
-			push_error("[DISCOURSE] Format string with key " + format_key + " doesn't have valid localization data for language: " + locale + ". Skipping")
+			push_error("[DISCOURSE] Format string with key '%s' doesn't have valid localization data for locale '%s'. Skipping" % [format_key, locale])
 			continue
 		
 		var valid_formats: Dictionary = {}
@@ -1047,7 +1053,7 @@ func _add_locale_data(file: DiscourseDialogLocale, localization_id: String, loca
 			var valid_cases: Dictionary = {}
 			
 			if typeof(data["format"][format_slice]) != TYPE_DICTIONARY or not data["format"][format_slice].has_all(["default", "cases"]) or typeof(data["format"][format_slice]["default"]) != TYPE_STRING or typeof(data["format"][format_slice]["cases"]) != TYPE_DICTIONARY:
-				push_error("[DISCOURSE] Format string with key " + format_key + " format " + format_slice + " has missing or corrupt data. Skipping")
+				push_error("[DISCOURSE] Format string with key '%s' format '%s' has missing or corrupt data. Skipping" % [format_key, format_slice])
 				continue
 			
 			var formats: Dictionary = data["format"][format_slice]
@@ -1075,6 +1081,25 @@ func _add_locale_data(file: DiscourseDialogLocale, localization_id: String, loca
 				file.format_strings,
 				[localization_id, format_key],
 				full_data)
+
+
+func _is_localization_data_complete(data: Dictionary) -> bool:
+	if data.is_empty():
+		return false
+	
+	if not data.has_all(["type", "unlocalized", "locales"]):
+		push_warning("[DISCOURSE] Localization data missing.")
+		return false
+	
+	if typeof(data["type"]) != TYPE_INT:
+		push_warning("[DISCOURSE] Localization data type missing.")
+		return false
+	
+	if typeof(data["locales"]) != TYPE_DICTIONARY:
+		push_warning("[DISCOURSE] Localization text data mismatch.")
+		return false
+	
+	return true
 
 
 func _localization_type_mismatch(uuid: StringName) -> bool:
