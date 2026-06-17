@@ -496,7 +496,7 @@ func _sort_mods(for_quest: StringName) -> void:
 				push_warning("[ODYSSEY] Circular dependency detected for mod '%s'. Forcing to end of execution order." % mod_id)
 				final_order.append(mod_id)
 	
-	_quest_modifiers[for_quest]["order"] = final_order
+	_quest_modifiers[for_quest]["order"].assign(final_order)
 
 
 func _is_dependency_circular(on_quest: StringName, mod_id: StringName, depends_on: StringName, _visited: Array[StringName] = []) -> bool:

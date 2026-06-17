@@ -410,105 +410,95 @@ func _parse_dialog(dialog_id: String, dialog: String) -> String:
 	parsed.locale = locale
 	parsed.dialog = dialog
 	
-	var functions_processed: PackedStringArray = []
-	var variables_processed: PackedStringArray = []
-	var phrases_processed: PackedStringArray = []
-	var random_processed: PackedStringArray = []
+	var functions_processed: Dictionary[String, Variant] = {}
+	var variables_processed: Dictionary[String, Variant] = {}
+	var phrases_processed: Dictionary[String, Variant] = {}
+	var random_processed: Dictionary[String,Variant] = {}
 	
-	var function_regex: RegEx = RegEx.new()
-	var variable_regex: RegEx = RegEx.new()
-	var phrase_regex: RegEx = RegEx.new()
-	var random_regex: RegEx = RegEx.new()
-	function_regex.compile("\\{\\![^\\s\\}]+\\}")
-	variable_regex.compile("\\{\\$[^\\s\\}]+\\}")
-	phrase_regex.compile("\\{\\&[^\\s\\}]+\\}")
-	random_regex.compile("\\{\\?[^\\}]+\\}")
+	var regex_search: RegEx = RegEx.new()
+	regex_search.compile("\\{([\\!\\$\\&\\?][^\\s\\}]+)\\}")
 	
-	for rgx_rand_result in random_regex.search_all(dialog):
-		if random_processed.has(rgx_rand_result.get_string()):
-			continue
+	for reg_result in regex_search.search_all(dialog):
+		var format_key: String = reg_result.get_string(1)
+		var token: String = format_key[0]
 		
-		random_processed.append(rgx_rand_result.get_string())
+		if token == "?":
+			if random_processed.has(reg_result.get_string()):
+				continue
+			
+			random_processed[reg_result.get_string()] = null
+			var options: Array[String] = []
+			options.assign(
+					format_key.substr(1).split("|", false))
+			
+			parsed.set_format_callable(
+					format_key,
+					options.pick_random)
 		
-		var clean_string: String = rgx_rand_result.get_string().trim_prefix("{").trim_suffix("}")
-		var options: Array[String] = []
-		options.assign(clean_string.trim_prefix("?").split("|", false))
+		elif token == "!":
+			if functions_processed.has(reg_result.get_string()):
+				continue
+			
+			functions_processed[reg_result.get_string()] = null
+			
+			parsed.set_format_callable(
+					format_key,
+					_build_callable_for_method(format_key.substr(1)))
 		
-		parsed.set_format_callable(
-			clean_string,
-			options.pick_random)
-	
-	# Searching for function calls.
-	
-	for rgx_func_result in function_regex.search_all(dialog):
-		if functions_processed.has(rgx_func_result.get_string()):
-			continue
+		elif token == "$":
+			if variables_processed.has(reg_result.get_string()):
+				continue
+			
+			variables_processed[reg_result.get_string()] = null
+			
+			parsed.set_format_callable(
+					format_key,
+					_build_callable_for_variable(format_key.substr(1)))
 		
-		functions_processed.append(rgx_func_result.get_string())
-		
-		# {!get_name|a,b} -> !get_name|a,b
-		var clean_string: String = rgx_func_result.get_string().trim_prefix("{").trim_suffix("}")
-		
-		parsed.set_format_callable(
-				clean_string,
-				_build_callable_for_method(clean_string.trim_prefix("!")))
-		
-	# Processing variables
-	
-	for rgx_var_result in variable_regex.search_all(dialog):
-		if variables_processed.has(rgx_var_result.get_string()):
-			continue
-		
-		var key: String = rgx_var_result.get_string().trim_prefix("{").trim_suffix("}")
-		variables_processed.append(rgx_var_result.get_string())
-		
-		var callable: Callable = _build_callable_for_variable(key.trim_prefix("{$").trim_suffix("}"))
-		
-		parsed.set_format_callable(
-				key,
-				_build_callable_for_variable(key.trim_prefix("$")))
-	
-	# Revealing the phrase text.
-	for rgx_phrase_result in phrase_regex.search_all(dialog):
-		if phrases_processed.has(rgx_phrase_result.get_string()):
-			continue
-		var phrase_key: String = rgx_phrase_result.get_string().trim_prefix("{").trim_suffix("}")
-		var prefix_trim_key: String = phrase_key.trim_prefix("&")
-		phrases_processed.append(phrase_key)
-		
-		var phrase: String = _dialog_resource.get_format_string(
-				prefix_trim_key,
-				locale)
-		
-		var argument_cases: Dictionary[String, Dictionary] = _dialog_resource.get_format_string_arguments(
-				prefix_trim_key,
-				locale)
-		
-		parsed.create_format_phrase(phrase_key, phrase, argument_cases)
-		
-		for random_section in random_regex.search_all(phrase):
-			var replace: String = random_section.get_string().trim_prefix("{").trim_suffix("}")
-			var items: Array[String] = []
-			items.assign(replace.trim_prefix("?").split("|", false))
-			parsed.set_format_phrase_callable(
-					phrase_key,
-					replace,
-					items.pick_random)
-		
-		for function_section in function_regex.search_all(phrase):
-		#{!askdjal}
-			var replace: String = function_section.get_string().trim_prefix("{").trim_suffix("}")
-			parsed.set_format_phrase_callable(
-					phrase_key,
-					replace,
-					_build_callable_for_method(replace.trim_prefix("!")))
-		
-		for variable_section in variable_regex.search_all(phrase):
-			var replace: String = variable_section.get_string().trim_prefix("{").trim_suffix("}")
-			parsed.set_format_phrase_callable(
-					phrase_key,
-					replace,
-					_build_callable_for_variable(replace.trim_prefix("$")))
+		elif token == "&":
+			if phrases_processed.has(reg_result.get_string()):
+				continue
+			phrases_processed[reg_result.get_string()] = null
+			var phrase_key: String = format_key.substr(1)
+			
+			var phrase: String = _dialog_resource.get_format_string(
+					format_key,
+					locale)
+			
+			var argument_cases: Dictionary[String, Dictionary] = _dialog_resource.get_format_string_arguments(
+					format_key,
+					locale)
+			
+			parsed.create_format_phrase(
+					format_key,
+					phrase,
+					argument_cases)
+			
+			for format_result in regex_search.search_all(phrase):
+				var phrase_case: String = format_result.get_string(1)
+				var case_token: String = phrase_case[0]
+				
+				if case_token == "?":
+					var options: Array[String] = []
+					options.assign(
+							phrase_case.substr(1).split("|", false))
+					
+					parsed.set_format_phrase_callable(
+							format_key,
+							phrase_case,
+							options.pick_random)
+				
+				elif case_token == "!":
+					parsed.set_format_phrase_callable(
+							format_key,
+							phrase_case,
+							_build_callable_for_method(phrase_case.substr(1)))
+				
+				elif case_token == "$":
+					parsed.set_format_phrase_callable(
+							format_key,
+							phrase_case,
+							_build_callable_for_variable(phrase_case.substr(1)))
 	
 	_dialog_resource.parsed_dialog_cache.cache_data(
 		DUUID,
