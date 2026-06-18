@@ -29,7 +29,7 @@ func _get_name() -> String:
 func _export_begin(_features: PackedStringArray, _is_debug: bool, _path: String, _flags: int) -> void:
 	export_temp_dir = DirAccess.create_temp("godot_nf_plugin")
 	var file_base_path: String = ProjectSettings.get_setting(
-			EditorNFPlugin.get_project_settings_path("discourse")).strip_edges()
+			NFPluginGameHandler.get_setting_path("discourse")).strip_edges()
 	
 	release_files.clear()
 	dialog_file_to_id.clear()

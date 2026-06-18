@@ -69,10 +69,10 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 	var data: Dictionary = _dialog_resource.get_node_data(uuid, locale)
 	
 	if data.is_empty():
-		push_error(
-			"[DISCOURSE] DATA FOR NODE WITH UUID \"",
-			uuid,
-			"\" WAS NOT FOUND")
+		NFPluginGameHandler._log_msg(
+			"discourse",
+			"Data for node with UUID '%s' was not found." % uuid,
+			NFPluginGameHandler._LogLevel.ERROR)
 		return target
 	
 	var metadata: Dictionary = data["metadata"]
@@ -101,8 +101,10 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 					if metadata_node.has_all(["input_connections", "metadata"]) and metadata_node["metadata"].has("metadata_connections"):
 						for meta_entry: Dictionary in metadata_node["metadata"]["metadata_connections"]:
 							if not metadata_node["input_connections"].has(meta_entry["id"]):
-								push_error(
-										"[NexusForge] Metadata connection missing for metadata \"", meta_entry["id"], "\" on node \"", metadata_node["name"], "\" on resoruce \"", _dialog_resource.resource_path, "\"")
+								NFPluginGameHandler._log_msg(
+									"dialog-exporter",
+									"Metadata connection missing for '%s' on node '%s' on resource '%s'. Setting to NULL." % [meta_entry["id"], metadata_node["name"], _dialog_resource.resource_path],
+									NFPluginGameHandler._LogLevel.ERROR)
 								dialog_metadata[meta_entry["id"]] = null
 							else:
 								dialog_metadata[meta_entry["id"]] = _get_data(metadata_node["input_connections"][meta_entry["id"]]["target_node_uuid"])
@@ -177,8 +179,10 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 						if metadata_node.has_all(["input_connections", "metadata"]) and metadata_node["metadata"].has("metadata_connections"):
 							for meta_entry: Dictionary in metadata_node["metadata"]["metadata_connections"]:
 								if not metadata_node["input_connections"].has(meta_entry["id"]):
-									push_error(
-											"[NexusForge] Metadata connection missing for metadata \"", meta_entry["id"], "\" on node \"", metadata_node["name"], "\" on resoruce \"", _dialog_resource.resource_path, "\"")
+									NFPluginGameHandler._log_msg(
+											"discourse",
+											"Metadata connection missing for '%s' on node '%s' on resource '%s'. Setting to NULL." % [meta_entry["id"], metadata_node["name"], _dialog_resource.resource_path],
+											NFPluginGameHandler._LogLevel.ERROR)
 									option_metadata[meta_entry["id"]] = null
 								else:
 									option_metadata[meta_entry["id"]] = _get_data(metadata_node["input_connections"][meta_entry["id"]]["target_node_uuid"])
@@ -216,7 +220,10 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 				if NexusForge.Blackboard.set_variable(path, set_data):
 					data_set.emit(path, set_data)
 				else:
-					push_error("[DISCOURSE] Node ", data["name"], " couldn't set data on path: ", path.strip_edges().simplify_path())
+					NFPluginGameHandler._log_msg(
+						"discourse",
+						"Node '%s' couldn't set data on '%s'" % [data["name"], path.strip_edges().simplify_path()],
+						NFPluginGameHandler._LogLevel.ERROR)
 			if data["input_connections"]["callable"]["target_node_uuid"] != "":
 				var call_data: Dictionary = _dialog_resource.get_node_data(data["input_connections"]["callable"]["target_node_uuid"])
 				var call_metadata: Dictionary = call_data["metadata"]
@@ -236,7 +243,10 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 					
 					method_called.emit(call_metadata["method"], call_args.duplicate(true))
 				else:
-					push_error("[DISCOURSE] Node ", data["name"], " attemted to call inexistent method: ", call_metadata["method"])
+					NFPluginGameHandler._log_msg(
+							"discourse",
+							"Node '%s' attempted to call inexistent method '%s'." % [data["name"], call_metadata["method"]],
+							NFPluginGameHandler._LogLevel.ERROR)
 			
 			if data["input_connections"]["signal"]["target_node_uuid"] != "":
 				var signal_data: Dictionary = _dialog_resource.get_node_data(data["input_connections"]["signal"]["target_node_uuid"])
@@ -253,7 +263,10 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 							signal_args)
 					signal_emmited.emit(signal_metadata["signal"], signal_args)
 				else:
-					push_error("[DISCOURSE] Node ", data["name"], " attempted to emit an inexistent signal: ", signal_metadata["signal"])
+					NFPluginGameHandler._log_msg(
+							"discourse",
+							"Node '%s' attempted to emit an inexistent signal '%s'." % [data["name"], signal_metadata["signal"]],
+							NFPluginGameHandler._LogLevel.ERROR)
 			return _process_logic(data["output_connections"]["next_node"]["target_node_uuid"])
 		NodeTypes.MATCH:
 			var data_comp = _get_data(data["input_connections"]["match_value_source"]["target_node_uuid"])
@@ -357,7 +370,10 @@ func _get_data(from_uuid: StringName, fallback = null) -> Variant:
 						data_conn):
 					data_set.emit(path, data_conn)
 				else:
-					push_error("[DISCOURSE] Node ", data["name"], " couldn't set data on path: ", path.strip_edges().simplify_path())
+					NFPluginGameHandler._log_msg(
+							"discourse",
+							"Node '%s' couldn't set data on path '%s'." % [data["name"], path.strip_edges().simplify_path()],
+							NFPluginGameHandler._LogLevel.ERROR)
 			if data["input_connections"]["callable"]["target_node_uuid"] != "":
 				var call_data: Dictionary = _dialog_resource.get_node_data(data["input_connections"]["callable"]["target_node_uuid"], locale)
 				
@@ -373,7 +389,10 @@ func _get_data(from_uuid: StringName, fallback = null) -> Variant:
 							call_args)
 					method_called.emit(call_data["metadata"]["method"], call_args.duplicate(true))
 				else:
-					push_error("[DISCOURSE] Node ", data["name"], " attemted to call inexistent method: ", call_data["metadata"]["method"])
+					NFPluginGameHandler._log_msg(
+						"discourse",
+						"Node %s attempted to call an inexistent method '%s'." % [data["name"], call_data["metadata"]["method"]],
+						NFPluginGameHandler._LogLevel.ERROR)
 			
 			if data["input_connections"]["signal"]["target_node_uuid"] != "":
 				var signal_data: Dictionary = _dialog_resource.get_node_data(data["input_connections"]["signal"]["target_node_uuid"], locale)
@@ -389,7 +408,10 @@ func _get_data(from_uuid: StringName, fallback = null) -> Variant:
 							signal_args)
 					signal_emmited.emit(signal_data["metadata"]["signal"], signal_args)
 				else:
-						push_error("[DISCOURSE] Node ", data["name"], " attempted to emit an inexistent signal: ", signal_data["metadata"]["signal"])
+					NFPluginGameHandler._log_msg(
+						"discourse",
+						"Node %s attempted to emit an inexistent signal '%s'." % [data["name"], signal_data["metadata"]["signal"]],
+						NFPluginGameHandler._LogLevel.ERROR)
 			return _get_data(data["input_connections"]["data_input"]["target_node_uuid"])
 		NodeTypes.LOCALIZED_TEXT:
 			return metadata["text"]
@@ -519,6 +541,82 @@ func _parse_dialog(dialog_id: String, dialog: String) -> String:
 
 func _load_locale_to_active_dialog(_locale_code: String) -> void:
 	return
+
+
+func edit_dialog(locale_code: String, dialog_id: StringName, node_id: StringName, new_dialog) -> void:
+	var type: int = typeof(new_dialog)
+	if type == TYPE_NIL:
+		if DictUtils.has_nested_path(_dialog_edits, [dialog_id, locale_code, node_id]):
+			_dialog_edits[dialog_id][locale_code].erase(node_id)
+		return
+	elif type != TYPE_STRING:
+		return
+	
+	var target: Dictionary = {}
+	
+	if DictUtils.has_nested_path(_dialog_edits, [dialog_id, locale_code]):
+		target = _dialog_edits[dialog_id][locale_code]
+	else:
+		DictUtils.set_nested_value(
+				_dialog_edits,
+				[dialog_id, locale_code],
+				target)
+	
+	target[node_id] = new_dialog
+	
+	if _dialog_resource == null or dialog_id.is_empty():
+		return
+	
+	if String(dialog_id) != _dialog_resource.dialog_id:
+		return
+	
+	if _dialog_resource.dialog_overrides != _dialog_edits[dialog_id]:
+		_dialog_resource.dialog_overrides = _dialog_edits[dialog_id]
+
+
+func edit_choices(locale_code: String, dialog_id: StringName, node_id: StringName, new_choices) -> void:
+	var type: int = typeof(new_choices)
+	if type == TYPE_NIL:
+		if DictUtils.has_nested_path(_dialog_edits, [dialog_id, locale_code, node_id]):
+			_dialog_edits[dialog_id][locale_code].erase(node_id)
+		return
+	elif type != TYPE_PACKED_STRING_ARRAY and type != TYPE_ARRAY:
+		NFPluginGameHandler._log_msg(
+			"discourse",
+			"Can't assing choices based on a non-array.",
+			NFPluginGameHandler._LogLevel.ERROR)
+		return
+	
+	var responses: PackedStringArray = []
+	
+	if DictUtils.has_nested_path(_dialog_edits, [dialog_id, locale_code, node_id]) and typeof(_dialog_edits[dialog_id][locale_code][node_id]) == TYPE_PACKED_STRING_ARRAY:
+		responses = _dialog_edits[dialog_id][locale_code][node_id]
+		responses.clear()
+	else:
+		DictUtils.set_nested_value(
+				_dialog_edits,
+				[dialog_id, locale_code, node_id],
+				responses,
+				true)
+	
+	for item in new_choices:
+		if typeof(item) == TYPE_STRING:
+			responses.append(item)
+		else:
+			NFPluginGameHandler._log_msg(
+				"discourse",
+				"An item in the provided array isn't a string.",
+				NFPluginGameHandler._LogLevel.WARNING)
+			responses.append("")
+	
+	if _dialog_resource == null or dialog_id.is_empty():
+		return
+	
+	if String(dialog_id) != _dialog_resource.dialog_id:
+		return
+	
+	if _dialog_resource.dialog_overrides != _dialog_edits[dialog_id]:
+		_dialog_resource.dialog_overrides = _dialog_edits[dialog_id]
 
 
 func _get_bool_result(from_uuid: String) -> bool:

@@ -234,7 +234,7 @@ func update_species_data(species_catalog: SpeciesCatalog = null) -> void:
 	species_option_button.clear()
 	
 	var species_path: String = ProjectSettings.get_setting(
-			EditorNFPlugin.get_project_settings_path("species"),
+			NFPluginGameHandler.get_setting_path("species"),
 			"")
 	
 	if species_catalog == null:

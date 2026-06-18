@@ -1,5 +1,4 @@
 @tool
-class_name EditorNFPlugin
 extends EditorPlugin
 
 
@@ -7,195 +6,9 @@ const MAIN_SCENE = preload("res://addons/nexus_forge/NexusForgeMainScene.tscn")
 const PLUGIN_NAME: String = "NexusForge"
 const PLUGIN_ICON_PATH: String = "res://addons/nexus_forge/icons/nexus_forge_small.svg"
 const HANDLED_CLASSES: Array[StringName] = [&"EditorDiscourseDialog", &"CharacterSheet", &"PhraseMap", &"Quest"]
-const SETTINGS_PATHS: Dictionary[String, Dictionary] = {
-	"discourse_enabled": {
-		"setting_path": "nexus_forge/enabled_modules/discourse_enabled",
-		"default_value": true,
-		"type": TYPE_BOOL,
-		"hint": PROPERTY_HINT_NONE,
-		"hint_string": ""},
-	"characters_enabled": {
-		"setting_path": "nexus_forge/enabled_modules/characters_enabled",
-		"default_value": true,
-		"type": TYPE_BOOL,
-		"hint": PROPERTY_HINT_NONE,
-		"hint_string": ""},
-	"species_enabled": {
-		"setting_path": "nexus_forge/enabled_modules/species_enabled",
-		"default_value": true,
-		"type": TYPE_BOOL,
-		"hint": PROPERTY_HINT_NONE,
-		"hint_string": ""},
-	"talents_enabled": {
-		"setting_path": "nexus_forge/enabled_modules/talents_enabled",
-		"default_value": true,
-		"type": TYPE_BOOL,
-		"hint": PROPERTY_HINT_NONE,
-		"hint_string": ""},
-	"items_enabled": {
-		"setting_path": "nexus_forge/enabled_modules/items_enabled",
-		"default_value": true,
-		"type": TYPE_BOOL,
-		"hint": PROPERTY_HINT_NONE,
-		"hint_string": ""},
-	"recipes_enabled": {
-		"setting_path": "nexus_forge/enabled_modules/recipes_enabled",
-		"default_value": true,
-		"type": TYPE_BOOL,
-		"hint": PROPERTY_HINT_NONE,
-		"hint_string": ""},
-	"quests_enabled": {
-		"setting_path": "nexus_forge/enabled_modules/quests_enabled",
-		"default_value": true,
-		"type": TYPE_BOOL,
-		"hint": PROPERTY_HINT_NONE,
-		"hint_string": ""},
-	"currencies_enabled": {
-		"setting_path": "nexus_forge/enabled_modules/currencies_enabled",
-		"default_value": true,
-		"type": TYPE_BOOL,
-		"hint": PROPERTY_HINT_NONE,
-		"hint_string": ""},
-	"phrases_enabled": {
-		"setting_path": "nexus_forge/enabled_modules/phrase_maps_enabled",
-		"default_value": true,
-		"type": TYPE_BOOL,
-		"hint": PROPERTY_HINT_NONE,
-		"hint_string": ""},
-	"recompile_documentation": {
-		"setting_path": "nexus_forge/settings/recompile_documentation_on_start",
-		"default_value": false,
-		"type": TYPE_BOOL,
-		"hint": PROPERTY_HINT_NONE,
-		"hint_string": "",
-		"restart_required": false},
-	"discourse_custom_dialog_debug_scene": {
-		"setting_path": "nexus_forge/settings/custom_dialog_debug_scene",
-		"default_value": "",
-		"type": TYPE_STRING,
-		"hint": PROPERTY_HINT_FILE,
-		"hint_string": "*.tres",
-		"restart_required": false},
-	"discourse_localization_preview_scene": {
-		"setting_path": "nexus_forge/settings/localization_preview_scene",
-		"default_value": "",
-		"type": TYPE_STRING,
-		"hint": PROPERTY_HINT_FILE,
-		"hint_string": "*.tres"},
-	"discourse_panning_scheme": {
-		"setting_path": "nexus_forge/settings/discourse_scroll_wheel_pans",
-		"default_value": true,
-		"type": TYPE_BOOL,
-		"hint": PROPERTY_HINT_NONE,
-		"hint_string": ""},
-	"discourse_base_language": {
-		"setting_path": "nexus_forge/settings/discourse_base_language",
-		"default_value": "",
-		"type": TYPE_STRING,
-		"hint": PROPERTY_HINT_LOCALE_ID,
-		"hint_string": ""},
-	"discourse_use_languages": {
-		"setting_path": "nexus_forge/settings/discourse_use_languages",
-		"default_value": "",
-		"type": TYPE_STRING,
-		"hint": PROPERTY_HINT_NONE,
-		"hint_string": ""},
-	"use_disabled_modules": {
-		"setting_path": "nexus_forge/settings/instantiate_disabled_modules",
-		"default_value": true,
-		"type": TYPE_BOOL,
-		"hint": PROPERTY_HINT_NONE,
-		"hint_string": "",
-		"restart_required": false,
-		"sort_string": "nexus_forge/settings/aaa_instantiate_disabled_modules"},
-	"items_format_strings": {
-		"setting_path": "nexus_forge/settings/format_item_strings_with_blackboard",
-		"default_value": false,
-		"type": TYPE_BOOL,
-		"hint": PROPERTY_HINT_NONE,
-		"hint_string": "",
-		"restart_required": false},
-	"species_genetic_dilution": {
-		"setting_path": "nexus_forge/settings/species_genetic_dilution",
-		"default_value": 0.0,
-		"type": TYPE_FLOAT,
-		"hint": PROPERTY_HINT_RANGE,
-		"hint_string": "0,1",
-		"restart_required": false},
-	"quests_format_strings": {
-		"setting_path": "nexus_forge/settings/format_quest_strings_with_blackboard",
-		"default_value": false,
-		"type": TYPE_BOOL,
-		"hint": PROPERTY_HINT_NONE,
-		"hint_string": "",
-		"restart_required": false},
-	"discourse_sync_locale": {
-		"setting_path": "nexus_forge/settings/update_discourse_locale_with_godot",
-		"default_value": true,
-		"type": TYPE_BOOL,
-		"hint": PROPERTY_HINT_NONE,
-		"hint_string": "",
-		"restart_required": false},
-	"discourse": {
-		"setting_path": "nexus_forge/export/localization_directory",
-		"default_value": "res://localization/",
-		"type": TYPE_STRING,
-		"hint": PROPERTY_HINT_DIR,
-		"hint_string": "",
-		"is_basic": false,
-		"restart_required": false},
-	"variables": {
-		"setting_path": "nexus_forge/paths/blackboard_path",
-		"default_value": "",
-		"type": TYPE_STRING,
-		"hint": PROPERTY_HINT_FILE,
-		"hint_string": "*.tres"},
-	"traits": {
-		"setting_path": "nexus_forge/paths/traits_path",
-		"default_value": "",
-		"type": TYPE_STRING,
-		"hint": PROPERTY_HINT_FILE,
-		"hint_string": "*.tres"},
-	"skills": {
-		"setting_path": "nexus_forge/paths/skills_path",
-		"default_value": "",
-		"type": TYPE_STRING,
-		"hint": PROPERTY_HINT_FILE,
-		"hint_string": "*.tres"},
-	"species": {
-		"setting_path": "nexus_forge/paths/species_path",
-		"default_value": "",
-		"type": TYPE_STRING,
-		"hint": PROPERTY_HINT_FILE,
-		"hint_string": "*.tres"},
-	"items": {
-		"setting_path": "nexus_forge/paths/items_path",
-		"default_value": "",
-		"type": TYPE_STRING,
-		"hint": PROPERTY_HINT_FILE,
-		"hint_string": "*.tres"},
-	"currency": {
-		"setting_path": "nexus_forge/paths/currency_path",
-		"default_value": "",
-		"type": TYPE_STRING,
-		"hint": PROPERTY_HINT_FILE,
-		"hint_string": "*.tres"},
-	"recipes": {
-		"setting_path": "nexus_forge/paths/recipes_path",
-		"default_value": "",
-		"type": TYPE_STRING,
-		"hint": PROPERTY_HINT_FILE,
-		"hint_string": "*.tres"}
-}
 
 var editor_view: Control = null
 var export_plugin: EditorExportPlugin = null
-
-
-static func get_project_settings_path(module: String) -> String:
-	if SETTINGS_PATHS.has(module):
-		return SETTINGS_PATHS[module]["setting_path"]
-	return ""
 
 
 # Earlier versions of godot had an issue where documentation wouldn't show
@@ -250,23 +63,23 @@ func _enter_tree() -> void:
 	export_plugin = preload("res://addons/nexus_forge/export_plugin.gd").new()
 	add_export_plugin(export_plugin)
 	verify_project_settings()
-	if ProjectSettings.has_setting("autoload/NexusForge") and ProjectSettings.get_setting(get_project_settings_path("recompile_documentation"), false):
+	if ProjectSettings.has_setting("autoload/NexusForge") and ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("recompile_documentation"), false):
 		recompile_script_docs.call_deferred()
 	editor_view = MAIN_SCENE.instantiate()
 	editor_view.visible = false
 	EditorInterface.get_editor_main_screen().add_child(editor_view)
 	if not editor_view.is_node_ready():
 		await editor_view.ready
-	var use_discourse: bool = ProjectSettings.get_setting(get_project_settings_path("discourse_enabled"), true)
-	var use_characters: bool = ProjectSettings.get_setting(get_project_settings_path("characters_enabled"), true)
-	var use_species: bool = ProjectSettings.get_setting(get_project_settings_path("species_enabled"), true)
-	var use_talents: bool = ProjectSettings.get_setting(get_project_settings_path("talents_enabled"), true)
-	var use_items: bool = ProjectSettings.get_setting(get_project_settings_path("items_enabled"), true)
-	var use_currencies: bool = ProjectSettings.get_setting(get_project_settings_path("currencies_enabled"), true)
-	var use_recipes: bool = ProjectSettings.get_setting(get_project_settings_path("recipes_enabled"), true)
-	var use_quests: bool = ProjectSettings.get_setting(get_project_settings_path("quests_enabled"), true)
-	var use_phrases: bool = ProjectSettings.get_setting(get_project_settings_path("phrases_enabled"), true)
-	var discourse_base_lang: String = ProjectSettings.get_setting(get_project_settings_path("discourse_base_language"), OS.get_locale_language())
+	var use_discourse: bool = ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("discourse_enabled"), true)
+	var use_characters: bool = ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("characters_enabled"), true)
+	var use_species: bool = ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("species_enabled"), true)
+	var use_talents: bool = ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("talents_enabled"), true)
+	var use_items: bool = ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("items_enabled"), true)
+	var use_currencies: bool = ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("currencies_enabled"), true)
+	var use_recipes: bool = ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("recipes_enabled"), true)
+	var use_quests: bool = ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("quests_enabled"), true)
+	var use_phrases: bool = ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("phrases_enabled"), true)
+	var discourse_base_lang: String = ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("discourse_base_language"), OS.get_locale_language())
 	editor_view.ready_plugin(
 			use_discourse,
 			use_characters,
@@ -285,7 +98,7 @@ func _enter_tree() -> void:
 
 func _build() -> bool:
 	var path: String = ProjectSettings.get_setting(
-			get_project_settings_path("discourse"), "res://localization/").strip_edges()
+			NFPluginGameHandler.get_setting_path("discourse"), "res://localization/").strip_edges()
 	
 	var valid_path: bool = path != "" and path.is_absolute_path() and path.begins_with("res://") and path.get_extension() == ""
 	
@@ -334,7 +147,7 @@ func _enable_plugin() -> void:
 	add_autoload_singleton(
 			"NexusForge",
 			"res://addons/nexus_forge/classes/autoload/nexus_forge_singleton.gd")
-	if ProjectSettings.get_setting(get_project_settings_path("recompile_documentation"), false):
+	if ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("recompile_documentation"), false):
 		recompile_script_docs.call_deferred()
 
 
@@ -390,36 +203,42 @@ func _set_window_layout(configuration: ConfigFile) -> void:
 
 
 func _sort_custom_settings(a: String, b: String) -> bool:
-	var a_string: String = SETTINGS_PATHS[a]["sort_string"] if SETTINGS_PATHS[a].has("sort_string") else SETTINGS_PATHS[a]["setting_path"]
-	var b_string: String = SETTINGS_PATHS[b]["sort_string"] if SETTINGS_PATHS[b].has("sort_string") else SETTINGS_PATHS[b]["setting_path"]
+	var a_string: String = NFPluginGameHandler._SETTINGS_PATHS[a]["sort_string"] if NFPluginGameHandler._SETTINGS_PATHS[a].has("sort_string") else NFPluginGameHandler._SETTINGS_PATHS[a]["setting_path"]
+	var b_string: String = NFPluginGameHandler._SETTINGS_PATHS[b]["sort_string"] if NFPluginGameHandler._SETTINGS_PATHS[b].has("sort_string") else NFPluginGameHandler._SETTINGS_PATHS[b]["setting_path"]
 	return a_string < b_string
 
 
-static func is_preview_scene_valid(print_errors: bool = true) -> bool:
-	var path: String = ProjectSettings.get_setting(get_project_settings_path("discourse_localization_preview_scene"), "")
+func is_preview_scene_valid(print_errors: bool = true) -> bool:
+	var path: String = ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("discourse_localization_preview_scene"), "")
 	
 	if path.is_empty():
 		return false
 	
 	if not FileAccess.file_exists(path):
 		if print_errors:
-			push_error(
-				"[NEXUS FORGE] Localization preview scene \"", path, "\" was not found.")
+			NFPluginGameHandler._log_msg(
+				"settings",
+				"Localization preview scene '%s' was not found" % path,
+				NFPluginGameHandler._LogLevel.ERROR)
 		return false
 	
 	var scene = load(path)
 	if scene == null or not scene is PackedScene or not scene.can_instantiate():
 		if print_errors:
-			push_error(
-				"[NEXUS FORGE] Error validating instantiation of scene \"", path, "\"")
+			NFPluginGameHandler._log_msg(
+					"settings",
+					"Error during instantiation of scene '%s'" % path,
+					NFPluginGameHandler._LogLevel.ERROR)
 		return false
 	
 	var instance: Node = scene.instantiate()
 	var scene_script: Script = instance.get_script()
 	if scene_script == null:
 		if print_errors:
-			push_error(
-					"[NEXUS FORGE] Localization preview scene \"", path, " has no script attatched")
+			NFPluginGameHandler._log_msg(
+					"settings",
+					"Scene '%s' has no script attatched" % path,
+					NFPluginGameHandler._LogLevel.ERROR)
 		instance.free()
 		return false
 	
@@ -487,8 +306,10 @@ static func is_preview_scene_valid(print_errors: bool = true) -> bool:
 		errors.append("Scene has no valid \"set_choices\" method")
 	
 	if not errors.is_empty() and print_errors:
-		push_error(
-			"[NEXUS FORGE] Localization preview scene \"", path, " has errors: ", ", ".join(errors))
+		NFPluginGameHandler._log_msg(
+				"settings",
+				"Scene '%s' errored: %s" % [path, ", ".join(errors)],
+				NFPluginGameHandler._LogLevel.ERROR)
 	
 	instance.free()
 	return has_d_txt and has_c_txt and has_set_c and has_set_d
@@ -496,31 +317,31 @@ static func is_preview_scene_valid(print_errors: bool = true) -> bool:
 
 func verify_project_settings() -> void:
 	var setting_order: Array[String] = []
-	setting_order.assign(SETTINGS_PATHS.keys())
+	setting_order.assign(NFPluginGameHandler._SETTINGS_PATHS.keys())
 	setting_order.sort_custom(_sort_custom_settings)
 	
 	for tool_id in setting_order:
-		if not ProjectSettings.has_setting(SETTINGS_PATHS[tool_id]["setting_path"]):
+		if not ProjectSettings.has_setting(NFPluginGameHandler._SETTINGS_PATHS[tool_id]["setting_path"]):
 			ProjectSettings.set_setting(
-				SETTINGS_PATHS[tool_id]["setting_path"],
-				SETTINGS_PATHS[tool_id]["default_value"] if tool_id != "discourse_base_language" else OS.get_locale_language())
+				NFPluginGameHandler._SETTINGS_PATHS[tool_id]["setting_path"],
+				NFPluginGameHandler._SETTINGS_PATHS[tool_id]["default_value"] if tool_id != "discourse_base_language" else OS.get_locale_language())
 		
 		if tool_id == "discourse_base_language":
-			var set_setting: String = TranslationServer.standardize_locale(ProjectSettings.get_setting(SETTINGS_PATHS[tool_id]["setting_path"], ""))
+			var set_setting: String = TranslationServer.standardize_locale(ProjectSettings.get_setting(NFPluginGameHandler._SETTINGS_PATHS[tool_id]["setting_path"], ""))
 			if not set_setting.is_empty():
 				var parts: PackedStringArray = set_setting.split("_", false)
 				var language: String = parts[0]
 				
 				if language != set_setting:
 					ProjectSettings.set_setting(
-					SETTINGS_PATHS[tool_id]["setting_path"],
+					NFPluginGameHandler._SETTINGS_PATHS[tool_id]["setting_path"],
 					language)
 			else:
 				ProjectSettings.set_setting(
-					SETTINGS_PATHS[tool_id]["setting_path"],
+					NFPluginGameHandler._SETTINGS_PATHS[tool_id]["setting_path"],
 					OS.get_locale_language())
 		elif tool_id == "discourse_use_languages":
-			var set_setting: String = ProjectSettings.get_setting(SETTINGS_PATHS[tool_id]["setting_path"], "")
+			var set_setting: String = ProjectSettings.get_setting(NFPluginGameHandler._SETTINGS_PATHS[tool_id]["setting_path"], "")
 			if not set_setting.is_empty():
 				var locales: PackedStringArray = StringUtils.split_and_strip(set_setting, ",", false)
 				var valid_locales: Dictionary[String, Variant] = {}
@@ -544,10 +365,10 @@ func verify_project_settings() -> void:
 						valid_locales[locale_code] = null
 				
 				ProjectSettings.set_setting(
-						SETTINGS_PATHS[tool_id]["setting_path"],
+						NFPluginGameHandler._SETTINGS_PATHS[tool_id]["setting_path"],
 						", ".join(PackedStringArray(valid_locales.keys())))
 		elif tool_id == "discourse_custom_dialog_debug_scene":
-			var path: String = ProjectSettings.get_setting(SETTINGS_PATHS[tool_id]["setting_path"], "")
+			var path: String = ProjectSettings.get_setting(NFPluginGameHandler._SETTINGS_PATHS[tool_id]["setting_path"], "")
 			if not path.is_empty() and not FileAccess.file_exists(path):
 				push_error(
 						"[NEXUS FORGE] Custom debug scene \"" + path + "\" was not found.")
@@ -556,28 +377,28 @@ func verify_project_settings() -> void:
 			
 		
 		ProjectSettings.set_initial_value(
-				SETTINGS_PATHS[tool_id]["setting_path"],
-				SETTINGS_PATHS[tool_id]["default_value"] if tool_id != "discourse_base_language" else OS.get_locale_language())
+				NFPluginGameHandler._SETTINGS_PATHS[tool_id]["setting_path"],
+				NFPluginGameHandler._SETTINGS_PATHS[tool_id]["default_value"] if tool_id != "discourse_base_language" else OS.get_locale_language())
 		
 		ProjectSettings.set_restart_if_changed(
-				SETTINGS_PATHS[tool_id]["setting_path"],
-				SETTINGS_PATHS[tool_id]["restart_required"] if SETTINGS_PATHS[tool_id].has("restart_required") else true)
+				NFPluginGameHandler._SETTINGS_PATHS[tool_id]["setting_path"],
+				NFPluginGameHandler._SETTINGS_PATHS[tool_id]["restart_required"] if NFPluginGameHandler._SETTINGS_PATHS[tool_id].has("restart_required") else true)
 		
 		var property_info = {
-			"name": SETTINGS_PATHS[tool_id]["setting_path"],
-			"type": SETTINGS_PATHS[tool_id]["type"],
-			"hint": SETTINGS_PATHS[tool_id]["hint"],
-			"hint_string": SETTINGS_PATHS[tool_id]["hint_string"]}
+			"name": NFPluginGameHandler._SETTINGS_PATHS[tool_id]["setting_path"],
+			"type": NFPluginGameHandler._SETTINGS_PATHS[tool_id]["type"],
+			"hint": NFPluginGameHandler._SETTINGS_PATHS[tool_id]["hint"] if NFPluginGameHandler._SETTINGS_PATHS[tool_id].has("hint") else PROPERTY_HINT_NONE,
+			"hint_string": NFPluginGameHandler._SETTINGS_PATHS[tool_id]["hint_string"] if NFPluginGameHandler._SETTINGS_PATHS[tool_id].has("hint_string") else ""}
 
 		ProjectSettings.add_property_info(property_info)
 		ProjectSettings.set_as_basic(
-				SETTINGS_PATHS[tool_id]["setting_path"],
-				SETTINGS_PATHS[tool_id]["is_basic"] if SETTINGS_PATHS[tool_id].has("is_basic") else true)
+				NFPluginGameHandler._SETTINGS_PATHS[tool_id]["setting_path"],
+				NFPluginGameHandler._SETTINGS_PATHS[tool_id]["is_basic"] if NFPluginGameHandler._SETTINGS_PATHS[tool_id].has("is_basic") else true)
 	
 	var idx: int = -1
 	for setting in setting_order:
 		idx += 1
-		ProjectSettings.set_order(SETTINGS_PATHS[setting]["setting_path"], idx)
+		ProjectSettings.set_order(NFPluginGameHandler._SETTINGS_PATHS[setting]["setting_path"], idx)
 		
 	ProjectSettings.save()
 
@@ -585,10 +406,10 @@ func verify_project_settings() -> void:
 func _disable_plugin() -> void:
 	remove_autoload_singleton("NexusForge")
 	
-	for tool_id in SETTINGS_PATHS.keys():
-		if ProjectSettings.has_setting(SETTINGS_PATHS[tool_id]["setting_path"]):
+	for tool_id in NFPluginGameHandler._SETTINGS_PATHS.keys():
+		if ProjectSettings.has_setting(NFPluginGameHandler._SETTINGS_PATHS[tool_id]["setting_path"]):
 			ProjectSettings.set_setting(
-					SETTINGS_PATHS[tool_id]["setting_path"],
+					NFPluginGameHandler._SETTINGS_PATHS[tool_id]["setting_path"],
 					null)
 	
 	ProjectSettings.save()
@@ -661,51 +482,51 @@ func _on_files_moved(old_file: String, new_file: String) -> void:
 		return
 	
 	if ProjectSettings.get_setting(
-			get_project_settings_path("discourse"), "") == old_file:
+			NFPluginGameHandler.get_setting_path("discourse"), "") == old_file:
 		ProjectSettings.set_setting(
-				get_project_settings_path("discourse"), new_file)
+				NFPluginGameHandler.get_setting_path("discourse"), new_file)
 		ProjectSettings.save()
 		return
 	elif ProjectSettings.get_setting(
-			get_project_settings_path("variables"), "") == old_file:
+			NFPluginGameHandler.get_setting_path("variables"), "") == old_file:
 		ProjectSettings.set_setting(
-				get_project_settings_path("variables"), new_file)
+				NFPluginGameHandler.get_setting_path("variables"), new_file)
 		ProjectSettings.save()
 		return
 	elif ProjectSettings.get_setting(
-			get_project_settings_path("traits"), "") == old_file:
+			NFPluginGameHandler.get_setting_path("traits"), "") == old_file:
 		ProjectSettings.set_setting(
-				get_project_settings_path("traits"), new_file)
+				NFPluginGameHandler.get_setting_path("traits"), new_file)
 		ProjectSettings.save()
 		return
 	elif ProjectSettings.get_setting(
-			get_project_settings_path("skills"), "") == old_file:
+			NFPluginGameHandler.get_setting_path("skills"), "") == old_file:
 		ProjectSettings.set_setting(
-				get_project_settings_path("skills"), new_file)
+				NFPluginGameHandler.get_setting_path("skills"), new_file)
 		ProjectSettings.save()
 		return
 	elif ProjectSettings.get_setting(
-			get_project_settings_path("species"), "") == old_file:
+			NFPluginGameHandler.get_setting_path("species"), "") == old_file:
 		ProjectSettings.set_setting(
-				get_project_settings_path("species"), new_file)
+				NFPluginGameHandler.get_setting_path("species"), new_file)
 		ProjectSettings.save()
 		return
 	elif ProjectSettings.get_setting(
-			get_project_settings_path("items"), "") == old_file:
+			NFPluginGameHandler.get_setting_path("items"), "") == old_file:
 		ProjectSettings.set_setting(
-				get_project_settings_path("items"), new_file)
+				NFPluginGameHandler.get_setting_path("items"), new_file)
 		ProjectSettings.save()
 		return
 	elif ProjectSettings.get_setting(
-			get_project_settings_path("currency"), "") == old_file:
+			NFPluginGameHandler.get_setting_path("currency"), "") == old_file:
 		ProjectSettings.set_setting(
-				get_project_settings_path("currency"), new_file)
+				NFPluginGameHandler.get_setting_path("currency"), new_file)
 		ProjectSettings.save()
 		return
 	elif ProjectSettings.get_setting(
-			get_project_settings_path("recipes"), "") == old_file:
+			NFPluginGameHandler.get_setting_path("recipes"), "") == old_file:
 		ProjectSettings.set_setting(
-				get_project_settings_path("recipes"), new_file)
+				NFPluginGameHandler.get_setting_path("recipes"), new_file)
 		ProjectSettings.save()
 		return
 	
@@ -742,35 +563,35 @@ func _on_resource_removed(object: Resource) -> void:
 	elif object is BlackboardData:
 		if editor_view.variables._variables_resource == object:
 			ProjectSettings.set_setting(
-					get_project_settings_path("variables"),
+					NFPluginGameHandler.get_setting_path("variables"),
 					"")
 			ProjectSettings.save()
 			editor_view.variables.reload_resource()
 	elif object is SpeciesCatalog:
 		if editor_view.species._species_resource == object:
 			ProjectSettings.set_setting(
-					get_project_settings_path("species"),
+					NFPluginGameHandler.get_setting_path("species"),
 					"")
 			ProjectSettings.save()
 			editor_view.species.reload_resource()
 	elif object is SkillCatalog:
 		if editor_view.talents._skills_resource == object:
 			ProjectSettings.set_setting(
-					get_project_settings_path("skills"),
+					NFPluginGameHandler.get_setting_path("skills"),
 					"")
 			ProjectSettings.save()
 			editor_view.talents.reload_skill_resource()
 	elif object is TraitCatalog:
 		if editor_view.talents._traits_resource == object:
 			ProjectSettings.set_setting(
-				get_project_settings_path("traits"),
+				NFPluginGameHandler.get_setting_path("traits"),
 				"")
 			ProjectSettings.save()
 			editor_view.talents.reload_trait_resource()
 	elif object is ItemCatalog:
 		if editor_view.recipes_link.items == object:
 			ProjectSettings.set_setting(
-				get_project_settings_path("items"),
+				NFPluginGameHandler.get_setting_path("items"),
 				"")
 			ProjectSettings.save()
 			editor_view.items.items_container.reload_item_resource()
@@ -778,14 +599,14 @@ func _on_resource_removed(object: Resource) -> void:
 	elif object is CurrencyCatalog:
 		if editor_view.items.items_container.currency_resource == object:
 			ProjectSettings.set_setting(
-				get_project_settings_path("currency"),
+				NFPluginGameHandler.get_setting_path("currency"),
 				"")
 			ProjectSettings.save()
 			editor_view.items.items_container.reload_currency_resource()
 	elif object is RecipeCatalog:
 		if editor_view.recipes_link.recipes == object:
 			ProjectSettings.set_setting(
-				get_project_settings_path("recipes"),
+				NFPluginGameHandler.get_setting_path("recipes"),
 				"")
 			ProjectSettings.save()
 			editor_view.recipes.reload_recipe_resource()

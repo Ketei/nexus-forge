@@ -228,7 +228,7 @@ func _on_create_currency_database_pressed(node: Control) -> void:
 		currency_resource.resource_path = result[1]
 		ResourceSaver.save(currency_resource, result[1])
 		ProjectSettings.set_setting(
-				EditorNFPlugin.get_project_settings_path("currency"),
+				NFPluginGameHandler.get_setting_path("currency"),
 				result[1])
 		if Engine.is_editor_hint():
 			ProjectSettings.save()
@@ -253,7 +253,7 @@ func _on_load_currency_database_pressed(node: Control) -> void:
 		if res_pre != null and res_pre is CurrencyCatalog:
 			currency_resource = res_pre
 			ProjectSettings.set_setting(
-					EditorNFPlugin.get_project_settings_path("currency"),
+					NFPluginGameHandler.get_setting_path("currency"),
 					result[1])
 			if Engine.is_editor_hint():
 				ProjectSettings.save()
@@ -268,7 +268,7 @@ func _on_load_currency_database_pressed(node: Control) -> void:
 func _on_currency_resource_dropped(resource: Resource, panel: Control) -> void:
 	currency_resource = resource
 	ProjectSettings.set_setting(
-			EditorNFPlugin.get_project_settings_path("currency"),
+			NFPluginGameHandler.get_setting_path("currency"),
 			resource.resource_path)
 	if Engine.is_editor_hint():
 		ProjectSettings.save()
@@ -356,7 +356,7 @@ func reload_currency_resource(first_launch: bool = false) -> void:
 	clear_currency_section()
 	
 	var currency_path: String = ProjectSettings.get_setting(
-			EditorNFPlugin.get_project_settings_path("currency"),
+			NFPluginGameHandler.get_setting_path("currency"),
 			"")
 	
 	if currency_path != "" and FileAccess.file_exists(currency_path):
@@ -548,7 +548,7 @@ func _on_create_database_pressed(node: Control) -> void:
 		item_resource.resource_path = result[1]
 		item_link.items = item_resource
 		ProjectSettings.set_setting(
-				EditorNFPlugin.get_project_settings_path("items"),
+				NFPluginGameHandler.get_setting_path("items"),
 				result[1])
 		if Engine.is_editor_hint():
 			ProjectSettings.save()
@@ -574,7 +574,7 @@ func _on_load_database_pressed(node: Control) -> void:
 		if res_pre != null and res_pre is ItemCatalog:
 			item_link.items = res_pre
 			ProjectSettings.set_setting(
-					EditorNFPlugin.get_project_settings_path("items"),
+					NFPluginGameHandler.get_setting_path("items"),
 					result[1])
 			if Engine.is_editor_hint():
 				ProjectSettings.save()
@@ -590,7 +590,7 @@ func _on_load_database_pressed(node: Control) -> void:
 func _on_items_resource_dropped(resource: Resource, panel: Control) -> void:
 	item_link.items = resource
 	ProjectSettings.set_setting(
-			EditorNFPlugin.get_project_settings_path("items"),
+			NFPluginGameHandler.get_setting_path("items"),
 			resource.resource_path)
 	if Engine.is_editor_hint():
 		ProjectSettings.save()
@@ -770,7 +770,7 @@ func reload_item_resource(first_launch: bool = false) -> void:
 	item_data_tree.clear_data()
 	
 	var item_path: String = ProjectSettings.get_setting(
-			EditorNFPlugin.get_project_settings_path("items"),
+			NFPluginGameHandler.get_setting_path("items"),
 			"")
 	
 	if item_path != "" and FileAccess.file_exists(item_path):

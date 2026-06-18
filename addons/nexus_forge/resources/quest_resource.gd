@@ -37,7 +37,7 @@ var _description_builder: Callable = Callable()
 ## Returns the quest [member Quest.title]. Formats it if [code]Format Quest Strings with Blackboard[/code]
 ## is [code]On[/code] on [code]Project Settings[/code].
 func get_quest_title() -> String:
-	if not ProjectSettings.get_setting(EditorNFPlugin.get_project_settings_path("items_format_strings"), false):
+	if not ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("items_format_strings"), false):
 		return title
 	
 	if _title_builder.is_valid():
@@ -68,7 +68,7 @@ func get_quest_title() -> String:
 ## Returns the item [member Quest.description]. Formats it if [code]Format Quest Strings with Blackboard[/code]
 ## is [code]On[/code] on [code]Project Settings[/code].
 func get_quest_description() -> String:
-	if not ProjectSettings.get_setting(EditorNFPlugin.get_project_settings_path("items_format_strings"), false):
+	if not ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("items_format_strings"), false):
 		return description
 	
 	if _description_builder.is_valid():

@@ -201,7 +201,7 @@ func generate_locale_map() -> void:
 	var file: FileAccess = FileAccess.open(
 			StringUtils.make_path([
 				ProjectSettings.get_setting(
-					EditorNFPlugin.get_project_settings_path("discourse"),
+					NFPluginGameHandler.get_setting_path("discourse"),
 					"res://localization/"),
 				"dialog_locale_map.json"]),
 			FileAccess.READ)
@@ -905,7 +905,7 @@ func override_dialog_locale(dialog_id: String, locale_code: String, path: String
 ## [param data] needs to be either a String or [code]null[/code]. If you pass
 ## [code]null[/code] to [param data] the edited dialog will be removed and the
 ## original used instead.
-func edit_dialog(locale_code: String, dialog_id: String, node_id: StringName, new_dialog) -> void:
+func edit_dialog(locale_code: String, dialog_id: StringName, node_id: StringName, new_dialog) -> void:
 	var type: int = typeof(new_dialog)
 	if type == TYPE_NIL:
 		if DictUtils.has_nested_path(_dialog_edits, [dialog_id, locale_code, node_id]):
@@ -914,17 +914,33 @@ func edit_dialog(locale_code: String, dialog_id: String, node_id: StringName, ne
 	elif type != TYPE_STRING:
 		return
 	
-	DictUtils.set_nested_value(
-			_dialog_edits,
-			[dialog_id, locale_code, node_id],
-			new_dialog)
+	var target: Dictionary = {}
+	
+	if DictUtils.has_nested_path(_dialog_edits, [dialog_id, locale_code]):
+		target = _dialog_edits[dialog_id][locale_code]
+	else:
+		DictUtils.set_nested_value(
+				_dialog_edits,
+				[dialog_id, locale_code],
+				target)
+	
+	target[node_id] = new_dialog
+	
+	if _dialog_resource == null or dialog_id.is_empty():
+		return
+	
+	if _get_dialog_id(_dialog_resource.resource_path) != dialog_id:
+		return
+	
+	if _dialog_resource.dialog_overrides != _dialog_edits[dialog_id]:
+		_dialog_resource.dialog_overrides = _dialog_edits[dialog_id]
 
 
 ## Adds an override for a specific set of choices on a specific locale.[br]
 ## [param data] needs to be either an Array, PackedStringArray or [code]null[/code].
 ## If you pass [code]null[/code] to [param data] the edited dialog will be 
 ## removed and the original used instead.
-func edit_choices(locale_code: String, dialog_id: String, node_id: StringName, new_choices) -> void:
+func edit_choices(locale_code: String, dialog_id: StringName, node_id: StringName, new_choices) -> void:
 	var type: int = typeof(new_choices)
 	if type == TYPE_NIL:
 		if DictUtils.has_nested_path(_dialog_edits, [dialog_id, locale_code, node_id]):
@@ -934,36 +950,68 @@ func edit_choices(locale_code: String, dialog_id: String, node_id: StringName, n
 		return
 	
 	var responses: PackedStringArray = []
+	
+	if DictUtils.has_nested_path(_dialog_edits, [dialog_id, locale_code, node_id]) and typeof(_dialog_edits[dialog_id][locale_code][node_id]) == TYPE_PACKED_STRING_ARRAY:
+		responses = _dialog_edits[dialog_id][locale_code][node_id]
+		responses.clear()
+	else:
+		DictUtils.set_nested_value(
+				_dialog_edits,
+				[dialog_id, locale_code, node_id],
+				responses,
+				true)
+	
 	for item in new_choices:
 		if typeof(item) == TYPE_STRING:
 			responses.append(item)
 		else:
 			responses.append("")
 	
-	DictUtils.set_nested_value(
-		_dialog_edits,
-		[dialog_id, locale_code, node_id],
-		responses,
-		true)
+	if _dialog_resource == null or dialog_id.is_empty():
+		return
+	
+	var id: StringName = _get_dialog_id(_dialog_resource.resource_path)
+	if id != dialog_id:
+		return
+	
+	if _dialog_resource.dialog_overrides != _dialog_edits[dialog_id]:
+		_dialog_resource.dialog_overrides = _dialog_edits[dialog_id]
 
 
 ## Adds an override for a specific choice on a specific locale.
-func edit_choice(locale_code: String, dialog_id: String, node_id: StringName, choice_index: int, data: String) -> void:
-	if not _dialog_edits.has(dialog_id):
-		_dialog_edits[dialog_id] = {}
-		
-	if not _dialog_edits[dialog_id].has(locale_code):
-		_dialog_edits[dialog_id][locale_code] = {}
-	
-	if not _dialog_edits[dialog_id][locale_code].has(node_id) or not typeof(_dialog_edits[dialog_id][locale_code][node_id]) == TYPE_PACKED_STRING_ARRAY:
-		_dialog_edits[dialog_id][locale_code][node_id] = PackedStringArray()
+func edit_choice(locale_code: String, dialog_id: StringName, node_id: StringName, choice_index: int, data: String) -> void:
+	var missing_path: bool = not DictUtils.has_nested_path(_dialog_edits, [dialog_id, locale_code, node_id])
+	var not_packed_array: bool = typeof(_dialog_edits[dialog_id][locale_code][node_id]) != TYPE_PACKED_STRING_ARRAY
+	if missing_path:
+		NFPluginGameHandler._log_msg(
+				"discourse",
+				"Can't edit choice array. Ensure using edit_choices before editing single choices.",
+				NFPluginGameHandler._LogLevel.ERROR)
+		return
+	elif not_packed_array:
+		NFPluginGameHandler._log_msg(
+				"discourse",
+				"Cant edit choice of non-array data.",
+				NFPluginGameHandler._LogLevel.ERROR)
+		return
 	
 	var target: PackedStringArray = _dialog_edits[dialog_id][locale_code][node_id]
 	
-	if target.size() < choice_index + 1:
-		target.resize(choice_index + 1)
+	if target.size() <= choice_index:
+		return
 	
 	target[choice_index] = data
+
+
+func _get_dialog_id(path: String) -> StringName:
+	var key: StringName = StringName(path)
+	if _path_to_id.has(key):
+		return _path_to_id[key]
+	return &""
+
+
+func _path_has_id(path: String) -> bool:
+	return _path_to_id.has(StringName(path))
 
 
 # Clears the whole cache. Used on exit to prevent leaked resources

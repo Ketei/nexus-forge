@@ -105,7 +105,7 @@ func reload_skill_resource(first_launch: bool = false) -> void:
 	var was_null: bool = _skills_resource == null
 	_skills_resource = null
 	var skills_path: String = ProjectSettings.get_setting(
-			EditorNFPlugin.get_project_settings_path("skills"),
+			NFPluginGameHandler.get_setting_path("skills"),
 			"")
 	
 	if not skills_path.is_empty() and ResourceLoader.exists(skills_path):
@@ -136,7 +136,7 @@ func reload_trait_resource(first_launch: bool = false) -> void:
 	trait_data_tree.clear_data()
 
 	var traits_path: String = ProjectSettings.get_setting(
-			EditorNFPlugin.get_project_settings_path("traits"),
+			NFPluginGameHandler.get_setting_path("traits"),
 			"")
 	if not traits_path.is_empty() and ResourceLoader.exists(traits_path):
 		var preload_traits_res: Resource = load(traits_path)
@@ -176,7 +176,7 @@ func _on_create_skill_resource_pressed(panel: PanelContainer) -> void:
 		if ResourceLoader.has_cached(result[1]):
 			_skills_resource.take_over_path(result[1])
 		ProjectSettings.set_setting(
-				EditorNFPlugin.get_project_settings_path("skills"),
+				NFPluginGameHandler.get_setting_path("skills"),
 				result[1])
 		if Engine.is_editor_hint():
 			ProjectSettings.save()
@@ -203,7 +203,7 @@ func _on_load_skill_resource_pressed(panel: PanelContainer) -> void:
 		if res_pre != null and res_pre is SkillCatalog:
 			_skills_resource = res_pre
 			ProjectSettings.set_setting(
-					EditorNFPlugin.get_project_settings_path("skills"),
+					NFPluginGameHandler.get_setting_path("skills"),
 					result[1])
 			if Engine.is_editor_hint():
 				ProjectSettings.save()
@@ -218,7 +218,7 @@ func _on_load_skill_resource_pressed(panel: PanelContainer) -> void:
 func _on_skill_resource_dropped(resource: Resource, panel: Control) -> void:
 	_skills_resource = resource
 	ProjectSettings.set_setting(
-			EditorNFPlugin.get_project_settings_path("skills"),
+			NFPluginGameHandler.get_setting_path("skills"),
 			resource.resource_path)
 	if Engine.is_editor_hint():
 		ProjectSettings.save()
@@ -427,7 +427,7 @@ func _on_create_traits_resource_pressed(panel: PanelContainer) -> void:
 		if ResourceLoader.has_cached(result[1]):
 			_traits_resource.take_over_path(result[1])
 		ProjectSettings.set_setting(
-				EditorNFPlugin.get_project_settings_path("traits"),
+				NFPluginGameHandler.get_setting_path("traits"),
 				result[1])
 		if Engine.is_editor_hint():
 			ProjectSettings.save()
@@ -455,7 +455,7 @@ func _on_load_traits_resource_pressed(panel: PanelContainer) -> void:
 		if res_pre != null and res_pre is TraitCatalog:
 			_traits_resource = res_pre
 			ProjectSettings.set_setting(
-					EditorNFPlugin.get_project_settings_path("traits"),
+					NFPluginGameHandler.get_setting_path("traits"),
 					result[1])
 			if Engine.is_editor_hint():
 				ProjectSettings.save()
@@ -471,7 +471,7 @@ func _on_load_traits_resource_pressed(panel: PanelContainer) -> void:
 func _on_traits_resource_dropped(resource: Resource, panel: Control) -> void:
 	_traits_resource = resource
 	ProjectSettings.set_setting(
-			EditorNFPlugin.get_project_settings_path("traits"),
+			NFPluginGameHandler.get_setting_path("traits"),
 			resource.resource_path)
 	if Engine.is_editor_hint():
 		ProjectSettings.save()

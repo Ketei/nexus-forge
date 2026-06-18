@@ -55,7 +55,7 @@ func _species_stat_data(species_id: StringName, use_inheritance: bool) -> Dictio
 	dominant_parent = _species[dominant_parent]["parent_dominant"]
 	
 	var dilution_multiplier: float = 1.0
-	var dilution_factor: float = clampf(ProjectSettings.get_setting(EditorNFPlugin.get_project_settings_path("species_genetic_dilution"), 0.0), 0.0, 1.0)
+	var dilution_factor: float = clampf(ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("species_genetic_dilution"), 0.0), 0.0, 1.0)
 	
 	if dilution_multiplier <= dilution_factor:
 		return stats
@@ -113,7 +113,7 @@ func _species_skill_data(species_id: StringName, use_inheritance: bool) -> Dicti
 	dominant_parent = _species[dominant_parent]["parent_dominant"]
 	
 	var dilution_multiplier: float = 1.0
-	var dilution_factor: float = clampf(ProjectSettings.get_setting(EditorNFPlugin.get_project_settings_path("species_genetic_dilution"), 0.0), 0.0, 1.0)
+	var dilution_factor: float = clampf(ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("species_genetic_dilution"), 0.0), 0.0, 1.0)
 	
 	while 0 < dilution_multiplier and not dominant_parent.is_empty() and not explored_species.has(dominant_parent):
 		dilution_multiplier -= dilution_factor
@@ -166,7 +166,7 @@ func _species_trait_data(species_id: StringName, use_inheritance: bool) -> Dicti
 	dominant_parent = _species[dominant_parent]["parent_dominant"]
 	
 	var dilution_multiplier: float = 1.0
-	var dilution_factor: float = clampf(ProjectSettings.get_setting(EditorNFPlugin.get_project_settings_path("species_genetic_dilution"), 0.0), 0.0, 1.0)
+	var dilution_factor: float = clampf(ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("species_genetic_dilution"), 0.0), 0.0, 1.0)
 	
 	while 0 < dilution_multiplier and not dominant_parent.is_empty() and not explored_species.has(dominant_parent):
 		dilution_multiplier -= dilution_factor

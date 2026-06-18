@@ -30,7 +30,7 @@ var _description_builder: Callable = Callable()
 ## Returns the item [member ItemSheet.name]. Formats it if [code]Format Item Strings with Blackboard[/code]
 ## is [code]On[/code] on [code]Project Settings[/code].
 func get_item_name() -> String:
-	if not ProjectSettings.get_setting(EditorNFPlugin.get_project_settings_path("items_format_strings"), false):
+	if not ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("items_format_strings"), false):
 		return name
 	
 	if _name_builder.is_valid():
@@ -60,7 +60,7 @@ func get_item_name() -> String:
 ## Returns the item [member ItemSheet.description]. Formats it if [code]Format Item Strings with Blackboard[/code]
 ## is [code]On[/code] on [code]Project Settings[/code].
 func get_item_description() -> String:
-	if not ProjectSettings.get_setting(EditorNFPlugin.get_project_settings_path("items_format_strings"), false):
+	if not ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("items_format_strings"), false):
 		return description
 	
 	if _description_builder.is_valid():

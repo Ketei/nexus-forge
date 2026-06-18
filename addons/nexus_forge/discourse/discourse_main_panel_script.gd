@@ -346,7 +346,7 @@ func ready_plugin(base_locale: String = "") -> void:
 	
 	var locale_settings: PackedStringArray = StringUtils.split_and_strip(
 			ProjectSettings.get_setting(
-					EditorNFPlugin.get_project_settings_path("discourse_use_languages"), ""),
+					NFPluginGameHandler.get_setting_path("discourse_use_languages"), ""),
 			",",
 			false)
 	
@@ -354,8 +354,10 @@ func ready_plugin(base_locale: String = "") -> void:
 		var parts: PackedStringArray = entry.split("_", false)
 		var part_size: int = parts.size()
 		if part_size <= 0 or 2 < part_size:
-			push_warning(
-				"[NEXUS FORGE] Discourse - Discourse languages only support language + region: " + entry)
+			NFPluginGameHandler._log_msg(
+					"discourse - editor",
+					"Discourse languages only support language & country. Attepmted to use '%s'" % entry,
+					NFPluginGameHandler._LogLevel.WARNING)
 			continue
 		
 		if not _included_languages.has(parts[0]):
@@ -374,14 +376,14 @@ func ready_plugin(base_locale: String = "") -> void:
 	
 	hide_issues_btn.icon = get_theme_icon("GuiClose", "EditorIcons")
 	
-	discourse_graph_edit.panning_scheme = GraphEdit.SCROLL_PANS if ProjectSettings.get_setting(EditorNFPlugin.get_project_settings_path("discourse_panning_scheme"), true) else GraphEdit.SCROLL_ZOOMS
+	discourse_graph_edit.panning_scheme = GraphEdit.SCROLL_PANS if ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("discourse_panning_scheme"), true) else GraphEdit.SCROLL_ZOOMS
 	
 	play_current_dialog_btn.icon = get_theme_icon("MainPlay", "EditorIcons")
 	
 	copy_arg_btn.icon = get_theme_icon("ActionCopy", "EditorIcons")
 	
-	if EditorNFPlugin.is_preview_scene_valid(false):
-		var path: String = ProjectSettings.get_setting(EditorNFPlugin.get_project_settings_path("discourse_localization_preview_scene"))
+	if _is_preview_scene_valid(false):
+		var path: String = ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("discourse_localization_preview_scene"))
 		uncollapse_previewer.visible = true
 		dialog_previewer = load(path).instantiate()
 		$LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/DialogScenePreviewer/HBoxContainer/PreviewPanel.add_child(dialog_previewer)
@@ -826,7 +828,10 @@ func _on_locale_submenu_idx_pressed(idx: int, submenu: PopupMenu) -> void:
 			break
 	
 	if lang.is_empty():
-		push_error("[DISCOURSE] ERROR SELECTING LOCALE")
+		NFPluginGameHandler._log_msg(
+				"discourse - editor",
+				"Error selecting locale",
+				NFPluginGameHandler._LogLevel.ERROR)
 		return
 	
 	var to: String = lang if count.is_empty() else lang + "_" + count
@@ -1112,7 +1117,7 @@ func _on_change_default_language_pressed() -> void:
 			active_conversation.add_locale(result)
 			
 		ProjectSettings.set_setting(
-				EditorNFPlugin.get_project_settings_path(
+				NFPluginGameHandler.get_setting_path(
 						"discourse_base_language"),
 				result)
 		ProjectSettings.save()
@@ -1912,11 +1917,14 @@ func _on_play_current_dialog_pressed() -> void:
 	if active_conversation == null:
 		return
 	var res_path: String = active_conversation.resource_path
-	var custom_scene: String = ProjectSettings.get_setting(EditorNFPlugin.get_project_settings_path("discourse_custom_dialog_debug_scene"), "").strip_edges()
+	var custom_scene: String = ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("discourse_custom_dialog_debug_scene"), "").strip_edges()
 	var scene_path: String = "res://addons/nexus_forge/discourse/dialog_previewer.tscn" if custom_scene.is_empty() or not FileAccess.file_exists(custom_scene) else custom_scene
 	
 	if res_path.is_empty():
-		push_error("[NexusForge] Discourse: Path of current conversation is empty.")
+		NFPluginGameHandler._log_msg(
+				"discourse - editor",
+				"Current dialog has no path.",
+				NFPluginGameHandler._LogLevel.ERROR)
 		return
 	
 	var cfg: ConfigFile = ConfigFile.new()
@@ -2083,12 +2091,18 @@ func display_conversation(conversation: EditorDiscourseDialog, with_locale: Stri
 		if d_node.node_type == DiscourseGraphNode.DialogueNodeType.CALLABLE or d_node.node_type == DiscourseGraphNode.DialogueNodeType.CALLABLE_RETURN:
 			if metadata.has("method") and not metadata["method"].is_empty():
 				if not d_node.available_methods.has(metadata["method"]):
-					push_warning("Node ", data["name"], " calls method ", metadata["method"], " but the method isn't available.")
+					NFPluginGameHandler._log_msg(
+							"discourse - editor",
+							"Node '%s' calls method '%s' but it isn't available." % [data["name"], metadata["method"]],
+							NFPluginGameHandler._LogLevel.WARNING)
 					needs_resaving = true
 		elif d_node.node_type == DiscourseGraphNode.DialogueNodeType.SIGNAL:
 			if metadata.has("signal") and not metadata["signal"].is_empty():
 				if not d_node.available_signals.has(metadata["signal"]):
-					push_warning("Node ", data["name"], " calls signal ", metadata["signal"], " but the signal isn't available.")
+					NFPluginGameHandler._log_msg(
+							"discurse - editor",
+							"Node '%s' calls signal '%s' but it isn't available." % [data["name"], metadata["signal"]],
+							NFPluginGameHandler._LogLevel.WARNING)
 					needs_resaving = true
 		elif d_node.node_type == DiscourseGraphNode.DialogueNodeType.ENTRY:
 			discourse_graph_edit.entry_node = d_node
@@ -2123,16 +2137,10 @@ func display_conversation(conversation: EditorDiscourseDialog, with_locale: Stri
 				output_connection["from_port"],
 				graph_map[output_connection["to"]].get_node_uuid(),
 				output_connection["to_port"]):
-			push_warning(
-				"Connection from node ",
-				graph_map[output_connection["from"]].get_node_id(),
-				" from port ",
-				output_connection["from_port"],
-				 " to node ",
-				graph_map[output_connection["to"]].get_node_id(),
-				" to port ",
-				output_connection["to_port"],
-				" failed.")
+			NFPluginGameHandler._log_msg(
+				"discourse - editor",
+				"Connection from node '%s' from port '%s' to node '%s' to port '%s' failed" % [graph_map[output_connection["from"]].get_node_id(), output_connection["from_port"], graph_map[output_connection["to"]].get_node_id(), output_connection["to_port"]],
+				NFPluginGameHandler._LogLevel.WARNING)
 			needs_resaving = true
 	
 	if discourse_graph_edit.entry_node == null:
@@ -2421,7 +2429,10 @@ func _on_graph_edit_paste_requested() -> void:
 
 func _save_file_layout_for(file_path: String, keys: Dictionary[String, Variant]) -> void:
 	if file_path.is_empty():
-		push_error("[DISCOURSE] Can't save data for an empty filepath")
+		NFPluginGameHandler._log_msg(
+				"discourse - editor",
+				"Can't save layout data for resource without path.",
+				NFPluginGameHandler._LogLevel.ERROR)
 		return
 	
 	var cfg: ConfigFile = ConfigFile.new()
@@ -2436,7 +2447,10 @@ func _save_file_layout_for(file_path: String, keys: Dictionary[String, Variant])
 		DirAccess.make_dir_recursive_absolute(absolute_path)
 	
 	if cfg.save(absolute_path.path_join(config_filename)) != OK:
-		push_warning("[DISCOURSE] Couldn't save layout settings for file \"", file_path, "\"")
+		NFPluginGameHandler._log_msg(
+				"discourse - editor",
+				"Couldn't save layout settings for file '%s'." % file_path,
+				NFPluginGameHandler._LogLevel.WARNING)
 
 
 #region Phrases
@@ -2661,7 +2675,10 @@ func _on_edit_cases_pressed(text_line: LineEdit, key: LineEdit, button: Button) 
 	var locale_code: String = phrases_lang_menu.get_selected_metadata()
 	
 	if locale_code.is_empty():
-		push_error("[DISCOURSE] OPTIONMENU LOCALE CODE EMPTY. CAN'T LOAD ITEMS")
+		NFPluginGameHandler._log_msg(
+				"discourse - editor",
+				"Locale menu is empty. Can't load data.",
+				NFPluginGameHandler._LogLevel.ERROR)
 		return
 	
 	phrases_lang_menu.disabled = true
@@ -3300,12 +3317,18 @@ func _on_recent_file_index_pressed(index: int) -> void:
 	if FileAccess.file_exists(file_path):
 		var file: EditorDiscourseDialog = load_dialog_from_file(file_path)
 		if file == null:
-			push_error("[DISCOURSE]: Couldn't open \"", file_path, "\"")
+			NFPluginGameHandler._log_msg(
+				"discourse - editor",
+				"Couldn't open file '%s'." % file_path,
+				NFPluginGameHandler._LogLevel.ERROR)
 			return
 		conversation_tree.select_conversation.call_deferred(file)
 		add_to_recently_opened_files(file_path)
 	else:
-		push_error("[DISCOURSE]: File not found: \"", file_path, "\"")
+		NFPluginGameHandler._log_msg(
+			"discourse - editor",
+			"File '%s' not found. Removing from menu." % file_path,
+			NFPluginGameHandler._LogLevel.INFO)
 		_recently_opened_files.erase(file_path)
 		_recently_opened_popup.remove_item(index)
 		_reset_recent_popup_size.call_deferred()
@@ -3487,3 +3510,110 @@ func _on_auto_update_toggled(toggled_on: bool) -> void:
 
 func _on_default_case_focus_pressed() -> void:
 	_on_open_discourse_text_editor_pressed(default_case_ln_edt)
+
+
+func _is_preview_scene_valid(print_errors: bool = true) -> bool:
+	var path: String = ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("discourse_localization_preview_scene"), "")
+	
+	if path.is_empty():
+		return false
+	
+	if not FileAccess.file_exists(path):
+		if print_errors:
+			NFPluginGameHandler._log_msg(
+				"discourse - editor",
+				"Localization preview scene '%s' was not found" % path,
+				NFPluginGameHandler._LogLevel.ERROR)
+		return false
+	
+	var scene = load(path)
+	if scene == null or not scene is PackedScene or not scene.can_instantiate():
+		if print_errors:
+			NFPluginGameHandler._log_msg(
+					"discourse - editor",
+					"Error during instantiation of scene '%s'" % path,
+					NFPluginGameHandler._LogLevel.ERROR)
+		return false
+	
+	var instance: Node = scene.instantiate()
+	var scene_script: Script = instance.get_script()
+	if scene_script == null:
+		if print_errors:
+			NFPluginGameHandler._log_msg(
+					"discourse - editor",
+					"Scene '%s' has no script attatched" % path,
+					NFPluginGameHandler._LogLevel.ERROR)
+		instance.free()
+		return false
+	
+	var errors: Array[String] = []
+	var static_methods: Array[Dictionary] = scene_script.get_script_method_list()
+	var static_signals: Array[Dictionary] = scene_script.get_script_signal_list()
+	var has_d_txt: bool = false
+	var has_c_txt: bool = false
+	var has_set_d: bool = false
+	var has_set_c: bool = false
+	
+	for item_signal in static_signals:
+		if item_signal["name"] == "dialog_text_changed":
+			if item_signal["args"].size() == 1:
+				var arg: Dictionary = item_signal["args"][0]
+				has_d_txt = arg["type"] == TYPE_NIL or arg["type"] == TYPE_STRING
+		elif item_signal["name"] == "choice_text_changed":
+			if item_signal["args"].size() == 2:
+				var arg_1: Dictionary = item_signal["args"][0]
+				var arg_2: Dictionary = item_signal["args"][1]
+				
+				var arg_1_valid: bool = arg_1["type"] == TYPE_NIL or arg_1["type"] == TYPE_STRING
+				var arg_2_valid: bool = arg_2["type"] == TYPE_NIL or arg_2["type"] == TYPE_INT
+				
+				has_c_txt = arg_1_valid and arg_2_valid
+		
+		if has_d_txt and has_c_txt:
+			break
+	
+	for method in static_methods:
+		if method["name"] == "set_choices":
+			if not method["args"].is_empty():
+				var arg: Dictionary = method["args"][0]
+				var extra_valid: bool = true
+				
+				if 1 < method["args"].size():
+					var default_size: int = method["default_args"].size()
+					extra_valid = method["args"].size() - 1 <= default_size
+				
+				if arg["type"] == TYPE_NIL:
+					has_set_c = extra_valid
+				elif arg["type"] == TYPE_ARRAY:
+					has_set_c = extra_valid and ( arg["hint_string"].is_empty() or arg["hint_string"] == "String" )
+		elif method["name"] == "set_dialog":
+			if not method["args"].is_empty():
+				var arg: Dictionary = method["args"][0]
+				var extra_valid: bool = true
+				
+				if 1 < method["args"].size():
+					var default_size: int = method["default_args"].size()
+					extra_valid = method["args"].size() - 1 <= default_size
+				
+				has_set_d = extra_valid and ( arg["type"] == TYPE_NIL or arg["type"] == TYPE_STRING )
+		
+		if has_set_c and has_set_d:
+			break
+	
+	if not has_d_txt:
+		errors.append("Scene has no valid \"dialog_text_changed\" signal")
+	if not has_c_txt:
+		errors.append("Scene has no valid \"choice_text_changed\" signal")
+	if not has_set_d:
+		errors.append("Scene has no valid \"set_dialog\" method")
+	if not has_set_c:
+		errors.append("Scene has no valid \"set_choices\" method")
+	
+	if not errors.is_empty() and print_errors:
+		NFPluginGameHandler._log_msg(
+				"discourse - editor",
+				"Scene '%s' errored: %s" % [path, ", ".join(errors)],
+				NFPluginGameHandler._LogLevel.ERROR)
+	
+	instance.free()
+	return has_d_txt and has_c_txt and has_set_c and has_set_d

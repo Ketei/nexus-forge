@@ -131,7 +131,7 @@ func _build_format(string: String, call_formats: Dictionary[String, Callable]) -
 ## Returns the quest [member QuestObjective.title]. Formats it if [code]Format Quest Strings with Blackboard[/code]
 ## is [code]On[/code] on [code]Project Settings[/code].
 func get_objective_title() -> String:
-	if not ProjectSettings.get_setting(EditorNFPlugin.get_project_settings_path("quests_format_strings"), false):
+	if not ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("quests_format_strings"), false):
 		return title
 	
 	if _title_builder.is_valid():
@@ -161,7 +161,7 @@ func get_objective_title() -> String:
 ## Returns the quest [member QuestObjective.description]. Formats it if [code]Format Quest Strings with Blackboard[/code]
 ## is [code]On[/code] on [code]Project Settings[/code].
 func get_objective_description() -> String:
-	if not ProjectSettings.get_setting(EditorNFPlugin.get_project_settings_path("items_format_strings"), false):
+	if not ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("items_format_strings"), false):
 		return description
 	
 	if _description_builder.is_valid():

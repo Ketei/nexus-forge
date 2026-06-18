@@ -77,7 +77,7 @@ func reload_resource(first_load: bool = false) -> void:
 	variables_tree.clear_variables()
 	
 	var res_path: String = ProjectSettings.get_setting(
-				EditorNFPlugin.get_project_settings_path("variables"),
+				NFPluginGameHandler.get_setting_path("variables"),
 				"")
 	
 	if not res_path.is_empty() and ResourceLoader.exists(res_path):
@@ -172,7 +172,10 @@ func save_layout() -> void:
 	var absolute_path: String = ProjectSettings.globalize_path("res://.godot/editor/nexus_forge_blackboard_layout.cfg")
 	
 	if layout_cfg.save(absolute_path) != OK:
-		push_warning("[NEXUS_FORGE] Blackboard: Failed saving layout")
+		NFPluginGameHandler._log_msg(
+				"blackboard - editor",
+				"Failed saving layout.",
+				NFPluginGameHandler._LogLevel.WARNING)
 
 
 func restore_layout() -> void:
@@ -217,7 +220,7 @@ func on_create_resource_pressed() -> void:
 		_variables_resource.resource_path = result[1]
 		ResourceSaver.save(_variables_resource, result[1])
 		ProjectSettings.set_setting(
-				EditorNFPlugin.get_project_settings_path("variables"),
+				NFPluginGameHandler.get_setting_path("variables"),
 				result[1])
 		if Engine.is_editor_hint():
 			ProjectSettings.save()
@@ -232,7 +235,7 @@ func on_create_resource_pressed() -> void:
 func _on_resource_dropped(resource: Resource, panel: Control) -> void:
 	_variables_resource = resource
 	ProjectSettings.set_setting(
-			EditorNFPlugin.get_project_settings_path("variables"),
+			NFPluginGameHandler.get_setting_path("variables"),
 			resource.resource_path)
 	if Engine.is_editor_hint():
 		ProjectSettings.save()
@@ -255,7 +258,7 @@ func on_load_resource_pressed() -> void:
 		if res_pre is BlackboardData:
 			_variables_resource = res_pre
 			ProjectSettings.set_setting(
-					EditorNFPlugin.get_project_settings_path("variables"),
+					NFPluginGameHandler.get_setting_path("variables"),
 					result[1])
 			if Engine.is_editor_hint():
 				ProjectSettings.save()
@@ -265,7 +268,10 @@ func on_load_resource_pressed() -> void:
 			no_db_container.queue_free()
 			load_variable_resource()
 		else:
-			push_error("Selected resource is not BlackboardData")
+			NFPluginGameHandler._log_msg(
+					"blackboard - editor",
+					"Selected resource is not BlackboardData.",
+					NFPluginGameHandler._LogLevel.INFO)
 	
 	new_dialog.queue_free()
 

@@ -276,7 +276,7 @@ func reload_recipe_resource(first_launch: bool = false) -> void:
 	recipe_custom_data_tree.clear_data()
 	
 	var path: String = ProjectSettings.get_setting(
-			EditorNFPlugin.get_project_settings_path("recipes"),
+			NFPluginGameHandler.get_setting_path("recipes"),
 			"")
 	
 	if path != "" and FileAccess.file_exists(path):
@@ -311,7 +311,7 @@ func reload_items(items: ItemCatalog = null) -> void:
 	
 	if items == null:
 		var item_path: String = ProjectSettings.get_setting(
-				EditorNFPlugin.get_project_settings_path("items"),
+				NFPluginGameHandler.get_setting_path("items"),
 				"")
 		
 		if item_path != "" and FileAccess.file_exists(item_path):
@@ -350,7 +350,7 @@ func _on_create_database_pressed(node: Control) -> void:
 		ResourceSaver.save(recipes_resource, result[1])
 		recipes_resource.resource_path = result[1]
 		ProjectSettings.set_setting(
-				EditorNFPlugin.get_project_settings_path("recipes"),
+				NFPluginGameHandler.get_setting_path("recipes"),
 				result[1])
 		if Engine.is_editor_hint():
 			ProjectSettings.save()
@@ -375,7 +375,7 @@ func _on_load_database_pressed(node: Control) -> void:
 		if res_pre != null and res_pre is RecipeCatalog:
 			recipes_resource = res_pre
 			ProjectSettings.set_setting(
-					EditorNFPlugin.get_project_settings_path("recipes"),
+					NFPluginGameHandler.get_setting_path("recipes"),
 					result[1])
 			if Engine.is_editor_hint():
 				ProjectSettings.save()
@@ -390,7 +390,7 @@ func _on_load_database_pressed(node: Control) -> void:
 func _on_resource_dropped(resource: Resource, panel: Control) -> void:
 	recipes_resource = resource
 	ProjectSettings.set_setting(
-			EditorNFPlugin.get_project_settings_path("recipes"),
+			NFPluginGameHandler.get_setting_path("recipes"),
 			resource.resource_path)
 	if Engine.is_editor_hint():
 		ProjectSettings.save()
