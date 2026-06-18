@@ -262,19 +262,29 @@ func get_text_entry(node_uuid: StringName, locale: String = "", fallback: String
 	if localization_data == null or localization_data["type"] != LocalizationType.TEXT:
 		return fallback
 	
-	if not DictUtils.has_nested_path(localization_data, ["locales", locale]):
-		return DictUtils.get_nested_value(localization_data, ["unlocalized"], fallback)
+	var node_id: StringName = node_data[node_uuid]["name"]
+	var localized: bool = DictUtils.get_nested_value(
+			node_data,
+			[node_uuid, "metadata", "localized"],
+			false,
+			true)
+	
+	if DictUtils.has_nested_path(dialog_overrides, [locale, node_id]):
+		return dialog_overrides[locale][node_id]
+	elif not localized:
+		return DictUtils.get_nested_value(localization_data, ["unlocalized"], fallback, true)
 	else:
 		return DictUtils.get_nested_value(
 				localization_data,
 				["locales", locale],
-				fallback)
+				fallback,
+				true)
 
 
 ## Gets the array of choices of a node with [param node_uuid] of a specific [param locale].
 ## If the node isn't of a type that supports choices or it is not found it'll
 ## return [param fallback].
-func get_choices_entry(node_uuid: StringName, locale: String = "", fallback: Array = ["[ENTRY NOT FOUND]"]) -> Array:
+func get_choices_entry(node_uuid: StringName, locale: String = "", fallback: Array = ["[ENTRY NOT FOUND]"]) -> Array[String]:
 	locale = TranslationServer.standardize_locale(locale)
 	var return_array: Array[String] = []
 	
@@ -283,15 +293,26 @@ func get_choices_entry(node_uuid: StringName, locale: String = "", fallback: Arr
 		return fallback
 	
 	var localization_data: Dictionary = localization[node_uuid]
+	var node_id: StringName = node_data[node_uuid]["name"]
+	var localized: bool = DictUtils.get_nested_value(
+			node_data,
+			[node_uuid, "metadata", "localized"],
+			false,
+			true)
 	
-	if localization_data["unlocalized"].is_empty():
+	if DictUtils.has_nested_path(dialog_overrides, [locale, node_id]) and typeof(dialog_overrides[locale][node_id]) == TYPE_PACKED_STRING_ARRAY:
+		return_array.assign(
+			dialog_overrides[locale][node_id])
+	elif localized:
 		return_array.assign(
 				DictUtils.get_nested_value(
 						localization_data,
 						["locales", locale],
-						[]))
+						[],
+						true))
 	else:
-		return_array.assign(localization_data["unlocalized"])
+		if localization_data.has("unlocalized") and typeof(localization_data["unlocalized"]) == TYPE_ARRAY:
+			return_array.assign(localization_data["unlocalized"])
 	
 	return return_array
 
@@ -1214,7 +1235,7 @@ func get_display_localization_data(locale: String) -> Dictionary:
 
 func get_id_target(id: StringName) -> StringName:
 	for entry in node_data.keys():
-		if entry["name"] == id:
+		if node_data[entry]["name"] == id:
 			return entry
 	return &""
 

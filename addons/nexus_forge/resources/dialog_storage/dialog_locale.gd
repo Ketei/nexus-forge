@@ -113,10 +113,10 @@ func as_json() -> String:
 
 ## Returns the options of the given [param uuid] from the [param conversation] .
 func get_choices(conversation: StringName, node: StringName) -> PackedStringArray:
-	return DictUtils.get_nested_value(
-			localization,
-			[conversation, node, "choices"],
-			PackedStringArray()).duplicate()
+	if DictUtils.has_nested_path(localization, [conversation, node, "choices"]):
+		return localization[conversation][node]["choices"].duplicate()
+	else:
+		return PackedStringArray()
 
 
 ## Returns the dialog text from the given [param uuid] from the [param conversation]
@@ -124,7 +124,8 @@ func get_text(conversation: StringName, node: StringName) -> String:
 	return DictUtils.get_nested_value(
 			localization,
 			[conversation, node, "text"],
-			"")
+			"",
+			true)
 
 
 ## Returns if the [param conversation] has data for the given [param uuid]

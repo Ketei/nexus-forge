@@ -17,6 +17,9 @@ signal signal_emmited(signal_name: String, arguments: Array)
 func load_dialog(path: String, starting_id: StringName = &"") -> bool:
 	if _conversation_cache.is_in_cache(path):
 		_dialog_resource = _conversation_cache.get_resource(path)
+		var dialog_id: String = _dialog_edits.dialog_id
+		if _dialog_edits.has(dialog_id) and _dialog_resource.dialog_overrides != _dialog_edits[dialog_id]:
+			_dialog_resource.dialog_overrides = _dialog_edits[dialog_id]
 		return true
 	else:
 		var res: Resource = load(path)
@@ -24,6 +27,10 @@ func load_dialog(path: String, starting_id: StringName = &"") -> bool:
 			_next_uuid = ""
 			_dialog_resource = null
 			return false
+		var dialog_id: String = res.dialog_id
+		
+		if _dialog_edits.has(dialog_id) and res.dialog_overrides != _dialog_edits[dialog_id]:
+			res.dialog_overrides = _dialog_edits[dialog_id]
 		_conversation_cache.cache_resource(res)
 		_dialog_resource = res
 	
@@ -54,8 +61,8 @@ func _get_uuid_from_id(id: StringName) -> StringName:
 	return &""
 
 
-func _process_logic(uuid: StringName) -> Dictionary[String, StringName]:
-	var target: Dictionary[String, StringName] = {"current": &"", "next": &""}
+func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
+	var target: Dictionary[String, Variant] = {"current": &"", "next": &"", "type": -1, "data": {}}
 	if uuid.is_empty():
 		return target
 	
@@ -108,7 +115,7 @@ func _process_logic(uuid: StringName) -> Dictionary[String, StringName]:
 					portrait_id = _get_data(settings["input_connections"]["portrait_id"]["target_node_uuid"])
 			
 			if data["input_connections"]["dialog_text_source"]["target_node_uuid"].is_empty():
-				dialog_reached.emit({
+				target["data"] = {
 					"dialog_text": _parse_dialog(uuid, metadata["dialog_text"]),
 					"character_id": metadata["character_id"],
 					"persist": metadata["persist"],
@@ -117,9 +124,9 @@ func _process_logic(uuid: StringName) -> Dictionary[String, StringName]:
 					"speed": speed,
 					"display_name": display_name,
 					"portrait_id": portrait_id,
-					"metadata": dialog_metadata})
+					"metadata": dialog_metadata}
 			else:
-				dialog_reached.emit({
+				target["data"] = {
 					"dialog_text": _parse_dialog(uuid, _get_data(data["input_connections"]["dialog_text_source"]["target_node_uuid"])),
 					"character_id": metadata["character_id"],
 					"persist": metadata["persist"],
@@ -128,8 +135,9 @@ func _process_logic(uuid: StringName) -> Dictionary[String, StringName]:
 					"speed": speed,
 					"display_name": display_name,
 					"portrait_id": portrait_id,
-					"metadata": dialog_metadata})
+					"metadata": dialog_metadata}
 			
+			target["type"] = NodeTypes.DIALOG
 			target["current"] = uuid
 			target["next"] = data["output_connections"]["next_node"]["target_node_uuid"]
 			
@@ -186,8 +194,8 @@ func _process_logic(uuid: StringName) -> Dictionary[String, StringName]:
 						"target": option["output_connections"]["next_node"]["target_node_uuid"],
 						"metadata": option_metadata})
 			
-			choices_reached.emit(available_options)
-			
+			target["data"] = available_options
+			target["type"] = NodeTypes.CHOICES
 			target["current"] = uuid
 			target["next"] = uuid
 			
@@ -254,7 +262,7 @@ func _process_logic(uuid: StringName) -> Dictionary[String, StringName]:
 					return _process_logic(case["output_connections"]["next_node"]["target_node_uuid"])
 			return _process_logic(data["output_connections"]["default"]["target_node_uuid"])
 		NodeTypes.PAUSE:
-			dialog_paused.emit()
+			target["type"] = NodeTypes.PAUSE
 			target["current"] = uuid
 			target["next"] = data["output_connections"]["next_node"]["target_node_uuid"]
 			return target
@@ -288,6 +296,8 @@ func _process_logic(uuid: StringName) -> Dictionary[String, StringName]:
 		NodeTypes.ANCHOR:
 			return _process_logic(data["output_connections"]["next_node"]["target_node_uuid"])
 		NodeTypes.DIALOG_END:
+			target["current"] = uuid
+			target["type"] = NodeTypes.DIALOG_END
 			return target
 		NodeTypes.DIALOG_MERGE:
 			return _process_logic(data["output_connections"]["next_node"]["target_node_uuid"])

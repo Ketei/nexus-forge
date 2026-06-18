@@ -114,7 +114,7 @@ func _get_choices(dialog_id: String, uuid: String) -> PackedStringArray:
 	var locale: String = _active_locale.locale
 	
 	if DictUtils.has_nested_path(dialog_overrides, [locale, node_logic[uuid]["id"]]):
-		return dialog_overrides[locale][node_logic[uuid]["id"]]
+		return dialog_overrides[locale][node_logic[uuid]["id"]].duplicate()
 	else:
 		return _active_locale.get_choices(dialog_id, uuid)
 

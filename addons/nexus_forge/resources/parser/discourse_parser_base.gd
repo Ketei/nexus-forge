@@ -382,8 +382,8 @@ func _can_compare(a, b) -> bool:
 #region Override
 # Returns a dictionary with the "current" dialog it emmited and the
 # "next" uuid for processing
-func _process_logic(uuid: StringName) -> Dictionary[String, StringName]:
-	var target: Dictionary[String, StringName] = {"current": &"", "next": &""}
+func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
+	var target: Dictionary[String, Variant] = {"current": &"", "next": &"", "type": -1, "data": {}}
 	if uuid.is_empty() or not _dialog_resource.node_logic.has(uuid):
 		return target
 	
@@ -400,12 +400,14 @@ func _process_logic(uuid: StringName) -> Dictionary[String, StringName]:
 			var portrait_id: String = _get_data(data["character_settings"]["portrait_id"], "")
 			var metadata: Dictionary[String, Variant] = {}
 			
+			target["type"] = NodeTypes.DIALOG
+			
 			if DictUtils.has_nested_path(data, ["dialog_settings", "metadata"]):
 				for meta_key in data["dialog_settings"]["metadata"].keys():
 					metadata[meta_key] = _get_data(data["dialog_settings"]["metadata"][meta_key])
 			
 			if data["text_source"].is_empty():
-				dialog_reached.emit({
+				target["data"] = {
 					"dialog_text": _parse_dialog(String(uuid), _dialog_resource._get_text(dialog_id, uuid)),
 					"character_id": data["character_id"],
 					"persist": data["persist"],
@@ -414,9 +416,9 @@ func _process_logic(uuid: StringName) -> Dictionary[String, StringName]:
 					"speed": speed,
 					"display_name": display_name,
 					"portrait_id": portrait_id,
-					"metadata": metadata})
+					"metadata": metadata}
 			else:
-				dialog_reached.emit({
+				target["data"] ={
 					"dialog_text": _parse_dialog(String(uuid), _get_data(data["text_source"], "")),
 					"character_id": data["character_id"],
 					"persist": data["persist"],
@@ -425,7 +427,7 @@ func _process_logic(uuid: StringName) -> Dictionary[String, StringName]:
 					"speed": speed,
 					"display_name": display_name,
 					"portrait_id": portrait_id,
-					"metadata": metadata})
+					"metadata": metadata}
 			
 			target["current"] = uuid
 			target["next"] = data["next_node"]
@@ -436,6 +438,7 @@ func _process_logic(uuid: StringName) -> Dictionary[String, StringName]:
 			var localized_options: PackedStringArray = _dialog_resource._get_choices(dialog_id, uuid)#_get_choices_for(dialog_id, uuid)
 			var target_size: int = data["options"].size()
 			var current_size: int = localized_options.size()
+			target["type"] = NodeTypes.CHOICES
 			
 			if current_size < target_size:
 				var err_msg: String = "[MISSING LOCALIZATION DATA]"
@@ -488,8 +491,7 @@ func _process_logic(uuid: StringName) -> Dictionary[String, StringName]:
 						"target": option["next_node"],
 						"metadata": metadata})
 			
-			choices_reached.emit(available_options)
-			
+			target["data"] = available_options
 			target["current"] = uuid
 			target["next"] = uuid
 			
@@ -537,6 +539,7 @@ func _process_logic(uuid: StringName) -> Dictionary[String, StringName]:
 		NodeTypes.PAUSE:
 			dialog_paused.emit()
 			
+			target["type"] = NodeTypes.PAUSE
 			target["current"] = uuid
 			target["next"] = data["next_node"]
 			
@@ -567,6 +570,8 @@ func _process_logic(uuid: StringName) -> Dictionary[String, StringName]:
 					return _process_logic(choice["next"])
 			return _process_logic(choices[-1]["next"]) # In case of loop error
 		NodeTypes.DIALOG_END:
+			target["current"] = uuid
+			target["type"] = NodeTypes.DIALOG_END
 			return target
 		_:
 			return target
@@ -826,15 +831,23 @@ func advance() -> void:
 		_conversation_started = true
 		dialog_started.emit()
 	
-	var pointers: Dictionary[String, StringName] = _process_logic(_next_uuid)
+	var result: Dictionary[String, Variant] = _process_logic(_next_uuid)
 	
-	_current_uuid = pointers["current"]
-	_next_uuid = pointers["next"]
+	_current_uuid = result["current"]
+	_next_uuid = result["next"]
 	
-	if _current_uuid.is_empty():
+	if result["type"] == -1 or result["type"] == NodeTypes.DIALOG_END:
 		_conversation_started = false
 		_next_uuid = _dialog_resource.entry_node
 		dialog_finished.emit()
+	else:
+		match result["type"]:
+			NodeTypes.DIALOG:
+				dialog_reached.emit(result["data"])
+			NodeTypes.CHOICES:
+				choices_reached.emit(result["data"])
+			NodeTypes.PAUSE:
+				dialog_paused.emit()
 
 
 ## Forces the parser to process the current dialog/choices node again,
@@ -850,8 +863,13 @@ func refresh() -> void:
 	
 	var dialog_type: NodeTypes = _dialog_resource.node_logic[_current_uuid]["node_type"]
 	
-	if dialog_type == NodeTypes.DIALOG or dialog_type == NodeTypes.CHOICES:
-		_process_logic(_current_uuid)
+	if dialog_type != NodeTypes.DIALOG and dialog_type != NodeTypes.CHOICES:
+		return
+	var result: Dictionary[String, Variant] = _process_logic(_current_uuid)
+	if result["type"] == NodeTypes.DIALOG:
+		dialog_reached.emit(result["data"])
+	elif result["tyle"] == NodeTypes.CHOICES:
+		choices_reached.emit(result["data"])
 
 
 ## Overrides the logic file. When a dialog data is loaded, the file provided in
@@ -887,7 +905,7 @@ func override_dialog_locale(dialog_id: String, locale_code: String, path: String
 ## [param data] needs to be either a String or [code]null[/code]. If you pass
 ## [code]null[/code] to [param data] the edited dialog will be removed and the
 ## original used instead.
-func edit_dialog(locale_code: String, dialog_id: String, node_id: String, new_dialog) -> void:
+func edit_dialog(locale_code: String, dialog_id: String, node_id: StringName, new_dialog) -> void:
 	var type: int = typeof(new_dialog)
 	if type == TYPE_NIL:
 		if DictUtils.has_nested_path(_dialog_edits, [dialog_id, locale_code, node_id]):
@@ -906,13 +924,13 @@ func edit_dialog(locale_code: String, dialog_id: String, node_id: String, new_di
 ## [param data] needs to be either an Array, PackedStringArray or [code]null[/code].
 ## If you pass [code]null[/code] to [param data] the edited dialog will be 
 ## removed and the original used instead.
-func edit_choices(locale_code: String, dialog_id: String, node_id: String, new_choices) -> void:
+func edit_choices(locale_code: String, dialog_id: String, node_id: StringName, new_choices) -> void:
 	var type: int = typeof(new_choices)
 	if type == TYPE_NIL:
 		if DictUtils.has_nested_path(_dialog_edits, [dialog_id, locale_code, node_id]):
 			_dialog_edits[dialog_id][locale_code].erase(node_id)
 		return
-	elif type != TYPE_PACKED_STRING_ARRAY or type != TYPE_ARRAY:
+	elif type != TYPE_PACKED_STRING_ARRAY and type != TYPE_ARRAY:
 		return
 	
 	var responses: PackedStringArray = []
@@ -925,11 +943,12 @@ func edit_choices(locale_code: String, dialog_id: String, node_id: String, new_c
 	DictUtils.set_nested_value(
 		_dialog_edits,
 		[dialog_id, locale_code, node_id],
-		responses)
+		responses,
+		true)
 
 
 ## Adds an override for a specific choice on a specific locale.
-func edit_choice(locale_code: String, dialog_id: String, node_id: String, choice_index: int, data: String) -> void:
+func edit_choice(locale_code: String, dialog_id: String, node_id: StringName, choice_index: int, data: String) -> void:
 	if not _dialog_edits.has(dialog_id):
 		_dialog_edits[dialog_id] = {}
 		

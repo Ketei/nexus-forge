@@ -143,13 +143,14 @@ func _set_node_data(data: Dictionary) -> void:
 		return
 	
 	var metadata_size: int = metadata["metadata_connections"].size()
-	var current_meta_size: int = get_child_count() - 1
+	var current_meta_size: int = get_child_count() - 2
+	
 	if current_meta_size < metadata_size:
 		for _a in range(metadata_size - current_meta_size):
 			add_metadata_port()
 	elif metadata_size < current_meta_size:
 		var fields_to_remove: Array[StringName] = []
-		for port in range(current_meta_size - 1, metadata_size, -1):
+		for port in range(current_meta_size, metadata_size, -1):
 			fields_to_remove.append(StringName("metadata_" + str(port)))
 		remove_fields(fields_to_remove, -1)
 		update_size.call_deferred()
@@ -160,6 +161,7 @@ func _set_node_data(data: Dictionary) -> void:
 		if field == null:
 			continue
 		var line: LineEdit = field.get_child(0)
+		line.visible = true
 		line.text = metadata_data["id"]
 
 
