@@ -125,6 +125,11 @@ const _SETTINGS_PATHS: Dictionary[String, Dictionary] = {
 		"restart_required": false,
 		"sort_string": "zzznexus_forge/setting/c_log_info",
 		"is_basic": false},
+	"character_register_ids": {
+		"setting_path": "nexus_forge/export/register_character_ids",
+		"default_value": true,
+		"type": TYPE_BOOL,
+		"restart_required": false},
 	"discourse": {
 		"setting_path": "nexus_forge/export/localization_directory",
 		"default_value": "res://localization/",
@@ -184,6 +189,11 @@ var Discourse: DialogParser
 ## The variables are nested into a folder-like structure which can also contain
 ## folders.
 var Blackboard: BlackboardData
+
+## An object for registering and loading [CharacterSheet]s and applying
+## modifications to them.
+var Characters: CharacterManager
+
 ## A resource containing the game's item definitions.
 var Items: ItemCatalog
 ## A resource containing custom stats data.[br]
@@ -239,6 +249,7 @@ func _ready() -> void:
 	var use_quests: bool = ProjectSettings.get_setting(get_setting_path("quests_enabled"), true)
 	var use_currencies: bool = ProjectSettings.get_setting(get_setting_path("currencies_enabled"), true)
 	var use_recipes: bool = ProjectSettings.get_setting(get_setting_path("recipes_enabled"), true)
+	var use_characters: bool = ProjectSettings.get_setting(get_setting_path("characters_enabled"), true)
 	var instantiate_disabled: bool = ProjectSettings.get_setting(get_setting_path("use_disabled_modules"), true)
 	
 	var blackboard_path: String = ProjectSettings.get_setting(
@@ -295,9 +306,6 @@ func _ready() -> void:
 			Discourse = EditorDialogParser.new() if OS.has_feature("editor") else DialogParser.new()
 			if use_discourse:
 				Discourse.generate_locale_map()
-	else:
-		if use_discourse:
-			Discourse.generate_locale_map()
 
 	if Blackboard == null:
 		Blackboard = BlackboardData.new()
@@ -310,6 +318,23 @@ func _ready() -> void:
 		if Skills == null:
 			Skills = SkillCatalog.new()
 	
+	if Characters == null and (use_characters or instantiate_disabled):
+		Characters = CharacterManager.new()
+		if ProjectSettings.get_setting(get_setting_path("character_register_ids"), false) and FileAccess.file_exists("res://addons/nexus_forge/settings.cfg"):
+			var cfg: ConfigFile = ConfigFile.new()
+			if cfg.load("res://addons/nexus_forge/settings.cfg") == OK:
+				var data = cfg.get_value("PERSONA", "CharacterMap")
+				if typeof(data) == TYPE_DICTIONARY:
+					var map: Dictionary[StringName, String] = {}
+					for key in data.keys():
+						if typeof(key) == TYPE_STRING_NAME and typeof(data[key]) == TYPE_STRING:
+							map[key] = data[key]
+					Characters._characters.assign(map)
+				else:
+					_log_msg(
+							"singleton",
+							"Failed to load NexusForge settings",
+							NFPluginGameHandler._LogLevel.WARNING)
 	if Quests == null and ( use_quests or instantiate_disabled ):
 		Quests = QuestManager.new()
 	if Species == null and ( use_species or instantiate_disabled ):

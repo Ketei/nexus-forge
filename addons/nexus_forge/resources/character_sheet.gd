@@ -27,6 +27,7 @@ enum Gender {
 ## The traits of the character.
 @export var traits: TraitBlock
 
+var _mods_applied: bool = false
 
 ## Custom constructor for the class. Ensures the returned object has
 ## [member CharacterSheet.stats], [member CharacterSheet.skills] and

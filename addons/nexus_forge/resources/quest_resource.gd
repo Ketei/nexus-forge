@@ -33,6 +33,7 @@ enum QuestType {
 
 var _title_builder: Callable = Callable()
 var _description_builder: Callable = Callable()
+var _mods_applied: bool = false
 
 ## Returns the quest [member Quest.title]. Formats it if [code]Format Quest Strings with Blackboard[/code]
 ## is [code]On[/code] on [code]Project Settings[/code].

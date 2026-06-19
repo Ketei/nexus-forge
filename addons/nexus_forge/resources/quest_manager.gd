@@ -110,7 +110,7 @@ func start_quest(quest: Quest, auto_advance_stages: bool) -> void:
 	if _active_quests.has(quest.id) or not quest.has_stage(quest.entry_stage):
 		return
 	
-	if _quest_modifiers.has(quest.id):
+	if _quest_modifiers.has(quest.id) and not quest._mods_applied:
 		for id in _quest_modifiers[quest.id]["order"]:
 			if _quest_modifiers[quest.id]["mods"][id]["callable"].is_valid():
 				_quest_modifiers[quest.id]["mods"][id]["callable"].call(quest)
@@ -323,8 +323,8 @@ func complete_quest(quest_id: StringName, success: bool) -> void:
 ## The [param order] argument can be passed which will determine
 ## the execution sequence. A value less than 0 will append the modifier
 ## to the end of the execution order.[br]
-## The param after_mod argument can be used to ensure the given callable
-## executes after another modification. The order will be respected.
+## The [param after_mod] argument can be used to ensure the given callable
+## executes after another modification. The [param order] will be respected.
 func register_quest_modifier(quest_id: StringName, mod_id: StringName, mod_callable: Callable, order: int = -1, after_mod: StringName = &"") -> void:
 	if mod_id.is_empty():
 		push_error("[ODYSSEY] Mod ID can't be empty.")

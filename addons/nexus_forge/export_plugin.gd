@@ -20,6 +20,7 @@ var export_temp_dir: DirAccess = null
 
 var character_ids: Dictionary[StringName, String] = {}
 var quest_ids: Dictionary[StringName, String] = {}
+var export_characters: bool = true
 
 
 func _get_name() -> String:
@@ -36,6 +37,10 @@ func _export_begin(_features: PackedStringArray, _is_debug: bool, _path: String,
 	id_to_localization.clear()
 	character_ids.clear()
 	quest_ids.clear()
+	
+	export_characters = ProjectSettings.get_setting(
+			NFPluginGameHandler.get_setting_path("characters_id_to_files"),
+			true)
 	
 	if not file_base_path.ends_with("/"):
 		file_base_path += "/"
@@ -130,7 +135,7 @@ func _customize_resource(resource: Resource, path: String) -> Resource:
 			else:
 				push_error("Couldn't generate localization file.")
 		
-		return release_files[resource.resource_path]
+		return release_files[path]
 	elif resource is SkillCatalog:
 		return customize_skill_catalog(resource)
 	elif resource is TraitCatalog:
@@ -139,7 +144,16 @@ func _customize_resource(resource: Resource, path: String) -> Resource:
 		return customize_species(resource)
 	elif resource is CharacterSheet:
 		if character_ids.has(resource.id):
-			push_warning("[NexusForge] Character on resource ", path,  " has the same ID of: ", character_ids[resource.id])
+			if export_characters:
+				NFPluginGameHandler._log_msg(
+						"export",
+						"Resource '%s' has the same ID of registered resource '%s'. Skipping registration." % [path, character_ids[resource.id]],
+						NFPluginGameHandler._LogLevel.WARNING)
+			else:
+				NFPluginGameHandler._log_msg(
+						"export",
+						"Resource '%s' has the same ID of resource '%s'." % [path, character_ids[resource.id]],
+						NFPluginGameHandler._LogLevel.WARNING)
 		else:
 			character_ids[resource.id] = path
 	elif resource is Quest:
@@ -164,6 +178,16 @@ func _end_customize_resources() -> void:
 	var file: FileAccess = FileAccess.open(file_path, FileAccess.WRITE_READ)
 	file.store_string(JSON.stringify(bridge_data))
 	file.close()
+	
+	if export_characters:
+		var config_path: String = export_temp_dir.get_current_dir().path_join("settings.cfg")
+		var cfg: ConfigFile = ConfigFile.new()
+		cfg.set_value("PERSONA", "CharacterMap", character_ids)
+		if cfg.save(config_path) == OK:
+			add_file(
+					"res://addons/nexus_forge/settings.cfg",
+					FileAccess.get_file_as_bytes(config_path),
+					false)
 	
 	if file != null:
 		add_file(
