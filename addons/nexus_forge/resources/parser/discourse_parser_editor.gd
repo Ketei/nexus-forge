@@ -619,6 +619,22 @@ func edit_choices(locale_code: String, dialog_id: StringName, node_id: StringNam
 		_dialog_resource.dialog_overrides = _dialog_edits[dialog_id]
 
 
+func refresh() -> void:
+	if _dialog_resource == null or _current_uuid.is_empty() or not _dialog_resource.node_data.has(_current_uuid):
+		return
+	
+	var dialog_type: NodeTypes = _dialog_resource.node_data[_current_uuid]["type"]
+	
+	if dialog_type != NodeTypes.DIALOG and dialog_type != NodeTypes.CHOICES:
+		return
+	var result: Dictionary[String, Variant] = _process_logic(_current_uuid)
+	
+	if result["type"] == NodeTypes.DIALOG:
+		dialog_reached.emit(result["data"])
+	elif result["tyle"] == NodeTypes.CHOICES:
+		choices_reached.emit(result["data"])
+
+
 func _get_bool_result(from_uuid: String) -> bool:
 	if _dialog_resource == null or from_uuid.is_empty() or not _dialog_resource.node_data.has(from_uuid):
 		return false

@@ -1159,7 +1159,6 @@ func _on_graph_editor_locale_changed(from: String, to: String) -> void:
 	
 	var data: Dictionary = active_conversation.get_display_localization_data(to)
 	update_localization_display(data)
-	
 
 
 func _on_side_editor_locale_changed(from: String, to: String) -> void:
@@ -1216,19 +1215,44 @@ func _on_side_editor_locale_changed(from: String, to: String) -> void:
 		return
 	
 	var base_locale: String = languages_tree.get_base_language()
+	var node_uuid: StringName = active_node.get_node_uuid()
+	
 	if active_node.node_type == DiscourseGraphNode.DialogueNodeType.DIALOG or active_node.node_type == DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
-		base_text_edt.text = active_conversation.get_text_entry(
-				active_node.get_node_uuid(),
-				base_locale)
-		translation_txt_box.text = active_conversation.get_text_entry(
-				active_node.get_node_uuid(),
-				to)
+		var base_text: String = ""
+		var new_text: String = ""
+		
+		new_text = DictUtils.get_nested_value(
+				active_conversation.localization,
+				[active_node.get_node_uuid(), "locales", to],
+				"",
+				true)
+		
+		base_text = DictUtils.get_nested_value(
+				active_conversation.localization,
+				[active_node.get_node_uuid(), "locales", base_locale],
+				base_text_edt.text,
+				true)
+		
+		base_text_edt.text = base_text
+		translation_txt_box.text = new_text
 	elif active_node.node_type == DiscourseGraphNode.DialogueNodeType.CHOICES:
+		var choices: Array[String] = []
+		var base_options: Array[String] = []
+		
+		choices.assign(DictUtils.get_nested_value(
+				active_conversation.localization,
+				[node_uuid, "locales", to],
+				[],
+				true))
+		
+		base_options.assign(DictUtils.get_nested_value(
+				active_conversation.localization,
+				[node_uuid, "locales", base_locale],
+				[],
+				true))
+		
 		clear_localized_options()
 		var choice_size: int = active_node.choice_count()
-		var base_options: Array[String] = active_conversation.get_choices_entry(
-				active_node.get_node_uuid(),
-				base_locale)
 		
 		if base_options.size() != choice_size:
 			base_options.resize(choice_size)
@@ -1299,24 +1323,51 @@ func _on_localizer_node_selected(uuid: StringName) -> void:
 	$LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer.visible = new_node.node_type == DiscourseGraphNode.DialogueNodeType.CHOICES
 	$LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/LocaleVBoxContainer.visible = !$LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer.visible
 	# Get the data & set to localizer
+	var new_node_uuid: StringName = new_node.get_node_uuid()
 	
 	match new_node.node_type:
 		DiscourseGraphNode.DialogueNodeType.DIALOG:
-			base_text_edt.text = active_conversation.get_text_entry(
-					uuid,
-					base_language)
-			translation_txt_box.text = active_conversation.get_text_entry(
-					uuid,
-					active_locale)
+			var base_text: String = ""
+			var new_text: String = ""
+			
+			new_text = DictUtils.get_nested_value(
+					active_conversation.localization,
+					[new_node_uuid, "locales", active_locale],
+					"",
+					true)
+			
+			base_text = DictUtils.get_nested_value(
+					active_conversation.localization,
+					[new_node_uuid, "locales", base_language],
+					base_text_edt.text,
+					true)
+			
+			
+			base_text_edt.text = base_text
+			translation_txt_box.text = new_text
 			
 		DiscourseGraphNode.DialogueNodeType.CHOICES:
+			var options_localized: Array[String] = []
+			var options_base: Array[String] = []
+			
+			options_localized.assign(DictUtils.get_nested_value(
+					active_conversation.localization,
+					[new_node_uuid, "locales", active_locale],
+					[],
+					true))
+			
+			options_base.assign(DictUtils.get_nested_value(
+					active_conversation.localization,
+					[new_node_uuid, "locales", base_language],
+					[],
+					true))
+			
 			var choice_count: int = new_node.choice_count()
 			clear_localized_options()
-			var options_base: Array[String] = active_conversation.get_choices_entry(uuid, base_language)
+			
 			var base_size: int = options_base.size()
 			if base_size != choice_count:
 				options_base.resize(choice_count)
-			var options_localized: Array[String] = active_conversation.get_choices_entry(uuid, active_locale)
 			var localized_size: int = options_localized.size()
 			if localized_size < choice_count:
 				options_localized.append_array(options_base.slice(localized_size))

@@ -306,6 +306,18 @@ func is_species_hybrid(species_id: StringName) -> bool:
 	return _hybrid_pointers.has(species_id)
 
 
+func get_hybrid_species_of(species_id: StringName) -> Array[String]:
+	var hybrids: Array[String] = []
+	if not _species_trees.has(species_id):
+		return hybrids
+	
+	for direct_child in _species_trees[species_id].get_children():
+		if not direct_child.get_metadata(0)["is_pointer"]:
+			continue
+		hybrids.append(direct_child.get_metadata(0)["id"])
+	return hybrids
+
+
 func species_has_ancestor(species: StringName, ancestor: StringName) -> bool:
 	if not _species_trees.has_all([species, ancestor]):
 		return false
@@ -335,15 +347,11 @@ func get_dominant_gene(of_species: StringName) -> StringName:
 
 
 func get_parent_species_of(species: StringName) -> StringName:
-	print("Looking for parent of: ", species)
 	if _species_trees.has(species):
-		print("Found on tree")
 		var parent: TreeItem = _species_trees[species].get_parent()
-		print("Parent found: ", parent.get_text(0))
 		if parent == get_root():
 			return &""
 		else:
-			print("Returning ", parent.get_metadata(0)["id"])
 			return parent.get_metadata(0)["id"]
 	return &""
 

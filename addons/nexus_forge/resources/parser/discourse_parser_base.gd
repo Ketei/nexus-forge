@@ -822,6 +822,11 @@ func set_dialog_id(id: StringName) -> void:
 		_next_uuid = &""
 
 
+## Returns the UUID of the current dialog position.
+func get_dialog_current_uuid() -> StringName:
+	return _current_uuid
+
+
 ## Progresses the conversation
 func advance() -> void:
 	if _dialog_resource == null:
@@ -833,14 +838,14 @@ func advance() -> void:
 	
 	var result: Dictionary[String, Variant] = _process_logic(_next_uuid)
 	
-	_current_uuid = result["current"]
-	_next_uuid = result["next"]
-	
 	if result["type"] == -1 or result["type"] == NodeTypes.DIALOG_END:
 		_conversation_started = false
 		_next_uuid = _dialog_resource.entry_node
+		_current_uuid = &""
 		dialog_finished.emit()
 	else:
+		_current_uuid = result["current"]
+		_next_uuid = result["next"]
 		match result["type"]:
 			NodeTypes.DIALOG:
 				dialog_reached.emit(result["data"])
@@ -851,10 +856,11 @@ func advance() -> void:
 
 
 ## Forces the parser to process the current dialog/choices node again,
-## re-emitting the relevant signal.[br]
+## re-emitting the relevant signal. Useful when changing locales or
+## loading a dialog from a specific point.[br]
 ## This method is automatically called on [code]NexusForge.Discourse[/code]
 ## if Godot's locale changed and
-## [code]Update Discourse Locale With Godot[/code] is [code]On[/code].[br]
+## [code]Update Discourse Locale With Godot[/code] is [code]On[/code].[br][br]
 ## [b]Note:[/b] This only reprocesses the current node if it is a dialog
 ## or choices node and does not re-trigger previous nodes leading up to it.
 func refresh() -> void:
@@ -865,11 +871,18 @@ func refresh() -> void:
 	
 	if dialog_type != NodeTypes.DIALOG and dialog_type != NodeTypes.CHOICES:
 		return
+	
 	var result: Dictionary[String, Variant] = _process_logic(_current_uuid)
+	
+	if _next_uuid != result["next"]:
+		_next_uuid = result["next"]
+	
 	if result["type"] == NodeTypes.DIALOG:
 		dialog_reached.emit(result["data"])
-	elif result["tyle"] == NodeTypes.CHOICES:
+	elif result["type"] == NodeTypes.CHOICES:
 		choices_reached.emit(result["data"])
+	elif result["type"] == NodeTypes.PAUSE:
+		dialog_paused.emit()
 
 
 ## Overrides the logic file. When a dialog data is loaded, the file provided in

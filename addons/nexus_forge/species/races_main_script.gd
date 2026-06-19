@@ -120,11 +120,15 @@ func _on_hybridize_pressed() -> void:
 	species.sort()
 	
 	var parent_species: StringName = races_tree.get_parent_species_of(loaded_species)
+	var hybrid_species: Dictionary[String, Variant] = {}
+	
+	for species_id in races_tree.get_hybrid_species_of(loaded_species):
+		hybrid_species[species_id] = null
 	
 	for id in species:
 		var strn_id: StringName = StringName(id)
 		_current_species.append(strn_id)
-		if strn_id == loaded_species:
+		if strn_id == loaded_species or hybrid_species.has(id):
 			continue
 		dom_opt_btn.add_item(id)
 		dom_opt_btn.set_item_metadata(-1, strn_id)
@@ -137,7 +141,7 @@ func _on_hybridize_pressed() -> void:
 	var dom_metadata: StringName = dom_opt_btn.get_selected_metadata()
 	
 	for id in _current_species:
-		if id == loaded_species or id == dom_metadata:
+		if id == loaded_species or id == dom_metadata or hybrid_species.has(id):
 			continue
 		sub_opt_btn.add_item(String(id))
 		sub_opt_btn.set_item_metadata(-1, id)

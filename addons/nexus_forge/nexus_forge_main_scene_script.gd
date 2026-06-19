@@ -237,37 +237,51 @@ func go_to_tab(tab: int) -> void:
 func handle_resource(resource: Resource) -> void:
 	if resource is EditorDiscourseDialog:
 		if discourse == null:
-			push_warning(
-					"[NexusForge] Discourse is disabled. Can't edit resource.")
+			NFPluginGameHandler._log_msg(
+					"editor",
+					"Dialogs are disabled. Can't edit resource.",
+					NFPluginGameHandler._LogLevel.INFO)
 		else:
 			go_to_tab(discourse.get_index())
 		discourse.plugin_file_selected(resource)
 	elif resource is CharacterSheet:
 		if characters == null:
-			push_warning(
-					"[NexusForge] Characters are disabled. Can't edit resource.")
+			NFPluginGameHandler._log_msg(
+					"editor",
+					"Characters are disabled. Can't edit resource.",
+					NFPluginGameHandler._LogLevel.INFO)
 		else:
 			go_to_tab(characters.get_index())
 			characters.plugin_open_resource(resource)
 	elif resource is PhraseMap:
 		if PhraseMap == null:
-			push_warning(
-					"[NexusForge] Phrase Maps are disabled. Can't edit resource.")
+			NFPluginGameHandler._log_msg(
+					"editor",
+					"Phrase Maps are disabled. Can't edit resource.",
+					NFPluginGameHandler._LogLevel.INFO)
 		else:
 			go_to_tab(phrase_maps.get_index())
 			phrase_maps.plugin_open_resource(resource)
 	elif resource is Quest:
 		if discourse == null:
-			push_warning(
-					"[NexusForge] Quests are disabled. Can't edit resource.")
+			NFPluginGameHandler._log_msg(
+					"editor",
+					"Quests are disabled. Can't edit resource.",
+					NFPluginGameHandler._LogLevel.INFO)
 		else:
 			go_to_tab(quests.get_index())
 			quests.plugin_handle_resource(resource)
 	else:
 		if resource == null:
-			print("This is null for some reason")
+			NFPluginGameHandler._log_msg(
+				"editor",
+				"Tried to open a null resource. This shouldn't have happened",
+				NFPluginGameHandler._LogLevel.WARNING)
 		else:
-			printerr("[NexusForge] MainScene: Invalid resource opened: " + resource.resource_path)
+			NFPluginGameHandler._log_msg(
+				"editor",
+				"Tried to open an invalid resource: '%s'. This shouldn't have happened." % resource.resource_path,
+				NFPluginGameHandler._LogLevel.WARNING)
 
 
 func has_unsaved_changes() -> bool:

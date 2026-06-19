@@ -12,7 +12,7 @@ enum _LogLevel{
 
 const _SETTINGS_PATHS: Dictionary[String, Dictionary] = {
 	"discourse_enabled": {
-		"setting_path": "nexus_forge/enabled_modules/discourse_enabled",
+		"setting_path": "nexus_forge/enabled_modules/dialogs_enabled",
 		"default_value": true,
 		"type": TYPE_BOOL},
 	"characters_enabled": {
@@ -338,4 +338,6 @@ func _notification(what: int) -> void:
 			return
 		
 		Discourse.locale = TranslationServer.get_locale()
-		Discourse.refresh()
+		
+		if Discourse.is_dialog_active():
+			Discourse.refresh()

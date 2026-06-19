@@ -257,10 +257,11 @@ func get_frames_uuids() -> Array:
 ## return [param fallback].
 func get_text_entry(node_uuid: StringName, locale: String = "", fallback: String = "[ENTRY NOT FOUND]") -> String:
 	locale = TranslationServer.standardize_locale(locale)
-	var localization_data = localization.get(node_uuid)
 	
-	if localization_data == null or localization_data["type"] != LocalizationType.TEXT:
+	if not localization.has(node_uuid) or localization[node_uuid]["type"] != LocalizationType.TEXT:
 		return fallback
+	
+	#var localization_data: Dictionary = localization[node_uuid]
 	
 	var node_id: StringName = node_data[node_uuid]["name"]
 	var localized: bool = DictUtils.get_nested_value(
@@ -272,11 +273,11 @@ func get_text_entry(node_uuid: StringName, locale: String = "", fallback: String
 	if DictUtils.has_nested_path(dialog_overrides, [locale, node_id]):
 		return dialog_overrides[locale][node_id]
 	elif not localized:
-		return DictUtils.get_nested_value(localization_data, ["unlocalized"], fallback, true)
+		return DictUtils.get_nested_value(localization, [node_uuid, "unlocalized"], fallback, true)
 	else:
 		return DictUtils.get_nested_value(
-				localization_data,
-				["locales", locale],
+				localization,
+				[node_uuid, "locales", locale],
 				fallback,
 				true)
 
