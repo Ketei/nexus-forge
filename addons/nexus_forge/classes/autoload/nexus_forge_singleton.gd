@@ -330,9 +330,12 @@ func _ready() -> void:
 							var map: Dictionary[StringName, String] = {}
 							for key in data.keys():
 								if typeof(key) == TYPE_STRING and typeof(data[key]) == TYPE_STRING_NAME:
+									if map.has(data[key]):
+										_log_msg(
+												"singleton",
+												"Resource '%s' is using the ID (%s) of an already registered resource '%s'. Skipping." % [key, data[key], map[data[key]]])
 									map[data[key]] = key
 							Characters._characters.assign(map)
-							
 			else:
 				if FileAccess.file_exists("res://addons/nexus_forge/settings.cfg"):
 					var cfg: ConfigFile = ConfigFile.new()

@@ -1,0 +1,15 @@
+[gd_scene format=3 uid="uid://c2ogwmdrsfksy"]
+
+[node name="ConfirmationDialog" type="ConfirmationDialog" unique_id=2087140612]
+oversampling_override = 1.0
+initial_position = 2
+size = Vector2i(665, 366)
+visible = true
+ok_button_text = "Proceed & Scan"
+dialog_text = "This tool will scan every file within the selected directory and subdirectories to locate and track CharacterSheet resources.
+The use of this tool is only relevant if \"Nexus Forge/Export/Register Character IDs\" is enabled in your Project Settings; Otherwise tracked files will have no effect at runtime.
+
+If you're only trying to track one or two missing resources, simply double-clicking them to open them from the FileSystem dock will make the plugin register them without requiring a full scan.
+
+This scan will load all resouces to verify their class. If there are many resource files (.tres) this process could take a minute to complete."
+dialog_autowrap = true

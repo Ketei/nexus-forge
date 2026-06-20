@@ -6,6 +6,7 @@ const MAIN_SCENE = preload("res://addons/nexus_forge/NexusForgeMainScene.tscn")
 const PLUGIN_NAME: String = "NexusForge"
 const PLUGIN_ICON_PATH: String = "res://addons/nexus_forge/icons/nexus_forge_small.svg"
 const HANDLED_CLASSES: Array[StringName] = [&"EditorDiscourseDialog", &"CharacterSheet", &"PhraseMap", &"Quest"]
+const TOOL_NAME: String = "Nexus Forge Character Lookup"
 
 var editor_view: Control = null
 var export_plugin: EditorExportPlugin = null
@@ -98,14 +99,14 @@ func _enter_tree() -> void:
 		var cfg: ConfigFile = ConfigFile.new()
 		if cfg.load("user://nexus_forge/persona_settings.cfg") == OK:
 			var data = cfg.get_value("RUNTIME", "CharacterMap")
-			if typeof(data) == TYPE_DICTIONARY:
-				for key in data.keys():
-					if typeof(key) == TYPE_STRING:
-						if FileAccess.file_exists(data[key]):
-							character_map[key] = data[key]
+			for key in data.keys():
+				if FileAccess.file_exists(key):
+					character_map[key] = data[key]
 	
 	if use_characters:
 		editor_view.characters.character_loaded.connect(_on_character_loaded)
+	
+	add_tool_menu_item(TOOL_NAME, _on_scan_folder_selected)
 	
 	resource_saved.connect(_on_resource_saved, CONNECT_DEFERRED)
 	EditorInterface.get_file_system_dock().resource_removed.connect(_on_resource_removed)
@@ -151,6 +152,7 @@ func _get_unsaved_status(for_scene: String) -> String:
 
 func _exit_tree() -> void:
 	remove_export_plugin(export_plugin)
+	remove_tool_menu_item(TOOL_NAME)
 	if editor_view:
 		editor_view.queue_free()
 	resource_saved.disconnect(_on_resource_saved)
@@ -654,6 +656,54 @@ func _on_resource_removed(object: Resource) -> void:
 			editor_view.recipes.reload_recipe_resource()
 
 
+func _on_scan_folder_selected() -> void:
+	var confirmation: ConfirmationDialog = load("res://addons/nexus_forge/characters/characer_scanner_window.tscn").instantiate()
+	confirmation.confirmed.connect(_on_scan_confirmed.bind(confirmation))
+	confirmation.canceled.connect(_on_scan_canceled.bind(confirmation))
+	EditorInterface.popup_dialog_centered(confirmation)
+
+
+func _on_scan_confirmed(dialog: ConfirmationDialog) -> void:
+	var dir_access: EditorFileDialog = load("res://addons/nexus_forge/classes/dir_file_dialog_editor.gd").new()
+	EditorInterface.popup_dialog_centered(dir_access)
+	
+	var result: Array = await dir_access.dialog_finished
+	
+	if result[0] and DirAccess.dir_exists_absolute(result[1]):
+		var log_msg: String = ""
+		var found_files: Dictionary[String, StringName] = {}
+		_scan_add_directory_for_characters(result[1], found_files)
+		if found_files.is_empty():
+			log_msg = "Scan finished. No character files found."
+		else:
+			character_map.merge(found_files, true)
+			log_msg = "Scan Finished. %s character file(s) found." % found_files.size()
+			
+		NFPluginGameHandler._log_msg(
+				"plugin",
+				log_msg)
+	
+	dialog.queue_free()
+	dir_access.queue_free()
+
+
+func _scan_add_directory_for_characters(directory: String, _on: Dictionary[String, StringName]) -> void:
+	for file in DirAccess.get_files_at(directory):
+		if file.get_extension() != "tres":
+			continue
+		var path: String = directory.path_join(file)
+		var res_load = load(path)
+		if res_load != null and res_load is CharacterSheet:
+			_on[path] = res_load.id
+	
+	for subdirectory in DirAccess.get_directories_at(directory):
+		_scan_add_directory_for_characters(directory.path_join(subdirectory), _on)
+
+
+func _on_scan_canceled(dialog: ConfirmationDialog) -> void:
+	dialog.queue_free()
+
+
 func save_character_paths() -> void:
 	var valid_characters: Dictionary[String, Variant] = {}
 	
@@ -662,15 +712,13 @@ func save_character_paths() -> void:
 			character_map.erase(res_path)
 			continue
 		var char = load(res_path)
-		if char == null:
+		if char == null or char is not CharacterSheet:
 			continue
-		if char is CharacterSheet:
-			valid_characters[res_path] = char.id
+		valid_characters[res_path] = char.id
 	
-	if valid_characters == character_map:
-		return
+	if valid_characters != character_map:
+		character_map.assign(valid_characters)
 	
-	character_map.assign(valid_characters)
 	var character_cfg: ConfigFile = ConfigFile.new()
 	character_cfg.set_value("RUNTIME", "CharacterMap", valid_characters)
 	
