@@ -9,6 +9,7 @@ const HANDLED_CLASSES: Array[StringName] = [&"EditorDiscourseDialog", &"Characte
 
 var editor_view: Control = null
 var export_plugin: EditorExportPlugin = null
+var character_map: Dictionary[String, Variant] = {}
 
 
 # Earlier versions of godot had an issue where documentation wouldn't show
@@ -80,6 +81,7 @@ func _enter_tree() -> void:
 	var use_quests: bool = ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("quests_enabled"), true)
 	var use_phrases: bool = ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("phrases_enabled"), true)
 	var discourse_base_lang: String = ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("discourse_base_language"), OS.get_locale_language())
+	
 	editor_view.ready_plugin(
 			use_discourse,
 			use_characters,
@@ -91,6 +93,20 @@ func _enter_tree() -> void:
 			use_quests,
 			use_phrases,
 			discourse_base_lang)
+	
+	if FileAccess.file_exists("user://nexus_forge/persona_settings.cfg"):
+		var cfg: ConfigFile = ConfigFile.new()
+		if cfg.load("user://nexus_forge/persona_settings.cfg") == OK:
+			var data = cfg.get_value("RUNTIME", "CharacterMap")
+			if typeof(data) == TYPE_DICTIONARY:
+				for key in data.keys():
+					if typeof(key) == TYPE_STRING:
+						if FileAccess.file_exists(data[key]):
+							character_map[key] = data[key]
+	
+	if use_characters:
+		editor_view.characters.character_loaded.connect(_on_character_loaded)
+	
 	resource_saved.connect(_on_resource_saved, CONNECT_DEFERRED)
 	EditorInterface.get_file_system_dock().resource_removed.connect(_on_resource_removed)
 	EditorInterface.get_file_system_dock().files_moved.connect(_on_files_moved, CONNECT_DEFERRED)
@@ -105,12 +121,22 @@ func _build() -> bool:
 	if not valid_path:
 		printerr("[ERROR] NexusForge: Discourse needs a valid folder path for localization files on project settings.")
 	
-	return valid_path
+	if ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("character_register_ids"), true):
+		save_character_paths()
+	
+	return true
 
 
 func _save_external_data() -> void:
 	if _editor_ready():
 		editor_view.save_resources()
+	
+	var character_cfg: ConfigFile = ConfigFile.new()
+	
+	character_cfg.set_value("RUNTIME", "CharacterMap", character_map)
+	
+	if character_cfg.save("user://nexus_forge/persona_settings.cfg") != OK:
+		print("Failed saving character config")
 
 
 func _has_main_screen() -> bool:
@@ -430,6 +456,8 @@ func _handles(object: Object) -> bool:
 		&"EditorDiscourseDialog":
 			tool_available = editor_view.discourse != null
 		&"CharacterSheet":
+			if not character_map.has(object.resource_path):
+				character_map[object.resource_path] = null
 			tool_available = editor_view.characters != null
 		&"PhraseMap":
 			tool_available = editor_view.phrase_maps != null
@@ -445,12 +473,21 @@ func _edit(object: Object) -> void:
 		editor_view.handle_resource(object)
 
 
+func _on_character_loaded(path: String) -> void:
+	if not character_map.has(path):
+		character_map[path] = null
+
+
 func _editor_ready() -> bool:
 	return editor_view != null and editor_view.is_node_ready()
 
 
 func _on_resource_saved(resource: Resource) -> void:
-	if resource is not Script:
+	if resource is CharacterSheet:
+		if not resource.resource_path.is_empty() and not character_map.has(resource.resource_path):
+			character_map[resource.resource_path] = null
+		return
+	elif resource is not Script:
 		return
 	
 	var script_class: StringName = resource.get_global_name()
@@ -480,6 +517,10 @@ func _on_resource_saved(resource: Resource) -> void:
 func _on_files_moved(old_file: String, new_file: String) -> void:
 	if old_file.get_extension() != "tres":
 		return
+	
+	if character_map.has(old_file):
+		character_map[new_file] = null
+		character_map.erase(old_file)
 	
 	if ProjectSettings.get_setting(
 			NFPluginGameHandler.get_setting_path("discourse"), "") == old_file:
@@ -555,6 +596,7 @@ func _on_resource_removed(object: Resource) -> void:
 	if object is EditorDiscourseDialog:
 		editor_view.discourse.filesystem_resource_removed(object)
 	elif object is CharacterSheet:
+		character_map.erase(object.resource_path)
 		editor_view.characters.filesystem_resource_removed(object)
 	elif object is PhraseMap:
 		editor_view.phrase_maps.filesystem_resource_removed(object)
@@ -610,3 +652,27 @@ func _on_resource_removed(object: Resource) -> void:
 				"")
 			ProjectSettings.save()
 			editor_view.recipes.reload_recipe_resource()
+
+
+func save_character_paths() -> void:
+	var valid_characters: Dictionary[String, Variant] = {}
+	
+	for res_path in character_map.keys():
+		if not ResourceLoader.exists(res_path):
+			character_map.erase(res_path)
+			continue
+		var char = load(res_path)
+		if char == null:
+			continue
+		if char is CharacterSheet:
+			valid_characters[res_path] = char.id
+	
+	if valid_characters == character_map:
+		return
+	
+	character_map.assign(valid_characters)
+	var character_cfg: ConfigFile = ConfigFile.new()
+	character_cfg.set_value("RUNTIME", "CharacterMap", valid_characters)
+	
+	if character_cfg.save("user://nexus_forge/persona_settings.cfg") != OK:
+		print("Failed saving cfg")

@@ -320,21 +320,35 @@ func _ready() -> void:
 	
 	if Characters == null and (use_characters or instantiate_disabled):
 		Characters = CharacterManager.new()
-		if ProjectSettings.get_setting(get_setting_path("character_register_ids"), false) and FileAccess.file_exists("res://addons/nexus_forge/settings.cfg"):
-			var cfg: ConfigFile = ConfigFile.new()
-			if cfg.load("res://addons/nexus_forge/settings.cfg") == OK:
-				var data = cfg.get_value("PERSONA", "CharacterMap")
-				if typeof(data) == TYPE_DICTIONARY:
-					var map: Dictionary[StringName, String] = {}
-					for key in data.keys():
-						if typeof(key) == TYPE_STRING_NAME and typeof(data[key]) == TYPE_STRING:
-							map[key] = data[key]
-					Characters._characters.assign(map)
-				else:
-					_log_msg(
-							"singleton",
-							"Failed to load NexusForge settings",
-							NFPluginGameHandler._LogLevel.WARNING)
+		if ProjectSettings.get_setting(get_setting_path("character_register_ids"), true):
+			if OS.has_feature("editor"):
+				if FileAccess.file_exists("user://nexus_forge/persona_settings.cfg"):
+					var cfg: ConfigFile = ConfigFile.new()
+					if cfg.load("user://nexus_forge/persona_settings.cfg") == OK:
+						var data = cfg.get_value("RUNTIME", "CharacterMap")
+						if typeof(data) == TYPE_DICTIONARY:
+							var map: Dictionary[StringName, String] = {}
+							for key in data.keys():
+								if typeof(key) == TYPE_STRING and typeof(data[key]) == TYPE_STRING_NAME:
+									map[data[key]] = key
+							Characters._characters.assign(map)
+							
+			else:
+				if FileAccess.file_exists("res://addons/nexus_forge/settings.cfg"):
+					var cfg: ConfigFile = ConfigFile.new()
+					if cfg.load("res://addons/nexus_forge/settings.cfg") == OK:
+						var data = cfg.get_value("PERSONA", "CharacterMap")
+						if typeof(data) == TYPE_DICTIONARY:
+							var map: Dictionary[StringName, String] = {}
+							for key in data.keys():
+								if typeof(key) == TYPE_STRING_NAME and typeof(data[key]) == TYPE_STRING:
+									map[key] = data[key]
+							Characters._characters.assign(map)
+						else:
+							_log_msg(
+									"singleton",
+									"Failed to load NexusForge settings",
+									NFPluginGameHandler._LogLevel.WARNING)
 	if Quests == null and ( use_quests or instantiate_disabled ):
 		Quests = QuestManager.new()
 	if Species == null and ( use_species or instantiate_disabled ):

@@ -3,6 +3,7 @@ extends PanelContainer
 
 
 signal import_species_data_pressed
+signal character_loaded(path: String)
 
 
 const LineEditConfirmationDialog = preload("res://addons/nexus_forge/dialogs/lineedit_confirmation_dialog.gd")
@@ -405,6 +406,7 @@ func _on_new_character_pressed() -> void:
 		current_sheet = new_resource
 		_unsaved = false
 		set_ui_enabled(true)
+		character_loaded.emit.call_deferred(dialog_result[1])
 	
 	resource_selector.queue_free()
 
