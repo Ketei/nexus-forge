@@ -281,7 +281,7 @@ func load_skills_resource() -> void:
 	var skills_exist: bool = 0 < skill_opt_btn.item_count
 	var disabled: bool = not skills_exist
 	
-	var skill_block: SkillSet = SkillSet.new()
+	var skill_block: SkillSet = SkillSet.new(false)
 	var all_skills: Array[StringName] = skill_block.skills()
 	
 	for skill in _skills_resource._skills.keys():
@@ -560,7 +560,7 @@ func load_traits_resource() -> void:
 	trait_str_btn.disabled = disabled
 	trait_dict_btn.disabled = disabled
 	
-	var block: TraitBlock = TraitBlock.new()
+	var block: TraitBlock = TraitBlock.new(false)
 	var all_traits: Array[StringName] = block.traits()
 	
 	for existing_trait in _traits_resource._traits.keys():

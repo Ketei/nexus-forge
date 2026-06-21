@@ -626,11 +626,11 @@ func set_ui_enabled(enabled: bool) -> void:
 
 
 func update_talent_nodes() -> void:
-	var skill_set: SkillSet = SkillSet.new()
+	var skill_set: SkillSet = SkillSet.new(false)
 	
-	var trait_block: TraitBlock = TraitBlock.new()
+	var trait_block: TraitBlock = TraitBlock.new(false)
 	
-	var stat_block: StatBlock = StatBlock.new()
+	var stat_block: StatBlock = StatBlock.new(false)
 	
 	var stat_data: Dictionary[StringName, int] = StatBlock.stats()
 	var stats: Array[StringName] = []

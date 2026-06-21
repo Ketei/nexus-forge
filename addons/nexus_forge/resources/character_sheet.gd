@@ -29,12 +29,10 @@ enum Gender {
 
 var _mods_applied: bool = false
 
-## Custom constructor for the class. Ensures the returned object has
-## [member CharacterSheet.stats], [member CharacterSheet.skills] and
-## [member CharacterSheet.traits] initialized, as well as
-## [member CharacterSheet.custom_data] filled with the
-## [const CharacterSheet.DEFAULT_DATA].
-static func new_character() -> CharacterSheet:
+## Ensures that the object has [member CharacterSheet.stats],
+## [member CharacterSheet.skills] and
+## [member CharacterSheet.traits] initialized.
+func initialize_objects() -> CharacterSheet:
 	var new_sheet: CharacterSheet = CharacterSheet.new()
 	if new_sheet.stats == null:
 		new_sheet.stats = StatBlock.new(true)

@@ -281,11 +281,11 @@ func update_species_data(species_catalog: SpeciesCatalog = null) -> void:
 
 
 func update_talent_nodes() -> void:
-	var skill_set: SkillSet = SkillSet.new()
+	var skill_set: SkillSet = SkillSet.new(false)
 
-	var trait_block: TraitBlock = TraitBlock.new()
+	var trait_block: TraitBlock = TraitBlock.new(false)
 	
-	var stat_block: StatBlock = StatBlock.new()
+	var stat_block: StatBlock = StatBlock.new(false)
 	
 	var stats_data: Dictionary[StringName, int] = StatBlock.stats()
 	
@@ -388,7 +388,8 @@ func _on_new_character_pressed() -> void:
 	if dialog_result[0]:
 		if current_sheet != null:
 			save_current_character()
-		var new_resource: CharacterSheet = CharacterSheet.new_character()
+		var new_resource: CharacterSheet = CharacterSheet.new()
+		new_resource.initialize_objects()
 		if ResourceLoader.has_cached(dialog_result[1]):
 			new_resource.take_over_path(dialog_result[1])
 		new_resource.resource_path = dialog_result[1]

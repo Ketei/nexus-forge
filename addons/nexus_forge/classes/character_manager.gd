@@ -16,18 +16,24 @@ func get_character(character_id: StringName, force_reapply_mods: bool = false) -
 	
 	var using_override: bool = _character_overrides.has(character_id)
 	
-	var char_sheet = null
+	var char_sheet: CharacterSheet = null
 	
 	if using_override:
-		char_sheet = ResourceLoader.load(_character_overrides[character_id], "", ResourceLoader.CACHE_MODE_REPLACE_DEEP) if force_reapply_mods else load(_character_overrides[character_id])
-		if char_sheet == null:
+		var res_load = ResourceLoader.load(_character_overrides[character_id], "", ResourceLoader.CACHE_MODE_REPLACE_DEEP) if force_reapply_mods else load(_character_overrides[character_id])
+		if res_load != null and res_load is CharacterSheet:
+			char_sheet = res_load
+		else:
 			NFPluginGameHandler._log_msg(
 					"persona",
 					"Error while loading override '%s'. Using default resource." % _character_overrides[character_id],
 					NFPluginGameHandler._LogLevel.ERROR)
-			char_sheet = ResourceLoader.load(_characters[character_id], "", ResourceLoader.CACHE_MODE_REPLACE_DEEP) if force_reapply_mods else load(_characters[character_id])
+			res_load = ResourceLoader.load(_characters[character_id], "", ResourceLoader.CACHE_MODE_REPLACE_DEEP) if force_reapply_mods else load(_characters[character_id])
+			if res_load != null and res_load is CharacterSheet:
+				char_sheet = res_load
 	else:
-		char_sheet = ResourceLoader.load(_characters[character_id], "", ResourceLoader.CACHE_MODE_REPLACE_DEEP) if force_reapply_mods else load(_characters[character_id])
+		var res_load = ResourceLoader.load(_characters[character_id], "", ResourceLoader.CACHE_MODE_REPLACE_DEEP) if force_reapply_mods else load(_characters[character_id])
+		if res_load != null and res_load is CharacterSheet:
+			char_sheet = res_load
 	
 	if char_sheet == null:
 		NFPluginGameHandler._log_msg(
@@ -36,15 +42,17 @@ func get_character(character_id: StringName, force_reapply_mods: bool = false) -
 				NFPluginGameHandler._LogLevel.ERROR)
 		return null
 	
-	
 	if char_sheet.id != character_id:
 		char_sheet.id = character_id
+	
+	char_sheet.initialize_objects()
 	
 	if _character_modifiers.has(character_id) and (not char_sheet._mods_applied or force_reapply_mods):
 		for mod_id in _character_modifiers[character_id]["order"]:
 			if _character_modifiers[character_id]["mods"][mod_id]["callable"].is_valid():
 				_character_modifiers[character_id]["mods"][mod_id]["callable"].call(char_sheet)
 		char_sheet._mods_applied = true
+	
 	return char_sheet
 
 

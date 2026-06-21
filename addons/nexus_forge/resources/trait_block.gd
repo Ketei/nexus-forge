@@ -15,27 +15,38 @@ extends Resource
 
 @export var cold_resist: int = 0
 
-var _custom_traits: Dictionary[StringName, int] = {}
+@export_storage var _custom_traits: Dictionary[StringName, int] = {}
 
 
-## Constructor for a new TraitBlock with NexusForge custom traits included.[br]
-## Also ensures that when a custom trait is created with NexusForge's singleton
-## the new stat block also registers it.
-static func new_trait_block() -> TraitBlock:
-	var new_block: TraitBlock = TraitBlock.new()
+func _init(use_nexus_forge: bool = true) -> void:
+	if not use_nexus_forge or not NexusForge.is_inside_tree():
+		return
+	
 	for custom_trait in NexusForge.Traits.custom_traits():
-		new_block._custom_traits[custom_trait] = 0
+		_custom_traits[custom_trait] = 0
 	
-	NexusForge.Traits.custom_trait_created.connect(new_block._on_custom_trait_created)
-	
-	return new_block
+	NexusForge.Traits.custom_trait_created.connect(_on_custom_trait_created)
+
+
+func _set(property: StringName, value: Variant) -> bool:
+	var val_type: int = typeof(value)
+	if _custom_traits.has(property) and (val_type == TYPE_INT or val_type == TYPE_FLOAT):
+		_custom_traits[property] = value
+		return true
+	return false
+
+
+func _get(property: StringName) -> Variant:
+	if _custom_traits.has(property):
+		return _custom_traits[property]
+	return -1
 
 
 ## Returns an array with the exported traits in this object.[br]
 ## Does NOT include custom traits.
 static func traits() -> Array[StringName]:
 	const MASK: int = PROPERTY_USAGE_SCRIPT_VARIABLE + PROPERTY_USAGE_STORAGE
-	var block: TraitBlock = TraitBlock.new()
+	var block: TraitBlock = TraitBlock.new(false)
 	var all_traits: Array[StringName] = []
 	var data: Array[Dictionary] = block.get_script().get_script_property_list()
 	
@@ -60,30 +71,31 @@ func custom_traits() -> Array[StringName]:
 	return all_traits
 
 
-## Adds a custom trait to the block if it doesn't have it and sets it
-## to [param value].[br]
+## Creates a custom trait and sets it to [param value] which can then be
+## accessed and modified directly like
+## [code]TraitBlock.my_custom_trait[/code].[br]
 ## Custom traits are tracked individually with exception of the traits
 ## registered on runtime with [method TraitCatalog.create_custom_trait] on the
-## [code]NexusForge.Traits[/code] singleton.
-func set_custom_trait(trait_id: StringName, to: int) -> void:
+## [code]NexusForge.Traits[/code] singleton which are added to all [TraitBlock]s
+func create_custom(trait_id: StringName, value: int = 0) -> void:
 	if _custom_traits.has(trait_id):
 		return
-	_custom_traits[trait_id] = to
+	_custom_traits[trait_id] = value
 
 
 ## Returns the value of a custom trait or -1 if no trait is found.
-func custom_trait_value(trait_id: StringName) -> int:
+func get_custom(trait_id: StringName) -> int:
 	if _custom_traits.has(trait_id):
 		return _custom_traits[trait_id]
 	return -1
 
 
 ## Returns true if the custom trait [param trait_id] exists.
-func has_custom_trait(trait_id: StringName) -> bool:
+func has_custom(trait_id: StringName) -> bool:
 	return _custom_traits.has(trait_id)
 
 
 ## Erases the custom trait [param trait_id].
-func erase_custom_trait(trait_id: StringName) -> void:
+func erase_custom(trait_id: StringName) -> void:
 	if _custom_traits.has(trait_id):
 		_custom_traits.erase(trait_id)

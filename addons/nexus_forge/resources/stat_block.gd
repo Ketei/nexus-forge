@@ -20,30 +20,7 @@ enum StatType {
 
 @export var health: RangeInt
 
-var _custom_stats: Dictionary[StringName, ValueRange] = {}
-
-
-## Builder that will create a new StatBlock with custom stats defined on
-## [member NexusForge.Stats].
-static func new_stat_block() -> StatBlock:
-	var stat_block: StatBlock = StatBlock.new()
-	
-	for custom_stat in NexusForge.Stats.custom_stats():
-		if stat_block._custom_stats.has(custom_stat):
-			continue
-		
-		var new_range: ValueRange = RangeInt.new() if NexusForge.Stats.custom_stat_type(custom_stat) == StatCatalog.StatType.INTEGER else RangeFloat.new()
-		
-		new_range.min_value = NexusForge.Stats.get_custom_min_value(custom_stat)
-		new_range.max_value = NexusForge.Stats.get_custom_max_value(custom_stat)
-		
-		stat_block._custom_stats[custom_stat] = NexusForge.Stats.get_custom_default_value(custom_stat)
-	
-	NexusForge.Stats.stat_created.connect(stat_block._on_custom_stat_created)
-	NexusForge.Stats.stat_min_range_changed.connect(stat_block._on_stat_min_range_changed)
-	NexusForge.Stats.stat_max_range_changed.connect(stat_block._on_stat_max_range_changed)
-	
-	return stat_block
+@export_storage var _custom_stats: Dictionary[StringName, ValueRange] = {}
 
 
 ## Returns all the stats in the statblock. This does NOT include custom stats.[br]
@@ -52,7 +29,7 @@ static func stats() -> Dictionary[StringName, int]:
 	const MASK: int = PROPERTY_USAGE_SCRIPT_VARIABLE + PROPERTY_USAGE_STORAGE
 	const VALID_CLASSES: Array[StringName] = [&"RangeInt", &"RangeFloat"]
 	
-	var block: StatBlock = StatBlock.new()
+	var block: StatBlock = StatBlock.new(false)
 	var all_stats: Dictionary[StringName, int] = {}
 	var data: Array[Dictionary] = block.get_script().get_script_property_list()
 	
@@ -64,13 +41,44 @@ static func stats() -> Dictionary[StringName, int]:
 	return all_stats
 
 
-# This init will make sure all RangeInt and RangeFloat are not null.
-# Note that initialization (_init) comes BEFORE loading, so once the file
-# is initialized it'll proceed to assign the variables to the file's values,
-# overwriting the newly initialized ones.
-func _init(initialize_ranges: bool = false) -> void:
-	if initialize_ranges == false:
+func _init(use_nexus_forge: bool = true) -> void:
+	if not use_nexus_forge or not NexusForge.is_inside_tree():
 		return
+	
+	for custom_stat in NexusForge.Stats.custom_stats():
+		if _custom_stats.has(custom_stat):
+			continue
+		
+		var new_range: ValueRange = RangeInt.new() if NexusForge.Stats.custom_stat_type(custom_stat) == StatCatalog.StatType.INTEGER else RangeFloat.new()
+		
+		new_range.allow_lesser = NexusForge.Stats.custom_allows_lesser(custom_stat)
+		new_range.allow_greater = NexusForge.Stats.custom_allows_greater(custom_stat)
+		new_range.min_value = NexusForge.Stats.get_custom_min_value(custom_stat)
+		new_range.max_value = NexusForge.Stats.get_custom_max_value(custom_stat)
+		
+		_custom_stats[custom_stat] = new_range
+	
+	NexusForge.Stats.stat_created.connect(_on_custom_stat_created)
+	NexusForge.Stats.stat_min_range_changed.connect(_on_stat_min_range_changed)
+	NexusForge.Stats.stat_max_range_changed.connect(_on_stat_max_range_changed)
+
+
+func _set(property: StringName, value: Variant) -> bool:
+	if _custom_stats.has(property) and typeof(value) == TYPE_OBJECT and (value is RangeInt or value is RangeFloat):
+		_custom_stats[property] = value
+		return true
+	return false
+
+
+func _get(property: StringName) -> Variant:
+	if _custom_stats.has(property):
+		return _custom_stats[property]
+	return null
+
+
+## This will make sure all stat variables of type RangeInt and
+## RangeFloat have objects assigned to them.
+func initialize_ranges() -> void:
 	var variant: StringName = &""
 	for item in get_script().get_script_property_list():
 		if item["class_name"] == &"RangeInt":
@@ -116,8 +124,10 @@ func custom_stats() -> Array[StringName]:
 	return all_stats
 
 
-## Adds a custom [param type] [param stat] to the stat block and returns the
-## created object.[br]
+## Creates a custom stat of [param type] which can then be
+## accessed and modified directly like
+## [code]StatBlock.my_custom_trait[/code]. This method returns
+## the created object.[br]
 ## If [param stat_id] already exists and the [param type] matches the stat
 ## type, it returns the object, otherwise returns [code]null[/code]
 func create_custom(stat_id: StringName, type: StatType) -> ValueRange:
