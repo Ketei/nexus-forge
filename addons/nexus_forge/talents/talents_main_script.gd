@@ -8,21 +8,25 @@ const DATA_FLOAT_STEP: float = 0.01
 
 var _skills_resource: SkillCatalog
 var _traits_resource: TraitCatalog
+var _stats_resource: StatCatalog
 
 var loaded_skill: StringName = &""
 var loaded_trait: StringName = &""
+var loaded_stat: StringName = &""
+
 var _skills_unsaved: bool = false
 var _traits_unsaved: bool = false
+var _stats_unsaved: bool = false
 
-@onready var skill_opt_btn: OptionButton = $MainContainer/SkillsPanel/SkillsContainer/SkillSelectContainer/SkillContainer/SkillOptBtn
-@onready var skill_ln_edt: LineEdit = $MainContainer/SkillsPanel/SkillsContainer/NameContainer/SkillLnEdt
-@onready var skill_desc_txt_edt: TextEdit = $MainContainer/SkillsPanel/SkillsContainer/DesContainer/SkillDescTxtEdt
-@onready var skill_data_tree: IDTree = $MainContainer/SkillsPanel/SkillsContainer/DataContainer/SkillDataTree
-@onready var skill_int_btn: Button = $MainContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader/ButtonContainer/SkillIntBtn
-@onready var skill_flt_btn: Button = $MainContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader/ButtonContainer/SkillFltBtn
-@onready var skill_bool_btn: Button = $MainContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader/ButtonContainer/SkillBoolBtn
-@onready var skill_str_btn: Button = $MainContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader/ButtonContainer/SkillStrBtn
-@onready var skill_dict_button: Button = $MainContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader/ButtonContainer/AddDictButton
+@onready var skill_opt_btn: OptionButton = $MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer/SkillSelectContainer/SkillContainer/SkillOptBtn
+@onready var skill_ln_edt: LineEdit = $MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer/NameContainer/SkillLnEdt
+@onready var skill_desc_txt_edt: TextEdit = $MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer/DesContainer/SkillDescTxtEdt
+@onready var skill_data_tree: IDTree = $MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer/DataContainer/SkillDataTree
+@onready var skill_int_btn: Button = $MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader/ButtonContainer/SkillIntBtn
+@onready var skill_flt_btn: Button = $MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader/ButtonContainer/SkillFltBtn
+@onready var skill_bool_btn: Button = $MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader/ButtonContainer/SkillBoolBtn
+@onready var skill_str_btn: Button = $MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader/ButtonContainer/SkillStrBtn
+@onready var skill_dict_button: Button = $MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader/ButtonContainer/AddDictButton
 
 @onready var trait_opt_btn: OptionButton = $MainContainer/TraitsPanel/TraitsContainerContainer/TraitSelectContainer/TraitContainer/TraitOptBtn
 @onready var trait_ln_edt: LineEdit = $MainContainer/TraitsPanel/TraitsContainerContainer/NameContainer/TraitLnEdt
@@ -34,36 +38,58 @@ var _traits_unsaved: bool = false
 @onready var trait_str_btn: Button = $MainContainer/TraitsPanel/TraitsContainerContainer/DataContainer/DataHeader/ButtonContainer/TraitStrBtn
 @onready var trait_data_tree: Tree = $MainContainer/TraitsPanel/TraitsContainerContainer/DataContainer/TraitDataTree
 
-@onready var edit_skills_btn: Button = $MainContainer/SkillsPanel/SkillsContainer/SkillSelectContainer/SkillContainer/EditSkillsBtn
+@onready var stat_opt_btn: OptionButton = $MainContainer/StatSkillContainer/StatsPanel/StatsContainer/StatSelectContainer/StatContainer/StatOptBtn
+@onready var stat_ln_edt: LineEdit = $MainContainer/StatSkillContainer/StatsPanel/StatsContainer/NameContainer/StatLnEdt
+@onready var stat_desc_txt_edt: TextEdit = $MainContainer/StatSkillContainer/StatsPanel/StatsContainer/DesContainer/StatDescTxtEdt
+@onready var stat_dict_button: Button = $MainContainer/StatSkillContainer/StatsPanel/StatsContainer/DataContainer/DataHeader/ButtonContainer/StatDictButton
+@onready var stat_int_btn: Button = $MainContainer/StatSkillContainer/StatsPanel/StatsContainer/DataContainer/DataHeader/ButtonContainer/StatIntBtn
+@onready var stat_flt_btn: Button = $MainContainer/StatSkillContainer/StatsPanel/StatsContainer/DataContainer/DataHeader/ButtonContainer/StatFltBtn
+@onready var stat_bool_btn: Button = $MainContainer/StatSkillContainer/StatsPanel/StatsContainer/DataContainer/DataHeader/ButtonContainer/StatBoolBtn
+@onready var stat_str_btn: Button = $MainContainer/StatSkillContainer/StatsPanel/StatsContainer/DataContainer/DataHeader/ButtonContainer/StatStrBtn
+@onready var stat_data_tree: Tree = $MainContainer/StatSkillContainer/StatsPanel/StatsContainer/DataContainer/StatDataTree
+
+@onready var edit_stats_btn: Button = $MainContainer/StatSkillContainer/StatsPanel/StatsContainer/StatSelectContainer/StatContainer/EditStatsBtn
+@onready var edit_skills_btn: Button = $MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer/SkillSelectContainer/SkillContainer/EditSkillsBtn
 @onready var edit_traits_btn: Button = $MainContainer/TraitsPanel/TraitsContainerContainer/TraitSelectContainer/TraitContainer/EditTraitsBtn
 
 
 func ready_plugin() -> void:
 	skill_data_tree.ready_plugin()
 	trait_data_tree.ready_plugin()
+	stat_data_tree.ready_plugin()
 	
 	reload_traits(false)
 	reload_skills(false)
+	reload_stats(true)
 	
 	reload_trait_resource(true)
 	reload_skill_resource(true)
+	reload_stat_resource(true)
 	
 	trait_dict_btn.icon = get_theme_icon("FolderCreate", "EditorIcons")
 	skill_dict_button.icon = get_theme_icon("FolderCreate", "EditorIcons")
+	stat_dict_button.icon = get_theme_icon("FolderCreate", "EditorIcons")
 	edit_skills_btn.icon = get_theme_icon("Edit", "EditorIcons")
 	edit_traits_btn.icon = get_theme_icon("Edit", "EditorIcons")
+	edit_stats_btn.icon = get_theme_icon("Edit", "EditorIcons")
 	
 	skill_opt_btn.get_popup().max_size.y = 300
 	trait_opt_btn.get_popup().max_size.y = 300
+	skill_opt_btn.get_popup().max_size.y = 300
 	
+	stat_opt_btn.disabled = stat_opt_btn.item_count == 0
 	skill_opt_btn.disabled = skill_opt_btn.item_count == 0
 	trait_opt_btn.disabled = trait_opt_btn.item_count == 0
 	
 	set_skills_ui_enabled(0 < skill_opt_btn.item_count)
 	set_traits_ui_enabled(0 < trait_opt_btn.item_count)
+	set_stats_ui_enabled(0 < stat_opt_btn.item_count)
 	
 	skill_ln_edt.text_changed.connect(skills_changed)
 	skill_desc_txt_edt.text_changed.connect(skills_changed)
+	
+	stat_ln_edt.text_changed.connect(stats_changed)
+	stat_desc_txt_edt.text_changed.connect(stats_changed)
 	
 	trait_ln_edt.text_changed.connect(traits_changed)
 	trait_desc_txt_edt.text_changed.connect(traits_changed)
@@ -82,11 +108,20 @@ func ready_plugin() -> void:
 	trait_str_btn.pressed.connect(_on_add_trait_data_pressed.bind("new_string", ""))
 	trait_dict_btn.pressed.connect(_on_add_trait_data_pressed.bind("new_folder", {}))
 	
+	stat_opt_btn.item_selected.connect(_on_stat_selected, CONNECT_DEFERRED)
+	stat_int_btn.pressed.connect(_on_add_stat_data_pressed.bind("new_int", 0))
+	stat_flt_btn.pressed.connect(_on_add_stat_data_pressed.bind("new_float", 0.0))
+	stat_bool_btn.pressed.connect(_on_add_stat_data_pressed.bind("new_bool", false))
+	stat_str_btn.pressed.connect(_on_add_stat_data_pressed.bind("new_string", ""))
+	stat_dict_button.pressed.connect(_on_add_stat_data_pressed.bind("new_folder", {}))
+	
 	edit_skills_btn.pressed.connect(_on_edit_skillset_pressed)
 	edit_traits_btn.pressed.connect(_on_edit_traitblock_pressed)
+	edit_stats_btn.pressed.connect(_on_edit_statblock_pressed)
 	
 	skill_data_tree.data_changed.connect(skills_changed)
 	trait_data_tree.data_changed.connect(traits_changed)
+	stat_data_tree.data_changed.connect(stats_changed)
 
 
 func _on_edit_skillset_pressed() -> void:
@@ -97,6 +132,12 @@ func _on_edit_skillset_pressed() -> void:
 
 func _on_edit_traitblock_pressed() -> void:
 	EditorInterface.edit_script(TraitBlock.new().get_script())
+	if not EditorInterface.get_editor_settings().get_setting("text_editor/external/use_external_editor"):
+		EditorInterface.set_main_screen_editor("Script")
+
+
+func _on_edit_statblock_pressed() -> void:
+	EditorInterface.edit_script(StatBlock.new().get_script())
 	if not EditorInterface.get_editor_settings().get_setting("text_editor/external/use_external_editor"):
 		EditorInterface.set_main_screen_editor("Script")
 
@@ -115,16 +156,16 @@ func reload_skill_resource(first_launch: bool = false) -> void:
 	
 	if _skills_resource == null:
 		if not was_null or first_launch:
-			$MainContainer/SkillsPanel/SkillsContainer.visible = false
+			$MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer.visible = false
 			var no_db = preload("res://addons/nexus_forge/no_db_container.tscn").instantiate()
-			$MainContainer/SkillsPanel.add_child(no_db)
+			$MainContainer/StatSkillContainer/SkillsPanel.add_child(no_db)
 			no_db.message_minimum_size.x = 450
 			no_db.set_resource_type("SkillCatalog", "Skills", "Skills")
 			no_db.create_resource_pressed.connect(_on_create_skill_resource_pressed.bind(no_db))
 			no_db.load_resource_pressed.connect(_on_load_skill_resource_pressed.bind(no_db))
 			no_db.resource_dropped.connect(_on_skill_resource_dropped.bind(no_db))
 	else:
-		$MainContainer/SkillsPanel/SkillsContainer.visible = true
+		$MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer.visible = true
 		load_skills_resource()
 
 
@@ -138,8 +179,9 @@ func reload_trait_resource(first_launch: bool = false) -> void:
 	var traits_path: String = ProjectSettings.get_setting(
 			NFPluginGameHandler.get_setting_path("traits"),
 			"")
+	
 	if not traits_path.is_empty() and ResourceLoader.exists(traits_path):
-		var preload_traits_res: Resource = load(traits_path)
+		var preload_traits_res = load(traits_path)
 		if preload_traits_res is TraitCatalog:
 			_traits_resource = preload_traits_res
 	
@@ -156,6 +198,37 @@ func reload_trait_resource(first_launch: bool = false) -> void:
 	else:
 		$MainContainer/TraitsPanel/TraitsContainerContainer.visible = true
 		load_traits_resource()
+
+
+func reload_stat_resource(first_launch: bool = false) -> void:
+	var was_null: bool = _stats_resource == null
+	_stats_resource = null
+	stat_ln_edt.text = ""
+	stat_desc_txt_edt.text = ""
+	stat_data_tree.clear_data()
+
+	var stats_path: String = ProjectSettings.get_setting(
+			NFPluginGameHandler.get_setting_path("stats"),
+			"")
+	if not stats_path.is_empty() and ResourceLoader.exists(stats_path):
+		var preload_stats_res = load(stats_path)
+		if preload_stats_res != null and preload_stats_res is StatCatalog:
+			_stats_resource = preload_stats_res
+	
+	if _stats_resource == null:
+		if not was_null or first_launch:
+			$MainContainer/StatSkillContainer/StatsPanel/StatsContainer.visible = false
+			var no_db = preload("res://addons/nexus_forge/no_db_container.tscn").instantiate()
+			$MainContainer/StatSkillContainer/StatsPanel.add_child(no_db)
+			no_db.message_minimum_size.x = 450
+			no_db.set_resource_type("StatCatalog", "Stats", "Stats")
+			no_db.create_resource_pressed.connect(_on_create_stat_resource_pressed.bind(no_db))
+			no_db.load_resource_pressed.connect(_on_load_stat_resource_pressed.bind(no_db))
+			no_db.resource_dropped.connect(_on_stat_resource_dropped.bind(no_db))
+	else:
+		$MainContainer/StatSkillContainer/StatsPanel/StatsContainer.visible = true
+		load_stats_resource()
+
 
 #region Skills
 
@@ -180,7 +253,7 @@ func _on_create_skill_resource_pressed(panel: PanelContainer) -> void:
 				result[1])
 		if Engine.is_editor_hint():
 			ProjectSettings.save()
-		$MainContainer/SkillsPanel/SkillsContainer.visible = true
+		$MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer.visible = true
 		panel.visible = false
 		panel.queue_free()
 		load_skills_resource()
@@ -207,7 +280,7 @@ func _on_load_skill_resource_pressed(panel: PanelContainer) -> void:
 					result[1])
 			if Engine.is_editor_hint():
 				ProjectSettings.save()
-			$MainContainer/SkillsPanel/SkillsContainer.visible = true
+			$MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer.visible = true
 			panel.visible = false
 			panel.queue_free()
 			load_skills_resource()
@@ -224,7 +297,7 @@ func _on_skill_resource_dropped(resource: Resource, panel: Control) -> void:
 		ProjectSettings.save()
 	panel.visible = false
 	panel.queue_free()
-	$MainContainer/SkillsPanel/SkillsContainer.visible = true
+	$MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer.visible = true
 	load_skills_resource()
 
 
@@ -263,15 +336,29 @@ func _on_skill_selected(skill_idx: int) -> void:
 
 
 func load_skill(skill_id: StringName) -> void:
-	skill_ln_edt.text = _skills_resource.get_skill_name(skill_id)
-	skill_desc_txt_edt.text = _skills_resource.get_skill_description(skill_id)
+	skill_ln_edt.text = DictUtils.get_nested_value(
+			_skills_resource._skill_data,
+			[skill_id, "name"],
+			"",
+			true)
+	skill_desc_txt_edt.text = DictUtils.get_nested_value(
+			_skills_resource._skill_data,
+			[skill_id, "description"],
+			"",
+			true)
 	
 	skill_data_tree.clear_data()
 	
-	for data_key in _skills_resource.skill_data_keys(skill_id):
+	var data: Dictionary = DictUtils.get_nested_value(
+			_skills_resource._skill_data,
+			[skill_id, "data"],
+			{},
+			true)
+	
+	for data_key in data.keys():
 		skill_data_tree.add_data(
 			data_key,
-			_skills_resource.get_skill_data(skill_id, data_key))
+			data[data_key])
 
 
 func load_skills_resource() -> void:
@@ -281,20 +368,20 @@ func load_skills_resource() -> void:
 	var skills_exist: bool = 0 < skill_opt_btn.item_count
 	var disabled: bool = not skills_exist
 	
-	var skill_block: SkillSet = SkillSet.new(false)
-	var all_skills: Array[StringName] = skill_block.skills()
+	#var skill_block: SkillSet = SkillSet.new(false)
+	var all_skills: Array[StringName] = SkillSet.skills()
 	
-	for skill in _skills_resource._skills.keys():
+	for skill in _skills_resource._skill_data.keys():
 		if all_skills.has(skill):
 			continue
-		_skills_resource._skills.erase(skill)
+		_skills_resource._skill_data.erase(skill)
 	
 	for new_skill in all_skills:
-		if _skills_resource._skills.has(new_skill):
+		if _skills_resource._skill_data.has(new_skill):
 			continue
 		var data: Dictionary[String, Variant] = {}
 		data.assign(_skills_resource.DEFAULT_DATA.duplicate(true))
-		_skills_resource._skills[new_skill] = {
+		_skills_resource._skill_data[new_skill] = {
 			"name": "",
 			"description": "",
 			"data": data}
@@ -373,7 +460,7 @@ func reload_skills(reselect: bool = true) -> void:
 		for skill in _skills_resource.skills():
 			if all_skills.has(skill):
 				continue
-			_skills_resource._skills.erase(skill)
+			_skills_resource._skill_data.erase(skill)
 	
 	skill_opt_btn.clear()
 	for skill in all_skills:
@@ -382,11 +469,11 @@ func reload_skills(reselect: bool = true) -> void:
 		skill_opt_btn.set_item_metadata(-1, skill)
 		
 		if _skills_resource != null:
-			if _skills_resource._skills.has(skill):
+			if _skills_resource._skill_data.has(skill):
 				continue
 			var data: Dictionary[String, Variant] = {}
 			data.assign(_skills_resource.DEFAULT_DATA.duplicate(true))
-			_skills_resource._skills[skill] = {
+			_skills_resource._skill_data[skill] = {
 				"name": "",
 				"description": "",
 				"data": data}
@@ -511,15 +598,21 @@ func _on_trait_selected(trait_idx: int) -> void:
 
 
 func load_trait(trait_id: StringName) -> void:
-	trait_ln_edt.text = _traits_resource.get_trait_name(trait_id)
-	trait_desc_txt_edt.text = _traits_resource.get_trait_description(trait_id)
+	trait_ln_edt.text = _traits_resource._trait_data[trait_id]["name"]
+	trait_desc_txt_edt.text = _traits_resource._trait_data[trait_id]["description"]
 	
 	trait_data_tree.clear_data()
 	
-	for data_key in _traits_resource.trait_data_keys(trait_id):
+	var data: Dictionary = DictUtils.get_nested_value(
+			_traits_resource._trait_data,
+			[trait_id, "data"],
+			{},
+			true)
+	
+	for data_key in data.keys():
 		trait_data_tree.add_data(
 			data_key,
-			_traits_resource.get_trait_data(trait_id, data_key))
+			data[data_key])
 
 
 func set_traits_ui_enabled(enabled: bool) -> void:
@@ -535,12 +628,19 @@ func set_traits_ui_enabled(enabled: bool) -> void:
 
 
 func save_current_trait() -> void:
-	var trait_data: Dictionary[String, Variant] = trait_data_tree.get_data()
-	_traits_resource.set_trait_name(loaded_trait, trait_ln_edt.text.strip_edges())
-	_traits_resource.set_trait_description(loaded_trait, trait_desc_txt_edt.text.strip_edges())
-	_traits_resource.clear_trait_data(loaded_trait)
-	for data_key in trait_data.keys():
-		_traits_resource.set_trait_data(loaded_trait, data_key, trait_data[data_key])
+	if loaded_trait.is_empty() or _traits_resource == null:
+		return
+	
+	var target: Dictionary = {}
+	
+	if _traits_resource._trait_data.has(loaded_trait):
+		target = _traits_resource._trait_data[loaded_trait]
+	else:
+		_traits_resource._trait_data[loaded_trait] = target
+	
+	target["name"] = trait_ln_edt.text.strip_edges()
+	target["description"] = trait_desc_txt_edt.text.strip_edges()
+	target["data"] = trait_data_tree.get_data()
 
 
 func load_traits_resource() -> void:
@@ -560,21 +660,21 @@ func load_traits_resource() -> void:
 	trait_str_btn.disabled = disabled
 	trait_dict_btn.disabled = disabled
 	
-	var block: TraitBlock = TraitBlock.new(false)
-	var all_traits: Array[StringName] = block.traits()
+	#var block: TraitBlock = TraitBlock.new(false)
+	var all_traits: Array[StringName] = TraitBlock.traits()
 	
-	for existing_trait in _traits_resource._traits.keys():
+	for existing_trait in _traits_resource._trait_data.keys():
 		if all_traits.has(existing_trait):
 			continue
-		_traits_resource._traits.erase(existing_trait)
+		_traits_resource._trait_data.erase(existing_trait)
 	
 	for new_trait in all_traits:
-		if _traits_resource._traits.has(new_trait):
+		if _traits_resource._trait_data.has(new_trait):
 			continue
 		else:
 			var data: Dictionary[String, Variant] = {}
 			data.assign(_traits_resource.DEFAULT_DATA.duplicate(true))
-			_traits_resource._traits[new_trait] = {
+			_traits_resource._trait_data[new_trait] = {
 				"name": "",
 				"description": "",
 				"data": data}
@@ -629,10 +729,10 @@ func reload_traits(reselect: bool = true) -> void:
 	var new_index: int = all_traits.find(current_trait) if reselect else -1
 	
 	if _traits_resource != null:
-		for existing_trait in _traits_resource._traits.keys():
+		for existing_trait in _traits_resource._trait_data.keys():
 			if all_traits.has(existing_trait):
 				continue
-			_traits_resource._traits.erase(existing_trait)
+			_traits_resource._trait_data.erase(existing_trait)
 	
 	trait_opt_btn.clear()
 	for trait_id in all_traits:
@@ -641,11 +741,11 @@ func reload_traits(reselect: bool = true) -> void:
 		trait_opt_btn.set_item_metadata(-1, trait_id)
 		
 		if _traits_resource != null:
-			if _traits_resource._traits.has(trait_id):
+			if _traits_resource._trait_data.has(trait_id):
 				continue
 			var data: Dictionary[String, Variant] = {}
 			data.assign(_traits_resource.DEFAULT_DATA.duplicate(true))
-			_traits_resource._traits[trait_id] = {
+			_traits_resource._trait_data[trait_id] = {
 				"name": "",
 				"description": "",
 				"data": data}
@@ -668,6 +768,280 @@ func reload_traits(reselect: bool = true) -> void:
 #endregion
 
 
+#region Stats
+
+func _on_create_stat_resource_pressed(panel: PanelContainer) -> void:
+	var res_loader := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
+	res_loader.file_mode = res_loader.FILE_MODE_SAVE_FILE
+	res_loader.title = "Create Stats"
+	res_loader.ok_button_text = "Save"
+	add_child(res_loader)
+	res_loader.show()
+	
+	var result = await res_loader.dialog_finished
+	
+	if result[0]:
+		_stats_resource = StatCatalog.new()
+		ResourceSaver.save(_stats_resource, result[1])
+		_stats_resource.resource_path = result[1]
+		if ResourceLoader.has_cached(result[1]):
+			_stats_resource.take_over_path(result[1])
+		ProjectSettings.set_setting(
+				NFPluginGameHandler.get_setting_path("stats"),
+				result[1])
+		if Engine.is_editor_hint():
+			ProjectSettings.save()
+		$MainContainer/StatSkillContainer/StatsPanel/StatsContainer.visible = true
+		panel.visible = false
+		panel.queue_free()
+		load_stats_resource()
+	
+	res_loader.queue_free()
+
+
+func _on_load_stat_resource_pressed(panel: PanelContainer) -> void:
+	var res_loader := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
+	res_loader.file_mode = res_loader.FILE_MODE_OPEN_FILE
+	res_loader.title = "Open Stats"
+	res_loader.ok_button_text = "Load"
+	add_child(res_loader)
+	res_loader.show()
+	
+	var result = await res_loader.dialog_finished
+	
+	if result[0]:
+		var res_pre: Resource = load(result[1])
+		if res_pre != null and res_pre is StatCatalog:
+			_stats_resource = res_pre
+			ProjectSettings.set_setting(
+					NFPluginGameHandler.get_setting_path("stats"),
+					result[1])
+			if Engine.is_editor_hint():
+				ProjectSettings.save()
+			$MainContainer/StatSkillContainer/StatsPanel/StatsContainer.visible = true
+			panel.visible = false
+			panel.queue_free()
+			load_stats_resource()
+	
+	res_loader.queue_free()
+
+
+func _on_stat_resource_dropped(resource: Resource, panel: Control) -> void:
+	_stats_resource = resource
+	ProjectSettings.set_setting(
+			NFPluginGameHandler.get_setting_path("stats"),
+			resource.resource_path)
+	if Engine.is_editor_hint():
+		ProjectSettings.save()
+	panel.visible = false
+	panel.queue_free()
+	$MainContainer/StatSkillContainer/StatsPanel/StatsContainer.visible = true
+	load_skills_resource()
+
+
+func _on_add_stat_data_pressed(data_name: String, data: Variant) -> void:
+	stat_data_tree.add_data(data_name, data)
+	stats_changed()
+
+
+func _on_stat_selected(stat_idx: int) -> void:
+	if not loaded_stat.is_empty():
+		save_current_stat()
+	
+	var target_stat: StringName = stat_opt_btn.get_item_metadata(stat_idx)
+	var valid_id: bool = stat_idx != -1
+	var disabled = not valid_id
+	
+	stat_ln_edt.editable = valid_id
+	stat_desc_txt_edt.editable = valid_id
+	
+	stat_int_btn.disabled = disabled
+	stat_flt_btn.disabled = disabled
+	stat_bool_btn.disabled = disabled
+	stat_str_btn.disabled = disabled
+	stat_dict_button.disabled = disabled
+	
+	if disabled:
+		stat_ln_edt.clear()
+		stat_desc_txt_edt.clear()
+		stat_data_tree.clear_data()
+		loaded_stat = &""
+		return
+	
+	load_stat(target_stat)
+	loaded_stat = target_stat
+
+
+func load_stat(stat_id: StringName) -> void:
+	stat_ln_edt.text = DictUtils.get_nested_value(
+			_stats_resource._stat_data,
+			[stat_id, "name"],
+			"",
+			true)
+	stat_desc_txt_edt.text = DictUtils.get_nested_value(
+			_stats_resource._stat_data,
+			[stat_id, "description"],
+			"",
+			true)
+	
+	stat_data_tree.clear_data()
+	
+	var data: Dictionary = DictUtils.get_nested_value(
+			_stats_resource._stat_data,
+			[stat_id, "data"],
+			{},
+			true)
+	
+	for data_key in data.keys():
+		stat_data_tree.add_data(
+			data_key,
+			data[data_key])
+
+
+func load_stats_resource() -> void:
+	stat_ln_edt.text = ""
+	stat_data_tree.clear_data()
+	
+	var stat_exist: bool = 0 < stat_opt_btn.item_count
+	var disabled: bool = not stat_exist
+	
+	#var skill_block: SkillSet = SkillSet.new(false)
+	var stat_entries: Dictionary[StringName, int] = StatBlock.stats()
+	var all_stats: Array[StringName] = []
+	all_stats.assign(stat_entries.keys())
+	
+	for stat in _stats_resource._stat_data.keys():
+		if all_stats.has(stat):
+			continue
+		_stats_resource._stat_data.erase(stat)
+	
+	for new_stat in all_stats:
+		if _stats_resource._stat_data.has(new_stat):
+			continue
+		var data: Dictionary[String, Variant] = {}
+		data.assign(_stats_resource.DEFAULT_DATA.duplicate(true))
+		_stats_resource._stat_data[new_stat] = {
+			"name": "",
+			"description": "",
+			"data": data}
+	
+	stat_ln_edt.editable = stat_exist
+	stat_desc_txt_edt.editable = stat_exist
+	
+	stat_int_btn.disabled = disabled
+	stat_flt_btn.disabled = disabled
+	stat_bool_btn.disabled = disabled
+	stat_str_btn.disabled = disabled
+	stat_dict_button.disabled = disabled
+	
+	if stat_exist:
+		stat_opt_btn.select(0)
+		load_stat(stat_opt_btn.get_item_metadata(0))
+		loaded_stat = stat_opt_btn.get_item_metadata(0)
+
+
+func sort_stats(reselect: bool = true) -> void:
+	if stat_opt_btn.item_count <= 1:
+		return
+	var stats: Array[StringName] = []
+	var current_stat: StringName = &"" if stat_opt_btn.selected == -1 else stat_opt_btn.get_item_metadata(stat_opt_btn.selected)
+	var new_index: int = -1
+	
+	for item_idx in range(stat_opt_btn.item_count):
+		stats.append(stat_opt_btn.get_item_metadata(item_idx))
+	
+	stats.sort_custom(func (a,b) -> bool: return String(a).naturalnocasecmp_to(String(b)) < 0)
+	
+	stat_opt_btn.clear()
+	
+	var idx: int = -1
+	for stat_id in stats:
+		idx += 1
+		skill_opt_btn.add_item(String(stat_id))
+		skill_opt_btn.set_item_metadata(idx, stat_id)
+		if stat_id == current_stat:
+			new_index = idx
+	
+	if reselect and new_index != -1:
+		stat_opt_btn.select(new_index)
+
+
+func set_stats_ui_enabled(set_enabled: bool) -> void:
+	var disabled: bool = not set_enabled
+	
+	stat_desc_txt_edt.editable = set_enabled
+	stat_int_btn.disabled = disabled
+	stat_flt_btn.disabled = disabled
+	stat_bool_btn.disabled = disabled
+	stat_str_btn.disabled = disabled
+	stat_dict_button.disabled = disabled
+	stat_data_tree.enabled = set_enabled
+
+
+# Use for comparing what skills exists when SkillSet is saved/changed.
+func loaded_stats() -> Dictionary[String, int]:
+	var all_stats: Dictionary[String, int]
+	for stat_idx in range(stat_opt_btn.item_count):
+		all_stats[String(stat_opt_btn.get_item_metadata(stat_idx))] = stat_idx
+	return all_stats
+
+
+# Call when SkillSet is saved/changed.
+func reload_stats(reselect: bool = true) -> void:
+	var current_stat: StringName = &"" if stat_opt_btn.selected == -1 else stat_opt_btn.get_item_metadata(stat_opt_btn.selected)
+	
+	var existing_stats: Dictionary[StringName, int] = StatBlock.stats()
+	var all_stats: Array[StringName] = []
+	all_stats.assign(existing_stats.keys())
+	
+	all_stats.sort_custom(func(a,b): return String(a).naturalnocasecmp_to(String(b)) < 0)
+	var new_index: int = all_stats.find(current_stat) if reselect else -1
+	
+	if _stats_resource != null:
+		for stat in _stats_resource.stats():
+			if all_stats.has(stat):
+				continue
+			_stats_resource._stat_data.erase(stat)
+	
+	stat_opt_btn.clear()
+	for stat in all_stats:
+		stat_opt_btn.add_item(
+				String(stat).capitalize())
+		stat_opt_btn.set_item_metadata(-1, stat)
+		
+		if _stats_resource != null:
+			if _stats_resource._stat_data.has(stat):
+				continue
+			var data: Dictionary[String, Variant] = {}
+			data.assign(_stats_resource.DEFAULT_DATA.duplicate(true))
+			_stats_resource._stat_data[stat] = {
+				"name": "",
+				"description": "",
+				"data": data}
+	
+	if _stats_resource == null:
+		return
+	
+	stat_opt_btn.disabled = stat_opt_btn.item_count == 0
+	set_stats_ui_enabled((0 < stat_opt_btn.item_count))
+	
+	if new_index != -1:
+		stat_opt_btn.select(new_index)
+	else:
+		if stat_opt_btn.item_count != 0:
+			stat_opt_btn.select(0)
+			load_stat(stat_opt_btn.get_item_metadata(0))
+			loaded_stat = stat_opt_btn.get_item_metadata(0)
+
+#endregion
+
+
+
+func stats_changed(_arg: Variant = null) -> void:
+	if not _stats_unsaved:
+		_stats_unsaved = true
+
+
 func skills_changed(_arg: Variant = null) -> void:
 	if not _skills_unsaved:
 		_skills_unsaved = true
@@ -679,16 +1053,39 @@ func traits_changed(_arg: Variant = null) -> void:
 
 
 func save_current_skill() -> void:
-	_skills_resource.set_skill_name(loaded_skill, skill_ln_edt.text.strip_edges())
-	_skills_resource.set_skill_description(loaded_skill, skill_desc_txt_edt.text.strip_edges())
-	_skills_resource.clear_skill_data(loaded_skill)
-	var skill_data: Dictionary[String, Variant] = skill_data_tree.get_data()
-	for data_key in skill_data.keys():
-		_skills_resource.set_skill_data(loaded_skill, data_key, skill_data[data_key])
+	if loaded_skill.is_empty() or _skills_resource == null:
+		return
+	
+	var target: Dictionary = {}
+	
+	if _skills_resource._skill_data.has(loaded_skill):
+		target = _skills_resource._skill_data[loaded_skill]
+	else:
+		_skills_resource._skill_data[loaded_skill] = target
+	
+	target["name"] = skill_ln_edt.text.strip_edges()
+	target["description"] = skill_desc_txt_edt.text.strip_edges()
+	target["data"] = skill_data_tree.get_data()
+
+
+func save_current_stat() -> void:
+	if loaded_stat.is_empty() or _stats_resource == null:
+		return
+	
+	var target: Dictionary = {}
+	
+	if _stats_resource._stat_data.has(loaded_stat):
+		target = _stats_resource._stat_data[loaded_stat]
+	else:
+		_stats_resource._stat_data[loaded_stat] = target
+	
+	target["name"] = stat_ln_edt.text.strip_edges()
+	target["description"] = stat_desc_txt_edt.text.strip_edges()
+	target["data"] = stat_data_tree.get_data()
 
 
 func has_unsaved_changes() -> bool:
-	return _traits_unsaved or _skills_unsaved
+	return _traits_unsaved or _skills_unsaved or _stats_unsaved
 
 
 func save() -> void:
@@ -702,5 +1099,11 @@ func save() -> void:
 			save_current_trait()
 		ResourceSaver.save(_traits_resource)
 	
+	if _stats_resource != null and _stats_unsaved:
+		if stat_opt_btn.selected != -1:
+			save_current_stat()
+		ResourceSaver.save(_stats_resource)
+	
 	_skills_unsaved = false
 	_traits_unsaved = false
+	_stats_unsaved = false

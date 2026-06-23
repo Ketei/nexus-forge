@@ -33,16 +33,16 @@ func _set(property: StringName, value: Variant) -> bool:
 
 
 func _init(use_nexus_forge: bool = true) -> void:
-	if not use_nexus_forge or not NexusForge.is_inside_tree():
+	if not use_nexus_forge or Engine.is_editor_hint():
 		return
 	
-	for skill_id in NexusForge.Skills.custom_skills():
-		if _custom_skills.has(skill_id):
+	for skill_id in NexusForge.Skills.skills():
+		if _custom_skills.has(skill_id) or not NexusForge.Skills.is_custom(skill_id):
 			continue
 		_custom_skills[skill_id] = 0
 	
-	NexusForge.Skills.custom_skill_created.connect(_on_custom_skill_created)
-	NexusForge.Skills.custom_skill_erased.connect(_on_custom_skill_erased)
+	NexusForge.Skills.skill_created.connect(_on_custom_skill_created)
+	NexusForge.Skills.skill_erased.connect(_on_custom_skill_erased)
 
 
 func _on_custom_skill_created(skill_id: StringName) -> void:

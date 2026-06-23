@@ -84,9 +84,9 @@ func _on_category_edit_pressed() -> void:
 
 
 func _on_categories_done_pressed() -> void:
-	categories_container.save_category_data(items_container.item_link.items)
-	items_container.reload_categories(true)
 	if categories_container.categories_edited:
+		categories_container.save_category_data(items_container.item_link.items)
+		items_container.reload_categories(true)
 		items_container._items_unsaved = true
 		categories_container.categories_edited = false
 	
@@ -95,14 +95,15 @@ func _on_categories_done_pressed() -> void:
 
 
 func has_unsaved_changes() -> bool:
-	return items_container._items_unsaved or items_container._currency_unsaved
+	return items_container._items_unsaved or items_container._currency_unsaved or categories_container.categories_edited
 
 
 func save() -> void:
-	if not items_container._items_unsaved and not items_container._currency_unsaved:
-		return
-	
-	if items_container._items_unsaved:
+	if items_container._items_unsaved or categories_container.categories_edited:
+		if categories_container.categories_edited:
+			categories_container.save_category_data(items_container.item_link.items)
+			categories_container.clean()
+		
 		if items_container.item_link.items != null and not items_container.loaded_item.is_empty():
 			items_container.save_current_item()
 		ResourceSaver.save(items_container.item_link.items)
@@ -114,3 +115,4 @@ func save() -> void:
 	
 	items_container._items_unsaved = false
 	items_container._currency_unsaved = false
+	categories_container.categories_edited = false

@@ -1,4 +1,4 @@
-class_name CharacterManager
+class_name NFCharacterManager
 extends RefCounted
 ## Manages [CharacterSheet] loading, overrides and character mods.
 

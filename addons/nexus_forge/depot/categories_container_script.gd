@@ -70,9 +70,7 @@ func _on_new_category_pressed() -> void:
 		if active_category_item != null:
 			active_category_item.get_metadata(0)["data"] = item_data_tree.get_data()
 		
-		var data: Dictionary[String, Variant] = {}
-		data.assign(ItemCatalog.ITEM_DEFAULT_DATA)
-		var item: TreeItem = categories_tree.create_category(result[1], "New Category", data)
+		var item: TreeItem = categories_tree.create_category(result[1], "New Category", DictUtils.create_typed(TYPE_STRING, TYPE_NIL))
 		item.select(0)
 		active_category_item = item
 		add_cat_int_btn.disabled = false
@@ -82,8 +80,6 @@ func _on_new_category_pressed() -> void:
 		add_cat_fldr_btn.disabled = false
 		item_data_tree.clear_data()
 		
-		for data_key in data.keys():
-			categories_tree.add_data(data_key, data[data_key])
 		listen_category_selected = true
 		_on_category_changed()
 	id_creator.queue_free()
@@ -92,7 +88,7 @@ func _on_new_category_pressed() -> void:
 func _update_keys(item_res: ItemCatalog, from: TreeItem) -> void:
 	var parent_category: StringName = StringName(from.get_text(0))
 	if not item_res.has_category(parent_category):
-		item_res.create_category(parent_category)
+		item_res.create_category(parent_category, "", &"")
 	
 	item_res.set_category_name(parent_category, from.get_text(1).strip_edges())
 	
@@ -105,7 +101,7 @@ func _update_keys(item_res: ItemCatalog, from: TreeItem) -> void:
 		var set_id: StringName = StringName(cat_item.get_text(0))
 		
 		if not item_res.has_category(set_id):
-			item_res.create_category(set_id)
+			item_res.create_category(set_id, "", &"")
 			
 		item_res.link_category(set_id, parent_category)
 		item_res.set_category_name(set_id, cat_item.get_text(1).strip_edges())
@@ -183,5 +179,7 @@ func reload_categories(items: ItemCatalog) -> void:
 
 func _add_category_map(categories: Dictionary[StringName, Dictionary], data: ItemCatalog, target: TreeItem = categories_tree.get_root()) -> void:
 	for category_id in categories.keys():
-		var new_target: TreeItem = categories_tree.create_category(category_id, data._categories[category_id]["name"], data._categories[category_id]["data"].duplicate(true), target)
+		var send_data: Dictionary[String, Variant] = {}
+		send_data.assign(data._categories[category_id]["data"])
+		var new_target: TreeItem = categories_tree.create_category(category_id, data._categories[category_id]["name"], send_data, target)
 		_add_category_map(categories[category_id], data, new_target)

@@ -233,3 +233,17 @@ static func replace_all(in_array: Variant, find: Variant, replace_with: Variant)
 	while index_found != -1:
 		in_array[index_found] = replace_with
 		index_found = in_array.find(find, index_found)
+
+
+static func has_all(in_array: Array, has_items: Array) -> bool:
+	for item in has_items:
+		if not in_array.has(item):
+			return false
+	return true
+
+
+static func has_any(array: Array, has_any_in: Array) -> bool:
+	for item in has_any_in:
+		if array.has(item):
+			return true
+	return false

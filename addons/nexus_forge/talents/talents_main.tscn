@@ -27,107 +27,111 @@ script = ExtResource("1_e4wsj")
 [node name="MainContainer" type="HSplitContainer" parent="." unique_id=754191128]
 layout_mode = 2
 theme_override_constants/minimum_grab_thickness = 10
-split_offsets = PackedInt32Array(634)
-split_offset = 634
 
-[node name="SkillsPanel" type="PanelContainer" parent="MainContainer" unique_id=1303361659]
+[node name="StatSkillContainer" type="HSplitContainer" parent="MainContainer" unique_id=642908933]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 2.0
+
+[node name="StatsPanel" type="PanelContainer" parent="MainContainer/StatSkillContainer" unique_id=456414744]
 custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_styles/panel = SubResource("StyleBoxEmpty_uv4cy")
 
-[node name="SkillsContainer" type="VBoxContainer" parent="MainContainer/SkillsPanel" unique_id=1633985940]
+[node name="StatsContainer" type="VBoxContainer" parent="MainContainer/StatSkillContainer/StatsPanel" unique_id=1702433814]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Label" type="Label" parent="MainContainer/SkillsPanel/SkillsContainer" unique_id=2035398156]
+[node name="Label" type="Label" parent="MainContainer/StatSkillContainer/StatsPanel/StatsContainer" unique_id=1914355170]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.223529, 0.705882, 0.905882, 1)
 theme_override_font_sizes/font_size = 25
-text = "Skills"
+text = "Stats"
 
-[node name="SkillSelectContainer" type="HBoxContainer" parent="MainContainer/SkillsPanel/SkillsContainer" unique_id=843736963]
+[node name="StatSelectContainer" type="HBoxContainer" parent="MainContainer/StatSkillContainer/StatsPanel/StatsContainer" unique_id=797045386]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="MainContainer/SkillsPanel/SkillsContainer/SkillSelectContainer" unique_id=1720429432]
+[node name="Label" type="Label" parent="MainContainer/StatSkillContainer/StatsPanel/StatsContainer/StatSelectContainer" unique_id=1432608749]
 custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
-text = "Skill"
+text = "Stat"
 vertical_alignment = 1
 
-[node name="SkillContainer" type="HBoxContainer" parent="MainContainer/SkillsPanel/SkillsContainer/SkillSelectContainer" unique_id=760198991]
+[node name="StatContainer" type="HBoxContainer" parent="MainContainer/StatSkillContainer/StatsPanel/StatsContainer/StatSelectContainer" unique_id=1777071650]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="SkillOptBtn" type="OptionButton" parent="MainContainer/SkillsPanel/SkillsContainer/SkillSelectContainer/SkillContainer" unique_id=349359651]
+[node name="StatOptBtn" type="OptionButton" parent="MainContainer/StatSkillContainer/StatsPanel/StatsContainer/StatSelectContainer/StatContainer" unique_id=923106226]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="EditSkillsBtn" type="Button" parent="MainContainer/SkillsPanel/SkillsContainer/SkillSelectContainer/SkillContainer" unique_id=209477705]
+[node name="EditStatsBtn" type="Button" parent="MainContainer/StatSkillContainer/StatsPanel/StatsContainer/StatSelectContainer/StatContainer" unique_id=517187081]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
-tooltip_text = "Edit SkillSet script"
+tooltip_text = "Edit StatBlock script"
 focus_mode = 1
 flat = true
 icon_alignment = 1
 
-[node name="NameContainer" type="HBoxContainer" parent="MainContainer/SkillsPanel/SkillsContainer" unique_id=1415204058]
+[node name="NameContainer" type="HBoxContainer" parent="MainContainer/StatSkillContainer/StatsPanel/StatsContainer" unique_id=568463246]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="MainContainer/SkillsPanel/SkillsContainer/NameContainer" unique_id=1029091323]
+[node name="Label" type="Label" parent="MainContainer/StatSkillContainer/StatsPanel/StatsContainer/NameContainer" unique_id=1984105284]
 custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
 text = "Name"
 vertical_alignment = 1
 
-[node name="SkillLnEdt" type="LineEdit" parent="MainContainer/SkillsPanel/SkillsContainer/NameContainer" unique_id=1519228069]
+[node name="StatLnEdt" type="LineEdit" parent="MainContainer/StatSkillContainer/StatsPanel/StatsContainer/NameContainer" unique_id=890457108]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
-placeholder_text = "Skill Name"
+placeholder_text = "Stat Name"
 
-[node name="DesContainer" type="VBoxContainer" parent="MainContainer/SkillsPanel/SkillsContainer" unique_id=770426003]
+[node name="DesContainer" type="VBoxContainer" parent="MainContainer/StatSkillContainer/StatsPanel/StatsContainer" unique_id=10891563]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="MainContainer/SkillsPanel/SkillsContainer/DesContainer" unique_id=473633516]
+[node name="Label" type="Label" parent="MainContainer/StatSkillContainer/StatsPanel/StatsContainer/DesContainer" unique_id=1726776318]
 layout_mode = 2
 text = "Description"
 
-[node name="SkillDescTxtEdt" type="TextEdit" parent="MainContainer/SkillsPanel/SkillsContainer/DesContainer" unique_id=776563385]
+[node name="StatDescTxtEdt" type="TextEdit" parent="MainContainer/StatSkillContainer/StatsPanel/StatsContainer/DesContainer" unique_id=379285223]
 custom_minimum_size = Vector2(0, 100)
 layout_mode = 2
 size_flags_vertical = 3
-placeholder_text = "Skill Description"
+placeholder_text = "Stat Description"
 wrap_mode = 1
 
-[node name="DataContainer" type="VBoxContainer" parent="MainContainer/SkillsPanel/SkillsContainer" unique_id=1733070955]
+[node name="DataContainer" type="VBoxContainer" parent="MainContainer/StatSkillContainer/StatsPanel/StatsContainer" unique_id=992110730]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="DataHeader" type="HBoxContainer" parent="MainContainer/SkillsPanel/SkillsContainer/DataContainer" unique_id=377380778]
+[node name="DataHeader" type="HBoxContainer" parent="MainContainer/StatSkillContainer/StatsPanel/StatsContainer/DataContainer" unique_id=143303914]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="MainContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader" unique_id=1318869846]
+[node name="Label" type="Label" parent="MainContainer/StatSkillContainer/StatsPanel/StatsContainer/DataContainer/DataHeader" unique_id=2142548435]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Skill Data"
+text = "Stat Data"
 vertical_alignment = 1
 
-[node name="ButtonContainer" type="HBoxContainer" parent="MainContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader" unique_id=1249940803]
+[node name="ButtonContainer" type="HBoxContainer" parent="MainContainer/StatSkillContainer/StatsPanel/StatsContainer/DataContainer/DataHeader" unique_id=1028029205]
 layout_mode = 2
 
-[node name="AddDictButton" type="Button" parent="MainContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader/ButtonContainer" unique_id=1612339928]
+[node name="StatDictButton" type="Button" parent="MainContainer/StatSkillContainer/StatsPanel/StatsContainer/DataContainer/DataHeader/ButtonContainer" unique_id=819457665]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add folder"
 flat = true
 icon_alignment = 1
 
-[node name="VSeparator" type="VSeparator" parent="MainContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader/ButtonContainer" unique_id=1427721570]
+[node name="VSeparator" type="VSeparator" parent="MainContainer/StatSkillContainer/StatsPanel/StatsContainer/DataContainer/DataHeader/ButtonContainer" unique_id=2016653495]
 layout_mode = 2
 
-[node name="SkillIntBtn" type="Button" parent="MainContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader/ButtonContainer" unique_id=1829158382]
+[node name="StatIntBtn" type="Button" parent="MainContainer/StatSkillContainer/StatsPanel/StatsContainer/DataContainer/DataHeader/ButtonContainer" unique_id=728292738]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add integer"
@@ -135,7 +139,7 @@ icon = ExtResource("4_2dcue")
 flat = true
 icon_alignment = 1
 
-[node name="SkillFltBtn" type="Button" parent="MainContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader/ButtonContainer" unique_id=1847557245]
+[node name="StatFltBtn" type="Button" parent="MainContainer/StatSkillContainer/StatsPanel/StatsContainer/DataContainer/DataHeader/ButtonContainer" unique_id=1193912881]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add float"
@@ -143,7 +147,7 @@ icon = ExtResource("5_jte7m")
 flat = true
 icon_alignment = 1
 
-[node name="SkillBoolBtn" type="Button" parent="MainContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader/ButtonContainer" unique_id=1232422128]
+[node name="StatBoolBtn" type="Button" parent="MainContainer/StatSkillContainer/StatsPanel/StatsContainer/DataContainer/DataHeader/ButtonContainer" unique_id=1278991087]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add boolean"
@@ -151,7 +155,7 @@ icon = ExtResource("6_pfvga")
 flat = true
 icon_alignment = 1
 
-[node name="SkillStrBtn" type="Button" parent="MainContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader/ButtonContainer" unique_id=711406031]
+[node name="StatStrBtn" type="Button" parent="MainContainer/StatSkillContainer/StatsPanel/StatsContainer/DataContainer/DataHeader/ButtonContainer" unique_id=420265449]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add string"
@@ -159,7 +163,148 @@ icon = ExtResource("7_ktu3r")
 flat = true
 icon_alignment = 1
 
-[node name="SkillDataTree" type="Tree" parent="MainContainer/SkillsPanel/SkillsContainer/DataContainer" unique_id=642974697]
+[node name="StatDataTree" type="Tree" parent="MainContainer/StatSkillContainer/StatsPanel/StatsContainer/DataContainer" unique_id=2086092255]
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+size_flags_vertical = 3
+columns = 2
+allow_reselect = true
+hide_folding = true
+hide_root = true
+script = ExtResource("8_0boio")
+allow_drag_and_drop = true
+
+[node name="SkillsPanel" type="PanelContainer" parent="MainContainer/StatSkillContainer" unique_id=1303361659]
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxEmpty_uv4cy")
+
+[node name="SkillsContainer" type="VBoxContainer" parent="MainContainer/StatSkillContainer/SkillsPanel" unique_id=1633985940]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Label" type="Label" parent="MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer" unique_id=2035398156]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.223529, 0.705882, 0.905882, 1)
+theme_override_font_sizes/font_size = 25
+text = "Skills"
+
+[node name="SkillSelectContainer" type="HBoxContainer" parent="MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer" unique_id=843736963]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer/SkillSelectContainer" unique_id=1720429432]
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+text = "Skill"
+vertical_alignment = 1
+
+[node name="SkillContainer" type="HBoxContainer" parent="MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer/SkillSelectContainer" unique_id=760198991]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SkillOptBtn" type="OptionButton" parent="MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer/SkillSelectContainer/SkillContainer" unique_id=349359651]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="EditSkillsBtn" type="Button" parent="MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer/SkillSelectContainer/SkillContainer" unique_id=209477705]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Edit SkillSet script"
+focus_mode = 1
+flat = true
+icon_alignment = 1
+
+[node name="NameContainer" type="HBoxContainer" parent="MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer" unique_id=1415204058]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer/NameContainer" unique_id=1029091323]
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+text = "Name"
+vertical_alignment = 1
+
+[node name="SkillLnEdt" type="LineEdit" parent="MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer/NameContainer" unique_id=1519228069]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Skill Name"
+
+[node name="DesContainer" type="VBoxContainer" parent="MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer" unique_id=770426003]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer/DesContainer" unique_id=473633516]
+layout_mode = 2
+text = "Description"
+
+[node name="SkillDescTxtEdt" type="TextEdit" parent="MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer/DesContainer" unique_id=776563385]
+custom_minimum_size = Vector2(0, 100)
+layout_mode = 2
+size_flags_vertical = 3
+placeholder_text = "Skill Description"
+wrap_mode = 1
+
+[node name="DataContainer" type="VBoxContainer" parent="MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer" unique_id=1733070955]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="DataHeader" type="HBoxContainer" parent="MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer/DataContainer" unique_id=377380778]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader" unique_id=1318869846]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Skill Data"
+vertical_alignment = 1
+
+[node name="ButtonContainer" type="HBoxContainer" parent="MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader" unique_id=1249940803]
+layout_mode = 2
+
+[node name="AddDictButton" type="Button" parent="MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader/ButtonContainer" unique_id=1612339928]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Add folder"
+flat = true
+icon_alignment = 1
+
+[node name="VSeparator" type="VSeparator" parent="MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader/ButtonContainer" unique_id=1427721570]
+layout_mode = 2
+
+[node name="SkillIntBtn" type="Button" parent="MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader/ButtonContainer" unique_id=1829158382]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Add integer"
+icon = ExtResource("4_2dcue")
+flat = true
+icon_alignment = 1
+
+[node name="SkillFltBtn" type="Button" parent="MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader/ButtonContainer" unique_id=1847557245]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Add float"
+icon = ExtResource("5_jte7m")
+flat = true
+icon_alignment = 1
+
+[node name="SkillBoolBtn" type="Button" parent="MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader/ButtonContainer" unique_id=1232422128]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Add boolean"
+icon = ExtResource("6_pfvga")
+flat = true
+icon_alignment = 1
+
+[node name="SkillStrBtn" type="Button" parent="MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader/ButtonContainer" unique_id=711406031]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Add string"
+icon = ExtResource("7_ktu3r")
+flat = true
+icon_alignment = 1
+
+[node name="SkillDataTree" type="Tree" parent="MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer/DataContainer" unique_id=642974697]
 custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
 size_flags_vertical = 3
@@ -173,6 +318,7 @@ allow_drag_and_drop = true
 [node name="TraitsPanel" type="PanelContainer" parent="MainContainer" unique_id=1268093603]
 custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_styles/panel = SubResource("StyleBoxEmpty_uv4cy")
 
 [node name="TraitsContainerContainer" type="VBoxContainer" parent="MainContainer/TraitsPanel" unique_id=1274922855]

@@ -15,7 +15,7 @@ func create_item(id: StringName) -> void:
 	if items == null:
 		return
 	if not items._items.has(id):
-		items.create_item(id)
+		items.create_item(id, "", "", &"", 0, 0, [], {})
 		item_created.emit(id, "New Item")
 
 

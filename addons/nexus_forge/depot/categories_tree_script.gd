@@ -72,7 +72,6 @@ func _on_button_clicked(item: TreeItem, _column: int, id: int, mouse_button_inde
 	elif id == 1:
 		var data: Dictionary[String, Variant] = {}
 		var id_text: String = get_valid_id("new_subcategory")
-		data.assign(ItemCatalog.ITEM_DEFAULT_DATA)
 		create_category(
 			id_text,
 			"New Subcategory",

@@ -198,7 +198,7 @@ func load_character_files(files: Array[String]) -> void:
 				continue
 			
 			if loaded.stats == null:
-				loaded.stats = StatBlock.new(true)
+				loaded.stats = StatBlock.new()
 			if loaded.skills == null:
 				loaded.skills = SkillSet.new()
 			if loaded.traits == null:
@@ -281,11 +281,11 @@ func update_species_data(species_catalog: SpeciesCatalog = null) -> void:
 
 
 func update_talent_nodes() -> void:
-	var skill_set: SkillSet = SkillSet.new(false)
+	var skill_set: SkillSet = SkillSet.new()
 
-	var trait_block: TraitBlock = TraitBlock.new(false)
+	var trait_block: TraitBlock = TraitBlock.new()
 	
-	var stat_block: StatBlock = StatBlock.new(false)
+	var stat_block: StatBlock = StatBlock.new()
 	
 	var stats_data: Dictionary[StringName, int] = StatBlock.stats()
 	

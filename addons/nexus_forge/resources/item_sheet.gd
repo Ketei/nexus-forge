@@ -1,7 +1,7 @@
 @tool
 @icon("res://addons/nexus_forge/icons/sword_icon.svg")
 class_name ItemSheet
-extends RefCounted
+extends Resource
 
 enum ItemFlag {
 	SELLABLE,
@@ -22,10 +22,15 @@ var rarity: Rarity = Rarity.COMMON
 var value: int = 0
 var description: String = "": set = _set_item_description
 var flags: Array[ItemFlag] = []
-var data: Dictionary[String, Variant] = {}
+var custom_data: Dictionary[StringName, Variant] = {}
 
 var _name_builder: Callable = Callable()
 var _description_builder: Callable = Callable()
+
+func _get(property: StringName) -> Variant:
+	if custom_data.has(property):
+		return custom_data[property]
+	return null
 
 ## Returns the item [member ItemSheet.name]. Formats it if [code]Format Item Strings with Blackboard[/code]
 ## is [code]On[/code] on [code]Project Settings[/code].

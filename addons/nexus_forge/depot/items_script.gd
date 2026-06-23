@@ -435,7 +435,8 @@ func save_current_currency() -> void:
 	
 	currency_resource.clear_currency_data(loaded_currency)
 	
-	var data: Dictionary[String, Variant] = currency_custom_data_tree.get_data()
+	var data: Dictionary[StringName, Variant] = {}
+	data.assign(currency_custom_data_tree.get_data())
 	
 	for data_key in data.keys():
 		currency_resource.set_currency_data(
@@ -517,7 +518,7 @@ func _on_category_selected(category: StringName) -> void:
 	new_item_btn.disabled = false
 	
 	for item in item_link.items.items():
-		if item_link.items._items[item]["category"] == category:
+		if item_link.items.get_item_category(item) == category:
 			items_tree.add_item(item)
 	set_items_ui_enabled(false)
 
@@ -712,7 +713,9 @@ func save_current_item() -> void:
 	
 	item_link.items.clear_item_data(loaded_item)
 	
-	var data: Dictionary[String, Variant] = item_data_tree.get_data()
+	var data: Dictionary[StringName, Variant] = {}
+	data.assign(item_data_tree.get_data())
+	
 	for item_key in data.keys():
 		item_link.items.set_item_data(loaded_item, item_key, data[item_key])
 	
@@ -806,7 +809,7 @@ func reload_categories(reselect: bool = false) -> void:
 	var top_level_categories: Array[StringName] = []
 	
 	for category in item_link.items.categories():
-		if item_link.items._categories[category]["parent_key"] == &"":
+		if item_link.items.get_category_parent(category) == &"":
 			top_level_categories.append(category)
 	
 	for category in top_level_categories:

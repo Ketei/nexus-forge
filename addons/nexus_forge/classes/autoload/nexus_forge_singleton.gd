@@ -23,10 +23,21 @@ const _SETTINGS_PATHS: Dictionary[String, Dictionary] = {
 		"setting_path": "nexus_forge/enabled_modules/species_enabled",
 		"default_value": true,
 		"type": TYPE_BOOL},
-	"talents_enabled": {
-		"setting_path": "nexus_forge/enabled_modules/talents_enabled",
+	"stats_enabled": {
+		"setting_path": "nexus_forge/enabled_modules/stats_enabled",
 		"default_value": true,
-		"type": TYPE_BOOL},
+		"type": TYPE_BOOL,
+		"sort_string": "nexus_forge/enabled_modules/stats_enabled_a"},
+	"skills_enabled": {
+		"setting_path": "nexus_forge/enabled_modules/skills_enabled",
+		"default_value": true,
+		"type": TYPE_BOOL,
+		"sort_string": "nexus_forge/enabled_modules/stats_enabled_b"},
+	"traits_enabled": {
+		"setting_path": "nexus_forge/enabled_modules/traits_enabled",
+		"default_value": true,
+		"type": TYPE_BOOL,
+		"sort_string": "nexus_forge/enabled_modules/stats_enabled_c"},
 	"items_enabled": {
 		"setting_path": "nexus_forge/enabled_modules/items_enabled",
 		"default_value": true,
@@ -95,7 +106,14 @@ const _SETTINGS_PATHS: Dictionary[String, Dictionary] = {
 		"type": TYPE_FLOAT,
 		"hint": PROPERTY_HINT_RANGE,
 		"hint_string": "0,1",
-		"restart_required": false},
+		"restart_required": false,
+		"sort_string": "nexus_forge/settings/species_use_genetic_inheritance_a"},
+	"species_use_inheritance": {
+		"setting_path": "nexus_forge/settings/species_use_genetic_inheritance",
+		"default_value": true,
+		"type": TYPE_BOOL,
+		"restart_required": false,
+		"sort_string": "nexus_forge/settings/species_use_genetic_inheritance_b"},
 	"quests_format_strings": {
 		"setting_path": "nexus_forge/settings/format_quest_strings_with_blackboard",
 		"default_value": false,
@@ -155,6 +173,12 @@ const _SETTINGS_PATHS: Dictionary[String, Dictionary] = {
 		"type": TYPE_STRING,
 		"hint": PROPERTY_HINT_FILE,
 		"hint_string": "*.tres"},
+	"stats": {
+		"setting_path": "nexus_forge/paths/stats_path",
+		"default_value": "",
+		"type": TYPE_STRING,
+		"hint": PROPERTY_HINT_FILE,
+		"hint_string": "*.tres"},
 	"species": {
 		"setting_path": "nexus_forge/paths/species_path",
 		"default_value": "",
@@ -192,24 +216,24 @@ var Blackboard: BlackboardData
 
 ## An object for registering and loading [CharacterSheet]s and applying
 ## modifications to them.
-var Characters: CharacterManager
+var Characters: NFCharacterManager
 
 ## A resource containing the game's item definitions.
-var Items: ItemCatalog
+var Items: NFItemManager
 ## A resource containing custom stats data.[br]
 ## Custom stats will be included in all [StatBlock]'s custom stats instantiated
 ## with [method StatBlock.new_stat_block].
-var Stats: StatCatalog
+var Stats: NFStatManager
 ## A resource containing common and custom trait data.[br]
 ## Custom traits created here will also be included in all instances of
 ## [TraitBlock] that were created via [method TraitBlock.new_trait_block].
-var Traits: TraitCatalog
+var Traits: NFTraitManager
 ## A resource containing common and custom skill data.[br]
 ## Custom skill created here will also be included in all instances of
 ## [SkillSet] that were created via [method SkillSet.new_skill_set].
-var Skills: SkillCatalog
+var Skills: NFSkillManager
 ## A resource containing the game's species data.
-var Species: SpeciesCatalog
+var Species: NFSpeciesManager
 ## A resource containing the game's quests data.
 var Quests: QuestManager
 ## A resource containing the game's currency data and helper methods to manage
@@ -244,7 +268,9 @@ static func _log_msg(module: String, msg: String, log_level: _LogLevel = _LogLev
 func _ready() -> void:
 	var use_discourse: bool = ProjectSettings.get_setting(get_setting_path("discourse_enabled"), true)
 	var use_items: bool = ProjectSettings.get_setting(get_setting_path("items_enabled"), true)
-	var use_talents: bool = ProjectSettings.get_setting(get_setting_path("talents_enabled"), true)
+	var use_stats: bool = ProjectSettings.get_setting(get_setting_path("stats_enabled"), true)
+	var use_skills: bool = ProjectSettings.get_setting(get_setting_path("skills_enabled"), true)
+	var use_traits: bool = ProjectSettings.get_setting(get_setting_path("traits_enabled"), true)
 	var use_species: bool = ProjectSettings.get_setting(get_setting_path("species_enabled"), true)
 	var use_quests: bool = ProjectSettings.get_setting(get_setting_path("quests_enabled"), true)
 	var use_currencies: bool = ProjectSettings.get_setting(get_setting_path("currencies_enabled"), true)
@@ -262,24 +288,30 @@ func _ready() -> void:
 			printerr("[NEXUS FORGE] ProjectSettings: Invalid Blackboard.")
 	
 	if use_species:
+		Species = NFSpeciesManager.new()
 		var species_path: String = ProjectSettings.get_setting(
 				get_setting_path("species"), "")
 		if not species_path.is_empty() and ResourceLoader.exists(species_path):
-			var res_pre: Resource = load(species_path)
+			var res_pre = load(species_path)
 			if res_pre is SpeciesCatalog:
-				Species = res_pre
+				Species.load_catalog(res_pre, true)
 			else:
 				printerr("[NEXUS FORGE] ProjectSettings: Invalid Species.")
 	
 	if use_items:
+		if Items == null:
+			Items = NFItemManager.new()
 		var items_path: String = ProjectSettings.get_setting(
 				get_setting_path("items"), "")
 		if not items_path.is_empty() and ResourceLoader.exists(items_path):
 			var res_pre: Resource = load(items_path)
 			if res_pre is ItemCatalog:
-				Items = res_pre
+				Items.load_catalog(res_pre)
 			else:
-				printerr("[NEXUS FORGE] ProjectSettings: Invalid Items.")
+				NFPluginGameHandler._log_msg(
+						"singleton",
+						"Invalid ItemCatalog resource '%s'" % items_path,
+						NFPluginGameHandler._LogLevel.ERROR)
 	
 	if use_currencies:
 		var currency_path: String = ProjectSettings.get_setting(
@@ -301,6 +333,39 @@ func _ready() -> void:
 			else:
 				printerr("[NEXUS FORGE] ProjectSettings: Invalid Recipes.")
 	
+	if use_stats:
+		if Stats == null:
+			Stats = NFStatManager.new()
+		var stats_path: String = ProjectSettings.get_setting(
+				get_setting_path("stats"), "")
+		
+		if not stats_path.is_empty() and ResourceLoader.exists(stats_path):
+			var st_load = load(stats_path)
+			if st_load != null and st_load is StatCatalog:
+				Stats.load_catalog(st_load)
+	
+	if use_skills:
+		if Skills == null:
+			Skills = NFSkillManager.new()
+		var skills_path: String = ProjectSettings.get_setting(
+				get_setting_path("skills"), "")
+		if not skills_path.is_empty() and ResourceLoader.exists(skills_path):
+			var skill_pre = load(skills_path)
+			if skill_pre != null and skill_pre is SkillCatalog:
+				Skills.load_catalog(skill_pre)
+	
+	if use_traits:
+		if Traits == null:
+			Traits = NFTraitManager.new()
+		var traits_path: String = ProjectSettings.get_setting(
+				get_setting_path("traits"), "")
+		
+		if not traits_path.is_empty() and ResourceLoader.exists(traits_path):
+			var pre_trait = load(traits_path)
+			
+			if pre_trait is TraitCatalog:
+				Traits.load_catalog(pre_trait)
+	
 	if Discourse == null:
 		if instantiate_disabled or use_discourse:
 			Discourse = EditorDialogParser.new() if OS.has_feature("editor") else DialogParser.new()
@@ -310,16 +375,15 @@ func _ready() -> void:
 	if Blackboard == null:
 		Blackboard = BlackboardData.new()
 	
-	if use_talents or instantiate_disabled:
-		if Stats == null:
-			Stats = StatCatalog.new()
-		if Traits == null:
-			Traits = TraitCatalog.new()
-		if Skills == null:
-			Skills = SkillCatalog.new()
+	if Stats == null and instantiate_disabled:
+		Stats = NFStatManager.new()
+	if Traits == null and instantiate_disabled:
+		Traits = NFTraitManager.new()
+	if Skills == null and instantiate_disabled:
+		Skills = NFSkillManager.new()
 	
 	if Characters == null and (use_characters or instantiate_disabled):
-		Characters = CharacterManager.new()
+		Characters = NFCharacterManager.new()
 		if ProjectSettings.get_setting(get_setting_path("character_register_ids"), true):
 			if OS.has_feature("editor"):
 				if FileAccess.file_exists("user://nexus_forge/persona_settings.cfg"):
@@ -354,10 +418,10 @@ func _ready() -> void:
 									NFPluginGameHandler._LogLevel.WARNING)
 	if Quests == null and ( use_quests or instantiate_disabled ):
 		Quests = QuestManager.new()
-	if Species == null and ( use_species or instantiate_disabled ):
-		Species = SpeciesCatalog.new()
-	if Items == null and ( use_items or instantiate_disabled):
-		Items = ItemCatalog.new()
+	if Species == null and instantiate_disabled:
+		Species = NFSpeciesManager.new()
+	if Items == null and instantiate_disabled:
+		Items = NFItemManager.new()
 	if Currency == null and ( use_currencies or instantiate_disabled ):
 		Currency = CurrencyCatalog.new()
 	if Recipes == null and ( use_recipes or instantiate_disabled ):

@@ -28,10 +28,14 @@ func _species_stat_data(species_id: StringName, use_inheritance: bool) -> Dictio
 	
 	var recessive_parent: StringName = _species[species_id]["parent_recessive"]
 	var dominant_parent: StringName = _species[species_id]["parent_dominant"]
+	
+	if not _species.has(dominant_parent):
+		return stats
+	
 	var explored_species: Dictionary[StringName, Variant] = {
 		dominant_parent: null}
 	
-	if not recessive_parent.is_empty():
+	if _species.has(recessive_parent):
 		var dominant_genes: Dictionary[StringName, float] = _species[dominant_parent]["stats"]
 		var recessive_genes: Dictionary[StringName, float] = _species[recessive_parent]["stats"]
 		var hybrid_genes: Dictionary[StringName, float] = {}
@@ -60,7 +64,7 @@ func _species_stat_data(species_id: StringName, use_inheritance: bool) -> Dictio
 	if dilution_multiplier <= dilution_factor:
 		return stats
 	
-	while 0 < dilution_multiplier and not dominant_parent.is_empty() and not explored_species.has(dominant_parent):
+	while _species.has(dominant_parent) and 0 < dilution_multiplier and not dominant_parent.is_empty() and not explored_species.has(dominant_parent):
 		dilution_multiplier -= dilution_factor
 		explored_species[dominant_parent] = null
 		for stat in _species[dominant_parent]["stats"].keys():
@@ -86,10 +90,14 @@ func _species_skill_data(species_id: StringName, use_inheritance: bool) -> Dicti
 	
 	var recessive_parent: StringName = _species[species_id]["parent_recessive"]
 	var dominant_parent: StringName = _species[species_id]["parent_dominant"]
+	
+	if not _species.has(dominant_parent):
+		return skills
+	
 	var explored_species: Dictionary[StringName, Variant] = {
 		dominant_parent: null}
 	
-	if not recessive_parent.is_empty():
+	if _species.has(recessive_parent):
 		var dominant_genes: Dictionary[StringName, int] = _species[dominant_parent]["skills"]
 		var recessive_genes: Dictionary[StringName, int] = _species[recessive_parent]["skills"]
 		var hybrid_genes: Dictionary[StringName, int] = {}
@@ -115,7 +123,7 @@ func _species_skill_data(species_id: StringName, use_inheritance: bool) -> Dicti
 	var dilution_multiplier: float = 1.0
 	var dilution_factor: float = clampf(ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("species_genetic_dilution"), 0.0), 0.0, 1.0)
 	
-	while 0 < dilution_multiplier and not dominant_parent.is_empty() and not explored_species.has(dominant_parent):
+	while _species.has(dominant_parent) and 0 < dilution_multiplier and not dominant_parent.is_empty() and not explored_species.has(dominant_parent):
 		dilution_multiplier -= dilution_factor
 		for skill in _species[dominant_parent]["skills"].keys():
 			if skills.has(skill):
@@ -139,10 +147,14 @@ func _species_trait_data(species_id: StringName, use_inheritance: bool) -> Dicti
 	
 	var recessive_parent: StringName = _species[species_id]["parent_recessive"]
 	var dominant_parent: StringName = _species[species_id]["parent_dominant"]
+	
+	if not _species.has(dominant_parent):
+		return traits
+	
 	var explored_species: Dictionary[StringName, Variant] = {
 		dominant_parent: null}
 	
-	if not recessive_parent.is_empty():
+	if _species.has(recessive_parent):
 		var dominant_genes: Dictionary[StringName, int] = _species[dominant_parent]["traits"]
 		var recessive_genes: Dictionary[StringName, int] = _species[recessive_parent]["traits"]
 		var hybrid_genes: Dictionary[StringName, int] = {}
@@ -168,7 +180,7 @@ func _species_trait_data(species_id: StringName, use_inheritance: bool) -> Dicti
 	var dilution_multiplier: float = 1.0
 	var dilution_factor: float = clampf(ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("species_genetic_dilution"), 0.0), 0.0, 1.0)
 	
-	while 0 < dilution_multiplier and not dominant_parent.is_empty() and not explored_species.has(dominant_parent):
+	while _species.has(dominant_parent) and 0 < dilution_multiplier and not dominant_parent.is_empty() and not explored_species.has(dominant_parent):
 		dilution_multiplier -= dilution_factor
 		for trait_id in _species[dominant_parent]["traits"].keys():
 			if traits.has(trait_id):
@@ -181,17 +193,46 @@ func _species_trait_data(species_id: StringName, use_inheritance: bool) -> Dicti
 
 
 ## Returns a [SpeciesSheet] with data, stats, skills and traits of the species.
-## Stats, skills and traits will have inherited values from the parent species.[br]
+## Stats, skills and traits will have inherited values from the parent species
+## if [code]settings/species_use_genetic_inheritance[/code] is enabled on 
+## [code]ProjectSettings/NexusForge[/code].[br]
 ## Returns [code]null[/code] if the species is not found.
-func get_species(species_id: StringName, with_inheritance: bool) -> SpeciesSheet:
+func get_species(species_id: StringName) -> SpeciesSheet:
+	if not _species.has(species_id):
+		return null
+	
+	var inherit: bool = ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("species_use_inheritance"), true)
+	
+	var new_species: SpeciesSheet = SpeciesSheet.new()
+	
+	var stats: Dictionary[StringName, float] = _species_stat_data(species_id, inherit)
+	var skills: Dictionary[StringName, int] = _species_skill_data(species_id, inherit)
+	var traits: Dictionary[StringName, int] = _species_trait_data(species_id, inherit)
+	
+	new_species.id = species_id
+	new_species.name = _species[species_id]["name"]
+	new_species.description = _species[species_id]["description"]
+	new_species.custom_data = _species[species_id]["data"].duplicate(true)
+	new_species.stats = get_species_stats(species_id)
+	new_species.skills = get_species_skills(species_id)
+	new_species.traits = get_species_traits(species_id)
+	
+	return new_species
+
+
+## Returns a [SpeciesSheet] object containing the base data of a species
+## without using inheritance. Useful if you need the base data but
+## [code]settings/species_use_genetic_inheritance[/code] is
+## [code]On[/code] in [code]ProjectSettings/NexusForge[/code].
+func get_species_base(species_id: StringName) -> SpeciesSheet:
 	if not _species.has(species_id):
 		return null
 	
 	var new_species: SpeciesSheet = SpeciesSheet.new()
 	
-	var stats: Dictionary[StringName, float] = _species_stat_data(species_id, with_inheritance)
-	var skills: Dictionary[StringName, int] = _species_skill_data(species_id, with_inheritance)
-	var traits: Dictionary[StringName, int] = _species_trait_data(species_id, with_inheritance)
+	var stats: Dictionary[StringName, float] = _species_stat_data(species_id, false)
+	var skills: Dictionary[StringName, int] = _species_skill_data(species_id, false)
+	var traits: Dictionary[StringName, int] = _species_trait_data(species_id, false)
 	
 	new_species.id = species_id
 	new_species.name = _species[species_id]["name"]
@@ -287,12 +328,14 @@ func register_species(species_sheet: SpeciesSheet, subspecies_of: StringName = &
 ## Erases the given species and clears the link of all subspecies linked
 ## to [param species_id].
 func erase_species(species_id: StringName) -> void:
-	if _species.erase(species_id):
-		for remaining_species in _species.keys():
-			if _species[remaining_species]["parent_dominant"] == species_id:
-				_species[remaining_species]["parent_dominant"] = &""
-			if _species[remaining_species]["parent_recessive"] == species_id:
-				_species[remaining_species]["parent_recessive"] = &""
+	if not _species.erase(species_id):
+		return
+	
+	for remaining_species in _species.keys():
+		if _species[remaining_species]["parent_dominant"] == species_id:
+			_species[remaining_species]["parent_dominant"] = &""
+		if _species[remaining_species]["parent_recessive"] == species_id:
+			_species[remaining_species]["parent_recessive"] = &""
 
 
 ## Sets the [param species_id] to be a subspecies of [param parent_species].
@@ -308,15 +351,19 @@ func link_species(species_id: StringName, parent_species: StringName, recessive_
 
 ## Returns the parent species of [param of_species].
 func get_dominant_species_of(species_id: StringName) -> StringName:
-	if _species.has(species_id):
-		return _species[species_id]["parent_dominant"]
-	return &""
+	return DictUtils.get_nested_value(
+			_species,
+			[species_id, "parent_dominant"],
+			&"",
+			true)
 
 
 func get_recessive_species_of(species_id: StringName) -> StringName:
-	if _species.has(species_id):
-		return _species[species_id]["parent_recessive"]
-	return &""
+	return DictUtils.get_nested_value(
+			_species,
+			[species_id, "parent_recessive"],
+			&"",
+			true)
 
 
 ## Returns [code]true[/code] if [param species_id] is registered.
@@ -327,29 +374,37 @@ func has_species(species_id: StringName) -> bool:
 ## Returns the name of [param species_id]. Returns an empty string if the species
 ## isn't registered.
 func get_species_name(species_id: StringName) -> String:
-	if _species.has(species_id):
-		return _species[species_id]["name"]
-	return ""
+	return DictUtils.get_nested_value(
+			_species,
+			[species_id, "name"],
+			"",
+			true)
 
 
 ## Sets the species name of [param species_id] to [param new_name]
 func set_species_name(species_id: StringName, new_name: String) -> void:
-	if _species.has(species_id):
-		_species[species_id]["name"] = new_name
+	if not _species.has(species_id):
+		return
+	
+	_species[species_id]["name"] = new_name
 
 
 ## Returns the description of [param species_id]. Returns an empty string if
 ## the species isn't registered.
 func get_species_description(species_id: StringName) -> String:
-	if _species.has(species_id):
-		return _species[species_id]["description"]
-	return ""
+	return DictUtils.get_nested_value(
+			_species,
+			[species_id, "description"],
+			"",
+			true)
 
 
 ## Sets the description of [param species_id] to [param new_name].
 func set_species_description(species_id: StringName, description: String) -> void:
-	if _species.has(species_id):
-		_species[species_id]["description"] = description
+	if not _species.has(species_id):
+		return
+	
+	_species[species_id]["description"] = description
 
 
 ## Sets the value of [param data_key] to [param data] of the [param species_id].
@@ -359,8 +414,7 @@ func set_species_data(species_id: StringName, data_key: String, data: Variant) -
 		return
 	
 	if data == null:
-		if _species[species_id]["data"].has(data_key):
-			_species[species_id]["data"].erase(data_key)
+		_species[species_id]["data"].erase(data_key)
 	else:
 		_species[species_id]["data"][data_key] = data
 
@@ -368,9 +422,19 @@ func set_species_data(species_id: StringName, data_key: String, data: Variant) -
 ## Returns the data with [param data_key] from the [param species_id] or
 ## [code]null[/code] if the species isn't registered or key doesn't exist.
 func get_species_data(species_id: StringName, data_key: String) -> Variant:
-	if _species.has(species_id) and _species[species_id]["data"].has(data_key):
-		return _species[species_id]["data"][data_key]
-	return null
+	return DictUtils.get_nested_value(
+			_species,
+			[species_id, "data", data_key])
+
+
+func get_species_custom_data(species_id: StringName) -> Dictionary[StringName, Variant]:
+	var data: Dictionary[StringName, Variant] = {}
+	data.assign(DictUtils.get_nested_value(
+			_species,
+			[species_id, "data"],
+			{},
+			true))
+	return data
 
 
 ## Returns [code]true[/code] if [param species_id] has custom data with key
@@ -389,23 +453,30 @@ func species_data_keys(species_id: StringName) -> Array[String]:
 
 ## Clears all the custom data from [param species_id].
 func clear_species_data(species_id: StringName) -> void:
-	if _species.has(species_id):
-		_species[species_id]["data"].clear()
+	if not _species.has(species_id):
+		return
+	
+	_species[species_id]["data"].clear()
 
 
 ## Returns the value of [param stat_id] assigned to the species with
 ## [param species_id] or 0 if the stat isn't assigned on the species.
 func get_species_stat_value(species_id: StringName, stat_id: StringName) -> float:
-	if _species.has(species_id) and _species[species_id]["stats"].has(stat_id):
-		return _species[species_id]["stats"][stat_id]
-	return 0
+	var data = DictUtils.get_nested_value(
+			_species,
+			[species_id, "stats", stat_id],
+			0.0)
+	var type: int = typeof(data)
+	if type == TYPE_INT or type == TYPE_FLOAT:
+		return data
+	return 0.0
 
 
 ## Returns a [StatBlock] with the stats of the [param species_id].[br]
 ## The species will have inherited the stats of the parent species if
 ## [param inherit] is [code]true[/code].
-func get_species_stats(species_id: StringName, inherit: bool = true) -> StatBlock:
-	var new_block: StatBlock = StatBlock.new()
+func get_species_stats(species_id: StringName, inherit: bool = true) -> NFSpeciesStatCatalog:
+	var new_block: NFSpeciesStatCatalog = NFSpeciesStatCatalog.new(TYPE_FLOAT)
 	var data_stats: Dictionary[StringName, float] = _species_stat_data(species_id, inherit)
 	
 	var properties: Dictionary[StringName, int] = StatBlock.stats()
@@ -413,41 +484,17 @@ func get_species_stats(species_id: StringName, inherit: bool = true) -> StatBloc
 	for stat in data_stats.keys():
 		if not properties.has(stat):
 			continue
-		
-		var val_range: ValueRange = new_block.get(stat)
-		if val_range == null:
-			val_range = RangeInt.new() if properties[stat] == TYPE_INT else RangeFloat.new()
-			new_block.set(stat, val_range)
-		
-		val_range.allow_greater = true
-		val_range.allow_lesser = true
-		
-		if properties[stat] == TYPE_INT:
-			val_range.value = int(data_stats[stat])
-		elif properties[stat] == TYPE_FLOAT:
-			val_range.value = data_stats[stat]
+		new_block.set_entry(stat, data_stats[stat])
 	
 	return new_block
 
 
 ## Sets the stat [param stat_id] to [param value] on the [param species_id].
 func set_species_stat_value(species_id: StringName, stat_id: StringName, value: float) -> void:
-	if _species.has(species_id):
-		_species[species_id]["stats"][stat_id] = value
-
-
-## Sets [param species_id] stats to match the values on [param stats].[br]
-## Stats with a value of 0 are ignored.
-func set_species_stats(species_id: StringName, stats: StatBlock) -> void:
 	if not _species.has(species_id):
 		return
 	
-	var stat_data: Dictionary[StringName, int] = StatBlock.stats()
-	
-	for stat_id in stat_data.keys():
-		var stat_value: float = stats.get(stat_id).value
-		if stat_value != 0:
-			_species[species_id]["stats"][stat_id] = stat_value
+	_species[species_id]["stats"][stat_id] = value
 
 
 ## Returns [code]true[/code] if [param species_id] has [param stat_id] assigned.
@@ -463,35 +510,31 @@ func erase_species_stat(species_id: StringName, stat_id: StringName) -> void:
 
 ## Sets the [param skill_id] to [param value] on [param species_id].
 func set_species_skill_value(species_id: StringName, skill_id: StringName, value: int) -> void:
-	if _species.has(species_id):
-		_species[species_id]["skills"][skill_id] = value
-
-
-## Sets [param species_id] skills to match the values on [param skills].[br]
-## Skills with a value of 0 are ignored.
-func set_species_skills(species_id: StringName, skills: SkillSet) -> void:
 	if not _species.has(species_id):
 		return
 	
-	for skill in SkillSet.skills():
-		var value: int = skills.get(skill)
-		if value != 0:
-			_species[species_id]["skills"][skill] = value
+	_species[species_id]["skills"][skill_id] = value
 
 
 ## Returns the value of [param skill_id] assigned to the species with
 ## [param species_id] or 0 if the skill isn't assigned on the species.
 func get_species_skill_value(species_id: StringName, skill_id: StringName) -> int:
-	if _species.has(species_id) and _species[species_id]["skills"].has(skill_id):
-		return _species[species_id]["skills"][skill_id]
+	var data = DictUtils.get_nested_value(
+			_species,
+			[species_id, "skills", skill_id],
+			0.0)
+	var type: int = typeof(data)
+	
+	if type == TYPE_INT or type == TYPE_FLOAT:
+		return data
 	return 0
 
 
 ## Returns a [SkillSet] with the skills of the [param species_id].[br]
 ## The species will have inherited the skills of the parent species if
 ## [param inherit] is [code]true[/code].
-func get_species_skills(species_id: StringName, inherit: bool = true) -> SkillSet:
-	var new_set: SkillSet = SkillSet.new()
+func get_species_skills(species_id: StringName, inherit: bool = true) -> NFSpeciesStatCatalog:
+	var new_set: NFSpeciesStatCatalog = NFSpeciesStatCatalog.new(TYPE_INT)
 	var data_stats: Dictionary[StringName, int] = _species_skill_data(species_id, inherit)
 	
 	var properties: Array[StringName] = SkillSet.skills()
@@ -499,7 +542,7 @@ func get_species_skills(species_id: StringName, inherit: bool = true) -> SkillSe
 	for stat in data_stats.keys():
 		if not properties.has(stat):
 			continue
-		new_set.set(stat, data_stats[stat])
+		new_set.set_entry(stat, data_stats[stat])
 	
 	return new_set
 
@@ -511,40 +554,36 @@ func species_has_skill(species_id: StringName, skill_id: StringName) -> bool:
 
 ## Erases the assigned [param skill_id] from the [param species_id].
 func erase_species_skill(species_id: StringName, skill_id: StringName) -> void:
-	if _species.has(species_id) and _species[species_id]["skills"].has(skill_id):
+	if _species.has(species_id):
 		_species[species_id]["skills"].erase(skill_id)
 
 
 ## Sets [param trait_id] to [param value] on the [param species_id].
 func set_species_trait_value(species_id: StringName, trait_id: StringName, value: int) -> void:
-	if _species.has(species_id):
-		_species[species_id]["traits"][trait_id] = value
-
-
-## Sets [param species_id] traits to match the values on [param traits].[br]
-## Traits with a value of 0 are ignored.
-func set_species_traits(species_id: StringName, traits: TraitBlock) -> void:
 	if not _species.has(species_id):
 		return
 	
-	for trait_id in TraitBlock.traits():
-		var trait_value: int = traits.get(trait_id)
-		if trait_value != 0:
-			_species[species_id]["traits"][trait_id] = trait_value
+	_species[species_id]["traits"][trait_id] = value
 
 
 ## Returns the value of [param trait_id] assigned to the species with
 ## [param species_id] or 0 if the trait isn't assigned on the species.
 func get_species_trait_value(species_id: StringName, trait_id: StringName) -> int:
-	if _species.has(species_id) and _species[species_id]["traits"].has(trait_id):
-		return _species[species_id]["traits"][trait_id]
+	var data = DictUtils.get_nested_value(
+			_species,
+			[species_id, "traits", trait_id],
+			0.0)
+	var type: int = typeof(data)
+	if type == TYPE_INT or type == TYPE_FLOAT:
+		return data
 	return 0
+
 
 ## Returns a [TraitBlock] with the traits of the [param species_id].[br]
 ## The species will have inherited the traits of the parent species if
 ## [param inherit] is [code]true[/code].
-func get_species_traits(species_id: StringName, inherit: bool = true) -> TraitBlock:
-	var new_block: TraitBlock = TraitBlock.new()
+func get_species_traits(species_id: StringName, inherit: bool = true) -> NFSpeciesStatCatalog:
+	var new_block: NFSpeciesStatCatalog = NFSpeciesStatCatalog.new(TYPE_INT)
 	var data_stats: Dictionary[StringName, int] = _species_trait_data(species_id, inherit)
 	
 	var properties: Array[StringName] = TraitBlock.traits()
@@ -552,7 +591,7 @@ func get_species_traits(species_id: StringName, inherit: bool = true) -> TraitBl
 	for trait_id in data_stats.keys():
 		if not properties.has(trait_id):
 			continue
-		new_block.set(trait_id, data_stats[trait_id])
+		new_block.set_entry(trait_id, data_stats[trait_id])
 	
 	return new_block
 
@@ -564,7 +603,7 @@ func species_has_trait(species_id: StringName, trait_id: StringName) -> bool:
 
 ## Erases the assigned [param trait_id] from the [param species_id].
 func erase_species_trait(species_id: StringName, trait_id: StringName) -> void:
-	if _species.has(species_id) and _species[species_id]["traits"].has(trait_id):
+	if _species.has(species_id):
 		_species[species_id]["traits"].erase(trait_id)
 
 

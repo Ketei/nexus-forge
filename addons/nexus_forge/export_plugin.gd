@@ -80,7 +80,10 @@ func _export_file(path: String, type: String, features: PackedStringArray) -> vo
 				culprit = filepath
 				break
 		new_id = path.md5_text()
-		push_warning("[NEXUSFORGE EXPORTPLUGIN] Dialog ID " + file.dialog_id + " already in use by " + culprit + ". Changing ID of file " + path + " to " + new_id)
+		NFPluginGameHandler._log_msg(
+				"export",
+				"Dialog ID '%s' already in use by '%s'. Changing ID of file '%s' to '%s'" % [file.dialog_id, culprit, path, new_id],
+				NFPluginGameHandler._LogLevel.WARNING)
 	else:
 		new_id = dialog_id
 		
@@ -114,7 +117,10 @@ func _customize_resource(resource: Resource, path: String) -> Resource:
 		
 		for locale_entry:Dictionary in localization_files[path]:
 			if locale_entry["path"].is_empty() or locale_entry["file"] == null:
-				push_error("[DISCOURSE] Failed to generate locale entry or path for: " + path)
+				NFPluginGameHandler._log_msg(
+						"export",
+						"Failed to generate locale entry or path for '%s'." % path,
+						NFPluginGameHandler._LogLevel.ERROR)
 				continue
 				
 			#if localization_files.has(release_files[resource.resource_path].localization_uuid):
@@ -133,7 +139,10 @@ func _customize_resource(resource: Resource, path: String) -> Resource:
 						false)
 				localization_files.erase(path)
 			else:
-				push_error("Couldn't generate localization file.")
+				NFPluginGameHandler._log_msg(
+						"export",
+						"Couldn't generate locale '%s' JSON for file '%s'" % [locale_file.locale, resource.resource_path],
+						NFPluginGameHandler._LogLevel.ERROR)
 		
 		return release_files[path]
 	elif resource is SkillCatalog:
@@ -142,6 +151,8 @@ func _customize_resource(resource: Resource, path: String) -> Resource:
 		return customize_trait_catalog(resource)
 	elif resource is SpeciesCatalog:
 		return customize_species(resource)
+	elif resource is StatCatalog:
+		return customize_stat_catalog(resource)
 	elif resource is CharacterSheet:
 		if character_ids.has(resource.id):
 			if export_characters:
@@ -158,12 +169,18 @@ func _customize_resource(resource: Resource, path: String) -> Resource:
 			character_ids[resource.id] = path
 	elif resource is Quest:
 		if quest_ids.has(resource.id):
-			push_warning("[NexusForge] Quest on resource ", path,  " has the same ID of: ", quest_ids[resource.id])
+			NFPluginGameHandler._log_msg(
+						"export",
+						"Quest resource '%s' has the same ID of '%s'" % [path, quest_ids[resource.id]],
+						NFPluginGameHandler._LogLevel.WARNING)
 		else:
 			quest_ids[resource.id] = path
 		
 		if not resource.has_stage(resource.entry_stage):
-			push_warning("[NexusForge] Quest \"", path, "\" entry stage \"", resource.entry_stage, "\" is not valid.")
+			NFPluginGameHandler._log_msg(
+						"export",
+						"Quest resource '%s' entry stage '%s' isn't valid." % [path, resource.entry_stage],
+						NFPluginGameHandler._LogLevel.WARNING)
 	return null
 
 
@@ -195,7 +212,10 @@ func _end_customize_resources() -> void:
 				FileAccess.get_file_as_bytes(file_path),
 				false)
 	else:
-		printerr("[NEXUSFORGE EXPORTPLUGIN] Error while generating dialog locale map.")
+		NFPluginGameHandler._log_msg(
+				"export",
+				"Error while generating dialog locale map.",
+				NFPluginGameHandler._LogLevel.ERROR)
 
 
 func process_editor_discourse_dialog(dialog_resource: EditorDiscourseDialog, dialog_id: String, expected_name: String) -> DiscourseDialog:
@@ -213,8 +233,7 @@ func process_editor_discourse_dialog(dialog_resource: EditorDiscourseDialog, dia
 
 
 func customize_species(resource: SpeciesCatalog) -> SpeciesCatalog:
-	var stats: Array[StringName] = []
-	stats.assign(StatBlock.stats().keys())
+	var stats: Dictionary[StringName, int] = StatBlock.stats()
 	var skills: Array[StringName] = SkillSet.skills()
 	var traits: Array[StringName] = TraitBlock.traits()
 	
@@ -240,10 +259,21 @@ func customize_species(resource: SpeciesCatalog) -> SpeciesCatalog:
 func customize_trait_catalog(catalog: TraitCatalog) -> TraitCatalog:
 	var traits: Array[StringName] = TraitBlock.traits()
 	
-	for saved_trait in catalog._traits.keys():
+	for saved_trait in catalog._trait_data.keys():
 		if traits.has(saved_trait):
 			continue
-		catalog._traits.erase(saved_trait)
+		catalog._trait_data.erase(saved_trait)
+	
+	return catalog
+
+
+func customize_stat_catalog(catalog: StatCatalog) -> StatCatalog:
+	var stats_data: Dictionary[StringName, int] = StatBlock.stats()
+	
+	for saved_trait in catalog._stat_data.keys():
+		if stats_data.has(saved_trait):
+			continue
+		catalog._stat_data.erase(saved_trait)
 	
 	return catalog
 
@@ -251,10 +281,10 @@ func customize_trait_catalog(catalog: TraitCatalog) -> TraitCatalog:
 func customize_skill_catalog(catalog: SkillCatalog) -> SkillCatalog:
 	var skills: Array[StringName] = SkillSet.skills()
 	
-	for saved_skill in catalog._skills.keys():
+	for saved_skill in catalog._skill_data.keys():
 		if skills.has(saved_skill):
 			continue
-		catalog._skills.erase(saved_skill)
+		catalog._skill_data.erase(saved_skill)
 	
 	return catalog
 

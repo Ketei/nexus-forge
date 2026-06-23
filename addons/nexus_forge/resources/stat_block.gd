@@ -12,12 +12,6 @@ extends Resource
 ## @export var new_stat: RangeInt
 ## [/codeblock]
 
-enum StatType {
-	NIL,
-	INTEGER,
-	FLOAT}
-
-
 @export var health: RangeInt
 
 @export_storage var _custom_stats: Dictionary[StringName, ValueRange] = {}
@@ -42,14 +36,14 @@ static func stats() -> Dictionary[StringName, int]:
 
 
 func _init(use_nexus_forge: bool = true) -> void:
-	if not use_nexus_forge or not NexusForge.is_inside_tree():
+	if not use_nexus_forge or Engine.is_editor_hint():
 		return
 	
-	for custom_stat in NexusForge.Stats.custom_stats():
-		if _custom_stats.has(custom_stat):
+	for custom_stat in NexusForge.Stats.stats():
+		if NexusForge.Stats.is_base_stat(custom_stat) or _custom_stats.has(custom_stat):
 			continue
 		
-		var new_range: ValueRange = RangeInt.new() if NexusForge.Stats.custom_stat_type(custom_stat) == StatCatalog.StatType.INTEGER else RangeFloat.new()
+		var new_range: ValueRange = RangeInt.new() if NexusForge.Stats.stat_type(custom_stat) == TYPE_INT else RangeFloat.new()
 		
 		new_range.allow_lesser = NexusForge.Stats.custom_allows_lesser(custom_stat)
 		new_range.allow_greater = NexusForge.Stats.custom_allows_greater(custom_stat)
@@ -91,11 +85,20 @@ func initialize_ranges() -> void:
 				set(variant, RangeFloat.new())
 
 
+## Assigns stats (built-in and custom) of another [param stat_block]
+## into the [StatBlock].
+func assign(stat_block: StatBlock) -> void:
+	var properties: Dictionary[StringName, int] = stats()
+	for property in properties.keys():
+		set(property, stat_block.get(property))
+	_custom_stats.assign(stat_block._custom_stats)
+
+
 func _on_custom_stat_created(stat_id: StringName) -> void:
 	if _custom_stats.has(stat_id):
 		return
 	
-	var new_range: ValueRange = RangeInt.new() if NexusForge.Stats.custom_stat_type(stat_id) == StatCatalog.StatType.INTEGER else RangeFloat.new()
+	var new_range: ValueRange = RangeInt.new() if NexusForge.Stats.stat_type(stat_id) == TYPE_INT else RangeFloat.new()
 	
 	new_range.allow_lesser = NexusForge.Stats.custom_allows_lesser(stat_id)
 	new_range.allow_greater = NexusForge.Stats.custom_allows_greater(stat_id)
@@ -130,15 +133,15 @@ func custom_stats() -> Array[StringName]:
 ## the created object.[br]
 ## If [param stat_id] already exists and the [param type] matches the stat
 ## type, it returns the object, otherwise returns [code]null[/code]
-func create_custom(stat_id: StringName, type: StatType) -> ValueRange:
+func create_custom(stat_id: StringName, type: int) -> ValueRange:
 	if _custom_stats.has(stat_id):
-		var class_type: int = TYPE_INT if type == StatType.INTEGER else TYPE_FLOAT
+		var class_type: int = TYPE_INT if type == TYPE_INT else TYPE_FLOAT
 		if _custom_stats[stat_id].range_type() == class_type:
 			return _custom_stats[stat_id]
 		else:
 			return null
 	
-	_custom_stats[stat_id] = RangeInt.new() if type == StatType.INTEGER else RangeFloat.new()
+	_custom_stats[stat_id] = RangeInt.new() if type == TYPE_INT else RangeFloat.new()
 	return _custom_stats[stat_id]
 
 
@@ -153,14 +156,14 @@ func get_custom(stat_id: StringName) -> ValueRange:
 
 ## Returns true if the custom stat [param stat_id] exists. If [param type] is set
 ## to a type, it'll also check if the stat is of the stated type.
-func has_custom(stat_id: StringName, type: StatType = StatType.NIL) -> bool:
+func has_custom(stat_id: StringName, type: int = TYPE_NIL) -> bool:
 	if not _custom_stats.has(stat_id):
 		return false
 	
-	if type == StatType.NIL:
+	if type == TYPE_NIL:
 		return true
 	else:
-		var class_type = TYPE_INT if type == StatType.INTEGER else TYPE_FLOAT
+		var class_type = TYPE_INT if type == TYPE_INT else TYPE_FLOAT
 		return _custom_stats[stat_id].range_type() == class_type
 
 
