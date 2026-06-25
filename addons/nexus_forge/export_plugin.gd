@@ -15,12 +15,15 @@ var dialog_file_to_id: Dictionary[String, String] = {}
 # Final map where non-conflicting IDs are assigned to a localization file.
 var id_to_localization: Dictionary[String, String] = {}
 
+
 var dialog_path: String = ""
 var export_temp_dir: DirAccess = null
 
 var character_ids: Dictionary[StringName, String] = {}
 var quest_ids: Dictionary[StringName, String] = {}
 var export_characters: bool = true
+
+var added_files: Dictionary[String, Variant] = {}
 
 
 func _get_name() -> String:
@@ -33,10 +36,13 @@ func _export_begin(_features: PackedStringArray, _is_debug: bool, _path: String,
 			NFPluginGameHandler.get_setting_path("discourse")).strip_edges()
 	
 	release_files.clear()
+	localization_groups.clear()
+	localization_files.clear()
 	dialog_file_to_id.clear()
 	id_to_localization.clear()
 	character_ids.clear()
 	quest_ids.clear()
+	added_files.clear()
 	
 	export_characters = ProjectSettings.get_setting(
 			NFPluginGameHandler.get_setting_path("characters_id_to_files"),
@@ -58,6 +64,9 @@ func _export_file(path: String, type: String, features: PackedStringArray) -> vo
 	if path.get_extension() != "tres":
 		return
 	
+	if release_files.has(path):
+		return
+		
 	var file: Resource = load(path)
 	if file is not EditorDiscourseDialog:
 		return
@@ -109,9 +118,6 @@ func _get_customization_configuration_hash() -> int:
 
 func _customize_resource(resource: Resource, path: String) -> Resource:
 	if resource is EditorDiscourseDialog:
-		if not release_files.has(path):
-			return null
-		
 		if not localization_files.has(path):
 			return release_files[path]
 		
@@ -132,18 +138,28 @@ func _customize_resource(resource: Resource, path: String) -> Resource:
 			file.store_string(locale_file.as_json())
 			file.close()
 			
+			
+				
+			
 			if file != null:
-				add_file(
-						virtual_path,
-						FileAccess.get_file_as_bytes(file_path),
-						false)
-				localization_files.erase(path)
+				if added_files.has(virtual_path):
+					NFPluginGameHandler._log_msg(
+						"export",
+						"Exporter tried to add a duplicate file '%s' when exporting. Skipping." % virtual_path,
+						NFPluginGameHandler._LogLevel.WARNING)
+				else:
+					added_files[virtual_path] = null
+					add_file(
+							virtual_path,
+							FileAccess.get_file_as_bytes(file_path),
+							false)
 			else:
 				NFPluginGameHandler._log_msg(
 						"export",
 						"Couldn't generate locale '%s' JSON for file '%s'" % [locale_file.locale, resource.resource_path],
 						NFPluginGameHandler._LogLevel.ERROR)
-		
+		if path == "res://tests/test_dialog_exported.tres":
+			ResourceSaver.save(release_files[path], "res://tests/aaa_test_dialog_exported.tres")
 		return release_files[path]
 	elif resource is SkillCatalog:
 		return customize_skill_catalog(resource)
@@ -201,16 +217,30 @@ func _end_customize_resources() -> void:
 		var cfg: ConfigFile = ConfigFile.new()
 		cfg.set_value("PERSONA", "CharacterMap", character_ids)
 		if cfg.save(config_path) == OK:
-			add_file(
-					"res://addons/nexus_forge/settings.cfg",
-					FileAccess.get_file_as_bytes(config_path),
-					false)
+			if added_files.has("res://addons/nexus_forge/settings.cfg"):
+				NFPluginGameHandler._log_msg(
+						"export",
+						"Exporter tried to add a duplicate file 'res://addons/nexus_forge/settings.cfg' when exporting. Skipping.",
+						NFPluginGameHandler._LogLevel.WARNING)
+			else:
+				added_files["res://addons/nexus_forge/settings.cfg"] = null
+				add_file(
+						"res://addons/nexus_forge/settings.cfg",
+						FileAccess.get_file_as_bytes(config_path),
+						false)
 	
 	if file != null:
-		add_file(
-				virtual_path,
-				FileAccess.get_file_as_bytes(file_path),
-				false)
+		if added_files.has(virtual_path):
+			NFPluginGameHandler._log_msg(
+						"export",
+						"Exporter tried to add a duplicate file '%s' when exporting. Skipping." % virtual_path,
+						NFPluginGameHandler._LogLevel.WARNING)
+		else:
+			added_files[virtual_path] = null
+			add_file(
+					virtual_path,
+					FileAccess.get_file_as_bytes(file_path),
+					false)
 	else:
 		NFPluginGameHandler._log_msg(
 				"export",
@@ -220,7 +250,6 @@ func _end_customize_resources() -> void:
 
 func process_editor_discourse_dialog(dialog_resource: EditorDiscourseDialog, dialog_id: String, expected_name: String) -> DiscourseDialog:
 	var release_resource: DiscourseDialog = dialog_resource.convert_for_release()
-	release_files[dialog_resource.resource_path] = release_resource
 	
 	var localizations: Array[Dictionary] = dialog_resource.generate_localization_files(dialog_id, dialog_path, expected_name, localization_groups)
 	
@@ -291,11 +320,12 @@ func customize_skill_catalog(catalog: SkillCatalog) -> SkillCatalog:
 
 func _export_end() -> void:
 	export_temp_dir = null
+	
 	release_files.clear()
 	localization_groups.clear()
 	localization_files.clear()
 	dialog_file_to_id.clear()
 	id_to_localization.clear()
-	release_files.clear()
 	character_ids.clear()
 	quest_ids.clear()
+	added_files.clear()

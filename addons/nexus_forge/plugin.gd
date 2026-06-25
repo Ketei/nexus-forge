@@ -75,7 +75,9 @@ func _enter_tree() -> void:
 	var use_discourse: bool = ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("discourse_enabled"), true)
 	var use_characters: bool = ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("characters_enabled"), true)
 	var use_species: bool = ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("species_enabled"), true)
-	var use_talents: bool = ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("talents_enabled"), true)
+	var use_stats: bool = ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("stats_enabled"), true)
+	var use_skills: bool = ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("skills_enabled"), true)
+	var use_traits: bool = ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("traits_enabled"), true)
 	var use_items: bool = ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("items_enabled"), true)
 	var use_currencies: bool = ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("currencies_enabled"), true)
 	var use_recipes: bool = ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("recipes_enabled"), true)
@@ -87,7 +89,9 @@ func _enter_tree() -> void:
 			use_discourse,
 			use_characters,
 			use_species,
-			use_talents,
+			use_stats,
+			use_skills,
+			use_traits,
 			use_items,
 			use_currencies,
 			use_recipes,

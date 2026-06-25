@@ -53,18 +53,31 @@ var _stats_unsaved: bool = false
 @onready var edit_traits_btn: Button = $MainContainer/TraitsPanel/TraitsContainerContainer/TraitSelectContainer/TraitContainer/EditTraitsBtn
 
 
-func ready_plugin() -> void:
-	skill_data_tree.ready_plugin()
-	trait_data_tree.ready_plugin()
-	stat_data_tree.ready_plugin()
+func ready_plugin(stats_enabled: bool, skills_enabled: bool, traits_enabled: bool) -> void:
+	if stats_enabled:
+		stat_data_tree.ready_plugin()
+		reload_stats(true)
+		reload_stat_resource(true)
 	
-	reload_traits(false)
-	reload_skills(false)
-	reload_stats(true)
+	if skills_enabled:
+		skill_data_tree.ready_plugin()
+		reload_skills(false)
+		reload_skill_resource(true)
 	
-	reload_trait_resource(true)
-	reload_skill_resource(true)
-	reload_stat_resource(true)
+	if traits_enabled:
+		trait_data_tree.ready_plugin()
+		reload_traits(false)
+		reload_trait_resource(true)
+	
+	if not stats_enabled and not skills_enabled:
+		$MainContainer/StatSkillContainer.visible = false
+	else:
+		if not stats_enabled:
+			$MainContainer/StatSkillContainer/StatsPanel.visible = false
+		if not skills_enabled:
+			$MainContainer/StatSkillContainer/SkillsPanel.visible = false
+	
+	$MainContainer/TraitsPanel.visible = traits_enabled
 	
 	trait_dict_btn.icon = get_theme_icon("FolderCreate", "EditorIcons")
 	skill_dict_button.icon = get_theme_icon("FolderCreate", "EditorIcons")
@@ -77,51 +90,49 @@ func ready_plugin() -> void:
 	trait_opt_btn.get_popup().max_size.y = 300
 	skill_opt_btn.get_popup().max_size.y = 300
 	
-	stat_opt_btn.disabled = stat_opt_btn.item_count == 0
-	skill_opt_btn.disabled = skill_opt_btn.item_count == 0
-	trait_opt_btn.disabled = trait_opt_btn.item_count == 0
+	stat_opt_btn.disabled = stat_opt_btn.item_count == 0 if stats_enabled else true
+	skill_opt_btn.disabled = skill_opt_btn.item_count == 0 if skills_enabled else true
+	trait_opt_btn.disabled = trait_opt_btn.item_count == 0 if traits_enabled else true
 	
-	set_skills_ui_enabled(0 < skill_opt_btn.item_count)
-	set_traits_ui_enabled(0 < trait_opt_btn.item_count)
-	set_stats_ui_enabled(0 < stat_opt_btn.item_count)
+	set_skills_ui_enabled(0 < skill_opt_btn.item_count if skills_enabled else false)
+	set_traits_ui_enabled(0 < trait_opt_btn.item_count if traits_enabled else false)
+	set_stats_ui_enabled(0 < stat_opt_btn.item_count if stats_enabled else false)
 	
-	skill_ln_edt.text_changed.connect(skills_changed)
-	skill_desc_txt_edt.text_changed.connect(skills_changed)
+	if stats_enabled:
+		stat_ln_edt.text_changed.connect(stats_changed)
+		stat_desc_txt_edt.text_changed.connect(stats_changed)
+		stat_opt_btn.item_selected.connect(_on_stat_selected, CONNECT_DEFERRED)
+		stat_int_btn.pressed.connect(_on_add_stat_data_pressed.bind("new_int", 0))
+		stat_flt_btn.pressed.connect(_on_add_stat_data_pressed.bind("new_float", 0.0))
+		stat_bool_btn.pressed.connect(_on_add_stat_data_pressed.bind("new_bool", false))
+		stat_str_btn.pressed.connect(_on_add_stat_data_pressed.bind("new_string", ""))
+		stat_dict_button.pressed.connect(_on_add_stat_data_pressed.bind("new_folder", {}))
+		edit_stats_btn.pressed.connect(_on_edit_statblock_pressed)
+		stat_data_tree.data_changed.connect(stats_changed)
 	
-	stat_ln_edt.text_changed.connect(stats_changed)
-	stat_desc_txt_edt.text_changed.connect(stats_changed)
+	if skills_enabled:
+		skill_ln_edt.text_changed.connect(skills_changed)
+		skill_desc_txt_edt.text_changed.connect(skills_changed)
+		skill_int_btn.pressed.connect(_on_add_skill_data_pressed.bind("new_int", 0))
+		skill_flt_btn.pressed.connect(_on_add_skill_data_pressed.bind("new_float", 0.0))
+		skill_bool_btn.pressed.connect(_on_add_skill_data_pressed.bind("new_bool", false))
+		skill_str_btn.pressed.connect(_on_add_skill_data_pressed.bind("new_string", ""))
+		skill_dict_button.pressed.connect(_on_add_skill_data_pressed.bind("new_folder", {}))
+		skill_opt_btn.item_selected.connect(_on_skill_selected, CONNECT_DEFERRED)
+		edit_skills_btn.pressed.connect(_on_edit_skillset_pressed)
+		skill_data_tree.data_changed.connect(skills_changed)
 	
-	trait_ln_edt.text_changed.connect(traits_changed)
-	trait_desc_txt_edt.text_changed.connect(traits_changed)
-	
-	skill_int_btn.pressed.connect(_on_add_skill_data_pressed.bind("new_int", 0))
-	skill_flt_btn.pressed.connect(_on_add_skill_data_pressed.bind("new_float", 0.0))
-	skill_bool_btn.pressed.connect(_on_add_skill_data_pressed.bind("new_bool", false))
-	skill_str_btn.pressed.connect(_on_add_skill_data_pressed.bind("new_string", ""))
-	skill_dict_button.pressed.connect(_on_add_skill_data_pressed.bind("new_folder", {}))
-	skill_opt_btn.item_selected.connect(_on_skill_selected, CONNECT_DEFERRED)
-	
-	trait_opt_btn.item_selected.connect(_on_trait_selected, CONNECT_DEFERRED)
-	trait_int_btn.pressed.connect(_on_add_trait_data_pressed.bind("new_int", 0))
-	trait_flt_btn.pressed.connect(_on_add_trait_data_pressed.bind("new_float", 0.0))
-	trait_bool_btn.pressed.connect(_on_add_trait_data_pressed.bind("new_bool", false))
-	trait_str_btn.pressed.connect(_on_add_trait_data_pressed.bind("new_string", ""))
-	trait_dict_btn.pressed.connect(_on_add_trait_data_pressed.bind("new_folder", {}))
-	
-	stat_opt_btn.item_selected.connect(_on_stat_selected, CONNECT_DEFERRED)
-	stat_int_btn.pressed.connect(_on_add_stat_data_pressed.bind("new_int", 0))
-	stat_flt_btn.pressed.connect(_on_add_stat_data_pressed.bind("new_float", 0.0))
-	stat_bool_btn.pressed.connect(_on_add_stat_data_pressed.bind("new_bool", false))
-	stat_str_btn.pressed.connect(_on_add_stat_data_pressed.bind("new_string", ""))
-	stat_dict_button.pressed.connect(_on_add_stat_data_pressed.bind("new_folder", {}))
-	
-	edit_skills_btn.pressed.connect(_on_edit_skillset_pressed)
-	edit_traits_btn.pressed.connect(_on_edit_traitblock_pressed)
-	edit_stats_btn.pressed.connect(_on_edit_statblock_pressed)
-	
-	skill_data_tree.data_changed.connect(skills_changed)
-	trait_data_tree.data_changed.connect(traits_changed)
-	stat_data_tree.data_changed.connect(stats_changed)
+	if traits_enabled:
+		trait_ln_edt.text_changed.connect(traits_changed)
+		trait_desc_txt_edt.text_changed.connect(traits_changed)
+		trait_opt_btn.item_selected.connect(_on_trait_selected, CONNECT_DEFERRED)
+		trait_int_btn.pressed.connect(_on_add_trait_data_pressed.bind("new_int", 0))
+		trait_flt_btn.pressed.connect(_on_add_trait_data_pressed.bind("new_float", 0.0))
+		trait_bool_btn.pressed.connect(_on_add_trait_data_pressed.bind("new_bool", false))
+		trait_str_btn.pressed.connect(_on_add_trait_data_pressed.bind("new_string", ""))
+		trait_dict_btn.pressed.connect(_on_add_trait_data_pressed.bind("new_folder", {}))
+		edit_traits_btn.pressed.connect(_on_edit_traitblock_pressed)
+		trait_data_tree.data_changed.connect(traits_changed)
 
 
 func _on_edit_skillset_pressed() -> void:

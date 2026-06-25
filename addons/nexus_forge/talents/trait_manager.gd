@@ -1,11 +1,17 @@
 class_name NFTraitManager
 extends RefCounted
+## An object to keep track of trait's info and custom traits.
+##
+## This object can keep track of data of base and custom traits. Data
+## can be accessed directly by using the ID of the trait eg. [code]Traits.my_trait[/code].
+## If the trait isn't registered a fallback object will be returned. You can
+## call is_valid() to verify a trait validity as well as is_custom() to
+## see if the trait is custom.
 
 
-
-## Emmited when a new custom trait is created.
+## Emmited when a new trait is created.
 signal trait_created(trait_id: StringName)
-## Emmited when a custom trait is erased.
+## Emmited when a trait is erased.
 signal trait_erased(trait_id: StringName)
 
 var _trait_entries: Dictionary[StringName, NFCatalogEntry] = {}
@@ -16,13 +22,14 @@ func _init() -> void:
 	for trait_id in TraitBlock.traits():
 		var base_entry: NFCatalogEntry = NFCatalogEntry.new()
 		base_entry.name = String(trait_id).capitalize()
-		base_entry._valid = true
-		base_entry._custom = false
+		base_entry._flags = NFCatalogEntry._get_flags(true, false, true)
 		_base_traits[trait_id] = null
 		_trait_entries
 	_base_traits.make_read_only()
 
 
+## Loads a trait [param catalog] into this object. If [param clear_traits]
+## is [code]true[/code] then previous traits are cleared.
 func load_catalog(catalog: TraitCatalog, clear_traits: bool = true) -> void:
 	if clear_traits:
 		for entry in _trait_entries.keys():
@@ -35,15 +42,16 @@ func load_catalog(catalog: TraitCatalog, clear_traits: bool = true) -> void:
 		entry.name = catalog.get_trait_name(trait_id)
 		entry.description = catalog.get_trait_description(trait_id)
 		entry.custom_data.assign(catalog.get_trait_custom_data(trait_id))
-		entry._valid = true
-		entry._custom = not _base_traits.has(trait_id)
+		entry._flags = NFCatalogEntry._get_flags(true, not _base_traits.has(trait_id), true)
 		_trait_entries[trait_id] = entry
 
 
 func _get(property: StringName) -> Variant:
 	if _trait_entries.has(property):
 		return _trait_entries[property]
-	return null
+	var invalid: NFCatalogEntry = NFCatalogEntry.new()
+	invalid._flags = NFCatalogEntry._get_flags(false, false, true)
+	return invalid
 
 
 #region Defined Traits
@@ -128,6 +136,7 @@ func create_trait(trait_id: StringName) -> void:
 	trait_created.emit(trait_id)
 
 
+## Returns whether a trait is custom or basic.
 func is_custom(trait_id: StringName) -> bool:
 	if _trait_entries.has(trait_id):
 		return _trait_entries[trait_id].is_custom()

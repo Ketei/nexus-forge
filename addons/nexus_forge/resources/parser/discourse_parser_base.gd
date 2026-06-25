@@ -214,17 +214,18 @@ func generate_locale_map() -> void:
 	if typeof(data) != TYPE_DICTIONARY or not data.has_all(["file_to_id", "id_to_locale_file"]):
 		return
 	
-	for file_path in data.keys():
-		if typeof(file_path) != TYPE_STRING or not data["id_to_locale_file"].has(file_path) or typeof(data["id_to_locale_file"][file_path]) != TYPE_STRING:
+	for file_path in data["file_to_id"].keys():
+		if typeof(file_path) != TYPE_STRING or typeof(data["file_to_id"][file_path]) != TYPE_STRING or not data["id_to_locale_file"].has(data["file_to_id"][file_path]) or typeof(data["id_to_locale_file"][data["file_to_id"][file_path]]) != TYPE_STRING:
 			continue
 		var file_id: String = data["file_to_id"][file_path]
+		var localizaton_file: String = data["id_to_locale_file"][file_id]
 		_path_to_id[file_path] = file_id
-		_id_to_data[data["file_to_id"][file_id]] = data["id_to_locale_file"][file_id]
+		_id_to_data[file_id] = {"data_path": file_path, "locale_file": localizaton_file}#localizaton_file
 
 
 # Function to parse the dialog in a custom manner. Modify if needed.
 func _parse_dialog(dialog_id: String, dialog: String) -> String:
-	var DUUID: String = dialog_id# + "/" + language + "_" + region
+	var DUUID: String = dialog_id + "/" + locale
 	# (UUID)/en_US
 	if _dialog_resource.parsed_dialog_cache.is_in_cache(DUUID):
 		var cached_data: ParsedDialog = _dialog_resource.parsed_dialog_cache.get_cache(DUUID)
@@ -290,7 +291,7 @@ func _parse_dialog(dialog_id: String, dialog: String) -> String:
 					resource_id,
 					phrase_key)
 			
-			parsed.create_format_phrase(phrase_key, phrase, argument_cases)
+			parsed.create_format_phrase(slice, phrase, argument_cases)
 			
 			for phrase_match in regex_search.search_all(phrase):
 				var phrase_item: String = phrase_match.get_string(1)
@@ -300,19 +301,19 @@ func _parse_dialog(dialog_id: String, dialog: String) -> String:
 					var items: Array[String] = []
 					items.assign(phrase_item.substr(1).split("|", false))
 					parsed.set_format_phrase_callable(
-							phrase_key,
+							slice,
 							phrase_item,
 							items.pick_random)
 				
 				elif phrase_token == "!":
 					parsed.set_format_phrase_callable(
-							phrase_key,
+							slice,
 							phrase_item,
 							_build_callable_for_method(phrase_item.substr(1)))
 				
 				elif phrase_token == "$":
 					parsed.set_format_phrase_callable(
-							phrase_key,
+							slice,
 							phrase_item,
 							_build_callable_for_variable(phrase_item.substr(1)))
 	
@@ -327,7 +328,7 @@ func _build_callable_for_variable(text: String) -> Callable:
 	var clean_text: String = text.trim_prefix("$")
 	var callable: Callable = Callable(
 			NexusForge.Blackboard.get_variable.bind(
-					clean_text))
+					clean_text, ""))
 	
 	return callable
 
@@ -389,6 +390,7 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 	
 	var dialog_id: String = _path_to_id[_dialog_resource.resource_path]
 	var data: Dictionary = _dialog_resource.node_logic[uuid]
+	
 	match data["node_type"]:
 		NodeTypes.ENTRY:
 			return _process_logic(data["next_node"])
@@ -436,7 +438,7 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 		NodeTypes.CHOICES:
 			var available_options: Array[Dictionary] = []
 			var localized_options: PackedStringArray = _dialog_resource._get_choices(dialog_id, uuid)#_get_choices_for(dialog_id, uuid)
-			var target_size: int = data["options"].size()
+			var target_size: int = data["choices"].size()
 			var current_size: int = localized_options.size()
 			target["type"] = NodeTypes.CHOICES
 			
@@ -449,7 +451,7 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 			
 			var idx: int = -1
 			var option_duuid: String = ""
-			for option:Dictionary in data["options"]:
+			for option:Dictionary in data["choices"]:
 				idx += 1
 				option_duuid = String(uuid) + "_" + str(idx)
 				
@@ -508,10 +510,12 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 						data["variable_path"],
 						_get_data(data["value"]))
 			if not data["callable"].is_empty():
-				var call_data: Dictionary = _dialog_resource.dialog_nodes[data["callable"]]
+				var call_data: Dictionary = _dialog_resource.node_logic[data["callable"]]
 				var call_args: Array = []
 				
 				for argument_key in call_data["arguments"]:
+					if argument_key.is_empty():
+						continue
 					call_args.append(_get_data(argument_key))
 				
 				NexusForge.Discourse.API.callv(
@@ -519,10 +523,12 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 						call_args)
 			
 			if not data["signal"].is_empty():
-				var signal_data: Dictionary = _dialog_resource.dialog_nodes[data["signal"]]
+				var signal_data: Dictionary = _dialog_resource.node_logic[data["signal"]]
 				var signal_args: Array = []
 				
 				for argument_key in signal_data["arguments"]:
+					if argument_key.is_empty():
+						continue
 					signal_args.append(_get_data(argument_key))
 				
 				NexusForge.Discourse.API.emit_signal(
@@ -537,8 +543,6 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 					return _process_logic(case["next_node"])
 			return _process_logic(data["case_default"])
 		NodeTypes.PAUSE:
-			dialog_paused.emit()
-			
 			target["type"] = NodeTypes.PAUSE
 			target["current"] = uuid
 			target["next"] = data["next_node"]
@@ -548,7 +552,9 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 			var total_weight: int = 0
 			var choices: Array[Dictionary] = []
 			
-			for choice:Dictionary in data["options"]:
+			for choice:Dictionary in data["choices"]:
+				if not choice["weight_override"].is_empty():
+					var a: int = _get_data(choice["weight_override"])
 				var weight: int = RANDOM_DEFAULT_WEIGHT if choice["weight_override"].is_empty() else _get_data(choice["weight_override"])
 				if weight == 0:
 					continue
@@ -578,7 +584,7 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 
 
 func _get_data(uuid: StringName, fallback = null) -> Variant:
-	if _dialog_resource == null or not _dialog_resource.dialog_nodes.has(uuid):
+	if _dialog_resource == null or not _dialog_resource.node_logic.has(uuid):
 		return fallback
 	var data: Dictionary = _dialog_resource.node_logic[uuid]
 	
@@ -614,7 +620,7 @@ func _get_data(uuid: StringName, fallback = null) -> Variant:
 					return null
 		NodeTypes.TYPE_GUARD:
 			var guard_data = _get_data(data["value"])
-			if typeof(guard_data) == typeof(data["type"]):
+			if typeof(guard_data) == typeof(data["fallback"]):
 				return guard_data
 			else:
 				return data["fallback"]
@@ -632,10 +638,12 @@ func _get_data(uuid: StringName, fallback = null) -> Variant:
 						data["variable_path"],
 						_get_data(data["value"]))
 			if not data["callable"].is_empty():
-				var call_data: Dictionary = _dialog_resource.dialog_nodes[data["callable"]]
+				var call_data: Dictionary = _dialog_resource.node_logic[data["callable"]]
 				var call_args: Array = []
 				
 				for argument_id in call_data["arguments"]:
+					if argument_id.is_empty():
+						continue
 					call_args.append(_get_data(argument_id))
 				
 				NexusForge.Discourse.API.callv(
@@ -643,14 +651,16 @@ func _get_data(uuid: StringName, fallback = null) -> Variant:
 						call_args)
 			
 			if not data["signal"].is_empty():
-				var signal_data: Dictionary = _dialog_resource.dialog_nodes[data["signal"]]
+				var signal_data: Dictionary = _dialog_resource.node_logic[data["signal"]]
 				var signal_args: Array = []
 				
 				for argument_key in signal_data["arguments"]:
+					if argument_key.is_empty():
+						continue
 					signal_args.append(_get_data(argument_key))
 				
 				NexusForge.Discourse.API.emit_signal(
-						data["signal"],
+						signal_data["signal"],
 						signal_args)
 			return _get_data(data["data_source"])
 		NodeTypes.LOCALIZED_TEXT:
@@ -699,7 +709,6 @@ func _load_locale_to_active_dialog(locale_code: String) -> void:
 			_path_to_id,
 			[_dialog_resource.resource_path],
 			"")
-	
 	_dialog_resource._set_locale(locale_code)
 	
 	if DictUtils.has_nested_path(_locale_overrides, [locale_id, locale]):
@@ -740,7 +749,6 @@ func _load_locale_to_active_dialog(locale_code: String) -> void:
 			locale_code,
 			hash_slice,
 			localization_filename])
-	
 	var file: FileAccess = FileAccess.open(locale_path, FileAccess.READ)
 	
 	if file != null:
@@ -752,7 +760,7 @@ func _load_locale_to_active_dialog(locale_code: String) -> void:
 func _dialog_resource_set(new_resource: DiscourseDialog) -> void:
 	if new_resource == null:
 		return
-		
+	
 	if new_resource._has_locale(locale):
 		new_resource._set_locale(locale)
 	else:
@@ -800,7 +808,7 @@ func load_dialog(path: String, starting_id: StringName = &"") -> bool:
 	
 	if _dialog_resource.id_map.has(starting_id):
 		_next_uuid = _dialog_resource.id_map[starting_id]
-	elif _dialog_resource.dialog_nodes.has(starting_id):
+	elif _dialog_resource.node_logic.has(starting_id):
 		_next_uuid = starting_id
 	else:
 		_next_uuid = _dialog_resource.entry_node

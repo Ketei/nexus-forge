@@ -49,7 +49,7 @@ func get_quest_title() -> String:
 	_regex_formatter = RegEx.new()
 	_regex_formatter.compile("\\{\\$[^\\s\\}]+\\}")
 	
-	var title_formats: Dictionary = {}
+	var title_formats: Dictionary[String, Callable] = {}
 	
 	for format_title in _regex_formatter.search_all(title):
 		var string_path: String = format_title.get_string().trim_prefix("{$").trim_suffix("}")

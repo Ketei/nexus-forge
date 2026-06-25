@@ -1,5 +1,12 @@
 class_name NFSkillManager
 extends RefCounted
+## An object to keep track of skill's info and custom skills.
+##
+## This object can keep track skill data of base skills and custom ones. Data
+## can be accessed directly by using the ID of the skill eg.[code]Skills.my_skill[/code].
+## If the skill isn't registered a fallback object will be returned. You can
+## call is_valid() to verify a skill validity as well as is_custom() to
+## see if the skill isn't a basic one.
 
 
 ## Emmited when a new custom skill is created.
@@ -16,8 +23,7 @@ func _init() -> void:
 	for skill_id in SkillSet.skills():
 		var base_entry: NFCatalogEntry = NFCatalogEntry.new()
 		base_entry.name = String(skill_id)
-		base_entry._custom = false
-		base_entry._valid = true
+		base_entry._flags = NFCatalogEntry._get_flags(true, false, true)
 		_base_skills[skill_id] = null
 		_skills[skill_id] = base_entry
 		
@@ -27,9 +33,13 @@ func _init() -> void:
 func _get(property: StringName) -> Variant:
 	if _skills.has(property):
 		return _skills[property]
-	return null
+	var invalid: NFCatalogEntry = NFCatalogEntry.new()
+	invalid._flags = NFCatalogEntry._get_flags(false, false, true)
+	return invalid
 
 
+## Loads a skill param catalog into this object. If param clear_skills
+## is [code]true[/code] then previous skills data is cleared.
 func load_catalog(catalog: SkillCatalog, clear_skills: bool = true) -> void:
 	if clear_skills:
 		for entry in _skills.keys():
@@ -42,8 +52,7 @@ func load_catalog(catalog: SkillCatalog, clear_skills: bool = true) -> void:
 		entry.name = catalog.get_skill_name(skill)
 		entry.description = catalog.get_skill_description(skill)
 		entry.custom_data.assign(catalog.get_skill_custom_data(skill))
-		entry._valid = true
-		entry._custom = not _base_skills.has(skill)
+		entry._flags = NFCatalogEntry._get_flags(true, not _base_skills.has(skill), true)
 		_skills[skill] = entry
 
 
@@ -67,7 +76,8 @@ func create_skill(skill_id: StringName) -> void:
 	skill_created.emit(skill_id)
 
 
-func is_base_stat(skill_id: StringName) -> bool:
+## Returns wether a skill is a basic one or a custom one.
+func is_base_skill(skill_id: StringName) -> bool:
 	return _base_skills.has(skill_id)
 
 

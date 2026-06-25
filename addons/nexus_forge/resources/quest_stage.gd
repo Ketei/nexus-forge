@@ -168,8 +168,7 @@ func is_objective_required(objective_id: StringName) -> bool:
 ## Returns [code]true[/code] if all the required objectives have been completed.
 func can_complete_stage() -> bool:
 	for objective_id in _objectives:
-		var a: QuestObjective
-		if _objectives[objective_id]["required"] and not _objectives[objective_id]["objective"].is_objective_complete():
+		if _objectives[objective_id]["required"] and not _objectives[objective_id]["objective"].is_completed():
 			return false
 	return true
 

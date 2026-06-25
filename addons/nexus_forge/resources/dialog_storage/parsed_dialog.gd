@@ -70,10 +70,10 @@ func set_format_callable(key: String, method: Callable) -> void:
 func get_dialog() -> String:
 	var format_dict: Dictionary[String, String] = {}
 	for format_key in _phrases_format.keys():
-		
 		var formats: Dictionary = {}
 		var values: Dictionary = {}
 		var phrase_text: String = _phrases_format[format_key]["text"]
+		
 		for format_arg:String in _phrases_format[format_key]["format"].keys():
 		# !eggs, $gender, etc...
 			var case_result: Dictionary[String, String] = _phrases_format[format_key]["format"][format_arg].call()

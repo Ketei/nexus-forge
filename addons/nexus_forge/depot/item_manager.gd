@@ -1,10 +1,20 @@
 class_name NFItemManager
 extends RefCounted
+## An object that holds items as [ItemSheet] resources.
+##
+## This object provides several utilities, such as a custom getter
+## for accessing registered items directly by their ID, eg. [code]Items.stick[/code]
+## and when an item is modified through this, the signal [Resource.changed] is
+## called on the specific item.
 
 
+## Emits when an item is created.
 signal item_created(item_id: StringName)
+## Emits when an item is removed.
 signal item_erased(item_id: StringName)
+## Emits when a category is created.
 signal category_created(category_id: StringName)
+## Emits when a category is removed.
 signal category_erased(category_id: StringName)
 
 
@@ -19,6 +29,8 @@ func _get(property: StringName) -> Variant:
 	return null
 
 
+## Loads an [ItemCatalog] into this object. If [param clear_items] is
+## [code]true[/code] then the previous registered items will be cleared.
 func load_catalog(catalog: ItemCatalog, clear_items: bool = true) -> void:
 	if clear_items:
 		_items.clear()
@@ -40,6 +52,7 @@ func load_catalog(catalog: ItemCatalog, clear_items: bool = true) -> void:
 		new_item.value = catalog.get_item_value(item_id)
 		new_item.flags.assign(catalog.get_item_flags(item_id))
 		new_item.custom_data.assign(catalog.item_data(item_id))
+		_items[item_id] = new_item
 
 
 #region Items
@@ -66,7 +79,6 @@ func set_item_data(item_id: StringName, data_key: String, data: Variant) -> void
 	
 	if update:
 		_items[item_id].emit_changed()
-	
 
 
 ## Clears the custom data from [param item_id].
@@ -78,8 +90,8 @@ func clear_item_data(item_id: StringName) -> void:
 	_items[item_id].emit_changed()
 
 
-## Registers the item_sheet as an item unless the ID it uses already exists
-## or is empty.[br]
+## Registers the [param item_sheet] as an item unless [member ItemSheet.item_id]
+## it uses already exists or is empty.[br]
 ## Note: Items are passed by reference, and [param item_sheet] will be
 ## stored AS the reference.
 func register_item(item_sheet: ItemSheet = null) -> void:

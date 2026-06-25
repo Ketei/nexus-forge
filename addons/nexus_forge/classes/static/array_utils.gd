@@ -235,6 +235,7 @@ static func replace_all(in_array: Variant, find: Variant, replace_with: Variant)
 		index_found = in_array.find(find, index_found)
 
 
+## Returns if [param in_array] has all the items in [param has_items].
 static func has_all(in_array: Array, has_items: Array) -> bool:
 	for item in has_items:
 		if not in_array.has(item):
@@ -242,6 +243,7 @@ static func has_all(in_array: Array, has_items: Array) -> bool:
 	return true
 
 
+## Returns if any item in [param has_any_in] exists in [param array].
 static func has_any(array: Array, has_any_in: Array) -> bool:
 	for item in has_any_in:
 		if array.has(item):

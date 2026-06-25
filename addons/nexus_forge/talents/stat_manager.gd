@@ -1,6 +1,12 @@
 class_name NFStatManager
 extends RefCounted
-
+## An object to keep track of stat's info and custom stats.
+##
+## This object can keep track of data of base and custom stats. Data
+## can be accessed directly by using the ID of the stat eg. [code]Stats.my_stat[/code].
+## If the stat isn't registered a fallback object will be returned. You can
+## call is_valid() to verify a stat validity as well as is_custom() to
+## see if the stat is custom.
 
 ## Emmited when a stat is created.
 signal stat_created(stat_id: StringName)
@@ -26,8 +32,7 @@ func _init() -> void:
 	for stat in _base_stats.keys():
 		var entry: NFCatalogEntryStat = NFCatalogEntryStat.new()
 		entry.name = String(stat).capitalize()
-		entry._valid = true
-		entry._custom = false
+		entry._flags = NFCatalogEntry._get_flags(true, false, true)
 		_stat_entries[stat] = entry
 	
 	_base_stats.make_read_only()
@@ -36,9 +41,13 @@ func _init() -> void:
 func _get(property: StringName) -> Variant:
 	if _stat_entries.has(property):
 		return _stat_entries[property]
-	return NFCatalogEntryStat.new()
+	var invalid: NFCatalogEntryStat = NFCatalogEntryStat.new()
+	invalid._flags = NFCatalogEntry._get_flags(false, false, true)
+	return invalid
 
 
+## Loads a stat [param catalog] into this object. If [param clear_stats]
+## is [code]true[/code] then previous stat data will be cleared.
 func load_catalog(catalog: StatCatalog, clear_stats: bool = true) -> void:
 	if clear_stats:
 		for entry in _stat_entries.keys():
@@ -52,8 +61,7 @@ func load_catalog(catalog: StatCatalog, clear_stats: bool = true) -> void:
 		new_data.description = catalog.get_stat_description(stat_id)
 		new_data.custom_data.assign(catalog.stat_data(stat_id))
 		new_data.type = catalog.stat_type(stat_id)
-		new_data._valid = true
-		new_data._custom = not _base_stats.has(stat_id)
+		new_data._flags = NFCatalogEntry._get_flags(true, not _base_stats.has(stat_id), true)
 		_stat_entries[stat_id] = new_data
 
 
@@ -103,6 +111,7 @@ func stat_type(stat_id: StringName) -> int:
 	return TYPE_NIL
 
 
+## Sets a the stat [param stat_id] name to [param new_name].
 func set_stat_name(stat_id: StringName, new_name: String) -> void:
 	if not _stat_entries.has(stat_id):
 		return
@@ -110,6 +119,7 @@ func set_stat_name(stat_id: StringName, new_name: String) -> void:
 	_stat_entries[stat_id].name = new_name
 
 
+## Sets a the stat [param stat_id] description to [param description].
 func set_stat_description(stat_id: StringName, description: String) -> void:
 	if not _stat_entries.has(stat_id):
 		return
@@ -117,18 +127,22 @@ func set_stat_description(stat_id: StringName, description: String) -> void:
 	_stat_entries[stat_id].description = description
 
 
+## Returns the [param stat_id] name or an empty string if not found.
 func get_stat_name(stat_id: StringName) -> String:
 	if _stat_entries.has(stat_id):
 		return _stat_entries[stat_id].name
 	return ""
 
 
+## Returns the [param stat_id] description or an empty string if not found.
 func get_stat_description(stat_id: StringName) -> String:
 	if _stat_entries.has(stat_id):
 		return _stat_entries[stat_id].description
 	return ""
 
 
+## Sets the stat [param stat_id] custom data [param data_key] to [param data].
+## If [param data] is [code]null[/code] then the entry is removed.
 func set_stat_data(stat_id: StringName, data_key: String, data) -> void:
 	if not _stat_entries.has(stat_id):
 		return
@@ -139,12 +153,15 @@ func set_stat_data(stat_id: StringName, data_key: String, data) -> void:
 		_stat_entries[stat_id].custom_data[data_key] = data
 
 
+## Gets the stat [param stat_id] custom data [param data_key] or [code]null[/code]
+## if not found.
 func get_stat_data(stat_id: StringName, data_key: String) -> Variant:
 	if _stat_entries.has(stat_id) and _stat_entries[stat_id].custom_data.has(data_key):
 		return _stat_entries[stat_id].custom_data[data_key]
 	return null
 
 
+## Clears a stat custom data.
 func clear_data(stat_id: StringName) -> void:
 	if _stat_entries.has(stat_id):
 		_stat_entries[stat_id].custom_data.clear()

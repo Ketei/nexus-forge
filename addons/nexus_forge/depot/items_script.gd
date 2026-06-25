@@ -132,7 +132,7 @@ func ready_plugin(use_items: bool, use_currencies: bool) -> void:
 	copy_val_btn.pressed.connect(_on_copy_value_button_pressed, CONNECT_DEFERRED)
 	reset_calculator_btn.pressed.connect(_on_reset_calculator_pressed)
 	return_currency_btn.pressed.connect(_on_return_calculator_button_pressed)
-	go_to_calc_btn.pressed.connect(_on_go_to_calculator_pressed)
+	go_to_calc_btn.pressed.connect(_on_go_to_calculator_pressed, CONNECT_DEFERRED)
 
 
 func _on_edit_rarities_pressed() -> void:
@@ -312,7 +312,7 @@ func _on_currency_value_changed(new_value: int) -> void:
 	if loaded_currency.is_empty():
 		return
 	
-	currencies_tee.update_currency_value(loaded_currency, new_value)
+	#currencies_tee.update_currency_value(loaded_currency, new_value)
 	_on_currency_changed()
 
 
@@ -326,6 +326,7 @@ func _on_currency_deleted(currency_id: StringName) -> void:
 		currency_custom_data_tree.clear_data()
 		set_currency_ui_enabled(false)
 	
+	currencies_tee.remove_currency(currency_id)
 	_on_currency_changed()
 
 
@@ -447,8 +448,18 @@ func save_current_currency() -> void:
 #endregion
 
 
+func sync_calculator_currencies() -> void:
+	if not loaded_currency.is_empty():
+		save_current_currency()
+	for currency_id in currency_resource.currencies():
+		currencies_tee.set_currency(
+				currency_id,
+				currency_resource.get_currency_name(currency_id),
+				currency_resource.get_currency_value(currency_id))
+
 
 func _on_go_to_calculator_pressed() -> void:
+	sync_calculator_currencies()
 	$CurrencyPanel/CurrencyContainer.visible = false
 	$CurrencyPanel/CurrencyCalc.visible = true
 
@@ -733,7 +744,11 @@ func load_item(item_id: StringName) -> void:
 	var item: ItemSheet = item_link.items.get_item(item_id)
 	
 	if item == null:
-		printerr("[NexusForge] Depot: An error ocourred while trying to load item: ", item_id)
+		NFPluginGameHandler._log_msg(
+			"items - editor",
+			"An error occurred while trying to load item '%s'" % item_id,
+			NFPluginGameHandler._LogLevel.ERROR)
+		return
 	
 	item_name_ln_edt.text = item.name
 	select_rarity(item.rarity)

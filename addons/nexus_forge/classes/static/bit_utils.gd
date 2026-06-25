@@ -19,7 +19,7 @@ static func get_bits(from: int, mask: int) -> int:
 ## to [param value].
 static func set_bit_index(on: int, bit_index: int, value: bool) -> int:
 	if bit_index < 0 or 63 < bit_index:
-		return 0
+		return on
 	
 	if value:
 		on |= 1 << bit_index

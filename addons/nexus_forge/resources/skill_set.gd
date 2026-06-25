@@ -37,7 +37,7 @@ func _init(use_nexus_forge: bool = true) -> void:
 		return
 	
 	for skill_id in NexusForge.Skills.skills():
-		if _custom_skills.has(skill_id) or not NexusForge.Skills.is_custom(skill_id):
+		if _custom_skills.has(skill_id) or NexusForge.Skills.is_base_skill(skill_id):
 			continue
 		_custom_skills[skill_id] = 0
 	

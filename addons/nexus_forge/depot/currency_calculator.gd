@@ -58,6 +58,24 @@ func sort_currency_item(new_item: TreeItem) -> void:
 			return
 
 
+func set_currency(id: StringName, title: String, value: int) -> void:
+	var target: TreeItem = null
+	
+	for item in get_root().get_children():
+		if item.get_metadata(1)["id"] == id:
+			target = item
+			break
+	
+	if target == null:
+		add_currency(id, title, value)
+	else:
+		target.set_text(0, title)
+		if target.get_metadata(1)["value"] != value:
+			target.get_metadata(1)["value"] = value
+			sort_currency_item(target)
+
+
+
 func reset_table() -> void:
 	for item in get_root().get_children():
 		item.set_range(1, 0)

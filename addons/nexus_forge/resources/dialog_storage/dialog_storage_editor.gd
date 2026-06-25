@@ -541,7 +541,7 @@ func convert_for_release() -> DiscourseDialog:
 		if node_data[node_uuid]["type"] == NodeType.ANCHOR_POINTER:
 			var target_node: StringName = &""
 			if not metadata["anchor_target"].is_empty():
-				target_node = node_data[metadata["anchor_target"]]["output_connections"]["next_node"]
+				target_node = node_data[metadata["anchor_target"]]["output_connections"]["next_node"]["target_node_uuid"]
 			anchor_nodes[node_uuid] = target_node
 		elif node_data[node_uuid]["type"] == NodeType.DIALOG_MERGE:
 			var target_node: StringName = &""
@@ -557,12 +557,14 @@ func convert_for_release() -> DiscourseDialog:
 	var add_id: bool = true
 	
 	for node_id in node_uuids:
-		var data: Dictionary[String, Variant] = {
-			"type": node_data[node_id]["type"]}
+		#var editor_data: Dictionary = node_data[node_id]
+		var export_data: Dictionary[String, Variant] = {
+			"node_type": node_data[node_id]["type"]}
 		var metadata: Dictionary = node_data[node_id]["metadata"]
+		
 		match node_data[node_id]["type"]:
 			NodeType.ENTRY:
-				data["next_node"] = target_finder.get_target(node_data[node_id]["output_connections"]["next_node"]["target_node_uuid"]) #get_target_lambda.call(node_id)
+				export_data["next_node"] = target_finder.get_target(node_data[node_id]["output_connections"]["next_node"]["target_node_uuid"]) #get_target_lambda.call(node_id)
 			NodeType.DIALOG:
 				var character_settings: Dictionary = {
 					"display_name": &"",
@@ -574,8 +576,8 @@ func convert_for_release() -> DiscourseDialog:
 					"dialog_speed": &"",
 					"metadata": {}}
 				
-				if not node_data[node_id]["input_connections"]["dialog_settings"]["target_node_uuid"].is_empty():
-					var character_settings_data: Dictionary = node_data[node_data[node_id]["input_connections"]["dialog_settings"]["target_node_uuid"]]
+				if not node_data[node_id]["input_connections"]["character_settings"]["target_node_uuid"].is_empty():
+					var character_settings_data: Dictionary = node_data[node_data[node_id]["input_connections"]["character_settings"]["target_node_uuid"]]
 					
 					if not character_settings_data["input_connections"]["display_name"]["target_node_uuid"].is_empty():
 						character_settings["display_name"] = StringName(character_settings_data["input_connections"]["display_name"]["target_node_uuid"])
@@ -583,8 +585,8 @@ func convert_for_release() -> DiscourseDialog:
 					if not character_settings_data["input_connections"]["portrait_id"]["target_node_uuid"].is_empty():
 						character_settings["portrait_id_node"] = StringName(character_settings_data["input_connections"]["display_name"]["target_node_uuid"])
 				
-				if not node_data[node_id]["input_connections"]["character_settings"]["target_node_uuid"].is_empty():
-					var dialog_settings_data: Dictionary = node_data[node_data[node_id]["input_connections"]["character_settings"]["target_node_uuid"]]
+				if not node_data[node_id]["input_connections"]["dialog_settings"]["target_node_uuid"].is_empty():
+					var dialog_settings_data: Dictionary = node_data[node_data[node_id]["input_connections"]["dialog_settings"]["target_node_uuid"]]
 					
 					if not dialog_settings_data["input_connections"]["font_resource"]["target_node_uuid"].is_empty():
 						dialog_settings["font_resource"] = StringName(dialog_settings_data["input_connections"]["font_resource"]["target_node_uuid"])
@@ -595,26 +597,26 @@ func convert_for_release() -> DiscourseDialog:
 					if not dialog_settings_data["input_connections"]["dialog_speed"]["target_node_uuid"].is_empty():
 						dialog_settings["dialog_speed"] = StringName(dialog_settings_data["input_connections"]["dialog_speed"]["target_node_uuid"])
 				
-				if not node_data[node_id]["input_connections"]["metadata"]["target_node_uuid"].is_empty():
-					var dialog_metadata_node: Dictionary = node_data[node_data[node_id]["input_connections"]["metadata"]["target_node_uuid"]]
-					var dialog_metadata: Dictionary = dialog_metadata_node["metadata"]
-					for meta_field in dialog_metadata:
-						if not dialog_metadata_node["input_connections"].has(meta_field["id"]):
-							push_error(
-								"[DISCOURSE] Metadata node ", dialog_metadata_node["name"], " on file ", resource_path, " registered metadata with ID ", meta_field["id"], " on port ", meta_field["port"], " but the port isn't available. Setting to null.")
-							dialog_metadata["metadata"][meta_field["id"]] = null
-						else:
-							dialog_settings["metadata"][meta_field["id"]] = dialog_metadata_node["input_connections"][meta_field["id"]]["target_node_uuid"]
+					if not dialog_settings_data["input_connections"]["metadata"]["target_node_uuid"].is_empty():
+						var dialog_metadata_node: Dictionary = node_data[dialog_settings_data["input_connections"]["metadata"]["target_node_uuid"]]
+						var dialog_metadata: Dictionary = dialog_metadata_node["metadata"]
+						for meta_field in dialog_metadata["metadata_connections"]:
+							if not dialog_metadata_node["input_connections"].has(meta_field["id"]):
+								push_error(
+									"[DISCOURSE] Metadata node ", dialog_metadata_node["name"], " on file ", resource_path, " registered metadata with ID ", meta_field["id"], " on port ", meta_field["port"], " but the port isn't available. Setting to null.")
+								dialog_metadata["metadata"][meta_field["id"]] = null
+							else:
+								dialog_settings["metadata"][meta_field["id"]] = dialog_metadata_node["input_connections"][meta_field["id"]]["target_node_uuid"]
 				
-				data["character_id"] = metadata["character_id"]
-				data["persist"] = metadata["persist"]
-				data["character_settings"] = character_settings
-				data["dialog_settings"] = dialog_settings
-				data["text_source"] = StringName(node_data[node_id]["input_connections"]["dialog_text_source"]["target_node_uuid"])
-				data["next_node"] = target_finder.get_target(node_data[node_id]["output_connections"]["next_node"]["target_node_uuid"]) #get_target_lambda.call(dialog_nodes[node_id]["output_connections"]["next_node"]["target_node_uuid"])
+				export_data["character_id"] = metadata["character_id"]
+				export_data["persist"] = metadata["persist"]
+				export_data["character_settings"] = character_settings
+				export_data["dialog_settings"] = dialog_settings
+				export_data["text_source"] = StringName(node_data[node_id]["input_connections"]["dialog_text_source"]["target_node_uuid"])
+				export_data["next_node"] = target_finder.get_target(node_data[node_id]["output_connections"]["next_node"]["target_node_uuid"]) #get_target_lambda.call(dialog_nodes[node_id]["output_connections"]["next_node"]["target_node_uuid"])
 			NodeType.CHOICES:
 				var options: Array[Dictionary] = []
-				for option:Dictionary in metadata["options"]:
+				for option:Dictionary in metadata["choices"]:
 					var new_option: Dictionary[String, Variant] = {
 						"next_node": target_finder.get_target(StringName(option["output_connections"]["next_node"]["target_node_uuid"])), #get_target_lambda.call(StringName(option["output_connections"]["next_node"]["target_node_uuid"])),
 						"settings": {
@@ -634,61 +636,61 @@ func convert_for_release() -> DiscourseDialog:
 						if not option_settings["input_connections"]["locked_hint"]["target_node_uuid"].is_empty():
 							new_option["settings"]["lock_hint"] = StringName(option_settings["input_connections"]["locked_hint"]["target_node_uuid"])
 					
-					if not node_data[node_id]["input_connections"]["metadata"]["target_node_uuid"].is_empty():
-						var dialog_metadata_node: Dictionary = node_data[node_data[node_id]["input_connections"]["metadata"]["target_node_uuid"]]
-						var dialog_metadata: Dictionary = dialog_metadata_node["metadata"]
-						for meta_field in dialog_metadata:
-							if not dialog_metadata_node["input_connections"].has(meta_field["id"]):
-								push_error(
-									"[DISCOURSE] Metadata node ", dialog_metadata_node["name"], " on file ", resource_path, " registered metadata with ID ", meta_field["id"], " on port ", meta_field["port"], " but the port isn't available. Setting to null.")
-								new_option["metadata"][meta_field["id"]] = null
-							else:
-								new_option["metadata"][meta_field["id"]] = dialog_metadata_node["input_connections"][meta_field["id"]]["target_node_uuid"]
+						if not option_settings["input_connections"]["metadata"]["target_node_uuid"].is_empty():
+							var dialog_metadata_node: Dictionary = node_data[option_settings["input_connections"]["metadata"]["target_node_uuid"]]
+							var dialog_metadata: Dictionary = dialog_metadata_node["metadata"]
+							for meta_field in dialog_metadata:
+								if not dialog_metadata_node["input_connections"].has(meta_field["id"]):
+									push_error(
+										"[DISCOURSE] Metadata node ", dialog_metadata_node["name"], " on file ", resource_path, " registered metadata with ID ", meta_field["id"], " on port ", meta_field["port"], " but the port isn't available. Setting to null.")
+									new_option["metadata"][meta_field["id"]] = null
+								else:
+									new_option["metadata"][meta_field["id"]] = dialog_metadata_node["input_connections"][meta_field["id"]]["target_node_uuid"]
 					
 					options.append(new_option)
-				data["options"] = options
+				export_data["choices"] = options
 			NodeType.BRANCH:
-				data["result"] = StringName(node_data[node_id]["input_connections"]["path_direction"]["target_node_uuid"])
-				data["case_true"] = target_finder.get_target(StringName(node_data[node_id]["output_connections"]["next_node_true"]["target_node_uuid"]))
-				data["case_false"] = target_finder.get_target(StringName(node_data[node_id]["output_connections"]["next_node_false"]["target_node_uuid"]))
+				export_data["result"] = StringName(node_data[node_id]["input_connections"]["path_direction"]["target_node_uuid"])
+				export_data["case_true"] = target_finder.get_target(StringName(node_data[node_id]["output_connections"]["next_node_true"]["target_node_uuid"]))
+				export_data["case_false"] = target_finder.get_target(StringName(node_data[node_id]["output_connections"]["next_node_false"]["target_node_uuid"]))
 			NodeType.CONDITION_SELECT:
-				data["result"] = StringName(node_data[node_id]["input_connections"]["result"]["target_node_uuid"])
-				data["true_value"] = target_finder.get_target(StringName(node_data[node_id]["input_connections"]["true_value"]["target_node_uuid"]))
-				data["false_value"] = target_finder.get_target(StringName(node_data[node_id]["input_connections"]["false_value"]["target_node_uuid"]))
+				export_data["result"] = StringName(node_data[node_id]["input_connections"]["result"]["target_node_uuid"])
+				export_data["true_value"] = target_finder.get_target(StringName(node_data[node_id]["input_connections"]["true_value"]["target_node_uuid"]))
+				export_data["false_value"] = target_finder.get_target(StringName(node_data[node_id]["input_connections"]["false_value"]["target_node_uuid"]))
 			NodeType.COMPARATION:
-				data["operator"] = metadata["operator"]
-				data["value_a"] = StringName(node_data[node_id]["input_connections"]["node_a"]["target_node_uuid"])
-				data["value_b"] = StringName(node_data[node_id]["input_connections"]["node_b"]["target_node_uuid"])
+				export_data["operator"] = metadata["operator"]
+				export_data["value_a"] = StringName(node_data[node_id]["input_connections"]["node_a"]["target_node_uuid"])
+				export_data["value_b"] = StringName(node_data[node_id]["input_connections"]["node_b"]["target_node_uuid"])
 			NodeType.EVENT:
 				var var_val: StringName = StringName(node_data[node_id]["input_connections"]["variable_value"]["target_node_uuid"])
-				data["value"] = var_val
+				export_data["value"] = var_val
 				
 				if not node_data[node_id]["input_connections"]["callable"]["target_node_uuid"].is_empty():
 					var callable_uuid: StringName = node_data[node_id]["input_connections"]["callable"]["target_node_uuid"]
 					if available_methods.has(node_data[callable_uuid]["metadata"]["method"]):
-						data["callable"] = StringName(node_data[node_id]["input_connections"]["callable"]["target_node_uuid"])
+						export_data["callable"] = StringName(node_data[node_id]["input_connections"]["callable"]["target_node_uuid"])
 					else:
-						data["callable"] = &""
+						export_data["callable"] = &""
 						printerr("[DISCOURSE] Warning: Issue when exporting ", resource_path, ". Event ", node_data[node_id]["name"], " calls an inexistent method.")
 				else:
-					data["callable"] = &""
+					export_data["callable"] = &""
 				
 				if not node_data[node_id]["input_connections"]["signal"]["target_node_uuid"].is_empty():
 					var signal_uuid: StringName = node_data[node_id]["input_connections"]["signal"]["target_node_uuid"]
 					if available_signals.has(node_data[signal_uuid]["metadata"]["signal"]):
-						data["signal"] = StringName(node_data[node_id]["input_connections"]["signal"]["target_node_uuid"])
+						export_data["signal"] = StringName(node_data[node_id]["input_connections"]["signal"]["target_node_uuid"])
 					else:
-						data["signal"] = &""
+						export_data["signal"] = &""
 						printerr("[DISCOURSE] Warning: Issue when exporting ", resource_path, ". Event ", node_data[node_id]["name"], " emits an inexistent signal.")
 				else:
-					data["signal"] = &""
-				data["next_node"] = target_finder.get_target(StringName(node_data[node_id]["output_connections"]["next_node"]["target_node_uuid"]))
+					export_data["signal"] = &""
+				export_data["next_node"] = target_finder.get_target(StringName(node_data[node_id]["output_connections"]["next_node"]["target_node_uuid"]))
 				
 				if var_val.is_empty():
-					data["variable_path"] = ""
+					export_data["variable_path"] = ""
 				else:
-					var clean_path: String = metadata["variable_path"].strip_edged().simplify_path()
-					data["variable_path"] = clean_path
+					var clean_path: String = metadata["variable_path"].strip_edges().simplify_path()
+					export_data["variable_path"] = clean_path
 			NodeType.MATCH:
 				var cases: Array[Dictionary] = []
 				
@@ -697,11 +699,11 @@ func convert_for_release() -> DiscourseDialog:
 					new_case["value"] = case["value"]
 					new_case["next_node"] = target_finder.get_target(StringName(case["output_connections"]["next_node"]["target_node_uuid"]))
 				
-				data["case_default"] = target_finder.get_target(StringName(node_data[node_id]["output_connections"]["default"]["target_node_uuid"]))
-				data["match_value"] = StringName(node_data[node_id]["input_connections"]["match_value_source"]["target_node_uuid"])
-				data["cases"] = cases
+				export_data["case_default"] = target_finder.get_target(StringName(node_data[node_id]["output_connections"]["default"]["target_node_uuid"]))
+				export_data["match_value"] = StringName(node_data[node_id]["input_connections"]["match_value_source"]["target_node_uuid"])
+				export_data["cases"] = cases
 			NodeType.PAUSE:
-				data["next_node"] = target_finder.get_target(StringName(node_data[node_id]["output_connections"]["next_node"]["target_node_uuid"]))
+				export_data["next_node"] = target_finder.get_target(StringName(node_data[node_id]["output_connections"]["next_node"]["target_node_uuid"]))
 			NodeType.RANDOM:
 				var options: Array[Dictionary] = []
 				
@@ -711,133 +713,141 @@ func convert_for_release() -> DiscourseDialog:
 					new_option["weight_override"] = StringName(option["input_connections"]["weight"]["target_node_uuid"])
 					options.append(new_option)
 				
-				data["default_override"] = StringName(node_data[node_id]["input_connections"]["default_weight"]["target_node_uuid"])
-				data["options"] = options
+				export_data["weight_override"] = StringName(node_data[node_id]["input_connections"]["default_weight"]["target_node_uuid"])
+				export_data["choices"] = options
 			NodeType.TYPE_GUARD:
-				data["type"] = typeof(metadata["fallback_value"])
-				data["value"] = StringName(node_data[node_id]["input_connections"]["value"]["target_node_uuid"])
-				data["fallback"] = metadata["fallback_value"]
+				export_data["value"] = StringName(node_data[node_id]["input_connections"]["value"]["target_node_uuid"])
+				export_data["fallback"] = metadata["fallback_value"]
 			NodeType.SIGNAL:
 				var arguments: Array[StringName] = []
 				for argument:Dictionary in metadata["arguments"]:
 					arguments.append(StringName(argument["target_node_uuid"]))
-				data["signal"] = StringName(metadata["signal"])
-				data["arguments"] = arguments
+				export_data["signal"] = StringName(metadata["signal"])
+				export_data["arguments"] = arguments
 			NodeType.CALLABLE:
 				var method_id: StringName = StringName(metadata["method"])
-				var default_args_size: int = 0
 				
-				if not api_methods.has(method_id):
-					push_error(
-							"[DISCOURSE] Callable node ", data["name"], " on file ", resource_path, " calls for inexisting method: ", method_id)
-				else:
-					default_args_size = api_methods[method_id]["default_args"].size()
-				
-				var arguments: Array[StringName] = []
-				var arg_idx: int = -1
-				var skipped_previous: bool = false
-				for argument:Dictionary in metadata["arguments"]:
-					arg_idx += 1
-					arguments.append(StringName(argument["target_node_uuid"]))
-					if not argument["target_node_uuid"].is_empty():
-						if skipped_previous:
-							push_error(
-								"[DISCOURSE] Callable node ", data["name"], " on file ", resource_path, " passed an argument on index ", arg_idx, " but a previous index doesn't have a value.")
+				if not method_id.is_empty():
+					var default_args_size: int = 0
+					
+					if not api_methods.has(method_id):
+						push_error(
+								"[DISCOURSE] Callable node ", node_data[node_id]["name"], " on file ", resource_path, " calls for inexisting method: ", method_id)
 					else:
-						skipped_previous = true
-						if default_args_size <= arg_idx:
-							push_error(
-								"[DISCOURSE] Callable node ", data["name"], " on file ", resource_path, " is missing a required argument value on index ", arg_idx)
-				data["method"] = method_id
-				data["arguments"] = arguments
+						default_args_size = api_methods[method_id]["default_args"].size()
+					
+					var arguments: Array[StringName] = []
+					var arg_idx: int = -1
+					var skipped_previous: bool = false
+					for argument:Dictionary in metadata["arguments"]:
+						arg_idx += 1
+						arguments.append(StringName(argument["target_node_uuid"]))
+						if not argument["target_node_uuid"].is_empty():
+							if skipped_previous:
+								push_error(
+									"[DISCOURSE] Callable node ", node_data[node_id]["name"], " on file ", resource_path, " passed an argument on index ", arg_idx, " but a previous index doesn't have a value.")
+						else:
+							skipped_previous = true
+							if default_args_size <= arg_idx:
+								push_error(
+									"[DISCOURSE] Callable node ", node_data[node_id]["name"], " on file ", resource_path, " is missing a required argument value on index ", arg_idx)
+					export_data["method"] = method_id
+					export_data["arguments"] = arguments
+				else:
+					export_data["method"] = &""
+					export_data["arguments"] = ArrayUtils.create_typed(TYPE_STRING_NAME)
 			NodeType.CALLABLE_RETURN:
 				var method_id: StringName = StringName(metadata["method"])
-				var default_args_size: int = 0
-				
-				if not api_methods.has(method_id):
-					push_error(
-							"[DISCOURSE] Callable node ", data["name"], " on file ", resource_path, " calls for inexisting method: ", method_id)
-				else:
-					default_args_size = api_methods[method_id]["default_args"].size()
-				
-				var arguments: Array[StringName] = []
-				var arg_idx: int = -1
-				var skipped_previous: bool = false
-				for argument:Dictionary in metadata["arguments"]:
-					arg_idx += 1
-					arguments.append(StringName(argument["target_node_uuid"]))
-					if not argument["target_node_uuid"].is_empty():
-						if skipped_previous:
-							push_error(
-								"[DISCOURSE] Callable node ", data["name"], " on file ", resource_path, " passed an argument on index ", arg_idx, " but a previous index doesn't have a value.")
+				if not method_id.is_empty():
+					var default_args_size: int = 0
+					
+					if not api_methods.has(method_id):
+						push_error(
+								"[DISCOURSE] Callable node ", node_data[node_id]["name"], " on file ", resource_path, " calls for inexisting method: ", method_id)
 					else:
-						skipped_previous = true
-						if default_args_size <= arg_idx:
-							push_error(
-								"[DISCOURSE] Callable node ", data["name"], " on file ", resource_path, " is missing a required argument value on index ", arg_idx)
-				data["method"] = method_id
-				data["arguments"] = arguments
+						default_args_size = api_methods[method_id]["default_args"].size()
+					
+					var arguments: Array[StringName] = []
+					var arg_idx: int = -1
+					var skipped_previous: bool = false
+					for argument:Dictionary in metadata["arguments"]:
+						arg_idx += 1
+						arguments.append(StringName(argument["target_node_uuid"]))
+						if not argument["target_node_uuid"].is_empty():
+							if skipped_previous:
+								push_error(
+									"[DISCOURSE] Callable node ", node_data[node_id]["name"], " on file ", resource_path, " passed an argument on index ", arg_idx, " but a previous index doesn't have a value.")
+						else:
+							skipped_previous = true
+							if default_args_size <= arg_idx:
+								push_error(
+									"[DISCOURSE] Callable node ", node_data[node_id]["name"], " on file ", resource_path, " is missing a required argument value on index ", arg_idx)
+					export_data["method"] = method_id
+					export_data["arguments"] = arguments
+				else:
+					export_data["method"] = &""
+					export_data["arguments"] = ArrayUtils.create_typed(TYPE_STRING_NAME)
 			NodeType.VARIABLE_GET:
 				var meta_path: String = ""
 				if metadata.has("variable_path"):
 					meta_path = metadata["variable_path"].strip_edges().simplify_path()
 				else:
-					push_warning("[DISCOURSE] Node ", data["name"], " has missing Blackboard data path. Using empty path instead")
+					push_warning("[DISCOURSE] Node ", node_data[node_id]["name"], " has missing Blackboard data path. Using empty path instead")
 				
-				data["path"] = meta_path
+				export_data["path"] = meta_path
 			NodeType.RANDOM_VALUE:
-				data["random_type"] = metadata["mode"]
-				data["min_value"] = metadata["values"]["base"]
-				data["max_value"] = metadata["values"]["max"]
-				data["min_override"] = StringName(node_data[node_id]["input_connections"]["base_value"]["target_node_uuid"])
-				data["max_override"] = StringName(node_data[node_id]["input_connections"]["max_value"]["target_node_uuid"])
+				export_data["random_type"] = metadata["mode"]
+				export_data["min_value"] = metadata["values"]["base"]
+				export_data["max_value"] = metadata["values"]["max"]
+				export_data["min_override"] = StringName(node_data[node_id]["input_connections"]["base_value"]["target_node_uuid"])
+				export_data["max_override"] = StringName(node_data[node_id]["input_connections"]["max_value"]["target_node_uuid"])
 			NodeType.RESOURCE:
-				data["path"] = metadata["resource_path"]
+				export_data["path"] = metadata["resource_path"]
 			NodeType.DATA_EVENT:
 				var var_val: StringName = StringName(node_data[node_id]["input_connections"]["variable_value"]["target_node_uuid"])
-				data["value"] = var_val
+				export_data["value"] = var_val
 				
 				if not node_data[node_id]["input_connections"]["callable"]["target_node_uuid"].is_empty():
 					var callable_uuid: StringName = node_data[node_id]["input_connections"]["callable"]["target_node_uuid"]
 					if available_methods.has(node_data[callable_uuid]["metadata"]["method"]):
-						data["callable"] = StringName(node_data[node_id]["input_connections"]["callable"]["target_node_uuid"])
+						export_data["callable"] = StringName(node_data[node_id]["input_connections"]["callable"]["target_node_uuid"])
 					else:
-						data["callable"] = &""
+						export_data["callable"] = &""
 						printerr("[DISCOURSE] Warning: Issue when exporting ", resource_path, ". Data event ", node_data[node_id]["name"], " calls an inexistent method.")
 				else:
-					data["callable"] = &""
+					export_data["callable"] = &""
 				
 				if not node_data[node_id]["input_connections"]["signal"]["target_node_uuid"].is_empty():
 					var signal_uuid: StringName = node_data[node_id]["input_connections"]["signal"]["target_node_uuid"]
 					if available_signals.has(node_data[signal_uuid]["metadata"]["signal"]):
-						data["signal"] = StringName(node_data[node_id]["input_connections"]["signal"]["target_node_uuid"])
+						export_data["signal"] = StringName(node_data[node_id]["input_connections"]["signal"]["target_node_uuid"])
 					else:
-						data["signal"] = &""
+						export_data["signal"] = &""
 						printerr("[DISCOURSE] Warning: Issue when exporting ", resource_path, ". Data event ", node_data[node_id]["name"], " emits an inexistent signal.")
 				else:
-					data["signal"] = &""
+					export_data["signal"] = &""
 				
-				data["data_source"] = StringName(node_data[node_id]["input_connections"]["data_input"]["target_node_uuid"])
+				export_data["data_source"] = StringName(node_data[node_id]["input_connections"]["data_input"]["target_node_uuid"])
 				if var_val.is_empty():
-					data["variable_path"] = ""
+					export_data["variable_path"] = ""
 				else:
 					var meta_path: String = ""
 					if metadata.has("variable_path"):
 						meta_path = metadata["variable_path"].strip_edges().simplify_path()
 					
-					data["variable_path"] = meta_path
+					export_data["variable_path"] = meta_path
 			NodeType.LOCALIZED_TEXT:
 				pass
 			NodeType.VALUE:
 				add_id = false
-				data["value"] = metadata["value"]
+				export_data["value"] = metadata["value"]
 			_:
 				add_id = false
 		
 		if add_id:
-			data["id"] = node_data[node_id]["name"]
+			export_data["id"] = node_data[node_id]["name"]
 			new_id_map[StringName(node_data[node_id]["name"])] = node_id
-		release_dialog.node_logic[node_id] = data
+		release_dialog.node_logic[node_id] = export_data
 		add_id = true
 	
 	release_dialog.id_map = new_id_map
@@ -855,7 +865,7 @@ func generate_localization_files(localization_id: String, base_path: String, fil
 	var new_files: Array[Dictionary] = []
 	#var md5_hash: String = resource_path.to_lower().md5_text().substr(0, 12)
 	var md5_fragment: String = filename.substr(0, 2)
-	var used_locales: Dictionary = {}
+	var used_locales: Dictionary[String, Variant] = {}
 	
 	# Given how Discourse works, there is ALWAYS a base language.
 	for language in locale_map.keys():
@@ -871,6 +881,10 @@ func generate_localization_files(localization_id: String, base_path: String, fil
 		if locale_group.is_empty():
 			lang_file = DiscourseDialogLocale.new()
 			lang_file.locale = lang_key
+			
+			new_files.append({
+				"file": lang_file,
+				"path": lang_path})
 		elif DictUtils.has_nested_path(localization_groups, [locale_group, lang_key]):
 			lang_file = localization_groups[locale_group][lang_key]
 		else:
@@ -880,6 +894,7 @@ func generate_localization_files(localization_id: String, base_path: String, fil
 						localization_groups,
 						[locale_group, lang_key],
 						lang_file)
+			
 			new_files.append({
 				"file": lang_file,
 				"path": lang_path})
@@ -887,7 +902,7 @@ func generate_localization_files(localization_id: String, base_path: String, fil
 		_add_locale_data(lang_file, localization_id, lang_key)
 		used_locales[lang_key] = null
 		
-		for region_code in locale_map.keys():
+		for region_code in locale_map[lang_key].keys():
 			var locale_key: String = TranslationServer.standardize_locale(lang_key + "_" + region_code)
 			var lang_locale_file: DiscourseDialogLocale = null
 			var locale_path: String = StringUtils.make_path([
@@ -902,6 +917,7 @@ func generate_localization_files(localization_id: String, base_path: String, fil
 						localization_groups,
 						[locale_group, locale_key],
 						lang_locale_file)
+				
 				new_files.append({
 					"file": lang_locale_file,
 					"path": locale_path})
@@ -920,10 +936,11 @@ func generate_localization_files(localization_id: String, base_path: String, fil
 		var localization_keys = localization_locales.keys()
 		
 		if not used_locales.has_all(localization_keys):
-			push_warning(
-				"[DISCOUSE] File contains more localization data than is being exported: " + resource_path + "\n. Verify locale map.")
-		extra_data_warned = true
-		break
+			push_warning("Used locales: %s, existing locales: %s" % [used_locales.keys(), localization_keys] )
+			#push_warning(
+				#"[DISCOUSE] File contains more localization data than is being exported: " + resource_path + "\n. Verify locale map.")
+			extra_data_warned = true
+			break
 	
 	if extra_data_warned:
 		return new_files
@@ -931,8 +948,9 @@ func generate_localization_files(localization_id: String, base_path: String, fil
 	for string_key in format_strings.keys():
 		var used_string_locales = format_strings[string_key].keys()
 		if not used_locales.has_all(used_string_locales):
-			push_warning(
-				"[DISCOUSE] File contains more localization data than is being exported: " + resource_path + "\n. Verify locale map.")
+			push_warning("Used locales: %s, existing locales: %s" % [used_locales.keys(), used_string_locales] )
+			#push_warning(
+				#"[DISCOUSE] File contains more localization data than is being exported: " + resource_path + "\n. Verify locale map.")
 			break
 	
 	return new_files
@@ -961,7 +979,7 @@ func _add_locale_data(file: DiscourseDialogLocale, localization_id: String, loca
 						"[DISCOURSE] Incomplete or corrupt data for node with UID '%s' " % node_id)
 			if type_mismatch:
 				push_error(
-						"[DISCOURSE] Type mismatch for node & localization with UID '%s'" % node_id)
+						"[DISCOURSE] Type mismatch for node & localization with UID '%s' of file %s" % [node_id, resource_path])
 			
 			push_warning("[DISCOURSE] Patching data with placeholder entries.")
 			
@@ -1082,12 +1100,17 @@ func _add_locale_data(file: DiscourseDialogLocale, localization_id: String, loca
 			var formats: Dictionary = data["format"][format_slice]
 			
 			for case in formats["cases"].keys():
-				if typeof(case) != TYPE_STRING or typeof(case) != TYPE_STRING_NAME:
-					push_error("[DISCOURSE] Case is not of type string. Exception on: " + "/".join([format_key, locale, format_slice]))
+				
+				
+				
+				if typeof(case) != TYPE_STRING and typeof(case) != TYPE_STRING_NAME:
+					push_error("[DISCOURSE] Case on resource %s is not of type string. Exception on: %s " % [resource_path, "/".join([format_key, locale, format_slice])])
 					continue
 				
-				if typeof(formats["cases"][case]) != TYPE_STRING:
-					push_error("[DISCOURSE] Case of format string with key " + format_key + " format " + format_slice + " case " + case + " is not of type string. Patching with warning string.")
+				var format_type: int = typeof(formats["cases"][case])
+				
+				if format_type != TYPE_STRING and format_type != TYPE_STRING_NAME:
+					push_warning("[DISCOURSE] Case of format string with key " + format_key + " format " + format_slice + " case " + case + " is not of type string. Patching with warning string.")
 					valid_cases[case] = "[CASE NOT IMPLEMENTED]"
 				else:
 					valid_cases[case] = formats["cases"][case]
@@ -1139,9 +1162,9 @@ func _localization_type_mismatch(uuid: StringName) -> bool:
 	var locale_type: LocalizationType = localization[uuid]["type"]
 	
 	if locale_type == LocalizationType.TEXT:
-		return node_type == NodeType.DIALOG or node_type == NodeType.LOCALIZED_TEXT
+		return node_type != NodeType.DIALOG and node_type != NodeType.LOCALIZED_TEXT
 	else:
-		return node_type == NodeType.CHOICES
+		return node_type != NodeType.CHOICES
 
 
 ## Returns an array with a split path used for variable access on the Blackboard.

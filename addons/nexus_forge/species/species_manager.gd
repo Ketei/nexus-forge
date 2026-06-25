@@ -1,8 +1,16 @@
 class_name NFSpeciesManager
 extends RefCounted
+## An object that holds items as [SpeciesSheet] resources.
+##
+## This object provides several utilities, such as a custom getter
+## for accessing registered species directly by their ID, eg.
+## [code]Species.dog[/code] and when an item is modified through this object,
+## the signal [Resource.changed] is called on the specific item.
 
 
+## Emited when a species is added.
 signal species_registered(species_id: StringName)
+## Emited when a species is erased.
 signal species_erased(species_id: StringName)
 
 var _species: Dictionary[StringName, SpeciesSheet] = {}
@@ -14,6 +22,8 @@ func _get(property: StringName) -> Variant:
 	return null
 
 
+## Loads a speices [param catalog] to this object. If [param clear_species]
+## is [code]true[/code] previous species will be cleared.
 func load_catalog(catalog: SpeciesCatalog, clear_species: bool = true) -> void:
 	var use_inheritance: bool = ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("species_use_inheritance"), true)
 	if clear_species:
@@ -106,13 +116,14 @@ func link_species(species_id: StringName, parent_species: StringName, recessive_
 		_species[species_id].emit_changed()
 
 
-## Returns the parent species of [param of_species].
+## Returns the dominant parent species of [param of_species].
 func get_dominant_species_of(species_id: StringName) -> StringName:
 	if _species.has(species_id):
 		return _species[species_id].dominant_species
 	return &""
 
 
+## Returns the recessive parent species of [param species_id].
 func get_recessive_species_of(species_id: StringName) -> StringName:
 	if _species.has(species_id):
 		return _species[species_id].recessive_species

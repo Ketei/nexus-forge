@@ -221,16 +221,10 @@ var Characters: NFCharacterManager
 ## A resource containing the game's item definitions.
 var Items: NFItemManager
 ## A resource containing custom stats data.[br]
-## Custom stats will be included in all [StatBlock]'s custom stats instantiated
-## with [method StatBlock.new_stat_block].
 var Stats: NFStatManager
-## A resource containing common and custom trait data.[br]
-## Custom traits created here will also be included in all instances of
-## [TraitBlock] that were created via [method TraitBlock.new_trait_block].
+## A resource containing basic and custom trait data.[br]
 var Traits: NFTraitManager
 ## A resource containing common and custom skill data.[br]
-## Custom skill created here will also be included in all instances of
-## [SkillSet] that were created via [method SkillSet.new_skill_set].
 var Skills: NFSkillManager
 ## A resource containing the game's species data.
 var Species: NFSpeciesManager
@@ -238,13 +232,14 @@ var Species: NFSpeciesManager
 var Quests: QuestManager
 ## A resource containing the game's currency data and helper methods to manage
 ## different currency systems.
-var Currency: CurrencyCatalog
+var Currency: NFCurrencyManager
 ## A resource containing the game's crafting recipes.
-var Recipes: RecipeCatalog
+var Recipes: NFRecipeManager
 
 var _phrase_api: PhraseAPI = PhraseAPI.new()
 
 
+## Gets the path to a ProjecSetting registered by NexusForge by using its ID.
 static func get_setting_path(module: String) -> String:
 	if _SETTINGS_PATHS.has(module):
 		return _SETTINGS_PATHS[module]["setting_path"]
@@ -314,24 +309,32 @@ func _ready() -> void:
 						NFPluginGameHandler._LogLevel.ERROR)
 	
 	if use_currencies:
+		Currency = NFCurrencyManager.new()
 		var currency_path: String = ProjectSettings.get_setting(
 				get_setting_path("currency"), "")
 		if not currency_path.is_empty() and ResourceLoader.exists(currency_path):
 			var res_pre: Resource = load(currency_path)
 			if res_pre is CurrencyCatalog:
-				Currency = res_pre
+				Currency.load_catalog(res_pre, true)
 			else:
-				printerr("[NEXUS FORGE] ProjectSettings: Invalid Currency.")
+				NFPluginGameHandler._log_msg(
+						"singleton",
+						"Invalid CurrencyCatalog resource '%s'" % currency_path,
+						NFPluginGameHandler._LogLevel.ERROR)
 	
 	if use_recipes:
+		Recipes = NFRecipeManager.new()
 		var recipe_path: String = ProjectSettings.get_setting(
 				get_setting_path("recipes"), "")
 		if not recipe_path.is_empty() and ResourceLoader.exists(recipe_path):
 			var res_pre: Resource = load(recipe_path)
 			if res_pre is RecipeCatalog:
-				Recipes = res_pre
+				Recipes.load_catalog(res_pre)
 			else:
-				printerr("[NEXUS FORGE] ProjectSettings: Invalid Recipes.")
+				NFPluginGameHandler._log_msg(
+						"singleton",
+						"Invalid RecipeCatalog resource '%s'" % recipe_path,
+						NFPluginGameHandler._LogLevel.ERROR)
 	
 	if use_stats:
 		if Stats == null:
@@ -422,10 +425,10 @@ func _ready() -> void:
 		Species = NFSpeciesManager.new()
 	if Items == null and instantiate_disabled:
 		Items = NFItemManager.new()
-	if Currency == null and ( use_currencies or instantiate_disabled ):
-		Currency = CurrencyCatalog.new()
-	if Recipes == null and ( use_recipes or instantiate_disabled ):
-		Recipes = RecipeCatalog.new()
+	if Currency == null and instantiate_disabled:
+		Currency = NFCurrencyManager.new()
+	if Recipes == null and instantiate_disabled:
+		Recipes = NFRecipeManager.new()
 
 
 func _notification(what: int) -> void:

@@ -30,7 +30,7 @@ enum SuccessStatus{
 	UNKNOWN,
 }
 
-var _active_quests: Dictionary = {
+var _active_quests: Dictionary[StringName, QuestEntry] = {
 	#&"lay_eggs": {
 		#"current_stage": &"",
 		#"quest": Quest.new(),
@@ -38,65 +38,19 @@ var _active_quests: Dictionary = {
 	#}
 }
 
-var _quest_logs: Dictionary = {
-	#&"lay_eggs": {
-		#"success": SuccessStatus.SUCCESS,
-		#"stages": {
-			#&"stage_id": {
-				#"success": SuccessStatus.SUCCESS,
-				#"objectives": {
-					#&"objective_id": SuccessStatus.SUCCESS
-				#}
-			#}
-		#}
-	#}
-}
+## The quest log in which the history of quest started and finished is stored.
+var Log: NFQuestLog = NFQuestLog.new()
 
 
 var _quest_modifiers: Dictionary[StringName, Dictionary] = {}
 
 
-## Returns all the active quest data and the quest logs. Useful for creating save files.
-func get_quests_data() -> Dictionary:
-	var active_quests: Dictionary = {}
-	
-	for quest in _active_quests.keys():
-		var quest_progress: Dictionary = {}
-		for stage:StringName in _active_quests[quest]["quest"].stages():
-			quest_progress[stage] = {}
-			for objective in _active_quests[quest]["quest"].get_stage(stage).objectives():
-				var obj: QuestObjective = _active_quests[quest]["quest"].get_stage(stage).get_objective(objective)
-				quest_progress[stage][objective] = {"completed": obj._completed, "progress": obj._progress.duplicate(true)}
-			
-		active_quests[quest] = {
-			"quest": _active_quests[quest]["quest"].duplicate(true),
-			"progress": quest_progress,
-			"current_stage": _active_quests[quest]["current_stage"],
-			"auto_advance_stages": _active_quests[quest]["auto_advance_stages"]}
-	
-	var data: Dictionary = {
-		"active_quests": active_quests,
-		"quest_log": _quest_logs.duplicate(true)}
-	
-	return data
-
-
-# TODO: Test if all the quest data (Quests, stages & objectives) saves properly.
-## Loads all quest data and quest logs. Useful for loading save files.
-func set_quests_data(data: Dictionary) -> void:
-	_quest_logs = data["quest_log"].duplicate(true)
-	
-	for quest_id in data["active_quests"]:
-		_active_quests[quest_id] = {
-			"quest": data["active_quests"][quest_id]["quest"],
-			"current_stage": data["active_quests"][quest_id]["current_stage"],
-			"auto_advance_stages": data["active_quests"][quest_id]["auto_advance_stages"]}
-		
-		for stage_id in data["progress"][quest_id].keys():
-			for objective_id in data["progress"][quest_id].keys():
-				var obj: QuestObjective = _active_quests[quest_id]["quest"].get_stage(stage_id).get_objective(objective_id)
-				obj._progress = data["progress"][quest_id][objective_id]["progress"].duplicate(true)
-				obj._completed = data["progress"][quest_id][objective_id]["completed"]
+func _get(property: StringName) -> Variant:
+	if _active_quests.has(property):
+		return property
+	var invalid: QuestEntry = QuestEntry.new()
+	invalid._flags = BitUtils.set_bit_index(0, 63, true)
+	return invalid
 
 
 ## Starts a quest. If [param auto_advance_stages] is [code]true[/code]
@@ -106,60 +60,51 @@ func set_quests_data(data: Dictionary) -> void:
 ## pass [param success] as [code]false[/code].
 ## And it'll auto-advance to the failed quest path if [param auto_advance_stages]
 ## was enabled.
-func start_quest(quest: Quest, auto_advance_stages: bool) -> void:
+func start_quest(quest: Quest, auto_advance_stages: bool) -> bool:
 	if _active_quests.has(quest.id) or not quest.has_stage(quest.entry_stage):
-		return
+		return false
 	
 	if _quest_modifiers.has(quest.id) and not quest._mods_applied:
 		for id in _quest_modifiers[quest.id]["order"]:
 			if _quest_modifiers[quest.id]["mods"][id]["callable"].is_valid():
 				_quest_modifiers[quest.id]["mods"][id]["callable"].call(quest)
 	
-	_active_quests[quest.id] = {
-		"quest": quest,
-		"auto_advance_stages": auto_advance_stages,
-		"current_stage": quest.entry_stage}
+	var new_entry: QuestEntry = QuestEntry.new()
+	new_entry.resource = quest
+	new_entry.auto_advance_stages = auto_advance_stages
+	new_entry.current_stage = quest.entry_stage
+	new_entry._flags = BitUtils.set_bit_index(0, 0, true)
 	
-	_quest_logs[quest.id] = {
-		"success": SuccessStatus.UNKNOWN,
-		"stages": {}}
+	_active_quests[quest.id] = new_entry
+	
+	var quest_entry: NFQuestLog.NFQuestLogEntry = Log.set_entry(quest.id)
 	
 	for stage_id in quest.stages():
+		var stage_entry: NFQuestLog.NFQuestLogStageEntry = quest_entry.set_entry(stage_id)
+		
 		var obj_status: Dictionary = {}
 		
 		for objective_id in quest.get_stage(stage_id).objectives():
-			obj_status[objective_id] = SuccessStatus.UNKNOWN
-		
-		_quest_logs[quest.id]["stages"][stage_id] = {
-			"success": SuccessStatus.UNKNOWN,
-			"objectives": obj_status}
+			stage_entry.set_entry(objective_id)
 	
 	quest_started.emit(quest.id)
 	quest_progressed.emit(quest.id, quest.entry_stage)
+	
+	return true
 
 
 ## Removes an active quest and clears it from the history if
 ## [param clear_from_history] is [code]true[/code]
 func remove_quest(quest_id: StringName, clear_from_history: bool = true) -> void:
 	if _active_quests.erase(quest_id) and clear_from_history:
-		_quest_logs.erase(quest_id)
-
-
-## Removes logs from the quest [param quest_id].
-func erase_quest_from_log(quest_id: StringName) -> void:
-	_quest_logs.erase(quest_id)
-
-
-## Clears the quest log entirely.
-func clear_quest_log() -> void:
-	_quest_logs.clear()
+		Log.erase(quest_id)
 
 
 ## Returns the quest object from the active quest [param quest_id] or
 ## [code]null[/code] if the quest isn't active.
 func get_quest(quest_id: StringName) -> Quest:
 	if _active_quests.has(quest_id):
-		return _active_quests[quest_id]["quest"]
+		return _active_quests[quest_id].resource
 	return null
 
 
@@ -167,14 +112,14 @@ func get_quest(quest_id: StringName) -> Quest:
 ## [code]null[/code] if the quest doesn't exist.
 func get_quest_current_stage(quest_id: StringName) -> QuestStage:
 	if _active_quests.has(quest_id):
-		return _active_quests[quest_id]["quest"].get_stage(_active_quests[quest_id]["current_stage"])
+		return _active_quests[quest_id].resource.get_stage(_active_quests[quest_id].current_stage)
 	return null
 
 
 ## Returns the ID of the stage [param quest_id] is in.
 func get_quest_current_stage_id(quest_id: StringName) -> StringName:
 	if _active_quests.has(quest_id):
-		return _active_quests[quest_id]["current_stage"]
+		return _active_quests[quest_id].current_stage
 	return &""
 
 
@@ -187,17 +132,15 @@ func is_quest_active(quest_id: StringName) -> bool:
 ## If a quest isn't active or hasn't been completed yet it'll return
 ## [enum SuccessStatus.UNKNOWN].
 func quest_success_status(quest_id: StringName) -> SuccessStatus:
-	if _quest_logs.has(quest_id):
-		return _quest_logs[quest_id]["success"]
-	return SuccessStatus.UNKNOWN
+	return Log.get_quest_status(quest_id)
 
 
 ## Returns if a stage was completed successfully or failed.[br]
 ## If the quest isn't active or the stage hasn't been completed yet it'll return
 ## [enum SuccessStatus.UNKNOWN].
 func stage_success_status(quest_id: StringName, stage_id: StringName) -> SuccessStatus:
-	if _quest_logs.has(quest_id) and _quest_logs[quest_id]["stages"].has(stage_id):
-		return _quest_logs[quest_id]["stages"][stage_id]["success"]
+	if Log.has(quest_id):
+		return Log.get_quest_entry(quest_id).get_entry_status(stage_id)
 	return SuccessStatus.UNKNOWN
 
 
@@ -205,8 +148,8 @@ func stage_success_status(quest_id: StringName, stage_id: StringName) -> Success
 ## If the quest isn't active or the objective hasn't been completed yet it'll return
 ## [enum SuccessStatus.UNKNOWN].
 func objective_success_status(quest_id: StringName, stage_id: StringName, objective_id: StringName) -> SuccessStatus:
-	if _quest_logs.has(quest_id) and _quest_logs[quest_id]["stages"].has(stage_id) and _quest_logs[quest_id]["stages"][stage_id]["objectives"].has(objective_id):
-		return _quest_logs[quest_id]["stages"][stage_id]["objectives"][objective_id]
+	if Log.has_stage_entry(quest_id, stage_id):
+		return Log.get_stage_entry(quest_id, stage_id).get_entry_status(objective_id)
 	return SuccessStatus.UNKNOWN
 
 
@@ -221,7 +164,7 @@ func set_objective_progress(quest_id: StringName, stage_id: StringName, objectiv
 	if not DictUtils.has_nested_path(_active_quests, [quest_id, "quest"]):
 		return
 	
-	var quest: Quest = _active_quests[quest_id]["quest"]
+	var quest: Quest = _active_quests[quest_id].resource
 	
 	if not quest.has_stage(stage_id) or not quest.get_stage(stage_id).has_objective(objective_id) or not quest.get_stage(stage_id).get_objective(objective_id).has_requirement(requirement_id):
 		return
@@ -229,14 +172,13 @@ func set_objective_progress(quest_id: StringName, stage_id: StringName, objectiv
 	var quest_objective: QuestObjective = quest.get_stage(stage_id).get_objective(objective_id)
 	quest_objective.set_progress(requirement_id, progress_value)
 	
-	if quest_objective.is_objective_complete():
-		quest_objective.set_completed(true)
-		_log_objective_complete(quest_id, stage_id, quest_objective, true)
+	if quest_objective.can_complete_objective():
+		_set_objective_complete(quest_id, stage_id, objective_id, true)
 		objective_completed.emit(quest_id, stage_id, objective_id, true)
 		
 		var quest_stage: QuestStage = quest.get_stage(stage_id)
 		
-		if not _active_quests[quest_id]["auto_advance_stages"] or not quest_stage.can_complete_stage():
+		if not _active_quests[quest_id].auto_advance_stages or not quest_stage.can_complete_stage():
 			return
 		
 		if quest_stage.success_stage_id.is_empty():
@@ -244,8 +186,8 @@ func set_objective_progress(quest_id: StringName, stage_id: StringName, objectiv
 			_active_quests.erase(quest_id)
 			quest_finished.emit(quest_id)
 		else:
-			_log_stage_complete(quest_id, quest_stage, true)
-			_active_quests[quest_id]["current_stage"] = quest_stage.success_stage_id
+			_set_stage_complete(quest_id, stage_id, true)
+			_active_quests[quest_id].current_stage = quest_stage.success_stage_id
 			stage_completed.emit(quest_id, stage_id, true)
 			quest_progressed.emit(quest_id, quest_stage.success_stage_id)
 
@@ -257,19 +199,20 @@ func set_objective_progress(quest_id: StringName, stage_id: StringName, objectiv
 ## will never progress and [signal stage_completed] won't be emmited if all
 ## objectives were completed so it must be progressed using [method complete_stage].
 func complete_objective(quest_id: StringName, stage_id: StringName, objective_id: StringName, success: bool) -> void:
-	if not _active_quests.has(quest_id) or not _active_quests[quest_id]["quest"].has_stage(stage_id) or not _active_quests[quest_id]["quest"].get_stage(stage_id).has_objective(objective_id):
+	if not _active_quests.has(quest_id) or not _active_quests[quest_id].resource.has_stage(stage_id) or not _active_quests[quest_id].resource.get_stage(stage_id).has_objective(objective_id):
 		return
-	var stage: QuestStage = _active_quests[quest_id]["quest"].get_stage(stage_id)
+	var stage: QuestStage = _active_quests[quest_id].resource.get_stage(stage_id)
 	_set_objective_complete(quest_id, stage_id, objective_id, success)
-	
-	var can_complete_stage: bool = stage.can_complete_stage()
 	
 	objective_completed.emit(quest_id, stage_id, objective_id, success)
 	
+	var can_complete_stage: bool = stage.can_complete_stage()
+	
 	if can_complete_stage:
+		_set_stage_complete(quest_id, stage_id, true)
 		stage_completed.emit(quest_id, stage_id, true)
 	
-	if not _active_quests[quest_id]["auto_advance_stages"] or not can_complete_stage:
+	if not _active_quests[quest_id].auto_advance_stages or not can_complete_stage:
 		return
 	
 	var next_stage_id: StringName = stage.success_stage_id if success else stage.failure_stage_id
@@ -279,7 +222,7 @@ func complete_objective(quest_id: StringName, stage_id: StringName, objective_id
 		_active_quests.erase(quest_id)
 		quest_finished.emit(quest_id)
 	else:
-		_active_quests[quest_id]["current_stage"] = next_stage_id
+		_active_quests[quest_id].current_stage = next_stage_id
 		quest_progressed.emit(quest_id, next_stage_id)
 
 
@@ -287,16 +230,16 @@ func complete_objective(quest_id: StringName, stage_id: StringName, objective_id
 ## If a quest is set to auto-advance it'll continue to the next stage based
 ## on [param success].
 func complete_stage(quest_id: StringName, stage_id: StringName, success: bool) -> void:
-	if not _active_quests.has(quest_id) or not _active_quests[quest_id]["quest"].has_stage(stage_id):
+	if not _active_quests.has(quest_id) or not _active_quests[quest_id].resource.has_stage(stage_id):
 		return
-	_set_stage_complete(quest_id, stage_id, success)
 	
+	_set_stage_complete(quest_id, stage_id, success)
 	stage_completed.emit(quest_id, stage_id, success)
 	
-	if not _active_quests[quest_id]["auto_advance_stages"]:
+	if not _active_quests[quest_id].auto_advance_stages:
 		return
 	
-	var stage: QuestStage = _active_quests[quest_id]["quest"].get_stage(stage_id)
+	var stage: QuestStage = _active_quests[quest_id].resource.get_stage(stage_id)
 	var next_stage_id: StringName = stage.success_stage_id if success else stage.failure_stage_id
 	
 	if next_stage_id.is_empty():
@@ -304,7 +247,7 @@ func complete_stage(quest_id: StringName, stage_id: StringName, success: bool) -
 		_active_quests.erase(quest_id)
 		quest_finished.emit(quest_id, success)
 	else:
-		_active_quests[quest_id]["current_stage"] = next_stage_id
+		_active_quests[quest_id].current_stage = next_stage_id
 		quest_progressed.emit(quest_id, next_stage_id)
 
 
@@ -388,9 +331,9 @@ func remove_quest_modifier(for_quest: StringName, mod_id: StringName) -> void:
 
 
 func _set_quest_complete(quest_id: StringName, success: bool, emit_events: bool = true) -> void:
-	var quest: Quest = _active_quests[quest_id]["quest"]
+	var quest: Quest = _active_quests[quest_id].resource
 	
-	_quest_logs[quest_id]["success"] = SuccessStatus.SUCCESS if success else SuccessStatus.FAILURE
+	Log.set_entry(quest_id, SuccessStatus.SUCCESS if success else SuccessStatus.FAILURE)
 	
 	if not emit_events:
 		return
@@ -402,8 +345,9 @@ func _set_quest_complete(quest_id: StringName, success: bool, emit_events: bool 
 
 
 func _set_stage_complete(quest_id: StringName, stage_id: StringName, success: bool, emit_events: bool = true) -> void:
-	var stage: QuestStage = _active_quests[quest_id]["quest"].get_stage(stage_id)
-	_quest_logs[quest_id]["stages"][stage_id]["success"] = SuccessStatus.SUCCESS if success else SuccessStatus.FAILURE
+	var stage: QuestStage = _active_quests[quest_id].resource.get_stage(stage_id)
+	
+	_log_stage_complete(quest_id, stage_id, success)
 	
 	if not emit_events:
 		return
@@ -414,9 +358,9 @@ func _set_stage_complete(quest_id: StringName, stage_id: StringName, success: bo
 
 
 func _set_objective_complete(quest_id: StringName, stage_id: StringName, objective_id: StringName, success: bool, emit_events: bool = true) -> void:
-	var objective: QuestObjective = _active_quests[quest_id]["quest"].get_stage(stage_id).get_objective(objective_id)
+	var objective: QuestObjective = _active_quests[quest_id].resource.get_stage(stage_id).get_objective(objective_id)
 	objective.set_completed(true)
-	_quest_logs[quest_id]["stages"][stage_id]["objectives"][objective_id] = SuccessStatus.SUCCESS if success else SuccessStatus.FAILURE
+	_log_objective_complete(quest_id, stage_id, objective_id, success)
 	
 	if not emit_events:
 		return
@@ -426,26 +370,20 @@ func _set_objective_complete(quest_id: StringName, stage_id: StringName, objecti
 		quest_event_triggered.emit(event_id, events[event_id])
 
 
-func _log_objective_complete(quest_id: StringName, stage_id: StringName, objective: QuestObjective, success: bool, emit_events: bool = true) -> void:
-	_quest_logs[quest_id]["stages"][stage_id]["objectives"][objective.id] = SuccessStatus.SUCCESS if success else SuccessStatus.FAILURE
+func _log_objective_complete(quest_id: StringName, stage_id: StringName, objective_id: StringName, success: bool) -> void:
+	if not Log.has_quest(quest_id):
+		Log.set_entry(quest_id)
 	
-	if not emit_events:
-		return
+	if not Log.has_stage(quest_id, stage_id):
+		Log.get_quest(quest_id).set_entry(stage_id)
 	
-	var events: Dictionary = objective.on_success_events if success else objective.on_failure_events
-	for event_id in events.keys():
-		quest_event_triggered.emit(event_id, events[event_id])
+	Log.get_stage(quest_id, stage_id).set_entry(objective_id, SuccessStatus.SUCCESS if success else SuccessStatus.FAILURE)
 
 
-func _log_stage_complete(quest_id: StringName, stage: QuestStage, success: bool, emit_events: bool = true) -> void:
-	_quest_logs[quest_id]["stages"][stage.id]["success"] = SuccessStatus.SUCCESS if success else SuccessStatus.FAILURE
-	
-	if not emit_events:
-		return
-	
-	var events: Dictionary[String, Variant] = stage.on_success_events if success else stage.on_failure_events
-	for event_id in events.keys():
-		quest_event_triggered.emit(event_id, events[event_id])
+func _log_stage_complete(quest_id: StringName, stage_id: StringName, success: bool) -> void:
+	if not Log.has_quest(quest_id):
+		Log.set_entry(quest_id)
+	Log.get_quest(quest_id).set_entry(stage_id, SuccessStatus.SUCCESS if success else SuccessStatus.FAILURE)
 
 
 func _sort_mods(for_quest: StringName) -> void:
@@ -519,3 +457,16 @@ func _is_dependency_circular(on_quest: StringName, mod_id: StringName, depends_o
 		return true
 	else:
 		return _is_dependency_circular(on_quest, mod_id, dependency, _visited)
+
+
+class QuestEntry extends RefCounted:
+	var resource: Quest = null
+	var auto_advance_stages: bool = false
+	var current_stage: StringName = &""
+	var _flags: int = 0:
+		set(f):
+			if _flags == 0:
+				_flags = f
+	
+	func is_valid() -> bool:
+		return BitUtils.is_bit_index(_flags, 0, true)

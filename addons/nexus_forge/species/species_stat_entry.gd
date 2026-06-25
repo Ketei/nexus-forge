@@ -15,6 +15,23 @@ func _init(mode: int = TYPE_FLOAT) -> void:
 	_mode = mode
 
 
+func _get(property: StringName) -> Variant:
+	if not entries.has(property):
+		return 0 if _mode == TYPE_INT else 0.0
+	if _mode == TYPE_INT:
+		return int(entries[property])
+	else:
+		return entries[property]
+
+
+func _set(property: StringName, value: Variant) -> bool:
+	var type: int = typeof(value)
+	if type == TYPE_INT or type == TYPE_FLOAT:
+		entries[property] = value
+		return true
+	return false
+
+
 func set_entry(property: StringName, value: float) -> void:
 	entries[property] = value
 
@@ -39,20 +56,3 @@ func is_empty() -> bool:
 
 func erase(property: StringName) -> bool:
 	return entries.erase(property)
-
-
-func _get(property: StringName) -> Variant:
-	if not entries.has(property):
-		return 0 if _mode == TYPE_INT else 0.0
-	if _mode == TYPE_INT:
-		return int(entries[property])
-	else:
-		return entries[property]
-
-
-func _set(property: StringName, value: Variant) -> bool:
-	var type: int = typeof(value)
-	if type == TYPE_INT or type == TYPE_FLOAT:
-		entries[property] = value
-		return true
-	return false

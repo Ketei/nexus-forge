@@ -2,21 +2,8 @@ class_name Math
 extends RefCounted
 ## Class to perform math operations in a more convenient way.
 
-
-
-## Calculates jump gravity.
-static func calculate_jump_gravity(jump_height: int, time_to_apex: float, up_negative: bool = true) -> float:
-	return ( (-2.0 * jump_height) / pow(time_to_apex, 2.0) ) * (1.0 - ( 2 * float(up_negative) ) )
-
-
-## Calculates jump velocity.
-static func calculate_jump_velocity(jump_height: int, time_to_apex: float, up_negative: bool = true) -> float:
-	return ( (2.0 * jump_height) / time_to_apex ) * (1.0 - ( 2 * float(up_negative) ) )
-
-
-## Calculates normal gravity.
-static func calculate_normal_gravity(jump_height: int, time_to_floor: float, up_negative: bool = true) -> float:
-	return ( (-2.0 * jump_height) / pow(time_to_floor, 2.0) ) * (1.0 - ( 2 * float(up_negative) ) )
+const INT_MAX: int = 9223372036854775807
+const INT_MIN: int = -9223372036854775808
 
 
 ## Exponential decay function
@@ -104,3 +91,25 @@ static func is_in_range(what: float, range_a: float, range_b: float) -> bool:
 ## [method @GlobalScope.signf] but returns the value as an integer.
 static func signfi(x: float) -> int:
 	return int(signf(x))
+
+
+## Sums [param a] and [param b] without causing an integer overflow.
+static func safe_sum(a: int, b: int) -> int:
+	if 0 < a and 0 < b and INT_MAX - b < a:
+		return INT_MAX
+	
+	if a < 0 and b < 0 and a < INT_MIN - b:
+		return INT_MIN
+	
+	return a + b
+
+
+## Sums [param a] and [param b] and returns a result that's not bigger than
+## [param maximum] nor smaller than [param minimum].
+static func safe_sum_range(a: int, b: int, minimum: int, maximum: int) -> int:
+	var real_max: int = maximum if minimum < maximum else minimum
+	var real_min: int = minimum if minimum < maximum else maximum
+	
+	var total_sum: int = safe_sum(a, b)
+	
+	return clampi(total_sum, real_min, real_max)

@@ -171,7 +171,7 @@ func _something_changed(arg: Variant = null) -> void:
 
 
 func _on_item_id_dropped(item_id: StringName, on_index: int, on_input: bool) -> void:
-	add_recipe_item(on_input, item_id, 1, RecipeItem.RECIPE_ITEM_DEFAULT_DATA.duplicate(true), on_index)
+	add_recipe_item(on_input, item_id, 1, {}, on_index)
 	_something_changed()
 
 
@@ -244,14 +244,14 @@ func save_current_recipe() -> void:
 		var item: RecipeItem = RecipeItem.new()
 		item.id = input["item_id"]
 		item.amount = input["amount"]
-		item.data.assign(input["data"])
+		item.custom_data.assign(input["data"])
 		input_items.append(item)
 	
 	for output in outputs:
 		var item: RecipeItem = RecipeItem.new()
 		item.id = output["item_id"]
 		item.amount = output["amount"]
-		item.data.assign(output["data"])
+		item.custom_data.assign(output["data"])
 		output_items.append(item)
 	
 	recipes_resource.set_recipe_inputs(active_recipe, input_items)
@@ -415,6 +415,14 @@ func _on_recipe_erased(recipe_id: StringName) -> void:
 
 func load_recipe(recipe_id: StringName) -> void:
 	var recipe: RecipeSheet = recipes_resource.get_recipe(recipe_id)
+	
+	if recipe == null:
+		NFPluginGameHandler._log_msg(
+				"crafting - editor",
+				"Error while loading recipe '%s'" % recipe_id,
+				NFPluginGameHandler._LogLevel.ERROR)
+		return
+	
 	recipe_input_tree.clear_items()
 	recipe_output_tree.clear_items()
 	
@@ -423,18 +431,18 @@ func load_recipe(recipe_id: StringName) -> void:
 			true,
 			item.id,
 			item.amount,
-			item.data)
+			item.custom_data)
 	
 	for item in recipe.output:
 		add_recipe_item(
 				false,
 				item.id,
 				item.amount,
-				item.data)
+				item.custom_data)
 	
 	recipe_custom_data_tree.clear_data()
-	for data_entry in recipe.data.keys():
-		recipe_custom_data_tree.add_data(data_entry, recipe.data[data_entry])
+	for data_entry in recipe.custom_data.keys():
+		recipe_custom_data_tree.add_data(data_entry, recipe.custom_data[data_entry])
 
 
 func add_recipe_item(to_input: bool, item_id: StringName, input_amount: int = 1, data: Dictionary = {}, index: int = -1) -> void:

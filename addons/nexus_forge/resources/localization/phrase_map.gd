@@ -41,75 +41,84 @@ static func get_valid_formats(phrase_text: String) -> Array[String]:
 	return all_args
 
 
-func _build_variable_callable(text: String) -> Callable:
-	var var_callable: Callable = Callable(
+func _build_callable_for_variable(text: String) -> Callable:
+	var clean_text: String = text.trim_prefix("$")
+	var callable: Callable = Callable(
 			NexusForge.Blackboard.get_variable.bind(
-						text.trim_prefix("$")))
-	return var_callable
+					clean_text, ""))
+	
+	return callable
 
 
-func _build_method_callable(function_string: String, arguments_string: String) -> Callable:
-		var method: StringName = StringName(function_string)
-		var arguments: PackedStringArray = arguments_string.split(",", false)
-		
-		var final_arguments: Array = []
-		
-		for argument in arguments:
-			if argument.begins_with("$"):
-				final_arguments.append(_build_variable_callable(argument))
-			elif argument.begins_with("!"):
-				var parts: PackedStringArray = argument.split("|", false, 1)
-				var sub_arguments: String = "" if parts.size() <= 1 else parts[1]
-				final_arguments.append(_build_method_callable(
-						parts[1].trim_prefix("!"),
-						sub_arguments))
-			else:
-				final_arguments.append(argument)
-		
-		return Callable(NexusForge._phrase_api, method).bind(final_arguments)
+func _build_callable_for_method(text: String) -> Callable:
+	var parts: PackedStringArray = text.split("|", false, 1)
+	var method: StringName = StringName(parts[0].trim_prefix("!"))
+	var arguments: PackedStringArray = []
+	if 1 < parts.size():
+		arguments = parts[1].split(",")
+	
+	var final_arguments: Array = []
+	
+	for argument in arguments:
+		if argument.begins_with("$"):
+			final_arguments.append(_build_callable_for_variable(argument.trim_prefix("$")))
+		elif argument.begins_with("!"):
+			final_arguments.append(_build_callable_for_method(argument.trim_prefix("!")))
+		else:
+			final_arguments.append(argument)
+	
+	var callable: Callable = Callable(NexusForge.Discourse.API, method)
+	
+	if not final_arguments.is_empty():
+		return _build_lazy_wrapper.bind(callable, final_arguments)
+	
+	return callable
+
+
+func _build_lazy_wrapper(target_method: Callable, args: Array) -> Variant:
+	var resolved_args: Array = []
+	for arg in args:
+		if arg is Callable:
+			resolved_args.append(arg.call())
+		else:
+			resolved_args.append(arg)
+	return target_method.callv(resolved_args)
+
 
 
 func _generate_callables(dialog_id: StringName) -> void:
 	var dialog: String = _phrases[dialog_id]["text"]
 	
+	if not _value_keys.has(dialog_id):
+		_value_keys[dialog_id] = DictUtils.create_typed(TYPE_STRING, TYPE_CALLABLE)
+	
 	if dialog.is_empty():
 		return
 	
-	var functions_processed: PackedStringArray = []
-	var variables_processed: PackedStringArray = []
-	var phrases_processed: PackedStringArray = []
+	var tokens_processed: Dictionary[String, Variant] = {}
 	
-	var function_regex: RegEx = RegEx.new()
-	var variable_regex: RegEx = RegEx.new()
-	function_regex.compile("\\{\\![^\\s\\}]+\\}")
-	variable_regex.compile("\\{\\$[^\\s\\}]+\\}")
+	var phrase_regex: RegEx = RegEx.new()
+	phrase_regex.compile("\\{([\\!\\$][^\\s\\}]+)\\}")
 	
-	# Searching for function calls.
-	
-	for rgx_func_result in function_regex.search_all(dialog):
-		var value_key: String = rgx_func_result.get_string().trim_prefix("{").trim_suffix("}")
-		if _value_keys[dialog_id].has(value_key) or functions_processed.has(rgx_func_result.get_string()):
-			continue
-		# Only split once from the left
-		var parts: Array = value_key.split("|", false, 1)
-		var argument_string: String = "" if parts.size() <= 1 else parts[1]
-		functions_processed.append(rgx_func_result.get_string())
+	for rgx_result in phrase_regex.search_all(dialog):
+		var format: String = rgx_result.get_string(1)
+		var token: String = format.substr(0, 1)
 		
-		#func set_format_callable(key: String, method: Callable, arguments: Array = []) -> void:
-			#_format_args[key] = method.bindv(arguments.duplicate(true))
-		_value_keys[dialog_id][value_key] = _build_method_callable(
-				parts[0].trim_prefix("!"),
-				argument_string)
-	
-	# Processing variables
-	for rgx_var_result in variable_regex.search_all(dialog):
-		var value_key: String = rgx_var_result.get_string().trim_prefix("{").trim_suffix("}")
-		if _value_keys[dialog_id].has(value_key) or variables_processed.has(rgx_var_result.get_string()):
-			continue
-		
-		variables_processed.append(rgx_var_result.get_string())
-		
-		_value_keys[dialog_id][value_key] = _build_variable_callable(value_key.trim_prefix("$"))
+		if token == "!":
+			if tokens_processed.has(rgx_result.get_string()):
+				continue
+			
+			tokens_processed[rgx_result.get_string()] = null
+			
+			if not _value_keys.has(format):
+				_value_keys[format] = {}
+			
+			_value_keys[dialog_id][format] = _build_callable_for_method(
+					format.substr(1))
+		elif token == "$":
+			
+			_value_keys[dialog_id][format] = _build_callable_for_variable(
+					format.substr(1))
 
 
 func _find_case(phrase: StringName, format: String, case: String) -> Dictionary[String, String]:
@@ -280,7 +289,7 @@ func get_text(phrase_key: StringName, override_values: Dictionary[String, String
 							phrase_key,
 							format_key,
 							override_values[format_key]))
-		elif _value_keys.has(phrase_key) and _value_keys[phrase_key].has(format_key):
+		elif DictUtils.has_nested_path(_value_keys, [phrase_key, format_key]):
 			case_result.assign(
 					_find_case_callable(
 							phrase_key,
