@@ -2004,6 +2004,7 @@ func plugin_file_selected(file: EditorDiscourseDialog):
 		dialog_id_ln_edt.editable = true
 	
 	if active_conversation == file:
+		add_to_recently_opened_files(active_conversation.resource_path)
 		return
 	elif active_conversation != null:
 		save_current_dialog_to_memory()
@@ -2014,6 +2015,7 @@ func plugin_file_selected(file: EditorDiscourseDialog):
 			conversation_tree.active_unsaved = true
 	else:
 		load_conversation(file)
+	add_to_recently_opened_files(file.resource_path)
 
 
 func reload_signals() -> void:

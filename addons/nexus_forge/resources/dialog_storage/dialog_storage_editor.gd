@@ -870,6 +870,8 @@ func generate_localization_files(localization_id: String, base_path: String, fil
 	# Given how Discourse works, there is ALWAYS a base language.
 	for language in locale_map.keys():
 		var lang_key: String = TranslationServer.standardize_locale(language)
+		if lang_key.is_empty():
+			continue
 		var lang_path: String = StringUtils.make_path(
 				[base_path,
 				lang_key,
@@ -904,6 +906,9 @@ func generate_localization_files(localization_id: String, base_path: String, fil
 		
 		for region_code in locale_map[lang_key].keys():
 			var locale_key: String = TranslationServer.standardize_locale(lang_key + "_" + region_code)
+			if locale_key.is_empty():
+				continue
+			
 			var lang_locale_file: DiscourseDialogLocale = null
 			var locale_path: String = StringUtils.make_path([
 				base_path, locale_key, md5_fragment, filename])
