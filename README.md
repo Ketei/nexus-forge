@@ -68,7 +68,7 @@ Nexus Forge makes use of [several class names](https://https://github.com/Ketei/
 - The plugin makes use of signals so you don't need to compromise with an UI. The plugin handles the data, you handle the display.
 - And more!
 
-If you wish to get a more detailed overview of the modules, head to the (wiki)[https://github.com/Ketei/nexus-forge/wiki#overview].
+If you wish to get a more detailed overview of the modules, head to the [wiki](https://github.com/Ketei/nexus-forge/wiki#overview).
 
 <img alt="Dialog Example" src="https://github.com/user-attachments/assets/d92ba731-fc55-44cf-9995-b187f7f8d932" />
 <img alt="Quest Example" src="https://github.com/user-attachments/assets/6d3d3022-3b87-4a28-905b-6e0e7306ded2" />
@@ -77,7 +77,7 @@ If you wish to get a more detailed overview of the modules, head to the (wiki)[h
 ## Documentation
 
 * **Built-in (F1):** All custom classes include manually written documentation accessible directly inside the Godot editor's F1 help menu.
-* **GitHub Wiki:** Setup instructions and guides are available on the (Wiki)[https://github.com/Ketei/nexus-forge/wiki].
+* **GitHub Wiki:** Setup instructions and guides are available on the [Wiki](https://github.com/Ketei/nexus-forge/wiki).
 > [!NOTE]
 > The wiki was initially AI-assisted but manually reviewed. A full rewrite is planned for after the Beta releases and the API stabilizes).
 
