@@ -4,6 +4,7 @@ signal dialog_finished(success: bool)
 
 var confirm_on_right: bool = true
 
+
 func _ready() -> void:
 	confirmed.connect(_on_confirmed)
 	canceled.connect(_on_canceled)

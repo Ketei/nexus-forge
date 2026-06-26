@@ -32,9 +32,13 @@
 - [Roadmap](#roadmap)
 
 ## About
-**Nexus Forge** is a headless game data manager for Godot 4.4+. It provides visual editors for managing your game's data, dialogue, stats, items and quests without forcing any specific UI on your project.
+**Nexus Forge** is a modular toolset designed to create and handle the creation and processing of data (dialogues, characters, items, etc.) through easy-to-use interfaces and remain UI-agnostic in-game by making use of built-in and custom signals.
 
-**Nexus Forge editor component is modular.** Through Godot's Project Settings you can selectively enable or disable individual modules. The plugin will only load the specific tools you need, keeping the editor clutter-free.
+This project was born out of the frustration that many plug-ins came with their own interface and were often difficult to customise, limited in its features or bloated with nodes that although weren't going to be used, were required in the scene.
+
+At first it was a script-only solution for my personal projects and I eventually made a game editor. As I started to put more effort into it, I decided to make it into a proper plug-in and release it in hopes it can help others that suffer from those same frustrations.
+
+I hope this can help you build your games and improve your workflow as much as it has done for me!
 
 ## Installation
 ### Compatibility
@@ -43,7 +47,7 @@
 * **Resolution:** The editor GUI is designed for a 1920x1080 resolution. Smaller resolutions are supported but will trigger scrollbars.
 
 ### Reserved Classes
-Nexus Forge makes use of [several class names](https://github.com/Ketei/nexus-forge/wiki#reserved-class-names). Make sure you have them available before installing.
+Nexus Forge makes use of [several class names](https://https://github.com/Ketei/nexus-forge/wiki#reserved-class-names). Make sure you have them available before installing.
 
 ### Installation Steps
 1. Download the [latest build](https://github.com/Ketei/nexus-forge/releases/latest) or the a copy of the [main branch](https://github.com/Ketei/nexus-forge/archive/refs/heads/main.zip).
@@ -54,32 +58,28 @@ Nexus Forge makes use of [several class names](https://github.com/Ketei/nexus-fo
 
 ## Features
 
-Nexus Forge provides editors to structure your game's content:
+- Create rich dialogs through an easy-to-use graph-node based editor with text parsing, localization capabilities and more.
+- Manage globally-accessible data with a folder/file-like structure.
+- Create and manage complex character sheets to use anywhere.
+- Make items with custom rarities, values, flags and integrate them into customizable crafting recipes.
+- Create custom currencies with different values to develop a multi-currency system (DnD inspired).
+- Create multi-branch quests and let the plugin log and handle it's progression.
+- Multiple utility classes to manage data with less boiler-plate.
+- The plugin makes use of signals so you don't need to compromise with an UI. The plugin handles the data, you handle the display.
+- And more!
 
-* **Dialogue Editor:** A powerful easy-to-use graph-based visual tool for creating dialogs.
-* **Global State:** A blackboard for global data storage and access.
-* **Character & Species Data:** Complex character sheets with custom stats, skills and traits. Plus a robust Species/Sub-Species inheritance system.
-* **Items & Crafting:** Define items with custom categories, flags and rarities. Define complex crafting recipes.
-* **Quests:** Construct quests with multiple stages and objectives.
-* **Economy:** Build single or multi-currency economies.
+If you wish to get a more detailed overview of the modules, head to the (wiki)[https://github.com/Ketei/nexus-forge/wiki#overview].
 
 <img alt="Dialog Example" src="https://github.com/user-attachments/assets/d92ba731-fc55-44cf-9995-b187f7f8d932" />
 <img alt="Quest Example" src="https://github.com/user-attachments/assets/6d3d3022-3b87-4a28-905b-6e0e7306ded2" />
 
 
-### Static Utility Classes
-
-Besides the editors, the plugin includes several objects that can be used independently in your code:
-
-* **Caching:** A Least Recently Used (LRU) Cache implementation.
-* **Data Pools and Selectors:** A Random Weighted Pool for random or weighted draws.
-* **Other Helpers:** BitFlags, UUID (v4) generation and bitwise operations.
-
 ## Documentation
 
 * **Built-in (F1):** All custom classes include manually written documentation accessible directly inside the Godot editor's F1 help menu.
 * **GitHub Wiki:** Setup instructions and guides are available on the [Wiki](https://github.com/Ketei/nexus-forge/wiki). 
-*(Note: The wiki was initially AI-assisted but manually reviewed. A full rewrite is planned for the Beta release once the API stabilizes).*
+> [!NOTE]
+> The wiki was initially AI-assisted but manually reviewed. A full rewrite is planned for after the Beta releases and the API stabilizes).
 
 ## Roadmap
 Features that are planned to be implemented in the future:

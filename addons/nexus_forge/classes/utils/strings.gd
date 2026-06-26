@@ -84,28 +84,23 @@ static func beautify_int(value: int) -> String:
 ## The Levenshtein distance represents the minimum number of single-character
 ## edits required to transform [param string_1] into [param string_2].
 static func levenshtein_distance(string_1: String, string_2: String) -> float:
-	# Written by ChatGPT
 	var len_1: int = string_1.length()
 	var len_2: int = string_2.length()
 	
-	# Empty vs something = completely different
 	if (len_1 == 0 and len_2 != 0) or (len_2 == 0 and len_1 != 0):
 		return 0.0
 
-	# Initialize a 2D array to store the distances
 	var dp: Array[Array] = []
 	for i in range(len_1 + 1):
 		dp.append([])
 		for j in range(len_2 + 1):
 			dp[i].append(0)
 	
-	# Initialize the first row and column of the array
 	for i in range(len_1 + 1):
 		dp[i][0] = i
 	for j in range(len_2 + 1):
 		dp[0][j] = j
 	
-	# Calculate Levenshtein distance
 	for i in range(1, len_1 + 1):
 		for j in range(1, len_2 + 1):
 			if string_1[i - 1] == string_2[j - 1]:
@@ -113,7 +108,6 @@ static func levenshtein_distance(string_1: String, string_2: String) -> float:
 			else:
 				dp[i][j] = min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + 1)
 	
-	# Calculate similarity (1 - normalized distance)
 	var distance: int = dp[len_1][len_2]
 	var max_len:int = maxi(len_1, len_2)
 	var similarity: float = 1.0 - float(distance) / float(max_len)

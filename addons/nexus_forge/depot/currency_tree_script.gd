@@ -1,12 +1,10 @@
 @tool
 extends IDTree
 
-#signal currencies_updated
+
 signal currency_selected(currency: StringName)
 signal currency_id_changed(from: StringName, to: StringName)
 signal currency_deleted(currency_id: StringName)
-#signal currency_name_changed(id: StringName, new_name: String)
-#signal currency_value_changed(id: StringName, value: int)
 
 
 func ready_plugin() -> void:
@@ -15,7 +13,6 @@ func ready_plugin() -> void:
 	item_selected.connect(_on_item_selected)
 	item_edited.connect(_on_item_edited)
 	button_clicked.connect(_on_button_clicked)
-	#column_title_clicked.connect(_on_column_title_clicked)
 
 
 func _on_button_clicked(item: TreeItem, _column: int, id: int, mouse_button_index: int) -> void:

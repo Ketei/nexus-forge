@@ -727,7 +727,7 @@ func select_gender(gender: CharacterSheet.Gender) -> void:
 			gender_option_button.select(item_idx)
 			break
 
-# default must be a numeric value (float/type
+
 func create_stat_item(stat_id: StringName, type: int, default: float) -> VBoxContainer:
 	var new_stat: VBoxContainer = VBoxContainer.new()
 	var data_field: HBoxContainer = HBoxContainer.new()
@@ -830,7 +830,7 @@ func create_stat_item(stat_id: StringName, type: int, default: float) -> VBoxCon
 	edit_limits_btn.pressed.connect(_toggle_limit_visibility_pressed.bind(edit_limits_btn, limits_container))
 	limit_max_spn.value_changed.connect(_on_limit_max_changed.bind(new_value))
 	limit_min_spn.value_changed.connect(_on_limit_min_changed.bind(new_value, limit_max_spn))
-	# is_enabled: bool, stat: SpinBox, min_spin: SpinBox, max_spin: SpinBox, limit_btn: CheckBox
+	
 	allow_lesser.toggled.connect(_on_toggle_min_stat.bind(new_value, limit_min_spn, limit_max_spn, edit_limits_btn))
 	allow_greater.toggled.connect(_on_toggle_max_stat.bind(new_value, limit_max_spn, edit_limits_btn))
 	
@@ -1007,15 +1007,11 @@ func create_trait_item(trait_id: StringName, default_value: int) -> HBoxContaine
 	new_value.update_on_text_changed = true
 	new_value.step = 1.0
 	new_value.value = default_value
-	#if type == TYPE_INT:
-	#else:
-		#new_value.step = 0.01
 	new_value.custom_minimum_size.y = 32
 	new_value.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	new_value.size_flags_stretch_ratio = 3.0
 	new_value.editable = ui_enabled
 	new_value.value_changed.connect(_something_changed)
-	#new_value.set_meta(&"default_value", default)
 	
 	new_trait.set_meta(&"trait_id", trait_id)
 	new_trait.set_meta(&"default_value", default_value)

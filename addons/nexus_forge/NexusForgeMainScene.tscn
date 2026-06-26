@@ -3,7 +3,7 @@
 [ext_resource type="Theme" uid="uid://bgqlr2f4msogv" path="res://addons/nexus_forge/default_theme.tres" id="1_14xiq"]
 [ext_resource type="Script" uid="uid://d0wp8u6btdhsk" path="res://addons/nexus_forge/nexus_forge_main_scene_script.gd" id="1_15n6i"]
 [ext_resource type="Texture2D" uid="uid://bohd4742ivr70" path="res://addons/nexus_forge/icons/nexus_forge_small.svg" id="2_efg3d"]
-[ext_resource type="Texture2D" uid="uid://dr5siu85och4s" path="res://addons/nexus_forge/icons/nexus_forge_large.svg" id="11_at7in"]
+[ext_resource type="Texture2D" uid="uid://dr5siu85och4s" path="res://addons/nexus_forge/splash/nexus_forge_large.svg" id="11_at7in"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_yutfl"]
 

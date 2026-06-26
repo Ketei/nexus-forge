@@ -123,7 +123,7 @@ layout_mode = 2
 custom_minimum_size = Vector2(70, 0)
 layout_mode = 2
 size_flags_stretch_ratio = 0.2
-text = "Type"
+text = "Species"
 
 [node name="SpeciesOptionButton" type="OptionButton" parent="CharacterContainer/BasicDataSplit/GeneralContainer/SpeciesContainer" unique_id=725459146]
 custom_minimum_size = Vector2(0, 32)

@@ -9,10 +9,8 @@ func _init() -> void:
 	title = "Discourse"
 	size = Vector2i(250, 85)
 	initial_position = WINDOW_INITIAL_POSITION_CENTER_PRIMARY_SCREEN
-	
 
 
-# Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	get_ok_button().text = "Save"
 	var dont_save := add_button("Discard", true)

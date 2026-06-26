@@ -4,6 +4,7 @@ extends EditorFileDialog
 
 signal dialog_finished(success: bool, resource_path: String)
 
+
 var expected_extension: String = "tres"
 
 

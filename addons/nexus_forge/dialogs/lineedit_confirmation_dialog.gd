@@ -37,7 +37,6 @@ func _init() -> void:
 	initial_position = Window.WINDOW_INITIAL_POSITION_CENTER_MAIN_WINDOW_SCREEN
 
 
-# Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	var new_container: HBoxContainer = HBoxContainer.new()
 	new_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL

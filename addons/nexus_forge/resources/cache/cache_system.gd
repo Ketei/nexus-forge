@@ -114,7 +114,7 @@ func cache_data(key: String, data: Variant) -> void:
 	
 	while max_size <= current_size:
 		_remove_oldest()
-		current_size -= 1 # We reduce the size by 1. Should end up at 49
+		current_size -= 1
 	
 	var new_link: CacheLink = CacheLink.new()
 	

@@ -4,14 +4,12 @@ extends Tree
 
 signal character_selected(character_sheet: CharacterSheet, unsaved: bool)
 signal character_closed(resource: CharacterSheet, unsaved: bool)
-#signal character_id_changed(from: StringName, to: StringName)
 
 
 func ready_plugin() -> void:
 	create_item()
 	
 	button_clicked.connect(_on_button_clicked)
-	#item_edited.connect(_on_item_edited)
 	item_selected.connect(_on_item_selected)
 
 
