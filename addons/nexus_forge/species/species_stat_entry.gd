@@ -1,5 +1,6 @@
 extends Resource
 class_name NFSpeciesStatCatalog
+## A resource used for storing stat/skil/trait data on [SpeciesSheet]s.
 
 
 @export var entries: Dictionary[StringName, float] = {}

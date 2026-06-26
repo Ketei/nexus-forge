@@ -106,14 +106,7 @@ const _SETTINGS_PATHS: Dictionary[String, Dictionary] = {
 		"type": TYPE_FLOAT,
 		"hint": PROPERTY_HINT_RANGE,
 		"hint_string": "0,1",
-		"restart_required": false,
-		"sort_string": "nexus_forge/settings/species_use_genetic_inheritance_a"},
-	"species_use_inheritance": {
-		"setting_path": "nexus_forge/settings/species_use_genetic_inheritance",
-		"default_value": true,
-		"type": TYPE_BOOL,
-		"restart_required": false,
-		"sort_string": "nexus_forge/settings/species_use_genetic_inheritance_b"},
+		"restart_required": false},
 	"quests_format_strings": {
 		"setting_path": "nexus_forge/settings/format_quest_strings_with_blackboard",
 		"default_value": false,
@@ -280,7 +273,10 @@ func _ready() -> void:
 		if res_pre is BlackboardData:
 			Blackboard = res_pre
 		else:
-			printerr("[NEXUS FORGE] ProjectSettings: Invalid Blackboard.")
+			_log_msg(
+					"singleton",
+					"Invalid Blackboard resource '%s'" % blackboard_path,
+					_LogLevel.ERROR)
 	
 	if use_species:
 		Species = NFSpeciesManager.new()

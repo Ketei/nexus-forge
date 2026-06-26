@@ -4,7 +4,7 @@ extends Resource
 ## A resource containing the basic information of a species.
 ##
 ## This resource contains all data of a species and if obtained via
-## [method NexusForge.Species.get_species()] it is shared by pointer.
+## [method NexusForge.Species.get_species] it is shared by pointer.
 ## Changing stats on the resource however will NOT change the stats
 ## of the species data stored on the singleton. Changing the data on the
 ## singleton, however, will update the data on the resource and emit

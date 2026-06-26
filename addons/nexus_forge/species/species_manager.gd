@@ -25,7 +25,7 @@ func _get(property: StringName) -> Variant:
 ## Loads a speices [param catalog] to this object. If [param clear_species]
 ## is [code]true[/code] previous species will be cleared.
 func load_catalog(catalog: SpeciesCatalog, clear_species: bool = true) -> void:
-	var use_inheritance: bool = ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("species_use_inheritance"), true)
+	var use_inheritance: bool = ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("species_genetic_dilution"), 0.0) < 1.0
 	if clear_species:
 		_species.clear()
 	
