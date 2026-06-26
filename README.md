@@ -77,7 +77,7 @@ If you wish to get a more detailed overview of the modules, head to the (wiki)[h
 ## Documentation
 
 * **Built-in (F1):** All custom classes include manually written documentation accessible directly inside the Godot editor's F1 help menu.
-* **GitHub Wiki:** Setup instructions and guides are available on the [Wiki](https://github.com/Ketei/nexus-forge/wiki). 
+* **GitHub Wiki:** Setup instructions and guides are available on the (Wiki)[https://github.com/Ketei/nexus-forge/wiki].
 > [!NOTE]
 > The wiki was initially AI-assisted but manually reviewed. A full rewrite is planned for after the Beta releases and the API stabilizes).
 
