@@ -7,7 +7,7 @@
 <div align="center">
   <a href="https://godotengine.org/download/" target="_blank" style="text-decoration:none"><img alt="Godot Badge" src="https://img.shields.io/badge/Godot-4.4+-478CBF?logo=godotengine&logoColor=white"/></a>
   <img alt="GDScript Badge" src="https://img.shields.io/badge/Language-GDScript-blue"/>
-  <img alt="Alpha Status Badge" src="https://img.shields.io/badge/Status-Alpha-red"/>
+  <img alt="Alpha Status Badge" src="https://img.shields.io/badge/Status-Beta-orange"/>
   <img alt="MIT License Badge" src="https://img.shields.io/badge/License-MIT-green"/>
 </div>
 
