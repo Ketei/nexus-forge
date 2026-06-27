@@ -35,7 +35,7 @@ const ConnectionType = DiscourseGraphNode.SlotConnectionType
 const PortFlow = DiscourseGraphNode.PortMode
 
 # Dictionary with data about compatible nodes. Could be a const
-const compatible_connections: Dictionary = {
+var compatible_connections: Dictionary = {
 	ConnectionType.DIALOG: {
 		"output": Array([
 			{
@@ -296,6 +296,8 @@ var _pending_connection_change: Dictionary = {}
 
 
 func _ready() -> void:
+	compatible_connections.make_read_only()
+	
 	connection_popup = PopupMenu.new()
 	connection_popup.name = &"ConnectionsPopupMenu"
 	connection_popup.visible = false

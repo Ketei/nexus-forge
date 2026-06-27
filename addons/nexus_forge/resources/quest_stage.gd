@@ -2,6 +2,7 @@
 @icon("res://addons/nexus_forge/icons/sign_icon.svg")
 class_name QuestStage
 extends Resource
+## A resource representing a stage of a [Quest].
 
 
 enum StageType {}

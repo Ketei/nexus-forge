@@ -379,7 +379,7 @@ func load_skills_resource() -> void:
 	var skills_exist: bool = 0 < skill_opt_btn.item_count
 	var disabled: bool = not skills_exist
 	
-	#var skill_block: SkillSet = SkillSet.new(false)
+	
 	var all_skills: Array[StringName] = SkillSet.skills()
 	
 	for skill in _skills_resource._skill_data.keys():
@@ -391,7 +391,6 @@ func load_skills_resource() -> void:
 		if _skills_resource._skill_data.has(new_skill):
 			continue
 		var data: Dictionary[String, Variant] = {}
-		data.assign(_skills_resource.DEFAULT_DATA.duplicate(true))
 		_skills_resource._skill_data[new_skill] = {
 			"name": "",
 			"description": "",
@@ -671,7 +670,6 @@ func load_traits_resource() -> void:
 	trait_str_btn.disabled = disabled
 	trait_dict_btn.disabled = disabled
 	
-	#var block: TraitBlock = TraitBlock.new(false)
 	var all_traits: Array[StringName] = TraitBlock.traits()
 	
 	for existing_trait in _traits_resource._trait_data.keys():
@@ -684,7 +682,6 @@ func load_traits_resource() -> void:
 			continue
 		else:
 			var data: Dictionary[String, Variant] = {}
-			data.assign(_traits_resource.DEFAULT_DATA.duplicate(true))
 			_traits_resource._trait_data[new_trait] = {
 				"name": "",
 				"description": "",
@@ -733,7 +730,7 @@ func loaded_traits() -> Dictionary[String, int]:
 # Call when TraitBlock is saved/changed.
 func reload_traits(reselect: bool = true) -> void:
 	var current_trait: StringName = &"" if trait_opt_btn.selected == -1 else trait_opt_btn.get_item_metadata(trait_opt_btn.selected)
-	#var trait_obj: TraitBlock = TraitBlock.new()
+	
 	var all_traits: Array[StringName] = TraitBlock.traits()
 	
 	all_traits.sort_custom(func(a,b): return String(a).naturalnocasecmp_to(String(b)) < 0)
@@ -755,7 +752,6 @@ func reload_traits(reselect: bool = true) -> void:
 			if _traits_resource._trait_data.has(trait_id):
 				continue
 			var data: Dictionary[String, Variant] = {}
-			data.assign(_traits_resource.DEFAULT_DATA.duplicate(true))
 			_traits_resource._trait_data[trait_id] = {
 				"name": "",
 				"description": "",
@@ -916,7 +912,6 @@ func load_stats_resource() -> void:
 	var stat_exist: bool = 0 < stat_opt_btn.item_count
 	var disabled: bool = not stat_exist
 	
-	#var skill_block: SkillSet = SkillSet.new(false)
 	var stat_entries: Dictionary[StringName, int] = StatBlock.stats()
 	var all_stats: Array[StringName] = []
 	all_stats.assign(stat_entries.keys())
@@ -930,7 +925,6 @@ func load_stats_resource() -> void:
 		if _stats_resource._stat_data.has(new_stat):
 			continue
 		var data: Dictionary[String, Variant] = {}
-		data.assign(_stats_resource.DEFAULT_DATA.duplicate(true))
 		_stats_resource._stat_data[new_stat] = {
 			"name": "",
 			"description": "",
