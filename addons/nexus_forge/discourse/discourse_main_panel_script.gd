@@ -154,7 +154,7 @@ func ready_plugin(base_locale: String = "") -> void:
 	node_popup.add_theme_constant_override(&"icon_max_width", 16)
 	
 	dialogs_submenu.add_icon_item(load("res://addons/nexus_forge/icons/speech_bubble.svg"), "Dialog", DiscourseGraphNode.DialogueNodeType.DIALOG)
-	dialogs_submenu.add_icon_item(load("res://addons/nexus_forge/icons/list_icon.svg"), "Options", DiscourseGraphNode.DialogueNodeType.CHOICES)
+	dialogs_submenu.add_icon_item(load("res://addons/nexus_forge/icons/list_icon.svg"), "Choices", DiscourseGraphNode.DialogueNodeType.CHOICES)
 	dialogs_submenu.add_separator("Flow")
 	dialogs_submenu.add_icon_item(get_theme_icon("RandomNumberGenerator", "EditorIcons"), "Random", DiscourseGraphNode.DialogueNodeType.RANDOM)
 	dialogs_submenu.add_icon_item(load("res://addons/nexus_forge/icons/branch_icon.svg"), "Branch", DiscourseGraphNode.DialogueNodeType.BRANCH)
