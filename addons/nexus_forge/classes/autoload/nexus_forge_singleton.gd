@@ -68,14 +68,14 @@ const _SETTINGS_PATHS: Dictionary[String, Dictionary] = {
 		"default_value": "",
 		"type": TYPE_STRING,
 		"hint": PROPERTY_HINT_FILE,
-		"hint_string": "*.tres",
+		"hint_string": "*.tscn",
 		"restart_required": false},
 	"discourse_localization_preview_scene": {
-		"setting_path": "nexus_forge/settings/localization_preview_scene",
+		"setting_path": "nexus_forge/settings/localization_live_preview_scene",
 		"default_value": "",
 		"type": TYPE_STRING,
 		"hint": PROPERTY_HINT_FILE,
-		"hint_string": "*.tres"},
+		"hint_string": "*.tscn"},
 	"discourse_panning_scheme": {
 		"setting_path": "nexus_forge/settings/discourse_scroll_wheel_pans",
 		"default_value": true,

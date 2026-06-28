@@ -249,7 +249,7 @@ func is_preview_scene_valid(print_errors: bool = true) -> bool:
 	if not FileAccess.file_exists(path):
 		if print_errors:
 			NFPluginGameHandler._log_msg(
-				"settings",
+				"discourse - editor",
 				"Localization preview scene '%s' was not found" % path,
 				NFPluginGameHandler._LogLevel.ERROR)
 		return false
@@ -258,7 +258,7 @@ func is_preview_scene_valid(print_errors: bool = true) -> bool:
 	if scene == null or not scene is PackedScene or not scene.can_instantiate():
 		if print_errors:
 			NFPluginGameHandler._log_msg(
-					"settings",
+					"discourse - editor",
 					"Error during instantiation of scene '%s'" % path,
 					NFPluginGameHandler._LogLevel.ERROR)
 		return false
@@ -268,7 +268,7 @@ func is_preview_scene_valid(print_errors: bool = true) -> bool:
 	if scene_script == null:
 		if print_errors:
 			NFPluginGameHandler._log_msg(
-					"settings",
+					"discourse - editor",
 					"Scene '%s' has no script attatched" % path,
 					NFPluginGameHandler._LogLevel.ERROR)
 		instance.free()
@@ -277,74 +277,99 @@ func is_preview_scene_valid(print_errors: bool = true) -> bool:
 	var errors: Array[String] = []
 	var static_methods: Array[Dictionary] = scene_script.get_script_method_list()
 	var static_signals: Array[Dictionary] = scene_script.get_script_signal_list()
-	var has_d_txt: bool = false
-	var has_c_txt: bool = false
+	var has_c_updt: bool = false
 	var has_set_d: bool = false
 	var has_set_c: bool = false
-	
-	for item_signal in static_signals:
-		if item_signal["name"] == "dialog_text_changed":
-			if item_signal["args"].size() == 1:
-				var arg: Dictionary = item_signal["args"][0]
-				has_d_txt = arg["type"] == TYPE_NIL or arg["type"] == TYPE_STRING
-		elif item_signal["name"] == "choice_text_changed":
-			if item_signal["args"].size() == 2:
-				var arg_1: Dictionary = item_signal["args"][0]
-				var arg_2: Dictionary = item_signal["args"][1]
-				
-				var arg_1_valid: bool = arg_1["type"] == TYPE_NIL or arg_1["type"] == TYPE_STRING
-				var arg_2_valid: bool = arg_2["type"] == TYPE_NIL or arg_2["type"] == TYPE_INT
-				
-				has_c_txt = arg_1_valid and arg_2_valid
-		
-		if has_d_txt and has_c_txt:
-			break
+	var has_p_txt: bool = false
+	var has_p_ch: bool = false
 	
 	for method in static_methods:
 		if method["name"] == "set_choices":
-			if not method["args"].is_empty():
-				var arg: Dictionary = method["args"][0]
-				var extra_valid: bool = true
-				
-				if 1 < method["args"].size():
-					var default_size: int = method["default_args"].size()
-					extra_valid = method["args"].size() - 1 <= default_size
-				
-				if arg["type"] == TYPE_NIL:
-					has_set_c = extra_valid
-				elif arg["type"] == TYPE_ARRAY:
-					has_set_c = extra_valid and ( arg["hint_string"].is_empty() or arg["hint_string"] == "String" )
+			if method["args"].is_empty():
+				continue
+			var arg: Dictionary = method["args"][0]
+			var extra_valid: bool = true
+			
+			if 1 < method["args"].size():
+				var default_size: int = method["default_args"].size()
+				extra_valid = method["args"].size() - 1 <= default_size
+			
+			if arg["type"] == TYPE_NIL:
+				has_set_c = extra_valid
+			elif arg["type"] == TYPE_ARRAY:
+				has_set_c = extra_valid and ( arg["hint_string"].is_empty() or arg["hint_string"] == "String" )
 		elif method["name"] == "set_dialog":
-			if not method["args"].is_empty():
-				var arg: Dictionary = method["args"][0]
-				var extra_valid: bool = true
-				
-				if 1 < method["args"].size():
-					var default_size: int = method["default_args"].size()
-					extra_valid = method["args"].size() - 1 <= default_size
-				
-				has_set_d = extra_valid and ( arg["type"] == TYPE_NIL or arg["type"] == TYPE_STRING )
+			if method["args"].is_empty():
+				continue
+			var arg: Dictionary = method["args"][0]
+			var extra_valid: bool = true
+			
+			if 1 < method["args"].size():
+				var default_size: int = method["default_args"].size()
+				extra_valid = method["args"].size() - 1 <= default_size
+			
+			has_set_d = extra_valid and ( arg["type"] == TYPE_NIL or arg["type"] == TYPE_STRING )
+		elif method["name"] == "update_choice":
+			if method["args"].size() < 2:
+				continue
+			var idx_arg: Dictionary = method["args"][0]
+			var txt_arg: Dictionary = method["args"][1]
+			var extra_valid: bool = true
+			
+			if 1 < method["args"].size():
+				var default_size: int = method["default_args"].size()
+				extra_valid = method["args"].size() - 2 <= default_size
+			
+			if (idx_arg["type"] == TYPE_INT or idx_arg["type"] == TYPE_NIL or idx_arg["type"] == TYPE_FLOAT) and (txt_arg["type"] == TYPE_STRING or txt_arg["type"] == TYPE_NIL):
+				has_c_updt = extra_valid
+		elif method["name"] == "play_dialog":
+			if method["args"].is_empty():
+				continue
+			var arg: Dictionary = method["args"][0]
+			var extra_valid: bool = true
+			
+			if 1 < method["args"].size():
+				var default_size: int = method["default_args"].size()
+				extra_valid = method["args"].size() - 1 <= default_size
+			
+			has_p_txt = extra_valid and ( arg["type"] == TYPE_STRING or arg["type"] == TYPE_NIL )
+		elif method["name"] == "play_choices":
+			if method["args"].is_empty():
+				continue
+			var arg: Dictionary = method["args"][0]
+			var extra_valid: bool = true
+			
+			if 1 < method["args"].size():
+				var default_size: int = method["default_args"].size()
+				extra_valid = method["args"].size() - 1 <= default_size
+			
+			if arg["type"] == TYPE_NIL:
+				has_p_ch = extra_valid
+			elif arg["type"] == TYPE_ARRAY:
+				has_p_ch = extra_valid and ( arg["hint_string"].is_empty() or arg["hint_string"] == "String" )
 		
-		if has_set_c and has_set_d:
+		if has_set_c and has_set_d and has_c_updt and has_p_txt and has_p_ch:
 			break
 	
-	if not has_d_txt:
-		errors.append("Scene has no valid \"dialog_text_changed\" signal")
-	if not has_c_txt:
-		errors.append("Scene has no valid \"choice_text_changed\" signal")
+	if not has_c_updt:
+		errors.append("Scene has no valid 'update_choice'\"' method.")
 	if not has_set_d:
-		errors.append("Scene has no valid \"set_dialog\" method")
+		errors.append("Scene has no valid 'set_dialog' method.")
 	if not has_set_c:
-		errors.append("Scene has no valid \"set_choices\" method")
+		errors.append("Scene has no valid 'set_choices' method.")
+	if not has_p_txt:
+		errors.append("Scene has no valid 'play_dialog' method.")
+	if not has_p_ch:
+		errors.append("Scene has no valid 'play_choices' method.")
 	
 	if not errors.is_empty() and print_errors:
 		NFPluginGameHandler._log_msg(
-				"settings",
+				"discourse - editor",
 				"Scene '%s' errored: %s" % [path, ", ".join(errors)],
 				NFPluginGameHandler._LogLevel.ERROR)
 	
 	instance.free()
-	return has_d_txt and has_c_txt and has_set_c and has_set_d
+	return has_c_updt and has_set_c and has_set_d and has_p_txt and has_p_ch
 
 
 func verify_project_settings() -> void:

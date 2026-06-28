@@ -110,6 +110,8 @@ var locale_popup: PopupMenu = null
 @onready var snap_distance_spn_bx: SpinBox = $MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/SnapDistanceSpnBx
 @onready var dialog_scene_previewer: PanelContainer = $LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/DialogScenePreviewer
 @onready var phrases_lang_menu: OptionButton = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/HeaderPanel/PhrasesHeader/PhrasesLangMenu
+@onready var auto_update_previewer: Button = $LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/DialogScenePreviewer/HBoxContainer/ButtonContaienr/AutoUpdateBtn
+
 
 
 var dialog_previewer: Node = null
@@ -134,7 +136,6 @@ func ready_plugin(base_locale: String = "") -> void:
 	
 	var uncollapse_previewer: Button = $LocalizationContainer/FooterContainer/UncollapsePreviewBtn
 	var collapse_previewer: Button = $LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/DialogScenePreviewer/HBoxContainer/ButtonContaienr/CollapsePreviewBtn
-	var auto_update_previewer: Button = $LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/DialogScenePreviewer/HBoxContainer/ButtonContaienr/AutoUpdateBtn
 	var play_previewer: Button = $LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/DialogScenePreviewer/HBoxContainer/ButtonContaienr/PlayTextBtn
 	var default_expand_button: Button = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/ResultContainer/DefaultContainer/DefaultExpandButton
 	# --- Node Menu Items ---
@@ -385,6 +386,8 @@ func ready_plugin(base_locale: String = "") -> void:
 	if _is_preview_scene_valid(false):
 		var path: String = ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("discourse_localization_preview_scene"))
 		uncollapse_previewer.visible = true
+		collapse_previewer.pressed.connect(_on_collapse_previewer_pressed)
+		uncollapse_previewer.pressed.connect(_on_uncollapse_previewer_pressed)
 		dialog_previewer = load(path).instantiate()
 		$LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/DialogScenePreviewer/HBoxContainer/PreviewPanel.add_child(dialog_previewer)
 	else:
@@ -471,8 +474,9 @@ func ready_plugin(base_locale: String = "") -> void:
 	uncollapse_right_btn.pressed.connect(_on_uncollapse_right_pressed)
 	
 	phrases_lang_menu.item_selected.connect(_on_phrase_button_item_selected)
-	$LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/DialogScenePreviewer/HBoxContainer/ButtonContaienr/AutoUpdateBtn.toggled.connect(_on_auto_update_toggled)
+	auto_update_previewer.toggled.connect(_on_auto_update_toggled)
 	
+	play_previewer.pressed.connect(_on_play_live_preview_pressed)
 	default_expand_button.pressed.connect(_on_default_case_focus_pressed)
 
 
@@ -1063,6 +1067,7 @@ func _on_menu_close_pressed() -> void:
 		conversation_tree.active_unsaved = false
 		selected_key = null
 		new_text_button.disabled = true
+		dialog_scene_previewer.visible = false
 		return
 	
 	var new_resource: EditorDiscourseDialog = conversation_tree.get_active_resource()
@@ -1169,7 +1174,6 @@ func _on_side_editor_locale_changed(from: String, to: String) -> void:
 	set_localization_tip(to)
 	
 	if not from.is_empty():
-		#save_phrase_keys(from)
 		save_localizer_data(from)
 		
 		if active_node != null and from == current_locale:
@@ -1187,31 +1191,13 @@ func _on_side_editor_locale_changed(from: String, to: String) -> void:
 				DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
 					var text: String = translation_txt_box.text.strip_edges()
 					active_node.set_text(translation_txt_box.text.strip_edges())
-	#save_phrase_keys(from)
-	#clear_cases()
-	#default_case_ln_edt.text = ""
-	#search_case_ln_edt.text = ""
-	#search_case_ln_edt.set_meta(&"current_search", "")
-	#argument_opt_btn.clear()
-	#
-	#search_text_ln_edt.text = ""
-	#search_text_ln_edt.set_meta(&"current_search", "")
 	
-	if to.is_empty():
+	if to.is_empty() or active_node == null:
 		$LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/LocaleVBoxContainer.visible = false
 		$LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer.visible = false
-		return
-	
-	#for item_index in range(key_container.get_child_count()):
-		#var line: LineEdit = key_container.get_child(item_index).get_child(1)
-		#var text_field: LineEdit = text_container.get_child(item_index).get_child(0)
-		#var key: String = line.get_meta(&"phrase_key")
-		#
-		#text_field.text = active_conversation.get_format_string(
-				#key,
-				#to)
-	
-	if active_node == null:
+		if dialog_scene_previewer.visible:
+			dialog_scene_previewer.visible = false
+			$LocalizationContainer/FooterContainer/UncollapsePreviewBtn.visible = true
 		return
 	
 	var base_locale: String = languages_tree.get_base_language()
@@ -1235,6 +1221,9 @@ func _on_side_editor_locale_changed(from: String, to: String) -> void:
 		
 		base_text_edt.text = base_text
 		translation_txt_box.text = new_text
+		
+		if dialog_scene_previewer.visible:
+			dialog_previewer.set_dialog(new_text)
 	elif active_node.node_type == DiscourseGraphNode.DialogueNodeType.CHOICES:
 		var choices: Array[String] = []
 		var base_options: Array[String] = []
@@ -1270,6 +1259,9 @@ func _on_side_editor_locale_changed(from: String, to: String) -> void:
 			create_choice_node(
 					base_options[option_idx],
 					localized_options[option_idx])
+		
+		if dialog_scene_previewer.visible:
+			dialog_previewer.set_choices(localized_options)
 
 
 func _on_localizer_node_selected(uuid: StringName) -> void:
@@ -1345,6 +1337,8 @@ func _on_localizer_node_selected(uuid: StringName) -> void:
 			
 			base_text_edt.text = base_text
 			translation_txt_box.text = new_text
+			if dialog_previewer != null and dialog_scene_previewer.visible:
+				dialog_previewer.set_dialog(new_text)
 			
 		DiscourseGraphNode.DialogueNodeType.CHOICES:
 			var options_localized: Array[String] = []
@@ -1376,9 +1370,17 @@ func _on_localizer_node_selected(uuid: StringName) -> void:
 				create_choice_node(
 						options_base[option_idx],
 						options_localized[option_idx])
+			
+			if dialog_previewer != null and dialog_scene_previewer.visible:
+				dialog_previewer.set_choices(options_localized)
+				
 		DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
+			var new_text: String = active_conversation.get_text_entry(uuid, active_locale)
 			base_text_edt.text = active_conversation.get_text_entry(uuid, base_language)
-			translation_txt_box.text = active_conversation.get_text_entry(uuid, active_locale)
+			translation_txt_box.text = new_text
+			
+			if dialog_previewer != null and dialog_scene_previewer.visible:
+				dialog_previewer.set_dialog(new_text)
 	
 	localization_node_selected = new_node
 
@@ -3523,25 +3525,48 @@ func _on_collapse_right_pressed() -> void:
 func _on_uncollapse_previewer_pressed() -> void:
 	dialog_scene_previewer.visible = true
 	$LocalizationContainer/FooterContainer/UncollapsePreviewBtn.visible = false
+	
+	var active_node: DiscourseGraphNode = localization_nodes_tree.get_active_node()
+	
+	if active_node == null:
+		return
+	elif active_node.node_type == DiscourseGraphNode.DialogueNodeType.DIALOG or active_node.node_type == DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
+		dialog_previewer.set_dialog(translation_txt_box.text)
+	elif active_node.node_type == DiscourseGraphNode.DialogueNodeType.CHOICES:
+		dialog_previewer.set_choices(
+				get_localizer_choices())
 
 
 func _on_collapse_previewer_pressed() -> void:
-	dialog_scene_previewer.visible = true
-	$LocalizationContainer/FooterContainer/UncollapsePreviewBtn.visible = false
+	dialog_scene_previewer.visible = false
+	$LocalizationContainer/FooterContainer/UncollapsePreviewBtn.visible = true
 
 
 func _on_text_changed_sync(text: String) -> void:
-	if dialog_previewer == null or not dialog_scene_previewer.visible or not $LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/DialogScenePreviewer/HBoxContainer/ButtonContaienr/AutoUpdateBtn.button_pressed:
+	if dialog_previewer == null or not dialog_scene_previewer.visible or not auto_update_previewer.button_pressed:
 		return
-	
-	dialog_previewer.dialog_text_changed.emit(text)
+	dialog_previewer.set_dialog(text)
 
 
 func _on_choice_text_changed(text: String, index: int) -> void:
-	if dialog_previewer == null or not dialog_scene_previewer.visible or not $LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/DialogScenePreviewer/HBoxContainer/ButtonContaienr/AutoUpdateBtn.button_pressed:
+	if dialog_previewer == null or not dialog_scene_previewer.visible or not auto_update_previewer.button_pressed:
+		return
+	dialog_previewer.update_choice(index, text)
+
+
+func _on_play_live_preview_pressed() -> void:
+	if dialog_previewer == null or not dialog_scene_previewer.visible:
 		return
 	
-	dialog_previewer.choice_text_changed.emit(text, index)
+	var active_node: DiscourseGraphNode = localization_nodes_tree.get_active_node()
+	
+	if active_node == null:
+		return
+	elif active_node.node_type == DiscourseGraphNode.DialogueNodeType.DIALOG or active_node.node_type == DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
+		dialog_previewer.play_dialog(translation_txt_box.text)
+	elif active_node.node_type == DiscourseGraphNode.DialogueNodeType.CHOICES:
+		dialog_previewer.play_choices(
+				get_localizer_choices())
 
 
 func _on_auto_update_toggled(toggled_on: bool) -> void:
@@ -3602,65 +3627,90 @@ func _is_preview_scene_valid(print_errors: bool = true) -> bool:
 	var errors: Array[String] = []
 	var static_methods: Array[Dictionary] = scene_script.get_script_method_list()
 	var static_signals: Array[Dictionary] = scene_script.get_script_signal_list()
-	var has_d_txt: bool = false
-	var has_c_txt: bool = false
+	var has_c_updt: bool = false
 	var has_set_d: bool = false
 	var has_set_c: bool = false
-	
-	for item_signal in static_signals:
-		if item_signal["name"] == "dialog_text_changed":
-			if item_signal["args"].size() == 1:
-				var arg: Dictionary = item_signal["args"][0]
-				has_d_txt = arg["type"] == TYPE_NIL or arg["type"] == TYPE_STRING
-		elif item_signal["name"] == "choice_text_changed":
-			if item_signal["args"].size() == 2:
-				var arg_1: Dictionary = item_signal["args"][0]
-				var arg_2: Dictionary = item_signal["args"][1]
-				
-				var arg_1_valid: bool = arg_1["type"] == TYPE_NIL or arg_1["type"] == TYPE_STRING
-				var arg_2_valid: bool = arg_2["type"] == TYPE_NIL or arg_2["type"] == TYPE_INT
-				
-				has_c_txt = arg_1_valid and arg_2_valid
-		
-		if has_d_txt and has_c_txt:
-			break
+	var has_p_txt: bool = false
+	var has_p_ch: bool = false
 	
 	for method in static_methods:
 		if method["name"] == "set_choices":
-			if not method["args"].is_empty():
-				var arg: Dictionary = method["args"][0]
-				var extra_valid: bool = true
-				
-				if 1 < method["args"].size():
-					var default_size: int = method["default_args"].size()
-					extra_valid = method["args"].size() - 1 <= default_size
-				
-				if arg["type"] == TYPE_NIL:
-					has_set_c = extra_valid
-				elif arg["type"] == TYPE_ARRAY:
-					has_set_c = extra_valid and ( arg["hint_string"].is_empty() or arg["hint_string"] == "String" )
+			if method["args"].is_empty():
+				continue
+			var arg: Dictionary = method["args"][0]
+			var extra_valid: bool = true
+			
+			if 1 < method["args"].size():
+				var default_size: int = method["default_args"].size()
+				extra_valid = method["args"].size() - 1 <= default_size
+			
+			if arg["type"] == TYPE_NIL:
+				has_set_c = extra_valid
+			elif arg["type"] == TYPE_ARRAY:
+				has_set_c = extra_valid and ( arg["hint_string"].is_empty() or arg["hint_string"] == "String" )
 		elif method["name"] == "set_dialog":
-			if not method["args"].is_empty():
-				var arg: Dictionary = method["args"][0]
-				var extra_valid: bool = true
-				
-				if 1 < method["args"].size():
-					var default_size: int = method["default_args"].size()
-					extra_valid = method["args"].size() - 1 <= default_size
-				
-				has_set_d = extra_valid and ( arg["type"] == TYPE_NIL or arg["type"] == TYPE_STRING )
+			if method["args"].is_empty():
+				continue
+			var arg: Dictionary = method["args"][0]
+			var extra_valid: bool = true
+			
+			if 1 < method["args"].size():
+				var default_size: int = method["default_args"].size()
+				extra_valid = method["args"].size() - 1 <= default_size
+			
+			has_set_d = extra_valid and ( arg["type"] == TYPE_NIL or arg["type"] == TYPE_STRING )
+		elif method["name"] == "update_choice":
+			if method["args"].size() < 2:
+				continue
+			var idx_arg: Dictionary = method["args"][0]
+			var txt_arg: Dictionary = method["args"][1]
+			var extra_valid: bool = true
+			
+			if 1 < method["args"].size():
+				var default_size: int = method["default_args"].size()
+				extra_valid = method["args"].size() - 2 <= default_size
+			
+			if (idx_arg["type"] == TYPE_INT or idx_arg["type"] == TYPE_NIL or idx_arg["type"] == TYPE_FLOAT) and (txt_arg["type"] == TYPE_STRING or txt_arg["type"] == TYPE_NIL):
+				has_c_updt = extra_valid
+		elif method["name"] == "play_dialog":
+			if method["args"].is_empty():
+				continue
+			var arg: Dictionary = method["args"][0]
+			var extra_valid: bool = true
+			
+			if 1 < method["args"].size():
+				var default_size: int = method["default_args"].size()
+				extra_valid = method["args"].size() - 1 <= default_size
+			
+			has_p_txt = extra_valid and ( arg["type"] == TYPE_STRING or arg["type"] == TYPE_NIL )
+		elif method["name"] == "play_choices":
+			if method["args"].is_empty():
+				continue
+			var arg: Dictionary = method["args"][0]
+			var extra_valid: bool = true
+			
+			if 1 < method["args"].size():
+				var default_size: int = method["default_args"].size()
+				extra_valid = method["args"].size() - 1 <= default_size
+			
+			if arg["type"] == TYPE_NIL:
+				has_p_ch = extra_valid
+			elif arg["type"] == TYPE_ARRAY:
+				has_p_ch = extra_valid and ( arg["hint_string"].is_empty() or arg["hint_string"] == "String" )
 		
-		if has_set_c and has_set_d:
+		if has_set_c and has_set_d and has_c_updt and has_p_txt and has_p_ch:
 			break
 	
-	if not has_d_txt:
-		errors.append("Scene has no valid \"dialog_text_changed\" signal")
-	if not has_c_txt:
-		errors.append("Scene has no valid \"choice_text_changed\" signal")
+	if not has_c_updt:
+		errors.append("Scene has no valid 'update_choice'\"' method.")
 	if not has_set_d:
-		errors.append("Scene has no valid \"set_dialog\" method")
+		errors.append("Scene has no valid 'set_dialog' method.")
 	if not has_set_c:
-		errors.append("Scene has no valid \"set_choices\" method")
+		errors.append("Scene has no valid 'set_choices' method.")
+	if not has_p_txt:
+		errors.append("Scene has no valid 'play_dialog' method.")
+	if not has_p_ch:
+		errors.append("Scene has no valid 'play_choices' method.")
 	
 	if not errors.is_empty() and print_errors:
 		NFPluginGameHandler._log_msg(
@@ -3669,4 +3719,4 @@ func _is_preview_scene_valid(print_errors: bool = true) -> bool:
 				NFPluginGameHandler._LogLevel.ERROR)
 	
 	instance.free()
-	return has_d_txt and has_c_txt and has_set_c and has_set_d
+	return has_c_updt and has_set_c and has_set_d and has_p_txt and has_p_ch

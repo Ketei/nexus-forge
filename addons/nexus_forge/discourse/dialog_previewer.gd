@@ -66,7 +66,7 @@ func _ready() -> void:
 	NexusForge.Discourse.dialog_finished.connect(_on_dialog_finished)
 	NexusForge.Discourse.data_set.connect(_on_data_set)
 	NexusForge.Discourse.method_called.connect(_on_method_called)
-	NexusForge.Discourse.signal_emmited.connect(_on_signal_emmited)
+	NexusForge.Discourse.signal_emitted.connect(_on_signal_emitted)
 
 
 func _on_clear_data_pressed() -> void:
@@ -144,7 +144,7 @@ func _on_method_called(method_string: String, arguments: Array) -> void:
 			"\n")
 
 
-func _on_signal_emmited(signal_name: String, arguments: Array) -> void:
+func _on_signal_emitted(signal_name: String, arguments: Array) -> void:
 	events_text_edit.text += str(
 			"[EVENT] Signal ",
 			signal_name,

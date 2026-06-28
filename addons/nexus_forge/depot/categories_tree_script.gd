@@ -111,7 +111,7 @@ func create_category(category_id: String, category_name: String, data: Dictionar
 	var new_category: TreeItem = on.create_child()
 	new_category.set_text(0, category_id)
 	new_category.set_text(1, category_name)
-	new_category.set_metadata(0, {"id": category_id, "original_id": StringName(category_id), "name": category_name, "data": data})
+	new_category.set_metadata(0, {"id": category_id, "original_id": StringName(category_id), "name": category_name, "custom_data": data})
 	new_category.add_button(
 			1,
 			get_theme_icon("New", "EditorIcons"),

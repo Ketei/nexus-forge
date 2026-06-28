@@ -396,6 +396,7 @@ func clear_currency_section() -> void:
 
 func add_currency_data(data_key: String, data: Variant) -> void:
 	currency_custom_data_tree.add_data(data_key, data)
+	_on_currency_changed()
 
 
 func set_currency_ui_enabled(enabled: bool) -> void:
@@ -520,8 +521,10 @@ func _on_items_recategorized(new_category: StringName, items: Array[StringName])
 func _on_category_selected(category: StringName) -> void:
 	if noncategory_loaded if category.is_empty() else current_category == category:
 		return
+	
 	if not loaded_item.is_empty():
 		save_current_item()
+	
 	clear_all_fields()
 	loaded_item = &""
 	current_category = category
@@ -677,6 +680,7 @@ func _on_create_item_pressed() -> void:
 
 func add_item_data(data_key: String, data: Variant) -> void:
 	item_data_tree.add_data(data_key, data)
+	_on_items_changed()
 
 
 func set_items_ui_enabled(enabled: bool) -> void:
@@ -715,6 +719,7 @@ func save_current_item() -> void:
 	item_link.set_item_name(loaded_item, item_name_ln_edt.text.strip_edges())
 	item_link.items.set_item_description(loaded_item, item_desc_txt_edt.text.strip_edges())
 	item_link.items.set_item_category(loaded_item, current_category)
+	
 	if -1 < rarity_opt_btn.selected:
 		item_link.items.set_item_rarity(loaded_item,  rarity_opt_btn.get_selected_metadata())
 	else:
@@ -757,8 +762,8 @@ func load_item(item_id: StringName) -> void:
 	
 	item_data_tree.clear_data()
 	
-	for data_key in item.data.keys():
-		item_data_tree.add_data(data_key, item.data[data_key])
+	for data_key in item.custom_data.keys():
+		item_data_tree.add_data(data_key, item.custom_data[data_key])
 	
 	for flag:CheckBox in items_flags_container.get_children():
 		flag.set_pressed_no_signal(

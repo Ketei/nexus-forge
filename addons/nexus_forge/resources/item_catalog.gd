@@ -32,18 +32,19 @@ func set_item_data(item_id: StringName, data_key: String, data: Variant) -> void
 	if not _items.has(item_id):
 		return
 	
+	if not _items[item_id].has("custom_data"):
+		_items[item_id]["custom_data"] = DictUtils.create_typed(TYPE_STRING, TYPE_NIL)
+	
 	if data == null:
-		_items[item_id]["data"].erase(data_key)
+		_items[item_id]["custom_data"].erase(data_key)
 	else:
-		_items[item_id]["data"][data_key] = data
+		_items[item_id]["custom_data"][data_key] = data
 
 
 ## Clears the custom data from [param item_id].
 func clear_item_data(item_id: StringName) -> void:
-	if not _items.has(item_id):
-		return
-	
-	_items[item_id]["data"].clear()
+	if DictUtils.has_nested_path(_items, [item_id, "custom_data"]):
+		_items[item_id]["custom_data"].clear()
 
 
 ## Creates an item with id [param item_id] unless it already exists.[br]
@@ -59,7 +60,7 @@ func create_item(item_id: StringName, item_name: String, description: String, ca
 		"rarity": rarity,
 		"value": value,
 		"flags": flags,
-		"data": data}
+		"custom_data": data}
 	
 	_items[item_id] = new_entry
 
@@ -201,7 +202,7 @@ func get_item(item_id: StringName) -> ItemSheet:
 	item_sheet.rarity = data["rarity"]
 	item_sheet.value = data["value"]
 	item_sheet.description = data["description"]
-	item_sheet.custom_data.assign(data["data"])
+	item_sheet.custom_data.assign(data["custom_data"])
 	item_sheet.flags.assign(data["flags"])
 	
 	return item_sheet
@@ -236,7 +237,7 @@ func create_category(category_id: StringName, category_name: String, parent_cate
 	var new_cat: Dictionary = {
 		"parent_key": parent_category,
 		"name": category_name,
-		"data": custom_data}
+		"custom_data": custom_data}
 	
 	_categories[category_id] = new_cat
 
@@ -277,32 +278,35 @@ func set_category_data(category_id: StringName, data_key: String, data: Variant)
 	if not _categories.has(category_id):
 		return
 	
+	if not _categories[category_id].has("custom_data"):
+		_categories[category_id]["custom_data"] = DictUtils.create_typed(TYPE_STRING, TYPE_NIL)
+	
 	if data == null:
-		_categories[category_id]["data"].erase(data_key)
+		_categories[category_id]["custom_data"].erase(data_key)
 	else:
-		_categories[category_id]["data"][data_key] = data
+		_categories[category_id]["custom_data"][data_key] = data
 
 
 ## Clears the custom data from the category [param category_id].
 func clear_category_data(category_id: StringName) -> void:
-	if _categories.has(category_id):
-		_categories[category_id]["data"].clear()
+	if DictUtils.has_nested_path(_categories, [category_id, "custom_data"]):
+		_categories[category_id]["custom_data"].clear()
 
 
 ## Returns the custom data with key [param data_key] from the [param category_id].[br]
 ## Returns [code]null[/code] if [param category_id] isn't registered
 ## or [param data_key] doesn't exist.
 func get_category_data(category_id: StringName, data_key: String) -> Variant:
-	if _categories.has(category_id) and _categories[category_id]["data"].has(data_key):
-		return _categories[category_id]["data"][data_key]
-	return null
+	return DictUtils.get_nested_value(
+			_categories,
+			[category_id, "custom_data", data_key])
 
 
 func category_data(category_id: StringName) -> Dictionary[StringName, Variant]:
 	var data: Dictionary[StringName, Variant] = {}
 	data.assign(DictUtils.get_nested_value(
 			_categories,
-			[category_id, "data"],
+			[category_id, "custom_data"],
 			{},
 			true))
 	return data

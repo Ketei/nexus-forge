@@ -11,13 +11,7 @@ extends Resource
 ## and no two currencies should share the same value.
 
 
-@export_storage var _currencies: Dictionary[StringName, Dictionary] = {
-	#&"copper": {"name": "CP", "value": 1, "data": null},
-	#&"silver": {"name": "SP", "value": 10, "data": null},
-	#&"electrum": {"name": "EP", "value": 50, "data": null},
-	#&"gold": {"name": "GP", "value": 100, "data": null},
-	#&"platinum": {"name": "PP", "value": 1000, "data": null},
-}
+@export_storage var _currencies: Dictionary[StringName, Dictionary] = {}
 
 
 ## Creates a new currency with [param currency_id] unless it already exists.
@@ -83,19 +77,21 @@ func set_currency_data(currency_id: StringName, data_key: String, data: Variant)
 	if not _currencies.has(currency_id):
 		return
 	
+	if not _currencies[currency_id].has("custom_data"):
+		_currencies[currency_id]["custom_data"] = DictUtils.create_typed(TYPE_STRING, TYPE_NIL)
+	
 	if data == null:
-		if _currencies[currency_id]["data"].has(data_key):
-			_currencies[currency_id]["data"].erase(data_key)
+		_currencies[currency_id]["custom_data"].erase(data_key)
 	else:
-		_currencies[currency_id]["data"][data_key] = data
+		_currencies[currency_id]["custom_data"][data_key] = data
 
 
 ## Returns the value of [param data_key] of the custom data of
 ## [param currency_id].
 func get_currency_data(currency_id: StringName, data_key: String) -> Variant:
-	if _currencies.has(currency_id) and _currencies[currency_id]["custom_data"].has(data_key):
-		return _currencies[currency_id]["custom_data"][data_key]
-	return null
+	return DictUtils.get_nested_value(
+			_currencies,
+			[currency_id, "custom_data", data_key])
 
 
 func get_currency_custom_data(currency_id: StringName) -> Dictionary[StringName, Variant]:
@@ -111,14 +107,17 @@ func get_currency_custom_data(currency_id: StringName) -> Dictionary[StringName,
 ## Returns the keys of the custom data that [param currency_id] has.
 func currency_data_keys(currency_id: StringName) -> Array[String]:
 	var keys: Array[String] = []
-	if _currencies.has(currency_id):
-		keys.assign(_currencies[currency_id]["custom_data"].keys())
+	keys.assign(DictUtils.get_nested_value(
+			_currencies,
+			[currency_id, "custom_data"],
+			{},
+			true).keys())
 	return keys
 
 
 ## Clears the custom data of the currency with id [param currency_id]
 func clear_currency_data(currency_id: StringName) -> void:
-	if _currencies.has(currency_id):
+	if DictUtils.has_nested_path(_currencies, [currency_id, "custom_data"]):
 		_currencies[currency_id]["custom_data"].clear()
 
 

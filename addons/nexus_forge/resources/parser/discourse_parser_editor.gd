@@ -11,7 +11,7 @@ signal data_set(path: String, data: Variant)
 ## Emmited when a method is called from the DiscourseAPI.
 signal method_called(method_string: String, arguments: Array)
 ## Emmited when a signal is emmited from the DiscourseAPI.
-signal signal_emmited(signal_name: String, arguments: Array)
+signal signal_emitted(signal_name: String, arguments: Array)
 
 
 func load_dialog(path: String, starting_id: StringName = &"") -> bool:
@@ -261,7 +261,7 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 					NexusForge.Discourse.API.emit_signal(
 							signal_metadata["signal"],
 							signal_args)
-					signal_emmited.emit(signal_metadata["signal"], signal_args)
+					signal_emitted.emit(signal_metadata["signal"], signal_args)
 				else:
 					NFPluginGameHandler._log_msg(
 							"discourse",
@@ -406,7 +406,7 @@ func _get_data(from_uuid: StringName, fallback = null) -> Variant:
 					NexusForge.Discourse.API.emit_signal(
 							signal_data["metadata"]["signal"],
 							signal_args)
-					signal_emmited.emit(signal_data["metadata"]["signal"], signal_args)
+					signal_emitted.emit(signal_data["metadata"]["signal"], signal_args)
 				else:
 					NFPluginGameHandler._log_msg(
 						"discourse",
