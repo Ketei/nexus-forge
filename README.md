@@ -91,7 +91,7 @@ Features that are planned to be implemented in the future:
 - [x] **Kindred(Species):** Hybridization system.
 - [x] **Odyssey(Quests):** Modding API.
 - [x] **Core:** Fix all the critical bugs and stabilize the API, making the plugin usable on projects.
-- [ ] Release Beta.
+- [x] Release Beta.
 
 
 ### Beta & Beyond
