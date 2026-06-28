@@ -1,2 +1,13 @@
 # Normalize EOL for all files that Git considers text files.
 * text=auto eol=lf
+
+# 1. Ignore everything in the repository by default
+* export-ignore
+
+# 2. Allow the root-level README and LICENSE files
+/README.md -export-ignore
+/LICENSE -export-ignore
+
+# 3. Allow the addons folder and all of its contents
+/addons/ -export-ignore
+/addons/** -export-ignore
