@@ -105,7 +105,10 @@ func set_variable(variable_path: String, value: Variant) -> bool:
 	var parts: Dictionary[String, Variant] = _get_folder_parts(variable_path)
 	
 	if not parts["parsed"] or not _variables.has(parts["folder"]):
-		push_error("[NEXUS FORGE] Blackboard - Tried to set variable with (", value, ") in an invalid or inexistent path:\" ", parts["path"], "\"")
+		NFPluginGameHandler._log_msg(
+				"blackboard",
+				"Tried to set variable with value '%s' on an invalid or inexistent path: '%s'. Ignoring." % [var_to_str(value), parts["path"]],
+				NFPluginGameHandler._LogLevel.ERROR)
 		return false
 	
 	if value == null:

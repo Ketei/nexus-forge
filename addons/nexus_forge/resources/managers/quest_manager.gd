@@ -166,7 +166,7 @@ func restore_state(state_data: Dictionary) -> void:
 			NFPluginGameHandler._log_msg(
 				"quests - deserializer",
 				"Resource for quest '%s' couldn't be loaded. Skipping." % key,
-				NFPluginGameHandler._LogLevel.ERROR)
+				NFPluginGameHandler._LogLevel.WARNING)
 			continue
 	
 		if _quest_modifiers.has(key) and not res._mods_applied:
@@ -181,8 +181,8 @@ func restore_state(state_data: Dictionary) -> void:
 			if typeof(state_data[key]["stages"][stage_id]) != TYPE_DICTIONARY:
 				NFPluginGameHandler._log_msg(
 						"quests - deserializer",
-						"Error on provided data of stage '%s' from quest '%s'." % [stage_id, key],
-						NFPluginGameHandler._LogLevel.ERROR)
+						"Error on provided data of stage '%s' from quest '%s'. Skipping." % [stage_id, key],
+						NFPluginGameHandler._LogLevel.WARNING)
 				continue
 			
 			if not res.has_stage(stage_id):
@@ -206,8 +206,8 @@ func restore_state(state_data: Dictionary) -> void:
 				if typeof(stage_data[objective_id]) != TYPE_DICTIONARY:
 					NFPluginGameHandler._log_msg(
 							"quests - deserializer",
-							"Error on provided data of objective '%s' from stage '%s' on quest '%s'." % [objective_id, stage_id, key],
-							NFPluginGameHandler._LogLevel.ERROR)
+							"Error on provided data of objective '%s' from stage '%s' on quest '%s'. Skipping." % [objective_id, stage_id, key],
+							NFPluginGameHandler._LogLevel.WARNING)
 					continue
 				var objective: QuestObjective = stage.get_objective(objective_id)
 				var obj_progress: Dictionary[String, Variant] = {}
@@ -440,11 +440,17 @@ func complete_quest(quest_id: StringName, success: bool) -> void:
 ## executes after another modification. The [param order] will be respected.
 func register_quest_modifier(quest_id: StringName, mod_id: StringName, mod_callable: Callable, order: int = -1, after_mod: StringName = &"") -> void:
 	if mod_id.is_empty():
-		push_error("[ODYSSEY] Mod ID can't be empty.")
+		NFPluginGameHandler._log_msg(
+				"odyssey",
+				"Mod ID can't be empty.",
+				NFPluginGameHandler._LogLevel.ERROR)
 		return
 	
 	if _is_dependency_circular(quest_id, mod_id, after_mod):
-		push_error("[ODYSSEY] Circular dependency detected when adding mod %s to %s. Skipping mod registry." % [mod_id, quest_id])
+		NFPluginGameHandler._log_msg(
+				"odyssey",
+				"Circular dependency detected when adding mod '%s' to '%s'. Skipping mod registry." % [mod_id, quest_id],
+				NFPluginGameHandler._LogLevel.ERROR)
 		return
 		
 	
@@ -601,7 +607,10 @@ func _sort_mods(for_quest: StringName) -> void:
 	if final_order.size() < mods.size():
 		for mod_id in mods.keys():
 			if not final_order.has(mod_id):
-				push_warning("[ODYSSEY] Circular dependency detected for mod '%s'. Forcing to end of execution order." % mod_id)
+				NFPluginGameHandler._log_msg(
+						"odyssey",
+						"[ODYSSEY] Circular dependency detected for mod '%s'. Forcing to end of execution order." % mod_id,
+						NFPluginGameHandler._LogLevel.WARNING)
 				final_order.append(mod_id)
 	
 	_quest_modifiers[for_quest]["order"].assign(final_order)
@@ -612,7 +621,10 @@ func _is_dependency_circular(on_quest: StringName, mod_id: StringName, depends_o
 		return false
 	
 	if _visited.has(depends_on):
-		push_warning("[ODYSSEY] Pre-existing cycle detected at '%s'. Aborting check." % depends_on)
+		NFPluginGameHandler._log_msg(
+				"odyssey",
+				"Pre-existing cycle detected at '%s'. Aborting check." % depends_on,
+				NFPluginGameHandler._LogLevel.WARNING)
 		return true
 	
 	_visited.append(depends_on)

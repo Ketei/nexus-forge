@@ -59,9 +59,6 @@ func _on_category_id_changed(from: StringName, to: StringName) -> void:
 	
 	if items_container.current_category == from:
 		items_container.current_category = to
-	#if items_container.category_opt_btn.selected != -1:
-		#if items_container.category_opt_btn.get_item_metadata(items_container.category_opt_btn.selected) == from:
-			#items_container.category_opt_btn.set_item_metadata(items_container.category_opt_btn.selected, to)
 
 
 func _on_resource_loaded() -> void:
