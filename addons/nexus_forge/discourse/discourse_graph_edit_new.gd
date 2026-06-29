@@ -1353,6 +1353,7 @@ func _on_connection_request(from_node: StringName, from_port: int, to_node: Stri
 		if same_origin and same_destination:
 			rollback_disconnection()
 		else:
+			var change: Dictionary = _pending_connection_change.duplicate()
 			commit_disconnection()
 			# Was the connection successful?
 			var con_success: bool = connect_discourse_nodes(from.get_node_uuid(), from_port, to.get_node_uuid(), to_port)
@@ -1361,10 +1362,10 @@ func _on_connection_request(from_node: StringName, from_port: int, to_node: Stri
 				node_connection_switched.emit(_pending_connection_change.duplicate(), to.get_node_uuid(), to_port)
 			else:
 				node_disconnected.emit(
-					_pending_connection_change["from_node"],
-					_pending_connection_change["from_port"],
-					_pending_connection_change["to_node"],
-					_pending_connection_change["to_port"])
+					change["from_node"],
+					change["from_port"],
+					change["to_node"],
+					change["to_port"])
 			
 			dialog_changed.emit()
 		return

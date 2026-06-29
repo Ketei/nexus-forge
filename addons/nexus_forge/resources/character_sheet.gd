@@ -52,7 +52,7 @@ func _set(property: StringName, value: Variant) -> bool:
 func initialize_objects() -> void:
 	if stats == null:
 		stats = StatBlock.new()
-		stats.initialize_ranges()
+	stats.initialize_ranges()
 	if skills == null:
 		skills = SkillSet.new()
 	if traits == null:
