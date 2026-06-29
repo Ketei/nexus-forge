@@ -49,13 +49,11 @@ func _set(property: StringName, value: Variant) -> bool:
 ## Ensures that the object has [member CharacterSheet.stats],
 ## [member CharacterSheet.skills] and
 ## [member CharacterSheet.traits] initialized.
-func initialize_objects() -> CharacterSheet:
-	var new_sheet: CharacterSheet = CharacterSheet.new()
-	if new_sheet.stats == null:
-		new_sheet.stats = StatBlock.new(true)
-	if new_sheet.skills == null:
-		new_sheet.skills = SkillSet.new()
-	if new_sheet.traits == null:
-		new_sheet.traits = TraitBlock.new()
-	
-	return new_sheet
+func initialize_objects() -> void:
+	if stats == null:
+		stats = StatBlock.new()
+		stats.initialize_ranges()
+	if skills == null:
+		skills = SkillSet.new()
+	if traits == null:
+		traits = TraitBlock.new()
