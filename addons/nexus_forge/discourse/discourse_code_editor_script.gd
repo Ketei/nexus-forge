@@ -54,7 +54,6 @@ func _on_text_changed() -> void:
 	var confirmed_via_mouse: bool = Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)
 	
 	if not confirmed_via_keys and not confirmed_via_mouse:
-	#else:
 		debounce_timer.start()
 
 

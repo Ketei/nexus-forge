@@ -54,14 +54,12 @@ func _init(uuid: String = "") -> void:
 	
 	color_picker.name = &"ColorPickerBtn"
 	color_picker.tooltip_text = "Frame tint color"
-	#color_picker.expand_icon = true
-	#color_picker.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	color_picker.custom_minimum_size = Vector2(32.0, 32.0) # 32 is the title height
 	color_picker.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	
 	color_picker.color_changed.connect(_on_color_changed)
 	color_picker.color = Color(0.0, 0.0, 0.0, 0.588) # Default tint from frame
-	#color_picker.deferred_mode = true
+	
 	color_picker.self_modulate = Color.TRANSPARENT
 	
 	color_picker_icon.name = &"ColorPickerTextureRect"
@@ -95,7 +93,6 @@ func _init(uuid: String = "") -> void:
 	label_editor.focus_exited.connect(_on_label_edit_finished.bind("", title_label))
 	label_editor.text_submitted.connect(_on_label_edit_finished.bind(title_label))
 	
-	#color_cont.color_changed.connect(_on_color_changed)
 	close_button.pressed.connect(_on_close_frame_pressed)
 
 

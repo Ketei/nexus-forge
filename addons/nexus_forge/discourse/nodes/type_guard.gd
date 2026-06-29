@@ -159,7 +159,7 @@ func _on_output_disconnected(_output: int, _to_node: DiscourseGraphNode, _to_por
 	fallback.get_child(3).visible = true
 	set_slot_type_right(0, SlotConnectionType.VAR_GUARD)
 	set_slot_color_right(0, COLORS["any"])
-	#set_slot_custom_icon_right(0, get_theme_icon("Variant", "EditorIcons"))
+	
 	set_output_connection_icon(&"connection", get_theme_icon("Variant", "EditorIcons"))
 	filter_mode = TYPE_NIL
 

@@ -4,8 +4,6 @@ extends Tree
 
 signal region_created(language: String, region: String)
 signal locale_changed(from: String, to: String)
-#signal region_deleted(language: String, region: String)
-#signal language_deleted(language: String)
 signal locale_deleted(locale: String)
 
 const ACTIVE_COLOR: Color = Color.SKY_BLUE
@@ -54,16 +52,11 @@ func _on_language_button_clicked(item: TreeItem, _column: int, id: int, _mouse_b
 			
 			if item.get_parent() == get_root():
 				locale_deleted.emit(TranslationServer.standardize_locale(item.get_metadata(0)["language_code"]))
-				#language_deleted.emit(
-						#item.get_metadata(0)["language_code"])
 			else:
 				locale_deleted.emit(TranslationServer.standardize_locale(
 						item.get_parent().get_metadata(0)["language_code"] +\
 						"_" +\
 						item.get_metadata(0)["region_code"]))
-				#region_deleted.emit(
-						#item.get_parent().get_metadata(0)["language_code"],
-						#item.get_metadata(0)["region_code"])
 			
 			if item == active_region:
 				active_region = null

@@ -322,18 +322,11 @@ func load_method(method_id: String) -> void:
 		add_input_arg(argument["name"], argument["type"])
 	
 	if has_any_output(0):
-		 #and get_slot_type_right(0) != type:
 		var target: DiscourseGraphNode = get_node_connected_to_port(PortMode.OUTPUT, 0)
 		var target_port_type: int = target.get_input_port_type(get_target_port_connected_to_self(PortMode.OUTPUT, 0))
 		
 		if not is_port_type_value_compatible(target_port_type, type):
 			disconnect_port(PortMode.OUTPUT, 0)
-			#disconnect_requested.emit(
-				#name,
-				#0,
-				#target.name,
-				#target.get_input_port_connected_to(self),
-				#self)
 	
 	set_slot_type_right(0, type)
 	set_slot_color_right(0, var_color)

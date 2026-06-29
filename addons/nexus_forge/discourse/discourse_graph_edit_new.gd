@@ -353,9 +353,6 @@ func _ready() -> void:
 			ConnectionType.VAR_FORWARD)
 	
 	entry_node = spawn_node(DialogNodes.ENTRY)
-	#new_dialog_node(DialogNodes.ENTRY)
-	#add_child(entry_node)
-	#graph_nodes[entry_node.get_node_uuid()] = entry_node
 	
 	begin_node_move.connect(_on_begin_node_move)
 	end_node_move.connect(_on_end_node_move)
@@ -467,7 +464,6 @@ func new_dialog_node(node_type: DialogNodes, uuid: StringName = &"") -> Discours
 	created_node.duplicate_requested.connect(_on_duplicate_node_button_pressed, CONNECT_DEFERRED)
 	created_node.localize_node_toggled.connect(_on_localize_node_toggled, CONNECT_DEFERRED)
 	
-	#created_node.name = get_unique_node_name(created_node.name)
 	created_node.set_node_id(get_unique_node_name(created_node.get_node_id()))
 	
 	return created_node
@@ -514,7 +510,7 @@ func spawn_node(node_type: DialogNodes, uuid: StringName = &"", data: Dictionary
 		var overwrite_data: Dictionary = new_node._get_node_data()
 		overwrite_data.merge(data, true)
 		new_node._set_node_data(overwrite_data)
-	#if not new_node.is_inside_tree():
+	
 	add_child(new_node)
 	graph_nodes[new_node.get_node_uuid()] = new_node
 	return new_node
@@ -526,7 +522,6 @@ func spawn_frame(uuid: StringName = &"", frame_position: Vector2 = Vector2.ZERO)
 	node_frames[new_frame.get_frame_uuid()] = new_frame
 	new_frame.position_offset = frame_position
 	return new_frame
-	#get_center_offset() - ( new_frame.size / 2.0 )
 
 
 # --- Used for re-do ---
@@ -570,7 +565,6 @@ func paste_node_clipboard(clipboard: Array[Dictionary], uuid_map: Dictionary[Str
 		return
 	
 	var new_connections: Array[Dictionary] = [] 
-	# original uuid : new_node_pointer
 	var uuid_equivalences: Dictionary[StringName, DiscourseGraphNode] = {}
 	
 	var current_offset: Vector2 = clipboard[0]["state"]["data"]["metadata"]["position"]
@@ -584,16 +578,13 @@ func paste_node_clipboard(clipboard: Array[Dictionary], uuid_map: Dictionary[Str
 		var new_name: StringName = get_unique_node_name(node_data["name"])
 		var new_data: Dictionary = node_data.duplicate(true)
 		new_data["name"] = new_name
-		#node_meta["position"] = node_meta["position"] - current_offset + center_scroll_offset
+		
 		var pasted_node: DiscourseGraphNode = spawn_node(
 				new_data["type"],
 				uuid_map[clipboard_data["node_uuid"]],
 				new_data)
 		pasted_node.position_offset = get_center_offset() - (pasted_node.size / 2.0) + (pasted_node.position_offset - current_offset)
-		#pasted_node._set_node_data(new_data)
-		#add_child(pasted_node)
-		#graph_nodes[pasted_node.get_node_uuid()] = pasted_node
-		#pasted_node.position_offset -= pasted_node.size / 2.0
+		
 		uuid_equivalences[clipboard_data["node_uuid"]] = pasted_node
 	
 		var _new_connections: Array[Dictionary] = get_connection_dictionary(
@@ -1110,8 +1101,8 @@ func connect_discourse_nodes(from_node_uuid: StringName, from_port: int, to_node
 	if not from_graph.has_port(PortFlow.OUTPUT, from_port) or not to_graph.has_port(PortFlow.INPUT, to_port):
 		return false
 	
-	var from_type: int = from_graph.get_slot_type_right(from_graph.get_slot_from_port(PortFlow.OUTPUT, from_port))#from_graph.get_output_port_slot(from_port))
-	var to_type: int = to_graph.get_slot_type_left(to_graph.get_slot_from_port(PortFlow.INPUT, to_port))#to_graph.get_input_port_slot(to_port))
+	var from_type: int = from_graph.get_slot_type_right(from_graph.get_slot_from_port(PortFlow.OUTPUT, from_port))
+	var to_type: int = to_graph.get_slot_type_left(to_graph.get_slot_from_port(PortFlow.INPUT, to_port))
 	
 	var from_port_ghost_disconnect: bool = _pending_connection_change.has_all(["from_node", "from_port"]) and _pending_connection_change["from_node"] == from_node_uuid and _pending_connection_change["from_port"] == from_port
 	
@@ -1760,7 +1751,6 @@ func copy_selected_to_clipboard() -> void:
 		var data: Dictionary = {
 			"node_uuid": selected_node.get_node_uuid(),
 			"state": selected_node.get_node_state()}
-		#data.merge(selected_node._get_node_data())
 		copy_data.append(data)
 	copy_data.sort_custom(sort_clipboard_custom)
 	node_clipboard.clear()

@@ -133,12 +133,6 @@ func _on_type_selected(item_id: int) -> void:
 		
 		if not is_port_type_value_compatible(target_port_type, item_id):
 			disconnect_port(PortMode.OUTPUT, 0)
-			#disconnect_requested.emit(
-					#name,
-					#0,
-					#target.name,
-					#target.get_port_connected_to(PortMode.INPUT, self, 0),
-					#self)
 	
 	set_node_type(item_id)
 	

@@ -42,7 +42,6 @@ var mode: int = TYPE_INT:
 				active_value.value_changed.connect(_on_field_changed, CONNECT_DEFERRED)
 				set_slot_type_right(0, SlotConnectionType.VAR_INT)
 				set_slot_color_right(0, COLORS["integer"])
-				#set_output_connection_icon(&"data", get_theme_icon("int", "EditorIcons"))
 			TYPE_FLOAT:
 				active_value = get_field(&"data").get_child(0).get_child(0)
 				active_value.visible = true
@@ -51,7 +50,6 @@ var mode: int = TYPE_INT:
 				active_value.value_changed.connect(_on_field_changed, CONNECT_DEFERRED)
 				set_slot_type_right(0, SlotConnectionType.VAR_FLOAT)
 				set_slot_color_right(0, COLORS["float"])
-				#set_output_connection_icon(&"data", get_theme_icon("float", "EditorIcons"))
 			TYPE_BOOL:
 				active_value = get_field(&"data").get_child(0).get_child(1)
 				active_value.visible = true
@@ -59,7 +57,6 @@ var mode: int = TYPE_INT:
 				active_value.toggled.connect(_on_field_changed, CONNECT_DEFERRED)
 				set_slot_type_right(0, SlotConnectionType.VAR_BOOL)
 				set_slot_color_right(0, COLORS["bool"])
-				#set_output_connection_icon(&"data", get_theme_icon("bool", "EditorIcons"))
 			TYPE_STRING:
 				active_value = get_field(&"data").get_child(0).get_child(2)
 				active_value.visible = true
@@ -67,7 +64,6 @@ var mode: int = TYPE_INT:
 				active_value.text_changed.connect(_on_field_changed, CONNECT_DEFERRED)
 				set_slot_type_right(0, SlotConnectionType.VAR_STRING)
 				set_slot_color_right(0, COLORS["string"])
-				#set_output_connection_icon(&"data", get_theme_icon("String", "EditorIcons"))
 		data_type_changed.emit()
 
 
@@ -84,7 +80,6 @@ func _post_init() -> void:
 	var data_spnbx: SpinBox = SpinBox.new()
 	var data_chk_bx: CheckBox = CheckBox.new()
 	var data_ln_edt: LineEdit = LineEdit.new()
-	#var data_type_optbtn: OptionButton = OptionButton.new()
 	var data_menu: MenuButton = MenuButton.new()
 	var data_popup: PopupMenu = data_menu.get_popup()
 	
@@ -203,16 +198,9 @@ func _on_data_type_selected(type: int) -> void:
 		var target: DiscourseGraphNode = get_node_connected_to_port(PortMode.OUTPUT, 0)
 		var port_type: int = target.get_input_port_type(get_target_port_connected_to_self(PortMode.OUTPUT, 0))
 		
-		#if port_type != SlotConnectionType.VAR_ANY:
 		if not is_port_type_value_compatible(port_type, type):
-			#var target_input: int = target.get_port_connected_to(PortMode.INPUT, self, 0)
 			disconnect_port(PortMode.OUTPUT, 0)
-			#disconnect_requested.emit(
-					#name,
-					#0,
-					#target.name,
-					#target_input,
-					#self)
+	
 	var menu: MenuButton = get_field(&"data").get_child(1)
 	var pop: Popup = menu.get_popup()
 	
@@ -275,13 +263,10 @@ func clamp_range(min_value: float, max_value: float, allow_lesser: bool = false,
 	
 	if not allow_greater and not allow_lesser:
 		range_box.value = clampf(range_box.value, min_value, max_value)
-		#range_box.set_value_no_signal(clampf(range_box.value, min_value, max_value))
 	elif not allow_lesser:
 		range_box.value = maxf(min_value, range_box.value)
-		#range_box.set_value_no_signal(maxf(min_value, range_box.value))
 	elif not allow_greater:
 		range_box.value = minf(range_box.value, max_value)
-		#range_box.set_value_no_signal(minf(range_box.value, max_value))
 	
 	if reconnect:
 		range_box.value_changed.connect(_on_value_changed)

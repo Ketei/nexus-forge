@@ -52,7 +52,7 @@ const COLORS: Dictionary = {
 	"signal": Color(0.825, 0.433, 0.261), # Orange
 	"object": Color(1.0, 0.418, 0.789), # Pink
 	"setting": Color(0.853, 0.55, 0.379),
-	"metadata": Color(0.541, 0.624, 0.82)} # Light-Orange/Gold
+	"metadata": Color(0.541, 0.624, 0.82)}
 
 const LOCALIZED_COLOR: Color = Color.LIME_GREEN
 
@@ -991,21 +991,16 @@ func remove_field(field_id: StringName, size_change: int = 0) -> void:
 		_output_nodes.remove_at(
 			node.get_meta(&"output_slot"))
 	
-	#remove_child(node)
 	var node_size: Vector2 = node.size
-	#var field_idx: int = node.get_index()
-	#set_slot(field_idx, false, -1, Color.BLACK, false, -1, Color.BLACK, null, null)
+	
 	if 0 < size_change:
 		size.y -= size_change
-		#deferred_resizing(size_change)
 	elif size_change < 0:
 		size.y = 0
 	else:
 		size.y -= node_size.y + (get_theme_constant("separation") if 0 < get_child_count() else 0)
-		#deferred_resizing(node.size.y + (get_theme_constant("separation") if 0 < get_child_count() else 0))
-	#node.free()
+	
 	node.queue_free()
-	#node.visible = false
 
 
 func remove_fields(field_ids: Array[StringName], size_change: int = 0) -> void:
@@ -1038,7 +1033,6 @@ func remove_fields(field_ids: Array[StringName], size_change: int = 0) -> void:
 					node.get_meta(&"input_slot"),
 					self)
 				await node_disconnected
-				#await get_tree().process_frame
 			_input_nodes.remove_at(
 				node.get_meta(&"input_slot"))
 			
@@ -1054,27 +1048,18 @@ func remove_fields(field_ids: Array[StringName], size_change: int = 0) -> void:
 					target_slot,
 					self)
 				await node_disconnected
-				#await get_tree().process_frame
 			_output_nodes.remove_at(
 				node.get_meta(&"output_slot"))
 		compound_size += node.size.y
-	#remove_child(node)
 	for node in target_nodes:
 		node.free()
 	
-	#await get_tree().process_frame
-	#var field_idx: int = node.get_index()
-	#set_slot(field_idx, false, -1, Color.BLACK, false, -1, Color.BLACK, null, null)
 	if 0 < size_change:
 		size.y -= size_change
-		#deferred_resizing(size_change)
 	elif size_change < 0:
 		size.y = 0
 	else:
 		size.y -= compound_size + (get_theme_constant("separation") * (target_nodes.size() - 1) if 0 < target_nodes.size() else 0)
-		#deferred_resizing(node.size.y + (get_theme_constant("separation") if 0 < get_child_count() else 0))
-	#node.queue_free()
-	#node.visible = false
 
 
 func deferred_resizing(amount: int) -> void:
@@ -1123,28 +1108,6 @@ func disconnect_port(port_mode: PortMode, port_idx: int, connection_idx: int = 0
 				output_target.get_node_uuid(),
 				output_target.get_port_connected_to(PortMode.INPUT, self, port_idx),
 				self)
-
-
-#func disconnect_all() -> void:
-	#for input_port in range(_input_nodes.size()):
-		#for connection_idx in range(_input_nodes[input_port]["connections"].size()):
-			#var input_target: DiscourseGraphNode = get_node_connected_to_port(PortMode.INPUT, input_port, connection_idx)
-			#disconnect_requested.emit(
-				#input_target.get_node_uuid(),
-				#input_target.get_port_connected_to(PortMode.OUTPUT, self, input_port),
-				#get_node_uuid(),
-				#input_port,
-				#self)
-	#
-	#for output_port in range(_output_nodes.size()):
-		#for connection_idx in range(_output_nodes[output_port]["connections"].size()):
-			#var output_target: DiscourseGraphNode = get_node_connected_to_port(PortMode.OUTPUT, output_port, connection_idx)
-			#disconnect_requested.emit(
-				#get_node_uuid(),
-				#output_port,
-				#output_target.get_node_uuid(),
-				#output_target.get_port_connected_to(PortMode.INPUT, self, output_port),
-				#self)
 
 
 func is_node_localized() -> bool:

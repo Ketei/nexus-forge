@@ -30,13 +30,7 @@ enum SuccessStatus{
 	UNKNOWN,
 }
 
-var _active_quests: Dictionary[StringName, QuestEntry] = {
-	#&"lay_eggs": {
-		#"current_stage": &"",
-		#"quest": Quest.new(),
-		#"auto_advance_stages": true
-	#}
-}
+var _active_quests: Dictionary[StringName, QuestEntry] = {}
 
 ## The quest log in which the history of quest started and finished is stored.
 var Log: NFQuestLog = NFQuestLog.new()

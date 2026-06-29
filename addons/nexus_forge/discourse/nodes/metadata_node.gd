@@ -53,7 +53,7 @@ func _on_input_connected(input_port: int, _from_node: DiscourseGraphNode, _from_
 	var id: StringName = StringName("metadata_" + str(input_port))
 	var port_field: PanelContainer = get_field(id)
 	var metadata_id: LineEdit = port_field.get_child(0)
-	#metadata_id.text = ""
+	
 	metadata_id.visible = true
 	if on_last:
 		add_metadata_port()
@@ -77,7 +77,6 @@ func remove_unused_fields() -> void:
 		var line: LineEdit = get_field(id).get_child(0)
 		line.focus_exited.disconnect(_on_metadata_line_focus_lost)
 		line.text_submitted.disconnect(_on_metadata_text_submit)
-		#remove_field.call_deferred(id, -1)
 		target_fields.append(id)
 		meta_fields -= 1
 	
@@ -97,9 +96,7 @@ func update_size() -> void:
 func _get_node_data() -> Dictionary:
 	sanitize_ids()
 	
-	var metadata_connections: Array[Dictionary] = [
-		#{"id": "alksjdlkas", "port": 1}
-	]
+	var metadata_connections: Array[Dictionary] = []
 	
 	var metadata: Dictionary = {"metadata_connections": metadata_connections}
 	var input_connections: Dictionary = {}

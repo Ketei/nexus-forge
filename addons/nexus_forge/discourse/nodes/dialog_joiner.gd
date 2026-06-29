@@ -148,11 +148,6 @@ func set_input_port_count(new_count: int) -> void:
 				else:
 					_highest_port_connected = port_idx - 1
 					break
-		#var port: int = -1
-		#for port_idx in range(new_count):
-			#if has_any_input(port_idx):
-				#port = port_idx
-		#_highest_port_connected = port
 
 
 func get_new_merge_node() -> Control:

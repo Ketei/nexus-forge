@@ -63,15 +63,11 @@ func _post_init() -> void:
 	parent_port = 0
 	node_type = DialogueNodeType.RANDOM
 	
-	#var con_con: Control = Control.new()
 	var options_container: HBoxContainer = HBoxContainer.new()
 	var options_lbl: Label = Label.new()
 	var options_spn: SpinBox = SpinBox.new()
 	var default_weight: Label = Label.new()
 	var first_random: Label = Label.new()
-	
-	#con_con.custom_minimum_size.y = 24
-	#con_con.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	
 	options_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	options_lbl.text = "Options"
@@ -268,7 +264,7 @@ func _get_node_data() -> Dictionary:
 			}
 		)
 	
-	var input_connections: Dictionary = { # TODO: Check if we need this
+	var input_connections: Dictionary = {
 		"default_weight": get_uuid_and_port_connected_to(PortMode.INPUT, 1)}
 	
 	var metadata: Dictionary = {"options": random_outputs}

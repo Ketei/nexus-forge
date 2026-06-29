@@ -1,9 +1,7 @@
 extends DiscourseGraphNode
 
 
-var available_methods: Dictionary = {
-	#"a_method": [{"name": "arg_name", "type": TYPE_INT, "has_default": true}]
-}
+var available_methods: Dictionary = {}
 
 
 func _post_init() -> void:
@@ -331,7 +329,7 @@ static func get_user_methods() -> Dictionary:
 	
 	var method_blacklsit: Array[String] = []
 	var singleton: DiscourseAPI = DiscourseAPI.new()
-	#var parser: DialogParser = DialogParser.new_parser()
+	
 	var base_methods: Array = ClassDB.class_get_method_list(&"RefCounted")
 	for method in base_methods:
 		method_blacklsit.append(method["name"])

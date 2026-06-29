@@ -16,10 +16,8 @@ func get_target(uuid: StringName, _origin: StringName = &"", _iteration: int = 0
 		_origin = uuid
 	
 	if anchor_nodes.has(uuid):
-		#return _get_target.call(anchor_nodes[uuid], _origin, _iteration + 1)
 		return get_target(anchor_nodes[uuid], _origin, _iteration + 1)
 	elif dialog_mergers.has(uuid):
 		return get_target(dialog_mergers[uuid], _origin, _iteration + 1)
-		#return _get_target.call(dialog_mergers[uuid], _origin, _iteration + 1)
 	else:
 		return uuid

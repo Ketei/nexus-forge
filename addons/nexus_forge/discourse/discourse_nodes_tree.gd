@@ -209,10 +209,7 @@ func _on_discourse_node_activated() -> void:
 	if active == null:
 		return
 	
-	#var node: DiscourseGraphNode = active.get_metadata(0)["node"]
 	node_activated.emit(active.get_metadata(0)["uuid"])
-	#discourse_window.discourse_graph_edit.focus_graph_node(node)
-	#_on_graph_edit_offset_changed(Vector2.ZERO)
 
 
 func belongs_to_tree(item: TreeItem) -> bool:
@@ -281,8 +278,6 @@ func create_node(node: DiscourseGraphNode, on: TreeItem = get_root()) -> void:
 	new_item.set_metadata(0, {"is_node": true, "uuid": node.get_node_uuid()})
 	
 	nodes[node.get_node_uuid()] = new_item
-	#if node == discourse_window.discourse_graph_edit.entry_node and new_item.get_index() != 0:
-		#new_item.move_before(new_item.get_parent().get_first_child())
 
 
 func select_node(node_uuid: StringName) -> void:
