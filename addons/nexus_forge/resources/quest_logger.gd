@@ -77,7 +77,7 @@ func has_objective(on_quest: StringName, from_stage: StringName, entry: StringNa
 
 
 ## Returns log data as a dictionary for serialization.
-func as_dictionary() -> Dictionary[StringName, Dictionary]:
+func log_state() -> Dictionary[StringName, Dictionary]:
 	var log_data: Dictionary[StringName, Dictionary] = {}
 	
 	for quest_id in _entries.keys():
@@ -98,7 +98,7 @@ func as_dictionary() -> Dictionary[StringName, Dictionary]:
 
 
 ## Restores the log from [param data].
-func load_from_data(data: Dictionary) -> void:
+func restore_state(data: Dictionary) -> void:
 	for key_entry in data.keys():
 		var key_type: int = typeof(key_entry)
 		if (key_type != TYPE_STRING_NAME and key_type != TYPE_STRING) or typeof(data[key_entry]) != TYPE_DICTIONARY:

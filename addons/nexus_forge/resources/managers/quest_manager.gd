@@ -82,14 +82,184 @@ func start_quest(quest: Quest, auto_advance_stages: bool) -> bool:
 	for stage_id in quest.stages():
 		var stage_entry: NFQuestLog.NFQuestLogStageEntry = quest_entry.set_entry(stage_id)
 		
-		var obj_status: Dictionary = {}
-		
 		for objective_id in quest.get_stage(stage_id).objectives():
 			stage_entry.set_entry(objective_id)
 	
 	quest_started.emit(quest.id)
 	quest_progressed.emit(quest.id, quest.entry_stage)
 	
+	return true
+
+
+## Adds a quest entry to the manager but does NOT emit signals nor adds entries
+## in the [member QuestManager.Log].[br]
+## Intended to restore programmatically generated
+## quests before calling [method QuestManager.restore_state].
+func add_quest_resource(quest: Quest, auto_advance_stages: bool, apply_mods: bool = true) -> bool:
+	if _active_quests.has(quest.id):
+		return false
+	
+	if _quest_modifiers.has(quest.id) and not quest._mods_applied and apply_mods:
+		for id in _quest_modifiers[quest.id]["order"]:
+			if _quest_modifiers[quest.id]["mods"][id]["callable"].is_valid():
+				_quest_modifiers[quest.id]["mods"][id]["callable"].call(quest)
+	
+	var new_entry: QuestEntry = QuestEntry.new()
+	new_entry.resource = quest
+	new_entry.auto_advance_stages = auto_advance_stages
+	new_entry.current_stage = quest.entry_stage
+	new_entry._flags = BitUtils.set_bit_index(0, 0, true)
+	
+	_active_quests[quest.id] = new_entry
+	return true
+
+
+## Returns a dictionary with the active quests' state. Intended for serialization
+## purposes.
+func get_state() -> Dictionary[StringName, Dictionary]:
+	var data: Dictionary[StringName, Dictionary] = {}
+	
+	for quest_id in _active_quests.keys():
+		var stages: Dictionary[StringName, Dictionary] = {}
+		var quest: Dictionary[String, Variant] = {
+			"resource_path": _active_quests[quest_id].resource.resource_path,
+			"current_stage": _active_quests[quest_id].current_stage,
+			"auto_advance_stages": _active_quests[quest_id].auto_advance_stages,
+			"stages": stages}
+		
+		for stage_id in _active_quests[quest_id].resource.stages():
+			var stage: QuestStage = _active_quests[quest_id].resource.get_stage(stage_id)
+			var objective_data: Dictionary[StringName, Dictionary] = {}
+			for objective_id in stage.objectives():
+				var objective: QuestObjective = stage.get_objective(objective_id)
+				if objective == null:
+					NFPluginGameHandler._log_msg(
+							"quests",
+							"Couldn't load objective data of '%s' from quest '%s' on stage '%s'" % [objective_id, quest_id, stage_id],
+							NFPluginGameHandler._LogLevel.ERROR)
+					continue
+				objective_data[objective_id] = objective._progress.duplicate(true)
+			stages[stage_id] = objective_data
+		data[quest_id] = quest
+	return data
+
+
+## Restores a previous state of the manager.
+func restore_state(state_data: Dictionary) -> void:
+	for key in state_data.keys():
+		var key_type: int = typeof(key)
+		if key_type != TYPE_STRING_NAME and key_type != TYPE_STRING:
+			continue
+		
+		if typeof(state_data[key]) != TYPE_DICTIONARY:
+			continue
+		
+		if not _is_serialized_data_valid(key, state_data[key]):
+			continue
+		
+		if state_data[key]["resource_path"].is_empty():
+			continue
+		
+		var res = _active_quests[key] if _active_quests.has(key) else load(state_data["resource_path"]) 
+		
+		if res == null or res is not Quest:
+			NFPluginGameHandler._log_msg(
+				"quests - deserializer",
+				"Resource for quest '%s' couldn't be loaded. Skipping." % key,
+				NFPluginGameHandler._LogLevel.ERROR)
+			continue
+	
+		if _quest_modifiers.has(key) and not res._mods_applied:
+			for id in _quest_modifiers[key]["order"]:
+				if _quest_modifiers[key]["mods"][id]["callable"].is_valid():
+					_quest_modifiers[key]["mods"][id]["callable"].call(res)
+		
+		for stage_id in state_data[key]["stages"].keys():
+			var stage_type: int = typeof(stage_id)
+			if stage_type != TYPE_STRING_NAME and stage_type != TYPE_STRING:
+				continue
+			if typeof(state_data[key]["stages"][stage_id]) != TYPE_DICTIONARY:
+				NFPluginGameHandler._log_msg(
+						"quests - deserializer",
+						"Error on provided data of stage '%s' from quest '%s'." % [stage_id, key],
+						NFPluginGameHandler._LogLevel.ERROR)
+				continue
+			
+			if not res.has_stage(stage_id):
+				NFPluginGameHandler._log_msg(
+						"quests - deserializer",
+						"Stage '%s' does not exist on quest '%s'. Skipping." % [stage_id, key],
+						NFPluginGameHandler._LogLevel.WARNING)
+				continue
+			var stage: QuestStage = res.get_stage(stage_id)
+			var stage_data: Dictionary = state_data[key]["stages"][stage_id]
+			for objective_id in stage_data.keys():
+				var obj_type: int = typeof(objective_id)
+				if obj_type != TYPE_STRING_NAME and obj_type != TYPE_STRING:
+					continue
+				if not stage.has_objective(objective_id):
+					NFPluginGameHandler._log_msg(
+							"quests - deserializer",
+							"Objective '%s' does not exist in stage '%s' on quest '%s'. Skipping." % [objective_id, stage_id, key],
+							NFPluginGameHandler._LogLevel.WARNING)
+					continue
+				if typeof(stage_data[objective_id]) != TYPE_DICTIONARY:
+					NFPluginGameHandler._log_msg(
+							"quests - deserializer",
+							"Error on provided data of objective '%s' from stage '%s' on quest '%s'." % [objective_id, stage_id, key],
+							NFPluginGameHandler._LogLevel.ERROR)
+					continue
+				var objective: QuestObjective = stage.get_objective(objective_id)
+				var obj_progress: Dictionary[String, Variant] = {}
+				for progress_key in stage_data[objective_id].keys():
+					var pr_type: int = typeof(progress_key)
+					if pr_type != TYPE_STRING and pr_type != TYPE_STRING_NAME:
+						NFPluginGameHandler._log_msg(
+								"quests - deserializer",
+								"Invalid objective data key on objective '%s' in stage '%s' on quest '%s'. Skipping progress entry." % [objective_id, stage_id, key],
+								NFPluginGameHandler._LogLevel.WARNING)
+						continue
+					obj_progress[progress_key] = stage_data[objective_id][progress_key]
+				objective._progress.assign(obj_progress)
+
+
+func _is_serialized_data_valid(quest: StringName, data: Dictionary) -> bool:
+	if not data.has_all(["resource_path", "current_stage", "stages"]):
+		NFPluginGameHandler._log_msg(
+				"quests - deserializer",
+				"Provided data for quest '%s' is missing entries.",
+				NFPluginGameHandler._LogLevel.ERROR)
+		return false
+	
+	if typeof(data["resource_path"]) != TYPE_STRING:
+		NFPluginGameHandler._log_msg(
+				"quests - deserializer",
+				"Invalid resource path given for quest '%s'" % quest,
+				NFPluginGameHandler._LogLevel.ERROR)
+		return false
+	
+	if data["resource_path"].is_empty() or not ResourceLoader.exists(data["resource_path"]):
+		NFPluginGameHandler._log_msg(
+				"quests - deserializer",
+				"Resource path '%s' for quest '%s' is empty or does not exist." % [data["resource_path"], quest],
+				NFPluginGameHandler._LogLevel.ERROR)
+		return false
+	
+	var stage_type = typeof(data["current_stage"])
+	
+	if stage_type != TYPE_STRING_NAME and stage_type != TYPE_STRING:
+		NFPluginGameHandler._log_msg(
+				"quests - deserializer",
+				"Invalid data for stage value on quest '%s'" % quest,
+				NFPluginGameHandler._LogLevel.ERROR)
+		return false
+	
+	if typeof(data["stages"]) != TYPE_DICTIONARY:
+		NFPluginGameHandler._log_msg(
+				"quests - deserializer",
+				"Invalid data for stages value on quest '%s'" % quest,
+				NFPluginGameHandler._LogLevel.ERROR)
+		return false
 	return true
 
 
