@@ -227,6 +227,14 @@ func set_species_stat_value(species_id: StringName, stat_id: StringName, value: 
 		_species[species_id].emit_changed()
 
 
+## Returns the value of [param stat_id] assigned to the species [param species_id]
+## or 0.0 if the stat isn't assigned on the species.
+func get_species_stat_value(species_id: StringName, stat_id: StringName) -> float:
+	if _species.has(species_id) and _species[species_id].stats.has(stat_id):
+		return _species[species_id].stats.get_entry(stat_id)
+	return 0.0
+
+
 ## Returns [code]true[/code] if [param species_id] has [param stat_id] assigned.
 func species_has_stat(species_id: StringName, stat_id: StringName) -> bool:
 	return _species.has(species_id) and _species[species_id].stats.has(stat_id)
