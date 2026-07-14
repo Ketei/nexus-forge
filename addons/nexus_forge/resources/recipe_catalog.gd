@@ -141,8 +141,8 @@ func get_recipe(recipe_id: StringName) -> RecipeSheet:
 	return recipe
 
 
-func get_recipe_custom_data(recipe_id: StringName) -> Dictionary[StringName, Dictionary]:
-	var data: Dictionary[StringName, Dictionary] = {}
+func get_recipe_custom_data(recipe_id: StringName) -> Dictionary[StringName, Variant]:
+	var data: Dictionary[StringName, Variant] = {}
 	data.assign(DictUtils.get_nested_value(
 			_recipes,
 			[recipe_id, "custom_data"],

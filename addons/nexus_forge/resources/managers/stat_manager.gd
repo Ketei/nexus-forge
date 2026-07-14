@@ -167,9 +167,9 @@ func clear_data(stat_id: StringName) -> void:
 		_stat_entries[stat_id].custom_data.clear()
 
 
-## Sets a new minimum value of custom stat [param stat_id] to [param new_min].[br][br]
-## [b]Note:[/b] This only signals that a range rule was established, but does not
-## force instanced [StatBlock]s to follow the set rule.
+## Sets a new minimum value of a stat [param stat_id] to [param new_min].[br][br]
+## [b]Note:[/b] If the maximum value is less than the new minimum assigned, the max
+## value will be increased to match the minimum value.
 func set_stat_min(stat_id: StringName, new_min: float) -> void:
 	if not _stat_entries.has(stat_id):
 		return
@@ -186,18 +186,16 @@ func set_stat_min(stat_id: StringName, new_min: float) -> void:
 		return
 	
 	_stat_ranges[stat_id]["min_value"] = new_min
+	if _stat_ranges[stat_id]["max_value"] < new_min:
+		_stat_ranges[stat_id]["max_value"] = new_min
 	
 	if not _stat_ranges[stat_id]["allow_lesser"]:
 		stat_clamping_changed.emit(stat_id)
 
 
-## Sets a new maximum value of custom stat [param stat_id] to [param new_min].[br][br]
-## [b]Note:[/b] This only signals that a range rule was established, but does not
-## force instanced [StatBlock]s to follow the set rule.
+## Sets a new maximum value of a stat [param stat_id] to [param new_max].[br][br]
+## [b]Note:[/b] The maximum value can't be less than the assigned minimum value.
 func set_stat_max(stat_id: StringName, new_max: float) -> void:
-	if not _stat_entries.has(stat_id):
-		return
-	
 	if not _stat_ranges.has(stat_id):
 		var entry: Dictionary[String, Variant] = {
 			"min_value": 0.0,
@@ -206,12 +204,48 @@ func set_stat_max(stat_id: StringName, new_max: float) -> void:
 			"allow_lesser": true}
 		_stat_ranges[stat_id] = entry
 	
-	if _stat_ranges[stat_id]["max_value"] == new_max:
+	var true_max: float = maxf(_stat_ranges[stat_id]["min_value"], new_max)
+	
+	if _stat_ranges[stat_id]["max_value"] == true_max:
 		return
 	
-	_stat_ranges[stat_id]["max_value"] = new_max
+	_stat_ranges[stat_id]["max_value"] = true_max
 	
 	if not _stat_ranges[stat_id]["allow_greater"]:
+		stat_clamping_changed.emit(stat_id)
+
+
+## Sets a range of a stat.
+func set_stat_range(stat_id: StringName, min_range: float, max_range: float) -> void:
+	if not _stat_ranges.has(stat_id):
+		var entry: Dictionary[String, Variant] = {
+			"min_value": 0.0,
+			"max_value": 0.0,
+			"allow_greater": true,
+			"allow_lesser": true}
+		_stat_ranges[stat_id] = entry
+	
+	var update: bool = false
+	var true_min: float = 0.0
+	var true_max: float = 0.0
+	
+	if min_range < max_range:
+		true_min = min_range
+		true_max = max_range
+	else:
+		true_min = max_range
+		true_max = min_range
+	
+	if _stat_ranges[stat_id]["min_value"] != true_min:
+		_stat_ranges[stat_id]["min_value"] = true_min
+		update = not _stat_ranges[stat_id]["allow_lesser"]
+	
+	if _stat_ranges[stat_id]["max_value"] != true_max:
+		_stat_ranges[stat_id]["max_value"] = true_max
+		if not update:
+			update = not _stat_ranges[stat_id]["allow_greater"]
+	
+	if update:
 		stat_clamping_changed.emit(stat_id)
 
 
@@ -231,9 +265,7 @@ func allows_greater(stat_id: StringName) -> bool:
 	return true
 
 
-## Sets if a stat should [param allow] lesser values than the minimum set.[br]
-## Note: This only signals that a lesser rule was established, but does not
-## force [StatBlock]s to follow the set rule.
+## Sets if a stat should [param allow] lesser values than the minimum set.
 func set_allow_lesser(for_stat: StringName, allow: bool) -> void:
 	if not _stat_entries.has(for_stat):
 		return
@@ -253,9 +285,7 @@ func set_allow_lesser(for_stat: StringName, allow: bool) -> void:
 	stat_clamping_toggled.emit(for_stat)
 
 
-## Sets if a stat should [param allow] greater values than the maximum set.[br]
-## Note: This only signals that a lesser rule was established, but does not
-## force [StatBlock]s to follow the set rule.
+## Sets if a stat should [param allow] greater values than the maximum set.
 func set_allow_greater(for_stat: StringName, allow: bool) -> void:
 	if not _stat_entries.has(for_stat):
 		return
@@ -273,6 +303,33 @@ func set_allow_greater(for_stat: StringName, allow: bool) -> void:
 	
 	_stat_ranges[for_stat]["allow_greater"] = allow
 	stat_clamping_toggled.emit(for_stat)
+
+
+## Sets if a stat should use a min/max range.
+func set_use_range(stat_id: StringName, allow_lesser: bool, allow_greater: bool) -> void:
+	if not _stat_entries.has(stat_id):
+		return
+	
+	if not _stat_ranges.has(stat_id):
+		var entry: Dictionary[String, Variant] = {
+			"min_value": 0.0,
+			"max_value": 0.0,
+			"allow_greater": true,
+			"allow_lesser": true}
+		_stat_ranges[stat_id] = entry
+	
+	var update: bool = false
+	
+	if _stat_ranges[stat_id]["allow_lesser"] != allow_lesser:
+		_stat_ranges[stat_id]["allow_lesser"] = allow_lesser
+		update = true
+		
+	if _stat_ranges[stat_id]["allow_greater"] != allow_greater:
+		_stat_ranges[stat_id]["allow_greater"] = allow_greater
+		update = true
+	
+	if update:
+		stat_clamping_toggled.emit(stat_id)
 
 
 ## Returns the minumum value of [param stat_id] or 0.0 if it doesn't exist.

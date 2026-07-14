@@ -136,6 +136,31 @@ func is_in_cache(key: String) -> bool:
 	return _cache_map.has(key)
 
 
+## Removes an item from the cache. Returns [code]true[/code] if [param key] was
+## in the cache.
+func remove_data(key: String) -> void:
+	if not _cache_map.has(key):
+		return
+	
+	var target_link: CacheLink = _cache_map[key]
+	
+	_cache_map.erase(key)
+	
+	if target_link.older_link != null:
+		target_link.older_link.newer_link = target_link.newer_link
+		
+	if target_link.newer_link != null:
+		target_link.newer_link.older_link = target_link.older_link
+	
+	if _newest_used == target_link:
+		_newest_used = target_link.older_link
+	
+	if _oldest_used == target_link:
+		_oldest_used = target_link.newer_link
+	
+	target_link.clear()
+
+
 ## Returns the current size of the cache.
 func size() -> int:
 	return _cache_map.size()

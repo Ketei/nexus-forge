@@ -261,8 +261,6 @@ func get_text_entry(node_uuid: StringName, locale: String = "", fallback: String
 	if not localization.has(node_uuid) or localization[node_uuid]["type"] != LocalizationType.TEXT:
 		return fallback
 	
-	#var localization_data: Dictionary = localization[node_uuid]
-	
 	var node_id: StringName = node_data[node_uuid]["name"]
 	var localized: bool = DictUtils.get_nested_value(
 			node_data,
@@ -270,8 +268,8 @@ func get_text_entry(node_uuid: StringName, locale: String = "", fallback: String
 			false,
 			true)
 	
-	if DictUtils.has_nested_path(dialog_overrides, [locale, node_id]):
-		return dialog_overrides[locale][node_id]
+	if _dialog_overrides != null and _dialog_overrides.has_override(node_id, locale):
+		return _dialog_overrides.get_override(node_id, locale)
 	elif not localized:
 		return DictUtils.get_nested_value(localization, [node_uuid, "unlocalized"], fallback, true)
 	else:
@@ -301,9 +299,11 @@ func get_choices_entry(node_uuid: StringName, locale: String = "", fallback: Arr
 			false,
 			true)
 	
-	if DictUtils.has_nested_path(dialog_overrides, [locale, node_id]) and typeof(dialog_overrides[locale][node_id]) == TYPE_PACKED_STRING_ARRAY:
-		return_array.assign(
-			dialog_overrides[locale][node_id])
+	if _dialog_overrides != null and _dialog_overrides.has_override(node_id, locale):
+		var override = _dialog_overrides.get_override(node_id, locale)
+		var override_type: int = typeof(override)
+		if override_type == TYPE_PACKED_STRING_ARRAY:
+			return_array.assign(override)
 	elif localized:
 		return_array.assign(
 				DictUtils.get_nested_value(

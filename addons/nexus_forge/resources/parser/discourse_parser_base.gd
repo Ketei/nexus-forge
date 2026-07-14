@@ -88,7 +88,7 @@ var _logic_overrides: Dictionary[String, String] = {}
 var _locale_overrides: Dictionary = {
 	#"dialog_id": {"locale_code": "new_path"}
 	}
-var _dialog_edits: Dictionary = {
+var _dialog_edits: Dictionary[String, DiscourseDialog.NFDialogEntryOverride] = {
 	#"dialogs.village.greet": {
 		#"en": {
 			#"NodeID": "Hello there!"
@@ -928,33 +928,39 @@ func override_dialog_locale(dialog_id: String, locale_code: String, path: String
 ## original used instead.
 func edit_dialog(locale_code: String, dialog_id: StringName, node_id: StringName, new_dialog) -> void:
 	var type: int = typeof(new_dialog)
+	
+	locale_code = TranslationServer.standardize_locale(locale_code)
+	
+	if locale_code.is_empty() or dialog_id.is_empty():
+		return
+	
 	if type == TYPE_NIL:
+		if _dialog_edits.has(dialog_id):
+			_dialog_edits[dialog_id].set_override(node_id, locale_code, new_dialog)
+		else:
+			return
+		
 		if DictUtils.has_nested_path(_dialog_edits, [dialog_id, locale_code, node_id]):
 			_dialog_edits[dialog_id][locale_code].erase(node_id)
 		return
 	elif type != TYPE_STRING:
 		return
 	
-	var target: Dictionary = {}
+	var target: DiscourseDialog.NFDialogEntryOverride = null
 	
-	if DictUtils.has_nested_path(_dialog_edits, [dialog_id, locale_code]):
-		target = _dialog_edits[dialog_id][locale_code]
+	if _dialog_edits.has(dialog_id):
+		target = _dialog_edits[dialog_id]
 	else:
-		DictUtils.set_nested_value(
-				_dialog_edits,
-				[dialog_id, locale_code],
-				target)
+		target = DiscourseDialog.NFDialogEntryOverride.new()
+		_dialog_edits[dialog_id] = target
 	
-	target[node_id] = new_dialog
+	target.set_override(node_id, locale_code, new_dialog)
 	
-	if _dialog_resource == null or dialog_id.is_empty():
+	if _dialog_resource == null or _get_dialog_id(_dialog_resource.resource_path) != dialog_id:
 		return
 	
-	if _get_dialog_id(_dialog_resource.resource_path) != dialog_id:
-		return
-	
-	if _dialog_resource.dialog_overrides != _dialog_edits[dialog_id]:
-		_dialog_resource.dialog_overrides = _dialog_edits[dialog_id]
+	if _dialog_resource._dialog_overrides != target:
+		_dialog_resource._dialog_overrides = target
 
 
 ## Adds an override for a specific set of choices on a specific locale.[br]
@@ -962,6 +968,11 @@ func edit_dialog(locale_code: String, dialog_id: StringName, node_id: StringName
 ## If you pass [code]null[/code] to [param data] the edited dialog will be 
 ## removed and the original used instead.
 func edit_choices(locale_code: String, dialog_id: StringName, node_id: StringName, new_choices) -> void:
+	locale_code = TranslationServer.standardize_locale(locale_code)
+	
+	if locale_code.is_empty() or dialog_id.is_empty():
+		return
+	
 	var type: int = typeof(new_choices)
 	if type == TYPE_NIL:
 		if DictUtils.has_nested_path(_dialog_edits, [dialog_id, locale_code, node_id]):
@@ -970,17 +981,15 @@ func edit_choices(locale_code: String, dialog_id: StringName, node_id: StringNam
 	elif type != TYPE_PACKED_STRING_ARRAY and type != TYPE_ARRAY:
 		return
 	
-	var responses: PackedStringArray = []
+	var target: DiscourseDialog.NFDialogEntryOverride = null
 	
-	if DictUtils.has_nested_path(_dialog_edits, [dialog_id, locale_code, node_id]) and typeof(_dialog_edits[dialog_id][locale_code][node_id]) == TYPE_PACKED_STRING_ARRAY:
-		responses = _dialog_edits[dialog_id][locale_code][node_id]
-		responses.clear()
+	if _dialog_edits.has(dialog_id):
+		target = _dialog_edits[dialog_id]
 	else:
-		DictUtils.set_nested_value(
-				_dialog_edits,
-				[dialog_id, locale_code, node_id],
-				responses,
-				true)
+		target = DiscourseDialog.NFDialogEntryOverride.new()
+		_dialog_edits[dialog_id] = target
+	
+	var responses: PackedStringArray = []
 	
 	for item in new_choices:
 		if typeof(item) == TYPE_STRING:
@@ -988,21 +997,20 @@ func edit_choices(locale_code: String, dialog_id: StringName, node_id: StringNam
 		else:
 			responses.append("")
 	
-	if _dialog_resource == null or dialog_id.is_empty():
+	target.set_override(node_id, locale_code, responses)
+	
+	if _dialog_resource == null or _get_dialog_id(_dialog_resource.resource_path) != dialog_id:
 		return
 	
-	var id: StringName = _get_dialog_id(_dialog_resource.resource_path)
-	if id != dialog_id:
-		return
-	
-	if _dialog_resource.dialog_overrides != _dialog_edits[dialog_id]:
-		_dialog_resource.dialog_overrides = _dialog_edits[dialog_id]
+	if _dialog_resource._dialog_overrides != target:
+		_dialog_resource._dialog_overrides = target
 
 
 ## Adds an override for a specific choice on a specific locale.
 func edit_choice(locale_code: String, dialog_id: StringName, node_id: StringName, choice_index: int, data: String) -> void:
-	var missing_path: bool = not DictUtils.has_nested_path(_dialog_edits, [dialog_id, locale_code, node_id])
-	var not_packed_array: bool = typeof(_dialog_edits[dialog_id][locale_code][node_id]) != TYPE_PACKED_STRING_ARRAY
+	locale_code = TranslationServer.standardize_locale(locale_code)
+	var missing_path: bool = not _dialog_edits.has(dialog_id) or not _dialog_edits[dialog_id].has_override(node_id, locale_code)
+	var not_packed_array: bool = false if missing_path else typeof(_dialog_edits[dialog_id].get_override(node_id, locale_code)) != TYPE_PACKED_STRING_ARRAY
 	if missing_path:
 		NFPluginGameHandler._log_msg(
 				"discourse",
@@ -1016,7 +1024,7 @@ func edit_choice(locale_code: String, dialog_id: StringName, node_id: StringName
 				NFPluginGameHandler._LogLevel.ERROR)
 		return
 	
-	var target: PackedStringArray = _dialog_edits[dialog_id][locale_code][node_id]
+	var target: PackedStringArray = _dialog_edits[dialog_id].get_override(node_id, locale_code)
 	
 	if target.size() <= choice_index:
 		return

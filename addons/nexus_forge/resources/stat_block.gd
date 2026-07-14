@@ -16,6 +16,10 @@ extends Resource
 
 @export_storage var _custom_stats: Dictionary[StringName, ValueRange] = {}
 
+# Global toggle to sync ranges and toggles with the singleton
+var _singleton_sync: bool = true
+# Specific stats to NOT sync with the singleton
+var _sync_blacklist: Dictionary[StringName, Variant] = {}
 
 ## Returns all the stats in the statblock. This does NOT include custom stats.[br]
 ## The key represents the stat, and the value its type from [enum Variant.Type].
@@ -53,8 +57,8 @@ func _init(use_nexus_forge: bool = true) -> void:
 		_custom_stats[custom_stat] = new_range
 	
 	NexusForge.Stats.stat_created.connect(_on_custom_stat_created)
-	NexusForge.Stats.stat_min_range_changed.connect(_on_stat_min_range_changed)
-	NexusForge.Stats.stat_max_range_changed.connect(_on_stat_max_range_changed)
+	NexusForge.Stats.stat_clamping_changed.connect(_on_stat_clamping_changed)
+	NexusForge.Stats.stat_clamping_toggled.connect(_on_stat_clamping_toggled)
 
 
 func _set(property: StringName, value: Variant) -> bool:
@@ -99,25 +103,39 @@ func _on_custom_stat_created(stat_id: StringName) -> void:
 		return
 	
 	var new_range: ValueRange = RangeInt.new() if NexusForge.Stats.stat_type(stat_id) == TYPE_INT else RangeFloat.new()
+	var allows_lesser: bool = NexusForge.Stats.allows_lesser(stat_id) 
+	var allows_greater: bool = NexusForge.Stats.allows_greater(stat_id)
 	
-	new_range.allow_lesser = NexusForge.Stats.custom_allows_lesser(stat_id)
-	new_range.allow_greater = NexusForge.Stats.custom_allows_greater(stat_id)
-	new_range.min_value = NexusForge.Stats.get_custom_min_value(stat_id)
-	new_range.max_value = NexusForge.Stats.get_custom_max_value(stat_id)
+	new_range.allow_lesser = allows_lesser
+	new_range.allow_greater = allows_greater
+	
+	new_range.min_value = NexusForge.Stats.get_range_min(stat_id)
+	new_range.max_value = NexusForge.Stats.get_range_max(stat_id)
 	
 	_custom_stats[stat_id] = new_range
 
 
-func _on_stat_min_range_changed(stat_id: StringName, new_min: float) -> void:
-	if not _custom_stats.has(stat_id):
+func _on_stat_clamping_changed(stat_id: StringName) -> void:
+	if not _singleton_sync or not _custom_stats.has(stat_id) or _sync_blacklist.has(stat_id):
 		return
-	_custom_stats[stat_id].min_value = new_min
+	
+	_custom_stats[stat_id].max_value = NexusForge.Stats.get_range_max(stat_id)
+	_custom_stats[stat_id].min_value = NexusForge.Stats.get_range_min(stat_id)
 
 
-func _on_stat_max_range_changed(stat_id: StringName, new_max: float) -> void:
-	if not _custom_stats.has(stat_id):
+func _on_stat_clamping_toggled(stat_id: StringName) -> void:
+	if not _singleton_sync or not _custom_stats.has(stat_id) or _sync_blacklist.has(stat_id):
 		return
-	_custom_stats[stat_id].max_value = new_max
+	
+	var stat: ValueRange = _custom_stats[stat_id]
+	var allow_greater: bool = NexusForge.Stats.allows_greater(stat_id)
+	var allow_lesser: bool = NexusForge.Stats.allows_lesser(stat_id)
+	
+	stat.allow_greater = allow_greater
+	stat.allow_lesser = allow_lesser
+	
+	stat.max_value = NexusForge.Stats.get_range_max(stat_id)
+	stat.min_value = NexusForge.Stats.get_range_min(stat_id)
 
 
 ## Returns all stats used in the statblock
@@ -173,3 +191,62 @@ func custom_type(stat_id: StringName) -> int:
 	if _custom_stats.has(stat_id):
 		return _custom_stats[stat_id].range_type()
 	return TYPE_NIL
+
+
+## Sets whether this object's stats should update along with the singleton. If
+## disabled, stats created via the singleton will still be added to the object,
+## but their min & max ranges will be 0 and they will allow lesser and greater values.
+func set_singleton_sync(enable: bool, sync_now: bool = true) -> void:
+	var update: bool = _singleton_sync != enable
+	_singleton_sync = enable
+	
+	if enable and update and sync_now: # Only sync if status changed to enabled
+		sync_stats_with_singleton()
+
+
+## Syncs all of this object's stats to match the data of the singleton, unless
+## the stat's sync was disabled with [method StatBlock.set_stat_sync].
+func sync_stats_with_singleton() -> void:
+	var existing_stats: Dictionary[StringName, int] = stats()
+	
+	for stat_id in existing_stats.keys():
+		if _sync_blacklist.has(stat_id):
+			continue
+		var stat_range: ValueRange = get(stat_id)
+		if stat_range == null:
+			stat_range = RangeInt.new() if existing_stats[stat_id] == TYPE_INT else RangeFloat.new()
+			set(stat_id, stat_range)
+		sync_stat_with_singleton(stat_id)
+	
+	for stat_id in _custom_stats.keys():
+		if _sync_blacklist.has(stat_id):
+			continue
+		sync_stat_with_singleton(stat_id)
+
+
+## Enables or disables the synchronization of a specific stat with the Nexus Forge singleton.[br]
+## If a stat was disabled and gets re-enabled, using [param sync_now] will force
+## the stat to match the current values of the singleton.
+func set_stat_sync(stat_id: StringName, enable: bool, sync_now: bool = true) -> void:
+	if not enable:
+		_sync_blacklist[stat_id] = null
+		return
+	
+	if _sync_blacklist.erase(stat_id) and sync_now:
+		sync_stat_with_singleton(stat_id)
+
+
+## Syncs a specific stat with the singleton values [b]REGARDLESS[/b] 
+## of whether the sync was disabled with [method StatBlock.set_stat_sync].
+func sync_stat_with_singleton(stat_id: StringName) -> void:
+	var stat_range: ValueRange = get(stat_id)
+	if stat_range == null:
+		if _custom_stats.has(stat_id):
+			stat_range = _custom_stats[stat_id]
+		else:
+			return
+	
+	stat_range.min_value = NexusForge.Stats.get_range_min(stat_id)
+	stat_range.max_value = NexusForge.Stats.get_range_max(stat_id)
+	stat_range.allow_lesser = NexusForge.Stats.allows_lesser(stat_id)
+	stat_range.allow_greater = NexusForge.Stats.allows_greater(stat_id)

@@ -17,9 +17,9 @@ signal signal_emitted(signal_name: String, arguments: Array)
 func load_dialog(path: String, starting_id: StringName = &"") -> bool:
 	if _conversation_cache.is_in_cache(path):
 		_dialog_resource = _conversation_cache.get_resource(path)
-		var dialog_id: String = _dialog_edits.dialog_id
-		if _dialog_edits.has(dialog_id) and _dialog_resource.dialog_overrides != _dialog_edits[dialog_id]:
-			_dialog_resource.dialog_overrides = _dialog_edits[dialog_id]
+		var dialog_id: String = _dialog_resource.dialog_id
+		if _dialog_edits.has(dialog_id) and _dialog_resource._dialog_overrides != _dialog_edits[dialog_id]:
+			_dialog_resource._dialog_overrides = _dialog_edits[dialog_id]
 		return true
 	else:
 		var res: Resource = load(path)
@@ -28,9 +28,8 @@ func load_dialog(path: String, starting_id: StringName = &"") -> bool:
 			_dialog_resource = null
 			return false
 		var dialog_id: String = res.dialog_id
-		
-		if _dialog_edits.has(dialog_id) and res.dialog_overrides != _dialog_edits[dialog_id]:
-			res.dialog_overrides = _dialog_edits[dialog_id]
+		if _dialog_edits.has(dialog_id) and res._dialog_overrides != _dialog_edits[dialog_id]:
+			res._dialog_overrides = _dialog_edits[dialog_id]
 		_conversation_cache.cache_resource(res)
 		_dialog_resource = res
 	
@@ -117,6 +116,7 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 					portrait_id = _get_data(settings["input_connections"]["portrait_id"]["target_node_uuid"])
 			
 			if data["input_connections"]["dialog_text_source"]["target_node_uuid"].is_empty():
+				_dialog_resource.get_text_entry(uuid, locale)
 				target["data"] = {
 					"dialog_text": _parse_dialog(uuid, metadata["dialog_text"]),
 					"character_id": metadata["character_id"],
@@ -431,8 +431,9 @@ func _dialog_resource_set(new_resource: DiscourseDialog) -> void:
 	return
 
 
-func _parse_dialog(dialog_id: String, dialog: String) -> String:
-	var DUUID: String = dialog_id + "/" + locale
+func _parse_dialog(dialog_uuid: String, dialog: String) -> String:
+	var DUUID: String = dialog_uuid + "/" + locale
+	
 	# (UUID)/en_US
 	if _dialog_resource.parsed_dialog_cache.is_in_cache(DUUID):
 		var cached_data: ParsedDialog = _dialog_resource.parsed_dialog_cache.get_cache(DUUID)
@@ -544,37 +545,34 @@ func _load_locale_to_active_dialog(_locale_code: String) -> void:
 
 
 func edit_dialog(locale_code: String, dialog_id: StringName, node_id: StringName, new_dialog) -> void:
-	var type: int = typeof(new_dialog)
-	if type == TYPE_NIL:
-		if DictUtils.has_nested_path(_dialog_edits, [dialog_id, locale_code, node_id]):
-			_dialog_edits[dialog_id][locale_code].erase(node_id)
-		return
-	elif type != TYPE_STRING:
+	locale_code = TranslationServer.standardize_locale(locale_code)
+	
+	if locale_code.is_empty() or dialog_id.is_empty():
 		return
 	
-	var target: Dictionary = {}
+	var target: DiscourseDialog.NFDialogEntryOverride = null
 	
-	if DictUtils.has_nested_path(_dialog_edits, [dialog_id, locale_code]):
-		target = _dialog_edits[dialog_id][locale_code]
+	if _dialog_edits.has(dialog_id):
+		target = _dialog_edits[dialog_id]
 	else:
-		DictUtils.set_nested_value(
-				_dialog_edits,
-				[dialog_id, locale_code],
-				target)
+		target = DiscourseDialog.NFDialogEntryOverride.new()
+		_dialog_edits[dialog_id] = target
 	
-	target[node_id] = new_dialog
+	target.set_override(node_id, locale_code, new_dialog)
 	
-	if _dialog_resource == null or dialog_id.is_empty():
+	if _dialog_resource == null or String(dialog_id) != _dialog_resource.dialog_id:
 		return
 	
-	if String(dialog_id) != _dialog_resource.dialog_id:
-		return
-	
-	if _dialog_resource.dialog_overrides != _dialog_edits[dialog_id]:
-		_dialog_resource.dialog_overrides = _dialog_edits[dialog_id]
+	if _dialog_resource._dialog_overrides != target:
+		_dialog_resource._dialog_overrides = target
 
 
 func edit_choices(locale_code: String, dialog_id: StringName, node_id: StringName, new_choices) -> void:
+	locale_code = TranslationServer.standardize_locale(locale_code)
+	
+	if locale_code.is_empty() or dialog_id.is_empty():
+		return
+	
 	var type: int = typeof(new_choices)
 	if type == TYPE_NIL:
 		if DictUtils.has_nested_path(_dialog_edits, [dialog_id, locale_code, node_id]):
@@ -587,18 +585,15 @@ func edit_choices(locale_code: String, dialog_id: StringName, node_id: StringNam
 			NFPluginGameHandler._LogLevel.ERROR)
 		return
 	
-	var responses: PackedStringArray = []
+	var target: DiscourseDialog.NFDialogEntryOverride = null
 	
-	if DictUtils.has_nested_path(_dialog_edits, [dialog_id, locale_code, node_id]) and typeof(_dialog_edits[dialog_id][locale_code][node_id]) == TYPE_PACKED_STRING_ARRAY:
-		responses = _dialog_edits[dialog_id][locale_code][node_id]
-		responses.clear()
+	if _dialog_edits.has(dialog_id):
+		target = _dialog_edits[dialog_id]
 	else:
-		DictUtils.set_nested_value(
-				_dialog_edits,
-				[dialog_id, locale_code, node_id],
-				responses,
-				true)
+		target = DiscourseDialog.NFDialogEntryOverride.new()
+		_dialog_edits[dialog_id] = target
 	
+	var responses: PackedStringArray = []
 	for item in new_choices:
 		if typeof(item) == TYPE_STRING:
 			responses.append(item)
@@ -609,14 +604,13 @@ func edit_choices(locale_code: String, dialog_id: StringName, node_id: StringNam
 				NFPluginGameHandler._LogLevel.WARNING)
 			responses.append("")
 	
-	if _dialog_resource == null or dialog_id.is_empty():
+	target.set_override(node_id, locale_code, responses)
+	
+	if _dialog_resource == null or String(dialog_id) != _dialog_resource.dialog_id:
 		return
 	
-	if String(dialog_id) != _dialog_resource.dialog_id:
-		return
-	
-	if _dialog_resource.dialog_overrides != _dialog_edits[dialog_id]:
-		_dialog_resource.dialog_overrides = _dialog_edits[dialog_id]
+	if _dialog_resource._dialog_overrides != target:
+		_dialog_resource._dialog_overrides = target
 
 
 func refresh() -> void:

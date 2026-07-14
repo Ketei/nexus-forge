@@ -1010,6 +1010,7 @@ func _on_conversation_close_pressed(dialog: EditorDiscourseDialog, save_required
 		display_conversation(null)
 		clear_localized_keys()
 		clear_cases()
+		dialog_id_ln_edt.text = ""
 		conversation_tree.active_unsaved = false
 		selected_key = null
 		new_text_button.disabled = true
@@ -1064,6 +1065,7 @@ func _on_menu_close_pressed() -> void:
 		display_conversation(null)
 		clear_localized_keys()
 		clear_cases()
+		dialog_id_ln_edt.text = ""
 		conversation_tree.active_unsaved = false
 		selected_key = null
 		new_text_button.disabled = true
@@ -1077,7 +1079,6 @@ func _on_menu_close_pressed() -> void:
 	
 	_unsaved = conversation_tree.active_unsaved
 	selected_key = null
-	#selected_format = ""
 
 
 func _on_new_folder_button_pressed() -> void:
