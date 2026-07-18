@@ -3264,7 +3264,6 @@ func create_new_phrase_entry(key: String, format: String, unsaved: bool = true) 
 	erase_button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	
 	text_field.text = format
-	text_field.custom_minimum_size.y = 33.0
 	text_field.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	text_field.placeholder_text = "Phrase Text"
 	text_field.enter_shifts_focus = true
@@ -3311,28 +3310,12 @@ func create_new_phrase_entry(key: String, format: String, unsaved: bool = true) 
 	key_line.text_changed.connect(_on_key_line_text_changed)
 	erase_button.pressed.connect(_on_erase_key_button_pressed.bind(container))
 	
-	if text_field.is_visible_in_tree():
-		print("I'm visible")
-	else:
-		print("I'm not visible")
-		_update_when_visible(text_field)
-	
 	return key
-
-
-func _update_when_visible(what: Control) -> void:
-	await what.draw
-	#await get_tree().process_frame
-	print("update now!")
-	#_update_choice_textbox_size(what)
 
 
 func erase_key(index: int) -> void:
 	var entry: HBoxContainer = %PhrasesEntries.get_child(index)
 	var new_count: int = %PhrasesEntries.get_child_count() - 1
-	
-	#var key: Control = key_container.get_child(index)
-	#var text: Control = text_container.get_child(index)
 	
 	if new_count <= 0:
 		new_text_button.focus_next = ^""
@@ -3851,12 +3834,14 @@ func _update_choice_textbox_size(box: TextEdit) -> void:
 		total_visual_lines += 1 + box.get_line_wrap_count(i)
 	if total_visual_lines <= MAX_LINES:
 		box.custom_minimum_size.y = 0
+		box.queue_redraw.call_deferred()
 		return
 	box.scroll_fit_content_height = false
 	
 	var new_height: float = MAX_LINES * box.get_line_height() + EXTRA_Y_PADDING
 	if new_height != box.custom_minimum_size.y:
 		box.custom_minimum_size.y = new_height
+		box.queue_redraw.call_deferred()
 
 
 func _on_phrase_text_field_changed(field: TextEdit) -> void:
