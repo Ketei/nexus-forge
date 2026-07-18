@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://drdg7tqhf06l2" path="res://addons/nexus_forge/discourse/discourse_code_editor_script.gd" id="1_ru4ik"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ru4ik"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_selu7"]
 content_margin_left = 8.0
 content_margin_top = 8.0
 content_margin_right = 8.0
@@ -12,10 +12,11 @@ bg_color = Color(0, 0, 0, 1)
 [node name="DiscourseCodeEditor" type="Window" unique_id=1371967701]
 oversampling_override = 1.0
 title = "Edit Text"
-position = Vector2i(0, 36)
 size = Vector2i(400, 300)
+visible = false
 transient = true
 exclusive = true
+minimize_disabled = true
 script = ExtResource("1_ru4ik")
 
 [node name="MainPanel" type="PanelContainer" parent="." unique_id=1790510752]
@@ -24,7 +25,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_ru4ik")
+theme_override_styles/panel = SubResource("StyleBoxFlat_selu7")
 
 [node name="MainContainer" type="VBoxContainer" parent="MainPanel" unique_id=1800856303]
 layout_mode = 2

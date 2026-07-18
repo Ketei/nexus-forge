@@ -18,13 +18,22 @@ var signal_variables: bool = true
 @onready var accept_button: Button = $MainPanel/MainContainer/ButtonContainer/AcceptButton
 
 
-func _ready() -> void:
+func ready_plugin() -> void:
 	var panel: PanelContainer = $MainPanel
 	var style: StyleBoxFlat = StyleBoxFlat.new()
+	var highlighter: SyntaxHighlighter = NFEditorDialogSyntaxHighlighter.new()
 	style.bg_color = get_theme_color("background", "Editor")
 	style.set_content_margin_all(8.0)
 	
+	text_code_edit.syntax_highlighter = highlighter
 	panel.add_theme_stylebox_override(&"panel", style)
+	
+	debounce_timer.timeout.connect(_on_debounce_timeout)
+	text_code_edit.text_changed.connect(_on_text_changed)
+	text_code_edit.code_completion_requested.connect(_on_code_completion_requested)
+	accept_button.pressed.connect(_on_confirmed, CONNECT_DEFERRED)
+	cancel_button.pressed.connect(_on_canceled)
+	close_requested.connect(_on_canceled)
 
 
 func _input(event: InputEvent) -> void:
@@ -35,18 +44,21 @@ func _input(event: InputEvent) -> void:
 		return
 	
 	if event.keycode == KEY_ENTER and event.ctrl_pressed:
-		_on_confirmed.call_deferred()
+		_on_confirmed()
+		get_viewport().set_input_as_handled()
+	elif event.keycode == KEY_ESCAPE:
+		_on_canceled()
 		get_viewport().set_input_as_handled()
 
 
-func connect_signals() -> void:
-	text_code_edit.clear_string_delimiters()
-	debounce_timer.timeout.connect(_on_debounce_timeout)
-	text_code_edit.text_changed.connect(_on_text_changed)
-	text_code_edit.code_completion_requested.connect(_on_code_completion_requested)
-	accept_button.pressed.connect(_on_confirmed, CONNECT_DEFERRED)
-	cancel_button.pressed.connect(_on_canceled)
-	close_requested.connect(_on_canceled)
+func clear() -> void:
+	phrase_keys.clear()
+	methods.clear()
+	plain_formats.clear()
+	variables.clear()
+	text_code_edit.clear()
+	if not debounce_timer.is_stopped():
+		debounce_timer.stop()
 
 
 func _on_text_changed() -> void:
@@ -169,10 +181,14 @@ func grab_code_focus() -> void:
 
 
 func _on_confirmed() -> void:
+	if not debounce_timer.is_stopped():
+		debounce_timer.stop()
 	hide()
-	action_finished.emit(true, text_code_edit.text.strip_edges().replace("\n", " "))
+	action_finished.emit(true, text_code_edit.text.strip_edges())
 
 
 func _on_canceled() -> void:
+	if not debounce_timer.is_stopped():
+		debounce_timer.stop()
 	hide()
 	action_finished.emit(false, "")

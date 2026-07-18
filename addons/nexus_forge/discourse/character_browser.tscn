@@ -1,0 +1,56 @@
+[gd_scene format=3 uid="uid://delwjj8igo7pv"]
+
+[ext_resource type="Script" uid="uid://h51yjdau1eug" path="res://addons/nexus_forge/discourse/character_browser_script.gd" id="1_m3wb3"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_m3wb3"]
+content_margin_left = 8.0
+content_margin_top = 8.0
+content_margin_right = 8.0
+content_margin_bottom = 8.0
+bg_color = Color(0, 0, 0, 0.6862745)
+
+[node name="PopupPanel" type="Window" unique_id=1070370702]
+oversampling_override = 1.0
+title = "Character Select"
+position = Vector2i(0, 36)
+size = Vector2i(280, 350)
+visible = false
+script = ExtResource("1_m3wb3")
+
+[node name="MainPanel" type="PanelContainer" parent="." unique_id=1332879654]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_m3wb3")
+
+[node name="MainContainer" type="VBoxContainer" parent="MainPanel" unique_id=749147903]
+layout_mode = 2
+
+[node name="CharSearchLnEdt" type="LineEdit" parent="MainPanel/MainContainer" unique_id=464496071]
+layout_mode = 2
+
+[node name="CharacterList" type="Tree" parent="MainPanel/MainContainer" unique_id=1509775344]
+layout_mode = 2
+size_flags_vertical = 3
+hide_folding = true
+hide_root = true
+
+[node name="ButtonContainer" type="HBoxContainer" parent="MainPanel/MainContainer" unique_id=215642420]
+layout_mode = 2
+
+[node name="CancelBtn" type="Button" parent="MainPanel/MainContainer/ButtonContainer" unique_id=890691084]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 2.0
+text = "Cancel"
+
+[node name="AcceptBtn" type="Button" parent="MainPanel/MainContainer/ButtonContainer" unique_id=2017939988]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 3.0
+disabled = true
+text = "Accept"

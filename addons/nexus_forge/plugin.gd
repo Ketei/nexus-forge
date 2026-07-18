@@ -62,7 +62,7 @@ func recompile_script_docs() -> void:
 
 
 func _enter_tree() -> void:
-	export_plugin = preload("res://addons/nexus_forge/export_plugin.gd").new()
+	export_plugin = load("res://addons/nexus_forge/export_plugin.gd").new()
 	add_export_plugin(export_plugin)
 	verify_project_settings()
 	if ProjectSettings.has_setting("autoload/NexusForge") and ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("recompile_documentation"), false):
@@ -99,6 +99,7 @@ func _enter_tree() -> void:
 			use_phrases,
 			discourse_base_lang)
 	
+	# Resotring previous session character data.
 	if FileAccess.file_exists("user://nexus_forge/persona_settings.cfg"):
 		var cfg: ConfigFile = ConfigFile.new()
 		if cfg.load("user://nexus_forge/persona_settings.cfg") == OK:
@@ -107,8 +108,13 @@ func _enter_tree() -> void:
 				if FileAccess.file_exists(key):
 					character_map[key] = data[key]
 	
+	if use_discourse:
+		editor_view.discourse.character_browser_requested.connect(_on_character_browser_requested)
+	
 	if use_characters:
-		editor_view.characters.character_loaded.connect(_on_character_loaded)
+		editor_view.characters.character_created.connect(_on_character_created)
+		editor_view.characters.character_saved.connect(_on_character_saved)
+		editor_view.characters.character_opened.connect(_on_character_opened)
 	
 	add_tool_menu_item(TOOL_NAME, _on_scan_folder_selected)
 	
@@ -141,7 +147,10 @@ func _save_external_data() -> void:
 	character_cfg.set_value("RUNTIME", "CharacterMap", character_map)
 	
 	if character_cfg.save("user://nexus_forge/persona_settings.cfg") != OK:
-		print("Failed saving character config")
+		NFPluginGameHandler._log_msg(
+				"plugin",
+				"Failed saving character config to user://nexus_forge/persona_settings.cfg",
+				NFPluginGameHandler._LogLevel.ERROR)
 
 
 func _has_main_screen() -> bool:
@@ -232,6 +241,23 @@ func _set_window_layout(configuration: ConfigFile) -> void:
 		editor_view.phrase_maps.open_map_files(maps)
 	if editor_view.quests != null:
 		editor_view.quests.open_files(open_quests)
+
+
+func _on_character_browser_requested(target: LineEdit) -> void:
+	var browser: Window = load("res://addons/nexus_forge/discourse/character_browser.tscn").instantiate()
+	EditorInterface.popup_dialog_centered(browser)
+	browser.populate_characters(character_map)
+	browser.grab_search_focus()
+	
+	var result: Array = await browser.window_finished
+	
+	if result[0]: #success
+		if target.text != result[1]:
+			editor_view.discourse._on_conversation_changed()
+		target.text = result[1]
+	target.grab_focus()
+	target.caret_column = target.text.length()
+	browser.queue_free()
 
 
 func _sort_custom_settings(a: String, b: String) -> bool:
@@ -487,8 +513,7 @@ func _handles(object: Object) -> bool:
 		&"EditorDiscourseDialog":
 			tool_available = editor_view.discourse != null
 		&"CharacterSheet":
-			if not character_map.has(object.resource_path):
-				character_map[object.resource_path] = null
+			character_map[object.resource_path] = object.id
 			tool_available = editor_view.characters != null
 		&"PhraseMap":
 			tool_available = editor_view.phrase_maps != null
@@ -504,7 +529,7 @@ func _edit(object: Object) -> void:
 		editor_view.handle_resource(object)
 
 
-func _on_character_loaded(path: String) -> void:
+func _on_character_created(path: String) -> void:
 	if not character_map.has(path):
 		character_map[path] = null
 
@@ -513,10 +538,19 @@ func _editor_ready() -> bool:
 	return editor_view != null and editor_view.is_node_ready()
 
 
+func _on_character_saved(path: String, id: StringName) -> void:
+	character_map[path] = id
+
+
+func _on_character_opened(path: String, id: StringName) -> void:
+	if not character_map.has(path):
+		character_map[path] = id
+
+
 func _on_resource_saved(resource: Resource) -> void:
 	if resource is CharacterSheet:
-		if not resource.resource_path.is_empty() and not character_map.has(resource.resource_path):
-			character_map[resource.resource_path] = null
+		if not resource.resource_path.is_empty() and resource.resource_path.get_extension() == "tres":
+			character_map[resource.resource_path] = resource.id
 		return
 	elif resource is not Script:
 		return
@@ -550,7 +584,7 @@ func _on_files_moved(old_file: String, new_file: String) -> void:
 		return
 	
 	if character_map.has(old_file):
-		character_map[new_file] = null
+		character_map[new_file] = character_map[old_file]
 		character_map.erase(old_file)
 	
 	if ProjectSettings.get_setting(
@@ -700,8 +734,8 @@ func _on_scan_confirmed(dialog: ConfirmationDialog) -> void:
 	
 	if result[0] and DirAccess.dir_exists_absolute(result[1]):
 		var log_msg: String = ""
-		var found_files: Dictionary[String, StringName] = {}
-		_scan_add_directory_for_characters(result[1], found_files)
+		var found_files: Dictionary[String, StringName] = discover_character_sheets(result[1])
+		
 		if found_files.is_empty():
 			log_msg = "Scan finished. No character files found."
 		else:
@@ -716,17 +750,23 @@ func _on_scan_confirmed(dialog: ConfirmationDialog) -> void:
 	dir_access.queue_free()
 
 
-func _scan_add_directory_for_characters(directory: String, _on: Dictionary[String, StringName]) -> void:
-	for file in DirAccess.get_files_at(directory):
-		if file.get_extension() != "tres":
-			continue
-		var path: String = directory.path_join(file)
-		var res_load = load(path)
-		if res_load != null and res_load is CharacterSheet:
-			_on[path] = res_load.id
+#func _scan_add_directory_for_characters(directory: String, _on: Dictionary[String, StringName]) -> void:
+	#var paths:
+	#for res_path in discover_character_sheets():
+		#if character_map.has(res_path):
+			#continue
+		#character_map[res_path] = null
 	
-	for subdirectory in DirAccess.get_directories_at(directory):
-		_scan_add_directory_for_characters(directory.path_join(subdirectory), _on)
+	#for file in DirAccess.get_files_at(directory):
+		#if file.get_extension() != "tres":
+			#continue
+		#var path: String = directory.path_join(file)
+		#var res_load = load(path)
+		#if res_load != null and res_load is CharacterSheet:
+			#_on[path] = res_load.id
+	#
+	#for subdirectory in DirAccess.get_directories_at(directory):
+		#_scan_add_directory_for_characters(directory.path_join(subdirectory), _on)
 
 
 func _on_scan_canceled(dialog: ConfirmationDialog) -> void:
@@ -738,12 +778,11 @@ func save_character_paths() -> void:
 	
 	for res_path in character_map.keys():
 		if not ResourceLoader.exists(res_path):
-			character_map.erase(res_path)
 			continue
-		var char = load(res_path)
-		if char == null or char is not CharacterSheet:
-			continue
-		valid_characters[res_path] = char.id
+		var data: Dictionary = parse_character_file(res_path)
+		
+		if data["is_character"]:
+			valid_characters[res_path] = data["id"]
 	
 	if valid_characters != character_map:
 		character_map.assign(valid_characters)
@@ -752,4 +791,75 @@ func save_character_paths() -> void:
 	character_cfg.set_value("RUNTIME", "CharacterMap", valid_characters)
 	
 	if character_cfg.save("user://nexus_forge/persona_settings.cfg") != OK:
-		print("Failed saving cfg")
+		NFPluginGameHandler._log_msg(
+				"plugin",
+				"Failed saving character config to user://nexus_forge/persona_settings.cfg",
+				NFPluginGameHandler._LogLevel.WARNING)
+
+
+func discover_character_sheets(on_path: String = "") -> Dictionary[String, StringName]:
+	var efs: EditorFileSystem = EditorInterface.get_resource_filesystem()
+	var sys_directory: EditorFileSystemDirectory = efs.get_filesystem() if on_path.is_empty() else efs.get_filesystem_path(on_path)
+	var character_sheets: Dictionary[String, StringName] = {}
+	
+	if sys_directory != null:
+		_traverse_for_character_resources(sys_directory, character_sheets)
+	
+	return character_sheets
+
+
+func _traverse_for_character_resources(dir: EditorFileSystemDirectory, results: Dictionary[String, StringName]) -> void:
+	for index in range(dir.get_file_count()):
+		var path: String = dir.get_file_path(index)
+		if path.get_extension() == "tres":
+			var res_data: Dictionary = parse_character_file(path)
+			if res_data["is_character"]:
+				results[path] = res_data["id"]
+		
+		for sub_index in range(dir.get_subdir_count()):
+			_traverse_for_character_resources(dir.get_subdir(sub_index), results)
+
+
+func parse_character_file(file_path: String, id_property: String = "id") -> Dictionary:
+	var data: Dictionary = {"is_character": false, "id": &""}
+	var file: FileAccess = FileAccess.open(file_path, FileAccess.READ)
+	
+	if file == null:
+		return data
+
+	var is_valid_class: bool = false
+	var in_main_resource: bool = false
+	
+	while not file.eof_reached():
+		var line: String = file.get_line().strip_edges()
+		
+		if line.is_empty():
+			continue
+			
+		if not is_valid_class:
+			if line.begins_with("[gd_resource"):
+				if "script_class=\"CharacterSheet\"" in line:
+					data["is_character"] = true
+					is_valid_class = true
+					continue
+				else:
+					return data 
+			continue 
+		
+		if not in_main_resource:
+			if line == "[resource]":
+				in_main_resource = true
+			continue
+		
+		if in_main_resource:
+			if line.begins_with("["):
+				return data 
+			
+			if line.begins_with(id_property + " =") or line.begins_with(id_property + "="):
+				var parts: PackedStringArray = line.split("=", true, 1)
+				if parts.size() == 2:
+					var id_value: String = parts[1].strip_edges()
+					data["id"] = id_value.trim_prefix("&\"").trim_suffix("\"")
+					return data
+	
+	return data

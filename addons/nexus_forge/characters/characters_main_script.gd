@@ -3,10 +3,10 @@ extends PanelContainer
 
 
 signal import_species_data_pressed
-signal character_loaded(path: String)
+signal character_created(path: String)
+signal character_saved(path: String, id: StringName)
+signal character_opened(path: String, id: StringName)
 
-
-const LineEditConfirmationDialog = preload("res://addons/nexus_forge/dialogs/lineedit_confirmation_dialog.gd")
 
 var _unsaved: bool = false
 
@@ -139,7 +139,7 @@ func _on_edit_traitblock_pressed() -> void:
 
 func _on_close_character_pressed(resource: CharacterSheet, unsaved: bool) -> void:
 	if unsaved:
-		var unsaved_dialog := preload("res://addons/nexus_forge/dialogs/unsaved_dialog_script.gd").new()
+		var unsaved_dialog: AcceptDialog = load("res://addons/nexus_forge/dialogs/unsaved_dialog_script.gd").new()
 		unsaved_dialog.title = "Save Character..."
 		unsaved_dialog.dialog_text = "Character has unsaved changes.\nDo you want to save before closing?"
 		add_child(unsaved_dialog)
@@ -376,7 +376,7 @@ func update_talent_nodes() -> void:
 
 
 func _on_new_character_pressed() -> void:
-	var resource_selector := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
+	var resource_selector: FileDialog = load("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	resource_selector.file_mode = resource_selector.FILE_MODE_SAVE_FILE
 	resource_selector.access = resource_selector.ACCESS_RESOURCES
 	resource_selector.title = "Save Character..."
@@ -407,13 +407,13 @@ func _on_new_character_pressed() -> void:
 		current_sheet = new_resource
 		_unsaved = false
 		set_ui_enabled(true)
-		character_loaded.emit.call_deferred(dialog_result[1])
+		character_created.emit.call_deferred(dialog_result[1])
 	
 	resource_selector.queue_free()
 
 
 func _on_open_character_pressed() -> void:
-	var resource_selector := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
+	var resource_selector: FileDialog = load("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	resource_selector.file_mode = resource_selector.FILE_MODE_OPEN_FILE
 	resource_selector.access = resource_selector.ACCESS_RESOURCES
 	resource_selector.title = "Open Character..."
@@ -443,6 +443,7 @@ func _on_open_character_pressed() -> void:
 			current_sheet = resource_preload
 			set_ui_enabled(true)
 			_unsaved = false
+			character_opened.emit(dialog_result[1], resource_preload.id)
 	
 	resource_selector.queue_free()
 
@@ -540,9 +541,9 @@ func reset_stats() -> void:
 		item.get_meta(&"use_max").set_pressed_no_signal(false)
 		item.get_meta(&"use_min").set_pressed_no_signal(false)
 		if BitUtils.is_bit_index(flags, 2, true):
-			btn.icon = preload("res://addons/nexus_forge/icons/range_uncollapsed_none.svg")
+			btn.icon = load("res://addons/nexus_forge/icons/range_uncollapsed_none.svg")
 		else:
-			btn.icon = preload("res://addons/nexus_forge/icons/range_collapsed_none.svg")
+			btn.icon = load("res://addons/nexus_forge/icons/range_collapsed_none.svg")
 		
 		flags = BitUtils.set_bits(flags, 3, false)
 		btn.set_meta(&"range_flags", flags)
@@ -606,11 +607,13 @@ func has_unsaved_files() -> bool:
 
 
 func save() -> void:
-	if current_sheet != null:
-		save_current_character()
 	var unsaved_characters: Array[CharacterSheet] = char_tree.get_unsaved()
 	for item in unsaved_characters:
-		ResourceSaver.save(item)
+		if item == current_sheet:
+			save_current_character()
+		else:
+			ResourceSaver.save(item)
+		character_saved.emit(item.resource_path, item.id)
 	char_tree.set_all_saved()
 	_unsaved = false
 
@@ -637,9 +640,9 @@ func load_character(sheet: CharacterSheet) -> void:
 			stat.get_meta(&"use_max").set_pressed_no_signal(false)
 			stat.get_meta(&"use_min").set_pressed_no_signal(false)
 			if BitUtils.is_bit_index(flags, 2, true):
-				btn.icon = preload("res://addons/nexus_forge/icons/range_uncollapsed_none.svg")
+				btn.icon = load("res://addons/nexus_forge/icons/range_uncollapsed_none.svg")
 			else:
-				btn.icon = preload("res://addons/nexus_forge/icons/range_collapsed_none.svg")
+				btn.icon = load("res://addons/nexus_forge/icons/range_collapsed_none.svg")
 			
 			flags = BitUtils.set_bits(flags, 3, false)
 			btn.set_meta(&"range_flags", flags)
@@ -662,23 +665,23 @@ func load_character(sheet: CharacterSheet) -> void:
 		if BitUtils.is_bit_index(flags, 2, true): #Expanded
 			match BitUtils.get_bits(flags, 3):
 				0:
-					collapse_btn.icon = preload("res://addons/nexus_forge/icons/range_uncollapsed_none.svg")
+					collapse_btn.icon = load("res://addons/nexus_forge/icons/range_uncollapsed_none.svg")
 				1:
-					collapse_btn.icon = preload("res://addons/nexus_forge/icons/range_uncollapsed_min.svg")
+					collapse_btn.icon = load("res://addons/nexus_forge/icons/range_uncollapsed_min.svg")
 				2:
-					collapse_btn.icon = preload("res://addons/nexus_forge/icons/range_uncollapsed_max.svg")
+					collapse_btn.icon = load("res://addons/nexus_forge/icons/range_uncollapsed_max.svg")
 				3:
-					collapse_btn.icon = preload("res://addons/nexus_forge/icons/range_uncollapsed_minmax.svg")
+					collapse_btn.icon = load("res://addons/nexus_forge/icons/range_uncollapsed_minmax.svg")
 		else:
 			match BitUtils.get_bits(flags, 3):
 				0:
-					collapse_btn.icon = preload("res://addons/nexus_forge/icons/range_collapsed_none.svg")
+					collapse_btn.icon = load("res://addons/nexus_forge/icons/range_collapsed_none.svg")
 				1:
-					collapse_btn.icon = preload("res://addons/nexus_forge/icons/range_collapsed_min.svg")
+					collapse_btn.icon = load("res://addons/nexus_forge/icons/range_collapsed_min.svg")
 				2:
-					collapse_btn.icon = preload("res://addons/nexus_forge/icons/range_collapsed_max.svg")
+					collapse_btn.icon = load("res://addons/nexus_forge/icons/range_collapsed_max.svg")
 				3:
-					collapse_btn.icon = preload("res://addons/nexus_forge/icons/range_collapsed_minmax.svg")
+					collapse_btn.icon = load("res://addons/nexus_forge/icons/range_collapsed_minmax.svg")
 		
 		value.allow_greater = stat_range.allow_greater
 		value.allow_lesser = stat_range.allow_lesser
@@ -765,7 +768,7 @@ func create_stat_item(stat_id: StringName, type: int, default: float) -> VBoxCon
 	limit_max_spn.editable = not allow_greater.disabled
 	
 	edit_limits_btn.custom_minimum_size = Vector2(32.0, 32.0)
-	edit_limits_btn.icon = preload("res://addons/nexus_forge/icons/range_collapsed_none.svg")
+	edit_limits_btn.icon = load("res://addons/nexus_forge/icons/range_collapsed_none.svg")
 	edit_limits_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	edit_limits_btn.tooltip_text = "Show limits"
 	edit_limits_btn.flat = true
@@ -851,23 +854,23 @@ func _on_toggle_min_stat(is_enabled: bool, stat: SpinBox, min_spin: SpinBox, max
 	if BitUtils.is_bit_index(flags, 2, true): # Uncollapsed
 		match BitUtils.get_bits(flags, 3):
 			0:
-				limit_btn.icon = preload("res://addons/nexus_forge/icons/range_uncollapsed_none.svg")
+				limit_btn.icon = load("res://addons/nexus_forge/icons/range_uncollapsed_none.svg")
 			1:
-				limit_btn.icon = preload("res://addons/nexus_forge/icons/range_uncollapsed_min.svg")
+				limit_btn.icon = load("res://addons/nexus_forge/icons/range_uncollapsed_min.svg")
 			2:
-				limit_btn.icon = preload("res://addons/nexus_forge/icons/range_uncollapsed_max.svg")
+				limit_btn.icon = load("res://addons/nexus_forge/icons/range_uncollapsed_max.svg")
 			3:
-				limit_btn.icon = preload("res://addons/nexus_forge/icons/range_uncollapsed_minmax.svg")
+				limit_btn.icon = load("res://addons/nexus_forge/icons/range_uncollapsed_minmax.svg")
 	else:
 		match BitUtils.get_bits(flags, 3):
 			0:
-				limit_btn.icon = preload("res://addons/nexus_forge/icons/range_collapsed_none.svg")
+				limit_btn.icon = load("res://addons/nexus_forge/icons/range_collapsed_none.svg")
 			1:
-				limit_btn.icon = preload("res://addons/nexus_forge/icons/range_collapsed_min.svg")
+				limit_btn.icon = load("res://addons/nexus_forge/icons/range_collapsed_min.svg")
 			2:
-				limit_btn.icon = preload("res://addons/nexus_forge/icons/range_collapsed_max.svg")
+				limit_btn.icon = load("res://addons/nexus_forge/icons/range_collapsed_max.svg")
 			3:
-				limit_btn.icon = preload("res://addons/nexus_forge/icons/range_collapsed_minmax.svg")
+				limit_btn.icon = load("res://addons/nexus_forge/icons/range_collapsed_minmax.svg")
 	
 	limit_btn.set_meta(&"range_flags", flags)
 	_something_changed()
@@ -885,23 +888,23 @@ func _on_toggle_max_stat(is_enabled: bool, stat: SpinBox, max_spin: SpinBox, lim
 	if BitUtils.is_bit_index(flags, 2, true): # Uncollapsed
 		match BitUtils.get_bits(flags, 3):
 			0:
-				limit_btn.icon = preload("res://addons/nexus_forge/icons/range_uncollapsed_none.svg")
+				limit_btn.icon = load("res://addons/nexus_forge/icons/range_uncollapsed_none.svg")
 			1:
-				limit_btn.icon = preload("res://addons/nexus_forge/icons/range_uncollapsed_min.svg")
+				limit_btn.icon = load("res://addons/nexus_forge/icons/range_uncollapsed_min.svg")
 			2:
-				limit_btn.icon = preload("res://addons/nexus_forge/icons/range_uncollapsed_max.svg")
+				limit_btn.icon = load("res://addons/nexus_forge/icons/range_uncollapsed_max.svg")
 			3:
-				limit_btn.icon = preload("res://addons/nexus_forge/icons/range_uncollapsed_minmax.svg")
+				limit_btn.icon = load("res://addons/nexus_forge/icons/range_uncollapsed_minmax.svg")
 	else:
 		match BitUtils.get_bits(flags, 3):
 			0:
-				limit_btn.icon = preload("res://addons/nexus_forge/icons/range_collapsed_none.svg")
+				limit_btn.icon = load("res://addons/nexus_forge/icons/range_collapsed_none.svg")
 			1:
-				limit_btn.icon = preload("res://addons/nexus_forge/icons/range_collapsed_min.svg")
+				limit_btn.icon = load("res://addons/nexus_forge/icons/range_collapsed_min.svg")
 			2:
-				limit_btn.icon = preload("res://addons/nexus_forge/icons/range_collapsed_max.svg")
+				limit_btn.icon = load("res://addons/nexus_forge/icons/range_collapsed_max.svg")
 			3:
-				limit_btn.icon = preload("res://addons/nexus_forge/icons/range_collapsed_minmax.svg")
+				limit_btn.icon = load("res://addons/nexus_forge/icons/range_collapsed_minmax.svg")
 	limit_btn.set_meta(&"range_flags", flags)
 	_something_changed()
 
@@ -916,23 +919,23 @@ func _toggle_limit_visibility_pressed(toggle_button: Button, limit_container: HB
 	if BitUtils.is_bit_index(flags, 2, true): # Uncollapsed
 		match BitUtils.get_bits(flags, 3):
 			0:
-				icon = preload("res://addons/nexus_forge/icons/range_uncollapsed_none.svg")
+				icon = load("res://addons/nexus_forge/icons/range_uncollapsed_none.svg")
 			1:
-				icon = preload("res://addons/nexus_forge/icons/range_uncollapsed_min.svg")
+				icon = load("res://addons/nexus_forge/icons/range_uncollapsed_min.svg")
 			2:
-				icon = preload("res://addons/nexus_forge/icons/range_uncollapsed_max.svg")
+				icon = load("res://addons/nexus_forge/icons/range_uncollapsed_max.svg")
 			3:
-				icon = preload("res://addons/nexus_forge/icons/range_uncollapsed_minmax.svg")
+				icon = load("res://addons/nexus_forge/icons/range_uncollapsed_minmax.svg")
 	else:
 		match BitUtils.get_bits(flags, 3):
 			0:
-				icon = preload("res://addons/nexus_forge/icons/range_collapsed_none.svg")
+				icon = load("res://addons/nexus_forge/icons/range_collapsed_none.svg")
 			1:
-				icon = preload("res://addons/nexus_forge/icons/range_collapsed_min.svg")
+				icon = load("res://addons/nexus_forge/icons/range_collapsed_min.svg")
 			2:
-				icon = preload("res://addons/nexus_forge/icons/range_collapsed_max.svg")
+				icon = load("res://addons/nexus_forge/icons/range_collapsed_max.svg")
 			3:
-				icon = preload("res://addons/nexus_forge/icons/range_collapsed_minmax.svg")
+				icon = load("res://addons/nexus_forge/icons/range_collapsed_minmax.svg")
 	
 	toggle_button.icon = icon
 	toggle_button.set_meta(&"range_flags", flags)
@@ -1068,7 +1071,7 @@ func close_active_character() -> void:
 		return
 		
 	if char_tree.is_unsaved(current_sheet):
-		var unsaved_dialog := preload("res://addons/nexus_forge/dialogs/unsaved_dialog_script.gd").new()
+		var unsaved_dialog: AcceptDialog = load("res://addons/nexus_forge/dialogs/unsaved_dialog_script.gd").new()
 		unsaved_dialog.title = "Save Character..."
 		unsaved_dialog.dialog_text = "Character has unsaved changes.\nDo you want to save before closing?"
 		add_child(unsaved_dialog)

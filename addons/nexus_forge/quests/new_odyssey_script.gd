@@ -688,7 +688,7 @@ func _on_objective_rearranged(from_stage: StringName, to_stage: StringName, obje
 
 
 func _on_new_quest_file_pressed() -> void:
-	var dialog := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
+	var dialog: FileDialog = load("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	add_child(dialog)
 	dialog.popup()
 	
@@ -745,7 +745,7 @@ func _on_search_requirement_text_changed(text: String) -> void:
 
 func _on_quest_close_pressed(quest: Quest, requires_save: bool, structure: Array[Dictionary]) -> void:
 	if requires_save:
-		var confirm_dialog := preload("res://addons/nexus_forge/dialogs/unsaved_dialog_script.gd").new()
+		var confirm_dialog: AcceptDialog = load("res://addons/nexus_forge/dialogs/unsaved_dialog_script.gd").new()
 		confirm_dialog.dialog_text = "File has unsaved changes. Save before closing?"
 		confirm_dialog.title = "Odyssey"
 		add_child(confirm_dialog)

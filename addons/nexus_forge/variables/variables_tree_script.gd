@@ -73,8 +73,8 @@ func _on_column_title_clicked(column: int, mouse_button_index: int) -> void:
 
 
 func _sort_data_column(a: TreeItem, b: TreeItem) -> bool:
-	var a_type: int = get_variable_type(a)
-	var b_type: int = get_variable_type(b)
+	var a_type: int = _get_tree_variable_type(a)
+	var b_type: int = _get_tree_variable_type(b)
 	
 	if a_type == b_type:
 		match a_type:
@@ -179,6 +179,75 @@ func create_variable(variable_value: Variant, variable_name: String = "new_varia
 	return unique_name
 
 
+func rename_variable(old_id: String, new_id: String) -> bool:
+	for item in get_root().get_children():
+		if item.get_metadata(0) != old_id:
+			continue
+		
+		var valid_name: String = validate_var_name(new_id, item)
+		if valid_name != new_id:
+			return false
+		item.set_text(0, new_id)
+		item.set_metadata(0, new_id)
+		return true
+	return false
+
+
+func update_variable(variable_id: String, value: Variant) -> bool:
+	for item in get_root().get_children():
+		if item.get_metadata(0) != variable_id:
+			continue
+		
+		if get_tree_variant(item) != typeof(value):
+			match typeof(value): 
+				TYPE_INT:
+					item.set_icon(0, get_theme_icon("int", "EditorIcons"))
+					item.set_cell_mode(1, TreeItem.CELL_MODE_RANGE)
+					item.set_range_config(1, -VALUE_MAX_RANGE, VALUE_MAX_RANGE, 1.0)
+					item.set_range(1, value)
+					item.set_editable(1, true)
+					item.set_metadata(1, {"type": TYPE_INT})
+				TYPE_FLOAT:
+					item.set_icon(0, get_theme_icon("float", "EditorIcons"))
+					item.set_cell_mode(1, TreeItem.CELL_MODE_RANGE)
+					item.set_range_config(1, -VALUE_MAX_RANGE, VALUE_MAX_RANGE, FLOAT_STEP)
+					item.set_range(1, value)
+					item.set_editable(1, true)
+					item.set_metadata(1, {"type": TYPE_FLOAT})
+				TYPE_BOOL:
+					item.set_icon(0, get_theme_icon("bool", "EditorIcons"))
+					item.set_cell_mode(1, TreeItem.CELL_MODE_CHECK)
+					item.set_text(1, "Enabled")
+					item.set_checked(1, value)
+					item.set_editable(1, true)
+					item.set_metadata(1, {"type": TYPE_BOOL})
+				TYPE_STRING:
+					item.set_icon(0, get_theme_icon("String", "EditorIcons"))
+					item.set_cell_mode(1, TreeItem.CELL_MODE_STRING)
+					item.set_text(1, value)
+					item.set_editable(1, true)
+					item.set_metadata(1, {"type": TYPE_STRING})
+				_:
+					item.set_icon(0, get_theme_icon("Variant", "EditorIcons"))
+					item.set_editable(1, false)
+					item.set_metadata(1, {"type": TYPE_NIL, "data": value})
+					item.set_cell_mode(1, TreeItem.CELL_MODE_STRING)
+					item.set_text(1, StringUtils.title_case(type_string(typeof(value))))
+		else:
+			match typeof(value):
+				TYPE_INT, TYPE_FLOAT:
+					item.set_range(1, value)
+				TYPE_BOOL:
+					item.set_checked(1, value)
+				TYPE_STRING:
+					item.set_text(1, value)
+				_:
+					item.get_metadata(1)["data"] = value
+		
+		return true
+	return false
+
+
 func clear_variables() -> void:
 	clear()
 	create_item()
@@ -198,11 +267,11 @@ func validate_var_name(var_name: String, skip_tree: TreeItem = null) -> String:
 	return tweaked_name
 
 
-func has_variable(folder_name: String, exception: TreeItem) -> bool:
+func has_variable(variable_name: String, exception: TreeItem = null) -> bool:
 	for child in get_root().get_children():
 		if child == exception:
 			continue
-		if child.get_text(0) == folder_name:
+		if child.get_metadata(0) == variable_name:
 			return true
 	return false
 
@@ -223,7 +292,7 @@ func get_variables_as_array() -> Array[Dictionary]:
 	for variable in get_root().get_children():
 		variables_array.append({
 				"name": variable.get_text(0),
-				"type": get_variable_type(variable),
+				"type": _get_tree_variable_type(variable),
 				"variable": get_tree_variant(variable)})
 	
 	return variables_array
@@ -245,7 +314,21 @@ func get_tree_variant(tree_var: TreeItem) -> Variant:
 			return null
 
 
-func get_variable_type(variable_cell: TreeItem) -> int:
+func get_variable_type(variable_name: String) -> int:
+	for item in get_root().get_children():
+		if item.get_metadata(0) == variable_name:
+			return _get_tree_variable_type(item)
+	return -1
+
+
+func get_variable(var_name: String) -> Variant:
+	for item in get_root().get_children():
+		if item.get_metadata(0) == var_name:
+			return get_tree_variant(item)
+	return null
+
+
+func _get_tree_variable_type(variable_cell: TreeItem) -> int:
 	if variable_cell.get_metadata(1)["type"] == TYPE_NIL:
 		return typeof(variable_cell.get_metadata(1)["data"])
 	else:
@@ -303,8 +386,8 @@ func sort_single_item(item: TreeItem) -> void:
 			if child == item:
 				continue
 			
-			var a_type: int = get_variable_type(child)
-			var b_type: int = get_variable_type(item)
+			var a_type: int = _get_tree_variable_type(child)
+			var b_type: int = _get_tree_variable_type(item)
 			
 			if a_type == b_type:
 				if item.get_text(0).naturalnocasecmp_to(child.get_text(0)) < 0:

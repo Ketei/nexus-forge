@@ -2,6 +2,11 @@
 extends DiscourseGraphNode
 
 
+signal use_code_editor_pressed(target: TextEdit)
+const MAX_LINES: int = 3
+const EXTRA_Y_PADDING: int = 8
+const CHOICE_TEXT_EDIT = preload("res://addons/nexus_forge/discourse/textedit_bracket_handler.gd")
+
 var _updating_choices: bool = false
 
 
@@ -17,7 +22,7 @@ func _post_init() -> void:
 	var choice_count_container: HBoxContainer = HBoxContainer.new()
 	var choices_label: Label = Label.new()
 	var choices_spinbox: SpinBox = SpinBox.new()
-	var first_choice: LineEdit = preload("res://addons/nexus_forge/discourse/choice_node_lineedit.gd").new()
+	var first_choice: HBoxContainer = get_choice_node()
 	
 	choices_label.text = "Choices"
 	choices_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -27,14 +32,8 @@ func _post_init() -> void:
 	choices_spinbox.value = 1.0
 	choices_spinbox.min_value = 1.0
 	
-	first_choice.placeholder_text = "Choice Text"
-	first_choice.custom_minimum_size.y = 32.0
-	first_choice.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	
 	choice_count_container.add_child(choices_label)
 	choice_count_container.add_child(choices_spinbox)
-	
-	first_choice.text_changed.connect(_on_option_text_changed)
 	
 	var next_in_idx: int = add_field(
 			&"choice_counter",
@@ -62,7 +61,9 @@ func _ready() -> void:
 	graph_icon = preload("res://addons/nexus_forge/icons/list_icon.svg")
 	set_slot_custom_icon_left(0, flow_icon)
 	for child_idx in range(1, get_child_count()):
+		var choice_id: StringName = StringName("choice_" + str(child_idx))
 		set_slot_custom_icon_right(child_idx, flow_icon)
+		get_field(choice_id).get_child(1).icon = get_theme_icon("DistractionFree", "EditorIcons")
 	set_input_connection_icon(
 			&"choice_1",
 			preload("res://addons/nexus_forge/icons/gear_icon.png"))
@@ -81,7 +82,8 @@ func _get_issues() -> PackedStringArray:
 	return issues
 
 
-func _on_option_text_changed(_text: String) -> void:
+func _on_option_text_changed(box: TextEdit) -> void:
+	_update_choice_textbox_size(box)
 	node_updated.emit()
 
 
@@ -112,6 +114,25 @@ func set_choice_count(value: int) -> void:
 		remove_choices(choices_to_remove)
 
 
+func _update_choice_textbox_size(box: TextEdit) -> void:
+	if box.size.x <= 0 or not box.is_visible_in_tree():
+		return
+	
+	box.scroll_fit_content_height = true
+	var total_visual_lines: int = 0
+	for i in range(box.get_line_count()):
+		total_visual_lines += 1 + box.get_line_wrap_count(i)
+	if total_visual_lines <= MAX_LINES:
+		reset_height.call_deferred()
+		box.custom_minimum_size.y = 0
+		return
+	box.scroll_fit_content_height = false
+	
+	var new_height: float = MAX_LINES * box.get_line_height() + EXTRA_Y_PADDING
+	if new_height != box.custom_minimum_size.y:
+		box.custom_minimum_size.y = new_height
+
+
 func _on_choice_count_changed(value: int) -> void:
 	if _updating_choices or value == get_child_count() - 1:
 		return
@@ -134,7 +155,7 @@ func _get_node_data() -> Dictionary:
 		
 	for choice in range(1, get_child_count()):
 		var field_id: StringName = &"choice_" + StringName(str(int(choice)))
-		var field: LineEdit = get_field(field_id)
+		var field: TextEdit = get_field(field_id).get_child(0)
 		
 		options.append(
 				{
@@ -178,25 +199,47 @@ func _set_node_data(data: Dictionary) -> void:
 	get_mapped_field(&"choice_counter", &"choice_count").set_value_no_signal(choice_count)
 	set_choice_count(choice_count)
 	for option in range(1, choice_size + 1):
-		get_field(&"choice_" + StringName(str(option))).text = true_options[option - 1]["text"]
+		get_field(&"choice_" + StringName(str(option))).get_child(0).text = true_options[option - 1]["text"]
 
 
 func choice_count() -> int:
 	return get_mapped_field(&"choice_counter", &"choice_count").value
 
 
-func get_choice_node() -> LineEdit:
-	var new_choice: LineEdit = preload("res://addons/nexus_forge/discourse/choice_node_lineedit.gd").new()
+func get_choice_node() -> HBoxContainer:
+	var new_choice: TextEdit = CHOICE_TEXT_EDIT.new()
+	var expand_button: Button = Button.new()
+	var container: HBoxContainer = HBoxContainer.new()
+	var highlighter: NFEditorDialogSyntaxHighlighter = NFEditorDialogSyntaxHighlighter.new()
+	
+	highlighter.set_use_token("*", false)
+	
+	container.add_child(new_choice)
+	container.add_child(expand_button)
+	
+	container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	
+	new_choice.syntax_highlighter = NFEditorDialogSyntaxHighlighter.new()
 	new_choice.placeholder_text = "Choice Text"
+	new_choice.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
 	new_choice.custom_minimum_size.y = 32.0
 	new_choice.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	new_choice.text_changed.connect(_on_option_text_changed)
-	return new_choice
+	new_choice.syntax_highlighter = highlighter
+	new_choice.resized.connect(reset_height, CONNECT_DEFERRED)
+	new_choice.text_changed.connect(_on_option_text_changed.bind(new_choice))
+	
+	expand_button.icon = get_theme_icon("DistractionFree", "EditorIcons")
+	expand_button.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	expand_button.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	expand_button.flat = true
+	expand_button.pressed.connect(use_code_editor_pressed.emit.bind(new_choice))
+	
+	return container
 
 
 func remove_choice(idx: int) -> void:
 	var field_id: StringName = &"choice_" + StringName(str(idx))
-	var choice: LineEdit = get_field(field_id)
+	var choice: TextEdit = get_field(field_id).get_child(0)
 	choice.text_changed.disconnect(_on_option_text_changed)
 	remove_field(field_id, 40)
 
@@ -206,16 +249,20 @@ func remove_choices(choices: Array[StringName]) -> void:
 		return
 	
 	for choice_id in choices:
-		var choice: LineEdit = get_field(choice_id)
+		var choice: TextEdit = get_field(choice_id).get_child(0)
 		choice.text_changed.disconnect(_on_option_text_changed)
 	
 	remove_fields(choices, -1)
 
 
+func reset_height() -> void:
+	size.y = 0
+
+
 func set_option_text(option: int, text: String) -> void:
 	var field_id: StringName = &"choice_" + StringName(str(option))
 	
-	var option_line: LineEdit = get_field(field_id)
+	var option_line: TextEdit = get_field(field_id).get_child(0)
 	if option_line != null:
 		option_line.text = text
 
@@ -225,7 +272,7 @@ func get_options() -> Array[String]:
 	
 	for choice in range(1, get_child_count()):
 		var field_id: StringName = &"choice_" + StringName(str(int(choice)))
-		var field: LineEdit = get_field(field_id)
+		var field: TextEdit = get_field(field_id).get_child(0)
 		options.append(field.text)
 	
 	return options

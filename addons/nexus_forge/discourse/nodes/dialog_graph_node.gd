@@ -1,7 +1,8 @@
 extends DiscourseGraphNode
 
 
-signal use_code_editor_pressed(target: TextEdit, text: String)
+signal use_code_editor_pressed(target: TextEdit)
+signal select_character_pressed(target: LineEdit)
 
 var free_size: Vector2 = Vector2(350.0, 300.0)
 
@@ -21,10 +22,12 @@ func _post_init() -> void:
 	var dialog_box: VBoxContainer = VBoxContainer.new()
 	var char_id_label: Label = Label.new()
 	var char_id_ln_edt: LineEdit = LineEdit.new()
+	var char_selector_btn: Button = Button.new()
 	var dialog_label: Label = Label.new()
 	var dialog_settings: Label = Label.new()
 	var settings_box: HBoxContainer = HBoxContainer.new()
-	var dialog_textedt: TextEdit = preload("res://addons/nexus_forge/discourse/dialog_node_textedit.gd").new()
+	var dialog_textedt: TextEdit = load("res://addons/nexus_forge/discourse/textedit_bracket_handler.gd").new()
+	var highlighter: NFEditorDialogSyntaxHighlighter = NFEditorDialogSyntaxHighlighter.new()
 	var persist_check: CheckBox = CheckBox.new()
 	var flags_container: HBoxContainer = HBoxContainer.new()
 	var use_code_editor_btn: Button = Button.new()
@@ -38,6 +41,12 @@ func _post_init() -> void:
 	dialog_label.name = &"DialogLabel"
 	dialog_textedt.name = &"DialogTxtEdt"
 	persist_check.name = &"PersistChkBx"
+	char_selector_btn.name = &"SelectCharBtn"
+	
+	char_selector_btn.custom_minimum_size = Vector2(32.0, 32.0)
+	char_selector_btn.flat = true
+	char_selector_btn.tooltip_text = "Browse Characters"
+	char_selector_btn.pressed.connect(_on_select_character_btn_pressed)
 	
 	connection_node.custom_minimum_size = Vector2(0.0, 32.0)
 	char_id_label.text = "Character"
@@ -49,11 +58,15 @@ func _post_init() -> void:
 	dialog_label.text = "Dialog"
 	dialog_label.custom_minimum_size = Vector2(0.0, 24.0)
 	dialog_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	
+	highlighter.set_use_token("*", false)
 	dialog_textedt.placeholder_text = "Character Dialog"
 	dialog_textedt.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	dialog_textedt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	dialog_textedt.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
 	dialog_textedt.caret_blink = true
+	dialog_textedt.syntax_highlighter = highlighter
+	
 	persist_check.size_flags_horizontal = Control.SIZE_EXPAND + Control.SIZE_SHRINK_END
 	persist_check.text = "Persist"
 	flags_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -75,6 +88,7 @@ func _post_init() -> void:
 	
 	id_box.add_child(char_id_label)
 	id_box.add_child(char_id_ln_edt)
+	id_box.add_child(char_selector_btn)
 	
 	flags_container.add_child(dialog_label)
 	flags_container.add_child(use_code_editor_btn)
@@ -126,6 +140,7 @@ func _ready() -> void:
 	set_input_connection_icon(&"dialog_settings", preload("res://addons/nexus_forge/icons/gear_icon.png"))
 	set_input_connection_icon(&"flags", get_theme_icon("String", "EditorIcons"))
 	get_mapped_field(&"flags", &"code_edit_button").icon = get_theme_icon("DistractionFree", "EditorIcons")
+	get_field(&"character_id").get_child(2).icon = get_theme_icon("Search", "EditorIcons")
 
 
 func _on_input_connected(input_port: int, from_node: DiscourseGraphNode, _from_port: int) -> void:
@@ -207,9 +222,12 @@ func _on_text_changed(_text: String = "") -> void:
 
 func _on_use_code_editor_pressed() -> void:
 	var field: TextEdit = get_field(&"dialog_text")
-	use_code_editor_pressed.emit(
-			field,
-			field.text)
+	use_code_editor_pressed.emit(field)
+
+
+func _on_select_character_btn_pressed() -> void:
+	var field: LineEdit = get_mapped_field(&"character_id", &"character_line")
+	select_character_pressed.emit(field)
 
 
 func set_dialog_text(text: String) -> void:

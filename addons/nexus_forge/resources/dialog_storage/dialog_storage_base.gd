@@ -50,11 +50,6 @@ const LOCALE_STORE_MAX: int = 3
 	#}
 }
 
-# Generated on export.
-@export_storage var id_map: Dictionary[StringName, StringName] = {
-	#&"Greeting": &"9156f183-6761-4259-9dde-1a81d12fb047"
-}
-
 var _uid_to_id: Dictionary[StringName, StringName] = {
 	#&"9156f183-6761-4259-9dde-1a81d12fb047": &"Greeting"
 }
@@ -147,34 +142,11 @@ func _get_choices(dialog_id: String, uuid: String) -> PackedStringArray:
 
 
 func _on_override_updated(node_id: StringName, locale: String) -> void:
-	var uuid: StringName = id_map[node_id] if id_map.has(node_id) else node_id
-	if not node_logic.has(uuid):
+	if not node_logic.has(node_id):
 		return
 	
-	var duuid: String = String(uuid) + "/" + locale
+	var duuid: String = String(node_id) + "/" + locale
 	parsed_dialog_cache.remove_data(duuid)
-
-
-## Returns the dialog UUID assiged to the custom [param id].
-func get_id_target(id: StringName) -> StringName:
-	if id_map.has(id):
-		return id_map[id]
-	return &""
-
-
-## Returns true if [param id] is mapped to a dialog UUID.
-func has_id(id: String) -> bool:
-	return id_map.has(id)
-
-
-## Assigns the [param id] to the dialog's [param uuid]. Returns [code]true[/code]
-## if the assignment was successful. If the UUID doesn't exist it'll return
-## [code]false[/code].
-func link_id(id: String, uuid: StringName) -> bool:
-	if node_logic.has(uuid):
-		id_map[id] = uuid
-		return true
-	return false
 
 
 class NFDialogEntryOverride extends RefCounted:

@@ -1062,21 +1062,6 @@ func remove_fields(field_ids: Array[StringName], size_change: int = 0) -> void:
 		size.y -= compound_size + (get_theme_constant("separation") * (target_nodes.size() - 1) if 0 < target_nodes.size() else 0)
 
 
-func deferred_resizing(amount: int) -> void:
-	size_change += amount
-	if not resizing:
-		resizing = true
-		ress.call_deferred()
-
-
-func ress() -> void:
-	resizing = false
-	size.y -= size_change
-	size_change = 0
-	
-
-
-
 func is_orphan() -> bool:
 	match parent_mode:
 		PortMode.NONE:

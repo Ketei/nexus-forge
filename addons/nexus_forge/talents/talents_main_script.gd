@@ -2,7 +2,6 @@
 extends PanelContainer
 
 
-const LineEditConfirmationDialog = preload("res://addons/nexus_forge/dialogs/lineedit_confirmation_dialog.gd")
 const DATA_RANGE_LIMIT: int = 9999
 const DATA_FLOAT_STEP: float = 0.01
 
@@ -168,7 +167,7 @@ func reload_skill_resource(first_launch: bool = false) -> void:
 	if _skills_resource == null:
 		if not was_null or first_launch:
 			$MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer.visible = false
-			var no_db = preload("res://addons/nexus_forge/no_db_container.tscn").instantiate()
+			var no_db: Control = load("res://addons/nexus_forge/no_db_container.tscn").instantiate()
 			$MainContainer/StatSkillContainer/SkillsPanel.add_child(no_db)
 			no_db.message_minimum_size.x = 450
 			no_db.set_resource_type("SkillCatalog", "Skills", "Skills")
@@ -199,7 +198,7 @@ func reload_trait_resource(first_launch: bool = false) -> void:
 	if _traits_resource == null:
 		if not was_null or first_launch:
 			$MainContainer/TraitsPanel/TraitsContainerContainer.visible = false
-			var no_db = preload("res://addons/nexus_forge/no_db_container.tscn").instantiate()
+			var no_db: Control = load("res://addons/nexus_forge/no_db_container.tscn").instantiate()
 			$MainContainer/TraitsPanel.add_child(no_db)
 			no_db.message_minimum_size.x = 450
 			no_db.set_resource_type("TraitCatalog", "Traits", "Traits")
@@ -229,7 +228,7 @@ func reload_stat_resource(first_launch: bool = false) -> void:
 	if _stats_resource == null:
 		if not was_null or first_launch:
 			$MainContainer/StatSkillContainer/StatsPanel/StatsContainer.visible = false
-			var no_db = preload("res://addons/nexus_forge/no_db_container.tscn").instantiate()
+			var no_db: Control = load("res://addons/nexus_forge/no_db_container.tscn").instantiate()
 			$MainContainer/StatSkillContainer/StatsPanel.add_child(no_db)
 			no_db.message_minimum_size.x = 450
 			no_db.set_resource_type("StatCatalog", "Stats", "Stats")
@@ -244,7 +243,7 @@ func reload_stat_resource(first_launch: bool = false) -> void:
 #region Skills
 
 func _on_create_skill_resource_pressed(panel: PanelContainer) -> void:
-	var res_loader := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
+	var res_loader: FileDialog = load("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	res_loader.file_mode = res_loader.FILE_MODE_SAVE_FILE
 	res_loader.title = "Create Talents"
 	res_loader.ok_button_text = "Save"
@@ -273,7 +272,7 @@ func _on_create_skill_resource_pressed(panel: PanelContainer) -> void:
 
 
 func _on_load_skill_resource_pressed(panel: PanelContainer) -> void:
-	var res_loader := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
+	var res_loader: FileDialog = load("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	res_loader.file_mode = res_loader.FILE_MODE_OPEN_FILE
 	res_loader.title = "Open Talents"
 	res_loader.ok_button_text = "Load"
@@ -508,7 +507,7 @@ func reload_skills(reselect: bool = true) -> void:
 #region Traits
 
 func _on_create_traits_resource_pressed(panel: PanelContainer) -> void:
-	var res_loader := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
+	var res_loader: FileDialog = load("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	res_loader.file_mode = res_loader.FILE_MODE_SAVE_FILE
 	res_loader.title = "Create StatBlock"
 	res_loader.ok_button_text = "Save"
@@ -538,7 +537,7 @@ func _on_create_traits_resource_pressed(panel: PanelContainer) -> void:
 
 
 func _on_load_traits_resource_pressed(panel: PanelContainer) -> void:
-	var res_loader := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
+	var res_loader: FileDialog = load("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	res_loader.file_mode = res_loader.FILE_MODE_OPEN_FILE
 	res_loader.title = "Open Talents"
 	res_loader.ok_button_text = "Load"
@@ -778,7 +777,7 @@ func reload_traits(reselect: bool = true) -> void:
 #region Stats
 
 func _on_create_stat_resource_pressed(panel: PanelContainer) -> void:
-	var res_loader := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
+	var res_loader: FileDialog = load("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	res_loader.file_mode = res_loader.FILE_MODE_SAVE_FILE
 	res_loader.title = "Create Stats"
 	res_loader.ok_button_text = "Save"
@@ -807,7 +806,7 @@ func _on_create_stat_resource_pressed(panel: PanelContainer) -> void:
 
 
 func _on_load_stat_resource_pressed(panel: PanelContainer) -> void:
-	var res_loader := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
+	var res_loader: FileDialog = load("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	res_loader.file_mode = res_loader.FILE_MODE_OPEN_FILE
 	res_loader.title = "Open Stats"
 	res_loader.ok_button_text = "Load"

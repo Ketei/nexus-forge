@@ -4,6 +4,8 @@ extends DiscourseGraphNode
 signal value_changed(type, value)
 signal data_type_changed
 
+const MAX_LINES: int = 5
+const EXTRA_Y_PADDING: int = 8
 
 var active_value: Control = null
 
@@ -17,16 +19,13 @@ var mode: int = TYPE_INT:
 			match mode:
 				TYPE_INT:
 					active_value.value_changed.disconnect(_on_value_changed)
-					active_value.value_changed.disconnect(_on_field_changed)
 				TYPE_FLOAT:
 					active_value.value_changed.disconnect(_on_value_changed)
-					active_value.value_changed.disconnect(_on_field_changed)
 				TYPE_BOOL:
 					active_value.toggled.disconnect(_on_value_changed)
-					active_value.value_changed.disconnect(_on_field_changed)
 				TYPE_STRING:
-					active_value.text_changed.disconnect(_on_value_changed)
-					active_value.value_changed.disconnect(_on_field_changed)
+					active_value.text_changed.disconnect(_on_text_field_text_changed)
+					_reset_height.call_deferred()
 		
 		mode = new_mode
 		
@@ -39,7 +38,6 @@ var mode: int = TYPE_INT:
 				active_value.step = 1.0
 				active_value.visible = true
 				active_value.value_changed.connect(_on_value_changed, CONNECT_DEFERRED)
-				active_value.value_changed.connect(_on_field_changed, CONNECT_DEFERRED)
 				set_slot_type_right(0, SlotConnectionType.VAR_INT)
 				set_slot_color_right(0, COLORS["integer"])
 			TYPE_FLOAT:
@@ -47,21 +45,18 @@ var mode: int = TYPE_INT:
 				active_value.visible = true
 				active_value.step = 0.01
 				active_value.value_changed.connect(_on_value_changed, CONNECT_DEFERRED)
-				active_value.value_changed.connect(_on_field_changed, CONNECT_DEFERRED)
 				set_slot_type_right(0, SlotConnectionType.VAR_FLOAT)
 				set_slot_color_right(0, COLORS["float"])
 			TYPE_BOOL:
 				active_value = get_field(&"data").get_child(0).get_child(1)
 				active_value.visible = true
 				active_value.toggled.connect(_on_value_changed, CONNECT_DEFERRED)
-				active_value.toggled.connect(_on_field_changed, CONNECT_DEFERRED)
 				set_slot_type_right(0, SlotConnectionType.VAR_BOOL)
 				set_slot_color_right(0, COLORS["bool"])
 			TYPE_STRING:
 				active_value = get_field(&"data").get_child(0).get_child(2)
 				active_value.visible = true
-				active_value.text_changed.connect(_on_value_changed, CONNECT_DEFERRED)
-				active_value.text_changed.connect(_on_field_changed, CONNECT_DEFERRED)
+				active_value.text_changed.connect(_on_text_field_text_changed, CONNECT_DEFERRED)
 				set_slot_type_right(0, SlotConnectionType.VAR_STRING)
 				set_slot_color_right(0, COLORS["string"])
 		data_type_changed.emit()
@@ -79,11 +74,11 @@ func _post_init() -> void:
 	var data_panel: PanelContainer = PanelContainer.new()
 	var data_spnbx: SpinBox = SpinBox.new()
 	var data_chk_bx: CheckBox = CheckBox.new()
-	var data_ln_edt: LineEdit = LineEdit.new()
+	var data_ln_edt: TextEdit = TextEdit.new()
 	var data_menu: MenuButton = MenuButton.new()
 	var data_popup: PopupMenu = data_menu.get_popup()
 	
-	main_container.custom_minimum_size.y = 32
+	main_container.custom_minimum_size.y = 33.0
 	main_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	data_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	data_panel.add_theme_stylebox_override(&"panel", StyleBoxEmpty.new())
@@ -96,6 +91,9 @@ func _post_init() -> void:
 	data_menu.flat = false
 	data_menu.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	data_menu.custom_minimum_size = Vector2(32.0, 32.0)
+	
+	data_ln_edt.custom_minimum_size.y = 33.0
+	data_ln_edt.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
 	
 	data_panel.add_child(data_spnbx)
 	data_panel.add_child(data_chk_bx)
@@ -120,7 +118,6 @@ func _post_init() -> void:
 	
 	data_popup.id_pressed.connect(_on_data_type_selected)
 	data_spnbx.value_changed.connect(_on_value_changed, CONNECT_DEFERRED)
-	data_spnbx.value_changed.connect(_on_field_changed, CONNECT_DEFERRED)
 
 
 func _ready() -> void:
@@ -209,13 +206,27 @@ func _on_data_type_selected(type: int) -> void:
 	node_updated.emit()
 
 
-func _on_value_changed(_value: Variant = null) -> void:
+func _on_value_changed(value: Variant = null) -> void:
 	node_updated.emit()
-
-
-func _on_field_changed(value = null) -> void:
 	value_changed.emit(mode, value)
-	
+
+
+func _on_text_field_text_changed() -> void:
+	_resize_text_entry()
+	_on_value_changed(get_mapped_field(&"data", &"text").text)
+
+
+func _resize_text_entry() -> void:
+	var field: TextEdit = get_mapped_field(&"data", &"text")
+	var lines: int = mini(field.get_total_visible_line_count(), MAX_LINES)
+	var new_height: float = lines * field.get_line_height() + EXTRA_Y_PADDING
+	if new_height < size.y:
+		_reset_height.call_deferred()
+	field.custom_minimum_size.y = new_height
+
+
+func _reset_height() -> void:
+	size.y = 0
 
 
 func is_port_type_value_compatible(port_type: int, value: int) -> bool:

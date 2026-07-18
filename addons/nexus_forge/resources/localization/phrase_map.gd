@@ -159,10 +159,17 @@ func entries() -> Array[StringName]:
 ## Sets the phrase's [param key] text to [param text].
 func set_entry(key: StringName, text: String) -> void:
 	var formats: Dictionary = {}
+	var entry_exists: bool = _phrases.has(key)
 	for format in get_valid_formats(text):
+		var default: String = ""
+		var cases: Dictionary[String, String] = {}
+		if entry_exists and _phrases[key]["formats"].has(format):
+			default = _phrases[key]["formats"][format]["default"]
+			cases.assign(_phrases[key]["formats"][format]["cases"])
+		
 		formats[format] = {
-			"default": DictUtils.get_nested_value(_phrases, [key, "text"], ""),
-			"cases": DictUtils.get_nested_value(_phrases, [key, "cases"], {})}
+			"default": default,
+			"cases": cases}
 	
 	_phrases[key] = {
 		"text": text,
@@ -205,19 +212,6 @@ func has_format(key: StringName, format: String) -> bool:
 			[key, "formats", format])
 
 
-## Sets the phrase [param phrase_key] default case for argument [param on_argument]
-## to [param default_value].
-func set_format_default(key: StringName, format: String,  default: String) -> void:
-	if not DictUtils.set_nested_value(
-			_phrases,
-			[key, "formats", format, "default"],
-			default,
-			false):
-		_phrases[key]["formats"][format] = {
-			"default": default,
-			"cases": {}}
-
-
 ## Returns the phrase [param phrase_key] default case for argument [param on_argument]
 ## or an empty string if the argument doesn't exist.
 func get_case_default(key: StringName, format: String) -> String:
@@ -237,6 +231,18 @@ func set_case(key: StringName, format: String, case: String, value: String) -> v
 			_phrases,
 			[key, "formats", format, "cases", case],
 			value)
+
+
+## Sets the default case on the phrase [param key] of the argument
+## [param on_argument] to [param default].
+func set_case_default(key: StringName, format: String, default: String) -> void:
+	if not _phrases.has(key):
+		return
+	
+	DictUtils.set_nested_value(
+			_phrases,
+			[key, "formats", format, "default"],
+			default)
 
 
 ## Clears the custom cases of the [param format] from the phrase

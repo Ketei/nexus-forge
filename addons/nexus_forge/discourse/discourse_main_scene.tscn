@@ -15,7 +15,6 @@
 [ext_resource type="Texture2D" uid="uid://cs028qrb244bx" path="res://addons/nexus_forge/icons/uncollapse_vertical_left.svg" id="6_rd8yp"]
 [ext_resource type="Texture2D" uid="uid://cymtattv7iu68" path="res://addons/nexus_forge/icons/format_plus.svg" id="8_nnanj"]
 [ext_resource type="Texture2D" uid="uid://ml3oqkmlxlbq" path="res://addons/nexus_forge/icons/collapse_vertical_left.svg" id="10_d1wp1"]
-[ext_resource type="Script" uid="uid://blbqpddxjenwk" path="res://addons/nexus_forge/item_quest_lineedit_script.gd" id="12_y6bvq"]
 [ext_resource type="Texture2D" uid="uid://djfghegbsgg4f" path="res://addons/nexus_forge/icons/collapse_up.svg" id="17_ronv0"]
 [ext_resource type="Texture2D" uid="uid://bkgn1c5b6vjcq" path="res://addons/nexus_forge/icons/sync_icon.svg" id="18_00i6d"]
 [ext_resource type="Texture2D" uid="uid://ggg4p1253a43" path="res://addons/nexus_forge/icons/uncollapse_up.svg" id="19_qigvn"]
@@ -451,14 +450,12 @@ flat = true
 [node name="HSeparator" type="HSeparator" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer" unique_id=1758267224]
 layout_mode = 2
 
-[node name="KeyHeaderSplit" type="HSplitContainer" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer" unique_id=1541194474]
+[node name="KeyHeaderSplit" type="HBoxContainer" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer" unique_id=1889060900]
 layout_mode = 2
-split_offsets = PackedInt32Array(170)
-dragging_enabled = false
-split_offset = 170
 
 [node name="HBoxContainer" type="HBoxContainer" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyHeaderSplit" unique_id=1610878380]
 layout_mode = 2
+size_flags_horizontal = 3
 
 [node name="Control" type="Control" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyHeaderSplit/HBoxContainer" unique_id=1957511038]
 custom_minimum_size = Vector2(32, 32)
@@ -474,6 +471,7 @@ vertical_alignment = 1
 
 [node name="HBoxContainer2" type="HBoxContainer" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyHeaderSplit" unique_id=1997336120]
 layout_mode = 2
+size_flags_horizontal = 3
 
 [node name="Label2" type="Label" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyHeaderSplit/HBoxContainer2" unique_id=1700079168]
 custom_minimum_size = Vector2(0, 32)
@@ -494,20 +492,10 @@ size_flags_vertical = 3
 theme_override_styles/panel = SubResource("StyleBoxEmpty_nnanj")
 horizontal_scroll_mode = 0
 
-[node name="KeySplitContainer" type="HSplitContainer" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyScroll" unique_id=836410647]
+[node name="PhrasesEntries" type="VBoxContainer" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyScroll" unique_id=507957641]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/minimum_grab_thickness = 10
-split_offsets = PackedInt32Array(170)
-split_offset = 170
-
-[node name="KeyContainer" type="VBoxContainer" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyScroll/KeySplitContainer" unique_id=344064397]
-custom_minimum_size = Vector2(150, 0)
-layout_mode = 2
-
-[node name="TextContainer" type="VBoxContainer" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyScroll/KeySplitContainer" unique_id=795235324]
-custom_minimum_size = Vector2(170, 0)
-layout_mode = 2
 
 [node name="CaseBoxContainer" type="VBoxContainer" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer" unique_id=774319691]
 visible = false
@@ -564,23 +552,23 @@ metadata/current_search = ""
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "New format case."
-focus_neighbor_bottom = NodePath("../../KeyScroll/CasesSplit/ResultContainer/DefaultContainer/DefaultCaseLnEdt")
-focus_next = NodePath("../../KeyScroll/CasesSplit/ResultContainer/DefaultContainer/DefaultCaseLnEdt")
 disabled = true
 icon = ExtResource("8_nnanj")
 
 [node name="HSeparator" type="HSeparator" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2" unique_id=192491382]
 layout_mode = 2
 
-[node name="CaseHeaderSplit" type="HSplitContainer" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2" unique_id=116790872]
+[node name="CaseHeaderSplit" type="HBoxContainer" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2" unique_id=1686350378]
 layout_mode = 2
-split_offsets = PackedInt32Array(200)
-dragging_enabled = false
-split_offset = 200
+
+[node name="Control2" type="Control" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/CaseHeaderSplit" unique_id=996209419]
+custom_minimum_size = Vector2(33, 0)
+layout_mode = 2
 
 [node name="Label" type="Label" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/CaseHeaderSplit" unique_id=1360314592]
-custom_minimum_size = Vector2(0, 32)
+custom_minimum_size = Vector2(115, 32)
 layout_mode = 2
+size_flags_horizontal = 3
 text = "Case"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -588,60 +576,53 @@ vertical_alignment = 1
 [node name="Label2" type="Label" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/CaseHeaderSplit" unique_id=1417106322]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 2.0
 text = "Result"
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="Control" type="Control" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/CaseHeaderSplit" unique_id=1013356691]
+custom_minimum_size = Vector2(33, 0)
+layout_mode = 2
 
 [node name="KeyScroll" type="ScrollContainer" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2" unique_id=101567025]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("StyleBoxEmpty_2wl78")
 
-[node name="CasesSplit" type="HSplitContainer" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll" unique_id=218609996]
+[node name="PhraseCasesEntries" type="VBoxContainer" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll" unique_id=1806995685]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/minimum_grab_thickness = 10
-split_offsets = PackedInt32Array(200)
-split_offset = 200
 
-[node name="CaseContainer" type="VBoxContainer" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit" unique_id=814243706]
+[node name="DefaultCase" type="HBoxContainer" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/PhraseCasesEntries" unique_id=880494225]
 layout_mode = 2
 
-[node name="Label2" type="Label" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/CaseContainer" unique_id=323294842]
-custom_minimum_size = Vector2(0, 32)
+[node name="Control" type="Control" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/PhraseCasesEntries/DefaultCase" unique_id=1202849060]
+custom_minimum_size = Vector2(33, 0)
 layout_mode = 2
+
+[node name="Label2" type="Label" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/PhraseCasesEntries/DefaultCase" unique_id=323294842]
+custom_minimum_size = Vector2(115, 32)
+layout_mode = 2
+size_flags_horizontal = 3
 text = "Default"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="CaseNodeContainer" type="VBoxContainer" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/CaseContainer" unique_id=445177330]
-layout_mode = 2
-
-[node name="ResultContainer" type="VBoxContainer" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit" unique_id=1552565991]
-layout_mode = 2
-
-[node name="DefaultContainer" type="HBoxContainer" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/ResultContainer" unique_id=617232666]
-layout_mode = 2
-
-[node name="DefaultCaseLnEdt" type="LineEdit" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/ResultContainer/DefaultContainer" unique_id=351618324]
-custom_minimum_size = Vector2(0, 32)
+[node name="DefaultCaseEdt" type="TextEdit" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/PhraseCasesEntries/DefaultCase" unique_id=1145851139]
 layout_mode = 2
 size_flags_horizontal = 3
-focus_neighbor_top = NodePath("../../../../../HeaderContainer/NewCaseBtn")
-focus_previous = NodePath("../../../../../HeaderContainer/NewCaseBtn")
-placeholder_text = "Default format"
-editable = false
-script = ExtResource("12_y6bvq")
+size_flags_stretch_ratio = 2.0
+wrap_mode = 1
 
-[node name="DefaultExpandButton" type="Button" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/ResultContainer/DefaultContainer" unique_id=89173855]
+[node name="DefaultExpandButton" type="Button" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/PhraseCasesEntries/DefaultCase" unique_id=89173855]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Open Editor"
 flat = true
 icon_alignment = 1
-
-[node name="ResultNodeContainer" type="VBoxContainer" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/ResultContainer" unique_id=1767288564]
-layout_mode = 2
 
 [node name="SaveCaseBtn" type="Button" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer" unique_id=1253882866]
 custom_minimum_size = Vector2(0, 32)

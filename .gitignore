@@ -28,7 +28,7 @@ desktop.ini
 addons/*
 !addons/nexus_forge
 tests/
-localization/
+/localization/
 editorconfig
 logo.png.import
 logo.svg.import

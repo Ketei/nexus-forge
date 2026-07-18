@@ -5,13 +5,16 @@ extends Tree
 signal something_changed
 signal folder_renamed(from: String, to: String)
 signal folder_selected(path_to_folder: String)
-signal folder_deleted(path_to_folder: String)
-signal folder_created(path_to_folder: String)
 signal folder_moved(original_path: String, target_folder: String)
 signal variable_dropped(var_folder: String, variable: String, new_folder: String)
+signal folder_created(path_to_folder: String)
+signal folder_deleted(path_to_folder: String)
+
 
 const CREATE_FOLDER_ID: int = 0
 const DELETE_FOLDER_ID: int = 1
+
+@export var default_folder_name: String = "new_folder"
 
 
 func ready_plugin() -> void:
@@ -128,8 +131,157 @@ func _is_item_child_of(item: TreeItem, parent: TreeItem) -> bool:
 	return false
 
 
+# Creates a folder recursively.
+func create_folder(path: String, expand: bool = true, select: bool = false) -> void:
+	var path_parts: PackedStringArray = path.simplify_path().split("/")
+	
+	if path_parts.is_empty():
+		return
+	
+	var folder_name: String = path_parts[-1]
+	var current_level: TreeItem = get_root()
+	var create: bool = true
+	
+	for folder in path_parts.slice(0, -1):
+		var no_match: bool = true
+		for folder_tree in current_level.get_children():
+			if folder_tree.get_metadata(0)["id"] == folder:
+				current_level = folder_tree
+				break
+		if no_match:
+			current_level = _create_folder(current_level, folder, expand, false)
+	
+	for tree in current_level.get_children():
+		if tree.get_metadata(0)["id"] == folder_name:
+			create = false
+			tree.collapsed = not expand
+			if select:
+				tree.select(0)
+			break
+	
+	if create:
+		_create_folder(current_level, folder_name, expand, select)
+
+
+# Removes a folder and all it's subfolders along with it.
+func remove_folder(path: String) -> void:
+	var path_parts: PackedStringArray = path.simplify_path().split("/")
+	
+	if path_parts.is_empty():
+		return
+	
+	var folder_name: String = path_parts[-1]
+	var current_level: TreeItem = get_root()
+	var erase: bool = true
+	
+	for path_slice in path_parts.slice(0, -1):
+		var found: bool = false
+		for item in current_level.get_children():
+			if item.get_metadata(0)["id"] == path_slice:
+				found = true
+				current_level = item
+				break
+		if not found:
+			erase = false
+			break
+	
+	if erase:
+		current_level.free()
+
+
+# Renames a folder
+func rename_folder(path: String, to: String) -> bool:
+	var folder_parts: PackedStringArray = path.simplify_path().split("/")
+	if folder_parts.is_empty():
+		return false
+	var target_folder: String = folder_parts[0]
+	var current_folder: TreeItem = get_root()
+	var rename: bool = true
+	
+	for slice in folder_parts:
+		var found: bool = false
+		for tree in current_folder.get_children():
+			if tree.get_metadata(0)["id"] == slice:
+				current_folder = tree
+				found = true
+				break
+		if not found:
+			rename = false
+			break
+	
+	if not rename:
+		return false
+	
+	var valid_name: String = validate_folder_name(current_folder.get_parent(), to, current_folder)
+	var success: bool = true
+	
+	if valid_name != to:
+		NFPluginGameHandler._log_msg(
+				"blackboard - editor",
+				"Tried to rename folder to '%s' but name is already taken or invalid. Using '%s' instead.",
+				NFPluginGameHandler._LogLevel.WARNING)
+		to = valid_name
+		success = false
+	
+	current_folder.set_text(0, to)
+	current_folder.get_metadata(0)["id"] = to
+	return success
+
+
+func move_folder(from: String, to: String) -> bool:
+	var target: TreeItem = null
+	var new_parent: TreeItem = null
+	var current_folder: TreeItem = get_root()
+	
+	var to_slice: PackedStringArray = to.split("/", false)
+	var from_slice: PackedStringArray = from.split("/", false)
+	
+	if to_slice.is_empty() or from_slice.is_empty():
+		return false
+	
+	var new_name: String = to_slice[-1]
+	
+	for slice in to_slice.slice(0, -1):
+		var found: bool = false
+		for item in current_folder.get_children():
+			if item.get_metadata(0)["id"] == slice:
+				current_folder = item
+				found = true
+				break
+		if not found:
+			return false
+	
+	new_parent = current_folder
+	current_folder = get_root()
+	
+	for slice in from_slice:
+		var found: bool = false
+		for item in current_folder.get_children():
+			if item.get_metadata(0)["id"] == slice:
+				current_folder = item
+				found = true
+				break
+		if not found:
+			return false
+	
+	target = current_folder
+	
+	if _has_folder(new_parent, new_name, target) or validate_folder_name(new_parent, new_name, target) != new_name:
+		return false
+	
+	target.set_text(0, new_name)
+	target.get_metadata(0)["id"] = new_name
+	
+	if target.get_parent() != new_parent:
+		target.get_parent().remove_child(target)
+		new_parent.add_child(target)
+		sort_single_item(target)
+	
+	return true
+
+
 func create_root_folder() -> String:
-	return create_folder(get_root()).get_text(0)
+	return _create_folder(get_root()).get_text(0)
 
 
 func select_folder_no_signal(folder_path: String) -> void:
@@ -142,7 +294,7 @@ func select_folder_no_signal(folder_path: String) -> void:
 	for level in path_names:
 		folder_found = false
 		for child in current_folder.get_children():
-			if child.get_text(0) == level:
+			if child.get_metadata(0)["id"] == level:
 				current_folder = child
 				folder_found = true
 				break
@@ -161,7 +313,7 @@ func clear_folders() -> void:
 		folder.free()
 
 
-func create_folder(target_tree: TreeItem = null, folder_name: String = "", expand: bool = false, select: bool = false) -> TreeItem:
+func _create_folder(target_tree: TreeItem = null, folder_name: String = default_folder_name, expand: bool = false, select: bool = false) -> TreeItem:
 	if target_tree == null:
 		target_tree = get_root()
 	
@@ -196,7 +348,7 @@ func load_folder_structure(folder_structure: Dictionary, _target_tree: TreeItem 
 	
 	for folder_name: String in folder_structure.keys():
 	 	# We create the top folder
-		var new_folder: TreeItem = create_folder(_target_tree, folder_name)
+		var new_folder: TreeItem = _create_folder(_target_tree, folder_name)
 		# Call this to ceate subfolders with the top folder as target
 		load_folder_structure(
 				folder_structure[folder_name],
@@ -206,9 +358,9 @@ func load_folder_structure(folder_structure: Dictionary, _target_tree: TreeItem 
 func _on_item_button_pressed(item: TreeItem, _column: int, id: int, _mouse_button_index: int) -> void:
 	match id:
 		CREATE_FOLDER_ID:
-			folder_created.emit(get_path_to_folder(create_folder(item, "", true, true)))
+			folder_created.emit(get_path_to_folder(_create_folder(item, "", true, true)))
 		DELETE_FOLDER_ID:
-			var confirmation := preload("res://addons/nexus_forge/dialogs/confirmation.gd").new()
+			var confirmation: ConfirmationDialog = load("res://addons/nexus_forge/dialogs/confirmation.gd").new()
 			confirmation.title = "Erase folder..."
 			confirmation.dialog_text = "Erase " + item.get_text(0) + " and all subfolders?"
 			confirmation.ok_button_text = "Erase"
@@ -230,6 +382,8 @@ func _on_item_button_pressed(item: TreeItem, _column: int, id: int, _mouse_butto
 func _on_folder_edited() -> void:
 	var item_edited: TreeItem = get_edited()
 	
+	item_edited.set_text(0, item_edited.get_text(0).strip_edges())
+	
 	if item_edited.get_metadata(0)["id"] == item_edited.get_text(0):
 		return
 	
@@ -237,14 +391,11 @@ func _on_folder_edited() -> void:
 	var prev_name: String = item_edited.get_metadata(0)["id"]
 	var path_to: String = get_path_to_folder(item_edited.get_parent())
 	
-	if not path_to.is_empty():
-		path_to += "/"
-	
 	item_edited.set_text(0, tweaked_name)
 	item_edited.get_metadata(0)["id"] = tweaked_name
 	
 	folder_renamed.emit(
-		path_to + prev_name, path_to + tweaked_name)
+		path_to.path_join(prev_name), path_to.path_join(tweaked_name))
 	something_changed.emit()
 
 
@@ -253,27 +404,52 @@ func collapse_folders(collapsed: bool = true) -> void:
 		top_folder.set_collapsed_recursive(collapsed)
 
 
-func validate_folder_name(parent_tree: TreeItem, folder_name: String = "new_folder", skip_tree: TreeItem = null) -> String:
-	if folder_name.is_empty():
+func validate_folder_name(parent_tree: TreeItem, folder_name: String = default_folder_name, skip_tree: TreeItem = null) -> String:
+	if folder_name.strip_edges().is_empty():
 		folder_name = "new_folder"
 	var tweaked_name: String = folder_name.replace("/", "_")
-	var iteration: int = 1
+	var trailing_int: Dictionary = StringUtils.get_trailing_integer(tweaked_name)
+	var iteration: int = trailing_int["integer"]
+	var modified_name = tweaked_name
+	if trailing_int["has_integer"]:
+		tweaked_name = tweaked_name.trim_suffix(str(iteration))
 	var total_folders: Array[TreeItem] = parent_tree.get_children()
 	
-	while has_folder(parent_tree, tweaked_name, skip_tree):
-		tweaked_name = str(folder_name, "_", iteration)
+	while _has_folder(parent_tree, modified_name, skip_tree):
 		iteration += 1
+		modified_name = str(tweaked_name, "_", iteration)
 	
 	return tweaked_name
 
 
-func has_folder(parent_folder: TreeItem, folder_name: String, exception: TreeItem) -> bool:
+func _has_folder(parent_folder: TreeItem, folder_name: String, exception: TreeItem) -> bool:
 	for subfolder in parent_folder.get_children():
 		if subfolder == exception:
 			continue
-		if subfolder.get_text(0) == folder_name:
+		if subfolder.get_metadata(0)["id"] == folder_name:
 			return true
 	return false
+
+
+func has_folder(folder_path: String) -> bool:
+	var slices: PackedStringArray = folder_path.split("/", false)
+	
+	if slices.is_empty():
+		return false
+	
+	var current_folder: TreeItem = get_root()
+	
+	for slice in slices:
+		var found = false
+		for item in current_folder.get_children():
+			if item.get_metadata(0)["id"] == slice:
+				found = true
+				current_folder = item
+				break
+		if not found:
+			return false
+	
+	return true
 
 
 func get_path_to_folder(folder: TreeItem) -> String:
@@ -286,7 +462,7 @@ func get_path_to_folder(folder: TreeItem) -> String:
 		folder_step = folder_step.get_parent()
 	
 	folder_path.reverse()
-	return "/".join(folder_path)
+	return StringUtils.make_path(folder_path)
 
 
 func get_state_path_to_folder(folder: TreeItem) -> String:

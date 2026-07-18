@@ -8,11 +8,11 @@ signal dialog_finished(success: bool, resource_path: String)
 var expected_extension: String = "tres"
 
 
-static func get_file_browser() -> ConfirmationDialog:
+static func get_file_browser() -> FileDialog:
 	if Engine.is_editor_hint():
-		return preload("res://addons/nexus_forge/classes/resource_file_dialog_editor.gd").new()
+		return load("res://addons/nexus_forge/classes/resource_file_dialog_editor.gd").new()
 	else:
-		return preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").new()
+		return load("res://addons/nexus_forge/classes/resource_file_dialog.gd").new()
 
 
 func _ready() -> void:

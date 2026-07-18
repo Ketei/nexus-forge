@@ -130,9 +130,9 @@ static func make_path(parts: Array) -> String:
 ## [code]has_integer[/code] contains a boolean representing if the string
 ## had an integer.[br]
 ## [code]integer[/code] is the integer that was found. If not found it'll be zero.
-static func get_trailing_integer(text: String) -> Dictionary:
+static func get_trailing_integer(text: String) -> Dictionary[String, Variant]:
 	var clean_text: String = text.strip_edges()
-	var data: Dictionary = {"has_integer": false, "integer": 0}
+	var data: Dictionary[String, Variant] = {"has_integer": false, "integer": 0}
 	
 	if clean_text.is_empty():
 		return data

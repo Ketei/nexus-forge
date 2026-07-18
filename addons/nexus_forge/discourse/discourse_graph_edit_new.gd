@@ -22,7 +22,8 @@ signal nodes_removed(nodes_data: Dictionary)
 signal node_connected(from_node: StringName, from_port: int, to_node: StringName, to_port: int)
 signal node_disconnected(from_node: StringName, from_port: int, to_node: StringName, to_port: int)
 signal node_connection_switched(origian_ports: Dictionary, new_node: StringName, new_port: int)
-signal use_code_editor_requested(target_control: Control, text: String)
+signal use_code_editor_requested(target_control: TextEdit)
+signal browse_character_requested(target_control: LineEdit)
 
 
 signal paste_nodes_requested
@@ -388,8 +389,10 @@ func new_dialog_node(node_type: DialogNodes, uuid: StringName = &"") -> Discours
 		DialogNodes.DIALOG:
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/dialog_graph_node.gd").new(uuid, &"", true, true, true)
 			created_node.use_code_editor_pressed.connect(_on_use_code_editor_requested)
+			created_node.select_character_pressed.connect(_on_use_character_selector_pressed)
 		DialogNodes.CHOICES:
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/dialog_options.gd").new(uuid, &"", true, true, true)
+			created_node.use_code_editor_pressed.connect(_on_use_code_editor_requested)
 		DialogNodes.BRANCH:
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/dialog_branch.gd").new(uuid)
 		DialogNodes.CONDITION_SELECT:
@@ -724,6 +727,9 @@ func remove_node(node_uuid: StringName) -> void:
 		anchor_pointers.erase(target)
 	
 	elif target.node_type == DialogNodes.DIALOG:
+		target.use_code_editor_pressed.disconnect(_on_use_code_editor_requested)
+	
+	elif target.node_type == DialogNodes.CHOICES:
 		target.use_code_editor_pressed.disconnect(_on_use_code_editor_requested)
 	
 	graph_nodes.erase(node_uuid)
@@ -1191,8 +1197,12 @@ func disconnect_all_node_connections(for_uuid: StringName) -> void:
 #region UI Actions / Listeners
 
 
-func _on_use_code_editor_requested(target_node: Control, text: String) -> void:
-	use_code_editor_requested.emit(target_node, text)
+func _on_use_code_editor_requested(target_node: TextEdit) -> void:
+	use_code_editor_requested.emit(target_node)
+
+
+func _on_use_character_selector_pressed(target: LineEdit) -> void:
+	browse_character_requested.emit(target)
 
 
 func _on_delete_nodes_request(nodes: Array[StringName]) -> void:

@@ -10,7 +10,10 @@ func _post_init() -> void:
 	size = Vector2(250.0, 120.0)
 	custom_minimum_size = Vector2(250.0, 120.0)
 	resizable = true
-	var localized_text: TextEdit = preload("res://addons/nexus_forge/discourse/dialog_node_textedit.gd").new()
+	var localized_text: TextEdit = load("res://addons/nexus_forge/discourse/textedit_bracket_handler.gd").new()
+	var highlighter: NFEditorDialogSyntaxHighlighter = NFEditorDialogSyntaxHighlighter.new()
+	highlighter.set_use_token("*", false)
+	localized_text.syntax_highlighter = highlighter
 	var connection: Label = Label.new()
 	
 	connection.text = "Text"
@@ -20,6 +23,8 @@ func _post_init() -> void:
 	
 	localized_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	localized_text.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
+	localized_text.custom_minimum_size.y = 33.0
+	
 	add_field(
 			&"connection",
 			connection,

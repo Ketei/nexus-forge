@@ -3,7 +3,6 @@ extends PanelContainer
 
 
 signal species_loaded
-const LineEditConfirmationDialog = preload("res://addons/nexus_forge/dialogs/lineedit_confirmation_dialog.gd")
 
 var _unsaved: bool = false
 var _species_resource: SpeciesCatalog = null
@@ -242,7 +241,7 @@ func _on_race_display_changed() -> void:
 
 
 func _on_create_database_pressed(node: Control) -> void:
-	var database_creator := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
+	var database_creator: FileDialog = load("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	database_creator.file_mode = database_creator.FILE_MODE_SAVE_FILE
 	add_child(database_creator)
 	database_creator.show()
@@ -280,7 +279,7 @@ func _on_resource_dropped(resource: Resource, panel: Control) -> void:
 
 
 func _on_load_database_pressed(node: Control) -> void:
-	var database_creator := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
+	var database_creator: FileDialog = load("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	database_creator.file_mode = database_creator.FILE_MODE_OPEN_FILE
 	add_child(database_creator)
 	database_creator.show()
@@ -371,7 +370,7 @@ func _on_species_selected(species_id: StringName) -> void:
 
 
 func _on_create_species_pressed() -> void:
-	var id_creator := LineEditConfirmationDialog.new()
+	var id_creator: ConfirmationDialog = load("res://addons/nexus_forge/dialogs/lineedit_confirmation_dialog.gd").new()
 	id_creator.line_placeholder_text = "Species ID"
 	id_creator.allow_empty = false
 	id_creator.use_blacklist = true

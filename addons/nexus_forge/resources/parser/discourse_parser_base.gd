@@ -10,14 +10,12 @@ extends RefCounted
 signal dialog_started
 ## Emitted when a dialog reaches its end.
 signal dialog_finished
-@warning_ignore_start("unused_signal")
 ## Emitted when a dialog reaches a "Pause" point.
 signal dialog_paused
 ## Emmited when a dialog event is reached.
 signal dialog_reached(dialog_data: Dictionary)
 ## Emited when a choice event is reached.
 signal choices_reached(options: Array[Dictionary])
-@warning_ignore_restore("unused_signal")
 
 
 enum NodeTypes { 
@@ -79,6 +77,7 @@ var _next_uuid: StringName = &""
 var _current_uuid: StringName = &""
 var _conversation_cache: ResourceCache = null
 var _parser_cache: Cache = null
+var _parser_regex: RegEx = RegEx.new()
 
 var _path_to_id: Dictionary[StringName, StringName] = {}
 # {"dialogs.village.mayor": {"data_path": "res://asdas", "locale_file": "---.json"}
@@ -96,105 +95,12 @@ var _dialog_edits: Dictionary[String, DiscourseDialog.NFDialogEntryOverride] = {
 	#}
 }
 
-## The [DialogParser] that NexusForge will use while its running on exported projects.
-##
-## On an exported project the resources parsed will be [ReleaseDiscourseDialog]
-## which contain a different structure from the editor files.[br]
-## For the editor parser see [EditorDialogParser].[br]
-
-## The resource containing the localizable data of a dialog.
-#var localization: DiscourseDialogLocale = null 
-# Example of how data will be structured in the dialog resource (Release).
-#const store = {
-		#UUID - NodeTypes.DIALOG: { # <- UUUID used to access localization if text_source is empty
-			#"node_type": NodeTypes.DIALOG,
-			#"character_id": &"",
-			#"persist": true,
-			#"character_settings": {},
-			#"dialog_settings": {},
-			#"text_source": &"", # External key source for dialog
-			#"next_node": &""},
-		#NodeTypes.CHOICES: {
-			#"node_type": null,
-			#"options": [
-				#{"next_node": "", "settings": {"available": &"", "locked": &"", "lock_hint": &""}},
-				#{"next_node": "", "settings": {}}]},
-		#NodeTypes.BRANCH: {
-			#"node_type": null,
-			#"result": &"", # What node provides the result
-			#"case_true": &"",
-			#"case_false": &""},
-		#NodeTypes.CONDITION_SELECT: {
-			#"node_type": null,
-			#"result": &"", # What node provides the result
-			#"true_value": &"",
-			#"false_value": &""},
-		#NodeTypes.COMPARATION: {
-			#"node_type": null,
-			#"operator": OP_EQUAL,
-			#"value_a": &"",
-			#"value_b": &""},
-		#NodeTypes.EVENT: {
-			#"variable_path": &"",
-			#"variable": &"",
-			#"value": &"",
-			#"callable": &"",
-			#"signal": &"",
-			#"next_node": &""},
-		#NodeTypes.MATCH: {
-			#"case_default": &"",
-			#"match_value": &"",
-			#"cases": [
-				#{"value": 0, "next_node": &""},
-				#{"value": "X3", "next_node": &""}]},
-		#NodeTypes.PAUSE: {
-			#"next_node": &""},
-		#NodeTypes.RANDOM: {
-			#"default_override": &"",
-			#"options": [
-				#{"target": &"", "weight": &""}]},
-		#NodeTypes.TYPE_GUARD: {
-			#"type": TYPE_INT,
-			#"value": &"",
-			#"fallback": 100},
-		#NodeTypes.VALUE: {
-			#"value": 50},
-		#NodeTypes.SIGNAL: {
-			#"signal": &"",
-			#"arguments": [&"", &""]}, # Sources for the arguments
-		#NodeTypes.CALLABLE: {
-			#"method": &"",
-			#"arguments": [&""]},
-		#NodeTypes.CALLABLE_RETURN: {
-			#"method": &"",
-			#"arguments": [&"", &""]},
-		#NodeTypes.VARIABLE_GET: {
-			#"path": &"",
-			#"variable": &""},
-		#NodeTypes.RANDOM_VALUE: {
-			#"random_type": TYPE_BOOL,
-			#"min_value": 0.0,
-			#"max_value": 100.0,
-			#"min_source": &"",
-			#"max_source": &""},
-		#NodeTypes.RESOURCE: {
-			#"uuid": ""},
-		#NodeTypes.DATA_EVENT: {
-			#"variable_path": &"",
-			#"variable": &"",
-			#"value": &"",
-			#"callable": &"",
-			#"signal": &"",
-			#"data_source": &""}, # Where is the data to get.
-		#NodeTypes.LOCALIZED_TEXT: {
-			#"type": NodeTypes.LOCALIZED_TEXT,
-			#"text": &""}} # Key to localization
-
 
 func _init() -> void:
 	_conversation_cache = ResourceCache.new()
 	_parser_cache = Cache.new()
 	API = DiscourseAPI.new()
+	_parser_regex.compile("\\{(\\![a-zA-Z\\_][a-zA-Z0-9\\_]*(?:\\|[^\\}]+)?|(?:[\\?\\&\\$][^\\}]+))\\}")
 
 
 func generate_locale_map() -> void:
@@ -225,6 +131,12 @@ func generate_locale_map() -> void:
 
 # Function to parse the dialog in a custom manner. Modify if needed.
 func _parse_dialog(dialog_id: String, dialog: String) -> String:
+	if not ProjectSettings.get_setting(
+			NFPluginGameHandler.get_setting_path(
+					"use_discourse_parser"),
+					true):
+		return dialog
+	
 	var DUUID: String = dialog_id + "/" + locale
 	# (UUID)/en_US
 	if _dialog_resource.parsed_dialog_cache.is_in_cache(DUUID):
@@ -239,10 +151,7 @@ func _parse_dialog(dialog_id: String, dialog: String) -> String:
 	var phrases_processed: Dictionary[String, Variant] = {}
 	var random_processed: Dictionary[String,Variant] = {}
 	
-	var regex_search: RegEx = RegEx.new()
-	regex_search.compile("\\{((?:\\![^\\}\\s]+)|(?:[\\?\\&\\$][^\\}]+))\\}")
-	
-	for rgx_result in regex_search.search_all(dialog):
+	for rgx_result in _parser_regex.search_all(dialog):
 		var slice: String = rgx_result.get_string(1)
 		var token: String = slice[0]
 		
@@ -293,7 +202,7 @@ func _parse_dialog(dialog_id: String, dialog: String) -> String:
 			
 			parsed.create_format_phrase(slice, phrase, argument_cases)
 			
-			for phrase_match in regex_search.search_all(phrase):
+			for phrase_match in _parser_regex.search_all(phrase):
 				var phrase_item: String = phrase_match.get_string(1)
 				var phrase_token: String = phrase_item[0]
 				
@@ -806,9 +715,7 @@ func load_dialog(path: String, starting_id: StringName = &"") -> bool:
 		_conversation_cache.cache_resource(res)
 		_dialog_resource = res
 	
-	if _dialog_resource.id_map.has(starting_id):
-		_next_uuid = _dialog_resource.id_map[starting_id]
-	elif _dialog_resource.node_logic.has(starting_id):
+	if _dialog_resource.node_logic.has(starting_id):
 		_next_uuid = starting_id
 	else:
 		_next_uuid = _dialog_resource.entry_node
@@ -822,9 +729,7 @@ func set_dialog_id(id: StringName) -> void:
 	if _dialog_resource == null:
 		return
 	
-	if _dialog_resource.id_map.has(id):
-		_next_uuid = _dialog_resource.id_map[id]
-	elif _dialog_resource.node_logic.has(id):
+	if _dialog_resource.node_logic.has(id):
 		_next_uuid = id
 	else:
 		_next_uuid = &""
@@ -932,18 +837,16 @@ func edit_dialog(locale_code: String, dialog_id: StringName, node_id: StringName
 	locale_code = TranslationServer.standardize_locale(locale_code)
 	
 	if locale_code.is_empty() or dialog_id.is_empty():
+		NFPluginGameHandler._log_msg(
+				"discourse",
+				"Invalid locale code or empty dialog id on dialog edit.",
+				NFPluginGameHandler._LogLevel.ERROR)
 		return
-	
-	if type == TYPE_NIL:
-		if _dialog_edits.has(dialog_id):
-			_dialog_edits[dialog_id].set_override(node_id, locale_code, new_dialog)
-		else:
-			return
-		
-		if DictUtils.has_nested_path(_dialog_edits, [dialog_id, locale_code, node_id]):
-			_dialog_edits[dialog_id][locale_code].erase(node_id)
-		return
-	elif type != TYPE_STRING:
+	elif type != TYPE_NIL and type != TYPE_STRING:
+		NFPluginGameHandler._log_msg(
+				"discourse",
+				"Data type error on dialog edit.",
+				NFPluginGameHandler._LogLevel.ERROR)
 		return
 	
 	var target: DiscourseDialog.NFDialogEntryOverride = null
@@ -969,16 +872,19 @@ func edit_dialog(locale_code: String, dialog_id: StringName, node_id: StringName
 ## removed and the original used instead.
 func edit_choices(locale_code: String, dialog_id: StringName, node_id: StringName, new_choices) -> void:
 	locale_code = TranslationServer.standardize_locale(locale_code)
+	var type: int = typeof(new_choices)
 	
 	if locale_code.is_empty() or dialog_id.is_empty():
+		NFPluginGameHandler._log_msg(
+				"discourse",
+				"Invalid locale code or empty dialog id on choice edit.",
+				NFPluginGameHandler._LogLevel.ERROR)
 		return
-	
-	var type: int = typeof(new_choices)
-	if type == TYPE_NIL:
-		if DictUtils.has_nested_path(_dialog_edits, [dialog_id, locale_code, node_id]):
-			_dialog_edits[dialog_id][locale_code].erase(node_id)
-		return
-	elif type != TYPE_PACKED_STRING_ARRAY and type != TYPE_ARRAY:
+	elif type != TYPE_PACKED_STRING_ARRAY and type != TYPE_ARRAY and type != TYPE_NIL:
+		NFPluginGameHandler._log_msg(
+				"discourse",
+				"Data type error on choice edit.",
+				NFPluginGameHandler._LogLevel.ERROR)
 		return
 	
 	var target: DiscourseDialog.NFDialogEntryOverride = null
@@ -995,7 +901,11 @@ func edit_choices(locale_code: String, dialog_id: StringName, node_id: StringNam
 		if typeof(item) == TYPE_STRING:
 			responses.append(item)
 		else:
-			responses.append("")
+			NFPluginGameHandler._log_msg(
+					"discourse",
+					"An item in the provided array isn't a string.",
+					NFPluginGameHandler._LogLevel.WARNING)
+			responses.append("[INVALID ENTRY]")
 	
 	target.set_override(node_id, locale_code, responses)
 	
@@ -1020,13 +930,17 @@ func edit_choice(locale_code: String, dialog_id: StringName, node_id: StringName
 	elif not_packed_array:
 		NFPluginGameHandler._log_msg(
 				"discourse",
-				"Cant edit choice of non-array data.",
+				"Can't edit choice of non-array data.",
 				NFPluginGameHandler._LogLevel.ERROR)
 		return
 	
 	var target: PackedStringArray = _dialog_edits[dialog_id].get_override(node_id, locale_code)
 	
 	if target.size() <= choice_index:
+		NFPluginGameHandler._log_msg(
+				"discourse",
+				"Choice index out of bounds.",
+				NFPluginGameHandler._LogLevel.ERROR)
 		return
 	
 	target[choice_index] = data

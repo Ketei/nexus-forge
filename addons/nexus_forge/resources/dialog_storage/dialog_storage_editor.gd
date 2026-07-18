@@ -113,7 +113,6 @@ var collapsed_state: Dictionary[String, bool] = {}
 ## Returns the text of a localized string.
 func get_format_string(key: String, locale: String) -> String:
 	locale = TranslationServer.standardize_locale(locale)
-	
 	return DictUtils.get_nested_value(
 			format_strings,
 			[key, locale, "base_string"],
@@ -512,14 +511,15 @@ func convert_for_release() -> DiscourseDialog:
 	
 	var release_dialog: DiscourseDialog = DiscourseDialog.new()
 	var api: DiscourseAPI = DiscourseAPI.new()
-	var api_methods: Dictionary[StringName, Dictionary] = {} 
+	var api_methods: Dictionary[StringName, Dictionary] = {}
+	var uuid_translator: Dictionary[StringName, StringName] = {}
 	
 	for method in api.get_method_list():
 		api_methods[StringName(method["name"])] = method
 	
-	release_dialog.entry_node = entry_node
+	release_dialog.entry_node = node_data[entry_node]["name"] if node_data.has(entry_node) else &""
 	
-	var new_id_map: Dictionary[StringName, StringName] = {}
+	#var new_id_map: Dictionary[StringName, StringName] = {}
 	
 	# UUID(Anchor pointer): UUID(Anchor Target)
 	# Example "123"(anchor pointer uuid) -> "456"(Anchor) -> "789"(Anchor connection)
@@ -538,6 +538,7 @@ func convert_for_release() -> DiscourseDialog:
 	
 	for node_uuid in node_uuids:
 		var metadata: Dictionary = node_data[node_uuid]["metadata"]
+		uuid_translator[node_uuid] = node_data[node_uuid]["name"]
 		if node_data[node_uuid]["type"] == NodeType.ANCHOR_POINTER:
 			var target_node: StringName = &""
 			if not metadata["anchor_target"].is_empty():
@@ -553,18 +554,19 @@ func convert_for_release() -> DiscourseDialog:
 	
 	target_finder.anchor_nodes.assign(anchor_nodes)
 	target_finder.dialog_mergers.assign(dialog_mergers)
+	target_finder.uuid_to_id_conversions.assign(uuid_translator)
 	
-	var add_id: bool = true
+	#var add_id: bool = true
 	
 	for node_id in node_uuids:
-		#var editor_data: Dictionary = node_data[node_id]
 		var export_data: Dictionary[String, Variant] = {
 			"node_type": node_data[node_id]["type"]}
 		var metadata: Dictionary = node_data[node_id]["metadata"]
+		var node_name: StringName = node_data[node_id]["name"]
 		
 		match node_data[node_id]["type"]:
 			NodeType.ENTRY:
-				export_data["next_node"] = target_finder.get_target(node_data[node_id]["output_connections"]["next_node"]["target_node_uuid"]) #get_target_lambda.call(node_id)
+				export_data["next_node"] = target_finder.get_target(node_data[node_id]["output_connections"]["next_node"]["target_node_uuid"])
 			NodeType.DIALOG:
 				var character_settings: Dictionary = {
 					"display_name": &"",
@@ -613,12 +615,12 @@ func convert_for_release() -> DiscourseDialog:
 				export_data["character_settings"] = character_settings
 				export_data["dialog_settings"] = dialog_settings
 				export_data["text_source"] = StringName(node_data[node_id]["input_connections"]["dialog_text_source"]["target_node_uuid"])
-				export_data["next_node"] = target_finder.get_target(node_data[node_id]["output_connections"]["next_node"]["target_node_uuid"]) #get_target_lambda.call(dialog_nodes[node_id]["output_connections"]["next_node"]["target_node_uuid"])
+				export_data["next_node"] = target_finder.get_target(node_data[node_id]["output_connections"]["next_node"]["target_node_uuid"])
 			NodeType.CHOICES:
 				var options: Array[Dictionary] = []
 				for option:Dictionary in metadata["choices"]:
 					var new_option: Dictionary[String, Variant] = {
-						"next_node": target_finder.get_target(StringName(option["output_connections"]["next_node"]["target_node_uuid"])), #get_target_lambda.call(StringName(option["output_connections"]["next_node"]["target_node_uuid"])),
+						"next_node": target_finder.get_target(StringName(option["output_connections"]["next_node"]["target_node_uuid"])),
 						"settings": {
 							"available": &"",
 							"unlocked": &"",
@@ -839,18 +841,10 @@ func convert_for_release() -> DiscourseDialog:
 			NodeType.LOCALIZED_TEXT:
 				pass
 			NodeType.VALUE:
-				add_id = false
 				export_data["value"] = metadata["value"]
 			_:
-				add_id = false
-		
-		if add_id:
-			export_data["id"] = node_data[node_id]["name"]
-			new_id_map[StringName(node_data[node_id]["name"])] = node_id
-		release_dialog.node_logic[node_id] = export_data
-		add_id = true
+				pass
 	
-	release_dialog.id_map = new_id_map
 	return release_dialog
 
 
@@ -962,47 +956,48 @@ func generate_localization_files(localization_id: String, base_path: String, fil
 
 
 func _add_locale_data(file: DiscourseDialogLocale, localization_id: String, locale: String) -> void:
-	for node_id in localization.keys():
-		if not node_data.has(node_id):
-			push_warning("[DISCOURSE] Orphaned localization with ID '%s'. Skipping." % node_id)
+	for node_uuid in localization.keys():
+		if not node_data.has(node_uuid):
+			push_warning("[DISCOURSE] Orphaned localization with ID '%s'. Skipping." % node_uuid)
 			continue
 		
-		var data = localization[node_id]
+		var nodeid: StringName = node_data[node_uuid]["name"]
+		var data = localization[node_uuid]
 		var localized: bool = DictUtils.get_nested_value(
 				node_data,
-				[node_id, "metadata", "localized"],
+				[node_uuid, "metadata", "localized"],
 				false,
 				true)
 		
-		var type_mismatch: bool = _localization_type_mismatch(node_id)
+		var type_mismatch: bool = _localization_type_mismatch(node_uuid)
 		var data_complete: bool = _is_localization_data_complete(data, localized)
 		
 		if type_mismatch or not data_complete:
-			var type: int = node_data[node_id]["type"]
+			var type: int = node_data[node_uuid]["type"]
 			if not data_complete:
 				push_error(
-						"[DISCOURSE] Incomplete or corrupt data for node with UID '%s' " % node_id)
+						"[DISCOURSE] Incomplete or corrupt data for node with UID '%s' " % node_uuid)
 			if type_mismatch:
 				push_error(
-						"[DISCOURSE] Type mismatch for node & localization with UID '%s' of file %s" % [node_id, resource_path])
+						"[DISCOURSE] Type mismatch for node & localization with UID '%s' of file %s" % [node_uuid, resource_path])
 			
 			push_warning("[DISCOURSE] Patching data with placeholder entries.")
 			
 			if type == NodeType.DIALOG or type == NodeType.LOCALIZED_TEXT:
 				DictUtils.set_nested_value(
 					file.localization,
-					[localization_id, node_id, "dialog"],
+					[localization_id, nodeid, "dialog"],
 					"",
 					true)
 			elif type == NodeType.CHOICES:
-				var choice_size: int = node_data[node_id]["metadata"]["choices"].size()
+				var choice_size: int = node_data[node_uuid]["metadata"]["choices"].size()
 				var choices: PackedStringArray = []
 				choices.resize(choice_size)
 				for idx in range(choice_size):
 					choices[idx] = "[MISSING LOCALIZATION DATA]"
 				DictUtils.set_nested_value(
 						file.localization,
-						[localization_id, node_id, "choices"],
+						[localization_id, nodeid, "choices"],
 						choices,
 						true)
 		
@@ -1010,7 +1005,7 @@ func _add_locale_data(file: DiscourseDialogLocale, localization_id: String, loca
 			var warn: bool = typeof(DictUtils.get_nested_value(data, ["locales", locale])) != TYPE_STRING if localized else typeof(data["unlocalized"]) != TYPE_STRING
 			DictUtils.set_nested_value(
 					file.localization,
-					[localization_id, node_id, "dialog"],
+					[localization_id, nodeid, "dialog"],
 					DictUtils.get_nested_value(
 							data,
 							["locales", locale],
@@ -1018,13 +1013,13 @@ func _add_locale_data(file: DiscourseDialogLocale, localization_id: String, loca
 							true) if localized else DictUtils.get_nested_value(data, ["unlocalized"], "[MISSING LOCALIZATION DATA]", true))
 			if warn:
 				if localized:
-					push_warning("[DISCOURSE] Unlocalized data for node UID \"" + node_id + "\" is missing.")
+					push_warning("[DISCOURSE] Unlocalized data for node UID \"" + node_uuid + "\" is missing.")
 				else:
-					push_warning("[DISCOURSE] Localization data for node UID \"" + node_id + "\" for locale \"" + locale + "\" is missing.")
+					push_warning("[DISCOURSE] Localization data for node UID \"" + node_uuid + "\" for locale \"" + locale + "\" is missing.")
 		
 		elif data["type"] == LocalizationType.CHOICES:
 			var data_exists: bool = false
-			var choice_size: int = node_data[node_id]["metadata"]["choices"].size()
+			var choice_size: int = node_data[node_uuid]["metadata"]["choices"].size()
 			var base: Array[String] = []
 			
 			if localized:
@@ -1052,9 +1047,9 @@ func _add_locale_data(file: DiscourseDialogLocale, localization_id: String, loca
 			
 			if not data_exists:
 				if localized:
-					push_warning("[DISCOURSE] Localization data for node UID '%s' for locale '%s' is missing." % [node_id, locale])
+					push_warning("[DISCOURSE] Localization data for node UID '%s' for locale '%s' is missing." % [node_uuid, locale])
 				else:
-					push_warning("[DISCOURSE] Unlocalized data for node UID '%s' is missing." % node_id)
+					push_warning("[DISCOURSE] Unlocalized data for node UID '%s' is missing." % node_uuid)
 				var err_string: String = "[MISSING LOCALIZATION DATA]"
 				base.resize(choice_size)
 				for idx in range(choice_size):
@@ -1062,14 +1057,14 @@ func _add_locale_data(file: DiscourseDialogLocale, localization_id: String, loca
 			
 			DictUtils.set_nested_value(
 					file.localization,
-					[localization_id, node_id, "choices"],
+					[localization_id, nodeid, "choices"],
 					PackedStringArray(base),
 					true)
 			
 			var current_size: int = base.size()
 			if choice_size != current_size:
 				push_warning(
-					"[DISCOURSE] Localization choice count on node UID %s differs from data choice count: %s vs %s. Patching to match data size." % [node_id, current_size, choice_size])
+					"[DISCOURSE] Localization choice count on node UID %s differs from data choice count: %s vs %s. Patching to match data size." % [node_uuid, current_size, choice_size])
 				base.resize(choice_size)
 				if current_size < choice_size:
 					push_warning("[DISCOURSE] Localization count is smaller. Applying placeholders.")
@@ -1077,8 +1072,8 @@ func _add_locale_data(file: DiscourseDialogLocale, localization_id: String, loca
 						base[missing_idx] = "[MISSING LOCALIZATION DATA]"
 		else:
 			push_warning(
-					"[DISCOURSE] Localization export for node with UID '%s' couldn't define type." % node_id)
-			var nameless_id = DictUtils.get_nested_value(node_data, [node_id, "name"])
+					"[DISCOURSE] Localization export for node with UID '%s' couldn't define type." % node_uuid)
+			var nameless_id = DictUtils.get_nested_value(node_data, [node_uuid, "name"])
 			if typeof(nameless_id) == TYPE_STRING_NAME:
 				push_warning("[DISCOURSE - INFO] ID for typeless node found: %s\"" % String(nameless_id))
 	
@@ -1105,9 +1100,6 @@ func _add_locale_data(file: DiscourseDialogLocale, localization_id: String, loca
 			var formats: Dictionary = data["format"][format_slice]
 			
 			for case in formats["cases"].keys():
-				
-				
-				
 				if typeof(case) != TYPE_STRING and typeof(case) != TYPE_STRING_NAME:
 					push_error("[DISCOURSE] Case on resource %s is not of type string. Exception on: %s " % [resource_path, "/".join([format_key, locale, format_slice])])
 					continue

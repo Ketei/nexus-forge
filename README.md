@@ -98,7 +98,7 @@ Features that are planned to be implemented in the future:
 - [ ] **On Release:** Publish on Godot's Asset Library/Asset Store
 - [ ] **Core:** UndoRedo for all modules
   - [ ] Discourse (Dialogs)
-  - [ ] Blackboard (Variables)
+  - [x] Blackboard (Variables)
   - [ ] Persona (Characters)
   - [ ] Kindred (Species)
   - [ ] Talents (Skills & Traits)

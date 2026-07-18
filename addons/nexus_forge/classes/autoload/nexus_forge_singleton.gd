@@ -112,6 +112,11 @@ const _SETTINGS_PATHS: Dictionary[String, Dictionary] = {
 		"default_value": false,
 		"type": TYPE_BOOL,
 		"restart_required": false},
+	"use_discourse_parser": {
+		"setting_path": "nexus_forge/settings/parse_discourse_strings",
+		"default_value": true,
+		"type": TYPE_BOOL,
+		"restart_required": false},
 	"discourse_sync_locale": {
 		"setting_path": "nexus_forge/settings/update_discourse_locale_with_godot",
 		"default_value": true,

@@ -11,5 +11,5 @@ The use of this tool is only relevant if \"Nexus Forge/Export/Register Character
 
 If you're only trying to track one or two missing resources, simply double-clicking them to open them from the FileSystem dock will make the plugin register them without requiring a full scan.
 
-This scan will load all resouces to verify their class. If there are many resource files (.tres) this process could take a minute to complete."
+This scan will read resouce files to verify their class. If there are many resource files (.tres) this process could take a minute to complete."
 dialog_autowrap = true

@@ -432,6 +432,12 @@ func _dialog_resource_set(new_resource: DiscourseDialog) -> void:
 
 
 func _parse_dialog(dialog_uuid: String, dialog: String) -> String:
+	if not ProjectSettings.get_setting(
+			NFPluginGameHandler.get_setting_path(
+					"use_discourse_parser"),
+					true):
+		return dialog
+	
 	var DUUID: String = dialog_uuid + "/" + locale
 	
 	# (UUID)/en_US
@@ -448,10 +454,7 @@ func _parse_dialog(dialog_uuid: String, dialog: String) -> String:
 	var phrases_processed: Dictionary[String, Variant] = {}
 	var random_processed: Dictionary[String,Variant] = {}
 	
-	var regex_search: RegEx = RegEx.new()
-	regex_search.compile("\\{((?:\\![^\\}\\s]+)|(?:[\\?\\&\\$][^\\}]+))\\}")
-	
-	for reg_result in regex_search.search_all(dialog):
+	for reg_result in _parser_regex.search_all(dialog):
 		var format_key: String = reg_result.get_string(1)
 		var token: String = format_key[0]
 		
@@ -495,11 +498,11 @@ func _parse_dialog(dialog_uuid: String, dialog: String) -> String:
 			var phrase_key: String = format_key.substr(1)
 			
 			var phrase: String = _dialog_resource.get_format_string(
-					format_key,
+					phrase_key,
 					locale)
 			
 			var argument_cases: Dictionary[String, Dictionary] = _dialog_resource.get_format_string_arguments(
-					format_key,
+					phrase_key,
 					locale)
 			
 			parsed.create_format_phrase(
@@ -507,7 +510,7 @@ func _parse_dialog(dialog_uuid: String, dialog: String) -> String:
 					phrase,
 					argument_cases)
 			
-			for format_result in regex_search.search_all(phrase):
+			for format_result in _parser_regex.search_all(phrase):
 				var phrase_case: String = format_result.get_string(1)
 				var case_token: String = phrase_case[0]
 				
@@ -546,8 +549,19 @@ func _load_locale_to_active_dialog(_locale_code: String) -> void:
 
 func edit_dialog(locale_code: String, dialog_id: StringName, node_id: StringName, new_dialog) -> void:
 	locale_code = TranslationServer.standardize_locale(locale_code)
+	var data_type: int = typeof(new_dialog)
 	
 	if locale_code.is_empty() or dialog_id.is_empty():
+		NFPluginGameHandler._log_msg(
+				"discourse",
+				"Invalid locale code or empty dialog id on dialog edit.",
+				NFPluginGameHandler._LogLevel.ERROR)
+		return
+	elif data_type != TYPE_STRING and data_type != TYPE_NIL:
+		NFPluginGameHandler._log_msg(
+				"discourse",
+				"Data type error on dialog edit.",
+				NFPluginGameHandler._LogLevel.ERROR)
 		return
 	
 	var target: DiscourseDialog.NFDialogEntryOverride = null
@@ -569,16 +583,15 @@ func edit_dialog(locale_code: String, dialog_id: StringName, node_id: StringName
 
 func edit_choices(locale_code: String, dialog_id: StringName, node_id: StringName, new_choices) -> void:
 	locale_code = TranslationServer.standardize_locale(locale_code)
+	var type: int = typeof(new_choices)
 	
 	if locale_code.is_empty() or dialog_id.is_empty():
+		NFPluginGameHandler._log_msg(
+				"discourse",
+				"Invalid locale code or empty dialog id on choice edit.",
+				NFPluginGameHandler._LogLevel.ERROR)
 		return
-	
-	var type: int = typeof(new_choices)
-	if type == TYPE_NIL:
-		if DictUtils.has_nested_path(_dialog_edits, [dialog_id, locale_code, node_id]):
-			_dialog_edits[dialog_id][locale_code].erase(node_id)
-		return
-	elif type != TYPE_PACKED_STRING_ARRAY and type != TYPE_ARRAY:
+	elif type != TYPE_PACKED_STRING_ARRAY and type != TYPE_ARRAY and type != TYPE_NIL:
 		NFPluginGameHandler._log_msg(
 			"discourse",
 			"Can't assing choices based on a non-array.",
@@ -599,10 +612,10 @@ func edit_choices(locale_code: String, dialog_id: StringName, node_id: StringNam
 			responses.append(item)
 		else:
 			NFPluginGameHandler._log_msg(
-				"discourse",
-				"An item in the provided array isn't a string.",
-				NFPluginGameHandler._LogLevel.WARNING)
-			responses.append("")
+					"discourse",
+					"An item in the provided array isn't a string.",
+					NFPluginGameHandler._LogLevel.WARNING)
+			responses.append("[INVALID ENTRY]")
 	
 	target.set_override(node_id, locale_code, responses)
 	

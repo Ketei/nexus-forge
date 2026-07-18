@@ -75,6 +75,7 @@ func ready_plugin(use_discourse: bool, use_characters: bool, use_species: bool, 
 		tool_tab_bar.add_tab("Quests", load("res://addons/nexus_forge/icons/scroll.svg"))
 	if phrase_maps != null:
 		tool_container.add_child(phrase_maps)
+		phrase_maps.code_editor_variables_requested.connect(_on_phrase_maps_code_editor_variables_requested)
 		tool_tab_bar.add_tab("Phrase Maps", load("res://addons/nexus_forge/icons/brackets_speech.svg"))
 	
 	if discourse != null:
@@ -124,10 +125,20 @@ func ready_plugin(use_discourse: bool, use_characters: bool, use_species: bool, 
 
 
 func _on_discourse_code_editor_variables_requested(path: String) -> void:
+	discourse.set_text_code_editor_variable_paths(
+			_get_variables_for(path))
+
+
+func _on_phrase_maps_code_editor_variables_requested(path: String) -> void:
+	phrase_maps.set_text_code_editor_variable_paths(
+			_get_variables_for(path))
+
+
+func _get_variables_for(path: String) -> Array[Dictionary]:
 	var paths: Array[Dictionary] = [] # is_folder, path
 	
 	if variables._variables_resource == null:
-		discourse.set_text_code_editor_variable_paths(paths)
+		return paths
 	
 	var data: BlackboardData = variables._variables_resource
 	
@@ -144,7 +155,7 @@ func _on_discourse_code_editor_variables_requested(path: String) -> void:
 			var distance_b: float = StringUtils.levenshtein_distance(b["path"], path)
 			return distance_a < distance_b)
 	
-	discourse.set_text_code_editor_variable_paths(paths)
+	return paths
 
 
 func _on_species_loaded() -> void:
@@ -156,7 +167,7 @@ func _on_import_species_data_pressed() -> void:
 	if species == null or characters == null or species._species_resource == null:
 		return
 
-	var confirmation_dialog: ConfirmationDialog = preload("res://addons/nexus_forge/characters/import_stat_data_cdialog.gd").new()
+	var confirmation_dialog: ConfirmationDialog = load("res://addons/nexus_forge/characters/import_stat_data_cdialog.gd").new()
 	add_child(confirmation_dialog)
 	confirmation_dialog.popup_centered()
 	

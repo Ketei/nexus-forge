@@ -3,6 +3,7 @@ extends PanelContainer
 
 
 signal code_editor_variables_requested(path: String)
+signal character_browser_requested(target: LineEdit)
 
 enum TreeButtonID {
 	DELETE,
@@ -25,7 +26,13 @@ enum DiscourseFileMenuID {
 	}
 # ------------------
 
+const TEXT_CODE_EDITOR = preload("res://addons/nexus_forge/discourse/discourse_text_editor.tscn")
+const BracketHandler = preload("res://addons/nexus_forge/discourse/textedit_bracket_handler.gd")
 const RECENT_FILE_AMOUNT_MAX: int = 10
+# Used on Phrases only
+const MAX_LINES: int = 3
+const EXTRA_Y_PADDING: int = 8
+# --------------------
 
 var active_conversation: EditorDiscourseDialog = null
 
@@ -33,7 +40,7 @@ var localization_node_selected: DiscourseGraphNode = null
 
 var listen_offset: bool = true
 
-var selected_key: LineEdit = null
+var selected_format_index: int = -1
 
 var _unsaved: bool = false
 
@@ -76,11 +83,11 @@ var phrases_index: int = -1
 @onready var choices_container: VBoxContainer = $LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer/ChoicesScroller/ChoicesContainer
 
 # --- Phrases ---
-@onready var key_container: VBoxContainer = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyScroll/KeySplitContainer/KeyContainer
-@onready var text_container: VBoxContainer = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyScroll/KeySplitContainer/TextContainer
-@onready var case_node_container: VBoxContainer = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/CaseContainer/CaseNodeContainer
-@onready var result_node_container: VBoxContainer = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/ResultContainer/ResultNodeContainer
-@onready var default_case_ln_edt: LineEdit = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/ResultContainer/DefaultContainer/DefaultCaseLnEdt
+#@onready var key_container: VBoxContainer = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyScroll/KeySplitContainer/KeyContainer
+#@onready var text_container: VBoxContainer = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyScroll/KeySplitContainer/TextContainer
+#@onready var case_node_container: VBoxContainer = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/CaseContainer/CaseNodeContainer
+#@onready var result_node_container: VBoxContainer = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/ResultContainer/ResultNodeContainer
+@onready var default_case_edt: TextEdit = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/PhraseCasesEntries/DefaultCase/DefaultCaseEdt
 @onready var argument_opt_btn: OptionButton = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/ArgumentContainer/ArgumentOptBtn
 @onready var copy_arg_btn: Button = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/ArgumentContainer/CopyArgBtn
 @onready var new_case_btn: Button = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/HeaderContainer/NewCaseBtn
@@ -91,10 +98,10 @@ var phrases_index: int = -1
 @onready var case_box_container: VBoxContainer = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer
 @onready var save_case_btn: Button = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/SaveCaseBtn
 @onready var search_text_ln_edt: LineEdit = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer/HBoxContainer/SearchTextLnEdt
-@onready var key_header_split: HSplitContainer = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyHeaderSplit
-@onready var key_split_container: HSplitContainer = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyScroll/KeySplitContainer
-@onready var case_header_split: HSplitContainer = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/CaseHeaderSplit
-@onready var cases_split: HSplitContainer = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit
+@onready var key_header_split: HBoxContainer = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyHeaderSplit
+#@onready var key_split_container: HSplitContainer = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyScroll/KeySplitContainer
+@onready var case_header_split: HBoxContainer = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/CaseHeaderSplit
+#@onready var cases_split: HSplitContainer = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit
 
 # ----------------------------------------------
 
@@ -118,6 +125,27 @@ var dialog_previewer: Node = null
 
 
 func ready_plugin(base_locale: String = "") -> void:
+	text_editor = TEXT_CODE_EDITOR.instantiate()
+	add_child(text_editor)
+	text_editor.ready_plugin()
+	
+	var highlighter: NFEditorDialogSyntaxHighlighter = text_editor.text_code_edit.syntax_highlighter
+	
+	highlighter.set_use_token("*", false)
+	
+	text_editor.variable_called.connect(_on_editor_variable_called)
+	if text_editor.visible:
+		text_editor.hide()
+	
+	var def_highlighter: NFEditorDialogSyntaxHighlighter = NFEditorDialogSyntaxHighlighter.new()
+	def_highlighter.set_use_token("&", false)
+	def_highlighter.set_use_token("?", false)
+	def_highlighter.set_use_token("*", false)
+	
+	default_case_edt.set_script(BracketHandler)
+	default_case_edt.enter_shifts_focus = true
+	default_case_edt.syntax_highlighter = def_highlighter
+	
 	base_locale = TranslationServer.standardize_locale(base_locale)
 	node_popup = node_menu_btn.get_popup()
 	locale_popup = $MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/LocaleMenuBtn.get_popup()
@@ -137,7 +165,7 @@ func ready_plugin(base_locale: String = "") -> void:
 	var uncollapse_previewer: Button = $LocalizationContainer/FooterContainer/UncollapsePreviewBtn
 	var collapse_previewer: Button = $LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/DialogScenePreviewer/HBoxContainer/ButtonContaienr/CollapsePreviewBtn
 	var play_previewer: Button = $LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/DialogScenePreviewer/HBoxContainer/ButtonContaienr/PlayTextBtn
-	var default_expand_button: Button = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/ResultContainer/DefaultContainer/DefaultExpandButton
+	var default_expand_button: Button = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/PhraseCasesEntries/DefaultCase/DefaultExpandButton
 	# --- Node Menu Items ---
 	var dialogs_submenu: PopupMenu = PopupMenu.new()
 	var data_submenu: PopupMenu = PopupMenu.new()
@@ -191,17 +219,17 @@ func ready_plugin(base_locale: String = "") -> void:
 	setting_submenu.add_icon_item(load("res://addons/nexus_forge/icons/gear_icon.png"), "Option", DiscourseGraphNode.DialogueNodeType.SETTINGS_OPTION)
 	
 	node_popup.add_submenu_node_item(
-			"Conversation",
-			dialogs_submenu,
-			100)
+		"Conversation",
+		dialogs_submenu,
+		100)
 	node_popup.add_submenu_node_item(
-			"Data",
-			data_submenu,
-			100)
+		"Data",
+		data_submenu,
+		100)
 	node_popup.add_submenu_node_item(
-			"Settings",
-			setting_submenu,
-			100)
+		"Settings",
+		setting_submenu,
+		100)
 	node_popup.add_separator()
 	node_popup.add_icon_item(load("res://addons/nexus_forge/icons/comment_icon.svg"), "Comment", DiscourseGraphNode.DialogueNodeType.COMMENT)
 	node_popup.add_icon_item(get_theme_icon("ResourcePreloader", "EditorIcons"), "Resource", DiscourseGraphNode.DialogueNodeType.RESOURCE)
@@ -237,84 +265,84 @@ func ready_plugin(base_locale: String = "") -> void:
 	file_popup.hide_on_checkable_item_selection = false
 	
 	file_popup.add_icon_item(
-			get_theme_icon("New", "EditorIcons"),
-			"New",
-			DiscourseFileMenuID.NEW_DIALOG)
+		get_theme_icon("New", "EditorIcons"),
+		"New",
+		DiscourseFileMenuID.NEW_DIALOG)
 	file_popup.add_icon_item(
-			get_theme_icon("Load", "EditorIcons"),
-			"Open",
-			DiscourseFileMenuID.OPEN_DIALOG)
+		get_theme_icon("Load", "EditorIcons"),
+		"Open",
+		DiscourseFileMenuID.OPEN_DIALOG)
 	file_popup.add_submenu_node_item(
-			"Recent",
-			_recently_opened_popup,
-			DiscourseFileMenuID.RECENT_OPEN_FILES)
+		"Recent",
+		_recently_opened_popup,
+		DiscourseFileMenuID.RECENT_OPEN_FILES)
 	file_popup.add_icon_item(
-			get_theme_icon("Save", "EditorIcons"),
-			"Save",
-			DiscourseFileMenuID.SAVE_DIALOG)
+		get_theme_icon("Save", "EditorIcons"),
+		"Save",
+		DiscourseFileMenuID.SAVE_DIALOG)
 	file_popup.add_separator()
 	file_popup.add_icon_item(
-			get_theme_icon("Play", "EditorIcons"),
-			"Play current dialog",
-			DiscourseFileMenuID.PLAY_CURRENT_DIALOG)
+		get_theme_icon("Play", "EditorIcons"),
+		"Play current dialog",
+		DiscourseFileMenuID.PLAY_CURRENT_DIALOG)
 	file_popup.add_item(
-			"Check for issues",
-			DiscourseFileMenuID.CHECK_ISSUES)
+		"Check for issues",
+		DiscourseFileMenuID.CHECK_ISSUES)
 	file_popup.add_separator()
 	file_popup.add_icon_item(
-			get_theme_icon("Translation", "EditorIcons"),
-			"Localization Window",
-			DiscourseFileMenuID.LOCALIZATION_WINDOW)
+		get_theme_icon("Translation", "EditorIcons"),
+		"Localization Window",
+		DiscourseFileMenuID.LOCALIZATION_WINDOW)
 	file_popup.add_item(
-			"Set file locale group",
-			DiscourseFileMenuID.SET_LOCALE_GROUP)
+		"Set file locale group",
+		DiscourseFileMenuID.SET_LOCALE_GROUP)
 	file_popup.add_separator()
 	file_popup.add_check_item(
-			"Dialog ID field visible",
-			DiscourseFileMenuID.DISPLAY_DIALOG_ID_FIELD)
+		"Dialog ID field visible",
+		DiscourseFileMenuID.DISPLAY_DIALOG_ID_FIELD)
 	file_popup.add_item(
-			"Change default language",
-			DiscourseFileMenuID.CHANGE_LANGUAGE)
+		"Change default language",
+		DiscourseFileMenuID.CHANGE_LANGUAGE)
 	file_popup.add_separator()
 	file_popup.add_icon_item(
-			get_theme_icon("Close", "EditorIcons"),
-			"Close",
-			DiscourseFileMenuID.CLOSE_DIALOG)
+		get_theme_icon("Close", "EditorIcons"),
+		"Close",
+		DiscourseFileMenuID.CLOSE_DIALOG)
 	
 	file_popup.set_item_disabled(
-			file_popup.get_item_index(
-					DiscourseFileMenuID.SAVE_DIALOG),
+		file_popup.get_item_index(
+			DiscourseFileMenuID.SAVE_DIALOG),
+		true)
+	
+	file_popup.set_item_disabled(
+		file_popup.get_item_index(
+			DiscourseFileMenuID.RECENT_OPEN_FILES),
+		_recently_opened_files.is_empty())
+	
+	file_popup.set_item_disabled(
+		file_popup.get_item_index(
+			DiscourseFileMenuID.CHECK_ISSUES),
 			true)
 	
 	file_popup.set_item_disabled(
-			file_popup.get_item_index(
-					DiscourseFileMenuID.RECENT_OPEN_FILES),
-			_recently_opened_files.is_empty())
+		file_popup.get_item_index(
+			DiscourseFileMenuID.CLOSE_DIALOG),
+		true)
 	
 	file_popup.set_item_disabled(
-			file_popup.get_item_index(
-					DiscourseFileMenuID.CHECK_ISSUES),
-					true)
+		file_popup.get_item_index(
+			DiscourseFileMenuID.SET_LOCALE_GROUP),
+		true)
 	
 	file_popup.set_item_disabled(
-			file_popup.get_item_index(
-					DiscourseFileMenuID.CLOSE_DIALOG),
-			true)
+		file_popup.get_item_index(
+			DiscourseFileMenuID.PLAY_CURRENT_DIALOG),
+		true)
 	
 	file_popup.set_item_disabled(
-			file_popup.get_item_index(
-					DiscourseFileMenuID.SET_LOCALE_GROUP),
-			true)
-	
-	file_popup.set_item_disabled(
-			file_popup.get_item_index(
-					DiscourseFileMenuID.PLAY_CURRENT_DIALOG),
-			true)
-	
-	file_popup.set_item_disabled(
-			file_popup.get_item_index(
-					DiscourseFileMenuID.LOCALIZATION_WINDOW),
-			true)
+		file_popup.get_item_index(
+			DiscourseFileMenuID.LOCALIZATION_WINDOW),
+		true)
 	
 	play_previewer.icon = get_theme_icon("Play", "EditorIcons")
 	# --------------------------------------------------------
@@ -346,19 +374,19 @@ func ready_plugin(base_locale: String = "") -> void:
 	set_phrase_button_locale(system_lang)
 	
 	var locale_settings: PackedStringArray = StringUtils.split_and_strip(
-			ProjectSettings.get_setting(
-					NFPluginGameHandler.get_setting_path("discourse_use_languages"), ""),
-			",",
-			false)
+		ProjectSettings.get_setting(
+			NFPluginGameHandler.get_setting_path("discourse_use_languages"), ""),
+		",",
+		false)
 	
 	for entry in locale_settings:
 		var parts: PackedStringArray = entry.split("_", false)
 		var part_size: int = parts.size()
 		if part_size <= 0 or 2 < part_size:
 			NFPluginGameHandler._log_msg(
-					"discourse - editor",
-					"Discourse languages only support language & country. Attepmted to use '%s'" % entry,
-					NFPluginGameHandler._LogLevel.WARNING)
+				"discourse - editor",
+				"Discourse languages only support language & country. Attepmted to use '%s'" % entry,
+				NFPluginGameHandler._LogLevel.WARNING)
 			continue
 		
 		if not _included_languages.has(parts[0]):
@@ -393,10 +421,10 @@ func ready_plugin(base_locale: String = "") -> void:
 	else:
 		uncollapse_previewer.visible = false
 	
-	var lambda: Callable = func() -> void:
-		key_header_split.split_offset = key_split_container.split_offset
+	#var lambda: Callable = func() -> void:
+		#key_header_split.split_offset = key_split_container.split_offset
 	
-	lambda.call_deferred()
+	#lambda.call_deferred()
 	
 	$MainSplitContainer/ActiveWindowSplit/PhrasesContainer.visible = false
 	
@@ -410,8 +438,6 @@ func ready_plugin(base_locale: String = "") -> void:
 	node_popup.id_pressed.connect(_on_create_dialog_id_pressed)
 	close_localizer_btn.pressed.connect(_on_switch_window_pressed)
 	file_popup.id_pressed.connect(_on_file_menu_id_pressed)
-	#localization_menu.item_selected.connect(_on_localization_selected)
-	#localization_menu.resized.connect(_on_localization_resized)
 	# --------------------------------------------------------
 	
 	open_btn.pressed.connect(_on_open_conversation_pressed)
@@ -424,6 +450,7 @@ func ready_plugin(base_locale: String = "") -> void:
 	discourse_graph_edit.node_duplication_requested.connect(_on_graph_edit_node_duplication_requested)
 	discourse_graph_edit.paste_nodes_requested.connect(_on_graph_edit_paste_requested)
 	discourse_graph_edit.use_code_editor_requested.connect(_on_open_code_editor_graph_request)
+	discourse_graph_edit.browse_character_requested.connect(_on_open_character_browser_request)
 	
 	discourse_graph_edit.discourse_node_selected.connect(_on_discourse_node_selected)
 	discourse_graph_edit.scroll_offset_changed.connect(_on_graph_edit_offset_changed)
@@ -454,10 +481,8 @@ func ready_plugin(base_locale: String = "") -> void:
 	search_text_ln_edt.text_changed.connect(_on_key_search_text_changed)
 	search_case_ln_edt.text_changed.connect(_on_case_search_text_changed)
 	
-	key_split_container.dragged.connect(_on_scroll_dragged.bind(key_header_split))
-	cases_split.dragged.connect(_on_scroll_dragged.bind(case_header_split))
-	
-	default_case_ln_edt.text_changed.connect(_on_conversation_changed)
+	default_case_edt.text_changed.connect(_on_phrase_text_field_changed.bind(default_case_edt))
+	default_case_edt.resized.connect(_update_choice_textbox_size.bind(default_case_edt))
 	conversation_tree.conversation_close_pressed.connect(_on_conversation_close_pressed)
 	
 	hide_issues_btn.pressed.connect(_on_hide_issues_pressed)
@@ -574,14 +599,14 @@ func _on_phrase_button_item_selected(idx: int) -> void:
 
 
 func set_phrases_locale(locale: String) -> void:
-	for item_index in range(key_container.get_child_count()):
-		var line: LineEdit = key_container.get_child(item_index).get_child(1)
-		var text_field: LineEdit = text_container.get_child(item_index).get_child(0)
-		var key: String = line.get_meta(&"phrase_key")
+	for entry in %PhrasesEntries.get_children():
+		var line: LineEdit = entry.get_child(1)
+		var text_field: TextEdit = entry.get_child(2)
+		var key: String = entry.get_meta(&"phrase_key")
 		
 		text_field.text = active_conversation.get_format_string(
-				key,
-				locale)
+			key,
+			locale)
 
 
 func add_locale(locale_code: String) -> void:
@@ -625,8 +650,8 @@ func add_locale(locale_code: String) -> void:
 		
 		for lang_code in existing_menus:
 			locale_popup.add_submenu_node_item(
-					items[lang_code]["name"],
-					items[lang_code]["popup"])
+				items[lang_code]["name"],
+				items[lang_code]["popup"])
 			locale_popup.set_item_metadata(-1, lang_code)
 		
 		lang_index = existing_menus.find(language)
@@ -755,34 +780,34 @@ func set_conversation_options_enabled(are_enabled: bool) -> void:
 	phrases_lang_menu.disabled = disabled
 	
 	file_popup.set_item_disabled(
-			file_popup.get_item_index(
-					DiscourseFileMenuID.SAVE_DIALOG),
-					disabled)
-	
-	file_popup.set_item_disabled(
-			file_popup.get_item_index(
-					DiscourseFileMenuID.SET_LOCALE_GROUP),
+		file_popup.get_item_index(
+			DiscourseFileMenuID.SAVE_DIALOG),
 			disabled)
 	
 	file_popup.set_item_disabled(
-			file_popup.get_item_index(
-					DiscourseFileMenuID.PLAY_CURRENT_DIALOG),
+		file_popup.get_item_index(
+			DiscourseFileMenuID.SET_LOCALE_GROUP),
+		disabled)
+	
+	file_popup.set_item_disabled(
+		file_popup.get_item_index(
+			DiscourseFileMenuID.PLAY_CURRENT_DIALOG),
+		disabled)
+	
+	file_popup.set_item_disabled(
+		file_popup.get_item_index(
+			DiscourseFileMenuID.CHECK_ISSUES),
+		disabled)
+	
+	file_popup.set_item_disabled(
+		file_popup.get_item_index(
+			DiscourseFileMenuID.CLOSE_DIALOG),
 			disabled)
 	
 	file_popup.set_item_disabled(
-			file_popup.get_item_index(
-					DiscourseFileMenuID.CHECK_ISSUES),
+		file_popup.get_item_index(
+			DiscourseFileMenuID.LOCALIZATION_WINDOW),
 			disabled)
-	
-	file_popup.set_item_disabled(
-			file_popup.get_item_index(
-					DiscourseFileMenuID.CLOSE_DIALOG),
-					disabled)
-	
-	file_popup.set_item_disabled(
-			file_popup.get_item_index(
-					DiscourseFileMenuID.LOCALIZATION_WINDOW),
-					disabled)
 	
 	_conversation_options_disabled = disabled
 
@@ -833,9 +858,9 @@ func _on_locale_submenu_idx_pressed(idx: int, submenu: PopupMenu) -> void:
 	
 	if lang.is_empty():
 		NFPluginGameHandler._log_msg(
-				"discourse - editor",
-				"Error selecting locale",
-				NFPluginGameHandler._LogLevel.ERROR)
+			"discourse - editor",
+			"Error selecting locale",
+			NFPluginGameHandler._LogLevel.ERROR)
 		return
 	
 	var to: String = lang if count.is_empty() else lang + "_" + count
@@ -858,7 +883,7 @@ func set_graph_locale_tip(locale: String) -> void:
 	
 	var language_name: String = TranslationServer.get_language_name(language)
 	
-	var locale_text: String = "" if region.is_empty() else TranslationServer.get_country_name(region) 
+	var locale_text: String = "" if region.is_empty() else TranslationServer.get_country_name(region)
 	
 	if not locale_text.is_empty():
 		if locale_text.to_lower().ends_with("s"):
@@ -902,7 +927,7 @@ func _on_file_menu_id_pressed(id: int) -> void:
 func _on_create_dialog_id_pressed(id: int) -> void:
 	if id != 1000:
 		discourse_graph_edit.spawn_node_at_center(
-				id as DiscourseGraphNode.DialogueNodeType)
+			id as DiscourseGraphNode.DialogueNodeType)
 	else:
 		discourse_graph_edit.spawn_frame_at_center()
 
@@ -993,8 +1018,8 @@ func _on_conversation_close_pressed(dialog: EditorDiscourseDialog, save_required
 			"scroll_offset": discourse_graph_edit.scroll_offset if close_current else dialog.scroll_offset}
 		
 		_save_file_layout_for(
-				dialog.resource_path,
-				layout_data)
+			dialog.resource_path,
+			layout_data)
 	
 	conversation_tree.remove_conversation(dialog)
 	
@@ -1012,7 +1037,7 @@ func _on_conversation_close_pressed(dialog: EditorDiscourseDialog, save_required
 		clear_cases()
 		dialog_id_ln_edt.text = ""
 		conversation_tree.active_unsaved = false
-		selected_key = null
+		selected_format_index = -1
 		new_text_button.disabled = true
 		return
 	
@@ -1022,7 +1047,7 @@ func _on_conversation_close_pressed(dialog: EditorDiscourseDialog, save_required
 		conversation_tree.active_unsaved = true
 	
 	_unsaved = conversation_tree.active_unsaved
-	selected_key = null
+	selected_format_index = -1
 
 
 func _on_menu_close_pressed() -> void:
@@ -1052,8 +1077,8 @@ func _on_menu_close_pressed() -> void:
 			"scroll_offset": discourse_graph_edit.scroll_offset}
 		
 		_save_file_layout_for(
-				active_conversation.resource_path,
-				layout_data)
+			active_conversation.resource_path,
+			layout_data)
 	
 	key_box_container.visible = true
 	case_box_container.visible = false
@@ -1067,7 +1092,7 @@ func _on_menu_close_pressed() -> void:
 		clear_cases()
 		dialog_id_ln_edt.text = ""
 		conversation_tree.active_unsaved = false
-		selected_key = null
+		selected_format_index = -1
 		new_text_button.disabled = true
 		dialog_scene_previewer.visible = false
 		return
@@ -1078,13 +1103,13 @@ func _on_menu_close_pressed() -> void:
 		conversation_tree.active_unsaved = true
 	
 	_unsaved = conversation_tree.active_unsaved
-	selected_key = null
+	selected_format_index = -1
 
 
 func _on_new_folder_button_pressed() -> void:
 	var new_name: String = get_unique_name_on_tree(
-			discourse_nodes_tree.get_root(),
-			"NewGroup")
+		discourse_nodes_tree.get_root(),
+		"NewGroup")
 	
 	var selected_item: TreeItem = discourse_nodes_tree.get_selected()
 	
@@ -1123,9 +1148,9 @@ func _on_change_default_language_pressed() -> void:
 			active_conversation.add_locale(result)
 			
 		ProjectSettings.set_setting(
-				NFPluginGameHandler.get_setting_path(
-						"discourse_base_language"),
-				result)
+			NFPluginGameHandler.get_setting_path(
+				"discourse_base_language"),
+			result)
 		ProjectSettings.save()
 		base_language = result
 		languages_tree.set_default_language(result)
@@ -1152,7 +1177,7 @@ func _on_graph_editor_locale_changed(from: String, to: String) -> void:
 		#save_phrase_keys(from)
 	
 	clear_cases()
-	default_case_ln_edt.text = ""
+	default_case_edt.clear()
 	search_case_ln_edt.text = ""
 	search_case_ln_edt.set_meta(&"current_search", "")
 	argument_opt_btn.clear()
@@ -1209,16 +1234,16 @@ func _on_side_editor_locale_changed(from: String, to: String) -> void:
 		var new_text: String = ""
 		
 		new_text = DictUtils.get_nested_value(
-				active_conversation.localization,
-				[active_node.get_node_uuid(), "locales", to],
-				"",
-				true)
+			active_conversation.localization,
+			[active_node.get_node_uuid(), "locales", to],
+			"",
+			true)
 		
 		base_text = DictUtils.get_nested_value(
-				active_conversation.localization,
-				[active_node.get_node_uuid(), "locales", base_locale],
-				base_text_edt.text,
-				true)
+			active_conversation.localization,
+			[active_node.get_node_uuid(), "locales", base_locale],
+			base_text_edt.text,
+			true)
 		
 		base_text_edt.text = base_text
 		translation_txt_box.text = new_text
@@ -1230,16 +1255,16 @@ func _on_side_editor_locale_changed(from: String, to: String) -> void:
 		var base_options: Array[String] = []
 		
 		choices.assign(DictUtils.get_nested_value(
-				active_conversation.localization,
-				[node_uuid, "locales", to],
-				[],
-				true))
+			active_conversation.localization,
+			[node_uuid, "locales", to],
+			[],
+			true))
 		
 		base_options.assign(DictUtils.get_nested_value(
-				active_conversation.localization,
-				[node_uuid, "locales", base_locale],
-				[],
-				true))
+			active_conversation.localization,
+			[node_uuid, "locales", base_locale],
+			[],
+			true))
 		
 		clear_localized_options()
 		var choice_size: int = active_node.choice_count()
@@ -1248,8 +1273,8 @@ func _on_side_editor_locale_changed(from: String, to: String) -> void:
 			base_options.resize(choice_size)
 		
 		var localized_options: Array[String] = active_conversation.get_choices_entry(
-				active_node.get_node_uuid(),
-				to)
+			active_node.get_node_uuid(),
+			to)
 		
 		var localized_size: int = localized_options.size()
 		
@@ -1258,8 +1283,8 @@ func _on_side_editor_locale_changed(from: String, to: String) -> void:
 		
 		for option_idx in range(base_options.size()):
 			create_choice_node(
-					base_options[option_idx],
-					localized_options[option_idx])
+				base_options[option_idx],
+				localized_options[option_idx])
 		
 		if dialog_scene_previewer.visible:
 			dialog_previewer.set_choices(localized_options)
@@ -1287,29 +1312,29 @@ func _on_localizer_node_selected(uuid: StringName) -> void:
 		match old_node.node_type:
 			DiscourseGraphNode.DialogueNodeType.DIALOG:
 				active_conversation.set_text_entry(
-						old_node.get_node_uuid(),
-						translation_txt_box.text.strip_edges(),
-						active_locale)
+					old_node.get_node_uuid(),
+					translation_txt_box.text.strip_edges(),
+					active_locale)
 				if update_node:
 					old_node.set_dialog_text(translation_txt_box.text)
 			DiscourseGraphNode.DialogueNodeType.CHOICES:
 				var options: Array[String] = get_localizer_choices()
 				
 				active_conversation.set_choices_entry(
-						old_node.get_node_uuid(),
-						options,
-						active_locale)
+					old_node.get_node_uuid(),
+					options,
+					active_locale)
 				
 				if update_node:
 					for option_idx in range(options.size()):
 						old_node.set_option_text(
-								option_idx + 1,
-								options[option_idx])
+							option_idx + 1,
+							options[option_idx])
 			DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
 				active_conversation.set_text_entry(
-						old_node.get_node_uuid(),
-						translation_txt_box.text.strip_edges(),
-						active_locale)
+					old_node.get_node_uuid(),
+					translation_txt_box.text.strip_edges(),
+					active_locale)
 				if update_node:
 					old_node.set_text(translation_txt_box.text)
 	
@@ -1324,16 +1349,16 @@ func _on_localizer_node_selected(uuid: StringName) -> void:
 			var new_text: String = ""
 			
 			new_text = DictUtils.get_nested_value(
-					active_conversation.localization,
-					[new_node_uuid, "locales", active_locale],
-					"",
-					true)
+				active_conversation.localization,
+				[new_node_uuid, "locales", active_locale],
+				"",
+				true)
 			
 			base_text = DictUtils.get_nested_value(
-					active_conversation.localization,
-					[new_node_uuid, "locales", base_language],
-					base_text_edt.text,
-					true)
+				active_conversation.localization,
+				[new_node_uuid, "locales", base_language],
+				base_text_edt.text,
+				true)
 			
 			
 			base_text_edt.text = base_text
@@ -1346,16 +1371,16 @@ func _on_localizer_node_selected(uuid: StringName) -> void:
 			var options_base: Array[String] = []
 			
 			options_localized.assign(DictUtils.get_nested_value(
-					active_conversation.localization,
-					[new_node_uuid, "locales", active_locale],
-					[],
-					true))
+				active_conversation.localization,
+				[new_node_uuid, "locales", active_locale],
+				[],
+				true))
 			
 			options_base.assign(DictUtils.get_nested_value(
-					active_conversation.localization,
-					[new_node_uuid, "locales", base_language],
-					[],
-					true))
+				active_conversation.localization,
+				[new_node_uuid, "locales", base_language],
+				[],
+				true))
 			
 			var choice_count: int = new_node.choice_count()
 			clear_localized_options()
@@ -1369,8 +1394,8 @@ func _on_localizer_node_selected(uuid: StringName) -> void:
 			
 			for option_idx in range(options_base.size()):
 				create_choice_node(
-						options_base[option_idx],
-						options_localized[option_idx])
+					options_base[option_idx],
+					options_localized[option_idx])
 			
 			if dialog_previewer != null and dialog_scene_previewer.visible:
 				dialog_previewer.set_choices(options_localized)
@@ -1390,22 +1415,22 @@ func _on_localize_node(node: DiscourseGraphNode) -> void:
 	match node.node_type:
 		DiscourseGraphNode.DialogueNodeType.DIALOG:
 			active_conversation.set_text_entry(
-					node.get_node_uuid(),
-					node.get_dialog_text(),
-					current_locale)
+				node.get_node_uuid(),
+				node.get_dialog_text(),
+				current_locale)
 			localization_nodes_tree.create_dialog_node(node.get_node_id(), node)
 		DiscourseGraphNode.DialogueNodeType.CHOICES:
 			var text_options: Array[String] = node.get_options()
 			active_conversation.set_choices_entry(
-					node.get_node_uuid(),
-					text_options,
-					current_locale)
+				node.get_node_uuid(),
+				text_options,
+				current_locale)
 			localization_nodes_tree.create_options_node(node.get_node_id(), node)
 		DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
 			active_conversation.set_text_entry(
-					node.get_node_uuid(),
-					node.get_text(),
-					current_locale)
+				node.get_node_uuid(),
+				node.get_text(),
+				current_locale)
 			localization_nodes_tree.create_localized_text_node(node.get_node_id(), node)
 
 
@@ -1416,22 +1441,22 @@ func _on_node_delocalized(node: DiscourseGraphNode) -> void:
 		DiscourseGraphNode.DialogueNodeType.DIALOG:
 			var dialog: String = node.get_dialog_text()
 			active_conversation.set_text_entry(
-					node.get_node_uuid(),
-					dialog)
+				node.get_node_uuid(),
+				dialog)
 		DiscourseGraphNode.DialogueNodeType.CHOICES:
 			var options: Array[String] = []
 			options.assign(
-					active_conversation.get_choices_entry(
-							node.get_node_uuid(),
-							base_language))
-			active_conversation.set_choices_entry(
+				active_conversation.get_choices_entry(
 					node.get_node_uuid(),
-					options)
+					base_language))
+			active_conversation.set_choices_entry(
+				node.get_node_uuid(),
+				options)
 		DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
 			var text: String = node.get_text()
 			active_conversation.set_text_entry(
-					node.get_node_uuid(),
-					text)
+				node.get_node_uuid(),
+				text)
 	
 	node.set_node_localized(false)
 	
@@ -1456,23 +1481,23 @@ func _on_switch_window_pressed() -> void:
 		if not localizer_locale.is_empty() and active_node != null:
 			if active_node.node_type == DiscourseGraphNode.DialogueNodeType.DIALOG:
 				active_conversation.set_text_entry(
-						active_node.get_node_uuid(),
-						translation_txt_box.text.strip_edges(),
-						localizer_locale)
+					active_node.get_node_uuid(),
+					translation_txt_box.text.strip_edges(),
+					localizer_locale)
 			elif active_node.node_type == DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
 				active_conversation.set_text_entry(
-						active_node.get_node_uuid(),
-						translation_txt_box.text.strip_edges(),
-						localizer_locale)
+					active_node.get_node_uuid(),
+					translation_txt_box.text.strip_edges(),
+					localizer_locale)
 			elif active_node.node_type == DiscourseGraphNode.DialogueNodeType.CHOICES:
 				var choices: Array[String] = get_localizer_choices()
 				var target_size: int = active_node.choice_count()
 				if choices.size() != target_size:
 					choices.resize(target_size)
 				active_conversation.set_choices_entry(
-						active_node.get_node_uuid(),
-						choices,
-						localizer_locale)
+					active_node.get_node_uuid(),
+					choices,
+					localizer_locale)
 	# --------------------------------------------------------------------------------
 	
 	$MainSplitContainer.visible = !to_localizer
@@ -1491,11 +1516,11 @@ func _on_switch_window_pressed() -> void:
 		if active_node.node_type == DiscourseGraphNode.DialogueNodeType.CHOICES:
 			var target_choices: int = active_node.choice_count()
 			var options: Array[String] = active_conversation.get_choices_entry(
-					active_node.get_node_uuid(),
-					localizer_locale)
+				active_node.get_node_uuid(),
+				localizer_locale)
 			var base_lang: Array[String] = active_conversation.get_choices_entry(
-					active_node.get_node_uuid(),
-					languages_tree.get_base_language())
+				active_node.get_node_uuid(),
+				languages_tree.get_base_language())
 			
 			if options.size() != target_choices:
 				options.resize(target_choices)
@@ -1505,20 +1530,20 @@ func _on_switch_window_pressed() -> void:
 			clear_localized_options()
 			for option_idx in range(target_choices):
 				create_choice_node(
-						base_lang[option_idx],
-						options[option_idx])
+					base_lang[option_idx],
+					options[option_idx])
 			
 			if dialog_previewer != null:
 				dialog_previewer.set_choices(options)
 				
 		else: # Either dialog or localized text. Same method can be used.
 			var text: String = active_conversation.get_text_entry(
-					active_node.get_node_uuid(),
-					localizer_locale,
-					"")
+				active_node.get_node_uuid(),
+				localizer_locale,
+				"")
 			base_text_edt.text = active_conversation.get_text_entry(
-					active_node.get_node_uuid(),
-					languages_tree.get_base_language())
+				active_node.get_node_uuid(),
+				languages_tree.get_base_language())
 			translation_txt_box.text = text
 			
 			if dialog_previewer != null:
@@ -1531,17 +1556,17 @@ func _on_switch_window_pressed() -> void:
 		
 		if active_node.node_type == DiscourseGraphNode.DialogueNodeType.DIALOG:
 			active_node.set_dialog_text(
-					translation_txt_box.text.strip_edges())
+				translation_txt_box.text.strip_edges())
 		elif active_node.node_type == DiscourseGraphNode.DialogueNodeType.CHOICES:
 			var option_number: int = 0
 			for option_node in choices_container.get_children():
 				option_number += 1
 				active_node.set_option_text(
-						option_number,
-						option_node.get_child(2).text)
+					option_number,
+					option_node.get_child(2).text)
 		elif active_node.node_type == DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
 			active_node.set_text(
-					translation_txt_box.text)
+				translation_txt_box.text)
 	# ----------------------------------------------------------------------
 
 
@@ -1577,7 +1602,7 @@ func _on_new_lang_pressed() -> void:
 		languages_tree.create_language(result)
 		add_locale(result)
 		var active_locale: String = languages_tree.get_active_locale()
-		if selected_key != null and argument_opt_btn.selected != -1 and not active_locale.is_empty():# selected_format != "":
+		if 0 <= selected_format_index and argument_opt_btn.selected != -1 and not active_locale.is_empty():
 			save_current_phrase_key(active_locale)
 		
 		active_conversation.add_locale(result)
@@ -1629,7 +1654,7 @@ func set_localization_tip(locale: String) -> void:
 	
 	var language_name: String = TranslationServer.get_language_name(language)
 	
-	var locale_text: String = "Current Locale: " 
+	var locale_text: String = "Current Locale: "
 	if not region.is_empty():
 		var country_name: String = TranslationServer.get_country_name(region)
 		locale_text += country_name
@@ -1686,9 +1711,9 @@ func update_recently_opened_files() -> void:
 		_recently_opened_popup.set_item_tooltip(-1, filepath)
 	
 	file_popup.set_item_disabled(
-			file_popup.get_item_index(
-					DiscourseFileMenuID.RECENT_OPEN_FILES),
-			_recently_opened_files.is_empty())
+		file_popup.get_item_index(
+			DiscourseFileMenuID.RECENT_OPEN_FILES),
+		_recently_opened_files.is_empty())
 	
 	_reset_recent_popup_size.call_deferred()
 
@@ -1813,8 +1838,8 @@ func _on_localizer_item_renamed(node_uuid: StringName, desired_id: String) -> vo
 		return
 	
 	var proper_name: StringName = discourse_graph_edit.get_unique_node_name(
-			StringName(desired_id),
-			node_uuid)
+		StringName(desired_id),
+		node_uuid)
 	
 	var proper_string: String = String(proper_name)
 	
@@ -1827,7 +1852,7 @@ func _on_localizer_item_renamed(node_uuid: StringName, desired_id: String) -> vo
 
 
 func _on_new_conversation_pressed() -> void:
-	var file_saver: AcceptDialog = preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
+	var file_saver: FileDialog = load("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	file_saver.file_mode = file_saver.FILE_MODE_SAVE_FILE
 	add_child(file_saver)
 	file_saver.popup_centered()
@@ -1843,8 +1868,8 @@ func _on_new_conversation_pressed() -> void:
 		if ResourceLoader.has_cached(result[1]):
 			new_conv.take_over_path(result[1])
 		ResourceSaver.save(
-				new_conv,
-				result[1])
+			new_conv,
+			result[1])
 		new_conv.resource_path = result[1]
 		if _conversation_options_disabled:
 			set_graph_edit_visible(true)
@@ -1910,7 +1935,7 @@ func load_dialog_from_file(file_path: String) -> EditorDiscourseDialog:
 
 
 func _on_open_conversation_pressed() -> void:
-	var file_opener: AcceptDialog = preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
+	var file_opener: FileDialog = load("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	file_opener.file_mode = file_opener.FILE_MODE_OPEN_FILE
 	add_child(file_opener)
 	file_opener.popup_centered()
@@ -1976,9 +2001,9 @@ func _on_play_current_dialog_pressed() -> void:
 	
 	if res_path.is_empty():
 		NFPluginGameHandler._log_msg(
-				"discourse - editor",
-				"Current dialog has no path.",
-				NFPluginGameHandler._LogLevel.ERROR)
+			"discourse - editor",
+			"Current dialog has no path.",
+			NFPluginGameHandler._LogLevel.ERROR)
 		return
 	
 	var cfg: ConfigFile = ConfigFile.new()
@@ -2070,22 +2095,22 @@ func set_up_node_structure(structure: Array, level: TreeItem, _map: Dictionary[S
 		else:
 			var new_folder: TreeItem = level.create_child()
 			new_folder.set_text(
-					0,
-					discourse_nodes_tree.get_unique_name_on_tree(
-							level,
-							item["name"] if item.has("name") else "new_folder",
-							new_folder))
+				0,
+				discourse_nodes_tree.get_unique_name_on_tree(
+					level,
+					item["name"] if item.has("name") else "new_folder",
+					new_folder))
 			
 			new_folder.set_editable(0, true)
 			new_folder.set_icon(0, get_theme_icon("Folder", "EditorIcons"))
 			if item.has("collapsed"):
 				new_folder.collapsed = item["collapsed"]
 			new_folder.add_button(
-					0,
-					get_theme_icon("Remove", "EditorIcons"),
-					-1,
-					false,
-					"Delete Group")
+				0,
+				get_theme_icon("Remove", "EditorIcons"),
+				-1,
+				false,
+				"Delete Group")
 			new_folder.set_metadata(0, {"is_node": false})
 			if item.has("items"):
 				set_up_node_structure(item["items"], new_folder, _map)
@@ -2148,17 +2173,17 @@ func display_conversation(conversation: EditorDiscourseDialog, with_locale: Stri
 			if metadata.has("method") and not metadata["method"].is_empty():
 				if not d_node.available_methods.has(metadata["method"]):
 					NFPluginGameHandler._log_msg(
-							"discourse - editor",
-							"Node '%s' calls method '%s' but it isn't available." % [data["name"], metadata["method"]],
-							NFPluginGameHandler._LogLevel.WARNING)
+						"discourse - editor",
+						"Node '%s' calls method '%s' but it isn't available." % [data["name"], metadata["method"]],
+						NFPluginGameHandler._LogLevel.WARNING)
 					needs_resaving = true
 		elif d_node.node_type == DiscourseGraphNode.DialogueNodeType.SIGNAL:
 			if metadata.has("signal") and not metadata["signal"].is_empty():
 				if not d_node.available_signals.has(metadata["signal"]):
 					NFPluginGameHandler._log_msg(
-							"discurse - editor",
-							"Node '%s' calls signal '%s' but it isn't available." % [data["name"], metadata["signal"]],
-							NFPluginGameHandler._LogLevel.WARNING)
+						"discurse - editor",
+						"Node '%s' calls signal '%s' but it isn't available." % [data["name"], metadata["signal"]],
+						NFPluginGameHandler._LogLevel.WARNING)
 					needs_resaving = true
 		elif d_node.node_type == DiscourseGraphNode.DialogueNodeType.ENTRY:
 			discourse_graph_edit.entry_node = d_node
@@ -2170,8 +2195,8 @@ func display_conversation(conversation: EditorDiscourseDialog, with_locale: Stri
 		graph_map[node_uuid] = d_node
 		
 		var new_connections: Array[Dictionary] = discourse_graph_edit.get_connection_dictionary(
-				node_stnm_uuid,
-				data)
+			node_stnm_uuid,
+			data)
 		if not new_connections.is_empty():
 			node_connections.append_array(new_connections)
 		
@@ -2189,10 +2214,10 @@ func display_conversation(conversation: EditorDiscourseDialog, with_locale: Stri
 		if not graph_map.has(output_connection["from"]) or not graph_map.has(output_connection["to"]):
 			continue
 		if not discourse_graph_edit.connect_discourse_nodes(
-				graph_map[output_connection["from"]].get_node_uuid(),
-				output_connection["from_port"],
-				graph_map[output_connection["to"]].get_node_uuid(),
-				output_connection["to_port"]):
+			graph_map[output_connection["from"]].get_node_uuid(),
+			output_connection["from_port"],
+			graph_map[output_connection["to"]].get_node_uuid(),
+			output_connection["to_port"]):
 			NFPluginGameHandler._log_msg(
 				"discourse - editor",
 				"Connection from node '%s' from port '%s' to node '%s' to port '%s' failed" % [graph_map[output_connection["from"]].get_node_id(), output_connection["from_port"], graph_map[output_connection["to"]].get_node_id(), output_connection["to_port"]],
@@ -2221,7 +2246,7 @@ func open_conversation(conversation: EditorDiscourseDialog) -> bool:
 	# Clears discourse_nodes_tree's items
 	discourse_nodes_tree.clear_tree()
 	
-	default_case_ln_edt.text = ""
+	default_case_edt.clear()
 	search_case_ln_edt.text = ""
 	search_case_ln_edt.set_meta(&"current_search", "")
 	argument_opt_btn.clear()
@@ -2260,13 +2285,13 @@ func open_conversation(conversation: EditorDiscourseDialog) -> bool:
 				root.add_child(node_map[node_uuid])
 	
 	discourse_nodes_tree.set_collapsed_folders(
-			conversation.collapsed_state)
+		conversation.collapsed_state)
 	
 	for localized_key in conversation.format_strings.keys():
 		var localized_text: String = conversation.get_format_string(
-				localized_key,
-				base_language)
-		add_new_phrase(localized_key, localized_text, false)
+			localized_key,
+			base_language)
+		create_new_phrase_entry(localized_key, localized_text, false)
 	
 	for language in conversation.locale_map.keys():
 		if not has_locale(language):
@@ -2317,20 +2342,20 @@ func save_localizer_data(for_locale: String) -> void:
 	match active_node.node_type:
 		DiscourseGraphNode.DialogueNodeType.DIALOG:
 			active_conversation.set_text_entry(
-					active_node.get_node_uuid(),
-					translation_txt_box.text,
-					for_locale)
+				active_node.get_node_uuid(),
+				translation_txt_box.text,
+				for_locale)
 		DiscourseGraphNode.DialogueNodeType.CHOICES:
 			var options: Array[String] = get_localizer_choices()
 			active_conversation.set_choices_entry(
-					active_node.get_node_uuid(),
-					options,
-					for_locale)
+				active_node.get_node_uuid(),
+				options,
+				for_locale)
 		DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
 			active_conversation.set_text_entry(
-					active_node.get_node_uuid(),
-					translation_txt_box.text,
-					for_locale)
+				active_node.get_node_uuid(),
+				translation_txt_box.text,
+				for_locale)
 
 
 func _on_save_conversation_pressed() -> void:
@@ -2363,8 +2388,8 @@ func save_current_dialog() -> void:
 			"scroll_offset": active_conversation.scroll_offset}
 		
 		_save_file_layout_for(
-				active_conversation.resource_path,
-				layout_data)
+			active_conversation.resource_path,
+			layout_data)
 		conversation_tree.active_offset_changed = false
 	
 	if not _unsaved:
@@ -2410,8 +2435,8 @@ func save_all_dialogs() -> void:
 			"scroll_offset": unsaved_layout.scroll_offset}
 		
 		_save_file_layout_for(
-				unsaved_layout.resource_path,
-				layout_data)
+			unsaved_layout.resource_path,
+			layout_data)
 	
 	_unsaved = false
 	conversation_tree.set_all_files_saved()
@@ -2425,8 +2450,8 @@ func save_layouts() -> void:
 			"scroll_offset": unsaved_layout.scroll_offset}
 		
 		_save_file_layout_for(
-				unsaved_layout.resource_path,
-				layout_data)
+			unsaved_layout.resource_path,
+			layout_data)
 
 
 func set_conversation_active(is_active: bool) -> void:
@@ -2486,9 +2511,9 @@ func _on_graph_edit_paste_requested() -> void:
 func _save_file_layout_for(file_path: String, keys: Dictionary[String, Variant]) -> void:
 	if file_path.is_empty():
 		NFPluginGameHandler._log_msg(
-				"discourse - editor",
-				"Can't save layout data for resource without path.",
-				NFPluginGameHandler._LogLevel.ERROR)
+			"discourse - editor",
+			"Can't save layout data for resource without path.",
+			NFPluginGameHandler._LogLevel.ERROR)
 		return
 	
 	var cfg: ConfigFile = ConfigFile.new()
@@ -2504,15 +2529,15 @@ func _save_file_layout_for(file_path: String, keys: Dictionary[String, Variant])
 	
 	if cfg.save(absolute_path.path_join(config_filename)) != OK:
 		NFPluginGameHandler._log_msg(
-				"discourse - editor",
-				"Couldn't save layout settings for file '%s'." % file_path,
-				NFPluginGameHandler._LogLevel.WARNING)
+			"discourse - editor",
+			"Couldn't save layout settings for file '%s'." % file_path,
+			NFPluginGameHandler._LogLevel.WARNING)
 
 
 #region Phrases
 
-func _on_scroll_dragged(offset: int, container: HSplitContainer) -> void:
-	container.split_offset = offset
+#func _on_scroll_dragged(offset: int, container: HSplitContainer) -> void:
+	#container.split_offset = offset
 
 
 func _on_key_search_text_changed(text: String) -> void:
@@ -2528,19 +2553,17 @@ func _on_key_search_text_changed(text: String) -> void:
 	
 	var idx: int = -1
 	
-	for key_child in key_container.get_children():
-		idx += 1
-		if clean_text.is_empty():
-			key_child.visible = true
-		else:
-			if mode == 0:
-				key_child.visible = key_child.get_child(1).text.containsn(clean_text) or text_container.get_child(idx).get_child(0).text.containsn(clean_text)
-			elif mode == 1:
-				key_child.visible = key_child.get_child(1).text.containsn(clean_text)
-			elif mode == 2:
-				key_child.visible = text_container.get_child(idx).get_child(0).text.containsn(clean_text)
-		
-		text_container.get_child(idx).visible = key_child.visible
+	if clean_text.is_empty():
+		for entry in %PhrasesEntries.get_children():
+			entry.visible = true
+	else:
+		for entry in %PhrasesEntries.get_children():
+			if mode == 0: # Both
+				entry.visible = entry.get_child(1).text.containsn(clean_text) or entry.get_child(2).text.containsn(clean_text)
+			elif mode == 1: # Key
+				entry.visible = entry.get_child(1).text.containsn(clean_text)
+			elif mode == 2: # Phrase
+				entry.visible = entry.get_child(2).text.containsn(clean_text)
 	
 	search_text_ln_edt.set_meta(&"current_search", clean_text)
 
@@ -2552,32 +2575,28 @@ func _on_case_search_text_changed(text: String) -> void:
 		return
 	
 	var mode: int = 1 if clean_text.begins_with("case:") else 2 if clean_text.begins_with("result:") else 0
+	var entries: Array[Node] = %PhraseCasesEntries.get_children().slice(1)
 	
 	if mode != 0:
 		clean_text = clean_text.trim_prefix("case:" if mode == 1 else "result:")
 	
-	
-	var idx: int = -1
-	for case:LineEdit in case_node_container.get_children():
-		idx += 1
-		
-		if clean_text.is_empty():
+	if clean_text.is_empty():
+		for case in entries:
 			case.visible = true
-		else:
-			if mode == 0:
-				case.visible = case.text.containsn(clean_text) or result_node_container.get_child(idx).get_child(0).text.containsn(clean_text)
-			elif mode == 1:
-				case.visible = case.text.containsn(clean_text)
-			elif mode == 2:
-				case.visible = result_node_container.get_child(idx).get_child(0).text.containsn(clean_text)
-		
-		result_node_container.get_child(idx).visible = case.visible
+	else:
+		for case in entries:
+			if mode == 0: # Any
+				case.visible = case.get_child(1).text.containsn(clean_text) or case.get_child(2).text.containsn(clean_text)
+			elif mode == 1: # Case
+				case.visible = case.get_child(1).text.containsn(clean_text)
+			elif mode == 2: # Result
+				case.visible = case.get_child(2).text.containsn(clean_text)
 	
 	search_case_ln_edt.set_meta(&"current_search", clean_text)
 
 
 func _on_new_case_button_pressed() -> void:
-	add_new_case()
+	create_new_phrase_case()
 	_on_conversation_changed()
 
 
@@ -2586,9 +2605,11 @@ func _on_erase_case_button_pressed(case_line: Control) -> void:
 	_on_case_line_text_changed()
 
 
-func _on_open_discourse_text_editor_pressed(target: LineEdit) -> void:
-	if text_editor != null:
+func _on_open_discourse_text_editor_pressed(target: TextEdit) -> void:
+	if text_editor.visible:
 		return
+	
+	text_editor.clear()
 	
 	var method_strings: Array[String] = []
 	var var_strings: Array[String] = []
@@ -2603,15 +2624,12 @@ func _on_open_discourse_text_editor_pressed(target: LineEdit) -> void:
 		else:
 			plain_formats.append(text)
 	
-	text_editor = preload("res://addons/nexus_forge/discourse/discourse_text_editor.tscn").instantiate()
-	add_child(text_editor)
 	text_editor.signal_variables = false
 	text_editor.plain_formats = plain_formats
 	text_editor.methods = method_strings
 	text_editor.variables = var_strings
 	
 	text_editor.set_code_text(target.text)
-	text_editor.connect_signals()
 	text_editor.popup_centered()
 	text_editor.grab_code_focus()
 	
@@ -2622,28 +2640,28 @@ func _on_open_discourse_text_editor_pressed(target: LineEdit) -> void:
 		if target.text != clean_text:
 			target.text = clean_text
 			_on_conversation_changed()
-	
-	text_editor.queue_free()
-	text_editor = null
 
 
-func _on_open_code_editor_graph_request(target: Control, initial_text: String) -> void:
-	if text_editor != null:
+func _on_open_character_browser_request(target: LineEdit) -> void:
+	character_browser_requested.emit(target)
+
+
+func _on_open_code_editor_graph_request(target: TextEdit) -> void:
+	if text_editor.visible:
 		return
 	
+	text_editor.clear()
+	
+	var initial_text: String = target.text
 	var api_methods: Dictionary = get_api_user_methods()
 	var method_strings: Array[String] = []
 	method_strings.assign(api_methods.keys())
 	var string_keys: Array[String] = []
 	string_keys.assign(active_conversation.format_strings.keys())
 	
-	text_editor = preload("res://addons/nexus_forge/discourse/discourse_text_editor.tscn").instantiate()
-	add_child(text_editor)
 	text_editor.phrase_keys = string_keys
 	text_editor.methods = method_strings
-	text_editor.variable_called.connect(_on_editor_variable_called)
-	text_editor.set_code_text(initial_text)
-	text_editor.connect_signals()
+	text_editor.set_code_text(target.text)
 	text_editor.popup_centered()
 	text_editor.grab_code_focus()
 	
@@ -2651,22 +2669,12 @@ func _on_open_code_editor_graph_request(target: Control, initial_text: String) -
 	
 	if result[0]:
 		var notify_change: bool = false
-		if target is LineEdit:
-			var clean_text: String = result[1].replace("\n", " ").strip_edges()
-			if initial_text != clean_text:
-				notify_change = true
-				target.text = clean_text
-		elif target is TextEdit:
-			if initial_text != result[1]:
-				notify_change = true
-				target.text = result[1]
+		if initial_text != result[1]:
+			notify_change = true
+			target.text = result[1]
 		
 		if notify_change:
 			_on_conversation_changed()
-	
-	text_editor.queue_free()
-	text_editor = null
-
 
 
 func _on_editor_variable_called(path: String) -> void:
@@ -2674,23 +2682,32 @@ func _on_editor_variable_called(path: String) -> void:
 
 
 func set_text_code_editor_variable_paths(paths: Array[Dictionary]) -> void:
-	if text_editor == null:
+	if not text_editor.visible:
 		return
 	
 	text_editor.display_completion_options_variables(paths)
 
 
 func _on_case_line_text_changed(_text: String = "") -> void:
+	_validate_phrase_cases()
+	_on_conversation_changed()
+
+
+func _validate_phrase_cases() -> void:
 	var all_ids: Dictionary[String, Array] = {}
 	
-	for container:HBoxContainer in case_node_container.get_children():
-		var item: LineEdit = container.get_child(1)
+	for case_idx in range(1, %PhraseCasesEntries.get_child_count()):
+		var case: HBoxContainer = %PhraseCasesEntries.get_child(case_idx)
+		if case.is_queued_for_deletion():
+			continue
+		
+		var item: LineEdit = case.get_child(1)
 		var key: String = item.text.strip_edges()
 		
 		if key.is_empty():
 			continue
 		
-		if all_ids.has(key) == false:
+		if not all_ids.has(key):
 			all_ids[key] = []
 		all_ids[key].append(item)
 	
@@ -2718,33 +2735,33 @@ func _on_save_cases_btn_pressed() -> void:
 	
 	save_current_phrase_key(languages_tree.get_active_locale())
 	clear_cases()
-	default_case_ln_edt.text = ""
+	default_case_edt.clear()
 	search_case_ln_edt.text = ""
 	search_case_ln_edt.set_meta(&"current_search", "")
 	argument_opt_btn.clear()
 	#selected_format = ""
 
 
-func _on_edit_cases_pressed(text_line: LineEdit, key: LineEdit, button: Button) -> void:
-	var phrase_key: StringName = key.get_meta(&"phrase_key")
-	var clean_string: String = text_line.text.strip_edges()
+func _on_edit_cases_pressed(field: Control) -> void:
+	var phrase_key: String = field.get_meta(&"phrase_key")
+	var clean_string: String = field.get_child(2).text.strip_edges()
 	var locale_code: String = phrases_lang_menu.get_selected_metadata()
 	
 	if locale_code.is_empty():
 		NFPluginGameHandler._log_msg(
-				"discourse - editor",
-				"Locale menu is empty. Can't load data.",
-				NFPluginGameHandler._LogLevel.ERROR)
+			"discourse - editor",
+			"Locale menu is empty. Can't load data.",
+			NFPluginGameHandler._LogLevel.ERROR)
 		return
 	
 	phrases_lang_menu.disabled = true
-	key_display_label.text = key.text.strip_edges()
+	key_display_label.text = field.get_child(1).text.strip_edges()
 	
 	if not active_conversation.has_format_string(phrase_key, locale_code):
 		active_conversation.set_format_string(
-				phrase_key,
-				clean_string,
-				locale_code)
+			phrase_key,
+			clean_string,
+			locale_code)
 	
 	if active_conversation.get_format_string(phrase_key, locale_code) != clean_string:
 		var new_cases: Dictionary[String, Variant] = {}
@@ -2754,14 +2771,14 @@ func _on_edit_cases_pressed(text_line: LineEdit, key: LineEdit, button: Button) 
 		for format in active_conversation.get_format_string_formats(phrase_key, locale_code):
 			if not new_cases.has(format):
 				active_conversation.erase_format_string_format(
-						phrase_key,
-						locale_code,
-						format)
+					phrase_key,
+					locale_code,
+					format)
 			
 		active_conversation.set_format_string(
-				phrase_key,
-				clean_string,
-				locale_code)
+			phrase_key,
+			clean_string,
+			locale_code)
 	
 	argument_opt_btn.clear()
 	clear_cases()
@@ -2769,21 +2786,21 @@ func _on_edit_cases_pressed(text_line: LineEdit, key: LineEdit, button: Button) 
 	for existing_key in EditorDiscourseDialog.get_phrase_arguments(clean_string, true):
 		argument_opt_btn.add_item(existing_key)
 	
-	selected_key = key
-	default_case_ln_edt.editable = 0 < argument_opt_btn.item_count
-	argument_opt_btn.disabled = not default_case_ln_edt.editable
+	selected_format_index = field.get_index()
+	default_case_edt.editable = 0 < argument_opt_btn.item_count
+	argument_opt_btn.disabled = not default_case_edt.editable
 	new_case_btn.disabled = argument_opt_btn.disabled
 	
 	if 0 < argument_opt_btn.item_count:
 		var argument_format: String = argument_opt_btn.get_item_text(0)
 		argument_opt_btn.select(0)
-		default_case_ln_edt.text = active_conversation.get_format_string_default_case(phrase_key, locale_code, argument_format)
+		default_case_edt.text = active_conversation.get_format_string_default_case(phrase_key, locale_code, argument_format)
 		
 		if DictUtils.has_nested_path(active_conversation.format_strings, [phrase_key, locale_code, "format", argument_format, "cases"]):
 			for custom_case in active_conversation.format_strings[phrase_key][locale_code]["format"][argument_format]["cases"].keys():
-				add_new_case(
-						custom_case,
-						active_conversation.get_format_string_case(phrase_key, locale_code, argument_format, custom_case))
+				create_new_phrase_case(
+					custom_case,
+					active_conversation.get_format_string_case(phrase_key, locale_code, argument_format, custom_case))
 	
 	case_box_container.visible = true
 	key_box_container.visible = false
@@ -2792,8 +2809,8 @@ func _on_edit_cases_pressed(text_line: LineEdit, key: LineEdit, button: Button) 
 func _on_key_line_text_changed(_text: String = "") -> void:
 	var all_ids: Dictionary[String, Array] = {}
 	
-	for item in key_container.get_children():
-		var line: LineEdit = item.get_child(1)
+	for entry in %PhrasesEntries.get_children():
+		var line: LineEdit = entry.get_child(1)
 		var key: String = line.text.strip_edges()
 		
 		if key.is_empty():
@@ -2814,42 +2831,31 @@ func _on_key_line_text_changed(_text: String = "") -> void:
 	_on_conversation_changed()
 
 
-func _on_erase_key_button_pressed(key: LineEdit) -> void:
-	if selected_key == key:
-		selected_key = null
+func _on_erase_key_button_pressed(field: HBoxContainer) -> void:
+	var phrase_key: String = field.get_meta(&"phrase_key")
+	if selected_format_index == field.get_index():
+		selected_format_index = -1
 		#selected_format = ""
 		clear_cases()
-		default_case_ln_edt.text = ""
-		default_case_ln_edt.editable = false
+		default_case_edt.clear()
+		default_case_edt.editable = false
 		argument_opt_btn.clear()
 		argument_opt_btn.disabled = true
 		new_case_btn.disabled = true
 	
-	active_conversation.format_strings.erase(key.get_meta(&"phrase_key"))
+	active_conversation.format_strings.erase(phrase_key)
 	
-	erase_key(
-		key.get_parent().get_index())
+	erase_key(field.get_index())
 	
 	_on_key_line_text_changed()
 
 
 func _on_new_key_field_button_pressed() -> void:
-	var phrase_key: String = add_new_phrase()
+	create_new_phrase_entry(&"", "")
 	_on_conversation_changed()
 
 
-func add_new_phrase(key: String = "", text: String = "", unsaved: bool = true) -> String:
-	var new_key: HBoxContainer = new_key_container(key, unsaved)
-	var new_text: HBoxContainer = new_text_field(text)
-	
-	key_container.add_child(new_key)
-	text_container.add_child(new_text)
-	
-	var text_edit: LineEdit = new_text.get_child(0)
-	var key_edit: LineEdit = new_key.get_child(1)
-	var text_edit_btn: Button = new_text.get_child(1)
-	
-	var text_menu: PopupMenu = text_edit.get_menu()
+func _rebuild_phrase_text_menu(text_menu: PopupMenu) -> void:
 	var submenus: Dictionary[int, PopupMenu] = {}
 	
 	for idx in range(text_menu.item_count):
@@ -2929,137 +2935,181 @@ func add_new_phrase(key: String = "", text: String = "", unsaved: bool = true) -
 	redo_shortcut.events = [redo_event]
 	
 	text_menu.set_item_shortcut(
-			text_menu.get_item_index(
-					LineEdit.MenuItems.MENU_CUT),
-			cut_shortcut)
+		text_menu.get_item_index(
+			LineEdit.MenuItems.MENU_CUT),
+		cut_shortcut)
 	
 	text_menu.set_item_shortcut(
-			text_menu.get_item_index(
-					LineEdit.MenuItems.MENU_COPY),
-			copy_shortcut)
+		text_menu.get_item_index(
+			LineEdit.MenuItems.MENU_COPY),
+		copy_shortcut)
 	
 	text_menu.set_item_shortcut(
-			text_menu.get_item_index(
-					LineEdit.MenuItems.MENU_PASTE),
-			paste_shortcut)
+		text_menu.get_item_index(
+			LineEdit.MenuItems.MENU_PASTE),
+		paste_shortcut)
 	
 	text_menu.set_item_shortcut(
-			text_menu.get_item_index(
-					LineEdit.MenuItems.MENU_SELECT_ALL),
-			select_all)
+		text_menu.get_item_index(
+			LineEdit.MenuItems.MENU_SELECT_ALL),
+		select_all)
 	
 	text_menu.set_item_shortcut(
-			text_menu.get_item_index(
-					LineEdit.MenuItems.MENU_UNDO),
-			undo_shortcut)
+		text_menu.get_item_index(
+			LineEdit.MenuItems.MENU_UNDO),
+		undo_shortcut)
 	
 	text_menu.set_item_shortcut(
-			text_menu.get_item_index(
-					LineEdit.MenuItems.MENU_REDO),
-			redo_shortcut)
-	
-	if 0 < key_container.get_child_count() - 1:
-		var btn: Button = text_container.get_child(-2).get_child(1)
-		btn.focus_next = key_edit.get_path()
-		key_edit.focus_previous = btn.get_path()
-	else:
-		new_text_button.focus_next = key_edit.get_path()
-		key_edit.focus_previous = new_text_button.get_path()
-	
-	key_edit.focus_next = text_edit.get_path()
-	key_edit.focus_neighbor_right = text_edit.get_path()
-	
-	text_edit.focus_previous = key_edit.get_path()
-	text_edit.focus_neighbor_left = key_edit.get_path()
-	text_edit.focus_next = text_edit_btn.get_path()
-	
-	text_edit_btn.focus_previous = text_edit.get_path()
-	
-	text_edit_btn.pressed.connect(_on_edit_cases_pressed.bind(text_edit, key_edit, text_edit_btn))
-	
-	text_menu.id_pressed.connect(_on_phrase_menu_id_pressed.bind(text_edit))
-	
-	return key_edit.get_meta(&"phrase_key")
+		text_menu.get_item_index(
+			LineEdit.MenuItems.MENU_REDO),
+		redo_shortcut)
 
 
-func _on_phrase_menu_id_pressed(id: int, line: LineEdit) -> void:
-	if id <= LineEdit.MenuItems.MENU_MAX:
+#func add_new_phrase(key: String = "", text: String = "", unsaved: bool = true) -> String:
+	#var new_key: HBoxContainer = new_key_container(key, unsaved)
+	#var new_text: HBoxContainer = new_text_field(text)
+	#
+	#key_container.add_child(new_key)
+	#text_container.add_child(new_text)
+	#
+	#var text_edit: TextEdit = new_text.get_child(0)
+	#var key_edit: LineEdit = new_key.get_child(1)
+	#var text_edit_btn: Button = new_text.get_child(1)
+	#
+	#var text_menu: PopupMenu = text_edit.get_menu()
+	#_rebuild_phrase_text_menu(text_menu)
+	#
+	#if 0 < key_container.get_child_count() - 1:
+		#var btn: Button = text_container.get_child(-2).get_child(1)
+		#btn.focus_next = key_edit.get_path()
+		#key_edit.focus_previous = btn.get_path()
+	#else:
+		#new_text_button.focus_next = key_edit.get_path()
+		#key_edit.focus_previous = new_text_button.get_path()
+	#
+	#key_edit.focus_next = text_edit.get_path()
+	#key_edit.focus_neighbor_right = text_edit.get_path()
+	#
+	#text_edit.focus_previous = key_edit.get_path()
+	#text_edit.focus_neighbor_left = key_edit.get_path()
+	#text_edit.focus_next = text_edit_btn.get_path()
+	#
+	#text_edit_btn.focus_previous = text_edit.get_path()
+	#
+	#text_edit_btn.pressed.connect(_on_edit_cases_pressed.bind(text_edit, key_edit, text_edit_btn))
+	#text_menu.id_pressed.connect(_on_phrase_menu_id_pressed.bind(text_edit))
+	#text_edit.text_changed.connect(_on_phrase_text_field_changed.bind(text_edit, new_key))
+	#text_edit.resized.connect(_update_choice_textbox_size.bind(text_edit, new_key))
+	#
+	#_update_choice_textbox_size.call_deferred(text_edit)
+	#
+	#return key_edit.get_meta(&"phrase_key")
+
+
+func _on_phrase_menu_id_pressed(id: int, field: TextEdit) -> void:
+	if id <= TextEdit.MenuItems.MENU_MAX:
 		return
 	
 	const MENU_MAX: int = LineEdit.MenuItems.MENU_MAX
 	
+	# TODO: Fix this
 	if id == MENU_MAX + 1:
-		_on_open_code_editor_graph_request(line, line.text)
+		_on_open_code_editor_graph_request(field)
 
 
-func add_new_case(case: String = "", case_text: String = "") -> void:
-	var new_case: LineEdit = LineEdit.new()
-	var erase_case_btn: Button = Button.new()
-	var case_result: HBoxContainer = new_case_result_node()
-	var result_line: LineEdit = case_result.get_child(0)
+func create_new_phrase_case(case: String = "", case_text: String = "") -> void:
 	var case_container: HBoxContainer = HBoxContainer.new()
+	var erase_case_btn: Button = Button.new()
+	var case_line: LineEdit = LineEdit.new()
+	var case_editor: TextEdit = BracketHandler.new()
+	var expand_case: Button = Button.new()
+	var highlighter: NFEditorDialogSyntaxHighlighter = NFEditorDialogSyntaxHighlighter.new()
+	
+	highlighter.set_use_token("*", false)
+	highlighter.set_use_token("?", false)
+	
+	case_editor.text = case_text
+	case_editor.enter_shifts_focus = true
+	case_editor.syntax_highlighter = highlighter
+	case_editor.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	case_editor.size_flags_stretch_ratio = 2.0
+	case_editor.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
 	
 	erase_case_btn.tooltip_text = "Erase case"
 	erase_case_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	erase_case_btn.flat = true
 	erase_case_btn.icon = get_theme_icon("Remove", "EditorIcons")
-	erase_case_btn.custom_minimum_size = Vector2(32.0, 32.0)
+	erase_case_btn.custom_minimum_size = Vector2(33.0, 33.0)
+	erase_case_btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	erase_case_btn.pressed.connect(_on_erase_case_button_pressed.bind(case_container))
 	
-	new_case.placeholder_text = "Case"
-	new_case.custom_minimum_size.y = 32.0
-	new_case.text = case
-	new_case.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	expand_case.tooltip_text = "Open Editor"
+	expand_case.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	expand_case.flat = true
+	expand_case.icon = get_theme_icon("DistractionFree", "EditorIcons")
+	expand_case.custom_minimum_size = Vector2(33.0, 33.0)
+	expand_case.pressed.connect(_on_open_discourse_text_editor_pressed.bind(case_line))
 	
-	result_line.text = case_text
+	case_line.placeholder_text = "Case"
+	case_line.custom_minimum_size.y = 33.0
+	case_line.text = case
+	case_line.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	case_line.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	case_line.size_flags_stretch_ratio = 1.0
 	
 	case_container.add_child(erase_case_btn)
-	case_container.add_child(new_case)
+	case_container.add_child(case_line)
+	case_container.add_child(case_editor)
+	case_container.add_child(expand_case)
 	
-	case_node_container.add_child(case_container)
-	result_node_container.add_child(case_result)
+	%PhraseCasesEntries.add_child(case_container)
 	
-	new_case.focus_neighbor_right = result_line.get_path()
-	result_line.focus_neighbor_left = new_case.get_path()
-	new_case.focus_next = result_line.get_path()
-	result_line.focus_previous = new_case.get_path()
+	case_line.focus_neighbor_right = case_editor.get_path()
+	case_editor.focus_neighbor_left = case_line.get_path()
+	case_line.focus_next = case_editor.get_path()
+	case_editor.focus_previous = case_line.get_path()
 	
-	if 0 < result_node_container.get_child_count() - 1:
-		var prev_case_result: LineEdit = result_node_container.get_child(-2).get_child(0)
-		prev_case_result.focus_next = new_case.get_path()
-		new_case.focus_previous = prev_case_result.get_path()
+	if 0 < %PhraseCasesEntries.get_child_count() - 1:
+		var prev_expand: Button = %PhraseCasesEntries.get_child(-2).get_child(3)
+		prev_expand.focus_next = case_line.get_path()
+		case_line.focus_previous = prev_expand.get_path()
 	else:
-		new_case.focus_previous = default_case_ln_edt.get_path()
-		default_case_ln_edt.focus_next = new_case.get_path()
+		case_line.focus_previous = default_case_edt.get_path()
+		default_case_edt.focus_next = case_line.get_path()
 	
-	new_case.text_changed.connect(_on_case_line_text_changed)
+	case_line.text_changed.connect(_on_case_line_text_changed)
+	case_editor.text_changed.connect(_on_phrase_text_field_changed.bind(case_editor))
+	case_editor.resized.connect(_update_choice_textbox_size.bind(case_editor))
 
 
 func erase_case(index: int) -> void:
-	var case: LineEdit = case_node_container.get_child(index)
-	var text: Control = result_node_container.get_child(index)
+	if index <= 0:
+		return
 	
-	if case_node_container.get_child_count() - 1 <= 0:
+	var case: HBoxContainer = %PhraseCasesEntries.get_child(index)
+	
+	if case.is_queued_for_deletion():
+		return
+	
+	var new_case_count: int = %PhraseCasesEntries.get_child_count() - 1
+	
+	if %PhraseCasesEntries.get_child_count() - 1 <= 0:
 		new_case_btn.focus_next = ^""
 	else:
-		if index == 0: # It's the first item
-			var target_ln: LineEdit = case_node_container.get_child(1)
+		if index == 1: # It's the first item
+			var target_ln: LineEdit = %PhraseCasesEntries.get_child(1)
 			new_text_button.focus_next = target_ln.get_path()
 			target_ln.focus_previous = new_text_button.get_path()
-		elif case_node_container.get_child_count() - 1 == index: # It's the last item
-			var target_text: LineEdit = result_node_container.get_child(-2).get_child(0)
+		elif new_case_count == index: # It's the last item
+			var target_text: LineEdit = %PhraseCasesEntries.get_child(-2).get_child(3)
 			target_text.focus_next = ^""
 		else: # It's between 2 items
-			var line_up: LineEdit = result_node_container.get_child(index - 1).get_child(0)
-			var line_down: LineEdit = case_node_container.get_child(index + 1)
-			line_up.focus_next = line_down.get_path()
-			line_down.focus_previous = line_up.get_path()
-	
-	case_node_container.remove_child(case)
-	result_node_container.remove_child(text)
+			var btn_up: Button = %PhraseCasesEntries.get_child(index - 1).get_child(3)
+			var line_down: LineEdit = %PhraseCasesEntries.get_child(index + 1).get_child(1)
+			btn_up.focus_next = line_down.get_path()
+			line_down.focus_previous = btn_up.get_path()
 	
 	case.queue_free()
-	text.queue_free()
 
 
 func new_key_container(key: String = "", unsaved: bool = true) -> HBoxContainer:
@@ -3077,7 +3127,8 @@ func new_key_container(key: String = "", unsaved: bool = true) -> HBoxContainer:
 	key_line.set_meta(&"unsaved", unsaved)
 	
 	key_line.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	key_line.custom_minimum_size.y = 32.0
+	key_line.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	key_line.custom_minimum_size.y = 33.0
 	key_line.placeholder_text = "Key"
 	key_line.text = String(key)
 	
@@ -3085,7 +3136,8 @@ func new_key_container(key: String = "", unsaved: bool = true) -> HBoxContainer:
 	erase_button.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	erase_button.tooltip_text = "Erase key"
 	erase_button.flat = true
-	erase_button.custom_minimum_size = Vector2(32.0, 32.0)
+	erase_button.custom_minimum_size = Vector2(33.0, 33.0)
+	erase_button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	
 	key_line.text_changed.connect(_on_key_line_text_changed)
 	erase_button.pressed.connect(_on_erase_key_button_pressed.bind(key_line))
@@ -3099,9 +3151,8 @@ func new_key_container(key: String = "", unsaved: bool = true) -> HBoxContainer:
 func get_valid_format_key_id(desired_id: String = "NEW_PHRASE") -> String:
 	var used_keys: Dictionary[String, Variant] = {}
 	
-	for container in key_container.get_children():
-		var line: LineEdit = container.get_child(1)
-		var assigned_key: String = line.get_meta(&"phrase_key", "")
+	for entry in %PhrasesEntries.get_children():
+		var assigned_key: StringName = entry.get_meta(&"phrase_key", &"")
 		used_keys[assigned_key] = null
 	
 	if not used_keys.has(desired_id):
@@ -3121,227 +3172,294 @@ func get_valid_format_key_id(desired_id: String = "NEW_PHRASE") -> String:
 	return modified
 
 
-func new_case_result_node() -> HBoxContainer:
-	var new_case: HBoxContainer = HBoxContainer.new()
-	var case_text: LineEdit = load("res://addons/nexus_forge/item_quest_lineedit_script.gd").new()
-	var open_editor_btn: Button = Button.new()
-	
-	case_text.placeholder_text = "Case format"
-	case_text.custom_minimum_size.y = 32.0
-	case_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	
-	open_editor_btn.tooltip_text = "Open Editor"
-	open_editor_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	open_editor_btn.flat = true
-	open_editor_btn.icon = get_theme_icon("DistractionFree", "EditorIcons")
-	open_editor_btn.custom_minimum_size = Vector2(32.0, 32.0)
-	open_editor_btn.pressed.connect(_on_open_discourse_text_editor_pressed.bind(case_text))
-	
-	new_case.add_child(case_text)
-	new_case.add_child(open_editor_btn)
-	
-	case_text.text_changed.connect(_on_conversation_changed)
-	
-	return new_case
+#func new_case_result_node() -> HBoxContainer:
+	#var new_case: HBoxContainer = HBoxContainer.new()
+	#var case_text: LineEdit = load("res://addons/nexus_forge/item_quest_lineedit_script.gd").new()
+	#var open_editor_btn: Button = Button.new()
+	#
+	#case_text.placeholder_text = "Case format"
+	#case_text.custom_minimum_size.y = 32.0
+	#case_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	#
+	#open_editor_btn.tooltip_text = "Open Editor"
+	#open_editor_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	#open_editor_btn.flat = true
+	#open_editor_btn.icon = get_theme_icon("DistractionFree", "EditorIcons")
+	#open_editor_btn.custom_minimum_size = Vector2(32.0, 32.0)
+	#open_editor_btn.pressed.connect(_on_open_discourse_text_editor_pressed.bind(case_text))
+	#
+	#new_case.add_child(case_text)
+	#new_case.add_child(open_editor_btn)
+	#
+	#case_text.text_changed.connect(_on_conversation_changed)
+	#
+	#return new_case
 
 
 func new_text_field(text: String = "") -> HBoxContainer:
 	var new_text: HBoxContainer = HBoxContainer.new()
-	var new_line: LineEdit = LineEdit.new()
+	var new_editor: TextEdit = BracketHandler.new()
 	var edit_button: Button = Button.new()
+	var highlighter: NFEditorDialogSyntaxHighlighter = NFEditorDialogSyntaxHighlighter.new()
 	
-	new_line.text = text
+	highlighter.set_use_token("&", false)
+	highlighter.set_use_token("*", false)
+	highlighter.set_use_token("?", false)
 	
-	new_text.add_child(new_line)
+	new_editor.syntax_highlighter = highlighter
+	
+	new_editor.text = text
+	
+	new_text.add_child(new_editor)
 	new_text.add_child(edit_button)
 	
-	new_line.custom_minimum_size.y = 32.0
-	new_line.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	new_line.placeholder_text = "Phrase Text"
-	edit_button.custom_minimum_size = Vector2(32.0, 32.0)
+	new_editor.custom_minimum_size.y = 33.0
+	new_editor.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	new_editor.placeholder_text = "Phrase Text"
+	new_editor.enter_shifts_focus = true
+	new_editor.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
+	edit_button.custom_minimum_size = Vector2(33.0, 33.0)
 	edit_button.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	edit_button.flat = true
 	edit_button.icon = get_theme_icon("Edit", "EditorIcons")
 	edit_button.tooltip_text = "Edit Cases"
 	
-	new_line.text_submitted.connect(_on_text_line_text_submitted.bind(edit_button))
-	new_line.text_changed.connect(_on_conversation_changed)
-	
 	return new_text
 
 
-func erase_key(index: int) -> void:
-	var key: Control = key_container.get_child(index)
-	var text: Control = text_container.get_child(index)
+func create_new_phrase_entry(key: String, format: String, unsaved: bool = true) -> StringName:
+	var container: HBoxContainer = HBoxContainer.new()
+	var erase_button: Button = Button.new()
+	var key_line: LineEdit = LineEdit.new()
+	var text_field: TextEdit = BracketHandler.new()
+	var edit_button: Button = Button.new()
+	var highlighter: NFEditorDialogSyntaxHighlighter = NFEditorDialogSyntaxHighlighter.new()
 	
-	if key_container.get_child_count() - 1 <= 0:
+	highlighter.set_use_token("&", false)
+	highlighter.set_use_token("*", false)
+	highlighter.set_use_token("?", false)
+	
+	text_field.syntax_highlighter = highlighter
+	
+	if key.is_empty():
+		key = get_valid_format_key_id()
+	else:
+		key = get_valid_format_key_id(key)
+	
+	container.set_meta(&"phrase_key", key)
+	container.set_meta(&"unsaved", unsaved)
+	container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	
+	key_line.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	key_line.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	key_line.custom_minimum_size = Vector2(115.0, 33.0)
+	key_line.placeholder_text = "Key"
+	key_line.text = String(key)
+	
+	erase_button.icon = get_theme_icon("Remove", "EditorIcons")
+	erase_button.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	erase_button.tooltip_text = "Erase key"
+	erase_button.flat = true
+	erase_button.custom_minimum_size = Vector2(33.0, 33.0)
+	erase_button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	
+	text_field.text = format
+	text_field.custom_minimum_size.y = 33.0
+	text_field.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	text_field.placeholder_text = "Phrase Text"
+	text_field.enter_shifts_focus = true
+	text_field.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
+	
+	edit_button.custom_minimum_size = Vector2(33.0, 33.0)
+	edit_button.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	edit_button.flat = true
+	edit_button.icon = get_theme_icon("Edit", "EditorIcons")
+	edit_button.tooltip_text = "Edit Cases"
+	
+	var text_menu: PopupMenu = text_field.get_menu()
+	_rebuild_phrase_text_menu(text_menu)
+	
+	container.add_child(erase_button)
+	container.add_child(key_line)
+	container.add_child(text_field)
+	container.add_child(edit_button)
+	
+	%PhrasesEntries.add_child(container)
+	
+	if 0 < %PhrasesEntries.get_child_count() - 1:
+		var btn: Button = %PhrasesEntries.get_child(-2).get_child(-1)
+		btn.focus_next = key_line.get_path()
+		key_line.focus_previous = btn.get_path()
+	else:
+		new_text_button.focus_next = key_line.get_path()
+		key_line.focus_previous = new_text_button.get_path()
+	
+	key_line.focus_next = text_field.get_path()
+	key_line.focus_neighbor_right = text_field.get_path()
+	
+	text_field.focus_previous = key_line.get_path()
+	text_field.focus_neighbor_left = key_line.get_path()
+	text_field.focus_next = edit_button.get_path()
+	
+	edit_button.focus_previous = text_field.get_path()
+	
+	edit_button.pressed.connect(_on_edit_cases_pressed.bind(container))
+	text_menu.id_pressed.connect(_on_phrase_menu_id_pressed.bind(text_field))
+	text_field.text_changed.connect(_on_phrase_text_field_changed.bind(text_field))
+	text_field.resized.connect(_update_choice_textbox_size.bind(text_field))
+	
+	key_line.text_changed.connect(_on_key_line_text_changed)
+	erase_button.pressed.connect(_on_erase_key_button_pressed.bind(container))
+	
+	if text_field.is_visible_in_tree():
+		print("I'm visible")
+	else:
+		print("I'm not visible")
+		_update_when_visible(text_field)
+	
+	return key
+
+
+func _update_when_visible(what: Control) -> void:
+	await what.draw
+	#await get_tree().process_frame
+	print("update now!")
+	#_update_choice_textbox_size(what)
+
+
+func erase_key(index: int) -> void:
+	var entry: HBoxContainer = %PhrasesEntries.get_child(index)
+	var new_count: int = %PhrasesEntries.get_child_count() - 1
+	
+	#var key: Control = key_container.get_child(index)
+	#var text: Control = text_container.get_child(index)
+	
+	if new_count <= 0:
 		new_text_button.focus_next = ^""
 	else:
 		if index == 0: # It's the first item
-			var target_ln: LineEdit = text_container.get_child(1).get_child(0)
+			var target_ln: LineEdit = %PhrasesEntries.get_child(1).get_child(1)
 			new_text_button.focus_next = target_ln.get_path()
 			target_ln.focus_previous = new_text_button.get_path()
-		elif key_container.get_child_count() - 1 == index: # It's the last item
-			var target_btn: Button = text_container.get_child(-2).get_child(1)
+		elif new_count == index: # It's the last item
+			var target_btn: Button = %PhrasesEntries.get_child(-2).get_child(3)
 			target_btn.focus_next = ^""
 		else: # It's between 2 items
-			var button_up: Button = text_container.get_child(index - 1).get_child(1)
-			var line_down: LineEdit = text_container.get_child(index + 1).get_child(0)
+			var button_up: Button = %PhrasesEntries.get_child(index - 1).get_child(3)
+			var line_down: LineEdit = %PhrasesEntries.get_child(index + 1).get_child(1)
 			button_up.focus_next = line_down.get_path()
 			line_down.focus_previous = button_up.get_path()
 	
-	key_container.remove_child(key)
-	text_container.remove_child(text)
-	
-	key.queue_free()
-	text.queue_free()
+	entry.queue_free()
 
 
 func clear_cases() -> void:
-	for case_key in case_node_container.get_children():
-		case_node_container.remove_child(case_key)
-		case_key.queue_free()
-	for case_result in result_node_container.get_children():
-		result_node_container.remove_child(case_result)
-		case_result.queue_free()
+	var default: HBoxContainer = %PhraseCasesEntries.get_child(0)
+	for case in %PhraseCasesEntries.get_children():
+		if case == default:
+			continue
+		case.queue_free()
 
 
 func clear_localized_keys() -> void:
-	for format_key in key_container.get_children():
-		key_container.remove_child(format_key)
-		format_key.queue_free()
-	for key_text in text_container.get_children():
-		text_container.remove_child(key_text)
-		key_text.queue_free()
+	for entry in %PhrasesEntries.get_children():
+		entry.queue_free()
 
 
 func save_current_phrase_key(locale_code: String) -> void:
-	if selected_key == null:
+	if selected_format_index < 0:
 		return
-	var phrase_key: String = selected_key.get_meta(&"phrase_key")
-	#var locale_code = languages_tree.get_active_locale()
+	
+	var phrase_key: String = %PhrasesEntries.get_child(selected_format_index).get_meta(&"phrase_key")
 	var selected_format: String = argument_opt_btn.get_item_text(argument_opt_btn.selected)
 	
 	active_conversation.set_format_string_default_case(
 		phrase_key,
 		locale_code,
 		selected_format,
-		default_case_ln_edt.text.strip_edges())
+		default_case_edt.text.strip_edges())
 	
-	var case_idx: int = 0
 	var desired: String = ""
-	var modified: String = ""
-	var iteration: int = 0
-	
-	var cases: Array[Dictionary] = []
-	
-	# Fixing the cases:
-	for case_container:HBoxContainer in case_node_container.get_children():
-		var case_key: LineEdit = case_container.get_child(1)
-		case_key.text = case_key.text.strip_edges()
-		cases.append({
-			"key_line": case_key,
-			"text_line": result_node_container.get_child(case_idx).get_child(0)})
-		case_idx += 1
-	
-	var assigned_keys: Dictionary[String, Variant] = {}
-	var keys_changed: bool = false
-	for item_index in range(cases.size()):
-		desired = cases[item_index]["key_line"].text
-		
-		if not _phrase_key_used(desired, cases, item_index):
-			continue
-		
-		var trailing_data: Dictionary = StringUtils.get_trailing_integer(desired)
-		var base: String = desired
-		iteration = trailing_data["integer"]
-		if trailing_data["has_integer"]:
-			base = base.trim_suffix(str(iteration))
-		modified = desired
-		while _phrase_key_used(modified, cases, item_index):
-			iteration += 1
-			modified = base + str(iteration)
-	
-		cases[item_index]["key_line"].text = modified
-		if not keys_changed:
-			keys_changed = true
+	var used_keys: Dictionary[String, Variant] = {}
 	
 	active_conversation.clear_format_string_cases(
-			phrase_key,
-			locale_code,
-			selected_format)
+		phrase_key,
+		locale_code,
+		selected_format)
 	
-	for case in cases:
+	# Fixing the cases:
+	for case_idx in range(1, %PhraseCasesEntries.get_child_count()):
+		var case_container: HBoxContainer = %PhraseCasesEntries.get_child(case_idx)
+		if case_container.is_queued_for_deletion():
+			continue
+		var desired_key: String = case_container.get_child(1).text.strip_edges()
+		var case_key: LineEdit = case_container.get_child(1)
+		case_key.text = case_key.text.strip_edges()
+		var trailing_int: Dictionary = StringUtils.get_trailing_integer(desired_key)
+		var iteration: int = trailing_int["integer"]
+		if trailing_int["has_integer"]:
+			desired_key = desired_key.trim_suffix(str(iteration))
+		var modified: String = desired_key
+		
+		while used_keys.has(modified):
+			iteration += 1
+			modified = desired_key + str(iteration)
+		
+		case_container.get_child(1).text = modified
+		
 		active_conversation.set_format_string_case(
 			phrase_key,
 			locale_code,
 			selected_format,
-			case["key_line"].text,
-			case["text_line"].text)
+			modified,
+			case_container.get_child(2).text)
 	
-	if keys_changed:
-		_on_case_line_text_changed()
+	_validate_phrase_cases()
 
 
 func save_phrase_keys(locale: String) -> void:
 	if locale.is_empty():
 		return
 	
-	var current_items: Array[Dictionary] = []
-	
-	var idx: int = 0
-	for key_child in key_container.get_children():
-		var item: LineEdit = key_child.get_child(1)
-		item.text = item.text.strip_edges()
-		current_items.append({
-			"key_line": item,
-			"text_line": text_container.get_child(idx).get_child(0)})
-		idx += 1
-	
 	var claimed_keys: Dictionary[String, Variant] = {}
-	for item_index in range(current_items.size()):
-		var item: Dictionary = current_items[item_index]
-		var key_line: LineEdit = item["key_line"]
-		var text_line: LineEdit = item["text_line"]
+	
+	for entry in %PhrasesEntries.get_children():
+		if entry.is_queued_for_deletion():
+			continue
 		
-		var unsaved: bool = key_line.get_meta(&"unsaved", false)
-		var old_key: String = key_line.get_meta(&"phrase_key", "")
+		var desired_key: String = entry.get_child(1).text.strip_edges()
 		
-		var clean: String = key_line.text.strip_edges()
-		if clean.is_empty():
-			clean = "phrase_key"
+		if desired_key.is_empty():
+			desired_key = "PHRASE"
 		
-		if _phrase_key_used(clean, current_items, item_index):
-			var base_name: String = clean
-			var trailing_data: Dictionary = StringUtils.get_trailing_integer(clean)
-			var iteration: int = trailing_data["integer"]
-			if trailing_data["has_integer"]:
-				base_name = clean.trim_suffix(str(iteration))
-			
-			var modified: String = clean
-			
-			while _phrase_key_used(modified, current_items, item_index):
-				iteration += 1
-				modified = base_name + str(iteration)
-			
-			clean = modified
+		var trailing_int: Dictionary = StringUtils.get_trailing_integer(desired_key)
+		var current_loop: int = trailing_int["integer"]
+		var modified: String = desired_key
 		
-		if unsaved: # Create the key-value entry. Set as created
-			key_line.set_meta(&"unsaved", false)
+		if trailing_int["has_integer"]:
+			desired_key = desired_key.trim_suffix(str(current_loop))
 		
-		elif old_key != clean: # Move the value to the new key, clean the old key.
-			active_conversation.format_strings[clean] = active_conversation.format_strings[old_key]
+		while claimed_keys.has(modified):
+			current_loop += 1
+			modified = desired_key + str(current_loop)
+		
+		var old_key: String = entry.get_meta(&"phrase_key")
+		var new_key: String = modified
+		claimed_keys[new_key] = null
+		
+		if entry.get_meta(&"unsaved"):
+			entry.set_meta(&"unsaved", false)
+		elif new_key != old_key:
+			active_conversation.format_strings[new_key] = active_conversation.format_strings[old_key]
 			active_conversation.format_strings.erase(old_key)
 		
+		entry.set_meta(&"phrase_key", new_key)
+		entry.get_child(1).text = modified
+		
 		active_conversation.set_format_string(
-				clean,
-				item["text_line"].text,
-				locale)
-		
-		key_line.set_meta(&"phrase_key", clean)
-		key_line.text = clean
-		
-		claimed_keys[clean] = null
+			new_key,
+			entry.get_child(2).text,
+			locale)
 	
 	# Remove keys no longer used
 	for existing_key in active_conversation.format_strings.keys():
@@ -3535,7 +3653,7 @@ func _on_uncollapse_previewer_pressed() -> void:
 		dialog_previewer.set_dialog(translation_txt_box.text)
 	elif active_node.node_type == DiscourseGraphNode.DialogueNodeType.CHOICES:
 		dialog_previewer.set_choices(
-				get_localizer_choices())
+			get_localizer_choices())
 
 
 func _on_collapse_previewer_pressed() -> void:
@@ -3567,7 +3685,7 @@ func _on_play_live_preview_pressed() -> void:
 		dialog_previewer.play_dialog(translation_txt_box.text)
 	elif active_node.node_type == DiscourseGraphNode.DialogueNodeType.CHOICES:
 		dialog_previewer.play_choices(
-				get_localizer_choices())
+			get_localizer_choices())
 
 
 func _on_auto_update_toggled(toggled_on: bool) -> void:
@@ -3581,14 +3699,14 @@ func _on_auto_update_toggled(toggled_on: bool) -> void:
 	
 	if node.node_type == DiscourseGraphNode.DialogueNodeType.DIALOG:
 		dialog_previewer.set_dialog(
-				translation_txt_box.text)
+			translation_txt_box.text)
 	else:
 		dialog_previewer.set_choices(
-				get_localizer_choices())
+			get_localizer_choices())
 
 
 func _on_default_case_focus_pressed() -> void:
-	_on_open_discourse_text_editor_pressed(default_case_ln_edt)
+	_on_open_discourse_text_editor_pressed(default_case_edt)
 
 
 func _is_preview_scene_valid(print_errors: bool = true) -> bool:
@@ -3609,9 +3727,9 @@ func _is_preview_scene_valid(print_errors: bool = true) -> bool:
 	if scene == null or not scene is PackedScene or not scene.can_instantiate():
 		if print_errors:
 			NFPluginGameHandler._log_msg(
-					"discourse - editor",
-					"Error during instantiation of scene '%s'" % path,
-					NFPluginGameHandler._LogLevel.ERROR)
+				"discourse - editor",
+				"Error during instantiation of scene '%s'" % path,
+				NFPluginGameHandler._LogLevel.ERROR)
 		return false
 	
 	var instance: Node = scene.instantiate()
@@ -3619,9 +3737,9 @@ func _is_preview_scene_valid(print_errors: bool = true) -> bool:
 	if scene_script == null:
 		if print_errors:
 			NFPluginGameHandler._log_msg(
-					"discourse - editor",
-					"Scene '%s' has no script attatched" % path,
-					NFPluginGameHandler._LogLevel.ERROR)
+				"discourse - editor",
+				"Scene '%s' has no script attatched" % path,
+				NFPluginGameHandler._LogLevel.ERROR)
 		instance.free()
 		return false
 	
@@ -3715,9 +3833,32 @@ func _is_preview_scene_valid(print_errors: bool = true) -> bool:
 	
 	if not errors.is_empty() and print_errors:
 		NFPluginGameHandler._log_msg(
-				"discourse - editor",
-				"Scene '%s' errored: %s" % [path, ", ".join(errors)],
-				NFPluginGameHandler._LogLevel.ERROR)
+			"discourse - editor",
+			"Scene '%s' errored: %s" % [path, ", ".join(errors)],
+			NFPluginGameHandler._LogLevel.ERROR)
 	
 	instance.free()
 	return has_c_updt and has_set_c and has_set_d and has_p_txt and has_p_ch
+
+
+func _update_choice_textbox_size(box: TextEdit) -> void:
+	if box.size.x <= 0 or not box.is_visible_in_tree():
+		return
+	
+	box.scroll_fit_content_height = true
+	var total_visual_lines: int = 0
+	for i in range(box.get_line_count()):
+		total_visual_lines += 1 + box.get_line_wrap_count(i)
+	if total_visual_lines <= MAX_LINES:
+		box.custom_minimum_size.y = 0
+		return
+	box.scroll_fit_content_height = false
+	
+	var new_height: float = MAX_LINES * box.get_line_height() + EXTRA_Y_PADDING
+	if new_height != box.custom_minimum_size.y:
+		box.custom_minimum_size.y = new_height
+
+
+func _on_phrase_text_field_changed(field: TextEdit) -> void:
+	_update_choice_textbox_size(field)
+	_on_conversation_changed()
