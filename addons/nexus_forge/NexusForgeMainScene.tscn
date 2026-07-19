@@ -73,3 +73,15 @@ layout_mode = 2
 texture = ExtResource("11_at7in")
 expand_mode = 1
 stretch_mode = 5
+
+[node name="VersionLabel" type="Label" parent="MainContainer/ToolScroll/ToolContainer/NexusForge" unique_id=1617386908]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -40.0
+offset_top = -23.0
+grow_horizontal = 0
+grow_vertical = 0

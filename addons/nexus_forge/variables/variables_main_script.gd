@@ -14,7 +14,7 @@ var _current_folder: String = "":
 		add_bool_button.disabled = set_disabled
 		add_string_button.disabled = set_disabled
 var _unsaved: bool = false
-var undo_redo: UndoRedo = null
+var undo: UndoRedo = null
 
 @onready var main_split: HSplitContainer = $MainSplit
 
@@ -42,29 +42,33 @@ func _input(event: InputEvent) -> void:
 		return
 	
 	var focused_node: Control = get_viewport().gui_get_focus_owner()
-	if focused_node != null and (focused_node is LineEdit or focused_node is TextEdit):
-		return
+	if focused_node != null:
+			if focused_node is LineEdit:
+				if focused_node.is_editing():
+					return
+				elif focused_node is TextEdit:
+					return
 	
 	if event.keycode == KEY_Z and event.ctrl_pressed:
 		if event.shift_pressed:
-			if undo_redo.has_redo():
-				undo_redo.redo()
+			if undo.has_redo():
+				undo.redo()
 		else:
-			if undo_redo.has_undo():
-				undo_redo.undo()
+			if undo.has_undo():
+				undo.undo()
 		
 		get_viewport().set_input_as_handled()
 	elif event.keycode == KEY_Y and event.ctrl_pressed:
-		if undo_redo.has_redo():
-			undo_redo.redo()
+		if undo.has_redo():
+			undo.redo()
 		get_viewport().set_input_as_handled()
 
 
 func ready_plugin() -> void:
 	folders_tree.ready_plugin()
 	variables_tree.ready_plugin()
-	undo_redo = UndoRedo.new()
-	undo_redo.max_steps = 50
+	undo = UndoRedo.new()
+	undo.max_steps = 50
 	
 	reload_resource(true)
 	
@@ -135,10 +139,10 @@ func _on_folder_created(path_to_folder: String) -> void:
 
 
 func _on_variable_renamed(from: String, to: String) -> void:
-	undo_redo.create_action("Rename Variable")
-	undo_redo.add_do_method(_apply_variable_rename.bind(_current_folder, from, to, false))
-	undo_redo.add_undo_method(_apply_variable_rename.bind(_current_folder, to, from, false))
-	undo_redo.commit_action(false)
+	undo.create_action("Rename Variable")
+	undo.add_do_method(_apply_variable_rename.bind(_current_folder, from, to, false))
+	undo.add_undo_method(_apply_variable_rename.bind(_current_folder, to, from, false))
+	undo.commit_action(false)
 	_apply_variable_rename(_current_folder, from, to, true)
 
 
@@ -175,10 +179,10 @@ func _on_variable_updated(variable_id: String, value: Variant) -> void:
 	
 	var action_name: String = "Delete Variable" if type == TYPE_NIL else "Update Variable"
 	
-	undo_redo.create_action(action_name)
-	undo_redo.add_do_method(_apply_variable_update.bind(path, value, false))
-	undo_redo.add_undo_method(_apply_variable_update.bind(path, old_value, false))
-	undo_redo.commit_action(false)
+	undo.create_action(action_name)
+	undo.add_do_method(_apply_variable_update.bind(path, value, false))
+	undo.add_undo_method(_apply_variable_update.bind(path, old_value, false))
+	undo.commit_action(false)
 	_apply_variable_update(path, value, true)
 
 
@@ -201,10 +205,10 @@ func _apply_variable_update(path: String, target_value: Variant, is_first_run: b
 
 
 func _on_folder_renamed(from: String, to: String) -> void:
-	undo_redo.create_action("Rename Folder")
-	undo_redo.add_do_method(_apply_folder_rename.bind(from, to, false))
-	undo_redo.add_undo_method(_apply_folder_rename.bind(to, from, false))
-	undo_redo.commit_action(false)
+	undo.create_action("Rename Folder")
+	undo.add_do_method(_apply_folder_rename.bind(from, to, false))
+	undo.add_undo_method(_apply_folder_rename.bind(to, from, false))
+	undo.commit_action(false)
 	_apply_folder_rename(from, to, true)
 
 
@@ -379,10 +383,10 @@ func _on_folder_deleted(folder_path: String) -> void:
 	
 	var folder_data: Dictionary[StringName, Dictionary] = get_folder_deletion_data(folder_path)
 	
-	undo_redo.create_action("Delete Folder")
-	undo_redo.add_do_method(_do_folder_delete.bind(folder_path))
-	undo_redo.add_undo_method(_undo_folder_delete.bind(folder_data, folder_path))
-	undo_redo.commit_action(false)
+	undo.create_action("Delete Folder")
+	undo.add_do_method(_do_folder_delete.bind(folder_path))
+	undo.add_undo_method(_undo_folder_delete.bind(folder_data, folder_path))
+	undo.commit_action(false)
 	_do_folder_delete(folder_path, false)
 
 
@@ -567,10 +571,10 @@ func _on_folder_moved(original_path: String, new_path: String) -> void:
 	if original_path == new_path:
 		return
 	
-	undo_redo.create_action("Move Folder")
-	undo_redo.add_do_method(_apply_folder_move.bind(original_path, new_path, false))
-	undo_redo.add_undo_method(_apply_folder_move.bind(new_path, original_path, false))
-	undo_redo.commit_action(false)
+	undo.create_action("Move Folder")
+	undo.add_do_method(_apply_folder_move.bind(original_path, new_path, false))
+	undo.add_undo_method(_apply_folder_move.bind(new_path, original_path, false))
+	undo.commit_action(false)
 	_apply_folder_move(original_path, new_path, true)
 
 
@@ -626,3 +630,10 @@ func set_sorting_column(column: int) -> void:
 
 func get_sorting_column() -> int:
 	return variables_tree.sorting_column
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE:
+		if undo != null and is_instance_valid(undo):
+			undo.free()
+			undo = null

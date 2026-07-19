@@ -57,8 +57,11 @@ func recompile_script_docs() -> void:
 		"res://addons/nexus_forge/resources/trait_catalog.gd",
 		"res://addons/nexus_forge/resources/var_db_script.gd"]
 	
-	for file in SCRIPT_DOC:
-		ResourceSaver.save(load(file))
+	var script_editor: ScriptEditor = EditorInterface.get_script_editor()
+	
+	for path in SCRIPT_DOC:
+		var script_file: Script = load(path)
+		script_editor.update_docs_from_script(script_file) # Could this work better?
 
 
 func _enter_tree() -> void:
@@ -72,6 +75,21 @@ func _enter_tree() -> void:
 	EditorInterface.get_editor_main_screen().add_child(editor_view)
 	if not editor_view.is_node_ready():
 		await editor_view.ready
+	
+	var script: Script = get_script()
+	var version: String = ""
+	if script != null:
+		var dir: String = script.resource_path.get_base_dir()
+		var config_path: String = dir.path_join("plugin.cfg")
+		var cfg: ConfigFile = ConfigFile.new()
+		if cfg.load(config_path) == OK:
+			version = cfg.get_value("plugin", "version", "")
+	
+	if version.is_empty():
+		editor_view.set_version("unknown version")
+	else:
+		editor_view.set_version(version)
+	
 	var use_discourse: bool = ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("discourse_enabled"), true)
 	var use_characters: bool = ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("characters_enabled"), true)
 	var use_species: bool = ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("species_enabled"), true)

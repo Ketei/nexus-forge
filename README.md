@@ -12,12 +12,12 @@
 </div>
 
 > [!IMPORTANT]
-> **Alpha State:** The plugin is functional, but APIs, class names and GUI layouts will likely undergo breaking changes before the Beta release. Use this for testing, evaluation, or as a bold choice for an early-stage project. Expect bugs.
+> **Beta State:** The plugin is fully functional but some utility and navigation features are unimplemented, incomplete or inconsistent. Any breaking changes will be announced on the releases page. Please report any bugs you encounter!
 > 
 > This began as a personal tool, so it includes a few specific static helper classes tailored for my own workflow.
 
-> [!WARNING]
-> **No Undo/Redo yet:** Nexus Forge does not currently implement an Undo/Redo system. Actions taken in the editor cannot be reversed via `Ctrl+Z`.
+> [!IMPORTANT]
+> **About Undo/Redo:** Not all modules of Nexus Forge implement the Undo/Redo system. Check the roadmap to find out which modules support these actions.
 
 ## Contents
 
@@ -99,7 +99,7 @@ Features that are planned to be implemented in the future:
 - [ ] **Core:** UndoRedo for all modules
   - [ ] Discourse (Dialogs)
   - [x] Blackboard (Variables)
-  - [ ] Persona (Characters)
+  - [x] Persona (Characters)
   - [ ] Kindred (Species)
   - [ ] Talents (Skills & Traits)
   - [ ] Depot (Items & Currencies)

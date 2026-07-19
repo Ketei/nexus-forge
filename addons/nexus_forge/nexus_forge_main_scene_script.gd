@@ -27,6 +27,10 @@ func _ready() -> void:
 	set_process_input(false)
 
 
+func set_version(version: String) -> void:
+	$MainContainer/ToolScroll/ToolContainer/NexusForge/VersionLabel.text = version
+
+
 func ready_plugin(use_discourse: bool, use_characters: bool, use_species: bool, use_stats: bool, use_skills: bool, use_traits: bool, use_items: bool, use_currencies: bool, use_recipes: bool, use_quests: bool, use_phrases: bool, discourse_base_lang: String) -> void:
 	set_process_input(true)
 	

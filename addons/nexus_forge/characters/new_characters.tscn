@@ -96,6 +96,7 @@ text = "ID"
 [node name="CharIDLine" type="LineEdit" parent="CharacterContainer/BasicDataSplit/GeneralContainer/CharIDContainer" unique_id=82698212]
 layout_mode = 2
 size_flags_horizontal = 3
+focus_next = NodePath("../../CharNameContainer/CharNameLine")
 editable = false
 
 [node name="CharNameContainer" type="HBoxContainer" parent="CharacterContainer/BasicDataSplit/GeneralContainer" unique_id=2061867974]
@@ -110,6 +111,8 @@ text = "Name"
 [node name="CharNameLine" type="LineEdit" parent="CharacterContainer/BasicDataSplit/GeneralContainer/CharNameContainer" unique_id=410619086]
 layout_mode = 2
 size_flags_horizontal = 3
+focus_next = NodePath("../../SpeciesContainer/SpeciesOptionButton")
+focus_previous = NodePath("../../CharIDContainer/CharIDLine")
 editable = false
 
 [node name="SpeciesContainer" type="HBoxContainer" parent="CharacterContainer/BasicDataSplit/GeneralContainer" unique_id=1293566963]
@@ -125,12 +128,16 @@ text = "Species"
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
+focus_next = NodePath("../LoadSpeciesDataBtn")
+focus_previous = NodePath("../../CharNameContainer/CharNameLine")
 disabled = true
 
 [node name="LoadSpeciesDataBtn" type="Button" parent="CharacterContainer/BasicDataSplit/GeneralContainer/SpeciesContainer" unique_id=1275425636]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Import species data"
+focus_next = NodePath("../../GenderContainer/GenderOptionButton")
+focus_previous = NodePath("../SpeciesOptionButton")
 disabled = true
 icon = ExtResource("4_w5f8f")
 flat = true
@@ -150,6 +157,8 @@ text = "Gender"
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_horizontal = 3
+focus_next = NodePath("../../CustomDataContainer/CDHeaderContainer/AddButtonsContainer/AddDictButton")
+focus_previous = NodePath("../../SpeciesContainer/SpeciesOptionButton")
 disabled = true
 
 [node name="EditGendersBtn" type="Button" parent="CharacterContainer/BasicDataSplit/GeneralContainer/GenderContainer" unique_id=1173069879]

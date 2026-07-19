@@ -2,12 +2,14 @@
 extends Tree
 
 
-signal character_selected(character_sheet: CharacterSheet, unsaved: bool)
+signal character_selected(character_sheet: CharacterSheet, unsaved: bool, char_undo: UndoRedo, data_undo: UndoRedo)
 signal character_closed(resource: CharacterSheet, unsaved: bool)
+
+var root: TreeItem = null
 
 
 func ready_plugin() -> void:
-	create_item()
+	root = create_item()
 	
 	button_clicked.connect(_on_button_clicked)
 	item_selected.connect(_on_item_selected)
@@ -26,44 +28,46 @@ func _on_item_selected() -> void:
 	var data: Dictionary = get_selected().get_metadata(0)
 	character_selected.emit(
 			data["resource"],
-			data["unsaved"])
+			data["unsaved"],
+			data["char_history"],
+			data["data_history"])
 
 
 func is_any_unsaved() -> bool:
-	for item in get_root().get_children():
+	for item in root.get_children():
 		if item.get_metadata(0)["unsaved"]:
 			return true
 	return false
 
 
 func is_unsaved(character: CharacterSheet) -> bool:
-	for item in get_root().get_children():
+	for item in root.get_children():
 		if item.get_metadata(0)["resource"] == character:
 			return item.get_metadata(0)["unsaved"]
 	return false
 
 
 func set_all_saved() -> void:
-	for item in get_root().get_children():
+	for item in root.get_children():
 		if item.get_metadata(0)["unsaved"]:
 			item.set_text(0, item.get_text(0).trim_suffix("*"))
 		item.get_metadata(0)["unsaved"] = false
 
 
 func clear_characters() -> void:
-	for characer in get_root().get_children():
+	for characer in root.get_children():
 		characer.free()
 
 
 func has_character(resource: CharacterSheet) -> bool:
-	for item in get_root().get_children():
+	for item in root.get_children():
 		if item.get_metadata(0)["resource"] == resource:
 			return true
 	return false
 
 
 func select_character(resource: CharacterSheet, emit_selected: bool = true) -> void:
-	for item in get_root().get_children():
+	for item in root.get_children():
 		if item.get_metadata(0)["resource"] == resource:
 			if emit_selected:
 				item.select(0)
@@ -74,21 +78,21 @@ func select_character(resource: CharacterSheet, emit_selected: bool = true) -> v
 
 
 func get_open_paths() -> Array[String]:
-	if get_root() == null:
+	if root == null:
 		return []
 	
 	var paths: Array[String] = []
 	
-	for item in get_root().get_children():
+	for item in root.get_children():
 		paths.append(item.get_metadata(0)["resource"].resource_path)
 	return paths
 
 
-func create_character(resource: CharacterSheet, select: bool = false, emit_select: bool = true) -> void:
-	var new_item: TreeItem = get_root().create_child()
+func create_character(resource: CharacterSheet, character_undo: UndoRedo, data_undo: UndoRedo, select: bool = false, emit_select: bool = true) -> void:
+	var new_item: TreeItem = root.create_child()
 	new_item.set_text(0, resource.resource_path.get_file().get_basename())
 	new_item.set_tooltip_text(0, resource.resource_path)
-	new_item.set_metadata(0, {"resource": resource, "stats": stats_to_data(resource.stats), "unsaved": false})
+	new_item.set_metadata(0, {"resource": resource, "stats": stats_to_data(resource.stats), "unsaved": false, "char_history": character_undo, "data_history": data_undo})
 	new_item.add_button(
 			0,
 			get_theme_icon("Close", "EditorIcons"),
@@ -107,8 +111,19 @@ func create_character(resource: CharacterSheet, select: bool = false, emit_selec
 			item_selected.connect(_on_item_selected)
 
 
+func get_resource_undos(character_sheet: CharacterSheet) -> Dictionary[String, UndoRedo]:
+	var undos: Dictionary[String, UndoRedo] = {"character": null, "data": null}
+	for item in root.get_children():
+		if item.get_metadata(0)["resource"] == character_sheet:
+			var metadata: Dictionary = item.get_metadata(0)
+			undos["character"] = metadata["char_history"]
+			undos["data"] = metadata["data_history"]
+			return undos
+	return undos
+
+
 func set_unsaved(character_resource: CharacterSheet, unsaved: bool) -> void:
-	for item in get_root().get_children():
+	for item in root.get_children():
 		if item.get_metadata(0)["resource"] == character_resource:
 			if unsaved:
 				if not item.get_metadata(0)["unsaved"]:
@@ -122,15 +137,21 @@ func set_unsaved(character_resource: CharacterSheet, unsaved: bool) -> void:
 
 func get_unsaved() -> Array[CharacterSheet]:
 	var unsaved: Array[CharacterSheet] = []
-	for item in get_root().get_children():
+	for item in root.get_children():
 		if item.get_metadata(0)["unsaved"]:
 			unsaved.append(item.get_metadata(0)["resource"])
 	return unsaved
 
 
-func remove_character(character_sheet: CharacterSheet) -> void:
-	for item in get_root().get_children():
+func remove_character(character_sheet: CharacterSheet, ensure_memory_clering: bool = true) -> void:
+	for item in root.get_children():
 		if item.get_metadata(0)["resource"] == character_sheet:
+			if ensure_memory_clering:
+				var metadata: Dictionary = item.get_metadata(0)
+				if is_instance_valid(metadata["char_history"]):
+					metadata["char_history"].free()
+				if is_instance_valid(metadata["data_history"]):
+					metadata["data_history"].free()
 			item.free()
 			return
 
@@ -147,7 +168,7 @@ func get_valid_id(desired: StringName, skip: TreeItem = null) -> String:
 
 
 func has_id(id: String, skip: TreeItem = null) -> bool:
-	for item in get_root().get_children():
+	for item in root.get_children():
 		if item == skip:
 			continue
 		if item.get_text(0) == id:
@@ -158,7 +179,7 @@ func has_id(id: String, skip: TreeItem = null) -> bool:
 func sort_single_item(item: TreeItem) -> void:
 	var before_item: TreeItem = null
 	
-	for child in get_root().get_children():
+	for child in root.get_children():
 		if child == item:
 			continue # We ignore the item we just added
 		
@@ -169,14 +190,14 @@ func sort_single_item(item: TreeItem) -> void:
 	if before_item != null:
 		item.move_before(before_item)
 	else:
-		if item.get_index() != get_root().get_child_count() - 1:
-			item.move_after(get_root().get_child(-1))
+		if item.get_index() != root.get_child_count() - 1:
+			item.move_after(root.get_child(-1))
 
 
 func update_talent_objects() -> void:
 	var stats: Dictionary[StringName, int] = StatBlock.stats()
 	
-	for item in get_root().get_children():
+	for item in root.get_children():
 		var sheet: CharacterSheet = item.get_metadata(0)["resource"]
 		var turn_unsaved: bool = false
 		
@@ -226,6 +247,17 @@ func stats_to_data(block: StatBlock) -> Dictionary[StringName, Dictionary]:
 
 
 func update_sheet(sheet: CharacterSheet) -> void:
-	for item in get_root().get_children():
+	for item in root.get_children():
 		if item.get_metadata(0)["resource"] == sheet:
 			item.get_metadata(0)["stats"] = stats_to_data(sheet.stats)
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE:
+		if root != null and is_instance_valid(root):
+			for item in root.get_children():
+				var metadata: Dictionary = item.get_metadata(0)
+				if is_instance_valid(metadata["char_history"]):
+					metadata["char_history"].free()
+				if is_instance_valid(metadata["data_history"]):
+					metadata["data_history"].free()
