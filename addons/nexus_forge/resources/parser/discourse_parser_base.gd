@@ -735,8 +735,8 @@ func set_dialog_id(id: StringName) -> void:
 		_next_uuid = &""
 
 
-## Returns the UUID of the current dialog position.
-func get_dialog_current_uuid() -> StringName:
+## Returns the ID of the current dialog position.
+func get_dialog_current_id() -> StringName:
 	return _current_uuid
 
 

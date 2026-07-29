@@ -33,11 +33,20 @@ func load_dialog(path: String, starting_id: StringName = &"") -> bool:
 		_conversation_cache.cache_resource(res)
 		_dialog_resource = res
 	
-	if _dialog_resource.node_data.has(starting_id):
+	if starting_id.is_empty():
+		_next_uuid = _dialog_resource.entry_node
+	elif _dialog_resource.node_data.has(starting_id):
 		_next_uuid = starting_id
 	else:
-		_next_uuid = _dialog_resource.entry_node
-	
+		var data: Dictionary = _dialog_resource.find_id_from_uuid(starting_id)
+		if data["found"]:
+			_next_uuid = starting_id
+		else:
+			_next_uuid = _dialog_resource.entry_node
+			NFPluginGameHandler._log_msg(
+					"discourse",
+					"Can't set dialog to inexistent ID '%s'." % starting_id,
+					NFPluginGameHandler._LogLevel.ERROR)
 	return true
 
 
@@ -48,14 +57,14 @@ func set_dialog_id(id: StringName) -> void:
 	if _dialog_resource.node_data.has(id):
 		_next_uuid = id
 	else:
-		_next_uuid = _get_uuid_from_id(id)
-
-
-func _get_uuid_from_id(id: StringName) -> StringName:
-	for entry in _dialog_resource.node_data.keys():
-		if _dialog_resource.node_data[entry]["name"] == id:
-			return entry
-	return &""
+		var data: Dictionary = _dialog_resource.find_id_from_uuid(id)
+		if data["found"]:
+			_next_uuid = data["id"]
+		else:
+			NFPluginGameHandler._log_msg(
+					"discourse",
+					"'%s' does not exist in dialog. Set aborted." % id,
+					NFPluginGameHandler._LogLevel.ERROR)
 
 
 func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
@@ -638,6 +647,19 @@ func refresh() -> void:
 		dialog_reached.emit(result["data"])
 	elif result["tyle"] == NodeTypes.CHOICES:
 		choices_reached.emit(result["data"])
+
+
+func advance() -> void:
+	if _dialog_resource == null:
+		return
+	
+	if _dialog_resource.has_dialog_entry(_next_uuid):
+		super()
+	else:
+		NFPluginGameHandler._log_msg(
+			"discourse",
+			"Can't advance to inexistend dialog entry '%s'." % _next_uuid,
+			NFPluginGameHandler._LogLevel.ERROR)
 
 
 func _get_bool_result(from_uuid: String) -> bool:

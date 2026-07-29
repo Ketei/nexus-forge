@@ -109,6 +109,9 @@ var collapsed_state: Dictionary[String, bool] = {}
 # {"is_node": false, "name": "", "items": {}}
 @export_storage var node_structure: Array[Dictionary] = []
 
+# Local ID map that builds as calls are made for optimization.
+var _id_map: Dictionary[StringName, StringName] = {}
+
 
 ## Returns the text of a localized string.
 func get_format_string(key: String, locale: String) -> String:
@@ -481,15 +484,6 @@ func register_node(node: DiscourseGraphNode, parent_frame: String = "") -> void:
 func remove_node(node_uuid: StringName) -> void:
 	node_data.erase(node_uuid)
 	localization.erase(node_uuid)
-
-
-## Builds and returns the custom ID static UUID relationship between nodes.[br]
-## The returned key is the custom ID, while the values are the unique UUIDs.
-func get_id_map() -> Dictionary[StringName, StringName]:
-	var map: Dictionary[StringName, StringName] = {}
-	for node_uuid in node_data.keys():
-		map[node_data[node_uuid]["name"]] = node_uuid
-	return map
 
 
 ## Clears the resource.
@@ -1254,6 +1248,20 @@ func get_display_localization_data(locale: String) -> Dictionary:
 	return data
 
 
+func find_id_from_uuid(uuid: StringName) -> Dictionary:
+	var dict: Dictionary = {"found": false, "id": &""}
+	
+	_buid_id_map()
+	
+	if not _id_map.has(uuid):
+		return dict
+	
+	dict["found"] = true
+	dict["id"] = _id_map[uuid]
+	
+	return dict
+
+
 func get_id_target(id: StringName) -> StringName:
 	for entry in node_data.keys():
 		if node_data[entry]["name"] == id:
@@ -1261,12 +1269,12 @@ func get_id_target(id: StringName) -> StringName:
 	return &""
 
 
-func has_id(id: String) -> bool:
-	for entry in node_data.keys():
-		if entry["name"] == id:
-			return true
-	return false
+func has_dialog_entry(id_or_uuid: String) -> bool:
+	_buid_id_map()
+	return node_data.has(id_or_uuid) or _id_map.has(id_or_uuid)
 
 
-func link_id(id: String, uuid: StringName) -> bool:
-	return false
+func _buid_id_map() -> void:
+	if _id_map.is_empty() and not node_data.is_empty():
+		for node_uuid in node_data.keys():
+			_id_map[node_uuid] = node_data[node_uuid]["name"]
