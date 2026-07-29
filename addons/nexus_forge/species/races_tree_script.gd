@@ -2,12 +2,13 @@
 extends Tree
 
 
-signal species_created(species_id: StringName, item: TreeItem)
+signal species_created(species_id: StringName)
 signal species_selected(species_id: StringName)
-signal species_erased(species_id: Array[StringName])
+signal erase_species_requested(species_id: StringName)
 signal species_id_changed(from: StringName, to: StringName)
 signal something_changed
-signal species_dehibridized(species_id: StringName)
+signal species_dehibridized(species_id: StringName, dom: StringName, sub: StringName)
+signal species_moved(species: StringName, from: StringName, to: StringName)
 
 const LineEditConfirmationDialog = preload("res://addons/nexus_forge/dialogs/lineedit_confirmation_dialog.gd")
 
@@ -72,63 +73,65 @@ func _gui_input(event: InputEvent) -> void:
 	# Have focus
 	# Not be an echo
 	# And be the delete key
-	if not event is InputEventKey or not has_focus() or event.is_echo() or not event.keycode == KEY_DELETE:
+	if not has_focus():
 		return
 	
-	var selected: TreeItem = get_selected()
-	
-	if selected == null:
-		accept_event()
-	
-	if event.is_echo() or get_selected() == null:
-		return
-	
-	accept_event()
-	
-	var all_species: Array[StringName] = get_subspecies_of(selected.get_metadata(0)["id"])
-	all_species.append(selected.get_metadata(0)["id"])
-	
-	if 0 < selected.get_child_count():
-		var dialog := preload("res://addons/nexus_forge/dialogs/confirmation.gd").new()
-		
-		dialog.title = "Delete species tree..."
-		dialog.dialog_text = str("Delete ", selected.get_text(0),  " and all subspecies?")
-		dialog.ok_button_text = "Delete All"
-		dialog.cancel_button_text = "Cancel"
-		dialog.initial_position = Window.WINDOW_INITIAL_POSITION_CENTER_MAIN_WINDOW_SCREEN
-		add_child(dialog)
-		dialog.show()
-		
-		var delete: bool = await dialog.dialog_finished
-		
-		if not delete:
-			dialog.queue_free()
+	if event is InputEventKey:
+		if event.echo or not event.pressed:
 			return
-	elif selected.get_metadata(0)["is_pointer"]: # We're pointing. Turn hybrid normal
-		var selected_id: StringName = selected.get_metadata(0)["id"]
-		remove_hybrid_pointer(selected)
-		something_changed.emit()
-		species_dehibridized.emit(selected_id)
+		
+		if event.keycode == KEY_DELETE:
+			var selected: TreeItem = get_selected()
+			
+			accept_event()
+			
+			if selected == null:
+				return
+			
+			if selected.get_metadata(0)["is_pointer"]: # We're pointing. Turn hybrid normal
+				var species_id: StringName = selected.get_metadata(0)["id"]
+				var dominant_species: StringName = _hybrid_pointers[species_id]["dom"]
+				var submissive: StringName = _hybrid_pointers[species_id]["sub"]
+				remove_hybrid_pointer(selected)
+				species_dehibridized.emit(species_id, get_dominant_gene(species_id), dominant_species, submissive)
+				return
+			
+			erase_species_requested.emit(selected.get_metadata(0)["id"])
+
+
+func dehybridize_species(species: StringName, new_dom: StringName = &"") -> void:
+	if not _hybrid_pointers.has(species) or (not new_dom.is_empty() and not _species_trees.has(new_dom)):
 		return
 	
-	var hybrid_pointers_erased: Dictionary[TreeItem, Variant] = {}
+	var tree: TreeItem = _species_trees[species]
+	var target: TreeItem = get_root() if new_dom.is_empty() else _species_trees[new_dom]
 	
-	for pointer in _scan_for_hybrid_pointers(selected):
-		if hybrid_pointers_erased.has(pointer):
-			continue
-		hybrid_pointers_erased[pointer] = null
+	if _hybrid_pointers[species]["dom"] != null:
+		_hybrid_pointers[species]["dom"].free()
+	if _hybrid_pointers[species]["sub"] != null:
+		_hybrid_pointers[species]["sub"].free()
 	
-	for pointer in hybrid_pointers_erased.keys():
-		remove_hybrid_pointer(pointer)
+	_hybrid_pointers.erase(species)
 	
-	if _hybrid_pointers.has(selected.get_metadata(0)["id"]):
-		_hybrid_pointers[selected.get_metadata(0)["id"]]["dom"].free()
-		_hybrid_pointers[selected.get_metadata(0)["id"]]["sub"].free()
-		_hybrid_pointers.erase(selected.get_metadata(0)["id"])
+	tree.get_parent().remove_child(tree)
+	target.add_child(tree)
+	sort_single_item(tree)
 	
-	_species_trees.erase(selected.get_metadata(0)["id"])
-	selected.free()
-	species_erased.emit(all_species)
+
+
+func remove_hybrid_link(hybrid: StringName, remove_species: StringName) -> void:
+	if not _hybrid_pointers.has_all([hybrid, remove_species]):
+		return
+	
+	var target_pointer: TreeItem = null
+	
+	if _hybrid_pointers[hybrid]["dom"] != null and _hybrid_pointers[hybrid]["dom"].get_metadata(0)["id"] == remove_species:
+		target_pointer = _hybrid_pointers[hybrid]["dom"]
+	elif _hybrid_pointers[hybrid]["sub"] != null and _hybrid_pointers[hybrid]["sub"].get_metadata(0)["id"] == remove_species:
+		target_pointer = _hybrid_pointers[hybrid]["sub"]
+	
+	if target_pointer != null:
+		remove_hybrid_pointer(target_pointer)
 
 
 func remove_hybrid_pointer(pointer: TreeItem) -> void:
@@ -161,7 +164,7 @@ func _scan_for_hybrid_pointers(from: TreeItem) -> Array[TreeItem]:
 
 func _get_drag_data(at_position: Vector2) -> Variant:
 	var node: TreeItem = get_item_at_position(at_position)
-	if node == null or node.get_metadata(0)["is_pointer"]:
+	if node == null or node.get_metadata(0)["is_pointer"] or _hybrid_pointers.has(node.get_metadata(0)["id"]):
 		return null
 	
 	var data: Dictionary = {
@@ -189,22 +192,28 @@ func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
 	var target_id: StringName = target_node.get_metadata(0)["id"]
 	var is_target_pointer: bool = target_node.get_metadata(0)["is_pointer"]
 	
-	return not species_has_subspecies(target_id, grabbed_id) and can_link_species(grabbed_id, target_id) and not is_target_pointer and target_node != data["node"] and not species_has_ancestor(target_id, grabbed_id)
+	return not species_has_subspecies(grabbed_id, target_id) and can_link_species(grabbed_id, target_id) and not is_target_pointer and target_node != data["node"] and not species_has_ancestor(target_id, grabbed_id)
 
 
 func _drop_data(at_position: Vector2, data: Variant) -> void:
-	if get_drop_section_at_position(at_position) == -100:
-		if data["node"].get_parent() == get_root():
-			return
-		data["node"].get_parent().remove_child(data["node"])
-		get_root().add_child(data["node"])
-	else:
-		var on_node: TreeItem = get_item_at_position(at_position)
-		if data["node"].get_parent() == on_node:
-			return
-		data["node"].get_parent().remove_child(data["node"])
-		on_node.add_child(data["node"])
-	sort_single_item(data["node"])
+	var new_parent: TreeItem = get_item_at_position(at_position)
+	var dropped_item: TreeItem = data["node"]
+	var original_parent: TreeItem = dropped_item.get_parent()
+	var root: TreeItem = get_root()
+	
+	if new_parent == null:
+		new_parent = root
+	
+	if original_parent == new_parent:
+		return
+	
+	var original_p_id: StringName = &"" if original_parent == root else original_parent.get_metadata(0)["id"]
+	var new_p_id: StringName = &"" if new_parent == root else new_parent.get_metadata(0)["id"]
+	
+	original_parent.remove_child(dropped_item)
+	new_parent.add_child(dropped_item)
+	sort_single_item(dropped_item)
+	species_moved.emit(dropped_item.get_metadata(0)["id"], original_p_id, new_p_id)
 
 
 func _on_item_mouse_selected(mouse_position: Vector2, mouse_button_index: int) -> void:
@@ -233,31 +242,7 @@ func _on_item_edited() -> void:
 	var old_id: StringName = edited.get_metadata(0)["id"]
 	var new_id: StringName = StringName(valid_name)
 	
-	edited.set_text(0, valid_name)
-	edited.get_metadata(0)["id"] = new_id
-	
-	if _hybrid_pointers.has(old_id):
-		var pointers: Array = [_hybrid_pointers[old_id]["dom"], _hybrid_pointers[old_id]["sub"]]
-		_hybrid_pointers[new_id] = _hybrid_pointers[old_id]
-		_hybrid_pointers.erase(old_id)
-		
-		for pointer: TreeItem in pointers:
-			if pointer == edited:
-				continue
-			pointer.set_text(0, valid_name)
-			pointer.get_metadata(0)["id"] = new_id
-			sort_single_item(pointer)
-	
-	if edited.get_metadata(0)["is_pointer"]:
-		var top_species: TreeItem = _species_trees[old_id]
-		top_species.set_text(0, valid_name)
-		top_species.get_metadata(0)["id"] = new_id
-		sort_single_item(top_species)
-	
-	_species_trees[new_id] = _species_trees[old_id]
-	_species_trees.erase(old_id)
-	
-	sort_single_item(edited)
+	set_species_id(old_id, new_id)
 	
 	species_id_changed.emit(old_id, new_id)
 
@@ -283,16 +268,12 @@ func _on_button_clicked(item: TreeItem, _column: int, id: int, mouse_button_inde
 		
 		if result[0]:
 			var race_id: StringName = StringName(result[1])
-			var new_race: TreeItem = add_species(race_id, false, item)
-			species_created.emit(
-					race_id,
-					new_race)
+			_add_species_on(race_id, item.get_metadata(0)["id"])
+			species_created.emit(race_id)
 		
 		id_creator.queue_free()
 	elif id == ButtonID.ERASE_SPECIES:
-		var types: Array[StringName] = [item.get_metadata(0)["id"]]
-		species_erased.emit(types)
-		item.free()
+		erase_species_requested.emit(item.get_metadata(0)["id"])
 	elif id == ButtonID.GO_TO_HYBRID:
 		var target: TreeItem = _species_trees[item.get_metadata(0)["id"]]
 		ensure_uncollapsed(item.get_metadata(0)["id"])
@@ -300,6 +281,76 @@ func _on_button_clicked(item: TreeItem, _column: int, id: int, mouse_button_inde
 		ensure_cursor_is_visible()
 		if not item.is_selected(0):
 			species_selected.emit(item.get_metadata(0)["id"])
+
+
+func set_species_id(old_id: StringName, new_id: StringName) -> void:
+	if not _species_trees.has(old_id) or _species_trees.has(new_id):
+		return
+	
+	var target: TreeItem = _species_trees[old_id]
+	var valid_name: String = String(new_id)
+	
+	if _hybrid_pointers.has(old_id):
+		var pointers: Array = [
+			_hybrid_pointers[old_id]["dom"],
+			_hybrid_pointers[old_id]["sub"]]
+		_hybrid_pointers[new_id] = _hybrid_pointers[old_id]
+		_hybrid_pointers.erase(old_id)
+		
+		for pointer: TreeItem in pointers:
+			pointer.set_text(0, valid_name)
+			pointer.get_metadata(0)["id"] = new_id
+			sort_single_item(pointer)
+	
+	target.set_text(0, valid_name)
+	target.get_metadata(0)["id"] = new_id
+	
+	_species_trees[new_id] = _species_trees[old_id]
+	_species_trees.erase(old_id)
+	
+	sort_single_item(target)
+
+
+
+func select_species(species_id: StringName, emit_select: bool) -> void:
+	if not _species_trees.has(species_id):
+		return
+	
+	_species_trees[species_id].select(0)
+	
+	if emit_select:
+		species_selected.emit(species_id)
+
+
+func has_species(species_id: StringName) -> bool:
+	return _species_trees.has(species_id)
+
+
+func erase_species(species_id: StringName) -> bool:
+	if not _species_trees.has(species_id):
+		return false
+	
+	var target: TreeItem = _species_trees[species_id]
+	
+	var hybrid_pointers_erased: Dictionary[TreeItem, Variant] = {}
+	
+	for pointer in _scan_for_hybrid_pointers(target):
+		if hybrid_pointers_erased.has(pointer):
+			continue
+		hybrid_pointers_erased[pointer] = null
+	
+	for pointer in hybrid_pointers_erased.keys():
+		remove_hybrid_pointer(pointer)
+	
+	if _hybrid_pointers.has(species_id):
+		_hybrid_pointers[species_id]["dom"].free()
+		_hybrid_pointers[species_id]["sub"].free()
+		_hybrid_pointers.erase(species_id)
+	
+	_species_trees.erase(species_id)
+	target.free()
+	
+	return true
 
 
 func is_species_hybrid(species_id: StringName) -> bool:
@@ -369,10 +420,35 @@ func get_all_species() -> Array[String]:
 	return races
 
 
-func add_species(race_id: StringName, select: bool = false, on: TreeItem = get_root()) -> TreeItem:
-	var new_race: TreeItem = on.create_child()
-	new_race.set_text(0, String(race_id))
-	new_race.set_metadata(0, {"id": race_id, "is_pointer": false})
+func create_species(species_id: StringName, on_species: StringName = &"") -> void:
+	if _add_species_on(species_id, on_species):
+		sort_single_item(_species_trees[species_id])
+
+
+func _add_species_on(new_id: StringName, on_species: StringName) -> bool:
+	if _species_trees.has(new_id):
+		var parent_tree: TreeItem = _species_trees[new_id].get_parent()
+		var parent_id: StringName = &"" if parent_tree == get_root() else _species_trees[new_id].get_parent().get_metadata(0)["id"]
+		if parent_id != on_species:
+			NFPluginGameHandler._log_msg(
+					"kindred - editor",
+					"Subspecies '%s' already exists under parent species '%s', can't add to '%s'." % [new_id, on_species, "[ORIGIN]" if parent_id.is_empty() else parent_id],
+					NFPluginGameHandler._LogLevel.ERROR)
+		return false
+	elif not on_species.is_empty() and not _species_trees.has(on_species):
+		NFPluginGameHandler._log_msg(
+				"kindred - editor",
+				"Unable to create subspecies '%s' on inexistent species '%s'." % [new_id, on_species],
+				NFPluginGameHandler._LogLevel.ERROR)
+		return false
+	elif species_has_subspecies(on_species, new_id):
+		return false
+	
+	var target: TreeItem = get_root() if on_species.is_empty() else _species_trees[on_species]
+	
+	var new_race: TreeItem = target.create_child()
+	new_race.set_text(0, String(new_id))
+	new_race.set_metadata(0, {"id": new_id, "is_pointer": false})
 	new_race.set_editable(0, true)
 	
 	new_race.add_button(
@@ -382,22 +458,9 @@ func add_species(race_id: StringName, select: bool = false, on: TreeItem = get_r
 			false,
 			"New subspecies")
 	
-	if select:
-		new_race.select(0)
+	_species_trees[new_id] = new_race
 	
-	sort_single_item(new_race)
-	
-	_species_trees[race_id] = new_race
-	
-	return new_race
-
-
-func create_species(species_id: StringName, on_species: StringName = &"") -> void:
-	if _species_trees.has(species_id) or (not on_species.is_empty() and not _species_trees.has(on_species)):
-		return
-	
-	var target: TreeItem = get_root() if on_species.is_empty() else _species_trees[on_species]
-	add_species(species_id, false, target)
+	return true
 
 
 func hybridize_species(hybrid_id: StringName, dominant: StringName, recessive: StringName) -> void:
@@ -406,7 +469,6 @@ func hybridize_species(hybrid_id: StringName, dominant: StringName, recessive: S
 	if not _species_trees.has_all(all_species):
 		return
 	
-	var group_id: String = UUID.generate_new()
 	var hybrid: TreeItem = _species_trees[hybrid_id]
 	
 	var root: TreeItem = get_root()
@@ -430,8 +492,6 @@ func hybridize_species(hybrid_id: StringName, dominant: StringName, recessive: S
 			_species_block[submissive_block.get_metadata(0)["id"]] = []
 		if not _species_block[submissive_block.get_metadata(0)["id"]].has(hybrid_id):
 			_species_block[submissive_block.get_metadata(0)["id"]].append(hybrid_id)
-	#var mix_a: TreeItem = _species_trees[parent_a]
-	#var mix_b: TreeItem = _species_trees[parent_b]
 	
 	# Move the hybrid node to the top.
 	# Add species pointers to parent a and b
@@ -443,25 +503,23 @@ func hybridize_species(hybrid_id: StringName, dominant: StringName, recessive: S
 	
 	add_hybrid_pointer_on(dominant, hybrid_id, true)
 	add_hybrid_pointer_on(recessive, hybrid_id, false)
-	
-	# Set hybrid color
 
 
-func add_hybrid_pointer_on(species: StringName, hybrid_species: StringName, dominant: bool) -> TreeItem:
+func add_hybrid_pointer_on(species: StringName, pointer_id: StringName, dominant: bool) -> void:
 	if not _species_trees.has(species):
-		return null
+		return
 	
 	var pointer: TreeItem = _species_trees[species].create_child()
-	pointer.set_metadata(0, {"id": hybrid_species, "is_pointer": true})
-	pointer.set_text(0, String(hybrid_species))
+	pointer.set_metadata(0, {"id": pointer_id, "is_pointer": true})
+	pointer.set_text(0, String(pointer_id))
 	pointer.set_editable(0, true)
 	sort_single_item(pointer)
-	if not _hybrid_pointers.has(hybrid_species):
-		_hybrid_pointers[hybrid_species] = {"dom": null, "sub": null}
+	if not _hybrid_pointers.has(pointer_id):
+		_hybrid_pointers[pointer_id] = {"dom": null, "sub": null}
 	if dominant:
-		_hybrid_pointers[hybrid_species]["dom"] = pointer
+		_hybrid_pointers[pointer_id]["dom"] = pointer
 	else:
-		_hybrid_pointers[hybrid_species]["sub"] = pointer
+		_hybrid_pointers[pointer_id]["sub"] = pointer
 	
 	pointer.set_custom_color(0, Color(0.778, 0.633, 1.0))
 	pointer.add_button(
@@ -470,35 +528,22 @@ func add_hybrid_pointer_on(species: StringName, hybrid_species: StringName, domi
 			ButtonID.GO_TO_HYBRID,
 			false,
 			"Go to Hybrid Entry")
-	
-	return pointer
-
-
-func add_subspecies_to(species: StringName, subspecies_id: StringName, select: bool = false) -> TreeItem:
-	if species.is_empty():
-		return add_species(subspecies_id, select)
-	elif _species_trees.has(species):
-		return add_species(subspecies_id, select, _species_trees[species])
-	else:
-		return null
 
 
 func set_species_as_subspecies_of(species: StringName, dom_species: StringName) -> void:
-	if not _species_trees.has(species):
+	if not _species_trees.has(species) or (not dom_species.is_empty() and not _species_trees.has(dom_species)):
 		return
 	
 	var target: TreeItem = _species_trees[species]
-	if dom_species.is_empty():
-		if target.get_parent() != get_root():
-			target.get_parent().remove_child(target)
-			get_root().add_child(target)
-			sort_single_item(target)
-	else:
-		if not _species_trees.has(dom_species) or target.get_parent() == _species_trees[dom_species]:
-			return
-		target.get_parent().remove_child(target)
-		_species_trees[dom_species].add_child(target)
-		sort_single_item(target)
+	var new_parent: TreeItem = get_root() if dom_species.is_empty() else _species_trees[dom_species]
+	
+	if target.get_parent() == new_parent:
+		return
+	
+	target.get_parent().remove_child(target)
+	new_parent.add_child(target)
+	
+	sort_single_item(target)
 
 
 func get_subspecies_of(species_id: StringName) -> Array[StringName]:
@@ -512,6 +557,91 @@ func get_subspecies_of(species_id: StringName) -> Array[StringName]:
 		subspecies.append_array(get_subspecies_of(species_item.get_metadata(0)["id"]))
 	
 	return subspecies
+
+
+func has_subspecies(species_id: StringName) -> bool:
+	if _species_trees.has(species_id):
+		return 0 < _species_trees[species_id].get_child_count()
+	return false
+
+
+func get_subspecies_map_of(species_id: StringName) -> Dictionary[StringName, Dictionary]:
+	var map: Dictionary[StringName, Dictionary] = {}
+	if not _species_trees.has(species_id):
+		return map
+	map = {
+		species_id: {
+			"hybrid_flag": is_species_hybrid(species_id),
+			"dominant": get_dominant_gene(species_id),
+			"recessive": get_recessive_gene(species_id),
+			"subspecies": _map_subspecies_of(species_id)}}
+	
+	return map
+
+
+func get_natural_subspecies_of(species_id: StringName) -> Array[StringName]:
+	var sub_keys: Array[StringName] = []
+	if not _species_trees.has(species_id):
+		return sub_keys
+	var subspecies: Dictionary[StringName, Variant] = {}
+	
+	_recursive_get_subspecies_of(species_id, false, subspecies)
+	sub_keys.assign(subspecies.keys())
+	return sub_keys
+
+
+func _recursive_get_subspecies_of(species_id: StringName, include_hybrid: bool, _on: Dictionary[StringName, Variant]) -> void:
+	for subspecies in _species_trees[species_id].get_children():
+		var id: StringName = subspecies.get_metadata(0)["id"]
+		if is_species_hybrid(id):
+			if include_hybrid:
+				_on[id] = null
+		else:
+			_on[id] = null
+		_recursive_get_subspecies_of(id, include_hybrid, _on)
+
+
+func _map_subspecies_of(species_id: StringName) -> Dictionary[StringName, Dictionary]:
+	var map: Dictionary[StringName, Dictionary] = {}
+	
+	if not _species_trees.has(species_id):
+		return map
+	
+	for item in _species_trees[species_id].get_children():
+		var sub_id: StringName = item.get_metadata(0)["id"]
+		map[sub_id] = {
+				"hybrid_flag": item.get_metadata(0)["is_pointer"],
+				"dominant": get_dominant_gene(sub_id),
+				"recessive": get_recessive_gene(sub_id),
+				"subspecies": _map_subspecies_of(sub_id)}
+	return map
+
+
+func _restore_tree(map: Dictionary, on_species: StringName = &"") -> void:
+	if not on_species.is_empty() and not _species_trees.has(on_species):
+		return
+	
+	_iterate_restore_species(map, on_species)
+	_iterate_restore_hybrid_pointers(map)
+
+
+func _iterate_restore_species(map: Dictionary, on: StringName) -> void:
+	for species_id in map.keys():
+		if map[species_id]["hybrid_flag"]:
+			if not _species_trees.has(species_id):
+				_add_species_on(species_id, &"")
+		else:
+			_add_species_on(species_id, on)
+		
+		_iterate_restore_species(map[species_id]["subspecies"], species_id)
+
+
+func _iterate_restore_hybrid_pointers(map: Dictionary) -> void:
+	for id in map.keys():
+		if map[id]["hybrid_flag"]:
+			hybridize_species(id, map[id]["dominant"], map[id]["recessive"])
+		
+		_iterate_restore_hybrid_pointers(map[id]["subspecies"])
 
 
 func get_species_tree(_from: TreeItem = get_root()) -> Dictionary:
@@ -613,12 +743,13 @@ func clear_species() -> void:
 		item.free()
 
 
-func species_has_subspecies(species: StringName, subspecies: StringName) -> bool:
-	if not _species_trees.has_all([species, subspecies]):
+func species_has_subspecies(subspecies: StringName, species: StringName = &"") -> bool:
+	if not species.is_empty() and not _species_trees.has(species):
 		return false
 	
-	var sub_item: TreeItem = _species_trees[subspecies]
-	for item in _species_trees[species].get_children():
+	var target: TreeItem = get_root() if species.is_empty() else _species_trees[species]
+	
+	for item in target.get_children():
 		if item.get_metadata(0)["id"] == subspecies:
 			return true
 	return false

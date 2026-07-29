@@ -277,6 +277,18 @@ func create_species(species_id: StringName, parent_species: StringName = &"", re
 	_species[species_id] = new_species
 
 
+func get_subspecies_of(from_species: StringName) -> Array[StringName]:
+	var ids: Array[StringName] = []
+	if not _species.has(from_species):
+		ids
+	
+	for species_id in _species.keys():
+		if _species[species_id]["parent_dominant"] == from_species or _species[species_id]["parent_recessive"] == from_species:
+			ids.append(species_id)
+	
+	return ids
+
+
 ## Creates a new species using a [SpeciesSheet]. Creation will fail if the species
 ## already exists.[br]
 ## [param subspecies_of] will allow you to set [param species_sheet] as a subspecies

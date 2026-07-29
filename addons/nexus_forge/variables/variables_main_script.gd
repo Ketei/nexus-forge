@@ -2,6 +2,8 @@
 extends PanelContainer
 
 
+const UNDO_MAX_STEPS: int = 50
+
 var _variables_resource: BlackboardData = null
 var _switching_tree: bool = false
 var _current_folder: String = "":
@@ -52,15 +54,33 @@ func _input(event: InputEvent) -> void:
 	if event.keycode == KEY_Z and event.ctrl_pressed:
 		if event.shift_pressed:
 			if undo.has_redo():
+				var action_name: String = undo.get_action_name(undo.get_current_action() + 1)
 				undo.redo()
+				NFPluginGameHandler._log_msg(
+						"",
+						"Redo: " + action_name,
+						NFPluginGameHandler._LogLevel.EDITOR)
+				on_something_changed()
 		else:
 			if undo.has_undo():
+				var action_name: String = undo.get_current_action_name()
 				undo.undo()
+				NFPluginGameHandler._log_msg(
+						"",
+						"Undo: " + action_name,
+						NFPluginGameHandler._LogLevel.EDITOR)
+				on_something_changed()
 		
 		get_viewport().set_input_as_handled()
 	elif event.keycode == KEY_Y and event.ctrl_pressed:
 		if undo.has_redo():
+			var action_name: String = undo.get_action_name(undo.get_current_action() + 1)
 			undo.redo()
+			NFPluginGameHandler._log_msg(
+					"",
+					"Redo: " + action_name,
+					NFPluginGameHandler._LogLevel.EDITOR)
+			on_something_changed()
 		get_viewport().set_input_as_handled()
 
 
@@ -68,7 +88,7 @@ func ready_plugin() -> void:
 	folders_tree.ready_plugin()
 	variables_tree.ready_plugin()
 	undo = UndoRedo.new()
-	undo.max_steps = 50
+	undo.max_steps = UNDO_MAX_STEPS
 	
 	reload_resource(true)
 	
@@ -177,7 +197,12 @@ func _on_variable_updated(variable_id: String, value: Variant) -> void:
 	if typeof(value) == type and value == old_value:
 		return
 	
-	var action_name: String = "Delete Variable" if type == TYPE_NIL else "Update Variable"
+	var action_name: String = ""
+	
+	if type == TYPE_NIL:
+		action_name = "Delete Variable '%s'" % variable_id
+	else:
+		action_name = "Update Variable '%s'" % variable_id
 	
 	undo.create_action(action_name)
 	undo.add_do_method(_apply_variable_update.bind(path, value, false))
@@ -383,7 +408,7 @@ func _on_folder_deleted(folder_path: String) -> void:
 	
 	var folder_data: Dictionary[StringName, Dictionary] = get_folder_deletion_data(folder_path)
 	
-	undo.create_action("Delete Folder")
+	undo.create_action("Delete Folder '%s'" % folder_path)
 	undo.add_do_method(_do_folder_delete.bind(folder_path))
 	undo.add_undo_method(_undo_folder_delete.bind(folder_data, folder_path))
 	undo.commit_action(false)

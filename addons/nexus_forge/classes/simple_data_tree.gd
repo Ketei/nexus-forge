@@ -4,7 +4,6 @@ extends IDTree
 
 signal item_deleted
 signal data_changed
-signal data_moved(was_dropped: bool)
 
 enum ItemType {
 	DATA,
@@ -21,7 +20,8 @@ enum ButtonIds {
 	TYPE_MENU,
 }
 
-const RANGE_MAX: int = 9999
+const RANGE_CEIL: int = 9999
+const RANGE_FLOOR: int = -9999
 const RANGE_FLOAT_STEP: float = 0.01
 
 @export var allow_drag_and_drop: bool = false
@@ -60,7 +60,7 @@ func ready_plugin() -> void:
 	ICON_VARIABLE = get_theme_icon("Variant", "EditorIcons")
 	id_cell = 0
 	
-	if 0 < undo_redo_steps:
+	if _undo == null and 0 < undo_redo_steps:
 		_undo = UndoRedo.new()
 		_undo.max_steps = undo_redo_steps
 	
@@ -124,6 +124,10 @@ func has_undo() -> bool:
 
 func get_undo() -> UndoRedo:
 	return _undo
+
+
+func set_undo(object: UndoRedo) -> void:
+	_undo = object
 
 
 func _on_compact_menu_id_pressed(id: int) -> void:
@@ -287,114 +291,74 @@ func _drop_data(at_position: Vector2, data: Variant) -> void:
 	if not allow_drag_and_drop:
 		return
 	
-	var target: TreeItem = get_item_at_position(at_position)
 	var object: TreeItem = data["tree"]
-	var origin_tree: Tree = object.get_tree()
-	var target_path: String = _get_data_path(target)
-	var original_path: String = _get_data_path(object)
-	var original_index: int = object.get_index()
-	var new_path: String = ""
+	var drop_target: TreeItem = get_item_at_position(at_position)
+	var new_parent: TreeItem = null
 	var from_this_tree: bool = _is_in_tree(object)
-	var log_undo: bool = true
+	var original_index: int = object.get_index()
+	var original_path: String = _get_data_path(object)
+	var new_index: int = -1
 	
-	if target == null: # Dropping at root
-		var root_count: int = get_root().get_child_count()
-		if object.get_parent() == get_root(): # Same parents
-			if 0 < root_count - 1 and original_index < root_count - 1:
-				object.move_after(get_root().get_child(-1))
-			log_undo = false
-		else:
-			if _tree_has_id(get_root(), object.get_metadata(0)["name"]):
-				var new_id: String = get_unique_id(get_root(), object.get_metadata(0)["name"])
-				object.set_text(0, new_id)
-				object.get_metadata(0)["name"] = new_id
-			if 0 < root_count:
-				object.move_after(get_root().get_child(-1))
-			else:
-				object.get_parent().remove_child(object)
-				get_root().add_child(object)
-			new_path = _get_data_path(object)
+	if drop_target == null:
+		new_parent = get_root()
+		new_index = -1
 	else:
-		var different_parents: bool = object.get_parent() != target
-		if different_parents:
-			log_undo = true
-			if _tree_has_id(target, object.get_metadata(0)["name"]):
-				var new_name: String = get_unique_id(target, object.get_metadata(0)["name"])
-				object.set_text(0, new_name)
-				object.get_metadata(0)["name"] = new_name
-		else:
-			log_undo = false
-		
+		var same_parent_shift: bool = from_this_tree and object.get_parent() == drop_target.get_parent() and object.get_index() < drop_target.get_index()
 		var drop_position: int = get_drop_section_at_position(at_position)
 		match drop_position:
 			-1: # Above
-				object.move_before(target)
+				new_parent = drop_target.get_parent()
+				new_index = drop_target.get_index()
+				if same_parent_shift:
+					new_index -=1
 			0: # On
-				object.get_parent().remove_child(object)
-				target.add_child(object)
+				new_index = -1
+				new_parent = drop_target
 			1: # Below
-				if target.get_metadata(0)["type"] == ItemType.FOLDER and not target.collapsed and 0 < target.get_child_count():
-					object.move_before(target.get_first_child())
+				if drop_target.get_metadata(0)["type"] == ItemType.FOLDER and not drop_target.collapsed and 0 < drop_target.get_child_count():
+					new_index = 0
+					new_parent = drop_target
 				else:
-					object.move_after(target)
+					new_parent = drop_target.get_parent()
+					new_index = drop_target.get_index()
+					if not same_parent_shift:
+						new_index += 1
+	
+	var drop_id: String = object.get_metadata(0)["name"]
+	if _tree_has_id(new_parent, drop_id):
+		drop_id = get_unique_id(new_parent, drop_id)
+	var drop_path: String = _get_data_path(new_parent).path_join(drop_id)
+	
+	if from_this_tree:
+		if object.get_parent() != new_parent:
+			object.get_parent().remove_child(object)
+			new_parent.add_child(object)
+		if drop_id != object.get_metadata(0)["name"]:
+			object.set_text(0, drop_id)
+			object.get_metadata(0)["name"] = drop_id
 		
-		new_path = _get_data_path(object)
-	
-	var new_index: int = object.get_index()
-	
-	if _undo != null and log_undo:
-		_undo.create_action("Drop Data")
-		if from_this_tree:
-			_undo.add_do_method(_do_move_item.bind(original_path, new_path, new_index))
-			_undo.add_undo_method(_do_move_item.bind(new_path, original_path, original_index))
-		else:
-			if origin_tree.get_script() == get_script() and origin_tree.has_undo(): # Same script
-				# --- Undo from this tree ---
-				var other_tree: WeakRef = weakref(origin_tree)
-				_undo.add_undo_method(_weak_call.bind(
-						other_tree,
-						&"_undo_erase_data",
-						[original_path, get_data_cell_data(object), original_index]))
-				_undo.add_do_method(
-						_weak_call.bind(
-								other_tree,
-								&"_do_erase_data",
-								[original_path]))
-				
-				# --- Undo from the other tree ---
-				var origin_undo: UndoRedo = origin_tree.get_undo()
-				origin_undo.create_action("Drag Data")
-				origin_undo.add_do_method(origin_tree._do_erase_data.bind(original_path))
-				origin_undo.add_do_method(origin_tree._weak_call.bind(
-					weakref(self),
-					&"_do_add_data",
-					[new_path, get_data_cell_data(object), new_index]))
-				origin_undo.add_undo_method(
-						origin_tree._do_add_data.bind(
-								original_path,
-								get_data_cell_data(object),
-								original_index))
-				origin_undo.add_undo_method(origin_tree._weak_call.bind(
-						weakref(self),
-						&"_do_erase_data",
-						[new_path]))
-				origin_undo.commit_action(false)
-				
-				origin_tree.data_moved.emit(false)
-			
-			_undo.add_do_method(_do_add_data.bind(new_path, get_data_cell_data(object), new_index))
-			_undo.add_undo_method(_do_erase_data.bind(new_path))
+		if new_parent.get_child(new_index) != object:
+			if new_index <= -1:
+				object.move_after(new_parent.get_child(-1))
+			elif new_index == 0:
+				object.move_before(new_parent.get_first_child())
+			else:
+				object.move_after(new_parent.get_child(new_index - 1))
+		
+		_undo.create_action("Move Data")
+		_undo.add_do_method(_do_move_item.bind(original_path, drop_path, new_index))
+		_undo.add_undo_method(_do_move_item.bind(drop_path, original_path, original_index))
 		_undo.commit_action(false)
-		data_moved.emit(true)
 	else:
-		data_changed.emit()
-
-
-func _weak_call(target: WeakRef, method: StringName, data: Array) -> void:
-	if target.get_ref() == null:
-		return
-	var tree: Tree = target.get_ref()
-	tree.callv(method, data)
+		_undo.create_action("Drop Data")
+		_undo.add_do_method(_undo_erase_data.bind( # _undo_erase has path validation unlike _do_add_data
+				drop_path,
+				get_data_cell_data(object),
+				new_index))
+		_undo.add_undo_method(_do_erase_data.bind(drop_path))
+		_undo.commit_action(true)
+	
+	data_changed.emit()
 
 
 func undo() -> void:
@@ -410,7 +374,7 @@ func redo() -> void:
 func clear_data(clear_undo: bool = true) -> void:
 	clear()
 	create_item()
-	if _undo != null and clear_undo:
+	if  clear_undo and _undo != null and is_instance_valid(_undo):
 		_undo.clear_history()
 
 
@@ -568,14 +532,14 @@ func _do_update_item_data(path: String, data: Variant) -> void:
 				item.set_icon(0, ICON_INT)
 				item.set_metadata(1, TYPE_INT)
 				item.set_cell_mode(1, TreeItem.CELL_MODE_RANGE)
-				item.set_range_config(1, -RANGE_MAX, RANGE_MAX, 1.0)
+				item.set_range_config(1, RANGE_FLOOR, RANGE_CEIL, 1.0)
 				item.set_range(1, data)
 				item.set_editable(1, true)
 			TYPE_FLOAT:
 				item.set_icon(0, ICON_FLOAT)
 				item.set_metadata(1, TYPE_FLOAT)
 				item.set_cell_mode(1, TreeItem.CELL_MODE_RANGE)
-				item.set_range_config(1, -RANGE_MAX, RANGE_MAX, RANGE_FLOAT_STEP)
+				item.set_range_config(1, RANGE_FLOOR, RANGE_CEIL, RANGE_FLOAT_STEP)
 				item.set_range(1, data)
 				item.set_editable(1, true)
 			TYPE_BOOL:
@@ -674,14 +638,14 @@ func _add_data_to_tree(new_name: String, data: Variant, on_node: TreeItem = get_
 			new_data.set_icon(0, ICON_INT)
 			new_data.set_metadata(1, TYPE_INT)
 			new_data.set_cell_mode(1, TreeItem.CELL_MODE_RANGE)
-			new_data.set_range_config(1, -RANGE_MAX, RANGE_MAX, 1.0)
+			new_data.set_range_config(1, RANGE_FLOOR, RANGE_CEIL, 1.0)
 			new_data.set_range(1, data)
 			new_data.set_editable(1, true)
 		TYPE_FLOAT:
 			new_data.set_icon(0, ICON_FLOAT)
 			new_data.set_metadata(1, TYPE_FLOAT)
 			new_data.set_cell_mode(1, TreeItem.CELL_MODE_RANGE)
-			new_data.set_range_config(1, -RANGE_MAX, RANGE_MAX, RANGE_FLOAT_STEP)
+			new_data.set_range_config(1, RANGE_FLOOR, RANGE_CEIL, RANGE_FLOAT_STEP)
 			new_data.set_range(1, data)
 			new_data.set_editable(1, true)
 		TYPE_BOOL:
@@ -822,6 +786,7 @@ func on_data_edited() -> void:
 						emit_update = false
 					else:
 						edited.get_metadata(0)["value"] = to
+		
 		if _undo != null and log_undo:
 			_undo.create_action("Update Data")
 			_undo.add_do_method(_do_update_item_data.bind(path, to))

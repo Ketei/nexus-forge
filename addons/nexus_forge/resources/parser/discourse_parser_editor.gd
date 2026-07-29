@@ -33,9 +33,7 @@ func load_dialog(path: String, starting_id: StringName = &"") -> bool:
 		_conversation_cache.cache_resource(res)
 		_dialog_resource = res
 	
-	if _dialog_resource.id_map.has(starting_id):
-		_next_uuid = _dialog_resource.id_map[starting_id]
-	elif _dialog_resource.node_data.has(starting_id):
+	if _dialog_resource.node_data.has(starting_id):
 		_next_uuid = starting_id
 	else:
 		_next_uuid = _dialog_resource.entry_node

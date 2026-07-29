@@ -2,20 +2,22 @@
 extends PanelContainer
 
 
-const DATA_RANGE_LIMIT: int = 9999
 const DATA_FLOAT_STEP: float = 0.01
+const UNDO_MAX_STEPS: int = 50
 
 var _skills_resource: SkillCatalog
 var _traits_resource: TraitCatalog
 var _stats_resource: StatCatalog
 
+var _skills_unsaved: bool = false
+var _traits_unsaved: bool = false
+var _stats_unsaved: bool = false
+
 var loaded_skill: StringName = &""
 var loaded_trait: StringName = &""
 var loaded_stat: StringName = &""
 
-var _skills_unsaved: bool = false
-var _traits_unsaved: bool = false
-var _stats_unsaved: bool = false
+var undo: UndoRedo = null
 
 @onready var skill_opt_btn: OptionButton = $MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer/SkillSelectContainer/SkillContainer/SkillOptBtn
 @onready var skill_ln_edt: LineEdit = $MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer/NameContainer/SkillLnEdt
@@ -53,17 +55,23 @@ var _stats_unsaved: bool = false
 
 
 func ready_plugin(stats_enabled: bool, skills_enabled: bool, traits_enabled: bool) -> void:
+	undo = UndoRedo.new()
+	undo.max_steps = UNDO_MAX_STEPS
+	
 	if stats_enabled:
+		stat_data_tree.undo_redo_steps = UNDO_MAX_STEPS
 		stat_data_tree.ready_plugin()
 		reload_stats(true)
 		reload_stat_resource(true)
 	
 	if skills_enabled:
+		skill_data_tree.undo_redo_steps = UNDO_MAX_STEPS
 		skill_data_tree.ready_plugin()
 		reload_skills(false)
 		reload_skill_resource(true)
 	
 	if traits_enabled:
+		skill_data_tree.undo_redo_steps = UNDO_MAX_STEPS
 		trait_data_tree.ready_plugin()
 		reload_traits(false)
 		reload_trait_resource(true)
@@ -98,8 +106,10 @@ func ready_plugin(stats_enabled: bool, skills_enabled: bool, traits_enabled: boo
 	set_stats_ui_enabled(0 < stat_opt_btn.item_count if stats_enabled else false)
 	
 	if stats_enabled:
-		stat_ln_edt.text_changed.connect(stats_changed)
-		stat_desc_txt_edt.text_changed.connect(stats_changed)
+		stat_ln_edt.text_changed.connect(_on_stats_changed)
+		stat_ln_edt.editing_toggled.connect(_on_name_line_edit_toggled.bind(stat_ln_edt, 0))
+		stat_desc_txt_edt.text_changed.connect(_on_stats_changed)
+		stat_desc_txt_edt.focus_exited.connect(_on_text_edit_focus_lost.bind(stat_desc_txt_edt))
 		stat_opt_btn.item_selected.connect(_on_stat_selected, CONNECT_DEFERRED)
 		stat_int_btn.pressed.connect(_on_add_stat_data_pressed.bind("new_int", 0))
 		stat_flt_btn.pressed.connect(_on_add_stat_data_pressed.bind("new_float", 0.0))
@@ -107,11 +117,13 @@ func ready_plugin(stats_enabled: bool, skills_enabled: bool, traits_enabled: boo
 		stat_str_btn.pressed.connect(_on_add_stat_data_pressed.bind("new_string", ""))
 		stat_dict_button.pressed.connect(_on_add_stat_data_pressed.bind("new_folder", {}))
 		edit_stats_btn.pressed.connect(_on_edit_statblock_pressed)
-		stat_data_tree.data_changed.connect(stats_changed)
+		stat_data_tree.data_changed.connect(_on_data_tree_updated.bind(0))
 	
 	if skills_enabled:
-		skill_ln_edt.text_changed.connect(skills_changed)
-		skill_desc_txt_edt.text_changed.connect(skills_changed)
+		skill_ln_edt.text_changed.connect(_on_skills_changed)
+		skill_ln_edt.editing_toggled.connect(_on_name_line_edit_toggled.bind(skill_ln_edt, 1))
+		skill_desc_txt_edt.text_changed.connect(_on_skills_changed)
+		skill_desc_txt_edt.focus_exited.connect(_on_text_edit_focus_lost.bind(skill_desc_txt_edt))
 		skill_int_btn.pressed.connect(_on_add_skill_data_pressed.bind("new_int", 0))
 		skill_flt_btn.pressed.connect(_on_add_skill_data_pressed.bind("new_float", 0.0))
 		skill_bool_btn.pressed.connect(_on_add_skill_data_pressed.bind("new_bool", false))
@@ -119,11 +131,13 @@ func ready_plugin(stats_enabled: bool, skills_enabled: bool, traits_enabled: boo
 		skill_dict_button.pressed.connect(_on_add_skill_data_pressed.bind("new_folder", {}))
 		skill_opt_btn.item_selected.connect(_on_skill_selected, CONNECT_DEFERRED)
 		edit_skills_btn.pressed.connect(_on_edit_skillset_pressed)
-		skill_data_tree.data_changed.connect(skills_changed)
+		skill_data_tree.data_changed.connect(_on_data_tree_updated.bind(1))
 	
 	if traits_enabled:
-		trait_ln_edt.text_changed.connect(traits_changed)
-		trait_desc_txt_edt.text_changed.connect(traits_changed)
+		trait_ln_edt.text_changed.connect(_on_traits_changed)
+		trait_ln_edt.editing_toggled.connect(_on_name_line_edit_toggled.bind(trait_ln_edt, 3))
+		trait_desc_txt_edt.text_changed.connect(_on_traits_changed)
+		trait_desc_txt_edt.focus_exited.connect(_on_text_edit_focus_lost.bind(trait_desc_txt_edt))
 		trait_opt_btn.item_selected.connect(_on_trait_selected, CONNECT_DEFERRED)
 		trait_int_btn.pressed.connect(_on_add_trait_data_pressed.bind("new_int", 0))
 		trait_flt_btn.pressed.connect(_on_add_trait_data_pressed.bind("new_float", 0.0))
@@ -131,7 +145,51 @@ func ready_plugin(stats_enabled: bool, skills_enabled: bool, traits_enabled: boo
 		trait_str_btn.pressed.connect(_on_add_trait_data_pressed.bind("new_string", ""))
 		trait_dict_btn.pressed.connect(_on_add_trait_data_pressed.bind("new_folder", {}))
 		edit_traits_btn.pressed.connect(_on_edit_traitblock_pressed)
-		trait_data_tree.data_changed.connect(traits_changed)
+		trait_data_tree.data_changed.connect(_on_data_tree_updated.bind(2))
+
+
+func _input(event: InputEvent) -> void:
+	if undo == null:
+		return
+	
+	if event is InputEventKey:
+		if event.echo or not event.pressed or not event.ctrl_pressed:
+			return
+		
+		var current_focus: Control = get_viewport().gui_get_focus_owner()
+		
+		if current_focus != null:
+			if current_focus is LineEdit:
+				if current_focus.is_editing():
+					return
+			elif current_focus is TextEdit:
+				return
+		
+		if event.keycode == KEY_Z:
+			if event.shift_pressed:
+				if undo.has_redo():
+					var action_name: String = undo.get_action_name(undo.get_current_action() + 1)
+					undo.redo()
+					NFPluginGameHandler._log_msg(
+							"",
+							"Redo: " + action_name,
+							NFPluginGameHandler._LogLevel.EDITOR)
+			else:
+				if undo.has_undo():
+					var action_name: String = undo.get_current_action_name()
+					undo.undo()
+					NFPluginGameHandler._log_msg(
+							"",
+							"Undo: " + action_name,
+							NFPluginGameHandler._LogLevel.EDITOR)
+		elif event.keycode == KEY_Y and not event.shift_pressed:
+			if undo.has_redo():
+					var action_name: String = undo.get_action_name(undo.get_current_action() + 1)
+					undo.redo()
+					NFPluginGameHandler._log_msg(
+							"",
+							"Redo: " + action_name,
+							NFPluginGameHandler._LogLevel.EDITOR)
 
 
 func _on_edit_skillset_pressed() -> void:
@@ -314,7 +372,12 @@ func _on_skill_resource_dropped(resource: Resource, panel: Control) -> void:
 
 func _on_add_skill_data_pressed(data_name: String, data: Variant) -> void:
 	skill_data_tree.add_data(data_name, data)
-	skills_changed()
+	if skill_data_tree.has_undo():
+		undo.create_action("Data Changed")
+		undo.add_do_method(skill_data_tree.redo)
+		undo.add_undo_method(skill_data_tree.undo)
+		undo.commit_action(false)
+	_on_skills_changed()
 
 
 func _on_skill_selected(skill_idx: int) -> void:
@@ -346,29 +409,27 @@ func _on_skill_selected(skill_idx: int) -> void:
 
 
 func load_skill(skill_id: StringName) -> void:
-	skill_ln_edt.text = DictUtils.get_nested_value(
-			_skills_resource._skill_data,
-			[skill_id, "name"],
-			"",
-			true)
-	skill_desc_txt_edt.text = DictUtils.get_nested_value(
-			_skills_resource._skill_data,
-			[skill_id, "description"],
-			"",
-			true)
-	
-	skill_data_tree.clear_data()
-	
+	var skill_name: String = _skills_resource.get_skill_name(skill_id)
+	var skill_desc: String = _skills_resource.get_skill_description(skill_id)
 	var data: Dictionary = DictUtils.get_nested_value(
 			_skills_resource._skill_data,
 			[skill_id, "data"],
 			{},
 			true)
 	
+	skill_ln_edt.text = skill_name
+	skill_ln_edt.set_meta(&"old_value", skill_name)
+	
+	skill_desc_txt_edt.text = skill_desc
+	skill_desc_txt_edt.set_meta(&"old_value", skill_desc)
+	
+	skill_data_tree.clear_data(false)
+	
 	for data_key in data.keys():
 		skill_data_tree.add_data(
 			data_key,
-			data[data_key])
+			data[data_key],
+			true)
 
 
 func load_skills_resource() -> void:
@@ -580,7 +641,12 @@ func _on_traits_resource_dropped(resource: Resource, panel: Control) -> void:
 
 func _on_add_trait_data_pressed(data_name: String, data: Variant) -> void:
 	trait_data_tree.add_data(data_name, data)
-	traits_changed()
+	if trait_data_tree.has_undo():
+		undo.create_action("Data Changed")
+		undo.add_do_method(trait_data_tree.redo)
+		undo.add_undo_method(trait_data_tree.undo)
+		undo.commit_action(false)
+	_on_traits_changed()
 
 
 func _on_trait_selected(trait_idx: int) -> void:
@@ -607,21 +673,27 @@ func _on_trait_selected(trait_idx: int) -> void:
 
 
 func load_trait(trait_id: StringName) -> void:
-	trait_ln_edt.text = _traits_resource._trait_data[trait_id]["name"]
-	trait_desc_txt_edt.text = _traits_resource._trait_data[trait_id]["description"]
-	
-	trait_data_tree.clear_data()
-	
+	var trait_name: String = _traits_resource.get_trait_name(trait_id)
+	var trait_desc: String = _traits_resource.get_trait_description(trait_id)
 	var data: Dictionary = DictUtils.get_nested_value(
 			_traits_resource._trait_data,
 			[trait_id, "data"],
 			{},
 			true)
 	
+	trait_ln_edt.text = trait_name
+	trait_ln_edt.set_meta(&"old_value", trait_name)
+	
+	trait_desc_txt_edt.text = trait_desc
+	trait_desc_txt_edt.set_meta(&"old_value", trait_desc)
+	
+	trait_data_tree.clear_data(false)
+	
 	for data_key in data.keys():
 		trait_data_tree.add_data(
 			data_key,
-			data[data_key])
+			data[data_key],
+			true)
 
 
 func set_traits_ui_enabled(enabled: bool) -> void:
@@ -847,7 +919,12 @@ func _on_stat_resource_dropped(resource: Resource, panel: Control) -> void:
 
 func _on_add_stat_data_pressed(data_name: String, data: Variant) -> void:
 	stat_data_tree.add_data(data_name, data)
-	stats_changed()
+	if stat_data_tree.has_undo():
+		undo.create_action("Data Changed")
+		undo.add_do_method(stat_data_tree.redo)
+		undo.add_undo_method(stat_data_tree.undo)
+		undo.commit_action(false)
+	_on_stats_changed()
 
 
 func _on_stat_selected(stat_idx: int) -> void:
@@ -855,6 +932,7 @@ func _on_stat_selected(stat_idx: int) -> void:
 		save_current_stat()
 	
 	var target_stat: StringName = stat_opt_btn.get_item_metadata(stat_idx)
+	
 	var valid_id: bool = stat_idx != -1
 	var disabled = not valid_id
 	
@@ -879,29 +957,27 @@ func _on_stat_selected(stat_idx: int) -> void:
 
 
 func load_stat(stat_id: StringName) -> void:
-	stat_ln_edt.text = DictUtils.get_nested_value(
-			_stats_resource._stat_data,
-			[stat_id, "name"],
-			"",
-			true)
-	stat_desc_txt_edt.text = DictUtils.get_nested_value(
-			_stats_resource._stat_data,
-			[stat_id, "description"],
-			"",
-			true)
-	
-	stat_data_tree.clear_data()
-	
+	var stat_name: String = _stats_resource.get_stat_name(stat_id)
+	var stat_desc: String = _stats_resource.get_stat_description(stat_id)
 	var data: Dictionary = DictUtils.get_nested_value(
 			_stats_resource._stat_data,
 			[stat_id, "data"],
 			{},
 			true)
 	
+	stat_ln_edt.text = stat_name
+	stat_ln_edt.set_meta(&"old_value", stat_name)
+	
+	stat_desc_txt_edt.text = stat_desc
+	stat_desc_txt_edt.set_meta(&"old_value", stat_desc)
+	
+	stat_data_tree.clear_data(false)
+	
 	for data_key in data.keys():
 		stat_data_tree.add_data(
 			data_key,
-			data[data_key])
+			data[data_key],
+			true)
 
 
 func load_stats_resource() -> void:
@@ -1037,23 +1113,262 @@ func reload_stats(reselect: bool = true) -> void:
 			load_stat(stat_opt_btn.get_item_metadata(0))
 			loaded_stat = stat_opt_btn.get_item_metadata(0)
 
+
+func select_stat(stat_id: StringName) -> bool:
+	if loaded_stat == stat_id:
+		return true
+	
+	var missing: bool = true
+	for idx in range(stat_opt_btn.item_count):
+		if stat_opt_btn.get_item_metadata(idx) == stat_id:
+			stat_opt_btn.select(idx)
+			missing = false
+			break
+	
+	if missing:
+		return false
+	if not loaded_stat.is_empty():
+		save_current_stat()
+	load_stat(stat_id)
+	loaded_stat = stat_id
+	return true
+
+
+func select_skill(skill_id: StringName) -> bool:
+	if loaded_skill == skill_id:
+		return true
+	
+	var missing: bool = true
+	for idx in range(skill_opt_btn.item_count):
+		if skill_opt_btn.get_item_metadata(idx) == skill_id:
+			skill_opt_btn.select(idx)
+			missing = false
+			return true
+	if missing:
+		return false
+	if not loaded_skill.is_empty():
+		save_current_skill()
+	load_skill(skill_id)
+	loaded_skill = skill_id
+	return true
+
+
+func select_trait(trait_id: StringName) -> bool:
+	if loaded_trait == trait_id:
+		return true
+	var missing: bool = true
+	for idx in range(trait_opt_btn.item_count):
+		if trait_opt_btn.get_item_metadata(idx) == trait_id:
+			trait_opt_btn.select(idx)
+			missing = false
+	if missing:
+		return false
+	
+	if not loaded_trait.is_empty():
+		save_current_trait()
+	load_trait(trait_id)
+	loaded_trait = trait_id
+	return true
+
 #endregion
 
 
-
-func stats_changed(_arg: Variant = null) -> void:
-	if not _stats_unsaved:
-		_stats_unsaved = true
-
-
-func skills_changed(_arg: Variant = null) -> void:
-	if not _skills_unsaved:
-		_skills_unsaved = true
+func _on_stats_changed(_arg = null) -> void:
+	if _stats_unsaved:
+		return
+	_stats_unsaved = true
 
 
-func traits_changed(_arg: Variant = null) -> void:
-	if not _traits_unsaved:
-		_traits_unsaved = true
+func _on_skills_changed(_arg = null) -> void:
+	if _skills_unsaved:
+		return
+	_skills_unsaved = true
+
+
+func _on_traits_changed(_arg = null) -> void:
+	if _traits_unsaved:
+		return
+	_traits_unsaved = true
+
+
+func _on_name_line_edit_toggled(toggled: bool, line: LineEdit, type: int) -> void:
+	if toggled:
+		return
+	var old_name: String = line.get_meta(&"old_value")
+	var new_name: String = line.text
+	
+	if new_name == old_name:
+		return
+	
+	line.set_meta(&"old_value", new_name)
+	var action_name: String = "Set %s Name" % String(loaded_stat if type == 0 else loaded_skill if type == 1 else loaded_trait).capitalize()
+	
+	if type == 0:
+		undo.create_action(action_name)
+		undo.add_do_method(_do_update_stat.bind(loaded_stat, new_name))
+		undo.add_undo_method(_do_update_stat.bind(loaded_stat, old_name))
+		undo.commit_action(false)
+		_on_stats_changed()
+	elif type == 1:
+		undo.create_action(action_name)
+		undo.add_do_method(_do_update_skill.bind(loaded_skill, new_name))
+		undo.add_undo_method(_do_update_skill.bind(loaded_skill, old_name))
+		undo.commit_action(false)
+		_on_skills_changed()
+	else:
+		undo.create_action(action_name)
+		undo.add_do_method(_do_update_trait.bind(loaded_trait, new_name))
+		undo.add_undo_method(_do_update_trait.bind(loaded_trait, old_name))
+		undo.commit_action(false)
+		_on_traits_changed()
+
+
+func _on_text_edit_focus_lost(text: TextEdit) -> void:
+	var mode: int = 0
+	
+	if text == stat_desc_txt_edt:
+		mode = 0
+	elif text == skill_desc_txt_edt:
+		mode = 1
+	else:
+		mode = 2
+	
+	var old_text: String = text.get_meta(&"old_value")
+	var new_text: String = text.text
+	
+	if new_text == old_text:
+		return
+	
+	text.set_meta(&"old_value", new_text)
+	undo.create_action("Set %s Description" % String(
+			loaded_stat if mode == 0 else\
+			loaded_skill if mode == 1 else\
+			loaded_trait).capitalize())
+	
+	match mode:
+		0:
+			undo.add_do_method(_do_update_stat_description.bind(loaded_stat, new_text))
+			undo.add_undo_method(_do_update_stat_description.bind(loaded_stat, old_text))
+			undo.commit_action(false)
+			_on_stats_changed()
+		1:
+			undo.add_do_method(_do_update_skill_description.bind(loaded_skill, new_text))
+			undo.add_undo_method(_do_update_skill_description.bind(loaded_skill, old_text))
+			undo.commit_action(false)
+			_on_skills_changed()
+		2:
+			undo.add_do_method(_do_update_trait_description.bind(loaded_trait, new_text))
+			undo.add_undo_method(_do_update_trait_description.bind(loaded_trait, old_text))
+			undo.commit_action(false)
+			_on_traits_changed()
+
+
+func _do_update_stat_description(stat_id: StringName, to: String) -> void:
+	if loaded_stat != stat_id:
+		if not select_stat(stat_id):
+			return
+	stat_desc_txt_edt.text = to
+	_on_stats_changed()
+
+
+func _do_update_skill_description(skill_id: StringName, to: String) -> void:
+	if loaded_skill != skill_id:
+		if not select_skill(skill_id):
+			return
+	skill_desc_txt_edt.text = to
+	_on_skills_changed()
+
+
+func _do_update_trait_description(trait_id: StringName, to: String) -> void:
+	if loaded_trait != trait_id:
+		if not select_trait(trait_id):
+			return
+	trait_desc_txt_edt.text = to
+	_on_traits_changed()
+
+
+func _do_update_stat(stat_id: StringName, to: String) -> void:
+	if loaded_stat != stat_id:
+		if not select_stat(stat_id):
+			return
+	stat_ln_edt.text = to
+	_on_stats_changed()
+
+
+func _do_update_skill(skill_id: StringName, to: String) -> void:
+	if loaded_skill != skill_id:
+		if not select_skill(skill_id):
+			return
+	skill_ln_edt.text = to
+	_on_skills_changed()
+
+
+func _do_update_trait(trait_id: StringName, to: String) -> void:
+	if loaded_trait != trait_id:
+		if not select_trait(trait_id):
+			return
+	trait_ln_edt.text = to
+	_on_traits_changed()
+
+
+func _on_data_tree_updated(type: int, id: StringName) -> void:
+	match type:
+		0:
+			if stat_data_tree.has_undo():
+				undo.create_action("Data Changed")
+				undo.add_do_method(_do_stat_data_tree.bind(loaded_stat))
+				undo.add_undo_method(_undo_stat_data_tree.bind(loaded_stat))
+				undo.commit_action(false)
+			_on_stats_changed()
+		1:
+			if skill_data_tree.has_undo():
+				undo.create_action("Data Changed")
+				undo.add_do_method(_do_skill_data_tree.bind(loaded_skill))
+				undo.add_undo_method(_undo_skill_data_tree.bind(loaded_skill))
+				undo.commit_action(false)
+			_on_skills_changed()
+		2:
+			if not _traits_unsaved:
+				_traits_unsaved = true
+			if trait_data_tree.has_undo():
+				undo.create_action("Data Changed")
+				undo.add_do_method(_do_trait_data_tree.bind(loaded_trait))
+				undo.add_undo_method(_undo_trait_data_tree.bind(loaded_trait))
+				undo.commit_action(false)
+			_on_traits_changed()
+
+
+func _do_stat_data_tree(stat_id: StringName) -> void:
+	if select_stat(stat_id):
+		stat_data_tree.redo()
+		_on_stats_changed()
+
+
+func _do_skill_data_tree(skill_id: StringName) -> void:
+	if select_skill(skill_id):
+		skill_data_tree.redo()
+		_on_skills_changed()
+
+
+func _do_trait_data_tree(trait_id: StringName) -> void:
+	if select_trait(trait_id):
+		trait_data_tree.redo()
+		_on_traits_changed()
+
+
+func _undo_stat_data_tree(stat_id: StringName) -> void:
+	if select_stat(stat_id):
+		stat_data_tree.undo()
+
+
+func _undo_skill_data_tree(skill_id: StringName) -> void:
+	if select_skill(skill_id):
+		skill_data_tree.undo()
+
+
+func _undo_trait_data_tree(trait_id: StringName) -> void:
+	if select_trait(trait_id):
+		trait_data_tree.undo()
 
 
 func save_current_skill() -> void:
@@ -1111,3 +1426,10 @@ func save() -> void:
 	_skills_unsaved = false
 	_traits_unsaved = false
 	_stats_unsaved = false
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE:
+		if undo != null and is_instance_valid(undo):
+			undo.clear_history()
+			undo.free()

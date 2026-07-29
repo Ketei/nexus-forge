@@ -8,7 +8,8 @@ extends Node
 enum _LogLevel{
 	INFO,
 	WARNING,
-	ERROR}
+	ERROR,
+	EDITOR}
 
 const _SETTINGS_PATHS: Dictionary[String, Dictionary] = {
 	"discourse_enabled": {
@@ -127,19 +128,26 @@ const _SETTINGS_PATHS: Dictionary[String, Dictionary] = {
 		"default_value": true,
 		"type": TYPE_BOOL,
 		"restart_required": false,
-		"sort_string": "zzznexus_forge/setting/a_log_info"},
+		"sort_string": "zzznexus_forge/setting/b_log_info"},
 	"plugin_log_warning": {
 		"setting_path": "nexus_forge/settings/log_warnings",
 		"default_value": true,
 		"type": TYPE_BOOL,
 		"restart_required": false,
-		"sort_string": "zzznexus_forge/setting/b_log_info"},
+		"sort_string": "zzznexus_forge/setting/c_log_info"},
 	"plugin_log_error": {
 		"setting_path": "nexus_forge/settings/log_errors",
 		"default_value": true,
 		"type": TYPE_BOOL,
 		"restart_required": false,
-		"sort_string": "zzznexus_forge/setting/c_log_info",
+		"sort_string": "zzznexus_forge/setting/d_log_info",
+		"is_basic": false},
+	"plugin_log_editor": {
+		"setting_path": "nexus_forge/settings/log_editor_info",
+		"default_value": true,
+		"type": TYPE_BOOL,
+		"restart_required": false,
+		"sort_string": "zzznexus_forge/setting/a_log_info",
 		"is_basic": false},
 	"character_register_ids": {
 		"setting_path": "nexus_forge/export/register_character_ids",
@@ -251,11 +259,14 @@ static func _log_msg(module: String, msg: String, log_level: _LogLevel = _LogLev
 		if ProjectSettings.get_setting(get_setting_path("plugin_log_info"), true):
 			print(full_msg)
 	elif log_level == _LogLevel.WARNING:
-		if not ProjectSettings.get_setting(get_setting_path("plugin_log_warning"), true):
+		if ProjectSettings.get_setting(get_setting_path("plugin_log_warning"), true):
 			push_warning(full_msg)
 	elif log_level == _LogLevel.ERROR:
-		if not ProjectSettings.get_setting(get_setting_path("plugin_log_error"), true):
+		if ProjectSettings.get_setting(get_setting_path("plugin_log_error"), true):
 			push_error(full_msg)
+	elif log_level == _LogLevel.EDITOR:
+		if ProjectSettings.get_setting(get_setting_path("plugin_log_editor"), true):
+			print_rich("[color=web_gray]" + msg + "[/color]")
 
 
 func _ready() -> void:

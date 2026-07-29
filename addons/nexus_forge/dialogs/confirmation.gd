@@ -2,7 +2,7 @@ extends ConfirmationDialog
 
 signal dialog_finished(success: bool)
 
-var confirm_on_right: bool = true
+var confirm_on_right: bool = false
 
 
 func _ready() -> void:

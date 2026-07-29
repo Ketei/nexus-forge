@@ -8,7 +8,6 @@ signal character_saved(path: String, id: StringName)
 signal character_opened(path: String, id: StringName)
 
 const UNDO_MAX_STEPS: int = 50
-const DATA_UNDO_MAX_STEPS: int = 20
 
 var _unsaved: bool = false
 
@@ -48,8 +47,9 @@ func ready_plugin() -> void:
 	char_tree.ready_plugin()
 	character_data_tree.ready_plugin()
 	
-	character_data_tree._undo.free()
-	character_data_tree._undo = null
+	if character_data_tree._undo != null:
+		character_data_tree._undo.free()
+		character_data_tree._undo = null
 	
 	search_char_ln_edt.right_icon = get_theme_icon("Search", "EditorIcons")
 	character_custom_data_search_line.right_icon = get_theme_icon("Search", "EditorIcons")
@@ -71,11 +71,11 @@ func ready_plugin() -> void:
 	char_menu_btn.get_popup().id_pressed.connect(_on_character_menu_id_pressed)
 	
 	char_id_line.text_changed.connect(_something_changed)
-	char_id_line.focus_exited.connect(_on_line_edit_focus_exited.bind(char_id_line))
+	char_id_line.editing_toggled.connect(_on_line_edit_edit_toggled.bind(char_id_line, "ID"))
 	char_id_line.text_submitted.connect(_on_id_name_line_text_submitted.bind(char_id_line))
 	
 	char_name_line.text_changed.connect(_something_changed)
-	char_name_line.focus_exited.connect(_on_line_edit_focus_exited.bind(char_name_line))
+	char_name_line.editing_toggled.connect(_on_line_edit_edit_toggled.bind(char_name_line, "Name"))
 	char_name_line.text_submitted.connect(_on_id_name_line_text_submitted.bind(char_name_line))
 	
 	species_option_button.item_selected.connect(_on_dropbox_index_selected.bind(species_option_button))
@@ -89,7 +89,6 @@ func ready_plugin() -> void:
 	load_species_data_btn.pressed.connect(_on_import_species_data_pressed)
 	char_tree.character_closed.connect(_on_close_character_pressed, CONNECT_DEFERRED)
 	character_data_tree.data_changed.connect(_on_data_tree_changed)
-	character_data_tree.data_moved.connect(_on_data_tree_moved)
 	
 	edit_stat_block_btn.pressed.connect(_on_edit_statblock_pressed)
 	edit_skill_set_btn.pressed.connect(_on_edit_skillset_pressed)
@@ -98,9 +97,6 @@ func ready_plugin() -> void:
 
 
 func _input(event: InputEvent) -> void:
-	if event is not InputEventKey:
-		return
-	
 	if not is_visible_in_tree() or undo == null:
 		return
 	
@@ -121,16 +117,31 @@ func _input(event: InputEvent) -> void:
 			if event.keycode == KEY_Z:
 				if event.shift_pressed:
 					if undo.has_redo():
+						var action_name: String = undo.get_action_name(undo.get_current_action() + 1)
 						undo.redo()
+						NFPluginGameHandler._log_msg(
+								"",
+								"Redo: " + action_name,
+								NFPluginGameHandler._LogLevel.EDITOR)
 						_something_changed()
 				else:
 					if undo.has_undo():
+						var action_name: String = undo.get_current_action_name()
 						undo.undo()
+						NFPluginGameHandler._log_msg(
+								"",
+								"Undo: " + action_name,
+								NFPluginGameHandler._LogLevel.EDITOR)
 						_something_changed()
 				get_viewport().set_input_as_handled()
 			elif event.keycode == KEY_Y:
 				if undo.has_redo():
+					var action_name: String = undo.get_action_name(undo.get_current_action() + 1)
 					undo.redo()
+					NFPluginGameHandler._log_msg(
+							"",
+							"Redo: " + action_name,
+							NFPluginGameHandler._LogLevel.EDITOR)
 					_something_changed()
 				get_viewport().set_input_as_handled()
 
@@ -233,7 +244,7 @@ func _on_close_character_pressed(resource: CharacterSheet, unsaved: bool) -> voi
 func _on_add_data_pressed(data_key: String, data: Variant) -> void:
 	character_data_tree.add_data(data_key, data)
 	if character_data_tree.has_undo():
-		undo.create_action("Character Data Changed")
+		undo.create_action("Data Changed")
 		undo.add_do_method(character_data_tree.redo)
 		undo.add_undo_method(character_data_tree.undo)
 		undo.commit_action(false)
@@ -251,19 +262,11 @@ func _something_changed(_arg: Variant = null) -> void:
 
 func _on_data_tree_changed() -> void:
 	if character_data_tree.has_undo():
-		undo.create_action("Character Data Changed")
+		undo.create_action("Data Changed")
 		undo.add_do_method(character_data_tree.redo)
 		undo.add_undo_method(character_data_tree.undo)
 		undo.commit_action(false)
 	_something_changed()
-
-
-func _on_data_tree_moved(was_dropped: bool) -> void:
-	var action_str: String = "Data Dropped" if was_dropped else "Data Dragged"
-	undo.create_action(action_str)
-	undo.add_do_method(character_data_tree.redo)
-	undo.add_undo_method(character_data_tree.undo)
-	undo.commit_action(false)
 
 
 func get_open_characters() -> Array[String]:
@@ -290,7 +293,7 @@ func load_character_files(files: Array[String]) -> void:
 			var data_undo: UndoRedo = UndoRedo.new()
 			
 			char_undo.max_steps = UNDO_MAX_STEPS
-			data_undo.max_steps = DATA_UNDO_MAX_STEPS
+			data_undo.max_steps = UNDO_MAX_STEPS
 			
 			char_tree.create_character(loaded, char_undo, data_undo, false)
 
@@ -481,7 +484,7 @@ func _on_new_character_pressed() -> void:
 		var new_undo: UndoRedo = UndoRedo.new()
 		var data_undo: UndoRedo = UndoRedo.new()
 		new_undo.max_steps = UNDO_MAX_STEPS
-		data_undo.max_steps = DATA_UNDO_MAX_STEPS
+		data_undo.max_steps = UNDO_MAX_STEPS
 		new_resource.initialize_objects()
 		if ResourceLoader.has_cached(dialog_result[1]):
 			new_resource.take_over_path(dialog_result[1])
@@ -542,7 +545,7 @@ func _on_open_character_pressed() -> void:
 				var new_undo: UndoRedo = UndoRedo.new()
 				var data_undo: UndoRedo = UndoRedo.new()
 				new_undo.max_steps = UNDO_MAX_STEPS
-				data_undo.max_steps = DATA_UNDO_MAX_STEPS
+				data_undo.max_steps = UNDO_MAX_STEPS
 				char_tree.create_character(resource_preload, new_undo, data_undo, true, false)
 				undo = new_undo
 				character_data_tree._undo = data_undo
@@ -636,7 +639,7 @@ func import_species_data(species_sheet: SpeciesCatalog, with_inheritance: bool) 
 			"stats": stats,
 			"skills": skills,
 			"traits": traits}
-		undo.create_action("Import Species Attributes")
+		undo.create_action("Import '%s' Attributes" % species_selected)
 		undo.add_do_method(_do_update_attributes.bind(new_attributes))
 		undo.add_undo_method(_do_update_attributes.bind(old_attributes))
 		undo.commit_action(false)
@@ -1027,12 +1030,12 @@ func create_stat_item(stat_id: StringName, type: int, default: float) -> VBoxCon
 	limit_max_spn.value_changed.connect(_on_limit_max_changed.bind(new_value))
 	limit_min_spn.value_changed.connect(_on_limit_min_changed.bind(new_value, limit_max_spn))
 	
-	limit_min_ln.focus_exited.connect(_on_limit_min_focus_lost.bind(
+	limit_min_ln.editing_toggled.connect(_on_limit_min_edit_toggled.bind(
 		new_value,
 		limit_min_spn,
 		limit_max_spn,
 		stat_id))
-	limit_max_ln.focus_exited.connect(_on_limit_max_focus_lost.bind(
+	limit_max_ln.editing_toggled.connect(_on_limit_max_edit_toggled.bind(
 		new_value,
 		limit_max_spn,
 		stat_id))
@@ -1155,55 +1158,10 @@ func set_focus_order_for_trait(trait_entry: HBoxContainer) -> void:
 		trait_line.focus_next = ^""
 
 
-func _on_toggle_min_stat(is_enabled: bool, check: CheckBox, stat: SpinBox, min_spin: SpinBox, max_spin: SpinBox, limit_btn: Button) -> void:
-	stat.allow_lesser = not is_enabled
-	max_spin.allow_lesser = not is_enabled
-	min_spin.editable = is_enabled
-	
-	if is_enabled and stat.value < min_spin.value:
-		stat.set_value_no_signal(min_spin.value)
-	
-	var flags: int = limit_btn.get_meta(&"range_flags")
-	flags = BitUtils.set_bit_index(flags, 0, is_enabled)
-	
-	if BitUtils.is_bit_index(flags, 2, true): # Uncollapsed
-		match BitUtils.get_bits(flags, 3):
-			0:
-				limit_btn.icon = load("res://addons/nexus_forge/icons/range_uncollapsed_none.svg")
-			1:
-				limit_btn.icon = load("res://addons/nexus_forge/icons/range_uncollapsed_min.svg")
-			2:
-				limit_btn.icon = load("res://addons/nexus_forge/icons/range_uncollapsed_max.svg")
-			3:
-				limit_btn.icon = load("res://addons/nexus_forge/icons/range_uncollapsed_minmax.svg")
-	else:
-		match BitUtils.get_bits(flags, 3):
-			0:
-				limit_btn.icon = load("res://addons/nexus_forge/icons/range_collapsed_none.svg")
-			1:
-				limit_btn.icon = load("res://addons/nexus_forge/icons/range_collapsed_min.svg")
-			2:
-				limit_btn.icon = load("res://addons/nexus_forge/icons/range_collapsed_max.svg")
-			3:
-				limit_btn.icon = load("res://addons/nexus_forge/icons/range_collapsed_minmax.svg")
-	
-	limit_btn.set_meta(&"range_flags", flags)
-	
-	if undo == null or check.disabled:
-		_something_changed()
-		return
-	
-	undo.create_action("Toggle Range")
-	undo.add_do_property(check, &"button_pressed", is_enabled)
-	undo.add_undo_property(check, &"button_pressed", !is_enabled)
-	undo.commit_action(false)
-	
-	_something_changed()
-
-
 func _on_stat_clamp_toggled(enabled: bool, check: CheckBox, stat: SpinBox, min_box: SpinBox, max_box: SpinBox, limit_btn: Button, is_min: bool) -> void:
 	if undo != null and not check.disabled:
-		undo.create_action("Toggle Range")
+		var stat_id: String = String(check.get_parent().get_parent().get_meta(&"stat_id")).capitalize()
+		undo.create_action("%s Range Toggled" % stat_id)
 		undo.add_do_method(_do_toggle_range_check.bind(
 				check,
 				enabled,
@@ -1318,8 +1276,8 @@ func _on_limit_min_changed(value: float, stat: SpinBox, max_spin: SpinBox) -> vo
 	_something_changed()
 
 
-func _on_limit_max_focus_lost(stat: SpinBox, max_box: SpinBox, stat_id: StringName) -> void:
-	if not max_box.editable:
+func _on_limit_max_edit_toggled(toggled: bool, stat: SpinBox, max_box: SpinBox, stat_id: StringName) -> void:
+	if toggled:
 		return
 	
 	var parse_text: String = max_box.get_line_edit().text
@@ -1331,14 +1289,14 @@ func _on_limit_max_focus_lost(stat: SpinBox, max_box: SpinBox, stat_id: StringNa
 	if undo == null or old_value == new_value:
 		return
 	
-	undo.create_action("Change Stat Ceiling")
+	undo.create_action("%s Ceiling Toggled" % String(stat_id).capitalize())
 	undo.add_do_method(_do_update_max_value.bind(stat_id, new_value, true))
 	undo.add_undo_method(_do_update_max_value.bind(stat_id, old_value, true))
 	undo.commit_action(false)
 
 
-func _on_limit_min_focus_lost(stat: SpinBox, min_spin: SpinBox, max_spin: SpinBox, stat_id: StringName) -> void:
-	if not min_spin.editable:
+func _on_limit_min_edit_toggled(toggled: bool, stat: SpinBox, min_spin: SpinBox, max_spin: SpinBox, stat_id: StringName) -> void:
+	if toggled:
 		return
 	
 	var parse_text: String = min_spin.get_line_edit().text
@@ -1349,7 +1307,7 @@ func _on_limit_min_focus_lost(stat: SpinBox, min_spin: SpinBox, max_spin: SpinBo
 	min_spin.set_meta(&"old_value", new_value)
 	if undo == null or new_value == old_value:
 		return
-	undo.create_action("Change Stat Floor")
+	undo.create_action("%s Floor Toggled" % String(stat_id).capitalize())
 	undo.add_do_method(_do_update_min_value.bind(stat_id, new_value, true))
 	undo.add_undo_method(_do_update_min_value.bind(stat_id, old_value, true))
 	undo.commit_action(false)
@@ -1523,7 +1481,7 @@ func plugin_open_resource(resource: CharacterSheet) -> void:
 		var new_undo: UndoRedo = UndoRedo.new()
 		var data_undo: UndoRedo = UndoRedo.new()
 		new_undo.max_steps = UNDO_MAX_STEPS
-		data_undo.max_steps = DATA_UNDO_MAX_STEPS
+		data_undo.max_steps = UNDO_MAX_STEPS
 		char_tree.create_character(resource, new_undo, data_undo, true, false)
 		undo = new_undo
 		character_data_tree._undo = data_undo
@@ -1595,13 +1553,14 @@ func _do_edit_line_edit(line: LineEdit, text: String) -> void:
 	line.text = text
 
 
-func _on_line_edit_focus_exited(line: LineEdit) -> void:
-	if undo == null or not line.editable:
+func _on_line_edit_edit_toggled(toggled: bool, line: LineEdit, field: String) -> void:
+	if toggled or undo == null or not line.editable:
 		return
 	
 	if line.get_meta(&"old_text", "") == line.text:
 		return
-	undo.create_action("Change Field")
+	
+	undo.create_action("Set Character %s" % field)
 	undo.add_do_method(_do_edit_line_edit.bind(line, line.text))
 	undo.add_undo_method(_do_edit_line_edit.bind(line, line.get_meta(&"old_text", "")))
 	undo.commit_action(false)
@@ -1616,7 +1575,7 @@ func _on_dropbox_index_selected(index: int, box: OptionButton) -> void:
 		box.set_meta(&"prev_selected", current)
 		if current == prev or prev == -1:
 			return
-		undo.create_action("Gender Changed")
+		undo.create_action("Set Gender")
 		undo.add_do_method(select_gender.bind(current))
 		undo.add_undo_method(select_gender.bind(prev))
 		undo.commit_action(false)
@@ -1626,7 +1585,7 @@ func _on_dropbox_index_selected(index: int, box: OptionButton) -> void:
 		box.set_meta(&"prev_selected", current)
 		if prev == current or prev.is_empty():
 			return
-		undo.create_action("Species Changed")
+		undo.create_action("Set Species")
 		undo.add_do_method(select_species.bind(current))
 		undo.add_undo_method(select_species.bind(prev))
 		undo.commit_action(false)
