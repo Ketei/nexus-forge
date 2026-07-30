@@ -23,10 +23,6 @@ var phrase_maps: PanelContainer = null
 # -----------------
 
 
-func _ready() -> void:
-	set_process_input(false)
-
-
 func set_version(version: String) -> void:
 	$MainContainer/ToolScroll/ToolContainer/NexusForge/VersionLabel.text = version
 
@@ -45,7 +41,7 @@ func ready_plugin(use_discourse: bool, use_characters: bool, use_species: bool, 
 	if use_stats or use_skills or use_traits:
 		talents = load("res://addons/nexus_forge/talents/talents_main.tscn").instantiate()
 	if use_items or use_currencies:
-		items = load("res://addons/nexus_forge/depot/depot_scene.tscn").instantiate()
+		items = load("res://addons/nexus_forge/depot/depot_scene_new.tscn").instantiate()
 	if use_recipes:
 		recipes = load("res://addons/nexus_forge/recipes/recipes_scene.tscn").instantiate()
 	if use_quests:

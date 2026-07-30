@@ -4,13 +4,11 @@ extends PanelContainer
 
 signal items_loaded
 
-var id_changed: Dictionary[StringName, StringName] = {}
-
 var _unsaved: bool = false:
 	get():
 		return items_container._unsaved
 
-@onready var edit_categories_btn: Button = $ItemsContainer/ItemsPanel/ItemsContainer/TreeContainer/VBoxContainer/HBoxContainer/EditCategoriesBtn
+@onready var edit_categories_btn: Button = $ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/CategoryContainer/OptBtnContainer/EditCategoriesBtn
 @onready var finish_cat_btn: Button = $CategoriesContainer/DataContainer/FinishCatBtn
 @onready var items_container: HBoxContainer = $ItemsContainer
 @onready var categories_container: HBoxContainer = $CategoriesContainer

@@ -1,22 +1,22 @@
-[gd_scene format=3 uid="uid://dx3tfxh44uxs6"]
+[gd_scene format=3 uid="uid://dhpmacu03qtm1"]
 
-[ext_resource type="Texture2D" uid="uid://12lyg7db58dg" path="res://addons/nexus_forge/icons/add_int.svg" id="1_e1mk7"]
-[ext_resource type="Script" uid="uid://cuem7gvcvgeia" path="res://addons/nexus_forge/depot/depot_main_script.gd" id="1_l5u5u"]
-[ext_resource type="Script" uid="uid://btsdjfui2ifmp" path="res://addons/nexus_forge/depot/items_script.gd" id="2_evcfd"]
-[ext_resource type="Texture2D" uid="uid://dcgniolhiay6u" path="res://addons/nexus_forge/icons/add_float.svg" id="2_l5u5u"]
-[ext_resource type="Script" uid="uid://cs5j1ud4uufop" path="res://addons/nexus_forge/depot/items_category_tree.gd" id="3_8n7i7"]
-[ext_resource type="Script" uid="uid://de78kcn57q0j6" path="res://addons/nexus_forge/depot/items_tree_script.gd" id="3_etwui"]
-[ext_resource type="Texture2D" uid="uid://c472l5bho4jpi" path="res://addons/nexus_forge/icons/add_bool.svg" id="3_evcfd"]
-[ext_resource type="Texture2D" uid="uid://cxv7veghytl4m" path="res://addons/nexus_forge/icons/add_string.svg" id="4_etwui"]
-[ext_resource type="Texture2D" uid="uid://dbjyls7e856f5" path="res://addons/nexus_forge/icons/chest_icon_plus.svg" id="4_qiph8"]
-[ext_resource type="Script" uid="uid://b3ooglkmjjil4" path="res://addons/nexus_forge/classes/simple_data_tree.gd" id="5_hb3ne"]
-[ext_resource type="Script" uid="uid://blbqpddxjenwk" path="res://addons/nexus_forge/item_quest_lineedit_script.gd" id="6_bes68"]
-[ext_resource type="Script" uid="uid://yl433uwg7btc" path="res://addons/nexus_forge/depot/currency_tree_script.gd" id="6_dn322"]
-[ext_resource type="Script" uid="uid://chkgp073iaf1d" path="res://addons/nexus_forge/item_quest_description_script.gd" id="7_6mxt2"]
-[ext_resource type="Script" uid="uid://d4hij5gpdxqnc" path="res://addons/nexus_forge/depot/categories_container_script.gd" id="10_hb3ne"]
-[ext_resource type="Texture2D" uid="uid://dd1wojqjxqfqn" path="res://addons/nexus_forge/icons/coin_plus.svg" id="11_5hvq2"]
-[ext_resource type="Script" uid="uid://7dmrf5h7co67" path="res://addons/nexus_forge/depot/categories_tree_script.gd" id="11_dn322"]
-[ext_resource type="Script" uid="uid://cmq4neoitl5cj" path="res://addons/nexus_forge/depot/currency_calculator.gd" id="15_6mxt2"]
+[ext_resource type="Script" uid="uid://cuem7gvcvgeia" path="res://addons/nexus_forge/depot/depot_main_script.gd" id="1_eig27"]
+[ext_resource type="Script" uid="uid://btsdjfui2ifmp" path="res://addons/nexus_forge/depot/items_script.gd" id="2_n4i7p"]
+[ext_resource type="Script" uid="uid://cs5j1ud4uufop" path="res://addons/nexus_forge/depot/items_category_tree.gd" id="3_xqdsk"]
+[ext_resource type="Texture2D" uid="uid://dbjyls7e856f5" path="res://addons/nexus_forge/icons/chest_icon_plus.svg" id="4_wu6sx"]
+[ext_resource type="Script" uid="uid://8jka6cymwa02" path="res://addons/nexus_forge/depot/items_tree_script_new.gd" id="5_eig27"]
+[ext_resource type="Script" uid="uid://blbqpddxjenwk" path="res://addons/nexus_forge/item_quest_lineedit_script.gd" id="6_py1un"]
+[ext_resource type="Script" uid="uid://chkgp073iaf1d" path="res://addons/nexus_forge/item_quest_description_script.gd" id="7_1fhme"]
+[ext_resource type="Texture2D" uid="uid://12lyg7db58dg" path="res://addons/nexus_forge/icons/add_int.svg" id="8_sptbn"]
+[ext_resource type="Texture2D" uid="uid://dcgniolhiay6u" path="res://addons/nexus_forge/icons/add_float.svg" id="9_ocoee"]
+[ext_resource type="Texture2D" uid="uid://c472l5bho4jpi" path="res://addons/nexus_forge/icons/add_bool.svg" id="10_p7e4l"]
+[ext_resource type="Texture2D" uid="uid://cxv7veghytl4m" path="res://addons/nexus_forge/icons/add_string.svg" id="11_qo6yq"]
+[ext_resource type="Script" uid="uid://b3ooglkmjjil4" path="res://addons/nexus_forge/classes/simple_data_tree.gd" id="12_y4yy6"]
+[ext_resource type="Texture2D" uid="uid://dd1wojqjxqfqn" path="res://addons/nexus_forge/icons/coin_plus.svg" id="13_d1ggt"]
+[ext_resource type="Script" uid="uid://yl433uwg7btc" path="res://addons/nexus_forge/depot/currency_tree_script.gd" id="14_x2dym"]
+[ext_resource type="Script" uid="uid://cmq4neoitl5cj" path="res://addons/nexus_forge/depot/currency_calculator.gd" id="15_u2cuq"]
+[ext_resource type="Script" uid="uid://d4hij5gpdxqnc" path="res://addons/nexus_forge/depot/categories_container_script.gd" id="16_o0d3q"]
+[ext_resource type="Script" uid="uid://7dmrf5h7co67" path="res://addons/nexus_forge/depot/categories_tree_script.gd" id="17_0vtic"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_8n7i7"]
 content_margin_left = 6.0
@@ -35,11 +35,11 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_8n7i7")
-script = ExtResource("1_l5u5u")
+script = ExtResource("1_eig27")
 
 [node name="ItemsContainer" type="HBoxContainer" parent="." unique_id=1849763466]
 layout_mode = 2
-script = ExtResource("2_evcfd")
+script = ExtResource("2_n4i7p")
 
 [node name="ItemsPanel" type="PanelContainer" parent="ItemsContainer" unique_id=1064040569]
 layout_mode = 2
@@ -63,6 +63,7 @@ theme_override_font_sizes/font_size = 25
 text = "Depot"
 
 [node name="VBoxContainer" type="VBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/TreeContainer" unique_id=1447035205]
+visible = false
 layout_mode = 2
 size_flags_vertical = 3
 
@@ -92,9 +93,10 @@ layout_mode = 2
 size_flags_vertical = 3
 allow_reselect = true
 hide_root = true
-script = ExtResource("3_8n7i7")
+script = ExtResource("3_xqdsk")
 
 [node name="HSeparator" type="HSeparator" parent="ItemsContainer/ItemsPanel/ItemsContainer/TreeContainer" unique_id=1292300583]
+visible = false
 layout_mode = 2
 
 [node name="ItemSearchContainer" type="HBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/TreeContainer" unique_id=1835264378]
@@ -103,14 +105,18 @@ layout_mode = 2
 [node name="SearchItemContainer" type="LineEdit" parent="ItemsContainer/ItemsPanel/ItemsContainer/TreeContainer/ItemSearchContainer" unique_id=1892178740]
 layout_mode = 2
 size_flags_horizontal = 3
-placeholder_text = "Search Item"
+tooltip_text = "Search for items. Typing without prefix will search names.
+Use prefix \"name:\" or \"n:\" and \"category:\" or \"c:\" to filter specifically.
+Text without prefix is the same as using \"name:\".
+Searching \"category:*\" will search for items without category."
+placeholder_text = "Search Items"
 
 [node name="NewItemBtn" type="Button" parent="ItemsContainer/ItemsPanel/ItemsContainer/TreeContainer/ItemSearchContainer" unique_id=1584290267]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Create Item"
 disabled = true
-icon = ExtResource("4_qiph8")
+icon = ExtResource("4_wu6sx")
 flat = true
 icon_alignment = 1
 expand_icon = true
@@ -122,7 +128,28 @@ size_flags_stretch_ratio = 2.0
 allow_reselect = true
 hide_folding = true
 hide_root = true
-script = ExtResource("3_etwui")
+script = ExtResource("5_eig27")
+
+[node name="ItemPageContainer" type="HBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/TreeContainer" unique_id=1158130329]
+layout_mode = 2
+
+[node name="PrevItemPageBtn" type="Button" parent="ItemsContainer/ItemsPanel/ItemsContainer/TreeContainer/ItemPageContainer" unique_id=2057021033]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+flat = true
+
+[node name="ItemPageLbl" type="Label" parent="ItemsContainer/ItemsPanel/ItemsContainer/TreeContainer/ItemPageContainer" unique_id=1731833440]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "1 / 1"
+horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 1
+
+[node name="NextItemPageBtn" type="Button" parent="ItemsContainer/ItemsPanel/ItemsContainer/TreeContainer/ItemPageContainer" unique_id=871833981]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+flat = true
 
 [node name="DataContainer" type="VBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer" unique_id=1058249425]
 custom_minimum_size = Vector2(300, 0)
@@ -141,13 +168,21 @@ text = "Item"
 horizontal_alignment = 1
 vertical_alignment = 2
 
+[node name="ItemIDLabel" type="Label" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer" unique_id=469528855]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+mouse_filter = 0
+horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 3
+
 [node name="NameContainer" type="HBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer" unique_id=1829187045]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 2.0
 
 [node name="Label" type="Label" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/NameContainer" unique_id=289202352]
-custom_minimum_size = Vector2(72, 0)
+custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
 text = "Name"
 
@@ -158,14 +193,40 @@ size_flags_horizontal = 3
 size_flags_stretch_ratio = 3.0
 placeholder_text = "Item Name"
 editable = false
-script = ExtResource("6_bes68")
+script = ExtResource("6_py1un")
+
+[node name="CategoryContainer" type="HBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer" unique_id=442863996]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Label" type="Label" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/CategoryContainer" unique_id=806847517]
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+text = "Category"
+
+[node name="OptBtnContainer" type="HBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/CategoryContainer" unique_id=203982469]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="CategoryOptBtn" type="OptionButton" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/CategoryContainer/OptBtnContainer" unique_id=596761929]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+disabled = true
+
+[node name="EditCategoriesBtn" type="Button" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/CategoryContainer/OptBtnContainer" unique_id=445113411]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = "Edit Rarities"
+flat = true
+icon_alignment = 1
 
 [node name="RarityContainer" type="HBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer" unique_id=563817139]
 layout_mode = 2
 size_flags_horizontal = 3
 
 [node name="Label" type="Label" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/RarityContainer" unique_id=373368640]
-custom_minimum_size = Vector2(72, 0)
+custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
 text = "Rarity"
 
@@ -191,7 +252,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 
 [node name="Label" type="Label" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/ValueContainer" unique_id=1878360125]
-custom_minimum_size = Vector2(72, 0)
+custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
 text = "Value"
 
@@ -216,7 +277,7 @@ layout_mode = 2
 size_flags_vertical = 3
 editable = false
 wrap_mode = 1
-script = ExtResource("7_6mxt2")
+script = ExtResource("7_1fhme")
 
 [node name="CustomDataContainer" type="VBoxContainer" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer" unique_id=1075825907]
 layout_mode = 2
@@ -253,7 +314,7 @@ custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add integer"
 disabled = true
-icon = ExtResource("1_e1mk7")
+icon = ExtResource("8_sptbn")
 flat = true
 icon_alignment = 1
 
@@ -262,7 +323,7 @@ custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add float"
 disabled = true
-icon = ExtResource("2_l5u5u")
+icon = ExtResource("9_ocoee")
 flat = true
 icon_alignment = 1
 
@@ -271,7 +332,7 @@ custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add boolean"
 disabled = true
-icon = ExtResource("3_evcfd")
+icon = ExtResource("10_p7e4l")
 flat = true
 icon_alignment = 1
 
@@ -280,7 +341,7 @@ custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add string"
 disabled = true
-icon = ExtResource("4_etwui")
+icon = ExtResource("11_qo6yq")
 flat = true
 icon_alignment = 1
 
@@ -292,7 +353,7 @@ size_flags_vertical = 3
 columns = 2
 allow_reselect = true
 hide_root = true
-script = ExtResource("5_hb3ne")
+script = ExtResource("12_y4yy6")
 allow_drag_and_drop = true
 compact_mode = true
 
@@ -363,14 +424,14 @@ layout_mode = 2
 [node name="SearchCurrLnEdt" type="LineEdit" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/TreeContainer/HeaderContainer" unique_id=639092054]
 layout_mode = 2
 size_flags_horizontal = 3
-placeholder_text = "Search Currencies..."
+placeholder_text = "Search Currencies"
 clear_button_enabled = true
 
 [node name="CreateCurrencyBtn" type="Button" parent="ItemsContainer/CurrencyPanel/CurrencyContainer/TreeContainer/HeaderContainer" unique_id=1259045453]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Create currency"
-icon = ExtResource("11_5hvq2")
+icon = ExtResource("13_d1ggt")
 flat = true
 icon_alignment = 1
 
@@ -382,7 +443,7 @@ allow_reselect = true
 hide_folding = true
 hide_root = true
 select_mode = 1
-script = ExtResource("6_dn322")
+script = ExtResource("14_x2dym")
 
 [node name="HBoxContainer" type="HBoxContainer" parent="ItemsContainer/CurrencyPanel/CurrencyContainer" unique_id=980059132]
 layout_mode = 2
@@ -446,7 +507,7 @@ custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add integer"
 disabled = true
-icon = ExtResource("1_e1mk7")
+icon = ExtResource("8_sptbn")
 flat = true
 icon_alignment = 1
 
@@ -455,7 +516,7 @@ custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add float"
 disabled = true
-icon = ExtResource("2_l5u5u")
+icon = ExtResource("9_ocoee")
 flat = true
 icon_alignment = 1
 
@@ -464,7 +525,7 @@ custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add boolean"
 disabled = true
-icon = ExtResource("3_evcfd")
+icon = ExtResource("10_p7e4l")
 flat = true
 icon_alignment = 1
 
@@ -473,7 +534,7 @@ custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add string"
 disabled = true
-icon = ExtResource("4_etwui")
+icon = ExtResource("11_qo6yq")
 flat = true
 icon_alignment = 1
 
@@ -486,7 +547,7 @@ columns = 2
 allow_reselect = true
 hide_root = true
 select_mode = 1
-script = ExtResource("5_hb3ne")
+script = ExtResource("12_y4yy6")
 allow_drag_and_drop = true
 compact_mode = true
 
@@ -518,7 +579,7 @@ columns = 2
 column_titles_visible = true
 allow_reselect = true
 hide_root = true
-script = ExtResource("15_6mxt2")
+script = ExtResource("15_u2cuq")
 
 [node name="InfoContainer" type="HBoxContainer" parent="ItemsContainer/CurrencyPanel/CurrencyCalc" unique_id=708703482]
 layout_mode = 2
@@ -545,11 +606,15 @@ custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 text = "Return"
 
+[node name="ItemSearchDebounce" type="Timer" parent="ItemsContainer" unique_id=1329360020]
+wait_time = 0.3
+one_shot = true
+
 [node name="CategoriesContainer" type="HBoxContainer" parent="." unique_id=1510395103]
 visible = false
 layout_mode = 2
 alignment = 1
-script = ExtResource("10_hb3ne")
+script = ExtResource("16_o0d3q")
 
 [node name="DataContainer" type="VBoxContainer" parent="CategoriesContainer" unique_id=1950818601]
 custom_minimum_size = Vector2(350, 0)
@@ -578,6 +643,7 @@ placeholder_text = "Search Category"
 [node name="NewCategoryBtn" type="Button" parent="CategoriesContainer/DataContainer/SearchContainer" unique_id=1713597529]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
+icon_alignment = 1
 
 [node name="CategoriesTree" type="Tree" parent="CategoriesContainer/DataContainer" unique_id=2090913382]
 custom_minimum_size = Vector2(0, 100)
@@ -589,7 +655,7 @@ column_titles_visible = true
 allow_reselect = true
 hide_root = true
 select_mode = 1
-script = ExtResource("11_dn322")
+script = ExtResource("17_0vtic")
 
 [node name="CustomDataContainer" type="VBoxContainer" parent="CategoriesContainer/DataContainer" unique_id=316780227]
 layout_mode = 2
@@ -625,7 +691,7 @@ custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add integer"
 disabled = true
-icon = ExtResource("1_e1mk7")
+icon = ExtResource("8_sptbn")
 icon_alignment = 1
 
 [node name="AddCatFloatBtn" type="Button" parent="CategoriesContainer/DataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer" unique_id=1435447944]
@@ -633,7 +699,7 @@ custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add float"
 disabled = true
-icon = ExtResource("2_l5u5u")
+icon = ExtResource("9_ocoee")
 icon_alignment = 1
 
 [node name="AddCatBoolBtn" type="Button" parent="CategoriesContainer/DataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer" unique_id=701533575]
@@ -641,7 +707,7 @@ custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add boolean"
 disabled = true
-icon = ExtResource("3_evcfd")
+icon = ExtResource("10_p7e4l")
 icon_alignment = 1
 
 [node name="AddCatStrBtn" type="Button" parent="CategoriesContainer/DataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer" unique_id=1653393041]
@@ -649,7 +715,7 @@ custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Add string"
 disabled = true
-icon = ExtResource("4_etwui")
+icon = ExtResource("11_qo6yq")
 icon_alignment = 1
 
 [node name="ItemDataTree" type="Tree" parent="CategoriesContainer/DataContainer/CustomDataContainer" unique_id=1274450263]
@@ -660,7 +726,7 @@ size_flags_vertical = 3
 columns = 2
 allow_reselect = true
 hide_root = true
-script = ExtResource("5_hb3ne")
+script = ExtResource("12_y4yy6")
 allow_drag_and_drop = true
 compact_mode = true
 

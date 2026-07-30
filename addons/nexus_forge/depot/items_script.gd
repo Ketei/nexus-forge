@@ -8,6 +8,8 @@ signal item_renamed(item_id: StringName, new_name: String)
 signal item_deleted(item_id: StringName)
 
 
+const PAGE_LABEL_STRING: String = "%d / %d"
+
 var item_link: EditorItemRecipeLink = EditorItemRecipeLink.new():
 	set(new_link):
 		new_link.items = item_link.items
@@ -17,8 +19,11 @@ var currency_resource: CurrencyCatalog = null
 
 var items_ui_enabled: bool = true
 var currency_ui_enabled: bool = true
-var loaded_item: StringName = &""
-var current_category: StringName = &""
+var loaded_item: StringName = &"":
+	set(i):
+		loaded_item = i
+		item_id_label.text = String(i)
+		item_id_label.tooltip_text = item_id_label.text
 var loaded_currency: StringName = &""
 var noncategory_loaded: bool = false
 
@@ -39,10 +44,17 @@ var _currency_unsaved: bool = false
 @onready var add_item_str_btn: Button = $ItemsPanel/ItemsContainer/DataContainer/CustomDataContainer/CustomDataHeader/ButtonContainer/AddItemStrBtn
 @onready var item_data_tree: Tree = $ItemsPanel/ItemsContainer/DataContainer/CustomDataContainer/ItemDataTree
 @onready var items_flags_container: VBoxContainer = $ItemsPanel/ItemsContainer/FlagsContainer/ScrollContainer/ItemsFlagsContainer
-@onready var categories_tree: Tree = $ItemsPanel/ItemsContainer/TreeContainer/VBoxContainer/CategoriesTree
-@onready var category_srch_ln_edt: LineEdit = $ItemsPanel/ItemsContainer/TreeContainer/VBoxContainer/HBoxContainer/CategorySrchLnEdt
 @onready var edit_rarities_btn: Button = $ItemsPanel/ItemsContainer/DataContainer/RarityContainer/RarityContainer/EditRaritiesBtn
 @onready var edit_flags_btn: Button = $ItemsPanel/ItemsContainer/FlagsContainer/TitleVContainer/Label/EditFlagsBtn
+
+@onready var item_page_container: HBoxContainer = $ItemsPanel/ItemsContainer/TreeContainer/ItemPageContainer
+@onready var category_opt_btn: OptionButton = $ItemsPanel/ItemsContainer/DataContainer/CategoryContainer/OptBtnContainer/CategoryOptBtn
+@onready var edit_categories_btn: Button = $ItemsPanel/ItemsContainer/DataContainer/CategoryContainer/OptBtnContainer/EditCategoriesBtn
+@onready var item_search_debounce: Timer = $ItemSearchDebounce
+@onready var prev_item_page_btn: Button = $ItemsPanel/ItemsContainer/TreeContainer/ItemPageContainer/PrevItemPageBtn
+@onready var item_page_lbl: Label = $ItemsPanel/ItemsContainer/TreeContainer/ItemPageContainer/ItemPageLbl
+@onready var next_item_page_btn: Button = $ItemsPanel/ItemsContainer/TreeContainer/ItemPageContainer/NextItemPageBtn
+@onready var item_id_label: Label = $ItemsPanel/ItemsContainer/DataContainer/ItemIDLabel
 
 
 # ------- Currencies -------
@@ -69,7 +81,6 @@ var _currency_unsaved: bool = false
 
 
 func ready_plugin(use_items: bool, use_currencies: bool) -> void:
-	category_srch_ln_edt.right_icon = get_theme_icon("Search", "EditorIcons")
 	search_curr_ln_edt.right_icon = get_theme_icon("Search", "EditorIcons")
 	edit_rarities_btn.icon = get_theme_icon("Edit", "EditorIcons")
 	edit_flags_btn.icon = get_theme_icon("Edit", "EditorIcons")
@@ -79,9 +90,11 @@ func ready_plugin(use_items: bool, use_currencies: bool) -> void:
 	reset_calculator_btn.icon = get_theme_icon("Reload", "EditorIcons")
 	copy_val_btn.icon = get_theme_icon("ActionCopy", "EditorIcons")
 	
+	next_item_page_btn.icon = get_theme_icon("Forward", "EditorIcons")
+	prev_item_page_btn.icon = get_theme_icon("Back", "EditorIcons")
 	
 	if use_items:
-		categories_tree.ready_plugin()
+		new_item_btn.disabled = false
 		items_tree.ready_plugin()
 		item_data_tree.ready_plugin()
 		reload_item_resource(true)
@@ -91,8 +104,12 @@ func ready_plugin(use_items: bool, use_currencies: bool) -> void:
 		currencies_tee.ready_plugin()
 		reload_currency_resource(true)
 	
+	item_search_debounce.timeout.connect(_on_search_item_debounce_timeout)
+	prev_item_page_btn.pressed.connect(_on_prev_page_btn_pressed)
+	next_item_page_btn.pressed.connect(_on_next_page_btn_pressed)
 	search_item_container.text_changed.connect(_on_search_item_text_changed)
 	new_item_btn.pressed.connect(_on_create_item_pressed)
+	items_tree.pagination_changed.connect(_on_tree_pagination_changed)
 	items_tree.item_id_selected.connect(_on_item_selected, CONNECT_DEFERRED)
 	items_tree.item_id_changed.connect(_on_item_id_changed, CONNECT_DEFERRED)
 	items_tree.item_erased.connect(_on_item_erased, CONNECT_DEFERRED)
@@ -101,8 +118,7 @@ func ready_plugin(use_items: bool, use_currencies: bool) -> void:
 	item_val_spn_bx.value_changed.connect(_on_items_changed)
 	item_desc_txt_edt.text_changed.connect(_on_items_changed)
 	item_data_tree.data_changed.connect(_on_items_changed)
-	categories_tree.category_selected.connect(_on_category_selected, CONNECT_DEFERRED)
-	categories_tree.items_recategorized.connect(_on_items_recategorized, CONNECT_DEFERRED)
+	
 	item_name_ln_edt.focus_exited.connect(_on_item_name_focus_lost, CONNECT_DEFERRED)
 	add_item_int_btn.pressed.connect(add_item_data.bind("new_int", 0))
 	add_item_float_btn.pressed.connect(add_item_data.bind("new_float", 0.0))
@@ -123,7 +139,6 @@ func ready_plugin(use_items: bool, use_currencies: bool) -> void:
 	add_curr_str_btn.pressed.connect(add_currency_data.bind("new_string", ""))
 	add_curr_dict_button.pressed.connect(add_currency_data.bind("new_folder", {}))
 	
-	category_srch_ln_edt.text_changed.connect(_on_category_search_text_changed)
 	search_curr_ln_edt.text_changed.connect(_on_currency_search_text_changed)
 	edit_flags_btn.pressed.connect(_on_edit_flags_pressed)
 	edit_rarities_btn.pressed.connect(_on_edit_rarities_pressed)
@@ -209,6 +224,43 @@ func _on_edit_flags_pressed() -> void:
 		EditorInterface.set_main_screen_editor("Script")
 
 
+func _on_next_page_btn_pressed() -> void:
+	if item_search_debounce.is_stopped() and items_tree.has_next_page():
+		items_tree.next_page()
+		update_page_buttons()
+		update_page_label()
+
+
+func _on_prev_page_btn_pressed() -> void:
+	if item_search_debounce.is_stopped() and items_tree.has_previous_page():
+		items_tree.previous_page()
+		update_page_buttons()
+		update_page_label()
+
+
+func _on_tree_pagination_changed() -> void:
+	if 1 < items_tree.last_page:
+		if not item_page_container.visible:
+			item_page_container.visible = true
+		update_page_label()
+		update_page_buttons()
+	else:
+		item_page_container.visible = false
+
+
+func update_page_label() -> void:
+	if not item_search_debounce.is_stopped():
+		await item_search_debounce.timeout
+	item_page_lbl.text = PAGE_LABEL_STRING % [items_tree.current_page, items_tree.last_page]
+
+
+func update_page_buttons() -> void:
+	if not item_search_debounce.is_stopped():
+		await item_search_debounce.timeout
+	prev_item_page_btn.disabled = not items_tree.has_previous_page()
+	next_item_page_btn.disabled = not items_tree.has_next_page()
+
+
 #region Currencies
 
 func _on_currency_search_text_changed(text: String) -> void:
@@ -216,7 +268,7 @@ func _on_currency_search_text_changed(text: String) -> void:
 
 
 func _on_create_currency_database_pressed(node: Control) -> void:
-	var database_creator := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
+	var database_creator: FileDialog = load("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	database_creator.file_mode = database_creator.FILE_MODE_SAVE_FILE
 	add_child(database_creator)
 	database_creator.show()
@@ -241,7 +293,7 @@ func _on_create_currency_database_pressed(node: Control) -> void:
 
 
 func _on_load_currency_database_pressed(node: Control) -> void:
-	var database_creator := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
+	var database_creator: FileDialog = load("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	database_creator.file_mode = database_creator.FILE_MODE_OPEN_FILE
 	add_child(database_creator)
 	database_creator.show()
@@ -312,7 +364,6 @@ func _on_currency_value_changed(new_value: int) -> void:
 	if loaded_currency.is_empty():
 		return
 	
-	#currencies_tee.update_currency_value(loaded_currency, new_value)
 	_on_currency_changed()
 
 
@@ -351,8 +402,7 @@ func _on_currency_selected(currency_id: StringName) -> void:
 
 func reload_currency_resource(first_launch: bool = false) -> void:
 	var was_null: bool = currency_resource == null
-	currency_resource = null # Release
-	#currency_resource = CurrencyCatalog.new() # Debug
+	currency_resource = null
 	
 	clear_currency_section()
 	
@@ -482,59 +532,11 @@ func _on_copy_value_button_pressed() -> void:
 	DisplayServer.clipboard_set(value_ln_edt.text)
 
 
-func _on_category_search_text_changed(text: String) -> void:
-	categories_tree.search_pattern(text.strip_edges())
-
-
 func _on_item_name_focus_lost() -> void:
 	var new_name: String = item_name_ln_edt.text.strip_edges()
 	if loaded_item.is_empty() or item_link.items.get_item_name(loaded_item) == new_name:
 		return
 	item_link.item_renamed.emit(loaded_item, new_name)
-
-
-func _on_items_recategorized(new_category: StringName, items: Array[StringName]):
-	if new_category == current_category:
-		return
-	var clean: bool = false
-	
-	if loaded_item in items:
-		save_current_item()
-		clean = true
-	
-	for item in items:
-		item_link.items.set_item_category(item, new_category)
-	
-	items_tree.remove_items(items)
-	
-	if clean:
-		loaded_item = &""
-		item_name_ln_edt.text = ""
-		rarity_opt_btn.select(0 if 0 < rarity_opt_btn.item_count else -1)
-		item_val_spn_bx.set_value_no_signal(0)
-		item_desc_txt_edt.text = ""
-		item_data_tree.clear_data()
-		reset_flags()
-		set_items_ui_enabled(false)
-
-
-func _on_category_selected(category: StringName) -> void:
-	if noncategory_loaded if category.is_empty() else current_category == category:
-		return
-	
-	if not loaded_item.is_empty():
-		save_current_item()
-	
-	clear_all_fields()
-	loaded_item = &""
-	current_category = category
-	noncategory_loaded = category.is_empty()
-	new_item_btn.disabled = false
-	
-	for item in item_link.items.items():
-		if item_link.items.get_item_category(item) == category:
-			items_tree.add_item(item)
-	set_items_ui_enabled(false)
 
 
 func _on_item_id_changed(from: StringName, to: StringName) -> void:
@@ -546,11 +548,53 @@ func _on_item_id_changed(from: StringName, to: StringName) -> void:
 
 
 func _on_search_item_text_changed(text: String) -> void:
-	items_tree.search_for(text.strip_edges())
+	item_search_debounce.start()
+
+
+func _on_search_item_debounce_timeout() -> void:
+	var result: Dictionary = _parse_search_query(search_item_container.text)
+	items_tree.search_for(result["text"], result["category"])
+
+
+func _parse_search_query(query: String) -> Dictionary:
+	var result = {
+		"text": "",
+		"category": ""}
+	
+	var name_prefix: String = "name:"
+	var category_prefix: String = "category:"
+	
+	var cat_idx: int = query.find(category_prefix)
+	if cat_idx == -1:
+		cat_idx = query.find("c:")
+		category_prefix = "c:"
+	var name_idx: int = query.find(name_prefix)
+	if name_idx == -1:
+		name_idx = query.find("n:")
+		name_prefix = "n:"
+	
+	# If neither tag is present, the whole query is just the item text.
+	if cat_idx == -1 and name_idx == -1:
+		result["text"] = query.strip_edges()
+	elif cat_idx == -1:
+		result["text"] = query.substr(name_idx, -1).trim_prefix(name_prefix).strip_edges()
+	elif name_idx == -1:
+		if 0 < cat_idx:
+			result["text"] = query.substr(0, cat_idx).strip_edges()
+		result["category"] = query.substr(cat_idx, -1).trim_prefix(category_prefix).strip_edges()
+	else:
+		if cat_idx < name_idx:
+			result["category"] = query.substr(cat_idx, name_idx - cat_idx).trim_prefix(category_prefix).strip_edges()
+			result["text"] = query.substr(name_idx, -1).trim_prefix(name_prefix).strip_edges()
+		else:
+			result["text"] = query.substr(name_idx, cat_idx - name_idx).trim_prefix(name_prefix).strip_edges()
+			result["category"] = query.substr(cat_idx, -1).trim_prefix(category_prefix).strip_edges()
+	
+	return result
 
 
 func _on_create_database_pressed(node: Control) -> void:
-	var database_creator := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
+	var database_creator: FileDialog = load("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	database_creator.file_mode = database_creator.FILE_MODE_SAVE_FILE
 	add_child(database_creator)
 	database_creator.show()
@@ -577,7 +621,7 @@ func _on_create_database_pressed(node: Control) -> void:
 
 
 func _on_load_database_pressed(node: Control) -> void:
-	var database_creator := preload("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
+	var database_creator: FileDialog = load("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	database_creator.file_mode = database_creator.FILE_MODE_OPEN_FILE
 	add_child(database_creator)
 	database_creator.show()
@@ -638,6 +682,7 @@ func _on_item_erased(item_id: StringName) -> void:
 		item_data_tree.clear_data()
 		reset_flags()
 		set_items_ui_enabled(false)
+	update_page_label()
 	item_deleted.emit(item_id)
 	_on_items_changed()
 
@@ -656,26 +701,30 @@ func _on_create_item_pressed() -> void:
 	id_creator.error_line_empty_msg = "ID can't be empty"
 	
 	add_child(id_creator)
-	id_creator.show()
+	id_creator.popup_centered()
 	id_creator.grab_text_focus()
 	
 	var result = await id_creator.dialog_finished
 	
-	if result[0]:
-		if not loaded_item.is_empty():
-			save_current_item()
-		
-		var item_id: StringName = StringName(result[1])
-		#item_resource.create_item(item_id)
-		item_link.create_item(item_id)
-		item_link.set_item_name(item_id, "New Item")
-		items_tree.add_item(item_id, true, false)
-		load_item(item_id)
-		loaded_item = item_id
-		set_items_ui_enabled(true)
-		item_created.emit(item_id, "New Item")
-		_on_items_changed()
 	id_creator.queue_free()
+	
+	if not result[0]:
+		return
+	
+	if not loaded_item.is_empty():
+		save_current_item()
+	
+	var item_id: StringName = StringName(result[1])
+	
+	item_link.create_item(item_id)
+	item_link.set_item_name(item_id, "New Item")
+	items_tree.add_item(item_id)
+	items_tree.select_item(item_id, false)
+	load_item(item_id)
+	loaded_item = item_id
+	set_items_ui_enabled(true)
+	item_created.emit(item_id, "New Item")
+	_on_items_changed()
 
 
 func add_item_data(data_key: String, data: Variant) -> void:
@@ -691,6 +740,7 @@ func set_items_ui_enabled(enabled: bool) -> void:
 	rarity_opt_btn.disabled = disabled
 	item_val_spn_bx.editable = enabled
 	item_desc_txt_edt.editable = enabled
+	category_opt_btn.disabled = disabled
 	
 	add_item_int_btn.disabled = disabled
 	add_item_float_btn.disabled = disabled
@@ -718,8 +768,8 @@ func clear_all_fields() -> void:
 func save_current_item() -> void:
 	item_link.set_item_name(loaded_item, item_name_ln_edt.text.strip_edges())
 	item_link.items.set_item_description(loaded_item, item_desc_txt_edt.text.strip_edges())
-	item_link.items.set_item_category(loaded_item, current_category)
-	
+	item_link.items.set_item_category(loaded_item, category_opt_btn.get_selected_metadata())
+	items_tree.set_item_category(loaded_item, category_opt_btn.get_selected_metadata())
 	if -1 < rarity_opt_btn.selected:
 		item_link.items.set_item_rarity(loaded_item,  rarity_opt_btn.get_selected_metadata())
 	else:
@@ -756,6 +806,7 @@ func load_item(item_id: StringName) -> void:
 		return
 	
 	item_name_ln_edt.text = item.name
+	select_category(item.category)
 	select_rarity(item.rarity)
 	item_val_spn_bx.set_value_no_signal(item.value)
 	item_desc_txt_edt.text = item.description
@@ -778,15 +829,9 @@ func select_rarity(rarity: ItemSheet.Rarity) -> void:
 			break
 
 
-func _add_category_map(categories: Dictionary[StringName, Dictionary], target: TreeItem = categories_tree.get_root()) -> void:
-	for top_category in categories.keys():
-		var new_target: TreeItem = categories_tree.add_category(top_category, target)
-		_add_category_map(categories[top_category], new_target)
-
-
 func reload_item_resource(first_launch: bool = false) -> void:
 	var was_null: bool = item_link.items == null
-	item_link.items = null # Release
+	item_link.items = null
 	item_name_ln_edt.text = ""
 	item_desc_txt_edt.text = ""
 	item_val_spn_bx.set_value_no_signal(0.0)
@@ -818,34 +863,53 @@ func reload_item_resource(first_launch: bool = false) -> void:
 			new_item_btn.disabled = true
 	else:
 		reload_categories()
+		items_tree.clear_entries()
+		
+		for item in item_link.items.items():
+			items_tree.register_item(item, item_link.items.get_item_category(item))
+		items_tree.sort_registered_items()
+		
+		if 1 < items_tree.last_page:
+			item_page_container.visible = true
+			update_page_label()
+			next_item_page_btn.disabled = not items_tree.has_next_page()
+			prev_item_page_btn.disabled = not items_tree.has_previous_page()
+		else:
+			item_page_container.visible = false
 		resource_loaded.emit()
 
 
 func reload_categories(reselect: bool = false) -> void:
-	var item_selected: bool = categories_tree.get_selected() != null
+	var can_reselect: bool = -1 < category_opt_btn.selected if reselect else false
+	var selected: StringName = category_opt_btn.get_item_metadata(category_opt_btn.selected) if can_reselect else &""
 	
-	categories_tree.clear_categories()
+	category_opt_btn.clear()
+	category_opt_btn.add_item("(unassigned)")
+	category_opt_btn.set_item_metadata(0, &"")
 	
-	var top_level_categories: Array[StringName] = []
+	var categories: Dictionary[StringName, String] = {}
+	var category_ids: Array[StringName] = []
 	
 	for category in item_link.items.categories():
-		if item_link.items.get_category_parent(category) == &"":
-			top_level_categories.append(category)
+		categories[category] = String(category).capitalize()
 	
-	for category in top_level_categories:
-		var subcategories: Dictionary[StringName, Dictionary] = item_link.items.get_subcategories_of(category)
-		
-		_add_category_map(subcategories)
+	category_ids.assign(categories.keys())
 	
-	categories_tree.add_category(&"")
-	var new_selection: TreeItem = categories_tree.get_category(current_category) if item_selected else null
+	category_ids.sort_custom(func(a,b): return categories[a] < categories[b])
 	
-	if reselect and new_selection != null:
-		categories_tree.select_no_singal(new_selection)
-	else:
-		current_category = &""
-		clear_all_fields()
-		new_item_btn.disabled = true
+	for category_id in category_ids:
+		category_opt_btn.add_item(categories[category_id])
+		category_opt_btn.set_item_metadata(-1, category_id)
+	
+	if can_reselect:
+		select_category(selected)
+
+
+func select_category(category_id: StringName) -> void:
+	for idx in range(category_opt_btn.item_count):
+		if category_opt_btn.get_item_metadata(idx) == category_id:
+			category_opt_btn.select(idx)
+			break
 
 
 func reload_fields() -> void:

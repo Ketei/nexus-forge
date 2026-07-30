@@ -65,6 +65,7 @@ func ready_plugin() -> void:
 		_undo.max_steps = undo_redo_steps
 	
 	create_item()
+	
 	set_column_title(0, "Data ID")
 	set_column_title(1, "Data Value")
 	
