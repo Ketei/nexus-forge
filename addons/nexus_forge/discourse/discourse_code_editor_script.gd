@@ -25,6 +25,7 @@ func ready_plugin() -> void:
 	style.bg_color = get_theme_color("background", "Editor")
 	style.set_content_margin_all(8.0)
 	
+	text_code_edit.clear_string_delimiters()
 	text_code_edit.syntax_highlighter = highlighter
 	panel.add_theme_stylebox_override(&"panel", style)
 	
