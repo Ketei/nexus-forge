@@ -50,7 +50,7 @@ Nexus Forge makes use of [several class names](https://https://github.com/Ketei/
 
 ### Installation Steps
 > [!IMPORTANT]
-> The main branch will always be more updated, while the latest build will be more stable.
+> The main branch will always be more up-to-date, while the latest build will be more stable.
 1. Download the [latest build](https://github.com/Ketei/nexus-forge/releases/latest) or the a copy of the [main branch](https://github.com/Ketei/nexus-forge/archive/refs/heads/main.zip).
 2. Extract the zip file and extract the `addons/nexus_forge` folder to your project's `res://addons` directory.
 3. Go to `Project` → `Project Settings` → `Plugins` and enable NexusForge
