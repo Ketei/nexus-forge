@@ -15,8 +15,7 @@
 > **Beta State:** The plugin is fully functional but some utility and navigation features are unimplemented, incomplete or inconsistent. Any breaking changes will be announced on the releases page. Please report any bugs you encounter!
 > 
 > This began as a personal tool, so it includes a few specific static helper classes tailored for my own workflow.
-
-> [!IMPORTANT]
+>
 > **About Undo/Redo:** Not all modules of Nexus Forge implement the Undo/Redo system. Check the roadmap to find out which modules support these actions.
 
 ## Contents
@@ -50,6 +49,8 @@ I hope this can help you build your games and improve your workflow as much as i
 Nexus Forge makes use of [several class names](https://https://github.com/Ketei/nexus-forge/wiki#reserved-class-names). Make sure you have them available before installing.
 
 ### Installation Steps
+> [!IMPORTANT]
+> The main branch will always be more updated, while the latest build will be more stable.
 1. Download the [latest build](https://github.com/Ketei/nexus-forge/releases/latest) or the a copy of the [main branch](https://github.com/Ketei/nexus-forge/archive/refs/heads/main.zip).
 2. Extract the zip file and extract the `addons/nexus_forge` folder to your project's `res://addons` directory.
 3. Go to `Project` → `Project Settings` → `Plugins` and enable NexusForge
