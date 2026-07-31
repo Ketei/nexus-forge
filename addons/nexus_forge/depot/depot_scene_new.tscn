@@ -217,7 +217,7 @@ disabled = true
 [node name="EditCategoriesBtn" type="Button" parent="ItemsContainer/ItemsPanel/ItemsContainer/DataContainer/CategoryContainer/OptBtnContainer" unique_id=445113411]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
-tooltip_text = "Edit Rarities"
+tooltip_text = "Edit Categories"
 flat = true
 icon_alignment = 1
 
@@ -591,13 +591,19 @@ text = "Total value:"
 [node name="ValueLnEdt" type="LineEdit" parent="ItemsContainer/CurrencyPanel/CurrencyCalc/InfoContainer" unique_id=922363764]
 layout_mode = 2
 size_flags_horizontal = 3
+mouse_default_cursor_shape = 0
 text = "0"
 placeholder_text = "Result"
 editable = false
+middle_mouse_paste_enabled = false
+selecting_enabled = false
+drag_and_drop_selection_enabled = false
 
 [node name="CopyValBtn" type="Button" parent="ItemsContainer/CurrencyPanel/CurrencyCalc/InfoContainer" unique_id=1285821437]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
+tooltip_text = "Click: Copy Value
+Drag: Get Value"
 flat = true
 icon_alignment = 1
 

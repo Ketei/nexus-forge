@@ -116,6 +116,7 @@ func ready_plugin(use_items: bool, use_currencies: bool) -> void:
 	item_name_ln_edt.text_changed.connect(_on_items_changed)
 	rarity_opt_btn.item_selected.connect(_on_items_changed)
 	item_val_spn_bx.value_changed.connect(_on_items_changed)
+	item_val_spn_bx.set_drag_forwarding(Callable(), _item_val_can_drop_data, _on_item_val_drop_data)
 	item_desc_txt_edt.text_changed.connect(_on_items_changed)
 	item_data_tree.data_changed.connect(_on_items_changed)
 	
@@ -142,12 +143,14 @@ func ready_plugin(use_items: bool, use_currencies: bool) -> void:
 	search_curr_ln_edt.text_changed.connect(_on_currency_search_text_changed)
 	edit_flags_btn.pressed.connect(_on_edit_flags_pressed)
 	edit_rarities_btn.pressed.connect(_on_edit_rarities_pressed)
-	
 	currencies_tee.calculation_updated.connect(_on_calculation_updated)
 	copy_val_btn.pressed.connect(_on_copy_value_button_pressed, CONNECT_DEFERRED)
+	copy_val_btn.set_drag_forwarding(_get_copy_button_drag_data, Callable(), Callable())
 	reset_calculator_btn.pressed.connect(_on_reset_calculator_pressed)
 	return_currency_btn.pressed.connect(_on_return_calculator_button_pressed)
 	go_to_calc_btn.pressed.connect(_on_go_to_calculator_pressed, CONNECT_DEFERRED)
+	
+	value_ln_edt.set_drag_forwarding(_get_copy_button_drag_data, Callable(), Callable())
 
 
 func _on_edit_rarities_pressed() -> void:
@@ -526,6 +529,27 @@ func _on_reset_calculator_pressed() -> void:
 
 func _on_calculation_updated(new_value: int) -> void:
 	value_ln_edt.text = str(new_value)
+
+
+func _get_copy_button_drag_data(_at_position: Vector2) -> Variant:
+	var val_label: Label = Label.new()
+	val_label.text = "   " + value_ln_edt.text
+	set_drag_preview(val_label)
+	return value_ln_edt.text.to_int()
+
+
+func _on_item_val_drop_data(at_position: Vector2, data: Variant) -> void:
+	item_val_spn_bx.value = data
+
+
+func _item_val_can_drop_data(at_position: Vector2, data: Variant) -> bool:
+	if not item_val_spn_bx.editable:
+		return false
+	match typeof(data):
+		TYPE_INT, TYPE_FLOAT:
+			return true
+		_:
+			return false
 
 
 func _on_copy_value_button_pressed() -> void:
