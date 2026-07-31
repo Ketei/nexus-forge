@@ -612,6 +612,7 @@ func convert_for_release() -> DiscourseDialog:
 				export_data["next_node"] = target_finder.get_target(node_data[node_id]["output_connections"]["next_node"]["target_node_uuid"])
 			NodeType.CHOICES:
 				var options: Array[Dictionary] = []
+				
 				for option:Dictionary in metadata["choices"]:
 					var new_option: Dictionary[String, Variant] = {
 						"next_node": target_finder.get_target(StringName(option["output_connections"]["next_node"]["target_node_uuid"])),
@@ -680,6 +681,7 @@ func convert_for_release() -> DiscourseDialog:
 						printerr("[DISCOURSE] Warning: Issue when exporting ", resource_path, ". Event ", node_data[node_id]["name"], " emits an inexistent signal.")
 				else:
 					export_data["signal"] = &""
+				
 				export_data["next_node"] = target_finder.get_target(StringName(node_data[node_id]["output_connections"]["next_node"]["target_node_uuid"]))
 				
 				if var_val.is_empty():
@@ -1073,13 +1075,13 @@ func _add_locale_data(file: DiscourseDialogLocale, localization_id: String, loca
 	
 	for format_key in format_strings.keys():
 		if not format_strings[format_key].has(locale) or typeof(format_strings[format_key][locale]) != TYPE_DICTIONARY:
-			push_warning("[DISCOURSE] Format string with key '%s' doesn't have valid localization data for locale '%s'. Skipping" % [format_key, locale])
+			push_warning("[DISCOURSE] Format string of file '%s' with key '%s' doesn't have valid localization data for locale '%s'. Skipping" % [resource_path, format_key, locale])
 			continue
 		
 		var data: Dictionary = format_strings[format_key][locale]
 		
 		if not data.has_all(["base_string", "format"]) or typeof(data["base_string"]) != TYPE_STRING or typeof(data["format"]) != TYPE_DICTIONARY:
-			push_error("[DISCOURSE] Format string with key '%s' doesn't have valid localization data for locale '%s'. Skipping" % [format_key, locale])
+			push_error("[DISCOURSE] Format string of file '%s' with key '%s' doesn't have valid localization data for locale '%s'. Skipping" % [resource_path, format_key, locale])
 			continue
 		
 		var valid_formats: Dictionary = {}
@@ -1088,7 +1090,7 @@ func _add_locale_data(file: DiscourseDialogLocale, localization_id: String, loca
 			var valid_cases: Dictionary = {}
 			
 			if typeof(data["format"][format_slice]) != TYPE_DICTIONARY or not data["format"][format_slice].has_all(["default", "cases"]) or typeof(data["format"][format_slice]["default"]) != TYPE_STRING or typeof(data["format"][format_slice]["cases"]) != TYPE_DICTIONARY:
-				push_error("[DISCOURSE] Format string with key '%s' format '%s' has missing or corrupt data. Skipping" % [format_key, format_slice])
+				push_error("[DISCOURSE] Format string of file '%s' with key '%s' format '%s' has missing or corrupt data. Skipping" % [resource_path, format_key, format_slice])
 				continue
 			
 			var formats: Dictionary = data["format"][format_slice]
@@ -1101,7 +1103,10 @@ func _add_locale_data(file: DiscourseDialogLocale, localization_id: String, loca
 				var format_type: int = typeof(formats["cases"][case])
 				
 				if format_type != TYPE_STRING and format_type != TYPE_STRING_NAME:
-					push_warning("[DISCOURSE] Case of format string with key " + format_key + " format " + format_slice + " case " + case + " is not of type string. Patching with warning string.")
+					NFPluginGameHandler._log_msg(
+							"dialog export",
+							"[DISCOURSE] Case on file '%s', format string with key '%s' format '%s' case '%s' is not of type string. Patching with warning string." % [resource_path, format_key, format_slice, case],
+							NFPluginGameHandler._LogLevel.WARNING)
 					valid_cases[case] = "[CASE NOT IMPLEMENTED]"
 				else:
 					valid_cases[case] = formats["cases"][case]

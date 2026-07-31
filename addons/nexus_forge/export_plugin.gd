@@ -138,9 +138,6 @@ func _customize_resource(resource: Resource, path: String) -> Resource:
 			file.store_string(locale_file.as_json())
 			file.close()
 			
-			
-				
-			
 			if file != null:
 				if added_files.has(virtual_path):
 					NFPluginGameHandler._log_msg(
