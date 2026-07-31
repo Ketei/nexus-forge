@@ -1311,7 +1311,7 @@ func _do_update_trait(trait_id: StringName, to: String) -> void:
 	_on_traits_changed()
 
 
-func _on_data_tree_updated(type: int, id: StringName) -> void:
+func _on_data_tree_updated(type: int) -> void:
 	match type:
 		0:
 			if stat_data_tree.has_undo():

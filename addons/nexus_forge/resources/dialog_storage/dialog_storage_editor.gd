@@ -612,7 +612,6 @@ func convert_for_release() -> DiscourseDialog:
 				export_data["next_node"] = target_finder.get_target(node_data[node_id]["output_connections"]["next_node"]["target_node_uuid"])
 			NodeType.CHOICES:
 				var options: Array[Dictionary] = []
-				
 				for option:Dictionary in metadata["choices"]:
 					var new_option: Dictionary[String, Variant] = {
 						"next_node": target_finder.get_target(StringName(option["output_connections"]["next_node"]["target_node_uuid"])),

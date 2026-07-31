@@ -18,22 +18,6 @@ var active_recipe: StringName = &"":
 		add_rcp_str_btn.disabled = not valid
 		add_rcp_fldr_btn.disabled = not valid
 		recipe_custom_data_tree.enabled = valid
-var _active_input_rcp: int = -1:
-	set(active_item):
-		_active_input_rcp = active_item
-		var invalid_item: bool = _active_input_rcp == -1
-		add_rcp_in_int_btn.disabled = invalid_item
-		add_rcp_in_float_btn.disabled = invalid_item
-		add_rcp_in_bool_btn.disabled = invalid_item
-		add_rcp_in_str_btn.disabled = invalid_item
-var _active_output_rcp: int = -1:
-	set(active_item):
-		_active_output_rcp = active_item
-		var invalid_item: bool = _active_output_rcp == -1
-		add_rcp_out_int_btn.disabled = invalid_item
-		add_rcp_out_float_btn.disabled = invalid_item
-		add_rcp_out_bool_btn.disabled = invalid_item
-		add_rcp_out_str_btn.disabled = invalid_item
 var _unsaved: bool = false
 
 @onready var search_recipes_ln_edt: LineEdit = $CraftingContainer/RecipeSelectContainer/MainContainer/SearchRecipesLnEdt
@@ -41,15 +25,7 @@ var _unsaved: bool = false
 @onready var recipe_tree: Tree = $CraftingContainer/RecipeSelectContainer/RecipeTree
 @onready var search_recipe_items_ln_edt: LineEdit = $CraftingContainer/RecipeDataContainer/RecipeItemTreeContainer/SearchRecipeItemsLnEdt
 @onready var recipe_items_tree: Tree = $CraftingContainer/RecipeDataContainer/RecipeItemTreeContainer/RecipeItemsTree
-@onready var add_rcp_in_int_btn: Button = $CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/InputContainer/DataBtnCtnr/ButtonContainer/AddRcpInIntBtn
-@onready var add_rcp_in_float_btn: Button = $CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/InputContainer/DataBtnCtnr/ButtonContainer/AddRcpInFloatBtn
-@onready var add_rcp_in_bool_btn: Button = $CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/InputContainer/DataBtnCtnr/ButtonContainer/AddRcpInBoolBtn
-@onready var add_rcp_in_str_btn: Button = $CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/InputContainer/DataBtnCtnr/ButtonContainer/AddRcpInStrBtn
 @onready var recipe_input_tree: Tree = $CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/InputContainer/RecipeInputTree
-@onready var add_rcp_out_int_btn: Button = $CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/OutputContainer/DataBtnCtnr/ButtonContainer/AddRcpOutIntBtn
-@onready var add_rcp_out_float_btn: Button = $CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/OutputContainer/DataBtnCtnr/ButtonContainer/AddRcpOutFloatBtn
-@onready var add_rcp_out_bool_btn: Button = $CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/OutputContainer/DataBtnCtnr/ButtonContainer/AddRcpOutBoolBtn
-@onready var add_rcp_out_str_btn: Button = $CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/OutputContainer/DataBtnCtnr/ButtonContainer/AddRcpOutStrBtn
 @onready var recipe_output_tree: Tree = $CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/OutputContainer/RecipeOutputTree
 @onready var add_rcp_fldr_btn: Button = $CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/CustomDataContainer/CustomDataHeader/ButtonContainer/AddRcpFldrBtn
 @onready var add_rcp_int_btn: Button = $CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/CustomDataContainer/CustomDataHeader/ButtonContainer/AddRcpIntBtn
@@ -73,28 +49,13 @@ func ready_plugin() -> void:
 	reload_recipe_resource(true)
 	reload_items()
 	
-	add_rcp_in_int_btn.pressed.connect(_on_recipe_item_add_data_button_pressed.bind(true, "new_int", 0))
-	add_rcp_in_float_btn.pressed.connect(_on_recipe_item_add_data_button_pressed.bind(true, "new_float", 0.0))
-	add_rcp_in_bool_btn.pressed.connect(_on_recipe_item_add_data_button_pressed.bind(true, "new_bool", false))
-	add_rcp_in_str_btn.pressed.connect(_on_recipe_item_add_data_button_pressed.bind(true, "new_string", ""))
-	
-	add_rcp_out_int_btn.pressed.connect(_on_recipe_item_add_data_button_pressed.bind(false, "new_int", 0))
-	add_rcp_out_float_btn.pressed.connect(_on_recipe_item_add_data_button_pressed.bind(false, "new_float", 0.0))
-	add_rcp_out_bool_btn.pressed.connect(_on_recipe_item_add_data_button_pressed.bind(false, "new_bool", false))
-	add_rcp_out_str_btn.pressed.connect(_on_recipe_item_add_data_button_pressed.bind(false, "new_string", ""))
-	
-	recipe_input_tree.recipe_item_selected.connect(_on_input_item_selected)
-	recipe_output_tree.recipe_item_selected.connect(_on_output_item_selected)
-	
 	add_rcp_int_btn.pressed.connect(_on_custom_data_button_pressed.bind("new_int", 0))
 	add_rcp_float_btn.pressed.connect(_on_custom_data_button_pressed.bind("new_float", 0.0))
 	add_rcp_bool_btn.pressed.connect(_on_custom_data_button_pressed.bind("new_bool", false))
 	add_rcp_str_btn.pressed.connect(_on_custom_data_button_pressed.bind("new_string", ""))
 	add_rcp_fldr_btn.pressed.connect(_on_custom_data_button_pressed.bind("new_folder", {}))
 	
-	recipe_input_tree.item_id_dropped.connect(_on_item_id_dropped.bind(true))
 	recipe_input_tree.items_changed.connect(_something_changed)
-	recipe_output_tree.item_id_dropped.connect(_on_item_id_dropped.bind(false))
 	recipe_output_tree.items_changed.connect(_something_changed)
 	
 	create_recipe_btn.pressed.connect(_on_recipe_create_pressed)
@@ -166,24 +127,6 @@ func _something_changed(arg: Variant = null) -> void:
 	if _unsaved:
 		return
 	_unsaved = true
-
-
-func _on_item_id_dropped(item_id: StringName, on_index: int, on_input: bool) -> void:
-	add_recipe_item(on_input, item_id, 1, {}, on_index)
-	_something_changed()
-
-
-func _on_input_item_selected(index: int) -> void:
-	_active_input_rcp = index
-
-
-func _on_output_item_selected(index: int) -> void:
-	_active_output_rcp = index
-
-
-func _on_recipe_item_add_data_button_pressed(on_input: bool, id: String, data: Variant) -> void:
-	add_data_to_active_recipe_item(on_input, data, id)
-	_something_changed()
 
 
 func _on_custom_data_button_pressed(id: String, data: Variant) -> void:
@@ -324,7 +267,6 @@ func reload_items(items: ItemCatalog = null) -> void:
 			recipe_items_tree.add_item(
 					item,
 					items.get_item_name(item))
-		
 
 
 func load_recipe_resource() -> void:
@@ -407,7 +349,7 @@ func _on_recipe_erased(recipe_id: StringName) -> void:
 		
 		recipe_input_tree.clear_items()
 		recipe_output_tree.clear_items()
-		recipe_custom_data_tree.clear_data()
+		recipe_custom_data_tree.clear_data(false)
 	_something_changed()
 
 
@@ -425,124 +367,21 @@ func load_recipe(recipe_id: StringName) -> void:
 	recipe_output_tree.clear_items()
 	
 	for item in recipe.input:
-		add_recipe_item(
-			true,
-			item.id,
-			item.amount,
-			item.custom_data)
-	
-	for item in recipe.output:
-		add_recipe_item(
-				false,
+		recipe_input_tree.add_item(
 				item.id,
 				item.amount,
-				item.custom_data)
+				item.custom_data,
+				false,
+				true)
 	
-	recipe_custom_data_tree.clear_data()
+	for item in recipe.output:
+		recipe_output_tree.add_item(
+				item.id,
+				item.amount,
+				item.custom_data,
+				false,
+				true)
+	
+	recipe_custom_data_tree.clear_data(false)
 	for data_entry in recipe.custom_data.keys():
 		recipe_custom_data_tree.add_data(data_entry, recipe.custom_data[data_entry])
-
-
-func add_recipe_item(to_input: bool, item_id: StringName, input_amount: int = 1, data: Dictionary = {}, index: int = -1) -> void:
-	if to_input:
-		recipe_input_tree.add_item(
-				item_id,
-				input_amount,
-				data,
-				true,
-				true,
-				index)
-	else:
-		recipe_output_tree.add_item(
-				item_id,
-				input_amount,
-				data,
-				true,
-				true,
-				index)
-
-
-func add_data_to_active_recipe_item(on_input: bool, data: Variant, data_name: String = "new_data") -> void:
-	if on_input and _active_input_rcp == null:
-		return
-	elif not on_input and _active_output_rcp == null:
-		return
-	
-	var target_item: TreeItem = recipe_input_tree.get_root().get_child(_active_input_rcp) if on_input else recipe_output_tree.get_root().get_child(_active_output_rcp)
-	
-	if on_input:
-		recipe_input_tree.add_data_to(
-				recipe_input_tree.get_root().get_child(_active_input_rcp),
-				data,
-				data_name)
-	else:
-		recipe_output_tree.add_data_to(
-				recipe_output_tree.get_root().get_child(_active_output_rcp),
-				data,
-				data_name)
-	
-	
-	#var new_data: TreeItem = recipe_input_tree.get_root().get_child(_active_input_rcp).create_child() if on_input else recipe_output_tree.get_root().get_child(_active_output_rcp).create_child()
-	#var new_id: String = validate_data_id(data_name, new_data)
-	#
-	#new_data.set_text(0, new_id)
-	#
-	#match typeof(data):
-		#TYPE_INT:
-			#new_data.set_cell_mode(1, TreeItem.CELL_MODE_RANGE)
-			#new_data.set_range_config(1, -9999, 9999, 1.0)
-			#new_data.set_range(1, data)
-			#new_data.set_icon(0, get_theme_icon("int", "EditorIcons"))
-			#new_data.set_editable(1, true)
-			#new_data.set_metadata(1, TYPE_INT)
-		#TYPE_FLOAT:
-			#new_data.set_cell_mode(1, TreeItem.CELL_MODE_RANGE)
-			#new_data.set_range_config(1, -9999, 9999, 0.01)
-			#new_data.set_range(1, data)
-			#new_data.set_icon(0, get_theme_icon("float", "EditorIcons"))
-			#new_data.set_editable(1, true)
-			#new_data.set_metadata(1, TYPE_FLOAT)
-		#TYPE_BOOL:
-			#new_data.set_cell_mode(1, TreeItem.CELL_MODE_CHECK)
-			#new_data.set_checked(1, data)
-			#new_data.set_text(1, "Enabled")
-			#new_data.set_icon(0, get_theme_icon("bool", "EditorIcons"))
-			#new_data.set_editable(1, true)
-			#new_data.set_metadata(1, TYPE_BOOL)
-		#TYPE_STRING:
-			#new_data.set_cell_mode(1, TreeItem.CELL_MODE_STRING)
-			#new_data.set_text(1, data)
-			#new_data.set_icon(0, get_theme_icon("String", "EditorIcons"))
-			#new_data.set_editable(1, true)
-			#new_data.set_metadata(1, TYPE_STRING)
-		#_:
-			#new_data.set_cell_mode(1, TreeItem.CELL_MODE_STRING)
-			#new_data.set_text(1, "Data")
-			#new_data.set_metadata(0, {"data": data})
-			#new_data.set_editable(1, false)
-			#new_data.set_metadata(1, TYPE_NIL)
-	#
-	#new_data.set_editable(0, true)
-	#
-	#new_data.add_button(
-			#1,
-			#get_theme_icon("Remove", "EditorIcons"),
-			#1,
-			#false,
-			#"Delete Data")
-
-
-func validate_data_id(desired_id: String, item: TreeItem = null) -> String:
-	var used_ids: PackedStringArray = []
-	
-	for tree_item in item.get_parent().get_children():
-		if tree_item == item:
-			continue
-		used_ids.append(tree_item.get_text(0))
-	
-	var current_index: int = 0
-	var fixed_id: String = desired_id
-	while used_ids.has(fixed_id):
-		current_index += 1
-		fixed_id = desired_id + "_" + str(current_index)
-	return fixed_id

@@ -131,51 +131,6 @@ size_flags_vertical = 1
 text = "Input"
 vertical_alignment = 1
 
-[node name="ButtonContainer" type="HBoxContainer" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/InputContainer/DataBtnCtnr" unique_id=100791281]
-layout_mode = 2
-size_flags_horizontal = 3
-alignment = 2
-
-[node name="AddRcpInIntBtn" type="Button" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/InputContainer/DataBtnCtnr/ButtonContainer" unique_id=1769154840]
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 2
-size_flags_vertical = 4
-tooltip_text = "Add integer"
-disabled = true
-icon = ExtResource("4_rfiew")
-flat = true
-icon_alignment = 1
-
-[node name="AddRcpInFloatBtn" type="Button" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/InputContainer/DataBtnCtnr/ButtonContainer" unique_id=1756071822]
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 2
-size_flags_vertical = 4
-tooltip_text = "Add float"
-disabled = true
-icon = ExtResource("5_hp1rg")
-flat = true
-icon_alignment = 1
-
-[node name="AddRcpInBoolBtn" type="Button" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/InputContainer/DataBtnCtnr/ButtonContainer" unique_id=493595853]
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 2
-size_flags_vertical = 4
-tooltip_text = "Add boolean"
-disabled = true
-icon = ExtResource("6_nekjn")
-flat = true
-icon_alignment = 1
-
-[node name="AddRcpInStrBtn" type="Button" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/InputContainer/DataBtnCtnr/ButtonContainer" unique_id=783352087]
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 2
-size_flags_vertical = 4
-tooltip_text = "Add string"
-disabled = true
-icon = ExtResource("7_tx5a0")
-flat = true
-icon_alignment = 1
-
 [node name="RecipeInputTree" type="Tree" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/InputContainer" unique_id=944297983]
 custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
@@ -202,51 +157,6 @@ layout_mode = 2
 size_flags_vertical = 1
 text = "Output"
 vertical_alignment = 1
-
-[node name="ButtonContainer" type="HBoxContainer" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/OutputContainer/DataBtnCtnr" unique_id=543688565]
-layout_mode = 2
-size_flags_horizontal = 3
-alignment = 2
-
-[node name="AddRcpOutIntBtn" type="Button" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/OutputContainer/DataBtnCtnr/ButtonContainer" unique_id=656062698]
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 2
-size_flags_vertical = 4
-tooltip_text = "Add integer"
-disabled = true
-icon = ExtResource("4_rfiew")
-flat = true
-icon_alignment = 1
-
-[node name="AddRcpOutFloatBtn" type="Button" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/OutputContainer/DataBtnCtnr/ButtonContainer" unique_id=1639134923]
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 2
-size_flags_vertical = 4
-tooltip_text = "Add float"
-disabled = true
-icon = ExtResource("5_hp1rg")
-flat = true
-icon_alignment = 1
-
-[node name="AddRcpOutBoolBtn" type="Button" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/OutputContainer/DataBtnCtnr/ButtonContainer" unique_id=2131643557]
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 2
-size_flags_vertical = 4
-tooltip_text = "Add boolean"
-disabled = true
-icon = ExtResource("6_nekjn")
-flat = true
-icon_alignment = 1
-
-[node name="AddRcpOutStrBtn" type="Button" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/OutputContainer/DataBtnCtnr/ButtonContainer" unique_id=1202945152]
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 2
-size_flags_vertical = 4
-tooltip_text = "Add string"
-disabled = true
-icon = ExtResource("7_tx5a0")
-flat = true
-icon_alignment = 1
 
 [node name="RecipeOutputTree" type="Tree" parent="CraftingContainer/RecipeDataContainer/RecipeRecipeeContainer/IOContainer/OutputContainer" unique_id=556456299]
 custom_minimum_size = Vector2(0, 150)

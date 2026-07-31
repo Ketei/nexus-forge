@@ -304,14 +304,16 @@ func _drop_data(at_position: Vector2, data: Variant) -> void:
 		new_parent = get_root()
 		new_index = -1
 	else:
-		var same_parent_shift: bool = from_this_tree and object.get_parent() == drop_target.get_parent() and object.get_index() < drop_target.get_index()
+		var same_parent_shift: bool = from_this_tree and\
+				object.get_parent() == drop_target.get_parent() and\
+				object.get_index() < drop_target.get_index()
 		var drop_position: int = get_drop_section_at_position(at_position)
 		match drop_position:
 			-1: # Above
 				new_parent = drop_target.get_parent()
 				new_index = drop_target.get_index()
 				if same_parent_shift:
-					new_index -=1
+					new_index -= 1
 			0: # On
 				new_index = -1
 				new_parent = drop_target
@@ -327,7 +329,7 @@ func _drop_data(at_position: Vector2, data: Variant) -> void:
 	
 	var drop_id: String = object.get_metadata(0)["name"]
 	if _tree_has_id(new_parent, drop_id):
-		drop_id = get_unique_id(new_parent, drop_id)
+		drop_id = get_unique_id(new_parent, drop_id, object)
 	var drop_path: String = _get_data_path(new_parent).path_join(drop_id)
 	
 	if from_this_tree:
