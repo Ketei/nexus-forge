@@ -22,7 +22,7 @@ signal stage_completed(quest_id: StringName, stage_id: StringName, successfully:
 signal objective_completed(quest_id: StringName, stage_id: StringName, objective_id: StringName, successfully: bool)
 
 ## Emits when a quest/stage/objective is completed either successfully or not.
-signal quest_event_triggered(event_id: String, event_data)
+signal quest_event_triggered(event_data: Dictionary)
 
 enum SuccessStatus{
 	SUCCESS,
@@ -510,8 +510,7 @@ func _set_quest_complete(quest_id: StringName, success: bool, emit_events: bool 
 	
 	var events: Dictionary[String, Variant] = quest.on_success_events if success else quest.on_failure_events
 	
-	for event_id in events.keys():
-		quest_event_triggered.emit(event_id, events[event_id])
+	quest_event_triggered.emit(events.duplicate(true))
 
 
 func _set_stage_complete(quest_id: StringName, stage_id: StringName, success: bool, emit_events: bool = true) -> void:
@@ -523,8 +522,7 @@ func _set_stage_complete(quest_id: StringName, stage_id: StringName, success: bo
 		return
 	
 	var events: Dictionary[String, Variant] = stage.on_success_events if success else stage.on_failure_events
-	for event_id in events.keys():
-		quest_event_triggered.emit(event_id, events[event_id])
+	quest_event_triggered.emit(events.duplicate(true))
 
 
 func _set_objective_complete(quest_id: StringName, stage_id: StringName, objective_id: StringName, success: bool, emit_events: bool = true) -> void:
@@ -536,8 +534,7 @@ func _set_objective_complete(quest_id: StringName, stage_id: StringName, objecti
 		return
 	
 	var events: Dictionary = objective.on_success_events if success else objective.on_failure_events
-	for event_id in events.keys():
-		quest_event_triggered.emit(event_id, events[event_id])
+	quest_event_triggered.emit(events.duplicate(true))
 
 
 func _log_objective_complete(quest_id: StringName, stage_id: StringName, objective_id: StringName, success: bool) -> void:

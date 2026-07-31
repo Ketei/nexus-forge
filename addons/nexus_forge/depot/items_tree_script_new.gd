@@ -7,7 +7,7 @@ signal item_id_changed(from: StringName, to: StringName)
 signal item_erased(item_id: StringName)
 signal pagination_changed
 
-const RESULTS_PER_PAGE: int = 50
+const RESULTS_PER_PAGE: int = 30
 
 var _active_item: StringName = &""
 var _items: Dictionary[StringName, TreeItem] = {}
@@ -21,7 +21,7 @@ var last_page: int = 0:
 	set(i):
 		return
 	get:
-		return _last_page
+		return _last_page + 1
 var _current_page_index: int = 0
 var _last_page: int = 0:
 	set(p):
@@ -51,7 +51,10 @@ func _on_item_mouse_selected(mouse_position: Vector2, mouse_button_index: int) -
 
 
 func update_page_count() -> void:
-	_last_page = _search_results.size() / float(RESULTS_PER_PAGE) if 0 < RESULTS_PER_PAGE else 0
+	if 0 < RESULTS_PER_PAGE:
+		_last_page = maxi(0, _search_results.size() - 1) / RESULTS_PER_PAGE
+	else:
+		_last_page = 0
 
 
 func add_item(item_id: StringName, item_category: StringName = &"") -> bool:
@@ -247,7 +250,7 @@ func previous_page() -> void:
 
 
 func go_to_page(page: int) -> void:
-	if RESULTS_PER_PAGE <= 0 or page <= 0 or _last_page < page or page == current_page:
+	if RESULTS_PER_PAGE <= 0 or page <= 0 or last_page < page or page == current_page:
 		return
 	
 	var page_index: int = page - 1
@@ -294,15 +297,16 @@ func _erase_item(item_id: StringName) -> void:
 		_active_item = &""
 	_items.erase(item_id)
 	target.free()
-	update_page_count()
 	
 	if search_idx < 0:
+		update_page_count()
 		return
 	
 	_search_results.remove_at(search_idx)
 	var page_idx: int = search_idx / RESULTS_PER_PAGE
 	if page_idx <= _current_page_index:
 		_refresh_current_page()
+	update_page_count()
 
 
 func _on_item_edited() -> void:
@@ -381,7 +385,7 @@ func sort_all_items() -> void:
 	
 	all_items.sort_custom(
 		func (a:TreeItem, b:TreeItem) -> bool:
-			return a.get_text(0).nocasecmp_to(b.get_text(0)) < 0)
+			return a.get_text(0).naturalnocasecmp_to(b.get_text(0)) < 0)
 	
 	if all_items[0].get_index() != 0:
 		all_items[0].move_before(get_root().get_first_child())
@@ -415,7 +419,7 @@ func clear_entries() -> void:
 func sort_results() -> void:
 	_search_results.sort_custom(
 		func (a:TreeItem,b:TreeItem) -> bool:
-			return a.get_text(0).nocasecmp_to(b.get_text(0)) < 0)
+			return a.get_text(0).naturalnocasecmp_to(b.get_text(0)) < 0)
 
 
 func clear_search() -> void:
@@ -478,7 +482,7 @@ func _search_with_pages(text: String, on_category: String) -> void:
 			if item.get_text(0).containsn(text) and item.get_metadata(0)["category"].containsn(on_category):
 				_search_results.append(item)
 	
-	_last_page = _search_results.size() / float(RESULTS_PER_PAGE) if 0 < RESULTS_PER_PAGE else 0
+	update_page_count()
 	
 	if _search_results.is_empty():
 		return
