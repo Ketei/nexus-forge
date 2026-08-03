@@ -718,19 +718,19 @@ func remove_node(node_uuid: StringName) -> void:
 	
 	disconnect_all_node_connections(node_uuid)
 	
-	if target.node_type == DialogNodes.ANCHOR:
-		for pointer in anchor_pointers:
-			pointer.remove_anchor(node_uuid)
-		anchor_targets.erase(target)
-		
-	elif target.node_type == DialogNodes.ANCHOR_POINTER:
-		anchor_pointers.erase(target)
-	
-	elif target.node_type == DialogNodes.DIALOG:
-		target.use_code_editor_pressed.disconnect(_on_use_code_editor_requested)
-	
-	elif target.node_type == DialogNodes.CHOICES:
-		target.use_code_editor_pressed.disconnect(_on_use_code_editor_requested)
+	match target.node_type:
+		DialogNodes.CALLABLE, DialogNodes.CALLABLE_RETURN:
+			method_callers.erase(target)
+		DialogNodes.ANCHOR:
+			for pointer in anchor_pointers:
+				pointer.remove_anchor(node_uuid)
+			anchor_targets.erase(target)
+		DialogNodes.ANCHOR_POINTER:
+			anchor_pointers.erase(target)
+		DialogNodes.DIALOG:
+			target.use_code_editor_pressed.disconnect(_on_use_code_editor_requested)
+		DialogNodes.CHOICES:
+			target.use_code_editor_pressed.disconnect(_on_use_code_editor_requested)
 	
 	graph_nodes.erase(node_uuid)
 	target.queue_free()
