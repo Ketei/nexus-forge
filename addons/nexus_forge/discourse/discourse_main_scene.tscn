@@ -105,7 +105,7 @@ layout_mode = 2
 
 [node name="ConversationTitle" type="Label" parent="MainSplitContainer/MainSidebar/SidebarSplitContainer/ConversationContainer/HeaderContainer" unique_id=1668543593]
 layout_mode = 2
-text = "Coversations"
+text = "Conversations"
 
 [node name="CollapseLeftBtn" type="Button" parent="MainSplitContainer/MainSidebar/SidebarSplitContainer/ConversationContainer/HeaderContainer" unique_id=1842931766]
 custom_minimum_size = Vector2(32, 32)

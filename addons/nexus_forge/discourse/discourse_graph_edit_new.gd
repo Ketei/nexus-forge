@@ -1781,4 +1781,12 @@ func spawn_frame_at_center(uuid: String = "") -> void:
 	var new_frame: GraphFrame = spawn_frame(uuid)
 	new_frame.position_offset = get_center_offset() - ( new_frame.size / 2.0 )
 
+
+func refresh_anchors() -> void:
+	for anchor in anchor_pointers:
+		for target in anchor_targets:
+			anchor.update_anchor(
+					target.get_node_uuid(),
+					target.get_anchor_id())
+
 #endregion

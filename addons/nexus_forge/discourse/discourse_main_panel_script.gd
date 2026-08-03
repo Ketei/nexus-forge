@@ -2236,6 +2236,8 @@ func display_conversation(conversation: EditorDiscourseDialog, with_locale: Stri
 	discourse_graph_edit.zoom = conversation.zoom
 	discourse_graph_edit.scroll_offset = conversation.scroll_offset
 	
+	discourse_graph_edit.refresh_anchors()
+	
 	return needs_resaving
 
 
