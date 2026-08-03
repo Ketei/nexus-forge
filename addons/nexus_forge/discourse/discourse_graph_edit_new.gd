@@ -829,11 +829,12 @@ func get_selected_graph_elements(include_start: bool = false) -> Array[GraphElem
 			continue
 		
 		selected_nodes.append(node)
-	return selected_nodes
 	
 	for frame:GraphFrame in node_frames.values():
 		if frame.selected:
 			selected_nodes.append(frame)
+	
+	return selected_nodes
 
 #endregion
 
@@ -1517,13 +1518,14 @@ func _on_begin_node_move() -> void:
 
 func _on_end_node_move() -> void:
 	dialog_changed.emit()
-	var reference_node: DiscourseGraphNode = movement_data["reference"]
+	var reference_node: GraphElement = movement_data["reference"]
 	if reference_node == null:
 		return
 	var node_uuids: Array[StringName] = []
 	var difference: Vector2 = reference_node.position_offset - movement_data["starting_position"]
-	for node:DiscourseGraphNode in movement_data["nodes"]:
-		node_uuids.append(node.get_node_uuid())
+	for node:GraphElement in movement_data["nodes"]:
+		var uuid: StringName = node.get_node_uuid() if node is DiscourseGraphNode else node.get_frame_uuid()
+		node_uuids.append(uuid)
 	
 	movement_data["nodes"].clear()
 	movement_data["reference"] = null
