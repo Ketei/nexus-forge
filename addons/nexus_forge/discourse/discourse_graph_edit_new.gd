@@ -719,9 +719,9 @@ func remove_node(node_uuid: StringName) -> void:
 	disconnect_all_node_connections(node_uuid)
 	
 	if target.node_type == DialogNodes.ANCHOR:
-		
 		for pointer in anchor_pointers:
 			pointer.remove_anchor(node_uuid)
+		anchor_targets.erase(target)
 		
 	elif target.node_type == DialogNodes.ANCHOR_POINTER:
 		anchor_pointers.erase(target)
