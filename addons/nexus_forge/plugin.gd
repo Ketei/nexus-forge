@@ -70,6 +70,8 @@ func _enter_tree() -> void:
 	verify_project_settings()
 	if ProjectSettings.has_setting("autoload/NexusForge") and ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("recompile_documentation"), false):
 		recompile_script_docs.call_deferred()
+	if not DirAccess.dir_exists_absolute("user://nexus_forge/"):
+		DirAccess.make_dir_recursive_absolute("user://nexus_forge/")
 	editor_view = MAIN_SCENE.instantiate()
 	editor_view.visible = false
 	EditorInterface.get_editor_main_screen().add_child(editor_view)

@@ -243,14 +243,17 @@ func _apply_folder_rename(from_path: String, to_path: String, is_first_run: bool
 		if _is_folder_or_subfolder(folder_key, from_path):
 			var old_path_str: String = String(folder_key)
 			
-			var new_path_str: String = to_path.path_join(old_path_str.substr(from_length)) # Ensure the path is well formed
+			var extra_path: String = old_path_str.substr(from_length)
+			var new_path_str: String = to_path
+			if not extra_path.is_empty():
+				new_path_str = to_path.path_join(extra_path)
 			var new_key: StringName = StringName(new_path_str)
 			
 			_variables_resource._variables[new_key] = _variables_resource._variables[folder_key]
 			_variables_resource._variables.erase(folder_key)
 	
 	if _current_folder == from_path:
-		_current_folder = from_path
+		_current_folder = to_path
 	elif _current_folder.begins_with(from_path + "/"):
 		_current_folder = to_path.path_join(_current_folder.substr(from_path.length()))
 	
