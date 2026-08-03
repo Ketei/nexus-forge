@@ -434,15 +434,20 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 			if not data["signal"].is_empty():
 				var signal_data: Dictionary = _dialog_resource.node_logic[data["signal"]]
 				var signal_args: Array = []
+				var api_signal: Signal = Signal(
+						NexusForge.Discourse.API,
+						data["signal"])
 				
 				for argument_key in signal_data["arguments"]:
 					if argument_key.is_empty():
 						continue
 					signal_args.append(_get_data(argument_key))
 				
-				NexusForge.Discourse.API.emit_signal(
-						data["signal"],
-						signal_args)
+				if signal_args.is_empty():
+					api_signal.emit()
+				else:
+					var emit_callable: Callable = api_signal.emit.bindv(signal_args)
+					emit_callable.call()
 				
 			return _process_logic(data["next_node"])
 		NodeTypes.MATCH:

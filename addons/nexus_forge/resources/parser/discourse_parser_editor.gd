@@ -265,9 +265,16 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 					for arg_connection in signal_metadata["arguments"]:
 						signal_args.append(_get_data(arg_connection["target_node_uuid"]))
 					
-					NexusForge.Discourse.API.emit_signal(
-							signal_metadata["signal"],
-							signal_args)
+					var api_signal: Signal = Signal(
+							NexusForge.Discourse.API,
+							signal_metadata["signal"])
+					
+					if signal_args.is_empty():
+						api_signal.emit()
+					else:
+						var signal_emittion: Callable = api_signal.emit.bindv(signal_args)
+						signal_emittion.call()
+					
 					signal_emitted.emit(signal_metadata["signal"], signal_args)
 				else:
 					NFPluginGameHandler._log_msg(
