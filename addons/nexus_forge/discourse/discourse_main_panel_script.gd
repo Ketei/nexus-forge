@@ -2733,7 +2733,7 @@ func _on_save_cases_btn_pressed() -> void:
 	if argument_opt_btn.selected == -1:# selected_format.is_empty():
 		return
 	
-	save_current_phrase_key(languages_tree.get_active_locale())
+	save_current_phrase_key(phrases_lang_menu.get_selected_metadata())
 	clear_cases()
 	default_case_edt.clear()
 	search_case_ln_edt.text = ""
@@ -3380,9 +3380,9 @@ func save_current_phrase_key(locale_code: String) -> void:
 		case_key.text = case_key.text.strip_edges()
 		var trailing_int: Dictionary = StringUtils.get_trailing_integer(desired_key)
 		var iteration: int = trailing_int["integer"]
+		var modified: String = desired_key
 		if trailing_int["has_integer"]:
 			desired_key = desired_key.trim_suffix(str(iteration))
-		var modified: String = desired_key
 		
 		while used_keys.has(modified):
 			iteration += 1
