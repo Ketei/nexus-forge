@@ -327,8 +327,6 @@ func get_unique_name_for_node(desired_name: String, skip_item: TreeItem = null) 
 	var all_names: Dictionary = {}
 	var base_name: String = desired_name
 	
-	if trailing_data["has_integer"]:
-		base_name = desired_name.trim_suffix(str(iteration))
 	
 	for node in nodes.values():
 		if node == skip_item:
@@ -336,6 +334,8 @@ func get_unique_name_for_node(desired_name: String, skip_item: TreeItem = null) 
 		all_names[node.get_text(0)] = null
 	
 	if all_names.has(desired_name):
+		if trailing_data["has_integer"]:
+			base_name = desired_name.trim_suffix(str(iteration))
 		var edited_name: String = desired_name
 		while all_names.has(edited_name):
 			iteration += 1
