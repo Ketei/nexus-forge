@@ -257,7 +257,7 @@ func get_frames_uuids() -> Array:
 ## Gets the text of a node with [param node_uuid] of a specific [param locale].
 ## If the node isn't of a type that supports text or it is not found it'll
 ## return [param fallback].
-func get_text_entry(node_uuid: StringName, locale: String = "", fallback: String = "[ENTRY NOT FOUND]") -> String:
+func get_text_entry(node_uuid: StringName, locale: String, fallback: String = "[ENTRY NOT FOUND]") -> String:
 	locale = TranslationServer.standardize_locale(locale)
 	
 	if not localization.has(node_uuid) or localization[node_uuid]["type"] != LocalizationType.TEXT:

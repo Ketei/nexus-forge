@@ -40,13 +40,15 @@ var json_file: String = ""
 
 
 static func new_from_json(json_string: String) -> DiscourseDialogLocale:
+	if json_string.is_empty():
+		return null
+	
 	var data = JSON.parse_string(json_string)
 	
 	if data == null or typeof(data) != TYPE_DICTIONARY:
 		return null
 	
 	var new_locale: DiscourseDialogLocale = DiscourseDialogLocale.new()
-	
 	
 	if data.has("localization") and typeof(data["localization"]) == TYPE_DICTIONARY:
 		for localization_key in data["localization"].keys():
@@ -111,6 +113,16 @@ static func new_from_json(json_string: String) -> DiscourseDialogLocale:
 			new_locale.format_strings[dialog_id] = conversation_data
 	
 	return new_locale
+
+
+## Merges the localization data of [param with] with the data of this
+## object. If [param overwrite] is [code]true[/code] then existing data will be
+## overwritten.
+func merge_dialog(with: DiscourseDialogLocale, overwrite: bool = false) -> void:
+	if overwrite == null or with == self:
+		return
+	localization.merge(with.localization, overwrite)
+	format_strings.merge(with.format_strings, overwrite)
 
 
 ## Sets the dialog text from the [param conversation]'s [param uuid] to [param text].

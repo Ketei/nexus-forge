@@ -249,3 +249,20 @@ static func has_any(array: Array, has_any_in: Array) -> bool:
 		if array.has(item):
 			return true
 	return false
+
+## Finds and removes the first occurrence of [param value] from the [param array]
+## beggining at the end of the list. If value does not exist in the array,
+## nothing happens.[br]
+## Works exactly like [method Array.erase] but erases from the end to the
+## beggining.
+static func erase_last(array: Array, value: Variant) -> void:
+	var erase_idx: int = array.rfind(value)
+	if 0 <= erase_idx:
+		array.remove_at(erase_idx)
+
+
+## Finds and removes all ocourrences of [param value] from the [param array].
+static func erase_all(array: Array, value: Variant) -> void:
+	var idx: int = array.rfind(value)
+	while 0 <= idx:
+		array.remove_at(idx)

@@ -86,6 +86,12 @@ const _SETTINGS_PATHS: Dictionary[String, Dictionary] = {
 		"default_value": "",
 		"type": TYPE_STRING,
 		"hint": PROPERTY_HINT_LOCALE_ID},
+	"discourse_fallback_mode": {
+		"setting_path": "nexus_forge/settings/discourse_fallback_mode",
+		"default_value": 2,
+		"type": TYPE_INT,
+		"hint": PROPERTY_HINT_ENUM,
+		"hint_string": "No Fallback:0,Direct Fallback:1,Cascade:2"},
 	"discourse_use_languages": {
 		"setting_path": "nexus_forge/settings/discourse_use_languages",
 		"default_value": "",

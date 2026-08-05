@@ -57,21 +57,19 @@ var locale: String = "en":
 	set(new_locale):
 		if locale == new_locale:
 			return
+		
 		locale = TranslationServer.standardize_locale(new_locale.strip_edges())
 		
 		if _dialog_resource != null:
 			if _dialog_resource._has_locale(locale):
 				_dialog_resource._set_locale(locale)
 			else:
-				_load_locale_to_active_dialog(locale)
+				_load_locale_into(_dialog_resource, locale)
 
 # Maps UUID: CustomID
 #var _dialog_id_map: Dictionary[StringName, StringName] = {}
 
-var _dialog_resource: DiscourseDialog = null:
-	set(d):
-		_dialog_resource = d
-		_dialog_resource_set(d)
+var _dialog_resource: DiscourseDialog = null : set = _dialog_resource_set
 var _conversation_started: bool = false
 var _next_uuid: StringName = &""
 var _current_uuid: StringName = &""
@@ -282,11 +280,15 @@ func _can_compare(a, b) -> bool:
 	var type_b: int = typeof(b)
 	
 	if type_a == type_b:
-		return true
-	elif type_a == TYPE_INT or type_a == TYPE_FLOAT:
-		return type_b == TYPE_INT or type_b == TYPE_FLOAT
-	else:
-		return false
+		return type_a != TYPE_NIL
+	
+	match type_a:
+		TYPE_INT, TYPE_FLOAT:
+			return type_b == TYPE_INT or type_b == TYPE_FLOAT
+		TYPE_STRING, TYPE_STRING_NAME:
+			return type_b == TYPE_STRING or type_b == TYPE_STRING_NAME
+		_:
+			return false
 
 
 #region Override
@@ -612,73 +614,172 @@ func _get_data(uuid: StringName, fallback = null) -> Variant:
 			return fallback
 
 
-func _load_locale_to_active_dialog(locale_code: String) -> void:
-	if _dialog_resource == null:
-		return
-	elif locale_code.is_empty():
-		_dialog_resource._set_locale("")
+func _load_locale_into(dialog: DiscourseDialog, locale_code: String, ) -> void:
+	if dialog == null or locale_code.is_empty() or dialog._has_locale(locale_code):
 		return
 	
-	var locale_id: String = DictUtils.get_nested_value(
-			_path_to_id,
-			[_dialog_resource.resource_path],
-			"")
-	_dialog_resource._set_locale(locale_code)
+	if dialog is ModDiscourseDialog:
+		# Haven't decided on the implementation. Does nothing for now.
+		return
 	
-	if DictUtils.has_nested_path(_locale_overrides, [locale_id, locale]):
-		#var res: DiscourseDialogLocale = _load_json_locale(_locale_overrides[locale_id][locale])
-		var file: FileAccess = FileAccess.open(
-				_locale_overrides[locale_id][locale],
-				FileAccess.READ)
+	if not _path_to_id.has(dialog.resource_path):
+		return
 	
-		if file != null:
-			var res: DiscourseDialogLocale = DiscourseDialogLocale.new_from_json(file.get_as_text())
-			res.json_file = _locale_overrides[locale_id][locale].get_file()
-			_dialog_resource._store_locale(locale_code, res)
-			return
+	# 0 = No Fallback
+	# 1 = Direct Fallback: Merge fallback_object with loaded objects
+	# 2 = Cascade fallback
+	var fallback_mode: int = ProjectSettings.get_setting(
+			NFPluginGameHandler.get_setting_path("discourse_fallback_mode"),
+			2)
+	var lang_fallback: String = ProjectSettings.get_setting(
+			"internationalization/locale/fallback")
+	var dialog_id: String = _path_to_id[dialog.resource_path]
 	
-	var base_locale_path: String = ""
+	if fallback_mode == 0 or (0 < fallback_mode and locale_code == lang_fallback):
+		var lang_data: DiscourseDialogLocale = _get_dialog_locale(
+				dialog_id,
+				locale_code)
+		if lang_data != null:
+			dialog._store_locale(locale_code, lang_data)
+		return
 	
-	if _dialog_resource is ModDiscourseDialog:
-		base_locale_path = _dialog_resource.localization_folder
-		# TODO: Move this to conversation load maybe?
-		if not _path_to_id.has(StringName(_dialog_resource.resource_path)):
-			var path_strn: StringName = StringName(_dialog_resource.resource_path)
-			var id: StringName = StringName(_dialog_resource.dialog_id)
-			_path_to_id[path_strn] = id
-			_id_to_data[id] = {
-				"data_path": path_strn,
-				"locale_file": _dialog_resource.resource_path.to_lower().md5_text().substr(0, 12) + "-" + _dialog_resource.resource_path.get_file().get_basename() + ".json"}
-		# ---
+	var locale_data: DiscourseDialogLocale = _get_dialog_locale(dialog_id, locale_code)
+	var direct_fallback: DiscourseDialogLocale = null
+	
+	if dialog._has_locale(lang_fallback):
+		direct_fallback = dialog._get_locale(lang_fallback)
 	else:
-		base_locale_path = ProjectSettings.get_setting(
-					"nexus_forge/localization_directory",
-					"res://localization/")
+		direct_fallback = _get_dialog_locale(
+			dialog_id,
+			lang_fallback)
 	
-	var localization_filename: String = _id_to_data[locale_id]["locale_file"]
-	var hash_slice: String = localization_filename.substr(0, 2)
+	if fallback_mode == 2 and locale_code.contains("_"):
+		var cascade_code: String = locale_code.get_slice("_", 0)
+		if cascade_code != lang_fallback:
+			var cascade_locale: DiscourseDialogLocale = _get_dialog_locale(
+					dialog_id,
+					cascade_code)
+			if cascade_locale != null:
+				if locale_data == null:
+					cascade_locale.json_file = ""
+					cascade_locale.locale = locale_code
+					locale_data = cascade_locale
+					
+				else:
+					locale_data.merge_dialog(cascade_locale)
 	
-	var locale_path: String = StringUtils.make_path([
-			base_locale_path,
-			locale_code,
-			hash_slice,
-			localization_filename])
-	var file: FileAccess = FileAccess.open(locale_path, FileAccess.READ)
+	if direct_fallback != null:
+		if locale_data == null:
+			locale_data = direct_fallback.duplicate(true)
+			direct_fallback.json_file = ""
+			direct_fallback.locale = locale_code
+		else:
+			locale_data.merge_dialog(direct_fallback)
 	
-	if file != null:
-		var res: DiscourseDialogLocale = DiscourseDialogLocale.new_from_json(file.get_as_text())
-		res.json_file = localization_filename
-		_dialog_resource._store_locale(locale_code, res)
+	if locale_data != null:
+		dialog._store_locale(locale_code, locale_data)
+
+
+func _get_dialog_locale(dialog_id: String, lang_code: String) -> DiscourseDialogLocale:
+	if DictUtils.has_nested_path(_locale_overrides, [dialog_id, lang_code]):
+		var modded_path: String = _locale_overrides[dialog_id][lang_code]
+		if FileAccess.file_exists(modded_path):
+			var locale_data: DiscourseDialogLocale = DiscourseDialogLocale.new_from_json(FileAccess.get_file_as_string(modded_path))
+			if locale_data != null:
+				locale_data.json_file = modded_path
+				locale_data.locale = lang_code
+			return locale_data
+	
+	if not _id_to_data.has(dialog_id):
+		return null
+	
+	var file_path: String = ProjectSettings.get_setting(
+			"nexus_forge/localization_directory",
+			"res://localization/")
+	var filename: String = _id_to_data[dialog_id]["locale_file"]
+	var hash_slice: String = filename.substr(0, 2)
+	var locale_path: String = StringUtils.make_path(
+		[file_path, lang_code, hash_slice, filename])
+	
+	if FileAccess.file_exists(locale_path):
+		var locale_data: DiscourseDialogLocale = DiscourseDialogLocale.new_from_json(
+				FileAccess.get_file_as_string(locale_path))
+		if locale_data != null:
+			locale_data.locale = lang_code
+			locale_data.json_file = filename
+		return 
+	else:
+		return null
+
+
+#func _load_locale_to_active_dialog(locale_code: String) -> void:
+	#if _dialog_resource == null:
+		#return
+	#elif locale_code.is_empty():
+		#_dialog_resource._set_locale("")
+		#return
+	#
+	#var locale_id: String = DictUtils.get_nested_value(
+			#_path_to_id,
+			#[_dialog_resource.resource_path],
+			#"")
+	#_dialog_resource._set_locale(locale_code)
+	#
+	#if DictUtils.has_nested_path(_locale_overrides, [locale_id, locale]):
+		#var file: FileAccess = FileAccess.open(
+				#_locale_overrides[locale_id][locale],
+				#FileAccess.READ)
+	#
+		#if file != null:
+			#var res: DiscourseDialogLocale = DiscourseDialogLocale.new_from_json(file.get_as_text())
+			#res.json_file = _locale_overrides[locale_id][locale].get_file()
+			#_dialog_resource._store_locale(locale_code, res)
+			#return
+	#
+	#var base_locale_path: String = ""
+	#
+	#if _dialog_resource is ModDiscourseDialog:
+		#base_locale_path = _dialog_resource.localization_folder
+		## TODO: Move this to conversation load maybe?
+		#if not _path_to_id.has(StringName(_dialog_resource.resource_path)):
+			#var path_strn: StringName = StringName(_dialog_resource.resource_path)
+			#var id: StringName = StringName(_dialog_resource.dialog_id)
+			#_path_to_id[path_strn] = id
+			#_id_to_data[id] = {
+				#"data_path": path_strn,
+				#"locale_file": _dialog_resource.resource_path.to_lower().md5_text().substr(0, 12) + "-" + _dialog_resource.resource_path.get_file().get_basename() + ".json"}
+		## ---
+	#else:
+		#base_locale_path = ProjectSettings.get_setting(
+					#"nexus_forge/localization_directory",
+					#"res://localization/")
+	#
+	#var localization_filename: String = _id_to_data[locale_id]["locale_file"]
+	#var hash_slice: String = localization_filename.substr(0, 2)
+	#
+	#var locale_path: String = StringUtils.make_path([
+			#base_locale_path,
+			#locale_code,
+			#hash_slice,
+			#localization_filename])
+	#var file: FileAccess = FileAccess.open(locale_path, FileAccess.READ)
+	#
+	#if file != null:
+		#var res: DiscourseDialogLocale = DiscourseDialogLocale.new_from_json(file.get_as_text())
+		#res.json_file = localization_filename
+		#_dialog_resource._store_locale(locale_code, res)
 
 
 func _dialog_resource_set(new_resource: DiscourseDialog) -> void:
+	_dialog_resource = new_resource
+	
 	if new_resource == null:
 		return
 	
 	if new_resource._has_locale(locale):
 		new_resource._set_locale(locale)
 	else:
-		_load_locale_to_active_dialog(locale)
+		_load_locale_into(new_resource, locale)
 #endregion
 
 
@@ -697,6 +798,8 @@ func load_dialog(path: String, starting_id: StringName = &"") -> bool:
 		var dialog_id: String = DictUtils.get_nested_value(_path_to_id, [path], "")
 		var data: DiscourseDialog = _conversation_cache.get_resource(target_path)
 		var locale_data: DiscourseDialogLocale = data._get_locale(locale)
+		# TODO: This doesn't take into account modded files. When implementation
+		# is decided, change this.
 		var reload_locale: bool = locale_data != null and locale_data.json_file != _id_to_data[dialog_id]["locale_file"]
 		
 		_dialog_resource = data
@@ -705,7 +808,7 @@ func load_dialog(path: String, starting_id: StringName = &"") -> bool:
 			_dialog_resource.dialog_overrides = _dialog_edits[dialog_id]
 		
 		if reload_locale:
-			_load_locale_to_active_dialog(locale)
+			_load_locale_into(_dialog_resource, locale)
 	else:
 		var res: Resource = load(target_path)
 		var id: String = DictUtils.get_nested_value(_path_to_id, [path], "")
