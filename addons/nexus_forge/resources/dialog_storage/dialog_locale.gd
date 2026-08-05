@@ -128,7 +128,6 @@ static func _overlay_dialog_array(target: PackedStringArray, source: PackedStrin
 		var text: String = target[i].strip_edges()
 		if text.is_empty():
 			target[i] = source[i]
-	
 
 
 ## Merges the localization data of [param with] with the data of this
