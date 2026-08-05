@@ -123,9 +123,8 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 					portrait_id = _get_data(settings["input_connections"]["portrait_id"]["target_node_uuid"])
 			
 			if data["input_connections"]["dialog_text_source"]["target_node_uuid"].is_empty():
-				var dialog_text: Dictionary[String, String] = _get_text_node_text(uuid)
 				target["data"] = {
-					"dialog_text": _parse_editor_dialog(uuid, dialog_text["text"], dialog_text["locale"]),
+					"dialog_text": _parse_dialog(uuid, _get_text_node_text(uuid)),
 					"character_id": metadata["character_id"],
 					"persist": metadata["persist"],
 					"font": font,
@@ -135,20 +134,8 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 					"portrait_id": portrait_id,
 					"metadata": dialog_metadata}
 			else:
-				var text_data = _get_data(data["input_connections"]["dialog_text_source"]["target_node_uuid"])
-				var type: int = typeof(text_data)
-				var text: String = ""
-				var locale_code: String = locale
-				if type == TYPE_DICTIONARY and text_data.has_all(["text", "locale"]):
-					text = text_data["text"]
-					locale_code = text_data["locale"]
-				elif type == TYPE_STRING:
-					text = text_data
-				else:
-					text = "[ENTRY NOT FOUND]"
-				
 				target["data"] = {
-					"dialog_text": _parse_editor_dialog(uuid, text, locale_code),
+					"dialog_text": _parse_dialog(uuid, _get_data(data["input_connections"]["dialog_text_source"]["target_node_uuid"])),
 					"character_id": metadata["character_id"],
 					"persist": metadata["persist"],
 					"font": font,
@@ -164,7 +151,7 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 			
 			return target
 		NodeTypes.CHOICES:
-			var localized_choices: Array[Dictionary] = _get_choice_node_entries(uuid)
+			var localized_choices: Array[String] = _get_choice_node_entries(uuid)
 			
 			var available_options: Array[Dictionary] = []
 			var option_idx: int = -1
@@ -173,16 +160,13 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 			for option:Dictionary in metadata["choices"]:
 				option_idx += 1
 				option_duuid = uuid + "_" + str(option_idx)
-				var choice_dict: Dictionary = localized_choices[option_idx]
-				var choice_text: String = choice_dict["text"]
-				var choice_locale: String = choice_dict["locale"]
 				
 				if option["input_connections"]["settings"]["target_node_uuid"].is_empty():
 					option_duuid += "_unlocked"
 					available_options.append(
 						{
 							"unlocked": true,
-							"text": _parse_editor_dialog(option_duuid, choice_text, choice_locale),
+							"text": _parse_dialog(option_duuid, localized_choices[option_idx]),
 							"target": option["output_connections"]["next_node"]["target_node_uuid"],
 							"metadata": {}})
 				else:
@@ -192,20 +176,15 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 					if not show:
 						continue
 					
+					var choice_text: String = localized_choices[option_idx]
 					var unlocked: bool = true if opt_settings["input_connections"]["option_unlocked"]["target_node_uuid"].is_empty() else _get_bool_result(opt_settings["input_connections"]["option_unlocked"]["target_node_uuid"])
 					var option_metadata: Dictionary[String, Variant] = {}
-					#var text: String = option["text"]
 					
 					if not unlocked and not opt_settings["input_connections"]["locked_hint"]["target_node_uuid"].is_empty():
-						var lock_hint_data = _get_data(opt_settings["input_connections"]["locked_hint"]["target_node_uuid"])
-						var lock_hint: String = ""
-						var lock_locale: String = choice_locale
-						var type: int = typeof(lock_hint_data)
-						if type == TYPE_DICTIONARY and lock_hint_data.has_all(["text", "locale"]):
-							choice_text = lock_hint_data["text"]
-							choice_locale = lock_hint_data["locale"]
-						elif type == TYPE_STRING:
-							choice_text = lock_hint_data
+						var lock_hint: String = _get_data(opt_settings["input_connections"]["locked_hint"]["target_node_uuid"], "")
+						if not lock_hint.is_empty():
+							choice_text = lock_hint
+							
 					if not opt_settings["input_connections"]["metadata"]["target_node_uuid"].is_empty():
 						var metadata_node: Dictionary = _dialog_resource.get_node_data(opt_settings["input_connections"]["metadata"]["target_node_uuid"])
 						if metadata_node.has_all(["input_connections", "metadata"]) and metadata_node["metadata"].has("metadata_connections"):
@@ -225,7 +204,7 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 					
 					available_options.append({
 						"unlocked": unlocked,
-						"text": _parse_editor_dialog(option_duuid, choice_text, choice_locale),
+						"text": _parse_dialog(option_duuid, choice_text),
 						"target": option["output_connections"]["next_node"]["target_node_uuid"],
 						"metadata": option_metadata})
 			
@@ -465,8 +444,8 @@ func _get_data(from_uuid: StringName, fallback = null) -> Variant:
 			return null
 
 
-func _get_choice_node_entries(node_uuid: StringName, entry_fallback: String = "[ENTRY NOT FOUND]") -> Array[Dictionary]:
-	var entries: Array[Dictionary] = []
+func _get_choice_node_entries(node_uuid: StringName, entry_fallback: String = "[ENTRY NOT FOUND]") -> Array[String]:
+	var entries: Array[String] = []
 	
 	if not _dialog_resource.node_logic.has(node_uuid):
 		return entries
@@ -480,7 +459,7 @@ func _get_choice_node_entries(node_uuid: StringName, entry_fallback: String = "[
 		return entries
 	
 	entries.resize(entry_target_size)
-	entries.fill({"text": entry_fallback, "locale": locale})
+	entries.fill(entry_fallback)
 	
 	var localized: bool = DictUtils.get_nested_value(
 			_dialog_resource.node_data,
@@ -491,7 +470,7 @@ func _get_choice_node_entries(node_uuid: StringName, entry_fallback: String = "[
 		var unlocalized_array: Array[String] = []
 		if DictUtils.has_nested_path(_dialog_resource.localization, [node_uuid, "locales", "unlocalized"]):
 			unlocalized_array.assign(_dialog_resource.localization[node_uuid]["locales"]["unlocalized"])
-		_overlay_array(entries, unlocalized_array, entry_target_size, locale)
+		_overlay_array(entries, unlocalized_array, entry_target_size)
 		return entries
 	
 	var fallback_mode: int = ProjectSettings.get_setting(
@@ -507,13 +486,12 @@ func _get_choice_node_entries(node_uuid: StringName, entry_fallback: String = "[
 			true))
 	
 	if fallback_mode == 0:
-		_overlay_array(entries, base_entries, entry_target_size, locale)
+		_overlay_array(entries, base_entries, entry_target_size)
 		return entries
 	
 	var lang_fallback: String = ProjectSettings.get_setting(
 			"internationalization/locale/fallback")
 	var fallback_arr: Array[String] = []
-	var cascade_lang: String = ""
 	var cascade_arr: Array[String] = []
 	
 	if locale != lang_fallback and DictUtils.has_nested_path(_dialog_resource.localization, [node_uuid, "locales", lang_fallback]):
@@ -521,38 +499,32 @@ func _get_choice_node_entries(node_uuid: StringName, entry_fallback: String = "[
 					_dialog_resource.localization[node_uuid]["locales"][lang_fallback])
 	
 	if fallback_mode == 2 and locale.contains("_"):
-		cascade_lang = locale.get_slice("_", 0)
+		var cascade_lang: String = locale.get_slice("_", 0)
 		if cascade_lang != lang_fallback:
 			if DictUtils.has_nested_path(_dialog_resource.localization, [node_uuid, "locales", cascade_lang]):
 				cascade_arr.assign(
 						_dialog_resource.localization[node_uuid]["locales"][cascade_lang])
 	
-	_overlay_array(entries, fallback_arr, entry_target_size, lang_fallback)
-	if not cascade_lang.is_empty():
-		_overlay_array(entries, cascade_arr, entry_target_size, cascade_lang)
-	_overlay_array(entries, base_entries, entry_target_size, locale)
+	_overlay_array(entries, fallback_arr, entry_target_size)
+	_overlay_array(entries, cascade_arr, entry_target_size)
+	_overlay_array(entries, base_entries, entry_target_size)
 	
 	return entries
 
 
-func _overlay_array(target: Array[Dictionary], source: Array[String], max_size: int, source_locale: String) -> void:
+func _overlay_array(target: Array[String], source: Array[String], max_size: int) -> void:
 	if source.is_empty():
 		return
 	
 	for i in range(mini(max_size, source.size())):
 		var text: String = source[i].strip_edges()
 		if not text.is_empty():
-			target[i]["text"] = text
-			target[i]["locale"] = source_locale
+			target[i] = text
 
 
-func _get_text_node_text(node_uuid: StringName, fallback: String = "[ENTRY NOT FOUND]") -> Dictionary[String, String]:
-	var data: Dictionary[String, String] = {
-		"locale": locale,
-		"text": fallback}
-	
+func _get_text_node_text(node_uuid: StringName, fallback: String = "[ENTRY NOT FOUND]") -> String:
 	if _dialog_resource == null or not _dialog_resource.localization.has(node_uuid) or _dialog_resource.localization[node_uuid]["type"] != DiscourseDialog.LocalizationType.TEXT:
-		return data
+		return fallback
 	
 	var fallback_mode: int = ProjectSettings.get_setting(
 			NFPluginGameHandler.get_setting_path("discourse_fallback_mode"),
@@ -564,19 +536,17 @@ func _get_text_node_text(node_uuid: StringName, fallback: String = "[ENTRY NOT F
 			false)
 	
 	if not localized:
-		data["text"] = DictUtils.get_nested_value(
+		return DictUtils.get_nested_value(
 				_dialog_resource.localization,
 				[node_uuid, "unlocalized"],
 				fallback,
 				true)
-		return data
 	elif fallback_mode == 0 or DictUtils.has_nested_path(_dialog_resource.localization, [node_uuid, "locales", locale]):
-		data["text"] = DictUtils.get_nested_value(
+		return DictUtils.get_nested_value(
 				_dialog_resource.localization,
 				[node_uuid, "locales", locale],
 				fallback,
 				true)
-		return data
 	
 	# Node is localized but we can use fallbacks
 	var lang_fallback: String = ProjectSettings.get_setting(
@@ -585,16 +555,12 @@ func _get_text_node_text(node_uuid: StringName, fallback: String = "[ENTRY NOT F
 	if fallback_mode == 2 and locale.contains("_"):
 		var cascade_lang: String = locale.get_slice("_", 0)
 		if DictUtils.has_nested_path(_dialog_resource.localization, [node_uuid, "locales", cascade_lang]):
-			data["text"] = _dialog_resource.localization[node_uuid]["locales"][cascade_lang]
-			data["locale"] = cascade_lang
-			return data
+			return _dialog_resource.localization[node_uuid]["locales"][cascade_lang]
 	
-	data["locale"] = lang_fallback
-	data["text"] = DictUtils.get_nested_value(
+	return DictUtils.get_nested_value(
 			_dialog_resource.localization,
 			[node_uuid, "locales", lang_fallback],
 			fallback)
-	return data
 
 
 func _dialog_resource_set(new_resource: DiscourseDialog) -> void:
@@ -602,17 +568,13 @@ func _dialog_resource_set(new_resource: DiscourseDialog) -> void:
 
 
 func _parse_dialog(dialog_id: String, dialog: String) -> String:
-	return _parse_editor_dialog(dialog_id, dialog, locale)
-
-
-func _parse_editor_dialog(dialog_uuid: String, dialog: String, locale_code: String) -> String:
 	if not ProjectSettings.get_setting(
 			NFPluginGameHandler.get_setting_path(
 					"use_discourse_parser"),
 					true):
 		return dialog
 	
-	var DUUID: String = dialog_uuid + "/" + locale_code
+	var DUUID: String = dialog_id + "/" + locale
 	
 	# (UUID)/en_US
 	if _dialog_resource.parsed_dialog_cache.is_in_cache(DUUID):
