@@ -54,7 +54,12 @@ var undo: UndoRedo = null
 @onready var edit_traits_btn: Button = $MainContainer/TraitsPanel/TraitsContainerContainer/TraitSelectContainer/TraitContainer/EditTraitsBtn
 
 
+func _ready() -> void:
+	set_process_input(false)
+
+
 func ready_plugin(stats_enabled: bool, skills_enabled: bool, traits_enabled: bool) -> void:
+	set_process_input(true)
 	undo = UndoRedo.new()
 	undo.max_steps = UNDO_MAX_STEPS
 	
@@ -149,7 +154,7 @@ func ready_plugin(stats_enabled: bool, skills_enabled: bool, traits_enabled: boo
 
 
 func _input(event: InputEvent) -> void:
-	if undo == null:
+	if not is_visible_in_tree():
 		return
 	
 	if event is InputEventKey:
