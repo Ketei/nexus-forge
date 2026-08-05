@@ -4,6 +4,8 @@ class_name ModDiscourseDialog
 ##
 ## This resource only contains the "logic" part of a conversation to be parsed
 ## by Discourse on project export.
+## [b]IMPORTANT:[/b] The use of this object hasn't been implemented in Discourse
+## so using it will yield no action or unexpected results.
 
 ## [b]REQUIRED[/b][br]
 ## An ID for the dialog. Giving this a distinct ID that can ensure that
