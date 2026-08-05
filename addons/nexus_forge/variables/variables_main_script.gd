@@ -36,6 +36,10 @@ var undo: UndoRedo = null
 @onready var current_folder_label: Label = $MainSplit/VBoxContainer2/TitleContainer/FolderPathContainer/CurrentFolderLabel
 
 
+func _ready() -> void:
+	set_process_input(false)
+
+
 func _input(event: InputEvent) -> void:
 	if event is not InputEventKey:
 		return
@@ -85,6 +89,7 @@ func _input(event: InputEvent) -> void:
 
 
 func ready_plugin() -> void:
+	set_process_input(true)
 	folders_tree.ready_plugin()
 	variables_tree.ready_plugin()
 	undo = UndoRedo.new()

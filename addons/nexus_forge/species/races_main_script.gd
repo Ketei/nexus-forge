@@ -46,7 +46,12 @@ var signal_change: bool = false
 @onready var hybrid_b: Label = $RacesContainer/RacesBasicSplit/BasicDataContainer/HybridInfoContainer/HybridB
 
 
+func _ready() -> void:
+	set_process_input(false)
+
+
 func ready_plugin() -> void:
+	set_process_input(true)
 	undo = UndoRedo.new()
 	undo.max_steps = UNDO_MAX_STEPS
 	race_data_tree.undo_redo_steps = UNDO_MAX_STEPS
@@ -103,7 +108,7 @@ func ready_plugin() -> void:
 
 
 func _input(event: InputEvent) -> void:
-	if undo == null or not is_visible_in_tree():
+	if not is_visible_in_tree():
 		return
 	
 	if event is InputEventKey:

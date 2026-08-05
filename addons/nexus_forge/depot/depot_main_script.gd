@@ -15,7 +15,36 @@ var _unsaved: bool = false:
 @onready var categories_tree: Tree = $CategoriesContainer/DataContainer/CategoriesTree
 
 
+func _ready() -> void:
+	set_process_input(false)
+
+
+func _input(event: InputEvent) -> void:
+	if not is_visible_in_tree():
+		return
+	
+	if event is InputEventKey:
+		if event.echo or not event.pressed:
+			return
+		
+		var current_focus: Control = get_viewport().gui_get_focus_owner()
+		
+		if current_focus != null:
+			if current_focus is LineEdit:
+				if current_focus.is_editing():
+					return
+			elif current_focus is TextEdit:
+				return
+		
+		if event.ctrl_pressed:
+			if event.keycode == KEY_Z:
+				get_viewport().set_input_as_handled()
+			elif event.keycode == KEY_Y:
+				get_viewport().set_input_as_handled()
+
+
 func ready_plugin(use_items: bool, use_currencies: bool) -> void:
+	set_process_input(true)
 	items_container.ready_plugin(use_items, use_currencies)
 	if use_items:
 		categories_container.ready_plugin()

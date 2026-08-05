@@ -110,6 +110,7 @@ var phrases_index: int = -1
 var node_popup: PopupMenu = null
 var file_popup: PopupMenu = null
 var locale_popup: PopupMenu = null
+var dialog_previewer: Node = null
 @onready var node_menu_btn: MenuButton = $MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/NodeMenuBtn
 @onready var save_btn: Button = $MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/SaveBtn
 @onready var play_current_dialog_btn: Button = $MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/PlayDialogBtn
@@ -120,8 +121,32 @@ var locale_popup: PopupMenu = null
 @onready var auto_update_previewer: Button = $LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/DialogScenePreviewer/HBoxContainer/ButtonContaienr/AutoUpdateBtn
 
 
+func _ready() -> void:
+	set_process_input(false)
 
-var dialog_previewer: Node = null
+
+func _input(event: InputEvent) -> void:
+	if not is_visible_in_tree():
+		return
+	
+	if event is InputEventKey:
+		if event.echo or not event.pressed:
+			return
+		
+		var current_focus: Control = get_viewport().gui_get_focus_owner()
+		
+		if current_focus != null:
+			if current_focus is LineEdit:
+				if current_focus.is_editing():
+					return
+			elif current_focus is TextEdit:
+				return
+		
+		if event.ctrl_pressed:
+			if event.keycode == KEY_Z:
+				get_viewport().set_input_as_handled()
+			elif event.keycode == KEY_Y:
+				get_viewport().set_input_as_handled()
 
 
 func ready_plugin(base_locale: String = "") -> void:

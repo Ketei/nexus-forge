@@ -51,7 +51,36 @@ var _logic_offset: int = 225
 @onready var obj_req_tree: Tree = $MainContainer/DataContainer/DataContainer/LogicContainer/TargetLogicContainer/RequirementsCotnainer/ObjReqTree
 
 
+func _ready() -> void:
+	set_process_input(false)
+
+
+func _input(event: InputEvent) -> void:
+	if not is_visible_in_tree():
+		return
+	
+	if event is InputEventKey:
+		if event.echo or not event.pressed:
+			return
+		
+		var current_focus: Control = get_viewport().gui_get_focus_owner()
+		
+		if current_focus != null:
+			if current_focus is LineEdit:
+				if current_focus.is_editing():
+					return
+			elif current_focus is TextEdit:
+				return
+		
+		if event.ctrl_pressed:
+			if event.keycode == KEY_Z:
+				get_viewport().set_input_as_handled()
+			elif event.keycode == KEY_Y:
+				get_viewport().set_input_as_handled()
+
+
 func ready_plugin() -> void:
+	set_process_input(true)
 	obj_req_tree.ready_plugin()
 	files_tree.ready_plugin()
 	quest_tree.ready_plugin()

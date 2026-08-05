@@ -42,7 +42,12 @@ var exp_parser: Expression = null
 @onready var edit_genders_btn: Button = $CharacterContainer/BasicDataSplit/GeneralContainer/GenderContainer/EditGendersBtn
 
 
+func _ready() -> void:
+	set_process_input(false)
+
+
 func ready_plugin() -> void:
+	set_process_input(true)
 	exp_parser = Expression.new()
 	char_tree.ready_plugin()
 	character_data_tree.ready_plugin()
