@@ -69,7 +69,10 @@ var locale: String = "en":
 # Maps UUID: CustomID
 #var _dialog_id_map: Dictionary[StringName, StringName] = {}
 
-var _dialog_resource: DiscourseDialog = null : set = _dialog_resource_set
+var _dialog_resource: DiscourseDialog = null:
+	set(new_res):
+		_dialog_resource = new_res
+		_dialog_resource_set()
 var _conversation_started: bool = false
 var _next_uuid: StringName = &""
 var _current_uuid: StringName = &""
@@ -770,16 +773,14 @@ func _get_dialog_locale(dialog_id: String, lang_code: String) -> DiscourseDialog
 		#_dialog_resource._store_locale(locale_code, res)
 
 
-func _dialog_resource_set(new_resource: DiscourseDialog) -> void:
-	_dialog_resource = new_resource
-	
-	if new_resource == null:
+func _dialog_resource_set() -> void:
+	if _dialog_resource == null:
 		return
 	
-	if new_resource._has_locale(locale):
-		new_resource._set_locale(locale)
+	if _dialog_resource._has_locale(locale):
+		_dialog_resource._set_locale(locale)
 	else:
-		_load_locale_into(new_resource, locale)
+		_load_locale_into(_dialog_resource, locale)
 #endregion
 
 

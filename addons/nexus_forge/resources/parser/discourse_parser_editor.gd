@@ -563,7 +563,7 @@ func _get_text_node_text(node_uuid: StringName, fallback: String = "[ENTRY NOT F
 			fallback)
 
 
-func _dialog_resource_set(new_resource: DiscourseDialog) -> void:
+func _dialog_resource_set() -> void:
 	return
 
 
