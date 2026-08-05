@@ -447,13 +447,13 @@ func _get_data(from_uuid: StringName, fallback = null) -> Variant:
 func _get_choice_node_entries(node_uuid: StringName, entry_fallback: String = "[ENTRY NOT FOUND]") -> Array[String]:
 	var entries: Array[String] = []
 	
-	if not _dialog_resource.node_logic.has(node_uuid):
+	if not _dialog_resource.node_data.has(node_uuid):
 		return entries
 	
 	var entry_target_size: int = 0
 	
-	if _dialog_resource.node_logic[node_uuid].has("choices"):
-		entry_target_size = _dialog_resource.node_logic[node_uuid]["choices"].size()
+	if _dialog_resource.node_data[node_uuid]["metadata"].has("choices"):
+		entry_target_size = _dialog_resource.node_data[node_uuid]["metadata"]["choices"].size()
 	
 	if entry_target_size == 0:
 		return entries
@@ -468,8 +468,8 @@ func _get_choice_node_entries(node_uuid: StringName, entry_fallback: String = "[
 	
 	if not localized:
 		var unlocalized_array: Array[String] = []
-		if DictUtils.has_nested_path(_dialog_resource.localization, [node_uuid, "locales", "unlocalized"]):
-			unlocalized_array.assign(_dialog_resource.localization[node_uuid]["locales"]["unlocalized"])
+		if _dialog_resource.localization[node_uuid].has("unlocalized"):
+			unlocalized_array.assign(_dialog_resource.localization[node_uuid]["unlocalized"])
 		_overlay_array(entries, unlocalized_array, entry_target_size)
 		return entries
 	
@@ -520,6 +520,53 @@ func _overlay_array(target: Array[String], source: Array[String], max_size: int)
 		var text: String = source[i].strip_edges()
 		if not text.is_empty():
 			target[i] = text
+
+
+func _get_format_string_text(key: String, locale_code: String) -> String:
+	if _dialog_resource == null:
+		return ""
+	
+	var fallback_mode: int = ProjectSettings.get_setting(
+			NFPluginGameHandler.get_setting_path("discourse_fallback_mode"),
+			2)
+	
+	if fallback_mode == 0 or _dialog_resource.has_format_string(key, locale_code):
+		return _dialog_resource.get_format_string(key, locale_code)
+	
+	var lang_fallback: String = ProjectSettings.get_setting(
+			"internationalization/locale/fallback")
+	
+	if fallback_mode == 2 and locale_code.contains("_"):
+		var cascade_lang: String = locale_code.get_slice("_", 0)
+		if _dialog_resource.has_format_string(key, cascade_lang):
+			return _dialog_resource.get_format_string(key, cascade_lang)
+	
+	return _dialog_resource.get_format_string(key, lang_fallback)
+
+
+func _get_format_string_arguments(key: String, locale_code: String) -> Dictionary[String, Dictionary]:
+	var arguments: Dictionary[String, Dictionary] = {}
+	
+	if _dialog_resource == null:
+		return arguments
+	
+	var fallback_mode: int = ProjectSettings.get_setting(
+			NFPluginGameHandler.get_setting_path("discourse_fallback_mode"),
+			2)
+	
+	if fallback_mode == 0 or _dialog_resource.has_format_string(key, locale_code):
+		return _dialog_resource.get_format_string_arguments(key, locale_code)
+	
+	var lang_fallback: String = ProjectSettings.get_setting(
+			"internationalization/locale/fallback")
+	
+	if fallback_mode == 2 and locale_code.contains("_"):
+		var cascade_lang: String = locale_code.get_slice("_", 0)
+		if _dialog_resource.has_format_string(key, cascade_lang):
+			return _dialog_resource.get_format_string_arguments(key, cascade_lang)
+	
+	return _dialog_resource.get_format_string_arguments(key, lang_fallback)
+	
 
 
 func _get_text_node_text(node_uuid: StringName, fallback: String = "[ENTRY NOT FOUND]") -> String:
@@ -633,11 +680,11 @@ func _parse_dialog(dialog_id: String, dialog: String) -> String:
 			phrases_processed[reg_result.get_string()] = null
 			var phrase_key: String = format_key.substr(1)
 			
-			var phrase: String = _dialog_resource.get_format_string(
+			var phrase: String = _get_format_string_text(
 					phrase_key,
 					locale)
 			
-			var argument_cases: Dictionary[String, Dictionary] = _dialog_resource.get_format_string_arguments(
+			var argument_cases: Dictionary[String, Dictionary] = _get_format_string_arguments(
 					phrase_key,
 					locale)
 			

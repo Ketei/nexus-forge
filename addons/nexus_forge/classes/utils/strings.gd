@@ -148,3 +148,25 @@ static func get_trailing_integer(text: String) -> Dictionary[String, Variant]:
 		data["integer"] = match_result.get_string().to_int()
 	
 	return data
+
+
+## Returns an array of all items that could be formatted by [method String.format]
+static func get_all_format_arguments(text: String, trim_brackets: bool = false, strip_edges: bool = false) -> Array[String]:
+	var all_formats: Array[String] = []
+	if text.is_empty():
+		return all_formats
+	
+	var entries_found: Dictionary[String, Variant] = {}
+	var rgx: RegEx = RegEx.new()
+	rgx.compile("\\{([^\\}]+)\\}")
+	
+	for entry in rgx.search_all(text):
+		var hit: String = entry.get_string()
+		if trim_brackets:
+			hit = hit.trim_prefix("{").trim_suffix("}")
+			if strip_edges:
+				hit = hit.strip_edges()
+		entries_found[hit] = null
+	
+	all_formats.assign(entries_found.keys())
+	return all_formats

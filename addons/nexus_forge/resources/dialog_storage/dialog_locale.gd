@@ -99,11 +99,11 @@ static func new_from_json(json_string: String) -> DiscourseDialogLocale:
 							continue
 						var custom_cases: Dictionary[String, String] = {}
 						var string_data: Dictionary = format_data["format"][format_key]
-						for custom_case in string_data["cases"].keys():
-							if typeof(custom_case) != TYPE_STRING or typeof(string_data["cases"][custom_case]) != TYPE_STRING:
-								continue
-							custom_cases[custom_case] = string_data["cases"][custom_case]
-						#data["format_strings"][conversation_uuid][format_id]["format"][format_key]["default"]
+						if string_data.has("cases") and typeof(string_data["cases"]) == TYPE_DICTIONARY:
+							for custom_case in string_data["cases"].keys():
+								if typeof(custom_case) != TYPE_STRING or typeof(string_data["cases"][custom_case]) != TYPE_STRING:
+									continue
+								custom_cases[custom_case] = string_data["cases"][custom_case]
 						formats[format_key] = {
 							"cases": custom_cases,
 							"default": DictUtils.get_nested_value(format_data, ["format", format_key, "default"], "", true)}
@@ -115,14 +115,109 @@ static func new_from_json(json_string: String) -> DiscourseDialogLocale:
 	return new_locale
 
 
+static func _overlay_dialog_array(target: PackedStringArray, source: PackedStringArray, max_size: int = -1) -> void:
+	if source.is_empty():
+		return
+	
+	var range_size: int = source.size() if max_size < 0 else mini(max_size, source.size())
+	
+	if target.size() < range_size:
+		target.resize(range_size)
+	
+	for i in range(range_size):
+		var text: String = target[i].strip_edges()
+		if text.is_empty():
+			target[i] = source[i]
+	
+
+
 ## Merges the localization data of [param with] with the data of this
 ## object. If [param overwrite] is [code]true[/code] then existing data will be
 ## overwritten.
-func merge_dialog(with: DiscourseDialogLocale, overwrite: bool = false) -> void:
-	if overwrite == null or with == self:
+func merge_dialog(with: DiscourseDialogLocale) -> void:
+	if with == null or with == self:
 		return
-	localization.merge(with.localization, overwrite)
-	format_strings.merge(with.format_strings, overwrite)
+	
+	for dialog_id in with.localization:
+		if not localization.has(dialog_id):
+			localization[dialog_id] = with.localization[dialog_id].duplicate(true)
+			continue
+		
+		var target_dialog: Dictionary = localization[dialog_id]
+		var source_dialog: Dictionary = with.localization[dialog_id]
+		
+		for node_id in source_dialog:
+			if not target_dialog.has(node_id):
+				target_dialog[node_id] = source_dialog[node_id].duplicate(true)
+				continue
+			
+			var target_node: Dictionary = target_dialog[node_id]
+			var source_node: Dictionary = source_dialog[node_id]
+			
+			if target_node.has("text") and source_node.has("text"):
+				if target_node["text"].is_empty():
+					target_node["text"] = source_node["text"]
+			elif target_node.has("choices") and source_node.has("choices"):
+				_overlay_dialog_array(target_node["choices"], source_node["choices"])
+	
+	for dialog_id in with.format_strings:
+		if not format_strings.has(dialog_id):
+			format_strings[dialog_id] = with.format_strings[dialog_id].duplicate(true)
+			continue
+		
+		var target_entry: Dictionary = format_strings[dialog_id]
+		var source_entry: Dictionary = with.format_strings[dialog_id]
+		
+		for entry_id in source_entry:
+			if not target_entry.has(entry_id):
+				target_entry[entry_id] = source_entry[entry_id].duplicate(true)
+				continue
+			
+			var target_data: Dictionary = target_entry[entry_id]
+			var source_data: Dictionary = source_entry[entry_id]
+			
+			var target_base: String = ""
+			
+			if target_data.has("base_string"):
+				target_base = target_data["base_string"].strip_edges()
+			
+			if target_base.is_empty():
+				if source_data.has("base_string"):
+					# We copy over everything, validation and healing is
+					# performed by the object parsing the dialogs.
+					target_data["base_string"] = source_data["base_string"]
+					if source_data.has("format"):
+						target_data["format"] = source_data["format"].duplicate(true)
+				continue
+			
+			var entries: Array[String] = StringUtils.get_all_format_arguments(target_base, true)
+			var source_formats: Dictionary = source_data["format"]
+			var target_formats: Dictionary = target_data["format"]
+			
+			for existing_format in entries:
+				if not source_formats.has(existing_format):
+					continue
+				
+				if not target_formats.has(existing_format):
+					target_formats[existing_format] = source_formats[existing_format].duplicate(true)
+					continue
+				
+				var target_default: String = target_formats[existing_format]["default"].strip_edges()
+				
+				if target_default.is_empty():
+					target_formats[existing_format]["default"] = source_formats[existing_format]["default"]
+				
+				var target_cases: Dictionary = target_formats[existing_format]["cases"]
+				var source_cases: Dictionary = source_formats[existing_format]["cases"]
+				
+				for case in source_cases:
+					if not target_cases.has(case):
+						target_cases[case] = source_cases[case]
+						continue
+					
+					var target_string: String = target_cases[case].strip_edges()
+					if target_string.is_empty():
+						target_cases[case] = source_cases[case]
 
 
 ## Sets the dialog text from the [param conversation]'s [param uuid] to [param text].
