@@ -325,19 +325,26 @@ func update_node_size() -> void:
 
 
 static func get_user_methods() -> Dictionary:
+	if api_path.is_empty() or not ResourceLoader.exists(api_path):
+		var all_classes: Array[Dictionary] = ProjectSettings.get_global_class_list()
+		for class_entry in all_classes:
+			if class_entry["class"] == "DiscourseAPI":
+				api_path = class_entry["path"]
+				break
+	
 	var methods: Dictionary = {}
 	
-	var method_blacklsit: Array[String] = []
-	var singleton: DiscourseAPI = DiscourseAPI.new()
+	if not ResourceLoader.exists(api_path):
+		NFPluginGameHandler._log_msg(
+				"discourse - editor",
+				"Couldn't load DiscourseAPI script.",
+				NFPluginGameHandler._LogLevel.ERROR)
+		return methods
 	
-	var base_methods: Array = ClassDB.class_get_method_list(&"RefCounted")
-	for method in base_methods:
-		method_blacklsit.append(method["name"])
+	var api_script: Script = load(api_path)
+	var api_methods: Array[Dictionary] = api_script.get_script_method_list()
 	
-	for method:Dictionary in singleton.get_method_list():
-		if method["name"] in method_blacklsit:
-			continue
-		
+	for method:Dictionary in api_methods:
 		var default_count: int = method["default_args"].size()
 		var default_index: int = method["args"].size() - default_count
 		var args: Array[Dictionary] = []

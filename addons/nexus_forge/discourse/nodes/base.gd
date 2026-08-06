@@ -56,6 +56,8 @@ const COLORS: Dictionary = {
 
 const LOCALIZED_COLOR: Color = Color.LIME_GREEN
 
+static var api_path: String = ""
+
 @onready var flow_icon: Texture2D = preload("res://addons/nexus_forge/icons/right_arrow.png")
 
 var node_type: DialogueNodeType = DialogueNodeType.DIALOG
