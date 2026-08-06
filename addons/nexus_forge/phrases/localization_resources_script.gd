@@ -110,6 +110,8 @@ func ready_plugin() -> void:
 	default_case_text.syntax_highlighter = def_highlighter
 	default_case_text.enter_shifts_focus = true
 	
+	expand_default_btn.disabled = true
+	
 	_update_choice_textbox_size(default_case_text)
 	
 	for lang_code in TranslationServer.get_all_languages():
@@ -330,6 +332,7 @@ func _on_edit_cases_pressed(container: HBoxContainer) -> void:
 		clear_cases()
 		selected_format = ""
 		
+		expand_default_btn.disabled = true
 		if container.get_index() == selected_key_index:
 			selected_key_index = -1
 			default_case_text.clear()
@@ -346,6 +349,7 @@ func _on_edit_cases_pressed(container: HBoxContainer) -> void:
 	text_key.editable = false
 	text_line.editable = false
 	expand_button.disabled = true
+	expand_default_btn.disabled = false
 	edit_button.icon = get_theme_icon("Unlock", "EditorIcons")
 	edit_button.tooltip_text = "Unlock"
 	selected_key_index = container.get_index()
@@ -571,6 +575,7 @@ func load_map(new_map: PhraseMap) -> void:
 	new_case_btn.disabled = true
 	default_case_text.clear()
 	default_case_text.editable = false
+	expand_default_btn.disabled = true
 	_update_choice_textbox_size(default_case_text)
 	
 	selected_key_index = -1
@@ -883,7 +888,6 @@ func create_case_entry(case: String, format: String) -> void:
 
 
 func create_key_text_entry(key: StringName, text_entry: String) -> void:
-	print("Creating %s for %s" % [key, text_entry])
 	var container: HBoxContainer = HBoxContainer.new()
 	var erase_button: Button = Button.new()
 	var key_line: LineEdit = LineEdit.new()
