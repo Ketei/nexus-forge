@@ -187,14 +187,16 @@ func _input(event: InputEvent) -> void:
 							"",
 							"Undo: " + action_name,
 							NFPluginGameHandler._LogLevel.EDITOR)
+			get_viewport().set_input_as_handled()
 		elif event.keycode == KEY_Y and not event.shift_pressed:
 			if undo.has_redo():
-					var action_name: String = undo.get_action_name(undo.get_current_action() + 1)
-					undo.redo()
-					NFPluginGameHandler._log_msg(
-							"",
-							"Redo: " + action_name,
-							NFPluginGameHandler._LogLevel.EDITOR)
+				var action_name: String = undo.get_action_name(undo.get_current_action() + 1)
+				undo.redo()
+				NFPluginGameHandler._log_msg(
+						"",
+						"Redo: " + action_name,
+						NFPluginGameHandler._LogLevel.EDITOR)
+			get_viewport().set_input_as_handled()
 
 
 func _on_edit_skillset_pressed() -> void:

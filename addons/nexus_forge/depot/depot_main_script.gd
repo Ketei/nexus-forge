@@ -24,7 +24,7 @@ func _input(event: InputEvent) -> void:
 		return
 	
 	if event is InputEventKey:
-		if event.echo or not event.pressed:
+		if event.echo or not event.pressed or not event.ctrl_pressed:
 			return
 		
 		var current_focus: Control = get_viewport().gui_get_focus_owner()
@@ -36,11 +36,10 @@ func _input(event: InputEvent) -> void:
 			elif current_focus is TextEdit:
 				return
 		
-		if event.ctrl_pressed:
-			if event.keycode == KEY_Z:
-				get_viewport().set_input_as_handled()
-			elif event.keycode == KEY_Y:
-				get_viewport().set_input_as_handled()
+		if event.keycode == KEY_Z:
+			get_viewport().set_input_as_handled()
+		elif event.keycode == KEY_Y and not event.shift_pressed:
+			get_viewport().set_input_as_handled()
 
 
 func ready_plugin(use_items: bool, use_currencies: bool) -> void:

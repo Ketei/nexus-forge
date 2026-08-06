@@ -44,18 +44,18 @@ func _input(event: InputEvent) -> void:
 	if event is not InputEventKey:
 		return
 	
-	if not is_visible_in_tree() or event.echo or not event.pressed:
+	if not is_visible_in_tree() or event.echo or not event.pressed or not event.ctrl_pressed:
 		return
 	
 	var focused_node: Control = get_viewport().gui_get_focus_owner()
 	if focused_node != null:
-			if focused_node is LineEdit:
-				if focused_node.is_editing():
-					return
-				elif focused_node is TextEdit:
-					return
+		if focused_node is LineEdit:
+			if focused_node.is_editing():
+				return
+			elif focused_node is TextEdit:
+				return
 	
-	if event.keycode == KEY_Z and event.ctrl_pressed:
+	if event.keycode == KEY_Z:
 		if event.shift_pressed:
 			if undo.has_redo():
 				var action_name: String = undo.get_action_name(undo.get_current_action() + 1)
@@ -76,7 +76,7 @@ func _input(event: InputEvent) -> void:
 				on_something_changed()
 		
 		get_viewport().set_input_as_handled()
-	elif event.keycode == KEY_Y and event.ctrl_pressed:
+	elif event.keycode == KEY_Y and not event.shift_pressed:
 		if undo.has_redo():
 			var action_name: String = undo.get_action_name(undo.get_current_action() + 1)
 			undo.redo()
