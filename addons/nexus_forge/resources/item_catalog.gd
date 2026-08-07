@@ -230,7 +230,7 @@ func categories() -> Array[StringName]:
 
 
 ## Creates a category with id [param category_id] unless it exists already.
-func create_category(category_id: StringName, category_name: String, parent_category: StringName, custom_data: Dictionary[String, Variant] = {}) -> void:
+func create_category(category_id: StringName, category_name: String, parent_category: StringName = &"", custom_data: Dictionary[String, Variant] = {}) -> void:
 	if _categories.has(category_id):
 		return
 	

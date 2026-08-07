@@ -119,7 +119,7 @@ static func make_path(parts: Array) -> String:
 	var full_path: String = ""
 	
 	for item in parts:
-		if typeof(item) != TYPE_STRING:
+		if typeof(item) != TYPE_STRING or item.is_empty():
 			continue
 		full_path = full_path.path_join(item)
 	return full_path

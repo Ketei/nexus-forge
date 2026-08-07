@@ -4,6 +4,8 @@ extends PanelContainer
 
 signal items_loaded
 
+const MAX_UNDO_STEPS: int = 50
+
 var _unsaved: bool = false:
 	get():
 		return items_container._unsaved
@@ -36,17 +38,53 @@ func _input(event: InputEvent) -> void:
 			elif current_focus is TextEdit:
 				return
 		
+		var target_undo: UndoRedo = null
+		
+		if items_container.visible:
+			target_undo = items_container.undo
+		elif categories_container.visible:
+			target_undo = categories_container.undo
+		
+		if target_undo == null:
+			get_viewport().set_input_as_handled()
+			return
+		
 		if event.keycode == KEY_Z:
+			if event.shift_pressed:
+				if target_undo.has_redo():
+					var action_name: String = target_undo.get_action_name(target_undo.get_current_action() + 1)
+					target_undo.redo()
+					NFPluginGameHandler._log_msg(
+						"",
+						"Redo: " + action_name,
+						NFPluginGameHandler._LogLevel.EDITOR)
+			else:
+				if target_undo.has_undo():
+					var action_name: String = target_undo.get_current_action_name()
+					target_undo.undo()
+					NFPluginGameHandler._log_msg(
+						"",
+						"Undo: " + action_name,
+						NFPluginGameHandler._LogLevel.EDITOR)
 			get_viewport().set_input_as_handled()
 		elif event.keycode == KEY_Y and not event.shift_pressed:
+			if target_undo.has_redo():
+				var action_name: String = target_undo.get_action_name(target_undo.get_current_action() + 1)
+				target_undo.redo()
+				NFPluginGameHandler._log_msg(
+						"",
+						"Redo: " + action_name,
+						NFPluginGameHandler._LogLevel.EDITOR)
 			get_viewport().set_input_as_handled()
 
 
 func ready_plugin(use_items: bool, use_currencies: bool) -> void:
 	set_process_input(true)
-	items_container.ready_plugin(use_items, use_currencies)
+	items_container.ready_plugin(use_items, use_currencies, MAX_UNDO_STEPS)
 	if use_items:
-		categories_container.ready_plugin()
+		if items_container.item_link.items != null:
+			categories_container.items_resource = items_container.item_link.items
+		categories_container.ready_plugin(MAX_UNDO_STEPS)
 	
 	items_container.visible = true
 	categories_container.visible = false
@@ -59,7 +97,7 @@ func ready_plugin(use_items: bool, use_currencies: bool) -> void:
 	items_container.resource_loaded.connect(_on_resource_loaded)
 	edit_categories_btn.pressed.connect(_on_category_edit_pressed)
 	finish_cat_btn.pressed.connect(_on_categories_done_pressed)
-	categories_tree.category_id_changed.connect(_on_category_id_changed)
+	categories_container.category_id_changed.connect(_on_category_id_updated)
 	
 	if items_container.item_link.items == null:
 		edit_categories_btn.disabled = true
@@ -67,30 +105,15 @@ func ready_plugin(use_items: bool, use_currencies: bool) -> void:
 		_on_resource_loaded()
 
 
-func _on_category_id_changed(from: StringName, to: StringName) -> void:
-	if from == to:
-		return
-	
-	var items: ItemCatalog = items_container.item_link.items
-	
-	if not items.has_category(from):
-		return
-	
-	items._categories[to] = items._categories[from]
-	items._categories.erase(from)
-	
-	for item_id in items.items():
-		if items._items[item_id]["category"] == from:
-			items._items[item_id]["category"] = to
-	
-	if items_container.current_category == from:
-		items_container.current_category = to
+func _on_category_id_updated(from: StringName, to: StringName) -> void:
+	items_container.update_category_id(from, to)
 
 
 func _on_resource_loaded() -> void:
 	var res: ItemCatalog = items_container.item_link.items
 	
-	categories_container.reload_categories(res)
+	categories_container.items_resource = res
+	categories_container.reload_categories()
 	edit_categories_btn.disabled = false
 	items_loaded.emit()
 
@@ -98,12 +121,10 @@ func _on_resource_loaded() -> void:
 func _on_category_edit_pressed() -> void:
 	items_container.visible = false
 	categories_container.visible = true
-	categories_container.clean()
 
 
 func _on_categories_done_pressed() -> void:
 	if categories_container.categories_edited:
-		categories_container.save_category_data(items_container.item_link.items)
 		items_container.reload_categories(true)
 		items_container._items_unsaved = true
 		categories_container.categories_edited = false
@@ -119,8 +140,7 @@ func has_unsaved_changes() -> bool:
 func save() -> void:
 	if items_container._items_unsaved or categories_container.categories_edited:
 		if categories_container.categories_edited:
-			categories_container.save_category_data(items_container.item_link.items)
-			categories_container.clean()
+			categories_container.save_current_category()
 		
 		if items_container.item_link.items != null and not items_container.loaded_item.is_empty():
 			items_container.save_current_item()
@@ -134,3 +154,12 @@ func save() -> void:
 	items_container._items_unsaved = false
 	items_container._currency_unsaved = false
 	categories_container.categories_edited = false
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE:
+		if categories_container.category_undo != null and is_instance_valid(categories_container.category_undo):
+			categories_container.category_undo.free()
+			categories_container.category_undo = null
+		if items_container.undo != null and is_instance_valid(items_container.undo_currency):
+			items_container.undo.free()

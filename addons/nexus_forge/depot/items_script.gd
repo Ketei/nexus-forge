@@ -27,6 +27,9 @@ var loaded_item: StringName = &"":
 var loaded_currency: StringName = &""
 var noncategory_loaded: bool = false
 
+var undo: UndoRedo
+var exp_parser: Expression = null
+
 var _items_unsaved: bool = false
 var _currency_unsaved: bool = false
 
@@ -70,7 +73,7 @@ var _currency_unsaved: bool = false
 @onready var add_curr_dict_button: Button = $CurrencyPanel/CurrencyContainer/CustomDataContainer/CustomDataHeader/ButtonContainer/AddDictButton
 @onready var currency_custom_data_tree: Tree = $CurrencyPanel/CurrencyContainer/CustomDataContainer/CurrencyCustomDataTree
 
-@onready var currencies_tee: Tree = $CurrencyPanel/CurrencyCalc/CurrenciesTee
+@onready var currencies_calculator_tree: Tree = $CurrencyPanel/CurrencyCalc/CurrenciesTee
 @onready var reset_calculator_btn: Button = $CurrencyPanel/CurrencyCalc/HBoxContainer/ResetCalculatorBtn
 @onready var value_ln_edt: LineEdit = $CurrencyPanel/CurrencyCalc/InfoContainer/ValueLnEdt
 @onready var copy_val_btn: Button = $CurrencyPanel/CurrencyCalc/InfoContainer/CopyValBtn
@@ -80,7 +83,9 @@ var _currency_unsaved: bool = false
 # --------------------------
 
 
-func ready_plugin(use_items: bool, use_currencies: bool) -> void:
+func ready_plugin(use_items: bool, use_currencies: bool, max_undo_steps: int) -> void:
+	exp_parser = Expression.new()
+	
 	search_curr_ln_edt.right_icon = get_theme_icon("Search", "EditorIcons")
 	edit_rarities_btn.icon = get_theme_icon("Edit", "EditorIcons")
 	edit_flags_btn.icon = get_theme_icon("Edit", "EditorIcons")
@@ -99,9 +104,10 @@ func ready_plugin(use_items: bool, use_currencies: bool) -> void:
 		item_data_tree.ready_plugin()
 		reload_item_resource(true)
 	if use_currencies:
+		undo = UndoRedo.new()
 		currency_tree.ready_plugin()
 		currency_custom_data_tree.ready_plugin()
-		currencies_tee.ready_plugin()
+		currencies_calculator_tree.ready_plugin()
 		reload_currency_resource(true)
 	
 	item_search_debounce.timeout.connect(_on_search_item_debounce_timeout)
@@ -114,25 +120,32 @@ func ready_plugin(use_items: bool, use_currencies: bool) -> void:
 	items_tree.item_id_changed.connect(_on_item_id_changed, CONNECT_DEFERRED)
 	items_tree.item_erased.connect(_on_item_erased, CONNECT_DEFERRED)
 	item_name_ln_edt.text_changed.connect(_on_items_changed)
-	rarity_opt_btn.item_selected.connect(_on_items_changed)
-	item_val_spn_bx.value_changed.connect(_on_items_changed)
+	item_name_ln_edt.editing_toggled.connect(_on_item_name_edit_toggled)
+	rarity_opt_btn.item_selected.connect(_on_rarity_selected)
+	item_val_spn_bx.value_changed.connect(_on_item_value_changed)
 	item_val_spn_bx.set_drag_forwarding(Callable(), _item_val_can_drop_data, _on_item_val_drop_data)
 	item_desc_txt_edt.text_changed.connect(_on_items_changed)
-	item_data_tree.data_changed.connect(_on_items_changed)
+	item_desc_txt_edt.focus_exited.connect(_on_item_description_focus_exited)
 	
-	item_name_ln_edt.focus_exited.connect(_on_item_name_focus_lost, CONNECT_DEFERRED)
+	category_opt_btn.item_selected.connect(_on_new_category_selected)
+	
+	currency_custom_data_tree.data_changed.connect(_on_currency_data_changed)
+	item_data_tree.data_changed.connect(_on_item_data_changed)
+	
 	add_item_int_btn.pressed.connect(add_item_data.bind("new_int", 0))
 	add_item_float_btn.pressed.connect(add_item_data.bind("new_float", 0.0))
 	add_item_bool_btn.pressed.connect(add_item_data.bind("new_bool", false))
 	add_item_str_btn.pressed.connect(add_item_data.bind("new_string", ""))
 	add_item_fldr_btn.pressed.connect(add_item_data.bind("new_folder", {}))
 	
+	currency_name_ln_edt.editing_toggled.connect(_on_currency_name_edit_toggled)
+	
 	create_currency_btn.pressed.connect(_on_create_currency_pressed)
 	currency_tree.currency_selected.connect(_on_currency_selected, CONNECT_DEFERRED)
 	currency_tree.currency_id_changed.connect(_on_currency_id_changed)
 	currency_tree.currency_deleted.connect(_on_currency_deleted)
 	currency_name_ln_edt.text_changed.connect(_on_currency_changed)
-	currency_value_spn_bx.value_changed.connect(_on_currency_value_changed, CONNECT_DEFERRED)
+	currency_value_spn_bx.value_changed.connect(_on_currency_value_changed)
 	
 	add_curr_int_btn.pressed.connect(add_currency_data.bind("new_int", 0))
 	add_curr_flt_btn.pressed.connect(add_currency_data.bind("new_float", 0.0))
@@ -143,7 +156,7 @@ func ready_plugin(use_items: bool, use_currencies: bool) -> void:
 	search_curr_ln_edt.text_changed.connect(_on_currency_search_text_changed)
 	edit_flags_btn.pressed.connect(_on_edit_flags_pressed)
 	edit_rarities_btn.pressed.connect(_on_edit_rarities_pressed)
-	currencies_tee.calculation_updated.connect(_on_calculation_updated)
+	currencies_calculator_tree.calculation_updated.connect(_on_calculation_updated)
 	copy_val_btn.pressed.connect(_on_copy_value_button_pressed, CONNECT_DEFERRED)
 	copy_val_btn.set_drag_forwarding(_get_copy_button_drag_data, Callable(), Callable())
 	reset_calculator_btn.pressed.connect(_on_reset_calculator_pressed)
@@ -251,10 +264,19 @@ func _on_tree_pagination_changed() -> void:
 		item_page_container.visible = false
 
 
+
 func update_page_label() -> void:
 	if not item_search_debounce.is_stopped():
 		await item_search_debounce.timeout
 	item_page_lbl.text = PAGE_LABEL_STRING % [items_tree.current_page, items_tree.last_page]
+
+
+func update_category_id(from: StringName, to: StringName) -> void:
+	for idx in range(category_opt_btn.item_count):
+		if category_opt_btn.get_item_metadata(idx) == from:
+			category_opt_btn.set_item_metadata(idx, to)
+			category_opt_btn.set_item_text(idx, String(to).capitalize())
+			break
 
 
 func update_page_buttons() -> void:
@@ -355,7 +377,7 @@ func _on_create_currency_pressed() -> void:
 		var currency_id: StringName = StringName(result[1])
 		currency_resource.create_currency(currency_id, 0, "New Currency")
 		currency_tree.add_currency(currency_id, true, false)
-		currencies_tee.add_currency(currency_id, "New Currency", 0)
+		currencies_calculator_tree.add_currency(currency_id, "New Currency", 0)
 		load_currency(currency_id)
 		loaded_currency = currency_id
 		set_currency_ui_enabled(true)
@@ -367,21 +389,85 @@ func _on_currency_value_changed(new_value: int) -> void:
 	if loaded_currency.is_empty():
 		return
 	
+	var old_value: int = currency_value_spn_bx.get_meta(&"old_value")
+	
+	currency_value_spn_bx.set_meta(&"old_value", new_value)
+	
+	undo.create_action("Set '%s' Currency Value" % loaded_currency)
+	undo.add_do_method(_do_update_currency_value.bind(loaded_currency, new_value))
+	undo.add_undo_method(_do_update_currency_value.bind(loaded_currency, old_value))
+	undo.commit_action(false)
+	
 	_on_currency_changed()
 
 
+func _do_update_currency_value(currency_id: StringName, new_value: int) -> void:
+	if loaded_currency != currency_id:
+		currency_tree.select_currency(currency_id, false)
+		switch_to_currency(currency_id)
+	currency_value_spn_bx.set_value_no_signal(new_value)
+	currency_value_spn_bx.set_meta(&"old_value", new_value)
+
+
 func _on_currency_deleted(currency_id: StringName) -> void:
+	var current: bool = loaded_currency == currency_id
+	var curr_name: String = currency_name_ln_edt.text.strip_edges() if current else currency_resource.get_currency_name(currency_id)
+	var curr_val: int = _parse_value(currency_value_spn_bx.get_line_edit().text, currency_value_spn_bx.value) if current else currency_resource.get_currency_value(currency_id)
+	var curr_data: Dictionary[String, Variant] = currency_custom_data_tree.get_data() if current else currency_resource._currencies[currency_id]["custom_data"].duplicate(true)
+	
+	var currency_data: Dictionary = {
+		"name": curr_name,
+		"value": curr_val,
+		"metadata": curr_data}
+	
 	currency_resource.erase_currency(currency_id)
+	currencies_calculator_tree.remove_currency(currency_id)
 	
 	if loaded_currency == currency_id:
 		loaded_currency = &""
 		currency_name_ln_edt.text = ""
 		currency_value_spn_bx.set_value_no_signal(0)
-		currency_custom_data_tree.clear_data()
+		currency_custom_data_tree.clear_data(false)
 		set_currency_ui_enabled(false)
 	
-	currencies_tee.remove_currency(currency_id)
+	undo.create_action("Erase '%s' Currency" % currency_id)
+	undo.add_do_method(_do_erase_currency.bind(currency_id))
+	undo.add_undo_method(_undo_erase_currency.bind(currency_id, currency_data))
+	undo.commit_action(false)
+	
 	_on_currency_changed()
+
+
+func _undo_erase_currency(currency_id: StringName, currency_data: Dictionary) -> void:
+	currency_resource.create_currency(
+			currency_id,
+			currency_data["value"],
+			currency_data["name"])
+	currency_resource._currencies[currency_id]["custom_data"].assign(
+			currency_data["metadata"].duplicate(true))
+	
+	if currency_tree._add_currency_to_tree(currency_id):
+		currencies_calculator_tree.add_currency(
+				currency_id,
+				currency_data["name"],
+				currency_data["value"])
+	else:
+		NFPluginGameHandler._log_msg(
+				"depot - editor",
+				"Couldn't restore currency '%s' on editor." % currency_id,
+				NFPluginGameHandler._LogLevel.ERROR)
+
+
+func _do_erase_currency(currency_id: StringName) -> void:
+	currency_resource.erase_currency(currency_id)
+	currency_tree.erase_currency(currency_id)
+	currencies_calculator_tree.remove_currency(currency_id)
+	if loaded_currency == currency_id:
+		loaded_currency = &""
+		currency_name_ln_edt.text = ""
+		currency_value_spn_bx.set_value_no_signal(0)
+		currency_custom_data_tree.clear_data(false)
+		set_currency_ui_enabled(false)
 
 
 func _on_currency_id_changed(from: StringName, to: StringName) -> void:
@@ -391,13 +477,30 @@ func _on_currency_id_changed(from: StringName, to: StringName) -> void:
 	if loaded_currency == from:
 		loaded_currency = to
 	
+	undo.create_action("Set Currency ID")
+	undo.add_do_method(_do_change_currency_id.bind(from, to))
+	undo.add_undo_method(_do_change_currency_id.bind(to, from))
+	undo.commit_action(false)
+	
 	_on_currency_changed()
+
+
+func _do_change_currency_id(from: StringName, to: StringName) -> void:
+	currency_resource._currencies[to] = currency_resource._currencies[from]
+	currency_resource._currencies.erase(from)
+	if loaded_currency == from:
+		loaded_currency = to
+	currency_tree.change_currency_id(from, to)
+	
 
 
 func _on_currency_selected(currency_id: StringName) -> void:
 	if not loaded_currency.is_empty():
 		save_current_currency()
-	
+	switch_to_currency(currency_id)
+
+
+func switch_to_currency(currency_id: StringName) -> void:
 	load_currency(currency_id)
 	loaded_currency = currency_id
 	set_currency_ui_enabled(true)
@@ -434,7 +537,7 @@ func reload_currency_resource(first_launch: bool = false) -> void:
 	else:
 		for currency in currency_resource.currencies():
 			currency_tree.add_currency(currency)
-			currencies_tee.add_currency(
+			currencies_calculator_tree.add_currency(
 					currency,
 					currency_resource.get_currency_name(currency),
 					currency_resource.get_currency_value(currency))
@@ -444,7 +547,7 @@ func clear_currency_section() -> void:
 	currency_tree.clear_currencies()
 	currency_name_ln_edt.text = ""
 	currency_value_spn_bx.set_value_no_signal(0)
-	currency_custom_data_tree.clear_data()
+	currency_custom_data_tree.clear_data(false)
 
 
 func add_currency_data(data_key: String, data: Variant) -> void:
@@ -470,9 +573,11 @@ func set_currency_ui_enabled(enabled: bool) -> void:
 
 
 func load_currency(currency_id: StringName) -> void:
+	var currency_value: int = currency_resource.get_currency_value(currency_id)
 	currency_name_ln_edt.text = currency_resource.get_currency_name(currency_id)
-	currency_value_spn_bx.set_value_no_signal(currency_resource.get_currency_value(currency_id))
-	currency_custom_data_tree.clear_data()
+	currency_value_spn_bx.set_value_no_signal(currency_value)
+	currency_value_spn_bx.set_meta(&"old_value", currency_value)
+	currency_custom_data_tree.clear_data(false)
 	
 	for data_key in currency_resource.currency_data_keys(currency_id):
 		currency_custom_data_tree.add_data(
@@ -481,12 +586,15 @@ func load_currency(currency_id: StringName) -> void:
 
 
 func save_current_currency() -> void:
+	var value: int = _parse_value(
+			currency_value_spn_bx.get_line_edit().text,
+			currency_value_spn_bx.value)
 	currency_resource.set_currency_name(
 			loaded_currency,
 			currency_name_ln_edt.text.strip_edges())
 	currency_resource.set_currency_value(
 			loaded_currency,
-			int(currency_value_spn_bx.value))
+			value)
 	
 	currency_resource.clear_currency_data(loaded_currency)
 	
@@ -506,7 +614,7 @@ func sync_calculator_currencies() -> void:
 	if not loaded_currency.is_empty():
 		save_current_currency()
 	for currency_id in currency_resource.currencies():
-		currencies_tee.set_currency(
+		currencies_calculator_tree.set_currency(
 				currency_id,
 				currency_resource.get_currency_name(currency_id),
 				currency_resource.get_currency_value(currency_id))
@@ -524,7 +632,7 @@ func _on_return_calculator_button_pressed() -> void:
 
 
 func _on_reset_calculator_pressed() -> void:
-	currencies_tee.reset_table()
+	currencies_calculator_tree.reset_table()
 
 
 func _on_calculation_updated(new_value: int) -> void:
@@ -556,11 +664,179 @@ func _on_copy_value_button_pressed() -> void:
 	DisplayServer.clipboard_set(value_ln_edt.text)
 
 
-func _on_item_name_focus_lost() -> void:
-	var new_name: String = item_name_ln_edt.text.strip_edges()
-	if loaded_item.is_empty() or item_link.items.get_item_name(loaded_item) == new_name:
+func _on_item_name_edit_toggled(is_toggled: bool) -> void:
+	if is_toggled:
 		return
+	
+	var old_name: String = item_name_ln_edt.get_meta(&"old_value")
+	var new_name: String = item_name_ln_edt.text.strip_edges()
+	
+	if new_name == old_name:
+		return
+	
+	undo.create_action("Set '%s' Item Name" % loaded_item)
+	undo.add_do_method(_do_update_item_name.bind(loaded_item, new_name))
+	undo.add_undo_method(_do_update_item_name.bind(loaded_item, old_name))
+	undo.commit_action(false)
+	
 	item_link.item_renamed.emit(loaded_item, new_name)
+	_on_items_changed()
+
+
+func _do_update_item_name(item_id: StringName, new_name: String) -> void:
+	if loaded_item != item_id:
+		items_tree.select_item(item_id, false)
+		switch_to_item(item_id)
+	item_name_ln_edt.text = new_name
+	item_name_ln_edt.set_meta(&"old_value", new_name)
+	item_link.item_renamed.emit(item_id, new_name)
+
+
+func _on_currency_name_edit_toggled(is_toggled: bool) -> void:
+	if is_toggled:
+		return
+	
+	var old_name: String = currency_name_ln_edt.get_meta(&"old_value")
+	var new_name: String = currency_name_ln_edt.text.strip_edges()
+	
+	if new_name == old_name:
+		return
+	
+	currency_name_ln_edt.set_meta(&"old_value", new_name)
+	
+	undo.create_action("Set '%s' Currency Name" % loaded_currency)
+	undo.add_do_method(_do_rename_currency.bind(loaded_currency, new_name))
+	undo.add_undo_method(_do_rename_currency.bind(loaded_currency, old_name))
+	undo.commit_action(false)
+	_on_currency_changed()
+
+
+func _do_rename_currency(currency_id: StringName, new_name: String) -> void:
+	if currency_id != loaded_currency:
+		currency_tree.select_currency(currency_id, false)
+		switch_to_currency(currency_id)
+	
+	currency_name_ln_edt.text = new_name
+	currency_name_ln_edt.set_meta(&"old_value", new_name)
+
+
+func _on_item_description_focus_exited() -> void:
+	var old_desc: String = item_desc_txt_edt.get_meta(&"old_value")
+	
+	if item_desc_txt_edt.text == old_desc:
+		return
+	var new_desc: String = item_desc_txt_edt.text
+	
+	item_desc_txt_edt.set_meta(&"old_value", new_desc)
+	
+	undo.create_action("Set '%s' Item Description" % loaded_item)
+	undo.add_do_method(_do_update_description.bind(loaded_item, new_desc))
+	undo.add_undo_method(_do_update_description.bind(loaded_item, old_desc))
+	undo.commit_action(false)
+	
+	_on_items_changed()
+
+
+func _do_update_description(item_id: StringName, new_desc: String) -> void:
+	if loaded_item != item_id:
+		switch_to_item(item_id)
+		items_tree.select_item(item_id, false)
+	item_desc_txt_edt.text = new_desc
+	item_desc_txt_edt.set_meta(&"old_value", new_desc)
+
+
+func _on_new_category_selected(idx: int) -> void:
+	var new_value: StringName = category_opt_btn.get_item_metadata(idx)
+	var old_value: StringName = category_opt_btn.get_meta(&"old_value")
+	
+	if new_value == old_value:
+		return
+	
+	category_opt_btn.set_meta(&"old_value", new_value)
+	
+	undo.create_action("Set '%s' Item Category" % loaded_item)
+	undo.add_do_method(_do_update_category.bind(loaded_item, new_value))
+	undo.add_undo_method(_do_update_category.bind(loaded_item, old_value))
+	undo.commit_action(false)
+	
+	_on_items_changed()
+
+
+func _do_update_category(item_id: StringName, category: StringName) -> void:
+	if loaded_item != item_id:
+		switch_to_item(item_id)
+		items_tree.select_item(item_id, false)
+	
+	if not select_category(category, true):
+		NFPluginGameHandler._log_msg(
+				"depot - editor",
+				"Tried to undo select to a non-existing category '%s'. Selecting (uncategorized)" % category,
+				NFPluginGameHandler._LogLevel.EDITOR)
+
+
+func _on_rarity_selected(idx: int) -> void:
+	var old_value: int = rarity_opt_btn.get_meta(&"old_value")
+	var new_value: int = rarity_opt_btn.get_item_metadata(idx)
+	
+	if new_value == old_value:
+		return
+	
+	rarity_opt_btn.set_meta(&"old_value", new_value)
+	
+	undo.create_action("Set '%s' Item Rarity" % loaded_item)
+	undo.add_do_method(_do_update_rarity.bind(loaded_item, new_value))
+	undo.add_undo_method(_do_update_rarity.bind(loaded_item, old_value))
+	undo.commit_action(false)
+	
+	_on_items_changed()
+
+
+func _do_update_rarity(item_id: StringName, rarity: int) -> void:
+	if loaded_item != item_id:
+		switch_to_item(item_id)
+		items_tree.select_item(item_id, false)
+	select_rarity(rarity)
+
+
+func _on_item_value_changed(new_value: int) -> void:
+	var old_value: int = item_val_spn_bx.get_meta(&"old_value")
+	
+	item_val_spn_bx.set_meta(&"old_value", new_value)
+	
+	undo.create_action("Set '%s' Item Value" % loaded_item)
+	undo.add_do_method(_do_update_item_value.bind(loaded_item, new_value))
+	undo.add_undo_method(_do_update_item_value.bind(loaded_item, old_value))
+	undo.commit_action(false)
+	
+	_on_items_changed()
+
+
+func _do_update_item_value(item_id: StringName, new_value: int) -> void:
+	if loaded_item != item_id:
+		switch_to_item(item_id)
+		items_tree.select_item(item_id, false)
+	item_val_spn_bx.set_value_no_signal(new_value)
+	item_val_spn_bx.set_meta(&"old_value", new_value)
+
+
+func _on_item_data_changed() -> void:
+	if item_data_tree.has_undo():
+		undo.create_action("Item Data Changed")
+		undo.add_do_method(_do_update_item_data.bind(loaded_item, false))
+		undo.add_undo_method(_do_update_item_data.bind(loaded_item, true))
+		undo.commit_action(false)
+	_on_items_changed()
+
+
+func _do_update_item_data(item_id: StringName, is_undo: bool) -> void:
+	if loaded_item != item_id:
+		items_tree.select_item(item_id, false)
+		switch_to_item(item_id)
+	
+	if is_undo:
+		item_data_tree.undo()
+	else:
+		item_data_tree.redo()
 
 
 func _on_item_id_changed(from: StringName, to: StringName) -> void:
@@ -688,6 +964,10 @@ func _on_items_resource_dropped(resource: Resource, panel: Control) -> void:
 func _on_item_selected(item_id: StringName) -> void:
 	if loaded_item == item_id:
 		return
+	switch_to_item(item_id)
+
+
+func switch_to_item(item_id: StringName) -> void:
 	if not loaded_item.is_empty():
 		save_current_item()
 	load_item(item_id)
@@ -703,7 +983,7 @@ func _on_item_erased(item_id: StringName) -> void:
 		item_desc_txt_edt.text = ""
 		rarity_opt_btn.select(0 if 0 < rarity_opt_btn.item_count else -1)
 		item_val_spn_bx.set_value_no_signal(0)
-		item_data_tree.clear_data()
+		item_data_tree.clear_data(false)
 		reset_flags()
 		set_items_ui_enabled(false)
 	update_page_label()
@@ -785,7 +1065,7 @@ func clear_all_fields() -> void:
 	rarity_opt_btn.select(0 if 0 < rarity_opt_btn.item_count else -1)
 	item_val_spn_bx.set_value_no_signal(0)
 	item_desc_txt_edt.text = ""
-	item_data_tree.clear_data()
+	item_data_tree.clear_data(false)
 	reset_flags()
 
 
@@ -830,12 +1110,15 @@ func load_item(item_id: StringName) -> void:
 		return
 	
 	item_name_ln_edt.text = item.name
+	item_name_ln_edt.set_meta(&"old_value", item.name)
 	select_category(item.category)
 	select_rarity(item.rarity)
 	item_val_spn_bx.set_value_no_signal(item.value)
+	item_val_spn_bx.set_meta(&"old_value", item.value)
 	item_desc_txt_edt.text = item.description
+	item_desc_txt_edt.set_meta(&"old_value", item.description)
 	
-	item_data_tree.clear_data()
+	item_data_tree.clear_data(false)
 	
 	for data_key in item.custom_data.keys():
 		item_data_tree.add_data(data_key, item.custom_data[data_key])
@@ -850,6 +1133,7 @@ func select_rarity(rarity: ItemSheet.Rarity) -> void:
 	for item_idx in range(rarity_opt_btn.item_count):
 		if rarity_opt_btn.get_item_metadata(item_idx) == rarity:
 			rarity_opt_btn.select(item_idx)
+			rarity_opt_btn.set_meta(&"old_value", rarity)
 			break
 
 
@@ -859,7 +1143,7 @@ func reload_item_resource(first_launch: bool = false) -> void:
 	item_name_ln_edt.text = ""
 	item_desc_txt_edt.text = ""
 	item_val_spn_bx.set_value_no_signal(0.0)
-	item_data_tree.clear_data()
+	item_data_tree.clear_data(false)
 	
 	var item_path: String = ProjectSettings.get_setting(
 			NFPluginGameHandler.get_setting_path("items"),
@@ -929,11 +1213,16 @@ func reload_categories(reselect: bool = false) -> void:
 		select_category(selected)
 
 
-func select_category(category_id: StringName) -> void:
+func select_category(category_id: StringName, uncategorized_if_not_found: bool = false) -> bool:
 	for idx in range(category_opt_btn.item_count):
 		if category_opt_btn.get_item_metadata(idx) == category_id:
 			category_opt_btn.select(idx)
-			break
+			category_opt_btn.set_meta(&"old_value", category_id)
+			return true
+	
+	if uncategorized_if_not_found:
+		category_opt_btn.select(0)
+	return false
 
 
 func reload_fields() -> void:
@@ -986,6 +1275,31 @@ func reload_fields() -> void:
 			existing_flags[remaining_flag].queue_free()
 
 
+func _on_currency_data_changed() -> void:
+	if currency_custom_data_tree.has_undo():
+		undo.create_action("Currency Data Changed")
+		undo.add_do_method(_do_currency_data_changed.bind(loaded_currency))
+		undo.add_undo_method(_undo_currency_data_changed.bind(loaded_currency))
+		undo.commit_action(false)
+	_on_currency_changed()
+
+
+func _undo_currency_data_changed(currency_id: StringName) -> void:
+	if loaded_currency != currency_id:
+		currency_tree.select_currency(currency_id, false)
+		switch_to_currency(currency_id)
+	if currency_custom_data_tree.has_undo():
+		currency_custom_data_tree.undo()
+
+
+func _do_currency_data_changed(currency_id: StringName) -> void:
+	if loaded_currency != currency_id:
+		currency_tree.select_currency(currency_id, false)
+		switch_to_currency(currency_id)
+	if currency_custom_data_tree.has_undo():
+		currency_custom_data_tree.redo()
+
+
 func _on_items_changed(arg = null) -> void:
 	if _items_unsaved:
 		return
@@ -998,6 +1312,45 @@ func _on_currency_changed(arg = null) -> void:
 	_currency_unsaved = true
 
 
+func _parse_value(value: String, fallback: float) -> float:
+	var error: int = exp_parser.parse(value)
+
+	if error != OK:
+		return fallback
+		
+	var result: Variant = exp_parser.execute([], null, false)
+	
+	if exp_parser.has_execute_failed():
+		return fallback
+	
+	var type: int = typeof(result)
+	if type == TYPE_INT or type == TYPE_FLOAT:
+		return result
+	return fallback
+
+
+func _on_flag_toggled(toggled: bool, flag_id: String) -> void:
+	undo.create_action("Set '%s' Item Flag" % loaded_item)
+	undo.add_do_method(_do_update_flag_toggled.bind(flag_id, toggled))
+	undo.add_undo_method(_do_update_flag_toggled.bind(flag_id, not toggled))
+	undo.commit_action(false)
+	
+	_on_items_changed()
+
+
+func _do_update_flag_toggled(flag_id: String, set_pressed: bool) -> void:
+	for item:CheckBox in items_flags_container.get_children():
+		if item.get_meta(&"flag_id") != flag_id:
+			continue
+		item.set_pressed_no_signal(set_pressed)
+		return
+	
+	NFPluginGameHandler._log_msg(
+			"depot - editor",
+			"UndoRedo couldn't apply action on inexistent flag '%s'" % flag_id,
+			NFPluginGameHandler._LogLevel.EDITOR)
+
+
 func create_flag_item(flag_id: String, flag_value: ItemSheet.ItemFlag) -> CheckBox:
 	var new_flag: CheckBox = CheckBox.new()
 	new_flag.text = flag_id.capitalize()
@@ -1007,7 +1360,7 @@ func create_flag_item(flag_id: String, flag_value: ItemSheet.ItemFlag) -> CheckB
 	new_flag.tooltip_text = new_flag.text
 	new_flag.custom_minimum_size.y = 32.0
 	new_flag.disabled = not items_ui_enabled
-	new_flag.toggled.connect(_on_items_changed)
+	new_flag.toggled.connect(_on_flag_toggled.bind(flag_id))
 	
 	return new_flag
 
