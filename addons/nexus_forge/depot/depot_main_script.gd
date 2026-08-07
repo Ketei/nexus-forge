@@ -43,7 +43,7 @@ func _input(event: InputEvent) -> void:
 		if items_container.visible:
 			target_undo = items_container.undo
 		elif categories_container.visible:
-			target_undo = categories_container.undo
+			target_undo = categories_container.category_undo
 		
 		if target_undo == null:
 			get_viewport().set_input_as_handled()
@@ -161,5 +161,5 @@ func _notification(what: int) -> void:
 		if categories_container.category_undo != null and is_instance_valid(categories_container.category_undo):
 			categories_container.category_undo.free()
 			categories_container.category_undo = null
-		if items_container.undo != null and is_instance_valid(items_container.undo_currency):
+		if items_container.undo != null and is_instance_valid(items_container.undo):
 			items_container.undo.free()
