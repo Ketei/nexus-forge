@@ -26,7 +26,22 @@ func _input(event: InputEvent) -> void:
 		return
 	
 	if event is InputEventKey:
-		if event.echo or not event.pressed or not event.ctrl_pressed:
+		if event.echo or not event.pressed:
+			return
+		
+		if event.keycode == KEY_DELETE and not event.shift_pressed and not event.ctrl_pressed:
+			if items_container.visible:
+				if not items_container.loaded_item.is_empty():
+					var item_id: StringName = items_container.loaded_item
+					items_container.items_tree._erase_item(item_id)
+					items_container._on_item_erased(item_id)
+			elif categories_container.visible:
+				var category_id: StringName = categories_container.selected_category
+				categories_container._on_erase_category_pressed(category_id)
+			get_viewport().set_input_as_handled()
+			return
+		
+		if not event.ctrl_pressed:
 			return
 		
 		var current_focus: Control = get_viewport().gui_get_focus_owner()

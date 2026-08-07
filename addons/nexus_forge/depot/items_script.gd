@@ -977,7 +977,8 @@ func switch_to_item(item_id: StringName) -> void:
 
 
 func _on_item_erased(item_id: StringName) -> void:
-	item_link.erase_item(item_id)
+	var item_data: Dictionary[String, Variant] = item_link.items._items[item_id].duplicate(true)
+	
 	if loaded_item == item_id:
 		loaded_item = &""
 		item_name_ln_edt.text = ""
@@ -987,9 +988,40 @@ func _on_item_erased(item_id: StringName) -> void:
 		item_data_tree.clear_data(false)
 		reset_flags()
 		set_items_ui_enabled(false)
+	
+	undo.create_action("Erase Item")
+	undo.add_do_method(_do_erase_item.bind(item_id))
+	undo.add_undo_method(_undo_erase_item.bind(item_id, item_data))
+	undo.commit_action(false)
+	
+	item_link.erase_item(item_id)
 	update_page_label()
 	item_deleted.emit(item_id)
 	_on_items_changed()
+
+
+func _do_erase_item(item_id: StringName) -> void:
+	item_link.erase_item(item_id)
+	items_tree._erase_item(item_id)
+	if loaded_item == item_id:
+		loaded_item = &""
+		item_name_ln_edt.text = ""
+		item_desc_txt_edt.text = ""
+		rarity_opt_btn.select(0 if 0 < rarity_opt_btn.item_count else -1)
+		item_val_spn_bx.set_value_no_signal(0)
+		item_data_tree.clear_data(false)
+		reset_flags()
+		set_items_ui_enabled(false)
+	
+	update_page_label()
+	item_deleted.emit(item_id)
+
+
+func _undo_erase_item(item_id: StringName, item_data: Dictionary[String, Variant]) -> void:
+	items_tree.add_item(item_id, item_data["category"])
+	item_link.create_item(item_id)
+	item_link.set_item_name(item_id, item_data["name"])
+	item_link.items._items[item_id] = item_data.duplicate(true)
 
 
 func _on_create_item_pressed() -> void:

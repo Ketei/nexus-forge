@@ -186,8 +186,10 @@ func _on_erase_category_pressed(category: String) -> void:
 	
 	var cat_id: StringName = StringName(category)
 	var parent_category: StringName = items_resource.get_category_parent(cat_id)
-	var tree_map: Dictionary[String, Dictionary] = {
-		category: categories_tree.get_category_map(category)}
+	var tree_map: Dictionary[StringName, Dictionary] = {
+		category: {
+			"name": categories_tree.get_category_name(category),
+			"subcategories": categories_tree.get_category_map(category)}}
 	
 	# ItemID: Category
 	var items_changed: Dictionary[StringName, StringName] = {}
@@ -204,6 +206,15 @@ func _on_erase_category_pressed(category: String) -> void:
 		"parent_key": parent_category}
 	
 	all_categories_erased.assign(categories_erased.keys())
+	
+	if category == selected_category:
+		item_data_tree.clear_data(false)
+		add_cat_int_btn.disabled = true
+		add_cat_float_btn.disabled = true
+		add_cat_bool_btn.disabled = true
+		add_cat_str_btn.disabled = true
+		add_cat_fldr_btn.disabled = true
+		selected_category = &""
 	
 	for item_id:StringName in items_resource.items():
 		var item_cat: StringName = items_resource.get_item_category(item_id)
@@ -238,7 +249,7 @@ func _do_erase_category(category_id: StringName, cats_to_erase: Array[StringName
 			items_resource.set_item_category(item_id, &"")
 
 
-func _undo_erase_category(parent_category: StringName, categories_snapshot: Dictionary[StringName, Dictionary], tree_snapshot: Dictionary[String, Dictionary], items_snapshot: Dictionary[StringName, StringName]) -> void:
+func _undo_erase_category(parent_category: StringName, categories_snapshot: Dictionary[StringName, Dictionary], tree_snapshot: Dictionary[StringName, Dictionary], items_snapshot: Dictionary[StringName, StringName]) -> void:
 	categories_tree._restore_categories(parent_category, tree_snapshot)
 	
 	for category_id in categories_snapshot:

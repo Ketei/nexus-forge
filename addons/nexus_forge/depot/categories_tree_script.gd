@@ -207,12 +207,13 @@ func _restore_categories(on_category: StringName, map: Dictionary[StringName, Di
 					"Trying to restore category '%s', but it already exists." % category_id,
 					NFPluginGameHandler._LogLevel.ERROR)
 			continue
+		
 		_add_category(
 			category_id,
 			map[category_id]["name"],
 			on_category)
 	
-		for subcategory_id in map["subcategories"]:
+		for subcategory_id in map[category_id]["subcategories"]:
 			_restore_subcategory_on(
 					category_id,
 					subcategory_id,
@@ -220,7 +221,7 @@ func _restore_categories(on_category: StringName, map: Dictionary[StringName, Di
 					map[subcategory_id]["subcategories"])
 
 
-func _restore_subcategory_on(on: String, subcategory_id: String, subcategory_name: String, subcategories: Dictionary[String, Dictionary]) -> void:
+func _restore_subcategory_on(on: String, subcategory_id: String, subcategory_name: String, subcategories: Dictionary[StringName, Dictionary]) -> void:
 	if not has_category(on):
 		return
 	
