@@ -7,10 +7,6 @@ extends Tree
 var id_cell: int = 0
 
 
-func _ready() -> void:
-	create_item()
-
-
 func get_unique_id(root_tree: TreeItem, desired_id: String, skip_tree: TreeItem = null) -> String:
 	var clean_name: String = desired_id.strip_edges()
 	var ideal_name: String = default_name if clean_name.is_empty() else clean_name
