@@ -582,7 +582,8 @@ func load_currency(currency_id: StringName) -> void:
 	for data_key in currency_resource.currency_data_keys(currency_id):
 		currency_custom_data_tree.add_data(
 				data_key,
-				currency_resource.get_currency_data(currency_id, data_key))
+				currency_resource.get_currency_data(currency_id, data_key),
+				true)
 
 
 func save_current_currency() -> void:
@@ -1121,7 +1122,7 @@ func load_item(item_id: StringName) -> void:
 	item_data_tree.clear_data(false)
 	
 	for data_key in item.custom_data.keys():
-		item_data_tree.add_data(data_key, item.custom_data[data_key])
+		item_data_tree.add_data(data_key, item.custom_data[data_key], true)
 	
 	for flag:CheckBox in items_flags_container.get_children():
 		flag.set_pressed_no_signal(
@@ -1278,26 +1279,21 @@ func reload_fields() -> void:
 func _on_currency_data_changed() -> void:
 	if currency_custom_data_tree.has_undo():
 		undo.create_action("Currency Data Changed")
-		undo.add_do_method(_do_currency_data_changed.bind(loaded_currency))
-		undo.add_undo_method(_undo_currency_data_changed.bind(loaded_currency))
+		undo.add_do_method(_do_update_currency_data.bind(loaded_currency, false))
+		undo.add_undo_method(_do_update_currency_data.bind(loaded_currency, true))
 		undo.commit_action(false)
 	_on_currency_changed()
 
 
-func _undo_currency_data_changed(currency_id: StringName) -> void:
+func _do_update_currency_data(currency_id: StringName, is_undo: bool) -> void:
 	if loaded_currency != currency_id:
 		currency_tree.select_currency(currency_id, false)
 		switch_to_currency(currency_id)
 	if currency_custom_data_tree.has_undo():
-		currency_custom_data_tree.undo()
-
-
-func _do_currency_data_changed(currency_id: StringName) -> void:
-	if loaded_currency != currency_id:
-		currency_tree.select_currency(currency_id, false)
-		switch_to_currency(currency_id)
-	if currency_custom_data_tree.has_undo():
-		currency_custom_data_tree.redo()
+		if is_undo:
+			currency_custom_data_tree.undo()
+		else:
+			currency_custom_data_tree.redo()
 
 
 func _on_items_changed(arg = null) -> void:
