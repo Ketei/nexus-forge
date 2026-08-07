@@ -103,7 +103,7 @@ Features that are planned to be implemented in the future:
   - [x] Persona (Characters)
   - [x] Kindred (Species)
   - [x] Talents (Skills & Traits)
-  - [ ] Depot (Items & Currencies)
+  - [x] Depot (Items & Currencies)
   - [ ] Blueprints (Recipes)
   - [ ] Odyssey (Quests)
   - [ ] Phrase Maps
