@@ -1289,11 +1289,10 @@ func _do_update_currency_data(currency_id: StringName, is_undo: bool) -> void:
 	if loaded_currency != currency_id:
 		currency_tree.select_currency(currency_id, false)
 		switch_to_currency(currency_id)
-	if currency_custom_data_tree.has_undo():
-		if is_undo:
-			currency_custom_data_tree.undo()
-		else:
-			currency_custom_data_tree.redo()
+	if is_undo:
+		currency_custom_data_tree.undo()
+	else:
+		currency_custom_data_tree.redo()
 
 
 func _on_items_changed(arg = null) -> void:

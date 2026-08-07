@@ -133,6 +133,10 @@ func add_data(data_key: String, data: Variant) -> void:
 
 
 func _on_category_selected(category_id: StringName) -> void:
+	switch_to_category(category_id)
+
+
+func switch_to_category(category_id: StringName) -> void: 
 	if not selected_category.is_empty():
 		save_current_category()
 	
@@ -141,7 +145,7 @@ func _on_category_selected(category_id: StringName) -> void:
 	var data: Dictionary = items_resource._categories[category_id]["custom_data"]
 	
 	for data_key in data.keys():
-		item_data_tree.add_data(data_key, data[data_key])
+		item_data_tree.add_data(data_key, data[data_key], true)
 	
 	add_cat_int_btn.disabled = false
 	add_cat_float_btn.disabled = false
@@ -325,10 +329,20 @@ func _on_subcategory_created(category_id: StringName) -> void:
 func _on_category_data_changed() -> void:
 	if item_data_tree.has_undo():
 		category_undo.create_action("Data Changed")
-		category_undo.add_do_method(item_data_tree.redo)
-		category_undo.add_undo_method(item_data_tree.undo)
+		category_undo.add_do_method(_do_update_data_change.bind(selected_category, false))
+		category_undo.add_undo_method(_do_update_data_change.bind(selected_category, true))
 		category_undo.commit_action(false)
 	_on_category_changed()
+
+
+func _do_update_data_change(category_id: StringName, is_undo: bool) -> void:
+	if selected_category != category_id:
+		switch_to_category(category_id)
+		categories_tree.select_category(category_id, true, false)
+	if is_undo:
+		item_data_tree.undo()
+	else:
+		item_data_tree.redo()
 
 
 func save_current_category() -> void:

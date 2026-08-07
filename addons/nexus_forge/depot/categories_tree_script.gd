@@ -138,12 +138,14 @@ func create_category(category_id: String, category_name: String, on: String) -> 
 	_add_category(StringName(valid_id), category_name, on)
 
 
-func select_category(category_id: StringName, emit_select: bool = true) -> void:
+func select_category(category_id: StringName, ensure_visible: bool, emit_select: bool = true) -> void:
 	if not categories.has(category_id):
 		return
 	
 	var target: TreeItem = categories[category_id]
 	target.select(0)
+	if ensure_visible:
+		ensure_cursor_is_visible()
 	if emit_select:
 		category_selected.emit(StringName(target.get_metadata(0)["id"]))
 
