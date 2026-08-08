@@ -13,7 +13,7 @@ var current_search: String = ""
 func ready_plugin() -> void:
 	create_item()
 	
-	item_selected.connect(_on_item_selected)
+	item_mouse_selected.connect(_on_item_mouse_selected)
 	item_edited.connect(_on_item_edited)
 	button_clicked.connect(_on_button_clicked)
 
@@ -46,12 +46,12 @@ func _on_item_edited() -> void:
 	recipe_id_changed.emit(old_id, new_id)
 
 
-func _on_item_selected() -> void:
+func _on_item_mouse_selected(mouse_position: Vector2, mouse_button_index: int) -> void:
 	recipe_selected.emit(
 			get_selected().get_metadata(0))
 
 
-func add_recipe(recipe_id: StringName, select: bool = false, emit_signal: bool = true) -> void:
+func add_recipe(recipe_id: StringName, select: bool = false, emit_selected: bool = true) -> void:
 	var new_rcp: TreeItem = get_root().create_child()
 	new_rcp.set_text(0, String(recipe_id))
 	new_rcp.set_metadata(0, recipe_id)
@@ -64,12 +64,19 @@ func add_recipe(recipe_id: StringName, select: bool = false, emit_signal: bool =
 			"Erase recipe")
 	
 	if select:
-		if emit_signal:
-			new_rcp.select(0)
-		else:
-			item_selected.disconnect(_on_item_selected)
-			new_rcp.select(0)
-			item_selected.connect(_on_item_selected)
+		new_rcp.select(0)
+		if emit_selected:
+			recipe_selected.emit(recipe_id)
+
+
+func select_recipe(recipe_id: StringName, emit_selected: bool) -> bool:
+	for item in get_root().get_children():
+		if item.get_metadata(0) == recipe_id:
+			item.select(0)
+			if emit_selected:
+				recipe_selected.emit(recipe_id)
+			return true
+	return false
 
 
 func clear_recipes() -> void:

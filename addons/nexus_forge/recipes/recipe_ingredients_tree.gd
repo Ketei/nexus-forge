@@ -2,7 +2,12 @@
 extends Tree
 
 
-signal items_changed
+signal ingredient_added(index: int)
+signal ingredient_moved(from: int, to: int)
+signal ingredient_erase_pressed(index: int, on_input: bool)
+signal metadata_added(index: int, path: String, data: Variant)
+signal metadata_moved(from_ingredient: int, to_ingredient: int, from_path: String, to_path: String, from_child_idx: int, to_child_idx: int)
+signal metadata_removed(index: int, path: String, data: Variant)
 
 
 enum RecipeMode {
@@ -128,9 +133,16 @@ func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
 func _drop_data(at_position: Vector2, data: Variant) -> void:
 	var drop_target: TreeItem = get_item_at_position(at_position)
 	var dropped_item: TreeItem = _create_item(data["id"], 1, {}) if data["item"] == null else data["item"]
+	var original_index: int = dropped_item.get_index() if data["item"] != null else -1
 	var from_this_tree: bool = _is_item_local(dropped_item)
+	var origin_path: String = ""
+	var origin_index: int = -1
 	var new_parent: TreeItem = null
 	var new_index: int = -1
+	
+	if data["item"] != null and data["type"] == ItemType.ITEM_DATA and from_this_tree:
+		origin_path = get_metadata_path(data["item"])
+		origin_index = get_metadata_ingredient(data["item"]).get_index()
 	
 	if drop_target == null:
 		new_parent = get_root()
@@ -195,17 +207,41 @@ func _drop_data(at_position: Vector2, data: Variant) -> void:
 					new_parent,
 					cell_data,
 					dropped_item.get_text(0))
-			
+	
 	if sort_item != new_parent.get_child(new_index):
 		if new_index <= -1:
 			sort_item.move_after(new_parent.get_child(-1))
 		elif new_index == 0:
 			sort_item.move_before(new_parent.get_first_child())
 		else:
-			sort_item.move_after(new_parent.get_child(new_index - 1))
+			if new_index < sort_item.get_index():
+				new_index -= 1
+			sort_item.move_after(new_parent.get_child(new_index))
 	
 	if data["type"] == ItemType.ITEM_DATA:
 		sort_item.set_text(0, data_id)
+	
+		var ingredient: TreeItem = get_metadata_ingredient(sort_item)
+		var new_path: String = get_metadata_path(sort_item)
+		
+		if from_this_tree:
+			metadata_moved.emit(
+				origin_index,
+				ingredient.get_index(),
+				origin_path,
+				new_path,
+				original_index, # Where it was originally
+				sort_item.get_index()) # The new index
+		else:
+			metadata_added.emit(
+				ingredient.get_index(),
+				new_path,
+				get_data_cell_data(sort_item))
+	else:
+		if from_this_tree:
+			ingredient_moved.emit(original_index, sort_item.get_index())
+		else:
+			ingredient_added.emit(sort_item.get_index())
 
 
 func _get_drag_data(at_position: Vector2) -> Variant:
@@ -266,10 +302,22 @@ func _on_button_clicked(item: TreeItem, _column: int, id: int, mouse_button_inde
 	if mouse_button_index != MOUSE_BUTTON_LEFT:
 		return
 	
+	var is_item: bool = item.get_parent() == get_root()
+	
 	if id == ButtonID.ERASE:
-		var is_item: bool = item.get_parent() == get_root()
-		item.free()
-		items_changed.emit()
+		if is_item:
+			ingredient_erase_pressed.emit(item.get_index(), recipe_mode == RecipeMode.INPUT)
+		else:
+			var ingredient: TreeItem = get_metadata_ingredient(item)
+			var ing_index: int = ingredient.get_index()
+			var meta_path: String = get_metadata_path(item)
+			var metadata: Variant = get_data_cell_data(item)
+			
+			item.free()
+			metadata_removed.emit(
+					ing_index,
+					meta_path,
+					metadata)
 	elif id == ButtonID.ADD_DATA:
 		data_item = item
 		compact_menu.position = DisplayServer.mouse_get_position()
@@ -301,11 +349,22 @@ func _on_add_data_menu_id_pressed(id: int) -> void:
 	else:
 		data_name += "data"
 	
-	_add_data_on(data_item, data_type, data_name)
+	var ingredient: TreeItem = null
+	
+	if data_item.get_parent() == get_root():
+		ingredient = data_item
+	else:
+		ingredient = get_metadata_ingredient(data_item)
+	
+	var meta_item: TreeItem = _add_data_on(data_item, data_type, data_name)
+	
+	var index: int = ingredient.get_index()
+	var path: String = get_metadata_path(meta_item)
+	var data: Variant = get_data_cell_data(meta_item)
 	
 	data_item = null
 	
-	items_changed.emit()
+	metadata_added.emit(index, path, data)
 
 
 func _get_item_id_from_data_tree(item: TreeItem) -> StringName:
@@ -326,6 +385,7 @@ func _get_item_id_from_data_tree(item: TreeItem) -> StringName:
 func _add_data_on(item: TreeItem, data: Variant, data_name: String) -> TreeItem:
 	var new_data: TreeItem = item.create_child()
 	var data_type: int = typeof(data)
+	var item_data: Dictionary = {"name": data_name}
 	new_data.set_text(0, data_name)
 	
 	match data_type:
@@ -374,11 +434,12 @@ func _add_data_on(item: TreeItem, data: Variant, data_name: String) -> TreeItem:
 		_:
 			new_data.set_cell_mode(1, TreeItem.CELL_MODE_STRING)
 			new_data.set_text(1, "Data")
-			new_data.set_metadata(0, {"data": data})
+			item_data["data"] = data
 			new_data.set_editable(1, false)
 			new_data.set_metadata(1, TYPE_NIL)
 	
 	new_data.set_editable(0, true)
+	new_data.set_metadata(0, item_data)
 	
 	if data_type == TYPE_DICTIONARY:
 		new_data.add_button(
@@ -432,14 +493,15 @@ func get_data_cell_data(cell: TreeItem) -> Variant:
 			return null
 
 
-func add_item(item_id: StringName, input_amount: int = 1, data: Dictionary = {}, select: bool = false, first_load: bool = false) -> void:
-	var new_item: TreeItem = _create_item(item_id, input_amount, data)
+func add_item(item_id: StringName, input_amount: int = 1, data: Dictionary = {}) -> void:
+	_create_item(item_id, input_amount, data)
+
+
+func _create_item(item_id: StringName, input_amount: int, data: Dictionary, index: int = -1) -> TreeItem:
+	if index != -1:
+		var child_count: int = get_root().get_child_count()
+		index = clampi(index, -child_count, child_count - 1)
 	
-	if select:
-		new_item.select(0)
-
-
-func _create_item(item_id: StringName, input_amount: int, data: Dictionary) -> TreeItem:
 	var new_item: TreeItem = get_root().create_child()
 	new_item.set_text(0, String(item_id))
 	new_item.set_cell_mode(1, TreeItem.CELL_MODE_RANGE)
@@ -471,6 +533,17 @@ func _create_item(item_id: StringName, input_amount: int, data: Dictionary) -> T
 			false,
 			"Remove Item")
 	
+	if index != -1:
+		if get_root().get_child(index) != new_item:
+			if index == 0:
+				new_item.move_before(get_root().get_first_child())
+			else:
+				var target_index: int = index
+				if 0 < new_item.get_index():
+					target_index -= 1
+				
+				new_item.move_after(get_root().get_child(target_index))
+	
 	return new_item
 
 
@@ -478,6 +551,202 @@ func remove_item(id: StringName) -> void:
 	for ingredient in get_root().get_children():
 		if ingredient.get_metadata(0)["id"] == id:
 			ingredient.free()
+
+
+func remove_ingredient(idx: int) -> void:
+	if idx < 0 or get_root().get_child_count() <= idx:
+		return
+	get_root().get_child(idx).free()
+
+
+func move_ingredient(from: int, to: int) -> void:
+	var root: TreeItem = get_root()
+	if from == to:
+		return
+	elif from < 0 or root.get_child_count() <= from:
+		return
+	elif to < 0 or root.get_child_count() <= to:
+		return
+	
+	var target: TreeItem = root.get_child(from)
+	
+	if to == 0:
+		target.move_before(root.get_first_child())
+	else:
+		target.move_after(root.get_child(to - 1))
+
+
+func add_metadata(on: int, path: String, data: Variant) -> void:
+	if path.is_empty() or typeof(data) == TYPE_NIL:
+		return
+	
+	var item: TreeItem = get_root().get_child(on)
+	
+	if item == null:
+		return
+	
+	var slices: PackedStringArray = path.split("/", false)
+	var var_name: String = slices[-1]
+	var current_level: TreeItem = item
+	
+	for path_slice in slices.slice(0, -1):
+		var found: bool = false
+		for data_tree in current_level.get_children():
+			if data_tree.get_text(0) == path_slice:
+				current_level = data_tree
+				found = true
+				break
+		if not found:
+			return
+	
+	_add_data_on(current_level, data, var_name)
+
+
+func remove_metadata(on: int, path: String) -> void:
+	if path.is_empty():
+		return
+	
+	var item: TreeItem = get_root().get_child(on)
+	
+	if item == null:
+		return
+	
+	var slices: PackedStringArray = path.split("/", false)
+	var var_name: String = slices[-1]
+	var current_level: TreeItem = item
+	
+	for path_slice in slices.slice(0, -1):
+		var found: bool = false
+		for data_tree in current_level.get_children():
+			if data_tree.get_text(0) == path_slice:
+				current_level = data_tree
+				found = true
+				break
+		if not found:
+			return
+	
+	for data_tree in current_level.get_children():
+		if data_tree.get_text(0) == var_name:
+			data_tree.free()
+			return
+
+
+func move_metadata(from_index: int, to_index: int, from: String, to: String, from_child_idx: int, to_child_idx: int, cancel_if_collides: bool = true) -> void:
+	if from.is_empty() or to.is_empty():
+		return
+
+	var root: TreeItem = get_root()
+	var origin_item: TreeItem = root.get_child(from_index)
+	var target_item: TreeItem = root.get_child(to_index)
+
+	if origin_item == null or target_item == null:
+		return
+
+	var to_slices: PackedStringArray = to.split("/", false)
+	var from_slices: PackedStringArray = from.split("/", false)
+	var target_name: String = to_slices[-1]
+
+	var origin_tree: TreeItem = null
+	var target_parent: TreeItem = null
+	var current_level: TreeItem = origin_item
+
+	# 1. Find the origin item
+	for slice in from_slices:
+		var found: bool = false
+		for data_tree in current_level.get_children():
+			if data_tree.get_text(0) == slice:
+				found = true
+				current_level = data_tree
+				break
+		if not found:
+			return
+  
+	origin_tree = current_level
+	current_level = target_item
+
+	# 2. Find the target parent
+	for slice in to_slices.slice(0, -1):
+		var found: bool = false
+		for data_tree in current_level.get_children():
+			if data_tree.get_text(0) == slice:
+				found = true
+				current_level = data_tree
+				break
+		if not found:
+			return
+			
+	target_parent = current_level
+
+	# 3. Check for collisions (ignoring the item itself)
+	var collides: bool = false
+	for data_tree in target_parent.get_children():
+		if data_tree != origin_tree and data_tree.get_text(0) == target_name:
+			collides = true
+			break
+
+	if cancel_if_collides and collides:
+		return
+	elif collides:
+		var used_names: Dictionary[String, Variant] = {}
+		for data_tree in target_parent.get_children():
+			if data_tree != origin_tree:
+				used_names[data_tree.get_text(0)] = null
+
+		var base: String = target_name
+		var modified: String = target_name
+		var trailing_data: Dictionary = StringUtils.get_trailing_integer(target_name)
+		var iteration: int = trailing_data["integer"]
+		if trailing_data["has_integer"]:
+			base = base.trim_suffix(str(iteration))
+		
+		while used_names.has(modified):
+			iteration += 1
+			modified = base + str(iteration)
+	
+		target_name = modified
+	
+	# 4. Reparent if necessary
+	if origin_tree.get_parent() != target_parent:
+		origin_tree.get_parent().remove_child(origin_tree)
+		target_parent.add_child(origin_tree)
+	
+	var total_children: int = target_parent.get_child_count()
+	var clamped_index: int = clampi(to_child_idx, -total_children, total_children - 1)
+	var valid_to_idx: int = wrapi(clamped_index, 0, total_children)
+	
+	# 5. Apply Visual Sorting
+	if origin_tree.get_index() != valid_to_idx:
+		if valid_to_idx == 0:
+			origin_tree.move_before(target_parent.get_first_child())
+		else:
+			if valid_to_idx < origin_tree.get_index(): # Account for index shifting
+				valid_to_idx -= 1
+			
+			origin_tree.move_after(target_parent.get_child(valid_to_idx))
+	
+	# 6. Apply new name
+	origin_tree.set_text(0, target_name)
+	origin_tree.get_metadata(0)["name"] = target_name
+
+
+func get_ingredient_data(index: int) -> Dictionary:
+	var item: TreeItem = get_root().get_child(index)
+	
+	if item == null:
+		return {}
+	
+	var metadata: Dictionary[String, Variant] = {}
+	
+	for meta in item.get_children():
+		metadata[meta.get_text(0)] = get_data_cell_data(meta)
+	
+	var data: Dictionary = {
+		"index": index,
+		"item_id": item.get_metadata(0)["id"],
+		"item_count": int(item.get_range(1)),
+		"metadata": metadata}
+	
+	return data
 
 
 func change_item_id(from: StringName, to: StringName) -> void:
@@ -512,3 +781,25 @@ func validate_id(on_tree: TreeItem, desired_id: String, skip_item: TreeItem = nu
 		modified = base + str(iteration)
 	
 	return modified
+
+
+func get_metadata_ingredient(metadata: TreeItem) -> TreeItem:
+	var root: TreeItem = get_root()
+	var current_item: TreeItem = metadata
+	while current_item.get_parent() != root and current_item != null:
+		current_item = current_item.get_parent()
+	return current_item
+
+
+func get_metadata_path(metadata: TreeItem) -> String:
+	var parts: Array[String] = []
+	var current_item: TreeItem = metadata
+	var root: TreeItem = get_root()
+	
+	while current_item.get_parent() != root and current_item != null:
+		parts.append(current_item.get_text(0))
+		current_item = current_item.get_parent()
+	
+	parts.reverse()
+	
+	return StringUtils.make_path(parts)

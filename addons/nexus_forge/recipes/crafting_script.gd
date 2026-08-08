@@ -19,6 +19,7 @@ var active_recipe: StringName = &"":
 		add_rcp_fldr_btn.disabled = not valid
 		recipe_custom_data_tree.enabled = valid
 var _unsaved: bool = false
+var undo: UndoRedo
 
 @onready var search_recipes_ln_edt: LineEdit = $CraftingContainer/RecipeSelectContainer/MainContainer/SearchRecipesLnEdt
 @onready var create_recipe_btn: Button = $CraftingContainer/RecipeSelectContainer/MainContainer/CreateRecipeBtn
@@ -143,12 +144,7 @@ func _on_recipe_id_changed(from: StringName, to: StringName) -> void:
 func _on_recipe_selected(recipe_id: StringName) -> void:
 	if active_recipe == recipe_id:
 		return
-	if not active_recipe.is_empty():
-		save_current_recipe()
-	recipe_input_tree.recipe_selected = true
-	recipe_output_tree.recipe_selected = true
-	load_recipe(recipe_id)
-	active_recipe = recipe_id
+	switch_to_recipe(recipe_id)
 
 
 func _something_changed(arg: Variant = null) -> void:
@@ -398,18 +394,83 @@ func load_recipe(recipe_id: StringName) -> void:
 		recipe_input_tree.add_item(
 				item.id,
 				item.amount,
-				item.custom_data,
-				false,
-				true)
+				item.custom_data)
 	
 	for item in recipe.output:
 		recipe_output_tree.add_item(
 				item.id,
 				item.amount,
-				item.custom_data,
-				false,
-				true)
+				item.custom_data)
 	
 	recipe_custom_data_tree.clear_data(false)
 	for data_entry in recipe.custom_data.keys():
-		recipe_custom_data_tree.add_data(data_entry, recipe.custom_data[data_entry])
+		recipe_custom_data_tree.add_data(data_entry, recipe.custom_data[data_entry], true)
+
+
+func switch_to_recipe(recipe_id: StringName) -> void:
+	if not active_recipe.is_empty():
+		save_current_recipe()
+	recipe_input_tree.recipe_selected = true
+	recipe_output_tree.recipe_selected = true
+	load_recipe(recipe_id)
+	active_recipe = recipe_id
+
+
+func _on_recipe_data_changed() -> void:
+	if recipe_custom_data_tree.has_undo():
+		undo.create_action("Data Changed")
+		undo.add_do_method(_do_update_custom_data.bind(active_recipe, false))
+		undo.add_undo_method(_do_update_custom_data.bind(active_recipe, true))
+		undo.commit_action(false)
+	_something_changed()
+
+
+func _do_update_custom_data(recipe_id: StringName, is_undo: bool) -> void:
+	if active_recipe != recipe_id:
+		recipe_tree.select_recipe(recipe_id, false)
+		switch_to_recipe(recipe_id)
+	if is_undo:
+		recipe_custom_data_tree.undo()
+	else:
+		recipe_custom_data_tree.redo()
+
+
+func _on_ingredient_erase_pressed(index: int, on_input: bool) -> void:
+	var data: Dictionary = (recipe_input_tree if on_input else recipe_output_tree).get_ingredient_data(index)
+	
+	undo.create_action("Erase '%s' Ingredient" % active_recipe)
+	undo.add_do_method(_do_erase_ingredient.bind(active_recipe, on_input, index))
+	undo.add_undo_method(_undo_erase_ingredient.bind(active_recipe, on_input, data))
+	undo.commit_action()
+	
+	_something_changed()
+
+
+func _do_erase_ingredient(on_recipe: StringName, on_input: bool, ingredient_index: int) -> void:
+	if on_recipe != active_recipe:
+		recipe_tree.select_recipe(on_recipe, false)
+		switch_to_recipe(on_recipe)
+	
+	if on_input:
+		recipe_input_tree.remove_at(ingredient_index)
+	else:
+		recipe_output_tree.remove_at(ingredient_index)
+
+
+func _undo_erase_ingredient(on_recipe: StringName, on_input: bool, ingredient_data: Dictionary) -> void:
+	if on_recipe != active_recipe:
+		recipe_tree.select_recipe(on_recipe, false)
+		switch_to_recipe(on_recipe)
+	
+	var target: Tree = null
+	
+	if on_input:
+		target = recipe_input_tree
+	else:
+		target = recipe_output_tree
+	
+	target._create_item(
+			ingredient_data["item_id"],
+			ingredient_data["item_count"],
+			ingredient_data["metadata"].duplicate(true),
+			ingredient_data["index"])
