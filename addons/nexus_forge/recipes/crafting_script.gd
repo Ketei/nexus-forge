@@ -851,3 +851,11 @@ func _set_ingredient_metadata_id(on_recipe: StringName, on_input: bool, on_ingre
 		recipe_input_tree.set_metadata_id(on_ingredient, path, new_name)
 	else:
 		recipe_output_tree.set_metadata_id(on_ingredient, path, new_name)
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE:
+		if undo != null and is_instance_valid(undo):
+			undo.clear_history()
+			undo.free()
+			undo = null
