@@ -3,6 +3,7 @@ extends Tree
 
 
 signal ingredient_added(index: int)
+signal ingredient_amount_changed(index: int, old_amount: int, new_amount: int)
 signal ingredient_moved(from: int, to: int)
 signal ingredient_erase_pressed(index: int, on_input: bool)
 signal metadata_added(index: int, path: String, data: Variant)
@@ -85,6 +86,7 @@ func ready_plugin() -> void:
 	
 	compact_menu.id_pressed.connect(_on_add_data_menu_id_pressed)
 	button_clicked.connect(_on_button_clicked)
+	item_edited.connect(_on_item_edited)
 
 
 func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
@@ -265,6 +267,22 @@ func _get_drag_data(at_position: Vector2) -> Variant:
 		label.text = "   " + selected.get_text(0)
 	set_drag_preview(label)
 	return data
+
+
+func _on_item_edited() -> void:
+	if get_edited_column() != 1:
+		return
+	
+	var edited: TreeItem = get_edited()
+	var new_amount: int = edited.get_range(1)
+	var old_amount: int = edited.get_metadata(1)["amount"]
+	
+	if new_amount == old_amount:
+		return
+	
+	edited.get_metadata(1)["amount"] = new_amount
+	
+	ingredient_amount_changed.emit(edited.get_index(), old_amount, new_amount)
 
 
 func _tree_has_id(item: TreeItem, id: String) -> bool:
@@ -458,6 +476,19 @@ func _add_data_on(item: TreeItem, data: Variant, data_name: String) -> TreeItem:
 	return new_data
 
 
+func _get_item_from_index(index: int) -> TreeItem:
+	var root: TreeItem = get_root()
+	var child_count: int = root.get_child_count()
+	
+	if child_count == 0:
+		return null
+	
+	var clamped_index: int = clampi(index, -child_count, child_count - 1)
+	var safe_index: int = wrapi(clamped_index, 0, child_count)
+	
+	return root.get_child(safe_index)
+
+
 func get_recipe_items() -> Array[Dictionary]:
 	var items: Array[Dictionary] = []
 	
@@ -497,6 +528,12 @@ func add_item(item_id: StringName, input_amount: int = 1, data: Dictionary = {})
 	_create_item(item_id, input_amount, data)
 
 
+func set_item_amount(index: int, new_amount: int) -> void:
+	var target: TreeItem = _get_item_from_index(index)
+	if target != null:
+		target.set_range(1, new_amount)
+
+
 func _create_item(item_id: StringName, input_amount: int, data: Dictionary, index: int = -1) -> TreeItem:
 	if index != -1:
 		var child_count: int = get_root().get_child_count()
@@ -509,6 +546,7 @@ func _create_item(item_id: StringName, input_amount: int, data: Dictionary, inde
 	new_item.set_range(1, input_amount)
 	new_item.set_editable(1, true)
 	new_item.set_metadata(0, {"id": item_id})
+	new_item.set_metadata(1, {"amount": input_amount})
 	
 	for data_key in data:
 		match typeof(data_key):

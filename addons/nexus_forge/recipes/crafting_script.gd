@@ -4,6 +4,8 @@ extends PanelContainer
 
 signal recipes_loaded
 
+const MAX_UNDO_STEPS: int = 50
+
 var recipes_resource: RecipeCatalog = null
 
 var active_recipe: StringName = &"":
@@ -45,7 +47,18 @@ func _input(event: InputEvent) -> void:
 		return
 	
 	if event is InputEventKey:
-		if event.echo or not event.pressed or not event.ctrl_pressed:
+		if event.echo or not event.pressed:
+			return
+		
+		if event.keycode == KEY_DELETE and not event.ctrl_pressed and not event.shift_pressed:
+			
+			if not active_recipe.is_empty():
+				recipe_tree.remove_recipe(active_recipe)
+				_on_recipe_erased(active_recipe)
+			get_viewport().set_input_as_handled()
+			return
+		
+		if not event.ctrl_pressed:
 			return
 		
 		var current_focus: Control = get_viewport().gui_get_focus_owner()
@@ -58,13 +71,45 @@ func _input(event: InputEvent) -> void:
 				return
 		
 		if event.keycode == KEY_Z:
+			if event.shift_pressed:
+				if undo.has_redo():
+					var action_name: String = undo.get_action_name(undo.get_current_action() + 1)
+					undo.redo()
+					NFPluginGameHandler._log_msg(
+						"",
+						"Redo: " + action_name,
+						NFPluginGameHandler._LogLevel.EDITOR)
+					_something_changed()
+			else:
+				if undo.has_undo():
+					var action_name: String = undo.get_current_action_name()
+					undo.undo()
+					NFPluginGameHandler._log_msg(
+						"",
+						"Undo: " + action_name,
+						NFPluginGameHandler._LogLevel.EDITOR)
+					_something_changed()
 			get_viewport().set_input_as_handled()
 		elif event.keycode == KEY_Y and not event.shift_pressed:
+			if undo.has_redo():
+				var action_name: String = undo.get_action_name(undo.get_current_action() + 1)
+				undo.redo()
+				NFPluginGameHandler._log_msg(
+						"",
+						"Redo: " + action_name,
+						NFPluginGameHandler._LogLevel.EDITOR)
+				_something_changed()
 			get_viewport().set_input_as_handled()
 
 
 func ready_plugin() -> void:
+	undo = UndoRedo.new()
+	undo.max_steps = MAX_UNDO_STEPS
+	
+	recipe_custom_data_tree.undo_redo_steps = MAX_UNDO_STEPS
+	
 	set_process_input(true)
+	
 	recipe_tree.ready_plugin()
 	recipe_items_tree.ready_plugin()
 	recipe_input_tree.ready_plugin()
@@ -84,9 +129,6 @@ func ready_plugin() -> void:
 	add_rcp_str_btn.pressed.connect(_on_custom_data_button_pressed.bind("new_string", ""))
 	add_rcp_fldr_btn.pressed.connect(_on_custom_data_button_pressed.bind("new_folder", {}))
 	
-	#recipe_input_tree.items_changed.connect(_something_changed)
-	#recipe_output_tree.items_changed.connect(_something_changed)
-	
 	create_recipe_btn.pressed.connect(_on_recipe_create_pressed)
 	
 	recipe_tree.recipe_selected.connect(_on_recipe_selected)
@@ -95,6 +137,22 @@ func ready_plugin() -> void:
 	
 	search_recipes_ln_edt.text_changed.connect(_on_recipe_lnedt_text_changed)
 	search_recipe_items_ln_edt.text_changed.connect(_on_item_lnedt_text_changed)
+	
+	recipe_input_tree.ingredient_added.connect(_on_ingredient_added.bind(true))
+	recipe_input_tree.ingredient_amount_changed.connect(_on_ingredient_amount_changed.bind(true))
+	recipe_input_tree.ingredient_moved.connect(_on_ingredient_moved.bind(true))
+	recipe_input_tree.ingredient_erase_pressed.connect(_on_ingredient_erase_pressed.bind(true))
+	recipe_input_tree.metadata_added.connect(_on_recipe_item_metadata_added.bind(true))
+	recipe_input_tree.metadata_moved.connect(_on_recipe_ingredient_metadata_moved.bind(true))
+	recipe_input_tree.metadata_removed.connect(_on_recipe_ingredient_metadata_removed.bind(true))
+	
+	recipe_output_tree.ingredient_added.connect(_on_ingredient_added.bind(false))
+	recipe_output_tree.ingredient_amount_changed.connect(_on_ingredient_amount_changed.bind(false))
+	recipe_output_tree.ingredient_moved.connect(_on_ingredient_moved.bind(false))
+	recipe_output_tree.ingredient_erase_pressed.connect(_on_ingredient_erase_pressed.bind(false))
+	recipe_output_tree.metadata_added.connect(_on_recipe_item_metadata_added.bind(false))
+	recipe_output_tree.metadata_moved.connect(_on_recipe_ingredient_metadata_moved.bind(false))
+	recipe_output_tree.metadata_removed.connect(_on_recipe_ingredient_metadata_removed.bind(false))
 
 
 func _on_recipe_lnedt_text_changed(text: String) -> void:
@@ -103,42 +161,6 @@ func _on_recipe_lnedt_text_changed(text: String) -> void:
 
 func _on_item_lnedt_text_changed(text: String) -> void:
 	recipe_items_tree.search_for(text)
-
-
-func _on_recipe_create_pressed() -> void:
-	var id_dialog: ConfirmationDialog = load("res://addons/nexus_forge/dialogs/lineedit_confirmation_dialog.gd").new()
-	id_dialog.title = "New Recipe"
-	id_dialog.ok_button_text = "Create"
-	id_dialog.allow_empty = false
-	id_dialog.strip_edges = true
-	id_dialog.use_blacklist = true
-	id_dialog.text_blacklist.assign(recipe_tree.recipes())
-	id_dialog.character_blacklist.append(" ")
-	id_dialog.line_placeholder_text = "Recipe ID"
-	add_child(id_dialog)
-	id_dialog.show()
-	id_dialog.grab_text_focus()
-	var result: Array = await id_dialog.dialog_finished
-	if result[0]:
-		var id: StringName = StringName(result[1])
-		recipes_resource.create_recipe(id)
-		recipe_tree.add_recipe(id, true, false)
-		recipe_input_tree.recipe_selected = true
-		recipe_output_tree.recipe_selected = true
-		load_recipe(id)
-		active_recipe = id
-		_something_changed()
-	id_dialog.queue_free()
-
-
-func _on_recipe_id_changed(from: StringName, to: StringName) -> void:
-	if from == to:
-		return
-	recipes_resource._recipes[to] = recipes_resource._recipes[from]
-	recipes_resource._recipes.erase(from)
-	if active_recipe == from:
-		active_recipe = to
-	_something_changed()
 
 
 func _on_recipe_selected(recipe_id: StringName) -> void:
@@ -404,6 +426,75 @@ func switch_to_recipe(recipe_id: StringName) -> void:
 
 
 # - Undo/Redo Operations -
+
+func _on_recipe_create_pressed() -> void:
+	var id_dialog: ConfirmationDialog = load("res://addons/nexus_forge/dialogs/lineedit_confirmation_dialog.gd").new()
+	id_dialog.title = "New Recipe"
+	id_dialog.ok_button_text = "Create"
+	id_dialog.allow_empty = false
+	id_dialog.strip_edges = true
+	id_dialog.use_blacklist = true
+	id_dialog.text_blacklist.assign(recipe_tree.recipes())
+	id_dialog.character_blacklist.append(" ")
+	id_dialog.line_placeholder_text = "Recipe ID"
+	add_child(id_dialog)
+	id_dialog.show()
+	id_dialog.grab_text_focus()
+	var result: Array = await id_dialog.dialog_finished
+	if result[0]:
+		var id: StringName = StringName(result[1])
+		
+		undo.create_action("Create Recipe")
+		undo.add_do_method(_do_create_recipe.bind(id))
+		undo.add_undo_method(_undo_create_recipe.bind(id))
+		undo.commit_action(false)
+		
+		recipes_resource.create_recipe(id)
+		recipe_tree.add_recipe(id, true, false)
+		recipe_input_tree.recipe_selected = true
+		recipe_output_tree.recipe_selected = true
+		load_recipe(id)
+		active_recipe = id
+		_something_changed()
+	id_dialog.queue_free()
+
+
+func _do_create_recipe(recipe_id: StringName) -> void:
+	recipes_resource.create_recipe(recipe_id)
+	recipe_tree.add_recipe(recipe_id, false)
+
+
+func _undo_create_recipe(recipe_id: StringName) -> void:
+	recipes_resource.erase_recipe(recipe_id)
+	recipe_tree.remove_recipe(recipe_id)
+	if active_recipe == recipe_id:
+		active_recipe = &""
+		recipe_input_tree.recipe_selected = false
+		recipe_output_tree.recipe_selected = false
+		
+		recipe_input_tree.clear_items()
+		recipe_output_tree.clear_items()
+		recipe_custom_data_tree.clear_data(false)
+
+
+func _on_recipe_id_changed(from: StringName, to: StringName) -> void:
+	if from == to:
+		return
+	
+	undo.create_action("Set Recipe ID")
+	undo.add_do_method(_do_update_recipe_id.bind(from, to))
+	undo.add_undo_method(_do_update_recipe_id.bind(to, from))
+	undo.commit_action()
+	
+	_something_changed()
+
+
+func _do_update_recipe_id(from: StringName, to: StringName) -> void:
+	recipes_resource._recipes[to] = recipes_resource._recipes[from]
+	recipes_resource._recipes.erase(from)
+	if active_recipe == from:
+		active_recipe = to
+
 
 func _on_recipe_erased(recipe_id: StringName) -> void:
 	var recipe_data: Dictionary = {}
@@ -688,3 +779,22 @@ func _do_remove_ingredient_metadata(on_recipe: StringName, on_input: bool, on_in
 		recipe_input_tree.remove_metadata(on_ingredient, path)
 	else:
 		recipe_output_tree.remove_metadata(on_ingredient, path)
+
+
+func _on_ingredient_amount_changed(index: int, old_amount: int, new_amount: int, on_input: bool) -> void:
+	undo.create_action("Set '%s' %s Amount" % [active_recipe, "Input" if on_input else "Output"])
+	undo.add_do_method(_do_update_ingredient_amount.bind(active_recipe, on_input, index, new_amount))
+	undo.add_undo_method(_do_update_ingredient_amount.bind(active_recipe, on_input, index, old_amount))
+	undo.commit_action(false)
+	_something_changed()
+
+
+func _do_update_ingredient_amount(on_recipe: StringName, on_input: bool, ingredient_index: int, new_amount: int) -> void:
+	if active_recipe != on_recipe:
+		switch_to_recipe(on_recipe)
+		recipe_tree.select_recipe(on_recipe, false)
+	
+	if on_input:
+		recipe_input_tree.set_item_amount(ingredient_index, new_amount)
+	else:
+		recipe_output_tree.set_item_amount(ingredient_index, new_amount)
