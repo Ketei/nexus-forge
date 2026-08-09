@@ -5,10 +5,12 @@ extends Tree
 signal ingredient_added(index: int)
 signal ingredient_amount_changed(index: int, old_amount: int, new_amount: int)
 signal ingredient_moved(from: int, to: int)
-signal ingredient_erase_pressed(index: int, on_input: bool)
+signal ingredient_erase_pressed(index: int)
 signal metadata_added(index: int, path: String, data: Variant)
 signal metadata_moved(from_ingredient: int, to_ingredient: int, from_path: String, to_path: String, from_child_idx: int, to_child_idx: int)
 signal metadata_removed(index: int, path: String, data: Variant)
+signal metadata_changed(index: int, path: String, old_value: Variant, new_value: Variant)
+signal metadata_renamed(index: int, path: String, old_name: String, new_name: String)
 
 
 enum RecipeMode {
@@ -142,7 +144,7 @@ func _drop_data(at_position: Vector2, data: Variant) -> void:
 	var new_parent: TreeItem = null
 	var new_index: int = -1
 	
-	if data["item"] != null and data["type"] == ItemType.ITEM_DATA and from_this_tree:
+	if data["item"] != null and from_this_tree:
 		origin_path = get_metadata_path(data["item"])
 		origin_index = get_metadata_ingredient(data["item"]).get_index()
 	
@@ -153,16 +155,20 @@ func _drop_data(at_position: Vector2, data: Variant) -> void:
 		var drop_position: int = get_drop_section_at_position(at_position)
 		# We're droping an item, can only exist in root.
 		if data["type"] == ItemType.RECIPE_ITEM:
+			var target_idx: int = drop_target.get_index()
 			new_parent = get_root()
-			match drop_position:
-				-1: # Above
-					new_index = drop_target.get_index()
-				_: # Below and fallback.
-					new_index = drop_target.get_index() + 1
+			if target_idx < origin_index:
+				if drop_position != -1:
+					target_idx += 1
+			elif origin_index < target_idx:
+				if drop_position == -1:
+					target_idx -= 1
+			new_index = target_idx
 		else: # We're dropping data. Can exist inside items and dictionary data.
 			var same_parent_shift: bool = from_this_tree and\
 					dropped_item.get_parent() == drop_target.get_parent() and\
 					dropped_item.get_index() < drop_target.get_index()
+			
 			match drop_position:
 				-1: # Above (Dropping on data)
 					new_parent = drop_target.get_parent()
@@ -270,19 +276,57 @@ func _get_drag_data(at_position: Vector2) -> Variant:
 
 
 func _on_item_edited() -> void:
-	if get_edited_column() != 1:
-		return
-	
+	var edited_column: int = get_edited_column()
 	var edited: TreeItem = get_edited()
-	var new_amount: int = edited.get_range(1)
-	var old_amount: int = edited.get_metadata(1)["amount"]
+	var is_item: bool = edited.get_parent() == get_root()
 	
-	if new_amount == old_amount:
-		return
-	
-	edited.get_metadata(1)["amount"] = new_amount
-	
-	ingredient_amount_changed.emit(edited.get_index(), old_amount, new_amount)
+	if is_item:
+		if edited_column == 1:
+			return
+		var new_amount: int = edited.get_range(1)
+		var old_amount: int = edited.get_metadata(1)["amount"]
+		
+		if new_amount == old_amount:
+			return
+		
+		edited.get_metadata(1)["amount"] = new_amount
+		
+		ingredient_amount_changed.emit(edited.get_index(), old_amount, new_amount)
+	else:
+		if edited_column == 0:
+			edited.set_text(0, validate_id(edited.get_parent(), edited.get_text(0), edited))
+			var old_name: String = edited.get_metadata(0)["name"]
+			var new_name: String = edited.get_text(0)
+			
+			if new_name == old_name:
+				return
+			
+			var parent_path: String = get_metadata_path(edited.get_parent())
+			edited.get_metadata(0)["name"] = new_name
+			
+			metadata_renamed.emit(
+					get_metadata_ingredient(edited).get_index(),
+					parent_path,
+					old_name,
+					new_name)
+		else:
+			if edited.get_metadata(1) == TYPE_DICTIONARY:
+				return
+			
+			var new_value: Variant = get_data_cell_data(edited)
+			var old_value: Variant = edited.get_metadata(0)["data"]
+			
+			if new_value == old_value:
+				return
+			
+			edited.get_metadata(0)["data"] = new_value
+			
+			metadata_changed.emit(
+					get_metadata_ingredient(edited).get_index(),
+					get_metadata_path(edited),
+					old_value,
+					new_value)
+		
 
 
 func _tree_has_id(item: TreeItem, id: String) -> bool:
@@ -324,7 +368,7 @@ func _on_button_clicked(item: TreeItem, _column: int, id: int, mouse_button_inde
 	
 	if id == ButtonID.ERASE:
 		if is_item:
-			ingredient_erase_pressed.emit(item.get_index(), recipe_mode == RecipeMode.INPUT)
+			ingredient_erase_pressed.emit(item.get_index())
 		else:
 			var ingredient: TreeItem = get_metadata_ingredient(item)
 			var ing_index: int = ingredient.get_index()
@@ -404,6 +448,8 @@ func _add_data_on(item: TreeItem, data: Variant, data_name: String) -> TreeItem:
 	var new_data: TreeItem = item.create_child()
 	var data_type: int = typeof(data)
 	var item_data: Dictionary = {"name": data_name}
+	if data_type != TYPE_DICTIONARY:
+		item_data["data"] = data
 	new_data.set_text(0, data_name)
 	
 	match data_type:
@@ -452,7 +498,6 @@ func _add_data_on(item: TreeItem, data: Variant, data_name: String) -> TreeItem:
 		_:
 			new_data.set_cell_mode(1, TreeItem.CELL_MODE_STRING)
 			new_data.set_text(1, "Data")
-			item_data["data"] = data
 			new_data.set_editable(1, false)
 			new_data.set_metadata(1, TYPE_NIL)
 	
@@ -534,11 +579,75 @@ func set_item_amount(index: int, new_amount: int) -> void:
 		target.set_range(1, new_amount)
 
 
-func _create_item(item_id: StringName, input_amount: int, data: Dictionary, index: int = -1) -> TreeItem:
-	if index != -1:
-		var child_count: int = get_root().get_child_count()
-		index = clampi(index, -child_count, child_count - 1)
+func set_metadata_id(index: int, path: String, new_name: String) -> void:
+	var item: TreeItem = _get_item_from_index(index)
 	
+	if item == null:
+		return
+	
+	var meta_item: TreeItem = get_metadata_item(item, path)
+	
+	if meta_item == null:
+		return
+	
+	if _tree_has_id(meta_item.get_parent(), new_name):
+		return
+	
+	meta_item.set_text(0, new_name)
+	meta_item.get_metadata(0)["name"] = new_name
+
+
+func set_metadata(index: int, path: String, new_value: Variant) -> void:
+	var item: TreeItem = _get_item_from_index(index)
+	
+	if item == null:
+		return
+	
+	var meta_item: TreeItem = get_metadata_item(item, path)
+	
+	if meta_item == null:
+		return
+	
+	var data_type: int = _type_to_used_type(typeof(new_value))
+	
+	if data_type != meta_item.get_metadata(1):
+		match data_type:
+			TYPE_INT, TYPE_FLOAT:
+				meta_item.set_cell_mode(1, TreeItem.CELL_MODE_RANGE)
+				meta_item.set_range_config(1, -9999, -9999, 1.0 if data_type == TYPE_INT else 0.01)
+				meta_item.set_editable(1, true)
+			TYPE_BOOL:
+				meta_item.set_cell_mode(1, TreeItem.CELL_MODE_CHECK)
+				meta_item.set_editable(1, true)
+			TYPE_STRING:
+				meta_item.set_cell_mode(1, TreeItem.CELL_MODE_STRING)
+				meta_item.set_editable(1, true)
+			_:
+				meta_item.set_cell_mode(1, TreeItem.CELL_MODE_STRING)
+				meta_item.set_text(1, "Data")
+				meta_item.set_editable(1, false)
+	
+	match data_type:
+		TYPE_INT, TYPE_FLOAT:
+			meta_item.set_range(1, new_value)
+		TYPE_BOOL:
+			meta_item.set_checked(1, new_value)
+		TYPE_STRING:
+			meta_item.set_text(1, new_value)
+	
+	meta_item.get_metadata(0)["data"] = new_value
+	
+
+
+func _type_to_used_type(type: int) -> int:
+	match type:
+		TYPE_INT, TYPE_FLOAT, TYPE_DICTIONARY, TYPE_BOOL, TYPE_STRING:
+			return type
+		_:
+			return TYPE_NIL
+
+
+func _create_item(item_id: StringName, input_amount: int, data: Dictionary, index: int = -1) -> TreeItem:
 	var new_item: TreeItem = get_root().create_child()
 	new_item.set_text(0, String(item_id))
 	new_item.set_cell_mode(1, TreeItem.CELL_MODE_RANGE)
@@ -572,15 +681,15 @@ func _create_item(item_id: StringName, input_amount: int, data: Dictionary, inde
 			"Remove Item")
 	
 	if index != -1:
-		if get_root().get_child(index) != new_item:
-			if index == 0:
+		var child_count: int = get_root().get_child_count()
+		var clamped_idx: int = clampi(index, -child_count, child_count - 1)
+		var valid_idx: int = wrapi(clamped_idx, 0, child_count)
+		
+		if get_root().get_child(valid_idx) != new_item:
+			if valid_idx == 0:
 				new_item.move_before(get_root().get_first_child())
 			else:
-				var target_index: int = index
-				if 0 < new_item.get_index():
-					target_index -= 1
-				
-				new_item.move_after(get_root().get_child(target_index))
+				new_item.move_after(get_root().get_child(valid_idx - 1))
 	
 	return new_item
 
@@ -612,6 +721,27 @@ func move_ingredient(from: int, to: int) -> void:
 		target.move_before(root.get_first_child())
 	else:
 		target.move_after(root.get_child(to - 1))
+
+
+func get_metadata_item(on: TreeItem, path: String) -> TreeItem:
+	var slices: PackedStringArray = path.split("/", false)
+	var var_name: String = slices[-1]
+	var current_level: TreeItem = on
+	
+	for path_slice in slices.slice(0, -1):
+		var found: bool = false
+		for data_tree in current_level.get_children():
+			if data_tree.get_text(0) == path_slice:
+				current_level = data_tree
+				found = true
+				break
+		if not found:
+			return null
+	
+	for item in current_level.get_children():
+		if item.get_text(0) == var_name:
+			return item
+	return null
 
 
 func add_metadata(on: int, path: String, data: Variant) -> void:

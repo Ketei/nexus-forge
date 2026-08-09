@@ -138,6 +138,8 @@ func ready_plugin() -> void:
 	search_recipes_ln_edt.text_changed.connect(_on_recipe_lnedt_text_changed)
 	search_recipe_items_ln_edt.text_changed.connect(_on_item_lnedt_text_changed)
 	
+	recipe_custom_data_tree.data_changed.connect(_on_recipe_data_changed)
+	
 	recipe_input_tree.ingredient_added.connect(_on_ingredient_added.bind(true))
 	recipe_input_tree.ingredient_amount_changed.connect(_on_ingredient_amount_changed.bind(true))
 	recipe_input_tree.ingredient_moved.connect(_on_ingredient_moved.bind(true))
@@ -145,6 +147,8 @@ func ready_plugin() -> void:
 	recipe_input_tree.metadata_added.connect(_on_recipe_item_metadata_added.bind(true))
 	recipe_input_tree.metadata_moved.connect(_on_recipe_ingredient_metadata_moved.bind(true))
 	recipe_input_tree.metadata_removed.connect(_on_recipe_ingredient_metadata_removed.bind(true))
+	recipe_input_tree.metadata_changed.connect(_on_ingredient_metadata_changed.bind(true))
+	recipe_input_tree.metadata_renamed.connect(_on_ingredient_metadata_renamed.bind(true))
 	
 	recipe_output_tree.ingredient_added.connect(_on_ingredient_added.bind(false))
 	recipe_output_tree.ingredient_amount_changed.connect(_on_ingredient_amount_changed.bind(false))
@@ -153,6 +157,8 @@ func ready_plugin() -> void:
 	recipe_output_tree.metadata_added.connect(_on_recipe_item_metadata_added.bind(false))
 	recipe_output_tree.metadata_moved.connect(_on_recipe_ingredient_metadata_moved.bind(false))
 	recipe_output_tree.metadata_removed.connect(_on_recipe_ingredient_metadata_removed.bind(false))
+	recipe_output_tree.metadata_changed.connect(_on_ingredient_metadata_changed.bind(false))
+	recipe_output_tree.metadata_renamed.connect(_on_ingredient_metadata_renamed.bind(false))
 
 
 func _on_recipe_lnedt_text_changed(text: String) -> void:
@@ -798,3 +804,50 @@ func _do_update_ingredient_amount(on_recipe: StringName, on_input: bool, ingredi
 		recipe_input_tree.set_item_amount(ingredient_index, new_amount)
 	else:
 		recipe_output_tree.set_item_amount(ingredient_index, new_amount)
+
+
+func _on_ingredient_metadata_changed(index: int, path: String, old_value: Variant, new_value: Variant, is_input: bool) -> void:
+	undo.create_action("Set '%s' %s Metadata" % [active_recipe, "Input" if is_input else "Output"])
+	undo.add_do_method(_do_update_ingredient_metadata.bind(active_recipe, is_input, index, path, new_value))
+	undo.add_undo_method(_do_update_ingredient_metadata.bind(active_recipe, is_input, index, path, old_value))
+	undo.commit_action(false)
+	_something_changed()
+
+
+func _do_update_ingredient_metadata(on_recipe: StringName, on_input: bool, on_ingredient: int, path: String, value: Variant) -> void:
+	if active_recipe != on_recipe:
+		switch_to_recipe(on_recipe)
+		recipe_tree.select_recipe(on_recipe, false)
+	
+	if on_input:
+		recipe_input_tree.set_metadata(on_ingredient, path, value)
+	else:
+		recipe_output_tree.set_metadata(on_ingredient, path, value)
+
+
+func _on_ingredient_metadata_renamed(index: int, parent_path: String, old_name: String, new_name: String, on_input: bool) -> void:
+	var new_path: String = parent_path
+	var old_path: String = parent_path
+	
+	if not old_name.is_empty():
+		old_path = old_path.path_join(old_name)
+	if not new_name.is_empty():
+		new_path = new_path.path_join(new_name)
+	
+	undo.create_action("Set '%s' %s Metadata ID" % [active_recipe, "Input" if on_input else "Output"])
+	undo.add_do_method(_set_ingredient_metadata_id.bind(active_recipe, on_input, index, old_path, new_name))
+	undo.add_undo_method(_set_ingredient_metadata_id.bind(active_recipe, on_input, index, new_path, old_name))
+	undo.commit_action(false)
+	
+	_something_changed()
+
+
+func _set_ingredient_metadata_id(on_recipe: StringName, on_input: bool, on_ingredient: int, path: String, new_name: String) -> void:
+	if active_recipe != on_recipe:
+		switch_to_recipe(on_recipe)
+		recipe_tree.select_recipe(on_recipe, false)
+	
+	if on_input:
+		recipe_input_tree.set_metadata_id(on_ingredient, path, new_name)
+	else:
+		recipe_output_tree.set_metadata_id(on_ingredient, path, new_name)
