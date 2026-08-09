@@ -104,7 +104,7 @@ Features that are planned to be implemented in the future:
   - [x] Kindred (Species)
   - [x] Talents (Skills & Traits)
   - [x] Depot (Items & Currencies)
-  - [ ] Blueprints (Recipes)
+  - [x] Blueprints (Recipes)
   - [ ] Odyssey (Quests)
   - [ ] Phrase Maps
 - [ ] **Core:** Implement an automatic [mod loader](#modding)
