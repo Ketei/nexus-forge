@@ -84,8 +84,8 @@ func ready_plugin() -> void:
 	add_rcp_str_btn.pressed.connect(_on_custom_data_button_pressed.bind("new_string", ""))
 	add_rcp_fldr_btn.pressed.connect(_on_custom_data_button_pressed.bind("new_folder", {}))
 	
-	recipe_input_tree.items_changed.connect(_something_changed)
-	recipe_output_tree.items_changed.connect(_something_changed)
+	#recipe_input_tree.items_changed.connect(_something_changed)
+	#recipe_output_tree.items_changed.connect(_something_changed)
 	
 	create_recipe_btn.pressed.connect(_on_recipe_create_pressed)
 	
@@ -364,19 +364,6 @@ func _on_resource_dropped(resource: Resource, panel: Control) -> void:
 	load_recipe_resource()
 
 
-func _on_recipe_erased(recipe_id: StringName) -> void:
-	recipes_resource.erase_recipe(recipe_id)
-	if active_recipe == recipe_id:
-		active_recipe = &""
-		recipe_input_tree.recipe_selected = false
-		recipe_output_tree.recipe_selected = false
-		
-		recipe_input_tree.clear_items()
-		recipe_output_tree.clear_items()
-		recipe_custom_data_tree.clear_data(false)
-	_something_changed()
-
-
 func load_recipe(recipe_id: StringName) -> void:
 	var recipe: RecipeSheet = recipes_resource.get_recipe(recipe_id)
 	
@@ -416,6 +403,62 @@ func switch_to_recipe(recipe_id: StringName) -> void:
 	active_recipe = recipe_id
 
 
+# - Undo/Redo Operations -
+
+func _on_recipe_erased(recipe_id: StringName) -> void:
+	var recipe_data: Dictionary = {}
+	
+	if active_recipe == recipe_id:
+		var inputs: Array[Dictionary] = recipe_input_tree.get_recipe_items()
+		var outputs: Array[Dictionary] = recipe_output_tree.get_recipe_items()
+		var custom_data: Dictionary[String, Variant] = recipe_custom_data_tree.get_data()
+		
+		recipe_data = {
+			"input": inputs,
+			"output": outputs,
+			"custom_data": custom_data}
+	else:
+		recipe_data = recipes_resource._recipes[recipe_id].duplicate(true)
+	
+	undo.create_action("Erase Recipe")
+	undo.add_do_method(_do_erase_recipe.bind(recipe_id))
+	undo.add_undo_method(_undo_erase_recipe.bind(recipe_id, recipe_data))
+	undo.commit_action(false)
+	
+	recipes_resource.erase_recipe(recipe_id)
+	
+	if active_recipe == recipe_id:
+		active_recipe = &""
+		recipe_input_tree.recipe_selected = false
+		recipe_output_tree.recipe_selected = false
+		
+		recipe_input_tree.clear_items()
+		recipe_output_tree.clear_items()
+		recipe_custom_data_tree.clear_data(false)
+	
+	_something_changed()
+
+
+func _undo_erase_recipe(recipe_id: StringName, recipe_data: Dictionary) -> void:
+	recipes_resource._recipes[recipe_id] = recipe_data.duplicate(true)
+	recipe_tree.add_recipe(recipe_id)
+
+
+func _do_erase_recipe(recipe_id: StringName) -> void:
+	recipes_resource.erase_recipe(recipe_id)
+	recipe_tree.remove_recipe(recipe_id)
+	
+	if active_recipe == recipe_id:
+		active_recipe = &""
+		recipe_input_tree.recipe_selected = false
+		recipe_output_tree.recipe_selected = false
+		
+		recipe_input_tree.clear_items()
+		recipe_output_tree.clear_items()
+		recipe_custom_data_tree.clear_data(false)
+
+
+
 func _on_recipe_data_changed() -> void:
 	if recipe_custom_data_tree.has_undo():
 		undo.create_action("Data Changed")
@@ -452,9 +495,9 @@ func _do_erase_ingredient(on_recipe: StringName, on_input: bool, ingredient_inde
 		switch_to_recipe(on_recipe)
 	
 	if on_input:
-		recipe_input_tree.remove_at(ingredient_index)
+		recipe_input_tree.remove_ingredient(ingredient_index)
 	else:
-		recipe_output_tree.remove_at(ingredient_index)
+		recipe_output_tree.remove_ingredient(ingredient_index)
 
 
 func _undo_erase_ingredient(on_recipe: StringName, on_input: bool, ingredient_data: Dictionary) -> void:
@@ -474,3 +517,175 @@ func _undo_erase_ingredient(on_recipe: StringName, on_input: bool, ingredient_da
 			ingredient_data["item_count"],
 			ingredient_data["metadata"].duplicate(true),
 			ingredient_data["index"])
+
+
+func _on_ingredient_added(index: int, on_input: bool) -> void:
+	var data: Dictionary = {}
+	
+	if on_input:
+		data = recipe_input_tree.get_ingredient_data(index)
+	else:
+		data = recipe_output_tree.get_ingredient_data(index)
+	
+	undo.create_action("Add Item to '%s'" % active_recipe)
+	undo.add_do_method(_do_add_ingredient.bind(active_recipe, on_input, data["item_id"], data["item_count"], data["metadata"], data["index"]))
+	undo.add_undo_method(_undo_add_ingredient.bind(active_recipe, on_input, data["index"]))
+	undo.commit_action(false)
+	
+	_something_changed()
+
+
+func _undo_add_ingredient(on_recipe: StringName, on_input: bool, ingredient_index: int) -> void:
+	if active_recipe != on_recipe:
+		switch_to_recipe(on_recipe)
+		recipe_tree.select_recipe(on_recipe, false)
+	
+	if on_input:
+		recipe_input_tree.remove_ingredient(ingredient_index)
+	else:
+		recipe_output_tree.remove_ingredient(ingredient_index)
+
+
+func _do_add_ingredient(on_recipe: StringName, on_input: bool, item_id: StringName, item_amount: int, metadata: Dictionary, on_index: int) -> void:
+	if active_recipe != on_recipe:
+		switch_to_recipe(on_recipe)
+		recipe_tree.select_recipe(on_recipe, false)
+	
+	if on_input:
+		recipe_input_tree._create_item(
+				item_id, item_amount,
+				metadata,
+				on_index)
+	else:
+		recipe_output_tree._create_item(
+				item_id, item_amount,
+				metadata,
+				on_index)
+
+
+func _on_ingredient_moved(from: int, to: int, on_input: bool) -> void:
+	undo.create_action("Move '%s' Item Index" % active_recipe)
+	undo.add_do_method(_do_move_ingredient.bind(active_recipe, on_input, from, to))
+	undo.add_undo_method(_do_move_ingredient.bind(active_recipe, on_input, to, from))
+	undo.commit_action(false)
+	
+	_something_changed()
+
+
+func _do_move_ingredient(from_recipe: StringName, on_input: bool, from_index: int, to_index: int) -> void:
+	if active_recipe != from_recipe:
+		switch_to_recipe(from_recipe)
+		recipe_tree.select_recipe(from_recipe, false)
+	
+	if on_input:
+		recipe_input_tree.move_ingredient(from_index, to_index)
+	else:
+		recipe_output_tree.move_ingredient(from_index, to_index)
+
+
+func _on_recipe_item_metadata_added(index: int, path: String, data: Variant, on_input: bool) -> void:
+	var is_dict: bool = typeof(data) == TYPE_DICTIONARY
+	undo.create_action("Set '%s' Recipe Metadata" % active_recipe)
+	undo.add_do_method(_do_add_item_metadata.bind(active_recipe, on_input, index, path, data.duplicate(true) if is_dict else data))
+	undo.add_undo_method(_undo_add_item_metadata.bind(active_recipe, on_input, index, path))
+	undo.commit_action(false)
+	_something_changed()
+
+
+func _do_add_item_metadata(on_recipe: StringName, on_input: bool, on_ingredient: int, path: String, data: Variant) -> void:
+	if active_recipe != on_recipe:
+		switch_to_recipe(on_recipe)
+		recipe_tree.select_recipe(on_recipe, false)
+	
+	var is_dict: bool = typeof(data) == TYPE_DICTIONARY
+	if on_input:
+		recipe_input_tree.add_metadata(on_ingredient, path, data.duplicate(true) if is_dict else data)
+	else:
+		recipe_output_tree.add_metadata(on_ingredient, path, data.duplicate(true) if is_dict else data)
+
+
+func _undo_add_item_metadata(on_recipe: StringName, on_input: bool, on_ingredient: int, path: String) -> void:
+	if active_recipe != on_recipe:
+		switch_to_recipe(on_recipe)
+		recipe_tree.select_recipe(on_recipe, false)
+	
+	if on_input:
+		recipe_input_tree.remove_metadata(on_ingredient, path)
+	else:
+		recipe_output_tree.remove_metadata(on_ingredient, path)
+
+
+func _on_recipe_ingredient_metadata_moved(from_ingredient: int, to_ingredient: int, from_path: String, to_path: String, from_child_idx: int, to_child_idx: int, on_input: bool) -> void:
+	undo.create_action("Move '%s' Ingredient Metadata" % active_recipe)
+	undo.add_do_method(_do_move_recipe_item_metadata.bind(
+			active_recipe,
+			on_input,
+			from_ingredient,
+			from_path,
+			to_ingredient,
+			to_path,
+			to_child_idx))
+	undo.add_undo_method(_do_move_recipe_item_metadata.bind(
+			active_recipe,
+			on_input,
+			to_ingredient,
+			to_path,
+			from_ingredient,
+			from_path,
+			from_child_idx))
+	undo.commit_action(false)
+	_something_changed()
+
+
+func _do_move_recipe_item_metadata(on_recipe: StringName, on_input: bool, from_ingredient: int, from_path: String, to_ingredient: int, to_path: String, to_index: int) -> void:
+	if active_recipe != on_recipe:
+		switch_to_recipe(on_recipe)
+		recipe_tree.select_recipe(on_recipe, false)
+	
+	if on_input:
+		recipe_input_tree.move_metadata(
+			from_ingredient,
+			from_path,
+			to_ingredient,
+			to_path,
+			to_index)
+	else:
+		recipe_output_tree.move_metadata(
+			from_ingredient,
+			from_path,
+			to_ingredient,
+			to_path,
+			to_index)
+
+
+func _on_recipe_ingredient_metadata_removed(index: int, path: String, data: Variant, on_input: bool) -> void:
+	var is_dict: bool = typeof(data) == TYPE_DICTIONARY
+	undo.create_action("Erase '%s' Ingredient Metadata" % active_recipe)
+	undo.add_do_method(_do_remove_ingredient_metadata.bind(active_recipe, on_input, index, path))
+	undo.add_undo_method(_undo_remove_ingredient_metadata.bind(active_recipe, on_input, index, path, data.duplicate(true) if is_dict else data))
+	undo.commit_action(false)
+	_something_changed()
+
+
+func _undo_remove_ingredient_metadata(on_recipe: StringName, on_input: bool, on_ingredient: int, path: String, data: Variant) -> void:
+	if active_recipe != on_recipe:
+		switch_to_recipe(on_recipe)
+		recipe_tree.select_recipe(on_recipe, false)
+	
+	var is_dict: bool = typeof(data) == TYPE_DICTIONARY
+	
+	if on_input:
+		recipe_input_tree.add_metadata(on_ingredient, path, data.duplicate(true) if is_dict else data)
+	else:
+		recipe_output_tree.add_metadata(on_ingredient, path, data.duplicate(true) if is_dict else data)
+
+
+func _do_remove_ingredient_metadata(on_recipe: StringName, on_input: bool, on_ingredient: int, path: String) -> void:
+	if active_recipe != on_recipe:
+		switch_to_recipe(on_recipe)
+		recipe_tree.select_recipe(on_recipe, false)
+	
+	if on_input:
+		recipe_input_tree.remove_metadata(on_ingredient, path)
+	else:
+		recipe_output_tree.remove_metadata(on_ingredient, path)

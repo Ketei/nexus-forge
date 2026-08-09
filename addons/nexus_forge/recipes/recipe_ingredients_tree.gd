@@ -631,19 +631,19 @@ func remove_metadata(on: int, path: String) -> void:
 			return
 
 
-func move_metadata(from_index: int, to_index: int, from: String, to: String, from_child_idx: int, to_child_idx: int, cancel_if_collides: bool = true) -> void:
-	if from.is_empty() or to.is_empty():
+func move_metadata(from_ingredient: int, from_path: String, to_ingredient: int, to_path: String, to_index: int, cancel_if_collides: bool = true) -> void:
+	if from_path.is_empty() or to_path.is_empty():
 		return
 
 	var root: TreeItem = get_root()
-	var origin_item: TreeItem = root.get_child(from_index)
-	var target_item: TreeItem = root.get_child(to_index)
+	var origin_item: TreeItem = root.get_child(from_ingredient)
+	var target_item: TreeItem = root.get_child(to_ingredient)
 
 	if origin_item == null or target_item == null:
 		return
 
-	var to_slices: PackedStringArray = to.split("/", false)
-	var from_slices: PackedStringArray = from.split("/", false)
+	var to_slices: PackedStringArray = to_path.split("/", false)
+	var from_slices: PackedStringArray = from_path.split("/", false)
 	var target_name: String = to_slices[-1]
 
 	var origin_tree: TreeItem = null
@@ -711,7 +711,7 @@ func move_metadata(from_index: int, to_index: int, from: String, to: String, fro
 		target_parent.add_child(origin_tree)
 	
 	var total_children: int = target_parent.get_child_count()
-	var clamped_index: int = clampi(to_child_idx, -total_children, total_children - 1)
+	var clamped_index: int = clampi(to_index, -total_children, total_children - 1)
 	var valid_to_idx: int = wrapi(clamped_index, 0, total_children)
 	
 	# 5. Apply Visual Sorting

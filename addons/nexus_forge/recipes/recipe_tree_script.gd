@@ -79,6 +79,14 @@ func select_recipe(recipe_id: StringName, emit_selected: bool) -> bool:
 	return false
 
 
+func remove_recipe(recipe_id: StringName) -> bool:
+	for recipe in get_root().get_children():
+		if recipe.get_metadata(0) == recipe_id:
+			recipe.free()
+			return true
+	return false
+
+
 func clear_recipes() -> void:
 	for item in get_root().get_children():
 		item.free()
