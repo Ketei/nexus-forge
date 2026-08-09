@@ -458,7 +458,6 @@ func _do_erase_recipe(recipe_id: StringName) -> void:
 		recipe_custom_data_tree.clear_data(false)
 
 
-
 func _on_recipe_data_changed() -> void:
 	if recipe_custom_data_tree.has_undo():
 		undo.create_action("Data Changed")
@@ -481,7 +480,7 @@ func _do_update_custom_data(recipe_id: StringName, is_undo: bool) -> void:
 func _on_ingredient_erase_pressed(index: int, on_input: bool) -> void:
 	var data: Dictionary = (recipe_input_tree if on_input else recipe_output_tree).get_ingredient_data(index)
 	
-	undo.create_action("Erase '%s' Ingredient" % active_recipe)
+	undo.create_action("Erase '%s' %s Ingredient" % [active_recipe, "Input" if on_input else "Output"])
 	undo.add_do_method(_do_erase_ingredient.bind(active_recipe, on_input, index))
 	undo.add_undo_method(_undo_erase_ingredient.bind(active_recipe, on_input, data))
 	undo.commit_action()
@@ -527,7 +526,7 @@ func _on_ingredient_added(index: int, on_input: bool) -> void:
 	else:
 		data = recipe_output_tree.get_ingredient_data(index)
 	
-	undo.create_action("Add Item to '%s'" % active_recipe)
+	undo.create_action("Add %s Item to '%s'" % ["Input" if on_input else "Output", active_recipe])
 	undo.add_do_method(_do_add_ingredient.bind(active_recipe, on_input, data["item_id"], data["item_count"], data["metadata"], data["index"]))
 	undo.add_undo_method(_undo_add_ingredient.bind(active_recipe, on_input, data["index"]))
 	undo.commit_action(false)
@@ -564,7 +563,7 @@ func _do_add_ingredient(on_recipe: StringName, on_input: bool, item_id: StringNa
 
 
 func _on_ingredient_moved(from: int, to: int, on_input: bool) -> void:
-	undo.create_action("Move '%s' Item Index" % active_recipe)
+	undo.create_action("Reorder '%s' %s Item" % [active_recipe, "Input" if on_input else "Output"])
 	undo.add_do_method(_do_move_ingredient.bind(active_recipe, on_input, from, to))
 	undo.add_undo_method(_do_move_ingredient.bind(active_recipe, on_input, to, from))
 	undo.commit_action(false)
@@ -585,7 +584,7 @@ func _do_move_ingredient(from_recipe: StringName, on_input: bool, from_index: in
 
 func _on_recipe_item_metadata_added(index: int, path: String, data: Variant, on_input: bool) -> void:
 	var is_dict: bool = typeof(data) == TYPE_DICTIONARY
-	undo.create_action("Set '%s' Recipe Metadata" % active_recipe)
+	undo.create_action("Set '%s' %s Item Metadata" % [active_recipe, "Input" if on_input else "Output"])
 	undo.add_do_method(_do_add_item_metadata.bind(active_recipe, on_input, index, path, data.duplicate(true) if is_dict else data))
 	undo.add_undo_method(_undo_add_item_metadata.bind(active_recipe, on_input, index, path))
 	undo.commit_action(false)
@@ -616,7 +615,7 @@ func _undo_add_item_metadata(on_recipe: StringName, on_input: bool, on_ingredien
 
 
 func _on_recipe_ingredient_metadata_moved(from_ingredient: int, to_ingredient: int, from_path: String, to_path: String, from_child_idx: int, to_child_idx: int, on_input: bool) -> void:
-	undo.create_action("Move '%s' Ingredient Metadata" % active_recipe)
+	undo.create_action("Reorder '%s' %s Item Metadata" % [active_recipe, "Input" if on_input else "Output"])
 	undo.add_do_method(_do_move_recipe_item_metadata.bind(
 			active_recipe,
 			on_input,
@@ -660,7 +659,7 @@ func _do_move_recipe_item_metadata(on_recipe: StringName, on_input: bool, from_i
 
 func _on_recipe_ingredient_metadata_removed(index: int, path: String, data: Variant, on_input: bool) -> void:
 	var is_dict: bool = typeof(data) == TYPE_DICTIONARY
-	undo.create_action("Erase '%s' Ingredient Metadata" % active_recipe)
+	undo.create_action("Erase '%s' %s Item Metadata" % [active_recipe, "Input" if on_input else "Output"])
 	undo.add_do_method(_do_remove_ingredient_metadata.bind(active_recipe, on_input, index, path))
 	undo.add_undo_method(_undo_remove_ingredient_metadata.bind(active_recipe, on_input, index, path, data.duplicate(true) if is_dict else data))
 	undo.commit_action(false)
