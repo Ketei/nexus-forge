@@ -1252,16 +1252,16 @@ func get_display_localization_data(locale: String) -> Dictionary:
 	return data
 
 
-func find_id_from_uuid(uuid: StringName) -> Dictionary:
+func find_uuid_from_id(id: StringName) -> Dictionary:
 	var dict: Dictionary = {"found": false, "id": &""}
 	
 	_buid_id_map()
 	
-	if not _id_map.has(uuid):
+	if not _id_map.has(id):
 		return dict
 	
 	dict["found"] = true
-	dict["id"] = _id_map[uuid]
+	dict["uuid"] = _id_map[id]
 	
 	return dict
 
@@ -1281,4 +1281,4 @@ func has_dialog_entry(id_or_uuid: String) -> bool:
 func _buid_id_map() -> void:
 	if _id_map.is_empty() and not node_data.is_empty():
 		for node_uuid in node_data.keys():
-			_id_map[node_uuid] = node_data[node_uuid]["name"]
+			_id_map[StringName(node_data[node_uuid]["name"])] = node_uuid

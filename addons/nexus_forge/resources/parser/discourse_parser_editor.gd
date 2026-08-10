@@ -20,6 +20,20 @@ func load_dialog(path: String, starting_id: StringName = &"") -> bool:
 		var dialog_id: String = _dialog_resource.dialog_id
 		if _dialog_edits.has(dialog_id) and _dialog_resource._dialog_overrides != _dialog_edits[dialog_id]:
 			_dialog_resource._dialog_overrides = _dialog_edits[dialog_id]
+		if starting_id.is_empty():
+			_next_uuid = _dialog_resource.entry_node
+		elif _dialog_resource.node_data.has(starting_id):
+			_next_uuid = starting_id
+		else:
+			var data: Dictionary = _dialog_resource.find_uuid_from_id(starting_id)
+			if data["found"]:
+				_next_uuid = data["uuid"]
+			else:
+				_next_uuid = _dialog_resource.entry_node
+				NFPluginGameHandler._log_msg(
+						"discourse",
+						"ID '%s' was not found. Setting to entry",
+						NFPluginGameHandler._LogLevel.WARNING)
 		return true
 	else:
 		var res: Resource = load(path)
@@ -38,9 +52,9 @@ func load_dialog(path: String, starting_id: StringName = &"") -> bool:
 	elif _dialog_resource.node_data.has(starting_id):
 		_next_uuid = starting_id
 	else:
-		var data: Dictionary = _dialog_resource.find_id_from_uuid(starting_id)
+		var data: Dictionary = _dialog_resource.find_uuid_from_id(starting_id)
 		if data["found"]:
-			_next_uuid = starting_id
+			_next_uuid = data["uuid"]
 		else:
 			_next_uuid = _dialog_resource.entry_node
 			NFPluginGameHandler._log_msg(
@@ -57,9 +71,9 @@ func set_dialog_id(id: StringName) -> void:
 	if _dialog_resource.node_data.has(id):
 		_next_uuid = id
 	else:
-		var data: Dictionary = _dialog_resource.find_id_from_uuid(id)
+		var data: Dictionary = _dialog_resource.find_uuid_from_id(id)
 		if data["found"]:
-			_next_uuid = data["id"]
+			_next_uuid = data["uuid"]
 		else:
 			NFPluginGameHandler._log_msg(
 					"discourse",
