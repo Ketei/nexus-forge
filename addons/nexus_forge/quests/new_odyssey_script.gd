@@ -16,6 +16,8 @@ var selected_stage: StringName = &""
 var selected_objective: StringName = &""
 var _logic_offset: int = 225
 
+var _open_files: Dictionary[int, Dictionary] = {}
+
 @onready var obj_req_chk_bx: CheckBox = $MainContainer/DataContainer/DataContainer/LogicContainer/TargetLogicContainer/ObjReqChkBx
 @onready var crumbs_label: Label = $MainContainer/TitleContainer/CrumbsContainer/CrumbsLabel
 @onready var file_search_ln_edt: LineEdit = $MainContainer/DataContainer/NavigationContainer/FileBarContainer/FileSearchLnEdt
@@ -726,6 +728,10 @@ func _on_new_quest_file_pressed() -> void:
 		if quest_resource != null:
 			save_current_data()
 			files_tree.set_quest_structure(quest_resource, quest_tree.get_quest_structure())
+		
+		
+		
+		
 		if ResourceLoader.exists(result[1]):
 			files_tree.close_with_path(result[1])
 		var new_quest: Quest = Quest.new()
@@ -960,3 +966,9 @@ func _on_objective_duplicated(from_stage: StringName, objective_id: StringName, 
 	
 	stage.add_objective(objective, stage.is_objective_required(objective_id))
 	_on_something_changed()
+
+
+# ------ UNDO/REDO ------
+
+func _on_quest_type_selected() -> void:
+	pass

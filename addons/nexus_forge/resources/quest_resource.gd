@@ -5,18 +5,32 @@ extends Resource
 
 
 enum QuestType {
-	MAIN_QUEST,
-	SIDE_QUEST
+	MAIN_QUEST = 0,
+	SIDE_QUEST = 1,
 }
+
+static var _regex_formatter: RegEx
 
 ## ID of the quest.
 @export var id: StringName = &""
 ## Type of the quest.
 @export var type: QuestType
 ## The title of the quest.
-@export var title: String = "": set = _set_quest_title
+@export var title: String = "":
+	set(new_title):
+		if new_title == title:
+			return
+		title = new_title
+		if _title_builder.is_valid():
+			_title_builder = Callable()
 ## The description of the quest.
-@export var description: String = "": set = _set_quest_description
+@export var description: String = "":
+	set(new_desc):
+		if new_desc == description:
+			return
+		description = new_desc
+		if _description_builder.is_valid():
+			_description_builder = Callable()
 ## Custom data assigned to the quest.
 @export var custom_data: Dictionary[String, Variant] = {}
 
@@ -25,15 +39,26 @@ enum QuestType {
 
 ## Events to be signaled by the [QuestManager] if the quest is completed
 ## successfully.
-@export var on_success_events: Dictionary[String, Variant] = {}
-## Events to be signaled by the [QuestManager] if the quest is failed.
-@export var on_failure_events: Dictionary[String, Variant] = {}
+
+## Dictionary containing the events signaled by the quest manager when the quest
+## completes. Currently only Succed and Failed are supported.
+@export var events: Dictionary[StringName, Dictionary] = {}
 
 @export var _stages: Dictionary[StringName, QuestStage] = {}
 
 var _title_builder: Callable = Callable()
 var _description_builder: Callable = Callable()
-var _mods_applied: bool = false
+var _mods_applied: bool = false:
+	set(a):
+		if _mods_applied:
+			return
+		_mods_applied = a
+
+
+static func _static_init() -> void:
+	_regex_formatter = RegEx.new()
+	_regex_formatter.compile("\\{\\$[^\\}]+\\}")
+
 
 ## Returns the quest [member Quest.title]. Formats it if [code]Format Quest Strings with Blackboard[/code]
 ## is [code]On[/code] on [code]Project Settings[/code].
@@ -44,20 +69,13 @@ func get_quest_title() -> String:
 	if _title_builder.is_valid():
 		return _title_builder.call()
 	
-	var _regex_formatter: RegEx
-	
-	_regex_formatter = RegEx.new()
-	_regex_formatter.compile("\\{\\$[^\\s\\}]+\\}")
-	
 	var title_formats: Dictionary[String, Callable] = {}
 	
 	for format_title in _regex_formatter.search_all(title):
 		var string_path: String = format_title.get_string().trim_prefix("{$").trim_suffix("}")
-		var var_parts: PackedStringArray = string_path.rsplit("/", false, 1)
-		if var_parts.size() != 2:
-			continue
+		var path_simplified: String = string_path.simplify_path()
 		
-		var variable: Callable = NexusForge.Blackboard.get_variable.bind(var_parts[0], var_parts[1], string_path)
+		var variable: Callable = NexusForge.Blackboard.get_variable.bind(path_simplified, path_simplified)
 		
 		title_formats["$" + string_path] = variable
 	
@@ -75,20 +93,13 @@ func get_quest_description() -> String:
 	if _description_builder.is_valid():
 		return _description_builder.call()
 	
-	var _regex_formatter: RegEx
-	
-	_regex_formatter = RegEx.new()
-	_regex_formatter.compile("\\{\\$[^\\s\\}]+\\}")
-	
 	var desc_formats: Dictionary = {}
 	
 	for description_item in _regex_formatter.search_all(description):
 		var string_path: String = description_item.get_string().trim_prefix("{$").trim_suffix("}")
-		var var_parts: PackedStringArray = string_path.rsplit("/", false, 1)
-		if var_parts.size() != 2:
-			continue
+		var path_simplified: String = string_path.simplify_path()
 		
-		var variable: Callable = NexusForge.Blackboard.get_variable.bind(var_parts[0], var_parts[1], string_path)
+		var variable: Callable = NexusForge.Blackboard.get_variable.bind(path_simplified, path_simplified)
 		
 		desc_formats["$" + string_path] = variable
 	
@@ -129,26 +140,10 @@ func get_stage(stage_id: StringName) -> QuestStage:
 	return null
 
 
-func _set_quest_title(new_title: String) -> void:
-	if new_title == title:
-			return
-	title = new_title
-	if _title_builder.is_valid():
-		_title_builder = Callable()
-
-
-func _set_quest_description(new_desc: String) -> void:
-	if new_desc == description:
-		return
-	description = new_desc
-	if _description_builder.is_valid():
-		_description_builder = Callable()
-
-
 func _build_format(string: String, call_formats: Dictionary[String, Callable]) -> String:
 	var new_format: Dictionary[String, String] = {}
 	
-	for key in call_formats.keys():
+	for key in call_formats:
 		new_format[key] = call_formats[key].call()
 	
 	return string.format(new_format)
