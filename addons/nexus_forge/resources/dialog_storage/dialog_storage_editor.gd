@@ -1280,5 +1280,5 @@ func has_dialog_entry(id_or_uuid: String) -> bool:
 
 func _buid_id_map() -> void:
 	if _id_map.is_empty() and not node_data.is_empty():
-		for node_uuid in node_data.keys():
+		for node_uuid in node_data:
 			_id_map[StringName(node_data[node_uuid]["name"])] = node_uuid

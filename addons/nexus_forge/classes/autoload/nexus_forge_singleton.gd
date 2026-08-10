@@ -448,6 +448,10 @@ func _ready() -> void:
 		Currency = NFCurrencyManager.new()
 	if Recipes == null and instantiate_disabled:
 		Recipes = NFRecipeManager.new()
+	
+	for folder_path in Blackboard._variables:
+		Blackboard._variables[folder_path].make_read_only()
+	Blackboard._variables.make_read_only()
 
 
 func _notification(what: int) -> void:

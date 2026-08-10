@@ -23,6 +23,8 @@ signal folder_erased(folder_path: String)
 
 @export_storage var _variables: Dictionary[StringName, Dictionary] = {}
 
+var _active_variables: Dictionary[StringName, Dictionary] = {}
+
 
 func _get_folder_parts(path: String) -> Dictionary[String, Variant]:
 	path = path.simplify_path()
@@ -46,20 +48,32 @@ func _get_folder_parts(path: String) -> Dictionary[String, Variant]:
 ## Returns true if a variable exist with the path [param path]
 func has_variable(path: StringName) -> bool:
 	var parts: Dictionary[String, Variant] = _get_folder_parts(path)
-	return parts["parsed"] and _variables.has(parts["folder"]) and _variables[parts["folder"]].has(parts["variable"])
+	
+	if not parts["parsed"]:
+		return false
+	
+	if _active_variables.has(parts["folder"]) and _active_variables[parts["folder"]].has(parts["variable"]):
+		return true
+	
+	return _variables.has(parts["folder"]) and _variables[parts["folder"]].has(parts["variable"])
 
 
 ## Returns true if the folder on [param folder_path] exists. This is different from
 ## checking if a variable exists.
 func has_folder(folder_path: String) -> bool:
 	var path: StringName = StringName(folder_path.simplify_path())
-	return _variables.has(path)
+	return _active_variables.has(path) or _variables.has(path)
 
 
 ## Returns a variable on [param variable_path] or null if the variable doesn't exist.
 func get_variable(path: String, fallback: Variant = null) -> Variant:
 	var parts: Dictionary[String, Variant] = _get_folder_parts(path)
-	if parts["parsed"] and _variables.has(parts["folder"]) and _variables[parts["folder"]].has(parts["variable"]):
+	if not parts["parsed"]:
+		return fallback
+	
+	if _active_variables.has(parts["folder"]) and _active_variables[parts["folder"]].has(parts["variable"]):
+		return _active_variables[parts["folder"]][parts["variable"]]
+	elif _variables.has(parts["folder"]) and _variables[parts["folder"]].has(parts["variable"]):
 		return _variables[parts["folder"]][parts["variable"]]
 	else:
 		return fallback
@@ -69,9 +83,17 @@ func get_variable(path: String, fallback: Variant = null) -> Variant:
 ## the specified [param folder_path]
 func variables(folder_path: String) -> Array[String]:
 	var keys: Array[String] = []
+	var keys_dict: Dictionary[StringName, Variant] = {}
 	var clean_path: StringName = StringName(folder_path.simplify_path())
+	
+	if _active_variables.has(clean_path):
+		for var_key in _active_variables[clean_path]:
+			keys_dict[var_key] = null
 	if _variables.has(clean_path):
-		keys.assign(_variables[clean_path].keys())
+		for var_key in _variables[clean_path]:
+			keys_dict[var_key] = null
+	
+	keys.assign(keys_dict.keys())
 	return keys
 
 
@@ -81,20 +103,31 @@ func folders(at: String = "") -> Array[String]:
 	var clean_level: String = at.simplify_path()
 	
 	var all_folders: Array[String] = []
+	var all_folder_entries: Dictionary[String, Variant] = {}
 	var slice_count: int = clean_level.get_slice_count("/")
 	
 	if clean_level.is_empty():
-		for folder:StringName in _variables.keys():
+		for folder:StringName in _variables:
 			var path: String = String(folder)
 			if path.get_slice_count("/") == 1:
-				all_folders.append(path)
+				all_folder_entries[path] = null
+		for folder:StringName in _active_variables:
+			var path: String = String(folder)
+			if path.get_slice_count("/") == 1:
+				all_folder_entries[path] = null
 	else:
-		for folder:StringName in _variables.keys():
+		for folder:StringName in _variables:
 			var path: String = String(folder)
 			var path_slice_count: int = path.get_slice_count("/")
 			if path.begins_with(clean_level) and slice_count + 1 == path_slice_count:
-				all_folders.append(clean_level + "/" + path.get_slice("/", 2))
+				all_folder_entries[clean_level + "/" + path.get_slice("/", 2)] = null
+		for folder:StringName in _active_variables:
+			var path: String = String(folder)
+			var path_slice_count: int = path.get_slice_count("/")
+			if path.begins_with(clean_level) and slice_count + 1 == path_slice_count:
+				all_folder_entries[clean_level + "/" + path.get_slice("/", 2)] = null
 	
+	all_folders.assign(all_folder_entries.keys())
 	return all_folders
 
 
@@ -103,8 +136,9 @@ func folders(at: String = "") -> Array[String]:
 ## Returns [code]true[/code] if the value was set correctly
 func set_variable(variable_path: String, value: Variant) -> bool:
 	var parts: Dictionary[String, Variant] = _get_folder_parts(variable_path)
+	var on_active: bool = _active_variables.has(parts["folder"])
 	
-	if not parts["parsed"] or not _variables.has(parts["folder"]):
+	if not parts["parsed"] or not (on_active or _variables.has(parts["folder"])):
 		NFPluginGameHandler._log_msg(
 				"blackboard",
 				"Tried to set variable with value '%s' on an invalid or inexistent path: '%s'. Ignoring." % [var_to_str(value), parts["path"]],
@@ -112,10 +146,14 @@ func set_variable(variable_path: String, value: Variant) -> bool:
 		return false
 	
 	if value == null:
-		if _variables[parts["folder"]].erase(parts["variable"]):
+		if on_active and _active_variables[parts["folder"]].erase(parts["variable"]):
 			data_erased.emit(parts["path"])
 	else:
-		_variables[parts["folder"]][parts["variable"]] = value
+		if not _active_variables.has(parts["folder"]):
+			_active_variables[parts["folder"]] = DictUtils.create_typed(
+					TYPE_STRING_NAME,
+					TYPE_NIL)
+		_active_variables[parts["folder"]][parts["variable"]] = value
 		data_set.emit(parts["path"])
 	return true
 
@@ -130,37 +168,118 @@ func create_folder(folder_path: String) -> void:
 	
 	for slice in clean_path.split("/"):
 		slice_path += StringName(slice)
-		if not _variables.has(slice_path):
-			var new_vars: Dictionary[StringName, Variant] = {}
-			_variables[slice_path] = new_vars
+		if not _active_variables.has(slice_path):
+			_active_variables[slice_path] = DictUtils.create_typed(
+					TYPE_STRING_NAME, TYPE_NIL)
 		slice_path += &"/"
 	
 	if not exists:
 		folder_created.emit(clean_path)
 
 
-## Deletes a folder in the given path, including all their variables and
-## subfolders.
+## Deletes a folder at the given [param folder_path], including all of its
+## variables and subfolders.
+## [br][br][b]Note:[/b] This operation only affects runtime data by erasing
+## all active overrides, effectively resetting the folder and its contents
+## back to their factory defaults.
+## [br]Programmatically created folders and programmatically
+## created variables inside of them will be completely erased.
 func erase_folder(folder_path: String) -> void:
 	var clean_path: String = folder_path.simplify_path()
-	var exists: bool = _variables.has(StringName(clean_path))
-	if not exists:
-		return
-	for folder:StringName in _variables.keys():
-		if folder.begins_with(clean_path):
-			_variables.erase(folder)
-	folder_erased.emit(clean_path)
+	var subfolder_path: String = clean_path + "/"
+	var initial_size: int = _active_variables.size()
+	
+	_active_variables.erase(StringName(clean_path))
+	
+	for folder:StringName in _active_variables.keys():
+		if folder.begins_with(subfolder_path):
+			_active_variables.erase(folder)
+	if _active_variables.size() != initial_size:
+		folder_erased.emit(clean_path)
 
 
 ## Returns true if folder in [param folder_oath] is empty or doesn't exist.
 func is_folder_empty(folder_path: String) -> bool:
 	var clean_path: StringName = StringName(folder_path.simplify_path())
+	if _active_variables.has(clean_path) and not _active_variables[clean_path].is_empty():
+		return false
+	
 	if _variables.has(clean_path):
 		return _variables[clean_path].is_empty()
-	else:
-		return true
+	
+	return true
 
 
-## Erases all folders and variables.
-func clear() -> void:
-	_variables.clear()
+## Resets a variable to its default value. Returns whether a variable was
+## deleted or not.[br]
+## [b]Note:[/b] Calling this on a programmatically created variable will erase
+## it instead.
+func reset_variable(variable_path: String) -> bool:
+	var parts: Dictionary[String, Variant] = _get_folder_parts(variable_path)
+	if not parts["parsed"]:
+		return false
+	
+	if _active_variables.has(parts["folder"]):
+		return _active_variables[parts["folder"]].erase(parts["variable"])
+	return false
+
+
+## Resets the object's data to the default state.
+func reset_data() -> void:
+	_active_variables.clear()
+
+
+## Returns a dictionary containing the changed data on this object. If
+## [param deep_copy] is [code]true[/code] it'll return a copy of the entire state
+## including the default parameters.
+func get_state(deep_copy: bool = false) -> Dictionary[StringName, Dictionary]:
+	var current_state: Dictionary[StringName, Dictionary] = {}
+	
+	if deep_copy:
+		current_state.merge(_variables.duplicate(true))
+	
+	current_state.merge(_active_variables.duplicate(true), true)
+	
+	return current_state
+
+
+## Restores a state based on a dictionary.
+func set_state(state: Dictionary) -> void:
+	for key in state:
+		var type: int = typeof(key)
+		if type != TYPE_STRING_NAME and type != TYPE_STRING:
+			continue
+		var val_type: int = typeof(state[key])
+		if val_type != TYPE_DICTIONARY:
+			continue
+		var clean_path: String = key.simplify_path()
+		create_folder(clean_path)
+		for sub_key in state[key]:
+			var sub_key_type: int = typeof(sub_key)
+			if sub_key_type != TYPE_STRING_NAME and sub_key_type != TYPE_STRING:
+				continue
+			
+			if _matches_base(clean_path, sub_key, state[key][sub_key]):
+				continue
+			
+			var var_val_type: int = typeof(state[key][sub_key])
+			var can_dupe: bool = var_val_type == TYPE_DICTIONARY or var_val_type == TYPE_ARRAY
+			
+			if can_dupe:
+				_active_variables[clean_path][StringName(sub_key)] = state[key][sub_key].duplicate(true)
+			else:
+				_active_variables[clean_path][StringName(sub_key)] = state[key][sub_key]
+	
+	# Cleaning empty folders created by create_folder but whose state matched
+	# the default.
+	for folder in _active_variables.keys():
+		if _active_variables[folder].is_empty():
+			_active_variables.erase(folder)
+
+
+func _matches_base(path: StringName, var_id: StringName, what: Variant) -> bool:
+	var what_type: int = typeof(what)
+	return _variables.has(path) and\
+			_variables[path].has(var_id) and\
+			typeof(_variables[path][var_id]) == what_type and\
+			_variables[path][var_id] == what

@@ -326,7 +326,6 @@ func _on_item_edited() -> void:
 					get_metadata_path(edited),
 					old_value,
 					new_value)
-		
 
 
 func _tree_has_id(item: TreeItem, id: String) -> bool:
