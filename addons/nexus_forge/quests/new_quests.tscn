@@ -252,6 +252,7 @@ hide_root = true
 script = ExtResource("5_v44ms")
 allow_drag_and_drop = true
 compact_mode = true
+undo_redo_steps = 0
 
 [node name="LogicContainer" type="VSplitContainer" parent="MainContainer/DataContainer/DataContainer" unique_id=149868027]
 custom_minimum_size = Vector2(300, 0)

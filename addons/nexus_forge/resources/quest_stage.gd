@@ -44,7 +44,7 @@ static var _regex_formatter: RegEx
 @export var failure_stage_id: StringName = &""
 
 ## Dictionary containing the events signaled by the quest manager when the stage
-## completes. Currently only Succed and Failed are supported.
+## completes. Currently only success and failure are supported.
 @export var events: Dictionary[StringName, Dictionary] = {}
 
 @export var _objectives: Dictionary[StringName, Dictionary] = {}

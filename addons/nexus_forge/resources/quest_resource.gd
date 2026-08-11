@@ -41,7 +41,7 @@ static var _regex_formatter: RegEx
 ## successfully.
 
 ## Dictionary containing the events signaled by the quest manager when the quest
-## completes. Currently only Succed and Failed are supported.
+## completes. Currently only success and failure are supported.
 @export var events: Dictionary[StringName, Dictionary] = {}
 
 @export var _stages: Dictionary[StringName, QuestStage] = {}

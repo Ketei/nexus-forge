@@ -46,6 +46,13 @@ func set_current_save_required(set_required: bool) -> void:
 	active_file.get_metadata(0)["save_required"] = set_required
 
 
+func update_quest_id(old_id: int, new_id: int) -> void:
+	for item in get_root().get_children():
+			if item.get_metadata(0)["id"] == old_id:
+				item.get_metadata(0)["id"] = new_id
+				return
+
+
 func set_save_required(on_quest: int, required: bool) -> void:
 	for item in get_root().get_children():
 		if item.get_metadata(0)["id"] == on_quest:
@@ -74,9 +81,16 @@ func set_all_saved() -> void:
 			item.get_metadata(0)["save_required"] = false
 
 
-func has_quest(quest_id: int) -> bool:
+func has_quest_id(quest_id: int) -> bool:
 	for item in get_root().get_children():
 		if item.get_metadata(0)["id"] == quest_id:
+			return true
+	return false
+
+
+func has_quest_file(quest_path: String) -> bool:
+	for item in get_root().get_children():
+		if item.get_metadata(0)["path"] == quest_path:
 			return true
 	return false
 

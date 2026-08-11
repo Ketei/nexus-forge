@@ -2,19 +2,20 @@
 extends PanelContainer
 
 
-
 enum QuestModeType {
 	NONE = 0,
 	QUEST = 1,
 	STAGE = 2,
 	OBJECTIVE = 3}
 
+const MAX_UNDO_STEPS: int = 50
+
 var quest_mode: QuestModeType = QuestModeType.NONE
 var quest_resource: Quest = null
+var undo: UndoRedo = null
 
 var selected_stage: StringName = &""
 var selected_objective: StringName = &""
-var _logic_offset: int = 225
 
 var _open_files: Dictionary[int, Dictionary] = {}
 
@@ -88,6 +89,10 @@ func ready_plugin() -> void:
 	events_tree.ready_plugin()
 	custom_data_tree.ready_plugin()
 	
+	if custom_data_tree.has_undo():
+		custom_data_tree._undo.free()
+		custom_data_tree._undo = null
+	
 	add_req_dict_button.icon = get_theme_icon("FolderCreate", "EditorIcons")
 	add_dict_button.icon = get_theme_icon("FolderCreate", "EditorIcons")
 	file_search_ln_edt.right_icon = get_theme_icon("Search", "EditorIcons")
@@ -111,7 +116,7 @@ func ready_plugin() -> void:
 	
 	quest_search_ln_edit.text_changed.connect(_on_search_quest_text_changed)
 	
-	quest_tree.quest_selected.connect(_on_quest_selected)
+	quest_tree.quest_selected.connect(_on_quest_root_selected)
 	quest_tree.stage_selected.connect(_on_stage_selected)
 	quest_tree.objective_selected.connect(_on_objective_selected)
 	quest_tree.stage_created.connect(_on_stage_created)
@@ -302,6 +307,18 @@ func set_ui_enabled(enabled: bool) -> void:
 	add_dict_button.disabled = disabled
 
 
+func update_crumbs_label() -> void:
+	if quest_resource == null:
+		crumbs_label.text = ""
+		return
+	var items: Array[String] = [String(quest_resource.id)]
+	if not selected_stage.is_empty():
+		items.append(String(selected_stage))
+	if not selected_objective.is_empty():
+		items.append(String(selected_objective))
+	crumbs_label.text = " / ".join(items)
+
+
 func set_stage_target_disabled(target: StringName) -> void:
 	for idx in range(1, success_pointer_opt_btn.item_count):
 		var disabled: bool = success_pointer_opt_btn.get_item_metadata(idx) == target
@@ -364,40 +381,42 @@ func select_failure_pointer(target: StringName) -> void:
 			return
 
 
-func save_current_data() -> void:
+func save_current_quest() -> void:
+	if quest_resource == null:
+		return
+	
+	_open_files[quest_resource.get_instance_id()] = quest_tree.get_quest_structure()
+	
 	if quest_mode == QuestModeType.QUEST:
 		quest_resource.type = type_opt_btn.get_selected_metadata() if -1 < type_opt_btn.selected else 0
 		quest_resource.title = title_ln_edt.text.strip_edges()
 		quest_resource.description = description_txt_edt.text.strip_edges()
-		quest_resource.custom_data.clear()
-		quest_resource.custom_data.assign(custom_data_tree.get_data())
+		quest_resource.custom_data = custom_data_tree.get_data()
 		
 		quest_resource.on_success_events.clear()
 		quest_resource.on_failure_events.clear()
 		
 		var events_data: Dictionary = events_tree.get_data()
-		quest_resource.on_success_events.assign(events_data["Success Events"])
-		quest_resource.on_failure_events.assign(events_data["Failure Events"])
+		quest_resource.events[&"success"] = events_data["Success Events"]
+		quest_resource.events[&"failure"] = events_data["Failure Events"]
+	
 	elif quest_mode == QuestModeType.STAGE:
 		if not quest_resource.has_stage(selected_stage):
 			return
+		
 		var stage: QuestStage = quest_resource.get_stage(selected_stage)
 		
 		stage.type = type_opt_btn.get_selected_metadata() if -1 < type_opt_btn.selected else 0
 		stage.title = title_ln_edt.text.strip_edges()
 		stage.description = description_txt_edt.text.strip_edges()
-		stage.custom_data.clear()
-		stage.custom_data.assign(custom_data_tree.get_data())
+		stage.custom_data = custom_data_tree.get_data()
 		
 		stage.success_stage_id = success_pointer_opt_btn.get_selected_metadata()
 		stage.failure_stage_id = failure_pointer_opt_btn.get_selected_metadata()
 		
-		stage.on_success_events.clear()
-		stage.on_failure_events.clear()
-		
 		var events_data: Dictionary = events_tree.get_data()
-		stage.on_success_events.assign(events_data["Success Events"])
-		stage.on_failure_events.assign(events_data["Failure Events"])
+		stage.events[&"success"] = events_data["Success Events"]
+		stage.events[&"failure"] = events_data["Failure Events"]
 	
 	elif quest_mode == QuestModeType.OBJECTIVE:
 		if not quest_resource.has_stage(selected_stage) or not quest_resource.get_stage(selected_stage).has_objective(selected_objective):
@@ -410,13 +429,11 @@ func save_current_data() -> void:
 		objective.custom_data.clear()
 		objective.custom_data.assign(custom_data_tree.get_data())
 		
-		objective.on_success_events.clear()
-		objective.on_failure_events.clear()
 		objective.clear_requirements()
 		
 		var events_data: Dictionary = events_tree.get_data()
-		objective.on_success_events.assign(events_data["Success Events"])
-		objective.on_failure_events.assign(events_data["Failure Events"])
+		objective.events[&"success"] = events_data["Success Events"]
+		objective.events[&"failure"] = events_data["Failure Events"]
 		
 		quest_resource.get_stage(selected_stage).set_objective_required(
 				selected_objective,
@@ -427,33 +444,32 @@ func save_current_data() -> void:
 
 func plugin_handle_resource(quest: Quest) -> void:
 	if quest_resource != null and quest != quest_resource:
-		save_current_data()
+		save_current_quest()
 		files_tree.set_quest_structure(quest_resource, quest_tree.get_quest_structure())
 	
-	if files_tree.has_quest(quest):
-		files_tree.select_quest(quest)
+	var id: int = quest.get_instance_id()
+	
+	if _open_files.has(id):
+		files_tree.select_quest(id, false)
 	else:
-		var cfg: ConfigFile = ConfigFile.new()
-		var filepath: String = quest.resource_path
-		var filename: String = filepath.get_file()
-		var path_hash: String = filepath.md5_text()
-		var absolute_path: String ="res://.godot/editor/"
-		var cfg_filename: String = str(filename, "-treestate-", path_hash, ".cfg")
-		var end_path: String = absolute_path.path_join(cfg_filename)
-		if FileAccess.file_exists(end_path):
-			cfg.load(end_path)
-		var structure: Array[Dictionary] = cfg.get_value("Layout", "quest_structure", ArrayUtils.create_typed(TYPE_DICTIONARY))
-		
-		var pointers: Array[StringName] = []
-		pointers.assign(quest.stages())
-		pointers.sort_custom(ArrayUtils.sort_custom_alphabetically_asc)
-		set_stage_target_pointers(pointers)
-		files_tree.add_quest(quest, true, false)
-		quest_tree.set_quest(quest)
-		quest_tree.set_quest_structure(structure)
-		quest_resource = quest
-		set_quest_mode(QuestModeType.QUEST)
-		load_quest()
+		add_quest_resource(quest)
+
+
+func display_quest(quest_id: int) -> void:
+	if not _open_files.has(quest_id):
+		return
+	
+	var quest: Quest = _open_files[quest_id]["resource"]
+	
+	var pointers: Array[StringName] = []
+	pointers.assign(quest.stages())
+	pointers.sort_custom(ArrayUtils.sort_custom_alphabetically_asc)
+	set_stage_target_pointers(pointers)
+	quest_tree.set_quest(quest)
+	quest_tree.set_quest_structure(_open_files[quest_id]["structure"])
+	quest_resource = quest
+	set_quest_mode(QuestModeType.QUEST)
+	load_quest_data()
 
 
 func select_type(type: int) -> void:
@@ -463,47 +479,57 @@ func select_type(type: int) -> void:
 			return
 
 
-func load_quest() -> void:
+func load_quest_data() -> void:
 	quest_mode = QuestModeType.QUEST
 	set_quest_mode(QuestModeType.QUEST)
 	
 	selected_stage = &""
 	selected_objective = &""
 	
-	crumbs_label.text = String(quest_resource.id)
+	update_crumbs_label()
 	
 	title_ln_edt.text = quest_resource.title
+	title_ln_edt.set_meta(&"old_value", quest_resource.title)
 	select_type(quest_resource.type)
 	description_txt_edt.text = quest_resource.description
+	description_txt_edt.set_meta(&"old_value", quest_resource.description)
 	
 	events_tree.clear_data()
-	custom_data_tree.clear_data()
+	custom_data_tree.clear_data(false)
 	
 	for data_key in quest_resource.custom_data.keys():
-		custom_data_tree.add_data(data_key, quest_resource.custom_data[data_key])
+		custom_data_tree.add_data(
+				data_key,
+				quest_resource.custom_data[data_key],
+				true)
 	
 	events_tree.add_data("Success Events", quest_resource.on_success_events, events_tree.get_root(), false, false, false)
 	events_tree.add_data("Failure Events", quest_resource.on_failure_events, events_tree.get_root(), false, false, false)
 
 
-func load_stage(stage_id: StringName) -> void:
+func load_stage_data(stage_id: StringName) -> void:
 	var stage: QuestStage = quest_resource.get_stage(stage_id)
 	
 	quest_mode = QuestModeType.STAGE
 	set_quest_mode(QuestModeType.STAGE)
 	
 	title_ln_edt.text = stage.title
+	title_ln_edt.set_meta(&"old_value", stage.title)
 	description_txt_edt.text = stage.description
+	description_txt_edt.set_meta(&"old_value", stage.description)
 	select_type(stage.type)
 	
 	select_success_pointer(stage.success_stage_id)
 	select_failure_pointer(stage.failure_stage_id)
 	
 	events_tree.clear_data()
-	custom_data_tree.clear_data()
+	custom_data_tree.clear_data(false)
 	
 	for data_key in stage.custom_data.keys():
-		custom_data_tree.add_data(data_key, stage.custom_data[data_key])
+		custom_data_tree.add_data(
+				data_key,
+				stage.custom_data[data_key],
+				true)
 	
 	events_tree.add_data("Success Events", stage.on_success_events, events_tree.get_root(), false, false, false)
 	events_tree.add_data("Failure Events", stage.on_failure_events, events_tree.get_root(), false, false, false)
@@ -511,26 +537,31 @@ func load_stage(stage_id: StringName) -> void:
 	selected_stage = stage_id
 	selected_objective = &""
 	
-	crumbs_label.text = String(quest_resource.id) + " / " + String(stage_id)
+	update_crumbs_label()
 
 
-func load_objective(stage_id: StringName, objective_id: StringName) -> void:
+func load_objective_data(stage_id: StringName, objective_id: StringName) -> void:
 	var objective: QuestObjective = quest_resource.get_stage(stage_id).get_objective(objective_id)
 	
 	quest_mode = QuestModeType.OBJECTIVE
 	set_quest_mode(QuestModeType.OBJECTIVE)
 	
 	title_ln_edt.text = objective.title
+	title_ln_edt.set_meta(&"old_value", objective.title)
 	description_txt_edt.text = objective.description
+	description_txt_edt.set_meta(&"old_value", objective.description)
 	select_type(objective.type)
 	
 	events_tree.clear_data()
-	custom_data_tree.clear_data()
+	custom_data_tree.clear_data(false)
 	
 	obj_req_tree.set_data(objective._requirements)
 	
 	for data_key in objective.custom_data.keys():
-		custom_data_tree.add_data(data_key, objective.custom_data[data_key])
+		custom_data_tree.add_data(
+				data_key,
+				objective.custom_data[data_key],
+				true)
 	
 	obj_req_chk_bx.set_pressed_no_signal(quest_resource.get_stage(stage_id).is_objective_required(objective_id))
 	
@@ -540,7 +571,7 @@ func load_objective(stage_id: StringName, objective_id: StringName) -> void:
 	selected_stage = stage_id
 	selected_objective = objective_id
 	
-	crumbs_label.text = String(quest_resource.id) + " / " + String(stage_id) + " / " + String(objective_id)
+	update_crumbs_label()
 
 
 func has_unsaved_files() -> bool:
@@ -549,7 +580,7 @@ func has_unsaved_files() -> bool:
 
 func save_resource() -> void:
 	if quest_resource != null:
-		save_current_data()
+		save_current_quest()
 		files_tree.set_quest_structure(quest_resource, quest_tree.get_quest_structure())
 	
 	for quest_file:Dictionary in files_tree.get_unsaved_files():
@@ -579,23 +610,77 @@ func get_open_files() -> Array[String]:
 
 func open_files(paths: Array[String]) -> void:
 	for path in paths:
-		if not ResourceLoader.exists(path):
-			continue
-		var res: Resource = load(path)
-		if res is Quest:
-			var cfg: ConfigFile = ConfigFile.new()
-			var filepath: String = res.resource_path
-			var filename: String = filepath.get_file()
-			var path_hash: String = filepath.md5_text()
-			var absolute_path: String ="res://.godot/editor/"
-			var cfg_filename: String = str(filename, "-treestate-", path_hash, ".cfg")
-			var end_path: String = absolute_path.path_join(cfg_filename)
-			if FileAccess.file_exists(end_path):
-				cfg.load(end_path)
-			var structure: Array[Dictionary] = cfg.get_value("Layout", "quest_structure", ArrayUtils.create_typed(TYPE_DICTIONARY))
-			
-			files_tree.add_quest(res)
-			files_tree.set_quest_structure(res, structure)
+		open_quest_file(path)
+
+
+func open_quest_file(file_path: String) -> void:
+	if not ResourceLoader.exists(file_path):
+		return
+	
+	var res: Resource = load(file_path)
+	if res == null or res is not Quest:
+		return
+	
+	var res_id: int = res.get_instance_id()
+	
+	if files_tree.has_quest_file(res.resource_path) or _open_files.has(res_id):
+		return
+	
+	add_quest_resource(res)
+
+
+func add_quest_resource(quest: Quest) -> void:
+	var quest_undo: UndoRedo = UndoRedo.new()
+	var data_undo: UndoRedo = UndoRedo.new()
+	var structure: Array[Dictionary] = get_layout_config_for_file(quest.resource_path)
+	
+	_open_files[quest.get_instance_id()] = {
+		"resource": quest,
+		"quest_undo": quest_undo,
+		"data_undo": data_undo,
+		"structure": structure}
+	
+	files_tree.add_quest(
+			quest,
+			quest.resource_path)
+
+
+func get_layout_config_for_file(file_path: String) -> Array[Dictionary]:
+	var filename: String = file_path.get_file()
+	var path_hash: String = file_path.md5_text()
+	var absolute_path: String = "res://.godot/editor/"
+	var cfg_filename: String = str(filename, "-treestate-", path_hash, ".cfg")
+	var end_path: String = absolute_path.path_join(cfg_filename)
+	return _get_layout_config(end_path)
+
+
+func _get_layout_config(config_path: String) -> Array[Dictionary]:
+	var structure: Array[Dictionary] = []
+	
+	if not FileAccess.file_exists(config_path):
+		return structure
+	
+	var cfg: ConfigFile = ConfigFile.new()
+	
+	if not FileAccess.file_exists(config_path):
+		return structure
+		
+	if cfg.load(config_path) != OK:
+		return structure
+	
+	if not cfg.has_section_key("Layout", "quest_structure"):
+		return structure
+	
+	var value = cfg.get_value("Layout", "quest_structure")
+	
+	if typeof(value) != TYPE_ARRAY:
+		return structure
+	
+	for item in value:
+		if typeof(item) == TYPE_DICTIONARY:
+			structure.append(value)
+	
+	return structure
 
 
 func _add_quest_requirement_data_pressed(data: Variant) -> void:
@@ -606,19 +691,19 @@ func _on_something_changed(_arg = null) -> void:
 	files_tree.set_current_save_required(true)
 
 
-func _on_quest_selected(_quest_id: StringName) -> void:
+func _on_quest_root_selected() -> void:
 	if quest_resource == null:
 		return
-	save_current_data()
-	load_quest()
+	save_current_quest()
+	load_quest_data()
 
 
 func _on_stage_selected(stage_id: StringName) -> void:
 	if quest_resource == null or (selected_stage == stage_id and selected_objective == &""):
 		return
 	
-	save_current_data()
-	load_stage(stage_id)
+	save_current_quest()
+	load_stage_data(stage_id)
 	set_stage_target_disabled(String(stage_id))
 
 
@@ -626,9 +711,9 @@ func _on_objective_selected(stage_id: StringName, objective_id: StringName) -> v
 	if quest_resource == null or (selected_stage == stage_id and selected_objective == objective_id):
 		return
 	
-	save_current_data()
+	save_current_quest()
 	
-	load_objective(stage_id, objective_id)
+	load_objective_data(stage_id, objective_id)
 
 
 func _on_stage_created(stage_id: StringName) -> void:
@@ -653,7 +738,7 @@ func _on_objective_created(stage_id: StringName, objective_id: StringName) -> vo
 func _on_quest_id_changed(_from: StringName, to: StringName) -> void:
 	quest_resource.id = to
 	_on_something_changed()
-	crumbs_label.text = String(to)
+	update_crumbs_label()
 
 
 func _on_stage_id_changed(from: StringName, to: StringName) -> void:
@@ -666,7 +751,7 @@ func _on_stage_id_changed(from: StringName, to: StringName) -> void:
 	if selected_stage == from:
 		selected_stage = to
 	
-	crumbs_label.text = String(quest_resource.id) + " / " + String(to)
+	update_crumbs_label()
 	
 	_on_something_changed() 
 
@@ -683,26 +768,28 @@ func _on_objective_id_changed(on_stage: StringName, from: StringName, to: String
 	if selected_stage == on_stage and selected_objective == from:
 		selected_objective = to
 	
-	crumbs_label.text = String(quest_resource.id) + " / " + String(selected_stage) + " / " + String(to)
+	update_crumbs_label()
 	
 	_on_something_changed()
 
 
-func _on_quest_resource_selected(quest: Quest, structure: Array[Dictionary]) -> void:
+func _on_quest_resource_selected(quest_id: int) -> void:
 	if quest_resource != null:
-		save_current_data()
-		files_tree.set_quest_structure(quest_tree.get_quest_structure())
+		save_current_quest()
 	
-	quest_resource = quest
-	quest_tree.set_quest(quest, true, false)
-	quest_tree.set_quest_structure(structure)
+	var resource: Quest = _open_files[quest_id]["resource"]
+	quest_resource = resource
+	undo = _open_files[quest_id]["quest_undo"]
+	custom_data_tree.set_undo(_open_files[quest_id]["data_undo"])
+	quest_tree.set_quest(resource, true, false)
+	quest_tree.set_quest_structure(_open_files[quest_id]["structure"])
 	
-	var stages: Array[StringName] = quest.stages()
-	stages.sort_custom(func(a:StringName,b:StringName): return String(a) < String(b))
+	var stages: Array[StringName] = resource.stages()
+	stages.sort_custom(func(a:StringName,b:StringName): return a.naturalnocasecmp_to(String(b)) < 0)
 	
 	set_stage_target_pointers(stages)
 	
-	load_quest()
+	load_quest_data()
 
 
 func _on_objective_rearranged(from_stage: StringName, to_stage: StringName, objective_id: StringName) -> void:
@@ -723,35 +810,67 @@ func _on_new_quest_file_pressed() -> void:
 	dialog.popup()
 	
 	var result: Array = await dialog.dialog_finished
-	
-	if result[0]:
-		if quest_resource != null:
-			save_current_data()
-			files_tree.set_quest_structure(quest_resource, quest_tree.get_quest_structure())
-		
-		
-		
-		
-		if ResourceLoader.exists(result[1]):
-			files_tree.close_with_path(result[1])
-		var new_quest: Quest = Quest.new()
-		if new_quest.id.is_empty():
-			new_quest.id = &"new_quest"
-		ResourceSaver.save(new_quest, result[1])
-		if ResourceLoader.has_cached(result[1]):
-			new_quest.take_over_path(result[1])
-		else:
-			new_quest.resource_path = result[1]
-		
-		files_tree.add_quest(new_quest, true, false)
-		quest_resource = new_quest
-		quest_tree.set_quest(new_quest, true, false)
-		load_quest()
-		var pointers: Array[StringName] = []
-		pointers.assign(new_quest.stages())
-		pointers.sort_custom(ArrayUtils.sort_custom_alphabetically_asc)
-		set_stage_target_pointers(pointers)
 	dialog.queue_free()
+	
+	if not result[0]:
+		return
+	
+	if quest_resource != null:
+		save_current_quest()
+	
+	var new_quest: Quest = Quest.new()
+	var quest_undo: UndoRedo = UndoRedo.new()
+	var data_undo: UndoRedo = UndoRedo.new()
+	var quest_id: int = new_quest.get_instance_id()
+	var take_over: bool = false
+	
+	quest_undo.max_steps = MAX_UNDO_STEPS
+	data_undo.max_steps = MAX_UNDO_STEPS
+	
+	if new_quest.id.is_empty():
+		new_quest.id = &"new_quest"
+	
+	if ResourceLoader.has_cached(result[1]):
+		var cached_resource: Resource = ResourceLoader.get_cached_ref(result[1])
+		var old_id: int = cached_resource.get_instance_id()
+		take_over = true
+		if _open_files.has(old_id):
+			_open_files[old_id]["undo"].free()
+			_open_files.erase(old_id)
+			files_tree.remove_quest(old_id)
+	else:
+		new_quest.resource_path = result[1]
+	
+	ResourceSaver.save(new_quest, result[1])
+	if take_over:
+		new_quest.take_over_path(result[1])
+	
+	_open_files[quest_id] = {
+		"resource": new_quest,
+		"quest_undo": quest_undo,
+		"data_undo": data_undo,
+		"structure": ArrayUtils.create_typed(TYPE_DICTIONARY)}
+	
+	undo = quest_undo
+	custom_data_tree.set_undo(data_undo)
+	quest_resource = new_quest
+	
+	files_tree.add_quest(
+			quest_id,
+			result[1],
+			true, # Select
+			false) # Emit select
+	
+	quest_tree.set_quest(
+			new_quest,
+			true, # Select
+			false) # Emit Select
+	
+	load_quest_data() # Loads the quest data
+	var pointers: Array[StringName] = []
+	pointers.assign(new_quest.stages())
+	pointers.sort_custom(ArrayUtils.sort_custom_alphabetically_asc)
+	set_stage_target_pointers(pointers)
 
 
 func _on_search_files_text_changed(text: String) -> void:
@@ -777,7 +896,7 @@ func _on_search_requirement_text_changed(text: String) -> void:
 	obj_req_tree.search_data(clean_text)
 
 
-func _on_quest_close_pressed(quest: Quest, requires_save: bool, structure: Array[Dictionary]) -> void:
+func _on_quest_close_pressed(quest_id: int, requires_save: bool, structure: Array[Dictionary]) -> void:
 	if requires_save:
 		var confirm_dialog: AcceptDialog = load("res://addons/nexus_forge/dialogs/unsaved_dialog_script.gd").new()
 		confirm_dialog.dialog_text = "File has unsaved changes. Save before closing?"
@@ -789,36 +908,43 @@ func _on_quest_close_pressed(quest: Quest, requires_save: bool, structure: Array
 		var result: int = await confirm_dialog.dialog_finished
 		
 		if result == 0:
-			if quest == quest_resource:
-				save_current_data()
+			var quest_res: Quest = _open_files[quest_id]["resource"]
+			if quest_res == quest_resource:
+				save_current_quest()
 			
-			_save_cfg_for(quest.resource_path, structure)
+			_save_cfg_for(
+					quest_res.resource_path,
+					structure)
 			
-			
-			ResourceSaver.save(quest)
+			ResourceSaver.save(quest_res)
 		elif result == 2:
 			confirm_dialog.queue_free()
 			return
 	
-	files_tree.close_quest(quest)
-	
-	if quest == quest_resource:
-		crumbs_label.text = ""
+	if quest_resource.get_instance_id() == quest_id:
 		title_ln_edt.text = ""
 		description_txt_edt.text = ""
 		quest_resource = null
 		quest_mode = QuestModeType.NONE
 		set_quest_mode(QuestModeType.NONE)
-		custom_data_tree.clear_data()
 		events_tree.clear_data()
 		quest_tree.clear()
+		custom_data_tree.clear_data(false)
+		undo = null
+		custom_data_tree.set_undo(null)
+		update_crumbs_label()
+	
+	files_tree.remove_quest(quest_id)
+	_open_files[quest_id]["quest_undo"].free()
+	_open_files[quest_id]["data_undo"].free()
+	_open_files.erase(quest_id)
 
 
 func _on_stage_erased(stage_id: StringName) -> void:
 	quest_resource.remove_stage(stage_id)
 	if selected_stage == stage_id and selected_objective == &"":
 		quest_tree.select_quest()
-		load_quest()
+		load_quest_data()
 	_on_something_changed()
 
 
@@ -827,7 +953,7 @@ func _on_objective_erased(from_stage: StringName, objective_id: StringName) -> v
 	
 	if selected_stage == from_stage and selected_objective == objective_id:
 		quest_tree.select_stage(selected_stage, false)
-		load_stage(from_stage)
+		load_stage_data(from_stage)
 	
 	_on_something_changed()
 
@@ -972,3 +1098,12 @@ func _on_objective_duplicated(from_stage: StringName, objective_id: StringName, 
 
 func _on_quest_type_selected() -> void:
 	pass
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE:
+		for open_file in _open_files:
+			if is_instance_valid(_open_files[open_file]["quest_undo"]):
+				_open_files[open_file]["quest_undo"].free()
+			if is_instance_valid(_open_files[open_file]["data_undo"]):
+				_open_files[open_file]["data_undo"].free()

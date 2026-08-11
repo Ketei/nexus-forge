@@ -2,7 +2,7 @@
 extends Tree
 
 
-signal quest_selected(quest: StringName)
+signal quest_selected
 signal stage_selected(stage: StringName)
 signal objective_selected(of_stage: StringName, objective: StringName)
 
@@ -63,7 +63,7 @@ func ready_plugin() -> void:
 	quest_popup.add_item("Set as entry", PopupItemID.SET_ENTRY)
 	quest_popup.id_pressed.connect(_on_popup_id_pressed)
 	
-	item_mouse_selected.connect(_on_item_clicked, CONNECT_DEFERRED)
+	item_mouse_selected.connect(_on_item_clicked)
 	button_clicked.connect(_on_button_clicked)
 	item_edited.connect(_on_item_edited)
 
@@ -221,12 +221,9 @@ func set_quest(quest: Quest, select: bool = false, emit_select: bool = true) -> 
 			objective_item.set_metadata(0, {"id": objective_id, "type": ItemType.OBJECTIVE})
 	
 	if select:
+		root.select(0)
 		if emit_select:
-			root.select(0)
-		else:
-			item_mouse_selected.disconnect(_on_item_clicked)
-			root.select(0)
-			item_mouse_selected.connect(_on_item_clicked, CONNECT_DEFERRED)
+			quest_selected.emit()
 
 
 func add_stage(stage_id: String) -> TreeItem:
@@ -266,6 +263,9 @@ func add_objective(on_item: TreeItem, objective_id: String) -> void:
 
 
 func sort_all() -> void:
+	if root == null:
+		return
+	
 	var stages: Array[TreeItem] = root.get_children()
 	var stage_count: int = stages.size()
 	
@@ -363,7 +363,6 @@ func get_quest_structure() -> Array[Dictionary]:
 
 func set_quest_structure(structure: Array[Dictionary]) -> void:
 	if root == null or structure.is_empty():
-		sort_all()
 		return
 	
 	var stage_ids: Array[String] = []
@@ -469,15 +468,6 @@ func _sort_tree_alphabetically(a: TreeItem, b: TreeItem) -> bool:
 
 func _on_item_clicked(mouse_position: Vector2, mouse_button_index: int) -> void:
 	var selected: TreeItem = get_selected()
-	right_position = mouse_position
-	var add_text: String = "Add"
-	
-	if selected.get_metadata(0)["type"] == ItemType.QUEST:
-		add_text += " stage"
-	elif selected.get_metadata(0)["type"] == ItemType.STAGE:
-		add_text += " objective"
-	
-	quest_popup.set_item_text(quest_popup.get_item_index(PopupItemID.ADD_ITEM), add_text)
 	
 	match selected.get_metadata(0)["type"]:
 		ItemType.QUEST:
@@ -487,22 +477,33 @@ func _on_item_clicked(mouse_position: Vector2, mouse_button_index: int) -> void:
 		ItemType.OBJECTIVE:
 			objective_selected.emit(selected.get_parent().get_metadata(0)["id"], selected.get_metadata(0)["id"])
 	
-	if mouse_button_index == MOUSE_BUTTON_RIGHT:
-		quest_popup.position = DisplayServer.mouse_get_position()
-		quest_popup.set_item_disabled(
-			quest_popup.get_item_index(PopupItemID.REMOVE_ITEM),
-			selected.get_metadata(0)["type"] == ItemType.QUEST)
-		quest_popup.set_item_disabled(
-			quest_popup.get_item_index(PopupItemID.ADD_ITEM),
-			selected.get_metadata(0)["type"] == ItemType.OBJECTIVE)
-		quest_popup.set_item_disabled(
-				quest_popup.get_item_index(PopupItemID.SET_ENTRY),
-				selected.get_metadata(0)["type"] != ItemType.STAGE)
-		quest_popup.set_item_disabled(
-				quest_popup.get_item_index(PopupItemID.DUPLICATE),
-				selected.get_metadata(0)["type"] == ItemType.QUEST)
+	if mouse_button_index != MOUSE_BUTTON_RIGHT:
+		return
 		
-		quest_popup.popup()
+	right_position = mouse_position
+	var add_text: String = "Add"
+	
+	if selected.get_metadata(0)["type"] == ItemType.QUEST:
+		add_text += " stage"
+	elif selected.get_metadata(0)["type"] == ItemType.STAGE:
+		add_text += " objective"
+	quest_popup.set_item_text(quest_popup.get_item_index(PopupItemID.ADD_ITEM), add_text)
+	
+	quest_popup.position = DisplayServer.mouse_get_position()
+	quest_popup.set_item_disabled(
+		quest_popup.get_item_index(PopupItemID.REMOVE_ITEM),
+		selected.get_metadata(0)["type"] == ItemType.QUEST)
+	quest_popup.set_item_disabled(
+		quest_popup.get_item_index(PopupItemID.ADD_ITEM),
+		selected.get_metadata(0)["type"] == ItemType.OBJECTIVE)
+	quest_popup.set_item_disabled(
+			quest_popup.get_item_index(PopupItemID.SET_ENTRY),
+			selected.get_metadata(0)["type"] != ItemType.STAGE)
+	quest_popup.set_item_disabled(
+			quest_popup.get_item_index(PopupItemID.DUPLICATE),
+			selected.get_metadata(0)["type"] == ItemType.QUEST)
+	
+	quest_popup.popup()
 
 
 func _on_popup_id_pressed(id: int) -> void:
