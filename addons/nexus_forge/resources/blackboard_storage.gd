@@ -198,7 +198,7 @@ func erase_folder(folder_path: String) -> void:
 		folder_erased.emit(clean_path)
 
 
-## Returns true if folder in [param folder_oath] is empty or doesn't exist.
+## Returns true if folder in [param folder_path] is empty or doesn't exist.
 func is_folder_empty(folder_path: String) -> bool:
 	var clean_path: StringName = StringName(folder_path.simplify_path())
 	if _active_variables.has(clean_path) and not _active_variables[clean_path].is_empty():
