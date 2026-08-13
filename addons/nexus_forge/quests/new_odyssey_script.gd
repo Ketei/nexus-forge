@@ -10,6 +10,10 @@ enum QuestModeType {
 
 const MAX_UNDO_STEPS: int = 50
 
+static var quest_path: String = ""
+static var stage_path: String = ""
+static var objecive_path: String = ""
+
 var quest_mode: QuestModeType = QuestModeType.NONE
 var quest_resource: Quest = null
 var undo: UndoRedo = null
@@ -52,6 +56,32 @@ var _open_files: Dictionary[int, Dictionary] = {}
 @onready var add_req_bool_button: Button = $MainContainer/DataContainer/DataContainer/LogicContainer/TargetLogicContainer/RequirementsCotnainer/HeaderContainer/AddButtonsContainer/AddReqBoolButton
 @onready var add_req_string_button: Button = $MainContainer/DataContainer/DataContainer/LogicContainer/TargetLogicContainer/RequirementsCotnainer/HeaderContainer/AddButtonsContainer/AddReqStringButton
 @onready var obj_req_tree: Tree = $MainContainer/DataContainer/DataContainer/LogicContainer/TargetLogicContainer/RequirementsCotnainer/ObjReqTree
+
+
+static func _static_init() -> void:
+	update_script_path()
+
+
+static func update_script_path(quest: bool = true, stage: bool = true, objective: bool = true) -> void:
+	if not quest and not stage and not objective:
+		return
+	
+	var all_classes: Array[Dictionary] = ProjectSettings.get_global_class_list()
+	for class_entry in all_classes:
+		if class_entry["class"] == "Quest":
+			if quest:
+				quest_path = class_entry["path"]
+		elif class_entry["class"] == "QuestStage":
+			if stage:
+				stage_path = class_entry["path"]
+		elif class_entry["class"] == "QuestObjective":
+			if objective:
+				objecive_path = class_entry["path"]
+		
+		if (not quest_path.is_empty() or not quest) and\
+				(not stage_path.is_empty() or not stage) and\
+				(not objecive_path.is_empty() or not objective):
+			break
 
 
 func _ready() -> void:
@@ -164,14 +194,21 @@ func ready_plugin() -> void:
 
 
 func filesystem_resource_removed(quest: Quest) -> void:
-	if files_tree.has_quest(quest):
-		files_tree.close_quest(quest)
-		if quest_resource == quest:
-			quest_resource = null
-			quest_mode = QuestModeType.NONE
-			set_quest_mode(QuestModeType.NONE)
-			custom_data_tree.clear_data()
-			events_tree.clear_data()
+	var quest_id: int = quest.get_instance_id()
+	if not _open_files.has(quest_id):
+		return
+	
+	if quest_resource == quest:
+		quest_resource = null
+		quest_mode = QuestModeType.NONE
+		set_quest_mode(QuestModeType.NONE)
+		custom_data_tree.clear_data()
+		events_tree.clear_data()
+	
+	_open_files[quest_id]["quest_undo"].free()
+	_open_files[quest_id]["data_undo"].free()
+	_open_files.erase(quest_id)
+	files_tree.close_quest(quest)
 
 
 func update_type_button(type: int) -> void:
@@ -187,7 +224,25 @@ func update_type_button(type: int) -> void:
 
 
 func set_quest_types(reselect: bool = false) -> void:
-	var quest_constants: Dictionary = Quest.new().get_script().get_script_constant_map()
+	if not FileAccess.file_exists(quest_path):
+		update_script_path(true, false, false)
+		if not FileAccess.file_exists(quest_path):
+			NFPluginGameHandler._log_msg(
+					"odyssey - editor",
+					"Unable to update quest types. Script not found.",
+					NFPluginGameHandler._LogLevel.ERROR)
+			return
+	
+	var script: Script = load(quest_path)
+	
+	if script == null:
+		NFPluginGameHandler._log_msg(
+				"odyssey - editor",
+				"Unable to update quest types. Unable to load script.",
+				NFPluginGameHandler._LogLevel.ERROR)
+		return
+	
+	var quest_constants: Dictionary = script.get_script_constant_map()
 	
 	if not quest_constants.has(&"QuestType"):
 		type_opt_btn.clear()
@@ -216,7 +271,25 @@ func set_quest_types(reselect: bool = false) -> void:
 
 
 func set_stage_types(reselect: bool = false) -> void:
-	var stage_constants: Dictionary = QuestStage.new().get_script().get_script_constant_map()
+	if not FileAccess.file_exists(stage_path):
+		update_script_path(false, true, false)
+		if not FileAccess.file_exists(stage_path):
+			NFPluginGameHandler._log_msg(
+					"odyssey - editor",
+					"Unable to update stage types. Script not found.",
+					NFPluginGameHandler._LogLevel.ERROR)
+			return
+	
+	var script: Script = load(stage_path)
+	
+	if script == null:
+		NFPluginGameHandler._log_msg(
+				"odyssey - editor",
+				"Unable to update stage types. Unable to load script.",
+				NFPluginGameHandler._LogLevel.ERROR)
+		return
+	
+	var stage_constants: Dictionary = script.get_script_constant_map()
 	
 	if not stage_constants.has(&"StageType"):
 		type_opt_btn.clear()
@@ -245,7 +318,25 @@ func set_stage_types(reselect: bool = false) -> void:
 
 
 func set_objective_types(reselect: bool = false) -> void:
-	var objectitve_constants: Dictionary = QuestObjective.new().get_script().get_script_constant_map()
+	if not FileAccess.file_exists(objecive_path):
+		update_script_path(false, true, false)
+		if not FileAccess.file_exists(objecive_path):
+			NFPluginGameHandler._log_msg(
+					"odyssey - editor",
+					"Unable to update objective types. Script not found.",
+					NFPluginGameHandler._LogLevel.ERROR)
+			return
+	
+	var script: Script = load(objecive_path)
+	
+	if script == null:
+		NFPluginGameHandler._log_msg(
+				"odyssey - editor",
+				"Unable to update objective types. Unable to load script.",
+				NFPluginGameHandler._LogLevel.ERROR)
+		return
+	
+	var objectitve_constants: Dictionary = script.get_script_constant_map()
 	
 	if not objectitve_constants.has(&"ObjectiveType"):
 		type_opt_btn.clear()
@@ -370,6 +461,7 @@ func set_stage_target_pointers(pointers: Array[StringName], reselect: bool = fal
 func select_success_pointer(target: StringName) -> void:
 	for idx in range(success_pointer_opt_btn.item_count):
 		if success_pointer_opt_btn.get_item_metadata(idx) == target:
+			success_pointer_opt_btn.set_meta(&"old_value", target)
 			success_pointer_opt_btn.select(idx)
 			return
 
@@ -377,6 +469,7 @@ func select_success_pointer(target: StringName) -> void:
 func select_failure_pointer(target: StringName) -> void:
 	for idx in range(failure_pointer_opt_btn.item_count):
 		if failure_pointer_opt_btn.get_item_metadata(idx) == target:
+			failure_pointer_opt_btn.set_meta(&"old_value", target)
 			failure_pointer_opt_btn.select(idx)
 			return
 
@@ -445,14 +538,15 @@ func save_current_quest() -> void:
 func plugin_handle_resource(quest: Quest) -> void:
 	if quest_resource != null and quest != quest_resource:
 		save_current_quest()
-		files_tree.set_quest_structure(quest_resource, quest_tree.get_quest_structure())
+		_open_files[quest_resource.get_instance_id()]["structure"] = quest_tree.get_quest_structure()
 	
 	var id: int = quest.get_instance_id()
 	
-	if _open_files.has(id):
-		files_tree.select_quest(id, false)
-	else:
+	if not _open_files.has(id):
 		add_quest_resource(quest)
+	
+	files_tree.select_quest(id, false)
+	display_quest(id)
 
 
 func display_quest(quest_id: int) -> void:
@@ -476,6 +570,7 @@ func select_type(type: int) -> void:
 	for idx in range(type_opt_btn.item_count):
 		if type_opt_btn.get_item_metadata(idx) == type:
 			type_opt_btn.select(idx)
+			type_opt_btn.set_meta(&"old_value", type)
 			return
 
 
@@ -581,11 +676,14 @@ func has_unsaved_files() -> bool:
 func save_resource() -> void:
 	if quest_resource != null:
 		save_current_quest()
-		files_tree.set_quest_structure(quest_resource, quest_tree.get_quest_structure())
+		_open_files[quest_resource.get_instance_id()]["structure"] = quest_tree.get_quest_structure()
 	
-	for quest_file:Dictionary in files_tree.get_unsaved_files():
-		_save_cfg_for(quest_file["resource"].resource_path, quest_file["structure"])
-		ResourceSaver.save(quest_file["resource"])
+	for unsaved_entries:Dictionary in files_tree.get_unsaved_files():
+		var file: Quest = _open_files[unsaved_entries["id"]]["resource"]
+		_save_cfg_for(
+			file.resource_path,
+			_open_files[unsaved_entries["id"]]["structure"])
+		ResourceSaver.save(file)
 	files_tree.set_all_saved()
 
 
@@ -601,11 +699,17 @@ func _save_cfg_for(filepath: String, structure: Array[Dictionary]) -> void:
 		DirAccess.make_dir_recursive_absolute(absolute_path)
 	
 	if cfg.save(absolute_path.path_join(cfg_filename)) != OK:
-		push_error("Error saving editor state on: ", absolute_path.path_join(cfg_filename))
+		NFPluginGameHandler._log_msg(
+				"odyssey - editor",
+				"Unable to save editor state to '%s'" % absolute_path.path_join(cfg_filename),
+				NFPluginGameHandler._LogLevel.WARNING)
 
 
 func get_open_files() -> Array[String]:
-	return files_tree.get_open_quest_paths()
+	var files: Array[String] = []
+	for file_id in _open_files:
+		files.append(_open_files[file_id]["resource"].resource_path)
+	return files
 
 
 func open_files(paths: Array[String]) -> void:
@@ -623,7 +727,7 @@ func open_quest_file(file_path: String) -> void:
 	
 	var res_id: int = res.get_instance_id()
 	
-	if files_tree.has_quest_file(res.resource_path) or _open_files.has(res_id):
+	if _open_files.has(res_id):
 		return
 	
 	add_quest_resource(res)
@@ -748,6 +852,9 @@ func _on_stage_id_changed(from: StringName, to: StringName) -> void:
 	quest_resource._stages[to] = quest_resource._stages[from]
 	quest_resource._stages.erase(from)
 	
+	if quest_resource.entry_stage == from:
+		quest_resource.entry_stage = to
+	
 	if selected_stage == from:
 		selected_stage = to
 	
@@ -793,6 +900,9 @@ func _on_quest_resource_selected(quest_id: int) -> void:
 
 
 func _on_objective_rearranged(from_stage: StringName, to_stage: StringName, objective_id: StringName) -> void:
+	if from_stage == to_stage:
+		return
+	
 	var stage_source: QuestStage = quest_resource.get_stage(from_stage)
 	var stage_target: QuestStage = quest_resource.get_stage(to_stage)
 	var objective: QuestObjective = stage_source.get_objective(objective_id)
