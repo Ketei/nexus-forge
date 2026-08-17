@@ -181,9 +181,9 @@ func ready_plugin() -> void:
 	add_req_string_button.pressed.connect(_add_quest_requirement_data_pressed.bind(""))
 	
 	# Unsaved triggers
-	obj_req_tree.data_changed.connect(_on_something_changed)
+	#obj_req_tree.data_changed.connect(_on_something_changed)
 	custom_data_tree.data_changed.connect(_on_something_changed)
-	events_tree.data_changed.connect(_on_something_changed)
+	#events_tree.data_changed.connect(_on_something_changed)
 	type_opt_btn.item_selected.connect(_on_something_changed)
 	title_ln_edt.text_changed.connect(_on_something_changed)
 	description_txt_edt.text_changed.connect(_on_something_changed)
@@ -478,7 +478,7 @@ func save_current_quest() -> void:
 	if quest_resource == null:
 		return
 	
-	_open_files[quest_resource.get_instance_id()] = quest_tree.get_quest_structure()
+	_open_files[quest_resource.get_instance_id()]["structure"] = quest_tree.get_quest_structure()
 	
 	if quest_mode == QuestModeType.QUEST:
 		quest_resource.type = type_opt_btn.get_selected_metadata() if -1 < type_opt_btn.selected else 0
@@ -486,8 +486,7 @@ func save_current_quest() -> void:
 		quest_resource.description = description_txt_edt.text.strip_edges()
 		quest_resource.custom_data = custom_data_tree.get_data()
 		
-		quest_resource.on_success_events.clear()
-		quest_resource.on_failure_events.clear()
+		quest_resource.events.clear()
 		
 		var events_data: Dictionary = events_tree.get_data()
 		quest_resource.events[&"success"] = events_data["Success Events"]
@@ -547,6 +546,7 @@ func plugin_handle_resource(quest: Quest) -> void:
 	
 	files_tree.select_quest(id, false)
 	display_quest(id)
+	quest_tree.select_quest(false)
 
 
 func display_quest(quest_id: int) -> void:
@@ -598,8 +598,20 @@ func load_quest_data() -> void:
 				quest_resource.custom_data[data_key],
 				true)
 	
-	events_tree.add_data("Success Events", quest_resource.on_success_events, events_tree.get_root(), false, false, false)
-	events_tree.add_data("Failure Events", quest_resource.on_failure_events, events_tree.get_root(), false, false, false)
+	var success_events: Dictionary[String, Variant] = {}
+	var failure_events: Dictionary[String, Variant] = {}
+	
+	if quest_resource.events.has(&"success"):
+		success_events = quest_resource.events[&"success"]
+	if quest_resource.events.has(&"failure"):
+		failure_events = quest_resource.events[&"failure"]
+	
+	events_tree.add_data(
+			"Success Events",
+			success_events)
+	events_tree.add_data(
+			"Failure Events",
+			failure_events)
 
 
 func load_stage_data(stage_id: StringName) -> void:
@@ -626,8 +638,20 @@ func load_stage_data(stage_id: StringName) -> void:
 				stage.custom_data[data_key],
 				true)
 	
-	events_tree.add_data("Success Events", stage.on_success_events, events_tree.get_root(), false, false, false)
-	events_tree.add_data("Failure Events", stage.on_failure_events, events_tree.get_root(), false, false, false)
+	var success_events: Dictionary[String, Variant] = {}
+	var failure_events: Dictionary[String, Variant] = {}
+	
+	if stage.events.has(&"success"):
+		success_events = stage.events[&"success"]
+	if stage.events.has(&"failure"):
+		failure_events = stage.events[&"failure"]
+	
+	events_tree.add_data(
+			"Success Events",
+			success_events)
+	events_tree.add_data(
+			"Failure Events",
+			failure_events)
 	
 	selected_stage = stage_id
 	selected_objective = &""
@@ -660,8 +684,20 @@ func load_objective_data(stage_id: StringName, objective_id: StringName) -> void
 	
 	obj_req_chk_bx.set_pressed_no_signal(quest_resource.get_stage(stage_id).is_objective_required(objective_id))
 	
-	events_tree.add_data("Success Events", objective.on_success_events, events_tree.get_root(), false, false, false)
-	events_tree.add_data("Failure Events", objective.on_failure_events, events_tree.get_root(), false, false, false)
+	var success_events: Dictionary[String, Variant] = {}
+	var failure_events: Dictionary[String, Variant] = {}
+	
+	if objective.events.has(&"success"):
+		success_events = objective.events[&"success"]
+	if objective.events.has(&"failure"):
+		failure_events = objective.events[&"failure"]
+	
+	events_tree.add_data(
+			"Success Events",
+			success_events)
+	events_tree.add_data(
+			"Failure Events",
+			failure_events)
 	
 	selected_stage = stage_id
 	selected_objective = objective_id
@@ -734,18 +770,19 @@ func open_quest_file(file_path: String) -> void:
 
 
 func add_quest_resource(quest: Quest) -> void:
+	var instance_id: int = quest.get_instance_id()
 	var quest_undo: UndoRedo = UndoRedo.new()
 	var data_undo: UndoRedo = UndoRedo.new()
 	var structure: Array[Dictionary] = get_layout_config_for_file(quest.resource_path)
 	
-	_open_files[quest.get_instance_id()] = {
+	_open_files[instance_id] = {
 		"resource": quest,
 		"quest_undo": quest_undo,
 		"data_undo": data_undo,
 		"structure": structure}
 	
 	files_tree.add_quest(
-			quest,
+			instance_id,
 			quest.resource_path)
 
 
@@ -782,7 +819,7 @@ func _get_layout_config(config_path: String) -> Array[Dictionary]:
 	
 	for item in value:
 		if typeof(item) == TYPE_DICTIONARY:
-			structure.append(value)
+			structure.append(item)
 	
 	return structure
 

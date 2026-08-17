@@ -673,7 +673,7 @@ func get_data_cell_data(cell: TreeItem) -> Variant:
 		TYPE_STRING:
 			return cell.get_text(1)
 		TYPE_DICTIONARY:
-			var subfolder: Dictionary = {}
+			var subfolder: Dictionary[String, Variant] = {}
 			for sub_data in cell.get_children():
 				subfolder[sub_data.get_text(0)] = get_data_cell_data(sub_data)
 			return subfolder
@@ -785,8 +785,8 @@ func on_data_edited() -> void:
 			new_name)
 
 
-func get_data() -> Dictionary[String, Variant]:
-	var rank_data: Dictionary[String, Variant] = {}
+func get_data() -> Dictionary[StringName, Variant]:
+	var rank_data: Dictionary[StringName, Variant] = {}
 	
 	for data_item in get_root().get_children():
 		rank_data[data_item.get_text(0)] = get_data_cell_data(data_item)

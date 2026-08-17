@@ -173,12 +173,9 @@ func set_entry_stage(stage_id: StringName) -> void:
 
 
 func select_quest(emit_select: bool = true) -> void:
+	root.select(0)
 	if emit_select:
-		root.select(0)
-	else:
-		item_mouse_selected.disconnect(_on_item_clicked)
-		root.select(0)
-		item_mouse_selected.connect(_on_item_clicked, CONNECT_DEFERRED)
+		quest_selected.emit()
 
 
 func set_quest(quest: Quest, select: bool = false, emit_select: bool = true) -> void:
@@ -471,7 +468,7 @@ func _on_item_clicked(mouse_position: Vector2, mouse_button_index: int) -> void:
 	
 	match selected.get_metadata(0)["type"]:
 		ItemType.QUEST:
-			quest_selected.emit(selected.get_metadata(0)["id"])
+			quest_selected.emit()
 		ItemType.STAGE:
 			stage_selected.emit(selected.get_metadata(0)["id"])
 		ItemType.OBJECTIVE:
