@@ -3,7 +3,7 @@ extends Tree
 
 
 signal quest_selected(quest_id: int)
-signal quest_close_pressed(quest_id: int, requires_save: bool, structure: Array[Dictionary])
+signal quest_close_pressed(quest_id: int, requires_save: bool)
 
 
 func ready_plugin() -> void:
@@ -140,20 +140,12 @@ func search_for(text: String) -> void:
 		item.visible = empty or item.get_metadata(0)["path"].containsn(text)
 
 
-func set_quest_structure(quest_id: int, structure: Array[Dictionary]) -> void:
-	for item in get_root().get_children():
-		var metadata: Dictionary = item.get_metadata(0)
-		if metadata["id"] == quest_id:
-			metadata["structure"].assign(structure)
-			return
-
-
 func _on_item_mouse_selected(mouse_position: Vector2, mouse_button_index: int) -> void:
 	if mouse_button_index != MOUSE_BUTTON_LEFT:
 		return
 	var selected: TreeItem = get_selected()
 	
-	quest_selected.emit(selected.get_metadata(0)["id"], selected.get_metadata(0)["structure"])
+	quest_selected.emit(selected.get_metadata(0)["id"])
 
 
 func _on_button_clicked(item: TreeItem, _column: int, id: int, mouse_button_index: int) -> void:
@@ -161,4 +153,7 @@ func _on_button_clicked(item: TreeItem, _column: int, id: int, mouse_button_inde
 		return
 	
 	if id == 0:
-		quest_close_pressed.emit(item.get_metadata(0)["id"], item.get_metadata(0)["save_required"], item.get_metadata(0)["structure"])
+		var metadata: Dictionary = item.get_metadata(0)
+		quest_close_pressed.emit(
+				metadata["id"],
+				metadata["save_required"])
