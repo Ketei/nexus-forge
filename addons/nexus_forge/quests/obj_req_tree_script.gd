@@ -2,11 +2,12 @@
 extends IDTree
 
 
-signal data_created(path: String, index: int ,data: Variant)
+signal data_created(path: String, index: int , data: Variant, operator: int)
 signal data_moved(from_path: String, from_index: int, to_path: String, to_index: int)
 signal data_renamed(parent_path: String, old_name: String, new_name: String)
 signal data_updated(path: String, old_value: Variant, new_value: Variant)
-signal data_erased(path: String, index: int, data: Variant)
+signal data_erased(path: String, index: int, data: Variant, operator: int)
+signal data_operator_changed(path: String, old_operator: int, new_operator: int)
 
 enum ItemType {
 	DATA,
@@ -488,45 +489,40 @@ func _do_update_item_data(path: String, data: Variant) -> void:
 	
 	var new_type: int = _data_type_to_internal(typeof(data))
 	
-	if new_type != item.get_metadata(1):
-		if item.get_metadata(1) == TYPE_DICTIONARY:
-			var btn_idx: int = item.get_button_by_id(1, ButtonIds.TYPE_MENU)
-			if btn_idx != -1:
-				item.erase_button(1, btn_idx)
+	if new_type != item.get_metadata(2):
 		match new_type:
 			TYPE_INT:
 				item.set_icon(0, ICON_INT)
-				item.set_metadata(1, TYPE_INT)
-				item.set_cell_mode(1, TreeItem.CELL_MODE_RANGE)
-				item.set_range_config(1, RANGE_FLOOR, RANGE_CEIL, 1.0)
-				item.set_range(1, data)
-				item.set_editable(1, true)
+				item.set_metadata(2, TYPE_INT)
+				item.set_cell_mode(2, TreeItem.CELL_MODE_RANGE)
+				item.set_range_config(2, RANGE_FLOOR, RANGE_CEIL, 1.0)
+				item.set_range(2, data)
+				item.set_editable(2, true)
 			TYPE_FLOAT:
 				item.set_icon(0, ICON_FLOAT)
-				item.set_metadata(1, TYPE_FLOAT)
-				item.set_cell_mode(1, TreeItem.CELL_MODE_RANGE)
-				item.set_range_config(1, RANGE_FLOOR, RANGE_CEIL, RANGE_FLOAT_STEP)
-				item.set_range(1, data)
-				item.set_editable(1, true)
+				item.set_metadata(2, TYPE_FLOAT)
+				item.set_cell_mode(2, TreeItem.CELL_MODE_RANGE)
+				item.set_range_config(2, RANGE_FLOOR, RANGE_CEIL, RANGE_FLOAT_STEP)
+				item.set_range(2, data)
+				item.set_editable(2, true)
 			TYPE_BOOL:
 				item.set_icon(0, ICON_BOOL)
-				item.set_metadata(1, TYPE_BOOL)
-				item.set_cell_mode(1, TreeItem.CELL_MODE_CHECK)
-				item.set_text(1, "Enabled")
-				item.set_checked(1, data)
-				item.set_editable(1, true)
+				item.set_metadata(2, TYPE_BOOL)
+				item.set_cell_mode(2, TreeItem.CELL_MODE_CHECK)
+				item.set_text(2, "Enabled")
+				item.set_checked(2, data)
+				item.set_editable(2, true)
 			TYPE_STRING:
 				item.set_icon(0, ICON_STRING)
-				item.set_metadata(1, TYPE_STRING)
-				item.set_cell_mode(1, TreeItem.CELL_MODE_STRING)
-				item.set_text(1, data)
-				item.set_editable(1, true)
+				item.set_metadata(2, TYPE_STRING)
+				item.set_cell_mode(2, TreeItem.CELL_MODE_STRING)
+				item.set_text(2, data)
+				item.set_editable(2, true)
 			TYPE_DICTIONARY:
 				item.set_icon(0, ICON_FOLDER)
-				item.set_metadata(1, TYPE_DICTIONARY)
-				item.set_selectable(1, false)
-				item.set_editable(0, true)
-				item.set_editable(1, false)
+				item.set_metadata(2, TYPE_DICTIONARY)
+				item.set_selectable(2, false)
+				item.set_editable(2, false)
 				item.get_metadata(0)["type"] = ItemType.FOLDER
 				if compact_mode:
 					item.add_button(
@@ -545,19 +541,19 @@ func _do_update_item_data(path: String, data: Variant) -> void:
 					add_data(subdata, data[subdata], false, item)
 			_:
 				item.set_icon(0, ICON_VARIABLE)
-				item.set_metadata(1, TYPE_NIL)
+				item.set_metadata(2, TYPE_NIL)
 				item.get_metadata(0)["data"] = data
-				item.set_cell_mode(1, TreeItem.CELL_MODE_STRING)
-				item.set_text(1, type_string(typeof(data)))
-				item.set_editable(1, false)
+				item.set_cell_mode(2, TreeItem.CELL_MODE_STRING)
+				item.set_text(2, type_string(typeof(data)))
+				item.set_editable(2, false)
 	else:
 		match new_type:
 			TYPE_INT, TYPE_FLOAT:
-				item.set_range(1, data)
+				item.set_range(2, data)
 			TYPE_BOOL:
-				item.set_checked(1, data)
+				item.set_checked(2, data)
 			TYPE_STRING:
-				item.set_text(1, data)
+				item.set_text(2, data)
 			_:
 				item.get_metadata(0)["data"] = data
 	
@@ -648,7 +644,7 @@ func _add_data_to_tree(new_name: String, data: Variant, operator: int, on_node: 
 	
 	if data_type != TYPE_DICTIONARY:
 		new_data.set_metadata(0, metadata)
-		
+		new_data.set_metadata(1, operator)
 		new_data.set_cell_mode(1, TreeItem.CELL_MODE_RANGE)
 		
 		if data_type == TYPE_INT or data_type == TYPE_FLOAT:
@@ -667,15 +663,15 @@ func _add_data_to_tree(new_name: String, data: Variant, operator: int, on_node: 
 
 
 func get_data_cell_data(cell: TreeItem) -> Variant:
-	match cell.get_metadata(1):
+	match cell.get_metadata(2):
 		TYPE_INT:
-			return int(cell.get_range(1))
+			return int(cell.get_range(2))
 		TYPE_FLOAT:
-			return float(cell.get_range(1))
+			return float(cell.get_range(2))
 		TYPE_BOOL:
-			return cell.is_checked(1)
+			return cell.is_checked(2)
 		TYPE_STRING:
-			return cell.get_text(1)
+			return cell.get_text(2)
 		TYPE_DICTIONARY:
 			var subfolder: Dictionary = {}
 			for sub_data in cell.get_children():
@@ -705,19 +701,19 @@ func _on_button_clicked(item: TreeItem, column: int, id: int, mouse_button_index
 			return
 		ButtonIds.INT:
 			data_copy = 0
-			data_path = add_data("new_int", 0, false, item)
+			data_path = add_data("new_int", 0, OP_EQUAL, item)
 		ButtonIds.FLOAT:
 			data_copy = 0.0
-			data_path = add_data("new_float", 0.0, false, item)
+			data_path = add_data("new_float", 0.0, OP_EQUAL, item)
 		ButtonIds.BOOL:
 			data_copy = false
-			data_path = add_data("new_bool", false, false, item)
+			data_path = add_data("new_bool", false, OP_EQUAL, item)
 		ButtonIds.STRING:
 			data_copy = ""
-			data_path = add_data("new_string", "", false, item)
+			data_path = add_data("new_string", "", OP_EQUAL, item)
 		ButtonIds.LEVEL:
 			data_copy = {}
-			data_path = add_data("new_folder", {}, false, item)
+			data_path = add_data("new_folder", {}, OP_EQUAL, item)
 		ButtonIds.TYPE_MENU:
 			data_item = item
 			mn.position = DisplayServer.mouse_get_position()
@@ -732,15 +728,47 @@ func _on_button_clicked(item: TreeItem, column: int, id: int, mouse_button_index
 func on_data_edited() -> void:
 	var edited: TreeItem = get_edited()
 	var path: String = _get_data_path(edited)
+	var column: int = get_edited_column()
 	
-	if get_edited_column() == 1: # Value
+	if column == 0: # --- ID updated ---
+		if edited.get_metadata(0)["name"] == edited.get_text(0):
+			return
+		
+		var old_name: String = edited.get_metadata(0)["name"]
+		var new_name: String = get_unique_id(edited.get_parent(), edited.get_text(0), edited)
+		
+		var parent_path: String = _get_data_path(edited.get_parent())
+		var old_path: String = parent_path.path_join(old_name)
+		var new_path: String = parent_path.path_join(new_name)
+		
+		edited.set_text(0, new_name)
+		edited.get_metadata(0)["name"] = new_name
+		
+		data_renamed.emit(
+				parent_path,
+				old_name,
+				new_name)
+	elif column == 1: # Operator
+		var old_value: int = edited.get_metadata(1)
+		var new_value: int = range_to_operator(edited.get_range(1))
+		
+		if new_value == old_value:
+			return
+		
+		edited.set_metadata(1, new_value)
+		data_operator_changed.emit(
+				path,
+				old_value,
+				new_value)
+	elif column == 2: # Value
 		var from = edited.get_metadata(0)["value"]
 		var to = get_data_cell_data(edited)
 		var emit_update: bool = true
 		
-		match edited.get_metadata(1):
+		match edited.get_metadata(2):
 			TYPE_INT, TYPE_FLOAT:
-				if edited.get_metadata(0)["value"] != int(edited.get_range(1)) if edited.get_metadata(1) == TYPE_INT else edited.get_range(1):
+				var current_val = int(edited.get_range(2)) if edited.get_metadata(2) == TYPE_INT else edited.get_range(2)
+				if edited.get_metadata(0)["value"] != current_val:
 					edited.get_metadata(0)["value"] = to
 				else:
 					emit_update = false
@@ -766,27 +794,6 @@ func on_data_edited() -> void:
 					path,
 					from,
 					to)
-		return
-	
-	# --- ID updated ---
-	
-	if edited.get_metadata(0)["name"] == edited.get_text(0):
-		return
-	
-	var old_name: String = edited.get_metadata(0)["name"]
-	var new_name: String = get_unique_id(edited.get_parent(), edited.get_text(0), edited)
-	
-	var parent_path: String = _get_data_path(edited.get_parent())
-	var old_path: String = parent_path.path_join(old_name)
-	var new_path: String = parent_path.path_join(new_name)
-	
-	edited.set_text(0, new_name)
-	edited.get_metadata(0)["name"] = new_name
-	
-	data_renamed.emit(
-			parent_path,
-			old_name,
-			new_name)
 
 
 func get_data() -> Dictionary[String, Dictionary]:
@@ -940,6 +947,13 @@ func get_cell_value(cell: TreeItem) -> Dictionary:
 			return {}
 
 
+func set_data_operator(path: String, operator: int) -> void:
+	var target: TreeItem = _get_data_item(path)
+	if target != null:
+		target.set_range(1, operator_to_range(operator))
+		target.set_metadata(1, operator)
+
+
 func _tree_has_id(item: TreeItem, id: String) -> bool:
 	for tree in item.get_children():
 		if tree.get_metadata(0)["name"] == id:
@@ -958,12 +972,12 @@ func _child_has_data(item: TreeItem, text: String) -> bool:
 
 
 func _data_cell_to_string(item: TreeItem) -> String:
-	match item.get_cell_mode(1):
+	match item.get_cell_mode(2):
 		TreeItem.CELL_MODE_STRING:
-			return item.get_text(1)
+			return item.get_text(2)
 		TreeItem.CELL_MODE_RANGE:
-			return str(item.get_range(1))
+			return str(item.get_range(2))
 		TreeItem.CELL_MODE_CHECK:
-			return "true" if item.is_checked(1) else "false"
+			return "true" if item.is_checked(2) else "false"
 		_:
 			return ""

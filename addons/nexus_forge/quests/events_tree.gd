@@ -136,7 +136,7 @@ func _on_compact_menu_id_pressed(id: int) -> void:
 	else:
 		data_name += "data"
 	
-	var path: String = add_data(data_name, data_type, false, data_item)
+	var path: String = add_data(data_name, data_type, data_item)
 	
 	data_item = null
 	
@@ -147,7 +147,7 @@ func _get_drag_data(at_position: Vector2) -> Variant:
 	if not allow_drag_and_drop:
 		return null
 	var item: TreeItem = get_item_at_position(at_position)
-	if item == null:
+	if item == null or item.get_parent() == get_root():
 		return null
 	var preview: Label = Label.new()
 	preview.text = "    " + item.get_text(0)
@@ -165,12 +165,13 @@ func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
 	
 	if data.has_all(["tree", "type", "source"]) and typeof(data["source"]) == TYPE_STRING and data["source"] == "data_tree":
 		var target_node: TreeItem = get_item_at_position(at_position)
-		if target_node == data["tree"] or (data["type"] == ItemType.FOLDER and _is_item_child_of(target_node, data["tree"])): #target_node.get_parent() == data["tree"]):
+		if target_node == null:
 			drop_mode_flags = DROP_MODE_DISABLED
 			return false
 		
-		if target_node == null:
-			return true
+		if target_node == data["tree"] or (data["type"] == ItemType.FOLDER and _is_item_child_of(target_node, data["tree"])):
+			drop_mode_flags = DROP_MODE_DISABLED
+			return false
 		
 		if target_node.get_metadata(0)["type"] == ItemType.FOLDER:
 			drop_mode_flags = DROP_MODE_ON_ITEM + DROP_MODE_INBETWEEN
@@ -486,10 +487,6 @@ func _do_update_item_data(path: String, data: Variant) -> void:
 	var new_type: int = _data_type_to_internal(typeof(data))
 	
 	if new_type != item.get_metadata(1):
-		if item.get_metadata(1) == TYPE_DICTIONARY:
-			var btn_idx: int = item.get_button_by_id(1, ButtonIds.TYPE_MENU)
-			if btn_idx != -1:
-				item.erase_button(1, btn_idx)
 		match new_type:
 			TYPE_INT:
 				item.set_icon(0, ICON_INT)
@@ -539,7 +536,10 @@ func _do_update_item_data(path: String, data: Variant) -> void:
 					item.add_button(1, preload("res://addons/nexus_forge/icons/add_string.svg"), ButtonIds.STRING, false, "Add String")
 					item.add_button(1, get_theme_icon("FolderCreate", "EditorIcons"), ButtonIds.LEVEL, false, "Add Level")
 				for subdata in data:
-					add_data(subdata, data[subdata], false, item)
+					_add_data_to_tree(
+						subdata,
+						data[subdata],
+						item)
 			_:
 				item.set_icon(0, ICON_VARIABLE)
 				item.set_metadata(1, TYPE_NIL)
@@ -561,16 +561,9 @@ func _do_update_item_data(path: String, data: Variant) -> void:
 	item.get_metadata(0)["value"] = data
 
 
-func add_data(data_id: String, data: Variant, initial_load: bool = false, on_node: TreeItem = get_root()) -> String:
+func add_data(data_id: String, data: Variant, on_node: TreeItem = get_root()) -> String:
 	var new_name: String = get_unique_id(on_node, data_id)
 	var data_path: String = _get_data_path(on_node).path_join(new_name)
-	
-	if initial_load:
-		_add_data_to_tree(
-				new_name,
-				data,
-				on_node)
-		return data_path
 	
 	var type: int = typeof(data)
 	
@@ -656,7 +649,7 @@ func _add_data_to_tree(new_name: String, data: Variant, on_node: TreeItem = get_
 
 func add_constant_data(new_name: String, data: Variant, on_node: TreeItem = get_root(), index: int = -1) -> void:
 	var valid_name: String = get_unique_id(on_node, new_name)
-	var data_tree: TreeItem = _add_data_to_tree(new_name, data, on_node, index)
+	var data_tree: TreeItem = _add_data_to_tree(valid_name, data, on_node, index)
 	data_tree.erase_button(
 			1,
 			data_tree.get_button_by_id(1, ButtonIds.DELETE))
@@ -701,19 +694,19 @@ func _on_button_clicked(item: TreeItem, column: int, id: int, mouse_button_index
 			return
 		ButtonIds.INT:
 			data_copy = 0
-			data_path = add_data("new_int", 0, false, item)
+			data_path = add_data("new_int", 0, item)
 		ButtonIds.FLOAT:
 			data_copy = 0.0
-			data_path = add_data("new_float", 0.0, false, item)
+			data_path = add_data("new_float", 0.0, item)
 		ButtonIds.BOOL:
 			data_copy = false
-			data_path = add_data("new_bool", false, false, item)
+			data_path = add_data("new_bool", false, item)
 		ButtonIds.STRING:
 			data_copy = ""
-			data_path = add_data("new_string", "", false, item)
+			data_path = add_data("new_string", "", item)
 		ButtonIds.LEVEL:
 			data_copy = {}
-			data_path = add_data("new_folder", {}, false, item)
+			data_path = add_data("new_folder", {}, item)
 		ButtonIds.TYPE_MENU:
 			data_item = item
 			mn.position = DisplayServer.mouse_get_position()
@@ -736,7 +729,8 @@ func on_data_edited() -> void:
 		
 		match edited.get_metadata(1):
 			TYPE_INT, TYPE_FLOAT:
-				if edited.get_metadata(0)["value"] != int(edited.get_range(1)) if edited.get_metadata(1) == TYPE_INT else edited.get_range(1):
+				var current_val = int(edited.get_range(1)) if edited.get_metadata(1) == TYPE_INT else edited.get_range(1)
+				if edited.get_metadata(0)["value"] != current_val:
 					edited.get_metadata(0)["value"] = to
 				else:
 					emit_update = false
