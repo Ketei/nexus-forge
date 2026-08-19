@@ -106,8 +106,34 @@ func _input(event: InputEvent) -> void:
 				return
 		
 		if event.keycode == KEY_Z:
+			if event.shift_pressed:
+				if undo.has_redo():
+					var action_name: String = undo.get_action_name(undo.get_current_action() + 1)
+					undo.redo()
+					NFPluginGameHandler._log_msg(
+						"",
+						"Redo: " + action_name,
+						NFPluginGameHandler._LogLevel.EDITOR)
+					_on_something_changed()
+			else:
+				if undo.has_undo():
+					var action_name: String = undo.get_current_action_name()
+					undo.undo()
+					NFPluginGameHandler._log_msg(
+						"",
+						"Undo: " + action_name,
+						NFPluginGameHandler._LogLevel.EDITOR)
+					_on_something_changed()
 			get_viewport().set_input_as_handled()
 		elif event.keycode == KEY_Y and not event.shift_pressed:
+			if undo.has_redo():
+				var action_name: String = undo.get_action_name(undo.get_current_action() + 1)
+				undo.redo()
+				NFPluginGameHandler._log_msg(
+					"",
+					"Redo: " + action_name,
+					NFPluginGameHandler._LogLevel.EDITOR)
+				_on_something_changed()
 			get_viewport().set_input_as_handled()
 
 
