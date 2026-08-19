@@ -14,7 +14,7 @@ func update_weights() -> void:
 		for node in range(2, get_child_count()):
 			get_child(node).get_child(1).text = "Weight ??.??%"
 	else:
-		var base_weight: int = DialogParser.RANDOM_DEFAULT_WEIGHT if custom_default_weight < 0 else custom_default_weight
+		var base_weight: int = NFDialogParser.RANDOM_DEFAULT_WEIGHT if custom_default_weight < 0 else custom_default_weight
 		var total_weight: int = 0
 		var weights: Array[int] = []
 		var labels: Array[Label] = []

@@ -19,42 +19,42 @@ const DIALOG_COLOR: Color = Color(0.553, 0.647, 0.953)
 const SETTINGS_COLOR: Color = Color(0.99, 0.808, 0.495)
 const RESOURCE_COLOR: Color = Color(0.988, 0.498, 0.498)
 
-const DIALOG: Array[DialogParser.NodeTypes] = [
-		DialogParser.NodeTypes.ENTRY,
-		DialogParser.NodeTypes.DIALOG,
-		DialogParser.NodeTypes.CHOICES,
-		DialogParser.NodeTypes.BRANCH,
-		DialogParser.NodeTypes.COMPARATION,
-		DialogParser.NodeTypes.EVENT,
-		DialogParser.NodeTypes.MATCH,
-		DialogParser.NodeTypes.PAUSE,
-		DialogParser.NodeTypes.RANDOM,
-		DialogParser.NodeTypes.ANCHOR_POINTER,
-		DialogParser.NodeTypes.ANCHOR,
-		DialogParser.NodeTypes.DIALOG_END,
-		DialogParser.NodeTypes.DIALOG_MERGE,
-		DialogParser.NodeTypes.LOCALIZED_TEXT]
+const DIALOG: Array[NFDialogParser.NodeTypes] = [
+		NFDialogParser.NodeTypes.ENTRY,
+		NFDialogParser.NodeTypes.DIALOG,
+		NFDialogParser.NodeTypes.CHOICES,
+		NFDialogParser.NodeTypes.BRANCH,
+		NFDialogParser.NodeTypes.COMPARATION,
+		NFDialogParser.NodeTypes.EVENT,
+		NFDialogParser.NodeTypes.MATCH,
+		NFDialogParser.NodeTypes.PAUSE,
+		NFDialogParser.NodeTypes.RANDOM,
+		NFDialogParser.NodeTypes.ANCHOR_POINTER,
+		NFDialogParser.NodeTypes.ANCHOR,
+		NFDialogParser.NodeTypes.DIALOG_END,
+		NFDialogParser.NodeTypes.DIALOG_MERGE,
+		NFDialogParser.NodeTypes.LOCALIZED_TEXT]
 	
-const DATA: Array[DialogParser.NodeTypes] = [
-		DialogParser.NodeTypes.CONDITION_SELECT,
-		DialogParser.NodeTypes.TYPE_GUARD,
-		DialogParser.NodeTypes.VALUE,
-		DialogParser.NodeTypes.SIGNAL,
-		DialogParser.NodeTypes.CALLABLE,
-		DialogParser.NodeTypes.CALLABLE_RETURN,
-		DialogParser.NodeTypes.VARIABLE_GET,
-		DialogParser.NodeTypes.RANDOM_VALUE,
-		DialogParser.NodeTypes.DATA_EVENT,
-		DialogParser.NodeTypes.LOCALIZED_TEXT,
-		DialogParser.NodeTypes.METADATA]
+const DATA: Array[NFDialogParser.NodeTypes] = [
+		NFDialogParser.NodeTypes.CONDITION_SELECT,
+		NFDialogParser.NodeTypes.TYPE_GUARD,
+		NFDialogParser.NodeTypes.VALUE,
+		NFDialogParser.NodeTypes.SIGNAL,
+		NFDialogParser.NodeTypes.CALLABLE,
+		NFDialogParser.NodeTypes.CALLABLE_RETURN,
+		NFDialogParser.NodeTypes.VARIABLE_GET,
+		NFDialogParser.NodeTypes.RANDOM_VALUE,
+		NFDialogParser.NodeTypes.DATA_EVENT,
+		NFDialogParser.NodeTypes.LOCALIZED_TEXT,
+		NFDialogParser.NodeTypes.METADATA]
 	
-const SETTINGS: Array[DialogParser.NodeTypes] = [
-		DialogParser.NodeTypes.SETTINGS_CHARACTER,
-		DialogParser.NodeTypes.SETTINGS_DIALOG,
-		DialogParser.NodeTypes.SETTINGS_OPTION]
+const SETTINGS: Array[NFDialogParser.NodeTypes] = [
+		NFDialogParser.NodeTypes.SETTINGS_CHARACTER,
+		NFDialogParser.NodeTypes.SETTINGS_DIALOG,
+		NFDialogParser.NodeTypes.SETTINGS_OPTION]
 	
-const RESOURCES: Array[DialogParser.NodeTypes] = [
-		DialogParser.NodeTypes.RESOURCE]
+const RESOURCES: Array[NFDialogParser.NodeTypes] = [
+		NFDialogParser.NodeTypes.RESOURCE]
 
 var nodes: Dictionary[StringName, TreeItem] = {}
 

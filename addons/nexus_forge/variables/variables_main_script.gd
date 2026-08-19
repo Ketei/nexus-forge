@@ -4,7 +4,7 @@ extends PanelContainer
 
 const UNDO_MAX_STEPS: int = 50
 
-var _variables_resource: BlackboardData = null
+var _variables_resource: NFBlackboardData = null
 var _switching_tree: bool = false
 var _current_folder: String = "":
 	set(new_tree):
@@ -138,8 +138,8 @@ func reload_resource(first_load: bool = false) -> void:
 	
 	if not res_path.is_empty() and ResourceLoader.exists(res_path):
 		var res_load: Resource = load(res_path)
-		if res_load is BlackboardData:
-			if res_load is BlackboardData:
+		if res_load is NFBlackboardData:
+			if res_load is NFBlackboardData:
 				_variables_resource = res_load
 	
 	if _variables_resource != null:
@@ -350,7 +350,7 @@ func on_create_resource_pressed() -> void:
 	var result = await new_dialog.dialog_finished
 	
 	if result[0]:
-		_variables_resource = BlackboardData.new()
+		_variables_resource = NFBlackboardData.new()
 		_variables_resource.resource_path = result[1]
 		ResourceSaver.save(_variables_resource, result[1])
 		ProjectSettings.set_setting(
@@ -389,7 +389,7 @@ func on_load_resource_pressed() -> void:
 	
 	if result[0]:
 		var res_pre: Resource = load(result[1])
-		if res_pre is BlackboardData:
+		if res_pre is NFBlackboardData:
 			_variables_resource = res_pre
 			ProjectSettings.set_setting(
 				NFPluginGameHandler.get_setting_path("variables"),

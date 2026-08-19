@@ -687,7 +687,7 @@ func _on_resource_removed(object: Resource) -> void:
 		editor_view.phrase_maps.filesystem_resource_removed(object)
 	elif object is Quest:
 		editor_view.quests.filesystem_resource_removed(object)
-	elif object is BlackboardData:
+	elif object is NFBlackboardData:
 		if editor_view.variables._variables_resource == object:
 			ProjectSettings.set_setting(
 					NFPluginGameHandler.get_setting_path("variables"),
