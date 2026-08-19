@@ -653,6 +653,7 @@ func _add_data_to_tree(new_name: String, data: Variant, operator: int, on_node: 
 		else:
 			new_data.set_range_config(1, 0, 1, 1)
 			new_data.set_text(1, "==,!=")
+		new_data.set_tooltip_text(1, "Comparator")
 		new_data.set_range(1, operator_to_range(operator))
 		new_data.set_editable(1, true)
 	else:

@@ -1032,7 +1032,7 @@ func _on_search_requirement_text_changed(text: String) -> void:
 	obj_req_tree.search_data(clean_text)
 
 
-func _on_quest_close_pressed(quest_id: int, requires_save: bool, structure: Array[Dictionary]) -> void:
+func _on_quest_close_pressed(quest_id: int, requires_save: bool) -> void:
 	if requires_save:
 		var confirm_dialog: AcceptDialog = load("res://addons/nexus_forge/dialogs/unsaved_dialog_script.gd").new()
 		confirm_dialog.dialog_text = "File has unsaved changes. Save before closing?"
@@ -1050,7 +1050,7 @@ func _on_quest_close_pressed(quest_id: int, requires_save: bool, structure: Arra
 			
 			_save_cfg_for(
 					quest_res.resource_path,
-					structure)
+					_open_files[quest_id]["structure"])
 			
 			ResourceSaver.save(quest_res)
 		elif result == 2:
