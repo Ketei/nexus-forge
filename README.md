@@ -105,7 +105,7 @@ Features that are planned to be implemented in the future:
   - [x] Talents (Skills & Traits)
   - [x] Depot (Items & Currencies)
   - [x] Blueprints (Recipes)
-  - [ ] Odyssey (Quests)
+  - [x] Odyssey (Quests)
   - [ ] Phrase Maps
 - [ ] **Core:** Implement an automatic [mod loader](#modding)
 - [ ] **Discourse:** Import/Export CSV files for localization
