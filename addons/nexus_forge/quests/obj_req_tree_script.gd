@@ -69,7 +69,7 @@ func ready_plugin() -> void:
 	set_column_expand_ratio(0, 2)
 	set_column_expand_ratio(2, 3)
 	
-	set_column_custom_minimum_width(1, 60)
+	set_column_custom_minimum_width(1, 80)
 	
 	item_edited.connect(on_data_edited)
 	
