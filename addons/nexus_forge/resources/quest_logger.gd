@@ -20,7 +20,7 @@ func _get(property: StringName) -> Variant:
 
 
 ## Sets an entry on the log with [param id] and a [param success_status].
-func set_entry(id: StringName, success_status: QuestManager.SuccessStatus = QuestManager.SuccessStatus.UNKNOWN) -> NFQuestLogEntry:
+func set_entry(id: StringName, success_status: NFQuestManager.SuccessStatus = NFQuestManager.SuccessStatus.UNKNOWN) -> NFQuestLogEntry:
 	if _entries.has(id):
 		_entries[id].success_status = success_status
 	else:
@@ -32,11 +32,11 @@ func set_entry(id: StringName, success_status: QuestManager.SuccessStatus = Ques
 
 
 ## Returns the status of the quest with the provided [param id] or
-## [enum QuestManager.SuccessStatus.UNKNOWN] if the entry doesn't exist.
-func get_quest_status(id: StringName) -> QuestManager.SuccessStatus:
+## [enum NFQuestManager.SuccessStatus.UNKNOWN] if the entry doesn't exist.
+func get_quest_status(id: StringName) -> NFQuestManager.SuccessStatus:
 	if _entries.has(id):
 		return _entries[id].success_status
-	return QuestManager.SuccessStatus.UNKNOWN
+	return NFQuestManager.SuccessStatus.UNKNOWN
 
 
 ## Gets the quest log entry object with [param id].
@@ -104,7 +104,7 @@ func restore_state(data: Dictionary) -> void:
 		if (key_type != TYPE_STRING_NAME and key_type != TYPE_STRING) or typeof(data[key_entry]) != TYPE_DICTIONARY:
 			continue
 		
-		var status: QuestManager.SuccessStatus = QuestManager.SuccessStatus.UNKNOWN
+		var status: NFQuestManager.SuccessStatus = NFQuestManager.SuccessStatus.UNKNOWN
 		
 		if data[key_entry].has("success_status") and typeof(data[key_entry]["success_status"]) == TYPE_INT:
 			status = data[key_entry]["success_status"]
@@ -136,14 +136,14 @@ func clear() -> void:
 
 class NFQuestLogStatusEntry extends RefCounted:
 	## The status of the entry.
-	var success_status: QuestManager.SuccessStatus = QuestManager.SuccessStatus.UNKNOWN
+	var success_status: NFQuestManager.SuccessStatus = NFQuestManager.SuccessStatus.UNKNOWN
 	var _flags: int = 0:
 		set(f):
 			if _flags == 0:
 				_flags = f
 	
 	
-	func _init(status: QuestManager.SuccessStatus = QuestManager.SuccessStatus.UNKNOWN) -> void:
+	func _init(status: NFQuestManager.SuccessStatus = NFQuestManager.SuccessStatus.UNKNOWN) -> void:
 		success_status = status
 	
 	
@@ -161,7 +161,7 @@ class NFQuestLogEntry extends NFQuestLogStatusEntry:
 	var _entries: Dictionary[StringName, NFQuestLogStageEntry] = {}
 	
 	
-	func _init(entry_id: StringName = &"", status: QuestManager.SuccessStatus = QuestManager.SuccessStatus.UNKNOWN) -> void:
+	func _init(entry_id: StringName = &"", status: NFQuestManager.SuccessStatus = NFQuestManager.SuccessStatus.UNKNOWN) -> void:
 		id = entry_id
 		success_status = status
 	
@@ -183,7 +183,7 @@ class NFQuestLogEntry extends NFQuestLogStatusEntry:
 			if (key_type != TYPE_STRING_NAME and key_type != TYPE_STRING) or typeof(dict[key_entry]) != TYPE_DICTIONARY:
 				continue
 			
-			var success: QuestManager.SuccessStatus = QuestManager.SuccessStatus.UNKNOWN
+			var success: NFQuestManager.SuccessStatus = NFQuestManager.SuccessStatus.UNKNOWN
 			if dict[key_entry].has("success_status") and typeof(dict[key_entry]["success_status"]) == TYPE_INT:
 				success = dict[key_entry]["success_status"]
 			else:
@@ -208,7 +208,7 @@ class NFQuestLogEntry extends NFQuestLogStatusEntry:
 	
 	## Creates an entry with id [param stage_id] unless the entry already exists,
 	## in which [param status] is assigned to it.
-	func set_entry(stage_id: StringName, status: QuestManager.SuccessStatus = QuestManager.SuccessStatus.UNKNOWN) -> NFQuestLogStageEntry:
+	func set_entry(stage_id: StringName, status: NFQuestManager.SuccessStatus = NFQuestManager.SuccessStatus.UNKNOWN) -> NFQuestLogStageEntry:
 		if _entries.has(stage_id):
 			_entries[stage_id].success_status = status
 		else:
@@ -226,12 +226,12 @@ class NFQuestLogEntry extends NFQuestLogStatusEntry:
 		return null
 	
 	
-	## Returns the status of a stage or [enum QuestManager.SuccessStatus.UNKNOWN]
+	## Returns the status of a stage or [enum NFQuestManager.SuccessStatus.UNKNOWN]
 	## if the entry doesn't exist.
-	func get_status(entry_id: StringName) -> QuestManager.SuccessStatus:
+	func get_status(entry_id: StringName) -> NFQuestManager.SuccessStatus:
 		if _entries.has(entry_id):
 			return _entries[entry_id].success_status
-		return QuestManager.SuccessStatus.UNKNOWN
+		return NFQuestManager.SuccessStatus.UNKNOWN
 	
 	
 	## Returns the stage entries as a dictionary.
@@ -267,7 +267,7 @@ class NFQuestLogStageEntry extends NFQuestLogStatusEntry:
 	var _entries: Dictionary[StringName, NFQuestLogStatusEntry] = {}
 	
 	
-	func _init(entry_id: StringName = &"", status: QuestManager.SuccessStatus = QuestManager.SuccessStatus.UNKNOWN) -> void:
+	func _init(entry_id: StringName = &"", status: NFQuestManager.SuccessStatus = NFQuestManager.SuccessStatus.UNKNOWN) -> void:
 		id = entry_id
 		success_status = status
 	
@@ -295,7 +295,7 @@ class NFQuestLogStageEntry extends NFQuestLogStatusEntry:
 	
 	## Creates an entry with id [param objective_id] unless the entry already exists,
 	## in which [param status] is assigned to it.
-	func set_entry(objective_id: StringName, status: QuestManager.SuccessStatus = QuestManager.SuccessStatus.UNKNOWN) -> void:
+	func set_entry(objective_id: StringName, status: NFQuestManager.SuccessStatus = NFQuestManager.SuccessStatus.UNKNOWN) -> void:
 		if _entries.has(objective_id):
 			_entries[objective_id].success_status = status
 		else:
@@ -311,12 +311,12 @@ class NFQuestLogStageEntry extends NFQuestLogStatusEntry:
 		return null
 	
 	
-	## Returns the status of an objective or [enum QuestManager.SuccessStatus.UNKNOWN]
+	## Returns the status of an objective or [enum NFQuestManager.SuccessStatus.UNKNOWN]
 	## if the entry doesn't exist.
-	func get_status(objective_id: StringName) -> QuestManager.SuccessStatus:
+	func get_status(objective_id: StringName) -> NFQuestManager.SuccessStatus:
 		if _entries.has(objective_id):
 			return _entries[objective_id].success_status
-		return QuestManager.SuccessStatus.UNKNOWN
+		return NFQuestManager.SuccessStatus.UNKNOWN
 	
 	
 	## Returns the logged objectives data as a dictionary.

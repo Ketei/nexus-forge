@@ -1,6 +1,6 @@
-class_name EditorDialogParser
-extends DialogParser
-## The [DialogParser] that NexusForge will use while its running in the editor.
+class_name NFEditorDialogParser
+extends NFDialogParser
+## The [NFDialogParser] that NexusForge will use while its running in the editor.
 ##
 ## The resources parsed by this object are [EditorDiscourseDialog] which
 ## contain a different structure from the released files.[br]
@@ -315,7 +315,7 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 			var choices: Array[Dictionary] = []
 			
 			for choice:Dictionary in metadata["options"]:
-				var weight: int = DialogParser.RANDOM_DEFAULT_WEIGHT if choice["input_connections"]["weight"]["target_node_uuid"].is_empty() else _get_data(choice["input_connections"]["weight"]["target_node_uuid"])
+				var weight: int = NFDialogParser.RANDOM_DEFAULT_WEIGHT if choice["input_connections"]["weight"]["target_node_uuid"].is_empty() else _get_data(choice["input_connections"]["weight"]["target_node_uuid"])
 				if weight == 0:
 					continue
 				choices.append({

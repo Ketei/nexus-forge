@@ -20,7 +20,7 @@ enum LocalizationType {
 }
 
 ## The types of nodes.
-const NodeType := DialogParser.NodeTypes
+const NodeType := NFDialogParser.NodeTypes
 const LOCALE_STORE_MAX: int = 3
 
 ## The UUID of the entry node.

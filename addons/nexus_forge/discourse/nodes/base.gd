@@ -39,7 +39,7 @@ enum IssueLevel {
 	ERROR = 0,
 	WARNING = 1}
 
-const DialogueNodeType := DialogParser.NodeTypes
+const DialogueNodeType := NFDialogParser.NodeTypes
 
 const COLORS: Dictionary = {
 	"dialog": Color.SEA_GREEN,
