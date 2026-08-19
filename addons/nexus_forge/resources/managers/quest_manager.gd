@@ -8,17 +8,17 @@ extends RefCounted
 ## It also provides methods to get data for storage and restoring it.
 
 
-## Emmited when a quest is started via [method start_quest].
+## Emitted when a quest is started via [method start_quest].
 signal quest_started(quest_id: StringName)
-## Emmited when a quest progresses. Emmited too when a quest starts with [param to_stage]
+## Emitted when a quest progresses. Emitted too when a quest starts with [param to_stage]
 ## being the entry stage.
 signal quest_progressed(quest_id: StringName, to_stage: StringName)
-## Emmited when a quest finishes either automatically or by using [method complete_quest]
+## Emitted when a quest finishes either automatically or by using [method complete_quest]
 signal quest_finished(quest_id: StringName)
 
-## Emmited when a quest stage is completed.
+## Emitted when a quest stage is completed.
 signal stage_completed(quest_id: StringName, stage_id: StringName, successfully: bool)
-## Emmited when a stage objective is completed.
+## Emitted when a stage objective is completed.
 signal objective_completed(quest_id: StringName, stage_id: StringName, objective_id: StringName, successfully: bool)
 
 ## Emits when a quest/stage/objective is completed either successfully or not.
@@ -56,7 +56,17 @@ func _get(property: StringName) -> Variant:
 ## And it'll auto-advance to the failed quest path if [param auto_advance_stages]
 ## was enabled.
 func start_quest(quest: Quest, auto_advance_stages: bool) -> bool:
-	if _active_quests.has(quest.id) or not quest.has_stage(quest.entry_stage):
+	if _active_quests.has(quest.id):
+		NFPluginGameHandler._log_msg(
+				"odyssey",
+				"Coulnd't start quest. Quest with ID '%s' is already active." % quest.id,
+				NFPluginGameHandler._LogLevel.ERROR)
+		return false
+	elif not quest.has_stage(quest.entry_stage):
+		NFPluginGameHandler._log_msg(
+				"odyssey",
+				"Coulnd't start quest '%s'. Quest doesn't have starting stage '%s'" % [quest.id, quest.entry_stage],
+				NFPluginGameHandler._LogLevel.ERROR)
 		return false
 	
 	if _quest_modifiers.has(quest.id) and not quest._mods_applied:
@@ -81,6 +91,10 @@ func start_quest(quest: Quest, auto_advance_stages: bool) -> bool:
 	quest_progressed.emit(quest.id, quest.entry_stage)
 	
 	if not new_entry.set_stage(quest.entry_stage, _static_progress):
+		NFPluginGameHandler._log_msg(
+				"odyssey",
+				"Failed to set stage '%s' for quest with ID '%s'" % [quest.entry_stage, quest.id],
+				NFPluginGameHandler._LogLevel.ERROR)
 		return false
 	
 	_check_stage_auto_advance(quest.id)
@@ -106,8 +120,9 @@ func add_quest_resource(quest: Quest, auto_advance_stages: bool, apply_mods: boo
 	new_entry.auto_advance_stages = auto_advance_stages
 	new_entry.current_stage = quest.entry_stage
 	new_entry._flags = BitUtils.set_bit_index(0, 0, true)
-	
 	_active_quests[quest.id] = new_entry
+	new_entry.objective_state_changed.connect(_on_quest_objective_state_changed)
+	
 	return true
 
 
@@ -170,6 +185,7 @@ func restore_state(state_data: Dictionary) -> void:
 			new_entry.auto_advance_stages = auto_advance
 			new_entry._flags = BitUtils.set_bit_index(0, 0, true)
 			_active_quests[key] = new_entry
+			new_entry.objective_state_changed.connect(_on_quest_objective_state_changed)
 		
 		var valid_progress: Dictionary[StringName, Dictionary] = {}
 		
@@ -200,7 +216,7 @@ func restore_state(state_data: Dictionary) -> void:
 			if not obj_progress.is_empty():
 				valid_progress[obj_id] = obj_progress
 		
-		_active_quests[key].set_stage(state_data[key]["current_stage"])
+		_active_quests[key].set_stage(state_data[key]["current_stage"], _static_progress, false)
 		_active_quests[key].set_objectives_state(valid_progress)
 
 
@@ -313,7 +329,7 @@ func set_objective_progress_of(quest: StringName, key: String, value: Variant) -
 ## completed successfully it'll continue to the next stage.
 ## [b]Note:[/b] Failing a required objective means that an auto-advancing quest
 ## will never progress and [signal QuestManager.stage_completed] won't be 
-## emmited if all objectives were completed so it must be progressed using 
+## emitted if all objectives were completed so it must be progressed using 
 ## [method QuestManager.complete_stage].
 func complete_objective(quest_id: StringName, stage_id: StringName, objective_id: StringName, success: bool) -> void:
 	if not _active_quests.has(quest_id) or not _active_quests[quest_id].resource.has_stage(stage_id) or not _active_quests[quest_id].resource.get_stage(stage_id).has_objective(objective_id):
@@ -332,20 +348,7 @@ func complete_objective(quest_id: StringName, stage_id: StringName, objective_id
 	_set_stage_complete(quest_id, stage_id, true)
 	stage_completed.emit(quest_id, stage_id, true)
 	
-	if next_stage.is_empty():
-		_set_quest_complete(quest_id, true)
-		_active_quests.erase(quest_id)
-		quest_finished.emit(quest_id)
-	else:
-		if entry.set_stage(next_stage, _static_progress):
-			quest_progressed.emit(quest_id, next_stage)
-			if not _static_progress.is_empty():
-				entry._scan_for_completed_objectives()
-		else:
-			NFPluginGameHandler._log_msg(
-					"odyssey - quest manager",
-					"Stage '%s' on quest '%s' not found." % [next_stage, quest_id],
-					NFPluginGameHandler._LogLevel.ERROR)
+	_check_stage_auto_advance(quest_id)
 
 
 ## Forces the completion of the [param stage_id] with a [param success] status.[br]
@@ -374,8 +377,6 @@ func complete_stage(quest_id: StringName, stage_id: StringName, success: bool) -
 	else:
 		if entry.set_stage(next_stage, _static_progress):
 			quest_progressed.emit(quest_id, next_stage)
-			if not _static_progress.is_empty():
-				entry._scan_for_completed_objectives()
 		else:
 			NFPluginGameHandler._log_msg(
 					"odyssey - quest manager",
@@ -476,28 +477,7 @@ func _on_quest_objective_state_changed(quest_id: StringName, stage_id: StringNam
 		_set_objective_complete(quest_id, stage_id, objective_id, true)
 		objective_completed.emit(quest_id, stage_id, objective_id, true)
 	
-	if not entry.auto_advance_stages or not entry.can_complete_stage():
-		return
-	
-	var next_stage: StringName = entry.resource.get_stage(stage_id).success_stage_id
-	
-	_set_stage_complete(quest_id, stage_id, true)
-	stage_completed.emit(quest_id, stage_id, true)
-	
-	if next_stage.is_empty():
-		_set_quest_complete(quest_id, true)
-		_active_quests.erase(quest_id)
-		quest_finished.emit(quest_id)
-	else:
-		if entry.set_stage(next_stage, _static_progress):
-			quest_progressed.emit(quest_id, next_stage)
-			if not _static_progress.is_empty():
-				entry._scan_for_completed_objectives()
-		else:
-			NFPluginGameHandler._log_msg(
-					"odyssey - quest manager",
-					"Stage '%s' on quest '%s' not found." % [next_stage, quest_id],
-					NFPluginGameHandler._LogLevel.ERROR)
+	_check_stage_auto_advance(quest_id)
 
 
 func _check_stage_auto_advance(quest_id: StringName) -> void:
@@ -755,15 +735,15 @@ class NFQuestEntry extends RefCounted:
 				_flags = f
 	
 	
-	func set_stage(stage_id: StringName, static_progress: Dictionary[String, Variant] = {}) -> bool:
+	func set_stage(stage_id: StringName, static_progress: Dictionary[String, Variant] = {}, initialize_stage: bool = true) -> bool:
 		if resource == null:
 			return false
-		elif not resource.has_stage(current_stage):
+		elif not resource.has_stage(stage_id):
 			return false
 		elif current_stage == stage_id:
 			return true
 		
-		var stage: QuestStage = resource.get_stage(current_stage)
+		var stage: QuestStage = resource.get_stage(stage_id)
 		_clear_trackers()
 		
 		for objective_id in stage.objectives():
@@ -776,7 +756,9 @@ class NFQuestEntry extends RefCounted:
 			_objective_tracker[objective_id] = progress_tracker
 			progress_tracker.state_updated.connect(_on_objective_state_changed)
 		
-		if not static_progress.is_empty():
+		_current_stage = stage_id
+		
+		if initialize_stage:
 			_initialize_stage()
 		
 		return true
@@ -801,6 +783,7 @@ class NFQuestEntry extends RefCounted:
 	func can_complete_stage(exclude_optional: bool = true) -> bool:
 		if _is_stage_initializing:
 			return false
+		
 		
 		for obj_id in _objective_tracker:
 			if not _objective_tracker[obj_id].is_required and exclude_optional:
@@ -856,12 +839,15 @@ class NFQuestEntry extends RefCounted:
 				valid_state[entry] = valid_entries
 		# ------------------
 		
-		for valid_entry in valid_state:
-			if _objective_tracker.has(valid_entry):
-				var tracker: NFObjectiveProgressTracker = _objective_tracker[valid_entry]
-				tracker._assign_progress(valid_state[valid_entry])
-				if not tracker._is_complete and tracker.can_complete():
-					tracker._is_complete = true
+		
+		for tracker_id in _objective_tracker:
+			var tracker: NFObjectiveProgressTracker = _objective_tracker[tracker_id]
+		
+			if valid_state.has(tracker_id):
+				tracker._assign_progress(valid_state[tracker_id])
+			
+			if not tracker._is_complete and tracker.can_complete():
+				tracker._is_complete = true
 	
 	
 	func _on_objective_state_changed(objective_id: StringName) -> void:
@@ -884,7 +870,7 @@ class NFObjectiveProgressTracker extends RefCounted:
 	var progress: Dictionary[String, Variant] = {
 		"inventory/apples": 2,
 		"inventory/oranges": 0}
-	var _requirements: Dictionary[String, Variant] = {
+	var _requirements: Dictionary[String, Dictionary] = {
 		"inventory/apples": {"operator": OP_GREATER_EQUAL, "value": 5},
 		"inventory/oranges": {"operator": OP_GREATER_EQUAL, "value": 1},
 		"time": {"operator": OP_LESS_EQUAL, "value": 720}}
@@ -940,12 +926,10 @@ class NFObjectiveProgressTracker extends RefCounted:
 	func _are_requirements_met() -> bool:
 		for entry in _requirements:
 			var current_progress_value = progress[entry] if progress.has(entry) else _get_default_value(_requirements[entry]["value"])
-			
 			if typeof(current_progress_value) == TYPE_NIL:
 				return false
 			elif not _perform_comparison(current_progress_value, _requirements[entry]["operator"], _requirements[entry]["value"]):
 				return false
-		
 		return true
 	
 	
@@ -971,7 +955,11 @@ class NFObjectiveProgressTracker extends RefCounted:
 			OP_GREATER_EQUAL:
 				return active_value >= target_value
 			_:
-				return true
+				NFPluginGameHandler._log_msg(
+						"odyssey - evaluator",
+						"Invalid operator '%s' used in requirement comparison." % operator,
+						NFPluginGameHandler._LogLevel.ERROR)
+				return false
 	
 	
 	func _get_default_value(of_variant: Variant) -> Variant:
