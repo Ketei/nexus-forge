@@ -213,7 +213,10 @@ func _do_set_race_description(species: StringName, new_description: String) -> v
 
 
 func _on_desc_text_focus_lost() -> void:
-	var old_desc: String = race_desc_txt_edt.get_meta(&"old_value", "")
+	if not race_desc_txt_edt.editable:
+		return
+	
+	var old_desc: String = race_desc_txt_edt.get_meta(&"old_value")
 	var new_desc: String = race_desc_txt_edt.text
 	
 	if new_desc == old_desc:

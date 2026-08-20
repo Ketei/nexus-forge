@@ -1231,6 +1231,9 @@ func _on_name_line_edit_toggled(toggled: bool, line: LineEdit, type: int) -> voi
 
 
 func _on_text_edit_focus_lost(text: TextEdit) -> void:
+	if not text.editable:
+		return
+	
 	var mode: int = 0
 	
 	if text == stat_desc_txt_edt:
