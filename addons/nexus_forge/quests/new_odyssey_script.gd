@@ -456,6 +456,9 @@ func set_ui_enabled(enabled: bool) -> void:
 	add_bool_button.disabled = disabled
 	add_string_button.disabled = disabled
 	add_dict_button.disabled = disabled
+	
+	search_event_ln_edt.editable = enabled
+	custom_data_search_line.editable = enabled
 
 
 func update_crumbs_label() -> void:
@@ -625,6 +628,8 @@ func display_quest(quest_id: int) -> void:
 	if quest_resource != null:
 		save_current_quest()
 	
+	quest_search_ln_edit.clear()
+	
 	var quest: Quest = _open_files[quest_id]["resource"]
 	quest_resource = quest
 	undo = _open_files[quest_id]["quest_undo"]
@@ -651,6 +656,8 @@ func load_quest_data() -> void:
 	
 	selected_stage = &""
 	selected_objective = &""
+	search_event_ln_edt.clear()
+	custom_data_search_line.clear()
 	
 	update_crumbs_label()
 	
@@ -690,6 +697,9 @@ func load_stage_data(stage_id: StringName) -> void:
 	
 	quest_mode = QuestModeType.STAGE
 	set_quest_mode(QuestModeType.STAGE)
+	
+	search_event_ln_edt.clear()
+	custom_data_search_line.clear()
 	
 	title_ln_edt.text = stage.title
 	title_ln_edt.set_meta(&"old_value", stage.title)
@@ -735,6 +745,9 @@ func load_objective_data(stage_id: StringName, objective_id: StringName) -> void
 	
 	quest_mode = QuestModeType.OBJECTIVE
 	set_quest_mode(QuestModeType.OBJECTIVE)
+	
+	search_event_ln_edt.clear()
+	custom_data_search_line.clear()
 	
 	title_ln_edt.text = objective.title
 	title_ln_edt.set_meta(&"old_value", objective.title)
@@ -1273,6 +1286,9 @@ func _do_set_title_of(stage: StringName, objective: StringName, title: String) -
 
 
 func _on_description_focus_lost() -> void:
+	if undo == null:
+		return
+	
 	var new_value: String = description_txt_edt.text
 	var old_value: String = description_txt_edt.get_meta(&"old_value")
 	
