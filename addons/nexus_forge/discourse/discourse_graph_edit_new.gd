@@ -29,7 +29,7 @@ signal browse_character_requested(target_control: LineEdit)
 signal paste_nodes_requested
 
 # Enum to differentiate dialog nodes
-const DialogNodes = DialogParser.NodeTypes
+const DialogNodes = NFDialogParser.NodeTypes
 # Enum to differentiate connection types
 const ConnectionType = DiscourseGraphNode.SlotConnectionType
 # Enum to differentiate port directions

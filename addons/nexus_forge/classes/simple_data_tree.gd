@@ -526,10 +526,6 @@ func _do_update_item_data(path: String, data: Variant) -> void:
 	var new_type: int = _data_type_to_internal(typeof(data))
 	
 	if new_type != item.get_metadata(1):
-		if item.get_metadata(1) == TYPE_DICTIONARY:
-			var btn_idx: int = item.get_button_by_id(1, ButtonIds.TYPE_MENU)
-			if btn_idx != -1:
-				item.erase_button(1, btn_idx)
 		match new_type:
 			TYPE_INT:
 				item.set_icon(0, ICON_INT)
@@ -765,7 +761,8 @@ func on_data_edited() -> void:
 		var emit_update: bool = true
 		match edited.get_metadata(1):
 			TYPE_INT, TYPE_FLOAT:
-				if edited.get_metadata(0)["value"] != int(edited.get_range(1)) if edited.get_metadata(1) == TYPE_INT else edited.get_range(1):
+				var current_val = int(edited.get_range(1)) if edited.get_metadata(1) == TYPE_INT else edited.get_range(1)
+				if edited.get_metadata(0)["value"] != current_val:
 					edited.get_metadata(0)["value"] = to
 				else:
 					emit_update = false

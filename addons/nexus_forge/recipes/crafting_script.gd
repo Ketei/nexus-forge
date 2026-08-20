@@ -855,7 +855,7 @@ func _set_ingredient_metadata_id(on_recipe: StringName, on_input: bool, on_ingre
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_PREDELETE:
-		if undo != null and is_instance_valid(undo):
+		if is_instance_valid(undo):
 			undo.clear_history()
 			undo.free()
 			undo = null

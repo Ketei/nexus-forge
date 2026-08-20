@@ -140,7 +140,7 @@ func _get_variables_for(path: String) -> Array[Dictionary]:
 	if variables._variables_resource == null:
 		return paths
 	
-	var data: BlackboardData = variables._variables_resource
+	var data: NFBlackboardData = variables._variables_resource
 	
 	for folder_path in data.folders():
 		if folder_path.begins_with(path):

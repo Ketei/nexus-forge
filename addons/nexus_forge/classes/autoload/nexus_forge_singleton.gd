@@ -221,11 +221,11 @@ const _SETTINGS_PATHS: Dictionary[String, Dictionary] = {
 
 ## The dialog parser in charge of loading dialogs.[br]
 ## The object notifies of dialog data and events through signals.
-var Discourse: DialogParser
+var Discourse: NFDialogParser
 ## An object containing globally-accessible variables.[br]
 ## The variables are nested into a folder-like structure which can also contain
 ## folders.
-var Blackboard: BlackboardData
+var Blackboard: NFBlackboardData
 
 ## An object for registering and loading [CharacterSheet]s and applying
 ## modifications to them.
@@ -242,7 +242,7 @@ var Skills: NFSkillManager
 ## A resource containing the game's species data.
 var Species: NFSpeciesManager
 ## A resource containing the game's quests data.
-var Quests: QuestManager
+var Quests: NFQuestManager
 ## A resource containing the game's currency data and helper methods to manage
 ## different currency systems.
 var Currency: NFCurrencyManager
@@ -293,7 +293,7 @@ func _ready() -> void:
 			get_setting_path("variables"), "")
 	if not blackboard_path.is_empty() and ResourceLoader.exists(blackboard_path):
 		var res_pre: Resource = load(blackboard_path)
-		if res_pre is BlackboardData:
+		if res_pre is NFBlackboardData:
 			Blackboard = res_pre
 		else:
 			_log_msg(
@@ -390,12 +390,12 @@ func _ready() -> void:
 	
 	if Discourse == null:
 		if instantiate_disabled or use_discourse:
-			Discourse = EditorDialogParser.new() if OS.has_feature("editor") else DialogParser.new()
+			Discourse = NFEditorDialogParser.new() if OS.has_feature("editor") else NFDialogParser.new()
 			if use_discourse:
 				Discourse.generate_locale_map()
 
 	if Blackboard == null:
-		Blackboard = BlackboardData.new()
+		Blackboard = NFBlackboardData.new()
 	
 	if Stats == null and instantiate_disabled:
 		Stats = NFStatManager.new()
@@ -439,7 +439,7 @@ func _ready() -> void:
 									"Failed to load NexusForge settings",
 									NFPluginGameHandler._LogLevel.WARNING)
 	if Quests == null and ( use_quests or instantiate_disabled ):
-		Quests = QuestManager.new()
+		Quests = NFQuestManager.new()
 	if Species == null and instantiate_disabled:
 		Species = NFSpeciesManager.new()
 	if Items == null and instantiate_disabled:

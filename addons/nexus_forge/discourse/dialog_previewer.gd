@@ -28,7 +28,7 @@ func _ready() -> void:
 	var success: bool = false
 	
 	if NexusForge.Discourse == null:
-		NexusForge.Discourse = EditorDialogParser.new()
+		NexusForge.Discourse = NFEditorDialogParser.new()
 	
 	var empty_path: bool = false
 	var empty_locale: bool = false

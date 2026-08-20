@@ -39,7 +39,7 @@ enum IssueLevel {
 	ERROR = 0,
 	WARNING = 1}
 
-const DialogueNodeType := DialogParser.NodeTypes
+const DialogueNodeType := NFDialogParser.NodeTypes
 
 const COLORS: Dictionary = {
 	"dialog": Color.SEA_GREEN,
@@ -77,6 +77,14 @@ var graph_icon: Texture2D = null:
 var _icon_rect: TextureRect = null
 var _input_nodes: Array[Dictionary] = []
 var _output_nodes: Array[Dictionary] = []
+
+
+static func _static_init() -> void:
+	var all_classes: Array[Dictionary] = ProjectSettings.get_global_class_list()
+	for class_entry in all_classes:
+		if class_entry["class"] == "DiscourseAPI":
+			api_path = class_entry["path"]
+			break
 
 
 func _init(uuid: StringName = &"", theme_variant: StringName = &"", with_duplicate: bool = true, with_close: bool = true, localization: bool = false) -> void:

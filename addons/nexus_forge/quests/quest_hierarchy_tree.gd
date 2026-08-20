@@ -2,7 +2,7 @@
 extends Tree
 
 
-signal quest_selected(quest: StringName)
+signal quest_selected
 signal stage_selected(stage: StringName)
 signal objective_selected(of_stage: StringName, objective: StringName)
 
@@ -13,17 +13,15 @@ signal quest_id_changed(from: StringName, to: StringName)
 signal stage_id_changed(from: StringName, to: StringName)
 signal objective_id_changed(on_stage: StringName, from: StringName, to: StringName)
 
-signal objective_rearranged(from_stage: StringName, to_stage: StringName, objective_id: StringName)
-
-signal stage_erased(stage_id: StringName)
-signal objective_erased(from_stage: StringName, objective_id: StringName)
-
 signal entry_stage_selected(stage_id: StringName)
 
 signal stage_duplicated(from: StringName, duplicate_id: StringName)
 signal objective_duplicated(from_stage: StringName, objective: StringName, duplicate_id: StringName)
 
-signal tree_changed
+signal stage_moved(stage_id: StringName, from_index: int, to_index: int)
+signal objective_moved(objective_id: StringName, from_stage: StringName, from_index: int, to_stage: StringName, to_index: int)
+signal stage_erased(stage_id: StringName, index: int, objectives: Array[String])
+signal objective_erased(from_stage: StringName, objective_id: StringName, index: int)
 
 
 enum ItemType {
@@ -63,7 +61,7 @@ func ready_plugin() -> void:
 	quest_popup.add_item("Set as entry", PopupItemID.SET_ENTRY)
 	quest_popup.id_pressed.connect(_on_popup_id_pressed)
 	
-	item_mouse_selected.connect(_on_item_clicked, CONNECT_DEFERRED)
+	item_mouse_selected.connect(_on_item_clicked)
 	button_clicked.connect(_on_button_clicked)
 	item_edited.connect(_on_item_edited)
 
@@ -77,7 +75,7 @@ func _get_drag_data(at_position: Vector2) -> Variant:
 	preview.text = "   " + item.get_text(0)
 	set_drag_preview(preview)
 	
-	return {"type": "quest_item", "item": item}#, "origin_stage": item.get_parent().get_metadata(0)["id"]}
+	return {"type": "quest_item", "item": item}
 
 
 func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
@@ -118,41 +116,159 @@ func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
 func _drop_data(at_position: Vector2, data: Variant) -> void:
 	var on_item: TreeItem = get_item_at_position(at_position)
 	var section: int = get_drop_section_at_position(at_position)
-	var item_count: int = 0# data["item"].get_parent().get_child_count()
+	var item: TreeItem = data["item"]
+	
+	var original_parent: TreeItem = item.get_parent()
+	var original_index: int = item.get_index()
+	var item_type: int = item.get_metadata(0)["type"]
+	var item_id: StringName = item.get_metadata(0)["id"]
+	var origin_stage_id: StringName = &""
+	
+	if item_type == ItemType.OBJECTIVE:
+		origin_stage_id = original_parent.get_metadata(0)["id"]
+	
 	if on_item.get_metadata(0)["type"] == ItemType.QUEST:
-		item_count = root.get_child_count()
-		if 1 < item_count and data["item"].get_index() < item_count - 1:
-			data["item"].move_after(root.get_child(item_count - 1))
-			tree_changed.emit()
-	elif on_item.get_metadata(0)["type"] == ItemType.STAGE:
-		if section == 0: # on
-			var is_changed: bool = data["item"].get_parent() != on_item
-			var origin_stage: String = data["item"].get_parent().get_metadata(0)["id"]
-			data["item"].get_parent().remove_child(data["item"])
-			on_item.add_child(data["item"])
-			if is_changed:
-				objective_rearranged.emit(origin_stage, on_item.get_metadata(0)["id"], data["item"].get_metadata(0)["id"])
+		var item_count: int = root.get_child_count()
+		if 1 < item_count and item.get_index() < item_count - 1:
+			item.move_after(root.get_child(item_count - 1))
+	elif on_item.get_metadata(0)["type"] == ItemType.STAGE: # Moving an objective
+		if section == 0: # Dropped ON a stage (Objective reassignment)
+			original_parent.remove_child(item)
+			on_item.add_child(item)
 		elif section == -1: # Above
-			data["item"].move_before(on_item)
-			tree_changed.emit()
+			item.move_before(on_item)
 		elif section == 1: # Below
-			data["item"].move_after(on_item)
-			tree_changed.emit()
+			item.move_after(on_item)
 	else:
 		if section == 1:
-			data["item"].move_after(on_item)
+			item.move_after(on_item)
 		else:
-			data["item"].move_before(on_item)
-		tree_changed.emit()
-		
-		
-		#var target: TreeItem = on_item.get_parent()
-		#data["item"].get_parent().remove_child(data["item"])
-		#target.add_child(data["item"])
-		#target_stage = target.get_metadata(0)["id"]
-	#sort_single_item(data["item"])
-	#
-	#objective_rearranged.emit(data["origin_stage"], target_stage, data["item"].get_metadata(0)["id"])
+			item.move_before(on_item)
+	
+	var new_parent: TreeItem = item.get_parent()
+	var new_index: int = item.get_index()
+	
+	if item_type == ItemType.STAGE:
+		if original_index != new_index:
+			stage_moved.emit(item_id, original_index, new_index)
+	elif item_type == ItemType.OBJECTIVE:
+		var new_stage_id: StringName = new_parent.get_metadata(0)["id"]
+		if origin_stage_id != new_stage_id or original_index != new_index:
+			objective_moved.emit(item_id, origin_stage_id, original_index, new_stage_id, new_index)
+
+
+func erase_stage(stage_id: StringName) -> void:
+	var stage: TreeItem = get_stage(stage_id)
+	if stage != null:
+		stage.free()
+
+
+func erase_objective(on_stage: StringName, objective_id: StringName) -> void:
+	var objective: TreeItem = get_objective(on_stage, objective_id)
+	if objective != null:
+		objective.free()
+
+
+func get_stage(stage_id: StringName) -> TreeItem:
+	for item in get_root().get_children():
+		if item.get_metadata(0)["id"] == stage_id:
+			return item
+	return null
+
+
+func get_objective(from_stage: StringName, objective_id: StringName) -> TreeItem:
+	var stage: TreeItem = get_stage(from_stage)
+	
+	if stage == null:
+		return null
+	
+	for objective in stage.get_children():
+		if objective.get_metadata(0)["id"] == objective_id:
+			return objective
+	return null
+
+
+func move_objective(objective_id: StringName, from_stage: StringName, to_stage: StringName, to_index: int) -> void:
+	var target: TreeItem = get_stage(to_stage)
+	var origin: TreeItem = get_objective(from_stage, objective_id)
+	
+	if origin == null or target == null or has_id(origin.get_text(0), target, origin):
+		return
+	
+	if target != origin.get_parent():
+		origin.get_parent().remove_child(origin)
+		target.add_child(origin)
+	
+	var child_count: int = target.get_child_count()
+	var max_index: int = child_count - 1
+	
+	if to_index < -child_count or max_index < to_index:
+		NFPluginGameHandler._log_msg(
+				"odyssey - editor",
+				"Failed changing objective '%s' index. Index out of bounds" % objective_id,
+				NFPluginGameHandler._LogLevel.ERROR)
+		return
+	
+	var target_index: int = wrapi(to_index, 0, child_count)
+	var current_index: int = origin.get_index()
+	
+	if current_index != target_index:
+		if target_index == 0:
+			origin.move_before(target.get_first_child())
+		else:
+			if target_index < current_index:
+				target_index -= 1
+			origin.move_after(target.get_child(target_index))
+
+
+func move_stage(stage_id: StringName, to_index: int) -> void:
+	var stage: TreeItem = get_stage(stage_id)
+	
+	if stage == null:
+		return
+	
+	var child_count: int = get_root().get_child_count()
+	var max_index: int = child_count - 1
+	
+	if to_index < -child_count or max_index < to_index:
+		NFPluginGameHandler._log_msg(
+				"odyssey - editor",
+				"Failed changing stage '%s' index. Index out of bounds",
+				NFPluginGameHandler._LogLevel.ERROR)
+		return
+	
+	var target_index: int = wrapi(to_index, 0, child_count)
+	var current_index: int = stage.get_index()
+	
+	if current_index == target_index:
+		return
+	
+	if target_index == 0:
+		stage.move_before(get_root().get_first_child())
+	else:
+		if target_index < current_index:
+			target_index -= 1
+		stage.move_after(get_root().get_child(target_index))
+
+
+func set_objective_id(on_stage: StringName, from: StringName, to: StringName) -> void:
+	var objective: TreeItem = get_objective(on_stage, from)
+	var str_id: String = String(to)
+	
+	if objective == null or has_id(to, objective.get_parent(), objective):
+		return
+	
+	objective.set_text(0, String(to))
+	objective.get_metadata(0)["id"] = to
+
+
+func set_stage_id(from: StringName, to: StringName) -> void:
+	var stage: TreeItem = get_stage(from)
+	var target_id: String = String(to)
+	if stage == null or has_id(target_id, get_root(), stage):
+		return
+	stage.set_text(0, target_id)
+	stage.get_metadata(0)["id"] = to
 
 
 func get_entry_stage() -> StringName:
@@ -173,12 +289,9 @@ func set_entry_stage(stage_id: StringName) -> void:
 
 
 func select_quest(emit_select: bool = true) -> void:
+	root.select(0)
 	if emit_select:
-		root.select(0)
-	else:
-		item_mouse_selected.disconnect(_on_item_clicked)
-		root.select(0)
-		item_mouse_selected.connect(_on_item_clicked, CONNECT_DEFERRED)
+		quest_selected.emit()
 
 
 func set_quest(quest: Quest, select: bool = false, emit_select: bool = true) -> void:
@@ -192,11 +305,11 @@ func set_quest(quest: Quest, select: bool = false, emit_select: bool = true) -> 
 	root.disable_folding = true
 	root.set_icon(0, preload("res://addons/nexus_forge/icons/scroll_full.svg"))
 	root.add_button(
-			0,
-			get_theme_icon("Add", "EditorIcons"),
-			ButtonID.ADD_STAGE,
-			false,
-			"Create stage")
+		0,
+		get_theme_icon("Add", "EditorIcons"),
+		ButtonID.ADD_STAGE,
+		false,
+		"Create stage")
 	root.set_metadata(0, {"id": quest.id, "type": ItemType.QUEST})
 	
 	for stage_id in quest.stages():
@@ -205,11 +318,11 @@ func set_quest(quest: Quest, select: bool = false, emit_select: bool = true) -> 
 		stage_item.set_editable(0, true)
 		stage_item.set_icon(0, preload("res://addons/nexus_forge/icons/sign_icon.svg"))
 		stage_item.add_button(
-				0,
-				get_theme_icon("Add", "EditorIcons"),
-				ButtonID.ADD_OBJECTIVE,
-				false,
-				"Create objective")
+			0,
+			get_theme_icon("Add", "EditorIcons"),
+			ButtonID.ADD_OBJECTIVE,
+			false,
+			"Create objective")
 		stage_item.set_metadata(0, {"id": stage_id, "type": ItemType.STAGE, "is_entry": quest.entry_stage == stage_id})
 		if quest.entry_stage == stage_id:
 			stage_item.set_icon_modulate(0, ENTRY_COLOR)
@@ -221,26 +334,37 @@ func set_quest(quest: Quest, select: bool = false, emit_select: bool = true) -> 
 			objective_item.set_metadata(0, {"id": objective_id, "type": ItemType.OBJECTIVE})
 	
 	if select:
+		root.select(0)
 		if emit_select:
-			root.select(0)
-		else:
-			item_mouse_selected.disconnect(_on_item_clicked)
-			root.select(0)
-			item_mouse_selected.connect(_on_item_clicked, CONNECT_DEFERRED)
+			quest_selected.emit()
 
 
-func add_stage(stage_id: String) -> TreeItem:
+func add_stage(stage_id: String, index: int = -1) -> TreeItem:
 	var stage_item: TreeItem = root.create_child()
 	stage_item.set_text(0, stage_id)
 	stage_item.set_editable(0, true)
 	stage_item.set_icon(0, preload("res://addons/nexus_forge/icons/sign_icon.svg"))
 	stage_item.add_button(
-			0,
-			get_theme_icon("Add", "EditorIcons"),
-			ButtonID.ADD_OBJECTIVE,
-			false,
-			"Create objective")
+		0,
+		get_theme_icon("Add", "EditorIcons"),
+		ButtonID.ADD_OBJECTIVE,
+		false,
+		"Create objective")
 	stage_item.set_metadata(0, {"id": StringName(stage_id), "type": ItemType.STAGE, "is_entry": false})
+	
+	if index != -1:
+		var child_count: int = root.get_child_count()
+		var max_index: int = child_count - 1
+		if RangeUtils.is_between(index, -child_count, max_index):
+			var target_index: int = wrapi(index, 0, child_count)
+			var current_index: int = stage_item.get_index()
+			if current_index != target_index:
+				if target_index == 0:
+					stage_item.move_before(root.get_first_child())
+				else:
+					if target_index < current_index:
+						target_index -= 1
+					stage_item.move_after(root.get_child(target_index))
 	
 	return stage_item
 
@@ -257,15 +381,55 @@ func select_stage(stage_id: StringName, emit_select: bool = true) -> void:
 			return
 
 
-func add_objective(on_item: TreeItem, objective_id: String) -> void:
+func add_objective(on_stage: StringName, objective_id: StringName, index: int = -1) -> void:
+	var stage: TreeItem = get_stage(on_stage)
+	
+	if stage == null or has_id(objective_id, stage):
+		return
+	
+	add_objective_on_tree(stage, objective_id, index)
+
+
+func _restore_objectives(on_stage: StringName, objectives: Array[String]) -> void:
+	var stage: TreeItem = get_stage(on_stage)
+	
+	if stage == null:
+		return
+	
+	for objective in objectives:
+		add_objective_on_tree(stage, objective)
+
+
+func add_objective_on_tree(on_item: TreeItem, objective_id: String, index: int = -1) -> void:
 	var objective_item: TreeItem = on_item.create_child()
 	objective_item.set_text(0, objective_id)
 	objective_item.set_editable(0, true)
 	objective_item.set_icon(0, preload("res://addons/nexus_forge/icons/target_icon.svg"))
 	objective_item.set_metadata(0, {"id": StringName(objective_id), "type": ItemType.OBJECTIVE})
+	
+	if index == -1:
+		return
+	
+	var child_count: int = on_item.get_child_count()
+	var max_index: int = child_count - 1
+	if not RangeUtils.is_between(index, -child_count, max_index):
+		return
+	var target_index: int = wrapi(index, 0, child_count)
+	var current_index: int = objective_item.get_index()
+	if target_index == current_index:
+		return
+	if target_index == 0:
+		objective_item.move_before(on_item.get_first_child())
+	else:
+		if target_index < current_index:
+			target_index -= 1
+		objective_item.move_after(on_item.get_child(target_index))
 
 
 func sort_all() -> void:
+	if root == null:
+		return
+	
 	var stages: Array[TreeItem] = root.get_children()
 	var stage_count: int = stages.size()
 	
@@ -363,7 +527,6 @@ func get_quest_structure() -> Array[Dictionary]:
 
 func set_quest_structure(structure: Array[Dictionary]) -> void:
 	if root == null or structure.is_empty():
-		sort_all()
 		return
 	
 	var stage_ids: Array[String] = []
@@ -426,7 +589,6 @@ func _on_button_clicked(item: TreeItem, _column: int, id: int, mouse_button_inde
 			dialog.use_blacklist = true
 			dialog.title = "Create stage"
 			dialog.line_placeholder_text = "Stage ID"
-			#dialog.character_blacklist.append(" ")
 			for stage in item.get_children():
 				dialog.text_blacklist.append(stage.get_text(0))
 			add_child(dialog)
@@ -440,7 +602,6 @@ func _on_button_clicked(item: TreeItem, _column: int, id: int, mouse_button_inde
 				stage_created.emit(StringName(result[1]))
 			
 			dialog.queue_free()
-			
 		ButtonID.ADD_OBJECTIVE:
 			var dialog := preload("res://addons/nexus_forge/dialogs/lineedit_confirmation_dialog.gd").new()
 			dialog.allow_empty = false
@@ -457,7 +618,7 @@ func _on_button_clicked(item: TreeItem, _column: int, id: int, mouse_button_inde
 			var result: Array = await dialog.dialog_finished
 			
 			if result[0]:
-				add_objective(item, result[1])
+				add_objective_on_tree(item, result[1])
 				objective_created.emit(item.get_metadata(0)["id"], StringName(result[1]))
 			
 			dialog.queue_free()
@@ -469,6 +630,18 @@ func _sort_tree_alphabetically(a: TreeItem, b: TreeItem) -> bool:
 
 func _on_item_clicked(mouse_position: Vector2, mouse_button_index: int) -> void:
 	var selected: TreeItem = get_selected()
+	
+	match selected.get_metadata(0)["type"]:
+		ItemType.QUEST:
+			quest_selected.emit()
+		ItemType.STAGE:
+			stage_selected.emit(selected.get_metadata(0)["id"])
+		ItemType.OBJECTIVE:
+			objective_selected.emit(selected.get_parent().get_metadata(0)["id"], selected.get_metadata(0)["id"])
+	
+	if mouse_button_index != MOUSE_BUTTON_RIGHT:
+		return
+		
 	right_position = mouse_position
 	var add_text: String = "Add"
 	
@@ -476,33 +649,23 @@ func _on_item_clicked(mouse_position: Vector2, mouse_button_index: int) -> void:
 		add_text += " stage"
 	elif selected.get_metadata(0)["type"] == ItemType.STAGE:
 		add_text += " objective"
-	
 	quest_popup.set_item_text(quest_popup.get_item_index(PopupItemID.ADD_ITEM), add_text)
 	
-	match selected.get_metadata(0)["type"]:
-		ItemType.QUEST:
-			quest_selected.emit(selected.get_metadata(0)["id"])
-		ItemType.STAGE:
-			stage_selected.emit(selected.get_metadata(0)["id"])
-		ItemType.OBJECTIVE:
-			objective_selected.emit(selected.get_parent().get_metadata(0)["id"], selected.get_metadata(0)["id"])
+	quest_popup.position = DisplayServer.mouse_get_position()
+	quest_popup.set_item_disabled(
+		quest_popup.get_item_index(PopupItemID.REMOVE_ITEM),
+		selected.get_metadata(0)["type"] == ItemType.QUEST)
+	quest_popup.set_item_disabled(
+		quest_popup.get_item_index(PopupItemID.ADD_ITEM),
+		selected.get_metadata(0)["type"] == ItemType.OBJECTIVE)
+	quest_popup.set_item_disabled(
+		quest_popup.get_item_index(PopupItemID.SET_ENTRY),
+		selected.get_metadata(0)["type"] != ItemType.STAGE)
+	quest_popup.set_item_disabled(
+		quest_popup.get_item_index(PopupItemID.DUPLICATE),
+		selected.get_metadata(0)["type"] == ItemType.QUEST)
 	
-	if mouse_button_index == MOUSE_BUTTON_RIGHT:
-		quest_popup.position = DisplayServer.mouse_get_position()
-		quest_popup.set_item_disabled(
-			quest_popup.get_item_index(PopupItemID.REMOVE_ITEM),
-			selected.get_metadata(0)["type"] == ItemType.QUEST)
-		quest_popup.set_item_disabled(
-			quest_popup.get_item_index(PopupItemID.ADD_ITEM),
-			selected.get_metadata(0)["type"] == ItemType.OBJECTIVE)
-		quest_popup.set_item_disabled(
-				quest_popup.get_item_index(PopupItemID.SET_ENTRY),
-				selected.get_metadata(0)["type"] != ItemType.STAGE)
-		quest_popup.set_item_disabled(
-				quest_popup.get_item_index(PopupItemID.DUPLICATE),
-				selected.get_metadata(0)["type"] == ItemType.QUEST)
-		
-		quest_popup.popup()
+	quest_popup.popup()
 
 
 func _on_popup_id_pressed(id: int) -> void:
@@ -523,10 +686,17 @@ func _on_popup_id_pressed(id: int) -> void:
 		PopupItemID.REMOVE_ITEM:
 			match target.get_metadata(0)["type"]:
 				ItemType.STAGE:
-					stage_erased.emit(target.get_metadata(0)["id"])
+					var objectives: Array[String] = []
+					for objective in target.get_children():
+						objectives.append(objective.get_text(0))
+					stage_erased.emit(target.get_metadata(0)["id"],
+					target.get_index(),
+					objectives)
 					target.free()
 				ItemType.OBJECTIVE:
-					objective_erased.emit(target.get_parent().get_metadata(0)["id"], target.get_metadata(0)["id"])
+					objective_erased.emit(target.get_parent().get_metadata(0)["id"],
+					target.get_metadata(0)["id"],
+					target.get_index())
 					target.free()
 		PopupItemID.SET_ENTRY:
 			if not target.get_metadata(0)["is_entry"]:
@@ -554,10 +724,10 @@ func _on_popup_id_pressed(id: int) -> void:
 				if type == ItemType.STAGE:
 					var dupe_stage: TreeItem = add_stage(result[1])
 					for obj in target.get_children():
-						add_objective(dupe_stage, obj.get_text(0))
+						add_objective_on_tree(dupe_stage, obj.get_text(0))
 					stage_duplicated.emit(target.get_metadata(0)["id"], StringName(result[1]))
 				else:
-					add_objective(target.get_parent(), result[1])
+					add_objective_on_tree(target.get_parent(), result[1])
 					objective_duplicated.emit(target.get_parent().get_metadata(0)["id"], target.get_metadata(0)["id"], StringName(result[1]))
 				
 			dialog.queue_free()

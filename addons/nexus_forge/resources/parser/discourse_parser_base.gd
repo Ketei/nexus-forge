@@ -1,4 +1,4 @@
-class_name DialogParser
+class_name NFDialogParser
 extends RefCounted
 ## The parser that NexusForge will use while its running on exported projects.
 ##

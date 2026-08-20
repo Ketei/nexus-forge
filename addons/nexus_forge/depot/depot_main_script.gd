@@ -173,8 +173,11 @@ func save() -> void:
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_PREDELETE:
-		if categories_container.category_undo != null and is_instance_valid(categories_container.category_undo):
+		if is_instance_valid(categories_container) and is_instance_valid(categories_container.category_undo):
+			categories_container.category_undo.clear_history()
 			categories_container.category_undo.free()
 			categories_container.category_undo = null
-		if items_container.undo != null and is_instance_valid(items_container.undo):
+		if is_instance_valid(items_container) and is_instance_valid(items_container.undo):
+			items_container.undo.clear_history()
 			items_container.undo.free()
+			items_container.undo = null

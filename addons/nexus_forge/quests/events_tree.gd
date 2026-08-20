@@ -2,8 +2,11 @@
 extends IDTree
 
 
-signal item_deleted
-signal data_changed
+signal data_created(path: String, index: int ,data: Variant)
+signal data_moved(from_path: String, from_index: int, to_path: String, to_index: int)
+signal data_renamed(parent_path: String, old_name: String, new_name: String)
+signal data_updated(path: String, old_value: Variant, new_value: Variant)
+signal data_erased(path: String, index: int, data: Variant)
 
 enum ItemType {
 	DATA,
@@ -20,7 +23,8 @@ enum ButtonIds {
 	TYPE_MENU,
 }
 
-const RANGE_MAX: int = 9999
+const RANGE_CEIL: int = 9999
+const RANGE_FLOOR: int = -9999
 const RANGE_FLOAT_STEP: float = 0.01
 
 @export var allow_drag_and_drop: bool = false
@@ -53,6 +57,7 @@ func ready_plugin() -> void:
 	id_cell = 0
 	
 	create_item()
+	
 	set_column_title(0, "Data ID")
 	set_column_title(1, "Data Value")
 	
@@ -131,11 +136,11 @@ func _on_compact_menu_id_pressed(id: int) -> void:
 	else:
 		data_name += "data"
 	
-	add_data(data_name, data_type, data_item)
+	var path: String = add_data(data_name, data_type, data_item)
 	
 	data_item = null
 	
-	data_changed.emit()
+	data_created.emit(path, -1, data_type)
 
 
 func _get_drag_data(at_position: Vector2) -> Variant:
@@ -160,16 +165,15 @@ func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
 	
 	if data.has_all(["tree", "type", "source"]) and typeof(data["source"]) == TYPE_STRING and data["source"] == "data_tree":
 		var target_node: TreeItem = get_item_at_position(at_position)
-		if target_node == data["tree"] or (data["type"] == ItemType.FOLDER and _is_item_child_of(target_node, data["tree"])): #target_node.get_parent() == data["tree"]):
+		if target_node == null:
 			drop_mode_flags = DROP_MODE_DISABLED
 			return false
 		
-		if target_node == null:
+		if target_node == data["tree"] or (data["type"] == ItemType.FOLDER and _is_item_child_of(target_node, data["tree"])):
+			drop_mode_flags = DROP_MODE_DISABLED
 			return false
 		
-		if target_node.get_parent() == get_root():
-			drop_mode_flags = DROP_MODE_ON_ITEM
-		elif target_node.get_metadata(0)["type"] == ItemType.FOLDER:
+		if target_node.get_metadata(0)["type"] == ItemType.FOLDER:
 			drop_mode_flags = DROP_MODE_ON_ITEM + DROP_MODE_INBETWEEN
 		else:
 			drop_mode_flags = DROP_MODE_INBETWEEN
@@ -192,36 +196,145 @@ func _is_item_child_of(item: TreeItem, parent: TreeItem) -> bool:
 	return false
 
 
+func _do_move_item(from: String, to: String, index: int) -> void:
+	var target: TreeItem = null
+	var new_parent: TreeItem = null
+	var current_folder: TreeItem = get_root()
+	
+	var to_slice: PackedStringArray = to.split("/", false)
+	var from_slice: PackedStringArray = from.split("/", false)
+	
+	if to_slice.is_empty() or from_slice.is_empty():
+		return
+	
+	var new_name: String = to_slice[-1]
+	
+	for slice in to_slice.slice(0, -1):
+		var found: bool = false
+		for item in current_folder.get_children():
+			if item.get_metadata(0)["name"] == slice:
+				if item.get_metadata(0)["type"] == ItemType.FOLDER:
+					current_folder = item
+					found = true
+				break
+		if not found:
+			return
+	
+	new_parent = current_folder
+	
+	if new_parent != get_root() and new_parent.get_metadata(0)["type"] != ItemType.FOLDER:
+		return
+	
+	for item in new_parent.get_children():
+		if item.get_metadata(0)["name"] == new_name:
+			return
+	
+	current_folder = get_root()
+	
+	for slice in from_slice:
+		var found: bool = false
+		for item in current_folder.get_children():
+			if item.get_metadata(0)["name"] == slice:
+				current_folder = item
+				found = true
+				break
+		if not found:
+			return
+	
+	target = current_folder
+	
+	target.set_text(0, new_name)
+	target.get_metadata(0)["name"] = new_name
+	
+	if target.get_parent() != new_parent:
+		target.get_parent().remove_child(target)
+		new_parent.add_child(target)
+		if -1 < index and target.get_index() != index:
+			if new_parent.get_child_count() <= 1:
+				return
+			if index == 0:
+				target.move_before(new_parent.get_first_child())
+			else:
+				target.move_after(new_parent.get_child(index - 1))
+
+
+func _is_in_tree(item: TreeItem) -> bool:
+	var current_level: TreeItem = item
+	var root: TreeItem = get_root()
+	
+	while current_level != null:
+		current_level = current_level.get_parent()
+		if current_level == get_root():
+			return true
+	return false
+
+
 func _drop_data(at_position: Vector2, data: Variant) -> void:
 	if not allow_drag_and_drop:
 		return
 	
-	var target: TreeItem = get_item_at_position(at_position)
 	var object: TreeItem = data["tree"]
+	var drop_target: TreeItem = get_item_at_position(at_position)
+	var new_parent: TreeItem = null
+	var from_this_tree: bool = _is_in_tree(object)
+	var original_index: int = object.get_index()
+	var original_path: String = _get_data_path(object)
+	var new_index: int = -1
 	
-	if target == null:
-		var root_count: int = get_root().get_child_count()
-		if object.get_parent() == get_root():
-			if 0 < root_count - 1 and object.get_index() < root_count - 1:
-				object.move_after(get_root().get_child(-1))
-		else:
-			if 0 < root_count:
-				object.move_after(get_root().get_child(-1))
-			else:
-				object.get_parent().remove_child(object)
-				get_root().add_child(object)
+	if drop_target == null:
+		new_parent = get_root()
+		new_index = -1
 	else:
+		var same_parent_shift: bool = from_this_tree and\
+				object.get_parent() == drop_target.get_parent() and\
+				object.get_index() < drop_target.get_index()
 		var drop_position: int = get_drop_section_at_position(at_position)
-		
 		match drop_position:
 			-1: # Above
-				object.move_before(target)
+				new_parent = drop_target.get_parent()
+				new_index = drop_target.get_index()
+				if same_parent_shift:
+					new_index -= 1
 			0: # On
-				object.get_parent().remove_child(object)
-				target.add_child(object)
+				new_index = -1
+				new_parent = drop_target
 			1: # Below
-				object.move_after(target)
-	data_changed.emit()
+				if drop_target.get_metadata(0)["type"] == ItemType.FOLDER and not drop_target.collapsed and 0 < drop_target.get_child_count():
+					new_index = 0
+					new_parent = drop_target
+				else:
+					new_parent = drop_target.get_parent()
+					new_index = drop_target.get_index()
+					if not same_parent_shift:
+						new_index += 1
+	
+	var drop_id: String = object.get_metadata(0)["name"]
+	if _tree_has_id(new_parent, drop_id):
+		drop_id = get_unique_id(new_parent, drop_id, object)
+	var drop_path: String = _get_data_path(new_parent).path_join(drop_id)
+	
+	if from_this_tree: # Data moved
+		if object.get_parent() != new_parent:
+			object.get_parent().remove_child(object)
+			new_parent.add_child(object)
+		if drop_id != object.get_metadata(0)["name"]:
+			object.set_text(0, drop_id)
+			object.get_metadata(0)["name"] = drop_id
+		
+		if new_parent.get_child(new_index) != object:
+			if new_index <= -1:
+				object.move_after(new_parent.get_child(-1))
+			elif new_index == 0:
+				object.move_before(new_parent.get_first_child())
+			else:
+				object.move_after(new_parent.get_child(new_index - 1))
+		
+		data_moved.emit(original_path, original_index, drop_path, new_index)
+	else: # Data created
+		data_created.emit(
+				drop_path,
+				new_index,
+				get_data_cell_data(object))
 
 
 func clear_data() -> void:
@@ -229,51 +342,281 @@ func clear_data() -> void:
 	create_item()
 
 
-func add_data(data_id: String, data: Variant, on_node: TreeItem = get_root(), id_editable: bool = true, value_editable: bool = true, can_delete: bool = true) -> void:
+func _get_data_path(item: TreeItem) -> String:
+	if item == null or item == get_root():
+		return ""
+	
+	var path: String = ""
+	
+	var items: Array[String] = []
+	
+	var current_item: TreeItem = item
+	var root: TreeItem = get_root()
+	
+	while current_item != root and current_item != null:
+		items.append(current_item.get_text(0))
+		current_item = current_item.get_parent()
+	
+	items.reverse()
+	
+	return StringUtils.make_path(items)
+
+
+func _get_data_item(path: String) -> TreeItem:
+	var parts: PackedStringArray = path.split("/", false)
+	if parts.is_empty():
+		return get_root()
+	
+	var current_item: TreeItem = get_root()
+	
+	for slice in parts:
+		var found: bool = false
+		for item in current_item.get_children():
+			if item.get_metadata(0)["name"] == slice:
+				found = true
+				current_item = item
+				break
+		if not found:
+			return null
+	
+	return current_item
+
+
+func _do_add_data(data_path: String, data: Variant, index: int = -1) -> void:
+	var parts: PackedStringArray = data_path.split("/", false)
+	if parts.is_empty():
+		return
+	var data_id: String = parts[-1]
+	if data_id.is_empty():
+		return
+	
+	var current_item: TreeItem = get_root()
+	for slice in parts.slice(0, -1):
+		var found: bool = false
+		for item in current_item.get_children():
+			if item.get_metadata(0)["name"] == slice:
+				current_item = item
+				found = true
+				break
+		if not found:
+			return
+	
+	if current_item == get_root() or current_item.get_metadata(0)["type"] == ItemType.FOLDER:
+		var can_add: bool = true
+		for item in current_item.get_children():
+			if item.get_metadata(0)["name"] == data_id:
+				can_add = false
+				break
+		if can_add:
+			_add_data_to_tree(data_id, data, current_item)
+
+
+func _do_erase_data(data_path: String) -> void:
+	var target: TreeItem = _get_data_item(data_path)
+	
+	if target == null or target == get_root():
+		return
+	
+	target.free()
+
+
+func _undo_erase_data(data_path: String, data: Variant, index: int) -> void:
+	var parts: PackedStringArray = data_path.rsplit("/", false)
+	if parts.is_empty():
+		NFPluginGameHandler._log_msg(
+				"editor - data tree",
+				"Failed to undo data erasure on empty path.",
+				NFPluginGameHandler._LogLevel.WARNING)
+		return
+	
+	var var_id: String = parts[-1]
+	var target: TreeItem = get_root()
+	
+	for path_slice in parts.slice(0, -1):
+		for item in target.get_children():
+			if item.get_metadata(0)["name"] == path_slice:
+				if item.get_metadata(0)["type"] != ItemType.FOLDER:
+					return
+				target = item
+				break
+	
+	for item in target.get_children():
+		if item.get_metadata(0)["name"] == var_id:
+			NFPluginGameHandler._log_msg(
+				"editor - data tree",
+				"Failed to undo data erasure. ID '%s' already used on path '%s'." % [var_id, _get_data_path(item.get_parent())],
+				NFPluginGameHandler._LogLevel.WARNING)
+			return
+	
+	
 	var data_type: int = typeof(data)
+	if data_type == TYPE_DICTIONARY or data_type == TYPE_ARRAY:
+		_add_data_to_tree(var_id, data.duplicate(true), target, index)
+	else:
+		_add_data_to_tree(var_id, data, target, index)
+
+
+func _undo_add_data(data_path: String) -> void:
+	var target: TreeItem = _get_data_item(data_path)
+	
+	if target != null and target != get_root():
+		target.free()
+
+
+func _do_rename_item(path: String, new_name: String) -> void:
+	var item: TreeItem = _get_data_item(path)
+	if item != null and item != get_root():
+		item.set_text(0, new_name)
+		item.get_metadata(0)["name"] = new_name
+
+
+func _data_type_to_internal(type: int) -> int:
+	match type:
+		TYPE_INT, TYPE_FLOAT, TYPE_BOOL, TYPE_STRING:
+			return type
+		_:
+			return TYPE_NIL
+
+
+func _do_update_item_data(path: String, data: Variant) -> void:
+	var item: TreeItem = _get_data_item(path)
+	
+	if item == null or item == get_root() or item.get_metadata(0)["type"] == ItemType.FOLDER:
+		return
+	
+	var new_type: int = _data_type_to_internal(typeof(data))
+	
+	if new_type != item.get_metadata(1):
+		match new_type:
+			TYPE_INT:
+				item.set_icon(0, ICON_INT)
+				item.set_metadata(1, TYPE_INT)
+				item.set_cell_mode(1, TreeItem.CELL_MODE_RANGE)
+				item.set_range_config(1, RANGE_FLOOR, RANGE_CEIL, 1.0)
+				item.set_range(1, data)
+				item.set_editable(1, true)
+			TYPE_FLOAT:
+				item.set_icon(0, ICON_FLOAT)
+				item.set_metadata(1, TYPE_FLOAT)
+				item.set_cell_mode(1, TreeItem.CELL_MODE_RANGE)
+				item.set_range_config(1, RANGE_FLOOR, RANGE_CEIL, RANGE_FLOAT_STEP)
+				item.set_range(1, data)
+				item.set_editable(1, true)
+			TYPE_BOOL:
+				item.set_icon(0, ICON_BOOL)
+				item.set_metadata(1, TYPE_BOOL)
+				item.set_cell_mode(1, TreeItem.CELL_MODE_CHECK)
+				item.set_text(1, "Enabled")
+				item.set_checked(1, data)
+				item.set_editable(1, true)
+			TYPE_STRING:
+				item.set_icon(0, ICON_STRING)
+				item.set_metadata(1, TYPE_STRING)
+				item.set_cell_mode(1, TreeItem.CELL_MODE_STRING)
+				item.set_text(1, data)
+				item.set_editable(1, true)
+			TYPE_DICTIONARY:
+				item.set_icon(0, ICON_FOLDER)
+				item.set_metadata(1, TYPE_DICTIONARY)
+				item.set_selectable(1, false)
+				item.set_editable(0, true)
+				item.set_editable(1, false)
+				item.get_metadata(0)["type"] = ItemType.FOLDER
+				if compact_mode:
+					item.add_button(
+							1,
+							preload("res://addons/nexus_forge/icons/add_variable_icon.svg"),
+							ButtonIds.TYPE_MENU,
+							false,
+							"Add data")
+				else:
+					item.add_button(1, preload("res://addons/nexus_forge/icons/add_int.svg"), ButtonIds.INT, false, "Add Integer")
+					item.add_button(1, preload("res://addons/nexus_forge/icons/add_float.svg"), ButtonIds.FLOAT, false, "Add Float")
+					item.add_button(1, preload("res://addons/nexus_forge/icons/add_bool.svg"), ButtonIds.BOOL, false, "Add Bool")
+					item.add_button(1, preload("res://addons/nexus_forge/icons/add_string.svg"), ButtonIds.STRING, false, "Add String")
+					item.add_button(1, get_theme_icon("FolderCreate", "EditorIcons"), ButtonIds.LEVEL, false, "Add Level")
+				for subdata in data:
+					_add_data_to_tree(
+						subdata,
+						data[subdata],
+						item)
+			_:
+				item.set_icon(0, ICON_VARIABLE)
+				item.set_metadata(1, TYPE_NIL)
+				item.get_metadata(0)["data"] = data
+				item.set_cell_mode(1, TreeItem.CELL_MODE_STRING)
+				item.set_text(1, type_string(typeof(data)))
+				item.set_editable(1, false)
+	else:
+		match new_type:
+			TYPE_INT, TYPE_FLOAT:
+				item.set_range(1, data)
+			TYPE_BOOL:
+				item.set_checked(1, data)
+			TYPE_STRING:
+				item.set_text(1, data)
+			_:
+				item.get_metadata(0)["data"] = data
+	
+	item.get_metadata(0)["value"] = data
+
+
+func add_data(data_id: String, data: Variant, on_node: TreeItem = get_root()) -> String:
 	var new_name: String = get_unique_id(on_node, data_id)
-	var new_data: TreeItem = on_node.create_child()
-	var metadata: Dictionary = {"name": new_name, "type": ItemType.DATA}
+	var data_path: String = _get_data_path(on_node).path_join(new_name)
+	
+	var type: int = typeof(data)
+	
+	_add_data_to_tree(new_name, data, on_node)
+	
+	return data_path
+
+
+func _add_data_to_tree(new_name: String, data: Variant, on_node: TreeItem = get_root(), index: int = -1) -> TreeItem:
+	var data_type: int = typeof(data)
+	var new_data: TreeItem = on_node.create_child(index)
+	var metadata: Dictionary = {"name": new_name, "type": ItemType.DATA, "value": data}
 	
 	new_data.set_cell_mode(0, TreeItem.CELL_MODE_STRING)
 	new_data.set_text(0, new_name)
-	new_data.set_editable(0, id_editable)
+	new_data.set_editable(0, true)
 	
 	match data_type:
 		TYPE_INT:
 			new_data.set_icon(0, ICON_INT)
 			new_data.set_metadata(1, TYPE_INT)
 			new_data.set_cell_mode(1, TreeItem.CELL_MODE_RANGE)
-			new_data.set_range_config(1, -RANGE_MAX, RANGE_MAX, 1.0)
+			new_data.set_range_config(1, RANGE_FLOOR, RANGE_CEIL, 1.0)
 			new_data.set_range(1, data)
-			new_data.set_editable(1, value_editable)
+			new_data.set_editable(1, true)
 		TYPE_FLOAT:
 			new_data.set_icon(0, ICON_FLOAT)
 			new_data.set_metadata(1, TYPE_FLOAT)
 			new_data.set_cell_mode(1, TreeItem.CELL_MODE_RANGE)
-			new_data.set_range_config(1, -RANGE_MAX, RANGE_MAX, RANGE_FLOAT_STEP)
+			new_data.set_range_config(1, RANGE_FLOOR, RANGE_CEIL, RANGE_FLOAT_STEP)
 			new_data.set_range(1, data)
-			new_data.set_editable(1, value_editable)
+			new_data.set_editable(1, true)
 		TYPE_BOOL:
 			new_data.set_icon(0, ICON_BOOL)
 			new_data.set_metadata(1, TYPE_BOOL)
 			new_data.set_cell_mode(1, TreeItem.CELL_MODE_CHECK)
 			new_data.set_text(1, "Enabled")
 			new_data.set_checked(1, data)
-			new_data.set_editable(1, value_editable)
+			new_data.set_editable(1, true)
 		TYPE_STRING:
 			new_data.set_icon(0, ICON_STRING)
 			new_data.set_metadata(1, TYPE_STRING)
 			new_data.set_cell_mode(1, TreeItem.CELL_MODE_STRING)
 			new_data.set_text(1, data)
-			new_data.set_editable(1, value_editable)
+			new_data.set_editable(1, true)
 		TYPE_DICTIONARY:
 			new_data.set_icon(0, ICON_FOLDER)
 			new_data.set_metadata(1, TYPE_DICTIONARY)
 			new_data.set_selectable(1, false)
-			new_data.set_editable(0, id_editable)
+			new_data.set_editable(0, true)
 			new_data.set_editable(1, false)
 			metadata["type"] = ItemType.FOLDER
+			new_data.set_metadata(0, metadata)
 			if compact_mode:
 				new_data.add_button(
 						1,
@@ -288,7 +631,7 @@ func add_data(data_id: String, data: Variant, on_node: TreeItem = get_root(), id
 				new_data.add_button(1, preload("res://addons/nexus_forge/icons/add_string.svg"), ButtonIds.STRING, false, "Add String")
 				new_data.add_button(1, get_theme_icon("FolderCreate", "EditorIcons"), ButtonIds.LEVEL, false, "Add Level")
 			for subdata in data:
-				add_data(subdata, data[subdata], new_data)
+				_add_data_to_tree(subdata, data[subdata], new_data)
 		_:
 			new_data.set_icon(0, ICON_VARIABLE)
 			new_data.set_metadata(1, TYPE_NIL)
@@ -297,10 +640,19 @@ func add_data(data_id: String, data: Variant, on_node: TreeItem = get_root(), id
 			new_data.set_text(1, type_string(data_type))
 			new_data.set_editable(1, false)
 	
-	if can_delete:
-		new_data.add_button(1, TRASH_BIN, ButtonIds.DELETE, false, "Delete Data")
+	new_data.add_button(1, TRASH_BIN, ButtonIds.DELETE, false, "Delete Data")
+	if data_type != TYPE_DICTIONARY:
+		new_data.set_metadata(0, metadata)
 	
-	new_data.set_metadata(0, metadata)
+	return new_data
+
+
+func add_constant_data(new_name: String, data: Variant, on_node: TreeItem = get_root(), index: int = -1) -> void:
+	var valid_name: String = get_unique_id(on_node, new_name)
+	var data_tree: TreeItem = _add_data_to_tree(valid_name, data, on_node, index)
+	data_tree.erase_button(
+			1,
+			data_tree.get_button_by_id(1, ButtonIds.DELETE))
 
 
 func get_data_cell_data(cell: TreeItem) -> Variant:
@@ -314,58 +666,121 @@ func get_data_cell_data(cell: TreeItem) -> Variant:
 		TYPE_STRING:
 			return cell.get_text(1)
 		TYPE_DICTIONARY:
-			var subfolder: Dictionary = {}
+			var subfolder: Dictionary[String, Variant] = {}
 			for sub_data in cell.get_children():
 				subfolder[sub_data.get_text(0)] = get_data_cell_data(sub_data)
 			return subfolder
 		TYPE_NIL:
-			return cell.get_metadata(0)["data"]
+			var type: int = typeof(cell.get_metadata(0)["data"])
+			if type == TYPE_DICTIONARY or type == TYPE_ARRAY:
+				return cell.get_metadata(0)["data"].duplicate(true)
+			else:
+				return cell.get_metadata(0)["data"]
 		_:
 			return null
 
 
 func _on_button_clicked(item: TreeItem, column: int, id: int, mouse_button_index: int) -> void:
+	var data_path: String = ""
+	var data_copy: Variant = null
 	match id:
 		ButtonIds.DELETE:
+			var path: String = _get_data_path(item)
+			var data: Variant = get_data_cell_data(item)
+			var index: int = item.get_index()
+			
 			item.free()
-			item_deleted.emit()
+			data_erased.emit(path, index, data)
+			return
 		ButtonIds.INT:
-			add_data("new_int", 0, item)
+			data_copy = 0
+			data_path = add_data("new_int", 0, item)
 		ButtonIds.FLOAT:
-			add_data("new_float", 0.0, item)
+			data_copy = 0.0
+			data_path = add_data("new_float", 0.0, item)
 		ButtonIds.BOOL:
-			add_data("new_bool", false, item)
+			data_copy = false
+			data_path = add_data("new_bool", false, item)
 		ButtonIds.STRING:
-			add_data("new_string", "", item)
+			data_copy = ""
+			data_path = add_data("new_string", "", item)
 		ButtonIds.LEVEL:
-			add_data("new_folder", {}, item)
+			data_copy = {}
+			data_path = add_data("new_folder", {}, item)
 		ButtonIds.TYPE_MENU:
 			data_item = item
 			mn.position = DisplayServer.mouse_get_position()
 			mn.popup()
 			return
-	data_changed.emit()
+	data_created.emit(
+			data_path,
+			-1,
+			data_copy)
 
 
 func on_data_edited() -> void:
-	if get_edited_column() != 0:
-		data_changed.emit()
+	var edited: TreeItem = get_edited()
+	var path: String = _get_data_path(edited)
+	
+	if get_edited_column() == 1: # Value
+		var from = edited.get_metadata(0)["value"]
+		var to = get_data_cell_data(edited)
+		var emit_update: bool = true
+		
+		match edited.get_metadata(1):
+			TYPE_INT, TYPE_FLOAT:
+				var current_val = int(edited.get_range(1)) if edited.get_metadata(1) == TYPE_INT else edited.get_range(1)
+				if edited.get_metadata(0)["value"] != current_val:
+					edited.get_metadata(0)["value"] = to
+				else:
+					emit_update = false
+			TYPE_BOOL:
+				if edited.get_metadata(0)["value"] != to:
+					edited.get_metadata(0)["value"] = to
+				else:
+					emit_update = false
+			TYPE_STRING:
+				if edited.get_metadata(0)["value"] != to:
+					edited.get_metadata(0)["value"] = to
+				else:
+					emit_update = false
+			TYPE_NIL:
+				if typeof(edited.get_metadata(0)["data"]) == typeof(edited.get_metadata(0)["value"]):
+					if edited.get_metadata(0)["data"] == edited.get_metadata(0)["value"]:
+						emit_update = false
+					else:
+						edited.get_metadata(0)["value"] = to
+		
+		if emit_update:
+			data_updated.emit(
+					path,
+					from,
+					to)
 		return
 	
-	var edited: TreeItem = get_edited()
+	# --- ID updated ---
 	
 	if edited.get_metadata(0)["name"] == edited.get_text(0):
 		return
 	
+	var old_name: String = edited.get_metadata(0)["name"]
 	var new_name: String = get_unique_id(edited.get_parent(), edited.get_text(0), edited)
+	
+	var parent_path: String = _get_data_path(edited.get_parent())
+	var old_path: String = parent_path.path_join(old_name)
+	var new_path: String = parent_path.path_join(new_name)
 	
 	edited.set_text(0, new_name)
 	edited.get_metadata(0)["name"] = new_name
-	data_changed.emit()
+	
+	data_renamed.emit(
+			parent_path,
+			old_name,
+			new_name)
 
 
-func get_data() -> Dictionary[String, Variant]:
-	var rank_data: Dictionary[String, Variant] = {}
+func get_data() -> Dictionary[StringName, Variant]:
+	var rank_data: Dictionary[StringName, Variant] = {}
 	
 	for data_item in get_root().get_children():
 		rank_data[data_item.get_text(0)] = get_data_cell_data(data_item)
@@ -377,9 +792,21 @@ func search_data(data_text: String) -> void:
 	if current_search == data_text:
 		return
 	var is_empty: bool = data_text.is_empty()
-	for data in get_root().get_children():
-		data.visible = _child_has_data(data, data_text) or is_empty or data.get_text(0).containsn(data_text) or _data_cell_to_string(data).containsn(data_text)
+	for folder in get_root().get_children():
+		var data_visible: bool = _child_has_data(folder, data_text) or\
+				is_empty or\
+				folder.get_text(0).containsn(data_text) or\
+				_data_cell_to_string(folder).containsn(data_text)
+		folder.visible = data_visible
+		
 	current_search = data_text
+
+
+func _tree_has_id(item: TreeItem, id: String) -> bool:
+	for tree in item.get_children():
+		if tree.get_metadata(0)["name"] == id:
+			return true
+	return false
 
 
 func _child_has_data(item: TreeItem, text: String) -> bool:
@@ -397,9 +824,8 @@ func _data_cell_to_string(item: TreeItem) -> String:
 		TreeItem.CELL_MODE_STRING:
 			return item.get_text(1)
 		TreeItem.CELL_MODE_RANGE:
-			return str(item.get_range(1))
+			return str(int(item.get_range(1)) if item.get_metadata(1) == TYPE_INT else item.get_range(1))
 		TreeItem.CELL_MODE_CHECK:
 			return "true" if item.is_checked(1) else "false"
 		_:
 			return ""
-	

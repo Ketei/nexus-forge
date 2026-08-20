@@ -1231,6 +1231,9 @@ func _on_name_line_edit_toggled(toggled: bool, line: LineEdit, type: int) -> voi
 
 
 func _on_text_edit_focus_lost(text: TextEdit) -> void:
+	if not text.editable:
+		return
+	
 	var mode: int = 0
 	
 	if text == stat_desc_txt_edt:
@@ -1437,6 +1440,7 @@ func save() -> void:
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_PREDELETE:
-		if undo != null and is_instance_valid(undo):
+		if is_instance_valid(undo):
 			undo.clear_history()
 			undo.free()
+			undo = null

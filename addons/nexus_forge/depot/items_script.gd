@@ -722,6 +722,9 @@ func _do_rename_currency(currency_id: StringName, new_name: String) -> void:
 
 
 func _on_item_description_focus_exited() -> void:
+	if not item_desc_txt_edt.editable:
+		return
+	
 	var old_desc: String = item_desc_txt_edt.get_meta(&"old_value")
 	
 	if item_desc_txt_edt.text == old_desc:
