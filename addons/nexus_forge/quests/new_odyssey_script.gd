@@ -46,6 +46,7 @@ var _open_files: Dictionary[int, Dictionary] = {}
 @onready var search_event_ln_edt: LineEdit = $MainContainer/DataContainer/DataContainer/LogicContainer/EventsContainer/EventsHeader/SearchEventLnEdt
 @onready var requirement_search_ln_edt: LineEdit = $MainContainer/DataContainer/DataContainer/LogicContainer/TargetLogicContainer/RequirementsCotnainer/HeaderContainer/RequirementSearchLnEdt
 @onready var edit_types_btn: Button = $MainContainer/DataContainer/DataContainer/BasicDataContainer/TypeContainer/EditTypesBtn
+@onready var events_header_label: Label = $MainContainer/DataContainer/DataContainer/LogicContainer/EventsContainer/EventsHeader/EventsHeaderLabel
 
 @onready var target_logic_container: VBoxContainer = $MainContainer/DataContainer/DataContainer/LogicContainer/TargetLogicContainer
 @onready var stage_logic_container: VBoxContainer = $MainContainer/DataContainer/DataContainer/LogicContainer/StageLogicContainer
@@ -425,12 +426,16 @@ func set_quest_mode(mode: QuestModeType) -> void:
 	$MainContainer/DataContainer/DataContainer/LogicContainer.collapsed = mode != QuestModeType.OBJECTIVE
 	
 	if mode == QuestModeType.QUEST:
+		events_header_label.text = "Quest Events"
 		set_quest_types()
 	elif mode == QuestModeType.STAGE:
+		events_header_label.text = "Stage Events"
 		set_stage_types()
 	elif mode == QuestModeType.OBJECTIVE:
+		events_header_label.text = "Objective Events"
 		set_objective_types()
 	else:
+		events_header_label.text = "Events"
 		type_opt_btn.clear()
 	
 	set_ui_enabled(mode != QuestModeType.NONE)
@@ -672,10 +677,10 @@ func load_quest_data() -> void:
 	if quest_resource.events.has(&"failure"):
 		failure_events = quest_resource.events[&"failure"]
 	
-	events_tree.add_data(
+	events_tree.add_constant_data(
 			"Success Events",
 			success_events)
-	events_tree.add_data(
+	events_tree.add_constant_data(
 			"Failure Events",
 			failure_events)
 
@@ -712,10 +717,10 @@ func load_stage_data(stage_id: StringName) -> void:
 	if stage.events.has(&"failure"):
 		failure_events = stage.events[&"failure"]
 	
-	events_tree.add_data(
+	events_tree.add_constant_data(
 			"Success Events",
 			success_events)
-	events_tree.add_data(
+	events_tree.add_constant_data(
 			"Failure Events",
 			failure_events)
 	
@@ -758,10 +763,10 @@ func load_objective_data(stage_id: StringName, objective_id: StringName) -> void
 	if objective.events.has(&"failure"):
 		failure_events = objective.events[&"failure"]
 	
-	events_tree.add_data(
+	events_tree.add_constant_data(
 			"Success Events",
 			success_events)
-	events_tree.add_data(
+	events_tree.add_constant_data(
 			"Failure Events",
 			failure_events)
 	
@@ -1023,8 +1028,7 @@ func _on_custom_data_search_text_changed(text: String) -> void:
 
 func _on_search_event_text_changed(text: String) -> void:
 	var clean_text: String = text.strip_edges()
-	for item in events_tree.get_root().get_children():
-		item.visible = events_tree._child_has_data(item, clean_text)
+	events_tree.search_data(clean_text)
 
 
 func _on_search_requirement_text_changed(text: String) -> void:

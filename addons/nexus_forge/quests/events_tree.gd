@@ -792,8 +792,13 @@ func search_data(data_text: String) -> void:
 	if current_search == data_text:
 		return
 	var is_empty: bool = data_text.is_empty()
-	for data in get_root().get_children():
-		data.visible = _child_has_data(data, data_text) or is_empty or data.get_text(0).containsn(data_text) or _data_cell_to_string(data).containsn(data_text)
+	for folder in get_root().get_children():
+		var data_visible: bool = _child_has_data(folder, data_text) or\
+				is_empty or\
+				folder.get_text(0).containsn(data_text) or\
+				_data_cell_to_string(folder).containsn(data_text)
+		folder.visible = data_visible
+		
 	current_search = data_text
 
 
@@ -819,7 +824,7 @@ func _data_cell_to_string(item: TreeItem) -> String:
 		TreeItem.CELL_MODE_STRING:
 			return item.get_text(1)
 		TreeItem.CELL_MODE_RANGE:
-			return str(item.get_range(1))
+			return str(int(item.get_range(1)) if item.get_metadata(1) == TYPE_INT else item.get_range(1))
 		TreeItem.CELL_MODE_CHECK:
 			return "true" if item.is_checked(1) else "false"
 		_:

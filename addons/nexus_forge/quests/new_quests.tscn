@@ -399,7 +399,7 @@ size_flags_stretch_ratio = 2.0
 [node name="EventsHeader" type="HBoxContainer" parent="MainContainer/DataContainer/DataContainer/LogicContainer/EventsContainer" unique_id=1184923930]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="MainContainer/DataContainer/DataContainer/LogicContainer/EventsContainer/EventsHeader" unique_id=1361518937]
+[node name="EventsHeaderLabel" type="Label" parent="MainContainer/DataContainer/DataContainer/LogicContainer/EventsContainer/EventsHeader" unique_id=1361518937]
 layout_mode = 2
 text = "Quest Events"
 
@@ -407,6 +407,7 @@ text = "Quest Events"
 layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "Search Event"
+clear_button_enabled = true
 
 [node name="EventsTree" type="Tree" parent="MainContainer/DataContainer/DataContainer/LogicContainer/EventsContainer" unique_id=277766728]
 layout_mode = 2
