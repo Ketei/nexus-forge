@@ -20,7 +20,7 @@ signal objective_duplicated(from_stage: StringName, objective: StringName, dupli
 
 signal stage_moved(stage_id: StringName, from_index: int, to_index: int)
 signal objective_moved(objective_id: StringName, from_stage: StringName, from_index: int, to_stage: StringName, to_index: int)
-signal stage_erased(stage_id: StringName, index: int)
+signal stage_erased(stage_id: StringName, index: int, objectives: Array[String])
 signal objective_erased(from_stage: StringName, objective_id: StringName, index: int)
 
 
@@ -209,7 +209,7 @@ func move_objective(objective_id: StringName, from_stage: StringName, to_stage: 
 				NFPluginGameHandler._LogLevel.ERROR)
 		return
 	
-	var target_index: int = wrapi(to_index, 0, max_index)
+	var target_index: int = wrapi(to_index, 0, child_count)
 	var current_index: int = origin.get_index()
 	
 	if current_index != target_index:
@@ -237,7 +237,7 @@ func move_stage(stage_id: StringName, to_index: int) -> void:
 				NFPluginGameHandler._LogLevel.ERROR)
 		return
 	
-	var target_index: int = wrapi(to_index, 0, max_index)
+	var target_index: int = wrapi(to_index, 0, child_count)
 	var current_index: int = stage.get_index()
 	
 	if current_index == target_index:
@@ -356,7 +356,7 @@ func add_stage(stage_id: String, index: int = -1) -> TreeItem:
 		var child_count: int = root.get_child_count()
 		var max_index: int = child_count - 1
 		if RangeUtils.is_between(index, -child_count, max_index):
-			var target_index: int = wrapi(index, 0, max_index)
+			var target_index: int = wrapi(index, 0, child_count)
 			var current_index: int = stage_item.get_index()
 			if current_index != target_index:
 				if target_index == 0:
@@ -390,6 +390,16 @@ func add_objective(on_stage: StringName, objective_id: StringName, index: int = 
 	add_objective_on_tree(stage, objective_id, index)
 
 
+func _restore_objectives(on_stage: StringName, objectives: Array[String]) -> void:
+	var stage: TreeItem = get_stage(on_stage)
+	
+	if stage == null:
+		return
+	
+	for objective in objectives:
+		add_objective_on_tree(stage, objective)
+
+
 func add_objective_on_tree(on_item: TreeItem, objective_id: String, index: int = -1) -> void:
 	var objective_item: TreeItem = on_item.create_child()
 	objective_item.set_text(0, objective_id)
@@ -404,7 +414,7 @@ func add_objective_on_tree(on_item: TreeItem, objective_id: String, index: int =
 	var max_index: int = child_count - 1
 	if not RangeUtils.is_between(index, -child_count, max_index):
 		return
-	var target_index: int = wrapi(index, 0, max_index)
+	var target_index: int = wrapi(index, 0, child_count)
 	var current_index: int = objective_item.get_index()
 	if target_index == current_index:
 		return
@@ -676,8 +686,12 @@ func _on_popup_id_pressed(id: int) -> void:
 		PopupItemID.REMOVE_ITEM:
 			match target.get_metadata(0)["type"]:
 				ItemType.STAGE:
+					var objectives: Array[String] = []
+					for objective in target.get_children():
+						objectives.append(objective.get_text(0))
 					stage_erased.emit(target.get_metadata(0)["id"],
-					target.get_index())
+					target.get_index(),
+					objectives)
 					target.free()
 				ItemType.OBJECTIVE:
 					objective_erased.emit(target.get_parent().get_metadata(0)["id"],

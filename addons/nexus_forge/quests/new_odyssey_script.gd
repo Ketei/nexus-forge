@@ -2058,7 +2058,7 @@ func _do_move_objective(objective_id: StringName, from_stage: StringName, to_sta
 			to_index)
 
 
-func _on_stage_erased(stage_id: StringName, index: int) -> void:
+func _on_stage_erased(stage_id: StringName, index: int, objective_order: Array[String]) -> void:
 	var original_stage: QuestStage = quest_resource.get_stage(stage_id)
 	var duplicate_stage: QuestStage = original_stage.duplicate(true)
 	# --- Godot 4.4 Compatibility code ---
@@ -2105,13 +2105,14 @@ func _on_stage_erased(stage_id: StringName, index: int) -> void:
 	undo.add_undo_method(_undo_erase_stage.bind(
 			duplicate_stage,
 			index,
-			targeted_stages))
+			targeted_stages,
+			objective_order))
 	undo.commit_action(false)
 	
 	_on_something_changed()
 
 
-func _undo_erase_stage(stage_res: QuestStage, index: int, pointers_patch: Dictionary[StringName, Dictionary]) -> void:
+func _undo_erase_stage(stage_res: QuestStage, index: int, pointers_patch: Dictionary[StringName, Dictionary], objectives: Array[String]) -> void:
 	if quest_resource.has_stage(stage_res.id):
 		NFPluginGameHandler._log_msg(
 				"odyssey - editor",
@@ -2126,6 +2127,8 @@ func _undo_erase_stage(stage_res: QuestStage, index: int, pointers_patch: Dictio
 	# Godot 4.5, but NexusForge 1.X will support 4.4. On version 2.0, supported
 	# versions will be changed just ahead enough to solve old issues like this.
 	for objective_id in stage_res.objectives():
+		if not objectives.has(String(objective_id)):
+			objectives.append(String(objective_id))
 		var saved_objective: QuestObjective = stage_res.get_objective(objective_id)
 		var restored_objective: QuestObjective = saved_objective.duplicate(true)
 		restored_stage._objectives[objective_id]["objective"] = restored_objective
@@ -2142,6 +2145,7 @@ func _undo_erase_stage(stage_res: QuestStage, index: int, pointers_patch: Dictio
 	
 	quest_resource.add_stage(stage_res)
 	quest_tree.add_stage(stage_res.id, index)
+	quest_tree._restore_objectives(stage_res.id, objectives)
 	
 	update_stage_target_pointers()
 
