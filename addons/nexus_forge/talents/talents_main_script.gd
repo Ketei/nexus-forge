@@ -1440,6 +1440,7 @@ func save() -> void:
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_PREDELETE:
-		if undo != null and is_instance_valid(undo):
+		if is_instance_valid(undo):
 			undo.clear_history()
 			undo.free()
+			undo = null

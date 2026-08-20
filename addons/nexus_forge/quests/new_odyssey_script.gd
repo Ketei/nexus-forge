@@ -2256,6 +2256,8 @@ func _notification(what: int) -> void:
 	if what == NOTIFICATION_PREDELETE:
 		for open_file in _open_files:
 			if is_instance_valid(_open_files[open_file]["quest_undo"]):
+				_open_files[open_file]["quest_undo"].clear_history()
 				_open_files[open_file]["quest_undo"].free()
 			if is_instance_valid(_open_files[open_file]["data_undo"]):
+				_open_files[open_file]["data_undo"].clear_history()
 				_open_files[open_file]["data_undo"].free()
