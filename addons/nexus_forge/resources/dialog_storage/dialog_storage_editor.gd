@@ -499,17 +499,12 @@ func clear() -> void:
 ## Grabs all data, strips it of the editor information and returns its
 ## [DiscourseDialog] version for release. Inteded ONLY to be used by the 
 ## NexusForge export plugin.
-func convert_for_release() -> DiscourseDialog:
+func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> DiscourseDialog:
 	var available_methods: Dictionary = preload("res://addons/nexus_forge/discourse/nodes/method_call_node.gd").get_user_methods()
 	var available_signals: Dictionary = preload("res://addons/nexus_forge/discourse/nodes/signal_node.gd").get_user_signals()
 	
 	var release_dialog: DiscourseDialog = DiscourseDialog.new()
-	var api: DiscourseAPI = DiscourseAPI.new()
-	var api_methods: Dictionary[StringName, Dictionary] = {}
 	var uuid_translator: Dictionary[StringName, StringName] = {}
-	
-	for method in api.get_method_list():
-		api_methods[StringName(method["name"])] = method
 	
 	release_dialog.entry_node = node_data[entry_node]["name"] if node_data.has(entry_node) else &""
 	
@@ -549,8 +544,6 @@ func convert_for_release() -> DiscourseDialog:
 	target_finder.anchor_nodes.assign(anchor_nodes)
 	target_finder.dialog_mergers.assign(dialog_mergers)
 	target_finder.uuid_to_id_conversions.assign(uuid_translator)
-	
-	#var add_id: bool = true
 	
 	for node_id in node_uuids:
 		var export_data: Dictionary[String, Variant] = {

@@ -24,6 +24,7 @@ var quest_ids: Dictionary[StringName, String] = {}
 var export_characters: bool = true
 
 var added_files: Dictionary[String, Variant] = {}
+var discourse_api_methods: Dictionary[StringName, Dictionary] = {}
 
 
 func _get_name() -> String:
@@ -31,18 +32,33 @@ func _get_name() -> String:
 
 
 func _export_begin(_features: PackedStringArray, _is_debug: bool, _path: String, _flags: int) -> void:
+	clear_memory()
+	
+	var discourse_api_found: bool = false
+	var api_path: String = ""
+	
+	var all_classes: Array[Dictionary] = ProjectSettings.get_global_class_list()
+	for class_entry in all_classes:
+		if class_entry["class"] == "DiscourseAPI":
+			api_path = class_entry["path"]
+			break
+	
+	if not api_path.is_empty():
+		var api_script: Script = load(api_path)
+		if api_script != null:
+			for method in api_script.get_script_method_list():
+				discourse_api_methods[StringName(method["name"])] = method
+			discourse_api_found = true
+	
+	if not discourse_api_found:
+		NFPluginGameHandler._log_msg(
+				"export",
+				"Couldn't locate DiscourseAPI script file.",
+				NFPluginGameHandler._LogLevel.ERROR)
+	
 	export_temp_dir = DirAccess.create_temp("godot_nf_plugin")
 	var file_base_path: String = ProjectSettings.get_setting(
 			NFPluginGameHandler.get_setting_path("discourse")).strip_edges()
-	
-	release_files.clear()
-	localization_groups.clear()
-	localization_files.clear()
-	dialog_file_to_id.clear()
-	id_to_localization.clear()
-	character_ids.clear()
-	quest_ids.clear()
-	added_files.clear()
 	
 	export_characters = ProjectSettings.get_setting(
 			NFPluginGameHandler.get_setting_path("characters_id_to_files"),
@@ -246,7 +262,7 @@ func _end_customize_resources() -> void:
 
 
 func process_editor_discourse_dialog(dialog_resource: EditorDiscourseDialog, dialog_id: String, expected_name: String) -> DiscourseDialog:
-	var release_resource: DiscourseDialog = dialog_resource.convert_for_release()
+	var release_resource: DiscourseDialog = dialog_resource.convert_for_release(discourse_api_methods)
 	
 	var localizations: Array[Dictionary] = dialog_resource.generate_localization_files(dialog_id, dialog_path, expected_name, localization_groups)
 	
@@ -317,7 +333,10 @@ func customize_skill_catalog(catalog: SkillCatalog) -> SkillCatalog:
 
 func _export_end() -> void:
 	export_temp_dir = null
-	
+	clear_memory()
+
+
+func clear_memory() -> void:
 	release_files.clear()
 	localization_groups.clear()
 	localization_files.clear()
@@ -326,3 +345,4 @@ func _export_end() -> void:
 	character_ids.clear()
 	quest_ids.clear()
 	added_files.clear()
+	discourse_api_methods.clear()
