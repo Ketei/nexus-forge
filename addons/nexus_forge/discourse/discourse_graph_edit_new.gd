@@ -1587,11 +1587,11 @@ func _on_go_to_node_pressed(uuid: StringName) -> void:
 
 
 func stop_focus_animation() -> void:
-	if focus_tween == null:
+	if not is_instance_valid(focus_tween):
 		return
 	# Grabbing reference as signaling "finished" could set focus_tween to null
 	var tween: Tween = focus_tween
-	tween.pause()
+	tween.stop()
 	tween.finished.emit()
 	tween.kill()
 	focus_tween = null

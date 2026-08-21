@@ -87,6 +87,15 @@ static func _static_init() -> void:
 			break
 
 
+static func validate_api_path() -> bool:
+	var all_classes: Array[Dictionary] = ProjectSettings.get_global_class_list()
+	for class_entry in all_classes:
+		if class_entry["class"] == "DiscourseAPI":
+			api_path = class_entry["path"]
+			return true
+	return false
+
+
 func _init(uuid: StringName = &"", theme_variant: StringName = &"", with_duplicate: bool = true, with_close: bool = true, localization: bool = false) -> void:
 	_uuid = StringName(UUID.generate_new()) if uuid.is_empty() else uuid
 	var _hbox: HBoxContainer = get_titlebar_hbox()

@@ -3,9 +3,14 @@ extends Tree
 
 
 signal node_activated(node: StringName)
-signal directory_edited
-signal item_renamed(uuid: StringName, new_name: String)
-signal node_structure_changed
+
+signal item_renamed(uuid: StringName, old_name: String, new_name: String)
+signal folder_renamed(folder_id: int, old_name: String, new_name: String)
+
+signal item_moved(from_path: String, from_index: int, to_path: String, to_index: int)
+
+signal directory_removed(path: String, index: int, id: int, contents: Array[Dictionary])
+
 signal collapsed_state_changed
 
 enum ContextMenuID {
@@ -59,6 +64,7 @@ const RESOURCES: Array[NFDialogParser.NodeTypes] = [
 var nodes: Dictionary[StringName, TreeItem] = {}
 
 var context_menu: PopupMenu = null
+var _folder_id: int = 0
 
 
 func ready_plugin() -> void:
@@ -100,14 +106,48 @@ func _on_context_id_pressed(id: int) -> void:
 			if selected.get_metadata(0)["is_node"]:
 				node_activated.emit(selected.get_metadata(0)["uuid"])
 		ContextMenuID.REMOVE:
-			if not selected.get_metadata(0)["is_node"]:
-				var parent: TreeItem = selected.get_parent()
-				for sub_item in selected.get_children():
-					selected.remove_child(sub_item)
-					parent.add_child(sub_item)
-				
-				selected.free()
-				directory_edited.emit()
+			if selected.get_metadata(0)["is_node"]:
+				return
+			
+			var metadata: Dictionary = selected.get_metadata(0)
+			var original_path: String = get_path_to_item(selected)
+			var original_index: int = selected.get_index()
+			var folder_id: int = metadata["id"]
+			var items_contained: Array[Dictionary] = []
+			for sub_item in selected.get_children():
+				var is_node: bool = metadata["is_node"]
+				var data: Dictionary = {
+					"is_node": is_node,
+					"name": metadata["name"]}
+				if is_node:
+					data["uuid"] = metadata["uuid"]
+				else:
+					data["id"] = metadata["id"]
+				items_contained.append(data)
+			
+			remove_folder_tree(selected)
+			
+			directory_removed.emit(
+					original_path,
+					original_index,
+					folder_id,
+					items_contained)
+
+
+func remove_folder(folder_path: String) -> void:
+	var item: TreeItem = get_item_from_path(folder_path)
+	remove_folder_tree(item)
+
+
+func remove_folder_tree(folder: TreeItem) -> void:
+	if not is_instance_valid(folder) or not is_folder(folder):
+		return
+	
+	var parent: TreeItem = folder.get_parent()
+	for sub_item in folder.get_children():
+		folder.remove_child(sub_item)
+		parent.add_child(sub_item)
+	folder.free()
 
 
 func _on_item_mouse_selected(mouse_position: Vector2, mouse_button_index: int) -> void:
@@ -125,11 +165,15 @@ func _on_item_mouse_selected(mouse_position: Vector2, mouse_button_index: int) -
 
 
 func _drop_data(at_position: Vector2, data: Variant) -> void:
+	var dropped_item: TreeItem = data
 	var at_node: TreeItem = get_item_at_position(at_position)
 	var drop_position: int = get_drop_section_at_position(at_position)
+	var original_path: String = get_path_to_item(dropped_item)
+	var original_index: int = dropped_item.get_index()
+	
 	if drop_position == -100:
-		data.get_parent().remove_child(data)
-		get_root().add_child(data)
+		dropped_item.get_parent().remove_child(dropped_item)
+		get_root().add_child(dropped_item)
 	else:
 		match drop_position:
 			-1: # Above
@@ -140,7 +184,15 @@ func _drop_data(at_position: Vector2, data: Variant) -> void:
 			1: # Below
 				data.move_after(at_node)
 	
-	node_structure_changed.emit()
+	var new_index: int = dropped_item.get_index()
+	var new_path: String = get_path_to_item(dropped_item)
+	
+	if new_index != original_index or new_path != original_path:
+		item_moved.emit(
+			original_path,
+			original_index,
+			new_path,
+			new_index)
 
 
 func _get_drag_data(at_position: Vector2) -> Variant:
@@ -156,7 +208,8 @@ func _get_drag_data(at_position: Vector2) -> Variant:
 
 func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
 	var item_at_pos: TreeItem = get_item_at_position(at_position)
-	if item_at_pos == null or data is not TreeItem or data == item_at_pos:
+	
+	if data is not TreeItem or data == item_at_pos:
 		return false
 	
 	drop_mode_flags = DropModeFlags.DROP_MODE_INBETWEEN
@@ -176,13 +229,27 @@ func _on_discourse_tree_button_clicked(item: TreeItem, _column: int, _id: int, _
 		item.select(0)
 		edit_selected.call_deferred(true)
 	else: # Deleting folder
-		var parent: TreeItem = item.get_parent()
+		var metadata: Dictionary = item.get_metadata(0)
+		var original_path: String = get_path_to_item(item)
+		var folder_id: int = metadata["id"]
+		var items_contained: Array[Dictionary] = []
 		for sub_item in item.get_children():
-			item.remove_child(sub_item)
-			parent.add_child(sub_item)
+			var is_node: bool = metadata["is_node"]
+			var data: Dictionary = {
+				"is_node": is_node,
+				"name": metadata["name"]}
+			if is_node:
+				data["uuid"] = metadata["uuid"]
+			else:
+				data["id"] = metadata["id"]
+			items_contained.append(data)
 		
-		item.free()
-		directory_edited.emit()
+		remove_folder_tree(item)
+		
+		directory_removed.emit(
+				original_path,
+				folder_id,
+				items_contained)
 
 
 func _on_discourse_item_edited() -> void:
@@ -191,17 +258,27 @@ func _on_discourse_item_edited() -> void:
 	
 	if is_node:
 		var uuid: StringName = edited.get_metadata(0)["uuid"]
+		var old_name: String = edited.get_metadata(0)["name"]
 		var new_name: String = get_unique_name_for_node(edited.get_text(0), edited)
-		edited.set_text(0, new_name)
-		item_renamed.emit(uuid, new_name)
+		
+		if new_name != old_name:
+			edited.get_metadata(0)["name"] = new_name
+			edited.set_text(0, new_name)
+			item_renamed.emit(uuid, old_name, new_name)
 	else:
 		var new_name: String = get_unique_name_on_tree(
 				edited.get_parent(),
 				edited.get_text(0),
 				edited)
-		edited.set_text(0, new_name)
-	
-	directory_edited.emit()
+		var old_name: String = edited.get_metadata(0)["name"]
+		
+		if new_name != old_name:
+			edited.set_text(0, new_name)
+			edited.get_metadata(0)["name"] = new_name
+			folder_renamed.emit(
+					edited.get_metadata(0)["id"],
+					old_name,
+					new_name)
 
 
 func _on_discourse_node_activated() -> void:
@@ -210,6 +287,12 @@ func _on_discourse_node_activated() -> void:
 		return
 	
 	node_activated.emit(active.get_metadata(0)["uuid"])
+
+
+func claim_folder_id() -> int:
+	var claimed_id: int = _folder_id
+	_folder_id += 1
+	return claimed_id
 
 
 func belongs_to_tree(item: TreeItem) -> bool:
@@ -237,8 +320,11 @@ func get_folder_structure(_from: TreeItem = get_root()) -> Array[Dictionary]:
 
 
 func create_folder(folder_name: String, on_node: TreeItem = get_root(), select: bool = true) -> void:
+	var true_name: String = get_unique_name_on_tree(
+				on_node,
+				folder_name)
 	var new_folder: TreeItem = on_node.create_child()
-	new_folder.set_text(0, folder_name)
+	new_folder.set_text(0, true_name)
 	new_folder.set_editable(0, true)
 	new_folder.set_icon(0, get_theme_icon("Folder", "EditorIcons"))
 	new_folder.add_button(
@@ -247,7 +333,7 @@ func create_folder(folder_name: String, on_node: TreeItem = get_root(), select: 
 			-1,
 			false,
 			"Delete Group")
-	new_folder.set_metadata(0, {"is_node": false})
+	new_folder.set_metadata(0, {"name": true_name, "is_node": false, "id": claim_folder_id()})
 	
 	if select:
 		new_folder.select(0)
@@ -255,8 +341,10 @@ func create_folder(folder_name: String, on_node: TreeItem = get_root(), select: 
 
 
 func is_folder(item: TreeItem) -> bool:
-	var data: Dictionary = item.get_metadata(0)
-	if data.has("is_node"):
+	var data = item.get_metadata(0)
+	if typeof(data) != TYPE_DICTIONARY:
+		return false
+	if data.has("is_node") and typeof(data["is_node"]) == TYPE_BOOL:
 		return not data["is_node"]
 	return false
 
@@ -264,10 +352,11 @@ func is_folder(item: TreeItem) -> bool:
 func create_node(node: DiscourseGraphNode, on: TreeItem = get_root()) -> void:
 	var new_item: TreeItem = on.create_child()
 	var type: int = 0 if node.node_type in DIALOG else 1 if node.node_type in DATA else 2 if node.node_type in SETTINGS else 3 if node.node_type in RESOURCES else -1
+	var node_name: String = str(node.get_node_id())
 	new_item.set_icon(0, preload("res://addons/nexus_forge/icons/node_icon.svg") if node.graph_icon == null else node.graph_icon)
 	if 0 <= type:
 		new_item.set_icon_modulate(0, DIALOG_COLOR if type == 0 else DATA_COLOR if type == 1 else SETTINGS_COLOR if type == 2 else RESOURCE_COLOR)
-	new_item.set_text(0, str(node.get_node_id()))
+	new_item.set_text(0, node_name)
 	new_item.add_button(
 			0,
 			get_theme_icon("Edit", "EditorIcons"),
@@ -275,7 +364,7 @@ func create_node(node: DiscourseGraphNode, on: TreeItem = get_root()) -> void:
 			false,
 			"Edit ID")
 	
-	new_item.set_metadata(0, {"is_node": true, "uuid": node.get_node_uuid()})
+	new_item.set_metadata(0, {"name": node_name,  "is_node": true, "uuid": node.get_node_uuid()})
 	
 	nodes[node.get_node_uuid()] = new_item
 
@@ -417,6 +506,47 @@ func get_folder_item_paths() -> Dictionary[String, TreeItem]:
 		_set_folder_items(top_item, items)
 	
 	return items
+
+
+func get_path_to_item(folder: TreeItem) -> String:
+	if not is_instance_valid(folder) or folder.get_parent() == null: # Skip if root
+		return ""
+	
+	var path_parts: Array[String] = []
+	
+	var root: TreeItem = get_root()
+	var current_item: TreeItem = folder
+	while current_item != null and current_item != root:
+		path_parts.append(current_item.get_text(0))
+	
+	path_parts.reverse()
+	
+	return StringUtils.make_path(path_parts)
+
+
+func get_item_from_path(path: String) -> TreeItem:
+	if path.is_empty():
+		return null
+	
+	var slices: PackedStringArray = path.split("/", false)
+	var node_id: String = slices[-1]
+	var current_item: TreeItem = get_root()
+	
+	for path_slice in slices.slice(0, -1):
+		var found: bool = false
+		for item in current_item.get_children():
+			if item.get_text(0) == path_slice:
+				current_item = item
+				found = true
+				break
+		if not found:
+			return null
+	
+	for item in current_item.get_children():
+		if item.get_text(0) == node_id:
+			return item
+	
+	return null
 
 
 func _set_folder_items(from: TreeItem, _on: Dictionary[String, TreeItem]) -> void:

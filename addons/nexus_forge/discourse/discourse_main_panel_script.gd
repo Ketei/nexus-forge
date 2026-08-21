@@ -35,6 +35,7 @@ const EXTRA_Y_PADDING: int = 8
 # --------------------
 
 var active_conversation: EditorDiscourseDialog = null
+var previous_conversation: int = 0
 
 var localization_node_selected: DiscourseGraphNode = null
 
@@ -42,7 +43,20 @@ var listen_offset: bool = true
 
 var selected_format_index: int = -1
 
-var _unsaved: bool = false
+var _unsaved: bool = false:
+	set(u):
+		if active_conversation == null:
+			return
+		var id: int = active_conversation.get_instance_id()
+		_open_files[id]["unsaved"] = u
+		conversation_tree.active_unsaved = u
+	get():
+		if active_conversation == null:
+			return false
+		return _open_files[active_conversation.get_instance_id()]["unsaved"]
+# Keys: resource, undo, unsaved, offset_changed
+var _open_files: Dictionary[int, Dictionary] = {}
+var undo: UndoRedo
 
 # ----------------------------
 var _conversation_options_disabled: bool = true
@@ -79,14 +93,9 @@ var phrases_index: int = -1
 @onready var translation_txt_box: TextEdit = $LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/LocaleVBoxContainer/TranslationPanel/TranslationContainer/TranslationTxtBox
 
 @onready var locale_label: Label = $LocalizationContainer/FooterContainer/LocaleLabel
-#@onready var return_discourse_btn: Button = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/HeaderPanel/PhrasesHeader/ReturnDiscourseBtn
 @onready var choices_container: VBoxContainer = $LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer/ChoicesScroller/ChoicesContainer
 
 # --- Phrases ---
-#@onready var key_container: VBoxContainer = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyScroll/KeySplitContainer/KeyContainer
-#@onready var text_container: VBoxContainer = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyScroll/KeySplitContainer/TextContainer
-#@onready var case_node_container: VBoxContainer = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/CaseContainer/CaseNodeContainer
-#@onready var result_node_container: VBoxContainer = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit/ResultContainer/ResultNodeContainer
 @onready var default_case_edt: TextEdit = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/PhraseCasesEntries/DefaultCase/DefaultCaseEdt
 @onready var argument_opt_btn: OptionButton = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/ArgumentContainer/ArgumentOptBtn
 @onready var copy_arg_btn: Button = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/ArgumentContainer/CopyArgBtn
@@ -99,9 +108,7 @@ var phrases_index: int = -1
 @onready var save_case_btn: Button = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/SaveCaseBtn
 @onready var search_text_ln_edt: LineEdit = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer/HBoxContainer/SearchTextLnEdt
 @onready var key_header_split: HBoxContainer = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyHeaderSplit
-#@onready var key_split_container: HSplitContainer = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyScroll/KeySplitContainer
 @onready var case_header_split: HBoxContainer = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/CaseHeaderSplit
-#@onready var cases_split: HSplitContainer = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/KeyScroll/CasesSplit
 
 # ----------------------------------------------
 
@@ -111,6 +118,7 @@ var node_popup: PopupMenu = null
 var file_popup: PopupMenu = null
 var locale_popup: PopupMenu = null
 var dialog_previewer: Node = null
+
 @onready var node_menu_btn: MenuButton = $MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/NodeMenuBtn
 @onready var save_btn: Button = $MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/SaveBtn
 @onready var play_current_dialog_btn: Button = $MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/PlayDialogBtn
@@ -372,8 +380,6 @@ func ready_plugin(base_locale: String = "") -> void:
 	play_previewer.icon = get_theme_icon("Play", "EditorIcons")
 	# --------------------------------------------------------
 	
-	#update_localization_button_compact.call_deferred()
-	
 	search_nodes_ln_edt.right_icon = get_theme_icon("Search", "EditorIcons")
 	
 	conversation_tree.ready_plugin()
@@ -486,11 +492,13 @@ func ready_plugin(base_locale: String = "") -> void:
 	languages_tree.region_created.connect(_on_region_created)
 	languages_tree.locale_deleted.connect(_on_locale_deleted)
 	
-	discourse_nodes_tree.directory_edited.connect(_on_conversation_changed)
-	discourse_nodes_tree.item_renamed.connect(_on_discourse_item_renamed)
-	discourse_nodes_tree.node_structure_changed.connect(_on_conversation_changed)
 	discourse_nodes_tree.node_activated.connect(_on_discourse_node_activated)
+	discourse_nodes_tree.item_renamed.connect(_on_discourse_item_renamed)
+	discourse_nodes_tree.folder_renamed.connect(_on_discourse_folder_renamed)
+	discourse_nodes_tree.item_moved.connect(_on_discourse_item_moved)
+	discourse_nodes_tree.directory_removed.connect(_on_discourse_directory_removed)
 	discourse_nodes_tree.collapsed_state_changed.connect(_on_collapsed_state_changed)
+	
 	localization_nodes_tree.dialog_selected.connect(_on_localizer_node_selected)
 	localization_nodes_tree.node_delocalized.connect(_on_node_delocalized)
 	localization_nodes_tree.dialog_item_edited.connect(_on_localizer_item_renamed)
@@ -498,7 +506,6 @@ func ready_plugin(base_locale: String = "") -> void:
 	translation_txt_box.text_changed.connect(_on_translation_text_changed)
 	
 	new_folder_button.pressed.connect(_on_new_folder_button_pressed)
-	conversation_tree.conversation_selected.connect(_on_conversation_selected)
 	
 	save_case_btn.pressed.connect(_on_save_cases_btn_pressed)
 	new_text_button.pressed.connect(_on_new_key_field_button_pressed)
@@ -508,7 +515,6 @@ func ready_plugin(base_locale: String = "") -> void:
 	
 	default_case_edt.text_changed.connect(_on_phrase_text_field_changed.bind(default_case_edt))
 	default_case_edt.resized.connect(_update_choice_textbox_size.bind(default_case_edt))
-	conversation_tree.conversation_close_pressed.connect(_on_conversation_close_pressed)
 	
 	hide_issues_btn.pressed.connect(_on_hide_issues_pressed)
 	issues_tree.issue_activated.connect(_on_issue_activated)
@@ -528,6 +534,9 @@ func ready_plugin(base_locale: String = "") -> void:
 	
 	play_previewer.pressed.connect(_on_play_live_preview_pressed)
 	default_expand_button.pressed.connect(_on_default_case_focus_pressed)
+	
+	conversation_tree.conversation_selected.connect(_on_conversation_selected)
+	conversation_tree.conversation_close_pressed.connect(_on_conversation_close_pressed)
 
 
 func get_column_left() -> Control:
@@ -1019,116 +1028,98 @@ func _on_graph_edit_offset_changed(_offset: Vector2) -> void:
 	conversation_tree.active_offset_changed = true
 
 
-func _on_conversation_close_pressed(dialog: EditorDiscourseDialog, save_required: bool, offset_changed: bool) -> void:
-	var close_current: bool = dialog == active_conversation
-	if save_required:
+func _on_conversation_close_pressed(dialog_id: int) -> void:
+	if not _open_files.has(dialog_id):
+		return
+	
+	var is_active: bool = false if active_conversation == null else active_conversation.get_instance_id() == dialog_id
+	
+	if _open_files[dialog_id]["unsaved"]:
 		var unsaved_prompt: AcceptDialog = preload("res://addons/nexus_forge/dialogs/unsaved_dialog_script.gd").new()
 		add_child(unsaved_prompt)
 		unsaved_prompt.show()
 		var result: int = await unsaved_prompt.dialog_finished
 		if result == 0: # Save
-			if close_current:
-				save_current_dialog()
+			if is_active:
+				save_current_dialog_to_memory()
+			ResourceSaver.save(_open_files[dialog_id]["resource"])
 		elif result == 1: # Don't save
-			offset_changed = false
+			_open_files[dialog_id]["offset_changed"] = false
 		elif result == 2: # Cancel
 			unsaved_prompt.queue_free()
 			return
 		unsaved_prompt.queue_free()
 	
-	if offset_changed:
-		var layout_data: Dictionary[String, Variant] = {
-			"collapsed_state": discourse_nodes_tree.get_collapsed_folders() if close_current else dialog.collapsed_state,
-			"zoom": discourse_graph_edit.zoom if close_current else dialog.zoom,
-			"scroll_offset": discourse_graph_edit.scroll_offset if close_current else dialog.scroll_offset}
-		
-		_save_file_layout_for(
-			dialog.resource_path,
-			layout_data)
+	if _open_files[dialog_id]["offset_changed"]:
+		save_layout_of(dialog_id)
 	
-	conversation_tree.remove_conversation(dialog)
-	
-	if not close_current:
+	close_dialog_resource(dialog_id)
+
+
+func close_dialog_resource(dialog_id: int, open_previous: bool = true) -> void:
+	if not _open_files.has(dialog_id):
 		return
 	
-	key_box_container.visible = true
-	case_box_container.visible = false
+	var is_active: bool = false if active_conversation == null else active_conversation.get_instance_id() == dialog_id
 	
-	if conversation_tree.active_conversation_item == null:
-		active_conversation = null
-		set_conversation_active(false)
-		display_conversation(null)
-		clear_localized_keys()
-		clear_cases()
-		dialog_id_ln_edt.text = ""
-		conversation_tree.active_unsaved = false
+	conversation_tree.remove_conversation(dialog_id)
+	_open_files[dialog_id]["undo"].clear_history()
+	_open_files[dialog_id]["undo"].free()
+	_open_files.erase(dialog_id)
+	
+	if is_active:
+		if is_instance_valid(discourse_graph_edit.focus_tween):
+			discourse_graph_edit.stop_focus_animation()
+		key_box_container.visible = true
+		case_box_container.visible = false
 		selected_format_index = -1
-		new_text_button.disabled = true
+		
+		if not open_previous:
+			active_conversation = null
+			set_conversation_active(false)
+			display_conversation(null)
+			clear_localized_keys()
+			clear_cases()
+			dialog_id_ln_edt.text = ""
+			conversation_tree.active_unsaved = false
+			new_text_button.disabled = true
+			dialog_scene_previewer.visible = false
+			return
+	else:
 		return
 	
-	var new_resource: EditorDiscourseDialog = conversation_tree.get_active_resource()
+	conversation_tree.select_conversation(previous_conversation, false)
 	
-	if open_conversation(new_resource):
-		conversation_tree.active_unsaved = true
+	var save_required: bool = open_conversation(
+			_open_files[previous_conversation]["resource"])
 	
-	_unsaved = conversation_tree.active_unsaved
-	selected_format_index = -1
+	if save_required:
+		_unsaved = true
 
 
 func _on_menu_close_pressed() -> void:
 	if active_conversation == null:
 		return
 	
-	if discourse_graph_edit.focus_tween != null:
-		discourse_graph_edit.stop_focus_animation()
+	var dialog_id: int = active_conversation.get_instance_id()
 	
-	if conversation_tree.active_unsaved:
+	if _open_files[dialog_id]["unsaved"]:
 		var unsaved_prompt: AcceptDialog = preload("res://addons/nexus_forge/dialogs/unsaved_dialog_script.gd").new()
 		add_child(unsaved_prompt)
 		unsaved_prompt.show()
 		var result: int = await unsaved_prompt.dialog_finished
-		if result == 0: # Save
-			save_current_dialog()
-		elif result == 1: # Don't save
-			pass
-		elif result == 2: # Cancel
-			unsaved_prompt.queue_free()
-			return
 		unsaved_prompt.queue_free()
-	elif conversation_tree.active_offset_changed:
-		var layout_data: Dictionary[String, Variant] = {
-			"collapsed_state": discourse_nodes_tree.get_collapsed_folders(),
-			"zoom": discourse_graph_edit.zoom,
-			"scroll_offset": discourse_graph_edit.scroll_offset}
-		
-		_save_file_layout_for(
-			active_conversation.resource_path,
-			layout_data)
+		if result == 0: # Save
+			save_dialog_resource(dialog_id)
+		elif result == 1: # Don't save
+			_open_files[dialog_id]["offset_changed"] = false
+		elif result == 2: # Cancel
+			return
 	
-	key_box_container.visible = true
-	case_box_container.visible = false
-	conversation_tree.remove_conversation(active_conversation)
+	if _open_files[dialog_id]["offset_changed"]:
+		save_layout_of(dialog_id)
 	
-	if conversation_tree.active_conversation_item == null:
-		active_conversation = null
-		set_conversation_active(false)
-		display_conversation(null)
-		clear_localized_keys()
-		clear_cases()
-		dialog_id_ln_edt.text = ""
-		conversation_tree.active_unsaved = false
-		selected_format_index = -1
-		new_text_button.disabled = true
-		dialog_scene_previewer.visible = false
-		return
-	
-	var new_resource: EditorDiscourseDialog = conversation_tree.get_active_resource()
-	
-	if open_conversation(new_resource):
-		conversation_tree.active_unsaved = true
-	
-	_unsaved = conversation_tree.active_unsaved
-	selected_format_index = -1
+	close_dialog_resource(dialog_id)
 
 
 func _on_new_folder_button_pressed() -> void:
@@ -1780,6 +1771,14 @@ func save_current_dialog_to_memory() -> void:
 	# data to the current selected dropdown locale.
 	discourse_graph_edit.update_conversation_file(active_conversation, current_locale)
 	
+	if phrases_lang_menu.selected != -1:
+		save_phrase_keys(phrases_lang_menu.get_selected_metadata())
+	if $LocalizationContainer.visible and localization_nodes_tree.get_active_node() != null:
+		save_localizer_data(languages_tree.get_active_locale())
+	
+	var locale_map: Dictionary[String, Dictionary] = languages_tree.as_map()
+	active_conversation.locale_map = locale_map.duplicate(true)
+	
 	active_conversation.collapsed_state = discourse_nodes_tree.get_collapsed_folders()
 	active_conversation.zoom = discourse_graph_edit.zoom
 	active_conversation.scroll_offset = discourse_graph_edit.scroll_offset
@@ -1787,7 +1786,13 @@ func save_current_dialog_to_memory() -> void:
 	active_conversation.dialog_id = dialog_id_ln_edt.text.strip_edges()
 
 
-func _on_conversation_selected(dialog: EditorDiscourseDialog) -> void:
+func _on_conversation_selected(dialog_id: int) -> void:
+	if not _open_files.has(dialog_id):
+		return
+	
+	if active_conversation != null and active_conversation.get_instance_id() == dialog_id:
+		return
+	
 	if _conversation_options_disabled:
 		set_graph_edit_visible(true)
 		set_conversation_options_enabled(true)
@@ -1798,9 +1803,7 @@ func _on_conversation_selected(dialog: EditorDiscourseDialog) -> void:
 	if active_conversation != null:
 		save_current_dialog_to_memory()
 	
-	active_conversation = dialog
-	conversation_tree.set_conversation_item_active(dialog)
-	if open_conversation(dialog):
+	if open_conversation(dialog_id): # Resaving Needed
 		conversation_tree.active_unsaved = true
 
 
@@ -1966,11 +1969,21 @@ func _on_open_conversation_pressed() -> void:
 	file_opener.popup_centered()
 	
 	var result: Array = await file_opener.dialog_finished
+	file_opener.queue_free()
 	
 	if result[0] and FileAccess.file_exists(result[1]):
 		listen_offset = false
 		var resource: Resource = load(result[1])
 		if resource != null and resource is EditorDiscourseDialog:
+			var file_id: int = resource.get_instance_id()
+			
+			if _open_files.has(file_id):
+				conversation_tree.select_conversation(file_id, false)
+				if open_conversation(file_id):
+					_unsaved = true
+				listen_offset = true
+				return
+
 			var filename: String = result[1].get_file()
 			var path_hash: String = result[1].md5_text()
 			var absolute_path: String = ProjectSettings.globalize_path("res://.godot/editor/")
@@ -1999,30 +2012,28 @@ func _on_open_conversation_pressed() -> void:
 				discourse_nodes_tree.get_root().collapsed = false
 				new_folder_button.disabled = false
 				dialog_id_ln_edt.editable = true
+			
 			if active_conversation != null:
 				save_current_dialog_to_memory()
 			
-			if conversation_tree.is_conversation_open(resource):
-				conversation_tree.set_conversation_item_active(resource)
-				if open_conversation(resource):
-					conversation_tree.active_unsaved = true
-			else:
-				_unsaved = false
-				load_conversation(resource)
+			load_conversation(resource)
 			
 			add_to_recently_opened_files(result[1])
 		
 		set_deferred(&"listen_offset", true)
-	
-	file_opener.queue_free()
 
 
 func _on_play_current_dialog_pressed() -> void:
 	if active_conversation == null:
 		return
+	
+	var resource_id: int = active_conversation.get_instance_id()
 	var res_path: String = active_conversation.resource_path
 	var custom_scene: String = ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("discourse_custom_dialog_debug_scene"), "").strip_edges()
-	var scene_path: String = "res://addons/nexus_forge/discourse/dialog_previewer.tscn" if custom_scene.is_empty() or not FileAccess.file_exists(custom_scene) else custom_scene
+	var scene_path: String = "res://addons/nexus_forge/discourse/dialog_previewer.tscn"
+	
+	if not custom_scene.is_empty() and FileAccess.file_exists(custom_scene):
+		scene_path = custom_scene
 	
 	if res_path.is_empty():
 		NFPluginGameHandler._log_msg(
@@ -2043,8 +2054,8 @@ func _on_play_current_dialog_pressed() -> void:
 		DirAccess.make_dir_absolute("user://nexus_forge/")
 	
 	cfg.save("user://nexus_forge/discourse_settings.cfg")
-	if conversation_tree.active_unsaved:
-		save_current_dialog()
+	if _open_files[resource_id]["unsaved"]:
+		save_dialog_resource(resource_id)
 	EditorInterface.play_custom_scene(scene_path)
 
 
@@ -2062,12 +2073,15 @@ func plugin_file_selected(file: EditorDiscourseDialog):
 	elif active_conversation != null:
 		save_current_dialog_to_memory()
 	
-	if conversation_tree.is_conversation_open(file):
-		conversation_tree.set_conversation_item_active(file)
-		if open_conversation(file):
-			conversation_tree.active_unsaved = true
+	var file_id: int = file.get_instance_id()
+	
+	if _open_files.has(file_id):
+		conversation_tree.select_conversation(file_id, false)
+		if open_conversation(file_id):
+			_unsaved = true
 	else:
-		load_conversation(file)
+		load_conversation(file, true)
+	
 	add_to_recently_opened_files(file.resource_path)
 
 
@@ -2141,12 +2155,8 @@ func set_up_node_structure(structure: Array, level: TreeItem, _map: Dictionary[S
 				set_up_node_structure(item["items"], new_folder, _map)
 
 
-func _on_discourse_item_renamed(uuid: StringName, new_name: String) -> void:
+func _on_discourse_item_renamed(uuid: StringName, old_name: String, new_name: String) -> void:
 	var node: DiscourseGraphNode = discourse_graph_edit.get_discourse_node(uuid)
-	var new_named: StringName = StringName(new_name)
-	if node == null or node.get_node_id() == new_named:
-		return
-	
 	node.set_node_id(new_name)
 	
 	if node.is_node_localized():
@@ -2157,6 +2167,21 @@ func _on_discourse_item_renamed(uuid: StringName, new_name: String) -> void:
 				localization_nodes_tree.rename_options_node(uuid, new_name)
 			DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
 				localization_nodes_tree.rename_text_node(uuid, new_name)
+	
+	_on_conversation_changed()
+
+
+func _on_discourse_folder_renamed(folder_id: int, old_name: String, new_name: String) -> void:
+	
+	_on_conversation_changed()
+
+
+func _on_discourse_item_moved(from_path: String, from_index: int, to_path: String, to_index: int) -> void:
+	
+	_on_conversation_changed()
+
+
+func _on_discourse_directory_removed(path: String, index: int, id: int, contents: Array[Dictionary]) -> void:
 	
 	_on_conversation_changed()
 
@@ -2267,7 +2292,11 @@ func display_conversation(conversation: EditorDiscourseDialog, with_locale: Stri
 
 
 # Loads a conversation into discourse.
-func open_conversation(conversation: EditorDiscourseDialog) -> bool:
+func open_conversation(dialog_id: int) -> bool:
+	if not _open_files.has(dialog_id):
+		return false
+	
+	var conversation: EditorDiscourseDialog = _open_files[dialog_id]["resource"]
 	dialog_id_ln_edt.text = conversation.dialog_id
 	
 	# Clears discourse_nodes_tree's items
@@ -2342,18 +2371,31 @@ func open_conversation(conversation: EditorDiscourseDialog) -> bool:
 	new_text_button.disabled = current_locale.is_empty()
 	
 	active_conversation = conversation
+	undo = _open_files[dialog_id]["undo"]
 	
 	return reload_needed
 
 
 # Adds a conversation into the list, can open it.
 func load_conversation(data: EditorDiscourseDialog, open_conv: bool = true) -> void:
-	conversation_tree.add_conversation(data, open_conv, false)
+	var conversation_id: int = data.get_instance_id()
+	
+	if not _open_files.has(conversation_id):
+		_open_files[conversation_id] = {
+			"resource": data,
+			"undo": UndoRedo.new(),
+			"unsaved": false,
+			"offset_changed": false}
+	
+	conversation_tree.add_conversation(
+			conversation_id,
+			data.resource_path,
+			open_conv, # Select
+			false) # Emit Select
 	
 	if open_conv:
-		conversation_tree.set_conversation_item_active(data)
-		if open_conversation(data):
-			conversation_tree.active_unsaved = true
+		if open_conversation(conversation_id):
+			_unsaved = true
 
 
 func save_localizer_data(for_locale: String) -> void:
@@ -2388,97 +2430,63 @@ func save_localizer_data(for_locale: String) -> void:
 func _on_save_conversation_pressed() -> void:
 	if active_conversation == null:
 		return
-	
-	save_current_dialog()
-	conversation_tree.active_offset_changed = false
-	conversation_tree.active_unsaved = false
+	var id: int = active_conversation.get_instance_id()
+	save_dialog_resource(id)
 
 
 func _on_godot_save_triggered() -> void:
-	if active_conversation != null and phrases_lang_menu.selected != -1:
-		save_phrase_keys(phrases_lang_menu.get_selected_metadata())
-	
 	save_all_dialogs()
 	conversation_tree.set_conversations_saved()
 
 
-func save_current_dialog() -> void:
-	if phrases_lang_menu.selected != -1:
-		save_phrase_keys(phrases_lang_menu.get_selected_metadata())
-	if $LocalizationContainer.visible and localization_nodes_tree.get_active_node() != null:
-		save_localizer_data(languages_tree.get_active_locale())
-	
-	if conversation_tree.active_offset_changed:
-		var layout_data: Dictionary[String, Variant] = {
-			"collapsed_state": discourse_nodes_tree.get_collapsed_folders(),
-			"zoom": active_conversation.zoom,
-			"scroll_offset": active_conversation.scroll_offset}
-		
-		_save_file_layout_for(
-			active_conversation.resource_path,
-			layout_data)
-		conversation_tree.active_offset_changed = false
-	
-	if not _unsaved:
+func save_dialog_resource(dialog_id: int) -> void:
+	if not _open_files.has(dialog_id):
 		return
 	
-	discourse_graph_edit.update_conversation_file(active_conversation, current_locale)
+	var target: EditorDiscourseDialog = _open_files[dialog_id]["resource"]
 	
-	var locale_map: Dictionary[String, Dictionary] = languages_tree.as_map()
+	if active_conversation == target:
+		save_current_dialog_to_memory()
 	
-	active_conversation.node_structure = discourse_nodes_tree.get_folder_structure()
-	active_conversation.locale_map = locale_map.duplicate(true)
-	active_conversation.dialog_id = dialog_id_ln_edt.text.strip_edges()
+	if _open_files[dialog_id]["offset_changed"]:
+		save_layout_of(dialog_id)
+		_open_files[dialog_id]["offset_changed"] = false
 	
-	_unsaved = false
-	ResourceSaver.save(active_conversation)
-	conversation_tree.active_unsaved = false
-	conversation_tree.active_offset_changed = false
+	if not _open_files[dialog_id]["unsaved"]:
+		return
+	
+	ResourceSaver.save(target)
+	_open_files[dialog_id]["unsaved"] = false
+	conversation_tree.set_dialog_unsaved(dialog_id, false)
 
 
 func save_all_dialogs() -> void:
-	if $LocalizationContainer.visible and localization_nodes_tree.get_active_node() != null:
-		save_localizer_data(languages_tree.get_active_locale())
+	if active_conversation != null:
+		save_current_dialog_to_memory()
 	
-	# Save all unsaved conversations
-	for unsaved_conversation:EditorDiscourseDialog in conversation_tree.get_unsaved_conversation_resources():
-		# Including our active one
-		if unsaved_conversation == active_conversation:
-			if phrases_lang_menu.selected != -1:
-				save_phrase_keys(phrases_lang_menu.get_selected_metadata())
-			discourse_graph_edit.update_conversation_file(active_conversation, current_locale)
-			active_conversation.dialog_id = dialog_id_ln_edt.text.strip_edges()
-			
-			active_conversation.node_structure = discourse_nodes_tree.get_folder_structure()
-			
-			ResourceSaver.save(active_conversation)
-		else:
-			ResourceSaver.save(unsaved_conversation)
+	for res_id in _open_files:
+		if _open_files[res_id]["unsaved"]:
+			ResourceSaver.save(_open_files[res_id]["resource"])
+			_open_files[res_id]["unsaved"] = false
+		if _open_files[res_id]["offset_changed"]:
+			save_layout_of(res_id)
+			_open_files[res_id]["offset_changed"] = false
 	
-	for unsaved_layout: EditorDiscourseDialog in conversation_tree.get_unsaved_layout_resources():
-		var layout_data: Dictionary[String, Variant] = {
-			"collapsed_state": unsaved_layout.collapsed_state,
-			"zoom": unsaved_layout.zoom,
-			"scroll_offset": unsaved_layout.scroll_offset}
-		
-		_save_file_layout_for(
-			unsaved_layout.resource_path,
-			layout_data)
-	
-	_unsaved = false
 	conversation_tree.set_all_files_saved()
 
 
-func save_layouts() -> void:
-	for unsaved_layout: EditorDiscourseDialog in conversation_tree.get_unsaved_layout_resources():
-		var layout_data: Dictionary[String, Variant] = {
-			"collapsed_state": unsaved_layout.collapsed_state,
-			"zoom": unsaved_layout.zoom,
-			"scroll_offset": unsaved_layout.scroll_offset}
-		
-		_save_file_layout_for(
-			unsaved_layout.resource_path,
-			layout_data)
+func save_layout_of(dialog_id: int) -> void:
+	if not _open_files.has(dialog_id):
+		return
+	var target: EditorDiscourseDialog = _open_files[dialog_id]["resource"]
+	var layout_data: Dictionary[String, Variant] = {
+		"collapsed_state": target.collapsed_state,
+		"zoom": target.zoom,
+		"scroll_offset": target.scroll_offset}
+	
+	_save_file_layout_for(
+		target.resource_path,
+		layout_data)
 
 
 func set_conversation_active(is_active: bool) -> void:
@@ -2489,8 +2497,8 @@ func set_conversation_active(is_active: bool) -> void:
 
 
 func has_unsaved_files() -> bool:
-	for item in conversation_tree.get_root().get_children():
-		if item.get_metadata(0)["unsaved"]:
+	for id in _open_files:
+		if _open_files[id]["unsaved"]:
 			return true
 	return false
 
@@ -2757,7 +2765,7 @@ func _on_save_cases_btn_pressed() -> void:
 	key_box_container.visible = true
 	phrases_lang_menu.disabled = false
 	
-	if argument_opt_btn.selected == -1:# selected_format.is_empty():
+	if argument_opt_btn.selected == -1:
 		return
 	
 	save_current_phrase_key(phrases_lang_menu.get_selected_metadata())
@@ -2766,7 +2774,6 @@ func _on_save_cases_btn_pressed() -> void:
 	search_case_ln_edt.text = ""
 	search_case_ln_edt.set_meta(&"current_search", "")
 	argument_opt_btn.clear()
-	#selected_format = ""
 
 
 func _on_edit_cases_pressed(field: Control) -> void:
@@ -2862,7 +2869,6 @@ func _on_erase_key_button_pressed(field: HBoxContainer) -> void:
 	var phrase_key: String = field.get_meta(&"phrase_key")
 	if selected_format_index == field.get_index():
 		selected_format_index = -1
-		#selected_format = ""
 		clear_cases()
 		default_case_edt.clear()
 		default_case_edt.editable = false
@@ -2992,54 +2998,12 @@ func _rebuild_phrase_text_menu(text_menu: PopupMenu) -> void:
 		redo_shortcut)
 
 
-#func add_new_phrase(key: String = "", text: String = "", unsaved: bool = true) -> String:
-	#var new_key: HBoxContainer = new_key_container(key, unsaved)
-	#var new_text: HBoxContainer = new_text_field(text)
-	#
-	#key_container.add_child(new_key)
-	#text_container.add_child(new_text)
-	#
-	#var text_edit: TextEdit = new_text.get_child(0)
-	#var key_edit: LineEdit = new_key.get_child(1)
-	#var text_edit_btn: Button = new_text.get_child(1)
-	#
-	#var text_menu: PopupMenu = text_edit.get_menu()
-	#_rebuild_phrase_text_menu(text_menu)
-	#
-	#if 0 < key_container.get_child_count() - 1:
-		#var btn: Button = text_container.get_child(-2).get_child(1)
-		#btn.focus_next = key_edit.get_path()
-		#key_edit.focus_previous = btn.get_path()
-	#else:
-		#new_text_button.focus_next = key_edit.get_path()
-		#key_edit.focus_previous = new_text_button.get_path()
-	#
-	#key_edit.focus_next = text_edit.get_path()
-	#key_edit.focus_neighbor_right = text_edit.get_path()
-	#
-	#text_edit.focus_previous = key_edit.get_path()
-	#text_edit.focus_neighbor_left = key_edit.get_path()
-	#text_edit.focus_next = text_edit_btn.get_path()
-	#
-	#text_edit_btn.focus_previous = text_edit.get_path()
-	#
-	#text_edit_btn.pressed.connect(_on_edit_cases_pressed.bind(text_edit, key_edit, text_edit_btn))
-	#text_menu.id_pressed.connect(_on_phrase_menu_id_pressed.bind(text_edit))
-	#text_edit.text_changed.connect(_on_phrase_text_field_changed.bind(text_edit, new_key))
-	#text_edit.resized.connect(_update_choice_textbox_size.bind(text_edit, new_key))
-	#
-	#_update_choice_textbox_size.call_deferred(text_edit)
-	#
-	#return key_edit.get_meta(&"phrase_key")
-
-
 func _on_phrase_menu_id_pressed(id: int, field: TextEdit) -> void:
 	if id <= TextEdit.MenuItems.MENU_MAX:
 		return
 	
 	const MENU_MAX: int = LineEdit.MenuItems.MENU_MAX
 	
-	# TODO: Fix this
 	if id == MENU_MAX + 1:
 		_on_open_code_editor_graph_request(field)
 
@@ -3139,42 +3103,6 @@ func erase_case(index: int) -> void:
 	case.queue_free()
 
 
-func new_key_container(key: String = "", unsaved: bool = true) -> HBoxContainer:
-	var new_key: HBoxContainer = HBoxContainer.new()
-	var key_line: LineEdit = LineEdit.new()
-	var erase_button: Button = Button.new()
-	var empty_key: bool = key.is_empty()
-	
-	if key.is_empty():
-		key = get_valid_format_key_id()
-	else:
-		key= get_valid_format_key_id(key)
-	
-	key_line.set_meta(&"phrase_key", key)
-	key_line.set_meta(&"unsaved", unsaved)
-	
-	key_line.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	key_line.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	key_line.custom_minimum_size.y = 33.0
-	key_line.placeholder_text = "Key"
-	key_line.text = String(key)
-	
-	erase_button.icon = get_theme_icon("Remove", "EditorIcons")
-	erase_button.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	erase_button.tooltip_text = "Erase key"
-	erase_button.flat = true
-	erase_button.custom_minimum_size = Vector2(33.0, 33.0)
-	erase_button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	
-	key_line.text_changed.connect(_on_key_line_text_changed)
-	erase_button.pressed.connect(_on_erase_key_button_pressed.bind(key_line))
-	
-	new_key.add_child(erase_button)
-	new_key.add_child(key_line)
-	
-	return new_key
-
-
 func get_valid_format_key_id(desired_id: String = "NEW_PHRASE") -> String:
 	var used_keys: Dictionary[String, Variant] = {}
 	
@@ -3197,61 +3125,6 @@ func get_valid_format_key_id(desired_id: String = "NEW_PHRASE") -> String:
 		modified = base + str(iteration)
 	
 	return modified
-
-
-#func new_case_result_node() -> HBoxContainer:
-	#var new_case: HBoxContainer = HBoxContainer.new()
-	#var case_text: LineEdit = load("res://addons/nexus_forge/item_quest_lineedit_script.gd").new()
-	#var open_editor_btn: Button = Button.new()
-	#
-	#case_text.placeholder_text = "Case format"
-	#case_text.custom_minimum_size.y = 32.0
-	#case_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	#
-	#open_editor_btn.tooltip_text = "Open Editor"
-	#open_editor_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	#open_editor_btn.flat = true
-	#open_editor_btn.icon = get_theme_icon("DistractionFree", "EditorIcons")
-	#open_editor_btn.custom_minimum_size = Vector2(32.0, 32.0)
-	#open_editor_btn.pressed.connect(_on_open_discourse_text_editor_pressed.bind(case_text))
-	#
-	#new_case.add_child(case_text)
-	#new_case.add_child(open_editor_btn)
-	#
-	#case_text.text_changed.connect(_on_conversation_changed)
-	#
-	#return new_case
-
-
-func new_text_field(text: String = "") -> HBoxContainer:
-	var new_text: HBoxContainer = HBoxContainer.new()
-	var new_editor: TextEdit = BracketHandler.new()
-	var edit_button: Button = Button.new()
-	var highlighter: NFEditorDialogSyntaxHighlighter = NFEditorDialogSyntaxHighlighter.new()
-	
-	highlighter.set_use_token("&", false)
-	highlighter.set_use_token("*", false)
-	highlighter.set_use_token("?", false)
-	
-	new_editor.syntax_highlighter = highlighter
-	
-	new_editor.text = text
-	
-	new_text.add_child(new_editor)
-	new_text.add_child(edit_button)
-	
-	new_editor.custom_minimum_size.y = 33.0
-	new_editor.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	new_editor.placeholder_text = "Phrase Text"
-	new_editor.enter_shifts_focus = true
-	new_editor.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
-	edit_button.custom_minimum_size = Vector2(33.0, 33.0)
-	edit_button.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	edit_button.flat = true
-	edit_button.icon = get_theme_icon("Edit", "EditorIcons")
-	edit_button.tooltip_text = "Edit Cases"
-	
-	return new_text
 
 
 func create_new_phrase_entry(key: String, format: String, unsaved: bool = true) -> StringName:
@@ -3364,11 +3237,8 @@ func erase_key(index: int) -> void:
 
 
 func clear_cases() -> void:
-	var default: HBoxContainer = %PhraseCasesEntries.get_child(0)
-	for case in %PhraseCasesEntries.get_children():
-		if case == default:
-			continue
-		case.queue_free()
+	for case_idx in range(%PhraseCasesEntries.get_child_count() - 1, 0, -1):
+		%PhraseCasesEntries.get_child(case_idx).queue_free()
 
 
 func clear_localized_keys() -> void:
@@ -3563,16 +3433,10 @@ func _truncate_with_elipsis(text: String, max_size: int, elipsis: String = "..."
 func filesystem_resource_removed(resource: Resource) -> void:
 	if resource == null:
 		return
-	conversation_tree.remove_conversation(resource)
-	if resource == active_conversation:
-		active_conversation = null
-		set_conversation_active(false)
-		_unsaved = false
-
-
-func close_active_conversation() -> void:
-	if active_conversation != null:
-		_on_menu_close_pressed()
+	var id: int = resource.get_instance_id()
+	if not _open_files.has(id):
+		return
+	close_dialog_resource(id)
 
 
 func display_dialog_id_checked() -> bool:
@@ -3599,15 +3463,18 @@ func _on_copy_format_pressed() -> void:
 func get_api_user_methods() -> Dictionary:
 	var methods: Dictionary = {}
 	
-	var method_blacklsit: Array[String] = []
-	var singleton: DiscourseAPI = DiscourseAPI.new()
-	var base_methods: Array = ClassDB.class_get_method_list(&"RefCounted")
+	if DiscourseGraphNode.api_path.is_empty() or not FileAccess.file_exists(DiscourseGraphNode.api_path):
+		if not DiscourseGraphNode.validate_api_path():
+			NFPluginGameHandler._log_msg(
+					"discourse - editor",
+					"Discourse API script not found",
+					NFPluginGameHandler._LogLevel.ERROR)
+			return methods
 	
-	for method in base_methods:
-		method_blacklsit.append(method["name"])
-		
-	for method:Dictionary in singleton.get_method_list():
-		if method["name"] in method_blacklsit or method["return"]["type"] == TYPE_NIL:
+	var api_script: Script = load(DiscourseGraphNode.api_path)
+	
+	for method:Dictionary in api_script.get_script_method_list():
+		if method["return"]["type"] == TYPE_NIL:
 			continue
 		
 		var default_count: int = method["default_args"].size()
@@ -3743,6 +3610,14 @@ func _is_preview_scene_valid(print_errors: bool = true) -> bool:
 		return false
 	
 	var instance: Node = scene.instantiate()
+	
+	if instance == null and print_errors:
+		NFPluginGameHandler._log_msg(
+				"discourse - editor",
+				"Scene '%s' couldn't be instantiated" % path,
+				NFPluginGameHandler._LogLevel.ERROR)
+		return false
+	
 	var scene_script: Script = instance.get_script()
 	if scene_script == null:
 		if print_errors:
@@ -3755,7 +3630,6 @@ func _is_preview_scene_valid(print_errors: bool = true) -> bool:
 	
 	var errors: Array[String] = []
 	var static_methods: Array[Dictionary] = scene_script.get_script_method_list()
-	var static_signals: Array[Dictionary] = scene_script.get_script_signal_list()
 	var has_c_updt: bool = false
 	var has_set_d: bool = false
 	var has_set_c: bool = false
@@ -3831,7 +3705,7 @@ func _is_preview_scene_valid(print_errors: bool = true) -> bool:
 			break
 	
 	if not has_c_updt:
-		errors.append("Scene has no valid 'update_choice'\"' method.")
+		errors.append("Scene has no valid 'update_choice' method.")
 	if not has_set_d:
 		errors.append("Scene has no valid 'set_dialog' method.")
 	if not has_set_c:
@@ -3874,3 +3748,42 @@ func _update_choice_textbox_size(box: TextEdit) -> void:
 func _on_phrase_text_field_changed(field: TextEdit) -> void:
 	_update_choice_textbox_size(field)
 	_on_conversation_changed()
+
+# --- UndoRedo ---
+
+
+func _on_phrase_key_editing_toggled(is_toggled: bool) -> void:
+	if is_toggled:
+		return
+
+
+func _on_phrase_text_editing_toggled(is_toggled: bool) -> void:
+	if is_toggled:
+		return
+
+
+func _on_phrase_case_editing_toggled(is_toggled: bool) -> void:
+	if is_toggled:
+		return
+
+
+func _on_phrase_result_editing_toggled(is_toggled: bool) -> void:
+	if is_toggled:
+		return
+
+
+func _on_localization_text_edit_focus_exited() -> void:
+	pass
+
+
+func _on_localization_choice_edit_toggled(is_toggled: bool) -> void:
+	pass
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE:
+		for file_id in _open_files:
+			if is_instance_valid(_open_files[file_id]["undo"]):
+				_open_files[file_id]["undo"].clear_history()
+				_open_files[file_id]["undo"].free()
+				_open_files[file_id]["undo"] = null
