@@ -1,7 +1,12 @@
 extends DiscourseGraphNode
 
-var meta_fields: int = 1
+
+signal metadata_id_changed(index: int, from: String, to: String)
+
+
+var meta_fields: int = 0
 var _connection_updates_disabled: bool = false
+
 
 func _post_init() -> void:
 	set_node_id(&"Metadata")
@@ -18,23 +23,7 @@ func _post_init() -> void:
 	connection_node.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	
 	add_field(&"metadata_connection", connection_node, false, -1, SlotConnectionType.METADATA)
-	
-	var new_port: PanelContainer = PanelContainer.new()
-	var metadata_line: LineEdit = LineEdit.new()
-	var field_id: StringName = &"metadata_0"
-	
-	new_port.add_theme_stylebox_override(&"panel", StyleBoxEmpty.new())
-	new_port.custom_minimum_size.y = 32
-	new_port.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	
-	metadata_line.visible = false
-	
-	new_port.add_child(metadata_line)
-	
-	metadata_line.focus_exited.connect(_on_metadata_line_focus_lost.bind(metadata_line))
-	metadata_line.text_submitted.connect(_on_metadata_line_focus_lost.bind(metadata_line))
-	
-	add_field(field_id, new_port, false, SlotConnectionType.VAR_ANY)
+	add_metadata_port()
 
 
 func _ready() -> void:
@@ -49,12 +38,17 @@ func _ready() -> void:
 func _on_input_connected(input_port: int, _from_node: DiscourseGraphNode, _from_port: int) -> void:
 	if _connection_updates_disabled:
 		return
+	
 	var on_last: bool = input_port == get_child_count() - 2
 	var id: StringName = StringName("metadata_" + str(input_port))
 	var port_field: PanelContainer = get_field(id)
 	var metadata_id: LineEdit = port_field.get_child(0)
+	var valid_id: String = get_valid_metadata_id(metadata_id.text.strip_edges(), metadata_id)
 	
+	metadata_id.text = valid_id
+	metadata_id.set_meta(&"old_value", valid_id)
 	metadata_id.visible = true
+	
 	if on_last:
 		add_metadata_port()
 
@@ -62,6 +56,7 @@ func _on_input_connected(input_port: int, _from_node: DiscourseGraphNode, _from_
 func _on_input_disconnected(input_port: int, _from_node: DiscourseGraphNode, _from_port: int) -> void:
 	if _connection_updates_disabled:
 		return
+	
 	if input_port == get_child_count() - 3:
 		remove_unused_fields.call_deferred()
 
@@ -75,8 +70,7 @@ func remove_unused_fields() -> void:
 			break
 		var id: StringName = StringName("metadata_" + str(port))
 		var line: LineEdit = get_field(id).get_child(0)
-		line.focus_exited.disconnect(_on_metadata_line_focus_lost)
-		line.text_submitted.disconnect(_on_metadata_text_submit)
+		line.editing_toggled.disconnect(_on_metadata_line_edit_toggled)
 		target_fields.append(id)
 		meta_fields -= 1
 	
@@ -86,6 +80,16 @@ func remove_unused_fields() -> void:
 	
 	remove_fields(target_fields, -1)
 	
+	var line: LineEdit = get_index_field(-1).get_child(0)
+	if line == null:
+		NFPluginGameHandler._log_msg(
+			"discourse - editor",
+			"Couldn't find metadata last item.",
+			NFPluginGameHandler._LogLevel.WARNING)
+		return
+	
+	line.visible = false
+	
 	update_size.call_deferred()
 
 
@@ -94,15 +98,12 @@ func update_size() -> void:
 
 
 func _get_node_data() -> Dictionary:
-	sanitize_ids()
-	
 	var metadata_connections: Array[Dictionary] = []
 	
 	var metadata: Dictionary = {"metadata_connections": metadata_connections}
 	var input_connections: Dictionary = {}
 	var output_connections: Dictionary = {
-		"metadata_target": get_uuid_and_port_connected_to(PortMode.OUTPUT, 0)
-	}
+		"metadata_target": get_uuid_and_port_connected_to(PortMode.OUTPUT, 0)}
 	
 	if 0 < get_metadata_count():
 		for port_index in range(get_metadata_count()):
@@ -162,54 +163,56 @@ func _set_node_data(data: Dictionary) -> void:
 		line.text = metadata_data["id"]
 
 
-func _on_metadata_line_focus_lost(edited: LineEdit) -> void:
-	if get_metadata_count() <= 1:
+func _on_metadata_line_edit_toggled(is_toggled: bool, edited: LineEdit) -> void:
+	if is_toggled:
 		return
 	
-	var desired: String = edited.text.strip_edges()
-	var validated_result: String = desired
-	var ids: Array[String] = []
-	var iteration: int = 0
+	var input_value = edited.text.strip_edges()
+	var new_value: String = get_valid_metadata_id(input_value, edited)
+	var old_value: String = edited.get_meta(&"old_value")
+	edited.text = new_value
 	
-	for meta_field in range(1, get_metadata_count()):
+	if new_value == old_value:
+		return
+	
+	var metadata_index: int = edited.get_parent().get_index()
+	edited.set_meta(&"old_value", new_value)
+	
+	metadata_id_changed.emit(
+			get_node_uuid(),
+			metadata_index,
+			old_value,
+			new_value)
+
+
+func get_valid_metadata_id(desired: String, skip: LineEdit = null) -> String:
+	var used_ids: Dictionary[String, Variant] = {}
+	
+	for meta_field in range(1, get_metadata_count() + 1):
 		var line: LineEdit = get_index_field(meta_field).get_child(0)
-		if line == edited:
+		if not line.visible or line == skip:
 			continue
-		ids.append(line.text)
+		used_ids[line.text] = null
+	var valid_id: String = desired
 	
-	while ids.has(validated_result):
-		iteration += 1
-		validated_result = desired + str(iteration)
+	if used_ids.has(desired):
+		var base: String = desired
+		var modified: String = desired
+		var trailing_data: Dictionary = StringUtils.get_trailing_integer(desired)
+		var iteration: int = trailing_data["integer"]
+		if trailing_data["has_integer"]:
+			base = base.trim_suffix(str(iteration))
+		
+		while used_ids.has(modified):
+			iteration += 1
+			modified = base + str(iteration)
+		valid_id = modified
 	
-	edited.text = validated_result
-
-
-func _on_metadata_text_submit(_text: String, submit_line: LineEdit) -> void:
-	submit_line.release_focus()
+	return valid_id
 
 
 func _on_metadata_id_text_changed(_text: String) -> void:
 	node_updated.emit()
-
-
-func sanitize_ids() -> void:
-	if get_metadata_count() <= 1:
-		return
-	
-	var ids: Array[String] = []
-	
-	for meta_field in range(1, get_metadata_count()):
-		var line: LineEdit = get_index_field(meta_field).get_child(0)
-		var desired: String = line.text.strip_edges()
-		var sanitized_text: String = desired
-		var iteration: int = 0
-		
-		while ids.has(sanitized_text):
-			iteration += 1
-			sanitized_text = desired + str(iteration)
-		
-		line.text = sanitized_text
-		ids.append(sanitized_text)
 
 
 func get_metadata_port_of(metadata_id: String) -> int:
@@ -238,12 +241,13 @@ func add_metadata_port() -> void:
 	new_port.custom_minimum_size.y = 32
 	new_port.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	
+	metadata_line.text = "metadata"
+	metadata_line.set_meta(&"old_value", "metadata")
 	metadata_line.visible = false
 	
 	new_port.add_child(metadata_line)
 	
-	metadata_line.focus_exited.connect(_on_metadata_line_focus_lost.bind(metadata_line))
-	metadata_line.text_submitted.connect(_on_metadata_text_submit.bind(metadata_line))
+	metadata_line.editing_toggled.connect(_on_metadata_line_edit_toggled.bind(metadata_line))
 	metadata_line.text_changed.connect(_on_metadata_id_text_changed)
 	
 	var slot_idx: int = add_field(field_id, new_port, false, SlotConnectionType.VAR_ANY)
@@ -263,5 +267,17 @@ func get_next_port_id() -> StringName:
 	return StringName(new_name)
 
 
-func set_metadata_ports() -> void:
-	pass
+func get_metadata_id(index: int) -> String:
+	var id: StringName = StringName("metadata_" + str(index))
+	var meta_entry: LineEdit = get_field(id)
+	if meta_entry != null:
+		return meta_entry.text
+	return ""
+
+
+func set_metadata_id(index: int, id: String) -> void:
+	var field_id: StringName = StringName("metadata_" + str(index))
+	var meta_entry: LineEdit = get_field(field_id)
+	if meta_entry != null:
+		meta_entry.text = id
+		meta_entry.set_meta(&"old_value", id)

@@ -1,8 +1,15 @@
 extends DiscourseGraphNode
 
 
+signal match_node_resized(uuid: StringName, old_snapshot: Dictionary, new_snapshot: Dictionary)
+signal match_field_updated(uuid: StringName, field_id: int, value: Variant)
+signal match_default_updated(uuid: StringName, value: Variant)
+signal match_mode_changed(uuid: StringName, old_mode: int, new_mode: int)
+
+
 var current_mode: int = TYPE_INT
 var _match_size_update_queed: bool = false
+
 
 func _post_init() -> void:
 	set_node_id(&"Match")
@@ -121,6 +128,19 @@ func _ready() -> void:
 
 
 func _get_node_data() -> Dictionary:
+	var metadata: Dictionary = {
+		"match_data_type": current_mode,
+		"cases": get_match_case_data()}
+	
+	var output_connections: Dictionary = {
+		"default": get_uuid_and_port_connected_to(PortMode.OUTPUT, 0)}
+	var input_connections: Dictionary = {
+		"match_value_source": get_uuid_and_port_connected_to(PortMode.INPUT, 1)}
+	
+	return _build_node_data(metadata, output_connections, input_connections)
+
+
+func get_match_case_data() -> Array[Dictionary]:
 	var cases: Array[Dictionary] = []
 	
 	for case in range(1, get_child_count() - 2):
@@ -137,17 +157,7 @@ func _get_node_data() -> Dictionary:
 			TYPE_STRING:
 				case_data["value"] = control.text
 		cases.append(case_data)
-	
-	var metadata: Dictionary = {
-		"match_data_type": current_mode,
-		"cases": cases}
-	
-	var output_connections: Dictionary = {
-		"default": get_uuid_and_port_connected_to(PortMode.OUTPUT, 0)}
-	var input_connections: Dictionary = {
-		"match_value_source": get_uuid_and_port_connected_to(PortMode.INPUT, 1)}
-	
-	return _build_node_data(metadata, output_connections, input_connections)
+	return cases
 
 
 func set_current_mode(mode: int) -> void:
@@ -182,12 +192,73 @@ func set_current_mode(mode: int) -> void:
 
 
 func _on_value_type_changed(id: int) -> void:
+	var old_mode: int = current_mode
 	set_current_mode(id)
-	node_updated.emit()
+	var new_mode: int = current_mode
+	
+	if old_mode == new_mode:
+		return
+	
+	match_mode_changed.emit(
+			get_node_uuid(),
+			old_mode,
+			new_mode)
 
 
-func _on_match_value_changed(_value: float) -> void:
-	node_updated.emit()
+func _on_match_value_changed(value: float, node: SpinBox) -> void:
+	if current_mode != TYPE_INT and current_mode != TYPE_FLOAT:
+		return
+	
+	var old_value: float = node.get_meta(&"old_value", 0.0)
+	var new_value: float = node.value
+	
+	if new_value == old_value:
+		return
+	
+	node.set_meta(&"old_value", new_value)
+	
+	var node_idx: int = node.get_parent().get_parent().get_index()
+	var match_id: int = node_idx - 3
+	
+	if match_id == 0:
+		match_default_updated.emit(
+				get_node_uuid(),
+				old_value,
+				new_value)
+	else:
+		match_field_updated.emit(
+				get_node_uuid(),
+				match_id,
+				old_value,
+				new_value)
+
+
+func _on_match_text_edit_toggled(is_toggled: bool, line: LineEdit) -> void:
+	if is_toggled or current_mode != TYPE_STRING:
+		return
+	
+	var old_value: String = line.get_meta(&"old_value", "")
+	var new_value: String = line.text
+	
+	if new_value == old_value:
+		return
+	
+	var node_idx: int = line.get_parent().get_parent().get_index()
+	var match_id: int = node_idx - 3
+	
+	line.set_meta(&"old_value", new_value)
+	
+	if match_id == 0:
+		match_default_updated.emit(
+				get_node_uuid(),
+				old_value,
+				new_value)
+	else:
+		match_field_updated.emit(
+				get_node_uuid(),
+				match_id,
+				old_value,
+				new_value)
 
 
 func _on_match_text_changed(_text: String) -> void:
@@ -270,10 +341,15 @@ func _on_match_count_changed(new_count: int) -> void:
 
 func _update_match_case_value() -> void:
 	var case_size: int = get_mapped_field(&"cases", &"case_count").value
+	var old_snapshot: Dictionary = {"metadata": {"match_data_type": get_match_case_data()}}
 	set_match_case_count(case_size)
+	var new_snapshot: Dictionary = {"metadata": {"match_data_type": get_match_case_data()}}
 	_match_size_update_queed = false
 	size.y = 0
-	node_updated.emit()
+	match_node_resized.emit(
+			get_node_uuid(),
+			old_snapshot,
+			new_snapshot)
 
 
 func remove_match_fields(fields: Array[StringName]) -> void:
@@ -305,9 +381,34 @@ func get_new_match_field() -> PanelContainer:
 	value_number.visible = current_mode != TYPE_STRING
 	
 	value_text.text_changed.connect(_on_match_text_changed)
-	value_number.value_changed.connect(_on_match_value_changed)
+	value_number.value_changed.connect(_on_match_value_changed.bind(value_number))
 	
 	new_field.add_child(value_number)
 	new_field.add_child(value_text)
 	
 	return new_field
+
+
+func set_match_value(case_number: int, value: Variant) -> void:
+	var current_match_count: int = get_child_count() - 3
+	
+	if not RangeUtils.is_between(case_number, 1, current_match_count):
+		return
+	
+	var set_type: int = typeof(value)
+	
+	match set_type:
+		TYPE_INT, TYPE_FLOAT:
+			if current_mode != TYPE_INT and current_mode != TYPE_FLOAT:
+				return
+		_:
+			if set_type != current_mode:
+				return
+	
+	var case_id: StringName = StringName("case_" + str(case_number))
+	var control: Control = get_field(case_id).get_child(1 if current_mode == TYPE_STRING else 0)
+	
+	if current_mode == TYPE_STRING:
+		control.text = value
+	else:
+		control.set_value_no_signal(value)

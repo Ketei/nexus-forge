@@ -22,6 +22,7 @@ signal nodes_removed(nodes_data: Dictionary)
 signal node_connected(from_node: StringName, from_port: int, to_node: StringName, to_port: int)
 signal node_disconnected(from_node: StringName, from_port: int, to_node: StringName, to_port: int)
 signal node_connection_switched(origian_ports: Dictionary, new_node: StringName, new_port: int)
+signal node_data_changed(node_uuid: StringName, old_data: Dictionary, new_data: Dictionary)
 signal use_code_editor_requested(target_control: TextEdit)
 signal browse_character_requested(target_control: LineEdit)
 

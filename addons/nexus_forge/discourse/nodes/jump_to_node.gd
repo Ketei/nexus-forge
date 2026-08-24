@@ -3,6 +3,7 @@ extends DiscourseGraphNode
 
 
 signal go_to_anchor_pressed(node_uuid: StringName)
+signal selected_anchor_changed(node_uuid: StringName, old_anchor: StringName, new_anchor: StringName)
 
 
 func _post_init() -> void:
@@ -21,6 +22,7 @@ func _post_init() -> void:
 	shortcuts.disabled = true
 	shortcuts.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	shortcuts.custom_minimum_size.y = 32
+	shortcuts.set_meta(&"old_value", &"")
 	
 	var go_to_btn: Button = Button.new()
 	go_to_btn.custom_minimum_size = Vector2(32.0, 32.0)
@@ -108,9 +110,11 @@ func add_anchor(target_uuid: StringName, target_text: String) -> void:
 	var new_idx: int = ids.find(id_selected)
 	
 	if new_idx == -1:
-		options.select(0 if 0 < options.item_count else -1)
+		options.select(0)
+		options.set_meta(&"old_value", options.get_item_metadata(0))
 	else:
 		options.select(new_idx)
+		options.set_meta(&"old_value", options.get_item_metadata(new_idx))
 	
 	if options.disabled:
 		options.disabled = false
@@ -138,8 +142,12 @@ func remove_anchor(target_uuid: StringName) -> bool:
 			continue
 		options.remove_item(idx)
 		if options.item_count == 0:
+			options.set_meta(&"old_value", &"")
 			options.disabled = true
 			go_to_btn.disabled = true
+		else:
+			# TEST: This might not work?
+			options.set_meta(&"old_value", options.selected)
 		return true
 	
 	return false
@@ -152,10 +160,26 @@ func _on_go_to_anchor_pressed() -> void:
 	go_to_anchor_pressed.emit(menu.get_selected_metadata())
 
 
-func select_anchor(uuid: String) -> void:
+func select_anchor(uuid: StringName) -> void:
 	var menu: OptionButton = get_mapped_field(&"fields", &"shortcuts")
 	
 	for idx in range(menu.item_count):
 		if menu.get_item_metadata(idx) == uuid:
 			menu.select(idx)
 			return
+
+
+func _on_anchor_idx_selected(idx: int) -> void:
+	var menu: OptionButton = get_mapped_field(&"fields", &"shortcuts")
+	var old_value: StringName = menu.get_meta(&"old_value", &"")
+	var new_value: StringName = menu.get_item_metadata(idx)
+	
+	if new_value == old_value:
+		return
+	
+	menu.set_meta(&"old_value", new_value)
+	
+	selected_anchor_changed.emit(
+			get_node_uuid(),
+			old_value,
+			new_value)

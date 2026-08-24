@@ -1,7 +1,7 @@
 extends DiscourseGraphNode
 
 
-signal id_changed(uuid: String, new_id: String)
+signal id_changed(uuid: String, old_id: String, new_id: String)
 
 var current_id: String = ""
 
@@ -17,7 +17,7 @@ func _post_init() -> void:
 	var anchor_id_lnedt: LineEdit = LineEdit.new()
 	anchor_id_lnedt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	anchor_id_lnedt.placeholder_text = "Anchor ID"
-	anchor_id_lnedt.focus_exited.connect(_on_id_focus_lost.bind(anchor_id_lnedt))
+	anchor_id_lnedt.editing_toggled.connect(_on_id_edit_toggled.bind(anchor_id_lnedt))
 	anchor_id_lnedt.text_submitted.connect(_on_line_text_submitted.bind(anchor_id_lnedt))
 	
 	add_field(
@@ -76,14 +76,14 @@ func _on_line_text_submitted(_text: String, line: LineEdit):
 	line.release_focus()
 
 
-func _on_id_focus_lost(line: LineEdit) -> void:
+func _on_id_edit_toggled(is_toggled: bool, line: LineEdit) -> void:
 	line.text = line.text.strip_edges()
 	
 	if current_id == line.text:
 		return
-	
+	var old_id: String = current_id
 	current_id = line.text.strip_edges()
-	id_changed.emit(_uuid, current_id)
+	id_changed.emit(_uuid, old_id, current_id)
 
 
 func set_anchor_id(new_id: String) -> void:

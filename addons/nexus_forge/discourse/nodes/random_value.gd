@@ -1,7 +1,15 @@
 extends DiscourseGraphNode
 
 
+signal mode_changed(uuid: StringName, from: float, to: float)
+signal range_changed(uuid: StringName, from_min: float, from_max: float, to_min: float, to_max: float)
+
+# Modes can only be int, float & bool
 var current_mode: int = TYPE_INT
+var min_spinbox: SpinBox
+var max_spinbox: SpinBox
+var min_label: Label
+var menu: MenuButton
 
 
 func _post_init() -> void:
@@ -12,15 +20,15 @@ func _post_init() -> void:
 	parent_port = 0
 	size = Vector2(240.0, 165.0)
 	var header_container: HBoxContainer = HBoxContainer.new()
-	var random_type: MenuButton = MenuButton.new()
-	var random_popup: PopupMenu = random_type.get_popup()
+	menu = MenuButton.new()
+	var random_popup: PopupMenu = menu.get_popup()
 	var header_label: Label = Label.new()
 	var min_container: HBoxContainer = HBoxContainer.new()
 	var max_container: HBoxContainer = HBoxContainer.new()
-	var min_label: Label = Label.new()
+	min_label = Label.new()
 	var max_label: Label = Label.new()
-	var min_spinbox: SpinBox = SpinBox.new()
-	var max_spinbox: SpinBox = SpinBox.new()
+	min_spinbox = SpinBox.new()
+	max_spinbox = SpinBox.new()
 	
 	header_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	min_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -32,8 +40,9 @@ func _post_init() -> void:
 	header_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	header_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	
-	random_type.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	random_type.custom_minimum_size = Vector2(32.0, 32.0)
+	menu.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	menu.custom_minimum_size = Vector2(32.0, 32.0)
+	menu.set_meta(&"old_value", current_mode)
 	
 	min_label.text = "Min"
 	min_label.custom_minimum_size.x = 35.0
@@ -42,17 +51,16 @@ func _post_init() -> void:
 	min_spinbox.max_value = 100.0
 	min_spinbox.allow_lesser = true
 	min_spinbox.allow_greater = true
-	
-	min_spinbox.value_changed.connect(node_updated.emit)
-	max_spinbox.value_changed.connect(node_updated.emit)
+	min_spinbox.set_meta(&"old_value", 0.0)
 	
 	max_label.text = "Max"
 	max_label.custom_minimum_size.x = 35.0
 	max_spinbox.custom_minimum_size = Vector2(90.0, 32.0)
 	max_spinbox.allow_greater = true
+	max_spinbox.set_meta(&"old_value", 0.0)
 	
 	header_container.add_child(header_label)
-	header_container.add_child(random_type)
+	header_container.add_child(menu)
 	
 	min_container.add_child(min_label)
 	min_container.add_child(min_spinbox)
@@ -67,7 +75,6 @@ func _post_init() -> void:
 			-1,
 			SlotConnectionType.VAR_INT)
 	set_slot_color_right(0, COLORS["integer"])
-	map_field(&"random_type", &"type_button", random_type)
 	
 	add_field(
 			&"min_value",
@@ -76,9 +83,6 @@ func _post_init() -> void:
 			SlotConnectionType.VAR_INT,
 			-1)
 	set_slot_color_left(1, COLORS["integer"])
-	map_field(&"min_value", &"min_label", min_label)
-	map_field(&"min_value", &"min_spinbox", min_spinbox)
-	map_field(&"min_value", &"min_spinbox", min_spinbox)
 	
 	add_field(
 			&"max_value",
@@ -89,8 +93,9 @@ func _post_init() -> void:
 	set_slot_color_left(2, COLORS["integer"])
 	map_field(&"max_value", &"max_spinbox", max_spinbox)
 	
-	min_spinbox.value_changed.connect(_on_min_value_changed.bind(max_spinbox))
-	random_popup.id_pressed.connect(_on_random_type_selected.bind(random_type, min_spinbox, max_spinbox, min_label))
+	min_spinbox.value_changed.connect(_on_min_value_changed)
+	max_spinbox.value_changed.connect(_on_max_value_changed)
+	random_popup.id_pressed.connect(_on_random_type_selected)
 
 
 func _ready() -> void:
@@ -164,48 +169,84 @@ func _set_node_data(data: Dictionary) -> void:
 	if metadata.has("position") and typeof(metadata["position"]) == TYPE_VECTOR2:
 		position_offset = metadata["position"]
 	
-	var base: SpinBox = get_mapped_field(&"min_value", "min_spinbox")
-	var max_value: SpinBox = get_mapped_field(&"max_value", "max_spinbox")
-	var min_label: Label = get_mapped_field(&"min_value", "min_label")
 	var type_menu: MenuButton = get_mapped_field(&"random_type", "type_button")
 	
 	if metadata.has("mode") and typeof(metadata["mode"]) == TYPE_INT:
-		current_mode = metadata["mode"]
+		set_mode(metadata["mode"])
 	
-	set_type_fields(current_mode, type_menu, base, max_value, min_label)
-	
-	if not metadata.has("values") or typeof(metadata["values"]) != TYPE_DICTIONARY or not metadata["values"].has_all(["base", "max"]):
+	if not metadata.has("values") or typeof(metadata["values"]) != TYPE_DICTIONARY:
 		return
 	
-	var base_value = metadata["values"]["base"]
-	var max_value_data = metadata["values"]["max"]
-	var base_value_type: int = typeof(base_value)
-	var max_value_type = typeof(max_value_data)
-	if base_value_type == TYPE_FLOAT || base_value_type == TYPE_INT:
-		base.set_value_no_signal(base_value)
-		if max_value_type == TYPE_FLOAT || max_value_type == TYPE_INT:
-			max_value.set_value_no_signal(maxf(base_value, max_value_data))
+	if metadata["values"].has("base"):
+		var base_type: int = metadata["values"]["base"]
+		if base_type == TYPE_INT or base_type == TYPE_FLOAT:
+			min_spinbox.set_value_no_signal(metadata["values"]["base"])
+			min_spinbox.set_meta(&"old_value", min_spinbox.value)
+	
+	if metadata["values"].has("max"):
+		var max_type: int = metadata["values"]["max"]
+		if max_type == TYPE_INT or max_type == TYPE_FLOAT:
+			max_spinbox.set_value_no_signal(maxf(min_spinbox.value, metadata["values"]["max"]))
+			max_spinbox.set_meta(&"old_value", max_spinbox.value)
 
 
-func _on_min_value_changed(min_value: float, max_spinbox: SpinBox) -> void:
+func _on_min_value_changed(min_value: float) -> void:
 	if current_mode == TYPE_BOOL:
 		return
-	
+	var prev_min_value: float = min_spinbox.get_meta(&"old_value")
+	var prev_max_value: float = max_spinbox.get_meta(&"old_value")
+	min_spinbox.set_meta(&"old_value", min_value)
 	max_spinbox.min_value = min_value
 	
 	if max_spinbox.value < min_value:
 		max_spinbox.set_value_no_signal(min_value)
+		max_spinbox.set_meta(&"old_value", min_value)
+	
+	range_changed.emit(
+			get_node_uuid(),
+			prev_min_value,
+			prev_max_value,
+			min_value,
+			max_spinbox.value)
 
 
-func _on_random_type_selected(type: int, menu: MenuButton, min_spinbox: SpinBox, max_spinbox: SpinBox, min_label: Label) -> void:
-	if current_mode == type:
+func _on_max_value_changed(max_value: float) -> void:
+	var prev_value: float = max_spinbox.get_meta(&"old_value")
+	max_spinbox.set_meta(&"old_value", max_value)
+	range_changed.emit(
+			get_node_uuid(),
+			min_spinbox.value,
+			prev_value,
+			min_spinbox.value,
+			max_value)
+
+
+func _on_random_type_selected(type: int) -> void:
+	var prev_mode: int = menu.get_meta(&"old_value")
+	
+	if type == prev_mode:
 		return
-	current_mode = type
-	set_type_fields(type, menu, min_spinbox, max_spinbox, min_label)
-	node_updated.emit()
+	
+	menu.set_meta(&"old_value", type)
+	set_mode(type)
+	mode_changed.emit(
+			get_node_uuid(),
+			prev_mode,
+			current_mode)
 
 
-func set_type_fields(type: int, menu: MenuButton, min_spinbox: SpinBox, max_spinbox: SpinBox, min_label: Label) -> void:
+func set_mode(mode: int) -> void:
+	if mode != TYPE_INT and mode != TYPE_FLOAT and mode != TYPE_BOOL:
+		return
+	
+	if current_mode == mode:
+		return
+	
+	current_mode = mode
+	_set_type_fields(mode)
+
+
+func _set_type_fields(type: int) -> void:
 	if min_spinbox.has_focus():
 		min_spinbox.release_focus()
 	elif max_spinbox.has_focus():

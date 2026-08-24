@@ -7,6 +7,7 @@ signal disconnect_requested(from: StringName, out_port: int, to: StringName, in_
 signal close_requested(node: DiscourseGraphNode)
 signal duplicate_requested(node: DiscourseGraphNode)
 signal localize_node_toggled(toggled_on: bool, node: DiscourseGraphNode)
+signal node_resized(node_uuid: StringName, from: Vector2, to: Vector2)
 signal node_updated
 signal node_disconnected
 
@@ -65,6 +66,8 @@ var node_type: DialogueNodeType = DialogueNodeType.DIALOG
 var _uuid: StringName = &""
 var _node_id: StringName = &""
 var _uses_localization: bool = false
+var _prev_size: Vector2 = Vector2.ZERO
+var _resizing: bool = false
 var parent_mode: PortMode = PortMode.INPUT
 var parent_port: int = 0
 var graph_icon: Texture2D = null:
@@ -171,11 +174,27 @@ func _init(uuid: StringName = &"", theme_variant: StringName = &"", with_duplica
 	_post_init()
 	
 	if resizable:
+		resize_request.connect(_on_resize_requested)
 		resize_end.connect(_on_resize_end)
 
 
-func _on_resize_end(_new_size: Vector2) -> void:
-	node_updated.emit()
+func _on_resize_requested(new_size: Vector2) -> void:
+	if _resizing:
+		return
+	_resizing = true
+	_prev_size = size
+
+
+func _on_resize_end(new_size: Vector2) -> void:
+	_resizing = false
+	
+	if _prev_size == new_size:
+		return
+	
+	node_resized.emit(
+			get_node_uuid(),
+			_prev_size,
+			new_size)
 
 
 func _ready_localize_icon(localize_btn: Button) -> void:
@@ -293,6 +312,9 @@ func _set_node_data(data: Dictionary) -> void:
 	
 	if metadata.has("position") and typeof(metadata["position"]) == TYPE_VECTOR2:
 		position_offset = metadata["position"]
+	
+	if metadata.has("localized") and typeof(metadata["localized"]) == TYPE_BOOL:
+		set_node_localized(metadata["localized"])
 
 
 func _on_localization_toggled(toggle: bool) -> void:
@@ -303,7 +325,6 @@ func _on_localization_toggled(toggle: bool) -> void:
 	node.modulate = LOCALIZED_COLOR if toggle else Color.WHITE
 	_uses_localization = toggle
 	localize_node_toggled.emit(toggle, self)
-	node_updated.emit()
 
 
 func get_node_state() -> Dictionary:
@@ -913,10 +934,19 @@ func get_field(field_id: StringName) -> Control:
 
 
 func get_index_field(field_index: int) -> Control:
-	if field_index < 0 or get_child_count() <= field_index:
+	var child_count: int = get_child_count()
+	
+	if child_count == 0:
 		return null
 	
-	return get_child(field_index).get_child(1)
+	var max_index: int = child_count - 1
+	
+	if not RangeUtils.is_between(field_index, -child_count, max_index):
+		return null
+	
+	var true_index: int = wrapi(field_index, 0, child_count)
+	
+	return get_child(true_index).get_child(1)
 
 
 func get_field_input_port(field_id: StringName) -> int:

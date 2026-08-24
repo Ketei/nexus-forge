@@ -58,6 +58,11 @@ var _unsaved: bool = false:
 var _open_files: Dictionary[int, Dictionary] = {}
 var undo: UndoRedo
 
+var node_popup: PopupMenu = null
+var file_popup: PopupMenu = null
+var locale_popup: PopupMenu = null
+var dialog_previewer: Node = null
+
 # ----------------------------
 var _conversation_options_disabled: bool = true
 
@@ -114,10 +119,6 @@ var phrases_index: int = -1
 
 @onready var no_dialog_label: Label = $MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/GraphPanel/NoDialogLbl
 @onready var discourse_graph_edit: GraphEdit = $MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/GraphPanel/DiscourseGraphEdit
-var node_popup: PopupMenu = null
-var file_popup: PopupMenu = null
-var locale_popup: PopupMenu = null
-var dialog_previewer: Node = null
 
 @onready var node_menu_btn: MenuButton = $MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/NodeMenuBtn
 @onready var save_btn: Button = $MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/SaveBtn
@@ -859,27 +860,6 @@ func _locale_sort_custom(locale_a: Dictionary, locale_b: Dictionary):
 		return language_comp < 0
 
 
-#func _on_localization_selected(idx: int) -> void:
-	#var old_locale: String = current_locale
-	#
-	#if idx == -1:
-		#localization_menu.tooltip_text = ""
-		#current_locale = ""
-	#else:
-		#var locale_data: Dictionary = localization_menu.get_item_metadata(idx)
-		#var lang_code: String = locale_data["language_code"]
-		#var count_code: String = locale_data["country_code"]
-		#if locale_button_compact:
-			#if count_code.is_empty():
-				#localization_menu.text = lang_code
-			#else:
-				#localization_menu.text = lang_code + "_" + count_code
-		#current_locale = TranslationServer.standardize_locale(lang_code if count_code.is_empty() else lang_code + "_" + count_code)
-		#localization_menu.tooltip_text = localization_menu.get_item_text(idx)
-	#
-	#_on_graph_editor_locale_changed(old_locale, current_locale)
-
-
 func _on_locale_submenu_idx_pressed(idx: int, submenu: PopupMenu) -> void:
 	var from: String = current_locale
 	var count: String = submenu.get_item_metadata(idx)
@@ -1015,17 +995,15 @@ func _on_change_locale_group_pressed() -> void:
 
 
 func _on_collapsed_state_changed() -> void:
-	if not listen_offset or conversation_tree.active_conversation_item == null or conversation_tree.active_offset_changed:
+	if active_conversation == null:
 		return
-	
-	conversation_tree.active_offset_changed = true
+	_unsaved = true
 
 
 func _on_graph_edit_offset_changed(_offset: Vector2) -> void:
-	if not listen_offset or conversation_tree.active_conversation_item == null or conversation_tree.active_offset_changed:
+	if not listen_offset or active_conversation == null:
 		return
-	
-	conversation_tree.active_offset_changed = true
+	_open_files[active_conversation.get_instance_id()]["offset_changed"] = true
 
 
 func _on_conversation_close_pressed(dialog_id: int) -> void:
@@ -1886,34 +1864,35 @@ func _on_new_conversation_pressed() -> void:
 	file_saver.popup_centered()
 	
 	var result: Array = await file_saver.dialog_finished
-	
-	if result[0]:
-		listen_offset = false
-		if active_conversation != null:
-			save_current_dialog_to_memory()
-		var new_conv: EditorDiscourseDialog = EditorDiscourseDialog.new()
-		new_conv.locale_map.assign(get_settings_languages_as_map())
-		if ResourceLoader.has_cached(result[1]):
-			new_conv.take_over_path(result[1])
-		ResourceSaver.save(
-			new_conv,
-			result[1])
-		new_conv.resource_path = result[1]
-		if _conversation_options_disabled:
-			set_graph_edit_visible(true)
-			set_conversation_options_enabled(true)
-			discourse_nodes_tree.get_root().collapsed = false
-			new_folder_button.disabled = false
-			dialog_id_ln_edt.editable = true
-		load_conversation(new_conv, true)
-		
-		discourse_graph_edit.reset_scroll_offset.call_deferred()
-		
-		set_deferred(&"listen_offset", true)
-		
-		add_to_recently_opened_files(result[1])
-		
 	file_saver.queue_free()
+	
+	if not result[0]:
+		return
+	
+	listen_offset = false
+	if active_conversation != null:
+		save_current_dialog_to_memory()
+	var new_conv: EditorDiscourseDialog = EditorDiscourseDialog.new()
+	new_conv.locale_map.assign(get_settings_languages_as_map())
+	if ResourceLoader.has_cached(result[1]):
+		new_conv.take_over_path(result[1])
+	ResourceSaver.save(
+		new_conv,
+		result[1])
+	new_conv.resource_path = result[1]
+	if _conversation_options_disabled:
+		set_graph_edit_visible(true)
+		set_conversation_options_enabled(true)
+		discourse_nodes_tree.get_root().collapsed = false
+		new_folder_button.disabled = false
+		dialog_id_ln_edt.editable = true
+	load_conversation(new_conv, true)
+	
+	discourse_graph_edit.reset_scroll_offset.call_deferred()
+	
+	set_deferred(&"listen_offset", true)
+	
+	add_to_recently_opened_files(result[1])
 
 
 func get_settings_languages_as_map() -> Dictionary:
@@ -2153,37 +2132,6 @@ func set_up_node_structure(structure: Array, level: TreeItem, _map: Dictionary[S
 			new_folder.set_metadata(0, {"is_node": false})
 			if item.has("items"):
 				set_up_node_structure(item["items"], new_folder, _map)
-
-
-func _on_discourse_item_renamed(uuid: StringName, old_name: String, new_name: String) -> void:
-	var node: DiscourseGraphNode = discourse_graph_edit.get_discourse_node(uuid)
-	node.set_node_id(new_name)
-	
-	if node.is_node_localized():
-		match node.node_type:
-			DiscourseGraphNode.DialogueNodeType.DIALOG:
-				localization_nodes_tree.rename_dialog_node(uuid, new_name)
-			DiscourseGraphNode.DialogueNodeType.CHOICES:
-				localization_nodes_tree.rename_options_node(uuid, new_name)
-			DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
-				localization_nodes_tree.rename_text_node(uuid, new_name)
-	
-	_on_conversation_changed()
-
-
-func _on_discourse_folder_renamed(folder_id: int, old_name: String, new_name: String) -> void:
-	
-	_on_conversation_changed()
-
-
-func _on_discourse_item_moved(from_path: String, from_index: int, to_path: String, to_index: int) -> void:
-	
-	_on_conversation_changed()
-
-
-func _on_discourse_directory_removed(path: String, index: int, id: int, contents: Array[Dictionary]) -> void:
-	
-	_on_conversation_changed()
 
 #endregion
 
@@ -3751,7 +3699,6 @@ func _on_phrase_text_field_changed(field: TextEdit) -> void:
 
 # --- UndoRedo ---
 
-
 func _on_phrase_key_editing_toggled(is_toggled: bool) -> void:
 	if is_toggled:
 		return
@@ -3771,6 +3718,7 @@ func _on_phrase_result_editing_toggled(is_toggled: bool) -> void:
 	if is_toggled:
 		return
 
+# --- Localization ---
 
 func _on_localization_text_edit_focus_exited() -> void:
 	pass
@@ -3778,6 +3726,39 @@ func _on_localization_text_edit_focus_exited() -> void:
 
 func _on_localization_choice_edit_toggled(is_toggled: bool) -> void:
 	pass
+
+
+# --- Node Structure ---
+
+func _on_discourse_item_renamed(uuid: StringName, old_name: String, new_name: String) -> void:
+	var node: DiscourseGraphNode = discourse_graph_edit.get_discourse_node(uuid)
+	node.set_node_id(new_name)
+	
+	if node.is_node_localized():
+		match node.node_type:
+			DiscourseGraphNode.DialogueNodeType.DIALOG:
+				localization_nodes_tree.rename_dialog_node(uuid, new_name)
+			DiscourseGraphNode.DialogueNodeType.CHOICES:
+				localization_nodes_tree.rename_options_node(uuid, new_name)
+			DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
+				localization_nodes_tree.rename_text_node(uuid, new_name)
+	
+	_on_conversation_changed()
+
+
+func _on_discourse_folder_renamed(folder_id: int, old_name: String, new_name: String) -> void:
+	
+	_on_conversation_changed()
+
+
+func _on_discourse_item_moved(from_path: String, from_index: int, to_path: String, to_index: int) -> void:
+	
+	_on_conversation_changed()
+
+
+func _on_discourse_directory_removed(path: String, index: int, id: int, contents: Array[Dictionary]) -> void:
+	
+	_on_conversation_changed()
 
 
 func _notification(what: int) -> void:

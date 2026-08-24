@@ -1,7 +1,13 @@
 extends DiscourseGraphNode
 
 
-var available_methods: Dictionary = {}
+signal method_changed(node_uuid: StringName, from: String, to: String)
+
+static var available_methods: Dictionary = {}
+
+
+static func _static_init() -> void:
+	available_methods = get_user_methods()
 
 
 func _post_init() -> void:
@@ -12,8 +18,6 @@ func _post_init() -> void:
 	parent_mode = PortMode.OUTPUT
 	parent_port = 0
 	size = Vector2(240, 83)
-	
-	available_methods = get_user_methods()
 	
 	var methods_node: OptionButton = OptionButton.new()
 	methods_node.name = &"MethodsOptBtn"
@@ -36,11 +40,14 @@ func _post_init() -> void:
 	
 	set_slot_color_right(0, COLORS["method"])
 	
-	if not available_methods.is_empty():
-		methods_node.select(0)
-		load_method(methods_node.get_item_metadata(0))
-	else:
+	if available_methods.is_empty():
 		methods_node.disabled = true
+		methods_node.set_meta(&"old_value", "")
+	else:
+		var method: String = methods_node.get_item_metadata(0)
+		methods_node.select(0)
+		methods_node.set_meta(&"old_value", method)
+		load_method(methods_node.get_item_metadata(0))
 	
 	methods_node.item_selected.connect(_on_method_selected)
 
@@ -118,6 +125,7 @@ func _set_node_data(data: Dictionary) -> void:
 		if method_opt_btn.get_item_metadata(idx) != metadata["method"]:
 			continue
 		method_opt_btn.select(idx)
+		method_opt_btn.set_meta(&"old_value", metadata["method"])
 		load_method(metadata["method"])
 		break
 
@@ -125,13 +133,47 @@ func _set_node_data(data: Dictionary) -> void:
 func _on_method_selected(idx: int) -> void:
 	var opt_btn: OptionButton = get_field(&"methods")
 	var id: String = opt_btn.get_item_metadata(idx)
+	var prev_id: String = opt_btn.get_meta(&"old_value")
+	
+	if id == prev_id:
+		return
+	
+	opt_btn.set_meta(&"old_value", id)
 	load_method(id)
-	node_updated.emit()
+	method_changed.emit(
+			get_node_uuid(),
+			prev_id,
+			id)
+
+
+func select_method(method_id: String) -> bool:
+	var opt_btn: OptionButton = get_field(&"methods")
+	for idx in range(opt_btn.item_count):
+		if opt_btn.get_item_metadata(idx) == method_id:
+			opt_btn.select(idx)
+			opt_btn.set_meta(&"old_value", method_id)
+			load_method(method_id)
+			return true
+	return false
 
 
 func reload_methods() -> void:
 	available_methods = get_user_methods()
 	var opt_btn: OptionButton = get_field(&"methods")
+	
+	if available_methods.is_empty():
+		if has_any_output(0):
+			var target: DiscourseGraphNode = get_node_connected_to_port(PortMode.OUTPUT, 0)
+			disconnect_port(PortMode.OUTPUT, 0)
+		opt_btn.clear()
+		clear_input_args()
+		opt_btn.disabled = true
+		opt_btn.set_meta(&"old_value", "")
+		return
+	else:
+		if opt_btn.disabled:
+			opt_btn.disabled = false
+	
 	var selected_method: String = opt_btn.get_selected_metadata() if opt_btn.selected != -1 else ""
 	var all_methods: Array = available_methods.keys()
 	var new_select: int = -1
@@ -152,14 +194,9 @@ func reload_methods() -> void:
 		opt_btn.select(new_select)
 	
 	if new_select == -1:
-		if available_methods.size() == 0:
-			clear_input_args()
-			if has_any_output(0):
-				var target: DiscourseGraphNode = get_node_connected_to_port(PortMode.OUTPUT, 0)
-				disconnect_port(PortMode.OUTPUT, 0)
-		else:
-			opt_btn.select(0)
-			load_method(opt_btn.get_item_metadata(0))
+		opt_btn.select(0)
+		opt_btn.set_meta(&"old_value", opt_btn.get_item_metadata(0))
+		load_method(opt_btn.get_item_metadata(0))
 		node_updated.emit()
 		return # Since there was no equal method we stop here
 	
@@ -412,21 +449,15 @@ func clear_input_args() -> void:
 
 
 static func get_user_methods() -> Dictionary:
-	if api_path.is_empty() or not ResourceLoader.exists(api_path):
-		var all_classes: Array[Dictionary] = ProjectSettings.get_global_class_list()
-		for class_entry in all_classes:
-			if class_entry["class"] == "DiscourseAPI":
-				api_path = class_entry["path"]
-				break
-	
 	var methods: Dictionary = {}
-	
-	if not ResourceLoader.exists(api_path):
-		NFPluginGameHandler._log_msg(
-				"discourse - editor",
-				"Couldn't load DiscourseAPI script.",
-				NFPluginGameHandler._LogLevel.ERROR)
-		return methods
+		
+	if api_path.is_empty() or not ResourceLoader.exists(api_path):
+		if not validate_api_path():
+			NFPluginGameHandler._log_msg(
+					"discourse - editor",
+					"Couldn't load DiscourseAPI script.",
+					NFPluginGameHandler._LogLevel.ERROR)
+			return methods
 	
 	var api_script: Script = load(api_path)
 	var api_methods: Array[Dictionary] = api_script.get_script_method_list()

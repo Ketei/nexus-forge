@@ -1,65 +1,18 @@
 extends DiscourseGraphNode
 
 
-signal value_changed(type, value)
-signal data_type_changed
+signal value_changed(uuid: StringName, from: Variant, to: Variant)
+signal data_type_changed(uuid: StringName, from: int, to: int)
 
 const MAX_LINES: int = 5
 const EXTRA_Y_PADDING: int = 8
 
-var active_value: Control = null
+var num_value: SpinBox
+var text_value: TextEdit
+var bool_value: CheckBox
 
 
-var mode: int = TYPE_INT:
-	set(new_mode):
-		if mode == new_mode:
-			return
-		
-		if active_value != null:
-			match mode:
-				TYPE_INT:
-					active_value.value_changed.disconnect(_on_value_changed)
-				TYPE_FLOAT:
-					active_value.value_changed.disconnect(_on_value_changed)
-				TYPE_BOOL:
-					active_value.toggled.disconnect(_on_value_changed)
-				TYPE_STRING:
-					active_value.text_changed.disconnect(_on_text_field_text_changed)
-					_reset_height.call_deferred()
-		
-		mode = new_mode
-		
-		for option in get_field(&"data").get_child(0).get_children():
-			option.visible = false
-		
-		match new_mode as Variant.Type:
-			TYPE_INT:
-				active_value = get_field(&"data").get_child(0).get_child(0)
-				active_value.step = 1.0
-				active_value.visible = true
-				active_value.value_changed.connect(_on_value_changed, CONNECT_DEFERRED)
-				set_slot_type_right(0, SlotConnectionType.VAR_INT)
-				set_slot_color_right(0, COLORS["integer"])
-			TYPE_FLOAT:
-				active_value = get_field(&"data").get_child(0).get_child(0)
-				active_value.visible = true
-				active_value.step = 0.01
-				active_value.value_changed.connect(_on_value_changed, CONNECT_DEFERRED)
-				set_slot_type_right(0, SlotConnectionType.VAR_FLOAT)
-				set_slot_color_right(0, COLORS["float"])
-			TYPE_BOOL:
-				active_value = get_field(&"data").get_child(0).get_child(1)
-				active_value.visible = true
-				active_value.toggled.connect(_on_value_changed, CONNECT_DEFERRED)
-				set_slot_type_right(0, SlotConnectionType.VAR_BOOL)
-				set_slot_color_right(0, COLORS["bool"])
-			TYPE_STRING:
-				active_value = get_field(&"data").get_child(0).get_child(2)
-				active_value.visible = true
-				active_value.text_changed.connect(_on_text_field_text_changed, CONNECT_DEFERRED)
-				set_slot_type_right(0, SlotConnectionType.VAR_STRING)
-				set_slot_color_right(0, COLORS["string"])
-		data_type_changed.emit()
+var _mode: int = TYPE_INT
 
 
 func _post_init() -> void:
@@ -70,11 +23,12 @@ func _post_init() -> void:
 	parent_port = 0
 	size = Vector2(260, 90)
 	
+	num_value = SpinBox.new()
+	text_value = TextEdit.new()
+	bool_value = CheckBox.new()
+	
 	var main_container: HBoxContainer = HBoxContainer.new()
 	var data_panel: PanelContainer = PanelContainer.new()
-	var data_spnbx: SpinBox = SpinBox.new()
-	var data_chk_bx: CheckBox = CheckBox.new()
-	var data_ln_edt: TextEdit = TextEdit.new()
 	var data_menu: MenuButton = MenuButton.new()
 	var data_popup: PopupMenu = data_menu.get_popup()
 	
@@ -82,22 +36,23 @@ func _post_init() -> void:
 	main_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	data_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	data_panel.add_theme_stylebox_override(&"panel", StyleBoxEmpty.new())
-	data_spnbx.allow_greater = true
-	data_spnbx.allow_lesser = true
-	data_chk_bx.text = "Is True"
-	data_chk_bx.visible = false
-	data_ln_edt.visible = false
+	num_value.allow_greater = true
+	num_value.allow_lesser = true
+	num_value.step = 1.0
+	bool_value.text = "Is True"
+	bool_value.visible = false
+	text_value.visible = false
 	
 	data_menu.flat = false
 	data_menu.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	data_menu.custom_minimum_size = Vector2(32.0, 32.0)
 	
-	data_ln_edt.custom_minimum_size.y = 33.0
-	data_ln_edt.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
+	text_value.custom_minimum_size.y = 33.0
+	text_value.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
 	
-	data_panel.add_child(data_spnbx)
-	data_panel.add_child(data_chk_bx)
-	data_panel.add_child(data_ln_edt)
+	data_panel.add_child(num_value)
+	data_panel.add_child(bool_value)
+	data_panel.add_child(text_value)
 	
 	main_container.add_child(data_panel)
 	main_container.add_child(data_menu)
@@ -108,16 +63,14 @@ func _post_init() -> void:
 			false,
 			-1,
 			SlotConnectionType.VAR_INT)
-	map_field(&"data", &"number", data_spnbx)
-	map_field(&"data", &"bool", data_chk_bx)
-	map_field(&"data", &"text", data_ln_edt)
 	
 	set_slot_color_right(0, COLORS["integer"])
 	
-	active_value = data_spnbx
-	
 	data_popup.id_pressed.connect(_on_data_type_selected)
-	data_spnbx.value_changed.connect(_on_value_changed, CONNECT_DEFERRED)
+	num_value.value_changed.connect(_on_num_value_changed)
+	text_value.text_changed.connect(_on_text_field_text_changed, CONNECT_DEFERRED)
+	text_value.focus_exited.connect(_on_text_value_focus_exited)
+	bool_value.toggled.connect(_on_bool_value_toggled)
 
 
 func _ready() -> void:
@@ -143,7 +96,68 @@ func _ready() -> void:
 			"",
 			TYPE_STRING)
 	
-	data_menu.icon = data_popup.get_item_icon(data_popup.get_item_index(mode))
+	data_menu.icon = data_popup.get_item_icon(data_popup.get_item_index(_mode))
+
+
+func set_mode(to: int) -> bool:
+	if to != TYPE_INT and to != TYPE_FLOAT and to != TYPE_BOOL and to != TYPE_STRING:
+		return false
+	
+	if to == _mode:
+		return true
+	
+	var menu: MenuButton = get_field(&"data").get_child(1)
+	
+	match to:
+		TYPE_INT:
+			num_value.visible = true
+			text_value.visible = false
+			bool_value.visible = false
+			num_value.step = 1.0
+			set_slot_type_right(0, SlotConnectionType.VAR_INT)
+			set_slot_color_right(0, COLORS["integer"])
+			menu.icon = get_theme_icon("int", "EditorIcons")
+		TYPE_FLOAT:
+			num_value.visible = true
+			text_value.visible = false
+			bool_value.visible = false
+			num_value.step = 0.01
+			set_slot_type_right(0, SlotConnectionType.VAR_FLOAT)
+			set_slot_color_right(0, COLORS["float"])
+			menu.icon = get_theme_icon("float", "EditorIcons")
+		TYPE_BOOL:
+			num_value.visible = false
+			text_value.visible = false
+			bool_value.visible = true
+			set_slot_type_right(0, SlotConnectionType.VAR_BOOL)
+			set_slot_color_right(0, COLORS["bool"])
+			menu.icon = get_theme_icon("bool", "EditorIcons")
+		TYPE_STRING:
+			num_value.visible = false
+			text_value.visible = true
+			bool_value.visible = false
+			set_slot_type_right(0, SlotConnectionType.VAR_STRING)
+			set_slot_color_right(0, COLORS["string"])
+			menu.icon = get_theme_icon("String", "EditorIcons")
+			_resize_text_entry.call_deferred()
+	
+	_mode = to
+	return true
+
+
+func set_value(value: Variant) -> void:
+	var val_type: int = typeof(value)
+	
+	match val_type:
+		TYPE_INT, TYPE_FLOAT:
+			num_value.set_value_no_signal(value)
+			num_value.set_meta(&"old_value", num_value.value)
+		TYPE_BOOL:
+			bool_value.set_pressed_no_signal(value)
+		TYPE_STRING:
+			text_value.text = value
+			if text_value.visible:
+				_resize_text_entry.call_deferred()
 
 
 func _get_node_data() -> Dictionary:
@@ -170,26 +184,15 @@ func _set_node_data(data: Dictionary) -> void:
 	if not metadata.has("value") or typeof(metadata["value"]) == TYPE_NIL:
 		return
 	
-	var menu: MenuButton = get_field(&"data").get_child(1)
-	mode = typeof(metadata["value"])
-	match mode:
-		TYPE_INT:
-			get_mapped_field(&"data", &"number").set_value_no_signal(metadata["value"])
-			menu.icon = get_theme_icon("int", "EditorIcons")
-		TYPE_FLOAT:
-			get_mapped_field(&"data", &"number").set_value_no_signal(metadata["value"])
-			menu.icon = get_theme_icon("float", "EditorIcons")
-		TYPE_BOOL:
-			get_mapped_field(&"data", &"bool").set_pressed_no_signal(metadata["value"])
-			menu.icon = get_theme_icon("bool", "EditorIcons")
-		TYPE_STRING:
-			get_mapped_field(&"data", &"text").text = metadata["value"]
-			menu.icon = get_theme_icon("String", "EditorIcons")
+	if set_mode(typeof(metadata["value"])):
+		set_value(metadata["value"])
 
 
 func _on_data_type_selected(type: int) -> void:
-	if type == mode:
+	if type == _mode:
 		return
+	
+	var old_type: int = _mode
 	
 	if has_any_output(0):
 		var target: DiscourseGraphNode = get_node_connected_to_port(PortMode.OUTPUT, 0)
@@ -198,22 +201,47 @@ func _on_data_type_selected(type: int) -> void:
 		if not is_port_type_value_compatible(port_type, type):
 			disconnect_port(PortMode.OUTPUT, 0)
 	
-	var menu: MenuButton = get_field(&"data").get_child(1)
-	var pop: Popup = menu.get_popup()
+	set_mode(type)
 	
-	menu.icon = pop.get_item_icon(pop.get_item_index(type))
-	mode = type
-	node_updated.emit()
+	data_type_changed.emit(
+			get_node_uuid(),
+			old_type,
+			_mode)
 
 
-func _on_value_changed(value: Variant = null) -> void:
-	node_updated.emit()
-	value_changed.emit(mode, value)
+func _on_num_value_changed(value: float) -> void:
+	var old_value: float = num_value.get_meta(&"old_value")
+	
+	num_value.set_meta(&"old_value", value)
+	
+	value_changed.emit(
+		get_node_uuid(),
+		int(old_value) if _mode == TYPE_INT else old_value,
+		int(value) if _mode == TYPE_INT else value)
 
 
 func _on_text_field_text_changed() -> void:
 	_resize_text_entry()
-	_on_value_changed(get_mapped_field(&"data", &"text").text)
+
+
+func _on_text_value_focus_exited() -> void:
+	var old_value: String = text_value.get_meta(&"old_value")
+	
+	if text_value.text == old_value:
+		return
+	
+	text_value.set_meta(&"old_value", text_value.text)
+	value_changed.emit(
+			get_node_uuid(),
+			old_value,
+			text_value.text)
+
+
+func _on_bool_value_toggled(is_toggled: bool) -> void:
+	value_changed.emit(
+			get_node_uuid(),
+			not is_toggled,
+			is_toggled)
 
 
 func _resize_text_entry() -> void:
@@ -245,53 +273,39 @@ func is_port_type_value_compatible(port_type: int, value: int) -> bool:
 
 
 func get_current_value(default: Variant = null) -> Variant:
-	var data: Control = get_field(&"data")
-	match mode:
+	match _mode:
 		TYPE_INT:
-			return int(data.get_child(0).get_child(0).value)
+			return int(num_value.value)
 		TYPE_FLOAT:
-			return float(data.get_child(0).get_child(0).value)
+			return num_value.value
 		TYPE_BOOL:
-			return data.get_child(0).get_child(1).button_pressed
+			return bool_value.button_pressed
 		TYPE_STRING:
-			return data.get_child(0).get_child(2).text
+			return text_value.text
 		_:
 			return default
 
 
 func clamp_range(min_value: float, max_value: float, allow_lesser: bool = false, allow_greater: bool = false) -> void:
-	var reconnect: bool = false
-	var range_box: SpinBox = get_field(&"data").get_child(0).get_child(0)
-	range_box.min_value = min_value
-	range_box.max_value = max_value
-	range_box.allow_lesser = allow_lesser
-	range_box.allow_greater = allow_greater
-	
-	
-	if range_box.value_changed.is_connected(_on_value_changed):
-		reconnect = true
-		range_box.value_changed.disconnect(_on_value_changed)
+	num_value.min_value = min_value
+	num_value.max_value = max_value
+	num_value.allow_lesser = allow_lesser
+	num_value.allow_greater = allow_greater
 	
 	if not allow_greater and not allow_lesser:
-		range_box.value = clampf(range_box.value, min_value, max_value)
+		num_value.set_value_no_signal(clampf(
+				num_value.value,
+				min_value,
+				max_value))
 	elif not allow_lesser:
-		range_box.value = maxf(min_value, range_box.value)
+		num_value.set_value_no_signal(maxf(
+				min_value,
+				num_value.value))
 	elif not allow_greater:
-		range_box.value = minf(range_box.value, max_value)
-	
-	if reconnect:
-		range_box.value_changed.connect(_on_value_changed)
+		num_value.set_value_no_signal(minf(
+				num_value.value,
+				max_value))
 
 
-func set_mode(new_mode: int) -> void:
-	var menu: MenuButton = get_field(&"data").get_child(1)
-	mode = new_mode
-	match mode:
-		TYPE_INT:
-			menu.icon = get_theme_icon("int", "EditorIcons")
-		TYPE_FLOAT:
-			menu.icon = get_theme_icon("float", "EditorIcons")
-		TYPE_BOOL:
-			menu.icon = get_theme_icon("bool", "EditorIcons")
-		TYPE_STRING:
-			menu.icon = get_theme_icon("String", "EditorIcons")
+func get_mode() -> int:
+	return _mode

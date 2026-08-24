@@ -178,11 +178,20 @@ func _drop_data(at_position: Vector2, data: Variant) -> void:
 		match drop_position:
 			-1: # Above
 				data.move_before(at_node)
-			0: # On (Shouldn't be used)
-				data.get_parent().remove_child(data)
-				at_node.add_child(data)
+			0: # On
+				if at_node == data.get_parent():
+					if data.get_index() != at_node.get_child_count() -1:
+						data.move_after(at_node.get_child(-1))
+				else:
+					data.get_parent().remove_child(data)
+					at_node.add_child(data)
 			1: # Below
-				data.move_after(at_node)
+				if is_folder(at_node) and 0 < at_node.get_child_count() and not at_node.collapsed:
+					var target: TreeItem = at_node.get_first_child()
+					if target != data:
+						data.move_before(target)
+				else:
+					data.move_after(at_node)
 	
 	var new_index: int = dropped_item.get_index()
 	var new_path: String = get_path_to_item(dropped_item)
@@ -209,15 +218,29 @@ func _get_drag_data(at_position: Vector2) -> Variant:
 func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
 	var item_at_pos: TreeItem = get_item_at_position(at_position)
 	
-	if data is not TreeItem or data == item_at_pos:
+	if data is not TreeItem or data == item_at_pos or _node_contains(data, item_at_pos):
 		return false
 	
 	drop_mode_flags = DropModeFlags.DROP_MODE_INBETWEEN
 	
-	if not item_at_pos.get_metadata(0)["is_node"]:
+	if is_folder(item_at_pos):
 		drop_mode_flags += DropModeFlags.DROP_MODE_ON_ITEM
 	
 	return belongs_to_tree(data)
+
+
+func _node_contains(parent: TreeItem, child: TreeItem) -> bool:
+	if child == null or parent == null:
+		return false
+	
+	var current: TreeItem = child
+	
+	while current != null:
+		if current == parent:
+			return true
+		current = current.get_parent()
+	
+	return false
 
 
 func _on_item_collapsed(item: TreeItem) -> void:
@@ -341,6 +364,8 @@ func create_folder(folder_name: String, on_node: TreeItem = get_root(), select: 
 
 
 func is_folder(item: TreeItem) -> bool:
+	if item == null:
+		return false
 	var data = item.get_metadata(0)
 	if typeof(data) != TYPE_DICTIONARY:
 		return false
@@ -518,6 +543,7 @@ func get_path_to_item(folder: TreeItem) -> String:
 	var current_item: TreeItem = folder
 	while current_item != null and current_item != root:
 		path_parts.append(current_item.get_text(0))
+		current_item = current_item.get_parent()
 	
 	path_parts.reverse()
 	

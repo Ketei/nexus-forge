@@ -3,6 +3,8 @@ extends DiscourseGraphNode
 
 
 signal use_code_editor_pressed(target: TextEdit)
+signal choice_text_changed(node_uuid: StringName, choice_idx: int, old_text: String, new_text: String)
+signal choices_resized(node_uuid: StringName, old_snapshot: Dictionary, new_snapshot: Dictionary)
 const MAX_LINES: int = 3
 const EXTRA_Y_PADDING: int = 8
 const CHOICE_TEXT_EDIT = preload("res://addons/nexus_forge/discourse/textedit_bracket_handler.gd")
@@ -94,7 +96,8 @@ func set_choice_count(value: int) -> void:
 	
 	if current < value:
 		for extra in range(value - current):
-			var choice_id: StringName = &"choice_" + StringName(str(current + extra + 1))
+			var index: int = current + extra
+			var choice_id: StringName = &"choice_" + StringName(str(index + 1))
 			var new_idx: int = add_field(
 					choice_id,
 					get_choice_node(),
@@ -142,11 +145,37 @@ func _on_choice_count_changed(value: int) -> void:
 	_update_value_to_spinbox.call_deferred()
 
 
+func get_choices_array() -> Array[Dictionary]:
+	var options: Array[Dictionary] = []
+	for choice in range(1, get_child_count()):
+		var field_id: StringName = &"choice_" + StringName(str(int(choice)))
+		var field: TextEdit = get_field(field_id).get_child(0)
+		
+		options.append(
+				{
+					"text": field.text.strip_edges(),
+					"output_connections":{
+						"next_node":  get_uuid_and_port_connected_to(PortMode.OUTPUT, choice - 1)
+					},
+					"input_connections": {
+						"settings": get_uuid_and_port_connected_to(PortMode.INPUT, choice)
+					}
+				})
+	return options
+
+
 func _update_value_to_spinbox() -> void:
-	set_choice_count(
-			get_mapped_field(&"choice_counter", &"choice_count").value)
+	var new_choice_count: int = get_mapped_field(&"choice_counter", &"choice_count").value
+	
+	var old_options: Array[Dictionary] = get_choices_array()
+	set_choice_count(new_choice_count)
+	var new_options: Array[Dictionary] = get_choices_array()
+	
 	_updating_choices = false
-	node_updated.emit()
+	choices_resized.emit(
+			get_node_uuid(),
+			{"metadata": {"choices": old_options}},
+			{"metadata": {"choices": new_options}})
 
 
 func _get_node_data() -> Dictionary:
@@ -227,6 +256,7 @@ func get_choice_node() -> HBoxContainer:
 	new_choice.syntax_highlighter = highlighter
 	new_choice.resized.connect(reset_height, CONNECT_DEFERRED)
 	new_choice.text_changed.connect(_on_option_text_changed.bind(new_choice))
+	new_choice.focus_exited.connect(_on_choice_text_focus_exited.bind(new_choice))
 	
 	expand_button.icon = get_theme_icon("DistractionFree", "EditorIcons")
 	expand_button.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -276,3 +306,25 @@ func get_options() -> Array[String]:
 		options.append(field.text)
 	
 	return options
+
+
+func set_choice_text(choice_idx: int, text: String) -> void:
+	var field_id: StringName = StringName("choice_" + str(choice_idx))
+	var choice: TextEdit = get_field(field_id).get_child(0)
+	choice.text = text
+
+
+func _on_choice_text_focus_exited(choice_line: TextEdit) -> void:
+	var index: int = choice_line.get_parent().get_index()
+	var old_value: String = choice_line.get_meta(&"old_value")
+	var new_value: String = choice_line.text
+	
+	if new_value == old_value:
+		return
+	
+	choice_line.set_meta(&"old_value", new_value)
+	choice_text_changed.emit(
+			get_node_uuid(),
+			index,
+			old_value,
+			new_value)

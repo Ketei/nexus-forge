@@ -1,6 +1,9 @@
 extends DiscourseGraphNode
 
 
+signal operator_changed(uuid: StringName, old_operator: int, new_operator: int)
+
+
 func _post_init() -> void:
 	set_node_id(&"Comparation")
 	title = "Comparation"
@@ -152,12 +155,18 @@ func _set_node_data(data: Dictionary) -> void:
 			dropdown.text = ">"
 		OP_GREATER_EQUAL:
 			dropdown.text = ">="
+	dropdown.set_meta(&"old_value", operator)
 	dropdown.set_meta(&"current_operator", operator)
 
 
 func _on_comparation_changed(id: int) -> void:
 	var menu_btn: MenuButton = get_field(&"comparation").get_child(1)
+	var old_operator: int = menu_btn.get_meta(&"old_value")
 	menu_btn.set_meta(&"current_operator", id)
+	
+	if id == old_operator:
+		return
+	
 	match id:
 		OP_EQUAL:
 			menu_btn.text = "=="
@@ -171,4 +180,10 @@ func _on_comparation_changed(id: int) -> void:
 			menu_btn.text = ">"
 		OP_GREATER_EQUAL:
 			menu_btn.text = ">="
-	node_updated.emit()
+	
+	menu_btn.set_meta(&"old_value", id)
+	
+	operator_changed.emit(
+			get_node_uuid(),
+			old_operator,
+			id)

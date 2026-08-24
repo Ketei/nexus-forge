@@ -1,7 +1,12 @@
 extends DiscourseGraphNode
 
 
+signal fallback_changed(uuid: StringName, from: Variant, to: Variant)
+
 var filter_mode: int = TYPE_NIL
+var str_fallback: LineEdit
+var bool_fallback: CheckButton
+var val_fallback: SpinBox
 
 
 func _post_init() -> void:
@@ -16,29 +21,40 @@ func _post_init() -> void:
 	var fallback_panel: PanelContainer = PanelContainer.new()
 	var spinbox_container: HBoxContainer = HBoxContainer.new()
 	var spnbx_label: Label = Label.new()
-	var val_fallback: SpinBox = SpinBox.new()
-	var bool_fallback: CheckButton = CheckButton.new()
-	var str_fallback: LineEdit = LineEdit.new()
+	val_fallback = SpinBox.new()
+	bool_fallback = CheckButton.new()
+	str_fallback = LineEdit.new()
 	var awaiting_label: Label = Label.new()
 	
 	awaiting_label.text = "- Fallback -"
 	awaiting_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	awaiting_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	
 	connection_label.text = "Input Output"
 	connection_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_FILL
 	connection_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	
 	fallback_panel.add_theme_stylebox_override(&"panel", StyleBoxEmpty.new())
 	fallback_panel.custom_minimum_size.y = 32.0
 	fallback_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	
 	spinbox_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	
 	spnbx_label.text = "Fallback"
 	spnbx_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	
 	val_fallback.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	val_fallback.allow_greater = true
 	val_fallback.allow_lesser = true
+	val_fallback.value_changed.connect(_on_value_fallback_value_changed)
+	
 	bool_fallback.text = "Is True"
 	bool_fallback.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	bool_fallback.toggled.connect(_on_bool_fallback_toggled)
+	
 	str_fallback.placeholder_text = "Fallback"
+	str_fallback.text_changed.connect(node_updated.emit)
+	str_fallback.editing_toggled.connect(_on_text_fallback_edit_toggled)
 	
 	spinbox_container.visible = false
 	bool_fallback.visible = false
@@ -101,14 +117,12 @@ func _set_node_data(data: Dictionary) -> void:
 	
 	if metadata.has("fallback_value"):
 		match typeof(metadata["fallback_value"]):
-			TYPE_INT:
-				get_field(&"fallback").get_child(0).get_child(1).value = metadata["fallback_value"]
-			TYPE_FLOAT:
-				get_field(&"fallback").get_child(0).get_child(1).value = metadata["fallback_value"]
+			TYPE_INT, TYPE_FLOAT:
+				val_fallback.set_value_no_signal(metadata["fallback_value"])
 			TYPE_BOOL:
-				get_field(&"fallback").get_child(1).button_pressed = metadata["fallback_value"]
+				bool_fallback.set_pressed_no_signal(metadata["fallback_value"])
 			TYPE_STRING:
-				get_field(&"fallback").get_child(2).text = metadata["fallback_value"]
+				str_fallback.text = metadata["fallback_value"]
 			_:
 				return
 
@@ -123,30 +137,28 @@ func _on_output_connected(output: int, to_node: DiscourseGraphNode, _to_port: in
 	
 	match type as SlotConnectionType:
 		SlotConnectionType.VAR_INT:
-			var child: HBoxContainer = fallback_panel.get_child(0)
 			set_slot_type_right(0, SlotConnectionType.VAR_INT)
 			set_slot_color_right(0, COLORS["integer"])
 			set_output_connection_icon(&"connection", get_theme_icon("int", "EditorIcons"))
-			child.visible = true
-			child.get_child(1).step = 1.0
+			val_fallback.visible = true
+			val_fallback.step = 1.0
 			filter_mode = TYPE_INT
 		SlotConnectionType.VAR_FLOAT:
-			var child: HBoxContainer = fallback_panel.get_child(0)
 			set_slot_type_right(0, SlotConnectionType.VAR_FLOAT)
 			set_slot_color_right(0, COLORS["float"])
 			set_output_connection_icon(&"connection", get_theme_icon("float", "EditorIcons"))
-			child.visible = true
-			child.get_child(1).step = 0.01
+			val_fallback.visible = true
+			val_fallback.step = 0.01
 			filter_mode = TYPE_FLOAT
 		SlotConnectionType.VAR_BOOL:
 			set_slot_type_right(0, SlotConnectionType.VAR_BOOL)
-			fallback_panel.get_child(1).visible = true
+			bool_fallback.visible = true
 			set_slot_color_right(0, COLORS["bool"])
 			set_output_connection_icon(&"connection", get_theme_icon("bool", "EditorIcons"))
 			filter_mode = TYPE_BOOL
 		SlotConnectionType.VAR_STRING:
 			set_slot_type_right(0, SlotConnectionType.VAR_STRING)
-			fallback_panel.get_child(2).visible = true
+			str_fallback.visible = true
 			set_slot_color_right(0, COLORS["string"])
 			set_output_connection_icon(&"connection", get_theme_icon("String", "EditorIcons"))
 			filter_mode = TYPE_STRING
@@ -164,16 +176,68 @@ func _on_output_disconnected(_output: int, _to_node: DiscourseGraphNode, _to_por
 	filter_mode = TYPE_NIL
 
 
+func set_fallback_value(value: Variant) -> void:
+	var val_type: int = typeof(value)
+	
+	match val_type:
+		TYPE_INT, TYPE_FLOAT:
+			val_fallback.set_value_no_signal(value)
+			val_fallback.set_meta(&"old_value", val_fallback.value)
+		TYPE_BOOL:
+			bool_fallback.set_pressed_no_signal(value)
+		TYPE_STRING:
+			str_fallback.text = value
+			str_fallback.set_meta(&"old_value", value)
+
+
+func _on_text_fallback_edit_toggled(is_toggled: bool) -> void:
+	if is_toggled or filter_mode != TYPE_STRING:
+		return
+	
+	var new_value: String = str_fallback.text
+	var old_value: String = str_fallback.get_meta(&"old_value")
+	
+	if new_value == old_value:
+		return
+	
+	str_fallback.set_meta(&"old_value", new_value)
+	
+	fallback_changed.emit(
+			get_node_uuid(),
+			old_value,
+			new_value)
+
+
+func _on_value_fallback_value_changed(value: float) -> void:
+	var old_value: float = val_fallback.get_meta(&"old_value")
+	
+	if value == old_value:
+		return
+	
+	val_fallback.set_meta(&"old_value", value)
+	fallback_changed.emit(
+		get_node_uuid(),
+		old_value,
+		value)
+
+
+func _on_bool_fallback_toggled(is_toggled: bool) -> void:
+	fallback_changed.emit(
+		get_node_uuid(),
+		not is_toggled,
+		is_toggled)
+
+
 func get_active_data_type() -> Variant:
 	var fallback_panel: PanelContainer = get_field(&"fallback")
 	match filter_mode:
 		TYPE_INT:
-			return int(fallback_panel.get_child(0).get_child(1).value)
+			return int(val_fallback.value)
 		TYPE_FLOAT:
-			return float(fallback_panel.get_child(0).get_child(1).value)
+			return val_fallback.value
 		TYPE_STRING:
-			return fallback_panel.get_child(2).text
+			return str_fallback.text
 		TYPE_BOOL:
-			return fallback_panel.get_child(1).button_pressed
+			return bool_fallback.button_pressed
 		_:
 			return null

@@ -9,51 +9,6 @@ var custom_default_weight: int = -1:
 var _exits_update_queued: bool = false
 
 
-func update_weights() -> void:
-	if custom_default_weight == 0:
-		for node in range(2, get_child_count()):
-			get_child(node).get_child(1).text = "Weight ??.??%"
-	else:
-		var base_weight: int = NFDialogParser.RANDOM_DEFAULT_WEIGHT if custom_default_weight < 0 else custom_default_weight
-		var total_weight: int = 0
-		var weights: Array[int] = []
-		var labels: Array[Label] = []
-		
-		for node in range(2, get_child_count()):
-			if has_any_input(node):
-				var input: DiscourseGraphNode = get_node_connected_to_port(PortMode.INPUT, node)
-				match input.node_type:
-					DialogueNodeType.VALUE:
-						if input.mode == TYPE_INT:
-							var clamped_weight: int = maxi(-1, input.get_current_value(base_weight))
-							weights.append(clamped_weight)
-							if 0 <= clamped_weight:
-								total_weight += clamped_weight
-						else:
-							weights.append(-1)
-					_:
-						weights.append(-1)
-			else:
-				weights.append(base_weight)
-				total_weight += base_weight
-			labels.append(get_field(StringName("option_" + str(node - 1))))
-		
-		var idx: int = -1
-		for label in labels:
-			idx += 1
-			if weights[idx] == -1:
-				label.text = "Weight ??.??%"
-			else:
-				var weight: float = snappedf(( weights[idx] / float(total_weight) * 100.0 ), 0.01 )
-				@warning_ignore("incompatible_ternary")
-				label.text = "Weight " + str( weight if 0 < step_decimals(weight) else int(weight) ) + "%"
-
-
-func _on_value_node_weight_changed(type: int, value) -> void:
-	if type == TYPE_INT:
-		update_weights()
-
-
 func _post_init() -> void:
 	set_node_id(&"RandomPath")
 	title = "Random"
@@ -142,13 +97,15 @@ func _on_input_disconnected(input_port: int, from_node: DiscourseGraphNode, _fro
 	
 	if input_port == 1:
 		custom_default_weight = -1
-	else:
-		update_weights()
 	
 	if from_node.node_type == DialogueNodeType.VALUE:
-		if from_node.value_changed.is_connected(_on_value_node_weight_changed):
-			from_node.value_changed.disconnect(_on_value_node_weight_changed)
+		if from_node.num_value.value_changed.is_connected(_on_value_node_weight_changed):
+			from_node.num_value.value_changed.disconnect(_on_value_node_weight_changed)
+		elif from_node.num_value.value_changed.is_connected(_on_custom_default_weight_changed):
+			from_node.num_value.value_changed.disconnect(_on_custom_default_weight_changed)
 		from_node.clamp_range(0.0, 100.0, true, true)
+	
+	update_weights()
 
 
 func _on_input_connected(input_port: int, from_node: DiscourseGraphNode, _from_port: int) -> void:
@@ -156,19 +113,61 @@ func _on_input_connected(input_port: int, from_node: DiscourseGraphNode, _from_p
 		return
 	
 	if from_node.node_type == DialogueNodeType.VALUE:
-		if not from_node.value_changed.is_connected(_on_value_node_weight_changed):
-			from_node.value_changed.connect(_on_value_node_weight_changed)
+		if not from_node.num_value.value_changed.is_connected(_on_value_node_weight_changed):
+			from_node.num_value.value_changed.connect(_on_value_node_weight_changed)
 		from_node.clamp_range(0.0, 100.0, false, true)
 	
-	if input_port == 1:
-		match from_node.node_type:
-			DialogueNodeType.VALUE:
-				if from_node.mode == TYPE_INT:
-					custom_default_weight = from_node.get_current_value(0)
-			_:
-				custom_default_weight = 0
+	if input_port == 1: # Defaults
+		if from_node.node_type == DialogueNodeType.VALUE:
+			custom_default_weight = int(from_node.num_value)
+			from_node.num_value.value_changed.connect(_on_custom_default_weight_changed)
+		else:
+			custom_default_weight = 0
+	
+	update_weights()
+
+
+func update_weights() -> void:
+	if custom_default_weight == 0:
+		for node in range(2, get_child_count()):
+			get_child(node).get_child(1).text = "Weight ??.??%"
 	else:
-		update_weights()
+		var base_weight: int = NFDialogParser.RANDOM_DEFAULT_WEIGHT if custom_default_weight < 0 else custom_default_weight
+		var total_weight: int = 0
+		var weights: Array[int] = []
+		var labels: Array[Label] = []
+		
+		for node in range(2, get_child_count()):
+			if has_any_input(node):
+				var input: DiscourseGraphNode = get_node_connected_to_port(PortMode.INPUT, node)
+				match input.node_type:
+					DialogueNodeType.VALUE:
+						if input.mode == TYPE_INT:
+							var clamped_weight: int = maxi(-1, input.get_current_value(base_weight))
+							weights.append(clamped_weight)
+							if 0 <= clamped_weight:
+								total_weight += clamped_weight
+						else:
+							weights.append(-1)
+					_:
+						weights.append(-1)
+			else:
+				weights.append(base_weight)
+				total_weight += base_weight
+			labels.append(get_field(StringName("option_" + str(node - 1))))
+		
+		var idx: int = -1
+		for label in labels:
+			idx += 1
+			if weights[idx] == -1:
+				label.text = "Weight ??.??%"
+			else:
+				var weight: float = snappedf(( weights[idx] / float(total_weight) * 100.0 ), 0.01 )
+				label.text = "Weight %s%" % str(weight) if 0 < step_decimals(weight) else str(int(weight))
+
+
+func _on_value_node_weight_changed(_value: float) -> void:
+	update_weights()
 
 
 func _on_random_exit_changed(_target_options: int) -> void:
@@ -184,6 +183,13 @@ func _update_exits_with_value() -> void:
 	_exits_update_queued = false
 	size.y = 0
 	node_updated.emit()
+
+
+func _on_custom_default_weight_changed(value: float) -> void:
+	var new_val: int = maxi(0, value)
+	if custom_default_weight != new_val:
+		custom_default_weight = new_val
+		update_weights()
 
 
 func set_random_exit_number(target_options: int) -> void:

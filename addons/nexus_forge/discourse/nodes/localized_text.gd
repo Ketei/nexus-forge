@@ -1,6 +1,9 @@
 extends DiscourseGraphNode
 
 
+signal text_changed(uuid: StringName, old_value: String, new_value: String)
+
+
 func _post_init() -> void:
 	set_node_id(&"LocalizedText")
 	title = "Localized Text"
@@ -73,3 +76,18 @@ func set_text(new_text: String) -> void:
 
 func get_text() -> String:
 	return get_field(&"localized_text").text
+
+
+func _on_text_focus_exited() -> void:
+	var field: TextEdit = get_field(&"localized_text")
+	var old_value: String = field.get_meta(&"old_value", "")
+	var new_value: String = field.text
+	
+	if new_value == old_value:
+		return
+	
+	field.set_meta(&"old_value", new_value)
+	text_changed.emit(
+			get_node_uuid(),
+			old_value,
+			new_value)

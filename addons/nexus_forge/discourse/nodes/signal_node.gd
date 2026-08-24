@@ -1,7 +1,15 @@
 extends DiscourseGraphNode
 
 
-var available_signals: Dictionary = {}
+signal signal_changed(uuid: StringName, from: String, to: String)
+
+static var available_signals: Dictionary = {}
+
+var signals_node: OptionButton
+
+
+static func _static_init() -> void:
+	available_signals = get_user_signals()
 
 
 func _post_init() -> void:
@@ -12,12 +20,10 @@ func _post_init() -> void:
 	parent_port = 0
 	size = Vector2(230, 83)
 	
-	available_signals = get_user_signals()
-	
 	var signal_keys: Array = available_signals.keys()
 	signal_keys.sort_custom(ArrayUtils.sort_custom_alphabetically_asc)
 	
-	var signals_node: OptionButton = OptionButton.new()
+	signals_node = OptionButton.new()
 	signals_node.name = &"SignalsOptBtn"
 	signals_node.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	signals_node.fit_to_longest_item = false
@@ -35,12 +41,13 @@ func _post_init() -> void:
 			SlotConnectionType.SIGNAL)
 	set_slot_color_right(0, COLORS["signal"])
 	
-	if not available_signals.is_empty():
-		signals_node.select(0)
-		for arg in available_signals[signals_node.get_item_metadata(0)]:
-			add_input_arg(arg["name"], arg["type"])
-	else:
+	if available_signals.is_empty():
 		signals_node.disabled = true
+		signals_node.set_meta(&"old_value", "")
+	else:
+		signals_node.select(0)
+		signals_node.set_meta(&"old_value", signals_node.get_item_metadata(0))
+		load_signal(signals_node.get_item_metadata(0))
 	
 	signals_node.item_selected.connect(_on_signal_selected)
 
@@ -103,25 +110,39 @@ func _set_node_data(data: Dictionary) -> void:
 	if not metadata.has("signal") or typeof(metadata["signal"]) != TYPE_STRING:
 		return
 	
-	var sign_btn: OptionButton = get_field(&"signals")
-
-	for idx in range(sign_btn.item_count):
-		if sign_btn.get_item_metadata(idx) == metadata["signal"]:
-			sign_btn.select(idx)
-			load_signal(metadata["signal"])
-			break
+	if set_signal(metadata["signal"]):
+		signals_node.set_meta(&"old_value", metadata["signal"])
 
 
 func _on_signal_selected(idx: int) -> void:
-	var signal_id: String = get_field(&"signals").get_item_metadata(idx)
+	var old_value: String = signals_node.get_meta(&"old_value")
+	var signal_id: String = signals_node.get_item_metadata(idx)
+	
+	if signal_id == old_value:
+		return
+	
+	signals_node.set_meta(&"old_value", signal_id)
 	load_signal(signal_id)
-	node_updated.emit()
+	signal_changed.emit(
+			get_node_uuid(),
+			old_value,
+			signal_id)
 
 
 func reload_signals() -> void:
 	available_signals = get_user_signals()
-	var opt_btn: OptionButton = get_field(&"signals")
-	var current_signal: String = "" if opt_btn.selected == -1 else opt_btn.get_selected_metadata()
+	
+	if available_signals.is_empty():
+		signals_node.clear()
+		clear_input_args()
+		signals_node.disabled = true
+		signals_node.set_meta(&"old_value", "")
+		return
+	else:
+		if signals_node.disabled:
+			signals_node.disabled = false
+	
+	var current_signal: String = "" if signals_node.selected == -1 else signals_node.get_selected_metadata()
 	var new_signals = available_signals.keys()
 	var new_idx: int = -1
 	var emit_updated: bool = false
@@ -131,22 +152,20 @@ func reload_signals() -> void:
 	if current_signal != "":
 		new_idx = new_signals.find(current_signal)
 	
-	opt_btn.clear()
+	signals_node.clear()
 	
 	for new_signal:String in new_signals:
-		opt_btn.add_item(new_signal.capitalize())
-		opt_btn.set_item_metadata(-1, new_signal)
+		signals_node.add_item(new_signal.capitalize())
+		signals_node.set_item_metadata(-1, new_signal)
 	
 	if new_idx == -1:
-		if opt_btn.item_count == 0:
-			clear_input_args()
-		else:
-			opt_btn.select(0)
-			load_signal(opt_btn.get_item_metadata(0))
+		signals_node.select(0)
+		signals_node.set_meta(&"old_value", signals_node.get_item_metadata(0))
+		load_signal(signals_node.get_item_metadata(0))
 		node_updated.emit()
 		return
 	else:
-		opt_btn.select(new_idx)
+		signals_node.select(new_idx)
 	
 	var arg_idx: int = -1 # With the index
 	for new_arg:Dictionary in available_signals[current_signal]:
@@ -218,6 +237,19 @@ func reload_signals() -> void:
 	
 	if emit_updated:
 		node_updated.emit()
+
+
+func set_signal(signal_id: String) -> bool:
+	if not available_signals.has(signal_id):
+		return false
+	
+	for idx in range(signals_node.item_count):
+		if signals_node.get_item_metadata(idx) == signal_id:
+			signals_node.select(idx)
+			load_signal(signal_id)
+			return true
+	
+	return false
 
 
 func load_signal(signal_id: String) -> void:
