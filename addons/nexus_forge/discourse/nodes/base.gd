@@ -515,6 +515,11 @@ func can_input_multiple(input_idx: int) -> bool:
 
 
 func is_port_available(port_type: PortMode, port: int) -> bool:
+	var slot: int = get_slot_from_port(port_type, port)
+	
+	if not get_child(slot).visible:
+		return false
+	
 	if port_type == PortMode.INPUT:
 		if has_any_input(port):
 			return can_input_multiple(port)
@@ -534,13 +539,42 @@ func can_output_multiple(output_idx: int) -> bool:
 
 
 func get_input_connection_count(input_port: int) -> int:
+	var port_count: int = _input_nodes.size()
+	var max_port_index: int = port_count - 1
+	if max_port_index < 0:
+		return 0
+	if not RangeUtils.is_between(input_port, -port_count, max_port_index):
+		return 0
 	return _input_nodes[input_port]["connections"].size()
 
 
-func get_node_connected_to_port(port_type: PortMode, port: int, connection_index: int = 0) -> DiscourseGraphNode:
+func get_connection_count(port_type: PortMode, port: int) -> int:
 	if port_type == PortMode.INPUT:
-		return _input_nodes[port]["connections"][connection_index]["target_node"]
+		return get_input_connection_count(port)
 	elif port_type == PortMode.OUTPUT:
+		return get_output_connection_count(port)
+	else:
+		return 0
+
+
+func get_node_connected_to_port(port_type: PortMode, port: int, connection_index: int = 0) -> DiscourseGraphNode:
+	var connection_count: int = get_connection_count(port_type, port)
+	
+	if connection_count == 0:
+		return null
+	
+	if port_type == PortMode.INPUT:
+		var in_connections_size: int = _input_nodes[port]["connections"].size()
+		var max_in_connection_index: int = in_connections_size - 1
+		if not RangeUtils.is_between(connection_index, -in_connections_size, max_in_connection_index):
+			return null
+		return _input_nodes[port]["connections"][connection_index]["target_node"]
+		
+	elif port_type == PortMode.OUTPUT:
+		var out_connections_size: int = _output_nodes[port]["connections"].size()
+		var max_out_connection_index: int = out_connections_size - 1
+		if not RangeUtils.is_between(connection_index, -out_connections_size, max_out_connection_index):
+			return null
 		return _output_nodes[port]["connections"][connection_index]["target_node"]
 	else:
 		return null
@@ -587,11 +621,19 @@ func get_target_node_uuid(port_mode: PortMode, port: int, connection_index: int 
 			return ""
 
 
-func is_connected_to_input(input_idx: int, node: DiscourseGraphNode) -> bool:
-	if _input_nodes.size() <= input_idx:
+func is_connected_to_input(port: int, node: DiscourseGraphNode) -> bool:
+	if not is_instance_valid(node):
 		return false
 	
-	for item in _input_nodes[input_idx]["connections"]:
+	var port_count: int = _input_nodes.size()
+	if port_count == 0:
+		return false
+	var max_port_index: int = port_count - 1
+	
+	if not RangeUtils.is_between(port, -port_count, max_port_index):
+		return false
+	
+	for item in _input_nodes[port]["connections"]:
 		if item["target_node"] == node:
 			return true
 	return false
@@ -620,14 +662,30 @@ func has_port(mode: PortMode, idx: int) -> bool:
 		return false
 
 
-func is_connected_to_output(output_idx: int, node: DiscourseGraphNode) -> bool:
-	if _output_nodes.size() <= output_idx:
+func is_connected_to_output(port: int, node: DiscourseGraphNode) -> bool:
+	if not is_instance_valid(node):
 		return false
 	
-	for item in _output_nodes[output_idx]["connections"]:
+	var port_count: int = _output_nodes.size()
+	if port_count == 0:
+		return false
+	var max_port_index: int = port_count - 1
+	if not RangeUtils.is_between(port, -port_count, max_port_index):
+		return false
+	
+	for item in _output_nodes[port]["connections"]:
 		if item["target_node"] == node:
 			return true
 	return false
+
+
+func is_node_connected_to(port_mode: PortMode, port: int, node: DiscourseGraphNode) -> bool:
+	if port_mode == PortMode.INPUT:
+		return is_connected_to_input(port, node)
+	elif port_mode == PortMode.OUTPUT:
+		return is_connected_to_output(port, node)
+	else:
+		return false
 
 
 func get_port_connected_to(port_type: PortMode, target_node: DiscourseGraphNode, target_port: int) -> int:
@@ -667,6 +725,13 @@ func get_input_connection_idx(on_input: int, input_node: DiscourseGraphNode) -> 
 
 
 func get_output_connection_count(output_port: int) -> int:
+	var port_count: int = _output_nodes.size()
+	var max_port_index: int = port_count - 1
+	if max_port_index < 0:
+		return 0
+	if not RangeUtils.is_between(output_port, -port_count, max_port_index):
+		return 0
+	
 	return _output_nodes[output_port]["connections"].size()
 
 

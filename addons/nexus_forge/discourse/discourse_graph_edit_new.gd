@@ -1114,7 +1114,18 @@ func connect_discourse_nodes(from_node_uuid: StringName, from_port: int, to_node
 
 	var to_graph: DiscourseGraphNode = graph_nodes[to_node_uuid]
 	var from_graph: DiscourseGraphNode = graph_nodes[from_node_uuid]
-
+	
+	if from_graph.is_connected_to_output(from_port, to_graph) and to_graph.is_connected_to_input(to_port, from_graph):
+		var is_ghost_reconnect: bool =\
+			_pending_connection_change.has_all(["from_node", "from_port", "to_node", "to_port"]) and\
+			_pending_connection_change["from_node"] == from_node_uuid and\
+			_pending_connection_change["from_port"] == from_port and\
+			_pending_connection_change["to_node"] == to_node_uuid and\
+			_pending_connection_change["to_port"] == to_port
+		if is_ghost_reconnect:
+			rollback_disconnection()
+		return true
+	
 	if not from_graph.has_port(PortFlow.OUTPUT, from_port) or not to_graph.has_port(PortFlow.INPUT, to_port):
 		return false
 	
@@ -1871,11 +1882,19 @@ func set_localized_text_node_text(node_uuid: StringName, text: String) -> void:
 
 
 # For match_node_resized
-func set_match_node_cases(node_uuid: StringName, cases: Dictionary) -> void:
+func set_match_node_cases(node_uuid: StringName, state: Dictionary) -> void:
 	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
 	
 	if node != null and node.node_type == DialogNodes.MATCH:
-		node._set_node_data(cases)
+		node._set_node_data(state)
+		for output_node in state["output_connections"]:
+			if not has_discourse_node(output_node["target_node_uuid"]):
+				continue
+			connect_discourse_nodes(
+					node_uuid,
+					output_node["from_port"],
+					output_node["target_node_uuid"],
+					output_node["target_port"])
 
 
 # Cases IDs start from 1. IDs are Case index + 1
@@ -1886,12 +1905,23 @@ func set_match_node_field(node_uuid: StringName, case_id: int, value: Variant) -
 		node.set_match_value(case_id, value)
 
 
+# Used for match_mode_changed
+# TODO: Consider merging the signals and methods for this and set_match_node_cases
 func set_match_node_state(node_uuid: StringName, state: Dictionary) -> void:
 	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
 	
 	if node != null and node.node_type == DialogNodes.MATCH:
 		node._set_node_data(state)
-		# TODO: Restore connections
+		var port_idx: int = -1
+		for output_node in state["output_connections"]:
+			port_idx += 1
+			if not has_discourse_node(output_node["target_node_uuid"]):
+				continue
+			connect_discourse_nodes(
+					node_uuid,
+					output_node["from_port"],
+					output_node["target_node_uuid"],
+					output_node["target_port"])
 
 
 func set_metadata_node_key(node_uuid: StringName, key_index: int, to: String) -> void:
@@ -1905,24 +1935,58 @@ func set_call_node_state(node_uuid: StringName, state: Dictionary) -> void:
 	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
 	
 	if node != null and node.node_type == DialogNodes.CALLABLE:
-		node.set_method(state["metadata"]["method"])
-		# TODO: Restore connections
+		await node.set_method(state["metadata"]["method"])
+		for arg_connection in state["metadata"]["arguments"]:
+			if not has_discourse_node(arg_connection["target_node_uuid"]):
+				continue
+			connect_discourse_nodes(
+					node_uuid,
+					arg_connection["from_port"],
+					arg_connection["target_node_uuid"],
+					arg_connection["target_port"])
 
 
 func set_call_return_node_state(node_uuid: StringName, state: Dictionary) -> void:
 	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
 	
 	if node != null and node.node_type == DialogNodes.CALLABLE_RETURN:
-		node.set_method(state["metadata"]["method"])
-		# TODO: Restore connections
+		await node.set_method(state["metadata"]["method"])
+		if has_discourse_node(state["output_connections"]["target_node_uuid"]):
+			connect_discourse_nodes(
+					node_uuid,
+					state["output_connections"]["from_port"],
+					state["output_connections"]["target_node_uuid"],
+					state["output_connections"]["target_port"])
+		
+		for arg_connection in state["metadata"]["arguments"]:
+			if not has_discourse_node(arg_connection["target_node_uuid"]):
+				continue
+			connect_discourse_nodes(
+					node_uuid,
+					arg_connection["from_port"],
+					arg_connection["target_node_uuid"],
+					arg_connection["target_port"])
 
 
+# Used for choice_count_state_changed
 func set_random_path_node_state(node_uuid: StringName, state: Dictionary) -> void:
 	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
 	
 	if node != null and node.node_type == DialogNodes.RANDOM:
 		node.set_random_exit_number(state["metadata"]["options"].size())
-		# TODO: Restore connections
+		for connection in state["metadata"]["options"]:
+			if has_discourse_node(connection["input_connections"]["weight"]["target_node_uuid"]):
+				connect_discourse_nodes(
+						connection["input_connections"]["weight"]["target_node_uuid"],
+						connection["input_connections"]["weight"]["target_port"],
+						node_uuid,
+						connection["input_connections"]["weight"]["from_port"])
+			if has_discourse_node(connection["output_connections"]["next_node"]["target_node_uuid"]):
+				connect_discourse_nodes(
+						node_uuid,
+						connection["output_connections"]["next_node"]["from_port"],
+						connection["output_connections"]["next_node"]["target_node_uuid"],
+						connection["output_connections"]["next_node"]["target_port"])
 
 
 func set_random_value_node_range(node_uuid: StringName, base: float, ceil: float) -> void:
@@ -1939,7 +2003,24 @@ func set_random_value_state(node_uuid: StringName, state: Dictionary) -> void:
 		var meta: Dictionary = state["metadata"]
 		node.set_mode(meta["mode"])
 		node.set_range(meta["values"]["base"], meta["values"]["max"])
-		# TODO: Restore connections
+		if has_discourse_node(state["input_connections"]["base_value"]["target_node_uuid"]):
+			connect_discourse_nodes(
+					state["input_connections"]["base_value"]["target_node_uuid"],
+					state["input_connections"]["base_value"]["target_port"],
+					node_uuid,
+					state["input_connections"]["base_value"]["from_port"])
+		if has_discourse_node(state["input_connections"]["max_value"]["target_node_uuid"]):
+			connect_discourse_nodes(
+					state["input_connections"]["max_value"]["target_node_uuid"],
+					state["input_connections"]["max_value"]["target_port"],
+					node_uuid,
+					state["input_connections"]["max_value"]["from_port"])
+		if has_discourse_node(state["output_connections"]["next_node"]["target_node_uuid"]):
+			connect_discourse_nodes(
+					node_uuid,
+					state["output_connections"]["next_node"]["from_port"],
+					state["output_connections"]["next_node"]["target_node_uuid"],
+					state["output_connections"]["next_node"]["target_port"])
 
 
 func set_resource_node_path(node_uuid: StringName, path: String) -> void:
@@ -1953,8 +2034,15 @@ func set_emit_signal_node_state(node_uuid: StringName, state: Dictionary) -> voi
 	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
 	
 	if node != null and node.node_type == DialogNodes.SIGNAL:
-		node.set_signal(state["metadata"]["signal"])
-		# TODO: Restore connections
+		await node.set_signal(state["metadata"]["signal"])
+		for signal_argument in state["metadata"]["arguments"]:
+			if not has_discourse_node(signal_argument["target_node_uuid"]):
+				continue
+			connect_discourse_nodes(
+					signal_argument["target_node_uuid"],
+					signal_argument["target_port"],
+					node_uuid,
+					signal_argument["from_port"])
 
 
 func set_shield_node_fallback(node_uuid: StringName, fallback: Variant) -> void:
@@ -1970,7 +2058,12 @@ func set_value_node_state(node_uuid: StringName, state: Dictionary) -> void:
 	if node != null and node.node_type == DialogNodes.VALUE:
 		if node.set_mode(typeof(state["metadata"]["value"])):
 			node.set_value(state["metadata"]["value"])
-		# TODO: set connections
+			if has_discourse_node(state["output_connections"]["next_node"]["target_node_uuid"]):
+				connect_discourse_nodes(
+						node_uuid,
+						state["output_connections"]["next_node"]["from_port"],
+						state["output_connections"]["next_node"]["target_node_uuid"],
+						state["output_connections"]["next_node"]["target_port"])
 
 
 func set_value_node_value(node_uuid: StringName, value: Variant) -> void:
@@ -1980,13 +2073,17 @@ func set_value_node_value(node_uuid: StringName, value: Variant) -> void:
 		node.set_value(value)
 
 
-func set_variable_node_type(node_uuid: StringName, state: Dictionary) -> void:
+func set_variable_node_state(node_uuid: StringName, state: Dictionary) -> void:
 	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
 	
 	if node != null and node.node_type == DialogNodes.VARIABLE_GET:
 		node.set_node_type(state["metadata"]["variable_type"])
-		# TODO: COnnect nodes
-	#"output_connections": {"target": get_target_node_uuid(PortMode.OUTPUT, 0)},
+		if has_discourse_node(state["output_connections"]["target"]["target_node_uuid"]):
+			connect_discourse_nodes(
+					node_uuid,
+					state["output_connections"]["target"]["from_port"],
+					state["output_connections"]["target"]["target_node_uuid"],
+					state["output_connections"]["target"]["target_port"])
 
 
 func set_variable_node_path(node_uuid: StringName, path: String) -> void:

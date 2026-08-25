@@ -187,7 +187,10 @@ func _update_exits_with_value() -> void:
 	var new_state: Dictionary = {"metadata": {"options": get_outputs_state()}}
 	_exits_update_queued = false
 	size.y = 0
-	node_updated.emit()
+	choice_count_state_changed.emit(
+			get_node_uuid(),
+			old_state,
+			new_state)
 
 
 func _on_custom_default_weight_changed(value: float) -> void:

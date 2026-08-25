@@ -1,7 +1,7 @@
 extends DiscourseGraphNode
 
 
-signal method_changed(node_uuid: StringName, from: String, to: String)
+signal method_changed(node_uuid: StringName, old_state: Dictionary, new_state: Dictionary)
 
 static var available_methods: Dictionary = {}
 
@@ -138,12 +138,39 @@ func _on_method_selected(idx: int) -> void:
 	if id == prev_id:
 		return
 	
-	methods_node.set_meta(&"old_value", id)
+	var old_inputs: Array[Dictionary] = []
+	for arg_idx in range(get_child_count() - 1):
+		old_inputs.append(
+				get_uuid_and_port_connected_to(
+							PortMode.INPUT,
+							arg_idx))
+	var original_state: Dictionary = {
+		"output_connections": {
+			"caller": get_uuid_and_port_connected_to(PortMode.OUTPUT, 0)},
+		"metadata": {
+			"arguments": old_inputs,
+			"method": prev_id}}
+	
 	load_method(id)
+	methods_node.set_meta(&"old_value", id)
+	
+	var new_inputs: Array[Dictionary] = []
+	for arg_idx in range(get_child_count() - 1):
+		new_inputs.append(
+				get_uuid_and_port_connected_to(
+							PortMode.INPUT,
+							arg_idx))
+	var new_state: Dictionary = {
+		"output_connections": {
+			"caller": get_uuid_and_port_connected_to(PortMode.OUTPUT, 0)},
+		"metadata": {
+			"arguments": new_inputs,
+			"method": id}}
+	
 	method_changed.emit(
 			get_node_uuid(),
-			prev_id,
-			id)
+			old_inputs,
+			new_inputs)
 
 
 func set_method(method_id: String) -> bool:
@@ -151,7 +178,7 @@ func set_method(method_id: String) -> bool:
 		if methods_node.get_item_metadata(idx) == method_id:
 			methods_node.select(idx)
 			methods_node.set_meta(&"old_value", method_id)
-			load_method(method_id)
+			await load_method(method_id)
 			return true
 	return false
 

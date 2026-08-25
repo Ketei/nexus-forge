@@ -229,12 +229,15 @@ func _on_random_type_selected(type: int) -> void:
 	var input_connections: Dictionary = {
 		"base_value": get_uuid_and_port_connected_to(PortMode.INPUT, 0),
 		"max_value": get_uuid_and_port_connected_to(PortMode.INPUT, 1)}
+	var output_connections: Dictionary = {
+		"next_node": get_uuid_and_port_connected_to(PortMode.OUTPUT, 0)}
 	var meta: Dictionary = {
 		"mode": current_mode,
 		"values": {
 			"base": min_spinbox.value,
 			"max": max_spinbox.value}}
 	var prev_state: Dictionary = {
+		"output_connections": output_connections,
 		"input_connections": input_connections,
 		"metadata": meta}
 	
@@ -244,12 +247,15 @@ func _on_random_type_selected(type: int) -> void:
 	var new_ins: Dictionary = {
 		"base_value": get_uuid_and_port_connected_to(PortMode.INPUT, 0),
 		"max_value": get_uuid_and_port_connected_to(PortMode.INPUT, 1)}
+	var new_outs: Dictionary = {
+		"next_node": get_uuid_and_port_connected_to(PortMode.OUTPUT, 0)}
 	var new_meta: Dictionary = {
 		"mode": current_mode,
 		"values": {
 			"base": min_spinbox.value,
 			"max": max_spinbox.value}}
 	var new_state: Dictionary = {
+		"output_connections": new_outs,
 		"input_connections": new_ins,
 		"metadata": new_meta}
 	

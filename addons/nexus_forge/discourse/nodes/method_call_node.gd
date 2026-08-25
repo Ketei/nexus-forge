@@ -134,7 +134,7 @@ func set_method(method_id: String) -> void:
 		if methods_node.get_item_metadata(idx) == method_id:
 			methods_node.select(idx)
 			methods_node.set_meta(&"old_value", method_id)
-			load_method(method_id)
+			await load_method(method_id)
 			return
 
 

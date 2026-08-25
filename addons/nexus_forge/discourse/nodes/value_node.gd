@@ -196,7 +196,7 @@ func _on_data_type_selected(type: int) -> void:
 		return
 	
 	var old_state: Dictionary = {
-		"output_connections": get_uuid_and_port_connected_to(PortMode.OUTPUT, 0),
+		"output_connections": {"next_node": get_uuid_and_port_connected_to(PortMode.OUTPUT, 0)},
 		"metadata": {"value": get_current_value()}}
 	
 	if has_any_output(0):
@@ -209,7 +209,7 @@ func _on_data_type_selected(type: int) -> void:
 	set_mode(type)
 	
 	var new_state: Dictionary = {
-		"output_connections": get_uuid_and_port_connected_to(PortMode.OUTPUT, 0),
+		"output_connections": {"next_node": get_uuid_and_port_connected_to(PortMode.OUTPUT, 0)},
 		"metadata": {"value": get_current_value()}}
 	
 	data_type_changed.emit(
