@@ -35,8 +35,8 @@ enum NodeTypes {
 	CALLABLE = 13, ## Represents a method that can be called
 	CALLABLE_RETURN = 14, ## Represents a method that can be called
 	VARIABLE_GET = 15,
-	ANCHOR_POINTER = 16, ## A pointer that directs to a SHORTCUT_OUT.
-	ANCHOR = 17, ## A node for SHORTCUT_IN to point to.
+	SHORTCUT = 16, ## A pointer that directs to a SHORTCUT_OUT.
+	SHORTCUT_TARGET = 17, ## A node for SHORTCUT_IN to point to.
 	DIALOG_END = 18,
 	DIALOG_MERGE = 19,
 	COMMENT = 20, ## A node that exists to explain something.

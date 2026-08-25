@@ -19,15 +19,20 @@ signal nodes_moved(node_uuid: StringName, movement: Vector2)
 # When nodes are removed, along with the node data
 signal nodes_removed(nodes_data: Dictionary)
 
+# -- Connections ---
 signal node_connected(from_node: StringName, from_port: int, to_node: StringName, to_port: int)
 signal node_disconnected(from_node: StringName, from_port: int, to_node: StringName, to_port: int)
 signal node_connection_switched(origian_ports: Dictionary, new_node: StringName, new_port: int)
-signal node_data_changed(node_uuid: StringName, old_data: Dictionary, new_data: Dictionary)
+# --- Actions ---
 signal use_code_editor_requested(target_control: TextEdit)
 signal browse_character_requested(target_control: LineEdit)
 
+# --- Mutations (UndoRedo) ---
 
+
+# --- Move to parent control ---
 signal paste_nodes_requested
+
 
 # Enum to differentiate dialog nodes
 const DialogNodes = NFDialogParser.NodeTypes
@@ -66,7 +71,7 @@ var compatible_connections: Dictionary = {
 				"ports": [{"port": 0}]},
 			{
 				"name": "Anchor Pointer",
-				"type": DialogNodes.ANCHOR_POINTER,
+				"type": DialogNodes.SHORTCUT,
 				"ports": [{"port": 0}]},
 			{
 				"name": "Dialog Merge",
@@ -111,7 +116,7 @@ var compatible_connections: Dictionary = {
 					{"port": 1, "name": "False Branch"}]},
 			{
 				"name": "Anchor",
-				"type": DialogNodes.ANCHOR,
+				"type": DialogNodes.SHORTCUT_TARGET,
 				"ports": [{"port": 0}]},
 			{
 				"name": "Dialog Merge",
@@ -423,7 +428,7 @@ func new_dialog_node(node_type: DialogNodes, uuid: StringName = &"") -> Discours
 			method_callers.append(created_node)
 		DialogNodes.VARIABLE_GET:
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/var_getter.gd").new(uuid, &"TypeData")
-		DialogNodes.ANCHOR_POINTER:
+		DialogNodes.SHORTCUT:
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/jump_to_node.gd").new(uuid)
 			anchor_pointers.append(created_node)
 			created_node.go_to_anchor_pressed.connect(_on_go_to_node_pressed, CONNECT_DEFERRED)
@@ -431,9 +436,9 @@ func new_dialog_node(node_type: DialogNodes, uuid: StringName = &"") -> Discours
 			for anchor in anchor_targets:
 				created_node.add_anchor(anchor.get_node_uuid(), anchor.current_id)
 			
-		DialogNodes.ANCHOR:
+		DialogNodes.SHORTCUT_TARGET:
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/jump_target_node.gd").new(uuid)
-			var valid_id: String = get_valid_anchor_id("anchor", created_node)
+			var valid_id: String = get_valid_shortcut_id("shortcut", created_node)
 			created_node.set_anchor_id(valid_id)
 			created_node.id_changed.connect(_on_anchor_id_changed.bind(created_node), CONNECT_DEFERRED)
 			anchor_targets.append(created_node)
@@ -641,9 +646,9 @@ func duplicate_single(node_uuid: StringName, new_uuid: StringName) -> void:
 	
 	var frame: GraphFrame = get_element_frame(node.name)
 	
-	if new_node.node_type == DialogNodes.ANCHOR:
+	if new_node.node_type == DialogNodes.SHORTCUT_TARGET:
 		var cloned_id: String = new_node.get_anchor_id()
-		var new_id: String = get_valid_anchor_id(cloned_id, new_node)
+		var new_id: String = get_valid_shortcut_id(cloned_id, new_node)
 		
 		new_node.set_anchor_id(new_id)
 		
@@ -722,11 +727,11 @@ func remove_node(node_uuid: StringName) -> void:
 	match target.node_type:
 		DialogNodes.CALLABLE, DialogNodes.CALLABLE_RETURN:
 			method_callers.erase(target)
-		DialogNodes.ANCHOR:
+		DialogNodes.SHORTCUT_TARGET:
 			for pointer in anchor_pointers:
 				pointer.remove_anchor(node_uuid)
 			anchor_targets.erase(target)
-		DialogNodes.ANCHOR_POINTER:
+		DialogNodes.SHORTCUT:
 			anchor_pointers.erase(target)
 		DialogNodes.DIALOG:
 			target.use_code_editor_pressed.disconnect(_on_use_code_editor_requested)
@@ -737,7 +742,7 @@ func remove_node(node_uuid: StringName) -> void:
 	target.queue_free()
 
 
-func get_valid_anchor_id(desired_id: String, skip: DiscourseGraphNode = null) -> String:
+func get_valid_shortcut_id(desired_id: String, skip: DiscourseGraphNode = null) -> String:
 	var modified: String = desired_id
 	var existing_ids: Array[StringName] = []
 	
@@ -938,6 +943,10 @@ func get_center_offset() -> Vector2:
 
 func get_discourse_node(node_uuid: StringName) -> DiscourseGraphNode:
 	return graph_nodes.get(node_uuid, null)
+
+
+func has_discourse_node(node_uuid: StringName) -> bool:
+	return graph_nodes.has(node_uuid)
 
 
 func get_connection_dictionary(node_uuid: StringName, node_data: Dictionary) -> Array[Dictionary]:
@@ -1232,7 +1241,7 @@ func set_node_in_frame(node_uuid: StringName, frame: StringName) -> void:
 
 
 func _on_anchor_id_changed(uuid: String, new_id: String, source: DiscourseGraphNode) -> void:
-	var valid_id: String = get_valid_anchor_id(new_id, source)
+	var valid_id: String = get_valid_shortcut_id(new_id, source)
 
 	source.set_anchor_id(valid_id)
 	
@@ -1793,3 +1802,195 @@ func refresh_anchors() -> void:
 					target.get_anchor_id())
 
 #endregion
+
+
+func resize_node(node_uuid: StringName, to_size: Vector2) -> void:
+	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
+	
+	if node != null:
+		node.size = to_size
+
+
+func set_comment_node_text(node_uuid: StringName, text: String) -> void:
+	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
+	
+	if node != null and node.node_type == DialogNodes.COMMENT:
+		node.set_comment_text(text)
+
+
+func set_comparation_node_operator(node_uuid: StringName, operator: int) -> void:
+	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
+	
+	if node != null and node.node_type == DialogNodes.COMPARATION:
+		node.set_operator(operator)
+
+
+func set_dialog_node_character_id(node_uuid: StringName, character_id: String) -> void:
+	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
+	
+	if node != null and node.node_type == DialogNodes.DIALOG:
+		node.set_character_id(character_id)
+
+
+func set_dialog_node_dialog_text(node_uuid: StringName, text: String) -> void:
+	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
+	
+	if node != null and node.node_type == DialogNodes.DIALOG:
+		node.set_dialog_text(text)
+
+
+func set_shortcut_node_target(node_uuid: StringName, target_uuid: StringName) -> void:
+	if not has_discourse_node(node_uuid) or not has_discourse_node(target_uuid):
+		return
+	
+	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
+	
+	if node != null and node.node_type == DialogNodes.SHORTCUT:
+		node.select_target(target_uuid)
+
+
+func set_shortcut_target_id(node_uuid: StringName, id: String) -> void:
+	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
+	
+	if node == null or node.node_type != DialogNodes.SHORTCUT_TARGET:
+		return
+	
+	var valid_id: String = get_valid_shortcut_id(id, node)
+	node.set_anchor_id(valid_id)
+	for anchor in anchor_pointers:
+		anchor.update_anchor(
+				node_uuid,
+				id)
+
+
+func set_localized_text_node_text(node_uuid: StringName, text: String) -> void:
+	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
+	
+	if node != null and node.node_type == DialogNodes.LOCALIZED_TEXT:
+		node.set_text(text)
+
+
+# For match_node_resized
+func set_match_node_cases(node_uuid: StringName, cases: Dictionary) -> void:
+	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
+	
+	if node != null and node.node_type == DialogNodes.MATCH:
+		node._set_node_data(cases)
+
+
+# Cases IDs start from 1. IDs are Case index + 1
+func set_match_node_field(node_uuid: StringName, case_id: int, value: Variant) -> void:
+	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
+	
+	if node != null and node.node_type == DialogNodes.MATCH:
+		node.set_match_value(case_id, value)
+
+
+func set_match_node_state(node_uuid: StringName, state: Dictionary) -> void:
+	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
+	
+	if node != null and node.node_type == DialogNodes.MATCH:
+		node._set_node_data(state)
+		# TODO: Restore connections
+
+
+func set_metadata_node_key(node_uuid: StringName, key_index: int, to: String) -> void:
+	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
+	
+	if node != null and node.node_type == DialogNodes.METADATA:
+		node.set_metadata_id(key_index, to)
+
+
+func set_call_node_state(node_uuid: StringName, state: Dictionary) -> void:
+	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
+	
+	if node != null and node.node_type == DialogNodes.CALLABLE:
+		node.set_method(state["metadata"]["method"])
+		# TODO: Restore connections
+
+
+func set_call_return_node_state(node_uuid: StringName, state: Dictionary) -> void:
+	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
+	
+	if node != null and node.node_type == DialogNodes.CALLABLE_RETURN:
+		node.set_method(state["metadata"]["method"])
+		# TODO: Restore connections
+
+
+func set_random_path_node_state(node_uuid: StringName, state: Dictionary) -> void:
+	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
+	
+	if node != null and node.node_type == DialogNodes.RANDOM:
+		node.set_random_exit_number(state["metadata"]["options"].size())
+		# TODO: Restore connections
+
+
+func set_random_value_node_range(node_uuid: StringName, base: float, ceil: float) -> void:
+	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
+	
+	if node != null and node.node_type == DialogNodes.RANDOM_VALUE:
+		node.set_range(base, ceil)
+
+
+func set_random_value_state(node_uuid: StringName, state: Dictionary) -> void:
+	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
+	
+	if node != null and node.node_type == DialogNodes.RANDOM_VALUE:
+		var meta: Dictionary = state["metadata"]
+		node.set_mode(meta["mode"])
+		node.set_range(meta["values"]["base"], meta["values"]["max"])
+		# TODO: Restore connections
+
+
+func set_resource_node_path(node_uuid: StringName, path: String) -> void:
+	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
+	
+	if node != null and node.node_type == DialogNodes.RESOURCE:
+		node.set_resource_path(path)
+
+
+func set_emit_signal_node_state(node_uuid: StringName, state: Dictionary) -> void:
+	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
+	
+	if node != null and node.node_type == DialogNodes.SIGNAL:
+		node.set_signal(state["metadata"]["signal"])
+		# TODO: Restore connections
+
+
+func set_shield_node_fallback(node_uuid: StringName, fallback: Variant) -> void:
+	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
+	
+	if node != null and node.node_type == DialogNodes.TYPE_GUARD:
+		node.set_fallback_value(fallback)
+
+
+func set_value_node_state(node_uuid: StringName, state: Dictionary) -> void:
+	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
+	
+	if node != null and node.node_type == DialogNodes.VALUE:
+		if node.set_mode(typeof(state["metadata"]["value"])):
+			node.set_value(state["metadata"]["value"])
+		# TODO: set connections
+
+
+func set_value_node_value(node_uuid: StringName, value: Variant) -> void:
+	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
+	
+	if node != null and node.node_type == DialogNodes.VALUE:
+		node.set_value(value)
+
+
+func set_variable_node_type(node_uuid: StringName, state: Dictionary) -> void:
+	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
+	
+	if node != null and node.node_type == DialogNodes.VARIABLE_GET:
+		node.set_node_type(state["metadata"]["variable_type"])
+		# TODO: COnnect nodes
+	#"output_connections": {"target": get_target_node_uuid(PortMode.OUTPUT, 0)},
+
+
+func set_variable_node_path(node_uuid: StringName, path: String) -> void:
+	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
+	
+	if node != null and node.node_type == DialogNodes.VARIABLE_GET:
+		node.set_variable_path(path)

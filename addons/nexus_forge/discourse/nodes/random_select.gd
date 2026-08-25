@@ -1,6 +1,7 @@
 extends DiscourseGraphNode
 
 
+signal choice_count_state_changed(uuid: StringName, old_state: Dictionary, new_state: Dictionary)
 var custom_default_weight: int = -1:
 	set(new_default):
 		custom_default_weight = new_default
@@ -178,8 +179,12 @@ func _on_random_exit_changed(_target_options: int) -> void:
 
 
 func _update_exits_with_value() -> void:
+	var old_state: Dictionary = {"metadata": {"options": get_outputs_state()}}
+	
 	var exit_size: int = get_mapped_field(&"options", &"count").value
-	set_random_exit_number(exit_size)
+	await set_random_exit_number(exit_size)
+	
+	var new_state: Dictionary = {"metadata": {"options": get_outputs_state()}}
 	_exits_update_queued = false
 	size.y = 0
 	node_updated.emit()
@@ -229,7 +234,7 @@ func set_random_exit_number(target_options: int) -> void:
 		for extra_option in range(current_options, target_options, -1):
 			var port_id: StringName = &"option_" + StringName(str(int(extra_option)))
 			fields_to_remove.append(port_id)
-		remove_fields(fields_to_remove)
+		await remove_fields(fields_to_remove)
 	
 	update_weights()
 
@@ -254,6 +259,15 @@ func _set_node_data(data: Dictionary) -> void:
 
 
 func _get_node_data() -> Dictionary:
+	var input_connections: Dictionary = {
+		"default_weight": get_uuid_and_port_connected_to(PortMode.INPUT, 1)}
+	
+	var metadata: Dictionary = {"options": get_outputs_state()}
+	
+	return _build_node_data(metadata, {}, input_connections)
+
+
+func get_outputs_state() -> Array[Dictionary]:
 	var random_outputs: Array[Dictionary] = []
 	
 	for option_number in range(get_mapped_field(&"options", &"count").value):
@@ -269,10 +283,4 @@ func _get_node_data() -> Dictionary:
 							option_number)}
 			}
 		)
-	
-	var input_connections: Dictionary = {
-		"default_weight": get_uuid_and_port_connected_to(PortMode.INPUT, 1)}
-	
-	var metadata: Dictionary = {"options": random_outputs}
-	
-	return _build_node_data(metadata, {}, input_connections)
+	return random_outputs

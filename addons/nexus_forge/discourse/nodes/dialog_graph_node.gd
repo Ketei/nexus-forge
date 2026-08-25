@@ -215,8 +215,7 @@ func _set_node_data(data: Dictionary) -> void:
 		size = metadata["size"]
 	
 	if metadata.has("character_id") and typeof(metadata["character_id"]) == TYPE_STRING:
-		character_id_ln_edt.text = metadata["character_id"]
-		character_id_ln_edt.set_meta(&"old_value", metadata["character_id"])
+		set_character_id(metadata["character_id"])
 	
 	if metadata.has("dialog_text") and typeof(metadata["dialog_text"]) == TYPE_STRING:
 		set_dialog_text(metadata["dialog_text"])
@@ -243,6 +242,7 @@ func _on_character_id_edit_toggled(is_toggled: bool) -> void:
 	
 	if new_value == old_value:
 		return
+	character_id_ln_edt.set_meta(&"old_value", new_value)
 	
 	character_id_changed.emit(
 			get_node_uuid(),
@@ -256,6 +256,8 @@ func _on_dialog_text_focus_exited() -> void:
 	
 	if new_value == old_value:
 		return
+	
+	character_dialog.set_meta(&"old_value", new_value)
 	
 	dialog_text_changed.emit(
 			get_node_uuid(),
@@ -284,6 +286,7 @@ func set_dialog_text(text: String) -> void:
 
 func set_character_id(id: String) -> void:
 	character_id_ln_edt.text = id
+	character_id_ln_edt.set_meta(&"old_value", id)
 
 
 func get_dialog_text() -> String:

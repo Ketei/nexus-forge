@@ -275,9 +275,8 @@ func get_metadata_id(index: int) -> String:
 	return ""
 
 
-func set_metadata_id(index: int, id: String) -> void:
-	var field_id: StringName = StringName("metadata_" + str(index))
-	var meta_entry: LineEdit = get_field(field_id)
+func set_metadata_id(metadata_index: int, id: String) -> void:
+	var meta_entry: LineEdit = get_index_field(metadata_index + 1)
 	if meta_entry != null:
 		meta_entry.text = id
 		meta_entry.set_meta(&"old_value", id)

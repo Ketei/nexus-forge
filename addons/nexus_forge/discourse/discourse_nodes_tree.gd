@@ -34,8 +34,8 @@ const DIALOG: Array[NFDialogParser.NodeTypes] = [
 		NFDialogParser.NodeTypes.MATCH,
 		NFDialogParser.NodeTypes.PAUSE,
 		NFDialogParser.NodeTypes.RANDOM,
-		NFDialogParser.NodeTypes.ANCHOR_POINTER,
-		NFDialogParser.NodeTypes.ANCHOR,
+		NFDialogParser.NodeTypes.SHORTCUT,
+		NFDialogParser.NodeTypes.SHORTCUT_TARGET,
 		NFDialogParser.NodeTypes.DIALOG_END,
 		NFDialogParser.NodeTypes.DIALOG_MERGE,
 		NFDialogParser.NodeTypes.LOCALIZED_TEXT]

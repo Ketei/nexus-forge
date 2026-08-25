@@ -56,6 +56,11 @@ func _set_node_data(data: Dictionary) -> void:
 		comment_txt.set_meta(&"old_value", meta["comment"])
 
 
+func set_comment_text(text: String) -> void:
+	comment_txt.text = text
+	comment_txt.set_meta(&"old_value", text)
+
+
 func _on_comment_focus_exited() -> void:
 	var old_data: String = comment_txt.get_meta(&"old_value")
 	var new_data: String = comment_txt.text

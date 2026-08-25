@@ -5,6 +5,7 @@ signal method_changed(node_uuid: StringName, from: String, to: String)
 
 static var available_methods: Dictionary = {}
 
+var methods_node: OptionButton
 
 static func _static_init() -> void:
 	available_methods = get_user_methods()
@@ -19,7 +20,7 @@ func _post_init() -> void:
 	parent_port = 0
 	size = Vector2(240, 83)
 	
-	var methods_node: OptionButton = OptionButton.new()
+	methods_node = OptionButton.new()
 	methods_node.name = &"MethodsOptBtn"
 	methods_node.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	methods_node.fit_to_longest_item = false
@@ -131,14 +132,13 @@ func _set_node_data(data: Dictionary) -> void:
 
 
 func _on_method_selected(idx: int) -> void:
-	var opt_btn: OptionButton = get_field(&"methods")
-	var id: String = opt_btn.get_item_metadata(idx)
-	var prev_id: String = opt_btn.get_meta(&"old_value")
+	var id: String = methods_node.get_item_metadata(idx)
+	var prev_id: String = methods_node.get_meta(&"old_value")
 	
 	if id == prev_id:
 		return
 	
-	opt_btn.set_meta(&"old_value", id)
+	methods_node.set_meta(&"old_value", id)
 	load_method(id)
 	method_changed.emit(
 			get_node_uuid(),
@@ -146,12 +146,11 @@ func _on_method_selected(idx: int) -> void:
 			id)
 
 
-func select_method(method_id: String) -> bool:
-	var opt_btn: OptionButton = get_field(&"methods")
-	for idx in range(opt_btn.item_count):
-		if opt_btn.get_item_metadata(idx) == method_id:
-			opt_btn.select(idx)
-			opt_btn.set_meta(&"old_value", method_id)
+func set_method(method_id: String) -> bool:
+	for idx in range(methods_node.item_count):
+		if methods_node.get_item_metadata(idx) == method_id:
+			methods_node.select(idx)
+			methods_node.set_meta(&"old_value", method_id)
 			load_method(method_id)
 			return true
 	return false
@@ -159,62 +158,64 @@ func select_method(method_id: String) -> bool:
 
 func reload_methods() -> void:
 	available_methods = get_user_methods()
-	var opt_btn: OptionButton = get_field(&"methods")
 	
 	if available_methods.is_empty():
 		if has_any_output(0):
 			var target: DiscourseGraphNode = get_node_connected_to_port(PortMode.OUTPUT, 0)
 			disconnect_port(PortMode.OUTPUT, 0)
-		opt_btn.clear()
-		clear_input_args()
-		opt_btn.disabled = true
-		opt_btn.set_meta(&"old_value", "")
+		methods_node.clear()
+		await clear_input_args()
+		methods_node.disabled = true
+		methods_node.set_meta(&"old_value", "")
 		return
-	else:
-		if opt_btn.disabled:
-			opt_btn.disabled = false
 	
-	var selected_method: String = opt_btn.get_selected_metadata() if opt_btn.selected != -1 else ""
+	if methods_node.disabled:
+		methods_node.disabled = false
+	
+	var selected_method: String = methods_node.get_selected_metadata() if methods_node.selected != -1 else ""
 	var all_methods: Array = available_methods.keys()
 	var new_select: int = -1
-	var emit_updated: bool = false
 	
 	all_methods.sort_custom(ArrayUtils.sort_custom_alphabetically_asc)
 	
 	if selected_method != "":
 		new_select = all_methods.find(selected_method)
 	
-	opt_btn.clear()
+	methods_node.clear()
 	
 	for method in all_methods:
-		opt_btn.add_item(method)
-		opt_btn.set_item_metadata(-1, method)
+		methods_node.add_item(method)
+		methods_node.set_item_metadata(-1, method)
 	
 	if new_select != -1:
-		opt_btn.select(new_select)
-	
-	if new_select == -1:
-		opt_btn.select(0)
-		opt_btn.set_meta(&"old_value", opt_btn.get_item_metadata(0))
-		load_method(opt_btn.get_item_metadata(0))
+		methods_node.select(new_select)
+		load_method(selected_method)
+	elif new_select == -1:
+		methods_node.select(0)
+		methods_node.set_meta(&"old_value", methods_node.get_item_metadata(0))
+		load_method(methods_node.get_item_metadata(0))
 		node_updated.emit()
-		return # Since there was no equal method we stop here
+
+
+func load_method(method_id: String) -> void:
+	if not available_methods.has(method_id):
+		return
 	
 	# Since there is an equal named method, we will check all the arguments.
 	var arg_idx: int = -1 # With the index
+	var arg_count: int = get_child_count() - 1
 	
-	for new_argument:Dictionary in available_methods[selected_method]["arguments"]:
+	for new_argument:Dictionary in available_methods[method_id]["arguments"]:
 		arg_idx += 1
 		
 		# If the new index is equal or larger as the child count, we add the argument.
 		# Index 0 to child count 0, means we need to add a new child.
-		if get_child_count() - 1 <= arg_idx:
+		if arg_count <= arg_idx:
 			add_input_arg(new_argument["name"], new_argument["type"])
-			emit_updated = true
+			arg_count += 1
 			continue # And we continue
 		
 		# We grab the existing argument to repurpose it.
-		var field_id: StringName = &"argument_" + StringName(str(arg_idx + 1))
 		var current_input_type: int = get_slot_type_left(arg_idx + 1)
 		var new_data_type: int = new_argument["type"]
 		var new_port_type: int = 0
@@ -222,29 +223,29 @@ func reload_methods() -> void:
 		var compatible: bool = false
 		var new_icon: Texture2D = null
 		
+		match new_data_type:
+			TYPE_INT:
+				new_port_type = SlotConnectionType.VAR_INT
+				new_type_color = "integer"
+				new_icon = get_theme_icon("int", "EditorIcons")
+			TYPE_FLOAT:
+				new_port_type = SlotConnectionType.VAR_FLOAT
+				new_type_color = "float"
+				new_icon = get_theme_icon("float", "EditorIcons")
+			TYPE_BOOL:
+				new_port_type = SlotConnectionType.VAR_BOOL
+				new_type_color = "bool"
+				new_icon = get_theme_icon("bool", "EditorIcons")
+			TYPE_STRING:
+				new_port_type = SlotConnectionType.VAR_STRING
+				new_type_color = "string"
+				new_icon = get_theme_icon("String", "EditorIcons")
+			_:
+				new_port_type = SlotConnectionType.VAR_ANY
+				new_type_color = "any"
+				new_icon = get_theme_icon("Variant", "EditorIcons")
+		
 		if has_any_input(arg_idx):
-			match new_data_type:
-				TYPE_INT:
-					new_port_type = SlotConnectionType.VAR_INT
-					new_type_color = "integer"
-					new_icon = get_theme_icon("int", "EditorIcons")
-				TYPE_FLOAT:
-					new_port_type = SlotConnectionType.VAR_FLOAT
-					new_type_color = "float"
-					new_icon = get_theme_icon("float", "EditorIcons")
-				TYPE_BOOL:
-					new_port_type = SlotConnectionType.VAR_BOOL
-					new_type_color = "bool"
-					new_icon = get_theme_icon("bool", "EditorIcons")
-				TYPE_STRING:
-					new_port_type = SlotConnectionType.VAR_STRING
-					new_type_color = "string"
-					new_icon = get_theme_icon("String", "EditorIcons")
-				_:
-					new_port_type = SlotConnectionType.VAR_ANY
-					new_type_color = "any"
-					new_icon = get_theme_icon("Variant", "EditorIcons")
-			
 			match current_input_type:
 				SlotConnectionType.VAR_INT:
 					compatible = new_data_type == TYPE_INT
@@ -267,21 +268,29 @@ func reload_methods() -> void:
 			
 			if not compatible: # If it isn't compatible we disconnect it.
 				disconnect_port(PortMode.INPUT, arg_idx)
-				emit_updated = true
 		
-		get_field(field_id).text = new_argument["name"]
+		get_index_field(arg_idx + 1).text = new_argument["name"]
 		
 		# If the types don't match we assign the type, change the color and icon.
 		if current_input_type != new_port_type:
-			set_slot_color_left(arg_idx, COLORS[new_type_color])
-			set_slot_type_left(arg_idx, new_port_type)
-			emit_updated = true
+			set_slot_color_left.call_deferred(arg_idx + 1, COLORS[new_type_color])
+			set_slot_type_left.call_deferred(arg_idx + 1, new_port_type)
+	
+	var fields_to_remove: Array[StringName] = []
+
+	for item in range(arg_idx + 2, get_child_count()):
+		var field_id: StringName = StringName("argument_" + str(item))
+		fields_to_remove.append(field_id)
+	
+	if not fields_to_remove.is_empty():
+		await remove_fields(fields_to_remove)
+		update_node_size.call_deferred()
 	
 	# Now we fix the output slot
 	var new_output_type: int = -1
 	var new_output_color: Color
-	var icon: Texture2D
-	match available_methods[selected_method]["return_type"]:
+	var icon: Texture2D = null
+	match available_methods[method_id]["return_type"]:
 		TYPE_INT:
 			new_output_type = SlotConnectionType.VAR_INT
 			new_output_color = COLORS["integer"]
@@ -303,14 +312,13 @@ func reload_methods() -> void:
 			new_output_color = COLORS["any"]
 	
 	if get_slot_type_right(0) != new_output_type:
-		set_slot_type_right(0, new_output_type)
-		set_slot_color_right(0, new_output_color)
+		set_slot_type_right.call_deferred(0, new_output_type)
+		set_slot_color_right.call_deferred(0, new_output_color)
 		set_output_connection_icon(&"methods", icon)
 	
 	if not has_any_output(0):
-		if emit_updated:
-			node_updated.emit()
 		return
+	
 	var compatible: bool = true
 	var target: DiscourseGraphNode = get_node_connected_to_port(PortMode.OUTPUT, 0)
 	var slot_idx: int = target.get_slot_from_port(PortMode.INPUT, get_target_port_connected_to_self(PortMode.OUTPUT, 0))
@@ -320,77 +328,13 @@ func reload_methods() -> void:
 	
 	if not compatible:
 		disconnect_port(PortMode.OUTPUT, 0)
-		emit_updated = true
-	
-	if emit_updated:
-		node_updated.emit()
-
-
-func load_method(method_id: String) -> void:
-	var var_color: Color = COLORS["any"]
-	var type: SlotConnectionType = SlotConnectionType.VAR_ANY
-	var icon: Texture2D = get_theme_icon("Variant", "EditorIcons")
-	
-	match available_methods[method_id]["return_type"]:
-		TYPE_INT:
-			var_color = COLORS["integer"]
-			type = SlotConnectionType.VAR_INT
-			icon = get_theme_icon("int", "EditorIcons")
-		TYPE_FLOAT:
-			var_color = COLORS["float"]
-			type = SlotConnectionType.VAR_FLOAT
-			icon = get_theme_icon("float", "EditorIcons")
-		TYPE_BOOL:
-			var_color = COLORS["bool"]
-			type = SlotConnectionType.VAR_BOOL
-			icon = get_theme_icon("bool", "EditorIcons")
-		TYPE_STRING:
-			var_color = COLORS["string"]
-			type = SlotConnectionType.VAR_STRING
-			icon = get_theme_icon("String", "EditorIcons")
-		_:
-			type = SlotConnectionType.VAR_ANY
-			icon = get_theme_icon("Variant", "EditorIcons")
-			var_color = COLORS["any"]
-	
-	clear_input_args()
-	
-	for argument:Dictionary in available_methods[method_id]["arguments"]:
-		add_input_arg(argument["name"], argument["type"])
-	
-	if has_any_output(0):
-		var target: DiscourseGraphNode = get_node_connected_to_port(PortMode.OUTPUT, 0)
-		var target_port_type: int = target.get_input_port_type(get_target_port_connected_to_self(PortMode.OUTPUT, 0))
-		
-		if not is_port_type_value_compatible(target_port_type, type):
-			disconnect_port(PortMode.OUTPUT, 0)
-	
-	set_slot_type_right(0, type)
-	set_slot_color_right(0, var_color)
-	set_output_connection_icon(&"methods", icon)
-
-
-func is_port_type_value_compatible(port_type: int, value: int) -> bool:
-	if port_type == SlotConnectionType.VAR_ANY:
-		return true
-	elif port_type == SlotConnectionType.VAR_INT and value == TYPE_INT:
-		return true
-	elif port_type == SlotConnectionType.VAR_FLOAT and value == TYPE_FLOAT:
-		return true
-	elif port_type == SlotConnectionType.VAR_BOOL and value == TYPE_BOOL:
-		return true
-	elif port_type == SlotConnectionType.VAR_STRING and value == TYPE_STRING:
-		return true
-	else:
-		return false
 
 
 func get_current_method() -> String:
-	var opt_btn: OptionButton = get_field(&"methods")
-	if opt_btn.selected == -1:
+	if methods_node.selected == -1:
 		return ""
 	else:
-		return opt_btn.get_item_metadata(opt_btn.selected)
+		return methods_node.get_item_metadata(methods_node.selected)
 
 
 func has_default_arg(method: String, argument_idx: int) -> bool:
@@ -445,7 +389,12 @@ func clear_input_args() -> void:
 	for item in range(get_child_count() - 1, 0, -1):
 		var field_id: StringName = &"argument_" + StringName(str(item))
 		field_ids.append(field_id)
-	remove_fields(field_ids, -1)
+	await remove_fields(field_ids, -1)
+	update_node_size.call_deferred()
+
+
+func update_node_size() -> void:
+	size.y = 0 
 
 
 static func get_user_methods() -> Dictionary:

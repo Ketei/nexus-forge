@@ -528,7 +528,7 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 	for node_uuid in node_uuids:
 		var metadata: Dictionary = node_data[node_uuid]["metadata"]
 		uuid_translator[node_uuid] = node_data[node_uuid]["name"]
-		if node_data[node_uuid]["type"] == NodeType.ANCHOR_POINTER:
+		if node_data[node_uuid]["type"] == NodeType.SHORTCUT:
 			var target_node: StringName = &""
 			if not metadata["anchor_target"].is_empty():
 				target_node = node_data[metadata["anchor_target"]]["output_connections"]["next_node"]["target_node_uuid"]

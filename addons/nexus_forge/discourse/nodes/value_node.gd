@@ -2,7 +2,7 @@ extends DiscourseGraphNode
 
 
 signal value_changed(uuid: StringName, from: Variant, to: Variant)
-signal data_type_changed(uuid: StringName, from: int, to: int)
+signal data_type_changed(uuid: StringName, old_state: Dictionary, new_state: Dictionary)
 
 const MAX_LINES: int = 5
 const EXTRA_Y_PADDING: int = 8
@@ -39,6 +39,7 @@ func _post_init() -> void:
 	num_value.allow_greater = true
 	num_value.allow_lesser = true
 	num_value.step = 1.0
+	num_value.set_meta(&"old_value", 0.0)
 	bool_value.text = "Is True"
 	bool_value.visible = false
 	text_value.visible = false
@@ -49,6 +50,7 @@ func _post_init() -> void:
 	
 	text_value.custom_minimum_size.y = 33.0
 	text_value.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
+	text_value.set_meta(&"old_value", "")
 	
 	data_panel.add_child(num_value)
 	data_panel.add_child(bool_value)
@@ -156,6 +158,7 @@ func set_value(value: Variant) -> void:
 			bool_value.set_pressed_no_signal(value)
 		TYPE_STRING:
 			text_value.text = value
+			text_value.set_meta(&"old_value", value)
 			if text_value.visible:
 				_resize_text_entry.call_deferred()
 
@@ -192,7 +195,9 @@ func _on_data_type_selected(type: int) -> void:
 	if type == _mode:
 		return
 	
-	var old_type: int = _mode
+	var old_state: Dictionary = {
+		"output_connections": get_uuid_and_port_connected_to(PortMode.OUTPUT, 0),
+		"metadata": {"value": get_current_value()}}
 	
 	if has_any_output(0):
 		var target: DiscourseGraphNode = get_node_connected_to_port(PortMode.OUTPUT, 0)
@@ -203,10 +208,14 @@ func _on_data_type_selected(type: int) -> void:
 	
 	set_mode(type)
 	
+	var new_state: Dictionary = {
+		"output_connections": get_uuid_and_port_connected_to(PortMode.OUTPUT, 0),
+		"metadata": {"value": get_current_value()}}
+	
 	data_type_changed.emit(
 			get_node_uuid(),
-			old_type,
-			_mode)
+			old_state,
+			new_state)
 
 
 func _on_num_value_changed(value: float) -> void:
@@ -245,12 +254,11 @@ func _on_bool_value_toggled(is_toggled: bool) -> void:
 
 
 func _resize_text_entry() -> void:
-	var field: TextEdit = get_mapped_field(&"data", &"text")
-	var lines: int = mini(field.get_total_visible_line_count(), MAX_LINES)
-	var new_height: float = lines * field.get_line_height() + EXTRA_Y_PADDING
+	var lines: int = mini(text_value.get_total_visible_line_count(), MAX_LINES)
+	var new_height: float = lines * text_value.get_line_height() + EXTRA_Y_PADDING
 	if new_height < size.y:
 		_reset_height.call_deferred()
-	field.custom_minimum_size.y = new_height
+	text_value.custom_minimum_size.y = new_height
 
 
 func _reset_height() -> void:

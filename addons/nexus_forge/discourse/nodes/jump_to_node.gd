@@ -9,7 +9,7 @@ signal selected_anchor_changed(node_uuid: StringName, old_anchor: StringName, ne
 func _post_init() -> void:
 	set_node_id(&"AnchorPointer")
 	title = "Go To"
-	node_type = DialogueNodeType.ANCHOR_POINTER
+	node_type = DialogueNodeType.SHORTCUT
 	parent_mode = PortMode.INPUT
 	parent_port = 0
 	size = Vector2(200.0, 87.0)
@@ -72,7 +72,7 @@ func _set_node_data(data: Dictionary) -> void:
 		position_offset = metadata["position"]
 	
 	if metadata.has("anchor_target") and typeof(metadata["anchor_target"]) == TYPE_STRING:
-		select_anchor(metadata["anchor_target"])
+		select_target(metadata["anchor_target"])
 
 
 func _get_issues() -> PackedStringArray:
@@ -160,7 +160,7 @@ func _on_go_to_anchor_pressed() -> void:
 	go_to_anchor_pressed.emit(menu.get_selected_metadata())
 
 
-func select_anchor(uuid: StringName) -> void:
+func select_target(uuid: StringName) -> void:
 	var menu: OptionButton = get_mapped_field(&"fields", &"shortcuts")
 	
 	for idx in range(menu.item_count):

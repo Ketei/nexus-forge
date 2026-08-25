@@ -2,9 +2,8 @@ extends DiscourseGraphNode
 
 
 signal match_node_resized(uuid: StringName, old_snapshot: Dictionary, new_snapshot: Dictionary)
-signal match_field_updated(uuid: StringName, field_id: int, value: Variant)
-signal match_default_updated(uuid: StringName, value: Variant)
-signal match_mode_changed(uuid: StringName, old_mode: int, new_mode: int)
+signal match_field_updated(uuid: StringName, field_id: int, from: Variant, to: Variant)
+signal match_mode_changed(uuid: StringName, old_state: Dictionary, new_state: Dictionary)
 
 
 var current_mode: int = TYPE_INT
@@ -160,7 +159,7 @@ func get_match_case_data() -> Array[Dictionary]:
 	return cases
 
 
-func set_current_mode(mode: int) -> void:
+func set_match_mode(mode: int) -> void:
 	var menu_button: MenuButton = get_field(&"values").get_child(0)
 	current_mode = mode
 	match current_mode:
@@ -193,16 +192,24 @@ func set_current_mode(mode: int) -> void:
 
 func _on_value_type_changed(id: int) -> void:
 	var old_mode: int = current_mode
-	set_current_mode(id)
-	var new_mode: int = current_mode
 	
-	if old_mode == new_mode:
+	if old_mode == id:
 		return
+	
+	var old_state: Dictionary = {
+		"metadata": {
+			"match_data_type": current_mode,
+			"cases": get_match_case_data()}}
+	set_match_mode(id)
+	var new_state: Dictionary = {
+		"metadata": {
+			"match_data_type": id,
+			"cases": get_match_case_data()}}
 	
 	match_mode_changed.emit(
 			get_node_uuid(),
-			old_mode,
-			new_mode)
+			old_state,
+			new_state)
 
 
 func _on_match_value_changed(value: float, node: SpinBox) -> void:
@@ -220,17 +227,11 @@ func _on_match_value_changed(value: float, node: SpinBox) -> void:
 	var node_idx: int = node.get_parent().get_parent().get_index()
 	var match_id: int = node_idx - 3
 	
-	if match_id == 0:
-		match_default_updated.emit(
-				get_node_uuid(),
-				old_value,
-				new_value)
-	else:
-		match_field_updated.emit(
-				get_node_uuid(),
-				match_id,
-				old_value,
-				new_value)
+	match_field_updated.emit(
+			get_node_uuid(),
+			match_id,
+			old_value,
+			new_value)
 
 
 func _on_match_text_edit_toggled(is_toggled: bool, line: LineEdit) -> void:
@@ -248,17 +249,11 @@ func _on_match_text_edit_toggled(is_toggled: bool, line: LineEdit) -> void:
 	
 	line.set_meta(&"old_value", new_value)
 	
-	if match_id == 0:
-		match_default_updated.emit(
-				get_node_uuid(),
-				old_value,
-				new_value)
-	else:
-		match_field_updated.emit(
-				get_node_uuid(),
-				match_id,
-				old_value,
-				new_value)
+	match_field_updated.emit(
+			get_node_uuid(),
+			match_id,
+			old_value,
+			new_value)
 
 
 func _on_match_text_changed(_text: String) -> void:
@@ -276,27 +271,24 @@ func _set_node_data(data: Dictionary) -> void:
 	if metadata.has("position") and typeof(metadata["position"]) == TYPE_VECTOR2:
 		position_offset = metadata["position"]
 	
-	if not metadata.has("cases") or typeof(metadata["cases"]) != TYPE_ARRAY:
-		return
-	
-	var case_count: int = metadata["cases"].size()
-	get_mapped_field(&"cases", &"case_count").set_value_no_signal(case_count)
-	set_match_case_count(case_count)
+	if metadata.has("cases") and typeof(metadata["cases"]) == TYPE_ARRAY:
+		var case_count: int = metadata["cases"].size()
+		get_mapped_field(&"cases", &"case_count").set_value_no_signal(case_count)
+		set_match_case_count(case_count)
+		for match_option in range(1, case_count + 1):
+			var case_id: StringName = &"case_" + StringName(str(int(match_option)))
+			var field: Control = get_field(case_id)
+			var val = metadata["cases"][match_option - 1].get("value")
+			var val_type = typeof(val)
+			if current_mode == TYPE_STRING:
+				if val_type == TYPE_STRING:
+					field.get_child(1).text = val
+			else:
+				if val_type == TYPE_FLOAT or val_type == TYPE_INT:
+					field.get_child(0).value = val
 	
 	if metadata.has("match_data_type") and typeof(metadata["match_data_type"]) == TYPE_INT:
-		set_current_mode(metadata["match_data_type"])
-	
-	for match_option in range(1, case_count + 1):
-		var case_id: StringName = &"case_" + StringName(str(int(match_option)))
-		var field: Control = get_field(case_id)
-		var val = metadata["cases"][match_option - 1].get("value")
-		var val_type = typeof(val)
-		if current_mode == TYPE_STRING:
-			if val_type == TYPE_STRING:
-				field.get_child(1).text = val
-		else:
-			if val_type == TYPE_FLOAT or val_type == TYPE_INT:
-				field.get_child(0).value = val
+		set_match_mode(metadata["match_data_type"])
 
 
 func _get_issues() -> PackedStringArray:
@@ -341,9 +333,9 @@ func _on_match_count_changed(new_count: int) -> void:
 
 func _update_match_case_value() -> void:
 	var case_size: int = get_mapped_field(&"cases", &"case_count").value
-	var old_snapshot: Dictionary = {"metadata": {"match_data_type": get_match_case_data()}}
+	var old_snapshot: Dictionary = {"metadata": {"cases": get_match_case_data()}}
 	set_match_case_count(case_size)
-	var new_snapshot: Dictionary = {"metadata": {"match_data_type": get_match_case_data()}}
+	var new_snapshot: Dictionary = {"metadata": {"cases": get_match_case_data()}}
 	_match_size_update_queed = false
 	size.y = 0
 	match_node_resized.emit(

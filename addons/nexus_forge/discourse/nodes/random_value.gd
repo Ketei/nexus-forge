@@ -1,7 +1,7 @@
 extends DiscourseGraphNode
 
 
-signal mode_changed(uuid: StringName, from: float, to: float)
+signal mode_changed(uuid: StringName, old_state: Dictionary, new_state: Dictionary)
 signal range_changed(uuid: StringName, from_min: float, from_max: float, to_min: float, to_max: float)
 
 # Modes can only be int, float & bool
@@ -99,10 +99,9 @@ func _post_init() -> void:
 
 
 func _ready() -> void:
-	var random_type: MenuButton = get_mapped_field(&"random_type", &"type_button")
-	var random_popup: PopupMenu = random_type.get_popup()
+	var random_popup: PopupMenu = menu.get_popup()
 	graph_icon = get_theme_icon("RandomNumberGenerator", "EditorIcons")
-	random_type.icon = get_theme_icon("int", "EditorIcons")
+	menu.icon = get_theme_icon("int", "EditorIcons")
 	random_popup.add_icon_item(
 			get_theme_icon("int", "EditorIcons"),
 			"",
@@ -147,8 +146,8 @@ func _get_node_data() -> Dictionary:
 	var metadata: Dictionary = {
 		"mode": current_mode,
 		"values": {
-			"base": get_mapped_field(&"min_value", "min_spinbox").value,
-			"max": get_mapped_field(&"max_value", "max_spinbox").value}}
+			"base": min_spinbox.value,
+			"max": max_spinbox.value}}
 	var input_connections: Dictionary = {
 		"base_value": get_uuid_and_port_connected_to(PortMode.INPUT, 0),
 		"max_value": get_uuid_and_port_connected_to(PortMode.INPUT, 1)}
@@ -178,13 +177,13 @@ func _set_node_data(data: Dictionary) -> void:
 		return
 	
 	if metadata["values"].has("base"):
-		var base_type: int = metadata["values"]["base"]
+		var base_type: int = typeof(metadata["values"]["base"])
 		if base_type == TYPE_INT or base_type == TYPE_FLOAT:
 			min_spinbox.set_value_no_signal(metadata["values"]["base"])
 			min_spinbox.set_meta(&"old_value", min_spinbox.value)
 	
 	if metadata["values"].has("max"):
-		var max_type: int = metadata["values"]["max"]
+		var max_type: int = typeof(metadata["values"]["max"])
 		if max_type == TYPE_INT or max_type == TYPE_FLOAT:
 			max_spinbox.set_value_no_signal(maxf(min_spinbox.value, metadata["values"]["max"]))
 			max_spinbox.set_meta(&"old_value", max_spinbox.value)
@@ -227,12 +226,37 @@ func _on_random_type_selected(type: int) -> void:
 	if type == prev_mode:
 		return
 	
+	var input_connections: Dictionary = {
+		"base_value": get_uuid_and_port_connected_to(PortMode.INPUT, 0),
+		"max_value": get_uuid_and_port_connected_to(PortMode.INPUT, 1)}
+	var meta: Dictionary = {
+		"mode": current_mode,
+		"values": {
+			"base": min_spinbox.value,
+			"max": max_spinbox.value}}
+	var prev_state: Dictionary = {
+		"input_connections": input_connections,
+		"metadata": meta}
+	
 	menu.set_meta(&"old_value", type)
 	set_mode(type)
+	
+	var new_ins: Dictionary = {
+		"base_value": get_uuid_and_port_connected_to(PortMode.INPUT, 0),
+		"max_value": get_uuid_and_port_connected_to(PortMode.INPUT, 1)}
+	var new_meta: Dictionary = {
+		"mode": current_mode,
+		"values": {
+			"base": min_spinbox.value,
+			"max": max_spinbox.value}}
+	var new_state: Dictionary = {
+		"input_connections": new_ins,
+		"metadata": new_meta}
+	
 	mode_changed.emit(
 			get_node_uuid(),
-			prev_mode,
-			current_mode)
+			prev_state,
+			new_state)
 
 
 func set_mode(mode: int) -> void:
@@ -244,6 +268,26 @@ func set_mode(mode: int) -> void:
 	
 	current_mode = mode
 	_set_type_fields(mode)
+
+
+func set_range(base: float, max: float) -> void:
+	var true_max: float = maxf(base, max)
+	set_range_base(base)
+	set_range_max(true_max)
+
+
+func set_range_base(value: float) -> void:
+	min_spinbox.set_value_no_signal(value)
+	min_spinbox.set_meta(&"old_value", value)
+	
+	max_spinbox.min_value = value
+	max_spinbox.set_value_no_signal(maxf(value, max_spinbox.value))
+	max_spinbox.set_meta(&"old_value", max_spinbox.value)
+
+
+func set_range_max(value: float) -> void:
+	max_spinbox.set_value_no_signal(value)
+	max_spinbox.set_meta(&"old_value", max_spinbox.value)
 
 
 func _set_type_fields(type: int) -> void:

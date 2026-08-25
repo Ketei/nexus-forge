@@ -4,6 +4,9 @@ extends DiscourseGraphNode
 signal operator_changed(uuid: StringName, old_operator: int, new_operator: int)
 
 
+var comparation_menu: MenuButton
+
+
 func _post_init() -> void:
 	set_node_id(&"Comparation")
 	title = "Comparation"
@@ -12,7 +15,7 @@ func _post_init() -> void:
 	parent_mode = PortMode.OUTPUT
 	parent_port = 0
 	
-	var comparation_menu: MenuButton = MenuButton.new()
+	comparation_menu = MenuButton.new()
 	var comparation_popup: PopupMenu = comparation_menu.get_popup()
 	
 	var comp_container: HBoxContainer = HBoxContainer.new()
@@ -70,7 +73,7 @@ func _post_init() -> void:
 	a_result_container.add_child(result_label)
 	
 	add_field(&"comparation", comp_container)
-	map_field(&"comparation", &"comparation_menu", comparation_menu)
+	
 	var res_idx: int = add_field(
 			&"result",
 			a_result_container,
@@ -113,9 +116,7 @@ func _get_node_data() -> Dictionary:
 	var data: Dictionary = {}
 	
 	var metadata: Dictionary = {
-		"operator": get_mapped_field(
-			&"comparation",
-			&"comparation_menu").get_meta(&"current_operator", 0)}
+		"operator": comparation_menu.get_meta(&"current_operator", 0)}
 	var in_connections: Dictionary = {
 		"node_a": get_uuid_and_port_connected_to(PortMode.INPUT, 0),
 		"node_b": get_uuid_and_port_connected_to(PortMode.INPUT, 1)}
@@ -140,50 +141,61 @@ func _set_node_data(data: Dictionary) -> void:
 	if not metadata.has("operator") or typeof(metadata["operator"]) != TYPE_INT:
 		return
 	
-	var dropdown: MenuButton = get_mapped_field(&"comparation", &"comparation_menu")
 	var operator: Variant.Operator = clampi(metadata["operator"], 0, 5) as Variant.Operator
 	match operator:
 		OP_EQUAL:
-			dropdown.text = "=="
+			comparation_menu.text = "=="
 		OP_NOT_EQUAL:
-			dropdown.text = "!="
+			comparation_menu.text = "!="
 		OP_LESS:
-			dropdown.text = "<"
+			comparation_menu.text = "<"
 		OP_LESS_EQUAL:
-			dropdown.text = "<="
+			comparation_menu.text = "<="
 		OP_GREATER:
-			dropdown.text = ">"
+			comparation_menu.text = ">"
 		OP_GREATER_EQUAL:
-			dropdown.text = ">="
-	dropdown.set_meta(&"old_value", operator)
-	dropdown.set_meta(&"current_operator", operator)
+			comparation_menu.text = ">="
+	comparation_menu.set_meta(&"old_value", operator)
+	comparation_menu.set_meta(&"current_operator", operator)
+
+
+func set_operator(operator: int) -> void:
+	match operator:
+		OP_EQUAL, OP_NOT_EQUAL, OP_LESS, OP_LESS_EQUAL, OP_GREATER, OP_GREATER_EQUAL:
+			if comparation_menu.get_meta(&"current_operator") != operator:
+				comparation_menu.set_meta(&"current_operator", operator)
+				comparation_menu.set_meta(&"old_value", operator)
+				_set_operator_display(operator)
+		_:
+			return
 
 
 func _on_comparation_changed(id: int) -> void:
-	var menu_btn: MenuButton = get_field(&"comparation").get_child(1)
-	var old_operator: int = menu_btn.get_meta(&"old_value")
-	menu_btn.set_meta(&"current_operator", id)
+	var old_operator: int = comparation_menu.get_meta(&"old_value")
+	comparation_menu.set_meta(&"current_operator", id)
 	
 	if id == old_operator:
 		return
 	
-	match id:
-		OP_EQUAL:
-			menu_btn.text = "=="
-		OP_NOT_EQUAL:
-			menu_btn.text = "!="
-		OP_LESS:
-			menu_btn.text = "<"
-		OP_LESS_EQUAL:
-			menu_btn.text = "<="
-		OP_GREATER:
-			menu_btn.text = ">"
-		OP_GREATER_EQUAL:
-			menu_btn.text = ">="
-	
-	menu_btn.set_meta(&"old_value", id)
-	
+	_set_operator_display(id)
+	comparation_menu.set_meta(&"old_value", id)
 	operator_changed.emit(
 			get_node_uuid(),
 			old_operator,
 			id)
+
+
+func _set_operator_display(id: int) -> void:
+	match id:
+		OP_EQUAL:
+			comparation_menu.text = "=="
+		OP_NOT_EQUAL:
+			comparation_menu.text = "!="
+		OP_LESS:
+			comparation_menu.text = "<"
+		OP_LESS_EQUAL:
+			comparation_menu.text = "<="
+		OP_GREATER:
+			comparation_menu.text = ">"
+		OP_GREATER_EQUAL:
+			comparation_menu.text = ">="

@@ -225,8 +225,8 @@ func ready_plugin(base_locale: String = "") -> void:
 	dialogs_submenu.add_icon_item(load("res://addons/nexus_forge/icons/merge_icon.svg"), "Merge", DiscourseGraphNode.DialogueNodeType.DIALOG_MERGE)
 	dialogs_submenu.add_icon_item(get_theme_icon("Pause", "EditorIcons"), "Pause", DiscourseGraphNode.DialogueNodeType.PAUSE)
 	dialogs_submenu.add_separator("Anchors")
-	dialogs_submenu.add_icon_item(load("res://addons/nexus_forge/icons/dialog_entry.svg"), "Pointer", DiscourseGraphNode.DialogueNodeType.ANCHOR_POINTER)
-	dialogs_submenu.add_icon_item(load("res://addons/nexus_forge/icons/dialog_exit.svg"), "Target", DiscourseGraphNode.DialogueNodeType.ANCHOR)
+	dialogs_submenu.add_icon_item(load("res://addons/nexus_forge/icons/dialog_entry.svg"), "Shortcut", DiscourseGraphNode.DialogueNodeType.SHORTCUT)
+	dialogs_submenu.add_icon_item(load("res://addons/nexus_forge/icons/dialog_exit.svg"), "Shortuct Target", DiscourseGraphNode.DialogueNodeType.SHORTCUT_TARGET)
 	dialogs_submenu.add_separator()
 	dialogs_submenu.add_icon_item(load("res://addons/nexus_forge/icons/bulb_icon.svg"), "Event", DiscourseGraphNode.DialogueNodeType.EVENT)
 	dialogs_submenu.add_icon_item(get_theme_icon("Stop", "EditorIcons"), "End", DiscourseGraphNode.DialogueNodeType.DIALOG_END)
@@ -3698,7 +3698,7 @@ func _on_phrase_text_field_changed(field: TextEdit) -> void:
 	_on_conversation_changed()
 
 # --- UndoRedo ---
-
+# --- Phrases ---
 func _on_phrase_key_editing_toggled(is_toggled: bool) -> void:
 	if is_toggled:
 		return

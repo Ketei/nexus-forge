@@ -209,6 +209,8 @@ func _on_text_fallback_edit_toggled(is_toggled: bool) -> void:
 
 
 func _on_value_fallback_value_changed(value: float) -> void:
+	if filter_mode != TYPE_BOOL and filter_mode != TYPE_FLOAT:
+		return
 	var old_value: float = val_fallback.get_meta(&"old_value")
 	
 	if value == old_value:
@@ -222,6 +224,8 @@ func _on_value_fallback_value_changed(value: float) -> void:
 
 
 func _on_bool_fallback_toggled(is_toggled: bool) -> void:
+	if filter_mode != TYPE_BOOL:
+		return
 	fallback_changed.emit(
 		get_node_uuid(),
 		not is_toggled,

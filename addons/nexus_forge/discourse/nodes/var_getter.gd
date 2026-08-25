@@ -1,6 +1,6 @@
 extends DiscourseGraphNode
 
-signal type_changed(uuid: StringName, from: int, to: int)
+signal type_changed(uuid: StringName, old_state: Dictionary, new_state: Dictionary)
 signal path_changed(uuid: StringName, from: String, to: String)
 
 var path_line: LineEdit
@@ -30,6 +30,7 @@ func _post_init() -> void:
 	type_menu.custom_minimum_size = Vector2(32.0, 32.0)
 	
 	type_menu.set_meta(&"current_type", TYPE_INT)
+	type_menu.set_meta(&"old_value", TYPE_INT)
 	
 	path_container.add_child(path_line)
 	path_container.add_child(type_menu)
@@ -114,13 +115,12 @@ func _set_node_data(data: Dictionary) -> void:
 		position_offset = metadata["position"]
 	
 	if metadata.has("variable_path") and typeof(metadata["variable_path"]) == TYPE_STRING:
-		path_line.text = metadata["variable_path"]
-		path_line.set_meta(&"old_value", metadata["variable_path"])
+		set_variable_path(metadata["variable_path"])
 		
-		if metadata.has("variable_type") and typeof(metadata["variable_type"]) == TYPE_INT:
-			set_node_type(metadata["variable_type"])
-		else:
-			set_node_type(TYPE_NIL)
+	if metadata.has("variable_type") and typeof(metadata["variable_type"]) == TYPE_INT:
+		set_node_type(metadata["variable_type"])
+	else:
+		set_node_type(TYPE_NIL)
 
 
 func _on_path_line_text_changed(_text: String) -> void:
@@ -152,6 +152,10 @@ func _on_type_selected(item_id: int) -> void:
 	if item_id == old_value:
 		return
 	
+	var old_state: Dictionary = {
+		"output_connections": {"target": get_target_node_uuid(PortMode.OUTPUT, 0)},
+		"metadata": {
+			"variable_type": type_menu.get_meta(&"current_type", TYPE_NIL)}}
 	if has_any_output(0):
 		var target: DiscourseGraphNode = get_node_connected_to_port(PortMode.OUTPUT, 0)
 		var target_port_type: int = target.get_input_port_type(get_target_port_connected_to_self(PortMode.OUTPUT, 0))
@@ -161,10 +165,15 @@ func _on_type_selected(item_id: int) -> void:
 	
 	set_node_type(item_id)
 	
+	var new_state: Dictionary = {
+		"output_connections": {"target": get_target_node_uuid(PortMode.OUTPUT, 0)},
+		"metadata": {
+			"variable_type": type_menu.get_meta(&"current_type", TYPE_NIL)}}
+	
 	type_changed.emit(
 			get_node_uuid(),
-			old_value,
-			item_id)
+			old_state,
+			new_state)
 
 
 func is_port_type_value_compatible(port_type: int, value: int) -> bool:
@@ -183,40 +192,44 @@ func is_port_type_value_compatible(port_type: int, value: int) -> bool:
 
 
 func set_node_type(item_id: int) -> void:
-	var menu: MenuButton = get_field(&"path").get_child(1)
-	var old_type: int = menu.get_meta(&"old_value")
+	var old_type: int = type_menu.get_meta(&"old_value")
 	
 	if old_type == item_id:
 		return
 	
 	match item_id:
 		TYPE_INT:
-			menu.icon = get_theme_icon("int", "EditorIcons")
+			type_menu.icon = get_theme_icon("int", "EditorIcons")
 			set_slot_color_right(0, COLORS["integer"])
 			set_slot_type_right(0, SlotConnectionType.VAR_INT)
-			menu.set_meta(&"current_type", TYPE_INT)
-			menu.set_meta(&"old_value", TYPE_INT)
+			type_menu.set_meta(&"current_type", TYPE_INT)
+			type_menu.set_meta(&"old_value", TYPE_INT)
 		TYPE_FLOAT:
-			menu.icon = get_theme_icon("float", "EditorIcons")
+			type_menu.icon = get_theme_icon("float", "EditorIcons")
 			set_slot_color_right(0, COLORS["float"])
 			set_slot_type_right(0, SlotConnectionType.VAR_FLOAT)
-			menu.set_meta(&"current_type", TYPE_FLOAT)
-			menu.set_meta(&"old_value", TYPE_FLOAT)
+			type_menu.set_meta(&"current_type", TYPE_FLOAT)
+			type_menu.set_meta(&"old_value", TYPE_FLOAT)
 		TYPE_BOOL:
-			menu.icon = get_theme_icon("bool", "EditorIcons")
+			type_menu.icon = get_theme_icon("bool", "EditorIcons")
 			set_slot_color_right(0, COLORS["bool"])
 			set_slot_type_right(0, SlotConnectionType.VAR_BOOL)
-			menu.set_meta(&"current_type", TYPE_BOOL)
-			menu.set_meta(&"old_value", TYPE_BOOL)
+			type_menu.set_meta(&"current_type", TYPE_BOOL)
+			type_menu.set_meta(&"old_value", TYPE_BOOL)
 		TYPE_STRING:
-			menu.icon = get_theme_icon("String", "EditorIcons")
+			type_menu.icon = get_theme_icon("String", "EditorIcons")
 			set_slot_color_right(0, COLORS["string"])
 			set_slot_type_right(0, SlotConnectionType.VAR_STRING)
-			menu.set_meta(&"current_type", TYPE_STRING)
-			menu.set_meta(&"old_value", TYPE_STRING)
+			type_menu.set_meta(&"current_type", TYPE_STRING)
+			type_menu.set_meta(&"old_value", TYPE_STRING)
 		_:
-			menu.icon = get_theme_icon("Variant", "EditorIcons")
+			type_menu.icon = get_theme_icon("Variant", "EditorIcons")
 			set_slot_color_right(0, COLORS["any"])
 			set_slot_type_right(0, SlotConnectionType.VAR_ANY)
-			menu.set_meta(&"current_type", TYPE_NIL)
-			menu.set_meta(&"old_value", TYPE_NIL)
+			type_menu.set_meta(&"current_type", TYPE_NIL)
+			type_menu.set_meta(&"old_value", TYPE_NIL)
+
+
+func set_variable_path(path: String) -> void:
+	path_line.text = path
+	path_line.set_meta(&"old_value", path)

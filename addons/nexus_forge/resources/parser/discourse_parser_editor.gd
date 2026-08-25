@@ -335,9 +335,9 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 				if random_select <= current_weight:
 					return _process_logic(choice["next"])
 			return _process_logic(choices[-1]["next"]) # In case of loop error
-		NodeTypes.ANCHOR_POINTER:
+		NodeTypes.SHORTCUT:
 			return _process_logic(metadata["anchor_target"])
-		NodeTypes.ANCHOR:
+		NodeTypes.SHORTCUT_TARGET:
 			return _process_logic(data["output_connections"]["next_node"]["target_node_uuid"])
 		NodeTypes.DIALOG_END:
 			target["current"] = uuid

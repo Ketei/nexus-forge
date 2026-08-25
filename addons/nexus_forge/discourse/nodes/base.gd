@@ -1060,12 +1060,15 @@ func remove_fields(field_ids: Array[StringName], size_change: int = 0) -> void:
 	var compound_size: float = 0.0
 	
 	for child in get_children():
+		if not is_instance_valid(child) or child.is_queued_for_deletion():
+			continue
 		if field_ids.has(child.name):
 			target_nodes.append(child)
 	
 	if target_nodes.is_empty():
 		return
 	
+	var target_count: int = target_nodes.size()
 	target_nodes.sort_custom(func (a:Control,b:Control): return b.get_index() < a.get_index())
 	
 	for node in target_nodes:
@@ -1101,6 +1104,7 @@ func remove_fields(field_ids: Array[StringName], size_change: int = 0) -> void:
 				node.get_meta(&"output_slot"))
 		compound_size += node.size.y
 	for node in target_nodes:
+		clear_slot(node.get_index())
 		node.free()
 	
 	if 0 < size_change:
@@ -1108,7 +1112,7 @@ func remove_fields(field_ids: Array[StringName], size_change: int = 0) -> void:
 	elif size_change < 0:
 		size.y = 0
 	else:
-		size.y -= compound_size + (get_theme_constant("separation") * (target_nodes.size() - 1) if 0 < target_nodes.size() else 0)
+		size.y -= compound_size + (get_theme_constant("separation") * (target_count - 1) if 0 < target_count else 0)
 
 
 func is_orphan() -> bool:

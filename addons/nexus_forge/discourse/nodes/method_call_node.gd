@@ -1,10 +1,12 @@
 extends DiscourseGraphNode
 
 
-signal method_changed(node_uuid: StringName, from: String, to: String)
+signal method_changed(node_uuid: StringName, from_state: Dictionary, to_state: Dictionary)
 
 
 static var available_methods: Dictionary = {}
+
+var methods_node: OptionButton
 
 
 static func _static_init() -> void:
@@ -21,7 +23,7 @@ func _post_init() -> void:
 	size = Vector2(240, 84)
 	custom_minimum_size.y = 84
 	
-	var methods_node: OptionButton = OptionButton.new()
+	methods_node = OptionButton.new()
 	methods_node.name = &"MethodsOptBtn"
 	methods_node.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	methods_node.fit_to_longest_item = false
@@ -123,93 +125,38 @@ func _set_node_data(data: Dictionary) -> void:
 	if metadata.has("position") and typeof(metadata["position"]) == TYPE_VECTOR2:
 		position_offset = metadata["position"]
 	
-	if not metadata.has("method") or typeof(metadata["method"]) != TYPE_STRING:
-		return
-	
-	var method_opt_btn: OptionButton = get_field(&"methods")
-	for idx in range(method_opt_btn.item_count):
-		if method_opt_btn.get_item_metadata(idx) == metadata["method"]:
-			method_opt_btn.select(idx)
-			method_opt_btn.set_meta(&"old_value", metadata["method"])
-			load_method(metadata["method"])
-			break
+	if metadata.has("method") and typeof(metadata["method"]) == TYPE_STRING and available_methods.has(metadata["method"]):
+		set_method(metadata["method"])
+
+
+func set_method(method_id: String) -> void:
+	for idx in range(methods_node.item_count):
+		if methods_node.get_item_metadata(idx) == method_id:
+			methods_node.select(idx)
+			methods_node.set_meta(&"old_value", method_id)
+			load_method(method_id)
+			return
 
 
 func load_method(method_id: String) -> void:
-	clear_input_args()
-	for argument:Dictionary in available_methods[method_id]:
-		add_input_arg(argument["name"], argument["type"])
-
-
-func _on_method_selected(idx: int) -> void:
-	var opt_btn: OptionButton = get_field(&"methods")
-	var id: String = opt_btn.get_item_metadata(idx)
-	var prev: String = opt_btn.get_meta(&"old_value")
-	
-	if id == prev:
+	if not available_methods.has(method_id):
 		return
 	
-	opt_btn.set_meta(&"old_value", id)
-	load_method(id)
-	method_changed.emit(
-			get_node_uuid(),
-			prev,
-			id)
-
-
-func reload_methods() -> void:
-	available_methods = get_user_methods()
-	var opt_btn: OptionButton = get_field(&"methods")
-	
-	if available_methods.is_empty():
-		opt_btn.clear()
-		clear_input_args()
-		opt_btn.disabled = true
-		opt_btn.set_meta(&"old_value", "")
-		return
-	
-	if opt_btn.disabled:
-		opt_btn.disabled = false
-	
-	var selected_method: String = opt_btn.get_selected_metadata() if opt_btn.selected != -1 else ""
-	var all_methods: Array = available_methods.keys()
-	var new_select: int = -1
-	var emit_updated: bool = false
-	
-	all_methods.sort_custom(ArrayUtils.sort_custom_alphabetically_asc)
-	
-	if selected_method != "":
-		new_select = all_methods.find(selected_method)
-	
-	opt_btn.clear()
-	
-	for method in all_methods:
-		opt_btn.add_item(method)
-		opt_btn.set_item_metadata(-1, method)
-	
-	if new_select != -1:
-		opt_btn.select(new_select)
-	elif new_select == -1:
-		opt_btn.select(0)
-		opt_btn.set_meta(&"old_value", opt_btn.get_item_metadata(0))
-		load_method(opt_btn.get_item_metadata(0))
-		node_updated.emit()
-		return # Since there was no equal method we stop here
-	
-	# Since there is an equal named method, we will check all the arguments.
 	var arg_idx: int = -1 # With the index
-	for new_argument:Dictionary in available_methods[selected_method]:
+	var arg_count: int = get_child_count() - 1
+	
+	for new_argument:Dictionary in available_methods[method_id]:
 		arg_idx += 1
 		
 		# If the new index is equal or larger as the child count, we add the argument.
 		# Index 0 to child count 0, means we need to add a new child.
-		if get_child_count() - 1 <= arg_idx:
+		if arg_count <= arg_idx:
 			add_input_arg(new_argument["name"], new_argument["type"])
-			emit_updated = true
+			arg_count += 1
 			continue # And we continue
 		
 		# We grab the existing argument to repurpose it.
-		var field_id: StringName = &"argument_" + StringName(str(arg_idx + 1))
+		#print("Getting slot type left of index %d with a total children of %d" % [arg_idx + 1, child_count])
 		var current_input_type: int = get_slot_type_left(arg_idx + 1)
 		var new_data_type: int = new_argument["type"]
 		var new_port_type: int = 0
@@ -262,18 +209,101 @@ func reload_methods() -> void:
 			
 			if not compatible: # If it isn't compatible we disconnect it.
 				disconnect_port(PortMode.INPUT, arg_idx)
-				emit_updated = true
 		
 		# Update the field text
-		get_field(field_id).text = new_argument["name"]
+		get_index_field(arg_idx + 1).text = new_argument["name"]
 		
 		# If the types don't match we assign the type, change the color and icon.
 		if current_input_type != new_port_type:
-			set_slot_color_left(arg_idx, COLORS[new_type_color])
-			set_slot_type_left(arg_idx, new_port_type)
-			emit_updated = true
+			set_slot_color_left.call_deferred(arg_idx + 1, COLORS[new_type_color])
+			set_slot_type_left.call_deferred(arg_idx + 1, new_port_type)
 	
-	if emit_updated:
+	var fields_to_remove: Array[StringName] = []
+
+	for item in range(arg_idx + 2, get_child_count()):
+		var field_id: StringName = StringName("argument_" + str(item))
+		fields_to_remove.append(field_id)
+	
+	if not fields_to_remove.is_empty():
+		await remove_fields(fields_to_remove)
+		update_node_size.call_deferred()
+
+
+func _on_method_selected(idx: int) -> void:
+	var opt_btn: OptionButton = get_field(&"methods")
+	var id: String = opt_btn.get_item_metadata(idx)
+	var prev: String = opt_btn.get_meta(&"old_value")
+	
+	if id == prev:
+		return
+	
+	var old_inputs: Array[Dictionary] = []
+	for arg_idx in range(get_child_count() - 1):
+		old_inputs.append(
+				get_uuid_and_port_connected_to(
+							PortMode.INPUT,
+							arg_idx))
+	var original_state: Dictionary = {
+		"metadata": {
+			"arguments": old_inputs,
+			"method": prev}}
+	
+	opt_btn.set_meta(&"old_value", id)
+	load_method(id)
+	
+	var new_inputs: Array[Dictionary] = []
+	for arg_idx in range(get_child_count() - 1):
+		new_inputs.append(
+				get_uuid_and_port_connected_to(
+							PortMode.INPUT,
+							arg_idx))
+	var new_state: Dictionary = {
+		"metadata": {
+			"arguments": new_inputs,
+			"method": id}}
+	
+	method_changed.emit(
+			get_node_uuid(),
+			original_state,
+			new_state)
+
+
+func reload_methods() -> void:
+	available_methods = get_user_methods()
+	
+	if available_methods.is_empty():
+		methods_node.clear()
+		await clear_input_args()
+		methods_node.disabled = true
+		methods_node.set_meta(&"old_value", "")
+		return
+	
+	if methods_node.disabled:
+		methods_node.disabled = false
+	
+	var selected_method: String = methods_node.get_selected_metadata() if methods_node.selected != -1 else ""
+	var all_methods: Array = available_methods.keys()
+	var new_select: int = -1
+	var emit_updated: bool = false
+	
+	all_methods.sort_custom(ArrayUtils.sort_custom_alphabetically_asc)
+	
+	if selected_method != "":
+		new_select = all_methods.find(selected_method)
+	
+	methods_node.clear()
+	
+	for method in all_methods:
+		methods_node.add_item(method)
+		methods_node.set_item_metadata(-1, method)
+	
+	if new_select != -1:
+		methods_node.select(new_select)
+		load_method(selected_method)
+	elif new_select == -1:
+		methods_node.select(0)
+		methods_node.set_meta(&"old_value", methods_node.get_item_metadata(0))
+		load_method(methods_node.get_item_metadata(0))
 		node_updated.emit()
 
 
@@ -339,11 +369,11 @@ func add_input_arg(arg_text: String, arg_type: int) -> void:
 
 func clear_input_args() -> void:
 	var fields_to_remove: Array[StringName] = []
-	for item in range(get_child_count() - 1, 0, -1):
-		var field_id: StringName = &"argument_" + StringName(str(item))
+	for item in range(1, get_child_count()):
+		var field_id: StringName = StringName("argument_" + str(item))
 		fields_to_remove.append(field_id)
 	if not fields_to_remove.is_empty():
-		remove_fields(fields_to_remove)
+		await remove_fields(fields_to_remove)
 		update_node_size.call_deferred()
 
 

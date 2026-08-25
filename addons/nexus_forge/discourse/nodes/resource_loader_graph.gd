@@ -59,8 +59,7 @@ func _set_node_data(data: Dictionary) -> void:
 		position_offset = metadata["position"]
 	
 	if metadata.has("resource_path") and typeof(metadata["resource_path"]) == TYPE_STRING:
-		res_line.text = metadata["resource_path"]
-		res_line.set_meta(&"old_value", metadata["resource_path"])
+		set_resource_path(metadata["resource_path"])
 
 
 func _get_issues() -> PackedStringArray:
@@ -71,6 +70,11 @@ func _get_issues() -> PackedStringArray:
 	if not ResourceLoader.exists(res_line.text.strip_edges()):
 		issues.append("Warning: Provided resource '%s' does not exist" % res_line.text.strip_edges())
 	return issues
+
+
+func set_resource_path(path: String) -> void:
+	res_line.text = path
+	res_line.set_meta(&"old_value", path)
 
 
 func _on_res_line_edit_toggled(is_toggled: bool) -> void:
