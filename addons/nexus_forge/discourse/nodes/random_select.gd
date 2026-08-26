@@ -2,6 +2,7 @@ extends DiscourseGraphNode
 
 
 signal choice_count_state_changed(uuid: StringName, old_state: Dictionary, new_state: Dictionary)
+
 var custom_default_weight: int = -1:
 	set(new_default):
 		custom_default_weight = new_default

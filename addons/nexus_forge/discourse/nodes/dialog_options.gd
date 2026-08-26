@@ -5,6 +5,7 @@ extends DiscourseGraphNode
 signal use_code_editor_pressed(target: TextEdit)
 signal choice_text_changed(node_uuid: StringName, choice_idx: int, old_text: String, new_text: String)
 signal choices_resized(node_uuid: StringName, old_snapshot: Dictionary, new_snapshot: Dictionary)
+
 const MAX_LINES: int = 3
 const EXTRA_Y_PADDING: int = 8
 const CHOICE_TEXT_EDIT = preload("res://addons/nexus_forge/discourse/textedit_bracket_handler.gd")
@@ -114,7 +115,7 @@ func set_choice_count(value: int) -> void:
 		var choices_to_remove: Array[StringName] = []
 		for over in range(current - value):
 			choices_to_remove.append(StringName("choice_" + str(current - over)))
-		remove_choices(choices_to_remove)
+		await remove_choices(choices_to_remove)
 
 
 func _update_choice_textbox_size(box: TextEdit) -> void:
@@ -168,7 +169,7 @@ func _update_value_to_spinbox() -> void:
 	var new_choice_count: int = get_mapped_field(&"choice_counter", &"choice_count").value
 	
 	var old_options: Array[Dictionary] = get_choices_array()
-	set_choice_count(new_choice_count)
+	await set_choice_count(new_choice_count)
 	var new_options: Array[Dictionary] = get_choices_array()
 	
 	_updating_choices = false
@@ -224,11 +225,11 @@ func _set_node_data(data: Dictionary) -> void:
 		true_options.append(option)
 	
 	var choice_size: int = true_options.size()
-	var choice_count: int = max(1, choice_size)
-	get_mapped_field(&"choice_counter", &"choice_count").set_value_no_signal(choice_count)
-	set_choice_count(choice_count)
+	var choice_counts: int = max(1, choice_size)
+	get_mapped_field(&"choice_counter", &"choice_count").set_value_no_signal(choice_counts)
+	await set_choice_count(choice_counts)
 	for option in range(1, choice_size + 1):
-		get_field(&"choice_" + StringName(str(option))).get_child(0).text = true_options[option - 1]["text"]
+		set_choice_text(option, true_options[option - 1]["text"])
 
 
 func choice_count() -> int:
@@ -282,7 +283,7 @@ func remove_choices(choices: Array[StringName]) -> void:
 		var choice: TextEdit = get_field(choice_id).get_child(0)
 		choice.text_changed.disconnect(_on_option_text_changed)
 	
-	remove_fields(choices, -1)
+	await remove_fields(choices, -1)
 
 
 func reset_height() -> void:
@@ -308,10 +309,12 @@ func get_options() -> Array[String]:
 	return options
 
 
-func set_choice_text(choice_idx: int, text: String) -> void:
-	var field_id: StringName = StringName("choice_" + str(choice_idx))
-	var choice: TextEdit = get_field(field_id).get_child(0)
-	choice.text = text
+func set_choice_text(choice_id: int, text: String) -> void:
+	var choice: Control = get_index_field(choice_id)
+	if choice != null:
+		var line: TextEdit = choice.get_child(0)
+		line.text = text
+		line.set_meta(&"old_value", text)
 
 
 func _on_choice_text_focus_exited(choice_line: TextEdit) -> void:

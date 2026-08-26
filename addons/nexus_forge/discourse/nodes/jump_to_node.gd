@@ -3,7 +3,7 @@ extends DiscourseGraphNode
 
 
 signal go_to_anchor_pressed(node_uuid: StringName)
-signal selected_anchor_changed(node_uuid: StringName, old_anchor: StringName, new_anchor: StringName)
+signal selected_shortcut_changed(node_uuid: StringName, old_anchor: StringName, new_anchor: StringName)
 
 
 func _post_init() -> void:
@@ -179,7 +179,7 @@ func _on_anchor_idx_selected(idx: int) -> void:
 	
 	menu.set_meta(&"old_value", new_value)
 	
-	selected_anchor_changed.emit(
+	selected_shortcut_changed.emit(
 			get_node_uuid(),
 			old_value,
 			new_value)

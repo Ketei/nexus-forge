@@ -83,7 +83,7 @@ func _on_id_edit_toggled(is_toggled: bool, line: LineEdit) -> void:
 		return
 	var old_id: String = current_id
 	current_id = line.text.strip_edges()
-	id_changed.emit(_uuid, old_id, current_id)
+	id_changed.emit(get_node_uuid(), old_id, current_id)
 
 
 func set_anchor_id(new_id: String) -> void:

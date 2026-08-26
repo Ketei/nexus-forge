@@ -19,6 +19,35 @@ signal nodes_moved(node_uuid: StringName, movement: Vector2)
 # When nodes are removed, along with the node data
 signal nodes_removed(nodes_data: Dictionary)
 
+# --- Forward Signals ---
+signal node_resized(node_uuid: StringName, from: Vector2, to: Vector2)
+signal comment_node_text_changed(uuid: StringName, old_comment: String, new_comment: String)
+signal comparation_node_operator_changed(uuid: StringName, old_operator: int, new_operator: int)
+signal dialog_node_character_id_changed(uuid: StringName, from: String, to: String)
+signal dialog_node_text_changed(uuid: StringName, from: String, to: String)
+signal dialog_node_presist_toggled(uuid: StringName, is_toggled: bool)
+signal choice_node_text_changed(node_uuid: StringName, choice_idx: int, old_text: String, new_text: String)
+signal choices_node_resized(node_uuid: StringName, old_snapshot: Dictionary, new_snapshot: Dictionary)
+signal shortcut_node_target_changed(node_uuid: StringName, old_anchor: StringName, new_anchor: StringName)
+signal localized_node_text_changed(uuid: StringName, old_value: String, new_value: String)
+signal match_node_cases_resized(uuid: StringName, old_snapshot: Dictionary, new_snapshot: Dictionary)
+signal match_node_field_updated(uuid: StringName, field_id: int, from: Variant, to: Variant)
+signal match_node_mode_changed(uuid: StringName, old_state: Dictionary, new_state: Dictionary)
+signal metadata_node_key_changed(index: int, from: String, to: String)
+signal call_node_method_changed(node_uuid: StringName, from_state: Dictionary, to_state: Dictionary)
+signal call_return_method_changed(node_uuid: StringName, old_state: Dictionary, new_state: Dictionary)
+signal random_node_count_state_changed(uuid: StringName, old_state: Dictionary, new_state: Dictionary)
+signal random_val_node_mode_changed(uuid: StringName, old_state: Dictionary, new_state: Dictionary)
+signal random_val_node_range_changed(uuid: StringName, from_min: float, from_max: float, to_min: float, to_max: float)
+signal resource_node_path_changed(uuid: StringName, from: String, to: String)
+signal signal_node_signal_changed(uuid: StringName, old_state: Dictionary, new_state: Dictionary)
+signal guard_node_fallback_changed(uuid: StringName, from: Variant, to: Variant)
+signal value_node_value_changed(uuid: StringName, from: Variant, to: Variant)
+signal value_node_type_changed(uuid: StringName, old_state: Dictionary, new_state: Dictionary)
+signal variable_node_type_changed(uuid: StringName, old_state: Dictionary, new_state: Dictionary)
+signal variable_node_path_changed(uuid: StringName, from: String, to: String)
+# ----------------------------
+
 # -- Connections ---
 signal node_connected(from_node: StringName, from_port: int, to_node: StringName, to_port: int)
 signal node_disconnected(from_node: StringName, from_port: int, to_node: StringName, to_port: int)
@@ -396,46 +425,63 @@ func new_dialog_node(node_type: DialogNodes, uuid: StringName = &"") -> Discours
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/dialog_graph_node.gd").new(uuid, &"", true, true, true)
 			created_node.use_code_editor_pressed.connect(_on_use_code_editor_requested)
 			created_node.select_character_pressed.connect(_on_use_character_selector_pressed)
+			created_node.character_id_changed.connect(dialog_node_character_id_changed.emit)
+			created_node.dialog_text_changed.connect(dialog_node_text_changed.emit)
+			created_node.dialog_presist_toggled.connect(dialog_node_presist_toggled.emit)
 		DialogNodes.CHOICES:
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/dialog_options.gd").new(uuid, &"", true, true, true)
 			created_node.use_code_editor_pressed.connect(_on_use_code_editor_requested)
+			created_node.choices_resized.connect(choices_node_resized.emit)
+			created_node.choice_text_changed.connect(choice_node_text_changed.emit)
 		DialogNodes.BRANCH:
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/dialog_branch.gd").new(uuid)
 		DialogNodes.CONDITION_SELECT:
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/conditional_select.gd").new(uuid, &"TypeData")
 		DialogNodes.COMPARATION:
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/comparation_node.gd").new(uuid, &"TypeData")
+			created_node.operator_changed.connect(comparation_node_operator_changed.emit)
 		DialogNodes.EVENT:
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/event_node.gd").new(uuid)
 		DialogNodes.MATCH:
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/match_node.gd").new(uuid)
+			created_node.match_node_resized.connect(match_node_cases_resized.emit)
+			created_node.match_field_updated.connect(match_node_field_updated.emit)
+			created_node.match_mode_changed.connect(match_node_mode_changed.emit)
 		DialogNodes.PAUSE:
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/pause_node.gd").new(uuid)
 		DialogNodes.RANDOM:
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/random_select.gd").new(uuid)
+			created_node.choice_count_state_changed.connect(random_node_count_state_changed.emit)
 		DialogNodes.TYPE_GUARD:
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/type_guard.gd").new(uuid, &"TypeData")
+			created_node.fallback_changed.connect(guard_node_fallback_changed.emit)
 		DialogNodes.VALUE:
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/value_node.gd").new(uuid, &"TypeData")
+			created_node.value_changed.connect(value_node_value_changed.emit)
+			created_node.data_type_changed.connect(value_node_type_changed.emit)
 		DialogNodes.SIGNAL:
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/signal_node.gd").new(uuid, &"TypeData")
+			created_node.signal_changed.connect(signal_node_signal_changed.emit)
 			signalers.append(created_node)
 		DialogNodes.CALLABLE:
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/method_call_node.gd").new(uuid, &"TypeData")
+			created_node.method_changed.connect(call_node_method_changed.emit)
 			method_callers.append(created_node)
 		DialogNodes.CALLABLE_RETURN:
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/method_call_return.gd").new(uuid, &"TypeData")
+			created_node.method_changed.connect(call_return_method_changed.emit)
 			method_callers.append(created_node)
 		DialogNodes.VARIABLE_GET:
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/var_getter.gd").new(uuid, &"TypeData")
+			created_node.type_changed.connect(variable_node_type_changed.emit)
+			created_node.path_changed.connect(variable_node_path_changed.emit)
 		DialogNodes.SHORTCUT:
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/jump_to_node.gd").new(uuid)
 			anchor_pointers.append(created_node)
 			created_node.go_to_anchor_pressed.connect(_on_go_to_node_pressed, CONNECT_DEFERRED)
-			
+			created_node.selected_shortcut_changed.connect(shortcut_node_target_changed.emit)
 			for anchor in anchor_targets:
 				created_node.add_anchor(anchor.get_node_uuid(), anchor.current_id)
-			
 		DialogNodes.SHORTCUT_TARGET:
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/jump_target_node.gd").new(uuid)
 			var valid_id: String = get_valid_shortcut_id("shortcut", created_node)
@@ -450,6 +496,7 @@ func new_dialog_node(node_type: DialogNodes, uuid: StringName = &"") -> Discours
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/dialog_joiner.gd").new(uuid)
 		DialogNodes.COMMENT:
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/comment_node.gd").new(uuid, &"TypeMisc")
+			created_node.comment_changed.connect(comment_node_text_changed.emit)
 		DialogNodes.SETTINGS_CHARACTER:
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/char_settings_node.gd").new(uuid, &"TypeSettings")
 		DialogNodes.SETTINGS_DIALOG:
@@ -458,20 +505,27 @@ func new_dialog_node(node_type: DialogNodes, uuid: StringName = &"") -> Discours
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/settings_option.gd").new(uuid, &"TypeSettings")
 		DialogNodes.RANDOM_VALUE:
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/random_value.gd").new(uuid, &"TypeData")
+			created_node.mode_changed.connect(random_val_node_mode_changed.emit)
+			created_node.range_changed.connect(random_val_node_range_changed.emit)
 		DialogNodes.RESOURCE:
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/resource_loader_graph.gd").new(uuid, &"TypeObject")
+			created_node.resource_path_changed.connect(resource_node_path_changed.emit)
 		DialogNodes.DATA_EVENT:
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/data_event.gd").new(uuid, &"TypeData")
 		DialogNodes.LOCALIZED_TEXT:
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/localized_text.gd").new(uuid)
+			created_node.text_changed.connect(localized_node_text_changed.emit)
 		DialogNodes.METADATA:
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/metadata_node.gd").new(uuid, &"TypeData")
+			created_node.metadata_id_changed.connect(metadata_node_key_changed.emit)
 	
 	created_node.node_updated.connect(dialog_changed.emit, CONNECT_DEFERRED)
 	created_node.disconnect_requested.connect(_on_disconnection_request, CONNECT_DEFERRED)
 	created_node.close_requested.connect(_close_requested, CONNECT_DEFERRED)
 	created_node.duplicate_requested.connect(_on_duplicate_node_button_pressed, CONNECT_DEFERRED)
 	created_node.localize_node_toggled.connect(_on_localize_node_toggled, CONNECT_DEFERRED)
+	if created_node.resizable:
+		created_node.node_resized.connect(node_resized.emit)
 	
 	created_node.set_node_id(get_unique_node_name(created_node.get_node_id()))
 	
@@ -1251,7 +1305,7 @@ func set_node_in_frame(node_uuid: StringName, frame: StringName) -> void:
 	attach_graph_element_to_frame(graph_nodes[node_uuid].name, node_frames[frame].name)
 
 
-func _on_anchor_id_changed(uuid: String, new_id: String, source: DiscourseGraphNode) -> void:
+func _on_anchor_id_changed(uuid: String, old_id: String, new_id: String, source: DiscourseGraphNode) -> void:
 	var valid_id: String = get_valid_shortcut_id(new_id, source)
 
 	source.set_anchor_id(valid_id)
@@ -1815,6 +1869,8 @@ func refresh_anchors() -> void:
 #endregion
 
 
+# --- UndoRedo restore ---
+
 func resize_node(node_uuid: StringName, to_size: Vector2) -> void:
 	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
 	
@@ -1848,6 +1904,33 @@ func set_dialog_node_dialog_text(node_uuid: StringName, text: String) -> void:
 	
 	if node != null and node.node_type == DialogNodes.DIALOG:
 		node.set_dialog_text(text)
+
+
+func set_choice_node_text(node_uuid: StringName, choice_idx: int, to: String) -> void:
+	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
+	
+	if node != null and node.node_type == DialogNodes.CHOICES:
+		node.set_choice_text(choice_idx, to)
+
+
+func set_choices_node_state(node_uuid: StringName, state: Dictionary) -> void:
+	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
+	
+	if node != null and node.node_type == DialogNodes.CHOICES:
+		node._set_node_data(state)
+		for option in state["metadata"]["choices"]:
+			if has_discourse_node(option["output_connections"]["next_node"]["target_node_uuid"]):
+				connect_discourse_nodes(
+						node_uuid,
+						option["output_connections"]["next_node"]["from_port"],
+						option["output_connections"]["next_node"]["target_node_uuid"],
+						option["output_connections"]["next_node"]["target_port"])
+			if has_discourse_node(option["input_connections"]["settings"]["target_node_uuid"]):
+				connect_discourse_nodes(
+						option["input_connections"]["settings"]["target_node_uuid"],
+						option["input_connections"]["settings"]["target_port"],
+						node_uuid,
+						option["input_connections"]["settings"]["from_port"])
 
 
 func set_shortcut_node_target(node_uuid: StringName, target_uuid: StringName) -> void:
@@ -2091,3 +2174,5 @@ func set_variable_node_path(node_uuid: StringName, path: String) -> void:
 	
 	if node != null and node.node_type == DialogNodes.VARIABLE_GET:
 		node.set_variable_path(path)
+
+# --- Node Signalers ---
