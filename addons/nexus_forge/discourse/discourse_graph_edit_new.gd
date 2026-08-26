@@ -29,11 +29,12 @@ signal dialog_node_presist_toggled(uuid: StringName, is_toggled: bool)
 signal choice_node_text_changed(node_uuid: StringName, choice_idx: int, old_text: String, new_text: String)
 signal choices_node_resized(node_uuid: StringName, old_snapshot: Dictionary, new_snapshot: Dictionary)
 signal shortcut_node_target_changed(node_uuid: StringName, old_anchor: StringName, new_anchor: StringName)
+signal shortcut_node_id_changed(node_uuid: String, old_id: String, new_id: String)
 signal localized_node_text_changed(uuid: StringName, old_value: String, new_value: String)
 signal match_node_cases_resized(uuid: StringName, old_snapshot: Dictionary, new_snapshot: Dictionary)
 signal match_node_field_updated(uuid: StringName, field_id: int, from: Variant, to: Variant)
 signal match_node_mode_changed(uuid: StringName, old_state: Dictionary, new_state: Dictionary)
-signal metadata_node_key_changed(index: int, from: String, to: String)
+signal metadata_node_key_changed(node_uuid: StringName, index: int, from: String, to: String)
 signal call_node_method_changed(node_uuid: StringName, from_state: Dictionary, to_state: Dictionary)
 signal call_return_method_changed(node_uuid: StringName, old_state: Dictionary, new_state: Dictionary)
 signal random_node_count_state_changed(uuid: StringName, old_state: Dictionary, new_state: Dictionary)
@@ -1313,6 +1314,7 @@ func _on_anchor_id_changed(uuid: String, old_id: String, new_id: String, source:
 	for anchor in anchor_pointers:
 		anchor.update_anchor(uuid, valid_id)
 	
+	shortcut_node_id_changed.emit(uuid, old_id, new_id)
 	dialog_changed.emit()
 
 
@@ -1904,6 +1906,13 @@ func set_dialog_node_dialog_text(node_uuid: StringName, text: String) -> void:
 	
 	if node != null and node.node_type == DialogNodes.DIALOG:
 		node.set_dialog_text(text)
+
+
+func set_dialog_node_persist_enabled(node_uuid: StringName, persist: bool) -> void:
+	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
+	
+	if node != null and node.node_type == DialogNodes.DIALOG:
+		node.set_persist_dialog(persist)
 
 
 func set_choice_node_text(node_uuid: StringName, choice_idx: int, to: String) -> void:

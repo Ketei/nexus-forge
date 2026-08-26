@@ -10,6 +10,7 @@ signal dialog_presist_toggled(uuid: StringName, is_toggled: bool)
 var free_size: Vector2 = Vector2(350.0, 300.0)
 var character_id_ln_edt: LineEdit
 var character_dialog: TextEdit
+var persist_check: CheckBox
 var old_size: Vector2 = Vector2.ZERO
 
 
@@ -35,7 +36,7 @@ func _post_init() -> void:
 	var settings_box: HBoxContainer = HBoxContainer.new()
 	character_dialog = load("res://addons/nexus_forge/discourse/textedit_bracket_handler.gd").new()
 	var highlighter: NFEditorDialogSyntaxHighlighter = NFEditorDialogSyntaxHighlighter.new()
-	var persist_check: CheckBox = CheckBox.new()
+	persist_check = CheckBox.new()
 	var flags_container: HBoxContainer = HBoxContainer.new()
 	var use_code_editor_btn: Button = Button.new()
 	
@@ -121,7 +122,6 @@ func _post_init() -> void:
 			SlotConnectionType.SETTINGS_CHARACTER,
 			-1)
 	set_slot_color_left(1, COLORS["setting"])
-	map_field(&"character_id", &"character_line", character_id_ln_edt)
 	
 	add_field(
 			&"dialog_settings",
@@ -133,7 +133,6 @@ func _post_init() -> void:
 	
 	var flgs_idx: int = add_field(&"flags", flags_container, false, SlotConnectionType.VAR_STRING, -1)
 	
-	map_field(&"dialog_settings", &"persist_checkbox", persist_check)
 	map_field(&"flags", &"code_edit_button", use_code_editor_btn)
 	add_field(&"dialog_text", character_dialog, true)
 	
@@ -157,13 +156,13 @@ func _ready() -> void:
 func _on_input_connected(input_port: int, from_node: DiscourseGraphNode, _from_port: int) -> void:
 	match input_port:
 		0:
-			if from_node.node_type == DialogueNodeType.DIALOG and get_mapped_field(&"character_id", &"character_line").text.strip_edges().is_empty():
-				var from_character_id: String = from_node.get_mapped_field(&"character_id", &"character_line").text
-				if not from_character_id.strip_edges().is_empty():
-					get_mapped_field(&"character_id", &"character_line").text = from_character_id
+			if from_node.node_type == DialogueNodeType.DIALOG and character_id_ln_edt.text.strip_edges().is_empty():
+				var from_character_id: String = from_node.get_character_id().strip_edges()
+				if not from_character_id.is_empty():
+					character_id_ln_edt.text = from_character_id
 		3:
 			free_size = size
-			get_field(&"dialog_text").editable = false
+			character_dialog.editable = false
 			get_mapped_field(&"flags", &"code_edit_button").disabled = true
 			get_child(4).visible = false
 			custom_minimum_size.y = 160.0
@@ -191,10 +190,10 @@ func _get_node_data() -> Dictionary:
 		"next_node": get_uuid_and_port_connected_to(PortMode.OUTPUT, 0)}
 	
 	var metadata: Dictionary = {
-		"character_id": get_mapped_field(&"character_id", &"character_line").text,
-		"persist": get_mapped_field(&"dialog_settings", &"persist_checkbox").button_pressed,
+		"character_id": character_id_ln_edt.text,
+		"persist": persist_check.button_pressed,
 		"size": size,
-		"dialog_text": get_field(&"dialog_text").text.strip_edges()}
+		"dialog_text": character_dialog.text.strip_edges()}
 	
 	return _build_node_data(metadata, output_connections, input_connections)
 
@@ -221,7 +220,7 @@ func _set_node_data(data: Dictionary) -> void:
 		set_dialog_text(metadata["dialog_text"])
 	
 	if metadata.has("persist") and typeof(metadata["persist"]) == TYPE_BOOL:
-		get_mapped_field(&"dialog_settings", &"persist_checkbox").button_pressed = metadata["persist"]
+		persist_check.set_pressed_no_signal(metadata["persist"])
 	
 	if metadata.has("localized") and typeof(metadata["localized"]) == TYPE_BOOL:
 		set_node_localized(metadata["localized"])
@@ -275,8 +274,11 @@ func _on_use_code_editor_pressed() -> void:
 
 
 func _on_select_character_btn_pressed() -> void:
-	var field: LineEdit = get_mapped_field(&"character_id", &"character_line")
-	select_character_pressed.emit(field)
+	select_character_pressed.emit(character_id_ln_edt)
+
+
+func set_persist_dialog(is_enabled: bool) -> void:
+	persist_check.set_pressed_no_signal(is_enabled)
 
 
 func set_dialog_text(text: String) -> void:
@@ -287,6 +289,10 @@ func set_dialog_text(text: String) -> void:
 func set_character_id(id: String) -> void:
 	character_id_ln_edt.text = id
 	character_id_ln_edt.set_meta(&"old_value", id)
+
+
+func get_character_id() -> String:
+	return character_id_ln_edt.text
 
 
 func get_dialog_text() -> String:

@@ -1,7 +1,7 @@
 extends DiscourseGraphNode
 
 
-signal metadata_id_changed(index: int, from: String, to: String)
+signal metadata_id_changed(uuid: StringName, index: int, from: String, to: String)
 
 
 var meta_fields: int = 0

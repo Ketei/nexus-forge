@@ -73,7 +73,9 @@ var text_editor: Window = null
 var _recently_opened_files: Array[String] = []
 var _recently_opened_popup: PopupMenu = null
 
-var phrases_index: int = -1
+# This is the selected editing phrase. Not locale.
+# THis shouldn't be assigned with an opt-btn. Pls fix.
+var editing_phrase_index: int = -1
 # ----------------------------
 
 # --- Discourse Graph ---
@@ -453,11 +455,6 @@ func ready_plugin(base_locale: String = "") -> void:
 	else:
 		uncollapse_previewer.visible = false
 	
-	#var lambda: Callable = func() -> void:
-		#key_header_split.split_offset = key_split_container.split_offset
-	
-	#lambda.call_deferred()
-	
 	$MainSplitContainer/ActiveWindowSplit/PhrasesContainer.visible = false
 	
 	default_expand_button.icon = get_theme_icon("DistractionFree", "EditorIcons")
@@ -538,51 +535,79 @@ func ready_plugin(base_locale: String = "") -> void:
 	
 	conversation_tree.conversation_selected.connect(_on_conversation_selected)
 	conversation_tree.conversation_close_pressed.connect(_on_conversation_close_pressed)
+	
+	discourse_graph_edit.node_resized.connect(_on_node_resized)
+	discourse_graph_edit.comment_node_text_changed.connect(_on_comment_node_text_changed)
+	discourse_graph_edit.comparation_node_operator_changed.connect(_on_comparation_node_operator_changed)
+	discourse_graph_edit.dialog_node_character_id_changed.connect(_on_dialog_node_character_id_changed)
+	discourse_graph_edit.dialog_node_text_changed.connect(_on_dialog_node_text_changed)
+	discourse_graph_edit.dialog_node_presist_toggled.connect(_on_dialog_node_presist_toggled)
+	discourse_graph_edit.choice_node_text_changed.connect(_on_choice_node_text_changed)
+	discourse_graph_edit.choices_node_resized.connect(_on_choices_node_resized)
+	discourse_graph_edit.shortcut_node_target_changed.connect(_on_shortcut_node_target_changed)
+	discourse_graph_edit.shortcut_node_id_changed.connect(shortcut_node_id_changed) # Note: no _on_ prefix as defined in your methods
+	discourse_graph_edit.localized_node_text_changed.connect(_on_localized_node_text_changed)
+	discourse_graph_edit.match_node_cases_resized.connect(_on_match_node_cases_resized)
+	discourse_graph_edit.match_node_field_updated.connect(_on_match_node_field_updated)
+	discourse_graph_edit.match_node_mode_changed.connect(_on_match_node_mode_changed)
+	discourse_graph_edit.metadata_node_key_changed.connect(_on_metadata_node_key_changed)
+	discourse_graph_edit.call_node_method_changed.connect(_on_call_node_method_changed)
+	discourse_graph_edit.call_return_method_changed.connect(_on_call_return_method_changed)
+	discourse_graph_edit.random_node_count_state_changed.connect(_on_random_node_count_state_changed)
+	discourse_graph_edit.random_val_node_mode_changed.connect(_on_random_val_node_mode_changed)
+	discourse_graph_edit.random_val_node_range_changed.connect(_on_random_val_node_range_changed)
+	discourse_graph_edit.resource_node_path_changed.connect(_on_resource_node_path_changed)
+	discourse_graph_edit.signal_node_signal_changed.connect(_on_signal_node_signal_changed)
+	discourse_graph_edit.guard_node_fallback_changed.connect(_on_guard_node_fallback_changed)
+	discourse_graph_edit.value_node_value_changed.connect(_on_value_node_value_changed)
+	discourse_graph_edit.value_node_type_changed.connect(_on_value_node_type_changed)
+	discourse_graph_edit.variable_node_type_changed.connect(_on_variable_node_type_changed)
+	discourse_graph_edit.variable_node_path_changed.connect(_on_variable_node_path_changed)
 
 
 func get_column_left() -> Control:
 	return $MainSplitContainer/MainSidebar
 
 
-func _add_locale_phrase_menu(lang: String, country: String) -> void:
+func _add_phrase_menu_locale(lang: String, country: String) -> void:
 	# Title, code
-	var entries: Dictionary[String, String] = {}
-	var entry_found: bool = false
+	var locale_entries: Dictionary[String, String] = {}
 	var locale_code: String = lang if country.is_empty() else lang + "_" + country
+	var selected_lang: String = "" if phrases_lang_menu.selected == -1 else phrases_lang_menu.get_item_metadata(phrases_lang_menu.selected)
+	var new_index: int = -1
 	
 	for item_idx in range(phrases_lang_menu.item_count):
 		var code: String = phrases_lang_menu.get_item_metadata(item_idx)
-		entries[phrases_lang_menu.get_item_text(item_idx)] = code
+		locale_entries[phrases_lang_menu.get_item_text(item_idx)] = code
 		if code == locale_code:
-			entry_found = true
+			return
 	
-	if entry_found:
-		return
-	
-	var selected: String = phrases_lang_menu.get_item_text(phrases_lang_menu.selected) if phrases_lang_menu.selected != -1 else ""
-	var item_selected: bool = phrases_lang_menu.selected != -1
-	var title: String = TranslationServer.get_language_name(lang)
+	var locale_title: String = TranslationServer.get_language_name(lang)
 	if not country.is_empty():
-		title += " (" + TranslationServer.get_country_name(country) + ")"
+		locale_title += " (" + TranslationServer.get_country_name(country) + ")"
 	
-	entries[title] = locale_code
+	locale_entries[locale_title] = locale_code
 	
 	var all_titles: Array[String] = []
-	all_titles.assign(entries.keys())
+	all_titles.assign(locale_entries.keys())
 	all_titles.sort()
+	
+	for title_idx in range(all_titles.size()):
+		if locale_entries[all_titles[title_idx]] == selected_lang:
+			new_index = title_idx
+			break
 	
 	phrases_lang_menu.clear()
 	
 	for item in all_titles:
 		phrases_lang_menu.add_item(item)
-		phrases_lang_menu.set_item_metadata(-1, entries[item])
+		phrases_lang_menu.set_item_metadata(-1, locale_entries[item])
 	
-	if item_selected:
-		phrases_index = all_titles.find(selected)
-		phrases_lang_menu.select(phrases_index)
+	if -1 < new_index:
+		phrases_lang_menu.select(new_index)
 	else:
-		phrases_lang_menu.select(-1)
-		phrases_index = -1
+		phrases_lang_menu.select(0)
+		phrases_lang_menu.set_meta(&"old_value", phrases_lang_menu.get_item_metadata(0))
 
 
 func _remove_locale_phrase_menu(lang: String, country: String) -> void:
@@ -619,18 +644,18 @@ func set_phrase_button_locale(locale: String) -> void:
 		if phrases_lang_menu.get_item_metadata(idx) == locale:
 			phrases_lang_menu.select(idx)
 			phrases_lang_menu.text = locale
-			phrases_index = idx
 			return
 
 
 func _on_phrase_button_item_selected(idx: int) -> void:
 	var locale: String = phrases_lang_menu.get_item_metadata(idx)
-	var prev_locale: String = "" if phrases_index == -1 else phrases_lang_menu.get_item_metadata(phrases_index)
+	var prev_locale: String = phrases_lang_menu.get_meta(&"old_value", "")
 	phrases_lang_menu.text = locale
 	phrases_lang_menu.tooltip_text = phrases_lang_menu.get_item_text(idx)
-	save_phrase_keys(prev_locale)
+	if not prev_locale.is_empty():
+		save_phrase_keys(prev_locale)
 	set_phrases_locale(locale)
-	phrases_index = idx
+	phrases_lang_menu.set_meta(&"old_value", phrases_lang_menu.get_item_metadata(idx))
 
 
 func set_phrases_locale(locale: String) -> void:
@@ -691,7 +716,7 @@ func add_locale(locale_code: String) -> void:
 		
 		lang_index = existing_menus.find(language)
 	
-	_add_locale_phrase_menu(language, region)
+	_add_phrase_menu_locale(language, region)
 	
 	if region.is_empty():
 		return
@@ -779,7 +804,7 @@ func remove_locale(locale: String) -> void:
 		set_graph_locale_tip(base_language)
 		_on_graph_editor_locale_changed("", base_language)
 	
-	if phrases_index != -1 and phrases_lang_menu.get_selected_metadata() == locale:
+	if -1 < editing_phrase_index and phrases_lang_menu.get_selected_metadata() == locale:
 		set_phrases_locale(base_language)
 		set_phrase_button_locale(base_language)
 	
@@ -1168,7 +1193,6 @@ func _on_conversation_changed(_arg = null) -> void:
 func _on_graph_editor_locale_changed(from: String, to: String) -> void:
 	if not from.is_empty():
 		discourse_graph_edit.update_localization_data(active_conversation, from)
-		#save_phrase_keys(from)
 	
 	clear_cases()
 	default_case_edt.clear()
@@ -2355,7 +2379,6 @@ func save_localizer_data(for_locale: String) -> void:
 	if active_node == null:
 		return
 	
-	#var current_locale: String = languages_tree.get_active_locale()
 	match active_node.node_type:
 		DiscourseGraphNode.DialogueNodeType.DIALOG:
 			active_conversation.set_text_entry(
@@ -2518,10 +2541,6 @@ func _save_file_layout_for(file_path: String, keys: Dictionary[String, Variant])
 
 
 #region Phrases
-
-#func _on_scroll_dragged(offset: int, container: HSplitContainer) -> void:
-	#container.split_offset = offset
-
 
 func _on_key_search_text_changed(text: String) -> void:
 	var clean_text: String = text.strip_edges()
@@ -3094,6 +3113,7 @@ func create_new_phrase_entry(key: String, format: String, unsaved: bool = true) 
 	else:
 		key = get_valid_format_key_id(key)
 	
+	container.set_meta(&"entry_id", UUID.generate_new())
 	container.set_meta(&"phrase_key", key)
 	container.set_meta(&"unsaved", unsaved)
 	container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -3699,22 +3719,22 @@ func _on_phrase_text_field_changed(field: TextEdit) -> void:
 
 # --- UndoRedo ---
 # --- Phrases ---
-func _on_phrase_key_editing_toggled(is_toggled: bool) -> void:
+func _on_phrase_key_editing_toggled(is_toggled: bool, entry_id: String) -> void:
 	if is_toggled:
 		return
 
 
-func _on_phrase_text_editing_toggled(is_toggled: bool) -> void:
+func _on_phrase_text_editing_toggled(is_toggled: bool, entry_id: String) -> void:
 	if is_toggled:
 		return
 
 
-func _on_phrase_case_editing_toggled(is_toggled: bool) -> void:
+func _on_phrase_case_editing_toggled(is_toggled: bool, case_line: LineEdit) -> void:
 	if is_toggled:
 		return
 
 
-func _on_phrase_result_editing_toggled(is_toggled: bool) -> void:
+func _on_phrase_result_editing_toggled(is_toggled: bool, result_line: LineEdit) -> void:
 	if is_toggled:
 		return
 
@@ -3724,7 +3744,7 @@ func _on_localization_text_edit_focus_exited() -> void:
 	pass
 
 
-func _on_localization_choice_edit_toggled(is_toggled: bool) -> void:
+func _on_localization_choice_edit_toggled(is_toggled: bool, line: LineEdit) -> void:
 	pass
 
 
@@ -3760,6 +3780,197 @@ func _on_discourse_directory_removed(path: String, index: int, id: int, contents
 	
 	_on_conversation_changed()
 
+# --- GraphEdit Operations ---
+
+func _on_node_resized(node_uuid: StringName, from: Vector2, to: Vector2) -> void:
+	undo.create_action("Resize Node")
+	undo.add_do_method(discourse_graph_edit.resize_node.bind(node_uuid, to))
+	undo.add_undo_method(discourse_graph_edit.resize_node.bind(node_uuid, from))
+	undo.commit_action(false)
+
+
+func _on_comment_node_text_changed(node_uuid: StringName, old_comment: String, new_comment: String) -> void:
+	undo.create_action("Set Comment Node Text")
+	undo.add_do_method(discourse_graph_edit.set_comment_node_text.bind(node_uuid, new_comment))
+	undo.add_undo_method(discourse_graph_edit.set_comment_node_text.bind(node_uuid, old_comment))
+	undo.commit_action(false)
+
+
+func _on_comparation_node_operator_changed(node_uuid: StringName, old_operator: int, new_operator: int) -> void:
+	undo.create_action("Set Comparator Node Operator")
+	undo.add_do_method(discourse_graph_edit.set_comparation_node_operator.bind(node_uuid, new_operator))
+	undo.add_undo_method(discourse_graph_edit.set_comparation_node_operator.bind(node_uuid, new_operator))
+	undo.commit_action(false)
+
+
+func _on_dialog_node_character_id_changed(node_uuid: StringName, from: String, to: String) -> void:
+	undo.create_action("Set Dialog Node Character")
+	undo.add_do_method(discourse_graph_edit.set_dialog_node_character_id.bind(node_uuid, to))
+	undo.add_undo_method(discourse_graph_edit.set_dialog_node_character_id.bind(node_uuid, from))
+	undo.commit_action(false)
+
+
+func _on_dialog_node_text_changed(node_uuid: StringName, from: String, to: String) -> void:
+	undo.create_action("Set Dialog Node Dialog")
+	undo.add_do_method(discourse_graph_edit.set_dialog_node_dialog_text.bind(node_uuid, to))
+	undo.add_undo_method(discourse_graph_edit.set_dialog_node_dialog_text.bind(node_uuid, from))
+	undo.commit_action(false)
+
+
+func _on_dialog_node_presist_toggled(node_uuid: StringName, is_toggled: bool) -> void:
+	undo.create_action("Toggle Dialog Node Persist")
+	undo.add_do_method(discourse_graph_edit.set_dialog_node_persist_enabled.bind(node_uuid, is_toggled))
+	undo.add_undo_method(discourse_graph_edit.set_dialog_node_persist_enabled.bind(node_uuid, not is_toggled))
+	undo.commit_action(false)
+
+
+func _on_choice_node_text_changed(node_uuid: StringName, choice_idx: int, old_text: String, new_text: String) -> void:
+	undo.create_action("Set Choice Node Text")
+	undo.add_do_method(discourse_graph_edit.set_choice_node_text.bind(node_uuid, choice_idx, new_text))
+	undo.add_undo_method(discourse_graph_edit.set_choice_node_text.bind(node_uuid, choice_idx, old_text))
+	undo.commit_action(false)
+
+
+func _on_choices_node_resized(node_uuid: StringName, old_snapshot: Dictionary, new_snapshot: Dictionary) -> void:
+	undo.create_action("Set Choice Node Choice Count")
+	undo.add_do_method(discourse_graph_edit.set_choices_node_state.bind(node_uuid, new_snapshot))
+	undo.add_undo_method(discourse_graph_edit.set_choices_node_state.bind(node_uuid, old_snapshot))
+	undo.commit_action(false)
+
+
+func _on_shortcut_node_target_changed(node_uuid: StringName, old_anchor: StringName, new_anchor: StringName) -> void:
+	undo.create_action("Set Shortcut Node Target")
+	undo.add_do_method(discourse_graph_edit.set_shortcut_node_target.bind(node_uuid, new_anchor))
+	undo.add_undo_method(discourse_graph_edit.set_shortcut_node_target.bind(node_uuid, old_anchor))
+	undo.commit_action(false)
+
+
+func shortcut_node_id_changed(node_uuid: String, old_id: String, new_id: String) -> void:
+	undo.create_action("Set Shortcut Target Node ID")
+	undo.add_do_method(discourse_graph_edit.set_shortcut_target_id.bind(node_uuid, new_id))
+	undo.add_undo_method(discourse_graph_edit.set_shortcut_target_id.bind(node_uuid, old_id))
+	undo.commit_action(false)
+
+
+func _on_localized_node_text_changed(node_uuid: StringName, old_value: String, new_value: String) -> void:
+	undo.create_action("Set Localized Node Text")
+	undo.add_do_method(discourse_graph_edit.set_localized_text_node_text.bind(node_uuid, new_value))
+	undo.add_undo_method(discourse_graph_edit.set_localized_text_node_text.bind(node_uuid, old_value))
+	undo.commit_action(false)
+
+
+func _on_match_node_cases_resized(node_uuid: StringName, old_snapshot: Dictionary, new_snapshot: Dictionary) -> void:
+	undo.create_action("Set Match Node Case Count")
+	undo.add_do_method(discourse_graph_edit.set_match_node_cases.bind(node_uuid, new_snapshot))
+	undo.add_undo_method(discourse_graph_edit.set_match_node_cases.bind(node_uuid, old_snapshot))
+	undo.commit_action(false)
+
+
+func _on_match_node_field_updated(node_uuid: StringName, field_id: int, from: Variant, to: Variant) -> void:
+	undo.create_action("Set Match Node Case")
+	undo.add_do_method(discourse_graph_edit.set_match_node_field.bind(node_uuid, field_id, from))
+	undo.add_undo_method(discourse_graph_edit.set_match_node_field.bind(node_uuid, field_id, to))
+	undo.commit_action(false)
+
+
+func _on_match_node_mode_changed(node_uuid: StringName, old_state: Dictionary, new_state: Dictionary) -> void:
+	undo.create_action("Set Match Node Type")
+	undo.add_do_method(discourse_graph_edit.set_match_node_state.bind(node_uuid, new_state))
+	undo.add_undo_method(discourse_graph_edit.set_match_node_state.bind(node_uuid, old_state))
+	undo.commit_action(false)
+
+
+func _on_metadata_node_key_changed(node_uuid: StringName, index: int, from: String, to: String) -> void:
+	undo.create_action("Set Metadata Node Key")
+	undo.add_do_method(discourse_graph_edit.set_metadata_node_key.bind(node_uuid, index, to))
+	undo.add_undo_method(discourse_graph_edit.set_metadata_node_key.bind(node_uuid, index, from))
+	undo.commit_action(false)
+
+
+func _on_call_node_method_changed(node_uuid: StringName, from_state: Dictionary, to_state: Dictionary) -> void:
+	undo.create_action("Set Call Node Method")
+	undo.add_do_method(discourse_graph_edit.set_call_node_state.bind(node_uuid, to_state))
+	undo.add_undo_method(discourse_graph_edit.set_call_node_state.bind(node_uuid, from_state))
+	undo.commit_action(false)
+
+
+func _on_call_return_method_changed(node_uuid: StringName, old_state: Dictionary, new_state: Dictionary) -> void:
+	undo.create_action("Set Call (Return) Node Method")
+	undo.add_do_method(discourse_graph_edit.set_call_return_node_state(node_uuid, new_state))
+	undo.add_undo_method(discourse_graph_edit.set_call_return_node_state(node_uuid, old_state))
+	undo.commit_action(false)
+
+
+func _on_random_node_count_state_changed(node_uuid: StringName, old_state: Dictionary, new_state: Dictionary) -> void:
+	undo.create_action("Set Random Exit Count")
+	undo.add_do_method(discourse_graph_edit.set_random_path_node_state.bind(node_uuid, new_state))
+	undo.add_undo_method(discourse_graph_edit.set_random_path_node_state.bind(node_uuid, old_state))
+	undo.commit_action(false)
+
+
+func _on_random_val_node_mode_changed(node_uuid: StringName, old_state: Dictionary, new_state: Dictionary) -> void:
+	undo.create_action("Set Random Value Node Type")
+	undo.add_do_method(discourse_graph_edit.set_random_value_state.bind(node_uuid, new_state))
+	undo.add_undo_method(discourse_graph_edit.set_random_value_state.bind(node_uuid, old_state))
+	undo.commit_action(false)
+
+
+func _on_random_val_node_range_changed(node_uuid: StringName, from_min: float, from_max: float, to_min: float, to_max: float) -> void:
+	undo.create_action("Set Random Value Node Range")
+	undo.add_do_method(discourse_graph_edit.set_random_value_node_range.bind(node_uuid, to_min, to_max))
+	undo.add_undo_method(discourse_graph_edit.set_random_value_node_range.bind(node_uuid, from_min, from_max))
+	undo.commit_action(false)
+
+
+func _on_resource_node_path_changed(node_uuid: StringName, from: String, to: String) -> void:
+	undo.create_action("Set Resource Node Path")
+	undo.add_do_method(discourse_graph_edit.set_resource_node_path.bind(node_uuid, to))
+	undo.add_undo_method(discourse_graph_edit.set_resource_node_path.bind(node_uuid, from))
+	undo.commit_action(false)
+
+
+func _on_signal_node_signal_changed(node_uuid: StringName, old_state: Dictionary, new_state: Dictionary) -> void:
+	undo.create_action("Set Emit Signal Node Signal")
+	undo.add_do_method(discourse_graph_edit.set_emit_signal_node_state.bind(node_uuid, new_state))
+	undo.add_undo_method(discourse_graph_edit.set_emit_signal_node_state.bind(node_uuid, old_state))
+	undo.commit_action(false)
+
+
+func _on_guard_node_fallback_changed(node_uuid: StringName, from: Variant, to: Variant) -> void:
+	undo.create_action("Set Shield Node Fallback")
+	undo.add_do_method(discourse_graph_edit.bind.set_shield_node_fallback.bind(node_uuid, to))
+	undo.add_undo_method(discourse_graph_edit.bind.set_shield_node_fallback.bind(node_uuid, from))
+	undo.commit_action(false)
+
+
+func _on_value_node_value_changed(node_uuid: StringName, from: Variant, to: Variant) -> void:
+	undo.create_action("Set Value Node Value")
+	undo.add_do_method(discourse_graph_edit.set_value_node_value.bind(node_uuid, to))
+	undo.add_undo_method(discourse_graph_edit.set_value_node_value.bind(node_uuid, from))
+	undo.commit_action(false)
+
+
+func _on_value_node_type_changed(node_uuid: StringName, old_state: Dictionary, new_state: Dictionary) -> void:
+	undo.create_action("Set Value Node Type")
+	undo.add_do_method(discourse_graph_edit.set_value_node_state.bind(node_uuid, old_state))
+	undo.add_undo_method(discourse_graph_edit.set_value_node_state.bind(node_uuid, new_state))
+	undo.commit_action(false)
+
+
+func _on_variable_node_type_changed(node_uuid: StringName, old_state: Dictionary, new_state: Dictionary) -> void:
+	undo.create_action("Set Variable Node Type")
+	undo.add_do_method(discourse_graph_edit.set_variable_node_state.bind(node_uuid, new_state))
+	undo.add_undo_method(discourse_graph_edit.set_variable_node_state.bind(node_uuid, old_state))
+	undo.commit_action(false)
+
+
+func _on_variable_node_path_changed(node_uuid: StringName, from: String, to: String) -> void:
+	undo.create_action("Set Variable Node Path")
+	undo.add_do_method(discourse_graph_edit.set_variable_node_path.bind(node_uuid, to))
+	undo.add_undo_method(discourse_graph_edit.set_variable_node_path.bind(node_uuid, from))
+	undo.commit_action(false)
+
+# ----------------------------
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_PREDELETE:
