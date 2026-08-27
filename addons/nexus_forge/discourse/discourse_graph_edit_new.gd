@@ -1,12 +1,12 @@
 @tool
 extends GraphEdit
 
-# Emmited when a node is created
+# Emmited when a node is created.
 signal node_created(node: DiscourseGraphNode)
+# Emitted when nodes are created.
+signal nodes_created(node_uuids: Array[StringName], action_name: String)
 # When a change has happened. Used for applying unsaved status
 signal dialog_changed
-# When nodes were linked to a frame
-signal nodes_attatched_to_frame(frame_uuid: StringName, nodes: Array[StringName])
 # When a node has been localized. Main window needs to update other elements
 signal localization_enabled(node: DiscourseGraphNode)
 # When a node is selected. Useful for highlithing the node in the menu tree.
@@ -15,9 +15,9 @@ signal discourse_node_selected(node_uuid: StringName)
 signal node_duplication_requested(nodes: Array[DiscourseGraphNode])
 # When a node movement finished and the movement it made. If substracted from
 # position offset, it would return to where it was initially
-signal nodes_moved(node_uuid: StringName, movement: Vector2)
+signal nodes_moved(state: Dictionary[String, Dictionary])
 # When nodes are removed, along with the node data
-signal nodes_removed(nodes_data: Dictionary)
+signal nodes_removed(action: String, nodes_data: Dictionary)
 
 # --- Forward Signals ---
 signal node_resized(node_uuid: StringName, from: Vector2, to: Vector2)
@@ -52,7 +52,7 @@ signal variable_node_path_changed(uuid: StringName, from: String, to: String)
 # -- Connections ---
 signal node_connected(from_node: StringName, from_port: int, to_node: StringName, to_port: int)
 signal node_disconnected(from_node: StringName, from_port: int, to_node: StringName, to_port: int)
-signal node_connection_switched(origian_ports: Dictionary, new_node: StringName, new_port: int)
+signal node_connection_switched(origin_ports: Dictionary, new_node: StringName, new_port: int)
 # --- Actions ---
 signal use_code_editor_requested(target_control: TextEdit)
 signal browse_character_requested(target_control: LineEdit)
@@ -317,12 +317,12 @@ var signalers: Array[DiscourseGraphNode] = []
 
 # Data for the mouse release.
 var release_data: Dictionary = {}
-var movement_data: Dictionary = {
-	"reference": null,
-	"nodes": [],
-	"starting_position": Vector2.ZERO,
-	"ending_position": Vector2.ZERO
-	}
+var movement_data: Dictionary[String, Dictionary] = {}# {
+	#"reference": null,
+	#"nodes": [],
+	#"starting_position": Vector2.ZERO,
+	#"ending_position": Vector2.ZERO
+	#}
 
 enum ConnectionChangeType{
 	SWITCH_DISCONNECT,
@@ -392,9 +392,9 @@ func _ready() -> void:
 	entry_node = spawn_node(DialogNodes.ENTRY)
 	
 	begin_node_move.connect(_on_begin_node_move)
-	end_node_move.connect(_on_end_node_move)
+	end_node_move.connect(_on_end_node_move, CONNECT_DEFERRED)
 	node_selected.connect(_on_node_selected)
-	graph_elements_linked_to_frame_request.connect(_on_graph_elements_linked_to_frame_request, CONNECT_DEFERRED)
+	graph_elements_linked_to_frame_request.connect(_on_graph_elements_linked_to_frame_request)
 	copy_nodes_request.connect(_on_copy_nodes_requested)
 	cut_nodes_request.connect(_on_cut_nodes_requested)
 	paste_nodes_request.connect(_on_paste_nodes_requested)
@@ -587,40 +587,6 @@ func spawn_frame(uuid: StringName = &"", frame_position: Vector2 = Vector2.ZERO)
 	new_frame.position_offset = frame_position
 	return new_frame
 
-
-# --- Used for re-do ---
-func restore_node(uuid: String, state: Dictionary):
-	var new_node: DiscourseGraphNode = spawn_node(
-			state["data"]["type"],
-			uuid,
-			state["data"] if state.has("data") else {})
-	
-	if state.has("input_connections"):
-		for conn:Dictionary in state["input_connections"]:
-			for connection_data in conn["connections"]:
-				if graph_nodes.has(connection_data["target_node_uuid"]):
-					connect_discourse_nodes(
-							connection_data["target_node_uuid"],
-							connection_data["target_port"],
-							uuid,
-							conn["port"])
-	
-	if state.has("output_connections"):
-		for conn:Dictionary in state["output_connections"]:
-			for connection_data in conn["connections"]:
-				if graph_nodes.has(connection_data["target_node_uuid"]):
-					connect_discourse_nodes(
-							uuid,
-							conn["port"],
-							connection_data["target_node_uuid"],
-							connection_data["target_port"])
-	
-	node_created.emit(new_node)
-
-
-func restore_nodes(node_data: Dictionary[StringName, Dictionary]) -> void:
-	for node_uuid in node_data.keys():
-		restore_node(node_uuid, node_data[node_uuid])
 # ----------------------
 
 
@@ -628,6 +594,7 @@ func paste_node_clipboard(clipboard: Array[Dictionary], uuid_map: Dictionary[Str
 	if clipboard.is_empty():
 		return
 	
+	var created_nodes: Array[StringName] = []
 	var new_connections: Array[Dictionary] = [] 
 	var uuid_equivalences: Dictionary[StringName, DiscourseGraphNode] = {}
 	
@@ -657,7 +624,9 @@ func paste_node_clipboard(clipboard: Array[Dictionary], uuid_map: Dictionary[Str
 		
 		if not _new_connections.is_empty():
 			new_connections.append_array(_new_connections)
+		
 		node_created.emit(pasted_node)
+		created_nodes.append(pasted_node.get_node_uuid())
 	
 	for output_connection in new_connections:
 		if not uuid_equivalences.has(output_connection["from"]) or not uuid_equivalences.has(output_connection["to"]):
@@ -667,6 +636,9 @@ func paste_node_clipboard(clipboard: Array[Dictionary], uuid_map: Dictionary[Str
 				output_connection["from_port"],
 				uuid_equivalences[output_connection["to"]].get_node_uuid(),
 				output_connection["to_port"])
+	
+	if not created_nodes.is_empty():
+		nodes_created.emit(created_nodes, "Paste Nodes")
 
 
 func _on_duplicate_node_button_pressed(node: DiscourseGraphNode) -> void:
@@ -713,7 +685,9 @@ func duplicate_single(node_uuid: StringName, new_uuid: StringName) -> void:
 	if frame != null:
 		attach_graph_element_to_frame(new_node.name, frame.name)
 	
+	var str_arr: Array[StringName] = [new_node.get_node_uuid()]
 	node_created.emit(new_node)
+	nodes_created.emit(str_arr, "Duplicate Node")
 
 
 # Used for the Ctrl+D signal with undo-redo. Key = node to be duplicated
@@ -731,7 +705,9 @@ func duplicate_multiple(duplicate_targets: Dictionary[StringName, StringName]) -
 		return
 	
 	var new_connections: Array[Dictionary] = []
+	var created_nodes: Array[StringName] = []
 	var uuid_equivalences: Dictionary[String, DiscourseGraphNode] = {}
+	
 	for node_data in nodes_to_duplicate:
 		var node: DiscourseGraphNode = node_data["node"]
 		var new_name: StringName = get_unique_node_name(node.get_node_id())
@@ -760,6 +736,7 @@ func duplicate_multiple(duplicate_targets: Dictionary[StringName, StringName]) -
 		if frame != null:
 			attach_graph_element_to_frame(new_node.name, frame.name)
 		node_created.emit(new_node)
+		created_nodes.append(new_node.get_node_uuid())
 	
 	for output_connection in new_connections:
 		if not uuid_equivalences.has(output_connection["from"]) or not uuid_equivalences.has(output_connection["to"]):
@@ -769,6 +746,9 @@ func duplicate_multiple(duplicate_targets: Dictionary[StringName, StringName]) -
 				output_connection["from_port"],
 				uuid_equivalences[output_connection["to"]].get_node_uuid(),
 				output_connection["to_port"])
+	
+	if not created_nodes.is_empty():
+		nodes_created.emit(created_nodes, "Duplicate Nodes")
 
 
 func remove_node(node_uuid: StringName) -> void:
@@ -819,17 +799,15 @@ func remove_nodes(node_uuids: Array[StringName]) -> void:
 	if node_uuids.is_empty():
 		return
 	
-	var status_data: Dictionary = {}
+	var status_data: Dictionary[StringName, Variant] = {}
 	
 	for node in node_uuids:
 		if not graph_nodes.has(node):
 			continue
-		status_data[node] = graph_nodes[node].get_node_state()
+		status_data[node] = null
 	
 	for item in status_data.keys():
 		remove_node(item)
-	
-	nodes_removed.emit(status_data)
 
 
 func remove_frame(frame_uuid: StringName) -> void:
@@ -860,6 +838,7 @@ func clear_dialog_nodes(recreate_entry: bool = true) -> void:
 	entry_node = null
 	if recreate_entry:
 		entry_node = spawn_node(DialogNodes.ENTRY, &"", {"name": &"Entry"})
+		var arr: Array[StringName] = [entry_node.get_node_uuid()]
 		node_created.emit(entry_node)
 
 #endregion
@@ -1000,8 +979,16 @@ func get_discourse_node(node_uuid: StringName) -> DiscourseGraphNode:
 	return graph_nodes.get(node_uuid, null)
 
 
+func get_discourse_frame(frame_uuid: StringName) -> GraphFrame:
+	return node_frames.get(frame_uuid, null)
+
+
 func has_discourse_node(node_uuid: StringName) -> bool:
 	return graph_nodes.has(node_uuid)
+
+
+func has_discourse_frame(frame_uuid: StringName) -> bool:
+	return node_frames.has(frame_uuid)
 
 
 func get_connection_dictionary(node_uuid: StringName, node_data: Dictionary) -> Array[Dictionary]:
@@ -1283,7 +1270,7 @@ func _on_use_character_selector_pressed(target: LineEdit) -> void:
 
 
 func _on_delete_nodes_request(nodes: Array[StringName]) -> void:
-	var nodes_to_remove: Dictionary = {}
+	var nodes_to_remove: Dictionary[StringName, Dictionary] = {}
 	var node_uuids: Array[StringName] = []
 	for selected_node in nodes:
 		var node: Control = get_node(NodePath(selected_node))
@@ -1296,8 +1283,7 @@ func _on_delete_nodes_request(nodes: Array[StringName]) -> void:
 	if node_uuids.is_empty():
 		return
 	
-	remove_nodes(node_uuids)
-	nodes_removed.emit(nodes_to_remove)
+	nodes_removed.emit("remove", nodes_to_remove)
 
 
 func set_node_in_frame(node_uuid: StringName, frame: StringName) -> void:
@@ -1365,7 +1351,9 @@ func _on_popup_index_pressed(index: int, menu: PopupMenu) -> void:
 	if frame != null:
 		attach_graph_element_to_frame(new_node.name, frame.name)
 	
+	var node_arr: Array[StringName] = [new_node.get_node_uuid()]
 	node_created.emit(new_node)
+	nodes_created.emit(node_arr, "Create Node")
 	dialog_changed.emit()
 
 
@@ -1438,7 +1426,7 @@ func _on_connection_request(from_node: StringName, from_port: int, to_node: Stri
 			var con_success: bool = connect_discourse_nodes(from.get_node_uuid(), from_port, to.get_node_uuid(), to_port)
 			
 			if con_success:
-				node_connection_switched.emit(_pending_connection_change.duplicate(), to.get_node_uuid(), to_port)
+				node_connection_switched.emit(change, to.get_node_uuid(), to_port)
 			else:
 				node_disconnected.emit(
 					change["from_node"],
@@ -1503,7 +1491,9 @@ func _on_connection_to_empty(from_node: StringName, from_port: int, release_posi
 				to_info["ports"][0]["port"])
 		if frame != null:
 			attach_graph_element_to_frame(to_graph.name, frame.name)
+		var node_arr: Array[StringName] = [to_graph.get_node_uuid()]
 		node_created.emit(to_graph)
+		nodes_created.emit(node_arr, "Create Node")
 		dialog_changed.emit()
 		return
 	
@@ -1557,7 +1547,9 @@ func _on_connection_from_empty(to_node: StringName, to_port: int, release_positi
 				to_port)
 		if frame != null:
 			attach_graph_element_to_frame(from_graph.name, frame.name)
+		var node_arr: Array[StringName] = [from_graph.get_node_uuid()]
 		node_created.emit(from_graph)
+		nodes_created.emit(node_arr, "Create Node")
 		dialog_changed.emit()
 		return
 
@@ -1580,35 +1572,46 @@ func _on_node_selected(node: GraphElement) -> void:
 func _on_begin_node_move() -> void:
 	var selected_nodes: Array[GraphElement] = get_selected_graph_elements(true)
 	
-	if not selected_nodes.is_empty():
-		movement_data["nodes"].assign(selected_nodes)
-		movement_data["reference"] = selected_nodes[0]
-		movement_data["starting_position"] = selected_nodes[0].position_offset
+	movement_data["nodes"].clear()
+	movement_data["frames"].clear()
+	
+	for node in selected_nodes:
+		if node is DiscourseGraphNode:
+			var frame: GraphFrame = get_element_frame(node.name)
+			movement_data["nodes"][node.get_node_uuid()] = {
+				"previous_position": node.position_offset,
+				"current_position": Vector2.ZERO,
+				"previous_frame": &"" if frame == null else frame.get_frame_uuid(),
+				"current_frame": &""}
+		else:
+			movement_data["frames"][node.get_frame_uuid()] = {
+				"previous_position": node.position_offset,
+				"current_position": Vector2.ZERO}
 	
 	if not Input.is_key_pressed(KEY_ALT):
 		return
 	
 	for node in selected_nodes:
-		if get_element_frame(node.name) != null:
+		var frame: GraphFrame = get_element_frame(node.name)
+		if frame != null and not frame.selected: # If frame is selected, we don't detatch inner nodes because everything is selected, maybe
 			detach_graph_element_from_frame(node.name)
 
 
 func _on_end_node_move() -> void:
+	for node_uuid in movement_data["nodes"]:
+		var node: DiscourseGraphNode = graph_nodes[node_uuid]
+		var curr_frame: GraphFrame = get_element_frame(node.name)
+		movement_data["nodes"][node_uuid]["current_position"] =\
+				node.position_offset
+		movement_data["nodes"][node_uuid]["current_frame"] =\
+				&"" if curr_frame == null else curr_frame.get_frame_uuid()
+	
+	for frame_uuid in movement_data["frames"]:
+		movement_data["frames"][frame_uuid]["current_position"] =\
+				node_frames[frame_uuid].position_offset
+	
+	nodes_moved.emit(movement_data.duplicate(true))
 	dialog_changed.emit()
-	var reference_node: GraphElement = movement_data["reference"]
-	if reference_node == null:
-		return
-	var node_uuids: Array[StringName] = []
-	var difference: Vector2 = reference_node.position_offset - movement_data["starting_position"]
-	for node:GraphElement in movement_data["nodes"]:
-		var uuid: StringName = node.get_node_uuid() if node is DiscourseGraphNode else node.get_frame_uuid()
-		node_uuids.append(uuid)
-	
-	movement_data["nodes"].clear()
-	movement_data["reference"] = null
-	movement_data["starting_position"] = Vector2.ZERO
-	
-	nodes_moved.emit(node_uuids, difference)
 
 
 func snap_node_to_grid(target_node: DiscourseGraphNode) -> void:
@@ -1622,15 +1625,8 @@ func _on_graph_elements_linked_to_frame_request(elements: Array, frame: StringNa
 	var element_uuids: Array[StringName] = []
 	
 	for element in elements:
-		var node_element = get_node_or_null(NodePath(element))
-		if node_element == null or node_element is not DiscourseGraphNode:
-			continue
-		element_uuids.append(node_element.get_node_uuid())
-	
-	for element in elements:
 		attach_graph_element_to_frame(element, frame)
 	
-	nodes_attatched_to_frame.emit(frame_node, element_uuids)
 	dialog_changed.emit()
 
 
@@ -1647,16 +1643,18 @@ func _on_localize_node_toggled(is_pressed: bool, node: DiscourseGraphNode) -> vo
 
 
 func _close_requested(node: DiscourseGraphNode) -> void:
-	var node_data: Dictionary = {
+	var node_data: Dictionary[StringName, Dictionary] = {
 		node.get_node_uuid(): node.get_node_state()}
-	remove_node(node.get_node_uuid())
-	nodes_removed.emit(node_data)
+	nodes_removed.emit("remove", node_data)
 	dialog_changed.emit()
 
 
 func _on_disconnection_request(from_node_uuid: StringName, from_port: int, to_node_uuid: StringName, to_port: int, caller: DiscourseGraphNode) -> void:
 	disconnect_discourse_nodes(from_node_uuid, from_port, to_node_uuid, to_port)
 	caller.node_disconnected.emit()
+	# I don't think this is required as this is only done when a node state
+	# changes and that's already handled by other methods.
+	#node_disconnected.emit(from_node_uuid, from_port, to_node_uuid, to_port)
 
 
 func _on_go_to_node_pressed(uuid: StringName) -> void:
@@ -1719,13 +1717,13 @@ func _on_copy_nodes_requested() -> void:
 func _on_cut_nodes_requested() -> void:
 	copy_selected_to_clipboard()
 	var nodes_to_remove: Array[StringName] = []
-	var removed_nodes_data: Dictionary = {}
+	var removed_nodes_data: Dictionary[StringName, Dictionary] = {}
 	for selected_node in get_selected_graph_nodes():
 		nodes_to_remove.append(selected_node.get_node_uuid())
 		removed_nodes_data[selected_node.get_node_uuid()] =\
 				selected_node.get_node_state()
-	remove_nodes(nodes_to_remove)
-	nodes_removed.emit(removed_nodes_data)
+	
+	nodes_removed.emit("cut", removed_nodes_data)
 
 
 func _on_paste_nodes_requested() -> void:
@@ -1852,8 +1850,10 @@ func sort_clipboard_custom(item_a: Dictionary, item_b: Dictionary) -> bool:
 
 func spawn_node_at_center(node_type: DialogNodes, uuid: String = "") -> void:
 	var new_node: DiscourseGraphNode = spawn_node(node_type, uuid)
+	var node_arr: Array[StringName] = []
 	new_node.position_offset = get_center_offset() - (new_node.size / 2.0)
 	node_created.emit(new_node)
+	nodes_created.emit(node_arr, "Create Node")
 
 
 func spawn_frame_at_center(uuid: String = "") -> void:

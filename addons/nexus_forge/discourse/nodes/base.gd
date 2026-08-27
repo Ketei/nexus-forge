@@ -337,23 +337,18 @@ func get_node_state() -> Dictionary:
 		"input_connections": input_connections,
 		"output_connections": output_connections}
 	
-	var fields: Array[StringName] = []
-	var field_nodes: Array[Node] = get_children()
-	
-	field_nodes.sort_custom(func (a:Control,b: Control): return a.get_index() < b.get_index())
-	
-	for field in field_nodes:
-		fields.append(field.name)
-	
 	var port: int = -1
 	for input_connection in _input_nodes:
 		port += 1
-		var slot: int = fields.find(input_connection["field_id"])
+		var slot: int = get_slot_from_port(PortMode.INPUT, port)
 		var connections: Array[Dictionary] = []
 		
 		for connection_index in input_connection["connections"].size():
 			connections.append(
-					get_uuid_and_port_connected_to(PortMode.INPUT, port, connection_index))
+					get_uuid_and_port_connected_to(
+							PortMode.INPUT,
+							port,
+							connection_index))
 		input_connections[input_connection["field_id"]] = {
 			"port": port, # Port ID
 			"slot": slot, # Slot Index,
@@ -361,7 +356,7 @@ func get_node_state() -> Dictionary:
 	port = -1
 	for output_connection in _output_nodes:
 		port += 1
-		var slot: int = fields.find(output_connection["field_id"])
+		var slot: int = get_slot_from_port(PortMode.OUTPUT, port)
 		var connections: Array[Dictionary] = []
 		for connection_index in output_connection["connections"].size():
 			connections.append(

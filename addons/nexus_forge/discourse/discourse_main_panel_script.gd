@@ -483,6 +483,8 @@ func ready_plugin(base_locale: String = "") -> void:
 	
 	discourse_graph_edit.discourse_node_selected.connect(_on_discourse_node_selected)
 	discourse_graph_edit.scroll_offset_changed.connect(_on_graph_edit_offset_changed)
+	discourse_graph_edit.nodes_moved.connect(_on_nodes_moved)
+	discourse_graph_edit.nodes_created.connect(_on_nodes_created_batch, CONNECT_DEFERRED)
 	
 	node_search_ln_edt.text_changed.connect(_on_discourse_node_search_text_changed)
 	new_language_btn.pressed.connect(_on_new_lang_pressed)
@@ -1094,7 +1096,7 @@ func close_dialog_resource(dialog_id: int, open_previous: bool = true) -> void:
 	conversation_tree.select_conversation(previous_conversation, false)
 	
 	var save_required: bool = open_conversation(
-			_open_files[previous_conversation]["resource"])
+		_open_files[previous_conversation]["resource"])
 	
 	if save_required:
 		_unsaved = true
@@ -1430,6 +1432,18 @@ func _on_localizer_node_selected(uuid: StringName) -> void:
 
 
 func _on_localize_node(node: DiscourseGraphNode) -> void:
+	localize_node(node.get_node_uuid())
+
+
+func localize_node(node_uuid: StringName) -> void:
+	if not discourse_graph_edit.has_discourse_node(node_uuid):
+		return
+	
+	var node: DiscourseGraphNode = discourse_graph_edit.get_discourse_node(node_uuid)
+	
+	if node.is_node_localized():
+		return
+	
 	match node.node_type:
 		DiscourseGraphNode.DialogueNodeType.DIALOG:
 			active_conversation.set_text_entry(
@@ -2360,10 +2374,10 @@ func load_conversation(data: EditorDiscourseDialog, open_conv: bool = true) -> v
 			"offset_changed": false}
 	
 	conversation_tree.add_conversation(
-			conversation_id,
-			data.resource_path,
-			open_conv, # Select
-			false) # Emit Select
+		conversation_id,
+		data.resource_path,
+		open_conv, # Select
+		false) # Emit Select
 	
 	if open_conv:
 		if open_conversation(conversation_id):
@@ -2472,46 +2486,6 @@ func has_unsaved_files() -> bool:
 		if _open_files[id]["unsaved"]:
 			return true
 	return false
-
-
-func _on_nodes_removed(nodes_data: Dictionary) -> void:
-	for node_uuid in nodes_data.keys():
-		discourse_nodes_tree.remove_dialog_node(node_uuid)
-		localization_nodes_tree.remove_node(node_uuid)
-		active_conversation.remove_node(node_uuid)
-
-
-func _on_graph_edit_node_duplication_requested(uuids: Array[StringName]) -> void:
-	var uuid_size: int = uuids.size()
-	if uuid_size == 0:
-		return
-	elif uuid_size == 1:
-		var new_uuid: StringName = StringName(UUID.generate_new())
-		discourse_graph_edit.duplicate_single(uuids[0], new_uuid)
-	else:
-		var uuid_map: Dictionary[StringName, StringName] = {}
-		for uuid in uuids:
-			uuid_map[uuid] = StringName(UUID.generate_new())
-		var undo_targets: Array[StringName] = []
-		undo_targets.assign(uuid_map.values())
-		discourse_graph_edit.duplicate_multiple(uuid_map)
-	_on_conversation_changed()
-
-
-func _on_graph_edit_paste_requested() -> void:
-	var uuid_map: Dictionary[StringName, StringName] = {}
-	var clipboard: Array[Dictionary] = discourse_graph_edit.node_clipboard.duplicate(true)
-	
-	for clipboard_data in clipboard:
-		if discourse_graph_edit.graph_nodes.has(clipboard_data["node_uuid"]): # Change to reference the GraphEdit
-			uuid_map[clipboard_data["node_uuid"]] = StringName(UUID.generate_new())
-		else:
-			uuid_map[clipboard_data["node_uuid"]] = clipboard_data["node_uuid"]
-	
-	# TODO: Write the undoredo action
-	# with the below being the "do" action v
-	discourse_graph_edit.paste_node_clipboard(clipboard, uuid_map)
-	_on_conversation_changed()
 
 
 func _save_file_layout_for(file_path: String, keys: Dictionary[String, Variant]) -> void:
@@ -3434,9 +3408,9 @@ func get_api_user_methods() -> Dictionary:
 	if DiscourseGraphNode.api_path.is_empty() or not FileAccess.file_exists(DiscourseGraphNode.api_path):
 		if not DiscourseGraphNode.validate_api_path():
 			NFPluginGameHandler._log_msg(
-					"discourse - editor",
-					"Discourse API script not found",
-					NFPluginGameHandler._LogLevel.ERROR)
+				"discourse - editor",
+				"Discourse API script not found",
+				NFPluginGameHandler._LogLevel.ERROR)
 			return methods
 	
 	var api_script: Script = load(DiscourseGraphNode.api_path)
@@ -3581,9 +3555,9 @@ func _is_preview_scene_valid(print_errors: bool = true) -> bool:
 	
 	if instance == null and print_errors:
 		NFPluginGameHandler._log_msg(
-				"discourse - editor",
-				"Scene '%s' couldn't be instantiated" % path,
-				NFPluginGameHandler._LogLevel.ERROR)
+			"discourse - editor",
+			"Scene '%s' couldn't be instantiated" % path,
+			NFPluginGameHandler._LogLevel.ERROR)
 		return false
 	
 	var scene_script: Script = instance.get_script()
@@ -3719,31 +3693,32 @@ func _on_phrase_text_field_changed(field: TextEdit) -> void:
 
 # --- UndoRedo ---
 # --- Phrases ---
+# TODO: This
 func _on_phrase_key_editing_toggled(is_toggled: bool, entry_id: String) -> void:
 	if is_toggled:
 		return
 
-
+# TODO: This
 func _on_phrase_text_editing_toggled(is_toggled: bool, entry_id: String) -> void:
 	if is_toggled:
 		return
 
-
+# TODO: This
 func _on_phrase_case_editing_toggled(is_toggled: bool, case_line: LineEdit) -> void:
 	if is_toggled:
 		return
 
-
+# TODO: This
 func _on_phrase_result_editing_toggled(is_toggled: bool, result_line: LineEdit) -> void:
 	if is_toggled:
 		return
 
 # --- Localization ---
-
+# TODO: This
 func _on_localization_text_edit_focus_exited() -> void:
 	pass
 
-
+# TODO: This
 func _on_localization_choice_edit_toggled(is_toggled: bool, line: LineEdit) -> void:
 	pass
 
@@ -3753,7 +3728,6 @@ func _on_localization_choice_edit_toggled(is_toggled: bool, line: LineEdit) -> v
 func _on_discourse_item_renamed(uuid: StringName, old_name: String, new_name: String) -> void:
 	var node: DiscourseGraphNode = discourse_graph_edit.get_discourse_node(uuid)
 	node.set_node_id(new_name)
-	
 	if node.is_node_localized():
 		match node.node_type:
 			DiscourseGraphNode.DialogueNodeType.DIALOG:
@@ -3763,21 +3737,54 @@ func _on_discourse_item_renamed(uuid: StringName, old_name: String, new_name: St
 			DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
 				localization_nodes_tree.rename_text_node(uuid, new_name)
 	
+	undo.create_action("Set Node ID")
+	undo.add_do_method(_do_set_node_id.bind(uuid, new_name))
+	undo.add_undo_method(_do_set_node_id.bind(uuid, old_name))
+	undo.commit_action(false)
+	
 	_on_conversation_changed()
 
 
+func _do_set_node_id(uuid: StringName, id: String) -> void:
+	discourse_nodes_tree.set_node_id(uuid, id)
+	if not discourse_graph_edit.has_discourse_node(uuid):
+		return
+	
+	var node: DiscourseGraphNode = discourse_graph_edit.get_discourse_node(uuid)
+	node.set_node_id(id)
+	if node.is_node_localized():
+		match node.node_type:
+			DiscourseGraphNode.DialogueNodeType.DIALOG:
+				localization_nodes_tree.rename_dialog_node(uuid, id)
+			DiscourseGraphNode.DialogueNodeType.CHOICES:
+				localization_nodes_tree.rename_options_node(uuid, id)
+			DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
+				localization_nodes_tree.rename_text_node(uuid, id)
+
+
 func _on_discourse_folder_renamed(folder_id: int, old_name: String, new_name: String) -> void:
+	undo.create_action("Set Folder Name")
+	undo.add_do_method(conversation_tree.set_folder_name.bind(folder_id, new_name))
+	undo.add_undo_method(conversation_tree.set_folder_name.bind(folder_id, old_name))
+	undo.commit_action(false)
 	
 	_on_conversation_changed()
 
 
 func _on_discourse_item_moved(from_path: String, from_index: int, to_path: String, to_index: int) -> void:
+	undo.create_action("Move Discourse Item")
+	undo.add_do_method(discourse_nodes_tree.move_item.bind(from_path, to_path, to_index))
+	undo.add_do_method(discourse_nodes_tree.move_item.bind(to_path, from_path, from_index))
+	undo.commit_action(false)
 	
 	_on_conversation_changed()
 
 
 func _on_discourse_directory_removed(path: String, index: int, id: int, contents: Array[Dictionary]) -> void:
-	
+	undo.create_action("Remove Folder")
+	undo.add_do_method(discourse_nodes_tree.restore_folder.bind(path, id, index, contents))
+	undo.add_undo_method(discourse_nodes_tree.remove_folder.bind(path))
+	undo.commit_action(false)
 	_on_conversation_changed()
 
 # --- GraphEdit Operations ---
@@ -3787,6 +3794,7 @@ func _on_node_resized(node_uuid: StringName, from: Vector2, to: Vector2) -> void
 	undo.add_do_method(discourse_graph_edit.resize_node.bind(node_uuid, to))
 	undo.add_undo_method(discourse_graph_edit.resize_node.bind(node_uuid, from))
 	undo.commit_action(false)
+	_on_conversation_changed()
 
 
 func _on_comment_node_text_changed(node_uuid: StringName, old_comment: String, new_comment: String) -> void:
@@ -3971,6 +3979,271 @@ func _on_variable_node_path_changed(node_uuid: StringName, from: String, to: Str
 	undo.commit_action(false)
 
 # ----------------------------
+# TEST: This thing. I think it SHOULD work, but I don't know
+func _on_nodes_removed(action: String, graph_nodes_data: Dictionary[StringName, Dictionary]) -> void:
+	var action_data: Dictionary = {
+		"graph_nodes_data": graph_nodes_data,
+		"resource_node_data": DictUtils.create_typed(
+			TYPE_STRING_NAME,
+			TYPE_DICTIONARY),
+		"resource_localization": DictUtils.create_typed(
+			TYPE_STRING_NAME,
+			TYPE_DICTIONARY),
+		"tree_hierarchy": DictUtils.create_typed(
+			TYPE_STRING_NAME,
+			TYPE_DICTIONARY)}
+	
+	for node_uuid in graph_nodes_data:
+		if active_conversation.node_data.has(node_uuid):
+			action_data["resource_node_data"][node_uuid] = active_conversation.node_data[node_uuid].duplicate(true)
+		if active_conversation.localization.has(node_uuid):
+			action_data["resource_localization"][node_uuid] = active_conversation.localization[node_uuid].duplicate(true)
+		
+		action_data["tree_hierarchy"][node_uuid] = discourse_nodes_tree.get_node_data(node_uuid)
+	
+	var action_name: String = action.capitalize() + " Node"
+	if 1 < graph_nodes_data.size():
+		action_name += "s"
+	
+	undo.create_action(action_name)
+	undo.add_do_method(_do_remove_nodes.bind(action_data))
+	undo.add_undo_method(_undo_remove_nodes.bind(action_data))
+	undo.commit_action()
+
+
+func _do_remove_nodes(action_data: Dictionary[StringName, Dictionary]) -> void:
+	for uuid in action_data["graph_nodes_data"]:
+		discourse_graph_edit.remove_node(uuid)
+		discourse_nodes_tree.remove_dialog_node(uuid)
+		localization_nodes_tree.remove_node(uuid)
+		active_conversation.remove_node(uuid)
+
+
+func _undo_remove_nodes(action_data: Dictionary) -> void:
+	active_conversation.node_data.merge(action_data["resource_node_data"], false)
+	active_conversation.localization.merge(action_data["resource_localization"], false)
+	
+	var graph_nodes_data: Dictionary[StringName, Dictionary] = action_data["graph_nodes_data"]
+	var tree_hierarchy: Dictionary = action_data["tree_hierarchy"]
+	var connection_deaf_nodes: Array[DiscourseGraphNode] = []
+	var created_nodes: Dictionary[StringName, DiscourseGraphNode] = {}
+	var refresh_shortcuts: bool = false
+	
+	var hierarchy_uuid: Array[StringName] = []
+	hierarchy_uuid.assign(tree_hierarchy.keys())
+	hierarchy_uuid.sort_custom(
+		func(a: StringName, b: StringName) -> bool:
+			return tree_hierarchy[a]["index"] < tree_hierarchy[b]["index"])
+	
+	for node_uuid in graph_nodes_data:
+		var node_info: Dictionary = graph_nodes_data[node_uuid]
+		var data: Dictionary = node_info["data"]
+		
+		var d_node: DiscourseGraphNode = discourse_graph_edit.spawn_node(data["type"], node_uuid, data)
+		
+		if d_node.node_type == DiscourseGraphNode.DialogueNodeType.DIALOG_MERGE or d_node.node_type == DiscourseGraphNode.DialogueNodeType.METADATA:
+			d_node._connection_updates_disabled = true
+			connection_deaf_nodes.append(d_node)
+		elif d_node.node_type == DiscourseGraphNode.DialogueNodeType.SHORTCUT or d_node.node_type == DiscourseGraphNode.DialogueNodeType.SHORTCUT_TARGET:
+			refresh_shortcuts = true
+		
+		if d_node.is_node_localized():
+			if d_node.node_type == DiscourseGraphNode.DialogueNodeType.DIALOG:
+				localization_nodes_tree.create_dialog_node(d_node.get_node_id(), d_node)
+			elif d_node.node_type == DiscourseGraphNode.DialogueNodeType.CHOICES:
+				localization_nodes_tree.create_options_node(d_node.get_node_id(), d_node)
+			elif d_node.node_type == DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
+				localization_nodes_tree.create_localized_text_node(d_node.get_node_id(), d_node)
+		created_nodes[node_uuid] = d_node
+	
+	for node_uuid in tree_hierarchy:
+		if not created_nodes.has(node_uuid):
+			continue
+		var tree_data: Dictionary = tree_hierarchy.get(node_uuid, {})
+		if not tree_data.is_empty() and tree_data.get("is_node", false):
+			discourse_nodes_tree.create_with_path(
+				created_nodes[node_uuid],
+				tree_data.get("path", ""),
+				tree_data.get("index", -1))
+	
+	for node_uuid in graph_nodes_data:
+		var node_info: Dictionary = graph_nodes_data[node_uuid]
+		
+		var outputs: Dictionary = node_info.get("output_connections", {})
+		for field_id in outputs:
+			for conn in outputs[field_id].get("connections", []):
+				discourse_graph_edit.connect_discourse_nodes(
+					node_uuid,
+					conn["from_port"],
+					conn["target_node_uuid"],
+					conn["target_port"])
+		
+		var inputs: Dictionary = node_info.get("input_connections", {})
+		for field_id in inputs:
+			for conn in inputs[field_id].get("connections", []):
+				discourse_graph_edit.connect_discourse_nodes(
+					conn["target_node_uuid"],
+					conn["target_port"],
+					node_uuid,
+					conn["from_port"])
+	
+	for node in connection_deaf_nodes:
+		node._connection_updates_disabled = false
+	
+	if refresh_shortcuts:
+		discourse_graph_edit.refresh_anchors()
+
+
+func _on_graph_edit_node_duplication_requested(uuids: Array[StringName]) -> void:
+	var uuid_size: int = uuids.size()
+	
+	if uuid_size == 0:
+		return
+	elif uuid_size == 1:
+		var new_uuid: StringName = StringName(UUID.generate_new())
+		discourse_graph_edit.duplicate_single(uuids[0], new_uuid)
+	else:
+		# Existing UUID: New UUID
+		var uuid_map: Dictionary[StringName, StringName] = {}
+		for uuid in uuids:
+			uuid_map[uuid] = StringName(UUID.generate_new())
+		
+		discourse_graph_edit.duplicate_multiple(uuid_map)
+		
+	_on_conversation_changed()
+
+
+func _on_graph_edit_paste_requested() -> void:
+	if discourse_graph_edit.node_clipboard.is_empty():
+		return
+	
+	# Original UUID, New UUID
+	var uuid_map: Dictionary[StringName, StringName] = {}
+	var clipboard: Array[Dictionary] = discourse_graph_edit.node_clipboard.duplicate(true)
+	
+	
+	for clipboard_data in clipboard:
+		if discourse_graph_edit.graph_nodes.has(clipboard_data["node_uuid"]): # Change to reference the GraphEdit
+			uuid_map[clipboard_data["node_uuid"]] = StringName(UUID.generate_new())
+		else:
+			uuid_map[clipboard_data["node_uuid"]] = clipboard_data["node_uuid"]
+	
+	discourse_graph_edit.paste_node_clipboard(clipboard, uuid_map)
+	_on_conversation_changed()
+
+# ------------------------------
+
+func _on_nodes_moved(movement_data: Dictionary) -> void:
+	var moved: bool = false
+	
+	for node_uuid in movement_data["nodes"]:
+		var data: Dictionary = movement_data["nodes"][node_uuid]
+		if data["previous_position"] != data["current_position"] or data["previous_frame"] != data["current_frame"]:
+			moved = true
+			break
+	
+	if not moved:
+		for frame_uuid in movement_data["frames"]:
+			var data: Dictionary = movement_data["frames"][frame_uuid]
+			if data["previous_position"] != data["current_position"]:
+				moved = true
+				break
+	
+	if not moved:
+		return
+	
+	undo.create_action("Move Graph Elements")
+	undo.add_do_method(_apply_movement_state.bind(movement_data, false))
+	undo.add_undo_method(_apply_movement_state.bind(movement_data, true))
+	undo.commit_action(false)
+
+
+func _apply_movement_state(movement_data: Dictionary, is_undo: bool) -> void:
+	for frame_uuid in movement_data["frames"]:
+		var frame: GraphFrame = discourse_graph_edit.get_discourse_frame(frame_uuid)
+		if frame != null:
+			var data: Dictionary = movement_data["frames"][frame_uuid]
+			frame.position_offset = data["previous_position"] if is_undo else data["current_position"]
+	
+	for node_uuid in movement_data["nodes"]:
+		var node: DiscourseGraphNode = discourse_graph_edit.get_discourse_node(node_uuid)
+		if node != null:
+			var data: Dictionary = movement_data["nodes"][node_uuid]
+			node.position_offset = data["previous_position"] if is_undo else data["current_position"]
+			
+			var target_frame_uuid: StringName = data["previous_frame"] if is_undo else data["current_frame"]
+			var current_frame_uuid: StringName = data["current_frame"] if is_undo else data["previous_frame"]
+			
+			if target_frame_uuid != current_frame_uuid:
+				if target_frame_uuid == &"":
+					discourse_graph_edit.detach_graph_element_from_frame(node.name)
+				else:
+					var target_frame: GraphFrame = discourse_graph_edit.get_discourse_frame(target_frame_uuid)
+					if target_frame != null:
+						discourse_graph_edit.attach_graph_element_to_frame(node.name, target_frame.name)
+
+
+func _on_node_connected(from_node: StringName, from_port: int, to_node: StringName, to_port: int) -> void:
+	undo.create_action("Connect Nodes")
+	undo.add_do_method(discourse_graph_edit.connect_discourse_nodes.bind(from_node, from_port, to_node, to_port))
+	undo.add_undo_method(discourse_graph_edit.disconnect_discourse_nodes.bind(from_node, from_port, to_node, to_port))
+	undo.commit_action(false)
+
+
+func _on_node_disconnected(from_node: StringName, from_port: int, to_node: StringName, to_port: int) -> void:
+	undo.create_action("Disconnect Nodes")
+	undo.add_do_method(discourse_graph_edit.disconnect_discourse_nodes.bind(from_node, from_port, to_node, to_port))
+	undo.add_undo_method(discourse_graph_edit.connect_discourse_nodes.bind(from_node, from_port, to_node, to_port))
+	undo.commit_action(false)
+
+
+func _on_node_connection_switched(origin_ports: Dictionary, new_node: StringName, new_port: int) -> void:
+	# origin_ports holds the OLD connection that was broken.
+	var old_from_node: StringName = origin_ports["from_node"]
+	var old_from_port: int = origin_ports["from_port"]
+	var old_to_node: StringName = origin_ports["to_node"]
+	var old_to_port: int = origin_ports["to_port"]
+	
+	var new_from_node: StringName = old_from_node
+	var new_from_port: int = old_from_port
+	
+	undo.create_action("Switch Node Connection")
+	
+	undo.add_do_method(discourse_graph_edit.disconnect_discourse_nodes.bind(old_from_node, old_from_port, old_to_node, old_to_port))
+	undo.add_do_method(discourse_graph_edit.connect_discourse_nodes.bind(new_from_node, new_from_port, new_node, new_port))
+	
+	undo.add_undo_method(discourse_graph_edit.disconnect_discourse_nodes.bind(new_from_node, new_from_port, new_node, new_port))
+	undo.add_undo_method(discourse_graph_edit.connect_discourse_nodes.bind(old_from_node, old_from_port, old_to_node, old_to_port))
+	
+	undo.commit_action(false)
+
+
+func _on_nodes_created_batch(node_uuids: Array[StringName], action_name: String = "Create Nodes") -> void:
+	var action_data: Dictionary = {
+		"graph_nodes_data": {},
+		"resource_node_data": {},
+		"resource_localization": {},
+		"tree_hierarchy": {}}
+	
+	for uuid in node_uuids:
+		var node: DiscourseGraphNode = discourse_graph_edit.get_discourse_node(uuid)
+		if node == null:
+			continue
+		
+		action_data["graph_nodes_data"][uuid] = node.get_node_state()
+		
+		if active_conversation.node_data.has(uuid):
+			action_data["resource_node_data"][uuid] = active_conversation.node_data[uuid].duplicate(true)
+		if active_conversation.localization.has(uuid):
+			action_data["resource_localization"][uuid] = active_conversation.localization[uuid].duplicate(true)
+		
+		action_data["tree_hierarchy"][uuid] = discourse_nodes_tree.get_node_data(uuid)
+	
+	undo.create_action(action_name)
+	undo.add_do_method(_undo_remove_nodes.bind(action_data))
+	undo.add_undo_method(_do_remove_nodes.bind(action_data))
+	undo.commit_action(false)
+
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_PREDELETE:

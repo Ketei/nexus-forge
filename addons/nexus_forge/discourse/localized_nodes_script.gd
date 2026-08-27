@@ -91,6 +91,8 @@ func clear_nodes() -> void:
 
 
 func create_dialog_node(node_name: String, node: DiscourseGraphNode) -> void:
+	if all_nodes.has(node.get_node_uuid()):
+		return
 	create_node_on(_dialog_tree, node_name, node, "DialogNode")
 
 
@@ -103,6 +105,8 @@ func rename_dialog_node(uuid: StringName, new_name: String) -> void:
 
 
 func create_options_node(node_name: String, node: DiscourseGraphNode) -> void:
+	if all_nodes.has(node.get_node_uuid()):
+		return
 	create_node_on(_options_tree, node_name, node, "OptionsNode")
 
 
@@ -115,6 +119,8 @@ func rename_options_node(uuid: StringName, new_name: String) -> void:
 
 
 func create_localized_text_node(node_name: String, node: DiscourseGraphNode) -> void:
+	if all_nodes.has(node.get_node_uuid()):
+		return
 	create_node_on(_text_tree, node_name, node, "TextNode")
 
 
