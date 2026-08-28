@@ -486,6 +486,8 @@ func ready_plugin(base_locale: String = "") -> void:
 	discourse_graph_edit.nodes_moved.connect(_on_nodes_moved)
 	discourse_graph_edit.nodes_created.connect(_on_nodes_created_batch, CONNECT_DEFERRED)
 	
+	argument_opt_btn.item_selected.connect(_on_argument_button_item_selected)
+	
 	node_search_ln_edt.text_changed.connect(_on_discourse_node_search_text_changed)
 	new_language_btn.pressed.connect(_on_new_lang_pressed)
 	languages_tree.locale_changed.connect(_on_side_editor_locale_changed, CONNECT_DEFERRED)
@@ -1196,7 +1198,6 @@ func _on_graph_editor_locale_changed(from: String, to: String) -> void:
 	if not from.is_empty():
 		discourse_graph_edit.update_localization_data(active_conversation, from)
 	
-	clear_cases()
 	default_case_edt.clear()
 	search_case_ln_edt.text = ""
 	search_case_ln_edt.set_meta(&"current_search", "")
@@ -2782,27 +2783,6 @@ func _on_edit_cases_pressed(field: Control) -> void:
 
 
 func _on_key_line_text_changed(_text: String = "") -> void:
-	var all_ids: Dictionary[String, Array] = {}
-	
-	for entry in %PhrasesEntries.get_children():
-		var line: LineEdit = entry.get_child(1)
-		var key: String = line.text.strip_edges()
-		
-		if key.is_empty():
-			continue
-		
-		if all_ids.has(key) == false:
-			all_ids[key] = []
-		all_ids[key].append(line)
-	
-	for item_key:String in all_ids.keys():
-		if 1 < all_ids[item_key].size():
-			for item:LineEdit in all_ids[item_key]:
-				item.add_theme_color_override(&"font_color", Color(1.0, 0.29, 0.325))
-		else:
-			for item:LineEdit in all_ids[item_key]:
-				if item.has_theme_color(&"font_color"):
-					item.remove_theme_color_override(&"font_color")
 	_on_conversation_changed()
 
 
@@ -2966,6 +2946,7 @@ func create_new_phrase_case(case: String = "", case_text: String = "") -> void:
 	case_editor.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	case_editor.size_flags_stretch_ratio = 2.0
 	case_editor.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
+	case_editor.set_meta(&"old_value", case_text)
 	
 	erase_case_btn.tooltip_text = "Erase case"
 	erase_case_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -3044,30 +3025,6 @@ func erase_case(index: int) -> void:
 	case.queue_free()
 
 
-func get_valid_format_key_id(desired_id: String = "NEW_PHRASE") -> String:
-	var used_keys: Dictionary[String, Variant] = {}
-	
-	for entry in %PhrasesEntries.get_children():
-		var assigned_key: StringName = entry.get_meta(&"phrase_key", &"")
-		used_keys[assigned_key] = null
-	
-	if not used_keys.has(desired_id):
-		return desired_id
-	
-	var base: String = desired_id
-	var modified: String = desired_id
-	var trailing_data: Dictionary = StringUtils.get_trailing_integer(desired_id)
-	var iteration: int = trailing_data["integer"]
-	if trailing_data["has_integer"]:
-		base = desired_id.trim_suffix(str(iteration))
-	
-	while used_keys.has(modified):
-		iteration += 1
-		modified = base + str(iteration)
-	
-	return modified
-
-
 func create_new_phrase_entry(key: String, format: String, unsaved: bool = true) -> StringName:
 	var container: HBoxContainer = HBoxContainer.new()
 	var erase_button: Button = Button.new()
@@ -3083,7 +3040,7 @@ func create_new_phrase_entry(key: String, format: String, unsaved: bool = true) 
 	text_field.syntax_highlighter = highlighter
 	
 	if key.is_empty():
-		key = get_valid_format_key_id()
+		key = get_valid_format_key_id(key)
 	else:
 		key = get_valid_format_key_id(key)
 	
@@ -3295,6 +3252,28 @@ func save_phrase_keys(locale: String) -> void:
 		save_current_phrase_key(locale)
 
 
+func set_phrase_format_string(phrase_key: String, locale: String, format_string: String) -> void:
+	active_conversation.set_format_string(phrase_key, format_string, locale)
+	
+	# Returns ["!a", "$b"] from "{!a} is {$b}". If the second argument is false it would return ["{!a}", "{$b}"]
+	var entries: Array[String] = EditorDiscourseDialog.get_phrase_arguments(format_string, true)
+	var existing_cases: Dictionary[String, Variant] = {}
+	
+	# Method returns an array of existing keys e.g. "!c"
+	for case in active_conversation.get_format_string_formats(phrase_key, locale):
+		if entries.has(case):
+			existing_cases[case] = null
+		else:
+			active_conversation.erase_format_string_format(
+					phrase_key,
+					locale,
+					case)
+	
+	for new_case in entries:
+		# This ensures that the new case exists and its structured properly
+		active_conversation.validate_format_string_format(phrase_key, locale, new_case)
+
+
 func _phrase_key_used(desired: String, items: Array[Dictionary], skip_index: int = -1) -> bool:
 	for index in range(items.size()):
 		if index == skip_index:
@@ -3432,6 +3411,17 @@ func get_api_user_methods() -> Dictionary:
 		methods[method["name"]] = {"return_type": method["return"]["type"], "arguments": args}
 	
 	return methods
+
+
+func display_format_key_formats(key: String, format: String, locale: String) -> void:
+	clear_cases()
+	var default: String = active_conversation.get_format_string_default_case(key, locale, format)
+	default_case_edt.text = default
+	default_case_edt.set_meta(&"old_value", default)
+	
+	for case in active_conversation.get_format_string_cases(key, locale, format):
+		var case_text: String = active_conversation.get_format_string_case(key, locale, format, case)
+		create_new_phrase_case(case, case_text)
 
 
 func _on_collapse_left_pressed() -> void:
@@ -3691,17 +3681,169 @@ func _on_phrase_text_field_changed(field: TextEdit) -> void:
 	_update_choice_textbox_size(field)
 	_on_conversation_changed()
 
+
+func _on_argument_button_item_selected(idx: int) -> void:
+	var current_key: String = %PhrasesEntries.get_child(editing_phrase_index).get_meta(&"phrase_key")
+	var new_format: String = argument_opt_btn.get_item_text(idx)
+	var locale: String = phrases_lang_menu.get_selected_metadata()
+	display_format_key_formats(current_key, new_format, locale)
+
 # --- UndoRedo ---
 # --- Phrases ---
-# TODO: This
-func _on_phrase_key_editing_toggled(is_toggled: bool, entry_id: String) -> void:
-	if is_toggled:
-		return
 
-# TODO: This
-func _on_phrase_text_editing_toggled(is_toggled: bool, entry_id: String) -> void:
+func _on_phrase_key_editing_toggled(is_toggled: bool, line: LineEdit) -> void:
 	if is_toggled:
 		return
+	
+	var current_text: String = line.text
+	
+	if current_text.is_empty():
+		current_text = "PHRASE"
+	
+	var new_value: String = get_valid_format_key_id(current_text, line)
+	var old_value: String = line.get_parent().get_meta(&"phrase_key")
+	
+	if new_value == old_value:
+		return
+	
+	undo.create_action("Set Phrase Key")
+	undo.add_do_method(_rename_phrase_key_action.bind(old_value, new_value))
+	undo.add_undo_method(_rename_phrase_key_action.bind(new_value, old_value))
+	undo.commit_action()
+	_on_conversation_changed()
+
+
+func _rename_phrase_key_action(from_key: String, to_key: String) -> void:
+	if active_conversation.format_strings.has(from_key):
+		active_conversation.format_strings[to_key] = active_conversation.format_strings[from_key]
+		active_conversation.format_strings.erase(from_key)
+	
+	for item in %PhrasesEntries.get_children():
+		if item.get_meta(&"phrase_key") == from_key:
+			item.get_child(1).text = to_key
+			item.set_meta(&"phrase_key", to_key)
+			break
+
+
+func get_valid_format_key_id(desired: String, skip: LineEdit = null) -> String:
+	var all_ids: Dictionary[String, Variant] = {}
+	
+	for entry in %PhrasesEntries.get_children():
+		var entry_line: LineEdit = entry.get_child(1)
+		
+		if entry_line == skip:
+			continue
+		
+		all_ids[entry_line.text] = null
+	
+	var current_id: String = desired
+	
+	if all_ids.has(desired):
+		var base: String = desired
+		var modified: String = desired
+		var trailing_data: Dictionary = StringUtils.get_trailing_integer(desired)
+		var iteration: int = trailing_data["integer"]
+		if trailing_data["has_integer"]:
+			base = desired.trim_suffix(str(iteration))
+		while all_ids.has(modified):
+			iteration += 1
+			modified = base + str(iteration)
+		current_id = modified
+	return current_id
+
+
+func _on_phrase_text_editing_focus_lost(field: TextEdit) -> void:
+	var old_text: String = field.get_meta(&"old_value")
+	var new_text: String = field.text
+	var phrase_id: String = field.get_parent().get_meta(&"phrase_key")
+	
+	if new_text == old_text:
+		return
+	
+	field.set_meta(&"old_value", new_text)
+	var locale_code: String = phrases_lang_menu.get_selected_metadata()
+	
+	var old_state: Dictionary = {}
+	if DictUtils.has_nested_path(active_conversation.format_strings, [phrase_id, locale_code]):
+		old_state = active_conversation.format_strings[phrase_id][locale_code].duplicate(true)
+	
+	set_phrase_format_string(phrase_id, locale_code, new_text)
+	
+	var new_state: Dictionary = active_conversation.format_strings[phrase_id][locale_code].duplicate(true)
+	
+	undo.create_action("Edit Phrase Text")
+	undo.add_do_method(_set_phrase_state_action.bind(phrase_id, locale_code, new_state))
+	undo.add_do_method(_set_phrase_state_action.bind(phrase_id, locale_code, old_state))
+	undo.commit_action(false)
+
+
+func _set_phrase_state_action(phrase_key: String, locale: String, state_dict: Dictionary) -> void:
+	var base_string: String = state_dict.get("base_string", "")
+	if not active_conversation.format_strings.has(phrase_key):
+		active_conversation.set_format_string(
+				phrase_key,
+				base_string,
+				locale)
+	
+	active_conversation.format_strings[phrase_key][locale] = state_dict.duplicate(true)
+	
+	for item in %PhrasesEntries.get_children():
+		if item.get_meta(&"phrase_key") == phrase_key:
+			var text_field: TextEdit = item.get_child(2)
+			if text_field.text != base_string:
+				text_field.text = base_string
+				text_field.set_meta(&"old_value", base_string)
+			break
+	
+	if -1 < editing_phrase_index: # This means we're editing a phrase
+		var key_control: Control = %PhrasesEntries.get_child(editing_phrase_index)
+		var editing_key: String = key_control.get_meta(&"phrase_key")
+		
+		if editing_key == phrase_key and -1 < phrases_lang_menu.selected and phrases_lang_menu.get_selected_metadata() == locale:
+			_refresh_cases_screen()
+
+	_on_conversation_changed()
+
+
+func _refresh_cases_screen() -> void:
+	if editing_phrase_index < 0 or phrases_lang_menu.selected < 0:
+		return
+	
+	var key_control: Control = %PhrasesEntries.get_child(editing_phrase_index)
+	var editing_key: String = key_control.get_meta(&"phrase_key")
+	var locale: String = phrases_lang_menu.get_selected_metadata()
+	var selected_format: String = "" if argument_opt_btn.selected < 0 else argument_opt_btn.get_item_text(argument_opt_btn.selected)
+	var existing_cases: Array[String] = active_conversation.get_format_string_formats(editing_key, locale)
+	var new_idx: int = existing_cases.find(selected_format)
+	
+	argument_opt_btn.clear()
+	
+	for case in existing_cases:
+		argument_opt_btn.add_item(case)
+	
+	if new_idx != -1:
+		argument_opt_btn.select(new_idx)
+		display_format_key_formats(
+			editing_key,
+			selected_format,
+			locale)
+	else:
+		if argument_opt_btn.item_count == 0: # Exit the editor
+			case_box_container.visible = false
+			key_box_container.visible = true
+			phrases_lang_menu.disabled = false
+			
+			clear_cases()
+			default_case_edt.clear()
+			default_case_edt.set_meta(&"old_value", "")
+			search_case_ln_edt.text = ""
+			search_case_ln_edt.set_meta(&"current_search", "")
+		else:
+			display_format_key_formats(
+				editing_key,
+				argument_opt_btn.get_item_text(0),
+				locale)
+
 
 # TODO: This
 func _on_phrase_case_editing_toggled(is_toggled: bool, case_line: LineEdit) -> void:
@@ -3714,13 +3856,65 @@ func _on_phrase_result_editing_toggled(is_toggled: bool, result_line: LineEdit) 
 		return
 
 # --- Localization ---
-# TODO: This
-func _on_localization_text_edit_focus_exited() -> void:
-	pass
 
-# TODO: This
+func _on_localization_text_edit_focus_exited() -> void:
+	var old_value: String = translation_txt_box.get_meta(&"old_value")
+	var new_value: String = translation_txt_box.text
+	
+	if new_value == old_value:
+		return
+	
+	var current_node_uuid: StringName = localization_nodes_tree.get_active_node_uuid()
+	var locale_code: String = languages_tree.get_active_locale()
+	
+	undo.create_action("Set Localized Text (%s)" % locale_code)
+	undo.add_do_method(_do_update_localized_text.bind(current_node_uuid, locale_code, new_value))
+	undo.add_undo_method(_do_update_localized_text.bind(current_node_uuid, locale_code, old_value))
+	undo.commit_action()
+
+
+func _do_update_localized_text(node_uuid: StringName, locale: String, text: String) -> void:
+	active_conversation.set_text_entry(
+			node_uuid,
+			text,
+			locale)
+	
+	if localization_nodes_tree.get_active_node_uuid() == node_uuid and languages_tree.get_active_locale() == locale:
+		translation_txt_box.text = text
+		translation_txt_box.set_meta(&"old_value", text)
+		_on_text_changed_sync(text)
+
+
 func _on_localization_choice_edit_toggled(is_toggled: bool, line: LineEdit) -> void:
-	pass
+	if is_toggled:
+		return
+	var old_value: String = line.get_meta(&"old_value")
+	var new_value: String = line.text
+	
+	if new_value == old_value:
+		return
+	
+	var current_node_uuid: StringName = localization_nodes_tree.get_active_node_uuid()
+	var locale_code: String = languages_tree.get_active_locale()
+	var current_index: int = line.get_parent().get_index()
+	
+	undo.create_action("Set Localized Choice Text (%s)" % locale_code)
+	undo.add_do_method(_set_localized_choice_action.bind(current_node_uuid, current_index, new_value, locale_code))
+	undo.add_undo_method(_set_localized_choice_action.bind(current_node_uuid, current_index, old_value, locale_code))
+	undo.commit_action()
+
+
+func _set_localized_choice_action(node_uuid: StringName, choice_index: int, text: String, locale: String) -> void:
+	active_conversation.update_choice_entry(node_uuid, choice_index, text, locale)
+	
+	if localization_nodes_tree.get_active_node_uuid() == node_uuid and languages_tree.get_active_locale() == locale:
+		if choice_index < choices_container.get_child_count():
+			var choice_row = choices_container.get_child(choice_index)
+			# Index 0 is the base locale, 1 is the selected locale
+			var line: LineEdit = choice_row.get_child(1)
+			line.text = text
+			line.set_meta(&"old_value", text)
+			_on_choice_text_changed(text, choice_index)
 
 
 # --- Node Structure ---

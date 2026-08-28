@@ -174,6 +174,25 @@ func set_format_string(key: String, text: String, locale: String) -> void:
 					{"base_string": text, "format": {}})
 
 
+## Checks if the format key exists in the given key and locale. If it doesn't it'll
+## create it. Returns true if the entry was created or already existed.
+func validate_format_string_format(key: String, locale: String, format: String) -> bool:
+	if not DictUtils.has_nested_path(format_strings, [key, locale, "format"]):
+		return false
+	
+	if not format_strings[key][locale]["format"].has(format):
+		format_strings[key][locale]["format"][format] = {
+			"cases": {},
+			"default": ""}
+	else:
+		if not format_strings[key][locale]["format"][format].has("cases"):
+			format_strings[key][locale]["format"][format]["cases"] = {}
+		if not format_strings[key][locale]["format"][format].has("default"):
+			format_strings[key][locale]["format"][format]["default"] = ""
+	
+	return true
+
+
 func set_format_string_case(key: String, locale: String, format: String, case: String, value: String) -> void:
 	locale = TranslationServer.standardize_locale(locale)
 	if not DictUtils.has_nested_path(format_strings, [key, locale]):
@@ -197,6 +216,14 @@ func get_format_string_case(key: String, locale: String, format: String, case: S
 			[key, locale, "format", format, "cases", case],
 			"",
 			true)
+
+
+func get_format_string_cases(key: String, locale: String, format: String) -> Array[String]:
+	var cases: Array[String] = []
+	
+	if DictUtils.has_nested_path(format_strings, [key, locale, "format", format, "cases"]):
+		cases.assign(format_strings[key][locale]["format"][format]["cases"].keys())
+	return cases
 
 
 ## Sets the default case from a localized string with the given key.
