@@ -260,6 +260,12 @@ func erase_format_string_format(key: String, locale: String, format_key: String)
 		format_strings[key][locale]["format"].erase(format_key)
 
 
+func erase_format_string_case(key: String, locale: String, format_key: String, case: String) -> bool:
+	if DictUtils.has_nested_path(format_strings, [key, locale, "format", format_key, "cases"]):
+		return format_strings[key][locale]["format"][format_key]["cases"].erase(case)
+	return false
+
+
 ## Clears the list of custom cases from the given key.
 func clear_format_string_cases(key: String, locale: String, format: String) -> void:
 	locale = TranslationServer.standardize_locale(locale)

@@ -33,6 +33,7 @@ func _init() -> void:
 	_info_label.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST_WITH_MIPMAPS
 	_dialog_line.custom_minimum_size.y = 32.0
 	_dialog_line.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_ok_button = get_ok_button()
 	size = Vector2i(250, 89)
 	initial_position = Window.WINDOW_INITIAL_POSITION_CENTER_MAIN_WINDOW_SCREEN
 
@@ -44,19 +45,7 @@ func _ready() -> void:
 	new_container.add_child(_dialog_line)
 	new_container.add_child(_info_label)
 	
-	_ok_button = get_ok_button()
-	
-	if not allow_empty:
-		_info_label.texture = preload("res://addons/nexus_forge/icons/error_red.svg")
-		get_ok_button().disabled = true
-		_info_label.tooltip_text = error_line_empty_msg
-	elif use_blacklist and "" in text_blacklist:
-		_info_label.texture = preload("res://addons/nexus_forge/icons/error_red.svg")
-		get_ok_button().disabled = "" in text_blacklist
-		_info_label.tooltip_text = error_line_empty_msg
-	else:
-		_info_label.texture = preload("res://addons/nexus_forge/icons/check_green.svg")
-		_info_label.tooltip_text = error_line_ok
+	validate_text()
 	
 	_dialog_line.text_changed.connect(_on_text_changed)
 	_dialog_line.text_submitted.connect(_on_text_submitted)
@@ -65,6 +54,11 @@ func _ready() -> void:
 
 
 func _on_text_changed(text: String) -> void:
+	validate_text()
+
+
+func validate_text() -> void:
+	var text: String = _dialog_line.text
 	var stripped_text: String = text.strip_edges()
 	var invalid_char: bool = false
 	for character in text:
@@ -115,9 +109,10 @@ func grab_text_focus() -> void:
 
 func set_line_text(text: String, caret_pos: int = -1) -> void:
 	_dialog_line.text = text
-	if -1 < caret_pos:
-		_dialog_line.caret_column = caret_pos
-	_on_text_changed(text)
+	if is_node_ready():
+		if -1 < caret_pos:
+			_dialog_line.caret_column = caret_pos
+		_on_text_changed(text)
 
 
 func select_all_text() -> void:

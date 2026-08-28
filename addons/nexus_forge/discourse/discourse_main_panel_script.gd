@@ -41,7 +41,8 @@ var localization_node_selected: DiscourseGraphNode = null
 
 var listen_offset: bool = true
 
-var selected_format_index: int = -1
+var selected_phrase_format: String = ""
+var selected_phrase_index: int = -1
 
 var _unsaved: bool = false:
 	set(u):
@@ -73,9 +74,6 @@ var text_editor: Window = null
 var _recently_opened_files: Array[String] = []
 var _recently_opened_popup: PopupMenu = null
 
-# This is the selected editing phrase. Not locale.
-# THis shouldn't be assigned with an opt-btn. Pls fix.
-var editing_phrase_index: int = -1
 # ----------------------------
 
 # --- Discourse Graph ---
@@ -491,8 +489,8 @@ func ready_plugin(base_locale: String = "") -> void:
 	node_search_ln_edt.text_changed.connect(_on_discourse_node_search_text_changed)
 	new_language_btn.pressed.connect(_on_new_lang_pressed)
 	languages_tree.locale_changed.connect(_on_side_editor_locale_changed, CONNECT_DEFERRED)
-	languages_tree.region_created.connect(_on_region_created)
-	languages_tree.locale_deleted.connect(_on_locale_deleted)
+	languages_tree.locale_creation_requested.connect(_on_languages_tree_locale_creation_requested)
+	languages_tree.locale_delete_requested.connect(_on_locale_delete_requested, CONNECT_DEFERRED)
 	
 	discourse_nodes_tree.node_activated.connect(_on_discourse_node_activated)
 	discourse_nodes_tree.item_renamed.connect(_on_discourse_item_renamed)
@@ -522,6 +520,7 @@ func ready_plugin(base_locale: String = "") -> void:
 	issues_tree.issue_activated.connect(_on_issue_activated)
 	
 	dialog_id_ln_edt.text_changed.connect(_on_conversation_changed)
+	dialog_id_ln_edt.editing_toggled.connect(_on_dialog_id_edit_toggled)
 	
 	copy_arg_btn.pressed.connect(_on_copy_format_pressed, CONNECT_DEFERRED)
 	
@@ -808,7 +807,7 @@ func remove_locale(locale: String) -> void:
 		set_graph_locale_tip(base_language)
 		_on_graph_editor_locale_changed("", base_language)
 	
-	if -1 < editing_phrase_index and phrases_lang_menu.get_selected_metadata() == locale:
+	if -1 < selected_phrase_index and phrases_lang_menu.get_selected_metadata() == locale:
 		set_phrases_locale(base_language)
 		set_phrase_button_locale(base_language)
 	
@@ -1013,14 +1012,25 @@ func _on_discourse_node_activated(node_uuid: StringName) -> void:
 
 func _on_change_locale_group_pressed() -> void:
 	var line_confirmation := preload("res://addons/nexus_forge/dialogs/lineedit_confirmation_dialog.gd").new()
-	line_confirmation.allow_empty = false
+	line_confirmation.allow_empty = true
 	line_confirmation.set_line_text(active_conversation.locale_group)
 	add_child(line_confirmation)
 	line_confirmation.show()
-	var new_group: Array = await line_confirmation.dialog_finished
-	if new_group[0]:
-		active_conversation.locale_group = new_group[1]
+	var result: Array = await line_confirmation.dialog_finished
 	line_confirmation.queue_free()
+	
+	if result[0] or result[1] == active_conversation.locale_group:
+		return
+	
+	var old_group: String = active_conversation.locale_group
+	var new_group: String = result[1]
+	
+	undo.create_action("Set Locale Group")
+	undo.add_do_method(_do_update_locale_group.bind(new_group))
+	undo.add_undo_method(_do_update_locale_group.bind(old_group))
+	undo.commit_action()
+	
+	_on_conversation_changed()
 
 
 func _on_collapsed_state_changed() -> void:
@@ -1079,7 +1089,7 @@ func close_dialog_resource(dialog_id: int, open_previous: bool = true) -> void:
 			discourse_graph_edit.stop_focus_animation()
 		key_box_container.visible = true
 		case_box_container.visible = false
-		selected_format_index = -1
+		selected_phrase_index = -1
 		
 		if not open_previous:
 			active_conversation = null
@@ -1163,21 +1173,20 @@ func _on_change_default_language_pressed() -> void:
 	window.popup()
 	window.focus_option_button()
 	var result: String = await window.dialog_finished
-	
-	if result != "":
-		if not languages_tree.has_language(result):
-			languages_tree.create_language(result, true)
-			add_locale(result)
-			active_conversation.add_locale(result)
-			
-		ProjectSettings.set_setting(
-			NFPluginGameHandler.get_setting_path(
-				"discourse_base_language"),
-			result)
-		ProjectSettings.save()
-		base_language = result
-		languages_tree.set_default_language(result)
 	window.queue_free()
+	
+	if result.is_empty() or base_language == result:
+		return
+	
+	var created_new: bool = not languages_tree.has_language(result)
+	var old_default: String = base_language
+	
+	undo.create_action("Set Default Locale (%s)" % result)
+	undo.add_do_method(_do_set_default_locale.bind(result, created_new))
+	undo.add_undo_method(_undo_set_default_locale.bind(old_default, result, created_new))
+	undo.commit_action()
+	
+	_on_conversation_changed()
 
 
 func _on_translation_text_changed() -> void:
@@ -1603,11 +1612,14 @@ func _on_switch_window_pressed() -> void:
 	# ----------------------------------------------------------------------
 
 
-func _on_region_created(language: String, region: String) -> void:
-	var locale_code: String = TranslationServer.standardize_locale(language if region.is_empty() else language + "_" + region)
+func _on_languages_tree_locale_creation_requested(locale_code: String) -> void:
+	if locale_code.is_empty() or has_locale(locale_code):
+		return
 	
-	add_locale(locale_code)
-	active_conversation.add_locale(locale_code)
+	undo.create_action("Add Locale (%s)" % locale_code)
+	undo.add_do_method(_do_add_locale_action.bind(locale_code))
+	undo.add_undo_method(_do_remove_locale_action.bind(locale_code))
+	undo.commit_action()
 	
 	_on_conversation_changed()
 
@@ -1630,22 +1642,29 @@ func _on_new_lang_pressed() -> void:
 	window.show()
 	window.focus_option_button()
 	var result: String = await window.dialog_finished
-	
-	if result != "":
-		languages_tree.create_language(result)
-		add_locale(result)
-		var active_locale: String = languages_tree.get_active_locale()
-		if 0 <= selected_format_index and argument_opt_btn.selected != -1 and not active_locale.is_empty():
-			save_current_phrase_key(active_locale)
-		
-		active_conversation.add_locale(result)
-		_on_conversation_changed()
 	window.queue_free()
+	
+	if result.is_empty() or has_locale(result):
+		return
+	
+	undo.create_action("Add Locale")
+	undo.add_do_method(_do_add_locale_action.bind(result))
+	undo.add_undo_method(_do_remove_locale_action.bind(result))
+	undo.commit_action()
+	
+	_on_conversation_changed()
 
 
-func _on_locale_deleted(locale: String) -> void:
-	remove_locale(locale)
-	active_conversation.remove_locale(locale)
+func _on_locale_delete_requested(locale: String) -> void:
+	if locale.is_empty():
+		return
+	
+	var snapshot: Dictionary = _get_locale_snapshot(locale)
+	undo.create_action("Delete Locale (%s)" % locale)
+	undo.add_do_method(_do_remove_locale_action.bind(locale))
+	undo.add_undo_method(_do_add_locale_action.bind(locale, snapshot))
+	undo.commit_action()
+	_on_conversation_changed()
 
 
 func _on_issue_activated(issue_uuid: StringName) -> void:
@@ -2710,7 +2729,9 @@ func _on_save_cases_btn_pressed() -> void:
 	if argument_opt_btn.selected == -1:
 		return
 	
-	save_current_phrase_key(phrases_lang_menu.get_selected_metadata())
+	save_current_phrase_key(
+		phrases_lang_menu.get_selected_metadata(),
+		argument_opt_btn.get_item_text(argument_opt_btn.selected))
 	clear_cases()
 	default_case_edt.clear()
 	search_case_ln_edt.text = ""
@@ -2762,7 +2783,7 @@ func _on_edit_cases_pressed(field: Control) -> void:
 	for existing_key in EditorDiscourseDialog.get_phrase_arguments(clean_string, true):
 		argument_opt_btn.add_item(existing_key)
 	
-	selected_format_index = field.get_index()
+	selected_phrase_index = field.get_index()
 	default_case_edt.editable = 0 < argument_opt_btn.item_count
 	argument_opt_btn.disabled = not default_case_edt.editable
 	new_case_btn.disabled = argument_opt_btn.disabled
@@ -2770,6 +2791,7 @@ func _on_edit_cases_pressed(field: Control) -> void:
 	if 0 < argument_opt_btn.item_count:
 		var argument_format: String = argument_opt_btn.get_item_text(0)
 		argument_opt_btn.select(0)
+		selected_phrase_format = argument_format
 		default_case_edt.text = active_conversation.get_format_string_default_case(phrase_key, locale_code, argument_format)
 		
 		if DictUtils.has_nested_path(active_conversation.format_strings, [phrase_key, locale_code, "format", argument_format, "cases"]):
@@ -2788,8 +2810,8 @@ func _on_key_line_text_changed(_text: String = "") -> void:
 
 func _on_erase_key_button_pressed(field: HBoxContainer) -> void:
 	var phrase_key: String = field.get_meta(&"phrase_key")
-	if selected_format_index == field.get_index():
-		selected_format_index = -1
+	if selected_phrase_index == field.get_index():
+		selected_phrase_index = -1
 		clear_cases()
 		default_case_edt.clear()
 		default_case_edt.editable = false
@@ -2969,6 +2991,7 @@ func create_new_phrase_case(case: String = "", case_text: String = "") -> void:
 	case_line.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	case_line.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	case_line.size_flags_stretch_ratio = 1.0
+	case_line.set_meta(&"old_value", case)
 	
 	case_container.add_child(erase_case_btn)
 	case_container.add_child(case_line)
@@ -3103,7 +3126,7 @@ func create_new_phrase_entry(key: String, format: String, unsaved: bool = true) 
 	
 	edit_button.pressed.connect(_on_edit_cases_pressed.bind(container))
 	text_menu.id_pressed.connect(_on_phrase_menu_id_pressed.bind(text_field))
-	text_field.text_changed.connect(_on_phrase_text_field_changed.bind(text_field))
+	text_field.text_changed.connect(_on_phrase_text_field_changed.bind(text_field), CONNECT_DEFERRED)
 	text_field.resized.connect(_update_choice_textbox_size.bind(text_field))
 	
 	key_line.text_changed.connect(_on_key_line_text_changed)
@@ -3145,17 +3168,16 @@ func clear_localized_keys() -> void:
 		entry.queue_free()
 
 
-func save_current_phrase_key(locale_code: String) -> void:
-	if selected_format_index < 0:
+func save_current_phrase_key(locale_code: String, format: String) -> void:
+	if selected_phrase_index < 0:
 		return
 	
-	var phrase_key: String = %PhrasesEntries.get_child(selected_format_index).get_meta(&"phrase_key")
-	var selected_format: String = argument_opt_btn.get_item_text(argument_opt_btn.selected)
+	var phrase_key: String = %PhrasesEntries.get_child(selected_phrase_index).get_meta(&"phrase_key")
 	
 	active_conversation.set_format_string_default_case(
 		phrase_key,
 		locale_code,
-		selected_format,
+		format,
 		default_case_edt.text.strip_edges())
 	
 	var desired: String = ""
@@ -3164,7 +3186,7 @@ func save_current_phrase_key(locale_code: String) -> void:
 	active_conversation.clear_format_string_cases(
 		phrase_key,
 		locale_code,
-		selected_format)
+		format)
 	
 	# Fixing the cases:
 	for case_idx in range(1, %PhraseCasesEntries.get_child_count()):
@@ -3189,7 +3211,7 @@ func save_current_phrase_key(locale_code: String) -> void:
 		active_conversation.set_format_string_case(
 			phrase_key,
 			locale_code,
-			selected_format,
+			format,
 			modified,
 			case_container.get_child(2).text)
 	
@@ -3248,8 +3270,8 @@ func save_phrase_keys(locale: String) -> void:
 	
 	# Saving this last because keys could shift above OR new keys could be
 	# assigned.
-	if -1 < argument_opt_btn.selected:# not selected_format.is_empty():
-		save_current_phrase_key(locale)
+	if -1 < argument_opt_btn.selected:
+		save_current_phrase_key(locale, argument_opt_btn.get_item_text(argument_opt_btn.selected))
 
 
 func set_phrase_format_string(phrase_key: String, locale: String, format_string: String) -> void:
@@ -3265,9 +3287,9 @@ func set_phrase_format_string(phrase_key: String, locale: String, format_string:
 			existing_cases[case] = null
 		else:
 			active_conversation.erase_format_string_format(
-					phrase_key,
-					locale,
-					case)
+				phrase_key,
+				locale,
+				case)
 	
 	for new_case in entries:
 		# This ensures that the new case exists and its structured properly
@@ -3418,7 +3440,6 @@ func display_format_key_formats(key: String, format: String, locale: String) -> 
 	var default: String = active_conversation.get_format_string_default_case(key, locale, format)
 	default_case_edt.text = default
 	default_case_edt.set_meta(&"old_value", default)
-	
 	for case in active_conversation.get_format_string_cases(key, locale, format):
 		var case_text: String = active_conversation.get_format_string_case(key, locale, format, case)
 		create_new_phrase_case(case, case_text)
@@ -3683,10 +3704,17 @@ func _on_phrase_text_field_changed(field: TextEdit) -> void:
 
 
 func _on_argument_button_item_selected(idx: int) -> void:
-	var current_key: String = %PhrasesEntries.get_child(editing_phrase_index).get_meta(&"phrase_key")
+	var current_key: String = %PhrasesEntries.get_child(selected_phrase_index).get_meta(&"phrase_key")
 	var new_format: String = argument_opt_btn.get_item_text(idx)
 	var locale: String = phrases_lang_menu.get_selected_metadata()
+	
+	if not selected_phrase_format.is_empty():
+		save_current_phrase_key(
+			locale,
+			selected_phrase_format)
+	
 	display_format_key_formats(current_key, new_format, locale)
+	selected_phrase_format = argument_opt_btn.get_item_text(idx)
 
 # --- UndoRedo ---
 # --- Phrases ---
@@ -3781,9 +3809,9 @@ func _set_phrase_state_action(phrase_key: String, locale: String, state_dict: Di
 	var base_string: String = state_dict.get("base_string", "")
 	if not active_conversation.format_strings.has(phrase_key):
 		active_conversation.set_format_string(
-				phrase_key,
-				base_string,
-				locale)
+			phrase_key,
+			base_string,
+			locale)
 	
 	active_conversation.format_strings[phrase_key][locale] = state_dict.duplicate(true)
 	
@@ -3795,8 +3823,8 @@ func _set_phrase_state_action(phrase_key: String, locale: String, state_dict: Di
 				text_field.set_meta(&"old_value", base_string)
 			break
 	
-	if -1 < editing_phrase_index: # This means we're editing a phrase
-		var key_control: Control = %PhrasesEntries.get_child(editing_phrase_index)
+	if -1 < selected_phrase_index: # This means we're editing a phrase
+		var key_control: Control = %PhrasesEntries.get_child(selected_phrase_index)
 		var editing_key: String = key_control.get_meta(&"phrase_key")
 		
 		if editing_key == phrase_key and -1 < phrases_lang_menu.selected and phrases_lang_menu.get_selected_metadata() == locale:
@@ -3806,10 +3834,10 @@ func _set_phrase_state_action(phrase_key: String, locale: String, state_dict: Di
 
 
 func _refresh_cases_screen() -> void:
-	if editing_phrase_index < 0 or phrases_lang_menu.selected < 0:
+	if selected_phrase_index < 0 or phrases_lang_menu.selected < 0:
 		return
 	
-	var key_control: Control = %PhrasesEntries.get_child(editing_phrase_index)
+	var key_control: Control = %PhrasesEntries.get_child(selected_phrase_index)
 	var editing_key: String = key_control.get_meta(&"phrase_key")
 	var locale: String = phrases_lang_menu.get_selected_metadata()
 	var selected_format: String = "" if argument_opt_btn.selected < 0 else argument_opt_btn.get_item_text(argument_opt_btn.selected)
@@ -3843,17 +3871,103 @@ func _refresh_cases_screen() -> void:
 				editing_key,
 				argument_opt_btn.get_item_text(0),
 				locale)
+			selected_phrase_format = argument_opt_btn.get_item_text(0)
 
 
-# TODO: This
 func _on_phrase_case_editing_toggled(is_toggled: bool, case_line: LineEdit) -> void:
 	if is_toggled:
 		return
-
-# TODO: This
-func _on_phrase_result_editing_toggled(is_toggled: bool, result_line: LineEdit) -> void:
-	if is_toggled:
+	
+	var old_case: String = case_line.get_meta(&"old_value")
+	var new_case: String = case_line.text
+	
+	if new_case == old_case:
 		return
+	
+	var key: String = %PhrasesEntries.get_child(selected_phrase_index).get_meta(&"phrase_key")
+	var locale: String = phrases_lang_menu.get_selected_metadata()
+	var format: String = argument_opt_btn.get_item_text(argument_opt_btn.selected)
+	
+	undo.create_action("Set Phrase Case")
+	undo.add_do_method(_do_update_phrase_case_key.bind(key, locale, format, old_case, new_case))
+	undo.add_undo_method(_do_update_phrase_case_key.bind(key, locale, format, new_case, old_case))
+	undo.commit_action()
+
+
+func _do_update_phrase_case_key(phrase_key: String, locale: String, format: String, from_case: String, to_case: String) -> void:
+	var case_value: String = active_conversation.get_format_string_case(phrase_key, locale, format, from_case)
+	active_conversation.set_format_string_case(phrase_key, locale, format, to_case, case_value)
+	active_conversation.erase_format_string_case(phrase_key, locale, format, from_case)
+	
+	var is_viewing_cases: bool = -1 < selected_phrase_index # When an edit cases is pressed, the index is assigned, when cases are saved it returns to -1
+	var current_phrase: String = "" if selected_phrase_index < 0 else %PhrasesEntries.get_child(selected_phrase_index).get_meta(&"phrase_key")
+	var is_correct_phrase: bool = current_phrase == phrase_key
+	var current_locale_code: String = "" if phrases_lang_menu.selected < 0 else phrases_lang_menu.get_selected_metadata()
+	var is_correct_locale: bool = current_locale_code == locale
+	var current_format: String = "" if argument_opt_btn.selected < 0 else argument_opt_btn.get_item_text(argument_opt_btn.selected)
+	var is_correct_format: bool = current_format == format
+	
+	if is_viewing_cases and is_correct_phrase and is_correct_locale and is_correct_format:
+		for container in %PhraseCasesEntries.get_children():
+			var case_line: LineEdit = container.get_child(1)
+			if case_line.get_meta(&"old_value", "") == from_case:
+				case_line.text = to_case
+				case_line.set_meta(&"old_value", to_case)
+				break
+
+
+func _on_phrase_case_result_focus_exited(result_control: TextEdit) -> void:
+	var is_default: bool = result_control == default_case_edt
+	
+	var old_value: String = result_control.get_meta(&"old_value")
+	var new_value: String = result_control.text
+	
+	if new_value == old_value:
+		return
+	
+	var phrase: String = %PhrasesEntries.get_child(selected_phrase_index).get_meta(&"phrase_key")
+	var locale: String = phrases_lang_menu.get_selected_metadata()
+	var format: String = argument_opt_btn.get_item_text(argument_opt_btn.selected)
+	var case_key: String = ""
+	
+	if not is_default:
+		var case_line: LineEdit = result_control.get_parent().get_child(1)
+		case_key = case_line.get_meta(&"old_value")
+	
+	var action_name: String = "Edit Default Case" if is_default else "Edit Case Result"
+	
+	undo.create_action(action_name)
+	undo.add_do_method(_set_phrase_case_result_action.bind(phrase, locale, format, is_default, case_key, new_value))
+	undo.add_undo_method(_set_phrase_case_result_action.bind(phrase, locale, format, is_default, case_key, old_value))
+	undo.commit_action()
+
+
+func _set_phrase_case_result_action(phrase_key: String, locale: String, format: String, is_default: bool, case_key: String, text_value: String) -> void:
+	if is_default:
+		active_conversation.set_format_string_default_case(phrase_key, locale, format, text_value)
+	else:
+		active_conversation.set_format_string_case(phrase_key, locale, format, case_key, text_value)
+	
+	var is_viewing_cases: bool = -1 < selected_phrase_index
+	var current_phrase: String = "" if selected_phrase_index < 0 else %PhrasesEntries.get_child(selected_phrase_index).get_meta(&"phrase_key")
+	var is_correct_phrase: bool = current_phrase == phrase_key
+	var current_locale_code: String = "" if phrases_lang_menu.selected < 0 else phrases_lang_menu.get_selected_metadata()
+	var is_correct_locale: bool = current_locale_code == locale
+	var current_format: String = "" if argument_opt_btn.selected < 0 else argument_opt_btn.get_item_text(argument_opt_btn.selected)
+	var is_correct_format: bool = current_format == format
+
+	if is_viewing_cases and is_correct_phrase and is_correct_locale and is_correct_format:
+		if is_default:
+			default_case_edt.text = text_value
+			default_case_edt.set_meta(&"old_value", text_value)
+		else:
+			for container in %PhraseCasesEntries.get_children():
+				var case_line: LineEdit = container.get_child(1)
+				if case_line.get_meta(&"old_value", "") == case_key:
+					var case_editor: TextEdit = container.get_child(2)
+					case_editor.text = text_value
+					case_editor.set_meta(&"old_value", text_value)
+					break
 
 # --- Localization ---
 
@@ -3875,9 +3989,9 @@ func _on_localization_text_edit_focus_exited() -> void:
 
 func _do_update_localized_text(node_uuid: StringName, locale: String, text: String) -> void:
 	active_conversation.set_text_entry(
-			node_uuid,
-			text,
-			locale)
+		node_uuid,
+		text,
+		locale)
 	
 	if localization_nodes_tree.get_active_node_uuid() == node_uuid and languages_tree.get_active_locale() == locale:
 		translation_txt_box.text = text
@@ -4317,7 +4431,7 @@ func _on_graph_edit_paste_requested() -> void:
 	
 	
 	for clipboard_data in clipboard:
-		if discourse_graph_edit.graph_nodes.has(clipboard_data["node_uuid"]): # Change to reference the GraphEdit
+		if discourse_graph_edit.graph_nodes.has(clipboard_data["node_uuid"]):
 			uuid_map[clipboard_data["node_uuid"]] = StringName(UUID.generate_new())
 		else:
 			uuid_map[clipboard_data["node_uuid"]] = clipboard_data["node_uuid"]
@@ -4437,6 +4551,106 @@ func _on_nodes_created_batch(node_uuids: Array[StringName], action_name: String 
 	undo.add_do_method(_undo_remove_nodes.bind(action_data))
 	undo.add_undo_method(_do_remove_nodes.bind(action_data))
 	undo.commit_action(false)
+
+# --- Other Actions ---
+
+func _get_locale_snapshot(locale: String) -> Dictionary[String, Dictionary]:
+	var snapshot: Dictionary[String, Dictionary] = {
+		"format_strings": {},
+		"localization": {}
+	}
+	var std_locale: String = TranslationServer.standardize_locale(locale)
+	
+	# Backup Phrase formats and cases
+	for phrase_key in active_conversation.format_strings:
+		if active_conversation.format_strings[phrase_key].has(std_locale):
+			snapshot["format_strings"][phrase_key] = active_conversation.format_strings[phrase_key][std_locale].duplicate(true)
+	
+	# Backup Graph Node texts/choices
+	for node_uuid in active_conversation.localization.keys():
+		if active_conversation.localization[node_uuid]["locales"].has(std_locale):
+			snapshot["localization"][node_uuid] = active_conversation.localization[node_uuid]["locales"][std_locale].duplicate(true)
+	
+	return snapshot
+
+
+func _do_add_locale_action(locale: String, snapshot: Dictionary = {}) -> void:
+	active_conversation.add_locale(locale)
+	
+	if not snapshot.is_empty():
+		var std_locale: String = TranslationServer.standardize_locale(locale)
+		for phrase_key in snapshot["format_strings"]:
+			if active_conversation.format_strings.has(phrase_key):
+				active_conversation.format_strings[phrase_key][std_locale] = snapshot["format_strings"][phrase_key].duplicate(true)
+	
+		for node_uuid in snapshot["localization"]:
+			if active_conversation.localization.has(node_uuid):
+				active_conversation.localization[node_uuid]["locales"][std_locale] = snapshot["localization"][node_uuid].duplicate(true)
+	
+	var parts: PackedStringArray = locale.split("_", false)
+	if 1 < parts.size():
+		languages_tree.create_region(parts[0], parts[1])
+	else:
+		languages_tree.create_language(locale)
+	add_locale(locale)
+
+
+func _do_remove_locale_action(locale: String) -> void:
+	active_conversation.remove_locale(locale)
+	
+	remove_locale(locale)
+	languages_tree.erase_language(locale)
+
+
+func _do_set_default_locale(new_locale: String, created_new: bool) -> void:
+	if created_new:
+		_do_add_locale_action(new_locale)
+	
+	ProjectSettings.set_setting(
+		NFPluginGameHandler.get_setting_path("discourse_base_language"),
+		new_locale)
+	ProjectSettings.save()
+	
+	base_language = new_locale
+	languages_tree.set_default_language(new_locale)
+
+
+func _undo_set_default_locale(old_locale: String, new_locale: String, created_new: bool) -> void:
+	ProjectSettings.set_setting(
+		NFPluginGameHandler.get_setting_path("discourse_base_language"),
+		old_locale)
+	ProjectSettings.save()
+	
+	base_language = old_locale
+	languages_tree.set_default_language(old_locale)
+	
+	if created_new:
+		_do_remove_locale_action(new_locale)
+
+
+func _on_dialog_id_edit_toggled(is_editing: bool) -> void:
+	if is_editing:
+		return
+	
+	var old_value: String = dialog_id_ln_edt.get_meta(&"old_value")
+	var new_value: String = dialog_id_ln_edt.text
+	
+	if new_value == old_value:
+		return
+	
+	undo.create_action("Set Dialog ID")
+	undo.add_do_method(_do_update_dialog_id.bind(new_value))
+	undo.add_undo_method(_do_update_dialog_id.bind(old_value))
+	undo.commit_action()
+
+
+func _do_update_dialog_id(new_id: String) -> void:
+	dialog_id_ln_edt.text = new_id
+	dialog_id_ln_edt.set_meta(&"old_value", new_id)
+
+
+func _do_update_locale_group(group: String) -> void:
+	active_conversation.locale_group = group
 
 
 func _notification(what: int) -> void:
