@@ -77,6 +77,8 @@ func _on_line_text_submitted(_text: String, line: LineEdit):
 
 
 func _on_id_edit_toggled(is_toggled: bool, line: LineEdit) -> void:
+	if is_toggled:
+		return
 	line.text = line.text.strip_edges()
 	
 	if current_id == line.text:

@@ -51,8 +51,8 @@ signal variable_node_path_changed(uuid: StringName, from: String, to: String)
 
 # -- Connections ---
 signal node_connected(from_node: StringName, from_port: int, to_node: StringName, to_port: int)
-signal node_disconnected(from_node: StringName, from_port: int, to_node: StringName, to_port: int)
-signal node_connection_switched(origin_ports: Dictionary, new_node: StringName, new_port: int)
+signal node_disconnected(from_node: StringName, from_port: int, to_node: StringName, to_port: int, from_state: Dictionary, to_state: Dictionary)
+signal node_connection_switched(origin_ports: Dictionary, new_node: StringName, new_port: int, original_from_state: Dictionary, original_to_state: Dictionary, new_from_state: Dictionary, new_to_state: Dictionary)
 # --- Actions ---
 signal use_code_editor_requested(target_control: TextEdit)
 signal browse_character_requested(target_control: LineEdit)
@@ -317,7 +317,10 @@ var signalers: Array[DiscourseGraphNode] = []
 
 # Data for the mouse release.
 var release_data: Dictionary = {}
-var movement_data: Dictionary[String, Dictionary] = {}# {
+var movement_data: Dictionary[String, Dictionary] = {
+	"nodes": DictUtils.create_typed(TYPE_STRING_NAME, TYPE_DICTIONARY),
+	"frames": DictUtils.create_typed(TYPE_STRING_NAME, TYPE_DICTIONARY)}
+# {
 	#"reference": null,
 	#"nodes": [],
 	#"starting_position": Vector2.ZERO,
@@ -1421,18 +1424,26 @@ func _on_connection_request(from_node: StringName, from_port: int, to_node: Stri
 			rollback_disconnection()
 		else:
 			var change: Dictionary = _pending_connection_change.duplicate()
+			var original_from_node: DiscourseGraphNode = get_discourse_node(change["from_node"])
+			var original_from_state: Dictionary = original_from_node._get_node_data()
+			var original_to_node: DiscourseGraphNode = get_discourse_node(change["to_node"])
+			var original_to_state: Dictionary = original_to_node._get_node_data()
 			commit_disconnection()
 			# Was the connection successful?
 			var con_success: bool = connect_discourse_nodes(from.get_node_uuid(), from_port, to.get_node_uuid(), to_port)
 			
 			if con_success:
-				node_connection_switched.emit(change, to.get_node_uuid(), to_port)
+				var new_from_state: Dictionary = from._get_node_data()
+				var new_to_state: Dictionary = to._get_node_data()
+				node_connection_switched.emit(change, to.get_node_uuid(), to_port, original_from_state, original_to_state, new_from_state, new_to_state)
 			else:
 				node_disconnected.emit(
 					change["from_node"],
 					change["from_port"],
 					change["to_node"],
-					change["to_port"])
+					change["to_port"],
+					original_from_state,
+					original_to_state)
 			
 			dialog_changed.emit()
 		return
@@ -1448,7 +1459,20 @@ func _on_connection_request(from_node: StringName, from_port: int, to_node: Stri
 
 func _on_connection_drag_ended() -> void:
 	if _pending_connection_change.has("type"):
+		var change: Dictionary = _pending_connection_change.duplicate()
+		var origin_node: DiscourseGraphNode = get_discourse_node(change["from_node"])
+		var from_state: Dictionary = origin_node._get_node_data()
+		var to_node: DiscourseGraphNode = get_discourse_node(change["to_node"])
+		var to_state: Dictionary = to_node._get_node_data()
 		commit_disconnection()
+		if change["type"] == ConnectionChangeType.SWITCH_DISCONNECT:
+			node_disconnected.emit(
+				change["from_node"],
+				change["from_port"],
+				change["to_node"],
+				change["to_port"],
+				from_state,
+				to_state)
 		dialog_changed.emit()
 
 

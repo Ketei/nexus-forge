@@ -135,11 +135,11 @@ func _ready() -> void:
 
 
 func _input(event: InputEvent) -> void:
-	if not is_visible_in_tree():
+	if not is_visible_in_tree() or undo == null:
 		return
 	
 	if event is InputEventKey:
-		if event.echo or not event.pressed:
+		if event.echo or not event.pressed or not event.ctrl_pressed:
 			return
 		
 		var current_focus: Control = get_viewport().gui_get_focus_owner()
@@ -151,14 +151,40 @@ func _input(event: InputEvent) -> void:
 			elif current_focus is TextEdit:
 				return
 		
-		if event.ctrl_pressed:
-			if event.keycode == KEY_Z:
-				get_viewport().set_input_as_handled()
-			elif event.keycode == KEY_Y:
-				get_viewport().set_input_as_handled()
+		if event.keycode == KEY_Z:
+			if event.shift_pressed:
+				if undo.has_redo():
+					var action_name: String = undo.get_action_name(undo.get_current_action() + 1)
+					undo.redo()
+					NFPluginGameHandler._log_msg(
+						"",
+						"Redo: " + action_name,
+						NFPluginGameHandler._LogLevel.EDITOR)
+					_on_conversation_changed()
+			else:
+				if undo.has_undo():
+					var action_name: String = undo.get_current_action_name()
+					undo.undo()
+					NFPluginGameHandler._log_msg(
+						"",
+						"Undo: " + action_name,
+						NFPluginGameHandler._LogLevel.EDITOR)
+					_on_conversation_changed()
+			get_viewport().set_input_as_handled()
+		elif event.keycode == KEY_Y and not event.shift_pressed:
+			if undo.has_redo():
+				var action_name: String = undo.get_action_name(undo.get_current_action() + 1)
+				undo.redo()
+				NFPluginGameHandler._log_msg(
+					"",
+					"Redo: " + action_name,
+					NFPluginGameHandler._LogLevel.EDITOR)
+				_on_conversation_changed()
+			get_viewport().set_input_as_handled()
 
 
 func ready_plugin(base_locale: String = "") -> void:
+	set_process_input(true)
 	text_editor = TEXT_CODE_EDITOR.instantiate()
 	add_child(text_editor)
 	text_editor.ready_plugin()
@@ -470,20 +496,6 @@ func ready_plugin(base_locale: String = "") -> void:
 	open_btn.pressed.connect(_on_open_conversation_pressed)
 	save_btn.pressed.connect(_on_save_conversation_pressed)
 	
-	discourse_graph_edit.dialog_changed.connect(_on_conversation_changed)
-	discourse_graph_edit.localization_enabled.connect(_on_localize_node)
-	discourse_graph_edit.nodes_removed.connect(_on_nodes_removed)
-	discourse_graph_edit.node_created.connect(_on_discourse_node_created)
-	discourse_graph_edit.node_duplication_requested.connect(_on_graph_edit_node_duplication_requested)
-	discourse_graph_edit.paste_nodes_requested.connect(_on_graph_edit_paste_requested)
-	discourse_graph_edit.use_code_editor_requested.connect(_on_open_code_editor_graph_request)
-	discourse_graph_edit.browse_character_requested.connect(_on_open_character_browser_request)
-	
-	discourse_graph_edit.discourse_node_selected.connect(_on_discourse_node_selected)
-	discourse_graph_edit.scroll_offset_changed.connect(_on_graph_edit_offset_changed)
-	discourse_graph_edit.nodes_moved.connect(_on_nodes_moved)
-	discourse_graph_edit.nodes_created.connect(_on_nodes_created_batch, CONNECT_DEFERRED)
-	
 	argument_opt_btn.item_selected.connect(_on_argument_button_item_selected)
 	
 	node_search_ln_edt.text_changed.connect(_on_discourse_node_search_text_changed)
@@ -515,6 +527,7 @@ func ready_plugin(base_locale: String = "") -> void:
 	
 	default_case_edt.text_changed.connect(_on_phrase_text_field_changed.bind(default_case_edt))
 	default_case_edt.resized.connect(_update_choice_textbox_size.bind(default_case_edt))
+	default_case_edt.focus_exited.connect(_on_phrase_case_result_focus_exited.bind(default_case_edt))
 	
 	hide_issues_btn.pressed.connect(_on_hide_issues_pressed)
 	issues_tree.issue_activated.connect(_on_issue_activated)
@@ -538,6 +551,24 @@ func ready_plugin(base_locale: String = "") -> void:
 	
 	conversation_tree.conversation_selected.connect(_on_conversation_selected)
 	conversation_tree.conversation_close_pressed.connect(_on_conversation_close_pressed)
+	
+	discourse_graph_edit.dialog_changed.connect(_on_conversation_changed)
+	discourse_graph_edit.localization_enabled.connect(_on_localize_node)
+	discourse_graph_edit.nodes_removed.connect(_on_nodes_removed)
+	discourse_graph_edit.node_created.connect(_on_discourse_node_created)
+	discourse_graph_edit.node_duplication_requested.connect(_on_graph_edit_node_duplication_requested)
+	discourse_graph_edit.paste_nodes_requested.connect(_on_graph_edit_paste_requested)
+	discourse_graph_edit.use_code_editor_requested.connect(_on_open_code_editor_graph_request)
+	discourse_graph_edit.browse_character_requested.connect(_on_open_character_browser_request)
+	
+	discourse_graph_edit.discourse_node_selected.connect(_on_discourse_node_selected)
+	discourse_graph_edit.scroll_offset_changed.connect(_on_graph_edit_offset_changed)
+	discourse_graph_edit.nodes_moved.connect(_on_nodes_moved)
+	discourse_graph_edit.nodes_created.connect(_on_nodes_created_batch, CONNECT_DEFERRED)
+	
+	discourse_graph_edit.node_connected.connect(_on_node_connected)
+	discourse_graph_edit.node_disconnected.connect(_on_node_disconnected)
+	discourse_graph_edit.node_connection_switched.connect(_on_node_connection_switched)
 	
 	discourse_graph_edit.node_resized.connect(_on_node_resized)
 	discourse_graph_edit.comment_node_text_changed.connect(_on_comment_node_text_changed)
@@ -3016,6 +3047,9 @@ func create_new_phrase_case(case: String = "", case_text: String = "") -> void:
 	case_line.text_changed.connect(_on_case_line_text_changed)
 	case_editor.text_changed.connect(_on_phrase_text_field_changed.bind(case_editor))
 	case_editor.resized.connect(_update_choice_textbox_size.bind(case_editor))
+	
+	case_line.editing_toggled.connect(_on_phrase_case_editing_toggled.bind(case_line))
+	case_editor.focus_exited.connect(_on_phrase_case_result_focus_exited.bind(case_editor))
 
 
 func erase_case(index: int) -> void:
@@ -3128,6 +3162,9 @@ func create_new_phrase_entry(key: String, format: String, unsaved: bool = true) 
 	text_menu.id_pressed.connect(_on_phrase_menu_id_pressed.bind(text_field))
 	text_field.text_changed.connect(_on_phrase_text_field_changed.bind(text_field), CONNECT_DEFERRED)
 	text_field.resized.connect(_update_choice_textbox_size.bind(text_field))
+	
+	text_field.focus_exited.connect(_on_phrase_text_editing_focus_lost.bind(text_field))
+	key_line.editing_toggled.connect(_on_phrase_key_editing_toggled.bind(key_line))
 	
 	key_line.text_changed.connect(_on_key_line_text_changed)
 	erase_button.pressed.connect(_on_erase_key_button_pressed.bind(container))
@@ -3801,7 +3838,7 @@ func _on_phrase_text_editing_focus_lost(field: TextEdit) -> void:
 	
 	undo.create_action("Edit Phrase Text")
 	undo.add_do_method(_set_phrase_state_action.bind(phrase_id, locale_code, new_state))
-	undo.add_do_method(_set_phrase_state_action.bind(phrase_id, locale_code, old_state))
+	undo.add_undo_method(_set_phrase_state_action.bind(phrase_id, locale_code, old_state))
 	undo.commit_action(false)
 
 
@@ -4082,7 +4119,7 @@ func _on_discourse_folder_renamed(folder_id: int, old_name: String, new_name: St
 func _on_discourse_item_moved(from_path: String, from_index: int, to_path: String, to_index: int) -> void:
 	undo.create_action("Move Discourse Item")
 	undo.add_do_method(discourse_nodes_tree.move_item.bind(from_path, to_path, to_index))
-	undo.add_do_method(discourse_nodes_tree.move_item.bind(to_path, from_path, from_index))
+	undo.add_undo_method(discourse_nodes_tree.move_item.bind(to_path, from_path, from_index))
 	undo.commit_action(false)
 	
 	_on_conversation_changed()
@@ -4090,8 +4127,8 @@ func _on_discourse_item_moved(from_path: String, from_index: int, to_path: Strin
 
 func _on_discourse_directory_removed(path: String, index: int, id: int, contents: Array[Dictionary]) -> void:
 	undo.create_action("Remove Folder")
-	undo.add_do_method(discourse_nodes_tree.restore_folder.bind(path, id, index, contents))
-	undo.add_undo_method(discourse_nodes_tree.remove_folder.bind(path))
+	undo.add_do_method(discourse_nodes_tree.remove_folder.bind(path))
+	undo.add_undo_method(discourse_nodes_tree.restore_folder.bind(path, id, index, contents))
 	undo.commit_action(false)
 	_on_conversation_changed()
 
@@ -4115,7 +4152,7 @@ func _on_comment_node_text_changed(node_uuid: StringName, old_comment: String, n
 func _on_comparation_node_operator_changed(node_uuid: StringName, old_operator: int, new_operator: int) -> void:
 	undo.create_action("Set Comparator Node Operator")
 	undo.add_do_method(discourse_graph_edit.set_comparation_node_operator.bind(node_uuid, new_operator))
-	undo.add_undo_method(discourse_graph_edit.set_comparation_node_operator.bind(node_uuid, new_operator))
+	undo.add_undo_method(discourse_graph_edit.set_comparation_node_operator.bind(node_uuid, old_operator))
 	undo.commit_action(false)
 
 
@@ -4184,8 +4221,8 @@ func _on_match_node_cases_resized(node_uuid: StringName, old_snapshot: Dictionar
 
 func _on_match_node_field_updated(node_uuid: StringName, field_id: int, from: Variant, to: Variant) -> void:
 	undo.create_action("Set Match Node Case")
-	undo.add_do_method(discourse_graph_edit.set_match_node_field.bind(node_uuid, field_id, from))
-	undo.add_undo_method(discourse_graph_edit.set_match_node_field.bind(node_uuid, field_id, to))
+	undo.add_do_method(discourse_graph_edit.set_match_node_field.bind(node_uuid, field_id, to))
+	undo.add_undo_method(discourse_graph_edit.set_match_node_field.bind(node_uuid, field_id, from))
 	undo.commit_action(false)
 
 
@@ -4212,8 +4249,8 @@ func _on_call_node_method_changed(node_uuid: StringName, from_state: Dictionary,
 
 func _on_call_return_method_changed(node_uuid: StringName, old_state: Dictionary, new_state: Dictionary) -> void:
 	undo.create_action("Set Call (Return) Node Method")
-	undo.add_do_method(discourse_graph_edit.set_call_return_node_state(node_uuid, new_state))
-	undo.add_undo_method(discourse_graph_edit.set_call_return_node_state(node_uuid, old_state))
+	undo.add_do_method(discourse_graph_edit.set_call_return_node_state.bind(node_uuid, new_state))
+	undo.add_undo_method(discourse_graph_edit.set_call_return_node_state.bind(node_uuid, old_state))
 	undo.commit_action(false)
 
 
@@ -4254,8 +4291,8 @@ func _on_signal_node_signal_changed(node_uuid: StringName, old_state: Dictionary
 
 func _on_guard_node_fallback_changed(node_uuid: StringName, from: Variant, to: Variant) -> void:
 	undo.create_action("Set Shield Node Fallback")
-	undo.add_do_method(discourse_graph_edit.bind.set_shield_node_fallback.bind(node_uuid, to))
-	undo.add_undo_method(discourse_graph_edit.bind.set_shield_node_fallback.bind(node_uuid, from))
+	undo.add_do_method(discourse_graph_edit.set_shield_node_fallback.bind(node_uuid, to))
+	undo.add_undo_method(discourse_graph_edit.set_shield_node_fallback.bind(node_uuid, from))
 	undo.commit_action(false)
 
 
@@ -4268,8 +4305,8 @@ func _on_value_node_value_changed(node_uuid: StringName, from: Variant, to: Vari
 
 func _on_value_node_type_changed(node_uuid: StringName, old_state: Dictionary, new_state: Dictionary) -> void:
 	undo.create_action("Set Value Node Type")
-	undo.add_do_method(discourse_graph_edit.set_value_node_state.bind(node_uuid, old_state))
-	undo.add_undo_method(discourse_graph_edit.set_value_node_state.bind(node_uuid, new_state))
+	undo.add_do_method(discourse_graph_edit.set_value_node_state.bind(node_uuid, new_state))
+	undo.add_undo_method(discourse_graph_edit.set_value_node_state.bind(node_uuid, old_state))
 	undo.commit_action(false)
 
 
@@ -4498,14 +4535,41 @@ func _on_node_connected(from_node: StringName, from_port: int, to_node: StringNa
 	undo.commit_action(false)
 
 
-func _on_node_disconnected(from_node: StringName, from_port: int, to_node: StringName, to_port: int) -> void:
+func _on_node_disconnected(from_node: StringName, from_port: int, to_node: StringName, to_port: int, from_state: Dictionary, to_state: Dictionary) -> void:
 	undo.create_action("Disconnect Nodes")
 	undo.add_do_method(discourse_graph_edit.disconnect_discourse_nodes.bind(from_node, from_port, to_node, to_port))
-	undo.add_undo_method(discourse_graph_edit.connect_discourse_nodes.bind(from_node, from_port, to_node, to_port))
+	undo.add_undo_method(_undo_node_disconnect.bind(from_node, from_port, to_node, to_port, from_state, to_state))
 	undo.commit_action(false)
 
 
-func _on_node_connection_switched(origin_ports: Dictionary, new_node: StringName, new_port: int) -> void:
+func _undo_node_disconnect(from_node: StringName, from_port: int, to_node: String, to_port: int, from_state: Dictionary, to_state: Dictionary) -> void:
+	var f_node: DiscourseGraphNode = discourse_graph_edit.get_discourse_node(from_node)
+	var t_node: DiscourseGraphNode = discourse_graph_edit.get_discourse_node(to_node)
+	var resume_updates_from: bool = false
+	var resume_updates_to: bool = false
+	
+	if f_node.node_type == DiscourseGraphNode.DialogueNodeType.DIALOG_MERGE or\
+			f_node.node_type == DiscourseGraphNode.DialogueNodeType.METADATA:
+		resume_updates_from = true
+		f_node._connection_updates_disabled = true
+	
+	if t_node.node_type == DiscourseGraphNode.DialogueNodeType.DIALOG_MERGE or\
+			t_node.node_type == DiscourseGraphNode.DialogueNodeType.METADATA:
+		resume_updates_to = true
+		t_node._connection_updates_disabled = true
+	
+	f_node._set_node_data(from_state)
+	t_node._set_node_data(to_state)
+	
+	discourse_graph_edit.connect_discourse_nodes(from_node, from_port, to_node, to_port)
+	
+	if resume_updates_to:
+		t_node._connection_updates_disabled = false
+	if resume_updates_from:
+		f_node._connection_updates_disabled = false
+
+
+func _on_node_connection_switched(origin_ports: Dictionary, new_node: StringName, new_port: int, old_from_data: Dictionary, old_to_data: Dictionary, new_from_data: Dictionary, new_to_data: Dictionary) -> void:
 	# origin_ports holds the OLD connection that was broken.
 	var old_from_node: StringName = origin_ports["from_node"]
 	var old_from_port: int = origin_ports["from_port"]
@@ -4515,15 +4579,75 @@ func _on_node_connection_switched(origin_ports: Dictionary, new_node: StringName
 	var new_from_node: StringName = old_from_node
 	var new_from_port: int = old_from_port
 	
+	var original_connection: Dictionary = {
+		"from_node": old_from_node,
+		"from_port": old_from_port,
+		"to_node": old_to_node,
+		"to_port": old_to_port,
+		"from_state": old_from_data,
+		"to_state": old_to_data}
+	
+	var new_connection: Dictionary = {
+		"from_node": new_from_node,
+		"from_port": new_from_port,
+		"to_node": new_node,
+		"to_port": new_port,
+		"from_state": new_from_data,
+		"to_state": new_to_data}
+	
 	undo.create_action("Switch Node Connection")
-	
-	undo.add_do_method(discourse_graph_edit.disconnect_discourse_nodes.bind(old_from_node, old_from_port, old_to_node, old_to_port))
-	undo.add_do_method(discourse_graph_edit.connect_discourse_nodes.bind(new_from_node, new_from_port, new_node, new_port))
-	
-	undo.add_undo_method(discourse_graph_edit.disconnect_discourse_nodes.bind(new_from_node, new_from_port, new_node, new_port))
-	undo.add_undo_method(discourse_graph_edit.connect_discourse_nodes.bind(old_from_node, old_from_port, old_to_node, old_to_port))
-	
+	undo.add_do_method(_do_switch_discourse_connections.bind(original_connection, new_connection))
+	undo.add_undo_method(_do_switch_discourse_connections.bind(new_connection, original_connection))
 	undo.commit_action(false)
+
+
+func _do_switch_discourse_connections(from: Dictionary, to: Dictionary) -> void:
+	var old_from_node: DiscourseGraphNode = discourse_graph_edit.get_discourse_node(from["from_node"])
+	var old_to_node: DiscourseGraphNode = discourse_graph_edit.get_discourse_node(from["to_node"])
+	var new_from_node: DiscourseGraphNode = discourse_graph_edit.get_discourse_node(to["from_node"])
+	var new_to_node: DiscourseGraphNode = discourse_graph_edit.get_discourse_node(to["to_node"])
+	
+	var resume_old_from: bool = false
+	var resume_old_to: bool = false
+	var resume_new_from: bool = false
+	var resume_new_to: bool = false
+	
+	if old_from_node.node_type == DiscourseGraphNode.DialogueNodeType.DIALOG_MERGE or\
+			old_from_node.node_type == DiscourseGraphNode.DialogueNodeType.METADATA:
+		resume_old_from = true
+		old_from_node._connection_updates_disabled = true
+	
+	if old_to_node.node_type == DiscourseGraphNode.DialogueNodeType.DIALOG_MERGE or\
+			old_to_node.node_type == DiscourseGraphNode.DialogueNodeType.METADATA:
+		resume_old_to = true
+		old_to_node._connection_updates_disabled = true
+	
+	if new_from_node.node_type == DiscourseGraphNode.DialogueNodeType.DIALOG_MERGE or\
+			new_from_node.node_type == DiscourseGraphNode.DialogueNodeType.METADATA:
+		resume_new_from = true
+		new_from_node._connection_updates_disabled = true
+	
+	if new_to_node.node_type == DiscourseGraphNode.DialogueNodeType.DIALOG_MERGE or\
+			new_to_node.node_type == DiscourseGraphNode.DialogueNodeType.METADATA:
+		resume_new_to = true
+		new_to_node._connection_updates_disabled = true
+	
+	discourse_graph_edit.disconnect_discourse_nodes(from["from_node"], from["from_port"], from["to_node"], from["to_port"])
+	old_from_node._set_node_data(from["from_state"])
+	old_to_node._set_node_data(from["to_state"])
+	
+	new_from_node._set_node_data(to["from_state"])
+	new_to_node._set_node_data(to["to_state"])
+	discourse_graph_edit.connect_discourse_nodes(to["from_node"], to["from_port"], to["to_node"], to["to_port"])
+	
+	if resume_old_from:
+		old_from_node._connection_updates_disabled = false
+	if resume_old_to:
+		old_to_node._connection_updates_disabled = false
+	if resume_new_from:
+		new_from_node._connection_updates_disabled = false
+	if resume_new_to:
+		new_to_node._connection_updates_disabled = false
 
 
 func _on_nodes_created_batch(node_uuids: Array[StringName], action_name: String = "Create Nodes") -> void:

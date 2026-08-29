@@ -22,6 +22,7 @@ func _post_init() -> void:
 	comment_txt.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	comment_txt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	comment_txt.set_meta(&"old_value", "")
+	comment_txt.focus_exited.connect(_on_comment_focus_exited)
 	
 	add_field(
 			&"comment",

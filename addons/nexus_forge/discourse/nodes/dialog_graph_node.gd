@@ -95,7 +95,9 @@ func _post_init() -> void:
 	settings_box.add_child(persist_check)
 	
 	character_id_ln_edt.text_changed.connect(_on_text_changed)
+	character_id_ln_edt.editing_toggled.connect(_on_character_id_edit_toggled)
 	character_dialog.text_changed.connect(_on_text_changed)
+	character_dialog.focus_exited.connect(_on_dialog_text_focus_exited)
 	persist_check.toggled.connect(_on_persist_toggled)
 	
 	id_box.add_child(char_id_label)
