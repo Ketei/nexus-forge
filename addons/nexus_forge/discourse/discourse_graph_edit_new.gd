@@ -1874,7 +1874,7 @@ func sort_clipboard_custom(item_a: Dictionary, item_b: Dictionary) -> bool:
 
 func spawn_node_at_center(node_type: DialogNodes, uuid: String = "") -> void:
 	var new_node: DiscourseGraphNode = spawn_node(node_type, uuid)
-	var node_arr: Array[StringName] = []
+	var node_arr: Array[StringName] = [new_node.get_node_uuid()]
 	new_node.position_offset = get_center_offset() - (new_node.size / 2.0)
 	node_created.emit(new_node)
 	nodes_created.emit(node_arr, "Create Node")

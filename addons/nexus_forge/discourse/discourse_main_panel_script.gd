@@ -4356,7 +4356,7 @@ func _on_nodes_removed(action: String, graph_nodes_data: Dictionary[StringName, 
 	undo.commit_action()
 
 
-func _do_remove_nodes(action_data: Dictionary[StringName, Dictionary]) -> void:
+func _do_remove_nodes(action_data: Dictionary) -> void:
 	for uuid in action_data["graph_nodes_data"]:
 		discourse_graph_edit.remove_node(uuid)
 		discourse_nodes_tree.remove_dialog_node(uuid)
@@ -4368,7 +4368,7 @@ func _undo_remove_nodes(action_data: Dictionary) -> void:
 	active_conversation.node_data.merge(action_data["resource_node_data"], false)
 	active_conversation.localization.merge(action_data["resource_localization"], false)
 	
-	var graph_nodes_data: Dictionary[StringName, Dictionary] = action_data["graph_nodes_data"]
+	var graph_nodes_data: Dictionary = action_data["graph_nodes_data"]
 	var tree_hierarchy: Dictionary = action_data["tree_hierarchy"]
 	var connection_deaf_nodes: Array[DiscourseGraphNode] = []
 	var created_nodes: Dictionary[StringName, DiscourseGraphNode] = {}
