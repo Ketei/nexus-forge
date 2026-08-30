@@ -5,12 +5,12 @@ extends Resource
 ## The locale code this dialog is in.
 @export var locale: String = "en"
 
-# The dictionary containing the UUIDs of the conversations, nodes and localized
+# The dictionary containing the IDs of the conversations, nodes and localized
 # data.
 @export_storage var localization: Dictionary[StringName, Dictionary] = {
 	#&"resourceUID": {
-		#&"NodeUUID": {"text": "Hello world"},
-		#&"UUID2": {"choices": ["a", "b", "c"]}}
+		#&"NodeID": {"text": "Hello world"},
+		#&"NodeID": {"choices": ["a", "b", "c"]}}
 	#&"resourceUID2": {
 		#...
 	#}

@@ -916,17 +916,17 @@ func get_conversation_file(current_locale: String = "") -> EditorDiscourseDialog
 		convo.register_node(node, frame_uuid)
 		
 		if node.node_type == DialogNodes.DIALOG:
-			convo.set_text_entry(
+			convo.set_dialog_text(
 					node_uuid,
 					node.get_dialog_text(),
 					current_locale)
 		elif node.node_type == DialogNodes.CHOICES:
-			convo.set_choices_entry(
+			convo.set_choices_array(
 					node_uuid,
 					node.get_options(),
 					current_locale)
 		elif node.node_type == DialogNodes.LOCALIZED_TEXT:
-			convo.set_text_entry(
+			convo.set_dialog_text(
 					node_uuid,
 					node.get_text(),
 					current_locale)
@@ -950,24 +950,23 @@ func update_conversation_file(on_file: EditorDiscourseDialog, current_locale: St
 	for node_uuid in graph_nodes.keys():
 		var node: DiscourseGraphNode = graph_nodes[node_uuid]
 		var node_data: Dictionary = node._get_node_data()
-		node_data["metadata"]["localized"] = node.is_node_localized()
 		var frame: GraphFrame = get_element_frame(node.name)
 		var frame_uuid: String = "" if frame == null else frame.get_frame_uuid()
 		
 		on_file.register_node(node, frame_uuid)
 		
 		if node.node_type == DialogNodes.DIALOG:
-			on_file.set_text_entry(
+			on_file.set_dialog_text(
 					node_uuid,
 					node.get_dialog_text(),
 					current_locale if node.is_node_localized() else "")
 		elif node.node_type == DialogNodes.CHOICES:
-			on_file.set_choices_entry(
+			on_file.set_choices_array(
 					node_uuid,
 					node.get_options(),
 					current_locale if node.is_node_localized() else "")
 		elif node.node_type == DialogNodes.LOCALIZED_TEXT:
-			on_file.set_text_entry(
+			on_file.set_dialog_text(
 					node_uuid,
 					node.get_text(),
 					current_locale)
@@ -1105,7 +1104,7 @@ func set_localization_data(localization: Dictionary) -> void:
 				var idx: int = 0
 				for choice in localization[node_uuid]:
 					idx += 1
-					node.set_option_text(idx, choice)
+					node.set_choice_text(idx, choice)
 		elif node.node_type == DialogNodes.LOCALIZED_TEXT:
 			if typeof(localization[node_uuid]) == TYPE_STRING:
 				node.set_text(localization[node_uuid])
@@ -1117,17 +1116,17 @@ func update_localization_data(dialog: EditorDiscourseDialog, for_locale: String)
 			continue
 		
 		if node.node_type == DialogNodes.DIALOG:
-			dialog.set_text_entry(
+			dialog.set_dialog_text(
 					node.get_node_uuid(),
 					node.get_dialog_text(),
 					for_locale)
 		elif node.node_type == DialogNodes.CHOICES:
-			dialog.set_choices_entry(
+			dialog.set_choices_array(
 					node.get_node_uuid(),
 					node.get_options(),
 					for_locale)
 		elif node.node_type == DialogNodes.LOCALIZED_TEXT:
-			dialog.set_text_entry(
+			dialog.set_dialog_text(
 					node.get_node_uuid(),
 					node.get_text(),
 					for_locale)
@@ -1872,17 +1871,19 @@ func sort_clipboard_custom(item_a: Dictionary, item_b: Dictionary) -> bool:
 	return item_a["state"]["data"]["metadata"]["position"] < item_b["state"]["data"]["metadata"]["position"]
 
 
-func spawn_node_at_center(node_type: DialogNodes, uuid: String = "") -> void:
+func spawn_node_at_center(node_type: DialogNodes, uuid: String = "") -> StringName:
 	var new_node: DiscourseGraphNode = spawn_node(node_type, uuid)
 	var node_arr: Array[StringName] = [new_node.get_node_uuid()]
 	new_node.position_offset = get_center_offset() - (new_node.size / 2.0)
 	node_created.emit(new_node)
 	nodes_created.emit(node_arr, "Create Node")
+	return new_node.get_node_uuid()
 
 
-func spawn_frame_at_center(uuid: String = "") -> void:
+func spawn_frame_at_center(uuid: String = "") -> StringName:
 	var new_frame: GraphFrame = spawn_frame(uuid)
 	new_frame.position_offset = get_center_offset() - ( new_frame.size / 2.0 )
+	return new_frame.get_frame_uuid()
 
 
 func refresh_anchors() -> void:
@@ -1939,11 +1940,11 @@ func set_dialog_node_persist_enabled(node_uuid: StringName, persist: bool) -> vo
 		node.set_persist_dialog(persist)
 
 
-func set_choice_node_text(node_uuid: StringName, choice_idx: int, to: String) -> void:
+func set_choice_node_text(node_uuid: StringName, choice_id: int, to: String) -> void:
 	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
 	
 	if node != null and node.node_type == DialogNodes.CHOICES:
-		node.set_choice_text(choice_idx, to)
+		node.set_choice_text(choice_id, to)
 
 
 func set_choices_node_state(node_uuid: StringName, state: Dictionary) -> void:

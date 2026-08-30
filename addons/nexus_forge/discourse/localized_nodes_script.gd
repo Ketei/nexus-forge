@@ -2,9 +2,9 @@
 extends Tree
 
 
-signal node_delocalized(node: DiscourseGraphNode)
 signal dialog_selected(node_uuid: StringName)
 signal dialog_item_edited(node_uuid: StringName, desired_id: String)
+signal node_delocalization_requested(node: DiscourseGraphNode)
 
 enum ButtonID {
 	DELETE,
@@ -54,11 +54,7 @@ func ready_plugin() -> void:
 
 func _on_button_clicked(item: TreeItem, _column: int, id: int, _mouse_button_index: int) -> void:
 	if id == ButtonID.DELETE:
-		node_delocalized.emit(item.get_metadata(0)["node"])
-		if item == active_dialog:
-			active_dialog = null
-			dialog_selected.emit(&"")
-		item.free()
+		node_delocalization_requested.emit(item.get_metadata(0)["node"])
 	elif id == ButtonID.RENAME:
 		item.select(0)
 		edit_selected(true)
@@ -145,7 +141,7 @@ func remove_node(uuid: StringName) -> void:
 
 func get_active_node_uuid() -> StringName:
 	if active_dialog == null:
-		return ""
+		return &""
 	return active_dialog.get_metadata(0)["node"].get_node_uuid()
 
 
@@ -192,3 +188,7 @@ func set_node_name(node_uuid: StringName, new_name: String) -> void:
 	
 	target.set_text(0, new_name)
 	target.get_metadata(0)["name"] = new_name
+
+
+func is_node_localized(node_uuid: StringName) -> bool:
+	return all_nodes.has(node_uuid)

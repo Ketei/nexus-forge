@@ -296,14 +296,15 @@ func get_text_entry(node_uuid: StringName, locale: String, fallback: String = "[
 	if not localization.has(node_uuid) or localization[node_uuid]["type"] != LocalizationType.TEXT:
 		return fallback
 	
-	var node_id: StringName = node_data[node_uuid]["name"]
+	var has_id: bool = DictUtils.has_nested_path(node_data, [node_uuid, "name"])
+	var node_id: StringName = DictUtils.get_nested_value(node_data, [node_uuid, "name"], &"", true)
 	var localized: bool = DictUtils.get_nested_value(
 			node_data,
 			[node_uuid, "metadata", "localized"],
-			false,
+			true,
 			true)
 	
-	if _dialog_overrides != null and _dialog_overrides.has_override(node_id, locale):
+	if _dialog_overrides != null and has_id and _dialog_overrides.has_override(node_id, locale):
 		return _dialog_overrides.get_override(node_id, locale)
 	elif not localized:
 		return DictUtils.get_nested_value(localization, [node_uuid, "unlocalized"], fallback, true)
@@ -326,15 +327,20 @@ func get_choices_entry(node_uuid: StringName, locale: String = "", fallback: Arr
 		return_array.assign(fallback)
 		return fallback
 	
-	var localization_data: Dictionary = localization[node_uuid]
-	var node_id: StringName = node_data[node_uuid]["name"]
+	#var localization_data: Dictionary = localization[node_uuid]
+	var has_id: bool = DictUtils.has_nested_path(node_data, [node_uuid, "name"])
+	var node_id: StringName = DictUtils.get_nested_value(
+			node_data,
+			[node_uuid, "name"],
+			&"",
+			true) if has_id else &""
 	var localized: bool = DictUtils.get_nested_value(
 			node_data,
 			[node_uuid, "metadata", "localized"],
-			false,
+			true,
 			true)
 	
-	if _dialog_overrides != null and _dialog_overrides.has_override(node_id, locale):
+	if _dialog_overrides != null and has_id and _dialog_overrides.has_override(node_id, locale):
 		var override = _dialog_overrides.get_override(node_id, locale)
 		var override_type: int = typeof(override)
 		if override_type == TYPE_PACKED_STRING_ARRAY:
@@ -342,13 +348,17 @@ func get_choices_entry(node_uuid: StringName, locale: String = "", fallback: Arr
 	elif localized:
 		return_array.assign(
 				DictUtils.get_nested_value(
-						localization_data,
-						["locales", locale],
+						localization,
+						[node_uuid, "locales", locale],
 						[],
 						true))
 	else:
-		if localization_data.has("unlocalized") and typeof(localization_data["unlocalized"]) == TYPE_ARRAY:
-			return_array.assign(localization_data["unlocalized"])
+		return_array.assign(
+				DictUtils.get_nested_value(
+						localization,
+						[node_uuid, "unlocalized"],
+						[],
+						true))
 	
 	return return_array
 
@@ -393,7 +403,7 @@ func get_node_data(node_uuid: StringName, locale: String = "") -> Dictionary:
 ## be the same on all localizations.[br]
 ## Note: Switching from a localized to an unlocalized node will clear the localization
 ## data completely and viceversa.
-func set_text_entry(uuid: StringName, text: String, locale: String = "") -> void:
+func set_dialog_text(uuid: StringName, text: String, locale: String = "") -> void:
 	locale = TranslationServer.standardize_locale(locale)
 	var localization_level: Dictionary = localization.get_or_add(uuid, {"type": LocalizationType.TEXT, "unlocalized": "", "locales": {}})
 	
@@ -403,24 +413,29 @@ func set_text_entry(uuid: StringName, text: String, locale: String = "") -> void
 	if locale.is_empty():
 		localization_level["unlocalized"] = text
 		localization_level["locales"].clear()
-		return
 	else:
 		localization_level["unlocalized"] = ""
-	
-	
-	localization_level["locales"][locale] = text
+		localization_level["locales"][locale] = text
 
 
 ## Sets ALL the choices for an option node. Passing an empty string on [param locale]
 ## will set the options as unlocalized.[br]
 ## Note: Switching from a localized to an unlocalized node will clear the localization
 ## data completely and viceversa.
-func set_choices_entry(uuid: StringName, options: Array, locale: String = "") -> void:
+func set_choices_array(uuid: StringName, options: Array, locale: String = "") -> void:
 	# --- Data validation ---
 	locale = TranslationServer.standardize_locale(locale)
+	var valid_options: Array[String]
 	for option in options:
-		if typeof(option) != TYPE_STRING:
-			return
+		var opt_type: int = typeof(option)
+		if opt_type == TYPE_STRING:
+			valid_options.append(option)
+		else:
+			NFPluginGameHandler._log_msg(
+				"discourse",
+				"Incorrect type for choice assing. Provided type: " + type_string(opt_type),
+				NFPluginGameHandler._LogLevel.ERROR)
+			valid_options.append("[INVALID FORMAT]")
 	# -----------------------
 	
 	var localization_level: Dictionary = localization.get_or_add(uuid, {"type": LocalizationType.CHOICES, "unlocalized": [], "locales": {}})
@@ -429,40 +444,51 @@ func set_choices_entry(uuid: StringName, options: Array, locale: String = "") ->
 		return
 	
 	if locale.is_empty():
-		localization_level["unlocalized"] = options.duplicate(true)
+		localization_level["unlocalized"] = valid_options
 		localization_level["locales"].clear()
-		return
 	else:
 		localization_level["unlocalized"].clear()
-	
-	DictUtils.set_nested_value(
-			localization_level,
-			["locales", locale],
-			options.duplicate(true))
+		DictUtils.set_nested_value(
+				localization_level,
+				["locales", locale],
+				valid_options)
 
 
 ## Sets a single choice for an option node. Specifically the choice with index
 ## [param option_index]. To set an unlocalized choice pass [code]common[/code]
 ## as the language argument. No region is needed when doing an unlocalized
 ## option.
-func update_choice_entry(uuid: StringName, option_index: int, text: String, locale: String = "") -> void:
+func set_choice_text(uuid: StringName, option_index: int, text: String, locale: String = "") -> void:
 	if not localization.has(uuid) or localization[uuid]["type"] != LocalizationType.CHOICES:
 		return
 	
 	var base_level: Dictionary = localization[uuid]
 	
 	if locale.is_empty():
-		if base_level["unlocalized"].size() < option_index + 1:
+		if not base_level.has("unlocalized") or typeof(base_level["unlocalized"]) != TYPE_ARRAY:
 			return
+		
+		var arr_size: int = base_level["unlocalized"].size()
+		if arr_size == 0:
+			return
+		var max_index: int = arr_size - 1
+		if not RangeUtils.is_between(option_index, -arr_size, max_index):
+			return
+		
 		base_level["unlocalized"][option_index] = text
 	else:
 		locale = TranslationServer.standardize_locale(locale)
-		
-		var locale_array = DictUtils.get_nested_value(
-				base_level,
-				["locales", locale])
-		if typeof(locale_array) != TYPE_ARRAY or locale_array.size() + 1 < option_index:
+		if not DictUtils.has_nested_path(base_level, ["locales", locale]) or typeof(base_level["locales"][locale]) != TYPE_ARRAY:
 			return
+		var locale_array: Array = base_level["locales"][locale]
+		
+		var arr_size: int = locale_array.size()
+		if arr_size == 0:
+			return
+		var max_index: int = arr_size - 1
+		if not RangeUtils.is_between(option_index, -arr_size, max_index):
+			return
+		
 		locale_array[option_index] = text
 
 

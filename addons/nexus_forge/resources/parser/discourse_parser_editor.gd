@@ -761,6 +761,11 @@ func edit_dialog(locale_code: String, dialog_id: StringName, node_id: StringName
 				NFPluginGameHandler._LogLevel.ERROR)
 		return
 	
+	if data_type == TYPE_NIL:
+		if _dialog_edits.has(dialog_id):
+			_dialog_edits[dialog_id].set_override(node_id, locale_code, null)
+		return
+	
 	var target: DiscourseDialog.NFDialogEntryOverride = null
 	
 	if _dialog_edits.has(dialog_id):
@@ -793,6 +798,11 @@ func edit_choices(locale_code: String, dialog_id: StringName, node_id: StringNam
 			"discourse",
 			"Can't assing choices based on a non-array.",
 			NFPluginGameHandler._LogLevel.ERROR)
+		return
+	
+	if type == TYPE_NIL:
+		if _dialog_edits.has(dialog_id):
+			_dialog_edits[dialog_id].set_override(node_id, locale_code, null)
 		return
 	
 	var target: DiscourseDialog.NFDialogEntryOverride = null

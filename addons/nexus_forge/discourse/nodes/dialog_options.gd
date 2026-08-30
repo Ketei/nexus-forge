@@ -290,14 +290,6 @@ func reset_height() -> void:
 	size.y = 0
 
 
-func set_option_text(option: int, text: String) -> void:
-	var field_id: StringName = &"choice_" + StringName(str(option))
-	
-	var option_line: TextEdit = get_field(field_id).get_child(0)
-	if option_line != null:
-		option_line.text = text
-
-
 func get_options() -> Array[String]:
 	var options: Array[String] = []
 	

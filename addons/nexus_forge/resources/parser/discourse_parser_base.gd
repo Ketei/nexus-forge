@@ -940,7 +940,7 @@ func override_dialog_locale(dialog_id: String, locale_code: String, path: String
 ## [param data] needs to be either a String or [code]null[/code]. If you pass
 ## [code]null[/code] to [param data] the edited dialog will be removed and the
 ## original used instead.
-func edit_dialog(locale_code: String, dialog_id: StringName, node_id: StringName, new_dialog) -> void:
+func set_dialog_text(locale_code: String, dialog_id: StringName, node_id: StringName, new_dialog) -> void:
 	var type: int = typeof(new_dialog)
 	
 	locale_code = TranslationServer.standardize_locale(locale_code)
@@ -956,6 +956,11 @@ func edit_dialog(locale_code: String, dialog_id: StringName, node_id: StringName
 				"discourse",
 				"Data type error on dialog edit.",
 				NFPluginGameHandler._LogLevel.ERROR)
+		return
+	
+	if type == TYPE_NIL:
+		if _dialog_edits.has(dialog_id):
+			_dialog_edits[dialog_id].set_override(node_id, locale_code, null)
 		return
 	
 	var target: DiscourseDialog.NFDialogEntryOverride = null
@@ -979,7 +984,7 @@ func edit_dialog(locale_code: String, dialog_id: StringName, node_id: StringName
 ## [param data] needs to be either an Array, PackedStringArray or [code]null[/code].
 ## If you pass [code]null[/code] to [param data] the edited dialog will be 
 ## removed and the original used instead.
-func edit_choices(locale_code: String, dialog_id: StringName, node_id: StringName, new_choices) -> void:
+func set_choices_array(locale_code: String, dialog_id: StringName, node_id: StringName, new_choices) -> void:
 	locale_code = TranslationServer.standardize_locale(locale_code)
 	var type: int = typeof(new_choices)
 	
@@ -996,6 +1001,11 @@ func edit_choices(locale_code: String, dialog_id: StringName, node_id: StringNam
 				NFPluginGameHandler._LogLevel.ERROR)
 		return
 	
+	if type == TYPE_NIL:
+		if _dialog_edits.has(dialog_id):
+			_dialog_edits[dialog_id].set_override(node_id, locale_code, null)
+		return
+	
 	var target: DiscourseDialog.NFDialogEntryOverride = null
 	
 	if _dialog_edits.has(dialog_id):
@@ -1007,14 +1017,15 @@ func edit_choices(locale_code: String, dialog_id: StringName, node_id: StringNam
 	var responses: PackedStringArray = []
 	
 	for item in new_choices:
-		if typeof(item) == TYPE_STRING:
+		var opt_type: int = typeof(item)
+		if opt_type == TYPE_STRING:
 			responses.append(item)
 		else:
 			NFPluginGameHandler._log_msg(
 					"discourse",
-					"An item in the provided array isn't a string.",
+					"Incorrect type for choice assing. Provided type: " + type_string(opt_type),
 					NFPluginGameHandler._LogLevel.WARNING)
-			responses.append("[INVALID ENTRY]")
+			responses.append("[INVALID FORMAT]")
 	
 	target.set_override(node_id, locale_code, responses)
 	
@@ -1026,7 +1037,7 @@ func edit_choices(locale_code: String, dialog_id: StringName, node_id: StringNam
 
 
 ## Adds an override for a specific choice on a specific locale.
-func edit_choice(locale_code: String, dialog_id: StringName, node_id: StringName, choice_index: int, data: String) -> void:
+func set_choice_text(locale_code: String, dialog_id: StringName, node_id: StringName, choice_index: int, data: String) -> void:
 	locale_code = TranslationServer.standardize_locale(locale_code)
 	var missing_path: bool = not _dialog_edits.has(dialog_id) or not _dialog_edits[dialog_id].has_override(node_id, locale_code)
 	var not_packed_array: bool = false if missing_path else typeof(_dialog_edits[dialog_id].get_override(node_id, locale_code)) != TYPE_PACKED_STRING_ARRAY
