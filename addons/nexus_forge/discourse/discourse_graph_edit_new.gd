@@ -55,7 +55,7 @@ signal node_disconnected(from_node: StringName, from_port: int, to_node: StringN
 signal node_connection_switched(origin_ports: Dictionary, new_node: StringName, new_port: int, original_from_state: Dictionary, original_to_state: Dictionary, new_from_state: Dictionary, new_to_state: Dictionary)
 # --- Actions ---
 signal use_code_editor_requested(target_control: TextEdit)
-signal browse_character_requested(target_control: LineEdit)
+signal browse_character_requested(node_uuid: StringName, target_control: LineEdit)
 
 # --- Mutations (UndoRedo) ---
 
@@ -1263,12 +1263,12 @@ func disconnect_all_node_connections(for_uuid: StringName) -> void:
 #region UI Actions / Listeners
 
 
-func _on_use_code_editor_requested(target_node: TextEdit) -> void:
-	use_code_editor_requested.emit(target_node)
+func _on_use_code_editor_requested(node_uuid: StringName, target_node: TextEdit) -> void:
+	use_code_editor_requested.emit(node_uuid, target_node)
 
 
-func _on_use_character_selector_pressed(target: LineEdit) -> void:
-	browse_character_requested.emit(target)
+func _on_use_character_selector_pressed(node_uuid: StringName, target: LineEdit) -> void:
+	browse_character_requested.emit(node_uuid, target)
 
 
 func _on_delete_nodes_request(nodes: Array[StringName]) -> void:

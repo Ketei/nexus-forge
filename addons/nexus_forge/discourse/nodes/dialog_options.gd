@@ -2,7 +2,7 @@
 extends DiscourseGraphNode
 
 
-signal use_code_editor_pressed(target: TextEdit)
+signal use_code_editor_pressed(uuid: StringName, target: TextEdit)
 signal choice_text_changed(node_uuid: StringName, choice_idx: int, old_text: String, new_text: String)
 signal choices_resized(node_uuid: StringName, old_snapshot: Dictionary, new_snapshot: Dictionary)
 
@@ -127,8 +127,8 @@ func _update_choice_textbox_size(box: TextEdit) -> void:
 	for i in range(box.get_line_count()):
 		total_visual_lines += 1 + box.get_line_wrap_count(i)
 	if total_visual_lines <= MAX_LINES:
-		reset_height.call_deferred()
 		box.custom_minimum_size.y = 0
+		reset_height.call_deferred()
 		return
 	box.scroll_fit_content_height = false
 	
@@ -252,10 +252,11 @@ func get_choice_node() -> HBoxContainer:
 	new_choice.syntax_highlighter = NFEditorDialogSyntaxHighlighter.new()
 	new_choice.placeholder_text = "Choice Text"
 	new_choice.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
-	new_choice.custom_minimum_size.y = 32.0
 	new_choice.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	new_choice.syntax_highlighter = highlighter
 	new_choice.resized.connect(reset_height, CONNECT_DEFERRED)
+	new_choice.set_meta(&"old_value", "")
+	new_choice.scroll_fit_content_height = true
 	new_choice.text_changed.connect(_on_option_text_changed.bind(new_choice))
 	new_choice.focus_exited.connect(_on_choice_text_focus_exited.bind(new_choice))
 	
@@ -263,9 +264,13 @@ func get_choice_node() -> HBoxContainer:
 	expand_button.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	expand_button.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	expand_button.flat = true
-	expand_button.pressed.connect(use_code_editor_pressed.emit.bind(new_choice))
+	expand_button.pressed.connect(_on_use_code_editor_on.bind(new_choice))
 	
 	return container
+
+
+func _on_use_code_editor_on(item: TextEdit) -> void:
+	use_code_editor_pressed.emit(get_node_uuid(), item)
 
 
 func remove_choice(idx: int) -> void:
@@ -310,7 +315,7 @@ func set_choice_text(choice_id: int, text: String) -> void:
 
 
 func _on_choice_text_focus_exited(choice_line: TextEdit) -> void:
-	var index: int = choice_line.get_parent().get_index()
+	var index: int = choice_line.get_parent().get_parent().get_index()
 	var old_value: String = choice_line.get_meta(&"old_value")
 	var new_value: String = choice_line.text
 	

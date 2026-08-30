@@ -25,6 +25,7 @@ enum DiscourseFileMenuID {
 	RECENT_OPEN_FILES,
 	}
 # ------------------
+
 const TEXT_CODE_EDITOR = preload("res://addons/nexus_forge/discourse/discourse_text_editor.tscn")
 const BracketHandler = preload("res://addons/nexus_forge/discourse/textedit_bracket_handler.gd")
 const RECENT_FILE_AMOUNT_MAX: int = 10
@@ -72,7 +73,6 @@ var current_locale: String = ""
 var text_editor: Window = null
 var _recently_opened_files: Array[String] = []
 var _recently_opened_popup: PopupMenu = null
-
 # ----------------------------
 
 # --- Discourse Graph ---
@@ -204,6 +204,7 @@ func ready_plugin(base_locale: String = "") -> void:
 	default_case_edt.set_script(BracketHandler)
 	default_case_edt.enter_shifts_focus = true
 	default_case_edt.syntax_highlighter = def_highlighter
+	default_case_edt.set_meta(&"old_value", "")
 	
 	base_locale = TranslationServer.standardize_locale(base_locale)
 	node_popup = node_menu_btn.get_popup()
@@ -1530,13 +1531,13 @@ func _on_switch_window_pressed() -> void:
 			var target_choices: int = active_node.choice_count()
 			var options: Array[String] = []
 			options.assign(DictUtils.get_nested_value(
-					active_conversation.localization_data,
+					active_conversation.localization,
 					[node_uuid, "locales", localizer_locale],
 					[],
 					true))
 			var base_lang: Array[String] = []
 			base_lang.assign(DictUtils.get_nested_value(
-					active_conversation.localization_data,
+					active_conversation.localization,
 					[node_uuid, "locales", base_language],
 					[],
 					true))
@@ -1866,7 +1867,7 @@ func create_choice_node(base_text: String, localized_text: String) -> void:
 	new_choice.text = localized_text
 	new_choice.placeholder_text = "Translation"
 	new_choice.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
-	new_choice.custom_minimum_size.y = 33.0
+	new_choice.scroll_fit_content_height = true
 	new_choice.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	new_choice.syntax_highlighter = highlighter
 	new_choice.size_flags_stretch_ratio = 2.0
@@ -2601,12 +2602,13 @@ func _on_erase_case_button_pressed(case_line: Control) -> void:
 	_on_case_line_text_changed()
 
 
-func _on_open_discourse_text_editor_pressed(target: TextEdit) -> void:
+func _on_open_phrase_case_text_editor_pressed(target: TextEdit) -> void:
 	if text_editor.visible:
 		return
 	
 	text_editor.clear()
 	
+	var initial_text: String = target.text
 	var method_strings: Array[String] = []
 	var var_strings: Array[String] = []
 	var plain_formats: Array[String] = []
@@ -2631,18 +2633,19 @@ func _on_open_discourse_text_editor_pressed(target: TextEdit) -> void:
 	
 	var result = await text_editor.action_finished
 	
-	if result[0]:
-		var clean_text: String = result[1].replace("\n", " ").strip_edges()
-		if target.text != clean_text:
-			target.text = clean_text
-			_on_conversation_changed()
+	if not result[0] or initial_text == result[1]:
+		return
+	
+	target.text = result[1]
+	_on_phrase_case_result_focus_exited(target)
+	_on_conversation_changed()
 
 
-func _on_open_character_browser_request(target: LineEdit) -> void:
-	character_browser_requested.emit(target)
+func _on_open_character_browser_request(node_uuid: StringName, target: LineEdit) -> void:
+	character_browser_requested.emit(node_uuid, target)
 
 
-func _on_open_code_editor_graph_request(target: TextEdit) -> void:
+func _on_phrase_field_code_editor_requested(target: TextEdit) -> void:
 	if text_editor.visible:
 		return
 	
@@ -2663,14 +2666,65 @@ func _on_open_code_editor_graph_request(target: TextEdit) -> void:
 	
 	var result = await text_editor.action_finished
 	
-	if result[0]:
-		var notify_change: bool = false
-		if initial_text != result[1]:
-			notify_change = true
-			target.text = result[1]
-		
-		if notify_change:
-			_on_conversation_changed()
+	if not result[0] or result[1] == initial_text:
+		return
+	
+	var phrase_id: String = target.get_parent().get_meta(&"phrase_key")
+	var locale_code: String = phrases_lang_menu.get_selected_metadata()
+	var old_state: Dictionary = {}
+	
+	if DictUtils.has_nested_path(active_conversation.format_strings, [phrase_id, locale_code]):
+		old_state = active_conversation.format_strings[phrase_id][locale_code].duplicate(true)
+	
+	set_phrase_format_string(phrase_id, locale_code, result[1])
+	target.set_meta(&"old_value", result[1])
+	
+	var new_state: Dictionary = active_conversation.format_strings[phrase_id][locale_code].duplicate(true)
+	
+	undo.create_action("Set Phrase Text (%s)" % locale_code)
+	undo.add_do_method(_set_phrase_state_action.bind(phrase_id, locale_code, new_state))
+	undo.add_undo_method(_set_phrase_state_action.bind(phrase_id, locale_code, old_state))
+	undo.commit_action(false)
+	
+	
+	target.text = result[1]
+	
+	_on_conversation_changed()
+
+
+func _on_open_code_editor_graph_request(node_uuid: StringName, target: TextEdit) -> void:
+	if text_editor.visible:
+		return
+	
+	text_editor.clear()
+	
+	var initial_text: String = target.text
+	var api_methods: Dictionary = get_api_user_methods()
+	var method_strings: Array[String] = []
+	method_strings.assign(api_methods.keys())
+	var string_keys: Array[String] = []
+	string_keys.assign(active_conversation.format_strings.keys())
+	
+	text_editor.phrase_keys = string_keys
+	text_editor.methods = method_strings
+	text_editor.set_code_text(target.text)
+	text_editor.popup_centered()
+	text_editor.grab_code_focus()
+	
+	var result = await text_editor.action_finished
+	
+	if not result[0] or result[1] == initial_text:
+		return
+	
+	var node: DiscourseGraphNode = discourse_graph_edit.get_discourse_node(node_uuid)
+	target.text = result[1]
+	
+	if node.node_type == DiscourseGraphNode.DialogueNodeType.DIALOG:
+		_on_dialog_node_text_changed(node_uuid, initial_text, result[1])
+	elif node.node_type == DiscourseGraphNode.DialogueNodeType.CHOICES:
+		_on_choice_node_text_changed(node_uuid, target.get_parent().get_index(), initial_text, result[1])
+	
+	_on_conversation_changed()
 
 
 func _on_editor_variable_called(path: String) -> void:
@@ -2948,7 +3002,7 @@ func _on_phrase_menu_id_pressed(id: int, field: TextEdit) -> void:
 	const MENU_MAX: int = LineEdit.MenuItems.MENU_MAX
 	
 	if id == MENU_MAX + 1:
-		_on_open_code_editor_graph_request(field)
+		_on_phrase_field_code_editor_requested(field)
 
 
 func create_new_phrase_case(case: String = "", case_text: String = "") -> void:
@@ -2968,6 +3022,7 @@ func create_new_phrase_case(case: String = "", case_text: String = "") -> void:
 	case_editor.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	case_editor.size_flags_stretch_ratio = 2.0
 	case_editor.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
+	case_editor.scroll_fit_content_height = true
 	case_editor.set_meta(&"old_value", case_text)
 	
 	erase_case_btn.tooltip_text = "Erase case"
@@ -2983,7 +3038,7 @@ func create_new_phrase_case(case: String = "", case_text: String = "") -> void:
 	expand_case.flat = true
 	expand_case.icon = get_theme_icon("DistractionFree", "EditorIcons")
 	expand_case.custom_minimum_size = Vector2(33.0, 33.0)
-	expand_case.pressed.connect(_on_open_discourse_text_editor_pressed.bind(case_line))
+	expand_case.pressed.connect(_on_open_phrase_case_text_editor_pressed.bind(case_editor))
 	
 	case_line.placeholder_text = "Case"
 	case_line.custom_minimum_size.y = 33.0
@@ -3080,6 +3135,7 @@ func create_new_phrase_entry(key: String, format: String, unsaved: bool = true) 
 	key_line.custom_minimum_size = Vector2(115.0, 33.0)
 	key_line.placeholder_text = "Key"
 	key_line.text = String(key)
+	key_line.set_meta(&"old_value", key_line.text)
 	
 	erase_button.icon = get_theme_icon("Remove", "EditorIcons")
 	erase_button.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -3093,6 +3149,7 @@ func create_new_phrase_entry(key: String, format: String, unsaved: bool = true) 
 	text_field.placeholder_text = "Phrase Text"
 	text_field.enter_shifts_focus = true
 	text_field.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
+	text_field.set_meta(&"old_value", format)
 	
 	edit_button.custom_minimum_size = Vector2(33.0, 33.0)
 	edit_button.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -3547,7 +3604,7 @@ func _on_auto_update_toggled(toggled_on: bool) -> void:
 
 
 func _on_default_case_focus_pressed() -> void:
-	_on_open_discourse_text_editor_pressed(default_case_edt)
+	_on_open_phrase_case_text_editor_pressed(default_case_edt)
 
 
 func _is_preview_scene_valid(print_errors: bool = true) -> bool:
@@ -3810,7 +3867,7 @@ func _on_phrase_text_editing_focus_lost(field: TextEdit) -> void:
 	
 	var new_state: Dictionary = active_conversation.format_strings[phrase_id][locale_code].duplicate(true)
 	
-	undo.create_action("Edit Phrase Text")
+	undo.create_action("Set Phrase Text (%s)" % locale_code)
 	undo.add_do_method(_set_phrase_state_action.bind(phrase_id, locale_code, new_state))
 	undo.add_undo_method(_set_phrase_state_action.bind(phrase_id, locale_code, old_state))
 	undo.commit_action(false)
@@ -3919,7 +3976,8 @@ func _do_update_phrase_case_key(phrase_key: String, locale: String, format: Stri
 	var is_correct_format: bool = current_format == format
 	
 	if is_viewing_cases and is_correct_phrase and is_correct_locale and is_correct_format:
-		for container in %PhraseCasesEntries.get_children():
+		for container_idx in range(1, %PhraseCasesEntries.get_child_count()):
+			var container: Control = %PhraseCasesEntries.get_child(container_idx)
 			var case_line: LineEdit = container.get_child(1)
 			if case_line.get_meta(&"old_value", "") == from_case:
 				case_line.text = to_case
@@ -3972,7 +4030,8 @@ func _set_phrase_case_result_action(phrase_key: String, locale: String, format: 
 			default_case_edt.text = text_value
 			default_case_edt.set_meta(&"old_value", text_value)
 		else:
-			for container in %PhraseCasesEntries.get_children():
+			for child_idx in range(1, %PhraseCasesEntries.get_child_count()):
+				var container: Control = %PhraseCasesEntries.get_child(child_idx)
 				var case_line: LineEdit = container.get_child(1)
 				if case_line.get_meta(&"old_value", "") == case_key:
 					var case_editor: TextEdit = container.get_child(2)
@@ -4165,12 +4224,12 @@ func _on_choices_node_resized(node_uuid: StringName, old_snapshot: Dictionary, n
 				get_localizer_choices())
 	
 	undo.create_action("Set Choice Node Choice Count")
-	undo.add_do_method(_set_choices_resize_action.bind(node_uuid, new_snapshot, loc_snapshot))
-	undo.add_undo_method(_set_choices_resize_action.bind(node_uuid, old_snapshot, loc_snapshot))
+	undo.add_do_method(_set_choices_resize_action.bind(node_uuid, new_snapshot, loc_snapshot, current_locale))
+	undo.add_undo_method(_set_choices_resize_action.bind(node_uuid, old_snapshot, loc_snapshot, current_locale))
 	undo.commit_action(false)
 
 
-func _set_choices_resize_action(node_uuid: StringName, node_snapshot: Dictionary, loc_snapshot: Dictionary) -> void:
+func _set_choices_resize_action(node_uuid: StringName, node_snapshot: Dictionary, loc_snapshot: Dictionary, locale: String) -> void:
 	discourse_graph_edit.set_choices_node_state(node_uuid, node_snapshot)
 	
 	if not loc_snapshot.is_empty():
@@ -4186,21 +4245,22 @@ func _set_choices_resize_action(node_uuid: StringName, node_snapshot: Dictionary
 	var choice_text: Array[String] = []
 	var choice_arr_size: int = 0
 	
-	if node.is_node_localized():
-		if loc_snapshot.has("locales") and loc_snapshot["locales"].has(current_locale):
-			choice_text.assign(loc_snapshot["locales"][current_locale])
-	else:
-		if loc_snapshot.has("unlocalized"):
-			choice_text.assign(loc_snapshot["unlocalized"])
-	
-	choice_arr_size = choice_text.size()
-	
-	if choice_arr_size < node_options:
-		choice_text.resize(node_options)
-		choice_arr_size = node_options
-	
-	for idx in range(mini(choice_arr_size, node_options)):
-		node.set_choice_text(idx + 1, choice_text[idx])
+	if locale != current_locale:
+		if node.is_node_localized():
+			if loc_snapshot.has("locales") and loc_snapshot["locales"].has(current_locale):
+				choice_text.assign(loc_snapshot["locales"][current_locale])
+		else:
+			if loc_snapshot.has("unlocalized"):
+				choice_text.assign(loc_snapshot["unlocalized"])
+		
+		choice_arr_size = choice_text.size()
+		
+		if choice_arr_size < node_options:
+			choice_text.resize(node_options)
+			choice_arr_size = node_options
+		
+		for idx in range(mini(choice_arr_size, node_options)):
+			node.set_choice_text(idx + 1, choice_text[idx])
 	
 	if localization_nodes_tree.get_active_node_uuid() == node_uuid:
 		_set_localization_window_choices(node)
@@ -4951,7 +5011,7 @@ func _do_delocalize_node(node_uuid: StringName) -> void:
 		DiscourseGraphNode.DialogueNodeType.CHOICES:
 			var options: Array[String] = []
 			options.assign(DictUtils.get_nested_value(
-					active_conversation.localization_data,
+					active_conversation.localization,
 					[node_uuid, "locales", base_language],
 					node.get_options(),
 					true))

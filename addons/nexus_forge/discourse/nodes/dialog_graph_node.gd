@@ -1,8 +1,8 @@
 extends DiscourseGraphNode
 
 
-signal use_code_editor_pressed(target: TextEdit)
-signal select_character_pressed(target: LineEdit)
+signal use_code_editor_pressed(uuid: StringName, target: TextEdit)
+signal select_character_pressed(uuid: StringName, target: LineEdit)
 signal character_id_changed(uuid: StringName, from: String, to: String)
 signal dialog_text_changed(uuid: StringName, from: String, to: String)
 signal dialog_presist_toggled(uuid: StringName, is_toggled: bool)
@@ -272,11 +272,11 @@ func _on_text_changed(_text: String = "") -> void:
 
 func _on_use_code_editor_pressed() -> void:
 	var field: TextEdit = get_field(&"dialog_text")
-	use_code_editor_pressed.emit(field)
+	use_code_editor_pressed.emit(get_node_uuid(), field)
 
 
 func _on_select_character_btn_pressed() -> void:
-	select_character_pressed.emit(character_id_ln_edt)
+	select_character_pressed.emit(get_node_uuid(), character_id_ln_edt)
 
 
 func set_persist_dialog(is_enabled: bool) -> void:

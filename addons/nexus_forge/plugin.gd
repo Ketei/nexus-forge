@@ -263,21 +263,23 @@ func _set_window_layout(configuration: ConfigFile) -> void:
 		editor_view.quests.open_files(open_quests)
 
 
-func _on_character_browser_requested(target: LineEdit) -> void:
+func _on_character_browser_requested(node_uuid: StringName, target: LineEdit) -> void:
 	var browser: Window = load("res://addons/nexus_forge/discourse/character_browser.tscn").instantiate()
+	var initial_text: String = target.text
 	EditorInterface.popup_dialog_centered(browser)
 	browser.populate_characters(character_map)
 	browser.grab_search_focus()
 	
 	var result: Array = await browser.window_finished
-	
-	if result[0]: #success
-		if target.text != result[1]:
-			editor_view.discourse._on_conversation_changed()
-		target.text = result[1]
-	target.grab_focus()
-	target.caret_column = target.text.length()
 	browser.queue_free()
+	
+	if not result[0] or result[1] == initial_text:
+		return
+	
+	target.text = result[1]
+	target.set_meta(&"old_value", result[1])
+	editor_view.discourse._on_dialog_node_character_id_changed(node_uuid, initial_text, result[1])
+	editor_view.discourse._on_conversation_changed()
 
 
 func _sort_custom_settings(a: String, b: String) -> bool:

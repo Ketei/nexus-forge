@@ -47,8 +47,7 @@ func _post_init() -> void:
 	data_menu.flat = false
 	data_menu.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	data_menu.custom_minimum_size = Vector2(32.0, 32.0)
-	
-	text_value.custom_minimum_size.y = 33.0
+	text_value.scroll_fit_content_height = true
 	text_value.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
 	text_value.set_meta(&"old_value", "")
 	
