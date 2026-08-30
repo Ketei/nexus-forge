@@ -3505,9 +3505,13 @@ func _on_text_changed_sync(text: String) -> void:
 
 func _on_choice_text_changed(text: String, control: Control) -> void:
 	_on_conversation_changed()
+	update_dialog_preview_choice(control.get_index(), text)
+
+
+func update_dialog_preview_choice(index: int, text: String) -> void:
 	if dialog_previewer == null or not dialog_scene_previewer.visible or not auto_update_previewer.button_pressed:
 		return
-	dialog_previewer.update_choice(control.get_index(), text)
+	dialog_previewer.update_choice(index, text)
 
 
 func _on_play_live_preview_pressed() -> void:
@@ -4106,6 +4110,10 @@ func _on_dialog_node_character_id_changed(node_uuid: StringName, from: String, t
 
 
 func _on_dialog_node_text_changed(node_uuid: StringName, from: String, to: String) -> void:
+	if localization_nodes_tree.get_active_node_uuid() == node_uuid and languages_tree.get_active_locale() == current_locale:
+		translation_txt_box.text = to
+		translation_txt_box.set_meta(&"old_value", to)
+		dialog_previewer.set_dialog(to)
 	undo.create_action("Set Dialog Node Dialog")
 	undo.add_do_method(_do_update_dialog_node_text.bind(node_uuid, to, current_locale))
 	undo.add_undo_method(_do_update_dialog_node_text.bind(node_uuid, from, current_locale))
@@ -4119,6 +4127,7 @@ func _do_update_dialog_node_text(node_uuid: StringName, to: String, locale: Stri
 	if localization_nodes_tree.get_active_node_uuid() == node_uuid and languages_tree.get_active_locale() == locale:
 		translation_txt_box.text = to
 		translation_txt_box.set_meta(&"old_value", to)
+		dialog_previewer.set_dialog(to)
 
 
 func _on_dialog_node_presist_toggled(node_uuid: StringName, is_toggled: bool) -> void:
@@ -4129,6 +4138,8 @@ func _on_dialog_node_presist_toggled(node_uuid: StringName, is_toggled: bool) ->
 
 
 func _on_choice_node_text_changed(node_uuid: StringName, choice_idx: int, old_text: String, new_text: String) -> void:
+	if localization_nodes_tree.get_active_node_uuid() == node_uuid and languages_tree.get_active_locale() == current_locale:
+		update_dialog_preview_choice(choice_idx - 1, new_text)
 	undo.create_action("Set Choice Node Text")
 	undo.add_do_method(_do_update_choice_node_text.bind(node_uuid, choice_idx, new_text, current_locale))
 	undo.add_undo_method(_do_update_choice_node_text.bind(node_uuid, choice_idx, old_text, current_locale))
@@ -4141,14 +4152,18 @@ func _do_update_choice_node_text(node_uuid: StringName, choice_id: int, to: Stri
 		discourse_graph_edit.set_choice_node_text(node_uuid, choice_id, to)
 	if localization_nodes_tree.get_active_node_uuid() == node_uuid and languages_tree.get_active_locale() == locale:
 		set_localized_choice_line_text(choice_id - 1, to)
+		update_dialog_preview_choice(choice_id - 1, to)
 
 
 func _on_choices_node_resized(node_uuid: StringName, old_snapshot: Dictionary, new_snapshot: Dictionary) -> void:
-	# 1. Capture the single localization snapshot (if it exists)
 	var loc_snapshot: Dictionary = {}
 	if active_conversation.localization.has(node_uuid):
 		loc_snapshot = active_conversation.localization[node_uuid].duplicate(true)
-		
+	if localization_nodes_tree.get_active_node_uuid() == node_uuid:
+		_set_localization_window_choices(discourse_graph_edit.get_discourse_node(node_uuid))
+		dialog_previewer.set_choices(
+				get_localizer_choices())
+	
 	undo.create_action("Set Choice Node Choice Count")
 	undo.add_do_method(_set_choices_resize_action.bind(node_uuid, new_snapshot, loc_snapshot))
 	undo.add_undo_method(_set_choices_resize_action.bind(node_uuid, old_snapshot, loc_snapshot))
@@ -4189,6 +4204,8 @@ func _set_choices_resize_action(node_uuid: StringName, node_snapshot: Dictionary
 	
 	if localization_nodes_tree.get_active_node_uuid() == node_uuid:
 		_set_localization_window_choices(node)
+		dialog_previewer.set_choices(
+				get_localizer_choices())
 	
 	_on_conversation_changed()
 
@@ -4892,7 +4909,7 @@ func _do_localize_node(node_uuid: StringName, snapshot: Dictionary = {}) -> void
 	
 	if node == null:
 		return
-	# 1. Update Resource Data
+	
 	if snapshot.is_empty():
 		# First time localizing
 		match node.node_type:
@@ -4906,10 +4923,9 @@ func _do_localize_node(node_uuid: StringName, snapshot: Dictionary = {}) -> void
 		# Restoring from an Undo
 		active_conversation.localization[node_uuid] = snapshot.duplicate(true)
 	
-	# 2. Update Graph Node State
+	
 	node.set_node_localized(true)
 	
-	# 3. Update Localization Tree UI
 	match node.node_type:
 		DiscourseGraphNode.DialogueNodeType.DIALOG:
 			localization_nodes_tree.create_dialog_node(node.get_node_id(), node)
@@ -4924,7 +4940,6 @@ func _do_delocalize_node(node_uuid: StringName) -> void:
 	if node == null:
 		return
 	
-	# 1. Wipe multi-locale data in Resource
 	match node.node_type:
 		DiscourseGraphNode.DialogueNodeType.DIALOG:
 			var base_text: String = DictUtils.get_nested_value(
@@ -4949,10 +4964,8 @@ func _do_delocalize_node(node_uuid: StringName) -> void:
 				true)
 			active_conversation.set_dialog_text(node_uuid, base_text)
 	
-	# 2. Update Graph Node State
 	node.set_node_localized(false)
 	
-	# 3. Clean up Localization Tree UI
 	localization_nodes_tree.remove_node(node_uuid)
 	
 	if localization_node_selected == node:
