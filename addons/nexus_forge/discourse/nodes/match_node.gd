@@ -45,8 +45,8 @@ func _post_init() -> void:
 	value_menu.custom_minimum_size = Vector2(32.0, 32.0)
 	value_menu.expand_icon = false
 	value_menu.focus_mode = Control.FOCUS_ALL
-	
 	value_menu.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	
 	default_label.text = "Default"
 	default_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	default_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -160,6 +160,11 @@ func get_match_case_data() -> Array[Dictionary]:
 
 
 func set_match_mode(mode: int) -> void:
+	if mode != TYPE_INT and mode != TYPE_FLOAT and mode != TYPE_STRING:
+		return
+	if current_mode == mode:
+		return
+	
 	var menu_button: MenuButton = get_field(&"values").get_child(0)
 	current_mode = mode
 	match current_mode:
@@ -169,9 +174,12 @@ func set_match_mode(mode: int) -> void:
 			menu_button.icon = get_theme_icon("int", "EditorIcons")
 			for match_option in range(3, get_child_count()):
 				var val: SpinBox = get_child(match_option).get_child(1).get_child(0)
+				var new_value: float = floorf(val.value)
+				val.step = 1.0
 				get_child(match_option).get_child(1).get_child(1).visible = false
 				val.visible = true
-				val.step = 1.0
+				val.set_value_no_signal(new_value)
+				val.set_meta(&"old_value", new_value)
 		TYPE_FLOAT:
 			set_slot_type_left(1, SlotConnectionType.VAR_FLOAT)
 			set_slot_color_left(1, COLORS["float"])
@@ -198,7 +206,7 @@ func _on_value_type_changed(id: int) -> void:
 	
 	var old_state: Dictionary = {
 		"metadata": {
-			"match_data_type": current_mode,
+			"match_data_type": old_mode,
 			"cases": get_match_case_data()}}
 	set_match_mode(id)
 	var new_state: Dictionary = {
@@ -225,7 +233,7 @@ func _on_match_value_changed(value: float, node: SpinBox) -> void:
 	node.set_meta(&"old_value", new_value)
 	
 	var node_idx: int = node.get_parent().get_parent().get_index()
-	var match_id: int = node_idx - 3
+	var match_id: int = node_idx - 2
 	
 	match_field_updated.emit(
 			get_node_uuid(),
@@ -271,6 +279,9 @@ func _set_node_data(data: Dictionary) -> void:
 	if metadata.has("position") and typeof(metadata["position"]) == TYPE_VECTOR2:
 		position_offset = metadata["position"]
 	
+	if metadata.has("match_data_type") and typeof(metadata["match_data_type"]) == TYPE_INT:
+		set_match_mode(metadata["match_data_type"])
+	
 	if metadata.has("cases") and typeof(metadata["cases"]) == TYPE_ARRAY:
 		var case_count: int = metadata["cases"].size()
 		get_mapped_field(&"cases", &"case_count").set_value_no_signal(case_count)
@@ -282,13 +293,14 @@ func _set_node_data(data: Dictionary) -> void:
 			var val_type = typeof(val)
 			if current_mode == TYPE_STRING:
 				if val_type == TYPE_STRING:
-					field.get_child(1).text = val
+					var line: LineEdit = field.get_child(1)
+					line.text = val
+					line.set_meta(&"old_value", val)
 			else:
 				if val_type == TYPE_FLOAT or val_type == TYPE_INT:
-					field.get_child(0).value = val
-	
-	if metadata.has("match_data_type") and typeof(metadata["match_data_type"]) == TYPE_INT:
-		set_match_mode(metadata["match_data_type"])
+					var spin: SpinBox = field.get_child(0)
+					spin.set_value_no_signal(val)
+					field.set_meta(&"old_value", spin.value)
 
 
 func _get_issues() -> PackedStringArray:
@@ -365,14 +377,17 @@ func get_new_match_field() -> PanelContainer:
 	value_text.placeholder_text = "String"
 	value_text.visible = current_mode == TYPE_STRING
 	value_text.alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	value_text.set_meta(&"old_value", "")
 	
 	value_number.alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	value_number.allow_greater = true
 	value_number.allow_lesser = true
 	value_number.step = 1.0 if current_mode == TYPE_INT else 0.01
 	value_number.visible = current_mode != TYPE_STRING
+	value_number.set_meta(&"old_value", 0.0)
 	
 	value_text.text_changed.connect(_on_match_text_changed)
+	value_text.editing_toggled.connect(_on_match_text_edit_toggled.bind(value_text))
 	value_number.value_changed.connect(_on_match_value_changed.bind(value_number))
 	
 	new_field.add_child(value_number)
@@ -397,8 +412,7 @@ func set_match_value(case_number: int, value: Variant) -> void:
 			if set_type != current_mode:
 				return
 	
-	var case_id: StringName = StringName("case_" + str(case_number))
-	var control: Control = get_field(case_id).get_child(1 if current_mode == TYPE_STRING else 0)
+	var control: Control = get_index_field(case_number + 2).get_child(1 if current_mode == TYPE_STRING else 0)
 	
 	if current_mode == TYPE_STRING:
 		control.text = value

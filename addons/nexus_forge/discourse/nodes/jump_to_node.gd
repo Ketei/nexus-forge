@@ -5,6 +5,8 @@ extends DiscourseGraphNode
 signal go_to_anchor_pressed(node_uuid: StringName)
 signal selected_shortcut_changed(node_uuid: StringName, old_anchor: StringName, new_anchor: StringName)
 
+var shortcuts: OptionButton
+
 
 func _post_init() -> void:
 	set_node_id(&"AnchorPointer")
@@ -18,7 +20,7 @@ func _post_init() -> void:
 	fields.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	fields.custom_minimum_size.y = 32.0
 	
-	var shortcuts: OptionButton = OptionButton.new()
+	shortcuts = OptionButton.new()
 	shortcuts.disabled = true
 	shortcuts.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	shortcuts.custom_minimum_size.y = 32
@@ -30,6 +32,7 @@ func _post_init() -> void:
 	go_to_btn.tooltip_text = "Go to anchor"
 	
 	go_to_btn.pressed.connect(_on_go_to_anchor_pressed)
+	shortcuts.item_selected.connect(_on_anchor_idx_selected)
 	
 	fields.add_child(shortcuts)
 	fields.add_child(go_to_btn)
@@ -40,12 +43,10 @@ func _post_init() -> void:
 			false,
 			SlotConnectionType.DIALOG)
 	
-	map_field(&"fields", &"shortcuts", shortcuts)
 	map_field(&"fields", &"button", go_to_btn)
 
 
 func _ready() -> void:
-	var menu: OptionButton = get_mapped_field(&"fields", &"shortcuts")
 	graph_icon = preload("res://addons/nexus_forge/icons/dialog_exit.svg")
 	set_slot_custom_icon_left(0, flow_icon)
 	set_slot_color_left(0, COLORS["dialog"])
@@ -53,10 +54,8 @@ func _ready() -> void:
 
 
 func _get_node_data() -> Dictionary:
-	var menu: OptionButton = get_mapped_field(&"fields", &"shortcuts")
-	
 	var metadata: Dictionary = {
-		"anchor_target": menu.get_selected_metadata() if 0 <= menu.selected else ""}
+		"anchor_target": shortcuts.get_selected_metadata() if 0 <= shortcuts.selected else &""}
 	return _build_node_data(metadata)
 
 
@@ -76,23 +75,21 @@ func _set_node_data(data: Dictionary) -> void:
 
 
 func _get_issues() -> PackedStringArray:
-	var options: OptionButton = get_mapped_field(&"fields", &"shortcuts")
 	var issues: PackedStringArray = []
 	if is_orphan():
 		issues.append("WARNING: Node is orphan.")
-	if has_any_input(0) and options.selected == -1:
+	if has_any_input(0) and shortcuts.selected == -1:
 		issues.append("WARNING: Node connected but no anchor is selected.")
 	return issues
 
 
 func add_anchor(target_uuid: StringName, target_text: String) -> void:
-	var options: OptionButton = get_mapped_field(&"fields", &"shortcuts")
 	var go_to_btn: Button = get_mapped_field(&"fields", &"button")
-	var id_selected: StringName = options.get_selected_metadata() if -1 < options.selected else &""
+	var id_selected: StringName = shortcuts.get_selected_metadata() if -1 < shortcuts.selected else &""
 	var existing_anchors: Dictionary[StringName, String] = {}
 	
-	for idx in range(options.item_count):
-		existing_anchors[options.get_item_metadata(idx)] = options.get_item_text(idx)
+	for idx in range(shortcuts.item_count):
+		existing_anchors[shortcuts.get_item_metadata(idx)] = shortcuts.get_item_text(idx)
 	
 	existing_anchors[target_uuid] = target_text
 	
@@ -101,83 +98,87 @@ func add_anchor(target_uuid: StringName, target_text: String) -> void:
 	
 	ids.sort_custom(func(a,b): return existing_anchors[a] < existing_anchors[b])
 	
-	options.clear()
+	shortcuts.clear()
 	
 	for id in ids:
-		options.add_item(existing_anchors[id])
-		options.set_item_metadata(-1, id)
+		shortcuts.add_item(existing_anchors[id])
+		shortcuts.set_item_metadata(-1, id)
 	
 	var new_idx: int = ids.find(id_selected)
 	
 	if new_idx == -1:
-		options.select(0)
-		options.set_meta(&"old_value", options.get_item_metadata(0))
+		shortcuts.select(0)
+		shortcuts.set_meta(&"old_value", shortcuts.get_item_metadata(0))
 	else:
-		options.select(new_idx)
-		options.set_meta(&"old_value", options.get_item_metadata(new_idx))
+		shortcuts.select(new_idx)
+		shortcuts.set_meta(&"old_value", shortcuts.get_item_metadata(new_idx))
 	
-	if options.disabled:
-		options.disabled = false
+	if shortcuts.disabled:
+		shortcuts.disabled = false
 	
 	if go_to_btn.disabled:
 		go_to_btn.disabled = false
 
 
 func update_anchor(target_uuid: StringName, new_text: String) -> void:
-	var options: OptionButton = get_mapped_field(&"fields", &"shortcuts")
-	
-	for idx in range(options.item_count):
-		if options.get_item_metadata(idx) != target_uuid:
+	for idx in range(shortcuts.item_count):
+		if shortcuts.get_item_metadata(idx) != target_uuid:
 			continue
-		options.set_item_text(idx, new_text)
+		shortcuts.set_item_text(idx, new_text)
 		return
 
 
+func get_selected_target_uuid() -> StringName:
+	if -1 < shortcuts.selected:
+		return shortcuts.get_selected_metadata()
+	return &""
+
+
 func remove_anchor(target_uuid: StringName) -> bool:
-	var options: OptionButton = get_mapped_field(&"fields", &"shortcuts")
 	var go_to_btn: Button = get_mapped_field(&"fields", &"button")
+	var selected_index: int = shortcuts.selected
 	
-	for idx in range(options.item_count):
-		if options.get_item_metadata(idx) != target_uuid:
+	for idx in range(shortcuts.item_count):
+		if shortcuts.get_item_metadata(idx) != target_uuid:
 			continue
-		options.remove_item(idx)
-		if options.item_count == 0:
-			options.set_meta(&"old_value", &"")
-			options.disabled = true
+		shortcuts.remove_item(idx)
+		if shortcuts.item_count == 0:
+			shortcuts.select(-1)
+			shortcuts.set_meta(&"old_value", &"")
+			shortcuts.disabled = true
 			go_to_btn.disabled = true
 		else:
-			# TEST: This might not work?
-			options.set_meta(&"old_value", options.selected)
+			if selected_index == idx:
+				var new_index: int = clampi(selected_index, 0, shortcuts.item_count - 1)
+				shortcuts.select(new_index)
+				shortcuts.set_meta(&"old_value", shortcuts.get_item_metadata(new_index))
 		return true
 	
 	return false
 
 
 func _on_go_to_anchor_pressed() -> void:
-	var menu: OptionButton = get_mapped_field(&"fields", &"shortcuts")
-	if menu.selected == -1:
+	if shortcuts.selected == -1:
 		return
-	go_to_anchor_pressed.emit(menu.get_selected_metadata())
+	go_to_anchor_pressed.emit(shortcuts.get_selected_metadata())
 
 
 func select_target(uuid: StringName) -> void:
-	var menu: OptionButton = get_mapped_field(&"fields", &"shortcuts")
-	
-	for idx in range(menu.item_count):
-		if menu.get_item_metadata(idx) == uuid:
-			menu.select(idx)
+	for idx in range(shortcuts.item_count):
+		if shortcuts.get_item_metadata(idx) == uuid:
+			shortcuts.select(idx)
+			shortcuts.set_meta(&"old_value", shortcuts.get_item_metadata(idx))
 			return
 
 
 func _on_anchor_idx_selected(idx: int) -> void:
-	var menu: OptionButton = get_mapped_field(&"fields", &"shortcuts")
-	var old_value: StringName = menu.get_meta(&"old_value", &"")
-	var new_value: StringName = menu.get_item_metadata(idx)
+	var old_value: StringName = shortcuts.get_meta(&"old_value", &"")
+	var new_value: StringName = shortcuts.get_item_metadata(idx)
 	
 	if new_value == old_value:
 		return
 	
-	menu.set_meta(&"old_value", new_value)
+	shortcuts.set_meta(&"old_value", new_value)
 	
 	selected_shortcut_changed.emit(
 			get_node_uuid(),

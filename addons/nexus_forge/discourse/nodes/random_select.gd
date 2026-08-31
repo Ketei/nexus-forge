@@ -144,7 +144,7 @@ func update_weights() -> void:
 				var input: DiscourseGraphNode = get_node_connected_to_port(PortMode.INPUT, node)
 				match input.node_type:
 					DialogueNodeType.VALUE:
-						if input.mode == TYPE_INT:
+						if input.get_mode() == TYPE_INT:
 							var clamped_weight: int = maxi(-1, input.get_current_value(base_weight))
 							weights.append(clamped_weight)
 							if 0 <= clamped_weight:
@@ -164,8 +164,13 @@ func update_weights() -> void:
 			if weights[idx] == -1:
 				label.text = "Weight ??.??%"
 			else:
-				var weight: float = snappedf(( weights[idx] / float(total_weight) * 100.0 ), 0.01 )
-				label.text = "Weight %s%" % str(weight) if 0 < step_decimals(weight) else str(int(weight))
+				var weight_float: float = snappedf(( weights[idx] / float(total_weight) * 100.0 ), 0.01 )
+				var weight_string: String = ""
+				if 0 < step_decimals(weight_float):
+					weight_string = str(weight_float)
+				else:
+					weight_string = str(int(weight_float))
+				label.text = "Weight %s%%" % weight_string
 
 
 func _on_value_node_weight_changed(_value: float) -> void:
@@ -175,19 +180,19 @@ func _on_value_node_weight_changed(_value: float) -> void:
 func _on_random_exit_changed(_target_options: int) -> void:
 	if _exits_update_queued:
 		return
-	_exits_update_queued = true
-	_update_exits_with_value.call_deferred()
-
-
-func _update_exits_with_value() -> void:
 	var old_state: Dictionary = {"metadata": {"options": get_outputs_state()}}
-	
+	_exits_update_queued = true
+	_update_exits_with_value.call_deferred(old_state)
+
+
+func _update_exits_with_value(old_state: Dictionary) -> void:
 	var exit_size: int = get_mapped_field(&"options", &"count").value
 	await set_random_exit_number(exit_size)
 	
 	var new_state: Dictionary = {"metadata": {"options": get_outputs_state()}}
 	_exits_update_queued = false
 	size.y = 0
+	
 	choice_count_state_changed.emit(
 			get_node_uuid(),
 			old_state,
@@ -240,7 +245,13 @@ func set_random_exit_number(target_options: int) -> void:
 			fields_to_remove.append(port_id)
 		await remove_fields(fields_to_remove)
 	
+	get_mapped_field(&"options", &"count").set_value_no_signal(target_options)
 	update_weights()
+	_reset_height.call_deferred()
+
+
+func _reset_height() -> void:
+	size.y = 0
 
 
 func _set_node_data(data: Dictionary) -> void:
@@ -274,7 +285,7 @@ func _get_node_data() -> Dictionary:
 func get_outputs_state() -> Array[Dictionary]:
 	var random_outputs: Array[Dictionary] = []
 	
-	for option_number in range(get_mapped_field(&"options", &"count").value):
+	for option_number in range(get_child_count() - 2):
 		random_outputs.append(
 			{
 				"input_connections": {

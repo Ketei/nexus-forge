@@ -4469,15 +4469,29 @@ func _on_nodes_removed(action: String, graph_nodes_data: Dictionary[StringName, 
 			TYPE_DICTIONARY),
 		"tree_hierarchy": DictUtils.create_typed(
 			TYPE_STRING_NAME,
-			TYPE_DICTIONARY)}
+			TYPE_DICTIONARY),
+		"pointer_states": DictUtils.create_typed(
+			TYPE_STRING_NAME,
+			TYPE_STRING_NAME)}
+	
+	var requires_anchor_snapshot: bool = false
 	
 	for node_uuid in graph_nodes_data:
+		var type: int = graph_nodes_data[node_uuid]["data"]["type"]
+		if type == DiscourseGraphNode.DialogueNodeType.SHORTCUT_TARGET:
+			requires_anchor_snapshot = true
 		if active_conversation.node_data.has(node_uuid):
 			action_data["resource_node_data"][node_uuid] = active_conversation.node_data[node_uuid].duplicate(true)
 		if active_conversation.localization.has(node_uuid):
 			action_data["resource_localization"][node_uuid] = active_conversation.localization[node_uuid].duplicate(true)
 		
 		action_data["tree_hierarchy"][node_uuid] = discourse_nodes_tree.get_node_data(node_uuid)
+	
+	if requires_anchor_snapshot:
+		for pointer in discourse_graph_edit.anchor_pointers:
+			var pointing_to: StringName = pointer.get_selected_target_uuid()
+			if graph_nodes_data.has(pointing_to):
+				action_data["pointer_states"][pointer.get_node_uuid()] = pointer.get_selected_target_uuid()
 	
 	var action_name: String = action.capitalize() + " Node"
 	if 1 < graph_nodes_data.size():
@@ -4490,6 +4504,12 @@ func _on_nodes_removed(action: String, graph_nodes_data: Dictionary[StringName, 
 
 
 func _do_remove_nodes(action_data: Dictionary) -> void:
+	var uuids_to_remove: Array[StringName] = ArrayUtils.create_typed(
+			TYPE_STRING_NAME,
+			action_data.keys())
+	
+	discourse_graph_edit.remove_nodes(uuids_to_remove)
+	
 	for uuid in action_data["graph_nodes_data"]:
 		discourse_graph_edit.remove_node(uuid)
 		discourse_nodes_tree.remove_dialog_node(uuid)
@@ -4598,6 +4618,11 @@ func _undo_remove_nodes(action_data: Dictionary) -> void:
 	
 	if refresh_shortcuts:
 		discourse_graph_edit.refresh_anchors()
+		var pointer_states: Dictionary = action_data["pointer_states"]
+		for pointer_uuid in action_data["pointer_states"]:
+			var pointer: DiscourseGraphNode = discourse_graph_edit.get_discourse_node(pointer_uuid)
+			if pointer != null:
+				pointer.select_target(pointer_states[pointer_uuid])
 
 
 func _on_graph_edit_node_duplication_requested(uuids: Array[StringName]) -> void:

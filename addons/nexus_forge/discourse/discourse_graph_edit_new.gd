@@ -809,8 +809,33 @@ func remove_nodes(node_uuids: Array[StringName]) -> void:
 			continue
 		status_data[node] = null
 	
-	for item in status_data.keys():
-		remove_node(item)
+	var removed_targets: Array[StringName] = []
+	
+	for node_uuid in status_data.keys():
+		var target: DiscourseGraphNode = graph_nodes[node_uuid]
+	
+		disconnect_all_node_connections(node_uuid)
+		
+		match target.node_type:
+			DialogNodes.CALLABLE, DialogNodes.CALLABLE_RETURN:
+				method_callers.erase(target)
+			DialogNodes.SHORTCUT_TARGET:
+				removed_targets.append(node_uuid)
+				anchor_targets.erase(target)
+			DialogNodes.SHORTCUT:
+				anchor_pointers.erase(target)
+			DialogNodes.DIALOG:
+				target.use_code_editor_pressed.disconnect(_on_use_code_editor_requested)
+			DialogNodes.CHOICES:
+				target.use_code_editor_pressed.disconnect(_on_use_code_editor_requested)
+		
+		graph_nodes.erase(node_uuid)
+		target.queue_free()
+	
+	if not removed_targets.is_empty():
+		for pointer in anchor_pointers:
+			for uuid in removed_targets:
+				pointer.remove_anchor(uuid)
 
 
 func remove_frame(frame_uuid: StringName) -> void:
@@ -2004,14 +2029,15 @@ func set_match_node_cases(node_uuid: StringName, state: Dictionary) -> void:
 	
 	if node != null and node.node_type == DialogNodes.MATCH:
 		node._set_node_data(state)
-		for output_node in state["output_connections"]:
-			if not has_discourse_node(output_node["target_node_uuid"]):
+		for case in state["metadata"]["cases"]:
+			var output_connection: Dictionary = case["output_connections"]["next_node"]
+			if not has_discourse_node(output_connection["target_node_uuid"]):
 				continue
 			connect_discourse_nodes(
 					node_uuid,
-					output_node["from_port"],
-					output_node["target_node_uuid"],
-					output_node["target_port"])
+					output_connection["from_port"],
+					output_connection["target_node_uuid"],
+					output_connection["target_port"])
 
 
 # Cases IDs start from 1. IDs are Case index + 1
@@ -2023,22 +2049,23 @@ func set_match_node_field(node_uuid: StringName, case_id: int, value: Variant) -
 
 
 # Used for match_mode_changed
-# TODO: Consider merging the signals and methods for this and set_match_node_cases
 func set_match_node_state(node_uuid: StringName, state: Dictionary) -> void:
 	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
+	if node == null or node.node_type != DialogNodes.MATCH:
+		return
 	
-	if node != null and node.node_type == DialogNodes.MATCH:
-		node._set_node_data(state)
-		var port_idx: int = -1
-		for output_node in state["output_connections"]:
-			port_idx += 1
-			if not has_discourse_node(output_node["target_node_uuid"]):
-				continue
-			connect_discourse_nodes(
-					node_uuid,
-					output_node["from_port"],
-					output_node["target_node_uuid"],
-					output_node["target_port"])
+	node._set_node_data(state)
+	var port_idx: int = -1
+	for case in state["metadata"]["cases"]:
+		var output_connection: Dictionary = case["output_connections"]["next_node"]
+		port_idx += 1
+		if not has_discourse_node(output_connection["target_node_uuid"]):
+			continue
+		connect_discourse_nodes(
+				node_uuid,
+				output_connection["from_port"],
+				output_connection["target_node_uuid"],
+				output_connection["target_port"])
 
 
 func set_metadata_node_key(node_uuid: StringName, key_index: int, to: String) -> void:
