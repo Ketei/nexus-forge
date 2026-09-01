@@ -153,7 +153,7 @@ func _on_type_selected(item_id: int) -> void:
 		return
 	
 	var old_state: Dictionary = {
-		"output_connections": {"target": get_target_node_uuid(PortMode.OUTPUT, 0)},
+		"output_connections": {"target": get_uuid_and_port_connected_to(PortMode.OUTPUT, 0)},
 		"metadata": {
 			"variable_type": type_menu.get_meta(&"current_type", TYPE_NIL)}}
 	if has_any_output(0):
@@ -166,7 +166,7 @@ func _on_type_selected(item_id: int) -> void:
 	set_node_type(item_id)
 	
 	var new_state: Dictionary = {
-		"output_connections": {"target": get_target_node_uuid(PortMode.OUTPUT, 0)},
+		"output_connections": {"target": get_uuid_and_port_connected_to(PortMode.OUTPUT, 0)},
 		"metadata": {
 			"variable_type": type_menu.get_meta(&"current_type", TYPE_NIL)}}
 	

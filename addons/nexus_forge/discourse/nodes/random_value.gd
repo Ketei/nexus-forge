@@ -195,11 +195,12 @@ func _on_min_value_changed(min_value: float) -> void:
 	var prev_min_value: float = min_spinbox.get_meta(&"old_value")
 	var prev_max_value: float = max_spinbox.get_meta(&"old_value")
 	min_spinbox.set_meta(&"old_value", min_value)
-	max_spinbox.min_value = min_value
 	
 	if max_spinbox.value < min_value:
 		max_spinbox.set_value_no_signal(min_value)
 		max_spinbox.set_meta(&"old_value", min_value)
+	
+	max_spinbox.min_value = min_value
 	
 	range_changed.emit(
 			get_node_uuid(),
@@ -211,6 +212,7 @@ func _on_min_value_changed(min_value: float) -> void:
 
 func _on_max_value_changed(max_value: float) -> void:
 	var prev_value: float = max_spinbox.get_meta(&"old_value")
+	
 	max_spinbox.set_meta(&"old_value", max_value)
 	range_changed.emit(
 			get_node_uuid(),
@@ -286,8 +288,8 @@ func set_range_base(value: float) -> void:
 	min_spinbox.set_value_no_signal(value)
 	min_spinbox.set_meta(&"old_value", value)
 	
-	max_spinbox.min_value = value
 	max_spinbox.set_value_no_signal(maxf(value, max_spinbox.value))
+	max_spinbox.min_value = value
 	max_spinbox.set_meta(&"old_value", max_spinbox.value)
 
 
