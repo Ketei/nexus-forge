@@ -47,6 +47,10 @@ signal value_node_value_changed(uuid: StringName, from: Variant, to: Variant)
 signal value_node_type_changed(uuid: StringName, old_state: Dictionary, new_state: Dictionary)
 signal variable_node_type_changed(uuid: StringName, old_state: Dictionary, new_state: Dictionary)
 signal variable_node_path_changed(uuid: StringName, from: String, to: String)
+
+signal close_frame_requested(uuid: StringName)
+signal frame_title_changed(uuid: StringName, from: String, to: String)
+signal frame_color_changed(uuid: StringName, from: Color, to: Color)
 # ----------------------------
 
 # -- Connections ---
@@ -538,7 +542,9 @@ func new_dialog_node(node_type: DialogNodes, uuid: StringName = &"") -> Discours
 
 func new_node_frame(uuid: StringName = &"") -> GraphFrame:
 	var new_frame: GraphFrame = preload("res://addons/nexus_forge/discourse/nodes/dialog_graph_frame.gd").new(uuid)
-	new_frame.close_frame_pressed.connect(_on_close_frame_pressed)
+	new_frame.close_frame_requested.connect(close_frame_requested.emit)
+	new_frame.frame_title_changed.connect(frame_title_changed.emit)
+	new_frame.frame_color_changed.connect(frame_color_changed.emit)
 	return new_frame
 
 
@@ -1101,6 +1107,28 @@ func get_nodes_in_frame(frame_uuid: StringName) -> Array[StringName]:
 	return node_uuids
 
 
+func get_elements_in_frame(frame_uuid: StringName) -> Dictionary[String, Array]:
+	var elements: Dictionary[String, Array] = {
+		"nodes": ArrayUtils.create_typed(TYPE_STRING_NAME),
+		"frames": ArrayUtils.create_typed(TYPE_STRING_NAME)}
+	
+	if not node_frames.has(frame_uuid):
+		return elements
+	
+	var frame: GraphFrame = node_frames[frame_uuid]
+	
+	for attatched_node in get_attached_nodes_of_frame(frame.name):
+		var node = get_node_or_null(NodePath(attatched_node))
+		if node == null:
+			continue
+		if node is GraphNode:
+			elements["nodes"].append(node.get_node_uuid())
+		elif node is GraphFrame:
+			elements["frames"].append(node.get_frame_uuid())
+	
+	return elements
+
+
 func get_compatible_node_count(connection_type: ConnectionType, node_side: String) -> int:
 	if not compatible_connections.has(connection_type) or not compatible_connections[connection_type].has(node_side):
 		return 0
@@ -1651,8 +1679,9 @@ func _on_end_node_move() -> void:
 		var curr_frame: GraphFrame = get_element_frame(node.name)
 		movement_data["nodes"][node_uuid]["current_position"] =\
 				node.position_offset
-		movement_data["nodes"][node_uuid]["current_frame"] =\
-				&"" if curr_frame == null else curr_frame.get_frame_uuid()
+		if curr_frame != null:
+			movement_data["nodes"][node_uuid]["current_frame"] =\
+					curr_frame.get_frame_uuid()
 	
 	for frame_uuid in movement_data["frames"]:
 		movement_data["frames"][frame_uuid]["current_position"] =\
@@ -1678,11 +1707,6 @@ func _on_graph_elements_linked_to_frame_request(elements: Array, frame: StringNa
 	dialog_changed.emit()
 
 
-func _on_close_frame_pressed(frame: GraphFrame) -> void:
-	remove_frame(frame.get_frame_uuid())
-	dialog_changed.emit()
-
-
 func _on_localize_node_toggled(is_pressed: bool, node: DiscourseGraphNode) -> void:
 	if not is_pressed:
 		return
@@ -1695,6 +1719,12 @@ func _close_requested(node: DiscourseGraphNode) -> void:
 		node.get_node_uuid(): node.get_node_state()}
 	nodes_removed.emit("remove", node_data)
 	dialog_changed.emit()
+
+
+func _close_frame_requested(frame: StringName) -> void:
+	#remove_frame(frame.get_frame_uuid())
+	#dialog_changed.emit()
+	pass
 
 
 func _on_disconnection_request(from_node_uuid: StringName, from_port: int, to_node_uuid: StringName, to_port: int, caller: DiscourseGraphNode) -> void:
@@ -2070,7 +2100,6 @@ func set_match_node_state(node_uuid: StringName, state: Dictionary) -> void:
 
 func set_metadata_node_key(node_uuid: StringName, key_index: int, to: String) -> void:
 	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
-	
 	if node != null and node.node_type == DialogNodes.METADATA:
 		node.set_metadata_id(key_index, to)
 
@@ -2095,12 +2124,13 @@ func set_call_return_node_state(node_uuid: StringName, state: Dictionary) -> voi
 	
 	if node != null and node.node_type == DialogNodes.CALLABLE_RETURN:
 		await node.set_method(state["metadata"]["method"])
-		if has_discourse_node(state["output_connections"]["target_node_uuid"]):
+		var caller_state: Dictionary = state["output_connections"]["caller"]
+		if has_discourse_node(caller_state["target_node_uuid"]):
 			connect_discourse_nodes(
 					node_uuid,
-					state["output_connections"]["from_port"],
-					state["output_connections"]["target_node_uuid"],
-					state["output_connections"]["target_port"])
+					caller_state["from_port"],
+					caller_state["target_node_uuid"],
+					caller_state["target_port"])
 		
 		for arg_connection in state["metadata"]["arguments"]:
 			if not has_discourse_node(arg_connection["target_node_uuid"]):
@@ -2235,5 +2265,15 @@ func set_variable_node_path(node_uuid: StringName, path: String) -> void:
 	
 	if node != null and node.node_type == DialogNodes.VARIABLE_GET:
 		node.set_variable_path(path)
+
+
+func set_frame_title(frame_uuid: StringName, title: String) -> void:
+	if node_frames.has(frame_uuid):
+		node_frames[frame_uuid].title = title
+
+
+func set_frame_tint(frame_uuid: StringName, tint: Color) -> void:
+	if node_frames.has(frame_uuid):
+		node_frames[frame_uuid].set_frame_tint(tint)
 
 # --- Node Signalers ---

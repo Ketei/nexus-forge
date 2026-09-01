@@ -83,8 +83,6 @@ func _get_issues() -> PackedStringArray:
 
 
 func _get_node_data() -> Dictionary:
-
-	
 	var output_connectons: Dictionary = {
 		"signaler": get_uuid_and_port_connected_to(PortMode.OUTPUT, 0)}
 	var metadata: Dictionary = {
@@ -132,12 +130,12 @@ func _on_signal_selected(idx: int) -> void:
 	
 	var old_state: Dictionary = {
 		"metadata": {
-			"signal": get_current_signal(),
+			"signal": old_value,
 			"arguments": get_signal_arguments()}}
 	await load_signal(signal_id)
 	var new_state: Dictionary = {
 		"metadata": {
-			"signal": get_current_signal(),
+			"signal": signal_id,
 			"arguments": get_signal_arguments()}}
 	
 	signal_changed.emit(
@@ -192,6 +190,7 @@ func set_signal(signal_id: String) -> bool:
 	for idx in range(signals_node.item_count):
 		if signals_node.get_item_metadata(idx) == signal_id:
 			signals_node.select(idx)
+			signals_node.set_meta(&"old_value", signal_id)
 			await load_signal(signal_id)
 			return true
 	
@@ -266,7 +265,7 @@ func load_signal(signal_id: String) -> void:
 			if not compatible: # If it isn't compatible we disconnect it.
 				disconnect_port(PortMode.INPUT, arg_idx)
 		
-		get_index_field(arg_idx + 1).text = new_arg["name"]
+		get_index_field(arg_idx + 1).text = new_arg["name"].capitalize()
 		
 		# If the types don't match we assign the type, change the color and icon.
 		if current_input_type != new_port_type:
@@ -284,11 +283,10 @@ func load_signal(signal_id: String) -> void:
 
 
 func get_current_signal() -> String:
-	var sign_btn: OptionButton = get_field(&"signals")
-	if sign_btn.selected == -1:
+	if signals_node.selected == -1:
 		return ""
 	else:
-		return sign_btn.get_item_metadata(sign_btn.selected)
+		return signals_node.get_item_metadata(signals_node.selected)
 
 
 func add_input_arg(arg_text: String, arg_type: int) -> void:

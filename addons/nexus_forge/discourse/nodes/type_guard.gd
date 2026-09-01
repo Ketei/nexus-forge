@@ -7,6 +7,7 @@ var filter_mode: int = TYPE_NIL
 var str_fallback: LineEdit
 var bool_fallback: CheckButton
 var val_fallback: SpinBox
+var spinbox_container: HBoxContainer
 
 
 func _post_init() -> void:
@@ -19,7 +20,7 @@ func _post_init() -> void:
 	
 	var connection_label: Label = Label.new()
 	var fallback_panel: PanelContainer = PanelContainer.new()
-	var spinbox_container: HBoxContainer = HBoxContainer.new()
+	spinbox_container = HBoxContainer.new()
 	var spnbx_label: Label = Label.new()
 	val_fallback = SpinBox.new()
 	bool_fallback = CheckButton.new()
@@ -46,6 +47,7 @@ func _post_init() -> void:
 	val_fallback.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	val_fallback.allow_greater = true
 	val_fallback.allow_lesser = true
+	val_fallback.set_meta(&"old_value", 0.0)
 	val_fallback.value_changed.connect(_on_value_fallback_value_changed)
 	
 	bool_fallback.text = "Is True"
@@ -55,6 +57,7 @@ func _post_init() -> void:
 	str_fallback.placeholder_text = "Fallback"
 	str_fallback.text_changed.connect(node_updated.emit)
 	str_fallback.editing_toggled.connect(_on_text_fallback_edit_toggled)
+	str_fallback.set_meta(&"old_value", "")
 	
 	spinbox_container.visible = false
 	bool_fallback.visible = false
@@ -135,12 +138,12 @@ func _on_output_connected(output: int, to_node: DiscourseGraphNode, _to_port: in
 	for child in fallback_panel.get_children():
 		child.visible = false
 	
-	match type as SlotConnectionType:
+	match type:
 		SlotConnectionType.VAR_INT:
 			set_slot_type_right(0, SlotConnectionType.VAR_INT)
 			set_slot_color_right(0, COLORS["integer"])
 			set_output_connection_icon(&"connection", get_theme_icon("int", "EditorIcons"))
-			val_fallback.visible = true
+			spinbox_container.visible = true
 			val_fallback.step = 1.0
 			filter_mode = TYPE_INT
 		SlotConnectionType.VAR_FLOAT:
@@ -209,7 +212,7 @@ func _on_text_fallback_edit_toggled(is_toggled: bool) -> void:
 
 
 func _on_value_fallback_value_changed(value: float) -> void:
-	if filter_mode != TYPE_BOOL and filter_mode != TYPE_FLOAT:
+	if filter_mode != TYPE_INT and filter_mode != TYPE_FLOAT:
 		return
 	var old_value: float = val_fallback.get_meta(&"old_value")
 	

@@ -597,7 +597,10 @@ func ready_plugin(base_locale: String = "") -> void:
 	discourse_graph_edit.value_node_type_changed.connect(_on_value_node_type_changed)
 	discourse_graph_edit.variable_node_type_changed.connect(_on_variable_node_type_changed)
 	discourse_graph_edit.variable_node_path_changed.connect(_on_variable_node_path_changed)
-
+	discourse_graph_edit.close_frame_requested.connect(_on_close_frame_requested)
+	discourse_graph_edit.frame_title_changed.connect(_on_frame_title_changed)
+	discourse_graph_edit.frame_color_changed.connect(_on_frame_color_changed)
+	
 
 func get_column_left() -> Control:
 	return $MainSplitContainer/MainSidebar
@@ -1001,7 +1004,18 @@ func _on_create_dialog_id_pressed(id: int) -> void:
 	if id != 1000:
 		discourse_graph_edit.spawn_node_at_center(id)
 	else:
-		discourse_graph_edit.spawn_frame_at_center()
+		var uuid: StringName = discourse_graph_edit.spawn_frame_at_center()
+		var frame: GraphFrame = discourse_graph_edit.get_discourse_frame(uuid)
+		var action_data: Dictionary = {
+			"uuid": uuid,
+			"frame_data": frame.get_frame_data(),
+			"attached_elements": {}}
+		
+		undo.create_action("Create Frame")
+		undo.add_do_method(_undo_remove_frame.bind(action_data))
+		undo.add_undo_method(_do_remove_frame.bind(uuid))
+		undo.commit_action(false)
+		_on_conversation_changed()
 
 
 func _on_show_grid_toggled(toggle: bool) -> void:
@@ -5057,6 +5071,63 @@ func _do_delocalize_node(node_uuid: StringName) -> void:
 		localization_node_selected = null
 		$LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer.visible = false
 		$LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/LocaleVBoxContainer.visible = false
+
+
+func _on_frame_title_changed(uuid: StringName, from: String, to: String) -> void:
+	undo.create_action("Set Frame Title")
+	undo.add_do_method(discourse_graph_edit.set_frame_title.bind(uuid, to))
+	undo.add_undo_method(discourse_graph_edit.set_frame_title.bind(uuid, from))
+	undo.commit_action(false)
+
+
+func _on_frame_color_changed(uuid: StringName, from: Color, to: Color) -> void:
+	undo.create_action("Set Frame Color")
+	undo.add_do_method(discourse_graph_edit.set_frame_tint.bind(uuid, to))
+	undo.add_undo_method(discourse_graph_edit.set_frame_tint.bind(uuid, from))
+	undo.commit_action(false)
+
+
+func _on_close_frame_requested(uuid: StringName) -> void:
+	var frame: GraphFrame = discourse_graph_edit.get_discourse_frame(uuid)
+	if frame == null:
+		return
+	
+	# 1. Capture the exact state and contents of the frame before it is destroyed
+	var action_data: Dictionary = {
+		"uuid": uuid,
+		"frame_data": frame.get_frame_data(),
+		"attached_elements": discourse_graph_edit.get_elements_in_frame(uuid)}
+	
+	undo.create_action("Remove Frame")
+	undo.add_do_method(_do_remove_frame.bind(uuid))
+	undo.add_undo_method(_undo_remove_frame.bind(action_data))
+	undo.commit_action()
+	_on_conversation_changed()
+
+
+func _do_remove_frame(uuid: StringName) -> void:
+	discourse_graph_edit.remove_frame(uuid)
+
+
+func _undo_remove_frame(action_data: Dictionary) -> void:
+	var uuid: StringName = action_data["uuid"]
+	var frame_data: Dictionary = action_data["frame_data"]
+	var attached: Dictionary = action_data["attached_elements"]
+	
+	var frame_pos: Vector2 = frame_data.get("position", Vector2.ZERO)
+	var frame: GraphFrame = discourse_graph_edit.spawn_frame(uuid, frame_pos)
+	
+	frame.set_frame_data(frame_data)
+	
+	for node_uuid in attached.get("nodes", []):
+		var node: DiscourseGraphNode = discourse_graph_edit.get_discourse_node(node_uuid)
+		if node != null:
+			discourse_graph_edit.attach_graph_element_to_frame(node.name, frame.name)
+	
+	for nested_uuid in attached.get("frames", []):
+		var nested_frame: GraphFrame = discourse_graph_edit.get_discourse_frame(nested_uuid)
+		if nested_frame != null:
+			discourse_graph_edit.attach_graph_element_to_frame(nested_frame.name, frame.name)
 
 
 func _notification(what: int) -> void:

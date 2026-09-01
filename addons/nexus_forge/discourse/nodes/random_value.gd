@@ -121,25 +121,21 @@ func _ready() -> void:
 
 
 func _on_input_connected(input_port: int, _from_node: DiscourseGraphNode, _from_port: int) -> void:
-	var min_spin: SpinBox = get_mapped_field(&"min_value", "min_spinbox")
-	var max_spin: SpinBox = get_mapped_field(&"max_value", "max_spinbox")
-	
 	if input_port == 0:
-		min_spin.visible = false
-		max_spin.allow_lesser = true
+		min_spinbox.visible = false
+		max_spinbox.allow_lesser = true
 	else:
-		max_spin.visible = false
+		max_spinbox.visible = false
 
 
 func _on_input_disconnected(input_port: int, _from_node: DiscourseGraphNode, _from_port: int) -> void:
-	var min_spin: SpinBox = get_mapped_field(&"min_value", "min_spinbox")
-	var max_spin: SpinBox = get_mapped_field(&"max_value", "max_spinbox")
-	
 	if input_port == 0:
-		min_spin.visible = true
-		max_spin.allow_lesser = false
+		min_spinbox.visible = true
+		if max_spinbox.value < min_spinbox.value:
+			max_spinbox.set_value_no_signal(min_spinbox.value)
+		max_spinbox.allow_lesser = false
 	else:
-		max_spin.visible = true
+		max_spinbox.visible = true
 
 
 func _get_node_data() -> Dictionary:

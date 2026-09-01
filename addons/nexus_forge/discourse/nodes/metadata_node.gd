@@ -175,7 +175,8 @@ func _on_metadata_line_edit_toggled(is_toggled: bool, edited: LineEdit) -> void:
 	if new_value == old_value:
 		return
 	
-	var metadata_index: int = edited.get_parent().get_index()
+	# HBOX_FIELD(Panel(LineEdit))
+	var metadata_index: int = edited.get_parent().get_parent().get_index() - 1
 	edited.set_meta(&"old_value", new_value)
 	
 	metadata_id_changed.emit(
@@ -276,7 +277,8 @@ func get_metadata_id(index: int) -> String:
 
 
 func set_metadata_id(metadata_index: int, id: String) -> void:
-	var meta_entry: LineEdit = get_index_field(metadata_index + 1)
+	var meta_entry: LineEdit = get_index_field(metadata_index + 1).get_child(0)
+	
 	if meta_entry != null:
 		meta_entry.text = id
 		meta_entry.set_meta(&"old_value", id)

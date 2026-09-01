@@ -1,11 +1,15 @@
 extends GraphFrame
 
 
-signal close_frame_pressed(frame: GraphFrame)
+signal close_frame_requested(uuid: StringName)
+signal frame_title_changed(uuid: StringName, from: String, to: String)
+signal frame_color_changed(uuid: StringName, from: Color, to: Color)
 
 var last_click_time: int = 0
 var label_editor: LineEdit = null
 var _uuid: String = ""
+var starting_color: Color
+var color_picker: ColorPickerButton
 
 
 func _init(uuid: String = "") -> void:
@@ -14,7 +18,7 @@ func _init(uuid: String = "") -> void:
 	var title_label: Label = title_frame.get_child(0)
 	var centering_spacer: Control = Control.new()
 	label_editor = LineEdit.new()
-	var color_picker: ColorPickerButton = ColorPickerButton.new()
+	color_picker = ColorPickerButton.new()
 	var color_picker_icon: TextureRect = TextureRect.new()
 	var close_button: Button = Button.new()
 	var buttons_container: HBoxContainer = HBoxContainer.new()
@@ -23,6 +27,7 @@ func _init(uuid: String = "") -> void:
 	
 	tint_color_enabled = true
 	tint_color = Color(0.0, 0.0, 0.0, 0.588)
+	starting_color = Color(0.0, 0.0, 0.0, 0.588)
 	custom_minimum_size = Vector2(200, 200)
 	size = Vector2(200, 200)
 	
@@ -30,7 +35,6 @@ func _init(uuid: String = "") -> void:
 	
 	centering_spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	centering_spacer.custom_minimum_size = Vector2(72.0, 32.0)
-	
 	
 	# Ensuring there is ALWAYS an area to click
 	title_label.custom_minimum_size.y = 32.0
@@ -58,6 +62,7 @@ func _init(uuid: String = "") -> void:
 	color_picker.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	
 	color_picker.color_changed.connect(_on_color_changed)
+	color_picker.popup_closed.connect(_on_color_popup_closed)
 	color_picker.color = Color(0.0, 0.0, 0.0, 0.588) # Default tint from frame
 	
 	color_picker.self_modulate = Color.TRANSPARENT
@@ -90,8 +95,7 @@ func _init(uuid: String = "") -> void:
 	title_frame.add_child(label_editor)
 	title_frame.add_child(buttons_container)
 	
-	label_editor.focus_exited.connect(_on_label_edit_finished.bind("", title_label))
-	label_editor.text_submitted.connect(_on_label_edit_finished.bind(title_label))
+	label_editor.editing_toggled.connect(_on_label_editor_edit_toggled.bind(title_label))
 	
 	close_button.pressed.connect(_on_close_frame_pressed)
 
@@ -113,16 +117,6 @@ func _ready() -> void:
 			color_picker_icon.texture = get_theme_icon("ColorPick", "EditorIcons")
 
 
-func _input(event: InputEvent) -> void:
-	if event is InputEventKey:
-		if event.keycode == KEY_ESCAPE and event.pressed and not event.echo:
-			label_editor.text = title
-			if label_editor.has_focus():
-				label_editor.release_focus()
-			get_viewport().set_input_as_handled()
-			set_process_input(false)
-
-
 func _on_color_button_pressed(color_button: Button, color_picker: ColorPicker) -> void:
 	color_picker.global_position = color_button.global_position + color_button.size
 	color_picker.visible = true
@@ -135,31 +129,51 @@ func _on_label_clicked(title_label: Label, title_edit: LineEdit) -> void:
 	if 500 < time_diff:
 		title_label.release_focus()
 		return
-	set_process_input(true)
 	title_label.visible = false
 	title_edit.visible = true
-	title_edit.grab_focus()
+	title_edit.grab_focus(true)
+	title_edit.edit(true)
 	title_edit.text = title_label.text
 	title_edit.caret_column = title_edit.text.length()
 	title_edit.select_all()
 
 
-func _on_label_edit_finished(_submit_argument: String = "", label: Label = null) -> void:
-	if label_editor.has_focus():
-		label_editor.release_focus() # Will cause this fucntion being called again
-		return 
-	title = label_editor.text.strip_edges()
-	label.tooltip_text = title
+func _on_label_editor_edit_toggled(is_toggled: bool, label: Label) -> void:
+	if is_toggled:
+		return
 	label_editor.visible = false
 	label.visible = true
+	
+	var old_title: String = title
+	var new_title: String = label_editor.text.strip_edges()
+	
+	if new_title == old_title:
+		return
+	
+	title = new_title
+	frame_title_changed.emit(get_frame_uuid(), old_title, new_title)
 
 
 func _on_color_changed(color: Color) -> void:
 	tint_color = color
 
 
+func _on_color_popup_closed() -> void:
+	var old_color: Color = starting_color
+	var new_color: Color = color_picker.color
+	
+	if new_color == old_color:
+		return
+	starting_color = new_color
+	
+	frame_color_changed.emit(
+		get_frame_uuid(),
+		old_color,
+		new_color)
+
+
 func _on_close_frame_pressed() -> void:
-	close_frame_pressed.emit(self)
+	close_frame_requested.emit(get_frame_uuid())
 
 
 func get_frame_data() -> Dictionary:
@@ -174,10 +188,15 @@ func get_frame_uuid() -> String:
 	return _uuid
 
 
+func set_frame_tint(tint: Color) -> void:
+	tint_color = tint
+	starting_color = tint
+
+
 func set_frame_data(data: Dictionary) -> void:
 	var tint = data.get("tint_color")
 	if typeof(tint) == TYPE_COLOR:
-		get_titlebar_hbox().get_child(2).get_child(0).color = tint
+		color_picker.color = tint
 		tint_color = tint
 	
 	var pos_offset = data.get("position")

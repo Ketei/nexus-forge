@@ -32,6 +32,7 @@ func _post_init() -> void:
 	comparation_menu.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	comparation_menu.set_meta(&"current_operator", OP_EQUAL)
 	comparation_menu.expand_icon = false
+	comparation_menu.set_meta(&"old_value", OP_EQUAL)
 	comparation_popup.add_item("==", OP_EQUAL)
 	comparation_popup.add_item("!=", OP_NOT_EQUAL)
 	comparation_popup.add_item("<", OP_LESS)

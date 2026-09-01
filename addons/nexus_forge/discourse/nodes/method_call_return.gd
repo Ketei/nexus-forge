@@ -169,8 +169,8 @@ func _on_method_selected(idx: int) -> void:
 	
 	method_changed.emit(
 			get_node_uuid(),
-			old_inputs,
-			new_inputs)
+			original_state,
+			new_state)
 
 
 func set_method(method_id: String) -> bool:
@@ -296,7 +296,7 @@ func load_method(method_id: String) -> void:
 			if not compatible: # If it isn't compatible we disconnect it.
 				disconnect_port(PortMode.INPUT, arg_idx)
 		
-		get_index_field(arg_idx + 1).text = new_argument["name"]
+		get_index_field(arg_idx + 1).text = new_argument["name"].capitalize()
 		
 		# If the types don't match we assign the type, change the color and icon.
 		if current_input_type != new_port_type:
