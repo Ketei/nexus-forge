@@ -5047,6 +5047,8 @@ func _do_delocalize_node(node_uuid: StringName) -> void:
 				node.get_dialog_text(),
 				true)
 			active_conversation.set_dialog_text(node_uuid, base_text)
+			if current_locale != base_language: # GUI update only
+				discourse_graph_edit.set_dialog_node_dialog_text(node_uuid, base_text)
 		DiscourseGraphNode.DialogueNodeType.CHOICES:
 			var options: Array[String] = []
 			options.assign(DictUtils.get_nested_value(
@@ -5055,6 +5057,12 @@ func _do_delocalize_node(node_uuid: StringName) -> void:
 					node.get_options(),
 					true))
 			active_conversation.set_choices_array(node_uuid, options)
+			if current_locale != base_language:
+				for choice_id in range(1, options.size() + 1): # It uses IDs instead of indexes
+					discourse_graph_edit.set_choice_node_text(
+							node_uuid,
+							choice_id,
+							options[choice_id - 1])
 		DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
 			var base_text: String = DictUtils.get_nested_value(
 				active_conversation.localization,
@@ -5062,15 +5070,22 @@ func _do_delocalize_node(node_uuid: StringName) -> void:
 				node.get_text(),
 				true)
 			active_conversation.set_dialog_text(node_uuid, base_text)
+			if current_locale != base_language:
+				discourse_graph_edit.set_localized_text_node_text(
+						node_uuid,
+						base_text)
 	
-	node.set_node_localized(false)
-	
-	localization_nodes_tree.remove_node(node_uuid)
-	
-	if localization_node_selected == node:
+	if localization_nodes_tree.get_active_node_uuid() == node_uuid:
+		# This variable is used to know the previously selected one.
+		# Shouldn't be accessed directly unless it's for a "switch",
+		# so we change the comparison being done. SHould yield exacctly
+		# the same behaviour as we're removing the node at the very end.
 		localization_node_selected = null
 		$LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer.visible = false
 		$LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/LocaleVBoxContainer.visible = false
+	
+	node.set_node_localized(false)
+	localization_nodes_tree.remove_node(node_uuid)
 
 
 func _on_frame_title_changed(uuid: StringName, from: String, to: String) -> void:

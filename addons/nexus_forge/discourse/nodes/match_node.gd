@@ -165,6 +165,24 @@ func set_match_mode(mode: int) -> void:
 	if current_mode == mode:
 		return
 	
+	if has_any_input(1): # There is a match value source
+		var node: DiscourseGraphNode = get_node_connected_to_port(PortMode.INPUT, 1)
+		var origin_port: int = get_target_port_connected_to_self(PortMode.INPUT, 1)
+		var origin_slot: int = node.get_slot_from_port(PortMode.OUTPUT, origin_port)
+		var origin_type: int = node.get_slot_type_right(origin_slot)
+		var is_universal: bool = origin_type == SlotConnectionType.VAR_ANY or origin_type == SlotConnectionType.VAR_GUARD
+		
+		match mode:
+			TYPE_INT:
+				if origin_type != SlotConnectionType.VAR_INT and not is_universal:
+					disconnect_port(PortMode.INPUT, 1)
+			TYPE_FLOAT:
+				if origin_type != SlotConnectionType.VAR_FLOAT and not is_universal:
+					disconnect_port(PortMode.INPUT, 1)
+			TYPE_STRING:
+				if origin_type != SlotConnectionType.VAR_STRING and not is_universal:
+					disconnect_port(PortMode.INPUT, 1)
+	
 	var menu_button: MenuButton = get_field(&"values").get_child(0)
 	current_mode = mode
 	match current_mode:
@@ -205,11 +223,15 @@ func _on_value_type_changed(id: int) -> void:
 		return
 	
 	var old_state: Dictionary = {
+		"input_connections":{
+			"match_value_source": get_uuid_and_port_connected_to(PortMode.INPUT, 1)},
 		"metadata": {
 			"match_data_type": old_mode,
 			"cases": get_match_case_data()}}
 	set_match_mode(id)
 	var new_state: Dictionary = {
+		"input_connections": {
+			"match_value_source": get_uuid_and_port_connected_to(PortMode.INPUT, 1)},
 		"metadata": {
 			"match_data_type": id,
 			"cases": get_match_case_data()}}

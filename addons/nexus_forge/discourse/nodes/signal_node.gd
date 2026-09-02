@@ -264,6 +264,7 @@ func load_signal(signal_id: String) -> void:
 			
 			if not compatible: # If it isn't compatible we disconnect it.
 				disconnect_port(PortMode.INPUT, arg_idx)
+				await node_disconnected
 		
 		get_index_field(arg_idx + 1).text = new_arg["name"].capitalize()
 		

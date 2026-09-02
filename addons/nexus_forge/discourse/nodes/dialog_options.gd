@@ -307,6 +307,8 @@ func get_options() -> Array[String]:
 
 
 func set_choice_text(choice_id: int, text: String) -> void:
+	if choice_id <= 0:
+		return
 	var choice: Control = get_index_field(choice_id)
 	if choice != null:
 		var line: TextEdit = choice.get_child(0)

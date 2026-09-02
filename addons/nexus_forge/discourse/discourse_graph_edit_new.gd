@@ -1303,7 +1303,26 @@ func disconnect_all_node_connections(for_uuid: StringName) -> void:
 		if not target.has_any_output(output_port):
 			continue
 		
-		for connection_idx in range(target._output_nodes[output_port]["connections"].size()):
+		for connection_idx in range(target._output_nodes[output_port]["connections"].size() - 1, -1, -1):
+			var output_target: DiscourseGraphNode = target.get_node_connected_to_port(PortFlow.OUTPUT, output_port, connection_idx)
+			disconnect_discourse_nodes(
+				target.get_node_uuid(),
+				output_port,
+				output_target.get_node_uuid(),
+				output_target.get_port_connected_to(PortFlow.INPUT, target, output_port))
+
+
+func disconnect_all_outputs_of(for_node: StringName) -> void:
+	if not has_discourse_node(for_node):
+		return
+	
+	var target: DiscourseGraphNode = get_discourse_node(for_node)
+	
+	for output_port in range(target._output_nodes.size() - 1, -1, -1):
+		if not target.has_any_output(output_port):
+			continue
+		
+		for connection_idx in range(target._output_nodes[output_port]["connections"].size() - 1, -1, -1):
 			var output_target: DiscourseGraphNode = target.get_node_connected_to_port(PortFlow.OUTPUT, output_port, connection_idx)
 			disconnect_discourse_nodes(
 				target.get_node_uuid(),
@@ -2084,7 +2103,43 @@ func set_match_node_state(node_uuid: StringName, state: Dictionary) -> void:
 	if node == null or node.node_type != DialogNodes.MATCH:
 		return
 	
+	var has_input: bool = node.has_any_input(1)
+	var inputs_match: bool = false
+	
+	if has_input:
+		var connection: DiscourseGraphNode = node.get_node_connected_to_port(
+				DiscourseGraphNode.PortMode.INPUT,
+				1)
+		inputs_match = connection.get_node_uuid() == state["input_connections"]["match_value_source"]["target_node_uuid"]
+	else:
+		inputs_match = state["input_connections"]["match_value_source"]["target_node_uuid"].is_empty()
+	
+	if has_input and not inputs_match:
+		var from_node: DiscourseGraphNode = node.get_node_connected_to_port(
+				DiscourseGraphNode.PortMode.INPUT,
+				1)
+		var from_uuid: StringName = from_node.get_node_uuid()
+		var from_port: int = node.get_target_port_connected_to_self(
+				DiscourseGraphNode.PortMode.INPUT,
+				1)
+		disconnect_discourse_nodes(
+				from_uuid,
+				from_port,
+				node_uuid,
+				1)
+	
+	disconnect_all_outputs_of(node_uuid)
+	
 	node._set_node_data(state)
+	
+	if not inputs_match:
+		if not state["input_connections"]["match_value_source"]["target_node_uuid"].is_empty() and has_discourse_node(state["input_connections"]["match_value_source"]["target_node_uuid"]):
+			connect_discourse_nodes(
+					state["input_connections"]["match_value_source"]["target_node_uuid"],
+					state["input_connections"]["match_value_source"]["target_port"],
+					node_uuid,
+					state["input_connections"]["match_value_source"]["from_port"]) # Should be 1
+		
 	var port_idx: int = -1
 	for case in state["metadata"]["cases"]:
 		var output_connection: Dictionary = case["output_connections"]["next_node"]
@@ -2113,10 +2168,10 @@ func set_call_node_state(node_uuid: StringName, state: Dictionary) -> void:
 			if not has_discourse_node(arg_connection["target_node_uuid"]):
 				continue
 			connect_discourse_nodes(
-					node_uuid,
-					arg_connection["from_port"],
 					arg_connection["target_node_uuid"],
-					arg_connection["target_port"])
+					arg_connection["target_port"],
+					node_uuid,
+					arg_connection["from_port"])
 
 
 func set_call_return_node_state(node_uuid: StringName, state: Dictionary) -> void:
@@ -2127,10 +2182,10 @@ func set_call_return_node_state(node_uuid: StringName, state: Dictionary) -> voi
 		var caller_state: Dictionary = state["output_connections"]["caller"]
 		if has_discourse_node(caller_state["target_node_uuid"]):
 			connect_discourse_nodes(
-					node_uuid,
-					caller_state["from_port"],
 					caller_state["target_node_uuid"],
-					caller_state["target_port"])
+					caller_state["target_port"],
+					node_uuid,
+					caller_state["from_port"])
 		
 		for arg_connection in state["metadata"]["arguments"]:
 			if not has_discourse_node(arg_connection["target_node_uuid"]):

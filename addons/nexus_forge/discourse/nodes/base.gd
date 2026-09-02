@@ -726,8 +726,20 @@ func get_connection_index(port_mode: PortMode, port: int, node: DiscourseGraphNo
 	if port_mode == PortMode.NONE:
 		return -1
 	
+	var target_array: Array[Dictionary] = _input_nodes if port_mode == PortMode.INPUT else _output_nodes
+	
+	var port_count: int = target_array.size()
+	
+	if port_count == 0:
+		return -1
+	
+	var max_index: int = port_count - 1
+	
+	if not RangeUtils.is_between(port, -port_count, max_index):
+		return -1
+	
 	var idx: int = -1
-	var target_dict: Array[Dictionary] = _input_nodes[port]["connections"] if port_mode == PortMode.INPUT else _output_nodes[port]["connections"]
+	var target_dict: Array[Dictionary] = target_array[port]["connections"]
 	for item:Dictionary in target_dict:
 		idx += 1
 		if item["target_node"] == node and item["target_port"] == target_port:

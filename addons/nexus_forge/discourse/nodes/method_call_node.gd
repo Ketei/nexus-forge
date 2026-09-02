@@ -209,6 +209,7 @@ func load_method(method_id: String) -> void:
 			
 			if not compatible: # If it isn't compatible we disconnect it.
 				disconnect_port(PortMode.INPUT, arg_idx)
+				await node_disconnected
 		
 		# Update the field text
 		get_index_field(arg_idx + 1).text = new_argument["name"].capitalize()
@@ -216,7 +217,7 @@ func load_method(method_id: String) -> void:
 		# If the types don't match we assign the type, change the color and icon.
 		if current_input_type != new_port_type:
 			set_slot_color_left.call_deferred(arg_idx + 1, COLORS[new_type_color])
-			set_slot_type_left.call_deferred(arg_idx + 1, new_port_type)
+			set_slot_type_left(arg_idx + 1, new_port_type)
 	
 	var fields_to_remove: Array[StringName] = []
 
@@ -249,7 +250,7 @@ func _on_method_selected(idx: int) -> void:
 			"method": prev}}
 	
 	opt_btn.set_meta(&"old_value", id)
-	load_method(id)
+	await load_method(id)
 	
 	var new_inputs: Array[Dictionary] = []
 	for arg_idx in range(get_child_count() - 1):

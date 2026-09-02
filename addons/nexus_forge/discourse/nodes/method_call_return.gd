@@ -295,6 +295,7 @@ func load_method(method_id: String) -> void:
 			
 			if not compatible: # If it isn't compatible we disconnect it.
 				disconnect_port(PortMode.INPUT, arg_idx)
+				await node_disconnected
 		
 		get_index_field(arg_idx + 1).text = new_argument["name"].capitalize()
 		
@@ -302,16 +303,6 @@ func load_method(method_id: String) -> void:
 		if current_input_type != new_port_type:
 			set_slot_color_left.call_deferred(arg_idx + 1, COLORS[new_type_color])
 			set_slot_type_left.call_deferred(arg_idx + 1, new_port_type)
-	
-	var fields_to_remove: Array[StringName] = []
-
-	for item in range(arg_idx + 2, get_child_count()):
-		var field_id: StringName = StringName("argument_" + str(item))
-		fields_to_remove.append(field_id)
-	
-	if not fields_to_remove.is_empty():
-		await remove_fields(fields_to_remove)
-		update_node_size.call_deferred()
 	
 	# Now we fix the output slot
 	var new_output_type: int = -1
@@ -339,22 +330,31 @@ func load_method(method_id: String) -> void:
 			new_output_color = COLORS["any"]
 	
 	if get_slot_type_right(0) != new_output_type:
-		set_slot_type_right.call_deferred(0, new_output_type)
+		set_slot_type_right(0, new_output_type)
 		set_slot_color_right.call_deferred(0, new_output_color)
 		set_output_connection_icon(&"methods", icon)
 	
-	if not has_any_output(0):
-		return
+	if has_any_output(0):
+		var compatible: bool = true
+		var target: DiscourseGraphNode = get_node_connected_to_port(PortMode.OUTPUT, 0)
+		var slot_idx: int = target.get_slot_from_port(PortMode.INPUT, get_target_port_connected_to_self(PortMode.OUTPUT, 0))
+		var input_type: int = target.get_slot_type_left(slot_idx)
+		
+		compatible = new_output_type == input_type or input_type == SlotConnectionType.VAR_ANY
+		
+		if not compatible:
+			disconnect_port(PortMode.OUTPUT, 0)
 	
-	var compatible: bool = true
-	var target: DiscourseGraphNode = get_node_connected_to_port(PortMode.OUTPUT, 0)
-	var slot_idx: int = target.get_slot_from_port(PortMode.INPUT, get_target_port_connected_to_self(PortMode.OUTPUT, 0))
-	var input_type: int = target.get_slot_type_left(slot_idx)
+	# We do the possible coroutine last, just in case that it isn't called as
+	# such.
+	var fields_to_remove: Array[StringName] = []
+	for item in range(arg_idx + 2, get_child_count()):
+		var field_id: StringName = StringName("argument_" + str(item))
+		fields_to_remove.append(field_id)
 	
-	compatible = new_output_type == input_type or input_type == SlotConnectionType.VAR_ANY
-	
-	if not compatible:
-		disconnect_port(PortMode.OUTPUT, 0)
+	if not fields_to_remove.is_empty():
+		await remove_fields(fields_to_remove)
+		update_node_size.call_deferred()
 
 
 func get_current_method() -> String:

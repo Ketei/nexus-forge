@@ -129,14 +129,14 @@ func rename_text_node(uuid: StringName, new_name: String) -> void:
 
 
 func remove_node(uuid: StringName) -> void:
-	for tree:TreeItem in [_dialog_tree, _options_tree, _text_tree]:
-		for item in tree.get_children():
-			if item.get_metadata(0)["uuid"] == uuid:
-				if active_dialog == item:
-					active_dialog = null
-					dialog_selected.emit(&"")
-				item.free()
-				return
+	if not all_nodes.has(uuid):
+		return
+	var target: TreeItem = all_nodes[uuid]
+	if active_dialog == target:
+		active_dialog = null
+		dialog_selected.emit(&"")
+	all_nodes.erase(uuid)
+	target.free()
 
 
 func get_active_node_uuid() -> StringName:
