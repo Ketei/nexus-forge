@@ -206,6 +206,8 @@ func ready_plugin(base_locale: String = "") -> void:
 	default_case_edt.syntax_highlighter = def_highlighter
 	default_case_edt.set_meta(&"old_value", "")
 	
+	dialog_id_ln_edt.set_meta(&"old_value", "")
+	
 	base_locale = TranslationServer.standardize_locale(base_locale)
 	node_popup = node_menu_btn.get_popup()
 	locale_popup = $MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/LocaleMenuBtn.get_popup()
@@ -600,7 +602,9 @@ func ready_plugin(base_locale: String = "") -> void:
 	discourse_graph_edit.close_frame_requested.connect(_on_close_frame_requested)
 	discourse_graph_edit.frame_title_changed.connect(_on_frame_title_changed)
 	discourse_graph_edit.frame_color_changed.connect(_on_frame_color_changed)
-	
+	discourse_graph_edit.event_path_changed.connect(_on_event_node_path_changed)
+	discourse_graph_edit.data_event_path_changed.connect(_on_data_event_node_path_changed)
+
 
 func get_column_left() -> Control:
 	return $MainSplitContainer/MainSidebar
@@ -1015,7 +1019,7 @@ func _on_create_dialog_id_pressed(id: int) -> void:
 		undo.add_do_method(_undo_remove_frame.bind(action_data))
 		undo.add_undo_method(_do_remove_frame.bind(uuid))
 		undo.commit_action(false)
-		_on_conversation_changed()
+	_on_conversation_changed()
 
 
 func _on_show_grid_toggled(toggle: bool) -> void:
@@ -1063,7 +1067,7 @@ func _on_change_locale_group_pressed() -> void:
 	var result: Array = await line_confirmation.dialog_finished
 	line_confirmation.queue_free()
 	
-	if result[0] or result[1] == active_conversation.locale_group:
+	if not result[0] or result[1] == active_conversation.locale_group:
 		return
 	
 	var old_group: String = active_conversation.locale_group
@@ -2319,7 +2323,7 @@ func open_conversation(dialog_id: int) -> bool:
 	
 	var conversation: EditorDiscourseDialog = _open_files[dialog_id]["resource"]
 	dialog_id_ln_edt.text = conversation.dialog_id
-	
+	dialog_id_ln_edt.set_meta(&"old_value", conversation.dialog_id)
 	# Clears discourse_nodes_tree's items
 	discourse_nodes_tree.clear_tree()
 	
@@ -4173,6 +4177,7 @@ func _on_comparation_node_operator_changed(node_uuid: StringName, old_operator: 
 	undo.add_do_method(discourse_graph_edit.set_comparation_node_operator.bind(node_uuid, new_operator))
 	undo.add_undo_method(discourse_graph_edit.set_comparation_node_operator.bind(node_uuid, old_operator))
 	undo.commit_action(false)
+	_on_conversation_changed()
 
 
 func _on_dialog_node_character_id_changed(node_uuid: StringName, from: String, to: String) -> void:
@@ -4208,6 +4213,7 @@ func _on_dialog_node_presist_toggled(node_uuid: StringName, is_toggled: bool) ->
 	undo.add_do_method(discourse_graph_edit.set_dialog_node_persist_enabled.bind(node_uuid, is_toggled))
 	undo.add_undo_method(discourse_graph_edit.set_dialog_node_persist_enabled.bind(node_uuid, not is_toggled))
 	undo.commit_action(false)
+	_on_conversation_changed()
 
 
 func _on_choice_node_text_changed(node_uuid: StringName, choice_idx: int, old_text: String, new_text: String) -> void:
@@ -4241,6 +4247,7 @@ func _on_choices_node_resized(node_uuid: StringName, old_snapshot: Dictionary, n
 	undo.add_do_method(_set_choices_resize_action.bind(node_uuid, new_snapshot, loc_snapshot, current_locale))
 	undo.add_undo_method(_set_choices_resize_action.bind(node_uuid, old_snapshot, loc_snapshot, current_locale))
 	undo.commit_action(false)
+	_on_conversation_changed()
 
 
 func _set_choices_resize_action(node_uuid: StringName, node_snapshot: Dictionary, loc_snapshot: Dictionary, locale: String) -> void:
@@ -4337,6 +4344,7 @@ func _on_shortcut_node_target_changed(node_uuid: StringName, old_anchor: StringN
 	undo.add_do_method(discourse_graph_edit.set_shortcut_node_target.bind(node_uuid, new_anchor))
 	undo.add_undo_method(discourse_graph_edit.set_shortcut_node_target.bind(node_uuid, old_anchor))
 	undo.commit_action(false)
+	_on_conversation_changed()
 
 
 func shortcut_node_id_changed(node_uuid: String, old_id: String, new_id: String) -> void:
@@ -4364,6 +4372,7 @@ func _on_match_node_cases_resized(node_uuid: StringName, old_snapshot: Dictionar
 	undo.add_do_method(discourse_graph_edit.set_match_node_cases.bind(node_uuid, new_snapshot))
 	undo.add_undo_method(discourse_graph_edit.set_match_node_cases.bind(node_uuid, old_snapshot))
 	undo.commit_action(false)
+	_on_conversation_changed()
 
 
 func _on_match_node_field_updated(node_uuid: StringName, field_id: int, from: Variant, to: Variant) -> void:
@@ -4371,6 +4380,7 @@ func _on_match_node_field_updated(node_uuid: StringName, field_id: int, from: Va
 	undo.add_do_method(discourse_graph_edit.set_match_node_field.bind(node_uuid, field_id, to))
 	undo.add_undo_method(discourse_graph_edit.set_match_node_field.bind(node_uuid, field_id, from))
 	undo.commit_action(false)
+	_on_conversation_changed()
 
 
 func _on_match_node_mode_changed(node_uuid: StringName, old_state: Dictionary, new_state: Dictionary) -> void:
@@ -4378,6 +4388,7 @@ func _on_match_node_mode_changed(node_uuid: StringName, old_state: Dictionary, n
 	undo.add_do_method(discourse_graph_edit.set_match_node_state.bind(node_uuid, new_state))
 	undo.add_undo_method(discourse_graph_edit.set_match_node_state.bind(node_uuid, old_state))
 	undo.commit_action(false)
+	_on_conversation_changed()
 
 
 func _on_metadata_node_key_changed(node_uuid: StringName, index: int, from: String, to: String) -> void:
@@ -4392,6 +4403,7 @@ func _on_call_node_method_changed(node_uuid: StringName, from_state: Dictionary,
 	undo.add_do_method(discourse_graph_edit.set_call_node_state.bind(node_uuid, to_state))
 	undo.add_undo_method(discourse_graph_edit.set_call_node_state.bind(node_uuid, from_state))
 	undo.commit_action(false)
+	_on_conversation_changed()
 
 
 func _on_call_return_method_changed(node_uuid: StringName, old_state: Dictionary, new_state: Dictionary) -> void:
@@ -4399,6 +4411,7 @@ func _on_call_return_method_changed(node_uuid: StringName, old_state: Dictionary
 	undo.add_do_method(discourse_graph_edit.set_call_return_node_state.bind(node_uuid, new_state))
 	undo.add_undo_method(discourse_graph_edit.set_call_return_node_state.bind(node_uuid, old_state))
 	undo.commit_action(false)
+	_on_conversation_changed()
 
 
 func _on_random_node_count_state_changed(node_uuid: StringName, old_state: Dictionary, new_state: Dictionary) -> void:
@@ -4406,6 +4419,7 @@ func _on_random_node_count_state_changed(node_uuid: StringName, old_state: Dicti
 	undo.add_do_method(discourse_graph_edit.set_random_path_node_state.bind(node_uuid, new_state))
 	undo.add_undo_method(discourse_graph_edit.set_random_path_node_state.bind(node_uuid, old_state))
 	undo.commit_action(false)
+	_on_conversation_changed()
 
 
 func _on_random_val_node_mode_changed(node_uuid: StringName, old_state: Dictionary, new_state: Dictionary) -> void:
@@ -4413,6 +4427,7 @@ func _on_random_val_node_mode_changed(node_uuid: StringName, old_state: Dictiona
 	undo.add_do_method(discourse_graph_edit.set_random_value_state.bind(node_uuid, new_state))
 	undo.add_undo_method(discourse_graph_edit.set_random_value_state.bind(node_uuid, old_state))
 	undo.commit_action(false)
+	_on_conversation_changed()
 
 
 func _on_random_val_node_range_changed(node_uuid: StringName, from_min: float, from_max: float, to_min: float, to_max: float) -> void:
@@ -4420,6 +4435,7 @@ func _on_random_val_node_range_changed(node_uuid: StringName, from_min: float, f
 	undo.add_do_method(discourse_graph_edit.set_random_value_node_range.bind(node_uuid, to_min, to_max))
 	undo.add_undo_method(discourse_graph_edit.set_random_value_node_range.bind(node_uuid, from_min, from_max))
 	undo.commit_action(false)
+	_on_conversation_changed()
 
 
 func _on_resource_node_path_changed(node_uuid: StringName, from: String, to: String) -> void:
@@ -4427,6 +4443,7 @@ func _on_resource_node_path_changed(node_uuid: StringName, from: String, to: Str
 	undo.add_do_method(discourse_graph_edit.set_resource_node_path.bind(node_uuid, to))
 	undo.add_undo_method(discourse_graph_edit.set_resource_node_path.bind(node_uuid, from))
 	undo.commit_action(false)
+	_on_conversation_changed()
 
 
 func _on_signal_node_signal_changed(node_uuid: StringName, old_state: Dictionary, new_state: Dictionary) -> void:
@@ -4434,6 +4451,7 @@ func _on_signal_node_signal_changed(node_uuid: StringName, old_state: Dictionary
 	undo.add_do_method(discourse_graph_edit.set_emit_signal_node_state.bind(node_uuid, new_state))
 	undo.add_undo_method(discourse_graph_edit.set_emit_signal_node_state.bind(node_uuid, old_state))
 	undo.commit_action(false)
+	_on_conversation_changed()
 
 
 func _on_guard_node_fallback_changed(node_uuid: StringName, from: Variant, to: Variant) -> void:
@@ -4441,6 +4459,7 @@ func _on_guard_node_fallback_changed(node_uuid: StringName, from: Variant, to: V
 	undo.add_do_method(discourse_graph_edit.set_shield_node_fallback.bind(node_uuid, to))
 	undo.add_undo_method(discourse_graph_edit.set_shield_node_fallback.bind(node_uuid, from))
 	undo.commit_action(false)
+	_on_conversation_changed()
 
 
 func _on_value_node_value_changed(node_uuid: StringName, from: Variant, to: Variant) -> void:
@@ -4448,6 +4467,7 @@ func _on_value_node_value_changed(node_uuid: StringName, from: Variant, to: Vari
 	undo.add_do_method(discourse_graph_edit.set_value_node_value.bind(node_uuid, to))
 	undo.add_undo_method(discourse_graph_edit.set_value_node_value.bind(node_uuid, from))
 	undo.commit_action(false)
+	_on_conversation_changed()
 
 
 func _on_value_node_type_changed(node_uuid: StringName, old_state: Dictionary, new_state: Dictionary) -> void:
@@ -4455,6 +4475,7 @@ func _on_value_node_type_changed(node_uuid: StringName, old_state: Dictionary, n
 	undo.add_do_method(discourse_graph_edit.set_value_node_state.bind(node_uuid, new_state))
 	undo.add_undo_method(discourse_graph_edit.set_value_node_state.bind(node_uuid, old_state))
 	undo.commit_action(false)
+	_on_conversation_changed()
 
 
 func _on_variable_node_type_changed(node_uuid: StringName, old_state: Dictionary, new_state: Dictionary) -> void:
@@ -4462,6 +4483,7 @@ func _on_variable_node_type_changed(node_uuid: StringName, old_state: Dictionary
 	undo.add_do_method(discourse_graph_edit.set_variable_node_state.bind(node_uuid, new_state))
 	undo.add_undo_method(discourse_graph_edit.set_variable_node_state.bind(node_uuid, old_state))
 	undo.commit_action(false)
+	_on_conversation_changed()
 
 
 func _on_variable_node_path_changed(node_uuid: StringName, from: String, to: String) -> void:
@@ -4469,6 +4491,7 @@ func _on_variable_node_path_changed(node_uuid: StringName, from: String, to: Str
 	undo.add_do_method(discourse_graph_edit.set_variable_node_path.bind(node_uuid, to))
 	undo.add_undo_method(discourse_graph_edit.set_variable_node_path.bind(node_uuid, from))
 	undo.commit_action(false)
+	_on_conversation_changed()
 
 # ----------------------------
 # TEST: This thing. I think it SHOULD work, but I don't know
@@ -4515,6 +4538,7 @@ func _on_nodes_removed(action: String, graph_nodes_data: Dictionary[StringName, 
 	undo.add_do_method(_do_remove_nodes.bind(action_data))
 	undo.add_undo_method(_undo_remove_nodes.bind(action_data))
 	undo.commit_action()
+	_on_conversation_changed()
 
 
 func _do_remove_nodes(action_data: Dictionary) -> void:
@@ -4701,6 +4725,7 @@ func _on_nodes_moved(movement_data: Dictionary) -> void:
 	undo.add_do_method(_apply_movement_state.bind(movement_data, false))
 	undo.add_undo_method(_apply_movement_state.bind(movement_data, true))
 	undo.commit_action(false)
+	_on_conversation_changed()
 
 
 func _apply_movement_state(movement_data: Dictionary, is_undo: bool) -> void:
@@ -4733,6 +4758,7 @@ func _on_node_connected(from_node: StringName, from_port: int, to_node: StringNa
 	undo.add_do_method(discourse_graph_edit.connect_discourse_nodes.bind(from_node, from_port, to_node, to_port))
 	undo.add_undo_method(discourse_graph_edit.disconnect_discourse_nodes.bind(from_node, from_port, to_node, to_port))
 	undo.commit_action(false)
+	_on_conversation_changed()
 
 
 func _on_node_disconnected(from_node: StringName, from_port: int, to_node: StringName, to_port: int, from_state: Dictionary, to_state: Dictionary) -> void:
@@ -4740,6 +4766,7 @@ func _on_node_disconnected(from_node: StringName, from_port: int, to_node: Strin
 	undo.add_do_method(discourse_graph_edit.disconnect_discourse_nodes.bind(from_node, from_port, to_node, to_port))
 	undo.add_undo_method(_undo_node_disconnect.bind(from_node, from_port, to_node, to_port, from_state, to_state))
 	undo.commit_action(false)
+	_on_conversation_changed()
 
 
 func _undo_node_disconnect(from_node: StringName, from_port: int, to_node: String, to_port: int, from_state: Dictionary, to_state: Dictionary) -> void:
@@ -4799,6 +4826,7 @@ func _on_node_connection_switched(origin_ports: Dictionary, new_node: StringName
 	undo.add_do_method(_do_switch_discourse_connections.bind(original_connection, new_connection))
 	undo.add_undo_method(_do_switch_discourse_connections.bind(new_connection, original_connection))
 	undo.commit_action(false)
+	_on_conversation_changed()
 
 
 func _do_switch_discourse_connections(from: Dictionary, to: Dictionary) -> void:
@@ -5093,6 +5121,7 @@ func _on_frame_title_changed(uuid: StringName, from: String, to: String) -> void
 	undo.add_do_method(discourse_graph_edit.set_frame_title.bind(uuid, to))
 	undo.add_undo_method(discourse_graph_edit.set_frame_title.bind(uuid, from))
 	undo.commit_action(false)
+	_on_conversation_changed()
 
 
 func _on_frame_color_changed(uuid: StringName, from: Color, to: Color) -> void:
@@ -5100,6 +5129,7 @@ func _on_frame_color_changed(uuid: StringName, from: Color, to: Color) -> void:
 	undo.add_do_method(discourse_graph_edit.set_frame_tint.bind(uuid, to))
 	undo.add_undo_method(discourse_graph_edit.set_frame_tint.bind(uuid, from))
 	undo.commit_action(false)
+	_on_conversation_changed()
 
 
 func _on_close_frame_requested(uuid: StringName) -> void:
@@ -5143,6 +5173,20 @@ func _undo_remove_frame(action_data: Dictionary) -> void:
 		var nested_frame: GraphFrame = discourse_graph_edit.get_discourse_frame(nested_uuid)
 		if nested_frame != null:
 			discourse_graph_edit.attach_graph_element_to_frame(nested_frame.name, frame.name)
+
+
+func _on_event_node_path_changed(node_uuid: StringName, from: String, to: String) -> void:
+	undo.create_action("Set Event Variable Path")
+	undo.add_do_method(discourse_graph_edit.set_event_node_variable_path.bind(node_uuid, to))
+	undo.add_undo_method(discourse_graph_edit.set_event_node_variable_path.bind(node_uuid, from))
+	undo.commit_action(false)
+
+
+func _on_data_event_node_path_changed(node_uuid: StringName, from: String, to: String) -> void:
+	undo.create_action("Set Data Event Variable Path")
+	undo.add_do_method(discourse_graph_edit.set_data_event_node_variable_path.bind(node_uuid, to))
+	undo.add_undo_method(discourse_graph_edit.set_data_event_node_variable_path.bind(node_uuid, from))
+	undo.commit_action(false)
 
 
 func _notification(what: int) -> void:

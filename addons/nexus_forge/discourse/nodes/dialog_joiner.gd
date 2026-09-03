@@ -120,7 +120,7 @@ func set_input_port_count(new_count: int) -> void:
 		return
 	
 	if current_count < new_count:
-		for missing_port in range(current_count,  (new_count - current_count) + 1):
+		for missing_port in range(current_count,  new_count):
 			var field_idx: int = add_field(
 				&"merge_" + StringName(str(missing_port)),
 				get_new_merge_node(),

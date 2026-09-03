@@ -1,6 +1,12 @@
 extends DiscourseGraphNode
 
 
+signal path_changed(uuid: StringName, from: String, to: String)
+
+
+var variable_path: LineEdit
+
+
 func _post_init() -> void:
 	set_node_id(&"DialogEvent")
 	title = "Event"
@@ -13,7 +19,7 @@ func _post_init() -> void:
 	var call_label: Label = Label.new()
 	var var_label: Label = Label.new()
 	var signal_label: Label = Label.new()
-	var variable_path: LineEdit = LineEdit.new()
+	variable_path = LineEdit.new()
 	var var_panel: PanelContainer = PanelContainer.new()
 	
 	var_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -23,6 +29,7 @@ func _post_init() -> void:
 	variable_path.custom_minimum_size.y = 32
 	variable_path.visible = false
 	variable_path.placeholder_text = "Variable Path"
+	variable_path.set_meta(&"old_value", "")
 	
 	var_panel.add_child(var_label)
 	var_panel.add_child(variable_path)
@@ -53,7 +60,6 @@ func _post_init() -> void:
 			false,
 			SlotConnectionType.VAR_ANY,
 			-1)
-	map_field(&"variable", &"path", variable_path)
 	
 	add_field(
 			&"callable",
@@ -69,9 +75,8 @@ func _post_init() -> void:
 			SlotConnectionType.SIGNAL,
 			-1)
 	
-	
 	variable_path.text_changed.connect(node_updated.emit)
-	variable_path.focus_exited.connect(_on_var_path_focus_lost)
+	variable_path.editing_toggled.connect(_on_var_path_edit_toggled)
 
 
 func _ready() -> void:
@@ -93,7 +98,7 @@ func _get_issues() -> PackedStringArray:
 	var issues: PackedStringArray = []
 	if is_orphan():
 		issues.append("Warning: Node is orphan.")
-	if has_any_input(1) and get_mapped_field(&"variable", &"path").text.strip_edges().is_empty():
+	if has_any_input(1) and variable_path.text.is_empty():
 		issues.append("Error: Variable is being set but no path provided.")
 	return issues
 
@@ -116,7 +121,7 @@ func _get_node_data() -> Dictionary:
 	var data: Dictionary = {}
 	
 	var metadata: Dictionary = {
-		"variable_path": get_mapped_field(&"variable", &"path").text.strip_edges()}
+		"variable_path": variable_path.text}
 	var output_connections: Dictionary = {
 		"next_node": get_uuid_and_port_connected_to(PortMode.OUTPUT, 0)}
 	var input_connections: Dictionary = {
@@ -139,9 +144,29 @@ func _set_node_data(data: Dictionary) -> void:
 		position_offset = metadata["position"]
 	
 	if metadata.has("variable_path") and typeof(metadata["variable_path"]) == TYPE_STRING:
-		get_mapped_field(&"variable", &"path").text = metadata["variable_path"]
+		set_variable_path(metadata["variable_path"])
 
 
-func _on_var_path_focus_lost() -> void:
-	var var_path: LineEdit = get_mapped_field(&"variable", &"path")
-	var_path.tooltip_text = var_path.text.strip_edges()
+func _on_var_path_edit_toggled(is_toggled: bool) -> void:
+	if is_toggled:
+		return
+	
+	var old_value: String = variable_path.get_meta(&"old_value")
+	var new_value: String = variable_path.text
+	
+	if new_value == old_value:
+		return
+	
+	variable_path.tooltip_text = new_value
+	variable_path.set_meta(&"old_value", new_value)
+	
+	path_changed.emit(
+			get_node_uuid(),
+			old_value,
+			new_value)
+
+
+func set_variable_path(path: String) -> void:
+	variable_path.text = path
+	variable_path.tooltip_text = path
+	variable_path.set_meta(&"old_value", path)

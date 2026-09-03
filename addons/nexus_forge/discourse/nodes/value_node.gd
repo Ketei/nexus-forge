@@ -230,6 +230,7 @@ func _on_num_value_changed(value: float) -> void:
 
 func _on_text_field_text_changed() -> void:
 	_resize_text_entry()
+	node_updated.emit()
 
 
 func _on_text_value_focus_exited() -> void:

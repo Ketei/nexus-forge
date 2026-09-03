@@ -47,6 +47,8 @@ signal value_node_value_changed(uuid: StringName, from: Variant, to: Variant)
 signal value_node_type_changed(uuid: StringName, old_state: Dictionary, new_state: Dictionary)
 signal variable_node_type_changed(uuid: StringName, old_state: Dictionary, new_state: Dictionary)
 signal variable_node_path_changed(uuid: StringName, from: String, to: String)
+signal event_path_changed(uuid: StringName, from: String, to: String)
+signal data_event_path_changed(uuid: StringName, from: String, to: String)
 
 signal close_frame_requested(uuid: StringName)
 signal frame_title_changed(uuid: StringName, from: String, to: String)
@@ -450,6 +452,7 @@ func new_dialog_node(node_type: DialogNodes, uuid: StringName = &"") -> Discours
 			created_node.operator_changed.connect(comparation_node_operator_changed.emit)
 		DialogNodes.EVENT:
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/event_node.gd").new(uuid)
+			created_node.path_changed.connect(event_path_changed.emit)
 		DialogNodes.MATCH:
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/match_node.gd").new(uuid)
 			created_node.match_node_resized.connect(match_node_cases_resized.emit)
@@ -520,6 +523,7 @@ func new_dialog_node(node_type: DialogNodes, uuid: StringName = &"") -> Discours
 			created_node.resource_path_changed.connect(resource_node_path_changed.emit)
 		DialogNodes.DATA_EVENT:
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/data_event.gd").new(uuid, &"TypeData")
+			created_node.path_changed.connect(data_event_path_changed.emit)
 		DialogNodes.LOCALIZED_TEXT:
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/localized_text.gd").new(uuid)
 			created_node.text_changed.connect(localized_node_text_changed.emit)
@@ -1707,7 +1711,6 @@ func _on_end_node_move() -> void:
 				node_frames[frame_uuid].position_offset
 	
 	nodes_moved.emit(movement_data.duplicate(true))
-	dialog_changed.emit()
 
 
 func snap_node_to_grid(target_node: DiscourseGraphNode) -> void:
@@ -1737,7 +1740,6 @@ func _close_requested(node: DiscourseGraphNode) -> void:
 	var node_data: Dictionary[StringName, Dictionary] = {
 		node.get_node_uuid(): node.get_node_state()}
 	nodes_removed.emit("remove", node_data)
-	dialog_changed.emit()
 
 
 func _close_frame_requested(frame: StringName) -> void:
@@ -2330,5 +2332,19 @@ func set_frame_title(frame_uuid: StringName, title: String) -> void:
 func set_frame_tint(frame_uuid: StringName, tint: Color) -> void:
 	if node_frames.has(frame_uuid):
 		node_frames[frame_uuid].set_frame_tint(tint)
+
+
+func set_event_node_variable_path(node_uuid: StringName, path: String) -> void:
+	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
+	
+	if node != null and node.node_type == DialogNodes.EVENT:
+		node.set_variable_path(path)
+
+
+func set_data_event_node_variable_path(node_uuid: StringName, path: String) -> void:
+	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
+	
+	if node != null and node.node_type == DialogNodes.DATA_EVENT:
+		node.set_variable_path(path)
 
 # --- Node Signalers ---

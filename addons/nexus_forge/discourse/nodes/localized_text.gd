@@ -30,7 +30,16 @@ func _post_init() -> void:
 	
 	localized_text_edt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	localized_text_edt.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
-	localized_text_edt.custom_minimum_size.y = 33.0
+	
+	var style: StyleBox = localized_text_edt.get_theme_stylebox("normal")
+	var margin_top: float = style.get_margin(SIDE_TOP)
+	var margin_bottom: float = style.get_margin(SIDE_BOTTOM)
+	
+	var line_height: int = localized_text_edt.get_line_height()
+	var line_spacing: int = localized_text_edt.get_theme_constant("line_spacing")
+	var total_height: float = margin_top + margin_bottom + line_height
+	
+	localized_text_edt.custom_minimum_size.y = total_height
 	
 	localized_text_edt.focus_exited.connect(_on_text_focus_exited)
 	
