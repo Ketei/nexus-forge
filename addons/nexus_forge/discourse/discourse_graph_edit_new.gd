@@ -109,7 +109,15 @@ var compatible_connections: Dictionary = {
 				"type": DialogNodes.BRANCH,
 				"ports": [{"port": 0}]},
 			{
-				"name": "Anchor Pointer",
+				"name": "Travel To",
+				"type": DialogNodes.TRAVEL_TO,
+				"ports": [{"port": 0}]},
+			{
+				"name": "Travel Back",
+				"type": DialogNodes.TRAVEL_BACK,
+				"ports": [{"port": 0}]},
+			{
+				"name": "Flow In",
 				"type": DialogNodes.SHORTCUT_IN,
 				"ports": [{"port": 0}]},
 			{
@@ -123,14 +131,6 @@ var compatible_connections: Dictionary = {
 			{
 				"name": "Dialog End",
 				"type": DialogNodes.DIALOG_END,
-				"ports": [{"port": 0}]},
-			{
-				"name": "Travel To",
-				"type": DialogNodes.TRAVEL_TO,
-				"ports": [{"port": 0}]},
-			{
-				"name": "Travel Back",
-				"type": DialogNodes.TRAVEL_BACK,
 				"ports": [{"port": 0}]}], TYPE_DICTIONARY, &"", null),
 		"input": Array([
 			{
@@ -162,7 +162,11 @@ var compatible_connections: Dictionary = {
 					{"port": 0, "name": "True Branch"},
 					{"port": 1, "name": "False Branch"}]},
 			{
-				"name": "Anchor",
+				"name": "Waypoint",
+				"type": DialogNodes.TRAVEL_TARGET,
+				"ports": [{"port": 0}]},
+			{
+				"name": "Flow Out",
 				"type": DialogNodes.SHORTCUT_OUT,
 				"ports": [{"port": 0}]},
 			{
@@ -173,10 +177,7 @@ var compatible_connections: Dictionary = {
 				"name": "Pause",
 				"type": DialogNodes.PAUSE,
 				"ports": [{"port": 0}]},
-			{
-				"name": "Waypoint",
-				"type": DialogNodes.TRAVEL_TARGET,
-				"ports": [{"port": 0}]}], TYPE_DICTIONARY, &"", null)},
+			], TYPE_DICTIONARY, &"", null)},
 	ConnectionType.METADATA: {
 		"input": Array([
 			{
@@ -554,6 +555,8 @@ func new_dialog_node(node_type: DialogNodes, uuid: StringName = &"") -> Discours
 			travel_pointers.append(created_node)
 			created_node.selected_waypoint_changed.connect(travel_node_selected_waypoint_changed.emit)
 			created_node.go_to_waypoint_pressed.connect(_on_go_to_node_pressed, CONNECT_DEFERRED)
+			for anchor in travel_targets:
+				created_node.add_waypoint(anchor.get_node_uuid(), anchor.get_waypoint_id())
 		DialogNodes.TRAVEL_TARGET:
 			var valid_id: String = get_valid_waypoint_id("waypoint")
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/travel_target_node.gd").new(uuid)
