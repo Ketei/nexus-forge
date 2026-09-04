@@ -126,7 +126,7 @@ func _enter_tree() -> void:
 			var data = cfg.get_value("RUNTIME", "CharacterMap")
 			for key in data.keys():
 				if FileAccess.file_exists(key):
-					character_map[key] = data[key]
+					character_map[key] = StringName(data[key])
 	
 	if use_discourse:
 		editor_view.discourse.character_browser_requested.connect(_on_character_browser_requested)

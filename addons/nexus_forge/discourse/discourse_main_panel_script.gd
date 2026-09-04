@@ -1104,6 +1104,7 @@ func _on_conversation_close_pressed(dialog_id: int) -> void:
 	if not _open_files.has(dialog_id):
 		return
 	
+	var save_performed: bool = false
 	var is_active: bool = false if active_conversation == null else active_conversation.get_instance_id() == dialog_id
 	
 	if _open_files[dialog_id]["unsaved"]:
@@ -1114,6 +1115,7 @@ func _on_conversation_close_pressed(dialog_id: int) -> void:
 		if result == 0: # Save
 			if is_active:
 				save_current_dialog_to_memory()
+				save_performed = true
 			ResourceSaver.save(_open_files[dialog_id]["resource"])
 		elif result == 1: # Don't save
 			_open_files[dialog_id]["offset_changed"] = false
@@ -1123,6 +1125,10 @@ func _on_conversation_close_pressed(dialog_id: int) -> void:
 		unsaved_prompt.queue_free()
 	
 	if _open_files[dialog_id]["offset_changed"]:
+		if is_active and not save_performed:
+			active_conversation.collapsed_state = discourse_nodes_tree.get_collapsed_folders()
+			active_conversation.zoom = discourse_graph_edit.zoom
+			active_conversation.scroll_offset = discourse_graph_edit.scroll_offset
 		save_layout_of(dialog_id)
 	
 	close_dialog_resource(dialog_id)
@@ -1160,13 +1166,28 @@ func close_dialog_resource(dialog_id: int, open_previous: bool = true) -> void:
 	else:
 		return
 	
-	conversation_tree.select_conversation(previous_conversation, false)
+	var last_instance_id: int = conversation_tree.get_last_item_instance_id()
 	
-	var save_required: bool = open_conversation(
-		_open_files[previous_conversation]["resource"])
-	
-	if save_required:
-		_unsaved = true
+	if _open_files.has(previous_conversation):
+		conversation_tree.select_conversation(previous_conversation, false)
+		var save_required: bool = open_conversation(previous_conversation)
+		if save_required:
+			_unsaved = true
+	elif 0 < _open_files.size() and _open_files.has(last_instance_id):
+		conversation_tree.select_conversation(last_instance_id, false)
+		var save_required: bool = open_conversation(last_instance_id)
+		if save_required:
+			_unsaved = true
+	else:
+		active_conversation = null
+		set_conversation_active(false)
+		display_conversation(null)
+		clear_localized_keys()
+		clear_cases()
+		dialog_id_ln_edt.text = ""
+		conversation_tree.active_unsaved = false
+		new_text_button.disabled = true
+		dialog_scene_previewer.visible = false
 
 
 func _on_menu_close_pressed() -> void:
@@ -1728,7 +1749,10 @@ func set_localization_tip(locale: String) -> void:
 
 
 func get_open_files() -> Array[String]:
-	return conversation_tree.get_open_file_paths()
+	var open_file_paths: Array[String] = []
+	for res_id in _open_files:
+		open_file_paths.append(_open_files[res_id]["resource"].resource_path)
+	return open_file_paths
 
 
 func get_recenlty_opened_files() -> Array[String]:
@@ -1804,7 +1828,7 @@ func load_dialog_files(files: Array[String]) -> void:
 					loaded.zoom = zoom
 					loaded.collapsed_state.assign(collapsed_state)
 			
-			if conversation_tree.is_conversation_open(loaded):
+			if _open_files.has(loaded.get_instance_id()):
 				continue
 			else:
 				load_conversation(loaded, false)
@@ -1836,6 +1860,9 @@ func _on_conversation_selected(dialog_id: int) -> void:
 	
 	if active_conversation != null and active_conversation.get_instance_id() == dialog_id:
 		return
+	
+	if active_conversation != null:
+		previous_conversation = active_conversation.get_instance_id()
 	
 	if _conversation_options_disabled:
 		set_graph_edit_visible(true)
@@ -1994,7 +2021,7 @@ func load_dialog_from_file(file_path: String) -> EditorDiscourseDialog:
 	
 	var dialog_resource: EditorDiscourseDialog = resource
 	
-	if conversation_tree.is_conversation_open(dialog_resource):
+	if _open_files.has(resource.get_instance_id()):
 		return dialog_resource
 	
 	var filename: String = file_path.get_file()
@@ -2342,6 +2369,8 @@ func open_conversation(dialog_id: int) -> bool:
 	search_text_ln_edt.text = ""
 	search_text_ln_edt.set_meta(&"current_search", "")
 	
+	node_search_ln_edt.text = ""
+	
 	clear_cases()
 	clear_localized_keys()
 	localization_nodes_tree.clear_nodes()
@@ -2504,6 +2533,13 @@ func save_all_dialogs() -> void:
 			_open_files[res_id]["offset_changed"] = false
 	
 	conversation_tree.set_all_files_saved()
+
+
+func save_layouts() -> void:
+	for file_id in _open_files:
+		if _open_files[file_id]["offset_changed"]:
+			save_layout_of(file_id)
+			_open_files[file_id]["offset_changed"] = false
 
 
 func save_layout_of(dialog_id: int) -> void:

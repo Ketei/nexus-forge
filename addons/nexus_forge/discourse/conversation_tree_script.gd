@@ -90,7 +90,7 @@ func select_conversation(conversation_id: int, emit_select: bool = true) -> void
 		return
 	
 	active_conversation_item = item
-	
+	item.select(0)
 	if emit_select:
 		conversation_selected.emit(conversation_id)
 
@@ -145,3 +145,9 @@ func get_conversation_item(conversation_id: int) -> TreeItem:
 		if item.get_metadata(0)["id"] == conversation_id:
 			return item
 	return null
+
+
+func get_last_item_instance_id() -> int:
+	if get_root().get_child_count() == 0:
+		return 0
+	return get_root().get_child(-1).get_metadata(0)["id"]

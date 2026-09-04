@@ -1,3 +1,4 @@
+@tool
 extends DiscourseGraphNode
 
 signal type_changed(uuid: StringName, old_state: Dictionary, new_state: Dictionary)
