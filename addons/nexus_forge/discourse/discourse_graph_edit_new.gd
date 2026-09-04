@@ -607,9 +607,12 @@ func paste_node_clipboard(clipboard: Array[Dictionary], uuid_map: Dictionary[Str
 	if clipboard.is_empty():
 		return
 	
+	deselect_all_elements()
+	
 	var created_nodes: Array[StringName] = []
 	var new_connections: Array[Dictionary] = [] 
 	var uuid_equivalences: Dictionary[StringName, DiscourseGraphNode] = {}
+	var update_paused_nodes: Array[DiscourseGraphNode] = []
 	
 	var current_offset: Vector2 = clipboard[0]["state"]["data"]["metadata"]["position"]
 	var center_scroll_offset: Vector2 = get_center_offset()
@@ -627,16 +630,23 @@ func paste_node_clipboard(clipboard: Array[Dictionary], uuid_map: Dictionary[Str
 				new_data["type"],
 				uuid_map[clipboard_data["node_uuid"]],
 				new_data)
+		
+		if pasted_node.node_type == DialogNodes.DIALOG_MERGE or pasted_node.node_type == DialogNodes.METADATA:
+			pasted_node._connection_updates_disabled = true
+			update_paused_nodes.append(pasted_node)
+		
 		pasted_node.position_offset = get_center_offset() - (pasted_node.size / 2.0) + (pasted_node.position_offset - current_offset)
 		
 		uuid_equivalences[clipboard_data["node_uuid"]] = pasted_node
-	
+		
 		var _new_connections: Array[Dictionary] = get_connection_dictionary(
 				clipboard_data["node_uuid"],
 				new_data)
 		
 		if not _new_connections.is_empty():
 			new_connections.append_array(_new_connections)
+		
+		pasted_node.selected = true
 		
 		node_created.emit(pasted_node)
 		created_nodes.append(pasted_node.get_node_uuid())
@@ -649,6 +659,9 @@ func paste_node_clipboard(clipboard: Array[Dictionary], uuid_map: Dictionary[Str
 				output_connection["from_port"],
 				uuid_equivalences[output_connection["to"]].get_node_uuid(),
 				output_connection["to_port"])
+	
+	for node in update_paused_nodes:
+		node._connection_updates_disabled = false
 	
 	if not created_nodes.is_empty():
 		nodes_created.emit(created_nodes, "Paste Nodes")
@@ -720,6 +733,7 @@ func duplicate_multiple(duplicate_targets: Dictionary[StringName, StringName]) -
 	var new_connections: Array[Dictionary] = []
 	var created_nodes: Array[StringName] = []
 	var uuid_equivalences: Dictionary[String, DiscourseGraphNode] = {}
+	var update_disabled_nodes: Array[DiscourseGraphNode] = []
 	
 	for node_data in nodes_to_duplicate:
 		var node: DiscourseGraphNode = node_data["node"]
@@ -734,6 +748,10 @@ func duplicate_multiple(duplicate_targets: Dictionary[StringName, StringName]) -
 				node.node_type,
 				node_data["new_uuid"],
 				old_data)
+		
+		if new_node.node_type == DialogNodes.DIALOG_MERGE or new_node.node_type == DialogNodes.METADATA:
+			new_node._connection_updates_disabled = true
+			update_disabled_nodes.append(new_node)
 		
 		var frame: GraphFrame = get_element_frame(node.name)
 		uuid_equivalences[node.get_node_uuid()] = new_node
@@ -759,6 +777,9 @@ func duplicate_multiple(duplicate_targets: Dictionary[StringName, StringName]) -
 				output_connection["from_port"],
 				uuid_equivalences[output_connection["to"]].get_node_uuid(),
 				output_connection["to_port"])
+	
+	for paused_nodes in update_disabled_nodes:
+		paused_nodes._connection_updates_disabled = false
 	
 	if not created_nodes.is_empty():
 		nodes_created.emit(created_nodes, "Duplicate Nodes")
@@ -894,6 +915,11 @@ func get_selected_graph_nodes(include_start: bool = false) -> Array[DiscourseGra
 		
 		selected_nodes.append(node)
 	return selected_nodes
+
+
+func deselect_all_elements() -> void:
+	for item in get_selected_graph_elements(true):
+		item.selected = false
 
 
 func get_selected_graph_elements(include_start: bool = false) -> Array[GraphElement]:

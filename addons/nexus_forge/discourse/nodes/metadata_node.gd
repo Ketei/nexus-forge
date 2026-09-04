@@ -5,7 +5,11 @@ signal metadata_id_changed(uuid: StringName, index: int, from: String, to: Strin
 
 
 var meta_fields: int = 0
-var _connection_updates_disabled: bool = false
+var _connection_updates_disabled: bool = false:
+	set(d):
+		if _connection_updates_disabled and not d:
+			remove_unused_fields()
+		_connection_updates_disabled = d
 
 
 func _post_init() -> void:
