@@ -7,9 +7,9 @@ var current_id: String = ""
 
 
 func _post_init() -> void:
-	set_node_id(&"Anchor")
-	title = "Anchor"
-	node_type = DialogueNodeType.SHORTCUT_TARGET
+	set_node_id(&"FlowOut")
+	title = "Flow Out"
+	node_type = DialogueNodeType.SHORTCUT_OUT
 	parent_mode = PortMode.OUTPUT
 	parent_port = 0
 	size = Vector2(200.0, 87.0)

@@ -245,7 +245,6 @@ func _get_close_button() -> Button:
 	return btn if btn is Button else null
 
 
-
 func _ready_close_icon(close_btn: Button) -> void:
 	if not is_node_ready():
 		await ready
@@ -814,34 +813,6 @@ func get_target_port_connected_to_self(port_mode: PortMode, port: int, connectio
 			return -1
 		_:
 			return -1
-
-
-func has_recursion(_caller: DiscourseGraphNode = null) -> bool:
-	if _caller == null:
-		_caller = self
-	else:
-		if _caller == self:
-			return true
-	
-	match parent_mode:
-		PortMode.NONE:
-			return false
-		PortMode.INPUT:
-			for input:DiscourseGraphNode in _input_nodes[parent_port]["connections"]:
-				if input == null:
-					continue
-				if input.has_recursion(_caller):
-					return true
-			return false
-		PortMode.OUTPUT:
-			for output:DiscourseGraphNode in _output_nodes[parent_port]["connections"]:
-				if output == null:
-					continue
-				if output.input.has_recursion(_caller):
-					return true
-			return false
-		_:
-			return false
 
 
 func _create_field(main_field: Control) -> HBoxContainer:

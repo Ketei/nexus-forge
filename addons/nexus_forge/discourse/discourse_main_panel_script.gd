@@ -252,9 +252,13 @@ func ready_plugin(base_locale: String = "") -> void:
 	dialogs_submenu.add_icon_item(load("res://addons/nexus_forge/icons/match_icon.svg"), "Match", DiscourseGraphNode.DialogueNodeType.MATCH)
 	dialogs_submenu.add_icon_item(load("res://addons/nexus_forge/icons/merge_icon.svg"), "Merge", DiscourseGraphNode.DialogueNodeType.DIALOG_MERGE)
 	dialogs_submenu.add_icon_item(get_theme_icon("Pause", "EditorIcons"), "Pause", DiscourseGraphNode.DialogueNodeType.PAUSE)
-	dialogs_submenu.add_separator("Anchors")
-	dialogs_submenu.add_icon_item(load("res://addons/nexus_forge/icons/dialog_entry.svg"), "Shortcut", DiscourseGraphNode.DialogueNodeType.SHORTCUT)
-	dialogs_submenu.add_icon_item(load("res://addons/nexus_forge/icons/dialog_exit.svg"), "Shortuct Target", DiscourseGraphNode.DialogueNodeType.SHORTCUT_TARGET)
+	dialogs_submenu.add_separator("Travel")
+	dialogs_submenu.add_icon_item(load("res://addons/nexus_forge/icons/travel_to_waypoint.svg"), "Travel To", DiscourseGraphNode.DialogueNodeType.TRAVEL_TO)
+	dialogs_submenu.add_icon_item(load("res://addons/nexus_forge/icons/travel_waypoint.svg"), "Travel Target", DiscourseGraphNode.DialogueNodeType.TRAVEL_TARGET)
+	dialogs_submenu.add_icon_item(load("res://addons/nexus_forge/icons/travel_back.svg"), "Travel Back", DiscourseGraphNode.DialogueNodeType.TRAVEL_BACK)
+	dialogs_submenu.add_separator("Shortcut")
+	dialogs_submenu.add_icon_item(load("res://addons/nexus_forge/icons/dialog_entry.svg"), "Flow In", DiscourseGraphNode.DialogueNodeType.SHORTCUT_IN)
+	dialogs_submenu.add_icon_item(load("res://addons/nexus_forge/icons/dialog_exit.svg"), "Flow Out", DiscourseGraphNode.DialogueNodeType.SHORTCUT_OUT)
 	dialogs_submenu.add_separator()
 	dialogs_submenu.add_icon_item(load("res://addons/nexus_forge/icons/bulb_icon.svg"), "Event", DiscourseGraphNode.DialogueNodeType.EVENT)
 	dialogs_submenu.add_icon_item(get_theme_icon("Stop", "EditorIcons"), "End", DiscourseGraphNode.DialogueNodeType.DIALOG_END)
@@ -604,6 +608,9 @@ func ready_plugin(base_locale: String = "") -> void:
 	discourse_graph_edit.frame_color_changed.connect(_on_frame_color_changed)
 	discourse_graph_edit.event_path_changed.connect(_on_event_node_path_changed)
 	discourse_graph_edit.data_event_path_changed.connect(_on_data_event_node_path_changed)
+	
+	discourse_graph_edit.travel_node_target_id_changed.connect(_on_travel_node_target_id_changed)
+	discourse_graph_edit.travel_node_selected_waypoint_changed.connect(_on_travel_node_selected_waypoint_changed)
 
 
 func get_column_left() -> Control:
@@ -4509,14 +4516,20 @@ func _on_nodes_removed(action: String, graph_nodes_data: Dictionary[StringName, 
 			TYPE_DICTIONARY),
 		"pointer_states": DictUtils.create_typed(
 			TYPE_STRING_NAME,
-			TYPE_STRING_NAME)}
+			TYPE_STRING_NAME),
+		"waypoint_states": DictUtils.create_typed(
+			TYPE_STRING_NAME,
+			TYPE_STRING_NAME),}
 	
 	var requires_anchor_snapshot: bool = false
+	var requires_waypoint_snapshot: bool = false
 	
 	for node_uuid in graph_nodes_data:
 		var type: int = graph_nodes_data[node_uuid]["data"]["type"]
-		if type == DiscourseGraphNode.DialogueNodeType.SHORTCUT_TARGET:
+		if type == DiscourseGraphNode.DialogueNodeType.SHORTCUT_OUT:
 			requires_anchor_snapshot = true
+		elif type == DiscourseGraphNode.DialogueNodeType.TRAVEL_TARGET:
+			requires_waypoint_snapshot = true
 		if active_conversation.node_data.has(node_uuid):
 			action_data["resource_node_data"][node_uuid] = active_conversation.node_data[node_uuid].duplicate(true)
 		if active_conversation.localization.has(node_uuid):
@@ -4528,7 +4541,13 @@ func _on_nodes_removed(action: String, graph_nodes_data: Dictionary[StringName, 
 		for pointer in discourse_graph_edit.anchor_pointers:
 			var pointing_to: StringName = pointer.get_selected_target_uuid()
 			if graph_nodes_data.has(pointing_to):
-				action_data["pointer_states"][pointer.get_node_uuid()] = pointer.get_selected_target_uuid()
+				action_data["pointer_states"][pointer.get_node_uuid()] = pointing_to
+	
+	if requires_waypoint_snapshot:
+		for pointer in discourse_graph_edit.travel_pointers:
+			var pointing_to: StringName = pointer.get_selected_waypoint_uuid()
+			if graph_nodes_data.has(pointing_to):
+				action_data["waypoint_states"][pointer.get_node_uuid()] = pointing_to
 	
 	var action_name: String = action.capitalize() + " Node"
 	if 1 < graph_nodes_data.size():
@@ -4564,6 +4583,7 @@ func _undo_remove_nodes(action_data: Dictionary) -> void:
 	var connection_deaf_nodes: Array[DiscourseGraphNode] = []
 	var created_nodes: Dictionary[StringName, DiscourseGraphNode] = {}
 	var refresh_shortcuts: bool = false
+	var refresh_waypoints: bool = false
 	
 	var hierarchy_uuid: Array[StringName] = []
 	hierarchy_uuid.assign(tree_hierarchy.keys())
@@ -4580,8 +4600,10 @@ func _undo_remove_nodes(action_data: Dictionary) -> void:
 		if d_node.node_type == DiscourseGraphNode.DialogueNodeType.DIALOG_MERGE or d_node.node_type == DiscourseGraphNode.DialogueNodeType.METADATA:
 			d_node._connection_updates_disabled = true
 			connection_deaf_nodes.append(d_node)
-		elif d_node.node_type == DiscourseGraphNode.DialogueNodeType.SHORTCUT or d_node.node_type == DiscourseGraphNode.DialogueNodeType.SHORTCUT_TARGET:
+		elif d_node.node_type == DiscourseGraphNode.DialogueNodeType.SHORTCUT_IN or d_node.node_type == DiscourseGraphNode.DialogueNodeType.SHORTCUT_OUT:
 			refresh_shortcuts = true
+		elif d_node.node_type == DiscourseGraphNode.DialogueNodeType.TRAVEL_TARGET or d_node.node_type == DiscourseGraphNode.DialogueNodeType.TRAVEL_TO:
+			refresh_waypoints = true
 		
 		if d_node.is_node_localized():
 			if d_node.node_type == DiscourseGraphNode.DialogueNodeType.DIALOG:
@@ -4657,10 +4679,18 @@ func _undo_remove_nodes(action_data: Dictionary) -> void:
 	if refresh_shortcuts:
 		discourse_graph_edit.refresh_anchors()
 		var pointer_states: Dictionary = action_data["pointer_states"]
-		for pointer_uuid in action_data["pointer_states"]:
+		for pointer_uuid in pointer_states:
 			var pointer: DiscourseGraphNode = discourse_graph_edit.get_discourse_node(pointer_uuid)
 			if pointer != null:
 				pointer.select_target(pointer_states[pointer_uuid])
+	
+	if refresh_waypoints:
+		discourse_graph_edit.refresh_waypoints()
+		var waypoint_states: Dictionary = action_data["waypoint_states"]
+		for pointer_uuid in waypoint_states:
+			var pointer: DiscourseGraphNode = discourse_graph_edit.get_discourse_node(pointer_uuid)
+			if pointer != null:
+				pointer.select_waypoint(waypoint_states[pointer_uuid])
 
 
 func _on_graph_edit_node_duplication_requested(uuids: Array[StringName]) -> void:
@@ -4883,7 +4913,9 @@ func _on_nodes_created_batch(node_uuids: Array[StringName], action_name: String 
 		"graph_nodes_data": {},
 		"resource_node_data": {},
 		"resource_localization": {},
-		"tree_hierarchy": {}}
+		"tree_hierarchy": {},
+		"waypoint_states": {},
+		"pointer_states": {}}
 	
 	for uuid in node_uuids:
 		var node: DiscourseGraphNode = discourse_graph_edit.get_discourse_node(uuid)
@@ -5186,6 +5218,20 @@ func _on_data_event_node_path_changed(node_uuid: StringName, from: String, to: S
 	undo.create_action("Set Data Event Variable Path")
 	undo.add_do_method(discourse_graph_edit.set_data_event_node_variable_path.bind(node_uuid, to))
 	undo.add_undo_method(discourse_graph_edit.set_data_event_node_variable_path.bind(node_uuid, from))
+	undo.commit_action(false)
+
+
+func _on_travel_node_target_id_changed(uuid: String, old_id: String, new_id: String) -> void:
+	undo.create_action("Set Waypoint Node ID")
+	undo.add_do_method(discourse_graph_edit.set_waypoint_node_id.bind(uuid, new_id))
+	undo.add_undo_method(discourse_graph_edit.set_waypoint_node_id.bind(uuid, old_id))
+	undo.commit_action(false)
+
+
+func _on_travel_node_selected_waypoint_changed(node_uuid: StringName, old_waypoint: StringName, new_waypoint: StringName) -> void:
+	undo.create_action("Set Travel Node Target")
+	undo.add_do_method(discourse_graph_edit.set_travel_node_selected_waypoint.bind(node_uuid, new_waypoint))
+	undo.add_undo_method(discourse_graph_edit.set_travel_node_selected_waypoint.bind(node_uuid, old_waypoint))
 	undo.commit_action(false)
 
 

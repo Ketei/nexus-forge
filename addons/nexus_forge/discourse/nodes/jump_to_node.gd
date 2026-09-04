@@ -1,4 +1,3 @@
-class_name DiscourseGraphAnchorPointer
 extends DiscourseGraphNode
 
 
@@ -9,9 +8,9 @@ var shortcuts: OptionButton
 
 
 func _post_init() -> void:
-	set_node_id(&"AnchorPointer")
-	title = "Go To"
-	node_type = DialogueNodeType.SHORTCUT
+	set_node_id(&"FlowIn")
+	title = "Flow In"
+	node_type = DialogueNodeType.SHORTCUT_IN
 	parent_mode = PortMode.INPUT
 	parent_port = 0
 	size = Vector2(200.0, 87.0)
@@ -70,8 +69,10 @@ func _set_node_data(data: Dictionary) -> void:
 	if metadata.has("position") and typeof(metadata["position"]) == TYPE_VECTOR2:
 		position_offset = metadata["position"]
 	
-	if metadata.has("anchor_target") and typeof(metadata["anchor_target"]) == TYPE_STRING:
-		select_target(metadata["anchor_target"])
+	if metadata.has("anchor_target"):
+		var target_type: int = typeof(metadata["anchor_target"])
+		if target_type == TYPE_STRING_NAME or target_type == TYPE_STRING:
+			select_target(metadata["anchor_target"])
 
 
 func _get_issues() -> PackedStringArray:

@@ -35,8 +35,8 @@ enum NodeTypes {
 	CALLABLE = 13, ## Represents a method that can be called
 	CALLABLE_RETURN = 14, ## Represents a method that can be called
 	VARIABLE_GET = 15,
-	SHORTCUT = 16, ## A pointer that directs to a SHORTCUT_OUT.
-	SHORTCUT_TARGET = 17, ## A node for SHORTCUT_IN to point to.
+	SHORTCUT_IN = 16, ## A pointer that directs to a SHORTCUT_OUT.
+	SHORTCUT_OUT = 17, ## A node for SHORTCUT_IN to point to.
 	DIALOG_END = 18,
 	DIALOG_MERGE = 19,
 	COMMENT = 20, ## A node that exists to explain something.
@@ -47,7 +47,11 @@ enum NodeTypes {
 	RESOURCE = 25,
 	DATA_EVENT = 26,
 	LOCALIZED_TEXT = 27,
-	METADATA = 28}
+	METADATA = 28,
+	TRAVEL_TO = 29,
+	TRAVEL_TARGET = 30,
+	TRAVEL_BACK = 31,
+	}
 
 const RANDOM_DEFAULT_WEIGHT: int = 1
 const FLOAT_SNAP: float = 0.01
@@ -65,9 +69,9 @@ var locale: String = "en":
 				_dialog_resource._set_locale(locale)
 			else:
 				_load_locale_into(_dialog_resource, locale)
-
-# Maps UUID: CustomID
-#var _dialog_id_map: Dictionary[StringName, StringName] = {}
+var max_dialog_travel_stack: int = 100:
+	set(s):
+		max_dialog_travel_stack = maxi(-1, s)
 
 var _dialog_resource: DiscourseDialog = null:
 	set(new_res):
@@ -79,6 +83,7 @@ var _current_uuid: StringName = &""
 var _conversation_cache: ResourceCache = null
 var _parser_cache: Cache = null
 var _parser_regex: RegEx = RegEx.new()
+var _node_travel_stack: Array[StringName] = []
 
 var _path_to_id: Dictionary[StringName, StringName] = {}
 # {"dialogs.village.mayor": {"data_path": "res://asdas", "locale_file": "---.json"}
@@ -498,6 +503,19 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 			target["current"] = uuid
 			target["type"] = NodeTypes.DIALOG_END
 			return target
+		NodeTypes.TRAVEL_TO:
+			if max_dialog_travel_stack <= _get_target_travel_stack_size():
+				NFPluginGameHandler._log_msg(
+					"discourse",
+					"Travel stack overflow! Max depth of %d reached." % max_dialog_travel_stack,
+					NFPluginGameHandler._LogLevel.ERROR)
+				return target # Empty, so it should stop the dialog
+			_add_target_to_travel_stack(data["next_node"])
+			return _process_logic(data["travel_target"])
+		NodeTypes.TRAVEL_TARGET:
+			return _process_logic(data["next_node"])
+		NodeTypes.TRAVEL_BACK:
+			return _process_logic(_pop_last_travel_node_stack())
 		_:
 			return target
 
@@ -793,6 +811,8 @@ func is_dialog_active() -> bool:
 ## unless a valid [param starting_id] is given.[br]
 ## Returns [code]true[/code] if the dialog was loaded.
 func load_dialog(path: String, starting_id: StringName = &"") -> bool:
+	_clear_target_travel_stack()
+	
 	var target_path: String = _logic_overrides[path] if _logic_overrides.has(path) else path
 	
 	if _conversation_cache.is_in_cache(target_path):
@@ -847,6 +867,44 @@ func set_dialog_id(id: StringName) -> void:
 ## Returns the ID of the current dialog position.
 func get_dialog_current_id() -> StringName:
 	return _current_uuid
+
+
+## Returns the current state of the dialog parser in raw data form for 
+## serialization.
+func get_state() -> Dictionary[String, Variant]:
+	var data: Dictionary[String, Variant] = {
+		"current_dialog_id": get_dialog_current_id(),
+		"dialog_travel_stack": _node_travel_stack.duplicate(true)}
+	return data
+
+
+## Sets the state of the current dialog from a dictionary.
+func set_state(to: Dictionary) -> void:
+	var new_uuid: StringName = &""
+	var new_stack: Array[StringName] = []
+	
+	if to.has("current_dialog_id"):
+		var type: int = typeof(to["current_dialog_id"])
+		if type == TYPE_STRING_NAME or type == TYPE_STRING:
+			new_uuid = StringName(to["current_dialog_id"])
+	
+	
+	if to.has("dialog_travel_stack") and typeof(to["dialog_travel_stack"]) == TYPE_ARRAY:
+		
+		for item in to["dialog_travel_stack"]:
+			var arr_type: int = typeof(item)
+			if arr_type == TYPE_STRING or arr_type == TYPE_STRING_NAME:
+				new_stack.append(StringName(item))
+			else:
+				NFPluginGameHandler._log_msg(
+						"discourse",
+						"Couldn't restore dialog stack. Item in stack is not String/StringName. Item type: %s" % type_string(arr_type),
+						NFPluginGameHandler._LogLevel.ERROR)
+				return
+	
+	_clear_target_travel_stack()
+	_current_uuid = new_uuid
+	_node_travel_stack.assign(new_stack)
 
 
 ## Progresses the conversation
@@ -1083,3 +1141,21 @@ func _clear_cache() -> void:
 		_dialog_resource.parsed_dialog_cache.clear()
 	_parser_cache.clear()
 	_conversation_cache.clear()
+
+
+func _pop_last_travel_node_stack() -> StringName:
+	if _node_travel_stack.is_empty():
+		return &""
+	return _node_travel_stack.pop_back()
+
+
+func _add_target_to_travel_stack(target: StringName) -> void:
+	_node_travel_stack.append(target)
+
+
+func _clear_target_travel_stack() -> void:
+	_node_travel_stack.clear()
+
+
+func _get_target_travel_stack_size() -> int:
+	return _node_travel_stack.size()

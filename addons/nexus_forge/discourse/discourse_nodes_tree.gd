@@ -34,11 +34,14 @@ const DIALOG: Array[NFDialogParser.NodeTypes] = [
 		NFDialogParser.NodeTypes.MATCH,
 		NFDialogParser.NodeTypes.PAUSE,
 		NFDialogParser.NodeTypes.RANDOM,
-		NFDialogParser.NodeTypes.SHORTCUT,
-		NFDialogParser.NodeTypes.SHORTCUT_TARGET,
+		NFDialogParser.NodeTypes.SHORTCUT_IN,
+		NFDialogParser.NodeTypes.SHORTCUT_OUT,
 		NFDialogParser.NodeTypes.DIALOG_END,
 		NFDialogParser.NodeTypes.DIALOG_MERGE,
-		NFDialogParser.NodeTypes.LOCALIZED_TEXT]
+		NFDialogParser.NodeTypes.LOCALIZED_TEXT,
+		NFDialogParser.NodeTypes.TRAVEL_TO,
+		NFDialogParser.NodeTypes.TRAVEL_TARGET,
+		NFDialogParser.NodeTypes.TRAVEL_BACK]
 	
 const DATA: Array[NFDialogParser.NodeTypes] = [
 		NFDialogParser.NodeTypes.CONDITION_SELECT,

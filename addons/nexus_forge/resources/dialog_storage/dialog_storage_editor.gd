@@ -587,7 +587,7 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 	for node_uuid in node_uuids:
 		var metadata: Dictionary = node_data[node_uuid]["metadata"]
 		uuid_translator[node_uuid] = node_data[node_uuid]["name"]
-		if node_data[node_uuid]["type"] == NodeType.SHORTCUT:
+		if node_data[node_uuid]["type"] == NodeType.SHORTCUT_IN:
 			var target_node: StringName = &""
 			if not metadata["anchor_target"].is_empty():
 				target_node = node_data[metadata["anchor_target"]]["output_connections"]["next_node"]["target_node_uuid"]
@@ -889,6 +889,11 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 				pass
 			NodeType.VALUE:
 				export_data["value"] = metadata["value"]
+			NodeType.TRAVEL_TO:
+				export_data["travel_target"] = target_finder.get_target(StringName(metadata["travel_target"]))
+				export_data["next_node"] = target_finder.get_target(StringName(node_data[node_id]["output_connections"]["next_node"]["target_node_uuid"]))
+			NodeType.TRAVEL_TARGET:
+				export_data["next_node"] = target_finder.get_target(StringName(node_data[node_id]["output_connections"]["next_node"]["target_node_uuid"]))
 			_:
 				pass
 	

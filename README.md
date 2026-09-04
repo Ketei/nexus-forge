@@ -98,7 +98,7 @@ Features that are planned to be implemented in the future:
 ### Beta & Beyond
 - [ ] **On Release:** Publish on Godot's Asset Library/Asset Store
 - [ ] **Core:** UndoRedo for all modules
-  - [ ] Discourse (Dialogs)
+  - [x] Discourse (Dialogs)
   - [x] Blackboard (Variables)
   - [x] Persona (Characters)
   - [x] Kindred (Species)
@@ -107,12 +107,9 @@ Features that are planned to be implemented in the future:
   - [x] Blueprints (Recipes)
   - [x] Odyssey (Quests)
   - [ ] Phrase Maps
-- [ ] **Core:** Implement an automatic [mod loader](#modding)
+- [ ] **Core:** Implement an automatic mod loader
 - [ ] **Discourse:** Import/Export CSV files for localization
 - [ ] **Github Wiki:** Rewrite the Wiki and include examples using screenshots/gifs
 - [ ] **GUI:** Improved GUI for smaller resolutions
 
 _And more! ... maybe_
-
-#### Modding
-All core data APIs are exposed at runtime, allowing developers to easily implement modding. A mod loader would automatically scan a defined directory and apply all changes from mods.

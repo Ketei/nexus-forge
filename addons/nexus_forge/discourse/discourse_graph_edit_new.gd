@@ -50,6 +50,9 @@ signal variable_node_path_changed(uuid: StringName, from: String, to: String)
 signal event_path_changed(uuid: StringName, from: String, to: String)
 signal data_event_path_changed(uuid: StringName, from: String, to: String)
 
+signal travel_node_target_id_changed(uuid: String, old_id: String, new_id: String)
+signal travel_node_selected_waypoint_changed(node_uuid: StringName, old_waypoint: StringName, new_waypoint: StringName)
+
 signal close_frame_requested(uuid: StringName)
 signal frame_title_changed(uuid: StringName, from: String, to: String)
 signal frame_color_changed(uuid: StringName, from: Color, to: Color)
@@ -107,7 +110,7 @@ var compatible_connections: Dictionary = {
 				"ports": [{"port": 0}]},
 			{
 				"name": "Anchor Pointer",
-				"type": DialogNodes.SHORTCUT,
+				"type": DialogNodes.SHORTCUT_IN,
 				"ports": [{"port": 0}]},
 			{
 				"name": "Dialog Merge",
@@ -120,6 +123,14 @@ var compatible_connections: Dictionary = {
 			{
 				"name": "Dialog End",
 				"type": DialogNodes.DIALOG_END,
+				"ports": [{"port": 0}]},
+			{
+				"name": "Travel To",
+				"type": DialogNodes.TRAVEL_TO,
+				"ports": [{"port": 0}]},
+			{
+				"name": "Travel Back",
+				"type": DialogNodes.TRAVEL_BACK,
 				"ports": [{"port": 0}]}], TYPE_DICTIONARY, &"", null),
 		"input": Array([
 			{
@@ -152,7 +163,7 @@ var compatible_connections: Dictionary = {
 					{"port": 1, "name": "False Branch"}]},
 			{
 				"name": "Anchor",
-				"type": DialogNodes.SHORTCUT_TARGET,
+				"type": DialogNodes.SHORTCUT_OUT,
 				"ports": [{"port": 0}]},
 			{
 				"name": "Dialog Merge",
@@ -161,6 +172,10 @@ var compatible_connections: Dictionary = {
 			{
 				"name": "Pause",
 				"type": DialogNodes.PAUSE,
+				"ports": [{"port": 0}]},
+			{
+				"name": "Waypoint",
+				"type": DialogNodes.TRAVEL_TARGET,
 				"ports": [{"port": 0}]}], TYPE_DICTIONARY, &"", null)},
 	ConnectionType.METADATA: {
 		"input": Array([
@@ -312,6 +327,10 @@ var connection_popup: PopupMenu = null
 # collection.
 var anchor_pointers: Array[DiscourseGraphNode] = []
 var anchor_targets: Array[DiscourseGraphNode] = []
+
+var travel_pointers: Array[DiscourseGraphNode] = []
+var travel_targets: Array[DiscourseGraphNode] = []
+
 # All of the spawned graph nodes. More straightforward since get_children also
 # returns the connection nodes
 var graph_nodes: Dictionary[StringName, DiscourseGraphNode] = {}
@@ -486,14 +505,14 @@ func new_dialog_node(node_type: DialogNodes, uuid: StringName = &"") -> Discours
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/var_getter.gd").new(uuid, &"TypeData")
 			created_node.type_changed.connect(variable_node_type_changed.emit)
 			created_node.path_changed.connect(variable_node_path_changed.emit)
-		DialogNodes.SHORTCUT:
+		DialogNodes.SHORTCUT_IN:
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/jump_to_node.gd").new(uuid)
 			anchor_pointers.append(created_node)
 			created_node.go_to_anchor_pressed.connect(_on_go_to_node_pressed, CONNECT_DEFERRED)
 			created_node.selected_shortcut_changed.connect(shortcut_node_target_changed.emit)
 			for anchor in anchor_targets:
 				created_node.add_anchor(anchor.get_node_uuid(), anchor.current_id)
-		DialogNodes.SHORTCUT_TARGET:
+		DialogNodes.SHORTCUT_OUT:
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/jump_target_node.gd").new(uuid)
 			var valid_id: String = get_valid_shortcut_id("shortcut", created_node)
 			created_node.set_anchor_id(valid_id)
@@ -530,6 +549,21 @@ func new_dialog_node(node_type: DialogNodes, uuid: StringName = &"") -> Discours
 		DialogNodes.METADATA:
 			created_node = preload("res://addons/nexus_forge/discourse/nodes/metadata_node.gd").new(uuid, &"TypeData")
 			created_node.metadata_id_changed.connect(metadata_node_key_changed.emit)
+		DialogNodes.TRAVEL_TO:
+			created_node = preload("res://addons/nexus_forge/discourse/nodes/travel_to_target_node.gd").new(uuid)
+			travel_pointers.append(created_node)
+			created_node.selected_waypoint_changed.connect(travel_node_selected_waypoint_changed.emit)
+			created_node.go_to_waypoint_pressed.connect(_on_go_to_node_pressed, CONNECT_DEFERRED)
+		DialogNodes.TRAVEL_TARGET:
+			var valid_id: String = get_valid_waypoint_id("waypoint")
+			created_node = preload("res://addons/nexus_forge/discourse/nodes/travel_target_node.gd").new(uuid)
+			created_node.set_waypoint_id(valid_id)
+			travel_targets.append(created_node)
+			for pointer in travel_pointers:
+				pointer.add_waypoint(created_node.get_node_uuid(), valid_id)
+			created_node.id_changed.connect(travel_node_target_id_changed.emit)
+		DialogNodes.TRAVEL_BACK:
+			created_node = preload("res://addons/nexus_forge/discourse/nodes/travel_back_node.gd").new(uuid)
 	
 	created_node.node_updated.connect(dialog_changed.emit, CONNECT_DEFERRED)
 	created_node.disconnect_requested.connect(_on_disconnection_request, CONNECT_DEFERRED)
@@ -699,14 +733,18 @@ func duplicate_single(node_uuid: StringName, new_uuid: StringName) -> void:
 	
 	var frame: GraphFrame = get_element_frame(node.name)
 	
-	if new_node.node_type == DialogNodes.SHORTCUT_TARGET:
+	if new_node.node_type == DialogNodes.SHORTCUT_OUT:
 		var cloned_id: String = new_node.get_anchor_id()
 		var new_id: String = get_valid_shortcut_id(cloned_id, new_node)
-		
 		new_node.set_anchor_id(new_id)
-		
 		for existing_anchor in anchor_pointers:
 			existing_anchor.add_anchor(new_uuid, new_id)
+	elif new_node.node_type == DialogNodes.TRAVEL_TARGET:
+		var cloned_id: String = new_node.get_waypoint_id()
+		var new_id: String = get_valid_waypoint_id(cloned_id, new_node)
+		new_node.set_waypoint_id(new_id)
+		for existing_pointer in travel_pointers:
+			existing_pointer.update_waypoint_id(new_uuid, new_id)
 	
 	if frame != null:
 		attach_graph_element_to_frame(new_node.name, frame.name)
@@ -752,6 +790,18 @@ func duplicate_multiple(duplicate_targets: Dictionary[StringName, StringName]) -
 		if new_node.node_type == DialogNodes.DIALOG_MERGE or new_node.node_type == DialogNodes.METADATA:
 			new_node._connection_updates_disabled = true
 			update_disabled_nodes.append(new_node)
+		elif new_node.node_type == DialogNodes.SHORTCUT_OUT:
+			var cloned_id: String = new_node.get_anchor_id()
+			var new_id: String = get_valid_shortcut_id(cloned_id, new_node)
+			new_node.set_anchor_id(new_id)
+			for existing_anchor in anchor_pointers:
+				existing_anchor.add_anchor(node_data["new_uuid"], new_id)
+		elif new_node.node_type == DialogNodes.TRAVEL_TARGET:
+			var original_id: String = new_node.get_waypoint_id()
+			var new_id: String = get_valid_waypoint_id(original_id, new_node)
+			new_node.set_waypoint_id(new_id)
+			for existing_pointer in travel_pointers:
+				existing_pointer.update_waypoint_id(node_data["new_uuid"], new_id)
 		
 		var frame: GraphFrame = get_element_frame(node.name)
 		uuid_equivalences[node.get_node_uuid()] = new_node
@@ -796,12 +846,18 @@ func remove_node(node_uuid: StringName) -> void:
 	match target.node_type:
 		DialogNodes.CALLABLE, DialogNodes.CALLABLE_RETURN:
 			method_callers.erase(target)
-		DialogNodes.SHORTCUT_TARGET:
+		DialogNodes.SHORTCUT_OUT:
 			for pointer in anchor_pointers:
 				pointer.remove_anchor(node_uuid)
 			anchor_targets.erase(target)
-		DialogNodes.SHORTCUT:
+		DialogNodes.SHORTCUT_IN:
 			anchor_pointers.erase(target)
+		DialogNodes.TRAVEL_TARGET:
+			travel_targets.erase(target)
+			for pointer in travel_pointers:
+				pointer.remove_waypoint(node_uuid)
+		DialogNodes.TRAVEL_TO:
+			travel_pointers.erase(target)
 		DialogNodes.DIALOG:
 			target.use_code_editor_pressed.disconnect(_on_use_code_editor_requested)
 		DialogNodes.CHOICES:
@@ -818,13 +874,35 @@ func get_valid_shortcut_id(desired_id: String, skip: DiscourseGraphNode = null) 
 	for item in anchor_targets:
 		if item == skip:
 			continue
-		existing_ids.append(item.current_id)
+		existing_ids.append(item.get_anchor_id())
 	
 	var iteration: int = 0
 	
 	while existing_ids.has(modified):
 		iteration += 1
 		modified = modified + str(iteration)
+	
+	return modified
+
+
+func get_valid_waypoint_id(desired_id: String, skip: DiscourseGraphNode = null) -> String:
+	var modified: String = desired_id
+	var existing_ids: Dictionary[String, Variant] = {}
+	
+	for item in travel_targets:
+		if item == skip:
+			continue
+		existing_ids[item.get_waypoint_id()] = null
+	
+	var base: String = desired_id
+	var trailing_data: Dictionary = StringUtils.get_trailing_integer(desired_id)
+	var iteration: int = trailing_data["integer"]
+	if trailing_data["has_integer"]:
+		base = base.trim_suffix(str(iteration))
+	
+	while existing_ids.has(modified):
+		iteration += 1
+		modified = base + str(iteration)
 	
 	return modified
 
@@ -841,6 +919,7 @@ func remove_nodes(node_uuids: Array[StringName]) -> void:
 		status_data[node] = null
 	
 	var removed_targets: Array[StringName] = []
+	var removed_travel_pointers: Array[StringName] = []
 	
 	for node_uuid in status_data.keys():
 		var target: DiscourseGraphNode = graph_nodes[node_uuid]
@@ -850,18 +929,28 @@ func remove_nodes(node_uuids: Array[StringName]) -> void:
 		match target.node_type:
 			DialogNodes.CALLABLE, DialogNodes.CALLABLE_RETURN:
 				method_callers.erase(target)
-			DialogNodes.SHORTCUT_TARGET:
+			DialogNodes.SHORTCUT_OUT:
 				removed_targets.append(node_uuid)
 				anchor_targets.erase(target)
-			DialogNodes.SHORTCUT:
+			DialogNodes.SHORTCUT_IN:
 				anchor_pointers.erase(target)
 			DialogNodes.DIALOG:
 				target.use_code_editor_pressed.disconnect(_on_use_code_editor_requested)
 			DialogNodes.CHOICES:
 				target.use_code_editor_pressed.disconnect(_on_use_code_editor_requested)
+			DialogNodes.TRAVEL_TARGET:
+				removed_travel_pointers.append(node_uuid)
+				travel_targets.erase(target)
+			DialogNodes.TRAVEL_TO:
+				travel_pointers.erase(target)
 		
 		graph_nodes.erase(node_uuid)
 		target.queue_free()
+	
+	if not removed_travel_pointers.is_empty():
+		for pointer in travel_pointers:
+			for uuid in removed_travel_pointers:
+				pointer.remove_waypoint(uuid)
 	
 	if not removed_targets.is_empty():
 		for pointer in anchor_pointers:
@@ -1995,6 +2084,14 @@ func refresh_anchors() -> void:
 					target.get_node_uuid(),
 					target.get_anchor_id())
 
+
+func refresh_waypoints() -> void:
+	for anchor in travel_pointers:
+		for target in travel_targets:
+			anchor.update_waypoint_id(
+					target.get_node_uuid(),
+					target.get_waypoint_id())
+
 #endregion
 
 
@@ -2075,14 +2172,14 @@ func set_shortcut_node_target(node_uuid: StringName, target_uuid: StringName) ->
 	
 	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
 	
-	if node != null and node.node_type == DialogNodes.SHORTCUT:
+	if node != null and node.node_type == DialogNodes.SHORTCUT_IN:
 		node.select_target(target_uuid)
 
 
 func set_shortcut_target_id(node_uuid: StringName, id: String) -> void:
 	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
 	
-	if node == null or node.node_type != DialogNodes.SHORTCUT_TARGET:
+	if node == null or node.node_type != DialogNodes.SHORTCUT_OUT:
 		return
 	
 	var valid_id: String = get_valid_shortcut_id(id, node)
@@ -2372,5 +2469,30 @@ func set_data_event_node_variable_path(node_uuid: StringName, path: String) -> v
 	
 	if node != null and node.node_type == DialogNodes.DATA_EVENT:
 		node.set_variable_path(path)
+
+
+func set_travel_node_selected_waypoint(node_uuid: StringName, target_uuid: StringName) -> void:
+	if not has_discourse_node(node_uuid) or not has_discourse_node(target_uuid):
+		return
+	
+	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
+	
+	if node != null and node.node_type == DialogNodes.TRAVEL_TO:
+		node.select_waypoint(target_uuid)
+
+
+func set_waypoint_node_id(node_uuid: StringName, id: String) -> void:
+	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
+	
+	if node == null or node.node_type != DialogNodes.TRAVEL_TARGET:
+		return
+	
+	var valid_id: String = get_valid_waypoint_id(id, node)
+	node.set_waypoint_id(valid_id)
+	for anchor in travel_pointers:
+		anchor.update_waypoint_id(
+				node_uuid,
+				id)
+
 
 # --- Node Signalers ---

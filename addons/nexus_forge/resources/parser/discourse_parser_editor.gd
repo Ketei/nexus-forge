@@ -335,14 +335,21 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 				if random_select <= current_weight:
 					return _process_logic(choice["next"])
 			return _process_logic(choices[-1]["next"]) # In case of loop error
-		NodeTypes.SHORTCUT:
+		NodeTypes.SHORTCUT_IN:
 			return _process_logic(metadata["anchor_target"])
-		NodeTypes.SHORTCUT_TARGET:
+		NodeTypes.SHORTCUT_OUT:
 			return _process_logic(data["output_connections"]["next_node"]["target_node_uuid"])
 		NodeTypes.DIALOG_END:
 			target["current"] = uuid
 			target["type"] = NodeTypes.DIALOG_END
 			return target
+		NodeTypes.TRAVEL_TO:
+			_add_target_to_travel_stack(data["output_connections"]["next_node"]["target_node_uuid"])
+			return _process_logic(metadata["travel_target"])
+		NodeTypes.TRAVEL_TARGET:
+			return _process_logic(data["output_connections"]["next_node"]["target_node_uuid"])
+		NodeTypes.TRAVEL_BACK:
+			return _process_logic(_pop_last_travel_node_stack())
 		NodeTypes.DIALOG_MERGE:
 			return _process_logic(data["output_connections"]["next_node"]["target_node_uuid"])
 		_:
