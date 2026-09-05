@@ -145,7 +145,6 @@ func remove_folder(folder_path: String) -> void:
 func remove_folder_tree(folder: TreeItem) -> void:
 	if not is_instance_valid(folder) or not is_folder(folder):
 		return
-	
 	folders.erase(folder.get_metadata(0)["id"])
 	var parent: TreeItem = folder.get_parent()
 	for sub_item in folder.get_children():
@@ -419,16 +418,13 @@ func get_folder_structure(_from: TreeItem = get_root()) -> Array[Dictionary]:
 	return structure
 
 
-func create_folder(folder_name: String, on_node: TreeItem = get_root(), select: bool = true, index: int = -1, folder_id: int = -1) -> TreeItem:
-	if 0 <= folder_id and folders.has(folder_id):
+func create_folder(folder_name: String, on_node: TreeItem = get_root(), select: bool = true, index: int = -1, folder_id: int = _folder_id) -> TreeItem:
+	if folder_id != _folder_id and folders.has(folder_id):
 		return null
 	
-	var true_name: String = get_unique_name_on_tree(
-				on_node,
-				folder_name)
 	var new_folder: TreeItem = on_node.create_child()
-	var true_id: int = claim_folder_id() if folder_id < 0 else folder_id
-	new_folder.set_text(0, true_name)
+	var true_id: int = claim_folder_id() if folder_id == _folder_id else folder_id
+	new_folder.set_text(0, folder_name)
 	new_folder.set_editable(0, true)
 	new_folder.set_icon(0, get_theme_icon("Folder", "EditorIcons"))
 	new_folder.add_button(
@@ -437,14 +433,13 @@ func create_folder(folder_name: String, on_node: TreeItem = get_root(), select: 
 			-1,
 			false,
 			"Delete Group")
-	new_folder.set_metadata(0, {"name": true_name, "is_node": false, "id": folder_id})
+	new_folder.set_metadata(0, {"name": folder_name, "is_node": false, "id": true_id})
 	
 	if select:
 		new_folder.select(0)
 		ensure_cursor_is_visible()
 	
-	folders[folder_id] = new_folder
-	
+	folders[true_id] = new_folder
 	if index == -1:
 		return new_folder
 	
@@ -479,12 +474,6 @@ func restore_folder(path: String, folder_id: int, index: int, contents: Array[Di
 	
 	if parent == null:
 		return
-	
-	for existing_item in parent.get_children():
-		if not is_folder(existing_item):
-			continue
-		if existing_item.get_text(0) == folder_name:
-			return
 	
 	var folder: TreeItem = create_folder(folder_name, parent, false, index, folder_id)
 	
@@ -715,21 +704,17 @@ func get_folder_item_paths() -> Dictionary[String, TreeItem]:
 
 
 func get_path_to_item(folder: TreeItem) -> String:
-	if not is_instance_valid(folder) or folder.get_parent() == null: # Skip if root
+	if not is_instance_valid(folder) or folder.get_parent() == null or folder.get_parent() == folder: # Skip if root
 		return ""
 	
 	var path_parts: Array[String] = []
 	
 	var root: TreeItem = get_root()
 	var current_item: TreeItem = folder
-	var iteration_limit: int = 100
-	var current_iteration: int = 0
+	
 	while current_item != null and current_item != root:
-		current_iteration += 1
 		path_parts.append(current_item.get_text(0))
 		current_item = current_item.get_parent()
-		if iteration_limit <= current_iteration:
-			break
 	
 	path_parts.reverse()
 	
