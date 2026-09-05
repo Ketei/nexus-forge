@@ -10,7 +10,7 @@ const TOOL_NAME: String = "Nexus Forge Character Lookup"
 
 var editor_view: Control = null
 var export_plugin: EditorExportPlugin = null
-var character_map: Dictionary[String, Variant] = {}
+var character_map: Dictionary[String, StringName] = {}
 
 
 # Earlier versions of godot had an issue where documentation wouldn't show
@@ -553,7 +553,7 @@ func _edit(object: Object) -> void:
 
 func _on_character_created(path: String) -> void:
 	if not character_map.has(path):
-		character_map[path] = null
+		character_map[path] = &""
 
 
 func _editor_ready() -> bool:
@@ -772,31 +772,12 @@ func _on_scan_confirmed(dialog: ConfirmationDialog) -> void:
 	dir_access.queue_free()
 
 
-#func _scan_add_directory_for_characters(directory: String, _on: Dictionary[String, StringName]) -> void:
-	#var paths:
-	#for res_path in discover_character_sheets():
-		#if character_map.has(res_path):
-			#continue
-		#character_map[res_path] = null
-	
-	#for file in DirAccess.get_files_at(directory):
-		#if file.get_extension() != "tres":
-			#continue
-		#var path: String = directory.path_join(file)
-		#var res_load = load(path)
-		#if res_load != null and res_load is CharacterSheet:
-			#_on[path] = res_load.id
-	#
-	#for subdirectory in DirAccess.get_directories_at(directory):
-		#_scan_add_directory_for_characters(directory.path_join(subdirectory), _on)
-
-
 func _on_scan_canceled(dialog: ConfirmationDialog) -> void:
 	dialog.queue_free()
 
 
 func save_character_paths() -> void:
-	var valid_characters: Dictionary[String, Variant] = {}
+	var valid_characters: Dictionary[String, StringName] = {}
 	
 	for res_path in character_map.keys():
 		if not ResourceLoader.exists(res_path):
