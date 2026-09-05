@@ -514,7 +514,7 @@ func ready_plugin(base_locale: String = "") -> void:
 	discourse_nodes_tree.item_renamed.connect(_on_discourse_item_renamed)
 	discourse_nodes_tree.folder_renamed.connect(_on_discourse_folder_renamed)
 	discourse_nodes_tree.item_moved.connect(_on_discourse_item_moved)
-	discourse_nodes_tree.directory_removed.connect(_on_discourse_directory_removed)
+	discourse_nodes_tree.directory_erase_requested.connect(_on_discourse_remove_directory_requested)
 	discourse_nodes_tree.collapsed_state_changed.connect(_on_collapsed_state_changed)
 	
 	localization_nodes_tree.dialog_selected.connect(_on_localizer_node_selected)
@@ -1216,16 +1216,33 @@ func _on_menu_close_pressed() -> void:
 
 
 func _on_new_folder_button_pressed() -> void:
+	var selected_item: TreeItem = discourse_nodes_tree.get_selected()
+	var parent_item: TreeItem = null
+	
+	if selected_item == null:
+		parent_item = discourse_nodes_tree.get_root()
+	else:
+		if discourse_nodes_tree.is_folder(selected_item):
+			parent_item = selected_item
+		else:
+			parent_item = discourse_nodes_tree.get_root()
+	
 	var new_name: String = get_unique_name_on_tree(
-		discourse_nodes_tree.get_root(),
+		parent_item,
 		"NewGroup")
 	
-	var selected_item: TreeItem = discourse_nodes_tree.get_selected()
+	var path: String = discourse_nodes_tree.get_path_to_item(parent_item)
+	var folder_id: int = discourse_nodes_tree.claim_folder_id()
 	
-	if selected_item != null and discourse_nodes_tree.is_folder(selected_item):
-		discourse_nodes_tree.create_folder(new_name, selected_item)
+	if path.is_empty():
+		path = new_name
 	else:
-		discourse_nodes_tree.create_folder(new_name)
+		path += "/" + new_name
+	
+	undo.create_action("Create Folder")
+	undo.add_do_method(discourse_nodes_tree.restore_folder.bind(path, folder_id, -1))
+	undo.add_undo_method(discourse_nodes_tree.remove_folder.bind(path))
+	undo.commit_action()
 	
 	_on_conversation_changed()
 
@@ -2222,25 +2239,15 @@ func set_up_node_structure(structure: Array, level: TreeItem, _map: Dictionary[S
 				level.add_child(_map[item["uuid"]])
 				_map.erase(item["uuid"])
 		else:
-			var new_folder: TreeItem = level.create_child()
-			new_folder.set_text(
-				0,
-				discourse_nodes_tree.get_unique_name_on_tree(
+			var folder_name: String = discourse_nodes_tree.get_unique_name_on_tree(
 					level,
-					item["name"] if item.has("name") else "new_folder",
-					new_folder))
-			
-			new_folder.set_editable(0, true)
-			new_folder.set_icon(0, get_theme_icon("Folder", "EditorIcons"))
+					item["name"] if item.has("name") else "new_folder")
+			var new_folder: TreeItem = discourse_nodes_tree.create_folder(
+					folder_name,
+					level,
+					false)
 			if item.has("collapsed"):
 				new_folder.collapsed = item["collapsed"]
-			new_folder.add_button(
-				0,
-				get_theme_icon("Remove", "EditorIcons"),
-				-1,
-				false,
-				"Delete Group")
-			new_folder.set_metadata(0, {"is_node": false})
 			if item.has("items"):
 				set_up_node_structure(item["items"], new_folder, _map)
 
@@ -3443,7 +3450,7 @@ func _on_recent_file_index_pressed(index: int) -> void:
 				"Couldn't open file '%s'." % file_path,
 				NFPluginGameHandler._LogLevel.ERROR)
 			return
-		conversation_tree.select_conversation.call_deferred(file)
+		conversation_tree.select_conversation.call_deferred(file.get_instance_id())
 		add_to_recently_opened_files(file_path)
 	else:
 		NFPluginGameHandler._log_msg(
@@ -4175,8 +4182,8 @@ func _do_set_node_id(uuid: StringName, id: String) -> void:
 
 func _on_discourse_folder_renamed(folder_id: int, old_name: String, new_name: String) -> void:
 	undo.create_action("Set Folder Name")
-	undo.add_do_method(conversation_tree.set_folder_name.bind(folder_id, new_name))
-	undo.add_undo_method(conversation_tree.set_folder_name.bind(folder_id, old_name))
+	undo.add_do_method(discourse_nodes_tree.set_folder_name.bind(folder_id, new_name))
+	undo.add_undo_method(discourse_nodes_tree.set_folder_name.bind(folder_id, old_name))
 	undo.commit_action(false)
 	
 	_on_conversation_changed()
@@ -4191,11 +4198,11 @@ func _on_discourse_item_moved(from_path: String, from_index: int, to_path: Strin
 	_on_conversation_changed()
 
 
-func _on_discourse_directory_removed(path: String, index: int, id: int, contents: Array[Dictionary]) -> void:
+func _on_discourse_remove_directory_requested(path: String, index: int, id: int, contents: Array[Dictionary]) -> void:
 	undo.create_action("Remove Folder")
 	undo.add_do_method(discourse_nodes_tree.remove_folder.bind(path))
 	undo.add_undo_method(discourse_nodes_tree.restore_folder.bind(path, id, index, contents))
-	undo.commit_action(false)
+	undo.commit_action()
 	_on_conversation_changed()
 
 # --- GraphEdit Operations ---

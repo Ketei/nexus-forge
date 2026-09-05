@@ -984,6 +984,8 @@ func clear_dialog_nodes(recreate_entry: bool = true) -> void:
 	node_frames.clear()
 	anchor_pointers.clear()
 	anchor_targets.clear()
+	travel_pointers.clear()
+	travel_targets.clear()
 	method_callers.clear()
 	signalers.clear()
 	entry_node = null

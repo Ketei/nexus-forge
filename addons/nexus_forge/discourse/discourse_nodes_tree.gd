@@ -9,7 +9,7 @@ signal folder_renamed(folder_id: int, old_name: String, new_name: String)
 
 signal item_moved(from_path: String, from_index: int, to_path: String, to_index: int)
 
-signal directory_removed(path: String, index: int, id: int, contents: Array[Dictionary])
+signal directory_erase_requested(path: String, index: int, id: int, contents: Array[Dictionary])
 
 signal collapsed_state_changed
 
@@ -119,19 +119,18 @@ func _on_context_id_pressed(id: int) -> void:
 			var folder_id: int = metadata["id"]
 			var items_contained: Array[Dictionary] = []
 			for sub_item in selected.get_children():
-				var is_node: bool = metadata["is_node"]
+				var subitem_meta: Dictionary = sub_item.get_metadata(0)
+				var is_node: bool = subitem_meta["is_node"]
 				var data: Dictionary = {
 					"is_node": is_node,
-					"name": metadata["name"]}
+					"name": subitem_meta["name"]}
 				if is_node:
-					data["uuid"] = metadata["uuid"]
+					data["uuid"] = subitem_meta["uuid"]
 				else:
-					data["id"] = metadata["id"]
+					data["id"] = subitem_meta["id"]
 				items_contained.append(data)
 			
-			remove_folder_tree(selected)
-			
-			directory_removed.emit(
+			directory_erase_requested.emit(
 					original_path,
 					original_index,
 					folder_id,
@@ -146,6 +145,7 @@ func remove_folder(folder_path: String) -> void:
 func remove_folder_tree(folder: TreeItem) -> void:
 	if not is_instance_valid(folder) or not is_folder(folder):
 		return
+	
 	folders.erase(folder.get_metadata(0)["id"])
 	var parent: TreeItem = folder.get_parent()
 	for sub_item in folder.get_children():
@@ -258,23 +258,24 @@ func _on_discourse_tree_button_clicked(item: TreeItem, _column: int, _id: int, _
 	else: # Deleting folder
 		var metadata: Dictionary = item.get_metadata(0)
 		var original_path: String = get_path_to_item(item)
+		var original_index: int = item.get_index()
 		var folder_id: int = metadata["id"]
 		var items_contained: Array[Dictionary] = []
 		for sub_item in item.get_children():
-			var is_node: bool = metadata["is_node"]
+			var subitem_meta: Dictionary = sub_item.get_metadata(0)
+			var is_node: bool = subitem_meta["is_node"]
 			var data: Dictionary = {
 				"is_node": is_node,
-				"name": metadata["name"]}
+				"name": subitem_meta["name"]}
 			if is_node:
-				data["uuid"] = metadata["uuid"]
+				data["uuid"] = subitem_meta["uuid"]
 			else:
-				data["id"] = metadata["id"]
+				data["id"] = subitem_meta["id"]
 			items_contained.append(data)
 		
-		remove_folder_tree(item)
-		
-		directory_removed.emit(
+		directory_erase_requested.emit(
 				original_path,
+				original_index,
 				folder_id,
 				items_contained)
 
@@ -418,9 +419,9 @@ func get_folder_structure(_from: TreeItem = get_root()) -> Array[Dictionary]:
 	return structure
 
 
-func create_folder(folder_name: String, on_node: TreeItem = get_root(), select: bool = true, index: int = -1, folder_id: int = -1) -> void:
+func create_folder(folder_name: String, on_node: TreeItem = get_root(), select: bool = true, index: int = -1, folder_id: int = -1) -> TreeItem:
 	if 0 <= folder_id and folders.has(folder_id):
-		return
+		return null
 	
 	var true_name: String = get_unique_name_on_tree(
 				on_node,
@@ -445,19 +446,19 @@ func create_folder(folder_name: String, on_node: TreeItem = get_root(), select: 
 	folders[folder_id] = new_folder
 	
 	if index == -1:
-		return
+		return new_folder
 	
 	var child_count: int = on_node.get_child_count()
 	var max_index: int = child_count - 1
 	
 	if not RangeUtils.is_between(index, -child_count, max_index):
-		return
+		return new_folder
 	
 	var true_index: int = wrapi(index, 0, child_count)
 	var current_index: int = new_folder.get_index()
 	
 	if current_index == true_index:
-		return
+		return new_folder
 	
 	if true_index == 0:
 		new_folder.move_before(on_node.get_first_child())
@@ -465,20 +466,16 @@ func create_folder(folder_name: String, on_node: TreeItem = get_root(), select: 
 		if true_index < current_index:
 			true_index -= 1
 		new_folder.move_after(on_node.get_child(true_index))
+	
+	return new_folder
 
 
-func restore_folder(path: String, folder_id: int, index: int, contents: Array[Dictionary]) -> void:
+func restore_folder(path: String, folder_id: int, index: int, contents: Array[Dictionary] = []) -> void:
 	if path.is_empty() or folders.has(folder_id):
 		return
 	
-	var slices: PackedStringArray = path.split("/", false, 1)
-	var parent: TreeItem = null
-	var folder_name: String = slices[-1]
-	
-	if slices.size() == 1:
-		parent = get_root()
-	else:
-		parent = get_item_from_path(slices[0])
+	var parent: TreeItem = get_item_from_path(path.get_base_dir())
+	var folder_name: String = path.get_file()
 	
 	if parent == null:
 		return
@@ -489,9 +486,7 @@ func restore_folder(path: String, folder_id: int, index: int, contents: Array[Di
 		if existing_item.get_text(0) == folder_name:
 			return
 	
-	create_folder(folder_name, parent, false, index, folder_id)
-	
-	var folder: TreeItem = folders[folder_id]
+	var folder: TreeItem = create_folder(folder_name, parent, false, index, folder_id)
 	
 	for item in contents:
 		if item["is_node"]:
@@ -500,6 +495,8 @@ func restore_folder(path: String, folder_id: int, index: int, contents: Array[Di
 				node_item.get_parent().remove_child(node_item)
 				folder.add_child(node_item)
 		else:
+			if item["id"] == folder_id:
+				continue
 			if folders.has(item["id"]):
 				var folder_item: TreeItem = folders[item["id"]]
 				folder_item.get_parent().remove_child(folder_item)
@@ -686,11 +683,12 @@ func _search_on_children(from: TreeItem, pattern: String) -> bool:
 
 func clear_tree() -> void:
 	var root: TreeItem = get_root()
+	nodes.clear()
+	folders.clear()
 	if root != null:
 		var collapsed: bool = root.collapsed
 		root.free()
 		create_item().collapsed = collapsed
-	nodes.clear()
 
 
 func set_collapsed_folders(folders: Dictionary) -> void:
@@ -724,9 +722,14 @@ func get_path_to_item(folder: TreeItem) -> String:
 	
 	var root: TreeItem = get_root()
 	var current_item: TreeItem = folder
+	var iteration_limit: int = 100
+	var current_iteration: int = 0
 	while current_item != null and current_item != root:
+		current_iteration += 1
 		path_parts.append(current_item.get_text(0))
 		current_item = current_item.get_parent()
+		if iteration_limit <= current_iteration:
+			break
 	
 	path_parts.reverse()
 	
@@ -735,7 +738,7 @@ func get_path_to_item(folder: TreeItem) -> String:
 
 func get_item_from_path(path: String) -> TreeItem:
 	if path.is_empty():
-		return null
+		return get_root()
 	
 	var slices: PackedStringArray = path.split("/", false)
 	var node_id: String = slices[-1]
