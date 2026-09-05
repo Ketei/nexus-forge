@@ -1268,6 +1268,31 @@ func get_compatible_nodes(connection_type: ConnectionType, node_side: String) ->
 
 #region Setters / Updaters
 
+func set_graph_frame_position_offset(frame_uuid: StringName, offset: Vector2) -> void:
+	if not node_frames.has(frame_uuid):
+		return
+	
+	var target_frame: GraphFrame = node_frames[frame_uuid]
+	var frame_elements: Dictionary[String, Array] = get_elements_in_frame(frame_uuid)
+	var offset_difference: Vector2 = offset - target_frame.position_offset
+	target_frame.position_offset = offset
+	
+	if offset_difference == Vector2.ZERO:
+		return
+	
+	for node_uuid in frame_elements["nodes"]:
+		var node: GraphNode = get_discourse_node(node_uuid)
+		if node != null:
+			node.position_offset += offset_difference
+	
+	for subframe_uuid in frame_elements["frames"]:
+		var frame: GraphFrame = get_discourse_frame(subframe_uuid)
+		if frame != null:
+			set_graph_frame_position_offset(
+					subframe_uuid,
+					frame.position_offset + offset_difference)
+
+
 func set_localization_data(localization: Dictionary) -> void:
 	for node_uuid in graph_nodes.keys():
 		var node: DiscourseGraphNode = graph_nodes[node_uuid]
@@ -1803,9 +1828,12 @@ func _on_begin_node_move() -> void:
 				"previous_frame": &"" if frame == null else frame.get_frame_uuid(),
 				"current_frame": &""}
 		else:
+			var p_frame: GraphFrame = get_element_frame(node.name)
 			movement_data["frames"][node.get_frame_uuid()] = {
 				"previous_position": node.position_offset,
-				"current_position": Vector2.ZERO}
+				"previous_frame": &"" if p_frame == null else p_frame.get_frame_uuid(),
+				"current_position": Vector2.ZERO,
+				"current_frame": &""}
 	
 	if not Input.is_key_pressed(KEY_ALT):
 		return
@@ -1827,8 +1855,15 @@ func _on_end_node_move() -> void:
 					curr_frame.get_frame_uuid()
 	
 	for frame_uuid in movement_data["frames"]:
+		var frame: GraphFrame = node_frames[frame_uuid]
+		var in_frame: GraphFrame = get_element_frame(frame.name)
+		var parent_frame: StringName = &""
+		if in_frame != null:
+			parent_frame = in_frame.get_frame_uuid()
 		movement_data["frames"][frame_uuid]["current_position"] =\
 				node_frames[frame_uuid].position_offset
+		movement_data["frames"][frame_uuid]["current_frame"] =\
+				parent_frame
 	
 	nodes_moved.emit(movement_data.duplicate(true))
 

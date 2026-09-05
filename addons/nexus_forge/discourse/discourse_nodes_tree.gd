@@ -369,7 +369,7 @@ func move_item(from_path: String, to: String, index: int) -> void:
 		else:
 			if true_index < target_item.get_index():
 				true_index -= 1
-			target_item.move_after(new_parent.get_child(true))
+			target_item.move_after(new_parent.get_child(true_index))
 
 
 func set_folder_name(folder_id: int, new_name: String) -> void:
