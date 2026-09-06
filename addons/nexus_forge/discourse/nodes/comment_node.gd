@@ -1,4 +1,11 @@
+@tool
 extends DiscourseGraphNode
+
+
+signal comment_changed(uuid: StringName, old_comment: String, new_comment: String)
+
+
+var comment_txt: TextEdit
 
 
 func _post_init() -> void:
@@ -11,14 +18,17 @@ func _post_init() -> void:
 	graph_icon = load("res://addons/nexus_forge/icons/comment_icon.svg")
 	resizable = true
 	
-	var comment_box: TextEdit = TextEdit.new()
-	comment_box.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
-	comment_box.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	comment_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	comment_txt = TextEdit.new()
+	comment_txt.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
+	comment_txt.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	comment_txt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	comment_txt.set_meta(&"old_value", "")
+	comment_txt.focus_exited.connect(_on_comment_focus_exited)
+	comment_txt.text_changed.connect(node_updated.emit)
 	
 	add_field(
 			&"comment",
-			comment_box,
+			comment_txt,
 			true)
 
 
@@ -45,4 +55,25 @@ func _set_node_data(data: Dictionary) -> void:
 		size = meta["size"]
 	
 	if meta.has("comment") and typeof(meta["comment"]) == TYPE_STRING:
-		get_field(&"comment").text = meta["comment"]
+		comment_txt.text = meta["comment"]
+		comment_txt.set_meta(&"old_value", meta["comment"])
+
+
+func set_comment_text(text: String) -> void:
+	comment_txt.text = text
+	comment_txt.set_meta(&"old_value", text)
+
+
+func _on_comment_focus_exited() -> void:
+	var old_data: String = comment_txt.get_meta(&"old_value")
+	var new_data: String = comment_txt.text
+	
+	if new_data == old_data:
+		return
+	
+	comment_txt.set_meta(&"old_value", new_data)
+	
+	comment_changed.emit(
+			get_node_uuid(),
+			old_data,
+			new_data)

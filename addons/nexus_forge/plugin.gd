@@ -10,7 +10,7 @@ const TOOL_NAME: String = "Nexus Forge Character Lookup"
 
 var editor_view: Control = null
 var export_plugin: EditorExportPlugin = null
-var character_map: Dictionary[String, Variant] = {}
+var character_map: Dictionary[String, StringName] = {}
 
 
 # Earlier versions of godot had an issue where documentation wouldn't show
@@ -126,7 +126,7 @@ func _enter_tree() -> void:
 			var data = cfg.get_value("RUNTIME", "CharacterMap")
 			for key in data.keys():
 				if FileAccess.file_exists(key):
-					character_map[key] = data[key]
+					character_map[key] = StringName(data[key])
 	
 	if use_discourse:
 		editor_view.discourse.character_browser_requested.connect(_on_character_browser_requested)
@@ -263,21 +263,23 @@ func _set_window_layout(configuration: ConfigFile) -> void:
 		editor_view.quests.open_files(open_quests)
 
 
-func _on_character_browser_requested(target: LineEdit) -> void:
+func _on_character_browser_requested(node_uuid: StringName, target: LineEdit) -> void:
 	var browser: Window = load("res://addons/nexus_forge/discourse/character_browser.tscn").instantiate()
+	var initial_text: String = target.text
 	EditorInterface.popup_dialog_centered(browser)
 	browser.populate_characters(character_map)
 	browser.grab_search_focus()
 	
 	var result: Array = await browser.window_finished
-	
-	if result[0]: #success
-		if target.text != result[1]:
-			editor_view.discourse._on_conversation_changed()
-		target.text = result[1]
-	target.grab_focus()
-	target.caret_column = target.text.length()
 	browser.queue_free()
+	
+	if not result[0] or result[1] == initial_text:
+		return
+	
+	target.text = result[1]
+	target.set_meta(&"old_value", result[1])
+	editor_view.discourse._on_dialog_node_character_id_changed(node_uuid, initial_text, result[1])
+	editor_view.discourse._on_conversation_changed()
 
 
 func _sort_custom_settings(a: String, b: String) -> bool:
@@ -551,7 +553,7 @@ func _edit(object: Object) -> void:
 
 func _on_character_created(path: String) -> void:
 	if not character_map.has(path):
-		character_map[path] = null
+		character_map[path] = &""
 
 
 func _editor_ready() -> bool:
@@ -770,31 +772,12 @@ func _on_scan_confirmed(dialog: ConfirmationDialog) -> void:
 	dir_access.queue_free()
 
 
-#func _scan_add_directory_for_characters(directory: String, _on: Dictionary[String, StringName]) -> void:
-	#var paths:
-	#for res_path in discover_character_sheets():
-		#if character_map.has(res_path):
-			#continue
-		#character_map[res_path] = null
-	
-	#for file in DirAccess.get_files_at(directory):
-		#if file.get_extension() != "tres":
-			#continue
-		#var path: String = directory.path_join(file)
-		#var res_load = load(path)
-		#if res_load != null and res_load is CharacterSheet:
-			#_on[path] = res_load.id
-	#
-	#for subdirectory in DirAccess.get_directories_at(directory):
-		#_scan_add_directory_for_characters(directory.path_join(subdirectory), _on)
-
-
 func _on_scan_canceled(dialog: ConfirmationDialog) -> void:
 	dialog.queue_free()
 
 
 func save_character_paths() -> void:
-	var valid_characters: Dictionary[String, Variant] = {}
+	var valid_characters: Dictionary[String, StringName] = {}
 	
 	for res_path in character_map.keys():
 		if not ResourceLoader.exists(res_path):

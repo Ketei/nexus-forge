@@ -335,14 +335,32 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 				if random_select <= current_weight:
 					return _process_logic(choice["next"])
 			return _process_logic(choices[-1]["next"]) # In case of loop error
-		NodeTypes.ANCHOR_POINTER:
+		NodeTypes.SHORTCUT_IN:
 			return _process_logic(metadata["anchor_target"])
-		NodeTypes.ANCHOR:
+		NodeTypes.SHORTCUT_OUT:
 			return _process_logic(data["output_connections"]["next_node"]["target_node_uuid"])
 		NodeTypes.DIALOG_END:
 			target["current"] = uuid
 			target["type"] = NodeTypes.DIALOG_END
 			return target
+		NodeTypes.TRAVEL_TO:
+			if max_dialog_travel_stack <= _get_target_travel_stack_size():
+				NFPluginGameHandler._log_msg(
+					"discourse",
+					"Travel stack overflow! Max depth of %d reached." % max_dialog_travel_stack,
+					NFPluginGameHandler._LogLevel.ERROR)
+				return target # Empty, so it should stop the dialog
+			_add_target_to_travel_stack(data["output_connections"]["next_node"]["target_node_uuid"])
+			return _process_logic(metadata["travel_target"])
+		NodeTypes.TRAVEL_TARGET:
+			return _process_logic(data["output_connections"]["next_node"]["target_node_uuid"])
+		NodeTypes.TRAVEL_BACK:
+			if _get_target_travel_stack_size() == 0:
+				NFPluginGameHandler._log_msg(
+						"discourse",
+						"Travel Back node '%s' called, but no item remains in the travel stack" % data.get("name", "ID NOT FOUND"),
+						NFPluginGameHandler._LogLevel.WARNING)
+			return _process_logic(_pop_last_travel_node_stack())
 		NodeTypes.DIALOG_MERGE:
 			return _process_logic(data["output_connections"]["next_node"]["target_node_uuid"])
 		_:
@@ -761,6 +779,11 @@ func edit_dialog(locale_code: String, dialog_id: StringName, node_id: StringName
 				NFPluginGameHandler._LogLevel.ERROR)
 		return
 	
+	if data_type == TYPE_NIL:
+		if _dialog_edits.has(dialog_id):
+			_dialog_edits[dialog_id].set_override(node_id, locale_code, null)
+		return
+	
 	var target: DiscourseDialog.NFDialogEntryOverride = null
 	
 	if _dialog_edits.has(dialog_id):
@@ -793,6 +816,11 @@ func edit_choices(locale_code: String, dialog_id: StringName, node_id: StringNam
 			"discourse",
 			"Can't assing choices based on a non-array.",
 			NFPluginGameHandler._LogLevel.ERROR)
+		return
+	
+	if type == TYPE_NIL:
+		if _dialog_edits.has(dialog_id):
+			_dialog_edits[dialog_id].set_override(node_id, locale_code, null)
 		return
 	
 	var target: DiscourseDialog.NFDialogEntryOverride = null

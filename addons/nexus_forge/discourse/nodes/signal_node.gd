@@ -1,7 +1,16 @@
+@tool
 extends DiscourseGraphNode
 
 
-var available_signals: Dictionary = {}
+signal signal_changed(uuid: StringName, old_state: Dictionary, new_state: Dictionary)
+
+static var available_signals: Dictionary = {}
+
+var signals_node: OptionButton
+
+
+static func _static_init() -> void:
+	available_signals = get_user_signals()
 
 
 func _post_init() -> void:
@@ -12,12 +21,10 @@ func _post_init() -> void:
 	parent_port = 0
 	size = Vector2(230, 83)
 	
-	available_signals = get_user_signals()
-	
 	var signal_keys: Array = available_signals.keys()
 	signal_keys.sort_custom(ArrayUtils.sort_custom_alphabetically_asc)
 	
-	var signals_node: OptionButton = OptionButton.new()
+	signals_node = OptionButton.new()
 	signals_node.name = &"SignalsOptBtn"
 	signals_node.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	signals_node.fit_to_longest_item = false
@@ -35,12 +42,13 @@ func _post_init() -> void:
 			SlotConnectionType.SIGNAL)
 	set_slot_color_right(0, COLORS["signal"])
 	
-	if not available_signals.is_empty():
-		signals_node.select(0)
-		for arg in available_signals[signals_node.get_item_metadata(0)]:
-			add_input_arg(arg["name"], arg["type"])
-	else:
+	if available_signals.is_empty():
 		signals_node.disabled = true
+		signals_node.set_meta(&"old_value", "")
+	else:
+		signals_node.select(0)
+		signals_node.set_meta(&"old_value", signals_node.get_item_metadata(0))
+		await load_signal(signals_node.get_item_metadata(0))
 	
 	signals_node.item_selected.connect(_on_signal_selected)
 
@@ -76,15 +84,11 @@ func _get_issues() -> PackedStringArray:
 
 
 func _get_node_data() -> Dictionary:
-	var arguments: Array[Dictionary] = []
-	for arg_idx in range(get_child_count() - 1):
-		arguments.append(get_uuid_and_port_connected_to(PortMode.INPUT, arg_idx))
-	
 	var output_connectons: Dictionary = {
 		"signaler": get_uuid_and_port_connected_to(PortMode.OUTPUT, 0)}
 	var metadata: Dictionary = {
 		"signal": get_current_signal(),
-		"arguments": arguments}
+		"arguments": get_signal_arguments()}
 	
 	return _build_node_data(metadata, output_connectons)
 
@@ -103,58 +107,110 @@ func _set_node_data(data: Dictionary) -> void:
 	if not metadata.has("signal") or typeof(metadata["signal"]) != TYPE_STRING:
 		return
 	
-	var sign_btn: OptionButton = get_field(&"signals")
+	if await set_signal(metadata["signal"]):
+		signals_node.set_meta(&"old_value", metadata["signal"])
 
-	for idx in range(sign_btn.item_count):
-		if sign_btn.get_item_metadata(idx) == metadata["signal"]:
-			sign_btn.select(idx)
-			load_signal(metadata["signal"])
-			break
+
+func get_signal_arguments() -> Array[Dictionary]:
+	var arguments: Array[Dictionary] = []
+	for arg_idx in range(get_child_count() - 1):
+		arguments.append(
+				get_uuid_and_port_connected_to(
+						PortMode.INPUT,
+						arg_idx))
+	return arguments
 
 
 func _on_signal_selected(idx: int) -> void:
-	var signal_id: String = get_field(&"signals").get_item_metadata(idx)
-	load_signal(signal_id)
-	node_updated.emit()
+	var old_value: String = signals_node.get_meta(&"old_value")
+	var signal_id: String = signals_node.get_item_metadata(idx)
+	
+	if signal_id == old_value:
+		return
+	signals_node.set_meta(&"old_value", signal_id)
+	
+	var old_state: Dictionary = {
+		"metadata": {
+			"signal": old_value,
+			"arguments": get_signal_arguments()}}
+	await load_signal(signal_id)
+	var new_state: Dictionary = {
+		"metadata": {
+			"signal": signal_id,
+			"arguments": get_signal_arguments()}}
+	
+	signal_changed.emit(
+			get_node_uuid(),
+			old_state,
+			new_state)
 
 
 func reload_signals() -> void:
 	available_signals = get_user_signals()
-	var opt_btn: OptionButton = get_field(&"signals")
-	var current_signal: String = "" if opt_btn.selected == -1 else opt_btn.get_selected_metadata()
+	
+	if available_signals.is_empty():
+		signals_node.clear()
+		await clear_input_args()
+		signals_node.disabled = true
+		signals_node.set_meta(&"old_value", "")
+		return
+	
+	if signals_node.disabled:
+		signals_node.disabled = false
+	
+	var current_signal: String = "" if signals_node.selected == -1 else signals_node.get_selected_metadata()
 	var new_signals = available_signals.keys()
 	var new_idx: int = -1
-	var emit_updated: bool = false
 	
 	new_signals.sort_custom(ArrayUtils.sort_custom_alphabetically_asc)
 	
 	if current_signal != "":
 		new_idx = new_signals.find(current_signal)
 	
-	opt_btn.clear()
+	signals_node.clear()
 	
 	for new_signal:String in new_signals:
-		opt_btn.add_item(new_signal.capitalize())
-		opt_btn.set_item_metadata(-1, new_signal)
+		signals_node.add_item(new_signal.capitalize())
+		signals_node.set_item_metadata(-1, new_signal)
 	
 	if new_idx == -1:
-		if opt_btn.item_count == 0:
-			clear_input_args()
-		else:
-			opt_btn.select(0)
-			load_signal(opt_btn.get_item_metadata(0))
+		signals_node.select(0)
+		signals_node.set_meta(&"old_value", signals_node.get_item_metadata(0))
+		await load_signal(signals_node.get_item_metadata(0))
 		node_updated.emit()
 		return
 	else:
-		opt_btn.select(new_idx)
+		signals_node.select(new_idx)
+		await load_signal(current_signal)
+
+
+func set_signal(signal_id: String) -> bool:
+	if not available_signals.has(signal_id):
+		return false
+	
+	for idx in range(signals_node.item_count):
+		if signals_node.get_item_metadata(idx) == signal_id:
+			signals_node.select(idx)
+			signals_node.set_meta(&"old_value", signal_id)
+			await load_signal(signal_id)
+			return true
+	
+	return false
+
+
+func load_signal(signal_id: String) -> void:
+	if not available_signals.has(signal_id):
+		return
 	
 	var arg_idx: int = -1 # With the index
-	for new_arg:Dictionary in available_signals[current_signal]:
+	var arg_count: int = get_child_count() - 1
+	
+	for new_arg:Dictionary in available_signals[signal_id]:
 		arg_idx += 1
 		
-		if get_child_count() - 1 <= arg_idx:
+		if arg_count <= arg_idx:
 			add_input_arg(new_arg["name"], new_arg["type"])
-			emit_updated = true
+			arg_count += 1
 			continue # And we continue
 		
 		var current_input_type: int = get_slot_type_left(arg_idx + 1)
@@ -186,52 +242,53 @@ func reload_signals() -> void:
 				new_type_color = "any"
 				new_icon = get_theme_icon("Variant", "EditorIcons")
 		
-		match current_input_type:
-			SlotConnectionType.VAR_INT:
-				compatible = new_data_type == TYPE_INT
-			SlotConnectionType.VAR_FLOAT:
-				compatible = new_data_type == TYPE_FLOAT
-			SlotConnectionType.VAR_BOOL:
-				compatible = new_data_type == TYPE_BOOL
-			SlotConnectionType.VAR_STRING:
-				compatible = new_data_type == TYPE_STRING
-			SlotConnectionType.VAR_ANY: # The current port accepts anything
-				# We grab the node that connects to the argument
-				var input_target: DiscourseGraphNode = get_node_connected_to_port(PortMode.INPUT, arg_idx)
-				# And grab the port type of that node
-				var output_type: int = -1 if input_target == null else input_target.get_output_port_type(
-						input_target.get_port_connected_to(PortMode.OUTPUT, self, arg_idx))
-				
-				# And it's compatible if the new port type matches the output
-				# port of the node connected to this one or is an "any".
-				compatible = output_type == new_port_type or output_type == SlotConnectionType.VAR_ANY
+		if has_any_input(arg_idx):
+			match current_input_type:
+				SlotConnectionType.VAR_INT:
+					compatible = new_data_type == TYPE_INT
+				SlotConnectionType.VAR_FLOAT:
+					compatible = new_data_type == TYPE_FLOAT
+				SlotConnectionType.VAR_BOOL:
+					compatible = new_data_type == TYPE_BOOL
+				SlotConnectionType.VAR_STRING:
+					compatible = new_data_type == TYPE_STRING
+				SlotConnectionType.VAR_ANY: # The current port accepts anything
+					# We grab the node that connects to the argument
+					var input_target: DiscourseGraphNode = get_node_connected_to_port(PortMode.INPUT, arg_idx)
+					# And grab the port type of that node
+					var output_type: int = -1 if input_target == null else input_target.get_output_port_type(
+							input_target.get_port_connected_to(PortMode.OUTPUT, self, arg_idx))
+					
+					# And it's compatible if the new port type matches the output
+					# port of the node connected to this one or is an "any".
+					compatible = output_type == new_port_type or output_type == SlotConnectionType.VAR_ANY
+			
+			if not compatible: # If it isn't compatible we disconnect it.
+				disconnect_port(PortMode.INPUT, arg_idx)
+				await node_disconnected
 		
-		if not compatible: # If it isn't compatible we disconnect it.
-			disconnect_port(PortMode.INPUT, arg_idx)
-			emit_updated = true
+		get_index_field(arg_idx + 1).text = new_arg["name"].capitalize()
 		
 		# If the types don't match we assign the type, change the color and icon.
 		if current_input_type != new_port_type:
-			set_slot_color_left(arg_idx, COLORS[new_type_color])
-			set_slot_type_left(arg_idx, new_port_type)
-			emit_updated = true
+			set_slot_color_left.call_deferred(arg_idx + 1, COLORS[new_type_color])
+			set_slot_type_left.call_deferred(arg_idx + 1, new_port_type)
 	
-	if emit_updated:
-		node_updated.emit()
-
-
-func load_signal(signal_id: String) -> void:
-	clear_input_args()
-	for arg:Dictionary in available_signals[signal_id]:
-		add_input_arg(arg["name"], arg["type"])
+	var fields_to_remove: Array[StringName] = []
+	for item in range(arg_idx + 2, get_child_count()):
+		var field_id: StringName = StringName("argument_" + str(item))
+		fields_to_remove.append(field_id)
+	
+	if not fields_to_remove.is_empty():
+		await remove_fields(fields_to_remove)
+		_reset_height.call_deferred()
 
 
 func get_current_signal() -> String:
-	var sign_btn: OptionButton = get_field(&"signals")
-	if sign_btn.selected == -1:
+	if signals_node.selected == -1:
 		return ""
 	else:
-		return sign_btn.get_item_metadata(sign_btn.selected)
+		return signals_node.get_item_metadata(signals_node.selected)
 
 
 func add_input_arg(arg_text: String, arg_type: int) -> void:

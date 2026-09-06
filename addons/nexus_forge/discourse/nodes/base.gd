@@ -7,6 +7,7 @@ signal disconnect_requested(from: StringName, out_port: int, to: StringName, in_
 signal close_requested(node: DiscourseGraphNode)
 signal duplicate_requested(node: DiscourseGraphNode)
 signal localize_node_toggled(toggled_on: bool, node: DiscourseGraphNode)
+signal node_resized(node_uuid: StringName, from: Vector2, to: Vector2)
 signal node_updated
 signal node_disconnected
 
@@ -65,6 +66,8 @@ var node_type: DialogueNodeType = DialogueNodeType.DIALOG
 var _uuid: StringName = &""
 var _node_id: StringName = &""
 var _uses_localization: bool = false
+var _prev_size: Vector2 = Vector2.ZERO
+var _resizing: bool = false
 var parent_mode: PortMode = PortMode.INPUT
 var parent_port: int = 0
 var graph_icon: Texture2D = null:
@@ -85,6 +88,15 @@ static func _static_init() -> void:
 		if class_entry["class"] == "DiscourseAPI":
 			api_path = class_entry["path"]
 			break
+
+
+static func validate_api_path() -> bool:
+	var all_classes: Array[Dictionary] = ProjectSettings.get_global_class_list()
+	for class_entry in all_classes:
+		if class_entry["class"] == "DiscourseAPI":
+			api_path = class_entry["path"]
+			return true
+	return false
 
 
 func _init(uuid: StringName = &"", theme_variant: StringName = &"", with_duplicate: bool = true, with_close: bool = true, localization: bool = false) -> void:
@@ -162,11 +174,27 @@ func _init(uuid: StringName = &"", theme_variant: StringName = &"", with_duplica
 	_post_init()
 	
 	if resizable:
+		resize_request.connect(_on_resize_requested)
 		resize_end.connect(_on_resize_end)
 
 
-func _on_resize_end(_new_size: Vector2) -> void:
-	node_updated.emit()
+func _on_resize_requested(new_size: Vector2) -> void:
+	if _resizing:
+		return
+	_resizing = true
+	_prev_size = size
+
+
+func _on_resize_end(new_size: Vector2) -> void:
+	_resizing = false
+	
+	if _prev_size == new_size:
+		return
+	
+	node_resized.emit(
+			get_node_uuid(),
+			_prev_size,
+			new_size)
 
 
 func _ready_localize_icon(localize_btn: Button) -> void:
@@ -215,7 +243,6 @@ func _get_close_button() -> Button:
 	var btn: Control = button_box.get_node_or_null(^"CloseBtn")
 	
 	return btn if btn is Button else null
-
 
 
 func _ready_close_icon(close_btn: Button) -> void:
@@ -284,6 +311,9 @@ func _set_node_data(data: Dictionary) -> void:
 	
 	if metadata.has("position") and typeof(metadata["position"]) == TYPE_VECTOR2:
 		position_offset = metadata["position"]
+	
+	if metadata.has("localized") and typeof(metadata["localized"]) == TYPE_BOOL:
+		set_node_localized(metadata["localized"])
 
 
 func _on_localization_toggled(toggle: bool) -> void:
@@ -294,7 +324,6 @@ func _on_localization_toggled(toggle: bool) -> void:
 	node.modulate = LOCALIZED_COLOR if toggle else Color.WHITE
 	_uses_localization = toggle
 	localize_node_toggled.emit(toggle, self)
-	node_updated.emit()
 
 
 func get_node_state() -> Dictionary:
@@ -307,23 +336,18 @@ func get_node_state() -> Dictionary:
 		"input_connections": input_connections,
 		"output_connections": output_connections}
 	
-	var fields: Array[StringName] = []
-	var field_nodes: Array[Node] = get_children()
-	
-	field_nodes.sort_custom(func (a:Control,b: Control): return a.get_index() < b.get_index())
-	
-	for field in field_nodes:
-		fields.append(field.name)
-	
 	var port: int = -1
 	for input_connection in _input_nodes:
 		port += 1
-		var slot: int = fields.find(input_connection["field_id"])
+		var slot: int = get_slot_from_port(PortMode.INPUT, port)
 		var connections: Array[Dictionary] = []
 		
 		for connection_index in input_connection["connections"].size():
 			connections.append(
-					get_uuid_and_port_connected_to(PortMode.INPUT, port, connection_index))
+					get_uuid_and_port_connected_to(
+							PortMode.INPUT,
+							port,
+							connection_index))
 		input_connections[input_connection["field_id"]] = {
 			"port": port, # Port ID
 			"slot": slot, # Slot Index,
@@ -331,7 +355,7 @@ func get_node_state() -> Dictionary:
 	port = -1
 	for output_connection in _output_nodes:
 		port += 1
-		var slot: int = fields.find(output_connection["field_id"])
+		var slot: int = get_slot_from_port(PortMode.OUTPUT, port)
 		var connections: Array[Dictionary] = []
 		for connection_index in output_connection["connections"].size():
 			connections.append(
@@ -485,6 +509,11 @@ func can_input_multiple(input_idx: int) -> bool:
 
 
 func is_port_available(port_type: PortMode, port: int) -> bool:
+	var slot: int = get_slot_from_port(port_type, port)
+	
+	if not get_child(slot).visible:
+		return false
+	
 	if port_type == PortMode.INPUT:
 		if has_any_input(port):
 			return can_input_multiple(port)
@@ -504,13 +533,42 @@ func can_output_multiple(output_idx: int) -> bool:
 
 
 func get_input_connection_count(input_port: int) -> int:
+	var port_count: int = _input_nodes.size()
+	var max_port_index: int = port_count - 1
+	if max_port_index < 0:
+		return 0
+	if not RangeUtils.is_between(input_port, -port_count, max_port_index):
+		return 0
 	return _input_nodes[input_port]["connections"].size()
 
 
-func get_node_connected_to_port(port_type: PortMode, port: int, connection_index: int = 0) -> DiscourseGraphNode:
+func get_connection_count(port_type: PortMode, port: int) -> int:
 	if port_type == PortMode.INPUT:
-		return _input_nodes[port]["connections"][connection_index]["target_node"]
+		return get_input_connection_count(port)
 	elif port_type == PortMode.OUTPUT:
+		return get_output_connection_count(port)
+	else:
+		return 0
+
+
+func get_node_connected_to_port(port_type: PortMode, port: int, connection_index: int = 0) -> DiscourseGraphNode:
+	var connection_count: int = get_connection_count(port_type, port)
+	
+	if connection_count == 0:
+		return null
+	
+	if port_type == PortMode.INPUT:
+		var in_connections_size: int = _input_nodes[port]["connections"].size()
+		var max_in_connection_index: int = in_connections_size - 1
+		if not RangeUtils.is_between(connection_index, -in_connections_size, max_in_connection_index):
+			return null
+		return _input_nodes[port]["connections"][connection_index]["target_node"]
+		
+	elif port_type == PortMode.OUTPUT:
+		var out_connections_size: int = _output_nodes[port]["connections"].size()
+		var max_out_connection_index: int = out_connections_size - 1
+		if not RangeUtils.is_between(connection_index, -out_connections_size, max_out_connection_index):
+			return null
 		return _output_nodes[port]["connections"][connection_index]["target_node"]
 	else:
 		return null
@@ -527,16 +585,28 @@ func get_target_port_connected_to_port(port_type: PortMode, port:int, connection
 
 func has_any_input(input_idx: int) -> bool:
 	var input_count: int = _input_nodes.size()
-	if input_count <= 0 or input_idx < 0 or input_count <= input_idx:
+	if input_count == 0:
+		return false
+	var max_index: int = input_count - 1
+	if not RangeUtils.is_between(input_idx, -input_count, max_index):
 		return false
 	return not _input_nodes[input_idx]["connections"].is_empty()
 
 
 func has_input_on(input_port: int, input_idx: int = 0) -> bool:
-	if input_port < 0 or input_idx < 0 or _input_nodes.size() - 1 < input_port:
+	var port_count: int = _input_nodes.size()
+	if port_count == 0:
 		return false
-	var input_size: int = _input_nodes[input_port]["connections"].size()
-	return 0 < input_size and input_idx < input_size
+	var max_port_index: int = port_count - 1
+	
+	if not RangeUtils.is_between(input_port, -port_count, max_port_index):
+		return false
+	
+	var connection_count: int = _input_nodes[input_port]["connections"].size()
+	if connection_count == 0:
+		return false
+	var max_connection_index: int = connection_count - 1
+	return RangeUtils.is_between(input_idx, 0, max_connection_index)
 
 
 func get_target_node_uuid(port_mode: PortMode, port: int, connection_index: int = 0) -> String:
@@ -557,11 +627,19 @@ func get_target_node_uuid(port_mode: PortMode, port: int, connection_index: int 
 			return ""
 
 
-func is_connected_to_input(input_idx: int, node: DiscourseGraphNode) -> bool:
-	if _input_nodes.size() <= input_idx:
+func is_connected_to_input(port: int, node: DiscourseGraphNode) -> bool:
+	if not is_instance_valid(node):
 		return false
 	
-	for item in _input_nodes[input_idx]["connections"]:
+	var port_count: int = _input_nodes.size()
+	if port_count == 0:
+		return false
+	var max_port_index: int = port_count - 1
+	
+	if not RangeUtils.is_between(port, -port_count, max_port_index):
+		return false
+	
+	for item in _input_nodes[port]["connections"]:
 		if item["target_node"] == node:
 			return true
 	return false
@@ -569,16 +647,29 @@ func is_connected_to_input(input_idx: int, node: DiscourseGraphNode) -> bool:
 
 func has_any_output(output_idx: int) -> bool:
 	var output_count: int = _output_nodes.size()
-	if output_count == 0 or output_idx < 0 or output_count <= output_idx:
+	if output_count == 0:
 		return false
+	var max_index: int = output_count - 1
+	if not RangeUtils.is_between(output_idx, -output_count, max_index):
+		return false
+	
 	return not _output_nodes[output_idx]["connections"].is_empty()
 
 
 func has_output_on(output_port: int, output_idx: int = 0) -> bool:
-	if output_idx < 0:
+	var port_count: int = _output_nodes.size()
+	if port_count == 0:
 		return false
-	var output_size: int = _output_nodes[output_port]["connections"].size()
-	return output_idx < output_size
+	var max_port_index: int = port_count - 1
+	
+	if not RangeUtils.is_between(output_port, -port_count, max_port_index):
+		return false
+	
+	var connection_count: int = _output_nodes[output_port]["connections"].size()
+	if connection_count == 0:
+		return false
+	var max_connection_index: int = connection_count - 1
+	return RangeUtils.is_between(output_idx, 0, max_connection_index)
 
 
 func has_port(mode: PortMode, idx: int) -> bool:
@@ -590,14 +681,30 @@ func has_port(mode: PortMode, idx: int) -> bool:
 		return false
 
 
-func is_connected_to_output(output_idx: int, node: DiscourseGraphNode) -> bool:
-	if _output_nodes.size() <= output_idx:
+func is_connected_to_output(port: int, node: DiscourseGraphNode) -> bool:
+	if not is_instance_valid(node):
 		return false
 	
-	for item in _output_nodes[output_idx]["connections"]:
+	var port_count: int = _output_nodes.size()
+	if port_count == 0:
+		return false
+	var max_port_index: int = port_count - 1
+	if not RangeUtils.is_between(port, -port_count, max_port_index):
+		return false
+	
+	for item in _output_nodes[port]["connections"]:
 		if item["target_node"] == node:
 			return true
 	return false
+
+
+func is_node_connected_to(port_mode: PortMode, port: int, node: DiscourseGraphNode) -> bool:
+	if port_mode == PortMode.INPUT:
+		return is_connected_to_input(port, node)
+	elif port_mode == PortMode.OUTPUT:
+		return is_connected_to_output(port, node)
+	else:
+		return false
 
 
 func get_port_connected_to(port_type: PortMode, target_node: DiscourseGraphNode, target_port: int) -> int:
@@ -618,8 +725,20 @@ func get_connection_index(port_mode: PortMode, port: int, node: DiscourseGraphNo
 	if port_mode == PortMode.NONE:
 		return -1
 	
+	var target_array: Array[Dictionary] = _input_nodes if port_mode == PortMode.INPUT else _output_nodes
+	
+	var port_count: int = target_array.size()
+	
+	if port_count == 0:
+		return -1
+	
+	var max_index: int = port_count - 1
+	
+	if not RangeUtils.is_between(port, -port_count, max_index):
+		return -1
+	
 	var idx: int = -1
-	var target_dict: Array[Dictionary] = _input_nodes[port]["connections"] if port_mode == PortMode.INPUT else _output_nodes[port]["connections"]
+	var target_dict: Array[Dictionary] = target_array[port]["connections"]
 	for item:Dictionary in target_dict:
 		idx += 1
 		if item["target_node"] == node and item["target_port"] == target_port:
@@ -637,6 +756,13 @@ func get_input_connection_idx(on_input: int, input_node: DiscourseGraphNode) -> 
 
 
 func get_output_connection_count(output_port: int) -> int:
+	var port_count: int = _output_nodes.size()
+	var max_port_index: int = port_count - 1
+	if max_port_index < 0:
+		return 0
+	if not RangeUtils.is_between(output_port, -port_count, max_port_index):
+		return 0
+	
 	return _output_nodes[output_port]["connections"].size()
 
 
@@ -687,34 +813,6 @@ func get_target_port_connected_to_self(port_mode: PortMode, port: int, connectio
 			return -1
 		_:
 			return -1
-
-
-func has_recursion(_caller: DiscourseGraphNode = null) -> bool:
-	if _caller == null:
-		_caller = self
-	else:
-		if _caller == self:
-			return true
-	
-	match parent_mode:
-		PortMode.NONE:
-			return false
-		PortMode.INPUT:
-			for input:DiscourseGraphNode in _input_nodes[parent_port]["connections"]:
-				if input == null:
-					continue
-				if input.has_recursion(_caller):
-					return true
-			return false
-		PortMode.OUTPUT:
-			for output:DiscourseGraphNode in _output_nodes[parent_port]["connections"]:
-				if output == null:
-					continue
-				if output.input.has_recursion(_caller):
-					return true
-			return false
-		_:
-			return false
 
 
 func _create_field(main_field: Control) -> HBoxContainer:
@@ -904,10 +1002,19 @@ func get_field(field_id: StringName) -> Control:
 
 
 func get_index_field(field_index: int) -> Control:
-	if field_index < 0 or get_child_count() <= field_index:
+	var child_count: int = get_child_count()
+	
+	if child_count == 0:
 		return null
 	
-	return get_child(field_index).get_child(1)
+	var max_index: int = child_count - 1
+	
+	if not RangeUtils.is_between(field_index, -child_count, max_index):
+		return null
+	
+	var true_index: int = wrapi(field_index, 0, child_count)
+	
+	return get_child(true_index).get_child(1)
 
 
 func get_field_input_port(field_id: StringName) -> int:
@@ -1021,12 +1128,15 @@ func remove_fields(field_ids: Array[StringName], size_change: int = 0) -> void:
 	var compound_size: float = 0.0
 	
 	for child in get_children():
+		if not is_instance_valid(child) or child.is_queued_for_deletion():
+			continue
 		if field_ids.has(child.name):
 			target_nodes.append(child)
 	
 	if target_nodes.is_empty():
 		return
 	
+	var target_count: int = target_nodes.size()
 	target_nodes.sort_custom(func (a:Control,b:Control): return b.get_index() < a.get_index())
 	
 	for node in target_nodes:
@@ -1062,6 +1172,7 @@ func remove_fields(field_ids: Array[StringName], size_change: int = 0) -> void:
 				node.get_meta(&"output_slot"))
 		compound_size += node.size.y
 	for node in target_nodes:
+		clear_slot(node.get_index())
 		node.free()
 	
 	if 0 < size_change:
@@ -1069,7 +1180,7 @@ func remove_fields(field_ids: Array[StringName], size_change: int = 0) -> void:
 	elif size_change < 0:
 		size.y = 0
 	else:
-		size.y -= compound_size + (get_theme_constant("separation") * (target_nodes.size() - 1) if 0 < target_nodes.size() else 0)
+		size.y -= compound_size + (get_theme_constant("separation") * (target_count - 1) if 0 < target_count else 0)
 
 
 func is_orphan() -> bool:

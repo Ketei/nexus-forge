@@ -2,9 +2,9 @@
 extends Tree
 
 
-signal node_delocalized(node: DiscourseGraphNode)
 signal dialog_selected(node_uuid: StringName)
 signal dialog_item_edited(node_uuid: StringName, desired_id: String)
+signal node_delocalization_requested(node: DiscourseGraphNode)
 
 enum ButtonID {
 	DELETE,
@@ -54,11 +54,7 @@ func ready_plugin() -> void:
 
 func _on_button_clicked(item: TreeItem, _column: int, id: int, _mouse_button_index: int) -> void:
 	if id == ButtonID.DELETE:
-		node_delocalized.emit(item.get_metadata(0)["node"])
-		if item == active_dialog:
-			active_dialog = null
-			dialog_selected.emit(&"")
-		item.free()
+		node_delocalization_requested.emit(item.get_metadata(0)["node"])
 	elif id == ButtonID.RENAME:
 		item.select(0)
 		edit_selected(true)
@@ -91,6 +87,8 @@ func clear_nodes() -> void:
 
 
 func create_dialog_node(node_name: String, node: DiscourseGraphNode) -> void:
+	if all_nodes.has(node.get_node_uuid()):
+		return
 	create_node_on(_dialog_tree, node_name, node, "DialogNode")
 
 
@@ -103,6 +101,8 @@ func rename_dialog_node(uuid: StringName, new_name: String) -> void:
 
 
 func create_options_node(node_name: String, node: DiscourseGraphNode) -> void:
+	if all_nodes.has(node.get_node_uuid()):
+		return
 	create_node_on(_options_tree, node_name, node, "OptionsNode")
 
 
@@ -115,6 +115,8 @@ func rename_options_node(uuid: StringName, new_name: String) -> void:
 
 
 func create_localized_text_node(node_name: String, node: DiscourseGraphNode) -> void:
+	if all_nodes.has(node.get_node_uuid()):
+		return
 	create_node_on(_text_tree, node_name, node, "TextNode")
 
 
@@ -127,19 +129,19 @@ func rename_text_node(uuid: StringName, new_name: String) -> void:
 
 
 func remove_node(uuid: StringName) -> void:
-	for tree:TreeItem in [_dialog_tree, _options_tree, _text_tree]:
-		for item in tree.get_children():
-			if item.get_metadata(0)["uuid"] == uuid:
-				if active_dialog == item:
-					active_dialog = null
-					dialog_selected.emit(&"")
-				item.free()
-				return
+	if not all_nodes.has(uuid):
+		return
+	var target: TreeItem = all_nodes[uuid]
+	if active_dialog == target:
+		active_dialog = null
+		dialog_selected.emit(&"")
+	all_nodes.erase(uuid)
+	target.free()
 
 
 func get_active_node_uuid() -> StringName:
 	if active_dialog == null:
-		return ""
+		return &""
 	return active_dialog.get_metadata(0)["node"].get_node_uuid()
 
 
@@ -186,3 +188,7 @@ func set_node_name(node_uuid: StringName, new_name: String) -> void:
 	
 	target.set_text(0, new_name)
 	target.get_metadata(0)["name"] = new_name
+
+
+func is_node_localized(node_uuid: StringName) -> bool:
+	return all_nodes.has(node_uuid)

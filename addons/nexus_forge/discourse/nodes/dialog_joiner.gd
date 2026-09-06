@@ -1,8 +1,15 @@
+@tool
 extends DiscourseGraphNode
 
 
 var _highest_port_connected: int = -1
-var _connection_updates_disabled: bool = false
+var _connection_updates_disabled: bool = false:
+	set(d):
+		if _connection_updates_disabled and not d:
+			remove_unused_fields()
+			if _highest_port_connected == 0 and not has_any_input(0):
+				_highest_port_connected = -1
+		_connection_updates_disabled = d
 
 
 func _post_init() -> void:
@@ -120,7 +127,7 @@ func set_input_port_count(new_count: int) -> void:
 		return
 	
 	if current_count < new_count:
-		for missing_port in range(current_count,  (new_count - current_count) + 1):
+		for missing_port in range(current_count,  new_count):
 			var field_idx: int = add_field(
 				&"merge_" + StringName(str(missing_port)),
 				get_new_merge_node(),

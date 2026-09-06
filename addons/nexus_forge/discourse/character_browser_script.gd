@@ -44,7 +44,7 @@ func _input(event: InputEvent) -> void:
 
 
 # character_data = {path: ID}
-func populate_characters(character_data: Dictionary[String, Variant]) -> void:
+func populate_characters(character_data: Dictionary[String, StringName]) -> void:
 	if character_list.get_root() != null:
 		character_list.clear()
 	var root: TreeItem = character_list.create_item()
@@ -55,7 +55,7 @@ func populate_characters(character_data: Dictionary[String, Variant]) -> void:
 			paths.append(key)
 			traveled[character_data[key]] = null
 	
-	paths.sort_custom(func (a,b): return character_data[a] < character_data[b])
+	paths.sort_custom(func (a,b): return character_data[a].naturalnocasecmp_to(String(character_data[b])) < 0)
 	
 	for path in paths:
 		var item: TreeItem = root.create_child()

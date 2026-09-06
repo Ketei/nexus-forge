@@ -1,10 +1,18 @@
+@tool
 extends DiscourseGraphNode
 
 
-signal use_code_editor_pressed(target: TextEdit)
-signal select_character_pressed(target: LineEdit)
+signal use_code_editor_pressed(uuid: StringName, target: TextEdit)
+signal select_character_pressed(uuid: StringName, target: LineEdit)
+signal character_id_changed(uuid: StringName, from: String, to: String)
+signal dialog_text_changed(uuid: StringName, from: String, to: String)
+signal dialog_presist_toggled(uuid: StringName, is_toggled: bool)
 
 var free_size: Vector2 = Vector2(350.0, 300.0)
+var character_id_ln_edt: LineEdit
+var character_dialog: TextEdit
+var persist_check: CheckBox
+var old_size: Vector2 = Vector2.ZERO
 
 
 func _post_init() -> void:
@@ -14,6 +22,7 @@ func _post_init() -> void:
 	parent_mode = PortMode.INPUT
 	parent_port = 0
 	size = Vector2(350.0, 300.0)
+	old_size = size
 	custom_minimum_size = Vector2(250.0, 270.0)
 	resizable = true
 	
@@ -21,14 +30,14 @@ func _post_init() -> void:
 	var id_box: HBoxContainer = HBoxContainer.new()
 	var dialog_box: VBoxContainer = VBoxContainer.new()
 	var char_id_label: Label = Label.new()
-	var char_id_ln_edt: LineEdit = LineEdit.new()
+	character_id_ln_edt = LineEdit.new()
 	var char_selector_btn: Button = Button.new()
 	var dialog_label: Label = Label.new()
 	var dialog_settings: Label = Label.new()
 	var settings_box: HBoxContainer = HBoxContainer.new()
-	var dialog_textedt: TextEdit = load("res://addons/nexus_forge/discourse/textedit_bracket_handler.gd").new()
+	character_dialog = load("res://addons/nexus_forge/discourse/textedit_bracket_handler.gd").new()
 	var highlighter: NFEditorDialogSyntaxHighlighter = NFEditorDialogSyntaxHighlighter.new()
-	var persist_check: CheckBox = CheckBox.new()
+	persist_check = CheckBox.new()
 	var flags_container: HBoxContainer = HBoxContainer.new()
 	var use_code_editor_btn: Button = Button.new()
 	
@@ -37,11 +46,14 @@ func _post_init() -> void:
 	id_box.name = &"IDContainer"
 	dialog_box.name = &"DialogContainer"
 	char_id_label.name = &"IDLabel"
-	char_id_ln_edt.name = &"CharIDLnEdt"
+	character_id_ln_edt.name = &"CharIDLnEdt"
 	dialog_label.name = &"DialogLabel"
-	dialog_textedt.name = &"DialogTxtEdt"
+	character_dialog.name = &"DialogTxtEdt"
 	persist_check.name = &"PersistChkBx"
 	char_selector_btn.name = &"SelectCharBtn"
+	
+	character_id_ln_edt.set_meta(&"old_value", "")
+	character_dialog.set_meta(&"old_value", "")
 	
 	char_selector_btn.custom_minimum_size = Vector2(32.0, 32.0)
 	char_selector_btn.flat = true
@@ -51,21 +63,21 @@ func _post_init() -> void:
 	connection_node.custom_minimum_size = Vector2(0.0, 32.0)
 	char_id_label.text = "Character"
 	char_id_label.custom_minimum_size = Vector2(80.0, 0.0)
-	char_id_ln_edt.caret_blink = true
-	char_id_ln_edt.placeholder_text = "Character ID"
-	char_id_ln_edt.custom_minimum_size = Vector2(0.0, 32.0)
-	char_id_ln_edt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	character_id_ln_edt.caret_blink = true
+	character_id_ln_edt.placeholder_text = "Character ID"
+	character_id_ln_edt.custom_minimum_size = Vector2(0.0, 32.0)
+	character_id_ln_edt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	dialog_label.text = "Dialog"
 	dialog_label.custom_minimum_size = Vector2(0.0, 24.0)
 	dialog_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	
 	highlighter.set_use_token("*", false)
-	dialog_textedt.placeholder_text = "Character Dialog"
-	dialog_textedt.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	dialog_textedt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	dialog_textedt.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
-	dialog_textedt.caret_blink = true
-	dialog_textedt.syntax_highlighter = highlighter
+	character_dialog.placeholder_text = "Character Dialog"
+	character_dialog.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	character_dialog.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	character_dialog.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
+	character_dialog.caret_blink = true
+	character_dialog.syntax_highlighter = highlighter
 	
 	persist_check.size_flags_horizontal = Control.SIZE_EXPAND + Control.SIZE_SHRINK_END
 	persist_check.text = "Persist"
@@ -83,11 +95,14 @@ func _post_init() -> void:
 	settings_box.add_child(dialog_settings)
 	settings_box.add_child(persist_check)
 	
-	char_id_ln_edt.text_changed.connect(_on_text_changed)
-	dialog_textedt.text_changed.connect(_on_text_changed)
+	character_id_ln_edt.text_changed.connect(_on_text_changed)
+	character_id_ln_edt.editing_toggled.connect(_on_character_id_edit_toggled)
+	character_dialog.text_changed.connect(_on_text_changed)
+	character_dialog.focus_exited.connect(_on_dialog_text_focus_exited)
+	persist_check.toggled.connect(_on_persist_toggled)
 	
 	id_box.add_child(char_id_label)
-	id_box.add_child(char_id_ln_edt)
+	id_box.add_child(character_id_ln_edt)
 	id_box.add_child(char_selector_btn)
 	
 	flags_container.add_child(dialog_label)
@@ -110,7 +125,6 @@ func _post_init() -> void:
 			SlotConnectionType.SETTINGS_CHARACTER,
 			-1)
 	set_slot_color_left(1, COLORS["setting"])
-	map_field(&"character_id", &"character_line", char_id_ln_edt)
 	
 	add_field(
 			&"dialog_settings",
@@ -122,9 +136,8 @@ func _post_init() -> void:
 	
 	var flgs_idx: int = add_field(&"flags", flags_container, false, SlotConnectionType.VAR_STRING, -1)
 	
-	map_field(&"dialog_settings", &"persist_checkbox", persist_check)
 	map_field(&"flags", &"code_edit_button", use_code_editor_btn)
-	add_field(&"dialog_text", dialog_textedt, true)
+	add_field(&"dialog_text", character_dialog, true)
 	
 	set_slot_color_left(connection_field, COLORS["dialog"])
 	set_slot_color_right(connection_field, COLORS["dialog"])
@@ -146,13 +159,13 @@ func _ready() -> void:
 func _on_input_connected(input_port: int, from_node: DiscourseGraphNode, _from_port: int) -> void:
 	match input_port:
 		0:
-			if from_node.node_type == DialogueNodeType.DIALOG and get_mapped_field(&"character_id", &"character_line").text.strip_edges().is_empty():
-				var from_character_id: String = from_node.get_mapped_field(&"character_id", &"character_line").text
-				if not from_character_id.strip_edges().is_empty():
-					get_mapped_field(&"character_id", &"character_line").text = from_character_id
+			if from_node.node_type == DialogueNodeType.DIALOG and character_id_ln_edt.text.strip_edges().is_empty():
+				var from_character_id: String = from_node.get_character_id().strip_edges()
+				if not from_character_id.is_empty():
+					character_id_ln_edt.text = from_character_id
 		3:
 			free_size = size
-			get_field(&"dialog_text").editable = false
+			character_dialog.editable = false
 			get_mapped_field(&"flags", &"code_edit_button").disabled = true
 			get_child(4).visible = false
 			custom_minimum_size.y = 160.0
@@ -180,10 +193,10 @@ func _get_node_data() -> Dictionary:
 		"next_node": get_uuid_and_port_connected_to(PortMode.OUTPUT, 0)}
 	
 	var metadata: Dictionary = {
-		"character_id": get_mapped_field(&"character_id", &"character_line").text,
-		"persist": get_mapped_field(&"dialog_settings", &"persist_checkbox").button_pressed,
+		"character_id": character_id_ln_edt.text,
+		"persist": persist_check.button_pressed,
 		"size": size,
-		"dialog_text": get_field(&"dialog_text").text.strip_edges()}
+		"dialog_text": character_dialog.text.strip_edges()}
 	
 	return _build_node_data(metadata, output_connections, input_connections)
 
@@ -204,16 +217,54 @@ func _set_node_data(data: Dictionary) -> void:
 		size = metadata["size"]
 	
 	if metadata.has("character_id") and typeof(metadata["character_id"]) == TYPE_STRING:
-		get_mapped_field(&"character_id", &"character_line").text = metadata["character_id"]
+		set_character_id(metadata["character_id"])
 	
 	if metadata.has("dialog_text") and typeof(metadata["dialog_text"]) == TYPE_STRING:
-		get_field(&"dialog_text").text = metadata["dialog_text"]
+		set_dialog_text(metadata["dialog_text"])
 	
 	if metadata.has("persist") and typeof(metadata["persist"]) == TYPE_BOOL:
-		get_mapped_field(&"dialog_settings", &"persist_checkbox").button_pressed = metadata["persist"]
+		persist_check.set_pressed_no_signal(metadata["persist"])
 	
 	if metadata.has("localized") and typeof(metadata["localized"]) == TYPE_BOOL:
 		set_node_localized(metadata["localized"])
+
+
+func _on_persist_toggled(is_toggled: bool) -> void:
+	dialog_presist_toggled.emit(
+			get_node_uuid(),
+			is_toggled)
+
+
+func _on_character_id_edit_toggled(is_toggled: bool) -> void:
+	if is_toggled:
+		return
+	
+	var old_value: String = character_id_ln_edt.get_meta(&"old_value", "")
+	var new_value: String = character_id_ln_edt.text
+	
+	if new_value == old_value:
+		return
+	character_id_ln_edt.set_meta(&"old_value", new_value)
+	
+	character_id_changed.emit(
+			get_node_uuid(),
+			old_value,
+			new_value)
+
+
+func _on_dialog_text_focus_exited() -> void:
+	var old_value: String = character_dialog.get_meta(&"old_value", "")
+	var new_value: String = character_dialog.text
+	
+	if new_value == old_value:
+		return
+	
+	character_dialog.set_meta(&"old_value", new_value)
+	
+	dialog_text_changed.emit(
+			get_node_uuid(),
+			old_value,
+			new_value)
 
 
 func _on_text_changed(_text: String = "") -> void:
@@ -222,16 +273,29 @@ func _on_text_changed(_text: String = "") -> void:
 
 func _on_use_code_editor_pressed() -> void:
 	var field: TextEdit = get_field(&"dialog_text")
-	use_code_editor_pressed.emit(field)
+	use_code_editor_pressed.emit(get_node_uuid(), field)
 
 
 func _on_select_character_btn_pressed() -> void:
-	var field: LineEdit = get_mapped_field(&"character_id", &"character_line")
-	select_character_pressed.emit(field)
+	select_character_pressed.emit(get_node_uuid(), character_id_ln_edt)
+
+
+func set_persist_dialog(is_enabled: bool) -> void:
+	persist_check.set_pressed_no_signal(is_enabled)
 
 
 func set_dialog_text(text: String) -> void:
-	get_field(&"dialog_text").text = text
+	character_dialog.text = text
+	character_dialog.set_meta(&"old_value", text)
+
+
+func set_character_id(id: String) -> void:
+	character_id_ln_edt.text = id
+	character_id_ln_edt.set_meta(&"old_value", id)
+
+
+func get_character_id() -> String:
+	return character_id_ln_edt.text
 
 
 func get_dialog_text() -> String:

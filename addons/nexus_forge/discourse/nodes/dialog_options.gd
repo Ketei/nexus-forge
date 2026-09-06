@@ -2,7 +2,10 @@
 extends DiscourseGraphNode
 
 
-signal use_code_editor_pressed(target: TextEdit)
+signal use_code_editor_pressed(uuid: StringName, target: TextEdit)
+signal choice_text_changed(node_uuid: StringName, choice_idx: int, old_text: String, new_text: String)
+signal choices_resized(node_uuid: StringName, old_snapshot: Dictionary, new_snapshot: Dictionary)
+
 const MAX_LINES: int = 3
 const EXTRA_Y_PADDING: int = 8
 const CHOICE_TEXT_EDIT = preload("res://addons/nexus_forge/discourse/textedit_bracket_handler.gd")
@@ -94,7 +97,8 @@ func set_choice_count(value: int) -> void:
 	
 	if current < value:
 		for extra in range(value - current):
-			var choice_id: StringName = &"choice_" + StringName(str(current + extra + 1))
+			var index: int = current + extra
+			var choice_id: StringName = &"choice_" + StringName(str(index + 1))
 			var new_idx: int = add_field(
 					choice_id,
 					get_choice_node(),
@@ -111,7 +115,7 @@ func set_choice_count(value: int) -> void:
 		var choices_to_remove: Array[StringName] = []
 		for over in range(current - value):
 			choices_to_remove.append(StringName("choice_" + str(current - over)))
-		remove_choices(choices_to_remove)
+		await remove_choices(choices_to_remove)
 
 
 func _update_choice_textbox_size(box: TextEdit) -> void:
@@ -123,8 +127,8 @@ func _update_choice_textbox_size(box: TextEdit) -> void:
 	for i in range(box.get_line_count()):
 		total_visual_lines += 1 + box.get_line_wrap_count(i)
 	if total_visual_lines <= MAX_LINES:
-		reset_height.call_deferred()
 		box.custom_minimum_size.y = 0
+		reset_height.call_deferred()
 		return
 	box.scroll_fit_content_height = false
 	
@@ -142,11 +146,37 @@ func _on_choice_count_changed(value: int) -> void:
 	_update_value_to_spinbox.call_deferred()
 
 
+func get_choices_array() -> Array[Dictionary]:
+	var options: Array[Dictionary] = []
+	for choice in range(1, get_child_count()):
+		var field_id: StringName = &"choice_" + StringName(str(int(choice)))
+		var field: TextEdit = get_field(field_id).get_child(0)
+		
+		options.append(
+				{
+					"text": field.text.strip_edges(),
+					"output_connections":{
+						"next_node":  get_uuid_and_port_connected_to(PortMode.OUTPUT, choice - 1)
+					},
+					"input_connections": {
+						"settings": get_uuid_and_port_connected_to(PortMode.INPUT, choice)
+					}
+				})
+	return options
+
+
 func _update_value_to_spinbox() -> void:
-	set_choice_count(
-			get_mapped_field(&"choice_counter", &"choice_count").value)
+	var new_choice_count: int = get_mapped_field(&"choice_counter", &"choice_count").value
+	
+	var old_options: Array[Dictionary] = get_choices_array()
+	await set_choice_count(new_choice_count)
+	var new_options: Array[Dictionary] = get_choices_array()
+	
 	_updating_choices = false
-	node_updated.emit()
+	choices_resized.emit(
+			get_node_uuid(),
+			{"metadata": {"choices": old_options}},
+			{"metadata": {"choices": new_options}})
 
 
 func _get_node_data() -> Dictionary:
@@ -195,11 +225,11 @@ func _set_node_data(data: Dictionary) -> void:
 		true_options.append(option)
 	
 	var choice_size: int = true_options.size()
-	var choice_count: int = max(1, choice_size)
-	get_mapped_field(&"choice_counter", &"choice_count").set_value_no_signal(choice_count)
-	set_choice_count(choice_count)
+	var choice_counts: int = max(1, choice_size)
+	get_mapped_field(&"choice_counter", &"choice_count").set_value_no_signal(choice_counts)
+	await set_choice_count(choice_counts)
 	for option in range(1, choice_size + 1):
-		get_field(&"choice_" + StringName(str(option))).get_child(0).text = true_options[option - 1]["text"]
+		set_choice_text(option, true_options[option - 1]["text"])
 
 
 func choice_count() -> int:
@@ -222,19 +252,25 @@ func get_choice_node() -> HBoxContainer:
 	new_choice.syntax_highlighter = NFEditorDialogSyntaxHighlighter.new()
 	new_choice.placeholder_text = "Choice Text"
 	new_choice.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
-	new_choice.custom_minimum_size.y = 32.0
 	new_choice.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	new_choice.syntax_highlighter = highlighter
 	new_choice.resized.connect(reset_height, CONNECT_DEFERRED)
+	new_choice.set_meta(&"old_value", "")
+	new_choice.scroll_fit_content_height = true
 	new_choice.text_changed.connect(_on_option_text_changed.bind(new_choice))
+	new_choice.focus_exited.connect(_on_choice_text_focus_exited.bind(new_choice))
 	
 	expand_button.icon = get_theme_icon("DistractionFree", "EditorIcons")
 	expand_button.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	expand_button.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	expand_button.flat = true
-	expand_button.pressed.connect(use_code_editor_pressed.emit.bind(new_choice))
+	expand_button.pressed.connect(_on_use_code_editor_on.bind(new_choice))
 	
 	return container
+
+
+func _on_use_code_editor_on(item: TextEdit) -> void:
+	use_code_editor_pressed.emit(get_node_uuid(), item)
 
 
 func remove_choice(idx: int) -> void:
@@ -252,19 +288,11 @@ func remove_choices(choices: Array[StringName]) -> void:
 		var choice: TextEdit = get_field(choice_id).get_child(0)
 		choice.text_changed.disconnect(_on_option_text_changed)
 	
-	remove_fields(choices, -1)
+	await remove_fields(choices, -1)
 
 
 func reset_height() -> void:
 	size.y = 0
-
-
-func set_option_text(option: int, text: String) -> void:
-	var field_id: StringName = &"choice_" + StringName(str(option))
-	
-	var option_line: TextEdit = get_field(field_id).get_child(0)
-	if option_line != null:
-		option_line.text = text
 
 
 func get_options() -> Array[String]:
@@ -276,3 +304,29 @@ func get_options() -> Array[String]:
 		options.append(field.text)
 	
 	return options
+
+
+func set_choice_text(choice_id: int, text: String) -> void:
+	if choice_id <= 0:
+		return
+	var choice: Control = get_index_field(choice_id)
+	if choice != null:
+		var line: TextEdit = choice.get_child(0)
+		line.text = text
+		line.set_meta(&"old_value", text)
+
+
+func _on_choice_text_focus_exited(choice_line: TextEdit) -> void:
+	var index: int = choice_line.get_parent().get_parent().get_index()
+	var old_value: String = choice_line.get_meta(&"old_value")
+	var new_value: String = choice_line.text
+	
+	if new_value == old_value:
+		return
+	
+	choice_line.set_meta(&"old_value", new_value)
+	choice_text_changed.emit(
+			get_node_uuid(),
+			index,
+			old_value,
+			new_value)

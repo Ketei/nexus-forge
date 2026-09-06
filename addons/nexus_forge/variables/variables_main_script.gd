@@ -74,7 +74,6 @@ func _input(event: InputEvent) -> void:
 						"Undo: " + action_name,
 						NFPluginGameHandler._LogLevel.EDITOR)
 				on_something_changed()
-		
 		get_viewport().set_input_as_handled()
 	elif event.keycode == KEY_Y and not event.shift_pressed:
 		if undo.has_redo():
@@ -110,10 +109,10 @@ func ready_plugin() -> void:
 	variables_tree.variable_updated.connect(_on_variable_updated)
 	variables_tree.variable_renamed.connect(_on_variable_renamed)
 	
-	add_int_button.pressed.connect(on_add_var_int_pressed)
-	add_float_button.pressed.connect(on_add_var_float_pressed)
-	add_bool_button.pressed.connect(on_add_var_bool_pressed)
-	add_string_button.pressed.connect(on_add_var_str_pressed)
+	add_int_button.pressed.connect(_on_add_variable_pressed.bind(0))
+	add_float_button.pressed.connect(_on_add_variable_pressed.bind(0.0))
+	add_bool_button.pressed.connect(_on_add_variable_pressed.bind(false))
+	add_string_button.pressed.connect(_on_add_variable_pressed.bind(""))
 	
 	add_folder_button.pressed.connect(_on_add_root_folder_pressed)
 	variables_tree.copy_path_pressed.connect(on_variable_cpath_button_pressed)
@@ -533,35 +532,48 @@ func create_variable(value: Variant, val_name: String) -> void:
 func remove_variable(variable: String) -> void:
 	variables_tree.remove_variable(variable)
 
-# ---
 
-
-func on_add_var_int_pressed() -> void:
-	var var_name: String = variables_tree.create_variable(0)
-	var path: String = _current_folder.path_join(var_name)
-	_variables_resource.set_variable(path, 0)
+func _on_add_variable_pressed(data: Variant) -> void:
+	var valid_id: String = variables_tree.create_variable(data)
+	var variable_key: StringName = StringName(valid_id)
+	var path: String = _current_folder.path_join(valid_id)
+	var type: int = typeof(data)
+	var can_dupe: bool = type == TYPE_DICTIONARY or type == TYPE_ARRAY
+	
+	_variables_resource.set_variable(path, data)
+	
+	undo.create_action("Create Data")
+	undo.add_do_method(_do_add_variable.bind(
+			_current_folder,
+			valid_id,
+			data.duplicate(true) if can_dupe else data))
+	undo.add_undo_method(_undo_add_variable.bind(
+			_current_folder,
+			valid_id))
+	undo.commit_action(false)
+	
 	on_something_changed()
 
 
-func on_add_var_float_pressed() -> void:
-	var variable_key: String = variables_tree.create_variable(0.0)
-	var path: String = _current_folder.path_join(variable_key)
-	_variables_resource.set_variable(path, 0.0)
-	on_something_changed()
+func _undo_add_variable(on_folder: String, data_id: String) -> void:
+	var folder_key: StringName = StringName(on_folder)
+	if _variables_resource._variables.has(folder_key):
+		_variables_resource._variables[folder_key].erase(StringName(data_id))
+	if _current_folder == on_folder:
+		variables_tree.remove_variable(data_id)
 
 
-func on_add_var_bool_pressed() -> void:
-	var variable_key: String = variables_tree.create_variable(false)
-	var path: String = _current_folder.path_join(variable_key)
-	_variables_resource.set_variable(path, false)
-	on_something_changed()
-
-
-func on_add_var_str_pressed() -> void:
-	var variable_key: StringName = StringName(variables_tree.create_variable(""))
-	var path: String = _current_folder.path_join(variable_key)
-	_variables_resource.set_variable(path, "")
-	on_something_changed()
+func _do_add_variable(on_folder: String, data_id: String, value: Variant) -> void:
+	var folder_key: StringName = StringName(on_folder)
+	if not _variables_resource._variables.has(folder_key) or _variables_resource._variables[folder_key].has(data_id):
+		return
+	
+	_variables_resource._variables[folder_key][data_id] = value
+	
+	if _current_folder != on_folder:
+		return
+	
+	variables_tree.create_variable(value, data_id)
 
 
 func _on_folder_selected(path_to_folder: String) -> void:

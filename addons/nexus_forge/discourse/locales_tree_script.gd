@@ -2,9 +2,9 @@
 extends Tree
 
 
-signal region_created(language: String, region: String)
 signal locale_changed(from: String, to: String)
-signal locale_deleted(locale: String)
+signal locale_creation_requested(locale: String)
+signal locale_delete_requested(locale: String)
 
 const ACTIVE_COLOR: Color = Color.SKY_BLUE
 
@@ -45,27 +45,19 @@ func ready_plugin() -> void:
 
 func _on_language_button_clicked(item: TreeItem, _column: int, id: int, _mouse_button_index: int) -> void:
 	match id:
-		0:
+		0: # Create Region
 			_on_create_region_pressed(item.get_metadata(0)["language_code"])
-		1:
-			var old_locale: String = get_active_locale()
+		1: # Erase locale
+			var locale_to_erase: String = ""
 			
 			if item.get_parent() == get_root():
-				locale_deleted.emit(TranslationServer.standardize_locale(item.get_metadata(0)["language_code"]))
+				locale_to_erase = item.get_metadata(0)["language_code"]
 			else:
-				locale_deleted.emit(TranslationServer.standardize_locale(
-						item.get_parent().get_metadata(0)["language_code"] +\
+				locale_to_erase = item.get_parent().get_metadata(0)["language_code"] +\
 						"_" +\
-						item.get_metadata(0)["region_code"]))
+						item.get_metadata(0)["region_code"]
 			
-			if item == active_region:
-				active_region = null
-				locale_changed.emit(old_locale, get_active_locale())
-			elif item == active_language:
-				active_language = null
-				active_region = null
-				locale_changed.emit(old_locale, "")
-			item.free()
+			locale_delete_requested.emit(TranslationServer.standardize_locale(locale_to_erase))
 
 
 func _on_lang_item_activated() -> void:
@@ -115,11 +107,13 @@ func _on_create_region_pressed(at_lang: String) -> void:
 	window.show()
 	window.focus_option_button()
 	var result_code: String = await window.dialog_finished
-	
-	if result_code != "":
-		create_region(at_lang, result_code)
-		region_created.emit(at_lang, result_code)
 	window.queue_free()
+	
+	if result_code.is_empty():
+		return
+	
+	var full_locale: String = TranslationServer.standardize_locale(at_lang + "_" + result_code)
+	locale_creation_requested.emit(full_locale)
 
 
 func get_active_language() -> String:
@@ -149,6 +143,8 @@ func get_base_language() -> String:
 
 func create_language(language_code: String, is_main: bool = false) -> void:
 	language_code = TranslationServer.standardize_locale(language_code)
+	if has_language(language_code):
+		return
 	
 	var root: TreeItem = get_root()
 	var new_language: TreeItem = root.create_child()
@@ -190,6 +186,33 @@ func create_region(on_lang: String, region_code: String) -> void:
 	region.add_button(0, get_theme_icon("Remove", "EditorIcons"), 1, false, "Delete Region")
 	region.set_metadata(0, {"region_code": region_code})
 	region.set_text_overrun_behavior(0, TextServer.OVERRUN_TRIM_ELLIPSIS)
+
+
+# Erases a language and all the regions.
+func erase_language(lang: String) -> void:
+	var normalized_lang: String = TranslationServer.standardize_locale(lang)
+	if normalized_lang.is_empty():
+		return
+	var parts: PackedStringArray = normalized_lang.split("_", false)
+	var language: String = parts[0]
+	var region: String = "" if parts.size() < 2 else parts[1]
+	
+	for lang_item in get_root().get_children():
+		if lang_item.get_metadata(0)["language_code"] == language:
+			if region.is_empty():
+				if main_language == lang_item:
+					main_language = null
+				if active_language == lang_item:
+					active_language = null
+				lang_item.free()
+			else:
+				for reg_item in lang_item.get_children():
+					if reg_item.get_metadata(0)["region_code"] == region:
+						if active_region == reg_item:
+							active_region = null
+						reg_item.free()
+						break
+			break
 
 
 func get_language_item(lang_code: String) -> TreeItem:

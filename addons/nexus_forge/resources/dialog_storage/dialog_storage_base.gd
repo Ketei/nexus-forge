@@ -109,36 +109,36 @@ func _has_locale(locale_code: String) -> bool:
 	return _loaded_locales.is_in_cache(locale_code)
 
 
-func _get_text(dialog_id: String, uuid: String) -> String:
+func _get_text(dialog_id: String, id: String) -> String:
 	if _active_locale == null:
 		return "[MISSING LOCALIZATION DATA]"
 	
 	var locale: String = _active_locale.locale
 	
-	if _dialog_overrides != null and _dialog_overrides.has_override(node_logic[uuid]["id"], locale):
-		var override = _dialog_overrides.get_override(node_logic[uuid]["id"], locale)
+	if _dialog_overrides != null and _dialog_overrides.has_override(id, locale):
+		var override = _dialog_overrides.get_override(id, locale)
 		if typeof(override) == TYPE_STRING:
 			return override
 		else:
 			return "[OVERRIDE TYPE ERROR]"
 	else:
-		return _active_locale.get_text(dialog_id, uuid)
+		return _active_locale.get_text(dialog_id, id)
 
 
-func _get_choices(dialog_id: String, uuid: String) -> PackedStringArray:
+func _get_choices(dialog_id: String, id: String) -> PackedStringArray:
 	if _active_locale == null:
 		return PackedStringArray()
 	
 	var locale: String = _active_locale.locale
 	
-	if _dialog_overrides != null and _dialog_overrides.has_override(node_logic[uuid]["id"], locale):
-		var override = _dialog_overrides.get_override(node_logic[uuid]["id"], locale)
+	if _dialog_overrides != null and _dialog_overrides.has_override(id, locale):
+		var override = _dialog_overrides.get_override(id, locale)
 		if typeof(override) == TYPE_PACKED_STRING_ARRAY:
 			return override.duplicate()
 		else:
 			return PackedStringArray(["[OVERRIDE TYPE ERROR]"])
 	else:
-		return _active_locale.get_choices(dialog_id, uuid)
+		return _active_locale.get_choices(dialog_id, id)
 
 
 func _on_override_updated(node_id: StringName, locale: String) -> void:
