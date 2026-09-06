@@ -1093,6 +1093,8 @@ func update_conversation_file(on_file: EditorDiscourseDialog, current_locale: St
 	if on_file == null:
 		return
 	
+	on_file.node_frames.clear()
+	
 	for frame_uuid in node_frames.keys():
 		var frame: GraphFrame = node_frames[frame_uuid]
 		on_file.register_frame(

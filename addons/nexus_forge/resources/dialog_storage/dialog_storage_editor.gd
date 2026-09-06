@@ -545,6 +545,10 @@ func remove_node(node_uuid: StringName) -> void:
 	localization.erase(node_uuid)
 
 
+func remove_frame(frame_uuid: StringName) -> void:
+	node_frames.erase(frame_uuid)
+
+
 ## Clears the resource.
 func clear() -> void:
 	scroll_offset = Vector2.ZERO

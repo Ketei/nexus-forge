@@ -40,8 +40,6 @@ var previous_conversation: int = 0
 
 var localization_node_selected: DiscourseGraphNode = null
 
-var listen_offset: bool = true
-
 var selected_phrase_format: String = ""
 var selected_phrase_index: int = -1
 
@@ -569,7 +567,6 @@ func ready_plugin(base_locale: String = "") -> void:
 	discourse_graph_edit.browse_character_requested.connect(_on_open_character_browser_request)
 	
 	discourse_graph_edit.discourse_node_selected.connect(_on_discourse_node_selected)
-	discourse_graph_edit.scroll_offset_changed.connect(_on_graph_edit_offset_changed)
 	discourse_graph_edit.nodes_moved.connect(_on_nodes_moved)
 	discourse_graph_edit.nodes_created.connect(_on_nodes_created_batch, CONNECT_DEFERRED)
 	
@@ -1095,16 +1092,11 @@ func _on_collapsed_state_changed() -> void:
 	_unsaved = true
 
 
-func _on_graph_edit_offset_changed(_offset: Vector2) -> void:
-	if not listen_offset or active_conversation == null:
-		return
-	_open_files[active_conversation.get_instance_id()]["offset_changed"] = true
-
-
 func _on_conversation_close_pressed(dialog_id: int) -> void:
 	if not _open_files.has(dialog_id):
 		return
 	
+	var resource: EditorDiscourseDialog = _open_files[dialog_id]["resource"]
 	var save_performed: bool = false
 	var is_active: bool = false if active_conversation == null else active_conversation.get_instance_id() == dialog_id
 	
@@ -1116,16 +1108,15 @@ func _on_conversation_close_pressed(dialog_id: int) -> void:
 		if result == 0: # Save
 			if is_active:
 				save_current_dialog_to_memory()
-				save_performed = true
 			ResourceSaver.save(_open_files[dialog_id]["resource"])
 		elif result == 1: # Don't save
-			_open_files[dialog_id]["offset_changed"] = false
+			_open_files[dialog_id]["initial_state"] = _get_file_current_state(dialog_id)
 		elif result == 2: # Cancel
 			unsaved_prompt.queue_free()
 			return
 		unsaved_prompt.queue_free()
 	
-	if _open_files[dialog_id]["offset_changed"]:
+	if _open_files[dialog_id]["initial_state"] != _get_file_current_state(dialog_id):
 		if is_active and not save_performed:
 			active_conversation.collapsed_state = discourse_nodes_tree.get_collapsed_folders()
 			active_conversation.zoom = discourse_graph_edit.zoom
@@ -1206,11 +1197,14 @@ func _on_menu_close_pressed() -> void:
 		if result == 0: # Save
 			save_dialog_resource(dialog_id)
 		elif result == 1: # Don't save
-			_open_files[dialog_id]["offset_changed"] = false
+			_open_files[dialog_id]["initial_state"] = _get_file_current_state(dialog_id)
 		elif result == 2: # Cancel
 			return
 	
-	if _open_files[dialog_id]["offset_changed"]:
+	if _open_files[dialog_id]["initial_state"] != _get_file_current_state(dialog_id):
+		active_conversation.collapsed_state = discourse_nodes_tree.get_collapsed_folders()
+		active_conversation.zoom = discourse_graph_edit.zoom
+		active_conversation.scroll_offset = discourse_graph_edit.scroll_offset
 		save_layout_of(dialog_id)
 	
 	close_dialog_resource(dialog_id)
@@ -1998,7 +1992,6 @@ func _on_new_conversation_pressed() -> void:
 	if not result[0]:
 		return
 	
-	listen_offset = false
 	if active_conversation != null:
 		save_current_dialog_to_memory()
 	var new_conv: EditorDiscourseDialog = EditorDiscourseDialog.new()
@@ -2017,9 +2010,7 @@ func _on_new_conversation_pressed() -> void:
 		dialog_id_ln_edt.editable = true
 	load_conversation(new_conv, true)
 	
-	discourse_graph_edit.reset_scroll_offset.call_deferred()
-	
-	set_deferred(&"listen_offset", true)
+	discourse_graph_edit.reset_scroll_offset()
 	
 	add_to_recently_opened_files(result[1])
 
@@ -2080,16 +2071,16 @@ func _on_open_conversation_pressed() -> void:
 	file_opener.queue_free()
 	
 	if result[0] and FileAccess.file_exists(result[1]):
-		listen_offset = false
 		var resource: Resource = load(result[1])
 		if resource != null and resource is EditorDiscourseDialog:
 			var file_id: int = resource.get_instance_id()
 			
 			if _open_files.has(file_id):
 				conversation_tree.select_conversation(file_id, false)
+				var offset_changed: bool = _open_files[file_id]["scroll_offset"]
 				if open_conversation(file_id):
 					_unsaved = true
-				listen_offset = true
+				_open_files[file_id]["scroll_offset"] = offset_changed
 				return
 
 			var filename: String = result[1].get_file()
@@ -2125,10 +2116,8 @@ func _on_open_conversation_pressed() -> void:
 				save_current_dialog_to_memory()
 			
 			load_conversation(resource)
-			
+			_open_files[file_id]["scroll_offset"] = false
 			add_to_recently_opened_files(result[1])
-		
-		set_deferred(&"listen_offset", true)
 
 
 func _on_play_current_dialog_pressed() -> void:
@@ -2188,6 +2177,11 @@ func plugin_file_selected(file: EditorDiscourseDialog):
 		if open_conversation(file_id):
 			_unsaved = true
 	else:
+		var props: Dictionary[String, Variant] = get_file_saved_properties(file.resource_path)
+		file.zoom = props["zoom"]
+		file.scroll_offset = props["scroll_offset"]
+		file.collapsed_state.assign(props["collapsed_state"])
+		
 		load_conversation(file, true)
 	
 	add_to_recently_opened_files(file.resource_path)
@@ -2199,6 +2193,41 @@ func reload_signals() -> void:
 
 func reload_methods() -> void:
 	discourse_graph_edit.update_methods()
+
+
+func get_file_saved_properties(path: String) -> Dictionary[String, Variant]:
+	var properties: Dictionary[String, Variant] = {
+		"zoom": 1.0,
+		"scroll_offset": Vector2.ZERO,
+		"collapsed_state": DictUtils.create_typed(TYPE_STRING, TYPE_BOOL)}
+	
+	var filename: String = path.get_file()
+	var path_hash: String = path.md5_text()
+	var absolute_path: String = ProjectSettings.globalize_path("res://.godot/editor/")
+	var config_filename: String = filename + "-graphstate-" + path_hash + ".cfg"
+	var full_path: String = absolute_path.path_join(config_filename)
+	if not FileAccess.file_exists(full_path):
+		return properties
+	var cfg: ConfigFile = ConfigFile.new()
+	
+	if cfg.load(full_path) != OK:
+		return properties
+		
+	var position_offset: Vector2 = cfg.get_value("Layout", "scroll_offset", Vector2.ZERO)
+	var zoom: float = cfg.get_value("Layout", "zoom", 1.0)
+	var collapsed_state: Dictionary[String, bool] = {}
+	var cfg_collapsed = cfg.get_value("Layout", "collapsed_state", {})
+	
+	if typeof(cfg_collapsed) == TYPE_DICTIONARY:
+		for key in cfg_collapsed.keys():
+			if typeof(key) == TYPE_STRING and typeof(cfg_collapsed[key]) == TYPE_BOOL:
+				collapsed_state[key] = cfg_collapsed[key]
+	
+	properties["zoom"] = zoom
+	properties["scroll_offset"] = position_offset
+	properties["collapsed_state"].assign(collapsed_state)
+	
+	return properties
 
 
 #region Discourse dialog node tree
@@ -2351,8 +2380,7 @@ func display_conversation(conversation: EditorDiscourseDialog, with_locale: Stri
 		node._connection_updates_disabled = false
 	
 	discourse_graph_edit.zoom = conversation.zoom
-	discourse_graph_edit.scroll_offset = conversation.scroll_offset
-	
+	discourse_graph_edit.set_deferred(&"scroll_offset", conversation.scroll_offset)
 	discourse_graph_edit.refresh_anchors()
 	
 	return needs_resaving
@@ -2456,7 +2484,10 @@ func load_conversation(data: EditorDiscourseDialog, open_conv: bool = true) -> v
 			"resource": data,
 			"undo": new_undo,
 			"unsaved": false,
-			"offset_changed": false}
+			"initial_state": {
+				"zoom": data.zoom,
+				"scroll_offset": data.scroll_offset,
+				"collapsed_state": data.collapsed_state.duplicate()}}
 	
 	conversation_tree.add_conversation(
 		conversation_id,
@@ -2518,9 +2549,11 @@ func save_dialog_resource(dialog_id: int) -> void:
 	if active_conversation == target:
 		save_current_dialog_to_memory()
 	
-	if _open_files[dialog_id]["offset_changed"]:
+	var current_state: Dictionary = _get_file_current_state(dialog_id)
+	
+	if _open_files[dialog_id]["initial_state"] != current_state:
 		save_layout_of(dialog_id)
-		_open_files[dialog_id]["offset_changed"] = false
+		_open_files[dialog_id]["initial_state"] = current_state
 	
 	if not _open_files[dialog_id]["unsaved"]:
 		return
@@ -2535,21 +2568,27 @@ func save_all_dialogs() -> void:
 		save_current_dialog_to_memory()
 	
 	for res_id in _open_files:
+		var current_state: Dictionary = _get_file_current_state(res_id)
 		if _open_files[res_id]["unsaved"]:
 			ResourceSaver.save(_open_files[res_id]["resource"])
 			_open_files[res_id]["unsaved"] = false
-		if _open_files[res_id]["offset_changed"]:
+		if _open_files[res_id]["initial_state"] != current_state:
 			save_layout_of(res_id)
-			_open_files[res_id]["offset_changed"] = false
+			_open_files[res_id]["initial_state"] = current_state
 	
 	conversation_tree.set_all_files_saved()
 
 
 func save_layouts() -> void:
+	if active_conversation != null:
+		active_conversation.collapsed_state = discourse_nodes_tree.get_collapsed_folders()
+		active_conversation.zoom = discourse_graph_edit.zoom
+		active_conversation.scroll_offset = discourse_graph_edit.scroll_offset
 	for file_id in _open_files:
-		if _open_files[file_id]["offset_changed"]:
+		var current_state: Dictionary = _get_file_current_state(file_id)
+		if _open_files[file_id]["initial_state"] != current_state:
 			save_layout_of(file_id)
-			_open_files[file_id]["offset_changed"] = false
+			_open_files[file_id]["current_state"] = current_state
 
 
 func save_layout_of(dialog_id: int) -> void:
@@ -3852,6 +3891,26 @@ func _on_argument_button_item_selected(idx: int) -> void:
 	
 	display_format_key_formats(current_key, new_format, locale)
 	selected_phrase_format = argument_opt_btn.get_item_text(idx)
+
+
+func _get_file_current_state(file_id: int) -> Dictionary:
+	if not _open_files.has(file_id):
+		return {
+			"zoom": 1.0,
+			"scroll_offset": Vector2.ZERO,
+			"collapsed_state": DictUtils.create_typed(TYPE_STRING, TYPE_BOOL)}
+	
+	if active_conversation != null and active_conversation.get_instance_id() == file_id:
+		return {
+			"zoom": snappedf(discourse_graph_edit.zoom, 0.001),
+			"scroll_offset": discourse_graph_edit.scroll_offset.snappedf(0.001),
+			"collapsed_state": discourse_nodes_tree.get_collapsed_folders()}
+	else:
+		var res: EditorDiscourseDialog = _open_files[file_id]["resource"]
+		return {
+			"zoom": res.zoom,
+			"scroll_offset": res.scroll_offset,
+			"collapsed_state": res.collapsed_state.duplicate()}
 
 # --- UndoRedo ---
 # --- Phrases ---
