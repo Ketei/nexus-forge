@@ -233,6 +233,20 @@ func set_case(key: StringName, format: String, case: String, value: String) -> v
 			value)
 
 
+## Removes the [param case] from the [param format] of the phrase with the
+## given [param key].
+func remove_case(key: StringName, format: String, case: String) -> void:
+	if not _phrases.has(key):
+		return
+	
+	var dict: Dictionary = DictUtils.get_nested_value(
+			_phrases,
+			[key, "formats", format, "cases"],
+			{},
+			true)
+	dict.erase(case)
+
+
 ## Sets the default case on the phrase [param key] of the argument
 ## [param on_argument] to [param default].
 func set_case_default(key: StringName, format: String, default: String) -> void:
