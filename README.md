@@ -15,8 +15,6 @@
 > **Beta State:** The plugin is fully functional but some utility and navigation features are unimplemented, incomplete or inconsistent. Any breaking changes will be announced on the releases page. Please report any bugs you encounter!
 > 
 > This began as a personal tool, so it includes a few specific static helper classes tailored for my own workflow.
->
-> **About Undo/Redo:** Not all modules of Nexus Forge implement the Undo/Redo system. Check the roadmap to find out which modules support these actions.
 
 ## Contents
 
