@@ -42,12 +42,7 @@ var exp_parser: Expression = null
 @onready var edit_genders_btn: Button = $CharacterContainer/BasicDataSplit/GeneralContainer/GenderContainer/EditGendersBtn
 
 
-func _ready() -> void:
-	set_process_input(false)
-
-
 func ready_plugin() -> void:
-	set_process_input(true)
 	exp_parser = Expression.new()
 	char_tree.ready_plugin()
 	character_data_tree.ready_plugin()
@@ -101,61 +96,36 @@ func ready_plugin() -> void:
 	edit_genders_btn.pressed.connect(_on_edit_genders_pressed)
 
 
-func _input(event: InputEvent) -> void:
-	if not is_visible_in_tree():
-		return
-	
-	var current_focus: Control = get_viewport().gui_get_focus_owner()
-	
-	if event is InputEventKey:
-		if event.echo or not event.pressed or not event.ctrl_pressed:
-			return
-		
-		if current_focus != null:
-			if current_focus is LineEdit:
-				if current_focus.is_editing():
-					return
-				elif current_focus is TextEdit:
-					return
-		
-		if event.keycode == KEY_Z:
-			if current_sheet == null:
-				get_viewport().set_input_as_handled()
-				return
-			
-			if event.shift_pressed:
-				if undo.has_redo():
-					var action_name: String = undo.get_action_name(undo.get_current_action() + 1)
-					undo.redo()
-					NFPluginGameHandler._log_msg(
-							"",
-							"Redo: " + action_name,
-							NFPluginGameHandler._LogLevel.EDITOR)
-					_something_changed()
-			else:
-				if undo.has_undo():
-					var action_name: String = undo.get_current_action_name()
-					undo.undo()
-					NFPluginGameHandler._log_msg(
-							"",
-							"Undo: " + action_name,
-							NFPluginGameHandler._LogLevel.EDITOR)
-					_something_changed()
-			get_viewport().set_input_as_handled()
-		elif event.keycode == KEY_Y:
-			if current_sheet == null:
-				get_viewport().set_input_as_handled()
-				return
-			
-			if undo.has_redo():
-				var action_name: String = undo.get_action_name(undo.get_current_action() + 1)
-				undo.redo()
-				NFPluginGameHandler._log_msg(
-						"",
-						"Redo: " + action_name,
-						NFPluginGameHandler._LogLevel.EDITOR)
-				_something_changed()
-			get_viewport().set_input_as_handled()
+func can_undo() -> bool:
+	if is_instance_valid(undo):
+		return undo.has_undo()
+	return false
+
+
+func can_redo() -> bool:
+	if is_instance_valid(undo):
+		return undo.has_redo()
+	return false
+
+
+func do_undo() -> void:
+	var action_name: String = undo.get_current_action_name()
+	undo.undo()
+	NFPluginGameHandler._log_msg(
+			"",
+			"Undo: " + action_name,
+			NFPluginGameHandler._LogLevel.EDITOR)
+	_something_changed()
+
+
+func do_redo() -> void:
+	var action_name: String = undo.get_action_name(undo.get_current_action() + 1)
+	undo.redo()
+	NFPluginGameHandler._log_msg(
+			"",
+			"Redo: " + action_name,
+			NFPluginGameHandler._LogLevel.EDITOR)
+	_something_changed()
 
 
 func _on_edit_genders_pressed() -> void:

@@ -202,6 +202,7 @@ func _get_plugin_name() -> String:
 func _make_visible(visible):
 	if editor_view != null:
 		editor_view.visible = visible
+		
 
 
 func _enable_plugin() -> void:

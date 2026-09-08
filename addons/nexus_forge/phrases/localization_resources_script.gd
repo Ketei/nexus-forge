@@ -47,61 +47,7 @@ var _open_files: Dictionary[int, Dictionary] = {}
 @onready var expand_default_btn: Button = $MainContainer/DataHSplit/CaseContainer/CasesContainer/KeyScroll/CasesContainer/DefaultCaseContainer/ExpandDefaultBtn
 
 
-func _ready() -> void:
-	set_process_input(false)
-
-
-func _input(event: InputEvent) -> void:
-	if not is_visible_in_tree():
-		return
-	
-	if event is InputEventKey:
-		if event.echo or not event.pressed or not event.ctrl_pressed:
-			return
-		
-		var current_focus: Control = get_viewport().gui_get_focus_owner()
-		
-		if current_focus != null:
-			if current_focus is LineEdit:
-				if current_focus.is_editing():
-					return
-			elif current_focus is TextEdit:
-				return
-		
-		if event.keycode == KEY_Z:
-			if event.shift_pressed:
-				if undo.has_redo():
-					var action_name: String = undo.get_action_name(undo.get_current_action() + 1)
-					undo.redo()
-					NFPluginGameHandler._log_msg(
-						"",
-						"Redo: " + action_name,
-						NFPluginGameHandler._LogLevel.EDITOR)
-					_on_file_edited()
-			else:
-				if undo.has_undo():
-					var action_name: String = undo.get_current_action_name()
-					undo.undo()
-					NFPluginGameHandler._log_msg(
-						"",
-						"Undo: " + action_name,
-						NFPluginGameHandler._LogLevel.EDITOR)
-					_on_file_edited()
-			get_viewport().set_input_as_handled()
-		elif event.keycode == KEY_Y and not event.shift_pressed:
-			if undo.has_redo():
-				var action_name: String = undo.get_action_name(undo.get_current_action() + 1)
-				undo.redo()
-				NFPluginGameHandler._log_msg(
-					"",
-					"Redo: " + action_name,
-					NFPluginGameHandler._LogLevel.EDITOR)
-				_on_file_edited()
-			get_viewport().set_input_as_handled()
-
-
 func ready_plugin() -> void:
-	set_process_input(true)
 	text_editor = load("res://addons/nexus_forge/discourse/discourse_text_editor.tscn").instantiate()
 	add_child(text_editor)
 	text_editor.signal_variables = true
@@ -179,6 +125,38 @@ func ready_plugin() -> void:
 	
 	search_text_ln_edt.text_changed.connect(_on_key_search_text_changed)
 	search_case_ln_edt.text_changed.connect(_on_case_search_text_changed)
+
+
+func can_undo() -> bool:
+	if is_instance_valid(undo):
+		return undo.has_undo()
+	return false
+
+
+func can_redo() -> bool:
+	if is_instance_valid(undo):
+		return undo.has_redo()
+	return false
+
+
+func do_undo() -> void:
+	var action_name: String = undo.get_current_action_name()
+	undo.undo()
+	NFPluginGameHandler._log_msg(
+		"",
+		"Undo: " + action_name,
+		NFPluginGameHandler._LogLevel.EDITOR)
+	_on_file_edited()
+
+
+func do_redo() -> void:
+	var action_name: String = undo.get_action_name(undo.get_current_action() + 1)
+	undo.redo()
+	NFPluginGameHandler._log_msg(
+		"",
+		"Redo: " + action_name,
+		NFPluginGameHandler._LogLevel.EDITOR)
+	_on_file_edited()
 
 
 func _on_case_line_text_changed(_text: String = "") -> void:

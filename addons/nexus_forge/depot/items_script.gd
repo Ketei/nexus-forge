@@ -407,6 +407,7 @@ func _do_update_currency_value(currency_id: StringName, new_value: int) -> void:
 		switch_to_currency(currency_id)
 	currency_value_spn_bx.set_value_no_signal(new_value)
 	currency_value_spn_bx.set_meta(&"old_value", new_value)
+	_on_currency_changed()
 
 
 func _on_currency_deleted(currency_id: StringName) -> void:
@@ -456,6 +457,7 @@ func _undo_erase_currency(currency_id: StringName, currency_data: Dictionary) ->
 				"depot - editor",
 				"Couldn't restore currency '%s' on editor." % currency_id,
 				NFPluginGameHandler._LogLevel.ERROR)
+	_on_currency_changed()
 
 
 func _do_erase_currency(currency_id: StringName) -> void:
@@ -468,6 +470,7 @@ func _do_erase_currency(currency_id: StringName) -> void:
 		currency_value_spn_bx.set_value_no_signal(0)
 		currency_custom_data_tree.clear_data(false)
 		set_currency_ui_enabled(false)
+	_on_currency_changed()
 
 
 func _on_currency_id_changed(from: StringName, to: StringName) -> void:
@@ -491,6 +494,7 @@ func _do_change_currency_id(from: StringName, to: StringName) -> void:
 	if loaded_currency == from:
 		loaded_currency = to
 	currency_tree.change_currency_id(from, to)
+	_on_currency_changed()
 	
 
 
@@ -691,6 +695,7 @@ func _do_update_item_name(item_id: StringName, new_name: String) -> void:
 	item_name_ln_edt.text = new_name
 	item_name_ln_edt.set_meta(&"old_value", new_name)
 	item_link.item_renamed.emit(item_id, new_name)
+	_on_items_changed()
 
 
 func _on_currency_name_edit_toggled(is_toggled: bool) -> void:
@@ -719,6 +724,7 @@ func _do_rename_currency(currency_id: StringName, new_name: String) -> void:
 	
 	currency_name_ln_edt.text = new_name
 	currency_name_ln_edt.set_meta(&"old_value", new_name)
+	_on_currency_changed()
 
 
 func _on_item_description_focus_exited() -> void:
@@ -747,6 +753,7 @@ func _do_update_description(item_id: StringName, new_desc: String) -> void:
 		items_tree.select_item(item_id, false)
 	item_desc_txt_edt.text = new_desc
 	item_desc_txt_edt.set_meta(&"old_value", new_desc)
+	_on_items_changed()
 
 
 func _on_new_category_selected(idx: int) -> void:
@@ -776,6 +783,7 @@ func _do_update_category(item_id: StringName, category: StringName) -> void:
 				"depot - editor",
 				"Tried to undo select to a non-existing category '%s'. Selecting (uncategorized)" % category,
 				NFPluginGameHandler._LogLevel.EDITOR)
+	_on_items_changed()
 
 
 func _on_rarity_selected(idx: int) -> void:
@@ -800,6 +808,7 @@ func _do_update_rarity(item_id: StringName, rarity: int) -> void:
 		switch_to_item(item_id)
 		items_tree.select_item(item_id, false)
 	select_rarity(rarity)
+	_on_items_changed()
 
 
 func _on_item_value_changed(new_value: int) -> void:
@@ -821,6 +830,7 @@ func _do_update_item_value(item_id: StringName, new_value: int) -> void:
 		items_tree.select_item(item_id, false)
 	item_val_spn_bx.set_value_no_signal(new_value)
 	item_val_spn_bx.set_meta(&"old_value", new_value)
+	_on_items_changed()
 
 
 func _on_item_data_changed() -> void:
@@ -841,6 +851,7 @@ func _do_update_item_data(item_id: StringName, is_undo: bool) -> void:
 		item_data_tree.undo()
 	else:
 		item_data_tree.redo()
+	_on_items_changed()
 
 
 func _on_item_id_changed(from: StringName, to: StringName) -> void:
@@ -1017,6 +1028,7 @@ func _do_erase_item(item_id: StringName) -> void:
 		set_items_ui_enabled(false)
 	
 	update_page_label()
+	_on_items_changed()
 	item_deleted.emit(item_id)
 
 
@@ -1025,6 +1037,7 @@ func _undo_erase_item(item_id: StringName, item_data: Dictionary[String, Variant
 	item_link.create_item(item_id)
 	item_link.set_item_name(item_id, item_data["name"])
 	item_link.items._items[item_id] = item_data.duplicate(true)
+	_on_items_changed()
 
 
 func _on_create_item_pressed() -> void:
@@ -1328,6 +1341,7 @@ func _do_update_currency_data(currency_id: StringName, is_undo: bool) -> void:
 		currency_custom_data_tree.undo()
 	else:
 		currency_custom_data_tree.redo()
+	_on_currency_changed()
 
 
 func _on_items_changed(arg = null) -> void:
@@ -1373,6 +1387,7 @@ func _do_update_flag_toggled(flag_id: String, set_pressed: bool) -> void:
 		if item.get_meta(&"flag_id") != flag_id:
 			continue
 		item.set_pressed_no_signal(set_pressed)
+		_on_items_changed()
 		return
 	
 	NFPluginGameHandler._log_msg(

@@ -51,54 +51,9 @@ func _input(event: InputEvent) -> void:
 			return
 		
 		if event.keycode == KEY_DELETE and not event.ctrl_pressed and not event.shift_pressed:
-			
 			if not active_recipe.is_empty():
 				recipe_tree.remove_recipe(active_recipe)
 				_on_recipe_erased(active_recipe)
-			get_viewport().set_input_as_handled()
-			return
-		
-		if not event.ctrl_pressed:
-			return
-		
-		var current_focus: Control = get_viewport().gui_get_focus_owner()
-		
-		if current_focus != null:
-			if current_focus is LineEdit:
-				if current_focus.is_editing():
-					return
-			elif current_focus is TextEdit:
-				return
-		
-		if event.keycode == KEY_Z:
-			if event.shift_pressed:
-				if undo.has_redo():
-					var action_name: String = undo.get_action_name(undo.get_current_action() + 1)
-					undo.redo()
-					NFPluginGameHandler._log_msg(
-						"",
-						"Redo: " + action_name,
-						NFPluginGameHandler._LogLevel.EDITOR)
-					_something_changed()
-			else:
-				if undo.has_undo():
-					var action_name: String = undo.get_current_action_name()
-					undo.undo()
-					NFPluginGameHandler._log_msg(
-						"",
-						"Undo: " + action_name,
-						NFPluginGameHandler._LogLevel.EDITOR)
-					_something_changed()
-			get_viewport().set_input_as_handled()
-		elif event.keycode == KEY_Y and not event.shift_pressed:
-			if undo.has_redo():
-				var action_name: String = undo.get_action_name(undo.get_current_action() + 1)
-				undo.redo()
-				NFPluginGameHandler._log_msg(
-						"",
-						"Redo: " + action_name,
-						NFPluginGameHandler._LogLevel.EDITOR)
-				_something_changed()
 			get_viewport().set_input_as_handled()
 
 
@@ -159,6 +114,39 @@ func ready_plugin() -> void:
 	recipe_output_tree.metadata_removed.connect(_on_recipe_ingredient_metadata_removed.bind(false))
 	recipe_output_tree.metadata_changed.connect(_on_ingredient_metadata_changed.bind(false))
 	recipe_output_tree.metadata_renamed.connect(_on_ingredient_metadata_renamed.bind(false))
+
+
+func can_undo() -> bool:
+	if is_instance_valid(undo):
+		return undo.has_undo()
+	return false
+
+
+func can_redo() -> bool:
+	if is_instance_valid(undo):
+		return undo.has_redo()
+	return false
+
+
+func do_undo() -> void:
+	var action_name: String = undo.get_current_action_name()
+	undo.undo()
+	NFPluginGameHandler._log_msg(
+		"",
+		"Undo: " + action_name,
+		NFPluginGameHandler._LogLevel.EDITOR)
+	_something_changed()
+
+
+func do_redo() -> void:
+	var action_name: String = undo.get_action_name(undo.get_current_action() + 1)
+	undo.redo()
+	NFPluginGameHandler._log_msg(
+			"",
+			"Redo: " + action_name,
+			NFPluginGameHandler._LogLevel.EDITOR)
+	_something_changed()
+
 
 
 func _on_recipe_lnedt_text_changed(text: String) -> void:

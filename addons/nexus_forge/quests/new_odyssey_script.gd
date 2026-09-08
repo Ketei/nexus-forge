@@ -85,61 +85,7 @@ static func update_script_path(quest: bool = true, stage: bool = true, objective
 			break
 
 
-func _ready() -> void:
-	set_process_input(false)
-
-
-func _input(event: InputEvent) -> void:
-	if not is_visible_in_tree():
-		return
-	
-	if event is InputEventKey:
-		if event.echo or not event.pressed or not event.ctrl_pressed:
-			return
-		
-		var current_focus: Control = get_viewport().gui_get_focus_owner()
-		
-		if current_focus != null:
-			if current_focus is LineEdit:
-				if current_focus.is_editing():
-					return
-			elif current_focus is TextEdit:
-				return
-		
-		if event.keycode == KEY_Z:
-			if event.shift_pressed:
-				if undo.has_redo():
-					var action_name: String = undo.get_action_name(undo.get_current_action() + 1)
-					undo.redo()
-					NFPluginGameHandler._log_msg(
-						"",
-						"Redo: " + action_name,
-						NFPluginGameHandler._LogLevel.EDITOR)
-					_on_something_changed()
-			else:
-				if undo.has_undo():
-					var action_name: String = undo.get_current_action_name()
-					undo.undo()
-					NFPluginGameHandler._log_msg(
-						"",
-						"Undo: " + action_name,
-						NFPluginGameHandler._LogLevel.EDITOR)
-					_on_something_changed()
-			get_viewport().set_input_as_handled()
-		elif event.keycode == KEY_Y and not event.shift_pressed:
-			if undo.has_redo():
-				var action_name: String = undo.get_action_name(undo.get_current_action() + 1)
-				undo.redo()
-				NFPluginGameHandler._log_msg(
-					"",
-					"Redo: " + action_name,
-					NFPluginGameHandler._LogLevel.EDITOR)
-				_on_something_changed()
-			get_viewport().set_input_as_handled()
-
-
 func ready_plugin() -> void:
-	set_process_input(true)
 	obj_req_tree.ready_plugin()
 	files_tree.ready_plugin()
 	quest_tree.ready_plugin()
@@ -247,6 +193,38 @@ func ready_plugin() -> void:
 	obj_req_tree.data_updated.connect(_on_objective_data_updated)
 	obj_req_tree.data_erased.connect(_on_objective_data_erased)
 	obj_req_tree.data_operator_changed.connect(_on_data_data_operator_changed)
+
+
+func can_undo() -> bool:
+	if is_instance_valid(undo):
+		return undo.has_undo()
+	return false
+
+
+func can_redo() -> bool:
+	if is_instance_valid(undo):
+		return undo.has_redo()
+	return false
+
+
+func do_undo() -> void:
+	var action_name: String = undo.get_current_action_name()
+	undo.undo()
+	NFPluginGameHandler._log_msg(
+		"",
+		"Undo: " + action_name,
+		NFPluginGameHandler._LogLevel.EDITOR)
+	_on_something_changed()
+
+
+func do_redo() -> void:
+	var action_name: String = undo.get_action_name(undo.get_current_action() + 1)
+	undo.redo()
+	NFPluginGameHandler._log_msg(
+		"",
+		"Redo: " + action_name,
+		NFPluginGameHandler._LogLevel.EDITOR)
+	_on_something_changed()
 
 
 func filesystem_resource_removed(quest: Quest) -> void:

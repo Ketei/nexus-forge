@@ -46,12 +46,7 @@ var signal_change: bool = false
 @onready var hybrid_b: Label = $RacesContainer/RacesBasicSplit/BasicDataContainer/HybridInfoContainer/HybridB
 
 
-func _ready() -> void:
-	set_process_input(false)
-
-
 func ready_plugin() -> void:
-	set_process_input(true)
 	undo = UndoRedo.new()
 	undo.max_steps = UNDO_MAX_STEPS
 	race_data_tree.undo_redo_steps = UNDO_MAX_STEPS
@@ -107,53 +102,36 @@ func ready_plugin() -> void:
 	dom_opt_btn.item_selected.connect(_on_dominant_gene_selected)
 
 
-func _input(event: InputEvent) -> void:
-	if not is_visible_in_tree():
-		return
-	
-	if event is InputEventKey:
-		if event.echo or not event.pressed or not event.ctrl_pressed:
-			return
-		
-		var current_focus: Control = get_viewport().gui_get_focus_owner()
-		
-		if current_focus != null:
-			if current_focus is LineEdit:
-				if current_focus.is_editing():
-					return
-			elif current_focus is TextEdit:
-				return
-		
-		if event.keycode == KEY_Z:
-			if event.shift_pressed:
-				if undo.has_redo():
-					var action_name: String = undo.get_action_name(undo.get_current_action() + 1)
-					undo.redo()
-					NFPluginGameHandler._log_msg(
-							"",
-							"Redo: " + action_name,
-							NFPluginGameHandler._LogLevel.EDITOR)
-					_on_something_changed()
-			else:
-				if undo.has_undo():
-					var action_name: String = undo.get_action_name(undo.get_current_action())
-					undo.undo()
-					NFPluginGameHandler._log_msg(
-							"",
-							"Undo: " + action_name,
-							NFPluginGameHandler._LogLevel.EDITOR)
-					_on_something_changed()
-			get_viewport().set_input_as_handled()
-		if event.keycode == KEY_Y and not event.shift_pressed:
-			if undo.has_redo():
-				var action_name: String = undo.get_current_action_name()
-				undo.redo()
-				NFPluginGameHandler._log_msg(
-							"",
-							"Redo: " + action_name,
-							NFPluginGameHandler._LogLevel.EDITOR)
-				_on_something_changed()
-			get_viewport().set_input_as_handled()
+func can_undo() -> bool:
+	if is_instance_valid(undo):
+		return undo.has_undo()
+	return false
+
+
+func can_redo() -> bool:
+	if is_instance_valid(undo):
+		return undo.has_redo()
+	return false
+
+
+func do_undo() -> void:
+	var action_name: String = undo.get_action_name(undo.get_current_action())
+	undo.undo()
+	NFPluginGameHandler._log_msg(
+			"",
+			"Undo: " + action_name,
+			NFPluginGameHandler._LogLevel.EDITOR)
+	_on_something_changed()
+
+
+func do_redo() -> void:
+	var action_name: String = undo.get_current_action_name()
+	undo.redo()
+	NFPluginGameHandler._log_msg(
+				"",
+				"Redo: " + action_name,
+				NFPluginGameHandler._LogLevel.EDITOR)
+	_on_something_changed()
 
 
 func _on_data_tree_data_changed() -> void:

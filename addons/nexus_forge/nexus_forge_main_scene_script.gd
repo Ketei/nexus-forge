@@ -5,6 +5,7 @@ extends Control
 var recipes_link: EditorItemRecipeLink = EditorItemRecipeLink.new()
 var current_tab: int = 0
 var tool_count: int = 0
+
 @onready var tool_container: PanelContainer = $MainContainer/ToolScroll/ToolContainer
 @onready var tool_tab_bar: TabBar = $MainContainer/ToolTabBar
 @onready var splash_texture: TextureRect = $MainContainer/ToolScroll/ToolContainer/NexusForge/SplashPanel/SplashTexture
@@ -25,6 +26,64 @@ var phrase_maps: PanelContainer = null
 
 func set_version(version: String) -> void:
 	$MainContainer/ToolScroll/ToolContainer/NexusForge/VersionLabel.text = version
+
+
+func _input(event: InputEvent) -> void:
+	if not is_visible_in_tree():
+		return
+	
+	if event is InputEventKey:
+		if not event.is_pressed() or event.is_echo():
+			return
+		
+		if event.keycode == KEY_TAB:
+			if event.ctrl_pressed:
+				if  event.shift_pressed:
+					tool_tab_bar.current_tab = posmod(tool_tab_bar.current_tab - 1, tool_count)
+				else:
+					tool_tab_bar.current_tab = posmod(tool_tab_bar.current_tab + 1, tool_count)
+				get_viewport().set_input_as_handled()
+		elif event.keycode == KEY_W:
+			if event.ctrl_pressed:
+				if discourse != null and discourse.visible:
+					discourse.close_active_conversation()
+					get_viewport().set_input_as_handled()
+				elif characters != null and characters.visible:
+					characters.close_active_character()
+					get_viewport().set_input_as_handled()
+				elif phrase_maps != null and phrase_maps.visible:
+					phrase_maps.close_active_map()
+					get_viewport().set_input_as_handled()
+		elif event.ctrl_pressed and event.keycode == KEY_Z:
+			var focused_node: Control = get_viewport().gui_get_focus_owner()
+			if focused_node != null:
+				if focused_node is LineEdit:
+					if focused_node.is_editing():
+						return
+				elif focused_node is TextEdit:
+					return
+			if 0 < tool_tab_bar.current_tab:
+				var target: Control = tool_container.get_child(current_tab)
+				if event.shift_pressed:
+					if target.can_redo():
+						target.do_redo()
+				else:
+					if target.can_undo():
+						target.do_undo()
+			get_viewport().set_input_as_handled()
+		elif event.ctrl_pressed and not event.shift_pressed and event.keycode == KEY_Y:
+			var focused_node: Control = get_viewport().gui_get_focus_owner()
+			if focused_node != null:
+				if focused_node is LineEdit:
+					if focused_node.is_editing():
+						return
+				elif focused_node is TextEdit:
+					return
+			if 0 < tool_tab_bar.current_tab:
+				var target: Control = tool_container.get_child(current_tab)
+				if target.can_redo():
+					target.do_redo()
+			get_viewport().set_input_as_handled()
 
 
 func ready_plugin(use_discourse: bool, use_characters: bool, use_species: bool, use_stats: bool, use_skills: bool, use_traits: bool, use_items: bool, use_currencies: bool, use_recipes: bool, use_quests: bool, use_phrases: bool, discourse_base_lang: String) -> void:
@@ -193,30 +252,6 @@ func _on_items_loaded() -> void:
 func _on_recipes_loaded() -> void:
 	if recipes != null:
 		recipes_link.recipes = recipes.recipes_resource
-
-
-func _input(event: InputEvent) -> void:
-	if visible and event is InputEventKey:
-		if not event.is_pressed() or event.is_echo():
-			return
-		if event.keycode == KEY_TAB:
-			if event.ctrl_pressed:
-				if  event.shift_pressed:
-					tool_tab_bar.current_tab = posmod(tool_tab_bar.current_tab - 1, tool_count)
-				else:
-					tool_tab_bar.current_tab = posmod(tool_tab_bar.current_tab + 1, tool_count)
-				get_viewport().set_input_as_handled()
-		if event.keycode == KEY_W:
-			if event.ctrl_pressed:
-				if discourse != null and discourse.visible:
-					discourse.close_active_conversation()
-					get_viewport().set_input_as_handled()
-				elif characters != null and characters.visible:
-					characters.close_active_character()
-					get_viewport().set_input_as_handled()
-				elif phrase_maps != null and phrase_maps.visible:
-					phrase_maps.close_active_map()
-					get_viewport().set_input_as_handled()
 
 
 func _on_tab_changed(tab: int) -> void:

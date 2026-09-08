@@ -128,61 +128,7 @@ var _recently_opened_popup: PopupMenu = null
 @onready var auto_update_previewer: Button = $LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/DialogScenePreviewer/HBoxContainer/ButtonContaienr/AutoUpdateBtn
 
 
-func _ready() -> void:
-	set_process_input(false)
-
-
-func _input(event: InputEvent) -> void:
-	if not is_visible_in_tree() or undo == null:
-		return
-	
-	if event is InputEventKey:
-		if event.echo or not event.pressed or not event.ctrl_pressed:
-			return
-		
-		var current_focus: Control = get_viewport().gui_get_focus_owner()
-		
-		if current_focus != null:
-			if current_focus is LineEdit:
-				if current_focus.is_editing():
-					return
-			elif current_focus is TextEdit:
-				return
-		
-		if event.keycode == KEY_Z:
-			if event.shift_pressed:
-				if undo.has_redo():
-					var action_name: String = undo.get_action_name(undo.get_current_action() + 1)
-					undo.redo()
-					NFPluginGameHandler._log_msg(
-						"",
-						"Redo: " + action_name,
-						NFPluginGameHandler._LogLevel.EDITOR)
-					_on_conversation_changed()
-			else:
-				if undo.has_undo():
-					var action_name: String = undo.get_current_action_name()
-					undo.undo()
-					NFPluginGameHandler._log_msg(
-						"",
-						"Undo: " + action_name,
-						NFPluginGameHandler._LogLevel.EDITOR)
-					_on_conversation_changed()
-			get_viewport().set_input_as_handled()
-		elif event.keycode == KEY_Y and not event.shift_pressed:
-			if undo.has_redo():
-				var action_name: String = undo.get_action_name(undo.get_current_action() + 1)
-				undo.redo()
-				NFPluginGameHandler._log_msg(
-					"",
-					"Redo: " + action_name,
-					NFPluginGameHandler._LogLevel.EDITOR)
-				_on_conversation_changed()
-			get_viewport().set_input_as_handled()
-
-
 func ready_plugin(base_locale: String = "") -> void:
-	set_process_input(true)
 	text_editor = TEXT_CODE_EDITOR.instantiate()
 	add_child(text_editor)
 	text_editor.ready_plugin()
@@ -609,6 +555,38 @@ func ready_plugin(base_locale: String = "") -> void:
 	
 	discourse_graph_edit.travel_node_target_id_changed.connect(_on_travel_node_target_id_changed)
 	discourse_graph_edit.travel_node_selected_waypoint_changed.connect(_on_travel_node_selected_waypoint_changed)
+
+
+func can_undo() -> bool:
+	if is_instance_valid(undo):
+		return undo.has_undo()
+	return false
+
+
+func can_redo() -> bool:
+	if is_instance_valid(undo):
+		return undo.has_redo()
+	return false
+
+
+func do_undo() -> void:
+	var action_name: String = undo.get_current_action_name()
+	undo.undo()
+	NFPluginGameHandler._log_msg(
+		"",
+		"Undo: " + action_name,
+		NFPluginGameHandler._LogLevel.EDITOR)
+	_on_conversation_changed()
+
+
+func do_redo() -> void:
+	var action_name: String = undo.get_action_name(undo.get_current_action() + 1)
+	undo.redo()
+	NFPluginGameHandler._log_msg(
+		"",
+		"Redo: " + action_name,
+		NFPluginGameHandler._LogLevel.EDITOR)
+	_on_conversation_changed()
 
 
 func get_column_left() -> Control:
