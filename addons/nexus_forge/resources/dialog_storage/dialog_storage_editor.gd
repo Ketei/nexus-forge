@@ -8,6 +8,8 @@ extends DiscourseDialog
 ## [ReleaseDiscourseDialog] and the original files are NOT included.
 
 
+static var regex_search: RegEx
+
 ## Offset for the [GraphEdit] in Discourse.
 var scroll_offset: Vector2 = Vector2.ZERO:
 	set(new_scroll):
@@ -113,6 +115,26 @@ var collapsed_state: Dictionary[String, bool] = {}
 var _id_map: Dictionary[StringName, StringName] = {}
 
 
+static func _static_init() -> void:
+	regex_search = RegEx.new()
+	regex_search.compile("\\{[\\$\\!][^\\s\\}]+\\}")
+
+
+## Returns an array with all the format arguments of the prase [param phrase_text].[br]
+## It'll only look for format arguments that start with $ or !.
+static func get_phrase_arguments(phrase_text: String, trim_brackets: bool = false) -> Array[String]:
+	var all_arguments: Array[String] = []
+	
+	if trim_brackets:
+		for regex_match in regex_search.search_all(phrase_text): # $variable
+			all_arguments.append(regex_match.get_string().trim_prefix("{").trim_suffix("}"))
+	else:
+		for regex_match in regex_search.search_all(phrase_text): # $variable
+			all_arguments.append(regex_match.get_string())
+	
+	return all_arguments
+
+
 ## Returns the text of a localized string.
 func get_format_string(key: String, locale: String) -> String:
 	locale = TranslationServer.standardize_locale(locale)
@@ -165,13 +187,15 @@ func get_editor_localized_strings(locale_code: String) -> Dictionary[String, Dic
 func set_format_string(key: String, text: String, locale: String) -> void:
 	locale = TranslationServer.standardize_locale(locale)
 	
-	var text_set: bool = DictUtils.set_nested_value(format_strings, [key, locale, "base_string"], text, false)
+	if not format_strings.has(key) or locale.is_empty():
+		return
 	
-	if not text_set:
-		DictUtils.set_nested_value(
-					format_strings,
-					[key, locale],
-					{"base_string": text, "format": {}})
+	if not format_strings[key].has(locale):
+		format_strings[key][locale] = {
+			"base_string": "",
+			"format": {}}
+	
+	DictUtils.set_nested_value(format_strings, [key, locale, "base_string"], text, false)
 
 
 ## Checks if the format key exists in the given key and locale. If it doesn't it'll
@@ -195,8 +219,14 @@ func validate_format_string_format(key: String, locale: String, format: String) 
 
 func set_format_string_case(key: String, locale: String, format: String, case: String, value: String) -> void:
 	locale = TranslationServer.standardize_locale(locale)
-	if not DictUtils.has_nested_path(format_strings, [key, locale]):
+	
+	if locale.is_empty() or not format_strings.has(key):
 		return
+	
+	if not format_strings[key].has(locale):
+		format_strings[key][locale] = {
+			"base_string": "",
+			"format": {}}
 	
 	if not format_strings[key][locale]["format"].has(format):
 		format_strings[key][locale]["format"][format] = {
@@ -229,8 +259,14 @@ func get_format_string_cases(key: String, locale: String, format: String) -> Arr
 ## Sets the default case from a localized string with the given key.
 func set_format_string_default_case(key: String, locale: String, format: String, default_text: String) -> void:
 	locale = TranslationServer.standardize_locale(locale)
-	if not DictUtils.has_nested_path(format_strings, [key, locale]):
+	
+	if locale.is_empty() or not format_strings.has(key):
 		return
+	
+	if not format_strings[key].has(locale):
+		format_strings[key][locale] = {
+			"base_string": "",
+			"format": {}}
 	
 	if not format_strings[key][locale]["format"].has(format):
 		format_strings[key][locale]["format"][format] = {
@@ -1232,25 +1268,6 @@ func split_path_variable(path: String) -> Array[StringName]:
 	if split.size() != 2:
 		path_array.resize(2)
 	return path_array
-
-
-## Returns an array with all the format arguments of the prase [param phrase_text].[br]
-## It'll only look for format arguments that start with $ or !.
-static func get_phrase_arguments(phrase_text: String, trim_brackets: bool = false) -> Array[String]:
-	var all_arguments: Array[String] = []
-	
-	var regex_search: RegEx = RegEx.new()
-	
-	regex_search.compile("\\{[\\$\\!][^\\s\\}]+\\}")
-	
-	if trim_brackets:
-		for regex_match in regex_search.search_all(phrase_text): # $variable
-			all_arguments.append(regex_match.get_string().trim_prefix("{").trim_suffix("}"))
-	else:
-		for regex_match in regex_search.search_all(phrase_text): # $variable
-			all_arguments.append(regex_match.get_string())
-	
-	return all_arguments
 
 
 ## Adds a locale to the locale map. The locale map is used to track which

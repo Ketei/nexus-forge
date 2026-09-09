@@ -2681,13 +2681,58 @@ func _on_case_search_text_changed(text: String) -> void:
 
 
 func _on_new_case_button_pressed() -> void:
-	create_new_phrase_case()
+	var phrase_key: String = %PhrasesEntries.get_child(selected_phrase_index).get_meta(&"phrase_key")
+	var selected_format: String = argument_opt_btn.get_item_text(argument_opt_btn.selected)
+	var case_locale: String = phrases_lang_menu.get_selected_metadata()
+	var case_key: String = get_valid_phrase_case_key("case")
+	
+	undo.create_action("Create Case on '%s' format '%s' (%s)" % [phrase_key, selected_format, case_locale])
+	undo.add_do_method(_do_create_case.bind(phrase_key, selected_format, case_locale, case_key, ""))
+	undo.add_undo_method(_undo_create_case.bind(phrase_key, selected_format, case_locale, case_key))
+	undo.commit_action()
+	
 	_on_conversation_changed()
 
 
-func _on_erase_case_button_pressed(case_line: Control) -> void:
-	erase_case(case_line.get_index())
-	_on_case_line_text_changed()
+func _on_erase_case_button_pressed(case_container: Control) -> void:
+	var case_line: LineEdit = case_container.get_child(1)
+	var selected_format: String = argument_opt_btn.get_item_text(argument_opt_btn.selected)
+	var phrase_key: String = %PhrasesEntries.get_child(selected_phrase_index).get_meta(&"phrase_key")
+	var case_result: String = case_container.get_child(2).text
+	var case_locale: String = phrases_lang_menu.get_selected_metadata()
+	
+	undo.create_action("Erase Case on '%s' format '%s' (%s)" % [phrase_key, selected_format, case_locale])
+	undo.add_do_method(_undo_create_case.bind(phrase_key, selected_format, case_locale, case_line.text))
+	undo.add_undo_method(_do_create_case.bind(phrase_key, selected_format, case_locale, case_line.text, case_result))
+	undo.commit_action()
+	
+	_on_conversation_changed()
+
+
+func _do_create_case(phrase_key: String, on_format: String, on_locale: String, case_key: String, case_result: String) -> void:
+	active_conversation.set_format_string_case(
+			phrase_key,
+			on_locale,
+			on_format,
+			case_key,
+			case_result)
+	
+	if 0 <= selected_phrase_index and %PhrasesEntries.get_child(selected_phrase_index).get_meta(&"phrase_key") == phrase_key and\
+			0 < argument_opt_btn.item_count and argument_opt_btn.get_item_text(argument_opt_btn.selected) == on_format and\
+			0 < phrases_lang_menu.item_count and phrases_lang_menu.get_selected_metadata() == on_locale:
+		create_new_phrase_case(case_key, case_result)
+
+
+func _undo_create_case(phrase_key: String, on_format: String, on_locale: String, case_key: String) -> void:
+	active_conversation.erase_format_string_case(phrase_key, on_locale, on_format, case_key)
+	if 0 <= selected_phrase_index and %PhrasesEntries.get_child(selected_phrase_index).get_meta(&"phrase_key") == phrase_key and\
+			0 < argument_opt_btn.item_count and argument_opt_btn.get_item_text(argument_opt_btn.selected) == on_format and\
+			0 < phrases_lang_menu.item_count and phrases_lang_menu.get_selected_metadata() == on_locale:
+		for case_idx in range(1, %PhraseCasesEntries.get_child_count()):
+			var case_container: Control = %PhraseCasesEntries.get_child(case_idx)
+			if case_container.get_child(1).get_meta(&"old_value") == case_key:
+				erase_case(case_idx)
+				return
 
 
 func _on_open_phrase_case_text_editor_pressed(target: TextEdit) -> void:
@@ -2827,36 +2872,36 @@ func set_text_code_editor_variable_paths(paths: Array[Dictionary]) -> void:
 
 
 func _on_case_line_text_changed(_text: String = "") -> void:
-	_validate_phrase_cases()
 	_on_conversation_changed()
 
 
-func _validate_phrase_cases() -> void:
-	var all_ids: Dictionary[String, Array] = {}
+func get_valid_phrase_case_key(desired_id: String, ignore_line: LineEdit = null) -> String:
+	var all_ids: Dictionary[String, Variant] = {}
 	
 	for case_idx in range(1, %PhraseCasesEntries.get_child_count()):
 		var case: HBoxContainer = %PhraseCasesEntries.get_child(case_idx)
 		if case.is_queued_for_deletion():
 			continue
-		
 		var item: LineEdit = case.get_child(1)
-		var key: String = item.text.strip_edges()
-		
-		if key.is_empty():
+		if item == ignore_line:
 			continue
-		
-		if not all_ids.has(key):
-			all_ids[key] = []
-		all_ids[key].append(item)
+		all_ids[item.text] = null
 	
-	for item_key:String in all_ids.keys():
-		if 1 < all_ids[item_key].size():
-			for item:LineEdit in all_ids[item_key]:
-				item.add_theme_color_override(&"font_color", Color(1.0, 0.29, 0.325))
-		else:
-			for item:LineEdit in all_ids[item_key]:
-				if item.has_theme_color(&"font_color"):
-					item.remove_theme_color_override(&"font_color")
+	if not all_ids.has(desired_id):
+		return desired_id
+	
+	var modified: String = desired_id.strip_edges()
+	var base: String = modified
+	var iteration_data: Dictionary = StringUtils.get_trailing_integer(modified)
+	var iteration: int = iteration_data["integer"]
+	if iteration_data["has_integer"]:
+		base = base.trim_suffix(str(iteration))
+	
+	while all_ids.has(modified):
+		iteration += 1
+		modified = base + str(iteration)
+	
+	return modified
 
 
 func _on_text_line_text_submitted(_text: String, edit_btn: Button) -> void:
@@ -2950,27 +2995,72 @@ func _on_key_line_text_changed(_text: String = "") -> void:
 	_on_conversation_changed()
 
 
+func _on_new_key_field_button_pressed() -> void:
+	var valid_id: String = get_valid_format_key_id("NEW_PHRASE")
+	
+	undo.create_action("Create Phrase")
+	undo.add_do_method(_do_create_phrase_entry.bind(valid_id, "", phrases_lang_menu.get_selected_metadata()))
+	undo.add_undo_method(_undo_create_phrase_entry.bind(valid_id))
+	undo.commit_action()
+	
+	_on_conversation_changed()
+
+
 func _on_erase_key_button_pressed(field: HBoxContainer) -> void:
 	var phrase_key: String = field.get_meta(&"phrase_key")
-	if selected_phrase_index == field.get_index():
-		selected_phrase_index = -1
-		clear_cases()
-		default_case_edt.clear()
-		default_case_edt.editable = false
-		argument_opt_btn.clear()
-		argument_opt_btn.disabled = true
-		new_case_btn.disabled = true
+	var locale: String = phrases_lang_menu.get_selected_metadata()
+	var data: Dictionary = active_conversation.format_strings.get(phrase_key, {}).duplicate(true)
+	var current_text: String = active_conversation.get_format_string(phrase_key, locale)
 	
-	active_conversation.format_strings.erase(phrase_key)
+	undo.create_action("Erase Phrase")
+	undo.add_do_method(_undo_create_phrase_entry.bind(phrase_key))
+	undo.add_undo_method(_do_create_phrase_entry.bind(phrase_key, current_text, locale, data))
+	undo.commit_action()
 	
-	erase_key(field.get_index())
-	
-	_on_key_line_text_changed()
-
-
-func _on_new_key_field_button_pressed() -> void:
-	create_new_phrase_entry(&"", "")
 	_on_conversation_changed()
+
+
+func _do_create_phrase_entry(key: String, text: String, locale: String, data: Dictionary = {}) -> void:
+	if data.is_empty():
+		active_conversation.set_format_string(key, text, locale)
+		create_new_phrase_entry(key, text)
+	else:
+		active_conversation[key] = data.duplicate(true)
+		if 0 < phrases_lang_menu.item_count:
+			create_new_phrase_entry(
+					key,
+					active_conversation.get_format_string(
+							key,
+							phrases_lang_menu.get_selected_metadata()))
+
+
+func _undo_create_phrase_entry(key: String) -> void:
+	active_conversation.format_strings.erase(key)
+	var erase_target: int = -1
+	var new_selected: int = selected_phrase_index
+	
+	for item in %PhrasesEntries.get_children():
+		erase_target += 1
+		if item.get_meta(&"phrase_key") == key:
+			break
+	
+	if erase_target < 0:
+		return
+	
+	var current_selected: Control = null
+	if 0 <= selected_phrase_index:
+		if selected_phrase_index == erase_target:
+			selected_phrase_index = -1
+			clear_cases()
+			default_case_edt.clear()
+			default_case_edt.editable = false
+			argument_opt_btn.clear()
+			argument_opt_btn.disabled = true
+			new_case_btn.disabled = true
+		elif erase_target < selected_phrase_index:
+			selected_phrase_index -= 1
+	
+	erase_key(erase_target)
 
 
 func _rebuild_phrase_text_menu(text_menu: PopupMenu) -> void:
@@ -3100,6 +3190,7 @@ func create_new_phrase_case(case: String = "", case_text: String = "") -> void:
 	var case_editor: TextEdit = BracketHandler.new()
 	var expand_case: Button = Button.new()
 	var highlighter: NFEditorDialogSyntaxHighlighter = NFEditorDialogSyntaxHighlighter.new()
+	var valid_id: String = get_valid_phrase_case_key(case)
 	
 	highlighter.set_use_token("*", false)
 	highlighter.set_use_token("?", false)
@@ -3130,11 +3221,11 @@ func create_new_phrase_case(case: String = "", case_text: String = "") -> void:
 	
 	case_line.placeholder_text = "Case"
 	case_line.custom_minimum_size.y = 33.0
-	case_line.text = case
+	case_line.text = valid_id
 	case_line.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	case_line.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	case_line.size_flags_stretch_ratio = 1.0
-	case_line.set_meta(&"old_value", case)
+	case_line.set_meta(&"old_value", valid_id)
 	
 	case_container.add_child(erase_case_btn)
 	case_container.add_child(case_line)
@@ -3157,10 +3248,10 @@ func create_new_phrase_case(case: String = "", case_text: String = "") -> void:
 		default_case_edt.focus_next = case_line.get_path()
 	
 	case_line.text_changed.connect(_on_case_line_text_changed)
+	case_line.editing_toggled.connect(_on_phrase_case_editing_toggled.bind(case_line))
+	
 	case_editor.text_changed.connect(_on_phrase_text_field_changed.bind(case_editor))
 	case_editor.resized.connect(_update_choice_textbox_size.bind(case_editor))
-	
-	case_line.editing_toggled.connect(_on_phrase_case_editing_toggled.bind(case_line))
 	case_editor.focus_exited.connect(_on_phrase_case_result_focus_exited.bind(case_editor))
 
 
@@ -3179,11 +3270,12 @@ func erase_case(index: int) -> void:
 		new_case_btn.focus_next = ^""
 	else:
 		if index == 1: # It's the first item
-			var target_ln: LineEdit = %PhraseCasesEntries.get_child(1)
+			var target_child: Control = %PhraseCasesEntries.get_child(1)
+			var target_ln: LineEdit = target_child.get_child(1)
 			new_text_button.focus_next = target_ln.get_path()
 			target_ln.focus_previous = new_text_button.get_path()
 		elif new_case_count == index: # It's the last item
-			var target_text: LineEdit = %PhraseCasesEntries.get_child(-2).get_child(3)
+			var target_text: Button = %PhraseCasesEntries.get_child(-2).get_child(3)
 			target_text.focus_next = ^""
 		else: # It's between 2 items
 			var btn_up: Button = %PhraseCasesEntries.get_child(index - 1).get_child(3)
@@ -3201,6 +3293,7 @@ func create_new_phrase_entry(key: String, format: String, unsaved: bool = true) 
 	var text_field: TextEdit = BracketHandler.new()
 	var edit_button: Button = Button.new()
 	var highlighter: NFEditorDialogSyntaxHighlighter = NFEditorDialogSyntaxHighlighter.new()
+	var valid_key: String = get_valid_format_key_id(key)
 	
 	highlighter.set_use_token("&", false)
 	highlighter.set_use_token("*", false)
@@ -3208,21 +3301,15 @@ func create_new_phrase_entry(key: String, format: String, unsaved: bool = true) 
 	
 	text_field.syntax_highlighter = highlighter
 	
-	if key.is_empty():
-		key = get_valid_format_key_id(key)
-	else:
-		key = get_valid_format_key_id(key)
-	
 	container.set_meta(&"entry_id", UUID.generate_new())
-	container.set_meta(&"phrase_key", key)
-	container.set_meta(&"unsaved", unsaved)
+	container.set_meta(&"phrase_key", valid_key)
 	container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	
 	key_line.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	key_line.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	key_line.custom_minimum_size = Vector2(115.0, 33.0)
 	key_line.placeholder_text = "Key"
-	key_line.text = String(key)
+	key_line.text = valid_key
 	key_line.set_meta(&"old_value", key_line.text)
 	
 	erase_button.icon = get_theme_icon("Remove", "EditorIcons")
@@ -3283,7 +3370,7 @@ func create_new_phrase_entry(key: String, format: String, unsaved: bool = true) 
 	key_line.text_changed.connect(_on_key_line_text_changed)
 	erase_button.pressed.connect(_on_erase_key_button_pressed.bind(container))
 	
-	return key
+	return valid_key
 
 
 func erase_key(index: int) -> void:
@@ -3365,8 +3452,6 @@ func save_current_phrase_key(locale_code: String, format: String) -> void:
 			format,
 			modified,
 			case_container.get_child(2).text)
-	
-	_validate_phrase_cases()
 
 
 func save_phrase_keys(locale: String) -> void:
@@ -3399,9 +3484,7 @@ func save_phrase_keys(locale: String) -> void:
 		var new_key: String = modified
 		claimed_keys[new_key] = null
 		
-		if entry.get_meta(&"unsaved"):
-			entry.set_meta(&"unsaved", false)
-		elif new_key != old_key:
+		if new_key != old_key:
 			active_conversation.format_strings[new_key] = active_conversation.format_strings[old_key]
 			active_conversation.format_strings.erase(old_key)
 		
@@ -3906,6 +3989,8 @@ func _on_phrase_key_editing_toggled(is_toggled: bool, line: LineEdit) -> void:
 	var old_value: String = line.get_parent().get_meta(&"phrase_key")
 	
 	if new_value == old_value:
+		if line.text != new_value:
+			line.text = new_value
 		return
 	
 	undo.create_action("Set Phrase Key")
@@ -4053,9 +4138,11 @@ func _on_phrase_case_editing_toggled(is_toggled: bool, case_line: LineEdit) -> v
 		return
 	
 	var old_case: String = case_line.get_meta(&"old_value")
-	var new_case: String = case_line.text
+	var new_case: String = get_valid_phrase_case_key(case_line.text, case_line)
 	
 	if new_case == old_case:
+		if case_line.text != new_case:
+			case_line.text = new_case
 		return
 	
 	var key: String = %PhrasesEntries.get_child(selected_phrase_index).get_meta(&"phrase_key")

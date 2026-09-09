@@ -1219,7 +1219,9 @@ func _on_phrase_key_edit_toggled(is_toggled: bool, line: LineEdit) -> void:
 	var old_key: String = line.get_meta(&"old_value")
 	var new_key: String = get_valid_id(line.text, line)
 	
-	if line.text == new_key and new_key == old_key:
+	if new_key == old_key:
+		if line.text != new_key:
+			line.text = new_key
 		return
 	
 	undo.create_action("Rename Phrase Key")
@@ -1255,7 +1257,9 @@ func _on_case_edit_toggled(is_toggled: bool, line: LineEdit) -> void:
 	
 	var old_value: String = line.get_meta(&"old_value")
 	var new_value: String = get_valid_case_id(line.text, line)
-	if line.text == new_value and new_value == old_value:
+	if new_value == old_value:
+		if line.text != new_value:
+			line.text = new_value
 		return
 	
 	var phrase_line: LineEdit = %EntriesContainer.get_child(selected_key_index).get_child(1)
