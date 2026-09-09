@@ -258,11 +258,15 @@ func _on_map_close_pressed(closing_map: int, requires_save: bool) -> void:
 	
 	if map == _open_files[closing_map]["resource"]:
 		clear_cases()
+		selected_format = ""
+		expand_default_btn.disabled = true
+		selected_key_index = -1
 		default_case_text.clear()
 		default_case_text.editable = false
 		_update_choice_textbox_size(default_case_text)
 		argument_opt_btn.clear()
 		argument_opt_btn.disabled = true
+		new_case_btn.disabled = true
 		clear_keys()
 		map = null
 		undo = null
@@ -802,11 +806,15 @@ func close_active_map() -> void:
 	var id: int = map.get_instance_id()
 	
 	clear_cases()
+	selected_format = ""
+	expand_default_btn.disabled = true
+	selected_key_index = -1
 	default_case_text.clear()
 	default_case_text.editable = false
 	_update_choice_textbox_size(default_case_text)
 	argument_opt_btn.clear()
 	argument_opt_btn.disabled = true
+	new_case_btn.disabled = true
 	clear_keys()
 	
 	files_tree.remove_map(id)
