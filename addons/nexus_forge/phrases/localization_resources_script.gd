@@ -248,15 +248,13 @@ func _on_map_close_pressed(closing_map: int, requires_save: bool) -> void:
 		unsaved_dialog.show()
 		
 		var result: int = await unsaved_dialog.dialog_finished
+		unsaved_dialog.queue_free()
 		# 0 = save, 1 = don't save, 2 = cancel
 		if result == 0: # Save
 			save_current_resource()
 			ResourceSaver.save(map)
 		elif result == 2: # Cancel
-			unsaved_dialog.queue_free()
 			return
-		
-		unsaved_dialog.queue_free()
 	
 	if map == _open_files[closing_map]["resource"]:
 		clear_cases()
@@ -1213,7 +1211,7 @@ func _on_phrase_key_edit_toggled(is_toggled: bool, line: LineEdit) -> void:
 	var old_key: String = line.get_meta(&"old_value")
 	var new_key: String = get_valid_id(line.text, line)
 	
-	if new_key == old_key:
+	if line.text == new_key and new_key == old_key:
 		return
 	
 	undo.create_action("Rename Phrase Key")
@@ -1244,10 +1242,12 @@ func _on_phrase_text_focus_exited(field: TextEdit) -> void:
 
 
 func _on_case_edit_toggled(is_toggled: bool, line: LineEdit) -> void:
+	if is_toggled:
+		return
+	
 	var old_value: String = line.get_meta(&"old_value")
 	var new_value: String = get_valid_case_id(line.text, line)
-	
-	if new_value == old_value:
+	if line.text == new_value and new_value == old_value:
 		return
 	
 	var phrase_line: LineEdit = %EntriesContainer.get_child(selected_key_index).get_child(1)
