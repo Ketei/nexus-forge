@@ -323,8 +323,8 @@ func _on_edit_cases_pressed(container: HBoxContainer) -> void:
 	
 	var phrase_key: StringName = container.get_child(1).get_meta(&"old_value")
 	
-	if not map.has_entry(phrase_key) or map.get_entry(phrase_key) != text_line.text.strip_edges():
-		map.set_entry(phrase_key, text_line.text.strip_edges())
+	if not map.has_entry(phrase_key) or map.get_entry(phrase_key) != text_line.text:
+		map.set_entry(phrase_key, text_line.text)
 	
 	argument_opt_btn.clear()
 	
@@ -615,7 +615,7 @@ func save_current_phrase_key() -> void:
 	
 	for case_index in range(1, %CasesContainer.get_child_count()):
 		var case_entry: HBoxContainer = %CasesContainer.get_child(case_index)
-		desired = case_entry.get_child(1).text.strip_edges()
+		desired = case_entry.get_child(1).text
 		modified = desired
 		iteration = 0
 		while cases.has(modified):
@@ -632,7 +632,7 @@ func save_current_phrase_key() -> void:
 				case,
 				cases[case])
 	
-	map.set_case_default(phrase_key, selected_format, default_case_text.text.strip_edges())
+	map.set_case_default(phrase_key, selected_format, default_case_text.text)
 
 
 func clear_keys() -> void:
@@ -1223,6 +1223,9 @@ func _on_phrase_key_edit_toggled(is_toggled: bool, line: LineEdit) -> void:
 
 
 func _on_phrase_text_focus_exited(field: TextEdit) -> void:
+	if not field.editable:
+		return
+	
 	var old_value: String = field.get_meta(&"old_value")
 	var new_value: String = field.text
 	
@@ -1232,9 +1235,11 @@ func _on_phrase_text_focus_exited(field: TextEdit) -> void:
 	var phrase_key_line: LineEdit = field.get_parent().get_child(1)
 	var phrase_key: StringName = StringName(phrase_key_line.get_meta(&"old_value"))
 	
+	var old_data: Dictionary = map._phrases.get(phrase_key, {}).duplicate(true)
+	
 	undo.create_action("Edit Phrase Text")
 	undo.add_do_method(_do_update_phrase_text.bind(phrase_key, new_value))
-	undo.add_undo_method(_do_update_phrase_text.bind(phrase_key, old_value))
+	undo.add_undo_method(_do_update_phrase_text.bind(phrase_key, old_value, old_data))
 	undo.commit_action()
 
 
@@ -1309,7 +1314,7 @@ func _do_update_prase_key(from: String, to: String) -> void:
 	target_line.set_meta(&"old_value", to)
 
 
-func _do_update_phrase_text(on_key: String, to: String) -> void:
+func _do_update_phrase_text(on_key: String, to: String, data: Dictionary = {}) -> void:
 	var idx: int = -1
 	var erase_btn: Button = null
 	var text_key: LineEdit = null
@@ -1318,7 +1323,10 @@ func _do_update_phrase_text(on_key: String, to: String) -> void:
 	var edit_button: Button = null
 	var phrase_key: StringName = StringName(on_key)
 	
-	map.set_entry(phrase_key, to)
+	if data.is_empty():
+		map.set_entry(phrase_key, to)
+	else:
+		map._phrases[phrase_key] = data.duplicate(true)
 	
 	for item in %EntriesContainer.get_children():
 		if item.is_queued_for_deletion():
@@ -1338,7 +1346,6 @@ func _do_update_phrase_text(on_key: String, to: String) -> void:
 		return
 	
 	if 0 <= selected_key_index and selected_key_index == idx:
-		save_current_phrase_key()
 		edit_button.icon = get_theme_icon("Edit", "EditorIcons")
 		edit_button.tooltip_text = "Edit Cases"
 		clear_cases()

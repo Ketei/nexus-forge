@@ -9,7 +9,6 @@ var tool_count: int = 0
 @onready var tool_container: PanelContainer = $MainContainer/ToolScroll/ToolContainer
 @onready var tool_tab_bar: TabBar = $MainContainer/ToolTabBar
 @onready var splash_texture: TextureRect = $MainContainer/ToolScroll/ToolContainer/NexusForge/SplashPanel/SplashTexture
-#@onready var reload_image_btn: Button = $MainContainer/ToolContainer/NexusForge/SplashPanel/SplashTexture/ReloadImageBtn
 # ----- Tools -----
 var discourse: PanelContainer = null
 var variables: PanelContainer = null
@@ -61,7 +60,8 @@ func _input(event: InputEvent) -> void:
 					if focused_node.is_editing():
 						return
 				elif focused_node is TextEdit:
-					return
+					if focused_node.editable:
+						return
 			if 0 < tool_tab_bar.current_tab:
 				var target: Control = tool_container.get_child(current_tab)
 				if event.shift_pressed:
