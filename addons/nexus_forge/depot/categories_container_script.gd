@@ -110,6 +110,7 @@ func _do_create_category(category_id: StringName, category_name: String, under: 
 				"depot - editor",
 				"Failed to create category '%s' on the editor." % category_id,
 				NFPluginGameHandler._LogLevel.ERROR)
+	_on_category_changed()
 
 
 func _undo_create_category(category_id: StringName) -> void:
@@ -121,15 +122,25 @@ func _undo_create_category(category_id: StringName) -> void:
 		add_cat_bool_btn.disabled = false
 		add_cat_str_btn.disabled = false
 		add_cat_fldr_btn.disabled = false
+	_on_category_changed()
 
 
 func add_data(data_key: String, data: Variant) -> void:
 	item_data_tree.add_data(data_key, data)
 	if item_data_tree.has_undo():
 		category_undo.create_action("Data Changed")
-		category_undo.add_do_method(item_data_tree.redo)
-		category_undo.add_undo_method(item_data_tree.undo)
+		category_undo.add_do_method(do_data_tree_undoredo.bind(false))
+		category_undo.add_undo_method(do_data_tree_undoredo.bind(true))
 		category_undo.commit_action(false)
+	_on_category_changed()
+
+
+func do_data_tree_undoredo(do_undo: bool) -> void:
+	if do_undo:
+		item_data_tree.undo()
+	else:
+		item_data_tree.redo()
+	_on_category_changed()
 
 
 func _on_category_selected(category_id: StringName) -> void:
@@ -247,6 +258,7 @@ func _do_erase_category(category_id: StringName, cats_to_erase: Array[StringName
 	for item_id in items_resource.items():
 		if cat_dict.has(items_resource.get_item_category(item_id)):
 			items_resource.set_item_category(item_id, &"")
+	_on_category_changed()
 
 
 func _undo_erase_category(parent_category: StringName, categories_snapshot: Dictionary[StringName, Dictionary], tree_snapshot: Dictionary[StringName, Dictionary], items_snapshot: Dictionary[StringName, StringName]) -> void:
@@ -257,6 +269,7 @@ func _undo_erase_category(parent_category: StringName, categories_snapshot: Dict
 	
 	for item_id in items_snapshot:
 		items_resource.set_item_category(item_id, items_snapshot[item_id])
+	_on_category_changed()
 
 
 func _on_category_name_changed(id: StringName, from: String, to: String) -> void:
@@ -274,6 +287,7 @@ func _do_rename_category(id: StringName, to: String) -> void:
 	if items_resource != null:
 		items_resource.set_category_name(id, to)
 	categories_tree.set_category_name(id, to)
+	_on_category_changed()
 
 
 func _on_category_id_changed(from: StringName, to: StringName) -> void:
@@ -302,6 +316,7 @@ func _do_update_category_id(from: StringName, to: StringName) -> void:
 			if items_resource.get_item_category(item_id) == from:
 				items_resource.set_item_category(item_id, to)
 	categories_tree.set_category_id(from, to)
+	_on_category_changed()
 	category_id_changed.emit(from, to)
 
 
@@ -319,6 +334,7 @@ func _do_move_category(category_id: String, new_parent: String) -> void:
 	if items_resource != null and items_resource.has_category(category_id):
 		items_resource.link_category(category_id, new_parent)
 	categories_tree.move_category(category_id, new_parent)
+	_on_category_changed()
 
 
 func _on_subcategory_created(category_id: StringName) -> void:
@@ -354,6 +370,7 @@ func _do_update_data_change(category_id: StringName, is_undo: bool) -> void:
 		item_data_tree.undo()
 	else:
 		item_data_tree.redo()
+	_on_category_changed()
 
 
 func save_current_category() -> void:

@@ -54,12 +54,7 @@ var undo: UndoRedo = null
 @onready var edit_traits_btn: Button = $MainContainer/TraitsPanel/TraitsContainerContainer/TraitSelectContainer/TraitContainer/EditTraitsBtn
 
 
-func _ready() -> void:
-	set_process_input(false)
-
-
 func ready_plugin(stats_enabled: bool, skills_enabled: bool, traits_enabled: bool) -> void:
-	set_process_input(true)
 	undo = UndoRedo.new()
 	undo.max_steps = UNDO_MAX_STEPS
 	
@@ -153,50 +148,34 @@ func ready_plugin(stats_enabled: bool, skills_enabled: bool, traits_enabled: boo
 		trait_data_tree.data_changed.connect(_on_data_tree_updated.bind(2))
 
 
-func _input(event: InputEvent) -> void:
-	if not is_visible_in_tree():
-		return
-	
-	if event is InputEventKey:
-		if event.echo or not event.pressed or not event.ctrl_pressed:
-			return
-		
-		var current_focus: Control = get_viewport().gui_get_focus_owner()
-		
-		if current_focus != null:
-			if current_focus is LineEdit:
-				if current_focus.is_editing():
-					return
-			elif current_focus is TextEdit:
-				return
-		
-		if event.keycode == KEY_Z:
-			if event.shift_pressed:
-				if undo.has_redo():
-					var action_name: String = undo.get_action_name(undo.get_current_action() + 1)
-					undo.redo()
-					NFPluginGameHandler._log_msg(
-							"",
-							"Redo: " + action_name,
-							NFPluginGameHandler._LogLevel.EDITOR)
-			else:
-				if undo.has_undo():
-					var action_name: String = undo.get_current_action_name()
-					undo.undo()
-					NFPluginGameHandler._log_msg(
-							"",
-							"Undo: " + action_name,
-							NFPluginGameHandler._LogLevel.EDITOR)
-			get_viewport().set_input_as_handled()
-		elif event.keycode == KEY_Y and not event.shift_pressed:
-			if undo.has_redo():
-				var action_name: String = undo.get_action_name(undo.get_current_action() + 1)
-				undo.redo()
-				NFPluginGameHandler._log_msg(
-						"",
-						"Redo: " + action_name,
-						NFPluginGameHandler._LogLevel.EDITOR)
-			get_viewport().set_input_as_handled()
+func can_undo() -> bool:
+	if is_instance_valid(undo):
+		return undo.has_undo()
+	return false
+
+
+func can_redo() -> bool:
+	if is_instance_valid(undo):
+		return undo.has_redo()
+	return false
+
+
+func do_undo() -> void:
+	var action_name: String = undo.get_current_action_name()
+	undo.undo()
+	NFPluginGameHandler._log_msg(
+			"",
+			"Undo: " + action_name,
+			NFPluginGameHandler._LogLevel.EDITOR)
+
+
+func do_redo() -> void:
+	var action_name: String = undo.get_action_name(undo.get_current_action() + 1)
+	undo.redo()
+	NFPluginGameHandler._log_msg(
+			"",
+			"Redo: " + action_name,
+			NFPluginGameHandler._LogLevel.EDITOR)
 
 
 func _on_edit_skillset_pressed() -> void:
@@ -381,9 +360,17 @@ func _on_add_skill_data_pressed(data_name: String, data: Variant) -> void:
 	skill_data_tree.add_data(data_name, data)
 	if skill_data_tree.has_undo():
 		undo.create_action("Data Changed")
-		undo.add_do_method(skill_data_tree.redo)
-		undo.add_undo_method(skill_data_tree.undo)
+		undo.add_do_method(_do_skill_data_tree_undoredo.bind(false))
+		undo.add_undo_method(_do_skill_data_tree_undoredo.bind(true))
 		undo.commit_action(false)
+	_on_skills_changed()
+
+
+func _do_skill_data_tree_undoredo(is_undo: bool) -> void:
+	if is_undo:
+		skill_data_tree.undo()
+	else:
+		skill_data_tree.redo()
 	_on_skills_changed()
 
 
@@ -650,9 +637,17 @@ func _on_add_trait_data_pressed(data_name: String, data: Variant) -> void:
 	trait_data_tree.add_data(data_name, data)
 	if trait_data_tree.has_undo():
 		undo.create_action("Data Changed")
-		undo.add_do_method(trait_data_tree.redo)
-		undo.add_undo_method(trait_data_tree.undo)
+		undo.add_do_method(_do_trait_data_tree_undoredo.bind(false))
+		undo.add_undo_method(_do_trait_data_tree_undoredo.bind(true))
 		undo.commit_action(false)
+	_on_traits_changed()
+
+
+func _do_trait_data_tree_undoredo(is_undo: bool) -> void:
+	if is_undo:
+		trait_data_tree.undo()
+	else:
+		trait_data_tree.redo()
 	_on_traits_changed()
 
 
@@ -928,9 +923,17 @@ func _on_add_stat_data_pressed(data_name: String, data: Variant) -> void:
 	stat_data_tree.add_data(data_name, data)
 	if stat_data_tree.has_undo():
 		undo.create_action("Data Changed")
-		undo.add_do_method(stat_data_tree.redo)
-		undo.add_undo_method(stat_data_tree.undo)
+		undo.add_do_method(_do_stat_data_tree_undoredo.bind(false))
+		undo.add_undo_method(_do_stat_data_tree_undoredo.bind(true))
 		undo.commit_action(false)
+	_on_stats_changed()
+
+
+func _do_stat_data_tree_undoredo(is_undo: bool) -> void:
+	if is_undo:
+		stat_data_tree.undo()
+	else:
+		stat_data_tree.redo()
 	_on_stats_changed()
 
 

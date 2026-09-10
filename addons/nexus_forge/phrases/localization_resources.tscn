@@ -287,6 +287,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 2.0
 focus_next = NodePath("../ExpandDefaultBtn")
+editable = false
 
 [node name="ExpandDefaultBtn" type="Button" parent="MainContainer/DataHSplit/CaseContainer/CasesContainer/KeyScroll/CasesContainer/DefaultCaseContainer" unique_id=1399405752]
 custom_minimum_size = Vector2(33, 33)

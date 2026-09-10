@@ -6,10 +6,12 @@ signal code_editor_variables_requested(path: String)
 const BRACKET_HANDLER = preload("res://addons/nexus_forge/discourse/textedit_bracket_handler.gd")
 const MAX_LINES: int = 3
 const EXTRA_Y_PADDING: int = 8
+const MAX_UNDO_STEPS: int = 50
 
 var selected_key_index: int = -1
 var selected_format: String = ""
 
+var api_path: String = ""
 var map: PhraseMap = null:
 	set(m):
 		map = m
@@ -17,9 +19,19 @@ var map: PhraseMap = null:
 		language_opt_btn.disabled = m == null
 		region_opt_btn.disabled = m == null
 
-var save_required: bool = false
+var save_required: bool = false:
+	set(s):
+		if map != null:
+			_open_files[map.get_instance_id()]["unsaved"] = s
+	get:
+		if map != null:
+			return _open_files[map.get_instance_id()]["unsaved"]
+		return false
 var text_editor: Window = null
 var standard_regex: RegEx = null
+
+var undo: UndoRedo
+var _open_files: Dictionary[int, Dictionary] = {}
 
 @onready var search_file_ln_edt: LineEdit = $MainContainer/FilesContainer/SearchContainer/SearchFileLnEdt
 @onready var file_menu_button: MenuButton = $MainContainer/FilesContainer/SearchContainer/FileMenuButton
@@ -28,49 +40,14 @@ var standard_regex: RegEx = null
 @onready var region_opt_btn: OptionButton = $MainContainer/FilesContainer/LanguageContainer/RegionContainer/RegionOptBtn
 @onready var search_text_ln_edt: LineEdit = $MainContainer/DataHSplit/TextContainer/HBoxContainer/SearchTextLnEdt
 @onready var new_text_button: Button = $MainContainer/DataHSplit/TextContainer/HBoxContainer/NewTextButton
-#@onready var key_split_container: HSplitContainer = $MainContainer/DataHSplit/TextContainer/KeyScroll/KeySplitContainer
-#@onready var key_container: VBoxContainer = $MainContainer/DataHSplit/TextContainer/KeyScroll/KeySplitContainer/KeyContainer
-#@onready var text_container: VBoxContainer = $MainContainer/DataHSplit/TextContainer/KeyScroll/KeySplitContainer/TextContainer
 @onready var search_case_ln_edt: LineEdit = $MainContainer/DataHSplit/CaseContainer/HeaderContainer/SearchCaseLnEdt
 @onready var argument_opt_btn: OptionButton = $MainContainer/DataHSplit/CaseContainer/HeaderContainer/ArgumentOptBtn
 @onready var new_case_btn: Button = $MainContainer/DataHSplit/CaseContainer/HeaderContainer/NewCaseBtn
-#@onready var case_header_split: HSplitContainer = $MainContainer/DataHSplit/CaseContainer/CaseHeaderSplit
-#@onready var cases_split: HSplitContainer = $MainContainer/DataHSplit/CaseContainer/KeyScroll/CasesSplit
-#@onready var case_node_container: VBoxContainer = $MainContainer/DataHSplit/CaseContainer/KeyScroll/CasesSplit/CaseContainer/CaseNodeContainer
 @onready var default_case_text: TextEdit = $MainContainer/DataHSplit/CaseContainer/CasesContainer/KeyScroll/CasesContainer/DefaultCaseContainer/DefaultCaseText
 @onready var expand_default_btn: Button = $MainContainer/DataHSplit/CaseContainer/CasesContainer/KeyScroll/CasesContainer/DefaultCaseContainer/ExpandDefaultBtn
-#@onready var result_node_container: VBoxContainer = $MainContainer/DataHSplit/CaseContainer/KeyScroll/CasesSplit/ResultContainer/ResultNodeContainer
-
-
-func _ready() -> void:
-	set_process_input(false)
-
-
-func _input(event: InputEvent) -> void:
-	if not is_visible_in_tree():
-		return
-	
-	if event is InputEventKey:
-		if event.echo or not event.pressed or not event.ctrl_pressed:
-			return
-		
-		var current_focus: Control = get_viewport().gui_get_focus_owner()
-		
-		if current_focus != null:
-			if current_focus is LineEdit:
-				if current_focus.is_editing():
-					return
-			elif current_focus is TextEdit:
-				return
-		
-		if event.keycode == KEY_Z:
-			get_viewport().set_input_as_handled()
-		elif event.keycode == KEY_Y and not event.shift_pressed:
-			get_viewport().set_input_as_handled()
 
 
 func ready_plugin() -> void:
-	set_process_input(true)
 	text_editor = load("res://addons/nexus_forge/discourse/discourse_text_editor.tscn").instantiate()
 	add_child(text_editor)
 	text_editor.signal_variables = true
@@ -109,6 +86,7 @@ func ready_plugin() -> void:
 	default_case_text.set_script(BRACKET_HANDLER)
 	default_case_text.syntax_highlighter = def_highlighter
 	default_case_text.enter_shifts_focus = true
+	default_case_text.set_meta(&"old_value", "")
 	
 	expand_default_btn.disabled = true
 	
@@ -138,89 +116,68 @@ func ready_plugin() -> void:
 	file_menu_button.get_popup().id_pressed.connect(_on_menu_id_pressed)
 	files_tree.map_close_pressed.connect(_on_map_close_pressed)
 	
-	language_opt_btn.item_selected.connect(_on_file_edited)
-	region_opt_btn.item_selected.connect(_on_file_edited)
+	language_opt_btn.item_selected.connect(_on_language_item_selected)
+	region_opt_btn.item_selected.connect(_on_region_item_selected)
 	
 	default_case_text.resized.connect(_update_choice_textbox_size.bind(default_case_text))
 	default_case_text.text_changed.connect(_on_text_field_changed.bind(default_case_text))
+	default_case_text.focus_exited.connect(_on_case_result_focus_exited.bind(default_case_text))
 	
 	search_text_ln_edt.text_changed.connect(_on_key_search_text_changed)
 	search_case_ln_edt.text_changed.connect(_on_case_search_text_changed)
 
 
-func _on_case_line_text_changed(_text: String = "") -> void:
-	validate_cases_entries()
+func can_undo() -> bool:
+	if is_instance_valid(undo):
+		return undo.has_undo()
+	return false
+
+
+func can_redo() -> bool:
+	if is_instance_valid(undo):
+		return undo.has_redo()
+	return false
+
+
+func do_undo() -> void:
+	var action_name: String = undo.get_current_action_name()
+	undo.undo()
+	NFPluginGameHandler._log_msg(
+		"",
+		"Undo: " + action_name,
+		NFPluginGameHandler._LogLevel.EDITOR)
 	_on_file_edited()
 
 
-func validate_cases_entries() -> void:
-	var all_ids: Dictionary[String, Array] = {}
-	var default_case: HBoxContainer = %CasesContainer.get_child(0)
-	
-	for node:HBoxContainer in %CasesContainer.get_children():
-		if node == default_case or node.is_queued_for_deletion():
-			continue
-		
-		var item: LineEdit = node.get_child(1)
-		var key: String = item.text.strip_edges()
-		
-		if key.is_empty():
-			continue
-		
-		if not all_ids.has(key):
-			all_ids[key] = []
-		all_ids[key].append(item)
-	
-	for item_key:String in all_ids.keys():
-		if 1 < all_ids[item_key].size():
-			for item:LineEdit in all_ids[item_key]:
-				item.add_theme_color_override(&"font_color", Color(1.0, 0.29, 0.325))
-		else:
-			for item:LineEdit in all_ids[item_key]:
-				if item.has_theme_color(&"font_color"):
-					item.remove_theme_color_override(&"font_color")
+func do_redo() -> void:
+	var action_name: String = undo.get_action_name(undo.get_current_action() + 1)
+	undo.redo()
+	NFPluginGameHandler._log_msg(
+		"",
+		"Redo: " + action_name,
+		NFPluginGameHandler._LogLevel.EDITOR)
+	_on_file_edited()
+
+
+func _on_case_line_text_changed(_text: String = "") -> void:
+	_on_file_edited()
 
 
 func _on_key_line_text_changed(_text: String = "") -> void:
-	validate_phrase_keys()
 	_on_file_edited()
 
 
-func validate_phrase_keys() -> void:
-	var all_ids: Dictionary[String, Array] = {}
-	
-	for node in %EntriesContainer.get_children():
-		if node.is_queued_for_deletion():
-			continue
-		
-		var line: LineEdit = node.get_child(1)
-		var key: String = line.text.strip_edges()
-		
-		if key.is_empty():
-			continue
-		
-		if all_ids.has(key) == false:
-			all_ids[key] = []
-		all_ids[key].append(line)
-	
-	for item_key:String in all_ids.keys():
-		if 1 < all_ids[item_key].size():
-			for item:LineEdit in all_ids[item_key]:
-				item.add_theme_color_override(&"font_color", Color(1.0, 0.29, 0.325))
-		else:
-			for item:LineEdit in all_ids[item_key]:
-				if item.has_theme_color(&"font_color"):
-					item.remove_theme_color_override(&"font_color")
-	
-
-
-#func _on_text_line_text_submitted(_text: String, edit_btn: Button) -> void:
-	#edit_btn.grab_focus()
-
-
 func _on_erase_case_button_pressed(item: HBoxContainer) -> void:
-	erase_case(item.get_index() - 1)
-	validate_cases_entries()
+	var phrase_line: LineEdit = %EntriesContainer.get_child(selected_key_index).get_child(1)
+	var phrase_key: String = phrase_line.get_meta(&"old_value")
+	var format: String = argument_opt_btn.get_item_text(argument_opt_btn.selected)
+	var case_id: String = item.get_child(1).get_meta(&"old_value")
+	var case_result: String = item.get_child(2).text
+	
+	undo.create_action("Erase Case Entry")
+	undo.add_do_method(_do_erase_case_entry.bind(phrase_key, format, case_id))
+	undo.add_undo_method(_do_add_case_entry.bind(phrase_key, format, case_id, case_result))
+	undo.commit_action()
 
 
 func _on_erase_key_button_pressed(key_node: HBoxContainer) -> void:
@@ -235,11 +192,15 @@ func _on_erase_key_button_pressed(key_node: HBoxContainer) -> void:
 		argument_opt_btn.disabled = true
 		new_case_btn.disabled = true
 	
-	map.erase_entry(key_node.get_meta(&"phrase_key"))
+	var phrase_id: String = key_node.get_child(1).get_meta(&"old_value")
+	var phrase_key: StringName = StringName(phrase_id)
+	var data: Dictionary = map._phrases.get(phrase_key, {}).duplicate(true)
+	var current_text: String = key_node.get_child(2).text
 	
-	erase_key(key_node.get_index())
-	
-	validate_phrase_keys()
+	undo.create_action("Erase Phrase Entry")
+	undo.add_do_method(_do_erase_phrase_entry.bind(phrase_id))
+	undo.add_undo_method(_do_add_phrase_entry.bind(phrase_id, current_text, data))
+	undo.commit_action()
 
 
 func _on_format_item_selected(idx: int) -> void:
@@ -253,10 +214,12 @@ func _on_format_item_selected(idx: int) -> void:
 	search_case_ln_edt.set_meta(&"current_search", "")
 	clear_cases()
 	
-	var phrase_key: StringName = %EntriesContainer.get_child(selected_key_index).get_meta(&"phrase_key")
+	var phrase_key: StringName = StringName(%EntriesContainer.get_child(selected_key_index).get_child(1).get_meta(&"old_value"))
 	var format_argument: String = argument_opt_btn.get_item_text(idx)
+	var default_case: String = map.get_case_default(phrase_key, format_argument)
+	default_case_text.text = default_case
+	default_case_text.set_meta(&"old_value", default_case)
 	
-	default_case_text.text = map.get_case_default(phrase_key, format_argument)
 	_update_choice_textbox_size(default_case_text)
 	
 	for case in map._phrases[phrase_key]["formats"][format_argument]["cases"].keys():
@@ -267,15 +230,16 @@ func _on_format_item_selected(idx: int) -> void:
 	selected_format = format_argument
 
 
-func _on_map_resource_selected(new_map: PhraseMap) -> void:
+func _on_map_resource_selected(new_map: int) -> void:
+	if not _open_files.has(new_map) or _open_files[new_map]["resource"] == map:
+		return
 	if map != null:
 		save_current_resource()
-	load_map(new_map)
-	map = new_map
-	save_required = false
+	load_map(_open_files[new_map]["resource"])
+	map = _open_files[new_map]["resource"]
 
 
-func _on_map_close_pressed(closing_map: PhraseMap, requires_save: bool) -> void:
+func _on_map_close_pressed(closing_map: int, requires_save: bool) -> void:
 	if requires_save:
 		var unsaved_dialog: AcceptDialog = load("res://addons/nexus_forge/dialogs/unsaved_dialog_script.gd").new()
 		unsaved_dialog.dialog_text = "File has unsaved changes\nDo you want to save before closing?"
@@ -284,28 +248,33 @@ func _on_map_close_pressed(closing_map: PhraseMap, requires_save: bool) -> void:
 		unsaved_dialog.show()
 		
 		var result: int = await unsaved_dialog.dialog_finished
+		unsaved_dialog.queue_free()
 		# 0 = save, 1 = don't save, 2 = cancel
 		if result == 0: # Save
 			save_current_resource()
 			ResourceSaver.save(map)
 		elif result == 2: # Cancel
-			unsaved_dialog.queue_free()
 			return
-		
-		unsaved_dialog.queue_free()
 	
-	if map == closing_map:
+	if map == _open_files[closing_map]["resource"]:
 		clear_cases()
+		selected_format = ""
+		expand_default_btn.disabled = true
+		selected_key_index = -1
 		default_case_text.clear()
 		default_case_text.editable = false
 		_update_choice_textbox_size(default_case_text)
 		argument_opt_btn.clear()
 		argument_opt_btn.disabled = true
-		
+		new_case_btn.disabled = true
 		clear_keys()
-		
 		map = null
+		undo = null
 	
+	_open_files[closing_map]["undo"].clear_history()
+	_open_files[closing_map]["undo"].free()
+	_open_files[closing_map]["undo"] = null
+	_open_files.erase(closing_map)
 	files_tree.remove_map(closing_map)
 
 
@@ -354,10 +323,10 @@ func _on_edit_cases_pressed(container: HBoxContainer) -> void:
 	edit_button.tooltip_text = "Unlock"
 	selected_key_index = container.get_index()
 	
-	var phrase_key: StringName = container.get_meta(&"phrase_key")
+	var phrase_key: StringName = container.get_child(1).get_meta(&"old_value")
 	
-	if not map.has_entry(phrase_key) or map.get_entry(phrase_key) != text_line.text.strip_edges():
-		map.set_entry(phrase_key, text_line.text.strip_edges())
+	if not map.has_entry(phrase_key) or map.get_entry(phrase_key) != text_line.text:
+		map.set_entry(phrase_key, text_line.text)
 	
 	argument_opt_btn.clear()
 	
@@ -370,8 +339,10 @@ func _on_edit_cases_pressed(container: HBoxContainer) -> void:
 	
 	if 0 < argument_opt_btn.item_count:
 		var argument_format: String = argument_opt_btn.get_item_text(0)
+		var default_case: String = map.get_case_default(phrase_key, argument_format)
 		argument_opt_btn.select(0)
-		default_case_text.text = map.get_case_default(phrase_key, argument_format)
+		default_case_text.text = default_case
+		default_case_text.set_meta(&"old_value", default_case)
 		_update_choice_textbox_size(default_case_text)
 		for custom_case in map._phrases[phrase_key]["formats"][argument_format]["cases"].keys():
 			create_case_entry(
@@ -381,7 +352,13 @@ func _on_edit_cases_pressed(container: HBoxContainer) -> void:
 
 
 func _on_new_key_field_button_pressed() -> void:
-	create_key_text_entry(&"", "")
+	var new_id: String = get_valid_id("NEW_PHRASE")
+	
+	undo.create_action("Add Phrase Entry")
+	undo.add_do_method(_do_add_phrase_entry.bind(new_id, ""))
+	undo.add_undo_method(_do_erase_phrase_entry.bind(new_id))
+	undo.commit_action()
+	
 	_on_file_edited()
 
 
@@ -389,11 +366,20 @@ func _on_file_edited(_arg = null) -> void:
 	if save_required:
 		return
 	save_required = true
-	files_tree.set_save_required(map, true)
+	files_tree.set_save_required(map.get_instance_id(), true)
 
 
 func _on_new_case_button_pressed() -> void:
-	create_case_entry("", "")
+	var new_case_id: String = get_valid_case_id("new case")
+	var phrase_line: LineEdit = %EntriesContainer.get_child(selected_key_index).get_child(1)
+	var phrase_key: String = phrase_line.get_meta(&"old_value")
+	var format: String = argument_opt_btn.get_item_text(argument_opt_btn.selected)
+	
+	undo.create_action("Add Case Entry")
+	undo.add_do_method(_do_add_case_entry.bind(phrase_key, format, new_case_id, ""))
+	undo.add_undo_method(_do_erase_case_entry.bind(phrase_key, format, new_case_id))
+	undo.commit_action()
+	
 	_on_file_edited()
 
 
@@ -412,40 +398,55 @@ func _on_menu_id_pressed(id: int) -> void:
 	map_dialog.show()
 	
 	var result: Array = await map_dialog.dialog_finished # (success: bool, resource_path: String)
+	map_dialog.queue_free()
 	
-	if result[0]:
-		if id == 0: # New file
-			var lang: String = language_opt_btn.get_selected_metadata().to_lower()
-			var reg: String = region_opt_btn.get_selected_metadata().to_upper()
-			var locale_code: String = lang if reg.is_empty() else lang + "_" + reg
+	if not result[0]:
+		return
+	
+	if id == 0: # New file
+		var lang: String = language_opt_btn.get_selected_metadata().to_lower()
+		var reg: String = region_opt_btn.get_selected_metadata().to_upper()
+		var locale_code: String = lang if reg.is_empty() else lang + "_" + reg
+		
+		if 0 <= selected_key_index:
+			save_current_resource()
+		var new_map: PhraseMap = PhraseMap.new()
+		var new_undo: UndoRedo = UndoRedo.new()
+		new_undo.max_steps = MAX_UNDO_STEPS
+		new_map.locale = locale_code
+		
+		if ResourceLoader.has_cached(result[1]):
+			new_map.take_over_path(result[1])
+		new_map.resource_path = result[1]
+		ResourceSaver.save(new_map, result[1])
+		files_tree.add_map(new_map, true, false)
+		_open_files[new_map.get_instance_id()] = {
+			"resource": new_map,
+			"undo": new_undo,
+			"unsaved": false}
+		load_map(new_map)
+		map = new_map
+	elif id == 1:
+		var res_pre: Resource = load(result[1])
+		if res_pre is PhraseMap:
+			if res_pre == map:
+				return
 			
 			if 0 <= selected_key_index:
 				save_current_resource()
-			var new_map: PhraseMap = PhraseMap.new()
-			new_map.locale = locale_code
 			
-			if ResourceLoader.has_cached(result[1]):
-				new_map.take_over_path(result[1])
-			new_map.resource_path = result[1]
-			ResourceSaver.save(new_map, result[1])
-			files_tree.add_map(new_map, true, false)
-			load_map(new_map)
-			map = new_map
-			save_required = false
-		elif id == 1:
-			var res_pre: Resource = load(result[1])
-			if res_pre is PhraseMap:
-				if 0 <= selected_key_index:
-					save_current_resource()
-				
-				if files_tree.has_map(res_pre):
-					files_tree.select_map(res_pre, false)
-				else:
-					files_tree.add_map(res_pre, true, false)
-				load_map(res_pre)
-				map = res_pre
-				save_required = false
-	map_dialog.queue_free()
+			if _open_files.has(res_pre.get_instance_id()):
+				files_tree.select_map(res_pre, false)
+			else:
+				var new_undo: UndoRedo = UndoRedo.new()
+				new_undo.max_steps = MAX_UNDO_STEPS
+				_open_files[res_pre.get_instance_id()] = {
+					"resource": res_pre,
+					"undo": new_undo,
+					"unsaved": false}
+				files_tree.add_map(res_pre, true, false)
+			load_map(res_pre)
+			map = res_pre
 
 
 func _on_key_search_text_changed(text: String) -> void:
@@ -458,8 +459,6 @@ func _on_key_search_text_changed(text: String) -> void:
 	
 	if mode != 0:
 		clean_text = clean_text.trim_prefix("key:" if mode == 1 else "text:")
-	
-	#var idx: int = -1
 	
 	if clean_text.is_empty():
 		for node in %EntriesContainer.get_children():
@@ -511,18 +510,26 @@ func plugin_open_resource(resource: PhraseMap) -> void:
 	elif map != null:
 		save_current_resource()
 	
-	if files_tree.has_map(resource):
-		files_tree.select_map(resource, false)
+	if _open_files.has(resource.get_instance_id()):
+		files_tree.select_map(resource.get_instance_id(), false)
 	else:
+		var new_undo: UndoRedo = UndoRedo.new()
+		new_undo.max_steps = MAX_UNDO_STEPS
+		_open_files[resource.get_instance_id()] = {
+			"resource": resource,
+			"undo": new_undo,
+			"unsaved": false}
 		files_tree.add_map(resource, true, false)
 	
 	load_map(resource)
 	map = resource
-	save_required = false
 
 
 func get_open_maps() -> Array[String]:
-	return files_tree.get_open_files()
+	var maps: Array[String] = []
+	for id in _open_files:
+		maps.append(_open_files[id]["resource"].resource_path)
+	return maps
 
 
 func open_map_files(files: Array[String]) -> void:
@@ -530,10 +537,16 @@ func open_map_files(files: Array[String]) -> void:
 		if not FileAccess.file_exists(file):
 			continue
 		var res_load: Resource = load(file)
-		if res_load != null and res_load is PhraseMap:
-			if files_tree.has_map(res_load):
-				continue
-			files_tree.add_map(res_load, false)
+		if res_load == null or res_load is not PhraseMap or _open_files.has(res_load.get_instance_id()):
+			continue
+		
+		var new_undo: UndoRedo = UndoRedo.new()
+		new_undo.max_steps = MAX_UNDO_STEPS
+		_open_files[res_load.get_instance_id()] = {
+			"resource": res_load,
+			"undo": new_undo,
+			"unsaved": false}
+		files_tree.add_map(res_load, false)
 
 
 func select_language(language_code: String) -> void:
@@ -543,17 +556,20 @@ func select_language(language_code: String) -> void:
 	for idx in range(language_opt_btn.item_count):
 		if language_opt_btn.get_item_metadata(idx) == language_code:
 			language_opt_btn.select(idx)
+			language_opt_btn.set_meta(&"old_value", language_opt_btn.get_item_metadata(idx))
 			return
 
 
 func select_region(country_code: String) -> void:
 	if country_code.is_empty():
 		region_opt_btn.select(0)
+		region_opt_btn.set_meta(&"old_value", "")
 		return
 	
 	for idx in range(region_opt_btn.item_count):
 		if region_opt_btn.get_item_metadata(idx) == country_code:
 			region_opt_btn.select(idx)
+			region_opt_btn.set_meta(&"old_value", region_opt_btn.get_item_metadata(idx))
 			return
 
 
@@ -583,16 +599,17 @@ func load_map(new_map: PhraseMap) -> void:
 	
 	for key:StringName in new_map.entries():
 		create_key_text_entry(key, new_map.get_entry(key))
+	
+	undo = _open_files[new_map.get_instance_id()]["undo"]
 
 
-func save_current_phrase_key(fix_cases: bool = false) -> void:
+func save_current_phrase_key() -> void:
 	if selected_key_index < 0:
 		return
 	
-	var phrase_key: StringName = %EntriesContainer.get_child(selected_key_index).get_meta(&"phrase_key")
+	var phrase_key: StringName = %EntriesContainer.get_child(selected_key_index).get_child(1).get_meta(&"old_value")
 	
 	var cases: Dictionary[String, String] = {}
-	var node_map: Dictionary[String, LineEdit] = {}
 	
 	var desired: String = ""
 	var modified: String = ""
@@ -600,14 +617,13 @@ func save_current_phrase_key(fix_cases: bool = false) -> void:
 	
 	for case_index in range(1, %CasesContainer.get_child_count()):
 		var case_entry: HBoxContainer = %CasesContainer.get_child(case_index)
-		desired = case_entry.get_child(1).text.strip_edges()
+		desired = case_entry.get_child(1).text
 		modified = desired
 		iteration = 0
 		while cases.has(modified):
 			iteration += 1
 			modified = desired + str(iteration)
 		cases[modified] = case_entry.get_child(2).text
-		node_map[modified] = case_entry.get_child(1)
 	
 	map.clear_cases(phrase_key, selected_format)
 	
@@ -617,14 +633,8 @@ func save_current_phrase_key(fix_cases: bool = false) -> void:
 				selected_format,
 				case,
 				cases[case])
-		
-		if fix_cases and case != node_map[case].text.strip_edges():
-			node_map[case].text = case
 	
-	map.set_case_default(phrase_key, selected_format, default_case_text.text.strip_edges())
-	
-	if fix_cases:
-		validate_cases_entries()
+	map.set_case_default(phrase_key, selected_format, default_case_text.text)
 
 
 func clear_keys() -> void:
@@ -701,9 +711,9 @@ func erase_key(index: int) -> void:
 	item.queue_free()
 
 
-func save_current_resource(fix_keys: bool = false) -> void:
+func save_current_resource() -> void:
 	if selected_format != "":
-		save_current_phrase_key(fix_keys)
+		save_current_phrase_key()
 	
 	var lang: String = language_opt_btn.get_selected_metadata().to_lower()
 	var reg: String = region_opt_btn.get_selected_metadata().to_upper()
@@ -715,63 +725,49 @@ func save_current_resource(fix_keys: bool = false) -> void:
 	var keys: Dictionary[String, String] = {}
 	
 	# Correct key: Line field
-	#var node_map: Dictionary[String, LineEdit] = {}
-	
 	var new_phrases: Dictionary[StringName, Dictionary]
 	
 	for key_node in %EntriesContainer.get_children():
 		if key_node.is_queued_for_deletion():
 			continue
-		var entry_key: StringName = key_node.get_meta(&"phrase_key")
-		var desired_id: String = key_node.get_child(1).text.strip_edges()
-		var trailing_int: Dictionary = StringUtils.get_trailing_integer(desired_id)
-		var iteration: int = trailing_int["integer"]
-		var modified: String = desired_id
-		
-		if trailing_int["has_integer"]:
-			desired_id = desired_id.trim_suffix(str(iteration))
-		
-		while keys.has(modified):
-			iteration += 1
-			modified = desired_id + str(iteration)
+		var entry_key: StringName = StringName(key_node.get_child(1).get_meta(&"old_value"))
 		
 		# Update the entry first.
 		map.set_entry(
 				entry_key,
 				key_node.get_child(2).text)
-		
-		# Store the entry with the correct key.
-		new_phrases[modified] = map._phrases[entry_key]
-		
-		key_node.set_meta(&"phrase_key", modified) # Update the key on the node
-		
-		if fix_keys:
-			key_node.get_child(1).text = modified
-	
-	# Assign the correct map to the dictionary.
-	map._phrases.assign(new_phrases)
-	
-	if fix_keys:
-		validate_phrase_keys()
 
 
 func has_unsaved_files() -> bool:
-	return files_tree.has_unsaved()
+	for id in _open_files:
+		if _open_files[id]["unsaved"]:
+			return true
+	return false
 
 
 func save_all() -> void:
-	for resource:PhraseMap in files_tree.get_unsaved_resources():
-		if resource == map:
-			save_current_resource(true)
-		ResourceSaver.save(resource)
+	if save_required:
+		save_current_resource()
+	
+	for id in _open_files:
+		if _open_files[id]["unsaved"]:
+			ResourceSaver.save(_open_files[id]["resource"])
+			_open_files[id]["unsaved"] = false
 	files_tree.set_save_required_all(false)
-	save_required = false
 
 
 func filesystem_resource_removed(resource: Resource) -> void:
 	if resource == null:
 		return
-	files_tree.remove_map(resource)
+	var id: int = resource.get_instance_id()
+	if not _open_files.has(id):
+		return
+	
+	_open_files[id]["undo"].clear_history()
+	_open_files[id]["undo"].free()
+	_open_files[id]["undo"] = null
+	_open_files.erase(id)
+	
 	if map == resource:
 		clear_cases()
 		default_case_text.clear()
@@ -781,13 +777,16 @@ func filesystem_resource_removed(resource: Resource) -> void:
 		argument_opt_btn.disabled = true
 		clear_keys()
 		map = null
+		undo = null
+	
+	files_tree.remove_map(id)
 
 
 func close_active_map() -> void:
 	if map == null:
 		return
 	
-	if files_tree.requires_save(map):
+	if save_required:
 		var unsaved_dialog: AcceptDialog = load("res://addons/nexus_forge/dialogs/unsaved_dialog_script.gd").new()
 		unsaved_dialog.dialog_text = "File has unsaved changes\nDo you want to save before closing?"
 		unsaved_dialog.title = "Save changes..."
@@ -795,28 +794,37 @@ func close_active_map() -> void:
 		unsaved_dialog.show()
 		
 		var result: int = await unsaved_dialog.dialog_finished
+		unsaved_dialog.queue_free()
+		
 		# 0 = save, 1 = don't save, 2 = cancel
 		if result == 0: # Save
 			save_current_resource()
 			ResourceSaver.save(map)
 		elif result == 2: # Cancel
-			unsaved_dialog.queue_free()
 			return
-		
-		unsaved_dialog.queue_free()
+	
+	var id: int = map.get_instance_id()
 	
 	clear_cases()
+	selected_format = ""
+	expand_default_btn.disabled = true
+	selected_key_index = -1
 	default_case_text.clear()
 	default_case_text.editable = false
 	_update_choice_textbox_size(default_case_text)
 	argument_opt_btn.clear()
 	argument_opt_btn.disabled = true
-	
+	new_case_btn.disabled = true
 	clear_keys()
 	
-	files_tree.remove_map(map)
+	files_tree.remove_map(id)
+	_open_files[id]["undo"].clear_history()
+	_open_files[id]["undo"].free()
+	_open_files[id]["undo"] = null
+	_open_files.erase(id)
 	
 	map = null
+	undo = null
 
 
 func create_case_entry(case: String, format: String) -> void:
@@ -837,6 +845,7 @@ func create_case_entry(case: String, format: String) -> void:
 	case_line.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	case_line.size_flags_stretch_ratio = 1.0
 	case_line.custom_minimum_size = Vector2(115.0, 33.0)
+	case_line.set_meta(&"old_value", case)
 	
 	case_text.syntax_highlighter = highlighter
 	case_text.caret_blink = true
@@ -846,6 +855,7 @@ func create_case_entry(case: String, format: String) -> void:
 	case_text.size_flags_stretch_ratio = 2.0
 	case_text.text = format
 	case_text.enter_shifts_focus = true
+	case_text.set_meta(&"old_value", format)
 	
 	erase_btn.tooltip_text = "Erase case"
 	erase_btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -882,12 +892,14 @@ func create_case_entry(case: String, format: String) -> void:
 	expand_text.focus_previous = case_text.get_path()
 	
 	case_line.text_submitted.connect(_on_case_key_text_submitted.bind(case_line))
+	case_line.editing_toggled.connect(_on_case_edit_toggled.bind(case_line))
 	
 	case_text.resized.connect(_update_choice_textbox_size.bind(case_text))
 	case_text.text_changed.connect(_on_text_field_changed.bind(case_text))
+	case_text.focus_exited.connect(_on_case_result_focus_exited.bind(case_text))
 
 
-func create_key_text_entry(key: StringName, text_entry: String) -> void:
+func create_key_text_entry(key: String, text_entry: String) -> void:
 	var container: HBoxContainer = HBoxContainer.new()
 	var erase_button: Button = Button.new()
 	var key_line: LineEdit = LineEdit.new()
@@ -904,17 +916,13 @@ func create_key_text_entry(key: StringName, text_entry: String) -> void:
 	text_editor.syntax_highlighter = highligher
 	text_editor.enter_shifts_focus = true
 	
-	if key.is_empty():
-		container.set_meta(&"phrase_key", StringName(UUID.generate_new()))
-	else:
-		container.set_meta(&"phrase_key", key)
-	
 	key_line.caret_blink = true
 	key_line.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	key_line.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	key_line.custom_minimum_size = Vector2(115.0, 33.0)
 	key_line.placeholder_text = "Key"
-	key_line.text = String(key)
+	key_line.text = key
+	key_line.set_meta(&"old_value", key)
 	key_line.size_flags_stretch_ratio = 1.0
 	
 	erase_button.icon = get_theme_icon("Remove", "EditorIcons")
@@ -931,6 +939,7 @@ func create_key_text_entry(key: StringName, text_entry: String) -> void:
 	text_editor.placeholder_text = "Phrase Text"
 	text_editor.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
 	text_editor.size_flags_stretch_ratio = 2.0
+	text_editor.set_meta(&"old_value", text_entry)
 	
 	edit_button.custom_minimum_size = Vector2(33.0, 33.0)
 	edit_button.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -974,9 +983,13 @@ func create_key_text_entry(key: StringName, text_entry: String) -> void:
 	
 	key_line.text_changed.connect(_on_key_line_text_changed)
 	key_line.text_submitted.connect(_on_case_key_text_submitted.bind(key_line))
-	erase_button.pressed.connect(_on_erase_key_button_pressed.bind(container))
+	key_line.editing_toggled.connect(_on_phrase_key_edit_toggled.bind(key_line))
+	
 	text_editor.text_changed.connect(_on_text_field_changed.bind(text_editor))
 	text_editor.resized.connect(_update_choice_textbox_size.bind(text_editor))
+	text_editor.focus_exited.connect(_on_phrase_text_focus_exited.bind(text_editor))
+	
+	erase_button.pressed.connect(_on_erase_key_button_pressed.bind(container))
 	expand_button.pressed.connect(_on_open_focus_editor_pressed.bind(text_editor, true))
 	edit_button.pressed.connect(_on_edit_cases_pressed.bind(container))
 
@@ -986,6 +999,36 @@ func set_text_code_editor_variable_paths(paths: Array[Dictionary]) -> void:
 		return
 	
 	text_editor.display_completion_options_variables(paths)
+
+
+func _on_language_item_selected(idx: int) -> void:
+	var old_language: String = language_opt_btn.get_meta(&"old_value")
+	var new_lang: String = language_opt_btn.get_item_metadata(idx)
+	
+	if new_lang == old_language:
+		return
+	
+	_on_file_edited()
+	language_opt_btn.set_meta(&"old_value", new_lang)
+	undo.create_action("Set Language")
+	undo.add_do_method(select_language.bind(new_lang))
+	undo.add_undo_method(select_language.bind(old_language))
+	undo.commit_action(false)
+
+
+func _on_region_item_selected(idx: int) -> void:
+	var old_region: String = region_opt_btn.get_meta(&"old_value")
+	var new_region: String = region_opt_btn.get_item_metadata(idx)
+	
+	if new_region == old_region:
+		return
+	
+	_on_file_edited()
+	region_opt_btn.set_meta(&"old_value", new_region)
+	undo.create_action("Set Region")
+	undo.add_do_method(select_region.bind(new_region))
+	undo.add_undo_method(select_region.bind(old_region))
+	undo.commit_action(false)
 
 
 func _on_case_key_text_submitted(_text: String, field: LineEdit) -> void:
@@ -1082,30 +1125,413 @@ func _on_editor_variable_called(path: String) -> void:
 
 
 func get_api_user_methods() -> Array[String]:
+	if api_path.is_empty() or not FileAccess.file_exists(api_path):
+		var all_classes: Array[Dictionary] = ProjectSettings.get_global_class_list()
+		for class_entry in all_classes:
+			if class_entry["class"] == "PhraseAPI":
+				api_path = class_entry["path"]
+				break
+	
 	var methods: Array[String] = []
+	if api_path.is_empty() or not FileAccess.file_exists(api_path):
+		NFPluginGameHandler._log_msg(
+				"phrase maps - editor",
+				"Unable to locate PhraseAPI class file",
+				NFPluginGameHandler._LogLevel.ERROR)
+		return methods
 	
-	var method_blacklsit: Array[String] = []
-	var singleton: PhraseAPI = PhraseAPI.new()
-	var base_methods: Array = ClassDB.class_get_method_list(&"RefCounted")
+	var api_script: Script = load(api_path)
 	
-	for method in base_methods:
-		method_blacklsit.append(method["name"])
-		
-	for method:Dictionary in singleton.get_method_list():
-		if method["name"] in method_blacklsit or method["return"]["type"] == TYPE_NIL:
+	for method:Dictionary in api_script.get_script_method_list():
+		if method["return"]["type"] == TYPE_NIL:
 			continue
 		
-		#var default_count: int = method["default_args"].size()
-		#var default_index: int = method["args"].size() - default_count
-		#var args: Array[Dictionary] = []
-		#var arg_idx: int = -1
-		#for arg: Dictionary in method["args"]:
-			#arg_idx += 1
-			#args.append({
-				#"name": arg["name"],
-				#"type": arg["type"],
-				#"has_default": default_index <= arg_idx})
-		#methods[method["name"]] = {"return_type": method["return"]["type"], "arguments": args}
 		methods.append(method["name"])
 	
 	return methods
+
+
+func get_valid_id(desired: String, ignore_node: LineEdit = null) -> String:
+	var all_ids: Dictionary[String, Variant] = {}
+	
+	for node in %EntriesContainer.get_children():
+		if node.is_queued_for_deletion():
+			continue
+		var line: LineEdit = node.get_child(1)
+		if line == ignore_node:
+			continue
+		var key: String = line.text
+		all_ids[key] = null
+	
+	if not all_ids.has(desired):
+		return desired
+	
+	var modified: String = desired.strip_edges()
+	var base: String = modified
+	var trailing_data: Dictionary = StringUtils.get_trailing_integer(modified)
+	var iteration: int = trailing_data["integer"]
+	if trailing_data["has_integer"]:
+		base = base.trim_suffix(str(iteration))
+	
+	while all_ids.has(modified):
+		iteration += 1
+		modified = base + str(iteration)
+	
+	return modified
+
+
+func get_valid_case_id(desired: String, ignore_node: LineEdit = null) -> String:
+	var all_ids: Dictionary[String, Variant] = {}
+	var default_case: HBoxContainer = %CasesContainer.get_child(0)
+	
+	for node_idx in range(1, %CasesContainer.get_child_count()):
+		var node: HBoxContainer = %CasesContainer.get_child(node_idx)
+		if node.is_queued_for_deletion():
+			continue
+		var item: LineEdit = node.get_child(1)
+		if item == ignore_node:
+			continue
+		
+		var key: String = item.text
+		all_ids[key] = null
+	
+	if not all_ids.has(desired):
+		return desired
+	
+	var modified: String = desired.strip_edges()
+	var base: String = modified
+	var trailing_data: Dictionary = StringUtils.get_trailing_integer(modified)
+	var iteration: int = trailing_data["integer"]
+	if trailing_data["has_integer"]:
+		base = base.trim_suffix(str(iteration))
+	
+	while all_ids.has(modified):
+		iteration += 1
+		modified = base + str(iteration)
+	
+	return modified
+
+
+func _on_phrase_key_edit_toggled(is_toggled: bool, line: LineEdit) -> void:
+	if is_toggled:
+		return
+	
+	var old_key: String = line.get_meta(&"old_value")
+	var new_key: String = get_valid_id(line.text, line)
+	
+	if new_key == old_key:
+		if line.text != new_key:
+			line.text = new_key
+		return
+	
+	undo.create_action("Rename Phrase Key")
+	undo.add_do_method(_do_update_prase_key.bind(old_key, new_key))
+	undo.add_undo_method(_do_update_prase_key.bind(new_key, old_key))
+	undo.commit_action()
+
+
+func _on_phrase_text_focus_exited(field: TextEdit) -> void:
+	if not field.editable:
+		return
+	
+	var old_value: String = field.get_meta(&"old_value")
+	var new_value: String = field.text
+	
+	if new_value == old_value:
+		return
+	
+	var phrase_key_line: LineEdit = field.get_parent().get_child(1)
+	var phrase_key: StringName = StringName(phrase_key_line.get_meta(&"old_value"))
+	
+	var old_data: Dictionary = map._phrases.get(phrase_key, {}).duplicate(true)
+	
+	undo.create_action("Edit Phrase Text")
+	undo.add_do_method(_do_update_phrase_text.bind(phrase_key, new_value))
+	undo.add_undo_method(_do_update_phrase_text.bind(phrase_key, old_value, old_data))
+	undo.commit_action()
+
+
+func _on_case_edit_toggled(is_toggled: bool, line: LineEdit) -> void:
+	if is_toggled:
+		return
+	
+	var old_value: String = line.get_meta(&"old_value")
+	var new_value: String = get_valid_case_id(line.text, line)
+	if new_value == old_value:
+		if line.text != new_value:
+			line.text = new_value
+		return
+	
+	var phrase_line: LineEdit = %EntriesContainer.get_child(selected_key_index).get_child(1)
+	var phrase_key: StringName = StringName(phrase_line.get_meta(&"old_value"))
+	var format: String = argument_opt_btn.get_item_text(argument_opt_btn.selected)
+	
+	undo.create_action("Rename Case Key")
+	undo.add_do_method(_do_update_case_key.bind(phrase_key, format, old_value, new_value))
+	undo.add_undo_method(_do_update_case_key.bind(phrase_key, format, new_value, old_value))
+	undo.commit_action()
+
+
+func _on_case_result_focus_exited(field: TextEdit) -> void:
+	if undo == null:
+		return
+	
+	var is_default: bool = field == default_case_text
+	var old_value: String = field.get_meta(&"old_value")
+	var new_value: String = field.text
+	
+	if new_value == old_value:
+		return
+	
+	var phrase_line: LineEdit = %EntriesContainer.get_child(selected_key_index).get_child(1)
+	var phrase_key: StringName = StringName(phrase_line.get_meta(&"old_value"))
+	var format: String = argument_opt_btn.get_item_text(argument_opt_btn.selected)
+	
+	if is_default:
+		undo.create_action("Edit Default Case")
+		undo.add_do_method(_do_update_case_default_result.bind(phrase_key, format, new_value))
+		undo.add_undo_method(_do_update_case_default_result.bind(phrase_key, format, old_value))
+		undo.commit_action()
+	else:
+		var case_line: LineEdit = field.get_parent().get_child(1)
+		var case_text: String = case_line.get_meta(&"old_value")
+		undo.create_action("Edit Case Result")
+		undo.add_do_method(_do_update_case_result.bind(phrase_key, format, case_text, new_value))
+		undo.add_undo_method(_do_update_case_result.bind(phrase_key, format, case_text, old_value))
+		undo.commit_action()
+
+
+func _do_update_prase_key(from: String, to: String) -> void:
+	var target_line: LineEdit = null
+	
+	if map._phrases.has(from):
+		map._phrases[to] = map._phrases[from]
+		map._phrases.erase(from)
+	
+	for item in %EntriesContainer.get_children():
+		if item.is_queued_for_deletion():
+			continue
+		var line: LineEdit = item.get_child(1)
+		
+		if line.get_meta(&"old_value") == from:
+			target_line = line
+			break
+	
+	if target_line == null:
+		return
+	
+	var old_key: StringName = StringName(from)
+	var new_key: StringName = StringName(to)
+	target_line.text = to
+	target_line.set_meta(&"old_value", to)
+
+
+func _do_update_phrase_text(on_key: String, to: String, data: Dictionary = {}) -> void:
+	var idx: int = -1
+	var erase_btn: Button = null
+	var text_key: LineEdit = null
+	var target_line: TextEdit = null
+	var expand_button: Button = null
+	var edit_button: Button = null
+	var phrase_key: StringName = StringName(on_key)
+	
+	if data.is_empty():
+		map.set_entry(phrase_key, to)
+	else:
+		map._phrases[phrase_key] = data.duplicate(true)
+	
+	for item in %EntriesContainer.get_children():
+		if item.is_queued_for_deletion():
+			continue
+		var line: LineEdit = item.get_child(1)
+		
+		if line.get_meta(&"old_value") == on_key:
+			idx = item.get_index()
+			erase_btn = item.get_child(0)
+			text_key = item.get_child(1)
+			target_line = item.get_child(2)
+			expand_button = item.get_child(3)
+			edit_button = item.get_child(4)
+			break
+	
+	if idx < 0:
+		return
+	
+	if 0 <= selected_key_index and selected_key_index == idx:
+		edit_button.icon = get_theme_icon("Edit", "EditorIcons")
+		edit_button.tooltip_text = "Edit Cases"
+		clear_cases()
+		selected_format = ""
+		expand_default_btn.disabled = true
+		selected_key_index = -1
+		default_case_text.clear()
+		default_case_text.editable = false
+		_update_choice_textbox_size(default_case_text)
+		argument_opt_btn.clear()
+		argument_opt_btn.disabled = true
+		new_case_btn.disabled = true
+		
+		erase_btn.disabled = false
+		text_key.editable = true
+		target_line.editable = true
+		expand_button.disabled = false
+		edit_button.disabled = false
+	
+	target_line.text = to
+	target_line.set_meta(&"old_value", to)
+
+
+func _do_update_case_key(from_phrase: String, on_format: String, from_case: String, to_case: String) -> void:
+	var phrase_key: StringName = StringName(from_phrase)
+	var case_result: String = map.get_case(phrase_key, on_format, from_case)
+	map.set_case(phrase_key, on_format, to_case, case_result)
+	map.remove_case(phrase_key, on_format, from_case)
+	
+	if selected_key_index < 0:
+		return
+	
+	for item in %EntriesContainer.get_children():
+		if item.is_queued_for_deletion():
+			continue
+		var line: LineEdit = item.get_child(1)
+		if line.get_meta(&"old_value") == from_phrase:
+			if item.get_index() == selected_key_index:
+				for case_idx in range(1, %CasesContainer.get_child_count()):
+					var case_line: LineEdit = %CasesContainer.get_child(case_idx).get_child(1)
+					if case_line.get_meta(&"old_value") == from_case:
+						case_line.text = to_case
+						case_line.set_meta(&"old_value", to_case)
+						return
+			else:
+				return
+
+
+func _do_update_case_result(from_phrase: String, on_format: String, on_case: String, to_result: String) -> void:
+	var phrase_key: StringName = StringName(from_phrase)
+	map.set_case(phrase_key, on_format, on_case, to_result)
+	
+	if selected_key_index < 0:
+		return
+	
+	for item in %EntriesContainer.get_children():
+		if item.is_queued_for_deletion():
+			continue
+		var line: LineEdit = item.get_child(1)
+		if line.get_meta(&"old_value") == from_phrase:
+			if item.get_index() == selected_key_index:
+				for case_idx in range(1, %CasesContainer.get_child_count()):
+					var case_container: HBoxContainer = %CasesContainer.get_child(case_idx)
+					var case_line: LineEdit = case_container.get_child(1)
+					if case_line.get_meta(&"old_value") == on_case:
+						var case_value: TextEdit = case_container.get_child(2)
+						case_value.text = to_result
+						case_value.set_meta(&"old_value", to_result)
+						return
+			else:
+				return
+
+
+func _do_update_case_default_result(from_phrase: String, on_format: String, to: String) -> void:
+	map.set_case_default(from_phrase, on_format, to)
+	
+	if selected_key_index < 0:
+		return
+	
+	for item in %EntriesContainer.get_children():
+		if item.is_queued_for_deletion():
+			continue
+		var line: LineEdit = item.get_child(1)
+		if line.get_meta(&"old_value") == from_phrase:
+			if item.get_index() == selected_key_index:
+				default_case_text.text = to
+				default_case_text.set_meta(&"old_value", to)
+			break
+
+
+func _do_add_phrase_entry(key: String, text: String, data: Dictionary = {}) -> void:
+	if data.is_empty():
+		map.set_entry(StringName(key), text)
+	else:
+		map._phrases[StringName(key)] = data
+	create_key_text_entry(key, text)
+
+
+func _do_erase_phrase_entry(key: String) -> void:
+	var target_index: int = -1
+	
+	map.erase_entry(StringName(key))
+	
+	for item in %EntriesContainer.get_children():
+		if item.is_queued_for_deletion():
+			continue
+		var line: LineEdit = item.get_child(1)
+		if line.get_meta(&"old_value") == key:
+			target_index = item.get_index()
+			break
+	
+	if target_index < 0:
+		return
+	
+	if selected_key_index == target_index:
+		selected_key_index = -1
+		selected_format = ""
+		clear_cases()
+		default_case_text.clear()
+		default_case_text.editable = false
+		_update_choice_textbox_size(default_case_text)
+		argument_opt_btn.clear()
+		argument_opt_btn.disabled = true
+		new_case_btn.disabled = true
+	
+	erase_key(target_index)
+
+
+func _do_add_case_entry(phrase_key: String, format: String, case_key: String, case_result: String) -> void:
+	map.set_case(StringName(phrase_key), format, case_key, case_result)
+	
+	if selected_key_index < 0:
+		return
+	
+	var current_phrase_line: LineEdit = %EntriesContainer.get_child(selected_key_index).get_child(1)
+	if current_phrase_line.get_meta(&"old_value") != phrase_key:
+		return
+	
+	if argument_opt_btn.selected < 0 or argument_opt_btn.get_item_text(argument_opt_btn.selected) != format:
+		return
+	create_case_entry(case_key, case_result)
+
+
+func _do_erase_case_entry(phrase_key: String, format: String, case_key: String) -> void:
+	map.remove_case(StringName(phrase_key), format, case_key)
+	
+	if selected_key_index < 0:
+		return
+	
+	var current_phrase_line: LineEdit = %EntriesContainer.get_child(selected_key_index).get_child(1)
+	if current_phrase_line.get_meta(&"old_value") != phrase_key:
+		return
+	
+	if argument_opt_btn.selected < 0 or argument_opt_btn.get_item_text(argument_opt_btn.selected) != format:
+		return
+	
+	var target_index: int = -1
+	for case_idx in range(1, %CasesContainer.get_child_count()):
+		var case_node: HBoxContainer = %CasesContainer.get_child(case_idx)
+		if case_node.is_queued_for_deletion():
+			continue
+		var case_line: LineEdit = case_node.get_child(1)
+		if case_line.get_meta(&"old_value") == case_key:
+			target_index = case_idx
+			break
+	
+	if 0 < target_index:
+		erase_case(target_index - 1)
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE:
+		for id in _open_files:
+			_open_files[id]["undo"].clear_history()
+			_open_files[id]["undo"].free()
+			_open_files[id]["undo"] = null
+			undo = null

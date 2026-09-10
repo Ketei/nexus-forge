@@ -202,6 +202,7 @@ func _get_plugin_name() -> String:
 func _make_visible(visible):
 	if editor_view != null:
 		editor_view.visible = visible
+		
 
 
 func _enable_plugin() -> void:
@@ -547,7 +548,7 @@ func _handles(object: Object) -> bool:
 
 func _edit(object: Object) -> void:
 	if _editor_ready() and object != null:
-		_make_visible(true)
+		EditorInterface.set_main_screen_editor(PLUGIN_NAME)
 		editor_view.handle_resource(object)
 
 

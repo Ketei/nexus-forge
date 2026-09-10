@@ -15,8 +15,6 @@
 > **Beta State:** The plugin is fully functional but some utility and navigation features are unimplemented, incomplete or inconsistent. Any breaking changes will be announced on the releases page. Please report any bugs you encounter!
 > 
 > This began as a personal tool, so it includes a few specific static helper classes tailored for my own workflow.
->
-> **About Undo/Redo:** Not all modules of Nexus Forge implement the Undo/Redo system. Check the roadmap to find out which modules support these actions.
 
 ## Contents
 
@@ -97,7 +95,7 @@ Features that are planned to be implemented in the future:
 
 ### Beta & Beyond
 - [ ] **On Release:** Publish on Godot's Asset Library/Asset Store
-- [ ] **Core:** UndoRedo for all modules
+- [x] **Core:** UndoRedo for all modules
   - [x] Discourse (Dialogs)
   - [x] Blackboard (Variables)
   - [x] Persona (Characters)
@@ -106,7 +104,7 @@ Features that are planned to be implemented in the future:
   - [x] Depot (Items & Currencies)
   - [x] Blueprints (Recipes)
   - [x] Odyssey (Quests)
-  - [ ] Phrase Maps
+  - [x] Phrase Maps
 - [ ] **Core:** Implement an automatic mod loader
 - [ ] **Discourse:** Import/Export CSV files for localization
 - [ ] **Github Wiki:** Rewrite the Wiki and include examples using screenshots/gifs

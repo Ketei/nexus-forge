@@ -160,12 +160,21 @@ func entries() -> Array[StringName]:
 func set_entry(key: StringName, text: String) -> void:
 	var formats: Dictionary = {}
 	var entry_exists: bool = _phrases.has(key)
+	
 	for format in get_valid_formats(text):
 		var default: String = ""
 		var cases: Dictionary[String, String] = {}
 		if entry_exists and _phrases[key]["formats"].has(format):
-			default = _phrases[key]["formats"][format]["default"]
-			cases.assign(_phrases[key]["formats"][format]["cases"])
+			default = DictUtils.get_nested_value(
+					_phrases,
+					[key, "formats", format, "default"],
+					"",
+					true)
+			cases.assign(DictUtils.get_nested_value(
+					_phrases,
+					[key, "formats", format, "cases"],
+					{},
+					true))
 		
 		formats[format] = {
 			"default": default,
@@ -227,10 +236,30 @@ func set_case(key: StringName, format: String, case: String, value: String) -> v
 	if not _phrases.has(key):
 		return
 	
+	if not _phrases[key]["formats"].has(format):
+		_phrases[key]["formats"][format] = {
+			"default": "",
+			"cases": DictUtils.create_typed(TYPE_STRING, TYPE_STRING)}
+	
 	DictUtils.set_nested_value(
 			_phrases,
 			[key, "formats", format, "cases", case],
-			value)
+			value,
+			false)
+
+
+## Removes the [param case] from the [param format] of the phrase with the
+## given [param key].
+func remove_case(key: StringName, format: String, case: String) -> void:
+	if not _phrases.has(key):
+		return
+	
+	var dict: Dictionary = DictUtils.get_nested_value(
+			_phrases,
+			[key, "formats", format, "cases"],
+			{},
+			true)
+	dict.erase(case)
 
 
 ## Sets the default case on the phrase [param key] of the argument
@@ -239,10 +268,16 @@ func set_case_default(key: StringName, format: String, default: String) -> void:
 	if not _phrases.has(key):
 		return
 	
+	if not _phrases[key]["formats"].has(format):
+		_phrases[key]["formats"][format] = {
+			"default": "",
+			"cases": DictUtils.create_typed(TYPE_STRING, TYPE_STRING)}
+	
 	DictUtils.set_nested_value(
 			_phrases,
 			[key, "formats", format, "default"],
-			default)
+			default,
+			false)
 
 
 ## Clears the custom cases of the [param format] from the phrase

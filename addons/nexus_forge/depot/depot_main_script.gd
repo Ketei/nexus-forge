@@ -39,58 +39,6 @@ func _input(event: InputEvent) -> void:
 				var category_id: StringName = categories_container.selected_category
 				categories_container._on_erase_category_pressed(category_id)
 			get_viewport().set_input_as_handled()
-			return
-		
-		if not event.ctrl_pressed:
-			return
-		
-		var current_focus: Control = get_viewport().gui_get_focus_owner()
-		
-		if current_focus != null:
-			if current_focus is LineEdit:
-				if current_focus.is_editing():
-					return
-			elif current_focus is TextEdit:
-				return
-		
-		var target_undo: UndoRedo = null
-		
-		if items_container.visible:
-			target_undo = items_container.undo
-		elif categories_container.visible:
-			target_undo = categories_container.category_undo
-		
-		if target_undo == null:
-			get_viewport().set_input_as_handled()
-			return
-		
-		if event.keycode == KEY_Z:
-			if event.shift_pressed:
-				if target_undo.has_redo():
-					var action_name: String = target_undo.get_action_name(target_undo.get_current_action() + 1)
-					target_undo.redo()
-					NFPluginGameHandler._log_msg(
-						"",
-						"Redo: " + action_name,
-						NFPluginGameHandler._LogLevel.EDITOR)
-			else:
-				if target_undo.has_undo():
-					var action_name: String = target_undo.get_current_action_name()
-					target_undo.undo()
-					NFPluginGameHandler._log_msg(
-						"",
-						"Undo: " + action_name,
-						NFPluginGameHandler._LogLevel.EDITOR)
-			get_viewport().set_input_as_handled()
-		elif event.keycode == KEY_Y and not event.shift_pressed:
-			if target_undo.has_redo():
-				var action_name: String = target_undo.get_action_name(target_undo.get_current_action() + 1)
-				target_undo.redo()
-				NFPluginGameHandler._log_msg(
-						"",
-						"Redo: " + action_name,
-						NFPluginGameHandler._LogLevel.EDITOR)
-			get_viewport().set_input_as_handled()
 
 
 func ready_plugin(use_items: bool, use_currencies: bool) -> void:
@@ -118,6 +66,48 @@ func ready_plugin(use_items: bool, use_currencies: bool) -> void:
 		edit_categories_btn.disabled = true
 	else:
 		_on_resource_loaded()
+
+
+func can_undo() -> bool:
+	if items_container.visible:
+		if is_instance_valid(items_container.undo):
+			return items_container.undo.has_undo()
+	elif categories_container.visible:
+		if is_instance_valid(categories_container.category_undo):
+			return categories_container.category_undo.has_undo()
+	return false
+
+
+func can_redo() -> bool:
+	if items_container.visible:
+		if is_instance_valid(items_container.undo):
+			return items_container.undo.has_redo()
+	elif categories_container.visible:
+		if is_instance_valid(categories_container.category_undo):
+			return categories_container.category_undo.has_redo()
+	return false
+
+
+func do_undo() -> void:
+	var is_items: bool = items_container.visible
+	var undo: UndoRedo = items_container.undo if is_items else categories_container.category_undo
+	var action_name: String = undo.get_action_name(undo.get_current_action() + 1)
+	undo.redo()
+	NFPluginGameHandler._log_msg(
+		"",
+		"Redo: " + action_name,
+		NFPluginGameHandler._LogLevel.EDITOR)
+
+
+func do_redo() -> void:
+	var is_items: bool = items_container.visible
+	var undo: UndoRedo = items_container.undo if is_items else categories_container.category_undo
+	var action_name: String = undo.get_action_name(undo.get_current_action() + 1)
+	undo.redo()
+	NFPluginGameHandler._log_msg(
+			"",
+			"Redo: " + action_name,
+			NFPluginGameHandler._LogLevel.EDITOR)
 
 
 func _on_category_id_updated(from: StringName, to: StringName) -> void:
