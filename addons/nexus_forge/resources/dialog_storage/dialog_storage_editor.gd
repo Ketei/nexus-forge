@@ -54,6 +54,7 @@ var collapsed_state: Dictionary[String, bool] = {}
 			#"persist": true,
 			#"size": Vector2.ZERO,
 			#"position": Vector2.ZERO
+			#"localized": true
 		#}
 	#}
 }
@@ -195,7 +196,7 @@ func set_format_string(key: String, text: String, locale: String) -> void:
 			"base_string": "",
 			"format": {}}
 	
-	DictUtils.set_nested_value(format_strings, [key, locale, "base_string"], text, false)
+	format_strings[key][locale]["base_string"] = text
 
 
 ## Checks if the format key exists in the given key and locale. If it doesn't it'll
@@ -236,8 +237,7 @@ func set_format_string_case(key: String, locale: String, format: String, case: S
 	DictUtils.set_nested_value(
 			format_strings,
 			[key, locale, "format", format, "cases", case],
-			value,
-			false)
+			value)
 
 
 func get_format_string_case(key: String, locale: String, format: String, case: String) -> String:
@@ -276,8 +276,7 @@ func set_format_string_default_case(key: String, locale: String, format: String,
 	DictUtils.set_nested_value(
 			format_strings,
 			[key, locale, "format", format, "default"],
-			default_text,
-			false)
+			default_text)
 
 
 ## Returns the default case from a localized string with the given key.
@@ -1293,6 +1292,23 @@ func add_locale(locale: String) -> void:
 			locale_map[language][region] = null
 
 
+func has_locale(locale_code: String) -> bool:
+	var standard_code: String = TranslationServer.standardize_locale(locale_code)
+	if standard_code.is_empty():
+		return false
+	
+	var parts: PackedStringArray = standard_code.split("_", false, 2)
+	var lang: String = parts[0]
+	var reg: String = parts[1] if 1 < parts.size() else ""
+	
+	if reg.is_empty():
+		return locale_map.has(lang)
+	else:
+		if locale_map.has(lang):
+			return locale_map[lang].has(reg)
+		return false
+
+
 ## Removes a locale from the locale map.
 func remove_locale(locale: String) -> void:
 	locale = TranslationServer.standardize_locale(locale)
@@ -1354,6 +1370,284 @@ func get_id_target(id: StringName) -> StringName:
 func has_dialog_entry(id_or_uuid: String) -> bool:
 	_buid_id_map()
 	return node_data.has(id_or_uuid) or _id_map.has(id_or_uuid)
+
+
+func phrases_to_json_string() -> String:
+	var data: Dictionary = {}
+	
+	var valid_locales: Dictionary[String, Variant] = {}
+	
+	for lang_code in locale_map: # Using currently registered locales
+		valid_locales[lang_code] = null
+		for reg_code in locale_map[lang_code]:
+			var locale: String = lang_code + "_" + reg_code
+			valid_locales[locale] = null
+	
+	for key in format_strings:
+		var locale_data: Dictionary = {}
+		for locale_code in valid_locales:
+			if not format_strings[key].has(locale_code):
+				locale_data[locale_code] = {
+					"base_string": "",
+					"format": {}}
+				continue
+		
+			var base_string: String = format_strings[key][locale_code].get("base_string", "")
+			var phrase_data: Dictionary = {
+				"base_string": base_string,
+				"format": {}}
+			# We won't trust that the dictionary is completely and correctly
+			# populated, so we populate the correct formats outselves.
+			var args: Array[String] = get_phrase_arguments(base_string)
+			for form in args:
+				var format_data: Dictionary = {
+					"default": "",
+					"cases": {}}
+				if format_strings[key][locale_code]["format"].has(form):
+					format_data["default"] = DictUtils.get_nested_value(format_strings, [key, locale_code, "format", form, "default"], "")
+					format_data["cases"] = DictUtils.get_nested_value(format_strings, [key, locale_code, "format", form, "cases"], {})
+				phrase_data["format"][form] = format_data
+			locale_data[locale_code] = phrase_data
+		data[key] = locale_data
+	
+	return JSON.stringify(data, "\t")
+
+
+func import_phrase_data(data: Dictionary) -> void:
+	var new_structure: Dictionary[String, Dictionary] = {}
+	
+	for imported_key in data:
+		if typeof(imported_key) != TYPE_STRING or typeof(data[imported_key]) != TYPE_DICTIONARY:
+			continue
+		var entry_data: Dictionary = data[imported_key]
+		var locale_entries: Dictionary = {}
+		for prob_loc in entry_data:
+			if typeof(prob_loc) != TYPE_STRING or typeof(entry_data[prob_loc]) != TYPE_DICTIONARY:
+				continue
+			
+			var standard_locale: String = TranslationServer.standardize_locale(prob_loc)
+			if standard_locale.is_empty():
+				continue
+			var localization_data: Dictionary = entry_data[prob_loc]
+			if not localization_data.has("base_string") or typeof(localization_data["base_string"]) != TYPE_STRING:
+				continue
+			
+			var formats: Dictionary = {}
+			var locale_data: Dictionary = {
+				"base_string": localization_data["base_string"],
+				"format": formats}
+			
+			if localization_data.has("format"):
+				for format_key in localization_data["format"]:
+					if typeof(format_key) != TYPE_STRING or typeof(localization_data["format"][format_key]) != TYPE_DICTIONARY:
+						continue
+					var format_data: Dictionary = localization_data["format"][format_key]
+					if not format_data.has("default") or typeof(format_data["default"]) != TYPE_STRING:
+						continue
+					var cases: Dictionary = {}
+					var format_entry: Dictionary = {
+						"default": format_data["default"],
+						"cases": cases}
+					if format_data.has("cases") and typeof(format_data["cases"]) == TYPE_DICTIONARY:
+						for case_key in format_data["cases"]:
+							if typeof(case_key) != TYPE_STRING:
+								continue
+							elif typeof(format_data["cases"][case_key]) != TYPE_STRING:
+								continue
+							else:
+								cases[case_key] = format_data["cases"][case_key]
+					formats[format_key] = format_entry
+			
+			locale_entries[standard_locale] = locale_data
+		new_structure[imported_key] = locale_entries
+	
+	# - Merging of deep entries -
+	for import_key in new_structure:
+		if not format_strings.has(import_key):
+			NFPluginGameHandler._log_msg(
+				"discourse - editor",
+				"Import data contains key '%s' but internal structure doesnt. Skipping" % import_key,
+				NFPluginGameHandler._LogLevel.WARNING)
+			continue
+		
+		var locale_level: Dictionary = format_strings[import_key]
+		for imported_locale in new_structure[import_key]:
+			if not locale_level.has(imported_locale):
+				if has_locale(imported_locale): # File has locale registered, but dictionary hasn't for some reason.
+					locale_level[imported_locale] = new_structure[import_key][imported_locale].duplicate(true)
+				else:
+					NFPluginGameHandler._log_msg(
+							"discourse - editor",
+							"Import data contains locale '%s' but internal structure doesnt. Skipping" % imported_locale,
+							NFPluginGameHandler._LogLevel.WARNING)
+				continue
+			
+			var local_locale_data: Dictionary = locale_level[imported_locale]
+			var imported_locale_data: Dictionary = new_structure[import_key][imported_locale]
+			var existing_formats: Array[String] = get_phrase_arguments(imported_locale_data["base_string"])
+			local_locale_data["base_string"] = imported_locale_data["base_string"]
+			
+			for format_key in imported_locale_data["format"]:
+				if not local_locale_data["format"].has(format_key):
+					if existing_formats.has(format_key):
+						local_locale_data["format"][format_key] =\
+								imported_locale_data["format"][format_key].duplicate(true)
+					continue
+				
+				var local_format: Dictionary = local_locale_data["format"][format_key]
+				var imported_format: Dictionary = imported_locale_data["format"][format_key]
+				local_format["default"] = imported_format["default"]
+				for case in local_format["cases"]:
+					if imported_format["cases"].has(case):
+						local_format["cases"][case] = imported_format["cases"][case]
+
+
+func get_used_locales() -> Array[String]:
+	var used_locales: Array[String] = []
+	
+	for lang_code in locale_map:
+		used_locales.append(lang_code)
+		for reg_code in locale_map[lang_code]:
+			var locale_code: String = lang_code + "_" + reg_code
+			used_locales.append(locale_code)
+	return used_locales
+
+
+func _get_data_for_csv() -> Dictionary:
+	var csv_data: Dictionary = {}
+	
+	var possible_locales: Array[String] = get_used_locales()
+	
+	for node_uuid in node_data:
+		if not node_data[node_uuid].has("metadata") or not node_data[node_uuid]["metadata"].get("localized", false):
+			continue
+		
+		var node_id: String = String(node_data[node_uuid]["name"])
+		if node_data[node_uuid]["type"] == NodeType.DIALOG or node_data[node_uuid]["type"] == NodeType.LOCALIZED_TEXT:
+			var row_data: Dictionary = {}
+			if localization.has(node_uuid):
+				for locale_code in possible_locales:
+					if localization[node_uuid]["locales"].has(locale_code):
+						var data_type: int = typeof(localization[node_uuid]["locales"][locale_code])
+						if data_type == TYPE_STRING:
+							row_data[locale_code] = localization[node_uuid]["locales"][locale_code]
+						else:
+							row_data[locale_code] = ""
+			else:
+				for locale_code in possible_locales:
+					row_data[locale_code] = ""
+			csv_data[node_id] = row_data
+		elif node_data[node_uuid]["type"] == NodeType.CHOICES:
+			var target_size: int = node_data[node_uuid]["metadata"]["choices"].size()
+			var arr_range: Array = range(target_size)
+			if localization.has(node_uuid):
+				for locale_code in possible_locales:
+					var assigned_choices: Array[String] = []
+					assigned_choices.assign(DictUtils.get_nested_value(
+							localization,
+							[node_uuid, "locales", locale_code],
+							[],
+							true))
+					if assigned_choices.size() < target_size:
+						assigned_choices.resize(target_size)
+					
+					for idx in arr_range:
+						var id: String = node_id + ":" + str(idx)
+						if not csv_data.has(id):
+							csv_data[id] = {}
+						csv_data[id][locale_code] = assigned_choices[idx]
+			else:
+				for locale_code in possible_locales:
+					for idx in arr_range:
+						var id: String = node_id + ":" + str(idx)
+						if not csv_data.has(id):
+							csv_data[id] = {}
+						csv_data[id][locale_code] = ""
+	
+	return csv_data
+
+
+func _set_csv_data(data: Dictionary) -> void:
+	if data.is_empty():
+		return
+	
+	var id_to_uuid: Dictionary[String, StringName] = {}
+	for node_uuid in node_data:
+		id_to_uuid[String(node_data[node_uuid]["name"])] = node_uuid
+	
+	for import_id in data:
+		var id_type: int = typeof(import_id)
+		if id_type != TYPE_STRING and id_type != TYPE_STRING_NAME:
+			continue
+		var data_type: int = typeof(data[import_id])
+		if data_type != TYPE_DICTIONARY:
+			continue
+		
+		var node_id: String = import_id.strip_edges()
+		var choice_idx: int = -1
+		
+		if 2 <= node_id.length() and node_id.contains(":"):
+			var trailing_data: Dictionary = StringUtils.get_trailing_integer(node_id)
+			if trailing_data["has_integer"]:
+				choice_idx = trailing_data["integer"]
+			node_id = node_id.trim_suffix(":" + str(choice_idx))
+		
+		if not id_to_uuid.has(node_id):
+			continue
+		
+		var uuid: StringName = id_to_uuid[node_id]
+		
+		if not node_data[uuid]["metadata"]["localized"]:
+			continue
+		
+		var type: NFDialogParser.NodeTypes = node_data[uuid]["type"]
+		
+		if type == NFDialogParser.NodeTypes.DIALOG or type == NFDialogParser.NodeTypes.LOCALIZED_TEXT:
+			if -1 < choice_idx:
+				continue
+			for import_locale in data[import_id]:
+				var locale_type: int = typeof(import_locale)
+				if locale_type != TYPE_STRING:
+					continue
+				var locale_code: String = TranslationServer.standardize_locale(String(import_locale))
+				if locale_code.is_empty():
+					continue
+				var localization_type: int = typeof(data[import_id][import_locale])
+				if localization_type != TYPE_STRING:
+					continue
+				if not localization.has(uuid):
+					localization[uuid] = {
+						"type": LocalizationType.TEXT,
+						"unlocalized": "",
+						"locales": {}}
+				localization[uuid]["locales"][locale_code] = data[import_id][import_locale]
+		elif type == NFDialogParser.NodeTypes.CHOICES:
+			if choice_idx < 0:
+				continue
+			var choice_size: int = node_data[uuid]["metadata"]["choices"].size()
+			if choice_size - 1 < choice_idx:
+				continue
+			for import_locale in data[import_id]:
+				var locale_type: int = typeof(import_locale)
+				if locale_type != TYPE_STRING:
+					continue
+				var locale_code: String = TranslationServer.standardize_locale(String(import_locale))
+				if locale_code.is_empty():
+					continue
+				var localization_type: int = typeof(data[import_id][import_locale])
+				if localization_type != TYPE_STRING:
+					continue
+				
+				if not localization.has(uuid):
+					localization[uuid] = {
+						"type": LocalizationType.CHOICES,
+						"unlocalized": ArrayUtils.create_typed(TYPE_STRING),
+						"locales": {}}
+				
+				var localized_choices: Array[String] = localization[uuid]["locales"].get_or_add(locale_code, ArrayUtils.create_typed(TYPE_STRING))
+				if localized_choices.size() != choice_size:
+					localized_choices.resize(choice_size)
+				localized_choices[choice_idx] = data[import_id][import_locale]
 
 
 func _buid_id_map() -> void:

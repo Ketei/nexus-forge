@@ -107,11 +107,11 @@ func _on_item_edited() -> void:
 				return
 			var valid_name: String = validate_var_name(edited.get_text(0), edited)
 			edited.set_text(0, valid_name)
-			variable_renamed.emit(edited.get_metadata(0), valid_name)
 			edited.set_metadata(0, valid_name)
 			if sorting_column == 0:
 				sort_single_item(edited)
 				ensure_cursor_is_visible()
+			variable_renamed.emit(edited.get_metadata(0), valid_name)
 		1: # Var value changed
 			variable_updated.emit(edited.get_text(0), get_tree_variant(edited))
 	something_changed.emit()
@@ -254,7 +254,7 @@ func clear_variables() -> void:
 
 
 func validate_var_name(var_name: String, skip_tree: TreeItem = null) -> String:
-	if var_name.is_empty():
+	if var_name.strip_edges().is_empty():
 		var_name = "new_variable"
 	
 	var tweaked_name: String = var_name.replace("/", "_")

@@ -80,6 +80,40 @@ const ConnectionType = DiscourseGraphNode.SlotConnectionType
 # Enum to differentiate port directions
 const PortFlow = DiscourseGraphNode.PortMode
 
+const DEFAULT_NODE_NAMES: Dictionary[DialogNodes, String] = {
+	DialogNodes.ENTRY: "Entry",
+	DialogNodes.DIALOG: "Dialog",
+	DialogNodes.CHOICES: "Choice",
+	DialogNodes.BRANCH: "Branch",
+	DialogNodes.COMPARATION: "Comparation",
+	DialogNodes.EVENT: "Event",
+	DialogNodes.MATCH: "Match",
+	DialogNodes.PAUSE: "Pause",
+	DialogNodes.RANDOM: "Random",
+	DialogNodes.SHORTCUT_IN: "FlowIn",
+	DialogNodes.SHORTCUT_OUT: "FlowOut",
+	DialogNodes.DIALOG_END: "End",
+	DialogNodes.DIALOG_MERGE: "Merge",
+	DialogNodes.LOCALIZED_TEXT: "Localized",
+	DialogNodes.TRAVEL_TO: "TravelTo",
+	DialogNodes.TRAVEL_TARGET: "Waypoint",
+	DialogNodes.TRAVEL_BACK: "TravelBack",
+	DialogNodes.CONDITION_SELECT: "ConditionSelect",
+	DialogNodes.TYPE_GUARD: "TypeGuard",
+	DialogNodes.VALUE: "Value",
+	DialogNodes.SIGNAL: "Signal",
+	DialogNodes.CALLABLE: "Callable",
+	DialogNodes.CALLABLE_RETURN: "CallableReturn",
+	DialogNodes.VARIABLE_GET: "Variable",
+	DialogNodes.RANDOM_VALUE: "RandomValue",
+	DialogNodes.DATA_EVENT: "EventData",
+	DialogNodes.METADATA: "Metadata",
+	DialogNodes.SETTINGS_CHARACTER: "ConfigCharacter",
+	DialogNodes.SETTINGS_DIALOG: "ConfigDialog",
+	DialogNodes.SETTINGS_OPTION: "ConfigChoice",
+	DialogNodes.RESOURCE: "Resource",
+	}
+
 # Dictionary with data about compatible nodes. Could be a const
 var compatible_connections: Dictionary = {
 	ConnectionType.DIALOG: {
@@ -576,7 +610,10 @@ func new_dialog_node(node_type: DialogNodes, uuid: StringName = &"") -> Discours
 	if created_node.resizable:
 		created_node.node_resized.connect(node_resized.emit)
 	
-	created_node.set_node_id(get_unique_node_name(created_node.get_node_id()))
+	created_node.set_node_id(
+			get_unique_node_name(
+					created_node.get_node_id(),
+					created_node.node_type))
 	
 	return created_node
 
@@ -589,31 +626,32 @@ func new_node_frame(uuid: StringName = &"") -> GraphFrame:
 	return new_frame
 
 
-func get_unique_node_name(desired: StringName, skip_uuid: StringName = &"") -> StringName:
-	var names: Dictionary[StringName, Variant] = {}
+func get_unique_node_name(desired: StringName, type: DialogNodes, skip_uuid: StringName = &"") -> StringName:
+	var desired_id: String = String(desired).strip_edges()
+	if desired_id.is_empty():
+		desired_id = DEFAULT_NODE_NAMES[type]
+	
+	var names: Dictionary[String, Variant] = {}
 	
 	for node in graph_nodes.values():
 		if node.get_node_uuid() == skip_uuid:
 			continue
-		names[node.get_node_id()] = null
-		
-	var desired_string: String = String(desired).strip_edges()
-	var desired_stringname: StringName = StringName(desired_string)
+		names[String(node.get_node_id())] = null
 	
-	if not names.has(desired_stringname):
-		return StringName(desired_stringname)
+	if not names.has(desired_id):
+		return desired_id
 	
-	var trailing_data: Dictionary = StringUtils.get_trailing_integer(desired_string)
+	var modified: String = desired_id
+	var base: String = desired_id
+	var trailing_data: Dictionary = StringUtils.get_trailing_integer(desired_id)
 	var iteration: int = trailing_data["integer"]
-	var base: String = desired_string
 	if trailing_data["has_integer"]:
 		base = base.trim_suffix(str(iteration))
 	
-	var edited: StringName = desired_stringname
-	while names.has(edited):
+	while names.has(modified):
 		iteration += 1
-		edited = StringName(base + str(iteration))
-	return edited
+		modified = base + str(iteration)
+	return StringName(modified)
 
 
 #region Spawners / Removers
@@ -624,6 +662,14 @@ func spawn_node(node_type: DialogNodes, uuid: StringName = &"", data: Dictionary
 		var overwrite_data: Dictionary = new_node._get_node_data()
 		overwrite_data.merge(data, true)
 		new_node._set_node_data(overwrite_data)
+		if overwrite_data.has("name"):
+			var name_type: int = typeof(overwrite_data["name"])
+			if name_type == TYPE_STRING_NAME or name_type == TYPE_STRING:
+				new_node.set_node_id(
+						get_unique_node_name(
+							new_node.get_node_id(),
+							new_node.node_type,
+							new_node.get_node_uuid()))
 	
 	add_child(new_node)
 	graph_nodes[new_node.get_node_uuid()] = new_node
@@ -659,7 +705,9 @@ func paste_node_clipboard(clipboard: Array[Dictionary], uuid_map: Dictionary[Str
 		
 		var node_data: Dictionary = clipboard_data["state"]["data"]
 		var node_meta: Dictionary = node_data["metadata"]
-		var new_name: StringName = get_unique_node_name(node_data["name"])
+		var new_name: StringName = get_unique_node_name(
+				node_data["name"],
+				node_data["type"])
 		var new_data: Dictionary = node_data.duplicate(true)
 		new_data["name"] = new_name
 		
@@ -722,7 +770,9 @@ func duplicate_single(node_uuid: StringName, new_uuid: StringName) -> void:
 	
 	var node: DiscourseGraphNode = graph_nodes[node_uuid]
 	var data: Dictionary = node._get_node_data()
-	var new_name: StringName = get_unique_node_name(node.get_node_id())
+	var new_name: StringName = get_unique_node_name(
+			node.get_node_id(),
+			node.node_type)
 	data["name"] = new_name
 	DictUtils.set_nested_value(
 			data,
@@ -778,7 +828,9 @@ func duplicate_multiple(duplicate_targets: Dictionary[StringName, StringName]) -
 	
 	for node_data in nodes_to_duplicate:
 		var node: DiscourseGraphNode = node_data["node"]
-		var new_name: StringName = get_unique_node_name(node.get_node_id())
+		var new_name: StringName = get_unique_node_name(
+				node.get_node_id(),
+				node.node_type)
 		var old_data: Dictionary = node._get_node_data()
 		old_data["name"] = new_name
 		DictUtils.set_nested_value(
