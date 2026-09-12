@@ -53,7 +53,6 @@ const DATA: Array[NFDialogParser.NodeTypes] = [
 		NFDialogParser.NodeTypes.VARIABLE_GET,
 		NFDialogParser.NodeTypes.RANDOM_VALUE,
 		NFDialogParser.NodeTypes.DATA_EVENT,
-		NFDialogParser.NodeTypes.LOCALIZED_TEXT,
 		NFDialogParser.NodeTypes.METADATA]
 	
 const SETTINGS: Array[NFDialogParser.NodeTypes] = [
@@ -63,6 +62,41 @@ const SETTINGS: Array[NFDialogParser.NodeTypes] = [
 	
 const RESOURCES: Array[NFDialogParser.NodeTypes] = [
 		NFDialogParser.NodeTypes.RESOURCE]
+
+const DEFAULT_NODE_NAMES: Dictionary[NFDialogParser.NodeTypes, String] = {
+	NFDialogParser.NodeTypes.ENTRY: "Entry",
+	NFDialogParser.NodeTypes.DIALOG: "Dialog",
+	NFDialogParser.NodeTypes.CHOICES: "Choice",
+	NFDialogParser.NodeTypes.BRANCH: "Branch",
+	NFDialogParser.NodeTypes.COMPARATION: "Comparation",
+	NFDialogParser.NodeTypes.EVENT: "Event",
+	NFDialogParser.NodeTypes.MATCH: "Match",
+	NFDialogParser.NodeTypes.PAUSE: "Pause",
+	NFDialogParser.NodeTypes.RANDOM: "Random",
+	NFDialogParser.NodeTypes.SHORTCUT_IN: "FlowIn",
+	NFDialogParser.NodeTypes.SHORTCUT_OUT: "FlowOut",
+	NFDialogParser.NodeTypes.DIALOG_END: "End",
+	NFDialogParser.NodeTypes.DIALOG_MERGE: "Merge",
+	NFDialogParser.NodeTypes.LOCALIZED_TEXT: "Localized",
+	NFDialogParser.NodeTypes.TRAVEL_TO: "TravelTo",
+	NFDialogParser.NodeTypes.TRAVEL_TARGET: "Waypoint",
+	NFDialogParser.NodeTypes.TRAVEL_BACK: "TravelBack",
+	NFDialogParser.NodeTypes.CONDITION_SELECT: "ConditionSelect",
+	NFDialogParser.NodeTypes.TYPE_GUARD: "TypeGuard",
+	NFDialogParser.NodeTypes.VALUE: "Value",
+	NFDialogParser.NodeTypes.SIGNAL: "Signal",
+	NFDialogParser.NodeTypes.CALLABLE: "Callable",
+	NFDialogParser.NodeTypes.CALLABLE_RETURN: "CallableReturn",
+	NFDialogParser.NodeTypes.VARIABLE_GET: "Variable",
+	NFDialogParser.NodeTypes.RANDOM_VALUE: "RandomValue",
+	NFDialogParser.NodeTypes.DATA_EVENT: "EventData",
+	NFDialogParser.NodeTypes.METADATA: "Metadata",
+	NFDialogParser.NodeTypes.SETTINGS_CHARACTER: "ConfigCharacter",
+	NFDialogParser.NodeTypes.SETTINGS_DIALOG: "ConfigDialog",
+	NFDialogParser.NodeTypes.SETTINGS_OPTION: "ConfigChoice",
+	NFDialogParser.NodeTypes.RESOURCE: "Resource",
+}
+
 
 var nodes: Dictionary[StringName, TreeItem] = {}
 var folders: Dictionary[int, TreeItem] = {}
@@ -286,12 +320,18 @@ func _on_discourse_item_edited() -> void:
 	if is_node:
 		var uuid: StringName = edited.get_metadata(0)["uuid"]
 		var old_name: String = edited.get_metadata(0)["name"]
-		var new_name: String = get_unique_name_for_node(edited.get_text(0), edited)
+		var new_name: String = get_unique_name_for_node(
+				edited.get_text(0),
+				edited.get_metadata(0)["type"],
+				edited)
 		
 		if new_name != old_name:
 			edited.get_metadata(0)["name"] = new_name
 			edited.set_text(0, new_name)
 			item_renamed.emit(uuid, old_name, new_name)
+		else:
+			if edited.get_text(0) != new_name:
+				edited.set_text(0, new_name)
 	else:
 		var new_name: String = get_unique_name_on_tree(
 				edited.get_parent(),
@@ -536,7 +576,13 @@ func create_node(node: DiscourseGraphNode, on: TreeItem = get_root(), index: int
 			false,
 			"Edit ID")
 	
-	new_item.set_metadata(0, {"name": node_name,  "is_node": true, "uuid": node.get_node_uuid()})
+	new_item.set_metadata(
+			0,
+			{
+				"name": node_name,
+				"is_node": true,
+				"type": node.node_type,
+				"uuid": node.get_node_uuid()})
 	
 	nodes[node.get_node_uuid()] = new_item
 	
@@ -604,37 +650,55 @@ func remove_dialog_node(uuid: StringName) -> bool:
 	return true
 
 
-func get_unique_name_for_node(desired_name: String, skip_item: TreeItem = null) -> String:
-	var trailing_data: Dictionary = StringUtils.get_trailing_integer(desired_name)
-	var iteration: int = trailing_data["integer"]
+func get_unique_name_for_node(desired_name: String, type: int, skip_item: TreeItem = null) -> String:
+	desired_name = desired_name.strip_edges()
+	if desired_name.is_empty():
+		desired_name = DEFAULT_NODE_NAMES[type]
 	var all_names: Dictionary = {}
-	var base_name: String = desired_name
-	
 	
 	for node in nodes.values():
 		if node == skip_item:
 			continue
 		all_names[node.get_text(0)] = null
 	
-	if all_names.has(desired_name):
-		if trailing_data["has_integer"]:
-			base_name = desired_name.trim_suffix(str(iteration))
-		var edited_name: String = desired_name
-		while all_names.has(edited_name):
-			iteration += 1
-			edited_name = base_name + str(iteration)
-		base_name = edited_name
+	if not all_names.has(desired_name):
+		return desired_name
 	
-	return base_name
+	var base_name: String = desired_name
+	var modified: String = desired_name
+	var trailing_data: Dictionary = StringUtils.get_trailing_integer(desired_name)
+	var iteration: int = trailing_data["integer"]
+	if trailing_data["has_integer"]:
+		base_name = desired_name.trim_suffix(str(iteration))
+	
+	while all_names.has(modified):
+		iteration += 1
+		modified = base_name + str(iteration)
+	
+	return modified
 
 
-func get_unique_name_on_tree(tree: TreeItem, desired_name: String, skip_item: TreeItem = null) -> String:
-	var edited_name: String = desired_name
-	var iteration: int = StringUtils.get_trailing_integer(desired_name)["integer"]
+func get_unique_name_on_tree(tree: TreeItem, desired_name: String, skip_item: TreeItem = null, _fallback: String = "Group") -> String:
+	desired_name = desired_name.strip_edges()
+	if desired_name.is_empty():
+		if _fallback.strip_edges().is_empty():
+			desired_name = "Element"
+		else:
+			desired_name = _fallback.strip_edges()
+	
+	if not has_text_on_tree(desired_name, 0, tree, skip_item):
+		return desired_name
+	
+	var edited_name: String = desired_name.strip_edges()
+	var base: String = edited_name
+	var trailing_data: Dictionary = StringUtils.get_trailing_integer(desired_name)
+	var iteration: int = trailing_data["integer"]
+	if trailing_data["has_integer"]:
+		base = base.trim_suffix(str(iteration))
 	
 	while has_text_on_tree(edited_name, 0, tree, skip_item):
 		iteration += 1
-		edited_name = desired_name + str(iteration)
+		edited_name = base + str(iteration)
 	
 	return edited_name
 

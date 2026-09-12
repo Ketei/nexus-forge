@@ -1,3 +1,4 @@
+@tool
 class_name NFEditorDialogSyntaxHighlighter
 extends SyntaxHighlighter
 
@@ -10,22 +11,20 @@ var _use_tokens: Dictionary[String, bool] = {}
 var match_unused_under_any: bool = false
 
 
-func _init() -> void:
-	if regex_engine == null:
-		regex_engine = RegEx.new()
-		regex_engine.compile("\\{(\\![a-zA-Z\\_][a-zA-Z0-9\\_]*(?:\\|[^\\}]+)?|(?!\\!)[^\\}]+)\\}")
-	
-	if _token_colors.is_empty():
-		_token_colors = {
+static func _static_init() -> void:
+	regex_engine = RegEx.new()
+	regex_engine.compile("\\{(\\![a-zA-Z\\_][a-zA-Z0-9\\_]*(?:\\|[^\\}]+)?|(?!\\!)[^\\}]+)\\}")
+	_token_colors = {
 			"!": Color("57b3fa"), # Methods
 			"$": Color("41ffb1"), # Variables
 			"&": Color("ffeda1"), # Format Strings
 			"?": Color("ff7085"), # Random Picks
 			"*": Color("d0afff")} # Everything Else
-	
-	if _use_tokens.is_empty():
-		for token in _token_colors.keys():
-			_use_tokens[token] = true
+
+
+func _init() -> void:
+	for token in _token_colors.keys():
+		_use_tokens[token] = true
 
 
 func _get_line_syntax_highlighting(line: int) -> Dictionary:

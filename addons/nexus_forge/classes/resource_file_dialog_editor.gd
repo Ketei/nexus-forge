@@ -6,13 +6,16 @@ signal dialog_finished(success: bool, resource_path: String)
 
 
 var expected_extension: String = "tres"
+var extension_name: String = "Resources"
 
-
-func _ready() -> void:
-	add_filter("*.tres", "Resources")
+func _init() -> void:
 	access = ACCESS_RESOURCES
 	size = Vector2i(850, 600)
 	initial_position = WINDOW_INITIAL_POSITION_CENTER_MAIN_WINDOW_SCREEN
+
+
+func _ready() -> void:
+	add_filter("*." + expected_extension, extension_name)
 	file_selected.connect(on_file_selected)
 	canceled.connect(on_canceled)
 

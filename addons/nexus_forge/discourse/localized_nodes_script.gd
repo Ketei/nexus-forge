@@ -81,9 +81,9 @@ func _on_node_edited() -> void:
 
 
 func clear_nodes() -> void:
-	for node:TreeItem in [_dialog_tree, _options_tree, _text_tree]:
-		for item in node.get_children():
-			item.free()
+	for node in all_nodes.values():
+		node.free()
+	all_nodes.clear()
 
 
 func create_dialog_node(node_name: String, node: DiscourseGraphNode) -> void:

@@ -23,11 +23,18 @@ enum DiscourseFileMenuID {
 	PLAY_CURRENT_DIALOG,
 	DISPLAY_DIALOG_ID_FIELD,
 	RECENT_OPEN_FILES,
+	EXPORT_NODES_CSV,
+	EXPORT_PHRASES_JSON,
+	IMPORT_NODES_CSV,
+	IMPORT_PHRASES_JSON,
+	EXPORT_MENU,
+	IMPORT_MENU,
 	}
 # ------------------
 
 const TEXT_CODE_EDITOR = preload("res://addons/nexus_forge/discourse/discourse_text_editor.tscn")
 const BracketHandler = preload("res://addons/nexus_forge/discourse/textedit_bracket_handler.gd")
+const PhrasesSyntaxHighlither = preload("res://addons/nexus_forge/discourse/discourse_phrases_syntax_highlighter.gd")
 const RECENT_FILE_AMOUNT_MAX: int = 10
 # Used on Phrases only
 const MAX_LINES: int = 3
@@ -141,14 +148,9 @@ func ready_plugin(base_locale: String = "") -> void:
 	if text_editor.visible:
 		text_editor.hide()
 	
-	var def_highlighter: NFEditorDialogSyntaxHighlighter = NFEditorDialogSyntaxHighlighter.new()
-	def_highlighter.set_use_token("&", false)
-	def_highlighter.set_use_token("?", false)
-	def_highlighter.set_use_token("*", false)
-	
 	default_case_edt.set_script(BracketHandler)
 	default_case_edt.enter_shifts_focus = true
-	default_case_edt.syntax_highlighter = def_highlighter
+	default_case_edt.syntax_highlighter = PhrasesSyntaxHighlither.new()
 	default_case_edt.set_meta(&"old_value", "")
 	
 	dialog_id_ln_edt.set_meta(&"old_value", "")
@@ -177,6 +179,8 @@ func ready_plugin(base_locale: String = "") -> void:
 	var dialogs_submenu: PopupMenu = PopupMenu.new()
 	var data_submenu: PopupMenu = PopupMenu.new()
 	var setting_submenu: PopupMenu = PopupMenu.new()
+	var export_submenu: PopupMenu = PopupMenu.new()
+	var import_submenu: PopupMenu = PopupMenu.new()
 	_recently_opened_popup = PopupMenu.new()
 	
 	_recently_opened_popup.size = Vector2.ZERO
@@ -187,6 +191,8 @@ func ready_plugin(base_locale: String = "") -> void:
 	dialogs_submenu.add_theme_constant_override(&"icon_max_width", 16)
 	data_submenu.add_theme_constant_override(&"icon_max_width", 16)
 	setting_submenu.add_theme_constant_override(&"icon_max_width", 16)
+	export_submenu.add_theme_constant_override(&"icon_max_width", 16)
+	import_submenu.add_theme_constant_override(&"icon_max_width", 16)
 	node_popup.add_theme_constant_override(&"icon_max_width", 16)
 	
 	dialogs_submenu.add_icon_item(load("res://addons/nexus_forge/icons/speech_bubble.svg"), "Dialog", DiscourseGraphNode.DialogueNodeType.DIALOG)
@@ -228,6 +234,20 @@ func ready_plugin(base_locale: String = "") -> void:
 	setting_submenu.add_icon_item(load("res://addons/nexus_forge/icons/gear_icon.png"), "Dialog", DiscourseGraphNode.DialogueNodeType.SETTINGS_DIALOG)
 	setting_submenu.add_icon_item(load("res://addons/nexus_forge/icons/gear_icon.png"), "Character", DiscourseGraphNode.DialogueNodeType.SETTINGS_CHARACTER)
 	setting_submenu.add_icon_item(load("res://addons/nexus_forge/icons/gear_icon.png"), "Option", DiscourseGraphNode.DialogueNodeType.SETTINGS_OPTION)
+	
+	export_submenu.add_item(
+			"Node Localization (.csv)",
+			DiscourseFileMenuID.EXPORT_NODES_CSV)
+	export_submenu.add_item(
+			"Phrases Localization (.json)",
+			DiscourseFileMenuID.EXPORT_PHRASES_JSON)
+	
+	import_submenu.add_item(
+			"Node Localization (.csv)",
+			DiscourseFileMenuID.IMPORT_NODES_CSV)
+	import_submenu.add_item(
+			"Phrases Localization (.json)",
+			DiscourseFileMenuID.IMPORT_PHRASES_JSON)
 	
 	node_popup.add_submenu_node_item(
 		"Conversation",
@@ -304,6 +324,14 @@ func ready_plugin(base_locale: String = "") -> void:
 		get_theme_icon("Translation", "EditorIcons"),
 		"Localization Window",
 		DiscourseFileMenuID.LOCALIZATION_WINDOW)
+	file_popup.add_submenu_node_item(
+			"Export",
+			export_submenu,
+			DiscourseFileMenuID.EXPORT_MENU)
+	file_popup.add_submenu_node_item(
+			"Import",
+			import_submenu,
+			DiscourseFileMenuID.IMPORT_MENU)
 	file_popup.add_item(
 		"Set file locale group",
 		DiscourseFileMenuID.SET_LOCALE_GROUP)
@@ -353,6 +381,16 @@ func ready_plugin(base_locale: String = "") -> void:
 	file_popup.set_item_disabled(
 		file_popup.get_item_index(
 			DiscourseFileMenuID.LOCALIZATION_WINDOW),
+		true)
+	
+	file_popup.set_item_disabled(
+		file_popup.get_item_index(
+			DiscourseFileMenuID.EXPORT_MENU),
+		true)
+	
+	file_popup.set_item_disabled(
+		file_popup.get_item_index(
+			DiscourseFileMenuID.IMPORT_MENU),
 		true)
 	
 	play_previewer.icon = get_theme_icon("Play", "EditorIcons")
@@ -442,6 +480,8 @@ func ready_plugin(base_locale: String = "") -> void:
 	node_popup.id_pressed.connect(_on_create_dialog_id_pressed)
 	close_localizer_btn.pressed.connect(_on_switch_window_pressed)
 	file_popup.id_pressed.connect(_on_file_menu_id_pressed)
+	export_submenu.id_pressed.connect(_on_file_menu_id_pressed)
+	import_submenu.id_pressed.connect(_on_file_menu_id_pressed)
 	# --------------------------------------------------------
 	
 	open_btn.pressed.connect(_on_open_conversation_pressed)
@@ -893,6 +933,16 @@ func set_conversation_options_enabled(are_enabled: bool) -> void:
 			DiscourseFileMenuID.LOCALIZATION_WINDOW),
 			disabled)
 	
+	file_popup.set_item_disabled(
+		file_popup.get_item_index(
+			DiscourseFileMenuID.EXPORT_MENU),
+			disabled)
+	
+	file_popup.set_item_disabled(
+		file_popup.get_item_index(
+			DiscourseFileMenuID.IMPORT_MENU),
+			disabled)
+	
 	_conversation_options_disabled = disabled
 
 
@@ -985,6 +1035,263 @@ func _on_file_menu_id_pressed(id: int) -> void:
 			_on_display_dialog_id_toggled(display)
 		DiscourseFileMenuID.LOCALIZATION_WINDOW:
 			_on_switch_window_pressed()
+		DiscourseFileMenuID.EXPORT_NODES_CSV:
+			var dialog: FileDialog = load("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
+			dialog.expected_extension = "csv"
+			dialog.extension_name = "CSV Localization"
+			dialog.file_mode = dialog.FILE_MODE_SAVE_FILE
+			dialog.access = dialog.ACCESS_FILESYSTEM
+			dialog.title = "Export CSV"
+			EditorInterface.popup_dialog_centered(dialog)
+			var result: Array = await dialog.dialog_finished
+			dialog.queue_free()
+			if not result[0]:
+				return
+			
+			var export_path: String = result[1]
+			var export_data: Dictionary = export_current_dialog_csv_to(export_path)
+			if export_data["success"]:
+				NFPluginGameHandler._log_msg(
+						"discourse - editor",
+						"Localization CSV Exported",
+						NFPluginGameHandler._LogLevel.INFO)
+			else:
+				NFPluginGameHandler._log_msg(
+						"discourse - editor",
+						"Couldn't export data to '%s'. Error: " % [export_path, export_data["msg"]],
+						NFPluginGameHandler._LogLevel.ERROR)
+		DiscourseFileMenuID.IMPORT_NODES_CSV:
+			var dialog: FileDialog = load("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
+			dialog.expected_extension = "csv"
+			dialog.extension_name = "CSV Localization"
+			dialog.file_mode = dialog.FILE_MODE_OPEN_FILE
+			dialog.access = dialog.ACCESS_FILESYSTEM
+			dialog.title = "Import CSV"
+			EditorInterface.popup_dialog_centered(dialog)
+			var result: Array = await dialog.dialog_finished
+			dialog.queue_free()
+			if not result[0]:
+				return
+			
+			var import_path: String = result[1]
+			var import_status: Dictionary = import_csv_data_from(import_path)
+			
+			if not import_status["success"]:
+				NFPluginGameHandler._log_msg(
+						"discourse - editor",
+						"Couldn't import data from '%s'. Error: " % [import_path, import_status["msg"]],
+						NFPluginGameHandler._LogLevel.ERROR)
+				return
+			
+			var import_data: Dictionary = import_status["data"]
+			if import_data.is_empty():
+				return
+			discourse_graph_edit.update_localization_data(
+					active_conversation,
+					current_locale)
+			var previous_state: Dictionary[StringName, Dictionary] = active_conversation.localization.duplicate(true)
+			active_conversation._set_csv_data(import_data)
+			var new_state: Dictionary[StringName, Dictionary] = active_conversation.localization.duplicate(true)
+			undo.create_action("Import CSV Localization")
+			undo.add_do_method(_do_update_node_localization.bind(new_state))
+			undo.add_undo_method(_do_update_node_localization.bind(previous_state))
+			undo.commit_action(false)
+			_do_update_node_localization(new_state, false)
+			_on_conversation_changed()
+		DiscourseFileMenuID.EXPORT_PHRASES_JSON:
+			var dialog: FileDialog = load("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
+			dialog.expected_extension = "json"
+			dialog.extension_name = "JSON Localization"
+			dialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
+			dialog.access = FileDialog.ACCESS_FILESYSTEM
+			dialog.title = "Export JSON"
+			EditorInterface.popup_dialog_centered(dialog)
+			var result: Array = await dialog.dialog_finished
+			dialog.queue_free()
+			if not result[0]:
+				return
+			
+			var export_path: String = result[1]
+			var json_writer: FileAccess = FileAccess.open(export_path, FileAccess.WRITE)
+			if json_writer == null:
+				NFPluginGameHandler._log_msg(
+						"discourse - editor",
+						"Couldn't export data to '%s'. Error: FileAccess error code %d" % [export_path, FileAccess.get_open_error()],
+						NFPluginGameHandler._LogLevel.ERROR)
+				return
+			
+			var success: bool = json_writer.store_string(active_conversation.phrases_to_json_string())
+			json_writer.close()
+			
+			if success:
+				NFPluginGameHandler._log_msg(
+						"discourse - editor",
+						"Localization JSON Exported",
+						NFPluginGameHandler._LogLevel.INFO)
+			else:
+				NFPluginGameHandler._log_msg(
+						"discourse - editor",
+						"Error writing file at '%s'" % export_path,
+						NFPluginGameHandler._LogLevel.INFO)
+		DiscourseFileMenuID.IMPORT_PHRASES_JSON:
+			var dialog: FileDialog = load("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
+			dialog.expected_extension = "json"
+			dialog.extension_name = "JSON Localization"
+			dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
+			dialog.access = FileDialog.ACCESS_FILESYSTEM
+			dialog.title = "Import JSON"
+			EditorInterface.popup_dialog_centered(dialog)
+			var result: Array = await dialog.dialog_finished
+			dialog.queue_free()
+			if not result[0]:
+				return
+			
+			var import_path: String = result[1]
+			var file_string: String = FileAccess.get_file_as_string(import_path)
+			if file_string.is_empty():
+				var err: int = FileAccess.get_open_error()
+				if err != OK:
+					NFPluginGameHandler._log_msg(
+							"discourse - editor",
+							"Couldn't import data from '%s'. Error: FileAccess error code %d" % [import_path, err],
+							NFPluginGameHandler._LogLevel.ERROR)
+				return
+			
+			var json: JSON = JSON.new()
+			
+			if json.parse(file_string) != OK:
+				NFPluginGameHandler._log_msg(
+						"discourse - editor",
+						"Couldn't parse data from '%s'. Error: '%s' (line: %d)" % [import_path, json.get_error_message(), json.get_error_line()],
+						NFPluginGameHandler._LogLevel.ERROR)
+				return
+			var data_type: int = typeof(json.data)
+			if data_type != TYPE_DICTIONARY:
+				NFPluginGameHandler._log_msg(
+						"discourse - editor",
+						"Parsed JSON data is wrong format.",
+						NFPluginGameHandler._LogLevel.ERROR)
+				return
+			
+			if -1 < phrases_lang_menu.selected:
+				save_phrase_keys(phrases_lang_menu.get_selected_metadata())
+			var previous_state: Dictionary = active_conversation.format_strings.duplicate(true)
+			active_conversation.import_phrase_data(json.data)
+			var new_state: Dictionary = active_conversation.format_strings.duplicate(true)
+			undo.create_action("Import JSON Localization")
+			undo.add_do_method(_do_update_phrases_localization.bind(new_state))
+			undo.add_undo_method(_do_update_phrases_localization.bind(previous_state))
+			undo.commit_action(false)
+			_do_update_phrases_localization(new_state, false)
+			_on_conversation_changed()
+
+
+func _do_update_node_localization(to: Dictionary, do_assign: bool = true) -> void:
+	if do_assign:
+		active_conversation.localization = to.duplicate(true)
+	var data: Dictionary = active_conversation.get_display_localization_data(current_locale)
+	
+	update_localization_display(data)
+	var selected_node: StringName = localization_nodes_tree.get_active_node_uuid()
+	if selected_node.is_empty():
+		return
+	var selected_locale: String = languages_tree.get_active_locale()
+	if selected_locale.is_empty():
+		return
+	
+	var node: DiscourseGraphNode = discourse_graph_edit.get_discourse_node(selected_node)
+	if node == null:
+		return
+	
+	if node.node_type == DiscourseGraphNode.DialogueNodeType.DIALOG or node.node_type == DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
+		var base_text: String = ""
+		var new_text: String = ""
+		
+		new_text = DictUtils.get_nested_value(
+				active_conversation.localization,
+				[selected_node, "locales", selected_locale],
+				"",
+				true)
+		
+		base_text = DictUtils.get_nested_value(
+				active_conversation.localization,
+				[selected_node, "locales", base_language],
+				base_text_edt.text,
+				true)
+		base_text_edt.text = base_text
+		translation_txt_box.text = new_text
+		
+		if dialog_scene_previewer.visible:
+			dialog_previewer.set_dialog(new_text)
+	elif node.node_type == DiscourseGraphNode.DialogueNodeType.CHOICES:
+		var localized_options: Array[String] = []
+		var base_options: Array[String] = []
+		
+		localized_options.assign(DictUtils.get_nested_value(
+				active_conversation.localization,
+				[selected_node, "locales", selected_locale],
+				[],
+				true))
+		
+		base_options.assign(DictUtils.get_nested_value(
+				active_conversation.localization,
+				[selected_node, "locales", base_language],
+				[],
+				true))
+		
+		clear_localized_options()
+		var choice_size: int = node.choice_count()
+		
+		if base_options.size() != choice_size:
+			base_options.resize(choice_size)
+		
+		var localized_size: int = localized_options.size()
+		
+		if localized_size < choice_size:
+			localized_options.append_array(base_options.slice(localized_size))
+		
+		for option_idx in range(base_options.size()):
+			create_choice_node(
+					base_options[option_idx],
+					localized_options[option_idx])
+		
+		if dialog_scene_previewer.visible:
+			dialog_previewer.set_choices(localized_options)
+
+
+func _do_update_phrases_localization(to: Dictionary, do_assign: bool = true) -> void:
+	if do_assign:
+		active_conversation.format_strings = to.duplicate(true)
+	set_phrases_locale(current_locale) # Sets the phrases, not the cases
+	if selected_phrase_index < 0 or phrases_lang_menu.selected < 0 or argument_opt_btn.selected < 0:
+		return
+	
+	var key: StringName = %PhrasesEntries.get_child(selected_phrase_index).get_meta(&"phrase_key")
+	var locale: String = phrases_lang_menu.get_selected_metadata()
+	var current_format: String = argument_opt_btn.get_item_text(argument_opt_btn.selected)
+	var all_cases: Array[String] = active_conversation.get_format_string_cases(
+			key,
+			locale,
+			current_format)
+	var case_nodes: Dictionary[String, Control] = {}
+	for idx in range(1, %PhraseCasesEntries.get_child_count()):
+		var case_container: Control = %PhraseCasesEntries.get_child(idx)
+		var case_text: String = case_container.get_child(1).get_meta(&"old_value")
+		case_nodes[case_text] = case_container
+	
+	default_case_edt.text = active_conversation.get_format_string_default_case(
+			key,
+			locale,
+			current_format)
+	for case_key in all_cases:
+		if not case_nodes.has(case_key):
+			continue
+		var val: TextEdit = case_nodes[case_key].get_child(2)
+		val.text = active_conversation.get_format_string_case(
+				key,
+				locale,
+				current_format,
+				case_key)
 
 
 func _on_create_dialog_id_pressed(id: int) -> void:
@@ -1200,7 +1507,7 @@ func _on_new_folder_button_pressed() -> void:
 		else:
 			parent_item = discourse_nodes_tree.get_root()
 	
-	var new_name: String = get_unique_name_on_tree(
+	var new_name: String = discourse_nodes_tree.get_unique_name_on_tree(
 		parent_item,
 		"NewGroup")
 	
@@ -2216,15 +2523,15 @@ func _on_discourse_node_created(node: DiscourseGraphNode) -> void:
 
 
 
-func get_unique_name_on_tree(on_tree: TreeItem, desired_name: String, skip_item: TreeItem = null) -> String:
-	var edited_name: String = desired_name
-	var iteration: int = 0
-	
-	while has_text_on_tree(on_tree, edited_name, 0, skip_item):
-		iteration += 1
-		edited_name = desired_name + str(iteration)
-	
-	return edited_name
+#func get_unique_name_on_tree(on_tree: TreeItem, desired_name: String, skip_item: TreeItem = null) -> String:
+	#var edited_name: String = desired_name
+	#var iteration: int = 0
+	#
+	#while has_text_on_tree(on_tree, edited_name, 0, skip_item):
+		#iteration += 1
+		#edited_name = desired_name + str(iteration)
+	#
+	#return edited_name
 
 
 func has_text_on_tree(on_tree: TreeItem, text: String, column: int, skip_item: TreeItem = null) -> bool:
@@ -2249,7 +2556,7 @@ func set_up_node_structure(structure: Array, level: TreeItem, _map: Dictionary[S
 		else:
 			var folder_name: String = discourse_nodes_tree.get_unique_name_on_tree(
 					level,
-					item["name"] if item.has("name") else "new_folder")
+					item["name"] if item.has("name") else "Group")
 			var new_folder: TreeItem = discourse_nodes_tree.create_folder(
 					folder_name,
 					level,
@@ -2316,6 +2623,7 @@ func display_conversation(conversation: EditorDiscourseDialog, with_locale: Stri
 			connection_deaf_nodes.append(d_node)
 		if node_relationships.has(node_uuid):
 			discourse_graph_edit.set_node_in_frame(node_stnm_uuid, node_relationships[node_uuid].get_frame_uuid())
+		
 		graph_map[node_uuid] = d_node
 		
 		var new_connections: Array[Dictionary] = discourse_graph_edit.get_connection_dictionary(
@@ -2930,6 +3238,7 @@ func _on_edit_cases_pressed(field: Control) -> void:
 	var phrase_key: String = field.get_meta(&"phrase_key")
 	var clean_string: String = field.get_child(2).text.strip_edges()
 	var locale_code: String = phrases_lang_menu.get_selected_metadata()
+	var highlight_color: Color = Color("d0afff")
 	
 	if locale_code.is_empty():
 		NFPluginGameHandler._log_msg(
@@ -2967,8 +3276,16 @@ func _on_edit_cases_pressed(field: Control) -> void:
 	argument_opt_btn.clear()
 	clear_cases()
 	
-	for existing_key in EditorDiscourseDialog.get_phrase_arguments(clean_string, true):
-		argument_opt_btn.add_item(existing_key)
+	var phrases: Array[String] = EditorDiscourseDialog.get_phrase_arguments(clean_string)
+	var unbracketed_phrases: Array[String] = []
+	default_case_edt.syntax_highlighter.clear_tokens()
+	
+	for bracket_match in phrases:
+		default_case_edt.syntax_highlighter.add_token(bracket_match, highlight_color)
+		var unbracket: String = bracket_match.trim_prefix("{").trim_suffix("}")
+		argument_opt_btn.add_item(unbracket)
+	
+	default_case_edt.syntax_highlighter.compile_highlighter()
 	
 	selected_phrase_index = field.get_index()
 	default_case_edt.editable = 0 < argument_opt_btn.item_count
@@ -2985,7 +3302,8 @@ func _on_edit_cases_pressed(field: Control) -> void:
 			for custom_case in active_conversation.format_strings[phrase_key][locale_code]["format"][argument_format]["cases"].keys():
 				create_new_phrase_case(
 					custom_case,
-					active_conversation.get_format_string_case(phrase_key, locale_code, argument_format, custom_case))
+					active_conversation.get_format_string_case(phrase_key, locale_code, argument_format, custom_case),
+					phrases)
 	
 	case_box_container.visible = true
 	key_box_container.visible = false
@@ -3183,17 +3501,22 @@ func _on_phrase_menu_id_pressed(id: int, field: TextEdit) -> void:
 		_on_phrase_field_code_editor_requested(field)
 
 
-func create_new_phrase_case(case: String = "", case_text: String = "") -> void:
+func create_new_phrase_case(case: String = "", case_text: String = "", highlihgts: Array = []) -> void:
 	var case_container: HBoxContainer = HBoxContainer.new()
 	var erase_case_btn: Button = Button.new()
 	var case_line: LineEdit = LineEdit.new()
 	var case_editor: TextEdit = BracketHandler.new()
 	var expand_case: Button = Button.new()
-	var highlighter: NFEditorDialogSyntaxHighlighter = NFEditorDialogSyntaxHighlighter.new()
+	var highlighter: SyntaxHighlighter = PhrasesSyntaxHighlither.new()
 	var valid_id: String = get_valid_phrase_case_key(case)
+	var highlight_color: Color = Color("d0afff")
 	
-	highlighter.set_use_token("*", false)
-	highlighter.set_use_token("?", false)
+	for word in highlihgts:
+		if typeof(word) != TYPE_STRING:
+			continue
+		highlighter.add_token(word, highlight_color)
+	
+	highlighter.compile_highlighter()
 	
 	case_editor.text = case_text
 	case_editor.enter_shifts_focus = true
@@ -3426,31 +3749,17 @@ func save_current_phrase_key(locale_code: String, format: String) -> void:
 		locale_code,
 		format)
 	
-	# Fixing the cases:
 	for case_idx in range(1, %PhraseCasesEntries.get_child_count()):
 		var case_container: HBoxContainer = %PhraseCasesEntries.get_child(case_idx)
 		if case_container.is_queued_for_deletion():
 			continue
-		var desired_key: String = case_container.get_child(1).text.strip_edges()
-		var case_key: LineEdit = case_container.get_child(1)
-		case_key.text = case_key.text.strip_edges()
-		var trailing_int: Dictionary = StringUtils.get_trailing_integer(desired_key)
-		var iteration: int = trailing_int["integer"]
-		var modified: String = desired_key
-		if trailing_int["has_integer"]:
-			desired_key = desired_key.trim_suffix(str(iteration))
-		
-		while used_keys.has(modified):
-			iteration += 1
-			modified = desired_key + str(iteration)
-		
-		case_container.get_child(1).text = modified
+		var desired_key: String = case_container.get_child(1).get_meta(&"old_value")
 		
 		active_conversation.set_format_string_case(
 			phrase_key,
 			locale_code,
 			format,
-			modified,
+			desired_key,
 			case_container.get_child(2).text)
 
 
@@ -3458,47 +3767,24 @@ func save_phrase_keys(locale: String) -> void:
 	if locale.is_empty():
 		return
 	
-	var claimed_keys: Dictionary[String, Variant] = {}
+	var used_keys: Dictionary[String, Variant] = {}
 	
 	for entry in %PhrasesEntries.get_children():
 		if entry.is_queued_for_deletion():
 			continue
 		
-		var desired_key: String = entry.get_child(1).text.strip_edges()
-		
-		if desired_key.is_empty():
-			desired_key = "PHRASE"
-		
-		var trailing_int: Dictionary = StringUtils.get_trailing_integer(desired_key)
-		var current_loop: int = trailing_int["integer"]
-		var modified: String = desired_key
-		
-		if trailing_int["has_integer"]:
-			desired_key = desired_key.trim_suffix(str(current_loop))
-		
-		while claimed_keys.has(modified):
-			current_loop += 1
-			modified = desired_key + str(current_loop)
-		
-		var old_key: String = entry.get_meta(&"phrase_key")
-		var new_key: String = modified
-		claimed_keys[new_key] = null
-		
-		if new_key != old_key:
-			active_conversation.format_strings[new_key] = active_conversation.format_strings[old_key]
-			active_conversation.format_strings.erase(old_key)
-		
-		entry.set_meta(&"phrase_key", new_key)
-		entry.get_child(1).text = modified
+		var entry_key: String = entry.get_meta(&"phrase_key")
 		
 		active_conversation.set_format_string(
-			new_key,
+			entry_key,
 			entry.get_child(2).text,
 			locale)
+		
+		used_keys[entry_key] = null
 	
 	# Remove keys no longer used
 	for existing_key in active_conversation.format_strings.keys():
-		if claimed_keys.has(existing_key):
+		if used_keys.has(existing_key):
 			continue
 		active_conversation.format_strings.erase(existing_key)
 	
@@ -3506,6 +3792,9 @@ func save_phrase_keys(locale: String) -> void:
 	# assigned.
 	if -1 < argument_opt_btn.selected:
 		save_current_phrase_key(locale, argument_opt_btn.get_item_text(argument_opt_btn.selected))
+	
+	# We clean cases no longer used.
+	
 
 
 func set_phrase_format_string(phrase_key: String, locale: String, format_string: String) -> void:
@@ -3972,6 +4261,105 @@ func _get_file_current_state(file_id: int) -> Dictionary:
 			"zoom": res.zoom,
 			"scroll_offset": res.scroll_offset,
 			"collapsed_state": res.collapsed_state.duplicate()}
+
+
+func export_current_dialog_csv_to(file_path: String) -> Dictionary:
+	if active_conversation == null:
+		return {"success": false, "msg": "Active Dialog is Nil"}
+	
+	var file: FileAccess = FileAccess.open(file_path, FileAccess.WRITE)
+	if file == null:
+		return {"success": false, "msg": "FileAccess error code %d" % FileAccess.get_open_error()}
+	
+	var csv_data: Dictionary = active_conversation._get_data_for_csv()
+	var locale_codes: Array[String] = active_conversation.get_used_locales()
+	var node_keys: Array[String] = []
+	node_keys.assign(csv_data.keys())
+	node_keys.sort_custom(
+			func(a:String,b:String) -> bool:
+				return a.naturalnocasecmp_to(b) < 0)
+	
+	if not active_conversation.locale_map.has(base_language):
+		locale_codes.append(base_language)
+	
+	locale_codes.sort_custom(
+			func(a:String,b:String) -> bool:
+				if a == base_language:
+					return true
+				elif b == base_language:
+					return false
+				else:
+					return a.naturalnocasecmp_to(b) < 0)
+	
+	var headers: PackedStringArray = ["ID"]
+	headers.append_array(locale_codes)
+	
+	file.store_csv_line(headers)
+	
+	for node_id in node_keys:
+		var row_data: PackedStringArray = [node_id]
+		for locale in locale_codes:
+			var text: String = csv_data[node_id].get(locale, "")
+			row_data.append(text)
+		file.store_csv_line(row_data)
+	file.close()
+	return {"success": true, "msg": ""}
+
+
+func import_csv_data_from(file_path: String) -> Dictionary:
+	var file: FileAccess = FileAccess.open(file_path, FileAccess.READ)
+	if file == null:
+		return {"success": false, "msg": "FileAccess Error %d" % FileAccess.get_open_error(), "data": {}}
+	var headers: PackedStringArray = file.get_csv_line()
+	if headers.size() < 2:
+		file.close()
+		return {"success": true, "msg": "", "data": {}}
+	
+	var csv_data: Dictionary = {}
+	var locales: Array[String] = []
+	
+	for locale_code in headers.slice(1):
+		var normal_locale: String = TranslationServer.standardize_locale(locale_code)
+		locales.append(normal_locale)
+	var columns: int = locales.size() + 1
+	
+	var current_row: int = 1
+	while not file.eof_reached():
+		current_row += 1
+		var row: PackedStringArray = file.get_csv_line()
+		var row_length: int = row.size()
+		if row_length < 2:
+			continue
+		
+		var id: String = row[0].strip_edges()
+		if id.is_empty():
+			NFPluginGameHandler._log_msg(
+					"discourse - editor",
+					"Row %d contains an empty ID. Skipping" % current_row,
+					NFPluginGameHandler._LogLevel.WARNING)
+			continue
+		elif csv_data.has(id):
+			NFPluginGameHandler._log_msg(
+					"discourse - editor",
+					"Row %d uses ID '%s' declared on a previou row. Skipping" % [current_row, id],
+					NFPluginGameHandler._LogLevel.ERROR)
+			continue
+			
+		var row_dict: Dictionary = {}
+		if row_length < columns:
+			row.resize(columns)
+		
+		var row_idx: int = 0
+		for locale_code in locales:
+			row_idx += 1
+			if locale_code.is_empty():
+				continue
+			var text: String = row[row_idx]
+			row_dict[locale_code] = text
+		csv_data[id] = row_dict
+	file.close()
+	return {"success": true, "msg": "", "data": csv_data}
+
 
 # --- UndoRedo ---
 # --- Phrases ---

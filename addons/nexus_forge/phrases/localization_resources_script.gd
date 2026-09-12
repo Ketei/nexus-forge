@@ -4,6 +4,7 @@ extends PanelContainer
 signal code_editor_variables_requested(path: String)
 
 const BRACKET_HANDLER = preload("res://addons/nexus_forge/discourse/textedit_bracket_handler.gd")
+const PhrasesSyntaxHighlighter = preload("res://addons/nexus_forge/discourse/discourse_phrases_syntax_highlighter.gd")
 const MAX_LINES: int = 3
 const EXTRA_Y_PADDING: int = 8
 const MAX_UNDO_STEPS: int = 50
@@ -79,10 +80,7 @@ func ready_plugin() -> void:
 	expand_default_btn.icon = get_theme_icon("DistractionFree", "EditorIcons")
 	expand_default_btn.pressed.connect(_on_open_focus_editor_pressed.bind(default_case_text, false))
 	
-	var def_highlighter: NFEditorDialogSyntaxHighlighter = NFEditorDialogSyntaxHighlighter.new()
-	def_highlighter.set_use_token("&", false)
-	def_highlighter.set_use_token("?", false)
-	def_highlighter.match_unused_under_any = true
+	var def_highlighter: SyntaxHighlighter = PhrasesSyntaxHighlighter.new()
 	default_case_text.set_script(BRACKET_HANDLER)
 	default_case_text.syntax_highlighter = def_highlighter
 	default_case_text.enter_shifts_focus = true
@@ -217,6 +215,18 @@ func _on_format_item_selected(idx: int) -> void:
 	var phrase_key: StringName = StringName(%EntriesContainer.get_child(selected_key_index).get_child(1).get_meta(&"old_value"))
 	var format_argument: String = argument_opt_btn.get_item_text(idx)
 	var default_case: String = map.get_case_default(phrase_key, format_argument)
+	var valid_formats: Array[String] = []
+	var format_color: Color = Color("d0afff")
+	
+	default_case_text.syntax_highlighter.clear_tokens()
+	
+	for format in map.get_formats(phrase_key):
+		var phrase_match: String = "{" + format + "}"
+		default_case_text.syntax_highlighter.add_token(phrase_match, format_color)
+		valid_formats.append(phrase_match)
+	
+	default_case_text.syntax_highlighter.compile_highlighter()
+	
 	default_case_text.text = default_case
 	default_case_text.set_meta(&"old_value", default_case)
 	
@@ -225,7 +235,8 @@ func _on_format_item_selected(idx: int) -> void:
 	for case in map._phrases[phrase_key]["formats"][format_argument]["cases"].keys():
 		create_case_entry(
 				case,
-				map.get_case(phrase_key, format_argument, case))
+				map.get_case(phrase_key, format_argument, case),
+				valid_formats)
 	
 	selected_format = format_argument
 
@@ -324,31 +335,44 @@ func _on_edit_cases_pressed(container: HBoxContainer) -> void:
 	selected_key_index = container.get_index()
 	
 	var phrase_key: StringName = container.get_child(1).get_meta(&"old_value")
+	var format_color: Color = Color("d0afff")
 	
 	if not map.has_entry(phrase_key) or map.get_entry(phrase_key) != text_line.text:
 		map.set_entry(phrase_key, text_line.text)
 	
 	argument_opt_btn.clear()
 	
-	for existing_key in map.get_formats(phrase_key):
+	var existing_formats: Array[String] = map.get_formats(phrase_key)
+	var bracketed_formats: Array[String] = []
+	default_case_text.syntax_highlighter.clear_tokens()
+	
+	for existing_key in existing_formats:
+		var brack_form: String = "{" + existing_key + "}"
+		bracketed_formats.append(brack_form)
+		default_case_text.syntax_highlighter.add_token(brack_form, format_color)
 		argument_opt_btn.add_item(existing_key)
+	
+	default_case_text.syntax_highlighter.compile_highlighter()
 	
 	default_case_text.editable = 0 < argument_opt_btn.item_count
 	argument_opt_btn.disabled = not default_case_text.editable
 	new_case_btn.disabled = argument_opt_btn.disabled
 	
-	if 0 < argument_opt_btn.item_count:
-		var argument_format: String = argument_opt_btn.get_item_text(0)
-		var default_case: String = map.get_case_default(phrase_key, argument_format)
-		argument_opt_btn.select(0)
-		default_case_text.text = default_case
-		default_case_text.set_meta(&"old_value", default_case)
-		_update_choice_textbox_size(default_case_text)
-		for custom_case in map._phrases[phrase_key]["formats"][argument_format]["cases"].keys():
-			create_case_entry(
-					custom_case,
-					map.get_case(phrase_key, argument_format, custom_case))
-		selected_format = argument_format
+	if argument_opt_btn.item_count == 0:
+		return
+	
+	var argument_format: String = argument_opt_btn.get_item_text(0)
+	var default_case: String = map.get_case_default(phrase_key, argument_format)
+	argument_opt_btn.select(0)
+	default_case_text.text = default_case
+	default_case_text.set_meta(&"old_value", default_case)
+	_update_choice_textbox_size(default_case_text)
+	for custom_case in map._phrases[phrase_key]["formats"][argument_format]["cases"].keys():
+		create_case_entry(
+				custom_case,
+				map.get_case(phrase_key, argument_format, custom_case),
+				bracketed_formats)
+	selected_format = argument_format
 
 
 func _on_new_key_field_button_pressed() -> void:
@@ -827,17 +851,21 @@ func close_active_map() -> void:
 	undo = null
 
 
-func create_case_entry(case: String, format: String) -> void:
+func create_case_entry(case: String, format: String, highlights: Array) -> void:
 	var container: HBoxContainer = HBoxContainer.new()
 	var case_line: LineEdit = LineEdit.new()
 	var case_text: TextEdit = BRACKET_HANDLER.new()
 	var erase_btn: Button = Button.new()
-	var highlighter: NFEditorDialogSyntaxHighlighter = NFEditorDialogSyntaxHighlighter.new()
+	var highlighter: SyntaxHighlighter = PhrasesSyntaxHighlighter.new()
 	var expand_text: Button = Button.new()
+	var format_color: Color = Color("d0afff")
 	
-	highlighter.set_use_token("&", false)
-	highlighter.set_use_token("?", false)
-	highlighter.match_unused_under_any = true
+	for token in highlights:
+		if typeof(token) != TYPE_STRING:
+			continue
+		highlighter.add_token(token, format_color)
+	
+	highlighter.compile_highlighter()
 	
 	case_line.text = case
 	case_line.text_changed.connect(_on_case_line_text_changed)
@@ -1498,7 +1526,14 @@ func _do_add_case_entry(phrase_key: String, format: String, case_key: String, ca
 	
 	if argument_opt_btn.selected < 0 or argument_opt_btn.get_item_text(argument_opt_btn.selected) != format:
 		return
-	create_case_entry(case_key, case_result)
+	
+	var all_formats: Array[String] = []
+	
+	for item in map.get_formats(StringName(phrase_key)):
+		var phrase_match: String = "{" + item + "}"
+		all_formats.append(phrase_match)
+	
+	create_case_entry(case_key, case_result, all_formats)
 
 
 func _do_erase_case_entry(phrase_key: String, format: String, case_key: String) -> void:

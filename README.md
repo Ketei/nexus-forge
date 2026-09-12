@@ -106,7 +106,7 @@ Features that are planned to be implemented in the future:
   - [x] Odyssey (Quests)
   - [x] Phrase Maps
 - [ ] **Core:** Implement an automatic mod loader
-- [ ] **Discourse:** Import/Export CSV files for localization
+- [x] **Discourse:** Import/Export CSV files for localization
 - [ ] **Github Wiki:** Rewrite the Wiki and include examples using screenshots/gifs
 - [ ] **GUI:** Improved GUI for smaller resolutions
 
