@@ -1398,7 +1398,8 @@ func phrases_to_json_string() -> String:
 				"format": {}}
 			# We won't trust that the dictionary is completely and correctly
 			# populated, so we populate the correct formats outselves.
-			var args: Array[String] = get_phrase_arguments(base_string)
+			var args: Array[String] = get_phrase_arguments(base_string, true)
+			
 			for form in args:
 				var format_data: Dictionary = {
 					"default": "",

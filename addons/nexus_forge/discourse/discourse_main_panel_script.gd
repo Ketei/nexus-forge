@@ -34,6 +34,7 @@ enum DiscourseFileMenuID {
 
 const TEXT_CODE_EDITOR = preload("res://addons/nexus_forge/discourse/discourse_text_editor.tscn")
 const BracketHandler = preload("res://addons/nexus_forge/discourse/textedit_bracket_handler.gd")
+const PhrasesSyntaxHighlither = preload("res://addons/nexus_forge/discourse/discourse_phrases_syntax_highlighter.gd")
 const RECENT_FILE_AMOUNT_MAX: int = 10
 # Used on Phrases only
 const MAX_LINES: int = 3
@@ -147,14 +148,9 @@ func ready_plugin(base_locale: String = "") -> void:
 	if text_editor.visible:
 		text_editor.hide()
 	
-	var def_highlighter: NFEditorDialogSyntaxHighlighter = NFEditorDialogSyntaxHighlighter.new()
-	def_highlighter.set_use_token("&", false)
-	def_highlighter.set_use_token("?", false)
-	def_highlighter.set_use_token("*", false)
-	
 	default_case_edt.set_script(BracketHandler)
 	default_case_edt.enter_shifts_focus = true
-	default_case_edt.syntax_highlighter = def_highlighter
+	default_case_edt.syntax_highlighter = PhrasesSyntaxHighlither.new()
 	default_case_edt.set_meta(&"old_value", "")
 	
 	dialog_id_ln_edt.set_meta(&"old_value", "")
@@ -3242,6 +3238,7 @@ func _on_edit_cases_pressed(field: Control) -> void:
 	var phrase_key: String = field.get_meta(&"phrase_key")
 	var clean_string: String = field.get_child(2).text.strip_edges()
 	var locale_code: String = phrases_lang_menu.get_selected_metadata()
+	var highlight_color: Color = Color("d0afff")
 	
 	if locale_code.is_empty():
 		NFPluginGameHandler._log_msg(
@@ -3279,8 +3276,16 @@ func _on_edit_cases_pressed(field: Control) -> void:
 	argument_opt_btn.clear()
 	clear_cases()
 	
-	for existing_key in EditorDiscourseDialog.get_phrase_arguments(clean_string, true):
-		argument_opt_btn.add_item(existing_key)
+	var phrases: Array[String] = EditorDiscourseDialog.get_phrase_arguments(clean_string)
+	var unbracketed_phrases: Array[String] = []
+	default_case_edt.syntax_highlighter.clear_tokens()
+	
+	for bracket_match in phrases:
+		default_case_edt.syntax_highlighter.add_token(bracket_match, highlight_color)
+		var unbracket: String = bracket_match.trim_prefix("{").trim_suffix("}")
+		argument_opt_btn.add_item(unbracket)
+	
+	default_case_edt.syntax_highlighter.compile_highlighter()
 	
 	selected_phrase_index = field.get_index()
 	default_case_edt.editable = 0 < argument_opt_btn.item_count
@@ -3297,7 +3302,8 @@ func _on_edit_cases_pressed(field: Control) -> void:
 			for custom_case in active_conversation.format_strings[phrase_key][locale_code]["format"][argument_format]["cases"].keys():
 				create_new_phrase_case(
 					custom_case,
-					active_conversation.get_format_string_case(phrase_key, locale_code, argument_format, custom_case))
+					active_conversation.get_format_string_case(phrase_key, locale_code, argument_format, custom_case),
+					phrases)
 	
 	case_box_container.visible = true
 	key_box_container.visible = false
@@ -3495,17 +3501,22 @@ func _on_phrase_menu_id_pressed(id: int, field: TextEdit) -> void:
 		_on_phrase_field_code_editor_requested(field)
 
 
-func create_new_phrase_case(case: String = "", case_text: String = "") -> void:
+func create_new_phrase_case(case: String = "", case_text: String = "", highlihgts: Array = []) -> void:
 	var case_container: HBoxContainer = HBoxContainer.new()
 	var erase_case_btn: Button = Button.new()
 	var case_line: LineEdit = LineEdit.new()
 	var case_editor: TextEdit = BracketHandler.new()
 	var expand_case: Button = Button.new()
-	var highlighter: NFEditorDialogSyntaxHighlighter = NFEditorDialogSyntaxHighlighter.new()
+	var highlighter: SyntaxHighlighter = PhrasesSyntaxHighlither.new()
 	var valid_id: String = get_valid_phrase_case_key(case)
+	var highlight_color: Color = Color("d0afff")
 	
-	highlighter.set_use_token("*", false)
-	highlighter.set_use_token("?", false)
+	for word in highlihgts:
+		if typeof(word) != TYPE_STRING:
+			continue
+		highlighter.add_token(word, highlight_color)
+	
+	highlighter.compile_highlighter()
 	
 	case_editor.text = case_text
 	case_editor.enter_shifts_focus = true
