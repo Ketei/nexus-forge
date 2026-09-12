@@ -1196,7 +1196,7 @@ func _do_update_node_localization(to: Dictionary, do_assign: bool = true) -> voi
 	var data: Dictionary = active_conversation.get_display_localization_data(current_locale)
 	
 	update_localization_display(data)
-	var selected_node: StringName = languages_tree.get_active_node_uuid()
+	var selected_node: StringName = localization_nodes_tree.get_active_node_uuid()
 	if selected_node.is_empty():
 		return
 	var selected_locale: String = languages_tree.get_active_locale()
@@ -2627,6 +2627,7 @@ func display_conversation(conversation: EditorDiscourseDialog, with_locale: Stri
 			connection_deaf_nodes.append(d_node)
 		if node_relationships.has(node_uuid):
 			discourse_graph_edit.set_node_in_frame(node_stnm_uuid, node_relationships[node_uuid].get_frame_uuid())
+		
 		graph_map[node_uuid] = d_node
 		
 		var new_connections: Array[Dictionary] = discourse_graph_edit.get_connection_dictionary(
