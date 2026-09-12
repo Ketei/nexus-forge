@@ -46,7 +46,6 @@ func _get_line_syntax_highlighting(line: int) -> Dictionary:
 
 
 func add_token(token: String, color: Color) -> void:
-	var escaped_token: String = token
 	_token_matches[token] = color
 
 
