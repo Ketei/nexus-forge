@@ -1090,10 +1090,18 @@ func _on_file_menu_id_pressed(id: int) -> void:
 			var import_data: Dictionary = import_status["data"]
 			if import_data.is_empty():
 				return
+			discourse_graph_edit.update_localization_data(
+					active_conversation,
+					current_locale)
 			var previous_state: Dictionary[StringName, Dictionary] = active_conversation.localization.duplicate(true)
 			active_conversation._set_csv_data(import_data)
 			var new_state: Dictionary[StringName, Dictionary] = active_conversation.localization.duplicate(true)
-			#TODO: Add the UndoRedo action for this using previous and new state.
+			undo.create_action("Import CSV Localization")
+			undo.add_do_method(_do_update_node_localization.bind(new_state))
+			undo.add_undo_method(_do_update_node_localization.bind(previous_state))
+			undo.commit_action(false)
+			_do_update_node_localization(new_state, false)
+			_on_conversation_changed()
 		DiscourseFileMenuID.EXPORT_PHRASES_JSON:
 			var dialog: FileDialog = load("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 			dialog.expected_extension = "json"
@@ -1169,10 +1177,125 @@ func _on_file_menu_id_pressed(id: int) -> void:
 						NFPluginGameHandler._LogLevel.ERROR)
 				return
 			
+			if -1 < phrases_lang_menu.selected:
+				save_phrase_keys(phrases_lang_menu.get_selected_metadata())
 			var previous_state: Dictionary = active_conversation.format_strings.duplicate(true)
 			active_conversation.import_phrase_data(json.data)
 			var new_state: Dictionary = active_conversation.format_strings.duplicate(true)
-			#TODO: Add the UndoRedo action for this using previous and new state.
+			undo.create_action("Import JSON Localization")
+			undo.add_do_method(_do_update_phrases_localization.bind(new_state))
+			undo.add_undo_method(_do_update_phrases_localization.bind(previous_state))
+			undo.commit_action(false)
+			_do_update_phrases_localization(new_state, false)
+			_on_conversation_changed()
+
+
+func _do_update_node_localization(to: Dictionary, do_assign: bool = true) -> void:
+	if do_assign:
+		active_conversation.localization = to.duplicate(true)
+	var data: Dictionary = active_conversation.get_display_localization_data(current_locale)
+	
+	update_localization_display(data)
+	var selected_node: StringName = languages_tree.get_active_node_uuid()
+	if selected_node.is_empty():
+		return
+	var selected_locale: String = languages_tree.get_active_locale()
+	if selected_locale.is_empty():
+		return
+	
+	var node: DiscourseGraphNode = discourse_graph_edit.get_discourse_node(selected_node)
+	if node == null:
+		return
+	
+	if node.node_type == DiscourseGraphNode.DialogueNodeType.DIALOG or node.node_type == DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
+		var base_text: String = ""
+		var new_text: String = ""
+		
+		new_text = DictUtils.get_nested_value(
+				active_conversation.localization,
+				[selected_node, "locales", selected_locale],
+				"",
+				true)
+		
+		base_text = DictUtils.get_nested_value(
+				active_conversation.localization,
+				[selected_node, "locales", base_language],
+				base_text_edt.text,
+				true)
+		base_text_edt.text = base_text
+		translation_txt_box.text = new_text
+		
+		if dialog_scene_previewer.visible:
+			dialog_previewer.set_dialog(new_text)
+	elif node.node_type == DiscourseGraphNode.DialogueNodeType.CHOICES:
+		var localized_options: Array[String] = []
+		var base_options: Array[String] = []
+		
+		localized_options.assign(DictUtils.get_nested_value(
+				active_conversation.localization,
+				[selected_node, "locales", selected_locale],
+				[],
+				true))
+		
+		base_options.assign(DictUtils.get_nested_value(
+				active_conversation.localization,
+				[selected_node, "locales", base_language],
+				[],
+				true))
+		
+		clear_localized_options()
+		var choice_size: int = node.choice_count()
+		
+		if base_options.size() != choice_size:
+			base_options.resize(choice_size)
+		
+		var localized_size: int = localized_options.size()
+		
+		if localized_size < choice_size:
+			localized_options.append_array(base_options.slice(localized_size))
+		
+		for option_idx in range(base_options.size()):
+			create_choice_node(
+					base_options[option_idx],
+					localized_options[option_idx])
+		
+		if dialog_scene_previewer.visible:
+			dialog_previewer.set_choices(localized_options)
+
+
+func _do_update_phrases_localization(to: Dictionary, do_assign: bool = true) -> void:
+	if do_assign:
+		active_conversation.format_strings = to.duplicate(true)
+	set_phrases_locale(current_locale) # Sets the phrases, not the cases
+	if selected_phrase_index < 0 or phrases_lang_menu.selected < 0 or argument_opt_btn.selected < 0:
+		return
+	
+	var key: StringName = %PhrasesEntries.get_child(selected_phrase_index).get_meta(&"phrase_key")
+	var locale: String = phrases_lang_menu.get_selected_metadata()
+	var current_format: String = argument_opt_btn.get_item_text(argument_opt_btn.selected)
+	var all_cases: Array[String] = active_conversation.get_format_string_cases(
+			key,
+			locale,
+			current_format)
+	var case_nodes: Dictionary[String, Control] = {}
+	for idx in range(1, %PhraseCasesEntries.get_child_count()):
+		var case_container: Control = %PhraseCasesEntries.get_child(idx)
+		var case_text: String = case_container.get_child(1).get_meta(&"old_value")
+		case_nodes[case_text] = case_container
+	
+	default_case_edt.text = active_conversation.get_format_string_default_case(
+			key,
+			locale,
+			current_format)
+	for case_key in all_cases:
+		if not case_nodes.has(case_key):
+			continue
+		var val: TextEdit = case_nodes[case_key].get_child(2)
+		val.text = active_conversation.get_format_string_case(
+				key,
+				locale,
+				current_format,
+				case_key)
 
 
 func _on_create_dialog_id_pressed(id: int) -> void:
