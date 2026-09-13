@@ -196,58 +196,100 @@ func ready_plugin(base_locale: String = "") -> void:
 	node_popup.add_theme_constant_override(&"icon_max_width", 16)
 	
 	dialogs_submenu.add_icon_item(load("res://addons/nexus_forge/icons/speech_bubble.svg"), "Dialog", DiscourseGraphNode.DialogueNodeType.DIALOG)
+	dialogs_submenu.set_item_tooltip(-1, "Used to display character text")
 	dialogs_submenu.add_icon_item(load("res://addons/nexus_forge/icons/list_icon.svg"), "Choices", DiscourseGraphNode.DialogueNodeType.CHOICES)
+	dialogs_submenu.set_item_tooltip(-1, "Used to display player choices")
 	dialogs_submenu.add_separator("Flow")
 	dialogs_submenu.add_icon_item(get_theme_icon("RandomNumberGenerator", "EditorIcons"), "Random", DiscourseGraphNode.DialogueNodeType.RANDOM)
+	dialogs_submenu.set_item_tooltip(-1, "Picks an output using weights")
 	dialogs_submenu.add_icon_item(load("res://addons/nexus_forge/icons/branch_icon.svg"), "Branch", DiscourseGraphNode.DialogueNodeType.BRANCH)
+	dialogs_submenu.set_item_tooltip(-1, "Picks an output using a bool")
 	dialogs_submenu.add_icon_item(load("res://addons/nexus_forge/icons/match_icon.svg"), "Match", DiscourseGraphNode.DialogueNodeType.MATCH)
+	dialogs_submenu.set_item_tooltip(-1, "Picks an output by matching a value")
 	dialogs_submenu.add_icon_item(load("res://addons/nexus_forge/icons/merge_icon.svg"), "Merge", DiscourseGraphNode.DialogueNodeType.DIALOG_MERGE)
+	dialogs_submenu.set_item_tooltip(-1, "Merges multiple branches\ninto a single output")
 	dialogs_submenu.add_icon_item(get_theme_icon("Pause", "EditorIcons"), "Pause", DiscourseGraphNode.DialogueNodeType.PAUSE)
+	dialogs_submenu.set_item_tooltip(-1, "Pauses dialogue flow")
 	dialogs_submenu.add_separator("Travel")
 	dialogs_submenu.add_icon_item(load("res://addons/nexus_forge/icons/travel_to_waypoint.svg"), "Travel To", DiscourseGraphNode.DialogueNodeType.TRAVEL_TO)
+	dialogs_submenu.set_item_tooltip(-1, "Continues the dialogue at the selected Waypoint")
 	dialogs_submenu.add_icon_item(load("res://addons/nexus_forge/icons/travel_waypoint.svg"), "Travel Target", DiscourseGraphNode.DialogueNodeType.TRAVEL_TARGET)
+	dialogs_submenu.set_item_tooltip(-1, "Marker used by 'Travel To' nodes.")
 	dialogs_submenu.add_icon_item(load("res://addons/nexus_forge/icons/travel_back.svg"), "Travel Back", DiscourseGraphNode.DialogueNodeType.TRAVEL_BACK)
+	dialogs_submenu.set_item_tooltip(-1, "Continues the flow from the last\n'Travel To' node triggered")
 	dialogs_submenu.add_separator("Shortcut")
 	dialogs_submenu.add_icon_item(load("res://addons/nexus_forge/icons/dialog_entry.svg"), "Flow In", DiscourseGraphNode.DialogueNodeType.SHORTCUT_IN)
+	dialogs_submenu.set_item_tooltip(-1, "Continues dialogue flow at\nthe selected 'Flow Out' node")
 	dialogs_submenu.add_icon_item(load("res://addons/nexus_forge/icons/dialog_exit.svg"), "Flow Out", DiscourseGraphNode.DialogueNodeType.SHORTCUT_OUT)
+	dialogs_submenu.set_item_tooltip(-1, "Marker used by 'Flow In' nodes")
 	dialogs_submenu.add_separator()
 	dialogs_submenu.add_icon_item(load("res://addons/nexus_forge/icons/bulb_icon.svg"), "Event", DiscourseGraphNode.DialogueNodeType.EVENT)
+	dialogs_submenu.set_item_tooltip(-1, "Triggers a Set/Method/Signal")
 	dialogs_submenu.add_icon_item(get_theme_icon("Stop", "EditorIcons"), "End", DiscourseGraphNode.DialogueNodeType.DIALOG_END)
+	dialogs_submenu.set_item_tooltip(-1, "Marks the end of the dialogue")
 	
 	data_submenu.add_icon_item(load("res://addons/nexus_forge/icons/variable_icon.svg"), "Value", DiscourseGraphNode.DialogueNodeType.VALUE)
+	data_submenu.set_item_tooltip(-1, "A constant int/float/bool/string")
 	data_submenu.add_icon_item(get_theme_icon("LocalVariable", "EditorIcons"), "Variable", DiscourseGraphNode.DialogueNodeType.VARIABLE_GET)
+	data_submenu.set_item_tooltip(-1, "Gets a Blackboard variable")
 	data_submenu.add_icon_item(get_theme_icon("RandomNumberGenerator", "EditorIcons"), "Random", DiscourseGraphNode.DialogueNodeType.RANDOM_VALUE)
+	data_submenu.set_item_tooltip(-1, "Produces a random int/float/bool")
 	data_submenu.add_icon_item(get_theme_icon("Translation", "EditorIcons"), "Localized Text", DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT)
+	data_submenu.set_item_tooltip(-1, "Text that changes based on the locale")
 	data_submenu.add_separator()
 	data_submenu.add_icon_item(load("res://addons/nexus_forge/icons/x_or_y_icon.svg"), "Condition Value", DiscourseGraphNode.DialogueNodeType.CONDITION_SELECT)
+	data_submenu.set_item_tooltip(-1, "Outputs a provided value\nbased on a boolean.")
 	data_submenu.add_icon_item(load("res://addons/nexus_forge/icons/scale_icon.svg"), "Comparation", DiscourseGraphNode.DialogueNodeType.COMPARATION)
+	data_submenu.set_item_tooltip(-1, "Takes 2 values and provides\nthe comparation result (bool)")
 	data_submenu.add_separator()
 	data_submenu.add_icon_item(load("res://addons/nexus_forge/icons/bulb_icon.svg"), "Event", DiscourseGraphNode.DialogueNodeType.DATA_EVENT)
+	data_submenu.set_item_tooltip(-1, "Triggers a Set/Method/Signal\nbefore providing a value")
 	data_submenu.add_icon_item(get_theme_icon("Signals", "EditorIcons"), "Signal", DiscourseGraphNode.DialogueNodeType.SIGNAL)
+	data_submenu.set_item_tooltip(-1, "Emits a signal from the API")
 	data_submenu.add_icon_item(get_theme_icon("Callable", "EditorIcons"), "Method", DiscourseGraphNode.DialogueNodeType.CALLABLE)
+	data_submenu.set_item_tooltip(-1, "Calls a method from the API")
 	data_submenu.add_icon_item(load("res://addons/nexus_forge/icons/callable_return_icon.svg"), "Method Return", DiscourseGraphNode.DialogueNodeType.CALLABLE_RETURN)
+	data_submenu.set_item_tooltip(-1, "Calls a method fromt he API\nand provides its return value")
 	data_submenu.add_separator()
 	data_submenu.add_icon_item(load("res://addons/nexus_forge/icons/shield_icon.svg"), "Type Guard", DiscourseGraphNode.DialogueNodeType.TYPE_GUARD)
+	data_submenu.set_item_tooltip(-1, "Ensures the data provided matches a type.")
 	data_submenu.add_separator()
 	data_submenu.add_icon_item(load("res://addons/nexus_forge/icons/metadata_icon.svg"), "Metadata", DiscourseGraphNode.DialogueNodeType.METADATA)
+	data_submenu.set_item_tooltip(-1, "Key-Value pairs of data")
 	
 	setting_submenu.add_icon_item(load("res://addons/nexus_forge/icons/gear_icon.png"), "Dialog", DiscourseGraphNode.DialogueNodeType.SETTINGS_DIALOG)
+	setting_submenu.set_item_tooltip(-1, "Provides settings for a 'Dialog Node'")
 	setting_submenu.add_icon_item(load("res://addons/nexus_forge/icons/gear_icon.png"), "Character", DiscourseGraphNode.DialogueNodeType.SETTINGS_CHARACTER)
+	setting_submenu.set_item_tooltip(-1, "Provides settings to customize\na character from a 'Dialog Node'")
 	setting_submenu.add_icon_item(load("res://addons/nexus_forge/icons/gear_icon.png"), "Option", DiscourseGraphNode.DialogueNodeType.SETTINGS_OPTION)
+	setting_submenu.set_item_tooltip(-1, "Provides settings to a specific\nchoice of the 'Choices Node'")
 	
 	export_submenu.add_item(
 			"Node Localization (.csv)",
 			DiscourseFileMenuID.EXPORT_NODES_CSV)
+	export_submenu.set_item_tooltip(
+			-1,
+			"Exports the node's\nlocalization data as a CSV file")
 	export_submenu.add_item(
 			"Phrases Localization (.json)",
 			DiscourseFileMenuID.EXPORT_PHRASES_JSON)
-	
+	export_submenu.set_item_tooltip(
+			-1,
+			"Exports the phrase's\nlocalization data as a JSON file")
 	import_submenu.add_item(
 			"Node Localization (.csv)",
 			DiscourseFileMenuID.IMPORT_NODES_CSV)
+	import_submenu.set_item_tooltip(
+			-1,
+			"Imports and overwrites the node's\n
+			localization data")
 	import_submenu.add_item(
 			"Phrases Localization (.json)",
 			DiscourseFileMenuID.IMPORT_PHRASES_JSON)
+	import_submenu.set_item_tooltip(
+			-1,
+			"Imports and overwirtes\n
+			the phrases localization data")
 	
 	node_popup.add_submenu_node_item(
 		"Conversation",
@@ -263,9 +305,12 @@ func ready_plugin(base_locale: String = "") -> void:
 		100)
 	node_popup.add_separator()
 	node_popup.add_icon_item(load("res://addons/nexus_forge/icons/comment_icon.svg"), "Comment", DiscourseGraphNode.DialogueNodeType.COMMENT)
+	node_popup.set_item_tooltip(-1, "An editor-only note")
 	node_popup.add_icon_item(get_theme_icon("ResourcePreloader", "EditorIcons"), "Resource", DiscourseGraphNode.DialogueNodeType.RESOURCE)
+	node_popup.set_item_tooltip(-1, "Contains a path to a resource")
 	node_popup.add_separator()
 	node_popup.add_icon_item(load("res://addons/nexus_forge/icons/frame_icon.svg"), "Frame", 1000)
+	node_popup.set_item_tooltip(-1, "A container to group and organize\nother elements")
 	
 	save_btn.icon = get_theme_icon("Save", "EditorIcons")
 	
@@ -299,10 +344,16 @@ func ready_plugin(base_locale: String = "") -> void:
 		get_theme_icon("New", "EditorIcons"),
 		"New",
 		DiscourseFileMenuID.NEW_DIALOG)
+	file_popup.set_item_tooltip(
+		-1,
+		"Creates a new dialogue resource")
 	file_popup.add_icon_item(
 		get_theme_icon("Load", "EditorIcons"),
 		"Open",
 		DiscourseFileMenuID.OPEN_DIALOG)
+	file_popup.set_item_tooltip(
+		-1,
+		"Opens an existing dialogue resource")
 	file_popup.add_submenu_node_item(
 		"Recent",
 		_recently_opened_popup,
@@ -311,19 +362,31 @@ func ready_plugin(base_locale: String = "") -> void:
 		get_theme_icon("Save", "EditorIcons"),
 		"Save",
 		DiscourseFileMenuID.SAVE_DIALOG)
+	file_popup.set_item_tooltip(
+		-1,
+		"Saves the current dialogue resource")
 	file_popup.add_separator()
 	file_popup.add_icon_item(
 		get_theme_icon("Play", "EditorIcons"),
 		"Play current dialog",
 		DiscourseFileMenuID.PLAY_CURRENT_DIALOG)
+	file_popup.set_item_tooltip(
+		-1,
+		"Runs the dialogue in the preview scene")
 	file_popup.add_item(
 		"Check for issues",
 		DiscourseFileMenuID.CHECK_ISSUES)
+	file_popup.set_item_tooltip(
+		-1,
+		"Analyzes the dialogue for simple\nstructure and continuity issues")
 	file_popup.add_separator()
 	file_popup.add_icon_item(
 		get_theme_icon("Translation", "EditorIcons"),
 		"Localization Window",
 		DiscourseFileMenuID.LOCALIZATION_WINDOW)
+	file_popup.set_item_tooltip(
+		-1,
+		"Switches to the localization window")
 	file_popup.add_submenu_node_item(
 			"Export",
 			export_submenu,
@@ -335,10 +398,16 @@ func ready_plugin(base_locale: String = "") -> void:
 	file_popup.add_item(
 		"Set file locale group",
 		DiscourseFileMenuID.SET_LOCALE_GROUP)
+	file_popup.set_item_tooltip(
+		-1,
+		"Sets the group to merge localizations with")
 	file_popup.add_separator()
 	file_popup.add_check_item(
 		"Dialog ID field visible",
 		DiscourseFileMenuID.DISPLAY_DIALOG_ID_FIELD)
+	file_popup.set_item_tooltip(
+		-1,
+		"Displays the field that\ncontains the dialogue ID")
 	file_popup.add_item(
 		"Change default language",
 		DiscourseFileMenuID.CHANGE_LANGUAGE)
@@ -347,6 +416,9 @@ func ready_plugin(base_locale: String = "") -> void:
 		get_theme_icon("Close", "EditorIcons"),
 		"Close",
 		DiscourseFileMenuID.CLOSE_DIALOG)
+	file_popup.set_item_tooltip(
+		-1,
+		"Closes the current dialogue resource")
 	
 	file_popup.set_item_disabled(
 		file_popup.get_item_index(

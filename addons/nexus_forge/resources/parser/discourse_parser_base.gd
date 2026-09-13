@@ -59,16 +59,18 @@ const FLOAT_SNAP: float = 0.01
 var API: DiscourseAPI = null
 var locale: String = "en":
 	set(new_locale):
-		if locale == new_locale:
+		var new_standard: String = TranslationServer.standardize_locale(new_locale.strip_edges())
+		if new_standard.is_empty() or locale == new_standard:
 			return
 		
-		locale = TranslationServer.standardize_locale(new_locale.strip_edges())
+		locale = new_standard
+		if _dialog_resource == null:
+			return
 		
-		if _dialog_resource != null:
-			if _dialog_resource._has_locale(locale):
-				_dialog_resource._set_locale(locale)
-			else:
-				_load_locale_into(_dialog_resource, locale)
+		if _dialog_resource._has_locale(locale):
+			_dialog_resource._set_locale(locale)
+		else:
+			_load_locale_into(_dialog_resource, locale)
 var max_dialog_travel_stack: int = 100:
 	set(s):
 		max_dialog_travel_stack = maxi(-1, s)
@@ -381,7 +383,7 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 							"unlocked": true,
 							"text": _parse_dialog(option_duuid, localized_options[idx]),
 							"target": option["next_node"],
-							"metadata": {}})
+							"metadata": DictUtils.create_typed(TYPE_STRING, TYPE_NIL)})
 				else:
 					var opt_settings: Dictionary = option["settings"]
 					var show: bool = _get_data(opt_settings["available"], true)
