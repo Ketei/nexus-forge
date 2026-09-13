@@ -319,7 +319,7 @@ func get_text(phrase_key: StringName, override_values: Dictionary[String, String
 	var formats: Dictionary[String, String] = {}
 	var values: Dictionary[String, String] = {}
 	
-	for format_key in _phrases[phrase_key]["formats"].keys():
+	for format_key in _phrases[phrase_key]["formats"]:
 		# format_key = $inventory/is_full
 		
 		var case_result: Dictionary[String, String] = {}
@@ -349,11 +349,10 @@ func get_text(phrase_key: StringName, override_values: Dictionary[String, String
 		# values["$inventory/is_full"] = "false"
 		# values["$inventory/count"] = "13"
 	
-	for format in formats.keys():
+	for format in formats:
 		format_dict[format] = formats[format].format(values)
 		# format_dict["$inventory/is_full"] = "Inventory 13 / 50"
 		# format_dict["$inventory/count"] = ""
-	
 	
 	 #return "Let's see: {$inventory/is_full}{$inventory/count}".format({
 		#"$inventory/is_full": "Inventory 13 / 50",

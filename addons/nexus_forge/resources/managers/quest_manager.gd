@@ -611,7 +611,7 @@ func _sort_mods(for_quest: StringName) -> void:
 				for child_id in mods_with_dependencies[current_id]:
 					self_ref.call(child_id, self_ref)
 	
-	for mod_id in mods.keys():
+	for mod_id in mods:
 		var dependency: StringName = mods[mod_id]["dependency"]
 		if dependency.is_empty() or not mods.has(dependency):
 			independent_mods.append(mod_id)
@@ -621,14 +621,14 @@ func _sort_mods(for_quest: StringName) -> void:
 			mods_with_dependencies[dependency].append(mod_id)
 	
 	independent_mods.sort_custom(sorting_lambda)
-	for after_id in mods_with_dependencies.keys():
+	for after_id in mods_with_dependencies:
 		mods_with_dependencies[after_id].sort_custom(sorting_lambda)
 	
 	for mod_id in independent_mods:
 		process_mod.call(mod_id, process_mod)
 	
 	if final_order.size() < mods.size():
-		for mod_id in mods.keys():
+		for mod_id in mods:
 			if not final_order.has(mod_id):
 				NFPluginGameHandler._log_msg(
 						"odyssey",

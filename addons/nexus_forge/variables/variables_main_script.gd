@@ -407,7 +407,7 @@ func _undo_folder_delete(folder_data: Dictionary[StringName, Dictionary], folder
 	for path_id in folder_data:
 		_variables_resource._variables[path_id] = folder_data[path_id].duplicate(true)
 	
-	for path in folder_data.keys():
+	for path in folder_data:
 		var path_string: String = String(path)
 		folders_tree.create_folder(path_string, true, false)
 	

@@ -771,7 +771,7 @@ func save_current_species() -> void:
 	_species_resource.clear_species_data(loaded_species)
 	var data: Dictionary[String, Variant] = race_data_tree.get_data()
 	
-	for data_key in data.keys():
+	for data_key in data:
 		_species_resource.set_species_data(
 				loaded_species,
 				data_key,
@@ -824,7 +824,7 @@ func load_species_resource() -> void:
 	var subspecies: Dictionary[StringName, Array] = {}
 	var hybrid_species: Array[Dictionary] = []
 	
-	for species_key in _species_resource._species.keys():
+	for species_key in _species_resource._species:
 		if _species_resource._species[species_key]["parent_dominant"].is_empty():
 			top_species.append(species_key)
 		else:
@@ -1060,7 +1060,7 @@ func update_talent_nodes() -> void:
 			skill_map.erase(skill_id)
 		else:
 			create_skill(skill_id, skill_set.get(skill_id))
-	for remaining_skill in skill_map.keys():
+	for remaining_skill in skill_map:
 		skill_map[remaining_skill].queue_free()
 	
 	var traits: Array[StringName] = TraitBlock.traits()
@@ -1083,7 +1083,7 @@ func update_talent_nodes() -> void:
 			trait_map.erase(trait_id)
 		else:
 			create_trait(trait_id, trait_block.get(trait_id))
-	for remaining_trait in trait_map.keys():
+	for remaining_trait in trait_map:
 		trait_map[remaining_trait].queue_free()
 	
 	if loaded_species != &"":

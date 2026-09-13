@@ -9,8 +9,8 @@ var comparation_menu: MenuButton
 
 
 func _post_init() -> void:
-	set_node_id(&"Comparation")
-	title = "Comparation"
+	set_node_id(&"Comparison")
+	title = "Comparison"
 	size = Vector2(200.0, 150.0)
 	node_type = DialogueNodeType.COMPARATION
 	parent_mode = PortMode.OUTPUT

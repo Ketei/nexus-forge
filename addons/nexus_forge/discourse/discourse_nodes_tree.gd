@@ -68,7 +68,7 @@ const DEFAULT_NODE_NAMES: Dictionary[NFDialogParser.NodeTypes, String] = {
 	NFDialogParser.NodeTypes.DIALOG: "Dialog",
 	NFDialogParser.NodeTypes.CHOICES: "Choice",
 	NFDialogParser.NodeTypes.BRANCH: "Branch",
-	NFDialogParser.NodeTypes.COMPARATION: "Comparation",
+	NFDialogParser.NodeTypes.COMPARATION: "Comparison",
 	NFDialogParser.NodeTypes.EVENT: "Event",
 	NFDialogParser.NodeTypes.MATCH: "Match",
 	NFDialogParser.NodeTypes.PAUSE: "Pause",
@@ -750,7 +750,7 @@ func set_collapsed_folders(folders: Dictionary) -> void:
 	
 	var folder_items: Dictionary[String, TreeItem] = get_folder_item_paths()
 	
-	for path in folders.keys():
+	for path in folders:
 		if typeof(folders[path]) != TYPE_BOOL:
 			continue
 		if folder_items.has(path):
@@ -834,7 +834,7 @@ func get_collapsed_folders() -> Dictionary[String, bool]:
 	var collapsed_items: Dictionary[String, bool] = {}
 	var folders: Dictionary[String, TreeItem] = get_folder_item_paths()
 	
-	for path in folders.keys():
+	for path in folders:
 		collapsed_items[path] = folders[path].collapsed
 	return collapsed_items
 

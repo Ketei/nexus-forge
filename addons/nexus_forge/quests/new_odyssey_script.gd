@@ -648,7 +648,7 @@ func load_quest_data() -> void:
 	events_tree.clear_data()
 	custom_data_tree.clear_data(false)
 	
-	for data_key in quest_resource.custom_data.keys():
+	for data_key in quest_resource.custom_data:
 		custom_data_tree.add_data(
 				data_key,
 				quest_resource.custom_data[data_key],
@@ -691,7 +691,7 @@ func load_stage_data(stage_id: StringName) -> void:
 	events_tree.clear_data()
 	custom_data_tree.clear_data(false)
 	
-	for data_key in stage.custom_data.keys():
+	for data_key in stage.custom_data:
 		custom_data_tree.add_data(
 				data_key,
 				stage.custom_data[data_key],
@@ -738,7 +738,7 @@ func load_objective_data(stage_id: StringName, objective_id: StringName) -> void
 	
 	obj_req_tree.set_data(objective._requirements)
 	
-	for data_key in objective.custom_data.keys():
+	for data_key in objective.custom_data:
 		custom_data_tree.add_data(
 				data_key,
 				objective.custom_data[data_key],

@@ -606,7 +606,7 @@ func save_current_currency() -> void:
 	var data: Dictionary[StringName, Variant] = {}
 	data.assign(currency_custom_data_tree.get_data())
 	
-	for data_key in data.keys():
+	for data_key in data:
 		currency_resource.set_currency_data(
 				loaded_currency,
 				data_key,
@@ -1135,7 +1135,7 @@ func save_current_item() -> void:
 	var data: Dictionary[StringName, Variant] = {}
 	data.assign(item_data_tree.get_data())
 	
-	for item_key in data.keys():
+	for item_key in data:
 		item_link.items.set_item_data(loaded_item, item_key, data[item_key])
 	
 	var flags: Array[ItemSheet.ItemFlag] = []
@@ -1169,7 +1169,7 @@ func load_item(item_id: StringName) -> void:
 	
 	item_data_tree.clear_data(false)
 	
-	for data_key in item.custom_data.keys():
+	for data_key in item.custom_data:
 		item_data_tree.add_data(data_key, item.custom_data[data_key], true)
 	
 	for flag:CheckBox in items_flags_container.get_children():
@@ -1283,7 +1283,7 @@ func reload_fields() -> void:
 		var new_index: int = -1
 		rarity_opt_btn.clear()
 		var idx: int = -1
-		for rarity:String in rarities.keys():
+		for rarity:String in rarities:
 			idx += 1
 			rarity_opt_btn.add_item(rarity.capitalize())
 			rarity_opt_btn.set_item_metadata(-1, rarities[rarity])
@@ -1320,7 +1320,7 @@ func reload_fields() -> void:
 				items_flags_container.add_child(
 						create_flag_item(flag, item_flags[flag]))
 		
-		for remaining_flag in existing_flags.keys():
+		for remaining_flag in existing_flags:
 			existing_flags[remaining_flag].queue_free()
 
 

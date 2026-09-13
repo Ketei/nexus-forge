@@ -419,7 +419,7 @@ func load_skill(skill_id: StringName) -> void:
 	
 	skill_data_tree.clear_data(false)
 	
-	for data_key in data.keys():
+	for data_key in data:
 		skill_data_tree.add_data(
 			data_key,
 			data[data_key],

@@ -85,7 +85,7 @@ const DEFAULT_NODE_NAMES: Dictionary[DialogNodes, String] = {
 	DialogNodes.DIALOG: "Dialog",
 	DialogNodes.CHOICES: "Choice",
 	DialogNodes.BRANCH: "Branch",
-	DialogNodes.COMPARATION: "Comparation",
+	DialogNodes.COMPARATION: "Comparison",
 	DialogNodes.EVENT: "Event",
 	DialogNodes.MATCH: "Match",
 	DialogNodes.PAUSE: "Pause",
@@ -115,101 +115,123 @@ const DEFAULT_NODE_NAMES: Dictionary[DialogNodes, String] = {
 	}
 
 # Dictionary with data about compatible nodes. Could be a const
-var compatible_connections: Dictionary = {
+@onready var compatible_connections: Dictionary = {
 	ConnectionType.DIALOG: {
 		"output": Array([
 			{
 				"name": "Dialog",
 				"type": DialogNodes.DIALOG,
+				"icon": load("res://addons/nexus_forge/icons/speech_bubble.svg"),
 				"ports": [{"port": 0}]},
 			{
 				"name": "Choices",
 				"type": DialogNodes.CHOICES,
+				"icon": load("res://addons/nexus_forge/icons/list_icon.svg"),
 				"ports": [{"port": 0}]},
 			{
 				"name": "Event",
 				"type": DialogNodes.EVENT,
+				"icon": load("res://addons/nexus_forge/icons/bulb_icon.svg"),
 				"ports": [{"port": 0}]},
 			{
 				"name": "Random",
 				"type": DialogNodes.RANDOM,
+				"icon": get_theme_icon("RandomNumberGenerator", "EditorIcons"),
 				"ports": [{"port": 0}]},
 			{
 				"name": "Match",
 				"type": DialogNodes.MATCH,
+				"icon": load("res://addons/nexus_forge/icons/match_icon.svg"),
 				"ports": [{"port": 0}]},
 			{
 				"name": "Branch",
 				"type": DialogNodes.BRANCH,
+				"icon": load("res://addons/nexus_forge/icons/branch_icon.svg"),
 				"ports": [{"port": 0}]},
 			{
 				"name": "Travel To",
 				"type": DialogNodes.TRAVEL_TO,
+				"icon": load("res://addons/nexus_forge/icons/travel_to_waypoint.svg"),
 				"ports": [{"port": 0}]},
 			{
 				"name": "Travel Back",
 				"type": DialogNodes.TRAVEL_BACK,
+				"icon": load("res://addons/nexus_forge/icons/travel_back.svg"),
 				"ports": [{"port": 0}]},
 			{
 				"name": "Flow In",
 				"type": DialogNodes.SHORTCUT_IN,
+				"icon": load("res://addons/nexus_forge/icons/dialog_exit.svg"),
 				"ports": [{"port": 0}]},
 			{
 				"name": "Dialog Merge",
 				"type": DialogNodes.DIALOG_MERGE,
+				"icon": load("res://addons/nexus_forge/icons/merge_icon.svg"),
 				"ports": [{"port": 0}]},
 			{
 				"name": "Pause",
 				"type": DialogNodes.PAUSE,
+				"icon": get_theme_icon("Pause", "EditorIcons"),
 				"ports": [{"port": 0}]},
 			{
 				"name": "Dialog End",
 				"type": DialogNodes.DIALOG_END,
+				"icon": get_theme_icon("Stop", "EditorIcons"),
 				"ports": [{"port": 0}]}], TYPE_DICTIONARY, &"", null),
 		"input": Array([
 			{
 				"name": "Dialog",
 				"type": DialogNodes.DIALOG,
+				"icon": load("res://addons/nexus_forge/icons/speech_bubble.svg"),
 				"ports": [{"port": 0}]},
 			{
 				"name": "Choices",
 				"type": DialogNodes.CHOICES,
+				"icon": load("res://addons/nexus_forge/icons/list_icon.svg"),
 				"ports": [{"port": 0}]},
 			{
 				"name": "Event",
 				"type": DialogNodes.EVENT,
+				"icon": load("res://addons/nexus_forge/icons/bulb_icon.svg"),
 				"ports": [{"port": 0}]},
 			{
 				"name": "Random",
 				"type": DialogNodes.RANDOM,
+				"icon": get_theme_icon("RandomNumberGenerator", "EditorIcons"),
 				"ports": [{"port": 0}]},
 			{
 				"name": "Match",
 				"type": DialogNodes.MATCH,
+				"icon": load("res://addons/nexus_forge/icons/match_icon.svg"),
 				"ports": [
 					{"port": 0, "name": "Default"},
 					{"port": 1, "name": "Case 1"}]},
 			{
 				"name": "Branch",
 				"type": DialogNodes.BRANCH,
+				"icon": load("res://addons/nexus_forge/icons/branch_icon.svg"),
 				"ports": [
 					{"port": 0, "name": "True Branch"},
 					{"port": 1, "name": "False Branch"}]},
 			{
 				"name": "Waypoint",
 				"type": DialogNodes.TRAVEL_TARGET,
+				"icon": load("res://addons/nexus_forge/icons/travel_waypoint.svg"),
 				"ports": [{"port": 0}]},
 			{
 				"name": "Flow Out",
 				"type": DialogNodes.SHORTCUT_OUT,
+				"icon": load("res://addons/nexus_forge/icons/dialog_entry.svg"),
 				"ports": [{"port": 0}]},
 			{
 				"name": "Dialog Merge",
 				"type": DialogNodes.DIALOG_MERGE,
+				"icon": load("res://addons/nexus_forge/icons/merge_icon.svg"),
 				"ports": [{"port": 0}]},
 			{
 				"name": "Pause",
 				"type": DialogNodes.PAUSE,
+				"icon": get_theme_icon("Pause", "EditorIcons"),
 				"ports": [{"port": 0}]},
 			], TYPE_DICTIONARY, &"", null)},
 	ConnectionType.METADATA: {
@@ -217,6 +239,7 @@ var compatible_connections: Dictionary = {
 			{
 				"name": "Metadata",
 				"type": DialogNodes.METADATA,
+				"icon": load("res://addons/nexus_forge/icons/metadata_icon.svg"),
 				"ports": [{"port": 0}]}
 		], TYPE_DICTIONARY, &"", null)},
 	ConnectionType.VAR_STRING: {
@@ -224,46 +247,56 @@ var compatible_connections: Dictionary = {
 			{
 				"name": "Value",
 				"type": DialogNodes.VALUE,
+				"icon": load("res://addons/nexus_forge/icons/variable_icon.svg"),
 				"ports": [{"port": 0,"data": {"value": ""}}]},
 			{
 				"name": "Localized Text",
 				"type": DialogNodes.LOCALIZED_TEXT,
+				"icon": get_theme_icon("Translation", "EditorIcons"),
 				"ports": [{"port": 0}]},
 			{
 				"name": "Type Guard",
 				"type": DialogNodes.TYPE_GUARD,
+				"icon": load("res://addons/nexus_forge/icons/shield_icon.svg"),
 				"ports": [{"port": 0}]},
 			{
 				"name": "Variable",
 				"type": DialogNodes.VARIABLE_GET,
+				"icon": get_theme_icon("LocalVariable", "EditorIcons"),
 				"ports": [{"port": 0, "data": {"variable_type": TYPE_STRING}}]}], TYPE_DICTIONARY, &"", null)},
 	ConnectionType.VAR_INT: {
 		"input": Array([
 			{
 				"name": "Value",
 				"type": DialogNodes.VALUE,
+				"icon": load("res://addons/nexus_forge/icons/variable_icon.svg"),
 				"ports": [{"port": 0, "data": {"value": 0}}]},
 			{
 				"name": "Random",
 				"type": DialogNodes.RANDOM_VALUE,
+				"icon": get_theme_icon("RandomNumberGenerator", "EditorIcons"),
 				"ports": [{"port": 0, "data": {"mode": TYPE_INT}}]},
 			{
 				"name": "Type Guard",
 				"type": DialogNodes.TYPE_GUARD,
+				"icon": load("res://addons/nexus_forge/icons/shield_icon.svg"),
 				"ports": [{"port": 0}]},
 			{
 				"name": "Variable",
 				"type": DialogNodes.VARIABLE_GET,
+				"icon": get_theme_icon("LocalVariable", "EditorIcons"),
 				"ports": [{"port": 0, "data": {"variable_type": TYPE_INT}}]}], TYPE_DICTIONARY, &"", null)},
 	ConnectionType.VAR_BOOL: {
 		"input": Array([
 			{
 				"name": "Value",
 				"type": DialogNodes.VALUE,
+				"icon": load("res://addons/nexus_forge/icons/variable_icon.svg"),
 				"ports": [{"port": 0, "data": {"value": false}}]},
 			{
 				"name": "Random",
 				"type": DialogNodes.RANDOM_VALUE,
+				"icon": get_theme_icon("RandomNumberGenerator", "EditorIcons"),
 				"ports": [{
 					"port": 0,
 					"data": {
@@ -272,50 +305,60 @@ var compatible_connections: Dictionary = {
 			{
 				"name": "Type Guard",
 				"type": DialogNodes.TYPE_GUARD,
+				"icon": load("res://addons/nexus_forge/icons/shield_icon.svg"),
 				"ports": [{"port": 0}]},
 			{
 				"name": "Variable",
 				"type": DialogNodes.VARIABLE_GET,
+				"icon": get_theme_icon("LocalVariable", "EditorIcons"),
 				"ports": [{"port": 0, "data": {"variable_type": TYPE_BOOL}}]},
 			{
-				"name": "Comparation",
+				"name": "Comparison",
 				"type": DialogNodes.COMPARATION,
+				"icon": load("res://addons/nexus_forge/icons/scale_icon.svg"),
 				"ports": [{"port": 0}]}], TYPE_DICTIONARY, &"", null)},
 	ConnectionType.SIGNAL: {
 		"input": Array([{
 			"name": "Signal",
 			"type": DialogNodes.SIGNAL,
+			"icon": get_theme_icon("Signals", "EditorIcons"),
 			"ports": [{"port": 0}]}], TYPE_DICTIONARY, &"", null)},
 	ConnectionType.CALL: {
 		"input": Array([{
-			"name": "Signal",
+			"name": "Callable",
 			"type": DialogNodes.CALLABLE,
+			"icon": get_theme_icon("Callable", "EditorIcons"),
 			"ports": [{"port": 0}]}], TYPE_DICTIONARY, &"", null)},
-		
 	ConnectionType.SETTINGS_CHARACTER: {
 		"input": Array([{
 			"name": "Settings",
 			"type": DialogNodes.SETTINGS_CHARACTER,
+			"icon": load("res://addons/nexus_forge/icons/gear_icon.png"),
 			"ports": [{"port": 0}]}], TYPE_DICTIONARY, &"", null)},
 	ConnectionType.SETTINGS_DIALOG: {
 		"input": Array([{
 			"name": "Settings",
 			"type": DialogNodes.SETTINGS_DIALOG,
+			"icon": load("res://addons/nexus_forge/icons/gear_icon.png"),
 			"ports": [{"port": 0}]}], TYPE_DICTIONARY, &"", null)},
 	ConnectionType.SETTINGS_OPTION: {
 		"input": Array([{
 			"name": "Settings",
 			"type": DialogNodes.SETTINGS_OPTION,
+			"icon": load("res://addons/nexus_forge/icons/gear_icon.png"),
 			"ports": [{"port": 0}]}], TYPE_DICTIONARY, &"", null)},
 	ConnectionType.RESOURCE: {
 		"input": Array([{
 			"name": "",
 			"type": DialogNodes.RESOURCE,
+			"icon": get_theme_icon("ResourcePreloader", "EditorIcons"),
 			"ports": [{"port": 0}]}], TYPE_DICTIONARY, &"", null)},
 	ConnectionType.VAR_ANY: {
 		"input": Array([{
 			"name": "Value",
-			"type": DialogNodes.VALUE, "ports": [
+			"type": DialogNodes.VALUE,
+			"icon": load("res://addons/nexus_forge/icons/variable_icon.svg"),
+			"ports": [
 				{"name": "Integer", "port": 0, "data": {"value": 0}},
 				{"name": "Float", "port": 0, "data": {"value": 0.0}},
 				{"name": "Bool", "port": 0, "data": {"value": false}},
@@ -323,26 +366,32 @@ var compatible_connections: Dictionary = {
 			{
 				"name": "Random Value",
 				"type": DialogNodes.RANDOM_VALUE,
+				"icon": get_theme_icon("RandomNumberGenerator", "EditorIcons"),
 				"ports": [{"port": 0}]},
 			{
 				"name": "Localized Text",
 				"type": DialogNodes.LOCALIZED_TEXT,
+				"icon": get_theme_icon("Translation", "EditorIcons"),
 				"ports": [{"port": 0}]},
 			{
 				"name": "Type Guard",
 				"type": DialogNodes.TYPE_GUARD,
+				"icon": load("res://addons/nexus_forge/icons/shield_icon.svg"),
 				"ports": [{"port": 0}]},
 			{
 				"name": "Variable",
 				"type": DialogNodes.VARIABLE_GET,
+				"icon": get_theme_icon("LocalVariable", "EditorIcons"),
 				"ports": [{"port": 0}]},
 			{
-				"name": "Comparation",
+				"name": "Comparison",
 				"type": DialogNodes.COMPARATION,
+				"icon": load("res://addons/nexus_forge/icons/scale_icon.svg"),
 				"ports": [{"port": 0}]},
 			{
 				"name": "Conditional Value",
 				"type": DialogNodes.CONDITION_SELECT,
+				"icon": load("res://addons/nexus_forge/icons/x_or_y_icon.svg"),
 				"ports": [{"port": 0}]
 			}
 		], TYPE_DICTIONARY, &"", null)
@@ -401,6 +450,7 @@ func _ready() -> void:
 	connection_popup = PopupMenu.new()
 	connection_popup.name = &"ConnectionsPopupMenu"
 	connection_popup.visible = false
+	connection_popup.add_theme_constant_override(&"icon_max_width", 16)
 	add_child(connection_popup)
 	
 	panning_scheme = GraphEdit.SCROLL_PANS
@@ -812,7 +862,7 @@ func duplicate_single(node_uuid: StringName, new_uuid: StringName) -> void:
 func duplicate_multiple(duplicate_targets: Dictionary[StringName, StringName]) -> void:
 	var nodes_to_duplicate: Array[Dictionary] = []
 	
-	for uuid in duplicate_targets.keys():
+	for uuid in duplicate_targets:
 		if graph_nodes.has(uuid):
 			nodes_to_duplicate.append({
 				"node": graph_nodes[uuid],
@@ -976,7 +1026,7 @@ func remove_nodes(node_uuids: Array[StringName]) -> void:
 	var removed_targets: Array[StringName] = []
 	var removed_travel_pointers: Array[StringName] = []
 	
-	for node_uuid in status_data.keys():
+	for node_uuid in status_data:
 		var target: DiscourseGraphNode = graph_nodes[node_uuid]
 	
 		disconnect_all_node_connections(node_uuid)
@@ -1113,7 +1163,7 @@ func get_conversation_file(current_locale: String = "") -> EditorDiscourseDialog
 				frame.size,
 				frame.tint_color)
 	
-	for node_uuid in graph_nodes.keys():
+	for node_uuid in graph_nodes:
 		var node: DiscourseGraphNode = graph_nodes[node_uuid]
 		var node_data: Dictionary = node._get_node_data()
 		node_data["metadata"]["localized"] = node.is_node_localized()
@@ -1147,7 +1197,7 @@ func update_conversation_file(on_file: EditorDiscourseDialog, current_locale: St
 	
 	on_file.node_frames.clear()
 	
-	for frame_uuid in node_frames.keys():
+	for frame_uuid in node_frames:
 		var frame: GraphFrame = node_frames[frame_uuid]
 		on_file.register_frame(
 				frame_uuid,
@@ -1156,7 +1206,7 @@ func update_conversation_file(on_file: EditorDiscourseDialog, current_locale: St
 				frame.size,
 				frame.tint_color)
 	
-	for node_uuid in graph_nodes.keys():
+	for node_uuid in graph_nodes:
 		var node: DiscourseGraphNode = graph_nodes[node_uuid]
 		var node_data: Dictionary = node._get_node_data()
 		var frame: GraphFrame = get_element_frame(node.name)
@@ -1244,7 +1294,7 @@ func get_connection_dictionary(node_uuid: StringName, node_data: Dictionary) -> 
 			node_connections.sort_custom(func(a,b): return a["from_port"] < b["from_port"])
 		_:
 			if node_data.has("output_connections"):
-				for output_connection_key in node_data["output_connections"].keys():
+				for output_connection_key in node_data["output_connections"]:
 					if node_data["output_connections"][output_connection_key]["target_node_uuid"].is_empty():
 						continue
 					node_connections.append({
@@ -1348,7 +1398,7 @@ func set_graph_frame_position_offset(frame_uuid: StringName, offset: Vector2) ->
 
 
 func set_localization_data(localization: Dictionary) -> void:
-	for node_uuid in graph_nodes.keys():
+	for node_uuid in graph_nodes:
 		var node: DiscourseGraphNode = graph_nodes[node_uuid]
 		if not node.is_node_localized() or not localization.has(node_uuid):
 			continue
@@ -2115,7 +2165,10 @@ func populate_popup(node_type: ConnectionType, port_direction: String) -> void:
 	
 	for node in get_compatible_nodes(node_type, port_direction):
 		if node["ports"].size() == 1:
-			connection_popup.add_item(node["name"], node_type)
+			connection_popup.add_icon_item(
+					node.get("icon", null),
+					node["name"],
+					node_type)
 			connection_popup.set_item_metadata(
 					-1,
 					{
@@ -2125,7 +2178,10 @@ func populate_popup(node_type: ConnectionType, port_direction: String) -> void:
 		else:
 			var connection_submenu: PopupMenu = PopupMenu.new()
 			for subitem:Dictionary in node["ports"]:
-				connection_submenu.add_item(subitem["name"], node_type)
+				connection_submenu.add_icon_item(
+					subitem.get("icon", null),
+					subitem["name"],
+					node_type)
 				connection_submenu.set_item_metadata(
 						-1,
 						{

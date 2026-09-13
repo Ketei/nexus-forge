@@ -232,7 +232,7 @@ func _on_format_item_selected(idx: int) -> void:
 	
 	_update_choice_textbox_size(default_case_text)
 	
-	for case in map._phrases[phrase_key]["formats"][format_argument]["cases"].keys():
+	for case in map._phrases[phrase_key]["formats"][format_argument]["cases"]:
 		create_case_entry(
 				case,
 				map.get_case(phrase_key, format_argument, case),
@@ -367,7 +367,7 @@ func _on_edit_cases_pressed(container: HBoxContainer) -> void:
 	default_case_text.text = default_case
 	default_case_text.set_meta(&"old_value", default_case)
 	_update_choice_textbox_size(default_case_text)
-	for custom_case in map._phrases[phrase_key]["formats"][argument_format]["cases"].keys():
+	for custom_case in map._phrases[phrase_key]["formats"][argument_format]["cases"]:
 		create_case_entry(
 				custom_case,
 				map.get_case(phrase_key, argument_format, custom_case),
@@ -651,7 +651,7 @@ func save_current_phrase_key() -> void:
 	
 	map.clear_cases(phrase_key, selected_format)
 	
-	for case in cases.keys():
+	for case in cases:
 		map.set_case(
 				phrase_key,
 				selected_format,

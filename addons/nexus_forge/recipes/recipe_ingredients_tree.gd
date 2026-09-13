@@ -485,7 +485,7 @@ func _add_data_on(item: TreeItem, data: Variant, data_name: String) -> TreeItem:
 			new_data.set_icon(0, get_theme_icon("Folder", "EditorIcons"))
 			new_data.set_editable(1, false)
 			new_data.set_metadata(1, TYPE_DICTIONARY)
-			for data_key in data.keys():
+			for data_key in data:
 				match typeof(data_key):
 					TYPE_STRING, TYPE_STRING_NAME:
 						_add_data_on(new_data, data[data_key], data_key)

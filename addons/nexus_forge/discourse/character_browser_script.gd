@@ -50,7 +50,7 @@ func populate_characters(character_data: Dictionary[String, StringName]) -> void
 	var root: TreeItem = character_list.create_item()
 	var paths: Array[String] = []
 	var traveled: Dictionary[StringName, Variant] = {}
-	for key in character_data.keys():
+	for key in character_data:
 		if typeof(character_data[key]) != TYPE_NIL and not traveled.has(character_data[key]):
 			paths.append(key)
 			traveled[character_data[key]] = null

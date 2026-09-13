@@ -239,8 +239,8 @@ func ready_plugin(base_locale: String = "") -> void:
 	data_submenu.add_separator()
 	data_submenu.add_icon_item(load("res://addons/nexus_forge/icons/x_or_y_icon.svg"), "Condition Value", DiscourseGraphNode.DialogueNodeType.CONDITION_SELECT)
 	data_submenu.set_item_tooltip(-1, "Outputs a provided value\nbased on a boolean.")
-	data_submenu.add_icon_item(load("res://addons/nexus_forge/icons/scale_icon.svg"), "Comparation", DiscourseGraphNode.DialogueNodeType.COMPARATION)
-	data_submenu.set_item_tooltip(-1, "Takes 2 values and provides\nthe comparation result (bool)")
+	data_submenu.add_icon_item(load("res://addons/nexus_forge/icons/scale_icon.svg"), "Comparison", DiscourseGraphNode.DialogueNodeType.COMPARATION)
+	data_submenu.set_item_tooltip(-1, "Takes 2 values and provides\nthe comparison result (bool)")
 	data_submenu.add_separator()
 	data_submenu.add_icon_item(load("res://addons/nexus_forge/icons/bulb_icon.svg"), "Event", DiscourseGraphNode.DialogueNodeType.DATA_EVENT)
 	data_submenu.set_item_tooltip(-1, "Triggers a Set/Method/Signal\nbefore providing a value")
@@ -411,6 +411,9 @@ func ready_plugin(base_locale: String = "") -> void:
 	file_popup.add_item(
 		"Change default language",
 		DiscourseFileMenuID.CHANGE_LANGUAGE)
+	file_popup.set_item_tooltip(
+		-1,
+		"Changes the plugin's Discourse default language")
 	file_popup.add_separator()
 	file_popup.add_icon_item(
 		get_theme_icon("Close", "EditorIcons"),
@@ -2190,7 +2193,7 @@ func load_dialog_files(files: Array[String]) -> void:
 					var collapsed_state: Dictionary[String, bool] = {}
 					var cfg_collapsed = cfg.get_value("Layout", "collapsed_state", {})
 					if typeof(cfg_collapsed) == TYPE_DICTIONARY:
-						for key in cfg_collapsed.keys():
+						for key in cfg_collapsed:
 							if typeof(key) == TYPE_STRING and typeof(cfg_collapsed[key]) == TYPE_BOOL:
 								collapsed_state[key] = cfg_collapsed[key]
 					loaded.scroll_offset = position_offset
@@ -2405,7 +2408,7 @@ func load_dialog_from_file(file_path: String) -> EditorDiscourseDialog:
 			var cfg_collapsed = cfg.get_value("Layout", "collapsed_state", {})
 			
 			if typeof(cfg_collapsed) == TYPE_DICTIONARY:
-				for key in cfg_collapsed.keys():
+				for key in cfg_collapsed:
 					if typeof(key) == TYPE_STRING and typeof(cfg_collapsed[key]) == TYPE_BOOL:
 						collapsed_state[key] = cfg_collapsed[key]
 			
@@ -2454,7 +2457,7 @@ func _on_open_conversation_pressed() -> void:
 					var cfg_collapsed = cfg.get_value("Layout", "collapsed_state", {})
 					
 					if typeof(cfg_collapsed) == TYPE_DICTIONARY:
-						for key in cfg_collapsed.keys():
+						for key in cfg_collapsed:
 							if typeof(key) == TYPE_STRING and typeof(cfg_collapsed[key]) == TYPE_BOOL:
 								collapsed_state[key] = cfg_collapsed[key]
 					
@@ -2576,7 +2579,7 @@ func get_file_saved_properties(path: String) -> Dictionary[String, Variant]:
 	var cfg_collapsed = cfg.get_value("Layout", "collapsed_state", {})
 	
 	if typeof(cfg_collapsed) == TYPE_DICTIONARY:
-		for key in cfg_collapsed.keys():
+		for key in cfg_collapsed:
 			if typeof(key) == TYPE_STRING and typeof(cfg_collapsed[key]) == TYPE_BOOL:
 				collapsed_state[key] = cfg_collapsed[key]
 	
@@ -2792,24 +2795,24 @@ func open_conversation(dialog_id: int) -> bool:
 		set_up_node_structure(conversation.node_structure, discourse_nodes_tree.get_root(), node_map)
 		
 		if not node_map.is_empty(): # We left some nodes outside the tree
-			for node_uuid in node_map.keys():
+			for node_uuid in node_map:
 				root.add_child(node_map[node_uuid])
 	
 	discourse_nodes_tree.set_collapsed_folders(
 		conversation.collapsed_state)
 	
-	for localized_key in conversation.format_strings.keys():
+	for localized_key in conversation.format_strings:
 		var localized_text: String = conversation.get_format_string(
 			localized_key,
 			base_language)
 		create_new_phrase_entry(localized_key, localized_text, false)
 	
-	for language in conversation.locale_map.keys():
+	for language in conversation.locale_map:
 		if not has_locale(language):
 			add_locale(language)
 		if not languages_tree.has_locale(language):
 			languages_tree.create_language(language)
-		for region in conversation.locale_map[language].keys():
+		for region in conversation.locale_map[language]:
 			if not languages_tree.has_locale(language, region):
 				languages_tree.create_region(language, region)
 			var lang_code: String = language.to_lower() + "_" + region.to_upper()
@@ -2986,7 +2989,7 @@ func _save_file_layout_for(file_path: String, keys: Dictionary[String, Variant])
 		return
 	
 	var cfg: ConfigFile = ConfigFile.new()
-	for key in keys.keys():
+	for key in keys:
 		cfg.set_value("Layout", key, keys[key])
 	var file: String = file_path.get_file()
 	var path_hash: String = file_path.md5_text()
@@ -3371,7 +3374,7 @@ func _on_edit_cases_pressed(field: Control) -> void:
 		default_case_edt.text = active_conversation.get_format_string_default_case(phrase_key, locale_code, argument_format)
 		
 		if DictUtils.has_nested_path(active_conversation.format_strings, [phrase_key, locale_code, "format", argument_format, "cases"]):
-			for custom_case in active_conversation.format_strings[phrase_key][locale_code]["format"][argument_format]["cases"].keys():
+			for custom_case in active_conversation.format_strings[phrase_key][locale_code]["format"][argument_format]["cases"]:
 				create_new_phrase_case(
 					custom_case,
 					active_conversation.get_format_string_case(phrase_key, locale_code, argument_format, custom_case),
@@ -5622,7 +5625,7 @@ func _get_locale_snapshot(locale: String) -> Dictionary[String, Dictionary]:
 			snapshot["format_strings"][phrase_key] = active_conversation.format_strings[phrase_key][std_locale].duplicate(true)
 	
 	# Backup Graph Node texts/choices
-	for node_uuid in active_conversation.localization.keys():
+	for node_uuid in active_conversation.localization:
 		if active_conversation.localization[node_uuid]["locales"].has(std_locale):
 			snapshot["localization"][node_uuid] = active_conversation.localization[node_uuid]["locales"][std_locale].duplicate(true)
 	

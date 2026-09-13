@@ -69,12 +69,12 @@ func set_format_callable(key: String, method: Callable) -> void:
 ## Returns the formatted dialog.
 func get_dialog() -> String:
 	var format_dict: Dictionary[String, String] = {}
-	for format_key in _phrases_format.keys():
+	for format_key in _phrases_format:
 		var formats: Dictionary = {}
 		var values: Dictionary = {}
 		var phrase_text: String = _phrases_format[format_key]["text"]
 		
-		for format_arg:String in _phrases_format[format_key]["format"].keys():
+		for format_arg:String in _phrases_format[format_key]["format"]:
 		# !eggs, $gender, etc...
 			var case_result: Dictionary[String, String] = _phrases_format[format_key]["format"][format_arg].call()
 			# value = { "case": 10, "value": "{!eggs} eggs" }
@@ -92,7 +92,7 @@ func get_dialog() -> String:
 		# format_dict["&EGG"] = "I have 10 eggs"
 		format_dict[format_key] = phrase_text
 		
-	for key in _format_args.keys():
+	for key in _format_args:
 		if typeof(_format_args[key]) == TYPE_CALLABLE:
 			format_dict[key] = str(_format_args[key].call())
 		else:

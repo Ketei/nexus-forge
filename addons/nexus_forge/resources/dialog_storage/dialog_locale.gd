@@ -51,13 +51,13 @@ static func new_from_json(json_string: String) -> DiscourseDialogLocale:
 	var new_locale: DiscourseDialogLocale = DiscourseDialogLocale.new()
 	
 	if data.has("localization") and typeof(data["localization"]) == TYPE_DICTIONARY:
-		for localization_key in data["localization"].keys():
+		for localization_key in data["localization"]:
 			if typeof(localization_key) != TYPE_STRING or typeof(data["localization"][localization_key]) != TYPE_DICTIONARY:
 				continue
 			var json_loc_data: Dictionary = data["localization"][localization_key]
 			
 			var locale_data: Dictionary[StringName, Dictionary] = {}
-			for node_uuid in json_loc_data.keys():
+			for node_uuid in json_loc_data:
 				if typeof(node_uuid) != TYPE_STRING or typeof(data["localization"][localization_key][node_uuid]) != TYPE_DICTIONARY:
 					continue
 				var json_n_data: Dictionary = json_loc_data[node_uuid]
@@ -81,12 +81,12 @@ static func new_from_json(json_string: String) -> DiscourseDialogLocale:
 	
 	if data.has("format_strings") and typeof(data["format_strings"]) == TYPE_DICTIONARY:
 		var json_data: Dictionary = data["format_strings"]
-		for dialog_id in json_data.keys():
+		for dialog_id in json_data:
 			if typeof(dialog_id) != TYPE_STRING or typeof(json_data[dialog_id]) != TYPE_DICTIONARY:
 				continue
 			var dialog_data: Dictionary = json_data[dialog_id]
 			var conversation_data: Dictionary[String, Dictionary] = {}
-			for format_id in dialog_data.keys():
+			for format_id in dialog_data:
 				if typeof(format_id) != TYPE_STRING or typeof(dialog_data[format_id]) != TYPE_DICTIONARY:
 					continue
 				
@@ -94,13 +94,13 @@ static func new_from_json(json_string: String) -> DiscourseDialogLocale:
 				
 				if dialog_data[format_id].has("format"):
 					var format_data: Dictionary = dialog_data[format_id]
-					for format_key in format_data["format"].keys():
+					for format_key in format_data["format"]:
 						if typeof(format_key) != TYPE_STRING or typeof(format_data["format"][format_key]) != TYPE_DICTIONARY:
 							continue
 						var custom_cases: Dictionary[String, String] = {}
 						var string_data: Dictionary = format_data["format"][format_key]
 						if string_data.has("cases") and typeof(string_data["cases"]) == TYPE_DICTIONARY:
-							for custom_case in string_data["cases"].keys():
+							for custom_case in string_data["cases"]:
 								if typeof(custom_case) != TYPE_STRING or typeof(string_data["cases"][custom_case]) != TYPE_STRING:
 									continue
 								custom_cases[custom_case] = string_data["cases"][custom_case]

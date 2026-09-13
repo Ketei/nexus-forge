@@ -128,7 +128,7 @@ func generate_locale_map() -> void:
 	if typeof(data) != TYPE_DICTIONARY or not data.has_all(["file_to_id", "id_to_locale_file"]):
 		return
 	
-	for file_path in data["file_to_id"].keys():
+	for file_path in data["file_to_id"]:
 		if typeof(file_path) != TYPE_STRING or typeof(data["file_to_id"][file_path]) != TYPE_STRING or not data["id_to_locale_file"].has(data["file_to_id"][file_path]) or typeof(data["id_to_locale_file"][data["file_to_id"][file_path]]) != TYPE_STRING:
 			continue
 		var file_id: String = data["file_to_id"][file_path]
@@ -326,7 +326,7 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 			target["type"] = NodeTypes.DIALOG
 			
 			if DictUtils.has_nested_path(data, ["dialog_settings", "metadata"]):
-				for meta_key in data["dialog_settings"]["metadata"].keys():
+				for meta_key in data["dialog_settings"]["metadata"]:
 					metadata[meta_key] = _get_data(data["dialog_settings"]["metadata"][meta_key])
 			
 			if data["text_source"].is_empty():
@@ -395,7 +395,7 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 					var metadata: Dictionary[String, Variant] = {}
 					
 					if opt_settings.has("metadata"):
-						for meta_key in opt_settings["metadata"].keys():
+						for meta_key in opt_settings["metadata"]:
 							metadata[meta_key] = _get_data(opt_settings["metadata"][meta_key])
 					
 					if not unlocked:

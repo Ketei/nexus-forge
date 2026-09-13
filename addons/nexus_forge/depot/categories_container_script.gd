@@ -155,7 +155,7 @@ func switch_to_category(category_id: StringName) -> void:
 	
 	var data: Dictionary = items_resource._categories[category_id]["custom_data"]
 	
-	for data_key in data.keys():
+	for data_key in data:
 		item_data_tree.add_data(data_key, data[data_key], true)
 	
 	add_cat_int_btn.disabled = false
@@ -184,7 +184,7 @@ func reload_categories() -> void:
 
 
 func _add_category_map(categories: Dictionary[StringName, Dictionary], target: StringName = &"") -> void:
-	for category_id in categories.keys():
+	for category_id in categories:
 		categories_tree.create_category(
 				category_id,
 				items_resource._categories[category_id]["name"],

@@ -209,7 +209,7 @@ func save_current_recipe() -> void:
 	var data: Dictionary[String, Variant] = recipe_custom_data_tree.get_data()
 	recipes_resource.clear_recipe_data(active_recipe)
 	
-	for data_key in data.keys():
+	for data_key in data:
 		recipes_resource.set_recipe_data(
 				active_recipe,
 				data_key,
@@ -406,7 +406,7 @@ func load_recipe(recipe_id: StringName) -> void:
 				item.custom_data)
 	
 	recipe_custom_data_tree.clear_data(false)
-	for data_entry in recipe.custom_data.keys():
+	for data_entry in recipe.custom_data:
 		recipe_custom_data_tree.add_data(data_entry, recipe.custom_data[data_entry], true)
 
 
