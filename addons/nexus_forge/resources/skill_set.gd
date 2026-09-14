@@ -62,13 +62,13 @@ func _init(use_nexus_forge: bool = true) -> void:
 	if not use_nexus_forge or Engine.is_editor_hint():
 		return
 	
-	for skill_id in NexusForge.Skills.skills():
-		if _custom_skills.has(skill_id) or NexusForge.Skills.is_base_skill(skill_id):
+	for skill_id in NexusForge.SkillManager.skills():
+		if _custom_skills.has(skill_id) or NexusForge.SkillManager.is_base_skill(skill_id):
 			continue
 		_custom_skills[skill_id] = 0
 	
-	NexusForge.Skills.skill_created.connect(_on_custom_skill_created)
-	NexusForge.Skills.skill_erased.connect(_on_custom_skill_erased)
+	NexusForge.SkillManager.skill_created.connect(_on_custom_skill_created)
+	NexusForge.SkillManager.skill_erased.connect(_on_custom_skill_erased)
 
 
 func _on_custom_skill_created(skill_id: StringName) -> void:

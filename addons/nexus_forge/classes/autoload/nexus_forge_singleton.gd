@@ -4,6 +4,34 @@ extends Node
 ##
 ## Contains subresources designed to parse and provide data from NexusForge's
 ## custom resources.
+## [br][br]
+## The dictionaries: Items, Stats, Traits, Skills, Species, Quests, 
+## Currencies, and Recipes; are the primary, read-only access points for all 
+## data loaded by their respective managers.
+## [br][br]
+## You can access the data in two ways:
+## [br]
+## 1. [b]Direct Access[/b]: 
+## Use brackets or dot-notation when you know the ID. This provides
+## autocomplete in the editor and throws an error if the ID is missing.
+## [codeblock]
+## var potion = Items.HealthPotion
+## var sword = Items[&"Sword"]
+## [/codeblock]
+## [br]
+## 2. [b]Safe Access:[/b][br]
+## Use the [method Dictionary.get] method when dealing with dynamic variables. 
+## This safely returns [code]null[/code] (or a custom fallback) if the ID
+## is missing.
+## [codeblock]
+## for loot_id in monster_loot:
+##    var loot = Items.get(loot_id)
+##    if loot:
+##        print(loot.get_item_name())
+## [/codeblock]
+## [br]
+## [b]Note:[/b] These dictionaries are read-only to protect internal state. 
+## To load, add, or remove data, you must use the corresponding Manager objects.
 
 enum _LogLevel{
 	INFO,
@@ -229,25 +257,173 @@ var Blackboard: NFBlackboardData
 
 ## An object for registering and loading [CharacterSheet]s and applying
 ## modifications to them.
-var Characters: NFCharacterManager
+var CharacterManager: NFCharacterManager
 
+## A read-only dictionary containing all registered [ItemSheet] resources.
+## [br][br]
+## [b]Note:[/b] This registry is populated automatically. To add or remove items, use [member ItemManager].
+var Items: Dictionary[StringName, ItemSheet] = {}
 ## A resource containing the game's item definitions.
-var Items: NFItemManager
+var ItemManager: NFItemManager:
+	set(m):
+		if is_instance_valid(ItemManager):
+			if ItemManager.item_created.is_connected(_on_item_list_changed):
+				ItemManager.item_created.disconnect(_on_item_list_changed)
+			if ItemManager.item_erased.is_connected(_on_item_list_changed):
+				ItemManager.item_erased.disconnect(_on_item_list_changed)
+		ItemManager = m
+		if is_instance_valid(m):
+			_rebuild_item_cache()
+			m.item_created.connect(_on_item_list_changed)
+			m.item_erased.connect(_on_item_list_changed)
+		else:
+			Items = {}
+			Items.make_read_only()
+
+## A read-only dictionary containing all registered [NFCatalogEntryStat] resources.
+## [br][br]
+## [b]Note:[/b] This registry is populated automatically. To add or remove stats, use [member StatManager].
+var Stats: Dictionary[StringName, NFCatalogEntryStat] = {}
 ## A resource containing custom stats data.[br]
-var Stats: NFStatManager
+var StatManager: NFStatManager:
+	set(s):
+		if is_instance_valid(StatManager):
+			if StatManager.stat_created.is_connected(_on_stat_list_changed):
+				StatManager.stat_created.disconnect(_on_stat_list_changed)
+			if StatManager.stat_erased.is_connected(_on_stat_list_changed):
+				StatManager.stat_erased.disconnect(_on_stat_list_changed)
+		StatManager = s
+		if is_instance_valid(s):
+			s.stat_created.connect(_on_stat_list_changed)
+			s.stat_erased.connect(_on_stat_list_changed)
+			_rebuild_stat_cache()
+		else:
+			Stats = {}
+			Stats.make_read_only()
+
+## A read-only dictionary containing all registered trait [NFCatalogEntry] resources.
+## [br][br]
+## [i]Note: This registry is populated automatically. To add or remove traits, use [member TraitManager].[/i]
+var Traits: Dictionary[StringName, NFCatalogEntry] = {}
 ## A resource containing basic and custom trait data.[br]
-var Traits: NFTraitManager
+var TraitManager: NFTraitManager:
+	set(t):
+		if is_instance_valid(TraitManager):
+			if TraitManager.trait_created.is_connected(_on_trait_list_changed):
+				TraitManager.trait_created.disconnect(_on_trait_list_changed)
+			if TraitManager.trait_erased.is_connected(_on_trait_list_changed):
+				TraitManager.trait_erased.disconnect(_on_trait_list_changed)
+		TraitManager = t
+		if is_instance_valid(t):
+			t.trait_created.connect(_on_trait_list_changed)
+			t.trait_erased.connect(_on_trait_list_changed)
+			_rebuild_trait_cache()
+		else:
+			Traits = {}
+			Traits.make_read_only()
+
+## A read-only dictionary containing all registered skill [NFCatalogEntry] resources.
+## [br][br]
+## [b]Note:[/b] This registry is populated automatically. To add or remove skills, use [member SkillManager].
+var Skills: Dictionary[StringName, NFCatalogEntry] = {}
 ## A resource containing common and custom skill data.[br]
-var Skills: NFSkillManager
+var SkillManager: NFSkillManager:
+	set(s):
+		if is_instance_valid(SkillManager):
+			if SkillManager.skill_created.is_connected(_on_skill_list_changed):
+				SkillManager.skill_created.disconnect(_on_skill_list_changed)
+			if SkillManager.skill_erased.is_connected(_on_skill_list_changed):
+				SkillManager.skill_erased.disconnect(_on_skill_list_changed)
+		SkillManager = s
+		if is_instance_valid(s):
+			s.skill_created.connect(_on_skill_list_changed)
+			s.skill_erased.connect(_on_skill_list_changed)
+			_rebuild_skill_cache()
+		else:
+			Skills = {}
+			Skills.make_read_only()
+
+## A read-only dictionary containing all registered [SpeciesSheet] resources.
+## [br][br]
+## [b]Note:[/b] This registry is populated automatically. To add or remove species, use [member SpeciesManager].
+var Species: Dictionary[StringName, SpeciesSheet] = {}
 ## A resource containing the game's species data.
-var Species: NFSpeciesManager
+var SpeciesManager: NFSpeciesManager:
+	set(s):
+		if is_instance_valid(SpeciesManager):
+			if SpeciesManager.species_created.is_connected(_on_species_list_changed):
+				SpeciesManager.species_created.disconnect(_on_species_list_changed)
+			if SpeciesManager.species_erased.is_connected(_on_species_list_changed):
+				SpeciesManager.species_erased.disconnect(_on_species_list_changed)
+		SpeciesManager = s
+		if is_instance_valid(s):
+			s.species_created.connect(_on_species_list_changed)
+			s.species_erased.connect(_on_species_list_changed)
+			_rebuild_species_cache()
+		else:
+			Species = {}
+			Species.make_read_only()
 ## A resource containing the game's quests data.
-var Quests: NFQuestManager
+
+## A read-only dictionary containing all active [Quest] resources.
+## [br][br]
+## [b]Note:[/b] This registry is populated automatically. To manage active quests, use [member QuestManager].
+var Quests: Dictionary[StringName, Quest] = {}
+var QuestManager: NFQuestManager:
+	set(q):
+		if is_instance_valid(QuestManager):
+			if QuestManager._quests_modified.is_connected(_on_quests_list_changed):
+				QuestManager._quests_modified.disconnect(_on_quests_list_changed)
+		QuestManager = q
+		if is_instance_valid(q):
+			q._quests_modified.connect(_on_quests_list_changed)
+			_rebuild_quest_cache()
+		else:
+			Quests = {}
+			Quests.make_read_only()
 ## A resource containing the game's currency data and helper methods to manage
 ## different currency systems.
-var Currency: NFCurrencyManager
+
+## A read-only dictionary containing all registered [NFCurrencyEntry] resources.
+## [br][br]
+## [b]Note:[/b] This registry is populated automatically. To add or remove currencies, use [member CurrencyManager].
+var Currencies: Dictionary[StringName, NFCurrencyEntry] = {}
+var CurrencyManager: NFCurrencyManager:
+	set(c):
+		if is_instance_valid(CurrencyManager):
+			if CurrencyManager.currency_created.is_connected(_on_currency_list_changed):
+				CurrencyManager.currency_created.disconnect(_on_currency_list_changed)
+			if CurrencyManager.currency_erased.is_connected(_on_currency_list_changed):
+				CurrencyManager.currency_erased.disconnect(_on_currency_list_changed)
+		CurrencyManager = c
+		if is_instance_valid(c):
+			c.currency_created.connect(_on_currency_list_changed)
+			c.currency_erased.connect(_on_currency_list_changed)
+			_rebuild_currency_cache()
+		else:
+			Currencies = {}
+			Currencies.make_read_only()
+
+## A read-only dictionary containing all registered [RecipeSheet] resources.
+## [br][br]
+## [b]Note:[/b] This registry is populated automatically. To add or remove recipes, use [member RecipeManager].
+var Recipes: Dictionary[StringName, RecipeSheet] = {}
 ## A resource containing the game's crafting recipes.
-var Recipes: NFRecipeManager
+var RecipeManager: NFRecipeManager:
+	set(r):
+		if is_instance_valid(RecipeManager):
+			if RecipeManager.recipe_created.is_connected(_on_recipe_list_changed):
+				RecipeManager.recipe_created.disconnect(_on_recipe_list_changed)
+			if RecipeManager.recipe_erased.is_connected(_on_recipe_list_changed):
+				RecipeManager.recipe_erased.disconnect(_on_recipe_list_changed)
+		RecipeManager = r
+		if is_instance_valid(r):
+			r.recipe_created.connect(_on_recipe_list_changed)
+			r.recipe_erased.connect(_on_recipe_list_changed)
+			_rebuild_recipe_cache()
+		else:
+			Recipes = {}
+			Recipes.make_read_only()
 
 var _phrase_api: PhraseAPI = PhraseAPI.new()
 
@@ -302,25 +478,27 @@ func _ready() -> void:
 					_LogLevel.ERROR)
 	
 	if use_species:
-		Species = NFSpeciesManager.new()
+		SpeciesManager = NFSpeciesManager.new()
 		var species_path: String = ProjectSettings.get_setting(
 				get_setting_path("species"), "")
 		if not species_path.is_empty() and ResourceLoader.exists(species_path):
 			var res_pre = load(species_path)
 			if res_pre is SpeciesCatalog:
-				Species.load_catalog(res_pre, true)
+				SpeciesManager.load_catalog(res_pre, true)
+				_rebuild_species_cache()
 			else:
 				printerr("[NEXUS FORGE] ProjectSettings: Invalid Species.")
 	
 	if use_items:
-		if Items == null:
-			Items = NFItemManager.new()
+		if ItemManager == null:
+			ItemManager = NFItemManager.new()
 		var items_path: String = ProjectSettings.get_setting(
 				get_setting_path("items"), "")
 		if not items_path.is_empty() and ResourceLoader.exists(items_path):
 			var res_pre: Resource = load(items_path)
 			if res_pre is ItemCatalog:
-				Items.load_catalog(res_pre)
+				ItemManager.load_catalog(res_pre)
+				_rebuild_item_cache()
 			else:
 				NFPluginGameHandler._log_msg(
 						"singleton",
@@ -328,13 +506,14 @@ func _ready() -> void:
 						NFPluginGameHandler._LogLevel.ERROR)
 	
 	if use_currencies:
-		Currency = NFCurrencyManager.new()
+		CurrencyManager = NFCurrencyManager.new()
 		var currency_path: String = ProjectSettings.get_setting(
 				get_setting_path("currency"), "")
 		if not currency_path.is_empty() and ResourceLoader.exists(currency_path):
 			var res_pre: Resource = load(currency_path)
 			if res_pre is CurrencyCatalog:
-				Currency.load_catalog(res_pre, true)
+				CurrencyManager.load_catalog(res_pre, true)
+				_rebuild_currency_cache()
 			else:
 				NFPluginGameHandler._log_msg(
 						"singleton",
@@ -342,13 +521,14 @@ func _ready() -> void:
 						NFPluginGameHandler._LogLevel.ERROR)
 	
 	if use_recipes:
-		Recipes = NFRecipeManager.new()
+		RecipeManager = NFRecipeManager.new()
 		var recipe_path: String = ProjectSettings.get_setting(
 				get_setting_path("recipes"), "")
 		if not recipe_path.is_empty() and ResourceLoader.exists(recipe_path):
 			var res_pre: Resource = load(recipe_path)
 			if res_pre is RecipeCatalog:
-				Recipes.load_catalog(res_pre)
+				RecipeManager.load_catalog(res_pre)
+				_rebuild_recipe_cache()
 			else:
 				NFPluginGameHandler._log_msg(
 						"singleton",
@@ -356,29 +536,31 @@ func _ready() -> void:
 						NFPluginGameHandler._LogLevel.ERROR)
 	
 	if use_stats:
-		if Stats == null:
-			Stats = NFStatManager.new()
+		if StatManager == null:
+			StatManager = NFStatManager.new()
 		var stats_path: String = ProjectSettings.get_setting(
 				get_setting_path("stats"), "")
 		
 		if not stats_path.is_empty() and ResourceLoader.exists(stats_path):
 			var st_load = load(stats_path)
 			if st_load != null and st_load is StatCatalog:
-				Stats.load_catalog(st_load)
+				StatManager.load_catalog(st_load)
+				_rebuild_stat_cache()
 	
 	if use_skills:
-		if Skills == null:
-			Skills = NFSkillManager.new()
+		if SkillManager == null:
+			SkillManager = NFSkillManager.new()
 		var skills_path: String = ProjectSettings.get_setting(
 				get_setting_path("skills"), "")
 		if not skills_path.is_empty() and ResourceLoader.exists(skills_path):
 			var skill_pre = load(skills_path)
 			if skill_pre != null and skill_pre is SkillCatalog:
-				Skills.load_catalog(skill_pre)
+				SkillManager.load_catalog(skill_pre)
+				_rebuild_skill_cache()
 	
 	if use_traits:
-		if Traits == null:
-			Traits = NFTraitManager.new()
+		if TraitManager == null:
+			TraitManager = NFTraitManager.new()
 		var traits_path: String = ProjectSettings.get_setting(
 				get_setting_path("traits"), "")
 		
@@ -386,7 +568,8 @@ func _ready() -> void:
 			var pre_trait = load(traits_path)
 			
 			if pre_trait is TraitCatalog:
-				Traits.load_catalog(pre_trait)
+				TraitManager.load_catalog(pre_trait)
+				_rebuild_trait_cache()
 	
 	if Discourse == null:
 		if instantiate_disabled or use_discourse:
@@ -397,15 +580,15 @@ func _ready() -> void:
 	if Blackboard == null:
 		Blackboard = NFBlackboardData.new()
 	
-	if Stats == null and instantiate_disabled:
-		Stats = NFStatManager.new()
-	if Traits == null and instantiate_disabled:
-		Traits = NFTraitManager.new()
-	if Skills == null and instantiate_disabled:
-		Skills = NFSkillManager.new()
+	if StatManager == null and instantiate_disabled:
+		StatManager = NFStatManager.new()
+	if TraitManager == null and instantiate_disabled:
+		TraitManager = NFTraitManager.new()
+	if SkillManager == null and instantiate_disabled:
+		SkillManager = NFSkillManager.new()
 	
-	if Characters == null and (use_characters or instantiate_disabled):
-		Characters = NFCharacterManager.new()
+	if CharacterManager == null and (use_characters or instantiate_disabled):
+		CharacterManager = NFCharacterManager.new()
 		if ProjectSettings.get_setting(get_setting_path("character_register_ids"), true):
 			if OS.has_feature("editor"):
 				if FileAccess.file_exists("user://nexus_forge/persona_settings.cfg"):
@@ -421,7 +604,7 @@ func _ready() -> void:
 												"singleton",
 												"Resource '%s' is using the ID (%s) of an already registered resource '%s'. Skipping." % [key, data[key], map[data[key]]])
 									map[data[key]] = key
-							Characters._characters.assign(map)
+							CharacterManager._characters.assign(map)
 			else:
 				if FileAccess.file_exists("res://addons/nexus_forge/settings.cfg"):
 					var cfg: ConfigFile = ConfigFile.new()
@@ -432,25 +615,26 @@ func _ready() -> void:
 							for key in data:
 								if typeof(key) == TYPE_STRING_NAME and typeof(data[key]) == TYPE_STRING:
 									map[key] = data[key]
-							Characters._characters.assign(map)
+							CharacterManager._characters.assign(map)
 						else:
 							_log_msg(
 									"singleton",
 									"Failed to load NexusForge settings",
 									NFPluginGameHandler._LogLevel.WARNING)
-	if Quests == null and ( use_quests or instantiate_disabled ):
-		Quests = NFQuestManager.new()
-	if Species == null and instantiate_disabled:
-		Species = NFSpeciesManager.new()
-	if Items == null and instantiate_disabled:
-		Items = NFItemManager.new()
-	if Currency == null and instantiate_disabled:
-		Currency = NFCurrencyManager.new()
-	if Recipes == null and instantiate_disabled:
-		Recipes = NFRecipeManager.new()
+	if QuestManager == null and ( use_quests or instantiate_disabled ):
+		QuestManager = NFQuestManager.new()
+	if SpeciesManager == null and instantiate_disabled:
+		SpeciesManager = NFSpeciesManager.new()
+	if ItemManager == null and instantiate_disabled:
+		ItemManager = NFItemManager.new()
+	if CurrencyManager == null and instantiate_disabled:
+		CurrencyManager = NFCurrencyManager.new()
+	if RecipeManager == null and instantiate_disabled:
+		RecipeManager = NFRecipeManager.new()
 	
 	for folder_path in Blackboard._variables:
 		Blackboard._variables[folder_path].make_read_only()
+	
 	Blackboard._variables.make_read_only()
 
 
@@ -473,3 +657,101 @@ func _notification(what: int) -> void:
 		
 		if Discourse.is_dialog_active():
 			Discourse.refresh()
+
+
+func _on_item_list_changed(_id: StringName) -> void:
+	_rebuild_item_cache()
+
+
+func _rebuild_item_cache() -> void:
+	if is_instance_valid(ItemManager):
+		var new_cache: Dictionary[StringName, ItemSheet] =\
+				ItemManager._items.duplicate()
+		new_cache.make_read_only()
+		Items = new_cache
+
+
+func _on_stat_list_changed(_id: StringName) -> void:
+	_rebuild_stat_cache()
+
+
+func _rebuild_stat_cache() -> void:
+	if is_instance_valid(StatManager):
+		var new_cache: Dictionary[StringName, NFCatalogEntryStat] =\
+				StatManager._stat_entries.duplicate()
+		new_cache.make_read_only()
+		Stats = new_cache
+
+
+func _on_trait_list_changed(_id: StringName) -> void:
+	_rebuild_trait_cache()
+
+
+func _rebuild_trait_cache() -> void:
+	if is_instance_valid(TraitManager):
+		var new_cache: Dictionary[StringName, NFCatalogEntry] =\
+				TraitManager._trait_entries.duplicate()
+		new_cache.make_read_only()
+		Traits = new_cache
+
+
+func _on_skill_list_changed(_id: StringName) -> void:
+	_rebuild_skill_cache()
+
+
+func _rebuild_skill_cache() -> void:
+	if is_instance_valid(SkillManager):
+		var new_cache: Dictionary[StringName, NFCatalogEntry] =\
+				SkillManager._skills.duplicate()
+		new_cache.make_read_only()
+		Skills = new_cache
+
+
+func _on_species_list_changed(_id: StringName) -> void:
+	_rebuild_species_cache()
+
+
+func _rebuild_species_cache() -> void:
+	if is_instance_valid(SpeciesManager):
+		var new_cache: Dictionary[StringName, SpeciesSheet] =\
+				SpeciesManager._species.duplicate()
+		new_cache.make_read_only()
+		Species = new_cache
+
+
+func _on_quests_list_changed(_id: StringName) -> void:
+	_rebuild_quest_cache()
+
+
+func _rebuild_quest_cache() -> void:
+	if is_instance_valid(QuestManager):
+		var new_cache: Dictionary[StringName, Quest] = {}
+		
+		for quest_id in QuestManager._active_quests:
+			new_cache[quest_id] = QuestManager._active_quests[quest_id].resource
+		new_cache.make_read_only()
+		Quests = new_cache
+
+
+func _on_currency_list_changed(_id: StringName) -> void:
+	_rebuild_currency_cache()
+
+
+func _rebuild_currency_cache() -> void:
+	if is_instance_valid(CurrencyManager):
+		var new_cache: Dictionary[StringName, NFCurrencyEntry] =\
+				CurrencyManager._currencies.duplicate()
+		new_cache.make_read_only()
+		Currencies = new_cache
+
+
+func _on_recipe_list_changed(_id: StringName) -> void:
+	_rebuild_recipe_cache()
+
+
+func _rebuild_recipe_cache() -> void:
+	if is_instance_valid(RecipeManager):
+		var new_cache: Dictionary[StringName, RecipeSheet] =\
+				RecipeManager._recipe_sheets.duplicate()
+		new_cache.make_read_only()
+		Recipes = new_cache

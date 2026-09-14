@@ -210,9 +210,9 @@ func _get_variables_for(path: String) -> Array[Dictionary]:
 	
 	paths.sort_custom(
 		func(a:Dictionary, b:Dictionary):
-			var distance_a: float = StringUtils.levenshtein_distance(a["path"], path)
-			var distance_b: float = StringUtils.levenshtein_distance(b["path"], path)
-			return distance_a < distance_b)
+			var distance_a: float = StringUtils.levenshtein_similarity(a["path"], path)
+			var distance_b: float = StringUtils.levenshtein_similarity(b["path"], path)
+			return distance_b < distance_a)
 	
 	return paths
 

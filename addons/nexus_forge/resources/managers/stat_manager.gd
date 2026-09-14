@@ -2,11 +2,7 @@ class_name NFStatManager
 extends RefCounted
 ## An object to keep track of stat's info and custom stats.
 ##
-## This object can keep track of data of base and custom stats. Data
-## can be accessed directly by using the ID of the stat eg. [code]Stats.my_stat[/code].
-## If the stat isn't registered a fallback object will be returned. You can
-## call is_valid() to verify a stat validity as well as is_custom() to
-## see if the stat is custom.
+## This object can keep track of data of base and custom stats.
 
 ## Emmited when a stat is created.
 signal stat_created(stat_id: StringName)
@@ -36,14 +32,6 @@ func _init() -> void:
 		_stat_entries[stat] = entry
 	
 	_base_stats.make_read_only()
-
-
-func _get(property: StringName) -> Variant:
-	if _stat_entries.has(property):
-		return _stat_entries[property]
-	var invalid: NFCatalogEntryStat = NFCatalogEntryStat.new()
-	invalid._flags = NFCatalogEntry._get_flags(false, false, true)
-	return invalid
 
 
 ## Loads a stat [param catalog] into this object. If [param clear_stats]
@@ -82,8 +70,7 @@ func is_base_stat(stat_id: StringName) -> bool:
 
 
 ## Registers a custom stat with [param stat_id] of type [param type] unless
-## it already exists. After creation you can access the stat directly by doing
-## [code]Stats.my_custom_stat[/code]. Access will return a [NFCatalogEntryStat] object.[br]
+## it already exists.[br]
 ## Registering a new stat will also add them to all existing [StatBlock]s and
 ## include them on newly instantiated ones.
 func create_stat(stat_id: StringName, type: int) -> void:

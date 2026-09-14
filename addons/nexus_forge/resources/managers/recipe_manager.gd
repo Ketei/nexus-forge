@@ -16,12 +16,6 @@ signal recipe_erased(recipe_id: StringName)
 var _recipe_sheets: Dictionary[StringName, RecipeSheet] = {}
 
 
-func _get(property: StringName) -> Variant:
-	if _recipe_sheets.has(property):
-		return _recipe_sheets[property]
-	return null
-
-
 ## Loads a [param catalog] of recipes into this object. If [param clear_recipes]
 ## is [code]true[/code] then the previous recipes are cleared.
 func load_catalog(catalog: RecipeCatalog, clear_recipes: bool = true) -> void:
@@ -136,14 +130,6 @@ func clear_recipe_output_item_data(recipe_id: StringName, ingredient_idx: int) -
 func clear_recipe_data(recipe_id: StringName) -> void:
 	if _recipe_sheets.has(recipe_id):
 		_recipe_sheets[recipe_id].custom_data.clear()
-
-
-## Returns a [RecipeSheet] of the [param recipe_id] or [code]null[/code]
-## if the recipe doesn't exist.
-func get_recipe(recipe_id: StringName) -> RecipeSheet:
-	if _recipe_sheets.has(recipe_id):
-		return _recipe_sheets[recipe_id]
-	return null
 
 
 ## Returns [code]true[/code] if param recipe_id is registered.

@@ -78,40 +78,53 @@ static func beautify_int(value: int) -> String:
 	return result
 
 
-## Quantifies the "textual difference" between [param string_1] and
-## [param string_2]. The closer the return is to [code]0[/code] the more similar
-## they are. The closer it is to [code]1.0[/code] the more different they are.[br]
-## The Levenshtein distance represents the minimum number of single-character
-## edits required to transform [param string_1] into [param string_2].
-static func levenshtein_distance(string_1: String, string_2: String) -> float:
+## Quantifies the textual similarity between [param string_1] and
+## [param string_2]. The closer the return is to [code]1.0[/code] the more similar
+## they are. The closer it is to [code]0.0[/code] the more different they are.[br]
+## This calculates the Levenshtein distance using an O(N) memory optimization.
+static func levenshtein_similarity(string_1: String, string_2: String) -> float:
 	var len_1: int = string_1.length()
 	var len_2: int = string_2.length()
 	
-	if (len_1 == 0 and len_2 != 0) or (len_2 == 0 and len_1 != 0):
-		return 0.0
-
-	var dp: Array[Array] = []
-	for i in range(len_1 + 1):
-		dp.append([])
-		for j in range(len_2 + 1):
-			dp[i].append(0)
+	if len_1 == 0 and len_2 == 0:
+		return 1.0 # Both empty means they are identical
+	if len_1 == 0 or len_2 == 0:
+		return 0.0 # One empty means completely different
 	
-	for i in range(len_1 + 1):
-		dp[i][0] = i
+	if len_1 < len_2:
+		var temp_str: String = string_1
+		string_1 = string_2
+		string_2 = temp_str
+		
+		var temp_len: int = len_1
+		len_1 = len_2
+		len_2 = temp_len
+	
+	var v0: Array[int] = []
+	var v1: Array[int] = []
+	v0.resize(len_2 + 1)
+	v1.resize(len_2 + 1)
+	
 	for j in range(len_2 + 1):
-		dp[0][j] = j
+		v0[j] = j
 	
-	for i in range(1, len_1 + 1):
-		for j in range(1, len_2 + 1):
-			if string_1[i - 1] == string_2[j - 1]:
-				dp[i][j] = dp[i - 1][j - 1]
-			else:
-				dp[i][j] = min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + 1)
+	# Calculate distance
+	for i in range(len_1):
+		v1[0] = i + 1
+		var c1: String = string_1[i]
+		for j in range(len_2):
+			var cost: int = 0 if c1 == string_2[j] else 1
+			v1[j + 1] = mini(v1[j] + 1, mini(v0[j + 1] + 1, v0[j] + cost))
+		
+		var temp: Array[int] = v0
+		v0 = v1
+		v1 = temp
 	
-	var distance: int = dp[len_1][len_2]
-	var max_len:int = maxi(len_1, len_2)
-	var similarity: float = 1.0 - float(distance) / float(max_len)
-	return similarity
+	var distance: int = v0[len_2]
+	var max_len: int = len_1
+	
+	# Return as a similarity percentage (1.0 = identical, 0.0 = completely different)
+	return 1.0 - (float(distance) / float(max_len))
 
 
 ## Takes an array of strings and converts them to a valid path.

@@ -2,11 +2,7 @@ class_name NFTraitManager
 extends RefCounted
 ## An object to keep track of trait's info and custom traits.
 ##
-## This object can keep track of data of base and custom traits. Data
-## can be accessed directly by using the ID of the trait eg. [code]Traits.my_trait[/code].
-## If the trait isn't registered a fallback object will be returned. You can
-## call is_valid() to verify a trait validity as well as is_custom() to
-## see if the trait is custom.
+## This object can keep track of data of base and custom traits.
 
 
 ## Emmited when a new trait is created.
@@ -44,14 +40,6 @@ func load_catalog(catalog: TraitCatalog, clear_traits: bool = true) -> void:
 		entry.custom_data.assign(catalog.get_trait_custom_data(trait_id))
 		entry._flags = NFCatalogEntry._get_flags(true, not _base_traits.has(trait_id), true)
 		_trait_entries[trait_id] = entry
-
-
-func _get(property: StringName) -> Variant:
-	if _trait_entries.has(property):
-		return _trait_entries[property]
-	var invalid: NFCatalogEntry = NFCatalogEntry.new()
-	invalid._flags = NFCatalogEntry._get_flags(false, false, true)
-	return invalid
 
 
 #region Defined Traits
@@ -118,7 +106,6 @@ func trait_data_keys(trait_id: StringName) -> Array[String]:
 #endregion
 
 ## Creates a custom trait with id [param trait_id] unless it already exists.
-## It can after be accessed directly by calling [code]Traits.my_trait[/code][br]
 ## Creating a custom trait with this method will add them to all instantiated
 ## [TraitBlock]s and newly instantiated ones will include them too.
 func create_trait(trait_id: StringName) -> void:
@@ -146,6 +133,7 @@ func is_custom(trait_id: StringName) -> bool:
 ## Returns if a custom trait [param trait_id] is registered.
 func has_trait(trait_id: StringName) -> bool:
 	return _trait_entries.has(trait_id)
+
 
 ## Erases the custom trait [param trait_id].[br]
 ## Erasing a trait doesn't remove it globally from existing [TraitBlock]s,

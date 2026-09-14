@@ -8,6 +8,8 @@ extends RefCounted
 ## It also provides methods to get data for storage and restoring it.
 
 
+signal _quests_modified
+
 ## Emitted when a quest is started via [method start_quest].
 signal quest_started(quest_id: StringName)
 ## Emitted when a quest progresses. Emitted too when a quest starts with [param to_stage]
@@ -38,14 +40,6 @@ var Log: NFQuestLog = NFQuestLog.new()
 
 
 var _quest_modifiers: Dictionary[StringName, Dictionary] = {}
-
-
-func _get(property: StringName) -> Variant:
-	if _active_quests.has(property):
-		return property
-	var invalid: NFQuestEntry = NFQuestEntry.new()
-	invalid._flags = BitUtils.set_bit_index(0, 63, true)
-	return invalid
 
 
 ## Starts a quest. If [param auto_advance_stages] is [code]true[/code]
@@ -87,6 +81,7 @@ func start_quest(quest: Quest, auto_advance_stages: bool) -> bool:
 		for objective_id in quest.get_stage(stage_id).objectives():
 			stage_entry.set_entry(objective_id)
 	
+	_quests_modified.emit()
 	quest_started.emit(quest.id)
 	quest_progressed.emit(quest.id, quest.entry_stage)
 	
@@ -123,6 +118,7 @@ func add_quest_resource(quest: Quest, auto_advance_stages: bool, apply_mods: boo
 	_active_quests[quest.id] = new_entry
 	new_entry.objective_state_changed.connect(_on_quest_objective_state_changed)
 	
+	_quests_modified.emit()
 	return true
 
 
@@ -218,6 +214,7 @@ func restore_state(state_data: Dictionary) -> void:
 		
 		_active_quests[key].set_stage(state_data[key]["current_stage"], _static_progress, false)
 		_active_quests[key].set_objectives_state(valid_progress)
+	_quests_modified.emit()
 
 
 ## Removes an active quest and clears it from the history if
@@ -225,14 +222,7 @@ func restore_state(state_data: Dictionary) -> void:
 func remove_quest(quest_id: StringName, clear_from_history: bool = true) -> void:
 	if _active_quests.erase(quest_id) and clear_from_history:
 		Log.erase(quest_id)
-
-
-## Returns the quest object from the active quest [param quest_id] or
-## [code]null[/code] if the quest isn't active.
-func get_quest(quest_id: StringName) -> Quest:
-	if _active_quests.has(quest_id):
-		return _active_quests[quest_id].resource
-	return null
+		_quests_modified.emit()
 
 
 ## Returns the current [QuestStage] object of the param quest_id or
@@ -371,9 +361,7 @@ func complete_stage(quest_id: StringName, stage_id: StringName, success: bool) -
 	stage_completed.emit(quest_id, stage_id, true)
 	
 	if next_stage.is_empty():
-		_set_quest_complete(quest_id, true)
-		_active_quests.erase(quest_id)
-		quest_finished.emit(quest_id)
+		complete_quest(quest_id, true)
 	else:
 		if entry.set_stage(next_stage, _static_progress):
 			quest_progressed.emit(quest_id, next_stage)
@@ -390,6 +378,7 @@ func complete_quest(quest_id: StringName, success: bool) -> void:
 		_set_quest_complete(quest_id, success)
 		_active_quests.erase(quest_id)
 		quest_finished.emit(quest_id)
+		_quests_modified.emit()
 
 
 ## Registers a [Callable] with ID [param mod_id] to modify [param quest_id]
@@ -494,9 +483,7 @@ func _check_stage_auto_advance(quest_id: StringName) -> void:
 		stage_completed.emit(quest_id, stage_id, true)
 	
 		if next_stage.is_empty():
-			_set_quest_complete(quest_id, true)
-			_active_quests.erase(quest_id)
-			quest_finished.emit(quest_id)
+			complete_quest(quest_id, true)
 			break
 		else:
 			quest_progressed.emit(quest_id, next_stage)

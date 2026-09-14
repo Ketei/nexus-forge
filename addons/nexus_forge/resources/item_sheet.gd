@@ -34,17 +34,12 @@ var value: int = 0
 var description: String = "": set = _set_item_description
 ## An array contaning the item flags.
 var flags: Array[ItemFlag] = []
-## Custom data of the item. It can be accessed directly with the data ID. eg.
-## [code]my_item.example_data[/code]
+## Custom data of the item.
 var custom_data: Dictionary[StringName, Variant] = {}
 
 var _name_builder: Callable = Callable()
 var _description_builder: Callable = Callable()
 
-func _get(property: StringName) -> Variant:
-	if custom_data.has(property):
-		return custom_data[property]
-	return null
 
 ## Returns the item [member ItemSheet.name]. Formats it if [code]Format Item Strings with Blackboard[/code]
 ## is [code]On[/code] on [code]Project Settings[/code].

@@ -2,11 +2,7 @@ class_name NFSkillManager
 extends RefCounted
 ## An object to keep track of skill's info and custom skills.
 ##
-## This object can keep track skill data of base skills and custom ones. Data
-## can be accessed directly by using the ID of the skill eg.[code]Skills.my_skill[/code].
-## If the skill isn't registered a fallback object will be returned. You can
-## call is_valid() to verify a skill validity as well as is_custom() to
-## see if the skill isn't a basic one.
+## This object can keep track skill data of base skills and custom ones.
 
 
 ## Emmited when a new custom skill is created.
@@ -28,14 +24,6 @@ func _init() -> void:
 		_skills[skill_id] = base_entry
 		
 	_base_skills.make_read_only()
-
-
-func _get(property: StringName) -> Variant:
-	if _skills.has(property):
-		return _skills[property]
-	var invalid: NFCatalogEntry = NFCatalogEntry.new()
-	invalid._flags = NFCatalogEntry._get_flags(false, false, true)
-	return invalid
 
 
 ## Loads a skill param catalog into this object. If param clear_skills

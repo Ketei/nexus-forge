@@ -134,10 +134,10 @@ func sort_and_set_completion_options(clean_syntax: String, options: Array[String
 	
 	var new_sort: Array[String] = options.duplicate()
 	new_sort.sort_custom(
-		func (a:String,b:String):
-			var dist_a: float = StringUtils.levenshtein_distance(a, clean_syntax)
-			var dist_b: float = StringUtils.levenshtein_distance(b, clean_syntax)
-			return dist_a < dist_b)
+		func (a: String, b: String):
+			var sim_a: float = StringUtils.levenshtein_similarity(a, clean_syntax)
+			var sim_b: float = StringUtils.levenshtein_similarity(b, clean_syntax)
+			return sim_b < sim_a)
 	
 	for var_path in new_sort:
 		text_code_edit.add_code_completion_option(CodeEdit.KIND_FUNCTION, var_path, var_path)

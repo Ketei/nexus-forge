@@ -32,9 +32,3 @@ extends Resource
 @export var skills: NFSpeciesStatCatalog = NFSpeciesStatCatalog.new(TYPE_INT)
 ## The traits of the species.
 @export var traits: NFSpeciesStatCatalog = NFSpeciesStatCatalog.new(TYPE_INT)
-
-
-func _get(property: StringName) -> Variant:
-	if custom_data.has(property):
-		return custom_data[property]
-	return null

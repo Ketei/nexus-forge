@@ -2,10 +2,18 @@ class_name NFCurrencyEntry
 extends RefCounted
 
 
+## The ID of the currency.
+var id: StringName = &"":
+	set(new_id):
+		if id.is_empty():
+			id = new_id
+## The name of the currency.
 var name: String = ""
+## The unitary value of the currency.
 var value: int = 1:
 	set(v):
 		value = maxi(1, v)
+## The custom data of the currency.
 var custom_data: Dictionary[StringName, Variant] = {}
 var _flags: int = 0:
 	set(f):
@@ -13,22 +21,7 @@ var _flags: int = 0:
 			_flags = f
 
 
-func _set(property: StringName, value: Variant) -> bool:
-	if custom_data.has(property):
-		if typeof(value) != TYPE_NIL:
-			custom_data[property] = value
-		else:
-			custom_data.erase(property)
-		return true
-	return false
-
-
-func _get(property: StringName) -> Variant:
-	if custom_data.has(property):
-		return custom_data[property]
-	return null
-
-
+## Converts [param total_value] to this currency.
 func from_value(total_value: int) -> int:
 	if total_value < value:
 		return 0
@@ -36,10 +29,6 @@ func from_value(total_value: int) -> int:
 		return 1
 	else:
 		return floori(total_value / float(value))
-
-
-func is_valid() -> bool:
-	return BitUtils.is_bit_index(_flags, 0, true)
 
 
 func is_custom() -> bool:

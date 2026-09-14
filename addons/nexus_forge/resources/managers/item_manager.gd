@@ -23,12 +23,6 @@ var _categories: Dictionary[StringName, Dictionary] = {}
 var _items: Dictionary[StringName, ItemSheet] = {}
 
 
-func _get(property: StringName) -> Variant:
-	if _items.has(property):
-		return _items[property]
-	return null
-
-
 ## Loads an [ItemCatalog] into this object. If [param clear_items] is
 ## [code]true[/code] then the previous registered items will be cleared.
 func load_catalog(catalog: ItemCatalog, clear_items: bool = true) -> void:
@@ -90,11 +84,11 @@ func clear_item_data(item_id: StringName) -> void:
 	_items[item_id].emit_changed()
 
 
-## Registers the [param item_sheet] as an item unless [member ItemSheet.item_id]
+## Adds the [param item_sheet] as an item unless [member ItemSheet.item_id]
 ## it uses already exists or is empty.[br]
-## Note: Items are passed by reference, and [param item_sheet] will be
+## [b]Note:[/b] Items are passed by reference, and [param item_sheet] will be
 ## stored AS the reference.
-func register_item(item_sheet: ItemSheet = null) -> void:
+func add_item(item_sheet: ItemSheet = null) -> void:
 	if item_sheet.item_id.is_empty() or _items.has(item_sheet.item_id):
 		return
 	
@@ -201,15 +195,6 @@ func set_item_description(item_id: StringName, new_desc: String) -> void:
 	
 	_items[item_id]["description"] = new_desc
 	_items[item_id].emit_changed()
-
-
-## Returns an [ItemSheet] of the item param item_id.[br]
-## Returns [code]null[/code] if the item doesn't exist.
-func get_item(item_id: StringName) -> ItemSheet:
-	if not _items.has(item_id):
-		return null
-	
-	return _items[item_id]
 
 
 ## Returns true if [param item_id] is registered.

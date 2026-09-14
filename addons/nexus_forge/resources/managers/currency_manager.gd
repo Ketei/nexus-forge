@@ -7,21 +7,8 @@ signal currency_erased(id: StringName)
 signal value_changed(id: StringName)
 
 
-var _currencies: Dictionary[StringName, NFCurrencyEntry] = {
-	#&"copper": {"name": "CP", "value": 1, "data": null},
-	#&"silver": {"name": "SP", "value": 10, "data": null},
-	#&"electrum": {"name": "EP", "value": 50, "data": null},
-	#&"gold": {"name": "GP", "value": 100, "data": null},
-	#&"platinum": {"name": "PP", "value": 1000, "data": null},
-}
+var _currencies: Dictionary[StringName, NFCurrencyEntry] = {}
 
-
-func _get(property: StringName) -> Variant:
-	if _currencies.has(property):
-		return _currencies[property]
-	var invalid: NFCurrencyEntry = NFCurrencyEntry.new()
-	invalid._flags = NFCurrencyEntry._get_flags(false, false, true)
-	return invalid
 
 
 func load_catalog(catalog: CurrencyCatalog, clear_currencies: bool = true) -> void:
@@ -30,6 +17,7 @@ func load_catalog(catalog: CurrencyCatalog, clear_currencies: bool = true) -> vo
 	
 	for currency_id in catalog.currencies():
 		var entry: NFCurrencyEntry = NFCurrencyEntry.new()
+		entry.id = currency_id
 		entry.name = catalog.get_currency_name(currency_id)
 		entry.value = catalog.get_currency_value(currency_id)
 		entry.custom_data.assign(catalog.get_currency_custom_data(currency_id))
@@ -44,6 +32,7 @@ func create_currency(currency_id: StringName, value: int = 0, name: String = "")
 	
 	var new_entry: NFCurrencyEntry = NFCurrencyEntry.new()
 	
+	new_entry.id = currency_id
 	new_entry.name = name
 	new_entry.value = value
 	new_entry._flags = NFCurrencyEntry._get_flags(true, true, true)

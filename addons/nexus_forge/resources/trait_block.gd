@@ -30,12 +30,12 @@ func _init(use_nexus_forge: bool = true) -> void:
 	if not use_nexus_forge or Engine.is_editor_hint():
 		return
 	
-	for custom_trait in NexusForge.Traits.traits():
-		if _custom_traits.has(custom_trait) or not NexusForge.Traits.is_custom(custom_trait):
+	for custom_trait in NexusForge.TraitManager.traits():
+		if _custom_traits.has(custom_trait) or not NexusForge.TraitManager.is_custom(custom_trait):
 			continue
 		_custom_traits[custom_trait] = 0
 	
-	NexusForge.Traits.trait_created.connect(_on_custom_trait_created)
+	NexusForge.TraitManager.trait_created.connect(_on_custom_trait_created)
 
 
 func _set(property: StringName, value: Variant) -> bool:

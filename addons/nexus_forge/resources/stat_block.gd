@@ -56,22 +56,22 @@ func _init(use_nexus_forge: bool = true) -> void:
 	if not use_nexus_forge or Engine.is_editor_hint():
 		return
 	
-	for custom_stat in NexusForge.Stats.stats():
-		if NexusForge.Stats.is_base_stat(custom_stat) or _custom_stats.has(custom_stat):
+	for custom_stat in NexusForge.StatManager.stats():
+		if NexusForge.StatManager.is_base_stat(custom_stat) or _custom_stats.has(custom_stat):
 			continue
 		
-		var new_range: ValueRange = RangeInt.new() if NexusForge.Stats.stat_type(custom_stat) == TYPE_INT else RangeFloat.new()
+		var new_range: ValueRange = RangeInt.new() if NexusForge.StatManager.stat_type(custom_stat) == TYPE_INT else RangeFloat.new()
 		
-		new_range.allow_lesser = NexusForge.Stats.custom_allows_lesser(custom_stat)
-		new_range.allow_greater = NexusForge.Stats.custom_allows_greater(custom_stat)
-		new_range.min_value = NexusForge.Stats.get_custom_min_value(custom_stat)
-		new_range.max_value = NexusForge.Stats.get_custom_max_value(custom_stat)
+		new_range.allow_lesser = NexusForge.StatManager.custom_allows_lesser(custom_stat)
+		new_range.allow_greater = NexusForge.StatManager.custom_allows_greater(custom_stat)
+		new_range.min_value = NexusForge.StatManager.get_custom_min_value(custom_stat)
+		new_range.max_value = NexusForge.StatManager.get_custom_max_value(custom_stat)
 		
 		_custom_stats[custom_stat] = new_range
 	
-	NexusForge.Stats.stat_created.connect(_on_custom_stat_created)
-	NexusForge.Stats.stat_clamping_changed.connect(_on_stat_clamping_changed)
-	NexusForge.Stats.stat_clamping_toggled.connect(_on_stat_clamping_toggled)
+	NexusForge.StatManager.stat_created.connect(_on_custom_stat_created)
+	NexusForge.StatManager.stat_clamping_changed.connect(_on_stat_clamping_changed)
+	NexusForge.StatManager.stat_clamping_toggled.connect(_on_stat_clamping_toggled)
 
 
 func _set(property: StringName, value: Variant) -> bool:
@@ -115,15 +115,15 @@ func _on_custom_stat_created(stat_id: StringName) -> void:
 	if _custom_stats.has(stat_id):
 		return
 	
-	var new_range: ValueRange = RangeInt.new() if NexusForge.Stats.stat_type(stat_id) == TYPE_INT else RangeFloat.new()
-	var allows_lesser: bool = NexusForge.Stats.allows_lesser(stat_id) 
-	var allows_greater: bool = NexusForge.Stats.allows_greater(stat_id)
+	var new_range: ValueRange = RangeInt.new() if NexusForge.StatManager.stat_type(stat_id) == TYPE_INT else RangeFloat.new()
+	var allows_lesser: bool = NexusForge.StatManager.allows_lesser(stat_id) 
+	var allows_greater: bool = NexusForge.StatManager.allows_greater(stat_id)
 	
 	new_range.allow_lesser = allows_lesser
 	new_range.allow_greater = allows_greater
 	
-	new_range.min_value = NexusForge.Stats.get_range_min(stat_id)
-	new_range.max_value = NexusForge.Stats.get_range_max(stat_id)
+	new_range.min_value = NexusForge.StatManager.get_range_min(stat_id)
+	new_range.max_value = NexusForge.StatManager.get_range_max(stat_id)
 	
 	_custom_stats[stat_id] = new_range
 
@@ -132,8 +132,8 @@ func _on_stat_clamping_changed(stat_id: StringName) -> void:
 	if not _singleton_sync or not _custom_stats.has(stat_id) or _sync_blacklist.has(stat_id):
 		return
 	
-	_custom_stats[stat_id].max_value = NexusForge.Stats.get_range_max(stat_id)
-	_custom_stats[stat_id].min_value = NexusForge.Stats.get_range_min(stat_id)
+	_custom_stats[stat_id].max_value = NexusForge.StatManager.get_range_max(stat_id)
+	_custom_stats[stat_id].min_value = NexusForge.StatManager.get_range_min(stat_id)
 
 
 func _on_stat_clamping_toggled(stat_id: StringName) -> void:
@@ -141,14 +141,14 @@ func _on_stat_clamping_toggled(stat_id: StringName) -> void:
 		return
 	
 	var stat: ValueRange = _custom_stats[stat_id]
-	var allow_greater: bool = NexusForge.Stats.allows_greater(stat_id)
-	var allow_lesser: bool = NexusForge.Stats.allows_lesser(stat_id)
+	var allow_greater: bool = NexusForge.StatManager.allows_greater(stat_id)
+	var allow_lesser: bool = NexusForge.StatManager.allows_lesser(stat_id)
 	
 	stat.allow_greater = allow_greater
 	stat.allow_lesser = allow_lesser
 	
-	stat.max_value = NexusForge.Stats.get_range_max(stat_id)
-	stat.min_value = NexusForge.Stats.get_range_min(stat_id)
+	stat.max_value = NexusForge.StatManager.get_range_max(stat_id)
+	stat.min_value = NexusForge.StatManager.get_range_min(stat_id)
 
 
 ## Returns all stats used in the statblock
@@ -259,7 +259,7 @@ func sync_stat_with_singleton(stat_id: StringName) -> void:
 		else:
 			return
 	
-	stat_range.min_value = NexusForge.Stats.get_range_min(stat_id)
-	stat_range.max_value = NexusForge.Stats.get_range_max(stat_id)
-	stat_range.allow_lesser = NexusForge.Stats.allows_lesser(stat_id)
-	stat_range.allow_greater = NexusForge.Stats.allows_greater(stat_id)
+	stat_range.min_value = NexusForge.StatManager.get_range_min(stat_id)
+	stat_range.max_value = NexusForge.StatManager.get_range_max(stat_id)
+	stat_range.allow_lesser = NexusForge.StatManager.allows_lesser(stat_id)
+	stat_range.allow_greater = NexusForge.StatManager.allows_greater(stat_id)

@@ -11,6 +11,7 @@ var localization_files: Dictionary[String, Array] = {}
 
 # Final map where the files are assigned to a non-conflicting ID.
 var dialog_file_to_id: Dictionary[String, String] = {}
+var id_to_dialog_file: Dictionary[String, String] = {}
 
 # Final map where non-conflicting IDs are assigned to a localization file.
 var id_to_localization: Dictionary[String, String] = {}
@@ -99,11 +100,7 @@ func _export_file(path: String, type: String, features: PackedStringArray) -> vo
 		else:
 			new_id = slug_id
 	elif id_to_localization.has(dialog_id):
-		var culprit: String = ""
-		for filepath in dialog_file_to_id.keys():
-			if dialog_file_to_id[filepath] == dialog_id:
-				culprit = filepath
-				break
+		var culprit: String = id_to_dialog_file.get(dialog_id, "Unknown")
 		new_id = path.md5_text()
 		NFPluginGameHandler._log_msg(
 				"export",
@@ -113,6 +110,7 @@ func _export_file(path: String, type: String, features: PackedStringArray) -> vo
 		new_id = dialog_id
 		
 	dialog_file_to_id[path] = new_id
+	id_to_dialog_file[new_id] = path
 	id_to_localization[new_id] = localization_filename
 	
 	release_files[path] = process_editor_discourse_dialog(file, new_id, localization_filename)
@@ -145,34 +143,54 @@ func _customize_resource(resource: Resource, path: String) -> Resource:
 						NFPluginGameHandler._LogLevel.ERROR)
 				continue
 				
-			#if localization_files.has(release_files[resource.resource_path].localization_uuid):
 			var locale_file: DiscourseDialogLocale = locale_entry["file"]
 			var virtual_path: String = locale_entry["path"]
+			
+			if added_files.has(virtual_path):
+				NFPluginGameHandler._log_msg(
+					"export",
+					"Exporter tried to add a duplicate file '%s' when exporting. Skipping." % virtual_path,
+					NFPluginGameHandler._LogLevel.WARNING)
+				continue
+			
 			var file_path: String = export_temp_dir.get_current_dir().path_join(virtual_path.get_file())
 			
-			var file: FileAccess = FileAccess.open(file_path, FileAccess.WRITE_READ)
-			file.store_string(locale_file.as_json())
-			file.close()
-			
-			if file != null:
-				if added_files.has(virtual_path):
-					NFPluginGameHandler._log_msg(
-						"export",
-						"Exporter tried to add a duplicate file '%s' when exporting. Skipping." % virtual_path,
-						NFPluginGameHandler._LogLevel.WARNING)
-				else:
-					added_files[virtual_path] = null
-					add_file(
-							virtual_path,
-							FileAccess.get_file_as_bytes(file_path),
-							false)
-			else:
+			var file: FileAccess = FileAccess.open(file_path, FileAccess.WRITE)
+			if file == null:
 				NFPluginGameHandler._log_msg(
 						"export",
-						"Couldn't generate locale '%s' JSON for file '%s'" % [locale_file.locale, resource.resource_path],
+						"Couldn't generate locale '%s' JSON for file '%s'. Error: %s" % [locale_file.locale, resource.resource_path, FileAccess.get_open_error()],
 						NFPluginGameHandler._LogLevel.ERROR)
-		if path == "res://tests/test_dialog_exported.tres":
-			ResourceSaver.save(release_files[path], "res://tests/aaa_test_dialog_exported.tres")
+				continue
+			
+			if not file.store_string(locale_file.as_json()):
+				NFPluginGameHandler._log_msg(
+						"export",
+						"Couldn't write data on file '%s'." % file_path,
+						NFPluginGameHandler._LogLevel.ERROR)
+			file.close()
+			
+			added_files[virtual_path] = null
+			# Add file, for some reason, doesn't like it when you give it bynary
+			# data that exists only in memory. And I kept finding that the export
+			# files always were one behind when doing memory only.
+			# e.g.
+			# 	> Export A was supposed to export a.json, but exported nothing
+			# 	> Change a.tres to b.tres
+			# 	> Trigger export. PCK now contains a.json, should contain b.json instead
+			# 	> Change b.tres to c.tres
+			# 	> Exporter is now storing b.json instead of c.json
+			# Only way I found to FORCE it to store the right files was using
+			# FileAccess.get_file_as_bytes. If I'm doing something wrong
+			# let me know.
+			# Note: The files being added are being generated and stored in memory
+			# when _export_file runs. They are being writen to disk and added to the
+			# pck in here. When export is done, the files should NOT persist. This
+			# means they need to be deleted somehow.
+			add_file(
+					virtual_path,
+					FileAccess.get_file_as_bytes(file_path),
+					false)
 		return release_files[path]
 	elif resource is SkillCatalog:
 		return customize_skill_catalog(resource)
@@ -221,9 +239,44 @@ func _end_customize_resources() -> void:
 	var virtual_path: String = dialog_path.path_join("dialog_locale_map.json")
 	var file_path: String = export_temp_dir.get_current_dir().path_join(virtual_path.get_file())
 	
-	var file: FileAccess = FileAccess.open(file_path, FileAccess.WRITE_READ)
-	file.store_string(JSON.stringify(bridge_data))
-	file.close()
+	var file: FileAccess = FileAccess.open(file_path, FileAccess.WRITE)
+	
+	if file == null:
+		NFPluginGameHandler._log_msg(
+				"export",
+				"Error while generating dialog locale map. Error: %s" % FileAccess.get_open_error(),
+				NFPluginGameHandler._LogLevel.ERROR)
+	else:
+		if file.store_string(JSON.stringify(bridge_data)):
+			if added_files.has(virtual_path):
+				NFPluginGameHandler._log_msg(
+						"export",
+						"Exporter tried to add a duplicate file '%s' when exporting. Skipping." % virtual_path,
+						NFPluginGameHandler._LogLevel.WARNING)
+			else:
+				added_files[virtual_path] = null
+				# Add file, for some reason, doesn't like it when you give it bynary
+				# data that exists only in memory. And I kept finding that the export
+				# files always were one behind when doing memory only.
+				# e.g.
+				# 	> Export A with data X. Was supposed to generate a.json, but exported nothing.
+				# 	> Change data X to Y.
+				# 	> Trigger export. PCK now contains a.json but with data X.
+				# 	> Change data Y to Z.
+				# 	> Exporter is now storing Y instead of Z.
+				# Only way I found to FORCE it to store the right files was using
+				# FileAccess.get_file_as_bytes. If I'm doing something wrong
+				# let me know.
+				add_file(
+						virtual_path,
+						FileAccess.get_file_as_bytes(file_path),
+						false)
+		else:
+			NFPluginGameHandler._log_msg(
+					"export",
+					"Couldn't write dialog locale map to file '%s'" % file_path,
+					NFPluginGameHandler._LogLevel.ERROR)
+		file.close()
 	
 	if export_characters:
 		var config_path: String = export_temp_dir.get_current_dir().path_join("settings.cfg")
@@ -241,24 +294,6 @@ func _end_customize_resources() -> void:
 						"res://addons/nexus_forge/settings.cfg",
 						FileAccess.get_file_as_bytes(config_path),
 						false)
-	
-	if file != null:
-		if added_files.has(virtual_path):
-			NFPluginGameHandler._log_msg(
-						"export",
-						"Exporter tried to add a duplicate file '%s' when exporting. Skipping." % virtual_path,
-						NFPluginGameHandler._LogLevel.WARNING)
-		else:
-			added_files[virtual_path] = null
-			add_file(
-					virtual_path,
-					FileAccess.get_file_as_bytes(file_path),
-					false)
-	else:
-		NFPluginGameHandler._log_msg(
-				"export",
-				"Error while generating dialog locale map.",
-				NFPluginGameHandler._LogLevel.ERROR)
 
 
 func process_editor_discourse_dialog(dialog_resource: EditorDiscourseDialog, dialog_id: String, expected_name: String) -> DiscourseDialog:
@@ -346,3 +381,4 @@ func clear_memory() -> void:
 	quest_ids.clear()
 	added_files.clear()
 	discourse_api_methods.clear()
+	id_to_dialog_file.clear()

@@ -1051,7 +1051,7 @@ func set_focus_order_for_stat(stat: VBoxContainer) -> void:
 	if 0 < child_count:
 		var prev_stat: VBoxContainer = char_stats_container.get_child(-2)
 		var prev_spin: SpinBox = prev_stat.get_meta(&"value")
-		var prev_max: LineEdit = prev_spin.get_meta(&"max").get_line_edit()
+		var prev_max: LineEdit = prev_stat.get_meta(&"max").get_line_edit()
 		stat_line.focus_previous = prev_max.get_path()
 		prev_max.focus_next = stat_line.get_path()
 	else:
@@ -1113,7 +1113,7 @@ func set_focus_order_for_trait(trait_entry: HBoxContainer) -> void:
 	if 0 < child_count:
 		var prev_trait: HBoxContainer = char_traits_container.get_child(-2)
 		var prev_spin: SpinBox = prev_trait.get_meta(&"value")
-		var prev_line: LineEdit = prev_trait.get_line_edit()
+		var prev_line: LineEdit = prev_spin.get_line_edit()
 		trait_line.focus_previous = prev_line.get_path()
 		prev_line.focus_next = trait_line.get_path()
 	elif 0 < char_skill_container.get_child_count():
@@ -1134,7 +1134,7 @@ func set_focus_order_for_trait(trait_entry: HBoxContainer) -> void:
 	if 0 < child_count:
 		var prev_trait: HBoxContainer = char_traits_container.get_child(-2)
 		var prev_spin: SpinBox = prev_trait.get_meta(&"value")
-		var prev_line: LineEdit = prev_trait.get_line_edit()
+		var prev_line: LineEdit = prev_spin.get_line_edit()
 		trait_line.focus_next = prev_line.get_path()
 	else:
 		trait_line.focus_next = ^""

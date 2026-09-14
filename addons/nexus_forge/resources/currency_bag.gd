@@ -9,40 +9,9 @@ extends Resource
 ## the signal [signal Resource.changed] is emmited.[br]
 ## The amounts, if handled through the methods, will always perform safe
 ## operations and never overflow.[br]
-## Currencies can also be accessed and set directly by using it's ID like
-## CurrencyWallet.gold = 12. But unlike using the methods, if using assignment 
-## operators (+=, -=, etc.) the currency can overflow and if such happens,
-## it'll be reset to 0.
 
 
 var _wallet: Dictionary[StringName, int] = {}
-
-
-func _get(property: StringName) -> Variant:
-	if _wallet.has(property):
-		return _wallet[property]
-	return 0
-
-
-func _set(property: StringName, value: Variant) -> bool:
-	var type: int = typeof(value)
-	if type != TYPE_INT and type != TYPE_FLOAT:
-		return false
-	
-	if not NexusForge.Currency.has_currency(property):
-		return false
-	
-	if value <= 0:
-		if _wallet.erase(property):
-			emit_changed()
-	else:
-		var new_value: int = int(value)
-		var update: bool = not _wallet.has(property) or _wallet[property] != new_value
-		_wallet[property] = new_value
-		if update:
-			emit_changed()
-	
-	return true
 
 
 ## Assigns the currencies in [param values] to this wallet.[br]
@@ -127,9 +96,7 @@ func has_enough_funds(to_match: Dictionary[StringName, int], times: int = 1) -> 
 
 ## Returns the total amount [param of_currency] in this wallet.
 func current_amount(of_currency: StringName) -> int:
-	if _wallet.has(of_currency):
-		return _wallet[of_currency]
-	return 0
+	return _wallet.get(of_currency, 0)
 
 
 ## Removes [param currency] from this wallet by the specified [param amount].

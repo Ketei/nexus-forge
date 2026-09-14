@@ -2,24 +2,16 @@ class_name NFSpeciesManager
 extends RefCounted
 ## An object that holds items as [SpeciesSheet] resources.
 ##
-## This object provides several utilities, such as a custom getter
-## for accessing registered species directly by their ID, eg.
-## [code]Species.dog[/code] and when an item is modified through this object,
+## When an item is modified through this object,
 ## the signal [Resource.changed] is called on the specific item.
 
 
 ## Emited when a species is added.
-signal species_registered(species_id: StringName)
+signal species_created(species_id: StringName)
 ## Emited when a species is erased.
 signal species_erased(species_id: StringName)
 
 var _species: Dictionary[StringName, SpeciesSheet] = {}
-
-
-func _get(property: StringName) -> Variant:
-	if _species.has(property):
-		return _species[property]
-	return null
 
 
 ## Loads a speices [param catalog] to this object. If [param clear_species]
@@ -43,18 +35,6 @@ func load_catalog(catalog: SpeciesCatalog, clear_species: bool = true) -> void:
 		_species[species_id] = sheet
 
 
-
-## Returns a [SpeciesSheet] with data, stats, skills and traits of the species.
-## Stats, skills and traits will have inherited values from the parent species
-## if [code]settings/species_use_genetic_inheritance[/code] is enabled on 
-## [code]ProjectSettings/NexusForge[/code].[br]
-## Returns [code]null[/code] if the species is not found.
-func get_species(species_id: StringName) -> SpeciesSheet:
-	if _species.has(species_id):
-		return _species[species_id]
-	return null
-
-
 ## Returns an array of all registered species.
 func species() -> Array[StringName]:
 	var all_species: Array[StringName] = []
@@ -63,7 +43,7 @@ func species() -> Array[StringName]:
 
 
 ## Creates a new species with [param species_id] unless it already exists.
-func register_species(new_species: SpeciesSheet) -> void:
+func add_species(new_species: SpeciesSheet) -> void:
 	if _species.has(new_species.id) or new_species.id.is_empty():
 		return
 	
@@ -76,7 +56,7 @@ func register_species(new_species: SpeciesSheet) -> void:
 	if new_species.traits == null:
 		new_species.traits = NFSpeciesStatCatalog.new()
 	
-	species_registered.emit(new_species.id)
+	species_created.emit(new_species.id)
 
 
 ## Erases the given species and clears the link of all subspecies linked

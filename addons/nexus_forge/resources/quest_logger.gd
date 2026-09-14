@@ -4,19 +4,9 @@ extends RefCounted
 ## status (success/failure/unknown).
 ##
 ## This object keeps track of quests, their stages and the objectives of such
-## stages. Supports accessing directly using the ID of the quest
-## (eg. Log.main_quest). If no quest exist, a fallback object will be
-## returned. To differentiate if an object is valid call is_valid() on the object.
+## stages.
 
 var _entries: Dictionary[StringName, NFQuestLogEntry] = {}
-
-
-func _get(property: StringName) -> Variant:
-	if _entries.has(property):
-		return _entries[property]
-	var invalid: NFQuestLogEntry = NFQuestLogEntry.new(property)
-	invalid._flags = BitUtils.set_bit_index(0, 63, true)
-	return invalid
 
 
 ## Sets an entry on the log with [param id] and a [param success_status].
@@ -165,15 +155,6 @@ class NFQuestLogEntry extends NFQuestLogStatusEntry:
 		id = entry_id
 		success_status = status
 	
-	
-	func _get(property: StringName) -> Variant:
-		if _entries.has(property):
-			return _entries[property]
-		var invalid: NFQuestLogStageEntry = NFQuestLogStageEntry.new(property)
-		invalid._flags = BitUtils.set_bit_index(0, 63, true)
-		return invalid
-	
-	
 	func _load_from_data(dict: Dictionary):
 		_entries.clear()
 		
@@ -270,14 +251,6 @@ class NFQuestLogStageEntry extends NFQuestLogStatusEntry:
 	func _init(entry_id: StringName = &"", status: NFQuestManager.SuccessStatus = NFQuestManager.SuccessStatus.UNKNOWN) -> void:
 		id = entry_id
 		success_status = status
-	
-	
-	func _get(property: StringName) -> Variant:
-		if _entries.has(property):
-			return _entries[property]
-		var invalid: NFQuestLogStatusEntry = NFQuestLogStatusEntry.new()
-		invalid._flags = BitUtils.set_bit_index(0, 63, true)
-		return invalid
 	
 	
 	func _load_from_data(dict: Dictionary):

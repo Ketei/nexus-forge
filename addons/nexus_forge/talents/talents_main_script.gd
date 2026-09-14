@@ -536,7 +536,6 @@ func reload_skills(reselect: bool = true) -> void:
 			if _skills_resource._skill_data.has(skill):
 				continue
 			var data: Dictionary[String, Variant] = {}
-			data.assign(_skills_resource.DEFAULT_DATA.duplicate(true))
 			_skills_resource._skill_data[skill] = {
 				"name": "",
 				"description": "",
@@ -1103,7 +1102,6 @@ func reload_stats(reselect: bool = true) -> void:
 			if _stats_resource._stat_data.has(stat):
 				continue
 			var data: Dictionary[String, Variant] = {}
-			data.assign(_stats_resource.DEFAULT_DATA.duplicate(true))
 			_stats_resource._stat_data[stat] = {
 				"name": "",
 				"description": "",
