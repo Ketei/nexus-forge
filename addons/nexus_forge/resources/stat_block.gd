@@ -12,6 +12,8 @@ extends Resource
 ## @export var new_stat: RangeInt
 ## [/codeblock]
 
+static var _script_path: String = ""
+
 @export var health: RangeInt
 
 @export_storage var _custom_stats: Dictionary[StringName, ValueRange] = {}
@@ -21,15 +23,26 @@ var _singleton_sync: bool = true
 # Specific stats to NOT sync with the singleton
 var _sync_blacklist: Dictionary[StringName, Variant] = {}
 
+
+static func _static_init() -> void:
+	for cls in ProjectSettings.get_global_class_list():
+		if cls["class"] == "StatBlock":
+			_script_path = cls["path"]
+			break
+
+
 ## Returns all the stats in the statblock. This does NOT include custom stats.[br]
 ## The key represents the stat, and the value its type from [enum Variant.Type].
 static func stats() -> Dictionary[StringName, int]:
+	if _script_path.is_empty():
+		return {}
+	
 	const MASK: int = PROPERTY_USAGE_SCRIPT_VARIABLE + PROPERTY_USAGE_STORAGE
 	const VALID_CLASSES: Array[StringName] = [&"RangeInt", &"RangeFloat"]
 	
-	var block: StatBlock = StatBlock.new(false)
+	var block_script: Script = load(_script_path)
 	var all_stats: Dictionary[StringName, int] = {}
-	var data: Array[Dictionary] = block.get_script().get_script_property_list()
+	var data: Array[Dictionary] = block_script.get_script_property_list()
 	
 	for item in data:
 		if not VALID_CLASSES.has(item["class_name"]) or not BitUtils.are_bits(item["usage"], MASK, true):

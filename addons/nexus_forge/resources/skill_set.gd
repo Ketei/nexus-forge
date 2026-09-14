@@ -12,10 +12,36 @@ extends Resource
 ## @export var my_skill: int = 0
 ## [/codeblock]
 
+static var _script_path: String = ""
 
 @export var persuasion: int
 
 @export_storage var _custom_skills: Dictionary[StringName, int] = {}
+
+
+static func _static_init() -> void:
+	for cls in ProjectSettings.get_global_class_list():
+		if cls["class"] == "SkillSet":
+			_script_path = cls["path"]
+			break
+
+
+## Returns all the non-custom skills registered in the skill set.
+static func skills() -> Array[StringName]:
+	if _script_path.is_empty():
+		return []
+	
+	const MASK: int = PROPERTY_USAGE_SCRIPT_VARIABLE + PROPERTY_USAGE_STORAGE
+	var skill_script: Script = load(_script_path)
+	var all_skills: Array[StringName] = []
+	var data: Array[Dictionary] = skill_script.get_script_property_list()
+	
+	for item in data:
+		if item["type"] != TYPE_INT or not BitUtils.are_bits(item["usage"], MASK, true):
+			continue
+		all_skills.append(StringName(item["name"]))
+	
+	return all_skills
 
 
 func _get(property: StringName) -> Variant:
@@ -55,21 +81,6 @@ func _on_custom_skill_created(skill_id: StringName) -> void:
 func _on_custom_skill_erased(skill_id: StringName) -> void:
 	if _custom_skills.has(skill_id):
 		_custom_skills.erase(skill_id)
-
-
-## Returns all the non-custom skills registered in the skill set.
-static func skills() -> Array[StringName]:
-	const MASK: int = PROPERTY_USAGE_SCRIPT_VARIABLE + PROPERTY_USAGE_STORAGE
-	var sk_st: SkillSet = SkillSet.new(false)
-	var all_skills: Array[StringName] = []
-	var data: Array[Dictionary] = sk_st.get_script().get_script_property_list()
-	
-	for item in data:
-		if item["type"] != TYPE_INT or not BitUtils.are_bits(item["usage"], MASK, true):
-			continue
-		all_skills.append(StringName(item["name"]))
-	
-	return all_skills
 
 
 ## Returns all the custom skills registered in the skill set.

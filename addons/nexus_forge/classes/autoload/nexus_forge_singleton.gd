@@ -414,7 +414,7 @@ func _ready() -> void:
 						var data = cfg.get_value("RUNTIME", "CharacterMap")
 						if typeof(data) == TYPE_DICTIONARY:
 							var map: Dictionary[StringName, String] = {}
-							for key in data.keys():
+							for key in data:
 								if typeof(key) == TYPE_STRING and typeof(data[key]) == TYPE_STRING_NAME:
 									if map.has(data[key]):
 										_log_msg(
@@ -429,7 +429,7 @@ func _ready() -> void:
 						var data = cfg.get_value("PERSONA", "CharacterMap")
 						if typeof(data) == TYPE_DICTIONARY:
 							var map: Dictionary[StringName, String] = {}
-							for key in data.keys():
+							for key in data:
 								if typeof(key) == TYPE_STRING_NAME and typeof(data[key]) == TYPE_STRING:
 									map[key] = data[key]
 							Characters._characters.assign(map)

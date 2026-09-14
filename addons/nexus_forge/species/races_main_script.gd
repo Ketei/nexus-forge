@@ -1098,6 +1098,7 @@ func create_stat(stat_id: StringName, default_value: float, type: int) -> void:
 	var field: HBoxContainer = _create_value_field(stat_id, default_value, 1.0 if type == TYPE_INT else 0.01)
 	field.get_child(0).disabled = not _gui_enabled
 	field.get_child(1).editable = false
+	field.set_meta(&"type", type)
 	race_stats_container.add_child(field)
 	_set_focus_for_stat(field)
 
@@ -1253,7 +1254,7 @@ func _set_focus_for_skill(skill: HBoxContainer) -> void:
 		line.focus_next = next_line.get_path()
 		next_line.focus_previous = line.get_path()
 	elif 0 < race_traits_container.get_child_count():
-		var next_trait: HBoxContainer = race_traits_container.get_child(skill_idx + 1)
+		var next_trait: HBoxContainer = race_traits_container.get_child(0)
 		var next_line: LineEdit = next_trait.get_meta(&"value").get_line_edit()
 		line.focus_next = next_line.get_path()
 		next_line.focus_previous = line.get_path()

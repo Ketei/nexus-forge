@@ -80,7 +80,7 @@ func has_objective(on_quest: StringName, from_stage: StringName, entry: StringNa
 func log_state() -> Dictionary[StringName, Dictionary]:
 	var log_data: Dictionary[StringName, Dictionary] = {}
 	
-	for quest_id in _entries.keys():
+	for quest_id in _entries:
 		var stage_data: Dictionary[StringName, Dictionary] = {}
 		var quest_data: Dictionary[String, Variant] = {
 			"success_status": _entries[quest_id].success_status,
@@ -99,7 +99,7 @@ func log_state() -> Dictionary[StringName, Dictionary]:
 
 ## Restores the log from [param data].
 func restore_state(data: Dictionary) -> void:
-	for key_entry in data.keys():
+	for key_entry in data:
 		var key_type: int = typeof(key_entry)
 		if (key_type != TYPE_STRING_NAME and key_type != TYPE_STRING) or typeof(data[key_entry]) != TYPE_DICTIONARY:
 			continue
@@ -177,7 +177,7 @@ class NFQuestLogEntry extends NFQuestLogStatusEntry:
 	func _load_from_data(dict: Dictionary):
 		_entries.clear()
 		
-		for key_entry in dict.keys():
+		for key_entry in dict:
 			var key_type: int = typeof(key_entry)
 			
 			if (key_type != TYPE_STRING_NAME and key_type != TYPE_STRING) or typeof(dict[key_entry]) != TYPE_DICTIONARY:
@@ -238,7 +238,7 @@ class NFQuestLogEntry extends NFQuestLogStatusEntry:
 	func stage_data() -> Dictionary[StringName, Dictionary]:
 		var stage_data: Dictionary[StringName, Dictionary] = {}
 		
-		for id in _entries.keys():
+		for id in _entries:
 			stage_data[id] = _entries[id].objective_data()
 		return stage_data
 	
@@ -283,7 +283,7 @@ class NFQuestLogStageEntry extends NFQuestLogStatusEntry:
 	func _load_from_data(dict: Dictionary):
 		_entries.clear()
 		
-		for key_entry in dict.keys():
+		for key_entry in dict:
 			var key_type: int = typeof(key_entry)
 			if (key_type != TYPE_STRING_NAME and key_type != TYPE_STRING) or typeof(dict[key_entry]) != TYPE_INT:
 				continue
@@ -323,7 +323,7 @@ class NFQuestLogStageEntry extends NFQuestLogStatusEntry:
 	func objective_data() -> Dictionary[StringName, int]:
 		var objective_data: Dictionary[StringName, int] = {}
 		
-		for id in _entries.keys():
+		for id in _entries:
 			objective_data[id] = _entries[id].success_status
 		return objective_data
 	

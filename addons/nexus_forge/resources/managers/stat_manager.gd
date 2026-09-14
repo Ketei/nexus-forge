@@ -29,7 +29,7 @@ var _base_stats: Dictionary[StringName, int] = {}
 func _init() -> void:
 	_base_stats.assign(StatBlock.stats())
 	
-	for stat in _base_stats.keys():
+	for stat in _base_stats:
 		var entry: NFCatalogEntryStat = NFCatalogEntryStat.new()
 		entry.name = String(stat).capitalize()
 		entry._flags = NFCatalogEntry._get_flags(true, false, true)

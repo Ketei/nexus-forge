@@ -85,7 +85,7 @@ func erase_species(species_id: StringName) -> void:
 	if not _species.erase(species_id):
 		return
 	
-	for remaining_species in _species.keys():
+	for remaining_species in _species:
 		var emit_update: bool = false
 		if _species[remaining_species].dominant_species == species_id:
 			_species[remaining_species].dominant_species = &""

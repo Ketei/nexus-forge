@@ -150,7 +150,7 @@ func erase_currency(currency_id: String) -> void:
 func substract_value(from: Dictionary[StringName, int], substract: Dictionary[StringName, int]) -> Dictionary[StringName, int]:
 	var final_inventory: Dictionary[StringName, int] = {}
 	
-	for key in from.keys():
+	for key in from:
 		if _currencies.has(key):
 			final_inventory[key] = from[key]
 	
@@ -179,7 +179,7 @@ func substract_value(from: Dictionary[StringName, int], substract: Dictionary[St
 		
 			if 0 < change:
 				var change_coins: Dictionary[StringName, int] = maximize_from_value(change)
-				for change_coin in change_coins.keys():
+				for change_coin in change_coins:
 					if not final_inventory.has(change_coin):
 						final_inventory[change_coin] = 0
 					final_inventory[change_coin] += change_coins[change_coin]
@@ -201,7 +201,7 @@ func substract_value(from: Dictionary[StringName, int], substract: Dictionary[St
 func currency_value(currency:Dictionary[StringName, int]) -> int:
 	var total_value: int = 0
 	
-	for currency_id in currency.keys():
+	for currency_id in currency:
 		if not _currencies.has(currency_id):
 			continue
 		total_value = Math.safe_sum(
@@ -250,7 +250,7 @@ func maximize_from_currency(currency_type: StringName, amount: int) -> Dictionar
 	var input_value: int = _currencies[currency_type]["value"]
 	
 	# Extract denominations and sort in descending order (important for maximizing)
-	for key in _currencies.keys():
+	for key in _currencies:
 		# We skip lower or equally denominated currencies.
 		if _currencies[key]["value"] <= input_value:
 			continue
