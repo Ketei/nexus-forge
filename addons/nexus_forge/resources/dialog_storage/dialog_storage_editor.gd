@@ -416,7 +416,10 @@ func get_node_data(node_uuid: StringName, locale: String = "") -> Dictionary:
 			var target_size: int = base_data["metadata"]["choices"].size()
 			
 			if options_translated.size() != target_size:
-				push_warning("[DISCOURSE] Choice data of node {node_id} size is different from the {locale_code} localization data. Data size: {data_size}, locale size: {locale_size}".format({"data_size": target_size, "locale_size": options_translated.size(), "locale_code": locale, "node_id": base_data["name"]}) )
+				NFPluginGameHandler._log_msg(
+						"export - dialog",
+						"Choice data of node '%s' size is different from the '%s' localization data. Data size: %d, locale size: %d" % [base_data["name"], locale, target_size, options_translated.size()],
+						NFPluginGameHandler._LogLevel.WARNING)
 				options_translated.resize(target_size)
 			
 			var idx: int = -1
@@ -689,8 +692,10 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 						var dialog_metadata: Dictionary = dialog_metadata_node["metadata"]
 						for meta_field in dialog_metadata["metadata_connections"]:
 							if not dialog_metadata_node["input_connections"].has(meta_field["id"]):
-								push_error(
-									"[DISCOURSE] Metadata node ", dialog_metadata_node["name"], " on file ", resource_path, " registered metadata with ID ", meta_field["id"], " on port ", meta_field["port"], " but the port isn't available. Setting to null.")
+								NFPluginGameHandler._log_msg(
+										"export - dialog",
+										"Metadata node '%s' on file '%s' registered metadata with ID '%s' on port %d but the port isn't available. Setting to null." % [dialog_metadata_node["name"], resource_path, meta_field["id"], meta_field["port"]],
+										NFPluginGameHandler._LogLevel.ERROR)
 								dialog_metadata["metadata"][meta_field["id"]] = null
 							else:
 								dialog_settings["metadata"][meta_field["id"]] = dialog_metadata_node["input_connections"][meta_field["id"]]["target_node_uuid"]
@@ -728,8 +733,10 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 							var dialog_metadata: Dictionary = dialog_metadata_node["metadata"]
 							for meta_field in dialog_metadata:
 								if not dialog_metadata_node["input_connections"].has(meta_field["id"]):
-									push_error(
-										"[DISCOURSE] Metadata node ", dialog_metadata_node["name"], " on file ", resource_path, " registered metadata with ID ", meta_field["id"], " on port ", meta_field["port"], " but the port isn't available. Setting to null.")
+									NFPluginGameHandler._log_msg(
+											"export - dialog",
+											"Metadata node '%s' on file '%s' registered metadata with ID '%s' on port %d but the port isn't available. Setting to null." % [dialog_metadata_node["name"], resource_path, meta_field["id"], meta_field["port"]],
+											NFPluginGameHandler._LogLevel.ERROR)
 									new_option["metadata"][meta_field["id"]] = null
 								else:
 									new_option["metadata"][meta_field["id"]] = dialog_metadata_node["input_connections"][meta_field["id"]]["target_node_uuid"]
@@ -758,7 +765,12 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 						export_data["callable"] = StringName(node_data[node_id]["input_connections"]["callable"]["target_node_uuid"])
 					else:
 						export_data["callable"] = &""
-						printerr("[DISCOURSE] Warning: Issue when exporting ", resource_path, ". Event ", node_data[node_id]["name"], " calls an inexistent method.")
+						NFPluginGameHandler._log_msg(
+								"export - dialog",
+								"[DISCOURSE] Warning: Issue when exporting %s. Event %s calls an inexistent method." % [
+									resource_path,
+									node_data[node_id]["name"]],
+								NFPluginGameHandler._LogLevel.ERROR)
 				else:
 					export_data["callable"] = &""
 				
@@ -768,7 +780,12 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 						export_data["signal"] = StringName(node_data[node_id]["input_connections"]["signal"]["target_node_uuid"])
 					else:
 						export_data["signal"] = &""
-						printerr("[DISCOURSE] Warning: Issue when exporting ", resource_path, ". Event ", node_data[node_id]["name"], " emits an inexistent signal.")
+						NFPluginGameHandler._log_msg(
+								"export - dialog",
+								"[DISCOURSE] Warning: Issue when exporting %s. Event %s emits an inexistent signal." % [
+									resource_path,
+									node_data[node_id]["name"]],
+								NFPluginGameHandler._LogLevel.ERROR)
 				else:
 					export_data["signal"] = &""
 				
@@ -819,8 +836,10 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 					var default_args_size: int = 0
 					
 					if not api_methods.has(method_id):
-						push_error(
-								"[DISCOURSE] Callable node ", node_data[node_id]["name"], " on file ", resource_path, " calls for inexisting method: ", method_id)
+						NFPluginGameHandler._log_msg(
+								"export - dialog",
+								"Callable node '%s' on file '%s' calls for an inexisting method '%s'" % [node_data[node_id]["name"], resource_path, method_id],
+								NFPluginGameHandler._LogLevel.ERROR)
 					else:
 						default_args_size = api_methods[method_id]["default_args"].size()
 					
@@ -832,13 +851,17 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 						arguments.append(StringName(argument["target_node_uuid"]))
 						if not argument["target_node_uuid"].is_empty():
 							if skipped_previous:
-								push_error(
-									"[DISCOURSE] Callable node ", node_data[node_id]["name"], " on file ", resource_path, " passed an argument on index ", arg_idx, " but a previous index doesn't have a value.")
+								NFPluginGameHandler._log_msg(
+										"export - dialog",
+										"Callable node '%s' on file '%s' passed an argument on index %d but a previous index doesn't have a value." % [node_data[node_id]["name"], resource_path, arg_idx],
+										NFPluginGameHandler._LogLevel.ERROR)
 						else:
 							skipped_previous = true
 							if default_args_size <= arg_idx:
-								push_error(
-									"[DISCOURSE] Callable node ", node_data[node_id]["name"], " on file ", resource_path, " is missing a required argument value on index ", arg_idx)
+								NFPluginGameHandler._log_msg(
+										"export - dialog",
+										"Callable node '%s' on file '%s' is missing a required argument value on index %d" % [node_data[node_id]["name"], resource_path, arg_idx],
+										NFPluginGameHandler._LogLevel.ERROR)
 					export_data["method"] = method_id
 					export_data["arguments"] = arguments
 				else:
@@ -850,8 +873,13 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 					var default_args_size: int = 0
 					
 					if not api_methods.has(method_id):
-						push_error(
-								"[DISCOURSE] Callable node ", node_data[node_id]["name"], " on file ", resource_path, " calls for inexisting method: ", method_id)
+						NFPluginGameHandler._log_msg(
+								"export - dialog",
+								"[DISCOURSE] Callable node '%s' on file '%s' calls for inexisting method '%s'" % [
+									node_data[node_id]["name"],
+									resource_path,
+									method_id],
+								NFPluginGameHandler._LogLevel.ERROR)
 					else:
 						default_args_size = api_methods[method_id]["default_args"].size()
 					
@@ -863,13 +891,23 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 						arguments.append(StringName(argument["target_node_uuid"]))
 						if not argument["target_node_uuid"].is_empty():
 							if skipped_previous:
-								push_error(
-									"[DISCOURSE] Callable node ", node_data[node_id]["name"], " on file ", resource_path, " passed an argument on index ", arg_idx, " but a previous index doesn't have a value.")
+								NFPluginGameHandler._log_msg(
+										"export - dialog",
+										"[DISCOURSE] Callable node '%s' on file '%s' passed an argument on index %d but a previous index doesn't have a value." % [
+											node_data[node_id]["name"],
+											resource_path,
+											arg_idx],
+										NFPluginGameHandler._LogLevel.ERROR)
 						else:
 							skipped_previous = true
 							if default_args_size <= arg_idx:
-								push_error(
-									"[DISCOURSE] Callable node ", node_data[node_id]["name"], " on file ", resource_path, " is missing a required argument value on index ", arg_idx)
+								NFPluginGameHandler._log_msg(
+										"export - dialog",
+										"[DISCOURSE] Callable node '%s' on file '%s' is missing a required argument value on index %d" % [
+											node_data[node_id]["name"],
+											resource_path,
+											arg_idx],
+										NFPluginGameHandler._LogLevel.ERROR)
 					export_data["method"] = method_id
 					export_data["arguments"] = arguments
 				else:
@@ -880,7 +918,10 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 				if metadata.has("variable_path"):
 					meta_path = metadata["variable_path"].strip_edges().simplify_path()
 				else:
-					push_warning("[DISCOURSE] Node ", node_data[node_id]["name"], " has missing Blackboard data path. Using empty path instead")
+					NFPluginGameHandler._log_msg(
+							"export - dialog",
+							"[DISCOURSE] Node %s has missing Blackboard data path. Using empty path instead" % node_data[node_id]["name"],
+							NFPluginGameHandler._LogLevel.WARNING)
 				
 				export_data["path"] = meta_path
 			NodeType.RANDOM_VALUE:
@@ -901,7 +942,12 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 						export_data["callable"] = StringName(node_data[node_id]["input_connections"]["callable"]["target_node_uuid"])
 					else:
 						export_data["callable"] = &""
-						printerr("[DISCOURSE] Warning: Issue when exporting ", resource_path, ". Data event ", node_data[node_id]["name"], " calls an inexistent method.")
+						NFPluginGameHandler._log_msg(
+								"export - dialog",
+								"[DISCOURSE] Warning: Issue when exporting %s. Data event %s calls an inexistent method." % [
+									resource_path,
+									node_data[node_id]["name"]],
+								NFPluginGameHandler._LogLevel.ERROR)
 				else:
 					export_data["callable"] = &""
 				
@@ -911,7 +957,12 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 						export_data["signal"] = StringName(node_data[node_id]["input_connections"]["signal"]["target_node_uuid"])
 					else:
 						export_data["signal"] = &""
-						printerr("[DISCOURSE] Warning: Issue when exporting ", resource_path, ". Data event ", node_data[node_id]["name"], " emits an inexistent signal.")
+						NFPluginGameHandler._log_msg(
+								"export - dialog",
+								"[DISCOURSE] Warning: Issue when exporting %s. Data event %s emits an inexistent signal." % [
+									resource_path,
+									node_data[node_id]["name"]],
+								NFPluginGameHandler._LogLevel.ERROR)
 				else:
 					export_data["signal"] = &""
 				
@@ -944,7 +995,10 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 func generate_localization_files(localization_id: String, base_path: String, filename: String, localization_groups: Dictionary = {}) -> Array[Dictionary]:
 	# Should never be the case, but just in case
 	if resource_path.is_empty():
-		push_error("[DISCOURSE - EXPORT ERROR] Tried to generate localization of a file with no path.")
+		NFPluginGameHandler._log_msg(
+				"export - dialog",
+				"Tried to generate localization of a file with no path.",
+				NFPluginGameHandler._LogLevel.WARNING)
 		return []
 	
 	var new_files: Array[Dictionary] = []
@@ -1020,27 +1074,32 @@ func generate_localization_files(localization_id: String, base_path: String, fil
 	var extra_data_warned: bool = false
 	
 	for localization_key in localization.keys():
+		if not node_data.has(localization_key):
+			continue
+		
 		var localization_locales = DictUtils.get_nested_value(localization, [localization_key, "locales"], {})
 		if typeof(localization_locales) != TYPE_DICTIONARY:
 			continue
 		var localization_keys = localization_locales.keys()
 		
 		if not used_locales.has_all(localization_keys):
-			push_warning("Used locales: %s, existing locales: %s" % [used_locales.keys(), localization_keys] )
-			#push_warning(
-				#"[DISCOUSE] File contains more localization data than is being exported: " + resource_path + "\n. Verify locale map.")
+			NFPluginGameHandler._log_msg(
+					"export - dialog",
+					"Localization data of file '%s' contains more localization data than the resource is set for.\nUsed locales: %s\nExisting locales: %s" % [resource_path, used_locales.keys(), localization_keys],
+					NFPluginGameHandler._LogLevel.WARNING)
 			extra_data_warned = true
 			break
 	
 	if extra_data_warned:
 		return new_files
 	
-	for string_key in format_strings.keys():
+	for string_key in format_strings:
 		var used_string_locales = format_strings[string_key].keys()
 		if not used_locales.has_all(used_string_locales):
-			push_warning("Used locales: %s, existing locales: %s" % [used_locales.keys(), used_string_locales] )
-			#push_warning(
-				#"[DISCOUSE] File contains more localization data than is being exported: " + resource_path + "\n. Verify locale map.")
+			NFPluginGameHandler._log_msg(
+					"export - dialog",
+					"Localization data of file '%s' contains more localization data than the resource is set for.\nUsed locales: %s\nExisting locales: %s" % [resource_path, used_locales.keys(), used_string_locales],
+					NFPluginGameHandler._LogLevel.WARNING)
 			break
 	
 	return new_files
@@ -1049,7 +1108,10 @@ func generate_localization_files(localization_id: String, base_path: String, fil
 func _add_locale_data(file: DiscourseDialogLocale, localization_id: String, locale: String) -> void:
 	for node_uuid in localization.keys():
 		if not node_data.has(node_uuid):
-			push_warning("[DISCOURSE] Orphaned localization with ID '%s'. Skipping." % node_uuid)
+			NFPluginGameHandler._log_msg(
+					"export - dialog",
+					"Orphaned localization with ID '%s'. Skipping." % node_uuid,
+					NFPluginGameHandler._LogLevel.WARNING)
 			continue
 		
 		var nodeid: StringName = node_data[node_uuid]["name"]
@@ -1066,13 +1128,20 @@ func _add_locale_data(file: DiscourseDialogLocale, localization_id: String, loca
 		if type_mismatch or not data_complete:
 			var type: int = node_data[node_uuid]["type"]
 			if not data_complete:
-				push_error(
-						"[DISCOURSE] Incomplete or corrupt data for node with UID '%s' " % node_uuid)
+				NFPluginGameHandler._log_msg(
+						"export - dialog",
+						"Incomplete or corrupt data for node with UID '%s' " % node_uuid,
+						NFPluginGameHandler._LogLevel.ERROR)
 			if type_mismatch:
-				push_error(
-						"[DISCOURSE] Type mismatch for node & localization with UID '%s' of file %s" % [node_uuid, resource_path])
+				NFPluginGameHandler._log_msg(
+						"export - dialog",
+						"Type mismatch for node & localization with UID '%s' of file %s" % [node_uuid, resource_path],
+						NFPluginGameHandler._LogLevel.ERROR)
 			
-			push_warning("[DISCOURSE] Patching data with placeholder entries.")
+			NFPluginGameHandler._log_msg(
+					"export - dialog",
+					"Patching data with placeholder entries.",
+					NFPluginGameHandler._LogLevel.WARNING)
 			
 			if type == NodeType.DIALOG or type == NodeType.LOCALIZED_TEXT:
 				DictUtils.set_nested_value(
@@ -1104,9 +1173,15 @@ func _add_locale_data(file: DiscourseDialogLocale, localization_id: String, loca
 							true) if localized else DictUtils.get_nested_value(data, ["unlocalized"], "[MISSING LOCALIZATION DATA]", true))
 			if warn:
 				if localized:
-					push_warning("[DISCOURSE] Unlocalized data for node UID \"" + node_uuid + "\" is missing.")
+					NFPluginGameHandler._log_msg(
+							"export - dialog",
+							"Unlocalized data for node UID '%s' is missing." % node_uuid,
+							NFPluginGameHandler._LogLevel.WARNING)
 				else:
-					push_warning("[DISCOURSE] Localization data for node UID \"" + node_uuid + "\" for locale \"" + locale + "\" is missing.")
+					NFPluginGameHandler._log_msg(
+							"export - dialog",
+							"Localization data for node UID '%s' for locale '%s' is missing." % [node_uuid, locale],
+							NFPluginGameHandler._LogLevel.WARNING)
 		
 		elif data["type"] == LocalizationType.CHOICES:
 			var data_exists: bool = false
@@ -1120,7 +1195,10 @@ func _add_locale_data(file: DiscourseDialogLocale, localization_id: String, loca
 						if typeof(data["locales"][locale][idx]) == TYPE_STRING:
 							base.append(data["locales"][locale][idx])
 						else:
-							push_warning("[DISCORUSE] Choice with index " + str(idx) + " on locale " + locale + " isn't a string.")
+							NFPluginGameHandler._log_msg(
+									"export - dialog",
+									"Choice with index %d on locale '%s' isn't a string." % [idx, locale],
+									NFPluginGameHandler._LogLevel.WARNING)
 							base.append("[INVALID TEXT]")
 				else:
 					base.resize(choice_size)
@@ -1131,16 +1209,25 @@ func _add_locale_data(file: DiscourseDialogLocale, localization_id: String, loca
 						if typeof(data["unlocalized"][idx]) == TYPE_STRING:
 							base.append(data["unlocalized"][idx])
 						else:
-							push_warning("[DISCORUSE] Choice with index %s on locale '%s' isn't a string." % [idx, locale])
+							NFPluginGameHandler._log_msg(
+									"export - dialog",
+									"Choice with index %d on locale '%s' isn't a string." % [idx, locale],
+									NFPluginGameHandler._LogLevel.WARNING)
 							base.append("[INVALID TEXT]")
 				else:
 					base.resize(choice_size)
 			
 			if not data_exists:
 				if localized:
-					push_warning("[DISCOURSE] Localization data for node UID '%s' for locale '%s' is missing." % [node_uuid, locale])
+					NFPluginGameHandler._log_msg(
+							"export - dialog",
+							"Localization data for node UID '%s' for locale '%s' is missing." % [node_uuid, locale],
+							NFPluginGameHandler._LogLevel.WARNING)
 				else:
-					push_warning("[DISCOURSE] Unlocalized data for node UID '%s' is missing." % node_uuid)
+					NFPluginGameHandler._log_msg(
+							"export - dialog",
+							"Unlocalized data for node UID '%s' is missing." % node_uuid,
+							NFPluginGameHandler._LogLevel.WARNING)
 				var err_string: String = "[MISSING LOCALIZATION DATA]"
 				base.resize(choice_size)
 				for idx in range(choice_size):
@@ -1154,45 +1241,86 @@ func _add_locale_data(file: DiscourseDialogLocale, localization_id: String, loca
 			
 			var current_size: int = base.size()
 			if choice_size != current_size:
-				push_warning(
-					"[DISCOURSE] Localization choice count on node UID %s differs from data choice count: %s vs %s. Patching to match data size." % [node_uuid, current_size, choice_size])
+				NFPluginGameHandler._log_msg(
+						"export - dialog",
+						"Localization choice count on node UID %s differs from data choice count: %d vs %d. Patching to match data size." % [
+							node_uuid,
+							current_size,
+							choice_size],
+						NFPluginGameHandler._LogLevel.WARNING)
 				base.resize(choice_size)
 				if current_size < choice_size:
-					push_warning("[DISCOURSE] Localization count is smaller. Applying placeholders.")
+					NFPluginGameHandler._log_msg(
+							"export - dialog",
+							"Localization count is smaller. Applying placeholders.",
+							NFPluginGameHandler._LogLevel.WARNING)
 					for missing_idx in range(current_size, choice_size):
 						base[missing_idx] = "[MISSING LOCALIZATION DATA]"
 		else:
-			push_warning(
-					"[DISCOURSE] Localization export for node with UID '%s' couldn't define type." % node_uuid)
+			NFPluginGameHandler._log_msg(
+					"export - dialog",
+					"Localization export for node with UID '%s' couldn't define type." % node_uuid,
+					NFPluginGameHandler._LogLevel.WARNING)
 			var nameless_id = DictUtils.get_nested_value(node_data, [node_uuid, "name"])
 			if typeof(nameless_id) == TYPE_STRING_NAME:
-				push_warning("[DISCOURSE - INFO] ID for typeless node found: %s\"" % String(nameless_id))
+				NFPluginGameHandler._log_msg(
+						"export - dialog",
+						"ID for typeless node found: '%s'\"" % str(nameless_id),
+						NFPluginGameHandler._LogLevel.WARNING)
 	
 	for format_key in format_strings.keys():
 		if not format_strings[format_key].has(locale) or typeof(format_strings[format_key][locale]) != TYPE_DICTIONARY:
-			push_warning("[DISCOURSE] Format string of file '%s' with key '%s' doesn't have valid localization data for locale '%s'. Skipping" % [resource_path, format_key, locale])
+			NFPluginGameHandler._log_msg(
+					"export - dialog",
+					"Format string of file '%s' with key '%s' doesn't have valid localization data for locale '%s'. Skipping" % [
+						resource_path,
+						format_key,
+						locale],
+					NFPluginGameHandler._LogLevel.WARNING)
 			continue
 		
 		var data: Dictionary = format_strings[format_key][locale]
 		
 		if not data.has_all(["base_string", "format"]) or typeof(data["base_string"]) != TYPE_STRING or typeof(data["format"]) != TYPE_DICTIONARY:
-			push_error("[DISCOURSE] Format string of file '%s' with key '%s' doesn't have valid localization data for locale '%s'. Skipping" % [resource_path, format_key, locale])
+			NFPluginGameHandler._log_msg(
+					"export - dialog",
+					"Format string of file '%s' with key '%s' doesn't have valid localization data for locale '%s'. Skipping" % [
+						resource_path,
+						format_key,
+						locale],
+					NFPluginGameHandler._LogLevel.ERROR)
 			continue
 		
 		var valid_formats: Dictionary = {}
+		var format_tags: Array[String] = get_phrase_arguments(data["base_string"])
 		
-		for format_slice in data["format"].keys():
-			var valid_cases: Dictionary = {}
-			
-			if typeof(data["format"][format_slice]) != TYPE_DICTIONARY or not data["format"][format_slice].has_all(["default", "cases"]) or typeof(data["format"][format_slice]["default"]) != TYPE_STRING or typeof(data["format"][format_slice]["cases"]) != TYPE_DICTIONARY:
-				push_error("[DISCOURSE] Format string of file '%s' with key '%s' format '%s' has missing or corrupt data. Skipping" % [resource_path, format_key, format_slice])
+		for format_slice in data["format"]:
+			if typeof(format_slice) != TYPE_STRING and typeof(format_slice) != TYPE_STRING_NAME:
 				continue
+			elif typeof(data["format"][format_slice]) != TYPE_DICTIONARY or not data["format"][format_slice].has_all(["default", "cases"]) or typeof(data["format"][format_slice]["default"]) != TYPE_STRING or typeof(data["format"][format_slice]["cases"]) != TYPE_DICTIONARY:
+				NFPluginGameHandler._log_msg(
+						"export - dialog",
+						"Format string of file '%s' with key '%s' format '%s' has missing or corrupt data. Skipping" % [
+							resource_path,
+							format_key,
+							format_slice],
+						NFPluginGameHandler._LogLevel.ERROR)
+				continue
+			elif not format_tags.has(format_slice):
+				continue
+				
+			var valid_cases: Dictionary = {}
 			
 			var formats: Dictionary = data["format"][format_slice]
 			
-			for case in formats["cases"].keys():
+			for case in formats["cases"]:
 				if typeof(case) != TYPE_STRING and typeof(case) != TYPE_STRING_NAME:
-					push_error("[DISCOURSE] Case on resource %s is not of type string. Exception on: %s " % [resource_path, "/".join([format_key, locale, format_slice])])
+					NFPluginGameHandler._log_msg(
+							"export - dialog",
+							"Case on resource '%s' is not of type string. Exception on: '%s'" % [
+								resource_path,
+								"/".join([format_key, locale, format_slice])],
+							NFPluginGameHandler._LogLevel.ERROR)
 					continue
 				
 				var format_type: int = typeof(formats["cases"][case])
@@ -1200,7 +1328,7 @@ func _add_locale_data(file: DiscourseDialogLocale, localization_id: String, loca
 				if format_type != TYPE_STRING and format_type != TYPE_STRING_NAME:
 					NFPluginGameHandler._log_msg(
 							"dialog export",
-							"[DISCOURSE] Case on file '%s', format string with key '%s' format '%s' case '%s' is not of type string. Patching with warning string." % [resource_path, format_key, format_slice, case],
+							"Case on file '%s', format string with key '%s' format '%s' case '%s' is not of type string. Patching with warning string." % [resource_path, format_key, format_slice, case],
 							NFPluginGameHandler._LogLevel.WARNING)
 					valid_cases[case] = "[CASE NOT IMPLEMENTED]"
 				else:
@@ -1231,15 +1359,24 @@ func _is_localization_data_complete(data: Dictionary, localized: bool) -> bool:
 		keys.append("unlocalized")
 	
 	if not data.has_all(keys):
-		push_warning("[DISCOURSE] Localization data missing.")
+		NFPluginGameHandler._log_msg(
+				"export - dialog",
+				"Localization data missing.",
+				NFPluginGameHandler._LogLevel.WARNING)
 		return false
 	
 	if typeof(data["type"]) != TYPE_INT:
-		push_warning("[DISCOURSE] Localization data type missing.")
+		NFPluginGameHandler._log_msg(
+				"export - dialog",
+				"Localization data type missing.",
+				NFPluginGameHandler._LogLevel.WARNING)
 		return false
 	
 	if localized and typeof(data["locales"]) != TYPE_DICTIONARY:
-		push_warning("[DISCOURSE] Localization text data mismatch.")
+		NFPluginGameHandler._log_msg(
+				"export - dialog",
+				"Localization text data mismatch.",
+				NFPluginGameHandler._LogLevel.WARNING)
 		return false
 	
 	return true
