@@ -1074,7 +1074,7 @@ func generate_localization_files(localization_id: String, base_path: String, fil
 	var extra_data_warned: bool = false
 	
 	for localization_key in localization.keys():
-		if not node_data.has(localization_key):
+		if not node_data.has(localization_key) or not DictUtils.get_nested_value(node_data[localization_key], ["metadata", "localized"], false, true):
 			continue
 		
 		var localization_locales = DictUtils.get_nested_value(localization, [localization_key, "locales"], {})
