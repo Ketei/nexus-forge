@@ -52,17 +52,6 @@ func select_character(resource_id: int, emit_selected: bool = true) -> void:
 				item_selected.connect(_on_item_selected)
 
 
-func get_open_paths() -> Array[String]:
-	if root == null:
-		return []
-	
-	var paths: Array[String] = []
-	
-	for item in root.get_children():
-		paths.append(item.get_metadata(0)["resource"].resource_path)
-	return paths
-
-
 func create_character(resource: CharacterSheet, select: bool = false, emit_select: bool = true) -> void:
 	var new_item: TreeItem = root.create_child()
 	new_item.set_text(0, resource.resource_path.get_file().get_basename())
@@ -87,9 +76,9 @@ func create_character(resource: CharacterSheet, select: bool = false, emit_selec
 
 
 
-func set_unsaved(character_resource: CharacterSheet, unsaved: bool) -> void:
+func set_unsaved(res_id: int, unsaved: bool) -> void:
 	for item in root.get_children():
-		if item.get_metadata(0)["resource"] == character_resource:
+		if item.get_metadata(0)["id"] == res_id:
 			if unsaved:
 				if not item.get_metadata(0)["unsaved"]:
 					item.set_text(0, item.get_text(0) + "*")
