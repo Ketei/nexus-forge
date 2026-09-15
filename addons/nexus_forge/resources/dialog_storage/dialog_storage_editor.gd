@@ -136,6 +136,68 @@ static func get_phrase_arguments(phrase_text: String, trim_brackets: bool = fals
 	return all_arguments
 
 
+func _get_text_data_localized(node_uuid: String, for_locale: String) -> Dictionary:
+	for_locale = TranslationServer.standardize_locale(for_locale)
+	
+	var data: Dictionary[String, Variant] = {
+		"is_override": false,
+		"text": "[MISSING LOCALIZATION DATA]"}
+	
+	if not localization.has(node_uuid) or for_locale.is_empty():
+		return data
+	
+	var node_id: StringName = node_data[node_uuid].get("name", &"")
+	
+	if _dialog_overrides != null and _dialog_overrides.has_override(node_id, for_locale, TYPE_STRING):
+		data["is_override"] = true
+		data["text"] = _dialog_overrides.get_override(node_id, for_locale)
+		return data
+	
+	if not node_data[node_uuid]["metadata"]["localized"]:
+		if typeof(localization[node_uuid]["unlocalized"]) == TYPE_STRING:
+			data["text"] = localization[node_uuid]["unlocalized"]
+		else:
+			data["text"] = "[LOCALIZATION DATA MISMATCH]"
+		return data
+	
+	if localization[node_uuid]["locales"].has(for_locale):
+		if typeof(localization[node_uuid]["locales"][for_locale]) == TYPE_STRING:
+			data["text"] = localization[node_uuid]["locales"][for_locale]
+		else:
+			data["text"] = "[LOCALIZATION DATA MISMATCH]"
+		return data
+	
+	# 0 = No Fallback
+	# 1 = Direct Fallback: Merge fallback_object with loaded objects
+	# 2 = Cascade fallback
+	var fallback_mode: int = ProjectSettings.get_setting(
+			NFPluginGameHandler.get_setting_path("discourse_fallback_mode"),
+			2)
+	
+	if fallback_mode == 0:
+		return data
+	
+	var lang_fallback: String = ProjectSettings.get_setting(
+			"internationalization/locale/fallback")
+	
+	if fallback_mode == 2 and for_locale.contains("_"):
+		var base_lang: String = for_locale.get_slice("_", 0)
+		if base_lang != lang_fallback:
+			if localization[node_uuid]["locales"].has(base_lang):
+				if typeof(localization[node_uuid]["locales"][base_lang]) == TYPE_STRING:
+					data["text"] = localization[node_uuid]["locales"][base_lang]
+				else:
+					data["text"] = "[LOCALIZATION DATA MISMATCH]"
+				return data
+	
+	if localization[node_uuid]["locales"].has(lang_fallback):
+		if typeof(localization[node_uuid]["locales"][lang_fallback]) == TYPE_STRING:
+			data["text"] = localization[node_uuid]["locales"][lang_fallback]
+		else:
+			data["text"] = "[LOCALIZATION DATA MISMATCH]"
+	return data
+
+
 ## Returns the text of a localized string.
 func get_format_string(key: String, locale: String) -> String:
 	locale = TranslationServer.standardize_locale(locale)
@@ -331,24 +393,20 @@ func get_text_entry(node_uuid: StringName, locale: String, fallback: String = "[
 	if not localization.has(node_uuid) or localization[node_uuid]["type"] != LocalizationType.TEXT:
 		return fallback
 	
-	var has_id: bool = DictUtils.has_nested_path(node_data, [node_uuid, "name"])
-	var node_id: StringName = DictUtils.get_nested_value(node_data, [node_uuid, "name"], &"", true)
 	var localized: bool = DictUtils.get_nested_value(
 			node_data,
 			[node_uuid, "metadata", "localized"],
 			true,
 			true)
 	
-	if _dialog_overrides != null and has_id and _dialog_overrides.has_override(node_id, locale):
-		return _dialog_overrides.get_override(node_id, locale)
-	elif not localized:
-		return DictUtils.get_nested_value(localization, [node_uuid, "unlocalized"], fallback, true)
-	else:
+	if localized:
 		return DictUtils.get_nested_value(
 				localization,
 				[node_uuid, "locales", locale],
 				fallback,
 				true)
+	else:
+		return DictUtils.get_nested_value(localization, [node_uuid, "unlocalized"], fallback, true)
 
 
 ## Gets the array of choices of a node with [param node_uuid] of a specific [param locale].
@@ -396,44 +454,6 @@ func get_choices_entry(node_uuid: StringName, locale: String = "", fallback: Arr
 						true))
 	
 	return return_array
-
-
-## Returns the node data from a the node with the given [param uuid] in a specific locale.
-func get_node_data(node_uuid: StringName, locale: String = "") -> Dictionary:
-	if not node_data.has(node_uuid):
-		return {}
-	
-	var base_data: Dictionary = node_data[node_uuid].duplicate(true)
-	var metadata_merge: Dictionary = {}
-	
-	match base_data["type"]:
-		NodeType.DIALOG:
-			metadata_merge = {
-				"dialog_text": get_text_entry(node_uuid, locale)}
-		NodeType.CHOICES:
-			var options_translated: Array[String] = []
-			options_translated.assign(get_choices_entry(node_uuid, locale))
-			var target_size: int = base_data["metadata"]["choices"].size()
-			
-			if options_translated.size() != target_size:
-				NFPluginGameHandler._log_msg(
-						"export - dialog",
-						"Choice data of node '%s' size is different from the '%s' localization data. Data size: %d, locale size: %d" % [base_data["name"], locale, target_size, options_translated.size()],
-						NFPluginGameHandler._LogLevel.WARNING)
-				options_translated.resize(target_size)
-			
-			var idx: int = -1
-			for option_translated in options_translated:
-				idx += 1
-				base_data["metadata"]["choices"][idx]["text"] = option_translated
-		NodeType.LOCALIZED_TEXT:
-			metadata_merge = {
-				"text": get_text_entry(node_uuid, locale)}
-	
-	if not metadata_merge.is_empty():
-		base_data["metadata"].merge(metadata_merge, true)
-	
-	return base_data
 
 
 ## Sets the locale for text (Dialogs & localized text nodes). Passing [code]""[/code]

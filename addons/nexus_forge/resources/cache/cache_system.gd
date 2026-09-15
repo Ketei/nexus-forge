@@ -104,8 +104,7 @@ func cache_data(key: String, data: Variant) -> void:
 	if _cache_map.has(key):
 		var link: CacheLink = _cache_map[key]
 		
-		if link.data != data:
-			link.data = data
+		link.data = data
 		
 		_move_to_newest(link)
 		return

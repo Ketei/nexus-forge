@@ -138,28 +138,36 @@ func generate_locale_map() -> void:
 
 
 # Function to parse the dialog in a custom manner. Modify if needed.
-func _parse_dialog(dialog_id: String, dialog: String) -> String:
+func _parse_dialog(dialog_id: String, dialog_text: String, is_override: bool) -> String:
 	if not ProjectSettings.get_setting(
 			NFPluginGameHandler.get_setting_path(
 					"use_discourse_parser"),
 					true):
-		return dialog
+		return dialog_text
 	
-	var DUUID: String = dialog_id + "/" + locale
+	var DUUID: String = ""
+	
+	if is_override:
+		DUUID = dialog_id + "/" + locale + "/override"
+	else:
+		DUUID = dialog_id + "/" + locale
+	
 	# (UUID)/en_US
 	if _dialog_resource.parsed_dialog_cache.is_in_cache(DUUID):
 		var cached_data: ParsedDialog = _dialog_resource.parsed_dialog_cache.get_cache(DUUID)
-		return cached_data.get_dialog()
+		if cached_data.dialog == dialog_text:
+			return cached_data.get_dialog()
 	
 	var parsed: ParsedDialog = ParsedDialog.new()
-	parsed.dialog = dialog
+	parsed.dialog = dialog_text
+	parsed.locale = locale
 	
 	var functions_processed: Dictionary[String, Variant] = {}
 	var variables_processed: Dictionary[String, Variant] = {}
 	var phrases_processed: Dictionary[String, Variant] = {}
 	var random_processed: Dictionary[String,Variant] = {}
 	
-	for rgx_result in _parser_regex.search_all(dialog):
+	for rgx_result in _parser_regex.search_all(dialog_text):
 		var slice: String = rgx_result.get_string(1)
 		var token: String = slice[0]
 		
@@ -330,8 +338,12 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 					metadata[meta_key] = _get_data(data["dialog_settings"]["metadata"][meta_key])
 			
 			if data["text_source"].is_empty():
+				var text_data: Dictionary[String, Variant] = _dialog_resource._get_text_data(dialog_id, uuid)
 				target["data"] = {
-					"dialog_text": _parse_dialog(String(uuid), _dialog_resource._get_text(dialog_id, uuid)),
+					"dialog_text": _parse_dialog(
+							String(uuid),
+							text_data["text"],
+							text_data["is_override"]),
 					"character_id": data["character_id"],
 					"persist": data["persist"],
 					"font": font,
@@ -341,8 +353,24 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 					"portrait_id": portrait_id,
 					"metadata": metadata}
 			else:
+				var data_source = _get_data(data["text_source"], "")
+				var text: String = ""
+				var is_override: bool = false
+				var source_type: int = typeof(data_source)
+				
+				if source_type == TYPE_STRING:
+					text = data_source
+				elif source_type == TYPE_DICTIONARY:
+					text = data_source.get("text", "")
+					is_override = data_source.get("is_override", false)
+				else:
+					text = "[ERROR GETING DATA FROM %s]" % data["text_source"]
+				
 				target["data"] ={
-					"dialog_text": _parse_dialog(String(uuid), _get_data(data["text_source"], "")),
+					"dialog_text": _parse_dialog(
+							String(uuid),
+							text,
+							is_override),
 					"character_id": data["character_id"],
 					"persist": data["persist"],
 					"font": font,
@@ -358,8 +386,17 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 			return target
 		NodeTypes.CHOICES:
 			var available_options: Array[Dictionary] = []
-			var localized_options: PackedStringArray = _dialog_resource._get_choices(dialog_id, uuid)#_get_choices_for(dialog_id, uuid)
 			var target_size: int = data["choices"].size()
+			var is_overridden: bool = _dialog_resource._dialog_overrides != null\
+					and _dialog_resource._dialog_overrides.has_override(uuid, locale, TYPE_PACKED_STRING_ARRAY)
+			
+			var localized_options: PackedStringArray = []
+			if is_overridden:
+				localized_options = _dialog_resource._dialog_overrides.get_override(uuid, locale).duplicate()
+			else:
+				if _dialog_resource._active_locale != null:
+					localized_options = _dialog_resource._active_locale.get_choices(dialog_id, uuid)
+			
 			var current_size: int = localized_options.size()
 			target["type"] = NodeTypes.CHOICES
 			
@@ -381,7 +418,7 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 					available_options.append(
 						{
 							"unlocked": true,
-							"text": _parse_dialog(option_duuid, localized_options[idx]),
+							"text": _parse_dialog(option_duuid, localized_options[idx], is_overridden),
 							"target": option["next_node"],
 							"metadata": DictUtils.create_typed(TYPE_STRING, TYPE_NIL)})
 				else:
@@ -390,6 +427,7 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 				
 					if not show:
 						continue
+					
 					var unlocked: bool = _get_data(opt_settings["unlocked"], true)
 					var text: String = localized_options[idx]
 					var metadata: Dictionary[String, Variant] = {}
@@ -410,7 +448,7 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 					
 					available_options.append({
 						"unlocked": unlocked,
-						"text": _parse_dialog(option_duuid, text),
+						"text": _parse_dialog(option_duuid, text, is_overridden),
 						"target": option["next_node"],
 						"metadata": metadata})
 			
@@ -603,7 +641,9 @@ func _get_data(uuid: StringName, fallback = null) -> Variant:
 						signal_args)
 			return _get_data(data["data_source"])
 		NodeTypes.LOCALIZED_TEXT:
-			return _dialog_resource._get_text(_path_to_id[_dialog_resource.resource_path], uuid)
+			return _dialog_resource._get_text_data(
+					_path_to_id[_dialog_resource.resource_path],
+					uuid)
 		NodeTypes.COMPARATION:
 			var a = _get_data(data["value_a"])
 			var b = _get_data(data["value_b"])

@@ -109,20 +109,23 @@ func _has_locale(locale_code: String) -> bool:
 	return _loaded_locales.is_in_cache(locale_code)
 
 
-func _get_text(dialog_id: String, id: String) -> String:
+func _get_text_data(dialog_id: String, node_id: String) -> Dictionary:
+	var data: Dictionary[String, Variant] = {
+		"is_override": false,
+		"text": "[MISSING LOCALIZATION DATA]"}
+	
 	if _active_locale == null:
-		return "[MISSING LOCALIZATION DATA]"
+		return data
 	
 	var locale: String = _active_locale.locale
 	
-	if _dialog_overrides != null and _dialog_overrides.has_override(id, locale):
-		var override = _dialog_overrides.get_override(id, locale)
-		if typeof(override) == TYPE_STRING:
-			return override
-		else:
-			return "[OVERRIDE TYPE ERROR]"
+	if _dialog_overrides != null and _dialog_overrides.has_override(node_id, locale, TYPE_STRING):
+		data["is_override"] = true
+		data["text"] = _dialog_overrides.get_override(node_id, locale)
 	else:
-		return _active_locale.get_text(dialog_id, id)
+		data["text"] = _active_locale.get_text(dialog_id, node_id)
+	
+	return data
 
 
 func _get_choices(dialog_id: String, id: String) -> PackedStringArray:
@@ -159,10 +162,15 @@ class NFDialogEntryOverride extends RefCounted:
 		_overrides.clear()
 	
 	
-	func has_override(node_id: StringName, locale: String) -> bool:
-		return DictUtils.has_nested_path(
-				_overrides,
-				[node_id, locale])
+	func has_override(node_id: StringName, locale: String, type: int = TYPE_NIL) -> bool:
+		var override_exist: bool = DictUtils.has_nested_path(
+					_overrides,
+					[node_id, locale])
+		
+		if type == TYPE_NIL or not override_exist:
+			return override_exist
+		else:
+			return typeof(get_override(node_id, locale)) == type
 	
 	
 	func get_override(node_id: StringName, locale: String) -> Variant:
