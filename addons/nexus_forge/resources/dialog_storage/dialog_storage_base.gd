@@ -193,4 +193,5 @@ class NFDialogEntryOverride extends RefCounted:
 			if not _overrides.has(node_id):
 				_overrides[node_id] = DictUtils.create_typed(TYPE_STRING, TYPE_NIL)
 			_overrides[node_id][locale] = override
+			
 			override_changed.emit(node_id, locale)

@@ -719,7 +719,7 @@ func _rebuild_species_cache() -> void:
 		Species = new_cache
 
 
-func _on_quests_list_changed(_id: StringName) -> void:
+func _on_quests_list_changed() -> void:
 	_rebuild_quest_cache()
 
 

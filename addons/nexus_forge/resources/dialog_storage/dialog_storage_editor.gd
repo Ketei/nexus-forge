@@ -198,6 +198,94 @@ func _get_text_data_localized(node_uuid: String, for_locale: String) -> Dictiona
 	return data
 
 
+func _get_array_data_localized(node_uuid: String, for_locale: String) -> Dictionary:
+	for_locale = TranslationServer.standardize_locale(for_locale)
+	
+	var choices: PackedStringArray = []
+	var data: Dictionary[String, Variant] = {
+		"is_override": false,
+		"choices": choices}
+	
+	var node_size: int = 0
+	if node_data.has(node_uuid):
+		node_size = node_data[node_uuid]["metadata"]["choices"].size()
+	
+	if node_size == 0:
+		return data
+	else:
+		choices.resize(node_size)
+	
+	if not localization.has(node_uuid) or for_locale.is_empty():
+		choices.fill("[MISSING LOCALIZATION DATA]")
+		return data
+	
+	var node_id: StringName = node_data[node_uuid].get("name", &"")
+	
+	if _dialog_overrides != null and _dialog_overrides.has_override(node_id, for_locale, TYPE_PACKED_STRING_ARRAY):
+		var resulting_choices: PackedStringArray = _dialog_overrides.get_override(node_id, for_locale).duplicate()
+		var override_size: int = resulting_choices.size()
+		if override_size < node_size:
+			for missing_entry in range(node_size - override_size):
+				resulting_choices.append("[MISSING OVERRIDE LOCALIZATION DATA]")
+		elif node_size < override_size:
+			resulting_choices.resize(node_size)
+		data["is_override"] = true
+		data["choices"] = resulting_choices
+		return data
+	
+	if not node_data[node_uuid]["metadata"]["localized"]:
+		print("Not localized!")
+		var result: PackedStringArray = []
+		if typeof(localization[node_uuid]["unlocalized"]) == TYPE_PACKED_STRING_ARRAY:
+			result = localization[node_uuid]["unlocalized"].duplicate()
+		var result_size: int = result.size()
+		if result_size < node_size:
+			for missing in range(node_size - result_size):
+				result.append("[MISSING LOCALIZATION DATA]")
+		elif node_size < result_size:
+			result.resize(node_size)
+		data["choices"] = result
+		return data
+	
+	if localization[node_uuid]["locales"].has(for_locale):
+		if typeof(localization[node_uuid]["locales"][for_locale]) == TYPE_PACKED_STRING_ARRAY:
+			var items: PackedStringArray = localization[node_uuid]["locales"][for_locale]
+			for idx in range(mini(items.size(), node_size)):
+				if choices[idx].strip_edges().is_empty():
+					choices[idx] = items[idx]
+	
+	# 0 = No Fallback
+	# 1 = Direct Fallback: Merge fallback_object with loaded objects
+	# 2 = Cascade fallback
+	var fallback_mode: int = ProjectSettings.get_setting(
+			NFPluginGameHandler.get_setting_path("discourse_fallback_mode"),
+			2)
+	var lang_fallback: String = ProjectSettings.get_setting(
+			"internationalization/locale/fallback")
+	
+	if fallback_mode == 0 or for_locale == lang_fallback:
+		return data
+	
+	if fallback_mode == 2 and for_locale.contains("_"):
+		var base_lang: String = for_locale.get_slice("_", 0)
+		if base_lang != lang_fallback:
+			if localization[node_uuid]["locales"].has(base_lang):
+				if typeof(localization[node_uuid]["locales"][base_lang]) == TYPE_PACKED_STRING_ARRAY:
+					var source: PackedStringArray = localization[node_uuid]["locales"][base_lang]
+					for idx in range(mini(source.size(), node_size)):
+						if choices[idx].strip_edges().is_empty():
+							choices[idx] = source[idx]
+	
+	if localization[node_uuid]["locales"].has(lang_fallback):
+		if typeof(localization[node_uuid]["locales"][lang_fallback]) == TYPE_PACKED_STRING_ARRAY:
+			var source: PackedStringArray = localization[node_uuid]["locales"][lang_fallback]
+			for idx in range(mini(source.size(), node_size)):
+				if choices[idx].strip_edges().is_empty():
+					choices[idx] = source[idx]
+	
+	return data
+
+
 ## Returns the text of a localized string.
 func get_format_string(key: String, locale: String) -> String:
 	locale = TranslationServer.standardize_locale(locale)
@@ -382,6 +470,40 @@ func get_node_uuids() -> Array:
 ## Returns all the registered frames uuids.
 func get_frames_uuids() -> Array:
 	return node_frames.keys()
+
+
+func get_node_data(node_uuid: StringName, locale: String = "") -> Dictionary:
+	if not node_data.has(node_uuid):
+		return {}
+	
+	var base_data: Dictionary = node_data[node_uuid].duplicate(true)
+	var metadata_merge: Dictionary = {}
+	
+	match base_data["type"]:
+		NodeType.DIALOG:
+			metadata_merge = {
+				"dialog_text": get_text_entry(node_uuid, locale)}
+		NodeType.CHOICES:
+			var options_translated: Array[String] = []
+			options_translated.assign(get_choices_entry(node_uuid, locale))
+			var target_size: int = base_data["metadata"]["choices"].size()
+	
+			if options_translated.size() != target_size:
+				push_warning("[DISCOURSE] Choice data of node {node_id} size is different from the {locale_code} localization data. Data size: {data_size}, locale size: {locale_size}".format({"data_size": target_size, "locale_size": options_translated.size(), "locale_code": locale, "node_id": base_data["name"]}) )
+				options_translated.resize(target_size)
+	
+			var idx: int = -1
+			for option_translated in options_translated:
+				idx += 1
+				base_data["metadata"]["choices"][idx]["text"] = option_translated
+		NodeType.LOCALIZED_TEXT:
+			metadata_merge = {
+				"text": get_text_entry(node_uuid, locale)}
+	
+	if not metadata_merge.is_empty():
+		base_data["metadata"].merge(metadata_merge, true)
+	
+	return base_data
 
 
 ## Gets the text of a node with [param node_uuid] of a specific [param locale].

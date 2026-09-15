@@ -1073,7 +1073,7 @@ func set_dialog_text(locale_code: String, dialog_id: StringName, node_id: String
 	
 	target.set_override(node_id, locale_code, new_dialog)
 	
-	if _dialog_resource == null or _get_dialog_id(_dialog_resource.resource_path) != dialog_id:
+	if _dialog_resource == null or _get_current_dialog_id() != dialog_id:
 		return
 	
 	if _dialog_resource._dialog_overrides != target:
@@ -1129,7 +1129,7 @@ func set_choices_array(locale_code: String, dialog_id: StringName, node_id: Stri
 	
 	target.set_override(node_id, locale_code, responses)
 	
-	if _dialog_resource == null or _get_dialog_id(_dialog_resource.resource_path) != dialog_id:
+	if _dialog_resource == null or _get_current_dialog_id() != dialog_id:
 		return
 	
 	if _dialog_resource._dialog_overrides != target:
@@ -1170,6 +1170,12 @@ func _get_dialog_id(path: String) -> StringName:
 	var key: StringName = StringName(path)
 	if _path_to_id.has(key):
 		return _path_to_id[key]
+	return &""
+
+
+func _get_current_dialog_id() -> StringName:
+	if is_instance_valid(_dialog_resource):
+		return _get_dialog_id(_dialog_resource.resource_path)
 	return &""
 
 
