@@ -709,9 +709,14 @@ func reset_stats() -> void:
 	for item in char_stats_container.get_children():
 		var max_spn: SpinBox = item.get_meta(&"max")
 		var min_spn: SpinBox = item.get_meta(&"min")
+		var val_spn: SpinBox = item.get_meta(&"value")
+		
+		val_spn.set_block_signals(true)
+		max_spn.set_block_signals(true)
+		min_spn.set_block_signals(true)
+		
 		var btn: Button = item.get_meta(&"collapse")
 		var flags: int = btn.get_meta(&"range_flags")
-		item.get_meta(&"value").set_value_no_signal(item.get_meta(&"default_value", 0.0))
 		item.get_meta(&"use_max").set_pressed_no_signal(false)
 		item.get_meta(&"use_min").set_pressed_no_signal(false)
 		if BitUtils.is_bit_index(flags, 2, true):
@@ -722,12 +727,24 @@ func reset_stats() -> void:
 		flags = BitUtils.set_bits(flags, 3, false)
 		btn.set_meta(&"range_flags", flags)
 		
+		val_spn.allow_greater = true
+		val_spn.allow_lesser = true
+		val_spn.min_value = 0.0
+		val_spn.max_value = 1.0
+		val_spn.value = item.get_meta(&"default_value", 0.0)
+		
 		max_spn.editable = false
-		max_spn.set_value_no_signal(1.0)
+		max_spn.value = 1.0
+		max_spn.min_value = 0.0
 		max_spn.set_meta(&"old_value", 1.0)
+		
 		min_spn.editable = false
-		min_spn.set_value_no_signal(0.0)
+		min_spn.value = 0.0
 		min_spn.set_meta(&"old_value", 0.0)
+		
+		val_spn.set_block_signals(false)
+		max_spn.set_block_signals(false)
+		min_spn.set_block_signals(false)
 
 
 func reset_skills() -> void:
@@ -913,7 +930,12 @@ func load_character(res_id: int) -> void:
 			var value: SpinBox = stat.get_meta(&"value")
 			var btn: Button = stat.get_meta(&"collapse")
 			var flags: int = btn.get_meta(&"range_flags")
-			value.set_value_no_signal(0.0)
+			
+			max_spn.set_block_signals(true)
+			min_spn.set_block_signals(true)
+			value.set_block_signals(true)
+			
+			value.value = 0.0
 			value.allow_greater = true
 			value.allow_lesser = true
 			value.max_value = 1.0
@@ -930,11 +952,14 @@ func load_character(res_id: int) -> void:
 			btn.set_meta(&"range_flags", flags)
 			
 			max_spn.editable = false
-			max_spn.set_value_no_signal(1.0)
+			max_spn.value = 1.0
 			max_spn.set_meta(&"old_value", 1.0)
 			min_spn.editable = false
-			min_spn.set_value_no_signal(0.0)
+			min_spn.value = 0.0
 			min_spn.set_meta(&"old_value", 0.0)
+			max_spn.set_block_signals(false)
+			min_spn.set_block_signals(false)
+			value.set_block_signals(false)
 			continue
 		
 		var collapse_btn: Button = stat.get_meta(&"collapse")
@@ -942,6 +967,10 @@ func load_character(res_id: int) -> void:
 		var value: SpinBox = stat.get_meta(&"value")
 		var max_spinbox: SpinBox = stat.get_meta(&"max")
 		var min_spinbox: SpinBox = stat.get_meta(&"min")
+		
+		value.set_block_signals(true)
+		max_spinbox.set_block_signals(true)
+		min_spinbox.set_block_signals(true)
 		
 		flags = BitUtils.set_bit_index(flags, 0, not stat_range.allow_lesser)
 		flags = BitUtils.set_bit_index(flags, 1, not stat_range.allow_greater)
@@ -976,19 +1005,17 @@ func load_character(res_id: int) -> void:
 		stat.get_meta(&"use_max").set_pressed_no_signal(not stat_range.allow_greater)
 		stat.get_meta(&"use_min").set_pressed_no_signal(not stat_range.allow_lesser)
 		min_spinbox.editable = stat_range.allow_lesser
-		min_spinbox.set_value_no_signal(stat_range.min_value)
+		min_spinbox.value = stat_range.min_value
 		min_spinbox.set_meta(&"old_value", stat_range.min_value)
 		max_spinbox.editable = stat_range.allow_greater
-		max_spinbox.set_value_no_signal(stat_range.max_value if stat_range.min_value <= stat_range.max_value else stat_range.min_value)
+		max_spinbox.value = stat_range.max_value if stat_range.min_value <= stat_range.max_value else stat_range.min_value
 		max_spinbox.set_meta(&"old_value", max_spinbox.value)
 		
-		if not stat_range.allow_greater and stat_range.max_value < value.value:
-			value.set_value_no_signal(stat_range.max_value)
+		value.value = stat_range.value
 		
-		if not stat_range.allow_lesser and value.value < stat_range.min_value:
-			value.set_value_no_signal(stat_range.min_value)
-		
-		value.set_value_no_signal(stat_range.value)
+		value.set_block_signals(false)
+		max_spinbox.set_block_signals(false)
+		min_spinbox.set_block_signals(false)
 	
 	for skill in char_skill_container.get_children():
 		if skill is HBoxContainer:
@@ -1444,16 +1471,18 @@ func _do_update_max_value(stat_id: StringName, to: float, att_value: float) -> v
 	if target == null:
 		return
 	
-	var min_spinbox: SpinBox = target.get_meta(&"min")
 	var max_spinbox: SpinBox = target.get_meta(&"max")
 	var stat_spinbox: SpinBox = target.get_meta(&"value")
 	
-	if to < stat_spinbox.value:
-		stat_spinbox.set_value_no_signal(to)
+	stat_spinbox.set_block_signals(true)
+	max_spinbox.set_block_signals(true)
 	
-	max_spinbox.set_value_no_signal(to)
+	max_spinbox.value = to
 	stat_spinbox.max_value = to
-	stat_spinbox.set_value_no_signal(att_value)
+	stat_spinbox.value = att_value
+	
+	stat_spinbox.set_block_signals(false)
+	max_spinbox.set_block_signals(false)
 
 
 func _do_update_min_value(stat_id: StringName, to: float, max_value: float, att_value: float) -> void:
@@ -1466,20 +1495,23 @@ func _do_update_min_value(stat_id: StringName, to: float, max_value: float, att_
 	if target == null:
 		return
 	
+	var stat_spinbox: SpinBox = target.get_meta(&"value")
 	var min_spinbox: SpinBox = target.get_meta(&"min")
 	var max_spinbox: SpinBox = target.get_meta(&"max")
-	var stat_spinbox: SpinBox = target.get_meta(&"value")
 	
-	if stat_spinbox.value < to:
-		stat_spinbox.set_value_no_signal(to)
-	if max_spinbox.value < to:
-		max_spinbox.set_value_no_signal(to)
+	stat_spinbox.set_block_signals(true)
+	min_spinbox.set_block_signals(true)
+	max_spinbox.set_block_signals(true)
 	
-	min_spinbox.set_value_no_signal(to)
+	min_spinbox.value = to
 	stat_spinbox.min_value = to
-	stat_spinbox.set_value_no_signal(att_value)
+	stat_spinbox.value = att_value
 	max_spinbox.min_value = to
-	max_spinbox.set_value_no_signal(max_value)
+	max_spinbox.value = max_value
+	
+	stat_spinbox.set_block_signals(false)
+	min_spinbox.set_block_signals(false)
+	max_spinbox.set_block_signals(false)
 
 
 func create_skill_item(skill_id: StringName, default_value: int) -> HBoxContainer:
