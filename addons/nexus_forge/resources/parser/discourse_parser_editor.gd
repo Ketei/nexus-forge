@@ -1,9 +1,13 @@
 class_name NFEditorDialogParser
 extends NFDialogParser
-## The [NFDialogParser] that NexusForge will use while its running in the editor.
+## The aprser that NexusForge will use while its running in the editor.
 ##
 ## The resources parsed by this object are [EditorDiscourseDialog] which
 ## contain a different structure from the released files.[br]
+## [b]Note:[/b] This parser is designed only to be used during editor builds
+## and can't process release resources.
+## [br][br]
+## For the release parser see [NFDialogParser].
 
 
 ## Emmited when data is set on the NexusForge.Blackboard singleton.

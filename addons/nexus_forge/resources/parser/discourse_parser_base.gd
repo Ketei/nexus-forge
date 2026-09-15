@@ -4,7 +4,11 @@ extends RefCounted
 ##
 ## The resources parsed by this object are [DiscourseDialog] which
 ## contain a different structure from the editor files.[br]
-## For the editor parser see [EditorDialogParser].
+## [br]
+## [b]Note:[/b] This parser is designed to be used on release builds and can't
+## process editor resources.
+## [br][br]
+## For the editor parser see [NFEditorDialogParser].
 
 ## Emitted when a dialog starts.
 signal dialog_started
@@ -111,7 +115,13 @@ func _init() -> void:
 	_parser_regex.compile("\\{(\\![a-zA-Z\\_][a-zA-Z0-9\\_]*(?:\\|[^\\}]+)?|(?:[\\?\\&\\$][^\\}]+))\\}")
 
 
-func generate_locale_map() -> void:
+# Reads the exported JSON map from the .pck to build relationships between 
+# file paths, dialog IDs, and localization files. 
+#
+# Note: This relies on a file generated ONLY during project export. It is 
+# called automatically by NexusForge on it's parser. Can't be used on editor
+# builds as files don't exist.
+func _generate_locale_map() -> void:
 	var file: FileAccess = FileAccess.open(
 			StringUtils.make_path([
 				ProjectSettings.get_setting(
@@ -681,10 +691,6 @@ func _load_locale_into(dialog: DiscourseDialog, locale_code: String, ) -> void:
 	if dialog == null or locale_code.is_empty() or dialog._has_locale(locale_code):
 		return
 	
-	if dialog is ModDiscourseDialog:
-		# Haven't decided on the implementation. Does nothing for now.
-		return
-	
 	if not _path_to_id.has(dialog.resource_path):
 		return
 	
@@ -861,14 +867,13 @@ func load_dialog(path: String, starting_id: StringName = &"") -> bool:
 		var dialog_id: String = DictUtils.get_nested_value(_path_to_id, [path], "")
 		var data: DiscourseDialog = _conversation_cache.get_resource(target_path)
 		var locale_data: DiscourseDialogLocale = data._get_locale(locale)
-		# TODO: This doesn't take into account modded files. When implementation
-		# is decided, change this.
+		
 		var reload_locale: bool = locale_data != null and locale_data.json_file != _id_to_data[dialog_id]["locale_file"]
 		
 		_dialog_resource = data
 		
-		if _dialog_edits.has(dialog_id) and _dialog_resource.dialog_overrides != _dialog_edits[dialog_id]:
-			_dialog_resource.dialog_overrides = _dialog_edits[dialog_id]
+		if _dialog_edits.has(dialog_id) and _dialog_resource._dialog_overrides != _dialog_edits[dialog_id]:
+			_dialog_resource._dialog_overrides = _dialog_edits[dialog_id]
 		
 		if reload_locale:
 			_load_locale_into(_dialog_resource, locale)
@@ -882,7 +887,7 @@ func load_dialog(path: String, starting_id: StringName = &"") -> bool:
 			return false
 			
 		if _dialog_edits.has(id):
-			res.dialog_overrides = _dialog_edits[id]
+			res._dialog_overrides = _dialog_edits[id]
 		_conversation_cache.cache_resource(res)
 		_dialog_resource = res
 	
@@ -890,6 +895,40 @@ func load_dialog(path: String, starting_id: StringName = &"") -> bool:
 		_next_uuid = starting_id
 	else:
 		_next_uuid = _dialog_resource.entry_node
+	
+	return true
+
+
+## Loads the dialog from [param path] and localization files,
+## then stores them in the dialogue cache making
+## [method NFDialogParser.load_dialog] calls for the file at [param path]
+## faster as long as the data remains in the cache.
+## [br][br]
+## Returns [code]true[/code] if the loading was successful.
+func prepare_dialog(path: String) -> bool:
+	var target_path: String = _logic_overrides[path] if _logic_overrides.has(path) else path
+	var dialog_id: String = DictUtils.get_nested_value(_path_to_id, [path], "")
+	
+	if _conversation_cache.is_in_cache(target_path):
+		var data: DiscourseDialog = _conversation_cache.get_resource(target_path)
+		var locale_data: DiscourseDialogLocale = data._get_locale(locale)
+		var reload_locale: bool = locale_data != null and locale_data.json_file != _id_to_data[dialog_id]["locale_file"]
+		if _dialog_edits.has(dialog_id) and data._dialog_overrides != _dialog_edits[dialog_id]:
+			data._dialog_overrides = _dialog_edits[dialog_id]
+		
+		if reload_locale:
+			_load_locale_into(data, locale)
+	else:
+		var res = load(target_path)
+		
+		if res == null or res is not DiscourseDialog:
+			return false
+			
+		if _dialog_edits.has(dialog_id):
+			res._dialog_overrides = _dialog_edits[dialog_id]
+		if not res._has_locale(locale):
+			_load_locale_into(res, locale)
+		_conversation_cache.cache_resource(res)
 	
 	return true
 

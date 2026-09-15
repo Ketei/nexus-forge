@@ -9,12 +9,34 @@ signal character_opened(path: String, id: StringName)
 
 const UNDO_MAX_STEPS: int = 50
 
-var _unsaved: bool = false
+var _unsaved: bool = false:
+	set(u):
+		if current_sheet == null:
+			return
+		var id: int = current_sheet.get_instance_id()
+		if _open_files.has(id):
+			_open_files[id]["unsaved"] = u
+	get:
+		if current_sheet == null:
+			return false
+		var id: int = current_sheet.get_instance_id()
+		if _open_files.has(id):
+			return _open_files[id]["unsaved"]
+		return false
+var expr: Expression
 
 var current_sheet: CharacterSheet = null
 var ui_enabled: bool = false
 var undo: UndoRedo = null
-var exp_parser: Expression = null
+
+
+var _open_files: Dictionary[int, Dictionary] = {
+	#0: {
+		#"resource": null,
+		#"undo": null,
+		#"unsaved": false
+	#}
+}
 
 @onready var char_menu_btn: MenuButton = $CharacterContainer/BasicDataSplit/CharacterTreeContainer/HBoxContainer/CharMenuBtn
 @onready var search_char_ln_edt: LineEdit = $CharacterContainer/BasicDataSplit/CharacterTreeContainer/HBoxContainer/SearchCharLnEdt
@@ -43,7 +65,7 @@ var exp_parser: Expression = null
 
 
 func ready_plugin() -> void:
-	exp_parser = Expression.new()
+	expr = Expression.new()
 	char_tree.ready_plugin()
 	character_data_tree.ready_plugin()
 	
@@ -184,8 +206,12 @@ func _on_edit_traitblock_pressed() -> void:
 		EditorInterface.set_main_screen_editor("Script")
 
 
-func _on_close_character_pressed(resource: CharacterSheet, unsaved: bool) -> void:
-	if unsaved:
+func _on_close_character_pressed(char_id: int) -> void:
+	if not _open_files.has(char_id):
+		return
+	
+	if _open_files[char_id]["unsaved"]:
+		var res: CharacterSheet = _open_files[char_id]["resource"]
 		var unsaved_dialog: AcceptDialog = load("res://addons/nexus_forge/dialogs/unsaved_dialog_script.gd").new()
 		unsaved_dialog.title = "Save Character..."
 		unsaved_dialog.dialog_text = "Character has unsaved changes.\nDo you want to save before closing?"
@@ -193,17 +219,16 @@ func _on_close_character_pressed(resource: CharacterSheet, unsaved: bool) -> voi
 		unsaved_dialog.show()
 		
 		var result: int = await unsaved_dialog.dialog_finished # 0 = save, 1 = don't save, 2 = cancel
+		unsaved_dialog.queue_free()
 		
 		if result == 0:
-			if resource == current_sheet:
+			if res == current_sheet:
 				save_current_character()
-			ResourceSaver.save(resource)
+			ResourceSaver.save(res)
 		elif result == 2:
-			unsaved_dialog.queue_free()
 			return
-		unsaved_dialog.queue_free()
 	
-	if resource == current_sheet:
+	if current_sheet != null and current_sheet.get_instance_id() == char_id:
 		current_sheet = null
 		char_id_line.text = ""
 		char_name_line.text = ""
@@ -212,15 +237,18 @@ func _on_close_character_pressed(resource: CharacterSheet, unsaved: bool) -> voi
 		reset_stats()
 		reset_traits()
 		_unsaved = false
-		
-		character_data_tree.clear_data(true)
-		character_data_tree._undo.free()
-		character_data_tree._undo = null
-		undo.clear_history()
-		undo.free()
 		undo = null
+		character_data_tree.set_undo(null)
+		character_data_tree.clear_data()
 	
-	char_tree.remove_character(resource)
+	char_tree.remove_character(char_id)
+	_open_files[char_id]["undo"].clear_history()
+	_open_files[char_id]["undo"].free()
+	_open_files[char_id]["undo"] = null
+	_open_files[char_id]["data_undo"].clear_history()
+	_open_files[char_id]["data_undo"].free()
+	_open_files[char_id]["data_undo"]= null
+	_open_files.erase(char_id)
 
 
 func _on_add_data_pressed(data_key: String, data: Variant) -> void:
@@ -234,12 +262,11 @@ func _on_add_data_pressed(data_key: String, data: Variant) -> void:
 
 
 func _something_changed(_arg: Variant = null) -> void:
-	if _unsaved:
+	if _unsaved or current_sheet == null:
 		return
 	
 	_unsaved = true
-	if current_sheet != null:
-		char_tree.set_unsaved(current_sheet, true)
+	char_tree.set_unsaved(current_sheet.get_instance_id(), true)
 
 
 func _on_data_tree_changed() -> void:
@@ -252,32 +279,37 @@ func _on_data_tree_changed() -> void:
 
 
 func get_open_characters() -> Array[String]:
-	return char_tree.get_open_paths()
+	var paths: Array[String] = []
+	for id in _open_files:
+		paths.append(_open_files[id]["resource"].resource_path)
+	return paths
 
 
 func load_character_files(files: Array[String]) -> void:
 	for file in files:
 		if not FileAccess.file_exists(file):
 			continue
-		var loaded: Resource = load(file)
-		if loaded != null and loaded is CharacterSheet:
-			if char_tree.has_character(loaded):
-				continue
-			
-			if loaded.stats == null:
-				loaded.stats = StatBlock.new()
-			if loaded.skills == null:
-				loaded.skills = SkillSet.new()
-			if loaded.traits == null:
-				loaded.traits = TraitBlock.new()
-			
-			var char_undo: UndoRedo = UndoRedo.new()
-			var data_undo: UndoRedo = UndoRedo.new()
-			
-			char_undo.max_steps = UNDO_MAX_STEPS
-			data_undo.max_steps = UNDO_MAX_STEPS
-			
-			char_tree.create_character(loaded, char_undo, data_undo, false)
+		var loaded = load(file)
+		if not loaded is CharacterSheet:
+			continue
+		
+		var id: int = loaded.get_instance_id()
+		if _open_files.has(id):
+			continue
+		
+		loaded.initialize_objects()
+		var char_undo: UndoRedo = UndoRedo.new()
+		var data_undo: UndoRedo = UndoRedo.new()
+		char_undo.max_steps = UNDO_MAX_STEPS
+		data_undo.max_steps = UNDO_MAX_STEPS
+		
+		_open_files[id] = {
+			"resource": loaded,
+			"undo": char_undo,
+			"data_undo": data_undo,
+			"unsaved": false}
+		
+		char_tree.create_character(loaded)
 
 
 func update_genders() -> void:
@@ -443,10 +475,6 @@ func update_talent_nodes() -> void:
 	
 	for remaining_trait in trait_map.keys():
 		trait_map[remaining_trait].queue_free()
-	
-	char_tree.update_talent_objects()
-	if current_sheet != null:
-		_unsaved = char_tree.is_unsaved(current_sheet)
 
 
 func _on_new_character_pressed() -> void:
@@ -458,38 +486,49 @@ func _on_new_character_pressed() -> void:
 	resource_selector.show()
 	
 	var dialog_result: Array = await resource_selector.dialog_finished
-	
-	if dialog_result[0]:
-		if current_sheet != null:
-			save_current_character()
-		var new_resource: CharacterSheet = CharacterSheet.new()
-		var new_undo: UndoRedo = UndoRedo.new()
-		var data_undo: UndoRedo = UndoRedo.new()
-		new_undo.max_steps = UNDO_MAX_STEPS
-		data_undo.max_steps = UNDO_MAX_STEPS
-		new_resource.initialize_objects()
-		if ResourceLoader.has_cached(dialog_result[1]):
-			new_resource.take_over_path(dialog_result[1])
-		new_resource.resource_path = dialog_result[1]
-		
-		for stat in StatBlock.stats():
-			var stat_range: ValueRange = new_resource.stats.get(stat)
-			stat_range.min_value = 0.0
-			stat_range.max_value = 1.0
-			stat_range.allow_greater = true
-			stat_range.allow_lesser = true
-		
-		ResourceSaver.save(new_resource, dialog_result[1])
-		char_tree.create_character(new_resource, new_undo, data_undo, true, false)
-		load_character(new_resource)
-		current_sheet = new_resource
-		undo = new_undo
-		character_data_tree._undo = data_undo
-		_unsaved = false
-		set_ui_enabled(true)
-		character_created.emit.call_deferred(dialog_result[1])
-	
 	resource_selector.queue_free()
+	
+	if not dialog_result[0]:
+		return
+	
+	if current_sheet != null:
+		save_current_character()
+	
+	var new_resource: CharacterSheet = CharacterSheet.new()
+	var id: int = new_resource.get_instance_id()
+	var new_undo: UndoRedo = UndoRedo.new()
+	var data_undo: UndoRedo = UndoRedo.new()
+	
+	new_undo.max_steps = UNDO_MAX_STEPS
+	data_undo.max_steps = UNDO_MAX_STEPS
+	new_resource.initialize_objects()
+	
+	_open_files[id] = {
+		"resource": new_resource,
+		"undo": new_undo,
+		"data_undo": data_undo,
+		"unsaved": false}
+	
+	if ResourceLoader.has_cached(dialog_result[1]):
+		new_resource.take_over_path(dialog_result[1])
+	new_resource.resource_path = dialog_result[1]
+	
+	for stat in StatBlock.stats():
+		var stat_range: ValueRange = new_resource.stats.get(stat)
+		stat_range.min_value = 0.0
+		stat_range.max_value = 1.0
+		stat_range.allow_greater = true
+		stat_range.allow_lesser = true
+	
+	ResourceSaver.save(new_resource, dialog_result[1])
+	char_tree.create_character(new_resource, true, false)
+	current_sheet = new_resource
+	undo = new_undo
+	load_character(id)
+	character_data_tree.set_undo(data_undo)
+	set_ui_enabled(true)
+	
+	character_created.emit.call_deferred(dialog_result[1])
 
 
 func _on_open_character_pressed() -> void:
@@ -501,54 +540,60 @@ func _on_open_character_pressed() -> void:
 	resource_selector.show()
 	
 	var dialog_result: Array = await resource_selector.dialog_finished
-	
 	resource_selector.queue_free()
 	
-	if dialog_result[0] and FileAccess.file_exists(dialog_result[1]):
-		var resource_preload: Resource = load(dialog_result[1])
-		if resource_preload is CharacterSheet:
-			if current_sheet != null:
-				save_current_character()
-			if resource_preload.stats == null:
-				resource_preload.stats = StatBlock.new()
-			if resource_preload.skills == null:
-				resource_preload.skills = SkillSet.new()
-			if resource_preload.traits == null:
-				resource_preload.traits = TraitBlock.new()
-			
-			if char_tree.has_character(resource_preload):
-				if current_sheet == resource_preload:
-					return
-				var undos: Dictionary[String, UndoRedo] = char_tree.get_resource_undos(resource_preload)
-				char_tree.select_character(resource_preload, false)
-				undo = undos["character"]
-				character_data_tree._undo = undos["data"]
-			else:
-				var new_undo: UndoRedo = UndoRedo.new()
-				var data_undo: UndoRedo = UndoRedo.new()
-				new_undo.max_steps = UNDO_MAX_STEPS
-				data_undo.max_steps = UNDO_MAX_STEPS
-				char_tree.create_character(resource_preload, new_undo, data_undo, true, false)
-				undo = new_undo
-				character_data_tree._undo = data_undo
-			
-			load_character(resource_preload)
-			current_sheet = resource_preload
-			set_ui_enabled(true)
-			_unsaved = false
-			character_opened.emit(dialog_result[1], resource_preload.id)
+	if not dialog_result[0] or not FileAccess.file_exists(dialog_result[1]):
+		return
+	
+	var resource_preload = load(dialog_result[1])
+	if resource_preload is not CharacterSheet:
+		return
+	
+	if current_sheet == resource_preload:
+		return
+	
+	var id: int = resource_preload.get_instance_id()
+	
+	if not _open_files.has(id):
+		var new_undo: UndoRedo = UndoRedo.new()
+		var data_undo: UndoRedo = UndoRedo.new()
+		new_undo.max_steps = UNDO_MAX_STEPS
+		data_undo.max_steps = UNDO_MAX_STEPS
+		resource_preload.initialize_objects()
+		
+		_open_files[id] = {
+			"resource": resource_preload,
+			"undo": new_undo,
+			"data_undo": data_undo,
+			"unsaved": false}
+		char_tree.create_character(resource_preload)
+		
+	if current_sheet != null:
+		save_current_character()
+		
+	current_sheet = resource_preload
+	char_tree.select_character(id, false)
+	load_character(id)
+	undo = _open_files[id]["undo"]
+	character_data_tree.set_undo(_open_files[id]["data_undo"])
+	
+	set_ui_enabled(true)
+	
+	character_opened.emit(dialog_result[1], resource_preload.id)
 
 
-func _on_character_selected(character_sheet: CharacterSheet, unsaved: bool, char_undo: UndoRedo, data_undo: UndoRedo) -> void:
+func _on_character_selected(resource_id: int) -> void:
+	if not _open_files.has(resource_id):
+		return
+	
 	if current_sheet != null:
 		save_current_character()
 	
-	undo = char_undo
-	character_data_tree._undo = data_undo
-	load_character(character_sheet)
-	current_sheet = character_sheet
+	undo = _open_files[resource_id]["undo"]
+	character_data_tree.set_undo(_open_files[resource_id]["data_undo"])
+	current_sheet = _open_files[resource_id]["resource"]
+	load_character(resource_id)
 	set_ui_enabled(true)
-	_unsaved = unsaved
 
 
 func _on_character_menu_id_pressed(id: int) -> void:
@@ -713,56 +758,141 @@ func save_current_character() -> void:
 			current_sheet.stats.set(stat.get_meta(&"stat_id"), new_sheet)
 			sheet_stat = new_sheet
 		
-		var value_box: SpinBox = stat.get_meta(&"value")
-		var parsed_value: float = _parse_value(
-				value_box.get_line_edit().text,
-				value_box.value)
 		var min_box: SpinBox = stat.get_meta(&"min")
-		var parsed_min: float = _parse_value(
-				min_box.get_line_edit().text,
-				min_box.value)
 		var max_box: SpinBox = stat.get_meta(&"max")
-		var parsed_max: float = maxf(parsed_min, _parse_value(
-				max_box.get_line_edit().text,
-				max_box.value))
+		var value_box: SpinBox = stat.get_meta(&"value")
 		
 		sheet_stat.allow_greater = not stat.get_meta(&"use_max").button_pressed
 		sheet_stat.allow_lesser = not stat.get_meta(&"use_min").button_pressed
-		sheet_stat.max_value = parsed_max
-		sheet_stat.min_value = parsed_min
-		sheet_stat.value = parsed_value
+		sheet_stat.max_value = max_box.value
+		sheet_stat.min_value = min_box.value
+		sheet_stat.value = value_box.value
 	
 	for skill in char_skill_container.get_children():
+		var skill_spin: SpinBox = skill.get_child(1)
+		if skill_spin.get_line_edit().is_editing():
+			skill_spin.apply()
 		current_sheet.skills.set(
 				skill.get_meta(&"skill_id"),
-				int(skill.get_child(1).value))
+				int(skill_spin.value))
 	
 	for trait_item in char_traits_container.get_children():
+		var trait_spin: SpinBox = trait_item.get_child(1)
+		if trait_spin.get_line_edit().is_editing():
+			trait_spin.apply()
 		current_sheet.traits.set(
 				trait_item.get_meta(&"trait_id"),
-				int(trait_item.get_child(1).value))
-	
-	char_tree.update_sheet(current_sheet)
-	char_tree.set_unsaved(current_sheet, _unsaved)
+				int(trait_spin.value))
 
 
 func has_unsaved_files() -> bool:
-	return char_tree.is_any_unsaved()
+	if current_sheet != null:
+		for stat in char_stats_container.get_children():
+			var min_box: SpinBox = stat.get_meta(&"min")
+			if min_box.get_line_edit().is_editing():
+				var new_val: float = _parse_value(
+						min_box.get_line_edit().text,
+						min_box.value)
+				if new_val != min_box.value:
+					return true
+			
+			var max_box: SpinBox = stat.get_meta(&"max")
+			if max_box.get_line_edit().is_editing():
+				var new_val: float = _parse_value(
+						max_box.get_line_edit().text,
+						max_box.value)
+				if new_val != max_box.value:
+					return true
+			
+			var value_box: SpinBox = stat.get_meta(&"value")
+			if value_box.get_line_edit().is_editing():
+				var new_val: float = _parse_value(
+						value_box.get_line_edit().text,
+						value_box.value)
+				if new_val != value_box.value:
+					return true
+	
+		for skill in char_skill_container.get_children():
+			var skill_spin: SpinBox = skill.get_child(1)
+			if skill_spin.get_line_edit().is_editing():
+				var new_val: float = _parse_value(
+						skill_spin.get_line_edit().text,
+						skill_spin.value)
+				if new_val != skill_spin.value:
+					return true
+		
+		for trait_item in char_traits_container.get_children():
+			var trait_spin: SpinBox = trait_item.get_child(1)
+			if trait_spin.get_line_edit().is_editing():
+				var new_val: float = _parse_value(
+						trait_spin.get_line_edit().text,
+						trait_spin.value)
+				if new_val != trait_spin.value:
+					return true
+	
+	for id in _open_files:
+		if _open_files[id]["unsaved"]:
+			return true
+	return false
 
 
 func save() -> void:
-	var unsaved_characters: Array[CharacterSheet] = char_tree.get_unsaved()
-	for item in unsaved_characters:
-		if item == current_sheet:
+	if current_sheet != null:
+		for stat in char_stats_container.get_children():
+			var min_box: SpinBox = stat.get_meta(&"min")
+			if min_box.get_line_edit().is_editing():
+				var old_value: float = min_box.value
+				min_box.apply()
+				var new_value: float = min_box.value
+				if old_value != new_value:
+					_something_changed()
+					#min_box.value_changed.emit(new_value)
+			
+			var max_box: SpinBox = stat.get_meta(&"max")
+			if max_box.get_line_edit().is_editing():
+				var old_value: float = max_box.value
+				max_box.apply()
+				var new_value: float = max_box.value
+				if old_value != new_value:
+					_something_changed()
+					#max_box.value_changed.emit(new_value)
+			
+			var value_box: SpinBox = stat.get_meta(&"value")
+			if value_box.get_line_edit().is_editing():
+				var old_value: float = value_box.value
+				value_box.apply()
+				var new_value: float = value_box.value
+				if old_value != new_value:
+					_something_changed()
+					#value_box.value_changed.emit(new_value)
+	
+		for skill in char_skill_container.get_children():
+			var skill_spin: SpinBox = skill.get_child(1)
+			if skill_spin.get_line_edit().is_editing():
+				skill_spin.apply()
+		
+		for trait_item in char_traits_container.get_children():
+			var trait_spin: SpinBox = trait_item.get_child(1)
+			if trait_spin.get_line_edit().is_editing():
+				trait_spin.apply()
+	
+	for id in _open_files:
+		if not _open_files[id]["unsaved"]:
+			continue
+		var res: CharacterSheet = _open_files[id]["resource"]
+		if res == current_sheet:
 			save_current_character()
-		else:
-			ResourceSaver.save(item)
-		character_saved.emit(item.resource_path, item.id)
+		ResourceSaver.save(res)
+		_open_files[id]["unsaved"] = false
+		character_saved.emit(res.resource_path, res.id)
 	char_tree.set_all_saved()
-	_unsaved = false
 
 
-func load_character(sheet: CharacterSheet) -> void:
+func load_character(res_id: int) -> void:
+	if not _open_files.has(res_id):
+		return
+	
+	var sheet: CharacterSheet = _open_files[res_id]["resource"]
 	char_id_line.text = sheet.id
 	char_id_line.set_meta(&"old_text", sheet.id)
 	char_name_line.text = sheet.name
@@ -801,8 +931,10 @@ func load_character(sheet: CharacterSheet) -> void:
 			
 			max_spn.editable = false
 			max_spn.set_value_no_signal(1.0)
+			max_spn.set_meta(&"old_value", 1.0)
 			min_spn.editable = false
 			min_spn.set_value_no_signal(0.0)
+			min_spn.set_meta(&"old_value", 0.0)
 			continue
 		
 		var collapse_btn: Button = stat.get_meta(&"collapse")
@@ -840,7 +972,7 @@ func load_character(sheet: CharacterSheet) -> void:
 		value.allow_lesser = stat_range.allow_lesser
 		value.max_value = stat_range.max_value
 		value.min_value = stat_range.min_value
-		value.set_meta(&"old_value", stat_range.value)
+		value.set_meta(&"old_value", value.value)
 		stat.get_meta(&"use_max").set_pressed_no_signal(not stat_range.allow_greater)
 		stat.get_meta(&"use_min").set_pressed_no_signal(not stat_range.allow_lesser)
 		min_spinbox.editable = stat_range.allow_lesser
@@ -919,6 +1051,7 @@ func create_stat_item(stat_id: StringName, type: int, default: float) -> VBoxCon
 	limit_min_spn.allow_lesser = true
 	limit_min_spn.allow_greater = true
 	limit_min_spn.editable = not allow_lesser.disabled
+	limit_min_spn.set_meta(&"old_value", 0.0)
 	
 	allow_greater.text = "Max"
 	allow_greater.custom_minimum_size = Vector2(62.0, 32.0)
@@ -928,6 +1061,7 @@ func create_stat_item(stat_id: StringName, type: int, default: float) -> VBoxCon
 	limit_max_spn.allow_lesser = true
 	limit_max_spn.allow_greater = true
 	limit_max_spn.editable = not allow_greater.disabled
+	limit_max_spn.set_meta(&"old_value", 0.0)
 	
 	edit_limits_btn.custom_minimum_size = Vector2(32.0, 32.0)
 	edit_limits_btn.icon = load("res://addons/nexus_forge/icons/range_collapsed_none.svg")
@@ -951,6 +1085,8 @@ func create_stat_item(stat_id: StringName, type: int, default: float) -> VBoxCon
 	new_value.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	new_value.size_flags_stretch_ratio = 3.0
 	new_value.value = default
+	new_value.set_meta(&"old_value", float(default))
+	
 	if type == TYPE_INT:
 		new_value.step = 1.0
 		limit_max_spn.step = 1.0
@@ -1003,24 +1139,21 @@ func create_stat_item(stat_id: StringName, type: int, default: float) -> VBoxCon
 	
 	set_focus_order_for_stat(new_stat)
 	
-	new_value.value_changed.connect(_something_changed)
-	value_ln.focus_exited.connect(_on_stat_skill_trait_spinbox_focus_lost.bind(new_value))
+	new_value.value_changed.connect(_on_stat_skill_trait_spinbox_value_changed.bind(new_value))
 	value_ln.text_submitted.connect(_on_stat_skill_trait_spinbox_text_submitted.bind(new_value, true))
 	
 	edit_limits_btn.pressed.connect(_toggle_limit_visibility_pressed.bind(edit_limits_btn, limits_container))
 	
-	limit_max_spn.value_changed.connect(_on_limit_max_changed.bind(new_value))
-	limit_min_spn.value_changed.connect(_on_limit_min_changed.bind(new_value, limit_max_spn))
+	limit_max_spn.value_changed.connect(_on_limit_max_changed.bind(
+			limit_max_spn,
+			new_value,
+			stat_id))
 	
-	limit_min_ln.editing_toggled.connect(_on_limit_min_edit_toggled.bind(
-		new_value,
-		limit_min_spn,
-		limit_max_spn,
-		stat_id))
-	limit_max_ln.editing_toggled.connect(_on_limit_max_edit_toggled.bind(
-		new_value,
-		limit_max_spn,
-		stat_id))
+	limit_min_spn.value_changed.connect(_on_limit_min_changed.bind(
+			new_value,
+			limit_min_spn,
+			limit_max_spn,
+			stat_id))
 	
 	limit_min_ln.text_submitted.connect(_on_limit_text_submitted.bind(limit_min_spn, limit_max_spn, true))
 	limit_max_ln.text_submitted.connect(_on_limit_text_submitted.bind(limit_min_spn, limit_max_spn, false))
@@ -1242,57 +1375,44 @@ func _toggle_limit_visibility_pressed(toggle_button: Button, limit_container: HB
 	toggle_button.set_meta(&"range_flags", flags)
 
 
-func _on_limit_max_changed(value: float, stat: SpinBox) -> void:
-	stat.max_value = value
+func _on_limit_max_changed(value: float, max_box: SpinBox, stat: SpinBox, stat_id: StringName) -> void:
+	var old_value: float = max_box.get_meta(&"old_value")
+	var old_att: float = stat.value
+	
 	if value < stat.value:
 		stat.set_value_no_signal(value)
+	stat.max_value = value
+	
+	max_box.set_meta(&"old_value", value)
+	undo.create_action("Set %s Ceiling" % String(stat_id).capitalize())
+	undo.add_do_method(_do_update_max_value.bind(stat_id, value, stat.value))
+	undo.add_undo_method(_do_update_max_value.bind(stat_id, old_value, old_att))
+	undo.commit_action(false)
 	
 	_something_changed()
 
 
-func _on_limit_min_changed(value: float, stat: SpinBox, max_spin: SpinBox) -> void:
-	stat.min_value = value
-	max_spin.min_value = value
+func _on_limit_min_changed(value: float, stat: SpinBox, min_spin: SpinBox, max_spin: SpinBox, stat_id: StringName) -> void:
+	var old_min_value: float = min_spin.get_meta(&"old_value")
+	var old_stat_value: float = stat.value
+	var old_max_value: float = max_spin.value
+	
 	if stat.value < value:
 		stat.set_value_no_signal(value)
+	stat.min_value = value
+	
+	if max_spin.value < value:
+		max_spin.set_value_no_signal(value)
+	max_spin.min_value = value
+	
+	min_spin.set_meta(&"old_value", value)
+	
+	undo.create_action("Set %s Floor" % String(stat_id).capitalize())
+	undo.add_do_method(_do_update_min_value.bind(stat_id, value, max_spin.value, stat.value))
+	undo.add_undo_method(_do_update_min_value.bind(stat_id, old_min_value, old_max_value, old_stat_value))
+	undo.commit_action(false)
+	
 	_something_changed()
-
-
-func _on_limit_max_edit_toggled(toggled: bool, stat: SpinBox, max_box: SpinBox, stat_id: StringName) -> void:
-	if toggled:
-		return
-	
-	var parse_text: String = max_box.get_line_edit().text
-	var parse_result: float = _parse_value(parse_text, max_box.value)
-	
-	var new_value: float = maxf(parse_result, max_box.value)
-	var old_value: float = max_box.get_meta(&"old_value", 1.0)
-	max_box.set_meta(&"old_value", new_value)
-	if undo == null or old_value == new_value:
-		return
-	
-	undo.create_action("%s Ceiling Toggled" % String(stat_id).capitalize())
-	undo.add_do_method(_do_update_max_value.bind(stat_id, new_value, true))
-	undo.add_undo_method(_do_update_max_value.bind(stat_id, old_value, true))
-	undo.commit_action(false)
-
-
-func _on_limit_min_edit_toggled(toggled: bool, stat: SpinBox, min_spin: SpinBox, max_spin: SpinBox, stat_id: StringName) -> void:
-	if toggled:
-		return
-	
-	var parse_text: String = min_spin.get_line_edit().text
-	var parse_result: float = _parse_value(parse_text, min_spin.value)
-	
-	var new_value: float = parse_result
-	var old_value: float = min_spin.get_meta(&"old_value", 0.0)
-	min_spin.set_meta(&"old_value", new_value)
-	if undo == null or new_value == old_value:
-		return
-	undo.create_action("%s Floor Toggled" % String(stat_id).capitalize())
-	undo.add_do_method(_do_update_min_value.bind(stat_id, new_value, true))
-	undo.add_undo_method(_do_update_min_value.bind(stat_id, old_value, true))
-	undo.commit_action(false)
 
 
 func _on_limit_text_submitted(_text: String, min_range: SpinBox, max_range: SpinBox, is_min: bool) -> void:
@@ -1306,17 +1426,14 @@ func _on_limit_text_submitted(_text: String, min_range: SpinBox, max_range: Spin
 				var next_focus: Control = max_line.find_next_valid_focus()
 				if next_focus != null:
 					next_focus.grab_focus()
-		min_range.get_line_edit().focus_exited.emit()
 	else:
 		if not max_line.focus_next.is_empty():
 			var next_focus: Control = max_line.find_next_valid_focus()
 			if next_focus != null:
 				next_focus.grab_focus()
-		
-		max_range.get_line_edit().focus_exited.emit()
 
 
-func _do_update_max_value(stat_id: StringName, value: float, update_value: bool = true) -> void:
+func _do_update_max_value(stat_id: StringName, to: float, att_value: float) -> void:
 	var target: VBoxContainer = null
 	
 	for stat_entry in char_stats_container.get_children():
@@ -1331,16 +1448,16 @@ func _do_update_max_value(stat_id: StringName, value: float, update_value: bool 
 	var max_spinbox: SpinBox = target.get_meta(&"max")
 	var stat_spinbox: SpinBox = target.get_meta(&"value")
 	
-	if update_value:
-		max_spinbox.set_value_no_signal(value)
-	stat_spinbox.max_value = value
-	if value < stat_spinbox.value:
-		stat_spinbox.set_value_no_signal(value)
-
-
-func _do_update_min_value(stat_id: StringName, value: float, update_value: bool = true) -> void:
-	var target: VBoxContainer = null
+	if to < stat_spinbox.value:
+		stat_spinbox.set_value_no_signal(to)
 	
+	max_spinbox.set_value_no_signal(to)
+	stat_spinbox.max_value = to
+	stat_spinbox.set_value_no_signal(att_value)
+
+
+func _do_update_min_value(stat_id: StringName, to: float, max_value: float, att_value: float) -> void:
+	var target: VBoxContainer = null
 	for stat_entry in char_stats_container.get_children():
 		if stat_entry.get_meta(&"stat_id") == stat_id:
 			target = stat_entry
@@ -1353,12 +1470,16 @@ func _do_update_min_value(stat_id: StringName, value: float, update_value: bool 
 	var max_spinbox: SpinBox = target.get_meta(&"max")
 	var stat_spinbox: SpinBox = target.get_meta(&"value")
 	
-	if update_value:
-		min_spinbox.set_value_no_signal(value)
-	stat_spinbox.min_value = value
-	max_spinbox.min_value = value
-	if stat_spinbox.value < value:
-		stat_spinbox.set_value_no_signal(value)
+	if stat_spinbox.value < to:
+		stat_spinbox.set_value_no_signal(to)
+	if max_spinbox.value < to:
+		max_spinbox.set_value_no_signal(to)
+	
+	min_spinbox.set_value_no_signal(to)
+	stat_spinbox.min_value = to
+	stat_spinbox.set_value_no_signal(att_value)
+	max_spinbox.min_value = to
+	max_spinbox.set_value_no_signal(max_value)
 
 
 func create_skill_item(skill_id: StringName, default_value: int) -> HBoxContainer:
@@ -1383,6 +1504,7 @@ func create_skill_item(skill_id: StringName, default_value: int) -> HBoxContaine
 	new_value.step = 1.0
 	new_value.value = default_value
 	new_value.editable = ui_enabled
+	new_value.set_meta(&"old_value", 0.0)
 	
 	new_skill.set_meta(&"value", new_value)
 	new_skill.set_meta(&"skill_id", skill_id)
@@ -1395,8 +1517,7 @@ func create_skill_item(skill_id: StringName, default_value: int) -> HBoxContaine
 	
 	set_focus_order_for_skill(new_skill)
 	
-	new_value.value_changed.connect(_something_changed)
-	new_value.get_line_edit().focus_exited.connect(_on_stat_skill_trait_spinbox_focus_lost.bind(new_value))
+	new_value.value_changed.connect(_on_stat_skill_trait_spinbox_value_changed.bind(new_value))
 	new_value.get_line_edit().text_submitted.connect(_on_stat_skill_trait_spinbox_text_submitted.bind(new_value))
 	
 	return new_skill
@@ -1424,6 +1545,7 @@ func create_trait_item(trait_id: StringName, default_value: int) -> HBoxContaine
 	new_value.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	new_value.size_flags_stretch_ratio = 3.0
 	new_value.editable = ui_enabled
+	new_value.set_meta(&"old_value", 0.0)
 	
 	new_trait.set_meta(&"value", new_value)
 	new_trait.set_meta(&"trait_id", trait_id)
@@ -1436,41 +1558,40 @@ func create_trait_item(trait_id: StringName, default_value: int) -> HBoxContaine
 	
 	set_focus_order_for_trait(new_trait)
 	
-	new_value.value_changed.connect(_something_changed)
-	new_value.get_line_edit().focus_exited.connect(_on_stat_skill_trait_spinbox_focus_lost.bind(new_value))
+	new_value.value_changed.connect(_on_stat_skill_trait_spinbox_value_changed.bind(new_value))
 	new_value.get_line_edit().text_submitted.connect(_on_stat_skill_trait_spinbox_text_submitted.bind(new_value))
 	
 	return new_trait
 
 
 func plugin_open_resource(resource: CharacterSheet) -> void:
-	if current_sheet == resource:
+	var id: int = resource.get_instance_id()
+	
+	if resource == current_sheet:
 		return
 	
-	if char_tree.has_character(resource):
-		if current_sheet == resource:
-			return
-		char_tree.select_character(resource)
-	else:
-		if resource.stats == null:
-			resource.stats = StatBlock.new()
-		if resource.skills == null:
-			resource.skills = SkillSet.new()
-		if resource.traits == null:
-			resource.traits = TraitBlock.new()
-		if current_sheet != null:
-			save_current_character()
-		var new_undo: UndoRedo = UndoRedo.new()
+	if not _open_files.has(id):
+		var char_undo: UndoRedo = UndoRedo.new()
 		var data_undo: UndoRedo = UndoRedo.new()
-		new_undo.max_steps = UNDO_MAX_STEPS
+		char_undo.max_steps = UNDO_MAX_STEPS
 		data_undo.max_steps = UNDO_MAX_STEPS
-		char_tree.create_character(resource, new_undo, data_undo, true, false)
-		undo = new_undo
-		character_data_tree._undo = data_undo
-		load_character(resource)
-		current_sheet = resource
-		_unsaved = false
+		_open_files[id] = {
+			"resource": resource,
+			"undo": char_undo,
+			"data_undo": data_undo,
+			"unsaved": false}
+		char_tree.create_character(resource)
 	
+	if current_sheet != null:
+		save_current_character()
+	
+	resource.initialize_objects()
+	
+	undo = _open_files[id]["undo"]
+	character_data_tree.set_undo(_open_files[id]["data_undo"])
+	char_tree.select_character(id, false)
+	current_sheet = resource
+	load_character(id)
 	set_ui_enabled(true)
 
 
@@ -1494,8 +1615,10 @@ func filesystem_resource_removed(res: Resource) -> void:
 func close_active_character() -> void:
 	if current_sheet == null:
 		return
-		
-	if char_tree.is_unsaved(current_sheet):
+	
+	var id: int = current_sheet.get_instance_id()
+	
+	if _unsaved:
 		var unsaved_dialog: AcceptDialog = load("res://addons/nexus_forge/dialogs/unsaved_dialog_script.gd").new()
 		unsaved_dialog.title = "Save Character..."
 		unsaved_dialog.dialog_text = "Character has unsaved changes.\nDo you want to save before closing?"
@@ -1503,14 +1626,13 @@ func close_active_character() -> void:
 		unsaved_dialog.show()
 		
 		var result: int = await unsaved_dialog.dialog_finished # 0 = save, 1 = don't save, 2 = cancel
+		unsaved_dialog.queue_free()
 		
 		if result == 0:
 			save_current_character()
 			ResourceSaver.save(current_sheet)
 		elif result == 2:
-			unsaved_dialog.queue_free()
 			return
-		unsaved_dialog.queue_free()
 	
 	char_id_line.text = ""
 	char_name_line.text = ""
@@ -1518,17 +1640,21 @@ func close_active_character() -> void:
 	reset_skills()
 	reset_stats()
 	reset_traits()
-	character_data_tree.clear_data(true)
-	character_data_tree._undo.free()
-	character_data_tree._undo = null
-	undo.clear_history(true)
-	undo.free()
+	character_data_tree.clear_data()
+	character_data_tree.set_undo(null)
 	undo = null
-	_unsaved = false
-	
-	char_tree.remove_character(current_sheet)
-	
 	current_sheet = null
+	
+	_open_files[id]["undo"].clear_history()
+	_open_files[id]["undo"].free()
+	_open_files[id]["undo"] = null
+	_open_files[id]["data_undo"].clear_history()
+	_open_files[id]["data_undo"].free()
+	_open_files[id]["data_undo"] = null
+	_open_files.erase(id)
+	
+	char_tree.remove_character(id)
+	
 
 
 func _do_edit_line_edit(line: LineEdit, text: String) -> void:
@@ -1579,7 +1705,6 @@ func _on_stat_skill_trait_spinbox_text_submitted(_text: String, spinbox: SpinBox
 	var line: LineEdit = spinbox.get_line_edit()
 	
 	if line.focus_next.is_empty():
-		line.focus_exited.emit()
 		return
 	
 	if is_stat:
@@ -1601,47 +1726,30 @@ func _on_stat_skill_trait_spinbox_text_submitted(_text: String, spinbox: SpinBox
 					var next: Control = max_line.find_next_valid_focus()
 					if next != null:
 						next.grab_focus()
-					else:
-						line.focus_exited.emit()
-				else:
-					line.focus_exited.emit()
 		else:
 			if not max_line.focus_next.is_empty():
 				var next: Control = max_line.find_next_valid_focus()
 				if next != null:
 					next.grab_focus()
-				else:
-					line.focus_exited.emit()
-			else:
-				line.focus_exited.emit()
 	else:
 		var next_focus: Control = line.find_next_valid_focus()
 		
 		if next_focus != null:
 			next_focus.grab_focus()
-		else:
-			line.focus_exited.emit()
 
 
-func _on_stat_skill_trait_spinbox_focus_lost(spin: SpinBox) -> void:
+func _on_stat_skill_trait_spinbox_value_changed(value: float, spin: SpinBox) -> void:
 	if undo == null or not spin.editable:
 		return
 	
-	var parse_text: String = spin.get_line_edit().text
-	var parse_result: float = _parse_value(parse_text, spin.value)
+	var old_value: float = spin.get_meta(&"old_value")
 	
-	var new_value: float = parse_result
-	var old_value: float = spin.get_meta(&"old_value", spin.get_meta(&"default_value", 0.0))
-	
-	spin.set_meta(&"old_value", new_value)
-	
-	if old_value == new_value:
-		return
-	
+	spin.set_meta(&"old_value", value)
 	undo.create_action("Attribute Updated")
-	undo.add_do_method(_update_spin_value.bind(spin, new_value))
+	undo.add_do_method(_update_spin_value.bind(spin, value))
 	undo.add_undo_method(_update_spin_value.bind(spin, old_value))
 	undo.commit_action(false)
+	_something_changed()
 
 
 func _update_spin_value(spin: SpinBox, to_value: float) -> void:
@@ -1680,14 +1788,14 @@ func _on_id_name_line_text_submitted(_text: String, line: LineEdit) -> void:
 
 
 func _parse_value(value: String, fallback: float) -> float:
-	var error: int = exp_parser.parse(value)
+	var error: int = expr.parse(value)
 
 	if error != OK:
 		return fallback
 		
-	var result: Variant = exp_parser.execute([], null, false)
+	var result: Variant = expr.execute([], null, false)
 	
-	if exp_parser.has_execute_failed():
+	if expr.has_execute_failed():
 		return fallback
 	
 	var type: int = typeof(result)
@@ -1698,7 +1806,10 @@ func _parse_value(value: String, fallback: float) -> float:
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_PREDELETE:
-		if is_instance_valid(undo):
-			undo.clear_history()
-			undo.free()
-			undo = null
+		for id in _open_files:
+			if is_instance_valid(_open_files[id]["undo"]):
+				_open_files[id]["undo"].clear_history()
+				_open_files[id]["undo"].free()
+			if is_instance_valid(_open_files[id]["data_undo"]):
+				_open_files[id]["data_undo"].clear_history()
+				_open_files[id]["data_undo"].free()

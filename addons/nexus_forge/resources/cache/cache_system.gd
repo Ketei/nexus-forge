@@ -20,9 +20,27 @@ extends RefCounted
 ## Max size of the cache.
 var max_size: int = 50: # Custom set that resizes _cache_map if larger
 	set(new_size):
+		if use_threads:
+			_mutex.lock()
+		
 		var clamped_size: int = maxi(new_size, 1)
 		_resize_cache(clamped_size)
 		max_size = clamped_size
+		if use_threads:
+			_mutex.unlock()
+
+var use_threads: bool = false:
+	set(t):
+		if use_threads and not t:
+			if is_instance_valid(_mutex):
+				_mutex = null # Refcoutend so it should free itself
+		
+		use_threads = t
+		
+		if t and not is_instance_valid(_mutex):
+			_mutex = Mutex.new()
+
+var _mutex: Mutex = null
 var _cache_map: Dictionary[String, CacheLink] = {}
 var _newest_used: CacheLink = null
 var _oldest_used: CacheLink = null
@@ -101,72 +119,104 @@ func _add_to_newest(link: CacheLink) -> void:
 ## If the item was already cached it moves it to the front of the
 ## cache (newest used).
 func cache_data(key: String, data: Variant) -> void:
+	if use_threads:
+		_mutex.lock()
+	
 	if _cache_map.has(key):
 		var link: CacheLink = _cache_map[key]
 		
 		link.data = data
 		
 		_move_to_newest(link)
-		return
+	else:
+		var current_size: int = _cache_map.size()
+		
+		while max_size <= current_size:
+			_remove_oldest()
+			current_size -= 1
+		
+		var new_link: CacheLink = CacheLink.new()
+		
+		new_link.key = key
+		new_link.data = data
+		_add_to_newest(new_link)
 	
-	var current_size: int = _cache_map.size()
-	
-	while max_size <= current_size:
-		_remove_oldest()
-		current_size -= 1
-	
-	var new_link: CacheLink = CacheLink.new()
-	
-	new_link.key = key
-	new_link.data = data
-	_add_to_newest(new_link)
+	if use_threads:
+		_mutex.unlock()
 
 
 ## Returns the cached item assigned to [param key] or [code]null[/code] if
 ## the item isn't in the cache.
 func get_cache(key: String) -> Variant:
+	var result: Variant = null
+	if use_threads:
+		_mutex.lock()
+	
 	if _cache_map.has(key):
-		return _cache_map[key].data
-	return null
+		result = _cache_map[key].data
+	
+	if use_threads:
+		_mutex.unlock()
+	
+	return result
 
 
 ## Returns true if an item with key [param key] is in the cache.
 func is_in_cache(key: String) -> bool:
-	return _cache_map.has(key)
+	var has_item: bool = false
+	if use_threads:
+		_mutex.lock()
+	has_item = _cache_map.has(key)
+	if use_threads:
+		_mutex.unlock()
+	return has_item
 
 
 ## Removes an item from the cache. Returns [code]true[/code] if [param key] was
 ## in the cache.
 func remove_data(key: String) -> void:
-	if not _cache_map.has(key):
-		return
+	if use_threads:
+		_mutex.lock()
 	
-	var target_link: CacheLink = _cache_map[key]
-	
-	_cache_map.erase(key)
-	
-	if target_link.older_link != null:
-		target_link.older_link.newer_link = target_link.newer_link
+	if _cache_map.has(key):
+		var target_link: CacheLink = _cache_map[key]
 		
-	if target_link.newer_link != null:
-		target_link.newer_link.older_link = target_link.older_link
+		_cache_map.erase(key)
+		
+		if target_link.older_link != null:
+			target_link.older_link.newer_link = target_link.newer_link
+			
+		if target_link.newer_link != null:
+			target_link.newer_link.older_link = target_link.older_link
+		
+		if _newest_used == target_link:
+			_newest_used = target_link.older_link
+		
+		if _oldest_used == target_link:
+			_oldest_used = target_link.newer_link
 	
-	if _newest_used == target_link:
-		_newest_used = target_link.older_link
+		target_link.clear()
 	
-	if _oldest_used == target_link:
-		_oldest_used = target_link.newer_link
-	
-	target_link.clear()
+	if use_threads:
+		_mutex.unlock()
 
 
 ## Returns the current size of the cache.
 func size() -> int:
-	return _cache_map.size()
+	var current_size: int = 0
+	if use_threads:
+		_mutex.lock()
+	current_size = _cache_map.size()
+	if use_threads:
+		_mutex.unlock()
+	return current_size
 
 
 ## Clears the cache.
 func clear() -> void:
+	if use_threads:
+		_mutex.lock()
+	
 	for cache_key in _cache_map.keys():
 		var link = _cache_map[cache_key]
 		if is_instance_valid(link):
@@ -174,12 +224,19 @@ func clear() -> void:
 	_cache_map.clear()
 	_newest_used = null
 	_oldest_used = null
+	
+	if use_threads:
+		_mutex.unlock()
 
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_PREDELETE:
+		if use_threads and is_instance_valid(_mutex):
+			_mutex.lock()
 		for cache_key in _cache_map.keys():
 			_cache_map[cache_key].clear()
 		_cache_map.clear()
 		_newest_used = null
 		_oldest_used = null
+		if use_threads and is_instance_valid(_mutex):
+			_mutex.unlock()

@@ -575,7 +575,7 @@ func _ready() -> void:
 		if instantiate_disabled or use_discourse:
 			Discourse = NFEditorDialogParser.new() if OS.has_feature("editor") else NFDialogParser.new()
 			if use_discourse:
-				Discourse.generate_locale_map()
+				Discourse._generate_locale_map()
 
 	if Blackboard == null:
 		Blackboard = NFBlackboardData.new()
