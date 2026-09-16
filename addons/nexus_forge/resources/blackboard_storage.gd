@@ -162,7 +162,6 @@ func set_variable(variable_path: String, value: Variant) -> bool:
 func create_folder(folder_path: String) -> void:
 	var clean_path: StringName = folder_path.simplify_path()
 	var exists: bool = _variables.has(clean_path)
-	var slices: Array[String] = []
 	
 	var slice_path: StringName = &""
 	

@@ -74,19 +74,6 @@ func _init(use_nexus_forge: bool = true) -> void:
 	NexusForge.StatManager.stat_clamping_toggled.connect(_on_stat_clamping_toggled)
 
 
-func _set(property: StringName, value: Variant) -> bool:
-	if _custom_stats.has(property) and typeof(value) == TYPE_OBJECT and (value is RangeInt or value is RangeFloat):
-		_custom_stats[property] = value
-		return true
-	return false
-
-
-func _get(property: StringName) -> Variant:
-	if _custom_stats.has(property):
-		return _custom_stats[property]
-	return null
-
-
 ## This will make sure all stat variables of type RangeInt and
 ## RangeFloat have objects assigned to them.
 func initialize_ranges() -> void:

@@ -286,7 +286,6 @@ func reload_methods() -> void:
 	var selected_method: String = methods_node.get_selected_metadata() if methods_node.selected != -1 else ""
 	var all_methods: Array = available_methods.keys()
 	var new_select: int = -1
-	var emit_updated: bool = false
 	
 	all_methods.sort_custom(ArrayUtils.sort_custom_alphabetically_asc)
 	

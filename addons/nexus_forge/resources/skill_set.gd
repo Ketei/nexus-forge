@@ -44,20 +44,6 @@ static func skills() -> Array[StringName]:
 	return all_skills
 
 
-func _get(property: StringName) -> Variant:
-	if _custom_skills.has(property):
-		return _custom_skills[property]
-	return -1
-
-
-func _set(property: StringName, value: Variant) -> bool:
-	var val_type: int = typeof(value)
-	if _custom_skills.has(property) and (val_type == TYPE_INT or val_type == TYPE_FLOAT):
-		_custom_skills[property] = value
-		return true
-	return false
-
-
 func _init(use_nexus_forge: bool = true) -> void:
 	if not use_nexus_forge or Engine.is_editor_hint():
 		return

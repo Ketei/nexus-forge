@@ -175,7 +175,7 @@ func get_item_value(item_id: StringName) -> int:
 			[item_id, "value"],
 			0)
 	var type: int = typeof(value)
-	if typeof(value) == TYPE_INT or typeof(value) == TYPE_FLOAT:
+	if type == TYPE_INT or type == TYPE_FLOAT:
 		return value
 	else:
 		return 0

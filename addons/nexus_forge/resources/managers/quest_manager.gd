@@ -333,8 +333,6 @@ func complete_objective(quest_id: StringName, stage_id: StringName, objective_id
 	if not entry.auto_advance_stages or not entry.can_complete_stage():
 		return
 	
-	var next_stage: StringName = entry.resource.get_stage(stage_id).success_stage_id
-	
 	_set_stage_complete(quest_id, stage_id, true)
 	stage_completed.emit(quest_id, stage_id, true)
 	

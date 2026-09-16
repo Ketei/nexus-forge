@@ -92,7 +92,6 @@ func _get_issues() -> PackedStringArray:
 
 
 func _get_node_data() -> Dictionary:
-	var data: Dictionary = {}
 	var inputs: Array[Dictionary] = []
 	
 	for arg_idx in range(get_child_count() - 1):
@@ -189,7 +188,6 @@ func reload_methods() -> void:
 	
 	if available_methods.is_empty():
 		if has_any_output(0):
-			var target: DiscourseGraphNode = get_node_connected_to_port(PortMode.OUTPUT, 0)
 			disconnect_port(PortMode.OUTPUT, 0)
 		methods_node.clear()
 		await clear_input_args()

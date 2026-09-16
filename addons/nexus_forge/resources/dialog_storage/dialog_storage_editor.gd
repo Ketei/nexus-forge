@@ -794,7 +794,6 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 		var export_data: Dictionary[String, Variant] = {
 			"node_type": node_data[node_id]["type"]}
 		var metadata: Dictionary = node_data[node_id]["metadata"]
-		var node_name: StringName = node_data[node_id]["name"]
 		
 		match node_data[node_id]["type"]:
 			NodeType.ENTRY:

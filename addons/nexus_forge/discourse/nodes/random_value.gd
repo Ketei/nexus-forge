@@ -165,8 +165,6 @@ func _set_node_data(data: Dictionary) -> void:
 	if metadata.has("position") and typeof(metadata["position"]) == TYPE_VECTOR2:
 		position_offset = metadata["position"]
 	
-	var type_menu: MenuButton = get_mapped_field(&"random_type", "type_button")
-	
 	if metadata.has("mode") and typeof(metadata["mode"]) == TYPE_INT:
 		set_mode(metadata["mode"])
 	

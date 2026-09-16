@@ -38,20 +38,6 @@ func _init(use_nexus_forge: bool = true) -> void:
 	NexusForge.TraitManager.trait_created.connect(_on_custom_trait_created)
 
 
-func _set(property: StringName, value: Variant) -> bool:
-	var val_type: int = typeof(value)
-	if _custom_traits.has(property) and (val_type == TYPE_INT or val_type == TYPE_FLOAT):
-		_custom_traits[property] = value
-		return true
-	return false
-
-
-func _get(property: StringName) -> Variant:
-	if _custom_traits.has(property):
-		return _custom_traits[property]
-	return -1
-
-
 ## Returns an array with the exported traits in this object.[br]
 ## Does NOT include custom traits.
 static func traits() -> Array[StringName]:

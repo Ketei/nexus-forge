@@ -115,8 +115,6 @@ func _get_issues() -> PackedStringArray:
 
 
 func _get_node_data() -> Dictionary:
-	var data: Dictionary = {}
-	
 	var metadata: Dictionary = {
 		"operator": comparation_menu.get_meta(&"current_operator", 0)}
 	var in_connections: Dictionary = {

@@ -111,7 +111,6 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 			var display_name: String = ""
 			var portrait_id: String = ""
 			var dialog_metadata: Dictionary[String, Variant] = {}
-			var node_id: StringName = data.get("name", &"")
 			
 			if not data["input_connections"]["dialog_settings"]["target_node_uuid"].is_empty():
 				var settings: Dictionary = _dialog_resource.node_data.get(data["input_connections"]["dialog_settings"]["target_node_uuid"], {})
@@ -395,6 +394,7 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 				current_weight += choice["weight"]
 				if random_select <= current_weight:
 					return _process_logic(choice["next"])
+			
 			return _process_logic(choices[-1]["next"]) # In case of loop error
 		NodeTypes.SHORTCUT_IN:
 			return _process_logic(metadata["anchor_target"])
@@ -546,74 +546,6 @@ func _get_data(from_uuid: StringName, fallback = null) -> Variant:
 			return metadata["resource_path"]
 		_:
 			return null
-
-
-func _get_choice_node_entries(node_uuid: StringName, entry_fallback: String = "[ENTRY NOT FOUND]") -> Array[String]:
-	var entries: Array[String] = []
-	
-	if not _dialog_resource.node_data.has(node_uuid):
-		return entries
-	
-	var entry_target_size: int = 0
-	
-	if _dialog_resource.node_data[node_uuid]["metadata"].has("choices"):
-		entry_target_size = _dialog_resource.node_data[node_uuid]["metadata"]["choices"].size()
-	
-	if entry_target_size == 0:
-		return entries
-	
-	entries.resize(entry_target_size)
-	entries.fill(entry_fallback)
-	
-	var localized: bool = DictUtils.get_nested_value(
-			_dialog_resource.node_data,
-			[node_uuid, "metadata", "localized"],
-			false)
-	
-	if not localized:
-		var unlocalized_array: Array[String] = []
-		if _dialog_resource.localization[node_uuid].has("unlocalized"):
-			unlocalized_array.assign(_dialog_resource.localization[node_uuid]["unlocalized"])
-		_overlay_array(entries, unlocalized_array, entry_target_size)
-		return entries
-	
-	var fallback_mode: int = ProjectSettings.get_setting(
-			NFPluginGameHandler.get_setting_path("discourse_fallback_mode"),
-			2)
-	
-	var base_entries: Array[String] = []
-	
-	base_entries.assign(DictUtils.get_nested_value(
-			_dialog_resource.localization,
-			[node_uuid, "locales", locale],
-			[],
-			true))
-	
-	if fallback_mode == 0:
-		_overlay_array(entries, base_entries, entry_target_size)
-		return entries
-	
-	var lang_fallback: String = ProjectSettings.get_setting(
-			"internationalization/locale/fallback")
-	var fallback_arr: Array[String] = []
-	var cascade_arr: Array[String] = []
-	
-	if locale != lang_fallback and DictUtils.has_nested_path(_dialog_resource.localization, [node_uuid, "locales", lang_fallback]):
-			fallback_arr.assign(
-					_dialog_resource.localization[node_uuid]["locales"][lang_fallback])
-	
-	if fallback_mode == 2 and locale.contains("_"):
-		var cascade_lang: String = locale.get_slice("_", 0)
-		if cascade_lang != lang_fallback:
-			if DictUtils.has_nested_path(_dialog_resource.localization, [node_uuid, "locales", cascade_lang]):
-				cascade_arr.assign(
-						_dialog_resource.localization[node_uuid]["locales"][cascade_lang])
-	
-	_overlay_array(entries, fallback_arr, entry_target_size)
-	_overlay_array(entries, cascade_arr, entry_target_size)
-	_overlay_array(entries, base_entries, entry_target_size)
-	
-	return entries
 
 
 func _overlay_array(target: Array[String], source: Array[String], max_size: int) -> void:
@@ -797,10 +729,6 @@ func _parse_dialog(dialog_id: String, dialog_text: String, is_override: bool) ->
 		parsed)
 	
 	return parsed.get_dialog()
-
-
-func _load_locale_to_active_dialog(_locale_code: String) -> void:
-	return
 
 
 func edit_dialog(locale_code: String, dialog_id: StringName, node_id: StringName, new_dialog) -> void:

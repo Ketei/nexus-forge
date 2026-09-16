@@ -237,7 +237,6 @@ func _on_bool_fallback_toggled(is_toggled: bool) -> void:
 
 
 func get_active_data_type() -> Variant:
-	var fallback_panel: PanelContainer = get_field(&"fallback")
 	match filter_mode:
 		TYPE_INT:
 			return int(val_fallback.value)
