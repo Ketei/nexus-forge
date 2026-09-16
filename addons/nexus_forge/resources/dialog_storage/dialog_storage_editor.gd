@@ -338,10 +338,12 @@ func get_editor_localized_strings(locale_code: String) -> Dictionary[String, Dic
 func set_format_string(key: String, text: String, locale: String) -> void:
 	locale = TranslationServer.standardize_locale(locale)
 	
-	if not format_strings.has(key) or locale.is_empty():
+	if locale.is_empty():
 		return
 	
-	if not format_strings[key].has(locale):
+	var key_dict: Dictionary = format_strings.get_or_add(key, {})
+	
+	if not key_dict.has(locale):
 		format_strings[key][locale] = {
 			"base_string": "",
 			"format": {}}

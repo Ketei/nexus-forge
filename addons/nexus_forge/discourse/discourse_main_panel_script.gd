@@ -2163,6 +2163,13 @@ func save_current_dialog_to_memory() -> void:
 	# data to the current selected dropdown locale.
 	discourse_graph_edit.update_conversation_file(active_conversation, current_locale)
 	
+	var current_focus: Control = get_viewport().gui_get_focus_owner()
+	
+	if current_focus != null and current_focus is LineEdit and\
+			current_focus.is_editing() and current_focus.has_meta(&"discourse_key_line"):
+				current_focus.unedit()
+				current_focus.editing_toggled.emit(false)
+	
 	if phrases_lang_menu.selected != -1:
 		save_phrase_keys(phrases_lang_menu.get_selected_metadata())
 	if $LocalizationContainer.visible and localization_nodes_tree.get_active_node() != null:
@@ -2914,6 +2921,13 @@ func set_conversation_active(is_active: bool) -> void:
 
 
 func has_unsaved_files() -> bool:
+	if active_conversation != null:
+		var current_focus: Control = get_viewport().gui_get_focus_owner()
+		if current_focus != null and current_focus is LineEdit and\
+				current_focus.is_editing() and current_focus.has_meta(&"discourse_key_line"):
+					if current_focus.text != current_focus.get_meta(&"old_value"):
+						return true
+	
 	for id in _open_files:
 		if _open_files[id]["unsaved"]:
 			return true
@@ -3555,6 +3569,7 @@ func create_new_phrase_case(case: String = "", case_text: String = "", highlihgt
 	case_line.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	case_line.size_flags_stretch_ratio = 1.0
 	case_line.set_meta(&"old_value", valid_id)
+	case_line.set_meta(&"discourse_key_line", case_line)
 	
 	case_container.add_child(erase_case_btn)
 	case_container.add_child(case_line)
@@ -3640,6 +3655,7 @@ func create_new_phrase_entry(key: String, format: String, unsaved: bool = true) 
 	key_line.placeholder_text = "Key"
 	key_line.text = valid_key
 	key_line.set_meta(&"old_value", key_line.text)
+	key_line.set_meta(&"discourse_key_line", key_line)
 	
 	erase_button.icon = get_theme_icon("Remove", "EditorIcons")
 	erase_button.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -3739,6 +3755,12 @@ func save_current_phrase_key(locale_code: String, format: String) -> void:
 	if selected_phrase_index < 0:
 		return
 	
+	var current_focus: Control = get_viewport().gui_get_focus_owner()
+	if current_focus != null and current_focus is LineEdit and\
+			current_focus.is_editing() and current_focus.has_meta(&"discourse_key_line"):
+				current_focus.unedit()
+				current_focus.editing_toggled.emit(false)
+	
 	var phrase_key: String = %PhrasesEntries.get_child(selected_phrase_index).get_meta(&"phrase_key")
 	
 	active_conversation.set_format_string_default_case(
@@ -3770,6 +3792,12 @@ func save_phrase_keys(locale: String) -> void:
 	if locale.is_empty():
 		return
 	
+	var current_focus: Control = get_viewport().gui_get_focus_owner()
+	if current_focus != null and current_focus is LineEdit and\
+			current_focus.is_editing() and current_focus.has_meta(&"discourse_key_line"):
+				current_focus.unedit()
+				current_focus.editing_toggled.emit(false)
+	
 	var used_keys: Dictionary[String, Variant] = {}
 	
 	for entry in %PhrasesEntries.get_children():
@@ -3777,7 +3805,6 @@ func save_phrase_keys(locale: String) -> void:
 			continue
 		
 		var entry_key: String = entry.get_meta(&"phrase_key")
-		
 		active_conversation.set_format_string(
 			entry_key,
 			entry.get_child(2).text,
@@ -4441,7 +4468,11 @@ func _on_phrase_text_editing_focus_lost(field: TextEdit) -> void:
 	
 	set_phrase_format_string(phrase_id, locale_code, new_text)
 	
-	var new_state: Dictionary = active_conversation.format_strings[phrase_id][locale_code].duplicate(true)
+	var new_state: Dictionary = DictUtils.get_nested_value(
+			active_conversation.format_strings,
+			[phrase_id, locale_code],
+			{},
+			true).duplicate(true)
 	
 	undo.create_action("Set Phrase Text (%s)" % locale_code)
 	undo.add_do_method(_set_phrase_state_action.bind(phrase_id, locale_code, new_state))
