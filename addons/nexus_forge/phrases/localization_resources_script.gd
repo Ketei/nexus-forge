@@ -1311,7 +1311,6 @@ func _on_case_edit_toggled(is_toggled: bool, line: LineEdit) -> void:
 	undo.add_do_method(_do_update_case_key.bind(phrase_key, format, old_value, new_value))
 	undo.add_undo_method(_do_update_case_key.bind(phrase_key, format, new_value, old_value))
 	undo.commit_action()
-	_on_file_edited()
 
 
 func _on_case_result_focus_exited(field: TextEdit) -> void:
