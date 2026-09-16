@@ -4918,16 +4918,6 @@ func _set_localization_window_choices(new_node: DiscourseGraphNode) -> void:
 		dialog_previewer.set_choices(options_localized)
 
 
-#func _do_set_choice_node_state(node_uuid: StringName, to: Dictionary, locale: String) -> void:
-	#var node: DiscourseGraphNode = discourse_graph_edit.get_discourse_node(node_uuid)
-	#if node == null:
-		#return
-	#
-	#var localized_data: Dictionary = active_conversation.get_node_data(node_uuid)
-	#discourse_graph_edit.set_chocies_node_state(node_uuid, to)
-	#node._set_node_data(localized_data)
-
-
 func _on_shortcut_node_target_changed(node_uuid: StringName, old_anchor: StringName, new_anchor: StringName) -> void:
 	undo.create_action("Set Shortcut Node Target")
 	undo.add_do_method(discourse_graph_edit.set_shortcut_node_target.bind(node_uuid, new_anchor))
