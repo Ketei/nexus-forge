@@ -14,7 +14,6 @@ var _unsaved: bool = false:
 @onready var finish_cat_btn: Button = $CategoriesContainer/DataContainer/FinishCatBtn
 @onready var items_container: HBoxContainer = $ItemsContainer
 @onready var categories_container: HBoxContainer = $CategoriesContainer
-@onready var categories_tree: Tree = $CategoriesContainer/DataContainer/CategoriesTree
 
 
 func _ready() -> void:

@@ -255,9 +255,8 @@ func _add_category(category_id: StringName, category_name: String, on: StringNam
 	if categories.has(category_id) or (not on.is_empty() and not categories.has(on)):
 		return false
 	var category_parent: TreeItem = get_root() if on.is_empty() else categories[on]
-	
 	var new_category: TreeItem = category_parent.create_child()
-	var id_name: String = String(category_id)
+	
 	new_category.set_text(0, category_id)
 	new_category.set_text(1, category_name)
 	new_category.set_metadata(0, {"id": category_id, "name": category_name})

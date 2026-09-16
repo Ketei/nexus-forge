@@ -748,13 +748,12 @@ func paste_node_clipboard(clipboard: Array[Dictionary], uuid_map: Dictionary[Str
 	var update_paused_nodes: Array[DiscourseGraphNode] = []
 	
 	var current_offset: Vector2 = clipboard[0]["state"]["data"]["metadata"]["position"]
-	var center_scroll_offset: Vector2 = get_center_offset()
+	
 	for clipboard_data in clipboard:
 		if not uuid_map.has(clipboard_data["node_uuid"]):
 			continue
 		
 		var node_data: Dictionary = clipboard_data["state"]["data"]
-		var node_meta: Dictionary = node_data["metadata"]
 		var new_name: StringName = get_unique_node_name(
 				node_data["name"],
 				node_data["type"])
@@ -1093,7 +1092,6 @@ func clear_dialog_nodes(recreate_entry: bool = true) -> void:
 	entry_node = null
 	if recreate_entry:
 		entry_node = spawn_node(DialogNodes.ENTRY, &"", {"name": &"Entry"})
-		var arr: Array[StringName] = [entry_node.get_node_uuid()]
 		node_created.emit(entry_node)
 
 #endregion
@@ -1151,46 +1149,6 @@ func get_compatible_node_overwrite_data(connection_type: ConnectionType, node_si
 	return {}
 
 
-func get_conversation_file(current_locale: String = "") -> EditorDiscourseDialog:
-	var convo: EditorDiscourseDialog = EditorDiscourseDialog.new()
-	
-	for frame_uuid in node_frames:
-		var frame: GraphFrame = node_frames[frame_uuid]
-		convo.register_frame(
-				frame_uuid,
-				frame.title,
-				frame.position_offset,
-				frame.size,
-				frame.tint_color)
-	
-	for node_uuid in graph_nodes:
-		var node: DiscourseGraphNode = graph_nodes[node_uuid]
-		var node_data: Dictionary = node._get_node_data()
-		node_data["metadata"]["localized"] = node.is_node_localized()
-		var frame: GraphFrame = get_element_frame(node.name)
-		var frame_uuid: String = "" if frame == null else frame.get_frame_uuid()
-		
-		convo.register_node(node, frame_uuid)
-		
-		if node.node_type == DialogNodes.DIALOG:
-			convo.set_dialog_text(
-					node_uuid,
-					node.get_dialog_text(),
-					current_locale)
-		elif node.node_type == DialogNodes.CHOICES:
-			convo.set_choices_array(
-					node_uuid,
-					node.get_options(),
-					current_locale)
-		elif node.node_type == DialogNodes.LOCALIZED_TEXT:
-			convo.set_dialog_text(
-					node_uuid,
-					node.get_text(),
-					current_locale)
-	
-	return convo
-
-
 func update_conversation_file(on_file: EditorDiscourseDialog, current_locale: String = "") -> void:
 	if on_file == null:
 		return
@@ -1208,7 +1166,6 @@ func update_conversation_file(on_file: EditorDiscourseDialog, current_locale: St
 	
 	for node_uuid in graph_nodes:
 		var node: DiscourseGraphNode = graph_nodes[node_uuid]
-		var node_data: Dictionary = node._get_node_data()
 		var frame: GraphFrame = get_element_frame(node.name)
 		var frame_uuid: String = "" if frame == null else frame.get_frame_uuid()
 		
@@ -1658,7 +1615,6 @@ func _on_popup_index_pressed(index: int, menu: PopupMenu) -> void:
 	
 	if data["flow"] == "input":
 		if new_node.node_type == DialogNodes.VALUE:
-			var port
 			new_node.set_mode(port_type_to_var_type(release_data["target_type"]))
 		elif new_node.node_type == DialogNodes.VARIABLE_GET:
 			new_node.set_node_type(release_data["target_type"])
@@ -1742,7 +1698,6 @@ func _on_connection_request(from_node: StringName, from_port: int, to_node: Stri
 	if has_type:
 		var same_origin: bool = from.get_node_uuid() == _pending_connection_change["from_node"] and from_port == _pending_connection_change["from_port"]
 		var same_destination: bool = to.get_node_uuid() == _pending_connection_change["to_node"] and to_port == _pending_connection_change["to_port"]
-		var switch_disconnect: bool = _pending_connection_change["type"] == ConnectionChangeType.SWITCH_DISCONNECT
 		
 		if same_origin and same_destination:
 			rollback_disconnection()
@@ -1979,9 +1934,6 @@ func snap_node_to_grid(target_node: DiscourseGraphNode) -> void:
 
 
 func _on_graph_elements_linked_to_frame_request(elements: Array, frame: StringName) -> void:
-	var frame_node: StringName = get_node_or_null(NodePath(frame)).get_frame_uuid()
-	var element_uuids: Array[StringName] = []
-	
 	for element in elements:
 		attach_graph_element_to_frame(element, frame)
 	
@@ -1999,12 +1951,6 @@ func _close_requested(node: DiscourseGraphNode) -> void:
 	var node_data: Dictionary[StringName, Dictionary] = {
 		node.get_node_uuid(): node.get_node_state()}
 	nodes_removed.emit("remove", node_data)
-
-
-func _close_frame_requested(frame: StringName) -> void:
-	#remove_frame(frame.get_frame_uuid())
-	#dialog_changed.emit()
-	pass
 
 
 func _on_disconnection_request(from_node_uuid: StringName, from_port: int, to_node_uuid: StringName, to_port: int, caller: DiscourseGraphNode) -> void:
@@ -2152,10 +2098,7 @@ func rollback_disconnection() -> void:
 
 
 func show_connection_popup_at(new_position: Vector2i):
-	# Get the PopupMenu's global size
-	var popup_size: Vector2i = Vector2i(connection_popup.get_contents_minimum_size())
-	
-	connection_popup.position = DisplayServer.mouse_get_position()#new_position + offset
+	connection_popup.position = DisplayServer.mouse_get_position()
 	connection_popup.popup()
 
 

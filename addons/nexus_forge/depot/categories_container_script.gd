@@ -168,8 +168,6 @@ func switch_to_category(category_id: StringName) -> void:
 
 
 func reload_categories() -> void:
-	var item_selected: bool = categories_tree.get_selected() != null
-	
 	categories_tree.clear_categories()
 	
 	var top_level_categories: Array[StringName] = []

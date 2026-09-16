@@ -25,7 +25,6 @@ var loaded_item: StringName = &"":
 		item_id_label.text = String(i)
 		item_id_label.tooltip_text = item_id_label.text
 var loaded_currency: StringName = &""
-var noncategory_loaded: bool = false
 
 var undo: UndoRedo
 var exp_parser: Expression = null
@@ -52,7 +51,6 @@ var _currency_unsaved: bool = false
 
 @onready var item_page_container: HBoxContainer = $ItemsPanel/ItemsContainer/TreeContainer/ItemPageContainer
 @onready var category_opt_btn: OptionButton = $ItemsPanel/ItemsContainer/DataContainer/CategoryContainer/OptBtnContainer/CategoryOptBtn
-@onready var edit_categories_btn: Button = $ItemsPanel/ItemsContainer/DataContainer/CategoryContainer/OptBtnContainer/EditCategoriesBtn
 @onready var item_search_debounce: Timer = $ItemSearchDebounce
 @onready var prev_item_page_btn: Button = $ItemsPanel/ItemsContainer/TreeContainer/ItemPageContainer/PrevItemPageBtn
 @onready var item_page_lbl: Label = $ItemsPanel/ItemsContainer/TreeContainer/ItemPageContainer/ItemPageLbl
@@ -1106,16 +1104,6 @@ func set_items_ui_enabled(enabled: bool) -> void:
 		flag.disabled = disabled
 	
 	items_ui_enabled = enabled
-
-
-func clear_all_fields() -> void:
-	items_tree.clear_items()
-	item_name_ln_edt.text = ""
-	rarity_opt_btn.select(0 if 0 < rarity_opt_btn.item_count else -1)
-	item_val_spn_bx.set_value_no_signal(0)
-	item_desc_txt_edt.text = ""
-	item_data_tree.clear_data(false)
-	reset_flags()
 
 
 func save_current_item() -> void:

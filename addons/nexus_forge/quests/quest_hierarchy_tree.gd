@@ -255,7 +255,7 @@ func set_objective_id(on_stage: StringName, from: StringName, to: StringName) ->
 	var objective: TreeItem = get_objective(on_stage, from)
 	var str_id: String = String(to)
 	
-	if objective == null or has_id(to, objective.get_parent(), objective):
+	if objective == null or has_id(str_id, objective.get_parent(), objective):
 		return
 	
 	objective.set_text(0, String(to))

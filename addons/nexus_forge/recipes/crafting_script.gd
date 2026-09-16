@@ -148,7 +148,6 @@ func do_redo() -> void:
 	_something_changed()
 
 
-
 func _on_recipe_lnedt_text_changed(text: String) -> void:
 	recipe_tree.search_text(text)
 

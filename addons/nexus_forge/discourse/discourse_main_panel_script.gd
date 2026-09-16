@@ -117,8 +117,6 @@ var _recently_opened_popup: PopupMenu = null
 @onready var case_box_container: VBoxContainer = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer
 @onready var save_case_btn: Button = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/SaveCaseBtn
 @onready var search_text_ln_edt: LineEdit = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer/HBoxContainer/SearchTextLnEdt
-@onready var key_header_split: HBoxContainer = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer/KeyHeaderSplit
-@onready var case_header_split: HBoxContainer = $MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/CaseBoxContainer/VBoxContainer2/CaseHeaderSplit
 
 # ----------------------------------------------
 
@@ -565,6 +563,7 @@ func ready_plugin(base_locale: String = "") -> void:
 	argument_opt_btn.item_selected.connect(_on_argument_button_item_selected)
 	
 	node_search_ln_edt.text_changed.connect(_on_discourse_node_search_text_changed)
+	search_language_ln_edt.text_changed.connect(_on_language_search_line_text_changed)
 	new_language_btn.pressed.connect(_on_new_lang_pressed)
 	languages_tree.locale_changed.connect(_on_side_editor_locale_changed, CONNECT_DEFERRED)
 	languages_tree.locale_creation_requested.connect(_on_languages_tree_locale_creation_requested)
@@ -754,7 +753,6 @@ func _remove_locale_phrase_menu(lang: String, country: String) -> void:
 	var new_select: int = -1
 	var selected: String = "" if phrases_lang_menu.selected == -1 else phrases_lang_menu.get_selected_metadata()
 	var entries: Dictionary[String, String] = {}
-	var reload: bool = false
 	
 	for idx in range(phrases_lang_menu.item_count):
 		entries[phrases_lang_menu.get_item_metadata(idx)] = phrases_lang_menu.get_item_text(idx)
@@ -799,7 +797,6 @@ func _on_phrase_button_item_selected(idx: int) -> void:
 
 func set_phrases_locale(locale: String) -> void:
 	for entry in %PhrasesEntries.get_children():
-		var line: LineEdit = entry.get_child(1)
 		var text_field: TextEdit = entry.get_child(2)
 		var key: String = entry.get_meta(&"phrase_key")
 		
@@ -812,10 +809,6 @@ func add_locale(locale_code: String) -> void:
 	var locale_parts: PackedStringArray = locale_code.split("_", false, 1)
 	var language: String = locale_parts[0]
 	var region: String = locale_parts[1] if locale_parts.size() == 2 else ""
-	var selected_language: String = ""
-	var selected_country: String = ""
-	var existing_locales: Array[Dictionary] = []
-	
 	var lang_index: int = -1
 	
 	for idx in range(locale_popup.item_count):
@@ -1023,15 +1016,6 @@ func set_conversation_options_enabled(are_enabled: bool) -> void:
 
 func update_localization_display(data: Dictionary) -> void:
 	discourse_graph_edit.set_localization_data(data)
-
-
-func _locale_sort_custom(locale_a: Dictionary, locale_b: Dictionary):
-	var language_comp: int = locale_a["language_name"].naturalnocasecmp_to(locale_b["language_name"])
-	
-	if language_comp == 0:
-		return locale_a["country_code"].naturalnocasecmp_to(locale_b["country_code"]) < 0
-	else:
-		return language_comp < 0
 
 
 func _on_locale_submenu_idx_pressed(idx: int, submenu: PopupMenu) -> void:
@@ -1682,7 +1666,6 @@ func _on_side_editor_locale_changed(from: String, to: String) -> void:
 		save_localizer_data(from)
 		
 		if active_node != null and from == current_locale:
-			var uuid: StringName = active_node.get_node_uuid()
 			match active_node.node_type:
 				DiscourseGraphNode.DialogueNodeType.DIALOG:
 					var text: String = translation_txt_box.text.strip_edges()
@@ -1861,37 +1844,6 @@ func _on_localizer_node_selected(uuid: StringName) -> void:
 				dialog_previewer.set_dialog(new_text)
 	
 	localization_node_selected = new_node
-
-
-func localize_node(node_uuid: StringName) -> void:
-	if not discourse_graph_edit.has_discourse_node(node_uuid):
-		return
-	
-	var node: DiscourseGraphNode = discourse_graph_edit.get_discourse_node(node_uuid)
-	
-	if node.is_node_localized():
-		return
-	
-	match node.node_type:
-		DiscourseGraphNode.DialogueNodeType.DIALOG:
-			active_conversation.set_dialog_text(
-				node.get_node_uuid(),
-				node.get_dialog_text(),
-				current_locale)
-			localization_nodes_tree.create_dialog_node(node.get_node_id(), node)
-		DiscourseGraphNode.DialogueNodeType.CHOICES:
-			var text_options: Array[String] = node.get_options()
-			active_conversation.set_choices_array(
-				node.get_node_uuid(),
-				text_options,
-				current_locale)
-			localization_nodes_tree.create_options_node(node.get_node_id(), node)
-		DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
-			active_conversation.set_dialog_text(
-				node.get_node_uuid(),
-				node.get_text(),
-				current_locale)
-			localization_nodes_tree.create_localized_text_node(node.get_node_id(), node)
 
 
 func _on_switch_window_pressed() -> void:
@@ -2597,18 +2549,6 @@ func _on_discourse_node_created(node: DiscourseGraphNode) -> void:
 		_on_localize_node(node)
 
 
-
-#func get_unique_name_on_tree(on_tree: TreeItem, desired_name: String, skip_item: TreeItem = null) -> String:
-	#var edited_name: String = desired_name
-	#var iteration: int = 0
-	#
-	#while has_text_on_tree(on_tree, edited_name, 0, skip_item):
-		#iteration += 1
-		#edited_name = desired_name + str(iteration)
-	#
-	#return edited_name
-
-
 func has_text_on_tree(on_tree: TreeItem, text: String, column: int, skip_item: TreeItem = null) -> bool:
 	for item in on_tree.get_children():
 		if item == skip_item:
@@ -3019,8 +2959,6 @@ func _on_key_search_text_changed(text: String) -> void:
 	if mode != 0:
 		clean_text = clean_text.trim_prefix("key:" if mode == 1 else "text:")
 	
-	var idx: int = -1
-	
 	if clean_text.is_empty():
 		for entry in %PhrasesEntries.get_children():
 			entry.visible = true
@@ -3287,10 +3225,6 @@ func get_valid_phrase_case_key(desired_id: String, ignore_line: LineEdit = null)
 	return modified
 
 
-func _on_text_line_text_submitted(_text: String, edit_btn: Button) -> void:
-	edit_btn.grab_focus()
-
-
 func _on_save_cases_btn_pressed() -> void:
 	case_box_container.visible = false
 	key_box_container.visible = true
@@ -3352,7 +3286,6 @@ func _on_edit_cases_pressed(field: Control) -> void:
 	clear_cases()
 	
 	var phrases: Array[String] = EditorDiscourseDialog.get_phrase_arguments(clean_string)
-	var unbracketed_phrases: Array[String] = []
 	default_case_edt.syntax_highlighter.clear_tokens()
 	
 	for bracket_match in phrases:
@@ -3430,7 +3363,6 @@ func _do_create_phrase_entry(key: String, text: String, locale: String, data: Di
 func _undo_create_phrase_entry(key: String) -> void:
 	active_conversation.format_strings.erase(key)
 	var erase_target: int = -1
-	var new_selected: int = selected_phrase_index
 	
 	for item in %PhrasesEntries.get_children():
 		erase_target += 1
@@ -3440,7 +3372,6 @@ func _undo_create_phrase_entry(key: String) -> void:
 	if erase_target < 0:
 		return
 	
-	var current_selected: Control = null
 	if 0 <= selected_phrase_index:
 		if selected_phrase_index == erase_target:
 			selected_phrase_index = -1
@@ -3816,9 +3747,6 @@ func save_current_phrase_key(locale_code: String, format: String) -> void:
 		format,
 		default_case_edt.text.strip_edges())
 	
-	var desired: String = ""
-	var used_keys: Dictionary[String, Variant] = {}
-	
 	active_conversation.clear_format_string_cases(
 		phrase_key,
 		locale_code,
@@ -3892,16 +3820,6 @@ func set_phrase_format_string(phrase_key: String, locale: String, format_string:
 	for new_case in entries:
 		# This ensures that the new case exists and its structured properly
 		active_conversation.validate_format_string_format(phrase_key, locale, new_case)
-
-
-func _phrase_key_used(desired: String, items: Array[Dictionary], skip_index: int = -1) -> bool:
-	for index in range(items.size()):
-		if index == skip_index:
-			continue
-		if items[index]["key_line"].text == desired:
-			return true
-	return false
-
 
 #endregion
 
@@ -4297,6 +4215,10 @@ func _update_choice_textbox_size(box: TextEdit) -> void:
 	if new_height != box.custom_minimum_size.y:
 		box.custom_minimum_size.y = new_height
 		box.queue_redraw.call_deferred()
+
+
+func _on_language_search_line_text_changed(text: String) -> void:
+	languages_tree.search_language(text.strip_edges())
 
 
 func _on_phrase_text_field_changed(field: TextEdit) -> void:
@@ -4965,14 +4887,14 @@ func _set_localization_window_choices(new_node: DiscourseGraphNode) -> void:
 		dialog_previewer.set_choices(options_localized)
 
 
-func _do_set_choice_node_state(node_uuid: StringName, to: Dictionary, locale: String) -> void:
-	var node: DiscourseGraphNode = discourse_graph_edit.get_discourse_node(node_uuid)
-	if node == null:
-		return
-	
-	var localized_data: Dictionary = active_conversation.get_node_data(node_uuid)
-	discourse_graph_edit.set_chocies_node_state(node_uuid, to)
-	node._set_node_data(localized_data)
+#func _do_set_choice_node_state(node_uuid: StringName, to: Dictionary, locale: String) -> void:
+	#var node: DiscourseGraphNode = discourse_graph_edit.get_discourse_node(node_uuid)
+	#if node == null:
+		#return
+	#
+	#var localized_data: Dictionary = active_conversation.get_node_data(node_uuid)
+	#discourse_graph_edit.set_chocies_node_state(node_uuid, to)
+	#node._set_node_data(localized_data)
 
 
 func _on_shortcut_node_target_changed(node_uuid: StringName, old_anchor: StringName, new_anchor: StringName) -> void:
@@ -5207,7 +5129,6 @@ func _do_remove_nodes(action_data: Dictionary) -> void:
 	discourse_graph_edit.remove_nodes(uuids_to_remove)
 	
 	for uuid in action_data["graph_nodes_data"]:
-		discourse_graph_edit.remove_node(uuid)
 		discourse_nodes_tree.remove_dialog_node(uuid)
 		localization_nodes_tree.remove_node(uuid)
 		active_conversation.remove_node(uuid)

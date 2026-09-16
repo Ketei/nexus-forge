@@ -283,7 +283,7 @@ func _is_in_tree(item: TreeItem) -> bool:
 	
 	while current_level != null:
 		current_level = current_level.get_parent()
-		if current_level == get_root():
+		if current_level == root:
 			return true
 	return false
 
@@ -385,9 +385,7 @@ func _get_data_path(item: TreeItem) -> String:
 	if item == null or item == get_root():
 		return ""
 	
-	var path: String = ""
-	
-	var items: Array[String] = []
+	var items: PackedStringArray = []
 	
 	var current_item: TreeItem = item
 	var root: TreeItem = get_root()
@@ -398,7 +396,7 @@ func _get_data_path(item: TreeItem) -> String:
 	
 	items.reverse()
 	
-	return StringUtils.make_path(items)
+	return "/".join(items)
 
 
 func _get_data_item(path: String) -> TreeItem:

@@ -466,7 +466,7 @@ func get_path_to_folder(folder: TreeItem) -> String:
 
 
 func get_state_path_to_folder(folder: TreeItem) -> String:
-	var folder_path: Array[String] = []
+	var folder_path: PackedStringArray = []
 	var folder_step: TreeItem = folder
 	var root: TreeItem = get_root()
 	

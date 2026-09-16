@@ -10,7 +10,6 @@ signal something_changed
 const VALUE_MAX_RANGE: int = 9999
 const FLOAT_STEP: float = 0.01
 
-var _current_selected: TreeItem = null
 var current_folder: String = ""
 var sorting_column: int = 0
 
@@ -120,7 +119,6 @@ func _on_item_edited() -> void:
 func create_variable(variable_value: Variant, variable_name: String = "new_variable") -> String:
 	var unique_name: String = validate_var_name(variable_name)
 	var new_variable: TreeItem = get_root().create_child()
-	var variable_typeof: int = typeof(variable_value)
 	
 	var editable_id: bool = true
 	var editable_value: bool = true

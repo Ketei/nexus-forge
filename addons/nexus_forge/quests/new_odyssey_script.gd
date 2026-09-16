@@ -923,21 +923,6 @@ func _on_quest_resource_selected(quest_id: int) -> void:
 	display_quest(quest_id)
 
 
-func _on_objective_rearranged(from_stage: StringName, to_stage: StringName, objective_id: StringName) -> void:
-	if from_stage == to_stage:
-		return
-	
-	var stage_source: QuestStage = quest_resource.get_stage(from_stage)
-	var stage_target: QuestStage = quest_resource.get_stage(to_stage)
-	var objective: QuestObjective = stage_source.get_objective(objective_id)
-	var required: bool = stage_source.is_objective_required(objective_id)
-	
-	stage_source.remove_objective(objective_id)
-	stage_target.add_objective(objective, required)
-	
-	_on_something_changed()
-
-
 func _on_new_quest_file_pressed() -> void:
 	var dialog: FileDialog = load("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	add_child(dialog)

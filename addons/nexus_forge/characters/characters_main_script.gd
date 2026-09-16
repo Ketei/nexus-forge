@@ -804,48 +804,15 @@ func save_current_character() -> void:
 
 func has_unsaved_files() -> bool:
 	if current_sheet != null:
-		for stat in char_stats_container.get_children():
-			var min_box: SpinBox = stat.get_meta(&"min")
-			if min_box.get_line_edit().is_editing():
-				var new_val: float = _parse_value(
-						min_box.get_line_edit().text,
-						min_box.value)
-				if new_val != min_box.value:
-					return true
-			
-			var max_box: SpinBox = stat.get_meta(&"max")
-			if max_box.get_line_edit().is_editing():
-				var new_val: float = _parse_value(
-						max_box.get_line_edit().text,
-						max_box.value)
-				if new_val != max_box.value:
-					return true
-			
-			var value_box: SpinBox = stat.get_meta(&"value")
-			if value_box.get_line_edit().is_editing():
-				var new_val: float = _parse_value(
-						value_box.get_line_edit().text,
-						value_box.value)
-				if new_val != value_box.value:
-					return true
-	
-		for skill in char_skill_container.get_children():
-			var skill_spin: SpinBox = skill.get_child(1)
-			if skill_spin.get_line_edit().is_editing():
-				var new_val: float = _parse_value(
-						skill_spin.get_line_edit().text,
-						skill_spin.value)
-				if new_val != skill_spin.value:
-					return true
-		
-		for trait_item in char_traits_container.get_children():
-			var trait_spin: SpinBox = trait_item.get_child(1)
-			if trait_spin.get_line_edit().is_editing():
-				var new_val: float = _parse_value(
-						trait_spin.get_line_edit().text,
-						trait_spin.value)
-				if new_val != trait_spin.value:
-					return true
+		var current_focus: Control = get_viewport().gui_get_focus_owner()
+		if current_focus != null and current_focus is LineEdit and\
+				current_focus.is_editing() and current_focus.has_meta(&"nf_char_spin"):
+			var spinbox: SpinBox = current_focus.get_meta(&"nf_char_spin")
+			var new_val: float = _parse_value(
+					current_focus.text,
+					spinbox.value)
+			if new_val != spinbox.value:
+				return true
 	
 	for id in _open_files:
 		if _open_files[id]["unsaved"]:
@@ -855,43 +822,13 @@ func has_unsaved_files() -> bool:
 
 func save() -> void:
 	if current_sheet != null:
-		for stat in char_stats_container.get_children():
-			var min_box: SpinBox = stat.get_meta(&"min")
-			if min_box.get_line_edit().is_editing():
-				var old_value: float = min_box.value
-				min_box.apply()
-				var new_value: float = min_box.value
-				if old_value != new_value:
-					_something_changed()
-					#min_box.value_changed.emit(new_value)
-			
-			var max_box: SpinBox = stat.get_meta(&"max")
-			if max_box.get_line_edit().is_editing():
-				var old_value: float = max_box.value
-				max_box.apply()
-				var new_value: float = max_box.value
-				if old_value != new_value:
-					_something_changed()
-					#max_box.value_changed.emit(new_value)
-			
-			var value_box: SpinBox = stat.get_meta(&"value")
-			if value_box.get_line_edit().is_editing():
-				var old_value: float = value_box.value
-				value_box.apply()
-				var new_value: float = value_box.value
-				if old_value != new_value:
-					_something_changed()
-					#value_box.value_changed.emit(new_value)
-	
-		for skill in char_skill_container.get_children():
-			var skill_spin: SpinBox = skill.get_child(1)
-			if skill_spin.get_line_edit().is_editing():
-				skill_spin.apply()
+		var focus_holder: Control = get_viewport().gui_get_focus_owner()
 		
-		for trait_item in char_traits_container.get_children():
-			var trait_spin: SpinBox = trait_item.get_child(1)
-			if trait_spin.get_line_edit().is_editing():
-				trait_spin.apply()
+		if focus_holder != null and focus_holder is LineEdit and\
+				focus_holder.is_editing() and focus_holder.has_meta(&"nf_char_spin"):
+			var spin: SpinBox = focus_holder.get_meta(&"nf_char_spin")
+			# Triggers value_changed, which triggers the undo and _something_changed
+			spin.apply()
 	
 	for id in _open_files:
 		if not _open_files[id]["unsaved"]:
@@ -1068,7 +1005,12 @@ func create_stat_item(stat_id: StringName, type: int, default: float) -> VBoxCon
 	var limit_min_ln: LineEdit = limit_min_spn.get_line_edit()
 	var value_ln: LineEdit = new_value.get_line_edit()
 	
+	# - Water marking -
+	limit_max_ln.set_meta(&"nf_char_spin", limit_max_spn)
+	limit_min_ln.set_meta(&"nf_char_spin", limit_min_spn)
+	value_ln.set_meta(&"nf_char_spin", new_value)
 	limits_container.visible = false
+	# -----------------
 	
 	allow_lesser.text = "Min"
 	allow_lesser.custom_minimum_size = Vector2(62.0, 32.0)
@@ -1210,7 +1152,6 @@ func set_focus_order_for_stat(stat: VBoxContainer) -> void:
 	
 	if 0 < child_count:
 		var prev_stat: VBoxContainer = char_stats_container.get_child(-2)
-		var prev_spin: SpinBox = prev_stat.get_meta(&"value")
 		var prev_max: LineEdit = prev_stat.get_meta(&"max").get_line_edit()
 		stat_line.focus_previous = prev_max.get_path()
 		prev_max.focus_next = stat_line.get_path()
@@ -1537,6 +1478,7 @@ func create_skill_item(skill_id: StringName, default_value: int) -> HBoxContaine
 	new_value.value = default_value
 	new_value.editable = ui_enabled
 	new_value.set_meta(&"old_value", 0.0)
+	new_value.get_line_edit().set_meta(&"nf_char_spin", new_value)
 	
 	new_skill.set_meta(&"value", new_value)
 	new_skill.set_meta(&"skill_id", skill_id)
@@ -1578,6 +1520,7 @@ func create_trait_item(trait_id: StringName, default_value: int) -> HBoxContaine
 	new_value.size_flags_stretch_ratio = 3.0
 	new_value.editable = ui_enabled
 	new_value.set_meta(&"old_value", 0.0)
+	new_value.get_line_edit().set_meta(&"nf_char_spin", new_value)
 	
 	new_trait.set_meta(&"value", new_value)
 	new_trait.set_meta(&"trait_id", trait_id)

@@ -32,7 +32,6 @@ var undo: UndoRedo = null
 @onready var add_bool_button: Button = $MainSplit/VBoxContainer2/TitleContainer/AddButtonsContainer/AddBoolButton
 @onready var add_string_button: Button = $MainSplit/VBoxContainer2/TitleContainer/AddButtonsContainer/AddStringButton
 
-@onready var title_label: Label = $MainSplit/VBoxContainer/HBoxContainer/TitleLabel
 @onready var current_folder_label: Label = $MainSplit/VBoxContainer2/TitleContainer/FolderPathContainer/CurrentFolderLabel
 
 
@@ -476,8 +475,6 @@ func get_folder_deletion_data(folder_path: String) -> Dictionary[StringName, Dic
 	if not _variables_resource._variables.has(path_id):
 		return folder_data
 	
-	var prefix_match: String = folder_path + "/"
-	
 	folder_data[path_id] = _variables_resource._variables[path_id].duplicate(true)
 	
 	# Saving the data for the redo.
@@ -516,7 +513,6 @@ func remove_variable(variable: String) -> void:
 
 func _on_add_variable_pressed(data: Variant) -> void:
 	var valid_id: String = variables_tree.create_variable(data)
-	var variable_key: StringName = StringName(valid_id)
 	var path: String = _current_folder.path_join(valid_id)
 	var type: int = typeof(data)
 	var can_dupe: bool = type == TYPE_DICTIONARY or type == TYPE_ARRAY

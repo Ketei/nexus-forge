@@ -208,31 +208,6 @@ func _on_desc_text_focus_lost() -> void:
 	undo.commit_action(false)
 
 
-func _on_attribute_editing_toggled(is_toggled: bool, attribute: SpinBox) -> void:
-	if is_toggled:
-		return
-	
-	var line: LineEdit = attribute.get_line_edit()
-	var old_value: float = attribute.get_meta(&"old_value")
-	var new_value: float = _parse_value(line.text, attribute.value)
-	
-	if new_value == old_value:
-		return
-	
-	var id: StringName = attribute.get_parent().get_meta(&"field_id")
-	var parent: VBoxContainer = attribute.get_parent().get_parent()
-	var type: int = 0
-	
-	var id_name: String = String(id).capitalize()
-	
-	attribute.set_meta(&"old_value", new_value)
-	
-	undo.create_action("Set '%s' %s" % [loaded_species, id_name])
-	undo.add_do_method(_do_update_attribute.bind(loaded_species, id, new_value, type))
-	undo.add_undo_method(_do_update_attribute.bind(loaded_species, id, old_value, type))
-	undo.commit_action(false)
-
-
 func _do_update_attribute(on_species: StringName, attribute_id: StringName, value: float, attribute_type: int,) -> void:
 	if not races_tree.has_species(on_species):
 		return
@@ -782,33 +757,40 @@ func save_current_species() -> void:
 	for stat in race_stats_container.get_children():
 		if stat.get_child(0).button_pressed == false:
 			continue
+		var stat_spin: SpinBox = stat.get_child(1)
+		if stat_spin.get_line_edit().is_editing():
+			stat_spin.apply()
 		
 		_species_resource.set_species_stat_value(
 				loaded_species,
 				stat.get_meta(&"field_id"),
-				int(stat.get_child(1).value))
+				int(stat_spin.value))
 	
 	_species_resource.clear_species_skills(loaded_species)
 	
 	for skill in race_skill_container.get_children():
 		if skill.get_child(0).button_pressed == false:
 			continue
-		
+		var skill_spin: SpinBox = skill.get_child(1)
+		if skill_spin.get_line_edit().is_editing():
+			skill_spin.apply()
 		_species_resource.set_species_skill_value(
 				loaded_species,
 				skill.get_meta(&"field_id"),
-				int(skill.get_child(1).value))
+				int(skill_spin.value))
 	
 	_species_resource.clear_species_traits(loaded_species)
 	
 	for trait_child in race_traits_container.get_children():
 		if trait_child.get_child(0).button_pressed == false:
 			continue
-		
+		var trait_spin: SpinBox = trait_child.get_child(1)
+		if trait_spin.get_line_edit().is_editing():
+			trait_spin.apply()
 		_species_resource.set_species_trait_value(
 				loaded_species,
 				trait_child.get_meta(&"field_id"),
-				int(trait_child.get_child(1).value))
+				int(trait_spin.value))
 
 
 func load_species_resource() -> void:
@@ -837,11 +819,7 @@ func load_species_resource() -> void:
 				"dom": _species_resource._species[species_key]["parent_dominant"],
 				"sub": _species_resource._species[species_key]["parent_recessive"],
 				"hybrid": species_key})
-		
-		var undo_dict: Dictionary[String, UndoRedo] = {
-			"species": UndoRedo.new(),
-			"data": UndoRedo.new()}
-		
+	
 	races_tree.clear_species()
 	
 	for id in top_species:
@@ -937,20 +915,6 @@ func load_species(species_id: StringName) -> void:
 		
 		spn.set_meta(&"old_value", new_val)
 		spn.set_value_no_signal(new_val)
-
-
-func clear_talents() -> void:
-	for child in race_stats_container.get_children():
-		race_stats_container.remove_child(child)
-		child.queue_free()
-	
-	for child in race_skill_container.get_children():
-		race_skill_container.remove_child(child)
-		child.queue_free()
-	
-	for child in race_traits_container.get_children():
-		race_traits_container.remove_child(child)
-		child.queue_free()
 
 
 func default_talents() -> void:
@@ -1090,10 +1054,6 @@ func update_talent_nodes() -> void:
 		_on_something_changed()
 
 
-func value_field_active(field: HBoxContainer) -> bool:
-	return field.get_child(0).button_pressed
-
-
 func create_stat(stat_id: StringName, default_value: float, type: int) -> void:
 	var field: HBoxContainer = _create_value_field(stat_id, default_value, 1.0 if type == TYPE_INT else 0.01)
 	field.get_child(0).disabled = not _gui_enabled
@@ -1140,6 +1100,7 @@ func _create_value_field(field_id: StringName, default_value: float, step: float
 	value.custom_minimum_size.y = 32
 	value.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	value.size_flags_stretch_ratio = 3.0
+	value.get_line_edit().set_meta(&"nf_species_spin", value)
 	
 	new_field.add_child(activatable)
 	new_field.add_child(value)
@@ -1150,23 +1111,42 @@ func _create_value_field(field_id: StringName, default_value: float, step: float
 	
 	activatable.toggled.connect(_on_value_field_toggled.bind(activatable, value))
 	value.value_changed.connect(_on_attribute_value_changed.bind(value))
-	value.get_line_edit().editing_toggled.connect(_on_attribute_editing_toggled.bind(value))
 	
 	return new_field
 
 
-func save() -> void:
-	_unsaved = false
+func has_unsaved_changes() -> bool:
+	var focused_item: Control = get_viewport().gui_get_focus_owner()
 	
+	if focused_item != null and focused_item is LineEdit and\
+			focused_item.is_editing() and focused_item.has_meta(&"nf_species_spin"):
+		var spin: SpinBox = focused_item.get_meta(&"nf_species_spin")
+		if spin.get_parent().get_child(0).button_pressed:
+			var p_value: float = _parse_value(
+					focused_item.text,
+					spin.value)
+			if p_value != spin.value:
+				return true
+	
+	return _unsaved
+
+
+func save() -> void:
 	if _species_resource == null:
 		return
 	
 	if not loaded_species.is_empty():
+		var focus_holder: Control = get_viewport().gui_get_focus_owner()
+		
+		if focus_holder != null and focus_holder is LineEdit\
+				and focus_holder.is_editing() and focus_holder.has_meta(&"nf_species_spin"):
+			var spin: SpinBox = focus_holder.get_meta(&"nf_species_spin")
+			if spin.get_parent().get_child(0).button_pressed:
+				spin.apply()
+		
 		save_current_species()
 	
 	var species_data: Array[Dictionary] = races_tree.get_species_map()
-	var top_species: Array[StringName] = []
-	var sub_species: Array[Dictionary] = []
 	
 	# We clear the top species link, as they are a subspecies of nothing.
 	for species in species_data:

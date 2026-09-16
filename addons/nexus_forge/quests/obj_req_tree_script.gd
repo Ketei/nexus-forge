@@ -267,7 +267,7 @@ func _is_in_tree(item: TreeItem) -> bool:
 	
 	while current_level != null:
 		current_level = current_level.get_parent()
-		if current_level == get_root():
+		if current_level == root:
 			return true
 	return false
 
@@ -349,8 +349,6 @@ func _get_data_path(item: TreeItem) -> String:
 	if item == null or item == get_root():
 		return ""
 	
-	var path: String = ""
-	
 	var items: Array[String] = []
 	
 	var current_item: TreeItem = item
@@ -362,7 +360,7 @@ func _get_data_path(item: TreeItem) -> String:
 	
 	items.reverse()
 	
-	return StringUtils.make_path(items)
+	return "/".join(items)
 
 
 func _get_data_item(path: String) -> TreeItem:
@@ -564,8 +562,6 @@ func add_data(data_id: String, data: Variant, operator: int = OP_EQUAL, on_node:
 	var new_name: String = get_unique_id(on_node, data_id)
 	var data_path: String = _get_data_path(on_node).path_join(new_name)
 	
-	var type: int = typeof(data)
-	
 	_add_data_to_tree(new_name, data, operator, on_node)
 	
 	return data_path
@@ -739,8 +735,6 @@ func on_data_edited() -> void:
 		var new_name: String = get_unique_id(edited.get_parent(), edited.get_text(0), edited)
 		
 		var parent_path: String = _get_data_path(edited.get_parent())
-		var old_path: String = parent_path.path_join(old_name)
-		var new_path: String = parent_path.path_join(new_name)
 		
 		edited.set_text(0, new_name)
 		edited.get_metadata(0)["name"] = new_name

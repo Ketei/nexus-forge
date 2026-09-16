@@ -85,3 +85,9 @@ func set_save_required_all(save_required: bool) -> void:
 		else:
 			item.set_text(0, item.get_text(0).trim_suffix("*"))
 		item.get_metadata(0)["save_required"] = save_required
+
+
+func search_for(pattern: String) -> void:
+	var empty: bool = pattern.is_empty()
+	for item in get_root().get_children():
+		item.visible = empty or item.get_tooltip_text(0).containsn(pattern)

@@ -116,8 +116,6 @@ func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
 				drop_mode_flags = DROP_MODE_DISABLED
 				return false
 	
-	var section: int = get_drop_section_at_position(at_position)
-	
 	if data["item"] == null:
 		drop_mode_flags = DROP_MODE_INBETWEEN
 	elif data["type"] == ItemType.RECIPE_ITEM:

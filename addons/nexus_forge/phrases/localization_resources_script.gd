@@ -110,6 +110,7 @@ func ready_plugin() -> void:
 	argument_opt_btn.item_selected.connect(_on_format_item_selected)
 	
 	files_tree.map_resource_selected.connect(_on_map_resource_selected)
+	search_file_ln_edt.text_changed.connect(_on_file_search_text_changed)
 	
 	file_menu_button.get_popup().id_pressed.connect(_on_menu_id_pressed)
 	files_tree.map_close_pressed.connect(_on_map_close_pressed)
@@ -500,6 +501,10 @@ func _on_key_search_text_changed(text: String) -> void:
 	search_text_ln_edt.set_meta(&"current_search", clean_text)
 
 
+func _on_file_search_text_changed(text: String) -> void:
+	files_tree.search_for(text.strip_edges())
+
+
 func _on_case_search_text_changed(text: String) -> void:
 	var clean_text: String = text.strip_edges()
 	
@@ -745,12 +750,6 @@ func save_current_resource() -> void:
 	
 	map.locale = locale_code
 	
-	# Correct key: Current text
-	var keys: Dictionary[String, String] = {}
-	
-	# Correct key: Line field
-	var new_phrases: Dictionary[StringName, Dictionary]
-	
 	for key_node in %EntriesContainer.get_children():
 		if key_node.is_queued_for_deletion():
 			continue
@@ -763,6 +762,14 @@ func save_current_resource() -> void:
 
 
 func has_unsaved_files() -> bool:
+	if map != null:
+		var current_focus: Control = get_viewport().gui_get_focus_owner()
+		
+		if current_focus != null and current_focus is LineEdit and\
+			current_focus.is_editing() and current_focus.has_meta(&"map_key_line"):
+				if current_focus.get_meta(&"old_value") != current_focus.text:
+					return true
+	
 	for id in _open_files:
 		if _open_files[id]["unsaved"]:
 			return true
@@ -770,6 +777,12 @@ func has_unsaved_files() -> bool:
 
 
 func save_all() -> void:
+	var current_focus: Control = get_viewport().gui_get_focus_owner()
+	if current_focus != null and current_focus is LineEdit and\
+			current_focus.is_editing() and current_focus.has_meta(&"map_key_line"):
+		current_focus.unedit()
+		current_focus.editing_toggled.emit(false)
+	
 	if save_required:
 		save_current_resource()
 	
@@ -874,6 +887,7 @@ func create_case_entry(case: String, format: String, highlights: Array) -> void:
 	case_line.size_flags_stretch_ratio = 1.0
 	case_line.custom_minimum_size = Vector2(115.0, 33.0)
 	case_line.set_meta(&"old_value", case)
+	case_line.set_meta(&"map_key_line", case_line)
 	
 	case_text.syntax_highlighter = highlighter
 	case_text.caret_blink = true
@@ -951,6 +965,7 @@ func create_key_text_entry(key: String, text_entry: String) -> void:
 	key_line.placeholder_text = "Key"
 	key_line.text = key
 	key_line.set_meta(&"old_value", key)
+	key_line.set_meta(&"map_key_line", key_line)
 	key_line.size_flags_stretch_ratio = 1.0
 	
 	erase_button.icon = get_theme_icon("Remove", "EditorIcons")
@@ -1210,7 +1225,6 @@ func get_valid_id(desired: String, ignore_node: LineEdit = null) -> String:
 
 func get_valid_case_id(desired: String, ignore_node: LineEdit = null) -> String:
 	var all_ids: Dictionary[String, Variant] = {}
-	var default_case: HBoxContainer = %CasesContainer.get_child(0)
 	
 	for node_idx in range(1, %CasesContainer.get_child_count()):
 		var node: HBoxContainer = %CasesContainer.get_child(node_idx)
@@ -1276,7 +1290,6 @@ func _on_phrase_text_focus_exited(field: TextEdit) -> void:
 	undo.create_action("Edit Phrase Text")
 	undo.add_do_method(_do_update_phrase_text.bind(phrase_key, new_value))
 	undo.add_undo_method(_do_update_phrase_text.bind(phrase_key, old_value, old_data))
-	undo.commit_action()
 
 
 func _on_case_edit_toggled(is_toggled: bool, line: LineEdit) -> void:
@@ -1298,6 +1311,7 @@ func _on_case_edit_toggled(is_toggled: bool, line: LineEdit) -> void:
 	undo.add_do_method(_do_update_case_key.bind(phrase_key, format, old_value, new_value))
 	undo.add_undo_method(_do_update_case_key.bind(phrase_key, format, new_value, old_value))
 	undo.commit_action()
+	_on_file_edited()
 
 
 func _on_case_result_focus_exited(field: TextEdit) -> void:
@@ -1348,8 +1362,6 @@ func _do_update_prase_key(from: String, to: String) -> void:
 	if target_line == null:
 		return
 	
-	var old_key: StringName = StringName(from)
-	var new_key: StringName = StringName(to)
 	target_line.text = to
 	target_line.set_meta(&"old_value", to)
 

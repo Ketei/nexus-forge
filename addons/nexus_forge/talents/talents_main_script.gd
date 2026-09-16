@@ -2,7 +2,6 @@
 extends PanelContainer
 
 
-const DATA_FLOAT_STEP: float = 0.01
 const UNDO_MAX_STEPS: int = 50
 
 var _skills_resource: SkillCatalog
@@ -465,32 +464,6 @@ func load_skills_resource() -> void:
 		loaded_skill = skill_opt_btn.get_item_metadata(0)
 
 
-func sort_skills(reselect: bool = true) -> void:
-	if skill_opt_btn.item_count <= 1:
-		return
-	var skills: Array[StringName] = []
-	var current_skill: StringName = &"" if skill_opt_btn.selected == -1 else skill_opt_btn.get_item_metadata(skill_opt_btn.selected)
-	var new_index: int = -1
-	
-	for item_idx in range(skill_opt_btn.item_count):
-		skills.append(skill_opt_btn.get_item_metadata(item_idx))
-	
-	skills.sort_custom(func (a,b) -> bool: return String(a).naturalnocasecmp_to(String(b)) < 0)
-	
-	skill_opt_btn.clear()
-	
-	var idx: int = -1
-	for skill_id in skills:
-		idx += 1
-		skill_opt_btn.add_item(String(skill_id))
-		skill_opt_btn.set_item_metadata(idx, skill_id)
-		if skill_id == current_skill:
-			new_index = idx
-	
-	if reselect and new_index != -1:
-		skill_opt_btn.select(new_index)
-
-
 func set_skills_ui_enabled(set_enabled: bool) -> void:
 	var disabled: bool = not set_enabled
 	
@@ -501,14 +474,6 @@ func set_skills_ui_enabled(set_enabled: bool) -> void:
 	skill_str_btn.disabled = disabled
 	skill_dict_button.disabled = disabled
 	skill_data_tree.enabled = set_enabled
-
-
-# Use for comparing what skills exists when SkillSet is saved/changed.
-func loaded_skills() -> Dictionary[String, int]:
-	var all_skills: Dictionary[String, int]
-	for skill_idx in range(skill_opt_btn.item_count):
-		all_skills[String(skill_opt_btn.get_item_metadata(skill_idx))] = skill_idx
-	return all_skills
 
 
 # Call when SkillSet is saved/changed.
@@ -765,40 +730,6 @@ func load_traits_resource() -> void:
 		loaded_trait = trait_opt_btn.get_item_metadata(0)
 
 
-func sort_traits(reselect: bool = true) -> void:
-	if trait_opt_btn.item_count <= 1:
-		return
-	var traits: Array[StringName] = []
-	var selected: StringName = &"" if trait_opt_btn.selected == -1 else trait_opt_btn.get_item_metadata(trait_opt_btn.selected)
-	var new_idx: int = -1
-	
-	for item_idx in range(trait_opt_btn.item_count):
-		traits.append(trait_opt_btn.get_item_metadata(item_idx))
-	
-	traits.sort_custom(func (a,b) -> bool: return String(a).naturalnocasecmp_to(String(b)) < 0)
-	
-	trait_opt_btn.clear()
-	
-	var idx: int = -1
-	for trait_id in traits:
-		idx += 1
-		trait_opt_btn.add_item(String(trait_id))
-		trait_opt_btn.set_item_metadata(idx, trait_id)
-		if trait_id == selected:
-			new_idx = idx
-	
-	if reselect and new_idx != -1:
-		trait_opt_btn.select(new_idx)
-
-
-# Use for comparing what skills exists when TraitBlock is saved/changed.
-func loaded_traits() -> Dictionary[String, int]:
-	var all_traits: Dictionary[String, int] = {}
-	for trait_idx in range(trait_opt_btn.item_count):
-		all_traits[String(trait_opt_btn.get_item_metadata(trait_idx))] = trait_idx
-	return all_traits
-
-
 # Call when TraitBlock is saved/changed.
 func reload_traits(reselect: bool = true) -> void:
 	var current_trait: StringName = &"" if trait_opt_btn.selected == -1 else trait_opt_btn.get_item_metadata(trait_opt_btn.selected)
@@ -1029,32 +960,6 @@ func load_stats_resource() -> void:
 		loaded_stat = stat_opt_btn.get_item_metadata(0)
 
 
-func sort_stats(reselect: bool = true) -> void:
-	if stat_opt_btn.item_count <= 1:
-		return
-	var stats: Array[StringName] = []
-	var current_stat: StringName = &"" if stat_opt_btn.selected == -1 else stat_opt_btn.get_item_metadata(stat_opt_btn.selected)
-	var new_index: int = -1
-	
-	for item_idx in range(stat_opt_btn.item_count):
-		stats.append(stat_opt_btn.get_item_metadata(item_idx))
-	
-	stats.sort_custom(func (a,b) -> bool: return String(a).naturalnocasecmp_to(String(b)) < 0)
-	
-	stat_opt_btn.clear()
-	
-	var idx: int = -1
-	for stat_id in stats:
-		idx += 1
-		skill_opt_btn.add_item(String(stat_id))
-		skill_opt_btn.set_item_metadata(idx, stat_id)
-		if stat_id == current_stat:
-			new_index = idx
-	
-	if reselect and new_index != -1:
-		stat_opt_btn.select(new_index)
-
-
 func set_stats_ui_enabled(set_enabled: bool) -> void:
 	var disabled: bool = not set_enabled
 	
@@ -1065,14 +970,6 @@ func set_stats_ui_enabled(set_enabled: bool) -> void:
 	stat_str_btn.disabled = disabled
 	stat_dict_button.disabled = disabled
 	stat_data_tree.enabled = set_enabled
-
-
-# Use for comparing what skills exists when SkillSet is saved/changed.
-func loaded_stats() -> Dictionary[String, int]:
-	var all_stats: Dictionary[String, int]
-	for stat_idx in range(stat_opt_btn.item_count):
-		all_stats[String(stat_opt_btn.get_item_metadata(stat_idx))] = stat_idx
-	return all_stats
 
 
 # Call when SkillSet is saved/changed.
