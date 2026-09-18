@@ -1277,7 +1277,7 @@ func select_category(category_id: StringName, uncategorized_if_not_found: bool =
 
 
 func reload_fields() -> void:
-	var path: String = _script_paths.get_class_script_path()
+	var path: String = _script_paths.get_class_script_path("NFItemSheet")
 	if path.is_empty():
 		NFPluginGameHandler._log_msg(
 				"depot - editor",

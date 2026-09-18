@@ -44,6 +44,7 @@ func ready_plugin(use_items: bool, use_currencies: bool, paths_resource: RefCoun
 	set_process_input(true)
 	if use_items:
 		items_container._script_paths = paths_resource
+	
 	items_container.ready_plugin(use_items, use_currencies, MAX_UNDO_STEPS)
 		
 	if use_items:
