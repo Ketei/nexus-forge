@@ -234,7 +234,6 @@ func _get_array_data_localized(node_uuid: String, for_locale: String) -> Diction
 		return data
 	
 	if not node_data[node_uuid]["metadata"]["localized"]:
-		print("Not localized!")
 		var result: PackedStringArray = []
 		if typeof(localization[node_uuid]["unlocalized"]) == TYPE_PACKED_STRING_ARRAY:
 			result = localization[node_uuid]["unlocalized"].duplicate()
@@ -491,7 +490,11 @@ func get_node_data(node_uuid: StringName, locale: String = "") -> Dictionary:
 			var target_size: int = base_data["metadata"]["choices"].size()
 	
 			if options_translated.size() != target_size:
-				push_warning("[DISCOURSE] Choice data of node {node_id} size is different from the {locale_code} localization data. Data size: {data_size}, locale size: {locale_size}".format({"data_size": target_size, "locale_size": options_translated.size(), "locale_code": locale, "node_id": base_data["name"]}) )
+				NFPluginGameHandler._log_msg(
+						"discourse - editor",
+						"Choice data size of node '%s' is different from the localization data of locale '%s'. Data size: %d, locale size: %d" % [base_data["name"], locale, target_size, options_translated.size()],
+						NFPluginGameHandler._LogLevel.WARNING)
+				
 				options_translated.resize(target_size)
 	
 			var idx: int = -1

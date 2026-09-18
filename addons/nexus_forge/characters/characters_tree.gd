@@ -12,7 +12,7 @@ func ready_plugin() -> void:
 	root = create_item()
 	
 	button_clicked.connect(_on_button_clicked)
-	item_selected.connect(_on_item_selected)
+	item_mouse_selected.connect(_on_item_mouse_selected)
 
 
 func _on_button_clicked(item: TreeItem, _column: int, id: int, mouse_button_index: int) -> void:
@@ -24,7 +24,7 @@ func _on_button_clicked(item: TreeItem, _column: int, id: int, mouse_button_inde
 		character_closed.emit(meta["id"])
 
 
-func _on_item_selected() -> void:
+func _on_item_mouse_selected(mouse_position: Vector2, mouse_button_index: int) -> void:
 	var data: Dictionary = get_selected().get_metadata(0)
 	character_selected.emit(data["id"])
 
@@ -44,12 +44,9 @@ func clear_characters() -> void:
 func select_character(resource_id: int, emit_selected: bool = true) -> void:
 	for item in root.get_children():
 		if item.get_metadata(0)["id"] == resource_id:
+			item.select(0)
 			if emit_selected:
-				item.select(0)
-			else:
-				item_selected.disconnect(_on_item_selected)
-				item.select(0)
-				item_selected.connect(_on_item_selected)
+				character_selected.emit(resource_id)
 
 
 func create_character(resource: NFCharacterSheet, select: bool = false, emit_select: bool = true) -> void:
@@ -67,13 +64,9 @@ func create_character(resource: NFCharacterSheet, select: bool = false, emit_sel
 	sort_single_item(new_item)
 	
 	if select:
+		new_item.select(0)
 		if emit_select:
-			new_item.select(0)
-		else:
-			item_selected.disconnect(_on_item_selected)
-			new_item.select(0)
-			item_selected.connect(_on_item_selected)
-
+			character_selected.emit(resource.get_instance_id())
 
 
 func set_unsaved(res_id: int, unsaved: bool) -> void:

@@ -153,7 +153,10 @@ func _build() -> bool:
 	var valid_path: bool = path != "" and path.is_absolute_path() and path.begins_with("res://") and path.get_extension() == ""
 	
 	if not valid_path:
-		printerr("[ERROR] NexusForge: Discourse needs a valid folder path for localization files on project settings.")
+		NFPluginGameHandler._log_msg(
+				"plugin",
+				"Invalid localization path '%s'" % path,
+				NFPluginGameHandler._LogLevel.ERROR)
 	
 	if ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("character_register_ids"), true):
 		save_character_paths()
@@ -478,8 +481,10 @@ func verify_project_settings() -> void:
 		elif tool_id == "discourse_custom_dialog_debug_scene":
 			var path: String = ProjectSettings.get_setting(NFPluginGameHandler._SETTINGS_PATHS[tool_id]["setting_path"], "")
 			if not path.is_empty() and not FileAccess.file_exists(path):
-				push_error(
-						"[NEXUS FORGE] Custom debug scene \"" + path + "\" was not found.")
+				NFPluginGameHandler._log_msg(
+						"plugin",
+						"Custom debug scene was not found at '%s'" % path,
+						NFPluginGameHandler._LogLevel.ERROR)
 		elif tool_id == "discourse_localization_preview_scene":
 			is_preview_scene_valid()
 			

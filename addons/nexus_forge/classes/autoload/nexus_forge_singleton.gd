@@ -436,7 +436,12 @@ static func get_setting_path(module: String) -> String:
 
 
 static func _log_msg(module: String, msg: String, log_level: _LogLevel = _LogLevel.INFO) -> void:
-	var full_msg: String = "[NEXUS FORGE - %s] %s" % [module.to_upper(), msg]
+	var full_msg: String = ""
+	
+	if module.is_empty():
+		full_msg = "[NEXUS FORGE] %s"
+	else:
+		full_msg = "[NEXUS FORGE - %s] %s" % [module.to_upper(), msg]
 	
 	if log_level == _LogLevel.INFO:
 		if ProjectSettings.get_setting(get_setting_path("plugin_log_info"), true):
@@ -473,7 +478,7 @@ func _ready() -> void:
 			Blackboard = res_pre
 		else:
 			_log_msg(
-					"singleton",
+					"",
 					"Invalid Blackboard resource '%s'" % blackboard_path,
 					_LogLevel.ERROR)
 	
@@ -487,7 +492,10 @@ func _ready() -> void:
 				SpeciesManager.load_catalog(res_pre, true)
 				_rebuild_species_cache()
 			else:
-				printerr("[NEXUS FORGE] ProjectSettings: Invalid Species.")
+				_log_msg(
+						"",
+						"Inavalid NFSpeciesCataglog resource '%s'" % species_path,
+						NFPluginGameHandler._LogLevel.ERROR)
 	
 	if use_items:
 		if ItemManager == null:
@@ -501,7 +509,7 @@ func _ready() -> void:
 				_rebuild_item_cache()
 			else:
 				NFPluginGameHandler._log_msg(
-						"singleton",
+						"",
 						"Invalid NFItemCatalog resource '%s'" % items_path,
 						NFPluginGameHandler._LogLevel.ERROR)
 	
@@ -516,7 +524,7 @@ func _ready() -> void:
 				_rebuild_currency_cache()
 			else:
 				NFPluginGameHandler._log_msg(
-						"singleton",
+						"",
 						"Invalid NFCurrencyCatalog resource '%s'" % currency_path,
 						NFPluginGameHandler._LogLevel.ERROR)
 	
@@ -531,7 +539,7 @@ func _ready() -> void:
 				_rebuild_recipe_cache()
 			else:
 				NFPluginGameHandler._log_msg(
-						"singleton",
+						"",
 						"Invalid NFRecipeCatalog resource '%s'" % recipe_path,
 						NFPluginGameHandler._LogLevel.ERROR)
 	
@@ -601,7 +609,7 @@ func _ready() -> void:
 								if typeof(key) == TYPE_STRING and typeof(data[key]) == TYPE_STRING_NAME:
 									if map.has(data[key]):
 										_log_msg(
-												"singleton",
+												"",
 												"Resource '%s' is using the ID (%s) of an already registered resource '%s'. Skipping." % [key, data[key], map[data[key]]])
 									map[data[key]] = key
 							CharacterManager._characters.assign(map)
@@ -618,7 +626,7 @@ func _ready() -> void:
 							CharacterManager._characters.assign(map)
 						else:
 							_log_msg(
-									"singleton",
+									"",
 									"Failed to load NexusForge settings",
 									NFPluginGameHandler._LogLevel.WARNING)
 	if QuestManager == null and ( use_quests or instantiate_disabled ):
