@@ -1,4 +1,4 @@
-class_name RandomWeightedPool
+class_name NFRandomWeightedPool
 extends RefCounted
 ## An object which can store items each associated with a specific weight
 ## that influences the likelihood of selection.

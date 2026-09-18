@@ -1,6 +1,6 @@
 @tool
 @icon("res://addons/nexus_forge/icons/sword_icon.svg")
-class_name ItemSheet
+class_name NFItemSheet
 extends Resource
 ## A resource representing an Item.
 
@@ -41,7 +41,7 @@ var _name_builder: Callable = Callable()
 var _description_builder: Callable = Callable()
 
 
-## Returns the item [member ItemSheet.name]. Formats it if [code]Format Item Strings with Blackboard[/code]
+## Returns the item [member NFItemSheet.name]. Formats it if [code]Format Item Strings with Blackboard[/code]
 ## is [code]On[/code] on [code]Project Settings[/code].
 func get_item_name() -> String:
 	if not ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("items_format_strings"), false):
@@ -71,7 +71,7 @@ func get_item_name() -> String:
 	return _build_format(name, title_formats)
 
 
-## Returns the item [member ItemSheet.description]. Formats it if [code]Format Item Strings with Blackboard[/code]
+## Returns the item [member NFItemSheet.description]. Formats it if [code]Format Item Strings with Blackboard[/code]
 ## is [code]On[/code] on [code]Project Settings[/code].
 func get_item_description() -> String:
 	if not ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("items_format_strings"), false):

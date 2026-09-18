@@ -1,4 +1,4 @@
-class_name DictUtils
+class_name NFDictUtils
 extends RefCounted
 ## A collection of static utility methods for changing, validating and getting
 ## values from dictionaries.
@@ -15,9 +15,9 @@ static func has_any(dict: Dictionary, keys: Array) -> bool:
 ## on [param keys].
 ## [codeblock]
 ## var dict = { "top": { "middle": {"bottom": true} } }
-## DictUtils.has_nested_path(dict, ["top", "middle", "bottom"]) # Returns true
-## DictUtils.has_nested_path(dict, ["top", "middle"]) # Returns true
-## DictUtils.has_nested_path(dict, ["top", "bottom", "middle"]) # Returns false
+## NFDictUtils.has_nested_path(dict, ["top", "middle", "bottom"]) # Returns true
+## NFDictUtils.has_nested_path(dict, ["top", "middle"]) # Returns true
+## NFDictUtils.has_nested_path(dict, ["top", "bottom", "middle"]) # Returns false
 ## [/codeblock]
 static func has_nested_path(dict: Dictionary, keys: Array) -> bool:
 	var current = dict
@@ -38,10 +38,10 @@ static func has_nested_path(dict: Dictionary, keys: Array) -> bool:
 ## be returned instead.[br]
 ## [codeblock]
 ## var dict = { "fruits": { "orange": {"amount": 621} } }
-## DictUtils.get_nested_value(dict, ["fruits", "orange", "amount"]) # Returns 621
-## DictUtils.get_nested_value(dict, ["fruits", "orange", "count"]) # Returns null
-## DictUtils.get_nested_value(dict, ["fruits", "apples"], 10) # Returns 10
-## DictUtils.get_nested_value(dict, ["fruits", "apples"], Vector2i(0,0)) # Returns Vector2i(0,0)
+## NFDictUtils.get_nested_value(dict, ["fruits", "orange", "amount"]) # Returns 621
+## NFDictUtils.get_nested_value(dict, ["fruits", "orange", "count"]) # Returns null
+## NFDictUtils.get_nested_value(dict, ["fruits", "apples"], 10) # Returns 10
+## NFDictUtils.get_nested_value(dict, ["fruits", "apples"], Vector2i(0,0)) # Returns Vector2i(0,0)
 ## [/codeblock]
 static func get_nested_value(from: Dictionary, keys: Array, default = null, match_default_type: bool = false) -> Variant:
 	var current = from
@@ -64,11 +64,11 @@ static func get_nested_value(from: Dictionary, keys: Array, default = null, matc
 ## only set a value if the nesting already exists.[br]
 ## [codeblock]
 ## var dict = { "inventory": { "potions": {"blue": 0} } }
-## DictUtils.set_nested_value(dict, ["inventory", "potions", "blue"], 10) # Returns true
+## NFDictUtils.set_nested_value(dict, ["inventory", "potions", "blue"], 10) # Returns true
 ## print(dict) # Prints { "inventory": { "potions": {"blue": 10} } }
-## DictUtils.set_nested_value(dict, ["inventory", "food", "kiwi"], 2, false) # Returns false
+## NFDictUtils.set_nested_value(dict, ["inventory", "food", "kiwi"], 2, false) # Returns false
 ## print(dict) # Prints { "inventory": { "potions": {"blue": 10} } }
-## DictUtils.set_nested_value(dict, ["inventory", "food", "kiwi"], 2) # Returns true
+## NFDictUtils.set_nested_value(dict, ["inventory", "food", "kiwi"], 2) # Returns true
 ## print(dict) # Prints { "inventory": { "potions": {"blue": 10} }, "food": { "kiwi": 2 } }
 ## [/codeblock]
 static func set_nested_value(on: Dictionary, keys: Array, value, create_dictionaries: bool = true) -> bool:

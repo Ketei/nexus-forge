@@ -294,7 +294,7 @@ func select_quest(emit_select: bool = true) -> void:
 		quest_selected.emit()
 
 
-func set_quest(quest: Quest, select: bool = false, emit_select: bool = true) -> void:
+func set_quest(quest: NFQuest, select: bool = false, emit_select: bool = true) -> void:
 	if root == null:
 		root = create_item()
 	else:
@@ -355,7 +355,7 @@ func add_stage(stage_id: String, index: int = -1) -> TreeItem:
 	if index != -1:
 		var child_count: int = root.get_child_count()
 		var max_index: int = child_count - 1
-		if RangeUtils.is_between(index, -child_count, max_index):
+		if NFRangeUtils.is_between(index, -child_count, max_index):
 			var target_index: int = wrapi(index, 0, child_count)
 			var current_index: int = stage_item.get_index()
 			if current_index != target_index:
@@ -412,7 +412,7 @@ func add_objective_on_tree(on_item: TreeItem, objective_id: String, index: int =
 	
 	var child_count: int = on_item.get_child_count()
 	var max_index: int = child_count - 1
-	if not RangeUtils.is_between(index, -child_count, max_index):
+	if not NFRangeUtils.is_between(index, -child_count, max_index):
 		return
 	var target_index: int = wrapi(index, 0, child_count)
 	var current_index: int = objective_item.get_index()
@@ -534,7 +534,7 @@ func set_quest_structure(structure: Array[Dictionary]) -> void:
 	
 	for item in structure:
 		stage_ids.append(item["stage"])
-		objectives[item["stage"]] = ArrayUtils.create_typed(TYPE_STRING, item["objectives"].duplicate())
+		objectives[item["stage"]] = NFArrayUtils.create_typed(TYPE_STRING, item["objectives"].duplicate())
 	
 	var stages: Array[TreeItem] = root.get_children()
 	var stage_count: int = stages.size()

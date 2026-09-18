@@ -1,5 +1,5 @@
 @tool
-extends IDTree
+extends NFIDTree
 
 
 signal item_deleted

@@ -192,15 +192,15 @@ func _customize_resource(resource: Resource, path: String) -> Resource:
 					FileAccess.get_file_as_bytes(file_path),
 					false)
 		return release_files[path]
-	elif resource is SkillCatalog:
+	elif resource is NFSkillCatalog:
 		return customize_skill_catalog(resource)
-	elif resource is TraitCatalog:
+	elif resource is NFTraitCatalog:
 		return customize_trait_catalog(resource)
-	elif resource is SpeciesCatalog:
+	elif resource is NFSpeciesCatalog:
 		return customize_species(resource)
-	elif resource is StatCatalog:
+	elif resource is NFStatCatalog:
 		return customize_stat_catalog(resource)
-	elif resource is CharacterSheet:
+	elif resource is NFCharacterSheet:
 		if character_ids.has(resource.id):
 			if export_characters:
 				NFPluginGameHandler._log_msg(
@@ -214,7 +214,7 @@ func _customize_resource(resource: Resource, path: String) -> Resource:
 						NFPluginGameHandler._LogLevel.WARNING)
 		else:
 			character_ids[resource.id] = path
-	elif resource is Quest:
+	elif resource is NFQuest:
 		if quest_ids.has(resource.id):
 			NFPluginGameHandler._log_msg(
 						"export",
@@ -309,10 +309,10 @@ func process_editor_discourse_dialog(dialog_resource: EditorDiscourseDialog, dia
 	return release_resource
 
 
-func customize_species(resource: SpeciesCatalog) -> SpeciesCatalog:
-	var stats: Dictionary[StringName, int] = StatBlock.stats()
-	var skills: Array[StringName] = SkillSet.skills()
-	var traits: Array[StringName] = TraitBlock.traits()
+func customize_species(resource: NFSpeciesCatalog) -> NFSpeciesCatalog:
+	var stats: Dictionary[StringName, int] = NFStatBlock.stats()
+	var skills: Array[StringName] = NFSkillSet.skills()
+	var traits: Array[StringName] = NFTraitBlock.traits()
 	
 	for species in resource._species.keys():
 		for stat in resource._species[species]["stats"].keys():
@@ -333,8 +333,8 @@ func customize_species(resource: SpeciesCatalog) -> SpeciesCatalog:
 	return resource
 
 
-func customize_trait_catalog(catalog: TraitCatalog) -> TraitCatalog:
-	var traits: Array[StringName] = TraitBlock.traits()
+func customize_trait_catalog(catalog: NFTraitCatalog) -> NFTraitCatalog:
+	var traits: Array[StringName] = NFTraitBlock.traits()
 	
 	for saved_trait in catalog._trait_data.keys():
 		if traits.has(saved_trait):
@@ -344,8 +344,8 @@ func customize_trait_catalog(catalog: TraitCatalog) -> TraitCatalog:
 	return catalog
 
 
-func customize_stat_catalog(catalog: StatCatalog) -> StatCatalog:
-	var stats_data: Dictionary[StringName, int] = StatBlock.stats()
+func customize_stat_catalog(catalog: NFStatCatalog) -> NFStatCatalog:
+	var stats_data: Dictionary[StringName, int] = NFStatBlock.stats()
 	
 	for saved_trait in catalog._stat_data.keys():
 		if stats_data.has(saved_trait):
@@ -355,8 +355,8 @@ func customize_stat_catalog(catalog: StatCatalog) -> StatCatalog:
 	return catalog
 
 
-func customize_skill_catalog(catalog: SkillCatalog) -> SkillCatalog:
-	var skills: Array[StringName] = SkillSet.skills()
+func customize_skill_catalog(catalog: NFSkillCatalog) -> NFSkillCatalog:
+	var skills: Array[StringName] = NFSkillSet.skills()
 	
 	for saved_skill in catalog._skill_data.keys():
 		if skills.has(saved_skill):

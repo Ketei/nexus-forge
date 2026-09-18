@@ -15,7 +15,7 @@ func set_entry(id: StringName, success_status: NFQuestManager.SuccessStatus = NF
 		_entries[id].success_status = success_status
 	else:
 		var new_entry: NFQuestLogEntry = NFQuestLogEntry.new(id, success_status)
-		new_entry._flags = BitUtils.set_bit_index(0, 0, true)
+		new_entry._flags = NFBitUtils.set_bit_index(0, 0, true)
 		_entries[id] = new_entry
 	
 	return _entries[id]
@@ -101,12 +101,12 @@ func restore_state(data: Dictionary) -> void:
 		else:
 			NFPluginGameHandler._log_msg(
 					"quest - log",
-					"Quest '%s' doesn't have a valid success status." % key_entry,
+					"NFQuest '%s' doesn't have a valid success status." % key_entry,
 					NFPluginGameHandler._LogLevel.WARNING)
 		
 		var quest_entry: NFQuestLogEntry = NFQuestLogEntry.new(key_entry, status)
 		
-		quest_entry._flags = BitUtils.set_bit_index(0, 0, true)
+		quest_entry._flags = NFBitUtils.set_bit_index(0, 0, true)
 		
 		if data[key_entry].has("stages"):
 			quest_entry._load_from_data(data[key_entry]["stages"])
@@ -139,7 +139,7 @@ class NFQuestLogStatusEntry extends RefCounted:
 	
 	## Returns if this entry exists in the log or was provided as a fallback.
 	func is_valid() -> bool:
-		return BitUtils.is_bit_index(_flags, 0, true)
+		return NFBitUtils.is_bit_index(_flags, 0, true)
 
 
 class NFQuestLogEntry extends NFQuestLogStatusEntry:
@@ -170,11 +170,11 @@ class NFQuestLogEntry extends NFQuestLogStatusEntry:
 			else:
 				NFPluginGameHandler._log_msg(
 					"quest - log",
-					"Quest '%s' doesn't have a valid success status." % key_entry,
+					"NFQuest '%s' doesn't have a valid success status." % key_entry,
 					NFPluginGameHandler._LogLevel.WARNING)
 			
 			var entry: NFQuestLogStageEntry = NFQuestLogStageEntry.new(key_entry, success)
-			entry._flags = BitUtils.set_bit_index(0, 0, true)
+			entry._flags = NFBitUtils.set_bit_index(0, 0, true)
 			if dict[key_entry].has("objectives") and typeof(dict[key_entry]["objectives"]) == TYPE_DICTIONARY:
 				entry._load_from_data(dict[key_entry]["objectives"])
 			_entries[key_entry] = entry
@@ -262,7 +262,7 @@ class NFQuestLogStageEntry extends NFQuestLogStatusEntry:
 				continue
 			
 			var entry: NFQuestLogStatusEntry = NFQuestLogStatusEntry.new(dict[key_entry])
-			entry._flags = BitUtils.set_bit_index(0, 0, true)
+			entry._flags = NFBitUtils.set_bit_index(0, 0, true)
 			_entries[key_entry] = entry
 	
 	

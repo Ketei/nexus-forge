@@ -1,6 +1,6 @@
 class_name NFSpeciesManager
 extends RefCounted
-## An object that holds items as [SpeciesSheet] resources.
+## An object that holds items as [NFSpeciesSheet] resources.
 ##
 ## When an item is modified through this object,
 ## the signal [Resource.changed] is called on the specific item.
@@ -11,18 +11,18 @@ signal species_created(species_id: StringName)
 ## Emited when a species is erased.
 signal species_erased(species_id: StringName)
 
-var _species: Dictionary[StringName, SpeciesSheet] = {}
+var _species: Dictionary[StringName, NFSpeciesSheet] = {}
 
 
 ## Loads a speices [param catalog] to this object. If [param clear_species]
 ## is [code]true[/code] previous species will be cleared.
-func load_catalog(catalog: SpeciesCatalog, clear_species: bool = true) -> void:
+func load_catalog(catalog: NFSpeciesCatalog, clear_species: bool = true) -> void:
 	var use_inheritance: bool = ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("species_genetic_dilution"), 0.0) < 1.0
 	if clear_species:
 		_species.clear()
 	
 	for species_id in catalog.species():
-		var sheet: SpeciesSheet = SpeciesSheet.new()
+		var sheet: NFSpeciesSheet = NFSpeciesSheet.new()
 		sheet.id = species_id
 		sheet.name = catalog.get_species_name(species_id)
 		sheet.description = catalog.get_species_description(species_id)
@@ -43,7 +43,7 @@ func species() -> Array[StringName]:
 
 
 ## Creates a new species with [param species_id] unless it already exists.
-func add_species(new_species: SpeciesSheet) -> void:
+func add_species(new_species: NFSpeciesSheet) -> void:
 	if _species.has(new_species.id) or new_species.id.is_empty():
 		return
 	

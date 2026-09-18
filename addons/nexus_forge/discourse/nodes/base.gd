@@ -100,7 +100,7 @@ static func validate_api_path() -> bool:
 
 
 func _init(uuid: StringName = &"", theme_variant: StringName = &"", with_duplicate: bool = true, with_close: bool = true, localization: bool = false) -> void:
-	_uuid = StringName(UUID.generate_new()) if uuid.is_empty() else uuid
+	_uuid = StringName(NFUUID.generate_new()) if uuid.is_empty() else uuid
 	var _hbox: HBoxContainer = get_titlebar_hbox()
 	var title_label: Label = _hbox.get_child(0)
 	title_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -537,7 +537,7 @@ func get_input_connection_count(input_port: int) -> int:
 	var max_port_index: int = port_count - 1
 	if max_port_index < 0:
 		return 0
-	if not RangeUtils.is_between(input_port, -port_count, max_port_index):
+	if not NFRangeUtils.is_between(input_port, -port_count, max_port_index):
 		return 0
 	return _input_nodes[input_port]["connections"].size()
 
@@ -560,14 +560,14 @@ func get_node_connected_to_port(port_type: PortMode, port: int, connection_index
 	if port_type == PortMode.INPUT:
 		var in_connections_size: int = _input_nodes[port]["connections"].size()
 		var max_in_connection_index: int = in_connections_size - 1
-		if not RangeUtils.is_between(connection_index, -in_connections_size, max_in_connection_index):
+		if not NFRangeUtils.is_between(connection_index, -in_connections_size, max_in_connection_index):
 			return null
 		return _input_nodes[port]["connections"][connection_index]["target_node"]
 		
 	elif port_type == PortMode.OUTPUT:
 		var out_connections_size: int = _output_nodes[port]["connections"].size()
 		var max_out_connection_index: int = out_connections_size - 1
-		if not RangeUtils.is_between(connection_index, -out_connections_size, max_out_connection_index):
+		if not NFRangeUtils.is_between(connection_index, -out_connections_size, max_out_connection_index):
 			return null
 		return _output_nodes[port]["connections"][connection_index]["target_node"]
 	else:
@@ -588,7 +588,7 @@ func has_any_input(input_idx: int) -> bool:
 	if input_count == 0:
 		return false
 	var max_index: int = input_count - 1
-	if not RangeUtils.is_between(input_idx, -input_count, max_index):
+	if not NFRangeUtils.is_between(input_idx, -input_count, max_index):
 		return false
 	return not _input_nodes[input_idx]["connections"].is_empty()
 
@@ -599,14 +599,14 @@ func has_input_on(input_port: int, input_idx: int = 0) -> bool:
 		return false
 	var max_port_index: int = port_count - 1
 	
-	if not RangeUtils.is_between(input_port, -port_count, max_port_index):
+	if not NFRangeUtils.is_between(input_port, -port_count, max_port_index):
 		return false
 	
 	var connection_count: int = _input_nodes[input_port]["connections"].size()
 	if connection_count == 0:
 		return false
 	var max_connection_index: int = connection_count - 1
-	return RangeUtils.is_between(input_idx, 0, max_connection_index)
+	return NFRangeUtils.is_between(input_idx, 0, max_connection_index)
 
 
 func get_target_node_uuid(port_mode: PortMode, port: int, connection_index: int = 0) -> String:
@@ -636,7 +636,7 @@ func is_connected_to_input(port: int, node: DiscourseGraphNode) -> bool:
 		return false
 	var max_port_index: int = port_count - 1
 	
-	if not RangeUtils.is_between(port, -port_count, max_port_index):
+	if not NFRangeUtils.is_between(port, -port_count, max_port_index):
 		return false
 	
 	for item in _input_nodes[port]["connections"]:
@@ -650,7 +650,7 @@ func has_any_output(output_idx: int) -> bool:
 	if output_count == 0:
 		return false
 	var max_index: int = output_count - 1
-	if not RangeUtils.is_between(output_idx, -output_count, max_index):
+	if not NFRangeUtils.is_between(output_idx, -output_count, max_index):
 		return false
 	
 	return not _output_nodes[output_idx]["connections"].is_empty()
@@ -662,14 +662,14 @@ func has_output_on(output_port: int, output_idx: int = 0) -> bool:
 		return false
 	var max_port_index: int = port_count - 1
 	
-	if not RangeUtils.is_between(output_port, -port_count, max_port_index):
+	if not NFRangeUtils.is_between(output_port, -port_count, max_port_index):
 		return false
 	
 	var connection_count: int = _output_nodes[output_port]["connections"].size()
 	if connection_count == 0:
 		return false
 	var max_connection_index: int = connection_count - 1
-	return RangeUtils.is_between(output_idx, 0, max_connection_index)
+	return NFRangeUtils.is_between(output_idx, 0, max_connection_index)
 
 
 func has_port(mode: PortMode, idx: int) -> bool:
@@ -689,7 +689,7 @@ func is_connected_to_output(port: int, node: DiscourseGraphNode) -> bool:
 	if port_count == 0:
 		return false
 	var max_port_index: int = port_count - 1
-	if not RangeUtils.is_between(port, -port_count, max_port_index):
+	if not NFRangeUtils.is_between(port, -port_count, max_port_index):
 		return false
 	
 	for item in _output_nodes[port]["connections"]:
@@ -734,7 +734,7 @@ func get_connection_index(port_mode: PortMode, port: int, node: DiscourseGraphNo
 	
 	var max_index: int = port_count - 1
 	
-	if not RangeUtils.is_between(port, -port_count, max_index):
+	if not NFRangeUtils.is_between(port, -port_count, max_index):
 		return -1
 	
 	var idx: int = -1
@@ -760,7 +760,7 @@ func get_output_connection_count(output_port: int) -> int:
 	var max_port_index: int = port_count - 1
 	if max_port_index < 0:
 		return 0
-	if not RangeUtils.is_between(output_port, -port_count, max_port_index):
+	if not NFRangeUtils.is_between(output_port, -port_count, max_port_index):
 		return 0
 	
 	return _output_nodes[output_port]["connections"].size()
@@ -1009,7 +1009,7 @@ func get_index_field(field_index: int) -> Control:
 	
 	var max_index: int = child_count - 1
 	
-	if not RangeUtils.is_between(field_index, -child_count, max_index):
+	if not NFRangeUtils.is_between(field_index, -child_count, max_index):
 		return null
 	
 	var true_index: int = wrapi(field_index, 0, child_count)

@@ -22,7 +22,7 @@ func _post_init() -> void:
 	size = Vector2(230, 83)
 	
 	var signal_keys: Array = available_signals.keys()
-	signal_keys.sort_custom(ArrayUtils.sort_custom_alphabetically_asc)
+	signal_keys.sort_custom(NFArrayUtils.sort_custom_alphabetically_asc)
 	
 	signals_node = OptionButton.new()
 	signals_node.name = &"SignalsOptBtn"
@@ -162,7 +162,7 @@ func reload_signals() -> void:
 	var new_signals = available_signals.keys()
 	var new_idx: int = -1
 	
-	new_signals.sort_custom(ArrayUtils.sort_custom_alphabetically_asc)
+	new_signals.sort_custom(NFArrayUtils.sort_custom_alphabetically_asc)
 	
 	if current_signal != "":
 		new_idx = new_signals.find(current_signal)

@@ -13,7 +13,7 @@ var selected_key_index: int = -1
 var selected_format: String = ""
 
 var api_path: String = ""
-var map: PhraseMap = null:
+var map: NFPhraseMap = null:
 	set(m):
 		map = m
 		new_text_button.disabled = m == null
@@ -435,7 +435,7 @@ func _on_menu_id_pressed(id: int) -> void:
 		
 		if 0 <= selected_key_index:
 			save_current_resource()
-		var new_map: PhraseMap = PhraseMap.new()
+		var new_map: NFPhraseMap = NFPhraseMap.new()
 		var new_undo: UndoRedo = UndoRedo.new()
 		new_undo.max_steps = MAX_UNDO_STEPS
 		new_map.locale = locale_code
@@ -453,7 +453,7 @@ func _on_menu_id_pressed(id: int) -> void:
 		map = new_map
 	elif id == 1:
 		var res_pre: Resource = load(result[1])
-		if res_pre is PhraseMap:
+		if res_pre is NFPhraseMap:
 			if res_pre == map:
 				return
 			
@@ -533,7 +533,7 @@ func _on_case_search_text_changed(text: String) -> void:
 	search_case_ln_edt.set_meta(&"current_search", clean_text)
 
 
-func plugin_open_resource(resource: PhraseMap) -> void:
+func plugin_open_resource(resource: NFPhraseMap) -> void:
 	if resource == map:
 		return
 	elif map != null:
@@ -566,7 +566,7 @@ func open_map_files(files: Array[String]) -> void:
 		if not FileAccess.file_exists(file):
 			continue
 		var res_load: Resource = load(file)
-		if res_load == null or res_load is not PhraseMap or _open_files.has(res_load.get_instance_id()):
+		if res_load == null or res_load is not NFPhraseMap or _open_files.has(res_load.get_instance_id()):
 			continue
 		
 		var new_undo: UndoRedo = UndoRedo.new()
@@ -602,7 +602,7 @@ func select_region(country_code: String) -> void:
 			return
 
 
-func load_map(new_map: PhraseMap) -> void:
+func load_map(new_map: NFPhraseMap) -> void:
 	var locale_parts: PackedStringArray = new_map.locale.split("_", false, 1)
 	var parts_size: int = locale_parts.size()
 	var lang: String = locale_parts[0] if 0 < parts_size else language_opt_btn.get_selected_metadata()
@@ -1171,7 +1171,7 @@ func get_api_user_methods() -> Array[String]:
 	if api_path.is_empty() or not FileAccess.file_exists(api_path):
 		var all_classes: Array[Dictionary] = ProjectSettings.get_global_class_list()
 		for class_entry in all_classes:
-			if class_entry["class"] == "PhraseAPI":
+			if class_entry["class"] == "NFPhraseAPI":
 				api_path = class_entry["path"]
 				break
 	
@@ -1179,7 +1179,7 @@ func get_api_user_methods() -> Array[String]:
 	if api_path.is_empty() or not FileAccess.file_exists(api_path):
 		NFPluginGameHandler._log_msg(
 				"phrase maps - editor",
-				"Unable to locate PhraseAPI class file",
+				"Unable to locate NFPhraseAPI class file",
 				NFPluginGameHandler._LogLevel.ERROR)
 		return methods
 	
@@ -1211,7 +1211,7 @@ func get_valid_id(desired: String, ignore_node: LineEdit = null) -> String:
 	
 	var modified: String = desired.strip_edges()
 	var base: String = modified
-	var trailing_data: Dictionary = StringUtils.get_trailing_integer(modified)
+	var trailing_data: Dictionary = NFStringUtils.get_trailing_integer(modified)
 	var iteration: int = trailing_data["integer"]
 	if trailing_data["has_integer"]:
 		base = base.trim_suffix(str(iteration))
@@ -1242,7 +1242,7 @@ func get_valid_case_id(desired: String, ignore_node: LineEdit = null) -> String:
 	
 	var modified: String = desired.strip_edges()
 	var base: String = modified
-	var trailing_data: Dictionary = StringUtils.get_trailing_integer(modified)
+	var trailing_data: Dictionary = NFStringUtils.get_trailing_integer(modified)
 	var iteration: int = trailing_data["integer"]
 	if trailing_data["has_integer"]:
 		base = base.trim_suffix(str(iteration))

@@ -23,7 +23,7 @@ var _base_stats: Dictionary[StringName, int] = {}
 
 
 func _init() -> void:
-	_base_stats.assign(StatBlock.stats())
+	_base_stats.assign(NFStatBlock.stats())
 	
 	for stat in _base_stats:
 		var entry: NFCatalogEntryStat = NFCatalogEntryStat.new()
@@ -36,7 +36,7 @@ func _init() -> void:
 
 ## Loads a stat [param catalog] into this object. If [param clear_stats]
 ## is [code]true[/code] then previous stat data will be cleared.
-func load_catalog(catalog: StatCatalog, clear_stats: bool = true) -> void:
+func load_catalog(catalog: NFStatCatalog, clear_stats: bool = true) -> void:
 	if clear_stats:
 		for entry in _stat_entries.keys():
 				if _base_stats.has(entry):
@@ -55,7 +55,7 @@ func load_catalog(catalog: StatCatalog, clear_stats: bool = true) -> void:
 
 ## Returns an array containing all registered stats.
 func stats() -> Array[StringName]:
-	return ArrayUtils.create_typed(TYPE_STRING_NAME, _stat_entries.keys())
+	return NFArrayUtils.create_typed(TYPE_STRING_NAME, _stat_entries.keys())
 
 
 ## Returns ture if a stat [param stat_id] is registered.
@@ -64,14 +64,14 @@ func has_stat(stat_id: StringName) -> bool:
 
 
 ## Returns [code]true[/code] if the stat belongs to declared stats on the
-## [StatBlock].
+## [NFStatBlock].
 func is_base_stat(stat_id: StringName) -> bool:
 	return _base_stats.has(stat_id)
 
 
 ## Registers a custom stat with [param stat_id] of type [param type] unless
 ## it already exists.[br]
-## Registering a new stat will also add them to all existing [StatBlock]s and
+## Registering a new stat will also add them to all existing [NFStatBlock]s and
 ## include them on newly instantiated ones.
 func create_stat(stat_id: StringName, type: int) -> void:
 	if _stat_entries.has(stat_id):
@@ -342,7 +342,7 @@ func get_range_max(stat_id: StringName) -> float:
 
 
 ## Erases the custom stat [param stat_id] if it exists.[br]
-## Erasing a stat WON'T erase it from existing [StatBlock]s, but will prevent
+## Erasing a stat WON'T erase it from existing [NFStatBlock]s, but will prevent
 ## new ones from having the custom stat in them.
 func erase_stat(stat_id: StringName) -> void:
 	if not _stat_entries.has(stat_id):

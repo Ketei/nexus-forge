@@ -1,5 +1,5 @@
 @icon("res://addons/nexus_forge/icons/dna_sheet.svg")
-class_name SpeciesSheet
+class_name NFSpeciesSheet
 extends Resource
 ## A resource containing the basic information of a species.
 ##

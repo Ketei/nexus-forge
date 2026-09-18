@@ -2,7 +2,7 @@
 extends Control
 
 
-var recipes_link: EditorItemRecipeLink = EditorItemRecipeLink.new()
+var recipes_link: NFEditorItemRecipeLink = NFEditorItemRecipeLink.new()
 var current_tab: int = 0
 var tool_count: int = 0
 
@@ -86,7 +86,7 @@ func _input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 
 
-func ready_plugin(use_discourse: bool, use_characters: bool, use_species: bool, use_stats: bool, use_skills: bool, use_traits: bool, use_items: bool, use_currencies: bool, use_recipes: bool, use_quests: bool, use_phrases: bool, discourse_base_lang: String) -> void:
+func ready_plugin(use_discourse: bool, use_characters: bool, use_species: bool, use_stats: bool, use_skills: bool, use_traits: bool, use_items: bool, use_currencies: bool, use_recipes: bool, use_quests: bool, use_phrases: bool, discourse_base_lang: String, paths_obj_reference: RefCounted) -> void:
 	set_process_input(true)
 	
 	variables = load("res://addons/nexus_forge/variables/variables_main.tscn").instantiate()
@@ -141,16 +141,19 @@ func ready_plugin(use_discourse: bool, use_characters: bool, use_species: bool, 
 		discourse.ready_plugin(discourse_base_lang)
 	variables.ready_plugin()
 	if characters != null:
+		characters._script_paths = paths_obj_reference
 		characters.ready_plugin()
 	if species != null:
 		species.ready_plugin()
 	if talents != null:
+		talents._script_paths = paths_obj_reference
 		talents.ready_plugin(use_stats, use_skills, use_traits)
 	if items != null:
-		items.ready_plugin(use_items, use_currencies)
+		items.ready_plugin(use_items, use_currencies, paths_obj_reference)
 	if recipes != null:
 		recipes.ready_plugin()
 	if quests != null:
+		quests._script_paths = paths_obj_reference
 		quests.ready_plugin()
 	if phrase_maps != null:
 		phrase_maps.ready_plugin()
@@ -210,8 +213,8 @@ func _get_variables_for(path: String) -> Array[Dictionary]:
 	
 	paths.sort_custom(
 		func(a:Dictionary, b:Dictionary):
-			var distance_a: float = StringUtils.levenshtein_similarity(a["path"], path)
-			var distance_b: float = StringUtils.levenshtein_similarity(b["path"], path)
+			var distance_a: float = NFStringUtils.levenshtein_similarity(a["path"], path)
+			var distance_b: float = NFStringUtils.levenshtein_similarity(b["path"], path)
 			return distance_b < distance_a)
 	
 	return paths
@@ -290,7 +293,7 @@ func handle_resource(resource: Resource) -> void:
 		else:
 			go_to_tab(discourse.get_index())
 		discourse.plugin_file_selected(resource)
-	elif resource is CharacterSheet:
+	elif resource is NFCharacterSheet:
 		if characters == null:
 			NFPluginGameHandler._log_msg(
 					"editor",
@@ -299,8 +302,8 @@ func handle_resource(resource: Resource) -> void:
 		else:
 			go_to_tab(characters.get_index())
 			characters.plugin_open_resource(resource)
-	elif resource is PhraseMap:
-		if PhraseMap == null:
+	elif resource is NFPhraseMap:
+		if NFPhraseMap == null:
 			NFPluginGameHandler._log_msg(
 					"editor",
 					"Phrase Maps are disabled. Can't edit resource.",
@@ -308,7 +311,7 @@ func handle_resource(resource: Resource) -> void:
 		else:
 			go_to_tab(phrase_maps.get_index())
 			phrase_maps.plugin_open_resource(resource)
-	elif resource is Quest:
+	elif resource is NFQuest:
 		if discourse == null:
 			NFPluginGameHandler._log_msg(
 					"editor",

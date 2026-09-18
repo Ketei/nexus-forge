@@ -10,12 +10,12 @@ signal item_deleted(item_id: StringName)
 
 const PAGE_LABEL_STRING: String = "%d / %d"
 
-var item_link: EditorItemRecipeLink = EditorItemRecipeLink.new():
+var item_link: NFEditorItemRecipeLink = NFEditorItemRecipeLink.new():
 	set(new_link):
 		new_link.items = item_link.items
 		item_link.items = null
 		item_link = new_link
-var currency_resource: CurrencyCatalog = null
+var currency_resource: NFCurrencyCatalog = null
 
 var items_ui_enabled: bool = true
 var currency_ui_enabled: bool = true
@@ -31,6 +31,7 @@ var exp_parser: Expression = null
 
 var _items_unsaved: bool = false
 var _currency_unsaved: bool = false
+var _script_paths: RefCounted = null
 
 @onready var search_item_container: LineEdit = $ItemsPanel/ItemsContainer/TreeContainer/ItemSearchContainer/SearchItemContainer
 @onready var new_item_btn: Button = $ItemsPanel/ItemsContainer/TreeContainer/ItemSearchContainer/NewItemBtn
@@ -79,7 +80,6 @@ var _currency_unsaved: bool = false
 @onready var go_to_calc_btn: Button = $CurrencyPanel/CurrencyContainer/GoToCalcBtn
 
 # --------------------------
-
 
 func ready_plugin(use_items: bool, use_currencies: bool, max_undo_steps: int) -> void:
 	exp_parser = Expression.new()
@@ -165,7 +165,15 @@ func ready_plugin(use_items: bool, use_currencies: bool, max_undo_steps: int) ->
 
 
 func _on_edit_rarities_pressed() -> void:
-	var item_script: Script = ItemSheet.new().get_script()
+	var path: String = _script_paths.get_class_script_path("NFItemSheet")
+	if path.is_empty():
+		NFPluginGameHandler._log_msg(
+				"depot - editor",
+				"Couldn't find NFItemSheet class file.",
+				NFPluginGameHandler._LogLevel.ERROR)
+		return
+	
+	var item_script: Script = load(path)
 	var source_code: String = item_script.source_code
 	
 	if source_code.is_empty():
@@ -202,7 +210,14 @@ func _on_edit_rarities_pressed() -> void:
 
 
 func _on_edit_flags_pressed() -> void:
-	var item_script: Script = ItemSheet.new().get_script()
+	var path: String = _script_paths.get_class_script_path("NFItemSheet")
+	if path.is_empty():
+		NFPluginGameHandler._log_msg(
+				"depot - editor",
+				"Couldn't find NFItemSheet class file.",
+				NFPluginGameHandler._LogLevel.ERROR)
+		return
+	var item_script: Script = load(path)
 	var source_code: String = item_script.source_code
 	
 	if source_code.is_empty():
@@ -299,7 +314,7 @@ func _on_create_currency_database_pressed(node: Control) -> void:
 	var result = await database_creator.dialog_finished
 	
 	if result[0]:
-		currency_resource = CurrencyCatalog.new()
+		currency_resource = NFCurrencyCatalog.new()
 		currency_resource.resource_path = result[1]
 		ResourceSaver.save(currency_resource, result[1])
 		ProjectSettings.set_setting(
@@ -325,7 +340,7 @@ func _on_load_currency_database_pressed(node: Control) -> void:
 	
 	if result[0]:
 		var res_pre: Resource = load(result[1])
-		if res_pre != null and res_pre is CurrencyCatalog:
+		if res_pre != null and res_pre is NFCurrencyCatalog:
 			currency_resource = res_pre
 			ProjectSettings.set_setting(
 					NFPluginGameHandler.get_setting_path("currency"),
@@ -520,7 +535,7 @@ func reload_currency_resource(first_launch: bool = false) -> void:
 	
 	if currency_path != "" and FileAccess.file_exists(currency_path):
 		var res_pre: Resource = load(currency_path)
-		if res_pre is CurrencyCatalog:
+		if res_pre is NFCurrencyCatalog:
 			currency_resource = res_pre
 	
 	$CurrencyPanel/CurrencyContainer.visible = currency_resource != null
@@ -532,7 +547,7 @@ func reload_currency_resource(first_launch: bool = false) -> void:
 			var no_db := preload("res://addons/nexus_forge/no_db_container.tscn").instantiate()
 			$CurrencyPanel.add_child(no_db)
 			no_db.message_minimum_size.x = 250.0
-			no_db.set_resource_type("CurrencyCatalog", "Currency", "Currencies")
+			no_db.set_resource_type("NFCurrencyCatalog", "Currency", "Currencies")
 			no_db.create_resource_pressed.connect(_on_create_currency_database_pressed.bind(no_db))
 			no_db.load_resource_pressed.connect(_on_load_currency_database_pressed.bind(no_db))
 			no_db.resource_dropped.connect(_on_currency_resource_dropped.bind(no_db))
@@ -915,7 +930,7 @@ func _on_create_database_pressed(node: Control) -> void:
 	var result = await database_creator.dialog_finished
 	
 	if result[0]:
-		var item_resource: ItemCatalog = ItemCatalog.new()
+		var item_resource: NFItemCatalog = NFItemCatalog.new()
 		ResourceSaver.save(item_resource, result[1])
 		item_resource.resource_path = result[1]
 		item_link.items = item_resource
@@ -943,7 +958,7 @@ func _on_load_database_pressed(node: Control) -> void:
 	
 	if result[0]:
 		var res_pre: Resource = load(result[1])
-		if res_pre != null and res_pre is ItemCatalog:
+		if res_pre != null and res_pre is NFItemCatalog:
 			item_link.items = res_pre
 			ProjectSettings.set_setting(
 					NFPluginGameHandler.get_setting_path("items"),
@@ -1051,8 +1066,7 @@ func _on_create_item_pressed() -> void:
 	id_creator.error_line_blacklist_character_msg = "Spaces disallowed"
 	id_creator.error_line_empty_msg = "ID can't be empty"
 	
-	add_child(id_creator)
-	id_creator.popup_centered()
+	EditorInterface.popup_dialog_centered(id_creator)
 	id_creator.grab_text_focus()
 	
 	var result = await id_creator.dialog_finished
@@ -1126,7 +1140,7 @@ func save_current_item() -> void:
 	for item_key in data:
 		item_link.items.set_item_data(loaded_item, item_key, data[item_key])
 	
-	var flags: Array[ItemSheet.ItemFlag] = []
+	var flags: Array[NFItemSheet.ItemFlag] = []
 	
 	for flag:CheckBox in items_flags_container.get_children():
 		if flag.button_pressed:
@@ -1137,7 +1151,7 @@ func save_current_item() -> void:
 
 
 func load_item(item_id: StringName) -> void:
-	var item: ItemSheet = item_link.items.get_item(item_id)
+	var item: NFItemSheet = item_link.items.get_item(item_id)
 	
 	if item == null:
 		NFPluginGameHandler._log_msg(
@@ -1166,7 +1180,7 @@ func load_item(item_id: StringName) -> void:
 						flag.get_meta(&"flag_value")))
 
 
-func select_rarity(rarity: ItemSheet.Rarity) -> void:
+func select_rarity(rarity: NFItemSheet.Rarity) -> void:
 	for item_idx in range(rarity_opt_btn.item_count):
 		if rarity_opt_btn.get_item_metadata(item_idx) == rarity:
 			rarity_opt_btn.select(item_idx)
@@ -1188,7 +1202,7 @@ func reload_item_resource(first_launch: bool = false) -> void:
 	
 	if item_path != "" and FileAccess.file_exists(item_path):
 		var res_pre: Resource = load(item_path)
-		if res_pre is ItemCatalog:
+		if res_pre is NFItemCatalog:
 			item_link.items = res_pre
 	
 	$ItemsPanel/ItemsContainer.visible = item_link.items != null
@@ -1201,7 +1215,7 @@ func reload_item_resource(first_launch: bool = false) -> void:
 			var no_db := preload("res://addons/nexus_forge/no_db_container.tscn").instantiate()
 			$ItemsPanel.add_child(no_db)
 			no_db.message_minimum_size.x = 450.0
-			no_db.set_resource_type("ItemCatalog", "Depot", "Items")
+			no_db.set_resource_type("NFItemCatalog", "Depot", "Items")
 			no_db.create_resource_pressed.connect(_on_create_database_pressed.bind(no_db))
 			no_db.load_resource_pressed.connect(_on_load_database_pressed.bind(no_db))
 			no_db.resource_dropped.connect(_on_items_resource_dropped.bind(no_db))
@@ -1263,7 +1277,15 @@ func select_category(category_id: StringName, uncategorized_if_not_found: bool =
 
 
 func reload_fields() -> void:
-	var constant_map: Dictionary = ItemSheet.new().get_script().get_script_constant_map()
+	var path: String = _script_paths.get_class_script_path()
+	if path.is_empty():
+		NFPluginGameHandler._log_msg(
+				"depot - editor",
+				"Couldn't load NFItemSheet class file.",
+				NFPluginGameHandler._LogLevel.ERROR)
+		return
+	var item_script: Script = load(path)
+	var constant_map: Dictionary = item_script.get_script_constant_map()
 	
 	if constant_map.has(&"Rarity"):
 		var rarities: Dictionary = constant_map[&"Rarity"]
@@ -1384,7 +1406,7 @@ func _do_update_flag_toggled(flag_id: String, set_pressed: bool) -> void:
 			NFPluginGameHandler._LogLevel.EDITOR)
 
 
-func create_flag_item(flag_id: String, flag_value: ItemSheet.ItemFlag) -> CheckBox:
+func create_flag_item(flag_id: String, flag_value: NFItemSheet.ItemFlag) -> CheckBox:
 	var new_flag: CheckBox = CheckBox.new()
 	new_flag.text = flag_id.capitalize()
 	new_flag.set_meta(&"flag_value", flag_value)

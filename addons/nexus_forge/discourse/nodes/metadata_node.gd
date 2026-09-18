@@ -204,7 +204,7 @@ func get_valid_metadata_id(desired: String, skip: LineEdit = null) -> String:
 	if used_ids.has(desired):
 		var base: String = desired
 		var modified: String = desired
-		var trailing_data: Dictionary = StringUtils.get_trailing_integer(desired)
+		var trailing_data: Dictionary = NFStringUtils.get_trailing_integer(desired)
 		var iteration: int = trailing_data["integer"]
 		if trailing_data["has_integer"]:
 			base = base.trim_suffix(str(iteration))

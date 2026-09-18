@@ -1,5 +1,5 @@
 @tool
-extends IDTree
+extends NFIDTree
 
 
 signal data_created(path: String, index: int ,data: Variant)

@@ -1,4 +1,4 @@
-class_name ArrayUtils
+class_name NFArrayUtils
 extends RefCounted
 ## A collection of static functions to modify arrays.
 
@@ -88,21 +88,21 @@ static func insert_sorted_desc(array: Array, item: Variant) -> void:
 
 ## Simple sorting fucntion for [method Array.sort_custom][br]
 ## Does a simple [code]item_b < item_a[/code][br]
-## Usage: [code]Array.sort_custom(ArrayUtils.sort_custom_desc)[/code]
+## Usage: [code]Array.sort_custom(NFArrayUtils.sort_custom_desc)[/code]
 static func sort_custom_desc(item_a: Variant, item_b: Variant) -> bool:
 	return item_b < item_a
 
 
 ## Simple sorting function for [method Array.sort_custom] when the arrays
 ## contain strings. Sorts item in an alphabetically ascending order. Case insensitive.[br]
-## Usage: [code]Array.sort_custom(ArrayUtils.sort_custom_alphabetically_asc)[/code]
+## Usage: [code]Array.sort_custom(NFArrayUtils.sort_custom_alphabetically_asc)[/code]
 static func sort_custom_alphabetically_asc(string_a: String, string_b: String) -> bool:
 	return string_a.naturalnocasecmp_to(string_b) < 0
 
 
 ## Simple sorting function for [method Array.sort_custom] when the arrays
 ## contain strings. Sorts item in an alphabetically descending order. Case insensitive.[br]
-## Usage: [code]Array.sort_custom(ArrayUtils.sort_custom_alphabetically_desc)[/code]
+## Usage: [code]Array.sort_custom(NFArrayUtils.sort_custom_alphabetically_desc)[/code]
 static func sort_custom_alphabetically_desc(string_a: String, string_b: String) -> bool:
 	return string_b.naturalnocasecmp_to(string_a) < 0
 

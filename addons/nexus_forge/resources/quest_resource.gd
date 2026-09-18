@@ -1,6 +1,6 @@
 @tool
 @icon("res://addons/nexus_forge/icons/scroll_full.svg")
-class_name Quest
+class_name NFQuest
 extends Resource
 
 
@@ -44,7 +44,7 @@ static var _regex_formatter: RegEx
 ## completes. Currently only success and failure are supported.
 @export var events: Dictionary[StringName, Dictionary] = {}
 
-@export var _stages: Dictionary[StringName, QuestStage] = {}
+@export var _stages: Dictionary[StringName, NFQuestStage] = {}
 
 var _title_builder: Callable = Callable()
 var _description_builder: Callable = Callable()
@@ -60,7 +60,7 @@ static func _static_init() -> void:
 	_regex_formatter.compile("\\{\\$[^\\}]+\\}")
 
 
-## Returns the quest [member Quest.title]. Formats it if [code]Format Quest Strings with Blackboard[/code]
+## Returns the quest [member NFQuest.title]. Formats it if [code]Format NFQuest Strings with Blackboard[/code]
 ## is [code]On[/code] on [code]Project Settings[/code].
 func get_quest_title() -> String:
 	if not ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("items_format_strings"), false):
@@ -84,7 +84,7 @@ func get_quest_title() -> String:
 	return _build_format(title, title_formats)
 
 
-## Returns the item [member Quest.description]. Formats it if [code]Format Quest Strings with Blackboard[/code]
+## Returns the item [member NFQuest.description]. Formats it if [code]Format NFQuest Strings with Blackboard[/code]
 ## is [code]On[/code] on [code]Project Settings[/code].
 func get_quest_description() -> String:
 	if not ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("items_format_strings"), false):
@@ -116,9 +116,9 @@ func stages() -> Array[StringName]:
 
 
 ## Adds a new stage to this quest.[br]
-## [b]Note:[/b] Ensure that the [member QuestStage.id] from [param stage] is
+## [b]Note:[/b] Ensure that the [member NFQuestStage.id] from [param stage] is
 ## unique or it'll be overwriting an existing stage.
-func add_stage(stage: QuestStage) -> void:
+func add_stage(stage: NFQuestStage) -> void:
 	_stages[stage.id] = stage
 
 
@@ -134,7 +134,7 @@ func has_stage(stage_id: StringName) -> bool:
 
 ## Returns the stage object from [param stage_id] or [code]null[/code] if the stage
 ## doesn't exist.
-func get_stage(stage_id: StringName) -> QuestStage:
+func get_stage(stage_id: StringName) -> NFQuestStage:
 	if _stages.has(stage_id):
 		return _stages[stage_id]
 	return null

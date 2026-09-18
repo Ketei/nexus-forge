@@ -1,6 +1,6 @@
 @tool
 @icon("res://addons/nexus_forge/icons/rune_stones.svg")
-class_name TraitBlock
+class_name NFTraitBlock
 extends Resource
 ## A resource holding a character's traits.
 ##
@@ -21,7 +21,7 @@ static var _script_path: String = ""
 
 static func _static_init() -> void:
 	for cls in ProjectSettings.get_global_class_list():
-		if cls["class"] == "TraitBlock":
+		if cls["class"] == "NFTraitBlock":
 			_script_path = cls["path"]
 			break
 
@@ -48,7 +48,7 @@ static func traits() -> Array[StringName]:
 	var data: Array[Dictionary] = block_script.get_script_property_list()
 	
 	for item in data:
-		if item["type"] != TYPE_INT or not BitUtils.are_bits(item["usage"], MASK, true):
+		if item["type"] != TYPE_INT or not NFBitUtils.are_bits(item["usage"], MASK, true):
 			continue
 		all_traits.append(StringName(item["name"]))
 	
@@ -70,10 +70,10 @@ func custom_traits() -> Array[StringName]:
 
 ## Creates a custom trait and sets it to [param value] which can then be
 ## accessed and modified directly like
-## [code]TraitBlock.my_custom_trait[/code].[br]
+## [code]NFTraitBlock.my_custom_trait[/code].[br]
 ## Custom traits are tracked individually with exception of the traits
-## registered on runtime with [method TraitCatalog.create_custom_trait] on the
-## [code]NexusForge.Traits[/code] singleton which are added to all [TraitBlock]s
+## registered on runtime with [method NFTraitCatalog.create_custom_trait] on the
+## [code]NexusForge.Traits[/code] singleton which are added to all [NFTraitBlock]s
 func create_custom(trait_id: StringName, value: int = 0) -> void:
 	if _custom_traits.has(trait_id):
 		return

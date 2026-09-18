@@ -1,5 +1,5 @@
 @tool
-class_name IDTree
+class_name NFIDTree
 extends Tree
 
 

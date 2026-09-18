@@ -349,7 +349,7 @@ func _set_type_fields(type: int) -> void:
 		min_spinbox.step = 1.0
 		min_spinbox.allow_lesser = false
 		min_spinbox.allow_greater = false
-		if not RangeUtils.is_between(min_spinbox.value, 0.0, 100.0):
+		if not NFRangeUtils.is_between(min_spinbox.value, 0.0, 100.0):
 			min_spinbox.set_value_no_signal(clampf(min_spinbox.value, 0.0, 100.0))
 		set_field_visible(&"max_value", false)
 		set_deferred(&"size", Vector2(240.0, 85.0))

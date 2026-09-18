@@ -40,12 +40,13 @@ func _input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 
 
-func ready_plugin(use_items: bool, use_currencies: bool) -> void:
+func ready_plugin(use_items: bool, use_currencies: bool, paths_resource: RefCounted) -> void:
 	set_process_input(true)
 	items_container.ready_plugin(use_items, use_currencies, MAX_UNDO_STEPS)
 	if use_items:
 		if items_container.item_link.items != null:
 			categories_container.items_resource = items_container.item_link.items
+		items_container._script_paths = paths_resource
 		categories_container.ready_plugin(MAX_UNDO_STEPS)
 	
 	items_container.visible = true
@@ -114,7 +115,7 @@ func _on_category_id_updated(from: StringName, to: StringName) -> void:
 
 
 func _on_resource_loaded() -> void:
-	var res: ItemCatalog = items_container.item_link.items
+	var res: NFItemCatalog = items_container.item_link.items
 	
 	categories_container.items_resource = res
 	categories_container.reload_categories()

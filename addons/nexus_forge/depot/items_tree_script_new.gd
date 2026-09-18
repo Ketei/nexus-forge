@@ -337,7 +337,7 @@ func get_valid_id(desired: String, skip_item: StringName = &"") -> String:
 	
 	var base: String = desired
 	var modified: String = desired
-	var trailing_data: Dictionary = StringUtils.get_trailing_integer(base)
+	var trailing_data: Dictionary = NFStringUtils.get_trailing_integer(base)
 	var iteration: int = trailing_data["integer"]
 	if trailing_data["has_integer"]:
 		base = desired.trim_suffix(str(iteration))

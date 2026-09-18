@@ -348,7 +348,7 @@ func get_valid_id(desired: String, skip: TreeItem = null) -> String:
 	var all_ids: Dictionary[String, Variant] = {}
 	var base: String = desired
 	var modified: String = desired
-	var trailing_data: Dictionary = StringUtils.get_trailing_integer(desired)
+	var trailing_data: Dictionary = NFStringUtils.get_trailing_integer(desired)
 	var iteration: int = trailing_data["integer"]
 	if trailing_data["has_integer"]:
 		base = desired.trim_suffix(str(iteration))

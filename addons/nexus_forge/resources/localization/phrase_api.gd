@@ -1,5 +1,5 @@
-class_name PhraseAPI
+class_name NFPhraseAPI
 extends RefCounted
-## An object containing the methods that [PhraseMap] will have access to.
+## An object containing the methods that [NFPhraseMap] will have access to.
 ##
-## When [PhraseMap] has to call a method, it'll do so from this object.
+## When [NFPhraseMap] has to call a method, it'll do so from this object.

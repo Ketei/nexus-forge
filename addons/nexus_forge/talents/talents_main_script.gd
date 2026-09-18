@@ -4,13 +4,15 @@ extends PanelContainer
 
 const UNDO_MAX_STEPS: int = 50
 
-var _skills_resource: SkillCatalog
-var _traits_resource: TraitCatalog
-var _stats_resource: StatCatalog
+var _skills_resource: NFSkillCatalog
+var _traits_resource: NFTraitCatalog
+var _stats_resource: NFStatCatalog
 
 var _skills_unsaved: bool = false
 var _traits_unsaved: bool = false
 var _stats_unsaved: bool = false
+
+var _script_paths: RefCounted = null
 
 var loaded_skill: StringName = &""
 var loaded_trait: StringName = &""
@@ -21,7 +23,7 @@ var undo: UndoRedo = null
 @onready var skill_opt_btn: OptionButton = $MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer/SkillSelectContainer/SkillContainer/SkillOptBtn
 @onready var skill_ln_edt: LineEdit = $MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer/NameContainer/SkillLnEdt
 @onready var skill_desc_txt_edt: TextEdit = $MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer/DesContainer/SkillDescTxtEdt
-@onready var skill_data_tree: IDTree = $MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer/DataContainer/SkillDataTree
+@onready var skill_data_tree: NFIDTree = $MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer/DataContainer/SkillDataTree
 @onready var skill_int_btn: Button = $MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader/ButtonContainer/SkillIntBtn
 @onready var skill_flt_btn: Button = $MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader/ButtonContainer/SkillFltBtn
 @onready var skill_bool_btn: Button = $MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer/DataContainer/DataHeader/ButtonContainer/SkillBoolBtn
@@ -178,19 +180,43 @@ func do_redo() -> void:
 
 
 func _on_edit_skillset_pressed() -> void:
-	EditorInterface.edit_script(SkillSet.new().get_script())
+	var path: String = _script_paths.get_class_script_path("NFSkillSet")
+	if path.is_empty():
+		NFPluginGameHandler._log_msg(
+				"talents - editor",
+				"Couldn't find class 'NFSkillSet' script.",
+				NFPluginGameHandler._LogLevel.ERROR)
+		return
+	var scr: Script = load(path)
+	EditorInterface.edit_script(scr)
 	if not EditorInterface.get_editor_settings().get_setting("text_editor/external/use_external_editor"):
 		EditorInterface.set_main_screen_editor("Script")
 
 
 func _on_edit_traitblock_pressed() -> void:
-	EditorInterface.edit_script(TraitBlock.new().get_script())
+	var path: String = _script_paths.get_class_script_path("NFTraitBlock")
+	if path.is_empty():
+		NFPluginGameHandler._log_msg(
+				"talents - editor",
+				"Couldn't find class 'NFTraitBlock' script.",
+				NFPluginGameHandler._LogLevel.ERROR)
+		return
+	var scr: Script = load(path)
+	EditorInterface.edit_script(scr)
 	if not EditorInterface.get_editor_settings().get_setting("text_editor/external/use_external_editor"):
 		EditorInterface.set_main_screen_editor("Script")
 
 
 func _on_edit_statblock_pressed() -> void:
-	EditorInterface.edit_script(StatBlock.new().get_script())
+	var path: String = _script_paths.get_class_script_path("NFStatBlock")
+	if path.is_empty():
+		NFPluginGameHandler._log_msg(
+				"talents - editor",
+				"Couldn't find class 'NFStatBlock' script.",
+				NFPluginGameHandler._LogLevel.ERROR)
+		return
+	var scr: Script = load(path)
+	EditorInterface.edit_script(scr)
 	if not EditorInterface.get_editor_settings().get_setting("text_editor/external/use_external_editor"):
 		EditorInterface.set_main_screen_editor("Script")
 
@@ -204,7 +230,7 @@ func reload_skill_resource(first_launch: bool = false) -> void:
 	
 	if not skills_path.is_empty() and ResourceLoader.exists(skills_path):
 		var preload_skill_res: Resource = load(skills_path)
-		if preload_skill_res is SkillCatalog:
+		if preload_skill_res is NFSkillCatalog:
 			_skills_resource = preload_skill_res
 	
 	if _skills_resource == null:
@@ -213,7 +239,7 @@ func reload_skill_resource(first_launch: bool = false) -> void:
 			var no_db: Control = load("res://addons/nexus_forge/no_db_container.tscn").instantiate()
 			$MainContainer/StatSkillContainer/SkillsPanel.add_child(no_db)
 			no_db.message_minimum_size.x = 450
-			no_db.set_resource_type("SkillCatalog", "Skills", "Skills")
+			no_db.set_resource_type("NFSkillCatalog", "Skills", "Skills")
 			no_db.create_resource_pressed.connect(_on_create_skill_resource_pressed.bind(no_db))
 			no_db.load_resource_pressed.connect(_on_load_skill_resource_pressed.bind(no_db))
 			no_db.resource_dropped.connect(_on_skill_resource_dropped.bind(no_db))
@@ -235,7 +261,7 @@ func reload_trait_resource(first_launch: bool = false) -> void:
 	
 	if not traits_path.is_empty() and ResourceLoader.exists(traits_path):
 		var preload_traits_res = load(traits_path)
-		if preload_traits_res is TraitCatalog:
+		if preload_traits_res is NFTraitCatalog:
 			_traits_resource = preload_traits_res
 	
 	if _traits_resource == null:
@@ -244,7 +270,7 @@ func reload_trait_resource(first_launch: bool = false) -> void:
 			var no_db: Control = load("res://addons/nexus_forge/no_db_container.tscn").instantiate()
 			$MainContainer/TraitsPanel.add_child(no_db)
 			no_db.message_minimum_size.x = 450
-			no_db.set_resource_type("TraitCatalog", "Traits", "Traits")
+			no_db.set_resource_type("NFTraitCatalog", "Traits", "Traits")
 			no_db.create_resource_pressed.connect(_on_create_traits_resource_pressed.bind(no_db))
 			no_db.load_resource_pressed.connect(_on_load_traits_resource_pressed.bind(no_db))
 			no_db.resource_dropped.connect(_on_traits_resource_dropped.bind(no_db))
@@ -265,7 +291,7 @@ func reload_stat_resource(first_launch: bool = false) -> void:
 			"")
 	if not stats_path.is_empty() and ResourceLoader.exists(stats_path):
 		var preload_stats_res = load(stats_path)
-		if preload_stats_res != null and preload_stats_res is StatCatalog:
+		if preload_stats_res != null and preload_stats_res is NFStatCatalog:
 			_stats_resource = preload_stats_res
 	
 	if _stats_resource == null:
@@ -274,7 +300,7 @@ func reload_stat_resource(first_launch: bool = false) -> void:
 			var no_db: Control = load("res://addons/nexus_forge/no_db_container.tscn").instantiate()
 			$MainContainer/StatSkillContainer/StatsPanel.add_child(no_db)
 			no_db.message_minimum_size.x = 450
-			no_db.set_resource_type("StatCatalog", "Stats", "Stats")
+			no_db.set_resource_type("NFStatCatalog", "Stats", "Stats")
 			no_db.create_resource_pressed.connect(_on_create_stat_resource_pressed.bind(no_db))
 			no_db.load_resource_pressed.connect(_on_load_stat_resource_pressed.bind(no_db))
 			no_db.resource_dropped.connect(_on_stat_resource_dropped.bind(no_db))
@@ -296,7 +322,7 @@ func _on_create_skill_resource_pressed(panel: PanelContainer) -> void:
 	var result = await res_loader.dialog_finished
 	
 	if result[0]:
-		_skills_resource = SkillCatalog.new()
+		_skills_resource = NFSkillCatalog.new()
 		ResourceSaver.save(_skills_resource, result[1])
 		_skills_resource.resource_path = result[1]
 		if ResourceLoader.has_cached(result[1]):
@@ -326,7 +352,7 @@ func _on_load_skill_resource_pressed(panel: PanelContainer) -> void:
 	
 	if result[0]:
 		var res_pre: Resource = load(result[1])
-		if res_pre != null and res_pre is SkillCatalog:
+		if res_pre != null and res_pre is NFSkillCatalog:
 			_skills_resource = res_pre
 			ProjectSettings.set_setting(
 					NFPluginGameHandler.get_setting_path("skills"),
@@ -404,7 +430,7 @@ func _on_skill_selected(skill_idx: int) -> void:
 func load_skill(skill_id: StringName) -> void:
 	var skill_name: String = _skills_resource.get_skill_name(skill_id)
 	var skill_desc: String = _skills_resource.get_skill_description(skill_id)
-	var data: Dictionary = DictUtils.get_nested_value(
+	var data: Dictionary = NFDictUtils.get_nested_value(
 			_skills_resource._skill_data,
 			[skill_id, "data"],
 			{},
@@ -433,7 +459,7 @@ func load_skills_resource() -> void:
 	var disabled: bool = not skills_exist
 	
 	
-	var all_skills: Array[StringName] = SkillSet.skills()
+	var all_skills: Array[StringName] = NFSkillSet.skills()
 	
 	for skill in _skills_resource._skill_data.keys():
 		if all_skills.has(skill):
@@ -476,11 +502,11 @@ func set_skills_ui_enabled(set_enabled: bool) -> void:
 	skill_data_tree.enabled = set_enabled
 
 
-# Call when SkillSet is saved/changed.
+# Call when NFSkillSet is saved/changed.
 func reload_skills(reselect: bool = true) -> void:
 	var current_skill: StringName = &"" if skill_opt_btn.selected == -1 else skill_opt_btn.get_item_metadata(skill_opt_btn.selected)
 	
-	var all_skills: Array[StringName] = SkillSet.skills()
+	var all_skills: Array[StringName] = NFSkillSet.skills()
 	
 	all_skills.sort_custom(func(a,b): return String(a).naturalnocasecmp_to(String(b)) < 0)
 	var new_index: int = all_skills.find(current_skill) if reselect else -1
@@ -528,7 +554,7 @@ func reload_skills(reselect: bool = true) -> void:
 func _on_create_traits_resource_pressed(panel: PanelContainer) -> void:
 	var res_loader: FileDialog = load("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	res_loader.file_mode = res_loader.FILE_MODE_SAVE_FILE
-	res_loader.title = "Create StatBlock"
+	res_loader.title = "Create NFStatBlock"
 	res_loader.ok_button_text = "Save"
 	add_child(res_loader)
 	res_loader.show()
@@ -536,7 +562,7 @@ func _on_create_traits_resource_pressed(panel: PanelContainer) -> void:
 	var result = await res_loader.dialog_finished
 	
 	if result[0]:
-		_traits_resource = TraitCatalog.new()
+		_traits_resource = NFTraitCatalog.new()
 		ResourceSaver.save(_traits_resource, result[1])
 		_traits_resource.resource_path = result[1]
 		if ResourceLoader.has_cached(result[1]):
@@ -567,7 +593,7 @@ func _on_load_traits_resource_pressed(panel: PanelContainer) -> void:
 	
 	if result[0]:
 		var res_pre: Resource = load(result[1])
-		if res_pre != null and res_pre is TraitCatalog:
+		if res_pre != null and res_pre is NFTraitCatalog:
 			_traits_resource = res_pre
 			ProjectSettings.set_setting(
 					NFPluginGameHandler.get_setting_path("traits"),
@@ -641,7 +667,7 @@ func _on_trait_selected(trait_idx: int) -> void:
 func load_trait(trait_id: StringName) -> void:
 	var trait_name: String = _traits_resource.get_trait_name(trait_id)
 	var trait_desc: String = _traits_resource.get_trait_description(trait_id)
-	var data: Dictionary = DictUtils.get_nested_value(
+	var data: Dictionary = NFDictUtils.get_nested_value(
 			_traits_resource._trait_data,
 			[trait_id, "data"],
 			{},
@@ -707,7 +733,7 @@ func load_traits_resource() -> void:
 	trait_str_btn.disabled = disabled
 	trait_dict_btn.disabled = disabled
 	
-	var all_traits: Array[StringName] = TraitBlock.traits()
+	var all_traits: Array[StringName] = NFTraitBlock.traits()
 	
 	for existing_trait in _traits_resource._trait_data.keys():
 		if all_traits.has(existing_trait):
@@ -730,11 +756,11 @@ func load_traits_resource() -> void:
 		loaded_trait = trait_opt_btn.get_item_metadata(0)
 
 
-# Call when TraitBlock is saved/changed.
+# Call when NFTraitBlock is saved/changed.
 func reload_traits(reselect: bool = true) -> void:
 	var current_trait: StringName = &"" if trait_opt_btn.selected == -1 else trait_opt_btn.get_item_metadata(trait_opt_btn.selected)
 	
-	var all_traits: Array[StringName] = TraitBlock.traits()
+	var all_traits: Array[StringName] = NFTraitBlock.traits()
 	
 	all_traits.sort_custom(func(a,b): return String(a).naturalnocasecmp_to(String(b)) < 0)
 	var new_index: int = all_traits.find(current_trait) if reselect else -1
@@ -791,7 +817,7 @@ func _on_create_stat_resource_pressed(panel: PanelContainer) -> void:
 	var result = await res_loader.dialog_finished
 	
 	if result[0]:
-		_stats_resource = StatCatalog.new()
+		_stats_resource = NFStatCatalog.new()
 		ResourceSaver.save(_stats_resource, result[1])
 		_stats_resource.resource_path = result[1]
 		if ResourceLoader.has_cached(result[1]):
@@ -821,7 +847,7 @@ func _on_load_stat_resource_pressed(panel: PanelContainer) -> void:
 	
 	if result[0]:
 		var res_pre: Resource = load(result[1])
-		if res_pre != null and res_pre is StatCatalog:
+		if res_pre != null and res_pre is NFStatCatalog:
 			_stats_resource = res_pre
 			ProjectSettings.set_setting(
 					NFPluginGameHandler.get_setting_path("stats"),
@@ -899,7 +925,7 @@ func _on_stat_selected(stat_idx: int) -> void:
 func load_stat(stat_id: StringName) -> void:
 	var stat_name: String = _stats_resource.get_stat_name(stat_id)
 	var stat_desc: String = _stats_resource.get_stat_description(stat_id)
-	var data: Dictionary = DictUtils.get_nested_value(
+	var data: Dictionary = NFDictUtils.get_nested_value(
 			_stats_resource._stat_data,
 			[stat_id, "data"],
 			{},
@@ -927,7 +953,7 @@ func load_stats_resource() -> void:
 	var stat_exist: bool = 0 < stat_opt_btn.item_count
 	var disabled: bool = not stat_exist
 	
-	var stat_entries: Dictionary[StringName, int] = StatBlock.stats()
+	var stat_entries: Dictionary[StringName, int] = NFStatBlock.stats()
 	var all_stats: Array[StringName] = []
 	all_stats.assign(stat_entries.keys())
 	
@@ -972,11 +998,11 @@ func set_stats_ui_enabled(set_enabled: bool) -> void:
 	stat_data_tree.enabled = set_enabled
 
 
-# Call when SkillSet is saved/changed.
+# Call when NFSkillSet is saved/changed.
 func reload_stats(reselect: bool = true) -> void:
 	var current_stat: StringName = &"" if stat_opt_btn.selected == -1 else stat_opt_btn.get_item_metadata(stat_opt_btn.selected)
 	
-	var existing_stats: Dictionary[StringName, int] = StatBlock.stats()
+	var existing_stats: Dictionary[StringName, int] = NFStatBlock.stats()
 	var all_stats: Array[StringName] = []
 	all_stats.assign(existing_stats.keys())
 	

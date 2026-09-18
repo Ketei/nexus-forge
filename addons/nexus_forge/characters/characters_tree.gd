@@ -52,7 +52,7 @@ func select_character(resource_id: int, emit_selected: bool = true) -> void:
 				item_selected.connect(_on_item_selected)
 
 
-func create_character(resource: CharacterSheet, select: bool = false, emit_select: bool = true) -> void:
+func create_character(resource: NFCharacterSheet, select: bool = false, emit_select: bool = true) -> void:
 	var new_item: TreeItem = root.create_child()
 	new_item.set_text(0, resource.resource_path.get_file().get_basename())
 	new_item.set_tooltip_text(0, resource.resource_path)

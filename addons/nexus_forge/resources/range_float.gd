@@ -1,6 +1,6 @@
 @icon("res://addons/nexus_forge/icons/range_float.svg")
-class_name RangeFloat
-extends ValueRange
+class_name NFRangeFloat
+extends NFValueRange
 ## An object representing a floating point numerical range.
 
 

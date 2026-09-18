@@ -1,4 +1,4 @@
-class_name Math
+class_name NFMath
 extends RefCounted
 ## Class to perform math operations in a more convenient way.
 

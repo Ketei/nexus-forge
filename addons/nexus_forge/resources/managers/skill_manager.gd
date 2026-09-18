@@ -16,7 +16,7 @@ var _base_skills: Dictionary[StringName, Variant] = {}
 
 
 func _init() -> void:
-	for skill_id in SkillSet.skills():
+	for skill_id in NFSkillSet.skills():
 		var base_entry: NFCatalogEntry = NFCatalogEntry.new()
 		base_entry.name = String(skill_id)
 		base_entry._flags = NFCatalogEntry._get_flags(true, false, true)
@@ -28,7 +28,7 @@ func _init() -> void:
 
 ## Loads a skill param catalog into this object. If param clear_skills
 ## is [code]true[/code] then previous skills data is cleared.
-func load_catalog(catalog: SkillCatalog, clear_skills: bool = true) -> void:
+func load_catalog(catalog: NFSkillCatalog, clear_skills: bool = true) -> void:
 	if clear_skills:
 		for entry in _skills.keys():
 			if _base_skills.has(entry):
@@ -46,11 +46,11 @@ func load_catalog(catalog: SkillCatalog, clear_skills: bool = true) -> void:
 
 ## Returns all the IDs of the registered skills.
 func skills() -> Array[StringName]:
-	return ArrayUtils.create_typed(TYPE_STRING_NAME, _skills.keys())
+	return NFArrayUtils.create_typed(TYPE_STRING_NAME, _skills.keys())
 
 
 ## Creates a custom skill with [param skill_id]. Creating a custom skill using
-## this method will add it to all initialized and new [SkillSet] objects.
+## this method will add it to all initialized and new [NFSkillSet] objects.
 func create_skill(skill_id: StringName) -> void:
 	if _skills.has(skill_id):
 		return

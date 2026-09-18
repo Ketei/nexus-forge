@@ -1,5 +1,5 @@
 @tool
-class_name EditorItemRecipeLink
+class_name NFEditorItemRecipeLink
 extends RefCounted
 
 signal item_created(id: StringName, name: String)
@@ -7,8 +7,8 @@ signal item_renamed(id: StringName, new_name: String)
 signal item_id_changed(from: StringName, to: StringName)
 signal item_erased(item_id: StringName)
 
-var items: ItemCatalog = null
-var recipes: RecipeCatalog = null
+var items: NFItemCatalog = null
+var recipes: NFRecipeCatalog = null
 
 
 func create_item(id: StringName) -> void:

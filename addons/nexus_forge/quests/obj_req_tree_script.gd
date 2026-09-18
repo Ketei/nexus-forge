@@ -1,5 +1,5 @@
 @tool
-extends IDTree
+extends NFIDTree
 
 
 signal data_created(path: String, index: int , data: Variant, operator: int)
@@ -835,7 +835,7 @@ func get_path_from(item: TreeItem) -> String:
 	if path_items.is_empty():
 		return ""
 	else:
-		return StringUtils.make_path(path_items)
+		return NFStringUtils.make_path(path_items)
 
 
 func set_data(flat_data: Dictionary[String, Dictionary]) -> void:
@@ -849,7 +849,7 @@ func set_data(flat_data: Dictionary[String, Dictionary]) -> void:
 	for full_path in flat_data.keys():
 		var item_data: Dictionary = flat_data[full_path]
 		
-		var segments: Array[String] = ArrayUtils.create_typed(TYPE_STRING, Array(full_path.split("/")))
+		var segments: Array[String] = NFArrayUtils.create_typed(TYPE_STRING, Array(full_path.split("/")))
 		
 		var item_name: String = segments.pop_back()
 		

@@ -1,6 +1,6 @@
 @tool
 @icon("res://addons/nexus_forge/icons/stars.svg")
-class_name SkillSet
+class_name NFSkillSet
 extends Resource
 ## A resource holding a character's skills.
 ##
@@ -21,7 +21,7 @@ static var _script_path: String = ""
 
 static func _static_init() -> void:
 	for cls in ProjectSettings.get_global_class_list():
-		if cls["class"] == "SkillSet":
+		if cls["class"] == "NFSkillSet":
 			_script_path = cls["path"]
 			break
 
@@ -37,7 +37,7 @@ static func skills() -> Array[StringName]:
 	var data: Array[Dictionary] = skill_script.get_script_property_list()
 	
 	for item in data:
-		if item["type"] != TYPE_INT or not BitUtils.are_bits(item["usage"], MASK, true):
+		if item["type"] != TYPE_INT or not NFBitUtils.are_bits(item["usage"], MASK, true):
 			continue
 		all_skills.append(StringName(item["name"]))
 	
@@ -78,9 +78,9 @@ func custom_skills() -> Array[StringName]:
 
 ## Creates a custom skill and sets it to [param value] which can then be
 ## accessed and modified directly like
-## [code]SkillSet.my_custom_trait[/code].[br]
+## [code]NFSkillSet.my_custom_trait[/code].[br]
 ## Custom skills are tracked individually with exception of the custom skills
-## registered on runtime with [method SkillCatalog.create_custom_skill] on the
+## registered on runtime with [method NFSkillCatalog.create_custom_skill] on the
 ## [code]NexusForge.Skills[/code] singleton which all SkillSets contain.
 func create_custom(skill_id: StringName, value: int = 0) -> void:
 	_custom_skills[skill_id] = value
@@ -93,7 +93,7 @@ func get_custom(skill_id: StringName) -> int:
 	return 0
 
 
-## Returns true if this SkillSet contains the custom skill [param skill_id].
+## Returns true if this NFSkillSet contains the custom skill [param skill_id].
 func has_custom(skill_id: StringName) -> bool:
 	return _custom_skills.has(skill_id)
 

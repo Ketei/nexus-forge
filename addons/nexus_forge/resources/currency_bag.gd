@@ -1,5 +1,5 @@
 @icon("res://addons/nexus_forge/icons/wallet_bag_icon.svg")
-class_name CurrencyWallet
+class_name NFCurrencyWallet
 extends Resource
 ## A resource used for holding the currencies registered on
 ## [member NexusForge.Currency].
@@ -40,7 +40,7 @@ func add_funds(funds: Dictionary[StringName, int]) -> void:
 			continue
 		
 		if _wallet.has(fund):
-			_wallet[fund] = Math.safe_sum(_wallet[fund], funds[fund])
+			_wallet[fund] = NFMath.safe_sum(_wallet[fund], funds[fund])
 			updated = true
 		else:
 			_wallet[fund] = funds[fund]
@@ -60,7 +60,7 @@ func add_currency(currency: StringName, value: int) -> void:
 	
 	if _wallet.has(currency):
 		var prev: int = _wallet[currency]
-		_wallet[currency] = Math.safe_sum(_wallet[currency], value)
+		_wallet[currency] = NFMath.safe_sum(_wallet[currency], value)
 		if prev != _wallet[currency]:
 			emit_changed()
 	else:

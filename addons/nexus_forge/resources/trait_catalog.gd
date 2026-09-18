@@ -1,8 +1,8 @@
 @tool
 @icon("res://addons/nexus_forge/icons/rune_scroll.svg")
-class_name TraitCatalog
+class_name NFTraitCatalog
 extends Resource
-## A catalog for holding common data about the traits from [TraitBlock] as well
+## A catalog for holding common data about the traits from [NFTraitBlock] as well
 ## as global custom traits.
 ##
 ## Common data includes the name, description and custom data for each trait.
@@ -19,7 +19,7 @@ extends Resource
 
 #region Defined Traits
 
-## Sets a trait's name. The trait must exist in a [TraitBlock].
+## Sets a trait's name. The trait must exist in a [NFTraitBlock].
 func set_trait_name(trait_id: StringName, new_name: String) -> void:
 	if _trait_data.has(trait_id):
 		_trait_data[trait_id]["name"] = new_name
@@ -27,14 +27,14 @@ func set_trait_name(trait_id: StringName, new_name: String) -> void:
 
 ## Returns the trait [param trait_id] name.
 func get_trait_name(trait_id: StringName) -> String:
-	return DictUtils.get_nested_value(
+	return NFDictUtils.get_nested_value(
 			_trait_data,
 			[trait_id, "name"],
 			"",
 			true)
 
 
-## Sets the trait [param trait_id] description. The trait must exist in a [TraitBlock].
+## Sets the trait [param trait_id] description. The trait must exist in a [NFTraitBlock].
 func set_trait_description(trait_id: StringName, description: String) -> void:
 	if _trait_data.has(trait_id):
 		_trait_data[trait_id]["description"] = description
@@ -42,7 +42,7 @@ func set_trait_description(trait_id: StringName, description: String) -> void:
 
 ## Returns the trait [trait_id] description.
 func get_trait_description(trait_id: StringName) -> String:
-	return DictUtils.get_nested_value(
+	return NFDictUtils.get_nested_value(
 			_trait_data,
 			[trait_id, "description"],
 			"",
@@ -50,7 +50,7 @@ func get_trait_description(trait_id: StringName) -> String:
 
 
 ## Sets the data with key [param data_key] to [param data] of the trait
-## [param trait_id]. The trait must exist in a [TraitBlock].
+## [param trait_id]. The trait must exist in a [NFTraitBlock].
 func set_trait_data(trait_id: StringName, data_key: String, data: Variant) -> void:
 	if not _trait_data.has(trait_id):
 		return
@@ -71,7 +71,7 @@ func get_trait_data(trait_id: StringName, data_key: String) -> Variant:
 
 func get_trait_custom_data(trait_id: StringName) -> Dictionary[StringName, Variant]:
 	var data: Dictionary[StringName, Variant] = {}
-	data.assign(DictUtils.get_nested_value(
+	data.assign(NFDictUtils.get_nested_value(
 			_trait_data,
 			[trait_id, "custom_data"],
 			{},
@@ -97,7 +97,7 @@ func trait_data_keys(trait_id: StringName) -> Array[String]:
 ## Creates a custom trait with id [param trait_id] unless it already exists.
 ## It can after be accessed directly by calling [code]Traits.my_trait[/code][br]
 ## Creating a custom trait with this method will add them to all instantiated
-## [TraitBlock]s and newly instantiated ones will include them too.
+## [NFTraitBlock]s and newly instantiated ones will include them too.
 func create_trait(trait_id: StringName) -> void:
 	if _trait_data.has(trait_id):
 		return
@@ -105,7 +105,7 @@ func create_trait(trait_id: StringName) -> void:
 	var entry: Dictionary[String, Variant] = {
 		"name": String(trait_id).capitalize(),
 		"dscription": "",
-		"custom_data": DictUtils.create_typed(TYPE_STRING, TYPE_NIL)}
+		"custom_data": NFDictUtils.create_typed(TYPE_STRING, TYPE_NIL)}
 	
 	_trait_data[trait_id] = entry
 
@@ -116,7 +116,7 @@ func has_trait(trait_id: StringName) -> bool:
 
 
 ## Erases the custom trait [param trait_id].[br]
-## Erasing a trait doesn't remove it globally from existing [TraitBlock]s,
+## Erasing a trait doesn't remove it globally from existing [NFTraitBlock]s,
 ## but prevents it from being added to newly instantiated ones.
 func erase_trait(trait_id: StringName) -> void:
 	_trait_data.erase(trait_id)

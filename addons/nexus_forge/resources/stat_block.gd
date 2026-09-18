@@ -1,22 +1,22 @@
 @tool
 @icon("res://addons/nexus_forge/icons/stats.svg")
-class_name StatBlock
+class_name NFStatBlock
 extends Resource
 ## A resource that defines stats for characters.
 ##
 ## To add new stats and make them appear on NexusForge you need to add
-## a new variable with an export flag and type the stat as a [RangeInt] or
-## [RangeFloat] depending on what numerical value you want the stat to be.
+## a new variable with an export flag and type the stat as a [NFRangeInt] or
+## [NFRangeFloat] depending on what numerical value you want the stat to be.
 ## Example: 
 ## [codeblock]
-## @export var new_stat: RangeInt
+## @export var new_stat: NFRangeInt
 ## [/codeblock]
 
 static var _script_path: String = ""
 
-@export var health: RangeInt
+@export var health: NFRangeInt
 
-@export_storage var _custom_stats: Dictionary[StringName, ValueRange] = {}
+@export_storage var _custom_stats: Dictionary[StringName, NFValueRange] = {}
 
 # Global toggle to sync ranges and toggles with the singleton
 var _singleton_sync: bool = true
@@ -26,7 +26,7 @@ var _sync_blacklist: Dictionary[StringName, Variant] = {}
 
 static func _static_init() -> void:
 	for cls in ProjectSettings.get_global_class_list():
-		if cls["class"] == "StatBlock":
+		if cls["class"] == "NFStatBlock":
 			_script_path = cls["path"]
 			break
 
@@ -38,16 +38,16 @@ static func stats() -> Dictionary[StringName, int]:
 		return {}
 	
 	const MASK: int = PROPERTY_USAGE_SCRIPT_VARIABLE + PROPERTY_USAGE_STORAGE
-	const VALID_CLASSES: Array[StringName] = [&"RangeInt", &"RangeFloat"]
+	const VALID_CLASSES: Array[StringName] = [&"NFRangeInt", &"NFRangeFloat"]
 	
 	var block_script: Script = load(_script_path)
 	var all_stats: Dictionary[StringName, int] = {}
 	var data: Array[Dictionary] = block_script.get_script_property_list()
 	
 	for item in data:
-		if not VALID_CLASSES.has(item["class_name"]) or not BitUtils.are_bits(item["usage"], MASK, true):
+		if not VALID_CLASSES.has(item["class_name"]) or not NFBitUtils.are_bits(item["usage"], MASK, true):
 			continue
-		all_stats[StringName(item["name"])] = TYPE_INT if item["class_name"] == &"RangeInt" else TYPE_FLOAT
+		all_stats[StringName(item["name"])] = TYPE_INT if item["class_name"] == &"NFRangeInt" else TYPE_FLOAT
 	
 	return all_stats
 
@@ -60,7 +60,7 @@ func _init(use_nexus_forge: bool = true) -> void:
 		if NexusForge.StatManager.is_base_stat(custom_stat) or _custom_stats.has(custom_stat):
 			continue
 		
-		var new_range: ValueRange = RangeInt.new() if NexusForge.StatManager.stat_type(custom_stat) == TYPE_INT else RangeFloat.new()
+		var new_range: NFValueRange = NFRangeInt.new() if NexusForge.StatManager.stat_type(custom_stat) == TYPE_INT else NFRangeFloat.new()
 		
 		new_range.allow_lesser = NexusForge.StatManager.custom_allows_lesser(custom_stat)
 		new_range.allow_greater = NexusForge.StatManager.custom_allows_greater(custom_stat)
@@ -74,24 +74,24 @@ func _init(use_nexus_forge: bool = true) -> void:
 	NexusForge.StatManager.stat_clamping_toggled.connect(_on_stat_clamping_toggled)
 
 
-## This will make sure all stat variables of type RangeInt and
-## RangeFloat have objects assigned to them.
+## This will make sure all stat variables of type NFRangeInt and
+## NFRangeFloat have objects assigned to them.
 func initialize_ranges() -> void:
 	var variant: StringName = &""
 	for item in get_script().get_script_property_list():
-		if item["class_name"] == &"RangeInt":
+		if item["class_name"] == &"NFRangeInt":
 			variant = StringName(item["name"])
 			if get(variant) == null:
-				set(variant, RangeInt.new())
-		elif item["class_name"] == &"RangeFloat":
+				set(variant, NFRangeInt.new())
+		elif item["class_name"] == &"NFRangeFloat":
 			variant = StringName(item["name"])
 			if get(variant) == null:
-				set(variant, RangeFloat.new())
+				set(variant, NFRangeFloat.new())
 
 
 ## Assigns stats (built-in and custom) of another [param stat_block]
-## into the [StatBlock].
-func assign(stat_block: StatBlock) -> void:
+## into the [NFStatBlock].
+func assign(stat_block: NFStatBlock) -> void:
 	var properties: Dictionary[StringName, int] = stats()
 	for property in properties.keys():
 		set(property, stat_block.get(property))
@@ -102,7 +102,7 @@ func _on_custom_stat_created(stat_id: StringName) -> void:
 	if _custom_stats.has(stat_id):
 		return
 	
-	var new_range: ValueRange = RangeInt.new() if NexusForge.StatManager.stat_type(stat_id) == TYPE_INT else RangeFloat.new()
+	var new_range: NFValueRange = NFRangeInt.new() if NexusForge.StatManager.stat_type(stat_id) == TYPE_INT else NFRangeFloat.new()
 	var allows_lesser: bool = NexusForge.StatManager.allows_lesser(stat_id) 
 	var allows_greater: bool = NexusForge.StatManager.allows_greater(stat_id)
 	
@@ -127,7 +127,7 @@ func _on_stat_clamping_toggled(stat_id: StringName) -> void:
 	if not _singleton_sync or not _custom_stats.has(stat_id) or _sync_blacklist.has(stat_id):
 		return
 	
-	var stat: ValueRange = _custom_stats[stat_id]
+	var stat: NFValueRange = _custom_stats[stat_id]
 	var allow_greater: bool = NexusForge.StatManager.allows_greater(stat_id)
 	var allow_lesser: bool = NexusForge.StatManager.allows_lesser(stat_id)
 	
@@ -147,11 +147,11 @@ func custom_stats() -> Array[StringName]:
 
 ## Creates a custom stat of [param type] which can then be
 ## accessed and modified directly like
-## [code]StatBlock.my_custom_trait[/code]. This method returns
+## [code]NFStatBlock.my_custom_trait[/code]. This method returns
 ## the created object.[br]
 ## If [param stat_id] already exists and the [param type] matches the stat
 ## type, it returns the object, otherwise returns [code]null[/code]
-func create_custom(stat_id: StringName, type: int) -> ValueRange:
+func create_custom(stat_id: StringName, type: int) -> NFValueRange:
 	if _custom_stats.has(stat_id):
 		var class_type: int = TYPE_INT if type == TYPE_INT else TYPE_FLOAT
 		if _custom_stats[stat_id].range_type() == class_type:
@@ -159,14 +159,14 @@ func create_custom(stat_id: StringName, type: int) -> ValueRange:
 		else:
 			return null
 	
-	_custom_stats[stat_id] = RangeInt.new() if type == TYPE_INT else RangeFloat.new()
+	_custom_stats[stat_id] = NFRangeInt.new() if type == TYPE_INT else NFRangeFloat.new()
 	return _custom_stats[stat_id]
 
 
-## Gets the range of the custom [param stat_id]. Returns [RangeInt] or [RangeFloat]
+## Gets the range of the custom [param stat_id]. Returns [NFRangeInt] or [NFRangeFloat]
 ## depending on the stat type.[br]
 ## Returns [code]null[/code] if the stat doesn't exist.
-func get_custom(stat_id: StringName) -> ValueRange:
+func get_custom(stat_id: StringName) -> NFValueRange:
 	if _custom_stats.has(stat_id):
 		return _custom_stats[stat_id]
 	return null
@@ -205,16 +205,16 @@ func set_singleton_sync(enable: bool, sync_now: bool = true) -> void:
 
 
 ## Syncs all of this object's stats to match the data of the singleton, unless
-## the stat's sync was disabled with [method StatBlock.set_stat_sync].
+## the stat's sync was disabled with [method NFStatBlock.set_stat_sync].
 func sync_stats_with_singleton() -> void:
 	var existing_stats: Dictionary[StringName, int] = stats()
 	
 	for stat_id in existing_stats.keys():
 		if _sync_blacklist.has(stat_id):
 			continue
-		var stat_range: ValueRange = get(stat_id)
+		var stat_range: NFValueRange = get(stat_id)
 		if stat_range == null:
-			stat_range = RangeInt.new() if existing_stats[stat_id] == TYPE_INT else RangeFloat.new()
+			stat_range = NFRangeInt.new() if existing_stats[stat_id] == TYPE_INT else NFRangeFloat.new()
 			set(stat_id, stat_range)
 		sync_stat_with_singleton(stat_id)
 	
@@ -237,9 +237,9 @@ func set_stat_sync(stat_id: StringName, enable: bool, sync_now: bool = true) -> 
 
 
 ## Syncs a specific stat with the singleton values [b]REGARDLESS[/b] 
-## of whether the sync was disabled with [method StatBlock.set_stat_sync].
+## of whether the sync was disabled with [method NFStatBlock.set_stat_sync].
 func sync_stat_with_singleton(stat_id: StringName) -> void:
-	var stat_range: ValueRange = get(stat_id)
+	var stat_range: NFValueRange = get(stat_id)
 	if stat_range == null:
 		if _custom_stats.has(stat_id):
 			stat_range = _custom_stats[stat_id]

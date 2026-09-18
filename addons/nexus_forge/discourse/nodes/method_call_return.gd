@@ -202,7 +202,7 @@ func reload_methods() -> void:
 	var all_methods: Array = available_methods.keys()
 	var new_select: int = -1
 	
-	all_methods.sort_custom(ArrayUtils.sort_custom_alphabetically_asc)
+	all_methods.sort_custom(NFArrayUtils.sort_custom_alphabetically_asc)
 	
 	if selected_method != "":
 		new_select = all_methods.find(selected_method)

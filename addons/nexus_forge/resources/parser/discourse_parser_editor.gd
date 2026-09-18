@@ -95,7 +95,7 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 	if data.is_empty():
 		NFPluginGameHandler._log_msg(
 			"discourse",
-			"Data for node with UUID '%s' was not found." % uuid,
+			"Data for node with NFUUID '%s' was not found." % uuid,
 			NFPluginGameHandler._LogLevel.ERROR)
 		return target
 	
@@ -627,13 +627,13 @@ func _parse_dialog(dialog_id: String, dialog_text: String, is_override: bool) ->
 	else:
 		DUUID = dialog_id + "/" + locale
 	
-	# (UUID)/en_US
+	# (NFUUID)/en_US
 	if _dialog_resource.parsed_dialog_cache.is_in_cache(DUUID):
-		var cached_data: ParsedDialog = _dialog_resource.parsed_dialog_cache.get_cache(DUUID)
+		var cached_data: NFParsedDialog = _dialog_resource.parsed_dialog_cache.get_cache(DUUID)
 		if cached_data.dialog == dialog_text:
 			return cached_data.get_dialog()
 	
-	var parsed: ParsedDialog = ParsedDialog.new()
+	var parsed: NFParsedDialog = NFParsedDialog.new()
 	parsed.locale = locale
 	parsed.dialog = dialog_text
 	

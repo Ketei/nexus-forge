@@ -1,5 +1,5 @@
 @icon("res://addons/nexus_forge/icons/cache_icon.svg")
-class_name Cache
+class_name NFLRUCache
 extends RefCounted
 ## A basic implemetation of a Least Recently Used Cache (LRU Cache)
 ##
@@ -10,9 +10,9 @@ extends RefCounted
 ## from the cache, freeing one slot and filling it with the newly cached item.
 ## [br]
 ## [br]
-## [b]IMPORTANT:[/b] While [Cache] will automatically clean itself
+## [b]IMPORTANT:[/b] While [NFLRUCache] will automatically clean itself
 ## when its reference counter drops to 0 it is highly recommended to
-## manually call [method Cache.clear] as soon as you no longer need the [Cache].
+## manually call [method NFLRUCache.clear] as soon as you no longer need the [NFLRUCache].
 ## This ensures that it clears all its references and allows
 ## the memory to be safely released.
 
@@ -20,30 +20,38 @@ extends RefCounted
 ## Max size of the cache.
 var max_size: int = 50: # Custom set that resizes _cache_map if larger
 	set(new_size):
-		if use_threads:
+		if thread_safe:
 			_mutex.lock()
 		
 		var clamped_size: int = maxi(new_size, 1)
 		_resize_cache(clamped_size)
 		max_size = clamped_size
-		if use_threads:
+		if thread_safe:
 			_mutex.unlock()
 
-var use_threads: bool = false:
+## Enables/Disables mutex locking to prevent race conditions
+## if doing multi-threaded access.
+## [br][br]
+## [b]Tip:[/b] Leave as [code]false[/code] if only using the main thread
+## to avoid unnecessary locking overhead.
+## [br][br]
+## [b]Note:[/b] Enabling this option instantiates a [Mutex] for this object,
+## setting it to [code]false[/code] drops the mutex's reference.
+var thread_safe: bool = false:
 	set(t):
-		if use_threads and not t:
+		if thread_safe and not t:
 			if is_instance_valid(_mutex):
 				_mutex = null # Refcoutend so it should free itself
 		
-		use_threads = t
+		thread_safe = t
 		
 		if t and not is_instance_valid(_mutex):
 			_mutex = Mutex.new()
 
 var _mutex: Mutex = null
-var _cache_map: Dictionary[String, CacheLink] = {}
-var _newest_used: CacheLink = null
-var _oldest_used: CacheLink = null
+var _cache_map: Dictionary[String, NFLRUCacheLink] = {}
+var _newest_used: NFLRUCacheLink = null
+var _oldest_used: NFLRUCacheLink = null
 
 
 func _resize_cache(target_size: int) -> void:
@@ -60,7 +68,7 @@ func _remove_oldest() -> void:
 	if _oldest_used == null:
 		return
 	
-	var target_link: CacheLink = _oldest_used
+	var target_link: NFLRUCacheLink = _oldest_used
 	
 	_cache_map.erase(target_link.key)
 	
@@ -77,7 +85,7 @@ func _remove_oldest() -> void:
 	target_link.clear()
 
 
-func _move_to_newest(link: CacheLink) -> void:
+func _move_to_newest(link: NFLRUCacheLink) -> void:
 	if link == _newest_used:
 		return
 	
@@ -102,7 +110,7 @@ func _move_to_newest(link: CacheLink) -> void:
 		_oldest_used = link
 
 
-func _add_to_newest(link: CacheLink) -> void:
+func _add_to_newest(link: NFLRUCacheLink) -> void:
 	if _newest_used != null:
 		link.older_link = _newest_used
 		_newest_used.newer_link = link
@@ -119,11 +127,11 @@ func _add_to_newest(link: CacheLink) -> void:
 ## If the item was already cached it moves it to the front of the
 ## cache (newest used).
 func cache_data(key: String, data: Variant) -> void:
-	if use_threads:
+	if thread_safe:
 		_mutex.lock()
 	
 	if _cache_map.has(key):
-		var link: CacheLink = _cache_map[key]
+		var link: NFLRUCacheLink = _cache_map[key]
 		
 		link.data = data
 		
@@ -135,13 +143,13 @@ func cache_data(key: String, data: Variant) -> void:
 			_remove_oldest()
 			current_size -= 1
 		
-		var new_link: CacheLink = CacheLink.new()
+		var new_link: NFLRUCacheLink = NFLRUCacheLink.new()
 		
 		new_link.key = key
 		new_link.data = data
 		_add_to_newest(new_link)
 	
-	if use_threads:
+	if thread_safe:
 		_mutex.unlock()
 
 
@@ -149,13 +157,13 @@ func cache_data(key: String, data: Variant) -> void:
 ## the item isn't in the cache.
 func get_cache(key: String) -> Variant:
 	var result: Variant = null
-	if use_threads:
+	if thread_safe:
 		_mutex.lock()
 	
 	if _cache_map.has(key):
 		result = _cache_map[key].data
 	
-	if use_threads:
+	if thread_safe:
 		_mutex.unlock()
 	
 	return result
@@ -164,10 +172,10 @@ func get_cache(key: String) -> Variant:
 ## Returns true if an item with key [param key] is in the cache.
 func is_in_cache(key: String) -> bool:
 	var has_item: bool = false
-	if use_threads:
+	if thread_safe:
 		_mutex.lock()
 	has_item = _cache_map.has(key)
-	if use_threads:
+	if thread_safe:
 		_mutex.unlock()
 	return has_item
 
@@ -175,11 +183,11 @@ func is_in_cache(key: String) -> bool:
 ## Removes an item from the cache. Returns [code]true[/code] if [param key] was
 ## in the cache.
 func remove_data(key: String) -> void:
-	if use_threads:
+	if thread_safe:
 		_mutex.lock()
 	
 	if _cache_map.has(key):
-		var target_link: CacheLink = _cache_map[key]
+		var target_link: NFLRUCacheLink = _cache_map[key]
 		
 		_cache_map.erase(key)
 		
@@ -197,24 +205,24 @@ func remove_data(key: String) -> void:
 	
 		target_link.clear()
 	
-	if use_threads:
+	if thread_safe:
 		_mutex.unlock()
 
 
 ## Returns the current size of the cache.
 func size() -> int:
 	var current_size: int = 0
-	if use_threads:
+	if thread_safe:
 		_mutex.lock()
 	current_size = _cache_map.size()
-	if use_threads:
+	if thread_safe:
 		_mutex.unlock()
 	return current_size
 
 
 ## Clears the cache.
 func clear() -> void:
-	if use_threads:
+	if thread_safe:
 		_mutex.lock()
 	
 	for cache_key in _cache_map.keys():
@@ -225,18 +233,18 @@ func clear() -> void:
 	_newest_used = null
 	_oldest_used = null
 	
-	if use_threads:
+	if thread_safe:
 		_mutex.unlock()
 
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_PREDELETE:
-		if use_threads and is_instance_valid(_mutex):
+		if thread_safe and is_instance_valid(_mutex):
 			_mutex.lock()
 		for cache_key in _cache_map.keys():
 			_cache_map[cache_key].clear()
 		_cache_map.clear()
 		_newest_used = null
 		_oldest_used = null
-		if use_threads and is_instance_valid(_mutex):
+		if thread_safe and is_instance_valid(_mutex):
 			_mutex.unlock()

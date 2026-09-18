@@ -1,6 +1,6 @@
 class_name NFRecipeManager
 extends RefCounted
-## An object that holds [RecipeSheet] resources.
+## An object that holds [NFRecipeSheet] resources.
 ##
 ## This object provides several utilities, such as a custom getter
 ## for accessing registered items directly by their ID, eg. [code]Recipes.wood[/code]
@@ -13,12 +13,12 @@ signal recipe_created(recipe_id: StringName)
 signal recipe_erased(recipe_id: StringName)
 
 
-var _recipe_sheets: Dictionary[StringName, RecipeSheet] = {}
+var _recipe_sheets: Dictionary[StringName, NFRecipeSheet] = {}
 
 
 ## Loads a [param catalog] of recipes into this object. If [param clear_recipes]
 ## is [code]true[/code] then the previous recipes are cleared.
-func load_catalog(catalog: RecipeCatalog, clear_recipes: bool = true) -> void:
+func load_catalog(catalog: NFRecipeCatalog, clear_recipes: bool = true) -> void:
 	if clear_recipes:
 		_recipe_sheets.clear()
 	
@@ -34,7 +34,7 @@ func recipes() -> Array[StringName]:
 
 
 ## Overwrites the inputs for [param recipe_id] with [param inputs].
-func set_recipe_inputs(recipe_id: StringName, inputs: Array[RecipeItem]) -> void:
+func set_recipe_inputs(recipe_id: StringName, inputs: Array[NFRecipeItem]) -> void:
 	if not _recipe_sheets.has(recipe_id):
 		return
 	
@@ -43,7 +43,7 @@ func set_recipe_inputs(recipe_id: StringName, inputs: Array[RecipeItem]) -> void
 
 
 ## Overwrites the outputs for [param recipe_id] with [param outputs].
-func set_recipe_outputs(recipe_id: StringName, outputs: Array[RecipeItem]) -> void:
+func set_recipe_outputs(recipe_id: StringName, outputs: Array[NFRecipeItem]) -> void:
 	if not _recipe_sheets.has(recipe_id):
 		return
 	
@@ -52,7 +52,7 @@ func set_recipe_outputs(recipe_id: StringName, outputs: Array[RecipeItem]) -> vo
 
 
 ## Creates a recipe with param recipe_id unless it already exists.
-func register_recipe(recipe_sheet: RecipeSheet) -> void:
+func register_recipe(recipe_sheet: NFRecipeSheet) -> void:
 	if recipe_sheet.id.is_empty() or _recipe_sheets.has(recipe_sheet.id):
 		return
 	

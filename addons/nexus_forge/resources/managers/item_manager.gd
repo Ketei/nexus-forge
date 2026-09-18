@@ -1,6 +1,6 @@
 class_name NFItemManager
 extends RefCounted
-## An object that holds items as [ItemSheet] resources.
+## An object that holds items as [NFItemSheet] resources.
 ##
 ## This object provides several utilities, such as a custom getter
 ## for accessing registered items directly by their ID, eg. [code]Items.stick[/code]
@@ -20,12 +20,12 @@ signal category_erased(category_id: StringName)
 
 var _categories: Dictionary[StringName, Dictionary] = {}
 
-var _items: Dictionary[StringName, ItemSheet] = {}
+var _items: Dictionary[StringName, NFItemSheet] = {}
 
 
-## Loads an [ItemCatalog] into this object. If [param clear_items] is
+## Loads an [NFItemCatalog] into this object. If [param clear_items] is
 ## [code]true[/code] then the previous registered items will be cleared.
-func load_catalog(catalog: ItemCatalog, clear_items: bool = true) -> void:
+func load_catalog(catalog: NFItemCatalog, clear_items: bool = true) -> void:
 	if clear_items:
 		_items.clear()
 		_categories.clear()
@@ -38,7 +38,7 @@ func load_catalog(catalog: ItemCatalog, clear_items: bool = true) -> void:
 		_categories[category_id] = category
 	
 	for item_id in catalog.items():
-		var new_item: ItemSheet = ItemSheet.new()
+		var new_item: NFItemSheet = NFItemSheet.new()
 		new_item.name = catalog.get_item_name(item_id)
 		new_item.description = catalog.get_item_description(item_id)
 		new_item.category = catalog.get_item_category(item_id)
@@ -84,11 +84,11 @@ func clear_item_data(item_id: StringName) -> void:
 	_items[item_id].emit_changed()
 
 
-## Adds the [param item_sheet] as an item unless [member ItemSheet.item_id]
+## Adds the [param item_sheet] as an item unless [member NFItemSheet.item_id]
 ## it uses already exists or is empty.[br]
 ## [b]Note:[/b] Items are passed by reference, and [param item_sheet] will be
 ## stored AS the reference.
-func add_item(item_sheet: ItemSheet = null) -> void:
+func add_item(item_sheet: NFItemSheet = null) -> void:
 	if item_sheet.item_id.is_empty() or _items.has(item_sheet.item_id):
 		return
 	
@@ -98,7 +98,7 @@ func add_item(item_sheet: ItemSheet = null) -> void:
 
 
 ## Sets the [param flag] on [param item_id] to [param enabled].
-func set_item_flag(item_id: StringName, flag: ItemSheet.ItemFlag, enabled: bool) -> void:
+func set_item_flag(item_id: StringName, flag: NFItemSheet.ItemFlag, enabled: bool) -> void:
 	if not _items.has(item_id):
 		return
 	
@@ -113,16 +113,16 @@ func set_item_flag(item_id: StringName, flag: ItemSheet.ItemFlag, enabled: bool)
 
 
 ## Sets all the [param flags] on [param item_id] to [param enabled].
-func set_item_flags(item_id: StringName, flags: Array[ItemSheet.ItemFlag], enabled: bool) -> void:
+func set_item_flags(item_id: StringName, flags: Array[NFItemSheet.ItemFlag], enabled: bool) -> void:
 	if not _items.has(item_id):
 		return
 	
-	if enabled and not ArrayUtils.has_all(_items[item_id]["flags"], flags):
+	if enabled and not NFArrayUtils.has_all(_items[item_id]["flags"], flags):
 		for flag in flags:
 			if not _items[item_id].flags.has(flag):
 				_items[item_id].flags.append(flag)
 		_items[item_id].emit_changed()
-	elif not enabled and ArrayUtils.has_any(_items[item_id].flags, flags):
+	elif not enabled and NFArrayUtils.has_any(_items[item_id].flags, flags):
 		for flag in flags:
 			if _items[item_id]["flags"].has(flag):
 				_items[item_id]["flags"].erase(flag)
@@ -130,7 +130,7 @@ func set_item_flags(item_id: StringName, flags: Array[ItemSheet.ItemFlag], enabl
 
 
 ## Returns true if the [param item_id] has [param flag] enabled.
-func item_has_flag(item_id: StringName, flag: ItemSheet.ItemFlag) -> bool:
+func item_has_flag(item_id: StringName, flag: NFItemSheet.ItemFlag) -> bool:
 	if _items.has(item_id):
 		return _items[item_id].flags.has(flag)
 	return false
@@ -171,7 +171,7 @@ func set_item_category(item_id: StringName, new_category: StringName) -> void:
 
 
 ## Sets the rarity of [param item_id] to [param new_rarity].
-func set_item_rarity(item_id: StringName, new_rarity: ItemSheet.Rarity) -> void:
+func set_item_rarity(item_id: StringName, new_rarity: NFItemSheet.Rarity) -> void:
 	if not _items.has(item_id) or _items[item_id].rarity == new_rarity:
 		return
 	
@@ -227,7 +227,7 @@ func create_category(category_id: StringName) -> void:
 	var cat: Dictionary[String, Variant] = {
 		"parent_key": &"",
 		"name": &"",
-		"custom_data": DictUtils.create_typed(TYPE_STRING_NAME, TYPE_NIL)}
+		"custom_data": NFDictUtils.create_typed(TYPE_STRING_NAME, TYPE_NIL)}
 	
 	_categories[category_id] = cat
 	

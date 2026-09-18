@@ -9,6 +9,7 @@ signal character_opened(path: String, id: StringName)
 
 const UNDO_MAX_STEPS: int = 50
 
+var _script_paths: RefCounted = null
 var _unsaved: bool = false:
 	set(u):
 		if current_sheet == null:
@@ -25,7 +26,7 @@ var _unsaved: bool = false:
 		return false
 var expr: Expression
 
-var current_sheet: CharacterSheet = null
+var current_sheet: NFCharacterSheet = null
 var ui_enabled: bool = false
 var undo: UndoRedo = null
 
@@ -151,7 +152,11 @@ func do_redo() -> void:
 
 
 func _on_edit_genders_pressed() -> void:
-	var sheet_script: Script = CharacterSheet.new().get_script()
+	var path: String = _script_paths.get_class_script_path("NFCharacterSheet")
+	if path.is_empty():
+		return
+	
+	var sheet_script: Script = load(path)
 	var source_code: String = sheet_script.source_code
 	
 	if source_code.is_empty():
@@ -189,19 +194,43 @@ func _on_edit_genders_pressed() -> void:
 
 
 func _on_edit_statblock_pressed() -> void:
-	EditorInterface.edit_script(StatBlock.new().get_script())
+	var path: String = _script_paths.get_class_script_path("NFStatBlock")
+	if path.is_empty():
+		NFPluginGameHandler._log_msg(
+				"talents - editor",
+				"Couldn't find class 'NFStatBlock' script.",
+				NFPluginGameHandler._LogLevel.ERROR)
+		return
+	var scr: Script = load(path)
+	EditorInterface.edit_script(scr)
 	if not EditorInterface.get_editor_settings().get_setting("text_editor/external/use_external_editor"):
 		EditorInterface.set_main_screen_editor("Script")
 
 
 func _on_edit_skillset_pressed() -> void:
-	EditorInterface.edit_script(SkillSet.new().get_script())
+	var path: String = _script_paths.get_class_script_path("NFSkillSet")
+	if path.is_empty():
+		NFPluginGameHandler._log_msg(
+				"talents - editor",
+				"Couldn't find class 'NFSkillSet' script.",
+				NFPluginGameHandler._LogLevel.ERROR)
+		return
+	var scr: Script = load(path)
+	EditorInterface.edit_script(scr)
 	if not EditorInterface.get_editor_settings().get_setting("text_editor/external/use_external_editor"):
 		EditorInterface.set_main_screen_editor("Script")
 
 
 func _on_edit_traitblock_pressed() -> void:
-	EditorInterface.edit_script(TraitBlock.new().get_script())
+	var path: String = _script_paths.get_class_script_path("NFTraitBlock")
+	if path.is_empty():
+		NFPluginGameHandler._log_msg(
+				"talents - editor",
+				"Couldn't find class 'NFTraitBlock' script.",
+				NFPluginGameHandler._LogLevel.ERROR)
+		return
+	var scr: Script = load(path)
+	EditorInterface.edit_script(scr)
 	if not EditorInterface.get_editor_settings().get_setting("text_editor/external/use_external_editor"):
 		EditorInterface.set_main_screen_editor("Script")
 
@@ -211,7 +240,7 @@ func _on_close_character_pressed(char_id: int) -> void:
 		return
 	
 	if _open_files[char_id]["unsaved"]:
-		var res: CharacterSheet = _open_files[char_id]["resource"]
+		var res: NFCharacterSheet = _open_files[char_id]["resource"]
 		var unsaved_dialog: AcceptDialog = load("res://addons/nexus_forge/dialogs/unsaved_dialog_script.gd").new()
 		unsaved_dialog.title = "Save Character..."
 		unsaved_dialog.dialog_text = "Character has unsaved changes.\nDo you want to save before closing?"
@@ -290,7 +319,7 @@ func load_character_files(files: Array[String]) -> void:
 		if not FileAccess.file_exists(file):
 			continue
 		var loaded = load(file)
-		if not loaded is CharacterSheet:
+		if not loaded is NFCharacterSheet:
 			continue
 		
 		var id: int = loaded.get_instance_id()
@@ -314,7 +343,7 @@ func load_character_files(files: Array[String]) -> void:
 
 func update_genders() -> void:
 	gender_option_button.clear()
-	var gender_obg: CharacterSheet = CharacterSheet.new()
+	var gender_obg: NFCharacterSheet = NFCharacterSheet.new()
 	var map: Dictionary = gender_obg.get_script().get_script_constant_map()
 	
 	if not map.has(&"Gender"):
@@ -333,7 +362,7 @@ func update_genders() -> void:
 	gender_option_button.disabled = gender_option_button.item_count == 0 or current_sheet == null
 
 
-func update_species_data(species_catalog: SpeciesCatalog = null) -> void:
+func update_species_data(species_catalog: NFSpeciesCatalog = null) -> void:
 	var currently_selected: StringName = &"" if species_option_button.selected == -1 else species_option_button.get_item_metadata(species_option_button.selected)
 	var new_index: int = -1
 	
@@ -346,7 +375,7 @@ func update_species_data(species_catalog: SpeciesCatalog = null) -> void:
 	if species_catalog == null:
 		if species_path != "" and FileAccess.file_exists(species_path):
 			var pre_res: Resource = load(species_path)
-			if pre_res is SpeciesCatalog:
+			if pre_res is NFSpeciesCatalog:
 				var species:Array[StringName] = pre_res.species()
 				species.sort_custom(func(a,b): return String(a).naturalnocasecmp_to(String(b)) < 0)
 				if not currently_selected.is_empty():
@@ -386,13 +415,13 @@ func update_species_data(species_catalog: SpeciesCatalog = null) -> void:
 
 
 func update_talent_nodes() -> void:
-	var skill_set: SkillSet = SkillSet.new()
+	var skill_set: NFSkillSet = NFSkillSet.new()
 
-	var trait_block: TraitBlock = TraitBlock.new()
+	var trait_block: NFTraitBlock = NFTraitBlock.new()
 	
-	var stat_block: StatBlock = StatBlock.new()
+	var stat_block: NFStatBlock = NFStatBlock.new()
 	
-	var stats_data: Dictionary[StringName, int] = StatBlock.stats()
+	var stats_data: Dictionary[StringName, int] = NFStatBlock.stats()
 	
 	var stats: Array[String] = []
 	stats.assign(stats_data.keys())
@@ -408,7 +437,7 @@ func update_talent_nodes() -> void:
 		
 	for stat_id in stats:
 		var stat_default: float = 0.0
-		var stat_item: ValueRange = stat_block.get(stat_id)
+		var stat_item: NFValueRange = stat_block.get(stat_id)
 		if stat_item != null:
 			stat_default = stat_item.value
 		
@@ -429,7 +458,7 @@ func update_talent_nodes() -> void:
 	for remaining_stat in stat_map:
 		stat_map[remaining_stat].queue_free()
 	
-	var skills: Array[StringName] = SkillSet.skills()
+	var skills: Array[StringName] = NFSkillSet.skills()
 	skills.sort_custom(func(a,b): return String(a).naturalnocasecmp_to(String(b)) < 0)
 	
 	var skill_map: Dictionary[StringName, Control] = {}
@@ -453,7 +482,7 @@ func update_talent_nodes() -> void:
 		skill_map[remaining_skill].queue_free()
 	
 
-	var traits: Array[StringName] = TraitBlock.traits()
+	var traits: Array[StringName] = NFTraitBlock.traits()
 	traits.sort_custom(func(a,b): return String(a).naturalnocasecmp_to(String(b)) < 0)
 	
 	var trait_map: Dictionary[StringName, Control] = {}
@@ -494,7 +523,7 @@ func _on_new_character_pressed() -> void:
 	if current_sheet != null:
 		save_current_character()
 	
-	var new_resource: CharacterSheet = CharacterSheet.new()
+	var new_resource: NFCharacterSheet = NFCharacterSheet.new()
 	var id: int = new_resource.get_instance_id()
 	var new_undo: UndoRedo = UndoRedo.new()
 	var data_undo: UndoRedo = UndoRedo.new()
@@ -513,8 +542,8 @@ func _on_new_character_pressed() -> void:
 		new_resource.take_over_path(dialog_result[1])
 	new_resource.resource_path = dialog_result[1]
 	
-	for stat in StatBlock.stats():
-		var stat_range: ValueRange = new_resource.stats.get(stat)
+	for stat in NFStatBlock.stats():
+		var stat_range: NFValueRange = new_resource.stats.get(stat)
 		stat_range.min_value = 0.0
 		stat_range.max_value = 1.0
 		stat_range.allow_greater = true
@@ -546,7 +575,7 @@ func _on_open_character_pressed() -> void:
 		return
 	
 	var resource_preload = load(dialog_result[1])
-	if resource_preload is not CharacterSheet:
+	if resource_preload is not NFCharacterSheet:
 		return
 	
 	if current_sheet == resource_preload:
@@ -629,7 +658,7 @@ func _do_update_attributes(attribute_data: Dictionary) -> void:
 			trait_node.get_meta(&"value").set_value_no_signal(trait_data[trait_id])
 
 
-func import_species_data(species_sheet: SpeciesCatalog, with_inheritance: bool) -> void:
+func import_species_data(species_sheet: NFSpeciesCatalog, with_inheritance: bool) -> void:
 	if species_option_button.selected == -1 or not species_sheet.has_species(species_option_button.get_selected_metadata()):
 		return
 	
@@ -719,12 +748,12 @@ func reset_stats() -> void:
 		var flags: int = btn.get_meta(&"range_flags")
 		item.get_meta(&"use_max").set_pressed_no_signal(false)
 		item.get_meta(&"use_min").set_pressed_no_signal(false)
-		if BitUtils.is_bit_index(flags, 2, true):
+		if NFBitUtils.is_bit_index(flags, 2, true):
 			btn.icon = load("res://addons/nexus_forge/icons/range_uncollapsed_none.svg")
 		else:
 			btn.icon = load("res://addons/nexus_forge/icons/range_collapsed_none.svg")
 		
-		flags = BitUtils.set_bits(flags, 3, false)
+		flags = NFBitUtils.set_bits(flags, 3, false)
 		btn.set_meta(&"range_flags", flags)
 		
 		val_spn.allow_greater = true
@@ -769,9 +798,9 @@ func save_current_character() -> void:
 	current_sheet.custom_data.assign(character_data_tree.get_data())
 	
 	for stat in char_stats_container.get_children():
-		var sheet_stat: ValueRange = current_sheet.stats.get(stat.get_meta(&"stat_id"))
+		var sheet_stat: NFValueRange = current_sheet.stats.get(stat.get_meta(&"stat_id"))
 		if sheet_stat == null:
-			var new_sheet: ValueRange = RangeInt.new() if stat.get_meta(&"type") == TYPE_INT else RangeFloat.new()
+			var new_sheet: NFValueRange = NFRangeInt.new() if stat.get_meta(&"type") == TYPE_INT else NFRangeFloat.new()
 			current_sheet.stats.set(stat.get_meta(&"stat_id"), new_sheet)
 			sheet_stat = new_sheet
 		
@@ -833,7 +862,7 @@ func save() -> void:
 	for id in _open_files:
 		if not _open_files[id]["unsaved"]:
 			continue
-		var res: CharacterSheet = _open_files[id]["resource"]
+		var res: NFCharacterSheet = _open_files[id]["resource"]
 		if res == current_sheet:
 			save_current_character()
 		ResourceSaver.save(res)
@@ -846,7 +875,7 @@ func load_character(res_id: int) -> void:
 	if not _open_files.has(res_id):
 		return
 	
-	var sheet: CharacterSheet = _open_files[res_id]["resource"]
+	var sheet: NFCharacterSheet = _open_files[res_id]["resource"]
 	char_id_line.text = sheet.id
 	char_id_line.set_meta(&"old_text", sheet.id)
 	char_name_line.text = sheet.name
@@ -860,7 +889,7 @@ func load_character(res_id: int) -> void:
 		character_data_tree.add_data(key, sheet.custom_data[key], true)
 	
 	for stat in char_stats_container.get_children():
-		var stat_range: ValueRange = sheet.stats.get(stat.get_meta(&"stat_id"))
+		var stat_range: NFValueRange = sheet.stats.get(stat.get_meta(&"stat_id"))
 		if stat_range == null:
 			var max_spn: SpinBox = stat.get_meta(&"max")
 			var min_spn: SpinBox = stat.get_meta(&"min")
@@ -880,12 +909,12 @@ func load_character(res_id: int) -> void:
 			value.set_meta(&"old_value", 0.0)
 			stat.get_meta(&"use_max").set_pressed_no_signal(false)
 			stat.get_meta(&"use_min").set_pressed_no_signal(false)
-			if BitUtils.is_bit_index(flags, 2, true):
+			if NFBitUtils.is_bit_index(flags, 2, true):
 				btn.icon = load("res://addons/nexus_forge/icons/range_uncollapsed_none.svg")
 			else:
 				btn.icon = load("res://addons/nexus_forge/icons/range_collapsed_none.svg")
 			
-			flags = BitUtils.set_bits(flags, 3, false)
+			flags = NFBitUtils.set_bits(flags, 3, false)
 			btn.set_meta(&"range_flags", flags)
 			
 			max_spn.editable = false
@@ -909,12 +938,12 @@ func load_character(res_id: int) -> void:
 		max_spinbox.set_block_signals(true)
 		min_spinbox.set_block_signals(true)
 		
-		flags = BitUtils.set_bit_index(flags, 0, not stat_range.allow_lesser)
-		flags = BitUtils.set_bit_index(flags, 1, not stat_range.allow_greater)
+		flags = NFBitUtils.set_bit_index(flags, 0, not stat_range.allow_lesser)
+		flags = NFBitUtils.set_bit_index(flags, 1, not stat_range.allow_greater)
 		collapse_btn.set_meta(&"range_flags", flags)
 		
-		if BitUtils.is_bit_index(flags, 2, true): #Expanded
-			match BitUtils.get_bits(flags, 3):
+		if NFBitUtils.is_bit_index(flags, 2, true): #Expanded
+			match NFBitUtils.get_bits(flags, 3):
 				0:
 					collapse_btn.icon = load("res://addons/nexus_forge/icons/range_uncollapsed_none.svg")
 				1:
@@ -924,7 +953,7 @@ func load_character(res_id: int) -> void:
 				3:
 					collapse_btn.icon = load("res://addons/nexus_forge/icons/range_uncollapsed_minmax.svg")
 		else:
-			match BitUtils.get_bits(flags, 3):
+			match NFBitUtils.get_bits(flags, 3):
 				0:
 					collapse_btn.icon = load("res://addons/nexus_forge/icons/range_collapsed_none.svg")
 				1:
@@ -979,7 +1008,7 @@ func select_species(type: StringName) -> void:
 			break
 
 
-func select_gender(gender: CharacterSheet.Gender) -> void:
+func select_gender(gender: NFCharacterSheet.Gender) -> void:
 	for item_idx in range(gender_option_button.item_count):
 		if gender_option_button.get_item_metadata(item_idx) == gender:
 			gender_option_button.select(item_idx)
@@ -1275,7 +1304,7 @@ func _do_toggle_range_check(check: CheckBox, enabled: bool, stat: SpinBox, min_s
 	
 	var flag_idx: int = 0 if is_min else 1
 	var flags: int = limit_btn.get_meta(&"range_flags")
-	flags = BitUtils.set_bit_index(flags, flag_idx, enabled)
+	flags = NFBitUtils.set_bit_index(flags, flag_idx, enabled)
 	
 	if is_min:
 		stat.allow_lesser = not enabled
@@ -1287,8 +1316,8 @@ func _do_toggle_range_check(check: CheckBox, enabled: bool, stat: SpinBox, min_s
 		if enabled and max_spinbox.value < stat.value:
 			stat.set_value_no_signal(max_spinbox.value)
 	
-	if BitUtils.is_bit_index(flags, 2, true): # Uncollapsed
-		match BitUtils.get_bits(flags, 3):
+	if NFBitUtils.is_bit_index(flags, 2, true): # Uncollapsed
+		match NFBitUtils.get_bits(flags, 3):
 			0:
 				limit_btn.icon = load("res://addons/nexus_forge/icons/range_uncollapsed_none.svg")
 			1:
@@ -1298,7 +1327,7 @@ func _do_toggle_range_check(check: CheckBox, enabled: bool, stat: SpinBox, min_s
 			3:
 				limit_btn.icon = load("res://addons/nexus_forge/icons/range_uncollapsed_minmax.svg")
 	else:
-		match BitUtils.get_bits(flags, 3):
+		match NFBitUtils.get_bits(flags, 3):
 			0:
 				limit_btn.icon = load("res://addons/nexus_forge/icons/range_collapsed_none.svg")
 			1:
@@ -1314,12 +1343,12 @@ func _do_toggle_range_check(check: CheckBox, enabled: bool, stat: SpinBox, min_s
 func _toggle_limit_visibility_pressed(toggle_button: Button, limit_container: HBoxContainer) -> void:
 	var flags: int = toggle_button.get_meta(&"range_flags")
 	limit_container.visible = not limit_container.visible
-	flags = BitUtils.set_bit_index(flags, 2, limit_container.visible)
+	flags = NFBitUtils.set_bit_index(flags, 2, limit_container.visible)
 	
 	var icon: Texture2D = null
 	
-	if BitUtils.is_bit_index(flags, 2, true): # Uncollapsed
-		match BitUtils.get_bits(flags, 3):
+	if NFBitUtils.is_bit_index(flags, 2, true): # Uncollapsed
+		match NFBitUtils.get_bits(flags, 3):
 			0:
 				icon = load("res://addons/nexus_forge/icons/range_uncollapsed_none.svg")
 			1:
@@ -1329,7 +1358,7 @@ func _toggle_limit_visibility_pressed(toggle_button: Button, limit_container: HB
 			3:
 				icon = load("res://addons/nexus_forge/icons/range_uncollapsed_minmax.svg")
 	else:
-		match BitUtils.get_bits(flags, 3):
+		match NFBitUtils.get_bits(flags, 3):
 			0:
 				icon = load("res://addons/nexus_forge/icons/range_collapsed_none.svg")
 			1:
@@ -1539,7 +1568,7 @@ func create_trait_item(trait_id: StringName, default_value: int) -> HBoxContaine
 	return new_trait
 
 
-func plugin_open_resource(resource: CharacterSheet) -> void:
+func plugin_open_resource(resource: NFCharacterSheet) -> void:
 	var id: int = resource.get_instance_id()
 	
 	if resource == current_sheet:

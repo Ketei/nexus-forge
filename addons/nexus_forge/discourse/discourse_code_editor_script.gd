@@ -135,8 +135,8 @@ func sort_and_set_completion_options(clean_syntax: String, options: Array[String
 	var new_sort: Array[String] = options.duplicate()
 	new_sort.sort_custom(
 		func (a: String, b: String):
-			var sim_a: float = StringUtils.levenshtein_similarity(a, clean_syntax)
-			var sim_b: float = StringUtils.levenshtein_similarity(b, clean_syntax)
+			var sim_a: float = NFStringUtils.levenshtein_similarity(a, clean_syntax)
+			var sim_b: float = NFStringUtils.levenshtein_similarity(b, clean_syntax)
 			return sim_b < sim_a)
 	
 	for var_path in new_sort:

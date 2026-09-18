@@ -493,7 +493,7 @@ func ready_plugin(base_locale: String = "") -> void:
 	set_graph_locale_tip(system_lang)
 	set_phrase_button_locale(system_lang)
 	
-	var locale_settings: PackedStringArray = StringUtils.split_and_strip(
+	var locale_settings: PackedStringArray = NFStringUtils.split_and_strip(
 		ProjectSettings.get_setting(
 			NFPluginGameHandler.get_setting_path("discourse_use_languages"), ""),
 		",",
@@ -1266,13 +1266,13 @@ func _do_update_node_localization(to: Dictionary, do_assign: bool = true) -> voi
 		var base_text: String = ""
 		var new_text: String = ""
 		
-		new_text = DictUtils.get_nested_value(
+		new_text = NFDictUtils.get_nested_value(
 				active_conversation.localization,
 				[selected_node, "locales", selected_locale],
 				"",
 				true)
 		
-		base_text = DictUtils.get_nested_value(
+		base_text = NFDictUtils.get_nested_value(
 				active_conversation.localization,
 				[selected_node, "locales", base_language],
 				base_text_edt.text,
@@ -1286,13 +1286,13 @@ func _do_update_node_localization(to: Dictionary, do_assign: bool = true) -> voi
 		var localized_options: Array[String] = []
 		var base_options: Array[String] = []
 		
-		localized_options.assign(DictUtils.get_nested_value(
+		localized_options.assign(NFDictUtils.get_nested_value(
 				active_conversation.localization,
 				[selected_node, "locales", selected_locale],
 				[],
 				true))
 		
-		base_options.assign(DictUtils.get_nested_value(
+		base_options.assign(NFDictUtils.get_nested_value(
 				active_conversation.localization,
 				[selected_node, "locales", base_language],
 				[],
@@ -1695,13 +1695,13 @@ func _on_side_editor_locale_changed(from: String, to: String) -> void:
 		var base_text: String = ""
 		var new_text: String = ""
 		
-		new_text = DictUtils.get_nested_value(
+		new_text = NFDictUtils.get_nested_value(
 				active_conversation.localization,
 				[node_uuid, "locales", to],
 				"",
 				true)
 		
-		base_text = DictUtils.get_nested_value(
+		base_text = NFDictUtils.get_nested_value(
 				active_conversation.localization,
 				[node_uuid, "locales", base_locale],
 				base_text_edt.text,
@@ -1716,13 +1716,13 @@ func _on_side_editor_locale_changed(from: String, to: String) -> void:
 		var localized_options: Array[String] = []
 		var base_options: Array[String] = []
 		
-		localized_options.assign(DictUtils.get_nested_value(
+		localized_options.assign(NFDictUtils.get_nested_value(
 				active_conversation.localization,
 				[node_uuid, "locales", to],
 				[],
 				true))
 		
-		base_options.assign(DictUtils.get_nested_value(
+		base_options.assign(NFDictUtils.get_nested_value(
 				active_conversation.localization,
 				[node_uuid, "locales", base_locale],
 				[],
@@ -1806,13 +1806,13 @@ func _on_localizer_node_selected(uuid: StringName) -> void:
 			var base_text: String = ""
 			var new_text: String = ""
 			
-			new_text = DictUtils.get_nested_value(
+			new_text = NFDictUtils.get_nested_value(
 				active_conversation.localization,
 				[new_node_uuid, "locales", active_locale],
 				"",
 				true)
 			
-			base_text = DictUtils.get_nested_value(
+			base_text = NFDictUtils.get_nested_value(
 				active_conversation.localization,
 				[new_node_uuid, "locales", base_language],
 				base_text_edt.text,
@@ -1826,12 +1826,12 @@ func _on_localizer_node_selected(uuid: StringName) -> void:
 		DiscourseGraphNode.DialogueNodeType.CHOICES:
 			_set_localization_window_choices(new_node)
 		DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
-			var new_text: String = DictUtils.get_nested_value(
+			var new_text: String = NFDictUtils.get_nested_value(
 				active_conversation.localization,
 				[uuid, "locales", active_locale],
 				"",
 				true)
-			var base_text: String = DictUtils.get_nested_value(
+			var base_text: String = NFDictUtils.get_nested_value(
 				active_conversation.localization,
 				[uuid, "locales", base_language],
 				"",
@@ -1900,13 +1900,13 @@ func _on_switch_window_pressed() -> void:
 		if active_node.node_type == DiscourseGraphNode.DialogueNodeType.CHOICES:
 			var target_choices: int = active_node.choice_count()
 			var options: Array[String] = []
-			options.assign(DictUtils.get_nested_value(
+			options.assign(NFDictUtils.get_nested_value(
 					active_conversation.localization,
 					[node_uuid, "locales", localizer_locale],
 					[],
 					true))
 			var base_lang: Array[String] = []
-			base_lang.assign(DictUtils.get_nested_value(
+			base_lang.assign(NFDictUtils.get_nested_value(
 					active_conversation.localization,
 					[node_uuid, "locales", base_language],
 					[],
@@ -1927,12 +1927,12 @@ func _on_switch_window_pressed() -> void:
 				dialog_previewer.set_choices(options)
 				
 		else: # Either dialog or localized text. Same method can be used.
-			var localized_text: String = DictUtils.get_nested_value(
+			var localized_text: String = NFDictUtils.get_nested_value(
 					active_conversation.localization,
 					[node_uuid, "locales", localizer_locale],
 					"",
 					true)
-			var base_text: String = DictUtils.get_nested_value(
+			var base_text: String = NFDictUtils.get_nested_value(
 					active_conversation.localization,
 					[node_uuid, "locales", base_language],
 					"",
@@ -2220,7 +2220,7 @@ func set_localized_choice_line_text(choice_index: int, text: String) -> void:
 	if child_count == 0:
 		return
 	var max_index: int = child_count - 1
-	if not RangeUtils.is_between(choice_index, -child_count, max_index):
+	if not NFRangeUtils.is_between(choice_index, -child_count, max_index):
 		return
 	var true_index: int = wrapi(choice_index, 0, child_count)
 	var line: TextEdit = choices_container.get_child(true_index).get_child(2)
@@ -2518,7 +2518,7 @@ func get_file_saved_properties(path: String) -> Dictionary[String, Variant]:
 	var properties: Dictionary[String, Variant] = {
 		"zoom": 1.0,
 		"scroll_offset": Vector2.ZERO,
-		"collapsed_state": DictUtils.create_typed(TYPE_STRING, TYPE_BOOL)}
+		"collapsed_state": NFDictUtils.create_typed(TYPE_STRING, TYPE_BOOL)}
 	
 	var filename: String = path.get_file()
 	var path_hash: String = path.md5_text()
@@ -3141,7 +3141,7 @@ func _on_phrase_field_code_editor_requested(target: TextEdit) -> void:
 	var locale_code: String = phrases_lang_menu.get_selected_metadata()
 	var old_state: Dictionary = {}
 	
-	if DictUtils.has_nested_path(active_conversation.format_strings, [phrase_id, locale_code]):
+	if NFDictUtils.has_nested_path(active_conversation.format_strings, [phrase_id, locale_code]):
 		old_state = active_conversation.format_strings[phrase_id][locale_code].duplicate(true)
 	
 	set_phrase_format_string(phrase_id, locale_code, result[1])
@@ -3227,7 +3227,7 @@ func get_valid_phrase_case_key(desired_id: String, ignore_line: LineEdit = null)
 	
 	var modified: String = desired_id.strip_edges()
 	var base: String = modified
-	var iteration_data: Dictionary = StringUtils.get_trailing_integer(modified)
+	var iteration_data: Dictionary = NFStringUtils.get_trailing_integer(modified)
 	var iteration: int = iteration_data["integer"]
 	if iteration_data["has_integer"]:
 		base = base.trim_suffix(str(iteration))
@@ -3320,7 +3320,7 @@ func _on_edit_cases_pressed(field: Control) -> void:
 		selected_phrase_format = argument_format
 		default_case_edt.text = active_conversation.get_format_string_default_case(phrase_key, locale_code, argument_format)
 		
-		if DictUtils.has_nested_path(active_conversation.format_strings, [phrase_key, locale_code, "format", argument_format, "cases"]):
+		if NFDictUtils.has_nested_path(active_conversation.format_strings, [phrase_key, locale_code, "format", argument_format, "cases"]):
 			for custom_case in active_conversation.format_strings[phrase_key][locale_code]["format"][argument_format]["cases"]:
 				create_new_phrase_case(
 					custom_case,
@@ -3645,7 +3645,7 @@ func create_new_phrase_entry(key: String, format: String, unsaved: bool = true) 
 	
 	text_field.syntax_highlighter = highlighter
 	
-	container.set_meta(&"entry_id", UUID.generate_new())
+	container.set_meta(&"entry_id", NFUUID.generate_new())
 	container.set_meta(&"phrase_key", valid_key)
 	container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	
@@ -4272,7 +4272,7 @@ func _get_file_current_state(file_id: int) -> Dictionary:
 		return {
 			"zoom": 1.0,
 			"scroll_offset": Vector2.ZERO,
-			"collapsed_state": DictUtils.create_typed(TYPE_STRING, TYPE_BOOL)}
+			"collapsed_state": NFDictUtils.create_typed(TYPE_STRING, TYPE_BOOL)}
 	
 	if active_conversation != null and active_conversation.get_instance_id() == file_id:
 		return {
@@ -4440,7 +4440,7 @@ func get_valid_format_key_id(desired: String, skip: LineEdit = null) -> String:
 	if all_ids.has(desired):
 		var base: String = desired
 		var modified: String = desired
-		var trailing_data: Dictionary = StringUtils.get_trailing_integer(desired)
+		var trailing_data: Dictionary = NFStringUtils.get_trailing_integer(desired)
 		var iteration: int = trailing_data["integer"]
 		if trailing_data["has_integer"]:
 			base = desired.trim_suffix(str(iteration))
@@ -4463,12 +4463,12 @@ func _on_phrase_text_editing_focus_lost(field: TextEdit) -> void:
 	var locale_code: String = phrases_lang_menu.get_selected_metadata()
 	
 	var old_state: Dictionary = {}
-	if DictUtils.has_nested_path(active_conversation.format_strings, [phrase_id, locale_code]):
+	if NFDictUtils.has_nested_path(active_conversation.format_strings, [phrase_id, locale_code]):
 		old_state = active_conversation.format_strings[phrase_id][locale_code].duplicate(true)
 	
 	set_phrase_format_string(phrase_id, locale_code, new_text)
 	
-	var new_state: Dictionary = DictUtils.get_nested_value(
+	var new_state: Dictionary = NFDictUtils.get_nested_value(
 			active_conversation.format_strings,
 			[phrase_id, locale_code],
 			{},
@@ -4887,13 +4887,13 @@ func _set_localization_window_choices(new_node: DiscourseGraphNode) -> void:
 	var options_localized: Array[String] = []
 	var options_base: Array[String] = []
 	
-	options_localized.assign(DictUtils.get_nested_value(
+	options_localized.assign(NFDictUtils.get_nested_value(
 		active_conversation.localization,
 		[new_node_uuid, "locales", active_locale],
 		[],
 		true))
 		
-	options_base.assign(DictUtils.get_nested_value(
+	options_base.assign(NFDictUtils.get_nested_value(
 		active_conversation.localization,
 		[new_node_uuid, "locales", base_language],
 		[],
@@ -5077,22 +5077,22 @@ func _on_variable_node_path_changed(node_uuid: StringName, from: String, to: Str
 func _on_nodes_removed(action: String, graph_nodes_data: Dictionary[StringName, Dictionary]) -> void:
 	var action_data: Dictionary = {
 		"graph_nodes_data": graph_nodes_data,
-		"nodes_frame_parents": DictUtils.create_typed( # Node UUID, parent UUID
+		"nodes_frame_parents": NFDictUtils.create_typed( # Node NFUUID, parent NFUUID
 				TYPE_STRING_NAME,
 				TYPE_STRING_NAME),
-		"resource_node_data": DictUtils.create_typed(
+		"resource_node_data": NFDictUtils.create_typed(
 			TYPE_STRING_NAME,
 			TYPE_DICTIONARY),
-		"resource_localization": DictUtils.create_typed(
+		"resource_localization": NFDictUtils.create_typed(
 			TYPE_STRING_NAME,
 			TYPE_DICTIONARY),
-		"tree_hierarchy": DictUtils.create_typed(
+		"tree_hierarchy": NFDictUtils.create_typed(
 			TYPE_STRING_NAME,
 			TYPE_DICTIONARY),
-		"pointer_states": DictUtils.create_typed(
+		"pointer_states": NFDictUtils.create_typed(
 			TYPE_STRING_NAME,
 			TYPE_STRING_NAME),
-		"waypoint_states": DictUtils.create_typed(
+		"waypoint_states": NFDictUtils.create_typed(
 			TYPE_STRING_NAME,
 			TYPE_STRING_NAME),}
 	
@@ -5143,7 +5143,7 @@ func _on_nodes_removed(action: String, graph_nodes_data: Dictionary[StringName, 
 
 
 func _do_remove_nodes(action_data: Dictionary) -> void:
-	var uuids_to_remove: Array[StringName] = ArrayUtils.create_typed(
+	var uuids_to_remove: Array[StringName] = NFArrayUtils.create_typed(
 			TYPE_STRING_NAME,
 			action_data.keys())
 	
@@ -5189,7 +5189,7 @@ func _undo_remove_nodes(action_data: Dictionary) -> void:
 		
 		if d_node.is_node_localized():
 			if d_node.node_type == DiscourseGraphNode.DialogueNodeType.DIALOG:
-				d_node.set_dialog_text(DictUtils.get_nested_value(
+				d_node.set_dialog_text(NFDictUtils.get_nested_value(
 						active_conversation.localization,
 						[node_uuid, "locales", current_locale],
 						"",
@@ -5199,7 +5199,7 @@ func _undo_remove_nodes(action_data: Dictionary) -> void:
 				var localized_options: Array[String] = []
 				var choice_size: int = d_node.choice_count()
 				
-				localized_options.assign(DictUtils.get_nested_value(
+				localized_options.assign(NFDictUtils.get_nested_value(
 						active_conversation.localization,
 						[node_uuid, "locales", current_locale],
 						[],
@@ -5216,7 +5216,7 @@ func _undo_remove_nodes(action_data: Dictionary) -> void:
 				
 				localization_nodes_tree.create_options_node(d_node.get_node_id(), d_node)
 			elif d_node.node_type == DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
-				d_node.set_text(DictUtils.get_nested_value(
+				d_node.set_text(NFDictUtils.get_nested_value(
 						active_conversation.localization,
 						[node_uuid, "locales", current_locale],
 						"",
@@ -5291,13 +5291,13 @@ func _on_graph_edit_node_duplication_requested(uuids: Array[StringName]) -> void
 	if uuid_size == 0:
 		return
 	elif uuid_size == 1:
-		var new_uuid: StringName = StringName(UUID.generate_new())
+		var new_uuid: StringName = StringName(NFUUID.generate_new())
 		discourse_graph_edit.duplicate_single(uuids[0], new_uuid)
 	else:
-		# Existing UUID: New UUID
+		# Existing NFUUID: New NFUUID
 		var uuid_map: Dictionary[StringName, StringName] = {}
 		for uuid in uuids:
-			uuid_map[uuid] = StringName(UUID.generate_new())
+			uuid_map[uuid] = StringName(NFUUID.generate_new())
 		
 		discourse_graph_edit.duplicate_multiple(uuid_map)
 		
@@ -5315,7 +5315,7 @@ func _on_graph_edit_paste_requested() -> void:
 	
 	for clipboard_data in clipboard:
 		if discourse_graph_edit.graph_nodes.has(clipboard_data["node_uuid"]):
-			uuid_map[clipboard_data["node_uuid"]] = StringName(UUID.generate_new())
+			uuid_map[clipboard_data["node_uuid"]] = StringName(NFUUID.generate_new())
 		else:
 			uuid_map[clipboard_data["node_uuid"]] = clipboard_data["node_uuid"]
 	
@@ -5717,7 +5717,7 @@ func _do_delocalize_node(node_uuid: StringName) -> void:
 	
 	match node.node_type:
 		DiscourseGraphNode.DialogueNodeType.DIALOG:
-			var base_text: String = DictUtils.get_nested_value(
+			var base_text: String = NFDictUtils.get_nested_value(
 				active_conversation.localization,
 				[node_uuid, "locales", base_language],
 				node.get_dialog_text(),
@@ -5727,7 +5727,7 @@ func _do_delocalize_node(node_uuid: StringName) -> void:
 				discourse_graph_edit.set_dialog_node_dialog_text(node_uuid, base_text)
 		DiscourseGraphNode.DialogueNodeType.CHOICES:
 			var options: Array[String] = []
-			options.assign(DictUtils.get_nested_value(
+			options.assign(NFDictUtils.get_nested_value(
 					active_conversation.localization,
 					[node_uuid, "locales", base_language],
 					node.get_options(),
@@ -5740,7 +5740,7 @@ func _do_delocalize_node(node_uuid: StringName) -> void:
 							choice_id,
 							options[choice_id - 1])
 		DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
-			var base_text: String = DictUtils.get_nested_value(
+			var base_text: String = NFDictUtils.get_nested_value(
 					active_conversation.localization,
 					[node_uuid, "locales", base_language],
 					node.get_text(),

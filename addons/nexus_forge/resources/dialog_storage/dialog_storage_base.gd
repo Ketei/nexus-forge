@@ -23,7 +23,7 @@ enum LocalizationType {
 const NodeType := NFDialogParser.NodeTypes
 const LOCALE_STORE_MAX: int = 3
 
-## The UUID of the entry node.
+## The ID of the entry node.
 @export_storage var entry_node: StringName = &""
 
 # Generated on export
@@ -76,15 +76,15 @@ var _dialog_overrides: NFDialogEntryOverride = null:
 		_dialog_overrides = o
 		_dialog_overrides.override_changed.connect(_on_override_updated)
 
-var parsed_dialog_cache: Cache
-var _loaded_locales: Cache
+var parsed_dialog_cache: NFLRUCache
+var _loaded_locales: NFLRUCache
 var _active_locale: DiscourseDialogLocale = null
 var _active_locale_code: String = ""
 
 
 func _init() -> void:
-	parsed_dialog_cache = Cache.new()
-	_loaded_locales = Cache.new()
+	parsed_dialog_cache = NFLRUCache.new()
+	_loaded_locales = NFLRUCache.new()
 	_loaded_locales.max_size = LOCALE_STORE_MAX
 
 
@@ -163,7 +163,7 @@ class NFDialogEntryOverride extends RefCounted:
 	
 	
 	func has_override(node_id: StringName, locale: String, type: int = TYPE_NIL) -> bool:
-		var override_exist: bool = DictUtils.has_nested_path(
+		var override_exist: bool = NFDictUtils.has_nested_path(
 					_overrides,
 					[node_id, locale])
 		
@@ -174,7 +174,7 @@ class NFDialogEntryOverride extends RefCounted:
 	
 	
 	func get_override(node_id: StringName, locale: String) -> Variant:
-		return DictUtils.get_nested_value(
+		return NFDictUtils.get_nested_value(
 				_overrides,
 				[node_id, locale])
 	
@@ -186,12 +186,12 @@ class NFDialogEntryOverride extends RefCounted:
 			if _overrides.has(node_id) and _overrides[node_id].erase(locale):
 				override_changed.emit(node_id, locale)
 		else:
-			if DictUtils.has_nested_path(_overrides, [node_id, locale]):
+			if NFDictUtils.has_nested_path(_overrides, [node_id, locale]):
 				if typeof(_overrides[node_id][locale]) == override_type:
 					if _overrides[node_id][locale] == override:
 						return
 			if not _overrides.has(node_id):
-				_overrides[node_id] = DictUtils.create_typed(TYPE_STRING, TYPE_NIL)
+				_overrides[node_id] = NFDictUtils.create_typed(TYPE_STRING, TYPE_NIL)
 			_overrides[node_id][locale] = override
 			
 			override_changed.emit(node_id, locale)

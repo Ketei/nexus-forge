@@ -1,5 +1,5 @@
-class_name ResourceCache
-extends Cache
+class_name NFLRUResourceCache
+extends NFLRUCache
 
 
 ## Returns a resource from cache or loads it into the cache and returns it.

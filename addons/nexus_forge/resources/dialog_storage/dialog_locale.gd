@@ -106,10 +106,10 @@ static func new_from_json(json_string: String) -> DiscourseDialogLocale:
 								custom_cases[custom_case] = string_data["cases"][custom_case]
 						formats[format_key] = {
 							"cases": custom_cases,
-							"default": DictUtils.get_nested_value(format_data, ["format", format_key, "default"], "", true)}
+							"default": NFDictUtils.get_nested_value(format_data, ["format", format_key, "default"], "", true)}
 				conversation_data[format_id] = {
 					"format": formats,
-					"base_string": DictUtils.get_nested_value(dialog_data, [format_id, "base_string"], "", true)}
+					"base_string": NFDictUtils.get_nested_value(dialog_data, [format_id, "base_string"], "", true)}
 			new_locale.format_strings[dialog_id] = conversation_data
 	
 	return new_locale
@@ -189,7 +189,7 @@ func merge_dialog(with: DiscourseDialogLocale) -> void:
 						target_data["format"] = source_data["format"].duplicate(true)
 				continue
 			
-			var entries: Array[String] = StringUtils.get_all_format_arguments(target_base, true)
+			var entries: Array[String] = NFStringUtils.get_all_format_arguments(target_base, true)
 			var source_formats: Dictionary = source_data["format"]
 			var target_formats: Dictionary = target_data["format"]
 			
@@ -221,7 +221,7 @@ func merge_dialog(with: DiscourseDialogLocale) -> void:
 
 ## Sets the dialog text from the [param conversation]'s [param uuid] to [param text].
 func set_text(conversation: StringName, uuid: StringName, text: String) -> void:
-	DictUtils.set_nested_value(
+	NFDictUtils.set_nested_value(
 			localization,
 			[conversation, uuid, "dialog"],
 			text,
@@ -231,7 +231,7 @@ func set_text(conversation: StringName, uuid: StringName, text: String) -> void:
 ## Sets the dialog options from the [param conversation]'s [param uuid] to be
 ## [param options].
 func set_choices(conversation: StringName, uuid: StringName, choices: PackedStringArray) -> void:
-	DictUtils.set_nested_value(
+	NFDictUtils.set_nested_value(
 			localization,
 			[conversation, uuid, "choices"],
 			choices.duplicate(),
@@ -247,7 +247,7 @@ func as_json() -> String:
 
 ## Returns the options of the given [param uuid] from the [param conversation] .
 func get_choices(conversation: StringName, node: StringName) -> PackedStringArray:
-	if DictUtils.has_nested_path(localization, [conversation, node, "choices"]):
+	if NFDictUtils.has_nested_path(localization, [conversation, node, "choices"]):
 		return localization[conversation][node]["choices"].duplicate()
 	else:
 		return PackedStringArray()
@@ -255,7 +255,7 @@ func get_choices(conversation: StringName, node: StringName) -> PackedStringArra
 
 ## Returns the dialog text from the given [param uuid] from the [param conversation]
 func get_text(conversation: StringName, node: StringName) -> String:
-	return DictUtils.get_nested_value(
+	return NFDictUtils.get_nested_value(
 			localization,
 			[conversation, node, "text"],
 			"",
@@ -264,12 +264,12 @@ func get_text(conversation: StringName, node: StringName) -> String:
 
 ## Returns if the [param conversation] has data for the given [param uuid]
 func has_data(conversation: StringName, node: StringName) -> bool:
-	return DictUtils.has_nested_path(localization, [conversation, node])
+	return NFDictUtils.has_nested_path(localization, [conversation, node])
 
 
 ## Returns the unformatted string from the [param conversation] assiged to [param key].
 func get_format_string_text(conversation: StringName, key: StringName) -> String:
-	return DictUtils.get_nested_value(
+	return NFDictUtils.get_nested_value(
 			format_strings,
 			[conversation, key, "base_string"],
 			"",
@@ -280,7 +280,7 @@ func get_format_string_text(conversation: StringName, key: StringName) -> String
 ## their [code]default[/code] value and custom [code]cases[/code].
 func get_format_string_args(conversation: StringName, key: StringName) -> Dictionary[String, Dictionary]:
 	var data: Dictionary[String, Dictionary] = {}
-	var stored: Dictionary = DictUtils.get_nested_value(
+	var stored: Dictionary = NFDictUtils.get_nested_value(
 			format_strings,
 			[conversation, key, "format"],
 			{},
@@ -291,7 +291,7 @@ func get_format_string_args(conversation: StringName, key: StringName) -> Dictio
 
 ## Returns true if the given [param conversation] has a format string with the given [param key].
 func has_format_string(conversation: StringName, key: StringName) -> bool:
-	return DictUtils.has_nested_path(
+	return NFDictUtils.has_nested_path(
 			format_strings,
 			[conversation, key])
 
@@ -299,7 +299,7 @@ func has_format_string(conversation: StringName, key: StringName) -> bool:
 ## Sets the format string from the [param conversation] with the assigned
 ## [param key] to be [param text] and the given format [param arguments].
 func set_format_string(conversation: StringName, key: String, text: String, arguments: Dictionary[String, Dictionary]) -> void:
-	var target: Dictionary = DictUtils.get_nested_value(
+	var target: Dictionary = NFDictUtils.get_nested_value(
 			format_strings,
 			[conversation, key],
 			{})

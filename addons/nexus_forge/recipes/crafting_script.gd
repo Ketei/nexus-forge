@@ -6,7 +6,7 @@ signal recipes_loaded
 
 const MAX_UNDO_STEPS: int = 50
 
-var recipes_resource: RecipeCatalog = null
+var recipes_resource: NFRecipeCatalog = null
 
 var active_recipe: StringName = &"":
 	set(new_active):
@@ -217,18 +217,18 @@ func save_current_recipe() -> void:
 	var inputs: Array[Dictionary] = recipe_input_tree.get_recipe_items()
 	var outputs: Array[Dictionary] = recipe_output_tree.get_recipe_items()
 	
-	var input_items: Array[RecipeItem] = []
-	var output_items: Array[RecipeItem] = []
+	var input_items: Array[NFRecipeItem] = []
+	var output_items: Array[NFRecipeItem] = []
 	
 	for input in inputs:
-		var item: RecipeItem = RecipeItem.new()
+		var item: NFRecipeItem = NFRecipeItem.new()
 		item.id = input["item_id"]
 		item.amount = input["amount"]
 		item.custom_data.assign(input["data"])
 		input_items.append(item)
 	
 	for output in outputs:
-		var item: RecipeItem = RecipeItem.new()
+		var item: NFRecipeItem = NFRecipeItem.new()
 		item.id = output["item_id"]
 		item.amount = output["amount"]
 		item.custom_data.assign(output["data"])
@@ -261,7 +261,7 @@ func reload_recipe_resource(first_launch: bool = false) -> void:
 	
 	if path != "" and FileAccess.file_exists(path):
 		var pre_res: Resource = load(path)
-		if pre_res is RecipeCatalog:
+		if pre_res is NFRecipeCatalog:
 			recipes_resource = pre_res
 	
 	$CraftingContainer.visible = recipes_resource != null
@@ -272,7 +272,7 @@ func reload_recipe_resource(first_launch: bool = false) -> void:
 			var no_db: Control = load("res://addons/nexus_forge/no_db_container.tscn").instantiate()
 			add_child(no_db)
 			no_db.message_minimum_size.x = 450
-			no_db.set_resource_type("RecipeCatalog", "Recipes", "Recipes")
+			no_db.set_resource_type("NFRecipeCatalog", "Recipes", "Recipes")
 			no_db.create_resource_pressed.connect(_on_create_database_pressed.bind(no_db))
 			no_db.load_resource_pressed.connect(_on_load_database_pressed.bind(no_db))
 			no_db.resource_dropped.connect(_on_resource_dropped.bind(no_db))
@@ -286,7 +286,7 @@ func add_item(item_id: StringName, item_name: String) -> void:
 			item_name)
 
 
-func reload_items(items: ItemCatalog = null) -> void:
+func reload_items(items: NFItemCatalog = null) -> void:
 	recipe_items_tree.clear_items()
 	
 	if items == null:
@@ -296,7 +296,7 @@ func reload_items(items: ItemCatalog = null) -> void:
 		
 		if item_path != "" and FileAccess.file_exists(item_path):
 			var res_pre: Resource = load(item_path)
-			if res_pre is ItemCatalog:
+			if res_pre is NFItemCatalog:
 				for item in res_pre.items():
 					recipe_items_tree.add_item(
 							item,
@@ -325,7 +325,7 @@ func _on_create_database_pressed(node: Control) -> void:
 	var result = await database_creator.dialog_finished
 	
 	if result[0]:
-		recipes_resource = RecipeCatalog.new()
+		recipes_resource = NFRecipeCatalog.new()
 		ResourceSaver.save(recipes_resource, result[1])
 		recipes_resource.resource_path = result[1]
 		ProjectSettings.set_setting(
@@ -351,7 +351,7 @@ func _on_load_database_pressed(node: Control) -> void:
 	
 	if result[0]:
 		var res_pre: Resource = load(result[1])
-		if res_pre != null and res_pre is RecipeCatalog:
+		if res_pre != null and res_pre is NFRecipeCatalog:
 			recipes_resource = res_pre
 			ProjectSettings.set_setting(
 					NFPluginGameHandler.get_setting_path("recipes"),
@@ -380,7 +380,7 @@ func _on_resource_dropped(resource: Resource, panel: Control) -> void:
 
 
 func load_recipe(recipe_id: StringName) -> void:
-	var recipe: RecipeSheet = recipes_resource.get_recipe(recipe_id)
+	var recipe: NFRecipeSheet = recipes_resource.get_recipe(recipe_id)
 	
 	if recipe == null:
 		NFPluginGameHandler._log_msg(

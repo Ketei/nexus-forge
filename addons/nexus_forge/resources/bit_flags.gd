@@ -1,4 +1,4 @@
-class_name BitFlags
+class_name NFBitFlags
 extends Resource
 ## An object to store integer-flags and pair them with an identifiable key.
 ##
@@ -43,7 +43,7 @@ func create_flag(flag_id: StringName) -> bool:
 ## Removes flag_id from the registry.
 func release_flag(flag_id: StringName) -> void:
 	if _flag_data.has(flag_id):
-		_bit_store = BitUtils.set_bits(
+		_bit_store = NFBitUtils.set_bits(
 				_bit_store,
 				_flag_data[flag_id],
 				false)

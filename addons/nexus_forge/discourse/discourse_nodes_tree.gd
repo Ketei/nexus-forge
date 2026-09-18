@@ -399,7 +399,7 @@ func move_item(from_path: String, to: String, index: int) -> void:
 	
 	var child_count: int = new_parent.get_child_count()
 	var max_index: int = child_count - 1
-	if not RangeUtils.is_between(index, -child_count, max_index):
+	if not NFRangeUtils.is_between(index, -child_count, max_index):
 		return
 	var true_index: int = wrapi(index, 0, child_count)
 	
@@ -486,7 +486,7 @@ func create_folder(folder_name: String, on_node: TreeItem = get_root(), select: 
 	var child_count: int = on_node.get_child_count()
 	var max_index: int = child_count - 1
 	
-	if not RangeUtils.is_between(index, -child_count, max_index):
+	if not NFRangeUtils.is_between(index, -child_count, max_index):
 		return new_folder
 	
 	var true_index: int = wrapi(index, 0, child_count)
@@ -592,7 +592,7 @@ func create_node(node: DiscourseGraphNode, on: TreeItem = get_root(), index: int
 	var child_count: int = on.get_child_count()
 	var max_index: int = child_count - 1
 	
-	if not RangeUtils.is_between(index, -child_count, max_index):
+	if not NFRangeUtils.is_between(index, -child_count, max_index):
 		return
 	
 	var true_index: int = wrapi(index, 0, child_count)
@@ -666,7 +666,7 @@ func get_unique_name_for_node(desired_name: String, type: int, skip_item: TreeIt
 	
 	var base_name: String = desired_name
 	var modified: String = desired_name
-	var trailing_data: Dictionary = StringUtils.get_trailing_integer(desired_name)
+	var trailing_data: Dictionary = NFStringUtils.get_trailing_integer(desired_name)
 	var iteration: int = trailing_data["integer"]
 	if trailing_data["has_integer"]:
 		base_name = desired_name.trim_suffix(str(iteration))
@@ -691,7 +691,7 @@ func get_unique_name_on_tree(tree: TreeItem, desired_name: String, skip_item: Tr
 	
 	var edited_name: String = desired_name.strip_edges()
 	var base: String = edited_name
-	var trailing_data: Dictionary = StringUtils.get_trailing_integer(desired_name)
+	var trailing_data: Dictionary = NFStringUtils.get_trailing_integer(desired_name)
 	var iteration: int = trailing_data["integer"]
 	if trailing_data["has_integer"]:
 		base = base.trim_suffix(str(iteration))
@@ -782,7 +782,7 @@ func get_path_to_item(folder: TreeItem) -> String:
 	
 	path_parts.reverse()
 	
-	return StringUtils.make_path(path_parts)
+	return NFStringUtils.make_path(path_parts)
 
 
 func get_item_from_path(path: String) -> TreeItem:

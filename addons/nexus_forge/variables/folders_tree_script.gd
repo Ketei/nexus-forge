@@ -408,7 +408,7 @@ func validate_folder_name(parent_tree: TreeItem, folder_name: String = default_f
 	if folder_name.strip_edges().is_empty():
 		folder_name = "new_folder"
 	var tweaked_name: String = folder_name.replace("/", "_")
-	var trailing_int: Dictionary = StringUtils.get_trailing_integer(tweaked_name)
+	var trailing_int: Dictionary = NFStringUtils.get_trailing_integer(tweaked_name)
 	var iteration: int = trailing_int["integer"]
 	var modified_name = tweaked_name
 	if trailing_int["has_integer"]:
@@ -462,7 +462,7 @@ func get_path_to_folder(folder: TreeItem) -> String:
 		folder_step = folder_step.get_parent()
 	
 	folder_path.reverse()
-	return StringUtils.make_path(folder_path)
+	return NFStringUtils.make_path(folder_path)
 
 
 func get_state_path_to_folder(folder: TreeItem) -> String:

@@ -1,6 +1,6 @@
 @tool
 @icon("res://addons/nexus_forge/icons/bluepring_fill.svg")
-class_name RecipeCatalog
+class_name NFRecipeCatalog
 extends Resource
 
 
@@ -16,7 +16,7 @@ func recipes() -> Array[StringName]:
 
 
 ## Overwrites the inputs for [param recipe_id] with [param inputs].
-func set_recipe_inputs(recipe_id: StringName, inputs: Array[RecipeItem]) -> void:
+func set_recipe_inputs(recipe_id: StringName, inputs: Array[NFRecipeItem]) -> void:
 	if not _recipes.has(recipe_id):
 		return
 	
@@ -34,7 +34,7 @@ func set_recipe_inputs(recipe_id: StringName, inputs: Array[RecipeItem]) -> void
 
 
 ## Overwrites the outputs for [param recipe_id] with [param outputs].
-func set_recipe_outputs(recipe_id: StringName, outputs: Array[RecipeItem]) -> void:
+func set_recipe_outputs(recipe_id: StringName, outputs: Array[NFRecipeItem]) -> void:
 	if not _recipes.has(recipe_id):
 		return
 	
@@ -62,7 +62,7 @@ func create_recipe(recipe_id: StringName) -> void:
 	var recipe: Dictionary = {
 		"input": inputs,
 		"output": outputs,
-		"custom_data": DictUtils.create_typed(TYPE_STRING, TYPE_NIL)}
+		"custom_data": NFDictUtils.create_typed(TYPE_STRING, TYPE_NIL)}
 
 	_recipes[recipe_id] = recipe
 
@@ -126,13 +126,13 @@ func clear_recipe_data(recipe_id: StringName) -> void:
 		_recipes[recipe_id]["custom_data"].clear()
 
 
-## Returns a [RecipeSheet] of the [param recipe_id] or [code]null[/code]
+## Returns a [NFRecipeSheet] of the [param recipe_id] or [code]null[/code]
 ## if the recipe doesn't exist.
-func get_recipe(recipe_id: StringName) -> RecipeSheet:
+func get_recipe(recipe_id: StringName) -> NFRecipeSheet:
 	if not _recipes.has(recipe_id):
 		return null
 	
-	var recipe: RecipeSheet = RecipeSheet.new()
+	var recipe: NFRecipeSheet = NFRecipeSheet.new()
 	recipe.id = recipe_id
 	recipe.input.assign(get_recipe_inputs(recipe_id))
 	recipe.output.assign(get_recipe_outputs(recipe_id))
@@ -143,7 +143,7 @@ func get_recipe(recipe_id: StringName) -> RecipeSheet:
 
 func get_recipe_custom_data(recipe_id: StringName) -> Dictionary[StringName, Variant]:
 	var data: Dictionary[StringName, Variant] = {}
-	data.assign(DictUtils.get_nested_value(
+	data.assign(NFDictUtils.get_nested_value(
 			_recipes,
 			[recipe_id, "custom_data"],
 			{},
@@ -151,12 +151,12 @@ func get_recipe_custom_data(recipe_id: StringName) -> Dictionary[StringName, Var
 	return data
 
 
-func get_recipe_inputs(recipe_id: StringName) -> Array[RecipeItem]:
-	var inp: Array[RecipeItem] = []
+func get_recipe_inputs(recipe_id: StringName) -> Array[NFRecipeItem]:
+	var inp: Array[NFRecipeItem] = []
 	if not _recipes.has(recipe_id):
 		return inp
 	
-	var inputs: Array = DictUtils.get_nested_value(
+	var inputs: Array = NFDictUtils.get_nested_value(
 			_recipes,
 			[recipe_id, "input"],
 			[],
@@ -165,9 +165,9 @@ func get_recipe_inputs(recipe_id: StringName) -> Array[RecipeItem]:
 	for input in inputs:
 		if typeof(input) != TYPE_DICTIONARY or not input.has("item_id"):
 			continue
-		var amount_data = DictUtils.get_nested_value(input, ["amount"], 0)
+		var amount_data = NFDictUtils.get_nested_value(input, ["amount"], 0)
 		var amount_type: int = typeof(amount_data)
-		var input_item: RecipeItem = RecipeItem.new()
+		var input_item: NFRecipeItem = NFRecipeItem.new()
 		
 		input_item.id = input["item_id"]
 		if amount_type != TYPE_INT and amount_type != TYPE_FLOAT:
@@ -175,7 +175,7 @@ func get_recipe_inputs(recipe_id: StringName) -> Array[RecipeItem]:
 		else:
 			input_item.amount = amount_data
 		input_item.amount = input["amount"]
-		input_item.custom_data.assign(DictUtils.get_nested_value(
+		input_item.custom_data.assign(NFDictUtils.get_nested_value(
 				input,
 				["custom_data"],
 				{},
@@ -185,12 +185,12 @@ func get_recipe_inputs(recipe_id: StringName) -> Array[RecipeItem]:
 	return inp
 
 
-func get_recipe_outputs(recipe_id: StringName) -> Array[RecipeItem]:
-	var inp: Array[RecipeItem] = []
+func get_recipe_outputs(recipe_id: StringName) -> Array[NFRecipeItem]:
+	var inp: Array[NFRecipeItem] = []
 	if not _recipes.has(recipe_id):
 		return inp
 	
-	var outputs: Array = DictUtils.get_nested_value(
+	var outputs: Array = NFDictUtils.get_nested_value(
 			_recipes,
 			[recipe_id, "output"],
 			[],
@@ -199,9 +199,9 @@ func get_recipe_outputs(recipe_id: StringName) -> Array[RecipeItem]:
 	for input in outputs:
 		if typeof(input) != TYPE_DICTIONARY or not input.has("item_id"):
 			continue
-		var amount_data = DictUtils.get_nested_value(input, ["amount"], 0)
+		var amount_data = NFDictUtils.get_nested_value(input, ["amount"], 0)
 		var amount_type: int = typeof(amount_data)
-		var input_item: RecipeItem = RecipeItem.new()
+		var input_item: NFRecipeItem = NFRecipeItem.new()
 		
 		input_item.id = input["item_id"]
 		if amount_type != TYPE_INT and amount_type != TYPE_FLOAT:
@@ -209,7 +209,7 @@ func get_recipe_outputs(recipe_id: StringName) -> Array[RecipeItem]:
 		else:
 			input_item.amount = amount_data
 		input_item.amount = input["amount"]
-		input_item.custom_data.assign(DictUtils.get_nested_value(
+		input_item.custom_data.assign(NFDictUtils.get_nested_value(
 				input,
 				["custom_data"],
 				{},

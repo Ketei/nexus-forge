@@ -14,7 +14,7 @@ var color_picker: ColorPickerButton
 
 
 func _init(uuid: String = "") -> void:
-	_uuid = UUID.generate_new() if uuid.is_empty() else uuid
+	_uuid = NFUUID.generate_new() if uuid.is_empty() else uuid
 	var title_frame: HBoxContainer = get_titlebar_hbox()
 	var title_label: Label = title_frame.get_child(0)
 	var centering_spacer: Control = Control.new()

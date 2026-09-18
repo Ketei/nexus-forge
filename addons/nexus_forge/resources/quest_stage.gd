@@ -1,8 +1,8 @@
 @tool
 @icon("res://addons/nexus_forge/icons/sign_icon.svg")
-class_name QuestStage
+class_name NFQuestStage
 extends Resource
-## A resource representing a stage of a [Quest].
+## A resource representing a stage of a [NFQuest].
 
 
 enum StageType {
@@ -58,7 +58,7 @@ static func _static_init() -> void:
 	_regex_formatter.compile("\\{\\$[^\\}]+\\}")
 
 
-## Returns the quest [member QuestStage.title]. Formats it if [code]Format Quest Strings with Blackboard[/code]
+## Returns the quest [member NFQuestStage.title]. Formats it if [code]Format NFQuest Strings with Blackboard[/code]
 ## is [code]On[/code] on [code]Project Settings[/code].
 func get_stage_title() -> String:
 	if not ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("quests_format_strings"), false):
@@ -82,7 +82,7 @@ func get_stage_title() -> String:
 	return _build_format(title, title_formats)
 
 
-## Returns the quest [member QuestStage.description]. Formats it if [code]Format Quest Strings with Blackboard[/code]
+## Returns the quest [member NFQuestStage.description]. Formats it if [code]Format NFQuest Strings with Blackboard[/code]
 ## is [code]On[/code] on [code]Project Settings[/code].
 func get_stage_description() -> String:
 	if not ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("quests_format_strings"), false):
@@ -114,10 +114,10 @@ func objectives() -> Array[StringName]:
 
 
 ## Creates a new objective for this stage. If an objective with id
-## [method QuestObjective.id] already exists it won't be added.[br]
+## [method NFQuestObjective.id] already exists it won't be added.[br]
 ## [param required] will define if this objective is required to complete
 ## the stage.
-func add_objective(objective: QuestObjective, required: bool) -> void:
+func add_objective(objective: NFQuestObjective, required: bool) -> void:
 	if _objectives.has(objective.id):
 		return
 	_objectives[objective.id] = {
@@ -151,7 +151,7 @@ func is_objective_required(objective_id: StringName) -> bool:
 
 ## Returns the objective object assigned to [param objective_id]. Returns
 ## [code]null[/code] if the objective isn't registered.
-func get_objective(objective_id: StringName) -> QuestObjective:
+func get_objective(objective_id: StringName) -> NFQuestObjective:
 	if _objectives.has(objective_id):
 		return _objectives[objective_id]["objective"]
 	return null

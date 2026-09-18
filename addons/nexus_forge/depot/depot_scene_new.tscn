@@ -115,11 +115,9 @@ placeholder_text = "Search Items"
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Create Item"
-disabled = true
 icon = ExtResource("4_wu6sx")
 flat = true
 icon_alignment = 1
-expand_icon = true
 
 [node name="ItemsTree" type="Tree" parent="ItemsContainer/ItemsPanel/ItemsContainer/TreeContainer" unique_id=1206274038]
 layout_mode = 2

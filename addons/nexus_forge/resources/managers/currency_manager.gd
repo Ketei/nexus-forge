@@ -11,7 +11,7 @@ var _currencies: Dictionary[StringName, NFCurrencyEntry] = {}
 
 
 
-func load_catalog(catalog: CurrencyCatalog, clear_currencies: bool = true) -> void:
+func load_catalog(catalog: NFCurrencyCatalog, clear_currencies: bool = true) -> void:
 	if clear_currencies:
 		_currencies.clear()
 	
@@ -193,7 +193,7 @@ func currency_value(currency:Dictionary[StringName, int]) -> int:
 	for currency_id in currency:
 		if not _currencies.has(currency_id):
 			continue
-		total_value = Math.safe_sum(
+		total_value = NFMath.safe_sum(
 				total_value,
 				_currencies[currency_id]["value"] * currency[currency_id])
 	

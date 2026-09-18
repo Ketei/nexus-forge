@@ -86,8 +86,8 @@ var _dialog_resource: DiscourseDialog = null:
 var _conversation_started: bool = false
 var _next_uuid: StringName = &""
 var _current_uuid: StringName = &""
-var _conversation_cache: ResourceCache = null
-var _parser_cache: Cache = null
+var _conversation_cache: NFLRUResourceCache = null
+var _parser_cache: NFLRUCache = null
 var _parser_regex: RegEx = RegEx.new()
 var _node_travel_stack: Array[StringName] = []
 
@@ -109,8 +109,8 @@ var _dialog_edits: Dictionary[String, DiscourseDialog.NFDialogEntryOverride] = {
 
 
 func _init() -> void:
-	_conversation_cache = ResourceCache.new()
-	_parser_cache = Cache.new()
+	_conversation_cache = NFLRUResourceCache.new()
+	_parser_cache = NFLRUCache.new()
 	API = DiscourseAPI.new()
 	_parser_regex.compile("\\{(\\![a-zA-Z\\_][a-zA-Z0-9\\_]*(?:\\|[^\\}]+)?|(?:[\\?\\&\\$][^\\}]+))\\}")
 
@@ -123,7 +123,7 @@ func _init() -> void:
 # builds as files don't exist.
 func _generate_locale_map() -> void:
 	var file: FileAccess = FileAccess.open(
-			StringUtils.make_path([
+			NFStringUtils.make_path([
 				ProjectSettings.get_setting(
 					NFPluginGameHandler.get_setting_path("discourse"),
 					"res://localization/"),
@@ -162,13 +162,13 @@ func _parse_dialog(dialog_id: String, dialog_text: String, is_override: bool) ->
 	else:
 		DUUID = dialog_id + "/" + locale
 	
-	# (UUID)/en_US
+	# (NFUUID)/en_US
 	if _dialog_resource.parsed_dialog_cache.is_in_cache(DUUID):
-		var cached_data: ParsedDialog = _dialog_resource.parsed_dialog_cache.get_cache(DUUID)
+		var cached_data: NFParsedDialog = _dialog_resource.parsed_dialog_cache.get_cache(DUUID)
 		if cached_data.dialog == dialog_text:
 			return cached_data.get_dialog()
 	
-	var parsed: ParsedDialog = ParsedDialog.new()
+	var parsed: NFParsedDialog = NFParsedDialog.new()
 	parsed.dialog = dialog_text
 	parsed.locale = locale
 	
@@ -343,7 +343,7 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 			
 			target["type"] = NodeTypes.DIALOG
 			
-			if DictUtils.has_nested_path(data, ["dialog_settings", "metadata"]):
+			if NFDictUtils.has_nested_path(data, ["dialog_settings", "metadata"]):
 				for meta_key in data["dialog_settings"]["metadata"]:
 					metadata[meta_key] = _get_data(data["dialog_settings"]["metadata"][meta_key])
 			
@@ -430,7 +430,7 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 							"unlocked": true,
 							"text": _parse_dialog(option_duuid, localized_options[idx], is_overridden),
 							"target": option["next_node"],
-							"metadata": DictUtils.create_typed(TYPE_STRING, TYPE_NIL)})
+							"metadata": NFDictUtils.create_typed(TYPE_STRING, TYPE_NIL)})
 				else:
 					var opt_settings: Dictionary = option["settings"]
 					var show: bool = _get_data(opt_settings["available"], true)
@@ -750,7 +750,7 @@ func _load_locale_into(dialog: DiscourseDialog, locale_code: String, ) -> void:
 
 
 func _get_dialog_locale(dialog_id: String, lang_code: String) -> DiscourseDialogLocale:
-	if DictUtils.has_nested_path(_locale_overrides, [dialog_id, lang_code]):
+	if NFDictUtils.has_nested_path(_locale_overrides, [dialog_id, lang_code]):
 		var modded_path: String = _locale_overrides[dialog_id][lang_code]
 		if FileAccess.file_exists(modded_path):
 			var locale_data: DiscourseDialogLocale = DiscourseDialogLocale.new_from_json(FileAccess.get_file_as_string(modded_path))
@@ -767,7 +767,7 @@ func _get_dialog_locale(dialog_id: String, lang_code: String) -> DiscourseDialog
 			"res://localization/")
 	var filename: String = _id_to_data[dialog_id]["locale_file"]
 	var hash_slice: String = filename.substr(0, 2)
-	var locale_path: String = StringUtils.make_path(
+	var locale_path: String = NFStringUtils.make_path(
 		[file_path, lang_code, hash_slice, filename])
 	
 	if FileAccess.file_exists(locale_path):
@@ -788,13 +788,13 @@ func _get_dialog_locale(dialog_id: String, lang_code: String) -> DiscourseDialog
 		#_dialog_resource._set_locale("")
 		#return
 	#
-	#var locale_id: String = DictUtils.get_nested_value(
+	#var locale_id: String = NFDictUtils.get_nested_value(
 			#_path_to_id,
 			#[_dialog_resource.resource_path],
 			#"")
 	#_dialog_resource._set_locale(locale_code)
 	#
-	#if DictUtils.has_nested_path(_locale_overrides, [locale_id, locale]):
+	#if NFDictUtils.has_nested_path(_locale_overrides, [locale_id, locale]):
 		#var file: FileAccess = FileAccess.open(
 				#_locale_overrides[locale_id][locale],
 				#FileAccess.READ)
@@ -826,7 +826,7 @@ func _get_dialog_locale(dialog_id: String, lang_code: String) -> DiscourseDialog
 	#var localization_filename: String = _id_to_data[locale_id]["locale_file"]
 	#var hash_slice: String = localization_filename.substr(0, 2)
 	#
-	#var locale_path: String = StringUtils.make_path([
+	#var locale_path: String = NFStringUtils.make_path([
 			#base_locale_path,
 			#locale_code,
 			#hash_slice,
@@ -864,7 +864,7 @@ func load_dialog(path: String, starting_id: StringName = &"") -> bool:
 	var target_path: String = _logic_overrides[path] if _logic_overrides.has(path) else path
 	
 	if _conversation_cache.is_in_cache(target_path):
-		var dialog_id: String = DictUtils.get_nested_value(_path_to_id, [path], "")
+		var dialog_id: String = NFDictUtils.get_nested_value(_path_to_id, [path], "")
 		var data: DiscourseDialog = _conversation_cache.get_resource(target_path)
 		var locale_data: DiscourseDialogLocale = data._get_locale(locale)
 		
@@ -879,7 +879,7 @@ func load_dialog(path: String, starting_id: StringName = &"") -> bool:
 			_load_locale_into(_dialog_resource, locale)
 	else:
 		var res: Resource = load(target_path)
-		var id: String = DictUtils.get_nested_value(_path_to_id, [path], "")
+		var id: String = NFDictUtils.get_nested_value(_path_to_id, [path], "")
 		
 		if res == null or res is not DiscourseDialog:
 			_next_uuid = &""
@@ -907,7 +907,7 @@ func load_dialog(path: String, starting_id: StringName = &"") -> bool:
 ## Returns [code]true[/code] if the loading was successful.
 func prepare_dialog(path: String) -> bool:
 	var target_path: String = _logic_overrides[path] if _logic_overrides.has(path) else path
-	var dialog_id: String = DictUtils.get_nested_value(_path_to_id, [path], "")
+	var dialog_id: String = NFDictUtils.get_nested_value(_path_to_id, [path], "")
 	
 	if _conversation_cache.is_in_cache(target_path):
 		var data: DiscourseDialog = _conversation_cache.get_resource(target_path)
@@ -934,7 +934,7 @@ func prepare_dialog(path: String) -> bool:
 
 
 ## Sets the dialog to be at a specific point. [param id] can be the dialog
-## id or the UUID. If invalid it'll set the dialog to be at the beggining.
+## id or the NFUUID. If invalid it'll set the dialog to be at the beggining.
 func set_dialog_id(id: StringName) -> void:
 	if _dialog_resource == null:
 		return
@@ -1069,7 +1069,7 @@ func override_dialog_locale(dialog_id: String, locale_code: String, path: String
 				_locale_overrides.erase(dialog_id)
 		return
 	
-	DictUtils.set_nested_value(
+	NFDictUtils.set_nested_value(
 			_locale_overrides,
 			[dialog_id, locale_code],
 			path)

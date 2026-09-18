@@ -1,6 +1,6 @@
 @tool
 @icon("res://addons/nexus_forge/icons/chest_full.svg")
-class_name ItemCatalog
+class_name NFItemCatalog
 extends Resource
 
 @export_storage var _categories: Dictionary[StringName, Dictionary] = {}
@@ -18,7 +18,7 @@ func items() -> Array[StringName]:
 
 func item_data(item_id: StringName) -> Dictionary[StringName, Variant]:
 	var data: Dictionary[StringName, Variant] = {}
-	data.assign(DictUtils.get_nested_value(
+	data.assign(NFDictUtils.get_nested_value(
 			_items,
 			[item_id, "custom_data"],
 			{},
@@ -33,7 +33,7 @@ func set_item_data(item_id: StringName, data_key: String, data: Variant) -> void
 		return
 	
 	if not _items[item_id].has("custom_data"):
-		_items[item_id]["custom_data"] = DictUtils.create_typed(TYPE_STRING, TYPE_NIL)
+		_items[item_id]["custom_data"] = NFDictUtils.create_typed(TYPE_STRING, TYPE_NIL)
 	
 	if data == null:
 		_items[item_id]["custom_data"].erase(data_key)
@@ -43,7 +43,7 @@ func set_item_data(item_id: StringName, data_key: String, data: Variant) -> void
 
 ## Clears the custom data from [param item_id].
 func clear_item_data(item_id: StringName) -> void:
-	if DictUtils.has_nested_path(_items, [item_id, "custom_data"]):
+	if NFDictUtils.has_nested_path(_items, [item_id, "custom_data"]):
 		_items[item_id]["custom_data"].clear()
 
 
@@ -66,7 +66,7 @@ func create_item(item_id: StringName, item_name: String, description: String, ca
 
 
 ## Sets all the [param flags] on [param item_id] to [param enabled].
-func set_item_flags(item_id: StringName, flags: Array[ItemSheet.ItemFlag], enabled: bool) -> void:
+func set_item_flags(item_id: StringName, flags: Array[NFItemSheet.ItemFlag], enabled: bool) -> void:
 	if not _items.has(item_id):
 		return
 	
@@ -83,7 +83,7 @@ func set_item_flags(item_id: StringName, flags: Array[ItemSheet.ItemFlag], enabl
 func get_item_flags(item_id: StringName) -> Array[int]:
 	var flags: Array[int] = []
 	
-	for item in DictUtils.get_nested_value(_items, [item_id, "flags"], [], true):
+	for item in NFDictUtils.get_nested_value(_items, [item_id, "flags"], [], true):
 		if typeof(item) != TYPE_INT or flags.has(item):
 			continue
 		flags.append(item)
@@ -92,7 +92,7 @@ func get_item_flags(item_id: StringName) -> Array[int]:
 
 
 ## Returns true if the [param item_id] has [param flag] enabled.
-func item_has_flag(item_id: StringName, flag: ItemSheet.ItemFlag) -> bool:
+func item_has_flag(item_id: StringName, flag: NFItemSheet.ItemFlag) -> bool:
 	if _items.has(item_id):
 		return _items[item_id]["flags"].has(flag)
 	return false
@@ -116,7 +116,7 @@ func set_item_name(item_id: StringName, new_name: String) -> void:
 
 ## Returns the name of [param item_id] or an empty string if the item doesn't exist.
 func get_item_name(item_id: StringName) -> String:
-	return DictUtils.get_nested_value(
+	return NFDictUtils.get_nested_value(
 			_items,
 			[item_id, "name"],
 			"",
@@ -124,7 +124,7 @@ func get_item_name(item_id: StringName) -> String:
 
 
 func get_item_description(item_id: StringName) -> String:
-	return DictUtils.get_nested_value(
+	return NFDictUtils.get_nested_value(
 			_items,
 			[item_id, "description"],
 			"",
@@ -154,7 +154,7 @@ func set_item_rarity(item_id: StringName, new_rarity: int) -> void:
 
 
 func get_item_rarity(item_id: StringName) -> int:
-	return DictUtils.get_nested_value(
+	return NFDictUtils.get_nested_value(
 			_items,
 			[item_id, "rarity"],
 			0,
@@ -170,7 +170,7 @@ func set_item_value(item_id: StringName, new_value: int) -> void:
 
 
 func get_item_value(item_id: StringName) -> int:
-	var value = DictUtils.get_nested_value(
+	var value = NFDictUtils.get_nested_value(
 			_items,
 			[item_id, "value"],
 			0)
@@ -189,13 +189,13 @@ func set_item_description(item_id: StringName, new_desc: String) -> void:
 	_items[item_id]["description"] = new_desc
 
 
-## Returns an [ItemSheet] of the item param item_id.[br]
+## Returns an [NFItemSheet] of the item param item_id.[br]
 ## Returns [code]null[/code] if the item doesn't exist.
-func get_item(item_id: StringName) -> ItemSheet:
+func get_item(item_id: StringName) -> NFItemSheet:
 	if not _items.has(item_id):
 		return null
 	
-	var item_sheet := ItemSheet.new()
+	var item_sheet := NFItemSheet.new()
 	var data: Dictionary = _items[item_id]
 	item_sheet.name = data["name"]
 	item_sheet.category = data["category"]
@@ -257,7 +257,7 @@ func set_category_name(category_id: StringName, category_name: String) -> void:
 ## Returns the name of [param category_id] or an empty string if the category
 ## isn't registered.
 func get_category_name(category_id: StringName) -> String:
-	return DictUtils.get_nested_value(
+	return NFDictUtils.get_nested_value(
 			_categories,
 			[category_id, "name"],
 			"",
@@ -265,7 +265,7 @@ func get_category_name(category_id: StringName) -> String:
 
 
 func get_category_parent(category_id: StringName) -> StringName:
-	return DictUtils.get_nested_value(
+	return NFDictUtils.get_nested_value(
 			_categories,
 			[category_id, "parent_key"],
 			&"",
@@ -279,7 +279,7 @@ func set_category_data(category_id: StringName, data_key: String, data: Variant)
 		return
 	
 	if not _categories[category_id].has("custom_data"):
-		_categories[category_id]["custom_data"] = DictUtils.create_typed(TYPE_STRING, TYPE_NIL)
+		_categories[category_id]["custom_data"] = NFDictUtils.create_typed(TYPE_STRING, TYPE_NIL)
 	
 	if data == null:
 		_categories[category_id]["custom_data"].erase(data_key)
@@ -289,7 +289,7 @@ func set_category_data(category_id: StringName, data_key: String, data: Variant)
 
 ## Clears the custom data from the category [param category_id].
 func clear_category_data(category_id: StringName) -> void:
-	if DictUtils.has_nested_path(_categories, [category_id, "custom_data"]):
+	if NFDictUtils.has_nested_path(_categories, [category_id, "custom_data"]):
 		_categories[category_id]["custom_data"].clear()
 
 
@@ -297,14 +297,14 @@ func clear_category_data(category_id: StringName) -> void:
 ## Returns [code]null[/code] if [param category_id] isn't registered
 ## or [param data_key] doesn't exist.
 func get_category_data(category_id: StringName, data_key: String) -> Variant:
-	return DictUtils.get_nested_value(
+	return NFDictUtils.get_nested_value(
 			_categories,
 			[category_id, "custom_data", data_key])
 
 
 func category_data(category_id: StringName) -> Dictionary[StringName, Variant]:
 	var data: Dictionary[StringName, Variant] = {}
-	data.assign(DictUtils.get_nested_value(
+	data.assign(NFDictUtils.get_nested_value(
 			_categories,
 			[category_id, "custom_data"],
 			{},

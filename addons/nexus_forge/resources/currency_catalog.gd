@@ -1,6 +1,6 @@
 @tool
 @icon("res://addons/nexus_forge/icons/currency_catalog.svg")
-class_name CurrencyCatalog
+class_name NFCurrencyCatalog
 extends Resource
 ## A resource holding data and values for a currency system.
 ##
@@ -44,7 +44,7 @@ func set_currency_value(currency_id: StringName, new_value: int) -> void:
 ## Returns the value of [param currency_id]. Value returned won't be less
 ## than 1.
 func get_currency_value(currency_id: StringName) -> int:
-	var data = DictUtils.get_nested_value(
+	var data = NFDictUtils.get_nested_value(
 			_currencies,
 			[currency_id, "value"],
 			1)
@@ -63,7 +63,7 @@ func set_currency_name(currency_id: StringName, new_name: String) -> void:
 ## Returns the name of [param currency_id] or an empty string if the currency
 ## isn't registered.
 func get_currency_name(currency_id: StringName) -> String:
-	return DictUtils.get_nested_value(
+	return NFDictUtils.get_nested_value(
 			_currencies,
 			[currency_id, "name"],
 			"",
@@ -78,7 +78,7 @@ func set_currency_data(currency_id: StringName, data_key: String, data: Variant)
 		return
 	
 	if not _currencies[currency_id].has("custom_data"):
-		_currencies[currency_id]["custom_data"] = DictUtils.create_typed(TYPE_STRING, TYPE_NIL)
+		_currencies[currency_id]["custom_data"] = NFDictUtils.create_typed(TYPE_STRING, TYPE_NIL)
 	
 	if data == null:
 		_currencies[currency_id]["custom_data"].erase(data_key)
@@ -89,14 +89,14 @@ func set_currency_data(currency_id: StringName, data_key: String, data: Variant)
 ## Returns the value of [param data_key] of the custom data of
 ## [param currency_id].
 func get_currency_data(currency_id: StringName, data_key: String) -> Variant:
-	return DictUtils.get_nested_value(
+	return NFDictUtils.get_nested_value(
 			_currencies,
 			[currency_id, "custom_data", data_key])
 
 
 func get_currency_custom_data(currency_id: StringName) -> Dictionary[StringName, Variant]:
 	var data: Dictionary[StringName, Variant] = {}
-	data.assign(DictUtils.get_nested_value(
+	data.assign(NFDictUtils.get_nested_value(
 			_currencies,
 			[currency_id, "custom_data"],
 			{},
@@ -107,7 +107,7 @@ func get_currency_custom_data(currency_id: StringName) -> Dictionary[StringName,
 ## Returns the keys of the custom data that [param currency_id] has.
 func currency_data_keys(currency_id: StringName) -> Array[String]:
 	var keys: Array[String] = []
-	keys.assign(DictUtils.get_nested_value(
+	keys.assign(NFDictUtils.get_nested_value(
 			_currencies,
 			[currency_id, "custom_data"],
 			{},
@@ -117,7 +117,7 @@ func currency_data_keys(currency_id: StringName) -> Array[String]:
 
 ## Clears the custom data of the currency with id [param currency_id]
 func clear_currency_data(currency_id: StringName) -> void:
-	if DictUtils.has_nested_path(_currencies, [currency_id, "custom_data"]):
+	if NFDictUtils.has_nested_path(_currencies, [currency_id, "custom_data"]):
 		_currencies[currency_id]["custom_data"].clear()
 
 

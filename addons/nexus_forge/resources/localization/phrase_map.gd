@@ -1,11 +1,11 @@
 @tool
 @icon("res://addons/nexus_forge/icons/brackets_speech.svg")
-class_name PhraseMap
+class_name NFPhraseMap
 extends Resource
 ## A resource to hold localized argument-based strings.
 ##
 ## An argument based string is a string that will change its content based
-## on existing data. It can be provided through methods in the [PhraseAPI] class
+## on existing data. It can be provided through methods in the [NFPhraseAPI] class
 ## by using prefix [code]![/code]; Or by pointing to a [Blackboard] variable
 ## with prefix [code]$[/code]. Non-access arguments can also be defined by not 
 ## using [code]$[/code] or [code]![/code] inside the brackets.[br][br]
@@ -90,7 +90,7 @@ func _generate_callables(dialog_id: StringName) -> void:
 	var dialog: String = _phrases[dialog_id]["text"]
 	
 	if not _value_keys.has(dialog_id):
-		_value_keys[dialog_id] = DictUtils.create_typed(TYPE_STRING, TYPE_CALLABLE)
+		_value_keys[dialog_id] = NFDictUtils.create_typed(TYPE_STRING, TYPE_CALLABLE)
 	
 	if dialog.is_empty():
 		return
@@ -124,10 +124,10 @@ func _generate_callables(dialog_id: StringName) -> void:
 func _find_case(phrase: StringName, format: String, case: String) -> Dictionary[String, String]:
 	var return_result: Dictionary[String, String] = {
 		"case": case,
-		"value": DictUtils.get_nested_value(
+		"value": NFDictUtils.get_nested_value(
 				_phrases,
 				[phrase, "formats", format, "cases", case],
-				DictUtils.get_nested_value(
+				NFDictUtils.get_nested_value(
 						_phrases,
 						[phrase, "formats", format, "default"],
 						""))}
@@ -139,10 +139,10 @@ func _find_case_callable(phrase: StringName, on_argument: String, method: Callab
 	var case: String = str(method.call())
 	var return_result: Dictionary[String, String] = {
 		"case": case,
-		"value": DictUtils.get_nested_value(
+		"value": NFDictUtils.get_nested_value(
 				_phrases,
 				[phrase, "formats", on_argument, "cases", case],
-				DictUtils.get_nested_value(
+				NFDictUtils.get_nested_value(
 						_phrases,
 						[phrase, "formats", on_argument, "default"],
 						""))}
@@ -165,12 +165,12 @@ func set_entry(key: StringName, text: String) -> void:
 		var default: String = ""
 		var cases: Dictionary[String, String] = {}
 		if entry_exists and _phrases[key]["formats"].has(format):
-			default = DictUtils.get_nested_value(
+			default = NFDictUtils.get_nested_value(
 					_phrases,
 					[key, "formats", format, "default"],
 					"",
 					true)
-			cases.assign(DictUtils.get_nested_value(
+			cases.assign(NFDictUtils.get_nested_value(
 					_phrases,
 					[key, "formats", format, "cases"],
 					{},
@@ -188,7 +188,7 @@ func set_entry(key: StringName, text: String) -> void:
 ## Returns the text that the phrase [param key] is set to or an empty
 ## string if the phrase doesn't exist.
 func get_entry(key: StringName) -> String:
-	return DictUtils.get_nested_value(
+	return NFDictUtils.get_nested_value(
 			_phrases,
 			[key, "text"],
 			"")
@@ -216,7 +216,7 @@ func erase_entry(key: StringName) -> void:
 
 ## Returns true if [param key] has a format [param format].
 func has_format(key: StringName, format: String) -> bool:
-	return DictUtils.has_nested_path(
+	return NFDictUtils.has_nested_path(
 			_phrases,
 			[key, "formats", format])
 
@@ -224,7 +224,7 @@ func has_format(key: StringName, format: String) -> bool:
 ## Returns the phrase [param phrase_key] default case for argument [param on_argument]
 ## or an empty string if the argument doesn't exist.
 func get_case_default(key: StringName, format: String) -> String:
-	return DictUtils.get_nested_value(
+	return NFDictUtils.get_nested_value(
 			_phrases,
 			[key, "formats", format, "default"],
 			"")
@@ -239,9 +239,9 @@ func set_case(key: StringName, format: String, case: String, value: String) -> v
 	if not _phrases[key]["formats"].has(format):
 		_phrases[key]["formats"][format] = {
 			"default": "",
-			"cases": DictUtils.create_typed(TYPE_STRING, TYPE_STRING)}
+			"cases": NFDictUtils.create_typed(TYPE_STRING, TYPE_STRING)}
 	
-	DictUtils.set_nested_value(
+	NFDictUtils.set_nested_value(
 			_phrases,
 			[key, "formats", format, "cases", case],
 			value,
@@ -254,7 +254,7 @@ func remove_case(key: StringName, format: String, case: String) -> void:
 	if not _phrases.has(key):
 		return
 	
-	var dict: Dictionary = DictUtils.get_nested_value(
+	var dict: Dictionary = NFDictUtils.get_nested_value(
 			_phrases,
 			[key, "formats", format, "cases"],
 			{},
@@ -271,9 +271,9 @@ func set_case_default(key: StringName, format: String, default: String) -> void:
 	if not _phrases[key]["formats"].has(format):
 		_phrases[key]["formats"][format] = {
 			"default": "",
-			"cases": DictUtils.create_typed(TYPE_STRING, TYPE_STRING)}
+			"cases": NFDictUtils.create_typed(TYPE_STRING, TYPE_STRING)}
 	
-	DictUtils.set_nested_value(
+	NFDictUtils.set_nested_value(
 			_phrases,
 			[key, "formats", format, "default"],
 			default,
@@ -283,7 +283,7 @@ func set_case_default(key: StringName, format: String, default: String) -> void:
 ## Clears the custom cases of the [param format] from the phrase
 ## with [param key].
 func clear_cases(key: StringName, format: String) -> void:
-	if not DictUtils.has_nested_path(_phrases, [key, "formats", format, "cases"]):
+	if not NFDictUtils.has_nested_path(_phrases, [key, "formats", format, "cases"]):
 		return
 	_phrases[key]["formats"][format]["cases"].clear()
 
@@ -291,7 +291,7 @@ func clear_cases(key: StringName, format: String) -> void:
 ## Returns the case from the phrase [param key] of the [param format]
 ## or an empty string if the case doesn't exist.
 func get_case(key: StringName, format: String, case: String) -> String:
-	return DictUtils.get_nested_value(
+	return NFDictUtils.get_nested_value(
 			_phrases,
 			[key, "formats", format, "cases", case],
 			"")
@@ -300,7 +300,7 @@ func get_case(key: StringName, format: String, case: String) -> String:
 ## Returns true if the [param case] exists on the [param format] in
 ## the phrase [param key].
 func has_case(key: StringName, format: String, case: String) -> bool:
-	return DictUtils.has_nested_path(_phrases, [key, "formats", format, "cases", case])
+	return NFDictUtils.has_nested_path(_phrases, [key, "formats", format, "cases", case])
 
 
 ## Returns the formatted text of phrase [param phrase_key]. Optionally you can pass
@@ -330,7 +330,7 @@ func get_text(phrase_key: StringName, override_values: Dictionary[String, String
 							phrase_key,
 							format_key,
 							override_values[format_key]))
-		elif DictUtils.has_nested_path(_value_keys, [phrase_key, format_key]):
+		elif NFDictUtils.has_nested_path(_value_keys, [phrase_key, format_key]):
 			case_result.assign(
 					_find_case_callable(
 							phrase_key,

@@ -159,7 +159,7 @@ func create_variable(variable_value: Variant, variable_name: String = "new_varia
 			editable_value = false
 			new_variable.set_metadata(1, {"type": TYPE_NIL, "data": variable_value})
 			new_variable.set_cell_mode(1, TreeItem.CELL_MODE_STRING)
-			new_variable.set_text(1, StringUtils.title_case(type_string(typeof(variable_value))))
+			new_variable.set_text(1, NFStringUtils.title_case(type_string(typeof(variable_value))))
 	# ------------------
 	
 	# Setting editability
@@ -230,7 +230,7 @@ func update_variable(variable_id: String, value: Variant) -> bool:
 					item.set_editable(1, false)
 					item.set_metadata(1, {"type": TYPE_NIL, "data": value})
 					item.set_cell_mode(1, TreeItem.CELL_MODE_STRING)
-					item.set_text(1, StringUtils.title_case(type_string(typeof(value))))
+					item.set_text(1, NFStringUtils.title_case(type_string(typeof(value))))
 		else:
 			match typeof(value):
 				TYPE_INT, TYPE_FLOAT:

@@ -1,4 +1,4 @@
-class_name RecipeItem
+class_name NFRecipeItem
 extends Resource
 ## An object representing an item of a recipe
 

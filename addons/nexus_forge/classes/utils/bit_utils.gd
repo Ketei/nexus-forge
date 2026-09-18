@@ -1,4 +1,4 @@
-class_name BitUtils
+class_name NFBitUtils
 extends RefCounted
 ## Provides a collection of helper functions for performing common bitwise
 ## operations on integers.

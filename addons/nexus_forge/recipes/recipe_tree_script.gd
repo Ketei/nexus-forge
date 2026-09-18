@@ -1,5 +1,5 @@
 @tool
-extends IDTree
+extends NFIDTree
 
 
 signal recipe_selected(id: StringName)

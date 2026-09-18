@@ -422,7 +422,7 @@ func get_new_match_field() -> PanelContainer:
 func set_match_value(case_number: int, value: Variant) -> void:
 	var current_match_count: int = get_child_count() - 3
 	
-	if not RangeUtils.is_between(case_number, 1, current_match_count):
+	if not NFRangeUtils.is_between(case_number, 1, current_match_count):
 		return
 	
 	var set_type: int = typeof(value)

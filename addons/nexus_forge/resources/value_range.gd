@@ -1,6 +1,6 @@
-class_name ValueRange
+class_name NFValueRange
 extends Resource
-## Base class of [RangeFloat] and [RangeInt].
+## Base class of [NFRangeFloat] and [NFRangeInt].
 
 
 ## Returns the type of range that this resource holds.

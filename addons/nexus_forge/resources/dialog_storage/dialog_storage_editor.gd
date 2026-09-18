@@ -289,7 +289,7 @@ func _get_array_data_localized(node_uuid: String, for_locale: String) -> Diction
 ## Returns the text of a localized string.
 func get_format_string(key: String, locale: String) -> String:
 	locale = TranslationServer.standardize_locale(locale)
-	return DictUtils.get_nested_value(
+	return NFDictUtils.get_nested_value(
 			format_strings,
 			[key, locale, "base_string"],
 			"")
@@ -305,16 +305,16 @@ func has_format_string(key: String, locale: String = "") -> bool:
 ## Returns all format keys that the localized string has.
 func get_format_string_formats(key: String, locale_code: String) -> Array[String]:
 	var lang_code: String = TranslationServer.standardize_locale(locale_code)
-	if DictUtils.has_nested_path(format_strings, [key, lang_code, "format"]):
-		return ArrayUtils.create_typed(TYPE_STRING, format_strings[key][lang_code]["format"].keys())
+	if NFDictUtils.has_nested_path(format_strings, [key, lang_code, "format"]):
+		return NFArrayUtils.create_typed(TYPE_STRING, format_strings[key][lang_code]["format"].keys())
 	else:
-		return ArrayUtils.create_typed(TYPE_STRING)
+		return NFArrayUtils.create_typed(TYPE_STRING)
 
 
 ## Returns the format keys and the possible formats of a given key.
 func get_format_string_arguments(key: String, locale_code: String) -> Dictionary[String, Dictionary]:
 	var lang_code: String = TranslationServer.standardize_locale(locale_code)
-	var formats = DictUtils.get_nested_value(
+	var formats = NFDictUtils.get_nested_value(
 			format_strings,
 			[key, lang_code, "format"])
 	
@@ -354,7 +354,7 @@ func set_format_string(key: String, text: String, locale: String) -> void:
 ## Checks if the format key exists in the given key and locale. If it doesn't it'll
 ## create it. Returns true if the entry was created or already existed.
 func validate_format_string_format(key: String, locale: String, format: String) -> bool:
-	if not DictUtils.has_nested_path(format_strings, [key, locale, "format"]):
+	if not NFDictUtils.has_nested_path(format_strings, [key, locale, "format"]):
 		return false
 	
 	if not format_strings[key][locale]["format"].has(format):
@@ -386,14 +386,14 @@ func set_format_string_case(key: String, locale: String, format: String, case: S
 			"default": "",
 			"cases": {}}
 	
-	DictUtils.set_nested_value(
+	NFDictUtils.set_nested_value(
 			format_strings,
 			[key, locale, "format", format, "cases", case],
 			value)
 
 
 func get_format_string_case(key: String, locale: String, format: String, case: String) -> String:
-	return DictUtils.get_nested_value(
+	return NFDictUtils.get_nested_value(
 			format_strings,
 			[key, locale, "format", format, "cases", case],
 			"",
@@ -403,7 +403,7 @@ func get_format_string_case(key: String, locale: String, format: String, case: S
 func get_format_string_cases(key: String, locale: String, format: String) -> Array[String]:
 	var cases: Array[String] = []
 	
-	if DictUtils.has_nested_path(format_strings, [key, locale, "format", format, "cases"]):
+	if NFDictUtils.has_nested_path(format_strings, [key, locale, "format", format, "cases"]):
 		cases.assign(format_strings[key][locale]["format"][format]["cases"].keys())
 	return cases
 
@@ -425,7 +425,7 @@ func set_format_string_default_case(key: String, locale: String, format: String,
 			"default": "",
 			"cases": {}}
 	
-	DictUtils.set_nested_value(
+	NFDictUtils.set_nested_value(
 			format_strings,
 			[key, locale, "format", format, "default"],
 			default_text)
@@ -434,7 +434,7 @@ func set_format_string_default_case(key: String, locale: String, format: String,
 ## Returns the default case from a localized string with the given key.
 func get_format_string_default_case(key: String, locale: String, argument: String) -> String:
 	locale = TranslationServer.standardize_locale(locale)
-	return DictUtils.get_nested_value(
+	return NFDictUtils.get_nested_value(
 			format_strings,
 			[key, locale, "format", argument, "default"],
 			"")
@@ -443,12 +443,12 @@ func get_format_string_default_case(key: String, locale: String, argument: Strin
 ## Erases a [param format_key] and all its cases on the given [param key]
 ## from the given [param locale].
 func erase_format_string_format(key: String, locale: String, format_key: String) -> void:
-	if DictUtils.has_nested_path(format_strings, [key, locale, "format"]):
+	if NFDictUtils.has_nested_path(format_strings, [key, locale, "format"]):
 		format_strings[key][locale]["format"].erase(format_key)
 
 
 func erase_format_string_case(key: String, locale: String, format_key: String, case: String) -> bool:
-	if DictUtils.has_nested_path(format_strings, [key, locale, "format", format_key, "cases"]):
+	if NFDictUtils.has_nested_path(format_strings, [key, locale, "format", format_key, "cases"]):
 		return format_strings[key][locale]["format"][format_key]["cases"].erase(case)
 	return false
 
@@ -456,7 +456,7 @@ func erase_format_string_case(key: String, locale: String, format_key: String, c
 ## Clears the list of custom cases from the given key.
 func clear_format_string_cases(key: String, locale: String, format: String) -> void:
 	locale = TranslationServer.standardize_locale(locale)
-	var cases = DictUtils.get_nested_value(
+	var cases = NFDictUtils.get_nested_value(
 			format_strings,
 			[key, locale, "format", format, "cases"])
 	
@@ -517,20 +517,20 @@ func get_text_entry(node_uuid: StringName, locale: String, fallback: String = "[
 	if not localization.has(node_uuid) or localization[node_uuid]["type"] != LocalizationType.TEXT:
 		return fallback
 	
-	var localized: bool = DictUtils.get_nested_value(
+	var localized: bool = NFDictUtils.get_nested_value(
 			node_data,
 			[node_uuid, "metadata", "localized"],
 			true,
 			true)
 	
 	if localized:
-		return DictUtils.get_nested_value(
+		return NFDictUtils.get_nested_value(
 				localization,
 				[node_uuid, "locales", locale],
 				fallback,
 				true)
 	else:
-		return DictUtils.get_nested_value(localization, [node_uuid, "unlocalized"], fallback, true)
+		return NFDictUtils.get_nested_value(localization, [node_uuid, "unlocalized"], fallback, true)
 
 
 ## Gets the array of choices of a node with [param node_uuid] of a specific [param locale].
@@ -545,13 +545,13 @@ func get_choices_entry(node_uuid: StringName, locale: String = "", fallback: Arr
 		return fallback
 	
 	#var localization_data: Dictionary = localization[node_uuid]
-	var has_id: bool = DictUtils.has_nested_path(node_data, [node_uuid, "name"])
-	var node_id: StringName = DictUtils.get_nested_value(
+	var has_id: bool = NFDictUtils.has_nested_path(node_data, [node_uuid, "name"])
+	var node_id: StringName = NFDictUtils.get_nested_value(
 			node_data,
 			[node_uuid, "name"],
 			&"",
 			true) if has_id else &""
-	var localized: bool = DictUtils.get_nested_value(
+	var localized: bool = NFDictUtils.get_nested_value(
 			node_data,
 			[node_uuid, "metadata", "localized"],
 			true,
@@ -564,14 +564,14 @@ func get_choices_entry(node_uuid: StringName, locale: String = "", fallback: Arr
 			return_array.assign(override)
 	elif localized:
 		return_array.assign(
-				DictUtils.get_nested_value(
+				NFDictUtils.get_nested_value(
 						localization,
 						[node_uuid, "locales", locale],
 						[],
 						true))
 	else:
 		return_array.assign(
-				DictUtils.get_nested_value(
+				NFDictUtils.get_nested_value(
 						localization,
 						[node_uuid, "unlocalized"],
 						[],
@@ -630,7 +630,7 @@ func set_choices_array(uuid: StringName, options: Array, locale: String = "") ->
 		localization_level["locales"].clear()
 	else:
 		localization_level["unlocalized"].clear()
-		DictUtils.set_nested_value(
+		NFDictUtils.set_nested_value(
 				localization_level,
 				["locales", locale],
 				valid_options)
@@ -654,13 +654,13 @@ func set_choice_text(uuid: StringName, option_index: int, text: String, locale: 
 		if arr_size == 0:
 			return
 		var max_index: int = arr_size - 1
-		if not RangeUtils.is_between(option_index, -arr_size, max_index):
+		if not NFRangeUtils.is_between(option_index, -arr_size, max_index):
 			return
 		
 		base_level["unlocalized"][option_index] = text
 	else:
 		locale = TranslationServer.standardize_locale(locale)
-		if not DictUtils.has_nested_path(base_level, ["locales", locale]) or typeof(base_level["locales"][locale]) != TYPE_ARRAY:
+		if not NFDictUtils.has_nested_path(base_level, ["locales", locale]) or typeof(base_level["locales"][locale]) != TYPE_ARRAY:
 			return
 		var locale_array: Array = base_level["locales"][locale]
 		
@@ -668,7 +668,7 @@ func set_choice_text(uuid: StringName, option_index: int, text: String, locale: 
 		if arr_size == 0:
 			return
 		var max_index: int = arr_size - 1
-		if not RangeUtils.is_between(option_index, -arr_size, max_index):
+		if not NFRangeUtils.is_between(option_index, -arr_size, max_index):
 			return
 		
 		locale_array[option_index] = text
@@ -762,7 +762,7 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 	# on the release files, anchor nodes have no use.
 	var anchor_nodes: Dictionary[StringName, StringName] = {}
 	
-	# UUID(merger_id): UUID(merger_next_node)
+	# NFUUID(merger_id): NFUUID(merger_next_node)
 	var dialog_mergers: Dictionary[StringName, StringName] = {}
 	
 	var target_finder: RefCounted = preload("res://addons/nexus_forge/discourse/exporter_target.gd").new()
@@ -1009,7 +1009,7 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 					export_data["arguments"] = arguments
 				else:
 					export_data["method"] = &""
-					export_data["arguments"] = ArrayUtils.create_typed(TYPE_STRING_NAME)
+					export_data["arguments"] = NFArrayUtils.create_typed(TYPE_STRING_NAME)
 			NodeType.CALLABLE_RETURN:
 				var method_id: StringName = StringName(metadata["method"])
 				if not method_id.is_empty():
@@ -1055,7 +1055,7 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 					export_data["arguments"] = arguments
 				else:
 					export_data["method"] = &""
-					export_data["arguments"] = ArrayUtils.create_typed(TYPE_STRING_NAME)
+					export_data["arguments"] = NFArrayUtils.create_typed(TYPE_STRING_NAME)
 			NodeType.VARIABLE_GET:
 				var meta_path: String = ""
 				if metadata.has("variable_path"):
@@ -1154,7 +1154,7 @@ func generate_localization_files(localization_id: String, base_path: String, fil
 		var lang_key: String = TranslationServer.standardize_locale(language)
 		if lang_key.is_empty():
 			continue
-		var lang_path: String = StringUtils.make_path(
+		var lang_path: String = NFStringUtils.make_path(
 				[base_path,
 				lang_key,
 				md5_fragment,
@@ -1169,12 +1169,12 @@ func generate_localization_files(localization_id: String, base_path: String, fil
 			new_files.append({
 				"file": lang_file,
 				"path": lang_path})
-		elif DictUtils.has_nested_path(localization_groups, [locale_group, lang_key]):
+		elif NFDictUtils.has_nested_path(localization_groups, [locale_group, lang_key]):
 			lang_file = localization_groups[locale_group][lang_key]
 		else:
 			lang_file = DiscourseDialogLocale.new()
 			lang_file.locale = lang_key
-			DictUtils.set_nested_value(
+			NFDictUtils.set_nested_value(
 						localization_groups,
 						[locale_group, lang_key],
 						lang_file)
@@ -1192,15 +1192,15 @@ func generate_localization_files(localization_id: String, base_path: String, fil
 				continue
 			
 			var lang_locale_file: DiscourseDialogLocale = null
-			var locale_path: String = StringUtils.make_path([
+			var locale_path: String = NFStringUtils.make_path([
 				base_path, locale_key, md5_fragment, filename])
 			
-			if DictUtils.has_nested_path(localization_groups, [locale_group, locale_key]):
+			if NFDictUtils.has_nested_path(localization_groups, [locale_group, locale_key]):
 				lang_locale_file = localization_groups[locale_group][locale_key]
 			else:
 				lang_locale_file = DiscourseDialogLocale.new()
 				lang_locale_file.locale = locale_key
-				DictUtils.set_nested_value(
+				NFDictUtils.set_nested_value(
 						localization_groups,
 						[locale_group, locale_key],
 						lang_locale_file)
@@ -1217,10 +1217,10 @@ func generate_localization_files(localization_id: String, base_path: String, fil
 	var extra_data_warned: bool = false
 	
 	for localization_key in localization.keys():
-		if not node_data.has(localization_key) or not DictUtils.get_nested_value(node_data[localization_key], ["metadata", "localized"], false, true):
+		if not node_data.has(localization_key) or not NFDictUtils.get_nested_value(node_data[localization_key], ["metadata", "localized"], false, true):
 			continue
 		
-		var localization_locales = DictUtils.get_nested_value(localization, [localization_key, "locales"], {})
+		var localization_locales = NFDictUtils.get_nested_value(localization, [localization_key, "locales"], {})
 		if typeof(localization_locales) != TYPE_DICTIONARY:
 			continue
 		var localization_keys = localization_locales.keys()
@@ -1259,7 +1259,7 @@ func _add_locale_data(file: DiscourseDialogLocale, localization_id: String, loca
 		
 		var nodeid: StringName = node_data[node_uuid]["name"]
 		var data = localization[node_uuid]
-		var localized: bool = DictUtils.get_nested_value(
+		var localized: bool = NFDictUtils.get_nested_value(
 				node_data,
 				[node_uuid, "metadata", "localized"],
 				false,
@@ -1287,7 +1287,7 @@ func _add_locale_data(file: DiscourseDialogLocale, localization_id: String, loca
 					NFPluginGameHandler._LogLevel.WARNING)
 			
 			if type == NodeType.DIALOG or type == NodeType.LOCALIZED_TEXT:
-				DictUtils.set_nested_value(
+				NFDictUtils.set_nested_value(
 					file.localization,
 					[localization_id, nodeid, "dialog"],
 					"",
@@ -1298,22 +1298,22 @@ func _add_locale_data(file: DiscourseDialogLocale, localization_id: String, loca
 				choices.resize(choice_size)
 				for idx in range(choice_size):
 					choices[idx] = "[MISSING LOCALIZATION DATA]"
-				DictUtils.set_nested_value(
+				NFDictUtils.set_nested_value(
 						file.localization,
 						[localization_id, nodeid, "choices"],
 						choices,
 						true)
 		
 		if data["type"] == LocalizationType.TEXT:
-			var warn: bool = typeof(DictUtils.get_nested_value(data, ["locales", locale])) != TYPE_STRING if localized else typeof(data["unlocalized"]) != TYPE_STRING
-			DictUtils.set_nested_value(
+			var warn: bool = typeof(NFDictUtils.get_nested_value(data, ["locales", locale])) != TYPE_STRING if localized else typeof(data["unlocalized"]) != TYPE_STRING
+			NFDictUtils.set_nested_value(
 					file.localization,
 					[localization_id, nodeid, "dialog"],
-					DictUtils.get_nested_value(
+					NFDictUtils.get_nested_value(
 							data,
 							["locales", locale],
 							"[MISSING LOCALIZATION DATA]",
-							true) if localized else DictUtils.get_nested_value(data, ["unlocalized"], "[MISSING LOCALIZATION DATA]", true))
+							true) if localized else NFDictUtils.get_nested_value(data, ["unlocalized"], "[MISSING LOCALIZATION DATA]", true))
 			if warn:
 				if localized:
 					NFPluginGameHandler._log_msg(
@@ -1376,7 +1376,7 @@ func _add_locale_data(file: DiscourseDialogLocale, localization_id: String, loca
 				for idx in range(choice_size):
 					base[idx] = err_string
 			
-			DictUtils.set_nested_value(
+			NFDictUtils.set_nested_value(
 					file.localization,
 					[localization_id, nodeid, "choices"],
 					PackedStringArray(base),
@@ -1404,7 +1404,7 @@ func _add_locale_data(file: DiscourseDialogLocale, localization_id: String, loca
 					"export - dialog",
 					"Localization export for node with UID '%s' couldn't define type." % node_uuid,
 					NFPluginGameHandler._LogLevel.WARNING)
-			var nameless_id = DictUtils.get_nested_value(node_data, [node_uuid, "name"])
+			var nameless_id = NFDictUtils.get_nested_value(node_data, [node_uuid, "name"])
 			if typeof(nameless_id) == TYPE_STRING_NAME:
 				NFPluginGameHandler._log_msg(
 						"export - dialog",
@@ -1485,7 +1485,7 @@ func _add_locale_data(file: DiscourseDialogLocale, localization_id: String, loca
 			"base_string": data["base_string"],
 			"format": valid_formats}
 		
-		DictUtils.set_nested_value(
+		NFDictUtils.set_nested_value(
 				file.format_strings,
 				[localization_id, format_key],
 				full_data)
@@ -1685,8 +1685,8 @@ func phrases_to_json_string() -> String:
 					"default": "",
 					"cases": {}}
 				if format_strings[key][locale_code]["format"].has(form):
-					format_data["default"] = DictUtils.get_nested_value(format_strings, [key, locale_code, "format", form, "default"], "")
-					format_data["cases"] = DictUtils.get_nested_value(format_strings, [key, locale_code, "format", form, "cases"], {})
+					format_data["default"] = NFDictUtils.get_nested_value(format_strings, [key, locale_code, "format", form, "default"], "")
+					format_data["cases"] = NFDictUtils.get_nested_value(format_strings, [key, locale_code, "format", form, "cases"], {})
 				phrase_data["format"][form] = format_data
 			locale_data[locale_code] = phrase_data
 		data[key] = locale_data
@@ -1824,7 +1824,7 @@ func _get_data_for_csv() -> Dictionary:
 			if localization.has(node_uuid):
 				for locale_code in possible_locales:
 					var assigned_choices: Array[String] = []
-					assigned_choices.assign(DictUtils.get_nested_value(
+					assigned_choices.assign(NFDictUtils.get_nested_value(
 							localization,
 							[node_uuid, "locales", locale_code],
 							[],
@@ -1868,7 +1868,7 @@ func _set_csv_data(data: Dictionary) -> void:
 		var choice_idx: int = -1
 		
 		if 2 <= node_id.length() and node_id.contains(":"):
-			var trailing_data: Dictionary = StringUtils.get_trailing_integer(node_id)
+			var trailing_data: Dictionary = NFStringUtils.get_trailing_integer(node_id)
 			if trailing_data["has_integer"]:
 				choice_idx = trailing_data["integer"]
 			node_id = node_id.trim_suffix(":" + str(choice_idx))
@@ -1922,10 +1922,10 @@ func _set_csv_data(data: Dictionary) -> void:
 				if not localization.has(uuid):
 					localization[uuid] = {
 						"type": LocalizationType.CHOICES,
-						"unlocalized": ArrayUtils.create_typed(TYPE_STRING),
+						"unlocalized": NFArrayUtils.create_typed(TYPE_STRING),
 						"locales": {}}
 				
-				var localized_choices: Array[String] = localization[uuid]["locales"].get_or_add(locale_code, ArrayUtils.create_typed(TYPE_STRING))
+				var localized_choices: Array[String] = localization[uuid]["locales"].get_or_add(locale_code, NFArrayUtils.create_typed(TYPE_STRING))
 				if localized_choices.size() != choice_size:
 					localized_choices.resize(choice_size)
 				localized_choices[choice_idx] = data[import_id][import_locale]

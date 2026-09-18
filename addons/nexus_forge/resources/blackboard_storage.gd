@@ -150,7 +150,7 @@ func set_variable(variable_path: String, value: Variant) -> bool:
 			data_erased.emit(parts["path"])
 	else:
 		if not _active_variables.has(parts["folder"]):
-			_active_variables[parts["folder"]] = DictUtils.create_typed(
+			_active_variables[parts["folder"]] = NFDictUtils.create_typed(
 					TYPE_STRING_NAME,
 					TYPE_NIL)
 		_active_variables[parts["folder"]][parts["variable"]] = value
@@ -168,7 +168,7 @@ func create_folder(folder_path: String) -> void:
 	for slice in clean_path.split("/"):
 		slice_path += StringName(slice)
 		if not _active_variables.has(slice_path):
-			_active_variables[slice_path] = DictUtils.create_typed(
+			_active_variables[slice_path] = NFDictUtils.create_typed(
 					TYPE_STRING_NAME, TYPE_NIL)
 		slice_path += &"/"
 	

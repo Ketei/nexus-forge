@@ -1,4 +1,4 @@
-class_name StringUtils
+class_name NFStringUtils
 extends RefCounted
 ## A class holding static methods to properly transform strings
 

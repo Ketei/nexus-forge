@@ -5,7 +5,7 @@ extends EditorPlugin
 const MAIN_SCENE = preload("res://addons/nexus_forge/NexusForgeMainScene.tscn")
 const PLUGIN_NAME: String = "NexusForge"
 const PLUGIN_ICON_PATH: String = "res://addons/nexus_forge/icons/nexus_forge_small.svg"
-const HANDLED_CLASSES: Array[StringName] = [&"EditorDiscourseDialog", &"CharacterSheet", &"PhraseMap", &"Quest"]
+const HANDLED_CLASSES: Array[StringName] = [&"EditorDiscourseDialog", &"NFCharacterSheet", &"NFPhraseMap", &"NFQuest"]
 const TOOL_NAME: String = "Nexus Forge Character Lookup"
 
 var editor_view: Control = null
@@ -105,6 +105,8 @@ func _enter_tree() -> void:
 	var use_phrases: bool = ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("phrases_enabled"), true)
 	var discourse_base_lang: String = ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("discourse_base_language"), OS.get_locale_language())
 	
+	var class_path_store: RefCounted = load("res://addons/nexus_forge/script_path_store.gd").new()
+	
 	editor_view.ready_plugin(
 			use_discourse,
 			use_characters,
@@ -117,7 +119,8 @@ func _enter_tree() -> void:
 			use_recipes,
 			use_quests,
 			use_phrases,
-			discourse_base_lang)
+			discourse_base_lang,
+			class_path_store)
 	
 	# Resotring previous session character data.
 	if FileAccess.file_exists("user://nexus_forge/persona_settings.cfg"):
@@ -202,7 +205,6 @@ func _get_plugin_name() -> String:
 func _make_visible(visible):
 	if editor_view != null:
 		editor_view.visible = visible
-		
 
 
 func _enable_plugin() -> void:
@@ -216,7 +218,7 @@ func _enable_plugin() -> void:
 func _get_window_layout(configuration: ConfigFile) -> void:
 	var discourse_id_visible: bool = editor_view.discourse.display_dialog_id_checked() if editor_view.discourse != null else false
 	var discourse_open_files: Array[String] = editor_view.discourse.get_open_files() if editor_view.discourse != null else Array([], TYPE_STRING, &"", null)
-	var discourse_recent_files: Array[String] = editor_view.discourse.get_recenlty_opened_files() if editor_view.discourse != null else ArrayUtils.create_typed(TYPE_STRING)
+	var discourse_recent_files: Array[String] = editor_view.discourse.get_recenlty_opened_files() if editor_view.discourse != null else NFArrayUtils.create_typed(TYPE_STRING)
 	var open_characters: Array[String] = editor_view.characters.get_open_characters() if editor_view.characters != null else Array([], TYPE_STRING, &"", null)
 	var open_maps: Array[String] = editor_view.phrase_maps.get_open_maps() if editor_view.phrase_maps != null else Array([], TYPE_STRING, &"", null)
 	var open_quests: Array[String] = editor_view.quests.get_open_files() if editor_view.quests != null else Array([], TYPE_STRING, &"", null)
@@ -449,7 +451,7 @@ func verify_project_settings() -> void:
 		elif tool_id == "discourse_use_languages":
 			var set_setting: String = ProjectSettings.get_setting(NFPluginGameHandler._SETTINGS_PATHS[tool_id]["setting_path"], "")
 			if not set_setting.is_empty():
-				var locales: PackedStringArray = StringUtils.split_and_strip(set_setting, ",", false)
+				var locales: PackedStringArray = NFStringUtils.split_and_strip(set_setting, ",", false)
 				var valid_locales: Dictionary[String, Variant] = {}
 				
 				for locale in locales:
@@ -535,12 +537,12 @@ func _handles(object: Object) -> bool:
 	match script_global_name:
 		&"EditorDiscourseDialog":
 			tool_available = editor_view.discourse != null
-		&"CharacterSheet":
+		&"NFCharacterSheet":
 			character_map[object.resource_path] = object.id
 			tool_available = editor_view.characters != null
-		&"PhraseMap":
+		&"NFPhraseMap":
 			tool_available = editor_view.phrase_maps != null
-		&"Quest":
+		&"NFQuest":
 			tool_available = editor_view.quests != null
 	
 	return HANDLED_CLASSES.has(script_global_name) and tool_available
@@ -571,7 +573,7 @@ func _on_character_opened(path: String, id: StringName) -> void:
 
 
 func _on_resource_saved(resource: Resource) -> void:
-	if resource is CharacterSheet:
+	if resource is NFCharacterSheet:
 		if not resource.resource_path.is_empty() and resource.resource_path.get_extension() == "tres":
 			character_map[resource.resource_path] = resource.id
 		return
@@ -582,21 +584,21 @@ func _on_resource_saved(resource: Resource) -> void:
 	
 	if script_class.is_empty():
 		return
-	elif script_class == &"StatBlock":
+	elif script_class == &"NFStatBlock":
 		editor_view.reload_stats()
-	elif script_class == &"SkillSet":
+	elif script_class == &"NFSkillSet":
 		editor_view.reload_skills()
-	elif script_class == &"TraitBlock":
+	elif script_class == &"NFTraitBlock":
 		editor_view.reload_traits()
-	elif script_class == &"CharacterSheet":
+	elif script_class == &"NFCharacterSheet":
 		editor_view.reload_character_sheet()
-	elif script_class == &"ItemSheet":
+	elif script_class == &"NFItemSheet":
 		editor_view.reload_items()
-	elif script_class == &"Quest":
+	elif script_class == &"NFQuest":
 		editor_view.reload_quest_data_types()
-	elif script_class == &"QuestStage":
+	elif script_class == &"NFQuestStage":
 		editor_view.reload_quest_stage_types()
-	elif script_class == &"QuestObjective":
+	elif script_class == &"NFQuestObjective":
 		editor_view.reload_quest_objective_types()
 	elif script_class == &"DiscourseAPI":
 		editor_view.reload_discourse_api()
@@ -662,7 +664,7 @@ func _on_files_moved(old_file: String, new_file: String) -> void:
 	var file = load(new_file)
 	var mode: String = ""
 	
-	if file is Quest:
+	if file is NFQuest:
 		mode = "-treestate-"
 	elif file is EditorDiscourseDialog:
 		mode = "-graphstate-"
@@ -683,12 +685,12 @@ func _on_resource_removed(object: Resource) -> void:
 		return
 	if object is EditorDiscourseDialog:
 		editor_view.discourse.filesystem_resource_removed(object)
-	elif object is CharacterSheet:
+	elif object is NFCharacterSheet:
 		character_map.erase(object.resource_path)
 		editor_view.characters.filesystem_resource_removed(object)
-	elif object is PhraseMap:
+	elif object is NFPhraseMap:
 		editor_view.phrase_maps.filesystem_resource_removed(object)
-	elif object is Quest:
+	elif object is NFQuest:
 		editor_view.quests.filesystem_resource_removed(object)
 	elif object is NFBlackboardData:
 		if editor_view.variables._variables_resource == object:
@@ -697,28 +699,28 @@ func _on_resource_removed(object: Resource) -> void:
 					"")
 			ProjectSettings.save()
 			editor_view.variables.reload_resource()
-	elif object is SpeciesCatalog:
+	elif object is NFSpeciesCatalog:
 		if editor_view.species._species_resource == object:
 			ProjectSettings.set_setting(
 					NFPluginGameHandler.get_setting_path("species"),
 					"")
 			ProjectSettings.save()
 			editor_view.species.reload_resource()
-	elif object is SkillCatalog:
+	elif object is NFSkillCatalog:
 		if editor_view.talents._skills_resource == object:
 			ProjectSettings.set_setting(
 					NFPluginGameHandler.get_setting_path("skills"),
 					"")
 			ProjectSettings.save()
 			editor_view.talents.reload_skill_resource()
-	elif object is TraitCatalog:
+	elif object is NFTraitCatalog:
 		if editor_view.talents._traits_resource == object:
 			ProjectSettings.set_setting(
 				NFPluginGameHandler.get_setting_path("traits"),
 				"")
 			ProjectSettings.save()
 			editor_view.talents.reload_trait_resource()
-	elif object is ItemCatalog:
+	elif object is NFItemCatalog:
 		if editor_view.recipes_link.items == object:
 			ProjectSettings.set_setting(
 				NFPluginGameHandler.get_setting_path("items"),
@@ -726,14 +728,14 @@ func _on_resource_removed(object: Resource) -> void:
 			ProjectSettings.save()
 			editor_view.items.items_container.reload_item_resource()
 			editor_view.recipes.reload_items(null)
-	elif object is CurrencyCatalog:
+	elif object is NFCurrencyCatalog:
 		if editor_view.items.items_container.currency_resource == object:
 			ProjectSettings.set_setting(
 				NFPluginGameHandler.get_setting_path("currency"),
 				"")
 			ProjectSettings.save()
 			editor_view.items.items_container.reload_currency_resource()
-	elif object is RecipeCatalog:
+	elif object is NFRecipeCatalog:
 		if editor_view.recipes_link.recipes == object:
 			ProjectSettings.set_setting(
 				NFPluginGameHandler.get_setting_path("recipes"),
@@ -842,7 +844,7 @@ func parse_character_file(file_path: String, id_property: String = "id") -> Dict
 			
 		if not is_valid_class:
 			if line.begins_with("[gd_resource"):
-				if "script_class=\"CharacterSheet\"" in line:
+				if "script_class=\"NFCharacterSheet\"" in line:
 					data["is_character"] = true
 					is_valid_class = true
 					continue

@@ -859,7 +859,7 @@ func move_metadata(from_ingredient: int, from_path: String, to_ingredient: int, 
 
 		var base: String = target_name
 		var modified: String = target_name
-		var trailing_data: Dictionary = StringUtils.get_trailing_integer(target_name)
+		var trailing_data: Dictionary = NFStringUtils.get_trailing_integer(target_name)
 		var iteration: int = trailing_data["integer"]
 		if trailing_data["has_integer"]:
 			base = base.trim_suffix(str(iteration))
@@ -934,7 +934,7 @@ func validate_id(on_tree: TreeItem, desired_id: String, skip_item: TreeItem = nu
 			continue
 		used_ids[tree_item.get_text(0)] = null
 	
-	var trailing_data: Dictionary = StringUtils.get_trailing_integer(desired_id)
+	var trailing_data: Dictionary = NFStringUtils.get_trailing_integer(desired_id)
 	var iteration: int = trailing_data["integer"]
 	var base: String = desired_id
 	var modified: String = desired_id
@@ -967,4 +967,4 @@ func get_metadata_path(metadata: TreeItem) -> String:
 	
 	parts.reverse()
 	
-	return StringUtils.make_path(parts)
+	return NFStringUtils.make_path(parts)

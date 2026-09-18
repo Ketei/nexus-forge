@@ -1,5 +1,5 @@
 @tool
-extends IDTree
+extends NFIDTree
 
 
 var sort_column: int = 0

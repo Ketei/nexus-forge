@@ -427,8 +427,8 @@ var signalers: Array[DiscourseGraphNode] = []
 # Data for the mouse release.
 var release_data: Dictionary = {}
 var movement_data: Dictionary[String, Dictionary] = {
-	"nodes": DictUtils.create_typed(TYPE_STRING_NAME, TYPE_DICTIONARY),
-	"frames": DictUtils.create_typed(TYPE_STRING_NAME, TYPE_DICTIONARY)}
+	"nodes": NFDictUtils.create_typed(TYPE_STRING_NAME, TYPE_DICTIONARY),
+	"frames": NFDictUtils.create_typed(TYPE_STRING_NAME, TYPE_DICTIONARY)}
 # {
 	#"reference": null,
 	#"nodes": [],
@@ -693,7 +693,7 @@ func get_unique_node_name(desired: StringName, type: DialogNodes, skip_uuid: Str
 	
 	var modified: String = desired_id
 	var base: String = desired_id
-	var trailing_data: Dictionary = StringUtils.get_trailing_integer(desired_id)
+	var trailing_data: Dictionary = NFStringUtils.get_trailing_integer(desired_id)
 	var iteration: int = trailing_data["integer"]
 	if trailing_data["has_integer"]:
 		base = base.trim_suffix(str(iteration))
@@ -823,7 +823,7 @@ func duplicate_single(node_uuid: StringName, new_uuid: StringName) -> void:
 			node.get_node_id(),
 			node.node_type)
 	data["name"] = new_name
-	DictUtils.set_nested_value(
+	NFDictUtils.set_nested_value(
 			data,
 			["metadata", "position"],
 			node.position_offset + Vector2(100.0, 100.0))
@@ -857,7 +857,7 @@ func duplicate_single(node_uuid: StringName, new_uuid: StringName) -> void:
 
 
 # Used for the Ctrl+D signal with undo-redo. Key = node to be duplicated
-# value = new UUID to be assigned to it.
+# value = new NFUUID to be assigned to it.
 func duplicate_multiple(duplicate_targets: Dictionary[StringName, StringName]) -> void:
 	var nodes_to_duplicate: Array[Dictionary] = []
 	
@@ -882,7 +882,7 @@ func duplicate_multiple(duplicate_targets: Dictionary[StringName, StringName]) -
 				node.node_type)
 		var old_data: Dictionary = node._get_node_data()
 		old_data["name"] = new_name
-		DictUtils.set_nested_value(
+		NFDictUtils.set_nested_value(
 				old_data,
 				["metadata", "position"],
 				node.position_offset + Vector2(100.0, 100.0))
@@ -999,7 +999,7 @@ func get_valid_waypoint_id(desired_id: String, skip: DiscourseGraphNode = null) 
 		existing_ids[item.get_waypoint_id()] = null
 	
 	var base: String = desired_id
-	var trailing_data: Dictionary = StringUtils.get_trailing_integer(desired_id)
+	var trailing_data: Dictionary = NFStringUtils.get_trailing_integer(desired_id)
 	var iteration: int = trailing_data["integer"]
 	if trailing_data["has_integer"]:
 		base = base.trim_suffix(str(iteration))
@@ -1294,8 +1294,8 @@ func get_nodes_in_frame(frame_uuid: StringName) -> Array[StringName]:
 
 func get_elements_in_frame(frame_uuid: StringName) -> Dictionary[String, Array]:
 	var elements: Dictionary[String, Array] = {
-		"nodes": ArrayUtils.create_typed(TYPE_STRING_NAME),
-		"frames": ArrayUtils.create_typed(TYPE_STRING_NAME)}
+		"nodes": NFArrayUtils.create_typed(TYPE_STRING_NAME),
+		"frames": NFArrayUtils.create_typed(TYPE_STRING_NAME)}
 	
 	if not node_frames.has(frame_uuid):
 		return elements
@@ -1601,7 +1601,7 @@ func _on_popup_index_pressed(index: int, menu: PopupMenu) -> void:
 			data["target_type"],
 			0 if menu == connection_popup else index).duplicate(true)
 	
-	DictUtils.set_nested_value(
+	NFDictUtils.set_nested_value(
 			node_data,
 			["metadata", "position"],
 			target_position)

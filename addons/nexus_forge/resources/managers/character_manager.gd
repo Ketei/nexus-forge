@@ -1,26 +1,26 @@
 class_name NFCharacterManager
 extends RefCounted
-## Manages [CharacterSheet] loading, overrides and character mods.
+## Manages [NFCharacterSheet] loading, overrides and character mods.
 
 var _characters: Dictionary[StringName, String] = {}
 var _character_modifiers: Dictionary[StringName, Dictionary] = {}
 var _character_overrides: Dictionary[StringName, String] = {}
 
 
-## Retuns a [CharacterSheet] via their [param character_id] with modifications
+## Retuns a [NFCharacterSheet] via their [param character_id] with modifications
 ## applied if available.
 ## Returns [code]null[/code] if the ID is not registered.
-func get_character(character_id: StringName, force_reapply_mods: bool = false) -> CharacterSheet:
+func get_character(character_id: StringName, force_reapply_mods: bool = false) -> NFCharacterSheet:
 	if not _characters.has(character_id):
 		return null
 	
 	var using_override: bool = _character_overrides.has(character_id)
 	
-	var char_sheet: CharacterSheet = null
+	var char_sheet: NFCharacterSheet = null
 	
 	if using_override:
 		var res_load = ResourceLoader.load(_character_overrides[character_id], "", ResourceLoader.CACHE_MODE_REPLACE_DEEP) if force_reapply_mods else load(_character_overrides[character_id])
-		if res_load != null and res_load is CharacterSheet:
+		if res_load != null and res_load is NFCharacterSheet:
 			char_sheet = res_load
 		else:
 			NFPluginGameHandler._log_msg(
@@ -28,11 +28,11 @@ func get_character(character_id: StringName, force_reapply_mods: bool = false) -
 					"Error while loading override '%s'. Using default resource." % _character_overrides[character_id],
 					NFPluginGameHandler._LogLevel.ERROR)
 			res_load = ResourceLoader.load(_characters[character_id], "", ResourceLoader.CACHE_MODE_REPLACE_DEEP) if force_reapply_mods else load(_characters[character_id])
-			if res_load != null and res_load is CharacterSheet:
+			if res_load != null and res_load is NFCharacterSheet:
 				char_sheet = res_load
 	else:
 		var res_load = ResourceLoader.load(_characters[character_id], "", ResourceLoader.CACHE_MODE_REPLACE_DEEP) if force_reapply_mods else load(_characters[character_id])
-		if res_load != null and res_load is CharacterSheet:
+		if res_load != null and res_load is NFCharacterSheet:
 			char_sheet = res_load
 	
 	if char_sheet == null:
@@ -107,7 +107,7 @@ func remove_character(id: StringName) -> void:
 
 ## Registers a [Callable] with ID [param mod_id] to modify [param character_id]
 ## before returned with [method CharacterManager.get_character].
-## The callable must have a single argument of type [CharacterSheet].
+## The callable must have a single argument of type [NFCharacterSheet].
 ## Modifications must be done directly to the object in-place.[br]
 ## The [param order] argument can be passed which will determine
 ## the execution sequence. A value less than 0 will append the modifier
@@ -136,13 +136,13 @@ func register_character_modifiers(character_id: StringName, mod_id: StringName, 
 	
 	if not _character_modifiers.has(character_id):
 		_character_modifiers[character_id] = {
-			"order": ArrayUtils.create_typed(TYPE_STRING_NAME),
-			"mods": DictUtils.create_typed(TYPE_STRING_NAME, TYPE_DICTIONARY)}
+			"order": NFArrayUtils.create_typed(TYPE_STRING_NAME),
+			"mods": NFDictUtils.create_typed(TYPE_STRING_NAME, TYPE_DICTIONARY)}
 	
 	var new_mod: bool = not _character_modifiers[character_id]["mods"].has(mod_id)
 	var trigger_sort: bool = true if new_mod else -1 < order and _character_modifiers[character_id]["mods"][mod_id]["order"] != order
 	
-	DictUtils.set_nested_value(
+	NFDictUtils.set_nested_value(
 			_character_modifiers,
 			[character_id, "mods", mod_id], # Key path
 			{"order": order, "callable": mod_callable, "dependency": depends_on}, # Value set to

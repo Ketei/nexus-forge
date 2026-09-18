@@ -1,11 +1,11 @@
 @tool
 @icon("res://addons/nexus_forge/icons/stat_catalog.svg")
-class_name StatCatalog
+class_name NFStatCatalog
 extends Resource
 ## A resource containing custom stats and its data.
 ##
-## Custom stats will be included in all [StatBlock]'s custom stats instantiated
-## with [method StatBlock.new_stat_block].
+## Custom stats will be included in all [NFStatBlock]'s custom stats instantiated
+## with [method NFStatBlock.new_stat_block].
 
 
 # Custom stats where the value is an integer array holding 2 values [min, max]
@@ -15,7 +15,7 @@ extends Resource
 
 ## Returns an array containing all registered stats.
 func stats() -> Array[StringName]:
-	return ArrayUtils.create_typed(TYPE_STRING_NAME, _stat_data.keys())
+	return NFArrayUtils.create_typed(TYPE_STRING_NAME, _stat_data.keys())
 
 
 ## Returns ture if a stat [param stat_id] is registered.
@@ -25,7 +25,7 @@ func has_stat(stat_id: StringName) -> bool:
 
 ## Returns the built-in type of a stat.
 func stat_type(stat_id: StringName) -> int:
-	var type: int = DictUtils.get_nested_value(
+	var type: int = NFDictUtils.get_nested_value(
 			_stat_data,
 			[stat_id, "type"],
 			TYPE_FLOAT,
@@ -52,7 +52,7 @@ func set_stat_description(stat_id: StringName, description: String) -> void:
 
 
 func get_stat_name(stat_id: StringName) -> String:
-	return DictUtils.get_nested_value(
+	return NFDictUtils.get_nested_value(
 			_stat_data,
 			[stat_id, "name"],
 			"",
@@ -60,7 +60,7 @@ func get_stat_name(stat_id: StringName) -> String:
 
 
 func get_stat_description(stat_id: StringName) -> String:
-	return DictUtils.get_nested_value(
+	return NFDictUtils.get_nested_value(
 			_stat_data,
 			[stat_id, "description"],
 			"",
@@ -85,7 +85,7 @@ func get_stat_data(stat_id: StringName, data_key: String) -> Variant:
 
 func stat_data(stat_id: StringName) -> Dictionary[StringName, Variant]:
 	var data: Dictionary[StringName, Variant] = {}
-	data.assign(DictUtils.get_nested_value(
+	data.assign(NFDictUtils.get_nested_value(
 			_stat_data,
 			[stat_id, "custom_data"],
 			{},
@@ -117,7 +117,7 @@ func set_stat_max(stat_id: StringName, new_max: float) -> void:
 ## Returns true if the custom stat [param stat_id] allows for lesser values or
 ## the stat doesn't exists.
 func allows_lesser(stat_id: StringName) -> bool:
-	return DictUtils.get_nested_value(
+	return NFDictUtils.get_nested_value(
 			_stat_data,
 			[stat_id, "allow_lesser"],
 			true,
@@ -127,7 +127,7 @@ func allows_lesser(stat_id: StringName) -> bool:
 ## Returns true if the custom stat [param stat_id] allows for greater values or
 ## the stat doesn't exists.
 func allows_greater(stat_id: StringName) -> bool:
-	return DictUtils.get_nested_value(
+	return NFDictUtils.get_nested_value(
 			_stat_data,
 			[stat_id, "allow_greater"],
 			true,
@@ -136,7 +136,7 @@ func allows_greater(stat_id: StringName) -> bool:
 
 ## Returns the minumum value of [param stat_id] or 0.0 if it doesn't exist.
 func get_min_value(stat_id: StringName) -> float:
-	var data = DictUtils.get_nested_value(
+	var data = NFDictUtils.get_nested_value(
 			_stat_data,
 			[stat_id, "min_value"],
 			0.0)
@@ -150,7 +150,7 @@ func get_min_value(stat_id: StringName) -> float:
 
 ## Returns the maximum value of [param stat_id] or 0.0 if it doesn't exist.
 func get_max_value(stat_id: StringName) -> float:
-	var data = DictUtils.get_nested_value(
+	var data = NFDictUtils.get_nested_value(
 			_stat_data,
 			[stat_id, "max_value"],
 			0.0)
@@ -163,7 +163,7 @@ func get_max_value(stat_id: StringName) -> float:
 
 
 ## Erases the custom stat [param stat_id] if it exists.[br]
-## Erasing a stat WON'T erase it from existing [StatBlock]s, but will prevent
+## Erasing a stat WON'T erase it from existing [NFStatBlock]s, but will prevent
 ## new ones from having the custom stat in them.
 func erase_stat(stat_id: StringName) -> void:
 	_stat_data.erase(stat_id)

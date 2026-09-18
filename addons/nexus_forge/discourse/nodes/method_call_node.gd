@@ -33,7 +33,7 @@ func _post_init() -> void:
 	
 	var method_keys: Array = available_methods.keys()
 	
-	method_keys.sort_custom(ArrayUtils.sort_custom_alphabetically_asc)
+	method_keys.sort_custom(NFArrayUtils.sort_custom_alphabetically_asc)
 	
 	for method:String in method_keys:
 		methods_node.add_item(method.capitalize())
@@ -287,7 +287,7 @@ func reload_methods() -> void:
 	var all_methods: Array = available_methods.keys()
 	var new_select: int = -1
 	
-	all_methods.sort_custom(ArrayUtils.sort_custom_alphabetically_asc)
+	all_methods.sort_custom(NFArrayUtils.sort_custom_alphabetically_asc)
 	
 	if selected_method != "":
 		new_select = all_methods.find(selected_method)

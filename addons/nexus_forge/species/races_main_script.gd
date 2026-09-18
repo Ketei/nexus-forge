@@ -7,11 +7,12 @@ signal species_loaded
 const UNDO_MAX_STEPS: int = 50
 
 var _unsaved: bool = false
-var _species_resource: SpeciesCatalog = null
+var _species_resource: NFSpeciesCatalog = null
 var loaded_species: StringName = &""
 var undo: UndoRedo = null
 var expr: Expression = null
 var _current_species: Array[StringName] = [] # Used for hybridization
+var _script_paths: RefCounted = null
 var _gui_enabled: bool = false
 var signal_change: bool = false
 
@@ -253,19 +254,43 @@ func _on_attribute_value_changed(new_value: float, spin: SpinBox) -> void:
 
 
 func _on_edit_statblock_pressed() -> void:
-	EditorInterface.edit_script(StatBlock.new().get_script())
+	var path: String = _script_paths.get_class_script_path("NFStatBlock")
+	if path.is_empty():
+		NFPluginGameHandler._log_msg(
+				"kindred - editor",
+				"Couldn't find class 'NFStatBlock' script.",
+				NFPluginGameHandler._LogLevel.ERROR)
+		return
+	var scr: Script = load(path)
+	EditorInterface.edit_script(scr)
 	if not EditorInterface.get_editor_settings().get_setting("text_editor/external/use_external_editor"):
 		EditorInterface.set_main_screen_editor("Script")
 
 
 func _on_edit_skillset_pressed() -> void:
-	EditorInterface.edit_script(SkillSet.new().get_script())
+	var path: String = _script_paths.get_class_script_path("NFSkillSet")
+	if path.is_empty():
+		NFPluginGameHandler._log_msg(
+				"kindred - editor",
+				"Couldn't find class 'NFSkillSet' script.",
+				NFPluginGameHandler._LogLevel.ERROR)
+		return
+	var scr: Script = load(path)
+	EditorInterface.edit_script(scr)
 	if not EditorInterface.get_editor_settings().get_setting("text_editor/external/use_external_editor"):
 		EditorInterface.set_main_screen_editor("Script")
 
 
 func _on_edit_traitblock_pressed() -> void:
-	EditorInterface.edit_script(TraitBlock.new().get_script())
+	var path: String = _script_paths.get_class_script_path("NFTraitBlock")
+	if path.is_empty():
+		NFPluginGameHandler._log_msg(
+				"kindred - editor",
+				"Couldn't find class 'NFTraitBlock' script.",
+				NFPluginGameHandler._LogLevel.ERROR)
+		return
+	var scr: Script = load(path)
+	EditorInterface.edit_script(scr)
 	if not EditorInterface.get_editor_settings().get_setting("text_editor/external/use_external_editor"):
 		EditorInterface.set_main_screen_editor("Script")
 
@@ -415,7 +440,7 @@ func reload_resource(first_load: bool = false) -> void:
 	
 	if res_path != "" and FileAccess.file_exists(res_path):
 		var preload_res: Resource = load(res_path)
-		if preload_res is SpeciesCatalog:
+		if preload_res is NFSpeciesCatalog:
 			_species_resource = preload_res
 	
 	if _species_resource == null:
@@ -424,7 +449,7 @@ func reload_resource(first_load: bool = false) -> void:
 			var no_db = preload("res://addons/nexus_forge/no_db_container.tscn").instantiate()
 			add_child(no_db)
 			no_db.message_minimum_size.x = 450
-			no_db.set_resource_type("SpeciesCatalog", "Species", "Species")
+			no_db.set_resource_type("NFSpeciesCatalog", "Species", "Species")
 			no_db.create_resource_pressed.connect(_on_create_database_pressed.bind(no_db))
 			no_db.load_resource_pressed.connect(_on_load_database_pressed.bind(no_db))
 			no_db.resource_dropped.connect(_on_resource_dropped.bind(no_db))
@@ -444,7 +469,7 @@ func _on_create_database_pressed(node: Control) -> void:
 	var result = await database_creator.dialog_finished
 	
 	if result[0]:
-		_species_resource = SpeciesCatalog.new()
+		_species_resource = NFSpeciesCatalog.new()
 		ResourceSaver.save(_species_resource, result[1])
 		_species_resource.resource_path = result[1]
 		ProjectSettings.set_setting(
@@ -483,7 +508,7 @@ func _on_load_database_pressed(node: Control) -> void:
 	
 	if result[0]:
 		var res_pre: Resource = load(result[1])
-		if res_pre != null and res_pre is SpeciesCatalog:
+		if res_pre != null and res_pre is NFSpeciesCatalog:
 			_species_resource = res_pre
 			ProjectSettings.set_setting(
 					NFPluginGameHandler.get_setting_path("species"),
@@ -968,13 +993,13 @@ func set_ui_enabled(enabled: bool) -> void:
 
 
 func update_talent_nodes() -> void:
-	var skill_set: SkillSet = SkillSet.new()
+	var skill_set: NFSkillSet = NFSkillSet.new()
 	
-	var trait_block: TraitBlock = TraitBlock.new()
+	var trait_block: NFTraitBlock = NFTraitBlock.new()
 	
-	var stat_block: StatBlock = StatBlock.new()
+	var stat_block: NFStatBlock = NFStatBlock.new()
 	
-	var stat_data: Dictionary[StringName, int] = StatBlock.stats()
+	var stat_data: Dictionary[StringName, int] = NFStatBlock.stats()
 	var stats: Array[StringName] = []
 	stats.assign(stat_data.keys())
 	stats.sort_custom(func(a,b): return String(a).naturalnocasecmp_to(String(b)) < 0)
@@ -989,7 +1014,7 @@ func update_talent_nodes() -> void:
 	
 	for stat_id in stats:
 		var stat_default: float = 0.0
-		var stat_item: ValueRange = stat_block.get(stat_id)
+		var stat_item: NFValueRange = stat_block.get(stat_id)
 		if stat_item != null:
 			stat_default = stat_item.value
 		
@@ -1005,7 +1030,7 @@ func update_talent_nodes() -> void:
 	for remaining_stat in stat_map:
 		stat_map[remaining_stat].queue_free()
 	
-	var skills: Array[StringName] = SkillSet.skills()
+	var skills: Array[StringName] = NFSkillSet.skills()
 	skills.sort_custom(func(a,b): return String(a).naturalnocasecmp_to(String(b)) < 0)
 	
 	var skill_map: Dictionary[StringName, HBoxContainer] = {}
@@ -1027,7 +1052,7 @@ func update_talent_nodes() -> void:
 	for remaining_skill in skill_map:
 		skill_map[remaining_skill].queue_free()
 	
-	var traits: Array[StringName] = TraitBlock.traits()
+	var traits: Array[StringName] = NFTraitBlock.traits()
 	
 	traits.sort_custom(func(a,b): return String(a).naturalnocasecmp_to(String(b)) < 0)
 	

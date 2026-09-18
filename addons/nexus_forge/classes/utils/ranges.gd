@@ -1,4 +1,4 @@
-class_name RangeUtils
+class_name NFRangeUtils
 extends RefCounted
 ## A collection of static functions to move values within a given range.
 

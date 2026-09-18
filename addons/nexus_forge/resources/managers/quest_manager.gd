@@ -49,11 +49,11 @@ var _quest_modifiers: Dictionary[StringName, Dictionary] = {}
 ## pass [param success] as [code]false[/code].
 ## And it'll auto-advance to the failed quest path if [param auto_advance_stages]
 ## was enabled.
-func start_quest(quest: Quest, auto_advance_stages: bool) -> bool:
+func start_quest(quest: NFQuest, auto_advance_stages: bool) -> bool:
 	if _active_quests.has(quest.id):
 		NFPluginGameHandler._log_msg(
 				"odyssey",
-				"Coulnd't start quest. Quest with ID '%s' is already active." % quest.id,
+				"Couldn't start quest. Quest with ID '%s' is already active." % quest.id,
 				NFPluginGameHandler._LogLevel.ERROR)
 		return false
 	elif not quest.has_stage(quest.entry_stage):
@@ -71,7 +71,7 @@ func start_quest(quest: Quest, auto_advance_stages: bool) -> bool:
 	var new_entry: NFQuestEntry = NFQuestEntry.new()
 	new_entry.resource = quest
 	new_entry.auto_advance_stages = auto_advance_stages
-	new_entry._flags = BitUtils.set_bit_index(0, 0, true)
+	new_entry._flags = NFBitUtils.set_bit_index(0, 0, true)
 	_active_quests[quest.id] = new_entry
 	new_entry.objective_state_changed.connect(_on_quest_objective_state_changed)
 	
@@ -101,7 +101,7 @@ func start_quest(quest: Quest, auto_advance_stages: bool) -> bool:
 ## in the [member QuestManager.Log].[br]
 ## Intended to restore programmatically generated
 ## quests before calling [method QuestManager.restore_state].
-func add_quest_resource(quest: Quest, auto_advance_stages: bool, apply_mods: bool = true) -> bool:
+func add_quest_resource(quest: NFQuest, auto_advance_stages: bool, apply_mods: bool = true) -> bool:
 	if _active_quests.has(quest.id):
 		return false
 	
@@ -114,7 +114,7 @@ func add_quest_resource(quest: Quest, auto_advance_stages: bool, apply_mods: boo
 	new_entry.resource = quest
 	new_entry.auto_advance_stages = auto_advance_stages
 	new_entry.current_stage = quest.entry_stage
-	new_entry._flags = BitUtils.set_bit_index(0, 0, true)
+	new_entry._flags = NFBitUtils.set_bit_index(0, 0, true)
 	_active_quests[quest.id] = new_entry
 	new_entry.objective_state_changed.connect(_on_quest_objective_state_changed)
 	
@@ -151,16 +151,16 @@ func restore_state(state_data: Dictionary) -> void:
 		if not _is_serialized_data_valid(key, state_data[key]):
 			continue
 		
-		var res: Quest = null
+		var res: NFQuest = null
 		
 		if _active_quests.has(key):
 			res = _active_quests[key].resource
 		else:
 			var pre = load(state_data[key]["resource_path"])
-			if pre != null and pre is Quest:
+			if pre != null and pre is NFQuest:
 				res = pre
 		
-		if res == null or res is not Quest:
+		if res == null or res is not NFQuest:
 			NFPluginGameHandler._log_msg(
 				"quests - deserializer",
 				"Resource for quest '%s' couldn't be loaded. Skipping." % key,
@@ -179,7 +179,7 @@ func restore_state(state_data: Dictionary) -> void:
 				auto_advance = state_data[key]["auto_advance_stages"]
 			new_entry.resource = res
 			new_entry.auto_advance_stages = auto_advance
-			new_entry._flags = BitUtils.set_bit_index(0, 0, true)
+			new_entry._flags = NFBitUtils.set_bit_index(0, 0, true)
 			_active_quests[key] = new_entry
 			new_entry.objective_state_changed.connect(_on_quest_objective_state_changed)
 		
@@ -225,9 +225,9 @@ func remove_quest(quest_id: StringName, clear_from_history: bool = true) -> void
 		_quests_modified.emit()
 
 
-## Returns the current [QuestStage] object of the param quest_id or
+## Returns the current [NFQuestStage] object of the param quest_id or
 ## [code]null[/code] if the quest doesn't exist.
-func get_quest_current_stage(quest_id: StringName) -> QuestStage:
+func get_quest_current_stage(quest_id: StringName) -> NFQuestStage:
 	if _active_quests.has(quest_id):
 		return _active_quests[quest_id].resource.get_stage(_active_quests[quest_id].current_stage)
 	return null
@@ -381,7 +381,7 @@ func complete_quest(quest_id: StringName, success: bool) -> void:
 
 ## Registers a [Callable] with ID [param mod_id] to modify [param quest_id]
 ## before it's tracked with [method QuestManager.start_quest].
-## The callable must have a single argument of type [Quest]. Modifications
+## The callable must have a single argument of type [NFQuest]. Modifications
 ## must be done directly to the object in-place.[br]
 ## The [param order] argument can be passed which will determine
 ## the execution sequence. A value less than 0 will append the modifier
@@ -406,14 +406,14 @@ func register_quest_modifier(quest_id: StringName, mod_id: StringName, mod_calla
 	
 	if not _quest_modifiers.has(quest_id):
 		_quest_modifiers[quest_id] = {
-			"order": ArrayUtils.create_typed(TYPE_STRING_NAME),
-			"mods": DictUtils.create_typed(TYPE_STRING_NAME, TYPE_DICTIONARY)}
+			"order": NFArrayUtils.create_typed(TYPE_STRING_NAME),
+			"mods": NFDictUtils.create_typed(TYPE_STRING_NAME, TYPE_DICTIONARY)}
 	
 	
 	var new_mod: bool = not _quest_modifiers[quest_id]["mods"].has(mod_id)
 	var trigger_sort: bool = true if new_mod else _quest_modifiers[quest_id]["mods"][mod_id]["order"] != order
 	
-	DictUtils.set_nested_value(
+	NFDictUtils.set_nested_value(
 			_quest_modifiers, # ID
 			[quest_id, "mods", mod_id], # Key path
 			{"order": order, "callable": mod_callable, "dependency": after_mod}, # Value set to
@@ -494,7 +494,7 @@ func _check_stage_auto_advance(quest_id: StringName) -> void:
 
 
 func _set_quest_complete(quest_id: StringName, success: bool, emit_events: bool = true) -> void:
-	var quest: Quest = _active_quests[quest_id].resource
+	var quest: NFQuest = _active_quests[quest_id].resource
 	
 	Log.set_entry(
 			quest_id,
@@ -516,7 +516,7 @@ func _set_quest_complete(quest_id: StringName, success: bool, emit_events: bool 
 
 
 func _set_stage_complete(quest_id: StringName, stage_id: StringName, success: bool, emit_events: bool = true) -> void:
-	var stage: QuestStage = _active_quests[quest_id].resource.get_stage(stage_id)
+	var stage: NFQuestStage = _active_quests[quest_id].resource.get_stage(stage_id)
 	
 	_log_stage_complete(quest_id, stage_id, success)
 	
@@ -536,7 +536,7 @@ func _set_stage_complete(quest_id: StringName, stage_id: StringName, success: bo
 
 
 func _set_objective_complete(quest_id: StringName, stage_id: StringName, objective_id: StringName, success: bool, emit_events: bool = true) -> void:
-	var objective: QuestObjective = _active_quests[quest_id].resource.get_stage(stage_id).get_objective(objective_id)
+	var objective: NFQuestObjective = _active_quests[quest_id].resource.get_stage(stage_id).get_objective(objective_id)
 	_log_objective_complete(quest_id, stage_id, objective_id, success)
 	
 	if not emit_events:
@@ -699,7 +699,7 @@ func _is_serialized_data_valid(quest: StringName, data: Dictionary) -> bool:
 class NFQuestEntry extends RefCounted:
 	signal objective_state_changed(quest_id: StringName, stage_id: StringName, objective_id: StringName)
 	
-	var resource: Quest = null: # Blueprint
+	var resource: NFQuest = null: # Blueprint
 		set(r):
 			if r == null and resource != null:
 				_current_stage = &""
@@ -728,11 +728,11 @@ class NFQuestEntry extends RefCounted:
 		elif current_stage == stage_id:
 			return true
 		
-		var stage: QuestStage = resource.get_stage(stage_id)
+		var stage: NFQuestStage = resource.get_stage(stage_id)
 		_clear_trackers()
 		
 		for objective_id in stage.objectives():
-			var objective: QuestObjective = stage.get_objective(objective_id)
+			var objective: NFQuestObjective = stage.get_objective(objective_id)
 			var progress_tracker: NFObjectiveProgressTracker = NFObjectiveProgressTracker.new()
 			progress_tracker.objective_id = objective_id
 			progress_tracker.is_required = stage.is_objective_required(objective_id)
@@ -779,7 +779,7 @@ class NFQuestEntry extends RefCounted:
 	
 	
 	func is_valid() -> bool:
-		return BitUtils.is_bit_index(_flags, 0, true)
+		return NFBitUtils.is_bit_index(_flags, 0, true)
 	
 	
 	func update_objective_progress(key: String, value: Variant) -> void:

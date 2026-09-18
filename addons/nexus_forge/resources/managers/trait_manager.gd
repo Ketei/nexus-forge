@@ -15,7 +15,7 @@ var _base_traits: Dictionary[StringName, Variant] = {}
 
 
 func _init() -> void:
-	for trait_id in TraitBlock.traits():
+	for trait_id in NFTraitBlock.traits():
 		var base_entry: NFCatalogEntry = NFCatalogEntry.new()
 		base_entry.name = String(trait_id).capitalize()
 		base_entry._flags = NFCatalogEntry._get_flags(true, false, true)
@@ -26,7 +26,7 @@ func _init() -> void:
 
 ## Loads a trait [param catalog] into this object. If [param clear_traits]
 ## is [code]true[/code] then previous traits are cleared.
-func load_catalog(catalog: TraitCatalog, clear_traits: bool = true) -> void:
+func load_catalog(catalog: NFTraitCatalog, clear_traits: bool = true) -> void:
 	if clear_traits:
 		for entry in _trait_entries.keys():
 			if _base_traits.has(entry):
@@ -44,7 +44,7 @@ func load_catalog(catalog: TraitCatalog, clear_traits: bool = true) -> void:
 
 #region Defined Traits
 
-## Sets a trait's name. The trait must exist in a [TraitBlock].
+## Sets a trait's name. The trait must exist in a [NFTraitBlock].
 func set_trait_name(trait_id: StringName, new_name: String) -> void:
 	if _trait_entries.has(trait_id):
 		_trait_entries[trait_id].name = new_name
@@ -57,7 +57,7 @@ func get_trait_name(trait_id: StringName) -> String:
 	return ""
 
 
-## Sets the trait [param trait_id] description. The trait must exist in a [TraitBlock].
+## Sets the trait [param trait_id] description. The trait must exist in a [NFTraitBlock].
 func set_trait_description(trait_id: StringName, description: String) -> void:
 	if _trait_entries.has(trait_id):
 		_trait_entries[trait_id].description = description
@@ -71,7 +71,7 @@ func get_trait_description(trait_id: StringName) -> String:
 
 
 ## Sets the data with key [param data_key] to [param data] of the trait
-## [param trait_id]. The trait must exist in a [TraitBlock].
+## [param trait_id]. The trait must exist in a [NFTraitBlock].
 func set_trait_data(trait_id: StringName, data_key: StringName, data: Variant) -> void:
 	if not _trait_entries.has(trait_id):
 		return
@@ -107,7 +107,7 @@ func trait_data_keys(trait_id: StringName) -> Array[String]:
 
 ## Creates a custom trait with id [param trait_id] unless it already exists.
 ## Creating a custom trait with this method will add them to all instantiated
-## [TraitBlock]s and newly instantiated ones will include them too.
+## [NFTraitBlock]s and newly instantiated ones will include them too.
 func create_trait(trait_id: StringName) -> void:
 	if _trait_entries.has(trait_id):
 		return
@@ -136,7 +136,7 @@ func has_trait(trait_id: StringName) -> bool:
 
 
 ## Erases the custom trait [param trait_id].[br]
-## Erasing a trait doesn't remove it globally from existing [TraitBlock]s,
+## Erasing a trait doesn't remove it globally from existing [NFTraitBlock]s,
 ## but prevents it from being added to newly instantiated ones.
 func erase_trait(trait_id: StringName) -> void:
 	if _base_traits.has(trait_id):

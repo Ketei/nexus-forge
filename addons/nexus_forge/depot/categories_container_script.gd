@@ -6,7 +6,7 @@ signal category_id_changed(from: StringName, to: StringName)
 var selected_category: StringName = &""
 
 var categories_edited: bool = false
-var items_resource: ItemCatalog
+var items_resource: NFItemCatalog
 var category_undo: UndoRedo
 
 @onready var search_cat_ln_edt: LineEdit = $DataContainer/SearchContainer/SearchCatLnEdt
