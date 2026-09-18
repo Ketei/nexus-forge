@@ -2302,8 +2302,7 @@ func _on_localizer_item_renamed(node_uuid: StringName, desired_id: String) -> vo
 func _on_new_conversation_pressed() -> void:
 	var file_saver: FileDialog = load("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	file_saver.file_mode = file_saver.FILE_MODE_SAVE_FILE
-	add_child(file_saver)
-	file_saver.popup_centered()
+	EditorInterface.popup_dialog_centered(file_saver)
 	
 	var result: Array = await file_saver.dialog_finished
 	file_saver.queue_free()
@@ -2383,8 +2382,7 @@ func load_dialog_from_file(file_path: String) -> EditorDiscourseDialog:
 func _on_open_conversation_pressed() -> void:
 	var file_opener: FileDialog = load("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	file_opener.file_mode = file_opener.FILE_MODE_OPEN_FILE
-	add_child(file_opener)
-	file_opener.popup_centered()
+	EditorInterface.popup_dialog_centered(file_opener)
 	
 	var result: Array = await file_opener.dialog_finished
 	file_opener.queue_free()

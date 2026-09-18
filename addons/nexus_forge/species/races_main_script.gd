@@ -672,8 +672,7 @@ func _on_erase_species_requested(species: StringName) -> void:
 	dialog.ok_button_text = "Delete"
 	dialog.cancel_button_text = "Cancel"
 	dialog.initial_position = Window.WINDOW_INITIAL_POSITION_CENTER_MAIN_WINDOW_SCREEN
-	add_child(dialog)
-	dialog.popup_centered()
+	EditorInterface.popup_dialog_centered(dialog)
 	
 	var delete: bool = await dialog.dialog_finished
 	dialog.queue_free()

@@ -230,21 +230,18 @@ func _on_import_species_data_pressed() -> void:
 		return
 
 	var confirmation_dialog: ConfirmationDialog = load("res://addons/nexus_forge/characters/import_stat_data_cdialog.gd").new()
-	add_child(confirmation_dialog)
-	confirmation_dialog.popup_centered()
+	EditorInterface.popup_dialog_centered(confirmation_dialog)
 	
 	var use_inheritance : int = await confirmation_dialog.dialog_finished
+	confirmation_dialog.queue_free()
 	
 	if use_inheritance == 0:
-		confirmation_dialog.queue_free()
 		return
 	
 	if not species.loaded_species.is_empty():
 		species.save_current_species()
 	
 	characters.import_species_data(species._species_resource, use_inheritance == 1)
-	
-	confirmation_dialog.queue_free()
 
 
 func _on_items_loaded() -> void:

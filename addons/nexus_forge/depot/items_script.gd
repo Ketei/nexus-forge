@@ -96,8 +96,9 @@ func ready_plugin(use_items: bool, use_currencies: bool, max_undo_steps: int) ->
 	next_item_page_btn.icon = get_theme_icon("Forward", "EditorIcons")
 	prev_item_page_btn.icon = get_theme_icon("Back", "EditorIcons")
 	
+	new_item_btn.disabled = not use_items
+	
 	if use_items:
-		new_item_btn.disabled = false
 		items_tree.ready_plugin()
 		item_data_tree.ready_plugin()
 		reload_item_resource(true)
@@ -1219,7 +1220,6 @@ func reload_item_resource(first_launch: bool = false) -> void:
 			no_db.create_resource_pressed.connect(_on_create_database_pressed.bind(no_db))
 			no_db.load_resource_pressed.connect(_on_load_database_pressed.bind(no_db))
 			no_db.resource_dropped.connect(_on_items_resource_dropped.bind(no_db))
-			new_item_btn.disabled = true
 	else:
 		reload_categories()
 		items_tree.clear_entries()
