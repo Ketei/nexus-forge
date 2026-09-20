@@ -16,15 +16,13 @@ var custom_data: Dictionary[StringName, Variant] = {}
 
 ## Returns if this entry is from a built-in item, or was added in programatically.
 func is_custom() -> bool:
-	return NFBitUtils.is_bit_index(_flags, 1, true)
+	return NFBitUtils.is_bit_index(_flags, 0, true)
 
 
-static func _get_flags(valid: bool, custom: bool, lock: bool) -> int:
+static func _get_flags(custom: bool, lock: bool) -> int:
 	var flags: int = 0
-	if valid:
-		flags = NFBitUtils.set_bit_index(flags, 0, true)
 	if custom:
-		flags = NFBitUtils.set_bit_index(flags, 1, true)
+		flags = NFBitUtils.set_bit_index(flags, 0, true)
 	if lock:
 		flags = NFBitUtils.set_bit_index(flags, 63, true)
 	return flags

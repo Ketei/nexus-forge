@@ -612,6 +612,7 @@ func _ready() -> void:
 												"",
 												"Resource '%s' is using the ID (%s) of an already registered resource '%s'. Skipping." % [key, data[key], map[data[key]]])
 									map[data[key]] = key
+							
 							CharacterManager._characters.assign(map)
 			else:
 				if FileAccess.file_exists("res://addons/nexus_forge/settings.cfg"):

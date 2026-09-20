@@ -18,7 +18,7 @@ func _init() -> void:
 	for trait_id in NFTraitBlock.traits():
 		var base_entry: NFCatalogEntry = NFCatalogEntry.new()
 		base_entry.name = String(trait_id).capitalize()
-		base_entry._flags = NFCatalogEntry._get_flags(true, false, true)
+		base_entry._flags = NFCatalogEntry._get_flags(false, true)
 		_base_traits[trait_id] = null
 		_trait_entries
 	_base_traits.make_read_only()
@@ -38,7 +38,7 @@ func load_catalog(catalog: NFTraitCatalog, clear_traits: bool = true) -> void:
 		entry.name = catalog.get_trait_name(trait_id)
 		entry.description = catalog.get_trait_description(trait_id)
 		entry.custom_data.assign(catalog.get_trait_custom_data(trait_id))
-		entry._flags = NFCatalogEntry._get_flags(true, not _base_traits.has(trait_id), true)
+		entry._flags = NFCatalogEntry._get_flags(not _base_traits.has(trait_id), true)
 		_trait_entries[trait_id] = entry
 
 
@@ -115,8 +115,7 @@ func create_trait(trait_id: StringName) -> void:
 	var entry: NFCatalogEntry = NFCatalogEntry.new()
 	
 	entry.name = String(trait_id).capitalize()
-	entry._valid = true
-	entry._custom = true
+	entry._flags = NFCatalogEntry._get_flags(true, true)
 	
 	_trait_entries[trait_id] = entry
 	

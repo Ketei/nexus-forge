@@ -138,22 +138,24 @@ func ready_plugin(use_discourse: bool, use_characters: bool, use_species: bool, 
 		tool_tab_bar.add_tab("Phrase Maps", load("res://addons/nexus_forge/icons/brackets_speech.svg"))
 	
 	if discourse != null:
+		discourse._class_update_signaler = paths_obj_reference
 		discourse.ready_plugin(discourse_base_lang)
 	variables.ready_plugin()
 	if characters != null:
-		characters._script_paths = paths_obj_reference
+		characters._class_update_signaler = paths_obj_reference
 		characters.ready_plugin()
 	if species != null:
+		species._class_update_signaler = paths_obj_reference
 		species.ready_plugin()
 	if talents != null:
-		talents._script_paths = paths_obj_reference
+		talents._class_update_signaler = paths_obj_reference
 		talents.ready_plugin(use_stats, use_skills, use_traits)
 	if items != null:
 		items.ready_plugin(use_items, use_currencies, paths_obj_reference)
 	if recipes != null:
 		recipes.ready_plugin()
 	if quests != null:
-		quests._script_paths = paths_obj_reference
+		quests._class_update_signaler = paths_obj_reference
 		quests.ready_plugin()
 	if phrase_maps != null:
 		phrase_maps.ready_plugin()

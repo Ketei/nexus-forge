@@ -31,7 +31,7 @@ var exp_parser: Expression = null
 
 var _items_unsaved: bool = false
 var _currency_unsaved: bool = false
-var _script_paths: RefCounted = null
+var _class_update_signaler: RefCounted = null
 
 @onready var search_item_container: LineEdit = $ItemsPanel/ItemsContainer/TreeContainer/ItemSearchContainer/SearchItemContainer
 @onready var new_item_btn: Button = $ItemsPanel/ItemsContainer/TreeContainer/ItemSearchContainer/NewItemBtn
@@ -163,18 +163,12 @@ func ready_plugin(use_items: bool, use_currencies: bool, max_undo_steps: int) ->
 	go_to_calc_btn.pressed.connect(_on_go_to_calculator_pressed, CONNECT_DEFERRED)
 	
 	value_ln_edt.set_drag_forwarding(_get_copy_button_drag_data, Callable(), Callable())
+	
+	_class_update_signaler.classes_updated.connect(_on_classes_changed)
 
 
 func _on_edit_rarities_pressed() -> void:
-	var path: String = _script_paths.get_class_script_path("NFItemSheet")
-	if path.is_empty():
-		NFPluginGameHandler._log_msg(
-				"depot - editor",
-				"Couldn't find NFItemSheet class file.",
-				NFPluginGameHandler._LogLevel.ERROR)
-		return
-	
-	var item_script: Script = load(path)
+	var item_script: Script = NFItemSheet
 	var source_code: String = item_script.source_code
 	
 	if source_code.is_empty():
@@ -204,21 +198,14 @@ func _on_edit_rarities_pressed() -> void:
 	var line: int  = text_before_target.count("\n") + 1
 	var last_newline_idx: int = text_before_target.rfind("\n")
 	var column: int = text_before_target.length() - last_newline_idx
-	EditorInterface.edit_script(item_script, line, column)
 	
 	if not EditorInterface.get_editor_settings().get_setting("text_editor/external/use_external_editor"):
 		EditorInterface.set_main_screen_editor("Script")
+	EditorInterface.edit_script(item_script, line, column)
 
 
 func _on_edit_flags_pressed() -> void:
-	var path: String = _script_paths.get_class_script_path("NFItemSheet")
-	if path.is_empty():
-		NFPluginGameHandler._log_msg(
-				"depot - editor",
-				"Couldn't find NFItemSheet class file.",
-				NFPluginGameHandler._LogLevel.ERROR)
-		return
-	var item_script: Script = load(path)
+	var item_script: Script = NFItemSheet
 	var source_code: String = item_script.source_code
 	
 	if source_code.is_empty():
@@ -248,10 +235,10 @@ func _on_edit_flags_pressed() -> void:
 	var line: int  = text_before_target.count("\n") + 1
 	var last_newline_idx: int = text_before_target.rfind("\n")
 	var column: int = text_before_target.length() - last_newline_idx
-	EditorInterface.edit_script(item_script, line, column)
 	
 	if not EditorInterface.get_editor_settings().get_setting("text_editor/external/use_external_editor"):
 		EditorInterface.set_main_screen_editor("Script")
+	EditorInterface.edit_script(item_script, line, column)
 
 
 func _on_next_page_btn_pressed() -> void:
@@ -1276,15 +1263,13 @@ func select_category(category_id: StringName, uncategorized_if_not_found: bool =
 	return false
 
 
+func _on_classes_changed(classes: Array[String]) -> void:
+	if classes.has("NFItemSheet"):
+		reload_fields()
+
+
 func reload_fields() -> void:
-	var path: String = _script_paths.get_class_script_path("NFItemSheet")
-	if path.is_empty():
-		NFPluginGameHandler._log_msg(
-				"depot - editor",
-				"Couldn't load NFItemSheet class file.",
-				NFPluginGameHandler._LogLevel.ERROR)
-		return
-	var item_script: Script = load(path)
+	var item_script: Script = NFItemSheet
 	var constant_map: Dictionary = item_script.get_script_constant_map()
 	
 	if constant_map.has(&"Rarity"):

@@ -27,8 +27,8 @@ extends Resource
 ## The custom data of the species.
 @export var custom_data: Dictionary[StringName, Variant] = {}
 ## The stats of the species.
-@export var stats: NFSpeciesStatCatalog = NFSpeciesStatCatalog.new(TYPE_FLOAT)
+@export var stats: NFSpeciesStatCatalog = NFSpeciesStatCatalog.new()
 ## The skills of the species.
-@export var skills: NFSpeciesStatCatalog = NFSpeciesStatCatalog.new(TYPE_INT)
+@export var skills: NFSpeciesStatCatalog = NFSpeciesStatCatalog.new()
 ## The traits of the species.
-@export var traits: NFSpeciesStatCatalog = NFSpeciesStatCatalog.new(TYPE_INT)
+@export var traits: NFSpeciesStatCatalog = NFSpeciesStatCatalog.new()

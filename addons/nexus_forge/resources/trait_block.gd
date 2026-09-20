@@ -12,18 +12,10 @@ extends Resource
 ## @export var my_trait: int = 0
 ## [/codeblock]
 
-static var _script_path: String = ""
 
 @export var cold_resist: int = 0
 
 @export_storage var _custom_traits: Dictionary[StringName, int] = {}
-
-
-static func _static_init() -> void:
-	for cls in ProjectSettings.get_global_class_list():
-		if cls["class"] == "NFTraitBlock":
-			_script_path = cls["path"]
-			break
 
 
 func _init(use_nexus_forge: bool = true) -> void:
@@ -42,15 +34,15 @@ func _init(use_nexus_forge: bool = true) -> void:
 ## Does NOT include custom traits.
 static func traits() -> Array[StringName]:
 	const MASK: int = PROPERTY_USAGE_SCRIPT_VARIABLE + PROPERTY_USAGE_STORAGE
-	var block_script: Script = load(_script_path)
+	var path: String = NFTraitBlock.resource_path
+	var block_script: Script = load(path)
 	var all_traits: Array[StringName] = []
 	
 	var data: Array[Dictionary] = block_script.get_script_property_list()
 	
 	for item in data:
-		if item["type"] != TYPE_INT or not NFBitUtils.are_bits(item["usage"], MASK, true):
-			continue
-		all_traits.append(StringName(item["name"]))
+		if item["type"] == TYPE_INT and NFBitUtils.are_bits(item["usage"], MASK, true):
+			all_traits.append(StringName(item["name"]))
 	
 	return all_traits
 

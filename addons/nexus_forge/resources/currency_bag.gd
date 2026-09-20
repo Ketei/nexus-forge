@@ -2,7 +2,7 @@
 class_name NFCurrencyWallet
 extends Resource
 ## A resource used for holding the currencies registered on
-## [member NexusForge.Currency].
+## [member NexusForge.CurrencyManager].
 ##
 ## This resource keeps track of the amount of each currency stored and
 ## provides helper method to change them safely. Whenever a value changes
@@ -21,7 +21,7 @@ func assign(values: Dictionary[StringName, int]) -> void:
 	var valid_values: Dictionary[StringName, int] = {}
 	
 	for c_id in values.keys():
-		if not NexusForge.Currency.has_currency(c_id) or values[c_id] <= 0:
+		if not NexusForge.CurrencyManager.has_currency(c_id) or values[c_id] <= 0:
 			continue
 		valid_values[c_id] = values[c_id]
 	
@@ -36,7 +36,7 @@ func add_funds(funds: Dictionary[StringName, int]) -> void:
 	var updated: bool = false
 	
 	for fund in funds.keys():
-		if not NexusForge.Currency.has_currency(fund) or funds[fund] <= 0:
+		if not NexusForge.CurrencyManager.has_currency(fund) or funds[fund] <= 0:
 			continue
 		
 		if _wallet.has(fund):
@@ -55,7 +55,7 @@ func add_funds(funds: Dictionary[StringName, int]) -> void:
 ## [param value] would've overflown the data, it'll keep it at the max
 ## possible integer.
 func add_currency(currency: StringName, value: int) -> void:
-	if not NexusForge.Currency.has_currency(currency) or value <= 0:
+	if not NexusForge.CurrencyManager.has_currency(currency) or value <= 0:
 		return
 	
 	if _wallet.has(currency):
@@ -133,11 +133,11 @@ func remove_funds(amount: Dictionary[StringName, int], times: int = 1) -> bool:
 
 
 ## Returns the total value of the wallet. Just like with
-## [method NexusForge.Currency.currency_value] if the combined value exceed
+## [method NexusForge.CurrencyManager.currency_value] if the combined value exceed
 ## the maximum integer, it'll return the maximum integer value instead of the
 ## total combined value.
 func total_value() -> int:
-	return NexusForge.Currency.currency_value(_wallet)
+	return NexusForge.CurrencyManager.currency_value(_wallet)
 
 
 ## Clears the wallet of all currencies.

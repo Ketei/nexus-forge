@@ -5,14 +5,14 @@ extends NFValueRange
 
 
 ## The minimum value this range can hold.
-@export var min_value: int = 0.0:
+@export var min_value: int = 0:
 	set(new_min):
 		min_value = new_min
 		if max_value < new_min:
 			max_value = new_min
 		_fix_value()
 ## The maximum value this range can hold.
-@export var max_value: int = 0.0:
+@export var max_value: int = 0:
 	set(new_max):
 		if  new_max < min_value:
 			new_max = min_value

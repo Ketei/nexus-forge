@@ -488,7 +488,7 @@ func get_species_stat_value(species_id: StringName, stat_id: StringName) -> floa
 ## The species will have inherited the stats of the parent species if
 ## [param inherit] is [code]true[/code].
 func get_species_stats(species_id: StringName, inherit: bool = true) -> NFSpeciesStatCatalog:
-	var new_block: NFSpeciesStatCatalog = NFSpeciesStatCatalog.new(TYPE_FLOAT)
+	var new_block: NFSpeciesStatCatalog = NFSpeciesStatCatalog.new()
 	var data_stats: Dictionary[StringName, float] = _species_stat_data(species_id, inherit)
 	
 	var properties: Dictionary[StringName, int] = NFStatBlock.stats()
@@ -546,7 +546,7 @@ func get_species_skill_value(species_id: StringName, skill_id: StringName) -> in
 ## The species will have inherited the skills of the parent species if
 ## [param inherit] is [code]true[/code].
 func get_species_skills(species_id: StringName, inherit: bool = true) -> NFSpeciesStatCatalog:
-	var new_set: NFSpeciesStatCatalog = NFSpeciesStatCatalog.new(TYPE_INT)
+	var new_set: NFSpeciesStatCatalog = NFSpeciesStatCatalog.new()
 	var data_stats: Dictionary[StringName, int] = _species_skill_data(species_id, inherit)
 	
 	var properties: Array[StringName] = NFSkillSet.skills()
@@ -595,7 +595,7 @@ func get_species_trait_value(species_id: StringName, trait_id: StringName) -> in
 ## The species will have inherited the traits of the parent species if
 ## [param inherit] is [code]true[/code].
 func get_species_traits(species_id: StringName, inherit: bool = true) -> NFSpeciesStatCatalog:
-	var new_block: NFSpeciesStatCatalog = NFSpeciesStatCatalog.new(TYPE_INT)
+	var new_block: NFSpeciesStatCatalog = NFSpeciesStatCatalog.new()
 	var data_stats: Dictionary[StringName, int] = _species_trait_data(species_id, inherit)
 	
 	var properties: Array[StringName] = NFTraitBlock.traits()

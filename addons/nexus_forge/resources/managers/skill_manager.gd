@@ -19,7 +19,7 @@ func _init() -> void:
 	for skill_id in NFSkillSet.skills():
 		var base_entry: NFCatalogEntry = NFCatalogEntry.new()
 		base_entry.name = String(skill_id)
-		base_entry._flags = NFCatalogEntry._get_flags(true, false, true)
+		base_entry._flags = NFCatalogEntry._get_flags(false, true)
 		_base_skills[skill_id] = null
 		_skills[skill_id] = base_entry
 		
@@ -40,7 +40,7 @@ func load_catalog(catalog: NFSkillCatalog, clear_skills: bool = true) -> void:
 		entry.name = catalog.get_skill_name(skill)
 		entry.description = catalog.get_skill_description(skill)
 		entry.custom_data.assign(catalog.get_skill_custom_data(skill))
-		entry._flags = NFCatalogEntry._get_flags(true, not _base_skills.has(skill), true)
+		entry._flags = NFCatalogEntry._get_flags(not _base_skills.has(skill), true)
 		_skills[skill] = entry
 
 
@@ -57,8 +57,8 @@ func create_skill(skill_id: StringName) -> void:
 	
 	var item: NFCatalogEntry = NFCatalogEntry.new()
 	item.name = String(skill_id).capitalize()
-	item._valid = true
-	item._custom = true
+	item._flags = NFCatalogEntry._get_flags(true, true)
+	
 	_skills[skill_id] = item
 	
 	skill_created.emit(skill_id)

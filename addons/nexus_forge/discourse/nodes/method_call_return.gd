@@ -425,16 +425,8 @@ func update_node_size() -> void:
 
 static func get_user_methods() -> Dictionary:
 	var methods: Dictionary = {}
-		
-	if api_path.is_empty() or not ResourceLoader.exists(api_path):
-		if not validate_api_path():
-			NFPluginGameHandler._log_msg(
-					"discourse - editor",
-					"Couldn't load DiscourseAPI script.",
-					NFPluginGameHandler._LogLevel.ERROR)
-			return methods
 	
-	var api_script: Script = load(api_path)
+	var api_script: Script = DiscourseAPI
 	var api_methods: Array[Dictionary] = api_script.get_script_method_list()
 		
 	for method:Dictionary in api_methods:

@@ -12,7 +12,6 @@ extends Resource
 ## @export var new_stat: NFRangeInt
 ## [/codeblock]
 
-static var _script_path: String = ""
 
 @export var health: NFRangeInt
 
@@ -24,23 +23,14 @@ var _singleton_sync: bool = true
 var _sync_blacklist: Dictionary[StringName, Variant] = {}
 
 
-static func _static_init() -> void:
-	for cls in ProjectSettings.get_global_class_list():
-		if cls["class"] == "NFStatBlock":
-			_script_path = cls["path"]
-			break
-
-
 ## Returns all the stats in the statblock. This does NOT include custom stats.[br]
 ## The key represents the stat, and the value its type from [enum Variant.Type].
 static func stats() -> Dictionary[StringName, int]:
-	if _script_path.is_empty():
-		return {}
-	
 	const MASK: int = PROPERTY_USAGE_SCRIPT_VARIABLE + PROPERTY_USAGE_STORAGE
 	const VALID_CLASSES: Array[StringName] = [&"NFRangeInt", &"NFRangeFloat"]
 	
-	var block_script: Script = load(_script_path)
+	var path: String = NFStatBlock.resource_path
+	var block_script: Script = load(path)
 	var all_stats: Dictionary[StringName, int] = {}
 	var data: Array[Dictionary] = block_script.get_script_property_list()
 	
@@ -62,10 +52,10 @@ func _init(use_nexus_forge: bool = true) -> void:
 		
 		var new_range: NFValueRange = NFRangeInt.new() if NexusForge.StatManager.stat_type(custom_stat) == TYPE_INT else NFRangeFloat.new()
 		
-		new_range.allow_lesser = NexusForge.StatManager.custom_allows_lesser(custom_stat)
-		new_range.allow_greater = NexusForge.StatManager.custom_allows_greater(custom_stat)
-		new_range.min_value = NexusForge.StatManager.get_custom_min_value(custom_stat)
-		new_range.max_value = NexusForge.StatManager.get_custom_max_value(custom_stat)
+		new_range.allow_lesser = NexusForge.StatManager.allows_lesser(custom_stat)
+		new_range.allow_greater = NexusForge.StatManager.allows_greater(custom_stat)
+		new_range.min_value = NexusForge.StatManager.get_range_min(custom_stat)
+		new_range.max_value = NexusForge.StatManager.get_range_max(custom_stat)
 		
 		_custom_stats[custom_stat] = new_range
 	

@@ -57,8 +57,6 @@ const COLORS: Dictionary = {
 
 const LOCALIZED_COLOR: Color = Color.LIME_GREEN
 
-static var api_path: String = ""
-
 @onready var flow_icon: Texture2D = preload("res://addons/nexus_forge/icons/right_arrow.png")
 
 var node_type: DialogueNodeType = DialogueNodeType.DIALOG
@@ -80,23 +78,6 @@ var graph_icon: Texture2D = null:
 var _icon_rect: TextureRect = null
 var _input_nodes: Array[Dictionary] = []
 var _output_nodes: Array[Dictionary] = []
-
-
-static func _static_init() -> void:
-	var all_classes: Array[Dictionary] = ProjectSettings.get_global_class_list()
-	for class_entry in all_classes:
-		if class_entry["class"] == "DiscourseAPI":
-			api_path = class_entry["path"]
-			break
-
-
-static func validate_api_path() -> bool:
-	var all_classes: Array[Dictionary] = ProjectSettings.get_global_class_list()
-	for class_entry in all_classes:
-		if class_entry["class"] == "DiscourseAPI":
-			api_path = class_entry["path"]
-			return true
-	return false
 
 
 func _init(uuid: StringName = &"", theme_variant: StringName = &"", with_duplicate: bool = true, with_close: bool = true, localization: bool = false) -> void:

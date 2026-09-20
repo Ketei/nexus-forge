@@ -12,7 +12,11 @@ var _skills_unsaved: bool = false
 var _traits_unsaved: bool = false
 var _stats_unsaved: bool = false
 
-var _script_paths: RefCounted = null
+var _using_stats: bool = false
+var _using_skills: bool = false
+var _using_traits: bool = false
+
+var _class_update_signaler: RefCounted = null
 
 var loaded_skill: StringName = &""
 var loaded_trait: StringName = &""
@@ -58,6 +62,10 @@ var undo: UndoRedo = null
 func ready_plugin(stats_enabled: bool, skills_enabled: bool, traits_enabled: bool) -> void:
 	undo = UndoRedo.new()
 	undo.max_steps = UNDO_MAX_STEPS
+	
+	_using_stats = stats_enabled
+	_using_skills = skills_enabled
+	_using_traits = traits_enabled
 	
 	if stats_enabled:
 		stat_data_tree.undo_redo_steps = UNDO_MAX_STEPS
@@ -147,6 +155,8 @@ func ready_plugin(stats_enabled: bool, skills_enabled: bool, traits_enabled: boo
 		trait_dict_btn.pressed.connect(_on_add_trait_data_pressed.bind("new_folder", {}))
 		edit_traits_btn.pressed.connect(_on_edit_traitblock_pressed)
 		trait_data_tree.data_changed.connect(_on_data_tree_updated.bind(2))
+	
+	_class_update_signaler.classes_updated.connect(_on_classes_updated)
 
 
 func can_undo() -> bool:
@@ -180,45 +190,21 @@ func do_redo() -> void:
 
 
 func _on_edit_skillset_pressed() -> void:
-	var path: String = _script_paths.get_class_script_path("NFSkillSet")
-	if path.is_empty():
-		NFPluginGameHandler._log_msg(
-				"talents - editor",
-				"Couldn't find class 'NFSkillSet' script.",
-				NFPluginGameHandler._LogLevel.ERROR)
-		return
-	var scr: Script = load(path)
-	EditorInterface.edit_script(scr)
 	if not EditorInterface.get_editor_settings().get_setting("text_editor/external/use_external_editor"):
 		EditorInterface.set_main_screen_editor("Script")
+	EditorInterface.edit_script(NFSkillSet)
 
 
 func _on_edit_traitblock_pressed() -> void:
-	var path: String = _script_paths.get_class_script_path("NFTraitBlock")
-	if path.is_empty():
-		NFPluginGameHandler._log_msg(
-				"talents - editor",
-				"Couldn't find class 'NFTraitBlock' script.",
-				NFPluginGameHandler._LogLevel.ERROR)
-		return
-	var scr: Script = load(path)
-	EditorInterface.edit_script(scr)
 	if not EditorInterface.get_editor_settings().get_setting("text_editor/external/use_external_editor"):
 		EditorInterface.set_main_screen_editor("Script")
+	EditorInterface.edit_script(NFTraitBlock)
 
 
 func _on_edit_statblock_pressed() -> void:
-	var path: String = _script_paths.get_class_script_path("NFStatBlock")
-	if path.is_empty():
-		NFPluginGameHandler._log_msg(
-				"talents - editor",
-				"Couldn't find class 'NFStatBlock' script.",
-				NFPluginGameHandler._LogLevel.ERROR)
-		return
-	var scr: Script = load(path)
-	EditorInterface.edit_script(scr)
 	if not EditorInterface.get_editor_settings().get_setting("text_editor/external/use_external_editor"):
 		EditorInterface.set_main_screen_editor("Script")
+	EditorInterface.edit_script(NFStatBlock)
 
 
 func reload_skill_resource(first_launch: bool = false) -> void:
@@ -1006,7 +992,9 @@ func reload_stats(reselect: bool = true) -> void:
 	var all_stats: Array[StringName] = []
 	all_stats.assign(existing_stats.keys())
 	
-	all_stats.sort_custom(func(a,b): return String(a).naturalnocasecmp_to(String(b)) < 0)
+	all_stats.sort_custom(
+			func(a:StringName,b:StringName):
+				return String(a).naturalnocasecmp_to(String(b)) < 0)
 	var new_index: int = all_stats.find(current_stat) if reselect else -1
 	
 	if _stats_resource != null:
@@ -1360,6 +1348,15 @@ func save() -> void:
 	_skills_unsaved = false
 	_traits_unsaved = false
 	_stats_unsaved = false
+
+
+func _on_classes_updated(classes: Array[String]) -> void:
+	if _using_stats and classes.has("NFStatBlock"):
+		reload_stats()
+	if _using_skills and classes.has("NFSkillSet"):
+		reload_skills()
+	if _using_traits and classes.has("NFTraitBlock"):
+		reload_traits()
 
 
 func _notification(what: int) -> void:

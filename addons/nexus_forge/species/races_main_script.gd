@@ -6,13 +6,18 @@ signal species_loaded
 
 const UNDO_MAX_STEPS: int = 50
 
-var _unsaved: bool = false
+var _unsaved: bool = false:
+	get():
+		if _species_resource == null:
+			return false
+		else:
+			return _unsaved
 var _species_resource: NFSpeciesCatalog = null
 var loaded_species: StringName = &""
 var undo: UndoRedo = null
 var expr: Expression = null
 var _current_species: Array[StringName] = [] # Used for hybridization
-var _script_paths: RefCounted = null
+var _class_update_signaler: RefCounted = null
 var _gui_enabled: bool = false
 var signal_change: bool = false
 
@@ -101,6 +106,8 @@ func ready_plugin() -> void:
 	edit_trait_block_btn.pressed.connect(_on_edit_traitblock_pressed)
 	
 	dom_opt_btn.item_selected.connect(_on_dominant_gene_selected)
+	
+	_class_update_signaler.classes_updated.connect(_on_class_updated)
 
 
 func can_undo() -> bool:
@@ -254,45 +261,37 @@ func _on_attribute_value_changed(new_value: float, spin: SpinBox) -> void:
 
 
 func _on_edit_statblock_pressed() -> void:
-	var path: String = _script_paths.get_class_script_path("NFStatBlock")
-	if path.is_empty():
-		NFPluginGameHandler._log_msg(
-				"kindred - editor",
-				"Couldn't find class 'NFStatBlock' script.",
-				NFPluginGameHandler._LogLevel.ERROR)
-		return
-	var scr: Script = load(path)
-	EditorInterface.edit_script(scr)
 	if not EditorInterface.get_editor_settings().get_setting("text_editor/external/use_external_editor"):
 		EditorInterface.set_main_screen_editor("Script")
+	EditorInterface.edit_script(NFStatBlock)
 
 
 func _on_edit_skillset_pressed() -> void:
-	var path: String = _script_paths.get_class_script_path("NFSkillSet")
-	if path.is_empty():
-		NFPluginGameHandler._log_msg(
-				"kindred - editor",
-				"Couldn't find class 'NFSkillSet' script.",
-				NFPluginGameHandler._LogLevel.ERROR)
-		return
-	var scr: Script = load(path)
-	EditorInterface.edit_script(scr)
 	if not EditorInterface.get_editor_settings().get_setting("text_editor/external/use_external_editor"):
 		EditorInterface.set_main_screen_editor("Script")
+	EditorInterface.edit_script(NFSkillSet)
 
 
 func _on_edit_traitblock_pressed() -> void:
-	var path: String = _script_paths.get_class_script_path("NFTraitBlock")
-	if path.is_empty():
-		NFPluginGameHandler._log_msg(
-				"kindred - editor",
-				"Couldn't find class 'NFTraitBlock' script.",
-				NFPluginGameHandler._LogLevel.ERROR)
-		return
-	var scr: Script = load(path)
-	EditorInterface.edit_script(scr)
 	if not EditorInterface.get_editor_settings().get_setting("text_editor/external/use_external_editor"):
 		EditorInterface.set_main_screen_editor("Script")
+	EditorInterface.edit_script(NFTraitBlock)
+
+
+func _on_class_updated(class_list: Array[String]) -> void:
+	var change_file: bool = false
+	if class_list.has("NFStatBlock"):
+		update_stats()
+		change_file = true
+	if class_list.has("NFSkillSet"):
+		update_skills()
+		change_file = true
+	if class_list.has("NFTraitBlock"):
+		update_traits()
+		change_file = true
+	
+	if change_file:
+		_on_something_changed()
 
 
 func _on_hybridize_pressed() -> void:
@@ -991,88 +990,121 @@ func set_ui_enabled(enabled: bool) -> void:
 		child.get_child(1).editable = child.get_child(0).button_pressed and enabled
 
 
-func update_talent_nodes() -> void:
-	var skill_set: NFSkillSet = NFSkillSet.new()
+func update_stats() -> void:
+	var scr: Script
+	var existing_stats: Dictionary[StringName, int] = NFStatBlock.stats()
+	var sorted_stats: Array[StringName] = []
+	sorted_stats.assign(existing_stats.keys())
 	
-	var trait_block: NFTraitBlock = NFTraitBlock.new()
-	
-	var stat_block: NFStatBlock = NFStatBlock.new()
-	
-	var stat_data: Dictionary[StringName, int] = NFStatBlock.stats()
-	var stats: Array[StringName] = []
-	stats.assign(stat_data.keys())
-	stats.sort_custom(func(a,b): return String(a).naturalnocasecmp_to(String(b)) < 0)
+	sorted_stats.sort_custom(
+			func(a:StringName,b:StringName):
+				return String(a).naturalnocasecmp_to(String(b)) < 0)
 	
 	var stat_map: Dictionary[StringName, HBoxContainer] = {}
-	for existing_stat in race_stats_container.get_children():
-		race_stats_container.remove_child(existing_stat)
-		if existing_stat.get_meta(&"field_id") in stats:
-			stat_map[existing_stat.get_meta(&"field_id")] = existing_stat
+	for stat_node in race_stats_container.get_children():
+		race_stats_container.remove_child(stat_node)
+		if existing_stats.has(stat_node.get_meta(&"field_id")):
+			stat_map[stat_node.get_meta(&"field_id")] = stat_node
 		else:
-			existing_stat.queue_free()
+			stat_node.queue_free()
 	
-	for stat_id in stats:
-		var stat_default: float = 0.0
-		var stat_item: NFValueRange = stat_block.get(stat_id)
-		if stat_item != null:
-			stat_default = stat_item.value
-		
+	for stat_id in sorted_stats:
 		if stat_map.has(stat_id):
 			race_stats_container.add_child(stat_map[stat_id])
-			stat_map[stat_id].set_meta(&"default_value", stat_default)
-			if stat_data[stat_id] != stat_map[stat_id].get_meta(&"type"):
-				stat_map[stat_id].get_meta(&"value").step = 1.0 if stat_data[stat_id] == TYPE_INT else 0.01
+			if existing_stats[stat_id] != stat_map[stat_id].get_meta(&"type"):
+				stat_map[stat_id].get_meta(&"value").step = 1.0 if existing_stats[stat_id] == TYPE_INT else 0.01
 			_set_focus_for_stat(stat_map[stat_id])
 			stat_map.erase(stat_id)
 		else:
-			create_stat(stat_id, stat_default, stat_data[stat_id])
+			create_stat(stat_id, 0.0, existing_stats[stat_id])
 	for remaining_stat in stat_map:
 		stat_map[remaining_stat].queue_free()
+
+
+func update_skills() -> void:
+	var scr: Script = NFSkillSet
+	var existing_skills: Array[StringName] = NFSkillSet.skills()
+	var default_values: Dictionary[StringName, int] = {}
 	
-	var skills: Array[StringName] = NFSkillSet.skills()
-	skills.sort_custom(func(a,b): return String(a).naturalnocasecmp_to(String(b)) < 0)
+	existing_skills.sort_custom(
+			func(a:StringName,b:StringName):
+				return String(a).naturalnocasecmp_to(String(b)) < 0)
 	
-	var skill_map: Dictionary[StringName, HBoxContainer] = {}
-	for existing_skill in race_skill_container.get_children():
-		race_skill_container.remove_child(existing_skill)
-		if skills.has(existing_skill.get_meta(&"field_id")):
-			skill_map[existing_skill.get_meta(&"field_id")] = existing_skill
+	for skill_id in existing_skills:
+		var def = scr.get_property_default_value(skill_id)
+		var def_type: int = typeof(def)
+		if def_type == TYPE_INT:
+			default_values[skill_id] = def
+		elif def_type == TYPE_FLOAT:
+			default_values[skill_id] = int(def)
 		else:
-			existing_skill.queue_free()
+			default_values[skill_id] = 0
 	
-	for skill_id in skills:
+	var skill_map: Dictionary[StringName, Control] = {}
+	for skill_node in race_skill_container.get_children():
+		race_skill_container.remove_child(skill_node)
+		if existing_skills.has(skill_node.get_meta(&"skill_id")):
+			skill_map[skill_node.get_meta(&"skill_id")] = skill_node
+		else:
+			skill_node.queue_free()
+	
+	for skill_id in existing_skills:
 		if skill_map.has(skill_id):
-			skill_map[skill_id].set_meta(&"default_value", skill_set.get(skill_id))
 			race_skill_container.add_child(skill_map[skill_id])
+			skill_map[skill_id].set_meta(&"default_value", default_values[skill_id])
 			_set_focus_for_skill(skill_map[skill_id])
 			skill_map.erase(skill_id)
 		else:
-			create_skill(skill_id, skill_set.get(skill_id))
-	for remaining_skill in skill_map:
+			create_skill(skill_id, default_values[skill_id])
+	
+	for remaining_skill in skill_map.keys():
 		skill_map[remaining_skill].queue_free()
+
+
+func update_traits() -> void:
+	var scr: Script = NFTraitBlock
+	var existing_traits: Array[StringName] = NFTraitBlock.traits()
+	var default_values: Dictionary[StringName, int] = {}
 	
-	var traits: Array[StringName] = NFTraitBlock.traits()
+	existing_traits.sort_custom(
+			func(a:StringName,b:StringName):
+				return String(a).naturalnocasecmp_to(String(b)) < 0)
 	
-	traits.sort_custom(func(a,b): return String(a).naturalnocasecmp_to(String(b)) < 0)
+	for trait_id in existing_traits:
+		var def = scr.get_property_default_value(trait_id)
+		var def_type: int = typeof(def)
+		if def_type == TYPE_INT:
+			default_values[trait_id] = def
+		elif def_type == TYPE_FLOAT:
+			default_values[trait_id] = int(def)
+		else:
+			default_values[trait_id] = 0
 	
-	var trait_map: Dictionary[StringName, HBoxContainer] = {}
+	var trait_map: Dictionary[StringName, Control] = {}
 	for existing_trait in race_traits_container.get_children():
 		race_traits_container.remove_child(existing_trait)
-		if traits.has(existing_trait.get_meta(&"field_id")):
-			trait_map[existing_trait.get_meta(&"field_id")] = existing_trait
+		if existing_traits.has(existing_trait.get_meta(&"trait_id")):
+			trait_map[existing_trait.get_meta(&"trait_id")] = existing_trait
 		else:
 			existing_trait.queue_free()
 	
-	for trait_id in traits:
+	for trait_id in existing_traits:
 		if trait_map.has(trait_id):
-			trait_map[trait_id].set_meta(&"default_value", trait_block.get(trait_id))
 			race_traits_container.add_child(trait_map[trait_id])
+			trait_map[trait_id].set_meta(&"default_value", default_values[trait_id])
 			_set_focus_for_trait(trait_map[trait_id])
 			trait_map.erase(trait_id)
 		else:
-			create_trait(trait_id, trait_block.get(trait_id))
-	for remaining_trait in trait_map:
+			create_trait(trait_id, default_values[trait_id])
+	
+	for remaining_trait in trait_map.keys():
 		trait_map[remaining_trait].queue_free()
+
+
+func update_talent_nodes() -> void:
+	update_stats()
+	update_skills()
+	update_traits()
 	
 	if loaded_species != &"":
 		_on_something_changed()
@@ -1181,6 +1213,8 @@ func save() -> void:
 		_species_resource.link_species(id, dom, sub)
 		
 	ResourceSaver.save(_species_resource)
+	
+	_unsaved = false
 
 
 func _parse_value(value: String, fallback: float) -> float:

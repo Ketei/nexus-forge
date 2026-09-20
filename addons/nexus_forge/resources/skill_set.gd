@@ -12,27 +12,17 @@ extends Resource
 ## @export var my_skill: int = 0
 ## [/codeblock]
 
-static var _script_path: String = ""
 
 @export var persuasion: int
 
 @export_storage var _custom_skills: Dictionary[StringName, int] = {}
 
 
-static func _static_init() -> void:
-	for cls in ProjectSettings.get_global_class_list():
-		if cls["class"] == "NFSkillSet":
-			_script_path = cls["path"]
-			break
-
-
 ## Returns all the non-custom skills registered in the skill set.
 static func skills() -> Array[StringName]:
-	if _script_path.is_empty():
-		return []
-	
 	const MASK: int = PROPERTY_USAGE_SCRIPT_VARIABLE + PROPERTY_USAGE_STORAGE
-	var skill_script: Script = load(_script_path)
+	var script_path: String = NFSkillSet.resource_path
+	var skill_script: Script = load(script_path)
 	var all_skills: Array[StringName] = []
 	var data: Array[Dictionary] = skill_script.get_script_property_list()
 	

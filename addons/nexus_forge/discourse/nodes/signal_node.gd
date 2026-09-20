@@ -348,23 +348,9 @@ func _reset_height() -> void:
 
 
 static func get_user_signals() -> Dictionary:
-	if api_path.is_empty() or not ResourceLoader.exists(api_path):
-		var all_classes: Array[Dictionary] = ProjectSettings.get_global_class_list()
-		for class_entry in all_classes:
-			if class_entry["class"] == "DiscourseAPI":
-				api_path = class_entry["path"]
-				break
-	
 	var user_signals: Dictionary = {}
 	
-	if not ResourceLoader.exists(api_path):
-		NFPluginGameHandler._log_msg(
-				"discourse - editor",
-				"Couldn't load DiscourseAPI script.",
-				NFPluginGameHandler._LogLevel.ERROR)
-		return user_signals
-	
-	var api_script: Script = load(api_path)
+	var api_script: Script = DiscourseAPI
 	var api_signals: Array[Dictionary] = api_script.get_script_signal_list()
 	
 	for reg_signal:Dictionary in api_signals:

@@ -11,6 +11,7 @@ const TOOL_NAME: String = "Nexus Forge Character Lookup"
 var editor_view: Control = null
 var export_plugin: EditorExportPlugin = null
 var character_map: Dictionary[String, StringName] = {}
+var class_timestamps: RefCounted = null
 
 
 # Earlier versions of godot had an issue where documentation wouldn't show
@@ -105,7 +106,7 @@ func _enter_tree() -> void:
 	var use_phrases: bool = ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("phrases_enabled"), true)
 	var discourse_base_lang: String = ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("discourse_base_language"), OS.get_locale_language())
 	
-	var class_path_store: RefCounted = load("res://addons/nexus_forge/script_path_store.gd").new()
+	class_timestamps = load("res://addons/nexus_forge/script_path_store.gd").new()
 	
 	editor_view.ready_plugin(
 			use_discourse,
@@ -120,7 +121,7 @@ func _enter_tree() -> void:
 			use_quests,
 			use_phrases,
 			discourse_base_lang,
-			class_path_store)
+			class_timestamps)
 	
 	# Resotring previous session character data.
 	if FileAccess.file_exists("user://nexus_forge/persona_settings.cfg"):
@@ -142,6 +143,9 @@ func _enter_tree() -> void:
 	add_tool_menu_item(TOOL_NAME, _on_scan_folder_selected)
 	
 	resource_saved.connect(_on_resource_saved, CONNECT_DEFERRED)
+	var fs: EditorFileSystem = EditorInterface.get_resource_filesystem()
+	fs.filesystem_changed.connect(_on_filesystem_changed)
+	
 	EditorInterface.get_file_system_dock().resource_removed.connect(_on_resource_removed)
 	EditorInterface.get_file_system_dock().files_moved.connect(_on_files_moved, CONNECT_DEFERRED)
 
@@ -589,24 +593,11 @@ func _on_resource_saved(resource: Resource) -> void:
 	
 	if script_class.is_empty():
 		return
-	elif script_class == &"NFStatBlock":
-		editor_view.reload_stats()
-	elif script_class == &"NFSkillSet":
-		editor_view.reload_skills()
-	elif script_class == &"NFTraitBlock":
-		editor_view.reload_traits()
-	elif script_class == &"NFCharacterSheet":
-		editor_view.reload_character_sheet()
-	elif script_class == &"NFItemSheet":
-		editor_view.reload_items()
-	elif script_class == &"NFQuest":
-		editor_view.reload_quest_data_types()
-	elif script_class == &"NFQuestStage":
-		editor_view.reload_quest_stage_types()
-	elif script_class == &"NFQuestObjective":
-		editor_view.reload_quest_objective_types()
-	elif script_class == &"DiscourseAPI":
-		editor_view.reload_discourse_api()
+	class_timestamps.validate_update(String(script_class), resource.resource_path)
+
+
+func _on_filesystem_changed():
+	class_timestamps.check_for_updates()
 
 
 func _on_files_moved(old_file: String, new_file: String) -> void:
@@ -800,7 +791,6 @@ func save_character_paths() -> void:
 	
 	var character_cfg: ConfigFile = ConfigFile.new()
 	character_cfg.set_value("RUNTIME", "CharacterMap", valid_characters)
-	
 	if character_cfg.save("user://nexus_forge/persona_settings.cfg") != OK:
 		NFPluginGameHandler._log_msg(
 				"plugin",

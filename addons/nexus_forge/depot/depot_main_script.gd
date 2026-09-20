@@ -43,7 +43,7 @@ func _input(event: InputEvent) -> void:
 func ready_plugin(use_items: bool, use_currencies: bool, paths_resource: RefCounted) -> void:
 	set_process_input(true)
 	if use_items:
-		items_container._script_paths = paths_resource
+		items_container._class_update_signaler = paths_resource
 	
 	items_container.ready_plugin(use_items, use_currencies, MAX_UNDO_STEPS)
 		

@@ -63,6 +63,7 @@ var _unsaved: bool = false:
 		return _open_files[active_conversation.get_instance_id()]["unsaved"]
 # Keys: resource, undo, unsaved, offset_changed
 var _open_files: Dictionary[int, Dictionary] = {}
+var _class_update_signaler: RefCounted
 var undo: UndoRedo
 
 var node_popup: PopupMenu = null
@@ -669,6 +670,8 @@ func ready_plugin(base_locale: String = "") -> void:
 	
 	discourse_graph_edit.travel_node_target_id_changed.connect(_on_travel_node_target_id_changed)
 	discourse_graph_edit.travel_node_selected_waypoint_changed.connect(_on_travel_node_selected_waypoint_changed)
+	
+	_class_update_signaler.classes_updated.connect(_on_classes_updated, CONNECT_DEFERRED)
 
 
 func can_undo() -> bool:
@@ -2504,6 +2507,12 @@ func plugin_file_selected(file: EditorDiscourseDialog):
 	add_to_recently_opened_files(file.resource_path)
 
 
+func _on_classes_updated(classes: Array[String]) -> void:
+	if classes.has("DiscourseAPI"):
+		reload_methods()
+		reload_signals()
+
+
 func reload_signals() -> void:
 	discourse_graph_edit.update_signals()
 
@@ -3947,15 +3956,7 @@ func _on_copy_format_pressed() -> void:
 func get_api_user_methods() -> Dictionary:
 	var methods: Dictionary = {}
 	
-	if DiscourseGraphNode.api_path.is_empty() or not FileAccess.file_exists(DiscourseGraphNode.api_path):
-		if not DiscourseGraphNode.validate_api_path():
-			NFPluginGameHandler._log_msg(
-				"discourse - editor",
-				"Discourse API script not found",
-				NFPluginGameHandler._LogLevel.ERROR)
-			return methods
-	
-	var api_script: Script = load(DiscourseGraphNode.api_path)
+	var api_script: Script = DiscourseAPI
 	
 	for method:Dictionary in api_script.get_script_method_list():
 		if method["return"]["type"] == TYPE_NIL:

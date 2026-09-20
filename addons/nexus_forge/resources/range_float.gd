@@ -5,21 +5,21 @@ extends NFValueRange
 
 
 ## The minimum value this range can hold.
-@export var min_value: int = 0:
+@export var min_value: float = 0.0:
 	set(new_min):
 		min_value = new_min
 		if max_value < new_min:
 			max_value = new_min
 		_fix_value()
 ## The maximum value this range can hold.
-@export var max_value: int = 0:
+@export var max_value: float = 0.0:
 	set(new_max):
 		if new_max < min_value:
 			new_max = min_value
 		max_value = new_max
 		_fix_value()
 ## The current value of this range.
-@export var value: int = 0:
+@export var value: float = 0.0:
 	set(v):
 		if v < min_value:
 			if allow_lesser == false:
@@ -30,9 +30,17 @@ extends NFValueRange
 		value = v
 @export_category("Options")
 ## If value can go above [member max_value].
-@export var allow_greater: bool = false
+@export var allow_greater: bool = false:
+	set(a):
+		allow_greater = a
+		if a:
+			_fix_value()
 ## If value can go below [member min_value].
-@export var allow_lesser: bool = false
+@export var allow_lesser: bool = false:
+	set(a):
+		allow_lesser = a
+		if a:
+			_fix_value()
 
 
 func _fix_value() -> void:

@@ -28,7 +28,7 @@ func _init() -> void:
 	for stat in _base_stats:
 		var entry: NFCatalogEntryStat = NFCatalogEntryStat.new()
 		entry.name = String(stat).capitalize()
-		entry._flags = NFCatalogEntry._get_flags(true, false, true)
+		entry._flags = NFCatalogEntry._get_flags(false, true)
 		_stat_entries[stat] = entry
 	
 	_base_stats.make_read_only()
@@ -49,7 +49,7 @@ func load_catalog(catalog: NFStatCatalog, clear_stats: bool = true) -> void:
 		new_data.description = catalog.get_stat_description(stat_id)
 		new_data.custom_data.assign(catalog.stat_data(stat_id))
 		new_data.type = catalog.stat_type(stat_id)
-		new_data._flags = NFCatalogEntry._get_flags(true, not _base_stats.has(stat_id), true)
+		new_data._flags = NFCatalogEntry._get_flags(not _base_stats.has(stat_id), true)
 		_stat_entries[stat_id] = new_data
 
 
@@ -81,8 +81,7 @@ func create_stat(stat_id: StringName, type: int) -> void:
 	
 	new_entry.name = String(stat_id).capitalize()
 	new_entry.type = type
-	new_entry._valid = true
-	new_entry._custom = true
+	new_entry._flags = NFCatalogEntry._get_flags(true, true)
 	
 	_stat_entries[stat_id] = new_entry
 	

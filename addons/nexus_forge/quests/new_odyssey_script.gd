@@ -18,7 +18,7 @@ var selected_stage: StringName = &""
 var selected_objective: StringName = &""
 
 var _open_files: Dictionary[int, Dictionary] = {}
-var _script_paths: RefCounted = null
+var _class_update_signaler: RefCounted = null
 
 @onready var obj_req_chk_bx: CheckBox = $MainContainer/DataContainer/DataContainer/LogicContainer/TargetLogicContainer/ObjReqChkBx
 @onready var crumbs_label: Label = $MainContainer/TitleContainer/CrumbsContainer/CrumbsLabel
@@ -164,6 +164,8 @@ func ready_plugin() -> void:
 	obj_req_tree.data_updated.connect(_on_objective_data_updated)
 	obj_req_tree.data_erased.connect(_on_objective_data_erased)
 	obj_req_tree.data_operator_changed.connect(_on_data_data_operator_changed)
+	
+	_class_update_signaler.classes_updated.connect(_on_classes_updated)
 
 
 func can_undo() -> bool:
@@ -216,36 +218,17 @@ func filesystem_resource_removed(quest: NFQuest) -> void:
 	files_tree.close_quest(quest)
 
 
-func update_type_button(type: int) -> void:
-	if quest_mode == QuestModeType.NONE:
-		return
-	
-	if quest_mode == QuestModeType.QUEST and type == 1:
+func _on_classes_updated(classes: Array[String]) -> void:
+	if quest_mode == QuestModeType.QUEST and classes.has("NFQuest"):
 		set_quest_types(true)
-	elif quest_mode == QuestModeType.STAGE and type == 2:
+	elif quest_mode == QuestModeType.STAGE and classes.has("NFQuestStage"):
 		set_stage_types(true)
-	elif quest_mode == QuestModeType.OBJECTIVE and type == 3:
+	elif quest_mode == QuestModeType.OBJECTIVE and classes.has("NFQuestObjective"):
 		set_objective_types(true)
 
 
 func set_quest_types(reselect: bool = false) -> void:
-	var quest_path: String = _script_paths.get_class_script_path("NFQuest")
-	if quest_path.is_empty():
-		NFPluginGameHandler._log_msg(
-				"odyssey - editor",
-				"Unable to update quest types. Script not found.",
-				NFPluginGameHandler._LogLevel.ERROR)
-		return
-	
-	var script: Script = load(quest_path)
-	
-	if script == null:
-		NFPluginGameHandler._log_msg(
-				"odyssey - editor",
-				"Unable to update quest types. Unable to load script.",
-				NFPluginGameHandler._LogLevel.ERROR)
-		return
-	
+	var script: Script = NFQuest
 	var quest_constants: Dictionary = script.get_script_constant_map()
 	
 	if not quest_constants.has(&"QuestType"):
@@ -275,23 +258,7 @@ func set_quest_types(reselect: bool = false) -> void:
 
 
 func set_stage_types(reselect: bool = false) -> void:
-	var stage_path: String = _script_paths.get_class_script_path("NFQuestStage")
-	if stage_path.is_empty():
-		NFPluginGameHandler._log_msg(
-				"odyssey - editor",
-				"Unable to update stage types. Script not found.",
-				NFPluginGameHandler._LogLevel.ERROR)
-		return
-	
-	var script: Script = load(stage_path)
-	
-	if script == null:
-		NFPluginGameHandler._log_msg(
-				"odyssey - editor",
-				"Unable to update stage types. Unable to load script.",
-				NFPluginGameHandler._LogLevel.ERROR)
-		return
-	
+	var script: Script = NFQuestStage
 	var stage_constants: Dictionary = script.get_script_constant_map()
 	
 	if not stage_constants.has(&"StageType"):
@@ -321,23 +288,7 @@ func set_stage_types(reselect: bool = false) -> void:
 
 
 func set_objective_types(reselect: bool = false) -> void:
-	var objective_path: String = _script_paths.get_class_script_path("NFQuestObjective")
-	if objective_path.is_empty():
-		NFPluginGameHandler._log_msg(
-				"odyssey - editor",
-				"Unable to update objective types. Script not found.",
-				NFPluginGameHandler._LogLevel.ERROR)
-		return
-	
-	var script: Script = load(objective_path)
-	
-	if script == null:
-		NFPluginGameHandler._log_msg(
-				"odyssey - editor",
-				"Unable to update objective types. Unable to load script.",
-				NFPluginGameHandler._LogLevel.ERROR)
-		return
-	
+	var script: Script = NFQuestObjective
 	var objectitve_constants: Dictionary = script.get_script_constant_map()
 	
 	if not objectitve_constants.has(&"ObjectiveType"):
@@ -1032,14 +983,7 @@ func _on_add_custom_data_pressed(id: String, data) -> void:
 func _on_edit_types_pressed() -> void:
 	match quest_mode:
 		QuestModeType.QUEST:
-			var scr_path: String = _script_paths.get_class_script_path("NFQuest")
-			if scr_path.is_empty():
-				NFPluginGameHandler._log_msg(
-						"odyssey - editor",
-						"Couldn't find NFQuest class script.",
-						NFPluginGameHandler._LogLevel.ERROR)
-				return
-			var quest_script: Script = load(scr_path)
+			var quest_script: Script = NFQuest
 			var source_code: String = quest_script.source_code
 			
 			if source_code.is_empty():
@@ -1074,14 +1018,7 @@ func _on_edit_types_pressed() -> void:
 			if not EditorInterface.get_editor_settings().get_setting("text_editor/external/use_external_editor"):
 				EditorInterface.set_main_screen_editor("Script")
 		QuestModeType.STAGE:
-			var scr_path: String = _script_paths.get_class_script_path("NFQuestStage")
-			if scr_path.is_empty():
-				NFPluginGameHandler._log_msg(
-						"odyssey - editor",
-						"Couldn't find NFQuestStage class script.",
-						NFPluginGameHandler._LogLevel.ERROR)
-				return
-			var stage_script: Script = load(scr_path)
+			var stage_script: Script = NFQuestStage
 			var source_code: String = stage_script.source_code
 			
 			if source_code.is_empty():
@@ -1116,14 +1053,7 @@ func _on_edit_types_pressed() -> void:
 			if not EditorInterface.get_editor_settings().get_setting("text_editor/external/use_external_editor"):
 				EditorInterface.set_main_screen_editor("Script")
 		QuestModeType.OBJECTIVE:
-			var scr_path: String = _script_paths.get_class_script_path("NFQuestObjective")
-			if scr_path.is_empty():
-				NFPluginGameHandler._log_msg(
-						"odyssey - editor",
-						"Couldn't find NFQuestObjective class script.",
-						NFPluginGameHandler._LogLevel.ERROR)
-				return
-			var objective_script: Script = load(scr_path)
+			var objective_script: Script = NFQuestObjective
 			EditorInterface.edit_script(objective_script)
 			var source_code: String = objective_script.source_code
 			

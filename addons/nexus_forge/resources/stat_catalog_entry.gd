@@ -1,5 +1,5 @@
-extends NFCatalogEntry
 class_name NFCatalogEntryStat
+extends NFCatalogEntry
 ## A catalog entry specific for stats.
 
 ## The stat type this entry is.

@@ -9,7 +9,7 @@ signal character_opened(path: String, id: StringName)
 
 const UNDO_MAX_STEPS: int = 50
 
-var _script_paths: RefCounted = null
+var _class_update_signaler: RefCounted = null
 var _unsaved: bool = false:
 	set(u):
 		if current_sheet == null:
@@ -117,6 +117,8 @@ func ready_plugin() -> void:
 	edit_skill_set_btn.pressed.connect(_on_edit_skillset_pressed)
 	edit_trait_block_btn.pressed.connect(_on_edit_traitblock_pressed)
 	edit_genders_btn.pressed.connect(_on_edit_genders_pressed)
+	
+	_class_update_signaler.classes_updated.connect(_on_script_classes_updated)
 
 
 func can_undo() -> bool:
@@ -152,11 +154,7 @@ func do_redo() -> void:
 
 
 func _on_edit_genders_pressed() -> void:
-	var path: String = _script_paths.get_class_script_path("NFCharacterSheet")
-	if path.is_empty():
-		return
-	
-	var sheet_script: Script = load(path)
+	var sheet_script: Script = NFCharacterSheet
 	var source_code: String = sheet_script.source_code
 	
 	if source_code.is_empty():
@@ -194,45 +192,21 @@ func _on_edit_genders_pressed() -> void:
 
 
 func _on_edit_statblock_pressed() -> void:
-	var path: String = _script_paths.get_class_script_path("NFStatBlock")
-	if path.is_empty():
-		NFPluginGameHandler._log_msg(
-				"talents - editor",
-				"Couldn't find class 'NFStatBlock' script.",
-				NFPluginGameHandler._LogLevel.ERROR)
-		return
-	var scr: Script = load(path)
-	EditorInterface.edit_script(scr)
 	if not EditorInterface.get_editor_settings().get_setting("text_editor/external/use_external_editor"):
 		EditorInterface.set_main_screen_editor("Script")
+	EditorInterface.edit_script(NFStatBlock)
 
 
 func _on_edit_skillset_pressed() -> void:
-	var path: String = _script_paths.get_class_script_path("NFSkillSet")
-	if path.is_empty():
-		NFPluginGameHandler._log_msg(
-				"talents - editor",
-				"Couldn't find class 'NFSkillSet' script.",
-				NFPluginGameHandler._LogLevel.ERROR)
-		return
-	var scr: Script = load(path)
-	EditorInterface.edit_script(scr)
 	if not EditorInterface.get_editor_settings().get_setting("text_editor/external/use_external_editor"):
 		EditorInterface.set_main_screen_editor("Script")
+	EditorInterface.edit_script(NFSkillSet)
 
 
 func _on_edit_traitblock_pressed() -> void:
-	var path: String = _script_paths.get_class_script_path("NFTraitBlock")
-	if path.is_empty():
-		NFPluginGameHandler._log_msg(
-				"talents - editor",
-				"Couldn't find class 'NFTraitBlock' script.",
-				NFPluginGameHandler._LogLevel.ERROR)
-		return
-	var scr: Script = load(path)
-	EditorInterface.edit_script(scr)
 	if not EditorInterface.get_editor_settings().get_setting("text_editor/external/use_external_editor"):
 		EditorInterface.set_main_screen_editor("Script")
+	EditorInterface.edit_script(NFTraitBlock)
 
 
 func _on_close_character_pressed(char_id: int) -> void:
@@ -342,22 +316,34 @@ func load_character_files(files: Array[String]) -> void:
 
 
 func update_genders() -> void:
+	var scr: Script = NFCharacterSheet
+	var map: Dictionary = scr.get_script_constant_map()
+	var reselect: bool = gender_option_button.selected < 0
+	var selected_gender: int = 0 if reselect else gender_option_button.get_selected_metadata()
 	gender_option_button.clear()
-	var gender_obg: NFCharacterSheet = NFCharacterSheet.new()
-	var map: Dictionary = gender_obg.get_script().get_script_constant_map()
 	
 	if not map.has(&"Gender"):
 		gender_option_button.disabled = true
 		return
 	
 	var genders: Dictionary = map[&"Gender"]
+	var new_index: int = -1
 	
+	var idx: int = -1
 	for gender:String in genders.keys():
+		idx += 1
 		gender_option_button.add_item(
 				gender.capitalize())
 		gender_option_button.set_item_metadata(
 				-1,
 				genders[gender])
+		if genders[gender] == selected_gender and reselect:
+			new_index = idx
+	
+	if -1 < new_index:
+		gender_option_button.select(new_index)
+	elif 0 < gender_option_button.item_count:
+		gender_option_button.select(0)
 	
 	gender_option_button.disabled = gender_option_button.item_count == 0 or current_sheet == null
 
@@ -414,96 +400,149 @@ func update_species_data(species_catalog: NFSpeciesCatalog = null) -> void:
 		species_option_button.select(new_index)
 
 
-func update_talent_nodes() -> void:
-	var skill_set: NFSkillSet = NFSkillSet.new()
+func _on_script_classes_updated(class_list: Array[String]) -> void:
+	var signal_change: bool = false
+	
+	if class_list.has("NFCharacterSheet"):
+		var gender_selected: bool = -1 < gender_option_button.selected
+		var prev_gender: int = gender_option_button.get_selected_metadata() if gender_selected else 0
+		update_genders()
+		if 0 < gender_option_button.item_count and gender_selected and prev_gender != gender_option_button.get_selected_metadata():
+			signal_change = true
+	if class_list.has("NFStatBlock"):
+		update_stats()
+		signal_change = true
+	if class_list.has("NFSkillSet"):
+		update_skills()
+		signal_change = true
+	if class_list.has("NFTraitBlock"):
+		update_traits()
+		signal_change = true
+	
+	if signal_change:
+		_something_changed()
 
-	var trait_block: NFTraitBlock = NFTraitBlock.new()
+
+func update_stats() -> void:
+	var scr: Script = NFStatBlock
+	var existing_stats: Dictionary[StringName, int] = NFStatBlock.stats()
+	var stat_keys: Array[StringName] = []
+	stat_keys.assign(existing_stats.keys())
 	
-	var stat_block: NFStatBlock = NFStatBlock.new()
-	
-	var stats_data: Dictionary[StringName, int] = NFStatBlock.stats()
-	
-	var stats: Array[String] = []
-	stats.assign(stats_data.keys())
-	stats.sort_custom(func(a,b): return String(a).naturalnocasecmp_to(String(b)) < 0)
+	stat_keys.sort_custom(
+			func(a:StringName,b:StringName):
+				return String(a).naturalnocasecmp_to(String(b)) < 0)
 	
 	var stat_map: Dictionary[StringName, Control] = {}
 	for existing_stat in char_stats_container.get_children():
 		char_stats_container.remove_child(existing_stat)
-		if existing_stat.get_meta(&"stat_id") in stats:
+		if existing_stat.get_meta(&"stat_id") in existing_stats:
 			stat_map[existing_stat.get_meta(&"stat_id")] = existing_stat
 		else:
 			existing_stat.queue_free()
 		
-	for stat_id in stats:
-		var stat_default: float = 0.0
-		var stat_item: NFValueRange = stat_block.get(stat_id)
-		if stat_item != null:
-			stat_default = stat_item.value
-		
+	for stat_id in stat_keys:
 		if stat_map.has(stat_id):
 			char_stats_container.add_child(stat_map[stat_id])
-			stat_map[stat_id].set_meta(&"default_value", stat_default)
-			if stats_data[stat_id] != stat_map[stat_id].get_meta(&"type"):
-				var new_step: float = 1.0 if stats_data[stat_id] == TYPE_INT else 0.01
+			if existing_stats[stat_id] != stat_map[stat_id].get_meta(&"type"):
+				var new_step: float = 1.0 if existing_stats[stat_id] == TYPE_INT else 0.01
 				stat_map[stat_id].get_meta(&"value").step = new_step
 				stat_map[stat_id].get_meta(&"max").step = new_step
 				stat_map[stat_id].get_meta(&"min").step = new_step
-				stat_map[stat_id].set_meta(&"type", stats_data[stat_id])
+				stat_map[stat_id].set_meta(&"type", existing_stats[stat_id])
 			set_focus_order_for_stat(stat_map[stat_id])
 			stat_map.erase(stat_id)
 		else:
-			create_stat_item(stat_id, stats_data[stat_id], stat_default)
+			create_stat_item(stat_id, existing_stats[stat_id], 0.0)
 	
 	for remaining_stat in stat_map:
 		stat_map[remaining_stat].queue_free()
+
+
+func update_skills() -> void:
+	var scr: Script = NFSkillSet
+	var existing_skills: Array[StringName] = NFSkillSet.skills()
+	var default_values: Dictionary[StringName, int] = {}
 	
-	var skills: Array[StringName] = NFSkillSet.skills()
-	skills.sort_custom(func(a,b): return String(a).naturalnocasecmp_to(String(b)) < 0)
+	existing_skills.sort_custom(
+			func(a:StringName,b:StringName):
+				return String(a).naturalnocasecmp_to(String(b)) < 0)
+	
+	for skill_id in existing_skills:
+		var def = scr.get_property_default_value(skill_id)
+		var def_type: int = typeof(def)
+		if def_type == TYPE_INT:
+			default_values[skill_id] = def
+		elif def_type == TYPE_FLOAT:
+			default_values[skill_id] = int(def)
+		else:
+			default_values[skill_id] = 0
 	
 	var skill_map: Dictionary[StringName, Control] = {}
-	for existing_skill in char_skill_container.get_children():
-		char_skill_container.remove_child(existing_skill)
-		if skills.has(existing_skill.get_meta(&"skill_id")):
-			skill_map[existing_skill.get_meta(&"skill_id")] = existing_skill
+	for skill_node in char_skill_container.get_children():
+		char_skill_container.remove_child(skill_node)
+		if existing_skills.has(skill_node.get_meta(&"skill_id")):
+			skill_map[skill_node.get_meta(&"skill_id")] = skill_node
 		else:
-			existing_skill.queue_free()
+			skill_node.queue_free()
 	
-	for skill_id in skills:
+	for skill_id in existing_skills:
 		if skill_map.has(skill_id):
 			char_skill_container.add_child(skill_map[skill_id])
-			skill_map[skill_id].set_meta(&"default_value", skill_set.get(skill_id))
+			skill_map[skill_id].set_meta(&"default_value", default_values[skill_id])
 			set_focus_order_for_skill(skill_map[skill_id])
 			skill_map.erase(skill_id)
 		else:
-			create_skill_item(skill_id, skill_set.get(skill_id))
+			create_skill_item(skill_id, default_values[skill_id])
 	
 	for remaining_skill in skill_map.keys():
 		skill_map[remaining_skill].queue_free()
-	
 
-	var traits: Array[StringName] = NFTraitBlock.traits()
-	traits.sort_custom(func(a,b): return String(a).naturalnocasecmp_to(String(b)) < 0)
+
+func update_traits() -> void:
+	var scr: Script = NFTraitBlock
+	var existing_traits: Array[StringName] = NFTraitBlock.traits()
+	var default_values: Dictionary[StringName, int] = {}
+	
+	existing_traits.sort_custom(
+			func(a:StringName,b:StringName):
+				return String(a).naturalnocasecmp_to(String(b)) < 0)
+	
+	for trait_id in existing_traits:
+		var def = scr.get_property_default_value(trait_id)
+		var def_type: int = typeof(def)
+		if def_type == TYPE_INT:
+			default_values[trait_id] = def
+		elif def_type == TYPE_FLOAT:
+			default_values[trait_id] = int(def)
+		else:
+			default_values[trait_id] = 0
 	
 	var trait_map: Dictionary[StringName, Control] = {}
 	for existing_trait in char_traits_container.get_children():
 		char_traits_container.remove_child(existing_trait)
-		if traits.has(existing_trait.get_meta(&"trait_id")):
+		if existing_traits.has(existing_trait.get_meta(&"trait_id")):
 			trait_map[existing_trait.get_meta(&"trait_id")] = existing_trait
 		else:
 			existing_trait.queue_free()
 	
-	for trait_id in traits:
+	for trait_id in existing_traits:
 		if trait_map.has(trait_id):
 			char_traits_container.add_child(trait_map[trait_id])
-			trait_map[trait_id].set_meta(&"default_value", trait_block.get(trait_id))
+			trait_map[trait_id].set_meta(&"default_value", default_values[trait_id])
 			set_focus_order_for_trait(trait_map[trait_id])
 			trait_map.erase(trait_id)
 		else:
-			create_trait_item(trait_id, trait_block.get(trait_id))
+			create_trait_item(trait_id, default_values[trait_id])
 	
 	for remaining_trait in trait_map.keys():
 		trait_map[remaining_trait].queue_free()
+
+
+func update_talent_nodes() -> void:
+	update_stats()
+	update_skills()
+	update_traits()
 
 
 func _on_new_character_pressed() -> void:
