@@ -546,6 +546,7 @@ func ready_plugin(base_locale: String = "") -> void:
 	
 	default_expand_button.icon = get_theme_icon("DistractionFree", "EditorIcons")
 	
+	translation_txt_box.set_meta(&"old_value", "")
 	# --------------------------------------------------------
 	dialogs_submenu.id_pressed.connect(_on_create_dialog_id_pressed)
 	data_submenu.id_pressed.connect(_on_create_dialog_id_pressed)
