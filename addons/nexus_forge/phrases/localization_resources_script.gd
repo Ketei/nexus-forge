@@ -256,11 +256,11 @@ func _on_map_close_pressed(closing_map: int, requires_save: bool) -> void:
 		var unsaved_dialog: AcceptDialog = load("res://addons/nexus_forge/dialogs/unsaved_dialog_script.gd").new()
 		unsaved_dialog.dialog_text = "File has unsaved changes\nDo you want to save before closing?"
 		unsaved_dialog.title = "Save changes..."
-		add_child(unsaved_dialog)
-		unsaved_dialog.show()
 		
+		EditorInterface.popup_dialog_centered(unsaved_dialog)
 		var result: int = await unsaved_dialog.dialog_finished
 		unsaved_dialog.queue_free()
+		
 		# 0 = save, 1 = don't save, 2 = cancel
 		if result == 0: # Save
 			save_current_resource()
@@ -419,9 +419,7 @@ func _on_menu_id_pressed(id: int) -> void:
 		map_dialog.file_mode = map_dialog.FILE_MODE_OPEN_FILE
 		map_dialog.title = "Open map"
 	
-	add_child(map_dialog)
-	map_dialog.show()
-	
+	EditorInterface.popup_dialog_centered(map_dialog)
 	var result: Array = await map_dialog.dialog_finished # (success: bool, resource_path: String)
 	map_dialog.queue_free()
 	
@@ -827,9 +825,8 @@ func close_active_map() -> void:
 		var unsaved_dialog: AcceptDialog = load("res://addons/nexus_forge/dialogs/unsaved_dialog_script.gd").new()
 		unsaved_dialog.dialog_text = "File has unsaved changes\nDo you want to save before closing?"
 		unsaved_dialog.title = "Save changes..."
-		add_child(unsaved_dialog)
-		unsaved_dialog.show()
 		
+		EditorInterface.popup_dialog_centered(unsaved_dialog)
 		var result: int = await unsaved_dialog.dialog_finished
 		unsaved_dialog.queue_free()
 		

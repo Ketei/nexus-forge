@@ -218,9 +218,8 @@ func _on_close_character_pressed(char_id: int) -> void:
 		var unsaved_dialog: AcceptDialog = load("res://addons/nexus_forge/dialogs/unsaved_dialog_script.gd").new()
 		unsaved_dialog.title = "Save Character..."
 		unsaved_dialog.dialog_text = "Character has unsaved changes.\nDo you want to save before closing?"
-		add_child(unsaved_dialog)
-		unsaved_dialog.show()
 		
+		EditorInterface.popup_dialog_centered(unsaved_dialog)
 		var result: int = await unsaved_dialog.dialog_finished # 0 = save, 1 = don't save, 2 = cancel
 		unsaved_dialog.queue_free()
 		
@@ -550,9 +549,8 @@ func _on_new_character_pressed() -> void:
 	resource_selector.file_mode = resource_selector.FILE_MODE_SAVE_FILE
 	resource_selector.access = resource_selector.ACCESS_RESOURCES
 	resource_selector.title = "Save Character..."
-	add_child(resource_selector)
-	resource_selector.show()
 	
+	EditorInterface.popup_dialog_centered(resource_selector)
 	var dialog_result: Array = await resource_selector.dialog_finished
 	resource_selector.queue_free()
 	
@@ -604,9 +602,8 @@ func _on_open_character_pressed() -> void:
 	resource_selector.file_mode = resource_selector.FILE_MODE_OPEN_FILE
 	resource_selector.access = resource_selector.ACCESS_RESOURCES
 	resource_selector.title = "Open Character..."
-	add_child(resource_selector)
-	resource_selector.show()
 	
+	EditorInterface.popup_dialog_centered(resource_selector)
 	var dialog_result: Array = await resource_selector.dialog_finished
 	resource_selector.queue_free()
 	
@@ -1665,9 +1662,8 @@ func close_active_character() -> void:
 		var unsaved_dialog: AcceptDialog = load("res://addons/nexus_forge/dialogs/unsaved_dialog_script.gd").new()
 		unsaved_dialog.title = "Save Character..."
 		unsaved_dialog.dialog_text = "Character has unsaved changes.\nDo you want to save before closing?"
-		add_child(unsaved_dialog)
-		unsaved_dialog.show()
 		
+		EditorInterface.popup_dialog_centered(unsaved_dialog)
 		var result: int = await unsaved_dialog.dialog_finished # 0 = save, 1 = don't save, 2 = cancel
 		unsaved_dialog.queue_free()
 		

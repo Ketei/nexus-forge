@@ -302,28 +302,28 @@ func _on_create_skill_resource_pressed(panel: PanelContainer) -> void:
 	res_loader.file_mode = res_loader.FILE_MODE_SAVE_FILE
 	res_loader.title = "Create Talents"
 	res_loader.ok_button_text = "Save"
-	add_child(res_loader)
-	res_loader.show()
 	
+	EditorInterface.popup_dialog_centered(res_loader)
 	var result = await res_loader.dialog_finished
-	
-	if result[0]:
-		_skills_resource = NFSkillCatalog.new()
-		ResourceSaver.save(_skills_resource, result[1])
-		_skills_resource.resource_path = result[1]
-		if ResourceLoader.has_cached(result[1]):
-			_skills_resource.take_over_path(result[1])
-		ProjectSettings.set_setting(
-				NFPluginGameHandler.get_setting_path("skills"),
-				result[1])
-		if Engine.is_editor_hint():
-			ProjectSettings.save()
-		$MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer.visible = true
-		panel.visible = false
-		panel.queue_free()
-		load_skills_resource()
-	
 	res_loader.queue_free()
+	
+	if not result[0]:
+		return
+	
+	_skills_resource = NFSkillCatalog.new()
+	ResourceSaver.save(_skills_resource, result[1])
+	_skills_resource.resource_path = result[1]
+	if ResourceLoader.has_cached(result[1]):
+		_skills_resource.take_over_path(result[1])
+	ProjectSettings.set_setting(
+			NFPluginGameHandler.get_setting_path("skills"),
+			result[1])
+	if Engine.is_editor_hint():
+		ProjectSettings.save()
+	$MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer.visible = true
+	panel.visible = false
+	panel.queue_free()
+	load_skills_resource()
 
 
 func _on_load_skill_resource_pressed(panel: PanelContainer) -> void:
@@ -331,26 +331,28 @@ func _on_load_skill_resource_pressed(panel: PanelContainer) -> void:
 	res_loader.file_mode = res_loader.FILE_MODE_OPEN_FILE
 	res_loader.title = "Open Talents"
 	res_loader.ok_button_text = "Load"
-	add_child(res_loader)
-	res_loader.show()
 	
+	EditorInterface.popup_dialog_centered(res_loader)
 	var result = await res_loader.dialog_finished
-	
-	if result[0]:
-		var res_pre: Resource = load(result[1])
-		if res_pre != null and res_pre is NFSkillCatalog:
-			_skills_resource = res_pre
-			ProjectSettings.set_setting(
-					NFPluginGameHandler.get_setting_path("skills"),
-					result[1])
-			if Engine.is_editor_hint():
-				ProjectSettings.save()
-			$MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer.visible = true
-			panel.visible = false
-			panel.queue_free()
-			load_skills_resource()
-	
 	res_loader.queue_free()
+	
+	if not result[0]:
+		return
+	
+	var res_pre: Resource = load(result[1])
+	if res_pre == null or res_pre is not NFSkillCatalog:
+		return
+	
+	_skills_resource = res_pre
+	ProjectSettings.set_setting(
+			NFPluginGameHandler.get_setting_path("skills"),
+			result[1])
+	if Engine.is_editor_hint():
+		ProjectSettings.save()
+	$MainContainer/StatSkillContainer/SkillsPanel/SkillsContainer.visible = true
+	panel.visible = false
+	panel.queue_free()
+	load_skills_resource()
 
 
 func _on_skill_resource_dropped(resource: Resource, panel: Control) -> void:
@@ -542,17 +544,47 @@ func _on_create_traits_resource_pressed(panel: PanelContainer) -> void:
 	res_loader.file_mode = res_loader.FILE_MODE_SAVE_FILE
 	res_loader.title = "Create NFStatBlock"
 	res_loader.ok_button_text = "Save"
-	add_child(res_loader)
-	res_loader.show()
 	
+	EditorInterface.popup_dialog_centered(res_loader)
 	var result = await res_loader.dialog_finished
+	res_loader.queue_free()
 	
-	if result[0]:
-		_traits_resource = NFTraitCatalog.new()
-		ResourceSaver.save(_traits_resource, result[1])
-		_traits_resource.resource_path = result[1]
-		if ResourceLoader.has_cached(result[1]):
-			_traits_resource.take_over_path(result[1])
+	if not result[0]:
+		return
+	
+	_traits_resource = NFTraitCatalog.new()
+	ResourceSaver.save(_traits_resource, result[1])
+	_traits_resource.resource_path = result[1]
+	if ResourceLoader.has_cached(result[1]):
+		_traits_resource.take_over_path(result[1])
+	ProjectSettings.set_setting(
+			NFPluginGameHandler.get_setting_path("traits"),
+			result[1])
+	if Engine.is_editor_hint():
+		ProjectSettings.save()
+	$MainContainer/TraitsPanel/TraitsContainerContainer.visible = true
+	panel.visible = false
+	panel.queue_free()
+	reload_traits(false)
+	load_traits_resource()
+
+
+func _on_load_traits_resource_pressed(panel: PanelContainer) -> void:
+	var res_loader: FileDialog = load("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
+	res_loader.file_mode = res_loader.FILE_MODE_OPEN_FILE
+	res_loader.title = "Open Talents"
+	res_loader.ok_button_text = "Load"
+	
+	EditorInterface.popup_dialog_centered(res_loader)
+	var result = await res_loader.dialog_finished
+	res_loader.queue_free()
+	
+	if not result[0]:
+		return
+	
+	var res_pre: Resource = load(result[1])
+	if res_pre != null and res_pre is NFTraitCatalog:
+		_traits_resource = res_pre
 		ProjectSettings.set_setting(
 				NFPluginGameHandler.get_setting_path("traits"),
 				result[1])
@@ -563,36 +595,6 @@ func _on_create_traits_resource_pressed(panel: PanelContainer) -> void:
 		panel.queue_free()
 		reload_traits(false)
 		load_traits_resource()
-	
-	res_loader.queue_free()
-
-
-func _on_load_traits_resource_pressed(panel: PanelContainer) -> void:
-	var res_loader: FileDialog = load("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
-	res_loader.file_mode = res_loader.FILE_MODE_OPEN_FILE
-	res_loader.title = "Open Talents"
-	res_loader.ok_button_text = "Load"
-	add_child(res_loader)
-	res_loader.show()
-	
-	var result = await res_loader.dialog_finished
-	
-	if result[0]:
-		var res_pre: Resource = load(result[1])
-		if res_pre != null and res_pre is NFTraitCatalog:
-			_traits_resource = res_pre
-			ProjectSettings.set_setting(
-					NFPluginGameHandler.get_setting_path("traits"),
-					result[1])
-			if Engine.is_editor_hint():
-				ProjectSettings.save()
-			$MainContainer/TraitsPanel/TraitsContainerContainer.visible = true
-			panel.visible = false
-			panel.queue_free()
-			reload_traits(false)
-			load_traits_resource()
-	
-	res_loader.queue_free()
 
 
 func _on_traits_resource_dropped(resource: Resource, panel: Control) -> void:
@@ -797,28 +799,28 @@ func _on_create_stat_resource_pressed(panel: PanelContainer) -> void:
 	res_loader.file_mode = res_loader.FILE_MODE_SAVE_FILE
 	res_loader.title = "Create Stats"
 	res_loader.ok_button_text = "Save"
-	add_child(res_loader)
-	res_loader.show()
 	
+	EditorInterface.popup_dialog_centered(res_loader)
 	var result = await res_loader.dialog_finished
-	
-	if result[0]:
-		_stats_resource = NFStatCatalog.new()
-		ResourceSaver.save(_stats_resource, result[1])
-		_stats_resource.resource_path = result[1]
-		if ResourceLoader.has_cached(result[1]):
-			_stats_resource.take_over_path(result[1])
-		ProjectSettings.set_setting(
-				NFPluginGameHandler.get_setting_path("stats"),
-				result[1])
-		if Engine.is_editor_hint():
-			ProjectSettings.save()
-		$MainContainer/StatSkillContainer/StatsPanel/StatsContainer.visible = true
-		panel.visible = false
-		panel.queue_free()
-		load_stats_resource()
-	
 	res_loader.queue_free()
+	
+	if not result[0]:
+		return
+	
+	_stats_resource = NFStatCatalog.new()
+	ResourceSaver.save(_stats_resource, result[1])
+	_stats_resource.resource_path = result[1]
+	if ResourceLoader.has_cached(result[1]):
+		_stats_resource.take_over_path(result[1])
+	ProjectSettings.set_setting(
+			NFPluginGameHandler.get_setting_path("stats"),
+			result[1])
+	if Engine.is_editor_hint():
+		ProjectSettings.save()
+	$MainContainer/StatSkillContainer/StatsPanel/StatsContainer.visible = true
+	panel.visible = false
+	panel.queue_free()
+	load_stats_resource()
 
 
 func _on_load_stat_resource_pressed(panel: PanelContainer) -> void:
@@ -826,26 +828,28 @@ func _on_load_stat_resource_pressed(panel: PanelContainer) -> void:
 	res_loader.file_mode = res_loader.FILE_MODE_OPEN_FILE
 	res_loader.title = "Open Stats"
 	res_loader.ok_button_text = "Load"
-	add_child(res_loader)
-	res_loader.show()
 	
+	EditorInterface.popup_dialog_centered(res_loader)
 	var result = await res_loader.dialog_finished
-	
-	if result[0]:
-		var res_pre: Resource = load(result[1])
-		if res_pre != null and res_pre is NFStatCatalog:
-			_stats_resource = res_pre
-			ProjectSettings.set_setting(
-					NFPluginGameHandler.get_setting_path("stats"),
-					result[1])
-			if Engine.is_editor_hint():
-				ProjectSettings.save()
-			$MainContainer/StatSkillContainer/StatsPanel/StatsContainer.visible = true
-			panel.visible = false
-			panel.queue_free()
-			load_stats_resource()
-	
 	res_loader.queue_free()
+	
+	if not result[0]:
+		return
+	
+	var res_pre: Resource = load(result[1])
+	if res_pre == null or res_pre is not NFStatCatalog:
+		return
+		
+	_stats_resource = res_pre
+	ProjectSettings.set_setting(
+			NFPluginGameHandler.get_setting_path("stats"),
+			result[1])
+	if Engine.is_editor_hint():
+		ProjectSettings.save()
+	$MainContainer/StatSkillContainer/StatsPanel/StatsContainer.visible = true
+	panel.visible = false
+	panel.queue_free()
+	load_stats_resource()
 
 
 func _on_stat_resource_dropped(resource: Resource, panel: Control) -> void:

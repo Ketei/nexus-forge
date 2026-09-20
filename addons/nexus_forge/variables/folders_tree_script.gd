@@ -366,14 +366,14 @@ func _on_item_button_pressed(item: TreeItem, _column: int, id: int, _mouse_butto
 			confirmation.ok_button_text = "Erase"
 			confirmation.cancel_button_text = "Cancel"
 			confirmation.initial_position = Window.WINDOW_INITIAL_POSITION_CENTER_MAIN_WINDOW_SCREEN
-			add_child(confirmation)
-			confirmation.show()
+			
+			EditorInterface.popup_dialog_centered(confirmation)
 			var erase: bool = await confirmation.dialog_finished
-			if not erase:
-				confirmation.queue_free()
-				return
-			var path: String = get_path_to_folder(item)
 			confirmation.queue_free()
+			if not erase:
+				return
+			
+			var path: String = get_path_to_folder(item)
 			item.free()
 			folder_deleted.emit(path)
 	something_changed.emit()

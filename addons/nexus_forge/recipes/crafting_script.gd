@@ -319,51 +319,53 @@ func load_recipe_resource() -> void:
 func _on_create_database_pressed(node: Control) -> void:
 	var database_creator: FileDialog = load("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	database_creator.file_mode = database_creator.FILE_MODE_SAVE_FILE
-	add_child(database_creator)
-	database_creator.show()
 	
+	EditorInterface.popup_dialog_centered(database_creator)
 	var result = await database_creator.dialog_finished
-	
-	if result[0]:
-		recipes_resource = NFRecipeCatalog.new()
-		ResourceSaver.save(recipes_resource, result[1])
-		recipes_resource.resource_path = result[1]
-		ProjectSettings.set_setting(
-				NFPluginGameHandler.get_setting_path("recipes"),
-				result[1])
-		if Engine.is_editor_hint():
-			ProjectSettings.save()
-		load_recipe_resource()
-		$CraftingContainer.visible = true
-		node.visible = false
-		node.queue_free()
-	
 	database_creator.queue_free()
+	
+	if not result[0]:
+		return
+	
+	recipes_resource = NFRecipeCatalog.new()
+	ResourceSaver.save(recipes_resource, result[1])
+	recipes_resource.resource_path = result[1]
+	ProjectSettings.set_setting(
+			NFPluginGameHandler.get_setting_path("recipes"),
+			result[1])
+	if Engine.is_editor_hint():
+		ProjectSettings.save()
+	load_recipe_resource()
+	$CraftingContainer.visible = true
+	node.visible = false
+	node.queue_free()
 
 
 func _on_load_database_pressed(node: Control) -> void:
 	var database_creator: FileDialog = load("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	database_creator.file_mode = database_creator.FILE_MODE_OPEN_FILE
-	add_child(database_creator)
-	database_creator.show()
 	
+	EditorInterface.popup_dialog_centered(database_creator)
 	var result = await database_creator.dialog_finished
-	
-	if result[0]:
-		var res_pre: Resource = load(result[1])
-		if res_pre != null and res_pre is NFRecipeCatalog:
-			recipes_resource = res_pre
-			ProjectSettings.set_setting(
-					NFPluginGameHandler.get_setting_path("recipes"),
-					result[1])
-			if Engine.is_editor_hint():
-				ProjectSettings.save()
-			load_recipe_resource()
-			$CraftingContainer.visible = true
-			node.visible = false
-			node.queue_free()
-	
 	database_creator.queue_free()
+	
+	if not result[0]:
+		return
+	
+	var res_pre: Resource = load(result[1])
+	if res_pre == null or res_pre is not NFRecipeCatalog:
+		return
+	
+	recipes_resource = res_pre
+	ProjectSettings.set_setting(
+			NFPluginGameHandler.get_setting_path("recipes"),
+			result[1])
+	if Engine.is_editor_hint():
+		ProjectSettings.save()
+	load_recipe_resource()
+	$CraftingContainer.visible = true
+	node.visible = false
+	node.queue_free()
 
 
 func _on_resource_dropped(resource: Resource, panel: Control) -> void:
@@ -428,28 +430,31 @@ func _on_recipe_create_pressed() -> void:
 	id_dialog.strip_edges = true
 	id_dialog.use_blacklist = true
 	id_dialog.text_blacklist.assign(recipe_tree.recipes())
-	id_dialog.character_blacklist.append(" ")
 	id_dialog.line_placeholder_text = "Recipe ID"
-	add_child(id_dialog)
-	id_dialog.show()
+	
+	EditorInterface.popup_dialog_centered(id_dialog)
 	id_dialog.grab_text_focus()
+	
 	var result: Array = await id_dialog.dialog_finished
-	if result[0]:
-		var id: StringName = StringName(result[1])
-		
-		undo.create_action("Create Recipe")
-		undo.add_do_method(_do_create_recipe.bind(id))
-		undo.add_undo_method(_undo_create_recipe.bind(id))
-		undo.commit_action(false)
-		
-		recipes_resource.create_recipe(id)
-		recipe_tree.add_recipe(id, true, false)
-		recipe_input_tree.recipe_selected = true
-		recipe_output_tree.recipe_selected = true
-		load_recipe(id)
-		active_recipe = id
-		_something_changed()
 	id_dialog.queue_free()
+	
+	if not result[0]:
+		return
+	
+	var id: StringName = StringName(result[1])
+	
+	undo.create_action("Create Recipe")
+	undo.add_do_method(_do_create_recipe.bind(id))
+	undo.add_undo_method(_undo_create_recipe.bind(id))
+	undo.commit_action(false)
+	
+	recipes_resource.create_recipe(id)
+	recipe_tree.add_recipe(id, true, false)
+	recipe_input_tree.recipe_selected = true
+	recipe_output_tree.recipe_selected = true
+	load_recipe(id)
+	active_recipe = id
+	_something_changed()
 
 
 func _do_create_recipe(recipe_id: StringName) -> void:

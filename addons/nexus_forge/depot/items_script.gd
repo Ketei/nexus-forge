@@ -296,51 +296,52 @@ func _on_currency_search_text_changed(text: String) -> void:
 func _on_create_currency_database_pressed(node: Control) -> void:
 	var database_creator: FileDialog = load("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	database_creator.file_mode = database_creator.FILE_MODE_SAVE_FILE
-	add_child(database_creator)
-	database_creator.show()
 	
+	EditorInterface.popup_dialog_centered(database_creator)
 	var result = await database_creator.dialog_finished
-	
-	if result[0]:
-		currency_resource = NFCurrencyCatalog.new()
-		currency_resource.resource_path = result[1]
-		ResourceSaver.save(currency_resource, result[1])
-		ProjectSettings.set_setting(
-				NFPluginGameHandler.get_setting_path("currency"),
-				result[1])
-		if Engine.is_editor_hint():
-			ProjectSettings.save()
-		reload_categories()
-		$CurrencyPanel/CurrencyContainer.visible = true
-		node.visible = false
-		node.queue_free()
-	
 	database_creator.queue_free()
-
+	
+	if not result[0]:
+		return
+	
+	currency_resource = NFCurrencyCatalog.new()
+	currency_resource.resource_path = result[1]
+	ResourceSaver.save(currency_resource, result[1])
+	ProjectSettings.set_setting(
+			NFPluginGameHandler.get_setting_path("currency"),
+			result[1])
+	if Engine.is_editor_hint():
+		ProjectSettings.save()
+	reload_categories()
+	$CurrencyPanel/CurrencyContainer.visible = true
+	node.visible = false
+	node.queue_free()
 
 func _on_load_currency_database_pressed(node: Control) -> void:
 	var database_creator: FileDialog = load("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	database_creator.file_mode = database_creator.FILE_MODE_OPEN_FILE
-	add_child(database_creator)
-	database_creator.show()
 	
+	EditorInterface.popup_dialog_centered(database_creator)
 	var result = await database_creator.dialog_finished
-	
-	if result[0]:
-		var res_pre: Resource = load(result[1])
-		if res_pre != null and res_pre is NFCurrencyCatalog:
-			currency_resource = res_pre
-			ProjectSettings.set_setting(
-					NFPluginGameHandler.get_setting_path("currency"),
-					result[1])
-			if Engine.is_editor_hint():
-				ProjectSettings.save()
-			reload_currency_resource()
-			$CurrencyPanel/CurrencyContainer.visible = true
-			node.visible = false
-			node.queue_free()
-	
 	database_creator.queue_free()
+	
+	if not result[0]:
+		return
+	
+	var res_pre: Resource = load(result[1])
+	if res_pre == null or res_pre is not NFCurrencyCatalog:
+		return
+	
+	currency_resource = res_pre
+	ProjectSettings.set_setting(
+			NFPluginGameHandler.get_setting_path("currency"),
+			result[1])
+	if Engine.is_editor_hint():
+		ProjectSettings.save()
+	reload_currency_resource()
+	$CurrencyPanel/CurrencyContainer.visible = true
+	node.visible = false
+	node.queue_free()
 
 
 func _on_currency_resource_dropped(resource: Resource, panel: Control) -> void:
@@ -365,25 +366,25 @@ func _on_create_currency_pressed() -> void:
 	id_creator.text_blacklist.assign(currency_tree.get_currencies())
 	id_creator.title = "Create Currency"
 	id_creator.ok_button_text = "Create"
-	add_child(id_creator)
-	id_creator.show()
+	
+	EditorInterface.popup_dialog_centered(id_creator)
 	id_creator.grab_text_focus()
-	
 	var result = await id_creator.dialog_finished
-	
-	if result[0]:
-		if not loaded_currency.is_empty():
-			save_current_currency()
-		
-		var currency_id: StringName = StringName(result[1])
-		currency_resource.create_currency(currency_id, 0, "New Currency")
-		currency_tree.add_currency(currency_id, true, false)
-		currencies_calculator_tree.add_currency(currency_id, "New Currency", 0)
-		load_currency(currency_id)
-		loaded_currency = currency_id
-		set_currency_ui_enabled(true)
-		_on_currency_changed()
 	id_creator.queue_free()
+	
+	if not result[0]:
+		return
+	if not loaded_currency.is_empty():
+		save_current_currency()
+	
+	var currency_id: StringName = StringName(result[1])
+	currency_resource.create_currency(currency_id, 0, "New Currency")
+	currency_tree.add_currency(currency_id, true, false)
+	currencies_calculator_tree.add_currency(currency_id, "New Currency", 0)
+	load_currency(currency_id)
+	loaded_currency = currency_id
+	set_currency_ui_enabled(true)
+	_on_currency_changed()
 
 
 func _on_currency_value_changed(new_value: int) -> void:
@@ -912,54 +913,56 @@ func _parse_search_query(query: String) -> Dictionary:
 func _on_create_database_pressed(node: Control) -> void:
 	var database_creator: FileDialog = load("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	database_creator.file_mode = database_creator.FILE_MODE_SAVE_FILE
-	add_child(database_creator)
-	database_creator.show()
 	
+	EditorInterface.popup_dialog_centered(database_creator)
 	var result = await database_creator.dialog_finished
-	
-	if result[0]:
-		var item_resource: NFItemCatalog = NFItemCatalog.new()
-		ResourceSaver.save(item_resource, result[1])
-		item_resource.resource_path = result[1]
-		item_link.items = item_resource
-		ProjectSettings.set_setting(
-				NFPluginGameHandler.get_setting_path("items"),
-				result[1])
-		if Engine.is_editor_hint():
-			ProjectSettings.save()
-		reload_categories()
-		$ItemsPanel/ItemsContainer.visible = true
-		node.visible = false
-		node.queue_free()
-		resource_loaded.emit()
-	
 	database_creator.queue_free()
+	
+	if not result[0]:
+		return
+	
+	var item_resource: NFItemCatalog = NFItemCatalog.new()
+	ResourceSaver.save(item_resource, result[1])
+	item_resource.resource_path = result[1]
+	item_link.items = item_resource
+	ProjectSettings.set_setting(
+			NFPluginGameHandler.get_setting_path("items"),
+			result[1])
+	if Engine.is_editor_hint():
+		ProjectSettings.save()
+	reload_categories()
+	$ItemsPanel/ItemsContainer.visible = true
+	node.visible = false
+	node.queue_free()
+	resource_loaded.emit()
 
 
 func _on_load_database_pressed(node: Control) -> void:
 	var database_creator: FileDialog = load("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	database_creator.file_mode = database_creator.FILE_MODE_OPEN_FILE
-	add_child(database_creator)
-	database_creator.show()
 	
+	EditorInterface.popup_dialog_centered(database_creator)
 	var result = await database_creator.dialog_finished
-	
-	if result[0]:
-		var res_pre: Resource = load(result[1])
-		if res_pre != null and res_pre is NFItemCatalog:
-			item_link.items = res_pre
-			ProjectSettings.set_setting(
-					NFPluginGameHandler.get_setting_path("items"),
-					result[1])
-			if Engine.is_editor_hint():
-				ProjectSettings.save()
-			reload_categories()
-			$ItemsPanel/ItemsContainer.visible = true
-			node.visible = false
-			node.queue_free()
-			resource_loaded.emit()
-	
 	database_creator.queue_free()
+	
+	if not result[0]:
+		return
+	
+	var res_pre: Resource = load(result[1])
+	if res_pre == null or res_pre is not NFItemCatalog:
+		return
+	
+	item_link.items = res_pre
+	ProjectSettings.set_setting(
+			NFPluginGameHandler.get_setting_path("items"),
+			result[1])
+	if Engine.is_editor_hint():
+		ProjectSettings.save()
+	reload_categories()
+	$ItemsPanel/ItemsContainer.visible = true
+	node.visible = false
+	node.queue_free()
+	resource_loaded.emit()
 
 
 func _on_items_resource_dropped(resource: Resource, panel: Control) -> void:

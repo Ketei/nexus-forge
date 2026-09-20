@@ -462,26 +462,25 @@ func reload_resource(first_load: bool = false) -> void:
 func _on_create_database_pressed(node: Control) -> void:
 	var database_creator: FileDialog = load("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	database_creator.file_mode = database_creator.FILE_MODE_SAVE_FILE
-	add_child(database_creator)
-	database_creator.show()
 	
+	EditorInterface.popup_dialog_centered(database_creator)
 	var result = await database_creator.dialog_finished
-	
-	if result[0]:
-		_species_resource = NFSpeciesCatalog.new()
-		ResourceSaver.save(_species_resource, result[1])
-		_species_resource.resource_path = result[1]
-		ProjectSettings.set_setting(
-				NFPluginGameHandler.get_setting_path("species"),
-				result[1])
-		if Engine.is_editor_hint():
-			ProjectSettings.save()
-		load_species_resource()
-		$RacesContainer.visible = true
-		node.visible = false
-		node.queue_free()
-	
 	database_creator.queue_free()
+	
+	if not result[0]:
+		return
+	_species_resource = NFSpeciesCatalog.new()
+	ResourceSaver.save(_species_resource, result[1])
+	_species_resource.resource_path = result[1]
+	ProjectSettings.set_setting(
+			NFPluginGameHandler.get_setting_path("species"),
+			result[1])
+	if Engine.is_editor_hint():
+		ProjectSettings.save()
+	load_species_resource()
+	$RacesContainer.visible = true
+	node.visible = false
+	node.queue_free()
 
 
 func _on_resource_dropped(resource: Resource, panel: Control) -> void:
@@ -500,26 +499,26 @@ func _on_resource_dropped(resource: Resource, panel: Control) -> void:
 func _on_load_database_pressed(node: Control) -> void:
 	var database_creator: FileDialog = load("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	database_creator.file_mode = database_creator.FILE_MODE_OPEN_FILE
-	add_child(database_creator)
-	database_creator.show()
 	
+	EditorInterface.popup_dialog_centered(database_creator)
 	var result = await database_creator.dialog_finished
-	
-	if result[0]:
-		var res_pre: Resource = load(result[1])
-		if res_pre != null and res_pre is NFSpeciesCatalog:
-			_species_resource = res_pre
-			ProjectSettings.set_setting(
-					NFPluginGameHandler.get_setting_path("species"),
-					result[1])
-			if Engine.is_editor_hint():
-				ProjectSettings.save()
-			load_species_resource()
-			$RacesContainer.visible = true
-			node.visible = false
-			node.queue_free()
-	
 	database_creator.queue_free()
+	
+	if not result[0]:
+		return
+	
+	var res_pre: Resource = load(result[1])
+	if res_pre != null and res_pre is NFSpeciesCatalog:
+		_species_resource = res_pre
+		ProjectSettings.set_setting(
+				NFPluginGameHandler.get_setting_path("species"),
+				result[1])
+		if Engine.is_editor_hint():
+			ProjectSettings.save()
+		load_species_resource()
+		$RacesContainer.visible = true
+		node.visible = false
+		node.queue_free()
 
 
 func _on_add_data_pressed(data_name: String, value: Variant) -> void:
@@ -632,36 +631,36 @@ func _on_create_species_pressed() -> void:
 	id_creator.text_blacklist.assign(races_tree.get_all_species())
 	id_creator.title = "Create Species"
 	id_creator.ok_button_text = "Create"
-	add_child(id_creator)
-	id_creator.show()
+	
+	EditorInterface.popup_dialog_centered(id_creator)
 	id_creator.grab_text_focus()
-	
 	var result: Array = await id_creator.dialog_finished
-	
-	if result[0]:
-		if not loaded_species.is_empty():
-			save_current_species()
-		
-		var species_id: StringName = StringName(result[1])
-		
-		_species_resource.create_species(species_id)
-		_species_resource.set_species_name(species_id, "New Species")
-		
-		undo.create_action("Create Species '%s'" % species_id)
-		undo.add_do_method(_do_create_species.bind(species_id))
-		undo.add_undo_method(_undo_create_species.bind(species_id))
-		undo.commit_action(false)
-		
-		races_tree.create_species(species_id)
-		races_tree.select_species(species_id, false)
-		load_species(species_id)
-		loaded_species = species_id
-		
-		set_ui_enabled(true)
-		_on_something_changed()
-		_on_race_entries_changed()
-		
 	id_creator.queue_free()
+	
+	if not result[0]:
+		return
+	
+	if not loaded_species.is_empty():
+		save_current_species()
+	
+	var species_id: StringName = StringName(result[1])
+	
+	_species_resource.create_species(species_id)
+	_species_resource.set_species_name(species_id, "New Species")
+	
+	undo.create_action("Create Species '%s'" % species_id)
+	undo.add_do_method(_do_create_species.bind(species_id))
+	undo.add_undo_method(_undo_create_species.bind(species_id))
+	undo.commit_action(false)
+	
+	races_tree.create_species(species_id)
+	races_tree.select_species(species_id, false)
+	load_species(species_id)
+	loaded_species = species_id
+	
+	set_ui_enabled(true)
+	_on_something_changed()
+	_on_race_entries_changed()
 
 
 func _on_erase_species_requested(species: StringName) -> void:

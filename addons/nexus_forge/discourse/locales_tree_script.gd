@@ -103,8 +103,8 @@ func _on_create_region_pressed(at_lang: String) -> void:
 	window.sort_codes_array(regions)
 	window.title = "Select Region..."
 	window.set_codes(regions)
-	add_child(window)
-	window.show()
+	
+	EditorInterface.popup_dialog_centered(window)
 	window.focus_option_button()
 	var result_code: String = await window.dialog_finished
 	window.queue_free()

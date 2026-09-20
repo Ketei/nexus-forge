@@ -70,10 +70,9 @@ func _on_new_category_pressed() -> void:
 	id_creator.text_blacklist.assign(items_resource.categories())
 	id_creator.title = "Create Category"
 	id_creator.ok_button_text = "Create"
-	add_child(id_creator)
-	id_creator.show()
-	id_creator.grab_text_focus()
 	
+	EditorInterface.popup_dialog_centered(id_creator)
+	id_creator.grab_text_focus()
 	var result = await id_creator.dialog_finished
 	id_creator.queue_free()
 	

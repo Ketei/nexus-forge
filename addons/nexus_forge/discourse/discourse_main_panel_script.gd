@@ -1414,8 +1414,8 @@ func _on_change_locale_group_pressed() -> void:
 	var line_confirmation := preload("res://addons/nexus_forge/dialogs/lineedit_confirmation_dialog.gd").new()
 	line_confirmation.allow_empty = true
 	line_confirmation.set_line_text(active_conversation.locale_group)
-	add_child(line_confirmation)
-	line_confirmation.show()
+	
+	EditorInterface.popup_dialog_centered(line_confirmation)
 	var result: Array = await line_confirmation.dialog_finished
 	line_confirmation.queue_free()
 	
@@ -1449,9 +1449,11 @@ func _on_conversation_close_pressed(dialog_id: int) -> void:
 	
 	if _open_files[dialog_id]["unsaved"]:
 		var unsaved_prompt: AcceptDialog = preload("res://addons/nexus_forge/dialogs/unsaved_dialog_script.gd").new()
-		add_child(unsaved_prompt)
-		unsaved_prompt.show()
+		
+		EditorInterface.popup_dialog_centered(unsaved_prompt)
 		var result: int = await unsaved_prompt.dialog_finished
+		unsaved_prompt.queue_free()
+		
 		if result == 0: # Save
 			if is_active:
 				save_current_dialog_to_memory()
@@ -1459,9 +1461,7 @@ func _on_conversation_close_pressed(dialog_id: int) -> void:
 		elif result == 1: # Don't save
 			_open_files[dialog_id]["initial_state"] = _get_file_current_state(dialog_id)
 		elif result == 2: # Cancel
-			unsaved_prompt.queue_free()
 			return
-		unsaved_prompt.queue_free()
 	
 	if _open_files[dialog_id]["initial_state"] != _get_file_current_state(dialog_id):
 		if is_active and not save_performed:
@@ -1537,10 +1537,11 @@ func _on_menu_close_pressed() -> void:
 	
 	if _open_files[dialog_id]["unsaved"]:
 		var unsaved_prompt: AcceptDialog = preload("res://addons/nexus_forge/dialogs/unsaved_dialog_script.gd").new()
-		add_child(unsaved_prompt)
-		unsaved_prompt.show()
+		
+		EditorInterface.popup_dialog_centered(unsaved_prompt)
 		var result: int = await unsaved_prompt.dialog_finished
 		unsaved_prompt.queue_free()
+		
 		if result == 0: # Save
 			save_dialog_resource(dialog_id)
 		elif result == 1: # Don't save
@@ -1994,8 +1995,8 @@ func _on_new_lang_pressed() -> void:
 	window.sort_codes_array(language_options)
 	window.title = "Select Language..."
 	window.set_codes(language_options)
-	add_child(window)
-	window.show()
+	
+	EditorInterface.popup_dialog_centered(window)
 	window.focus_option_button()
 	var result: String = await window.dialog_finished
 	window.queue_free()

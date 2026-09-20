@@ -323,26 +323,26 @@ func restore_layout() -> void:
 func on_create_resource_pressed() -> void:
 	var new_dialog: FileDialog = load("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	new_dialog.file_mode = new_dialog.FILE_MODE_SAVE_FILE
-	add_child(new_dialog)
-	new_dialog.show()
 	
+	EditorInterface.popup_dialog_centered(new_dialog)
 	var result = await new_dialog.dialog_finished
-	
-	if result[0]:
-		_variables_resource = NFBlackboardData.new()
-		_variables_resource.resource_path = result[1]
-		ResourceSaver.save(_variables_resource, result[1])
-		ProjectSettings.set_setting(
-			NFPluginGameHandler.get_setting_path("variables"),
-			result[1])
-		if Engine.is_editor_hint():
-			ProjectSettings.save()
-		main_split.visible = true
-		var no_db_container = get_node(^"NoVarResContainer")
-		no_db_container.visible = false
-		no_db_container.queue_free()
-	
 	new_dialog.queue_free()
+	
+	if not result[0]:
+		return
+	
+	_variables_resource = NFBlackboardData.new()
+	_variables_resource.resource_path = result[1]
+	ResourceSaver.save(_variables_resource, result[1])
+	ProjectSettings.set_setting(
+		NFPluginGameHandler.get_setting_path("variables"),
+		result[1])
+	if Engine.is_editor_hint():
+		ProjectSettings.save()
+	main_split.visible = true
+	var no_db_container = get_node(^"NoVarResContainer")
+	no_db_container.visible = false
+	no_db_container.queue_free()
 
 
 func _on_resource_dropped(resource: Resource, panel: Control) -> void:
@@ -361,32 +361,32 @@ func _on_resource_dropped(resource: Resource, panel: Control) -> void:
 func on_load_resource_pressed() -> void:
 	var new_dialog: FileDialog = load("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	new_dialog.file_mode = new_dialog.FILE_MODE_OPEN_FILE
-	add_child(new_dialog)
-	new_dialog.show()
 	
+	EditorInterface.popup_dialog_centered(new_dialog)
 	var result = await new_dialog.dialog_finished
-	
-	if result[0]:
-		var res_pre: Resource = load(result[1])
-		if res_pre is NFBlackboardData:
-			_variables_resource = res_pre
-			ProjectSettings.set_setting(
-				NFPluginGameHandler.get_setting_path("variables"),
-				result[1])
-			if Engine.is_editor_hint():
-				ProjectSettings.save()
-			main_split.visible = true
-			var no_db_container = get_node(^"NoVarResContainer")
-			no_db_container.visible = false
-			no_db_container.queue_free()
-			load_variable_resource()
-		else:
-			NFPluginGameHandler._log_msg(
-				"blackboard - editor",
-				"Selected resource is not BlackboardData.",
-				NFPluginGameHandler._LogLevel.INFO)
-	
 	new_dialog.queue_free()
+	
+	if not result[0]:
+		return
+	
+	var res_pre: Resource = load(result[1])
+	if res_pre is NFBlackboardData:
+		_variables_resource = res_pre
+		ProjectSettings.set_setting(
+			NFPluginGameHandler.get_setting_path("variables"),
+			result[1])
+		if Engine.is_editor_hint():
+			ProjectSettings.save()
+		main_split.visible = true
+		var no_db_container = get_node(^"NoVarResContainer")
+		no_db_container.visible = false
+		no_db_container.queue_free()
+		load_variable_resource()
+	else:
+		NFPluginGameHandler._log_msg(
+			"blackboard - editor",
+			"Selected resource is not BlackboardData.",
+			NFPluginGameHandler._LogLevel.INFO)
 
 
 func _on_folder_deleted(folder_path: String) -> void:
