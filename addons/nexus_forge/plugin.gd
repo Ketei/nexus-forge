@@ -10,7 +10,8 @@ const TOOL_NAME: String = "Nexus Forge Character Lookup"
 
 var editor_view: Control = null
 var export_plugin: EditorExportPlugin = null
-var character_map: Dictionary[String, StringName] = {}
+var tracked_characters: Array[Dictionary] = []
+var tracker_edited: bool = false
 var class_timestamps: RefCounted = null
 
 
@@ -128,9 +129,23 @@ func _enter_tree() -> void:
 		var cfg: ConfigFile = ConfigFile.new()
 		if cfg.load("user://nexus_forge/persona_settings.cfg") == OK:
 			var data = cfg.get_value("RUNTIME", "CharacterMap")
-			for key in data.keys():
-				if FileAccess.file_exists(key):
-					character_map[key] = StringName(data[key])
+			if typeof(data) == TYPE_ARRAY:
+				for entry in data:
+					if typeof(entry) != TYPE_DICTIONARY or not entry.has_all(["path", "character_id", "timestamp"]):
+						continue
+					var id_type: int = typeof(entry["character_id"])
+					if typeof(entry["path"]) != TYPE_STRING:
+						continue
+					elif id_type != TYPE_STRING_NAME and id_type != TYPE_STRING:
+						continue
+					elif typeof(entry["timestamp"]) != TYPE_INT:
+						continue
+					if FileAccess.file_exists(entry["path"]):
+						set_character_entry(
+								entry["path"],
+								entry["character_id"],
+								entry["timestamp"])
+	tracker_edited = false
 	
 	if use_discourse:
 		editor_view.discourse.character_browser_requested.connect(_on_character_browser_requested)
@@ -172,15 +187,16 @@ func _save_external_data() -> void:
 	if _editor_ready():
 		editor_view.save_resources()
 	
-	var character_cfg: ConfigFile = ConfigFile.new()
-	
-	character_cfg.set_value("RUNTIME", "CharacterMap", character_map)
-	
-	if character_cfg.save("user://nexus_forge/persona_settings.cfg") != OK:
-		NFPluginGameHandler._log_msg(
-				"plugin",
-				"Failed saving character config to user://nexus_forge/persona_settings.cfg",
-				NFPluginGameHandler._LogLevel.ERROR)
+	if tracker_edited:
+		var character_cfg: ConfigFile = ConfigFile.new()
+		character_cfg.set_value("RUNTIME", "CharacterMap", tracked_characters.duplicate(true))
+		if character_cfg.save("user://nexus_forge/persona_settings.cfg") == OK:
+			tracker_edited = false
+		else:
+			NFPluginGameHandler._log_msg(
+					"plugin",
+					"Failed saving character config to user://nexus_forge/persona_settings.cfg",
+					NFPluginGameHandler._LogLevel.ERROR)
 
 
 func _has_main_screen() -> bool:
@@ -274,10 +290,15 @@ func _set_window_layout(configuration: ConfigFile) -> void:
 
 
 func _on_character_browser_requested(node_uuid: StringName, target: LineEdit) -> void:
+	var data_to_populate: Dictionary[String, StringName] = {}
+	
+	for entry in tracked_characters:
+		data_to_populate[entry["path"]] = entry["character_id"]
+	
 	var browser: Window = load("res://addons/nexus_forge/discourse/character_browser.tscn").instantiate()
 	var initial_text: String = target.text
 	EditorInterface.popup_dialog_centered(browser)
-	browser.populate_characters(character_map)
+	browser.populate_characters(data_to_populate)
 	browser.grab_search_focus()
 	
 	var result: Array = await browser.window_finished
@@ -547,7 +568,7 @@ func _handles(object: Object) -> bool:
 		&"EditorDiscourseDialog":
 			tool_available = editor_view.discourse != null
 		&"NFCharacterSheet":
-			character_map[object.resource_path] = object.id
+			set_character_entry(object.resource_path, object.id)
 			tool_available = editor_view.characters != null
 		&"NFPhraseMap":
 			tool_available = editor_view.phrase_maps != null
@@ -564,8 +585,8 @@ func _edit(object: Object) -> void:
 
 
 func _on_character_created(path: String) -> void:
-	if not character_map.has(path):
-		character_map[path] = &""
+	# ID is still not assigned, only the resource was created
+	set_character_entry(path)
 
 
 func _editor_ready() -> bool:
@@ -573,18 +594,17 @@ func _editor_ready() -> bool:
 
 
 func _on_character_saved(path: String, id: StringName) -> void:
-	character_map[path] = id
+	set_character_entry(path, id, FileAccess.get_modified_time(path))
 
 
 func _on_character_opened(path: String, id: StringName) -> void:
-	if not character_map.has(path):
-		character_map[path] = id
+	set_character_entry(path, id)
 
 
 func _on_resource_saved(resource: Resource) -> void:
 	if resource is NFCharacterSheet:
 		if not resource.resource_path.is_empty() and resource.resource_path.get_extension() == "tres":
-			character_map[resource.resource_path] = resource.id
+			set_character_entry(resource.resource_path, resource.id, FileAccess.get_modified_time(resource.resource_path))
 		return
 	elif resource is not Script:
 		return
@@ -598,15 +618,14 @@ func _on_resource_saved(resource: Resource) -> void:
 
 func _on_filesystem_changed():
 	class_timestamps.check_for_updates()
+	scan_for_character_changes()
 
 
 func _on_files_moved(old_file: String, new_file: String) -> void:
 	if old_file.get_extension() != "tres":
 		return
 	
-	if character_map.has(old_file):
-		character_map[new_file] = character_map[old_file]
-		character_map.erase(old_file)
+	change_character_path(old_file, new_file)
 	
 	if ProjectSettings.get_setting(
 			NFPluginGameHandler.get_setting_path("discourse"), "") == old_file:
@@ -682,7 +701,7 @@ func _on_resource_removed(object: Resource) -> void:
 	if object is EditorDiscourseDialog:
 		editor_view.discourse.filesystem_resource_removed(object)
 	elif object is NFCharacterSheet:
-		character_map.erase(object.resource_path)
+		remove_character(object.resource_path)
 		editor_view.characters.filesystem_resource_removed(object)
 	elif object is NFPhraseMap:
 		editor_view.phrase_maps.filesystem_resource_removed(object)
@@ -752,23 +771,25 @@ func _on_scan_confirmed(dialog: ConfirmationDialog) -> void:
 	EditorInterface.popup_dialog_centered(dir_access)
 	
 	var result: Array = await dir_access.dialog_finished
-	
-	if result[0] and DirAccess.dir_exists_absolute(result[1]):
-		var log_msg: String = ""
-		var found_files: Dictionary[String, StringName] = discover_character_sheets(result[1])
-		
-		if found_files.is_empty():
-			log_msg = "Scan finished. No character files found."
-		else:
-			character_map.merge(found_files, true)
-			log_msg = "Scan Finished. %s character file(s) found." % found_files.size()
-			
-		NFPluginGameHandler._log_msg(
-				"plugin",
-				log_msg)
-	
 	dialog.queue_free()
 	dir_access.queue_free()
+	
+	if not result[0] or not DirAccess.dir_exists_absolute(result[1]):
+		return
+	
+	var log_msg: String = ""
+	var found_files: Dictionary[String, StringName] = discover_character_sheets(result[1])
+	
+	if found_files.is_empty():
+		log_msg = "Scan finished. No character files found."
+	else:
+		for path in found_files:
+			set_character_entry(path, found_files[path], FileAccess.get_modified_time(path))
+		log_msg = "Scan Finished. %s character file(s) found." % found_files.size()
+		
+	NFPluginGameHandler._log_msg(
+			"plugin",
+			log_msg)
 
 
 func _on_scan_canceled(dialog: ConfirmationDialog) -> void:
@@ -776,26 +797,46 @@ func _on_scan_canceled(dialog: ConfirmationDialog) -> void:
 
 
 func save_character_paths() -> void:
-	var valid_characters: Dictionary[String, StringName] = {}
+	if tracked_characters.is_empty():
+		return
 	
-	for res_path in character_map.keys():
-		if not ResourceLoader.exists(res_path):
+	var new_entries: Array[Dictionary] = []
+	var performed_changes: bool = false
+	
+	for entry in tracked_characters:
+		if not ResourceLoader.exists(entry["path"]):
+			performed_changes = true
 			continue
-		var data: Dictionary = parse_character_file(res_path)
 		
-		if data["is_character"]:
-			valid_characters[res_path] = data["id"]
+		var file_timestamp: int = FileAccess.get_modified_time(entry["path"])
+		if file_timestamp == entry["timestamp"]:
+			new_entries.append(entry)
+			continue
+		else:
+			var data: Dictionary = parse_character_file(entry["path"])
+			if data["is_character"]:
+				var new_entry: Dictionary[String, Variant] = {
+					"path": entry["path"],
+					"character_id": data["id"],
+					"timestamp": file_timestamp}
+				new_entries.append(new_entry)
+			performed_changes = true
 	
-	if valid_characters != character_map:
-		character_map.assign(valid_characters)
+	if not performed_changes:
+		return
+	
+	tracked_characters.assign(new_entries)
 	
 	var character_cfg: ConfigFile = ConfigFile.new()
-	character_cfg.set_value("RUNTIME", "CharacterMap", valid_characters)
-	if character_cfg.save("user://nexus_forge/persona_settings.cfg") != OK:
+	character_cfg.set_value("RUNTIME", "CharacterMap", new_entries)
+	if character_cfg.save("user://nexus_forge/persona_settings.cfg") == OK:
+		tracker_edited = false
+	else:
 		NFPluginGameHandler._log_msg(
 				"plugin",
 				"Failed saving character config to user://nexus_forge/persona_settings.cfg",
 				NFPluginGameHandler._LogLevel.WARNING)
+	
 
 
 func discover_character_sheets(on_path: String = "") -> Dictionary[String, StringName]:
@@ -864,3 +905,62 @@ func parse_character_file(file_path: String, id_property: String = "id") -> Dict
 					return data
 	
 	return data
+
+
+func scan_for_character_changes() -> void:
+	for idx in range(tracked_characters.size() - 1, -1, -1):
+		if FileAccess.file_exists(tracked_characters[idx]["path"]):
+			var dict: Dictionary = tracked_characters[idx]
+			var timestamp: int = FileAccess.get_modified_time(dict["path"])
+			if timestamp != dict["timestamp"]:
+				var char_data = parse_character_file(dict["path"])
+				if char_data["is_character"]:
+					dict["timestamp"] = timestamp
+					dict["character_id"] = char_data["id"]
+				else:
+					tracked_characters.remove_at(idx)
+				tracker_edited = true
+		else:
+			tracked_characters.remove_at(idx)
+			tracker_edited = true
+
+
+func set_character_entry(path: String, character_id: StringName = &"", timestamp: int = -1) -> void:
+	if not ResourceLoader.exists(path):
+		return
+	
+	for item in tracked_characters:
+		if item["path"] == path:
+			if item["character_id"] != character_id:
+				item["character_id"] = character_id
+				tracker_edited = true
+			
+			if 0 < timestamp:
+				if item["timestamp"] != timestamp:
+					tracker_edited = true
+					item["timestamp"] = timestamp
+			
+			return
+	
+	var new_entry: Dictionary[String, Variant] = {
+		"path": path,
+		"character_id": character_id,
+		"timestamp": FileAccess.get_modified_time(path) if timestamp < 0 else timestamp}
+	tracked_characters.append(new_entry)
+	tracker_edited = true
+
+
+func change_character_path(old_path: String, new_path: String) -> void:
+	for item in tracked_characters:
+		if item["path"] == old_path:
+			item["path"] = new_path
+			tracker_edited = true
+			return
+
+
+func remove_character(path: String) -> void:
+	for idx in range(tracked_characters.size()):
+		if tracked_characters[idx]["path"] == path:
+			tracked_characters.remove_at(idx)
+			tracker_edited = true
+			return
