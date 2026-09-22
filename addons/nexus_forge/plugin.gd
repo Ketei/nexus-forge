@@ -797,9 +797,6 @@ func _on_scan_canceled(dialog: ConfirmationDialog) -> void:
 
 
 func save_character_paths() -> void:
-	if tracked_characters.is_empty():
-		return
-	
 	var new_entries: Array[Dictionary] = []
 	var performed_changes: bool = false
 	
@@ -822,10 +819,11 @@ func save_character_paths() -> void:
 				new_entries.append(new_entry)
 			performed_changes = true
 	
-	if not performed_changes:
+	if not performed_changes and not tracker_edited:
 		return
 	
-	tracked_characters.assign(new_entries)
+	if performed_changes:
+		tracked_characters.assign(new_entries)
 	
 	var character_cfg: ConfigFile = ConfigFile.new()
 	character_cfg.set_value("RUNTIME", "CharacterMap", new_entries)
