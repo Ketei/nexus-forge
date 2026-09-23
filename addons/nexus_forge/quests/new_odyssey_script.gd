@@ -19,6 +19,14 @@ var selected_objective: StringName = &""
 
 var _open_files: Dictionary[int, Dictionary] = {}
 var _class_update_signaler: RefCounted = null
+var _unsaved: bool = false:
+	set(u):
+		if quest_resource != null:
+			_open_files[quest_resource.get_instance_id()]["unsaved"] = u
+	get:
+		if quest_resource == null:
+			return false
+		return _open_files[quest_resource.get_instance_id()]["unsaved"]
 
 @onready var obj_req_chk_bx: CheckBox = $MainContainer/DataContainer/DataContainer/LogicContainer/TargetLogicContainer/ObjReqChkBx
 @onready var crumbs_label: Label = $MainContainer/TitleContainer/CrumbsContainer/CrumbsLabel
@@ -518,6 +526,13 @@ func plugin_handle_resource(quest: NFQuest) -> void:
 	quest_tree.select_quest(false)
 
 
+func close_current_quest() -> void:
+	if quest_resource == null:
+		return
+	var id: int = quest_resource.get_instance_id()
+	_on_quest_close_pressed(id)
+
+
 func display_quest(quest_id: int) -> void:
 	if not _open_files.has(quest_id) or _open_files[quest_id]["resource"] == quest_resource:
 		return
@@ -687,7 +702,10 @@ func load_objective_data(stage_id: StringName, objective_id: StringName) -> void
 
 
 func has_unsaved_files() -> bool:
-	return files_tree.has_unsaved_files()
+	for id in _open_files:
+		if _open_files[id]["unsaved"]:
+			return true
+	return false
 
 
 func save_resource() -> void:
@@ -695,12 +713,15 @@ func save_resource() -> void:
 		save_current_quest()
 		_open_files[quest_resource.get_instance_id()]["structure"] = quest_tree.get_quest_structure()
 	
-	for unsaved_entries:Dictionary in files_tree.get_unsaved_files():
-		var file: NFQuest = _open_files[unsaved_entries["id"]]["resource"]
+	for id in _open_files:
+		if not _open_files[id]["unsaved"]:
+			continue
+		var file: NFQuest = _open_files[id]["resource"]
 		_save_cfg_for(
 			file.resource_path,
-			_open_files[unsaved_entries["id"]]["structure"])
+			_open_files[id]["structure"])
 		ResourceSaver.save(file)
+		_open_files[id]["unsaved"] = false
 	files_tree.set_all_saved()
 
 
@@ -760,7 +781,8 @@ func add_quest_resource(quest: NFQuest) -> void:
 		"resource": quest,
 		"quest_undo": quest_undo,
 		"data_undo": data_undo,
-		"structure": structure}
+		"structure": structure,
+		"unsaved": false}
 	
 	files_tree.add_quest(
 			instance_id,
@@ -810,6 +832,7 @@ func _add_quest_requirement_data_pressed(data: Variant) -> void:
 
 
 func _on_something_changed(_arg = null) -> void:
+	_unsaved = true
 	files_tree.set_current_save_required(true)
 
 
@@ -931,8 +954,11 @@ func _on_search_requirement_text_changed(text: String) -> void:
 	obj_req_tree.search_data(clean_text)
 
 
-func _on_quest_close_pressed(quest_id: int, requires_save: bool) -> void:
-	if requires_save:
+func _on_quest_close_pressed(quest_id: int) -> void:
+	if not _open_files.has(quest_id):
+		return
+	
+	if _open_files[quest_id]["unsaved"]:
 		var confirm_dialog: AcceptDialog = load("res://addons/nexus_forge/dialogs/unsaved_dialog_script.gd").new()
 		confirm_dialog.dialog_text = "File has unsaved changes. Save before closing?"
 		confirm_dialog.title = "Odyssey"

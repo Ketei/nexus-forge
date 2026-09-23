@@ -3,7 +3,7 @@ extends Tree
 
 
 signal quest_selected(quest_id: int)
-signal quest_close_pressed(quest_id: int, requires_save: bool)
+signal quest_close_pressed(quest_id: int)
 
 
 func ready_plugin() -> void:
@@ -18,7 +18,7 @@ func add_quest(quest_id: int, resource_path: String, select: bool = false, emit_
 	
 	quest_item.set_text(0, resource_path.get_file().get_basename())
 	quest_item.set_tooltip_text(0, resource_path)
-	quest_item.set_metadata(0, {"id": quest_id, "path": resource_path, "save_required": false, "structure": NFArrayUtils.create_typed(TYPE_DICTIONARY)})
+	quest_item.set_metadata(0, {"id": quest_id, "path": resource_path, "save_required": false})
 	
 	quest_item.add_button(
 			0,
@@ -118,22 +118,6 @@ func select_quest(quest_id: int, emit_select: bool = true) -> void:
 			return
 
 
-func has_unsaved_files() -> bool:
-	for item in get_root().get_children():
-		if item.get_metadata(0)["save_required"]:
-			return true
-	return false
-
-
-func get_unsaved_files() -> Array[Dictionary]:
-	var files: Array[Dictionary] = []
-	for item in get_root().get_children():
-		if item.get_metadata(0)["save_required"]:
-			var metadata: Dictionary = item.get_metadata(0)
-			files.append({"id": metadata["id"], "structure": metadata["structure"]})
-	return files
-
-
 func search_for(text: String) -> void:
 	var empty: bool = text.is_empty()
 	for item in get_root().get_children():
@@ -154,6 +138,4 @@ func _on_button_clicked(item: TreeItem, _column: int, id: int, mouse_button_inde
 	
 	if id == 0:
 		var metadata: Dictionary = item.get_metadata(0)
-		quest_close_pressed.emit(
-				metadata["id"],
-				metadata["save_required"])
+		quest_close_pressed.emit(metadata["id"])

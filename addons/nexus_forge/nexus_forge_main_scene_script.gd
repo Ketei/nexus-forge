@@ -42,17 +42,19 @@ func _input(event: InputEvent) -> void:
 				else:
 					tool_tab_bar.current_tab = posmod(tool_tab_bar.current_tab + 1, tool_count)
 				get_viewport().set_input_as_handled()
-		elif event.keycode == KEY_W:
-			if event.ctrl_pressed:
-				if discourse != null and discourse.visible:
-					discourse.close_active_conversation()
-					get_viewport().set_input_as_handled()
-				elif characters != null and characters.visible:
-					characters.close_active_character()
-					get_viewport().set_input_as_handled()
-				elif phrase_maps != null and phrase_maps.visible:
-					phrase_maps.close_active_map()
-					get_viewport().set_input_as_handled()
+		elif event.ctrl_pressed and event.keycode == KEY_W:
+			if current_tab == discourse.get_index():
+				discourse.close_active_conversation()
+				get_viewport().set_input_as_handled()
+			elif current_tab == characters.get_index():
+				characters.close_active_character()
+				get_viewport().set_input_as_handled()
+			elif current_tab == quests.get_index():
+				quests.close_current_quest()
+				get_viewport().set_input_as_handled()
+			elif current_tab == phrase_maps.get_index():
+				phrase_maps.close_active_map()
+				get_viewport().set_input_as_handled()
 		elif event.ctrl_pressed and event.keycode == KEY_Z:
 			var focused_node: Control = get_viewport().gui_get_focus_owner()
 			if focused_node != null:
@@ -87,8 +89,6 @@ func _input(event: InputEvent) -> void:
 
 
 func ready_plugin(use_discourse: bool, use_characters: bool, use_species: bool, use_stats: bool, use_skills: bool, use_traits: bool, use_items: bool, use_currencies: bool, use_recipes: bool, use_quests: bool, use_phrases: bool, discourse_base_lang: String, paths_obj_reference: RefCounted) -> void:
-	set_process_input(true)
-	
 	variables = load("res://addons/nexus_forge/variables/variables_main.tscn").instantiate()
 	
 	if use_discourse:
