@@ -39,7 +39,7 @@ func _get_issues() -> PackedStringArray:
 	var issues: PackedStringArray = []
 	if is_orphan():
 		issues.append("Warning: Node is orphan.")
-	if id_line.is_empty():
+	if id_line.text.is_empty():
 		issues.append("Error: Waypoint has no set ID.")
 	return issues
 

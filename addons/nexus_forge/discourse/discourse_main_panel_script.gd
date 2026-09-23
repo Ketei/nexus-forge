@@ -1417,6 +1417,9 @@ func _on_change_locale_group_pressed() -> void:
 	line_confirmation.set_line_text(active_conversation.locale_group)
 	
 	EditorInterface.popup_dialog_centered(line_confirmation)
+	line_confirmation.grab_text_focus()
+	line_confirmation.select_all_text()
+	line_confirmation.caret_to_end()
 	var result: Array = await line_confirmation.dialog_finished
 	line_confirmation.queue_free()
 	

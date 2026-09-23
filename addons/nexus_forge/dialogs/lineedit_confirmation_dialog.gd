@@ -1,8 +1,19 @@
+@tool
 extends ConfirmationDialog
 
 
 signal dialog_finished(success: bool, line_selected: String)
 
+
+enum _ErrorStates {
+	NO_ISSUE = 0,
+	EMPTY = 1,
+	BLACKLIST_WORD = 2,
+	BLACKLIST_CHAR = 4,
+}
+
+var _error_flags: int = -1
+var _bypass_validation: bool = false
 var _dialog_line: LineEdit
 var _info_label: TextureRect
 var _ok_button: Button
@@ -15,14 +26,19 @@ var line_placeholder_text: String:
 var text_blacklist: Array[String] = []
 var character_blacklist: PackedStringArray = []
 var strip_edges: bool = true
-var use_blacklist: bool = false
-var allow_empty: bool = true
+var use_blacklist: bool = false:
+	set(b):
+		use_blacklist = b
+		validate_bypass()
+var allow_empty: bool = true:
+	set(e):
+		allow_empty = e
+		validate_bypass()
 
 var error_line_empty_msg: String = "Field can't be empty"
 var error_line_blacklist_word_msg: String = "Word is blacklisted"
 var error_line_blacklist_character_msg: String = "A character is blacklisted"
 var error_line_ok: String = "No issues found"
-
 
 func _init() -> void:
 	_dialog_line = LineEdit.new()
@@ -45,7 +61,7 @@ func _ready() -> void:
 	new_container.add_child(_dialog_line)
 	new_container.add_child(_info_label)
 	
-	validate_text()
+	validate_bypass()
 	
 	_dialog_line.text_changed.connect(_on_text_changed)
 	_dialog_line.text_submitted.connect(_on_text_submitted)
@@ -54,6 +70,8 @@ func _ready() -> void:
 
 
 func _on_text_changed(text: String) -> void:
+	if _bypass_validation:
+		return
 	validate_text()
 
 
@@ -65,22 +83,48 @@ func validate_text() -> void:
 		if character in character_blacklist:
 			invalid_char = true
 			break
+	
+	var error_flags: int = 0
+	var error_block: PackedStringArray = []
+	
 	if stripped_text.is_empty() and not allow_empty:
-		_ok_button.disabled = true
-		_info_label.texture = preload("res://addons/nexus_forge/icons/error_red.svg")
-		_info_label.tooltip_text = error_line_empty_msg
-	elif use_blacklist and stripped_text in text_blacklist:
-		_ok_button.disabled = true
-		_info_label.texture = preload("res://addons/nexus_forge/icons/error_red.svg")
-		_info_label.tooltip_text = error_line_blacklist_word_msg
-	elif invalid_char:
-		_ok_button.disabled = true
-		_info_label.texture = preload("res://addons/nexus_forge/icons/error_red.svg")
-		_info_label.tooltip_text = error_line_blacklist_character_msg
-	elif _ok_button.disabled:
+		error_flags += _ErrorStates.EMPTY
+		error_block.append(error_line_empty_msg)
+	if use_blacklist and stripped_text in text_blacklist:
+		error_flags += _ErrorStates.BLACKLIST_WORD
+		error_block.append(error_line_blacklist_word_msg)
+	if invalid_char:
+		error_flags += _ErrorStates.BLACKLIST_CHAR
+		error_block.append(error_line_blacklist_character_msg)
+	
+	if error_flags == _error_flags:
+		return
+	
+	_error_flags = error_flags
+	
+	if error_flags == _ErrorStates.NO_ISSUE:
 		_info_label.texture = preload("res://addons/nexus_forge/icons/check_green.svg")
 		_info_label.tooltip_text = error_line_ok
-		_ok_button.disabled = false
+		if _ok_button.disabled:
+			_ok_button.disabled = false
+	else:
+		_info_label.texture = preload("res://addons/nexus_forge/icons/error_red.svg")
+		_info_label.tooltip_text = "\n".join(error_block)
+		if not _ok_button.disabled:
+			_ok_button.disabled = true
+
+
+func validate_bypass() -> void:
+	if use_blacklist or not allow_empty or not character_blacklist.is_empty():
+		_bypass_validation = false
+		if not _info_label.visible:
+			_info_label.visible = true
+		validate_text()
+	else:
+		_error_flags = -1
+		_bypass_validation = true
+		if _info_label.visible:
+			_info_label.visible = false
 
 
 func _on_text_submitted(text: String) -> void:
@@ -117,3 +161,7 @@ func set_line_text(text: String, caret_pos: int = -1) -> void:
 
 func select_all_text() -> void:
 	_dialog_line.select_all()
+
+
+func caret_to_end() -> void:
+	_dialog_line.caret_column = _dialog_line.text.length()
