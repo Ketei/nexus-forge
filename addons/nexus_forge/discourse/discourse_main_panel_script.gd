@@ -1474,6 +1474,13 @@ func _on_conversation_close_pressed(dialog_id: int) -> void:
 	close_dialog_resource(dialog_id)
 
 
+func close_active_conversation() -> void:
+	if active_conversation == null:
+		return
+	
+	_on_conversation_close_pressed(active_conversation.get_instance_id())
+
+
 func close_dialog_resource(dialog_id: int, open_previous: bool = true) -> void:
 	if not _open_files.has(dialog_id):
 		return
