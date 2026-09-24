@@ -268,7 +268,7 @@ static func erase_all(array: Array, value: Variant) -> void:
 	var idx: int = array.rfind(value)
 	while 0 <= idx:
 		array.remove_at(idx)
-		idx = array.rfind(value)
+		idx = array.rfind(value, idx - 1)
 
 
 ## Checks if the [param index] is within bounds of the [param array],
