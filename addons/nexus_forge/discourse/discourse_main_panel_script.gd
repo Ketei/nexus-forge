@@ -861,7 +861,7 @@ func add_locale(locale_code: String) -> void:
 	var found: bool = false
 	
 	for idx in range(submenu.item_count):
-		if submenu.get_item_metadata(0) == region:
+		if submenu.get_item_metadata(idx) == region:
 			found = true
 			break
 	
@@ -2915,7 +2915,7 @@ func save_layouts() -> void:
 		var current_state: Dictionary = _get_file_current_state(file_id)
 		if _open_files[file_id]["initial_state"] != current_state:
 			save_layout_of(file_id)
-			_open_files[file_id]["current_state"] = current_state
+			_open_files[file_id]["initial_state"] = current_state
 
 
 func save_layout_of(dialog_id: int) -> void:
@@ -5156,7 +5156,7 @@ func _on_nodes_removed(action: String, graph_nodes_data: Dictionary[StringName, 
 func _do_remove_nodes(action_data: Dictionary) -> void:
 	var uuids_to_remove: Array[StringName] = NFArrayUtils.create_typed(
 			TYPE_STRING_NAME,
-			action_data.keys())
+			action_data["graph_nodes_data"].keys())
 	
 	discourse_graph_edit.remove_nodes(uuids_to_remove)
 	

@@ -447,8 +447,8 @@ func sort_all() -> void:
 			objectives.sort_custom(_sort_tree_alphabetically)
 			if objectives[0] != stage_item.get_first_child():
 				objectives[0].move_before(stage_item.get_first_child())
-				for objective_idx in range(1, objective_count):
-					objectives[objective_idx].move_after(objectives[objective_idx - 1])
+			for objective_idx in range(1, objective_count):
+				objectives[objective_idx].move_after(objectives[objective_idx - 1])
 
 
 func clear_quests() -> void:

@@ -92,7 +92,7 @@ func create_stat(stat_id: StringName, type: int) -> void:
 ## [code]TYPE_FLOAT[/code].[br]
 ## Returns [code]TYPE_NIL[/code] if the stat doesn't exist.
 func stat_type(stat_id: StringName) -> int:
-	if not _stat_entries.has(stat_id):
+	if _stat_entries.has(stat_id):
 		return _stat_entries[stat_id].type
 	return TYPE_NIL
 

@@ -4,9 +4,10 @@ extends RefCounted
 ##
 ## Utility methods for processing arrays.
 ## [br][br]
-## [b]Note:[/b] For maximum performance in tight loops (e.g.
-##  [method Object._process], or heavy procedural generation), consider
-## copying the logic of the method inline.
+## [b]Note:[/b] For best performance in tight loops (e.g.
+## [method Object._process], or heavy procedural generation), consider
+## copying the logic of the methods inline where you need it.
+
 
 ## Removes a random item on the array and returns it.
 static func pop_random(from: Array) -> Variant:
@@ -272,7 +273,7 @@ static func erase_all(array: Array, value: Variant) -> void:
 
 
 ## Checks if the [param index] is within bounds of the [param array],
-## supports GDScript's negative indexing.
+## supports negative indexing.
 static func is_valid_index(array: Array, index: int) -> bool:
 	var size: int = array.size()
 	return -size <= index and index < size

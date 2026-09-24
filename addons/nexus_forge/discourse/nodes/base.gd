@@ -890,12 +890,7 @@ func set_field_visible(field_id: StringName, field_visible: bool) -> void:
 	if field_id.is_empty():
 		return
 		
-	var field = null
-	
-	for child in get_children():
-		if child.name == field_id:
-			field = child
-			break
+	var field = get_field(field_id)
 	
 	if field == null:
 		return
@@ -905,9 +900,9 @@ func set_field_visible(field_id: StringName, field_visible: bool) -> void:
 		return
 	
 	var slot: int = field.get_index()
-	var in_port: int = field.get_meta(&"input_slot")
-	var out_port: int = field.get_meta(&"input_slot")
-	if is_slot_enabled_left(slot) and has_any_input(in_port):
+	var in_port: int = field.get_meta(&"input_slot", -1)
+	var out_port: int = field.get_meta(&"output_slot", -1)
+	if -1 < in_port and is_slot_enabled_left(slot) and has_any_input(in_port):
 		var from_graph: DiscourseGraphNode = get_node_connected_to_port(PortMode.INPUT, in_port)
 		disconnect_requested.emit(
 			from_graph.get_node_uuid(),
@@ -916,7 +911,7 @@ func set_field_visible(field_id: StringName, field_visible: bool) -> void:
 			in_port,
 			self)
 		await node_disconnected
-	if is_slot_enabled_right(slot) and has_any_output(out_port):
+	if -1 < out_port and is_slot_enabled_right(slot) and has_any_output(out_port):
 		var to_graph: DiscourseGraphNode = get_node_connected_to_port(PortMode.OUTPUT, out_port)
 		disconnect_requested.emit(
 			get_node_uuid(),
@@ -931,11 +926,7 @@ func set_field_visible(field_id: StringName, field_visible: bool) -> void:
 func has_field(field_id: StringName) -> bool:
 	if field_id.is_empty():
 		return false
-	
-	for child in get_children():
-		if child.name == field_id:
-			return true
-	return false
+	return has_node(NodePath(field_id))
 
 
 func has_any_field_output(field_id: StringName) -> bool:
@@ -964,7 +955,7 @@ func has_any_field_input(field_id: StringName) -> bool:
 	if field == null:
 		return false
 	
-	var input_port: int = field.get_meta(&"output_slot", -1)
+	var input_port: int = field.get_meta(&"input_slot", -1)
 	
 	if input_port <= -1:
 		return false
@@ -975,11 +966,9 @@ func has_any_field_input(field_id: StringName) -> bool:
 func get_field(field_id: StringName) -> Control:
 	if field_id.is_empty():
 		return null
+	var child: Control = get_node_or_null(NodePath(field_id))
 	
-	for node:Control in get_children():
-		if node.name == field_id:
-			return node.get_child(1)
-	return null
+	return null if child == null else child.get_child(1)
 
 
 func get_index_field(field_index: int) -> Control:

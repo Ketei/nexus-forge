@@ -1281,12 +1281,12 @@ func _on_phrase_text_focus_exited(field: TextEdit) -> void:
 	
 	var phrase_key_line: LineEdit = field.get_parent().get_child(1)
 	var phrase_key: StringName = StringName(phrase_key_line.get_meta(&"old_value"))
-	
 	var old_data: Dictionary = map._phrases.get(phrase_key, {}).duplicate(true)
 	
 	undo.create_action("Edit Phrase Text")
 	undo.add_do_method(_do_update_phrase_text.bind(phrase_key, new_value))
 	undo.add_undo_method(_do_update_phrase_text.bind(phrase_key, old_value, old_data))
+	undo.commit_action()
 
 
 func _on_case_edit_toggled(is_toggled: bool, line: LineEdit) -> void:
