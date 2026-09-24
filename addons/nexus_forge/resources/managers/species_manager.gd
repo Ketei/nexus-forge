@@ -253,8 +253,8 @@ func species_has_skill(species_id: StringName, skill_id: StringName) -> bool:
 
 ## Erases the assigned [param skill_id] from the [param species_id].
 func erase_species_skill(species_id: StringName, skill_id: StringName) -> void:
-	if _species.has(species_id) and _species[species_id]["skills"].has(skill_id):
-		_species[species_id]["skills"].erase(skill_id)
+	if _species.has(species_id) and _species[species_id]["skills"].erase(skill_id):
+		_species[species_id].emit_changed()
 
 
 ## Sets [param trait_id] to [param value] on the [param species_id].

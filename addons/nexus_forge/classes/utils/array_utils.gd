@@ -1,7 +1,12 @@
 class_name NFArrayUtils
 extends RefCounted
 ## A collection of static functions to modify arrays.
-
+##
+## Utility methods for processing arrays.
+## [br][br]
+## [b]Note:[/b] For maximum performance in tight loops (e.g.
+##  [method Object._process], or heavy procedural generation), consider
+## copying the logic of the method inline.
 
 ## Removes a random item on the array and returns it.
 static func pop_random(from: Array) -> Variant:
@@ -86,7 +91,7 @@ static func insert_sorted_desc(array: Array, item: Variant) -> void:
 	array.insert(low, item)
 
 
-## Simple sorting fucntion for [method Array.sort_custom][br]
+## Simple sorting function for [method Array.sort_custom][br]
 ## Does a simple [code]item_b < item_a[/code][br]
 ## Usage: [code]Array.sort_custom(NFArrayUtils.sort_custom_desc)[/code]
 static func sort_custom_desc(item_a: Variant, item_b: Variant) -> bool:
@@ -163,7 +168,7 @@ static func substract_array(from: Array, substract: Array) -> void:
 
 ## Returns an array containing the unique items from both arrays.[br]
 ## [code]difference([a,b], [b,c])[/code] = [code][a, c][/code]
-static func symetric_difference(array_a: Array, array_b: Array) -> Array:
+static func symmetric_difference(array_a: Array, array_b: Array) -> Array:
 	var difference_items: Array = []
 	for item in array_a:
 		if not array_b.has(item):
@@ -180,17 +185,14 @@ static func symetric_difference(array_a: Array, array_b: Array) -> Array:
 ## of not preserving the order of items in the array.
 static func swap_remove(array: Array, index: int) -> void:
 	var size: int = array.size()
-	
-	if size == 0 or index < 0 or size <= index:
+	if index < -size or size <= index:
 		return
 	
-	if 2 <= size:
-		array[index] = array[size - 1]
-	
-	array.resize(size - 1)
+	array[index] = array[-1]
+	array.remove_at(-1)
 
 
-## Costructor for an array with default parameters set.
+## Constructor for an array with default parameters set.
 static func create_typed(type: int, from: Array = [], class_string: StringName = &"", script: Variant = null) -> Array:
 	return Array(from, type, class_string, script)
 
@@ -251,18 +253,25 @@ static func has_any(array: Array, has_any_in: Array) -> bool:
 	return false
 
 ## Finds and removes the first occurrence of [param value] from the [param array]
-## beggining at the end of the list. If value does not exist in the array,
+## beginning at the end of the list. If value does not exist in the array,
 ## nothing happens.[br]
 ## Works exactly like [method Array.erase] but erases from the end to the
-## beggining.
+## beginning.
 static func erase_last(array: Array, value: Variant) -> void:
 	var erase_idx: int = array.rfind(value)
 	if 0 <= erase_idx:
 		array.remove_at(erase_idx)
 
 
-## Finds and removes all ocourrences of [param value] from the [param array].
+## Finds and removes all occurrences of [param value] from the [param array].
 static func erase_all(array: Array, value: Variant) -> void:
 	var idx: int = array.rfind(value)
 	while 0 <= idx:
 		array.remove_at(idx)
+
+
+## Checks if the [param index] is within bounds of the [param array],
+## supports GDScript's negative indexing.
+static func is_valid_index(array: Array, index: int) -> bool:
+	var size: int = array.size()
+	return -size <= index and index < size

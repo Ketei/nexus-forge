@@ -347,8 +347,6 @@ func get_valid_id(desired: String, skip_item: StringName = &"") -> String:
 			continue
 		all_ids[tree.get_text(0)] = null
 	
-	all_ids.erase(skip.get_text(0))
-	
 	while all_ids.has(modified):
 		iteration += 1
 		modified = base + str(iteration)

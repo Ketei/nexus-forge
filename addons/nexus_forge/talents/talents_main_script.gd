@@ -862,7 +862,7 @@ func _on_stat_resource_dropped(resource: Resource, panel: Control) -> void:
 	panel.visible = false
 	panel.queue_free()
 	$MainContainer/StatSkillContainer/StatsPanel/StatsContainer.visible = true
-	load_skills_resource()
+	load_stats_resource()
 
 
 func _on_add_stat_data_pressed(data_name: String, data: Variant) -> void:
@@ -1066,7 +1066,7 @@ func select_skill(skill_id: StringName) -> bool:
 		if skill_opt_btn.get_item_metadata(idx) == skill_id:
 			skill_opt_btn.select(idx)
 			missing = false
-			return true
+	
 	if missing:
 		return false
 	if not loaded_skill.is_empty():

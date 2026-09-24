@@ -256,8 +256,8 @@ func quest_success_status(quest_id: StringName) -> SuccessStatus:
 ## If the quest isn't active or the stage hasn't been completed yet it'll return
 ## [enum SuccessStatus.UNKNOWN].
 func stage_success_status(quest_id: StringName, stage_id: StringName) -> SuccessStatus:
-	if Log.has(quest_id):
-		return Log.get_quest_entry(quest_id).get_entry_status(stage_id)
+	if Log.has_quest(quest_id):
+		return Log.get_quest(quest_id).get_status(stage_id)
 	return SuccessStatus.UNKNOWN
 
 
@@ -265,8 +265,8 @@ func stage_success_status(quest_id: StringName, stage_id: StringName) -> Success
 ## If the quest isn't active or the objective hasn't been completed yet it'll return
 ## [enum SuccessStatus.UNKNOWN].
 func objective_success_status(quest_id: StringName, stage_id: StringName, objective_id: StringName) -> SuccessStatus:
-	if Log.has_stage_entry(quest_id, stage_id):
-		return Log.get_stage_entry(quest_id, stage_id).get_entry_status(objective_id)
+	if Log.has_stage(quest_id, stage_id):
+		return Log.get_stage(quest_id, stage_id).get_status(objective_id)
 	return SuccessStatus.UNKNOWN
 
 
@@ -353,12 +353,13 @@ func complete_stage(quest_id: StringName, stage_id: StringName, success: bool) -
 		return
 	
 	var entry: NFQuestEntry = _active_quests[quest_id]
-	var next_stage: StringName = entry.resource.get_stage(stage_id).success_stage_id
-	
-	_set_stage_complete(quest_id, stage_id, true)
-	stage_completed.emit(quest_id, stage_id, true)
+	var stage = entry.resource.get_stage(stage_id)
+	var next_stage: StringName = stage.success_stage_id if success else stage.failure_stage_id
 	
 	if next_stage.is_empty():
+		# Second parameter is if the quest was completed successfully.
+		# The automatic progression system has no idea when to classify a
+		# quest as "failed", so we pass true to set as successful.
 		complete_quest(quest_id, true)
 	else:
 		if entry.set_stage(next_stage, _static_progress):

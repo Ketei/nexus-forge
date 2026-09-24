@@ -75,16 +75,19 @@ func set_recipe_data(recipe_id: StringName, data_key: StringName, data: Variant)
 ## Sets the custom data of an input ingredient in the [param recipe_id]
 ## to [param data]. If param data is [code]null[/code] then the key is erased.
 func set_recipe_input_item_data(recipe_id: StringName, ingredient_idx: int, data_key: String, data: Variant) -> void:
-	if not _recipe_sheets.has(recipe_id):
+	if not _recipe_sheets.has(recipe_id) or _recipe_sheets[recipe_id].input.is_empty():
 		return
 	
-	if ingredient_idx < 0 or not _recipe_sheets[recipe_id].input.size() <= ingredient_idx:
+	var target: Array[NFRecipeItem] = _recipe_sheets[recipe_id].input
+	var size: int = target.size()
+	
+	if ingredient_idx < -size or size <= ingredient_idx:
 		return
 	
 	if typeof(data) == TYPE_NIL:
-		_recipe_sheets[recipe_id].input[ingredient_idx].custom_data.erase(data_key)
+		target[ingredient_idx].custom_data.erase(data_key)
 	else:
-		_recipe_sheets[recipe_id].input[ingredient_idx].custom_data[data_key] = data
+		target[ingredient_idx].custom_data[data_key] = data
 
 
 ## Sets the custom data of an output ingredient in the [param recipe_id]
@@ -93,13 +96,16 @@ func set_recipe_output_item_data(recipe_id: StringName, ingredient_idx: int, dat
 	if not _recipe_sheets.has(recipe_id):
 		return
 	
-	if ingredient_idx < 0 or not _recipe_sheets[recipe_id].output.size() <= ingredient_idx:
+	var target: Array[NFRecipeItem] = _recipe_sheets[recipe_id].output
+	var size: int = target.size()
+	
+	if ingredient_idx < -size or size <= ingredient_idx:
 		return
 	
 	if typeof(data) == TYPE_NIL:
-		_recipe_sheets[recipe_id].output[ingredient_idx].custom_data.erase(data_key)
+		target[ingredient_idx].custom_data.erase(data_key)
 	else:
-		_recipe_sheets[recipe_id].output[ingredient_idx].custom_data[data_key] = data
+		target[ingredient_idx].custom_data[data_key] = data
 
 
 ## Clears the custom data from the input ingredient with index [param ingredient_idx]
@@ -108,10 +114,12 @@ func clear_recipe_input_item_data(recipe_id: StringName, ingredient_idx: int) ->
 	if not _recipe_sheets.has(recipe_id):
 		return
 	
-	if ingredient_idx < 0 or not _recipe_sheets[recipe_id].input.size() <= ingredient_idx:
+	var target: Array[NFRecipeItem] = _recipe_sheets[recipe_id].input
+	var size: int = target.size()
+	if ingredient_idx < -size or size <= ingredient_idx:
 		return
 	
-	_recipe_sheets[recipe_id].input[ingredient_idx].custom_data.clear()
+	target[ingredient_idx].custom_data.clear()
 
 
 ## Clears the custom data from the output ingredient with index [param ingredient_idx]
@@ -120,10 +128,12 @@ func clear_recipe_output_item_data(recipe_id: StringName, ingredient_idx: int) -
 	if not _recipe_sheets.has(recipe_id):
 		return
 	
-	if ingredient_idx < 0 or not _recipe_sheets[recipe_id].output.size() <= ingredient_idx:
+	var target: Array[NFRecipeItem] = _recipe_sheets[recipe_id].output
+	var size: int = target.size()
+	if ingredient_idx < -size or size <= ingredient_idx:
 		return
 	
-	_recipe_sheets[recipe_id].output[ingredient_idx].custom_data.clear()
+	target[ingredient_idx].custom_data.clear()
 
 
 ## Clears the custom data of [param recipe_id].

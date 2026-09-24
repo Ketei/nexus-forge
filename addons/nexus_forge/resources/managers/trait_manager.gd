@@ -20,7 +20,7 @@ func _init() -> void:
 		base_entry.name = String(trait_id).capitalize()
 		base_entry._flags = NFCatalogEntry._get_flags(false, true)
 		_base_traits[trait_id] = null
-		_trait_entries
+		_trait_entries[trait_id] = base_entry
 	_base_traits.make_read_only()
 
 
