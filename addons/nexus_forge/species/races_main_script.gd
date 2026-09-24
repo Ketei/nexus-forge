@@ -1042,8 +1042,8 @@ func update_skills() -> void:
 	var skill_map: Dictionary[StringName, Control] = {}
 	for skill_node in race_skill_container.get_children():
 		race_skill_container.remove_child(skill_node)
-		if existing_skills.has(skill_node.get_meta(&"skill_id")):
-			skill_map[skill_node.get_meta(&"skill_id")] = skill_node
+		if existing_skills.has(skill_node.get_meta(&"field_id")):
+			skill_map[skill_node.get_meta(&"field_id")] = skill_node
 		else:
 			skill_node.queue_free()
 	
@@ -1082,8 +1082,8 @@ func update_traits() -> void:
 	var trait_map: Dictionary[StringName, Control] = {}
 	for existing_trait in race_traits_container.get_children():
 		race_traits_container.remove_child(existing_trait)
-		if existing_traits.has(existing_trait.get_meta(&"trait_id")):
-			trait_map[existing_trait.get_meta(&"trait_id")] = existing_trait
+		if existing_traits.has(existing_trait.get_meta(&"field_id")):
+			trait_map[existing_trait.get_meta(&"field_id")] = existing_trait
 		else:
 			existing_trait.queue_free()
 	

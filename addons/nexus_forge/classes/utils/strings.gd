@@ -6,13 +6,12 @@ extends RefCounted
 ## Converts the first letter of a string to uppercase, while the rest
 ## are converted to lower case.
 static func capitalize(string_to_cap: String) -> String:
-	var len: int = string_to_cap.length() == 0
-	if string_to_cap.length() == 0:
+	if string_to_cap.is_empty():
 		return ""
-	elif len == 1:
+	elif string_to_cap.length() == 1:
 		return string_to_cap.to_upper()
 	else:
-		return string_to_cap.substr(0, 1).to_upper() + string_to_cap.substr(1).to_lower()
+		return string_to_cap.left(1).to_upper() + string_to_cap.substr(1).to_lower()
 
 
 ## Converts the first and every other letter after a space to uppercase

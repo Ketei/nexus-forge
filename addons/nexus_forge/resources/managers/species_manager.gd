@@ -168,7 +168,7 @@ func set_species_data(species_id: StringName, data_key: StringName, data: Varian
 ## [code]null[/code] if the species isn't registered or key doesn't exist.
 func get_species_data(species_id: StringName, data_key: StringName) -> Variant:
 	if _species.has(species_id) and _species[species_id].custom_data.has(data_key):
-		return _species[species_id]["data"][data_key]
+		return _species[species_id].custom_data[data_key]
 	return null
 
 
@@ -242,7 +242,7 @@ func set_species_skill_value(species_id: StringName, skill_id: StringName, value
 ## [param species_id] or 0 if the skill isn't assigned on the species.
 func get_species_skill_value(species_id: StringName, skill_id: StringName) -> int:
 	if _species.has(species_id) and _species[species_id].skills.has(skill_id):
-		return _species[species_id].skills.get_entry(species_id)
+		return _species[species_id].skills.get_entry(skill_id)
 	return 0
 
 

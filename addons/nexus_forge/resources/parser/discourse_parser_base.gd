@@ -776,7 +776,7 @@ func _get_dialog_locale(dialog_id: String, lang_code: String) -> DiscourseDialog
 		if locale_data != null:
 			locale_data.locale = lang_code
 			locale_data.json_file = filename
-		return 
+		return locale_data
 	else:
 		return null
 

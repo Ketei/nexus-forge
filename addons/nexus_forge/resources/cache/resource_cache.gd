@@ -4,11 +4,25 @@ extends NFLRUCache
 
 ## Returns a resource from cache or loads it into the cache and returns it.
 func get_resource(path: String) -> Resource:
-	if is_in_cache(path):
-		_move_to_newest(_cache_map[path])
-		return get_cache(path)
+	var res: Resource = null
+	var found: bool = false
 	
-	var res: Resource = load(path)
+	if thread_safe:
+		_mutex.lock()
+	
+	if _cache_map.has(path):
+		var link: NFLRUCacheLink = _cache_map[path]
+		_move_to_newest(link)
+		res = link.data
+		found = true
+	
+	if thread_safe:
+		_mutex.unlock()
+	
+	if found:
+		return res
+	
+	res = load(path)
 	
 	if res != null:
 		cache_data(path, res)
@@ -22,10 +36,6 @@ func get_resource(path: String) -> Resource:
 ## a non-empty [member Resource.resource_path]) for it to be cached.
 func cache_resource(resource: Resource):
 	if resource == null or resource.resource_path.is_empty():
-		return
-	
-	if is_in_cache(resource.resource_path):
-		_move_to_newest(_cache_map[resource.resource_path])
 		return
 	
 	cache_data(resource.resource_path, resource)

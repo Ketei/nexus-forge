@@ -844,6 +844,13 @@ func save_current_character() -> void:
 		var max_box: SpinBox = stat.get_meta(&"max")
 		var value_box: SpinBox = stat.get_meta(&"value")
 		
+		if min_box.get_line_edit().is_editing():
+			min_box.apply()
+		if max_box.get_line_edit().is_editing():
+			max_box.apply()
+		if value_box.get_line_edit().is_editing():
+			value_box.apply()
+		
 		sheet_stat.allow_greater = not stat.get_meta(&"use_max").button_pressed
 		sheet_stat.allow_lesser = not stat.get_meta(&"use_min").button_pressed
 		sheet_stat.max_value = max_box.value

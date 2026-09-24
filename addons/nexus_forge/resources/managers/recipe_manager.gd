@@ -56,7 +56,7 @@ func register_recipe(recipe_sheet: NFRecipeSheet) -> void:
 	if recipe_sheet.id.is_empty() or _recipe_sheets.has(recipe_sheet.id):
 		return
 	
-	recipe_sheet[recipe_sheet.id] = recipe_sheet
+	_recipe_sheets[recipe_sheet.id] = recipe_sheet
 	recipe_created.emit(recipe_sheet.id)
 
 
