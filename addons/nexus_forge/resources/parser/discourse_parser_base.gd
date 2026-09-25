@@ -503,11 +503,7 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 						continue
 					signal_args.append(_get_data(argument_key))
 				
-				if signal_args.is_empty():
-					api_signal.emit()
-				else:
-					var emit_callable: Callable = api_signal.emit.bindv(signal_args)
-					emit_callable.call()
+				api_signal.emit.callv(signal_args)
 				
 			return _process_logic(data["next_node"])
 		NodeTypes.MATCH:

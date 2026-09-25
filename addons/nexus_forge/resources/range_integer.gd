@@ -30,16 +30,16 @@ extends NFValueRange
 		value = v
 @export_category("Options")
 ## If value can go above [member max_value].
-@export var allow_greater: bool = false:
+@export var allow_greater: bool = true:
 	set(a):
 		allow_greater = a
-		if a:
+		if not a:
 			_fix_value()
 ## If value can go below [member min_value].
-@export var allow_lesser: bool = false:
+@export var allow_lesser: bool = true:
 	set(a):
 		allow_lesser = a
-		if a:
+		if not a:
 			_fix_value()
 
 

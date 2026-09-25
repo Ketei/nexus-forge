@@ -114,7 +114,7 @@ func remove_character(id: StringName) -> void:
 ## to the end of the execution order.[br]
 ## The [param depends_on] argument can be used to ensure the given callable
 ## executes after another modification. The [param order] will be respected.
-func register_character_modifiers(character_id: StringName, mod_id: StringName, mod_callable: Callable, order: int = -1, depends_on: StringName = &"") -> void:
+func register_character_modifier(character_id: StringName, mod_id: StringName, mod_callable: Callable, order: int = -1, depends_on: StringName = &"") -> void:
 	if character_id.is_empty():
 		NFPluginGameHandler._log_msg(
 				"persona",
@@ -123,7 +123,10 @@ func register_character_modifiers(character_id: StringName, mod_id: StringName, 
 		return
 	
 	if not mod_callable.is_valid():
-		_character_modifiers.erase(character_id)
+		NFPluginGameHandler._log_msg(
+				"persona",
+				"Tried to register a character modifier to an invalid callable. Skipping",
+				NFPluginGameHandler._LogLevel.ERROR)
 		return
 	
 	if _is_dependency_circular(character_id, mod_id, depends_on):
@@ -142,17 +145,27 @@ func register_character_modifiers(character_id: StringName, mod_id: StringName, 
 	var new_mod: bool = not _character_modifiers[character_id]["mods"].has(mod_id)
 	var trigger_sort: bool = true if new_mod else -1 < order and _character_modifiers[character_id]["mods"][mod_id]["order"] != order
 	
-	NFDictUtils.set_nested_value(
-			_character_modifiers,
-			[character_id, "mods", mod_id], # Key path
-			{"order": order, "callable": mod_callable, "dependency": depends_on}, # Value set to
-			true) # Create the mod_id dictionary if it doesn't exist
+	_character_modifiers[character_id]["mods"][mod_id] = {
+		"order": order,
+		"callable": mod_callable,
+		"dependency": depends_on}
 	
 	if new_mod:
 		_character_modifiers[character_id]["order"].append(mod_id)
 	
 	if trigger_sort:
 		_sort_mods(character_id)
+
+
+## Removes a character modifier with the given [param mod_id]
+## from [param character_id] if it exists.
+func unregister_character_modifier(character_id: StringName, mod_id: StringName) -> void:
+	if _character_modifiers.has(character_id) and\
+		_character_modifiers[character_id]["mods"].erase(mod_id):
+		
+		_character_modifiers[character_id]["order"].erase(mod_id)
+		if _character_modifiers[character_id]["mods"].is_empty():
+			_character_modifiers.erase(character_id)
 
 
 func _sort_mods(for_character: StringName) -> void:

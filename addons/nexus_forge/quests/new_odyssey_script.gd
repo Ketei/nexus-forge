@@ -1457,6 +1457,7 @@ func _on_objective_data_created(path: String, index: int , data: Variant, operat
 			selected_stage,
 			selected_objective,
 			path))
+	undo.commit_action()
 	_on_something_changed()
 
 
@@ -1863,7 +1864,7 @@ func _do_duplicate_stage(target: StringName, new_id: StringName) -> void:
 		return
 	
 	var stage_obj: NFQuestStage = quest_resource.get_stage(target)
-	var duplicate_obj: NFQuestStage = quest_resource.duplicate(true)
+	var duplicate_obj: NFQuestStage = stage_obj.duplicate(true)
 	duplicate_obj.id = new_id
 	# --- Godot 4.4 Compatibility code ---
 	# A quest stage saves objectives as subresoruces. To ensure duplication

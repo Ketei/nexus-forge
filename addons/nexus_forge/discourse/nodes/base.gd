@@ -943,7 +943,7 @@ func has_any_field_output(field_id: StringName) -> bool:
 	if output_port <= -1:
 		return false
 	else:
-		return not _input_nodes[output_port]["connections"].is_empty()
+		return not _output_nodes[output_port]["connections"].is_empty()
 
 
 func has_any_field_input(field_id: StringName) -> bool:

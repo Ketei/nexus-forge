@@ -518,13 +518,15 @@ func _get_data(from_uuid: StringName, fallback = null) -> Variant:
 							NFPluginGameHandler._LogLevel.ERROR)
 				elif NexusForge.Discourse.API.has_signal(signal_data["metadata"]["signal"]):
 					var signal_args: Array = []
+					var api_signal: Signal = Signal(
+						NexusForge.Discourse.API,
+						data["metadata"]["signal"])
 					
 					for arg_connection in signal_data["metadata"]["arguments"]:
 						signal_args.append(_get_data(arg_connection["target_node_uuid"]))
 					
-					NexusForge.Discourse.API.emit_signal(
-							signal_data["metadata"]["signal"],
-							signal_args)
+					api_signal.emit.callv(signal_args)
+					
 					signal_emitted.emit(signal_data["metadata"]["signal"], signal_args)
 				else:
 					NFPluginGameHandler._log_msg(
@@ -832,7 +834,7 @@ func refresh() -> void:
 	
 	if result["type"] == NodeTypes.DIALOG:
 		dialog_reached.emit(result["data"])
-	elif result["tyle"] == NodeTypes.CHOICES:
+	elif result["type"] == NodeTypes.CHOICES:
 		choices_reached.emit(result["data"])
 
 

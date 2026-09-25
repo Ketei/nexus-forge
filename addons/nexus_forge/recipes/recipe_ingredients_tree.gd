@@ -916,7 +916,7 @@ func get_ingredient_data(index: int) -> Dictionary:
 
 func change_item_id(from: StringName, to: StringName) -> void:
 	for item in get_root().get_children():
-		if item.get_metadata(0) == from:
+		if item.get_metadata(0)["id"] == from:
 			item.set_text(0, String(to))
 			item.set_metadata(0, to)
 
