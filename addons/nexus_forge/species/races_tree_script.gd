@@ -88,15 +88,17 @@ func _gui_input(event: InputEvent) -> void:
 			if selected == null:
 				return
 			
+			var species_id: StringName = selected.get_metadata(0)["id"]
+			
 			if selected.get_metadata(0)["is_pointer"]: # We're pointing. Turn hybrid normal
-				var species_id: StringName = selected.get_metadata(0)["id"]
-				var dominant_species: StringName = _hybrid_pointers[species_id]["dom"]
-				var submissive: StringName = _hybrid_pointers[species_id]["sub"]
+				var dominant_species: StringName = get_dominant_gene(species_id)
+				var submissive: StringName = get_recessive_gene(species_id)
+				
 				remove_hybrid_pointer(selected)
-				species_dehibridized.emit(species_id, get_dominant_gene(species_id), dominant_species, submissive)
+				species_dehibridized.emit(species_id, dominant_species, submissive)
 				return
 			
-			erase_species_requested.emit(selected.get_metadata(0)["id"])
+			erase_species_requested.emit(species_id)
 
 
 func dehybridize_species(species: StringName, new_dom: StringName = &"") -> void:
@@ -720,6 +722,7 @@ func get_valid_id(desired: String, skip_item: TreeItem = null) -> String:
 
 func sort_single_item(item: TreeItem) -> void:
 	var before_item: TreeItem = null
+	var parent: TreeItem = item.get_parent()
 	
 	for child in item.get_parent().get_children():
 		if child == item:
@@ -732,8 +735,8 @@ func sort_single_item(item: TreeItem) -> void:
 	if before_item != null:
 		item.move_before(before_item)
 	else:
-		if item.get_index() != item.get_parent().get_child_count() - 1:
-			item.move_after(get_root().get_child(-1))
+		if item.get_index() != parent.get_child_count() - 1:
+			item.move_after(parent.get_child(-1))
 
 
 func clear_species() -> void:

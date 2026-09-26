@@ -43,6 +43,11 @@ extends NFValueRange
 			_fix_value()
 
 
+func _init() -> void:
+	if not allow_greater or not allow_lesser:
+		_fix_value()
+
+
 func _fix_value() -> void:
 	if value < min_value:
 		if allow_lesser == false:

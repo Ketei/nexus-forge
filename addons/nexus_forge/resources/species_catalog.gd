@@ -305,24 +305,24 @@ func register_species(species_sheet: NFSpeciesSheet, subspecies_of: StringName =
 	if species_sheet.stats != null:
 		var stat_block: Dictionary[StringName, int] = NFStatBlock.stats()
 		for stat_id in stat_block.keys():
-			var stat_value = species_sheet.stats.get(stat_id)
-			if stat_value == null or 0 == stat_value:
+			var stat_value: float = species_sheet.stats.get_entry(stat_id)
+			if stat_value == 0:
 				continue
 			stats[stat_id] = stat_value
 	
 	if species_sheet.skills != null:
 		for skill_id in NFSkillSet.skills():
-			var skill_value = species_sheet.skills.get(skill_id)
-			if skill_value == null or 0 == skill_value:
+			var skill_value: int = int(species_sheet.skills.get_entry(skill_id))
+			if skill_value == 0:
 				continue
-			skills[skill_id] = int(skill_value)
+			skills[skill_id] = skill_value
 	
 	if species_sheet.traits != null:
 		for trait_id in NFTraitBlock.traits():
-			var trait_value = species_sheet.traits.get(trait_id)
-			if trait_value == null or 0 == trait_value:
+			var trait_value: int = int(species_sheet.traits.get_entry(trait_id))
+			if trait_value == 0:
 				continue
-			traits[trait_id] = int(trait_value)
+			traits[trait_id] = trait_value
 	
 	var new_species: Dictionary[String, Variant] = {
 		"parent_dominant": subspecies_of,

@@ -88,10 +88,20 @@ func _export_file(path: String, type: String, features: PackedStringArray) -> vo
 	if file is not EditorDiscourseDialog:
 		return
 	
-	var new_id: String = ""
 	var md5_hash: String = path.to_lower().md5_text().substr(0, 12)
 	var localization_filename: String = md5_hash + "-" + path.get_file().get_basename() + ".json"
-	var dialog_id: String = file.dialog_id.strip_edges().replace(" ", "_")
+	var new_id: String = _get_valid_dialog_id(file.dialog_id, file.resource_path)
+	
+	dialog_file_to_id[path] = new_id
+	id_to_dialog_file[new_id] = path
+	id_to_localization[new_id] = localization_filename
+	
+	release_files[path] = process_editor_discourse_dialog(file, new_id, localization_filename)
+
+
+func _get_valid_dialog_id(desired: String, path: String) -> String:
+	var dialog_id: String = desired.strip_edges().replace(" ", "_")
+	var new_id: String = ""
 	
 	if dialog_id.is_empty():
 		var slug_id: String = _get_new_dialog_id_for(path)
@@ -104,16 +114,12 @@ func _export_file(path: String, type: String, features: PackedStringArray) -> vo
 		new_id = path.md5_text()
 		NFPluginGameHandler._log_msg(
 				"export",
-				"Dialog ID '%s' already in use by '%s'. Changing ID of file '%s' to '%s'" % [file.dialog_id, culprit, path, new_id],
+				"Dialog ID '%s' already in use by '%s'. Changing ID of file '%s' to '%s'" % [dialog_id, culprit, path, new_id],
 				NFPluginGameHandler._LogLevel.WARNING)
 	else:
 		new_id = dialog_id
-		
-	dialog_file_to_id[path] = new_id
-	id_to_dialog_file[new_id] = path
-	id_to_localization[new_id] = localization_filename
 	
-	release_files[path] = process_editor_discourse_dialog(file, new_id, localization_filename)
+	return new_id
 
 
 func _begin_customize_resources(_platform: EditorExportPlatform, _features: PackedStringArray) -> bool:
@@ -132,10 +138,28 @@ func _get_customization_configuration_hash() -> int:
 
 func _customize_resource(resource: Resource, path: String) -> Resource:
 	if resource is EditorDiscourseDialog:
-		if not localization_files.has(path):
-			return release_files[path]
+		var res_key: String = resource.resource_path
 		
-		for locale_entry:Dictionary in localization_files[path]:
+		if resource.resource_path.is_empty():
+			NFPluginGameHandler._log_msg(
+					"export",
+					"Embedded EditorDiscourseDialog found in scene '%s'. Embedded dialogs are not supported by the runtime API. Please save it as an external .tres file." % path,
+					NFPluginGameHandler._LogLevel.ERROR)
+			return null
+		
+		if not release_files.has(res_key):
+			var dialog_id: String = _get_valid_dialog_id(resource.dialog_id, res_key)
+			var md5_hash: String = dialog_id.md5_text().substr(0, 12)
+			var loc_filename: String = md5_hash + "-" + res_key.get_file().get_basename() + ".json"
+			
+			release_files[res_key] = process_editor_discourse_dialog(resource, dialog_id, loc_filename)
+		
+		var loc_key: String = res_key
+		
+		if not localization_files.has(loc_key):
+			return release_files[res_key]
+		
+		for locale_entry:Dictionary in localization_files[loc_key]:
 			if locale_entry["path"].is_empty() or locale_entry["file"] == null:
 				NFPluginGameHandler._log_msg(
 						"export",
@@ -191,7 +215,7 @@ func _customize_resource(resource: Resource, path: String) -> Resource:
 					virtual_path,
 					FileAccess.get_file_as_bytes(file_path),
 					false)
-		return release_files[path]
+		return release_files[res_key]
 	elif resource is NFSkillCatalog:
 		return customize_skill_catalog(resource)
 	elif resource is NFTraitCatalog:

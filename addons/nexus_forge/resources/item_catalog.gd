@@ -331,6 +331,10 @@ func erase_category(category_id: StringName) -> void:
 ## get_category_structure(&"c") = [code]{&"a": {&"b": {&"c": {}}}[/code]
 func get_supercategories_of(from_category: StringName) -> Dictionary[StringName, Dictionary]:
 	var category_map: Dictionary[StringName, Dictionary] = {}
+	
+	if not _categories.has(from_category):
+		return category_map
+	
 	var categories: Array[StringName] = [from_category]
 	var current_category: StringName = _categories[from_category]["parent_key"]
 	

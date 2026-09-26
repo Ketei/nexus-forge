@@ -2,15 +2,20 @@ class_name NFCurrencyManager
 extends RefCounted
 
 
+## Emitted when a currency is created.
 signal currency_created(id: StringName)
+## Emitted when a currency is erased.
 signal currency_erased(id: StringName)
+## Emitted when the value of currencu [param id] was changed through
+## this object.
 signal value_changed(id: StringName)
 
 
 var _currencies: Dictionary[StringName, NFCurrencyEntry] = {}
 
 
-
+## Loads a [param catalog] into this object. You can choose to
+## [param clear_currencies] held in this object before loading the data.
 func load_catalog(catalog: NFCurrencyCatalog, clear_currencies: bool = true) -> void:
 	if clear_currencies:
 		_currencies.clear()
@@ -19,14 +24,14 @@ func load_catalog(catalog: NFCurrencyCatalog, clear_currencies: bool = true) -> 
 		var entry: NFCurrencyEntry = NFCurrencyEntry.new()
 		entry.id = currency_id
 		entry.name = catalog.get_currency_name(currency_id)
-		entry.value = catalog.get_currency_value(currency_id)
+		entry.value = maxi(1, catalog.get_currency_value(currency_id))
 		entry.custom_data.assign(catalog.get_currency_custom_data(currency_id))
-		entry._flags = NFCurrencyEntry._get_flags(true, false, true)
+		entry._flags = NFCurrencyEntry._get_flags(false, true)
 		_currencies[currency_id] = entry
 
 
 ## Creates a new currency with [param currency_id] unless it already exists.
-func create_currency(currency_id: StringName, value: int = 0, name: String = "") -> void:
+func create_currency(currency_id: StringName, value: int = 1, name: String = "") -> void:
 	if _currencies.has(currency_id):
 		return
 	
@@ -34,8 +39,8 @@ func create_currency(currency_id: StringName, value: int = 0, name: String = "")
 	
 	new_entry.id = currency_id
 	new_entry.name = name
-	new_entry.value = value
-	new_entry._flags = NFCurrencyEntry._get_flags(true, true, true)
+	new_entry.value = maxi(1, value)
+	new_entry._flags = NFCurrencyEntry._get_flags(true, true)
 	
 	_currencies[currency_id] = new_entry
 	
@@ -52,7 +57,10 @@ func has_currency(currency_id: StringName) -> bool:
 func set_currency_value(currency_id: StringName, new_value: int) -> void:
 	new_value = maxi(1, new_value)
 	if _currencies.has(currency_id) and _currencies[currency_id].value != new_value:
-		_currencies[currency_id].value = new_value
+		var curr: NFCurrencyEntry = _currencies[currency_id]
+		curr._flags = NFBitUtils.set_bit_index(curr._flags, 63, false)
+		curr.value = new_value
+		curr._flags = NFBitUtils.set_bit_index(curr._flags, 63, true)
 		value_changed.emit(currency_id)
 
 
@@ -200,25 +208,65 @@ func currency_value(currency:Dictionary[StringName, int]) -> int:
 	return total_value
 
 
-## Converts an [param amount] currency [param from] a type [param to] another.[br]
-## The returned dictionary cotnains 2 keys:[br]
-## Key [param from] which will contain the remainder.[br]
-## Key [param to] which will contain the converted amount.
-func convert_currency(from: StringName, to: StringName, amount: int) -> Dictionary[StringName, int]:
+## Converts a specified [param amount] of a [param from] currency into a
+## [param to] currency based on their values.
+## [br][br]
+## If [param allow_loss] is [code]true[/code], the method maximizes
+## the target currency yield, which may result in indivisible
+## value being lost.[br]
+## If [code]false[/code], it ensures that there is no lost value.
+## [br][br]
+## [b]Example:[/b]
+## [codeblock]
+## # Assuming "Bronze" has a value of 2, and "Silver" has a value of 3.
+## # This will try to convert 5 bronze (total value of 10) to silver,
+## # while allowing loss.
+## var exchange = convert_currency(&"Bronze", &"Silver", 5, true)
+## print(exchange.converted)  # Prints 3 (9 value)
+## print(exchange.remainder)  # Prints 0 (Not enough remaining value for a Bronze coin)
+## print(exchange.lost_value) # Prints 1 (value lost to conversion)
+##
+## var strict = convert_currency(&"Bronze", &"Silver", 5, false) # Or ommit the last argument
+## print(strict.converted)  # Prints 2 (6 value)
+## print(strict.remainder)  # Prints 2 (4 value)
+## print(strict.lost_value) # Prints 0 (Zero loss)
+## [/codeblock]
+func convert_currency(from: StringName, to: StringName, amount: int, allow_loss: bool = false) -> NFCurrencyConversionResult:
+	var result: NFCurrencyConversionResult = NFCurrencyConversionResult.new()
+	result.origin_currency = from
+	result.target_currency = to
+	
 	if not _currencies.has_all([from, to]):
 		NFPluginGameHandler._log_msg(
 				"currencies",
 				"An invalid currency can't be converted: '%s' to '%s'" % [from, to],
 				NFPluginGameHandler._LogLevel.ERROR)
-		return {from: amount, to: 0}
+		result.remainder = amount
+		return result
 
-	var from_value: int = _currencies[from]["value"]
-	var to_value: int = _currencies[to]["value"]
-
-	var converted_amount: int = floori((amount * from_value) / to_value)
-	var remainder: int = floori( ( (amount * from_value) - (converted_amount * to_value) ) / from_value )
-
-	var result: Dictionary[StringName, int] = {from: remainder, to: converted_amount}
+	var from_value: int = _currencies[from].value
+	var to_value: int = _currencies[to].value
+	
+	if from_value <= 0 or to_value <= 0:
+		result.remainder = amount
+		NFPluginGameHandler._log_msg(
+			"currencies",
+			"Currency values must be greater than 0: '%s' (%d), '%s' (%d)" % [from, from_value, to, to_value],
+			NFPluginGameHandler._LogLevel.ERROR)
+		return result
+	
+	var total_value: int = amount * from_value
+	var converted_amount: int = total_value / to_value
+	
+	if not allow_loss:
+		while 0 < converted_amount and (converted_amount * to_value) % from_value != 0:
+			converted_amount -= 1
+	
+	var remainder_value: int = total_value - (converted_amount * to_value)
+	
+	result.converted = converted_amount
+	result.remainder = remainder_value / from_value
+	result.lost_value = remainder_value % from_value
 	
 	return result
 
@@ -244,21 +292,23 @@ func maximize_from_currency(currency_type: StringName, amount: int) -> Dictionar
 		if _currencies[key]["value"] <= input_value:
 			continue
 		denominations.append(key)
-
+	
 	denominations.sort_custom(func(a, b): return _currencies[b]["value"] < _currencies[a]["value"]) # Sort descending
-
-	var current_amount: int = amount # Start with the initial amount
-
+	
+	var remaining_value: int = amount * input_value
+	
 	for denom in denominations:
 		var denom_value: int = _currencies[denom]["value"]
-		var exchangeable_amount: int = floori(float(current_amount * input_value) / denom_value)
+		var exchangeable_amount: int = remaining_value / denom_value
 
 		if 0 < exchangeable_amount:
 			result[denom] = exchangeable_amount
-			current_amount -= floori((exchangeable_amount * denom_value) / input_value)
+			remaining_value -= exchangeable_amount * denom_value
 	
-	if 0 < current_amount:
-		result[currency_type] = current_amount
+	var leftover_input: int = remaining_value / input_value
+	
+	if 0 < leftover_input:
+		result[currency_type] = leftover_input
 
 	return result
 
@@ -299,6 +349,9 @@ func maximize_from_value(currency_value: int) -> Dictionary[StringName, int]:
 
 ## Converts an [param amount] of a [param currency_type] to be the lowest
 ## denomination possible.
+## [br]
+## Returns a dictionary mapping the resulting currency IDs
+## to their respective quantities.
 func minimize_from_currency(currency_type: StringName, amount: int) -> Dictionary[StringName, int]:
 	var result: Dictionary[StringName, int] = {}  # Start with the initial amount
 	
@@ -321,18 +374,36 @@ func minimize_from_currency(currency_type: StringName, amount: int) -> Dictionar
 		denominations.append(key)
 
 	denominations.sort_custom(func(a, b): return _currencies[a]["value"] < _currencies[b]["value"]) # Sort ascending
-
-	var current_amount: int = amount
+	
+	var remaining_value: int = amount * input_value
 
 	for denom in denominations:
 		var denom_value: int = _currencies[denom]["value"]
-		var exchangeable_amount: int = floori(float(current_amount * input_value) / denom_value)
+		var exchangeable_amount: int = remaining_value / denom_value
 
 		if 0 < exchangeable_amount:
 			result[denom] = exchangeable_amount
-			current_amount -= floori( (exchangeable_amount * denom_value) / input_value )
+			remaining_value -= exchangeable_amount * denom_value
 	
-	if 0 < current_amount:
-		result[currency_type] = current_amount
+	var leftover_input: int = remaining_value / input_value
+	if 0 < leftover_input:
+		result[currency_type] = leftover_input
 	
 	return result
+
+
+## An object returned as the result after calling 
+## [method NFCurrencyManager.convert_currency]
+class NFCurrencyConversionResult extends RefCounted:
+	## The currency that was converted.
+	var origin_currency: StringName
+	## The amount of [member target_currency] successfully
+	## converted from [member origin_currency].
+	var converted: int
+	## The currency that [member origin_currency] was converted to.
+	var target_currency: StringName
+	## How much [member origin_currency] was left after conversion.
+	var remainder: int
+	## How much value was lost due to an indivisible value of
+	## [member origin_currency] by [member target_currency]
+	var lost_value: int
