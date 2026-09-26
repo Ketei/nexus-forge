@@ -13,7 +13,7 @@ extends RefCounted
 static func pop_random(from: Array) -> Variant:
 	if from.is_empty():
 		return null
-	var random_index: int = randi_range(0, from.size())
+	var random_index: int = randi_range(0, from.size() - 1)
 	return from.pop_at(random_index)
 
 

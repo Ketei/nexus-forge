@@ -181,7 +181,7 @@ func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
 		else:
 			drop_mode_flags = DROP_MODE_INBETWEEN
 		return true
-	else: 
+	else:
 		drop_mode_flags = DROP_MODE_DISABLED
 		return false
 
@@ -488,6 +488,16 @@ func _do_update_item_data(path: String, data: Variant) -> void:
 	var new_type: int = _data_type_to_internal(typeof(data))
 	
 	if new_type != item.get_metadata(2):
+		if item.get_metadata(2) == TYPE_DICTIONARY:
+			if compact_mode:
+				var idx: int = item.get_button_by_id(2, ButtonIds.TYPE_MENU)
+				if -1 < idx:
+					item.erase_button(2, idx)
+			else:
+				for id in [ButtonIds.LEVEL, ButtonIds.STRING, ButtonIds.BOOL, ButtonIds.FLOAT, ButtonIds.INT]:
+					var idx: int = item.get_button_by_id(2, id)
+					if -1 < idx:
+						item.erase_button(2, idx)
 		match new_type:
 			TYPE_INT:
 				item.set_icon(0, ICON_INT)
@@ -522,19 +532,22 @@ func _do_update_item_data(path: String, data: Variant) -> void:
 				item.set_selectable(2, false)
 				item.set_editable(2, false)
 				item.get_metadata(0)["type"] = ItemType.FOLDER
+				item.set_cell_mode(1, TreeItem.CELL_MODE_STRING)
+				item.set_text(1, "")
+				item.set_editable(1, false)
 				if compact_mode:
 					item.add_button(
-							1,
+							2,
 							preload("res://addons/nexus_forge/icons/add_variable_icon.svg"),
 							ButtonIds.TYPE_MENU,
 							false,
 							"Add data")
 				else:
-					item.add_button(1, preload("res://addons/nexus_forge/icons/add_int.svg"), ButtonIds.INT, false, "Add Integer")
-					item.add_button(1, preload("res://addons/nexus_forge/icons/add_float.svg"), ButtonIds.FLOAT, false, "Add Float")
-					item.add_button(1, preload("res://addons/nexus_forge/icons/add_bool.svg"), ButtonIds.BOOL, false, "Add Bool")
-					item.add_button(1, preload("res://addons/nexus_forge/icons/add_string.svg"), ButtonIds.STRING, false, "Add String")
-					item.add_button(1, get_theme_icon("FolderCreate", "EditorIcons"), ButtonIds.LEVEL, false, "Add Level")
+					item.add_button(2, preload("res://addons/nexus_forge/icons/add_int.svg"), ButtonIds.INT, false, "Add Integer")
+					item.add_button(2, preload("res://addons/nexus_forge/icons/add_float.svg"), ButtonIds.FLOAT, false, "Add Float")
+					item.add_button(2, preload("res://addons/nexus_forge/icons/add_bool.svg"), ButtonIds.BOOL, false, "Add Bool")
+					item.add_button(2, preload("res://addons/nexus_forge/icons/add_string.svg"), ButtonIds.STRING, false, "Add String")
+					item.add_button(2, get_theme_icon("FolderCreate", "EditorIcons"), ButtonIds.LEVEL, false, "Add Level")
 				for subdata in data:
 					add_data(subdata, data[subdata], false, item)
 			_:

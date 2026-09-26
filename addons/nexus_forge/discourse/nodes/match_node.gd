@@ -276,7 +276,7 @@ func _on_match_text_edit_toggled(is_toggled: bool, line: LineEdit) -> void:
 		return
 	
 	var node_idx: int = line.get_parent().get_parent().get_index()
-	var match_id: int = node_idx - 3
+	var match_id: int = node_idx - 2
 	
 	line.set_meta(&"old_value", new_value)
 	
@@ -384,7 +384,6 @@ func remove_match_fields(fields: Array[StringName]) -> void:
 		var field: Control = get_field(id)
 		field.get_child(0).value_changed.disconnect(_on_match_value_changed)
 		field.get_child(1).text_changed.disconnect(_on_match_text_changed)
-	
 	remove_fields(fields, -1)
 
 

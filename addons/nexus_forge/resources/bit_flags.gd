@@ -68,14 +68,14 @@ func is_full() -> bool:
 
 
 ## Sets the flag assigned to [param flag_id] to [param value].
-func set_flag(flag_id: String, value: bool) -> void:
+func set_flag(flag_id: StringName, value: bool) -> void:
 	if not _flag_data.has(flag_id):
 		return
 	
 	if value:
-		_bit_store |= 1 << _flag_data[flag_id]
+		_bit_store |= _flag_data[flag_id]
 	else:
-		_bit_store ^= 1 << ~_flag_data[flag_id]
+		_bit_store &= ~_flag_data[flag_id]
 
 
 ## Sets an array of [param flags] to value. If a flag is

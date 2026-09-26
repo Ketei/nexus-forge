@@ -67,7 +67,7 @@ func pool_items() -> Array[Dictionary]:
 func remove_item(item: Variant) -> bool:
 	for item_idx in range(_items.size()):
 		if _items[item_idx].value == item:
-			_max_weight -= _items[item_idx].value
+			_max_weight -= _items[item_idx].weight
 			_items.remove_at(item_idx)
 			return true
 	return false

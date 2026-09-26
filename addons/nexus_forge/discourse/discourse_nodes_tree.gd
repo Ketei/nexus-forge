@@ -387,7 +387,7 @@ func move_item(from_path: String, to: String, index: int) -> void:
 				continue
 			used_ids[nodes[node_id].get_text(0)] = null
 		
-		if nodes.has(new_name):
+		if used_ids.has(new_name):
 			return
 	
 	if target_item.get_parent() != new_parent:

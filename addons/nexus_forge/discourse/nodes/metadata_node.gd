@@ -227,7 +227,7 @@ func get_metadata_port_of(metadata_id: String) -> int:
 	if meta_count <= 0:
 		return -1
 	
-	for meta_field in range(1, meta_count):
+	for meta_field in range(1, meta_count + 1):
 		var field: Control = get_index_field(meta_field)
 		if field == null:
 			continue
