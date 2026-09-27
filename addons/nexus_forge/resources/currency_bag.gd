@@ -25,7 +25,7 @@ func assign(values: Dictionary[StringName, int]) -> void:
 			continue
 		valid_values[c_id] = values[c_id]
 	
-	_wallet.assign(values)
+	_wallet.assign(valid_values)
 
 
 ## Adds currencies to the wallet in bulk.[br]

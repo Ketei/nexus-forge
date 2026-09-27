@@ -31,7 +31,7 @@ extends Resource
 		#},
 		#&"EGGD": {
 			#"base_string": "",
-			#"formats": {}
+			#"format": {}
 		#}
 	#}
 }
@@ -305,5 +305,5 @@ func set_format_string(conversation: StringName, key: String, text: String, argu
 			{})
 	
 	if not target.is_empty():
-		target["text"] = text
-		target["arguments"] = arguments.duplicate(true)
+		target["base_string"] = text
+		target["format"] = arguments.duplicate(true)

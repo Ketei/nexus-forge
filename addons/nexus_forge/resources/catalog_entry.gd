@@ -8,7 +8,7 @@ var name: String = ""
 var description: String = ""
 var _flags: int = 0:
 	set(f):
-		if _flags == 0:
+		if NFBitUtils.is_bit_index(_flags, 63, false):
 			_flags = f
 ## Custom data assigned to this entry.
 var custom_data: Dictionary[StringName, Variant] = {}

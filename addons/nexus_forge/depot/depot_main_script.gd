@@ -94,11 +94,11 @@ func can_redo() -> bool:
 func do_undo() -> void:
 	var is_items: bool = items_container.visible
 	var undo: UndoRedo = items_container.undo if is_items else categories_container.category_undo
-	var action_name: String = undo.get_action_name(undo.get_current_action() + 1)
-	undo.redo()
+	var action_name: String = undo.get_action_name(undo.get_current_action())
+	undo.undo()
 	NFPluginGameHandler._log_msg(
 		"",
-		"Redo: " + action_name,
+		"Undo: " + action_name,
 		NFPluginGameHandler._LogLevel.EDITOR)
 
 

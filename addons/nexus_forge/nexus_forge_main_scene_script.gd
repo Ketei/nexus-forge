@@ -302,7 +302,7 @@ func handle_resource(resource: Resource) -> void:
 			go_to_tab(characters.get_index())
 			characters.plugin_open_resource(resource)
 	elif resource is NFPhraseMap:
-		if NFPhraseMap == null:
+		if phrase_maps == null:
 			NFPluginGameHandler._log_msg(
 					"editor",
 					"Phrase Maps are disabled. Can't edit resource.",
@@ -311,7 +311,7 @@ func handle_resource(resource: Resource) -> void:
 			go_to_tab(phrase_maps.get_index())
 			phrase_maps.plugin_open_resource(resource)
 	elif resource is NFQuest:
-		if discourse == null:
+		if quests == null:
 			NFPluginGameHandler._log_msg(
 					"editor",
 					"Quests are disabled. Can't edit resource.",
