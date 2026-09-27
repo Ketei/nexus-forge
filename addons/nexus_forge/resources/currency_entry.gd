@@ -16,10 +16,7 @@ var value: int = 1:
 			value = maxi(1, v)
 ## The custom data of the currency.
 var custom_data: Dictionary[StringName, Variant] = {}
-var _flags: int = 0:
-	set(f):
-		if _flags == 0:
-			_flags = f
+var _flags: int = 0
 
 
 ## Converts [param total_value] to this currency.

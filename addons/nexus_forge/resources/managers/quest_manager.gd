@@ -113,7 +113,7 @@ func add_quest_resource(quest: NFQuest, auto_advance_stages: bool, apply_mods: b
 	var new_entry: NFQuestEntry = NFQuestEntry.new()
 	new_entry.resource = quest
 	new_entry.auto_advance_stages = auto_advance_stages
-	new_entry.current_stage = quest.entry_stage
+	new_entry.set_stage(quest.entry_stage, {}, false)
 	new_entry._flags = NFBitUtils.set_bit_index(0, 0, true)
 	_active_quests[quest.id] = new_entry
 	new_entry.objective_state_changed.connect(_on_quest_objective_state_changed)
@@ -715,10 +715,7 @@ class NFQuestEntry extends RefCounted:
 	var _current_stage: StringName = &""
 	var _objective_tracker: Dictionary[StringName, NFObjectiveProgressTracker] = {}
 	var _is_stage_initializing: bool = false
-	var _flags: int = 0:
-		set(f):
-			if _flags == 0:
-				_flags = f
+	var _flags: int = 0
 	
 	
 	func set_stage(stage_id: StringName, static_progress: Dictionary[String, Variant] = {}, initialize_stage: bool = true) -> bool:
@@ -854,12 +851,14 @@ class NFObjectiveProgressTracker extends RefCounted:
 	var objective_id: StringName
 	var is_required: bool
 	var progress: Dictionary[String, Variant] = {
-		"inventory/apples": 2,
-		"inventory/oranges": 0}
+		#"inventory/apples": 2,
+		#"inventory/oranges": 0
+		}
 	var _requirements: Dictionary[String, Dictionary] = {
-		"inventory/apples": {"operator": OP_GREATER_EQUAL, "value": 5},
-		"inventory/oranges": {"operator": OP_GREATER_EQUAL, "value": 1},
-		"time": {"operator": OP_LESS_EQUAL, "value": 720}}
+		#"inventory/apples": {"operator": OP_GREATER_EQUAL, "value": 5},
+		#"inventory/oranges": {"operator": OP_GREATER_EQUAL, "value": 1},
+		#"time": {"operator": OP_LESS_EQUAL, "value": 720}
+		}
 	var _is_complete: bool = false
 	
 	

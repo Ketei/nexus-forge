@@ -127,10 +127,7 @@ func clear() -> void:
 class NFQuestLogStatusEntry extends RefCounted:
 	## The status of the entry.
 	var success_status: NFQuestManager.SuccessStatus = NFQuestManager.SuccessStatus.UNKNOWN
-	var _flags: int = 0:
-		set(f):
-			if _flags == 0:
-				_flags = f
+	var _flags: int = 0
 	
 	
 	func _init(status: NFQuestManager.SuccessStatus = NFQuestManager.SuccessStatus.UNKNOWN) -> void:

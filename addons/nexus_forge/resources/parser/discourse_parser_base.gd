@@ -496,7 +496,7 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 				var signal_args: Array = []
 				var api_signal: Signal = Signal(
 						NexusForge.Discourse.API,
-						data["signal"])
+						signal_data["signal"])
 				
 				for argument_key in signal_data["arguments"]:
 					if argument_key.is_empty():
@@ -642,9 +642,12 @@ func _get_data(uuid: StringName, fallback = null) -> Variant:
 						continue
 					signal_args.append(_get_data(argument_key))
 				
-				NexusForge.Discourse.API.emit_signal(
-						signal_data["signal"],
-						signal_args)
+				var sign_call: Signal = Signal(
+						NexusForge.Discourse.API,
+						signal_data["signal"])
+				
+				sign_call.emit.callv(signal_args)
+				
 			return _get_data(data["data_source"])
 		NodeTypes.LOCALIZED_TEXT:
 			return _dialog_resource._get_text_data(

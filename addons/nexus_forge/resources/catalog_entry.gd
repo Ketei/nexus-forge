@@ -6,10 +6,7 @@ extends RefCounted
 var name: String = ""
 ## The description of the entry.
 var description: String = ""
-var _flags: int = 0:
-	set(f):
-		if NFBitUtils.is_bit_index(_flags, 63, false):
-			_flags = f
+var _flags: int = 0
 ## Custom data assigned to this entry.
 var custom_data: Dictionary[StringName, Variant] = {}
 

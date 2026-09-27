@@ -143,7 +143,7 @@ func get_min_value(stat_id: StringName) -> float:
 	var type: int = typeof(data)
 	
 	if type == TYPE_INT or type == TYPE_FLOAT:
-		return type
+		return data
 	else:
 		return 0.0
 
@@ -157,7 +157,7 @@ func get_max_value(stat_id: StringName) -> float:
 	var type: int = typeof(data)
 	
 	if type == TYPE_INT or type == TYPE_FLOAT:
-		return type
+		return data
 	else:
 		return 0.0
 
