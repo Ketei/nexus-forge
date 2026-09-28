@@ -274,6 +274,6 @@ static func erase_all(array: Array, value: Variant) -> void:
 
 ## Checks if the [param index] is within bounds of the [param array],
 ## supports negative indexing.
-static func is_valid_index(array: Array, index: int) -> bool:
+static func is_index_valid(array: Array, index: int) -> bool:
 	var size: int = array.size()
 	return -size <= index and index < size

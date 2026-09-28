@@ -279,8 +279,9 @@ func _on_item_edited() -> void:
 	var is_item: bool = edited.get_parent() == get_root()
 	
 	if is_item:
-		if edited_column == 1:
+		if edited_column != 1:
 			return
+		
 		var new_amount: int = edited.get_range(1)
 		var old_amount: int = edited.get_metadata(1)["amount"]
 		
