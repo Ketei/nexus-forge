@@ -1,31 +1,20 @@
 @icon("res://addons/nexus_forge/icons/wallet_bag_icon.svg")
 class_name NFCurrencyWallet
-extends Resource
-## A resource used for holding the currencies registered on
-## [member NexusForge.CurrencyManager].
+extends RefCounted
+## An object used for holding the currencies registered on
+## Nexus Forge's currency manager.
 ##
-## This resource keeps track of the amount of each currency stored and
+## This object keeps track of the amount of each currency stored and
 ## provides helper method to change them safely. Whenever a value changes
-## the signal [signal Resource.changed] is emmited.[br]
+## the signal [signal NFCurrencyWallet.wallet_changed] is emmited.[br]
 ## The amounts, if handled through the methods, will always perform safe
-## operations and never overflow.[br]
+## operations and never overflow.
+
+## Emitted when the wallet is updated
+signal wallet_changed
 
 
 var _wallet: Dictionary[StringName, int] = {}
-
-
-## Assigns the currencies in [param values] to this wallet.[br]
-## [b]Note:[/b] Using this method won't emit the [signal Resource.changed]
-## signal.
-func assign(values: Dictionary[StringName, int]) -> void:
-	var valid_values: Dictionary[StringName, int] = {}
-	
-	for c_id in values.keys():
-		if not NexusForge.CurrencyManager.has_currency(c_id) or values[c_id] <= 0:
-			continue
-		valid_values[c_id] = values[c_id]
-	
-	_wallet.assign(valid_values)
 
 
 ## Adds currencies to the wallet in bulk.[br]
@@ -47,7 +36,7 @@ func add_funds(funds: Dictionary[StringName, int]) -> void:
 			updated = true
 	
 	if updated:
-		emit_changed()
+		wallet_changed.emit()
 
 
 ## Adds a [param currency] to the wallet by the specified [param amount].[br]
@@ -62,10 +51,10 @@ func add_currency(currency: StringName, value: int) -> void:
 		var prev: int = _wallet[currency]
 		_wallet[currency] = NFMath.safe_sum(_wallet[currency], value)
 		if prev != _wallet[currency]:
-			emit_changed()
+			wallet_changed.emit()
 	else:
 		_wallet[currency] = value
-		emit_changed()
+		wallet_changed.emit()
 
 
 ## Returns [code]true[/code] if this wallet has equal or more [param amount]
@@ -83,6 +72,7 @@ func has_enough_funds(to_match: Dictionary[StringName, int], times: int = 1) -> 
 		return true
 	
 	var valid_currencies: Dictionary[StringName, int] = {}
+	
 	for id in to_match.keys():
 		if to_match[id] <= 0:
 			continue
@@ -109,7 +99,7 @@ func remove_currency(currency: StringName, amount: int) -> bool:
 	else:
 		_wallet[currency] -= amount
 	
-	emit_changed()
+	wallet_changed.emit()
 	return true
 
 
@@ -128,7 +118,7 @@ func remove_funds(amount: Dictionary[StringName, int], times: int = 1) -> bool:
 		else:
 			_wallet[id] -= total_to_remove
 	
-	emit_changed()
+	wallet_changed.emit()
 	return true
 
 
@@ -146,9 +136,31 @@ func clear() -> void:
 		return
 	
 	_wallet.clear()
-	emit_changed()
+	wallet_changed.emit()
 
 
-## Returns the wallet's currencies and amounts as a dictionary.
-func as_dictionary() -> Dictionary[StringName, int]:
+## Returns the current state of the wallet for serialization.
+## This is functionally identical to [method NFCurrencyWallet.as_dictionary]
+## but aligns with the plugin's serialization standards.
+func get_state() -> Dictionary[StringName, int]:
 	return _wallet.duplicate()
+
+
+## Restores the wallet to a given [param state] dictionary.[br]
+## [b]Note:[/b] Using this method won't emit the
+## [signal NFCurrencyWallet.wallet_changed] signal.
+func set_state(state: Dictionary) -> void:
+	_wallet.clear()
+	
+	for key in state:
+		var key_type: int = typeof(key)
+		var val_type: int = typeof(state[key])
+		if key_type != TYPE_STRING_NAME and key_type != TYPE_STRING:
+			continue
+		if val_type != TYPE_INT and val_type != TYPE_FLOAT:
+			continue
+		
+		var curr_key: StringName = StringName(key)
+		var curr_am: int = int(state[key])
+		if NexusForge.CurrencyManager.has_currency(curr_key) and 0 < curr_am:
+			_wallet[curr_key] = curr_am

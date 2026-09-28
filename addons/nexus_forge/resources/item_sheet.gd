@@ -18,24 +18,24 @@ enum Rarity {
 	}
 
 ## The ID of the item
-var item_id: StringName = &"":
+@export var item_id: StringName = &"":
 	set(id):
 		if item_id.is_empty():
 			item_id = id
 ## The name of the item.
-var name: String = "": set = _set_item_name
+@export var name: String = "": set = _set_item_name
 ## The ID of the category this item belongs to
-var category: StringName = &""
+@export var category: StringName = &""
 ## The rarity of the item.
-var rarity: Rarity = Rarity.COMMON
+@export var rarity: Rarity = Rarity.COMMON
 ## The value of the item.
-var value: int = 0
+@export var value: int = 0
 ## THe description of the item.
-var description: String = "": set = _set_item_description
+@export var description: String = "": set = _set_item_description
 ## An array contaning the item flags.
-var flags: Array[ItemFlag] = []
+@export var flags: Array[ItemFlag] = []
 ## Custom data of the item.
-var custom_data: Dictionary[StringName, Variant] = {}
+@export var custom_data: Dictionary[StringName, Variant] = {}
 
 var _name_builder: Callable = Callable()
 var _description_builder: Callable = Callable()

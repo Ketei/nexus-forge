@@ -139,7 +139,7 @@ func get_state() -> Dictionary[StringName, Dictionary]:
 
 
 ## Restores a previous state of the manager.
-func restore_state(state_data: Dictionary) -> void:
+func set_state(state_data: Dictionary) -> void:
 	for key in state_data:
 		var key_type: int = typeof(key)
 		if key_type != TYPE_STRING_NAME and key_type != TYPE_STRING:
