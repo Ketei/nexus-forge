@@ -4,7 +4,7 @@ class_name NFRecipeCatalog
 extends Resource
 
 
-@export_storage var _recipes: Dictionary = {}
+@export_storage var _recipes: Dictionary[String, Dictionary] = {}
 
 #region Crafting Recipes
 
@@ -156,6 +156,7 @@ func get_recipe_custom_data(recipe_id: StringName) -> Dictionary[StringName, Var
 
 func get_recipe_inputs(recipe_id: StringName) -> Array[NFRecipeItem]:
 	var inp: Array[NFRecipeItem] = []
+	
 	if not _recipes.has(recipe_id):
 		return inp
 	

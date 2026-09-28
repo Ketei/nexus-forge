@@ -17,6 +17,8 @@ enum Rarity {
 	RARE,
 	}
 
+static var _name_desc_regex: RegEx
+
 ## The ID of the item
 @export var item_id: StringName = &"":
 	set(id):
@@ -41,6 +43,11 @@ var _name_builder: Callable = Callable()
 var _description_builder: Callable = Callable()
 
 
+static func _static_init() -> void:
+	_name_desc_regex = RegEx.new()
+	_name_desc_regex.compile("\\{\\$[^\\s\\}]+\\}")
+
+
 ## Returns the item [member NFItemSheet.name]. Formats it if [code]Format Item Strings with Blackboard[/code]
 ## is [code]On[/code] on [code]Project Settings[/code].
 func get_item_name() -> String:
@@ -50,19 +57,12 @@ func get_item_name() -> String:
 	if _name_builder.is_valid():
 		return _name_builder.call()
 	
-	var _regex_formatter: RegEx
-	
-	_regex_formatter = RegEx.new()
-	_regex_formatter.compile("\\{\\$[^\\s\\}]+\\}")
-	
 	var title_formats: Dictionary[String, Callable] = {}
 	
-	for format_title in _regex_formatter.search_all(name):
+	for format_title in _name_desc_regex.search_all(name):
 		var string_path: String = format_title.get_string().trim_prefix("{$").trim_suffix("}")
-		var path_simplified: String = string_path.simplify_path()
-		#var var_parts: PackedStringArray = string_path.rsplit("/", false, 1)
 		
-		var black_callable: Callable = NexusForge.Blackboard.get_variable.bind(path_simplified, path_simplified)
+		var black_callable: Callable = NexusForge.Blackboard.get_variable.bind(string_path, format_title.get_string())
 		
 		title_formats["$" + string_path] = black_callable
 	
@@ -80,20 +80,12 @@ func get_item_description() -> String:
 	if _description_builder.is_valid():
 		return _description_builder.call()
 	
-	var _regex_formatter: RegEx
-	
-	_regex_formatter = RegEx.new()
-	_regex_formatter.compile("\\{\\$[^\\s\\}]+\\}")
-	
 	var desc_formats: Dictionary[String, Callable] = {}
 	
-	for description_item in _regex_formatter.search_all(description):
+	for description_item in _name_desc_regex.search_all(description):
 		var string_path: String = description_item.get_string().trim_prefix("{$").trim_suffix("}")
-		var var_parts: PackedStringArray = string_path.rsplit("/", false, 1)
-		if var_parts.size() != 2:
-			continue
 		
-		var variable: Callable = NexusForge.Blackboard.get_variable.bind(var_parts[0], var_parts[1], string_path)
+		var variable: Callable = NexusForge.Blackboard.get_variable.bind(string_path, description_item.get_string())
 		
 		desc_formats["$" + string_path] = variable
 	

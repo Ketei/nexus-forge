@@ -141,10 +141,11 @@ func erase_currency(currency_id: String) -> void:
 		currency_erased.emit(currency_id)
 
 
-# ----- Utility -----
-## Substracts the amount from [param substract] to the pool [param from] and
+#region Utility
+
+## Subtracts the amount from [param substract] to the pool [param from] and
 ## returns the remainder.[br]
-func substract_value(from: Dictionary[StringName, int], substract: Dictionary[StringName, int]) -> Dictionary[StringName, int]:
+func subtract_value(from: Dictionary[StringName, int], substract: Dictionary[StringName, int]) -> Dictionary[StringName, int]:
 	var final_inventory: Dictionary[StringName, int] = {}
 	
 	for key in from:
@@ -168,7 +169,7 @@ func substract_value(from: Dictionary[StringName, int], substract: Dictionary[St
 		var c_amount: int = final_inventory[currency_id]
 		var c_total_value: int = c_amount * c_value
 		if deficit_value <= c_total_value:
-			var amount_to_use: int = ceili(deficit_value / float(c_value))
+			var amount_to_use: int = (deficit_value + c_value - 1) / c_value
 			var total_spent: int = amount_to_use * c_value
 			var change: int = total_spent - deficit_value
 			
@@ -272,7 +273,10 @@ func convert_currency(from: StringName, to: StringName, amount: int, allow_loss:
 
 
 ## Converts an [param amount] of a [param currency_type] to be the highest
-## denomination possible.
+## denomination possible.[br]
+## If there is a remainder that couldn't be converted (due to a lack of a 
+## currency with a value of 1) the returned dictionary will contain a key
+## [code]_remainder[/code] with the remainder of the conversion.
 func maximize_from_currency(currency_type: StringName, amount: int) -> Dictionary[StringName, int]:
 	var result: Dictionary[StringName, int] = {}
 	if not _currencies.has(currency_type):
@@ -309,7 +313,11 @@ func maximize_from_currency(currency_type: StringName, amount: int) -> Dictionar
 	
 	if 0 < leftover_input:
 		result[currency_type] = leftover_input
-
+		remaining_value -= leftover_input * input_value
+	
+	if 0 < remaining_value:
+		result[&"_remainder"] = remaining_value
+	
 	return result
 
 
@@ -333,7 +341,7 @@ func maximize_from_value(currency_value: int) -> Dictionary[StringName, int]:
 		var value: int = _currencies[currency_id]["value"]
 		
 		if value <= remainder :
-			var amount: int = floori(remainder / float(value))
+			var amount: int = remainder / value
 			if 0 < amount:
 				maximized[currency_id] = amount
 				remainder -= amount * value
@@ -391,6 +399,7 @@ func minimize_from_currency(currency_type: StringName, amount: int) -> Dictionar
 	
 	return result
 
+#endregion
 
 ## An object returned as the result after calling 
 ## [method NFCurrencyManager.convert_currency]
