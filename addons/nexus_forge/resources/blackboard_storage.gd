@@ -104,7 +104,6 @@ func folders(at: String = "") -> Array[String]:
 	
 	var all_folders: Array[String] = []
 	var all_folder_entries: Dictionary[String, Variant] = {}
-	var slice_count: int = clean_level.get_slice_count("/")
 	
 	if clean_level.is_empty():
 		for folder:StringName in _variables:
@@ -116,16 +115,18 @@ func folders(at: String = "") -> Array[String]:
 			if path.get_slice_count("/") == 1:
 				all_folder_entries[path] = null
 	else:
+		var prefix: String = clean_level + "/"
+		var target_slice_count: int = clean_level.get_slice_count("/") + 1
+		
 		for folder:StringName in _variables:
 			var path: String = String(folder)
-			var path_slice_count: int = path.get_slice_count("/")
-			if path.begins_with(clean_level) and slice_count + 1 == path_slice_count:
-				all_folder_entries[clean_level + "/" + path.get_slice("/", 2)] = null
+			if path.begins_with(prefix) and path.get_slice_count("/") == target_slice_count:
+				all_folder_entries[path] = null
+		
 		for folder:StringName in _active_variables:
 			var path: String = String(folder)
-			var path_slice_count: int = path.get_slice_count("/")
-			if path.begins_with(clean_level) and slice_count + 1 == path_slice_count:
-				all_folder_entries[clean_level + "/" + path.get_slice("/", 2)] = null
+			if path.begins_with(prefix) and path.get_slice_count("/") == target_slice_count:
+				all_folder_entries[path] = null
 	
 	all_folders.assign(all_folder_entries.keys())
 	return all_folders
@@ -161,7 +162,7 @@ func set_variable(variable_path: String, value: Variant) -> bool:
 ## Creates a directory recursively.
 func create_folder(folder_path: String) -> void:
 	var clean_path: StringName = folder_path.simplify_path()
-	var exists: bool = _variables.has(clean_path)
+	var exists: bool = _active_variables.has(clean_path) or _variables.has(clean_path)
 	
 	var slice_path: StringName = &""
 	
@@ -237,7 +238,13 @@ func get_state(deep_copy: bool = false) -> Dictionary[StringName, Dictionary]:
 	if deep_copy:
 		current_state.merge(_variables.duplicate(true))
 	
-	current_state.merge(_active_variables.duplicate(true), true)
+	for folder: StringName in _active_variables:
+		var active_folder_data: Dictionary[StringName, Variant] = _active_variables[folder].duplicate(true)
+		
+		if current_state.has(folder):
+			current_state[folder].merge(active_folder_data, true)
+		else:
+			current_state[folder] = active_folder_data
 	
 	return current_state
 

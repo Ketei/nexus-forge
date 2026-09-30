@@ -114,6 +114,6 @@ func _build_format(string: String, call_formats: Dictionary[String, Callable]) -
 	var new_format: Dictionary[String, String] = {}
 	
 	for key in call_formats.keys():
-		new_format[key] = call_formats[key].call()
+		new_format[key] = str(call_formats[key].call())
 	
 	return string.format(new_format)

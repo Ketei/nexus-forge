@@ -47,15 +47,14 @@ static func bsearch_array_desc(array: Array, target: Variant) -> int:
 	var high: int = array.size() - 1
 	
 	while low <= high:
-		var mid_val: float = low + (high - low) / 2.0
-		var mid: int = roundi(mid_val)
+		var mid: int = low + (high - low) / 2
 		
 		if array[mid] == target:
 			return mid
-		elif array[mid] < target: # Right Half
-			low = mid + 1
-		else: # Left Half
-			high = mid - 1
+		elif array[mid] < target: # Left Half
+			low = mid - 1
+		else: # Right Half
+			high = mid + 1
 	
 	return -1
 

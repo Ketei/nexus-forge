@@ -11,7 +11,7 @@ signal stat_erased(stat_id: StringName)
 ## Emits when allow_greater or allow_lesser on a stat is toggled.
 signal stat_clamping_toggled(for_stat: StringName)
 ## Emits when max_value and min_value on a stat change and it's respective
-## allow_* is enabled.
+## allow_* is disabled.
 signal stat_clamping_changed(for_stat: StringName)
 ## Emitted when a stat name or descriptions are updated
 signal stat_info_changed(stat_id: StringName)
@@ -91,15 +91,6 @@ func create_stat(stat_id: StringName, as_float: bool) -> void:
 	_stat_entries[stat_id] = new_entry
 	
 	stat_created.emit(stat_id)
-
-
-## Returns the built-in type of a stat. Either [code]TYPE_INT[/code] or
-## [code]TYPE_FLOAT[/code].[br]
-## Returns [code]TYPE_NIL[/code] if the stat doesn't exist.
-func stat_type(stat_id: StringName) -> int:
-	if _stat_entries.has(stat_id):
-		return _stat_entries[stat_id].type
-	return TYPE_NIL
 
 
 ## Sets a the stat [param stat_id] name to [param new_name].
