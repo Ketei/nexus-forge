@@ -23,7 +23,7 @@ func _init(use_nexus_forge: bool = true) -> void:
 		return
 	
 	for custom_trait in NexusForge.TraitManager.traits():
-		if _custom_traits.has(custom_trait) or not NexusForge.TraitManager.is_custom(custom_trait):
+		if _custom_traits.has(custom_trait) or not NexusForge.Traits[custom_trait].is_custom():
 			continue
 		_custom_traits[custom_trait] = 0
 	
