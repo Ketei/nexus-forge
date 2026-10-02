@@ -52,9 +52,9 @@ static func bsearch_array_desc(array: Array, target: Variant) -> int:
 		if array[mid] == target:
 			return mid
 		elif array[mid] < target: # Left Half
-			low = mid - 1
+			high = mid - 1
 		else: # Right Half
-			high = mid + 1
+			low = mid + 1
 	
 	return -1
 

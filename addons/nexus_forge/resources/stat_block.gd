@@ -46,17 +46,18 @@ func _init(use_nexus_forge: bool = true) -> void:
 	if not use_nexus_forge or Engine.is_editor_hint():
 		return
 	
-	for custom_stat in NexusForge.StatManager.stats():
-		if NexusForge.StatManager.is_base_stat(custom_stat) or _custom_stats.has(custom_stat):
+	for custom_stat in NexusForge.Stats:
+		var stat_obj: NFCatalogEntryStat = NexusForge.Stats[custom_stat]
+		
+		if not stat_obj.is_custom() or _custom_stats.has(custom_stat):
 			continue
 		
-		var new_range: NFValueRange = NFRangeInt.new() if NexusForge.StatManager.stat_type(custom_stat) == TYPE_INT else NFRangeFloat.new()
+		var new_range: NFValueRange = NFRangeFloat.new() if stat_obj.is_float else NFRangeInt.new()
 		
-		new_range.allow_lesser = NexusForge.StatManager.allows_lesser(custom_stat)
-		new_range.allow_greater = NexusForge.StatManager.allows_greater(custom_stat)
-		new_range.min_value = NexusForge.StatManager.get_range_min(custom_stat)
-		new_range.max_value = NexusForge.StatManager.get_range_max(custom_stat)
-		
+		new_range.allow_lesser = stat_obj.allow_lesser
+		new_range.allow_greater = stat_obj.allow_greater
+		new_range.min_value = stat_obj.min_value
+		new_range.max_value = stat_obj.max_value
 		_custom_stats[custom_stat] = new_range
 	
 	NexusForge.StatManager.stat_created.connect(_on_custom_stat_created)
@@ -92,15 +93,15 @@ func _on_custom_stat_created(stat_id: StringName) -> void:
 	if _custom_stats.has(stat_id):
 		return
 	
-	var new_range: NFValueRange = NFRangeInt.new() if NexusForge.StatManager.stat_type(stat_id) == TYPE_INT else NFRangeFloat.new()
-	var allows_lesser: bool = NexusForge.StatManager.allows_lesser(stat_id) 
-	var allows_greater: bool = NexusForge.StatManager.allows_greater(stat_id)
+	var new_stat: NFCatalogEntryStat = NexusForge.Stats[stat_id]
 	
-	new_range.allow_lesser = allows_lesser
-	new_range.allow_greater = allows_greater
+	var new_range: NFValueRange = NFRangeFloat.new() if new_stat.is_float else NFRangeInt.new()
 	
-	new_range.min_value = NexusForge.StatManager.get_range_min(stat_id)
-	new_range.max_value = NexusForge.StatManager.get_range_max(stat_id)
+	new_range.allow_lesser = new_stat.allow_lesser
+	new_range.allow_greater = new_stat.allow_greater
+	
+	new_range.min_value = new_stat.min_value
+	new_range.max_value = new_stat.max_value
 	
 	_custom_stats[stat_id] = new_range
 
