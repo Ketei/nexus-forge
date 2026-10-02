@@ -143,7 +143,7 @@ func set_species_description(species_id: StringName, description: String) -> voi
 	if not _species.has(species_id) or _species[species_id].description == description:
 		return
 	
-	_species[species_id]["description"] = description
+	_species[species_id].description = description
 	_species[species_id].emit_changed()
 
 
@@ -253,7 +253,7 @@ func species_has_skill(species_id: StringName, skill_id: StringName) -> bool:
 
 ## Erases the assigned [param skill_id] from the [param species_id].
 func erase_species_skill(species_id: StringName, skill_id: StringName) -> void:
-	if _species.has(species_id) and _species[species_id]["skills"].erase(skill_id):
+	if _species.has(species_id) and _species[species_id].skills.erase(skill_id):
 		_species[species_id].emit_changed()
 
 
