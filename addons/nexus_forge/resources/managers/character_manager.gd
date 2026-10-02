@@ -143,7 +143,11 @@ func register_character_modifier(character_id: StringName, mod_id: StringName, m
 			"mods": NFDictUtils.create_typed(TYPE_STRING_NAME, TYPE_DICTIONARY)}
 	
 	var new_mod: bool = not _character_modifiers[character_id]["mods"].has(mod_id)
-	var trigger_sort: bool = true if new_mod else -1 < order and _character_modifiers[character_id]["mods"][mod_id]["order"] != order
+	var trigger_sort: bool = new_mod
+	
+	if not new_mod:
+		var existing_mod: Dictionary = _character_modifiers[character_id]["mods"][mod_id]
+		trigger_sort = (-1 < order and existing_mod["order"] != order) or existing_mod["dependency"] != depends_on
 	
 	_character_modifiers[character_id]["mods"][mod_id] = {
 		"order": order,

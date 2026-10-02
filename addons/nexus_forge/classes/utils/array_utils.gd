@@ -20,8 +20,12 @@ static func pop_random(from: Array) -> Variant:
 ## Switches the data on the [param at] array on the [param from] and [param to]
 ## indexes.
 static func switch_indexes(from: int, to: int, at: Array) -> void:
-	var array_size: int = at.size() - 1
-	if array_size < from or array_size < to:
+	var size: int = at.size()
+	if size <= from or from < -size or size <= to or to < -size:
+		NFPluginGameHandler._log_msg(
+				"array utils",
+				"One or both of the provided indexes are out of bounds: %d, %d. Array.size(): %d" % [from, to, size],
+				NFPluginGameHandler._LogLevel.ERROR)
 		return
 	
 	var second_memory = at[to]
@@ -61,8 +65,16 @@ static func bsearch_array_desc(array: Array, target: Variant) -> int:
 
 ## Moves an item on the [param array] from [param from_idx] to [param to_idx].
 static func move_item(array: Array, from_idx: int, to_idx: int) -> void:
-	var insert_item: Variant = array[from_idx]
+	var size: int = array.size()
 	
+	if size <= from_idx or from_idx < -size or size <= to_idx or to_idx < -size or from_idx == to_idx:
+		NFPluginGameHandler._log_msg(
+				"array utils",
+				"One or both of the provided indexes are out of bounds: %d, %d. Array.size(): %d" % [from_idx, to_idx, size],
+				NFPluginGameHandler._LogLevel.ERROR)
+		return
+	
+	var insert_item: Variant = array[from_idx]
 	array.remove_at(from_idx)
 	array.insert(to_idx, insert_item)
 
@@ -80,7 +92,6 @@ static func insert_sorted_desc(array: Array, item: Variant) -> void:
 	var high: int = array.size() - 1
 	
 	while low <= high:
-		@warning_ignore("integer_division")
 		var mid: int = (low + high) / 2
 	
 		if array[mid] > item:
@@ -186,6 +197,10 @@ static func symmetric_difference(array_a: Array, array_b: Array) -> Array:
 static func swap_remove(array: Array, index: int) -> void:
 	var size: int = array.size()
 	if index < -size or size <= index:
+		NFPluginGameHandler._log_msg(
+				"array utils",
+				"Index out of bounds: %d. Array.size(): %d" % [index, size],
+				NFPluginGameHandler._LogLevel.ERROR)
 		return
 	
 	array[index] = array[-1]
@@ -198,18 +213,18 @@ static func create_typed(type: int, from: Array = [], class_string: StringName =
 
 
 ## Constructor for a 2D array.
-static func create_2d(size_x: int, size_y: int, type: int = -1) -> Array[Array]:
+static func create_2d(size_x: int, size_y: int, type: int = -1, class_type: StringName = &"", script: Variant = null) -> Array[Array]:
 	if size_x <= 0 or size_y <= 0:
 		return create_typed(TYPE_ARRAY)
 	
 	var y_array: Array[Array] = []
 	y_array.resize(size_y)
 	
-	if 0 <= type and type < TYPE_MAX:
-		for array_idx in range(size_x):
-			var x_array: Array = create_typed(type) if type != -1 else []
-			x_array.resize(size_x)
-			y_array[array_idx] = x_array
+	var x_array: Array = Array([], type, class_type, script) if NFRangeUtils.is_between(type, 0, TYPE_MAX - 1) else []
+	x_array.resize(size_x)
+	
+	for y_idx in range(size_y):
+		y_array[y_idx] = x_array.duplicate(true)
 	
 	return y_array
 
