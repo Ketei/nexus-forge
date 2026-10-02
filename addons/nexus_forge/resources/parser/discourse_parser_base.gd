@@ -334,18 +334,21 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 		NodeTypes.ENTRY:
 			return _process_logic(data["next_node"])
 		NodeTypes.DIALOG:
-			var font: String = _get_data(data["dialog_settings"]["font_resource"], "")
-			var scene: String = _get_data(data["dialog_settings"]["dialog_scene"], "")
-			var speed: float = _get_data(data["dialog_settings"]["dialog_speed"], 0.0)
-			var display_name: String = _get_data(data["character_settings"]["display_name"], "")
-			var portrait_id: String = _get_data(data["character_settings"]["portrait_id"], "")
+			var settings: Dictionary = data.get("dialog_settings", {})
+			var char_settings: Dictionary = data.get("character_settings", {})
+			var dialog_metadata: Dictionary = settings.get("metadata", {})
+			
+			var font: String = _get_data(settings.get("font_resource", &""), "")
+			var scene: String = _get_data(settings.get("dialog_scene", &""), "")
+			var speed: float = _get_data(settings.get("dialog_speed", &""), 0.0)
+			var display_name: String = _get_data(char_settings.get("display_name", &""), "")
+			var portrait_id: String = _get_data(char_settings.get("portrait_id", &""), "")
 			var metadata: Dictionary[String, Variant] = {}
 			
 			target["type"] = NodeTypes.DIALOG
 			
-			if NFDictUtils.has_nested_path(data, ["dialog_settings", "metadata"]):
-				for meta_key in data["dialog_settings"]["metadata"]:
-					metadata[meta_key] = _get_data(data["dialog_settings"]["metadata"][meta_key])
+			for meta_key in dialog_metadata:
+				metadata[meta_key] = _get_data(dialog_metadata[meta_key])
 			
 			if data["text_source"].is_empty():
 				var text_data: Dictionary[String, Variant] = _dialog_resource._get_text_data(dialog_id, uuid)
@@ -474,12 +477,17 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 			else:
 				return _process_logic(data["case_false"])
 		NodeTypes.EVENT:
-			if not data["variable_path"].is_empty() and not data["value"].is_empty():
+			var path: String = data.get("variable_path", "")
+			var val: StringName = data.get("value", &"")
+			var call_node: StringName = data.get("callable", &"")
+			var sign_node: StringName = data.get("signal", &"")
+			
+			if not path.is_empty() and not val.is_empty():
 				NexusForge.Blackboard.set_variable(
-						data["variable_path"],
-						_get_data(data["value"]))
-			if not data["callable"].is_empty():
-				var call_data: Dictionary = _dialog_resource.node_logic[data["callable"]]
+						path,
+						_get_data(val))
+			if not call_node.is_empty():
+				var call_data: Dictionary = _dialog_resource.node_logic[call_node]
 				var call_args: Array = []
 				
 				for argument_key in call_data["arguments"]:
@@ -491,8 +499,8 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 						call_data["method"],
 						call_args)
 			
-			if not data["signal"].is_empty():
-				var signal_data: Dictionary = _dialog_resource.node_logic[data["signal"]]
+			if not sign_node.is_empty():
+				var signal_data: Dictionary = _dialog_resource.node_logic[sign_node]
 				var signal_args: Array = []
 				var api_signal: Signal = Signal(
 						NexusForge.Discourse.API,
@@ -616,12 +624,16 @@ func _get_data(uuid: StringName, fallback = null) -> Variant:
 				args.append(_get_data(arg))
 			return method.callv(args)
 		NodeTypes.DATA_EVENT:
-			if not data["variable_path"].is_empty() and not data["value"].is_empty():
+			var var_path: String = data.get("variable_path", "")
+			var val_node: StringName = data.get("value", &"")
+			var call_node: StringName = data.get("callable", &"")
+			var sign_node: StringName = data.get("signal", &"")
+			if not var_path.is_empty() and not val_node.is_empty():
 				NexusForge.Blackboard.set_variable(
-						data["variable_path"],
-						_get_data(data["value"]))
-			if not data["callable"].is_empty():
-				var call_data: Dictionary = _dialog_resource.node_logic[data["callable"]]
+						var_path,
+						_get_data(val_node))
+			if not call_node.is_empty():
+				var call_data: Dictionary = _dialog_resource.node_logic[call_node]
 				var call_args: Array = []
 				
 				for argument_id in call_data["arguments"]:
@@ -633,8 +645,8 @@ func _get_data(uuid: StringName, fallback = null) -> Variant:
 						call_data["method"],
 						call_args)
 			
-			if not data["signal"].is_empty():
-				var signal_data: Dictionary = _dialog_resource.node_logic[data["signal"]]
+			if not sign_node.is_empty():
+				var signal_data: Dictionary = _dialog_resource.node_logic[sign_node]
 				var signal_args: Array = []
 				
 				for argument_key in signal_data["arguments"]:
@@ -749,8 +761,9 @@ func _load_locale_into(dialog: DiscourseDialog, locale_code: String, ) -> void:
 
 
 func _get_dialog_locale(dialog_id: String, lang_code: String) -> DiscourseDialogLocale:
-	if NFDictUtils.has_nested_path(_locale_overrides, [dialog_id, lang_code]):
-		var modded_path: String = _locale_overrides[dialog_id][lang_code]
+	var dialog_id_override: Variant = _locale_overrides.get(dialog_id, {}).get(lang_code)
+	if typeof(dialog_id_override) == TYPE_STRING:
+		var modded_path: String = dialog_id_override
 		if FileAccess.file_exists(modded_path):
 			var locale_data: DiscourseDialogLocale = DiscourseDialogLocale.new_from_json(FileAccess.get_file_as_string(modded_path))
 			if locale_data != null:
@@ -778,64 +791,6 @@ func _get_dialog_locale(dialog_id: String, lang_code: String) -> DiscourseDialog
 		return locale_data
 	else:
 		return null
-
-
-#func _load_locale_to_active_dialog(locale_code: String) -> void:
-	#if _dialog_resource == null:
-		#return
-	#elif locale_code.is_empty():
-		#_dialog_resource._set_locale("")
-		#return
-	#
-	#var locale_id: String = NFDictUtils.get_nested_value(
-			#_path_to_id,
-			#[_dialog_resource.resource_path],
-			#"")
-	#_dialog_resource._set_locale(locale_code)
-	#
-	#if NFDictUtils.has_nested_path(_locale_overrides, [locale_id, locale]):
-		#var file: FileAccess = FileAccess.open(
-				#_locale_overrides[locale_id][locale],
-				#FileAccess.READ)
-	#
-		#if file != null:
-			#var res: DiscourseDialogLocale = DiscourseDialogLocale.new_from_json(file.get_as_text())
-			#res.json_file = _locale_overrides[locale_id][locale].get_file()
-			#_dialog_resource._store_locale(locale_code, res)
-			#return
-	#
-	#var base_locale_path: String = ""
-	#
-	#if _dialog_resource is ModDiscourseDialog:
-		#base_locale_path = _dialog_resource.localization_folder
-		## TODO: Move this to conversation load maybe?
-		#if not _path_to_id.has(StringName(_dialog_resource.resource_path)):
-			#var path_strn: StringName = StringName(_dialog_resource.resource_path)
-			#var id: StringName = StringName(_dialog_resource.dialog_id)
-			#_path_to_id[path_strn] = id
-			#_id_to_data[id] = {
-				#"data_path": path_strn,
-				#"locale_file": _dialog_resource.resource_path.to_lower().md5_text().substr(0, 12) + "-" + _dialog_resource.resource_path.get_file().get_basename() + ".json"}
-		## ---
-	#else:
-		#base_locale_path = ProjectSettings.get_setting(
-					#"nexus_forge/localization_directory",
-					#"res://localization/")
-	#
-	#var localization_filename: String = _id_to_data[locale_id]["locale_file"]
-	#var hash_slice: String = localization_filename.substr(0, 2)
-	#
-	#var locale_path: String = NFStringUtils.make_path([
-			#base_locale_path,
-			#locale_code,
-			#hash_slice,
-			#localization_filename])
-	#var file: FileAccess = FileAccess.open(locale_path, FileAccess.READ)
-	#
-	#if file != null:
-		#var res: DiscourseDialogLocale = DiscourseDialogLocale.new_from_json(file.get_as_text())
-		#res.json_file = localization_filename
-		#_dialog_resource._store_locale(locale_code, res)
 
 
 func _dialog_resource_set() -> void:

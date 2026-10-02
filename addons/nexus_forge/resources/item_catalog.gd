@@ -43,8 +43,9 @@ func set_item_data(item_id: StringName, data_key: String, data: Variant) -> void
 
 ## Clears the custom data from [param item_id].
 func clear_item_data(item_id: StringName) -> void:
-	if NFDictUtils.has_nested_path(_items, [item_id, "custom_data"]):
-		_items[item_id]["custom_data"].clear()
+	var target: Variant = _items.get(item_id)
+	if typeof(target) == TYPE_DICTIONARY:
+		target["custom_data"].clear()
 
 
 ## Creates an item with id [param item_id] unless it already exists.[br]
@@ -289,8 +290,9 @@ func set_category_data(category_id: StringName, data_key: String, data: Variant)
 
 ## Clears the custom data from the category [param category_id].
 func clear_category_data(category_id: StringName) -> void:
-	if NFDictUtils.has_nested_path(_categories, [category_id, "custom_data"]):
-		_categories[category_id]["custom_data"].clear()
+	var target_dict: Variant = _categories.get(category_id)
+	if typeof(target_dict) == TYPE_DICTIONARY:
+		target_dict["custom_data"].clear()
 
 
 ## Returns the custom data with key [param data_key] from the [param category_id].[br]

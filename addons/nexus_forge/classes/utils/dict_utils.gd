@@ -44,18 +44,28 @@ static func has_nested_path(dict: Dictionary, keys: Array) -> bool:
 ## NFDictUtils.get_nested_value(dict, ["fruits", "apples"], Vector2i(0,0)) # Returns Vector2i(0,0)
 ## [/codeblock]
 static func get_nested_value(from: Dictionary, keys: Array, default = null, match_default_type: bool = false) -> Variant:
-	var current = from
+	var current: Variant = from
+	var keys_size: int = keys.size()
 	
-	for key_value in keys:
-		if typeof(current) == TYPE_DICTIONARY and current.has(key_value):
-			current = current[key_value]
-		else:
+	if keys_size == 0:
+		if match_default_type and typeof(current) != typeof(default):
 			return default
-	
-	if match_default_type:
-		return current if typeof(current) == typeof(default) else default
-	else:
 		return current
+	
+	for i in range(keys_size - 1):
+		if typeof(current) != TYPE_DICTIONARY or not current.has(keys[i]):
+			return default
+		current = current[keys[i]]
+	
+	if typeof(current) != TYPE_DICTIONARY:
+		return default
+	
+	var final_val: Variant = current.get(keys[-1], default)
+	
+	if match_default_type and typeof(final_val) != typeof(default):
+		return default
+	
+	return final_val
 
 
 ## Returns [code]true[/code] if it was able to set the value, otherwise returns
@@ -71,26 +81,29 @@ static func get_nested_value(from: Dictionary, keys: Array, default = null, matc
 ## NFDictUtils.set_nested_value(dict, ["inventory", "food", "kiwi"], 2) # Returns true
 ## print(dict) # Prints { "inventory": { "potions": {"blue": 10} }, "food": { "kiwi": 2 } }
 ## [/codeblock]
-static func set_nested_value(on: Dictionary, keys: Array, value, create_dictionaries: bool = true) -> bool:
-	if keys.is_empty():
+static func set_nested_value(on: Dictionary, keys: Array, value: Variant, create_dictionaries: bool = true) -> bool:
+	var keys_size: int = keys.size()
+	if keys_size == 0:
 		return false
 	
 	var current: Dictionary = on
 	
-	for idx in range(keys.size() - 1):
-		if not current.has(keys[idx]): # The key doesn't exist
+	for idx in range(keys_size - 1):
+		var key: Variant = keys[idx]
+		var next_node: Variant = current.get(key)
+		
+		if typeof(next_node) == TYPE_DICTIONARY:
+			current = next_node
+		elif not current.has(key):
 			if not create_dictionaries:
 				return false
 			var new_dict: Dictionary = {}
-			current[keys[idx]] = new_dict
+			current[key] = new_dict
 			current = new_dict
-		elif typeof(current[keys[idx]]) != TYPE_DICTIONARY: # The key exists but it isn't a dictionary.
+		else:
 			return false
-		else: # THe key exists and it is a dictionary
-			current = current[keys[idx]]
 	
 	current[keys[-1]] = value
-	
 	return true
 
 

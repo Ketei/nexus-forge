@@ -163,9 +163,7 @@ class NFDialogEntryOverride extends RefCounted:
 	
 	
 	func has_override(node_id: StringName, locale: String, type: int = TYPE_NIL) -> bool:
-		var override_exist: bool = NFDictUtils.has_nested_path(
-					_overrides,
-					[node_id, locale])
+		var override_exist: bool = _overrides.has(node_id) and _overrides[node_id].has(locale)
 		
 		if type == TYPE_NIL or not override_exist:
 			return override_exist
@@ -174,24 +172,27 @@ class NFDialogEntryOverride extends RefCounted:
 	
 	
 	func get_override(node_id: StringName, locale: String) -> Variant:
-		return NFDictUtils.get_nested_value(
-				_overrides,
-				[node_id, locale])
+		if _overrides.has(node_id):
+			return _overrides[node_id].get(locale)
+		return null
 	
 	
 	func set_override(node_id: StringName, locale: String, override) -> void:
 		var override_type: int = typeof(override)
+		var node_dict: Variant = _overrides.get(node_id)
 		
 		if override_type == TYPE_NIL:
-			if _overrides.has(node_id) and _overrides[node_id].erase(locale):
+			if typeof(node_dict) == TYPE_DICTIONARY and node_dict.erase(locale):
 				override_changed.emit(node_id, locale)
 		else:
-			if NFDictUtils.has_nested_path(_overrides, [node_id, locale]):
-				if typeof(_overrides[node_id][locale]) == override_type:
-					if _overrides[node_id][locale] == override:
-						return
-			if not _overrides.has(node_id):
-				_overrides[node_id] = NFDictUtils.create_typed(TYPE_STRING, TYPE_NIL)
-			_overrides[node_id][locale] = override
+			if typeof(node_dict) == TYPE_DICTIONARY:
+				var existing_val: Variant = node_dict.get(locale)
+				if typeof(existing_val) == override_type and existing_val == override:
+					return
+				node_dict[locale] = override
+			else:
+				node_dict = NFDictUtils.create_typed(TYPE_STRING, TYPE_NIL)
+				node_dict[locale] = override
+				_overrides[node_id] = node_dict
 			
 			override_changed.emit(node_id, locale)

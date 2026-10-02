@@ -9,49 +9,79 @@ extends RefCounted
 var locale: String = ""
 ## The unformatted dialog this parser formats.
 var dialog: String = ""
-var _format_args: Dictionary = {}
-var _phrases_format: Dictionary = {}
+var _format_args: Dictionary[String, Variant] = {}
+var _phrases_format: Dictionary[String, Dictionary] = {}
 
 
 func _find_case(on_format: String, on_argument: String, case: String) -> String:
-	if _phrases_format[on_format]["arguments"][on_argument]["custom"].has(case):
-		return _phrases_format[on_format]["arguments"][on_argument]["custom"][case]
-	else:
-		return _phrases_format[on_format]["arguments"][on_argument]["default"]
+	var format_dict: Variant = _phrases_format.get(on_format)
+	if typeof(format_dict) != TYPE_DICTIONARY:
+		return ""
+	
+	var arguments_dict: Dictionary = format_dict[on_format]["arguments"]
+	var argument_entry: Variant = arguments_dict.get(on_argument)
+	
+	if typeof(argument_entry) != TYPE_DICTIONARY:
+		return ""
+	
+	var custom_cases: Dictionary = argument_entry["custom"]
+	return custom_cases.get(case, argument_entry["default"])
 
 
 func _find_case_callable(on_format: String, on_argument: String, method: Callable) -> Dictionary[String, String]:
 	var case: String = str(method.call())
-	var return_result: Dictionary[String, String] = {"case": case, "value": ""}
-	if not NFDictUtils.has_nested_path(
-			_phrases_format,
-			[on_format, "arguments", on_argument]):
-		return_result["value"] = on_argument
-		return return_result
+	var result: Dictionary[String, String] = {
+		"case": case,
+		"value": on_argument}
 	
-	if _phrases_format[on_format]["arguments"][on_argument]["cases"].has(case):
-		return_result["value"] = _phrases_format[on_format]["arguments"][on_argument]["cases"][case]
-	else:
-		return_result["value"] =_phrases_format[on_format]["arguments"][on_argument]["default"]
+	var format_dict: Variant = _phrases_format.get(on_format)
+	if typeof(format_dict) != TYPE_DICTIONARY:
+		return result
 	
-	return return_result
+	var argument_node: Variant = format_dict["arguments"].get(on_argument)
+	if typeof(argument_node) != TYPE_DICTIONARY:
+		return result
+	
+	var case_val: Variant = argument_node["cases"].get(case)
+	if typeof(case_val) == TYPE_STRING:
+		result["value"] = case_val
+		return result
+	
+	result["value"] = argument_node.get("default", "")
+	return result
 
 
 ## Registers a phrase to format [member dialog] with.
 func create_format_phrase(key: String, text: String, arguments: Dictionary) -> void:
-	_phrases_format[key] = {
+	var valid_arguments: Dictionary[String, Dictionary] = {}
+	
+	for arg_key in arguments:
+		if typeof(arg_key) != TYPE_STRING or typeof(arguments[arg_key]) != TYPE_DICTIONARY:
+			continue
+		
+		valid_arguments[arg_key] = arguments[arg_key].duplicate(true)
+	
+	var new_format_entry: Dictionary[String, Variant] = {
 		"text": text,
-		"arguments": arguments.duplicate(true),
-		"format": {}}
+		"arguments": valid_arguments,
+		"format": NFDictUtils.create_typed(TYPE_STRING, TYPE_CALLABLE)}
+	
+	_phrases_format[key] = new_format_entry
 
 
 ## Sets the case of a format string from a phrase.
 func set_format_phrase_string(format_key: String, argument: String, case: String) -> void:
+	if not _phrases_format.has(format_key):
+		return
+	
 	_phrases_format[format_key]["format"][argument] = _find_case.bind(format_key, argument, case)
 
 
 ## For [param argument] be sure to include the prefix.
 func set_format_phrase_callable(format_key: String, argument: String, case: Callable) -> void:
+	if not _phrases_format.has(format_key):
+		return
+	
 	_phrases_format[format_key]["format"][argument] =  _find_case_callable.bind(format_key, argument, case)
 
 

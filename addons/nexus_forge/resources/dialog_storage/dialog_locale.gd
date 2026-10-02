@@ -247,53 +247,82 @@ func as_json() -> String:
 
 ## Returns the options of the given [param uuid] from the [param conversation] .
 func get_choices(conversation: StringName, node: StringName) -> PackedStringArray:
-	if NFDictUtils.has_nested_path(localization, [conversation, node, "choices"]):
-		return localization[conversation][node]["choices"].duplicate()
+	var conv: Variant = localization.get(conversation)
+	if typeof(conv) != TYPE_DICTIONARY:
+		return []
+	
+	var node_dict: Variant = conv.get(node)
+	if typeof(node_dict) != TYPE_DICTIONARY:
+		return []
+	
+	var choices_packarr: Variant = node_dict.get("choices")
+	if typeof(choices_packarr) == TYPE_PACKED_STRING_ARRAY:
+		return choices_packarr.duplicate()
 	else:
-		return PackedStringArray()
+		return []
 
 
 ## Returns the dialog text from the given [param uuid] from the [param conversation]
 func get_text(conversation: StringName, node: StringName) -> String:
-	return NFDictUtils.get_nested_value(
-			localization,
-			[conversation, node, "text"],
-			"",
-			true)
+	var level: Variant = localization.get(conversation)
+	
+	if typeof(level) != TYPE_DICTIONARY:
+		return ""
+	
+	var node_dict: Variant = level.get(node)
+	
+	if typeof(level) != TYPE_DICTIONARY:
+		return ""
+	
+	var node_text = node_dict.get("text", "")
+	
+	if typeof(node_text) == TYPE_STRING:
+		return node_text
+	return ""
 
 
 ## Returns if the [param conversation] has data for the given [param uuid]
 func has_data(conversation: StringName, node: StringName) -> bool:
-	return NFDictUtils.has_nested_path(localization, [conversation, node])
+	return localization.get(conversation, {}).has(node)
 
 
 ## Returns the unformatted string from the [param conversation] assiged to [param key].
 func get_format_string_text(conversation: StringName, key: StringName) -> String:
-	return NFDictUtils.get_nested_value(
-			format_strings,
-			[conversation, key, "base_string"],
-			"",
-			true)
+	var conv_dict: Variant = format_strings.get(conversation)
+	if typeof(conv_dict) != TYPE_DICTIONARY:
+		return ""
+	
+	var format_dict: Variant = conv_dict.get(key)
+	if typeof(format_dict) != TYPE_DICTIONARY:
+		return ""
+	
+	var base_string: Variant = format_dict.get("base_string", "")
+	
+	if typeof(base_string) != TYPE_STRING:
+		return base_string
+	return ""
 
 
 ## Returns the dictionary containing the format arguments along with the data of
 ## their [code]default[/code] value and custom [code]cases[/code].
 func get_format_string_args(conversation: StringName, key: StringName) -> Dictionary[String, Dictionary]:
-	var data: Dictionary[String, Dictionary] = {}
-	var stored: Dictionary = NFDictUtils.get_nested_value(
-			format_strings,
-			[conversation, key, "format"],
-			{},
-			true)
-	data.assign(stored.duplicate(true))
-	return data
+	var conv_dict: Variant = format_strings.get(conversation)
+	if typeof(conv_dict) != TYPE_DICTIONARY:
+		return {}
+	
+	var key_dict: Variant = conv_dict.get(key)
+	if typeof(key_dict) != TYPE_DICTIONARY:
+		return {}
+	
+	if key_dict.has("format"):
+		return key_dict["format"].duplicate(true)
+	else:
+		return {}
 
 
 ## Returns true if the given [param conversation] has a format string with the given [param key].
 func has_format_string(conversation: StringName, key: StringName) -> bool:
-	return NFDictUtils.has_nested_path(
-			format_strings,
-			[conversation, key])
+	return format_strings.get(conversation, {}).has(key)
 
 
 ## Sets the format string from the [param conversation] with the assigned

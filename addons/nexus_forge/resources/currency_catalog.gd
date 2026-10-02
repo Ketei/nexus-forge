@@ -117,8 +117,9 @@ func currency_data_keys(currency_id: StringName) -> Array[String]:
 
 ## Clears the custom data of the currency with id [param currency_id]
 func clear_currency_data(currency_id: StringName) -> void:
-	if NFDictUtils.has_nested_path(_currencies, [currency_id, "custom_data"]):
-		_currencies[currency_id]["custom_data"].clear()
+	var target_dict: Variant = _currencies.get(currency_id)
+	if typeof(target_dict) == TYPE_DICTIONARY:
+		target_dict["custom_data"].clear()
 
 
 ## Returns an array containing the keys of all currencies.[br]
