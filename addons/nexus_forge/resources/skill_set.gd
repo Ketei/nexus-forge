@@ -13,6 +13,7 @@ extends Resource
 ## [/codeblock]
 
 
+## Example skill.
 @export var persuasion: int
 
 @export_storage var _custom_skills: Dictionary[StringName, int] = {}

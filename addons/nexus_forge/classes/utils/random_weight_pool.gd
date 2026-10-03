@@ -84,8 +84,15 @@ func _sort_weighted(item_a: NFWeightedPoolEntry, item_b: NFWeightedPoolEntry) ->
 	return item_a.weight > item_b.weight
 
 
+## An object representing an entry in a [NFRandomWeightedPool]
+## object.
 class NFWeightedPoolEntry extends RefCounted:
+	## The data stored in this entry.
 	var value = null
+	## How probable is for this entry to be picked from
+	## a pool of objects.
+	## [br][br]
+	## [b]Note:[/b] Weight is [method @GlobalScope.snappedf] to 0.001
 	var weight: float = 0.0:
 		set(w):
-			weight = maxf(0.001, w)
+			weight = snappedf(w, 0.001)

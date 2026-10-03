@@ -13,6 +13,7 @@ extends Resource
 ## [/codeblock]
 
 
+## Example trait.
 @export var cold_resist: int = 0
 
 @export_storage var _custom_traits: Dictionary[StringName, int] = {}

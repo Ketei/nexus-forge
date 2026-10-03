@@ -52,5 +52,6 @@ func _fix_value() -> void:
 			value = max_value
 
 
+## Returns [code]TYPE_FLOAT[/code]
 func range_type() -> int:
 	return TYPE_FLOAT

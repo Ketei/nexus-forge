@@ -5,8 +5,8 @@ extends Resource
 ## The locale code this dialog is in.
 @export var locale: String = "en"
 
-# The dictionary containing the IDs of the conversations, nodes and localized
-# data.
+## The dictionary containing the IDs of the conversations, nodes
+## and localized data.
 @export_storage var localization: Dictionary[StringName, Dictionary] = {
 	#&"resourceUID": {
 		#&"NodeID": {"text": "Hello world"},
@@ -15,7 +15,8 @@ extends Resource
 		#...
 	#}
 	}
-# The format strings from conversations and all their formats.
+
+## The format strings from conversations and all their formats.
 @export_storage var format_strings: Dictionary[String, Dictionary] = {
 	#"resourceUID": {
 		#"HELLO_WORLD": {
@@ -36,9 +37,13 @@ extends Resource
 	#}
 }
 
+## The path to the JSON from which the localization was populated.
 var json_file: String = ""
 
 
+## Creates a new [DiscourseDialogLocale] object based on JSON data given
+## on [param json_string]. Returns [code]null[/code] if the parsing
+## failed.
 static func new_from_json(json_string: String) -> DiscourseDialogLocale:
 	if json_string.is_empty():
 		return null
@@ -219,25 +224,26 @@ func merge_dialog(with: DiscourseDialogLocale) -> void:
 						target_cases[case] = source_cases[case]
 
 
-## Sets the dialog text from the [param conversation]'s [param uuid] to [param text].
-func set_text(conversation: StringName, uuid: StringName, text: String) -> void:
+## Sets the dialog text from the [param conversation]'s [param node] to [param text].
+func set_text(conversation: StringName, node: StringName, text: String) -> void:
 	NFDictUtils.set_nested_value(
 			localization,
-			[conversation, uuid, "dialog"],
+			[conversation, node, "dialog"],
 			text,
 			false)
 
 
-## Sets the dialog options from the [param conversation]'s [param uuid] to be
+## Sets the dialog options from the [param conversation]'s [param node] to be
 ## [param options].
-func set_choices(conversation: StringName, uuid: StringName, choices: PackedStringArray) -> void:
+func set_choices(conversation: StringName, node: StringName, choices: PackedStringArray) -> void:
 	NFDictUtils.set_nested_value(
 			localization,
-			[conversation, uuid, "choices"],
+			[conversation, node, "choices"],
 			choices.duplicate(),
 			false)
 
 
+## Returns this object's data as a JSON string.
 func as_json() -> String:
 	var data: Dictionary = {
 		"localization": localization,
@@ -245,7 +251,7 @@ func as_json() -> String:
 	return JSON.stringify(data, "\t")
 
 
-## Returns the options of the given [param uuid] from the [param conversation] .
+## Returns the options of the given [param node] from the [param conversation] .
 func get_choices(conversation: StringName, node: StringName) -> PackedStringArray:
 	var conv: Variant = localization.get(conversation)
 	if typeof(conv) != TYPE_DICTIONARY:

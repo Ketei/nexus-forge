@@ -13,6 +13,7 @@ extends Resource
 ## [/codeblock]
 
 
+## Example stat.
 @export var health: NFRangeInt
 
 @export_storage var _custom_stats: Dictionary[StringName, NFValueRange] = {}

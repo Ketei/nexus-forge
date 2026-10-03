@@ -8,7 +8,7 @@ extends DiscourseDialog
 ## [ReleaseDiscourseDialog] and the original files are NOT included.
 
 
-static var regex_search: RegEx
+static var _regex_search: RegEx
 
 ## Offset for the [GraphEdit] in Discourse.
 var scroll_offset: Vector2 = Vector2.ZERO:
@@ -18,21 +18,29 @@ var scroll_offset: Vector2 = Vector2.ZERO:
 var zoom: float = 1.0:
 	set(new_zoom):
 		zoom = snappedf(new_zoom, 0.001)
+## A dictionary containing the collapsed status of folders.
 var collapsed_state: Dictionary[String, bool] = {}
 
-# A map of all languages that will be exported and used. If localization data
-# is set but the locale isn't registered in here then the export plugin
-# will ignore that data.
+## A map of all languages that will be exported and used. If
+## localization data is set but the locale isn't registered in here
+## then the export plugin will ignore that data.
 @export_storage var locale_map: Dictionary[String, Dictionary] = {
 	#"en": {"US": null, "GB": null}
 }
 
+## The user-assigned ID of this dialogue. Will be used during the
+## game's export process.
 @export var dialog_id: String = ""
 
-# Localizations with the same id will be merged toguether on the release file.
-# If empty then each conversation will have it's own unique locale file.
+## The user-assigned locale group ID.
+## [br][br]
+## Localizations with the same id will be merged toguether on the
+## release file.
+## If empty then each conversation will have it's own unique locale
+## json file.
 @export_storage var locale_group: String = ""
 
+## Individual frame data.
 @export_storage var node_frames: Dictionary[String, Dictionary] = {
 	#"e2f420f0-1e9b-4672-bdaf-e926b59945d2": {
 		#"title": "Random Frame",
@@ -43,7 +51,7 @@ var collapsed_state: Dictionary[String, bool] = {}
 	#}
 }
 
-# Generated on export
+## Individual node data.
 @export_storage var node_data: Dictionary[StringName, Dictionary] = {
 	#&"9156f183-6761-4259-9dde-1a81d12fb047": {
 		#"name": &"Greeting",
@@ -59,6 +67,7 @@ var collapsed_state: Dictionary[String, bool] = {}
 	#}
 }
 
+## The localization data of this dialogue.
 @export_storage var localization: Dictionary[StringName, Dictionary] = {
 	#&"9156f183-6761-4259-9dde-1a81d12fb047": {
 		#"type": LocalizationType.DIALOG,
@@ -80,6 +89,7 @@ var collapsed_state: Dictionary[String, bool] = {}
 	#}
 }
 
+## The format string data and localization of this dialogue.
 @export_storage var format_strings: Dictionary[String, Dictionary] = {
 	#"GREETINGS": {
 		#"en": {
@@ -110,6 +120,7 @@ var collapsed_state: Dictionary[String, bool] = {}
 # Node folder structure
 # {"is_node": true, "uuid": ""}
 # {"is_node": false, "name": "", "items": {}}
+## The folder structure of this dialogue file.
 @export_storage var node_structure: Array[Dictionary] = []
 
 # Local ID map that builds as calls are made for optimization.
@@ -117,8 +128,8 @@ var _id_map: Dictionary[StringName, StringName] = {}
 
 
 static func _static_init() -> void:
-	regex_search = RegEx.new()
-	regex_search.compile("\\{[\\$\\!][^\\s\\}]+\\}")
+	_regex_search = RegEx.new()
+	_regex_search.compile("\\{[\\$\\!][^\\s\\}]+\\}")
 
 
 ## Returns an array with all the format arguments of the prase [param phrase_text].[br]
@@ -127,10 +138,10 @@ static func get_phrase_arguments(phrase_text: String, trim_brackets: bool = fals
 	var all_arguments: Array[String] = []
 	
 	if trim_brackets:
-		for regex_match in regex_search.search_all(phrase_text): # $variable
+		for regex_match in _regex_search.search_all(phrase_text): # $variable
 			all_arguments.append(regex_match.get_string().trim_prefix("{").trim_suffix("}"))
 	else:
-		for regex_match in regex_search.search_all(phrase_text): # $variable
+		for regex_match in _regex_search.search_all(phrase_text): # $variable
 			all_arguments.append(regex_match.get_string())
 	
 	return all_arguments
@@ -294,6 +305,8 @@ func get_format_string(key: String, locale: String) -> String:
 			"")
 
 
+## Returns whether a format string with [param key] exists. If
+## [param locale] isn't empty it'll validate that locale too.
 func has_format_string(key: String, locale: String = "") -> bool:
 	if locale.is_empty():
 		return format_strings.has(key)
@@ -369,6 +382,8 @@ func validate_format_string_format(key: String, locale: String, format: String) 
 	return true
 
 
+## Sets the [param case] for the [param locale] on the [param format] in the
+## specified [param key] to [param value].
 func set_format_string_case(key: String, locale: String, format: String, case: String, value: String) -> void:
 	locale = TranslationServer.standardize_locale(locale)
 	
@@ -391,6 +406,9 @@ func set_format_string_case(key: String, locale: String, format: String, case: S
 			value)
 
 
+## Gets the [param case] in the [param locale] on the [param format]
+## in the specified [param key].[br]
+## Returns an empty string if not found.
 func get_format_string_case(key: String, locale: String, format: String, case: String) -> String:
 	return NFDictUtils.get_nested_value(
 			format_strings,
@@ -399,6 +417,8 @@ func get_format_string_case(key: String, locale: String, format: String, case: S
 			true)
 
 
+## Returns an array containing all the cases (not their results) of a specified
+## [param format] of the [param locale] from the specified [param key].
 func get_format_string_cases(key: String, locale: String, format: String) -> Array[String]:
 	var cases: Array[String] = []
 	
@@ -446,6 +466,8 @@ func erase_format_string_format(key: String, locale: String, format_key: String)
 		format_strings[key][locale]["format"].erase(format_key)
 
 
+## Erases the specific [param case] of the [param format_key] of the specified
+## [param locale] in the [param key].
 func erase_format_string_case(key: String, locale: String, format_key: String, case: String) -> bool:
 	if NFDictUtils.has_nested_path(format_strings, [key, locale, "format", format_key, "cases"]):
 		return format_strings[key][locale]["format"][format_key]["cases"].erase(case)
@@ -473,6 +495,9 @@ func get_frames_uuids() -> Array:
 	return node_frames.keys()
 
 
+## Gets the node data. If it contains localized data then [param locale]
+## will be used to integrate the localization data. Mainly used by the
+## graph editor to set node's data.
 func get_node_data(node_uuid: StringName, locale: String = "") -> Dictionary:
 	if not node_data.has(node_uuid):
 		return {}
@@ -678,7 +703,7 @@ func set_choice_text(uuid: StringName, option_index: int, text: String, locale: 
 
 
 ## Registers a frame.[br]
-## Note: Always register frames before registering nodes.
+## [b]Note:[/b] Always register frames before registering nodes.
 func register_frame(uuid: String, title: String, position: Vector2, size: Vector2, tint: Color) -> void:
 	node_frames[uuid] = {
 		"title": title,
@@ -725,11 +750,13 @@ func register_node(node: DiscourseGraphNode, parent_frame: String = "") -> void:
 		node_frames[parent_frame]["nodes"].append(uuid)
 
 
+## Removes the [param node_uuid]'s node and localization data.
 func remove_node(node_uuid: StringName) -> void:
 	node_data.erase(node_uuid)
 	localization.erase(node_uuid)
 
 
+## Removes the frame [param frame_uuid] data.
 func remove_frame(frame_uuid: StringName) -> void:
 	node_frames.erase(frame_uuid)
 
@@ -1575,6 +1602,8 @@ func add_locale(locale: String) -> void:
 			locale_map[language][region] = null
 
 
+## Returns whether [param locale_code] is a valid locale registered
+## in this resource locale map.
 func has_locale(locale_code: String) -> bool:
 	var standard_code: String = TranslationServer.standardize_locale(locale_code)
 	if standard_code.is_empty():
@@ -1617,6 +1646,8 @@ func remove_locale(locale: String) -> void:
 		localization[node_uuid]["locales"].erase(locale_code)
 
 
+## Gets all the localization data of [param locale] contained
+## in this resource for display purposes.
 func get_display_localization_data(locale: String) -> Dictionary:
 	var data: Dictionary = {}
 	
@@ -1629,8 +1660,13 @@ func get_display_localization_data(locale: String) -> Dictionary:
 	return data
 
 
+## Returns a dictionary containing the UUID of a node based on its
+## [param id].
+## [br][br]
+## Dictionary contains 2 keys: 
+## [code]"found"[/code](bool) and [code]"uuid"[/code](StringName)
 func find_uuid_from_id(id: StringName) -> Dictionary:
-	var dict: Dictionary = {"found": false, "id": &""}
+	var dict: Dictionary = {"found": false, "uuid": &""}
 	
 	_buid_id_map()
 	
@@ -1643,19 +1679,13 @@ func find_uuid_from_id(id: StringName) -> Dictionary:
 	return dict
 
 
-func get_id_target(id: StringName) -> StringName:
-	for entry in node_data.keys():
-		if node_data[entry]["name"] == id:
-			return entry
-	return &""
-
-
+## Returns whether [param id_or_uuid] exists in this file.
 func has_dialog_entry(id_or_uuid: String) -> bool:
 	_buid_id_map()
 	return node_data.has(id_or_uuid) or _id_map.has(id_or_uuid)
 
 
-func phrases_to_json_string() -> String:
+func _phrases_to_json_string() -> String:
 	var data: Dictionary = {}
 	
 	var valid_locales: Dictionary[String, Variant] = {}
@@ -1697,7 +1727,7 @@ func phrases_to_json_string() -> String:
 	return JSON.stringify(data, "\t")
 
 
-func import_phrase_data(data: Dictionary) -> void:
+func _import_phrase_data(data: Dictionary) -> void:
 	var new_structure: Dictionary[String, Dictionary] = {}
 	
 	for imported_key in data:
@@ -1786,6 +1816,8 @@ func import_phrase_data(data: Dictionary) -> void:
 						local_format["cases"][case] = imported_format["cases"][case]
 
 
+## Returns an array of all the registered locale codes in this
+## resoruce.
 func get_used_locales() -> Array[String]:
 	var used_locales: Array[String] = []
 	

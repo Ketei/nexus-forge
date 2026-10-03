@@ -363,12 +363,14 @@ var SpeciesManager: NFSpeciesManager:
 		else:
 			Species = {}
 			Species.make_read_only()
-## A resource containing the game's quests data.
+
 
 ## A read-only dictionary containing all active [NFQuest] resources.
 ## [br][br]
 ## [b]Note:[/b] This registry is populated automatically. To manage active quests, use [member QuestManager].
 var Quests: Dictionary[StringName, NFQuest] = {}
+## An object that keeps track of quests, progression and a log registering
+## the completion status of each quest.
 var QuestManager: NFQuestManager:
 	set(q):
 		if is_instance_valid(QuestManager):
@@ -381,13 +383,13 @@ var QuestManager: NFQuestManager:
 		else:
 			Quests = {}
 			Quests.make_read_only()
-## A resource containing the game's currency data and helper methods to manage
-## different currency systems.
 
 ## A read-only dictionary containing all registered [NFCurrencyEntry] resources.
 ## [br][br]
 ## [b]Note:[/b] This registry is populated automatically. To add or remove currencies, use [member CurrencyManager].
 var Currencies: Dictionary[StringName, NFCurrencyEntry] = {}
+## An object that handles the game's currency data and helper methods
+## to manage different currency systems.
 var CurrencyManager: NFCurrencyManager:
 	set(c):
 		if is_instance_valid(CurrencyManager):

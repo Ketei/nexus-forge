@@ -94,14 +94,19 @@ func get_currency_data(currency_id: StringName, data_key: String) -> Variant:
 			[currency_id, "custom_data", data_key])
 
 
+## Returns a copy of the [param currency_id] custom data.
 func get_currency_custom_data(currency_id: StringName) -> Dictionary[StringName, Variant]:
+	var curr_ent: Variant = _currencies.get(currency_id)
+	if typeof(curr_ent) != TYPE_DICTIONARY:
+		return {}
+	
+	var curr_dat: Variant = curr_ent.get("custom_data")
+	if typeof(curr_dat) != TYPE_DICTIONARY:
+		return {}
+	
 	var data: Dictionary[StringName, Variant] = {}
-	data.assign(NFDictUtils.get_nested_value(
-			_currencies,
-			[currency_id, "custom_data"],
-			{},
-			true))
-	return data
+	data.assign(curr_dat)
+	return data.duplicate(true)
 
 
 ## Returns the keys of the custom data that [param currency_id] has.

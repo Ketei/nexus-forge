@@ -87,14 +87,19 @@ func get_skill_data(skill_id: StringName, data_id: String) -> Variant:
 	return null
 
 
+## Returns a copy of the custom data of [param skill_id].
 func get_skill_custom_data(skill_id: StringName) -> Dictionary[StringName, Variant]:
-	var data: Dictionary[StringName, Variant] = {}
-	data.assign(NFDictUtils.get_nested_value(
-			_skill_data,
-			[skill_id, "custom_data"],
-			{},
-			true))
-	return data
+	var entry: Variant = _skill_data.get(skill_id)
+	if typeof(entry) != TYPE_DICTIONARY:
+		return {}
+	
+	var data: Variant = entry.get("custom_data")
+	if typeof(data) != TYPE_DICTIONARY:
+		return {}
+	
+	var data_found: Dictionary[StringName, Variant] = {}
+	data_found.assign(data)
+	return data_found.duplicate(true)
 
 
 ## Returns if the custom [param skill_id] has data with key [param data_id].

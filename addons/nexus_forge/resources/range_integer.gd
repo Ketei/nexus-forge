@@ -49,6 +49,6 @@ func _fix_value() -> void:
 	if not allow_greater and max_value < value:
 		value = max_value
 
-
+## Returns [code]TYPE_INT[/code]
 func range_type() -> int:
 	return TYPE_INT

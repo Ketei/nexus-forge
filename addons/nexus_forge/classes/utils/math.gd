@@ -53,6 +53,8 @@ static func sum_arrayf(values_array: Array) -> float:
 	return total_value
 
 
+## Sums all the numerical values inside an array and returns
+## the result as an integer.
 static func sum_arrayi(values_array: Array) -> int:
 	var type_arg: int = typeof(values_array)
 	

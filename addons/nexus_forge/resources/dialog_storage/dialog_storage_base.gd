@@ -26,7 +26,10 @@ const LOCALE_STORE_MAX: int = 3
 ## The ID of the entry node.
 @export_storage var entry_node: StringName = &""
 
-# Generated on export
+## The logic of all the nodes in a dialog. Does not contain localization
+## data.
+## [br][br]
+## [b]Important:[/b] This data is only generated when the game is exported.
 @export_storage var node_logic: Dictionary[StringName, Dictionary] = {
 	#&"9156f183-6761-4259-9dde-1a81d12fb047": {
 		#"id": "This is the ID",
@@ -76,6 +79,7 @@ var _dialog_overrides: NFDialogEntryOverride = null:
 		_dialog_overrides = o
 		_dialog_overrides.override_changed.connect(_on_override_updated)
 
+## Cache of parsed dialogues for quick loading.
 var parsed_dialog_cache: NFLRUCache
 var _loaded_locales: NFLRUCache
 var _active_locale: DiscourseDialogLocale = null
@@ -152,16 +156,24 @@ func _on_override_updated(node_id: StringName, locale: String) -> void:
 	parsed_dialog_cache.remove_data(duuid)
 
 
+## On override used by [DiscourseDialog] to replace text dynamically
+## on a dialogue.
 class NFDialogEntryOverride extends RefCounted:
+	## Emits when an override was changed
 	signal override_changed(node_id: String, locale: String)
 	# node id: {locale: etry}
 	var _overrides: Dictionary[String, Dictionary] = {}
 	
-	
+	## Clears all overrides. Does not emit
+	## [signal NFDialogEntryOverride.override_changed].
 	func clear() -> void:
 		_overrides.clear()
 	
 	
+	## Returns if an override for the node [param node_id] on the
+	## [param locale] exists.[br]
+	## If [param type] is other than [code]TYPE_NIL[/code] it'll also condier
+	## the type.
 	func has_override(node_id: StringName, locale: String, type: int = TYPE_NIL) -> bool:
 		var override_exist: bool = _overrides.has(node_id) and _overrides[node_id].has(locale)
 		
@@ -171,12 +183,16 @@ class NFDialogEntryOverride extends RefCounted:
 			return typeof(get_override(node_id, locale)) == type
 	
 	
+	## Returns the registered override of [param node_id] for [param locale].[br]
+	## Returns [code]null[/code] if no override existed.
 	func get_override(node_id: StringName, locale: String) -> Variant:
 		if _overrides.has(node_id):
 			return _overrides[node_id].get(locale)
 		return null
 	
 	
+	## Registers an [param override] for [param node_id] in the specific
+	## [param locale].
 	func set_override(node_id: StringName, locale: String, override) -> void:
 		var override_type: int = typeof(override)
 		var node_dict: Variant = _overrides.get(node_id)

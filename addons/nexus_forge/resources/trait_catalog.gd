@@ -69,14 +69,19 @@ func get_trait_data(trait_id: StringName, data_key: String) -> Variant:
 	return null
 
 
+## Returns a copy of the custom data of [param trait_id].
 func get_trait_custom_data(trait_id: StringName) -> Dictionary[StringName, Variant]:
+	var entry: Variant = _trait_data.get(trait_id)
+	if typeof(entry) != TYPE_DICTIONARY:
+		return {}
+	
+	var c_data: Variant = entry.get("custom_data")
+	if typeof(entry) != TYPE_DICTIONARY:
+		return {}
+	
 	var data: Dictionary[StringName, Variant] = {}
-	data.assign(NFDictUtils.get_nested_value(
-			_trait_data,
-			[trait_id, "custom_data"],
-			{},
-			true))
-	return data
+	data.assign(c_data)
+	return data.duplicate(true)
 
 
 ## Clears the data from trait [param trait_id].

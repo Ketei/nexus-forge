@@ -29,6 +29,8 @@ func from_value(total_value: int) -> int:
 		return floori(total_value / float(value))
 
 
+## Returns whether this currency was created programatically within
+## [NFCurrencyManager] or not.
 func is_custom() -> bool:
 	return NFBitUtils.is_bit_index(_flags, 0, true)
 

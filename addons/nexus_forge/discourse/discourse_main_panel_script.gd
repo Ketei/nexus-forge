@@ -1183,7 +1183,7 @@ func _on_file_menu_id_pressed(id: int) -> void:
 						NFPluginGameHandler._LogLevel.ERROR)
 				return
 			
-			var success: bool = json_writer.store_string(active_conversation.phrases_to_json_string())
+			var success: bool = json_writer.store_string(active_conversation._phrases_to_json_string())
 			json_writer.close()
 			
 			if success:
@@ -1239,7 +1239,7 @@ func _on_file_menu_id_pressed(id: int) -> void:
 			if -1 < phrases_lang_menu.selected:
 				save_phrase_keys(phrases_lang_menu.get_selected_metadata())
 			var previous_state: Dictionary = active_conversation.format_strings.duplicate(true)
-			active_conversation.import_phrase_data(json.data)
+			active_conversation._import_phrase_data(json.data)
 			var new_state: Dictionary = active_conversation.format_strings.duplicate(true)
 			undo.create_action("Import JSON Localization")
 			undo.add_do_method(_do_update_phrases_localization.bind(new_state))
