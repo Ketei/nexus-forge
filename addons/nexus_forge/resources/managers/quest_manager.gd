@@ -26,10 +26,11 @@ signal objective_completed(quest_id: StringName, stage_id: StringName, objective
 ## Emits when a quest/stage/objective is completed either successfully or not.
 signal quest_event_triggered(event_data: Dictionary)
 
-enum SuccessStatus{
-	SUCCESS,
-	FAILURE,
-	UNKNOWN,
+## Defines the status of tracked quests.
+enum SuccessStatus {
+	SUCCESS, ## When a tracked quest was successfully completed.
+	FAILURE, ## When a tracked quest was failed.
+	UNKNOWN, ## The quest is currently in progress (tracked but neither succeeded nor failed).
 }
 
 var _active_quests: Dictionary[StringName, NFQuestEntry] = {}

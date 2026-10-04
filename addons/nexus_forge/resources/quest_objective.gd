@@ -4,9 +4,14 @@ class_name NFQuestObjective
 extends Resource
 
 
+## Defines the types of an objective step within a quest stage.
+## [br][br]
+## This enum is designed to be customized and expanded by the
+## developer. Modifying its values while the Odyssey module is active
+## will automatically update the objective type dropdown in the editor GUI.
 enum ObjectiveType {
-	TRAVEL = 0,
-	COLLECT = 1,
+	TRAVEL = 0, ## Example Type 0
+	COLLECT = 1, ## Example Type 1
 }
 
 static var _regex_formatter: RegEx

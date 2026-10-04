@@ -124,6 +124,7 @@ func clear() -> void:
 	_entries.clear()
 
 
+## A base entry used in [NFQuestLog].
 class NFQuestLogStatusEntry extends RefCounted:
 	## The status of the entry.
 	var success_status: NFQuestManager.SuccessStatus = NFQuestManager.SuccessStatus.UNKNOWN
@@ -139,6 +140,7 @@ class NFQuestLogStatusEntry extends RefCounted:
 		return NFBitUtils.is_bit_index(_flags, 0, true)
 
 
+## A quest entry used in [NFQuestLog].
 class NFQuestLogEntry extends NFQuestLogStatusEntry:
 	## The ID of the quest.
 	var id: StringName = &"":
@@ -236,6 +238,7 @@ class NFQuestLogEntry extends NFQuestLogStatusEntry:
 		_entries.clear()
 
 
+## A stage entry used in [NFQuestLog.NFQuestLogEntry]
 class NFQuestLogStageEntry extends NFQuestLogStatusEntry:
 	## The ID of the stage.
 	var id: StringName = &"":

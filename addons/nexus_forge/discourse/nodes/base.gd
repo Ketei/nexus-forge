@@ -3,45 +3,66 @@ class_name DiscourseGraphNode
 extends GraphNode
 
 
+## Signal emitted when a disconnection needs to be made. Used
+## for the Discourse [GraphEdit].
 signal disconnect_requested(from: StringName, out_port: int, to: StringName, in_port: int, caller: DiscourseGraphNode)
+## Emitted when the user presses the close button.
 signal close_requested(node: DiscourseGraphNode)
+## Emitted when the user presses the duplicate button.
 signal duplicate_requested(node: DiscourseGraphNode)
+## Emitted when the user presses the localize button.
 signal localize_node_toggled(toggled_on: bool, node: DiscourseGraphNode)
+## Signals when the node was resized.
+## [br][br]
+## Note: For this signal to emit [member resizable] has to be
+## [code]true[/code] BEFORE the node is ready
+## (normally by being added to the scene).[br]
 signal node_resized(node_uuid: StringName, from: Vector2, to: Vector2)
+## Emitted when a non-specific change is made to the node. Used
+## to trigger the unsaved file flag on Discourse without creating
+## an undo/redo action.
 signal node_updated
+## Signal used INTERNALLY to know when the Discourse [GraphEdit]
+## disconnected nodes after a request was made.
 signal node_disconnected
 
 
+## Used to define port modes in multiple methods.
 enum PortMode {
-	NONE, ## The node has no parents, hence it acts as one.
-	INPUT, ## The node's parent is an input.
-	OUTPUT, ## The node's parent is an output.
+	NONE, ## Signals to no port.
+	INPUT, ## Signals that it is referring to an input port.
+	OUTPUT, ## Signals that it is referring to an output port.
 }
 
+## Defines the connection types for Discourse [GraphEdit]
 enum SlotConnectionType {
-	DIALOG, ## Output Dialog
-	CALL,
-	SIGNAL,
-	VAR_BOOL,
-	VAR_STRING,
-	VAR_INT,
-	VAR_FLOAT,
-	VAR_ANY, ## Variable
-	VAR_GUARD, ## Connects to any input. Used for compat
+	DIALOG, ## Dialogue flow.
+	CALL, ## Method node.
+	SIGNAL, ## Signal node.
+	VAR_BOOL, ## Boolean data type.
+	VAR_STRING, ## String data type.
+	VAR_INT, ## Integer data type.
+	VAR_FLOAT, ## Float data type.
+	VAR_ANY, ## Connects to any data type.
+	VAR_GUARD, ## Connects to any input. Used for compatibility.
 	VAR_FORWARD, ## Inputs to any data, outputs same data type.
-	SETTINGS_CHARACTER,
-	SETTINGS_DIALOG,
-	SETTINGS_OPTION,
-	RESOURCE,
-	METADATA,
+	SETTINGS_CHARACTER, ## Character settings.
+	SETTINGS_DIALOG, ## Dialogue settings.
+	SETTINGS_OPTION, ## Choice entry settings.
+	RESOURCE, ## Represents a resource path.
+	METADATA, ## Metadata node.
 }
 
+## Types of issue.
 enum IssueLevel {
-	ERROR = 0,
-	WARNING = 1}
+	ERROR = 0, ## Represents a critical issue that will cause problems.
+	WARNING = 1 ## Represents a non-critical issue.
+}
 
+## The different types a node can be.
 const DialogueNodeType := NFDialogParser.NodeTypes
 
+## Colours used on the ports based on their types.
 const COLORS: Dictionary = {
 	"dialog": Color.SEA_GREEN,
 	"bool": Color(1.0, 0.439, 0.522), # Red
@@ -55,6 +76,7 @@ const COLORS: Dictionary = {
 	"setting": Color(0.853, 0.55, 0.379),
 	"metadata": Color(0.541, 0.624, 0.82)}
 
+## Color to tint the localization button when it is toggled.
 const LOCALIZED_COLOR: Color = Color.LIME_GREEN
 
 ## The arrow icon that indicates dialogue flow
@@ -159,6 +181,8 @@ func _init(uuid: StringName = &"", theme_variant: StringName = &"", with_duplica
 	close_btn.pressed.connect(close_requested.emit.bind(self))
 	
 	_post_init()
+	
+	await ready
 	
 	if resizable:
 		resize_request.connect(_on_resize_requested)

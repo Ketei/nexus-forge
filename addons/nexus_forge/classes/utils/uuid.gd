@@ -33,6 +33,9 @@ extends Resource
 # - Changed internal array to `PackedByteArray` for memory efficiency.
 # - Added some documentation.
 
+## Bitmask ([code]0xFF[/code] or [code]255[/code]) used to isolate
+## the lowest 8 bits (a single byte) of a 32-bit integer when
+## extracting random bytes.
 const BYTE_MASK: int = 0b11111111 # 255
 var _uuid: PackedByteArray
 

@@ -7,20 +7,16 @@ extends Resource
 ## by Discourse on project export. Usually generated from [EditorDiscourseDialog]
 ## files.
 
-
-enum LocalizationFormat {
-	STRING = 0,
-	VAR_ACCESS = 1,
-	METHOD_CALL = 2,
-}
-
+	
+## The type of localization.
 enum LocalizationType {
-	TEXT = 0,
-	CHOICES = 1,
+	TEXT = 0, ## Represents a string entry.
+	CHOICES = 1, ## Represents an array entry.
 }
 
 ## The types of nodes.
 const NodeType := NFDialogParser.NodeTypes
+## The max amount of locales that will be stored per-dialogue.
 const LOCALE_STORE_MAX: int = 3
 
 ## The ID of the entry node.

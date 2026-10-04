@@ -101,15 +101,6 @@ var collapsed_state: Dictionary[String, bool] = {}
 						#"ketei": "Doggie",
 						#"wulfre": "variables/player/name",
 					#}
-				#},
-				#"daytime": {
-					#"default": "",
-					#"cases": {
-						#"type": LocalizationFormat.METHOD_CALL,
-						#"value": "get_time_string"}},
-				#"fruit": {
-					#"type": LocalizationFormat.STRING,
-					#"value": "Banana"
 				#}
 			#}
 		#}

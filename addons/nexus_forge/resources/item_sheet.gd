@@ -4,17 +4,26 @@ class_name NFItemSheet
 extends Resource
 ## A resource representing an Item.
 
-
+## Defines boolean-like capabilities or properties of an item.
+## [br][br]
+## This enum is meant to be updated by the developer. Modifying it
+## while the Depot module is active will automatically update the item
+## flag entries in the editor GUI.
 enum ItemFlag {
-	SELLABLE,
-	GIFTABLE,
+	SELLABLE = 0, ## Example flag 0
+	GIFTABLE = 1, ## Example flag 1
 	}
 
+## Defines the tier or rarity level of an item.
+## [br][br]
+## This enum is meant to be updated by the developer. Modifying it
+## while the Depot module is active will automatically update the
+## rarity dropdowns in the editor GUI.
 enum Rarity {
-	BASIC,
-	COMMON,
-	UNCOMMON,
-	RARE,
+	BASIC = 0, ## Example rarity 0
+	COMMON = 1, ## Example rarity 1
+	UNCOMMON = 2, ## Example rarity 2
+	RARE = 3, ## Example rarity 3
 	}
 
 static var _name_desc_regex: RegEx

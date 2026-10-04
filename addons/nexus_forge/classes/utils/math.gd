@@ -2,7 +2,11 @@ class_name NFMath
 extends RefCounted
 ## Class to perform math operations in a more convenient way.
 
+## The maximum positive value a 64-bit signed integer can hold in Godot
+## [code](2^63 - 1)[/code].
 const INT_MAX: int = 9223372036854775807
+## The minimum negative value a 64-bit signed integer can hold in Godot
+## [code](-2^63)[/code].
 const INT_MIN: int = -9223372036854775808
 
 

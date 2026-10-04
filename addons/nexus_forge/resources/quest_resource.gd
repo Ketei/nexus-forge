@@ -3,10 +3,14 @@
 class_name NFQuest
 extends Resource
 
-
+## Defines the types of quests.
+## [br][br]
+## This enum is designed to be customized and expanded by the
+## developer. Modifying its values while the Odyssey module is active
+## will automatically update the quest type dropdown in the editor GUI.
 enum QuestType {
-	MAIN_QUEST = 0,
-	SIDE_QUEST = 1,
+	MAIN_QUEST = 0, ## Example Type 0
+	SIDE_QUEST = 1, ## Example Type 1
 }
 
 static var _regex_formatter: RegEx

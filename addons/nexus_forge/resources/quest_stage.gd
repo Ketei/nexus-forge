@@ -5,9 +5,14 @@ extends Resource
 ## A resource representing a stage of a [NFQuest].
 
 
+## Defines the types of a quest stage.
+## [br][br]
+## This enum is designed to be customized and expanded by the
+## developer. Modifying its values while the Odyssey module is active
+## will automatically update the stage type dropdown in the editor GUI.
 enum StageType {
-	DEFAULT = 0,
-	HIDDEN = 1,
+	DEFAULT = 0, ## Example Type 0
+	HIDDEN = 1, ## Example Type 1
 }
 
 
