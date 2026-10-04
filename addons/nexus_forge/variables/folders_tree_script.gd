@@ -170,11 +170,9 @@ func remove_folder(path: String) -> void:
 	if path_parts.is_empty():
 		return
 	
-	var folder_name: String = path_parts[-1]
 	var current_level: TreeItem = get_root()
-	var erase: bool = true
 	
-	for path_slice in path_parts.slice(0, -1):
+	for path_slice in path_parts:
 		var found: bool = false
 		for item in current_level.get_children():
 			if item.get_metadata(0)["id"] == path_slice:
@@ -182,10 +180,9 @@ func remove_folder(path: String) -> void:
 				current_level = item
 				break
 		if not found:
-			erase = false
-			break
+			return
 	
-	if erase:
+	if current_level != get_root():
 		current_level.free()
 
 
@@ -419,7 +416,7 @@ func validate_folder_name(parent_tree: TreeItem, folder_name: String = default_f
 		iteration += 1
 		modified_name = str(tweaked_name, "_", iteration)
 	
-	return tweaked_name
+	return modified_name
 
 
 func _has_folder(parent_folder: TreeItem, folder_name: String, exception: TreeItem) -> bool:

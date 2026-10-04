@@ -249,8 +249,14 @@ func get_state(deep_copy: bool = false) -> Dictionary[StringName, Dictionary]:
 	return current_state
 
 
-## Restores a state based on a dictionary.
-func set_state(state: Dictionary) -> void:
+## Restores a state based on a dictionary.[br]
+## If [param clear_state] is [code]true[/code], then the current
+## state will be cleared before loading the new [param state]
+## similar to calling [method NFBlackboardData.reset_data].
+func set_state(state: Dictionary, clear_state: bool = false) -> void:
+	if clear_state:
+		_active_variables.clear()
+	
 	for key in state:
 		var type: int = typeof(key)
 		if type != TYPE_STRING_NAME and type != TYPE_STRING:
@@ -258,23 +264,39 @@ func set_state(state: Dictionary) -> void:
 		var val_type: int = typeof(state[key])
 		if val_type != TYPE_DICTIONARY:
 			continue
+		
 		var clean_path: String = key.simplify_path()
-		create_folder(clean_path)
+		var slice_path: String = ""
+		var clean_strn: StringName = StringName(clean_path)
+		
+		for slice in clean_path.split("/"):
+			slice_path += slice
+			var slice_strn: StringName = StringName(slice_path)
+			if not _active_variables.has(slice_strn):
+				_active_variables[slice_strn] = NFDictUtils.create_typed(
+						TYPE_STRING_NAME,
+						TYPE_NIL)
+			slice_path += "/"
+		
+		var folder_dict: Dictionary = _active_variables[clean_strn]
+		
 		for sub_key in state[key]:
 			var sub_key_type: int = typeof(sub_key)
 			if sub_key_type != TYPE_STRING_NAME and sub_key_type != TYPE_STRING:
 				continue
 			
-			if _matches_base(clean_path, sub_key, state[key][sub_key]):
+			var final_key: StringName = StringName(sub_key)
+			if _matches_base(clean_strn, final_key, state[key][sub_key]):
+				folder_dict.erase(final_key)
 				continue
 			
 			var var_val_type: int = typeof(state[key][sub_key])
 			var can_dupe: bool = var_val_type == TYPE_DICTIONARY or var_val_type == TYPE_ARRAY
 			
 			if can_dupe:
-				_active_variables[clean_path][StringName(sub_key)] = state[key][sub_key].duplicate(true)
+				folder_dict[final_key] = state[key][sub_key].duplicate(true)
 			else:
-				_active_variables[clean_path][StringName(sub_key)] = state[key][sub_key]
+				folder_dict[final_key] = state[key][sub_key]
 	
 	# Cleaning empty folders created by create_folder but whose state matched
 	# the default.

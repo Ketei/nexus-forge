@@ -182,8 +182,10 @@ func _init(uuid: StringName = &"", theme_variant: StringName = &"", with_duplica
 	
 	_post_init()
 	
-	await ready
-	
+	ready.connect(_ready_signaled)
+
+
+func _ready_signaled() -> void:
 	if resizable:
 		resize_request.connect(_on_resize_requested)
 		resize_end.connect(_on_resize_end)

@@ -104,13 +104,16 @@ func _on_item_edited() -> void:
 		0: # Var name edited
 			if edited.get_metadata(0) == edited.get_text(0):
 				return
+			var old_name: String = edited.get_metadata(0)
 			var valid_name: String = validate_var_name(edited.get_text(0), edited)
+			if old_name == valid_name:
+				return
 			edited.set_text(0, valid_name)
 			edited.set_metadata(0, valid_name)
 			if sorting_column == 0:
 				sort_single_item(edited)
 				ensure_cursor_is_visible()
-			variable_renamed.emit(edited.get_metadata(0), valid_name)
+			variable_renamed.emit(old_name, valid_name)
 		1: # Var value changed
 			variable_updated.emit(edited.get_text(0), get_tree_variant(edited))
 	something_changed.emit()

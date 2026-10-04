@@ -76,7 +76,7 @@ func get_trait_custom_data(trait_id: StringName) -> Dictionary[StringName, Varia
 		return {}
 	
 	var c_data: Variant = entry.get("custom_data")
-	if typeof(entry) != TYPE_DICTIONARY:
+	if typeof(c_data) != TYPE_DICTIONARY:
 		return {}
 	
 	var data: Dictionary[StringName, Variant] = {}
