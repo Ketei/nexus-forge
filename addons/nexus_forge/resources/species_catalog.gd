@@ -212,7 +212,7 @@ func get_species(species_id: StringName) -> NFSpeciesSheet:
 	new_species.id = species_id
 	new_species.name = _species[species_id]["name"]
 	new_species.description = _species[species_id]["description"]
-	new_species.custom_data = _species[species_id]["data"].duplicate(true)
+	new_species.custom_data = _species[species_id]["custom_data"].duplicate(true)
 	new_species.stats = get_species_stats(species_id)
 	new_species.skills = get_species_skills(species_id)
 	new_species.traits = get_species_traits(species_id)
@@ -237,7 +237,7 @@ func get_species_base(species_id: StringName) -> NFSpeciesSheet:
 	new_species.id = species_id
 	new_species.name = _species[species_id]["name"]
 	new_species.description = _species[species_id]["description"]
-	new_species.custom_data = _species[species_id]["data"].duplicate(true)
+	new_species.custom_data = _species[species_id]["custom_data"].duplicate(true)
 	new_species.stats = get_species_stats(species_id)
 	new_species.skills = get_species_skills(species_id)
 	new_species.traits = get_species_traits(species_id)
@@ -269,7 +269,7 @@ func create_species(species_id: StringName, parent_species: StringName = &"", re
 		"parent_recessive": recessive_species,
 		"name": "",
 		"description": "",
-		"data": data,
+		"custom_data": data,
 		"stats": stats,
 		"skills": skills,
 		"traits": traits}
@@ -277,12 +277,17 @@ func create_species(species_id: StringName, parent_species: StringName = &"", re
 	_species[species_id] = new_species
 
 
+## Returns an array of species IDs that are a subspecies of [param from_species].
+## A species is considered a subspecies if [param from_species]
+## is registered as either its dominant or recessive parent.
+## Returns an empty array if [param from_species] is not found
+## or has no subspecies.
 func get_subspecies_of(from_species: StringName) -> Array[StringName]:
 	var ids: Array[StringName] = []
 	if not _species.has(from_species):
-		ids
+		return ids
 	
-	for species_id in _species.keys():
+	for species_id in _species:
 		if _species[species_id]["parent_dominant"] == from_species or _species[species_id]["parent_recessive"] == from_species:
 			ids.append(species_id)
 	
@@ -329,7 +334,7 @@ func register_species(species_sheet: NFSpeciesSheet, subspecies_of: StringName =
 		"parent_recessive": recessive_subspecies,
 		"name": species_sheet.name,
 		"description": species_sheet.description,
-		"data": species_sheet.custom_data.duplicate(true),
+		"custom_data": species_sheet.custom_data.duplicate(true),
 		"stats":stats,
 		"skills": skills,
 		"traits": traits}
@@ -370,12 +375,11 @@ func get_dominant_species_of(species_id: StringName) -> StringName:
 			true)
 
 
+## Returns the recessive species of [param species_id].[br]
+## Returns an empty StringName if the species isn't found or has
+## no parent.
 func get_recessive_species_of(species_id: StringName) -> StringName:
-	return NFDictUtils.get_nested_value(
-			_species,
-			[species_id, "parent_recessive"],
-			&"",
-			true)
+	return _species.get(species_id, {}).get("parent_recessive", &"")
 
 
 ## Returns [code]true[/code] if [param species_id] is registered.
@@ -426,9 +430,9 @@ func set_species_data(species_id: StringName, data_key: String, data: Variant) -
 		return
 	
 	if data == null:
-		_species[species_id]["data"].erase(data_key)
+		_species[species_id]["custom_data"].erase(data_key)
 	else:
-		_species[species_id]["data"][data_key] = data
+		_species[species_id]["custom_data"][data_key] = data
 
 
 ## Returns the data with [param data_key] from the [param species_id] or
@@ -436,30 +440,35 @@ func set_species_data(species_id: StringName, data_key: String, data: Variant) -
 func get_species_data(species_id: StringName, data_key: String) -> Variant:
 	return NFDictUtils.get_nested_value(
 			_species,
-			[species_id, "data", data_key])
+			[species_id, "custom_data", data_key])
 
 
+## Returns a copy of the custom data of species [param species_id].
 func get_species_custom_data(species_id: StringName) -> Dictionary[StringName, Variant]:
-	var data: Dictionary[StringName, Variant] = {}
-	data.assign(NFDictUtils.get_nested_value(
-			_species,
-			[species_id, "data"],
-			{},
-			true))
-	return data
+	var entry: Variant = _species.get(species_id)
+	if typeof(entry) != TYPE_DICTIONARY:
+		return {}
+	
+	var data: Dictionary = entry.get("custom_data")
+	if typeof(data) != TYPE_DICTIONARY:
+		return {}
+	
+	var custom_data: Dictionary[StringName, Variant] = {}
+	custom_data.assign(data)
+	return custom_data.duplicate(true)
 
 
 ## Returns [code]true[/code] if [param species_id] has custom data with key
 ## [param data_key].
 func has_species_data(species_id: StringName, data_key: String) -> bool:
-	return _species.has(species_id) and _species[species_id]["data"].has(data_key)
+	return _species.has(species_id) and _species[species_id]["custom_data"].has(data_key)
 
 
 ## Returns an array with all custom data keys that [param species_id] has.
 func species_data_keys(species_id: StringName) -> Array[String]:
 	var all_keys: Array[String] = []
 	if _species.has(species_id):
-		all_keys.assign(_species[species_id]["data"].keys())
+		all_keys.assign(_species[species_id]["custom_data"].keys())
 	return all_keys
 
 
@@ -468,7 +477,7 @@ func clear_species_data(species_id: StringName) -> void:
 	if not _species.has(species_id):
 		return
 	
-	_species[species_id]["data"].clear()
+	_species[species_id]["custom_data"].clear()
 
 
 ## Returns the value of [param stat_id] assigned to the species with

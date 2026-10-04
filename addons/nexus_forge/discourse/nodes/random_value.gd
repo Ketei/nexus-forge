@@ -92,7 +92,6 @@ func _post_init() -> void:
 			SlotConnectionType.VAR_INT,
 			-1)
 	set_slot_color_left(2, COLORS["integer"])
-	map_field(&"max_value", &"max_spinbox", max_spinbox)
 	
 	min_spinbox.value_changed.connect(_on_min_value_changed)
 	max_spinbox.value_changed.connect(_on_max_value_changed)

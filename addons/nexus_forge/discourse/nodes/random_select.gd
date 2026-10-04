@@ -10,6 +10,7 @@ var custom_default_weight: int = -1:
 		update_weights()
 
 var _exits_update_queued: bool = false
+var options_spn: SpinBox
 
 
 func _post_init() -> void:
@@ -23,7 +24,7 @@ func _post_init() -> void:
 	
 	var options_container: HBoxContainer = HBoxContainer.new()
 	var options_lbl: Label = Label.new()
-	var options_spn: SpinBox = SpinBox.new()
+	options_spn = SpinBox.new()
 	var default_weight: Label = Label.new()
 	var first_random: Label = Label.new()
 	
@@ -49,7 +50,6 @@ func _post_init() -> void:
 			options_container,
 			false,
 			SlotConnectionType.DIALOG)
-	map_field(&"options", &"count", options_spn)
 	
 	add_field(
 			&"weight_default",
@@ -187,7 +187,7 @@ func _on_random_exit_changed(_target_options: int) -> void:
 
 
 func _update_exits_with_value(old_state: Dictionary) -> void:
-	var exit_size: int = get_mapped_field(&"options", &"count").value
+	var exit_size: int = options_spn.value
 	await set_random_exit_number(exit_size)
 	
 	var new_state: Dictionary = {"metadata": {"options": get_outputs_state()}}
@@ -246,7 +246,7 @@ func set_random_exit_number(target_options: int) -> void:
 			fields_to_remove.append(port_id)
 		await remove_fields(fields_to_remove)
 	
-	get_mapped_field(&"options", &"count").set_value_no_signal(target_options)
+	options_spn.set_value_no_signal(target_options)
 	update_weights()
 	_reset_height.call_deferred()
 
@@ -270,7 +270,7 @@ func _set_node_data(data: Dictionary) -> void:
 		return
 	
 	var option_size: int = metadata["options"].size()
-	get_mapped_field(&"options", &"count").set_value_no_signal(option_size)
+	options_spn.set_value_no_signal(option_size)
 	set_random_exit_number(option_size)
 
 

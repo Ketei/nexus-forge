@@ -62,7 +62,6 @@ func _post_init() -> void:
 			false,
 			SlotConnectionType.VAR_ANY,
 			-1)
-	map_field(&"variable", &"path", variable_path)
 	
 	add_field(
 			&"callable",

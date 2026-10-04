@@ -10,6 +10,7 @@ const MAX_LINES: int = 3
 const EXTRA_Y_PADDING: int = 8
 const CHOICE_TEXT_EDIT = preload("res://addons/nexus_forge/discourse/textedit_bracket_handler.gd")
 
+var choices_spinbox: SpinBox
 var _updating_choices: bool = false
 
 
@@ -24,7 +25,7 @@ func _post_init() -> void:
 	
 	var choice_count_container: HBoxContainer = HBoxContainer.new()
 	var choices_label: Label = Label.new()
-	var choices_spinbox: SpinBox = SpinBox.new()
+	choices_spinbox = SpinBox.new()
 	var first_choice: HBoxContainer = get_choice_node()
 	
 	choices_label.text = "Choices"
@@ -43,7 +44,6 @@ func _post_init() -> void:
 			choice_count_container,
 			false,
 			SlotConnectionType.DIALOG)
-	map_field(&"choice_counter", &"choice_count", choices_spinbox)
 	
 	var first_out_idx: int = add_field(
 			&"choice_1",
@@ -166,7 +166,7 @@ func get_choices_array() -> Array[Dictionary]:
 
 
 func _update_value_to_spinbox() -> void:
-	var new_choice_count: int = get_mapped_field(&"choice_counter", &"choice_count").value
+	var new_choice_count: int = choices_spinbox.value
 	
 	var old_options: Array[Dictionary] = get_choices_array()
 	await set_choice_count(new_choice_count)
@@ -226,14 +226,14 @@ func _set_node_data(data: Dictionary) -> void:
 	
 	var choice_size: int = true_options.size()
 	var choice_counts: int = max(1, choice_size)
-	get_mapped_field(&"choice_counter", &"choice_count").set_value_no_signal(choice_counts)
+	choices_spinbox.set_value_no_signal(choice_counts)
 	await set_choice_count(choice_counts)
 	for option in range(1, choice_size + 1):
 		set_choice_text(option, true_options[option - 1]["text"])
 
 
 func choice_count() -> int:
-	return get_mapped_field(&"choice_counter", &"choice_count").value
+	return choices_spinbox.value
 
 
 func get_choice_node() -> HBoxContainer:

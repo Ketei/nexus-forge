@@ -147,13 +147,23 @@ func get_recipe(recipe_id: StringName) -> NFRecipeSheet:
 	return recipe
 
 
+## Returns a copy of the [param recipe_id] custom data.
 func get_recipe_custom_data(recipe_id: StringName) -> Dictionary[StringName, Variant]:
-	var data: Dictionary[StringName, Variant] = {}
-	if _recipes.has(recipe_id):
-		data.assign(_recipes[recipe_id].get("custom_data").duplicate(true))
-	return data
+	var recipe: Variant = _recipes.get(recipe_id)
+	if typeof(recipe) != TYPE_DICTIONARY:
+		return {}
+	
+	var data: Variant = recipe.get("custom_data")
+	if typeof(data) != TYPE_DICTIONARY:
+		return {}
+	
+	var custom_data: Dictionary[StringName, Variant] = {}
+	custom_data.assign(data)
+	return custom_data.duplicate(true)
 
 
+## Returns a copy array of the [NFRecipeItem]s registered on the
+## recipe input.
 func get_recipe_inputs(recipe_id: StringName) -> Array[NFRecipeItem]:
 	var inp: Array[NFRecipeItem] = []
 	
@@ -168,6 +178,8 @@ func get_recipe_inputs(recipe_id: StringName) -> Array[NFRecipeItem]:
 	return inp
 
 
+## Returns a copy array of the [NFRecipeItem]s registered on the
+## recipe output.
 func get_recipe_outputs(recipe_id: StringName) -> Array[NFRecipeItem]:
 	var out: Array[NFRecipeItem] = []
 	if not _recipes.has(recipe_id):

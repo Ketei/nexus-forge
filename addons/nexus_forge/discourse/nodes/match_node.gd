@@ -8,6 +8,7 @@ signal match_mode_changed(uuid: StringName, old_state: Dictionary, new_state: Di
 
 
 var current_mode: int = TYPE_INT
+var cases: SpinBox
 var _match_size_update_queed: bool = false
 
 
@@ -24,7 +25,7 @@ func _post_init() -> void:
 	var value_label: Label = Label.new()
 	var default_label: Label = Label.new()
 	
-	var cases: SpinBox = SpinBox.new()
+	cases = SpinBox.new()
 	var value_menu: MenuButton = MenuButton.new()
 	var menu_popup: PopupMenu = value_menu.get_popup()
 	var value_text: LineEdit = LineEdit.new()
@@ -72,7 +73,6 @@ func _post_init() -> void:
 			cases_container,
 			false,
 			SlotConnectionType.DIALOG)
-	map_field(&"cases", &"case_count", cases)
 	
 	add_field(
 		&"values",
@@ -307,7 +307,7 @@ func _set_node_data(data: Dictionary) -> void:
 	
 	if metadata.has("cases") and typeof(metadata["cases"]) == TYPE_ARRAY:
 		var case_count: int = metadata["cases"].size()
-		get_mapped_field(&"cases", &"case_count").set_value_no_signal(case_count)
+		cases.set_value_no_signal(case_count)
 		set_match_case_count(case_count)
 		for match_option in range(1, case_count + 1):
 			var case_id: StringName = &"case_" + StringName(str(int(match_option)))
@@ -367,7 +367,7 @@ func _on_match_count_changed(new_count: int) -> void:
 
 
 func _update_match_case_value() -> void:
-	var case_size: int = get_mapped_field(&"cases", &"case_count").value
+	var case_size: int = cases.value
 	var old_snapshot: Dictionary = {"metadata": {"cases": get_match_case_data()}}
 	set_match_case_count(case_size)
 	var new_snapshot: Dictionary = {"metadata": {"cases": get_match_case_data()}}

@@ -16,14 +16,19 @@ func items() -> Array[StringName]:
 	return ids
 
 
+## Returns a copy of the item [param item_id] custom data.
 func item_data(item_id: StringName) -> Dictionary[StringName, Variant]:
+	var item: Variant = _items.get(item_id)
+	if typeof(item) != TYPE_DICTIONARY:
+		return {}
+	
+	var c_data: Variant = item.get("custom_data")
+	if typeof(c_data) != TYPE_DICTIONARY:
+		return {}
+	
 	var data: Dictionary[StringName, Variant] = {}
-	data.assign(NFDictUtils.get_nested_value(
-			_items,
-			[item_id, "custom_data"],
-			{},
-			true))
-	return data
+	data.assign(c_data)
+	return data.duplicate(true)
 
 
 ## Sets the [param data_key] of [param item_id] to [param data]. If [param data]
@@ -50,7 +55,7 @@ func clear_item_data(item_id: StringName) -> void:
 
 ## Creates an item with id [param item_id] unless it already exists.[br]
 ## If [param item_data] isn't null, it'll create the item with the data from it.
-func create_item(item_id: StringName, item_name: String, description: String, category: StringName, rarity: int, value: int, flags: Array[int], data: Dictionary[String, Variant]) -> void:
+func create_item(item_id: StringName, item_name: String, description: String, category: StringName, rarity: int, value: int, flags: PackedInt64Array, data: Dictionary[String, Variant]) -> void:
 	if _items.has(item_id):
 		return
 	
@@ -81,15 +86,25 @@ func set_item_flags(item_id: StringName, flags: Array[NFItemSheet.ItemFlag], ena
 				_items[item_id]["flags"].erase(flag)
 
 
+## Returns an array with all the enabled flags of the item [param item_id].
 func get_item_flags(item_id: StringName) -> Array[int]:
-	var flags: Array[int] = []
+	var item: Variant = _items.get(item_id)
+	if typeof(_items) != TYPE_DICTIONARY:
+		return []
 	
-	for item in NFDictUtils.get_nested_value(_items, [item_id, "flags"], [], true):
-		if typeof(item) != TYPE_INT or flags.has(item):
-			continue
-		flags.append(item)
+	var flag_arr: Variant = _items.get("flags")
+	# NOTE: If the flags format changes, change this too
+	if typeof(flag_arr) != TYPE_PACKED_INT64_ARRAY:
+		return []
+	var used_flags: Dictionary[int, Variant] = {}
+	for flag in flag_arr:
+		used_flags[flag] = null
 	
-	return flags
+	var item_flags: Array[int] = []
+	if not used_flags.is_empty():
+		item_flags.assign(used_flags.keys())
+	
+	return item_flags
 
 
 ## Returns true if the [param item_id] has [param flag] enabled.
@@ -124,6 +139,8 @@ func get_item_name(item_id: StringName) -> String:
 			true)
 
 
+## Returns the description of the [param item_id] or an empty string
+## if the item isn't found.
 func get_item_description(item_id: StringName) -> String:
 	return NFDictUtils.get_nested_value(
 			_items,
@@ -140,6 +157,11 @@ func set_item_category(item_id: StringName, new_category: StringName) -> void:
 	_items[item_id]["category"] = new_category
 
 
+## Returns the category of the [param item_id] or an empty stringname
+## if the item isn't found.
+## [br][br]
+## [b]Note:[/b] An empty StringName can also mean that an item isn't
+## set to any category.
 func get_item_category(item_id: StringName) -> StringName:
 	if _items.has(item_id):
 		return _items[item_id]["category"]
@@ -154,6 +176,7 @@ func set_item_rarity(item_id: StringName, new_rarity: int) -> void:
 	_items[item_id]["rarity"] = new_rarity
 
 
+## Returns the rarity of [param item_id].
 func get_item_rarity(item_id: StringName) -> int:
 	return NFDictUtils.get_nested_value(
 			_items,
@@ -170,6 +193,7 @@ func set_item_value(item_id: StringName, new_value: int) -> void:
 	_items[item_id]["value"] = maxi(0, new_value)
 
 
+## Returns the absolute value of [param item_id].
 func get_item_value(item_id: StringName) -> int:
 	var value = NFDictUtils.get_nested_value(
 			_items,
@@ -265,6 +289,7 @@ func get_category_name(category_id: StringName) -> String:
 			true)
 
 
+## Returns the parent category of [param category_id].
 func get_category_parent(category_id: StringName) -> StringName:
 	return NFDictUtils.get_nested_value(
 			_categories,
@@ -304,14 +329,19 @@ func get_category_data(category_id: StringName, data_key: String) -> Variant:
 			[category_id, "custom_data", data_key])
 
 
+## Returns the custom data of the [param category_id].
 func category_data(category_id: StringName) -> Dictionary[StringName, Variant]:
-	var data: Dictionary[StringName, Variant] = {}
-	data.assign(NFDictUtils.get_nested_value(
-			_categories,
-			[category_id, "custom_data"],
-			{},
-			true))
-	return data
+	var cat: Variant = _categories.get(category_id)
+	if typeof(cat) != TYPE_DICTIONARY:
+		return {}
+	
+	var data: Variant = cat.get("custom_data")
+	if typeof(data) != TYPE_DICTIONARY:
+		return {}
+	
+	var custom_data: Dictionary[StringName, Variant] = {}
+	custom_data.assign(data)
+	return custom_data.duplicate(true)
 
 
 ## Returns true if [param category_id] is registered.

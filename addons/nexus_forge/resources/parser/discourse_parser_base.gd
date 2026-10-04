@@ -22,6 +22,7 @@ signal dialog_reached(dialog_data: Dictionary)
 signal choices_reached(options: Array[Dictionary])
 
 
+## The different types a node can be.
 enum NodeTypes { 
 	ENTRY = 0, ## The entry for a conversation.
 	DIALOG = 1, ## A generic dialog node
@@ -38,29 +39,34 @@ enum NodeTypes {
 	SIGNAL = 12, ## Represents a registered signal
 	CALLABLE = 13, ## Represents a method that can be called
 	CALLABLE_RETURN = 14, ## Represents a method that can be called
-	VARIABLE_GET = 15,
+	VARIABLE_GET = 15, ## Fetches data from the Blackboard
 	SHORTCUT_IN = 16, ## A pointer that directs to a SHORTCUT_OUT.
 	SHORTCUT_OUT = 17, ## A node for SHORTCUT_IN to point to.
-	DIALOG_END = 18,
-	DIALOG_MERGE = 19,
+	DIALOG_END = 18, ## A visual marker that signals the end of a dialogue
+	DIALOG_MERGE = 19, ## A path-joiner merging multiple branches into one.
 	COMMENT = 20, ## A node that exists to explain something.
-	SETTINGS_CHARACTER = 21,
-	SETTINGS_DIALOG = 22,
-	SETTINGS_OPTION = 23,
-	RANDOM_VALUE = 24,
-	RESOURCE = 25,
-	DATA_EVENT = 26,
-	LOCALIZED_TEXT = 27,
-	METADATA = 28,
-	TRAVEL_TO = 29,
-	TRAVEL_TARGET = 30,
-	TRAVEL_BACK = 31,
+	SETTINGS_CHARACTER = 21, ## Character settings for a DIALOG node.
+	SETTINGS_DIALOG = 22, ## Dialogue settings for a DIALOG node.
+	SETTINGS_OPTION = 23, ## Choice settings for an entry in the CHOICES node.
+	RANDOM_VALUE = 24, ## Generates a random value of different types.
+	RESOURCE = 25, ## Provides the path to a resource.
+	DATA_EVENT = 26, ## An event that can set a variable, call a method or emit a signal.
+	LOCALIZED_TEXT = 27, ## Text that changes based on the locale.
+	METADATA = 28, ## A node representing entries in a dictionary to be passed as metadata.
+	TRAVEL_TO = 29, ## A pointer to a TRAVEL_TARGET.
+	TRAVEL_TARGET = 30, ## A waypoint for TRAVEL_TO nodes to jump to.
+	TRAVEL_BACK = 31, ## A signaler to go to the next node after the last TRAVEL_TO node reached.
 	}
 
+## The default weigth that the random path node uses.
 const RANDOM_DEFAULT_WEIGHT: int = 1
+## THe snapping decimal point for random values
 const FLOAT_SNAP: float = 0.01
 
+## An instance of the [DiscourseAPI] to which method calls and signals
+## will draw from.
 var API: DiscourseAPI = null
+## The current locale of the parser
 var locale: String = "en":
 	set(new_locale):
 		var new_standard: String = TranslationServer.standardize_locale(new_locale.strip_edges())
@@ -75,6 +81,9 @@ var locale: String = "en":
 			_dialog_resource._set_locale(locale)
 		else:
 			_load_locale_into(_dialog_resource, locale)
+## How many "steps" are kept track of for the travel_back node to
+## go back to.[br]
+## Setting this to [code]-1[/code] makes it unlimited.
 var max_dialog_travel_stack: int = 100:
 	set(s):
 		max_dialog_travel_stack = maxi(-1, s)
@@ -887,8 +896,8 @@ func prepare_dialog(path: String) -> bool:
 	return true
 
 
-## Sets the dialog to be at a specific point. [param id] can be the dialog
-## id or the NFUUID. If invalid it'll set the dialog to be at the beggining.
+## Sets the dialog to be at a specific point. If invalid it'll
+## set the dialog to be at the beggining.
 func set_dialog_id(id: StringName) -> void:
 	if _dialog_resource == null:
 		return
@@ -975,7 +984,8 @@ func advance() -> void:
 ## loading a dialog from a specific point.[br]
 ## This method is automatically called on [code]NexusForge.Discourse[/code]
 ## if Godot's locale changed and
-## [code]Update Discourse Locale With Godot[/code] is [code]On[/code].[br][br]
+## [code]Update Discourse Locale With Godot[/code] is [code]On[/code].
+## [br][br]
 ## [b]Note:[/b] This only reprocesses the current node if it is a dialog
 ## or choices node and does not re-trigger previous nodes leading up to it.
 func refresh() -> void:

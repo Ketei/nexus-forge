@@ -18,6 +18,9 @@ signal method_called(method_string: String, arguments: Array)
 signal signal_emitted(signal_name: String, arguments: Array)
 
 
+## Loads a dialog and sets the dialog ID to the start of the conversation
+## unless a valid [param starting_id] is given.[br]
+## Returns [code]true[/code] if the dialog was loaded.
 func load_dialog(path: String, starting_id: StringName = &"") -> bool:
 	if _conversation_cache.is_in_cache(path):
 		_dialog_resource = _conversation_cache.get_resource(path)
@@ -68,6 +71,8 @@ func load_dialog(path: String, starting_id: StringName = &"") -> bool:
 	return true
 
 
+## Sets the dialog to be at a specific point. If invalid it'll
+## set the dialog to be at the beggining.
 func set_dialog_id(id: StringName) -> void:
 	if _dialog_resource == null:
 		return
@@ -733,7 +738,11 @@ func _parse_dialog(dialog_id: String, dialog_text: String, is_override: bool) ->
 	return parsed.get_dialog()
 
 
-func edit_dialog(locale_code: String, dialog_id: StringName, node_id: StringName, new_dialog) -> void:
+## Adds an override for a specific dialog on a specific locale.[br]
+## [param data] needs to be either a String or [code]null[/code]. If you pass
+## [code]null[/code] to [param data] the edited dialog will be removed and the
+## original used instead.
+func set_dialog_text(locale_code: String, dialog_id: StringName, node_id: StringName, new_dialog) -> void:
 	locale_code = TranslationServer.standardize_locale(locale_code)
 	var data_type: int = typeof(new_dialog)
 	
@@ -772,7 +781,11 @@ func edit_dialog(locale_code: String, dialog_id: StringName, node_id: StringName
 		_dialog_resource._dialog_overrides = target
 
 
-func edit_choices(locale_code: String, dialog_id: StringName, node_id: StringName, new_choices) -> void:
+## Adds an override for a specific set of choices on a specific locale.[br]
+## [param data] needs to be either an Array, PackedStringArray or [code]null[/code].
+## If you pass [code]null[/code] to [param data] the edited dialog will be 
+## removed and the original used instead.
+func set_choices_array(locale_code: String, dialog_id: StringName, node_id: StringName, new_choices) -> void:
 	locale_code = TranslationServer.standardize_locale(locale_code)
 	var type: int = typeof(new_choices)
 	
@@ -822,6 +835,15 @@ func edit_choices(locale_code: String, dialog_id: StringName, node_id: StringNam
 		_dialog_resource._dialog_overrides = target
 
 
+## Forces the parser to process the current dialog/choices node again,
+## re-emitting the relevant signal. Useful when changing locales or
+## loading a dialog from a specific point.[br]
+## This method is automatically called on [code]NexusForge.Discourse[/code]
+## if Godot's locale changed and
+## [code]Update Discourse Locale With Godot[/code] is [code]On[/code].
+## [br][br]
+## [b]Note:[/b] This only reprocesses the current node if it is a dialog
+## or choices node and does not re-trigger previous nodes leading up to it.
 func refresh() -> void:
 	if _dialog_resource == null or _current_uuid.is_empty() or not _dialog_resource.node_data.has(_current_uuid):
 		return
@@ -838,6 +860,7 @@ func refresh() -> void:
 		choices_reached.emit(result["data"])
 
 
+## Progresses the conversation
 func advance() -> void:
 	if _dialog_resource == null:
 		return

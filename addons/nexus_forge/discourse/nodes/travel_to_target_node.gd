@@ -6,6 +6,7 @@ signal go_to_waypoint_pressed(node_uuid: StringName)
 signal selected_waypoint_changed(node_uuid: StringName, old_waypoint: StringName, new_waypoint: StringName)
 
 var _waypoints: OptionButton
+var go_to_btn: Button
 
 
 func _post_init() -> void:
@@ -26,7 +27,7 @@ func _post_init() -> void:
 	_waypoints.custom_minimum_size.y = 32
 	_waypoints.set_meta(&"old_value", &"")
 	
-	var go_to_btn: Button = Button.new()
+	go_to_btn = Button.new()
 	go_to_btn.custom_minimum_size = Vector2(32.0, 32.0)
 	go_to_btn.disabled = true
 	go_to_btn.tooltip_text = "Go to waypoint"
@@ -43,8 +44,6 @@ func _post_init() -> void:
 			false,
 			SlotConnectionType.DIALOG,
 			SlotConnectionType.DIALOG)
-	
-	map_field(&"fields", &"button", go_to_btn)
 
 
 func _ready() -> void:
@@ -53,7 +52,7 @@ func _ready() -> void:
 	set_slot_color_left(0, COLORS["dialog"])
 	set_slot_custom_icon_right(0, flow_icon)
 	set_slot_color_right(0, COLORS["dialog"])
-	get_mapped_field(&"fields", &"button").icon = get_theme_icon("ExternalLink", "EditorIcons")
+	go_to_btn.icon = get_theme_icon("ExternalLink", "EditorIcons")
 
 
 func _get_node_data() -> Dictionary:
@@ -92,7 +91,6 @@ func _get_issues() -> PackedStringArray:
 
 
 func add_waypoint(target_uuid: StringName, waypoint_id: String) -> void:
-	var go_to_btn: Button = get_mapped_field(&"fields", &"button")
 	var id_selected: StringName = _waypoints.get_selected_metadata() if -1 < _waypoints.selected else &""
 	var existing_waypoints: Dictionary[StringName, String] = {}
 	
@@ -143,7 +141,6 @@ func get_selected_waypoint_uuid() -> StringName:
 
 
 func remove_waypoint(target_uuid: StringName) -> bool:
-	var go_to_btn: Button = get_mapped_field(&"fields", &"button")
 	var selected_index: int = _waypoints.selected
 	
 	for idx in range(_waypoints.item_count):
