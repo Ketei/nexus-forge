@@ -182,7 +182,7 @@ func _init(uuid: StringName = &"", theme_variant: StringName = &"", with_duplica
 	
 	_post_init()
 	
-	ready.connect(_ready_signaled)
+	ready.connect(_ready_signaled, CONNECT_ONE_SHOT)
 
 
 func _ready_signaled() -> void:
