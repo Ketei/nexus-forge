@@ -1961,3 +1961,105 @@ func _buid_id_map() -> void:
 	if _id_map.is_empty() and not node_data.is_empty():
 		for node_uuid in node_data:
 			_id_map[StringName(node_data[node_uuid]["name"])] = node_uuid
+
+
+func _get_format_string_localized(key: String, for_locale: String) -> String:
+	for_locale = TranslationServer.standardize_locale(for_locale)
+	
+	if _phrase_overrides != null:
+		var possible_override: Variant = _phrase_overrides.get_base_string_override(
+				dialog_id,
+				for_locale,
+				key)
+		if possible_override != null:
+			return possible_override
+	
+	var default_fallback: String = "[MISSING LOCALIZATION DATA]"
+	
+	var key_dict: Variant = format_strings.get(key)
+	if key_dict == null:
+		return default_fallback
+	
+	# 2. Direct Match
+	if key_dict.has(for_locale):
+		return key_dict[for_locale]["base_string"]
+	
+	var fallback_mode: int = ProjectSettings.get_setting(
+			NFPluginGameHandler.get_setting_path("discourse_fallback_mode"),
+			2)
+			
+	if fallback_mode == 0:
+		return default_fallback
+		
+	var lang_fallback: String = ProjectSettings.get_setting(
+			"internationalization/locale/fallback")
+			
+	# 3. Cascade Fallback (e.g., es_AR -> es)
+	if fallback_mode == 2 and for_locale.contains("_"):
+		var base_lang: String = for_locale.get_slice("_", 0)
+		if base_lang != lang_fallback:
+			if key_dict.has(base_lang):
+				return key_dict[base_lang]["base_string"]
+	
+	# 4. Project Default Fallback
+	if key_dict.has(lang_fallback):
+		return key_dict[lang_fallback]["base_string"]
+	
+	return default_fallback
+
+
+func _get_format_string_args_localized(key: String, for_locale: String) -> Dictionary[String, Dictionary]:
+	for_locale = TranslationServer.standardize_locale(for_locale)
+	
+	var base: Dictionary[String, Dictionary] = {}
+	
+	if format_strings.has(key):
+		var key_dict: Dictionary = format_strings[key]
+		
+		var target_locale_to_use: String = ""
+		
+		if key_dict.has(for_locale):
+			target_locale_to_use = for_locale
+		else:
+			var fallback_mode: int = ProjectSettings.get_setting(
+					NFPluginGameHandler.get_setting_path("discourse_fallback_mode"),
+					2)
+			
+			if fallback_mode > 0:
+				var lang_fallback: String = ProjectSettings.get_setting("internationalization/locale/fallback")
+				
+				if fallback_mode == 2 and for_locale.contains("_"):
+					var base_lang: String = for_locale.get_slice("_", 0)
+					if base_lang != lang_fallback and key_dict.has(base_lang):
+						target_locale_to_use = base_lang
+				
+				if target_locale_to_use.is_empty() and key_dict.has(lang_fallback):
+					target_locale_to_use = lang_fallback
+		
+		if not target_locale_to_use.is_empty():
+			base = key_dict[target_locale_to_use]["format"].duplicate(true)
+	
+	# 2. Deep-merge the specific locale's overrides on top of the resolved base
+	if _phrase_overrides != null:
+		var possible_override: Dictionary[String, Dictionary] = _phrase_overrides.get_formats_override(
+				dialog_id,
+				for_locale,
+				key)
+		
+		for format_key in possible_override:
+			if not base.has(format_key):
+				base[format_key] = possible_override[format_key]
+			else:
+				var base_format: Dictionary = base[format_key]
+				var over_format: Dictionary = possible_override[format_key]
+				
+				if over_format.has("default"):
+					base_format["default"] = over_format["default"]
+				
+				if over_format.has("cases"):
+					if not base_format.has("cases"):
+						base_format["cases"] = over_format["cases"]
+					else:
+						base_format["cases"].merge(over_format["cases"], true)
+						
+	return base

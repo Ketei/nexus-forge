@@ -77,10 +77,10 @@ var locale: String = "en":
 		if _dialog_resource == null:
 			return
 		
-		if _dialog_resource._has_locale(locale):
-			_dialog_resource._set_locale(locale)
-		else:
+		if not _dialog_resource._has_locale(locale):
 			_load_locale_into(_dialog_resource, locale)
+		_dialog_resource._set_locale(locale)
+
 ## How many "steps" are kept track of for the travel_back node to
 ## go back to.[br]
 ## Setting this to [code]-1[/code] makes it unlimited.
@@ -114,6 +114,9 @@ var _dialog_edits: Dictionary[String, DiscourseDialog.NFDialogEntryOverride] = {
 			#"NodeID": "Hello there!"
 		#}
 	#}
+}
+var _phrase_overrides: Dictionary[String, DiscourseDialog.NFPhraseEntryOverride] = {
+	"dialogs.village.mayor": DiscourseDialog.NFPhraseEntryOverride.new()
 }
 
 
@@ -227,11 +230,11 @@ func _parse_dialog(dialog_id: String, dialog_text: String, is_override: bool) ->
 			var resource_id: StringName = _path_to_id[_dialog_resource.resource_path] if _path_to_id.has(_dialog_resource.resource_path) else &""
 			phrases_processed[rgx_result.get_string()] = null
 			
-			var phrase: String = _dialog_resource._active_locale.get_format_string_text(
+			var phrase: String = _dialog_resource._get_format_string(
 					resource_id,
 					phrase_key)
 			
-			var argument_cases: Dictionary[String, Dictionary] = _dialog_resource._active_locale.get_format_string_args(
+			var argument_cases: Dictionary[String, Dictionary] = _dialog_resource._get_format_string_args(
 					resource_id,
 					phrase_key)
 			
@@ -806,10 +809,10 @@ func _dialog_resource_set() -> void:
 	if _dialog_resource == null:
 		return
 	
-	if _dialog_resource._has_locale(locale):
-		_dialog_resource._set_locale(locale)
-	else:
+	if not _dialog_resource._has_locale(locale):
 		_load_locale_into(_dialog_resource, locale)
+	
+	_dialog_resource._set_locale(locale)
 #endregion
 
 
@@ -838,19 +841,24 @@ func load_dialog(path: String, starting_id: StringName = &"") -> bool:
 		if _dialog_edits.has(dialog_id) and _dialog_resource._dialog_overrides != _dialog_edits[dialog_id]:
 			_dialog_resource._dialog_overrides = _dialog_edits[dialog_id]
 		
+		var p_overrides: DiscourseDialog.NFPhraseEntryOverride = _phrase_overrides.get(dialog_id)
+		if _dialog_resource._phrase_overrides != p_overrides:
+			_dialog_resource._phrase_overrides = p_overrides
+		
 		if reload_locale:
 			_load_locale_into(_dialog_resource, locale)
 	else:
-		var res: Resource = load(target_path)
+		var res: DiscourseDialog = load(target_path)
 		var id: String = NFDictUtils.get_nested_value(_path_to_id, [path], "")
 		
 		if res == null or res is not DiscourseDialog:
 			_next_uuid = &""
 			_dialog_resource = null
 			return false
-			
-		if _dialog_edits.has(id):
-			res._dialog_overrides = _dialog_edits[id]
+		
+		res._dialog_overrides = _dialog_edits.get(id)
+		res._phrase_overrides = _phrase_overrides.get(id)
+		
 		_conversation_cache.cache_resource(res)
 		_dialog_resource = res
 	
@@ -1043,7 +1051,7 @@ func override_dialog_locale(dialog_id: String, locale_code: String, path: String
 ## [param data] needs to be either a String or [code]null[/code]. If you pass
 ## [code]null[/code] to [param data] the edited dialog will be removed and the
 ## original used instead.
-func set_dialog_text(locale_code: String, dialog_id: StringName, node_id: StringName, new_dialog) -> void:
+func set_dialog_text(locale_code: String, dialog_id: String, node_id: StringName, new_dialog) -> void:
 	var type: int = typeof(new_dialog)
 	
 	locale_code = TranslationServer.standardize_locale(locale_code)
@@ -1087,7 +1095,7 @@ func set_dialog_text(locale_code: String, dialog_id: StringName, node_id: String
 ## [param data] needs to be either an Array, PackedStringArray or [code]null[/code].
 ## If you pass [code]null[/code] to [param data] the edited dialog will be 
 ## removed and the original used instead.
-func set_choices_array(locale_code: String, dialog_id: StringName, node_id: StringName, new_choices) -> void:
+func set_choices_array(locale_code: String, dialog_id: String, node_id: StringName, new_choices) -> void:
 	locale_code = TranslationServer.standardize_locale(locale_code)
 	var type: int = typeof(new_choices)
 	
@@ -1100,7 +1108,7 @@ func set_choices_array(locale_code: String, dialog_id: StringName, node_id: Stri
 	elif type != TYPE_PACKED_STRING_ARRAY and type != TYPE_ARRAY and type != TYPE_NIL:
 		NFPluginGameHandler._log_msg(
 				"discourse",
-				"Data type error on choice edit.",
+				"Can't assing choices based on a non-array.",
 				NFPluginGameHandler._LogLevel.ERROR)
 		return
 	
@@ -1140,7 +1148,7 @@ func set_choices_array(locale_code: String, dialog_id: StringName, node_id: Stri
 
 
 ## Adds an override for a specific choice on a specific locale.
-func set_choice_text(locale_code: String, dialog_id: StringName, node_id: StringName, choice_index: int, data: String) -> void:
+func set_choice_text(locale_code: String, dialog_id: String, node_id: StringName, choice_index: int, data: String) -> void:
 	locale_code = TranslationServer.standardize_locale(locale_code)
 	var missing_path: bool = not _dialog_edits.has(dialog_id) or not _dialog_edits[dialog_id].has_override(node_id, locale_code)
 	var not_packed_array: bool = false if missing_path else typeof(_dialog_edits[dialog_id].get_override(node_id, locale_code)) != TYPE_PACKED_STRING_ARRAY
@@ -1167,6 +1175,123 @@ func set_choice_text(locale_code: String, dialog_id: StringName, node_id: String
 		return
 	
 	target[choice_index] = data
+
+
+## Adds an override for a specific phrase's base string.[br]
+## Pass [code]null[/code] to [param base] to remove the override.
+func set_phrase_base_string_override(locale_code: String, dialog_id: String, phrase_id: String, base: Variant) -> void:
+	var type: int = typeof(base)
+	locale_code = TranslationServer.standardize_locale(locale_code)
+	
+	if locale_code.is_empty() or dialog_id.is_empty() or phrase_id.is_empty():
+		NFPluginGameHandler._log_msg(
+				"discourse",
+				"Invalid locale code or empty id on phrase or dialog for phrase base string edit.",
+				NFPluginGameHandler._LogLevel.ERROR)
+		return
+	elif type != TYPE_NIL and type != TYPE_STRING:
+		NFPluginGameHandler._log_msg(
+				"discourse",
+				"Data type error on phrase base string edit.",
+				NFPluginGameHandler._LogLevel.ERROR)
+		return
+	
+	if type == TYPE_NIL:
+		if _phrase_overrides.has(dialog_id):
+			_phrase_overrides[dialog_id].set_base_string_override(dialog_id, locale_code, phrase_id, null)
+		return
+	
+	var target: DiscourseDialog.NFPhraseEntryOverride = _phrase_overrides.get(dialog_id)
+	if target == null:
+		var new_entry := DiscourseDialog.NFPhraseEntryOverride.new()
+		_phrase_overrides[dialog_id] = new_entry
+		target = new_entry
+	
+	target.set_base_string_override(dialog_id, locale_code, phrase_id, base)
+	
+	if _dialog_resource == null or _get_current_dialog_id() != dialog_id:
+		return
+	
+	if _dialog_resource._phrase_overrides != _phrase_overrides[dialog_id]:
+		_dialog_resource._phrase_overrides = _phrase_overrides[dialog_id]
+
+
+## Adds an override for a specific phrase's format default.[br]
+## Pass [code]null[/code] to [param default_val] to remove the override.
+func set_phrase_format_default_override(locale_code: String, dialog_id: String, phrase_id: String, format_id: String, default_val: Variant) -> void:
+	var type: int = typeof(default_val)
+	locale_code = TranslationServer.standardize_locale(locale_code)
+	
+	if locale_code.is_empty() or dialog_id.is_empty() or phrase_id.is_empty() or format_id.is_empty():
+		NFPluginGameHandler._log_msg(
+				"discourse",
+				"Invalid locale code or empty id on phrase format edit.",
+				NFPluginGameHandler._LogLevel.ERROR)
+		return
+	elif type != TYPE_NIL and type != TYPE_STRING:
+		NFPluginGameHandler._log_msg(
+				"discourse",
+				"Data type error on phrase format edit.",
+				NFPluginGameHandler._LogLevel.ERROR)
+		return
+	
+	if type == TYPE_NIL:
+		if _phrase_overrides.has(dialog_id):
+			_phrase_overrides[dialog_id].set_format_default_override(dialog_id, locale_code, phrase_id, format_id, null)
+		return
+	
+	var target: DiscourseDialog.NFPhraseEntryOverride = _phrase_overrides.get(dialog_id)
+	if target == null:
+		var new_override := DiscourseDialog.NFPhraseEntryOverride.new()
+		_phrase_overrides[dialog_id] = new_override
+		target = new_override
+	
+	target.set_format_default_override(dialog_id, locale_code, phrase_id, format_id, default_val)
+	
+	if _dialog_resource == null or _get_current_dialog_id() != dialog_id:
+		return
+	
+	if _dialog_resource._phrase_overrides != _phrase_overrides[dialog_id]:
+		_dialog_resource._phrase_overrides = _phrase_overrides[dialog_id]
+
+
+## Adds an override for a specific phrase's format case.[br]
+## Pass [code]null[/code] to [param result] to remove the override.
+func set_phrase_format_case_override(locale_code: String, dialog_id: String, phrase_id: String, format_id: String, case_id: String, result: Variant) -> void:
+	var type: int = typeof(result)
+	locale_code = TranslationServer.standardize_locale(locale_code)
+	
+	if locale_code.is_empty() or dialog_id.is_empty() or phrase_id.is_empty() or format_id.is_empty() or case_id.is_empty():
+		NFPluginGameHandler._log_msg(
+				"discourse",
+				"Invalid locale code or empty id on phrase format case edit.",
+				NFPluginGameHandler._LogLevel.ERROR)
+		return
+	elif type != TYPE_NIL and type != TYPE_STRING:
+		NFPluginGameHandler._log_msg(
+				"discourse",
+				"Data type error on phrase format case edit.",
+				NFPluginGameHandler._LogLevel.ERROR)
+		return
+	
+	if type == TYPE_NIL:
+		if _phrase_overrides.has(dialog_id):
+			_phrase_overrides[dialog_id].set_format_case_override(dialog_id, locale_code, phrase_id, format_id, case_id, null)
+		return
+	
+	var target: DiscourseDialog.NFPhraseEntryOverride = _phrase_overrides.get(dialog_id)
+	if target == null:
+		var new_override := DiscourseDialog.NFPhraseEntryOverride.new()
+		_phrase_overrides[dialog_id] = new_override
+		target = new_override
+	
+	target.set_format_case_override(dialog_id, locale_code, phrase_id, format_id, case_id, result)
+	
+	if _dialog_resource == null or _get_current_dialog_id() != dialog_id:
+		return
+	
+	if _dialog_resource._phrase_overrides != _phrase_overrides[dialog_id]:
+		_dialog_resource._phrase_overrides = _phrase_overrides[dialog_id]
 
 
 func _get_dialog_id(path: String) -> StringName:

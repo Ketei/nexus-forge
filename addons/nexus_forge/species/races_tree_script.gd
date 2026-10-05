@@ -344,12 +344,22 @@ func erase_species(species_id: StringName) -> bool:
 	for pointer in hybrid_pointers_erased.keys():
 		remove_hybrid_pointer(pointer)
 	
-	if _hybrid_pointers.has(species_id):
-		_hybrid_pointers[species_id]["dom"].free()
-		_hybrid_pointers[species_id]["sub"].free()
-		_hybrid_pointers.erase(species_id)
+	var ids_to_erase: Array[StringName] = get_natural_subspecies_of(species_id)
+	ids_to_erase.append(species_id)
 	
-	_species_trees.erase(species_id)
+	for id in ids_to_erase:
+		var hybrid_entry: Variant = _hybrid_pointers.get(id)
+		if hybrid_entry != null:
+			var dom: TreeItem = hybrid_entry["dom"]
+			var sub: TreeItem = hybrid_entry["sub"]
+			
+			if is_instance_valid(dom):
+				dom.free()
+			if is_instance_valid(sub):
+				sub.free()
+			_hybrid_pointers.erase(id)
+		_species_trees.erase(id)
+	
 	target.free()
 	
 	return true

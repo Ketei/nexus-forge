@@ -555,66 +555,10 @@ func _get_data(from_uuid: StringName, fallback = null) -> Variant:
 			return null
 
 
-func _overlay_array(target: Array[String], source: Array[String], max_size: int) -> void:
-	if source.is_empty():
-		return
-	
-	for i in range(mini(max_size, source.size())):
-		var text: String = source[i].strip_edges()
-		if not text.is_empty():
-			target[i] = text
-
-
 func _get_current_dialog_id() -> StringName:
 	if is_instance_valid(_dialog_resource):
 		return StringName(_dialog_resource.dialog_id)
 	return &""
-
-
-func _get_format_string_text(key: String, locale_code: String) -> String:
-	if _dialog_resource == null:
-		return ""
-	
-	var fallback_mode: int = ProjectSettings.get_setting(
-			NFPluginGameHandler.get_setting_path("discourse_fallback_mode"),
-			2)
-	
-	if fallback_mode == 0 or _dialog_resource.has_format_string(key, locale_code):
-		return _dialog_resource.get_format_string(key, locale_code)
-	
-	var lang_fallback: String = ProjectSettings.get_setting(
-			"internationalization/locale/fallback")
-	
-	if fallback_mode == 2 and locale_code.contains("_"):
-		var cascade_lang: String = locale_code.get_slice("_", 0)
-		if _dialog_resource.has_format_string(key, cascade_lang):
-			return _dialog_resource.get_format_string(key, cascade_lang)
-	
-	return _dialog_resource.get_format_string(key, lang_fallback)
-
-
-func _get_format_string_arguments(key: String, locale_code: String) -> Dictionary[String, Dictionary]:
-	var arguments: Dictionary[String, Dictionary] = {}
-	
-	if _dialog_resource == null:
-		return arguments
-	
-	var fallback_mode: int = ProjectSettings.get_setting(
-			NFPluginGameHandler.get_setting_path("discourse_fallback_mode"),
-			2)
-	
-	if fallback_mode == 0 or _dialog_resource.has_format_string(key, locale_code):
-		return _dialog_resource.get_format_string_arguments(key, locale_code)
-	
-	var lang_fallback: String = ProjectSettings.get_setting(
-			"internationalization/locale/fallback")
-	
-	if fallback_mode == 2 and locale_code.contains("_"):
-		var cascade_lang: String = locale_code.get_slice("_", 0)
-		if _dialog_resource.has_format_string(key, cascade_lang):
-			return _dialog_resource.get_format_string_arguments(key, cascade_lang)
-	
-	return _dialog_resource.get_format_string_arguments(key, lang_fallback)
 
 
 func _dialog_resource_set() -> void:
@@ -692,11 +636,9 @@ func _parse_dialog(dialog_id: String, dialog_text: String, is_override: bool) ->
 			phrases_processed[reg_result.get_string()] = null
 			var phrase_key: String = format_key.substr(1)
 			
-			var phrase: String = _get_format_string_text(
-					phrase_key,
-					locale)
+			var phrase: String = _dialog_resource._get_format_string_localized(phrase_key, locale)
 			
-			var argument_cases: Dictionary[String, Dictionary] = _get_format_string_arguments(
+			var argument_cases: Dictionary[String, Dictionary] = _dialog_resource._get_format_string_args_localized(
 					phrase_key,
 					locale)
 			
@@ -736,103 +678,6 @@ func _parse_dialog(dialog_id: String, dialog_text: String, is_override: bool) ->
 		parsed)
 	
 	return parsed.get_dialog()
-
-
-## Adds an override for a specific dialog on a specific locale.[br]
-## [param data] needs to be either a String or [code]null[/code]. If you pass
-## [code]null[/code] to [param data] the edited dialog will be removed and the
-## original used instead.
-func set_dialog_text(locale_code: String, dialog_id: StringName, node_id: StringName, new_dialog) -> void:
-	locale_code = TranslationServer.standardize_locale(locale_code)
-	var data_type: int = typeof(new_dialog)
-	
-	if locale_code.is_empty() or dialog_id.is_empty():
-		NFPluginGameHandler._log_msg(
-				"discourse",
-				"Invalid locale code or empty dialog id on dialog edit.",
-				NFPluginGameHandler._LogLevel.ERROR)
-		return
-	elif data_type != TYPE_STRING and data_type != TYPE_NIL:
-		NFPluginGameHandler._log_msg(
-				"discourse",
-				"Data type error on dialog edit.",
-				NFPluginGameHandler._LogLevel.ERROR)
-		return
-	
-	if data_type == TYPE_NIL:
-		if _dialog_edits.has(dialog_id):
-			_dialog_edits[dialog_id].set_override(node_id, locale_code, null)
-		return
-	
-	var target: DiscourseDialog.NFDialogEntryOverride = null
-	
-	if _dialog_edits.has(dialog_id):
-		target = _dialog_edits[dialog_id]
-	else:
-		target = DiscourseDialog.NFDialogEntryOverride.new()
-		_dialog_edits[dialog_id] = target
-	
-	target.set_override(node_id, locale_code, new_dialog)
-	
-	if _dialog_resource == null or String(dialog_id) != _dialog_resource.dialog_id:
-		return
-	
-	if _dialog_resource._dialog_overrides != target:
-		_dialog_resource._dialog_overrides = target
-
-
-## Adds an override for a specific set of choices on a specific locale.[br]
-## [param data] needs to be either an Array, PackedStringArray or [code]null[/code].
-## If you pass [code]null[/code] to [param data] the edited dialog will be 
-## removed and the original used instead.
-func set_choices_array(locale_code: String, dialog_id: StringName, node_id: StringName, new_choices) -> void:
-	locale_code = TranslationServer.standardize_locale(locale_code)
-	var type: int = typeof(new_choices)
-	
-	if locale_code.is_empty() or dialog_id.is_empty():
-		NFPluginGameHandler._log_msg(
-				"discourse",
-				"Invalid locale code or empty dialog id on choice edit.",
-				NFPluginGameHandler._LogLevel.ERROR)
-		return
-	elif type != TYPE_PACKED_STRING_ARRAY and type != TYPE_ARRAY and type != TYPE_NIL:
-		NFPluginGameHandler._log_msg(
-			"discourse",
-			"Can't assing choices based on a non-array.",
-			NFPluginGameHandler._LogLevel.ERROR)
-		return
-	
-	if type == TYPE_NIL:
-		if _dialog_edits.has(dialog_id):
-			_dialog_edits[dialog_id].set_override(node_id, locale_code, null)
-		return
-	
-	var target: DiscourseDialog.NFDialogEntryOverride = null
-	
-	if _dialog_edits.has(dialog_id):
-		target = _dialog_edits[dialog_id]
-	else:
-		target = DiscourseDialog.NFDialogEntryOverride.new()
-		_dialog_edits[dialog_id] = target
-	
-	var responses: PackedStringArray = []
-	for item in new_choices:
-		if typeof(item) == TYPE_STRING:
-			responses.append(item)
-		else:
-			NFPluginGameHandler._log_msg(
-					"discourse",
-					"An item in the provided array isn't a string.",
-					NFPluginGameHandler._LogLevel.WARNING)
-			responses.append("[INVALID ENTRY]")
-	
-	target.set_override(node_id, locale_code, responses)
-	
-	if _dialog_resource == null or String(dialog_id) != _dialog_resource.dialog_id:
-		return
-	
-	if _dialog_resource._dialog_overrides != target:
-		_dialog_resource._dialog_overrides = target
 
 
 ## Forces the parser to process the current dialog/choices node again,

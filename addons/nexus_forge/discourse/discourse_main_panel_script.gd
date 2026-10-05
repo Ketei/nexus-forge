@@ -2247,7 +2247,6 @@ func create_choice_node(base_text: String, localized_text: String) -> void:
 	var new_container: HBoxContainer = HBoxContainer.new()
 	var new_choice_count: Label = Label.new()
 	var base_text_label: Label = Label.new()
-	#var localization_lnedt: LineEdit = LineEdit.new()
 	var new_choice: TextEdit = BracketHandler.new()
 	var highlighter: NFEditorDialogSyntaxHighlighter = NFEditorDialogSyntaxHighlighter.new()
 	
@@ -4050,9 +4049,10 @@ func _on_text_changed_sync(text: String) -> void:
 	dialog_previewer.set_dialog(text)
 
 
-func _on_choice_text_changed(text: String, control: Control) -> void:
+func _on_choice_text_changed(control: Control) -> void:
+	var text_control: TextEdit = control.get_child(2)
 	_on_conversation_changed()
-	update_dialog_preview_choice(control.get_index(), text)
+	update_dialog_preview_choice(control.get_index(), text_control.text)
 
 
 func update_dialog_preview_choice(index: int, text: String) -> void:

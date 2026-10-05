@@ -293,7 +293,7 @@ func has_data(conversation: StringName, node: StringName) -> bool:
 
 
 ## Returns the unformatted string from the [param conversation] assiged to [param key].
-func get_format_string_text(conversation: StringName, key: StringName) -> String:
+func get_format_string_text(conversation: StringName, key: String) -> String:
 	var conv_dict: Variant = format_strings.get(conversation)
 	if typeof(conv_dict) != TYPE_DICTIONARY:
 		return ""
@@ -311,7 +311,7 @@ func get_format_string_text(conversation: StringName, key: StringName) -> String
 
 ## Returns the dictionary containing the format arguments along with the data of
 ## their [code]default[/code] value and custom [code]cases[/code].
-func get_format_string_args(conversation: StringName, key: StringName) -> Dictionary[String, Dictionary]:
+func get_format_string_args(conversation: StringName, key: String) -> Dictionary[String, Dictionary]:
 	var conv_dict: Variant = format_strings.get(conversation)
 	if typeof(conv_dict) != TYPE_DICTIONARY:
 		return {}
@@ -327,7 +327,7 @@ func get_format_string_args(conversation: StringName, key: StringName) -> Dictio
 
 
 ## Returns true if the given [param conversation] has a format string with the given [param key].
-func has_format_string(conversation: StringName, key: StringName) -> bool:
+func has_format_string(conversation: StringName, key: String) -> bool:
 	return format_strings.get(conversation, {}).has(key)
 
 
