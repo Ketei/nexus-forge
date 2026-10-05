@@ -125,6 +125,7 @@ func _species_skill_data(species_id: StringName, use_inheritance: bool) -> Dicti
 	
 	while _species.has(dominant_parent) and 0 < dilution_multiplier and not dominant_parent.is_empty() and not explored_species.has(dominant_parent):
 		dilution_multiplier -= dilution_factor
+		explored_species[dominant_parent] = null
 		for skill in _species[dominant_parent]["skills"].keys():
 			if skills.has(skill):
 				continue
@@ -182,6 +183,7 @@ func _species_trait_data(species_id: StringName, use_inheritance: bool) -> Dicti
 	
 	while _species.has(dominant_parent) and 0 < dilution_multiplier and not dominant_parent.is_empty() and not explored_species.has(dominant_parent):
 		dilution_multiplier -= dilution_factor
+		explored_species[dominant_parent] = null
 		for trait_id in _species[dominant_parent]["traits"].keys():
 			if traits.has(trait_id):
 				continue
@@ -256,6 +258,13 @@ func species() -> Array[StringName]:
 func create_species(species_id: StringName, parent_species: StringName = &"", recessive_species: StringName = &"") -> void:
 	if _species.has(species_id):
 		return
+	elif species_id == parent_species or species_id == recessive_species:
+		NFPluginGameHandler._log_msg(
+				"kindred",
+				"Tried to register species '%s' with itself as their genetic parent. Aborting.",
+				NFPluginGameHandler._LogLevel.ERROR)
+		return
+	
 	var data: Dictionary[String, Variant] = {}
 	var stats: Dictionary[StringName, float] = {}
 	var skills: Dictionary[StringName, int] = {}
@@ -357,13 +366,75 @@ func erase_species(species_id: StringName) -> void:
 
 ## Sets the [param species_id] to be a subspecies of [param parent_species].
 func link_species(species_id: StringName, parent_species: StringName, recessive_species: StringName = &"") -> void:
-	if not _species.has_all([species_id, parent_species]):
+	var entry: Variant = _species.get(species_id)
+	if entry == null:
 		return
 	
-	_species[species_id]["parent_dominant"] = parent_species
+	var dominant_found: bool = _species.has(parent_species)
+	var submissive_found: bool = _species.has(recessive_species)
 	
-	if not recessive_species.is_empty() and _species.has(recessive_species):
-		_species[species_id]["parent_recessive"] = recessive_species
+	if (dominant_found and species_id == parent_species) or (submissive_found and species_id == recessive_species):
+		NFPluginGameHandler._log_msg(
+				"kindred",
+				"Cannot link species '%s' as its own direct parent. Aborting." % species_id,
+				NFPluginGameHandler._LogLevel.ERROR)
+		return
+	
+	if dominant_found and _is_ancestor_of(species_id, parent_species):
+		NFPluginGameHandler._log_msg(
+				"kindred",
+				"Cannot link species '%s' to dominant parent '%s': '%s' is already an ancestor of '%s'. Aborting." % [
+						species_id,
+						parent_species,
+						species_id,
+						parent_species],
+				NFPluginGameHandler._LogLevel.ERROR)
+		return
+	
+	if submissive_found and _is_ancestor_of(species_id, recessive_species):
+		NFPluginGameHandler._log_msg(
+				"kindred",
+				"Cannot link species '%s' to recessive parent '%s': '%s' is already an ancestor of '%s'. Aborting." % [
+						species_id,
+						recessive_species,
+						species_id,
+						recessive_species],
+				NFPluginGameHandler._LogLevel.ERROR)
+		return
+	
+	if dominant_found:
+		entry["parent_dominant"] = parent_species
+	else:
+		if not parent_species.is_empty():
+			NFPluginGameHandler._log_msg(
+					"kindred",
+					"Attempted to link dominant parent '%s', but it does not exist. Clearing dominant parent." % parent_species,
+					NFPluginGameHandler._LogLevel.WARNING)
+		entry["parent_dominant"] = &""
+	
+	if submissive_found:
+		entry["parent_recessive"] = recessive_species
+	else:
+		if not recessive_species.is_empty():
+			NFPluginGameHandler._log_msg(
+					"kindred",
+					"Attempted to link recessive parent '%s', but it does not exist. Clearing recessive parent." % recessive_species,
+					NFPluginGameHandler._LogLevel.WARNING)
+		entry["parent_recessive"] = &""
+
+
+## Clears the genetic link of [param species_id] to it's parent species.[br]
+## [param clear_dominant] and [param clear_recessive] can be used to specify
+## which link to clear.
+func unlink_species(species_id: StringName, clear_dominant: bool = true, clear_recessive: bool = true) -> void:
+	var entry: Variant = _species.get(species_id)
+	if entry == null:
+		return
+	
+	if clear_dominant:
+		entry["parent_dominant"] = &""
+	if clear_recessive:
+		entry["parent_recessive"] = &""
 
 
 ## Returns the parent species of [param of_species].
@@ -644,3 +715,29 @@ func clear_species_skills(species_id: StringName) -> void:
 func clear_species_traits(species_id: StringName) -> void:
 	if _species.has(species_id):
 		_species[species_id]["traits"].clear()
+
+
+func _is_ancestor_of(potential_ancestor: StringName, start_species: StringName) -> bool:
+	var species_to_validate: Array[StringName] = [start_species]
+	
+	var visited: Dictionary[StringName, Variant] = {}
+	while not species_to_validate.is_empty():
+		var current: StringName = species_to_validate.pop_back()
+		if current == potential_ancestor:
+			return true
+		if visited.has(current):
+			continue
+		visited[current] = null
+		
+		var species_data: Variant = _species.get(current)
+		if species_data == null:
+			continue
+		
+		var dom: StringName = species_data["parent_dominant"]
+		var sub: StringName = species_data["parent_recessive"]
+		if not dom.is_empty():
+			species_to_validate.append(dom)
+		if not sub.is_empty():
+			species_to_validate.append(sub)
+	
+	return false

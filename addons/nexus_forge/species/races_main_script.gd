@@ -910,6 +910,7 @@ func load_species(species_id: StringName) -> void:
 		var new_value: int = 0
 		
 		if _species_resource.species_has_skill(species_id, skill_id):
+			new_value = _species_resource.get_species_skill_value(species_id, skill_id)
 			chk.set_pressed_no_signal(true)
 			spn.editable = true
 		else:
@@ -1209,6 +1210,12 @@ func save() -> void:
 		var dom: StringName = species["dominant_species"]
 		var sub: StringName = species["recessive_species"]
 		
+		if not _species_resource._species.has(id):
+			NFPluginGameHandler._log_msg(
+					"kindred - editor",
+					"Tried to link species '%s' but entry wasn't found in resource." % id,
+					NFPluginGameHandler._LogLevel.ERROR)
+			continue
 		_species_resource.link_species(id, dom, sub)
 		
 	ResourceSaver.save(_species_resource)

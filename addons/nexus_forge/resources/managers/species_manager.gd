@@ -78,22 +78,99 @@ func erase_species(species_id: StringName) -> void:
 	species_erased.emit(species_id)
 
 
-## Sets the [param species_id] to be a subspecies of [param parent_species].
+## Sets the [param species_id] to be a subspecies of [param parent_species]
+## and [param recessive_species] if specified.
 func link_species(species_id: StringName, parent_species: StringName, recessive_species: StringName = &"") -> void:
-	if not _species.has_all([species_id, parent_species]):
+	var entry: NFSpeciesSheet = _species.get(species_id)
+	if entry == null:
+		return
+	
+	var dominant_found: bool = _species.has(parent_species)
+	var submissive_found: bool = _species.has(recessive_species)
+	
+	if (dominant_found and species_id == parent_species) or (submissive_found and species_id == recessive_species):
+		NFPluginGameHandler._log_msg(
+				"kindred",
+				"Cannot link species '%s' as its own direct parent. Aborting." % species_id,
+				NFPluginGameHandler._LogLevel.ERROR)
+		return
+	
+	if dominant_found and _is_ancestor_of(species_id, parent_species):
+		NFPluginGameHandler._log_msg(
+				"kindred",
+				"Cannot link species '%s' to dominant parent '%s': '%s' is already an ancestor of '%s'. Aborting." % [
+						species_id,
+						parent_species,
+						species_id,
+						parent_species],
+				NFPluginGameHandler._LogLevel.ERROR)
+		return
+	
+	if submissive_found and _is_ancestor_of(species_id, recessive_species):
+		NFPluginGameHandler._log_msg(
+				"kindred",
+				"Cannot link species '%s' to recessive parent '%s': '%s' is already an ancestor of '%s'. Aborting." % [
+						species_id,
+						recessive_species,
+						species_id,
+						recessive_species],
+				NFPluginGameHandler._LogLevel.ERROR)
 		return
 	
 	var emit_change: bool = false
-	if _species[species_id].dominant_species != parent_species:
-		_species[species_id].dominant_species = parent_species
-		emit_change = true
 	
-	if not recessive_species.is_empty() and _species.has(recessive_species):
-		_species[species_id].recessive_species = recessive_species
-		emit_change = true
+	if dominant_found:
+		if entry.dominant_species != parent_species:
+			entry.dominant_species = parent_species
+			emit_change = true
+	else:
+		if not parent_species.is_empty():
+			NFPluginGameHandler._log_msg(
+					"kindred",
+					"Attempted to link dominant parent '%s', but it does not exist. Clearing dominant parent." % parent_species,
+					NFPluginGameHandler._LogLevel.WARNING)
+		if entry.dominant_species != &"":
+			entry.dominant_species = &""
+			emit_change = true
 	
+	if submissive_found:
+		if entry.recessive_species != recessive_species:
+			entry.recessive_species = recessive_species
+			emit_change = true
+	else:
+		if not recessive_species.is_empty():
+			NFPluginGameHandler._log_msg(
+					"kindred",
+					"Attempted to link recessive parent '%s', but it does not exist. Clearing recessive parent." % recessive_species,
+					NFPluginGameHandler._LogLevel.WARNING)
+		if entry.recessive_species != &"":
+			entry.recessive_species = &""
+			emit_change = true
+			
 	if emit_change:
-		_species[species_id].emit_changed()
+		entry.emit_changed()
+
+
+## Clears the genetic link of [param species_id] to it's parent species.[br]
+## [param clear_dominant] and [param clear_recessive] can be used to specify
+## which link to clear.
+func unlink_species(species_id: StringName, clear_dominant: bool = true, clear_recessive: bool = true) -> void:
+	var entry: NFSpeciesSheet = _species.get(species_id)
+	if entry == null:
+		return
+		
+	var emit_change: bool = false
+	
+	if clear_dominant and not entry.dominant_species.is_empty():
+		entry.dominant_species = &""
+		emit_change = true
+		
+	if clear_recessive and not entry.recessive_species.is_empty():
+		entry.recessive_species = &""
+		emit_change = true
+		
+	if emit_change:
+		entry.emit_changed()
 
 
 ## Returns the dominant parent species of [param of_species].
@@ -307,3 +384,29 @@ func clear_species_traits(species_id: StringName) -> void:
 	if _species.has(species_id) and not _species[species_id].traits.is_empty():
 		_species[species_id].traits.clear()
 		_species[species_id].emit_changed()
+
+
+func _is_ancestor_of(potential_ancestor: StringName, start_species: StringName) -> bool:
+	var species_to_validate: Array[StringName] = [start_species]
+	
+	var visited: Dictionary[StringName, Variant] = {}
+	while not species_to_validate.is_empty():
+		var current: StringName = species_to_validate.pop_back()
+		if current == potential_ancestor:
+			return true
+		if visited.has(current):
+			continue
+		visited[current] = null
+		
+		var species_data: NFSpeciesSheet = _species.get(current)
+		if species_data == null:
+			continue
+		
+		var dom: StringName = species_data.dominant_species
+		var sub: StringName = species_data.recessive_species
+		if not dom.is_empty():
+			species_to_validate.append(dom)
+		if not sub.is_empty():
+			species_to_validate.append(sub)
+	
+	return false
