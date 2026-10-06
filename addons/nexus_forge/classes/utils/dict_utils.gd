@@ -3,6 +3,15 @@ extends RefCounted
 ## A collection of static utility methods for changing, validating and getting
 ## values from dictionaries.
 
+
+## A read-only empty dictionary constant.
+const EMPTY_DICT: Dictionary = {}
+
+
+static func _static_init() -> void:
+	EMPTY_DICT.make_read_only()
+
+
 ## Returns [code]true[/code] if the [param dict] has any of the [param keys] given.
 static func has_any(dict: Dictionary, keys: Array) -> bool:
 	for key in keys:

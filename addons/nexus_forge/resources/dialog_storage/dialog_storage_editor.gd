@@ -626,7 +626,7 @@ func set_dialog_text(uuid: StringName, text: String, locale: String = "") -> voi
 func set_choices_array(uuid: StringName, options: Array, locale: String = "") -> void:
 	# --- Data validation ---
 	locale = TranslationServer.standardize_locale(locale)
-	var valid_options: Array[String]
+	var valid_options: PackedStringArray
 	for option in options:
 		var opt_type: int = typeof(option)
 		if opt_type == TYPE_STRING:
@@ -639,7 +639,14 @@ func set_choices_array(uuid: StringName, options: Array, locale: String = "") ->
 			valid_options.append("[INVALID FORMAT]")
 	# -----------------------
 	
-	var localization_level: Dictionary = localization.get_or_add(uuid, {"type": LocalizationType.CHOICES, "unlocalized": [], "locales": {}})
+	if not localization.has(uuid):
+		var new_entry: Dictionary[String, Variant] = {
+			"type": LocalizationType.CHOICES,
+			"unlocalized": PackedStringArray(),
+			"locales": NFDictUtils.create_typed(TYPE_STRING, TYPE_PACKED_STRING_ARRAY)}
+		localization[uuid] = new_entry
+	
+	var localization_level: Dictionary = localization[uuid]
 	
 	if localization_level["type"] != LocalizationType.CHOICES:
 		return
@@ -649,10 +656,7 @@ func set_choices_array(uuid: StringName, options: Array, locale: String = "") ->
 		localization_level["locales"].clear()
 	else:
 		localization_level["unlocalized"].clear()
-		NFDictUtils.set_nested_value(
-				localization_level,
-				["locales", locale],
-				valid_options)
+		localization_level["locales"][locale] = valid_options
 
 
 ## Sets a single choice for an option node. Specifically the choice with index
@@ -666,26 +670,28 @@ func set_choice_text(uuid: StringName, option_index: int, text: String, locale: 
 	var base_level: Dictionary = localization[uuid]
 	
 	if locale.is_empty():
-		if not base_level.has("unlocalized") or typeof(base_level["unlocalized"]) != TYPE_ARRAY:
+		if not base_level.has("unlocalized") or typeof(base_level["unlocalized"]) != TYPE_PACKED_STRING_ARRAY:
 			return
 		
-		var arr_size: int = base_level["unlocalized"].size()
+		var items: PackedStringArray = base_level["unlocalized"]
+		var arr_size: int = items.size()
 		if arr_size == 0:
 			return
 		var max_index: int = arr_size - 1
 		if not NFRangeUtils.is_between(option_index, -arr_size, max_index):
 			return
 		
-		base_level["unlocalized"][option_index] = text
+		items[option_index] = text
 	else:
 		locale = TranslationServer.standardize_locale(locale)
-		if not NFDictUtils.has_nested_path(base_level, ["locales", locale]) or typeof(base_level["locales"][locale]) != TYPE_ARRAY:
+		if not base_level["locales"].has(locale) or typeof(base_level["locales"][locale]) != TYPE_PACKED_STRING_ARRAY:
 			return
-		var locale_array: Array = base_level["locales"][locale]
 		
+		var locale_array: PackedStringArray = base_level["locales"][locale]
 		var arr_size: int = locale_array.size()
 		if arr_size == 0:
 			return
+		
 		var max_index: int = arr_size - 1
 		if not NFRangeUtils.is_between(option_index, -arr_size, max_index):
 			return

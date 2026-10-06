@@ -168,6 +168,10 @@ func _parse_dialog(dialog_id: String, dialog_text: String, is_override: bool) ->
 		return dialog_text
 	
 	var DUUID: String = ""
+	var p_override: DiscourseDialog.NFPhraseEntryOverride = _phrase_overrides.get(dialog_id)
+	
+	if p_override != null and p_override.has_override(_get_current_dialog_id()):
+		is_override = true
 	
 	if is_override:
 		DUUID = dialog_id + "/" + locale + "/override"
@@ -1290,6 +1294,57 @@ func set_phrase_format_case_override(locale_code: String, dialog_id: String, phr
 	if _dialog_resource == null or _get_current_dialog_id() != dialog_id:
 		return
 	
+	if _dialog_resource._phrase_overrides != _phrase_overrides[dialog_id]:
+		_dialog_resource._phrase_overrides = _phrase_overrides[dialog_id]
+
+
+## Overrides a specific phrase's format to use the default text.
+func set_phrase_format_case_to_default(locale_code: String, dialog_id: String, phrase_id: String, format_id: String, case_id: String) -> void:
+	locale_code = TranslationServer.standardize_locale(locale_code)
+	
+	if locale_code.is_empty() or dialog_id.is_empty() or phrase_id.is_empty() or format_id.is_empty() or case_id.is_empty():
+		NFPluginGameHandler._log_msg(
+				"discourse",
+				"Invalid locale code or empty id on phrase case default edit.",
+				NFPluginGameHandler._LogLevel.ERROR)
+		return
+	
+	var target: DiscourseDialog.NFPhraseEntryOverride = _phrase_overrides.get(dialog_id)
+	if target == null:
+		var new_override := DiscourseDialog.NFPhraseEntryOverride.new()
+		_phrase_overrides[dialog_id] = new_override
+		target = new_override
+	
+	target.override_format_case_to_default(dialog_id, phrase_id, format_id, case_id, locale_code)
+	
+	if _dialog_resource == null or _get_current_dialog_id() != dialog_id:
+		return
+	
+	if _dialog_resource._phrase_overrides != _phrase_overrides[dialog_id]:
+		_dialog_resource._phrase_overrides = _phrase_overrides[dialog_id]
+
+
+## Removes the default override for a specific phrase's case, restoring its base data.
+func clear_phrase_format_case_default(locale_code: String, dialog_id: String, phrase_id: String, format_id: String, case_id: String) -> void:
+	locale_code = TranslationServer.standardize_locale(locale_code)
+	
+	if locale_code.is_empty() or dialog_id.is_empty() or phrase_id.is_empty() or format_id.is_empty() or case_id.is_empty():
+		NFPluginGameHandler._log_msg(
+				"discourse",
+				"Invalid locale code or empty id on phrase case default clear.",
+				NFPluginGameHandler._LogLevel.ERROR)
+		return
+	
+	var target: DiscourseDialog.NFPhraseEntryOverride = _phrase_overrides.get(dialog_id)
+		
+	if target == null:
+		return
+	
+	target.clear_format_case_default(dialog_id, phrase_id, format_id, case_id, locale_code)
+	
+	if _dialog_resource == null or _get_current_dialog_id() != dialog_id:
+		return
+		
 	if _dialog_resource._phrase_overrides != _phrase_overrides[dialog_id]:
 		_dialog_resource._phrase_overrides = _phrase_overrides[dialog_id]
 

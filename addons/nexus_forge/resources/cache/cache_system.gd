@@ -180,6 +180,17 @@ func is_in_cache(key: String) -> bool:
 	return has_item
 
 
+## Returns all the keys of the cached items.
+func keys() -> Array[String]:
+	var c_keys: Array[String] = []
+	if thread_safe:
+		_mutex.lock()
+	c_keys.assign(_cache_map.keys())
+	if thread_safe:
+		_mutex.unlock()
+	return c_keys
+
+
 ## Removes an item from the cache. Returns [code]true[/code] if [param key] was
 ## in the cache.
 func remove_data(key: String) -> void:
@@ -188,6 +199,42 @@ func remove_data(key: String) -> void:
 	
 	if _cache_map.has(key):
 		var target_link: NFLRUCacheLink = _cache_map[key]
+		
+		_cache_map.erase(key)
+		
+		if target_link.older_link != null:
+			target_link.older_link.newer_link = target_link.newer_link
+			
+		if target_link.newer_link != null:
+			target_link.newer_link.older_link = target_link.older_link
+		
+		if _newest_used == target_link:
+			_newest_used = target_link.older_link
+		
+		if _oldest_used == target_link:
+			_oldest_used = target_link.newer_link
+	
+		target_link.clear()
+	
+	if thread_safe:
+		_mutex.unlock()
+
+
+## Removes the bulk of entries on param key_arr from
+## the cache in 1 operation. Intended for use when
+## member thread_safe is [code]true[/code] and
+## a need to remove multiple keys is required.
+func remove_keys(key_arr: Array[String]) -> void:
+	if key_arr.is_empty():
+		return
+	
+	if thread_safe:
+		_mutex.lock()
+	
+	for key in key_arr:
+		var target_link: NFLRUCacheLink = _cache_map.get(key)
+		if target_link == null:
+			continue
 		
 		_cache_map.erase(key)
 		

@@ -634,17 +634,11 @@ func _ready() -> void:
 					var cfg: ConfigFile = ConfigFile.new()
 					if cfg.load("res://addons/nexus_forge/settings.cfg") == OK:
 						var data = cfg.get_value("PERSONA", "CharacterMap")
-						if typeof(data) == TYPE_ARRAY:
+						if typeof(data) == TYPE_DICTIONARY:
 							var map: Dictionary[StringName, String] = {}
-							for entry in data:
-								if typeof(entry) == TYPE_DICTIONARY and entry.has_all(["character_id", "path"]):
-									var path = entry["path"]
-									var id = entry["character_id"]
-									var id_type: int = typeof(id)
-									if typeof(path) != TYPE_STRING:
-										continue
-									elif id_type != TYPE_STRING_NAME and id_type != TYPE_STRING:
-										continue
+							for char_id in data:
+								if typeof(char_id) == TYPE_STRING_NAME and typeof(data[char_id]) == TYPE_STRING:
+									map[char_id] = data[char_id]
 							CharacterManager._characters.assign(map)
 						else:
 							_log_msg(

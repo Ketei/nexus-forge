@@ -16,9 +16,7 @@ var id_to_dialog_file: Dictionary[String, String] = {}
 # Final map where non-conflicting IDs are assigned to a localization file.
 var id_to_localization: Dictionary[String, String] = {}
 
-
 var dialog_path: String = ""
-var export_temp_dir: DirAccess = null
 
 var character_ids: Dictionary[StringName, String] = {}
 var quest_ids: Dictionary[StringName, String] = {}
@@ -57,7 +55,6 @@ func _export_begin(_features: PackedStringArray, _is_debug: bool, _path: String,
 				"Couldn't locate DiscourseAPI script file.",
 				NFPluginGameHandler._LogLevel.ERROR)
 	
-	export_temp_dir = DirAccess.create_temp("godot_nf_plugin")
 	var file_base_path: String = ProjectSettings.get_setting(
 			NFPluginGameHandler.get_setting_path("discourse")).strip_edges()
 	
@@ -177,43 +174,13 @@ func _customize_resource(resource: Resource, path: String) -> Resource:
 					NFPluginGameHandler._LogLevel.WARNING)
 				continue
 			
-			var file_path: String = export_temp_dir.get_current_dir().path_join(virtual_path.get_file())
-			
-			var file: FileAccess = FileAccess.open(file_path, FileAccess.WRITE)
-			if file == null:
-				NFPluginGameHandler._log_msg(
-						"export",
-						"Couldn't generate locale '%s' JSON for file '%s'. Error: %s" % [locale_file.locale, resource.resource_path, FileAccess.get_open_error()],
-						NFPluginGameHandler._LogLevel.ERROR)
-				continue
-			
-			if not file.store_string(locale_file.as_json()):
-				NFPluginGameHandler._log_msg(
-						"export",
-						"Couldn't write data on file '%s'." % file_path,
-						NFPluginGameHandler._LogLevel.ERROR)
-			file.close()
-			
 			added_files[virtual_path] = null
-			# Add file, for some reason, doesn't like it when you give it bynary
-			# data that exists only in memory. And I kept finding that the export
-			# files always were one behind when doing memory only.
-			# e.g.
-			# 	> Export A was supposed to export a.json, but exported nothing
-			# 	> Change a.tres to b.tres
-			# 	> Trigger export. PCK now contains a.json, should contain b.json instead
-			# 	> Change b.tres to c.tres
-			# 	> Exporter is now storing b.json instead of c.json
-			# Only way I found to FORCE it to store the right files was using
-			# FileAccess.get_file_as_bytes. If I'm doing something wrong
-			# let me know.
-			# Note: The files being added are being generated and stored in memory
-			# when _export_file runs. They are being writen to disk and added to the
-			# pck in here. When export is done, the files should NOT persist. This
-			# means they need to be deleted somehow.
+			
+			var json_str: String = locale_file.as_json()
+			var data: = json_str.to_utf8_buffer()
 			add_file(
 					virtual_path,
-					FileAccess.get_file_as_bytes(file_path),
+					data,
 					false)
 		return release_files[res_key]
 	elif resource is NFSkillCatalog:
@@ -261,63 +228,27 @@ func _end_customize_resources() -> void:
 		"id_to_locale_file": id_to_localization}
 	
 	var virtual_path: String = dialog_path.path_join("dialog_locale_map.json")
-	var file_path: String = export_temp_dir.get_current_dir().path_join(virtual_path.get_file())
 	
-	var file: FileAccess = FileAccess.open(file_path, FileAccess.WRITE)
+	added_files[virtual_path] = null
 	
-	if file == null:
-		NFPluginGameHandler._log_msg(
-				"export",
-				"Error while generating dialog locale map. Error: %s" % FileAccess.get_open_error(),
-				NFPluginGameHandler._LogLevel.ERROR)
-	else:
-		if file.store_string(JSON.stringify(bridge_data)):
-			if added_files.has(virtual_path):
-				NFPluginGameHandler._log_msg(
-						"export",
-						"Exporter tried to add a duplicate file '%s' when exporting. Skipping." % virtual_path,
-						NFPluginGameHandler._LogLevel.WARNING)
-			else:
-				added_files[virtual_path] = null
-				# Add file, for some reason, doesn't like it when you give it bynary
-				# data that exists only in memory. And I kept finding that the export
-				# files always were one behind when doing memory only.
-				# e.g.
-				# 	> Export A with data X. Was supposed to generate a.json, but exported nothing.
-				# 	> Change data X to Y.
-				# 	> Trigger export. PCK now contains a.json but with data X.
-				# 	> Change data Y to Z.
-				# 	> Exporter is now storing Y instead of Z.
-				# Only way I found to FORCE it to store the right files was using
-				# FileAccess.get_file_as_bytes. If I'm doing something wrong
-				# let me know.
-				add_file(
-						virtual_path,
-						FileAccess.get_file_as_bytes(file_path),
-						false)
-		else:
-			NFPluginGameHandler._log_msg(
-					"export",
-					"Couldn't write dialog locale map to file '%s'" % file_path,
-					NFPluginGameHandler._LogLevel.ERROR)
-		file.close()
+	var text: String = JSON.stringify(bridge_data)
+	var data: PackedByteArray = text.to_utf8_buffer()
+	add_file(
+			virtual_path,
+			data,
+			false)
 	
 	if export_characters:
-		var config_path: String = export_temp_dir.get_current_dir().path_join("settings.cfg")
 		var cfg: ConfigFile = ConfigFile.new()
 		cfg.set_value("PERSONA", "CharacterMap", character_ids)
-		if cfg.save(config_path) == OK:
-			if added_files.has("res://addons/nexus_forge/settings.cfg"):
-				NFPluginGameHandler._log_msg(
-						"export",
-						"Exporter tried to add a duplicate file 'res://addons/nexus_forge/settings.cfg' when exporting. Skipping.",
-						NFPluginGameHandler._LogLevel.WARNING)
-			else:
-				added_files["res://addons/nexus_forge/settings.cfg"] = null
-				add_file(
-						"res://addons/nexus_forge/settings.cfg",
-						FileAccess.get_file_as_bytes(config_path),
-						false)
+		
+		var cfg_text: String = cfg.encode_to_text()
+		var bytes: PackedByteArray = cfg_text.to_utf8_buffer()
+		added_files["res://addons/nexus_forge/settings.cfg"] = null
+		add_file(
+				"res://addons/nexus_forge/settings.cfg",
+				bytes,
+				false)
 
 
 func process_editor_discourse_dialog(dialog_resource: EditorDiscourseDialog, dialog_id: String, expected_name: String) -> DiscourseDialog:
@@ -391,7 +322,6 @@ func customize_skill_catalog(catalog: NFSkillCatalog) -> NFSkillCatalog:
 
 
 func _export_end() -> void:
-	export_temp_dir = null
 	clear_memory()
 
 

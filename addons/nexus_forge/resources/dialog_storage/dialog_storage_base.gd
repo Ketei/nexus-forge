@@ -56,30 +56,22 @@ var _uid_to_id: Dictionary[StringName, StringName] = {
 var _dialog_overrides: NFDialogEntryOverride = null:
 	set(o):
 		if _dialog_overrides != null:
+			_clear_override_keys()
 			_dialog_overrides.override_changed.disconnect(_on_dialog_override_updated)
-			for node_id in _dialog_overrides._overrides.keys():
-				for locale_id in _dialog_overrides._overrides[node_id].keys():
-					#var has_override: bool = false
-					var override_entry: Variant = null
-					
-					if o != null:
-						override_entry = o.get_override(node_id, locale_id)
-					
-					var c_override: Variant = _dialog_overrides.get_override(node_id, locale_id)
-					
-					# Both null means the override doesn't exist?
-					if typeof(override_entry) == typeof(c_override) and override_entry == c_override:
-						continue
-					
-					var override_duuid: String = "%s/%s/override" % [node_id, locale_id]
-					parsed_dialog_cache.remove_data(override_duuid)
-			_dialog_overrides.clear()
-		
+			
 		_dialog_overrides = o
+		
 		if _dialog_overrides != null:
 			_dialog_overrides.override_changed.connect(_on_dialog_override_updated)
 
-var _phrase_overrides: NFPhraseEntryOverride = null
+var _phrase_overrides: NFPhraseEntryOverride = null:
+	set(o):
+		if _phrase_overrides != null:
+			_clear_override_keys()
+			_phrase_overrides.phrases_changed.disconnect(_on_phrases_changed)
+		_phrase_overrides = o
+		if o != null:
+			o.phrases_changed.connect(_on_phrases_changed)
 
 ## Cache of parsed dialogues for quick loading.
 var parsed_dialog_cache: NFLRUCache
@@ -159,6 +151,19 @@ func _on_dialog_override_updated(node_id: StringName, locale: String) -> void:
 	parsed_dialog_cache.remove_data(duuid)
 
 
+func _on_phrases_changed() -> void:
+	_clear_override_keys()
+
+
+func _clear_override_keys() -> void:
+	var keys_to_erase: Array[String] = []
+	for key in parsed_dialog_cache.keys():
+		if key.ends_with("/override"):
+			keys_to_erase.append(key)
+	
+	parsed_dialog_cache.remove_keys(keys_to_erase)
+
+
 func _get_format_string(conversation: String, key: String) -> String:
 	if _active_locale == null:
 		return "[MISSING LOCALIZATION DATA]"
@@ -179,6 +184,7 @@ func _get_format_string_args(conversation: String, key: String) -> Dictionary[St
 		return {}
 	
 	var base: Dictionary[String, Dictionary] = _active_locale.get_format_string_args(conversation, key)
+	
 	if _phrase_overrides != null:
 		var possible_override: Dictionary[String, Dictionary] = _phrase_overrides.get_formats_override(
 				conversation,
@@ -186,6 +192,12 @@ func _get_format_string_args(conversation: String, key: String) -> Dictionary[St
 				key)
 		
 		for format_key in possible_override:
+			var default_overrides: Array[String] = _phrase_overrides.get_format_case_default_overriden(
+					conversation,
+					key,
+					format_key,
+					_active_locale_code)
+			
 			if not base.has(format_key):
 				base[format_key] = possible_override[format_key]
 			else:
@@ -199,12 +211,15 @@ func _get_format_string_args(conversation: String, key: String) -> Dictionary[St
 					if not base_format.has("cases"):
 						base_format["cases"] = over_format["cases"]
 					else:
-						base_format["cases"].merge(over_format["cases"], true)
+						var case_dict: Dictionary = base_format["cases"]
+						for def_case in default_overrides:
+							case_dict.erase(def_case)
+						case_dict.merge(over_format["cases"], true)
 	
 	return base
 
 
-## On override used by [DiscourseDialog] to replace text dynamically
+## An override used by [DiscourseDialog] to replace text dynamically
 ## on a dialogue.
 class NFDialogEntryOverride extends RefCounted:
 	## Emits when an override was changed
@@ -262,8 +277,84 @@ class NFDialogEntryOverride extends RefCounted:
 			override_changed.emit(node_id, locale)
 
 
+## An override used by [DiscourseDialog] to replace phrases text
+## dynamically on dialogue.
 class NFPhraseEntryOverride extends RefCounted:
+	## Emitted when any of the internal data changes
+	signal phrases_changed
+	
 	var _overrides: Dictionary[String, Dictionary] = {}
+	var _default_cases: Dictionary[String, Dictionary] = {}
+	
+	## Overrides a format's case to use the default entry instead.
+	## [br][br]
+	##  [color=yellow]Warning:[/color] This will clear any data set with
+	## [method DiscourseDialog.NFPhraseEntryOverride.set_format_case_override]
+	func override_format_case_to_default(dialog: String, phrase: String, format: String, case: String, locale: String) -> void:
+		var dialogue_data: Variant = _default_cases.get(dialog)
+		if dialogue_data == null:
+			var formats: Dictionary[String, Dictionary] = {}
+			_default_cases[dialog] = formats
+			dialogue_data = formats
+		
+		var phrase_data: Variant = dialogue_data.get(phrase)
+		if phrase_data == null:
+			var new_phrase: Dictionary[String, Dictionary] = {}
+			dialogue_data[phrase] = new_phrase
+			phrase_data = new_phrase
+		
+		var formats_data: Variant = phrase_data.get(format)
+		if formats_data == null:
+			var new_overrides: Dictionary[String, Array] = {}
+			phrase_data[format] = new_overrides
+			formats_data = new_overrides
+		
+		if not formats_data.has(locale):
+			var case_arr: Array[String] = []
+			formats_data[locale] = case_arr
+		
+		var overrides: Array[String] = formats_data[locale]
+		var update: bool = false
+		
+		if not overrides.has(case):
+			overrides.append(case)
+			update = true
+		
+		var e: Dictionary = NFDictUtils.EMPTY_DICT
+		var locales_dict: Dictionary = _overrides.get(dialog, e).get(locale, e).get(phrase, e).get(format, e).get("cases", e)
+		if locales_dict.has(case):
+			update = true
+			locales_dict.erase(case)
+		
+		if update:
+			phrases_changed.emit()
+	
+	
+	## Clears the default override of a format's case, restoring its data.
+	func clear_format_case_default(dialog: String, phrase: String, format: String, case: String, locale: String) -> void:
+		if _erase_format_case_default(dialog, phrase, format, case, locale):
+			phrases_changed.emit()
+	
+	
+	## Returns an array of all the overriden cases that are defaulting.
+	func get_format_case_default_overriden(dialog: String, phrase: String, format: String, locale: String) -> Array[String]:
+		var d_data: Variant = _default_cases.get(dialog)
+		if d_data == null:
+			return []
+		
+		var p_data: Variant = d_data.get(phrase)
+		if p_data == null:
+			return []
+		
+		var f_data: Variant = p_data.get(format)
+		if f_data == null:
+			return []
+		
+		if f_data.has(locale):
+			var arr: Array[String] = f_data[locale]
+			return arr.duplicate()
+		else:
+			return []
 	
 	
 	## Returns a phrase base string override or [code]null[/code] if not exists.
@@ -311,6 +402,8 @@ class NFPhraseEntryOverride extends RefCounted:
 		return override_dict
 	
 	
+	## Sets a format's default text to be [param default].[br]
+	## If [param default] is [code]null[/code] the override is cleared.
 	func set_format_default_override(dialog: String, locale: String, phrase: String, format: String, default: Variant) -> void:
 		var def_type: int = typeof(default)
 		
@@ -319,6 +412,7 @@ class NFPhraseEntryOverride extends RefCounted:
 		if def_type == TYPE_NIL:
 			if d_override != null and d_override.has(locale) and d_override[locale].has(phrase) and d_override[locale][phrase]["format"].has(format):
 				var target: Dictionary = d_override[locale][phrase]["format"][format]
+				var change_made: bool = target["default"] != null
 				target["default"] = null
 				if target["cases"].is_empty():
 					d_override[locale][phrase]["format"].erase(format)
@@ -328,7 +422,8 @@ class NFPhraseEntryOverride extends RefCounted:
 							d_override.erase(locale)
 							if d_override.is_empty():
 								_overrides.erase(dialog)
-								
+				if change_made:
+					phrases_changed.emit()
 			return
 		elif def_type != TYPE_STRING:
 			return
@@ -362,9 +457,14 @@ class NFPhraseEntryOverride extends RefCounted:
 			phrase_o["format"][format] = format_override
 			format_o = format_override
 		
+		var change_made: bool = format_o["default"] != default
 		format_o["default"] = default
+		if change_made:
+			phrases_changed.emit()
 	
 	
+	## Sets a format's case result to be [param result].[br]
+	## If [param result] is [code]null[/code] the override is cleared.
 	func set_format_case_override(dialog: String, locale: String, phrase: String, format: String, case: String, result: Variant) -> void:
 		var res_type: int = typeof(result)
 		
@@ -382,6 +482,7 @@ class NFPhraseEntryOverride extends RefCounted:
 								d_override.erase(locale)
 								if d_override.is_empty():
 									_overrides.erase(dialog)
+					phrases_changed.emit()
 			return
 		elif res_type != TYPE_STRING:
 			return
@@ -415,9 +516,17 @@ class NFPhraseEntryOverride extends RefCounted:
 			phrase_o["format"][format] = format_override
 			format_o = format_override
 		
+		var change: bool = format_o["cases"].get(case) != result
 		format_o["cases"][case] = result
+		
+		var erased: bool = _erase_format_case_default(dialog, phrase, format, case, locale)
+		
+		if change or erased:
+			phrases_changed.emit()
 	
 	
+	## Overrides the base string of a phrase used to apply formatting to [param base].[br]
+	## If [param base] is [code]null[/code] the override is cleared.
 	func set_base_string_override(dialog: String, locale: String, phrase: String, base: Variant) -> void:
 		var base_type: int = typeof(base)
 		
@@ -426,6 +535,7 @@ class NFPhraseEntryOverride extends RefCounted:
 		if base_type == TYPE_NIL:
 			if d_override != null and d_override.has(locale) and d_override[locale].has(phrase):
 				var target: Dictionary = d_override[locale][phrase]
+				var change: bool = target["base_string"] != null
 				target["base_string"] = null
 				if target["format"].is_empty():
 					d_override[locale].erase(phrase)
@@ -433,6 +543,8 @@ class NFPhraseEntryOverride extends RefCounted:
 						d_override.erase(locale)
 						if d_override.is_empty():
 							_overrides.erase(dialog)
+				if change:
+					phrases_changed.emit()
 			return
 		elif base_type != TYPE_STRING:
 			return
@@ -457,4 +569,46 @@ class NFPhraseEntryOverride extends RefCounted:
 			loc_data[phrase] = new_override # FIXED: Assigned to loc_data, not d_override
 			phrase_o = new_override
 		
+		var change: bool = phrase_o["base_string"] != base
 		phrase_o["base_string"] = base
+		if change:
+			phrases_changed.emit()
+	
+	
+	## Returns if a phrase override exist for [param dialog_id].
+	func has_override(dialog_id: String) -> bool:
+		return _overrides.has(dialog_id) or _default_cases.has(dialog_id)
+	
+	
+	func _erase_format_case_default(dialog: String, phrase: String, format: String, case: String, locale: String) -> bool:
+		if not _default_cases.has(dialog):
+			return false
+		
+		var dialogue_data: Dictionary = _default_cases[dialog]
+		if not dialogue_data.has(phrase):
+			return false
+		
+		var phrase_data: Dictionary = dialogue_data[phrase]
+		if not phrase_data.has(format):
+			return false
+		
+		var formats_data: Dictionary = phrase_data[format]
+		if not formats_data.has(locale):
+			return false
+		
+		var case_arr: Array[String] = formats_data[locale]
+		var idx: int = case_arr.find(case)
+		var change: bool = -1 < idx
+		if change:
+			case_arr.remove_at(idx)
+		
+		if case_arr.is_empty():
+			formats_data.erase(locale)
+		if formats_data.is_empty():
+			phrase_data.erase(format)
+		if phrase_data.is_empty():
+			dialogue_data.erase(phrase)
+		if dialogue_data.is_empty():
+			_default_cases.erase(dialog)
+		
+		return change
