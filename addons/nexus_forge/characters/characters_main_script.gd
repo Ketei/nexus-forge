@@ -946,8 +946,8 @@ func load_character(res_id: int) -> void:
 			value.value = 0.0
 			value.allow_greater = true
 			value.allow_lesser = true
-			value.max_value = 1.0
 			value.min_value = 0.0
+			value.max_value = 1.0
 			value.set_meta(&"old_value", 0.0)
 			stat.get_meta(&"use_max").set_pressed_no_signal(false)
 			stat.get_meta(&"use_min").set_pressed_no_signal(false)
@@ -1007,9 +1007,7 @@ func load_character(res_id: int) -> void:
 		
 		value.allow_greater = stat_range.allow_greater
 		value.allow_lesser = stat_range.allow_lesser
-		value.max_value = stat_range.max_value
-		value.min_value = stat_range.min_value
-		value.set_meta(&"old_value", value.value)
+		value.set_bounds(stat_range.min_value, stat_range.max_value)
 		stat.get_meta(&"use_max").set_pressed_no_signal(not stat_range.allow_greater)
 		stat.get_meta(&"use_min").set_pressed_no_signal(not stat_range.allow_lesser)
 		min_spinbox.editable = stat_range.allow_lesser
@@ -1020,6 +1018,7 @@ func load_character(res_id: int) -> void:
 		max_spinbox.set_meta(&"old_value", max_spinbox.value)
 		
 		value.value = stat_range.value
+		value.set_meta(&"old_value", value.value)
 		
 		value.set_block_signals(false)
 		max_spinbox.set_block_signals(false)
@@ -1028,18 +1027,19 @@ func load_character(res_id: int) -> void:
 	for skill in char_skill_container.get_children():
 		if skill is HBoxContainer:
 			var skill_value = sheet.skills.get(skill.get_meta(&"skill_id"))
-			if skill_value == null:
-				skill.get_child(1).set_value_no_signal(skill.get_meta(&"default_value"))
-			else:
-				skill.get_child(1).set_value_no_signal(skill_value)
+			var final_val: float = skill.get_meta(&"default_value") if skill_value == null else skill_value
+			var spin: SpinBox = skill.get_child(1)
+			
+			spin.set_value_no_signal(final_val)
+			spin.set_meta(&"old_value", final_val)
 	
 	for child in char_traits_container.get_children():
 		if child is HBoxContainer:
 			var trait_value = sheet.traits.get(child.get_meta(&"trait_id"))
-			if trait_value == null:
-				child.get_child(1).set_value_no_signal(child.get_meta(&"default_value"))
-			else:
-				child.get_child(1).set_value_no_signal(trait_value)
+			var final_val: float = child.get_meta(&"default_value") if trait_value == null else trait_value
+			var spin: SpinBox = child.get_child(1)
+			spin.set_value_no_signal(final_val)
+			spin.set_meta(&"old_value", final_val)
 
 
 func select_species(type: StringName) -> void:
