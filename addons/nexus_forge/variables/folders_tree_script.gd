@@ -147,9 +147,11 @@ func create_folder(path: String, expand: bool = true, select: bool = false) -> v
 		for folder_tree in current_level.get_children():
 			if folder_tree.get_metadata(0)["id"] == folder:
 				current_level = folder_tree
+				no_match = false
 				break
 		if no_match:
 			current_level = _create_folder(current_level, folder, expand, false)
+			
 	
 	for tree in current_level.get_children():
 		if tree.get_metadata(0)["id"] == folder_name:

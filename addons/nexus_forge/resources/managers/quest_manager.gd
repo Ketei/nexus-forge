@@ -475,8 +475,18 @@ func _check_stage_auto_advance(quest_id: StringName) -> void:
 	
 	var entry: NFQuestEntry = _active_quests[quest_id]
 	
+	var visited_stages: Dictionary[String, Variant] = {}
 	while entry.auto_advance_stages and entry.can_complete_stage():
 		var stage_id: StringName = entry.current_stage
+		
+		if visited_stages.has(stage_id):
+			NFPluginGameHandler._log_msg(
+					"odyssey - quest manager",
+					"Infinite auto-advance loop detected in quest '%s' at stage '%s'. Aborting chain to prevent thread lock." % [quest_id, stage_id],
+					NFPluginGameHandler._LogLevel.ERROR)
+			break
+		visited_stages[stage_id] = null
+		
 		var next_stage: StringName = entry.resource.get_stage(stage_id).success_stage_id
 	
 		_set_stage_complete(quest_id, stage_id, true)

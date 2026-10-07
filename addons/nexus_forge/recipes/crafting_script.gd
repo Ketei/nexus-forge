@@ -441,6 +441,9 @@ func _on_recipe_create_pressed() -> void:
 	if not result[0]:
 		return
 	
+	if not active_recipe.is_empty():
+		save_current_recipe()
+	
 	var id: StringName = StringName(result[1])
 	
 	undo.create_action("Create Recipe")

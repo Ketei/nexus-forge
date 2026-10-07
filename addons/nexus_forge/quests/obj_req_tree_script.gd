@@ -212,6 +212,19 @@ func _do_move_item(from: String, to: String, index: int) -> void:
 	
 	var new_name: String = to_slice[-1]
 	
+	for slice in from_slice:
+		var found: bool = false
+		for item in current_folder.get_children():
+			if item.get_metadata(0)["name"] == slice:
+				current_folder = item
+				found = true
+				break
+		if not found:
+			return
+	
+	target = current_folder
+	
+	current_folder = get_root()
 	for slice in to_slice.slice(0, -1):
 		var found: bool = false
 		for item in current_folder.get_children():
@@ -229,22 +242,8 @@ func _do_move_item(from: String, to: String, index: int) -> void:
 		return
 	
 	for item in new_parent.get_children():
-		if item.get_metadata(0)["name"] == new_name:
+		if item != target and item.get_metadata(0)["name"] == new_name:
 			return
-	
-	current_folder = get_root()
-	
-	for slice in from_slice:
-		var found: bool = false
-		for item in current_folder.get_children():
-			if item.get_metadata(0)["name"] == slice:
-				current_folder = item
-				found = true
-				break
-		if not found:
-			return
-	
-	target = current_folder
 	
 	target.set_text(0, new_name)
 	target.get_metadata(0)["name"] = new_name
@@ -252,13 +251,14 @@ func _do_move_item(from: String, to: String, index: int) -> void:
 	if target.get_parent() != new_parent:
 		target.get_parent().remove_child(target)
 		new_parent.add_child(target)
-		if -1 < index and target.get_index() != index:
-			if new_parent.get_child_count() <= 1:
-				return
-			if index == 0:
-				target.move_before(new_parent.get_first_child())
-			else:
-				target.move_after(new_parent.get_child(index - 1))
+	
+	if -1 < index and target.get_index() != index:
+		if new_parent.get_child_count() <= 1:
+			return
+		if index == 0:
+			target.move_before(new_parent.get_first_child())
+		else:
+			target.move_after(new_parent.get_child(index - 1))
 
 
 func _is_in_tree(item: TreeItem) -> bool:

@@ -301,7 +301,7 @@ func set_state(state: Dictionary, clear_state: bool = false) -> void:
 	# Cleaning empty folders created by create_folder but whose state matched
 	# the default.
 	for folder in _active_variables.keys():
-		if _active_variables[folder].is_empty():
+		if _variables.has(folder) and _active_variables[folder].is_empty():
 			_active_variables.erase(folder)
 
 
