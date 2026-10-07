@@ -853,8 +853,7 @@ func save_current_character() -> void:
 		
 		sheet_stat.allow_greater = not stat.get_meta(&"use_max").button_pressed
 		sheet_stat.allow_lesser = not stat.get_meta(&"use_min").button_pressed
-		sheet_stat.max_value = max_box.value
-		sheet_stat.min_value = min_box.value
+		sheet_stat.set_bounds(min_box.value, max_box.value)
 		sheet_stat.value = value_box.value
 	
 	for skill in char_skill_container.get_children():

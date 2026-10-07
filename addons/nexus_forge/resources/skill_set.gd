@@ -72,16 +72,18 @@ func custom_skills() -> Array[StringName]:
 ## [code]NFSkillSet.my_custom_trait[/code].[br]
 ## Custom skills are tracked individually with exception of the custom skills
 ## registered on runtime with [method NFSkillCatalog.create_custom_skill] on the
-## [code]NexusForge.Skills[/code] singleton which all SkillSets contain.
+## [code]NexusForge.Skills[/code] singleton which all SkillSets contain.[br]
+## If [param skill_id] matches a built-in skill, it skips creation.
 func create_custom(skill_id: StringName, value: int = 0) -> void:
+	if NexusForge.SkillManager.is_base_skill(skill_id):
+		return
 	_custom_skills[skill_id] = value
 
 
-## Gets the value of the custom skill [param skill_id].
+## Gets the value of the custom skill [param skill_id] or
+## [code]-1[/code] if it doesn't exist.
 func get_custom(skill_id: StringName) -> int:
-	if _custom_skills.has(skill_id):
-		return _custom_skills[skill_id]
-	return 0
+	return _custom_skills.get(skill_id, -1)
 
 
 ## Returns true if this NFSkillSet contains the custom skill [param skill_id].

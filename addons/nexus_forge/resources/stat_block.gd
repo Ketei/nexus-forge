@@ -108,26 +108,42 @@ func _on_custom_stat_created(stat_id: StringName) -> void:
 
 
 func _on_stat_clamping_changed(stat_id: StringName) -> void:
-	if not _singleton_sync or not _custom_stats.has(stat_id) or _sync_blacklist.has(stat_id):
+	if not _singleton_sync or _sync_blacklist.has(stat_id):
 		return
 	
-	_custom_stats[stat_id].max_value = NexusForge.StatManager.get_range_max(stat_id)
-	_custom_stats[stat_id].min_value = NexusForge.StatManager.get_range_min(stat_id)
+	var max_val: float = NexusForge.StatManager.get_range_max(stat_id)
+	var min_val: float = NexusForge.StatManager.get_range_min(stat_id)
+	var built_in_stat: Variant = get(stat_id)
+	if built_in_stat is NFValueRange:
+		built_in_stat.set_bounds(min_val, max_val)
+		return
+	
+	var custom_stat: NFValueRange = _custom_stats.get(stat_id)
+	if custom_stat != null:
+		custom_stat.set_bounds(min_val, max_val)
 
 
 func _on_stat_clamping_toggled(stat_id: StringName) -> void:
-	if not _singleton_sync or not _custom_stats.has(stat_id) or _sync_blacklist.has(stat_id):
+	if not _singleton_sync or _sync_blacklist.has(stat_id):
 		return
 	
-	var stat: NFValueRange = _custom_stats[stat_id]
 	var allow_greater: bool = NexusForge.StatManager.allows_greater(stat_id)
 	var allow_lesser: bool = NexusForge.StatManager.allows_lesser(stat_id)
+	var max_val: float = NexusForge.StatManager.get_range_max(stat_id)
+	var min_val: float = NexusForge.StatManager.get_range_min(stat_id)
 	
-	stat.allow_greater = allow_greater
-	stat.allow_lesser = allow_lesser
+	var built_in_stat: Variant = get(stat_id)
+	if built_in_stat is NFValueRange:
+		built_in_stat.allow_greater = allow_greater
+		built_in_stat.allow_lesser = allow_lesser
+		built_in_stat.set_bounds(min_val, max_val)
+		return
 	
-	stat.max_value = NexusForge.StatManager.get_range_max(stat_id)
-	stat.min_value = NexusForge.StatManager.get_range_min(stat_id)
+	var custom_stat: NFValueRange = _custom_stats.get(stat_id)
+	if custom_stat != null:
+		custom_stat.allow_greater = allow_greater
+		custom_stat.allow_lesser = allow_lesser
+		custom_stat.set_bounds(min_val, max_val)
 
 
 ## Returns all stats used in the statblock
@@ -141,27 +157,32 @@ func custom_stats() -> Array[StringName]:
 ## accessed and modified directly like
 ## [code]NFStatBlock.my_custom_trait[/code]. This method returns
 ## the created object.[br]
-## If [param stat_id] already exists and the [param type] matches the stat
-## type, it returns the object, otherwise returns [code]null[/code]
-func create_custom(stat_id: StringName, type: int) -> NFValueRange:
-	if _custom_stats.has(stat_id):
-		var class_type: int = TYPE_INT if type == TYPE_INT else TYPE_FLOAT
-		if _custom_stats[stat_id].range_type() == class_type:
-			return _custom_stats[stat_id]
-		else:
-			return null
+## If [param stat_id] exists as a built-in stat, it'll return [code]null[/code].[br]
+## If custom [param stat_id] already exists and the [param type] matches
+## the stat type, it returns the object,
+## otherwise returns [code]null[/code].
+func create_custom(stat_id: StringName, as_float: bool) -> NFValueRange:
+	if NexusForge.StatManager.is_base_stat(stat_id):
+		return null
 	
-	_custom_stats[stat_id] = NFRangeInt.new() if type == TYPE_INT else NFRangeFloat.new()
-	return _custom_stats[stat_id]
+	var target_stat: NFValueRange = _custom_stats.get(stat_id)
+	var class_type: int = TYPE_FLOAT if as_float else TYPE_INT
+	
+	if target_stat == null:
+		var new_stat: NFValueRange = NFRangeFloat.new() if as_float else NFRangeInt.new()
+		_custom_stats[stat_id] = new_stat
+		target_stat = new_stat
+	elif target_stat.range_type() != class_type:
+		return null
+	
+	return target_stat
 
 
 ## Gets the range of the custom [param stat_id]. Returns [NFRangeInt] or [NFRangeFloat]
 ## depending on the stat type.[br]
 ## Returns [code]null[/code] if the stat doesn't exist.
 func get_custom(stat_id: StringName) -> NFValueRange:
-	if _custom_stats.has(stat_id):
-		return _custom_stats[stat_id]
-	return null
+	return _custom_stats.get(stat_id)
 
 
 ## Returns true if the custom stat [param stat_id] exists. If [param type] is set
@@ -194,6 +215,12 @@ func set_singleton_sync(enable: bool, sync_now: bool = true) -> void:
 	
 	if enable and update and sync_now: # Only sync if status changed to enabled
 		sync_stats_with_singleton()
+
+
+## Returns whether this object stats are syncing with the Nexus Forge
+## singleton or not.
+func is_syncing_with_singleton() -> bool:
+	return _singleton_sync 
 
 
 ## Syncs all of this object's stats to match the data of the singleton, unless

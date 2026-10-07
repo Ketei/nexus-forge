@@ -560,12 +560,28 @@ func _on_folder_selected(path_to_folder: String) -> void:
 	_current_folder = path_to_folder
 
 
+func refresh_current_variable_folder() -> void:
+	if not _variables_resource._variables.has(_current_folder):
+		return
+	
+	var folder: Dictionary = _variables_resource._variables[_current_folder]
+	variables_tree.clear_variables()
+	for variable_id in folder:
+		variables_tree.create_variable(
+				folder[variable_id],
+				String(variable_id))
+	
+	var search_prompt: String = var_search_line.text.strip_edges()
+	if not search_prompt.is_empty():
+		variables_tree.search_for_pattern(search_prompt)
+
+
 func display_variables_of(folder_path: String) -> void:
 	var path_strn: StringName = StringName(folder_path)
 	var variables: Array[StringName] = []
 	variables.assign(
 			_variables_resource._variables.get(
-					path_strn, {}).keys())
+					path_strn, NFDictUtils.EMPTY_DICT).keys())
 	
 	variables_tree.clear_variables()
 	var_search_line.clear()
@@ -577,7 +593,7 @@ func display_variables_of(folder_path: String) -> void:
 
 
 func on_variable_cpath_button_pressed(var_id: String) -> void:
-	DisplayServer.clipboard_set(str(_current_folder, "/", var_id))
+	DisplayServer.clipboard_set("%s/%s" % [_current_folder, var_id])
 
 
 func has_unsaved_changes() -> bool:
@@ -641,16 +657,81 @@ func _apply_folder_move(original_path: String, new_path: String, is_first_run: b
 	on_something_changed()
 
 
-func _on_variable_dropped(var_folder: String, variable: String, new_folder: String) -> void:
-	set_resource_variable(
-			new_folder,
-			variable,
-			_variables_resource._variables.get(
-					StringName(var_folder),
-					{}).get(
-							StringName(variable)))
-	erase_variable(var_folder, variable)
-	variables_tree.remove_variable(variable)
+func _on_variable_dropped(origin_folder: String, variable: String, new_folder: String) -> void:
+	if origin_folder == new_folder or new_folder.is_empty():
+		return
+	
+	var strn_origin_folder: StringName = StringName(origin_folder)
+	var strn_destination_folder: StringName = StringName(new_folder)
+	var strn_original_var_name: StringName = StringName(variable)
+	var strn_new_var_name: StringName = strn_original_var_name
+	
+	if not _variables_resource._variables.get(
+				strn_origin_folder, NFDictUtils.EMPTY_DICT).has(
+						strn_original_var_name):
+		return
+	
+	var source_value: Variant = _variables_resource._variables[strn_origin_folder][strn_original_var_name]
+	var is_replacing: bool = false
+	var overwritten_value: Variant = null
+	
+	if _variables_resource._variables.get(strn_destination_folder, NFDictUtils.EMPTY_DICT).has(strn_new_var_name):
+		var ren_rep_dialog: ConfirmationDialog = load("res://addons/nexus_forge/dialogs/three_option_dialog.gd").new()
+		ren_rep_dialog.mid_button_text = "Rename"
+		ren_rep_dialog.ok_button_text = "Replace"
+		ren_rep_dialog.cancel_button_text = "Cancel"
+		ren_rep_dialog.title = "Rename or skip variable"
+		ren_rep_dialog.dialog_text = "Folder already has a variable '%s'" % variable
+		
+		EditorInterface.popup_dialog_centered(ren_rep_dialog)
+		var result: Array = await ren_rep_dialog.dialog_finished
+		ren_rep_dialog.hide()
+		ren_rep_dialog.queue_free()
+		
+		if not result[0]:
+			return
+		
+		var op_result: int = result[1]
+		if op_result == 0:
+			is_replacing = true
+			overwritten_value = _variables_resource._variables[strn_destination_folder][strn_new_var_name]
+		
+		elif op_result == 1:
+			var rename_dialog: ConfirmationDialog = load("res://addons/nexus_forge/dialogs/lineedit_confirmation_dialog.gd").new()
+			rename_dialog.title = "Rename"
+			rename_dialog.ok_button_text = "Accept"
+			rename_dialog.cancel_button_text = "Cancel"
+			rename_dialog.use_blacklist = true
+			
+			for existing_variable in _variables_resource._variables[strn_destination_folder].keys():
+				rename_dialog.text_blacklist.append(String(existing_variable))
+			
+			rename_dialog.allow_empty = false
+			rename_dialog.error_line_blacklist_word_msg = "Variable name already used"
+			
+			EditorInterface.popup_dialog_centered(rename_dialog)
+			rename_dialog.set_line_text(variable)
+			rename_dialog.select_all_text()
+			var rename_result: Array = await rename_dialog.dialog_finished
+			rename_dialog.hide()
+			rename_dialog.queue_free()
+			
+			if not rename_result[0]:
+				return
+			
+			var picked_variable: String = rename_result[1]
+			strn_new_var_name = StringName(picked_variable)
+	
+	undo.create_action("Move Variable")
+	undo.add_do_method(_do_move_variable.bind(strn_origin_folder, strn_original_var_name, strn_destination_folder, strn_new_var_name, source_value))
+	
+	if is_replacing:
+		undo.add_undo_method(_undo_replace_variable.bind(strn_origin_folder, strn_original_var_name, strn_destination_folder, strn_new_var_name, source_value, overwritten_value))
+	else:
+		undo.add_undo_method(_do_move_variable.bind(strn_destination_folder, strn_new_var_name, strn_origin_folder, strn_original_var_name, source_value))
+		
+	undo.commit_action()
+	
 	on_something_changed()
 
 
@@ -716,6 +797,24 @@ func erase_folder(path: String) -> void:
 	for folder_path:StringName in _variables_resource._variables.keys():
 		if folder_path.begins_with(prefix):
 			_variables_resource._variables.erase(folder_path)
+
+
+func _do_move_variable(from_folder: StringName, from_var: StringName, to_folder: StringName, to_var: StringName, value: Variant) -> void:
+	erase_variable(from_folder, from_var)
+	set_resource_variable(to_folder, to_var, value)
+	
+	if String(from_folder) == _current_folder or String(to_folder) == _current_folder:
+		refresh_current_variable_folder()
+
+
+func _undo_replace_variable(from_folder: StringName, from_var: StringName, to_folder: StringName, to_var: StringName, source_value: Variant, overwritten_value: Variant) -> void:
+	erase_variable(to_folder, to_var)
+	set_resource_variable(from_folder, from_var, source_value)
+	
+	set_resource_variable(to_folder, to_var, overwritten_value)
+	
+	if String(from_folder) == _current_folder or String(to_folder) == _current_folder:
+		refresh_current_variable_folder()
 
 
 func _notification(what: int) -> void:

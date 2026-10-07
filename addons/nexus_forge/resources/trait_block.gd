@@ -68,16 +68,15 @@ func custom_traits() -> Array[StringName]:
 ## registered on runtime with [method NFTraitCatalog.create_custom_trait] on the
 ## [code]NexusForge.Traits[/code] singleton which are added to all [NFTraitBlock]s
 func create_custom(trait_id: StringName, value: int = 0) -> void:
-	if _custom_traits.has(trait_id):
+	if NexusForge.TraitManager.is_base_trait(trait_id):
 		return
+	
 	_custom_traits[trait_id] = value
 
 
 ## Returns the value of a custom trait or -1 if no trait is found.
 func get_custom(trait_id: StringName) -> int:
-	if _custom_traits.has(trait_id):
-		return _custom_traits[trait_id]
-	return -1
+	return _custom_traits.get(trait_id, -1)
 
 
 ## Returns true if the custom trait [param trait_id] exists.
@@ -87,5 +86,4 @@ func has_custom(trait_id: StringName) -> bool:
 
 ## Erases the custom trait [param trait_id].
 func erase_custom(trait_id: StringName) -> void:
-	if _custom_traits.has(trait_id):
-		_custom_traits.erase(trait_id)
+	_custom_traits.erase(trait_id)

@@ -786,7 +786,7 @@ func save_current_species() -> void:
 		_species_resource.set_species_stat_value(
 				loaded_species,
 				stat.get_meta(&"field_id"),
-				int(stat_spin.value))
+				stat_spin.value)
 	
 	_species_resource.clear_species_skills(loaded_species)
 	

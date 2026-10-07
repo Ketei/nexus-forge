@@ -37,11 +37,7 @@ func set_skill_name(skill_id: StringName, skill_name: String) -> void:
 
 ## Returns the custom skill [param skill_id] name.
 func get_skill_name(skill_id: StringName) -> String:
-	return NFDictUtils.get_nested_value(
-			_skill_data,
-			[skill_id, "name"],
-			"",
-			true)
+	return _skill_data.get(skill_id, NFDictUtils.EMPTY_DICT).get("name", "")
 
 
 ## Sets the custom skill [param skill_id] description.
@@ -52,11 +48,7 @@ func set_skill_description(skill_id: StringName, skill_description: String) -> v
 
 ## Returns the custom skill [param skill_id] description.
 func get_skill_description(skill_id: String) -> String:
-	return NFDictUtils.get_nested_value(
-			_skill_data,
-			[skill_id, "description"],
-			"",
-			true)
+	return _skill_data.get(skill_id, NFDictUtils.EMPTY_DICT).get("description", "")
 
 
 ## Returns true if a custom skill with [param skill_id] exists.

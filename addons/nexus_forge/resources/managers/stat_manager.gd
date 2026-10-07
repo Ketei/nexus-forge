@@ -32,6 +32,7 @@ func _init() -> void:
 	for stat in _base_stats:
 		var entry: NFCatalogEntryStat = NFCatalogEntryStat.new()
 		entry.name = String(stat).capitalize()
+		entry.is_float = _base_stats[stat] == TYPE_FLOAT
 		entry._flags = NFCatalogEntry._get_flags(false, true)
 		_stat_entries[stat] = entry
 	
@@ -53,6 +54,11 @@ func load_catalog(catalog: NFStatCatalog, clear_stats: bool = true) -> void:
 		new_data.description = catalog.get_stat_description(stat_id)
 		new_data.custom_data.assign(catalog.stat_data(stat_id))
 		new_data.is_float = catalog.stat_type(stat_id) != TYPE_INT
+		new_data.min_value = catalog.get_min_value(stat_id)
+		new_data.max_value = catalog.get_max_value(stat_id)
+		new_data.allow_lesser = catalog.allows_lesser(stat_id)
+		new_data.allow_greater = catalog.allows_greater(stat_id)
+		
 		new_data._flags = NFCatalogEntry._get_flags(not _base_stats.has(stat_id), true)
 		_stat_entries[stat_id] = new_data
 

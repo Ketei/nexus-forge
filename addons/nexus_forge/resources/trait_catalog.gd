@@ -42,11 +42,7 @@ func set_trait_description(trait_id: StringName, description: String) -> void:
 
 ## Returns the trait [trait_id] description.
 func get_trait_description(trait_id: StringName) -> String:
-	return NFDictUtils.get_nested_value(
-			_trait_data,
-			[trait_id, "description"],
-			"",
-			true)
+	return _trait_data.get(trait_id, NFDictUtils.EMPTY_DICT).get("description", "")
 
 
 ## Sets the data with key [param data_key] to [param data] of the trait

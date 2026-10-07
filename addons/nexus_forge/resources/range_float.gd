@@ -4,14 +4,16 @@ extends NFValueRange
 ## An object representing a floating point numerical range.
 
 
-## The minimum value this range can hold.
+## The minimum value this range can hold. Will push [member max_value] if
+## it is larger than it.
 @export var min_value: float = 0.0:
 	set(new_min):
 		min_value = new_min
 		if max_value < new_min:
 			max_value = new_min
 		_fix_value()
-## The maximum value this range can hold.
+## The maximum value this range can hold. Can't go below [member min_value].[br]
+## To assign a range safely see [method NFRangeFloat.set_bounds].
 @export var max_value: float = 0.0:
 	set(new_max):
 		if new_max < min_value:
@@ -50,6 +52,19 @@ func _fix_value() -> void:
 	elif max_value < value:
 		if allow_greater == false:
 			value = max_value
+
+
+## Safely applies new range boundaries. [param new_min] will be used
+## as the floor for [param new_max].
+func set_bounds(new_min: float, new_max: float) -> void:
+	var clamped_max = maxf(new_min, new_max)
+	
+	if max_value < new_min:
+		max_value = clamped_max
+		min_value = new_min
+	else:
+		min_value = new_min
+		max_value = clamped_max
 
 
 ## Returns [code]TYPE_FLOAT[/code]

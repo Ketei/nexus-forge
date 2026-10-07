@@ -199,7 +199,7 @@ func update_variable(variable_id: String, value: Variant) -> bool:
 		if item.get_metadata(0) != variable_id:
 			continue
 		
-		if get_tree_variant(item) != typeof(value):
+		if _get_tree_variable_type(item) != typeof(value):
 			match typeof(value): 
 				TYPE_INT:
 					item.set_icon(0, get_theme_icon("int", "EditorIcons"))

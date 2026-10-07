@@ -17,14 +17,19 @@ var id_cell: int = 0
 ## The [param skip_tree] item is ignored during validation,
 ## which is useful when renaming an existing item.
 func get_unique_id(root_tree: TreeItem, desired_id: String, skip_tree: TreeItem = null) -> String:
-	var clean_name: String = desired_id.strip_edges()
+	var clean_name: String = _sanitize_id(desired_id)
 	var ideal_name: String = default_name if clean_name.is_empty() else clean_name
+	var base_name: String = ideal_name
 	var tweaked_name: String = ideal_name
-	var iteration: int = 1
+	var iteration_data: Dictionary = NFStringUtils.get_trailing_integer(ideal_name)
+	var iteration: int = iteration_data["integer"]
+	if iteration_data["has_integer"]:
+		# We remove the integer and the las _ if it has one
+		base_name = base_name.trim_suffix(str(iteration)).trim_suffix("_")
 	
 	while has_id(root_tree, tweaked_name, skip_tree):
-		tweaked_name = str(ideal_name, "_", iteration)
 		iteration += 1
+		tweaked_name = "%s_%d" % [base_name, iteration]
 	
 	return tweaked_name
 
@@ -67,3 +72,7 @@ func search_pattern(pattern: String, on_columns: Array[int]) -> void:
 				contains = true
 				break
 		cell.visible = contains
+
+
+func _sanitize_id(id_text: String) -> String:
+	return id_text.replace("/", "_").replace("\\", "_")

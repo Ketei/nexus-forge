@@ -122,21 +122,21 @@ func create_trait(trait_id: StringName) -> void:
 	trait_created.emit(trait_id)
 
 
-## Returns whether a trait is custom or basic.
-func is_custom(trait_id: StringName) -> bool:
-	if _trait_entries.has(trait_id):
-		return _trait_entries[trait_id].is_custom()
-	return true
+## Returns [code]true[/code] if the [param trait_id] belongs to
+## declared traits on the [NFTraitBlock].
+func is_base_trait(trait_id: StringName) -> bool:
+	return _base_traits.has(trait_id)
 
 
-## Returns if a custom trait [param trait_id] is registered.
+## Returns if the trait [param trait_id] is registered.
 func has_trait(trait_id: StringName) -> bool:
 	return _trait_entries.has(trait_id)
 
 
-## Erases the custom trait [param trait_id].[br]
+## Erases the trait [param trait_id].[br]
 ## Erasing a trait doesn't remove it globally from existing [NFTraitBlock]s,
-## but prevents it from being added to newly instantiated ones.
+## but prevents it from being added to newly instantiated ones.[br]
+## Non-custom traits can't be erased.
 func erase_trait(trait_id: StringName) -> void:
 	if _base_traits.has(trait_id):
 		NFPluginGameHandler._log_msg(
@@ -149,7 +149,7 @@ func erase_trait(trait_id: StringName) -> void:
 		trait_erased.emit(trait_id)
 
 
-## Returns an array containing the IDs of the custom traits registered.
+## Returns an array containing the IDs of all registered traits.
 func traits() -> Array[StringName]:
 	var all_traits: Array[StringName] = []
 	all_traits.assign(_trait_entries.keys())

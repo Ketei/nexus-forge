@@ -152,10 +152,13 @@ func grab_text_focus() -> void:
 
 
 func set_line_text(text: String, caret_pos: int = -1) -> void:
+	var diff_text: bool = _dialog_line.text != text
 	_dialog_line.text = text
-	if is_node_ready():
-		if -1 < caret_pos:
-			_dialog_line.caret_column = caret_pos
+	if not text.is_empty():
+		var len: int = text.length()
+		var real_index: int = clampi(caret_pos, -len, len - 1)
+		_dialog_line.caret_column = real_index
+	if diff_text:
 		_on_text_changed(text)
 
 

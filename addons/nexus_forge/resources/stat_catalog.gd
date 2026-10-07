@@ -9,7 +9,7 @@ extends Resource
 
 
 # Custom stats where the value is an integer array holding 2 values [min, max]
-# &"health": {"name": "Health", "description": "Life!", "allow_*": true, "*_value": 0, "data": {}}
+# &"health": {"name": "Health", "description": "Life!", "allow_*": true, "*_value": 0, "custom_data": {}}
 @export_storage var _stat_data: Dictionary[StringName, Dictionary] = {}
 
 
@@ -60,7 +60,7 @@ func get_stat_name(stat_id: StringName) -> String:
 
 ## Gets the name of [param stat_id] or an empty string if not found.
 func get_stat_description(stat_id: StringName) -> String:
-	return _stat_data.get(stat_id, {}).get("name", "")
+	return _stat_data.get(stat_id, {}).get("description", "")
 
 
 ## Sets the [param stat_id] custom data of key [param data_key] to
