@@ -617,9 +617,42 @@ func _on_resource_saved(resource: Resource) -> void:
 
 
 func _on_filesystem_changed():
+	# Updates localtion of classes for API-dependent modules
 	class_timestamps.check_for_updates()
+	# Updates internal dictionary relation between ID and filepath
 	scan_for_character_changes()
-
+	
+	if editor_view == null:
+		return
+	# Remove open resources that were deleted
+	
+	if editor_view.characters != null:
+		var removed_characters: Array[NFCharacterSheet] = []
+		for inst_id in editor_view.characters._open_files:
+			var res: NFCharacterSheet = editor_view.characters._open_files[inst_id]["resource"]
+			if not FileAccess.file_exists(res.resource_path):
+				removed_characters.append(res)
+		for character in removed_characters:
+			editor_view.characters.filesystem_resource_removed(character)
+	
+	if editor_view.quests != null:
+		var removed_quests: Array[NFQuest] = []
+		for inst_id in editor_view.quests._open_files:
+			var res: NFQuest = editor_view.quests._open_files[inst_id]["resource"]
+			if not FileAccess.file_exists(res.resource_path):
+				removed_quests.append(res)
+		for quest in removed_quests:
+			editor_view.quests.filesystem_resource_removed(quest)
+	
+	if editor_view.phrase_maps != null:
+		var removed_phrases: Array[NFPhraseMap] = []
+		for instance_id in editor_view.phrase_maps._open_files:
+			var res: NFPhraseMap = editor_view.phrase_maps._open_files[instance_id]["resource"]
+			if not FileAccess.file_exists(res.resource_path):
+				removed_phrases.append(res)
+		
+		for phrase in removed_phrases:
+			editor_view.phrase_maps.filesystem_resource_removed(phrase)
 
 func _on_files_moved(old_file: String, new_file: String) -> void:
 	if old_file.get_extension() != "tres":

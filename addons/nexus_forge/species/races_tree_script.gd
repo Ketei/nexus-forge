@@ -7,7 +7,7 @@ signal species_selected(species_id: StringName)
 signal erase_species_requested(species_id: StringName)
 signal species_id_changed(from: StringName, to: StringName)
 signal something_changed
-signal species_dehibridized(species_id: StringName, dom: StringName, sub: StringName)
+signal species_dehibridized(species_id: StringName, new_top: StringName, dom: StringName, sub: StringName)
 signal species_moved(species: StringName, from: StringName, to: StringName)
 
 const LineEditConfirmationDialog = preload("res://addons/nexus_forge/dialogs/lineedit_confirmation_dialog.gd")
@@ -94,8 +94,11 @@ func _gui_input(event: InputEvent) -> void:
 				var dominant_species: StringName = get_dominant_gene(species_id)
 				var submissive: StringName = get_recessive_gene(species_id)
 				
+				var parent_id: StringName = selected.get_parent().get_metadata(0)["id"]
+				var new_top: StringName = submissive if parent_id == dominant_species else dominant_species
+				
 				remove_hybrid_pointer(selected)
-				species_dehibridized.emit(species_id, dominant_species, submissive)
+				species_dehibridized.emit(species_id, new_top, dominant_species, submissive)
 				return
 			
 			erase_species_requested.emit(species_id)
@@ -480,6 +483,21 @@ func hybridize_species(hybrid_id: StringName, dominant: StringName, recessive: S
 	
 	if not _species_trees.has_all(all_species):
 		return
+	
+	if _hybrid_pointers.has(hybrid_id):
+		var pointers: Dictionary = _hybrid_pointers[hybrid_id]
+		if is_instance_valid(pointers["dom"]):
+			pointers["dom"].free()
+		if is_instance_valid(pointers["sub"]):
+			pointers["sub"].free()
+		
+		_hybrid_pointers.erase(hybrid_id)
+		
+		for block_id in _species_block.keys():
+			if _species_block[block_id].has(hybrid_id):
+				_species_block[block_id].erase(hybrid_id)
+				if _species_block[block_id].is_empty():
+					_species_block.erase(block_id)
 	
 	var hybrid: TreeItem = _species_trees[hybrid_id]
 	

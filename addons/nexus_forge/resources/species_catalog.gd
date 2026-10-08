@@ -232,17 +232,13 @@ func get_species_base(species_id: StringName) -> NFSpeciesSheet:
 	
 	var new_species: NFSpeciesSheet = NFSpeciesSheet.new()
 	
-	var stats: Dictionary[StringName, float] = _species_stat_data(species_id, false)
-	var skills: Dictionary[StringName, int] = _species_skill_data(species_id, false)
-	var traits: Dictionary[StringName, int] = _species_trait_data(species_id, false)
-	
 	new_species.id = species_id
 	new_species.name = _species[species_id]["name"]
 	new_species.description = _species[species_id]["description"]
 	new_species.custom_data = _species[species_id]["custom_data"].duplicate(true)
-	new_species.stats = get_species_stats(species_id)
-	new_species.skills = get_species_skills(species_id)
-	new_species.traits = get_species_traits(species_id)
+	new_species.stats = get_species_stats(species_id, false)
+	new_species.skills = get_species_skills(species_id, false)
+	new_species.traits = get_species_traits(species_id, false)
 	
 	return new_species
 

@@ -238,7 +238,6 @@ func _on_close_character_pressed(char_id: int) -> void:
 		reset_skills()
 		reset_stats()
 		reset_traits()
-		_unsaved = false
 		undo = null
 		character_data_tree.set_undo(null)
 		character_data_tree.clear_data()
@@ -1642,12 +1641,27 @@ func plugin_open_resource(resource: NFCharacterSheet) -> void:
 
 
 func filesystem_resource_removed(res: Resource) -> void:
-	if res == null:
+	if not is_instance_valid(res):
 		return
 	
-	char_tree.remove_character(res)
+	var id: int = res.get_instance_id()
+	
+	if not _open_files.has(id):
+		return
+	
+	char_tree.remove_character(id)
+	_open_files[id]["undo"].clear_history()
+	_open_files[id]["undo"].free()
+	_open_files[id]["undo"] = null
+	_open_files[id]["data_undo"].clear_history()
+	_open_files[id]["data_undo"].free()
+	_open_files[id]["data_undo"]= null
+	_open_files.erase(id)
+	
 	if current_sheet == res:
 		current_sheet = null
+		undo = null
+		character_data_tree.set_undo(null)
 		char_id_line.text = ""
 		char_name_line.text = ""
 		set_ui_enabled(false)
@@ -1655,7 +1669,6 @@ func filesystem_resource_removed(res: Resource) -> void:
 		reset_skills()
 		reset_stats()
 		reset_traits()
-		_unsaved = false
 
 
 func close_active_character() -> void:

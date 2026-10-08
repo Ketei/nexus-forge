@@ -2398,21 +2398,23 @@ func set_call_return_node_state(node_uuid: StringName, state: Dictionary) -> voi
 	if node != null and node.node_type == DialogNodes.CALLABLE_RETURN:
 		await node.set_method(state["metadata"]["method"])
 		var caller_state: Dictionary = state["output_connections"]["caller"]
+		
 		if has_discourse_node(caller_state["target_node_uuid"]):
 			connect_discourse_nodes(
-					caller_state["target_node_uuid"],
-					caller_state["target_port"],
 					node_uuid,
-					caller_state["from_port"])
+					caller_state["from_port"],
+					caller_state["target_node_uuid"],
+					caller_state["target_port"])
 		
 		for arg_connection in state["metadata"]["arguments"]:
 			if not has_discourse_node(arg_connection["target_node_uuid"]):
 				continue
+			
 			connect_discourse_nodes(
-					node_uuid,
-					arg_connection["from_port"],
 					arg_connection["target_node_uuid"],
-					arg_connection["target_port"])
+					arg_connection["target_port"],
+					node_uuid,
+					arg_connection["from_port"])
 
 
 # Used for choice_count_state_changed

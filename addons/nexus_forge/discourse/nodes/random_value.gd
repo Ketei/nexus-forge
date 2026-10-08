@@ -301,8 +301,8 @@ func _set_type_fields(type: int) -> void:
 	match type:
 		TYPE_INT:
 			menu.icon = get_theme_icon("int", "EditorIcons")
-			set_slot_type_left(0, SlotConnectionType.VAR_INT)
 			set_slot_type_left(1, SlotConnectionType.VAR_INT)
+			set_slot_type_left(2, SlotConnectionType.VAR_INT)
 			set_slot_type_right(0, SlotConnectionType.VAR_INT)
 			set_slot_color_left(1, COLORS["integer"])
 			set_slot_color_left(2, COLORS["integer"])
@@ -312,8 +312,8 @@ func _set_type_fields(type: int) -> void:
 			
 		TYPE_FLOAT:
 			menu.icon = get_theme_icon("float", "EditorIcons")
-			set_slot_type_left(0, SlotConnectionType.VAR_FLOAT)
 			set_slot_type_left(1, SlotConnectionType.VAR_FLOAT)
+			set_slot_type_left(2, SlotConnectionType.VAR_FLOAT)
 			set_slot_type_right(0, SlotConnectionType.VAR_FLOAT)
 			set_slot_color_left(1, COLORS["float"])
 			set_slot_color_left(2, COLORS["float"])
@@ -322,8 +322,8 @@ func _set_type_fields(type: int) -> void:
 			set_input_connection_icon(&"max_value", get_theme_icon("float", "EditorIcons"))
 		TYPE_BOOL:
 			menu.icon = get_theme_icon("bool", "EditorIcons")
-			set_slot_type_left(0, SlotConnectionType.VAR_BOOL)
 			set_slot_type_left(1, SlotConnectionType.VAR_INT)
+			set_slot_type_left(2, SlotConnectionType.VAR_BOOL)
 			set_slot_type_right(0, SlotConnectionType.VAR_BOOL)
 			set_slot_color_left(1, COLORS["integer"])
 			set_slot_color_left(2, COLORS["bool"])

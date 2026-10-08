@@ -25,7 +25,7 @@ var active_dialog: TreeItem = null:
 		active_dialog = new_dialog
 		if new_dialog != null:
 			new_dialog.set_custom_color(0, SELECTED_COLOR)
-var previous_dialog: String
+
 
 # Called when the node enters the scene tree for the first time.
 func ready_plugin() -> void:
@@ -84,6 +84,8 @@ func clear_nodes() -> void:
 	for node in all_nodes.values():
 		node.free()
 	all_nodes.clear()
+	
+	active_dialog = null
 
 
 func create_dialog_node(node_name: String, node: DiscourseGraphNode) -> void:
@@ -140,15 +142,15 @@ func remove_node(uuid: StringName) -> void:
 
 
 func get_active_node_uuid() -> StringName:
-	if active_dialog == null:
-		return &""
-	return active_dialog.get_metadata(0)["node"].get_node_uuid()
+	if is_instance_valid(active_dialog):
+		return active_dialog.get_metadata(0)["node"].get_node_uuid()
+	return &""
 
 
 func get_active_node() -> DiscourseGraphNode:
-	if active_dialog == null:
-		return null
-	return active_dialog.get_metadata(0)["node"]
+	if is_instance_valid(active_dialog):
+		return active_dialog.get_metadata(0)["node"]
+	return null
 
 
 func create_node_on(tree: TreeItem, node_name: String, node: DiscourseGraphNode, default_name: String) -> void:

@@ -1019,7 +1019,7 @@ func set_field_visible(field_id: StringName, field_visible: bool) -> void:
 	if field_id.is_empty():
 		return
 		
-	var field = get_field(field_id)
+	var field = get_node_or_null(NodePath(field_id))
 	
 	if field == null:
 		return

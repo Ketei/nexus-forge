@@ -209,6 +209,9 @@ func do_redo() -> void:
 
 
 func filesystem_resource_removed(quest: NFQuest) -> void:
+	if not is_instance_valid(quest):
+		return
+	
 	var quest_id: int = quest.get_instance_id()
 	if not _open_files.has(quest_id):
 		return
