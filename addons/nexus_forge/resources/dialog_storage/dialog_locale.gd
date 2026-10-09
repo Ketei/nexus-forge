@@ -226,27 +226,45 @@ func merge_dialog(with: DiscourseDialogLocale) -> void:
 
 ## Sets the dialog text from the [param conversation]'s [param node] to [param text].
 func set_text(conversation: StringName, node: StringName, text: String) -> void:
-	NFDictUtils.set_nested_value(
-			localization,
-			[conversation, node, "dialog"],
-			text,
-			false)
+	var conv_data: Variant = localization.get(conversation)
+	if conv_data == null:
+		return
+	
+	var node_data: Variant = conv_data.get(node)
+	if conv_data == null:
+		return
+	
+	node_data["text"] = text
 
 
 ## Sets the dialog options from the [param conversation]'s [param node] to be
 ## [param options].
 func set_choices(conversation: StringName, node: StringName, choices: PackedStringArray) -> void:
-	NFDictUtils.set_nested_value(
-			localization,
-			[conversation, node, "choices"],
-			choices.duplicate(),
-			false)
+	var conv_data: Variant = localization.get(conversation)
+	if conv_data == null:
+		return
+	
+	var node_data: Variant = conv_data.get(node)
+	if conv_data == null:
+		return
+	
+	node_data["choices"] = choices.duplicate()
 
 
 ## Returns this object's data as a JSON string.
 func as_json() -> String:
+	var export_localization: Dictionary = localization.duplicate(true)
+	
+	for conv_key in export_localization:
+		var conv_dict: Dictionary = export_localization[conv_key]
+		for node_key in conv_dict:
+			var node_dict: Dictionary = conv_dict[node_key]
+			if node_dict.has("text"):
+				node_dict["dialog"] = node_dict["text"]
+				node_dict.erase("text")
+	
 	var data: Dictionary = {
-		"localization": localization,
+		"localization": export_localization,
 		"format_strings": format_strings}
 	return JSON.stringify(data, "\t")
 
@@ -272,12 +290,11 @@ func get_choices(conversation: StringName, node: StringName) -> PackedStringArra
 func get_text(conversation: StringName, node: StringName) -> String:
 	var level: Variant = localization.get(conversation)
 	
-	if typeof(level) != TYPE_DICTIONARY:
+	if level == null:
 		return ""
 	
 	var node_dict: Variant = level.get(node)
-	
-	if typeof(level) != TYPE_DICTIONARY:
+	if node_dict == null:
 		return ""
 	
 	var node_text = node_dict.get("text", "")
@@ -304,7 +321,7 @@ func get_format_string_text(conversation: StringName, key: String) -> String:
 	
 	var base_string: Variant = format_dict.get("base_string", "")
 	
-	if typeof(base_string) != TYPE_STRING:
+	if typeof(base_string) == TYPE_STRING:
 		return base_string
 	return ""
 

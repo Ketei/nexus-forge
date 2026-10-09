@@ -1047,6 +1047,8 @@ func remove_nodes(node_uuids: Array[StringName]) -> void:
 				travel_targets.erase(target)
 			DialogNodes.TRAVEL_TO:
 				travel_pointers.erase(target)
+			DialogNodes.SIGNAL:
+				signalers.erase(target)
 		
 		graph_nodes.erase(node_uuid)
 		target.queue_free()
@@ -1396,13 +1398,27 @@ func update_localization_data(dialog: EditorDiscourseDialog, for_locale: String)
 
 
 func update_methods() -> void:
+	var clean_invalid: bool = false
 	for node in method_callers:
-		node.reload_methods()
+		if is_instance_valid(node):
+			node.reload_methods()
+		else:
+			clean_invalid = true
+	
+	if clean_invalid:
+		_remove_invalid_instances(method_callers)
 
 
 func update_signals() -> void:
+	var clean_invalid: bool = false
 	for node in signalers:
-		node.reload_signals()
+		if is_instance_valid(node):
+			node.reload_signals()
+		else:
+			clean_invalid = true
+	
+	if clean_invalid:
+		_remove_invalid_instances(signalers)
 
 
 func localize_node(node_uuid: StringName, set_localized: bool) -> void:
@@ -2590,4 +2606,7 @@ func set_waypoint_node_id(node_uuid: StringName, id: String) -> void:
 				id)
 
 
-# --- Node Signalers ---
+func _remove_invalid_instances(array: Array) -> void:
+	for idx in range(array.size() -1, -1, -1):
+		if not is_instance_valid(array[idx]):
+			array.remove_at(idx)

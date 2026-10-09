@@ -1795,7 +1795,7 @@ func _import_phrase_data(data: Dictionary) -> void:
 			
 			var local_locale_data: Dictionary = locale_level[imported_locale]
 			var imported_locale_data: Dictionary = new_structure[import_key][imported_locale]
-			var existing_formats: Array[String] = get_phrase_arguments(imported_locale_data["base_string"])
+			var existing_formats: Array[String] = get_phrase_arguments(imported_locale_data["base_string"], true)
 			local_locale_data["base_string"] = imported_locale_data["base_string"]
 			
 			for format_key in imported_locale_data["format"]:

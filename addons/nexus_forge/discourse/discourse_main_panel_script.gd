@@ -1724,6 +1724,7 @@ func _on_side_editor_locale_changed(from: String, to: String) -> void:
 		
 		base_text_edt.text = base_text
 		translation_txt_box.text = new_text
+		translation_txt_box.set_meta(&"old_value", new_text)
 		
 		if dialog_scene_previewer.visible:
 			dialog_previewer.set_dialog(new_text)
@@ -2409,10 +2410,8 @@ func _on_open_conversation_pressed() -> void:
 			
 			if _open_files.has(file_id):
 				conversation_tree.select_conversation(file_id, false)
-				var offset_changed: bool = _open_files[file_id]["scroll_offset"]
 				if open_conversation(file_id):
 					_unsaved = true
-				_open_files[file_id]["scroll_offset"] = offset_changed
 				return
 
 			var filename: String = result[1].get_file()

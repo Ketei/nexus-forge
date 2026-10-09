@@ -120,11 +120,11 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 			if not data["input_connections"]["dialog_settings"]["target_node_uuid"].is_empty():
 				var settings: Dictionary = _dialog_resource.node_data.get(data["input_connections"]["dialog_settings"]["target_node_uuid"], {})
 				if not settings.is_empty() and not settings["input_connections"]["font_resource"]["target_node_uuid"].is_empty():
-					font = _get_data(settings["input_connections"]["font_resource"]["target_node_uuid"])
+					font = _get_data(settings["input_connections"]["font_resource"]["target_node_uuid"], font)
 				if not settings["input_connections"]["dialog_scene"]["target_node_uuid"].is_empty():
-					scene = _get_data(settings["input_connections"]["dialog_scene"]["target_node_uuid"])
+					scene = _get_data(settings["input_connections"]["dialog_scene"]["target_node_uuid"], scene)
 				if not settings["input_connections"]["dialog_speed"]["target_node_uuid"].is_empty():
-					speed = _get_data(settings["input_connections"]["dialog_speed"]["target_node_uuid"])
+					speed = _get_data(settings["input_connections"]["dialog_speed"]["target_node_uuid"], speed)
 				if not settings["input_connections"]["metadata"]["target_node_uuid"].is_empty():
 					var metadata_node: Dictionary = _dialog_resource.node_data.get(settings["input_connections"]["metadata"]["target_node_uuid"], {})
 					if not metadata_node.is_empty() and metadata_node.has_all(["input_connections", "metadata"]) and metadata_node["metadata"].has("metadata_connections"):
@@ -147,9 +147,9 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 							NFPluginGameHandler._LogLevel.ERROR)
 				else:
 					if not settings["input_connections"]["display_name"]["target_node_uuid"].is_empty():
-						display_name = _get_data(settings["input_connections"]["display_name"]["target_node_uuid"])
+						display_name = _get_data(settings["input_connections"]["display_name"]["target_node_uuid"], display_name)
 					if not settings["input_connections"]["portrait_id"]["target_node_uuid"].is_empty():
-						portrait_id = _get_data(settings["input_connections"]["portrait_id"]["target_node_uuid"])
+						portrait_id = _get_data(settings["input_connections"]["portrait_id"]["target_node_uuid"], display_name)
 			
 			if data["input_connections"]["dialog_text_source"]["target_node_uuid"].is_empty():
 				var text_data: Dictionary[String, Variant] = _dialog_resource._get_text_data_localized(uuid, locale)
@@ -380,8 +380,10 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 			var choices: Array[Dictionary] = []
 			
 			for choice:Dictionary in metadata["options"]:
-				var weight: int = NFDialogParser.RANDOM_DEFAULT_WEIGHT if choice["input_connections"]["weight"]["target_node_uuid"].is_empty() else _get_data(choice["input_connections"]["weight"]["target_node_uuid"])
-				if weight == 0:
+				var weight: int = NFDialogParser.RANDOM_DEFAULT_WEIGHT
+				if not choice["input_connections"]["weight"]["target_node_uuid"].is_empty():
+					weight = _get_data(choice["input_connections"]["weight"]["target_node_uuid"], weight)
+				if weight <= 0:
 					continue
 				choices.append({
 					"next": choice["output_connections"]["next_node"]["target_node_uuid"],
@@ -410,7 +412,7 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 			target["type"] = NodeTypes.DIALOG_END
 			return target
 		NodeTypes.TRAVEL_TO:
-			if max_dialog_travel_stack <= _get_target_travel_stack_size():
+			if -1 < max_dialog_travel_stack and max_dialog_travel_stack <= _get_target_travel_stack_size():
 				NFPluginGameHandler._log_msg(
 					"discourse",
 					"Travel stack overflow! Max depth of %d reached." % max_dialog_travel_stack,
@@ -447,23 +449,52 @@ func _get_data(from_uuid: StringName, fallback = null) -> Variant:
 		NodeTypes.RANDOM_VALUE:
 			match metadata["mode"]:
 				TYPE_INT:
-					return randi_range(
-							metadata["values"]["base"],
-							metadata["values"]["max"])
-				TYPE_FLOAT:
-					return snappedf(
-							randf_range(
-									metadata["values"]["base"],
-									metadata["values"]["max"]),
-							0.01)
-				TYPE_BOOL:
-					var true_range: int = randi_range(
-							1,
-							100 if data["input_connections"]["base_value"]["target_node_uuid"] == "" else _get_data(data["input_connections"]["base_value"]["target_node_uuid"]))
+					var val_base: int = metadata["values"]["base"]
+					var val_max: int = metadata["values"]["max"]
 					
-					return true_range <= metadata["values"]["base"]
+					var override_base: StringName = data["input_connections"]["base_value"]["target_node_uuid"]
+					var override_max: StringName = data["input_connections"]["max_value"]["target_node_uuid"]
+					if not override_base.is_empty():
+						val_base = _get_data(override_base, val_base)
+					if not override_max.is_empty():
+						val_max = _get_data(override_max, val_max)
+					
+					if val_max < val_base:
+						val_max = val_base
+					return randi_range(val_base, val_max)
+				TYPE_FLOAT:
+					var val_base: float = metadata["values"]["base"]
+					var val_max: float = metadata["values"]["max"]
+					
+					var override_base: StringName = data["input_connections"]["base_value"]["target_node_uuid"]
+					var override_max: StringName = data["input_connections"]["max_value"]["target_node_uuid"]
+					if not override_base.is_empty():
+						val_base = _get_data(override_base, val_base)
+					if not override_max.is_empty():
+						val_max = _get_data(override_max, val_max)
+					
+					if val_max < val_base:
+						val_max = val_base
+					
+					return snappedf(
+							randf_range(val_base, val_max),
+							FLOAT_SNAP)
+				TYPE_BOOL:
+					var val_base: float = metadata["values"]["base"]
+					
+					var override_base: StringName = data["input_connections"]["base_value"]["target_node_uuid"]
+					if not override_base.is_empty():
+						val_base = _get_data(override_base, val_base)
+					
+					if val_base <= 0:
+						return false
+					elif 100 <= val_base:
+						return true
+					else:
+						var true_range: int = randi_range(1, 100)
+						return true_range <= val_base
 				_:
-					return null
+					return fallback
 		NodeTypes.TYPE_GUARD:
 			var guard_data = _get_data(data["input_connections"]["value"]["target_node_uuid"])
 			if typeof(guard_data) == typeof(metadata["fallback_value"]):
@@ -474,9 +505,13 @@ func _get_data(from_uuid: StringName, fallback = null) -> Variant:
 			var path: String = metadata["variable_path"]
 			return NexusForge.Blackboard.get_variable(path)
 		NodeTypes.CALLABLE_RETURN:
+			var args: Array = []
+			for argument in metadata["arguments"]:
+				args.append(
+						_get_data(argument["target_node_uuid"]))
 			return NexusForge.Discourse.API.callv(
 					metadata["method"],
-					metadata["arguments"])
+					args)
 		NodeTypes.DATA_EVENT:
 			if metadata["variable_path"] != "" and data["input_connections"]["variable_value"] != "":
 				var path: String = metadata["variable_path"]
@@ -525,7 +560,7 @@ func _get_data(from_uuid: StringName, fallback = null) -> Variant:
 					var signal_args: Array = []
 					var api_signal: Signal = Signal(
 						NexusForge.Discourse.API,
-						data["metadata"]["signal"])
+						signal_data["metadata"]["signal"])
 					
 					for arg_connection in signal_data["metadata"]["arguments"]:
 						signal_args.append(_get_data(arg_connection["target_node_uuid"]))
@@ -551,6 +586,28 @@ func _get_data(from_uuid: StringName, fallback = null) -> Variant:
 				return _get_data(data["input_connections"]["false_value"]["target_node_uuid"])
 		NodeTypes.RESOURCE:
 			return metadata["resource_path"]
+		NodeTypes.COMPARATION:
+			var value_a = _get_data(data["input_connections"]["node_a"]["target_node_uuid"])
+			var value_b = _get_data(data["input_connections"]["node_b"]["target_node_uuid"])
+			
+			if not _can_compare(value_a, value_b):
+				return metadata["operator"] == OP_NOT_EQUAL
+			
+			match metadata["operator"]:
+				OP_EQUAL:
+					return value_a == value_b
+				OP_NOT_EQUAL:
+					return value_a != value_b
+				OP_LESS:
+					return value_a < value_b
+				OP_LESS_EQUAL:
+					return value_a <= value_b
+				OP_GREATER:
+					return value_b < value_a
+				OP_GREATER_EQUAL:
+					return value_b <= value_a
+				_:
+					return false
 		_:
 			return null
 
@@ -710,12 +767,12 @@ func advance() -> void:
 	if _dialog_resource == null:
 		return
 	
-	if _dialog_resource.has_dialog_entry(_next_uuid):
+	if _next_uuid.is_empty() or _dialog_resource.has_dialog_entry(_next_uuid):
 		super()
 	else:
 		NFPluginGameHandler._log_msg(
 			"discourse",
-			"Can't advance to inexistend dialog entry '%s'." % _next_uuid,
+			"Can't advance to inexistent dialog entry '%s'." % _next_uuid,
 			NFPluginGameHandler._LogLevel.ERROR)
 
 
@@ -723,66 +780,12 @@ func _get_bool_result(from_uuid: String) -> bool:
 	if _dialog_resource == null or from_uuid.is_empty() or not _dialog_resource.node_data.has(from_uuid):
 		return false
 	
-	var data: Dictionary = _dialog_resource.node_data.get(from_uuid, {})
-	var metadata: Dictionary = data["metadata"]
-	match data["type"]:
-		NodeTypes.VALUE:
-			var value = metadata["value"]
-			if typeof(value) in [TYPE_BOOL, TYPE_INT, TYPE_FLOAT]:
-				return bool(value)
-			else:
-				return false
-		NodeTypes.RANDOM_VALUE:
-			if metadata["mode"] == TYPE_BOOL:
-				var result: int = randi_range(1, 100)
-				return metadata["values"]["base"] <= result
-			elif metadata["mode"] in [TYPE_INT, TYPE_FLOAT]:
-				return randi_range(
-						 metadata["values"]["base"],
-						 metadata["values"]["max"]) != 0
-			else:
-				return false
-		NodeTypes.TYPE_GUARD:
-			# Will get data if matches type, if not fallback is used
-			var guard_data = _get_data(data["input_connections"]["value"]["target_node_uuid"])
-			var data_type: int = typeof(guard_data)
-			
-			if data_type  == TYPE_BOOL:
-				return guard_data
-			elif data_type == TYPE_INT or data_type == TYPE_FLOAT:
-				return guard_data != 0
-			else:
-				return false
-		NodeTypes.VARIABLE_GET:
-			var path: String = metadata["variable_path"]
-			
-			var variable = NexusForge.Blackboard.get_variable(path)
-			
-			if typeof(variable) in [TYPE_BOOL, TYPE_INT, TYPE_FLOAT]:
-				return bool(variable)
-			else:
-				return false
-		NodeTypes.COMPARATION:
-			var value_a = _get_data(data["input_connections"]["node_a"]["target_node_uuid"])
-			var value_b = _get_data(data["input_connections"]["node_b"]["target_node_uuid"])
-			
-			if not _can_compare(value_a, value_b):
-				return metadata["operator"] == OP_NOT_EQUAL
-			
-			match metadata["operator"]:
-				OP_EQUAL:
-					return value_a == value_b
-				OP_NOT_EQUAL:
-					return value_a != value_b
-				OP_LESS:
-					return value_a < value_b
-				OP_LESS_EQUAL:
-					return value_a <= value_b
-				OP_GREATER:
-					return value_b < value_a
-				OP_GREATER_EQUAL:
-					return value_b <= value_a
-				_:
-					return false
-		_:
-			return false
+	var result: Variant = _get_data(from_uuid, false)
+	
+	var result_type: int = typeof(result)
+	if result_type == TYPE_BOOL:
+		return result
+	elif result_type == TYPE_INT or result_type == TYPE_FLOAT:
+		return bool(result)
+	
+	return false

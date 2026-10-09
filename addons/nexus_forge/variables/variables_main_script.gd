@@ -676,12 +676,23 @@ func _on_variable_dropped(origin_folder: String, variable: String, new_folder: S
 	var overwritten_value: Variant = null
 	
 	if _variables_resource._variables.get(strn_destination_folder, NFDictUtils.EMPTY_DICT).has(strn_new_var_name):
+		var folder_slices: int = new_folder.get_slice_count("/")
+		var display_folder: String = new_folder if folder_slices == 0 else\
+				new_folder.get_slice("/", folder_slices - 1)
+		var display_variable: String = variable
+		if 20 < display_folder.length():
+			display_folder = display_folder.substr(0, 20) + "..."
+		if 20 < display_variable.length():
+			display_variable = display_variable.substr(0, 20) + "..."
 		var ren_rep_dialog: ConfirmationDialog = load("res://addons/nexus_forge/dialogs/three_option_dialog.gd").new()
+		ren_rep_dialog.dialog_autowrap = true
 		ren_rep_dialog.mid_button_text = "Rename"
 		ren_rep_dialog.ok_button_text = "Replace"
 		ren_rep_dialog.cancel_button_text = "Cancel"
 		ren_rep_dialog.title = "Rename or skip variable"
-		ren_rep_dialog.dialog_text = "Folder already has a variable '%s'" % variable
+		ren_rep_dialog.dialog_text = "Folder '%s' already has a variable '%s'" % [
+				display_folder,
+				display_variable]
 		
 		EditorInterface.popup_dialog_centered(ren_rep_dialog)
 		var result: Array = await ren_rep_dialog.dialog_finished

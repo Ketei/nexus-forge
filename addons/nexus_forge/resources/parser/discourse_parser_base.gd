@@ -92,6 +92,8 @@ var _dialog_resource: DiscourseDialog = null:
 	set(new_res):
 		_dialog_resource = new_res
 		_dialog_resource_set()
+
+var _resource_id: String = ""
 var _conversation_started: bool = false
 var _next_uuid: StringName = &""
 var _current_uuid: StringName = &""
@@ -105,7 +107,7 @@ var _path_to_id: Dictionary[StringName, StringName] = {}
 var _id_to_data: Dictionary[StringName, Dictionary] = {}
 
 var _logic_overrides: Dictionary[String, String] = {}
-var _locale_overrides: Dictionary = {
+var _locale_overrides: Dictionary[String, Dictionary] = {
 	#"dialog_id": {"locale_code": "new_path"}
 	}
 var _dialog_edits: Dictionary[String, DiscourseDialog.NFDialogEntryOverride] = {
@@ -343,7 +345,7 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 	if uuid.is_empty() or not _dialog_resource.node_logic.has(uuid):
 		return target
 	
-	var dialog_id: String = _path_to_id[_dialog_resource.resource_path]
+	var dialog_id: String = _resource_id
 	var data: Dictionary = _dialog_resource.node_logic[uuid]
 	
 	match data["node_type"]:
@@ -547,10 +549,10 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 			var choices: Array[Dictionary] = []
 			
 			for choice:Dictionary in data["choices"]:
+				var weight: int = RANDOM_DEFAULT_WEIGHT
 				if not choice["weight_override"].is_empty():
-					var a: int = _get_data(choice["weight_override"])
-				var weight: int = RANDOM_DEFAULT_WEIGHT if choice["weight_override"].is_empty() else _get_data(choice["weight_override"])
-				if weight == 0:
+					weight = _get_data(choice["weight_override"], weight)
+				if weight <= 0:
 					continue
 				choices.append({
 					"next": choice["target"],
@@ -574,7 +576,7 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 			target["type"] = NodeTypes.DIALOG_END
 			return target
 		NodeTypes.TRAVEL_TO:
-			if max_dialog_travel_stack <= _get_target_travel_stack_size():
+			if -1 < max_dialog_travel_stack and max_dialog_travel_stack <= _get_target_travel_stack_size():
 				NFPluginGameHandler._log_msg(
 					"discourse",
 					"Travel stack overflow! Max depth of %d reached." % max_dialog_travel_stack,
@@ -601,27 +603,47 @@ func _get_data(uuid: StringName, fallback = null) -> Variant:
 		NodeTypes.RANDOM_VALUE:
 			match data["random_type"]:
 				TYPE_INT:
-					var min_value: int = data["min_value"] if data["min_override"].is_empty() else _get_data(data["min_override"])
-					var max_value: int = data["max_value"] if data["max_override"].is_empty() else _get_data(data["max_override"])
+					var min_value: int = data["min_value"]
+					var max_value: int = data["max_value"]
+					
+					if not data["min_override"].is_empty():
+						min_value = _get_data(data["min_override"], min_value)
+					if not data["max_override"].is_empty():
+						max_value = _get_data(data["max_override"], max_value)
+					
+					if max_value < min_value:
+						max_value = min_value
+					
 					return randi_range(min_value, max_value)
 				TYPE_FLOAT:
-					var min_value: float = data["min_value"] if data["min_override"].is_empty() else _get_data(data["min_override"])
-					var max_value: float = data["max_value"] if data["max_override"].is_empty() else _get_data(data["max_override"])
+					var min_value: float = data["min_value"]
+					var max_value: float = data["max_value"]
+					
+					if not data["min_override"].is_empty():
+						min_value = _get_data(data["min_override"], min_value)
+					if not data["max_override"].is_empty():
+						max_value = _get_data(data["max_override"], max_value)
+					
+					if max_value < min_value:
+						max_value = min_value
+					
 					return snappedf(
 							randf_range(
 									min_value,
 									max_value),
 							FLOAT_SNAP)
 				TYPE_BOOL:
-					var true_probability: int = data["min_value"] if data["min_override"].is_empty() else _get_data(data["min_override"], 100)
-					if true_probability == 0:
+					var true_probability: int = data["min_value"]
+					
+					if not data["min_override"].is_empty():
+						true_probability = _get_data(data["min_override"], true_probability)
+						
+					if true_probability <= 0:
 						return false
-					elif true_probability == 100:
+					elif 100 <= true_probability:
 						return true
 					else:
-						var true_range: int = randi_range(
-								1,
-								100)
+						var true_range: int = randi_range(1, 100)
 						return true_range <= true_probability
 				_:
 					return null
@@ -714,11 +736,12 @@ func _get_data(uuid: StringName, fallback = null) -> Variant:
 			return fallback
 
 
-func _load_locale_into(dialog: DiscourseDialog, locale_code: String, ) -> void:
-	if dialog == null or locale_code.is_empty() or dialog._has_locale(locale_code):
+func _load_locale_into(dialog: DiscourseDialog, locale_code: String, force_reload: bool = false) -> void:
+	if dialog == null or locale_code.is_empty() or (dialog._has_locale(locale_code) and not force_reload):
 		return
 	
-	if not _path_to_id.has(dialog.resource_path):
+	var dialog_id: String = _resource_id
+	if dialog_id.is_empty():
 		return
 	
 	# 0 = No Fallback
@@ -729,7 +752,6 @@ func _load_locale_into(dialog: DiscourseDialog, locale_code: String, ) -> void:
 			2)
 	var lang_fallback: String = ProjectSettings.get_setting(
 			"internationalization/locale/fallback")
-	var dialog_id: String = _path_to_id[dialog.resource_path]
 	
 	if fallback_mode == 0 or (0 < fallback_mode and locale_code == lang_fallback):
 		var lang_data: DiscourseDialogLocale = _get_dialog_locale(
@@ -767,8 +789,8 @@ func _load_locale_into(dialog: DiscourseDialog, locale_code: String, ) -> void:
 	if direct_fallback != null:
 		if locale_data == null:
 			locale_data = direct_fallback.duplicate(true)
-			direct_fallback.json_file = ""
-			direct_fallback.locale = locale_code
+			locale_data.json_file = ""
+			locale_data.locale = locale_code
 		else:
 			locale_data.merge_dialog(direct_fallback)
 	
@@ -833,14 +855,17 @@ func load_dialog(path: String, starting_id: StringName = &"") -> bool:
 	
 	var target_path: String = _logic_overrides[path] if _logic_overrides.has(path) else path
 	
+	
 	if _conversation_cache.is_in_cache(target_path):
-		var dialog_id: String = NFDictUtils.get_nested_value(_path_to_id, [path], "")
+		var dialog_id: String = _path_to_id.get(path, "")
 		var data: DiscourseDialog = _conversation_cache.get_resource(target_path)
 		var locale_data: DiscourseDialogLocale = data._get_locale(locale)
 		
-		var reload_locale: bool = locale_data != null and locale_data.json_file != _id_to_data[dialog_id]["locale_file"]
+		var eff_locale_file: String = _locale_overrides.get(dialog_id, NFDictUtils.EMPTY_DICT).get(locale, _id_to_data[dialog_id]["locale_file"])
+		var reload_locale: bool = locale_data != null and locale_data.json_file != eff_locale_file
 		
 		_dialog_resource = data
+		_resource_id = dialog_id
 		
 		if _dialog_edits.has(dialog_id) and _dialog_resource._dialog_overrides != _dialog_edits[dialog_id]:
 			_dialog_resource._dialog_overrides = _dialog_edits[dialog_id]
@@ -850,13 +875,14 @@ func load_dialog(path: String, starting_id: StringName = &"") -> bool:
 			_dialog_resource._phrase_overrides = p_overrides
 		
 		if reload_locale:
-			_load_locale_into(_dialog_resource, locale)
+			_load_locale_into(_dialog_resource, locale, true)
 	else:
 		var res: DiscourseDialog = load(target_path)
-		var id: String = NFDictUtils.get_nested_value(_path_to_id, [path], "")
+		var id: String = _path_to_id.get(path, "")
 		
 		if res == null or res is not DiscourseDialog:
 			_next_uuid = &""
+			_resource_id = ""
 			_dialog_resource = null
 			return false
 		
@@ -865,6 +891,7 @@ func load_dialog(path: String, starting_id: StringName = &"") -> bool:
 		
 		_conversation_cache.cache_resource(res)
 		_dialog_resource = res
+		_resource_id = id
 	
 	if _dialog_resource.node_logic.has(starting_id):
 		_next_uuid = starting_id
@@ -887,12 +914,14 @@ func prepare_dialog(path: String) -> bool:
 	if _conversation_cache.is_in_cache(target_path):
 		var data: DiscourseDialog = _conversation_cache.get_resource(target_path)
 		var locale_data: DiscourseDialogLocale = data._get_locale(locale)
-		var reload_locale: bool = locale_data != null and locale_data.json_file != _id_to_data[dialog_id]["locale_file"]
+		
+		var eff_locale_file: String = _locale_overrides.get(dialog_id, NFDictUtils.EMPTY_DICT).get(locale, _id_to_data[dialog_id]["locale_file"])
+		var reload_locale: bool = locale_data != null and locale_data.json_file != eff_locale_file
 		if _dialog_edits.has(dialog_id) and data._dialog_overrides != _dialog_edits[dialog_id]:
 			data._dialog_overrides = _dialog_edits[dialog_id]
 		
 		if reload_locale:
-			_load_locale_into(data, locale)
+			_load_locale_into(data, locale, true)
 	else:
 		var res = load(target_path)
 		
@@ -930,6 +959,8 @@ func get_dialog_current_id() -> StringName:
 func get_state() -> Dictionary[String, Variant]:
 	var data: Dictionary[String, Variant] = {
 		"current_dialog_id": get_dialog_current_id(),
+		"next_dialog_id": _next_uuid,
+		"conversation_started": _conversation_started,
 		"dialog_travel_stack": _node_travel_stack.duplicate(true)}
 	return data
 
@@ -937,6 +968,8 @@ func get_state() -> Dictionary[String, Variant]:
 ## Sets the state of the current dialog from a dictionary.
 func set_state(to: Dictionary) -> void:
 	var new_uuid: StringName = &""
+	var next_uuid: StringName = _next_uuid
+	var conv_started: bool = _conversation_started
 	var new_stack: Array[StringName] = []
 	
 	if to.has("current_dialog_id"):
@@ -944,6 +977,15 @@ func set_state(to: Dictionary) -> void:
 		if type == TYPE_STRING_NAME or type == TYPE_STRING:
 			new_uuid = StringName(to["current_dialog_id"])
 	
+	if to.has("next_dialog_id"):
+		var type: int = typeof(to["next_dialog_id"])
+		if type == TYPE_STRING_NAME or type == TYPE_STRING:
+			next_uuid = StringName(to["next_dialog_id"])
+	
+	if to.has("conversation_started"):
+		var type: int = typeof(to["conversation_started"])
+		if type == TYPE_BOOL:
+			conv_started = to["conversation_started"]
 	
 	if to.has("dialog_travel_stack") and typeof(to["dialog_travel_stack"]) == TYPE_ARRAY:
 		
@@ -960,6 +1002,8 @@ func set_state(to: Dictionary) -> void:
 	
 	_clear_target_travel_stack()
 	_current_uuid = new_uuid
+	_next_uuid = next_uuid
+	_conversation_started = conv_started
 	_node_travel_stack.assign(new_stack)
 
 
@@ -1028,10 +1072,15 @@ func refresh() -> void:
 func override_dialog_data(dialog_id: String, override_path: String) -> void:
 	override_path = override_path.strip_edges().simplify_path()
 	
+	if not _id_to_data.has(dialog_id):
+		return
+		
+	var original_data_path: String = _id_to_data[dialog_id]["data_path"]
+	
 	if override_path.is_empty():
-		_logic_overrides.erase(dialog_id)
+		_logic_overrides.erase(original_data_path)
 	else:
-		_logic_overrides[_id_to_data[dialog_id]["data_path"]] = override_path
+		_logic_overrides[original_data_path] = override_path
 
 
 ## Overrides a complete localization file. When a dialog file is loaded, the file
@@ -1045,10 +1094,24 @@ func override_dialog_locale(dialog_id: String, locale_code: String, path: String
 				_locale_overrides.erase(dialog_id)
 		return
 	
-	NFDictUtils.set_nested_value(
-			_locale_overrides,
-			[dialog_id, locale_code],
-			path)
+	if not _locale_overrides.has(dialog_id):
+		var override: Dictionary[String, String] = {}
+		_locale_overrides[dialog_id] = override
+	
+	_locale_overrides[dialog_id][locale_code] = path
+	
+	if not _id_to_data.has(dialog_id):
+		return
+	
+	var data_path: String = _id_to_data[dialog_id]["data_path"]
+	var target_path: String = _logic_overrides.get(data_path, data_path)
+	
+	if not _conversation_cache.is_in_cache(target_path):
+		return
+	
+	var dialog: DiscourseDialog = _conversation_cache.get_resource(target_path)
+	if dialog._has_locale(locale_code):
+		_load_locale_into(dialog, locale_code, true)
 
 
 ## Adds an override for a specific dialog on a specific locale.[br]
