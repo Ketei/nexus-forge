@@ -22,6 +22,8 @@ signal signal_emitted(signal_name: String, arguments: Array)
 ## unless a valid [param starting_id] is given.[br]
 ## Returns [code]true[/code] if the dialog was loaded.
 func load_dialog(path: String, starting_id: StringName = &"") -> bool:
+	_clear_target_travel_stack()
+	
 	if _conversation_cache.is_in_cache(path):
 		_dialog_resource = _conversation_cache.get_resource(path)
 		var dialog_id: String = _dialog_resource.dialog_id

@@ -92,7 +92,7 @@ func get_item_flags(item_id: StringName) -> Array[int]:
 	if typeof(_items) != TYPE_DICTIONARY:
 		return []
 	
-	var flag_arr: Variant = _items.get("flags")
+	var flag_arr: Variant = item.get("flags")
 	# NOTE: If the flags format changes, change this too
 	if typeof(flag_arr) != TYPE_PACKED_INT64_ARRAY:
 		return []
@@ -222,6 +222,7 @@ func get_item(item_id: StringName) -> NFItemSheet:
 	
 	var item_sheet := NFItemSheet.new()
 	var data: Dictionary = _items[item_id]
+	item_sheet.item_id = item_id
 	item_sheet.name = data["name"]
 	item_sheet.category = data["category"]
 	item_sheet.rarity = data["rarity"]

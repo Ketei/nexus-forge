@@ -11,6 +11,8 @@ extends RefCounted
 signal recipe_created(recipe_id: StringName)
 ## Emmited when a recipe is erased.
 signal recipe_erased(recipe_id: StringName)
+## Emitted when the catalog is rebuilt by using [method NFRecipeManager.load_catalog]
+signal catalog_loaded
 
 
 var _recipe_sheets: Dictionary[StringName, NFRecipeSheet] = {}
@@ -24,6 +26,8 @@ func load_catalog(catalog: NFRecipeCatalog, clear_recipes: bool = true) -> void:
 	
 	for id in catalog.recipes():
 		_recipe_sheets[id] = catalog.get_recipe(id)
+	
+	catalog_loaded.emit()
 
 
 ## Returns an array containing the IDs of the recipes.
@@ -149,4 +153,5 @@ func has_recipe(recipe_id: StringName) -> bool:
 
 ## Erases the recipe with id [param recipe_id].
 func erase_recipe(recipe_id: StringName) -> void:
-	_recipe_sheets.erase(recipe_id)
+	if _recipe_sheets.erase(recipe_id):
+		recipe_erased.emit(recipe_id)

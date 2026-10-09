@@ -74,9 +74,15 @@ static func move_item(array: Array, from_idx: int, to_idx: int) -> void:
 				NFPluginGameHandler._LogLevel.ERROR)
 		return
 	
-	var insert_item: Variant = array[from_idx]
-	array.remove_at(from_idx)
-	array.insert(to_idx, insert_item)
+	var normalized_from: int = wrapi(from_idx, 0, size)
+	var normalized_to: int = wrapi(to_idx, 0, size)
+	
+	if normalized_from == normalized_to:
+		return
+	
+	var insert_item: Variant = array[normalized_from]
+	array.remove_at(normalized_from)
+	array.insert(normalized_to, insert_item)
 
 
 ## Inserts [param item] on [param array] in an ascending order.[br]
@@ -244,12 +250,15 @@ static func resize_2d(array: Array[Array], new_width: int, new_height: int) -> v
 
 ## Replaces all instances of [param find] with [param replace_with] on the
 ## array [param in_array]
-static func replace_all(in_array: Variant, find: Variant, replace_with: Variant) -> void:
+static func replace_all(in_array: Array, find: Variant, replace_with: Variant) -> void:
+	if find == replace_with:
+		return
+	
 	var index_found: int = in_array.find(find)
 	
 	while index_found != -1:
 		in_array[index_found] = replace_with
-		index_found = in_array.find(find, index_found)
+		index_found = in_array.find(find, index_found + 1)
 
 
 ## Returns if [param in_array] has all the items in [param has_items].

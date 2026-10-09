@@ -108,11 +108,13 @@ func _on_option_activated() -> void:
 	var selected: TreeItem = options_tree.get_selected()
 	if selected == null:
 		return
-	NexusForge.Discourse.set_dialog_id(selected.get_metadata(0))
-	NexusForge.Discourse.advance()
+	
 	options_container.visible = false
 	continue_btn.disabled = false
 	continue_btn.grab_focus()
+	
+	NexusForge.Discourse.set_dialog_id(selected.get_metadata(0))
+	NexusForge.Discourse.advance()
 
 
 func _on_option_button_clicked(item: TreeItem, _column: int, id: int, mouse_button_index: int) -> void:
@@ -121,10 +123,11 @@ func _on_option_button_clicked(item: TreeItem, _column: int, id: int, mouse_butt
 	
 	if id == 0:
 		NexusForge.Discourse.set_dialog_id(item.get_metadata(0))
-		NexusForge.Discourse.advance()
 		options_container.visible = false
 		continue_btn.disabled = false
 		continue_btn.grab_focus()
+		
+		NexusForge.Discourse.advance()
 
 
 func _on_continue_pressed() -> void:

@@ -9,6 +9,8 @@ signal currency_erased(id: StringName)
 ## Emitted when the value of currencu [param id] was changed through
 ## this object.
 signal value_changed(id: StringName)
+## Emitted when the catalog is rebuilt by using [method NFCurrencyManager.load_catalog]
+signal catalog_loaded
 
 
 var _currencies: Dictionary[StringName, NFCurrencyEntry] = {}
@@ -28,6 +30,8 @@ func load_catalog(catalog: NFCurrencyCatalog, clear_currencies: bool = true) -> 
 		entry.custom_data.assign(catalog.get_currency_custom_data(currency_id))
 		entry._flags = NFCurrencyEntry._get_flags(false, true)
 		_currencies[currency_id] = entry
+	
+	catalog_loaded.emit()
 
 
 ## Creates a new currency with [param currency_id] unless it already exists.

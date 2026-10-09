@@ -9,6 +9,8 @@ extends RefCounted
 signal trait_created(trait_id: StringName)
 ## Emmited when a trait is erased.
 signal trait_erased(trait_id: StringName)
+## Emitted when the catalog is rebuilt by using [method NFTraitManager.load_catalog]
+signal catalog_loaded
 
 var _trait_entries: Dictionary[StringName, NFCatalogEntry] = {}
 var _base_traits: Dictionary[StringName, Variant] = {}
@@ -40,6 +42,7 @@ func load_catalog(catalog: NFTraitCatalog, clear_traits: bool = true) -> void:
 		entry.custom_data.assign(catalog.get_trait_custom_data(trait_id))
 		entry._flags = NFCatalogEntry._get_flags(not _base_traits.has(trait_id), true)
 		_trait_entries[trait_id] = entry
+	catalog_loaded.emit()
 
 
 #region Defined Traits

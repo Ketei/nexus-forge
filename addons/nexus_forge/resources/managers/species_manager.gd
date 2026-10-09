@@ -10,6 +10,8 @@ extends RefCounted
 signal species_created(species_id: StringName)
 ## Emited when a species is erased.
 signal species_erased(species_id: StringName)
+## Emitted when the catalog is rebuilt by using [method NFSpeciesManager.load_catalog]
+signal catalog_loaded
 
 var _species: Dictionary[StringName, NFSpeciesSheet] = {}
 
@@ -33,6 +35,7 @@ func load_catalog(catalog: NFSpeciesCatalog, clear_species: bool = true) -> void
 		sheet.skills = catalog.get_species_skills(species_id, use_inheritance)
 		sheet.traits = catalog.get_species_traits(species_id, use_inheritance)
 		_species[species_id] = sheet
+	catalog_loaded.emit()
 
 
 ## Returns an array of all registered species.

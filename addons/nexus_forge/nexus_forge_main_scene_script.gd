@@ -43,16 +43,16 @@ func _input(event: InputEvent) -> void:
 					tool_tab_bar.current_tab = posmod(tool_tab_bar.current_tab + 1, tool_count)
 				get_viewport().set_input_as_handled()
 		elif event.ctrl_pressed and event.keycode == KEY_W:
-			if current_tab == discourse.get_index():
+			if discourse != null and current_tab == discourse.get_index():
 				discourse.close_active_conversation()
 				get_viewport().set_input_as_handled()
-			elif current_tab == characters.get_index():
+			elif characters != null and current_tab == characters.get_index():
 				characters.close_active_character()
 				get_viewport().set_input_as_handled()
-			elif current_tab == quests.get_index():
+			elif quests != null and current_tab == quests.get_index():
 				quests.close_current_quest()
 				get_viewport().set_input_as_handled()
-			elif current_tab == phrase_maps.get_index():
+			elif phrase_maps != null and current_tab == phrase_maps.get_index():
 				phrase_maps.close_active_map()
 				get_viewport().set_input_as_handled()
 		elif event.ctrl_pressed and event.keycode == KEY_Z:
@@ -291,7 +291,7 @@ func handle_resource(resource: Resource) -> void:
 					NFPluginGameHandler._LogLevel.INFO)
 		else:
 			go_to_tab(discourse.get_index())
-		discourse.plugin_file_selected(resource)
+			discourse.plugin_file_selected(resource)
 	elif resource is NFCharacterSheet:
 		if characters == null:
 			NFPluginGameHandler._log_msg(

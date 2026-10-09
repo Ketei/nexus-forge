@@ -17,6 +17,8 @@ signal stat_clamping_changed(for_stat: StringName)
 signal stat_info_changed(stat_id: StringName)
 ## Emitted when a stat custom data changes.
 signal stat_data_changed(stat_id: StringName)
+## Emitted when the catalog is rebuilt by using [method NFStatManager.load_catalog]
+signal catalog_loaded
 
 
 # Custom stats where the value is an integer array holding 2 values [min, max]
@@ -61,6 +63,8 @@ func load_catalog(catalog: NFStatCatalog, clear_stats: bool = true) -> void:
 		
 		new_data._flags = NFCatalogEntry._get_flags(not _base_stats.has(stat_id), true)
 		_stat_entries[stat_id] = new_data
+	
+	catalog_loaded.emit()
 
 
 ## Returns an array containing all registered stats.

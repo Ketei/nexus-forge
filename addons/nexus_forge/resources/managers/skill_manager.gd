@@ -9,6 +9,8 @@ extends RefCounted
 signal skill_created(id: StringName)
 ## Emmited when a custom skill is erased.
 signal skill_erased(id: StringName)
+## Emitted when the catalog is rebuilt by using [method NFSkillManager.load_catalog]
+signal catalog_loaded
 
 
 var _skills: Dictionary[StringName, NFCatalogEntry] = {}
@@ -42,6 +44,8 @@ func load_catalog(catalog: NFSkillCatalog, clear_skills: bool = true) -> void:
 		entry.custom_data.assign(catalog.get_skill_custom_data(skill))
 		entry._flags = NFCatalogEntry._get_flags(not _base_skills.has(skill), true)
 		_skills[skill] = entry
+	
+	catalog_loaded.emit()
 
 
 ## Returns all the IDs of the registered skills.

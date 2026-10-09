@@ -16,6 +16,8 @@ signal item_erased(item_id: StringName)
 signal category_created(category_id: StringName)
 ## Emits when a category is removed.
 signal category_erased(category_id: StringName)
+## Emitted when the catalog is rebuilt by using [method NFItemManager.load_catalog]
+signal catalog_loaded
 
 
 var _categories: Dictionary[StringName, Dictionary] = {}
@@ -39,6 +41,7 @@ func load_catalog(catalog: NFItemCatalog, clear_items: bool = true) -> void:
 	
 	for item_id in catalog.items():
 		var new_item: NFItemSheet = NFItemSheet.new()
+		new_item.item_id = item_id
 		new_item.name = catalog.get_item_name(item_id)
 		new_item.description = catalog.get_item_description(item_id)
 		new_item.category = catalog.get_item_category(item_id)
@@ -47,6 +50,8 @@ func load_catalog(catalog: NFItemCatalog, clear_items: bool = true) -> void:
 		new_item.flags.assign(catalog.get_item_flags(item_id))
 		new_item.custom_data.assign(catalog.item_data(item_id))
 		_items[item_id] = new_item
+	
+	catalog_loaded.emit()
 
 
 #region Items

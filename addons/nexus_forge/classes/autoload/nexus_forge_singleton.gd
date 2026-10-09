@@ -271,11 +271,14 @@ var ItemManager: NFItemManager:
 				ItemManager.item_created.disconnect(_on_item_list_changed)
 			if ItemManager.item_erased.is_connected(_on_item_list_changed):
 				ItemManager.item_erased.disconnect(_on_item_list_changed)
+			if ItemManager.catalog_loaded.is_connected(_on_item_catalog_reloaded):
+				ItemManager.catalog_loaded.disconnect(_on_item_catalog_reloaded)
 		ItemManager = m
 		if is_instance_valid(m):
 			_rebuild_item_cache()
 			m.item_created.connect(_on_item_list_changed)
 			m.item_erased.connect(_on_item_list_changed)
+			m.catalog_loaded.connect(_on_item_catalog_reloaded)
 		else:
 			Items = {}
 			Items.make_read_only()
@@ -292,10 +295,13 @@ var StatManager: NFStatManager:
 				StatManager.stat_created.disconnect(_on_stat_list_changed)
 			if StatManager.stat_erased.is_connected(_on_stat_list_changed):
 				StatManager.stat_erased.disconnect(_on_stat_list_changed)
+			if StatManager.catalog_loaded.is_connected(_on_stat_manager_reloaded):
+				StatManager.catalog_loaded.disconnect(_on_stat_manager_reloaded)
 		StatManager = s
 		if is_instance_valid(s):
 			s.stat_created.connect(_on_stat_list_changed)
 			s.stat_erased.connect(_on_stat_list_changed)
+			s.catalog_loaded.connect(_on_stat_manager_reloaded)
 			_rebuild_stat_cache()
 		else:
 			Stats = {}
@@ -313,10 +319,13 @@ var TraitManager: NFTraitManager:
 				TraitManager.trait_created.disconnect(_on_trait_list_changed)
 			if TraitManager.trait_erased.is_connected(_on_trait_list_changed):
 				TraitManager.trait_erased.disconnect(_on_trait_list_changed)
+			if TraitManager.catalog_loaded.is_connected(_on_trait_catalog_loaded):
+				TraitManager.catalog_loaded.disconnect(_on_trait_catalog_loaded)
 		TraitManager = t
 		if is_instance_valid(t):
 			t.trait_created.connect(_on_trait_list_changed)
 			t.trait_erased.connect(_on_trait_list_changed)
+			t.catalog_loaded.connect(_on_trait_catalog_loaded)
 			_rebuild_trait_cache()
 		else:
 			Traits = {}
@@ -334,10 +343,13 @@ var SkillManager: NFSkillManager:
 				SkillManager.skill_created.disconnect(_on_skill_list_changed)
 			if SkillManager.skill_erased.is_connected(_on_skill_list_changed):
 				SkillManager.skill_erased.disconnect(_on_skill_list_changed)
+			if SkillManager.catalog_loaded.is_connected(_on_skill_catalog_loaded):
+				SkillManager.catalog_loaded.disconnect(_on_skill_catalog_loaded)
 		SkillManager = s
 		if is_instance_valid(s):
 			s.skill_created.connect(_on_skill_list_changed)
 			s.skill_erased.connect(_on_skill_list_changed)
+			s.catalog_loaded.connect(_on_skill_catalog_loaded)
 			_rebuild_skill_cache()
 		else:
 			Skills = {}
@@ -355,10 +367,13 @@ var SpeciesManager: NFSpeciesManager:
 				SpeciesManager.species_created.disconnect(_on_species_list_changed)
 			if SpeciesManager.species_erased.is_connected(_on_species_list_changed):
 				SpeciesManager.species_erased.disconnect(_on_species_list_changed)
+			if SpeciesManager.catalog_loaded.is_connected(_on_species_catalog_loaded):
+				SpeciesManager.catalog_loaded.disconnect(_on_species_catalog_loaded)
 		SpeciesManager = s
 		if is_instance_valid(s):
 			s.species_created.connect(_on_species_list_changed)
 			s.species_erased.connect(_on_species_list_changed)
+			s.catalog_loaded.connect(_on_species_catalog_loaded)
 			_rebuild_species_cache()
 		else:
 			Species = {}
@@ -397,10 +412,13 @@ var CurrencyManager: NFCurrencyManager:
 				CurrencyManager.currency_created.disconnect(_on_currency_list_changed)
 			if CurrencyManager.currency_erased.is_connected(_on_currency_list_changed):
 				CurrencyManager.currency_erased.disconnect(_on_currency_list_changed)
+			if CurrencyManager.catalog_loaded.is_connected(_on_currency_catalog_loaded):
+				CurrencyManager.catalog_loaded.disconnect(_on_currency_catalog_loaded)
 		CurrencyManager = c
 		if is_instance_valid(c):
 			c.currency_created.connect(_on_currency_list_changed)
 			c.currency_erased.connect(_on_currency_list_changed)
+			c.catalog_loaded.connect(_on_currency_catalog_loaded)
 			_rebuild_currency_cache()
 		else:
 			Currencies = {}
@@ -418,10 +436,13 @@ var RecipeManager: NFRecipeManager:
 				RecipeManager.recipe_created.disconnect(_on_recipe_list_changed)
 			if RecipeManager.recipe_erased.is_connected(_on_recipe_list_changed):
 				RecipeManager.recipe_erased.disconnect(_on_recipe_list_changed)
+			if RecipeManager.catalog_loaded.is_connected(_on_recipe_catalog_loaded):
+				RecipeManager.catalog_loaded.disconnect(_on_recipe_catalog_loaded)
 		RecipeManager = r
 		if is_instance_valid(r):
 			r.recipe_created.connect(_on_recipe_list_changed)
 			r.recipe_erased.connect(_on_recipe_list_changed)
+			r.catalog_loaded.connect(_on_recipe_catalog_loaded)
 			_rebuild_recipe_cache()
 		else:
 			Recipes = {}
@@ -492,7 +513,6 @@ func _ready() -> void:
 			var res_pre = load(species_path)
 			if res_pre is NFSpeciesCatalog:
 				SpeciesManager.load_catalog(res_pre, true)
-				_rebuild_species_cache()
 			else:
 				_log_msg(
 						"",
@@ -508,7 +528,6 @@ func _ready() -> void:
 			var res_pre: Resource = load(items_path)
 			if res_pre is NFItemCatalog:
 				ItemManager.load_catalog(res_pre)
-				_rebuild_item_cache()
 			else:
 				NFPluginGameHandler._log_msg(
 						"",
@@ -523,7 +542,6 @@ func _ready() -> void:
 			var res_pre: Resource = load(currency_path)
 			if res_pre is NFCurrencyCatalog:
 				CurrencyManager.load_catalog(res_pre, true)
-				_rebuild_currency_cache()
 			else:
 				NFPluginGameHandler._log_msg(
 						"",
@@ -538,7 +556,6 @@ func _ready() -> void:
 			var res_pre: Resource = load(recipe_path)
 			if res_pre is NFRecipeCatalog:
 				RecipeManager.load_catalog(res_pre)
-				_rebuild_recipe_cache()
 			else:
 				NFPluginGameHandler._log_msg(
 						"",
@@ -555,7 +572,6 @@ func _ready() -> void:
 			var st_load = load(stats_path)
 			if st_load != null and st_load is NFStatCatalog:
 				StatManager.load_catalog(st_load)
-				_rebuild_stat_cache()
 	
 	if use_skills:
 		if SkillManager == null:
@@ -566,7 +582,6 @@ func _ready() -> void:
 			var skill_pre = load(skills_path)
 			if skill_pre != null and skill_pre is NFSkillCatalog:
 				SkillManager.load_catalog(skill_pre)
-				_rebuild_skill_cache()
 	
 	if use_traits:
 		if TraitManager == null:
@@ -579,7 +594,6 @@ func _ready() -> void:
 			
 			if pre_trait is NFTraitCatalog:
 				TraitManager.load_catalog(pre_trait)
-				_rebuild_trait_cache()
 	
 	if Discourse == null:
 		if instantiate_disabled or use_discourse:
@@ -662,28 +676,11 @@ func _ready() -> void:
 	Blackboard._variables.make_read_only()
 
 
-func _notification(what: int) -> void:
-	if what == NOTIFICATION_WM_CLOSE_REQUEST:
-		Discourse._clear_cache() # Clearing discourse cache to prevent leaked resources.
-	elif what == NOTIFICATION_TRANSLATION_CHANGED:
-		if not ProjectSettings.get_setting(
-				get_setting_path("discourse_sync_locale"),
-				true):
-			return
-		
-		if not is_node_ready():
-			await ready
-		
-		if Discourse == null:
-			return
-		
-		Discourse.locale = TranslationServer.get_locale()
-		
-		if Discourse.is_dialog_active():
-			Discourse.refresh()
-
-
 func _on_item_list_changed(_id: StringName) -> void:
+	_rebuild_item_cache()
+
+
+func _on_item_catalog_reloaded() -> void:
 	_rebuild_item_cache()
 
 
@@ -699,6 +696,10 @@ func _on_stat_list_changed(_id: StringName) -> void:
 	_rebuild_stat_cache()
 
 
+func _on_stat_manager_reloaded() -> void:
+	_rebuild_stat_cache()
+
+
 func _rebuild_stat_cache() -> void:
 	if is_instance_valid(StatManager):
 		var new_cache: Dictionary[StringName, NFCatalogEntryStat] =\
@@ -708,6 +709,10 @@ func _rebuild_stat_cache() -> void:
 
 
 func _on_trait_list_changed(_id: StringName) -> void:
+	_rebuild_trait_cache()
+
+
+func _on_trait_catalog_loaded() -> void:
 	_rebuild_trait_cache()
 
 
@@ -723,6 +728,10 @@ func _on_skill_list_changed(_id: StringName) -> void:
 	_rebuild_skill_cache()
 
 
+func _on_skill_catalog_loaded() -> void:
+	_rebuild_skill_cache()
+
+
 func _rebuild_skill_cache() -> void:
 	if is_instance_valid(SkillManager):
 		var new_cache: Dictionary[StringName, NFCatalogEntry] =\
@@ -732,6 +741,10 @@ func _rebuild_skill_cache() -> void:
 
 
 func _on_species_list_changed(_id: StringName) -> void:
+	_rebuild_species_cache()
+
+
+func _on_species_catalog_loaded() -> void:
 	_rebuild_species_cache()
 
 
@@ -761,6 +774,10 @@ func _on_currency_list_changed(_id: StringName) -> void:
 	_rebuild_currency_cache()
 
 
+func _on_currency_catalog_loaded() -> void:
+	_rebuild_currency_cache()
+
+
 func _rebuild_currency_cache() -> void:
 	if is_instance_valid(CurrencyManager):
 		var new_cache: Dictionary[StringName, NFCurrencyEntry] =\
@@ -773,9 +790,35 @@ func _on_recipe_list_changed(_id: StringName) -> void:
 	_rebuild_recipe_cache()
 
 
+func _on_recipe_catalog_loaded() -> void:
+	_rebuild_recipe_cache()
+
+
 func _rebuild_recipe_cache() -> void:
 	if is_instance_valid(RecipeManager):
 		var new_cache: Dictionary[StringName, NFRecipeSheet] =\
 				RecipeManager._recipe_sheets.duplicate()
 		new_cache.make_read_only()
 		Recipes = new_cache
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST:
+		if is_instance_valid(Discourse):
+			Discourse._clear_cache() # Clearing discourse cache to prevent leaked resources.
+	elif what == NOTIFICATION_TRANSLATION_CHANGED:
+		if not ProjectSettings.get_setting(
+				get_setting_path("discourse_sync_locale"),
+				true):
+			return
+		
+		if not is_node_ready():
+			await ready
+		
+		if Discourse == null:
+			return
+		
+		Discourse.locale = TranslationServer.get_locale()
+		
+		if Discourse.is_dialog_active():
+			Discourse.refresh()

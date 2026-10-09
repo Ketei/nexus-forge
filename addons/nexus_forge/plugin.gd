@@ -888,9 +888,9 @@ func _traverse_for_character_resources(dir: EditorFileSystemDirectory, results: 
 			var res_data: Dictionary = parse_character_file(path)
 			if res_data["is_character"]:
 				results[path] = res_data["id"]
-		
-		for sub_index in range(dir.get_subdir_count()):
-			_traverse_for_character_resources(dir.get_subdir(sub_index), results)
+	
+	for sub_index in range(dir.get_subdir_count()):
+		_traverse_for_character_resources(dir.get_subdir(sub_index), results)
 
 
 func parse_character_file(file_path: String, id_property: String = "id") -> Dictionary:

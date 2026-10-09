@@ -855,7 +855,6 @@ func load_dialog(path: String, starting_id: StringName = &"") -> bool:
 	
 	var target_path: String = _logic_overrides[path] if _logic_overrides.has(path) else path
 	
-	
 	if _conversation_cache.is_in_cache(target_path):
 		var dialog_id: String = _path_to_id.get(path, "")
 		var data: DiscourseDialog = _conversation_cache.get_resource(target_path)

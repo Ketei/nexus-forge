@@ -843,7 +843,7 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 						character_settings["display_name"] = StringName(character_settings_data["input_connections"]["display_name"]["target_node_uuid"])
 					
 					if not character_settings_data["input_connections"]["portrait_id"]["target_node_uuid"].is_empty():
-						character_settings["portrait_id_node"] = StringName(character_settings_data["input_connections"]["display_name"]["target_node_uuid"])
+						character_settings["portrait_id"] = StringName(character_settings_data["input_connections"]["portrait_id"]["target_node_uuid"])
 				
 				if not node_data[node_id]["input_connections"]["dialog_settings"]["target_node_uuid"].is_empty():
 					var dialog_settings_data: Dictionary = node_data[node_data[node_id]["input_connections"]["dialog_settings"]["target_node_uuid"]]
