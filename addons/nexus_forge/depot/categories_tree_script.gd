@@ -214,11 +214,12 @@ func _restore_categories(on_category: StringName, map: Dictionary[StringName, Di
 			on_category)
 	
 		for subcategory_id in map[category_id]["subcategories"]:
+			var sub_data: Dictionary = map[category_id]["subcategories"][subcategory_id]
 			_restore_subcategory_on(
 					category_id,
 					subcategory_id,
-					map[subcategory_id]["name"],
-					map[subcategory_id]["subcategories"])
+					sub_data["name"],
+					sub_data["subcategories"])
 
 
 func _restore_subcategory_on(on: String, subcategory_id: String, subcategory_name: String, subcategories: Dictionary[StringName, Dictionary]) -> void:

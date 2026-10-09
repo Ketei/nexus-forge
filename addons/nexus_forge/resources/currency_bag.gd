@@ -60,9 +60,8 @@ func add_currency(currency: StringName, value: int) -> void:
 ## Returns [code]true[/code] if this wallet has equal or more [param amount]
 ## of [param currency]
 func has_enough(currency: StringName, amount: int) -> bool:
-	if _wallet.has(currency) and amount <= _wallet[currency]:
-		return true
-	return false
+	amount = maxi(0, amount)
+	return amount <= _wallet.get(currency, 0)
 
 
 ## Returns [code]true[/code] if this wallet has equal or more funds matching
@@ -73,14 +72,20 @@ func has_enough_funds(to_match: Dictionary[StringName, int], times: int = 1) -> 
 	
 	var valid_currencies: Dictionary[StringName, int] = {}
 	
-	for id in to_match.keys():
+	for id in to_match:
 		if to_match[id] <= 0:
 			continue
 		valid_currencies[id] = to_match[id]
 	
-	for currency in valid_currencies.keys():
-		if not _wallet.has(currency) or _wallet[currency] < valid_currencies[currency] * times:
+	for currency in valid_currencies:
+		var cost: int = valid_currencies[currency]
+		
+		if NFMath.INT_MAX / cost < times:
 			return false
+		
+		if _wallet.get(currency, 0) < cost * times:
+			return false
+	
 	return true
 
 
@@ -91,6 +96,10 @@ func current_amount(of_currency: StringName) -> int:
 
 ## Removes [param currency] from this wallet by the specified [param amount].
 func remove_currency(currency: StringName, amount: int) -> bool:
+	amount = maxi(0, amount)
+	if amount <= 0:
+		return true
+	
 	if not has_enough(currency, amount):
 		return false
 	

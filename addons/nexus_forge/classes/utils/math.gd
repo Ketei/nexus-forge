@@ -110,12 +110,72 @@ static func safe_sum(a: int, b: int) -> int:
 	return a + b
 
 
+## Multiplies [param a] and [param b] without causing an integer overflow.
+static func safe_multiply(a: int, b: int) -> int:
+	if a == 0 or b == 0:
+		return 0
+	
+	var a_pos: bool = 0 < a
+	var b_pos: bool = 0 < b
+	
+	if a_pos and b_pos:
+		if INT_MAX / b < a:
+			return INT_MAX
+	
+	elif a_pos and not b_pos:
+		if b < INT_MIN / a:
+			return INT_MIN
+	
+	elif not a_pos and b_pos:
+		if a < INT_MIN / b:
+			return INT_MIN
+	
+	else:
+		if a < INT_MAX / b:
+			return INT_MAX
+	
+	return a * b
+
+
+## Divides [param a] by [param b] without causing an integer overflow.
+static func safe_divide(a: int, b: int) -> int:
+	# 1. Prevent division by zero (causes a runtime crash in Godot)
+	if b == 0:
+		NFPluginGameHandler._log_msg(
+			"math",
+			"Attempted to divide by 0",
+			NFPluginGameHandler._LogLevel.ERROR)
+		return 0
+	
+	if a == INT_MIN and b == -1:
+		return INT_MAX
+	
+	return a / b
+
+
 ## Sums [param a] and [param b] and returns a result that's not bigger than
 ## [param maximum] nor smaller than [param minimum].
 static func safe_sum_range(a: int, b: int, minimum: int, maximum: int) -> int:
-	var real_max: int = maximum if minimum < maximum else minimum
-	var real_min: int = minimum if minimum < maximum else maximum
+	var real_max: int = maxi(minimum, maximum)
 	
 	var total_sum: int = safe_sum(a, b)
 	
-	return clampi(total_sum, real_min, real_max)
+	return clampi(total_sum, minimum, real_max)
+
+
+## Returns the Greatest Common Divisor (gdc) which is the largest
+## positive integer that divides both [param a] and [param b].
+## The returned value is always positive.
+## [br][b]
+## [br][b]Note:[/b] Safely handles [const NFMath.INT_MIN] edge cases 
+## by clamping the result to [const NFMath.INT_MAX] to prevent overflow.
+static func gcd(a: int, b: int) -> int:
+	while b != 0:
+		var temp: int = b
+		b = a % b
+		a = temp
+	
+	if a == INT_MIN:
+		return INT_MAX
+		
+	return abs(a)

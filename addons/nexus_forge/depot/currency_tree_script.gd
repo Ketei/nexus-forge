@@ -40,12 +40,19 @@ func _on_item_edited() -> void:
 	var column: int = get_edited_column()
 	
 	if column == 0: # ID
-		var valid_id: String = get_unique_id(get_root(),edited.get_text(0),edited)
+		var valid_id: String = get_unique_id(get_root(), edited.get_text(0), edited)
 		if valid_id == String(edited.get_metadata(0)):
+			if edited.get_text(0) != valid_id: # Revert the text if different
+				edited.set_text(0, valid_id)
 			return
 		var old_id: StringName = edited.get_metadata(0)
 		var new_id: StringName = StringName(valid_id)
+		
+		edited.set_text(0, valid_id)
 		edited.set_metadata(0, new_id)
+		currencies[new_id] = edited
+		currencies.erase(old_id)
+		
 		sort_single_item(edited)
 		currency_id_changed.emit(old_id, new_id)
 

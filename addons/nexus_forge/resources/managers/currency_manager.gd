@@ -206,9 +206,15 @@ func currency_value(currency:Dictionary[StringName, int]) -> int:
 	for currency_id in currency:
 		if not _currencies.has(currency_id):
 			continue
-		total_value = NFMath.safe_sum(
-				total_value,
-				_currencies[currency_id]["value"] * currency[currency_id])
+		
+		var curr_val: int = _currencies[currency_id]["value"]
+		var curr_amount: int = currency[currency_id]
+		
+		var step_value: int = NFMath.safe_multiply(
+				curr_val,
+				curr_amount)
+		
+		total_value = NFMath.safe_sum(total_value, step_value)
 	
 	return total_value
 
@@ -264,8 +270,9 @@ func convert_currency(from: StringName, to: StringName, amount: int, allow_loss:
 	var converted_amount: int = total_value / to_value
 	
 	if not allow_loss:
-		while 0 < converted_amount and (converted_amount * to_value) % from_value != 0:
-			converted_amount -= 1
+		var common_divisor: int = NFMath.gcd(from_value, to_value)
+		var step: int = from_value / common_divisor
+		converted_amount = (converted_amount / step) * step
 	
 	var remainder_value: int = total_value - (converted_amount * to_value)
 	

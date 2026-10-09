@@ -26,6 +26,14 @@ func add_currency(id: StringName, title: String, value: int) -> void:
 	sort_currency_item(new_item)
 
 
+func update_currency_id(from: StringName, to: StringName) -> void:
+	for item in get_root().get_children():
+		if item.get_metadata(1)["id"] == from:
+			item.get_metadata(1)["id"] = to
+			item.set_tooltip_text(0, String(to))
+			break
+
+
 func update_currency_value(id: StringName, value: int) -> void:
 	for item in get_root().get_children():
 		if item.get_metadata(1)["id"] != id:
@@ -73,7 +81,6 @@ func set_currency(id: StringName, title: String, value: int) -> void:
 		if target.get_metadata(1)["value"] != value:
 			target.get_metadata(1)["value"] = value
 			sort_currency_item(target)
-
 
 
 func reset_table() -> void:

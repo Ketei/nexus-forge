@@ -98,12 +98,14 @@ func ready_plugin(use_items: bool, use_currencies: bool, max_undo_steps: int) ->
 	
 	new_item_btn.disabled = not use_items
 	
+	if use_items or use_currencies:
+		undo = UndoRedo.new()
+	
 	if use_items:
 		items_tree.ready_plugin()
 		item_data_tree.ready_plugin()
 		reload_item_resource(true)
 	if use_currencies:
-		undo = UndoRedo.new()
 		currency_tree.ready_plugin()
 		currency_custom_data_tree.ready_plugin()
 		currencies_calculator_tree.ready_plugin()
@@ -482,6 +484,8 @@ func _on_currency_id_changed(from: StringName, to: StringName) -> void:
 	if loaded_currency == from:
 		loaded_currency = to
 	
+	currencies_calculator_tree.update_currency_id(from, to)
+	
 	undo.create_action("Set Currency ID")
 	undo.add_do_method(_do_change_currency_id.bind(from, to))
 	undo.add_undo_method(_do_change_currency_id.bind(to, from))
@@ -493,11 +497,12 @@ func _on_currency_id_changed(from: StringName, to: StringName) -> void:
 func _do_change_currency_id(from: StringName, to: StringName) -> void:
 	currency_resource._currencies[to] = currency_resource._currencies[from]
 	currency_resource._currencies.erase(from)
+	
 	if loaded_currency == from:
 		loaded_currency = to
-	currency_tree.change_currency_id(from, to)
-	_on_currency_changed()
 	
+	currency_tree.change_currency_id(from, to)
+	currencies_calculator_tree.update_currency_id(from, to)
 
 
 func _on_currency_selected(currency_id: StringName) -> void:
@@ -958,7 +963,7 @@ func _on_load_database_pressed(node: Control) -> void:
 			result[1])
 	if Engine.is_editor_hint():
 		ProjectSettings.save()
-	reload_categories()
+	reload_item_resource(true)
 	$ItemsPanel/ItemsContainer.visible = true
 	node.visible = false
 	node.queue_free()
@@ -975,7 +980,7 @@ func _on_items_resource_dropped(resource: Resource, panel: Control) -> void:
 	panel.visible = false
 	panel.queue_free()
 	$ItemsPanel/ItemsContainer.visible = true
-	reload_categories()
+	reload_item_resource(true)
 	resource_loaded.emit()
 
 
@@ -1373,25 +1378,21 @@ func _parse_value(value: String, fallback: float) -> float:
 
 func _on_flag_toggled(toggled: bool, flag_id: String) -> void:
 	undo.create_action("Set '%s' Item Flag" % loaded_item)
-	undo.add_do_method(_do_update_flag_toggled.bind(flag_id, toggled))
-	undo.add_undo_method(_do_update_flag_toggled.bind(flag_id, not toggled))
+	undo.add_do_method(_do_update_flag_toggled.bind(loaded_item, flag_id, toggled))
+	undo.add_undo_method(_do_update_flag_toggled.bind(loaded_item, flag_id, not toggled))
 	undo.commit_action(false)
 	
 	_on_items_changed()
 
 
-func _do_update_flag_toggled(flag_id: String, set_pressed: bool) -> void:
-	for item:CheckBox in items_flags_container.get_children():
-		if item.get_meta(&"flag_id") != flag_id:
-			continue
-		item.set_pressed_no_signal(set_pressed)
-		_on_items_changed()
-		return
+func _do_update_flag_toggled(item_id: StringName, flag_id: String, set_pressed: bool) -> void:
+	if loaded_item != item_id:
+		switch_to_item(item_id)
 	
-	NFPluginGameHandler._log_msg(
-			"depot - editor",
-			"UndoRedo couldn't apply action on inexistent flag '%s'" % flag_id,
-			NFPluginGameHandler._LogLevel.EDITOR)
+	for item:CheckBox in items_flags_container.get_children():
+		if item.get_meta(&"flag_id") == flag_id:
+			item.set_pressed_no_signal(set_pressed)
+			return
 
 
 func create_flag_item(flag_id: String, flag_value: NFItemSheet.ItemFlag) -> CheckBox:

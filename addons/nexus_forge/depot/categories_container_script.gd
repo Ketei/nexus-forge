@@ -295,6 +295,13 @@ func _on_category_id_changed(from: StringName, to: StringName) -> void:
 		if items_resource.get_item_category(item_id) == from:
 			items_resource.set_item_category(item_id, to)
 	
+	for category_id in items_resource._categories:
+		if items_resource._categories[category_id]["parent_key"] == from:
+			items_resource._categories[category_id]["parent_key"] = to
+	
+	if selected_category == from:
+		selected_category = to
+	
 	category_undo.create_action("Set Category ID")
 	category_undo.add_do_method(_do_update_category_id.bind(from, to))
 	category_undo.add_undo_method(_do_update_category_id.bind(to, from))
@@ -312,8 +319,14 @@ func _do_update_category_id(from: StringName, to: StringName) -> void:
 		for item_id in items_resource.items():
 			if items_resource.get_item_category(item_id) == from:
 				items_resource.set_item_category(item_id, to)
+		for category_id in items_resource._categories:
+			if items_resource._categories[category_id]["parent_key"] == from:
+				items_resource._categories[category_id]["parent_key"] = to
+	
+	if selected_category == from:
+		selected_category = to
+	
 	categories_tree.set_category_id(from, to)
-	_on_category_changed()
 	category_id_changed.emit(from, to)
 
 
