@@ -52,13 +52,13 @@ func change_item_id(from: StringName, to: StringName) -> void:
 		return
 	
 	for recipe in recipes.recipes():
-		for input in recipes._recipes[recipe]["input"]:
-			if input["item_id"] == from:
-				input["item_id"] = to
+		for input:NFRecipeItem in recipes._recipes[recipe]["input"]:
+			if input.id == from:
+				input.id = to
 		
-		for output in recipes._recipes[recipe]["output"]:
-			if output["item_id"] == from:
-				output["item_id"] = to
+		for output:NFRecipeItem in recipes._recipes[recipe]["output"]:
+			if output.id == from:
+				output.id = to
 	
 	item_id_changed.emit(from, to)
 
@@ -81,13 +81,13 @@ func erase_item(item_id: StringName) -> void:
 
 func _remove_from_recipes(item_id: StringName) -> void:
 	for recipe_id in recipes.recipes():
-		var idx: int = -1
-		for input: Dictionary in recipes._recipes[recipe_id]["input"].duplicate():
-			idx += 1
-			if input["item_id"] == item_id:
-				recipes._recipes[recipe_id]["input"].erase(input)
-		idx = -1
-		for output:Dictionary in recipes._recipes[recipe_id]["output"].duplicate():
-			idx += 1
-			if output["item_id"] == item_id:
-				recipes._recipes[recipe_id]["output"].erase(output)
+		var source_inputs: Array[NFRecipeItem] = recipes._recipes[recipe_id]["input"]
+		var source_outputs: Array[NFRecipeItem] = recipes._recipes[recipe_id]["output"]
+		
+		for input:NFRecipeItem in source_inputs.duplicate():
+			if input.id == item_id:
+				source_inputs.erase(input)
+		
+		for output:NFRecipeItem in source_outputs.duplicate():
+			if output.id == item_id:
+				source_outputs.erase(output)

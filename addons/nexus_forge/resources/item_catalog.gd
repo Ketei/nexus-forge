@@ -65,10 +65,22 @@ func create_item(item_id: StringName, item_name: String, description: String, ca
 		"category": category,
 		"rarity": rarity,
 		"value": value,
-		"flags": flags,
+		"flags": NFDictUtils.create_typed(TYPE_INT, TYPE_NIL),
 		"custom_data": data}
 	
 	_items[item_id] = new_entry
+
+
+## Sets the [param flag] on the [param item_id] to [param enabled].
+func set_item_flag(item_id: StringName, flag: NFItemSheet.ItemFlag, enabled: bool) -> void:
+	if not _items.has(item_id):
+		return
+	
+	var flags: Dictionary = _items[item_id]["flags"]
+	if enabled:
+		flags[flag] = null
+	else:
+		flags.erase(flag)
 
 
 ## Sets all the [param flags] on [param item_id] to [param enabled].
@@ -76,34 +88,25 @@ func set_item_flags(item_id: StringName, flags: Array[NFItemSheet.ItemFlag], ena
 	if not _items.has(item_id):
 		return
 	
+	var flag_dict: Dictionary = _items[item_id]["flags"]
 	if enabled:
 		for flag in flags:
-			if not _items[item_id]["flags"].has(flag):
-				_items[item_id]["flags"].append(flag)
+			flag_dict[flag] = null
 	else:
 		for flag in flags:
-			if _items[item_id]["flags"].has(flag):
-				_items[item_id]["flags"].erase(flag)
+			flag_dict.erase(flag)
 
 
 ## Returns an array with all the enabled flags of the item [param item_id].
 func get_item_flags(item_id: StringName) -> Array[int]:
-	var item: Variant = _items.get(item_id)
-	if typeof(_items) != TYPE_DICTIONARY:
-		return []
-	
-	var flag_arr: Variant = item.get("flags")
-	# NOTE: If the flags format changes, change this too
-	if typeof(flag_arr) != TYPE_PACKED_INT64_ARRAY:
-		return []
-	var used_flags: Dictionary[int, Variant] = {}
-	for flag in flag_arr:
-		used_flags[flag] = null
-	
 	var item_flags: Array[int] = []
-	if not used_flags.is_empty():
-		item_flags.assign(used_flags.keys())
-	
+	var flags_dict: Dictionary = _items.get(
+			item_id,
+			NFDictUtils.EMPTY_DICT).get(
+					"flags",
+					NFDictUtils.EMPTY_DICT)
+	for flag in flags_dict:
+		item_flags.append(flag)
 	return item_flags
 
 

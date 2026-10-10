@@ -30,14 +30,19 @@ func _input(event: InputEvent) -> void:
 		
 		if event.keycode == KEY_DELETE and not event.shift_pressed and not event.ctrl_pressed:
 			if items_container.visible:
+				if not items_container.items_tree.has_focus():
+					return
 				if not items_container.loaded_item.is_empty():
 					var item_id: StringName = items_container.loaded_item
 					items_container.items_tree._erase_item(item_id)
 					items_container._on_item_erased(item_id)
+				get_viewport().set_input_as_handled()
 			elif categories_container.visible:
+				if not categories_container.categories_tree.has_focus():
+					return
 				var category_id: StringName = categories_container.selected_category
 				categories_container._on_erase_category_pressed(category_id)
-			get_viewport().set_input_as_handled()
+				get_viewport().set_input_as_handled()
 
 
 func ready_plugin(use_items: bool, use_currencies: bool, paths_resource: RefCounted) -> void:

@@ -50,7 +50,7 @@ func _input(event: InputEvent) -> void:
 		if event.echo or not event.pressed:
 			return
 		
-		if event.keycode == KEY_DELETE and not event.ctrl_pressed and not event.shift_pressed:
+		if recipe_tree.has_focus() and event.keycode == KEY_DELETE and not event.ctrl_pressed and not event.shift_pressed:
 			if not active_recipe.is_empty():
 				recipe_tree.remove_recipe(active_recipe)
 				_on_recipe_erased(active_recipe)
@@ -196,12 +196,12 @@ func change_item_id(old: StringName, new: StringName) -> void:
 	
 	_something_changed()
 	for recipe in recipes_resource.recipes():
-		for input_item in recipes_resource._recipes[recipe]["input"]:
-			if input_item["item_id"] == old:
-				input_item["item_id"] = new
-		for output_item in recipes_resource._recipes[recipe]["output"]:
-			if output_item["item_id"] == old:
-				output_item["item_id"] = new
+		for input_item:NFRecipeItem in recipes_resource._recipes[recipe]["input"]:
+			if input_item.id == old:
+				input_item.id = new
+		for output_item:NFRecipeItem in recipes_resource._recipes[recipe]["output"]:
+			if output_item.id == old:
+				output_item.id = new
 
 
 func save_current_recipe() -> void:
@@ -222,16 +222,16 @@ func save_current_recipe() -> void:
 	
 	for input in inputs:
 		var item: NFRecipeItem = NFRecipeItem.new()
-		item.id = input["item_id"]
-		item.amount = input["amount"]
-		item.custom_data.assign(input["data"])
+		item.id = input.get("item_id", &"")
+		item.amount = input.get("amount", 1)
+		item.custom_data = input.get("data", item.custom_data)
 		input_items.append(item)
 	
 	for output in outputs:
 		var item: NFRecipeItem = NFRecipeItem.new()
-		item.id = output["item_id"]
-		item.amount = output["amount"]
-		item.custom_data.assign(output["data"])
+		item.id = output.get("item_id", &"")
+		item.amount = output.get("amount", 1)
+		item.custom_data = output.get("data", item.custom_data)
 		output_items.append(item)
 	
 	recipes_resource.set_recipe_inputs(active_recipe, input_items)
@@ -495,22 +495,14 @@ func _do_update_recipe_id(from: StringName, to: StringName) -> void:
 	recipes_resource._recipes.erase(from)
 	if active_recipe == from:
 		active_recipe = to
+	recipe_tree.update_recipe_id(from, to)
 
 
 func _on_recipe_erased(recipe_id: StringName) -> void:
-	var recipe_data: Dictionary = {}
-	
 	if active_recipe == recipe_id:
-		var inputs: Array[Dictionary] = recipe_input_tree.get_recipe_items()
-		var outputs: Array[Dictionary] = recipe_output_tree.get_recipe_items()
-		var custom_data: Dictionary[String, Variant] = recipe_custom_data_tree.get_data()
-		
-		recipe_data = {
-			"input": inputs,
-			"output": outputs,
-			"custom_data": custom_data}
-	else:
-		recipe_data = recipes_resource._recipes[recipe_id].duplicate(true)
+		save_current_recipe()
+	
+	var recipe_data: Dictionary = recipes_resource._recipes[recipe_id].duplicate(true)
 	
 	undo.create_action("Erase Recipe")
 	undo.add_do_method(_do_erase_recipe.bind(recipe_id))

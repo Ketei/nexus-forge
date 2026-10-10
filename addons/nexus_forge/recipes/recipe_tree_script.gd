@@ -69,6 +69,14 @@ func add_recipe(recipe_id: StringName, select: bool = false, emit_selected: bool
 			recipe_selected.emit(recipe_id)
 
 
+func update_recipe_id(from: StringName, to: StringName) -> void:
+	for item in get_root().get_children():
+		if item.get_metadata(0) == from:
+			item.set_text(0, String(to))
+			item.set_metadata(0, to)
+			break
+
+
 func select_recipe(recipe_id: StringName, emit_selected: bool) -> bool:
 	for item in get_root().get_children():
 		if item.get_metadata(0) == recipe_id:

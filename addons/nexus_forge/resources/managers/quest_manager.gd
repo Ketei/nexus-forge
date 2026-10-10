@@ -68,6 +68,7 @@ func start_quest(quest: NFQuest, auto_advance_stages: bool) -> bool:
 		for id in _quest_modifiers[quest.id]["order"]:
 			if _quest_modifiers[quest.id]["mods"][id]["callable"].is_valid():
 				_quest_modifiers[quest.id]["mods"][id]["callable"].call(quest)
+		quest._mods_applied = true
 	
 	var new_entry: NFQuestEntry = NFQuestEntry.new()
 	new_entry.resource = quest
@@ -110,6 +111,7 @@ func add_quest_resource(quest: NFQuest, auto_advance_stages: bool, apply_mods: b
 		for id in _quest_modifiers[quest.id]["order"]:
 			if _quest_modifiers[quest.id]["mods"][id]["callable"].is_valid():
 				_quest_modifiers[quest.id]["mods"][id]["callable"].call(quest)
+		quest._mods_applied = true
 	
 	var new_entry: NFQuestEntry = NFQuestEntry.new()
 	new_entry.resource = quest
@@ -172,6 +174,7 @@ func set_state(state_data: Dictionary) -> void:
 			for id in _quest_modifiers[key]["order"]:
 				if _quest_modifiers[key]["mods"][id]["callable"].is_valid():
 					_quest_modifiers[key]["mods"][id]["callable"].call(res)
+			res._mods_applied = true
 		
 		if not _active_quests.has(key):
 			var new_entry: NFQuestEntry = NFQuestEntry.new()
@@ -411,18 +414,25 @@ func register_quest_modifier(quest_id: StringName, mod_id: StringName, mod_calla
 			"order": NFArrayUtils.create_typed(TYPE_STRING_NAME),
 			"mods": NFDictUtils.create_typed(TYPE_STRING_NAME, TYPE_DICTIONARY)}
 	
-	
 	var new_mod: bool = not _quest_modifiers[quest_id]["mods"].has(mod_id)
-	var trigger_sort: bool = true if new_mod else _quest_modifiers[quest_id]["mods"][mod_id]["order"] != order
+	var trigger_sort: bool = true if new_mod else\
+			_quest_modifiers[quest_id]["mods"][mod_id]["order"] != order or\
+			_quest_modifiers[quest_id]["mods"][mod_id]["dependency"] != after_mod
 	
-	NFDictUtils.set_nested_value(
-			_quest_modifiers, # ID
-			[quest_id, "mods", mod_id], # Key path
-			{"order": order, "callable": mod_callable, "dependency": after_mod}, # Value set to
-			true) # Create the mod_id dictionary if it doesn't exist
+	var mods_entry: Dictionary = _quest_modifiers[quest_id]
 	
 	if new_mod:
-		_quest_modifiers[quest_id]["order"].append(mod_id)
+		var new_entry: Dictionary[String, Variant] = {
+			"order": order,
+			"callable": mod_callable,
+			"dependency": after_mod}
+		mods_entry["mods"][mod_id] = new_entry
+		mods_entry["order"].append(mod_id)
+	else:
+		var ex_entry: Dictionary = mods_entry["mods"][mod_id]
+		ex_entry["order"] = order
+		ex_entry["callable"] = mod_callable
+		ex_entry["dependency"] = after_mod
 	
 	if trigger_sort:
 		_sort_mods(quest_id)
@@ -550,6 +560,10 @@ func _set_stage_complete(quest_id: StringName, stage_id: StringName, success: bo
 func _set_objective_complete(quest_id: StringName, stage_id: StringName, objective_id: StringName, success: bool, emit_events: bool = true) -> void:
 	var objective: NFQuestObjective = _active_quests[quest_id].resource.get_stage(stage_id).get_objective(objective_id)
 	_log_objective_complete(quest_id, stage_id, objective_id, success)
+	
+	var entry: NFQuestEntry = _active_quests[quest_id]
+	if entry._objective_tracker.has(objective_id):
+		entry._objective_tracker[objective_id]._forced_complete = true
 	
 	if not emit_events:
 		return
@@ -683,12 +697,13 @@ func _is_serialized_data_valid(quest: StringName, data: Dictionary) -> bool:
 				NFPluginGameHandler._LogLevel.ERROR)
 		return false
 	
-	if data["resource_path"].is_empty() or not ResourceLoader.exists(data["resource_path"]):
-		NFPluginGameHandler._log_msg(
-				"quests - deserializer",
-				"Resource path '%s' for quest '%s' is empty or does not exist." % [data["resource_path"], quest],
-				NFPluginGameHandler._LogLevel.ERROR)
-		return false
+	if not _active_quests.has(quest):
+		if data["resource_path"].is_empty() or not ResourceLoader.exists(data["resource_path"]):
+			NFPluginGameHandler._log_msg(
+					"quests - deserializer",
+					"Resource path '%s' for quest '%s' is empty or does not exist." % [data["resource_path"], quest],
+					NFPluginGameHandler._LogLevel.ERROR)
+			return false
 	
 	var stage_type = typeof(data["current_stage"])
 	
@@ -800,7 +815,6 @@ class NFQuestEntry extends RefCounted:
 		if _is_stage_initializing:
 			return false
 		
-		
 		for obj_id in _objective_tracker:
 			if not _objective_tracker[obj_id].is_required and exclude_optional:
 				continue
@@ -911,6 +925,18 @@ class NFObjectiveProgressTracker extends RefCounted:
 		#"time": {"operator": OP_LESS_EQUAL, "value": 720}
 		}
 	var _is_complete: bool = false
+	var _forced_complete: bool = false:
+		set(c):
+			if _forced_complete == c:
+				return
+			
+			_forced_complete = c
+			
+			if not _forced_complete:
+				_is_complete = _are_requirements_met()
+				
+				if not _is_complete:
+					state_updated.emit(objective_id)
 	
 	
 	## Returns an array of requirement entries and its details.
@@ -941,7 +967,7 @@ class NFObjectiveProgressTracker extends RefCounted:
 	## objective are currently satisfied or if it is already
 	## marked complete.
 	func can_complete() -> bool:
-		if _is_complete:
+		if _is_complete or _forced_complete:
 			return true
 		return _are_requirements_met()
 	
@@ -955,19 +981,22 @@ class NFObjectiveProgressTracker extends RefCounted:
 			return
 		
 		progress[key] = value
-		var was_complete: bool = _is_complete
 		
+		if _forced_complete:
+			return
+		
+		var was_complete: bool = _is_complete
 		_validate_progress()
 		
-		if was_complete and not _is_complete:
-			state_updated.emit(objective_id)
-		elif not was_complete and can_complete():
+		if not was_complete and can_complete():
 			_is_complete = true
+		
+		if was_complete != _is_complete:
 			state_updated.emit(objective_id)
 	
 	
 	func _validate_progress() -> void:
-		if not _is_complete:
+		if _forced_complete or not _is_complete:
 			return
 		
 		if not _are_requirements_met():

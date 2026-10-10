@@ -314,10 +314,11 @@ func _on_create_currency_database_pressed(node: Control) -> void:
 			result[1])
 	if Engine.is_editor_hint():
 		ProjectSettings.save()
-	reload_categories()
+	reload_currency_resource(true)
 	$CurrencyPanel/CurrencyContainer.visible = true
 	node.visible = false
 	node.queue_free()
+
 
 func _on_load_currency_database_pressed(node: Control) -> void:
 	var database_creator: FileDialog = load("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
@@ -555,7 +556,9 @@ func reload_currency_resource(first_launch: bool = false) -> void:
 
 
 func clear_currency_section() -> void:
+	currencies_calculator_tree.clear_currencies()
 	currency_tree.clear_currencies()
+	loaded_currency = &""
 	currency_name_ln_edt.text = ""
 	currency_value_spn_bx.set_value_no_signal(0)
 	currency_custom_data_tree.clear_data(false)
@@ -1317,7 +1320,9 @@ func reload_fields() -> void:
 			
 		for flag in sorted_flags:
 			if existing_flags.has(flag):
-				items_flags_container.add_child(existing_flags[flag])
+				var flag_check: CheckBox = existing_flags[flag]
+				flag_check.set_meta(&"flag_value", item_flags[flag])
+				items_flags_container.add_child(flag_check)
 				existing_flags.erase(flag)
 			else:
 				items_flags_container.add_child(

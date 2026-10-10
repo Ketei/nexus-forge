@@ -140,7 +140,7 @@ func _on_compact_menu_id_pressed(id: int) -> void:
 	else:
 		data_name += "data"
 	
-	var path: String = add_data(data_name, data_type, false, data_item)
+	var path: String = add_data(data_name, data_type, OP_EQUAL, data_item)
 	
 	data_item = null
 	
@@ -334,10 +334,12 @@ func _drop_data(at_position: Vector2, data: Variant) -> void:
 		
 		data_moved.emit(original_path, original_index, drop_path, new_index)
 	else: # Data created
+		var operator: int = range_to_operator(object.get_range(1))
 		data_created.emit(
 				drop_path,
 				new_index,
-				get_data_cell_data(object))
+				get_data_cell_data(object),
+				operator)
 
 
 func clear_data() -> void:
@@ -729,10 +731,12 @@ func _on_button_clicked(item: TreeItem, column: int, id: int, mouse_button_index
 			mn.position = DisplayServer.mouse_get_position()
 			mn.popup()
 			return
+	
 	data_created.emit(
 			data_path,
 			-1,
-			data_copy)
+			data_copy,
+			OP_EQUAL)
 
 
 func on_data_edited() -> void:

@@ -432,10 +432,10 @@ func set_stage_target_pointers(pointers: Array[StringName], reselect: bool = fal
 	if reselect:
 		if reselect_success:
 			var success_idx: int = pointers.find(success_id)
-			success_pointer_opt_btn.select(0 if success_idx == -1 else success_idx)
+			success_pointer_opt_btn.select(0 if success_idx == -1 else success_idx + 1)
 		if reselect_failure:
 			var failure_idx: int = pointers.find(failure_id)
-			failure_pointer_opt_btn.select(0 if failure_idx == -1 else failure_idx)
+			failure_pointer_opt_btn.select(0 if failure_idx == -1 else failure_idx + 1)
 
 
 func select_success_pointer(target: StringName) -> void:
@@ -831,7 +831,8 @@ func _get_layout_config(config_path: String) -> Array[Dictionary]:
 
 
 func _add_quest_requirement_data_pressed(data: Variant) -> void:
-	obj_req_tree.add_data("new_requirement", data)
+	var path: String = obj_req_tree.add_data("new_requirement", data)
+	_on_objective_data_created(path, -1, data, OP_EQUAL)
 
 
 func _on_something_changed(_arg = null) -> void:
@@ -1141,19 +1142,25 @@ func _on_quest_type_selected(type: int) -> void:
 	if new_value == old_value:
 		return
 	
+	var mode_name: String = "Quest"
+	if quest_mode == QuestModeType.STAGE:
+		mode_name = "Stage"
+	elif quest_mode == QuestModeType.OBJECTIVE:
+		mode_name = "Objective"
+	
 	type_opt_btn.set_meta(&"old_value", new_value)
 	
-	undo.create_action("Set Quest Type")
-	undo.add_do_method(_do_update_quest_type.bind(new_value))
-	undo.add_undo_method(_do_update_quest_type.bind(old_value))
+	undo.create_action("Set %s Type" % mode_name)
+	undo.add_do_method(_do_update_item_type.bind(quest_mode, selected_stage, selected_objective, new_value))
+	undo.add_undo_method(_do_update_item_type.bind(quest_mode, selected_stage, selected_objective, old_value))
 	undo.commit_action(false)
 	
 	_on_something_changed()
 
 
-func _do_update_quest_type(type: int) -> void:
-	switch_to()
-	select_type(type)
+func _do_update_item_type(mode: int, stage_id: StringName, obj_id: StringName, type_val: int) -> void:
+	switch_to(stage_id, obj_id)
+	select_type(type_val)
 
 
 func _on_title_edit_toggled(is_toggled: bool) -> void:
@@ -1711,8 +1718,21 @@ func _on_stage_id_changed(from: StringName, to: StringName) -> void:
 		quest_resource._stages[to] = quest_resource._stages[from]
 		quest_resource._stages.erase(from)
 	
+	for stage_id in quest_resource._stages:
+		var stage: NFQuestStage = quest_resource._stages[stage_id]
+		if stage.success_stage_id == from:
+			stage.success_stage_id = to
+		if stage.failure_stage_id == from:
+			stage.failure_stage_id = to
+	
 	if quest_resource.entry_stage == from:
 		quest_resource.entry_stage = to
+	
+	if success_pointer_opt_btn.get_selected_metadata() == from:
+		success_pointer_opt_btn.set_item_metadata(success_pointer_opt_btn.selected, to)
+	if failure_pointer_opt_btn.get_selected_metadata() == from:
+		failure_pointer_opt_btn.set_item_metadata(failure_pointer_opt_btn.selected, to)
+	update_stage_target_pointers()
 	
 	if selected_stage == from:
 		selected_stage = to
@@ -1738,6 +1758,11 @@ func _do_update_stage_id(from: StringName, to: StringName) -> void:
 	quest_resource._stages[to] = quest_resource._stages[from]
 	quest_resource._stages.erase(from)
 	
+	if success_pointer_opt_btn.get_selected_metadata() == from:
+		success_pointer_opt_btn.set_item_metadata(success_pointer_opt_btn.selected, to)
+	if failure_pointer_opt_btn.get_selected_metadata() == from:
+		failure_pointer_opt_btn.set_item_metadata(failure_pointer_opt_btn.selected, to)
+	
 	quest_tree.set_stage_id(from, to)
 	
 	if quest_resource.entry_stage == from:
@@ -1746,6 +1771,8 @@ func _do_update_stage_id(from: StringName, to: StringName) -> void:
 	if selected_stage == from:
 		selected_stage = to
 		update_crumbs_label()
+	
+	update_stage_target_pointers()
 
 
 func _on_objective_id_changed(on_stage: StringName, from: StringName, to: StringName) -> void:
@@ -1967,6 +1994,20 @@ func _do_move_stage(stage_id: StringName, to_index: int) -> void:
 
 
 func _on_objective_moved(objective_id: StringName, from_stage: StringName, from_index: int, to_stage: StringName, to_index: int) -> void:
+	if from_stage != to_stage:
+		var source_stage: NFQuestStage = quest_resource.get_stage(from_stage)
+		var target_stage: NFQuestStage = quest_resource.get_stage(to_stage)
+		
+		if source_stage != null and target_stage != null and source_stage.has_objective(objective_id):
+			var objective: NFQuestObjective = source_stage.get_objective(objective_id)
+			var required: bool = source_stage.is_objective_required(objective_id)
+			
+			target_stage.add_objective(objective, required)
+			source_stage.remove_objective(objective_id)
+			
+			if selected_stage == from_stage and selected_objective == objective_id:
+				selected_stage = to_stage
+	
 	undo.create_action("Move Stage '%s' Objective '%s'" % [from_stage, objective_id])
 	undo.add_do_method(_do_move_objective.bind(
 			objective_id,
@@ -1983,6 +2024,20 @@ func _on_objective_moved(objective_id: StringName, from_stage: StringName, from_
 
 
 func _do_move_objective(objective_id: StringName, from_stage: StringName, to_stage: StringName, to_index: int) -> void:
+	if from_stage != to_stage:
+		var source_stage: NFQuestStage = quest_resource.get_stage(from_stage)
+		var target_stage: NFQuestStage = quest_resource.get_stage(to_stage)
+		
+		if source_stage != null and target_stage != null and source_stage.has_objective(objective_id):
+			var objective: NFQuestObjective = source_stage.get_objective(objective_id)
+			var required: bool = source_stage.is_objective_required(objective_id)
+			
+			target_stage.add_objective(objective, required)
+			source_stage.remove_objective(objective_id)
+			
+			if selected_stage == from_stage and selected_objective == objective_id:
+				selected_stage = to_stage
+	
 	quest_tree.move_objective(
 			objective_id,
 			from_stage,

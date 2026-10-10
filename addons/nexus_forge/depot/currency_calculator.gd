@@ -96,6 +96,11 @@ func update_calculation() -> void:
 	calculation_updated.emit(new_value)
 
 
+func clear_currencies() -> void:
+	for item in get_root().get_children():
+		item.free()
+
+
 func _get_currency_value(item: TreeItem) -> int:
 	var meta = item.get_metadata(1)
 	

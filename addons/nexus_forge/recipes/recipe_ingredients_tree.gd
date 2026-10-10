@@ -919,7 +919,7 @@ func change_item_id(from: StringName, to: StringName) -> void:
 	for item in get_root().get_children():
 		if item.get_metadata(0)["id"] == from:
 			item.set_text(0, String(to))
-			item.set_metadata(0, to)
+			item.get_metadata(0)["id"] = to
 
 
 func clear_items() -> void:

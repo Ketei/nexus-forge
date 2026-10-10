@@ -55,6 +55,9 @@ func update_page_count() -> void:
 		_last_page = maxi(0, _search_results.size() - 1) / RESULTS_PER_PAGE
 	else:
 		_last_page = 0
+	
+	if _last_page < _current_page_index:
+		_current_page_index = _last_page
 
 
 func add_item(item_id: StringName, item_category: StringName = &"") -> bool:
@@ -304,9 +307,12 @@ func _erase_item(item_id: StringName) -> void:
 	
 	_search_results.remove_at(search_idx)
 	var page_idx: int = search_idx / RESULTS_PER_PAGE
-	if page_idx <= _current_page_index:
-		_refresh_current_page()
+	var old_page: int = _current_page_index
+	
 	update_page_count()
+	
+	if page_idx <= old_page or _current_page_index != old_page:
+		_refresh_current_page()
 
 
 func _on_item_edited() -> void:
@@ -327,6 +333,9 @@ func _on_item_edited() -> void:
 	
 	_items[new_id] = _items[old_id]
 	_items.erase(old_id)
+	
+	if _active_item == old_id:
+		_active_item = new_id
 	
 	item_id_changed.emit(old_id, new_id)
 
@@ -504,7 +513,7 @@ func _refresh_current_page() -> void:
 			(_current_page_index + 1) * RESULTS_PER_PAGE)
 	for item in slice:
 		root.add_child(item)
-	if not _active_item.is_empty() and _items[_active_item].get_parent() == root:
+	if _items.has(_active_item) and _items[_active_item].get_parent() == root:
 		_items[_active_item].select(0)
 
 

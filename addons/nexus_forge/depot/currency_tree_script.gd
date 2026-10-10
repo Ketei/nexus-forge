@@ -154,8 +154,9 @@ func get_currency_data() -> Dictionary:
 
 
 func clear_currencies() -> void:
-	for item in get_root().get_children():
-		item.free()
+	for curr_id in currencies:
+		currencies[curr_id].free()
+	currencies.clear()
 
 
 func search_for(text: String) -> void:
