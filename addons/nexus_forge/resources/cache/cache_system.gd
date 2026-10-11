@@ -160,8 +160,10 @@ func get_cache(key: String) -> Variant:
 	if thread_safe:
 		_mutex.lock()
 	
-	if _cache_map.has(key):
-		result = _cache_map[key].data
+	var link: NFLRUCacheLink = _cache_map.get(key)
+	if link != null:
+		result = link.data
+		_move_to_newest(link)
 	
 	if thread_safe:
 		_mutex.unlock()

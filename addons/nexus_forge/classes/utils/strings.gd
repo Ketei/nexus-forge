@@ -48,11 +48,10 @@ static func split_and_strip(string: String, delimeter: String, allow_empty: bool
 static func string_to_variant(string: String) -> Variant:
 	var clean_string: String = string.to_lower().strip_edges()
 	
-	if clean_string.is_valid_float():
-		if clean_string.contains("."):
-			return clean_string.to_float()
-		else:
-			return clean_string.to_int()
+	if clean_string.is_valid_int():
+		return clean_string.to_int()
+	elif clean_string.is_valid_float():
+		return clean_string.to_float()
 	elif clean_string == "true":
 		return true
 	elif clean_string == "false":
@@ -64,16 +63,24 @@ static func string_to_variant(string: String) -> Variant:
 ## Takes param value and returns a string of the same value but with commas[br]
 ## Example: 123456789 -> "123,456,789"
 static func beautify_int(value: int) -> String:
-	var formatted_number: String = str(value) # Convert the number to a string
+	var formatted_number: String = str(value)
+	var is_negative: bool = value < 0
+	
+	if is_negative:
+		formatted_number = formatted_number.substr(1)
+	
 	var count: int = 0
 	var result: String = ""
-
+	
 	for char_idx in range(len(formatted_number) - 1, -1, -1): # Iterate backwards through the string
 		result = formatted_number[char_idx] + result
 		count += 1
 		if count % 3 == 0 and char_idx != 0:
 			result = "," + result # Add a comma every three digits
-
+	
+	if is_negative:
+		result = "-" + result
+	
 	return result
 
 

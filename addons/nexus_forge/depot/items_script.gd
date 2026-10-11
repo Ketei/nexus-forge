@@ -587,9 +587,13 @@ func set_currency_ui_enabled(enabled: bool) -> void:
 
 
 func load_currency(currency_id: StringName) -> void:
+	var currency_name: String = currency_resource.get_currency_name(currency_id)
 	var currency_value: int = currency_resource.get_currency_value(currency_id)
-	currency_name_ln_edt.text = currency_resource.get_currency_name(currency_id)
+	
+	currency_name_ln_edt.text = currency_name
 	currency_value_spn_bx.set_value_no_signal(currency_value)
+	
+	currency_name_ln_edt.set_meta(&"old_value", currency_name)
 	currency_value_spn_bx.set_meta(&"old_value", currency_value)
 	currency_custom_data_tree.clear_data(false)
 	
@@ -688,6 +692,8 @@ func _on_item_name_edit_toggled(is_toggled: bool) -> void:
 	
 	if new_name == old_name:
 		return
+	
+	item_name_ln_edt.set_meta(&"old_value", new_name)
 	
 	undo.create_action("Set '%s' Item Name" % loaded_item)
 	undo.add_do_method(_do_update_item_name.bind(loaded_item, new_name))

@@ -134,9 +134,9 @@ func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
 
 func _drop_data(at_position: Vector2, data: Variant) -> void:
 	var drop_target: TreeItem = get_item_at_position(at_position)
+	var from_this_tree: bool = _is_item_local(data["item"])
 	var dropped_item: TreeItem = _create_item(data["id"], 1, {}) if data["item"] == null else data["item"]
 	var original_index: int = dropped_item.get_index() if data["item"] != null else -1
-	var from_this_tree: bool = _is_item_local(dropped_item)
 	var origin_path: String = ""
 	var origin_index: int = -1
 	var new_parent: TreeItem = null
@@ -575,6 +575,7 @@ func set_item_amount(index: int, new_amount: int) -> void:
 	var target: TreeItem = _get_item_from_index(index)
 	if target != null:
 		target.set_range(1, new_amount)
+		target.get_metadata(1)["amount"] = target.get_range(1)
 
 
 func set_metadata_id(index: int, path: String, new_name: String) -> void:

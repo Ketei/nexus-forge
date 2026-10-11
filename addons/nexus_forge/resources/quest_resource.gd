@@ -67,7 +67,7 @@ static func _static_init() -> void:
 ## Returns the quest [member NFQuest.title]. Formats it if [code]Format NFQuest Strings with Blackboard[/code]
 ## is [code]On[/code] on [code]Project Settings[/code].
 func get_quest_title() -> String:
-	if not ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("items_format_strings"), false):
+	if not ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("quests_format_strings"), false):
 		return title
 	
 	if _title_builder.is_valid():
@@ -91,7 +91,7 @@ func get_quest_title() -> String:
 ## Returns the item [member NFQuest.description]. Formats it if [code]Format NFQuest Strings with Blackboard[/code]
 ## is [code]On[/code] on [code]Project Settings[/code].
 func get_quest_description() -> String:
-	if not ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("items_format_strings"), false):
+	if not ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("quests_format_strings"), false):
 		return description
 	
 	if _description_builder.is_valid():

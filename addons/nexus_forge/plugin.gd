@@ -18,52 +18,12 @@ var class_timestamps: RefCounted = null
 # Earlier versions of godot had an issue where documentation wouldn't show
 # unless recompiled. This forces a recompilation. Adds to load time.
 func recompile_script_docs() -> void:
-	const SCRIPT_DOC: Array[String] = [
-		"res://addons/nexus_forge/classes/autoload/nexus_forge_singleton.gd",
-		"res://addons/nexus_forge/resources/cache/cache_system.gd",
-		"res://addons/nexus_forge/resources/cache/resource_cache.gd",
-		"res://addons/nexus_forge/resources/bit_flags.gd",
-		"res://addons/nexus_forge/resources/value_range.gd",
-		"res://addons/nexus_forge/resources/range_float.gd",
-		"res://addons/nexus_forge/resources/range_integer.gd",
-		"res://addons/nexus_forge/classes/utils/array_utils.gd",
-		"res://addons/nexus_forge/classes/utils/bit_utils.gd",
-		"res://addons/nexus_forge/classes/utils/dict_utils.gd",
-		"res://addons/nexus_forge/classes/utils/math.gd",
-		"res://addons/nexus_forge/classes/utils/random_weight_pool.gd",
-		"res://addons/nexus_forge/classes/utils/ranges.gd",
-		"res://addons/nexus_forge/classes/utils/strings.gd",
-		"res://addons/nexus_forge/classes/utils/uuid.gd",
-		"res://addons/nexus_forge/resources/skill_set.gd",
-		"res://addons/nexus_forge/resources/stat_block.gd",
-		"res://addons/nexus_forge/resources/trait_block.gd",
-		"res://addons/nexus_forge/resources/dialog_storage/dialog_locale.gd",
-		"res://addons/nexus_forge/resources/dialog_storage/parsed_dialog.gd",
-		"res://addons/nexus_forge/resources/localization/phrase_map.gd",
-		"res://addons/nexus_forge/resources/parser/discouse_parser_base.gd",
-		"res://addons/nexus_forge/resources/character_sheet.gd",
-		"res://addons/nexus_forge/resources/item_sheet.gd",
-		"res://addons/nexus_forge/resources/quest_objective.gd",
-		"res://addons/nexus_forge/resources/quest_stage.gd",
-		"res://addons/nexus_forge/resources/quest_resource.gd",
-		"res://addons/nexus_forge/resources/quest_manager.gd",
-		"res://addons/nexus_forge/resources/recipe_item.gd",
-		"res://addons/nexus_forge/resources/recipe_sheet.gd",
-		"res://addons/nexus_forge/resources/species.gd",
-		"res://addons/nexus_forge/resources/currency_catalog.gd",
-		"res://addons/nexus_forge/resources/item_catalog.gd",
-		"res://addons/nexus_forge/resources/recipe_catalog.gd",
-		"res://addons/nexus_forge/resources/skill_catalog.gd",
-		"res://addons/nexus_forge/resources/species_catalog.gd",
-		"res://addons/nexus_forge/resources/stat_catalog.gd",
-		"res://addons/nexus_forge/resources/trait_catalog.gd",
-		"res://addons/nexus_forge/resources/var_db_script.gd"]
-	
 	var script_editor: ScriptEditor = EditorInterface.get_script_editor()
 	
-	for path in SCRIPT_DOC:
-		var script_file: Script = load(path)
-		script_editor.update_docs_from_script(script_file) # Could this work better?
+	for found_class in ProjectSettings.get_global_class_list():
+		var path: String = found_class["path"]
+		if path.begins_with("res://addons/nexus_forge/") and FileAccess.file_exists(path):
+			script_editor.update_docs_from_script(load(found_class["path"]))
 
 
 func _enter_tree() -> void:
@@ -725,7 +685,7 @@ func _on_files_moved(old_file: String, new_file: String) -> void:
 	if FileAccess.file_exists(path):
 		var new_md5: String = new_file.md5_text()
 		var new_path: String = "res://.godot/editor/".path_join(new_file.get_file() + mode + new_md5 + ".cfg")
-		DirAccess.rename_absolute(old_file, new_path)
+		DirAccess.rename_absolute(path, new_path)
 
 
 func _on_resource_removed(object: Resource) -> void:
