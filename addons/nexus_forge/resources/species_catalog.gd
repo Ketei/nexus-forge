@@ -26,10 +26,31 @@ func _species_stat_data(species_id: StringName, use_inheritance: bool) -> Dictio
 	if not use_inheritance:
 		return stats
 	
+	var dilution_factor: float = clampf(
+			ProjectSettings.get_setting(
+					NFPluginGameHandler.get_setting_path(
+							"species_genetic_dilution"),
+					0.0),
+			0.0,
+			1.0)
+	
 	var recessive_parent: StringName = _species[species_id]["parent_recessive"]
 	var dominant_parent: StringName = _species[species_id]["parent_dominant"]
 	
 	if not _species.has(dominant_parent):
+		return stats
+	
+	var dilute_parents: bool = ProjectSettings.get_setting(
+			NFPluginGameHandler.get_setting_path(
+					"species_dilute_parents"),
+			false)
+	
+	var dilution_multiplier: float = 1.0
+	
+	if dilute_parents:
+		dilution_multiplier -= dilution_factor
+	
+	if dilution_multiplier <= 0:
 		return stats
 	
 	var explored_species: Dictionary[StringName, Variant] = {
@@ -42,24 +63,33 @@ func _species_stat_data(species_id: StringName, use_inheritance: bool) -> Dictio
 		
 		for stat_id in dominant_genes.keys():
 			if recessive_genes.has(stat_id):
-				hybrid_genes[stat_id] = roundf(( dominant_genes[stat_id] * 0.75) + ( recessive_genes[stat_id] / 4.0 ))
+				hybrid_genes[stat_id] = roundf((
+							(dominant_genes[stat_id] * 0.75) +\
+							(recessive_genes[stat_id] / 4.0)
+						) * dilution_multiplier)
 			else:
-				hybrid_genes[stat_id] = dominant_genes[stat_id]
+				hybrid_genes[stat_id] = roundf(
+						dominant_genes[stat_id] *\
+						dilution_multiplier)
 		
 		for stat_id in recessive_genes.keys():
 			if hybrid_genes.has(stat_id):
 				continue
-			hybrid_genes[stat_id] = roundf(recessive_genes[stat_id] / 2.0)
+			hybrid_genes[stat_id] = roundf(
+					(recessive_genes[stat_id] / 2.0) *\
+					dilution_multiplier)
 		
 		stats.merge(hybrid_genes)
 		explored_species[recessive_parent] = null
 	else:
-		stats.merge(_species[dominant_parent]["stats"])
+		var dominant_genes: Dictionary[StringName, float] = {}
+		for stat_id in _species[dominant_parent]["stats"].keys():
+			dominant_genes[stat_id] = roundf(
+					_species[dominant_parent]["stats"][stat_id] *\
+					dilution_multiplier)
+		stats.merge(dominant_genes)
 	
 	dominant_parent = _species[dominant_parent]["parent_dominant"]
-	
-	var dilution_multiplier: float = 1.0
-	var dilution_factor: float = clampf(ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("species_genetic_dilution"), 0.0), 0.0, 1.0)
 	
 	if dilution_multiplier <= dilution_factor:
 		return stats
@@ -70,7 +100,9 @@ func _species_stat_data(species_id: StringName, use_inheritance: bool) -> Dictio
 		for stat in _species[dominant_parent]["stats"].keys():
 			if stats.has(stat):
 				continue
-			stats[stat] = roundf( _species[dominant_parent]["stats"][stat] * dilution_multiplier )
+			stats[stat] = roundf(
+					_species[dominant_parent]["stats"][stat] *\
+					dilution_multiplier)
 		
 		dominant_parent = _species[dominant_parent]["parent_dominant"]
 	
@@ -88,10 +120,31 @@ func _species_skill_data(species_id: StringName, use_inheritance: bool) -> Dicti
 	if not use_inheritance:
 		return skills
 	
+	var dilution_factor: float = clampf(
+			ProjectSettings.get_setting(
+					NFPluginGameHandler.get_setting_path(
+							"species_genetic_dilution"),
+					0.0),
+			0.0,
+			1.0)
+	
 	var recessive_parent: StringName = _species[species_id]["parent_recessive"]
 	var dominant_parent: StringName = _species[species_id]["parent_dominant"]
 	
 	if not _species.has(dominant_parent):
+		return skills
+	
+	var dilute_parents: bool = ProjectSettings.get_setting(
+			NFPluginGameHandler.get_setting_path(
+					"species_dilute_parents"),
+			false)
+	
+	var dilution_multiplier: float = 1.0
+	
+	if dilute_parents:
+		dilution_multiplier -= dilution_factor
+	
+	if dilution_multiplier <= 0:
 		return skills
 	
 	var explored_species: Dictionary[StringName, Variant] = {
@@ -104,24 +157,37 @@ func _species_skill_data(species_id: StringName, use_inheritance: bool) -> Dicti
 		
 		for skill_id in dominant_genes.keys():
 			if recessive_genes.has(skill_id):
-				hybrid_genes[skill_id] = roundf(( dominant_genes[skill_id] * 0.75) + ( recessive_genes[skill_id] / 4.0 ))
+				hybrid_genes[skill_id] = roundi(
+						((dominant_genes[skill_id] * 0.75) +\
+						(recessive_genes[skill_id] / 4.0)) *\
+						dilution_multiplier)
 			else:
-				hybrid_genes[skill_id] = dominant_genes[skill_id]
+				hybrid_genes[skill_id] = roundi(
+						dominant_genes[skill_id] *\
+						dilution_multiplier)
 		
 		for skill_id in recessive_genes.keys():
 			if hybrid_genes.has(skill_id):
 				continue
-			hybrid_genes[skill_id] = roundi(recessive_genes[skill_id] / 2.0)
+			hybrid_genes[skill_id] = roundi(
+					(recessive_genes[skill_id] / 2.0) *\
+					dilution_multiplier)
 		
 		skills.merge(hybrid_genes)
 		explored_species[recessive_parent] = null
 	else:
-		skills.merge(_species[dominant_parent]["skills"])
+		var dominant_genes: Dictionary[StringName, int] = {}
+		for skill_id in _species[dominant_parent]["skills"].keys():
+			dominant_genes[skill_id] = roundi(
+					_species[dominant_parent]["skills"][skill_id] *\
+					dilution_multiplier)
+		
+		skills.merge(dominant_genes)
 	
 	dominant_parent = _species[dominant_parent]["parent_dominant"]
 	
-	var dilution_multiplier: float = 1.0
-	var dilution_factor: float = clampf(ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("species_genetic_dilution"), 0.0), 0.0, 1.0)
+	if dilution_multiplier <= dilution_factor:
+		return skills
 	
 	while _species.has(dominant_parent) and 0 < dilution_multiplier and not dominant_parent.is_empty() and not explored_species.has(dominant_parent):
 		dilution_multiplier -= dilution_factor
@@ -129,7 +195,9 @@ func _species_skill_data(species_id: StringName, use_inheritance: bool) -> Dicti
 		for skill in _species[dominant_parent]["skills"].keys():
 			if skills.has(skill):
 				continue
-			skills[skill] = roundi(_species[dominant_parent]["skills"][skill] * dilution_multiplier)
+			skills[skill] = roundi(
+					_species[dominant_parent]["skills"][skill] *\
+					dilution_multiplier)
 			
 		dominant_parent = _species[dominant_parent]["parent_dominant"]
 	
@@ -138,6 +206,7 @@ func _species_skill_data(species_id: StringName, use_inheritance: bool) -> Dicti
 
 func _species_trait_data(species_id: StringName, use_inheritance: bool) -> Dictionary[StringName, int]:
 	var traits: Dictionary[StringName, int] = {}
+	
 	if not _species.has(species_id):
 		return traits
 	
@@ -146,10 +215,31 @@ func _species_trait_data(species_id: StringName, use_inheritance: bool) -> Dicti
 	if not use_inheritance:
 		return traits
 	
+	var dilution_factor: float = clampf(
+			ProjectSettings.get_setting(
+					NFPluginGameHandler.get_setting_path(
+							"species_genetic_dilution"),
+					0.0),
+			0.0,
+			1.0)
+	
 	var recessive_parent: StringName = _species[species_id]["parent_recessive"]
 	var dominant_parent: StringName = _species[species_id]["parent_dominant"]
 	
 	if not _species.has(dominant_parent):
+		return traits
+	
+	var dilute_parents: bool = ProjectSettings.get_setting(
+			NFPluginGameHandler.get_setting_path(
+					"species_dilute_parents"),
+			false)
+	
+	var dilution_multiplier: float = 1.0
+	
+	if dilute_parents:
+		dilution_multiplier -= dilution_factor
+	
+	if dilution_multiplier <= 0:
 		return traits
 	
 	var explored_species: Dictionary[StringName, Variant] = {
@@ -162,24 +252,38 @@ func _species_trait_data(species_id: StringName, use_inheritance: bool) -> Dicti
 		
 		for trait_id in dominant_genes.keys():
 			if recessive_genes.has(trait_id):
-				hybrid_genes[trait_id] = roundf(( dominant_genes[trait_id] * 0.75) + ( recessive_genes[trait_id] / 4.0 ))
+				hybrid_genes[trait_id] = roundi(
+							(
+								(dominant_genes[trait_id] * 0.75) +\
+								(recessive_genes[trait_id] / 4.0)
+							) * dilution_multiplier)
 			else:
-				hybrid_genes[trait_id] = dominant_genes[trait_id]
+				hybrid_genes[trait_id] = roundi(
+						dominant_genes[trait_id] *\
+						dilution_multiplier)
 		
 		for trait_id in recessive_genes.keys():
 			if hybrid_genes.has(trait_id):
 				continue
-			hybrid_genes[trait_id] = roundi(recessive_genes[trait_id] / 2.0)
+			hybrid_genes[trait_id] = roundi(
+					(recessive_genes[trait_id] / 2.0) *\
+					dilution_multiplier)
 		
 		traits.merge(hybrid_genes)
 		explored_species[recessive_parent] = null
 	else:
-		traits.merge(_species[dominant_parent]["traits"])
+		var dominant_genes: Dictionary[StringName, int] = {}
+		for trait_id in _species[dominant_parent]["traits"].keys():
+			dominant_genes[trait_id] = roundi(
+					_species[dominant_parent]["traits"][trait_id] *\
+					dilution_multiplier)
+		
+		traits.merge(dominant_genes)
 	
 	dominant_parent = _species[dominant_parent]["parent_dominant"]
 	
-	var dilution_multiplier: float = 1.0
-	var dilution_factor: float = clampf(ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("species_genetic_dilution"), 0.0), 0.0, 1.0)
+	if dilution_multiplier <= dilution_factor:
+		return traits
 	
 	while _species.has(dominant_parent) and 0 < dilution_multiplier and not dominant_parent.is_empty() and not explored_species.has(dominant_parent):
 		dilution_multiplier -= dilution_factor
@@ -187,12 +291,13 @@ func _species_trait_data(species_id: StringName, use_inheritance: bool) -> Dicti
 		for trait_id in _species[dominant_parent]["traits"].keys():
 			if traits.has(trait_id):
 				continue
-			traits[trait_id] = _species[dominant_parent]["traits"][trait_id]
+			traits[trait_id] = roundi(
+					_species[dominant_parent]["traits"][trait_id] *
+					dilution_multiplier)
 			
 		dominant_parent = _species[dominant_parent]["parent_dominant"]
 	
 	return traits
-
 
 ## Returns a [NFSpeciesSheet] with data, stats, skills and traits of the species.
 ## Stats, skills and traits will have inherited values from the parent species
@@ -203,7 +308,9 @@ func get_species(species_id: StringName) -> NFSpeciesSheet:
 	if not _species.has(species_id):
 		return null
 	
-	var inherit: bool = ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("species_use_inheritance"), true)
+	var inherit: bool = ProjectSettings.get_setting(
+			NFPluginGameHandler.get_setting_path(
+					"species_genetic_dilution"), 0.0) < 1.0
 	
 	var new_species: NFSpeciesSheet = NFSpeciesSheet.new()
 	
@@ -314,29 +421,35 @@ func register_species(species_sheet: NFSpeciesSheet, subspecies_of: StringName =
 	
 	if species_sheet.stats != null:
 		var stat_block: Dictionary[StringName, int] = NFStatBlock.stats()
+		var stat_obj: NFSpeciesStatCatalog = species_sheet.stats
 		for stat_id in stat_block.keys():
-			var stat_value: float = species_sheet.stats.get_entry(stat_id)
-			if stat_value == 0:
+			if not stat_obj.has(stat_id):
 				continue
+			var stat_value: float = stat_obj.get_entry(stat_id)
 			stats[stat_id] = stat_value
 	
 	if species_sheet.skills != null:
+		var skill_obj: NFSpeciesStatCatalog = species_sheet.skills
 		for skill_id in NFSkillSet.skills():
-			var skill_value: int = int(species_sheet.skills.get_entry(skill_id))
-			if skill_value == 0:
+			if not skill_obj.has(skill_id):
 				continue
+			var skill_value: int = int(skill_obj.get_entry(skill_id))
 			skills[skill_id] = skill_value
 	
 	if species_sheet.traits != null:
+		var trait_obj: NFSpeciesStatCatalog = species_sheet.traits
 		for trait_id in NFTraitBlock.traits():
-			var trait_value: int = int(species_sheet.traits.get_entry(trait_id))
-			if trait_value == 0:
+			if not trait_obj.has(trait_id):
 				continue
+			var trait_value: int = int(trait_obj.get_entry(trait_id))
 			traits[trait_id] = trait_value
 	
+	var true_dom: StringName = subspecies_of if _species.has(subspecies_of) else &""
+	var true_sub: StringName = recessive_subspecies if _species.has(recessive_subspecies) else &""
+	
 	var new_species: Dictionary[String, Variant] = {
-		"parent_dominant": subspecies_of,
-		"parent_recessive": recessive_subspecies,
+		"parent_dominant": true_dom,
+		"parent_recessive": true_sub,
 		"name": species_sheet.name,
 		"description": species_sheet.description,
 		"custom_data": species_sheet.custom_data.duplicate(true),
@@ -561,7 +674,8 @@ func get_species_stat_value(species_id: StringName, stat_id: StringName) -> floa
 
 
 ## Returns a [NFStatBlock] with the stats of the [param species_id].[br]
-## The species will have inherited the stats of the parent species if
+## The species will have inherited the stats of the parent species
+## using the [code]Species Genetic Dillution[/code] setting if
 ## [param inherit] is [code]true[/code].
 func get_species_stats(species_id: StringName, inherit: bool = true) -> NFSpeciesStatCatalog:
 	var new_block: NFSpeciesStatCatalog = NFSpeciesStatCatalog.new()
@@ -619,7 +733,8 @@ func get_species_skill_value(species_id: StringName, skill_id: StringName) -> in
 
 
 ## Returns a [NFSkillSet] with the skills of the [param species_id].[br]
-## The species will have inherited the skills of the parent species if
+## The species will have inherited the stats of the parent species
+## using the [code]Species Genetic Dillution[/code] setting if
 ## [param inherit] is [code]true[/code].
 func get_species_skills(species_id: StringName, inherit: bool = true) -> NFSpeciesStatCatalog:
 	var new_set: NFSpeciesStatCatalog = NFSpeciesStatCatalog.new()
@@ -668,7 +783,8 @@ func get_species_trait_value(species_id: StringName, trait_id: StringName) -> in
 
 
 ## Returns a [NFTraitBlock] with the traits of the [param species_id].[br]
-## The species will have inherited the traits of the parent species if
+## The species will have inherited the stats of the parent species
+## using the [code]Species Genetic Dillution[/code] setting if
 ## [param inherit] is [code]true[/code].
 func get_species_traits(species_id: StringName, inherit: bool = true) -> NFSpeciesStatCatalog:
 	var new_block: NFSpeciesStatCatalog = NFSpeciesStatCatalog.new()

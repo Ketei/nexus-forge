@@ -77,7 +77,7 @@ func add_item(item_id: StringName, item_category: StringName = &"") -> bool:
 		false,
 		"Erase Item")
 	
-	_items[id_string] = new_item
+	_items[item_id] = new_item
 	
 	if 0 < RESULTS_PER_PAGE:
 		get_root().remove_child(new_item)
@@ -98,6 +98,17 @@ func add_item(item_id: StringName, item_category: StringName = &"") -> bool:
 		sort_single_item(new_item)
 	
 	return true
+
+
+func update_item_id(from: StringName, to: StringName) -> void:
+	if not _items.has(from) or _items.has(to):
+		return
+	
+	var target: TreeItem = _items[from]
+	target.set_text(0, String(to))
+	target.get_metadata(0)["id"] = to
+	_items[to] = target
+	_items.erase(from)
 
 
 func set_active_item(item_id: StringName) -> void:
@@ -319,10 +330,11 @@ func _on_item_edited() -> void:
 	var edited: TreeItem = get_edited()
 	var prev_text: String = String(edited.get_metadata(0)["id"])
 	var new_text: String = get_valid_id(
-		edited.get_text(0),
+		edited.get_text(0).strip_edges().replace(" ", "_"),
 		edited.get_metadata(0)["id"])
 	
-	if new_text == prev_text:
+	if new_text.is_empty() or new_text == prev_text:
+		edited.set_text(0, prev_text)
 		return
 	
 	var old_id: StringName = edited.get_metadata(0)["id"]

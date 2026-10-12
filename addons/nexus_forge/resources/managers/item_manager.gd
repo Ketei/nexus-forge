@@ -317,16 +317,22 @@ func has_category(category_id: StringName) -> bool:
 ## Erases the category [param category_id] and removes the category from
 ## any item that has it.
 func erase_category(category_id: StringName) -> void:
-	var items_changed: Array[NFItemSheet] = []
-	
-	if not _categories.erase(category_id):
+	if not _categories.has(category_id):
 		return
 	
+	var upper_category: StringName = _categories[category_id]["parent_key"]
+	var items_changed: Array[NFItemSheet] = []
+	
 	for item in _items:
-		if _items[item].category == category_id:
-			_items[item].category = &""
+		var target: NFItemSheet = _items[item]
+		if target.category == category_id:
+			target.category = &""
 			items_changed.append(_items[item])
 	
+	for cat in _categories:
+		var target: Dictionary = _categories[cat]
+		if target["parent_key"] == category_id:
+			target["parent_key"] = upper_category
 	
 	category_erased.emit(category_id)
 	for item in items_changed:

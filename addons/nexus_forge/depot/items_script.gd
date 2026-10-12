@@ -875,6 +875,21 @@ func _on_item_id_changed(from: StringName, to: StringName) -> void:
 	item_link.change_item_id(from, to)
 	if loaded_item == from:
 		loaded_item = to
+	
+	undo.create_action("Set Item Name")
+	undo.add_do_method(_do_rename_item.bind(from, to))
+	undo.add_undo_method(_do_rename_item.bind(to, from))
+	undo.commit_action(false)
+	_on_items_changed()
+
+
+func _do_rename_item(from: StringName, to: StringName) -> void:
+	if loaded_item == from:
+		loaded_item = to
+	
+	item_link.change_item_id(from, to)
+	items_tree.update_item_id(from, to)
+	_on_items_changed()
 
 
 func _on_search_item_text_changed(text: String) -> void:

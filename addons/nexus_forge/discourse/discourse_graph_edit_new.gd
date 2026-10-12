@@ -966,6 +966,8 @@ func remove_node(node_uuid: StringName) -> void:
 			target.use_code_editor_pressed.disconnect(_on_use_code_editor_requested)
 		DialogNodes.CHOICES:
 			target.use_code_editor_pressed.disconnect(_on_use_code_editor_requested)
+		DialogNodes.SIGNAL:
+			signalers.erase(target)
 	
 	graph_nodes.erase(node_uuid)
 	target.queue_free()

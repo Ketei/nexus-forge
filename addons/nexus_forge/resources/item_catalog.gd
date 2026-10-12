@@ -357,10 +357,21 @@ func has_category(category_id: StringName) -> bool:
 ## Erases the category [param category_id] and removes the category from
 ## any item that has it.
 func erase_category(category_id: StringName) -> void:
-	if _categories.erase(category_id):
-		for item in _items:
-			if _items[item]["category"] == category_id:
-				_items[item]["category"] = &""
+	if not _categories.has(category_id):
+		return
+	
+	var upper_category: StringName = _categories[category_id]["parent_key"]
+	_categories.erase(category_id)
+	
+	for item in _items:
+		var target: Dictionary = _items[item]
+		if target["category"] == category_id:
+			target["category"] = &""
+	
+	for cat in _categories:
+		var target_cat: Dictionary = _categories[cat]
+		if target_cat["parent_key"] == category_id:
+			target_cat["parent_key"] = upper_category
 
 
 ## Returns a dictionary with all the parent categories from [param from_category].[br]

@@ -142,7 +142,14 @@ const _SETTINGS_PATHS: Dictionary[String, Dictionary] = {
 		"type": TYPE_FLOAT,
 		"hint": PROPERTY_HINT_RANGE,
 		"hint_string": "0,1",
-		"restart_required": false},
+		"restart_required": false,
+		"sort_string": "nexus_forge/settings/species_genetic_dilution_a"},
+	"species_dilute_parents": {
+		"setting_path": "nexus_forge/settings/dilution_affects_parents",
+		"default_value": false,
+		"type": TYPE_BOOL,
+		"restart_required": false,
+		"sort_string": "nexus_forge/settings/species_genetic_dilution_b"},
 	"quests_format_strings": {
 		"setting_path": "nexus_forge/settings/format_quest_strings_with_blackboard",
 		"default_value": false,
