@@ -286,10 +286,10 @@ func set_case(key: StringName, format: String, case: String, value: String) -> v
 	var cases_dict: Dictionary[String, String] = {}
 	
 	if formats_dict.has(format):
-		var case_entry: Variant = formats_dict.get("cases")
+		var case_entry: Variant = formats_dict[format].get("cases")
 		if typeof(case_entry) != TYPE_DICTIONARY:
 			var new_cases: Dictionary[String, String] = {}
-			formats_dict["cases"] = new_cases
+			formats_dict[format]["cases"] = new_cases
 			cases_dict = new_cases
 		else:
 			cases_dict = case_entry

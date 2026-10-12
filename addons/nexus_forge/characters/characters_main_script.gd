@@ -830,7 +830,7 @@ func save_current_character() -> void:
 	else:
 		current_sheet.gender = 0
 	current_sheet.custom_data.clear()
-	current_sheet.custom_data.assign(character_data_tree.get_data())
+	current_sheet.custom_data.assign(character_data_tree.get_data_stringname_keys())
 	
 	for stat in char_stats_container.get_children():
 		var sheet_stat: NFValueRange = current_sheet.stats.get(stat.get_meta(&"stat_id"))
@@ -927,7 +927,7 @@ func load_character(res_id: int) -> void:
 	character_data_tree.clear_data(false)
 	
 	for key in sheet.custom_data.keys():
-		character_data_tree.add_data(key, sheet.custom_data[key], true)
+		character_data_tree.add_data(String(key), sheet.custom_data[key], true)
 	
 	for stat in char_stats_container.get_children():
 		var stat_range: NFValueRange = sheet.stats.get(stat.get_meta(&"stat_id"))

@@ -464,7 +464,7 @@ func save_current_quest() -> void:
 		quest_resource.type = type_opt_btn.get_selected_metadata() if -1 < type_opt_btn.selected else 0
 		quest_resource.title = title_ln_edt.text.strip_edges()
 		quest_resource.description = description_txt_edt.text.strip_edges()
-		quest_resource.custom_data = custom_data_tree.get_data()
+		quest_resource.custom_data = custom_data_tree.get_data_stringname_keys()
 		
 		quest_resource.events.clear()
 		
@@ -481,7 +481,7 @@ func save_current_quest() -> void:
 		stage.type = type_opt_btn.get_selected_metadata() if -1 < type_opt_btn.selected else 0
 		stage.title = title_ln_edt.text.strip_edges()
 		stage.description = description_txt_edt.text.strip_edges()
-		stage.custom_data = custom_data_tree.get_data()
+		stage.custom_data = custom_data_tree.get_data_stringname_keys()
 		
 		stage.success_stage_id = success_pointer_opt_btn.get_selected_metadata()
 		stage.failure_stage_id = failure_pointer_opt_btn.get_selected_metadata()
@@ -499,7 +499,7 @@ func save_current_quest() -> void:
 		objective.title = title_ln_edt.text.strip_edges()
 		objective.description = description_txt_edt.text.strip_edges()
 		objective.custom_data.clear()
-		objective.custom_data.assign(custom_data_tree.get_data())
+		objective.custom_data.assign(custom_data_tree.get_data_stringname_keys())
 		
 		objective.clear_requirements()
 		
@@ -986,7 +986,7 @@ func _on_quest_close_pressed(quest_id: int) -> void:
 			confirm_dialog.queue_free()
 			return
 	
-	if quest_resource.get_instance_id() == quest_id:
+	if quest_resource != null and quest_resource.get_instance_id() == quest_id:
 		title_ln_edt.text = ""
 		description_txt_edt.text = ""
 		quest_resource = null

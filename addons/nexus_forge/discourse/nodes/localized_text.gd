@@ -64,7 +64,10 @@ func _ready() -> void:
 
 func _get_node_data() -> Dictionary:
 	var metadata: Dictionary = {"text": get_field(&"localized_text").text.strip_edges()}
-	return _build_node_data(metadata)
+	var output_connections: Dictionary = {
+		"next_node": get_uuid_and_port_connected_to(PortMode.OUTPUT, 0)}
+	
+	return _build_node_data(metadata, output_connections)
 
 
 func _set_node_data(data: Dictionary) -> void:

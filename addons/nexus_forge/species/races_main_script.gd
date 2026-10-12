@@ -379,11 +379,6 @@ func _on_hybridize_confirmed() -> void:
 
 
 func _do_hybridize_species(target: StringName, dominant: StringName, recessive: StringName) -> void:
-	#if loaded_species != target:
-		#if not loaded_species.is_empty():
-			#save_current_species()
-		#switch_to_species(target)
-	
 	if recessive.is_empty():
 		if races_tree.is_species_hybrid(target):
 			races_tree.dehybridize_species(target, dominant)
@@ -766,6 +761,7 @@ func save_current_species() -> void:
 	_species_resource.set_species_name(loaded_species, race_name_ln_edt.text.strip_edges())
 	_species_resource.set_species_description(loaded_species, race_desc_txt_edt.text.strip_edges())
 	_species_resource.clear_species_data(loaded_species)
+	
 	var data: Dictionary[String, Variant] = race_data_tree.get_data()
 	
 	for data_key in data:
@@ -884,7 +880,7 @@ func load_species(species_id: StringName) -> void:
 		hybrid_info_container.visible = false
 	
 	for data_key in _species_resource.species_data_keys(species_id):
-		race_data_tree.add_data(data_key, _species_resource.get_species_data(species_id, data_key), true)
+		race_data_tree.add_data(String(data_key), _species_resource.get_species_data(species_id, data_key), true)
 	
 	for stat in race_stats_container.get_children():
 		var stat_id: StringName = stat.get_meta(&"field_id")

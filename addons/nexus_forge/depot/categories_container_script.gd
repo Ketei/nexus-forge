@@ -392,4 +392,4 @@ func save_current_category() -> void:
 	var cat_str: String = String(selected_category)
 	items_resource._categories[selected_category]["parent_key"] = StringName(categories_tree.get_category_parent(cat_str))
 	items_resource._categories[selected_category]["name"] = categories_tree.get_category_name(cat_str)
-	items_resource._categories[selected_category]["custom_data"].assign(item_data_tree.get_data())
+	items_resource._categories[selected_category]["custom_data"].assign(item_data_tree.get_data_stringname_keys())

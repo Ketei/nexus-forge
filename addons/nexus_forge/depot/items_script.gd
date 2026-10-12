@@ -419,7 +419,7 @@ func _on_currency_deleted(currency_id: StringName) -> void:
 	var current: bool = loaded_currency == currency_id
 	var curr_name: String = currency_name_ln_edt.text.strip_edges() if current else currency_resource.get_currency_name(currency_id)
 	var curr_val: int = _parse_value(currency_value_spn_bx.get_line_edit().text, currency_value_spn_bx.value) if current else currency_resource.get_currency_value(currency_id)
-	var curr_data: Dictionary[String, Variant] = currency_custom_data_tree.get_data() if current else currency_resource._currencies[currency_id]["custom_data"].duplicate(true)
+	var curr_data: Dictionary[StringName, Variant] = currency_custom_data_tree.item_data_tree.get_data_stringname_keys() if current else currency_resource._currencies[currency_id]["custom_data"].duplicate(true)
 	
 	var currency_data: Dictionary = {
 		"name": curr_name,
@@ -617,8 +617,7 @@ func save_current_currency() -> void:
 	
 	currency_resource.clear_currency_data(loaded_currency)
 	
-	var data: Dictionary[StringName, Variant] = {}
-	data.assign(currency_custom_data_tree.get_data())
+	var data: Dictionary[StringName, Variant] = currency_custom_data_tree.item_data_tree.get_data_stringname_keys()
 	
 	for data_key in data:
 		currency_resource.set_currency_data(
@@ -1139,8 +1138,7 @@ func save_current_item() -> void:
 	
 	item_link.items.clear_item_data(loaded_item)
 	
-	var data: Dictionary[StringName, Variant] = {}
-	data.assign(item_data_tree.get_data())
+	var data: Dictionary[StringName, Variant] = item_data_tree.get_data_stringname_keys()
 	
 	for item_key in data:
 		item_link.items.set_item_data(loaded_item, item_key, data[item_key])

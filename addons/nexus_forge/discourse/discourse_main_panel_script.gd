@@ -2633,6 +2633,8 @@ func display_conversation(conversation: EditorDiscourseDialog, with_locale: Stri
 			node_relationships[child_node] = frame
 	
 	var connection_deaf_nodes: Array[DiscourseGraphNode] = []
+	var flow_in_node_targets: Dictionary[StringName, StringName] = {}
+	var travel_to_node_targets: Dictionary[StringName, StringName] = {}
 	
 	for node_stnm_uuid:StringName in conversation.get_node_uuids():
 		var node_uuid: String = String(node_stnm_uuid)
@@ -2661,6 +2663,15 @@ func display_conversation(conversation: EditorDiscourseDialog, with_locale: Stri
 		elif d_node.node_type == DiscourseGraphNode.DialogueNodeType.DIALOG_MERGE or d_node.node_type == DiscourseGraphNode.DialogueNodeType.METADATA:
 			d_node._connection_updates_disabled = true
 			connection_deaf_nodes.append(d_node)
+		elif d_node.node_type == DiscourseGraphNode.DialogueNodeType.SHORTCUT_IN:
+			var target: StringName = metadata.get("anchor_target", &"")
+			if not target.is_empty():
+				flow_in_node_targets[node_stnm_uuid] = target
+		elif d_node.node_type == DiscourseGraphNode.DialogueNodeType.TRAVEL_TO:
+			var target: StringName = metadata.get("travel_target", &"")
+			if not target.is_empty():
+				travel_to_node_targets[node_stnm_uuid] = target
+		
 		if node_relationships.has(node_uuid):
 			discourse_graph_edit.set_node_in_frame(node_stnm_uuid, node_relationships[node_uuid].get_frame_uuid())
 		
@@ -2702,12 +2713,24 @@ func display_conversation(conversation: EditorDiscourseDialog, with_locale: Stri
 		discourse_graph_edit.entry_node = en_node
 		_on_discourse_node_created(en_node)
 	
+	discourse_graph_edit.refresh_anchors()
+	discourse_graph_edit.refresh_waypoints()
+	
+	for node_uuid in flow_in_node_targets:
+		discourse_graph_edit.set_shortcut_node_target(
+				node_uuid,
+				flow_in_node_targets[node_uuid])
+	
+	for node_uuid in travel_to_node_targets:
+		discourse_graph_edit.set_travel_node_selected_waypoint(
+				node_uuid,
+				travel_to_node_targets[node_uuid])
+	
 	for node in connection_deaf_nodes:
 		node._connection_updates_disabled = false
 	
 	discourse_graph_edit.zoom = conversation.zoom
 	discourse_graph_edit.set_deferred(&"scroll_offset", conversation.scroll_offset)
-	discourse_graph_edit.refresh_anchors()
 	
 	return needs_resaving
 

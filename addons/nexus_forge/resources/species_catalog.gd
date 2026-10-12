@@ -214,7 +214,7 @@ func get_species(species_id: StringName) -> NFSpeciesSheet:
 	new_species.id = species_id
 	new_species.name = _species[species_id]["name"]
 	new_species.description = _species[species_id]["description"]
-	new_species.custom_data = _species[species_id]["custom_data"].duplicate(true)
+	new_species.custom_data.assign(_species[species_id]["custom_data"].duplicate(true))
 	new_species.stats = get_species_stats(species_id)
 	new_species.skills = get_species_skills(species_id)
 	new_species.traits = get_species_traits(species_id)
@@ -235,7 +235,7 @@ func get_species_base(species_id: StringName) -> NFSpeciesSheet:
 	new_species.id = species_id
 	new_species.name = _species[species_id]["name"]
 	new_species.description = _species[species_id]["description"]
-	new_species.custom_data = _species[species_id]["custom_data"].duplicate(true)
+	new_species.custom_data.assign(_species[species_id]["custom_data"].duplicate(true))
 	new_species.stats = get_species_stats(species_id, false)
 	new_species.skills = get_species_skills(species_id, false)
 	new_species.traits = get_species_traits(species_id, false)
@@ -261,7 +261,7 @@ func create_species(species_id: StringName, parent_species: StringName = &"", re
 				NFPluginGameHandler._LogLevel.ERROR)
 		return
 	
-	var data: Dictionary[String, Variant] = {}
+	var data: Dictionary[StringName, Variant] = {}
 	var stats: Dictionary[StringName, float] = {}
 	var skills: Dictionary[StringName, int] = {}
 	var traits: Dictionary[StringName, int] = {}
@@ -492,7 +492,7 @@ func set_species_description(species_id: StringName, description: String) -> voi
 
 ## Sets the value of [param data_key] to [param data] of the [param species_id].
 ## If [param data] is [code]null[/code] then [param data_key] is erased.
-func set_species_data(species_id: StringName, data_key: String, data: Variant) -> void:
+func set_species_data(species_id: StringName, data_key: StringName, data: Variant) -> void:
 	if not _species.has(species_id):
 		return
 	
@@ -504,7 +504,7 @@ func set_species_data(species_id: StringName, data_key: String, data: Variant) -
 
 ## Returns the data with [param data_key] from the [param species_id] or
 ## [code]null[/code] if the species isn't registered or key doesn't exist.
-func get_species_data(species_id: StringName, data_key: String) -> Variant:
+func get_species_data(species_id: StringName, data_key: StringName) -> Variant:
 	return NFDictUtils.get_nested_value(
 			_species,
 			[species_id, "custom_data", data_key])

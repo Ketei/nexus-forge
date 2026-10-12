@@ -33,12 +33,12 @@ func item_data(item_id: StringName) -> Dictionary[StringName, Variant]:
 
 ## Sets the [param data_key] of [param item_id] to [param data]. If [param data]
 ## is [code]null[/code] then the key is erased instead.
-func set_item_data(item_id: StringName, data_key: String, data: Variant) -> void:
+func set_item_data(item_id: StringName, data_key: StringName, data: Variant) -> void:
 	if not _items.has(item_id):
 		return
 	
 	if not _items[item_id].has("custom_data"):
-		_items[item_id]["custom_data"] = NFDictUtils.create_typed(TYPE_STRING, TYPE_NIL)
+		_items[item_id]["custom_data"] = NFDictUtils.create_typed(TYPE_STRING_NAME, TYPE_NIL)
 	
 	if data == null:
 		_items[item_id]["custom_data"].erase(data_key)
@@ -259,7 +259,7 @@ func categories() -> Array[StringName]:
 
 
 ## Creates a category with id [param category_id] unless it exists already.
-func create_category(category_id: StringName, category_name: String, parent_category: StringName = &"", custom_data: Dictionary[String, Variant] = {}) -> void:
+func create_category(category_id: StringName, category_name: String, parent_category: StringName = &"", custom_data: Dictionary[StringName, Variant] = {}) -> void:
 	if _categories.has(category_id):
 		return
 	
@@ -304,12 +304,12 @@ func get_category_parent(category_id: StringName) -> StringName:
 
 ## Sets the custom data on [param data_key] to [param data].[br]
 ## If [param data] is [code]null[/code] then [param data_key] is erased.
-func set_category_data(category_id: StringName, data_key: String, data: Variant) -> void:
+func set_category_data(category_id: StringName, data_key: StringName, data: Variant) -> void:
 	if not _categories.has(category_id):
 		return
 	
 	if not _categories[category_id].has("custom_data"):
-		_categories[category_id]["custom_data"] = NFDictUtils.create_typed(TYPE_STRING, TYPE_NIL)
+		_categories[category_id]["custom_data"] = NFDictUtils.create_typed(TYPE_STRING_NAME, TYPE_NIL)
 	
 	if data == null:
 		_categories[category_id]["custom_data"].erase(data_key)
@@ -327,7 +327,7 @@ func clear_category_data(category_id: StringName) -> void:
 ## Returns the custom data with key [param data_key] from the [param category_id].[br]
 ## Returns [code]null[/code] if [param category_id] isn't registered
 ## or [param data_key] doesn't exist.
-func get_category_data(category_id: StringName, data_key: String) -> Variant:
+func get_category_data(category_id: StringName, data_key: StringName) -> Variant:
 	return NFDictUtils.get_nested_value(
 			_categories,
 			[category_id, "custom_data", data_key])

@@ -10,4 +10,4 @@ extends Resource
 	set(a):
 		amount = maxi(0, a)
 ## Custom data of this recipe item entry.
-@export var custom_data: Dictionary[String, Variant] = {}
+@export var custom_data: Dictionary[StringName, Variant] = {}

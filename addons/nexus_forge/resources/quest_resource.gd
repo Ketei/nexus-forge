@@ -36,7 +36,7 @@ static var _regex_formatter: RegEx
 		if _description_builder.is_valid():
 			_description_builder = Callable()
 ## Custom data assigned to the quest.
-@export var custom_data: Dictionary[String, Variant] = {}
+@export var custom_data: Dictionary[StringName, Variant] = {}
 
 ## The initial stage of the quest.
 @export var entry_stage: StringName = &""
@@ -97,7 +97,7 @@ func get_quest_description() -> String:
 	if _description_builder.is_valid():
 		return _description_builder.call()
 	
-	var desc_formats: Dictionary = {}
+	var desc_formats: Dictionary[String, Callable] = {}
 	
 	for description_item in _regex_formatter.search_all(description):
 		var string_path: String = description_item.get_string().trim_prefix("{$").trim_suffix("}")
@@ -145,7 +145,7 @@ func get_stage(stage_id: StringName) -> NFQuestStage:
 
 
 func _build_format(string: String, call_formats: Dictionary[String, Callable]) -> String:
-	var new_format: Dictionary[String, String] = {}
+	var new_format: Dictionary[String, Variant] = {}
 	
 	for key in call_formats:
 		new_format[key] = call_formats[key].call()

@@ -42,7 +42,7 @@ func set_item_name(id: StringName, new_name: StringName) -> void:
 ## [b]Note:[/b] Signal only emits if a [member recipes] pointer
 ## is loaded.
 func change_item_id(from: StringName, to: StringName) -> void:
-	if items._items.has(from) == false:
+	if items == null or from == to or not items._items.has(from) or items._items.has(to):
 		return
 	
 	items._items[to] = items._items[from]

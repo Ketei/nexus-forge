@@ -769,7 +769,7 @@ func clear() -> void:
 
 
 ## Grabs all data, strips it of the editor information and returns its
-## [DiscourseDialog] version for release. Inteded ONLY to be used by the 
+## [DiscourseDialog] version for release. Intended ONLY to be used by the 
 ## NexusForge export plugin.
 func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> DiscourseDialog:
 	var available_methods: Dictionary = preload("res://addons/nexus_forge/discourse/nodes/method_call_node.gd").get_user_methods()
@@ -779,8 +779,6 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 	var uuid_translator: Dictionary[StringName, StringName] = {}
 	
 	release_dialog.entry_node = node_data[entry_node]["name"] if node_data.has(entry_node) else &""
-	
-	#var new_id_map: Dictionary[StringName, StringName] = {}
 	
 	# UUID(Anchor pointer): UUID(Anchor Target)
 	# Example "123"(anchor pointer uuid) -> "456"(Anchor) -> "789"(Anchor connection)
@@ -840,22 +838,22 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 					var character_settings_data: Dictionary = node_data[node_data[node_id]["input_connections"]["character_settings"]["target_node_uuid"]]
 					
 					if not character_settings_data["input_connections"]["display_name"]["target_node_uuid"].is_empty():
-						character_settings["display_name"] = StringName(character_settings_data["input_connections"]["display_name"]["target_node_uuid"])
+						character_settings["display_name"] = target_finder.get_target(character_settings_data["input_connections"]["display_name"]["target_node_uuid"])
 					
 					if not character_settings_data["input_connections"]["portrait_id"]["target_node_uuid"].is_empty():
-						character_settings["portrait_id"] = StringName(character_settings_data["input_connections"]["portrait_id"]["target_node_uuid"])
+						character_settings["portrait_id"] = target_finder.get_target(character_settings_data["input_connections"]["portrait_id"]["target_node_uuid"])
 				
 				if not node_data[node_id]["input_connections"]["dialog_settings"]["target_node_uuid"].is_empty():
 					var dialog_settings_data: Dictionary = node_data[node_data[node_id]["input_connections"]["dialog_settings"]["target_node_uuid"]]
 					
 					if not dialog_settings_data["input_connections"]["font_resource"]["target_node_uuid"].is_empty():
-						dialog_settings["font_resource"] = StringName(dialog_settings_data["input_connections"]["font_resource"]["target_node_uuid"])
+						dialog_settings["font_resource"] = target_finder.get_target(dialog_settings_data["input_connections"]["font_resource"]["target_node_uuid"])
 					
 					if not dialog_settings_data["input_connections"]["dialog_scene"]["target_node_uuid"].is_empty():
-						dialog_settings["dialog_scene"] = StringName(dialog_settings_data["input_connections"]["dialog_scene"]["target_node_uuid"])
+						dialog_settings["dialog_scene"] = target_finder.get_target(dialog_settings_data["input_connections"]["dialog_scene"]["target_node_uuid"])
 					
 					if not dialog_settings_data["input_connections"]["dialog_speed"]["target_node_uuid"].is_empty():
-						dialog_settings["dialog_speed"] = StringName(dialog_settings_data["input_connections"]["dialog_speed"]["target_node_uuid"])
+						dialog_settings["dialog_speed"] = target_finder.get_target(dialog_settings_data["input_connections"]["dialog_speed"]["target_node_uuid"])
 				
 					if not dialog_settings_data["input_connections"]["metadata"]["target_node_uuid"].is_empty():
 						var dialog_metadata_node: Dictionary = node_data[dialog_settings_data["input_connections"]["metadata"]["target_node_uuid"]]
@@ -866,15 +864,15 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 										"export - dialog",
 										"Metadata node '%s' on file '%s' registered metadata with ID '%s' on port %d but the port isn't available. Setting to null." % [dialog_metadata_node["name"], resource_path, meta_field["id"], meta_field["port"]],
 										NFPluginGameHandler._LogLevel.ERROR)
-								dialog_metadata["metadata"][meta_field["id"]] = null
+								dialog_settings["metadata"][meta_field["id"]] = null
 							else:
-								dialog_settings["metadata"][meta_field["id"]] = dialog_metadata_node["input_connections"][meta_field["id"]]["target_node_uuid"]
+								dialog_settings["metadata"][meta_field["id"]] = target_finder.get_target(dialog_metadata_node["input_connections"][meta_field["id"]]["target_node_uuid"])
 				
 				export_data["character_id"] = metadata["character_id"]
 				export_data["persist"] = metadata["persist"]
 				export_data["character_settings"] = character_settings
 				export_data["dialog_settings"] = dialog_settings
-				export_data["text_source"] = StringName(node_data[node_id]["input_connections"]["dialog_text_source"]["target_node_uuid"])
+				export_data["text_source"] = target_finder.get_target(node_data[node_id]["input_connections"]["dialog_text_source"]["target_node_uuid"])
 				export_data["next_node"] = target_finder.get_target(node_data[node_id]["output_connections"]["next_node"]["target_node_uuid"])
 			NodeType.CHOICES:
 				var options: Array[Dictionary] = []
@@ -890,13 +888,13 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 					if not option["input_connections"]["settings"]["target_node_uuid"].is_empty():
 						var option_settings: Dictionary = node_data[option["input_connections"]["settings"]["target_node_uuid"]]
 						if not option_settings["input_connections"]["option_available"]["target_node_uuid"].is_empty():
-							new_option["settings"]["available"] = StringName(option_settings["input_connections"]["option_available"]["target_node_uuid"])
+							new_option["settings"]["available"] = target_finder.get_target(option_settings["input_connections"]["option_available"]["target_node_uuid"])
 						
 						if not option_settings["input_connections"]["option_unlocked"]["target_node_uuid"].is_empty():
-							new_option["settings"]["unlocked"] = StringName(option_settings["input_connections"]["option_unlocked"]["target_node_uuid"])
+							new_option["settings"]["unlocked"] = target_finder.get_target(option_settings["input_connections"]["option_unlocked"]["target_node_uuid"])
 		
 						if not option_settings["input_connections"]["locked_hint"]["target_node_uuid"].is_empty():
-							new_option["settings"]["lock_hint"] = StringName(option_settings["input_connections"]["locked_hint"]["target_node_uuid"])
+							new_option["settings"]["lock_hint"] = target_finder.get_target(option_settings["input_connections"]["locked_hint"]["target_node_uuid"])
 					
 						if not option_settings["input_connections"]["metadata"]["target_node_uuid"].is_empty():
 							var dialog_metadata_node: Dictionary = node_data[option_settings["input_connections"]["metadata"]["target_node_uuid"]]
@@ -909,30 +907,30 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 											NFPluginGameHandler._LogLevel.ERROR)
 									new_option["metadata"][meta_field["id"]] = null
 								else:
-									new_option["metadata"][meta_field["id"]] = dialog_metadata_node["input_connections"][meta_field["id"]]["target_node_uuid"]
+									new_option["metadata"][meta_field["id"]] = target_finder.get_target(dialog_metadata_node["input_connections"][meta_field["id"]]["target_node_uuid"])
 					
 					options.append(new_option)
 				export_data["choices"] = options
 			NodeType.BRANCH:
-				export_data["result"] = StringName(node_data[node_id]["input_connections"]["path_direction"]["target_node_uuid"])
+				export_data["result"] = target_finder.get_target(node_data[node_id]["input_connections"]["path_direction"]["target_node_uuid"])
 				export_data["case_true"] = target_finder.get_target(StringName(node_data[node_id]["output_connections"]["next_node_true"]["target_node_uuid"]))
 				export_data["case_false"] = target_finder.get_target(StringName(node_data[node_id]["output_connections"]["next_node_false"]["target_node_uuid"]))
 			NodeType.CONDITION_SELECT:
-				export_data["result"] = StringName(node_data[node_id]["input_connections"]["result"]["target_node_uuid"])
+				export_data["result"] = target_finder.get_target(node_data[node_id]["input_connections"]["result"]["target_node_uuid"])
 				export_data["true_value"] = target_finder.get_target(StringName(node_data[node_id]["input_connections"]["true_value"]["target_node_uuid"]))
 				export_data["false_value"] = target_finder.get_target(StringName(node_data[node_id]["input_connections"]["false_value"]["target_node_uuid"]))
 			NodeType.COMPARATION:
 				export_data["operator"] = metadata["operator"]
-				export_data["value_a"] = StringName(node_data[node_id]["input_connections"]["node_a"]["target_node_uuid"])
-				export_data["value_b"] = StringName(node_data[node_id]["input_connections"]["node_b"]["target_node_uuid"])
+				export_data["value_a"] = target_finder.get_target(node_data[node_id]["input_connections"]["node_a"]["target_node_uuid"])
+				export_data["value_b"] = target_finder.get_target(node_data[node_id]["input_connections"]["node_b"]["target_node_uuid"])
 			NodeType.EVENT:
 				var var_val: StringName = StringName(node_data[node_id]["input_connections"]["variable_value"]["target_node_uuid"])
-				export_data["value"] = var_val
+				export_data["value"] = target_finder.get_target(var_val)
 				
 				if not node_data[node_id]["input_connections"]["callable"]["target_node_uuid"].is_empty():
 					var callable_uuid: StringName = node_data[node_id]["input_connections"]["callable"]["target_node_uuid"]
 					if available_methods.has(node_data[callable_uuid]["metadata"]["method"]):
-						export_data["callable"] = StringName(node_data[node_id]["input_connections"]["callable"]["target_node_uuid"])
+						export_data["callable"] = target_finder.get_target(node_data[node_id]["input_connections"]["callable"]["target_node_uuid"])
 					else:
 						export_data["callable"] = &""
 						NFPluginGameHandler._log_msg(
@@ -947,7 +945,7 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 				if not node_data[node_id]["input_connections"]["signal"]["target_node_uuid"].is_empty():
 					var signal_uuid: StringName = node_data[node_id]["input_connections"]["signal"]["target_node_uuid"]
 					if available_signals.has(node_data[signal_uuid]["metadata"]["signal"]):
-						export_data["signal"] = StringName(node_data[node_id]["input_connections"]["signal"]["target_node_uuid"])
+						export_data["signal"] = target_finder.get_target(signal_uuid)
 					else:
 						export_data["signal"] = &""
 						NFPluginGameHandler._log_msg(
@@ -973,9 +971,10 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 					var new_case: Dictionary[String, Variant] = {}
 					new_case["value"] = case["value"]
 					new_case["next_node"] = target_finder.get_target(StringName(case["output_connections"]["next_node"]["target_node_uuid"]))
+					cases.append(new_case)
 				
 				export_data["case_default"] = target_finder.get_target(StringName(node_data[node_id]["output_connections"]["default"]["target_node_uuid"]))
-				export_data["match_value"] = StringName(node_data[node_id]["input_connections"]["match_value_source"]["target_node_uuid"])
+				export_data["match_value"] = target_finder.get_target(node_data[node_id]["input_connections"]["match_value_source"]["target_node_uuid"])
 				export_data["cases"] = cases
 			NodeType.PAUSE:
 				export_data["next_node"] = target_finder.get_target(StringName(node_data[node_id]["output_connections"]["next_node"]["target_node_uuid"]))
@@ -985,18 +984,22 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 				for option:Dictionary in metadata["options"]:
 					var new_option: Dictionary[String, StringName] = {}
 					new_option["target"] = target_finder.get_target(StringName(option["output_connections"]["next_node"]["target_node_uuid"]))
-					new_option["weight_override"] = StringName(option["input_connections"]["weight"]["target_node_uuid"])
+					new_option["weight_override"] = target_finder.get_target(option["input_connections"]["weight"]["target_node_uuid"])
 					options.append(new_option)
 				
-				export_data["weight_override"] = StringName(node_data[node_id]["input_connections"]["default_weight"]["target_node_uuid"])
+				export_data["weight_override"] = target_finder.get_target(node_data[node_id]["input_connections"]["default_weight"]["target_node_uuid"])
 				export_data["choices"] = options
 			NodeType.TYPE_GUARD:
-				export_data["value"] = StringName(node_data[node_id]["input_connections"]["value"]["target_node_uuid"])
+				export_data["value"] = target_finder.get_target(node_data[node_id]["input_connections"]["value"]["target_node_uuid"])
 				export_data["fallback"] = metadata["fallback_value"]
 			NodeType.SIGNAL:
 				var arguments: Array[StringName] = []
 				for argument:Dictionary in metadata["arguments"]:
-					arguments.append(StringName(argument["target_node_uuid"]))
+					var target_uuid: StringName = StringName(argument["target_node_uuid"])
+					if not target_uuid.is_empty():
+						arguments.append(target_finder.get_target(target_uuid))
+					else:
+						arguments.append(&"")
 				export_data["signal"] = StringName(metadata["signal"])
 				export_data["arguments"] = arguments
 			NodeType.CALLABLE:
@@ -1018,14 +1021,17 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 					var skipped_previous: bool = false
 					for argument:Dictionary in metadata["arguments"]:
 						arg_idx += 1
-						arguments.append(StringName(argument["target_node_uuid"]))
-						if not argument["target_node_uuid"].is_empty():
+						var t_uuid: StringName = StringName(argument["target_node_uuid"])
+						
+						if not t_uuid.is_empty():
+							arguments.append(target_finder.get_target(t_uuid))
 							if skipped_previous:
 								NFPluginGameHandler._log_msg(
 										"export - dialog",
 										"Callable node '%s' on file '%s' passed an argument on index %d but a previous index doesn't have a value." % [node_data[node_id]["name"], resource_path, arg_idx],
 										NFPluginGameHandler._LogLevel.ERROR)
 						else:
+							arguments.append(&"")
 							skipped_previous = true
 							if default_args_size <= arg_idx:
 								NFPluginGameHandler._log_msg(
@@ -1058,8 +1064,9 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 					var skipped_previous: bool = false
 					for argument:Dictionary in metadata["arguments"]:
 						arg_idx += 1
-						arguments.append(StringName(argument["target_node_uuid"]))
+						var t_uuid: StringName = StringName(argument["target_node_uuid"])
 						if not argument["target_node_uuid"].is_empty():
+							arguments.append(target_finder.get_target(t_uuid))
 							if skipped_previous:
 								NFPluginGameHandler._log_msg(
 										"export - dialog",
@@ -1069,6 +1076,7 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 											arg_idx],
 										NFPluginGameHandler._LogLevel.ERROR)
 						else:
+							arguments.append(&"")
 							skipped_previous = true
 							if default_args_size <= arg_idx:
 								NFPluginGameHandler._log_msg(
@@ -1098,8 +1106,8 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 				export_data["random_type"] = metadata["mode"]
 				export_data["min_value"] = metadata["values"]["base"]
 				export_data["max_value"] = metadata["values"]["max"]
-				export_data["min_override"] = StringName(node_data[node_id]["input_connections"]["base_value"]["target_node_uuid"])
-				export_data["max_override"] = StringName(node_data[node_id]["input_connections"]["max_value"]["target_node_uuid"])
+				export_data["min_override"] = target_finder.get_target(node_data[node_id]["input_connections"]["base_value"]["target_node_uuid"])
+				export_data["max_override"] = target_finder.get_target(node_data[node_id]["input_connections"]["max_value"]["target_node_uuid"])
 			NodeType.RESOURCE:
 				export_data["path"] = metadata["resource_path"]
 			NodeType.DATA_EVENT:
@@ -1109,7 +1117,7 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 				if not node_data[node_id]["input_connections"]["callable"]["target_node_uuid"].is_empty():
 					var callable_uuid: StringName = node_data[node_id]["input_connections"]["callable"]["target_node_uuid"]
 					if available_methods.has(node_data[callable_uuid]["metadata"]["method"]):
-						export_data["callable"] = StringName(node_data[node_id]["input_connections"]["callable"]["target_node_uuid"])
+						export_data["callable"] = target_finder.get_target(callable_uuid)
 					else:
 						export_data["callable"] = &""
 						NFPluginGameHandler._log_msg(
@@ -1124,7 +1132,7 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 				if not node_data[node_id]["input_connections"]["signal"]["target_node_uuid"].is_empty():
 					var signal_uuid: StringName = node_data[node_id]["input_connections"]["signal"]["target_node_uuid"]
 					if available_signals.has(node_data[signal_uuid]["metadata"]["signal"]):
-						export_data["signal"] = StringName(node_data[node_id]["input_connections"]["signal"]["target_node_uuid"])
+						export_data["signal"] = target_finder.get_target(signal_uuid)
 					else:
 						export_data["signal"] = &""
 						NFPluginGameHandler._log_msg(
@@ -1136,7 +1144,7 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 				else:
 					export_data["signal"] = &""
 				
-				export_data["data_source"] = StringName(node_data[node_id]["input_connections"]["data_input"]["target_node_uuid"])
+				export_data["data_source"] = target_finder.get_target(node_data[node_id]["input_connections"]["data_input"]["target_node_uuid"])
 				if var_val.is_empty():
 					export_data["variable_path"] = ""
 				else:
@@ -1156,7 +1164,8 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 				export_data["next_node"] = target_finder.get_target(StringName(node_data[node_id]["output_connections"]["next_node"]["target_node_uuid"]))
 			_:
 				pass
-	
+		
+		release_dialog.node_logic[uuid_translator[node_id]] = export_data
 	return release_dialog
 
 
@@ -1222,7 +1231,7 @@ func generate_localization_files(localization_id: String, base_path: String, fil
 			var locale_path: String = NFStringUtils.make_path([
 				base_path, locale_key, md5_fragment, filename])
 			
-			if NFDictUtils.has_nested_path(localization_groups, [locale_group, locale_key]):
+			if not locale_group.is_empty() and NFDictUtils.has_nested_path(localization_groups, [locale_group, locale_key]):
 				lang_locale_file = localization_groups[locale_group][locale_key]
 			else:
 				lang_locale_file = DiscourseDialogLocale.new()

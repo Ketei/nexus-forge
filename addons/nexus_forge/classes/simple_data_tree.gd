@@ -680,7 +680,10 @@ func _add_data_to_tree(new_name: String, data: Variant, on_node: TreeItem = get_
 				new_data.add_button(1, preload("res://addons/nexus_forge/icons/add_string.svg"), ButtonIds.STRING, false, "Add String")
 				new_data.add_button(1, get_theme_icon("FolderCreate", "EditorIcons"), ButtonIds.LEVEL, false, "Add Level")
 			for subdata in data:
-				_add_data_to_tree(subdata, data[subdata], new_data)
+				_add_data_to_tree(
+						String(subdata), # Should always be either string or stringname
+						data[subdata],
+						new_data)
 		_:
 			new_data.set_icon(0, ICON_VARIABLE)
 			new_data.set_metadata(1, TYPE_NIL)
@@ -708,6 +711,32 @@ func get_data_cell_data(cell: TreeItem) -> Variant:
 			var subfolder: Dictionary = {}
 			for sub_data in cell.get_children():
 				subfolder[sub_data.get_text(0)] = get_data_cell_data(sub_data)
+			return subfolder
+		TYPE_NIL:
+			var type: int = typeof(cell.get_metadata(0)["data"])
+			if type == TYPE_DICTIONARY or type == TYPE_ARRAY:
+				return cell.get_metadata(0)["data"].duplicate(true)
+			else:
+				return cell.get_metadata(0)["data"]
+		_:
+			return null
+
+
+func get_data_cell_data_string_name(cell: TreeItem) -> Variant:
+	match cell.get_metadata(1):
+		TYPE_INT:
+			return int(cell.get_range(1))
+		TYPE_FLOAT:
+			return float(cell.get_range(1))
+		TYPE_BOOL:
+			return cell.is_checked(1)
+		TYPE_STRING:
+			return cell.get_text(1)
+		TYPE_DICTIONARY:
+			var subfolder: Dictionary[StringName, Variant] = {}
+			for sub_data in cell.get_children():
+				var key: StringName = StringName(sub_data.get_text(0))
+				subfolder[key] = get_data_cell_data_string_name(sub_data)
 			return subfolder
 		TYPE_NIL:
 			var type: int = typeof(cell.get_metadata(0)["data"])
@@ -820,10 +849,18 @@ func on_data_edited() -> void:
 func get_data() -> Dictionary[String, Variant]:
 	var rank_data: Dictionary[String, Variant] = {}
 	
-	for data_item in get_root().get_children():
-		rank_data[data_item.get_text(0)] = get_data_cell_data(data_item)
+	for data_item_tree in get_root().get_children():
+		rank_data[data_item_tree.get_text(0)] = get_data_cell_data(data_item_tree)
 	
 	return rank_data
+
+
+func get_data_stringname_keys() -> Dictionary[StringName, Variant]:
+	var data: Dictionary[StringName, Variant] = {}
+	for item_tree in get_root().get_children():
+		var key: StringName = StringName(item_tree.get_text(0))
+		data[key] = get_data_cell_data_string_name(item_tree)
+	return data
 
 
 func search_data(data_text: String) -> void:

@@ -676,6 +676,33 @@ func get_data_cell_data(cell: TreeItem) -> Variant:
 			return null
 
 
+func get_data_cell_data_stringname(cell: TreeItem) -> Variant:
+	match cell.get_metadata(1):
+		TYPE_INT:
+			return int(cell.get_range(1))
+		TYPE_FLOAT:
+			return float(cell.get_range(1))
+		TYPE_BOOL:
+			return cell.is_checked(1)
+		TYPE_STRING:
+			return cell.get_text(1)
+		TYPE_DICTIONARY:
+			var subfolder: Dictionary[StringName, Variant] = {}
+			for sub_data in cell.get_children():
+				var key: StringName = StringName(sub_data.get_text(0))
+				subfolder[key] = get_data_cell_data_stringname(sub_data)
+			return subfolder
+		TYPE_NIL:
+			var type: int = typeof(cell.get_metadata(0)["data"])
+			if type == TYPE_DICTIONARY or type == TYPE_ARRAY:
+				return cell.get_metadata(0)["data"].duplicate(true)
+			else:
+				return cell.get_metadata(0)["data"]
+		_:
+			return null
+
+
+
 func _on_button_clicked(item: TreeItem, column: int, id: int, mouse_button_index: int) -> void:
 	var data_path: String = ""
 	var data_copy: Variant = null
@@ -777,7 +804,8 @@ func get_data() -> Dictionary[StringName, Variant]:
 	var rank_data: Dictionary[StringName, Variant] = {}
 	
 	for data_item in get_root().get_children():
-		rank_data[data_item.get_text(0)] = get_data_cell_data(data_item)
+		var key: StringName = StringName(data_item.get_text(0))
+		rank_data[key] = get_data_cell_data_stringname(data_item)
 	
 	return rank_data
 

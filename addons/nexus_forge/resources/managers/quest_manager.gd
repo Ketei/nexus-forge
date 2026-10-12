@@ -368,6 +368,7 @@ func complete_stage(quest_id: StringName, stage_id: StringName, success: bool) -
 	else:
 		if entry.set_stage(next_stage, _static_progress):
 			quest_progressed.emit(quest_id, next_stage)
+			_check_stage_auto_advance(quest_id)
 		else:
 			NFPluginGameHandler._log_msg(
 					"odyssey - quest manager",
@@ -485,7 +486,7 @@ func _check_stage_auto_advance(quest_id: StringName) -> void:
 	
 	var entry: NFQuestEntry = _active_quests[quest_id]
 	
-	var visited_stages: Dictionary[String, Variant] = {}
+	var visited_stages: Dictionary[StringName, Variant] = {}
 	while entry.auto_advance_stages and entry.can_complete_stage():
 		var stage_id: StringName = entry.current_stage
 		
@@ -676,8 +677,11 @@ func _is_dependency_circular(on_quest: StringName, mod_id: StringName, depends_o
 
 
 func _update_objective_progress(for_key: String, value: Variant) -> void:
-	for quest_id in _active_quests:
-		_active_quests[quest_id].update_objective_progress(
+	for quest_id in _active_quests.keys():
+		var entry: NFQuestEntry = _active_quests.get(quest_id)
+		if entry == null:
+			continue
+		entry.update_objective_progress(
 				for_key,
 				value)
 

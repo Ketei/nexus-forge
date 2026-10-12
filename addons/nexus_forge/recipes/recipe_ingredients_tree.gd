@@ -487,7 +487,7 @@ func _add_data_on(item: TreeItem, data: Variant, data_name: String) -> TreeItem:
 			for data_key in data:
 				match typeof(data_key):
 					TYPE_STRING, TYPE_STRING_NAME:
-						_add_data_on(new_data, data[data_key], data_key)
+						_add_data_on(new_data, data[data_key], String(data_key))
 					_:
 						NFPluginGameHandler._log_msg(
 						"depot - editor",
@@ -536,9 +536,9 @@ func get_recipe_items() -> Array[Dictionary]:
 	var items: Array[Dictionary] = []
 	
 	for item in get_root().get_children():
-		var data: Dictionary[String, Variant] = {}
+		var data: Dictionary[StringName, Variant] = {}
 		for data_child in item.get_children():
-			data[data_child.get_text(0)] = get_data_cell_data(data_child)
+			data[data_child.get_text(0)] = get_data_cell_data_stringname(data_child)
 		items.append({
 				"item_id": StringName(item.get_text(0)),
 				"amount": int(item.get_range(1)),
@@ -560,6 +560,28 @@ func get_data_cell_data(cell: TreeItem) -> Variant:
 			var subfolder: Dictionary = {}
 			for sub_data in cell.get_children():
 				subfolder[sub_data.get_text(0)] = get_data_cell_data(sub_data)
+			return subfolder
+		TYPE_NIL:
+			return cell.get_metadata(0)["data"]
+		_:
+			return null
+
+
+func get_data_cell_data_stringname(cell: TreeItem) -> Variant:
+	match cell.get_metadata(1):
+		TYPE_INT:
+			return int(cell.get_range(1))
+		TYPE_FLOAT:
+			return float(cell.get_range(1))
+		TYPE_BOOL:
+			return cell.is_checked(1)
+		TYPE_STRING:
+			return cell.get_text(1)
+		TYPE_DICTIONARY:
+			var subfolder: Dictionary[StringName, Variant] = {}
+			for sub_data in cell.get_children():
+				var key: StringName = StringName(sub_data.get_text(0))
+				subfolder[key] = get_data_cell_data_stringname(sub_data)
 			return subfolder
 		TYPE_NIL:
 			return cell.get_metadata(0)["data"]
@@ -659,7 +681,7 @@ func _create_item(item_id: StringName, input_amount: int, data: Dictionary, inde
 	for data_key in data:
 		match typeof(data_key):
 			TYPE_STRING, TYPE_STRING_NAME:
-				_add_data_on(new_item, data[data_key], data_key)
+				_add_data_on(new_item, data[data_key], String(data_key))
 			_:
 				NFPluginGameHandler._log_msg(
 						"depot - editor",

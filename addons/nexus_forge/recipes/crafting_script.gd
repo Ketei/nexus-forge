@@ -205,7 +205,7 @@ func change_item_id(old: StringName, new: StringName) -> void:
 
 
 func save_current_recipe() -> void:
-	var data: Dictionary[String, Variant] = recipe_custom_data_tree.get_data()
+	var data: Dictionary[StringName, Variant] = recipe_custom_data_tree.get_data_stringname_keys()
 	recipes_resource.clear_recipe_data(active_recipe)
 	
 	for data_key in data:
