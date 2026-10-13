@@ -16,10 +16,18 @@ extends Resource
 ## Example stat.
 @export var health: NFRangeInt
 
-@export_storage var _custom_stats: Dictionary[StringName, NFValueRange] = {}
+@export_storage var _custom_stats: Dictionary[StringName, NFValueRange] = {}:
+	set(s):
+		_custom_stats = s
+		if NFBitUtils.is_bit_index(_flags, _StatFlags.USE_NF, true):
+			_sync_missing_custom_stats()
 
-# Global toggle to sync ranges and toggles with the singleton
-var _singleton_sync: bool = true
+
+enum _StatFlags { # This is the bit index, not the value
+	USE_NF = 0,
+	SYNC_WITH_NF = 1}
+
+var _flags: int = 0
 # Specific stats to NOT sync with the singleton
 var _sync_blacklist: Dictionary[StringName, Variant] = {}
 
@@ -44,7 +52,19 @@ static func stats() -> Dictionary[StringName, int]:
 
 
 func _init(use_nexus_forge: bool = true) -> void:
-	if not use_nexus_forge or Engine.is_editor_hint():
+	if Engine.is_editor_hint():
+		return
+	
+	_flags = NFBitUtils.set_bit_index(
+			_flags,
+			_StatFlags.USE_NF,
+			use_nexus_forge)
+	_flags = NFBitUtils.set_bit_index(
+			_flags,
+			_StatFlags.SYNC_WITH_NF,
+			true)
+	
+	if not use_nexus_forge:
 		return
 	
 	for custom_stat in NexusForge.Stats:
@@ -86,8 +106,15 @@ func initialize_ranges() -> void:
 func assign(stat_block: NFStatBlock) -> void:
 	var properties: Dictionary[StringName, int] = stats()
 	for property in properties.keys():
-		set(property, stat_block.get(property))
-	_custom_stats.assign(stat_block._custom_stats)
+		var src: Variant = stat_block.get(property)
+		if src != null:
+			set(property, src.duplicate(true))
+		else:
+			set(property, null)
+	
+	_custom_stats.clear()
+	for stat_id in stat_block._custom_stats:
+		_custom_stats[stat_id] = stat_block._custom_stats[stat_id].duplicate(true)
 
 
 func _on_custom_stat_created(stat_id: StringName) -> void:
@@ -108,7 +135,7 @@ func _on_custom_stat_created(stat_id: StringName) -> void:
 
 
 func _on_stat_clamping_changed(stat_id: StringName) -> void:
-	if not _singleton_sync or _sync_blacklist.has(stat_id):
+	if NFBitUtils.is_bit_index(_flags, _StatFlags.SYNC_WITH_NF, false) or _sync_blacklist.has(stat_id):
 		return
 	
 	var max_val: float = NexusForge.StatManager.get_range_max(stat_id)
@@ -124,7 +151,7 @@ func _on_stat_clamping_changed(stat_id: StringName) -> void:
 
 
 func _on_stat_clamping_toggled(stat_id: StringName) -> void:
-	if not _singleton_sync or _sync_blacklist.has(stat_id):
+	if NFBitUtils.is_bit_index(_flags, _StatFlags.SYNC_WITH_NF, false) or _sync_blacklist.has(stat_id):
 		return
 	
 	var allow_greater: bool = NexusForge.StatManager.allows_greater(stat_id)
@@ -210,8 +237,15 @@ func custom_type(stat_id: StringName) -> int:
 ## disabled, stats created via the singleton will still be added to the object,
 ## but their min & max ranges will be 0 and they will allow lesser and greater values.
 func set_singleton_sync(enable: bool, sync_now: bool = true) -> void:
-	var update: bool = _singleton_sync != enable
-	_singleton_sync = enable
+	var syncyng: bool = NFBitUtils.is_bit_index(
+			_flags,
+			_StatFlags.SYNC_WITH_NF,
+			true)
+	var update: bool = syncyng != enable
+	_flags = NFBitUtils.set_bit_index(
+			_flags,
+			_StatFlags.SYNC_WITH_NF,
+			enable)
 	
 	if enable and update and sync_now: # Only sync if status changed to enabled
 		sync_stats_with_singleton()
@@ -220,7 +254,10 @@ func set_singleton_sync(enable: bool, sync_now: bool = true) -> void:
 ## Returns whether this object stats are syncing with the Nexus Forge
 ## singleton or not.
 func is_syncing_with_singleton() -> bool:
-	return _singleton_sync 
+	return NFBitUtils.is_bit_index(
+			_flags,
+			_StatFlags.SYNC_WITH_NF,
+			true)
 
 
 ## Syncs all of this object's stats to match the data of the singleton, unless
@@ -269,3 +306,14 @@ func sync_stat_with_singleton(stat_id: StringName) -> void:
 	stat_range.max_value = NexusForge.StatManager.get_range_max(stat_id)
 	stat_range.allow_lesser = NexusForge.StatManager.allows_lesser(stat_id)
 	stat_range.allow_greater = NexusForge.StatManager.allows_greater(stat_id)
+
+
+func _sync_missing_custom_stats() -> void:
+	for stat_id in NexusForge.Stats:
+		var entry: NFCatalogEntryStat = NexusForge.Stats[stat_id]
+		if entry.is_custom() and not _custom_stats.has(stat_id):
+			var range: NFValueRange = NFRangeFloat.new() if entry.is_float else NFRangeInt.new()
+			range.allow_lesser = entry.allow_lesser
+			range.allow_greater = entry.allow_greater
+			range.set_bounds(entry.min_value, entry.max_value)
+			_custom_stats[stat_id] = range

@@ -2,9 +2,10 @@
 extends NFIDTree
 
 
+var _items: Dictionary[StringName, TreeItem] = {}
 var sort_column: int = 0
-
 var current_search: String = ""
+
 
 func ready_plugin() -> void:
 	create_item()
@@ -49,11 +50,18 @@ func _on_column_title_clicked(column: int, mouse_button_index: int) -> void:
 
 
 func add_item(item_id: StringName, item_name: String) -> void:
+	if _items.has(item_id):
+		return
 	var item: TreeItem = get_root().create_child()
 	item.set_text(0, String(item_id))
 	item.set_text(1, item_name)
 	item.set_metadata(0, item_id)
 	sort_single_item(item)
+	_items[item_id] = item
+
+
+func has_item(item_id: StringName) -> bool:
+	return _items.has(item_id)
 
 
 func sort_single_item(item: TreeItem) -> void:
@@ -74,35 +82,38 @@ func sort_single_item(item: TreeItem) -> void:
 
 
 func clear_items() -> void:
-	for item in get_root().get_children():
-		item.free()
+	for item in _items:
+		_items[item].free()
+	_items.clear()
 
 
 func change_name(from: StringName, to: String) -> void:
-	for item in get_root().get_children():
-		if item.get_metadata(0) == from:
-			item.set_text(1, to)
-			break
+	var target: TreeItem = _items.get(from)
+	if target != null:
+		target.set_text(1, to)
 
 
 func change_id(from: StringName, to: StringName) -> void:
-	for item in get_root().get_children():
-		if item.get_metadata(0) == from:
-			item.set_text(0, String(to))
-			item.set_metadata(0, to)
-			break
+	if not _items.has(from) or _items.has(to):
+		return
+	
+	var target: TreeItem = _items[from]
+	target.set_text(0, String(to))
+	target.set_metadata(0, to)
+	_items[to] = target
+	_items.erase(from)
 
 
 func remove_item(id: StringName) -> void:
-	for item in get_root().get_children():
-		if item.get_metadata(0) == id:
-			item.free()
-			break
+	if _items.has(id):
+		_items[id].free()
+		_items.erase(id)
 
 
 func search_for(text: String) -> void:
 	if text == current_search:
 		return
-	for item in get_root().get_children():
+	for item_id in _items:
+		var item: TreeItem = _items[item_id]
 		item.visible = text.is_empty() or item.get_text(0).containsn(text) or item.get_text(1).containsn(text)
 	current_search = text

@@ -47,7 +47,7 @@ func load_dialog(path: String, starting_id: StringName = &"") -> bool:
 	else:
 		var res: Resource = load(path)
 		if res == null or res is not EditorDiscourseDialog:
-			_next_uuid = ""
+			_next_uuid = &""
 			_dialog_resource = null
 			return false
 		var dialog_id: String = res.dialog_id
@@ -303,7 +303,7 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 						"discourse",
 						"Node '%s' couldn't set data on '%s'" % [data["name"], path.strip_edges().simplify_path()],
 						NFPluginGameHandler._LogLevel.ERROR)
-			if data["input_connections"]["callable"]["target_node_uuid"] != "":
+			if not data["input_connections"]["callable"]["target_node_uuid"].is_empty():
 				var call_data: Dictionary = _dialog_resource.node_data.get(data["input_connections"]["callable"]["target_node_uuid"], {})
 				if call_data.is_empty():
 					NFPluginGameHandler._log_msg(
@@ -333,7 +333,7 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 								"Node '%s' attempted to call inexistent method '%s'." % [data["name"], call_metadata["method"]],
 								NFPluginGameHandler._LogLevel.ERROR)
 			
-			if data["input_connections"]["signal"]["target_node_uuid"] != "":
+			if not data["input_connections"]["signal"]["target_node_uuid"].is_empty():
 				var signal_data: Dictionary = _dialog_resource.node_data.get(data["input_connections"]["signal"]["target_node_uuid"], {})
 				if signal_data.is_empty():
 					NFPluginGameHandler._log_msg(
@@ -515,7 +515,7 @@ func _get_data(from_uuid: StringName, fallback = null) -> Variant:
 					metadata["method"],
 					args)
 		NodeTypes.DATA_EVENT:
-			if metadata["variable_path"] != "" and data["input_connections"]["variable_value"] != "":
+			if metadata["variable_path"] != "" and not data["input_connections"]["variable_value"]["target_node_uuid"].is_empty():
 				var path: String = metadata["variable_path"]
 				var data_conn = _get_data(data["input_connections"]["variable_value"]["target_node_uuid"])
 				if NexusForge.Blackboard.set_variable(
@@ -551,7 +551,7 @@ func _get_data(from_uuid: StringName, fallback = null) -> Variant:
 						"Node %s attempted to call an inexistent method '%s'." % [data["name"], call_data["metadata"]["method"]],
 						NFPluginGameHandler._LogLevel.ERROR)
 			
-			if data["input_connections"]["signal"]["target_node_uuid"] != "":
+			if not data["input_connections"]["signal"]["target_node_uuid"].is_empty():
 				var signal_data: Dictionary = _dialog_resource.node_data.get(data["input_connections"]["signal"]["target_node_uuid"], {})
 				if signal_data.is_empty():
 					NFPluginGameHandler._log_msg(

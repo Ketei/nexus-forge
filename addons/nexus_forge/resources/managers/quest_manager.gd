@@ -224,8 +224,10 @@ func set_state(state_data: Dictionary) -> void:
 ## Removes an active quest and clears it from the history if
 ## [param clear_from_history] is [code]true[/code]
 func remove_quest(quest_id: StringName, clear_from_history: bool = true) -> void:
-	if _active_quests.erase(quest_id) and clear_from_history:
+	var was_active: bool = _active_quests.erase(quest_id)
+	if clear_from_history:
 		Log.erase(quest_id)
+	if was_active:
 		_quests_modified.emit()
 
 
@@ -395,6 +397,8 @@ func complete_quest(quest_id: StringName, success: bool) -> void:
 ## The [param after_mod] argument can be used to ensure the given callable
 ## executes after another modification. The [param order] will be respected.
 func register_quest_modifier(quest_id: StringName, mod_id: StringName, mod_callable: Callable, order: int = -1, after_mod: StringName = &"") -> void:
+	order = maxi(-1, order)
+	
 	if mod_id.is_empty():
 		NFPluginGameHandler._log_msg(
 				"odyssey",
@@ -476,6 +480,8 @@ func _on_quest_objective_state_changed(quest_id: StringName, stage_id: StringNam
 	if objective_complete:
 		_set_objective_complete(quest_id, stage_id, objective_id, true)
 		objective_completed.emit(quest_id, stage_id, objective_id, true)
+	elif Log.has_objective(quest_id, stage_id, objective_id):
+		Log.get_stage(quest_id, stage_id).set_entry(objective_id, SuccessStatus.UNKNOWN)
 	
 	_check_stage_auto_advance(quest_id)
 
@@ -598,21 +604,29 @@ func _log_stage_complete(quest_id: StringName, stage_id: StringName, success: bo
 
 
 func _sort_mods(for_quest: StringName) -> void:
+	var current_order: Array = _quest_modifiers[for_quest]["order"]
+	var index_cache: Dictionary[StringName, int] = {}
+	for i in range(current_order.size()):
+		index_cache[current_order[i]] = i
+	
 	var mods_with_dependencies: Dictionary[StringName, Array] = {}
 	var independent_mods: Array[StringName] = []
 	var mods: Dictionary[StringName, Dictionary] = _quest_modifiers[for_quest]["mods"]
 	var final_order: Array[StringName] = []
+	
 	var sorting_lambda: Callable = func(a:StringName,b:StringName) -> bool:
 		var order_a: int = mods[a]["order"]
 		var order_b: int = mods[b]["order"]
+		
 		if order_a == order_b:
-			return false
+			return index_cache.get(a, NFMath.INT_MAX) < index_cache.get(b, NFMath.INT_MAX)
 		elif order_a < 0:
 			return false
 		elif order_b < 0:
 			return true
 		else:
 			return order_a < order_b
+	
 	var process_mod: Callable = func(current_id: StringName, self_ref: Callable) -> void:
 			if final_order.has(current_id):
 				return

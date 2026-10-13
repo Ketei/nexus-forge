@@ -1249,9 +1249,9 @@ func _on_custom_data_changed() -> void:
 		if selected_stage.is_empty() and selected_objective.is_empty():
 			action_name = "Set Quest Data"
 		elif selected_objective.is_empty():
-			action_name = "Set '%s' Stage '%s' Objective Data" % [selected_stage, selected_objective]
-		else:
 			action_name = "Set '%s' Stage Data" % selected_stage
+		else:
+			action_name = "Set '%s' Stage '%s' Objective Data" % [selected_stage, selected_objective]
 		
 		undo.create_action(action_name)
 		undo.add_do_method(_do_custom_data_change.bind(
@@ -1260,6 +1260,8 @@ func _on_custom_data_changed() -> void:
 		undo.add_undo_method(_undo_custom_data_change.bind(
 				selected_stage,
 				selected_objective))
+		undo.commit_action(false)
+	
 	_on_something_changed()
 
 

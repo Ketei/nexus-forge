@@ -12,15 +12,25 @@ extends Resource
 ## @export var my_trait: int = 0
 ## [/codeblock]
 
+var _flags: int = 0
 
 ## Example trait.
 @export var cold_resist: int = 0
 
-@export_storage var _custom_traits: Dictionary[StringName, int] = {}
+@export_storage var _custom_traits: Dictionary[StringName, int] = {}:
+	set(t):
+		_custom_traits = t
+		if NFBitUtils.is_bit_index(_flags, 0, true):
+			_sync_missing_custom_traits()
 
 
 func _init(use_nexus_forge: bool = true) -> void:
-	if not use_nexus_forge or Engine.is_editor_hint():
+	if Engine.is_editor_hint():
+		return
+	
+	_flags = NFBitUtils.set_bit_index(_flags, 0, use_nexus_forge)
+	
+	if not use_nexus_forge:
 		return
 	
 	for custom_trait in NexusForge.TraitManager.traits():
@@ -87,3 +97,10 @@ func has_custom(trait_id: StringName) -> bool:
 ## Erases the custom trait [param trait_id].
 func erase_custom(trait_id: StringName) -> void:
 	_custom_traits.erase(trait_id)
+
+
+func _sync_missing_custom_traits() -> void:
+	for trait_id in NexusForge.Traits:
+		var entry: NFCatalogEntry = NexusForge.Traits[trait_id]
+		if entry.is_custom() and not _custom_traits.has(trait_id):
+			_custom_traits[trait_id] = 0

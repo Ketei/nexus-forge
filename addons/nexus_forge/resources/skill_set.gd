@@ -12,11 +12,16 @@ extends Resource
 ## @export var my_skill: int = 0
 ## [/codeblock]
 
+var _flags: int = 0
 
 ## Example skill.
 @export var persuasion: int
 
-@export_storage var _custom_skills: Dictionary[StringName, int] = {}
+@export_storage var _custom_skills: Dictionary[StringName, int] = {}:
+	set(c):
+		_custom_skills = c
+		if NFBitUtils.is_bit_index(_flags, 0, true):
+			_sync_missing_custom_skills()
 
 
 ## Returns all the non-custom skills registered in the skill set.
@@ -36,7 +41,12 @@ static func skills() -> Array[StringName]:
 
 
 func _init(use_nexus_forge: bool = true) -> void:
-	if not use_nexus_forge or Engine.is_editor_hint():
+	if Engine.is_editor_hint():
+		return
+	
+	_flags = NFBitUtils.set_bit_index(_flags, 0, use_nexus_forge)
+	
+	if not use_nexus_forge:
 		return
 	
 	for skill_id in NexusForge.SkillManager.skills():
@@ -94,3 +104,10 @@ func has_custom(skill_id: StringName) -> bool:
 ## Removes a custom skill with ID [param skill_id]
 func erase_custom(skill_id: StringName) -> void:
 	_custom_skills.erase(skill_id)
+
+
+func _sync_missing_custom_skills() -> void:
+	for skill_id in NexusForge.Skills:
+		var entry: NFCatalogEntry = NexusForge.Skills[skill_id]
+		if entry.is_custom() and not _custom_skills.has(skill_id):
+			_custom_skills[skill_id] = 0

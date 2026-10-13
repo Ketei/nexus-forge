@@ -657,7 +657,17 @@ func set_metadata(index: int, path: String, new_value: Variant) -> void:
 			meta_item.set_text(1, new_value)
 	
 	meta_item.get_metadata(0)["data"] = new_value
-	
+
+
+func mark_item_missing(item_id: StringName, missing_item: bool) -> void:
+	for item_tree in get_root().get_children():
+		if item_tree.get_metadata(0)["id"] == item_id:
+			if missing_item:
+				item_tree.set_custom_color(
+						0,
+						Color.CRIMSON)
+			else:
+				item_tree.clear_custom_color(0)
 
 
 func _type_to_used_type(type: int) -> int:

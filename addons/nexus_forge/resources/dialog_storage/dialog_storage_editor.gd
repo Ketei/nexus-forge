@@ -299,6 +299,7 @@ func get_format_string(key: String, locale: String) -> String:
 ## Returns whether a format string with [param key] exists. If
 ## [param locale] isn't empty it'll validate that locale too.
 func has_format_string(key: String, locale: String = "") -> bool:
+	locale = TranslationServer.standardize_locale(locale)
 	if locale.is_empty():
 		return format_strings.has(key)
 	else:
@@ -357,6 +358,8 @@ func set_format_string(key: String, text: String, locale: String) -> void:
 ## Checks if the format key exists in the given key and locale. If it doesn't it'll
 ## create it. Returns true if the entry was created or already existed.
 func validate_format_string_format(key: String, locale: String, format: String) -> bool:
+	locale = TranslationServer.standardize_locale(locale)
+	
 	if not NFDictUtils.has_nested_path(format_strings, [key, locale, "format"]):
 		return false
 	
@@ -401,6 +404,7 @@ func set_format_string_case(key: String, locale: String, format: String, case: S
 ## in the specified [param key].[br]
 ## Returns an empty string if not found.
 func get_format_string_case(key: String, locale: String, format: String, case: String) -> String:
+	locale = TranslationServer.standardize_locale(locale)
 	return NFDictUtils.get_nested_value(
 			format_strings,
 			[key, locale, "format", format, "cases", case],
@@ -411,6 +415,7 @@ func get_format_string_case(key: String, locale: String, format: String, case: S
 ## Returns an array containing all the cases (not their results) of a specified
 ## [param format] of the [param locale] from the specified [param key].
 func get_format_string_cases(key: String, locale: String, format: String) -> Array[String]:
+	locale = TranslationServer.standardize_locale(locale)
 	var cases: Array[String] = []
 	
 	if NFDictUtils.has_nested_path(format_strings, [key, locale, "format", format, "cases"]):
@@ -453,6 +458,7 @@ func get_format_string_default_case(key: String, locale: String, argument: Strin
 ## Erases a [param format_key] and all its cases on the given [param key]
 ## from the given [param locale].
 func erase_format_string_format(key: String, locale: String, format_key: String) -> void:
+	locale = TranslationServer.standardize_locale(locale)
 	if NFDictUtils.has_nested_path(format_strings, [key, locale, "format"]):
 		format_strings[key][locale]["format"].erase(format_key)
 
@@ -460,6 +466,7 @@ func erase_format_string_format(key: String, locale: String, format_key: String)
 ## Erases the specific [param case] of the [param format_key] of the specified
 ## [param locale] in the [param key].
 func erase_format_string_case(key: String, locale: String, format_key: String, case: String) -> bool:
+	locale = TranslationServer.standardize_locale(locale)
 	if NFDictUtils.has_nested_path(format_strings, [key, locale, "format", format_key, "cases"]):
 		return format_strings[key][locale]["format"][format_key]["cases"].erase(case)
 	return false

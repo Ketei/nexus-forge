@@ -4,7 +4,7 @@ class_name NFRecipeCatalog
 extends Resource
 
 
-@export_storage var _recipes: Dictionary[String, Dictionary] = {}
+@export_storage var _recipes: Dictionary[StringName, Dictionary] = {}
 
 #region Crafting Recipes
 

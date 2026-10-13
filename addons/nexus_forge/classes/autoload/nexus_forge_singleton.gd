@@ -469,7 +469,7 @@ static func _log_msg(module: String, msg: String, log_level: _LogLevel = _LogLev
 	var full_msg: String = ""
 	
 	if module.is_empty():
-		full_msg = "[NEXUS FORGE] %s"
+		full_msg = "[NEXUS FORGE] %s" % msg
 	else:
 		full_msg = "[NEXUS FORGE - %s] %s" % [module.to_upper(), msg]
 	

@@ -63,8 +63,7 @@ func change_item_id(from: StringName, to: StringName) -> void:
 	item_id_changed.emit(from, to)
 
 
-## Erases the item [param item_id]. Then, if [member recipes] is
-## loaded, removes [param item_id] from all recipes. After it emits
+## Erases the item [param item_id]. After it emits
 ## relevant signals.
 func erase_item(item_id: StringName) -> void:
 	if items == null:
@@ -73,21 +72,4 @@ func erase_item(item_id: StringName) -> void:
 	if items._items.has(item_id):
 		items.erase_item(item_id)
 	
-	if recipes != null:
-		_remove_from_recipes(item_id)
-	
 	item_erased.emit(item_id)
-
-
-func _remove_from_recipes(item_id: StringName) -> void:
-	for recipe_id in recipes.recipes():
-		var source_inputs: Array[NFRecipeItem] = recipes._recipes[recipe_id]["input"]
-		var source_outputs: Array[NFRecipeItem] = recipes._recipes[recipe_id]["output"]
-		
-		for input:NFRecipeItem in source_inputs.duplicate():
-			if input.id == item_id:
-				source_inputs.erase(input)
-		
-		for output:NFRecipeItem in source_outputs.duplicate():
-			if output.id == item_id:
-				source_outputs.erase(output)

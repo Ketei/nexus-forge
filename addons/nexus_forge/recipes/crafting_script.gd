@@ -177,8 +177,8 @@ func _on_item_erased(item_id: StringName) -> void:
 	if recipes_resource == null:
 		return
 	recipe_items_tree.remove_item(item_id)
-	recipe_input_tree.remove_item(item_id)
-	recipe_output_tree.remove_item(item_id)
+	recipe_input_tree.mark_item_missing(item_id, true)
+	recipe_output_tree.mark_item_missing(item_id, true)
 	_something_changed()
 
 
@@ -284,6 +284,9 @@ func add_item(item_id: StringName, item_name: String) -> void:
 	recipe_items_tree.add_item(
 			item_id,
 			item_name)
+	
+	recipe_input_tree.mark_item_missing(item_id, false)
+	recipe_output_tree.mark_item_missing(item_id, false)
 
 
 func reload_items(items: NFItemCatalog = null) -> void:
@@ -383,6 +386,7 @@ func _on_resource_dropped(resource: Resource, panel: Control) -> void:
 
 func load_recipe(recipe_id: StringName) -> void:
 	var recipe: NFRecipeSheet = recipes_resource.get_recipe(recipe_id)
+	var missing_ingredients: Dictionary[StringName, Variant] = {}
 	
 	if recipe == null:
 		NFPluginGameHandler._log_msg(
@@ -395,12 +399,18 @@ func load_recipe(recipe_id: StringName) -> void:
 	recipe_output_tree.clear_items()
 	
 	for item in recipe.input:
+		if not recipe_items_tree.has_item(item.id):
+			missing_ingredients[item.id] = null
+	
 		recipe_input_tree.add_item(
 				item.id,
 				item.amount,
 				item.custom_data)
 	
 	for item in recipe.output:
+		if not recipe_items_tree.has_item(item.id):
+			missing_ingredients[item.id] = null
+		
 		recipe_output_tree.add_item(
 				item.id,
 				item.amount,
@@ -409,6 +419,10 @@ func load_recipe(recipe_id: StringName) -> void:
 	recipe_custom_data_tree.clear_data(false)
 	for data_entry in recipe.custom_data:
 		recipe_custom_data_tree.add_data(data_entry, recipe.custom_data[data_entry], true)
+	
+	for missing_id in missing_ingredients:
+		recipe_input_tree.mark_item_missing(missing_id, true)
+		recipe_output_tree.mark_item_missing(missing_id, true)
 
 
 func switch_to_recipe(recipe_id: StringName) -> void:
