@@ -226,7 +226,7 @@ static func create_2d(size_x: int, size_y: int, type: int = -1, class_type: Stri
 	var y_array: Array[Array] = []
 	y_array.resize(size_y)
 	
-	var x_array: Array = Array([], type, class_type, script) if NFRangeUtils.is_between(type, 0, TYPE_MAX - 1) else []
+	var x_array: Array = Array([], type, class_type, script) if NFMath.is_between(type, 0, TYPE_MAX - 1) else []
 	x_array.resize(size_x)
 	
 	for y_idx in range(size_y):
@@ -236,12 +236,16 @@ static func create_2d(size_x: int, size_y: int, type: int = -1, class_type: Stri
 
 
 ## Resizes a 2D array.
-static func resize_2d(array: Array[Array], new_width: int, new_height: int) -> void:
+static func resize_2d(array: Array[Array], new_width: int, new_height: int, new_types: int = TYPE_NIL, type_class: StringName = &"", type_script: Variant = null) -> void:
+	var old_size: int = array.size()
 	new_width = maxi(0, new_width)
 	new_height = maxi(0, new_height)
 	
 	if array.size() != new_height:
 		array.resize(new_height)
+		if old_size < new_height and -1 < new_types and new_types < TYPE_MAX:
+			for idx in range(old_size, new_height):
+				array[idx] = Array([], new_types, type_class, type_script)
 	
 	if 0 < new_height:
 		for x_arr in array:

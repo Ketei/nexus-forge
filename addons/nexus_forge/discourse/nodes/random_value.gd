@@ -181,6 +181,9 @@ func _set_node_data(data: Dictionary) -> void:
 		if max_type == TYPE_INT or max_type == TYPE_FLOAT:
 			max_spinbox.set_value_no_signal(maxf(min_spinbox.value, metadata["values"]["max"]))
 			max_spinbox.set_meta(&"old_value", max_spinbox.value)
+	
+	if current_mode != TYPE_BOOL:
+		max_spinbox.min_value = min_spinbox.value
 
 
 func _on_min_value_changed(min_value: float) -> void:
@@ -269,6 +272,7 @@ func set_mode(mode: int) -> void:
 		return
 	
 	current_mode = mode
+	menu.set_meta(&"old_value", mode)
 	_set_type_fields(mode)
 
 
@@ -348,7 +352,7 @@ func _set_type_fields(type: int) -> void:
 		min_spinbox.step = 1.0
 		min_spinbox.allow_lesser = false
 		min_spinbox.allow_greater = false
-		if not NFRangeUtils.is_between(min_spinbox.value, 0.0, 100.0):
+		if not NFMath.is_between(min_spinbox.value, 0.0, 100.0):
 			min_spinbox.set_value_no_signal(clampf(min_spinbox.value, 0.0, 100.0))
 		set_field_visible(&"max_value", false)
 		set_deferred(&"size", Vector2(240.0, 85.0))

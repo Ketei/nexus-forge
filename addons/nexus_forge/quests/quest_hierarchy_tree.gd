@@ -355,7 +355,7 @@ func add_stage(stage_id: String, index: int = -1) -> TreeItem:
 	if index != -1:
 		var child_count: int = root.get_child_count()
 		var max_index: int = child_count - 1
-		if NFRangeUtils.is_between(index, -child_count, max_index):
+		if NFMath.is_between(index, -child_count, max_index):
 			var target_index: int = wrapi(index, 0, child_count)
 			var current_index: int = stage_item.get_index()
 			if current_index != target_index:
@@ -412,7 +412,7 @@ func add_objective_on_tree(on_item: TreeItem, objective_id: String, index: int =
 	
 	var child_count: int = on_item.get_child_count()
 	var max_index: int = child_count - 1
-	if not NFRangeUtils.is_between(index, -child_count, max_index):
+	if not NFMath.is_between(index, -child_count, max_index):
 		return
 	var target_index: int = wrapi(index, 0, child_count)
 	var current_index: int = objective_item.get_index()

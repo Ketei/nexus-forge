@@ -399,7 +399,7 @@ func move_item(from_path: String, to: String, index: int) -> void:
 	
 	var child_count: int = new_parent.get_child_count()
 	var max_index: int = child_count - 1
-	if not NFRangeUtils.is_between(index, -child_count, max_index):
+	if not NFMath.is_between(index, -child_count, max_index):
 		return
 	var true_index: int = wrapi(index, 0, child_count)
 	
@@ -486,7 +486,7 @@ func create_folder(folder_name: String, on_node: TreeItem = get_root(), select: 
 	var child_count: int = on_node.get_child_count()
 	var max_index: int = child_count - 1
 	
-	if not NFRangeUtils.is_between(index, -child_count, max_index):
+	if not NFMath.is_between(index, -child_count, max_index):
 		return new_folder
 	
 	var true_index: int = wrapi(index, 0, child_count)
@@ -592,7 +592,7 @@ func create_node(node: DiscourseGraphNode, on: TreeItem = get_root(), index: int
 	var child_count: int = on.get_child_count()
 	var max_index: int = child_count - 1
 	
-	if not NFRangeUtils.is_between(index, -child_count, max_index):
+	if not NFMath.is_between(index, -child_count, max_index):
 		return
 	
 	var true_index: int = wrapi(index, 0, child_count)

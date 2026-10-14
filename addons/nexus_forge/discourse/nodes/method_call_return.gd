@@ -151,7 +151,7 @@ func _on_method_selected(idx: int) -> void:
 			"arguments": old_inputs,
 			"method": prev_id}}
 	
-	load_method(id)
+	await load_method(id)
 	methods_node.set_meta(&"old_value", id)
 	
 	var new_inputs: Array[Dictionary] = []

@@ -138,7 +138,8 @@ static func make_path(parts: Array) -> String:
 	var full_path: String = ""
 	
 	for item in parts:
-		if typeof(item) != TYPE_STRING or item.is_empty():
+		var type: int = typeof(item)
+		if (type != TYPE_STRING and type != TYPE_STRING_NAME) or item.is_empty():
 			continue
 		full_path = full_path.path_join(item)
 	return full_path
@@ -160,7 +161,7 @@ static func get_trailing_integer(text: String) -> Dictionary[String, Variant]:
 	
 	regex.compile("\\d+$") 
 	
-	var match_result:RegExMatch = regex.search(text)
+	var match_result:RegExMatch = regex.search(clean_text)
 	
 	if match_result != null:
 		data["has_integer"] = true

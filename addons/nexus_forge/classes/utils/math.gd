@@ -60,30 +60,71 @@ static func sum_arrayf(values_array: Array) -> float:
 ## Sums all the numerical values inside an array and returns
 ## the result as an integer.
 static func sum_arrayi(values_array: Array) -> int:
-	var type_arg: int = typeof(values_array)
-	
-	if type_arg < 28 or 33 < type_arg:
-		push_error("Can't iterate non-array")
-		return 0
-	
-	var total_value: float = 0
-	for item in values_array:
-		var type: int = typeof(item)
-		if type != TYPE_INT and type != TYPE_FLOAT:
-			continue
-		total_value += item
-	return int(total_value)
+	var total: int = 0
+	for val in values_array:
+		var type: int = typeof(val)
+		if type == TYPE_INT:
+			total = NFMath.safe_sum(total, val)
+		elif type == TYPE_FLOAT:
+			total = NFMath.safe_sum(total, int(val))
+		else:
+			NFPluginGameHandler._log_msg(
+					"NFMath",
+					"sum_arrayi encountered a non-numeric value. Skipping.",
+					NFPluginGameHandler._LogLevel.WARNING)
+	return total
 
 
 ## Returns the distance between 2 numbers. Typed as float.
-static func distancef(n_1: float, n_2: float) -> float:
-	return absf(n_1 - n_2)
+static func distancef(a: float, b: float) -> float:
+	if is_nan(a) or is_nan(b):
+		NFPluginGameHandler._log_msg(
+				"",
+				"[NFMath] distancef received NaN. Returning NaN.",
+				NFPluginGameHandler._LogLevel.ERROR)
+		return NAN
+	
+	if is_inf(a) or is_inf(b):
+		NFPluginGameHandler._log_msg(
+				"",
+				"[NFMath] distancef received INF. Clamping to INF.",
+				NFPluginGameHandler._LogLevel.ERROR)
+		return INF
+	
+	var max_val: float = maxf(a, b)
+	var min_val: float = minf(a, b)
+	
+	if 0.0 <= min_val or max_val <= 0.0:
+		return max_val - min_val
+	
+	var dist: float = max_val - min_val
+	
+	if is_inf(dist):
+		NFPluginGameHandler._log_msg(
+				"",
+				"[NFMath] distancef exceeded maximum float limit. Clamping to INF.",
+				NFPluginGameHandler._LogLevel.ERROR)
+		return INF
+	
+	return dist
 
 
 ## Returns the distance between 2 numbers. Typed as integer.
-static func distancei(n_1: float, n_2: float) -> int:
-	var sum: float = n_1 - n_2
-	return absi(sum)
+static func distancei(a: int, b: int) -> int:
+	var max_val: int = maxi(a, b)
+	var min_val: int = mini(a, b)
+	
+	if 0 <= min_val or max_val <= 0:
+		return max_val - min_val
+	
+	if NFMath.INT_MAX + min_val < max_val:
+		NFPluginGameHandler._log_msg(
+				"",
+				"[NFMath] distancei exceeded INT_MAX. Clamping to max integer limit.",
+				NFPluginGameHandler._LogLevel.ERROR)
+		return NFMath.INT_MAX
+	
+	return max_val - min_val
 
 
 ## Returns true if [param value] is between 2 numbers.
@@ -179,3 +220,21 @@ static func gcd(a: int, b: int) -> int:
 		return INT_MAX
 		
 	return abs(a)
+
+
+## A int typed version of [@GlobalScope.move_toward].
+static func move_towardi(from: int, to: int, by: int) -> int:
+	if from < to:
+		return mini(from + by, to) 
+	else:
+		return maxi(from - by, to)
+
+
+## Returns true if [param value] exist between the range [param a] and [param b]
+## (both inclusive).[br]
+## [param a] and [param b] [b]don't[/b] need to to passed in a specific order.
+static func is_between(value: float, a: float, b: float) -> bool:
+	if a < b:
+		return a <= value and value <= b
+	else:
+		return b <= value and value <= a

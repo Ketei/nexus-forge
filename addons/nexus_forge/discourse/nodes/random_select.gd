@@ -104,7 +104,7 @@ func _on_input_disconnected(input_port: int, from_node: DiscourseGraphNode, _fro
 	if from_node.node_type == DialogueNodeType.VALUE:
 		if from_node.num_value.value_changed.is_connected(_on_value_node_weight_changed):
 			from_node.num_value.value_changed.disconnect(_on_value_node_weight_changed)
-		elif from_node.num_value.value_changed.is_connected(_on_custom_default_weight_changed):
+		if from_node.num_value.value_changed.is_connected(_on_custom_default_weight_changed):
 			from_node.num_value.value_changed.disconnect(_on_custom_default_weight_changed)
 		from_node.clamp_range(0.0, 100.0, true, true)
 	
@@ -122,7 +122,7 @@ func _on_input_connected(input_port: int, from_node: DiscourseGraphNode, _from_p
 	
 	if input_port == 1: # Defaults
 		if from_node.node_type == DialogueNodeType.VALUE:
-			custom_default_weight = int(from_node.num_value)
+			custom_default_weight = int(from_node.num_value.value)
 			from_node.num_value.value_changed.connect(_on_custom_default_weight_changed)
 		else:
 			custom_default_weight = 0

@@ -460,9 +460,11 @@ var _phrase_api: NFPhraseAPI = NFPhraseAPI.new()
 
 ## Gets the path to a ProjecSetting registered by NexusForge by using its ID.
 static func get_setting_path(module: String) -> String:
-	if _SETTINGS_PATHS.has(module):
-		return _SETTINGS_PATHS[module]["setting_path"]
-	return ""
+	return _SETTINGS_PATHS.get(module, NFDictUtils.EMPTY_DICT).get("setting_path", "")
+
+
+static func get_default_setting(for_module: String) -> Variant:
+	return _SETTINGS_PATHS.get(for_module, NFDictUtils.EMPTY_DICT).get("default_value")
 
 
 static func _log_msg(module: String, msg: String, log_level: _LogLevel = _LogLevel.INFO) -> void:
@@ -822,7 +824,7 @@ func _notification(what: int) -> void:
 		if not is_node_ready():
 			await ready
 		
-		if Discourse == null:
+		if not is_instance_valid(Discourse):
 			return
 		
 		Discourse.locale = TranslationServer.get_locale()

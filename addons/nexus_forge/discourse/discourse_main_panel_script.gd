@@ -1112,6 +1112,7 @@ func _on_file_menu_id_pressed(id: int) -> void:
 				return
 			
 			var export_path: String = result[1]
+			discourse_graph_edit.update_localization_data(active_conversation, current_locale)
 			var export_data: Dictionary = export_current_dialog_csv_to(export_path)
 			if export_data["success"]:
 				NFPluginGameHandler._log_msg(
@@ -1121,7 +1122,7 @@ func _on_file_menu_id_pressed(id: int) -> void:
 			else:
 				NFPluginGameHandler._log_msg(
 						"discourse - editor",
-						"Couldn't export data to '%s'. Error: " % [export_path, export_data["msg"]],
+						"Couldn't export data to '%s'. Error: %" % [export_path, export_data["msg"]],
 						NFPluginGameHandler._LogLevel.ERROR)
 		DiscourseFileMenuID.IMPORT_NODES_CSV:
 			var dialog: FileDialog = load("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
@@ -1142,7 +1143,7 @@ func _on_file_menu_id_pressed(id: int) -> void:
 			if not import_status["success"]:
 				NFPluginGameHandler._log_msg(
 						"discourse - editor",
-						"Couldn't import data from '%s'. Error: " % [import_path, import_status["msg"]],
+						"Couldn't import data from '%s'. Error: %" % [import_path, import_status["msg"]],
 						NFPluginGameHandler._LogLevel.ERROR)
 				return
 			
@@ -1175,6 +1176,8 @@ func _on_file_menu_id_pressed(id: int) -> void:
 				return
 			
 			var export_path: String = result[1]
+			if -1 < phrases_lang_menu.selected:
+				save_phrase_keys(phrases_lang_menu.get_selected_metadata())
 			var json_writer: FileAccess = FileAccess.open(export_path, FileAccess.WRITE)
 			if json_writer == null:
 				NFPluginGameHandler._log_msg(
@@ -2236,7 +2239,7 @@ func set_localized_choice_line_text(choice_index: int, text: String) -> void:
 	if child_count == 0:
 		return
 	var max_index: int = child_count - 1
-	if not NFRangeUtils.is_between(choice_index, -child_count, max_index):
+	if not NFMath.is_between(choice_index, -child_count, max_index):
 		return
 	var true_index: int = wrapi(choice_index, 0, child_count)
 	var line: TextEdit = choices_container.get_child(true_index).get_child(2)
@@ -5347,12 +5350,23 @@ func _on_graph_edit_paste_requested() -> void:
 	var uuid_map: Dictionary[StringName, StringName] = {}
 	var clipboard: Array[Dictionary] = discourse_graph_edit.node_clipboard.duplicate(true)
 	
-	
 	for clipboard_data in clipboard:
+		var node_data: Dictionary = clipboard_data["state"]["data"]
+		var node_type: int = node_data["type"]
+		
 		if discourse_graph_edit.graph_nodes.has(clipboard_data["node_uuid"]):
 			uuid_map[clipboard_data["node_uuid"]] = StringName(NFUUID.generate_new())
 		else:
 			uuid_map[clipboard_data["node_uuid"]] = clipboard_data["node_uuid"]
+		
+		if node_type == DiscourseGraphNode.DialogueNodeType.SHORTCUT_OUT:
+			var metadata: Dictionary = node_data["metadata"]
+			var valid_id: String = discourse_graph_edit.get_valid_shortcut_id(metadata["anchor_id"])
+			metadata["anchor_id"] = valid_id
+		elif node_type == DiscourseGraphNode.DialogueNodeType.TRAVEL_TARGET:
+			var metadata: Dictionary = node_data["metadata"]
+			var valid_id: String = discourse_graph_edit.get_valid_waypoint_id(metadata["waypoint_id"])
+			metadata["waypoint_id"] = valid_id
 	
 	discourse_graph_edit.paste_node_clipboard(clipboard, uuid_map)
 	_on_conversation_changed()

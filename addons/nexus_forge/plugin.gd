@@ -7,6 +7,7 @@ const PLUGIN_NAME: String = "NexusForge"
 const PLUGIN_ICON_PATH: String = "res://addons/nexus_forge/icons/nexus_forge_small.svg"
 const HANDLED_CLASSES: Array[StringName] = [&"EditorDiscourseDialog", &"NFCharacterSheet", &"NFPhraseMap", &"NFQuest"]
 const TOOL_NAME: String = "Nexus Forge Character Lookup"
+const PLUGIN_CACHE_PATH: String = "user://nexus_forge/plugin_config.cfg"
 
 var editor_view: Control = null
 var export_plugin: EditorExportPlugin = null
@@ -194,6 +195,27 @@ func _enable_plugin() -> void:
 	add_autoload_singleton(
 			"NexusForge",
 			"res://addons/nexus_forge/classes/autoload/nexus_forge_singleton.gd")
+	
+	var trigger_settings_save: bool = false
+	
+	if FileAccess.file_exists(PLUGIN_CACHE_PATH):
+		var cfg: ConfigFile = ConfigFile.new()
+		var err: Error = cfg.load(PLUGIN_CACHE_PATH)
+		if err == OK:
+			for tool_id in NFPluginGameHandler._SETTINGS_PATHS:
+				if not cfg.has_section_key("ProjectSettings", tool_id):
+					continue
+				var path: String = NFPluginGameHandler.get_setting_path(tool_id)
+				var default_setting: Variant = NFPluginGameHandler.get_default_setting(tool_id)
+				var value: Variant = cfg.get_value("ProjectSettings", tool_id, null)
+				
+				if typeof(default_setting) == typeof(value) and default_setting != value:
+					ProjectSettings.set_setting(path, value)
+					trigger_settings_save = true
+	
+	if trigger_settings_save:
+		ProjectSettings.save()
+	
 	if ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("recompile_documentation"), false):
 		recompile_script_docs.call_deferred()
 
@@ -504,11 +526,24 @@ func verify_project_settings() -> void:
 func _disable_plugin() -> void:
 	remove_autoload_singleton("NexusForge")
 	
+	var cache: ConfigFile = ConfigFile.new()
+	
 	for tool_id in NFPluginGameHandler._SETTINGS_PATHS.keys():
-		if ProjectSettings.has_setting(NFPluginGameHandler._SETTINGS_PATHS[tool_id]["setting_path"]):
+		var setting_path: String = NFPluginGameHandler.get_setting_path(tool_id)
+		if ProjectSettings.has_setting(setting_path):
+			var value: Variant = ProjectSettings.get_setting(setting_path)
+			cache.set_value("ProjectSettings", tool_id, value)
+			
 			ProjectSettings.set_setting(
-					NFPluginGameHandler._SETTINGS_PATHS[tool_id]["setting_path"],
+					setting_path,
 					null)
+	
+	if 0 < cache.get_sections().size():
+		if cache.save(PLUGIN_CACHE_PATH) != OK:
+			NFPluginGameHandler._log_msg(
+					"",
+					"Couldn't save Nexus Forge ProjectSettings Cache",
+					NFPluginGameHandler._LogLevel.WARNING)
 	
 	ProjectSettings.save()
 
@@ -692,14 +727,18 @@ func _on_resource_removed(object: Resource) -> void:
 	if object == null:
 		return
 	if object is EditorDiscourseDialog:
-		editor_view.discourse.filesystem_resource_removed(object)
+		if editor_view.discourse != null:
+			editor_view.discourse.filesystem_resource_removed(object)
 	elif object is NFCharacterSheet:
 		remove_character(object.resource_path)
-		editor_view.characters.filesystem_resource_removed(object)
+		if editor_view.characters != null:
+			editor_view.characters.filesystem_resource_removed(object)
 	elif object is NFPhraseMap:
-		editor_view.phrase_maps.filesystem_resource_removed(object)
+		if editor_view.phrase_maps != null:
+			editor_view.phrase_maps.filesystem_resource_removed(object)
 	elif object is NFQuest:
-		editor_view.quests.filesystem_resource_removed(object)
+		if editor_view.quests != null:
+			editor_view.quests.filesystem_resource_removed(object)
 	elif object is NFBlackboardData:
 		if editor_view.variables._variables_resource == object:
 			ProjectSettings.set_setting(
@@ -708,21 +747,21 @@ func _on_resource_removed(object: Resource) -> void:
 			ProjectSettings.save()
 			editor_view.variables.reload_resource()
 	elif object is NFSpeciesCatalog:
-		if editor_view.species._species_resource == object:
+		if editor_view.species != null and editor_view.species._species_resource == object:
 			ProjectSettings.set_setting(
 					NFPluginGameHandler.get_setting_path("species"),
 					"")
 			ProjectSettings.save()
 			editor_view.species.reload_resource()
 	elif object is NFSkillCatalog:
-		if editor_view.talents._skills_resource == object:
+		if editor_view.talents != null and editor_view.talents._skills_resource == object:
 			ProjectSettings.set_setting(
 					NFPluginGameHandler.get_setting_path("skills"),
 					"")
 			ProjectSettings.save()
 			editor_view.talents.reload_skill_resource()
 	elif object is NFTraitCatalog:
-		if editor_view.talents._traits_resource == object:
+		if editor_view.talents != null and editor_view.talents._traits_resource == object:
 			ProjectSettings.set_setting(
 				NFPluginGameHandler.get_setting_path("traits"),
 				"")
@@ -734,10 +773,12 @@ func _on_resource_removed(object: Resource) -> void:
 				NFPluginGameHandler.get_setting_path("items"),
 				"")
 			ProjectSettings.save()
-			editor_view.items.items_container.reload_item_resource()
-			editor_view.recipes.reload_items(null)
+			if editor_view.items != null:
+				editor_view.items.items_container.reload_item_resource()
+			if editor_view.recipes != null:
+				editor_view.recipes.reload_items(null)
 	elif object is NFCurrencyCatalog:
-		if editor_view.items.items_container.currency_resource == object:
+		if editor_view.items != null and editor_view.items.items_container.currency_resource == object:
 			ProjectSettings.set_setting(
 				NFPluginGameHandler.get_setting_path("currency"),
 				"")
@@ -749,7 +790,8 @@ func _on_resource_removed(object: Resource) -> void:
 				NFPluginGameHandler.get_setting_path("recipes"),
 				"")
 			ProjectSettings.save()
-			editor_view.recipes.reload_recipe_resource()
+			if editor_view.recipes != null:
+				editor_view.recipes.reload_recipe_resource()
 
 
 func _on_scan_folder_selected() -> void:

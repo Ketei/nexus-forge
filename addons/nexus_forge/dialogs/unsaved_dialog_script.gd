@@ -18,7 +18,7 @@ func _ready() -> void:
 	
 	confirmed.connect(dialog_finished.emit.bind(0))
 	dont_save.pressed.connect(_on_no_save_pressed)
-	cancel.pressed.connect(dialog_finished.emit.bind(2))
+	canceled.connect(dialog_finished.emit.bind(2))
 
 
 func _on_no_save_pressed() -> void:

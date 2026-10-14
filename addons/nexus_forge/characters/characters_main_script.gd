@@ -824,7 +824,8 @@ func reset_traits() -> void:
 func save_current_character() -> void:
 	current_sheet.id = StringName(char_id_line.text.strip_edges())
 	current_sheet.name = char_name_line.text.strip_edges()
-	current_sheet.species = &"" if species_option_button.selected == -1 else species_option_button.get_item_metadata(species_option_button.selected)
+	if -1 < species_option_button.selected:
+		current_sheet.species = species_option_button.get_item_metadata(species_option_button.selected)
 	if -1 < gender_option_button.selected:
 		current_sheet.gender = gender_option_button.get_item_metadata(gender_option_button.selected)
 	else:
@@ -1046,15 +1047,21 @@ func select_species(type: StringName) -> void:
 		if species_option_button.get_item_metadata(item_idx) == type:
 			species_option_button.select(item_idx)
 			species_option_button.set_meta(&"prev_selected", type)
-			break
+			return
+	
+	species_option_button.select(-1)
+	species_option_button.set_meta(&"prev_selected", &"")
 
 
-func select_gender(gender: NFCharacterSheet.Gender) -> void:
+func select_gender(gender: int) -> void:
 	for item_idx in range(gender_option_button.item_count):
 		if gender_option_button.get_item_metadata(item_idx) == gender:
 			gender_option_button.select(item_idx)
 			gender_option_button.set_meta(&"prev_selected", gender)
-			break
+			return
+	
+	gender_option_button.select(-1)
+	gender_option_button.set_meta(&"prev_selected", null)
 
 
 func create_stat_item(stat_id: StringName, type: int, default: float) -> VBoxContainer:
@@ -1737,9 +1744,10 @@ func _on_line_edit_edit_toggled(toggled: bool, line: LineEdit, field: String) ->
 func _on_dropbox_index_selected(index: int, box: OptionButton) -> void:
 	if box == gender_option_button:
 		var current: int = box.get_item_metadata(index)
-		var prev: int = box.get_meta(&"prev_selected", -1)
+		var before: Variant = box.get_meta(&"prev_selected")
+		var prev: int = -1 if before == null or typeof(before) != TYPE_INT else before
 		box.set_meta(&"prev_selected", current)
-		if current == prev or prev == -1:
+		if before == prev and current == prev:
 			return
 		undo.create_action("Set Gender")
 		undo.add_do_method(select_gender.bind(current))
@@ -1749,7 +1757,7 @@ func _on_dropbox_index_selected(index: int, box: OptionButton) -> void:
 		var current: StringName = box.get_item_metadata(index)
 		var prev: StringName = box.get_meta(&"prev_selected", &"")
 		box.set_meta(&"prev_selected", current)
-		if prev == current or prev.is_empty():
+		if prev == current:
 			return
 		undo.create_action("Set Species")
 		undo.add_do_method(select_species.bind(current))

@@ -685,7 +685,7 @@ func set_choice_text(uuid: StringName, option_index: int, text: String, locale: 
 		if arr_size == 0:
 			return
 		var max_index: int = arr_size - 1
-		if not NFRangeUtils.is_between(option_index, -arr_size, max_index):
+		if not NFMath.is_between(option_index, -arr_size, max_index):
 			return
 		
 		items[option_index] = text
@@ -700,7 +700,7 @@ func set_choice_text(uuid: StringName, option_index: int, text: String, locale: 
 			return
 		
 		var max_index: int = arr_size - 1
-		if not NFRangeUtils.is_between(option_index, -arr_size, max_index):
+		if not NFMath.is_between(option_index, -arr_size, max_index):
 			return
 		
 		locale_array[option_index] = text

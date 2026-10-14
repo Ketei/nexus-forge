@@ -268,13 +268,20 @@ func _do_move_item(from: String, to: String, index: int) -> void:
 		target.get_parent().remove_child(target)
 		new_parent.add_child(target)
 	
-	if -1 < index and target.get_index() != index:
-		if new_parent.get_child_count() <= 1:
-			return
-		if index == 0:
-			target.move_before(new_parent.get_first_child())
-		else:
-			target.move_after(new_parent.get_child(index - 1))
+	if index == -1:
+		return
+	
+	var current_childs: int = new_parent.get_child_count()
+	var safe_index: int = wrapi(clampi(index, -current_childs, current_childs -1), 0, current_childs)
+	if target.get_index() == safe_index:
+		return
+	
+	if current_childs <= 1:
+		return
+	if safe_index == 0:
+		target.move_before(new_parent.get_first_child())
+	else:
+		target.move_after(new_parent.get_child(safe_index - 1))
 
 
 func _is_in_tree(item: TreeItem) -> bool:
@@ -348,18 +355,22 @@ func _drop_data(at_position: Vector2, data: Variant) -> void:
 			else:
 				object.move_after(new_parent.get_child(new_index - 1))
 		
-		_undo.create_action("Move Data")
-		_undo.add_do_method(_do_move_item.bind(original_path, drop_path, new_index))
-		_undo.add_undo_method(_do_move_item.bind(drop_path, original_path, original_index))
-		_undo.commit_action(false)
+		if is_instance_valid(_undo):
+			_undo.create_action("Move Data")
+			_undo.add_do_method(_do_move_item.bind(original_path, drop_path, new_index))
+			_undo.add_undo_method(_do_move_item.bind(drop_path, original_path, original_index))
+			_undo.commit_action(false)
 	else:
-		_undo.create_action("Drop Data")
-		_undo.add_do_method(_undo_erase_data.bind( # _undo_erase has path validation unlike _do_add_data
-				drop_path,
-				get_data_cell_data(object),
-				new_index))
-		_undo.add_undo_method(_do_erase_data.bind(drop_path))
-		_undo.commit_action(true)
+		if is_instance_valid(_undo):
+			_undo.create_action("Drop Data")
+			_undo.add_do_method(_undo_erase_data.bind( # _undo_erase has path validation unlike _do_add_data
+					drop_path,
+					get_data_cell_data(object),
+					new_index))
+			_undo.add_undo_method(_do_erase_data.bind(drop_path))
+			_undo.commit_action(true)
+		else:
+			_undo_erase_data(drop_path, get_data_cell_data(object), new_index)
 	
 	data_changed.emit()
 
@@ -468,6 +479,7 @@ func _undo_erase_data(data_path: String, data: Variant, index: int) -> void:
 	
 	var var_id: String = parts[-1]
 	var target: TreeItem = get_root()
+	var path_found: bool = false
 	
 	for path_slice in parts.slice(0, -1):
 		for item in target.get_children():
@@ -475,7 +487,11 @@ func _undo_erase_data(data_path: String, data: Variant, index: int) -> void:
 				if item.get_metadata(0)["type"] != ItemType.FOLDER:
 					return
 				target = item
+				path_found = true
 				break
+	
+	if not path_found:
+		return
 	
 	for item in target.get_children():
 		if item.get_metadata(0)["name"] == var_id:
@@ -484,7 +500,6 @@ func _undo_erase_data(data_path: String, data: Variant, index: int) -> void:
 				"Failed to undo data erasure. ID '%s' already used on path '%s'." % [var_id, _get_data_path(item.get_parent())],
 				NFPluginGameHandler._LogLevel.WARNING)
 			return
-	
 	
 	var data_type: int = typeof(data)
 	if data_type == TYPE_DICTIONARY or data_type == TYPE_ARRAY:
@@ -903,6 +918,6 @@ func _data_cell_to_string(item: TreeItem) -> String:
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_PREDELETE:
-		if _undo != null and is_instance_valid(_undo):
+		if is_instance_valid(_undo):
 			_undo.clear_history()
 			_undo.free()

@@ -799,6 +799,9 @@ func paste_node_clipboard(clipboard: Array[Dictionary], uuid_map: Dictionary[Str
 	
 	if not created_nodes.is_empty():
 		nodes_created.emit(created_nodes, "Paste Nodes")
+	
+	refresh_anchors()
+	refresh_waypoints()
 
 
 func _on_duplicate_node_button_pressed(node: DiscourseGraphNode) -> void:
