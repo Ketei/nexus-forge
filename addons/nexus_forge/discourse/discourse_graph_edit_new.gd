@@ -509,8 +509,6 @@ func _ready() -> void:
 	end_node_move.connect(_on_end_node_move, CONNECT_DEFERRED)
 	node_selected.connect(_on_node_selected)
 	graph_elements_linked_to_frame_request.connect(_on_graph_elements_linked_to_frame_request)
-	copy_nodes_request.connect(_on_copy_nodes_requested)
-	cut_nodes_request.connect(_on_cut_nodes_requested)
 	paste_nodes_request.connect(_on_paste_nodes_requested)
 	duplicate_nodes_request.connect(_on_graph_edit_keyboard_duplicate_pressed)
 	delete_nodes_request.connect(_on_delete_nodes_request)
@@ -2036,22 +2034,6 @@ func reset_scroll_offset() -> void:
 	scroll_offset = target_size
 
 
-func _on_copy_nodes_requested() -> void:
-	copy_selected_to_clipboard()
-
-
-func _on_cut_nodes_requested() -> void:
-	copy_selected_to_clipboard()
-	var nodes_to_remove: Array[StringName] = []
-	var removed_nodes_data: Dictionary[StringName, Dictionary] = {}
-	for selected_node in get_selected_graph_nodes():
-		nodes_to_remove.append(selected_node.get_node_uuid())
-		removed_nodes_data[selected_node.get_node_uuid()] =\
-				selected_node.get_node_state()
-	
-	nodes_removed.emit("cut", removed_nodes_data)
-
-
 func _on_paste_nodes_requested() -> void:
 	paste_nodes_requested.emit()
 
@@ -2155,26 +2137,6 @@ func populate_popup(node_type: ConnectionType, port_direction: String) -> void:
 							"target_port": subitem["port"]})
 			connection_popup.add_submenu_node_item(node["name"], connection_submenu)
 			connection_submenu.index_pressed.connect(_on_popup_index_pressed.bind(connection_submenu))
-
-
-func copy_selected_to_clipboard() -> void:
-	var selected_nodes: Array[DiscourseGraphNode] = get_selected_graph_nodes()
-	if selected_nodes.is_empty():
-		return
-	node_clipboard.clear()
-	var copy_data: Array[Dictionary] = []
-	for selected_node in selected_nodes:
-		var data: Dictionary = {
-			"node_uuid": selected_node.get_node_uuid(),
-			"state": selected_node.get_node_state()}
-		copy_data.append(data)
-	copy_data.sort_custom(sort_clipboard_custom)
-	node_clipboard.clear()
-	node_clipboard.assign(copy_data)
-
-
-func sort_clipboard_custom(item_a: Dictionary, item_b: Dictionary) -> bool:
-	return item_a["state"]["data"]["metadata"]["position"] < item_b["state"]["data"]["metadata"]["position"]
 
 
 func spawn_node_at_center(node_type: DialogNodes, uuid: String = "") -> StringName:

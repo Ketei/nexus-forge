@@ -356,11 +356,7 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 								NexusForge.Discourse.API,
 								signal_metadata["signal"])
 						
-						if signal_args.is_empty():
-							api_signal.emit()
-						else:
-							var signal_emittion: Callable = api_signal.emit.bindv(signal_args)
-							signal_emittion.call()
+						api_signal.emit.callv(signal_args)
 						
 						signal_emitted.emit(signal_metadata["signal"], signal_args)
 					else:

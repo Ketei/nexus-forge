@@ -142,6 +142,7 @@ func _on_category_edit_pressed() -> void:
 
 func _on_categories_done_pressed() -> void:
 	if categories_container.categories_edited:
+		categories_container.save_current_category()
 		items_container.reload_categories(true)
 		items_container._items_unsaved = true
 		categories_container.categories_edited = false

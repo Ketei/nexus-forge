@@ -263,8 +263,10 @@ func _on_map_close_pressed(closing_map: int, requires_save: bool) -> void:
 		
 		# 0 = save, 1 = don't save, 2 = cancel
 		if result == 0: # Save
-			save_current_resource()
-			ResourceSaver.save(map)
+			var closing_resource: Resource = _open_files[closing_map]["resource"]
+			if map == closing_resource:
+				save_current_resource()
+			ResourceSaver.save(closing_resource)
 		elif result == 2: # Cancel
 			return
 	

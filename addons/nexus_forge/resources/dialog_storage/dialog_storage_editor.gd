@@ -906,15 +906,15 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 						if not option_settings["input_connections"]["metadata"]["target_node_uuid"].is_empty():
 							var dialog_metadata_node: Dictionary = node_data[option_settings["input_connections"]["metadata"]["target_node_uuid"]]
 							var dialog_metadata: Dictionary = dialog_metadata_node["metadata"]
-							for meta_field in dialog_metadata:
+							for meta_field in dialog_metadata["metadata_connections"]: 
 								if not dialog_metadata_node["input_connections"].has(meta_field["id"]):
 									NFPluginGameHandler._log_msg(
 											"export - dialog",
 											"Metadata node '%s' on file '%s' registered metadata with ID '%s' on port %d but the port isn't available. Setting to null." % [dialog_metadata_node["name"], resource_path, meta_field["id"], meta_field["port"]],
 											NFPluginGameHandler._LogLevel.ERROR)
-									new_option["metadata"][meta_field["id"]] = null
+									new_option["settings"]["metadata"][meta_field["id"]] = null 
 								else:
-									new_option["metadata"][meta_field["id"]] = target_finder.get_target(dialog_metadata_node["input_connections"][meta_field["id"]]["target_node_uuid"])
+									new_option["settings"]["metadata"][meta_field["id"]] = target_finder.get_target(dialog_metadata_node["input_connections"][meta_field["id"]]["target_node_uuid"])
 					
 					options.append(new_option)
 				export_data["choices"] = options
@@ -1116,10 +1116,10 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 				export_data["min_override"] = target_finder.get_target(node_data[node_id]["input_connections"]["base_value"]["target_node_uuid"])
 				export_data["max_override"] = target_finder.get_target(node_data[node_id]["input_connections"]["max_value"]["target_node_uuid"])
 			NodeType.RESOURCE:
-				export_data["path"] = metadata["resource_path"]
+				export_data["resource_path"] = metadata["resource_path"]
 			NodeType.DATA_EVENT:
 				var var_val: StringName = StringName(node_data[node_id]["input_connections"]["variable_value"]["target_node_uuid"])
-				export_data["value"] = var_val
+				export_data["value"] = target_finder.get_target(var_val)
 				
 				if not node_data[node_id]["input_connections"]["callable"]["target_node_uuid"].is_empty():
 					var callable_uuid: StringName = node_data[node_id]["input_connections"]["callable"]["target_node_uuid"]

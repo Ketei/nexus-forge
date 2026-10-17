@@ -673,6 +673,9 @@ func ready_plugin(base_locale: String = "") -> void:
 	discourse_graph_edit.travel_node_selected_waypoint_changed.connect(_on_travel_node_selected_waypoint_changed)
 	
 	_class_update_signaler.classes_updated.connect(_on_classes_updated, CONNECT_DEFERRED)
+	
+	discourse_graph_edit.copy_nodes_request.connect(_on_graph_copy_nodes_requested)
+	discourse_graph_edit.cut_nodes_request.connect(_on_graph_cut_nodes_requested)
 
 
 func can_undo() -> bool:
@@ -5376,11 +5379,12 @@ func _on_graph_edit_paste_requested() -> void:
 	for clipboard_data in clipboard:
 		var node_data: Dictionary = clipboard_data["state"]["data"]
 		var node_type: int = node_data["type"]
+		var uuid: StringName = clipboard_data["node_uuid"]
 		
-		if discourse_graph_edit.graph_nodes.has(clipboard_data["node_uuid"]):
-			uuid_map[clipboard_data["node_uuid"]] = StringName(NFUUID.generate_new())
+		if discourse_graph_edit.graph_nodes.has(uuid):
+			uuid_map[uuid] = StringName(NFUUID.generate_new())
 		else:
-			uuid_map[clipboard_data["node_uuid"]] = clipboard_data["node_uuid"]
+			uuid_map[uuid] = uuid
 		
 		if node_type == DiscourseGraphNode.DialogueNodeType.SHORTCUT_OUT:
 			var metadata: Dictionary = node_data["metadata"]
@@ -5391,7 +5395,14 @@ func _on_graph_edit_paste_requested() -> void:
 			var valid_id: String = discourse_graph_edit.get_valid_waypoint_id(metadata["waypoint_id"])
 			metadata["waypoint_id"] = valid_id
 	
+		if clipboard_data.has("localization"):
+			active_conversation.localization[uuid_map[uuid]] = clipboard_data["localization"].duplicate(true)
+		
 	discourse_graph_edit.paste_node_clipboard(clipboard, uuid_map)
+	
+	var display_data: Dictionary = active_conversation.get_display_localization_data(current_locale)
+	update_localization_display(display_data)
+	
 	_on_conversation_changed()
 
 # ------------------------------
@@ -6009,6 +6020,44 @@ func _on_travel_node_selected_waypoint_changed(node_uuid: StringName, old_waypoi
 	undo.add_do_method(discourse_graph_edit.set_travel_node_selected_waypoint.bind(node_uuid, new_waypoint))
 	undo.add_undo_method(discourse_graph_edit.set_travel_node_selected_waypoint.bind(node_uuid, old_waypoint))
 	undo.commit_action(false)
+
+
+func _sort_clipboard_custom(item_a: Dictionary, item_b: Dictionary) -> bool:
+	return item_a["state"]["data"]["metadata"]["position"] < item_b["state"]["data"]["metadata"]["position"]
+
+
+func graph_copy_selected_to_clipboard() -> void:
+	var selected_nodes: Array[DiscourseGraphNode] = discourse_graph_edit.get_selected_graph_nodes()
+	if selected_nodes.is_empty():
+		return
+	var copy_data: Array[Dictionary] = []
+	for selected_node in selected_nodes:
+		var uuid: StringName = selected_node.get_node_uuid()
+		var data: Dictionary = {
+			"node_uuid": uuid,
+			"state": selected_node.get_node_state()}
+		if active_conversation.localization.has(uuid):
+			data["localization"] = active_conversation.localization[uuid].duplicate(true)
+		copy_data.append(data)
+	copy_data.sort_custom(_sort_clipboard_custom)
+	discourse_graph_edit.node_clipboard.clear()
+	discourse_graph_edit.node_clipboard.assign(copy_data)
+
+
+func _on_graph_copy_nodes_requested() -> void:
+	graph_copy_selected_to_clipboard()
+
+
+func _on_graph_cut_nodes_requested() -> void:
+	graph_copy_selected_to_clipboard()
+	var nodes_to_remove: Array[StringName] = []
+	var removed_nodes_data: Dictionary[StringName, Dictionary] = {}
+	for selected_node in discourse_graph_edit.get_selected_graph_nodes():
+		nodes_to_remove.append(selected_node.get_node_uuid())
+		removed_nodes_data[selected_node.get_node_uuid()] =\
+				selected_node.get_node_state()
+	
+	_on_nodes_removed("cut", removed_nodes_data)
 
 
 func _notification(what: int) -> void:

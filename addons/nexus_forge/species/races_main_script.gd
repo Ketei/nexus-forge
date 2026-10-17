@@ -376,6 +376,7 @@ func _on_hybridize_confirmed() -> void:
 	undo.add_do_method(_do_hybridize_species.bind(loaded_species, dominant, submissive))
 	undo.add_undo_method(_do_hybridize_species.bind(loaded_species, current_dominant, current_recessive))
 	undo.commit_action()
+	_on_something_changed()
 
 
 func _do_hybridize_species(target: StringName, dominant: StringName, recessive: StringName) -> void:
@@ -405,6 +406,7 @@ func _on_species_dehibridized(species_id: StringName, new_top: StringName, dom: 
 	
 	if species_id == loaded_species and hybrid_info_container.visible:
 		hybrid_info_container.visible = false
+	_on_something_changed()
 
 
 func _do_dehibridize_species(species_id: StringName, move_to: StringName) -> void:
@@ -722,6 +724,7 @@ func _on_species_moved(species: StringName, from: StringName, to: StringName) ->
 	undo.add_do_method(_do_move_species.bind(species, to))
 	undo.add_undo_method(_do_move_species.bind(species, from))
 	undo.commit_action(false)
+	_on_something_changed()
 
 
 func _do_move_species(what: StringName, to: StringName) -> void:
