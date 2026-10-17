@@ -42,7 +42,11 @@ func set_recipe_inputs(recipe_id: StringName, inputs: Array[NFRecipeItem]) -> vo
 	if not _recipe_sheets.has(recipe_id):
 		return
 	
-	_recipe_sheets[recipe_id].input.assign(inputs)
+	var target: Array[NFRecipeItem] = _recipe_sheets[recipe_id].input
+	target.clear()
+	for item in inputs:
+		target.append(item.duplicate(true))
+	
 	_recipe_sheets[recipe_id].emit_changed()
 
 
@@ -51,7 +55,11 @@ func set_recipe_outputs(recipe_id: StringName, outputs: Array[NFRecipeItem]) -> 
 	if not _recipe_sheets.has(recipe_id):
 		return
 	
-	_recipe_sheets[recipe_id].output.assign(outputs)
+	var target: Array[NFRecipeItem] = _recipe_sheets[recipe_id].output
+	target.clear()
+	for item in outputs:
+		target.append(item.duplicate(true))
+	
 	_recipe_sheets[recipe_id].emit_changed()
 
 

@@ -17,12 +17,12 @@ var min_value: float = 0.0:
 			max_value = m
 		min_value = m
 
-## Whether a stat should be able to go above [member max_value].
+## Whether a stat should be able to go below [member min_value].
 var allow_lesser: bool = true:
 	set(a):
 		if NFBitUtils.is_bit_index(_flags, 63, false):
 			allow_lesser = a
-## Whether a stat should be able to go below [member min_value].
+## Whether a stat should be able to go above [member max_value].
 var allow_greater: bool = true:
 	set(a):
 		if NFBitUtils.is_bit_index(_flags, 63, false):

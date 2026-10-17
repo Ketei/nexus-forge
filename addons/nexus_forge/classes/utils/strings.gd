@@ -190,3 +190,25 @@ static func get_all_format_arguments(text: String, trim_brackets: bool = false, 
 	
 	all_formats.assign(entries_found.keys())
 	return all_formats
+
+
+static func get_locale_language(code: String) -> String:
+	code = TranslationServer.standardize_locale(code)
+	if code.is_empty():
+		return ""
+	return code.get_slice("_", 0)
+
+
+static func get_locale_country(code: String) -> String:
+	code = TranslationServer.standardize_locale(code)
+	var slice_count: int = code.get_slice_count("_")
+	if slice_count == 0:
+		return ""
+	
+	var candidate: String = code.get_slice("_", 1)
+	if candidate.length() == 4:
+		if 1 < slice_count:
+			candidate = code.get_slice("_", 2)
+		else:
+			candidate = ""
+	return candidate

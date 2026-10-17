@@ -19,7 +19,7 @@ func add_currency(id: StringName, title: String, value: int) -> void:
 	
 	new_item.set_cell_mode(1, TreeItem.CELL_MODE_RANGE)
 	new_item.set_range_config(1, 0, 1_000_000, 1.0)
-	new_item.set_range(0, 1.0)
+	new_item.set_range(1, 0.0)
 	new_item.set_editable(1, true)
 	new_item.set_editable(0, false)
 	

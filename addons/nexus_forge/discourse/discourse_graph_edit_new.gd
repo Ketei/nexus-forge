@@ -95,6 +95,7 @@ const DEFAULT_NODE_NAMES: Dictionary[DialogNodes, String] = {
 	DialogNodes.DIALOG_END: "End",
 	DialogNodes.DIALOG_MERGE: "Merge",
 	DialogNodes.LOCALIZED_TEXT: "Localized",
+	DialogNodes.COMMENT: "Comment",
 	DialogNodes.TRAVEL_TO: "TravelTo",
 	DialogNodes.TRAVEL_TARGET: "Waypoint",
 	DialogNodes.TRAVEL_BACK: "TravelBack",
@@ -679,7 +680,7 @@ func new_node_frame(uuid: StringName = &"") -> GraphFrame:
 func get_unique_node_name(desired: StringName, type: DialogNodes, skip_uuid: StringName = &"") -> StringName:
 	var desired_id: String = String(desired).strip_edges()
 	if desired_id.is_empty():
-		desired_id = DEFAULT_NODE_NAMES[type]
+		desired_id = DEFAULT_NODE_NAMES.get(type, "Node")
 	
 	var names: Dictionary[String, Variant] = {}
 	
@@ -2301,7 +2302,7 @@ func set_shortcut_target_id(node_uuid: StringName, id: String) -> void:
 	for anchor in anchor_pointers:
 		anchor.update_anchor(
 				node_uuid,
-				id)
+				valid_id)
 
 
 func set_localized_text_node_text(node_uuid: StringName, text: String) -> void:
@@ -2608,7 +2609,7 @@ func set_waypoint_node_id(node_uuid: StringName, id: String) -> void:
 	for anchor in travel_pointers:
 		anchor.update_waypoint_id(
 				node_uuid,
-				id)
+				valid_id)
 
 
 func _remove_invalid_instances(array: Array) -> void:

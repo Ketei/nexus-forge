@@ -635,7 +635,7 @@ func set_metadata(index: int, path: String, new_value: Variant) -> void:
 		match data_type:
 			TYPE_INT, TYPE_FLOAT:
 				meta_item.set_cell_mode(1, TreeItem.CELL_MODE_RANGE)
-				meta_item.set_range_config(1, -9999, -9999, 1.0 if data_type == TYPE_INT else 0.01)
+				meta_item.set_range_config(1, -9999, 9999, 1.0 if data_type == TYPE_INT else 0.01)
 				meta_item.set_editable(1, true)
 			TYPE_BOOL:
 				meta_item.set_cell_mode(1, TreeItem.CELL_MODE_CHECK)

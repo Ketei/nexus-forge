@@ -30,7 +30,7 @@ func create_item(id: StringName) -> void:
 ## Sets the name of item [param id] to [param new_name] and then
 ## emits relevant signals.
 func set_item_name(id: StringName, new_name: StringName) -> void:
-	if items._items.has(id):
+	if items != null and items._items.has(id):
 		items.set_item_name(id, new_name)
 		item_renamed.emit(id, new_name)
 

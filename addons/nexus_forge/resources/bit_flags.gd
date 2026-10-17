@@ -5,7 +5,11 @@ extends Resource
 ## A serializable object designed to combine the human-readable StringName keys
 ##  with the memory efficiency of bitwise storage.
 
-## The amount of flags BitFlags can hold. Must be a value between 1 and 64 inclusive.
+## The maximum amount of flags this resource can hold. Defaults to 63 to avoid 
+## changint Godot's 64-bit integer sign-bit, but can be safely increased to 64 
+## if interfacing with unsigned 64-bit systems
+## [br][br]
+## Must be a value between 1 and 64 inclusive.
 const MAX_BITMASK: int = 63
 
 @export_storage var _bit_store: int = 0

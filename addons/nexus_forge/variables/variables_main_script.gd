@@ -170,7 +170,7 @@ func _apply_variable_rename(folder: String, old_name: String, new_name: String, 
 	if not variables_tree.rename_variable(old_name, new_name):
 		NFPluginGameHandler._log_msg(
 				"blackboard - editor",
-				"Couldn't rename variable '%s' to '%s'",
+				"Couldn't rename variable '%s' to '%s'" % [old_name, new_name],
 				NFPluginGameHandler._LogLevel.ERROR)
 
 

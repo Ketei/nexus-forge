@@ -97,8 +97,8 @@ func clear_item_data(item_id: StringName) -> void:
 ## it uses already exists or is empty.[br]
 ## [b]Note:[/b] Items are passed by reference, and [param item_sheet] will be
 ## stored AS the reference.
-func add_item(item_sheet: NFItemSheet = null) -> void:
-	if item_sheet.item_id.is_empty() or _items.has(item_sheet.item_id):
+func add_item(item_sheet: NFItemSheet) -> void:
+	if item_sheet == null or item_sheet.item_id.is_empty() or _items.has(item_sheet.item_id):
 		return
 	
 	_items[item_sheet.item_id] = item_sheet

@@ -157,7 +157,7 @@ func _set_node_data(data: Dictionary) -> void:
 		position_offset = metadata["position"]
 	
 	if metadata.has("variable_path") and typeof(metadata["variable_path"]) == TYPE_STRING:
-		variable_path.text = metadata["variable_path"]
+		set_variable_path(metadata["variable_path"])
 
 
 func _on_var_path_edit_toggled(is_toggled: bool) -> void:

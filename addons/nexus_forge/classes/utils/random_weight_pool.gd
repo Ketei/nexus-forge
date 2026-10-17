@@ -11,6 +11,19 @@ var _max_weight: float = 0.0
 
 ## Adds [param item] to the item pool and assigns it the [param weight] provided.
 func add_weighted(item: Variant, weight: float) -> void:
+	if not is_finite(weight):
+		NFPluginGameHandler._log_msg(
+				"",
+				"[NFRandomWeightedPool] Tried to add an item with an INF or NaN weight. Ignoring.",
+				NFPluginGameHandler._LogLevel.ERROR)
+		return
+	elif weight <= 0:
+		NFPluginGameHandler._log_msg(
+				"",
+				"[NFRandomWeightedPool] Can't add an item with a weight of 0 or less. Ignoring",
+				NFPluginGameHandler._LogLevel.ERROR)
+		return
+	
 	if _sorted:
 		_sorted = false
 	var new_item: NFWeightedPoolEntry = NFWeightedPoolEntry.new()

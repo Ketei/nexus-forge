@@ -7,7 +7,7 @@ signal node_activated(node: StringName)
 signal item_renamed(uuid: StringName, old_name: String, new_name: String)
 signal folder_renamed(folder_id: int, old_name: String, new_name: String)
 
-signal item_moved(from_path: String, from_index: int, to_path: String, to_index: int)
+signal item_moved(from_path: String, from_index: int, to_path: String, to_index: int, old_name: String, new_name: String, is_node: bool, uuid: StringName)
 
 signal directory_erase_requested(path: String, index: int, id: int, contents: Array[Dictionary])
 
@@ -78,6 +78,7 @@ const DEFAULT_NODE_NAMES: Dictionary[NFDialogParser.NodeTypes, String] = {
 	NFDialogParser.NodeTypes.DIALOG_END: "End",
 	NFDialogParser.NodeTypes.DIALOG_MERGE: "Merge",
 	NFDialogParser.NodeTypes.LOCALIZED_TEXT: "Localized",
+	NFDialogParser.NodeTypes.COMMENT: "Comment",
 	NFDialogParser.NodeTypes.TRAVEL_TO: "TravelTo",
 	NFDialogParser.NodeTypes.TRAVEL_TARGET: "Waypoint",
 	NFDialogParser.NodeTypes.TRAVEL_BACK: "TravelBack",
@@ -230,6 +231,20 @@ func _drop_data(at_position: Vector2, data: Variant) -> void:
 				else:
 					data.move_after(at_node)
 	
+	var is_node: bool = dropped_item.get_metadata(0)["is_node"]
+	var old_name: String = dropped_item.get_text(0)
+	var new_name: String = old_name
+	var uuid: StringName = dropped_item.get_metadata(0)["uuid"]
+	
+	if is_node:
+		new_name = get_unique_name_for_node(old_name, dropped_item.get_metadata(0)["type"], dropped_item)
+	else:
+		new_name = get_unique_name_on_tree(dropped_item.get_parent(), old_name, dropped_item)
+		
+	if new_name != old_name:
+		dropped_item.set_text(0, new_name)
+		dropped_item.get_metadata(0)["name"] = new_name
+	
 	var new_index: int = dropped_item.get_index()
 	var new_path: String = get_path_to_item(dropped_item)
 	
@@ -238,7 +253,11 @@ func _drop_data(at_position: Vector2, data: Variant) -> void:
 			original_path,
 			original_index,
 			new_path,
-			new_index)
+			new_index,
+			old_name,
+			new_name,
+			is_node,
+			uuid)
 
 
 func _get_drag_data(at_position: Vector2) -> Variant:
@@ -373,21 +392,8 @@ func move_item(from_path: String, to: String, index: int) -> void:
 	if target_item == null or new_parent == null:
 		return
 	
-	if is_folder(target_item):
-		for item in new_parent.get_children():
-			if item == target_item:
-				continue
-			if is_folder(item) and item.get_text(0) == new_name:
-				return
-	else:
-		var used_ids: Dictionary[String, Variant] = {}
-		
-		for node_id in nodes:
-			if nodes[node_id] == target_item:
-				continue
-			used_ids[nodes[node_id].get_text(0)] = null
-		
-		if used_ids.has(new_name):
+	for child in new_parent.get_children():
+		if child != target_item and child.get_text(0) == new_name:
 			return
 	
 	if target_item.get_parent() != new_parent:
@@ -396,6 +402,7 @@ func move_item(from_path: String, to: String, index: int) -> void:
 	
 	if target_item.get_text(0) != new_name:
 		target_item.set_text(0, new_name)
+		target_item.get_metadata(0)["name"] = new_name
 	
 	var child_count: int = new_parent.get_child_count()
 	var max_index: int = child_count - 1
@@ -421,7 +428,7 @@ func set_folder_name(folder_id: int, new_name: String) -> void:
 	for item in target.get_parent().get_children():
 		if item == target:
 			continue
-		if is_folder(item) and item.get_text(0) == new_name:
+		if item.get_text(0) == new_name:
 			return
 	
 	target.set_text(0, new_name)
@@ -653,13 +660,20 @@ func remove_dialog_node(uuid: StringName) -> bool:
 func get_unique_name_for_node(desired_name: String, type: int, skip_item: TreeItem = null) -> String:
 	desired_name = desired_name.strip_edges()
 	if desired_name.is_empty():
-		desired_name = DEFAULT_NODE_NAMES[type]
+		desired_name = DEFAULT_NODE_NAMES.get(type, "Node")
+		
 	var all_names: Dictionary = {}
 	
 	for node in nodes.values():
 		if node == skip_item:
 			continue
 		all_names[node.get_text(0)] = null
+	
+	if skip_item != null and skip_item.get_parent() != null:
+		for child in skip_item.get_parent().get_children():
+			if child == skip_item or child.get_metadata(0)["is_node"]:
+				continue
+			all_names[child.get_text(0)] = null
 	
 	if not all_names.has(desired_name):
 		return desired_name
@@ -828,6 +842,7 @@ func _set_folder_items(from: TreeItem, _on: Dictionary[String, TreeItem]) -> voi
 	for item in from.get_children():
 		if not item.get_metadata(0)["is_node"]:
 			_on[_get_path_of_node(item)] = item
+			_set_folder_items(item, _on)
 
 
 func get_collapsed_folders() -> Dictionary[String, bool]:

@@ -15,14 +15,14 @@ extends Resource
 
 
 ## Creates a new currency with [param currency_id] unless it already exists.
-func create_currency(currency_id: StringName, value: int = 0, name: String = "") -> void:
+func create_currency(currency_id: StringName, value: int = 1, name: String = "") -> void:
 	if _currencies.has(currency_id):
 		return
 	var currency_data: Dictionary[String, Variant] = {}
 	
 	var new_entry: Dictionary = {
 		"name": name,
-		"value": value,
+		"value": maxi(1, value),
 		"custom_data": currency_data}
 	_currencies[currency_id] = new_entry
 	

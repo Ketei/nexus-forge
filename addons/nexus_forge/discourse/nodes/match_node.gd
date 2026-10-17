@@ -323,7 +323,7 @@ func _set_node_data(data: Dictionary) -> void:
 				if val_type == TYPE_FLOAT or val_type == TYPE_INT:
 					var spin: SpinBox = field.get_child(0)
 					spin.set_value_no_signal(val)
-					field.set_meta(&"old_value", spin.value)
+					spin.set_meta(&"old_value", spin.value)
 
 
 func _get_issues() -> PackedStringArray:

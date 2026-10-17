@@ -41,7 +41,7 @@ func load_dialog(path: String, starting_id: StringName = &"") -> bool:
 				_next_uuid = _dialog_resource.entry_node
 				NFPluginGameHandler._log_msg(
 						"discourse",
-						"ID '%s' was not found. Setting to entry",
+						"ID '%s' was not found. Setting to entry" % starting_id,
 						NFPluginGameHandler._LogLevel.WARNING)
 		return true
 	else:
@@ -75,9 +75,9 @@ func load_dialog(path: String, starting_id: StringName = &"") -> bool:
 
 ## Sets the dialog to be at a specific point. If invalid it'll
 ## set the dialog to be at the beggining.
-func set_dialog_id(id: StringName) -> void:
+func set_dialog_id(id: StringName) -> bool:
 	if _dialog_resource == null:
-		return
+		return false
 	
 	if _dialog_resource.node_data.has(id):
 		_next_uuid = id
@@ -88,8 +88,11 @@ func set_dialog_id(id: StringName) -> void:
 		else:
 			NFPluginGameHandler._log_msg(
 					"discourse",
-					"'%s' does not exist in dialog. Set aborted." % id,
+					"Attempted to set an invalid dialog ID '%s' in loaded resource. Setting to dialogue end." % id,
 					NFPluginGameHandler._LogLevel.ERROR)
+			_next_uuid = &""
+			return false
+	return true
 
 
 func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:

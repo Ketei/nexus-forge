@@ -67,7 +67,7 @@ func _build_callable_for_method(text: String) -> Callable:
 		else:
 			final_arguments.append(argument)
 	
-	var callable: Callable = Callable(NexusForge.Discourse.API, method)
+	var callable: Callable = Callable(NexusForge._phrase_api, method)
 	
 	if not final_arguments.is_empty():
 		return _build_lazy_wrapper.bind(callable, final_arguments)
@@ -225,6 +225,7 @@ func set_entry(key: StringName, text: String) -> void:
 		"text": text,
 		"formats": formats}
 	_phrases[key] = phrase_entry
+	_value_keys.erase(key)
 
 
 ## Returns the text that the phrase [param key] is set to or an empty

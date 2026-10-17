@@ -909,13 +909,13 @@ func _parse_search_query(query: String) -> Dictionary:
 	var name_prefix: String = "name:"
 	var category_prefix: String = "category:"
 	
-	var cat_idx: int = query.find(category_prefix)
+	var cat_idx: int = _find_prefix(query, category_prefix)
 	if cat_idx == -1:
-		cat_idx = query.find("c:")
+		cat_idx = _find_prefix(query, "c:")
 		category_prefix = "c:"
-	var name_idx: int = query.find(name_prefix)
+	var name_idx: int = _find_prefix(query, name_prefix)
 	if name_idx == -1:
-		name_idx = query.find("n:")
+		name_idx = _find_prefix(query, "n:")
 		name_prefix = "n:"
 	
 	# If neither tag is present, the whole query is just the item text.
@@ -1436,3 +1436,17 @@ func create_flag_item(flag_id: String, flag_value: NFItemSheet.ItemFlag) -> Chec
 func reset_flags() -> void:
 	for item:CheckBox in items_flags_container.get_children():
 		item.set_pressed_no_signal(false)
+
+
+func _find_prefix(query: String, prefix: String) -> int:
+	var from: int = 0
+	var idx: int = query.find(prefix, from)
+	
+	while idx != -1:
+		if idx == 0 or query[idx - 1] == " ":
+			return idx
+			
+		from = idx + 1
+		idx = query.find(prefix, from)
+		
+	return -1

@@ -926,12 +926,12 @@ func clear_locales(clear_main: bool = true) -> void:
 
 
 func remove_locale(locale: String) -> void:
+	locale = TranslationServer.standardize_locale(locale)
 	if locale.is_empty():
 		return
 	
-	var parts: PackedStringArray = TranslationServer.standardize_locale(locale).split("_")
-	var lang: String = parts[0]
-	var reg: String = parts[1] if parts.size() == 2 else ""
+	var lang: String = NFStringUtils.get_locale_language(locale)
+	var reg: String = NFStringUtils.get_locale_country(locale)
 	
 	_remove_locale_phrase_menu(lang, reg)
 	
@@ -4768,13 +4768,36 @@ func _on_discourse_folder_renamed(folder_id: int, old_name: String, new_name: St
 	_on_conversation_changed()
 
 
-func _on_discourse_item_moved(from_path: String, from_index: int, to_path: String, to_index: int) -> void:
+func _on_discourse_item_moved(from_path: String, from_index: int, to_path: String, to_index: int, old_name: String, new_name: String, is_node: bool, uuid: StringName) -> void:
 	undo.create_action("Move Discourse Item")
-	undo.add_do_method(discourse_nodes_tree.move_item.bind(from_path, to_path, to_index))
-	undo.add_undo_method(discourse_nodes_tree.move_item.bind(to_path, from_path, from_index))
+	undo.add_do_method(_do_move_discourse_item.bind(from_path, to_path, to_index, old_name, new_name, is_node, uuid))
+	undo.add_undo_method(_do_move_discourse_item.bind(to_path, from_path, from_index, new_name, old_name, is_node, uuid))
 	undo.commit_action(false)
 	
 	_on_conversation_changed()
+
+
+func _do_move_discourse_item(from_path: String, to_path: String, to_index: int, old_name: String, new_name: String, is_node: bool, uuid: StringName) -> void:
+	discourse_nodes_tree.move_item(from_path, to_path, to_index)
+	
+	if not is_node or old_name == new_name:
+		return
+	
+	var new_id: StringName = StringName(new_name)
+	if not discourse_graph_edit.has_discourse_node(uuid):
+		return
+	
+	var node: DiscourseGraphNode = discourse_graph_edit.get_discourse_node(uuid)
+	node.set_node_id(new_id)
+	
+	if node.is_node_localized():
+		match node.node_type:
+			DiscourseGraphNode.DialogueNodeType.DIALOG:
+				localization_nodes_tree.rename_dialog_node(uuid, new_id)
+			DiscourseGraphNode.DialogueNodeType.CHOICES:
+				localization_nodes_tree.rename_options_node(uuid, new_id)
+			DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
+				localization_nodes_tree.rename_text_node(uuid, new_id)
 
 
 func _on_discourse_remove_directory_requested(path: String, index: int, id: int, contents: Array[Dictionary]) -> void:
@@ -5604,27 +5627,46 @@ func _on_nodes_created_batch(node_uuids: Array[StringName], action_name: String 
 # --- Other Actions ---
 
 func _get_locale_snapshot(locale: String) -> Dictionary[String, Dictionary]:
+	locale = TranslationServer.standardize_locale(locale)
 	var snapshot: Dictionary[String, Dictionary] = {
 		"format_strings": {},
-		"localization": {}
-	}
-	var std_locale: String = TranslationServer.standardize_locale(locale)
+		"localization": {}}
 	
-	# Backup Phrase formats and cases
-	for phrase_key in active_conversation.format_strings:
-		if active_conversation.format_strings[phrase_key].has(std_locale):
-			snapshot["format_strings"][phrase_key] = active_conversation.format_strings[phrase_key][std_locale].duplicate(true)
+	if locale.is_empty():
+		return snapshot
 	
-	# Backup Graph Node texts/choices
-	for node_uuid in active_conversation.localization:
-		var node_dict: Dictionary = active_conversation.localization[node_uuid]
-		if node_dict["locales"].has(std_locale):
-			var data: Variant = node_dict["locales"][std_locale]
-			var data_type: int = typeof(data)
-			if data_type == TYPE_ARRAY or data_type == TYPE_DICTIONARY:
-				snapshot["localization"][node_uuid] = data.duplicate(true)
-			else:
-				snapshot["localization"][node_uuid] = data
+	var language: String = NFStringUtils.get_locale_language(locale)
+	var region: String = NFStringUtils.get_locale_country(locale)
+	
+	var locales_to_snapshot: Array[String] = [locale]
+	if region.is_empty() and active_conversation.locale_map.has(language):
+		for region_code in active_conversation.locale_map[language]:
+			locales_to_snapshot.append(language + "_" + region_code)
+	
+	for code in locales_to_snapshot:
+		if not snapshot["format_strings"].has(code):
+			snapshot["format_strings"][code] = {}
+		if not snapshot["localization"].has(code):
+			snapshot["localization"][code] = {}
+		
+		var formats_target: Dictionary = snapshot["format_strings"][code]
+		var nodes_target: Dictionary = snapshot["localization"][code]
+		
+		# Backup Phrase formats and cases
+		for phrase_key in active_conversation.format_strings:
+			if active_conversation.format_strings[phrase_key].has(code):
+				formats_target[phrase_key] = active_conversation.format_strings[phrase_key][code].duplicate(true)
+	
+		# Backup Graph Node texts/choices
+		for node_uuid in active_conversation.localization:
+			var node_dict: Dictionary = active_conversation.localization[node_uuid]
+			if node_dict["locales"].has(code):
+				var data: Variant = node_dict["locales"][code]
+				var data_type: int = typeof(data)
+				if data_type == TYPE_ARRAY or data_type == TYPE_DICTIONARY:
+					nodes_target[node_uuid] = data.duplicate(true)
+				else:
+					nodes_target[node_uuid] = data
 	
 	return snapshot
 
@@ -5632,37 +5674,59 @@ func _get_locale_snapshot(locale: String) -> Dictionary[String, Dictionary]:
 func _do_add_locale_action(locale: String, snapshot: Dictionary = {}) -> void:
 	active_conversation.add_locale(locale)
 	
-	if not snapshot.is_empty():
-		var std_locale: String = TranslationServer.standardize_locale(locale)
-		for phrase_key in snapshot["format_strings"]:
-			if active_conversation.format_strings.has(phrase_key):
-				var data: Variant = snapshot["format_strings"][phrase_key]
-				var data_type: int = typeof(data)
-				if data_type == TYPE_ARRAY or data_type == TYPE_DICTIONARY:
-					active_conversation.format_strings[phrase_key][std_locale] = data.duplicate(true)
-				else:
-					active_conversation.format_strings[phrase_key][std_locale] = data
+	var has_region: bool = locale.contains("_")
+	var lang: String = locale.get_slice("_", 0) if has_region else locale
+	var reg: String = locale.get_slice("_", 1) if has_region else ""
 	
-		for node_uuid in snapshot["localization"]:
-			var data: Variant = snapshot["localization"][node_uuid]
-			var data_type: int = typeof(data)
-			if active_conversation.localization.has(node_uuid):
-				if data_type == TYPE_ARRAY or data_type == TYPE_DICTIONARY:
-					active_conversation.localization[node_uuid]["locales"][std_locale] = data.duplicate(true)
-				else:
-					active_conversation.localization[node_uuid]["locales"][std_locale] = data
-	
-	var parts: PackedStringArray = locale.split("_", false)
-	if 1 < parts.size():
-		languages_tree.create_region(parts[0], parts[1])
+	if has_region:
+		languages_tree.create_region(lang, reg)
 	else:
 		languages_tree.create_language(locale)
+	
 	add_locale(locale)
+	
+	if snapshot.is_empty():
+		return
+	
+	var restored_codes: Array = snapshot["format_strings"].keys()
+	
+	for code:String in restored_codes:
+		var code_has_region: bool = code.contains("_")
+		var code_lang: String = code.get_slice("_", 0) if code_has_region else code
+		var code_reg: String = code.get_slice("_", 1) if code_has_region else ""
+		
+		active_conversation.add_locale(code)
+		
+		var formats: Dictionary = snapshot["format_strings"][code]
+		for phrase_key in formats:
+			if active_conversation.format_strings.has(phrase_key):
+				var data: Variant = formats[phrase_key]
+				var data_type: int = typeof(data)
+				if data_type == TYPE_ARRAY or data_type == TYPE_DICTIONARY:
+					active_conversation.format_strings[phrase_key][code] = data.duplicate(true)
+				else:
+					active_conversation.format_strings[phrase_key][code] = data
+		
+		var nodes: Dictionary = snapshot["localization"][code]
+		for node_uuid in nodes:
+			if active_conversation.localization.has(node_uuid):
+				var data: Variant = nodes[node_uuid]
+				var data_type: int = typeof(data)
+				if data_type == TYPE_ARRAY or data_type == TYPE_DICTIONARY:
+					active_conversation.localization[node_uuid]["locales"][code] = data.duplicate(true)
+				else:
+					active_conversation.localization[node_uuid]["locales"][code] = data
+		
+		if code_has_region:
+			languages_tree.create_region(code_lang, code_reg)
+		else:
+			languages_tree.create_language(code_lang)
+		
+		add_locale(code)
 
 
 func _do_remove_locale_action(locale: String) -> void:
 	active_conversation.remove_locale(locale)
-	
 	remove_locale(locale)
 	languages_tree.erase_language(locale)
 

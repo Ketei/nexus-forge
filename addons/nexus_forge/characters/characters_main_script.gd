@@ -1007,7 +1007,9 @@ func load_character(res_id: int) -> void:
 		
 		value.allow_greater = stat_range.allow_greater
 		value.allow_lesser = stat_range.allow_lesser
-		value.set_bounds(stat_range.min_value, stat_range.max_value)
+		value.min_value = stat_range.min_value
+		value.max_value = stat_range.max_value
+		
 		stat.get_meta(&"use_max").set_pressed_no_signal(not stat_range.allow_greater)
 		stat.get_meta(&"use_min").set_pressed_no_signal(not stat_range.allow_lesser)
 		min_spinbox.editable = stat_range.allow_lesser
@@ -1175,7 +1177,7 @@ func create_stat_item(stat_id: StringName, type: int, default: float) -> VBoxCon
 	char_stats_container.add_child(new_stat)
 	
 	value_ln.focus_next = allow_lesser.get_path()
-	allow_lesser.focus_previous = new_value.get_path()
+	allow_lesser.focus_previous = value_ln.get_path()
 	allow_lesser.focus_next = limit_min_ln.get_path()
 	limit_min_ln.focus_previous = allow_lesser.get_path()
 	limit_min_ln.focus_next = allow_greater.get_path()
@@ -1303,19 +1305,13 @@ func set_focus_order_for_trait(trait_entry: HBoxContainer) -> void:
 	elif 0 < char_stats_container.get_child_count():
 		var last_stat: VBoxContainer = char_stats_container.get_child(-1)
 		var last_spin: SpinBox = last_stat.get_meta(&"max")
-		var last_line: LineEdit = last_stat.get_line_edit()
+		var last_line: LineEdit = last_spin.get_line_edit()
 		trait_line.focus_previous = last_line.get_path()
 		last_line.focus_next = trait_line.get_path()
 	else:
 		trait_line.focus_previous = ^""
 	
-	if 0 < child_count:
-		var prev_trait: HBoxContainer = char_traits_container.get_child(-2)
-		var prev_spin: SpinBox = prev_trait.get_meta(&"value")
-		var prev_line: LineEdit = prev_spin.get_line_edit()
-		trait_line.focus_next = prev_line.get_path()
-	else:
-		trait_line.focus_next = ^""
+	trait_line.focus_next = ^""
 
 
 func _on_stat_clamp_toggled(enabled: bool, check: CheckBox, stat: SpinBox, min_box: SpinBox, max_box: SpinBox, limit_btn: Button, is_min: bool) -> void:

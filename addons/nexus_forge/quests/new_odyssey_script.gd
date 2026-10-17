@@ -1180,9 +1180,9 @@ func _on_title_edit_toggled(is_toggled: bool) -> void:
 	if selected_stage.is_empty() and selected_objective.is_empty():
 		action_title = "Set Quest Title"
 	elif selected_objective.is_empty():
-		action_title = "Set Stage '%s' Objective '%s' Title" % [selected_stage, selected_objective]
-	else:
 		action_title = "Set Stage '%s' Title" % selected_stage
+	else:
+		action_title = "Set Stage '%s' Objective '%s' Title" % [selected_stage, selected_objective]
 	
 	undo.create_action(action_title)
 	undo.add_do_method(_do_set_title_of.bind(
@@ -1220,9 +1220,9 @@ func _on_description_focus_lost() -> void:
 	if selected_stage.is_empty() and selected_objective.is_empty():
 		action_title = "Set Quest Description"
 	elif selected_objective.is_empty():
-		action_title = "Set Stage '%s' Objective '%s' Description" % [selected_stage, selected_objective]
-	else:
 		action_title = "Set Stage '%s' Description" % selected_stage
+	else:
+		action_title = "Set Stage '%s' Objective '%s' Description" % [selected_stage, selected_objective]
 	
 	undo.create_action(action_title)
 	undo.add_do_method(_do_set_description_of.bind(
@@ -1752,7 +1752,7 @@ func _do_update_stage_id(from: StringName, to: StringName) -> void:
 	if not quest_resource.has_stage(from):
 		NFPluginGameHandler._log_msg(
 				"odyssey - editor",
-				"Couldn't set ID of stage '%s'. Stage not found",
+				"Couldn't set ID of stage '%s'. Stage not found" % from,
 				NFPluginGameHandler._LogLevel.ERROR)
 		return
 	

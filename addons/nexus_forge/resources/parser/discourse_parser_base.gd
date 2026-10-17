@@ -102,7 +102,7 @@ var _parser_cache: NFLRUCache = null
 var _parser_regex: RegEx = RegEx.new()
 var _node_travel_stack: Array[StringName] = []
 
-var _path_to_id: Dictionary[StringName, StringName] = {}
+var _path_to_id: Dictionary[String, StringName] = {}
 # {"dialogs.village.mayor": {"data_path": "res://asdas", "locale_file": "---.json"}
 var _id_to_data: Dictionary[StringName, Dictionary] = {}
 
@@ -117,9 +117,7 @@ var _dialog_edits: Dictionary[String, DiscourseDialog.NFDialogEntryOverride] = {
 		#}
 	#}
 }
-var _phrase_overrides: Dictionary[String, DiscourseDialog.NFPhraseEntryOverride] = {
-	"dialogs.village.mayor": DiscourseDialog.NFPhraseEntryOverride.new()
-}
+var _phrase_overrides: Dictionary[String, DiscourseDialog.NFPhraseEntryOverride] = {}
 
 
 func _init() -> void:
@@ -839,6 +837,7 @@ func _dialog_resource_set() -> void:
 		_load_locale_into(_dialog_resource, locale)
 	
 	_dialog_resource._set_locale(locale)
+
 #endregion
 
 
@@ -900,6 +899,95 @@ func load_dialog(path: String, starting_id: StringName = &"") -> bool:
 	return true
 
 
+## Registers a new base dialogue to the parser so it can be properly loaded
+## with [method NFDialogParser.load_dialog] and
+## [method NFDialogParser.prepare_dialog]. Returns [code]true[/code] if
+## the registration was successful.
+## [br][br]
+## [b]Note:[/b] This method is intended to register BASE dialogues. If you want
+## to override a dialogue use [method NFDialogParser.override_dialog_data] and
+## [method NFDialogParser.override_dialog_locale] respectively.
+func register_dialog(dialog_id: StringName, resource_path: String, json_path: String) -> bool:
+	if _id_to_data.has(dialog_id):
+		NFPluginGameHandler._log_msg(
+				"discourse",
+				"Tried to register dialogue '%s' with ID '%s' but the ID is already taken. Aborting" % [resource_path, dialog_id],
+				NFPluginGameHandler._LogLevel.ERROR)
+		return false
+	elif _path_to_id.has(resource_path):
+		NFPluginGameHandler._log_msg(
+				"discourse",
+				"Tried to register dialogue '%s' but the resource is already registered with ID '%s'. Aborting" % [resource_path, _path_to_id[resource_path]],
+				NFPluginGameHandler._LogLevel.ERROR)
+		return false
+	elif not FileAccess.file_exists(resource_path):
+		NFPluginGameHandler._log_msg(
+				"discourse",
+				"Tried to register dialogue but resource '%s' doesn't exist. Aborting" % resource_path,
+				NFPluginGameHandler._LogLevel.ERROR)
+		return false
+	elif json_path.get_extension() != "json":
+		NFPluginGameHandler._log_msg(
+				"discourse",
+				"Tried to register dialogue but '%s' is not a path to a valid JSON. Aborting" % json_path,
+				NFPluginGameHandler._LogLevel.ERROR)
+		return false
+	
+	_path_to_id[resource_path] = dialog_id
+	_id_to_data[dialog_id] = {
+		"data_path": resource_path,
+		"locale_file": json_path}
+	
+	return true
+
+
+## Removes [param dialog_id] from the internal registry, meaning that this parser
+## will no longer be able to load it.[br]
+## If [param path] is empty, the data will be removed using only the [param dialog_id]
+## but if a path is specified it must match with the resource registered in order
+## to be removed. Returns [code]true[/code] if the operation was successful.
+## [br][br]
+## [b]Note:[/b] A successful operation only means that the action succeeded,
+## not that any data was changed.
+func unregister_dialog(dialog_id: StringName, path: String = "") -> bool:
+	if not _id_to_data.has(dialog_id):
+		return true
+	path = path.simplify_path()
+	
+	var resource_filepath: String = _id_to_data[dialog_id]["data_path"]
+	if not path.is_empty() and resource_filepath != path:
+		return false
+	
+	_path_to_id.erase(resource_filepath)
+	_id_to_data.erase(dialog_id)
+	return true
+
+
+## Returns if the resource at [param path] is currently registered in this
+## parser.
+func is_resource_registered(path: String) -> bool:
+	return _path_to_id.has(path.simplify_path())
+
+
+## Returns whether the [param id] is already registered in this parser.
+func is_resource_id_registered(id: StringName) -> bool:
+	return _id_to_data.has(id)
+
+
+## Returns the ID of the registered resource at [param path] or an empty
+## [code]&""[/code] if not found.
+func get_resource_id(path: String) -> StringName:
+	return _path_to_id.get(path.simplify_path(), &"")
+
+
+## Returns the path to the resource registered with the [param id] or
+## an empty string if not found.
+func get_resource_path_of_resource_id(id: StringName) -> String:
+	if not _id_to_data.has(id):
+		return ""
+	return _id_to_data[id]["data_path"]
+
+
 ## Loads the dialog from [param path] and localization files,
 ## then stores them in the dialogue cache making
 ## [method NFDialogParser.load_dialog] calls for the file at [param path]
@@ -936,16 +1024,22 @@ func prepare_dialog(path: String) -> bool:
 	return true
 
 
-## Sets the dialog to be at a specific point. If invalid it'll
-## set the dialog to be at the beggining.
-func set_dialog_id(id: StringName) -> void:
+## Sets the dialog to be at the specific point of [param id].[br]
+## Returns [code]true[/code] if the ID was set successfully.
+func set_dialog_id(id: StringName) -> bool:
 	if _dialog_resource == null:
-		return
+		return false
 	
-	if _dialog_resource.node_logic.has(id):
-		_next_uuid = id
-	else:
+	if not _dialog_resource.node_logic.has(id):
+		NFPluginGameHandler._log_msg(
+				"discourse",
+				"Attempted to set an invalid dialog ID '%s' in loaded resource. Setting to dialogue end." % id,
+				NFPluginGameHandler._LogLevel.ERROR)
 		_next_uuid = &""
+		return false
+	
+	_next_uuid = id
+	return true
 
 
 ## Returns the ID of the current dialog position.

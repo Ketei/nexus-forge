@@ -233,7 +233,7 @@ func move_stage(stage_id: StringName, to_index: int) -> void:
 	if to_index < -child_count or max_index < to_index:
 		NFPluginGameHandler._log_msg(
 				"odyssey - editor",
-				"Failed changing stage '%s' index. Index out of bounds",
+				"Failed changing stage '%s' index. Index out of bounds" % stage_id,
 				NFPluginGameHandler._LogLevel.ERROR)
 		return
 	

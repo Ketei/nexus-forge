@@ -211,7 +211,7 @@ func is_folder_empty(folder_path: String) -> bool:
 
 
 ## Resets a variable to its default value. Returns whether a variable was
-## deleted or not.[br]
+## reset or not.[br]
 ## [b]Note:[/b] Calling this on a programmatically created variable will erase
 ## it instead.
 func reset_variable(variable_path: String) -> bool:
@@ -220,7 +220,10 @@ func reset_variable(variable_path: String) -> bool:
 		return false
 	
 	if _active_variables.has(parts["folder"]):
-		return _active_variables[parts["folder"]].erase(parts["variable"])
+		var erased: bool = _active_variables[parts["folder"]].erase(parts["variable"])
+		if erased:
+			data_erased.emit(parts["path"])
+		return erased
 	return false
 
 

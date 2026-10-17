@@ -89,20 +89,31 @@ func log_state() -> Dictionary[StringName, Dictionary]:
 
 ## Restores the log from [param data].
 func restore_state(data: Dictionary) -> void:
+	var success_values: Array = NFQuestManager.SuccessStatus.values()
 	for key_entry in data:
 		var key_type: int = typeof(key_entry)
 		if (key_type != TYPE_STRING_NAME and key_type != TYPE_STRING) or typeof(data[key_entry]) != TYPE_DICTIONARY:
 			continue
 		
-		var status: NFQuestManager.SuccessStatus = NFQuestManager.SuccessStatus.UNKNOWN
+		var status: int = NFQuestManager.SuccessStatus.UNKNOWN
 		
-		if data[key_entry].has("success_status") and typeof(data[key_entry]["success_status"]) == TYPE_INT:
-			status = data[key_entry]["success_status"]
-		else:
-			NFPluginGameHandler._log_msg(
-					"quest - log",
-					"NFQuest '%s' doesn't have a valid success status." % key_entry,
-					NFPluginGameHandler._LogLevel.WARNING)
+		if data[key_entry].has("success_status"):
+			var val: Variant = data[key_entry]["success_status"]
+			var type: int = typeof(data[key_entry]["success_status"])
+			if type == TYPE_INT or type == TYPE_FLOAT:
+				var num_val: int = int(val)
+				if success_values.has(num_val):
+					status = num_val
+				else:
+					NFPluginGameHandler._log_msg(
+							"quest - log",
+							"NFQuest '%s' success status value is not valid." % key_entry,
+							NFPluginGameHandler._LogLevel.WARNING)
+			else:
+				NFPluginGameHandler._log_msg(
+						"quest - log",
+						"NFQuest '%s' doesn't have a valid success status." % key_entry,
+						NFPluginGameHandler._LogLevel.WARNING)
 		
 		var quest_entry: NFQuestLogEntry = NFQuestLogEntry.new(key_entry, status)
 		
@@ -155,6 +166,7 @@ class NFQuestLogEntry extends NFQuestLogStatusEntry:
 		success_status = status
 	
 	func _load_from_data(dict: Dictionary):
+		var success_status: Array = NFQuestManager.SuccessStatus.values()
 		_entries.clear()
 		
 		for key_entry in dict:
@@ -163,14 +175,24 @@ class NFQuestLogEntry extends NFQuestLogStatusEntry:
 			if (key_type != TYPE_STRING_NAME and key_type != TYPE_STRING) or typeof(dict[key_entry]) != TYPE_DICTIONARY:
 				continue
 			
-			var success: NFQuestManager.SuccessStatus = NFQuestManager.SuccessStatus.UNKNOWN
-			if dict[key_entry].has("success_status") and typeof(dict[key_entry]["success_status"]) == TYPE_INT:
-				success = dict[key_entry]["success_status"]
+			var success: int = NFQuestManager.SuccessStatus.UNKNOWN
+			if dict[key_entry].has("success_status"):
+				var val: Variant = dict[key_entry]["success_status"]
+				var type: int = typeof(val)
+				if type == TYPE_FLOAT or type == TYPE_INT:
+					var val_int: int = int(val)
+					if success_status.has(val_int):
+						success = val_int
+					else:
+						NFPluginGameHandler._log_msg(
+								"quest - log",
+								"NFQuest '%s' success status value is not valid." % key_entry,
+								NFPluginGameHandler._LogLevel.WARNING)
 			else:
 				NFPluginGameHandler._log_msg(
-					"quest - log",
-					"NFQuest '%s' doesn't have a valid success status." % key_entry,
-					NFPluginGameHandler._LogLevel.WARNING)
+						"quest - log",
+						"NFQuest '%s' doesn't have a valid success status." % key_entry,
+						NFPluginGameHandler._LogLevel.WARNING)
 			
 			var entry: NFQuestLogStageEntry = NFQuestLogStageEntry.new(key_entry, success)
 			entry._flags = NFBitUtils.set_bit_index(0, 0, true)

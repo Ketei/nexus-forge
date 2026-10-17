@@ -28,10 +28,18 @@ func _ready() -> void:
 
 
 func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
-	return typeof(data) == TYPE_DICTIONARY and data.has_all(["type", "files"]) and typeof(data["type"]) == TYPE_STRING and data["type"] == "files" and typeof(data["files"]) == TYPE_PACKED_STRING_ARRAY and data["files"].size() == 1
+	return typeof(data) == TYPE_DICTIONARY and\
+			data.has_all(["type", "files"]) and\
+			typeof(data["type"]) == TYPE_STRING and\
+			data["type"] == "files" and\
+			typeof(data["files"]) == TYPE_PACKED_STRING_ARRAY and\
+			data["files"].size() == 1 and\
+			FileAccess.file_exists(data["files"][0])
 
 
 func _drop_data(_at_position: Vector2, data: Variant) -> void:
+	if not FileAccess.file_exists(data["files"][0]):
+		return
 	var res_load: Resource = load(data["files"][0])
 	var script: Script = res_load.get_script() if res_load != null else null
 	if res_load != null and script != null and script.get_global_name() == resource_class:

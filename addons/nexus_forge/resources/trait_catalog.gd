@@ -105,7 +105,7 @@ func create_trait(trait_id: StringName) -> void:
 	
 	var entry: Dictionary[String, Variant] = {
 		"name": String(trait_id).capitalize(),
-		"dscription": "",
+		"description": "",
 		"custom_data": NFDictUtils.create_typed(TYPE_STRING, TYPE_NIL)}
 	
 	_trait_data[trait_id] = entry

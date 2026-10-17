@@ -26,7 +26,7 @@ func from_value(total_value: int) -> int:
 	elif total_value == value:
 		return 1
 	else:
-		return floori(total_value / float(value))
+		return total_value / value
 
 
 ## Returns whether this currency was created programatically within

@@ -389,8 +389,8 @@ func _do_hybridize_species(target: StringName, dominant: StringName, recessive: 
 		races_tree.hybridize_species(target, dominant, recessive)
 	
 		hybrid_info_container.visible = true
-		hybrid_a.text = dom_opt_btn.get_selected_metadata()
-		hybrid_b.text = sub_opt_btn.get_selected_metadata()
+		hybrid_a.text = String(dominant)
+		hybrid_b.text = String(recessive)
 
 
 func _on_hybridize_cancelled() -> void:
@@ -1275,7 +1275,7 @@ func _set_focus_for_skill(skill: HBoxContainer) -> void:
 	var current_skills: int = race_skill_container.get_child_count()
 	var skill_idx: int = skill.get_index()
 	
-	if skill_idx < 0:
+	if 0 < skill_idx:
 		var prev_skill: HBoxContainer = race_skill_container.get_child(skill_idx - 1)
 		var prev_line: LineEdit = prev_skill.get_meta(&"value").get_line_edit()
 		prev_line.focus_next = line.get_path()

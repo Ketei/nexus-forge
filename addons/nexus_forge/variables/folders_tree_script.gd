@@ -217,7 +217,7 @@ func rename_folder(path: String, to: String) -> bool:
 	if valid_name != to:
 		NFPluginGameHandler._log_msg(
 				"blackboard - editor",
-				"Tried to rename folder to '%s' but name is already taken or invalid. Using '%s' instead.",
+				"Tried to rename folder to '%s' but name is already taken or invalid. Using '%s' instead." % [to, valid_name],
 				NFPluginGameHandler._LogLevel.WARNING)
 		to = valid_name
 		success = false

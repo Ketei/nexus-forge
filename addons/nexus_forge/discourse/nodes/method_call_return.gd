@@ -27,8 +27,11 @@ func _post_init() -> void:
 	methods_node.fit_to_longest_item = false
 	methods_node.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	methods_node.custom_minimum_size.y = 32
-
-	for method:String in available_methods.keys():
+	
+	var method_keys: Array = available_methods.keys()
+	method_keys.sort_custom(NFArrayUtils.sort_custom_alphabetically_asc)
+	
+	for method:String in method_keys:
 		methods_node.add_item(method.capitalize())
 		methods_node.set_item_metadata(-1, method)
 	

@@ -5,6 +5,8 @@ extends RefCounted
 ## This object will contain data to quickly re-format a [DiscourseDialog]
 ## dialog quicker by saving generated lambda functions to access variable data.
 
+static var _format_regex: RegEx
+
 ## The language this dialog is in.
 var locale: String = ""
 ## The unformatted dialog this parser formats.
@@ -13,19 +15,32 @@ var _format_args: Dictionary[String, Variant] = {}
 var _phrases_format: Dictionary[String, Dictionary] = {}
 
 
-func _find_case(on_format: String, on_argument: String, case: String) -> String:
+
+static func _static_init() -> void:
+	_format_regex = RegEx.new()
+	_format_regex.compile("\\{([^\\{\\}]*)\\}")
+
+
+func _find_case(on_format: String, on_argument: String, case: String) -> Dictionary[String, String]:
+	var result: Dictionary[String, String] = {
+		"case": case,
+		"value": on_argument}
+	
 	var format_dict: Variant = _phrases_format.get(on_format)
 	if typeof(format_dict) != TYPE_DICTIONARY:
-		return ""
+		return result
 	
-	var arguments_dict: Dictionary = format_dict[on_format]["arguments"]
-	var argument_entry: Variant = arguments_dict.get(on_argument)
-	
+	var argument_entry: Variant = format_dict["arguments"].get(on_argument)
 	if typeof(argument_entry) != TYPE_DICTIONARY:
-		return ""
+		return result
 	
-	var custom_cases: Dictionary = argument_entry["custom"]
-	return custom_cases.get(case, argument_entry["default"])
+	var case_val: Variant = argument_entry["cases"].get(case)
+	if typeof(case_val) == TYPE_STRING:
+		result["value"] = case_val
+	else:
+		result["value"] = argument_entry.get("default", "")
+		
+	return result
 
 
 func _find_case_callable(on_format: String, on_argument: String, method: Callable) -> Dictionary[String, String]:
@@ -48,6 +63,25 @@ func _find_case_callable(on_format: String, on_argument: String, method: Callabl
 		return result
 	
 	result["value"] = argument_node.get("default", "")
+	return result
+
+
+func _format_once(text: String, replacements: Dictionary) -> String:
+	var result: String = ""
+	var offset: int = 0
+	
+	for match_data in _format_regex.search_all(text):
+		var key: String = match_data.get_string(1)
+		result += text.substr(offset, match_data.get_start() - offset)
+		
+		if replacements.has(key):
+			result += str(replacements[key])
+		else:
+			result += match_data.get_string(0) 
+			
+		offset = match_data.get_end()
+		
+	result += text.substr(offset)
 	return result
 
 
@@ -128,4 +162,4 @@ func get_dialog() -> String:
 		else:
 			format_dict[key] = key
 	
-	return dialog.format(format_dict)
+	return _format_once(dialog, format_dict)

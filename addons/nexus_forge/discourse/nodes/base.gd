@@ -405,7 +405,8 @@ func set_localization_enabled(enable: bool) -> void:
 	btn.visible = enable
 	
 	if enable:
-		btn.toggled.connect(_on_localization_toggled)
+		if not btn.toggled.is_connected(_on_localization_toggled):
+			btn.toggled.connect(_on_localization_toggled)
 	else:
 		if btn.toggled.is_connected(_on_localization_toggled):
 			btn.toggled.disconnect(_on_localization_toggled)
@@ -860,9 +861,9 @@ func get_input_connection_idx(on_input: int, input_node: DiscourseGraphNode) -> 
 		return -1
 	
 	var idx: int = -1
-	for connection:DiscourseGraphNode in _input_nodes[on_input]["connections"]:
+	for connection:Dictionary in _input_nodes[on_input]["connections"]:
 		idx += 1
-		if input_node == connection:
+		if input_node == connection["target_node"]:
 			return idx
 	return -1
 
@@ -882,9 +883,9 @@ func get_output_connection_count(output_port: int) -> int:
 ## Gets which connection index does a node have.
 func get_output_connection_idx(on_output: int, output_node: DiscourseGraphNode) -> int:
 	var idx: int = -1
-	for connection:DiscourseGraphNode in _output_nodes[on_output]["connections"]:
+	for connection:Dictionary in _output_nodes[on_output]["connections"]:
 		idx += 1
-		if output_node == connection:
+		if output_node == connection["target_node"]:
 			return idx
 	return -1
 

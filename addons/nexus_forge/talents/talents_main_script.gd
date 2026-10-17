@@ -80,7 +80,7 @@ func ready_plugin(stats_enabled: bool, skills_enabled: bool, traits_enabled: boo
 		reload_skill_resource(true)
 	
 	if traits_enabled:
-		skill_data_tree.undo_redo_steps = UNDO_MAX_STEPS
+		trait_data_tree.undo_redo_steps = UNDO_MAX_STEPS
 		trait_data_tree.ready_plugin()
 		reload_traits(false)
 		reload_trait_resource(true)

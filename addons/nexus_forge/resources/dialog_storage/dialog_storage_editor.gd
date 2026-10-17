@@ -1602,9 +1602,8 @@ func add_locale(locale: String) -> void:
 	if locale.is_empty():
 		return
 	
-	var locale_parts: PackedStringArray = locale.split("_", false, 1)
-	var language: String = locale_parts[0]
-	var region: String = locale_parts[1] if locale_parts.size() == 2 else ""
+	var language: String = NFStringUtils.get_locale_language(locale)
+	var region: String = NFStringUtils.get_locale_country(locale)
 	
 	if not locale_map.has(language):
 		locale_map[language] = {}
@@ -1622,9 +1621,8 @@ func has_locale(locale_code: String) -> bool:
 	if standard_code.is_empty():
 		return false
 	
-	var parts: PackedStringArray = standard_code.split("_", false, 2)
-	var lang: String = parts[0]
-	var reg: String = parts[1] if 1 < parts.size() else ""
+	var lang: String = NFStringUtils.get_locale_language(locale_code)
+	var reg: String = NFStringUtils.get_locale_country(locale_code)
 	
 	if reg.is_empty():
 		return locale_map.has(lang)
@@ -1637,26 +1635,29 @@ func has_locale(locale_code: String) -> bool:
 ## Removes a locale from the locale map.
 func remove_locale(locale: String) -> void:
 	locale = TranslationServer.standardize_locale(locale)
+	
 	if locale.is_empty():
 		return
-	var locale_parts: PackedStringArray = locale.split("_", false, 1)
-	var language: String = locale_parts[0]
-	var region: String = locale_parts[1] if locale_parts.size() == 2 else ""
+	
+	var language: String = NFStringUtils.get_locale_language(locale)
+	var region: String = NFStringUtils.get_locale_country(locale)
 	
 	if not locale_map.has(language):
 		return
 	
-	var locale_code: String = language if region.is_empty() else language + "_" + region
-	
+	var locales_to_remove: Array[String] = [locale]
 	if region.is_empty():
+		for region_code in locale_map[language]:
+			locales_to_remove.append(language + "_" + region_code)
 		locale_map.erase(language)
 	else:
 		locale_map[language].erase(region)
 	
-	for format_key in format_strings.keys():
-		format_strings[format_key].erase(locale_code)
-	for node_uuid in localization.keys():
-		localization[node_uuid]["locales"].erase(locale_code)
+	for locale_code in locales_to_remove:
+		for format_key in format_strings:
+			format_strings[format_key].erase(locale_code)
+		for node_uuid in localization:
+			localization[node_uuid]["locales"].erase(locale_code)
 
 
 ## Gets all the localization data of [param locale] contained

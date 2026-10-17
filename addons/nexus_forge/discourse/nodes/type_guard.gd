@@ -120,15 +120,7 @@ func _set_node_data(data: Dictionary) -> void:
 		position_offset = metadata["position"]
 	
 	if metadata.has("fallback_value"):
-		match typeof(metadata["fallback_value"]):
-			TYPE_INT, TYPE_FLOAT:
-				val_fallback.set_value_no_signal(metadata["fallback_value"])
-			TYPE_BOOL:
-				bool_fallback.set_pressed_no_signal(metadata["fallback_value"])
-			TYPE_STRING:
-				str_fallback.text = metadata["fallback_value"]
-			_:
-				return
+		set_fallback_value(metadata["fallback_value"])
 
 
 func _on_output_connected(output: int, to_node: DiscourseGraphNode, _to_port: int) -> void:
@@ -151,7 +143,7 @@ func _on_output_connected(output: int, to_node: DiscourseGraphNode, _to_port: in
 			set_slot_type_right(0, SlotConnectionType.VAR_FLOAT)
 			set_slot_color_right(0, COLORS["float"])
 			set_output_connection_icon(&"connection", get_theme_icon("float", "EditorIcons"))
-			val_fallback.visible = true
+			spinbox_container.visible = true
 			val_fallback.step = 0.01
 			filter_mode = TYPE_FLOAT
 		SlotConnectionType.VAR_BOOL:
