@@ -253,7 +253,12 @@ func _on_close_character_pressed(char_id: int) -> void:
 
 
 func _on_add_data_pressed(data_key: String, data: Variant) -> void:
-	character_data_tree.add_data(data_key, data)
+	character_data_tree.add_data(
+			data_key,
+			data,
+			false,
+			character_data_tree.get_root(),
+			true)
 	if character_data_tree.has_undo():
 		undo.create_action("Data Changed")
 		undo.add_do_method(character_data_tree.redo)

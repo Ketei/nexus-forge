@@ -140,7 +140,7 @@ func _on_compact_menu_id_pressed(id: int) -> void:
 	else:
 		data_name += "data"
 	
-	var path: String = add_data(data_name, data_type, OP_EQUAL, data_item)
+	var path: String = add_data(data_name, data_type, OP_EQUAL, data_item, true)
 	
 	data_item = null
 	
@@ -573,16 +573,16 @@ func _do_update_item_data(path: String, data: Variant) -> void:
 	item.get_metadata(0)["value"] = data
 
 
-func add_data(data_id: String, data: Variant, operator: int = OP_EQUAL, on_node: TreeItem = get_root()) -> String:
+func add_data(data_id: String, data: Variant, operator: int = OP_EQUAL, on_node: TreeItem = get_root(), select: bool = false) -> String:
 	var new_name: String = get_unique_id(on_node, data_id)
 	var data_path: String = _get_data_path(on_node).path_join(new_name)
 	
-	_add_data_to_tree(new_name, data, operator, on_node)
+	_add_data_to_tree(new_name, data, operator, on_node, -1, select)
 	
 	return data_path
 
 
-func _add_data_to_tree(new_name: String, data: Variant, operator: int, on_node: TreeItem = get_root(), index: int = -1) -> TreeItem:
+func _add_data_to_tree(new_name: String, data: Variant, operator: int, on_node: TreeItem = get_root(), index: int = -1, select: bool = false) -> TreeItem:
 	var data_type: int = typeof(data)
 	var new_data: TreeItem = on_node.create_child(index)
 	var metadata: Dictionary = {"name": new_name, "type": ItemType.DATA, "value": data}
@@ -671,6 +671,10 @@ func _add_data_to_tree(new_name: String, data: Variant, operator: int, on_node: 
 		new_data.set_cell_mode(1, TreeItem.CELL_MODE_STRING)
 		new_data.set_editable(1, false)
 	
+	if select:
+		new_data.select(0)
+		scroll_to_item.call_deferred(new_data)
+	
 	return new_data
 
 
@@ -714,19 +718,19 @@ func _on_button_clicked(item: TreeItem, column: int, id: int, mouse_button_index
 			return
 		ButtonIds.INT:
 			data_copy = 0
-			data_path = add_data("new_int", 0, OP_EQUAL, item)
+			data_path = add_data("new_int", 0, OP_EQUAL, item, true)
 		ButtonIds.FLOAT:
 			data_copy = 0.0
-			data_path = add_data("new_float", 0.0, OP_EQUAL, item)
+			data_path = add_data("new_float", 0.0, OP_EQUAL, item, true)
 		ButtonIds.BOOL:
 			data_copy = false
-			data_path = add_data("new_bool", false, OP_EQUAL, item)
+			data_path = add_data("new_bool", false, OP_EQUAL, item, true)
 		ButtonIds.STRING:
 			data_copy = ""
-			data_path = add_data("new_string", "", OP_EQUAL, item)
+			data_path = add_data("new_string", "", OP_EQUAL, item, true)
 		ButtonIds.LEVEL:
 			data_copy = {}
-			data_path = add_data("new_folder", {}, OP_EQUAL, item)
+			data_path = add_data("new_folder", {}, OP_EQUAL, item, true)
 		ButtonIds.TYPE_MENU:
 			data_item = item
 			mn.position = DisplayServer.mouse_get_position()

@@ -565,7 +565,12 @@ func clear_currency_section() -> void:
 
 
 func add_currency_data(data_key: String, data: Variant) -> void:
-	currency_custom_data_tree.add_data(data_key, data)
+	currency_custom_data_tree.add_data(
+			data_key,
+			data,
+			false,
+			currency_custom_data_tree.get_root(),
+			true)
 	_on_currency_changed()
 
 
@@ -1112,7 +1117,12 @@ func _on_create_item_pressed() -> void:
 
 
 func add_item_data(data_key: String, data: Variant) -> void:
-	item_data_tree.add_data(data_key, data)
+	item_data_tree.add_data(
+			data_key,
+			data,
+			false,
+			item_data_tree.get_root(),
+			true)
 	_on_items_changed()
 
 

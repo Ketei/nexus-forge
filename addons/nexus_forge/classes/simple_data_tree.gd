@@ -156,7 +156,7 @@ func _on_compact_menu_id_pressed(id: int) -> void:
 	else:
 		data_name += "data"
 	
-	add_data(data_name, data_type, false, data_item)
+	add_data(data_name, data_type, false, data_item, true)
 	
 	data_item = null
 	
@@ -610,13 +610,15 @@ func _do_update_item_data(path: String, data: Variant) -> void:
 	item.get_metadata(0)["value"] = data
 
 
-func add_data(data_id: String, data: Variant, initial_load: bool = false, on_node: TreeItem = get_root()) -> void:
+func add_data(data_id: String, data: Variant, initial_load: bool = false, on_node: TreeItem = get_root(), select: bool = false) -> void:
 	var new_name: String = get_unique_id(on_node, data_id)
 	if _undo == null or initial_load:
 		_add_data_to_tree(
 				new_name,
 				data,
-				on_node)
+				on_node,
+				-1,
+				select)
 		return
 	
 	var data_path: String = _get_data_path(on_node).path_join(new_name)
@@ -633,10 +635,10 @@ func add_data(data_id: String, data: Variant, initial_load: bool = false, on_nod
 				data))
 	_undo.add_undo_method(_undo_add_data.bind(data_path))
 	_undo.commit_action(false)
-	_add_data_to_tree(new_name, data, on_node)
+	_add_data_to_tree(new_name, data, on_node, -1, select)
 
 
-func _add_data_to_tree(new_name: String, data: Variant, on_node: TreeItem = get_root(), index: int = -1) -> void:
+func _add_data_to_tree(new_name: String, data: Variant, on_node: TreeItem = get_root(), index: int = -1, select: bool = false) -> void:
 	var data_type: int = typeof(data)
 	var new_data: TreeItem = on_node.create_child(index)
 	var metadata: Dictionary = {"name": new_name, "type": ItemType.DATA, "value": data}
@@ -710,6 +712,10 @@ func _add_data_to_tree(new_name: String, data: Variant, on_node: TreeItem = get_
 	new_data.add_button(1, TRASH_BIN, ButtonIds.DELETE, false, "Delete Data")
 	if data_type != TYPE_DICTIONARY:
 		new_data.set_metadata(0, metadata)
+	
+	if select:
+		new_data.select(0)
+		scroll_to_item.call_deferred(new_data)
 
 
 func get_data_cell_data(cell: TreeItem) -> Variant:
@@ -775,15 +781,15 @@ func _on_button_clicked(item: TreeItem, column: int, id: int, mouse_button_index
 			item.free()
 			item_deleted.emit()
 		ButtonIds.INT:
-			add_data("new_int", 0, false, item)
+			add_data("new_int", 0, false, item, true)
 		ButtonIds.FLOAT:
-			add_data("new_float", 0.0, false, item)
+			add_data("new_float", 0.0, false, item, true)
 		ButtonIds.BOOL:
-			add_data("new_bool", false, false, item)
+			add_data("new_bool", false, false, item, true)
 		ButtonIds.STRING:
-			add_data("new_string", "", false, item)
+			add_data("new_string", "", false, item, true)
 		ButtonIds.LEVEL:
-			add_data("new_folder", {}, false, item)
+			add_data("new_folder", {}, false, item, true)
 		ButtonIds.TYPE_MENU:
 			data_item = item
 			mn.position = DisplayServer.mouse_get_position()

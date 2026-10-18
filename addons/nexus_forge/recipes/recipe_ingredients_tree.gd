@@ -198,8 +198,13 @@ func _drop_data(at_position: Vector2, data: Variant) -> void:
 			new_parent.add_child(dropped_item)
 		
 		sort_item = dropped_item
-	else: # We dragged from the other tree. Copy the data.
-		if data["type"] == ItemType.RECIPE_ITEM:
+	else: # We dragged from another tree.
+		if data["item"] == null:
+			# Dragged from the ingredients tree and was instantiated
+			# at the start of the function
+			sort_item = dropped_item
+		elif data["type"] == ItemType.RECIPE_ITEM:
+			# Dragged ingredient from the other tree. Copy data.
 			var item_metadata: Dictionary = {}
 			for meta in dropped_item.get_children():
 				item_metadata[meta.get_text(0)] = get_data_cell_data(meta)
@@ -207,7 +212,8 @@ func _drop_data(at_position: Vector2, data: Variant) -> void:
 					dropped_item.get_metadata(0)["id"],
 					dropped_item.get_range(1),
 					item_metadata)
-		else: # It's data
+		else:
+			# It's data
 			var cell_data: Variant = get_data_cell_data(dropped_item)
 			sort_item = _add_data_on(
 					new_parent,
@@ -223,6 +229,9 @@ func _drop_data(at_position: Vector2, data: Variant) -> void:
 			if new_index < sort_item.get_index():
 				new_index -= 1
 			sort_item.move_after(new_parent.get_child(new_index))
+	
+	sort_item.select(0)
+	scroll_to_item.call_deferred(sort_item)
 	
 	if data["type"] == ItemType.ITEM_DATA:
 		sort_item.set_text(0, data_id)
@@ -423,6 +432,8 @@ func _on_add_data_menu_id_pressed(id: int) -> void:
 	var data: Variant = get_data_cell_data(meta_item)
 	
 	data_item = null
+	meta_item.select(0)
+	scroll_to_item.call_deferred(meta_item)
 	
 	metadata_added.emit(index, path, data)
 
@@ -589,8 +600,8 @@ func get_data_cell_data_stringname(cell: TreeItem) -> Variant:
 			return null
 
 
-func add_item(item_id: StringName, input_amount: int = 1, data: Dictionary = {}) -> void:
-	_create_item(item_id, input_amount, data)
+func add_item(item_id: StringName, input_amount: int = 1, data: Dictionary = {}, select: bool = false) -> void:
+	_create_item(item_id, input_amount, data, -1, select)
 
 
 func set_item_amount(index: int, new_amount: int) -> void:
@@ -678,7 +689,7 @@ func _type_to_used_type(type: int) -> int:
 			return TYPE_NIL
 
 
-func _create_item(item_id: StringName, input_amount: int, data: Dictionary, index: int = -1) -> TreeItem:
+func _create_item(item_id: StringName, input_amount: int, data: Dictionary, index: int = -1, select: bool = false) -> TreeItem:
 	var new_item: TreeItem = get_root().create_child()
 	new_item.set_text(0, String(item_id))
 	new_item.set_cell_mode(1, TreeItem.CELL_MODE_RANGE)
@@ -721,6 +732,10 @@ func _create_item(item_id: StringName, input_amount: int, data: Dictionary, inde
 				new_item.move_before(get_root().get_first_child())
 			else:
 				new_item.move_after(get_root().get_child(valid_idx - 1))
+	
+	if select:
+		new_item.select(0)
+		scroll_to_item.call_deferred(new_item)
 	
 	return new_item
 

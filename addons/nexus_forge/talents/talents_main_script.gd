@@ -370,7 +370,12 @@ func _on_skill_resource_dropped(resource: Resource, panel: Control) -> void:
 
 
 func _on_add_skill_data_pressed(data_name: String, data: Variant) -> void:
-	skill_data_tree.add_data(data_name, data)
+	skill_data_tree.add_data(
+			data_name,
+			data,
+			false,
+			skill_data_tree.get_root(),
+			true)
 	if skill_data_tree.has_undo():
 		undo.create_action("Data Changed")
 		undo.add_do_method(_do_skill_data_tree_undoredo.bind(false))
@@ -608,7 +613,12 @@ func _on_traits_resource_dropped(resource: Resource, panel: Control) -> void:
 
 
 func _on_add_trait_data_pressed(data_name: String, data: Variant) -> void:
-	trait_data_tree.add_data(data_name, data)
+	trait_data_tree.add_data(
+			data_name,
+			data,
+			false,
+			trait_data_tree.get_root(),
+			true)
 	if trait_data_tree.has_undo():
 		undo.create_action("Data Changed")
 		undo.add_do_method(_do_trait_data_tree_undoredo.bind(false))
@@ -858,7 +868,12 @@ func _on_stat_resource_dropped(resource: Resource, panel: Control) -> void:
 
 
 func _on_add_stat_data_pressed(data_name: String, data: Variant) -> void:
-	stat_data_tree.add_data(data_name, data)
+	stat_data_tree.add_data(
+			data_name,
+			data,
+			false,
+			stat_data_tree.get_root(),
+			true)
 	if stat_data_tree.has_undo():
 		undo.create_action("Data Changed")
 		undo.add_do_method(_do_stat_data_tree_undoredo.bind(false))

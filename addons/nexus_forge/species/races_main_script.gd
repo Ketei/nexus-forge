@@ -519,7 +519,12 @@ func _on_load_database_pressed(node: Control) -> void:
 
 
 func _on_add_data_pressed(data_name: String, value: Variant) -> void:
-	race_data_tree.add_data(data_name, value)
+	race_data_tree.add_data(
+			data_name,
+			value,
+			false,
+			race_data_tree.get_root(),
+			true)
 	if race_data_tree.has_undo():
 		undo.create_action("Data Changed")
 		undo.add_do_method(race_data_tree.redo)

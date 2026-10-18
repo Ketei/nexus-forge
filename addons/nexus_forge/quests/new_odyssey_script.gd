@@ -831,7 +831,12 @@ func _get_layout_config(config_path: String) -> Array[Dictionary]:
 
 
 func _add_quest_requirement_data_pressed(data: Variant) -> void:
-	var path: String = obj_req_tree.add_data("new_requirement", data)
+	var path: String = obj_req_tree.add_data(
+			"new_requirement",
+			data,
+			OP_EQUAL,
+			obj_req_tree.get_root(),
+			true)
 	_on_objective_data_created(path, -1, data, OP_EQUAL)
 
 
@@ -1006,7 +1011,12 @@ func _on_quest_close_pressed(quest_id: int) -> void:
 
 
 func _on_add_custom_data_pressed(id: String, data) -> void:
-	custom_data_tree.add_data(id, data)
+	custom_data_tree.add_data(
+			id,
+			data,
+			false,
+			custom_data_tree.get_root(),
+			true)
 	_on_something_changed()
 
 

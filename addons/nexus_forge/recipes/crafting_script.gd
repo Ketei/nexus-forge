@@ -171,7 +171,12 @@ func _something_changed(arg: Variant = null) -> void:
 
 
 func _on_custom_data_button_pressed(id: String, data: Variant) -> void:
-	recipe_custom_data_tree.add_data(id, data)
+	recipe_custom_data_tree.add_data(
+			id,
+			data,
+			false,
+			recipe_custom_data_tree.get_root(),
+			true)
 	_something_changed()
 
 
