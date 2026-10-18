@@ -138,6 +138,7 @@ func select_currency(currency_id: StringName, emit_selected: bool = true) -> voi
 	for tree in get_root().get_children():
 		if tree.get_metadata(0) == currency_id:
 			tree.select(0)
+			scroll_to_item.call_deferred(tree)
 			if emit_selected:
 				currency_selected.emit(currency_id)
 

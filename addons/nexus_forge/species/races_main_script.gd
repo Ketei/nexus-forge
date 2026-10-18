@@ -569,6 +569,7 @@ func _on_species_created(species_id: StringName) -> void:
 	
 	_species_resource.create_species(species_id)
 	_species_resource.set_species_name(species_id, "New Species")
+	
 	if not parent_species.is_empty():
 		_species_resource.link_species(species_id, parent_species)
 	

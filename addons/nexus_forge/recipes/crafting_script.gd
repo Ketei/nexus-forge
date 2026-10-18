@@ -47,13 +47,15 @@ func _input(event: InputEvent) -> void:
 		return
 	
 	if event is InputEventKey:
-		if event.echo or not event.pressed:
+		if event.echo or not event.pressed or event.ctrl_pressed or event.shift_pressed:
 			return
 		
-		if recipe_tree.has_focus() and event.keycode == KEY_DELETE and not event.ctrl_pressed and not event.shift_pressed:
-			if not active_recipe.is_empty():
-				recipe_tree.remove_recipe(active_recipe)
-				_on_recipe_erased(active_recipe)
+		if event.keycode == KEY_DELETE and recipe_tree.has_focus() and recipe_tree.get_selected() != null:
+			var selected_id: StringName = recipe_tree.get_selected_recipe()
+			var selected_tree: TreeItem = recipe_tree.get_selected()
+			if recipes_resource.has_recipe(selected_id):
+				recipe_tree.remove_recipe(selected_id)
+				_on_recipe_erased(selected_id, selected_tree.get_index())
 			get_viewport().set_input_as_handled()
 
 
@@ -466,7 +468,7 @@ func _on_recipe_create_pressed() -> void:
 	undo.commit_action(false)
 	
 	recipes_resource.create_recipe(id)
-	recipe_tree.add_recipe(id, true, false)
+	recipe_tree.add_recipe(id, -1, true, false)
 	recipe_input_tree.recipe_selected = true
 	recipe_output_tree.recipe_selected = true
 	load_recipe(id)
@@ -476,7 +478,7 @@ func _on_recipe_create_pressed() -> void:
 
 func _do_create_recipe(recipe_id: StringName) -> void:
 	recipes_resource.create_recipe(recipe_id)
-	recipe_tree.add_recipe(recipe_id, false)
+	recipe_tree.add_recipe(recipe_id, -1, false)
 
 
 func _undo_create_recipe(recipe_id: StringName) -> void:
@@ -512,7 +514,7 @@ func _do_update_recipe_id(from: StringName, to: StringName) -> void:
 	recipe_tree.update_recipe_id(from, to)
 
 
-func _on_recipe_erased(recipe_id: StringName) -> void:
+func _on_recipe_erased(recipe_id: StringName, index: int) -> void:
 	if active_recipe == recipe_id:
 		save_current_recipe()
 	
@@ -520,7 +522,7 @@ func _on_recipe_erased(recipe_id: StringName) -> void:
 	
 	undo.create_action("Erase Recipe")
 	undo.add_do_method(_do_erase_recipe.bind(recipe_id))
-	undo.add_undo_method(_undo_erase_recipe.bind(recipe_id, recipe_data))
+	undo.add_undo_method(_undo_erase_recipe.bind(recipe_id, index, recipe_data))
 	undo.commit_action(false)
 	
 	recipes_resource.erase_recipe(recipe_id)
@@ -537,9 +539,9 @@ func _on_recipe_erased(recipe_id: StringName) -> void:
 	_something_changed()
 
 
-func _undo_erase_recipe(recipe_id: StringName, recipe_data: Dictionary) -> void:
+func _undo_erase_recipe(recipe_id: StringName, index: int, recipe_data: Dictionary) -> void:
 	recipes_resource._recipes[recipe_id] = recipe_data.duplicate(true)
-	recipe_tree.add_recipe(recipe_id)
+	recipe_tree.add_recipe(recipe_id, index)
 
 
 func _do_erase_recipe(recipe_id: StringName) -> void:

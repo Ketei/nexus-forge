@@ -45,6 +45,7 @@ func select_character(resource_id: int, emit_selected: bool = true) -> void:
 	for item in root.get_children():
 		if item.get_metadata(0)["id"] == resource_id:
 			item.select(0)
+			scroll_to_item.call_deferred(item)
 			if emit_selected:
 				character_selected.emit(resource_id)
 
@@ -65,6 +66,7 @@ func create_character(resource: NFCharacterSheet, select: bool = false, emit_sel
 	
 	if select:
 		new_item.select(0)
+		scroll_to_item.call_deferred(new_item)
 		if emit_select:
 			character_selected.emit(resource.get_instance_id())
 

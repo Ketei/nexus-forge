@@ -185,7 +185,8 @@ func _add_category_map(categories: Dictionary[StringName, Dictionary], target: S
 		categories_tree.create_category(
 				category_id,
 				items_resource._categories[category_id]["name"],
-				target)
+				target,
+				false)
 		_add_category_map(categories[category_id], category_id)
 
 

@@ -4,7 +4,7 @@ extends NFIDTree
 
 signal recipe_selected(id: StringName)
 signal recipe_id_changed(from: StringName, to: StringName)
-signal recipe_erased(id: StringName)
+signal recipe_erased(id: StringName, index: int)
 
 
 var current_search: String = ""
@@ -23,7 +23,7 @@ func _on_button_clicked(item: TreeItem, _column: int, id: int, mouse_button_inde
 		return
 	
 	if id == 0:
-		recipe_erased.emit(item.get_metadata(0))
+		recipe_erased.emit(item.get_metadata(0), item.get_index())
 		item.free()
 
 
@@ -51,7 +51,7 @@ func _on_item_mouse_selected(mouse_position: Vector2, mouse_button_index: int) -
 			get_selected().get_metadata(0))
 
 
-func add_recipe(recipe_id: StringName, select: bool = false, emit_selected: bool = true) -> void:
+func add_recipe(recipe_id: StringName, index: int = -1, select: bool = false, emit_selected: bool = true) -> void:
 	var new_rcp: TreeItem = get_root().create_child()
 	new_rcp.set_text(0, String(recipe_id))
 	new_rcp.set_metadata(0, recipe_id)
@@ -63,10 +63,31 @@ func add_recipe(recipe_id: StringName, select: bool = false, emit_selected: bool
 			false,
 			"Erase recipe")
 	
+	if index != -1:
+		var root: TreeItem = get_root()
+		var child_count: int = root.get_child_count()
+		var actual_index: int = wrapi(
+				clampi(index, -child_count, child_count - 1),
+				0,
+				child_count)
+		if new_rcp.get_index() != actual_index:
+			if actual_index == 0:
+				new_rcp.move_before(root.get_first_child())
+			else:
+				new_rcp.move_after(root.get_child(actual_index - 1))
+	
 	if select:
 		new_rcp.select(0)
+		scroll_to_item.call_deferred(new_rcp)
 		if emit_selected:
 			recipe_selected.emit(recipe_id)
+
+
+func get_selected_recipe() -> StringName:
+	var selected: TreeItem = get_selected()
+	if selected == null:
+		return &""
+	return selected.get_metadata(0)
 
 
 func update_recipe_id(from: StringName, to: StringName) -> void:
@@ -81,6 +102,7 @@ func select_recipe(recipe_id: StringName, emit_selected: bool) -> bool:
 	for item in get_root().get_children():
 		if item.get_metadata(0) == recipe_id:
 			item.select(0)
+			scroll_to_item.call_deferred(item)
 			if emit_selected:
 				recipe_selected.emit(recipe_id)
 			return true

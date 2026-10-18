@@ -649,6 +649,8 @@ func add_constant_data(new_name: String, data: Variant, on_node: TreeItem = get_
 	data_tree.erase_button(
 			1,
 			data_tree.get_button_by_id(1, ButtonIds.DELETE))
+	data_tree.set_editable(0, false)
+	data_tree.set_editable(1, false)
 
 
 func get_data_cell_data(cell: TreeItem) -> Variant:

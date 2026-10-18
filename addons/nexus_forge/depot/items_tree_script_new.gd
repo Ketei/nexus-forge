@@ -60,13 +60,14 @@ func update_page_count() -> void:
 		_current_page_index = _last_page
 
 
-func add_item(item_id: StringName, item_category: StringName = &"") -> bool:
+func add_item(item_id: StringName, item_category: StringName = &"", select: bool = false) -> bool:
 	var id_string: String = String(item_id)
 	
 	if _items.has(item_id):
 		return false
 	
-	var new_item: TreeItem = get_root().create_child()
+	var root: TreeItem = get_root()
+	var new_item: TreeItem = root.create_child()
 	new_item.set_text(0, id_string)
 	new_item.set_metadata(0, {"id": item_id, "category": item_category})
 	new_item.set_editable(0, true)
@@ -80,7 +81,7 @@ func add_item(item_id: StringName, item_category: StringName = &"") -> bool:
 	_items[item_id] = new_item
 	
 	if 0 < RESULTS_PER_PAGE:
-		get_root().remove_child(new_item)
+		root.remove_child(new_item)
 		var item_query_match: bool = _search_item_query.is_empty() or id_string.containsn(_search_item_query)
 		var cat_query_match: bool = _search_category_query.is_empty() or item_category.containsn(_search_category_query)
 		
@@ -96,6 +97,9 @@ func add_item(item_id: StringName, item_category: StringName = &"") -> bool:
 		update_page_count() # Update how many pages exist
 	else:
 		sort_single_item(new_item)
+	
+	if select and new_item.get_parent() == root and new_item.visible:
+		scroll_to_item(new_item)
 	
 	return true
 
@@ -228,8 +232,10 @@ func select_item(item_id: StringName, emit_selected: bool = false) -> void:
 			_current_page_index = page
 	
 		target.select(0)
+		scroll_to_item.call_deferred(target)
 	else:
 		target.select(0)
+		scroll_to_item.call_deferred(target)
 	
 	if emit_selected:
 		item_selected.emit(item_id)

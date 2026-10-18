@@ -487,8 +487,8 @@ func save_current_quest() -> void:
 		stage.failure_stage_id = failure_pointer_opt_btn.get_selected_metadata()
 		
 		var events_data: Dictionary = events_tree.get_data()
-		stage.events[&"success"] = events_data["Success Events"]
-		stage.events[&"failure"] = events_data["Failure Events"]
+		stage.events[&"success"] = events_data[&"Success Events"]
+		stage.events[&"failure"] = events_data[&"Failure Events"]
 	
 	elif quest_mode == QuestModeType.OBJECTIVE:
 		if not quest_resource.has_stage(selected_stage) or not quest_resource.get_stage(selected_stage).has_objective(selected_objective):
@@ -504,8 +504,8 @@ func save_current_quest() -> void:
 		objective.clear_requirements()
 		
 		var events_data: Dictionary = events_tree.get_data()
-		objective.events[&"success"] = events_data["Success Events"]
-		objective.events[&"failure"] = events_data["Failure Events"]
+		objective.events[&"success"] = events_data[&"Success Events"]
+		objective.events[&"failure"] = events_data[&"Failure Events"]
 		
 		quest_resource.get_stage(selected_stage).set_objective_required(
 				selected_objective,
@@ -591,8 +591,8 @@ func load_quest_data() -> void:
 				quest_resource.custom_data[data_key],
 				true)
 	
-	var success_events: Dictionary[String, Variant] = {}
-	var failure_events: Dictionary[String, Variant] = {}
+	var success_events: Dictionary[StringName, Variant] = {}
+	var failure_events: Dictionary[StringName, Variant] = {}
 	
 	if quest_resource.events.has(&"success"):
 		success_events = quest_resource.events[&"success"]
@@ -634,8 +634,8 @@ func load_stage_data(stage_id: StringName) -> void:
 				stage.custom_data[data_key],
 				true)
 	
-	var success_events: Dictionary[String, Variant] = {}
-	var failure_events: Dictionary[String, Variant] = {}
+	var success_events: Dictionary[StringName, Variant] = {}
+	var failure_events: Dictionary[StringName, Variant] = {}
 	
 	if stage.events.has(&"success"):
 		success_events = stage.events[&"success"]
@@ -683,8 +683,8 @@ func load_objective_data(stage_id: StringName, objective_id: StringName) -> void
 	
 	obj_req_chk_bx.set_pressed_no_signal(quest_resource.get_stage(stage_id).is_objective_required(objective_id))
 	
-	var success_events: Dictionary[String, Variant] = {}
-	var failure_events: Dictionary[String, Variant] = {}
+	var success_events: Dictionary[StringName, Variant] = {}
+	var failure_events: Dictionary[StringName, Variant] = {}
 	
 	if objective.events.has(&"success"):
 		success_events = objective.events[&"success"]
@@ -1647,6 +1647,8 @@ func _on_stage_created(stage_id: StringName) -> void:
 	undo.add_undo_method(_undo_create_stage.bind(stage_id))
 	undo.commit_action(false)
 	
+	switch_to(stage_id)
+	
 	_on_something_changed()
 
 
@@ -1679,6 +1681,8 @@ func _on_objective_created(stage_id: StringName, objective_id: StringName) -> vo
 	undo.add_do_method(_do_create_objective.bind(stage_id, objective_id))
 	undo.add_undo_method(_undo_create_objective.bind(stage_id, objective_id))
 	undo.commit_action(false)
+	
+	switch_to(stage_id, objective_id)
 	
 	_on_something_changed()
 

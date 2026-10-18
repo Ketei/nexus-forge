@@ -119,7 +119,7 @@ func _on_item_edited() -> void:
 	something_changed.emit()
 
 
-func create_variable(variable_value: Variant, variable_name: String = "new_variable") -> String:
+func create_variable(variable_value: Variant, variable_name: String = "new_variable", select: bool = false) -> String:
 	var unique_name: String = validate_var_name(variable_name)
 	var new_variable: TreeItem = get_root().create_child()
 	
@@ -177,7 +177,30 @@ func create_variable(variable_value: Variant, variable_name: String = "new_varia
 	
 	sort_single_item(new_variable)
 	
+	if select:
+		scroll_to_item.call_deferred(new_variable)
+	
 	return unique_name
+
+
+func is_variable_selected() -> bool:
+	return get_selected() != null
+
+
+func get_selected_variable() -> String:
+	var selected: TreeItem = get_selected()
+	if selected == null:
+		return ""
+	return selected.get_metadata(0)
+
+
+func select_variable(variable: String, focus: bool = false) -> void:
+	for item in get_root().get_children():
+		if item.get_metadata(0) == variable:
+			item.select(0)
+			if focus:
+				scroll_to_item.call_deferred(item)
+			return
 
 
 func rename_variable(old_id: String, new_id: String) -> bool:

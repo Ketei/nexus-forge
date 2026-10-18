@@ -273,7 +273,7 @@ func _on_button_clicked(item: TreeItem, _column: int, id: int, mouse_button_inde
 		
 		if result[0]:
 			var race_id: StringName = StringName(result[1])
-			_add_species_on(race_id, item.get_metadata(0)["id"])
+			_add_species_on(race_id, item.get_metadata(0)["id"], false)
 			species_created.emit(race_id)
 		
 		id_creator.queue_free()
@@ -320,8 +320,9 @@ func set_species_id(old_id: StringName, new_id: StringName) -> void:
 func select_species(species_id: StringName, emit_select: bool) -> void:
 	if not _species_trees.has(species_id):
 		return
-	
-	_species_trees[species_id].select(0)
+	var target: TreeItem = _species_trees[species_id]
+	target.select(0)
+	scroll_to_item.call_deferred(target)
 	
 	if emit_select:
 		species_selected.emit(species_id)
@@ -435,12 +436,12 @@ func get_all_species() -> Array[String]:
 	return races
 
 
-func create_species(species_id: StringName, on_species: StringName = &"") -> void:
-	if _add_species_on(species_id, on_species):
+func create_species(species_id: StringName, on_species: StringName = &"", select: bool = false) -> void:
+	if _add_species_on(species_id, on_species, select):
 		sort_single_item(_species_trees[species_id])
 
 
-func _add_species_on(new_id: StringName, on_species: StringName) -> bool:
+func _add_species_on(new_id: StringName, on_species: StringName, select: bool) -> bool:
 	if _species_trees.has(new_id):
 		var parent_tree: TreeItem = _species_trees[new_id].get_parent()
 		var parent_id: StringName = &"" if parent_tree == get_root() else _species_trees[new_id].get_parent().get_metadata(0)["id"]
@@ -459,7 +460,7 @@ func _add_species_on(new_id: StringName, on_species: StringName) -> bool:
 	elif species_has_subspecies(on_species, new_id):
 		return false
 	
-	var target: TreeItem = get_root() if on_species.is_empty() else _species_trees[on_species]
+	var target: TreeItem = _species_trees.get(on_species, get_root())
 	
 	var new_race: TreeItem = target.create_child()
 	new_race.set_text(0, String(new_id))
@@ -474,6 +475,9 @@ func _add_species_on(new_id: StringName, on_species: StringName) -> bool:
 			"New subspecies")
 	
 	_species_trees[new_id] = new_race
+	
+	if select:
+		scroll_to_item.call_deferred(new_race)
 	
 	return true
 
@@ -659,9 +663,9 @@ func _iterate_restore_species(map: Dictionary, on: StringName) -> void:
 	for species_id in map.keys():
 		if map[species_id]["hybrid_flag"]:
 			if not _species_trees.has(species_id):
-				_add_species_on(species_id, &"")
+				_add_species_on(species_id, &"", false)
 		else:
-			_add_species_on(species_id, on)
+			_add_species_on(species_id, on, false)
 		
 		_iterate_restore_species(map[species_id]["subspecies"], species_id)
 

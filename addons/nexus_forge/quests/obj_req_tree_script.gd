@@ -144,7 +144,7 @@ func _on_compact_menu_id_pressed(id: int) -> void:
 	
 	data_item = null
 	
-	data_created.emit(path, -1, data_type)
+	data_created.emit(path, -1, data_type, OP_EQUAL)
 
 
 func _get_drag_data(at_position: Vector2) -> Variant:
@@ -707,9 +707,10 @@ func _on_button_clicked(item: TreeItem, column: int, id: int, mouse_button_index
 			var path: String = _get_data_path(item)
 			var data: Variant = get_data_cell_data(item)
 			var index: int = item.get_index()
+			var op: int = range_to_operator(item.get_range(1))
 			
 			item.free()
-			data_erased.emit(path, index, data)
+			data_erased.emit(path, index, data, op)
 			return
 		ButtonIds.INT:
 			data_copy = 0

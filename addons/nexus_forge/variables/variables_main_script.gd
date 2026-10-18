@@ -494,9 +494,9 @@ func rename_folder(path: String, new_path: String) -> void:
 	folders_tree.rename_folder(path, new_path.rsplit("/", false, 1)[-1])
 
 
-func create_variable(value: Variant, val_name: String) -> void:
+func create_variable(value: Variant, val_name: String, select: bool = false) -> void:
 	if variables_tree.has_variable(val_name):
-		var msg: String = "ried to create a variable '%s' but the variable already existed. Type mismatch." % val_name
+		var msg: String = "Tried to create a variable '%s' but the variable already existed. Type mismatch." % val_name
 		var level: NFPluginGameHandler._LogLevel = NFPluginGameHandler._LogLevel.ERROR
 		if typeof(value) == variables_tree.get_variable_type(val_name):
 			if value == variables_tree.get_variable(val_name):
@@ -508,7 +508,11 @@ func create_variable(value: Variant, val_name: String) -> void:
 			level)
 		return
 	
-	variables_tree.create_variable(value, val_name)
+	variables_tree.create_variable(
+			value,
+			val_name,
+			"new_variable",
+			select)
 
 
 func remove_variable(variable: String) -> void:
@@ -516,7 +520,7 @@ func remove_variable(variable: String) -> void:
 
 
 func _on_add_variable_pressed(data: Variant) -> void:
-	var valid_id: String = variables_tree.create_variable(data)
+	var valid_id: String = variables_tree.create_variable(data, "new_variable", true)
 	var path: String = _current_folder.path_join(valid_id)
 	var type: int = typeof(data)
 	var can_dupe: bool = type == TYPE_DICTIONARY or type == TYPE_ARRAY
@@ -564,6 +568,8 @@ func refresh_current_variable_folder() -> void:
 	if not _variables_resource._variables.has(_current_folder):
 		return
 	
+	var is_selected: bool = variables_tree.is_variable_selected()
+	var selected: String = variables_tree.get_selected_variable() if is_selected else ""
 	var folder: Dictionary = _variables_resource._variables[_current_folder]
 	variables_tree.clear_variables()
 	for variable_id in folder:
@@ -574,6 +580,8 @@ func refresh_current_variable_folder() -> void:
 	var search_prompt: String = var_search_line.text.strip_edges()
 	if not search_prompt.is_empty():
 		variables_tree.search_for_pattern(search_prompt)
+	if is_selected:
+		variables_tree.select_variable(selected)
 
 
 func display_variables_of(folder_path: String) -> void:

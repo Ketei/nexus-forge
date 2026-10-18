@@ -958,7 +958,7 @@ func _on_create_database_pressed(node: Control) -> void:
 			result[1])
 	if Engine.is_editor_hint():
 		ProjectSettings.save()
-	reload_categories()
+	reload_item_resource(true)
 	$ItemsPanel/ItemsContainer.visible = true
 	node.visible = false
 	node.queue_free()
@@ -1102,7 +1102,7 @@ func _on_create_item_pressed() -> void:
 	
 	item_link.create_item(item_id)
 	item_link.set_item_name(item_id, "New Item")
-	items_tree.add_item(item_id)
+	items_tree.add_item(item_id, &"", true)
 	items_tree.select_item(item_id, false)
 	load_item(item_id)
 	loaded_item = item_id
