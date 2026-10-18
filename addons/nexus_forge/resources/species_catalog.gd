@@ -9,7 +9,9 @@ extends Resource
 ## For stats, skills and traits it can hold the values for inexistent properties
 ## but these will be ignored when calling a method that returns an object.
 
-
+# When inheriting stats, after the multiplication, it'll be snapped to this
+# decimal step.
+const _INHERITANCE_SNAP_VALUE: float = 0.001
 # This is not meant to be edited manually, as the exporter will clean it,
 # losing any custom species stats/skills/traits added manually.
 @export_storage var _species: Dictionary[StringName, Dictionary] = {}
@@ -62,31 +64,44 @@ func _species_stat_data(species_id: StringName, use_inheritance: bool) -> Dictio
 		var hybrid_genes: Dictionary[StringName, float] = {}
 		
 		for stat_id in dominant_genes.keys():
+			var full_value: float = 0.0
 			if recessive_genes.has(stat_id):
-				hybrid_genes[stat_id] = roundf((
+				full_value = ((
 							(dominant_genes[stat_id] * 0.75) +\
 							(recessive_genes[stat_id] / 4.0)
 						) * dilution_multiplier)
+				
 			else:
-				hybrid_genes[stat_id] = roundf(
-						dominant_genes[stat_id] *\
+				full_value = (dominant_genes[stat_id] *\
 						dilution_multiplier)
+			
+			hybrid_genes[stat_id] = snappedf(
+					full_value,
+					_INHERITANCE_SNAP_VALUE)
 		
 		for stat_id in recessive_genes.keys():
 			if hybrid_genes.has(stat_id):
 				continue
-			hybrid_genes[stat_id] = roundf(
+			var full_value: float = (
 					(recessive_genes[stat_id] / 2.0) *\
 					dilution_multiplier)
+			
+			hybrid_genes[stat_id] = snappedf(
+					full_value,
+					_INHERITANCE_SNAP_VALUE)
 		
 		stats.merge(hybrid_genes)
 		explored_species[recessive_parent] = null
 	else:
 		var dominant_genes: Dictionary[StringName, float] = {}
 		for stat_id in _species[dominant_parent]["stats"].keys():
-			dominant_genes[stat_id] = roundf(
+			var full_value: float = (
 					_species[dominant_parent]["stats"][stat_id] *\
 					dilution_multiplier)
+			
+			dominant_genes[stat_id] = snappedf(
+					full_value,
+					_INHERITANCE_SNAP_VALUE)
 		stats.merge(dominant_genes)
 	
 	dominant_parent = _species[dominant_parent]["parent_dominant"]
@@ -94,15 +109,18 @@ func _species_stat_data(species_id: StringName, use_inheritance: bool) -> Dictio
 	if dilution_multiplier <= dilution_factor:
 		return stats
 	
-	while _species.has(dominant_parent) and 0 < dilution_multiplier and not dominant_parent.is_empty() and not explored_species.has(dominant_parent):
+	while _species.has(dominant_parent) and dilution_factor < dilution_multiplier and not dominant_parent.is_empty() and not explored_species.has(dominant_parent):
 		dilution_multiplier -= dilution_factor
 		explored_species[dominant_parent] = null
 		for stat in _species[dominant_parent]["stats"].keys():
 			if stats.has(stat):
 				continue
-			stats[stat] = roundf(
+			var full_value: float = (
 					_species[dominant_parent]["stats"][stat] *\
 					dilution_multiplier)
+			stats[stat] = snappedf(
+					full_value,
+					_INHERITANCE_SNAP_VALUE)
 		
 		dominant_parent = _species[dominant_parent]["parent_dominant"]
 	
@@ -189,7 +207,7 @@ func _species_skill_data(species_id: StringName, use_inheritance: bool) -> Dicti
 	if dilution_multiplier <= dilution_factor:
 		return skills
 	
-	while _species.has(dominant_parent) and 0 < dilution_multiplier and not dominant_parent.is_empty() and not explored_species.has(dominant_parent):
+	while _species.has(dominant_parent) and dilution_factor < dilution_multiplier and not dominant_parent.is_empty() and not explored_species.has(dominant_parent):
 		dilution_multiplier -= dilution_factor
 		explored_species[dominant_parent] = null
 		for skill in _species[dominant_parent]["skills"].keys():
@@ -285,7 +303,7 @@ func _species_trait_data(species_id: StringName, use_inheritance: bool) -> Dicti
 	if dilution_multiplier <= dilution_factor:
 		return traits
 	
-	while _species.has(dominant_parent) and 0 < dilution_multiplier and not dominant_parent.is_empty() and not explored_species.has(dominant_parent):
+	while _species.has(dominant_parent) and dilution_factor < dilution_multiplier and not dominant_parent.is_empty() and not explored_species.has(dominant_parent):
 		dilution_multiplier -= dilution_factor
 		explored_species[dominant_parent] = null
 		for trait_id in _species[dominant_parent]["traits"].keys():
@@ -313,18 +331,17 @@ func get_species(species_id: StringName) -> NFSpeciesSheet:
 					"species_genetic_dilution"), 0.0) < 1.0
 	
 	var new_species: NFSpeciesSheet = NFSpeciesSheet.new()
-	
-	var stats: Dictionary[StringName, float] = _species_stat_data(species_id, inherit)
-	var skills: Dictionary[StringName, int] = _species_skill_data(species_id, inherit)
-	var traits: Dictionary[StringName, int] = _species_trait_data(species_id, inherit)
+	var species_entry: Dictionary = _species[species_id]
 	
 	new_species.id = species_id
-	new_species.name = _species[species_id]["name"]
-	new_species.description = _species[species_id]["description"]
-	new_species.custom_data.assign(_species[species_id]["custom_data"].duplicate(true))
-	new_species.stats = get_species_stats(species_id)
-	new_species.skills = get_species_skills(species_id)
-	new_species.traits = get_species_traits(species_id)
+	new_species.name = species_entry["name"]
+	new_species.description = species_entry["description"]
+	new_species.custom_data.assign(species_entry["custom_data"].duplicate(true))
+	new_species.dominant_species = species_entry["parent_dominant"]
+	new_species.recessive_species = species_entry["parent_recessive"]
+	new_species.stats = get_species_stats(species_id, inherit)
+	new_species.skills = get_species_skills(species_id, inherit)
+	new_species.traits = get_species_traits(species_id, inherit)
 	
 	return new_species
 
@@ -337,12 +354,15 @@ func get_species_base(species_id: StringName) -> NFSpeciesSheet:
 	if not _species.has(species_id):
 		return null
 	
+	var species_entry: Dictionary = _species[species_id]
 	var new_species: NFSpeciesSheet = NFSpeciesSheet.new()
 	
 	new_species.id = species_id
-	new_species.name = _species[species_id]["name"]
-	new_species.description = _species[species_id]["description"]
-	new_species.custom_data.assign(_species[species_id]["custom_data"].duplicate(true))
+	new_species.name = species_entry["name"]
+	new_species.description = species_entry["description"]
+	new_species.dominant_species = species_entry["parent_dominant"]
+	new_species.recessive_species = species_entry["parent_recessive"]
+	new_species.custom_data.assign(species_entry["custom_data"].duplicate(true))
 	new_species.stats = get_species_stats(species_id, false)
 	new_species.skills = get_species_skills(species_id, false)
 	new_species.traits = get_species_traits(species_id, false)

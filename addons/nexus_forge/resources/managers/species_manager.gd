@@ -247,8 +247,8 @@ func set_species_data(species_id: StringName, data_key: StringName, data: Varian
 ## Returns the data with [param data_key] from the [param species_id] or
 ## [code]null[/code] if the species isn't registered or key doesn't exist.
 func get_species_data(species_id: StringName, data_key: StringName) -> Variant:
-	if _species.has(species_id) and _species[species_id].custom_data.has(data_key):
-		return _species[species_id].custom_data[data_key]
+	if _species.has(species_id):
+		return _species[species_id].custom_data.get(data_key)
 	return null
 
 
