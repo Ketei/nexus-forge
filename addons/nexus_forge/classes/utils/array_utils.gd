@@ -304,3 +304,49 @@ static func erase_all(array: Array, value: Variant) -> void:
 static func is_index_valid(array: Array, index: int) -> bool:
 	var size: int = array.size()
 	return -size <= index and index < size
+
+
+## Returns a combined array where the [param target] array has its matching
+## values [param match_val] replaced with the ones on the same index of
+## the [param overlay] array.
+## [codeblock]
+## var a = [1, null, 3, null]
+## var b = ["one", "two", "three", "four", "five", "six"]
+## var combined = NFArrayUtils.overlay_array(a, b, null)
+## print(combined) # Prints [1, "two", 3, "four"]
+## [/codeblock]
+## [br][br]
+## Note: While the returned array is NOT a reference to any of the passed 
+## arguments, the values in the array could be depending on the type as they
+## are not duplicated.
+static func overlay_array(target: Array, overlay: Array, match_val: Variant) -> Array:
+	var final_arr: Array = target.duplicate()
+	var iter_size: int = mini(target.size(), overlay.size())
+	if iter_size == 0 or overlay.is_empty():
+		return final_arr
+	
+	for idx in range(iter_size):
+		if final_arr[idx] == match_val:
+			final_arr[idx] = overlay[idx]
+	return final_arr
+
+
+## Returns a combined PackedStringArray where the [param target] array has its
+## matching values [param match_val] replaced with the ones on the same index
+## of the [param overlay] array.
+## [codeblock]
+## var a = ["a", "", "", "d"]
+## var b = ["z", "y", "x"]
+## var combined = NFArrayUtils.overlay_packed_string_array(a, b, "")
+## print(combined) # Prints ["a", "y", "x", "d"]
+## [/codeblock]
+static func overlay_packed_string_array(target: PackedStringArray, overlay: PackedStringArray, match_val: String) -> PackedStringArray:
+	var final_arr: PackedStringArray = target.duplicate()
+	var iter_size: int = mini(target.size(), overlay.size())
+	if iter_size == 0:
+		return final_arr
+	
+	for idx in range(iter_size):
+		if final_arr[idx] == match_val:
+			final_arr[idx] = overlay[idx]
+	return final_arr

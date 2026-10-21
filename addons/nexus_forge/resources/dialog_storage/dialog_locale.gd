@@ -351,11 +351,15 @@ func has_format_string(conversation: StringName, key: String) -> bool:
 ## Sets the format string from the [param conversation] with the assigned
 ## [param key] to be [param text] and the given format [param arguments].
 func set_format_string(conversation: StringName, key: String, text: String, arguments: Dictionary[String, Dictionary]) -> void:
-	var target: Dictionary = NFDictUtils.get_nested_value(
-			format_strings,
-			[conversation, key],
-			{})
+	if not format_strings.has(conversation):
+		format_strings[conversation] = NFDictUtils.create_typed(TYPE_STRING, TYPE_DICTIONARY)
+	var convo: Dictionary = format_strings[conversation]
 	
-	if not target.is_empty():
+	if convo.has(key):
+		var target: Dictionary = convo[key]
 		target["base_string"] = text
 		target["format"] = arguments.duplicate(true)
+	else:
+		convo[key] = {
+			"format": arguments.duplicate(true),
+			"base_string": text}

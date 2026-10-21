@@ -807,9 +807,12 @@ func set_phrases_locale(locale: String) -> void:
 		var text_field: TextEdit = entry.get_child(2)
 		var key: String = entry.get_meta(&"phrase_key")
 		
-		text_field.text = active_conversation.get_format_string(
+		var new_text: String = active_conversation.get_format_string(
 			key,
 			locale)
+			
+		text_field.text = new_text
+		text_field.set_meta(&"old_value", new_text)
 
 
 func add_locale(locale_code: String) -> void:
@@ -1289,9 +1292,10 @@ func _do_update_node_localization(to: Dictionary, do_assign: bool = true) -> voi
 				true)
 		base_text_edt.text = base_text
 		translation_txt_box.text = new_text
+		translation_txt_box.set_meta(&"old_value", new_text)
 		
-		if dialog_scene_previewer.visible:
-			dialog_previewer.set_dialog(new_text)
+		_set_dialog_previewer_text(new_text)
+		
 	elif node.node_type == DiscourseGraphNode.DialogueNodeType.CHOICES:
 		var localized_options: Array[String] = []
 		var base_options: Array[String] = []
@@ -1323,9 +1327,7 @@ func _do_update_node_localization(to: Dictionary, do_assign: bool = true) -> voi
 			create_choice_node(
 					base_options[option_idx],
 					localized_options[option_idx])
-		
-		if dialog_scene_previewer.visible:
-			dialog_previewer.set_choices(localized_options)
+		_set_dialog_previewer_choices(localized_options)
 
 
 func _do_update_phrases_localization(to: Dictionary, do_assign: bool = true) -> void:
@@ -1732,8 +1734,8 @@ func _on_side_editor_locale_changed(from: String, to: String) -> void:
 		translation_txt_box.text = new_text
 		translation_txt_box.set_meta(&"old_value", new_text)
 		
-		if dialog_scene_previewer.visible:
-			dialog_previewer.set_dialog(new_text)
+		_set_dialog_previewer_text(new_text)
+	
 	elif active_node.node_type == DiscourseGraphNode.DialogueNodeType.CHOICES:
 		var localized_options: Array[String] = []
 		var base_options: Array[String] = []
@@ -1766,8 +1768,7 @@ func _on_side_editor_locale_changed(from: String, to: String) -> void:
 					base_options[option_idx],
 					localized_options[option_idx])
 		
-		if dialog_scene_previewer.visible:
-			dialog_previewer.set_choices(localized_options)
+		_set_dialog_previewer_choices(localized_options)
 
 
 func _on_localizer_node_selected(uuid: StringName) -> void:
@@ -1842,11 +1843,14 @@ func _on_localizer_node_selected(uuid: StringName) -> void:
 			
 			base_text_edt.text = base_text
 			translation_txt_box.text = new_text
-			if dialog_previewer != null and dialog_scene_previewer.visible:
-				dialog_previewer.set_dialog(new_text)
+			translation_txt_box.set_meta(&"old_value", new_text)
+			_set_dialog_previewer_text(new_text)
 			
 		DiscourseGraphNode.DialogueNodeType.CHOICES:
 			_set_localization_window_choices(new_node)
+			if dialog_previewer != null:
+				var choices: Array[String] = get_localizer_choices()
+				_set_dialog_previewer_choices(choices)
 		DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
 			var new_text: String = NFDictUtils.get_nested_value(
 				active_conversation.localization,
@@ -1861,9 +1865,8 @@ func _on_localizer_node_selected(uuid: StringName) -> void:
 			
 			base_text_edt.text = base_text
 			translation_txt_box.text = new_text
-			
-			if dialog_previewer != null and dialog_scene_previewer.visible:
-				dialog_previewer.set_dialog(new_text)
+			translation_txt_box.set_meta(&"old_value", new_text)
+			_set_dialog_previewer_text(new_text)
 	
 	localization_node_selected = new_node
 
@@ -1945,9 +1948,8 @@ func _on_switch_window_pressed() -> void:
 						base_lang[option_idx],
 						options[option_idx])
 			
-			if dialog_previewer != null:
-				dialog_previewer.set_choices(options)
-				
+			_set_dialog_previewer_choices(options)
+		
 		else: # Either dialog or localized text. Same method can be used.
 			var localized_text: String = NFDictUtils.get_nested_value(
 					active_conversation.localization,
@@ -1962,9 +1964,8 @@ func _on_switch_window_pressed() -> void:
 				
 			base_text_edt.text = base_text
 			translation_txt_box.text = localized_text
-			
-			if dialog_previewer != null:
-				dialog_previewer.set_dialog(localized_text)
+			translation_txt_box.set_meta(&"old_value", localized_text)
+			_set_dialog_previewer_text(localized_text)
 	else:
 		# If no active node was selected or no locale is selected we stop to prevent
 		# bad data assignation.
@@ -2772,6 +2773,7 @@ func open_conversation(dialog_id: int) -> bool:
 	languages_tree.clear_languages(false)
 	base_text_edt.text = ""
 	translation_txt_box.text = ""
+	translation_txt_box.set_meta(&"old_value", "")
 	clear_localized_options()
 	$LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/LocaleVBoxContainer.visible = false
 	$LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer.visible = false
@@ -3367,6 +3369,7 @@ func _on_edit_cases_pressed(field: Control) -> void:
 		argument_opt_btn.select(0)
 		selected_phrase_format = argument_format
 		default_case_edt.text = active_conversation.get_format_string_default_case(phrase_key, locale_code, argument_format)
+		default_case_edt.set_meta(&"old_value", default_case_edt.text)
 		
 		if NFDictUtils.has_nested_path(active_conversation.format_strings, [phrase_key, locale_code, "format", argument_format, "cases"]):
 			for custom_case in active_conversation.format_strings[phrase_key][locale_code]["format"][argument_format]["cases"]:
@@ -4063,9 +4066,10 @@ func _on_uncollapse_previewer_pressed() -> void:
 	if active_node == null:
 		return
 	elif active_node.node_type == DiscourseGraphNode.DialogueNodeType.DIALOG or active_node.node_type == DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
-		dialog_previewer.set_dialog(translation_txt_box.text)
+		_set_dialog_previewer_text(translation_txt_box.text)
 	elif active_node.node_type == DiscourseGraphNode.DialogueNodeType.CHOICES:
-		dialog_previewer.set_choices(get_localizer_choices())
+		var choices: Array[String] = get_localizer_choices()
+		_set_dialog_previewer_choices(choices)
 
 
 func _on_collapse_previewer_pressed() -> void:
@@ -4074,7 +4078,7 @@ func _on_collapse_previewer_pressed() -> void:
 
 
 func _on_text_changed_sync(text: String) -> void:
-	if dialog_previewer == null or not dialog_scene_previewer.visible or not auto_update_previewer.button_pressed:
+	if not is_instance_valid(dialog_previewer) or not dialog_scene_previewer.is_visible_in_tree() or not auto_update_previewer.button_pressed:
 		return
 	dialog_previewer.set_dialog(text)
 
@@ -4092,7 +4096,7 @@ func update_dialog_preview_choice(index: int, text: String) -> void:
 
 
 func _on_play_live_preview_pressed() -> void:
-	if dialog_previewer == null or not dialog_scene_previewer.visible:
+	if not is_instance_valid(dialog_previewer) or not dialog_scene_previewer.is_visible_in_tree():
 		return
 	
 	var active_node: DiscourseGraphNode = localization_nodes_tree.get_active_node()
@@ -4102,8 +4106,8 @@ func _on_play_live_preview_pressed() -> void:
 	elif active_node.node_type == DiscourseGraphNode.DialogueNodeType.DIALOG or active_node.node_type == DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
 		dialog_previewer.play_dialog(translation_txt_box.text)
 	elif active_node.node_type == DiscourseGraphNode.DialogueNodeType.CHOICES:
-		dialog_previewer.play_choices(
-			get_localizer_choices())
+		var choices: Array[String] = get_localizer_choices()
+		dialog_previewer.play_choices(choices)
 
 
 func _on_auto_update_toggled(toggled_on: bool) -> void:
@@ -4116,10 +4120,12 @@ func _on_auto_update_toggled(toggled_on: bool) -> void:
 		return
 	
 	if node.node_type == DiscourseGraphNode.DialogueNodeType.DIALOG:
-		dialog_previewer.set_dialog(
-			translation_txt_box.text)
+		_set_dialog_previewer_text(translation_txt_box.text)
+	elif node.node_type == DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
+		_set_dialog_previewer_text(translation_txt_box.text)
 	else:
-		dialog_previewer.set_choices(get_localizer_choices())
+		var choices: Array[String] = get_localizer_choices()
+		_set_dialog_previewer_choices(choices)
 
 
 func _on_default_case_focus_pressed() -> void:
@@ -4846,7 +4852,7 @@ func _on_dialog_node_text_changed(node_uuid: StringName, from: String, to: Strin
 	if localization_nodes_tree.get_active_node_uuid() == node_uuid and languages_tree.get_active_locale() == current_locale:
 		translation_txt_box.text = to
 		translation_txt_box.set_meta(&"old_value", to)
-		dialog_previewer.set_dialog(to)
+		_set_dialog_previewer_text(to)
 	undo.create_action("Set Dialog Node Dialog")
 	undo.add_do_method(_do_update_dialog_node_text.bind(node_uuid, to, current_locale))
 	undo.add_undo_method(_do_update_dialog_node_text.bind(node_uuid, from, current_locale))
@@ -4860,7 +4866,7 @@ func _do_update_dialog_node_text(node_uuid: StringName, to: String, locale: Stri
 	if localization_nodes_tree.get_active_node_uuid() == node_uuid and languages_tree.get_active_locale() == locale:
 		translation_txt_box.text = to
 		translation_txt_box.set_meta(&"old_value", to)
-		dialog_previewer.set_dialog(to)
+		_set_dialog_previewer_text(to)
 
 
 func _on_dialog_node_presist_toggled(node_uuid: StringName, is_toggled: bool) -> void:
@@ -4895,7 +4901,9 @@ func _on_choices_node_resized(node_uuid: StringName, old_snapshot: Dictionary, n
 		loc_snapshot = active_conversation.localization[node_uuid].duplicate(true)
 	if localization_nodes_tree.get_active_node_uuid() == node_uuid:
 		_set_localization_window_choices(discourse_graph_edit.get_discourse_node(node_uuid))
-		dialog_previewer.set_choices(get_localizer_choices())
+		if dialog_previewer != null:
+			var choices: Array[String] = get_localizer_choices()
+			_set_dialog_previewer_choices(choices)
 	
 	undo.create_action("Set Choice Node Choice Count")
 	undo.add_do_method(_set_choices_resize_action.bind(node_uuid, new_snapshot, loc_snapshot, current_locale))
@@ -4939,7 +4947,9 @@ func _set_choices_resize_action(node_uuid: StringName, node_snapshot: Dictionary
 	
 	if localization_nodes_tree.get_active_node_uuid() == node_uuid:
 		_set_localization_window_choices(node)
-		dialog_previewer.set_choices(get_localizer_choices())
+		if dialog_previewer != null:
+			var choices: Array[String] = get_localizer_choices()
+			_set_dialog_previewer_choices(choices)
 	
 	_on_conversation_changed()
 
@@ -4978,8 +4988,7 @@ func _set_localization_window_choices(new_node: DiscourseGraphNode) -> void:
 			options_base[option_idx],
 			options_localized[option_idx])
 	
-	if dialog_previewer != null and dialog_scene_previewer.visible:
-		dialog_previewer.set_choices(options_localized)
+	_set_dialog_previewer_choices(options_localized)
 
 
 func _on_shortcut_node_target_changed(node_uuid: StringName, old_anchor: StringName, new_anchor: StringName) -> void:
@@ -6058,6 +6067,18 @@ func _on_graph_cut_nodes_requested() -> void:
 				selected_node.get_node_state()
 	
 	_on_nodes_removed("cut", removed_nodes_data)
+
+
+func _set_dialog_previewer_text(text: String, ignore_auto_update: bool = false) -> void:
+	var auto_update: bool = true if ignore_auto_update else auto_update_previewer.button_pressed
+	if is_instance_valid(dialog_previewer) and dialog_scene_previewer.is_visible_in_tree() and auto_update:
+		dialog_previewer.set_dialog(text)
+
+
+func _set_dialog_previewer_choices(choices: Array[String], ignore_auto_update: bool = false) -> void:
+	var auto_update: bool = true if ignore_auto_update else auto_update_previewer.button_pressed
+	if is_instance_valid(dialog_previewer) and dialog_scene_previewer.is_visible_in_tree() and auto_update:
+		dialog_previewer.set_choices(choices)
 
 
 func _notification(what: int) -> void:

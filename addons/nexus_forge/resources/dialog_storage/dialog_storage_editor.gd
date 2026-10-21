@@ -149,25 +149,27 @@ func _get_text_data_localized(node_uuid: String, for_locale: String) -> Dictiona
 		return data
 	
 	var node_id: StringName = node_data[node_uuid].get("name", &"")
+	var localized: bool = node_data[node_uuid]["metadata"]["localized"]
 	
 	if _dialog_overrides != null and _dialog_overrides.has_override(node_id, for_locale, TYPE_STRING):
 		data["is_override"] = true
 		data["text"] = _dialog_overrides.get_override(node_id, for_locale)
 		return data
 	
-	if not node_data[node_uuid]["metadata"]["localized"]:
-		if typeof(localization[node_uuid]["unlocalized"]) == TYPE_STRING:
-			data["text"] = localization[node_uuid]["unlocalized"]
-		else:
-			data["text"] = "[LOCALIZATION DATA MISMATCH]"
-		return data
+	var e: Dictionary = NFDictUtils.EMPTY_DICT
+	var localization_dict: Dictionary = localization.get(node_uuid, e)
+	var locales_dict: Dictionary = localization_dict.get("locales", e)
 	
-	if localization[node_uuid]["locales"].has(for_locale):
-		if typeof(localization[node_uuid]["locales"][for_locale]) == TYPE_STRING:
-			data["text"] = localization[node_uuid]["locales"][for_locale]
-		else:
-			data["text"] = "[LOCALIZATION DATA MISMATCH]"
-		return data
+	if localized:
+		var localized_data: Variant = locales_dict.get(for_locale)
+		if typeof(localized_data) == TYPE_STRING:
+			data["text"] = localized_data
+			return data
+	else:
+		var unlocalized_data: Variant = localization_dict.get("unlocalized")
+		if typeof(unlocalized_data) == TYPE_STRING:
+			data["text"] = localization[node_uuid]["unlocalized"]
+			return data
 	
 	# 0 = No Fallback
 	# 1 = Direct Fallback: Merge fallback_object with loaded objects
@@ -185,18 +187,17 @@ func _get_text_data_localized(node_uuid: String, for_locale: String) -> Dictiona
 	if fallback_mode == 2 and for_locale.contains("_"):
 		var base_lang: String = for_locale.get_slice("_", 0)
 		if base_lang != lang_fallback:
-			if localization[node_uuid]["locales"].has(base_lang):
-				if typeof(localization[node_uuid]["locales"][base_lang]) == TYPE_STRING:
+			if locales_dict.has(base_lang):
+				var locale_data: Variant = locales_dict.get(base_lang)
+				if typeof(locale_data) == TYPE_STRING:
 					data["text"] = localization[node_uuid]["locales"][base_lang]
-				else:
-					data["text"] = "[LOCALIZATION DATA MISMATCH]"
-				return data
+					return data
 	
-	if localization[node_uuid]["locales"].has(lang_fallback):
-		if typeof(localization[node_uuid]["locales"][lang_fallback]) == TYPE_STRING:
-			data["text"] = localization[node_uuid]["locales"][lang_fallback]
-		else:
-			data["text"] = "[LOCALIZATION DATA MISMATCH]"
+	if locales_dict.has(lang_fallback):
+		var locale_data: Variant = locales_dict.get(lang_fallback)
+		if typeof(locale_data) == TYPE_STRING:
+			data["text"] = locale_data
+	
 	return data
 
 
@@ -204,6 +205,7 @@ func _get_array_data_localized(node_uuid: String, for_locale: String) -> Diction
 	for_locale = TranslationServer.standardize_locale(for_locale)
 	
 	var choices: PackedStringArray = []
+	var build_array: Array = []
 	var data: Dictionary[String, Variant] = {
 		"is_override": false,
 		"choices": choices}
@@ -216,44 +218,30 @@ func _get_array_data_localized(node_uuid: String, for_locale: String) -> Diction
 		return data
 	else:
 		choices.resize(node_size)
+		build_array.resize(node_size)
 	
 	if not localization.has(node_uuid) or for_locale.is_empty():
 		choices.fill("[MISSING LOCALIZATION DATA]")
 		return data
 	
 	var node_id: StringName = node_data[node_uuid].get("name", &"")
+	var localized: bool = node_data[node_uuid]["metadata"]["localized"]
 	
-	if _dialog_overrides != null and _dialog_overrides.has_override(node_id, for_locale, TYPE_PACKED_STRING_ARRAY):
-		var resulting_choices: PackedStringArray = _dialog_overrides.get_override(node_id, for_locale).duplicate()
-		var override_size: int = resulting_choices.size()
-		if override_size < node_size:
-			for missing_entry in range(node_size - override_size):
-				resulting_choices.append("[MISSING OVERRIDE LOCALIZATION DATA]")
-		elif node_size < override_size:
-			resulting_choices.resize(node_size)
-		data["is_override"] = true
-		data["choices"] = resulting_choices
-		return data
-	
-	if not node_data[node_uuid]["metadata"]["localized"]:
-		var result: PackedStringArray = []
+	if localized:
+		if localization[node_uuid]["locales"].has(for_locale):
+			if typeof(localization[node_uuid]["locales"][for_locale]) == TYPE_PACKED_STRING_ARRAY:
+				var source: PackedStringArray = localization[node_uuid]["locales"][for_locale]
+				for idx in range(mini(source.size(), node_size)):
+					var choice_item: String = source[idx].strip_edges()
+					if  not choice_item.is_empty():
+						build_array[idx] = choice_item
+	else:
 		if typeof(localization[node_uuid]["unlocalized"]) == TYPE_PACKED_STRING_ARRAY:
-			result = localization[node_uuid]["unlocalized"].duplicate()
-		var result_size: int = result.size()
-		if result_size < node_size:
-			for missing in range(node_size - result_size):
-				result.append("[MISSING LOCALIZATION DATA]")
-		elif node_size < result_size:
-			result.resize(node_size)
-		data["choices"] = result
-		return data
-	
-	if localization[node_uuid]["locales"].has(for_locale):
-		if typeof(localization[node_uuid]["locales"][for_locale]) == TYPE_PACKED_STRING_ARRAY:
-			var items: PackedStringArray = localization[node_uuid]["locales"][for_locale]
-			for idx in range(mini(items.size(), node_size)):
-				if choices[idx].strip_edges().is_empty():
-					choices[idx] = items[idx]
+			var source: PackedStringArray = localization[node_uuid]["unlocalized"]
+			for idx in range(mini(source.size(), node_size)):
+				var choice_item: String = source[idx].strip_edges()
+				if not choice_item.is_empty():
+					build_array[idx] = choice_item
 	
 	# 0 = No Fallback
 	# 1 = Direct Fallback: Merge fallback_object with loaded objects
@@ -265,7 +253,18 @@ func _get_array_data_localized(node_uuid: String, for_locale: String) -> Diction
 			"internationalization/locale/fallback")
 	
 	if fallback_mode == 0 or for_locale == lang_fallback:
+		for idx in range(build_array.size()):
+			var val: Variant = build_array[idx]
+			if val == null:
+				choices[idx] = "[MISSING LOCALIZATION DATA]"
+			else:
+				choices[idx] = val
 		return data
+	else:
+		for idx in range(build_array.size()):
+			var val: Variant = build_array[idx]
+			if val != null:
+				choices[idx] = val
 	
 	if fallback_mode == 2 and for_locale.contains("_"):
 		var base_lang: String = for_locale.get_slice("_", 0)
@@ -273,16 +272,35 @@ func _get_array_data_localized(node_uuid: String, for_locale: String) -> Diction
 			if localization[node_uuid]["locales"].has(base_lang):
 				if typeof(localization[node_uuid]["locales"][base_lang]) == TYPE_PACKED_STRING_ARRAY:
 					var source: PackedStringArray = localization[node_uuid]["locales"][base_lang]
-					for idx in range(mini(source.size(), node_size)):
-						if choices[idx].strip_edges().is_empty():
-							choices[idx] = source[idx]
+					var it: int = mini(source.size(), node_size)
+					for idx in range(it):
+						var choice_item: String = source[idx].strip_edges()
+						if choices[idx].is_empty() and not choice_item.is_empty():
+							choices[idx] = choice_item
 	
 	if localization[node_uuid]["locales"].has(lang_fallback):
 		if typeof(localization[node_uuid]["locales"][lang_fallback]) == TYPE_PACKED_STRING_ARRAY:
 			var source: PackedStringArray = localization[node_uuid]["locales"][lang_fallback]
-			for idx in range(mini(source.size(), node_size)):
-				if choices[idx].strip_edges().is_empty():
-					choices[idx] = source[idx]
+			var it: int = mini(source.size(), node_size)
+			for idx in range(it):
+				var choice_item: String = source[idx].strip_edges()
+				if choices[idx].is_empty() and not choice_item.is_empty():
+					choices[idx] = choice_item
+	
+	var empty: int = choices.find("")
+	while -1 < empty:
+		choices[empty] = "[MISSING OVERRIDE LOCALIZATION DATA]"
+		empty = choices.find("", empty + 1)
+	
+	if _dialog_overrides != null:
+		var override: Variant = _dialog_overrides.get_override(node_id, for_locale)
+		if typeof(override) == TYPE_ARRAY:
+			var it: int = mini(override.size(), node_size)
+			for override_index in range(it):
+				var item: Variant = override[override_index]
+				if item != null:
+					choices[override_index] = item
+			data["is_override"] = true
 	
 	return data
 
@@ -563,6 +581,8 @@ func get_text_entry(node_uuid: StringName, locale: String, fallback: String = "[
 ## If the node isn't of a type that supports choices or it is not found it'll
 ## return [param fallback].
 func get_choices_entry(node_uuid: StringName, locale: String = "", fallback: Array = ["[ENTRY NOT FOUND]"]) -> Array[String]:
+	var e: Dictionary = NFDictUtils.EMPTY_DICT
+	
 	locale = TranslationServer.standardize_locale(locale)
 	var return_array: Array[String] = []
 	
@@ -570,40 +590,37 @@ func get_choices_entry(node_uuid: StringName, locale: String = "", fallback: Arr
 		return_array.assign(fallback)
 		return fallback
 	
-	#var localization_data: Dictionary = localization[node_uuid]
-	var has_id: bool = NFDictUtils.has_nested_path(node_data, [node_uuid, "name"])
-	var node_id: StringName = NFDictUtils.get_nested_value(
-			node_data,
-			[node_uuid, "name"],
-			&"",
-			true) if has_id else &""
-	var localized: bool = NFDictUtils.get_nested_value(
-			node_data,
-			[node_uuid, "metadata", "localized"],
-			true,
-			true)
+	var has_id: bool = node_data.get(node_uuid, e).has("name")
+	var node_id: StringName = node_data[node_uuid]["name"] if has_id else &""
+	var localized: bool = node_data.get(
+			node_uuid, e).get("metadata", e).get("localized", true)
 	
-	if _dialog_overrides != null and has_id and _dialog_overrides.has_override(node_id, locale):
-		var override = _dialog_overrides.get_override(node_id, locale)
-		var override_type: int = typeof(override)
-		if override_type == TYPE_PACKED_STRING_ARRAY:
-			return_array.assign(override)
-	elif localized:
-		return_array.assign(
-				NFDictUtils.get_nested_value(
-						localization,
-						[node_uuid, "locales", locale],
-						[],
-						true))
+	var base_array: Array[String] = []
+	
+	if localized:
+		if localization.get(node_uuid, e).get("locales", e).has(locale):
+			var data: Variant = localization[node_uuid]["locales"][locale]
+			if typeof(data) == TYPE_ARRAY:
+				base_array.assign(data)
 	else:
-		return_array.assign(
-				NFDictUtils.get_nested_value(
-						localization,
-						[node_uuid, "unlocalized"],
-						[],
-						true))
+		if localization.get(node_uuid, NFDictUtils.EMPTY_DICT).has("unlocalized"):
+			var data: Variant = localization[node_uuid]["unlocalized"]
+			if typeof(data) == TYPE_ARRAY:
+				base_array.assign(data)
 	
-	return return_array
+	if _dialog_overrides != null and has_id:
+		var override = _dialog_overrides.get_override(node_id, locale)
+		if typeof(override) == TYPE_ARRAY:
+			var overr_size: int = override.size()
+			if base_array.size() < overr_size:
+				base_array.resize(overr_size)
+			
+			for idx in range(mini(override.size(), base_array.size())):
+				var data: Variant = override[idx]
+				if typeof(data) == TYPE_STRING:
+					base_array[idx] = data
+	
+	return base_array
 
 
 ## Sets the locale for text (Dialogs & localized text nodes). Passing [code]""[/code]

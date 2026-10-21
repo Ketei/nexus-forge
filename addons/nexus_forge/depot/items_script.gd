@@ -622,7 +622,7 @@ func save_current_currency() -> void:
 	
 	currency_resource.clear_currency_data(loaded_currency)
 	
-	var data: Dictionary[StringName, Variant] = currency_custom_data_tree.item_data_tree.get_data_stringname_keys()
+	var data: Dictionary[StringName, Variant] = currency_custom_data_tree.get_data_stringname_keys()
 	
 	for data_key in data:
 		currency_resource.set_currency_data(
@@ -641,6 +641,7 @@ func sync_calculator_currencies() -> void:
 				currency_id,
 				currency_resource.get_currency_name(currency_id),
 				currency_resource.get_currency_value(currency_id))
+	currencies_calculator_tree.update_calculation()
 
 
 func _on_go_to_calculator_pressed() -> void:

@@ -715,20 +715,26 @@ func import_species_data(species_sheet: NFSpeciesCatalog, with_inheritance: bool
 	for stat in char_stats_container.get_children():
 		var target_stat: StringName = stat.get_meta(&"stat_id")
 		if stats.has(target_stat):
-			stat.get_meta(&"value").set_value_no_signal(
+			var spin: SpinBox = stat.get_meta(&"value")
+			spin.set_value_no_signal(
 					stats[target_stat])
+			spin.set_meta(&"old_value", spin.value)
 	
 	for skill in char_skill_container.get_children():
 		var target_skill: StringName = skill.get_meta(&"skill_id")
 		if skills.has(target_skill):
-			skill.get_child(1).set_value_no_signal(
+			var spin: SpinBox = skill.get_child(1)
+			spin.set_value_no_signal(
 				skills[target_skill])
+			spin.set_meta(&"old_value", spin.value)
 	
 	for child in char_traits_container.get_children():
 		var target_trait: StringName = child.get_meta(&"trait_id")
 		if traits.has(target_trait):
-			child.get_child(1).set_value_no_signal(
+			var spin: SpinBox = child.get_child(1)
+			spin.set_value_no_signal(
 					traits[target_trait])
+			spin.set_meta(&"old_value", spin.value)
 	
 	if updated:
 		var new_attributes: Dictionary[StringName, Dictionary] = {
@@ -1320,8 +1326,9 @@ func set_focus_order_for_trait(trait_entry: HBoxContainer) -> void:
 
 
 func _on_stat_clamp_toggled(enabled: bool, check: CheckBox, stat: SpinBox, min_box: SpinBox, max_box: SpinBox, limit_btn: Button, is_min: bool) -> void:
+	var current_stat_value: float = stat.value
 	if undo != null and not check.disabled:
-		var stat_id: String = String(check.get_parent().get_parent().get_meta(&"stat_id")).capitalize()
+		var stat_id: String = String(check.get_parent().get_parent().get_parent().get_meta(&"stat_id")).capitalize()
 		undo.create_action("%s Range Toggled" % stat_id)
 		undo.add_do_method(_do_toggle_range_check.bind(
 				check,
@@ -1331,7 +1338,8 @@ func _on_stat_clamp_toggled(enabled: bool, check: CheckBox, stat: SpinBox, min_b
 				max_box,
 				is_min,
 				limit_btn,
-				true))
+				true,
+				current_stat_value))
 		undo.add_undo_method(_do_toggle_range_check.bind(
 				check,
 				not enabled,
@@ -1340,14 +1348,15 @@ func _on_stat_clamp_toggled(enabled: bool, check: CheckBox, stat: SpinBox, min_b
 				max_box,
 				is_min,
 				limit_btn,
-				true))
+				true,
+				current_stat_value))
 		undo.commit_action(false)
 	
-	_do_toggle_range_check(check, enabled, stat, min_box, max_box, is_min, limit_btn, false)
+	_do_toggle_range_check(check, enabled, stat, min_box, max_box, is_min, limit_btn, false, current_stat_value)
 	_something_changed()
 
 
-func _do_toggle_range_check(check: CheckBox, enabled: bool, stat: SpinBox, min_spinbox: SpinBox, max_spinbox: SpinBox, is_min: bool, limit_btn: Button, update_check: bool = false) -> void:
+func _do_toggle_range_check(check: CheckBox, enabled: bool, stat: SpinBox, min_spinbox: SpinBox, max_spinbox: SpinBox, is_min: bool, limit_btn: Button, update_check: bool = false, old_stat_value: float = 0.0) -> void:
 	if update_check:
 		check.set_pressed_no_signal(enabled)
 	
@@ -1359,11 +1368,17 @@ func _do_toggle_range_check(check: CheckBox, enabled: bool, stat: SpinBox, min_s
 		stat.allow_lesser = not enabled
 		max_spinbox.allow_lesser = not enabled
 		min_spinbox.editable = enabled
+		if enabled and stat.value < min_spinbox.value:
+			stat.set_value_no_signal(min_spinbox.value)
+		elif not enabled and update_check:
+			stat.set_value_no_signal(old_stat_value)
 	else:
 		stat.allow_greater = not enabled
 		max_spinbox.editable = enabled
 		if enabled and max_spinbox.value < stat.value:
 			stat.set_value_no_signal(max_spinbox.value)
+		elif not enabled and update_check:
+			stat.set_value_no_signal(old_stat_value)
 	
 	if NFBitUtils.is_bit_index(flags, 2, true): # Uncollapsed
 		match NFBitUtils.get_bits(flags, 3):
@@ -1387,7 +1402,6 @@ func _do_toggle_range_check(check: CheckBox, enabled: bool, stat: SpinBox, min_s
 				limit_btn.icon = load("res://addons/nexus_forge/icons/range_collapsed_minmax.svg")
 	
 	limit_btn.set_meta(&"range_flags", flags)
-
 
 func _toggle_limit_visibility_pressed(toggle_button: Button, limit_container: HBoxContainer) -> void:
 	var flags: int = toggle_button.get_meta(&"range_flags")

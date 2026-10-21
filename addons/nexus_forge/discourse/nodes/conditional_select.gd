@@ -85,4 +85,4 @@ func _get_issues() -> PackedStringArray:
 		issues.append("Error: No value assigned for true evaluation")
 	if not has_any_input(2):
 		issues.append("Error: No value assigned for false evaluation")
-	return PackedStringArray()
+	return issues

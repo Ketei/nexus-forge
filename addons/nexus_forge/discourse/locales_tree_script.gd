@@ -193,9 +193,9 @@ func erase_language(lang: String) -> void:
 	var normalized_lang: String = TranslationServer.standardize_locale(lang)
 	if normalized_lang.is_empty():
 		return
-	var parts: PackedStringArray = normalized_lang.split("_", false)
-	var language: String = parts[0]
-	var region: String = "" if parts.size() < 2 else parts[1]
+	
+	var language: String = NFStringUtils.get_locale_language(lang)
+	var region: String = NFStringUtils.get_locale_country(lang)
 	
 	for lang_item in get_root().get_children():
 		if lang_item.get_metadata(0)["language_code"] == language:
@@ -204,6 +204,8 @@ func erase_language(lang: String) -> void:
 					main_language = null
 				if active_language == lang_item:
 					active_language = null
+				if active_region != null and active_region.get_parent() == lang_item:
+					active_region = null
 				lang_item.free()
 			else:
 				for reg_item in lang_item.get_children():

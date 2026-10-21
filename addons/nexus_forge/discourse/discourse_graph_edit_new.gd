@@ -1777,8 +1777,9 @@ func _on_connection_drag_ended() -> void:
 
 func _on_connection_to_empty(from_node: StringName, from_port: int, release_position: Vector2) -> void:
 	if _pending_connection_change.has("type"):
+		var conn_snapshot: Dictionary = _pending_connection_change.duplicate()
 		commit_disconnection()
-		if _pending_connection_change["type"] == ConnectionChangeType.SWITCH_DISCONNECT:
+		if conn_snapshot["type"] == ConnectionChangeType.SWITCH_DISCONNECT:
 			dialog_changed.emit()
 	
 	if not Input.is_key_pressed(KEY_CTRL):

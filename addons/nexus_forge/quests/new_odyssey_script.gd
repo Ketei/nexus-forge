@@ -355,6 +355,7 @@ func set_ui_enabled(enabled: bool) -> void:
 	title_ln_edt.editable = enabled
 	description_txt_edt.editable = enabled
 	custom_data_tree.enabled = enabled
+	obj_req_tree.enabled = enabled
 	events_tree.enabled = enabled
 	edit_types_btn.disabled = disabled
 	
@@ -1479,7 +1480,7 @@ func _on_objective_data_created(path: String, index: int , data: Variant, operat
 			selected_stage,
 			selected_objective,
 			path))
-	undo.commit_action()
+	undo.commit_action(false)
 	_on_something_changed()
 
 
@@ -1716,15 +1717,19 @@ func _undo_create_objective(on_stage: StringName, objective_id: StringName) -> v
 
 
 func _on_quest_id_changed(from: StringName, to: StringName) -> void:
+	quest_resource.id = to
+	update_crumbs_label()
+	
 	undo.create_action("Set Quest ID")
 	undo.add_do_method(_do_update_quest_id.bind(to))
 	undo.add_undo_method(_do_update_quest_id.bind(from))
-	undo.commit_action()
+	undo.commit_action(false)
 	_on_something_changed()
 
 
 func _do_update_quest_id(to: StringName) -> void:
 	quest_resource.id = to
+	quest_tree.set_quest_id(to)
 	update_crumbs_label()
 
 
@@ -2064,6 +2069,7 @@ func _do_move_objective(objective_id: StringName, from_stage: StringName, to_sta
 func _on_stage_erased(stage_id: StringName, index: int, objective_order: Array[String]) -> void:
 	var original_stage: NFQuestStage = quest_resource.get_stage(stage_id)
 	var duplicate_stage: NFQuestStage = original_stage.duplicate(true)
+	var is_entry: bool = quest_resource.entry_stage == stage_id
 	# --- Godot 4.4 Compatibility code ---
 	# A quest stage saves objectives as subresoruces. To ensure duplication
 	# is true we will go and duplicate the resources too. This is solved in
@@ -2102,6 +2108,8 @@ func _on_stage_erased(stage_id: StringName, index: int, objective_order: Array[S
 	if selected_stage == stage_id:
 		quest_tree.select_quest(false)
 		load_quest_data()
+	if is_entry:
+		quest_resource.entry_stage = &""
 	
 	undo.create_action("Erase Stage '%s'" % stage_id)
 	undo.add_do_method(_do_erase_stage.bind(stage_id))
@@ -2109,13 +2117,14 @@ func _on_stage_erased(stage_id: StringName, index: int, objective_order: Array[S
 			duplicate_stage,
 			index,
 			targeted_stages,
-			objective_order))
+			objective_order,
+			is_entry))
 	undo.commit_action(false)
 	
 	_on_something_changed()
 
 
-func _undo_erase_stage(stage_res: NFQuestStage, index: int, pointers_patch: Dictionary[StringName, Dictionary], objectives: Array[String]) -> void:
+func _undo_erase_stage(stage_res: NFQuestStage, index: int, pointers_patch: Dictionary[StringName, Dictionary], objectives: Array[String], is_entry: bool) -> void:
 	if quest_resource.has_stage(stage_res.id):
 		NFPluginGameHandler._log_msg(
 				"odyssey - editor",
@@ -2146,9 +2155,11 @@ func _undo_erase_stage(stage_res: NFQuestStage, index: int, pointers_patch: Dict
 		if pointers_patch[stage_id]["on_failure"]:
 			stage.failure_stage_id = stage_res.id
 	
-	quest_resource.add_stage(stage_res)
+	quest_resource.add_stage(restored_stage)
 	quest_tree.add_stage(stage_res.id, index)
 	quest_tree._restore_objectives(stage_res.id, objectives)
+	if is_entry:
+		quest_resource.entry_stage = stage_res.id
 	
 	update_stage_target_pointers()
 
@@ -2171,6 +2182,8 @@ func _do_erase_stage(stage_id: StringName) -> void:
 	if selected_stage == stage_id:
 		quest_tree.select_quest(false)
 		load_quest_data()
+	if quest_resource.entry_stage == stage_id:
+		quest_resource.entry_stage = &""
 
 
 func _on_objective_erased(from_stage: StringName, objective_id: StringName, index: int) -> void:

@@ -340,7 +340,8 @@ func _on_item_edited() -> void:
 		edited.get_metadata(0)["id"])
 	
 	if new_text.is_empty() or new_text == prev_text:
-		edited.set_text(0, prev_text)
+		if edited.get_text(0) != new_text:
+			edited.set_text(0, prev_text)
 		return
 	
 	var old_id: StringName = edited.get_metadata(0)["id"]

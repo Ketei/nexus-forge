@@ -338,6 +338,10 @@ func set_quest(quest: NFQuest, select: bool = false, emit_select: bool = true) -
 		select_quest(emit_select)
 
 
+func set_quest_id(to: StringName) -> void:
+	get_root().get_metadata(0)["id"] = to
+
+
 func add_stage(stage_id: String, index: int = -1, select: bool = false) -> TreeItem:
 	var stage_item: TreeItem = root.create_child()
 	stage_item.set_text(0, stage_id)

@@ -527,8 +527,8 @@ func _on_add_data_pressed(data_name: String, value: Variant) -> void:
 			true)
 	if race_data_tree.has_undo():
 		undo.create_action("Data Changed")
-		undo.add_do_method(race_data_tree.redo)
-		undo.add_undo_method(race_data_tree.undo)
+		undo.add_do_method(_perform_data_action.bind(loaded_species, true))
+		undo.add_undo_method(_perform_data_action.bind(loaded_species, false))
 		undo.commit_action(false)
 	_on_something_changed()
 

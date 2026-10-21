@@ -170,6 +170,6 @@ func set_state(state: Dictionary) -> void:
 			continue
 		
 		var curr_key: StringName = StringName(key)
-		var curr_am: int = int(state[key])
+		var curr_am: int = mini(0, int(state[key]))
 		if NexusForge.CurrencyManager.has_currency(curr_key) and 0 < curr_am:
 			_wallet[curr_key] = curr_am

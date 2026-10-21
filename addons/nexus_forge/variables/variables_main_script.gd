@@ -130,7 +130,7 @@ func reload_resource(first_load: bool = false) -> void:
 			no_db_container.name = &"NoVarResContainer"
 			add_child(no_db_container)
 			no_db_container.message_minimum_size.x = 550
-			no_db_container.set_resource_type("BlackboardData", "Variables", "Variables")
+			no_db_container.set_resource_type("NFBlackboardData", "Variables", "Variables")
 			no_db_container.create_resource_pressed.connect(on_create_resource_pressed)
 			no_db_container.load_resource_pressed.connect(on_load_resource_pressed)
 			no_db_container.resource_dropped.connect(_on_resource_dropped.bind(no_db_container))
@@ -152,6 +152,7 @@ func _on_variable_renamed(from: String, to: String) -> void:
 	undo.add_undo_method(_apply_variable_rename.bind(_current_folder, to, from, false))
 	undo.commit_action(false)
 	_apply_variable_rename(_current_folder, from, to, true)
+	on_something_changed()
 
 
 func _apply_variable_rename(folder: String, old_name: String, new_name: String, first_action: bool = false) -> void:
@@ -180,11 +181,11 @@ func _on_variable_updated(variable_id: String, value: Variant) -> void:
 	var old_value: Variant = _variables_resource._variables.get(folder_strn, {}).get(var_strn)
 	var type: int = typeof(old_value)
 	
-	if type == TYPE_DICTIONARY or type == TYPE_ARRAY:
-		old_value = old_value.duplicate()
-	
 	if typeof(value) == type and value == old_value:
 		return
+	
+	if type == TYPE_DICTIONARY or type == TYPE_ARRAY:
+		old_value = old_value.duplicate()
 	
 	var action_name: String = ""
 	
@@ -198,6 +199,8 @@ func _on_variable_updated(variable_id: String, value: Variant) -> void:
 	undo.add_undo_method(_apply_variable_update.bind(_current_folder, variable_id, old_value))
 	undo.commit_action(false)
 	_apply_variable_update(_current_folder, variable_id, value, true)
+	
+	on_something_changed()
 
 
 func _apply_variable_update(folder: String, variable: String, target_value: Variant, is_first_run: bool = false) -> void:

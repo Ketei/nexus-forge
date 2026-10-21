@@ -459,13 +459,13 @@ func _on_menu_id_pressed(id: int) -> void:
 			
 			if 0 <= selected_key_index:
 				save_current_resource()
-			
-			if _open_files.has(res_pre.get_instance_id()):
-				files_tree.select_map(res_pre, false)
+			var new_id: int = res_pre.get_instance_id()
+			if _open_files.has(new_id):
+				files_tree.select_map(new_id, false)
 			else:
 				var new_undo: UndoRedo = UndoRedo.new()
 				new_undo.max_steps = MAX_UNDO_STEPS
-				_open_files[res_pre.get_instance_id()] = {
+				_open_files[new_id] = {
 					"resource": res_pre,
 					"undo": new_undo,
 					"unsaved": false}

@@ -59,7 +59,7 @@ func _export_begin(_features: PackedStringArray, _is_debug: bool, _path: String,
 			NFPluginGameHandler.get_setting_path("discourse")).strip_edges()
 	
 	export_characters = ProjectSettings.get_setting(
-			NFPluginGameHandler.get_setting_path("characters_id_to_files"),
+			NFPluginGameHandler.get_setting_path("character_register_ids"),
 			true)
 	
 	if not file_base_path.ends_with("/"):

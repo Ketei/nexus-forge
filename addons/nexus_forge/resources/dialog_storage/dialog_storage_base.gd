@@ -19,6 +19,27 @@ const NodeType := NFDialogParser.NodeTypes
 ## The max amount of locales that will be stored per-dialogue.
 const LOCALE_STORE_MAX: int = 3
 
+## Enables/Disables mutex locking to prevent race conditions
+## if doing multi-threaded access. Only use if you know what you're doing.[br]
+## This flag also toggles the [code]thread_safe[/code] flag of the internal
+## caches.
+## [br][br]
+## [b]Tip:[/b] Leave as [code]false[/code] if only using the main thread
+## to avoid unnecessary locking overhead.
+## [br][br]
+## [b]Note:[/b] Enabling this option instantiates a [Mutex] for this object,
+## setting it to [code]false[/code] drops the mutex's reference.
+var thread_safe: bool = false:
+	set(t):
+		if thread_safe and not t:
+			_mutex = null
+		thread_safe = t
+		parsed_dialog_cache.thread_safe = t
+		_loaded_locales.thread_safe = t
+		if t and _mutex == null:
+			_mutex = Mutex.new()
+var _mutex: Mutex = null
+
 ## The ID of the entry node.
 @export_storage var entry_node: StringName = &""
 
@@ -55,6 +76,9 @@ var _uid_to_id: Dictionary[StringName, StringName] = {
 
 var _dialog_overrides: NFDialogEntryOverride = null:
 	set(o):
+		if thread_safe:
+			_mutex.lock()
+		
 		if _dialog_overrides != null:
 			_clear_override_keys()
 			_dialog_overrides.override_changed.disconnect(_on_dialog_override_updated)
@@ -63,15 +87,23 @@ var _dialog_overrides: NFDialogEntryOverride = null:
 		
 		if _dialog_overrides != null:
 			_dialog_overrides.override_changed.connect(_on_dialog_override_updated)
+		
+		if thread_safe:
+			_mutex.unlock()
 
 var _phrase_overrides: NFPhraseEntryOverride = null:
 	set(o):
+		if thread_safe:
+			_mutex.lock()
+		
 		if _phrase_overrides != null:
 			_clear_override_keys()
 			_phrase_overrides.phrases_changed.disconnect(_on_phrases_changed)
 		_phrase_overrides = o
 		if o != null:
 			o.phrases_changed.connect(_on_phrases_changed)
+		if thread_safe:
+			_mutex.unlock()
 
 ## Cache of parsed dialogues for quick loading.
 var parsed_dialog_cache: NFLRUCache
@@ -88,24 +120,47 @@ func _init() -> void:
 
 
 func _store_locale(locale_code: String, new_locale: DiscourseDialogLocale) -> void:
+	if thread_safe:
+		_mutex.lock()
 	_loaded_locales.cache_data(locale_code, new_locale)
 	if locale_code == _active_locale_code:
 		_active_locale = new_locale
+	if thread_safe:
+		_mutex.unlock()
 
 
 func _get_locale(locale_code: String) -> DiscourseDialogLocale:
+	var value: DiscourseDialogLocale = null
+	if thread_safe:
+		_mutex.lock()
+	
 	if _loaded_locales.is_in_cache(locale_code):
-		return _loaded_locales.get_cache(locale_code)
-	return null
+		value = _loaded_locales.get_cache(locale_code)
+	
+	if thread_safe:
+		_mutex.unlock()
+	
+	return value
 
 
 func _set_locale(locale_code: String) -> void:
-	_active_locale = _get_locale(locale_code)
+	if thread_safe:
+		_mutex.lock()
+	if _loaded_locales.is_in_cache(locale_code):
+		_active_locale = _loaded_locales.get_cache(locale_code)
 	_active_locale_code = locale_code
+	if thread_safe:
+		_mutex.unlock()
 
 
 func _has_locale(locale_code: String) -> bool:
-	return _loaded_locales.is_in_cache(locale_code)
+	var in_cache: bool = false
+	if thread_safe:
+		_mutex.lock()
+	in_cache = _loaded_locales.is_in_cache(locale_code)
+	if thread_safe:
+		_mutex.unlock()
+	return in_cache
 
 
 func _get_text_data(dialog_id: String, node_id: String) -> Dictionary:
@@ -113,42 +168,74 @@ func _get_text_data(dialog_id: String, node_id: String) -> Dictionary:
 		"is_override": false,
 		"text": "[MISSING LOCALIZATION DATA]"}
 	
+	if thread_safe:
+		_mutex.lock()
+	
 	if _active_locale == null:
+		if thread_safe:
+			_mutex.unlock()
 		return data
 	
 	var locale: String = _active_locale.locale
 	
-	if _dialog_overrides != null and _dialog_overrides.has_override(node_id, locale, TYPE_STRING):
-		data["is_override"] = true
-		data["text"] = _dialog_overrides.get_override(node_id, locale)
+	if _dialog_overrides != null:
+		var override: Variant = _dialog_overrides.get_override(node_id, locale)
+		if typeof(override) == TYPE_STRING:
+			data["is_override"] = true
+			data["text"] = _dialog_overrides.get_override(node_id, locale)
+		else:
+			data["text"] = _active_locale.get_text(dialog_id, node_id)
 	else:
 		data["text"] = _active_locale.get_text(dialog_id, node_id)
+	
+	if thread_safe:
+		_mutex.unlock()
 	
 	return data
 
 
 func _get_choices(dialog_id: String, id: String) -> PackedStringArray:
+	if thread_safe:
+		_mutex.lock()
+	
 	if _active_locale == null:
+		if thread_safe:
+			_mutex.unlock()
 		return ["[MISSING LOCALIZATION DATA]"]
 	
 	var locale: String = _active_locale.locale
+	var origin_choices: PackedStringArray = _active_locale.get_choices(dialog_id, id)
 	
-	if _dialog_overrides != null and _dialog_overrides.has_override(id, locale):
-		var override = _dialog_overrides.get_override(id, locale)
-		if typeof(override) == TYPE_PACKED_STRING_ARRAY:
-			return override.duplicate()
-		else:
-			return PackedStringArray(["[OVERRIDE TYPE ERROR]"])
-	else:
-		return _active_locale.get_choices(dialog_id, id)
+	if _dialog_overrides != null:
+		var override: Variant = _dialog_overrides.get_override(id, locale)
+		if typeof(override) == TYPE_ARRAY:
+			for idx in range(mini(origin_choices.size(), override.size())):
+				var override_item: Variant = override[idx]
+				if override_item != null:
+					origin_choices[idx] = override_item
+	
+	if thread_safe:
+		_mutex.unlock()
+	
+	return origin_choices
 
 
-func _on_dialog_override_updated(node_id: StringName, locale: String) -> void:
+func _on_dialog_override_updated(node_id: StringName, locale: String, indexes: Array[int]) -> void:
 	if not node_logic.has(node_id):
 		return
 	
-	var duuid: String = String(node_id) + "/" + locale + "/override"
-	parsed_dialog_cache.remove_data(duuid)
+	if indexes.is_empty():
+		# The base dialog text was changed or removed.
+		var duuid: String = String(node_id) + "/" + locale + "/override"
+		parsed_dialog_cache.remove_data(duuid)
+	else:
+		# One or more specific choices were changed or removed.
+		for idx in indexes:
+			var unlocked_duuid: String = String(node_id) + "_" + str(idx) + "_unlocked/" + locale + "/override"
+			var locked_duuid: String = String(node_id) + "_" + str(idx) + "_locked/" + locale + "/override"
+			
+			parsed_dialog_cache.remove_data(unlocked_duuid)
+			parsed_dialog_cache.remove_data(locked_duuid)
 
 
 func _on_phrases_changed() -> void:
@@ -165,23 +252,44 @@ func _clear_override_keys() -> void:
 
 
 func _get_format_string(conversation: String, key: String) -> String:
-	if _active_locale == null:
-		return "[MISSING LOCALIZATION DATA]"
+	var final_string: String = "[MISSING LOCALIZATION DATA]"
+	if thread_safe:
+		_mutex.lock()
 	
+	if _active_locale == null:
+		if thread_safe:
+			_mutex.unlock()
+		return final_string
+	
+	var string_set: bool = false
 	if _phrase_overrides != null:
 		var possible_override: Variant = _phrase_overrides.get_base_string_override(
 				conversation,
 				_active_locale_code,
 				key)
 		if possible_override != null:
-			return possible_override
+			final_string = possible_override
+			string_set = true
+
+	if not string_set:
+		final_string = _active_locale.get_format_string_text(conversation, key)
 	
-	return _active_locale.get_format_string_text(conversation, key)
+	if thread_safe:
+		_mutex.unlock()
+	
+	return final_string
 
 
 func _get_format_string_args(conversation: String, key: String) -> Dictionary[String, Dictionary]:
+	var final_args: Dictionary[String, Dictionary] = {}
+	
+	if thread_safe:
+		_mutex.lock()
+	
 	if _active_locale == null:
-		return {}
+		if thread_safe:
+			_mutex.unlock()
+		return final_args
 	
 	var base: Dictionary[String, Dictionary] = _active_locale.get_format_string_args(conversation, key)
 	
@@ -216,6 +324,8 @@ func _get_format_string_args(conversation: String, key: String) -> Dictionary[St
 							case_dict.erase(def_case)
 						case_dict.merge(over_format["cases"], true)
 	
+	if thread_safe:
+		_mutex.unlock()
 	return base
 
 
@@ -223,7 +333,7 @@ func _get_format_string_args(conversation: String, key: String) -> Dictionary[St
 ## on a dialogue.
 class NFDialogEntryOverride extends RefCounted:
 	## Emits when an override was changed
-	signal override_changed(node_id: String, locale: String)
+	signal override_changed(node_id: String, locale: String, indexes: Array[int])
 	# node id: {locale: etry}
 	var _overrides: Dictionary[String, Dictionary] = {}
 	
@@ -249,32 +359,171 @@ class NFDialogEntryOverride extends RefCounted:
 	## Returns the registered override of [param node_id] for [param locale].[br]
 	## Returns [code]null[/code] if no override existed.
 	func get_override(node_id: StringName, locale: String) -> Variant:
+		return _overrides.get(node_id, NFDictUtils.EMPTY_DICT).get(locale)
+	
+	
+	## Registers a text [param override] for [param node_id] on the
+	## specified [param locale]. If [param force] is true, and another override
+	## that is not a dialogue override exists, it'll be overwriten with a
+	## dialogue override instead. Otherwise, it'll
+	## stop the assign.[br]
+	func set_dialog_override(node_id: StringName, locale: String, override: String, force: bool = false) -> bool:
+		if not _overrides.has(node_id):
+			_overrides[node_id] = NFDictUtils.create_typed(TYPE_STRING_NAME, TYPE_NIL)
+		var target: Dictionary = _overrides[node_id]
+		var current: Variant = target.get(locale)
+		var type: int = typeof(current)
+		if type != TYPE_NIL and type != TYPE_STRING and not force:
+			return false
+		_overrides[node_id][locale] = override
+		override_changed.emit(node_id, locale, [])
+		return true
+	
+	
+	## Clears the dialogue override of [param node_id] for the [param locale]
+	func remove_dialog_override(node_id: StringName, locale: String) -> void:
 		if _overrides.has(node_id):
-			return _overrides[node_id].get(locale)
-		return null
+			var target: Dictionary = _overrides[node_id]
+			var override: Variant = target.get(locale)
+			if typeof(override) == TYPE_STRING:
+				target.erase(locale)
+				if target.is_empty():
+					_overrides.erase(node_id)
+				override_changed.emit(node_id, locale, [])
 	
 	
-	## Registers an [param override] for [param node_id] in the specific
-	## [param locale].
-	func set_override(node_id: StringName, locale: String, override) -> void:
-		var override_type: int = typeof(override)
-		var node_dict: Variant = _overrides.get(node_id)
+	## Sets a choice override for a specific [param node_id].If [param force]
+	## is true, and another override that is not a choices override exists,
+	## it'll be overwriten with a choices override instead. Otherwise, it'll
+	## stop the assign.[br]
+	## [b]Note:[/b] This override is NOT destructive. Meaning that if a previous
+	## choice override exists and is not being overwritten by [param choices]
+	## it'll remain in the overrides.
+	func set_choices_override(node_id: StringName, locale: String, choices: Array, force: bool = false) -> bool:
+		if not _overrides.has(node_id):
+			_overrides[node_id] = NFDictUtils.create_typed(TYPE_STRING_NAME, TYPE_NIL)
+		var target: Dictionary = _overrides[node_id]
+		var current: Variant = target.get(locale)
+		var type: int = typeof(current)
+		if type != TYPE_NIL and type != TYPE_ARRAY and not force:
+			return false
 		
-		if override_type == TYPE_NIL:
-			if typeof(node_dict) == TYPE_DICTIONARY and node_dict.erase(locale):
-				override_changed.emit(node_id, locale)
+		var valid_array: Array = []
+		var total_size: int = choices.size()
+		valid_array.resize(total_size)
+		
+		for idx in range(total_size):
+			if typeof(choices[idx]) == TYPE_STRING:
+				valid_array[idx] = choices[idx]
+		
+		if 0 < total_size and valid_array[-1] == null:
+			var current_size: int = total_size
+			while 0 < current_size and valid_array[-1] != null:
+				valid_array.remove_at(-1)
+				current_size -= 1
+		
+		if type == TYPE_ARRAY:
+			var curr_size: int = current.size()
+			var valid_size: int = valid_array.size()
+			if curr_size < valid_size:
+				current.resize(valid_size)
+			var updated_indexes: Array[int] = []
+			for idx in range(mini(valid_size, curr_size)):
+				if valid_array[idx] != null:
+					current[idx] = valid_array[idx]
+					updated_indexes.append(idx)
+			if not updated_indexes.is_empty():
+				override_changed.emit(node_id, locale, updated_indexes)
 		else:
-			if typeof(node_dict) == TYPE_DICTIONARY:
-				var existing_val: Variant = node_dict.get(locale)
-				if typeof(existing_val) == override_type and existing_val == override:
-					return
-				node_dict[locale] = override
-			else:
-				node_dict = NFDictUtils.create_typed(TYPE_STRING, TYPE_NIL)
-				node_dict[locale] = override
-				_overrides[node_id] = node_dict
+			var valid_idx: Array[int] = []
+			for idx in range(valid_array.size()):
+				if valid_array[idx] != null:
+					valid_idx.append(idx)
 			
-			override_changed.emit(node_id, locale)
+			target[locale] = valid_array
+			if not valid_idx.is_empty():
+				override_changed.emit(node_id, locale, valid_idx)
+		
+		return true
+	
+	
+	## Sets an override for a specific choice on index [param choice_idx] to be
+	## [param override]. If [param force] is true, and another override
+	## that is not a choice override exists, it'll be overwriten with a
+	## choices override instead. Otherwise, it'll
+	## stop the assign.[br]
+	## [b]Note:[/b] This method does NOT work with negative indexes.[br]
+	func set_choice_override(node_id: StringName, locale: String, choice_idx: int, override: String, force: bool = false) -> bool:
+		if choice_idx < 0:
+			return false
+		if not _overrides.has(node_id):
+			_overrides[node_id] = NFDictUtils.create_typed(TYPE_STRING_NAME, TYPE_NIL)
+		var target: Dictionary = _overrides[node_id]
+		var current: Variant = target.get(locale)
+		var type: int = typeof(current)
+		if type != TYPE_NIL and type != TYPE_ARRAY and not force:
+			return false
+		var override_arr: Array = current if type == TYPE_ARRAY else []
+		var arr_size: int = override_arr.size()
+		var target_size: int = choice_idx + 1
+		
+		if arr_size < target_size:
+			override_arr.resize(target_size)
+		override_arr[choice_idx] = override
+		
+		target[locale] = override_arr
+		override_changed.emit(node_id, locale, [choice_idx])
+		return true
+	
+	
+	## Removes all choice overrides for the [param node_id] of the specified
+	## [param locale].[br]
+	## [b]Note:[/b] This only works if the override exists and is of type choices.
+	func clear_choice_overrides(node_id: StringName, locale: String) -> void:
+		var value: Variant = _overrides.get(node_id, NFDictUtils.EMPTY_DICT).get(locale)
+		if typeof(value) != TYPE_ARRAY:
+			return
+		
+		var indexes: Array[int] = []
+		for idx in range(value.size()):
+			if value[idx] != null:
+				indexes.append(idx)
+		
+		_overrides[node_id].erase(locale)
+		if _overrides[node_id].is_empty():
+			_overrides.erase(node_id)
+		if not indexes.is_empty():
+			override_changed.emit(node_id, locale, indexes)
+	
+	
+	## Removes the choice override of index [param choice_idx].
+	func remove_choice_override(node_id: StringName, locale: String, choice_idx: int) -> void:
+		if not _overrides.has(node_id):
+			return
+		
+		var target: Dictionary = _overrides[node_id]
+		var override: Array = target.get(locale)
+		if typeof(override) != TYPE_ARRAY:
+			return
+		
+		if not NFArrayUtils.is_index_valid(override, choice_idx): # Index out of bounds
+			return
+		
+		var arr_size: int = override.size()
+		var real_idx: int = wrapi(choice_idx, 0, arr_size)
+		
+		override[real_idx] = null
+		var is_empty: bool = true
+		for item in override:
+			if item != null:
+				is_empty = false
+				break
+		
+		target.erase(locale)
+		
+		if target.is_empty():
+			_overrides.erase(node_id)
+		override_changed.emit(node_id, locale, [real_idx])
 
 
 ## An override used by [DiscourseDialog] to replace phrases text

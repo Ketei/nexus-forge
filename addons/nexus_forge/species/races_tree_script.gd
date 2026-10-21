@@ -717,7 +717,10 @@ func search_species(text: String) -> void:
 		_show_all_species()
 	else:
 		for species in get_root().get_children():
-			species.visible = _search_subspecies(text, species)
+			var own_match: bool = species.get_text(0).containsn(text)
+			var subspecies_found: bool = _search_subspecies(text, species)
+			species.visible = own_match or subspecies_found
+			
 	
 	current_search = text
 
@@ -731,7 +734,9 @@ func _show_all_species(_from: TreeItem = get_root()) -> void:
 func _search_subspecies(text: String, species: TreeItem) -> bool:
 	var found: bool = false
 	for child in species.get_children():
-		child.visible = child.get_text(0).containsn(text) or _search_subspecies(text, child)
+		var own_match: bool = child.get_text(0).containsn(text)
+		var child_match: bool = _search_subspecies(text, child)
+		child.visible = own_match or child_match
 		if not found and child.visible:
 			found = true
 	return found

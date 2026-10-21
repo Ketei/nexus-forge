@@ -107,7 +107,10 @@ func _on_item_edited() -> void:
 			var old_name: String = edited.get_metadata(0)
 			var valid_name: String = validate_var_name(edited.get_text(0), edited)
 			if old_name == valid_name:
+				if edited.get_text(0) != valid_name:
+					edited.set_text(0, valid_name)
 				return
+			
 			edited.set_text(0, valid_name)
 			edited.set_metadata(0, valid_name)
 			if sorting_column == 0:
@@ -116,7 +119,6 @@ func _on_item_edited() -> void:
 			variable_renamed.emit(old_name, valid_name)
 		1: # Var value changed
 			variable_updated.emit(edited.get_text(0), get_tree_variant(edited))
-	something_changed.emit()
 
 
 func create_variable(variable_value: Variant, variable_name: String = "new_variable", select: bool = false) -> String:

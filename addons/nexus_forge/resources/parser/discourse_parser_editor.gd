@@ -379,9 +379,12 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 		NodeTypes.RANDOM:
 			var total_weight: int = 0
 			var choices: Array[Dictionary] = []
+			var default_weight: int = NFDialogParser.RANDOM_DEFAULT_WEIGHT
+			if not data["input_connections"]["default_weight"]["target_node_uuid"].is_empty():
+				default_weight = _get_data(data["input_connections"]["default_weight"]["target_node_uuid"], default_weight)
 			
 			for choice:Dictionary in metadata["options"]:
-				var weight: int = NFDialogParser.RANDOM_DEFAULT_WEIGHT
+				var weight: int = default_weight
 				if not choice["input_connections"]["weight"]["target_node_uuid"].is_empty():
 					weight = _get_data(choice["input_connections"]["weight"]["target_node_uuid"], weight)
 				if weight <= 0:
