@@ -270,8 +270,9 @@ func _on_method_selected(idx: int) -> void:
 			new_state)
 
 
-func reload_methods() -> void:
-	available_methods = get_user_methods()
+func reload_methods(reload_api: bool = true) -> void:
+	if reload_api:
+		available_methods = get_user_methods()
 	
 	if available_methods.is_empty():
 		methods_node.clear()

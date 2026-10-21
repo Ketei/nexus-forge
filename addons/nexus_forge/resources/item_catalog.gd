@@ -232,7 +232,7 @@ func get_item(item_id: StringName) -> NFItemSheet:
 	item_sheet.value = data["value"]
 	item_sheet.description = data["description"]
 	item_sheet.custom_data.assign(data["custom_data"])
-	item_sheet.flags.assign(data["flags"])
+	item_sheet.flags.assign(data["flags"].keys())
 	
 	return item_sheet
 

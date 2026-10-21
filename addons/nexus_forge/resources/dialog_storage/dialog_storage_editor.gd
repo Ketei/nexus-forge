@@ -363,14 +363,17 @@ func set_format_string(key: String, text: String, locale: String) -> void:
 	if locale.is_empty():
 		return
 	
-	var key_dict: Dictionary = format_strings.get_or_add(key, {})
+	if not format_strings.has(key):
+		format_strings[key] = NFDictUtils.create_typed(TYPE_STRING, TYPE_DICTIONARY)
+	var key_dict: Dictionary = format_strings[key]
 	
 	if not key_dict.has(locale):
-		format_strings[key][locale] = {
+		var new_locale: Dictionary[String, Variant] = {
 			"base_string": "",
-			"format": {}}
-	
-	format_strings[key][locale]["base_string"] = text
+			"format": NFDictUtils.create_typed(TYPE_STRING, TYPE_DICTIONARY)}
+		key_dict[locale] = new_locale
+	var locale_dict: Dictionary = key_dict[locale]
+	locale_dict["base_string"] = text
 
 
 ## Checks if the format key exists in the given key and locale. If it doesn't it'll
@@ -383,11 +386,11 @@ func validate_format_string_format(key: String, locale: String, format: String) 
 	
 	if not format_strings[key][locale]["format"].has(format):
 		format_strings[key][locale]["format"][format] = {
-			"cases": {},
+			"cases": NFDictUtils.create_typed(TYPE_STRING, TYPE_STRING),
 			"default": ""}
 	else:
 		if not format_strings[key][locale]["format"][format].has("cases"):
-			format_strings[key][locale]["format"][format]["cases"] = {}
+			format_strings[key][locale]["format"][format]["cases"] = NFDictUtils.create_typed(TYPE_STRING, TYPE_STRING)
 		if not format_strings[key][locale]["format"][format].has("default"):
 			format_strings[key][locale]["format"][format]["default"] = ""
 	
@@ -405,12 +408,12 @@ func set_format_string_case(key: String, locale: String, format: String, case: S
 	if not format_strings[key].has(locale):
 		format_strings[key][locale] = {
 			"base_string": "",
-			"format": {}}
+			"format": NFDictUtils.create_typed(TYPE_STRING, TYPE_DICTIONARY)}
 	
 	if not format_strings[key][locale]["format"].has(format):
 		format_strings[key][locale]["format"][format] = {
 			"default": "",
-			"cases": {}}
+			"cases": NFDictUtils.create_typed(TYPE_STRING, TYPE_STRING)}
 	
 	NFDictUtils.set_nested_value(
 			format_strings,
@@ -451,12 +454,12 @@ func set_format_string_default_case(key: String, locale: String, format: String,
 	if not format_strings[key].has(locale):
 		format_strings[key][locale] = {
 			"base_string": "",
-			"format": {}}
+			"format": NFDictUtils.create_typed(TYPE_STRING, TYPE_DICTIONARY)}
 	
 	if not format_strings[key][locale]["format"].has(format):
 		format_strings[key][locale]["format"][format] = {
 			"default": "",
-			"cases": {}}
+			"cases": NFDictUtils.create_typed(TYPE_STRING, TYPE_STRING)}
 	
 	NFDictUtils.set_nested_value(
 			format_strings,
@@ -561,20 +564,18 @@ func get_text_entry(node_uuid: StringName, locale: String, fallback: String = "[
 	if not localization.has(node_uuid) or localization[node_uuid]["type"] != LocalizationType.TEXT:
 		return fallback
 	
-	var localized: bool = NFDictUtils.get_nested_value(
-			node_data,
-			[node_uuid, "metadata", "localized"],
-			true,
-			true)
+	var e: Dictionary = NFDictUtils.EMPTY_DICT
+	var source_dict: Dictionary = localization[node_uuid]
+	
+	var localized: bool = node_data.get(node_uuid, e).get("metadata", e).get("localized", true)
 	
 	if localized:
-		return NFDictUtils.get_nested_value(
-				localization,
-				[node_uuid, "locales", locale],
-				fallback,
-				true)
+		var data_source: Dictionary = source_dict.get("locales", e)
+		var data: String = data_source.get(locale, fallback)
+		return data
 	else:
-		return NFDictUtils.get_nested_value(localization, [node_uuid, "unlocalized"], fallback, true)
+		var data: String = source_dict.get("unlocalized", fallback)
+		return data
 
 
 ## Gets the array of choices of a node with [param node_uuid] of a specific [param locale].
@@ -600,12 +601,12 @@ func get_choices_entry(node_uuid: StringName, locale: String = "", fallback: Arr
 	if localized:
 		if localization.get(node_uuid, e).get("locales", e).has(locale):
 			var data: Variant = localization[node_uuid]["locales"][locale]
-			if typeof(data) == TYPE_ARRAY:
+			if typeof(data) == TYPE_PACKED_STRING_ARRAY:
 				base_array.assign(data)
 	else:
 		if localization.get(node_uuid, NFDictUtils.EMPTY_DICT).has("unlocalized"):
 			var data: Variant = localization[node_uuid]["unlocalized"]
-			if typeof(data) == TYPE_ARRAY:
+			if typeof(data) == TYPE_PACKED_STRING_ARRAY:
 				base_array.assign(data)
 	
 	if _dialog_overrides != null and has_id:
@@ -2077,7 +2078,8 @@ func _get_format_string_args_localized(key: String, for_locale: String) -> Dicti
 					target_locale_to_use = lang_fallback
 		
 		if not target_locale_to_use.is_empty():
-			base = key_dict[target_locale_to_use]["format"].duplicate(true)
+			var current: Dictionary = key_dict[target_locale_to_use]["format"].duplicate(true)
+			base.assign(current)
 	
 	# 2. Deep-merge the specific locale's overrides on top of the resolved base
 	if _phrase_overrides != null:

@@ -46,7 +46,7 @@ func _get_folder_parts(path: String) -> Dictionary[String, Variant]:
 
 
 ## Returns true if a variable exist with the path [param path]
-func has_variable(path: StringName) -> bool:
+func has_variable(path: String) -> bool:
 	var parts: Dictionary[String, Variant] = _get_folder_parts(path)
 	
 	if not parts["parsed"]:

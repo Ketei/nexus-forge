@@ -2351,7 +2351,7 @@ func _on_new_conversation_pressed() -> void:
 		dialog_id_ln_edt.editable = true
 	load_conversation(new_conv, true)
 	
-	discourse_graph_edit.reset_scroll_offset()
+	discourse_graph_edit.reset_scroll_offset.call_deferred()
 	
 	add_to_recently_opened_files(result[1])
 

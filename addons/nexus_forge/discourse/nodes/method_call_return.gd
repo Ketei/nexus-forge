@@ -186,8 +186,9 @@ func set_method(method_id: String) -> bool:
 	return false
 
 
-func reload_methods() -> void:
-	available_methods = get_user_methods()
+func reload_methods(reload_api: bool = true) -> void:
+	if reload_api:
+		available_methods = get_user_methods()
 	
 	if available_methods.is_empty():
 		if has_any_output(0):

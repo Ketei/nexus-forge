@@ -145,8 +145,9 @@ func _on_signal_selected(idx: int) -> void:
 			new_state)
 
 
-func reload_signals() -> void:
-	available_signals = get_user_signals()
+func reload_signals(reload_api: bool = true) -> void:
+	if reload_api:
+		available_signals = get_user_signals()
 	
 	if available_signals.is_empty():
 		signals_node.clear()

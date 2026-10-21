@@ -621,7 +621,7 @@ func select_node(node_uuid: StringName) -> void:
 		if root_item.get_metadata(0)["is_node"] and root_item.get_metadata(0)["uuid"] == node_uuid:
 			ensure_expanded(root_item)
 			root_item.select(0)
-			ensure_cursor_is_visible()
+			scroll_to_item(root_item)
 			return
 		elif _select_on_children(root_item, node_uuid):
 			return

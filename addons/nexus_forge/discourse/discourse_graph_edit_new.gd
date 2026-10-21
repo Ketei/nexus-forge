@@ -1403,9 +1403,15 @@ func update_localization_data(dialog: EditorDiscourseDialog, for_locale: String)
 
 func update_methods() -> void:
 	var clean_invalid: bool = false
+	
+	var script: Script = preload("res://addons/nexus_forge/discourse/nodes/method_call_node.gd")
+	var ret_script: Script = preload("res://addons/nexus_forge/discourse/nodes/method_call_return.gd")
+	script.available_methods = script.get_user_methods()
+	ret_script.available_methods = ret_script.get_user_methods()
+	
 	for node in method_callers:
 		if is_instance_valid(node):
-			node.reload_methods()
+			node.reload_methods(false)
 		else:
 			clean_invalid = true
 	
@@ -1415,9 +1421,13 @@ func update_methods() -> void:
 
 func update_signals() -> void:
 	var clean_invalid: bool = false
+	
+	var sig_script: Script = load("res://addons/nexus_forge/discourse/nodes/signal_node.gd")
+	sig_script.available_signals = sig_script.get_user_signals()
+	
 	for node in signalers:
 		if is_instance_valid(node):
-			node.reload_signals()
+			node.reload_signals(false)
 		else:
 			clean_invalid = true
 	
