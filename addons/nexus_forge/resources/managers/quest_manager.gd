@@ -491,6 +491,13 @@ func _check_stage_auto_advance(quest_id: StringName) -> void:
 	if not _active_quests.has(quest_id) or _advancing_quests.has(quest_id):
 		return
 	
+	if _advancing_quests.has(quest_id):
+		NFPluginGameHandler._log_msg(
+				"odyssey",
+				"Blocked recursive auto-advance for quest '%s' to prevent stack overflow." % quest_id,
+				NFPluginGameHandler._LogLevel.ERROR)
+		return
+	
 	_advancing_quests[quest_id] = null
 	var entry: NFQuestEntry = _active_quests[quest_id]
 	
