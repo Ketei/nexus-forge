@@ -442,6 +442,15 @@ class NFCurrencyConversionResult extends RefCounted:
 	## How much value was lost due to an indivisible value of
 	## [member origin_currency] by [member target_currency]
 	var lost_value: int
+	
+	## Returns the currency as a balance.
+	## [br][br]
+	## Note: Any [member lost_value] will not be carried over to the balance.
+	func as_balance() -> NFCurrencyBalance:
+		var new_balance := NFCurrencyBalance.new()
+		new_balance.set_currency(origin_currency, remainder)
+		new_balance.set_currency(target_currency, converted)
+		return new_balance
 
 
 ## An object returning when minimizing or maximizing the value of
@@ -460,3 +469,11 @@ class NFCurrencyDenominationResult extends RefCounted:
 	## How much value was lost due to an indivisible value
 	## between currencies.
 	var lost_value: int
+	
+	
+	## Returns the currencies as a balance.
+	## [br][br]
+	## Note: Any [member lost_value] will not be carried over to the balance.
+	func as_balance() -> NFCurrencyBalance:
+		var new_balance := NFCurrencyBalance.new(converted_currencies)
+		return new_balance

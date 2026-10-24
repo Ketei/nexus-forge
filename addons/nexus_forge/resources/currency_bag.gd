@@ -17,7 +17,7 @@ signal wallet_changed
 var _wallet: Dictionary[StringName, int] = {}
 
 
-## Adds currencies to the wallet in bulk.[br]
+## Sums currencies to the wallet in bulk.[br]
 ## [b]Note:[/b] This method sums the currencies safely, meaning that if
 ## a currency amount passed in [param funds] would've overflown the data,
 ## it'll keep it at the max possible integer.
@@ -39,7 +39,7 @@ func add_funds(funds: Dictionary[StringName, int]) -> void:
 		wallet_changed.emit()
 
 
-## Adds a [param currency] to the wallet by the specified [param amount].[br]
+## Sums a [param currency] to the wallet by the specified [param amount].[br]
 ## [b]Note:[/b] This method sums the currency safely, meaning that if
 ## [param value] would've overflown the data, it'll keep it at the max
 ## possible integer.
@@ -57,6 +57,16 @@ func add_currency(currency: StringName, value: int) -> void:
 		wallet_changed.emit()
 
 
+## Sums the currencies in [param balance] to this wallet.[br]
+## [b]Note:[/b] This method sums the currency safely, meaning that if
+## [param value] would've overflown the data, it'll keep it at the max
+## possible integer.
+func add_balance(balance: NFCurrencyBalance) -> void:
+	if balance == null:
+		return
+	add_funds(balance.as_dictionary())
+
+
 ## Returns [code]true[/code] if this wallet has equal or more [param amount]
 ## of [param currency]
 func has_enough(currency: StringName, amount: int) -> bool:
@@ -70,15 +80,11 @@ func has_enough_funds(to_match: Dictionary[StringName, int], times: int = 1) -> 
 	if times < 1:
 		return true
 	
-	var valid_currencies: Dictionary[StringName, int] = {}
-	
-	for id in to_match:
-		if to_match[id] <= 0:
+	for currency in to_match:
+		var cost: int = to_match[currency]
+		
+		if cost <= 0:
 			continue
-		valid_currencies[id] = to_match[id]
-	
-	for currency in valid_currencies:
-		var cost: int = valid_currencies[currency]
 		
 		if NFMath.INT_MAX / cost < times:
 			return false
@@ -89,46 +95,80 @@ func has_enough_funds(to_match: Dictionary[StringName, int], times: int = 1) -> 
 	return true
 
 
+## Returns [code]true[/code] if this wallet has equal or more funds matching
+## the passed [param balance] multiplied by [param times].
+func has_enough_balance(balance: NFCurrencyBalance, times: int = 1) -> bool:
+	if times < 1:
+		return true
+	return has_enough_funds(balance.as_dictionary(), times)
+
+
 ## Returns the total amount [param of_currency] in this wallet.
 func current_amount(of_currency: StringName) -> int:
 	return _wallet.get(of_currency, 0)
 
 
 ## Removes [param currency] from this wallet by the specified [param amount].
-func remove_currency(currency: StringName, amount: int) -> bool:
+## Returns [code]true[/code] if the balance was removed.
+## [br][br]
+## [b]Note:[/b] This method will only subtract the currency if the wallet has enough
+## funds to match the subtracted value unless [param force] is [code]true[/code].
+func remove_currency(currency: StringName, amount: int, force: bool = false) -> bool:
 	amount = maxi(0, amount)
 	if amount <= 0:
 		return true
 	
-	if not has_enough(currency, amount):
+	if not force and not has_enough(currency, amount):
 		return false
 	
-	if _wallet[currency] == amount:
-		_wallet.erase(currency)
-	else:
-		_wallet[currency] -= amount
+	if _wallet.has(currency):
+		if _wallet[currency] <= amount:
+			_wallet.erase(currency)
+		else:
+			_wallet[currency] -= amount
 	
-	wallet_changed.emit()
+		wallet_changed.emit()
+	
 	return true
 
 
 ## Removes the amount of currencies specified in [param amount] multiplied
-## by [param times].
-func remove_funds(amount: Dictionary[StringName, int], times: int = 1) -> bool:
-	if times < 1 or not has_enough_funds(amount, times):
+## by [param times]. Returns [code]true[/code] if the funds were removed.
+## [br][br]
+## [b]Note:[/b] This method will only subtract the currencyies if the wallet has enough
+## funds to match the subtracted value unless [param force] is [code]true[/code].
+func remove_funds(amount: Dictionary[StringName, int], times: int = 1, force: bool = false) -> bool:
+	if times < 1:
+		return false
+	elif not force and not has_enough_funds(amount, times):
 		return false
 	
+	var updated: bool = false
 	for id in amount.keys():
-		if amount[id] < 1:
+		var value_to_remove: int = amount[id]
+		if value_to_remove < 1 or not _wallet.has(id):
 			continue
-		var total_to_remove: int = amount[id] * times
-		if _wallet[id] == total_to_remove:
+		var total_to_remove: int = value_to_remove * times
+		if _wallet[id] <= total_to_remove:
 			_wallet.erase(id)
 		else:
 			_wallet[id] -= total_to_remove
+		updated = true
 	
-	wallet_changed.emit()
+	if updated:
+		wallet_changed.emit()
 	return true
+
+
+## Removes the currencies in the [param balance] multiplied
+## by [param times]. Returns [code]true[/code] if the balance was removed.
+## [br][br]
+## [b]Note:[/b] This method will only subtract the currencyies if the wallet has enough
+## funds to match the subtracted value unless [param force] is [code]true[/code].
+func remove_balance(balance: NFCurrencyBalance, times: int = 1, force: bool = false) -> bool:
+	if balance == null:
+		return false
+	return remove_funds(balance.as_dictionary(), times, force)
 
 
 ## Returns the total value of the wallet. Just like with
@@ -137,6 +177,30 @@ func remove_funds(amount: Dictionary[StringName, int], times: int = 1) -> bool:
 ## total combined value.
 func total_value() -> int:
 	return NexusForge.CurrencyManager.currency_value(_wallet)
+
+
+## Returns this object's currencies as a [NFCurrencyBalance]
+func as_balance() -> NFCurrencyBalance:
+	var assign_balance: Dictionary[StringName, int] = _wallet.duplicate()
+	var new_balance := NFCurrencyBalance.new(assign_balance)
+	return new_balance
+
+
+## Overwrites this object's currencies with those of the [param balance]. Returns
+## [code]true[/code] if the operation was successful.
+func set_balance(balance: NFCurrencyBalance) -> bool:
+	if balance == null:
+		return false
+	var prev_wallet: Dictionary[StringName, int] = _wallet.duplicate()
+	_wallet.clear()
+	
+	for id in balance._balance:
+		var curr_am: int = balance._balance[id]
+		if 0 < curr_am and NexusForge.CurrencyManager.has_currency(id):
+			_wallet[id] = curr_am
+	if prev_wallet != _wallet:
+		wallet_changed.emit()
+	return true
 
 
 ## Clears the wallet of all currencies.
@@ -170,6 +234,6 @@ func set_state(state: Dictionary) -> void:
 			continue
 		
 		var curr_key: StringName = StringName(key)
-		var curr_am: int = mini(0, int(state[key]))
+		var curr_am: int = int(state[key])
 		if NexusForge.CurrencyManager.has_currency(curr_key) and 0 < curr_am:
 			_wallet[curr_key] = curr_am

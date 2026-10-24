@@ -135,6 +135,53 @@ static func _overlay_dialog_array(target: PackedStringArray, source: PackedStrin
 			target[i] = source[i]
 
 
+func invalidate_empty_strings(text: bool = true, choices: bool = true, formats: bool = true) -> void:
+	const missing_text: String = "[MISSING LOCALIZATION DATA]" # text
+	const missing_choice: String = "[MISSING LOCALIZATION DATA]" # choices
+	const missing_format_base: String = "[MISSING PHRASE DATA]" # formats
+	const missing_format_case: String = "[MISSING CASE DATA]" # formats
+	
+	if text or choices:
+		for dialog_id: StringName in localization:
+			var locale_data: Dictionary = localization[dialog_id]
+			for node_uuid: StringName in locale_data:
+				var node_data: Dictionary = locale_data[node_uuid]
+				
+				if text and node_data.has("text"):
+					if node_data["text"].strip_edges().is_empty():
+						node_data["text"] = missing_text
+						
+				if choices and node_data.has("choices"):
+					var choice_array: PackedStringArray = node_data["choices"]
+					
+					for i: int in range(choice_array.size()):
+						if choice_array[i].strip_edges().is_empty():
+							choice_array[i] = missing_choice
+
+	if formats:
+		var E: Dictionary = NFDictUtils.EMPTY_DICT
+		
+		for dialog_id: Variant in format_strings:
+			var conversation_data: Dictionary = format_strings[dialog_id]
+			for format_id: String in conversation_data:
+				var format_node: Dictionary = conversation_data[format_id]
+				
+				if format_node.get("base_string", "").strip_edges().is_empty():
+					format_node["base_string"] = missing_format_base
+					
+				var formats_dict: Dictionary = format_node.get("format", E)
+				for format_key: String in formats_dict:
+					var string_data: Dictionary = formats_dict[format_key]
+					
+					if string_data.get("default", "").strip_edges().is_empty():
+						string_data["default"] = missing_format_case
+						
+					var cases_dict: Dictionary = string_data.get("cases", E)
+					for case_key: String in cases_dict:
+						if cases_dict[case_key].strip_edges().is_empty():
+							cases_dict[case_key] = missing_format_case
+
+
 ## Merges the localization data of [param with] with the data of this
 ## object. If [param overwrite] is [code]true[/code] then existing data will be
 ## overwritten.
@@ -159,8 +206,10 @@ func merge_dialog(with: DiscourseDialogLocale) -> void:
 			var source_node: Dictionary = source_dialog[node_id]
 			
 			if target_node.has("text") and source_node.has("text"):
-				if target_node["text"].is_empty():
-					target_node["text"] = source_node["text"]
+				var target: String = target_node["text"].strip_edges()
+				var source: String = source_node["text"].strip_edges()
+				if target.is_empty() and not source.is_empty():
+					target_node["text"] = source
 			elif target_node.has("choices") and source_node.has("choices"):
 				_overlay_dialog_array(target_node["choices"], source_node["choices"])
 	
@@ -288,20 +337,8 @@ func get_choices(conversation: StringName, node: StringName) -> PackedStringArra
 
 ## Returns the dialog text from the given [param uuid] from the [param conversation]
 func get_text(conversation: StringName, node: StringName) -> String:
-	var level: Variant = localization.get(conversation)
-	
-	if level == null:
-		return ""
-	
-	var node_dict: Variant = level.get(node)
-	if node_dict == null:
-		return ""
-	
-	var node_text = node_dict.get("text", "")
-	
-	if typeof(node_text) == TYPE_STRING:
-		return node_text
-	return ""
+	var e: Dictionary = NFDictUtils.EMPTY_DICT
+	return localization.get(conversation, e).get(node, e).get("text", "")
 
 
 ## Returns if the [param conversation] has data for the given [param uuid]

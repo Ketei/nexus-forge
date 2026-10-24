@@ -202,7 +202,7 @@ static func get_locale_language(code: String) -> String:
 static func get_locale_country(code: String) -> String:
 	code = TranslationServer.standardize_locale(code)
 	var slice_count: int = code.get_slice_count("_")
-	if slice_count == 0:
+	if slice_count < 2:
 		return ""
 	
 	var candidate: String = code.get_slice("_", 1)

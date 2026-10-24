@@ -9,6 +9,14 @@ extends RefCounted
 ## copying the logic of the methods inline where you need it.
 
 
+## An empty non-typed array.
+const EMPTY: Array = []
+
+
+static func _static_init() -> void:
+	EMPTY.make_read_only()
+
+
 ## Removes a random item on the array and returns it.
 static func pop_random(from: Array) -> Variant:
 	if from.is_empty():

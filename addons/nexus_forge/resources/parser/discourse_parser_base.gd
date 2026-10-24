@@ -23,7 +23,8 @@ signal choices_reached(options: Array[Dictionary])
 
 
 ## The different types a node can be.
-enum NodeTypes { 
+enum NodeTypes {
+	INVALID = -1, ## Reserved for when a type isn't of a node.
 	ENTRY = 0, ## The entry for a conversation.
 	DIALOG = 1, ## A generic dialog node
 	CHOICES = 2, ## A collection of dialog options.
@@ -58,6 +59,7 @@ enum NodeTypes {
 	TRAVEL_BACK = 31, ## A signaler to go to the next node after the last TRAVEL_TO node reached.
 	}
 
+const _NODE_PROCESS_MAX_TRAVEL: int = 1000
 ## The default weigth that the random path node uses.
 const RANDOM_DEFAULT_WEIGHT: int = 1
 ## THe snapping decimal point for random values
@@ -93,7 +95,7 @@ var _dialog_resource: DiscourseDialog = null:
 		_dialog_resource = new_res
 		_dialog_resource_set()
 
-var _resource_id: String = ""
+var _resource_id: StringName = &""
 var _conversation_started: bool = false
 var _next_uuid: StringName = &""
 var _current_uuid: StringName = &""
@@ -168,9 +170,9 @@ func _parse_dialog(dialog_id: String, dialog_text: String, is_override: bool) ->
 		return dialog_text
 	
 	var DUUID: String = ""
-	var p_override: DiscourseDialog.NFPhraseEntryOverride = _phrase_overrides.get(dialog_id)
+	var p_override: DiscourseDialog.NFPhraseEntryOverride = _phrase_overrides.get(_resource_id)
 	
-	if p_override != null and p_override.has_override(_get_current_dialog_id()):
+	if p_override != null and p_override.has_override(_resource_id):
 		is_override = true
 	
 	if is_override:
@@ -338,292 +340,394 @@ func _can_compare(a, b) -> bool:
 #region Override
 # Returns a dictionary with the "current" dialog it emmited and the
 # "next" uuid for processing
-func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
+func _process_logic(node_id: StringName) -> Dictionary[String, Variant]:
+	const T: String = "target_node_uuid"
+	const I: String = "input_connections"
+	const O: String = "output_connections"
+	
 	var target: Dictionary[String, Variant] = {"current": &"", "next": &"", "type": -1, "data": {}}
-	if uuid.is_empty() or not _dialog_resource.node_logic.has(uuid):
+	if node_id.is_empty():
 		return target
 	
+	var E: Dictionary = NFDictUtils.EMPTY_DICT
+	
 	var dialog_id: String = _resource_id
-	var data: Dictionary = _dialog_resource.node_logic[uuid]
+	var process_next: StringName = node_id
+	var node_data: Dictionary = _dialog_resource.node_logic.get(node_id, E)
+	var remaining_travels: int = _NODE_PROCESS_MAX_TRAVEL
 	
-	match data["node_type"]:
-		NodeTypes.ENTRY:
-			return _process_logic(data["next_node"])
-		NodeTypes.DIALOG:
-			var settings: Dictionary = data.get("dialog_settings", {})
-			var char_settings: Dictionary = data.get("character_settings", {})
-			var dialog_metadata: Dictionary = settings.get("metadata", {})
-			
-			var font: String = _get_data(settings.get("font_resource", &""), "")
-			var scene: String = _get_data(settings.get("dialog_scene", &""), "")
-			var speed: float = _get_data(settings.get("dialog_speed", &""), 0.0)
-			var display_name: String = _get_data(char_settings.get("display_name", &""), "")
-			var portrait_id: String = _get_data(char_settings.get("portrait_id", &""), "")
-			var metadata: Dictionary[String, Variant] = {}
-			
-			target["type"] = NodeTypes.DIALOG
-			
-			for meta_key in dialog_metadata:
-				metadata[meta_key] = _get_data(dialog_metadata[meta_key])
-			
-			if data["text_source"].is_empty():
-				var text_data: Dictionary[String, Variant] = _dialog_resource._get_text_data(dialog_id, uuid)
-				target["data"] = {
-					"dialog_text": _parse_dialog(
-							String(uuid),
-							text_data["text"],
-							text_data["is_override"]),
-					"character_id": data["character_id"],
-					"persist": data["persist"],
-					"font": font,
-					"scene": scene,
-					"speed": speed,
-					"display_name": display_name,
-					"portrait_id": portrait_id,
-					"metadata": metadata}
-			else:
-				var data_source = _get_data(data["text_source"], "")
-				var text: String = ""
-				var is_override: bool = false
-				var source_type: int = typeof(data_source)
+	while not node_data.is_empty() and 0 < remaining_travels:
+		match node_data.get("node_type", NodeTypes.INVALID):
+			NodeTypes.ENTRY:
+				process_next = node_data.get("next_node", &"")
+			NodeTypes.DIALOG:
+				var settings: Dictionary = node_data.get("dialog_settings", E)
+				var char_settings: Dictionary = node_data.get("character_settings", E)
+				var dialog_metadata: Dictionary = settings.get("metadata", E)
 				
-				if source_type == TYPE_STRING:
-					text = data_source
-				elif source_type == TYPE_DICTIONARY:
-					text = data_source.get("text", "")
-					is_override = data_source.get("is_override", false)
+				var disp_name_node: StringName = char_settings.get("display_name", &"")
+				var port_node: StringName = char_settings.get("portrait_id", &"")
+				var font_node: StringName = settings.get("font_resource", &"")
+				var scene_node: StringName = settings.get("dialog_scene", &"")
+				var speed_node: StringName = settings.get("dialog_speed", &"")
+				var text_source_node: StringName = node_data.get("text_source", &"")
+				
+				var character_id: String = node_data.get("character_id", "")
+				var persist_dialogue: bool = node_data.get("persist", false)
+				var font: String = ""
+				var scene: String = ""
+				var speed: float = 0.0
+				var display_name: String = ""
+				var portrait_id: String = ""
+				var dialogue_metadata: Dictionary[String, Variant] = {}
+				
+				var next_node: StringName = node_data.get("next_node", &"")
+				
+				if not font_node.is_empty():
+					font = _get_data(font_node, font)
+				if not scene_node.is_empty():
+					scene = _get_data(scene_node, scene)
+				if not speed_node.is_empty():
+					speed = _get_data(speed_node, speed)
+				if not disp_name_node.is_empty():
+					display_name = _get_data(disp_name_node, display_name)
+				if not port_node.is_empty():
+					portrait_id = _get_data(port_node, portrait_id)
+				
+				target["type"] = NodeTypes.DIALOG
+				
+				for meta_key in dialog_metadata:
+					dialogue_metadata[meta_key] = _get_data(dialog_metadata[meta_key])
+				
+				if text_source_node.is_empty():
+					var text_data: Dictionary[String, Variant] = _dialog_resource._get_text_data(dialog_id, node_id)
+					target["data"] = {
+						"dialog_text": _parse_dialog(
+								String(node_id),
+								text_data["text"],
+								text_data["is_override"]),
+						"character_id": character_id,
+						"persist": persist_dialogue,
+						"font": font,
+						"scene": scene,
+						"speed": speed,
+						"display_name": display_name,
+						"portrait_id": portrait_id,
+						"metadata": dialogue_metadata}
 				else:
-					text = "[ERROR GETING DATA FROM %s]" % data["text_source"]
-				
-				target["data"] ={
-					"dialog_text": _parse_dialog(
-							String(uuid),
-							text,
-							is_override),
-					"character_id": data["character_id"],
-					"persist": data["persist"],
-					"font": font,
-					"scene": scene,
-					"speed": speed,
-					"display_name": display_name,
-					"portrait_id": portrait_id,
-					"metadata": metadata}
-			
-			target["current"] = uuid
-			target["next"] = data["next_node"]
-			
-			return target
-		NodeTypes.CHOICES:
-			var available_options: Array[Dictionary] = []
-			var target_size: int = data["choices"].size()
-			var is_overridden: bool = _dialog_resource._dialog_overrides != null\
-					and _dialog_resource._dialog_overrides.has_override(uuid, locale, TYPE_ARRAY)
-			
-			var localized_options: PackedStringArray = []
-			if is_overridden:
-				localized_options = _dialog_resource._dialog_overrides.get_override(uuid, locale).duplicate()
-			else:
-				if _dialog_resource._active_locale != null:
-					localized_options = _dialog_resource._active_locale.get_choices(dialog_id, uuid)
-			
-			var current_size: int = localized_options.size()
-			target["type"] = NodeTypes.CHOICES
-			
-			if current_size < target_size:
-				var err_msg: String = "[MISSING LOCALIZATION DATA]"
-				for _step in range(target_size - current_size):
-					localized_options.append(err_msg)
-			elif target_size < current_size:
-				localized_options.resize(target_size)
-			
-			var idx: int = -1
-			var option_duuid: String = ""
-			for option:Dictionary in data["choices"]:
-				idx += 1
-				option_duuid = String(uuid) + "_" + str(idx)
-				
-				if option["settings"].is_empty():
-					option_duuid += "_unlocked"
-					available_options.append(
-						{
-							"unlocked": true,
-							"text": _parse_dialog(option_duuid, localized_options[idx], is_overridden),
-							"target": option["next_node"],
-							"metadata": NFDictUtils.create_typed(TYPE_STRING, TYPE_NIL)})
-				else:
-					var opt_settings: Dictionary = option["settings"]
-					var show: bool = _get_data(opt_settings["available"], true)
-				
-					if not show:
-						continue
+					var data_source = _get_data(text_source_node, "")
+					var text: String = ""
+					var is_override: bool = false
+					var source_type: int = typeof(data_source)
 					
-					var unlocked: bool = _get_data(opt_settings["unlocked"], true)
-					var text: String = localized_options[idx]
-					var metadata: Dictionary[String, Variant] = {}
-					
-					if opt_settings.has("metadata"):
-						for meta_key in opt_settings["metadata"]:
-							metadata[meta_key] = _get_data(opt_settings["metadata"][meta_key])
-					
-					if not unlocked:
-						var lock_hint: String = _get_data(opt_settings["lock_hint"], "")
-						if not lock_hint.is_empty():
-							text = lock_hint
-					
-					if unlocked:
-						option_duuid += "_unlocked"
+					if source_type == TYPE_STRING:
+						text = data_source
+					elif source_type == TYPE_DICTIONARY:
+						text = data_source.get("text", "")
+						is_override = data_source.get("is_override", false)
 					else:
-						option_duuid += "_locked"
+						text = "[ERROR GETING DATA FROM '%s']" % text_source_node
 					
-					available_options.append({
-						"unlocked": unlocked,
-						"text": _parse_dialog(option_duuid, text, is_overridden),
-						"target": option["next_node"],
-						"metadata": metadata})
-			
-			target["data"] = available_options
-			target["current"] = uuid
-			target["next"] = uuid
-			
-			return target
-		NodeTypes.BRANCH:
-			var use_a: bool = _get_data(data["result"], true)
-			if use_a:
-				return _process_logic(data["case_true"])
-			else:
-				return _process_logic(data["case_false"])
-		NodeTypes.EVENT:
-			var path: String = data.get("variable_path", "")
-			var val: StringName = data.get("value", &"")
-			var call_node: StringName = data.get("callable", &"")
-			var sign_node: StringName = data.get("signal", &"")
-			
-			if not path.is_empty() and not val.is_empty():
-				NexusForge.Blackboard.set_variable(
-						path,
-						_get_data(val))
-			if not call_node.is_empty():
-				var call_data: Dictionary = _dialog_resource.node_logic[call_node]
-				var call_args: Array = []
+					target["data"] ={
+						"dialog_text": _parse_dialog(
+								String(node_id),
+								text,
+								is_override),
+						"character_id": character_id,
+						"persist": persist_dialogue,
+						"font": font,
+						"scene": scene,
+						"speed": speed,
+						"display_name": display_name,
+						"portrait_id": portrait_id,
+						"metadata": dialogue_metadata}
 				
-				for argument_key in call_data["arguments"]:
-					if argument_key.is_empty():
-						continue
-					call_args.append(_get_data(argument_key))
-				
-				NexusForge.Discourse.API.callv(
-						call_data["method"],
-						call_args)
-			
-			if not sign_node.is_empty():
-				var signal_data: Dictionary = _dialog_resource.node_logic[sign_node]
-				var signal_args: Array = []
-				var api_signal: Signal = Signal(
-						NexusForge.Discourse.API,
-						signal_data["signal"])
-				
-				for argument_key in signal_data["arguments"]:
-					if argument_key.is_empty():
-						continue
-					signal_args.append(_get_data(argument_key))
-				
-				api_signal.emit.callv(signal_args)
-				
-			return _process_logic(data["next_node"])
-		NodeTypes.MATCH:
-			var match_data = _get_data(data["match_value"])
-			for case:Dictionary in data["cases"]:
-				if case["value"] == match_data:
-					return _process_logic(case["next_node"])
-			return _process_logic(data["case_default"])
-		NodeTypes.PAUSE:
-			target["type"] = NodeTypes.PAUSE
-			target["current"] = uuid
-			target["next"] = data["next_node"]
-			
-			return target
-		NodeTypes.RANDOM:
-			var total_weight: int = 0
-			var choices: Array[Dictionary] = []
-			var default_weight: int = NFDialogParser.RANDOM_DEFAULT_WEIGHT
-			if not data["weight_override"].is_empty():
-				default_weight = _get_data(data["weight_override"], default_weight)
-			
-			for choice:Dictionary in data["choices"]:
-				var weight: int = default_weight
-				if not choice["weight_override"].is_empty():
-					weight = _get_data(choice["weight_override"], weight)
-				if weight <= 0:
-					continue
-				choices.append({
-					"next": choice["target"],
-					"weight": weight})
-				total_weight += weight
-			
-			if choices.is_empty():
+				target["current"] = node_id
+				target["next"] = next_node
 				return target
-			
-			choices.sort_custom(func(a, b): return a["weight"] > b["weight"])
-			var random_select: int = randi_range(1, total_weight)
-			
-			var current_weight: int = 0
-			for choice in choices:
-				current_weight += choice["weight"]
-				if random_select <= current_weight:
-					return _process_logic(choice["next"])
-			return _process_logic(choices[-1]["next"]) # In case of loop error
-		NodeTypes.DIALOG_END:
-			target["current"] = uuid
-			target["type"] = NodeTypes.DIALOG_END
+			NodeTypes.CHOICES:
+				var base_choices: Array = node_data.get("choices", NFArrayUtils.EMPTY)
+				
+				var available_options: Array[Dictionary] = []
+				var target_size: int = base_choices.size()
+				var is_overridden: bool = _dialog_resource._dialog_overrides != null\
+						and _dialog_resource._dialog_overrides.has_override(node_id, locale, TYPE_ARRAY)
+				
+				var localized_options: PackedStringArray = _dialog_resource._get_choices(dialog_id, node_id)
+				
+				var current_size: int = localized_options.size()
+				target["type"] = NodeTypes.CHOICES
+				
+				var err_msg: String = "[MISSING LOCALIZATION DATA]"
+				
+				if current_size < target_size:
+					for _step in range(target_size - current_size):
+						localized_options.append(err_msg)
+				elif target_size < current_size:
+					localized_options.resize(target_size)
+				
+				for i in range(target_size):
+					if localized_options[i].strip_edges().is_empty():
+						localized_options[i] = err_msg
+				
+				var idx: int = -1
+				var option_duuid: String = ""
+				for option:Dictionary in base_choices:
+					var choice_target: StringName = option.get("next_node", &"")
+					var option_settings: Dictionary = option.get("settings", E)
+					
+					idx += 1
+					option_duuid = String(node_id) + "_" + str(idx)
+					
+					if option_settings.is_empty():
+						option_duuid += "_unlocked"
+						available_options.append(
+							{
+								"unlocked": true,
+								"text": _parse_dialog(option_duuid, localized_options[idx], is_overridden),
+								"target": choice_target,
+								"metadata": NFDictUtils.create_typed(TYPE_STRING, TYPE_NIL)})
+					else:
+						var settings_node: StringName = option_settings.get("available", &"")
+						var show: bool = _get_data(settings_node, true)
+					
+						if not show:
+							continue
+						
+						var meta_data: Dictionary = option_settings.get("metadata", E)
+						
+						var unlocked_node: StringName = option_settings.get("unlocked", &"")
+						var unlocked: bool = _get_data(unlocked_node, true)
+						var text: String = localized_options[idx]
+						var choice_metadata: Dictionary[String, Variant] = {}
+						
+						for meta_key in meta_data:
+							var meta_node: StringName = meta_data[meta_key]
+							if not meta_node.is_empty():
+								choice_metadata[meta_key] = _get_data(meta_node)
+						
+						if not unlocked:
+							var lock_node: StringName = option_settings.get("lock_hint", &"")
+							if not lock_node.is_empty():
+								var lock_hint: String = _get_data(lock_node, "")
+								if not lock_hint.is_empty():
+									text = lock_hint
+						
+						if unlocked:
+							option_duuid += "_unlocked"
+						else:
+							option_duuid += "_locked"
+						
+						var option_text: String = _parse_dialog(option_duuid, text, is_overridden)
+						
+						available_options.append({
+							"unlocked": unlocked,
+							"text": option_text,
+							"target": choice_target,
+							"metadata": choice_metadata})
+				
+				target["data"] = available_options
+				target["current"] = node_id
+				target["next"] = node_id
+				
+				return target
+			NodeTypes.BRANCH:
+				var val_node: StringName = node_data.get("result", &"")
+				var branch_val: Variant = true
+				if not val_node.is_empty():
+					branch_val = _get_data(val_node, branch_val)
+				
+				var use_a: bool = _to_bool(branch_val)
+				var next_target: StringName = &""
+				
+				if use_a:
+					next_target = node_data.get("case_true", &"")
+				else:
+					next_target = node_data.get("case_false", &"")
+				
+				process_next = next_target
+			NodeTypes.EVENT:
+				var path: String = node_data.get("variable_path", "")
+				var val: StringName = node_data.get("value", &"")
+				var call_node: StringName = node_data.get("callable", &"")
+				var sign_node: StringName = node_data.get("signal", &"")
+				
+				if not path.is_empty() and not val.is_empty():
+					NexusForge.Blackboard.set_variable(
+							path,
+							_get_data(val))
+				
+				if not call_node.is_empty():
+					var call_data: Dictionary = _dialog_resource.node_logic.get(call_node, E)
+					var call_method: StringName = call_data.get("method", &"")
+					
+					if NexusForge.Discourse.API.has_method(call_method):
+						var call_args: Array = []
+						
+						for argument_key in call_data.get("arguments", NFArrayUtils.EMPTY):
+							if argument_key.is_empty():
+								continue
+							var data: Variant = _get_data(argument_key)
+							call_args.append(data)
+						
+						NexusForge.Discourse.API.callv(
+								call_method,
+								call_args)
+				
+				if not sign_node.is_empty():
+					var signal_data: Dictionary = _dialog_resource.node_logic.get(sign_node, E)
+					var signal_str: StringName = signal_data.get("signal", &"")
+					
+					if NexusForge.Discourse.API.has_signal(signal_str):
+						var signal_args: Array = []
+						var api_signal: Signal = Signal(
+								NexusForge.Discourse.API,
+								signal_data["signal"])
+						
+						for argument_key in signal_data.get("arguments", NFArrayUtils.EMPTY):
+							if argument_key.is_empty():
+								continue
+							var arg_data: Variant = _get_data(argument_key)
+							signal_args.append(arg_data)
+						
+						api_signal.emit.callv(signal_args)
+				
+				process_next = node_data.get("next_node", &"")
+			NodeTypes.MATCH:
+				var match_node: StringName = node_data.get("match_value", &"")
+				var match_result: StringName = node_data.get("case_default", &"")
+				
+				if not match_node.is_empty():
+					var match_data: Variant = _get_data(match_node)
+					for case:Dictionary in node_data.get("cases", NFArrayUtils.EMPTY):
+						if case.get("value") == match_data:
+							match_result = case.get("next_node", &"")
+							break
+				
+				process_next = match_result
+			NodeTypes.PAUSE:
+				target["type"] = NodeTypes.PAUSE
+				target["current"] = node_id
+				target["next"] = node_data.get("next_node", &"")
+				return target
+			NodeTypes.RANDOM:
+				var total_weight: int = 0
+				var choices: Array[Dictionary] = []
+				var default_weight: int = NFDialogParser.RANDOM_DEFAULT_WEIGHT
+				
+				var weigth_override_node: StringName = node_data.get("weight_override", &"")
+				if not weigth_override_node.is_empty():
+					default_weight = _get_data(weigth_override_node, default_weight)
+				
+				for choice:Dictionary in node_data.get("choices", NFArrayUtils.EMPTY):
+					var choice_w_override: StringName = choice.get("weight_override", &"")
+					var weight: int = default_weight
+					if not choice_w_override.is_empty():
+						weight = _get_data(choice_w_override, weight)
+					if weight <= 0:
+						continue
+					choices.append({
+						"next": choice.get("target", &""),
+						"weight": weight})
+					total_weight += weight
+				
+				if choices.is_empty():
+					return target
+				
+				choices.sort_custom(func(a, b): return a["weight"] > b["weight"])
+				var random_select: int = randi_range(1, total_weight)
+				
+				var choice_selected: bool = false
+				var current_weight: int = 0
+				var target_node: StringName = &""
+				for choice in choices:
+					current_weight += choice["weight"]
+					if random_select <= current_weight:
+						target_node = choice["next"]
+						choice_selected = true
+						break
+				
+				if not choice_selected:
+					target_node = choices[-1]["next"]
+				
+				process_next = target_node
+			NodeTypes.DIALOG_END:
+				target["current"] = node_id
+				target["type"] = NodeTypes.DIALOG_END
+				return target
+			NodeTypes.TRAVEL_TO:
+				if -1 < max_dialog_travel_stack and max_dialog_travel_stack <= _get_target_travel_stack_size():
+					NFPluginGameHandler._log_msg(
+						"discourse",
+						"Travel stack overflow! Max depth of %d reached." % max_dialog_travel_stack,
+						NFPluginGameHandler._LogLevel.ERROR)
+					return target # Empty, so it should stop the dialog
+				var next_node: StringName = node_data.get("next_node", &"")
+				_add_target_to_travel_stack(next_node)
+				process_next = node_data.get("travel_target", &"")
+			NodeTypes.TRAVEL_TARGET:
+				process_next = node_data.get("next_node", &"")
+			NodeTypes.TRAVEL_BACK:
+				if _node_travel_stack.is_empty():
+					return target
+				process_next = _pop_last_travel_node_stack()
+			_:
+				return target
+		
+		node_data = _dialog_resource.node_logic.get(process_next, E)
+		if node_data.is_empty():
 			return target
-		NodeTypes.TRAVEL_TO:
-			if -1 < max_dialog_travel_stack and max_dialog_travel_stack <= _get_target_travel_stack_size():
-				NFPluginGameHandler._log_msg(
-					"discourse",
-					"Travel stack overflow! Max depth of %d reached." % max_dialog_travel_stack,
-					NFPluginGameHandler._LogLevel.ERROR)
-				return target # Empty, so it should stop the dialog
-			_add_target_to_travel_stack(data["next_node"])
-			return _process_logic(data["travel_target"])
-		NodeTypes.TRAVEL_TARGET:
-			return _process_logic(data["next_node"])
-		NodeTypes.TRAVEL_BACK:
-			return _process_logic(_pop_last_travel_node_stack())
-		_:
-			return target
-
-
-func _get_data(uuid: StringName, fallback = null) -> Variant:
-	if _dialog_resource == null or not _dialog_resource.node_logic.has(uuid):
-		return fallback
-	var data: Dictionary = _dialog_resource.node_logic[uuid]
+		
+		remaining_travels -= 1
+	# --- while loop end ---
 	
-	match data["node_type"]:
+	if remaining_travels <= 0:
+		NFPluginGameHandler._log_msg(
+				"discourse",
+				"Exceeded maximum node travel stack at node '%s'. Stopping process." % process_next,
+				NFPluginGameHandler._LogLevel.ERROR)
+	
+	return target
+
+
+func _get_data(node_id: StringName, fallback = null, _remaining_travels: int = 250) -> Variant:
+	if _dialog_resource == null or _remaining_travels <= 0 or not _dialog_resource.node_logic.has(node_id):
+		return fallback
+	var E: Dictionary = NFDictUtils.EMPTY_DICT
+	var data: Dictionary = _dialog_resource.node_logic.get(node_id, E)
+	
+	match data.get("node_type", NodeTypes.INVALID):
 		NodeTypes.VALUE:
-			return data["value"]
+			return data.get("value", fallback)
 		NodeTypes.RANDOM_VALUE:
 			match data["random_type"]:
 				TYPE_INT:
-					var min_value: int = data["min_value"]
-					var max_value: int = data["max_value"]
+					var min_value: int = data.get("min_value", 0)
+					var max_value: int = data.get("max_value", 100)
 					
-					if not data["min_override"].is_empty():
-						min_value = _get_data(data["min_override"], min_value)
-					if not data["max_override"].is_empty():
-						max_value = _get_data(data["max_override"], max_value)
+					var min_override: StringName = data.get("min_override", &"")
+					var max_override: StringName = data.get("max_override", &"")
+					
+					if not min_override.is_empty():
+						min_value = _get_data(min_override, min_value, _remaining_travels - 1)
+					if not max_override.is_empty():
+						max_value = _get_data(max_override, max_value, _remaining_travels - 1)
 					
 					if max_value < min_value:
 						max_value = min_value
 					
 					return randi_range(min_value, max_value)
 				TYPE_FLOAT:
-					var min_value: float = data["min_value"]
-					var max_value: float = data["max_value"]
+					var min_value: float = data.get("min_value", 0.0)
+					var max_value: float = data.get("max_value", 100.0)
 					
-					if not data["min_override"].is_empty():
-						min_value = _get_data(data["min_override"], min_value)
-					if not data["max_override"].is_empty():
-						max_value = _get_data(data["max_override"], max_value)
+					var min_override: StringName = data.get("min_override", &"")
+					var max_override: StringName = data.get("max_override", &"")
+					
+					if not min_override.is_empty():
+						min_value = _get_data(min_override, min_value, _remaining_travels - 1)
+					if not max_override.is_empty():
+						max_value = _get_data(max_override, max_value, _remaining_travels - 1)
 					
 					if max_value < min_value:
 						max_value = min_value
@@ -634,11 +738,12 @@ func _get_data(uuid: StringName, fallback = null) -> Variant:
 									max_value),
 							FLOAT_SNAP)
 				TYPE_BOOL:
-					var true_probability: int = data["min_value"]
+					var true_probability: int = data.get("min_value", 50)
+					var min_override: StringName = data.get("min_override", &"")
 					
-					if not data["min_override"].is_empty():
-						true_probability = _get_data(data["min_override"], true_probability)
-						
+					if not min_override.is_empty():
+						true_probability = _get_data(min_override, true_probability, _remaining_travels - 1)
+					
 					if true_probability <= 0:
 						return false
 					elif 100 <= true_probability:
@@ -647,70 +752,102 @@ func _get_data(uuid: StringName, fallback = null) -> Variant:
 						var true_range: int = randi_range(1, 100)
 						return true_range <= true_probability
 				_:
-					return null
+					return fallback
 		NodeTypes.TYPE_GUARD:
-			var guard_data = _get_data(data["value"])
-			if typeof(guard_data) == typeof(data["fallback"]):
-				return guard_data
+			var data_node: StringName = data.get("value", &"")
+			
+			if data_node.is_empty():
+				return fallback
+			
+			var origin_data: Variant = _get_data(data_node, null, _remaining_travels - 1)
+			var guard_data: Variant = data.get("fallback")
+			
+			if typeof(origin_data) == typeof(guard_data):
+				return origin_data
 			else:
-				return data["fallback"]
+				return guard_data
 		NodeTypes.VARIABLE_GET:
-			return NexusForge.Blackboard.get_variable(data["path"])
+			var path: String = data.get("path", "").strip_edges().simplify_path()
+			if path.is_empty():
+				return fallback
+			return NexusForge.Blackboard.get_variable(path)
 		NodeTypes.CALLABLE_RETURN:
-			var method: Callable = Callable(NexusForge.Discourse.API, data["method"])
+			var method_str: StringName = data.get("method", &"")
+			if not NexusForge.Discourse.API.has_method(method_str):
+				return fallback
+			
 			var args: Array = []
-			for arg:StringName in data["arguments"]:
-				args.append(_get_data(arg))
-			return method.callv(args)
+			for arg:StringName in data.get("arguments", NFArrayUtils.EMPTY):
+				var arg_data: Variant = _get_data(arg, null, _remaining_travels - 1)
+				args.append(arg_data)
+			
+			return NexusForge.Discourse.API.callv(method_str, args)
 		NodeTypes.DATA_EVENT:
-			var var_path: String = data.get("variable_path", "")
+			var var_path: String = data.get("variable_path", "").strip_edges().simplify_path()
 			var val_node: StringName = data.get("value", &"")
 			var call_node: StringName = data.get("callable", &"")
 			var sign_node: StringName = data.get("signal", &"")
+			
+			var data_source: StringName = data.get("data_source", &"")
+			
 			if not var_path.is_empty() and not val_node.is_empty():
 				NexusForge.Blackboard.set_variable(
 						var_path,
-						_get_data(val_node))
+						_get_data(val_node, null, _remaining_travels - 1))
+			
 			if not call_node.is_empty():
-				var call_data: Dictionary = _dialog_resource.node_logic[call_node]
-				var call_args: Array = []
+				var call_data: Dictionary = _dialog_resource.node_logic.get(call_node, E)
+				var method_str: StringName = call_data.get("method", &"")
 				
-				for argument_id in call_data["arguments"]:
-					if argument_id.is_empty():
-						continue
-					call_args.append(_get_data(argument_id))
-				
-				NexusForge.Discourse.API.callv(
-						call_data["method"],
-						call_args)
+				if NexusForge.Discourse.API.has_method(method_str):
+					var call_args: Array = []
+					for argument_id in call_data.get("arguments", NFArrayUtils.EMPTY):
+						if argument_id.is_empty():
+							continue
+						var arg_data: Variant = _get_data(argument_id, null, _remaining_travels - 1)
+						call_args.append(arg_data)
+					
+					NexusForge.Discourse.API.callv(
+							call_data["method"],
+							call_args)
 			
 			if not sign_node.is_empty():
-				var signal_data: Dictionary = _dialog_resource.node_logic[sign_node]
+				var signal_data: Dictionary = _dialog_resource.node_logic.get(sign_node, E)
+				var signal_str: StringName = signal_data.get("signal", &"")
 				var signal_args: Array = []
 				
-				for argument_key in signal_data["arguments"]:
+				for argument_key in signal_data.get("arguments", NFArrayUtils.EMPTY):
 					if argument_key.is_empty():
 						continue
-					signal_args.append(_get_data(argument_key))
+					var arg_data: Variant = _get_data(argument_key, null, _remaining_travels - 1)
+					signal_args.append(arg_data)
 				
 				var sign_call: Signal = Signal(
 						NexusForge.Discourse.API,
-						signal_data["signal"])
+						signal_str)
 				
 				sign_call.emit.callv(signal_args)
-				
-			return _get_data(data["data_source"])
+			
+			if data_source.is_empty():
+				return fallback
+			else:
+				return _get_data(data_source, fallback, _remaining_travels - 1)
 		NodeTypes.LOCALIZED_TEXT:
 			return _dialog_resource._get_text_data(
-					_path_to_id[_dialog_resource.resource_path],
-					uuid)
+					_resource_id,
+					node_id)
 		NodeTypes.COMPARATION:
-			var a = _get_data(data["value_a"])
-			var b = _get_data(data["value_b"])
-			if not _can_compare(a, b):
-				return false
+			var operator: int = data.get("operator", OP_EQUAL)
+			var a_node: StringName = data.get("value_a", &"")
+			var b_node: StringName = data.get("value_b", &"")
 			
-			match data["operator"]:
+			var a: Variant = _get_data(a_node, null, _remaining_travels - 1)
+			var b: Variant = _get_data(b_node, null, _remaining_travels - 1)
+			
+			if not _can_compare(a, b):
+				return operator == OP_NOT_EQUAL
+			
+			match operator:
 				OP_EQUAL:
 					return a == b
 				OP_NOT_EQUAL:
@@ -724,26 +861,38 @@ func _get_data(uuid: StringName, fallback = null) -> Variant:
 				OP_GREATER_EQUAL:
 					return a >= b
 				_:
-					return false
+					return operator == OP_NOT_EQUAL
 		NodeTypes.CONDITION_SELECT:
-			var condition: bool = _get_data(data["result"])
+			var data_source: StringName = data.get("result", &"")
+			
+			if data_source.is_empty():
+				return fallback
+			
+			var branch_data: Variant = _get_data(data_source, false, _remaining_travels - 1)
+			var condition: bool = _to_bool(branch_data)
 			if condition:
-				return _get_data(data["true_value"])
+				var node_true: StringName = data.get("true_value", &"")
+				return _get_data(node_true, fallback, _remaining_travels - 1)
 			else:
-				return _get_data(data["false_value"])
+				var node_false: StringName = data.get("false_value", &"")
+				return _get_data(node_false, fallback, _remaining_travels - 1)
 		NodeTypes.RESOURCE:
-			return data["resource_path"]
+			return data.get("resource_path", "")
 		_:
 			return fallback
 
 
-func _load_locale_into(dialog: DiscourseDialog, locale_code: String, force_reload: bool = false) -> void:
+func _load_locale_into(dialog: DiscourseDialog, locale_code: String, force_reload: bool = false, target_id: String = "") -> void:
 	if dialog == null or locale_code.is_empty() or (dialog._has_locale(locale_code) and not force_reload):
 		return
 	
-	var dialog_id: String = _resource_id
+	var dialog_id: String = _resource_id if target_id.is_empty() else target_id
 	if dialog_id.is_empty():
 		return
+	
+	var e: Dictionary = NFDictUtils.EMPTY_DICT
+	var m_file: String = _id_to_data.get(dialog_id, e).get("locale_file", "")
+	var file_path: String = _locale_overrides.get(dialog_id, e).get(locale_code, m_file)
 	
 	# 0 = No Fallback
 	# 1 = Direct Fallback: Merge fallback_object with loaded objects
@@ -780,9 +929,9 @@ func _load_locale_into(dialog: DiscourseDialog, locale_code: String, force_reloa
 					cascade_code)
 			if cascade_locale != null:
 				if locale_data == null:
-					cascade_locale.json_file = ""
-					cascade_locale.locale = locale_code
-					locale_data = cascade_locale
+					locale_data = cascade_locale.duplicate(true)
+					locale_data.json_file = file_path
+					locale_data.locale = locale_code
 					
 				else:
 					locale_data.merge_dialog(cascade_locale)
@@ -790,12 +939,14 @@ func _load_locale_into(dialog: DiscourseDialog, locale_code: String, force_reloa
 	if direct_fallback != null:
 		if locale_data == null:
 			locale_data = direct_fallback.duplicate(true)
-			locale_data.json_file = ""
+			locale_data.json_file = file_path
 			locale_data.locale = locale_code
 		else:
 			locale_data.merge_dialog(direct_fallback)
 	
+	
 	if locale_data != null:
+		locale_data.invalidate_empty_strings()
 		dialog._store_locale(locale_code, locale_data)
 
 
@@ -814,7 +965,7 @@ func _get_dialog_locale(dialog_id: String, lang_code: String) -> DiscourseDialog
 		return null
 	
 	var file_path: String = ProjectSettings.get_setting(
-			"nexus_forge/localization_directory",
+		NFPluginGameHandler.get_setting_path("discourse"),
 			"res://localization/")
 	var filename: String = _id_to_data[dialog_id]["locale_file"]
 	var hash_slice: String = filename.substr(0, 2)
@@ -858,22 +1009,25 @@ func load_dialog(path: String, starting_id: StringName = &"") -> bool:
 	var target_path: String = _logic_overrides[path] if _logic_overrides.has(path) else path
 	
 	if _conversation_cache.is_in_cache(target_path):
-		var dialog_id: String = _path_to_id.get(path, "")
+		var dialog_id: StringName = _path_to_id.get(path, &"")
 		var data: DiscourseDialog = _conversation_cache.get_resource(target_path)
 		var locale_data: DiscourseDialogLocale = data._get_locale(locale)
 		
-		var eff_locale_file: String = _locale_overrides.get(dialog_id, NFDictUtils.EMPTY_DICT).get(locale, _id_to_data[dialog_id]["locale_file"])
+		var e: Dictionary = NFDictUtils.EMPTY_DICT
+		var m_file: String = _id_to_data.get(dialog_id, e).get("locale_file", "")
+		var eff_locale_file: String = _locale_overrides.get(dialog_id, e).get(locale, m_file)
 		var reload_locale: bool = locale_data != null and locale_data.json_file != eff_locale_file
 		
-		_dialog_resource = data
 		_resource_id = dialog_id
+		_dialog_resource = data
 		
-		if _dialog_edits.has(dialog_id) and _dialog_resource._dialog_overrides != _dialog_edits[dialog_id]:
-			_dialog_resource._dialog_overrides = _dialog_edits[dialog_id]
+		var d_o: RefCounted = _dialog_edits.get(dialog_id)
+		var p_o: RefCounted = _phrase_overrides.get(dialog_id)
 		
-		var p_overrides: DiscourseDialog.NFPhraseEntryOverride = _phrase_overrides.get(dialog_id)
-		if _dialog_resource._phrase_overrides != p_overrides:
-			_dialog_resource._phrase_overrides = p_overrides
+		if _dialog_resource._dialog_overrides != d_o:
+			_dialog_resource._dialog_overrides = d_o
+		if _dialog_resource._phrase_overrides != p_o:
+			_dialog_resource._phrase_overrides = p_o
 		
 		if reload_locale:
 			_load_locale_into(_dialog_resource, locale, true)
@@ -891,8 +1045,8 @@ func load_dialog(path: String, starting_id: StringName = &"") -> bool:
 		res._phrase_overrides = _phrase_overrides.get(id)
 		
 		_conversation_cache.cache_resource(res)
-		_dialog_resource = res
 		_resource_id = id
+		_dialog_resource = res
 	
 	if _dialog_resource.node_logic.has(starting_id):
 		_next_uuid = starting_id
@@ -1005,13 +1159,15 @@ func prepare_dialog(path: String) -> bool:
 		var data: DiscourseDialog = _conversation_cache.get_resource(target_path)
 		var locale_data: DiscourseDialogLocale = data._get_locale(locale)
 		
-		var eff_locale_file: String = _locale_overrides.get(dialog_id, NFDictUtils.EMPTY_DICT).get(locale, _id_to_data[dialog_id]["locale_file"])
+		var e: Dictionary = NFDictUtils.EMPTY_DICT
+		var m_file: String = _id_to_data.get(dialog_id, e).get("locale_file")
+		var eff_locale_file: String = _locale_overrides.get(dialog_id, e).get(locale, m_file)
 		var reload_locale: bool = locale_data != null and locale_data.json_file != eff_locale_file
 		if _dialog_edits.has(dialog_id) and data._dialog_overrides != _dialog_edits[dialog_id]:
 			data._dialog_overrides = _dialog_edits[dialog_id]
 		
 		if reload_locale:
-			_load_locale_into(data, locale, true)
+			_load_locale_into(data, locale, true, dialog_id)
 	else:
 		var res = load(target_path)
 		
@@ -1021,7 +1177,7 @@ func prepare_dialog(path: String) -> bool:
 		if _dialog_edits.has(dialog_id):
 			res._dialog_overrides = _dialog_edits[dialog_id]
 		if not res._has_locale(locale):
-			_load_locale_into(res, locale)
+			_load_locale_into(res, locale, false, dialog_id)
 		_conversation_cache.cache_resource(res)
 	
 	return true
@@ -1118,6 +1274,7 @@ func advance() -> void:
 		_conversation_started = false
 		_next_uuid = _dialog_resource.entry_node
 		_current_uuid = &""
+		_clear_target_travel_stack()
 		dialog_finished.emit()
 	else:
 		_current_uuid = result["current"]
@@ -1214,7 +1371,7 @@ func override_dialog_locale(dialog_id: String, locale_code: String, path: String
 	var dialog: DiscourseDialog = _conversation_cache.get_resource(target_path)
 	if dialog._has_locale(locale_code): # Checking if the dialog has the locale
 		dialog.parsed_dialog_cache.clear()
-		_load_locale_into(dialog, locale_code, true) # Since it has it we force a reload
+		_load_locale_into(dialog, locale_code, true, dialog_id) # Since it has it we force a reload
 
 
 ## Adds an override for a specific dialog on a specific locale.[br]
@@ -1225,6 +1382,9 @@ func override_dialog_locale(dialog_id: String, locale_code: String, path: String
 ## for text, it'll be replaced with one for text.
 func set_dialog_text(locale_code: String, dialog_id: String, node_id: StringName, new_dialog, force: bool = false) -> void:
 	var type: int = typeof(new_dialog)
+	if type == TYPE_STRING_NAME:
+		new_dialog = String(new_dialog)
+		type = TYPE_STRING
 	
 	locale_code = TranslationServer.standardize_locale(locale_code)
 	
@@ -1289,7 +1449,7 @@ func set_choices_array(locale_code: String, dialog_id: String, node_id: StringNa
 				"Invalid locale code or empty dialog id on choice edit.",
 				NFPluginGameHandler._LogLevel.ERROR)
 		return
-	elif type != TYPE_ARRAY and type != TYPE_NIL:
+	elif type != TYPE_ARRAY and type != TYPE_PACKED_STRING_ARRAY and type != TYPE_NIL:
 		NFPluginGameHandler._log_msg(
 				"discourse",
 				"Can't assing choices based on a non-array.",
@@ -1311,7 +1471,9 @@ func set_choices_array(locale_code: String, dialog_id: String, node_id: StringNa
 		
 	for idx in range(new_choices.size()):
 		var opt_type: int = typeof(new_choices[idx])
-		if opt_type == TYPE_STRING or opt_type == TYPE_NIL:
+		if opt_type == TYPE_STRING_NAME:
+			valid_responses.append(String(new_choices[idx]))
+		elif opt_type == TYPE_STRING or opt_type == TYPE_NIL:
 			valid_responses.append(new_choices[idx])
 		else:
 			NFPluginGameHandler._log_msg(
@@ -1350,10 +1512,26 @@ func set_choice_text(locale_code: String, dialog_id: String, node_id: StringName
 				"Choice overrides doesn't work with negative indexes: %d" % choice_index,
 				NFPluginGameHandler._LogLevel.ERROR)
 		return
+	elif dialog_id.is_empty():
+		NFPluginGameHandler._log_msg(
+				"discourse",
+				"Invalid dialog id on choice edit.",
+				NFPluginGameHandler._LogLevel.ERROR)
+		return
 	
 	locale_code = TranslationServer.standardize_locale(locale_code)
-	var data_type: int = typeof(data)
 	
+	if locale_code.is_empty():
+		NFPluginGameHandler._log_msg(
+				"discourse",
+				"Invalid locale code on choice edit.",
+				NFPluginGameHandler._LogLevel.ERROR)
+		return
+	
+	var data_type: int = typeof(data)
+	if data_type == TYPE_STRING_NAME:
+		data = String(data)
+		data_type = TYPE_STRING
 	var target: DiscourseDialog.NFDialogEntryOverride = _dialog_edits.get(dialog_id)
 	
 	if data_type == TYPE_NIL:
@@ -1377,12 +1555,21 @@ func set_choice_text(locale_code: String, dialog_id: String, node_id: StringName
 				"discourse",
 				"Dialogue override assingment failed. Previous text override detected on ID '%s' of dialogue '%s' for locale '%s'" % [node_id, dialog_id, locale_code],
 				NFPluginGameHandler._LogLevel.ERROR)
+	
+	if _dialog_resource == null or _get_current_dialog_id() != dialog_id:
+		return
+	
+	if _dialog_resource._dialog_overrides != target:
+		_dialog_resource._dialog_overrides = target
 
 
 ## Adds an override for a specific phrase's base string.[br]
 ## Pass [code]null[/code] to [param base] to remove the override.
 func set_phrase_base_string_override(locale_code: String, dialog_id: String, phrase_id: String, base: Variant) -> void:
 	var type: int = typeof(base)
+	if type == TYPE_STRING_NAME:
+		base = String(base)
+		type = TYPE_STRING
 	locale_code = TranslationServer.standardize_locale(locale_code)
 	
 	if locale_code.is_empty() or dialog_id.is_empty() or phrase_id.is_empty():
@@ -1422,6 +1609,9 @@ func set_phrase_base_string_override(locale_code: String, dialog_id: String, phr
 ## Pass [code]null[/code] to [param default_val] to remove the override.
 func set_phrase_format_default_override(locale_code: String, dialog_id: String, phrase_id: String, format_id: String, default_val: Variant) -> void:
 	var type: int = typeof(default_val)
+	if type == TYPE_STRING_NAME:
+		default_val = String(default_val)
+		type = TYPE_STRING
 	locale_code = TranslationServer.standardize_locale(locale_code)
 	
 	if locale_code.is_empty() or dialog_id.is_empty() or phrase_id.is_empty() or format_id.is_empty():
@@ -1461,6 +1651,10 @@ func set_phrase_format_default_override(locale_code: String, dialog_id: String, 
 ## Pass [code]null[/code] to [param result] to remove the override.
 func set_phrase_format_case_override(locale_code: String, dialog_id: String, phrase_id: String, format_id: String, case_id: String, result: Variant) -> void:
 	var type: int = typeof(result)
+	if type == TYPE_STRING_NAME:
+		result = String(result)
+		type = TYPE_STRING
+	
 	locale_code = TranslationServer.standardize_locale(locale_code)
 	
 	if locale_code.is_empty() or dialog_id.is_empty() or phrase_id.is_empty() or format_id.is_empty() or case_id.is_empty():
@@ -1556,7 +1750,7 @@ func _get_dialog_id(path: String) -> StringName:
 
 func _get_current_dialog_id() -> StringName:
 	if is_instance_valid(_dialog_resource):
-		return _get_dialog_id(_dialog_resource.resource_path)
+		return StringName(_resource_id)
 	return &""
 
 
@@ -1588,3 +1782,13 @@ func _clear_target_travel_stack() -> void:
 
 func _get_target_travel_stack_size() -> int:
 	return _node_travel_stack.size()
+
+
+func _to_bool(data: Variant) -> bool:
+	match typeof(data):
+		TYPE_BOOL:
+			return data
+		TYPE_INT, TYPE_FLOAT:
+			return bool(data)
+		_:
+			return false

@@ -23,8 +23,6 @@ var _flags: int = 0
 func from_value(total_value: int) -> int:
 	if total_value < value:
 		return 0
-	elif total_value == value:
-		return 1
 	else:
 		return total_value / value
 

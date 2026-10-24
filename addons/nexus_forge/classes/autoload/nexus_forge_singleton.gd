@@ -627,7 +627,7 @@ func _ready() -> void:
 				if FileAccess.file_exists("user://nexus_forge/persona_settings.cfg"):
 					var cfg: ConfigFile = ConfigFile.new()
 					if cfg.load("user://nexus_forge/persona_settings.cfg") == OK:
-						var data = cfg.get_value("RUNTIME", "CharacterMap")
+						var data = cfg.get_value("RUNTIME", "CharacterMap", false)
 						if typeof(data) == TYPE_ARRAY:
 							var map: Dictionary[StringName, String] = {}
 							for entry in data:
@@ -646,7 +646,7 @@ func _ready() -> void:
 												"Resource '%s' is using the ID (%s) of an already registered resource '%s'. Skipping." % [
 														entry["path"],
 														entry["character_id"],
-														id],
+														map[id]],
 												NFPluginGameHandler._LogLevel.WARNING)
 									else:
 										map[id] = path
@@ -656,7 +656,7 @@ func _ready() -> void:
 				if FileAccess.file_exists("res://addons/nexus_forge/settings.cfg"):
 					var cfg: ConfigFile = ConfigFile.new()
 					if cfg.load("res://addons/nexus_forge/settings.cfg") == OK:
-						var data = cfg.get_value("PERSONA", "CharacterMap")
+						var data = cfg.get_value("PERSONA", "CharacterMap", false)
 						if typeof(data) == TYPE_DICTIONARY:
 							var map: Dictionary[StringName, String] = {}
 							for char_id in data:
