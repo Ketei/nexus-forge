@@ -35,6 +35,7 @@ enum SuccessStatus {
 
 var _active_quests: Dictionary[StringName, NFQuestEntry] = {}
 var _static_progress: Dictionary[String, Variant] = {}
+var _advancing_quests: Dictionary[StringName, Variant] = {}
 
 ## The quest log in which the history of quest started and finished is stored.
 var Log: NFQuestLog = NFQuestLog.new()
@@ -487,9 +488,10 @@ func _on_quest_objective_state_changed(quest_id: StringName, stage_id: StringNam
 
 
 func _check_stage_auto_advance(quest_id: StringName) -> void:
-	if not _active_quests.has(quest_id):
+	if not _active_quests.has(quest_id) or _advancing_quests.has(quest_id):
 		return
 	
+	_advancing_quests[quest_id] = null
 	var entry: NFQuestEntry = _active_quests[quest_id]
 	
 	var visited_stages: Dictionary[StringName, Variant] = {}
@@ -520,6 +522,7 @@ func _check_stage_auto_advance(quest_id: StringName) -> void:
 						"Stage '%s' on quest '%s' not found." % [next_stage, quest_id],
 						NFPluginGameHandler._LogLevel.ERROR)
 				break
+	_advancing_quests.erase(quest_id)
 
 
 func _set_quest_complete(quest_id: StringName, success: bool, emit_events: bool = true) -> void:
@@ -676,7 +679,8 @@ func _is_dependency_circular(on_quest: StringName, mod_id: StringName, depends_o
 				NFPluginGameHandler._LogLevel.WARNING)
 		return true
 	
-	_visited.append(depends_on)
+	var visited_dupe: Array[StringName] = _visited.duplicate()
+	visited_dupe.append(depends_on)
 	
 	var mods: Dictionary[StringName, Dictionary] = _quest_modifiers[on_quest]["mods"]
 	
@@ -687,7 +691,7 @@ func _is_dependency_circular(on_quest: StringName, mod_id: StringName, depends_o
 	elif dependency == mod_id:
 		return true
 	else:
-		return _is_dependency_circular(on_quest, mod_id, dependency, _visited)
+		return _is_dependency_circular(on_quest, mod_id, dependency, visited_dupe)
 
 
 func _update_objective_progress(for_key: String, value: Variant) -> void:
