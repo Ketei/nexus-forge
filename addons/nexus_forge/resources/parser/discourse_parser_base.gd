@@ -355,6 +355,8 @@ func _process_logic(node_id: StringName) -> Dictionary[String, Variant]:
 	var remaining_travels: int = _NODE_PROCESS_MAX_TRAVEL
 	
 	while not node_data.is_empty() and 0 < remaining_travels:
+		var current_node: StringName = process_next
+		
 		match node_data.get("node_type", NodeTypes.INVALID):
 			NodeTypes.ENTRY:
 				process_next = node_data.get("next_node", &"")
@@ -382,15 +384,18 @@ func _process_logic(node_id: StringName) -> Dictionary[String, Variant]:
 				var next_node: StringName = node_data.get("next_node", &"")
 				
 				if not font_node.is_empty():
-					font = _get_data(font_node, font)
+					font = _get_data_string(font_node, font)
 				if not scene_node.is_empty():
-					scene = _get_data(scene_node, scene)
+					scene = _get_data_string(scene_node, scene)
 				if not speed_node.is_empty():
-					speed = _get_data(speed_node, speed)
+					var speed_data: Variant = _get_data(speed_node, speed)
+					var sp_type: int = typeof(speed_data)
+					if sp_type == TYPE_INT or sp_type == TYPE_FLOAT:
+						speed = speed_data
 				if not disp_name_node.is_empty():
-					display_name = _get_data(disp_name_node, display_name)
+					display_name = _get_data_string(disp_name_node, display_name)
 				if not port_node.is_empty():
-					portrait_id = _get_data(port_node, portrait_id)
+					portrait_id = _get_data_string(port_node, portrait_id)
 				
 				target["type"] = NodeTypes.DIALOG
 				
@@ -398,10 +403,10 @@ func _process_logic(node_id: StringName) -> Dictionary[String, Variant]:
 					dialogue_metadata[meta_key] = _get_data(dialog_metadata[meta_key])
 				
 				if text_source_node.is_empty():
-					var text_data: Dictionary[String, Variant] = _dialog_resource._get_text_data(dialog_id, node_id)
+					var text_data: Dictionary[String, Variant] = _dialog_resource._get_text_data(dialog_id, current_node)
 					target["data"] = {
 						"dialog_text": _parse_dialog(
-								String(node_id),
+								String(current_node),
 								text_data["text"],
 								text_data["is_override"]),
 						"character_id": character_id,
@@ -428,7 +433,7 @@ func _process_logic(node_id: StringName) -> Dictionary[String, Variant]:
 					
 					target["data"] ={
 						"dialog_text": _parse_dialog(
-								String(node_id),
+								String(current_node),
 								text,
 								is_override),
 						"character_id": character_id,
@@ -440,7 +445,7 @@ func _process_logic(node_id: StringName) -> Dictionary[String, Variant]:
 						"portrait_id": portrait_id,
 						"metadata": dialogue_metadata}
 				
-				target["current"] = node_id
+				target["current"] = current_node
 				target["next"] = next_node
 				return target
 			NodeTypes.CHOICES:
@@ -449,9 +454,9 @@ func _process_logic(node_id: StringName) -> Dictionary[String, Variant]:
 				var available_options: Array[Dictionary] = []
 				var target_size: int = base_choices.size()
 				var is_overridden: bool = _dialog_resource._dialog_overrides != null\
-						and _dialog_resource._dialog_overrides.has_override(node_id, locale, TYPE_ARRAY)
+						and _dialog_resource._dialog_overrides.has_override(current_node, locale, TYPE_ARRAY)
 				
-				var localized_options: PackedStringArray = _dialog_resource._get_choices(dialog_id, node_id)
+				var localized_options: PackedStringArray = _dialog_resource._get_choices(dialog_id, current_node)
 				
 				var current_size: int = localized_options.size()
 				target["type"] = NodeTypes.CHOICES
@@ -475,7 +480,7 @@ func _process_logic(node_id: StringName) -> Dictionary[String, Variant]:
 					var option_settings: Dictionary = option.get("settings", E)
 					
 					idx += 1
-					option_duuid = String(node_id) + "_" + str(idx)
+					option_duuid = String(current_node) + "_" + str(idx)
 					
 					if option_settings.is_empty():
 						option_duuid += "_unlocked"
@@ -487,7 +492,9 @@ func _process_logic(node_id: StringName) -> Dictionary[String, Variant]:
 								"metadata": NFDictUtils.create_typed(TYPE_STRING, TYPE_NIL)})
 					else:
 						var settings_node: StringName = option_settings.get("available", &"")
-						var show: bool = _get_data(settings_node, true)
+						var show: bool = _to_bool(
+								_get_data(settings_node, true),
+								true)
 					
 						if not show:
 							continue
@@ -495,7 +502,9 @@ func _process_logic(node_id: StringName) -> Dictionary[String, Variant]:
 						var meta_data: Dictionary = option_settings.get("metadata", E)
 						
 						var unlocked_node: StringName = option_settings.get("unlocked", &"")
-						var unlocked: bool = _get_data(unlocked_node, true)
+						var unlocked: bool = _to_bool(
+								_get_data(unlocked_node, true),
+								true)
 						var text: String = localized_options[idx]
 						var choice_metadata: Dictionary[String, Variant] = {}
 						
@@ -507,7 +516,7 @@ func _process_logic(node_id: StringName) -> Dictionary[String, Variant]:
 						if not unlocked:
 							var lock_node: StringName = option_settings.get("lock_hint", &"")
 							if not lock_node.is_empty():
-								var lock_hint: String = _get_data(lock_node, "")
+								var lock_hint: String = _get_data_string(lock_node)
 								if not lock_hint.is_empty():
 									text = lock_hint
 						
@@ -525,8 +534,8 @@ func _process_logic(node_id: StringName) -> Dictionary[String, Variant]:
 							"metadata": choice_metadata})
 				
 				target["data"] = available_options
-				target["current"] = node_id
-				target["next"] = node_id
+				target["current"] = current_node
+				target["next"] = current_node
 				
 				return target
 			NodeTypes.BRANCH:
@@ -535,7 +544,7 @@ func _process_logic(node_id: StringName) -> Dictionary[String, Variant]:
 				if not val_node.is_empty():
 					branch_val = _get_data(val_node, branch_val)
 				
-				var use_a: bool = _to_bool(branch_val)
+				var use_a: bool = _to_bool(branch_val, true)
 				var next_target: StringName = &""
 				
 				if use_a:
@@ -605,7 +614,7 @@ func _process_logic(node_id: StringName) -> Dictionary[String, Variant]:
 				process_next = match_result
 			NodeTypes.PAUSE:
 				target["type"] = NodeTypes.PAUSE
-				target["current"] = node_id
+				target["current"] = current_node
 				target["next"] = node_data.get("next_node", &"")
 				return target
 			NodeTypes.RANDOM:
@@ -650,7 +659,7 @@ func _process_logic(node_id: StringName) -> Dictionary[String, Variant]:
 				
 				process_next = target_node
 			NodeTypes.DIALOG_END:
-				target["current"] = node_id
+				target["current"] = current_node
 				target["type"] = NodeTypes.DIALOG_END
 				return target
 			NodeTypes.TRAVEL_TO:
@@ -768,7 +777,7 @@ func _get_data(node_id: StringName, fallback = null, _remaining_travels: int = 2
 			var path: String = data.get("path", "").strip_edges().simplify_path()
 			if path.is_empty():
 				return fallback
-			return NexusForge.Blackboard.get_variable(path)
+			return NexusForge.Blackboard.get_variable(path, fallback)
 		NodeTypes.CALLABLE_RETURN:
 			var method_str: StringName = data.get("method", &"")
 			if not NexusForge.Discourse.API.has_method(method_str):
@@ -878,6 +887,20 @@ func _get_data(node_id: StringName, fallback = null, _remaining_travels: int = 2
 			return data.get("resource_path", "")
 		_:
 			return fallback
+
+
+func _get_data_string(node_id: StringName, fallback: String = "") -> String:
+	var data: Variant = _get_data(node_id, fallback)
+	var type: int = typeof(data)
+	if type == TYPE_STRING:
+		return data
+	elif type == TYPE_DICTIONARY: # Accounting for localization text
+		if data.has("text"):
+			var dict_data: Variant = data["text"]
+			if typeof(dict_data) == TYPE_STRING:
+				return dict_data
+	return fallback
+	
 
 
 func _load_locale_into(dialog: DiscourseDialog, locale_code: String, force_reload: bool = false, target_id: String = "") -> void:
@@ -1158,7 +1181,7 @@ func prepare_dialog(path: String) -> bool:
 		var locale_data: DiscourseDialogLocale = data._get_locale(locale)
 		
 		var e: Dictionary = NFDictUtils.EMPTY_DICT
-		var m_file: String = _id_to_data.get(dialog_id, e).get("locale_file")
+		var m_file: String = _id_to_data.get(dialog_id, e).get("locale_file", "")
 		var eff_locale_file: String = _locale_overrides.get(dialog_id, e).get(locale, m_file)
 		var reload_locale: bool = locale_data != null and locale_data.json_file != eff_locale_file
 		if _dialog_edits.has(dialog_id) and data._dialog_overrides != _dialog_edits[dialog_id]:
@@ -1781,11 +1804,11 @@ func _get_target_travel_stack_size() -> int:
 	return _node_travel_stack.size()
 
 
-func _to_bool(data: Variant) -> bool:
+func _to_bool(data: Variant, fallback: bool = false) -> bool:
 	match typeof(data):
 		TYPE_BOOL:
 			return data
 		TYPE_INT, TYPE_FLOAT:
 			return bool(data)
 		_:
-			return false
+			return fallback

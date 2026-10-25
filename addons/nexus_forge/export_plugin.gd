@@ -15,6 +15,8 @@ var id_to_dialog_file: Dictionary[String, String] = {}
 
 # Final map where non-conflicting IDs are assigned to a localization file.
 var id_to_localization: Dictionary[String, String] = {}
+# AnID: localization/aa/abcd-localization_id.json
+var localization_id_to_file: Dictionary[String, String] = {}
 
 var dialog_path: String = ""
 
@@ -81,12 +83,11 @@ func _export_file(path: String, type: String, features: PackedStringArray) -> vo
 	if release_files.has(path):
 		return
 		
-	var file: Resource = load(path)
+	var file: Variant = load(path)
 	if file is not EditorDiscourseDialog:
 		return
 	
-	var md5_hash: String = path.to_lower().md5_text().substr(0, 12)
-	var localization_filename: String = md5_hash + "-" + path.get_file().get_basename() + ".json"
+	var localization_filename: String = _get_localization_filename(path, file.locale_group)
 	var new_id: String = _get_valid_dialog_id(file.dialog_id, file.resource_path)
 	
 	dialog_file_to_id[path] = new_id
@@ -94,6 +95,25 @@ func _export_file(path: String, type: String, features: PackedStringArray) -> vo
 	id_to_localization[new_id] = localization_filename
 	
 	release_files[path] = process_editor_discourse_dialog(file, new_id, localization_filename)
+
+
+func _get_localization_filename(file_path: String, localization_id: String = "") -> String:
+	localization_id = localization_id.strip_edges()
+	var new_filename: String = ""
+	var base_name: String = file_path.get_file().get_basename() + ".json"
+	
+	if localization_id.is_empty():
+		var md5: String = file_path.to_lower().md5_text().substr(0, 12)
+		new_filename = md5 + "-" + base_name
+	else:
+		if localization_id_to_file.has(localization_id):
+			new_filename = localization_id_to_file[localization_id]
+		else:
+			var md5: String = localization_id.md5_text().substr(0, 12)
+			new_filename = md5 + "-" + localization_id + ".json"
+			localization_id_to_file[localization_id] = new_filename
+	
+	return new_filename
 
 
 func _get_valid_dialog_id(desired: String, path: String) -> String:

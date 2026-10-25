@@ -118,6 +118,7 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 	var remaining_travels: int = _NODE_PROCESS_MAX_TRAVEL
 	
 	while not node_data.is_empty() and 0 < remaining_travels:
+		var current_node: StringName = process_next
 		var metadata: Dictionary = node_data.get("metadata", E)
 		match node_data.get("type", NodeTypes.INVALID):
 			NodeTypes.ENTRY:
@@ -134,7 +135,7 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 				var display_name: String = ""
 				var portrait_id: String = ""
 				var character_id: StringName = metadata.get("character_id", &"")
-				var text_persist: bool = metadata.get("persisst", false)
+				var text_persist: bool = metadata.get("persist", false)
 				var dialog_metadata: Dictionary[String, Variant] = {}
 				
 				# --- Connections ---
@@ -151,14 +152,17 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 					var metadata_node: StringName = sett_inputs.get("metadata", E).get(T, &"")
 					
 					if not font_target.is_empty():
-						font = _get_data(font_target, font)
+						font = _get_data_string(font_target, font)
 					if not scene_target.is_empty():
-						scene = _get_data(scene_target, scene)
+						scene = _get_data_string(scene_target, scene)
 					if not speed_target.is_empty():
-						speed = _get_data(speed_target, speed)
+						var speed_data: Variant = _get_data(speed_target, speed)
+						var type: int = typeof(speed_data)
+						if type == TYPE_INT or type == TYPE_FLOAT:
+							speed = speed_data
 					if not metadata_node.is_empty():
 						var metadata_data: Dictionary = _dialog_resource.node_data.get(metadata_node, E)
-						if not metadata_data.is_empty():# and metadata_node.has_all(["input_connections", "metadata"]) and metadata_node["metadata"].has("metadata_connections"):
+						if not metadata_data.is_empty():
 							var meta_in_connections: Dictionary = metadata_data.get(I, E)
 							var meta_data: Dictionary = metadata_data.get("metadata", E)
 							var meta_connections: Array = meta_data.get("metadata_connections", NFArrayUtils.EMPTY)
@@ -195,15 +199,15 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 						var portrait_id_node: StringName = char_inputs.get("portrait_id", E).get(T, &"")
 						
 						if not display_name_node.is_empty():
-							display_name = _get_data(display_name_node, display_name)
+							display_name = _get_data_string(display_name_node, display_name)
 						if not portrait_id_node.is_empty():
-							portrait_id = _get_data(portrait_id_node, portrait_id)
+							portrait_id = _get_data_string(portrait_id_node, portrait_id)
 				
 				if text_source_node.is_empty():
-					var text_data: Dictionary[String, Variant] = _dialog_resource._get_text_data_localized(uuid, locale)
+					var text_data: Dictionary[String, Variant] = _dialog_resource._get_text_data_localized(current_node, locale)
 					target["data"] = {
 						"dialog_text": _parse_dialog(
-								uuid,
+								current_node,
 								text_data["text"],
 								text_data["is_override"]),
 						"character_id": character_id,
@@ -230,7 +234,7 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 					
 					target["data"] = {
 						"dialog_text": _parse_dialog(
-								uuid,
+								current_node,
 								text,
 								is_override),
 						"character_id": character_id,
@@ -243,11 +247,11 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 						"metadata": dialog_metadata}
 				
 				target["type"] = NodeTypes.DIALOG
-				target["current"] = uuid
+				target["current"] = current_node
 				target["next"] = output_conns.get("next_node", E).get(T, &"")
 				return target
 			NodeTypes.CHOICES:
-				var localized_data: Dictionary = _dialog_resource._get_array_data_localized(uuid, locale)
+				var localized_data: Dictionary = _dialog_resource._get_array_data_localized(current_node, locale)
 				var localized_choices: PackedStringArray = localized_data["choices"]
 				var available_options: Array[Dictionary] = []
 				var option_idx: int = -1
@@ -262,7 +266,7 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 					var settings_node: StringName = input_connections.get("settings", E).get(T, &"")
 					
 					option_idx += 1
-					option_duuid = String(uuid) + "_" + str(option_idx)
+					option_duuid = String(current_node) + "_" + str(option_idx)
 					
 					if settings_node.is_empty():
 						option_duuid += "_unlocked"
@@ -286,7 +290,7 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 									NFPluginGameHandler._LogLevel.ERROR)
 							continue
 						
-						var show: bool = true if available_node.is_empty() else _get_bool_result(available_node)
+						var show: bool = true if available_node.is_empty() else _get_bool_result(available_node, true)
 					
 						if not show:
 							continue
@@ -296,11 +300,11 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 						var metadata_node: StringName = opt_node_inputs.get("metadata", E).get(T, &"")
 						
 						var choice_text: String = localized_choices[option_idx]
-						var unlocked: bool = true if unlocked_node.is_empty() else _get_bool_result(unlocked_node)
+						var unlocked: bool = true if unlocked_node.is_empty() else _get_bool_result(unlocked_node, true)
 						var option_metadata: Dictionary[String, Variant] = {}
 						
 						if not unlocked and not hint_node.is_empty():
-							var lock_hint: String = _get_data(hint_node, "")
+							var lock_hint: String = _get_data_string(hint_node)
 							if not lock_hint.is_empty():
 								choice_text = lock_hint
 						
@@ -352,8 +356,8 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 				
 				target["data"] = available_options
 				target["type"] = NodeTypes.CHOICES
-				target["current"] = uuid
-				target["next"] = uuid
+				target["current"] = current_node
+				target["next"] = current_node
 				return target
 			NodeTypes.BRANCH:
 				var output_conn: Dictionary = node_data.get(O, E)
@@ -475,11 +479,12 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 					for case:Dictionary in metadata.get("cases", NFArrayUtils.EMPTY):
 						if case.get("value") == data_to_match:
 							next_node = case.get(O, E).get("next_node", E).get(T, &"")
+							break
 				
 				process_next = next_node
 			NodeTypes.PAUSE:
 				target["type"] = NodeTypes.PAUSE
-				target["current"] = uuid
+				target["current"] = current_node
 				target["next"] = node_data.get(O, E).get("next_node", E).get(T, &"")
 				return target
 			NodeTypes.RANDOM:
@@ -527,7 +532,7 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 			NodeTypes.SHORTCUT_OUT:
 				process_next = node_data.get(O, E).get("next_node", E).get(T, &"")
 			NodeTypes.DIALOG_END:
-				target["current"] = uuid
+				target["current"] = current_node
 				target["type"] = NodeTypes.DIALOG_END
 				return target
 			NodeTypes.TRAVEL_TO:
@@ -608,7 +613,7 @@ func _get_data(from_uuid: StringName, fallback = null, _remaining_travels: int =
 			return metadata.get("value", fallback)
 		NodeTypes.RANDOM_VALUE:
 			var inputs: Dictionary = data.get(I, E)
-			var values_dict: Dictionary = data.get("values", E)
+			var values_dict: Dictionary = metadata.get("values", E)
 			
 			match metadata.get("mode", -1):
 				TYPE_INT:

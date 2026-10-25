@@ -215,7 +215,8 @@ func _get_array_data_localized(node_uuid: StringName, for_locale: String) -> Dic
 	
 	var node_size: int = 0
 	if node_data.has(node_uuid):
-		node_size = node_data[node_uuid]["metadata"]["choices"].size()
+		var e: Dictionary = NFDictUtils.EMPTY_DICT
+		node_size = node_data[node_uuid].get("metadata", e).get("choices", NFArrayUtils.EMPTY).size()
 	
 	if node_size == 0:
 		return data
@@ -417,12 +418,9 @@ func set_format_string_case(key: String, locale: String, format: String, case: S
 ## in the specified [param key].[br]
 ## Returns an empty string if not found.
 func get_format_string_case(key: String, locale: String, format: String, case: String) -> String:
+	var e: Dictionary = NFDictUtils.EMPTY_DICT
 	locale = NFStringUtils.sanitize_locale(locale)
-	return NFDictUtils.get_nested_value(
-			format_strings,
-			[key, locale, "format", format, "cases", case],
-			"",
-			true)
+	return format_strings.get(key, e).get(locale, e).get("format", e).get("cases", e).get(case, "")
 
 
 ## Returns an array containing all the cases (not their results) of a specified
@@ -1187,7 +1185,7 @@ func generate_localization_files(localization_id: String, base_path: String, fil
 	#var md5_hash: String = resource_path.to_lower().md5_text().substr(0, 12)
 	var md5_fragment: String = filename.substr(0, 2)
 	var used_locales: Dictionary[String, Variant] = {}
-	
+		
 	# Given how Discourse works, there is ALWAYS a base language.
 	for language in locale_map.keys():
 		var lang_key: String = TranslationServer.standardize_locale(language.to_lower())
@@ -1208,7 +1206,7 @@ func generate_localization_files(localization_id: String, base_path: String, fil
 			new_files.append({
 				"file": lang_file,
 				"path": lang_path})
-		elif NFDictUtils.has_nested_path(localization_groups, [locale_group, lang_key]):
+		elif localization_groups.get(locale_group, NFDictUtils.EMPTY_DICT).has(lang_key):
 			lang_file = localization_groups[locale_group][lang_key]
 		else:
 			lang_file = DiscourseDialogLocale.new()
@@ -1390,6 +1388,16 @@ func _add_locale_data(file: DiscourseDialogLocale, localization_id: StringName, 
 							"export - dialog",
 							"Unlocalized data for node UID '%s' is missing." % node_uuid,
 							NFPluginGameHandler._LogLevel.WARNING)
+			
+			if not file.localization.has(localization_id):
+				file.localization[localization_id] = NFDictUtils.create_typed(TYPE_STRING_NAME, TYPE_DICTIONARY)
+			var file_locale_dict: Dictionary = file.localization[localization_id]
+			
+			if not file_locale_dict.has(nodeid):
+				file_locale_dict[nodeid] = NFDictUtils.create_typed(TYPE_STRING, TYPE_STRING)
+			var str_dicts: Dictionary = file_locale_dict[nodeid]
+			
+			str_dicts["text"] = text_set
 		
 		elif data["type"] == LocalizationType.CHOICES:
 			var data_exists: bool = false
@@ -1505,7 +1513,7 @@ func _add_locale_data(file: DiscourseDialogLocale, localization_id: StringName, 
 			continue
 		
 		var valid_formats: Dictionary[String, Dictionary] = {}
-		var format_tags: Array[String] = get_phrase_arguments(data["base_string"])
+		var format_tags: Array[String] = get_phrase_arguments(data["base_string"], true)
 		
 		for format_slice in data["format"]:
 			if typeof(format_slice) != TYPE_STRING and typeof(format_slice) != TYPE_STRING_NAME:
@@ -1873,6 +1881,7 @@ func get_used_locales() -> Array[String]:
 
 
 func _get_data_for_csv() -> Dictionary:
+	var e: Dictionary = NFDictUtils.EMPTY_DICT
 	var csv_data: Dictionary = {}
 	
 	var possible_locales: Array[String] = get_used_locales()
@@ -1902,11 +1911,10 @@ func _get_data_for_csv() -> Dictionary:
 			if localization.has(node_uuid):
 				for locale_code in possible_locales:
 					var assigned_choices: Array[String] = []
-					assigned_choices.assign(NFDictUtils.get_nested_value(
-							localization,
-							[node_uuid, "locales", locale_code],
-							[],
-							true))
+					var current_data: Variant = localization.get(node_uuid, e).get("locales", e).get(locale_code)
+					if typeof(current_data) == TYPE_PACKED_STRING_ARRAY:
+						assigned_choices.assign(current_data)
+					
 					if assigned_choices.size() < target_size:
 						assigned_choices.resize(target_size)
 					

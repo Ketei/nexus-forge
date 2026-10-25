@@ -275,29 +275,21 @@ func merge_dialog(with: DiscourseDialogLocale) -> void:
 
 ## Sets the dialog text from the [param conversation]'s [param node] to [param text].
 func set_text(conversation: StringName, node: StringName, text: String) -> void:
-	var conv_data: Variant = localization.get(conversation)
-	if conv_data == null:
+	var target: Dictionary = localization.get(conversation, NFDictUtils.EMPTY_DICT)
+	if not target.has(node):
 		return
 	
-	var node_data: Variant = conv_data.get(node)
-	if conv_data == null:
-		return
-	
-	node_data["text"] = text
+	target[node]["text"] = text
 
 
 ## Sets the dialog options from the [param conversation]'s [param node] to be
 ## [param options].
 func set_choices(conversation: StringName, node: StringName, choices: PackedStringArray) -> void:
-	var conv_data: Variant = localization.get(conversation)
-	if conv_data == null:
+	var target: Dictionary = localization.get(conversation, NFDictUtils.EMPTY_DICT)
+	if not target.has(node):
 		return
 	
-	var node_data: Variant = conv_data.get(node)
-	if conv_data == null:
-		return
-	
-	node_data["choices"] = choices.duplicate()
+	target[node]["choices"] = choices.duplicate()
 
 
 ## Returns this object's data as a JSON string.

@@ -652,7 +652,7 @@ class NFPhraseEntryOverride extends RefCounted:
 		var override_dict: Dictionary[String, Dictionary] = {}
 		for format_key in p_override["format"]:
 			var target: Dictionary = p_override["format"][format_key]
-			var entry: Dictionary[String, Dictionary] = {
+			var entry: Dictionary[String, Variant] = {
 				"cases": target["cases"].duplicate(true)}
 			
 			if target["default"] != null:
