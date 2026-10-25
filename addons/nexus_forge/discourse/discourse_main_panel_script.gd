@@ -154,7 +154,7 @@ func ready_plugin(base_locale: String = "") -> void:
 	
 	dialog_id_ln_edt.set_meta(&"old_value", "")
 	
-	base_locale = TranslationServer.standardize_locale(base_locale)
+	base_locale = NFStringUtils.sanitize_locale(base_locale)
 	node_popup = node_menu_btn.get_popup()
 	locale_popup = $MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/LocaleMenuBtn.get_popup()
 	file_popup = $MainSplitContainer/ActiveWindowSplit/DiscourseSplitContainer/DiscourseWindow/ContentVBox/MenuPanel/MenuVBox/FileMenuBtn.get_popup()
@@ -900,10 +900,9 @@ func _new_lang_submenu() -> PopupMenu:
 func has_locale(locale: String) -> bool:
 	if locale.is_empty():
 		return false
-	
-	var parts: PackedStringArray = TranslationServer.standardize_locale(locale).split("_", false, 1)
-	var lang_code: String = parts[0]
-	var reg_code: String = parts[1] if parts.size() == 2 else ""
+	locale = NFStringUtils.sanitize_locale(locale)
+	var lang_code: String = NFStringUtils.get_locale_language(locale)
+	var reg_code: String = NFStringUtils.get_locale_country(locale)
 	
 	for idx in range(locale_popup.item_count):
 		if locale_popup.get_item_metadata(idx) == lang_code:
@@ -932,7 +931,7 @@ func clear_locales(clear_main: bool = true) -> void:
 
 
 func remove_locale(locale: String) -> void:
-	locale = TranslationServer.standardize_locale(locale)
+	locale = NFStringUtils.sanitize_locale(locale)
 	if locale.is_empty():
 		return
 	
@@ -4390,7 +4389,7 @@ func import_csv_data_from(file_path: String) -> Dictionary:
 	var locales: Array[String] = []
 	
 	for locale_code in headers.slice(1):
-		var normal_locale: String = TranslationServer.standardize_locale(locale_code)
+		var normal_locale: String = NFStringUtils.sanitize_locale(locale_code)
 		locales.append(normal_locale)
 	var columns: int = locales.size() + 1
 	
@@ -5647,7 +5646,7 @@ func _on_nodes_created_batch(node_uuids: Array[StringName], action_name: String 
 # --- Other Actions ---
 
 func _get_locale_snapshot(locale: String) -> Dictionary[String, Dictionary]:
-	locale = TranslationServer.standardize_locale(locale)
+	locale = NFStringUtils.sanitize_locale(locale)
 	var snapshot: Dictionary[String, Dictionary] = {
 		"format_strings": {},
 		"localization": {}}
@@ -5875,12 +5874,14 @@ func _do_delocalize_node(node_uuid: StringName) -> void:
 			if current_locale != base_language: # GUI update only
 				discourse_graph_edit.set_dialog_node_dialog_text(node_uuid, base_text)
 		DiscourseGraphNode.DialogueNodeType.CHOICES:
+			var e: Dictionary = NFDictUtils.EMPTY_DICT
 			var options: Array[String] = []
-			options.assign(NFDictUtils.get_nested_value(
-					active_conversation.localization,
-					[node_uuid, "locales", base_language],
-					node.get_options(),
-					true))
+			var option_data: Variant = active_conversation.localization.get(node_uuid, e).get("locales", e).get(base_language)
+			if typeof(option_data) == TYPE_PACKED_STRING_ARRAY:
+				options.assign(option_data)
+			else:
+				options = node.get_options()
+			
 			active_conversation.set_choices_array(node_uuid, options)
 			if current_locale != base_language:
 				for choice_id in range(1, options.size() + 1): # It uses IDs instead of indexes

@@ -2,6 +2,36 @@ class_name NFStringUtils
 extends RefCounted
 ## A class holding static methods to properly transform strings
 
+static var _LANG_CODES: Array[String] = []
+static var _COUNTRY_CODES: Array[String] = []
+static var _SCRIPT_CODES: Array[String] = []
+
+
+static func _populate_locale_dicts() -> void:
+	if not _LANG_CODES.is_read_only():
+		_LANG_CODES.clear()
+		_LANG_CODES.assign(TranslationServer.get_all_languages())
+	
+	if not _COUNTRY_CODES.is_read_only():
+		_COUNTRY_CODES.clear()
+		_COUNTRY_CODES.assign(TranslationServer.get_all_countries())
+	
+	if not _SCRIPT_CODES.is_read_only():
+		_SCRIPT_CODES.clear()
+		_SCRIPT_CODES.assign(TranslationServer.get_all_scripts())
+	
+	if not _LANG_CODES.is_empty():
+		_LANG_CODES.sort()
+		_LANG_CODES.make_read_only()
+	
+	if not _COUNTRY_CODES.is_empty():
+		_COUNTRY_CODES.sort()
+		_COUNTRY_CODES.make_read_only()
+	
+	if not _SCRIPT_CODES.is_empty():
+		_SCRIPT_CODES.sort()
+		_SCRIPT_CODES.make_read_only()
+
 
 ## Converts the first letter of a string to uppercase, while the rest
 ## are converted to lower case.
@@ -192,15 +222,77 @@ static func get_all_format_arguments(text: String, trim_brackets: bool = false, 
 	return all_formats
 
 
+## Takes param locale_string and santizes and standarizes the output.[br]
+## If param strict is false, it'll construct a valid locale with what it can.
+## Otherwise all the parts of the code must be valid or it'll return an empty
+## string.
+## [codeblock]
+## print(NFStringUtils.sanitize_locale("En_Invl-XX")) # Will print "en"
+## print(NFStringUtils.sanitize_locale("En-Invl-US")) # Will print "en_US"
+## print(NFStringUtils.sanitize_locale("en-Invl_US", true)) # Will print ""
+## [/codeblock]
+static func sanitize_locale(locale_string: String, strict: bool = false) -> String:
+	if _LANG_CODES.is_empty():
+		_populate_locale_dicts()
+	
+	var clean_string: String = locale_string.strip_edges()
+	if clean_string.is_empty():
+		return ""
+	var normalized: String = clean_string.replace("-", "_")
+	var parts: PackedStringArray = normalized.split("_")
+	var part_size: int = parts.size()
+	
+	var lang: String = ""
+	var scr: String = ""
+	var cnt: String = ""
+	
+	if 0 < part_size:
+		lang = parts[0].to_lower()
+	if 1 < part_size:
+		var code_slice: String = parts[1]
+		if code_slice.length() == 4: # It could be a script tag.
+			scr = capitalize(code_slice)
+		else:
+			cnt = code_slice.to_upper()
+	if 2 < part_size:
+		cnt = parts[2].to_upper()
+	
+	
+	if lang.is_empty():
+		return ""
+	else:
+		var lang_index: int = _LANG_CODES.bsearch(lang)
+		if _LANG_CODES.size() <= lang_index or _LANG_CODES[lang_index] != lang:
+			return ""
+	
+	var structured_code: String = lang
+	
+	if not scr.is_empty():
+		var scr_index: int = _SCRIPT_CODES.bsearch(scr)
+		if scr_index < _SCRIPT_CODES.size() and _SCRIPT_CODES[scr_index] == scr:
+			structured_code += "_" + scr
+		elif strict:
+			return ""
+	
+	if not cnt.is_empty():
+		var cnt_index: int = _COUNTRY_CODES.bsearch(cnt)
+		if cnt_index < _COUNTRY_CODES.size() and _COUNTRY_CODES[cnt_index] == cnt:
+			structured_code += "_" + cnt
+		elif strict:
+			return ""
+	
+	return TranslationServer.standardize_locale(structured_code)
+
+
 static func get_locale_language(code: String) -> String:
-	code = TranslationServer.standardize_locale(code)
+	code = sanitize_locale(code)
 	if code.is_empty():
 		return ""
-	return code.get_slice("_", 0)
+	return code.get_slice("_", 0).to_lower()
 
 
 static func get_locale_country(code: String) -> String:
-	code = TranslationServer.standardize_locale(code)
+	code = sanitize_locale(code)
 	var slice_count: int = code.get_slice_count("_")
 	if slice_count < 2:
 		return ""
@@ -211,4 +303,4 @@ static func get_locale_country(code: String) -> String:
 			candidate = code.get_slice("_", 2)
 		else:
 			candidate = ""
-	return candidate
+	return candidate.to_upper()

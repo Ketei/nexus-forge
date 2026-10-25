@@ -139,7 +139,7 @@ static func get_phrase_arguments(phrase_text: String, trim_brackets: bool = fals
 
 
 func _get_text_data_localized(node_uuid: StringName, for_locale: String) -> Dictionary:
-	for_locale = TranslationServer.standardize_locale(for_locale)
+	for_locale = NFStringUtils.sanitize_locale(for_locale)
 	
 	var data: Dictionary[String, Variant] = {
 		"is_override": false,
@@ -205,7 +205,7 @@ func _get_text_data_localized(node_uuid: StringName, for_locale: String) -> Dict
 
 
 func _get_array_data_localized(node_uuid: StringName, for_locale: String) -> Dictionary:
-	for_locale = TranslationServer.standardize_locale(for_locale)
+	for_locale = NFStringUtils.sanitize_locale(for_locale)
 	
 	var choices: PackedStringArray = []
 	var build_array: Array = []
@@ -302,7 +302,7 @@ func _get_array_data_localized(node_uuid: StringName, for_locale: String) -> Dic
 
 ## Returns the text of a localized string.
 func get_format_string(key: String, locale: String) -> String:
-	locale = TranslationServer.standardize_locale(locale)
+	locale = NFStringUtils.sanitize_locale(locale)
 	var e: Dictionary = NFDictUtils.EMPTY_DICT
 	return format_strings.get(key, e).get(locale, e).get("base_string", "")
 
@@ -310,13 +310,13 @@ func get_format_string(key: String, locale: String) -> String:
 ## Returns whether a format string with [param key] exists. If
 ## [param locale] isn't empty it'll validate that locale too.
 func has_format_string(key: String, locale: String = "") -> bool:
-	locale = TranslationServer.standardize_locale(locale)
+	locale = NFStringUtils.sanitize_locale(locale)
 	return format_strings.get(key, NFDictUtils.EMPTY_DICT).has(locale)
 
 
 ## Returns all format keys that the localized string has.
 func get_format_string_formats(key: String, locale_code: String) -> Array[String]:
-	var lang_code: String = TranslationServer.standardize_locale(locale_code)
+	var lang_code: String = NFStringUtils.sanitize_locale(locale_code)
 	var e: Dictionary = NFDictUtils.EMPTY_DICT
 	var format_dict: Dictionary = format_strings.get(key, e).get(lang_code, e).get("format", e)
 	var formats: Array[String] = []
@@ -327,7 +327,7 @@ func get_format_string_formats(key: String, locale_code: String) -> Array[String
 
 ## Returns the format keys and the possible formats of a given key.
 func get_format_string_arguments(key: String, locale_code: String) -> Dictionary[String, Dictionary]:
-	var lang_code: String = TranslationServer.standardize_locale(locale_code)
+	var lang_code: String = NFStringUtils.sanitize_locale(locale_code)
 	var e: Dictionary = NFDictUtils.EMPTY_DICT
 	var format_dict: Variant = format_strings.get(key, e).get(lang_code, e).get("format")
 	var return_dict: Dictionary[String, Dictionary] = {}
@@ -339,7 +339,7 @@ func get_format_string_arguments(key: String, locale_code: String) -> Dictionary
 
 ## Returns strings formatted for NexusForge plugin use.
 func get_editor_localized_strings(locale_code: String) -> Dictionary[String, Dictionary]:
-	var lang_code: String = TranslationServer.standardize_locale(locale_code)
+	var lang_code: String = NFStringUtils.sanitize_locale(locale_code)
 	var data: Dictionary[String, Dictionary] = {}
 	
 	for key in format_strings:
@@ -350,7 +350,7 @@ func get_editor_localized_strings(locale_code: String) -> Dictionary[String, Dic
 
 ## Sets or creates a localized string with the given key.
 func set_format_string(key: String, text: String, locale: String) -> void:
-	locale = TranslationServer.standardize_locale(locale)
+	locale = NFStringUtils.sanitize_locale(locale)
 	
 	if locale.is_empty():
 		return
@@ -371,7 +371,7 @@ func set_format_string(key: String, text: String, locale: String) -> void:
 ## Checks if the format key exists in the given key and locale. If it doesn't it'll
 ## create it. Returns true if the entry was created or already existed.
 func validate_format_string_format(key: String, locale: String, format: String) -> bool:
-	locale = TranslationServer.standardize_locale(locale)
+	locale = NFStringUtils.sanitize_locale(locale)
 	
 	if not NFDictUtils.has_nested_path(format_strings, [key, locale, "format"]):
 		return false
@@ -392,7 +392,7 @@ func validate_format_string_format(key: String, locale: String, format: String) 
 ## Sets the [param case] for the [param locale] on the [param format] in the
 ## specified [param key] to [param value].
 func set_format_string_case(key: String, locale: String, format: String, case: String, value: String) -> void:
-	locale = TranslationServer.standardize_locale(locale)
+	locale = NFStringUtils.sanitize_locale(locale)
 	
 	if locale.is_empty() or not format_strings.has(key):
 		return
@@ -417,7 +417,7 @@ func set_format_string_case(key: String, locale: String, format: String, case: S
 ## in the specified [param key].[br]
 ## Returns an empty string if not found.
 func get_format_string_case(key: String, locale: String, format: String, case: String) -> String:
-	locale = TranslationServer.standardize_locale(locale)
+	locale = NFStringUtils.sanitize_locale(locale)
 	return NFDictUtils.get_nested_value(
 			format_strings,
 			[key, locale, "format", format, "cases", case],
@@ -428,7 +428,7 @@ func get_format_string_case(key: String, locale: String, format: String, case: S
 ## Returns an array containing all the cases (not their results) of a specified
 ## [param format] of the [param locale] from the specified [param key].
 func get_format_string_cases(key: String, locale: String, format: String) -> Array[String]:
-	locale = TranslationServer.standardize_locale(locale)
+	locale = NFStringUtils.sanitize_locale(locale)
 	var cases: Array[String] = []
 	
 	if NFDictUtils.has_nested_path(format_strings, [key, locale, "format", format, "cases"]):
@@ -438,7 +438,7 @@ func get_format_string_cases(key: String, locale: String, format: String) -> Arr
 
 ## Sets the default case from a localized string with the given key.
 func set_format_string_default_case(key: String, locale: String, format: String, default_text: String) -> void:
-	locale = TranslationServer.standardize_locale(locale)
+	locale = NFStringUtils.sanitize_locale(locale)
 	
 	if locale.is_empty() or not format_strings.has(key):
 		return
@@ -461,7 +461,7 @@ func set_format_string_default_case(key: String, locale: String, format: String,
 
 ## Returns the default case from a localized string with the given key.
 func get_format_string_default_case(key: String, locale: String, argument: String) -> String:
-	locale = TranslationServer.standardize_locale(locale)
+	locale = NFStringUtils.sanitize_locale(locale)
 	return NFDictUtils.get_nested_value(
 			format_strings,
 			[key, locale, "format", argument, "default"],
@@ -471,7 +471,7 @@ func get_format_string_default_case(key: String, locale: String, argument: Strin
 ## Erases a [param format_key] and all its cases on the given [param key]
 ## from the given [param locale].
 func erase_format_string_format(key: String, locale: String, format_key: String) -> void:
-	locale = TranslationServer.standardize_locale(locale)
+	locale = NFStringUtils.sanitize_locale(locale)
 	if NFDictUtils.has_nested_path(format_strings, [key, locale, "format"]):
 		format_strings[key][locale]["format"].erase(format_key)
 
@@ -479,7 +479,7 @@ func erase_format_string_format(key: String, locale: String, format_key: String)
 ## Erases the specific [param case] of the [param format_key] of the specified
 ## [param locale] in the [param key].
 func erase_format_string_case(key: String, locale: String, format_key: String, case: String) -> bool:
-	locale = TranslationServer.standardize_locale(locale)
+	locale = NFStringUtils.sanitize_locale(locale)
 	if NFDictUtils.has_nested_path(format_strings, [key, locale, "format", format_key, "cases"]):
 		return format_strings[key][locale]["format"][format_key]["cases"].erase(case)
 	return false
@@ -487,7 +487,7 @@ func erase_format_string_case(key: String, locale: String, format_key: String, c
 
 ## Clears the list of custom cases from the given key.
 func clear_format_string_cases(key: String, locale: String, format: String) -> void:
-	locale = TranslationServer.standardize_locale(locale)
+	locale = NFStringUtils.sanitize_locale(locale)
 	var cases = NFDictUtils.get_nested_value(
 			format_strings,
 			[key, locale, "format", format, "cases"])
@@ -551,7 +551,7 @@ func get_node_data(node_uuid: StringName, locale: String = "") -> Dictionary:
 ## If the node isn't of a type that supports text or it is not found it'll
 ## return [param fallback].
 func get_text_entry(node_uuid: StringName, locale: String, fallback: String = "[ENTRY NOT FOUND]") -> String:
-	locale = TranslationServer.standardize_locale(locale)
+	locale = NFStringUtils.sanitize_locale(locale)
 	
 	if not localization.has(node_uuid) or localization[node_uuid]["type"] != LocalizationType.TEXT:
 		return fallback
@@ -576,7 +576,7 @@ func get_text_entry(node_uuid: StringName, locale: String, fallback: String = "[
 func get_choices_entry(node_uuid: StringName, locale: String = "", fallback: Array = ["[ENTRY NOT FOUND]"]) -> Array[String]:
 	var e: Dictionary = NFDictUtils.EMPTY_DICT
 	
-	locale = TranslationServer.standardize_locale(locale)
+	locale = NFStringUtils.sanitize_locale(locale)
 	var return_array: Array[String] = []
 	
 	if not localization.has(node_uuid) or localization[node_uuid]["type"] != LocalizationType.CHOICES:
@@ -608,7 +608,7 @@ func get_choices_entry(node_uuid: StringName, locale: String = "", fallback: Arr
 ## Note: Switching from a localized to an unlocalized node will clear the localization
 ## data completely and viceversa.
 func set_dialog_text(uuid: StringName, text: String, locale: String = "") -> void:
-	locale = TranslationServer.standardize_locale(locale)
+	locale = NFStringUtils.sanitize_locale(locale)
 	var localization_level: Dictionary = localization.get_or_add(uuid, {"type": LocalizationType.TEXT, "unlocalized": "", "locales": {}})
 	
 	if localization_level["type"] != LocalizationType.TEXT:
@@ -628,7 +628,7 @@ func set_dialog_text(uuid: StringName, text: String, locale: String = "") -> voi
 ## data completely and viceversa.
 func set_choices_array(uuid: StringName, options: Array, locale: String = "") -> void:
 	# --- Data validation ---
-	locale = TranslationServer.standardize_locale(locale)
+	locale = NFStringUtils.sanitize_locale(locale)
 	var valid_options: PackedStringArray
 	for option in options:
 		var opt_type: int = typeof(option)
@@ -686,7 +686,7 @@ func set_choice_text(uuid: StringName, option_index: int, text: String, locale: 
 		
 		items[option_index] = text
 	else:
-		locale = TranslationServer.standardize_locale(locale)
+		locale = NFStringUtils.sanitize_locale(locale)
 		if not base_level["locales"].has(locale) or typeof(base_level["locales"][locale]) != TYPE_PACKED_STRING_ARRAY:
 			return
 		
@@ -1190,7 +1190,7 @@ func generate_localization_files(localization_id: String, base_path: String, fil
 	
 	# Given how Discourse works, there is ALWAYS a base language.
 	for language in locale_map.keys():
-		var lang_key: String = TranslationServer.standardize_locale(language)
+		var lang_key: String = TranslationServer.standardize_locale(language.to_lower())
 		if lang_key.is_empty():
 			continue
 		var lang_path: String = NFStringUtils.make_path(
@@ -1226,7 +1226,7 @@ func generate_localization_files(localization_id: String, base_path: String, fil
 		used_locales[lang_key] = null
 		
 		for region_code in locale_map[lang_key].keys():
-			var locale_key: String = TranslationServer.standardize_locale(lang_key + "_" + region_code)
+			var locale_key: String = TranslationServer.standardize_locale(lang_key + "_" + region_code.to_upper())
 			if locale_key.is_empty():
 				continue
 			
@@ -1627,7 +1627,7 @@ func split_path_variable(path: String) -> Array[StringName]:
 ## If there is localization data of locales not registered through here it'll
 ## warn that the data isn't going to be used during runtime.
 func add_locale(locale: String) -> void:
-	locale = TranslationServer.standardize_locale(locale)
+	locale = NFStringUtils.sanitize_locale(locale)
 	if locale.is_empty():
 		return
 	
@@ -1646,7 +1646,7 @@ func add_locale(locale: String) -> void:
 ## Returns whether [param locale_code] is a valid locale registered
 ## in this resource locale map.
 func has_locale(locale_code: String) -> bool:
-	var standard_code: String = TranslationServer.standardize_locale(locale_code)
+	var standard_code: String = NFStringUtils.sanitize_locale(locale_code)
 	if standard_code.is_empty():
 		return false
 	
@@ -1663,7 +1663,7 @@ func has_locale(locale_code: String) -> bool:
 
 ## Removes a locale from the locale map.
 func remove_locale(locale: String) -> void:
-	locale = TranslationServer.standardize_locale(locale)
+	locale = NFStringUtils.sanitize_locale(locale)
 	
 	if locale.is_empty():
 		return
@@ -1782,7 +1782,7 @@ func _import_phrase_data(data: Dictionary) -> void:
 			if typeof(prob_loc) != TYPE_STRING or typeof(entry_data[prob_loc]) != TYPE_DICTIONARY:
 				continue
 			
-			var standard_locale: String = TranslationServer.standardize_locale(prob_loc)
+			var standard_locale: String = NFStringUtils.sanitize_locale(prob_loc)
 			if standard_locale.is_empty():
 				continue
 			var localization_data: Dictionary = entry_data[prob_loc]
@@ -1968,7 +1968,7 @@ func _set_csv_data(data: Dictionary) -> void:
 				var locale_type: int = typeof(import_locale)
 				if locale_type != TYPE_STRING:
 					continue
-				var locale_code: String = TranslationServer.standardize_locale(String(import_locale))
+				var locale_code: String = NFStringUtils.sanitize_locale(String(import_locale))
 				if locale_code.is_empty():
 					continue
 				var localization_type: int = typeof(data[import_id][import_locale])
@@ -1990,7 +1990,7 @@ func _set_csv_data(data: Dictionary) -> void:
 				var locale_type: int = typeof(import_locale)
 				if locale_type != TYPE_STRING:
 					continue
-				var locale_code: String = TranslationServer.standardize_locale(String(import_locale))
+				var locale_code: String = NFStringUtils.sanitize_locale(String(import_locale))
 				if locale_code.is_empty():
 					continue
 				var localization_type: int = typeof(data[import_id][import_locale])
@@ -2021,7 +2021,7 @@ func _buid_id_map() -> void:
 
 
 func _get_format_string_localized(key: String, for_locale: String) -> String:
-	for_locale = TranslationServer.standardize_locale(for_locale)
+	for_locale = NFStringUtils.sanitize_locale(for_locale)
 	
 	if _phrase_overrides != null:
 		var possible_override: Variant = _phrase_overrides.get_base_string_override(
@@ -2072,7 +2072,7 @@ func _get_format_string_localized(key: String, for_locale: String) -> String:
 
 
 func _get_format_string_args_localized(key: String, for_locale: String) -> Dictionary[String, Dictionary]:
-	for_locale = TranslationServer.standardize_locale(for_locale)
+	for_locale = NFStringUtils.sanitize_locale(for_locale)
 	
 	var e: Dictionary = NFDictUtils.EMPTY_DICT
 	var base: Dictionary[String, Dictionary] = {}

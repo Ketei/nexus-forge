@@ -71,7 +71,7 @@ var API: DiscourseAPI = null
 ## The current locale of the parser
 var locale: String = "en":
 	set(new_locale):
-		var new_standard: String = TranslationServer.standardize_locale(new_locale.strip_edges())
+		var new_standard: String = NFStringUtils.sanitize_locale(new_locale)
 		if new_standard.is_empty() or locale == new_standard:
 			return
 		
@@ -100,7 +100,6 @@ var _conversation_started: bool = false
 var _next_uuid: StringName = &""
 var _current_uuid: StringName = &""
 var _conversation_cache: NFLRUResourceCache = null
-var _parser_cache: NFLRUCache = null
 var _parser_regex: RegEx = RegEx.new()
 var _node_travel_stack: Array[StringName] = []
 
@@ -124,7 +123,6 @@ var _phrase_overrides: Dictionary[String, DiscourseDialog.NFPhraseEntryOverride]
 
 func _init() -> void:
 	_conversation_cache = NFLRUResourceCache.new()
-	_parser_cache = NFLRUCache.new()
 	API = DiscourseAPI.new()
 	_parser_regex.compile("\\{(\\![a-zA-Z\\_][a-zA-Z0-9\\_]*(?:\\|[^\\}]+)?|(?:[\\?\\&\\$][^\\}]+))\\}")
 
@@ -1386,7 +1384,7 @@ func set_dialog_text(locale_code: String, dialog_id: String, node_id: StringName
 		new_dialog = String(new_dialog)
 		type = TYPE_STRING
 	
-	locale_code = TranslationServer.standardize_locale(locale_code)
+	locale_code = NFStringUtils.sanitize_locale(locale_code)
 	
 	if locale_code.is_empty() or dialog_id.is_empty():
 		NFPluginGameHandler._log_msg(
@@ -1440,7 +1438,7 @@ func set_dialog_text(locale_code: String, dialog_id: String, node_id: StringName
 ## [param force] forces the override. This means that if a previous override wasn't
 ## for a choice, it'll be replaced with one for choices.
 func set_choices_array(locale_code: String, dialog_id: String, node_id: StringName, new_choices, force: bool = false) -> void:
-	locale_code = TranslationServer.standardize_locale(locale_code)
+	locale_code = NFStringUtils.sanitize_locale(locale_code)
 	var type: int = typeof(new_choices)
 	
 	if locale_code.is_empty() or dialog_id.is_empty():
@@ -1519,7 +1517,7 @@ func set_choice_text(locale_code: String, dialog_id: String, node_id: StringName
 				NFPluginGameHandler._LogLevel.ERROR)
 		return
 	
-	locale_code = TranslationServer.standardize_locale(locale_code)
+	locale_code = NFStringUtils.sanitize_locale(locale_code)
 	
 	if locale_code.is_empty():
 		NFPluginGameHandler._log_msg(
@@ -1570,7 +1568,7 @@ func set_phrase_base_string_override(locale_code: String, dialog_id: String, phr
 	if type == TYPE_STRING_NAME:
 		base = String(base)
 		type = TYPE_STRING
-	locale_code = TranslationServer.standardize_locale(locale_code)
+	locale_code = NFStringUtils.sanitize_locale(locale_code)
 	
 	if locale_code.is_empty() or dialog_id.is_empty() or phrase_id.is_empty():
 		NFPluginGameHandler._log_msg(
@@ -1612,7 +1610,7 @@ func set_phrase_format_default_override(locale_code: String, dialog_id: String, 
 	if type == TYPE_STRING_NAME:
 		default_val = String(default_val)
 		type = TYPE_STRING
-	locale_code = TranslationServer.standardize_locale(locale_code)
+	locale_code = NFStringUtils.sanitize_locale(locale_code)
 	
 	if locale_code.is_empty() or dialog_id.is_empty() or phrase_id.is_empty() or format_id.is_empty():
 		NFPluginGameHandler._log_msg(
@@ -1655,7 +1653,7 @@ func set_phrase_format_case_override(locale_code: String, dialog_id: String, phr
 		result = String(result)
 		type = TYPE_STRING
 	
-	locale_code = TranslationServer.standardize_locale(locale_code)
+	locale_code = NFStringUtils.sanitize_locale(locale_code)
 	
 	if locale_code.is_empty() or dialog_id.is_empty() or phrase_id.is_empty() or format_id.is_empty() or case_id.is_empty():
 		NFPluginGameHandler._log_msg(
@@ -1692,7 +1690,7 @@ func set_phrase_format_case_override(locale_code: String, dialog_id: String, phr
 
 ## Overrides a specific phrase's format to use the default text.
 func set_phrase_format_case_to_default(locale_code: String, dialog_id: String, phrase_id: String, format_id: String, case_id: String) -> void:
-	locale_code = TranslationServer.standardize_locale(locale_code)
+	locale_code = NFStringUtils.sanitize_locale(locale_code)
 	
 	if locale_code.is_empty() or dialog_id.is_empty() or phrase_id.is_empty() or format_id.is_empty() or case_id.is_empty():
 		NFPluginGameHandler._log_msg(
@@ -1718,7 +1716,7 @@ func set_phrase_format_case_to_default(locale_code: String, dialog_id: String, p
 
 ## Removes the default override for a specific phrase's case, restoring its base data.
 func clear_phrase_format_case_default(locale_code: String, dialog_id: String, phrase_id: String, format_id: String, case_id: String) -> void:
-	locale_code = TranslationServer.standardize_locale(locale_code)
+	locale_code = NFStringUtils.sanitize_locale(locale_code)
 	
 	if locale_code.is_empty() or dialog_id.is_empty() or phrase_id.is_empty() or format_id.is_empty() or case_id.is_empty():
 		NFPluginGameHandler._log_msg(
@@ -1762,7 +1760,6 @@ func _path_has_id(path: String) -> bool:
 func _clear_cache() -> void:
 	if _dialog_resource != null:
 		_dialog_resource.parsed_dialog_cache.clear()
-	_parser_cache.clear()
 	_conversation_cache.clear()
 
 

@@ -445,7 +445,10 @@ func verify_project_settings() -> void:
 				NFPluginGameHandler._SETTINGS_PATHS[tool_id]["default_value"] if tool_id != "discourse_base_language" else OS.get_locale_language())
 		
 		if tool_id == "discourse_base_language":
-			var set_setting: String = TranslationServer.standardize_locale(ProjectSettings.get_setting(NFPluginGameHandler._SETTINGS_PATHS[tool_id]["setting_path"], ""))
+			var set_setting: String = NFStringUtils.sanitize_locale(
+					ProjectSettings.get_setting(
+							NFPluginGameHandler._SETTINGS_PATHS[tool_id]["setting_path"],
+							""))
 			if not set_setting.is_empty():
 				var language: String = NFStringUtils.get_locale_language(set_setting)
 				
@@ -464,7 +467,7 @@ func verify_project_settings() -> void:
 				var valid_locales: Dictionary[String, Variant] = {}
 				
 				for locale in locales:
-					var valid_code: String = TranslationServer.standardize_locale(locale)
+					var valid_code: String = NFStringUtils.sanitize_locale(locale)
 					if valid_code.is_empty():
 						continue
 					
