@@ -164,15 +164,19 @@ func _get_text_data_localized(node_uuid: StringName, for_locale: String) -> Dict
 	var locales_dict: Dictionary = localization_dict.get("locales", e)
 	
 	if localized:
-		var localized_data: Variant = locales_dict.get(for_locale)
-		if typeof(localized_data) == TYPE_STRING and not localized_data.is_empty():
-			data["text"] = localized_data
-			return data
+		var localized_data: Variant = locales_dict.get(for_locale, "")
+		if typeof(localized_data) == TYPE_STRING:
+			var loc_str: String = localized_data.strip_edges()
+			if not loc_str.is_empty():
+				data["text"] = localized_data
+				return data
 	else:
 		var unlocalized_data: Variant = localization_dict.get("unlocalized")
 		if typeof(unlocalized_data) == TYPE_STRING:
-			data["text"] = localization[node_uuid]["unlocalized"]
-			return data
+			var unloc_str: String = unlocalized_data.strip_edges()
+			if not unloc_str.is_empty():
+				data["text"] = localization[node_uuid]["unlocalized"]
+				return data
 	
 	# 0 = No Fallback
 	# 1 = Direct Fallback: Merge fallback_object with loaded objects
@@ -191,15 +195,19 @@ func _get_text_data_localized(node_uuid: StringName, for_locale: String) -> Dict
 		var base_lang: String = for_locale.get_slice("_", 0)
 		if base_lang != lang_fallback:
 			if locales_dict.has(base_lang):
-				var locale_data: Variant = locales_dict.get(base_lang)
-				if typeof(locale_data) == TYPE_STRING and not locale_data.is_empty():
-					data["text"] = locale_data
-					return data
+				var locale_data: Variant = locales_dict.get(base_lang, "")
+				if typeof(locale_data) == TYPE_STRING:
+					var loc_str: String = locale_data.strip_edges()
+					if not loc_str.is_empty():
+						data["text"] = locale_data
+						return data
 	
 	if locales_dict.has(lang_fallback):
 		var locale_data: Variant = locales_dict.get(lang_fallback)
-		if typeof(locale_data) == TYPE_STRING and not locale_data.is_empty():
-			data["text"] = locale_data
+		if typeof(locale_data) == TYPE_STRING:
+			var loc_str: String = locale_data.strip_edges()
+			if not loc_str.is_empty():
+				data["text"] = locale_data
 	
 	return data
 
@@ -863,9 +871,9 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 							if not dialog_metadata_node["input_connections"].has(meta_field["id"]):
 								NFPluginGameHandler._log_msg(
 										"export - dialog",
-										"Metadata node '%s' on file '%s' registered metadata with ID '%s' on port %d but the port isn't available. Setting to null." % [dialog_metadata_node["name"], resource_path, meta_field["id"], meta_field["port"]],
+										"Metadata node '%s' on file '%s' registered metadata with ID '%s' on port %d but the port isn't available. Setting to empty." % [dialog_metadata_node["name"], resource_path, meta_field["id"], meta_field["port"]],
 										NFPluginGameHandler._LogLevel.ERROR)
-								dialog_settings["metadata"][meta_field["id"]] = null
+								dialog_settings["metadata"][meta_field["id"]] = &""
 							else:
 								dialog_settings["metadata"][meta_field["id"]] = target_finder.get_target(dialog_metadata_node["input_connections"][meta_field["id"]]["target_node_uuid"])
 				
@@ -904,9 +912,9 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 								if not dialog_metadata_node["input_connections"].has(meta_field["id"]):
 									NFPluginGameHandler._log_msg(
 											"export - dialog",
-											"Metadata node '%s' on file '%s' registered metadata with ID '%s' on port %d but the port isn't available. Setting to null." % [dialog_metadata_node["name"], resource_path, meta_field["id"], meta_field["port"]],
+											"Metadata node '%s' on file '%s' registered metadata with ID '%s' on port %d but the port isn't available. Setting to empty." % [dialog_metadata_node["name"], resource_path, meta_field["id"], meta_field["port"]],
 											NFPluginGameHandler._LogLevel.ERROR)
-									new_option["settings"]["metadata"][meta_field["id"]] = null 
+									new_option["settings"]["metadata"][meta_field["id"]] = &"" 
 								else:
 									new_option["settings"]["metadata"][meta_field["id"]] = target_finder.get_target(dialog_metadata_node["input_connections"][meta_field["id"]]["target_node_uuid"])
 					
@@ -2039,7 +2047,7 @@ func _get_format_string_localized(key: String, for_locale: String) -> String:
 		if possible_override != null:
 			return possible_override
 	
-	var default_fallback: String = "[MISSING LOCALIZATION DATA]"
+	var default_fallback: String = "[MISSING LOCALIZATION PHRASE DATA]"
 	
 	var key_dict: Variant = format_strings.get(key)
 	if key_dict == null:
@@ -2082,6 +2090,8 @@ func _get_format_string_localized(key: String, for_locale: String) -> String:
 func _get_format_string_args_localized(key: String, for_locale: String) -> Dictionary[String, Dictionary]:
 	for_locale = NFStringUtils.sanitize_locale(for_locale)
 	
+	const missing_format_case: String = "[MISSING CASE LOCALIZATION]" # formats
+	
 	var e: Dictionary = NFDictUtils.EMPTY_DICT
 	var base: Dictionary[String, Dictionary] = {}
 	
@@ -2108,8 +2118,29 @@ func _get_format_string_args_localized(key: String, for_locale: String) -> Dicti
 					target_locale_to_use = lang_fallback
 		
 		if not target_locale_to_use.is_empty():
-			var current: Dictionary = key_dict[target_locale_to_use]["format"].duplicate(true)
-			base.assign(current)
+			var formats_dict: Dictionary = key_dict[target_locale_to_use]["format"]
+			for format_id in formats_dict:
+				var cases: Dictionary[String, String] = {}
+				
+				var format_data: Dictionary = formats_dict[format_id]
+				var cases_data: Dictionary = formats_dict.get("cases", e)
+				
+				var default: String = format_data.get("default", "")
+				if default.strip_edges().is_empty():
+					default = missing_format_case
+				
+				for case in cases_data:
+					var case_text: String = cases_data[case]
+					if case_text.strip_edges().is_empty():
+						case_text = missing_format_case
+					
+					cases[case] = case_text
+				
+				var new_data: Dictionary[String, Variant] = {
+					"default": default,
+					"cases": cases}
+				
+				base[format_id] = new_data
 	
 	# 2. Deep-merge the specific locale's overrides on top of the resolved base
 	if _phrase_overrides != null:

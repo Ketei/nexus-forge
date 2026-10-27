@@ -195,7 +195,9 @@ func keys() -> Array[String]:
 
 ## Removes an item from the cache. Returns [code]true[/code] if [param key] was
 ## in the cache.
-func remove_data(key: String) -> void:
+func remove_data(key: String) -> bool:
+	var removed: bool = false
+	
 	if thread_safe:
 		_mutex.lock()
 	
@@ -217,9 +219,12 @@ func remove_data(key: String) -> void:
 			_oldest_used = target_link.newer_link
 	
 		target_link.clear()
+		removed = true
 	
 	if thread_safe:
 		_mutex.unlock()
+	
+	return removed
 
 
 ## Removes the bulk of entries on param key_arr from

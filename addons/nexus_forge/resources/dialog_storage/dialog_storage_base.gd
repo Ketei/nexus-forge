@@ -174,26 +174,21 @@ func _get_text_data(dialog_id: StringName, node_id: StringName) -> Dictionary:
 	if thread_safe:
 		_mutex.lock()
 	
-	if _active_locale == null:
-		if thread_safe:
-			_mutex.unlock()
-		return data
-	
 	var locale: String = _active_locale_code
+	var base_string: String = "[MISSING LOCALIZATION DATA]"
+	
+	if _active_locale != null:
+		var loc_str: String = _active_locale.get_text(dialog_id, node_id).strip_edges()
+		if not loc_str.is_empty():
+			base_string = "[MISSING LOCALIZATION DATA]"
 	
 	if _dialog_overrides != null:
 		var override: Variant = _dialog_overrides.get_override(node_id, locale)
 		if typeof(override) == TYPE_STRING:
 			data["is_override"] = true
-			data["text"] = override
-		else:
-			var loc_str: String = _active_locale.get_text(dialog_id, node_id)
-			if not loc_str.is_empty():
-				data["text"] = loc_str
-	else:
-		var loc_str: String = _active_locale.get_text(dialog_id, node_id)
-		if not loc_str.is_empty():
-			data["text"] = loc_str
+			base_string = override
+	
+	data["text"] = base_string
 	
 	if thread_safe:
 		_mutex.unlock()
@@ -202,21 +197,29 @@ func _get_text_data(dialog_id: StringName, node_id: StringName) -> Dictionary:
 
 
 func _get_choices(dialog_id: StringName, id: StringName) -> PackedStringArray:
+	var locale: String = _active_locale_code
+	var origin_choices: PackedStringArray = ["[MISSING LOCALIZATION DATA]"]
+	
 	if thread_safe:
 		_mutex.lock()
 	
-	if _active_locale == null:
-		if thread_safe:
-			_mutex.unlock()
-		return ["[MISSING LOCALIZATION DATA]"]
-	
-	var locale: String = _active_locale_code
-	var origin_choices: PackedStringArray = _active_locale.get_choices(dialog_id, id)
+	var dirty: bool = true
+	if _active_locale != null:
+		origin_choices = _active_locale.get_choices(dialog_id, id)
+		dirty = false
 	
 	if _dialog_overrides != null:
 		var override: Variant = _dialog_overrides.get_override(id, locale)
 		if typeof(override) == TYPE_ARRAY:
-			for idx in range(mini(origin_choices.size(), override.size())):
+			var ovr_size: int = override.size()
+			if dirty:
+				origin_choices.resize(ovr_size)
+				origin_choices.fill("[MISSING LOCALIZATION DATA]")
+			
+			if origin_choices.size() < ovr_size:
+				origin_choices.resize(ovr_size)
+			
+			for idx in range(ovr_size):
 				var override_item: Variant = override[idx]
 				if override_item != null:
 					origin_choices[idx] = override_item
@@ -309,12 +312,6 @@ func _get_format_string_args(conversation: StringName, key: String) -> Dictionar
 				key)
 		
 		for format_key in possible_override:
-			var default_overrides: Array[String] = _phrase_overrides.get_format_case_default_overriden(
-					conversation,
-					key,
-					format_key,
-					_active_locale_code)
-			
 			if not base.has(format_key):
 				base[format_key] = possible_override[format_key]
 			else:
@@ -329,9 +326,19 @@ func _get_format_string_args(conversation: StringName, key: String) -> Dictionar
 						base_format["cases"] = over_format["cases"]
 					else:
 						var case_dict: Dictionary = base_format["cases"]
-						for def_case in default_overrides:
-							case_dict.erase(def_case)
 						case_dict.merge(over_format["cases"], true)
+		
+		for format_key in base:
+			var default_overrides: Array[String] = _phrase_overrides.get_format_case_default_overriden(
+					conversation,
+					key,
+					format_key,
+					_active_locale_code)
+			
+			if not default_overrides.is_empty() and base[format_key].has("cases"):
+				var case_dict: Dictionary = base[format_key]["cases"]
+				for def_case in default_overrides:
+					case_dict.erase(def_case)
 	
 	if thread_safe:
 		_mutex.unlock()
@@ -544,30 +551,38 @@ class NFPhraseEntryOverride extends RefCounted:
 	signal phrases_changed
 	
 	var _overrides: Dictionary[StringName, Dictionary] = {}
-	var _default_cases: Dictionary[StringName, Dictionary] = {}
+	var _default_cases: Dictionary[StringName, Dictionary] = {
+		 #"DIALOG_ID": {
+			#"PhraseKey": {
+				#"format_text": {
+					#"loc_CODE": ["default", "cases"]
+				#}
+			#}
+		#}
+	}
 	
 	## Overrides a format's case to use the default entry instead.
 	## [br][br]
 	##  [color=yellow]Warning:[/color] This will clear any data set with
 	## [method DiscourseDialog.NFPhraseEntryOverride.set_format_case_override]
 	func override_format_case_to_default(dialog: StringName, phrase: String, format: String, case: String, locale: String) -> void:
-		var dialogue_data: Variant = _default_cases.get(dialog)
-		if dialogue_data == null:
+		if not _default_cases.has(dialog):
 			var formats: Dictionary[String, Dictionary] = {}
 			_default_cases[dialog] = formats
-			dialogue_data = formats
 		
-		var phrase_data: Variant = dialogue_data.get(phrase)
-		if phrase_data == null:
+		var dialogue_data: Dictionary = _default_cases[dialog]
+		
+		if not dialogue_data.has(phrase):
 			var new_phrase: Dictionary[String, Dictionary] = {}
 			dialogue_data[phrase] = new_phrase
-			phrase_data = new_phrase
 		
-		var formats_data: Variant = phrase_data.get(format)
-		if formats_data == null:
+		var phrase_data: Dictionary = dialogue_data[phrase]
+		
+		if not phrase_data.has(format):
 			var new_overrides: Dictionary[String, Array] = {}
 			phrase_data[format] = new_overrides
-			formats_data = new_overrides
+		
+		var formats_data: Variant = phrase_data[format]
 		
 		if not formats_data.has(locale):
 			var case_arr: Array[String] = []
@@ -581,7 +596,7 @@ class NFPhraseEntryOverride extends RefCounted:
 			update = true
 		
 		var e: Dictionary = NFDictUtils.EMPTY_DICT
-		var locales_dict: Dictionary = _overrides.get(dialog, e).get(locale, e).get(phrase, e).get(format, e).get("cases", e)
+		var locales_dict: Dictionary = _overrides.get(dialog, e).get(locale, e).get(phrase, e).get("format", e).get(format, e).get("cases", e)
 		if locales_dict.has(case):
 			update = true
 			locales_dict.erase(case)

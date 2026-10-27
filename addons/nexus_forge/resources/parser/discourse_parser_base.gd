@@ -716,9 +716,15 @@ func _get_data(node_id: StringName, fallback = null, _remaining_travels: int = 2
 					var max_override: StringName = data.get("max_override", &"")
 					
 					if not min_override.is_empty():
-						min_value = _get_data(min_override, min_value, _remaining_travels - 1)
+						var override_val: Variant = _get_data(min_override, min_value, _remaining_travels - 1)
+						var override_type: int = typeof(override_val)
+						if override_type == TYPE_INT or override_type == TYPE_FLOAT:
+							min_value = override_val
 					if not max_override.is_empty():
-						max_value = _get_data(max_override, max_value, _remaining_travels - 1)
+						var override_val: Variant = _get_data(max_override, max_value, _remaining_travels - 1)
+						var override_type: int = typeof(override_val)
+						if override_type == TYPE_INT or override_type == TYPE_FLOAT:
+							max_value = override_val
 					
 					if max_value < min_value:
 						max_value = min_value
@@ -732,9 +738,15 @@ func _get_data(node_id: StringName, fallback = null, _remaining_travels: int = 2
 					var max_override: StringName = data.get("max_override", &"")
 					
 					if not min_override.is_empty():
-						min_value = _get_data(min_override, min_value, _remaining_travels - 1)
+						var override_val: Variant = _get_data(min_override, min_value, _remaining_travels - 1)
+						var override_type: int = typeof(override_val)
+						if override_type == TYPE_INT or override_type == TYPE_FLOAT:
+							min_value = override_val
 					if not max_override.is_empty():
-						max_value = _get_data(max_override, max_value, _remaining_travels - 1)
+						var override_val: Variant = _get_data(max_override, max_value, _remaining_travels - 1)
+						var override_type: int = typeof(override_val)
+						if override_type == TYPE_INT or override_type == TYPE_FLOAT:
+							max_value = override_val
 					
 					if max_value < min_value:
 						max_value = min_value
@@ -749,7 +761,10 @@ func _get_data(node_id: StringName, fallback = null, _remaining_travels: int = 2
 					var min_override: StringName = data.get("min_override", &"")
 					
 					if not min_override.is_empty():
-						true_probability = _get_data(min_override, true_probability, _remaining_travels - 1)
+						var override_val: Variant = _get_data(min_override, true_probability, _remaining_travels - 1)
+						var override_type: int = typeof(override_val)
+						if override_type == TYPE_INT or override_type == TYPE_FLOAT:
+							true_probability = override_val
 					
 					if true_probability <= 0:
 						return false
@@ -785,6 +800,9 @@ func _get_data(node_id: StringName, fallback = null, _remaining_travels: int = 2
 			
 			var args: Array = []
 			for arg:StringName in data.get("arguments", NFArrayUtils.EMPTY):
+				if arg.is_empty():
+					continue
+				
 				var arg_data: Variant = _get_data(arg, null, _remaining_travels - 1)
 				args.append(arg_data)
 			
@@ -929,6 +947,7 @@ func _load_locale_into(dialog: DiscourseDialog, locale_code: String, force_reloa
 				dialog_id,
 				locale_code)
 		if lang_data != null:
+			lang_data.invalidate_empty_strings()
 			dialog._store_locale(locale_code, lang_data)
 		return
 	
@@ -1037,7 +1056,7 @@ func load_dialog(path: String, starting_id: StringName = &"") -> bool:
 		var e: Dictionary = NFDictUtils.EMPTY_DICT
 		var m_file: String = _id_to_data.get(dialog_id, e).get("locale_file", "")
 		var eff_locale_file: String = _locale_overrides.get(dialog_id, e).get(locale, m_file)
-		var reload_locale: bool = locale_data != null and locale_data.json_file != eff_locale_file
+		var reload_locale: bool = locale_data == null or locale_data.json_file != eff_locale_file
 		
 		_resource_id = dialog_id
 		_dialog_resource = data
@@ -1053,7 +1072,7 @@ func load_dialog(path: String, starting_id: StringName = &"") -> bool:
 		if reload_locale:
 			_load_locale_into(_dialog_resource, locale, true)
 	else:
-		var res: DiscourseDialog = load(target_path)
+		var res: Variant = load(target_path)
 		var id: String = _path_to_id.get(path, "")
 		
 		if res == null or res is not DiscourseDialog:
@@ -1062,13 +1081,18 @@ func load_dialog(path: String, starting_id: StringName = &"") -> bool:
 			_dialog_resource = null
 			return false
 		
-		res._dialog_overrides = _dialog_edits.get(id)
-		res._phrase_overrides = _phrase_overrides.get(id)
+		var d_o: RefCounted = _dialog_edits.get(id)
+		var p_o: RefCounted = _phrase_overrides.get(id)
+		
+		if res._dialog_overrides != d_o:
+			res._dialog_overrides = d_o
+		if res._phrase_overrides != p_o:
+			res._phrase_overrides = p_o
 		
 		_conversation_cache.cache_resource(res)
 		_resource_id = id
 		_dialog_resource = res
-	
+		
 	if _dialog_resource.node_logic.has(starting_id):
 		_next_uuid = starting_id
 	else:
@@ -1183,7 +1207,7 @@ func prepare_dialog(path: String) -> bool:
 		var e: Dictionary = NFDictUtils.EMPTY_DICT
 		var m_file: String = _id_to_data.get(dialog_id, e).get("locale_file", "")
 		var eff_locale_file: String = _locale_overrides.get(dialog_id, e).get(locale, m_file)
-		var reload_locale: bool = locale_data != null and locale_data.json_file != eff_locale_file
+		var reload_locale: bool = locale_data == null or locale_data.json_file != eff_locale_file
 		if _dialog_edits.has(dialog_id) and data._dialog_overrides != _dialog_edits[dialog_id]:
 			data._dialog_overrides = _dialog_edits[dialog_id]
 		

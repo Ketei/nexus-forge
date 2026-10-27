@@ -58,6 +58,15 @@ func load_dialog(path: String, starting_id: StringName = &"") -> bool:
 			_dialog_resource = null
 			return false
 		var dialog_id: String = res.dialog_id
+		
+		var d_o: RefCounted = _dialog_edits.get(dialog_id)
+		var p_o: RefCounted = _phrase_overrides.get(dialog_id)
+		
+		if res._dialog_overrides != d_o:
+			res._dialog_overrides = d_o
+		if res._phrase_overrides != p_o:
+			res._phrase_overrides = p_o
+		
 		if _dialog_edits.has(dialog_id) and res._dialog_overrides != _dialog_edits[dialog_id]:
 			res._dialog_overrides = _dialog_edits[dialog_id]
 		_conversation_cache.cache_resource(res)
@@ -230,7 +239,7 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 						text = data_source.get("text", "")
 						is_override = data_source.get("is_override", false)
 					else:
-						text = "[ERROR GETING DATA FROM %s]" % text_source_node
+						text = "[ERROR GETING DATA FROM '%s']" % text_source_node
 					
 					target["data"] = {
 						"dialog_text": _parse_dialog(
@@ -623,9 +632,16 @@ func _get_data(from_uuid: StringName, fallback = null, _remaining_travels: int =
 					var override_base: StringName = inputs.get("base_value", E).get(T, &"")
 					var override_max: StringName = inputs.get("max_value", E).get(T, &"")
 					if not override_base.is_empty():
-						val_base = _get_data(override_base, val_base, _remaining_travels - 1)
+						var override_val: Variant = _get_data(override_base, val_base, _remaining_travels - 1)
+						var override_type: int = typeof(override_val)
+						if override_type == TYPE_INT or override_type == TYPE_FLOAT:
+							val_base = override_type
+					
 					if not override_max.is_empty():
-						val_max = _get_data(override_max, val_max, _remaining_travels - 1)
+						var override_val: Variant = _get_data(override_max, val_max, _remaining_travels - 1)
+						var override_type: int = typeof(override_val)
+						if override_type == TYPE_INT or override_type == TYPE_FLOAT:
+							val_max = override_type
 					
 					if val_max < val_base:
 						val_max = val_base
@@ -636,10 +652,18 @@ func _get_data(from_uuid: StringName, fallback = null, _remaining_travels: int =
 					
 					var override_base: StringName = inputs.get("base_value", E).get(T, &"")
 					var override_max: StringName = inputs.get("max_value", E).get(T, &"")
+					
 					if not override_base.is_empty():
-						val_base = _get_data(override_base, val_base, _remaining_travels - 1)
+						var override_val: Variant = _get_data(override_base, val_base, _remaining_travels - 1)
+						var override_type: int = typeof(override_val)
+						if override_type == TYPE_INT or override_type == TYPE_FLOAT:
+							val_base = override_type
+					
 					if not override_max.is_empty():
-						val_max = _get_data(override_max, val_max, _remaining_travels - 1)
+						var override_val: Variant = _get_data(override_max, val_max, _remaining_travels - 1)
+						var override_type: int = typeof(override_val)
+						if override_type == TYPE_INT or override_type == TYPE_FLOAT:
+							val_max = override_type
 					
 					if val_max < val_base:
 						val_max = val_base
@@ -652,7 +676,10 @@ func _get_data(from_uuid: StringName, fallback = null, _remaining_travels: int =
 					
 					var override_base: StringName = inputs.get("base_value", E).get(T, &"")
 					if not override_base.is_empty():
-						val_base = _get_data(override_base, val_base, _remaining_travels - 1)
+						var override_val: Variant = _get_data(override_base, val_base, _remaining_travels - 1)
+						var override_type: int = typeof(override_val)
+						if override_type == TYPE_INT or override_type == TYPE_FLOAT:
+							val_base = override_type
 					
 					if val_base <= 0:
 						return false

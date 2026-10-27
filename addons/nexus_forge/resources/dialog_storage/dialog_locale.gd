@@ -138,8 +138,8 @@ static func _overlay_dialog_array(target: PackedStringArray, source: PackedStrin
 func invalidate_empty_strings(text: bool = true, choices: bool = true, formats: bool = true) -> void:
 	const missing_text: String = "[MISSING LOCALIZATION DATA]" # text
 	const missing_choice: String = "[MISSING LOCALIZATION DATA]" # choices
-	const missing_format_base: String = "[MISSING PHRASE DATA]" # formats
-	const missing_format_case: String = "[MISSING CASE DATA]" # formats
+	const missing_format_base: String = "[MISSING PHRASE LOCALIZATION]" # formats
+	const missing_format_case: String = "[MISSING CASE LOCALIZATION]" # formats
 	
 	if text or choices:
 		for dialog_id: StringName in localization:
