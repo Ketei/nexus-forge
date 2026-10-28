@@ -53,6 +53,21 @@ func _build_callable_for_variable(text: String) -> Callable:
 func _build_callable_for_method(text: String) -> Callable:
 	var parts: PackedStringArray = text.split("|", false, 1)
 	var method: StringName = StringName(parts[0].trim_prefix("!"))
+	
+	var valid_method: bool = NexusForge._phrase_api.has_method(method)
+	
+	if not valid_method:
+		var msg: String = "Phrase Map '%s' attempted to use a non-existent API method '%s'." % [resource_path, method]
+		if OS.is_debug_build():
+			assert(false, msg)
+		else:
+			NFPluginGameHandler._log_msg(
+					"",
+					msg,
+					NFPluginGameHandler._LogLevel.ERROR)
+		
+		return _string_return_method.bind("[METHOD '%s' NOT FOUND]" % method)
+	
 	var arguments: PackedStringArray = []
 	if 1 < parts.size():
 		arguments = parts[1].split(",")
@@ -75,6 +90,10 @@ func _build_callable_for_method(text: String) -> Callable:
 	return callable
 
 
+func _string_return_method(msg: String) -> String:
+	return msg
+
+
 func _build_lazy_wrapper(target_method: Callable, args: Array) -> Variant:
 	var resolved_args: Array = []
 	for arg in args:
@@ -83,7 +102,6 @@ func _build_lazy_wrapper(target_method: Callable, args: Array) -> Variant:
 		else:
 			resolved_args.append(arg)
 	return target_method.callv(resolved_args)
-
 
 
 func _generate_callables(dialog_id: StringName) -> void:
