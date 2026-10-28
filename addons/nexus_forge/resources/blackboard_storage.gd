@@ -21,26 +21,26 @@ signal folder_created(folder_path: String)
 signal folder_erased(folder_path: String)
 
 
-@export_storage var _variables: Dictionary[StringName, Dictionary] = {}
+@export_storage var _variables: Dictionary[String, Dictionary] = {}
 
-var _active_variables: Dictionary[StringName, Dictionary] = {}
+var _active_variables: Dictionary[String, Dictionary] = {}
 
 
 func _get_folder_parts(path: String) -> Dictionary[String, Variant]:
 	path = path.simplify_path()
-	var pieces: PackedStringArray = path.rsplit("/", false, 1)
+	
 	var parts: Dictionary[String, Variant] = {
-		"folder": &"",
-		"variable": &"",
+		"folder": "",
+		"variable": "",
 		"path": path,
 		"parsed": false}
 	
-	if pieces.size() != 2:
-		return parts
+	var slash_index: int = path.rfind("/")
 	
-	parts["folder"] = StringName(pieces[0])
-	parts["variable"] = StringName(pieces[1])
-	parts["parsed"] = true
+	if 0 < slash_index and slash_index < path.length() - 1:
+		parts["folder"] = path.substr(0, slash_index)
+		parts["variable"] = path.substr(slash_index + 1)
+		parts["parsed"] = true
 	
 	return parts
 
@@ -52,16 +52,20 @@ func has_variable(path: String) -> bool:
 	if not parts["parsed"]:
 		return false
 	
-	if _active_variables.has(parts["folder"]) and _active_variables[parts["folder"]].has(parts["variable"]):
-		return true
+	var folder_path: String = parts["folder"]
+	var target_dict: Dictionary = _active_variables.get(
+			folder_path,
+			_variables.get(
+					folder_path,
+					NFDictUtils.EMPTY_DICT))
 	
-	return _variables.has(parts["folder"]) and _variables[parts["folder"]].has(parts["variable"])
+	return target_dict.has(parts["variable"])
 
 
 ## Returns true if the folder on [param folder_path] exists. This is different from
 ## checking if a variable exists.
 func has_folder(folder_path: String) -> bool:
-	var path: StringName = StringName(folder_path.simplify_path())
+	var path: String = folder_path.simplify_path()
 	return _active_variables.has(path) or _variables.has(path)
 
 
@@ -71,29 +75,31 @@ func get_variable(path: String, fallback: Variant = null) -> Variant:
 	if not parts["parsed"]:
 		return fallback
 	
-	if _active_variables.has(parts["folder"]) and _active_variables[parts["folder"]].has(parts["variable"]):
-		return _active_variables[parts["folder"]][parts["variable"]]
-	elif _variables.has(parts["folder"]) and _variables[parts["folder"]].has(parts["variable"]):
-		return _variables[parts["folder"]][parts["variable"]]
-	else:
-		return fallback
+	var folder: String = parts["folder"]
+	var variable: String = parts["variable"]
+	
+	var target_folder: Dictionary = _active_variables.get(
+			folder, _variables.get(folder, NFDictUtils.EMPTY_DICT))
+	
+	return target_folder.get(variable, fallback)
 
 
 ## Returns an array containing the variable keys in
 ## the specified [param folder_path]
 func variables(folder_path: String) -> Array[String]:
 	var keys: Array[String] = []
-	var keys_dict: Dictionary[StringName, Variant] = {}
-	var clean_path: StringName = StringName(folder_path.simplify_path())
+	var keys_dict: Dictionary[String, Variant] = {}
+	var clean_path: String = folder_path.simplify_path()
 	
-	if _active_variables.has(clean_path):
-		for var_key in _active_variables[clean_path]:
-			keys_dict[var_key] = null
-	if _variables.has(clean_path):
-		for var_key in _variables[clean_path]:
-			keys_dict[var_key] = null
+	for var_key in _active_variables.get(clean_path, NFDictUtils.EMPTY_DICT):
+		keys_dict[var_key] = null
+
+	for var_key in _variables.get(clean_path, NFDictUtils.EMPTY_DICT):
+		keys_dict[var_key] = null
 	
-	keys.assign(keys_dict.keys())
+	if not keys_dict.is_empty():
+		keys.assign(keys_dict.keys())
+	
 	return keys
 
 
@@ -106,25 +112,25 @@ func folders(at: String = "") -> Array[String]:
 	var all_folder_entries: Dictionary[String, Variant] = {}
 	
 	if clean_level.is_empty():
-		for folder:StringName in _variables:
-			var path: String = String(folder)
+		for folder:String in _variables:
+			var path: String = folder
 			if path.get_slice_count("/") == 1:
 				all_folder_entries[path] = null
-		for folder:StringName in _active_variables:
-			var path: String = String(folder)
+		for folder:String in _active_variables:
+			var path: String = folder
 			if path.get_slice_count("/") == 1:
 				all_folder_entries[path] = null
 	else:
 		var prefix: String = clean_level + "/"
 		var target_slice_count: int = clean_level.get_slice_count("/") + 1
 		
-		for folder:StringName in _variables:
-			var path: String = String(folder)
+		for folder:String in _variables:
+			var path: String = folder
 			if path.begins_with(prefix) and path.get_slice_count("/") == target_slice_count:
 				all_folder_entries[path] = null
 		
-		for folder:StringName in _active_variables:
-			var path: String = String(folder)
+		for folder:String in _active_variables:
+			var path: String = folder
 			if path.begins_with(prefix) and path.get_slice_count("/") == target_slice_count:
 				all_folder_entries[path] = null
 	
@@ -137,9 +143,10 @@ func folders(at: String = "") -> Array[String]:
 ## Returns [code]true[/code] if the value was set correctly
 func set_variable(variable_path: String, value: Variant) -> bool:
 	var parts: Dictionary[String, Variant] = _get_folder_parts(variable_path)
-	var on_active: bool = _active_variables.has(parts["folder"])
+	var folder_path: String = parts["folder"]
+	var on_active: bool = _active_variables.has(folder_path)
 	
-	if not parts["parsed"] or not (on_active or _variables.has(parts["folder"])):
+	if not parts["parsed"] or not (on_active or _variables.has(folder_path)):
 		NFPluginGameHandler._log_msg(
 				"blackboard",
 				"Tried to set variable with value '%s' on an invalid or inexistent path: '%s'. Ignoring." % [var_to_str(value), parts["path"]],
@@ -147,31 +154,31 @@ func set_variable(variable_path: String, value: Variant) -> bool:
 		return false
 	
 	if value == null:
-		if on_active and _active_variables[parts["folder"]].erase(parts["variable"]):
+		if on_active and _active_variables[folder_path].erase(parts["variable"]):
 			data_erased.emit(parts["path"])
 	else:
-		if not _active_variables.has(parts["folder"]):
-			_active_variables[parts["folder"]] = NFDictUtils.create_typed(
-					TYPE_STRING_NAME,
+		if not _active_variables.has(folder_path):
+			_active_variables[folder_path] = NFDictUtils.create_typed(
+					TYPE_STRING,
 					TYPE_NIL)
-		_active_variables[parts["folder"]][parts["variable"]] = value
+		_active_variables[folder_path][parts["variable"]] = value
 		data_set.emit(parts["path"])
 	return true
 
 
 ## Creates a directory recursively.
 func create_folder(folder_path: String) -> void:
-	var clean_path: StringName = folder_path.simplify_path()
+	var clean_path: String = folder_path.simplify_path()
 	var exists: bool = _active_variables.has(clean_path) or _variables.has(clean_path)
 	
-	var slice_path: StringName = &""
+	var slice_path: String = ""
 	
 	for slice in clean_path.split("/"):
-		slice_path += StringName(slice)
+		slice_path += slice
 		if not _active_variables.has(slice_path):
 			_active_variables[slice_path] = NFDictUtils.create_typed(
-					TYPE_STRING_NAME, TYPE_NIL)
-		slice_path += &"/"
+					TYPE_STRING, TYPE_NIL)
+		slice_path += "/"
 	
 	if not exists:
 		folder_created.emit(clean_path)
@@ -189,9 +196,9 @@ func erase_folder(folder_path: String) -> void:
 	var subfolder_path: String = clean_path + "/"
 	var initial_size: int = _active_variables.size()
 	
-	_active_variables.erase(StringName(clean_path))
+	_active_variables.erase(clean_path)
 	
-	for folder:StringName in _active_variables.keys():
+	for folder:String in _active_variables.keys():
 		if folder.begins_with(subfolder_path):
 			_active_variables.erase(folder)
 	if _active_variables.size() != initial_size:
@@ -200,14 +207,14 @@ func erase_folder(folder_path: String) -> void:
 
 ## Returns true if folder in [param folder_path] is empty or doesn't exist.
 func is_folder_empty(folder_path: String) -> bool:
-	var clean_path: StringName = StringName(folder_path.simplify_path())
-	if _active_variables.has(clean_path) and not _active_variables[clean_path].is_empty():
-		return false
+	var clean_path: String = folder_path.simplify_path()
+	var target: Dictionary = _active_variables.get(
+			clean_path,
+			_variables.get(
+					clean_path,
+					NFDictUtils.EMPTY_DICT))
 	
-	if _variables.has(clean_path):
-		return _variables[clean_path].is_empty()
-	
-	return true
+	return target.is_empty()
 
 
 ## Resets a variable to its default value. Returns whether a variable was
@@ -235,14 +242,14 @@ func reset_data() -> void:
 ## Returns a dictionary containing the changed data on this object. If
 ## [param deep_copy] is [code]true[/code] it'll return a copy of the entire state
 ## including the default parameters.
-func get_state(deep_copy: bool = false) -> Dictionary[StringName, Dictionary]:
-	var current_state: Dictionary[StringName, Dictionary] = {}
+func get_state(deep_copy: bool = false) -> Dictionary[String, Dictionary]:
+	var current_state: Dictionary[String, Dictionary] = {}
 	
 	if deep_copy:
 		current_state.merge(_variables.duplicate(true))
 	
-	for folder: StringName in _active_variables:
-		var active_folder_data: Dictionary[StringName, Variant] = _active_variables[folder].duplicate(true)
+	for folder:String in _active_variables:
+		var active_folder_data: Dictionary[String, Variant] = _active_variables[folder].duplicate(true)
 		
 		if current_state.has(folder):
 			current_state[folder].merge(active_folder_data, true)
@@ -262,44 +269,43 @@ func set_state(state: Dictionary, clear_state: bool = false) -> void:
 	
 	for key in state:
 		var type: int = typeof(key)
-		if type != TYPE_STRING_NAME and type != TYPE_STRING:
+		if type != TYPE_STRING and type != TYPE_STRING_NAME:
 			continue
 		var val_type: int = typeof(state[key])
 		if val_type != TYPE_DICTIONARY:
 			continue
 		
-		var clean_path: String = key.simplify_path()
+		var clean_path: String = String(key).simplify_path()
 		var slice_path: String = ""
-		var clean_strn: StringName = StringName(clean_path)
 		
 		for slice in clean_path.split("/"):
 			slice_path += slice
-			var slice_strn: StringName = StringName(slice_path)
-			if not _active_variables.has(slice_strn):
-				_active_variables[slice_strn] = NFDictUtils.create_typed(
-						TYPE_STRING_NAME,
+			if not _active_variables.has(slice_path):
+				_active_variables[slice_path] = NFDictUtils.create_typed(
+						TYPE_STRING,
 						TYPE_NIL)
 			slice_path += "/"
 		
-		var folder_dict: Dictionary = _active_variables[clean_strn]
+		var folder_dict: Dictionary = _active_variables[clean_path]
 		
 		for sub_key in state[key]:
 			var sub_key_type: int = typeof(sub_key)
-			if sub_key_type != TYPE_STRING_NAME and sub_key_type != TYPE_STRING:
+			if sub_key_type != TYPE_STRING and sub_key_type != TYPE_STRING_NAME:
 				continue
 			
-			var final_key: StringName = StringName(sub_key)
-			if _matches_base(clean_strn, final_key, state[key][sub_key]):
+			var final_key: String = String(sub_key)
+			var final_value: Variant = state[key][sub_key]
+			if _matches_base(clean_path, final_key, final_value):
 				folder_dict.erase(final_key)
 				continue
 			
-			var var_val_type: int = typeof(state[key][sub_key])
+			var var_val_type: int = typeof(final_value)
 			var can_dupe: bool = var_val_type == TYPE_DICTIONARY or var_val_type == TYPE_ARRAY
 			
 			if can_dupe:
-				folder_dict[final_key] = state[key][sub_key].duplicate(true)
+				folder_dict[final_key] = final_value.duplicate(true)
 			else:
-				folder_dict[final_key] = state[key][sub_key]
+				folder_dict[final_key] =final_value
 	
 	# Cleaning empty folders created by create_folder but whose state matched
 	# the default.
@@ -308,7 +314,7 @@ func set_state(state: Dictionary, clear_state: bool = false) -> void:
 			_active_variables.erase(folder)
 
 
-func _matches_base(path: StringName, var_id: StringName, what: Variant) -> bool:
+func _matches_base(path: String, var_id: String, what: Variant) -> bool:
 	var what_type: int = typeof(what)
 	return _variables.has(path) and\
 			_variables[path].has(var_id) and\

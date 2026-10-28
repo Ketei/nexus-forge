@@ -40,6 +40,7 @@ var error_line_blacklist_word_msg: String = "Word is blacklisted"
 var error_line_blacklist_character_msg: String = "A character is blacklisted"
 var error_line_ok: String = "No issues found"
 
+
 func _init() -> void:
 	_dialog_line = LineEdit.new()
 	_info_label = TextureRect.new()

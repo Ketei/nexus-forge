@@ -103,7 +103,6 @@ func do_redo() -> void:
 	on_something_changed()
 
 
-
 func reload_resource(first_load: bool = false) -> void:
 	var was_null: bool = _variables_resource == null
 	_variables_resource = null
@@ -143,8 +142,8 @@ func _on_folder_created(path_to_folder: String) -> void:
 
 
 func _on_variable_renamed(from: String, to: String) -> void:
-	var folder = _variables_resource._variables.get(StringName(_current_folder))
-	if folder == null or not folder.has(StringName(from)):
+	var folder: Variant = _variables_resource._variables.get(_current_folder)
+	if folder == null or not folder.has(from):
 		return
 	
 	undo.create_action("Rename Variable")
@@ -156,14 +155,11 @@ func _on_variable_renamed(from: String, to: String) -> void:
 
 
 func _apply_variable_rename(folder: String, old_name: String, new_name: String, first_action: bool = false) -> void:
-	var folder_key: StringName = StringName(folder)
-	if not _variables_resource._variables.has(folder_key) or old_name == new_name:
+	if not _variables_resource._variables.has(folder) or old_name == new_name:
 		return
-	var old_key: StringName = StringName(old_name)
-	var new_key: StringName = StringName(new_name)
 	
-	_variables_resource._variables[folder_key][new_key] = _variables_resource._variables[folder_key][old_key]
-	_variables_resource._variables[folder_key].erase(old_key)
+	_variables_resource._variables[folder][new_name] = _variables_resource._variables[folder][old_name]
+	_variables_resource._variables[folder].erase(old_name)
 	
 	if first_action or _current_folder != folder:
 		return
@@ -176,16 +172,14 @@ func _apply_variable_rename(folder: String, old_name: String, new_name: String, 
 
 
 func _on_variable_updated(variable_id: String, value: Variant) -> void:
-	var folder_strn: StringName = StringName(_current_folder)
-	var var_strn: StringName = StringName(variable_id)
-	var old_value: Variant = _variables_resource._variables.get(folder_strn, {}).get(var_strn)
+	var old_value: Variant = _variables_resource._variables.get(_current_folder, NFDictUtils.EMPTY_DICT).get(variable_id)
 	var type: int = typeof(old_value)
 	
 	if typeof(value) == type and value == old_value:
 		return
 	
 	if type == TYPE_DICTIONARY or type == TYPE_ARRAY:
-		old_value = old_value.duplicate()
+		old_value = old_value.duplicate(true)
 	
 	var action_name: String = ""
 	
@@ -229,21 +223,20 @@ func _apply_folder_rename(from_path: String, to_path: String, is_first_run: bool
 	var from_length: int = from_path.length()
 	for folder_key in _variables_resource._variables.keys():
 		if _is_folder_or_subfolder(folder_key, from_path):
-			var old_path_str: String = String(folder_key)
+			var old_path_str: String = folder_key
 			
 			var extra_path: String = old_path_str.substr(from_length)
 			var new_path_str: String = to_path
 			if not extra_path.is_empty():
 				new_path_str = to_path.path_join(extra_path)
-			var new_key: StringName = StringName(new_path_str)
 			
-			if not _variables_resource._variables.has(new_key):
-				_variables_resource._variables[new_key] = _variables_resource._variables[folder_key]
+			if not _variables_resource._variables.has(new_path_str):
+				_variables_resource._variables[new_path_str] = _variables_resource._variables[folder_key]
 				_variables_resource._variables.erase(folder_key)
 			else:
 				NFPluginGameHandler._log_msg(
 						"blackboard - editor",
-						"Attempted to rename folder '%s' to '%s', but folder '%s' already exists. Aborting backend change." % [folder_key, new_key, new_key],
+						"Attempted to rename folder '%s' to '%s', but folder '%s' already exists. Aborting backend change." % [folder_key, new_path_str, new_path_str],
 						NFPluginGameHandler._LogLevel.WARNING)
 	
 	if _current_folder == from_path:
@@ -400,10 +393,10 @@ func on_load_resource_pressed() -> void:
 
 
 func _on_folder_deleted(folder_path: String) -> void:
-	if not _variables_resource._variables.has(StringName(folder_path)): # Backend check
+	if not _variables_resource._variables.has(folder_path): # Backend check
 		return
 	
-	var folder_data: Dictionary[StringName, Dictionary] = get_folder_deletion_data(folder_path)
+	var folder_data: Dictionary[String, Dictionary] = get_folder_deletion_data(folder_path)
 	
 	undo.create_action("Delete Folder '%s'" % folder_path)
 	undo.add_do_method(_do_folder_delete.bind(folder_path))
@@ -412,11 +405,10 @@ func _on_folder_deleted(folder_path: String) -> void:
 	_do_folder_delete(folder_path, false)
 
 
-func _undo_folder_delete(folder_data: Dictionary[StringName, Dictionary], folder_path: String) -> void:
+func _undo_folder_delete(folder_data: Dictionary[String, Dictionary], folder_path: String) -> void:
 	for path_id in folder_data:
 		_variables_resource._variables[path_id] = folder_data[path_id].duplicate(true)
-		var path_string: String = String(path_id)
-		folders_tree.create_folder(path_string, true, false)
+		folders_tree.create_folder(path_id, true, false)
 	
 	folders_tree.select_folder_no_signal(folder_path)
 	display_variables_of(folder_path)
@@ -437,10 +429,7 @@ func _do_folder_delete(folder_path: String, remove_tree: bool = true) -> void:
 func load_variable_resource() -> void:
 	var tree_map: Dictionary = {}
 	
-	var all_paths: Array[String] = []
-	all_paths.assign(_variables_resource._variables.keys())
-	
-	for folder_path: String in all_paths:
+	for folder_path: String in _variables_resource._variables:
 		var current_level: Dictionary = tree_map
 		for folder: String in folder_path.split("/", false):
 			if not current_level.has(folder):
@@ -475,19 +464,18 @@ func _on_add_root_folder_pressed() -> void:
 
 
 # --- Used for undo/redo ---
-func get_folder_deletion_data(folder_path: String) -> Dictionary[StringName, Dictionary]:
+func get_folder_deletion_data(folder_path: String) -> Dictionary[String, Dictionary]:
 	folder_path = folder_path.simplify_path()
-	var folder_data: Dictionary[StringName, Dictionary] = {}
-	var path_id: StringName = StringName(folder_path)
+	var folder_data: Dictionary[String, Dictionary] = {}
 	
-	if not _variables_resource._variables.has(path_id):
+	if not _variables_resource._variables.has(folder_path):
 		return folder_data
 	
 	var descendant_prefix: String = folder_path + "/"
 	
 	# Saving the data for the redo.
-	for folder in _variables_resource._variables.keys():
-		if folder.begins_with(descendant_prefix) or folder == path_id:
+	for folder in _variables_resource._variables:
+		if folder.begins_with(descendant_prefix) or folder == folder_path:
 			folder_data[folder] = _variables_resource._variables[folder].duplicate(true)
 	
 	return folder_data
@@ -544,18 +532,17 @@ func _on_add_variable_pressed(data: Variant) -> void:
 
 
 func _undo_add_variable(on_folder: String, data_id: String) -> void:
-	var folder_key: StringName = StringName(on_folder)
 	erase_variable(on_folder, data_id)
 	if _current_folder == on_folder:
 		variables_tree.remove_variable(data_id)
 
 
 func _do_add_variable(on_folder: String, data_id: String, value: Variant) -> void:
-	var folder_key: StringName = StringName(on_folder)
-	if not _variables_resource._variables.has(folder_key) or _variables_resource._variables[folder_key].has(data_id):
+	var target_dict: Dictionary = _variables_resource._variables.get(on_folder, NFDictUtils.EMPTY_DICT)
+	if target_dict.has(data_id):
 		return
 	
-	_variables_resource._variables[folder_key][data_id] = value
+	target_dict[data_id] = value
 	
 	if _current_folder == on_folder:
 		variables_tree.create_variable(value, data_id)
@@ -573,12 +560,12 @@ func refresh_current_variable_folder() -> void:
 	
 	var is_selected: bool = variables_tree.is_variable_selected()
 	var selected: String = variables_tree.get_selected_variable() if is_selected else ""
-	var folder: Dictionary = _variables_resource._variables[_current_folder]
+	var folder: Dictionary = _variables_resource._variables.get(_current_folder, NFDictUtils.EMPTY_DICT)
 	variables_tree.clear_variables()
 	for variable_id in folder:
 		variables_tree.create_variable(
 				folder[variable_id],
-				String(variable_id))
+				variable_id)
 	
 	var search_prompt: String = var_search_line.text.strip_edges()
 	if not search_prompt.is_empty():
@@ -588,23 +575,19 @@ func refresh_current_variable_folder() -> void:
 
 
 func display_variables_of(folder_path: String) -> void:
-	var path_strn: StringName = StringName(folder_path)
-	var variables: Array[StringName] = []
-	variables.assign(
-			_variables_resource._variables.get(
-					path_strn, NFDictUtils.EMPTY_DICT).keys())
+	var variables: Array[String] = []
+	var folder_dict: Dictionary = _variables_resource._variables.get(
+			folder_path,
+			NFDictUtils.EMPTY_DICT)
 	
-	variables_tree.clear_variables()
-	var_search_line.clear()
-	
-	for variable_id in variables:
+	for variable_id in folder_dict:
 		variables_tree.create_variable(
-			_variables_resource._variables[path_strn][variable_id],
+			folder_dict[variable_id],
 			variable_id)
 
 
 func on_variable_cpath_button_pressed(var_id: String) -> void:
-	DisplayServer.clipboard_set("%s/%s" % [_current_folder, var_id])
+	DisplayServer.clipboard_set(_current_folder + "/" + var_id)
 
 
 func has_unsaved_changes() -> bool:
@@ -632,20 +615,19 @@ func _on_folder_moved(original_path: String, new_path: String) -> void:
 
 
 func _apply_folder_move(original_path: String, new_path: String, is_first_run: bool = false) -> void:
-	var original_key: StringName = StringName(original_path)
 	var from_prefix: String = original_path + "/"
 	var to_prefix: String = new_path + "/"
 	
-	if _variables_resource._variables.has(original_key):
-		_variables_resource._variables[StringName(new_path)] = _variables_resource._variables[original_key]
-		_variables_resource._variables.erase(original_key)
+	if _variables_resource._variables.has(original_path):
+		_variables_resource._variables[new_path] = _variables_resource._variables[original_path]
+		_variables_resource._variables.erase(original_path)
 	
-	for folder_key:StringName in _variables_resource._variables.keys():
-		var folder_str: String = String(folder_key)
+	for folder_key:String in _variables_resource._variables.keys():
+		var folder_str: String = folder_key
 		if folder_str.begins_with(from_prefix):
-			var new_folder_str: String = to_prefix.path_join(folder_str.trim_prefix(from_prefix))
-			var new_key: StringName = StringName(new_folder_str)
-			_variables_resource._variables[new_key] = _variables_resource._variables[folder_key]
+			var new_folder_str: String = to_prefix.path_join(
+					folder_str.trim_prefix(from_prefix))
+			_variables_resource._variables[new_folder_str] = _variables_resource._variables[folder_key]
 			_variables_resource._variables.erase(folder_key)
 	
 	if _current_folder == original_path:
@@ -672,21 +654,19 @@ func _on_variable_dropped(origin_folder: String, variable: String, new_folder: S
 	if origin_folder == new_folder or new_folder.is_empty():
 		return
 	
-	var strn_origin_folder: StringName = StringName(origin_folder)
-	var strn_destination_folder: StringName = StringName(new_folder)
-	var strn_original_var_name: StringName = StringName(variable)
-	var strn_new_var_name: StringName = strn_original_var_name
+	var original_var_name: String = variable
+	var new_var_name: String = original_var_name
 	
 	if not _variables_resource._variables.get(
-				strn_origin_folder, NFDictUtils.EMPTY_DICT).has(
-						strn_original_var_name):
+				origin_folder, NFDictUtils.EMPTY_DICT).has(
+						original_var_name):
 		return
 	
-	var source_value: Variant = _variables_resource._variables[strn_origin_folder][strn_original_var_name]
+	var source_value: Variant = _variables_resource._variables[origin_folder][original_var_name]
 	var is_replacing: bool = false
 	var overwritten_value: Variant = null
 	
-	if _variables_resource._variables.get(strn_destination_folder, NFDictUtils.EMPTY_DICT).has(strn_new_var_name):
+	if _variables_resource._variables.get(new_folder, NFDictUtils.EMPTY_DICT).has(new_var_name):
 		var folder_slices: int = new_folder.get_slice_count("/")
 		var display_folder: String = new_folder if folder_slices == 0 else\
 				new_folder.get_slice("/", folder_slices - 1)
@@ -716,7 +696,7 @@ func _on_variable_dropped(origin_folder: String, variable: String, new_folder: S
 		var op_result: int = result[1]
 		if op_result == 0:
 			is_replacing = true
-			overwritten_value = _variables_resource._variables[strn_destination_folder][strn_new_var_name]
+			overwritten_value = _variables_resource._variables[new_folder][new_var_name]
 		
 		elif op_result == 1:
 			var rename_dialog: ConfirmationDialog = load("res://addons/nexus_forge/dialogs/lineedit_confirmation_dialog.gd").new()
@@ -725,8 +705,8 @@ func _on_variable_dropped(origin_folder: String, variable: String, new_folder: S
 			rename_dialog.cancel_button_text = "Cancel"
 			rename_dialog.use_blacklist = true
 			
-			for existing_variable in _variables_resource._variables[strn_destination_folder].keys():
-				rename_dialog.text_blacklist.append(String(existing_variable))
+			for existing_variable in _variables_resource._variables[new_folder]:
+				rename_dialog.text_blacklist.append(existing_variable)
 			
 			rename_dialog.allow_empty = false
 			rename_dialog.error_line_blacklist_word_msg = "Variable name already used"
@@ -742,15 +722,15 @@ func _on_variable_dropped(origin_folder: String, variable: String, new_folder: S
 				return
 			
 			var picked_variable: String = rename_result[1]
-			strn_new_var_name = StringName(picked_variable)
+			new_var_name = picked_variable
 	
 	undo.create_action("Move Variable")
-	undo.add_do_method(_do_move_variable.bind(strn_origin_folder, strn_original_var_name, strn_destination_folder, strn_new_var_name, source_value))
+	undo.add_do_method(_do_move_variable.bind(origin_folder, original_var_name, new_folder, new_var_name, source_value))
 	
 	if is_replacing:
-		undo.add_undo_method(_undo_replace_variable.bind(strn_origin_folder, strn_original_var_name, strn_destination_folder, strn_new_var_name, source_value, overwritten_value))
+		undo.add_undo_method(_undo_replace_variable.bind(origin_folder, original_var_name, new_folder, new_var_name, source_value, overwritten_value))
 	else:
-		undo.add_undo_method(_do_move_variable.bind(strn_destination_folder, strn_new_var_name, strn_origin_folder, strn_original_var_name, source_value))
+		undo.add_undo_method(_do_move_variable.bind(new_folder, new_var_name, origin_folder, original_var_name, source_value))
 		
 	undo.commit_action()
 	
@@ -765,14 +745,14 @@ func get_sorting_column() -> int:
 	return variables_tree.sorting_column
 
 
-func set_resource_variable(folder: StringName, variable: StringName, data: Variant) -> void:
+func set_resource_variable(folder: String, variable: String, data: Variant) -> void:
 	if typeof(data) == TYPE_NIL:
 		# Storing Nil variables isn't allowed for now.
 		erase_variable(folder, variable)
 		return
 	
 	if not _variables_resource._variables.has(folder):
-		var new_folder: Dictionary[StringName, Variant] = {}
+		var new_folder: Dictionary[String, Variant] = {}
 		_variables_resource._variables[folder] = new_folder
 		NFPluginGameHandler._log_msg(
 				"blackboard - editor",
@@ -782,31 +762,29 @@ func set_resource_variable(folder: StringName, variable: StringName, data: Varia
 	_variables_resource._variables[folder][variable] = data
 
 
-func erase_variable(folder: StringName, variable: StringName) -> void:
-	_variables_resource._variables.get(folder, {}).erase(variable)
+func erase_variable(folder: String, variable: String) -> void:
+	if _variables_resource._variables.has(folder):
+		_variables_resource._variables[folder].erase(variable)
 
 
 func create_folder(path: String, recursive: bool = true) -> void:
 	if path.is_empty():
 		return
 	
-	var strn_path: StringName = StringName(path)
-	
 	if recursive:
 		var crumbs_path: String = ""
 		var parts: PackedStringArray = path.split("/")
 		for path_idx in range(parts.size() - 1):
 			crumbs_path += parts[path_idx]
-			var folder: StringName = StringName(crumbs_path)
-			if not _variables_resource._variables.has(folder):
-				_variables_resource._variables[folder] = NFDictUtils.create_typed(
-						TYPE_STRING_NAME,
+			if not _variables_resource._variables.has(crumbs_path):
+				_variables_resource._variables[crumbs_path] = NFDictUtils.create_typed(
+						TYPE_STRING,
 						TYPE_NIL)
 			crumbs_path += "/"
 	
-	if not _variables_resource._variables.has(strn_path):
-		_variables_resource._variables[strn_path] = NFDictUtils.create_typed(
-				TYPE_STRING_NAME,
+	if not _variables_resource._variables.has(path):
+		_variables_resource._variables[path] = NFDictUtils.create_typed(
+				TYPE_STRING,
 				TYPE_NIL)
 
 
@@ -815,27 +793,27 @@ func erase_folder(path: String) -> void:
 	if not prefix.ends_with("/"):
 		prefix += "/"
 	
-	_variables_resource._variables.erase(StringName(path))
-	for folder_path:StringName in _variables_resource._variables.keys():
+	_variables_resource._variables.erase(path)
+	for folder_path:String in _variables_resource._variables.keys():
 		if folder_path.begins_with(prefix):
 			_variables_resource._variables.erase(folder_path)
 
 
-func _do_move_variable(from_folder: StringName, from_var: StringName, to_folder: StringName, to_var: StringName, value: Variant) -> void:
+func _do_move_variable(from_folder: String, from_var: String, to_folder: String, to_var: String, value: Variant) -> void:
 	erase_variable(from_folder, from_var)
 	set_resource_variable(to_folder, to_var, value)
 	
-	if String(from_folder) == _current_folder or String(to_folder) == _current_folder:
+	if from_folder == _current_folder or to_folder == _current_folder:
 		refresh_current_variable_folder()
 
 
-func _undo_replace_variable(from_folder: StringName, from_var: StringName, to_folder: StringName, to_var: StringName, source_value: Variant, overwritten_value: Variant) -> void:
+func _undo_replace_variable(from_folder: String, from_var: String, to_folder: String, to_var: String, source_value: Variant, overwritten_value: Variant) -> void:
 	erase_variable(to_folder, to_var)
 	set_resource_variable(from_folder, from_var, source_value)
 	
 	set_resource_variable(to_folder, to_var, overwritten_value)
 	
-	if String(from_folder) == _current_folder or String(to_folder) == _current_folder:
+	if from_folder == _current_folder or to_folder == _current_folder:
 		refresh_current_variable_folder()
 
 
