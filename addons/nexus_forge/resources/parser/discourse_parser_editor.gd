@@ -67,8 +67,6 @@ func load_dialog(path: String, starting_id: StringName = &"") -> bool:
 		if res._phrase_overrides != p_o:
 			res._phrase_overrides = p_o
 		
-		if _dialog_edits.has(dialog_id) and res._dialog_overrides != _dialog_edits[dialog_id]:
-			res._dialog_overrides = _dialog_edits[dialog_id]
 		_conversation_cache.cache_resource(res)
 		_dialog_resource = res
 	
@@ -108,6 +106,70 @@ func set_dialog_id(id: StringName) -> bool:
 					NFPluginGameHandler._LogLevel.ERROR)
 			_next_uuid = &""
 			return false
+	return true
+
+
+## Sets the state of the current dialog from a dictionary.
+func set_state(to: Dictionary) -> bool:
+	var new_uuid: StringName = &""
+	var next_uuid: StringName = &""
+	var conv_started: bool = false
+	var new_stack: Array[StringName] = []
+	
+	var stack_value: Variant = to.get("dialog_travel_stack")
+	if typeof(stack_value) == TYPE_ARRAY:
+		for item in stack_value:
+			var arr_type: int = typeof(item)
+			if arr_type == TYPE_STRING or arr_type == TYPE_STRING_NAME:
+				new_stack.append(StringName(item))
+			else:
+				NFPluginGameHandler._log_msg(
+						"discourse",
+						"Couldn't restore dialog stack. Item in stack is not String/StringName. Item type: %s" % type_string(arr_type),
+						NFPluginGameHandler._LogLevel.ERROR)
+				return false
+	else:
+		NFPluginGameHandler._log_msg(
+				"discourse",
+				"Wrong or missing data for travel stack: %s. Setting to empty" % str(stack_value),
+				NFPluginGameHandler._LogLevel.ERROR)
+	
+	var to_value: Variant = to.get("current_dialog_id")
+	var type: int = typeof(to_value)
+	if type == TYPE_STRING_NAME or type == TYPE_STRING:
+		new_uuid = StringName(to_value)
+	else:
+		NFPluginGameHandler._log_msg(
+				"discourse",
+				"Wrong or missing current dialogue from data: %s. Setting to empty." % str(to_value),
+				NFPluginGameHandler._LogLevel.WARNING)
+	
+	var next_value: Variant = to.get("next_dialog_id")
+	var type_next: int = typeof(next_value)
+	if type_next == TYPE_STRING_NAME or type_next == TYPE_STRING:
+		next_uuid = StringName(next_value)
+	else:
+		NFPluginGameHandler._log_msg(
+				"discourse",
+				"Wrong or missing next dialogue from data: %s. Setting to empty." % str(next_value),
+				NFPluginGameHandler._LogLevel.WARNING)
+	
+	var started_value: Variant = to.get("conversation_started")
+	var type_started: int = typeof(started_value)
+	if type_started == TYPE_BOOL:
+		conv_started = started_value
+	else:
+		NFPluginGameHandler._log_msg(
+				"discourse",
+				"Wrong or missing dialogue started from data: %s. Setting to false." % str(started_value),
+				NFPluginGameHandler._LogLevel.WARNING)
+	
+	_clear_target_travel_stack()
+	_current_uuid = new_uuid
+	_next_uuid = next_uuid
+	_conversation_started = conv_started
+	_node_travel_stack.assign(new_stack)
+	
 	return true
 
 
@@ -239,7 +301,7 @@ func _process_logic(uuid: StringName) -> Dictionary[String, Variant]:
 						text = data_source.get("text", "")
 						is_override = data_source.get("is_override", false)
 					else:
-						text = "[ERROR GETING DATA FROM '%s']" % text_source_node
+						text = "[ERROR GETTING DATA FROM '%s']" % text_source_node
 					
 					target["data"] = {
 						"dialog_text": _parse_dialog(
@@ -694,7 +756,7 @@ func _get_data(from_uuid: StringName, fallback = null, _remaining_travels: int =
 			if not metadata.has("fallback_value"):
 				NFPluginGameHandler._log_msg(
 						"discourse",
-						"Guard node '%s' doesn't have a fallback. Returning function fallback.",
+						"Guard node '%s' doesn't have a fallback. Returning function fallback." % data.get("name", "[UNKNOWN]"),
 						NFPluginGameHandler._LogLevel.ERROR)
 				return fallback
 			
@@ -834,7 +896,7 @@ func _get_data(from_uuid: StringName, fallback = null, _remaining_travels: int =
 			if data_source.is_empty():
 				NFPluginGameHandler._log_msg(
 						"discourse",
-						"Condition select node '%s' has no evaluator. Returning fallback.",
+						"Condition select node '%s' has no evaluator. Returning fallback." % data.get("name", "[UNKNOWN]"),
 						NFPluginGameHandler._LogLevel.ERROR)
 				return fallback
 			
@@ -856,18 +918,18 @@ func _get_data(from_uuid: StringName, fallback = null, _remaining_travels: int =
 			if a_node.is_empty():
 				NFPluginGameHandler._log_msg(
 						"discourse",
-						"Node '%s' has no input on port A: " + data.get("name", "[UNKNOWN]"),
+						"Node '%s' has no input on port A" % data.get("name", "[UNKNOWN]"),
 						NFPluginGameHandler._LogLevel.WARNING)
 			if b_node.is_empty():
 				NFPluginGameHandler._log_msg(
 						"discourse",
-						"Node '%s' has no input on port B: " + data.get("name", "[UNKNOWN]"),
+						"Node '%s' has no input on port B" % data.get("name", "[UNKNOWN]"),
 						NFPluginGameHandler._LogLevel.WARNING)
 			
 			var value_a: Variant = _get_data(a_node, null, _remaining_travels - 1)
 			var value_b: Variant = _get_data(b_node, null, _remaining_travels - 1)
 			
-			if not _can_compare(value_a, value_b):
+			if not _can_compare(value_a, value_b, operator):
 				return operator == OP_NOT_EQUAL
 			
 			match operator:

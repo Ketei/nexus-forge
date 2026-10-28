@@ -79,7 +79,7 @@ var locale: String = "en":
 		if _dialog_resource == null:
 			return
 		
-		if not _dialog_resource._has_locale(locale):
+		if _id_to_data.has(_resource_id) and not _dialog_resource._has_locale(locale):
 			_load_locale_into(_dialog_resource, locale)
 		_dialog_resource._set_locale(locale)
 
@@ -150,13 +150,31 @@ func _generate_locale_map() -> void:
 	if typeof(data) != TYPE_DICTIONARY or not data.has_all(["file_to_id", "id_to_locale_file"]):
 		return
 	
-	for file_path in data["file_to_id"]:
-		if typeof(file_path) != TYPE_STRING or typeof(data["file_to_id"][file_path]) != TYPE_STRING or not data["id_to_locale_file"].has(data["file_to_id"][file_path]) or typeof(data["id_to_locale_file"][data["file_to_id"][file_path]]) != TYPE_STRING:
+	if not typeof(data["file_to_id"]) == TYPE_DICTIONARY or not typeof(data["id_to_locale_file"]) == TYPE_DICTIONARY:
+		return
+	
+	var file_to_id: Dictionary = data["file_to_id"]
+	var id_to_locale_file: Dictionary = data["id_to_locale_file"]
+	
+	for file_path in file_to_id:
+		if typeof(file_path) != TYPE_STRING:
 			continue
-		var file_id: String = data["file_to_id"][file_path]
-		var localizaton_file: String = data["id_to_locale_file"][file_id]
-		_path_to_id[file_path] = file_id
-		_id_to_data[file_id] = {"data_path": file_path, "locale_file": localizaton_file}#localizaton_file
+		
+		var clean_file_path: String = file_path.strip_edges().simplify_path()
+		
+		var pos_file_id: Variant = file_to_id[file_path]
+		if typeof(pos_file_id) != TYPE_STRING or not id_to_locale_file.has(pos_file_id):
+			continue
+		
+		var pos_id_to_locale: Variant = id_to_locale_file[pos_file_id]
+		if typeof(pos_id_to_locale) != TYPE_STRING:
+			continue
+		
+		var file_id: String = pos_file_id
+		var localization_file: String = pos_id_to_locale.strip_edges()
+		
+		_path_to_id[clean_file_path] = file_id
+		_id_to_data[file_id] = {"data_path": clean_file_path, "locale_file": localization_file}
 
 
 # Function to parse the dialog in a custom manner. Modify if needed.
@@ -231,7 +249,7 @@ func _parse_dialog(dialog_id: String, dialog_text: String, is_override: bool) ->
 			if phrases_processed.has(rgx_result.get_string()):
 				continue
 			var phrase_key: String = slice.substr(1)
-			var resource_id: StringName = _path_to_id[_dialog_resource.resource_path] if _path_to_id.has(_dialog_resource.resource_path) else &""
+			var resource_id: StringName = _resource_id
 			phrases_processed[rgx_result.get_string()] = null
 			
 			var phrase: String = _dialog_resource._get_format_string(
@@ -279,7 +297,7 @@ func _build_callable_for_variable(text: String) -> Callable:
 	var clean_text: String = text.trim_prefix("$")
 	var callable: Callable = Callable(
 			NexusForge.Blackboard.get_variable.bind(
-					clean_text, ""))
+					clean_text, "[VARIABLE '%s' NOT FOUND]" % clean_text))
 	
 	return callable
 
@@ -287,6 +305,20 @@ func _build_callable_for_variable(text: String) -> Callable:
 func _build_callable_for_method(text: String) -> Callable:
 	var parts: PackedStringArray = text.split("|", false, 1)
 	var method: StringName = StringName(parts[0].trim_prefix("!"))
+	var valid_method: bool = API.has_method(method)
+	
+	if not valid_method:
+		var msg: String = "Attempted to use a non-existent API method '%s' on a dialogue." % method
+		if OS.is_debug_build():
+			assert(false, msg)
+		else:
+			NFPluginGameHandler._log_msg(
+					"discourse",
+					msg,
+					NFPluginGameHandler._LogLevel.ERROR)
+		
+		return _string_return_method.bind("[METHOD '%s' NOT FOUND]" % method)
+	
 	var arguments: PackedStringArray = []
 	if 1 < parts.size():
 		arguments = parts[1].split(",")
@@ -301,7 +333,7 @@ func _build_callable_for_method(text: String) -> Callable:
 		else:
 			final_arguments.append(argument)
 	
-	var callable: Callable = Callable(NexusForge.Discourse.API, method)
+	var callable: Callable = Callable(API, method)
 	
 	if not final_arguments.is_empty():
 		return _build_lazy_wrapper.bind(callable, final_arguments)
@@ -319,11 +351,29 @@ func _build_lazy_wrapper(target_method: Callable, args: Array) -> Variant:
 	return target_method.callv(resolved_args)
 
 
-func _can_compare(a, b) -> bool:
+func _string_return_method(msg: String) -> String:
+	return msg
+
+
+func _can_compare(a, b, operator: int) -> bool:
 	var type_a: int = typeof(a)
 	var type_b: int = typeof(b)
 	
 	if type_a == type_b:
+		match operator:
+			OP_LESS, OP_LESS_EQUAL, OP_GREATER, OP_GREATER_EQUAL:
+				match type_a:
+					TYPE_BOOL, TYPE_INT, TYPE_FLOAT, TYPE_STRING, TYPE_STRING_NAME, \
+					TYPE_VECTOR2, TYPE_VECTOR2I, TYPE_VECTOR3, TYPE_VECTOR3I,\
+					TYPE_VECTOR4, TYPE_VECTOR4I, TYPE_RID:
+						return true
+					_:
+						NFPluginGameHandler._log_msg(
+								"discourse",
+								"Invalid comparison: Cannot use <, >, <=, or >= operators on type %s." % type_string(type_a),
+								NFPluginGameHandler._LogLevel.WARNING)
+						return false
+		
 		return type_a != TYPE_NIL
 	
 	match type_a:
@@ -333,7 +383,6 @@ func _can_compare(a, b) -> bool:
 			return type_b == TYPE_STRING or type_b == TYPE_STRING_NAME
 		_:
 			return false
-
 
 #region Override
 # Returns a dictionary with the "current" dialog it emmited and the
@@ -372,7 +421,7 @@ func _process_logic(node_id: StringName) -> Dictionary[String, Variant]:
 				var speed_node: StringName = settings.get("dialog_speed", &"")
 				var text_source_node: StringName = node_data.get("text_source", &"")
 				
-				var character_id: String = node_data.get("character_id", "")
+				var character_id: StringName = node_data.get("character_id", &"")
 				var persist_dialogue: bool = node_data.get("persist", false)
 				var font: String = ""
 				var scene: String = ""
@@ -429,7 +478,7 @@ func _process_logic(node_id: StringName) -> Dictionary[String, Variant]:
 						text = data_source.get("text", "")
 						is_override = data_source.get("is_override", false)
 					else:
-						text = "[ERROR GETING DATA FROM '%s']" % text_source_node
+						text = "[ERROR GETTING DATA FROM '%s']" % text_source_node
 					
 					target["data"] ={
 						"dialog_text": _parse_dialog(
@@ -510,7 +559,9 @@ func _process_logic(node_id: StringName) -> Dictionary[String, Variant]:
 						
 						for meta_key in meta_data:
 							var meta_node: StringName = meta_data[meta_key]
-							if not meta_node.is_empty():
+							if meta_node.is_empty():
+								choice_metadata[meta_key] = null
+							else:
 								choice_metadata[meta_key] = _get_data(meta_node)
 						
 						if not unlocked:
@@ -568,7 +619,7 @@ func _process_logic(node_id: StringName) -> Dictionary[String, Variant]:
 					var call_data: Dictionary = _dialog_resource.node_logic.get(call_node, E)
 					var call_method: StringName = call_data.get("method", &"")
 					
-					if NexusForge.Discourse.API.has_method(call_method):
+					if API.has_method(call_method):
 						var call_args: Array = []
 						
 						for argument_key in call_data.get("arguments", NFArrayUtils.EMPTY):
@@ -577,7 +628,7 @@ func _process_logic(node_id: StringName) -> Dictionary[String, Variant]:
 							var data: Variant = _get_data(argument_key)
 							call_args.append(data)
 						
-						NexusForge.Discourse.API.callv(
+						API.callv(
 								call_method,
 								call_args)
 				
@@ -585,10 +636,10 @@ func _process_logic(node_id: StringName) -> Dictionary[String, Variant]:
 					var signal_data: Dictionary = _dialog_resource.node_logic.get(sign_node, E)
 					var signal_str: StringName = signal_data.get("signal", &"")
 					
-					if NexusForge.Discourse.API.has_signal(signal_str):
+					if API.has_signal(signal_str):
 						var signal_args: Array = []
 						var api_signal: Signal = Signal(
-								NexusForge.Discourse.API,
+								API,
 								signal_data["signal"])
 						
 						for argument_key in signal_data.get("arguments", NFArrayUtils.EMPTY):
@@ -795,7 +846,7 @@ func _get_data(node_id: StringName, fallback = null, _remaining_travels: int = 2
 			return NexusForge.Blackboard.get_variable(path, fallback)
 		NodeTypes.CALLABLE_RETURN:
 			var method_str: StringName = data.get("method", &"")
-			if not NexusForge.Discourse.API.has_method(method_str):
+			if not API.has_method(method_str):
 				return fallback
 			
 			var args: Array = []
@@ -806,7 +857,7 @@ func _get_data(node_id: StringName, fallback = null, _remaining_travels: int = 2
 				var arg_data: Variant = _get_data(arg, null, _remaining_travels - 1)
 				args.append(arg_data)
 			
-			return NexusForge.Discourse.API.callv(method_str, args)
+			return API.callv(method_str, args)
 		NodeTypes.DATA_EVENT:
 			var var_path: String = data.get("variable_path", "").strip_edges().simplify_path()
 			var val_node: StringName = data.get("value", &"")
@@ -824,7 +875,7 @@ func _get_data(node_id: StringName, fallback = null, _remaining_travels: int = 2
 				var call_data: Dictionary = _dialog_resource.node_logic.get(call_node, E)
 				var method_str: StringName = call_data.get("method", &"")
 				
-				if NexusForge.Discourse.API.has_method(method_str):
+				if API.has_method(method_str):
 					var call_args: Array = []
 					for argument_id in call_data.get("arguments", NFArrayUtils.EMPTY):
 						if argument_id.is_empty():
@@ -832,7 +883,7 @@ func _get_data(node_id: StringName, fallback = null, _remaining_travels: int = 2
 						var arg_data: Variant = _get_data(argument_id, null, _remaining_travels - 1)
 						call_args.append(arg_data)
 					
-					NexusForge.Discourse.API.callv(
+					API.callv(
 							call_data["method"],
 							call_args)
 			
@@ -848,7 +899,7 @@ func _get_data(node_id: StringName, fallback = null, _remaining_travels: int = 2
 					signal_args.append(arg_data)
 				
 				var sign_call: Signal = Signal(
-						NexusForge.Discourse.API,
+						API,
 						signal_str)
 				
 				sign_call.emit.callv(signal_args)
@@ -869,7 +920,7 @@ func _get_data(node_id: StringName, fallback = null, _remaining_travels: int = 2
 			var a: Variant = _get_data(a_node, null, _remaining_travels - 1)
 			var b: Variant = _get_data(b_node, null, _remaining_travels - 1)
 			
-			if not _can_compare(a, b):
+			if not _can_compare(a, b, operator):
 				return operator == OP_NOT_EQUAL
 			
 			match operator:
@@ -918,7 +969,6 @@ func _get_data_string(node_id: StringName, fallback: String = "") -> String:
 			if typeof(dict_data) == TYPE_STRING:
 				return dict_data
 	return fallback
-	
 
 
 func _load_locale_into(dialog: DiscourseDialog, locale_code: String, force_reload: bool = false, target_id: String = "") -> void:
@@ -930,8 +980,8 @@ func _load_locale_into(dialog: DiscourseDialog, locale_code: String, force_reloa
 		return
 	
 	var e: Dictionary = NFDictUtils.EMPTY_DICT
-	var m_file: String = _id_to_data.get(dialog_id, e).get("locale_file", "")
-	var file_path: String = _locale_overrides.get(dialog_id, e).get(locale_code, m_file)
+	var base_path: String = _get_base_locale_path(dialog_id, locale_code)
+	var file_path: String = _locale_overrides.get(dialog_id, e).get(locale_code, base_path)
 	
 	# 0 = No Fallback
 	# 1 = Direct Fallback: Merge fallback_object with loaded objects
@@ -1017,7 +1067,7 @@ func _get_dialog_locale(dialog_id: String, lang_code: String) -> DiscourseDialog
 				FileAccess.get_file_as_string(locale_path))
 		if locale_data != null:
 			locale_data.locale = lang_code
-			locale_data.json_file = filename
+			locale_data.json_file = locale_path
 		return locale_data
 	else:
 		return null
@@ -1027,7 +1077,7 @@ func _dialog_resource_set() -> void:
 	if _dialog_resource == null:
 		return
 	
-	if not _dialog_resource._has_locale(locale):
+	if _id_to_data.has(_resource_id) and not _dialog_resource._has_locale(locale):
 		_load_locale_into(_dialog_resource, locale)
 	
 	_dialog_resource._set_locale(locale)
@@ -1044,19 +1094,37 @@ func is_dialog_active() -> bool:
 ## unless a valid [param starting_id] is given.[br]
 ## Returns [code]true[/code] if the dialog was loaded.
 func load_dialog(path: String, starting_id: StringName = &"") -> bool:
+	path = path.simplify_path()
 	_clear_target_travel_stack()
 	
-	var target_path: String = _logic_overrides[path] if _logic_overrides.has(path) else path
+	var target_path: String = _logic_overrides.get(path, path)
 	
 	if _conversation_cache.is_in_cache(target_path):
 		var dialog_id: StringName = _path_to_id.get(path, &"")
 		var data: DiscourseDialog = _conversation_cache.get_resource(target_path)
 		var locale_data: DiscourseDialogLocale = data._get_locale(locale)
 		
-		var e: Dictionary = NFDictUtils.EMPTY_DICT
-		var m_file: String = _id_to_data.get(dialog_id, e).get("locale_file", "")
-		var eff_locale_file: String = _locale_overrides.get(dialog_id, e).get(locale, m_file)
-		var reload_locale: bool = locale_data == null or locale_data.json_file != eff_locale_file
+		var base_path: String = _get_base_locale_path(dialog_id, locale)
+		var eff_path: String = _locale_overrides.get(dialog_id, NFDictUtils.EMPTY_DICT).get(locale, base_path)
+		
+		var current_json: String = locale_data.json_file if locale_data != null else ""
+		var reload_locale: bool = false
+		
+		if eff_path != current_json or eff_path.is_empty():
+			# Cache miss. Must check disk.
+			var eff_exists: bool = not eff_path.is_empty() and FileAccess.file_exists(eff_path)
+			
+			if not eff_exists and eff_path != base_path:
+				# Override file missing. Gracefully revert to base_path.
+				eff_path = base_path
+				
+				# FALLBACK OPTIMIZATION: Base file is already in memory. Zero disk I/O.
+				eff_exists = true
+				if eff_path != current_json or eff_path.is_empty():
+					eff_exists = not eff_path.is_empty() and FileAccess.file_exists(eff_path)
+					
+			# Only reload if a valid file exists AND it differs from what is in memory
+			reload_locale = eff_exists and (current_json != eff_path)
 		
 		_resource_id = dialog_id
 		_dialog_resource = data
@@ -1069,7 +1137,7 @@ func load_dialog(path: String, starting_id: StringName = &"") -> bool:
 		if _dialog_resource._phrase_overrides != p_o:
 			_dialog_resource._phrase_overrides = p_o
 		
-		if reload_locale:
+		if reload_locale and _id_to_data.has(dialog_id):
 			_load_locale_into(_dialog_resource, locale, true)
 	else:
 		var res: Variant = load(target_path)
@@ -1104,12 +1172,19 @@ func load_dialog(path: String, starting_id: StringName = &"") -> bool:
 ## Registers a new base dialogue to the parser so it can be properly loaded
 ## with [method NFDialogParser.load_dialog] and
 ## [method NFDialogParser.prepare_dialog]. Returns [code]true[/code] if
-## the registration was successful.
+## the registration was successful.[br]
+## You can use [param localization_folder] to specify which folder contains
+## the localization jsons. If left empty, the Nexus Forge localization folder
+## and default path formatting will be used instead. This is probably [b]NOT[/b] what
+## you want.
 ## [br][br]
 ## [b]Note:[/b] This method is intended to register BASE dialogues. If you want
 ## to override a dialogue use [method NFDialogParser.override_dialog_data] and
 ## [method NFDialogParser.override_dialog_locale] respectively.
-func register_dialog(dialog_id: StringName, resource_path: String, json_path: String) -> bool:
+func register_dialog(dialog_id: StringName, resource_path: String, localization_json_filename: String, localization_folder: String = "") -> bool:
+	localization_folder = localization_folder.strip_edges().simplify_path()
+	localization_json_filename = localization_json_filename.strip_edges().get_file()
+	
 	if _id_to_data.has(dialog_id):
 		NFPluginGameHandler._log_msg(
 				"discourse",
@@ -1128,17 +1203,28 @@ func register_dialog(dialog_id: StringName, resource_path: String, json_path: St
 				"Tried to register dialogue but resource '%s' doesn't exist. Aborting" % resource_path,
 				NFPluginGameHandler._LogLevel.ERROR)
 		return false
-	elif json_path.get_extension() != "json":
+	elif localization_json_filename.get_extension() != "json":
 		NFPluginGameHandler._log_msg(
 				"discourse",
-				"Tried to register dialogue but '%s' is not a path to a valid JSON. Aborting" % json_path,
+				"Tried to register dialogue but '%s' is not a valid JSON file name. Aborting" % localization_json_filename,
+				NFPluginGameHandler._LogLevel.ERROR)
+		return false
+	elif not localization_folder.is_empty() and (not localization_folder.is_absolute_path() or not DirAccess.dir_exists_absolute(localization_folder)):
+		NFPluginGameHandler._log_msg(
+				"discourse",
+				"Tried to register dialogue but '%s' is not a valid directory path. Aborting" % localization_folder,
 				NFPluginGameHandler._LogLevel.ERROR)
 		return false
 	
-	_path_to_id[resource_path] = dialog_id
-	_id_to_data[dialog_id] = {
+	var new_data: Dictionary[String, String] = {
 		"data_path": resource_path,
-		"locale_file": json_path}
+		"locale_file": localization_json_filename}
+	
+	if not localization_folder.is_empty():
+		new_data["localization_folder"] = localization_folder
+	
+	_path_to_id[resource_path] = dialog_id
+	_id_to_data[dialog_id] = new_data
 	
 	return true
 
@@ -1197,33 +1283,57 @@ func get_resource_path_of_resource_id(id: StringName) -> String:
 ## [br][br]
 ## Returns [code]true[/code] if the loading was successful.
 func prepare_dialog(path: String) -> bool:
+	path = path.simplify_path()
 	var target_path: String = _logic_overrides.get(path, path)
-	var dialog_id: String = _path_to_id.get(path, "")
+	var dialog_id: StringName = _path_to_id.get(path, &"")
 	
-	if _conversation_cache.is_in_cache(target_path):
-		var data: DiscourseDialog = _conversation_cache.get_resource(target_path)
-		var locale_data: DiscourseDialogLocale = data._get_locale(locale)
-		
-		var e: Dictionary = NFDictUtils.EMPTY_DICT
-		var m_file: String = _id_to_data.get(dialog_id, e).get("locale_file", "")
-		var eff_locale_file: String = _locale_overrides.get(dialog_id, e).get(locale, m_file)
-		var reload_locale: bool = locale_data == null or locale_data.json_file != eff_locale_file
-		if _dialog_edits.has(dialog_id) and data._dialog_overrides != _dialog_edits[dialog_id]:
-			data._dialog_overrides = _dialog_edits[dialog_id]
-		
-		if reload_locale:
-			_load_locale_into(data, locale, true, dialog_id)
-	else:
-		var res = load(target_path)
+	if not _conversation_cache.is_in_cache(target_path):
+		var res: Variant = load(target_path)
 		
 		if res == null or res is not DiscourseDialog:
 			return false
 		
-		if _dialog_edits.has(dialog_id):
-			res._dialog_overrides = _dialog_edits[dialog_id]
-		if not res._has_locale(locale):
+		var d_o: RefCounted = _dialog_edits.get(dialog_id)
+		var p_o: RefCounted = _phrase_overrides.get(dialog_id)
+		
+		if res._dialog_overrides != d_o:
+			res._dialog_overrides = d_o
+		if res._phrase_overrides != p_o:
+			res._phrase_overrides = p_o
+		
+		if not res._has_locale(locale) and _id_to_data.has(dialog_id):
 			_load_locale_into(res, locale, false, dialog_id)
+			
 		_conversation_cache.cache_resource(res)
+		return true
+	
+	var data: DiscourseDialog = _conversation_cache.get_resource(target_path)
+	var locale_data: DiscourseDialogLocale = data._get_locale(locale)
+	
+	var base_path: String = _get_base_locale_path(dialog_id, locale)
+	var eff_path: String = _locale_overrides.get(dialog_id, NFDictUtils.EMPTY_DICT).get(locale, base_path)
+	
+	var current_json: String = locale_data.json_file if locale_data != null else ""
+	var reload_locale: bool = false
+	
+	if eff_path != current_json or eff_path.is_empty():
+		# Cache miss. Must check disk.
+		var eff_exists: bool = not eff_path.is_empty() and FileAccess.file_exists(eff_path)
+		
+		if not eff_exists and eff_path != base_path:
+			# Override file missing. Gracefully revert to base_path.
+			eff_path = base_path
+			
+			# FALLBACK OPTIMIZATION: Base file is already in memory. Zero disk I/O.
+			eff_exists = true
+			if eff_path != current_json or eff_path.is_empty():
+				eff_exists = not eff_path.is_empty() and FileAccess.file_exists(eff_path)
+				
+		# Only reload if a valid file exists AND it differs from what is in memory
+		reload_locale = eff_exists and (current_json != eff_path)
+	
+	if reload_locale and _id_to_data.has(dialog_id):
+		_load_locale_into(data, locale, true, dialog_id)
 	
 	return true
 
@@ -1263,45 +1373,43 @@ func get_state() -> Dictionary[String, Variant]:
 
 
 ## Sets the state of the current dialog from a dictionary.
-func set_state(to: Dictionary) -> void:
+func set_state(to: Dictionary) -> bool:
 	var new_uuid: StringName = &""
-	var next_uuid: StringName = _next_uuid
-	var conv_started: bool = _conversation_started
+	var next_uuid: StringName = &""
+	var conv_started: bool = false
 	var new_stack: Array[StringName] = []
 	
-	if to.has("current_dialog_id"):
-		var type: int = typeof(to["current_dialog_id"])
-		if type == TYPE_STRING_NAME or type == TYPE_STRING:
-			new_uuid = StringName(to["current_dialog_id"])
-	
-	if to.has("next_dialog_id"):
-		var type: int = typeof(to["next_dialog_id"])
-		if type == TYPE_STRING_NAME or type == TYPE_STRING:
-			next_uuid = StringName(to["next_dialog_id"])
-	
-	if to.has("conversation_started"):
-		var type: int = typeof(to["conversation_started"])
-		if type == TYPE_BOOL:
-			conv_started = to["conversation_started"]
-	
-	if to.has("dialog_travel_stack") and typeof(to["dialog_travel_stack"]) == TYPE_ARRAY:
-		
-		for item in to["dialog_travel_stack"]:
+	var stack_value: Variant = to.get("dialog_travel_stack")
+	if typeof(stack_value) == TYPE_ARRAY:
+		for item in stack_value:
 			var arr_type: int = typeof(item)
 			if arr_type == TYPE_STRING or arr_type == TYPE_STRING_NAME:
 				new_stack.append(StringName(item))
 			else:
-				NFPluginGameHandler._log_msg(
-						"discourse",
-						"Couldn't restore dialog stack. Item in stack is not String/StringName. Item type: %s" % type_string(arr_type),
-						NFPluginGameHandler._LogLevel.ERROR)
-				return
+				return false
+	
+	var to_value: Variant = to.get("current_dialog_id")
+	var type: int = typeof(to_value)
+	if type == TYPE_STRING_NAME or type == TYPE_STRING:
+		new_uuid = StringName(to_value)
+	
+	var next_value: Variant = to.get("next_dialog_id")
+	var type_next: int = typeof(next_value)
+	if type_next == TYPE_STRING_NAME or type_next == TYPE_STRING:
+		next_uuid = StringName(next_value)
+	
+	var started_value: Variant = to.get("conversation_started")
+	var type_started: int = typeof(started_value)
+	if type_started == TYPE_BOOL:
+		conv_started = started_value
 	
 	_clear_target_travel_stack()
 	_current_uuid = new_uuid
 	_next_uuid = next_uuid
 	_conversation_started = conv_started
 	_node_travel_stack.assign(new_stack)
+	
+	return true
 
 
 ## Progresses the conversation
@@ -1385,23 +1493,31 @@ func override_dialog_data(dialog_id: String, override_path: String) -> void:
 ## provided in [param path] will be used for localization instead of the original
 ## one.
 func override_dialog_locale(dialog_id: String, locale_code: String, path: String) -> void:
+	var valid_code: String = NFStringUtils.sanitize_locale(locale_code)
+	if valid_code.is_empty():
+		NFPluginGameHandler._log_msg(
+				"discourse",
+				"Attempted to set an override with an invalid locale '%s'" % locale_code,
+				NFPluginGameHandler._LogLevel.ERROR)
+		return
+	
 	var override_changed: bool = false
 	
 	if path.is_empty():
-		if _locale_overrides.has(dialog_id) and _locale_overrides[dialog_id].erase(locale_code):
+		if _locale_overrides.has(dialog_id) and _locale_overrides[dialog_id].erase(valid_code):
 			if _locale_overrides[dialog_id].is_empty():
 				_locale_overrides.erase(dialog_id)
 			override_changed = true # Had something, we cleared it
 	else:
 		if _locale_overrides.has(dialog_id):
 			# Overrides were different.
-			override_changed = _locale_overrides[dialog_id].get(locale_code, "") != path
+			override_changed = _locale_overrides[dialog_id].get(valid_code, "") != path
 		else:
 			var override: Dictionary[String, String] = {}
 			_locale_overrides[dialog_id] = override
 			override_changed = true # No override existed
 		
-		_locale_overrides[dialog_id][locale_code] = path
+		_locale_overrides[dialog_id][valid_code] = path
 	
 	if not override_changed or not _id_to_data.has(dialog_id):
 		return # Dialog hasn't been registered YET
@@ -1414,9 +1530,33 @@ func override_dialog_locale(dialog_id: String, locale_code: String, path: String
 		return # Not loaded
 	
 	var dialog: DiscourseDialog = _conversation_cache.get_resource(target_path)
-	if dialog._has_locale(locale_code): # Checking if the dialog has the locale
-		dialog.parsed_dialog_cache.clear()
-		_load_locale_into(dialog, locale_code, true, dialog_id) # Since it has it we force a reload
+	dialog.parsed_dialog_cache.clear() # We clear ALL the node data.
+	
+	var fallback_mode: int = ProjectSettings.get_setting(
+			NFPluginGameHandler.get_setting_path("discourse_fallback_mode"), 2)
+	var godot_fallback: String = NFStringUtils.sanitize_locale(
+			ProjectSettings.get_setting("internationalization/locale/fallback", "en"))
+	
+	var locales_to_drop: Array[String] = []
+	for cached_code: String in dialog._loaded_locales.keys():
+		var needs_drop: bool = false
+		
+		if cached_code == valid_code:
+			needs_drop = true
+		elif fallback_mode == 1:
+			needs_drop = valid_code == godot_fallback
+		elif fallback_mode == 2:
+			var cached_lang: String = NFStringUtils.get_locale_language(cached_code)
+			needs_drop = valid_code == godot_fallback or valid_code == cached_lang
+		
+		if needs_drop:
+			locales_to_drop.append(cached_code)
+	
+	if not locales_to_drop.is_empty():
+		dialog._loaded_locales.remove_keys(locales_to_drop) # Drop specific locales
+	
+	if locales_to_drop.has(locale) or locale == valid_code:
+		_load_locale_into(dialog, locale, true, dialog_id) # Since it has it we force a reload
 
 
 ## Adds an override for a specific dialog on a specific locale.[br]
@@ -1836,3 +1976,25 @@ func _to_bool(data: Variant, fallback: bool = false) -> bool:
 			return bool(data)
 		_:
 			return fallback
+
+
+func _get_base_locale_path(dialog_id: StringName, target_locale: String) -> String:
+	var e: Dictionary = NFDictUtils.EMPTY_DICT
+	var dialog_data: Dictionary = _id_to_data.get(dialog_id, e)
+	var m_file: String = dialog_data.get("locale_file", "")
+	
+	if m_file.is_empty():
+		return ""
+		
+	if dialog_data.has("localization_folder"):
+		# Mod Structure: folder / locale / filename
+		var m_folder: String = dialog_data["localization_folder"]
+		return m_folder.path_join(target_locale).path_join(m_file)
+		
+	# Vanilla Structure: default_path / locale / hash / filename
+	var default_loc: String = ProjectSettings.get_setting(
+			NFPluginGameHandler.get_setting_path("discourse"), 
+			"res://localization/")
+	var hash_slice: String = m_file.substr(0, 2)
+	
+	return default_loc.path_join(target_locale).path_join(hash_slice).path_join(m_file)

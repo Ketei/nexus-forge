@@ -320,7 +320,10 @@ func get_format_string(key: String, locale: String) -> String:
 ## [param locale] isn't empty it'll validate that locale too.
 func has_format_string(key: String, locale: String = "") -> bool:
 	locale = NFStringUtils.sanitize_locale(locale)
-	return format_strings.get(key, NFDictUtils.EMPTY_DICT).has(locale)
+	if locale.is_empty():
+		return format_strings.has(key)
+	else:
+		return format_strings.get(key, NFDictUtils.EMPTY_DICT).has(locale)
 
 
 ## Returns all format keys that the localized string has.
@@ -2056,7 +2059,7 @@ func _get_format_string_localized(key: String, for_locale: String) -> String:
 	# 2. Direct Match
 	if key_dict.has(for_locale):
 		var base_str: String = key_dict[for_locale]["base_string"]
-		if not base_str.is_empty():
+		if not base_str.strip_edges().is_empty():
 			return base_str
 	
 	var fallback_mode: int = ProjectSettings.get_setting(
@@ -2075,13 +2078,13 @@ func _get_format_string_localized(key: String, for_locale: String) -> String:
 		if base_lang != lang_fallback:
 			if key_dict.has(base_lang):
 				var cas_str: String = key_dict[base_lang]["base_string"]
-				if not cas_str.is_empty():
+				if not cas_str.strip_edges().is_empty():
 					return cas_str
 	
 	# 4. Project Default Fallback
 	if key_dict.has(lang_fallback):
 		var fall_str: String = key_dict[lang_fallback]["base_string"]
-		if not fall_str.is_empty():
+		if not fall_str.strip_edges().is_empty():
 			return fall_str
 	
 	return default_fallback

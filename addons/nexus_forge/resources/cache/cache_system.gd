@@ -197,12 +197,13 @@ func keys() -> Array[String]:
 ## in the cache.
 func remove_data(key: String) -> bool:
 	var removed: bool = false
+	var target_link: NFLRUCacheLink = null
 	
 	if thread_safe:
 		_mutex.lock()
 	
 	if _cache_map.has(key):
-		var target_link: NFLRUCacheLink = _cache_map[key]
+		target_link = _cache_map[key]
 		
 		_cache_map.erase(key)
 		
@@ -218,12 +219,12 @@ func remove_data(key: String) -> bool:
 		if _oldest_used == target_link:
 			_oldest_used = target_link.newer_link
 	
-		target_link.clear()
 		removed = true
 	
 	if thread_safe:
 		_mutex.unlock()
-	
+	if removed:
+		target_link.clear()
 	return removed
 
 
@@ -234,6 +235,8 @@ func remove_data(key: String) -> bool:
 func remove_keys(key_arr: Array[String]) -> void:
 	if key_arr.is_empty():
 		return
+	
+	var deferred_clears: Array[NFLRUCacheLink] = []
 	
 	if thread_safe:
 		_mutex.lock()
@@ -257,10 +260,13 @@ func remove_keys(key_arr: Array[String]) -> void:
 		if _oldest_used == target_link:
 			_oldest_used = target_link.newer_link
 	
-		target_link.clear()
+		deferred_clears.append(target_link)
 	
 	if thread_safe:
 		_mutex.unlock()
+	
+	for link in deferred_clears:
+		link.clear()
 
 
 ## Returns the current size of the cache.

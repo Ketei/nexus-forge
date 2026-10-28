@@ -77,7 +77,8 @@ func _get_new_dialog_id_for(path: String) -> String:
 
 
 func _export_file(path: String, type: String, features: PackedStringArray) -> void:
-	if path.get_extension() != "tres":
+	var extension: String = path.get_extension()
+	if extension != "tres" and extension != "res":
 		return
 	
 	if release_files.has(path):

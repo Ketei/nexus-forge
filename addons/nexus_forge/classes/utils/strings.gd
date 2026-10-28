@@ -222,16 +222,17 @@ static func get_all_format_arguments(text: String, trim_brackets: bool = false, 
 	return all_formats
 
 
-## Takes param locale_string and santizes and standarizes the output.[br]
-## If param strict is false, it'll construct a valid locale with what it can.
+## Takes [param locale_string] and santizes and standarizes the output.[br]
+## If [param strict] is [code]false[/code], it'll construct a valid locale
+## with what it can.
 ## Otherwise all the parts of the code must be valid or it'll return an empty
 ## string.
 ## [codeblock]
-## print(NFStringUtils.sanitize_locale("En_Invl-XX")) # Will print "en"
-## print(NFStringUtils.sanitize_locale("En-Invl-US")) # Will print "en_US"
-## print(NFStringUtils.sanitize_locale("en-Invl_US", true)) # Will print ""
+## print(NFStringUtils.sanitize_locale("En_Invl-XX", false)) # Will print "en"
+## print(NFStringUtils.sanitize_locale("En-Invl-US", false)) # Will print "en_US"
+## print(NFStringUtils.sanitize_locale("en-Invl_US")) # Will print ""
 ## [/codeblock]
-static func sanitize_locale(locale_string: String, strict: bool = false) -> String:
+static func sanitize_locale(locale_string: String, strict: bool = true) -> String:
 	if _LANG_CODES.is_empty():
 		_populate_locale_dicts()
 	
@@ -285,14 +286,14 @@ static func sanitize_locale(locale_string: String, strict: bool = false) -> Stri
 
 
 static func get_locale_language(code: String) -> String:
-	code = sanitize_locale(code)
+	code = sanitize_locale(code, false)
 	if code.is_empty():
 		return ""
 	return code.get_slice("_", 0).to_lower()
 
 
 static func get_locale_country(code: String) -> String:
-	code = sanitize_locale(code)
+	code = sanitize_locale(code, false)
 	var slice_count: int = code.get_slice_count("_")
 	if slice_count < 2:
 		return ""

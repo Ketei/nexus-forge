@@ -1369,7 +1369,7 @@ func set_localization_data(localization: Dictionary) -> void:
 			if typeof(localization[node_uuid]) == TYPE_STRING:
 				node.set_dialog_text(localization[node_uuid])
 		elif node.node_type == DialogNodes.CHOICES:
-			if typeof(localization[node_uuid]) == TYPE_ARRAY:
+			if typeof(localization[node_uuid]) == TYPE_PACKED_STRING_ARRAY:
 				var idx: int = 0
 				for choice in localization[node_uuid]:
 					idx += 1

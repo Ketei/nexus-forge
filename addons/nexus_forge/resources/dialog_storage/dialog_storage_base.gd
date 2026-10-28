@@ -76,6 +76,9 @@ var _uid_to_id: Dictionary[StringName, StringName] = {
 
 var _dialog_overrides: NFDialogEntryOverride = null:
 	set(o):
+		if o == _dialog_overrides:
+			return
+		
 		if thread_safe:
 			_mutex.lock()
 		
@@ -93,15 +96,20 @@ var _dialog_overrides: NFDialogEntryOverride = null:
 
 var _phrase_overrides: NFPhraseEntryOverride = null:
 	set(o):
+		if o == _phrase_overrides:
+			return
+		
 		if thread_safe:
 			_mutex.lock()
 		
 		if _phrase_overrides != null:
-			_clear_override_keys()
 			_phrase_overrides.phrases_changed.disconnect(_on_phrases_changed)
 		_phrase_overrides = o
 		if o != null:
 			o.phrases_changed.connect(_on_phrases_changed)
+		
+		parsed_dialog_cache.clear()
+		
 		if thread_safe:
 			_mutex.unlock()
 
@@ -436,6 +444,9 @@ class NFDialogEntryOverride extends RefCounted:
 		
 		while not valid_array.is_empty() and valid_array[-1] == null:
 			valid_array.remove_at(-1)
+		
+		if valid_array.is_empty():
+			return true
 		
 		if type == TYPE_ARRAY:
 			var curr_size: int = current.size()
