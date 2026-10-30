@@ -265,9 +265,9 @@ func _process_logic(id: StringName) -> Dictionary[String, Variant]:
 					var metadata_node: String = sett_inputs.get("metadata", E).get(T, "")
 					
 					if not font_target.is_empty():
-						font = _get_data_string(font_target, font)
+						font = _get_data_string_editor(font_target, font)
 					if not scene_target.is_empty():
-						scene = _get_data_string(scene_target, scene)
+						scene = _get_data_string_editor(scene_target, scene)
 					if not speed_target.is_empty():
 						var speed_data: Variant = _get_data_editor(speed_target, speed)
 						var type: int = typeof(speed_data)
@@ -312,9 +312,9 @@ func _process_logic(id: StringName) -> Dictionary[String, Variant]:
 						var portrait_id_node: String = char_inputs.get("portrait_id", E).get(T, "")
 						
 						if not display_name_node.is_empty():
-							display_name = _get_data_string(display_name_node, display_name)
+							display_name = _get_data_string_editor(display_name_node, display_name)
 						if not portrait_id_node.is_empty():
-							portrait_id = _get_data_string(portrait_id_node, portrait_id)
+							portrait_id = _get_data_string_editor(portrait_id_node, portrait_id)
 				
 				if text_source_node.is_empty():
 					var text_data: Dictionary[String, Variant] = _dialog_resource._get_text_data_localized(current_node, locale)
@@ -417,7 +417,7 @@ func _process_logic(id: StringName) -> Dictionary[String, Variant]:
 						var option_metadata: Dictionary[String, Variant] = {}
 						
 						if not unlocked and not hint_node.is_empty():
-							var lock_hint: String = _get_data_string(hint_node)
+							var lock_hint: String = _get_data_string_editor(hint_node)
 							if not lock_hint.is_empty():
 								choice_text = lock_hint
 						
@@ -768,13 +768,13 @@ func _get_data_editor(from_uuid: String, fallback = null, _remaining_travels: in
 						var override_val: Variant = _get_data_editor(override_base, val_base, _remaining_travels - 1)
 						var override_type: int = typeof(override_val)
 						if override_type == TYPE_INT or override_type == TYPE_FLOAT:
-							val_base = override_type
+							val_base = override_val
 					
 					if not override_max.is_empty():
 						var override_val: Variant = _get_data_editor(override_max, val_max, _remaining_travels - 1)
 						var override_type: int = typeof(override_val)
 						if override_type == TYPE_INT or override_type == TYPE_FLOAT:
-							val_max = override_type
+							val_max = override_val
 					
 					if val_max < val_base:
 						val_max = val_base
@@ -789,8 +789,8 @@ func _get_data_editor(from_uuid: String, fallback = null, _remaining_travels: in
 					if not override_base.is_empty():
 						var override_val: Variant = _get_data_editor(override_base, val_base, _remaining_travels - 1)
 						var override_type: int = typeof(override_val)
-						if override_type == TYPE_INT or override_type == TYPE_FLOAT:
-							val_base = override_type
+						if override_type == TYPE_BOOL:
+							val_base = override_val
 					
 					if val_base <= 0:
 						return false

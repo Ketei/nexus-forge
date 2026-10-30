@@ -270,11 +270,6 @@ func _get_format_string(conversation: StringName, key: String) -> String:
 	if thread_safe:
 		_mutex.lock()
 	
-	if _active_locale == null:
-		if thread_safe:
-			_mutex.unlock()
-		return final_string
-	
 	var string_set: bool = false
 	if _phrase_overrides != null:
 		var possible_override: Variant = _phrase_overrides.get_base_string_override(
@@ -285,7 +280,7 @@ func _get_format_string(conversation: StringName, key: String) -> String:
 			final_string = possible_override
 			string_set = true
 
-	if not string_set:
+	if not string_set and _active_locale != null:
 		var loc_text: String = _active_locale.get_format_string_text(conversation, key)
 		if not loc_text.is_empty():
 			final_string = loc_text
@@ -297,17 +292,13 @@ func _get_format_string(conversation: StringName, key: String) -> String:
 
 
 func _get_format_string_args(conversation: StringName, key: String) -> Dictionary[String, Dictionary]:
-	var final_args: Dictionary[String, Dictionary] = {}
+	var base: Dictionary[String, Dictionary] = {}
 	
 	if thread_safe:
 		_mutex.lock()
 	
-	if _active_locale == null:
-		if thread_safe:
-			_mutex.unlock()
-		return final_args
-	
-	var base: Dictionary[String, Dictionary] = _active_locale.get_format_string_args(conversation, key)
+	if _active_locale != null:
+		base = _active_locale.get_format_string_args(conversation, key)
 	
 	if _phrase_overrides != null:
 		var possible_override: Dictionary[String, Dictionary] = _phrase_overrides.get_formats_override(

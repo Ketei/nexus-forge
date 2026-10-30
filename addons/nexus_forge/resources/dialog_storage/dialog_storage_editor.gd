@@ -170,14 +170,14 @@ func _get_text_data_localized(node_uuid: String, for_locale: String) -> Dictiona
 		if typeof(localized_data) == TYPE_STRING:
 			var loc_str: String = localized_data.strip_edges()
 			if not loc_str.is_empty():
-				data["text"] = localized_data
+				data["text"] = loc_str
 				return data
 	else:
 		var unlocalized_data: Variant = localization_dict.get("unlocalized")
 		if typeof(unlocalized_data) == TYPE_STRING:
 			var unloc_str: String = unlocalized_data.strip_edges()
 			if not unloc_str.is_empty():
-				data["text"] = localization[node_uuid]["unlocalized"]
+				data["text"] = unloc_str
 				return data
 	
 	# 0 = No Fallback
@@ -201,7 +201,7 @@ func _get_text_data_localized(node_uuid: String, for_locale: String) -> Dictiona
 				if typeof(locale_data) == TYPE_STRING:
 					var loc_str: String = locale_data.strip_edges()
 					if not loc_str.is_empty():
-						data["text"] = locale_data
+						data["text"] = loc_str
 						return data
 	
 	if locales_dict.has(lang_fallback):
@@ -209,7 +209,7 @@ func _get_text_data_localized(node_uuid: String, for_locale: String) -> Dictiona
 		if typeof(locale_data) == TYPE_STRING:
 			var loc_str: String = locale_data.strip_edges()
 			if not loc_str.is_empty():
-				data["text"] = locale_data
+				data["text"] = loc_str
 	
 	return data
 
@@ -2165,12 +2165,6 @@ func _get_format_string_args_localized(key: String, for_locale: String) -> Dicti
 				key)
 		
 		for format_key in possible_override:
-			var default_overrides: Array[String] = _phrase_overrides.get_format_case_default_overriden(
-					dialog_id,
-					key,
-					format_key,
-					for_locale)
-			
 			if not base.has(format_key):
 				base[format_key] = possible_override[format_key]
 			else:
@@ -2185,7 +2179,18 @@ func _get_format_string_args_localized(key: String, for_locale: String) -> Dicti
 						base_format["cases"] = over_format["cases"]
 					else:
 						var case_dict: Dictionary = base_format["cases"]
-						for def_case in default_overrides:
-							case_dict.erase(def_case)
 						case_dict.merge(over_format["cases"], true)
+		
+		for format_key in base:
+			var default_overrides: Array[String] = _phrase_overrides.get_format_case_default_overriden(
+					dialog_id,
+					key,
+					format_key,
+					for_locale)
+			
+			if not default_overrides.is_empty() and base[format_key].has("cases"):
+				var case_dict: Dictionary = base[format_key]["cases"]
+				for def_case: String in default_overrides:
+					case_dict.erase(def_case)
+	
 	return base

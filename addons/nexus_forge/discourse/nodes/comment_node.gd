@@ -2,7 +2,7 @@
 extends DiscourseGraphNode
 
 
-signal comment_changed(uuid: StringName, old_comment: String, new_comment: String)
+signal comment_changed(uuid: String, old_comment: String, new_comment: String)
 
 
 var comment_txt: TextEdit

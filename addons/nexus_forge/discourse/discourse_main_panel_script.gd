@@ -1116,8 +1116,8 @@ func _on_file_menu_id_pressed(id: int) -> void:
 			if not result[0]:
 				return
 			
+			save_current_dialog_to_memory()
 			var export_path: String = result[1]
-			discourse_graph_edit.update_localization_data(active_conversation, current_locale)
 			var export_data: Dictionary = export_current_dialog_csv_to(export_path)
 			if export_data["success"]:
 				NFPluginGameHandler._log_msg(
@@ -1377,7 +1377,7 @@ func _on_create_dialog_id_pressed(id: int) -> void:
 		
 		undo.create_action("Create Frame")
 		undo.add_do_method(_undo_remove_frame.bind(action_data))
-		undo.add_undo_method(_do_remove_frame.bind(uuid))
+		undo.add_undo_method(_do_remove_frame.bind(action_data))
 		undo.commit_action(false)
 	_on_conversation_changed()
 
@@ -2301,7 +2301,7 @@ func get_localizer_choices() -> Array[String]:
 
 
 func _on_localizer_item_renamed(node_uuid: String, desired_id: String) -> void:
-	var node: DiscourseGraphNode = discourse_nodes_tree.get_discourse_node(node_uuid)
+	var node: DiscourseGraphNode = discourse_graph_edit.get_discourse_node(node_uuid)
 	
 	if node == null:
 		return
@@ -2311,7 +2311,7 @@ func _on_localizer_item_renamed(node_uuid: String, desired_id: String) -> void:
 		node.node_type,
 		node_uuid)
 	
-	var proper_string: String = String(proper_name)
+	var proper_string: String = proper_name
 	
 	node.set_node_id(proper_name)
 	
@@ -2576,8 +2576,21 @@ func get_file_saved_properties(path: String) -> Dictionary[String, Variant]:
 #region Discourse dialog node tree
 func _on_discourse_node_created(node: DiscourseGraphNode) -> void:
 	discourse_nodes_tree.create_node(node)
-	if node.node_type == DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
-		_on_localize_node(node)
+	
+	if node.is_node_localized():
+		match node.node_type:
+			DiscourseGraphNode.DialogueNodeType.DIALOG:
+				localization_nodes_tree.create_dialog_node(
+						node.get_node_id(),
+						node)
+			DiscourseGraphNode.DialogueNodeType.CHOICES:
+				localization_nodes_tree.create_options_node(
+						node.get_node_id(),
+						node)
+			DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
+				localization_nodes_tree.create_localized_text_node(
+						node.get_node_id(),
+						node)
 
 
 func has_text_on_tree(on_tree: TreeItem, text: String, column: int, skip_item: TreeItem = null) -> bool:
@@ -3415,7 +3428,7 @@ func _do_create_phrase_entry(key: String, text: String, locale: String, data: Di
 		active_conversation.set_format_string(key, text, locale)
 		create_new_phrase_entry(key, text)
 	else:
-		active_conversation[key] = data.duplicate(true)
+		active_conversation.format_strings[key] = data.duplicate(true)
 		if 0 < phrases_lang_menu.item_count:
 			create_new_phrase_entry(
 					key,
@@ -4960,18 +4973,18 @@ func _set_localization_window_choices(new_node: DiscourseGraphNode) -> void:
 	var options_localized: Array[String] = []
 	var options_base: Array[String] = []
 	
-	options_localized.assign(NFDictUtils.get_nested_value(
-		active_conversation.localization,
-		[new_node_uuid, "locales", active_locale],
-		[],
-		true))
-		
-	options_base.assign(NFDictUtils.get_nested_value(
-		active_conversation.localization,
-		[new_node_uuid, "locales", base_language],
-		[],
-		true))
-		
+	var localized_data: Dictionary = active_conversation.localization.get(new_node_uuid, NFDictUtils.EMPTY_DICT)
+	var locales: Dictionary = localized_data.get("locales", NFDictUtils.EMPTY_DICT)
+	var active_data: Variant = locales.get(active_locale)
+	if typeof(active_data) == TYPE_PACKED_STRING_ARRAY:
+		options_localized.assign(active_data)
+	
+	var base_data: Dictionary = active_conversation.localization.get(new_node_uuid, NFDictUtils.EMPTY_DICT)
+	var base_locales: Dictionary = base_data.get("locales", NFDictUtils.EMPTY_DICT)
+	var base_localization: Variant = base_locales.get(base_language)
+	if typeof(base_localization) == TYPE_PACKED_STRING_ARRAY:
+		options_base.assign(base_localization)
+	
 	var choice_count: int = new_node.choice_count()
 	clear_localized_options()
 	
@@ -5216,7 +5229,7 @@ func _on_nodes_removed(action: String, graph_nodes_data: Dictionary[String, Dict
 
 func _do_remove_nodes(action_data: Dictionary) -> void:
 	var uuids_to_remove: Array[String] = NFArrayUtils.create_typed(
-			TYPE_STRING_NAME,
+			TYPE_STRING,
 			action_data["graph_nodes_data"].keys())
 	
 	discourse_graph_edit.remove_nodes(uuids_to_remove)
@@ -5359,20 +5372,25 @@ func _undo_remove_nodes(action_data: Dictionary) -> void:
 
 func _on_graph_edit_node_duplication_requested(uuids: Array[String]) -> void:
 	var uuid_size: int = uuids.size()
-	
 	if uuid_size == 0:
 		return
-	elif uuid_size == 1:
-		var new_uuid: String = NFUUID.generate_new()
-		discourse_graph_edit.duplicate_single(uuids[0], new_uuid)
+	
+	var uuid_map: Dictionary[String, String] = {}
+	
+	for uuid in uuids:
+		uuid_map[uuid] = NFUUID.generate_new()
+	
+	for uuid_to_copy in uuids:
+		if active_conversation.localization.has(uuid_to_copy):
+			var unique_id: String = uuid_map[uuid_to_copy]
+			active_conversation.localization[unique_id] = active_conversation.localization[uuid_to_copy].duplicate(true)
+	
+	if uuid_size == 1:
+		var single_uuid: String = uuids[0]
+		discourse_graph_edit.duplicate_single(single_uuid, uuid_map[single_uuid])
 	else:
-		# Existing NFUUID: New NFUUID
-		var uuid_map: Dictionary[String, String] = {}
-		for uuid in uuids:
-			uuid_map[uuid] = NFUUID.generate_new()
-		
 		discourse_graph_edit.duplicate_multiple(uuid_map)
-		
+	
 	_on_conversation_changed()
 
 
@@ -5952,15 +5970,15 @@ func _on_close_frame_requested(uuid: String) -> void:
 
 
 func _do_remove_frame(action_data: Dictionary) -> void:
-	var uuid: String = action_data["uuid"]
-	var parent_uuid: String = action_data["parent_frame"]
+	var uuid: String = action_data.get("uuid", "")
+	var parent_uuid: String = action_data.get("parent_frame", "")
 	
 	discourse_graph_edit.remove_frame(uuid)
 	
 	if not parent_uuid.is_empty():
 		var parent_frame: GraphFrame = discourse_graph_edit.get_discourse_frame(parent_uuid)
 		if parent_frame != null:
-			var attached_elements: Dictionary = action_data["attached_elements"]
+			var attached_elements: Dictionary = action_data.get("attached_elements", NFDictUtils.EMPTY_DICT)
 			for node_uuid in attached_elements["nodes"]:
 				var node: DiscourseGraphNode = discourse_graph_edit.get_discourse_node(node_uuid)
 				if node != null:
@@ -5972,32 +5990,35 @@ func _do_remove_frame(action_data: Dictionary) -> void:
 
 
 func _undo_remove_frame(action_data: Dictionary) -> void:
-	var uuid: String = action_data["uuid"]
-	var frame_data: Dictionary = action_data["frame_data"]
-	var attached: Dictionary = action_data["attached_elements"]
+	var uuid: String = action_data.get("uuid", "")
+	var frame_data: Dictionary = action_data.get("frame_data", NFDictUtils.EMPTY_DICT)
+	var attached: Dictionary = action_data.get("attached_elements", NFDictUtils.EMPTY_DICT)
 	
 	var frame_pos: Vector2 = frame_data.get("position", Vector2.ZERO)
 	var frame: GraphFrame = discourse_graph_edit.spawn_frame(uuid, frame_pos)
 	
 	frame.set_frame_data(frame_data)
+	if not attached.is_empty():
+		var att_nodes: Dictionary = attached.get("nodes", NFDictUtils.EMPTY_DICT)
+		var att_frames: Dictionary = attached.get("frames", NFDictUtils.EMPTY_DICT)
+		
+		for node_uuid in att_nodes:
+			var node: DiscourseGraphNode = discourse_graph_edit.get_discourse_node(node_uuid)
+			if node != null:
+				var current_parent: GraphFrame = discourse_graph_edit.get_element_frame(node.name)
+				if current_parent != null and current_parent != frame:
+					discourse_graph_edit.detach_graph_element_from_frame(node.name)
+				discourse_graph_edit.attach_graph_element_to_frame(node.name, frame.name)
+		
+		for nested_uuid in att_frames:
+			var nested_frame: GraphFrame = discourse_graph_edit.get_discourse_frame(nested_uuid)
+			if nested_frame != null:
+				var current_parent: GraphFrame = discourse_graph_edit.get_element_frame(nested_frame.name)
+				if current_parent != null and current_parent != frame:
+					discourse_graph_edit.detach_graph_element_from_frame(nested_frame.name)
+				discourse_graph_edit.attach_graph_element_to_frame(nested_frame.name, frame.name)
 	
-	for node_uuid in attached["nodes"]:
-		var node: DiscourseGraphNode = discourse_graph_edit.get_discourse_node(node_uuid)
-		if node != null:
-			var current_parent: GraphFrame = discourse_graph_edit.get_element_frame(node.name)
-			if current_parent != null and current_parent != frame:
-				discourse_graph_edit.detach_graph_element_from_frame(node.name)
-			discourse_graph_edit.attach_graph_element_to_frame(node.name, frame.name)
-	
-	for nested_uuid in attached["frames"]:
-		var nested_frame: GraphFrame = discourse_graph_edit.get_discourse_frame(nested_uuid)
-		if nested_frame != null:
-			var current_parent: GraphFrame = discourse_graph_edit.get_element_frame(nested_frame.name)
-			if current_parent != null and current_parent != frame:
-				discourse_graph_edit.detach_graph_element_from_frame(nested_frame.name)
-			discourse_graph_edit.attach_graph_element_to_frame(nested_frame.name, frame.name)
-	
-	var parent_uuid: String = action_data["parent_frame"]
+	var parent_uuid: String = action_data.get("parent_frame", "")
 	if not parent_uuid.is_empty():
 		var parent_frame: GraphFrame = discourse_graph_edit.get_discourse_frame(parent_uuid)
 		if parent_frame != null:

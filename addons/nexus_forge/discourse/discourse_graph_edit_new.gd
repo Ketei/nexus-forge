@@ -1580,7 +1580,7 @@ func _on_use_character_selector_pressed(node_uuid: String, target: LineEdit) -> 
 	browse_character_requested.emit(node_uuid, target)
 
 
-func _on_delete_nodes_request(nodes: Array[String]) -> void:
+func _on_delete_nodes_request(nodes: Array[StringName]) -> void:
 	var nodes_to_remove: Dictionary[String, Dictionary] = {}
 	var node_uuids: Array[String] = []
 	for selected_node in nodes:

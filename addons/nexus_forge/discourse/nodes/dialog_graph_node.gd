@@ -2,11 +2,11 @@
 extends DiscourseGraphNode
 
 
-signal use_code_editor_pressed(uuid: StringName, target: TextEdit)
-signal select_character_pressed(uuid: StringName, target: LineEdit)
-signal character_id_changed(uuid: StringName, from: String, to: String)
-signal dialog_text_changed(uuid: StringName, from: String, to: String)
-signal dialog_presist_toggled(uuid: StringName, is_toggled: bool)
+signal use_code_editor_pressed(uuid: String, target: TextEdit)
+signal select_character_pressed(uuid: String, target: LineEdit)
+signal character_id_changed(uuid: String, from: String, to: String)
+signal dialog_text_changed(uuid: String, from: String, to: String)
+signal dialog_presist_toggled(uuid: String, is_toggled: bool)
 
 var free_size: Vector2 = Vector2(350.0, 300.0)
 var character_id_ln_edt: LineEdit

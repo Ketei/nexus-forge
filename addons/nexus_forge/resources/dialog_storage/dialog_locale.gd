@@ -259,18 +259,6 @@ func merge_dialog(with: DiscourseDialogLocale) -> void:
 				
 				if target_default.is_empty():
 					target_formats[existing_format]["default"] = source_formats[existing_format]["default"]
-				
-				var target_cases: Dictionary = target_formats[existing_format]["cases"]
-				var source_cases: Dictionary = source_formats[existing_format]["cases"]
-				
-				for case in source_cases:
-					if not target_cases.has(case):
-						target_cases[case] = source_cases[case]
-						continue
-					
-					var target_string: String = target_cases[case].strip_edges()
-					if target_string.is_empty():
-						target_cases[case] = source_cases[case]
 
 
 ## Sets the dialog text from the [param conversation]'s [param node] to [param text].

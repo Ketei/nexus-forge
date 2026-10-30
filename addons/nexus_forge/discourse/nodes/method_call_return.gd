@@ -2,9 +2,9 @@
 extends DiscourseGraphNode
 
 
-signal method_changed(node_uuid: StringName, old_state: Dictionary, new_state: Dictionary)
+signal method_changed(node_uuid: String, old_state: Dictionary, new_state: Dictionary)
 
-static var available_methods: Dictionary = {}
+static var available_methods: Dictionary[String, Dictionary] = {}
 
 var methods_node: OptionButton
 
@@ -411,8 +411,8 @@ func update_node_size() -> void:
 	size.y = 0 
 
 
-static func get_user_methods() -> Dictionary:
-	var methods: Dictionary = {}
+static func get_user_methods() -> Dictionary[String, Dictionary]:
+	var methods: Dictionary[String, Dictionary] = {}
 	
 	var api_script: Script = DiscourseAPI
 	var api_methods: Array[Dictionary] = api_script.get_script_method_list()

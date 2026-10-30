@@ -2,7 +2,7 @@
 extends DiscourseGraphNode
 
 
-signal operator_changed(uuid: StringName, old_operator: int, new_operator: int)
+signal operator_changed(uuid: String, old_operator: int, new_operator: int)
 
 
 var comparation_menu: MenuButton

@@ -135,7 +135,7 @@ func _set_node_data(data: Dictionary) -> void:
 	super(data)
 	
 	var connections_data: Variant = data.get("metadata", NFDictUtils.EMPTY_DICT).get("metadata_connections")
-	if not typeof(connections_data) != TYPE_ARRAY:
+	if typeof(connections_data) != TYPE_ARRAY:
 		return
 	
 	var target_meta_size: int = 1

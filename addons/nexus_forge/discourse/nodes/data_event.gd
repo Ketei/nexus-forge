@@ -2,7 +2,7 @@
 extends DiscourseGraphNode
 
 
-signal path_changed(uuid: StringName, from: String, to: String)
+signal path_changed(uuid: String, from: String, to: String)
 
 
 var variable_path: LineEdit

@@ -2,9 +2,9 @@
 extends GraphFrame
 
 
-signal close_frame_requested(uuid: StringName)
-signal frame_title_changed(uuid: StringName, from: String, to: String)
-signal frame_color_changed(uuid: StringName, from: Color, to: Color)
+signal close_frame_requested(uuid: String)
+signal frame_title_changed(uuid: String, from: String, to: String)
+signal frame_color_changed(uuid: String, from: Color, to: Color)
 
 var last_click_time: int = 0
 var label_editor: LineEdit = null
