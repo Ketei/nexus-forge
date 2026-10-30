@@ -60,22 +60,21 @@ func set_trait_data(trait_id: StringName, data_key: String, data: Variant) -> vo
 ## Returns the data from the trait [param trait_id] with key [param data_key].[br]
 ## Returns [code]null[/code] if either the trait or the data don't exist.
 func get_trait_data(trait_id: StringName, data_key: String) -> Variant:
-	if _trait_data.has(trait_id) and _trait_data[trait_id]["custom_data"].has(data_key):
-		return _trait_data[trait_id]["custom_data"][data_key]
-	return null
+	var target: Dictionary = _trait_data.get(trait_id, NFDictUtils.EMPTY_DICT).get("custom_data", NFDictUtils.EMPTY_DICT)
+	return target.get(data_key)
 
 
 ## Returns a copy of the custom data of [param trait_id].
-func get_trait_custom_data(trait_id: StringName) -> Dictionary[StringName, Variant]:
+func get_trait_custom_data(trait_id: StringName) -> Dictionary[String, Variant]:
 	var entry: Variant = _trait_data.get(trait_id)
+	var data: Dictionary[String, Variant] = {}
 	if typeof(entry) != TYPE_DICTIONARY:
-		return {}
+		return data
 	
 	var c_data: Variant = entry.get("custom_data")
 	if typeof(c_data) != TYPE_DICTIONARY:
-		return {}
+		return data
 	
-	var data: Dictionary[StringName, Variant] = {}
 	data.assign(c_data)
 	return data.duplicate(true)
 

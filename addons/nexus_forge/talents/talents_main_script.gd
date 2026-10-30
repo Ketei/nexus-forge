@@ -699,7 +699,9 @@ func save_current_trait() -> void:
 	if _traits_resource._trait_data.has(loaded_trait):
 		target = _traits_resource._trait_data[loaded_trait]
 	else:
-		_traits_resource._trait_data[loaded_trait] = target
+		var new_entry: Dictionary[String, Variant] = {}
+		_traits_resource._trait_data[loaded_trait] = new_entry
+		target = new_entry
 	
 	target["name"] = trait_ln_edt.text.strip_edges()
 	target["description"] = trait_desc_txt_edt.text.strip_edges()
@@ -959,10 +961,11 @@ func load_stats_resource() -> void:
 		if _stats_resource._stat_data.has(new_stat):
 			continue
 		var data: Dictionary[String, Variant] = {}
-		_stats_resource._stat_data[new_stat] = {
+		var new_entry: Dictionary[String, Variant] = {
 			"name": "",
 			"description": "",
 			"custom_data": data}
+		_stats_resource._stat_data[new_stat] = new_entry
 	
 	stat_ln_edt.editable = stat_exist
 	stat_desc_txt_edt.editable = stat_exist
@@ -1020,10 +1023,11 @@ func reload_stats(reselect: bool = true) -> void:
 			if _stats_resource._stat_data.has(stat):
 				continue
 			var data: Dictionary[String, Variant] = {}
-			_stats_resource._stat_data[stat] = {
+			var new_entry: Dictionary[String, Variant] = {
 				"name": "",
 				"description": "",
 				"custom_data": data}
+			_stats_resource._stat_data[stat] = new_entry
 	
 	if _stats_resource == null:
 		return
@@ -1309,7 +1313,9 @@ func save_current_skill() -> void:
 	if _skills_resource._skill_data.has(loaded_skill):
 		target = _skills_resource._skill_data[loaded_skill]
 	else:
-		_skills_resource._skill_data[loaded_skill] = target
+		var new_entry: Dictionary[String, Variant] = {}
+		_skills_resource._skill_data[loaded_skill] = new_entry
+		target = new_entry
 	
 	target["name"] = skill_ln_edt.text.strip_edges()
 	target["description"] = skill_desc_txt_edt.text.strip_edges()
@@ -1325,7 +1331,9 @@ func save_current_stat() -> void:
 	if _stats_resource._stat_data.has(loaded_stat):
 		target = _stats_resource._stat_data[loaded_stat]
 	else:
-		_stats_resource._stat_data[loaded_stat] = target
+		var new_target: Dictionary[String, Variant] = {}
+		_stats_resource._stat_data[loaded_stat] = new_target
+		target = new_target
 	
 	target["name"] = stat_ln_edt.text.strip_edges()
 	target["description"] = stat_desc_txt_edt.text.strip_edges()

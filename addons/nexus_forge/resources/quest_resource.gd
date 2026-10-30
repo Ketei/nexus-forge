@@ -36,7 +36,7 @@ static var _regex_formatter: RegEx
 		if _description_builder.is_valid():
 			_description_builder = Callable()
 ## Custom data assigned to the quest.
-@export var custom_data: Dictionary[StringName, Variant] = {}
+@export var custom_data: Dictionary[String, Variant] = {}
 
 ## The initial stage of the quest.
 @export var entry_stage: StringName = &""

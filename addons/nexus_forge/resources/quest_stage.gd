@@ -39,7 +39,7 @@ static var _regex_formatter: RegEx
 ## The type of the stage.
 @export var type: StageType
 ## CUstom data assigned to the stage.
-@export var custom_data: Dictionary[StringName, Variant] = {}
+@export var custom_data: Dictionary[String, Variant] = {}
 
 ## The ID of the next stage should this complete successfully. An empty value
 ## signifies the end of the quest this is in.

@@ -61,7 +61,7 @@ func create_recipe(recipe_id: StringName) -> void:
 
 ## Sets the custom data of [param recipe_id] with key [param data_key]
 ## to [param data]. If param data is [code]null[/code] then the key is erased.
-func set_recipe_data(recipe_id: StringName, data_key: StringName, data: Variant) -> void:
+func set_recipe_data(recipe_id: StringName, data_key: String, data: Variant) -> void:
 	if not _recipes.has(recipe_id):
 		return
 	
@@ -74,7 +74,7 @@ func set_recipe_data(recipe_id: StringName, data_key: StringName, data: Variant)
 
 ## Sets the custom data of an input ingredient in the [param recipe_id]
 ## to [param data]. If param data is [code]null[/code] then the key is erased.
-func set_recipe_input_item_data(recipe_id: StringName, ingredient_idx: int, data_key: StringName, data: Variant) -> void:
+func set_recipe_input_item_data(recipe_id: StringName, ingredient_idx: int, data_key: String, data: Variant) -> void:
 	if not _recipes.has(recipe_id):
 		return
 	
@@ -90,7 +90,7 @@ func set_recipe_input_item_data(recipe_id: StringName, ingredient_idx: int, data
 
 ## Sets the custom data of an output ingredient in the [param recipe_id]
 ## to [param data]. If param data is [code]null[/code] then the key is erased.
-func set_recipe_output_item_data(recipe_id: StringName, ingredient_idx: int, data_key: StringName, data: Variant) -> void:
+func set_recipe_output_item_data(recipe_id: StringName, ingredient_idx: int, data_key: String, data: Variant) -> void:
 	if not _recipes.has(recipe_id):
 		return
 	

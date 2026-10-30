@@ -55,12 +55,12 @@ func set_stat_description(stat_id: StringName, description: String) -> void:
 
 ## Gets the name of [param stat_id] or an empty string if not found.
 func get_stat_name(stat_id: StringName) -> String:
-	return _stat_data.get(stat_id, {}).get("name", "")
+	return _stat_data.get(stat_id, NFDictUtils.EMPTY_DICT).get("name", "")
 
 
 ## Gets the name of [param stat_id] or an empty string if not found.
 func get_stat_description(stat_id: StringName) -> String:
-	return _stat_data.get(stat_id, {}).get("description", "")
+	return _stat_data.get(stat_id, NFDictUtils.EMPTY_DICT).get("description", "")
 
 
 ## Sets the [param stat_id] custom data of key [param data_key] to
@@ -78,28 +78,24 @@ func set_stat_data(stat_id: StringName, data_key: StringName, data) -> void:
 ## Returns the custom data of [param stat_id] on key [param data_key].
 ## Returns [code]null[/code] if the entry is not found.
 func get_stat_data(stat_id: StringName, data_key: String) -> Variant:
-	var entry: Variant = _stat_data.get(stat_id)
-	if typeof(entry) != TYPE_DICTIONARY:
-		return null
+	var target_dict: Dictionary = _stat_data.get(
+			stat_id,
+			NFDictUtils.EMPTY_DICT).get("custom_data", NFDictUtils.EMPTY_DICT)
 	
-	var data: Variant = entry.get("custom_data")
-	if typeof(data) != TYPE_DICTIONARY:
-		return null
-	
-	return data.get(data_key)
+	return target_dict.get(data_key)
 
 
 ## Returns a copy of the custom data of the stat [param stat_id].
-func stat_data(stat_id: StringName) -> Dictionary[StringName, Variant]:
+func stat_data(stat_id: StringName) -> Dictionary[String, Variant]:
+	var custom_data: Dictionary[String, Variant] = {}
 	var entry: Variant = _stat_data.get(stat_id)
 	if typeof(entry) != TYPE_DICTIONARY:
-		return {}
+		return custom_data
 	
 	var data: Variant = entry.get("custom_data")
 	if typeof(data) != TYPE_DICTIONARY:
-		return {}
+		return custom_data
 	
-	var custom_data: Dictionary[StringName, Variant] = {}
 	custom_data.assign(data)
 	return custom_data.duplicate(true)
 
@@ -129,23 +125,23 @@ func set_stat_max(stat_id: StringName, new_max: float) -> void:
 ## Returns true if the custom stat [param stat_id] allows for lesser values or
 ## the stat doesn't exists.
 func allows_lesser(stat_id: StringName) -> bool:
-	return _stat_data.get(stat_id, {}).get("allow_lesser", true)
+	return _stat_data.get(stat_id, NFDictUtils.EMPTY_DICT).get("allow_lesser", true)
 
 
 ## Returns true if the custom stat [param stat_id] allows for greater values or
 ## the stat doesn't exists.
 func allows_greater(stat_id: StringName) -> bool:
-	return _stat_data.get(stat_id, {}).get("allow_greater", true)
+	return _stat_data.get(stat_id, NFDictUtils.EMPTY_DICT).get("allow_greater", true)
 
 
 ## Returns the minumum value of [param stat_id] or 0.0 if it doesn't exist.
 func get_min_value(stat_id: StringName) -> float:
-	return _stat_data.get(stat_id, {}).get("min_value", 0.0)
+	return _stat_data.get(stat_id, NFDictUtils.EMPTY_DICT).get("min_value", 0.0)
 
 
 ## Returns the maximum value of [param stat_id] or 0.0 if it doesn't exist.
 func get_max_value(stat_id: StringName) -> float:
-	return _stat_data.get(stat_id, {}).get("max_value", 0.0)
+	return _stat_data.get(stat_id, NFDictUtils.EMPTY_DICT).get("max_value", 0.0)
 
 
 ## Erases the custom stat [param stat_id] if it exists.[br]

@@ -74,22 +74,22 @@ func set_skill_data(skill_id: StringName, data_key: String, data: Variant) -> vo
 
 ## Returns the value of [param data_id] on the custom skill [param skill_id].
 func get_skill_data(skill_id: StringName, data_id: String) -> Variant:
-	if _skill_data.has(skill_id) and _skill_data[skill_id]["custom_data"].has(data_id):
-		return _skill_data[skill_id]["custom_data"][data_id]
-	return null
+	var custom_data: Dictionary = _skill_data.get(skill_id, NFDictUtils.EMPTY_DICT).get("custom_data", NFDictUtils.EMPTY_DICT)
+	return custom_data.get(data_id)
 
 
 ## Returns a copy of the custom data of [param skill_id].
-func get_skill_custom_data(skill_id: StringName) -> Dictionary[StringName, Variant]:
+func get_skill_custom_data(skill_id: StringName) -> Dictionary[String, Variant]:
 	var entry: Variant = _skill_data.get(skill_id)
+	var data_found: Dictionary[String, Variant] = {}
+	
 	if typeof(entry) != TYPE_DICTIONARY:
-		return {}
+		return data_found
 	
 	var data: Variant = entry.get("custom_data")
 	if typeof(data) != TYPE_DICTIONARY:
-		return {}
+		return data_found
 	
-	var data_found: Dictionary[StringName, Variant] = {}
 	data_found.assign(data)
 	return data_found.duplicate(true)
 

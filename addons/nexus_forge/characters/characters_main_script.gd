@@ -842,7 +842,7 @@ func save_current_character() -> void:
 	else:
 		current_sheet.gender = 0
 	current_sheet.custom_data.clear()
-	current_sheet.custom_data.assign(character_data_tree.get_data_stringname_keys())
+	current_sheet.custom_data.assign(character_data_tree.get_data())
 	
 	for stat in char_stats_container.get_children():
 		var sheet_stat: NFValueRange = current_sheet.stats.get(stat.get_meta(&"stat_id"))

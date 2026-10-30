@@ -19,7 +19,7 @@ enum Gender {
 ## The gender of the character.
 @export var gender: Gender = Gender.MALE
 ## Custom data unique to this character.
-@export var custom_data: Dictionary[StringName, Variant] = {}
+@export var custom_data: Dictionary[String, Variant] = {}
 ## The stats of the character.
 @export var stats: NFStatBlock
 ## The skills of the character.

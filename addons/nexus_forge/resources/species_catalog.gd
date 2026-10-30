@@ -625,7 +625,7 @@ func set_species_description(species_id: StringName, description: String) -> voi
 
 ## Sets the value of [param data_key] to [param data] of the [param species_id].
 ## If [param data] is [code]null[/code] then [param data_key] is erased.
-func set_species_data(species_id: StringName, data_key: StringName, data: Variant) -> void:
+func set_species_data(species_id: StringName, data_key: String, data: Variant) -> void:
 	if not _species.has(species_id):
 		return
 	
@@ -637,23 +637,23 @@ func set_species_data(species_id: StringName, data_key: StringName, data: Varian
 
 ## Returns the data with [param data_key] from the [param species_id] or
 ## [code]null[/code] if the species isn't registered or key doesn't exist.
-func get_species_data(species_id: StringName, data_key: StringName) -> Variant:
+func get_species_data(species_id: StringName, data_key: String) -> Variant:
 	return NFDictUtils.get_nested_value(
 			_species,
 			[species_id, "custom_data", data_key])
 
 
 ## Returns a copy of the custom data of species [param species_id].
-func get_species_custom_data(species_id: StringName) -> Dictionary[StringName, Variant]:
+func get_species_custom_data(species_id: StringName) -> Dictionary[String, Variant]:
 	var entry: Variant = _species.get(species_id)
+	var custom_data: Dictionary[String, Variant] = {}
 	if typeof(entry) != TYPE_DICTIONARY:
-		return {}
+		return custom_data
 	
 	var data: Dictionary = entry.get("custom_data")
 	if typeof(data) != TYPE_DICTIONARY:
-		return {}
+		return custom_data
 	
-	var custom_data: Dictionary[StringName, Variant] = {}
 	custom_data.assign(data)
 	return custom_data.duplicate(true)
 

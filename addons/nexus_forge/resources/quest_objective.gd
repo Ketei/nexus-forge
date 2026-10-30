@@ -37,7 +37,7 @@ static var _regex_formatter: RegEx
 ## The objective type.
 @export var type: ObjectiveType
 ## Custom data assigned to this objective.
-@export var custom_data: Dictionary[StringName, Variant] = {}
+@export var custom_data: Dictionary[String, Variant] = {}
 
 ## Dictionary containing the events signaled by the quest manager when the objective
 ## completes. Currently only success and failure are supported.
