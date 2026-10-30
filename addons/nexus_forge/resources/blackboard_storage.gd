@@ -53,13 +53,12 @@ func has_variable(path: String) -> bool:
 		return false
 	
 	var folder_path: String = parts["folder"]
-	var target_dict: Dictionary = _active_variables.get(
-			folder_path,
-			_variables.get(
-					folder_path,
-					NFDictUtils.EMPTY_DICT))
+	var variable_name: String = parts["variable"]
 	
-	return target_dict.has(parts["variable"])
+	var base_folder: Dictionary = _variables.get(folder_path, NFDictUtils.EMPTY_DICT)
+	var active_folder: Dictionary = _active_variables.get(folder_path, NFDictUtils.EMPTY_DICT)
+	
+	return base_folder.has(variable_name) or active_folder.has(variable_name)
 
 
 ## Returns true if the folder on [param folder_path] exists. This is different from
@@ -78,10 +77,12 @@ func get_variable(path: String, fallback: Variant = null) -> Variant:
 	var folder: String = parts["folder"]
 	var variable: String = parts["variable"]
 	
-	var target_folder: Dictionary = _active_variables.get(
-			folder, _variables.get(folder, NFDictUtils.EMPTY_DICT))
+	var active_folder: Dictionary = _active_variables.get(folder, NFDictUtils.EMPTY_DICT)
+	var base_folder: Dictionary = _variables.get(folder, NFDictUtils.EMPTY_DICT)
 	
-	return target_folder.get(variable, fallback)
+	if active_folder.has(variable):
+		return active_folder[variable]
+	return base_folder.get(variable, fallback)
 
 
 ## Returns an array containing the variable keys in
@@ -208,13 +209,11 @@ func erase_folder(folder_path: String) -> void:
 ## Returns true if folder in [param folder_path] is empty or doesn't exist.
 func is_folder_empty(folder_path: String) -> bool:
 	var clean_path: String = folder_path.simplify_path()
-	var target: Dictionary = _active_variables.get(
-			clean_path,
-			_variables.get(
-					clean_path,
-					NFDictUtils.EMPTY_DICT))
 	
-	return target.is_empty()
+	var active_folder: Dictionary = _active_variables.get(clean_path, NFDictUtils.EMPTY_DICT)
+	var base_folder: Dictionary = _variables.get(clean_path, NFDictUtils.EMPTY_DICT)
+	
+	return active_folder.is_empty() and base_folder.is_empty()
 
 
 ## Resets a variable to its default value. Returns whether a variable was
