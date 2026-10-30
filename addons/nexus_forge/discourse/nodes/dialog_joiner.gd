@@ -13,7 +13,7 @@ var _connection_updates_disabled: bool = false:
 
 
 func _post_init() -> void:
-	set_node_id(&"DialogMerge")
+	set_node_id("DialogMerge")
 	title = "Dialog Merge"
 	size = Vector2(200.0, 79.0)
 	custom_minimum_size.y = 79.0
@@ -55,7 +55,7 @@ func _on_input_connected(input_port: int, _from_node: DiscourseGraphNode, _from_
 	
 	_highest_port_connected = input_port
 	var field_idx: int = add_field(
-			&"merge_" + StringName(str(_highest_port_connected + 1)),
+			StringName("merge_" + str(_highest_port_connected + 1)),
 			get_new_merge_node(),
 			false,
 			SlotConnectionType.DIALOG)
@@ -106,18 +106,11 @@ func _get_node_data() -> Dictionary:
 
 
 func _set_node_data(data: Dictionary) -> void:
-	if data.has("name") and typeof(data["name"]) == TYPE_STRING_NAME:
-		_node_id = data["name"]
+	super(data)
 	
-	if not data.has("metadata") or typeof(data["metadata"]) != TYPE_DICTIONARY:
-		return
-	var metadata: Dictionary = data["metadata"]
-	
-	if metadata.has("position") and typeof(metadata["position"]) == TYPE_VECTOR2:
-		position_offset = metadata["position"]
-	
-	if metadata.has("port_count") and typeof(metadata["port_count"]) == TYPE_INT:
-		set_input_port_count(metadata["port_count"])
+	var port_data: Variant = data.get("metadata", NFDictUtils.EMPTY_DICT).get("port_count")
+	if typeof(port_data) == TYPE_INT:
+		set_input_port_count(port_data)
 
 
 func set_input_port_count(new_count: int) -> void:
@@ -129,7 +122,7 @@ func set_input_port_count(new_count: int) -> void:
 	if current_count < new_count:
 		for missing_port in range(current_count,  new_count):
 			var field_idx: int = add_field(
-				&"merge_" + StringName(str(missing_port)),
+				StringName("merge_" + str(missing_port)),
 				get_new_merge_node(),
 				false,
 				SlotConnectionType.DIALOG)
@@ -142,7 +135,7 @@ func set_input_port_count(new_count: int) -> void:
 						PortMode.INPUT,
 						extra_ports - 1)
 			
-			var target_remove: StringName = &"merge_" + StringName(str(extra_ports + 1))
+			var target_remove: StringName = StringName("merge_" + str(extra_ports + 1))
 			remove_field(target_remove)
 			
 			for port_idx in range(_highest_port_connected, -1, -1):
@@ -150,7 +143,7 @@ func set_input_port_count(new_count: int) -> void:
 					_highest_port_connected = 0 if has_any_input(0) else -1
 					break
 				elif not has_any_input(port_idx):
-					var field_id: StringName = &"merge_" + StringName(str(port_idx))
+					var field_id: StringName = StringName("merge_" + str(port_idx))
 					remove_field(field_id, 29)
 				else:
 					_highest_port_connected = port_idx - 1

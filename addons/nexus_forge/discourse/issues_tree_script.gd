@@ -2,7 +2,7 @@
 extends Tree
 
 
-signal issue_activated(issue_node: StringName)
+signal issue_activated(issue_node: String)
 
 
 func ready_plugin() -> void:
@@ -24,7 +24,7 @@ func _on_button_clicked(item: TreeItem, _column: int, id: int, mouse_button_inde
 		item.free()
 
 
-func add_issue(issue: String, node: StringName) -> void:
+func add_issue(issue: String, node: String) -> void:
 	var new_issue: TreeItem = get_root().create_child()
 	new_issue.set_text(0, issue)
 	new_issue.set_metadata(0, {"node": node})

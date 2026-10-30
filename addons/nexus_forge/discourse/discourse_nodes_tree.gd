@@ -2,12 +2,12 @@
 extends Tree
 
 
-signal node_activated(node: StringName)
+signal node_activated(node: String)
 
-signal item_renamed(uuid: StringName, old_name: String, new_name: String)
+signal item_renamed(uuid: String, old_name: String, new_name: String)
 signal folder_renamed(folder_id: int, old_name: String, new_name: String)
 
-signal item_moved(from_path: String, from_index: int, to_path: String, to_index: int, old_name: String, new_name: String, is_node: bool, uuid: StringName)
+signal item_moved(from_path: String, from_index: int, to_path: String, to_index: int, old_name: String, new_name: String, is_node: bool, uuid: String)
 
 signal directory_erase_requested(path: String, index: int, id: int, contents: Array[Dictionary])
 
@@ -99,7 +99,7 @@ const DEFAULT_NODE_NAMES: Dictionary[NFDialogParser.NodeTypes, String] = {
 }
 
 
-var nodes: Dictionary[StringName, TreeItem] = {}
+var nodes: Dictionary[String, TreeItem] = {}
 var folders: Dictionary[int, TreeItem] = {}
 
 var context_menu: PopupMenu = null
@@ -234,7 +234,7 @@ func _drop_data(at_position: Vector2, data: Variant) -> void:
 	var is_node: bool = dropped_item.get_metadata(0)["is_node"]
 	var old_name: String = dropped_item.get_text(0)
 	var new_name: String = old_name
-	var uuid: StringName = dropped_item.get_metadata(0)["uuid"]
+	var uuid: String = dropped_item.get_metadata(0)["uuid"]
 	
 	if is_node:
 		new_name = get_unique_name_for_node(old_name, dropped_item.get_metadata(0)["type"], dropped_item)
@@ -337,7 +337,7 @@ func _on_discourse_item_edited() -> void:
 	var is_node: bool = edited.get_metadata(0)["is_node"]
 	
 	if is_node:
-		var uuid: StringName = edited.get_metadata(0)["uuid"]
+		var uuid: String = edited.get_metadata(0)["uuid"]
 		var old_name: String = edited.get_metadata(0)["name"]
 		var new_name: String = get_unique_name_for_node(
 				edited.get_text(0),
@@ -616,27 +616,13 @@ func create_node(node: DiscourseGraphNode, on: TreeItem = get_root(), index: int
 		new_item.move_after(on.get_child(true_index))
 
 
-func select_node(node_uuid: StringName) -> void:
-	for root_item in get_root().get_children():
-		if root_item.get_metadata(0)["is_node"] and root_item.get_metadata(0)["uuid"] == node_uuid:
-			ensure_expanded(root_item)
-			root_item.select(0)
-			scroll_to_item(root_item)
-			return
-		elif _select_on_children(root_item, node_uuid):
-			return
-
-
-func _select_on_children(on_tree: TreeItem, node_uuid: StringName) -> bool:
-	for child in on_tree.get_children():
-		if child.get_metadata(0)["is_node"] and child.get_metadata(0)["uuid"] == node_uuid:
-			ensure_expanded(child)
-			child.select(0)
-			ensure_cursor_is_visible()
-			return true
-		elif _select_on_children(child, node_uuid):
-			return true
-	return false
+func select_node(node_uuid: String) -> void:
+	var node: TreeItem = nodes.get(node_uuid)
+	if node == null:
+		return
+	ensure_expanded(node)
+	node.select(0)
+	scroll_to_item(node)
 
 
 func ensure_expanded(node: TreeItem) -> void:
@@ -647,7 +633,7 @@ func ensure_expanded(node: TreeItem) -> void:
 		current_node = current_node.get_parent()
 
 
-func remove_dialog_node(uuid: StringName) -> bool:
+func remove_dialog_node(uuid: String) -> bool:
 	if not nodes.has(uuid):
 		return false
 	
@@ -732,7 +718,7 @@ func search_for_node(pattern: String) -> void:
 		item.visible = _search_on_children(item, pattern) or is_empty or item.get_text(0).containsn(pattern)
 
 
-func set_node_id(uuid: StringName, id: String) -> void:
+func set_node_id(uuid: String, id: String) -> void:
 	if not nodes.has(uuid):
 		return
 	nodes[uuid].set_text(0, id)
@@ -824,7 +810,7 @@ func get_item_from_path(path: String) -> TreeItem:
 	return null
 
 
-func get_node_data(node_uuid: StringName) -> Dictionary:
+func get_node_data(node_uuid: String) -> Dictionary:
 	var data: Dictionary = {}
 	if not nodes.has(node_uuid):
 		return data

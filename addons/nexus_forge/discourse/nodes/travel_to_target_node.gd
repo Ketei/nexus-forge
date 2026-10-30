@@ -2,15 +2,15 @@
 extends DiscourseGraphNode
 
 
-signal go_to_waypoint_pressed(node_uuid: StringName)
-signal selected_waypoint_changed(node_uuid: StringName, old_waypoint: StringName, new_waypoint: StringName)
+signal go_to_waypoint_pressed(node_uuid: String)
+signal selected_waypoint_changed(node_uuid: String, old_waypoint: String, new_waypoint: String)
 
 var _waypoints: OptionButton
 var go_to_btn: Button
 
 
 func _post_init() -> void:
-	set_node_id(&"TravelTo")
+	set_node_id("TravelTo")
 	title = "Travel To"
 	node_type = DialogueNodeType.TRAVEL_TO
 	parent_mode = PortMode.INPUT
@@ -25,7 +25,7 @@ func _post_init() -> void:
 	_waypoints.disabled = true
 	_waypoints.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_waypoints.custom_minimum_size.y = 32
-	_waypoints.set_meta(&"old_value", &"")
+	_waypoints.set_meta(&"old_value", "")
 	
 	go_to_btn = Button.new()
 	go_to_btn.custom_minimum_size = Vector2(32.0, 32.0)
@@ -59,25 +59,16 @@ func _get_node_data() -> Dictionary:
 	var output_connections: Dictionary = {
 		"next_node": get_uuid_and_port_connected_to(PortMode.OUTPUT, 0)}
 	var metadata: Dictionary = {
-		"travel_target": _waypoints.get_selected_metadata() if 0 <= _waypoints.selected else &""}
+		"travel_target": _waypoints.get_selected_metadata() if 0 <= _waypoints.selected else ""}
 	return _build_node_data(metadata, output_connections)
 
 
 func _set_node_data(data: Dictionary) -> void:
-	if data.has("name") and typeof(data["name"]) == TYPE_STRING_NAME:
-		_node_id = data["name"]
-	
-	if not data.has("metadata") or typeof(data["metadata"]) != TYPE_DICTIONARY:
-		return
-	var metadata: Dictionary = data["metadata"]
-	
-	if metadata.has("position") and typeof(metadata["position"]) == TYPE_VECTOR2:
-		position_offset = metadata["position"]
-	
-	if metadata.has("travel_target"):
-		var waypoint_type: int = typeof(metadata["travel_target"])
-		if waypoint_type == TYPE_STRING_NAME or waypoint_type == TYPE_STRING:
-			select_waypoint(metadata["travel_target"])
+	super(data)
+	var travel_data: Variant = data.get("metadata", NFDictUtils.EMPTY_DICT).get("travel_target")
+	var waypoint_type: int = typeof(travel_data)
+	if waypoint_type == TYPE_STRING or waypoint_type == TYPE_STRING_NAME:
+		select_waypoint(travel_data)
 
 
 func _get_issues() -> PackedStringArray:
@@ -90,16 +81,16 @@ func _get_issues() -> PackedStringArray:
 	return issues
 
 
-func add_waypoint(target_uuid: StringName, waypoint_id: String) -> void:
-	var id_selected: StringName = _waypoints.get_selected_metadata() if -1 < _waypoints.selected else &""
-	var existing_waypoints: Dictionary[StringName, String] = {}
+func add_waypoint(target_uuid: String, waypoint_id: String) -> void:
+	var id_selected: String = _waypoints.get_selected_metadata() if -1 < _waypoints.selected else ""
+	var existing_waypoints: Dictionary[String, String] = {}
 	
 	for idx in range(_waypoints.item_count):
 		existing_waypoints[_waypoints.get_item_metadata(idx)] = _waypoints.get_item_text(idx)
 	
 	existing_waypoints[target_uuid] = waypoint_id
 	
-	var ids: Array[StringName] = []
+	var ids: Array[String] = []
 	ids.assign(existing_waypoints.keys())
 	
 	ids.sort_custom(func(a,b): return existing_waypoints[a] < existing_waypoints[b])
@@ -126,7 +117,7 @@ func add_waypoint(target_uuid: StringName, waypoint_id: String) -> void:
 		go_to_btn.disabled = false
 
 
-func update_waypoint_id(target_uuid: StringName, new_text: String) -> void:
+func update_waypoint_id(target_uuid: String, new_text: String) -> void:
 	for idx in range(_waypoints.item_count):
 		if _waypoints.get_item_metadata(idx) != target_uuid:
 			continue
@@ -134,13 +125,13 @@ func update_waypoint_id(target_uuid: StringName, new_text: String) -> void:
 		return
 
 
-func get_selected_waypoint_uuid() -> StringName:
+func get_selected_waypoint_uuid() -> String:
 	if -1 < _waypoints.selected:
 		return _waypoints.get_selected_metadata()
-	return &""
+	return ""
 
 
-func remove_waypoint(target_uuid: StringName) -> bool:
+func remove_waypoint(target_uuid: String) -> bool:
 	var selected_index: int = _waypoints.selected
 	
 	for idx in range(_waypoints.item_count):
@@ -149,7 +140,7 @@ func remove_waypoint(target_uuid: StringName) -> bool:
 		_waypoints.remove_item(idx)
 		if _waypoints.item_count == 0:
 			_waypoints.select(-1)
-			_waypoints.set_meta(&"old_value", &"")
+			_waypoints.set_meta(&"old_value", "")
 			_waypoints.disabled = true
 			go_to_btn.disabled = true
 		else:
@@ -168,7 +159,7 @@ func _on_go_to_anchor_pressed() -> void:
 	go_to_waypoint_pressed.emit(_waypoints.get_selected_metadata())
 
 
-func select_waypoint(uuid: StringName) -> void:
+func select_waypoint(uuid: String) -> void:
 	for idx in range(_waypoints.item_count):
 		if _waypoints.get_item_metadata(idx) == uuid:
 			_waypoints.select(idx)
@@ -177,8 +168,8 @@ func select_waypoint(uuid: StringName) -> void:
 
 
 func _on_anchor_idx_selected(idx: int) -> void:
-	var old_value: StringName = _waypoints.get_meta(&"old_value", &"")
-	var new_value: StringName = _waypoints.get_item_metadata(idx)
+	var old_value: String = _waypoints.get_meta(&"old_value", "")
+	var new_value: String = _waypoints.get_item_metadata(idx)
 	
 	if new_value == old_value:
 		return

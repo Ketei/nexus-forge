@@ -2,14 +2,14 @@
 extends DiscourseGraphNode
 
 
-signal text_changed(uuid: StringName, old_value: String, new_value: String)
+signal text_changed(uuid: String, old_value: String, new_value: String)
 
 
 var localized_text_edt: TextEdit
 
 
 func _post_init() -> void:
-	set_node_id(&"LocalizedText")
+	set_node_id("LocalizedText")
 	title = "Localized Text"
 	node_type = DialogueNodeType.LOCALIZED_TEXT
 	parent_mode = PortMode.OUTPUT
@@ -63,7 +63,7 @@ func _ready() -> void:
 
 
 func _get_node_data() -> Dictionary:
-	var metadata: Dictionary = {"text": get_field(&"localized_text").text.strip_edges()}
+	var metadata: Dictionary = {"text": localized_text_edt.text.strip_edges()}
 	var output_connections: Dictionary = {
 		"next_node": get_uuid_and_port_connected_to(PortMode.OUTPUT, 0)}
 	
@@ -71,18 +71,11 @@ func _get_node_data() -> Dictionary:
 
 
 func _set_node_data(data: Dictionary) -> void:
-	if data.has("name") and typeof(data["name"]) == TYPE_STRING_NAME:
-		_node_id = data["name"]
+	super(data)
+	var text_data: Variant = data.get("metadata", NFDictUtils.EMPTY_DICT).get("text")
 	
-	if not data.has("metadata") or typeof(data["metadata"]) != TYPE_DICTIONARY:
-		return
-	var metadata: Dictionary = data["metadata"]
-	
-	if metadata.has("position") and typeof(metadata["position"]) == TYPE_VECTOR2:
-		position_offset = metadata["position"]
-	
-	if metadata.has("text") and typeof(metadata["text"]) == TYPE_STRING:
-		set_text(metadata["text"])
+	if typeof(text_data) == TYPE_STRING:
+		set_text(text_data)
 
 
 func is_node_localized() -> bool:
@@ -95,18 +88,17 @@ func set_text(new_text: String) -> void:
 
 
 func get_text() -> String:
-	return get_field(&"localized_text").text
+	return localized_text_edt.text
 
 
 func _on_text_focus_exited() -> void:
-	var field: TextEdit = get_field(&"localized_text")
-	var old_value: String = field.get_meta(&"old_value", "")
-	var new_value: String = field.text
+	var old_value: String = localized_text_edt.get_meta(&"old_value", "")
+	var new_value: String = localized_text_edt.text
 	
 	if new_value == old_value:
 		return
 	
-	field.set_meta(&"old_value", new_value)
+	localized_text_edt.set_meta(&"old_value", new_value)
 	text_changed.emit(
 			get_node_uuid(),
 			old_value,

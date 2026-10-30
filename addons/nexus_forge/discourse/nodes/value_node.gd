@@ -2,8 +2,8 @@
 extends DiscourseGraphNode
 
 
-signal value_changed(uuid: StringName, from: Variant, to: Variant)
-signal data_type_changed(uuid: StringName, old_state: Dictionary, new_state: Dictionary)
+signal value_changed(uuid: String, from: Variant, to: Variant)
+signal data_type_changed(uuid: String, old_state: Dictionary, new_state: Dictionary)
 
 const MAX_LINES: int = 5
 const EXTRA_Y_PADDING: int = 8
@@ -17,7 +17,7 @@ var _mode: int = TYPE_INT
 
 
 func _post_init() -> void:
-	set_node_id(&"Value")
+	set_node_id("Value")
 	title = "Value"
 	node_type = DialogueNodeType.VALUE
 	parent_mode = PortMode.OUTPUT
@@ -174,21 +174,12 @@ func _get_node_data() -> Dictionary:
 
 
 func _set_node_data(data: Dictionary) -> void:
-	if data.has("name") and typeof(data["name"]) == TYPE_STRING_NAME:
-		_node_id = data["name"]
+	super(data)
+	var value_data: Variant = data.get("metadata", NFDictUtils.EMPTY_DICT).get("value")
+	var value_type: int = typeof(value_data)
 	
-	if not data.has("metadata") or typeof(data["metadata"]) != TYPE_DICTIONARY:
-		return
-	var metadata: Dictionary = data["metadata"]
-	
-	if metadata.has("position") and typeof(metadata["position"]) == TYPE_VECTOR2:
-		position_offset = metadata["position"]
-	
-	if not metadata.has("value") or typeof(metadata["value"]) == TYPE_NIL:
-		return
-	
-	if set_mode(typeof(metadata["value"])):
-		set_value(metadata["value"])
+	if set_mode(value_type):
+		set_value(value_data)
 
 
 func _on_data_type_selected(type: int) -> void:

@@ -2,7 +2,7 @@
 extends DiscourseGraphNode
 
 
-signal fallback_changed(uuid: StringName, from: Variant, to: Variant)
+signal fallback_changed(uuid: String, from: Variant, to: Variant)
 
 var filter_mode: int = TYPE_NIL
 var str_fallback: LineEdit
@@ -12,7 +12,7 @@ var spinbox_container: HBoxContainer
 
 
 func _post_init() -> void:
-	set_node_id(&"TypeGuard")
+	set_node_id("TypeGuard")
 	title = "Type Guard"
 	node_type = DialogueNodeType.TYPE_GUARD
 	parent_mode = PortMode.OUTPUT
@@ -109,18 +109,9 @@ func _get_node_data() -> Dictionary:
 
 
 func _set_node_data(data: Dictionary) -> void:
-	if data.has("name") and typeof(data["name"]) == TYPE_STRING_NAME:
-		_node_id = data["name"]
-	
-	if not data.has("metadata") or typeof(data["metadata"]) != TYPE_DICTIONARY:
-		return
-	var metadata: Dictionary = data["metadata"]
-	
-	if metadata.has("position") and typeof(metadata["position"]) == TYPE_VECTOR2:
-		position_offset = metadata["position"]
-	
-	if metadata.has("fallback_value"):
-		set_fallback_value(metadata["fallback_value"])
+	super(data)
+	var fallback_data: Variant = data.get("metadata", NFDictUtils.EMPTY_DICT).get("fallback_value")
+	set_fallback_value(fallback_data)
 
 
 func _on_output_connected(output: int, to_node: DiscourseGraphNode, _to_port: int) -> void:

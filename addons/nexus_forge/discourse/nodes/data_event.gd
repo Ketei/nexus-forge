@@ -8,7 +8,7 @@ signal path_changed(uuid: StringName, from: String, to: String)
 var variable_path: LineEdit
 
 func _post_init() -> void:
-	set_node_id(&"DataEvent")
+	set_node_id("DataEvent")
 	title = "Event (Data)"
 	size = Vector2(200.0, 200.0)
 	node_type = DialogueNodeType.DATA_EVENT
@@ -146,18 +146,11 @@ func _get_node_data() -> Dictionary:
 
 
 func _set_node_data(data: Dictionary) -> void:
-	if data.has("name") and typeof(data["name"]) == TYPE_STRING_NAME:
-		_node_id = data["name"]
+	super(data)
 	
-	if not data.has("metadata") or typeof(data["metadata"]) != TYPE_DICTIONARY:
-		return
-	var metadata: Dictionary = data["metadata"]
-	
-	if metadata.has("position") and typeof(metadata["position"]) == TYPE_VECTOR2:
-		position_offset = metadata["position"]
-	
-	if metadata.has("variable_path") and typeof(metadata["variable_path"]) == TYPE_STRING:
-		set_variable_path(metadata["variable_path"])
+	var path_data: Variant = data.get("metadata", NFDictUtils.EMPTY_DICT).get("variable_path")
+	if typeof(path_data) == TYPE_STRING:
+		set_variable_path(path_data)
 
 
 func _on_var_path_edit_toggled(is_toggled: bool) -> void:

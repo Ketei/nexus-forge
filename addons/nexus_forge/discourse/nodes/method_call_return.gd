@@ -13,7 +13,7 @@ static func _static_init() -> void:
 
 
 func _post_init() -> void:
-	set_node_id(&"CallWithReturn")
+	set_node_id("CallWithReturn")
 	title = "Call Method (Return)"
 	graph_icon = get_theme_icon("MemberMethod", "EditorIcons")
 	node_type = DialogueNodeType.CALLABLE_RETURN
@@ -111,27 +111,11 @@ func _get_node_data() -> Dictionary:
 
 
 func _set_node_data(data: Dictionary) -> void:
-	if data.has("name") and typeof(data["name"]) == TYPE_STRING_NAME:
-		_node_id = data["name"]
-	
-	if not data.has("metadata") or typeof(data["metadata"]) != TYPE_DICTIONARY:
+	super(data)
+	var method_data: Variant = data.get("metadata", NFDictUtils.EMPTY_DICT).get("method")
+	if typeof(method_data) != TYPE_STRING:
 		return
-	var metadata: Dictionary = data["metadata"]
-	
-	if metadata.has("position") and typeof(metadata["position"]) == TYPE_VECTOR2:
-		position_offset = metadata["position"]
-	
-	if not metadata.has("method") or typeof(metadata["method"]) != TYPE_STRING:
-		return
-	
-	var method_opt_btn: OptionButton = get_field(&"methods")
-	for idx in range(method_opt_btn.item_count):
-		if method_opt_btn.get_item_metadata(idx) != metadata["method"]:
-			continue
-		method_opt_btn.select(idx)
-		method_opt_btn.set_meta(&"old_value", metadata["method"])
-		load_method(metadata["method"])
-		break
+	set_method(method_data)
 
 
 func _on_method_selected(idx: int) -> void:
@@ -377,7 +361,7 @@ func add_input_arg(arg_text: String, arg_type: int) -> void:
 	var slot_target: int = get_child_count()
 	var arg: Label = Label.new()
 	var slot_type: SlotConnectionType = SlotConnectionType.VAR_ANY
-	var field_id: StringName = &"argument_" + StringName(str(slot_target))
+	var field_id: StringName = StringName("argument_" + str(slot_target))
 	
 	var input_icon: Texture2D = get_theme_icon("Variant", "EditorIcons")
 	var input_color: Color = COLORS["any"]
@@ -417,7 +401,7 @@ func add_input_arg(arg_text: String, arg_type: int) -> void:
 func clear_input_args() -> void:
 	var field_ids: Array[StringName] = []
 	for item in range(get_child_count() - 1, 0, -1):
-		var field_id: StringName = &"argument_" + StringName(str(item))
+		var field_id: StringName = StringName("argument_" + str(item))
 		field_ids.append(field_id)
 	await remove_fields(field_ids, -1)
 	update_node_size.call_deferred()

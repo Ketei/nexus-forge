@@ -2,13 +2,13 @@
 extends DiscourseGraphNode
 
 
-signal resource_path_changed(uuid: StringName, from: String, to: String)
+signal resource_path_changed(uuid: String, from: String, to: String)
 
 var res_line: LineEdit
 
 
 func _post_init() -> void:
-	set_node_id(&"Resource")
+	set_node_id("Resource")
 	title = "Resource"
 	node_type = DialogueNodeType.RESOURCE
 	parent_mode = PortMode.OUTPUT
@@ -49,23 +49,14 @@ func _get_node_data() -> Dictionary:
 
 
 func _set_node_data(data: Dictionary) -> void:
-	if data.has("name") and typeof(data["name"]) == TYPE_STRING_NAME:
-		_node_id = data["name"]
-	
-	if not data.has("metadata") or typeof(data["metadata"]) != TYPE_DICTIONARY:
-		return
-	var metadata: Dictionary = data["metadata"]
-	
-	if metadata.has("position") and typeof(metadata["position"]) == TYPE_VECTOR2:
-		position_offset = metadata["position"]
-	
-	if metadata.has("resource_path") and typeof(metadata["resource_path"]) == TYPE_STRING:
-		set_resource_path(metadata["resource_path"])
+	super(data)
+	var path_data: Variant = data.get("metadata", NFDictUtils.EMPTY_DICT).get("resource_path")
+	if typeof(path_data) == TYPE_STRING:
+		set_resource_path(path_data)
 
 
 func _get_issues() -> PackedStringArray:
 	var issues: PackedStringArray = []
-	var res_line: LineEdit = get_field(&"res_path")
 	if is_orphan():
 		issues.append("Warning: Node is orphan.")
 	if not ResourceLoader.exists(res_line.text.strip_edges()):

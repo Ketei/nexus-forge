@@ -1,20 +1,17 @@
 extends RefCounted
 
 
-var anchor_nodes: Dictionary[StringName, StringName] = {}
-var dialog_mergers: Dictionary[StringName, StringName] = {}
-var uuid_to_id_conversions: Dictionary[StringName, StringName] = {}
+var anchor_nodes: Dictionary[String, String] = {}
+var dialog_mergers: Dictionary[String, String] = {}
+var uuid_to_id_conversions: Dictionary[String, StringName] = {}
 
 
-func get_target(uuid: StringName) -> StringName:
-	var target: StringName = _uuid_lookup(uuid)
-	if uuid_to_id_conversions.has(target):
-		return uuid_to_id_conversions[target]
-	else:
-		return &""
+func get_target(uuid: String) -> StringName:
+	var target: String = _uuid_lookup(uuid)
+	return uuid_to_id_conversions.get(target, &"")
 
 
-func _uuid_lookup(uuid: StringName, _origin: StringName = &"", _iteration: int = 0) -> StringName:
+func _uuid_lookup(uuid: String, _origin: String = "", _iteration: int = 0) -> StringName:
 	if _origin == uuid or 100 <= _iteration:
 		if 100 <= _iteration:
 			NFPluginGameHandler._log_msg(

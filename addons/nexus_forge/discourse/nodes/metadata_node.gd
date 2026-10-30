@@ -2,7 +2,7 @@
 extends DiscourseGraphNode
 
 
-signal metadata_id_changed(uuid: StringName, index: int, from: String, to: String)
+signal metadata_id_changed(uuid: String, index: int, from: String, to: String)
 
 
 var meta_fields: int = 0
@@ -14,7 +14,7 @@ var _connection_updates_disabled: bool = false:
 
 
 func _post_init() -> void:
-	set_node_id(&"Metadata")
+	set_node_id("Metadata")
 	title = "Metadata"
 	size = Vector2(250.0, 121.0)
 	custom_minimum_size.y = 121.0
@@ -132,21 +132,14 @@ func _get_node_data() -> Dictionary:
 
 
 func _set_node_data(data: Dictionary) -> void:
-	if data.has("name") and typeof(data["name"]) == TYPE_STRING_NAME:
-		_node_id = data["name"]
+	super(data)
 	
-	if not data.has("metadata") or typeof(data["metadata"]) != TYPE_DICTIONARY:
-		return
-	var metadata: Dictionary = data["metadata"]
-	
-	if metadata.has("position") and typeof(metadata["position"]) == TYPE_VECTOR2:
-		position_offset = metadata["position"]
-		
-	if not metadata.has("metadata_connections"):
+	var connections_data: Variant = data.get("metadata", NFDictUtils.EMPTY_DICT).get("metadata_connections")
+	if not typeof(connections_data) != TYPE_ARRAY:
 		return
 	
 	var target_meta_size: int = 1
-	for metadata_data: Dictionary in metadata["metadata_connections"]:
+	for metadata_data: Dictionary in connections_data:
 		if target_meta_size <= metadata_data["port"]:
 			target_meta_size = metadata_data["port"] + 2
 	
@@ -162,7 +155,7 @@ func _set_node_data(data: Dictionary) -> void:
 		remove_fields(fields_to_remove, -1)
 		update_size.call_deferred()
 	
-	for metadata_data:Dictionary in metadata["metadata_connections"]:
+	for metadata_data:Dictionary in connections_data:
 		var field_id: StringName = StringName("metadata_" + str(metadata_data["port"]))
 		var field: Control = get_field(field_id)
 		if field == null:

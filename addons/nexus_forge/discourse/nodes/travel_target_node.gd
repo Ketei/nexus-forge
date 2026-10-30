@@ -8,7 +8,7 @@ var id_line: LineEdit
 
 
 func _post_init() -> void:
-	set_node_id(&"Waypoint")
+	set_node_id("Waypoint")
 	title = "Waypoint"
 	node_type = DialogueNodeType.TRAVEL_TARGET
 	parent_mode = PortMode.OUTPUT
@@ -55,18 +55,11 @@ func _get_node_data() -> Dictionary:
 
 
 func _set_node_data(data: Dictionary) -> void:
-	if data.has("name") and typeof(data["name"]) == TYPE_STRING_NAME:
-		_node_id = data["name"]
+	super(data)
+	var waypoint_data: Variant = data.get("metadata", NFDictUtils.EMPTY_DICT).get("waypoint_id")
 	
-	if not data.has("metadata") or typeof(data["metadata"]) != TYPE_DICTIONARY:
-		return
-	var metadata: Dictionary = data["metadata"]
-	
-	if metadata.has("position") and typeof(metadata["position"]) == TYPE_VECTOR2:
-		position_offset = metadata["position"]
-	
-	if metadata.has("waypoint_id") and typeof(metadata["waypoint_id"]) == TYPE_STRING:
-		set_waypoint_id(metadata["waypoint_id"])
+	if typeof(waypoint_data) == TYPE_STRING:
+		set_waypoint_id(waypoint_data)
 
 
 func _on_id_edit_toggled(is_toggled: bool) -> void:

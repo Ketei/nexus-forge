@@ -5,7 +5,7 @@ extends GraphNode
 
 ## Signal emitted when a disconnection needs to be made. Used
 ## for the Discourse [GraphEdit].
-signal disconnect_requested(from: StringName, out_port: int, to: StringName, in_port: int, caller: DiscourseGraphNode)
+signal disconnect_requested(from: String, out_port: int, to: String, in_port: int, caller: DiscourseGraphNode)
 ## Emitted when the user presses the close button.
 signal close_requested(node: DiscourseGraphNode)
 ## Emitted when the user presses the duplicate button.
@@ -17,7 +17,7 @@ signal localize_node_toggled(toggled_on: bool, node: DiscourseGraphNode)
 ## Note: For this signal to emit [member resizable] has to be
 ## [code]true[/code] BEFORE the node is ready
 ## (normally by being added to the scene).[br]
-signal node_resized(node_uuid: StringName, from: Vector2, to: Vector2)
+signal node_resized(node_uuid: String, from: Vector2, to: Vector2)
 ## Emitted when a non-specific change is made to the node. Used
 ## to trigger the unsaved file flag on Discourse without creating
 ## an undo/redo action.
@@ -85,9 +85,10 @@ const LOCALIZED_COLOR: Color = Color.LIME_GREEN
 ## The type of node this graph represents
 var node_type: DialogueNodeType = DialogueNodeType.DIALOG
 
-var _uuid: StringName = &""
-var _node_id: StringName = &""
+var _uuid: String = ""
+var _node_id: String = ""
 var _uses_localization: bool = false
+var _can_be_localized: bool = false
 var _prev_size: Vector2 = Vector2.ZERO
 var _resizing: bool = false
 ## Which port side connects to the "owner" of this node.
@@ -108,8 +109,8 @@ var _input_nodes: Array[Dictionary] = []
 var _output_nodes: Array[Dictionary] = []
 
 
-func _init(uuid: StringName = &"", theme_variant: StringName = &"", with_duplicate: bool = true, with_close: bool = true, localization: bool = false) -> void:
-	_uuid = StringName(NFUUID.generate_new()) if uuid.is_empty() else uuid
+func _init(uuid: String = "", theme_variant: StringName = &"", with_duplicate: bool = true, with_close: bool = true, localization: bool = false) -> void:
+	_uuid = NFUUID.generate_new() if uuid.is_empty() else uuid
 	var _hbox: HBoxContainer = get_titlebar_hbox()
 	var title_label: Label = _hbox.get_child(0)
 	title_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -179,6 +180,8 @@ func _init(uuid: StringName = &"", theme_variant: StringName = &"", with_duplica
 	_button_box.add_child(close_btn)
 	_ready_close_icon(close_btn)
 	close_btn.pressed.connect(close_requested.emit.bind(self))
+	
+	_can_be_localized = localization
 	
 	_post_init()
 	
@@ -314,19 +317,30 @@ func _get_node_data() -> Dictionary:
 
 ## Use to set data on the node
 func _set_node_data(data: Dictionary) -> void:
-	if data.has("name") and typeof(data["name"]) == TYPE_STRING_NAME:
-		_node_id = data["name"]
+	if data.has("name"):
+		var name_data: Variant = data["name"]
+		var type: int = typeof(name_data)
+		if type == TYPE_STRING or type == TYPE_STRING_NAME:
+			_node_id = String(data["name"])
 	
 	if not data.has("metadata") or typeof(data["metadata"]) != TYPE_DICTIONARY:
 		return
 	
 	var metadata: Dictionary = data["metadata"]
 	
-	if metadata.has("position") and typeof(metadata["position"]) == TYPE_VECTOR2:
-		position_offset = metadata["position"]
+	var pos: Variant = metadata.get("position")
+	if typeof(pos) == TYPE_VECTOR2:
+		position_offset = pos
 	
-	if metadata.has("localized") and typeof(metadata["localized"]) == TYPE_BOOL:
-		set_node_localized(metadata["localized"])
+	if _can_be_localized:
+		var locale_data: Variant = metadata.get("localized")
+		if typeof(locale_data) == TYPE_BOOL:
+			set_node_localized(locale_data)
+	
+	if resizable:
+		var size_data: Variant = metadata.get("size")
+		if typeof(size_data) == TYPE_VECTOR2:
+			size = size_data
 
 
 func _on_localization_toggled(toggle: bool) -> void:
@@ -695,7 +709,7 @@ func has_input_on(input_port: int, connection_index: int = 0) -> bool:
 ## Returns the UUID of the node that is connected to this node's [param port].
 ## An optional [param connection_index] argument is available for nodes
 ## that allow multiple connections.
-func get_target_node_uuid(port_mode: PortMode, port: int, connection_index: int = 0) -> StringName:
+func get_target_node_uuid(port_mode: PortMode, port: int, connection_index: int = 0) -> String:
 	if port_mode == PortMode.INPUT:
 		if has_input_on(port, connection_index):
 			return get_node_connected_to_port(
@@ -708,7 +722,7 @@ func get_target_node_uuid(port_mode: PortMode, port: int, connection_index: int 
 					port_mode,
 					port,
 					connection_index).get_node_uuid()
-	return &""
+	return ""
 
 
 ## Returns if the [param node] is connected to this node's input
@@ -902,7 +916,7 @@ func get_output_connection_idx(on_output: int, output_node: DiscourseGraphNode) 
 ## regardless if it's an input or output.
 func get_uuid_and_port_connected_to(port_mode: PortMode, port: int, connection_index: int = 0) -> Dictionary[String, Variant]:
 	var data: Dictionary[String, Variant] = {
-		"target_node_uuid": &"",
+		"target_node_uuid": "",
 		"target_port": -1,
 		"from_port": port}
 	
@@ -1343,15 +1357,15 @@ func is_node_localized() -> bool:
 
 
 ## Returns the UUID assigned to this node.
-func get_node_uuid() -> StringName:
+func get_node_uuid() -> String:
 	return _uuid
 
 
 ## Returns the custom ID assigned to this node.
-func get_node_id() -> StringName:
+func get_node_id() -> String:
 	return _node_id
 
 
 ## Sets this node's ID.
-func set_node_id(new_id: StringName) -> void:
+func set_node_id(new_id: String) -> void:
 	_node_id = new_id

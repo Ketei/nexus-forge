@@ -8,7 +8,7 @@ var current_id: String = ""
 
 
 func _post_init() -> void:
-	set_node_id(&"FlowOut")
+	set_node_id("FlowOut")
 	title = "Flow Out"
 	node_type = DialogueNodeType.SHORTCUT_OUT
 	parent_mode = PortMode.OUTPUT
@@ -55,22 +55,11 @@ func _get_node_data() -> Dictionary:
 
 
 func _set_node_data(data: Dictionary) -> void:
-	if data.has("name") and typeof(data["name"]) == TYPE_STRING_NAME:
-		_node_id = data["name"]
+	super(data)
+	var anchor_data: Variant = data.get("metadata", NFDictUtils.EMPTY_DICT).get("anchor_id")
 	
-	if not data.has("metadata") or typeof(data["metadata"]) != TYPE_DICTIONARY:
-		return
-	var metadata: Dictionary = data["metadata"]
-	
-	if metadata.has("position") and typeof(metadata["position"]) == TYPE_VECTOR2:
-		position_offset = metadata["position"]
-	
-	if not metadata.has("anchor_id") or typeof(metadata["anchor_id"]) != TYPE_STRING:
-		return
-	
-	get_field(&"anchor").text = metadata["anchor_id"]
-	if current_id != metadata["anchor_id"]:
-		current_id = metadata["anchor_id"]
+	if typeof(anchor_data) == TYPE_STRING:
+		set_anchor_id(anchor_data)
 
 
 func _on_line_text_submitted(_text: String, line: LineEdit):

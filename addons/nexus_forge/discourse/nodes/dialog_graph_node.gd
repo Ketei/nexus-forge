@@ -17,7 +17,7 @@ var old_size: Vector2 = Vector2.ZERO
 
 
 func _post_init() -> void:
-	set_node_id(&"Dialog")
+	set_node_id("Dialog")
 	title = "Dialog"
 	node_type = DialogueNodeType.DIALOG
 	parent_mode = PortMode.INPUT
@@ -202,31 +202,25 @@ func _get_node_data() -> Dictionary:
 
 
 func _set_node_data(data: Dictionary) -> void:
-	if data.has("name") and typeof(data["name"]) == TYPE_STRING_NAME:
-		_node_id = data["name"]
+	super(data)
 	
-	if not data.has("metadata") or typeof(data["metadata"]) != TYPE_DICTIONARY:
+	var metadata: Dictionary = data.get("metadata", NFDictUtils.EMPTY_DICT)
+	
+	if metadata.is_empty():
 		return
 	
-	var metadata: Dictionary = data["metadata"]
+	var character_data: Variant = metadata.get("character_id")
+	var dialog_data: Variant = metadata.get("dialog_text")
+	var persist_data: Variant = metadata.get("persist")
 	
-	if metadata.has("position") and typeof(metadata["position"]) == TYPE_VECTOR2:
-		position_offset = metadata["position"]
+	if typeof(character_data) == TYPE_STRING:
+		set_character_id(character_data)
 	
-	if metadata.has("size") and typeof(metadata["size"]) == TYPE_VECTOR2:
-		size = metadata["size"]
+	if typeof(dialog_data) == TYPE_STRING:
+		set_dialog_text(dialog_data)
 	
-	if metadata.has("character_id") and typeof(metadata["character_id"]) == TYPE_STRING:
-		set_character_id(metadata["character_id"])
-	
-	if metadata.has("dialog_text") and typeof(metadata["dialog_text"]) == TYPE_STRING:
-		set_dialog_text(metadata["dialog_text"])
-	
-	if metadata.has("persist") and typeof(metadata["persist"]) == TYPE_BOOL:
-		persist_check.set_pressed_no_signal(metadata["persist"])
-	
-	if metadata.has("localized") and typeof(metadata["localized"]) == TYPE_BOOL:
-		set_node_localized(metadata["localized"])
+	if typeof(persist_data) == TYPE_BOOL:
+		persist_check.set_pressed_no_signal(persist_data)
 
 
 func _on_persist_toggled(is_toggled: bool) -> void:

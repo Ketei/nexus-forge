@@ -1158,9 +1158,9 @@ func _on_file_menu_id_pressed(id: int) -> void:
 			discourse_graph_edit.update_localization_data(
 					active_conversation,
 					current_locale)
-			var previous_state: Dictionary[StringName, Dictionary] = active_conversation.localization.duplicate(true)
+			var previous_state: Dictionary[String, Dictionary] = active_conversation.localization.duplicate(true)
 			active_conversation._set_csv_data(import_data)
-			var new_state: Dictionary[StringName, Dictionary] = active_conversation.localization.duplicate(true)
+			var new_state: Dictionary[String, Dictionary] = active_conversation.localization.duplicate(true)
 			undo.create_action("Import CSV Localization")
 			undo.add_do_method(_do_update_node_localization.bind(new_state))
 			undo.add_undo_method(_do_update_node_localization.bind(previous_state))
@@ -1263,7 +1263,7 @@ func _do_update_node_localization(to: Dictionary, do_assign: bool = true) -> voi
 	var data: Dictionary = active_conversation.get_display_localization_data(current_locale)
 	
 	update_localization_display(data)
-	var selected_node: StringName = localization_nodes_tree.get_active_node_uuid()
+	var selected_node: String = localization_nodes_tree.get_active_node_uuid()
 	if selected_node.is_empty():
 		return
 	var selected_locale: String = languages_tree.get_active_locale()
@@ -1336,7 +1336,7 @@ func _do_update_phrases_localization(to: Dictionary, do_assign: bool = true) -> 
 	if selected_phrase_index < 0 or phrases_lang_menu.selected < 0 or argument_opt_btn.selected < 0:
 		return
 	
-	var key: StringName = %PhrasesEntries.get_child(selected_phrase_index).get_meta(&"phrase_key")
+	var key: String = %PhrasesEntries.get_child(selected_phrase_index).get_meta(&"phrase_key")
 	var locale: String = phrases_lang_menu.get_selected_metadata()
 	var current_format: String = argument_opt_btn.get_item_text(argument_opt_btn.selected)
 	var all_cases: Array[String] = active_conversation.get_format_string_cases(
@@ -1368,7 +1368,7 @@ func _on_create_dialog_id_pressed(id: int) -> void:
 	if id != 1000:
 		discourse_graph_edit.spawn_node_at_center(id)
 	else:
-		var uuid: StringName = discourse_graph_edit.spawn_frame_at_center()
+		var uuid: String = discourse_graph_edit.spawn_frame_at_center()
 		var frame: GraphFrame = discourse_graph_edit.get_discourse_frame(uuid)
 		var action_data: Dictionary = {
 			"uuid": uuid,
@@ -1406,7 +1406,7 @@ func _on_display_dialog_id_toggled(id_line_visible: bool) -> void:
 	dialog_id_container.visible = id_line_visible
 
 
-func _on_discourse_node_selected(node_uuid: StringName) -> void:
+func _on_discourse_node_selected(node_uuid: String) -> void:
 	discourse_nodes_tree.select_node(node_uuid)
 
 
@@ -1414,7 +1414,7 @@ func _on_discourse_node_search_text_changed(text: String) -> void:
 	discourse_nodes_tree.search_for_node(text.strip_edges())
 
 
-func _on_discourse_node_activated(node_uuid: StringName) -> void:
+func _on_discourse_node_activated(node_uuid: String) -> void:
 	discourse_graph_edit.focus_graph_node(node_uuid)
 
 
@@ -1711,7 +1711,7 @@ func _on_side_editor_locale_changed(from: String, to: String) -> void:
 		return
 	
 	var base_locale: String = languages_tree.get_base_language()
-	var node_uuid: StringName = active_node.get_node_uuid()
+	var node_uuid: String = active_node.get_node_uuid()
 	
 	if active_node.node_type == DiscourseGraphNode.DialogueNodeType.DIALOG or active_node.node_type == DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
 		var base_text: String = ""
@@ -1770,7 +1770,7 @@ func _on_side_editor_locale_changed(from: String, to: String) -> void:
 		_set_dialog_previewer_choices(localized_options)
 
 
-func _on_localizer_node_selected(uuid: StringName) -> void:
+func _on_localizer_node_selected(uuid: String) -> void:
 	if uuid.is_empty():
 		localization_node_selected = null
 		$LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer.visible = false
@@ -1821,7 +1821,7 @@ func _on_localizer_node_selected(uuid: StringName) -> void:
 	$LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer.visible = new_node.node_type == DiscourseGraphNode.DialogueNodeType.CHOICES
 	$LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/LocaleVBoxContainer.visible = !$LocalizationContainer/MainSplitContainer/LeftSplitContainer/LocaleContainer/LocalePanel/ChoicesContainer.visible
 	# Get the data & set to localizer
-	var new_node_uuid: StringName = new_node.get_node_uuid()
+	var new_node_uuid: String = new_node.get_node_uuid()
 	
 	match new_node.node_type:
 		DiscourseGraphNode.DialogueNodeType.DIALOG:
@@ -1919,7 +1919,7 @@ func _on_switch_window_pressed() -> void:
 		if active_node == null or localizer_locale.is_empty():
 			return
 		
-		var node_uuid: StringName = active_node.get_node_uuid()
+		var node_uuid: String = active_node.get_node_uuid()
 		# Node is option. Specific method call is needed
 		if active_node.node_type == DiscourseGraphNode.DialogueNodeType.CHOICES:
 			var target_choices: int = active_node.choice_count()
@@ -2042,7 +2042,7 @@ func _on_locale_delete_requested(locale: String) -> void:
 	_on_conversation_changed()
 
 
-func _on_issue_activated(issue_uuid: StringName) -> void:
+func _on_issue_activated(issue_uuid: String) -> void:
 	discourse_graph_edit.focus_graph_node(issue_uuid)
 
 
@@ -2062,7 +2062,7 @@ func _on_get_issues_pressed() -> void:
 		discourse_split_container.dragger_visibility = SplitContainer.DRAGGER_VISIBLE
 	
 	if issues.is_empty():
-		issues_tree.add_issue("No issue found", &"")
+		issues_tree.add_issue("No issue found", "")
 		return
 	
 	for issue in issues:
@@ -2300,14 +2300,14 @@ func get_localizer_choices() -> Array[String]:
 	return choices
 
 
-func _on_localizer_item_renamed(node_uuid: StringName, desired_id: String) -> void:
+func _on_localizer_item_renamed(node_uuid: String, desired_id: String) -> void:
 	var node: DiscourseGraphNode = discourse_nodes_tree.get_discourse_node(node_uuid)
 	
 	if node == null:
 		return
 	
-	var proper_name: StringName = discourse_graph_edit.get_unique_node_name(
-		StringName(desired_id),
+	var proper_name: String = discourse_graph_edit.get_unique_node_name(
+		desired_id,
 		node.node_type,
 		node_uuid)
 	
@@ -2639,10 +2639,10 @@ func display_conversation(conversation: EditorDiscourseDialog, with_locale: Stri
 			node_relationships[child_node] = frame
 	
 	var connection_deaf_nodes: Array[DiscourseGraphNode] = []
-	var flow_in_node_targets: Dictionary[StringName, StringName] = {}
-	var travel_to_node_targets: Dictionary[StringName, StringName] = {}
+	var flow_in_node_targets: Dictionary[String, String] = {}
+	var travel_to_node_targets: Dictionary[String, String] = {}
 	
-	for node_stnm_uuid:StringName in conversation.get_node_uuids():
+	for node_stnm_uuid:String in conversation.get_node_uuids():
 		var node_uuid: String = String(node_stnm_uuid)
 		var data: Dictionary = conversation.get_node_data(node_stnm_uuid, with_locale)
 		var metadata: Dictionary = data["metadata"]
@@ -2670,11 +2670,11 @@ func display_conversation(conversation: EditorDiscourseDialog, with_locale: Stri
 			d_node._connection_updates_disabled = true
 			connection_deaf_nodes.append(d_node)
 		elif d_node.node_type == DiscourseGraphNode.DialogueNodeType.SHORTCUT_IN:
-			var target: StringName = metadata.get("anchor_target", &"")
+			var target: String = metadata.get("anchor_target", "")
 			if not target.is_empty():
 				flow_in_node_targets[node_stnm_uuid] = target
 		elif d_node.node_type == DiscourseGraphNode.DialogueNodeType.TRAVEL_TO:
-			var target: StringName = metadata.get("travel_target", &"")
+			var target: String = metadata.get("travel_target", "")
 			if not target.is_empty():
 				travel_to_node_targets[node_stnm_uuid] = target
 		
@@ -2715,7 +2715,7 @@ func display_conversation(conversation: EditorDiscourseDialog, with_locale: Stri
 	
 	if discourse_graph_edit.entry_node == null:
 		var en_node: DiscourseGraphNode = discourse_graph_edit.spawn_node(DiscourseGraphNode.DialogueNodeType.ENTRY)
-		en_node.set_node_id(&"Entry")
+		en_node.set_node_id("Entry")
 		discourse_graph_edit.entry_node = en_node
 		_on_discourse_node_created(en_node)
 	
@@ -3158,7 +3158,7 @@ func _on_open_phrase_case_text_editor_pressed(target: TextEdit) -> void:
 	_on_conversation_changed()
 
 
-func _on_open_character_browser_request(node_uuid: StringName, target: LineEdit) -> void:
+func _on_open_character_browser_request(node_uuid: String, target: LineEdit) -> void:
 	character_browser_requested.emit(node_uuid, target)
 
 
@@ -3209,7 +3209,7 @@ func _on_phrase_field_code_editor_requested(target: TextEdit) -> void:
 	_on_conversation_changed()
 
 
-func _on_open_code_editor_graph_request(node_uuid: StringName, target: TextEdit) -> void:
+func _on_open_code_editor_graph_request(node_uuid: String, target: TextEdit) -> void:
 	if text_editor.visible:
 		return
 	
@@ -3680,7 +3680,7 @@ func erase_case(index: int) -> void:
 	case.queue_free()
 
 
-func create_new_phrase_entry(key: String, format: String, unsaved: bool = true) -> StringName:
+func create_new_phrase_entry(key: String, format: String, unsaved: bool = true) -> String:
 	var container: HBoxContainer = HBoxContainer.new()
 	var erase_button: Button = Button.new()
 	var key_line: LineEdit = LineEdit.new()
@@ -4703,7 +4703,7 @@ func _on_localization_text_edit_focus_exited() -> void:
 	if new_value == old_value:
 		return
 	
-	var current_node_uuid: StringName = localization_nodes_tree.get_active_node_uuid()
+	var current_node_uuid: String = localization_nodes_tree.get_active_node_uuid()
 	var locale_code: String = languages_tree.get_active_locale()
 	
 	undo.create_action("Set Localized Text (%s)" % locale_code)
@@ -4719,7 +4719,7 @@ func _on_localization_choice_focus_exited(field: TextEdit) -> void:
 	if new_value == old_value:
 		return
 	
-	var current_node_uuid: StringName = localization_nodes_tree.get_active_node_uuid()
+	var current_node_uuid: String = localization_nodes_tree.get_active_node_uuid()
 	var locale_code: String = languages_tree.get_active_locale()
 	var current_index: int = field.get_parent().get_index()
 	
@@ -4730,7 +4730,7 @@ func _on_localization_choice_focus_exited(field: TextEdit) -> void:
 
 # --- Node Structure ---
 
-func _on_discourse_item_renamed(uuid: StringName, old_name: String, new_name: String) -> void:
+func _on_discourse_item_renamed(uuid: String, old_name: String, new_name: String) -> void:
 	var node: DiscourseGraphNode = discourse_graph_edit.get_discourse_node(uuid)
 	node.set_node_id(new_name)
 	if node.is_node_localized():
@@ -4750,7 +4750,7 @@ func _on_discourse_item_renamed(uuid: StringName, old_name: String, new_name: St
 	_on_conversation_changed()
 
 
-func _do_set_node_id(uuid: StringName, id: String) -> void:
+func _do_set_node_id(uuid: String, id: String) -> void:
 	discourse_nodes_tree.set_node_id(uuid, id)
 	if not discourse_graph_edit.has_discourse_node(uuid):
 		return
@@ -4776,7 +4776,7 @@ func _on_discourse_folder_renamed(folder_id: int, old_name: String, new_name: St
 	_on_conversation_changed()
 
 
-func _on_discourse_item_moved(from_path: String, from_index: int, to_path: String, to_index: int, old_name: String, new_name: String, is_node: bool, uuid: StringName) -> void:
+func _on_discourse_item_moved(from_path: String, from_index: int, to_path: String, to_index: int, old_name: String, new_name: String, is_node: bool, uuid: String) -> void:
 	undo.create_action("Move Discourse Item")
 	undo.add_do_method(_do_move_discourse_item.bind(from_path, to_path, to_index, old_name, new_name, is_node, uuid))
 	undo.add_undo_method(_do_move_discourse_item.bind(to_path, from_path, from_index, new_name, old_name, is_node, uuid))
@@ -4785,13 +4785,13 @@ func _on_discourse_item_moved(from_path: String, from_index: int, to_path: Strin
 	_on_conversation_changed()
 
 
-func _do_move_discourse_item(from_path: String, to_path: String, to_index: int, old_name: String, new_name: String, is_node: bool, uuid: StringName) -> void:
+func _do_move_discourse_item(from_path: String, to_path: String, to_index: int, old_name: String, new_name: String, is_node: bool, uuid: String) -> void:
 	discourse_nodes_tree.move_item(from_path, to_path, to_index)
 	
 	if not is_node or old_name == new_name:
 		return
 	
-	var new_id: StringName = StringName(new_name)
+	var new_id: String = new_name
 	if not discourse_graph_edit.has_discourse_node(uuid):
 		return
 	
@@ -4817,7 +4817,7 @@ func _on_discourse_remove_directory_requested(path: String, index: int, id: int,
 
 # --- GraphEdit Operations ---
 
-func _on_node_resized(node_uuid: StringName, from: Vector2, to: Vector2) -> void:
+func _on_node_resized(node_uuid: String, from: Vector2, to: Vector2) -> void:
 	undo.create_action("Resize Node")
 	undo.add_do_method(discourse_graph_edit.resize_node.bind(node_uuid, to))
 	undo.add_undo_method(discourse_graph_edit.resize_node.bind(node_uuid, from))
@@ -4825,14 +4825,14 @@ func _on_node_resized(node_uuid: StringName, from: Vector2, to: Vector2) -> void
 	_on_conversation_changed()
 
 
-func _on_comment_node_text_changed(node_uuid: StringName, old_comment: String, new_comment: String) -> void:
+func _on_comment_node_text_changed(node_uuid: String, old_comment: String, new_comment: String) -> void:
 	undo.create_action("Set Comment Node Text")
 	undo.add_do_method(discourse_graph_edit.set_comment_node_text.bind(node_uuid, new_comment))
 	undo.add_undo_method(discourse_graph_edit.set_comment_node_text.bind(node_uuid, old_comment))
 	undo.commit_action(false)
 
 
-func _on_comparation_node_operator_changed(node_uuid: StringName, old_operator: int, new_operator: int) -> void:
+func _on_comparation_node_operator_changed(node_uuid: String, old_operator: int, new_operator: int) -> void:
 	undo.create_action("Set Comparator Node Operator")
 	undo.add_do_method(discourse_graph_edit.set_comparation_node_operator.bind(node_uuid, new_operator))
 	undo.add_undo_method(discourse_graph_edit.set_comparation_node_operator.bind(node_uuid, old_operator))
@@ -4840,14 +4840,14 @@ func _on_comparation_node_operator_changed(node_uuid: StringName, old_operator: 
 	_on_conversation_changed()
 
 
-func _on_dialog_node_character_id_changed(node_uuid: StringName, from: String, to: String) -> void:
+func _on_dialog_node_character_id_changed(node_uuid: String, from: String, to: String) -> void:
 	undo.create_action("Set Dialog Node Character")
 	undo.add_do_method(discourse_graph_edit.set_dialog_node_character_id.bind(node_uuid, to))
 	undo.add_undo_method(discourse_graph_edit.set_dialog_node_character_id.bind(node_uuid, from))
 	undo.commit_action(false)
 
 
-func _on_dialog_node_text_changed(node_uuid: StringName, from: String, to: String) -> void:
+func _on_dialog_node_text_changed(node_uuid: String, from: String, to: String) -> void:
 	if localization_nodes_tree.get_active_node_uuid() == node_uuid and languages_tree.get_active_locale() == current_locale:
 		translation_txt_box.text = to
 		translation_txt_box.set_meta(&"old_value", to)
@@ -4858,7 +4858,7 @@ func _on_dialog_node_text_changed(node_uuid: StringName, from: String, to: Strin
 	undo.commit_action(false)
 
 
-func _do_update_dialog_node_text(node_uuid: StringName, to: String, locale: String) -> void:
+func _do_update_dialog_node_text(node_uuid: String, to: String, locale: String) -> void:
 	active_conversation.set_dialog_text(node_uuid, to, locale)
 	if current_locale == locale:
 		discourse_graph_edit.set_dialog_node_dialog_text(node_uuid, to)
@@ -4868,7 +4868,7 @@ func _do_update_dialog_node_text(node_uuid: StringName, to: String, locale: Stri
 		_set_dialog_previewer_text(to)
 
 
-func _on_dialog_node_presist_toggled(node_uuid: StringName, is_toggled: bool) -> void:
+func _on_dialog_node_presist_toggled(node_uuid: String, is_toggled: bool) -> void:
 	undo.create_action("Toggle Dialog Node Persist")
 	undo.add_do_method(discourse_graph_edit.set_dialog_node_persist_enabled.bind(node_uuid, is_toggled))
 	undo.add_undo_method(discourse_graph_edit.set_dialog_node_persist_enabled.bind(node_uuid, not is_toggled))
@@ -4876,7 +4876,7 @@ func _on_dialog_node_presist_toggled(node_uuid: StringName, is_toggled: bool) ->
 	_on_conversation_changed()
 
 
-func _on_choice_node_text_changed(node_uuid: StringName, choice_idx: int, old_text: String, new_text: String) -> void:
+func _on_choice_node_text_changed(node_uuid: String, choice_idx: int, old_text: String, new_text: String) -> void:
 	if localization_nodes_tree.get_active_node_uuid() == node_uuid and languages_tree.get_active_locale() == current_locale:
 		update_dialog_preview_choice(choice_idx - 1, new_text)
 	undo.create_action("Set Choice Node Text")
@@ -4885,7 +4885,7 @@ func _on_choice_node_text_changed(node_uuid: StringName, choice_idx: int, old_te
 	undo.commit_action(false)
 
 
-func _do_update_choice_node_text(node_uuid: StringName, choice_id: int, to: String, locale: String) -> void:
+func _do_update_choice_node_text(node_uuid: String, choice_id: int, to: String, locale: String) -> void:
 	active_conversation.set_choice_text(node_uuid, choice_id - 1, to, locale)
 	if current_locale == locale:
 		discourse_graph_edit.set_choice_node_text(node_uuid, choice_id, to)
@@ -4894,7 +4894,7 @@ func _do_update_choice_node_text(node_uuid: StringName, choice_id: int, to: Stri
 		update_dialog_preview_choice(choice_id - 1, to)
 
 
-func _on_choices_node_resized(node_uuid: StringName, old_snapshot: Dictionary, new_snapshot: Dictionary) -> void:
+func _on_choices_node_resized(node_uuid: String, old_snapshot: Dictionary, new_snapshot: Dictionary) -> void:
 	var loc_snapshot: Dictionary = {}
 	if active_conversation.localization.has(node_uuid):
 		loc_snapshot = active_conversation.localization[node_uuid].duplicate(true)
@@ -4911,7 +4911,7 @@ func _on_choices_node_resized(node_uuid: StringName, old_snapshot: Dictionary, n
 	_on_conversation_changed()
 
 
-func _set_choices_resize_action(node_uuid: StringName, node_snapshot: Dictionary, loc_snapshot: Dictionary, locale: String) -> void:
+func _set_choices_resize_action(node_uuid: String, node_snapshot: Dictionary, loc_snapshot: Dictionary, locale: String) -> void:
 	discourse_graph_edit.set_choices_node_state(node_uuid, node_snapshot)
 	
 	if not loc_snapshot.is_empty():
@@ -4954,7 +4954,7 @@ func _set_choices_resize_action(node_uuid: StringName, node_snapshot: Dictionary
 
 
 func _set_localization_window_choices(new_node: DiscourseGraphNode) -> void:
-	var new_node_uuid: StringName = new_node.get_node_uuid()
+	var new_node_uuid: String = new_node.get_node_uuid()
 	var active_locale: String = languages_tree.get_active_locale()
 	
 	var options_localized: Array[String] = []
@@ -4990,7 +4990,7 @@ func _set_localization_window_choices(new_node: DiscourseGraphNode) -> void:
 	_set_dialog_previewer_choices(options_localized)
 
 
-func _on_shortcut_node_target_changed(node_uuid: StringName, old_anchor: StringName, new_anchor: StringName) -> void:
+func _on_shortcut_node_target_changed(node_uuid: String, old_anchor: String, new_anchor: String) -> void:
 	undo.create_action("Set Shortcut Node Target")
 	undo.add_do_method(discourse_graph_edit.set_shortcut_node_target.bind(node_uuid, new_anchor))
 	undo.add_undo_method(discourse_graph_edit.set_shortcut_node_target.bind(node_uuid, old_anchor))
@@ -5005,20 +5005,20 @@ func shortcut_node_id_changed(node_uuid: String, old_id: String, new_id: String)
 	undo.commit_action(false)
 
 
-func _on_localized_node_text_changed(node_uuid: StringName, old_value: String, new_value: String) -> void:
+func _on_localized_node_text_changed(node_uuid: String, old_value: String, new_value: String) -> void:
 	undo.create_action("Set Localized Node Text")
 	undo.add_do_method(_do_update_localized_node_text.bind(node_uuid, new_value, current_locale))
 	undo.add_undo_method(_do_update_localized_node_text.bind(node_uuid, old_value, current_locale))
 	undo.commit_action(false)
 
 
-func _do_update_localized_node_text(node_uuid: StringName, to: String, locale: String) -> void:
+func _do_update_localized_node_text(node_uuid: String, to: String, locale: String) -> void:
 	active_conversation.set_dialog_text(node_uuid, to, locale)
 	if current_locale == locale:
 		discourse_graph_edit.set_localized_text_node_text(node_uuid, to)
 
 
-func _on_match_node_cases_resized(node_uuid: StringName, old_snapshot: Dictionary, new_snapshot: Dictionary) -> void:
+func _on_match_node_cases_resized(node_uuid: String, old_snapshot: Dictionary, new_snapshot: Dictionary) -> void:
 	undo.create_action("Set Match Node Case Count")
 	undo.add_do_method(discourse_graph_edit.set_match_node_cases.bind(node_uuid, new_snapshot))
 	undo.add_undo_method(discourse_graph_edit.set_match_node_cases.bind(node_uuid, old_snapshot))
@@ -5026,7 +5026,7 @@ func _on_match_node_cases_resized(node_uuid: StringName, old_snapshot: Dictionar
 	_on_conversation_changed()
 
 
-func _on_match_node_field_updated(node_uuid: StringName, field_id: int, from: Variant, to: Variant) -> void:
+func _on_match_node_field_updated(node_uuid: String, field_id: int, from: Variant, to: Variant) -> void:
 	undo.create_action("Set Match Node Case")
 	undo.add_do_method(discourse_graph_edit.set_match_node_field.bind(node_uuid, field_id, to))
 	undo.add_undo_method(discourse_graph_edit.set_match_node_field.bind(node_uuid, field_id, from))
@@ -5034,7 +5034,7 @@ func _on_match_node_field_updated(node_uuid: StringName, field_id: int, from: Va
 	_on_conversation_changed()
 
 
-func _on_match_node_mode_changed(node_uuid: StringName, old_state: Dictionary, new_state: Dictionary) -> void:
+func _on_match_node_mode_changed(node_uuid: String, old_state: Dictionary, new_state: Dictionary) -> void:
 	undo.create_action("Set Match Node Type")
 	undo.add_do_method(discourse_graph_edit.set_match_node_state.bind(node_uuid, new_state))
 	undo.add_undo_method(discourse_graph_edit.set_match_node_state.bind(node_uuid, old_state))
@@ -5042,14 +5042,14 @@ func _on_match_node_mode_changed(node_uuid: StringName, old_state: Dictionary, n
 	_on_conversation_changed()
 
 
-func _on_metadata_node_key_changed(node_uuid: StringName, index: int, from: String, to: String) -> void:
+func _on_metadata_node_key_changed(node_uuid: String, index: int, from: String, to: String) -> void:
 	undo.create_action("Set Metadata Node Key")
 	undo.add_do_method(discourse_graph_edit.set_metadata_node_key.bind(node_uuid, index, to))
 	undo.add_undo_method(discourse_graph_edit.set_metadata_node_key.bind(node_uuid, index, from))
 	undo.commit_action(false)
 
 
-func _on_call_node_method_changed(node_uuid: StringName, from_state: Dictionary, to_state: Dictionary) -> void:
+func _on_call_node_method_changed(node_uuid: String, from_state: Dictionary, to_state: Dictionary) -> void:
 	undo.create_action("Set Call Node Method")
 	undo.add_do_method(discourse_graph_edit.set_call_node_state.bind(node_uuid, to_state))
 	undo.add_undo_method(discourse_graph_edit.set_call_node_state.bind(node_uuid, from_state))
@@ -5057,7 +5057,7 @@ func _on_call_node_method_changed(node_uuid: StringName, from_state: Dictionary,
 	_on_conversation_changed()
 
 
-func _on_call_return_method_changed(node_uuid: StringName, old_state: Dictionary, new_state: Dictionary) -> void:
+func _on_call_return_method_changed(node_uuid: String, old_state: Dictionary, new_state: Dictionary) -> void:
 	undo.create_action("Set Call (Return) Node Method")
 	undo.add_do_method(discourse_graph_edit.set_call_return_node_state.bind(node_uuid, new_state))
 	undo.add_undo_method(discourse_graph_edit.set_call_return_node_state.bind(node_uuid, old_state))
@@ -5065,7 +5065,7 @@ func _on_call_return_method_changed(node_uuid: StringName, old_state: Dictionary
 	_on_conversation_changed()
 
 
-func _on_random_node_count_state_changed(node_uuid: StringName, old_state: Dictionary, new_state: Dictionary) -> void:
+func _on_random_node_count_state_changed(node_uuid: String, old_state: Dictionary, new_state: Dictionary) -> void:
 	undo.create_action("Set Random Exit Count")
 	undo.add_do_method(discourse_graph_edit.set_random_path_node_state.bind(node_uuid, new_state))
 	undo.add_undo_method(discourse_graph_edit.set_random_path_node_state.bind(node_uuid, old_state))
@@ -5073,7 +5073,7 @@ func _on_random_node_count_state_changed(node_uuid: StringName, old_state: Dicti
 	_on_conversation_changed()
 
 
-func _on_random_val_node_mode_changed(node_uuid: StringName, old_state: Dictionary, new_state: Dictionary) -> void:
+func _on_random_val_node_mode_changed(node_uuid: String, old_state: Dictionary, new_state: Dictionary) -> void:
 	undo.create_action("Set Random Value Node Type")
 	undo.add_do_method(discourse_graph_edit.set_random_value_state.bind(node_uuid, new_state))
 	undo.add_undo_method(discourse_graph_edit.set_random_value_state.bind(node_uuid, old_state))
@@ -5081,7 +5081,7 @@ func _on_random_val_node_mode_changed(node_uuid: StringName, old_state: Dictiona
 	_on_conversation_changed()
 
 
-func _on_random_val_node_range_changed(node_uuid: StringName, from_min: float, from_max: float, to_min: float, to_max: float) -> void:
+func _on_random_val_node_range_changed(node_uuid: String, from_min: float, from_max: float, to_min: float, to_max: float) -> void:
 	undo.create_action("Set Random Value Node Range")
 	undo.add_do_method(discourse_graph_edit.set_random_value_node_range.bind(node_uuid, to_min, to_max))
 	undo.add_undo_method(discourse_graph_edit.set_random_value_node_range.bind(node_uuid, from_min, from_max))
@@ -5089,7 +5089,7 @@ func _on_random_val_node_range_changed(node_uuid: StringName, from_min: float, f
 	_on_conversation_changed()
 
 
-func _on_resource_node_path_changed(node_uuid: StringName, from: String, to: String) -> void:
+func _on_resource_node_path_changed(node_uuid: String, from: String, to: String) -> void:
 	undo.create_action("Set Resource Node Path")
 	undo.add_do_method(discourse_graph_edit.set_resource_node_path.bind(node_uuid, to))
 	undo.add_undo_method(discourse_graph_edit.set_resource_node_path.bind(node_uuid, from))
@@ -5097,7 +5097,7 @@ func _on_resource_node_path_changed(node_uuid: StringName, from: String, to: Str
 	_on_conversation_changed()
 
 
-func _on_signal_node_signal_changed(node_uuid: StringName, old_state: Dictionary, new_state: Dictionary) -> void:
+func _on_signal_node_signal_changed(node_uuid: String, old_state: Dictionary, new_state: Dictionary) -> void:
 	undo.create_action("Set Emit Signal Node Signal")
 	undo.add_do_method(discourse_graph_edit.set_emit_signal_node_state.bind(node_uuid, new_state))
 	undo.add_undo_method(discourse_graph_edit.set_emit_signal_node_state.bind(node_uuid, old_state))
@@ -5105,7 +5105,7 @@ func _on_signal_node_signal_changed(node_uuid: StringName, old_state: Dictionary
 	_on_conversation_changed()
 
 
-func _on_guard_node_fallback_changed(node_uuid: StringName, from: Variant, to: Variant) -> void:
+func _on_guard_node_fallback_changed(node_uuid: String, from: Variant, to: Variant) -> void:
 	undo.create_action("Set Shield Node Fallback")
 	undo.add_do_method(discourse_graph_edit.set_shield_node_fallback.bind(node_uuid, to))
 	undo.add_undo_method(discourse_graph_edit.set_shield_node_fallback.bind(node_uuid, from))
@@ -5113,7 +5113,7 @@ func _on_guard_node_fallback_changed(node_uuid: StringName, from: Variant, to: V
 	_on_conversation_changed()
 
 
-func _on_value_node_value_changed(node_uuid: StringName, from: Variant, to: Variant) -> void:
+func _on_value_node_value_changed(node_uuid: String, from: Variant, to: Variant) -> void:
 	undo.create_action("Set Value Node Value")
 	undo.add_do_method(discourse_graph_edit.set_value_node_value.bind(node_uuid, to))
 	undo.add_undo_method(discourse_graph_edit.set_value_node_value.bind(node_uuid, from))
@@ -5121,7 +5121,7 @@ func _on_value_node_value_changed(node_uuid: StringName, from: Variant, to: Vari
 	_on_conversation_changed()
 
 
-func _on_value_node_type_changed(node_uuid: StringName, old_state: Dictionary, new_state: Dictionary) -> void:
+func _on_value_node_type_changed(node_uuid: String, old_state: Dictionary, new_state: Dictionary) -> void:
 	undo.create_action("Set Value Node Type")
 	undo.add_do_method(discourse_graph_edit.set_value_node_state.bind(node_uuid, new_state))
 	undo.add_undo_method(discourse_graph_edit.set_value_node_state.bind(node_uuid, old_state))
@@ -5129,7 +5129,7 @@ func _on_value_node_type_changed(node_uuid: StringName, old_state: Dictionary, n
 	_on_conversation_changed()
 
 
-func _on_variable_node_type_changed(node_uuid: StringName, old_state: Dictionary, new_state: Dictionary) -> void:
+func _on_variable_node_type_changed(node_uuid: String, old_state: Dictionary, new_state: Dictionary) -> void:
 	undo.create_action("Set Variable Node Type")
 	undo.add_do_method(discourse_graph_edit.set_variable_node_state.bind(node_uuid, new_state))
 	undo.add_undo_method(discourse_graph_edit.set_variable_node_state.bind(node_uuid, old_state))
@@ -5137,7 +5137,7 @@ func _on_variable_node_type_changed(node_uuid: StringName, old_state: Dictionary
 	_on_conversation_changed()
 
 
-func _on_variable_node_path_changed(node_uuid: StringName, from: String, to: String) -> void:
+func _on_variable_node_path_changed(node_uuid: String, from: String, to: String) -> void:
 	undo.create_action("Set Variable Node Path")
 	undo.add_do_method(discourse_graph_edit.set_variable_node_path.bind(node_uuid, to))
 	undo.add_undo_method(discourse_graph_edit.set_variable_node_path.bind(node_uuid, from))
@@ -5146,7 +5146,7 @@ func _on_variable_node_path_changed(node_uuid: StringName, from: String, to: Str
 
 # ----------------------------
 # TEST: This thing. I think it SHOULD work, but I don't know
-func _on_nodes_removed(action: String, graph_nodes_data: Dictionary[StringName, Dictionary]) -> void:
+func _on_nodes_removed(action: String, graph_nodes_data: Dictionary[String, Dictionary]) -> void:
 	var action_data: Dictionary = {
 		"graph_nodes_data": graph_nodes_data,
 		"nodes_frame_parents": NFDictUtils.create_typed( # Node NFUUID, parent NFUUID
@@ -5174,7 +5174,7 @@ func _on_nodes_removed(action: String, graph_nodes_data: Dictionary[StringName, 
 	for node_uuid in graph_nodes_data:
 		var node: DiscourseGraphNode = discourse_graph_edit.get_discourse_node(node_uuid)
 		var parent_frame: GraphFrame = discourse_graph_edit.get_element_frame(node.name)
-		var frame_uuid: StringName = &""
+		var frame_uuid: String = ""
 		if parent_frame != null:
 			frame_uuid = parent_frame.get_frame_uuid()
 		var type: int = node.node_type
@@ -5193,13 +5193,13 @@ func _on_nodes_removed(action: String, graph_nodes_data: Dictionary[StringName, 
 	
 	if requires_anchor_snapshot:
 		for pointer in discourse_graph_edit.anchor_pointers:
-			var pointing_to: StringName = pointer.get_selected_target_uuid()
+			var pointing_to: String = pointer.get_selected_target_uuid()
 			if graph_nodes_data.has(pointing_to):
 				action_data["pointer_states"][pointer.get_node_uuid()] = pointing_to
 	
 	if requires_waypoint_snapshot:
 		for pointer in discourse_graph_edit.travel_pointers:
-			var pointing_to: StringName = pointer.get_selected_waypoint_uuid()
+			var pointing_to: String = pointer.get_selected_waypoint_uuid()
 			if graph_nodes_data.has(pointing_to):
 				action_data["waypoint_states"][pointer.get_node_uuid()] = pointing_to
 	
@@ -5215,7 +5215,7 @@ func _on_nodes_removed(action: String, graph_nodes_data: Dictionary[StringName, 
 
 
 func _do_remove_nodes(action_data: Dictionary) -> void:
-	var uuids_to_remove: Array[StringName] = NFArrayUtils.create_typed(
+	var uuids_to_remove: Array[String] = NFArrayUtils.create_typed(
 			TYPE_STRING_NAME,
 			action_data["graph_nodes_data"].keys())
 	
@@ -5235,14 +5235,14 @@ func _undo_remove_nodes(action_data: Dictionary) -> void:
 	var tree_hierarchy: Dictionary = action_data["tree_hierarchy"]
 	var nodes_frame_parents: Dictionary = action_data["nodes_frame_parents"]
 	var connection_deaf_nodes: Array[DiscourseGraphNode] = []
-	var created_nodes: Dictionary[StringName, DiscourseGraphNode] = {}
+	var created_nodes: Dictionary[String, DiscourseGraphNode] = {}
 	var refresh_shortcuts: bool = false
 	var refresh_waypoints: bool = false
 	
-	var hierarchy_uuid: Array[StringName] = []
+	var hierarchy_uuid: Array[String] = []
 	hierarchy_uuid.assign(tree_hierarchy.keys())
 	hierarchy_uuid.sort_custom(
-			func(a: StringName, b: StringName) -> bool:
+			func(a: String, b: String) -> bool:
 				return tree_hierarchy[a]["index"] < tree_hierarchy[b]["index"])
 	
 	for node_uuid in graph_nodes_data:
@@ -5329,7 +5329,7 @@ func _undo_remove_nodes(action_data: Dictionary) -> void:
 	
 	# Restore Frame Attachments
 	for node_uuid in nodes_frame_parents:
-		var frame_uuid: StringName = nodes_frame_parents[node_uuid]
+		var frame_uuid: String = nodes_frame_parents[node_uuid]
 		if not frame_uuid.is_empty():
 			var target_frame: GraphFrame = discourse_graph_edit.get_discourse_frame(frame_uuid)
 			# Ensure both the frame exists and we successfully recreated the node
@@ -5357,19 +5357,19 @@ func _undo_remove_nodes(action_data: Dictionary) -> void:
 				pointer.select_waypoint(waypoint_states[pointer_uuid])
 
 
-func _on_graph_edit_node_duplication_requested(uuids: Array[StringName]) -> void:
+func _on_graph_edit_node_duplication_requested(uuids: Array[String]) -> void:
 	var uuid_size: int = uuids.size()
 	
 	if uuid_size == 0:
 		return
 	elif uuid_size == 1:
-		var new_uuid: StringName = StringName(NFUUID.generate_new())
+		var new_uuid: String = NFUUID.generate_new()
 		discourse_graph_edit.duplicate_single(uuids[0], new_uuid)
 	else:
 		# Existing NFUUID: New NFUUID
-		var uuid_map: Dictionary[StringName, StringName] = {}
+		var uuid_map: Dictionary[String, String] = {}
 		for uuid in uuids:
-			uuid_map[uuid] = StringName(NFUUID.generate_new())
+			uuid_map[uuid] = NFUUID.generate_new()
 		
 		discourse_graph_edit.duplicate_multiple(uuid_map)
 		
@@ -5381,16 +5381,16 @@ func _on_graph_edit_paste_requested() -> void:
 		return
 	
 	# Original UUID, New UUID
-	var uuid_map: Dictionary[StringName, StringName] = {}
+	var uuid_map: Dictionary[String, String] = {}
 	var clipboard: Array[Dictionary] = discourse_graph_edit.node_clipboard.duplicate(true)
 	
 	for clipboard_data in clipboard:
 		var node_data: Dictionary = clipboard_data["state"]["data"]
 		var node_type: int = node_data["type"]
-		var uuid: StringName = clipboard_data["node_uuid"]
+		var uuid: String = clipboard_data["node_uuid"]
 		
 		if discourse_graph_edit.graph_nodes.has(uuid):
-			uuid_map[uuid] = StringName(NFUUID.generate_new())
+			uuid_map[uuid] = NFUUID.generate_new()
 		else:
 			uuid_map[uuid] = uuid
 		
@@ -5442,12 +5442,12 @@ func _on_nodes_moved(movement_data: Dictionary) -> void:
 
 
 func _apply_movement_state(movement_data: Dictionary, is_undo: bool) -> void:
-	var top_level_frames: Array[StringName] = []
+	var top_level_frames: Array[String] = []
 	for frame_uuid in movement_data["frames"]:
 		var data: Dictionary = movement_data["frames"][frame_uuid]
-		var parent_uuid: StringName = data["previous_frame"] if is_undo else data["current_frame"]
+		var parent_uuid: String = data["previous_frame"] if is_undo else data["current_frame"]
 		
-		if parent_uuid == &"" or not movement_data["frames"].has(parent_uuid):
+		if parent_uuid.is_empty() or not movement_data["frames"].has(parent_uuid):
 			top_level_frames.append(frame_uuid)
 	
 	for frame_uuid in top_level_frames:
@@ -5460,8 +5460,8 @@ func _apply_movement_state(movement_data: Dictionary, is_undo: bool) -> void:
 		var frame: GraphFrame = discourse_graph_edit.get_discourse_frame(frame_uuid)
 		if frame != null:
 			var data: Dictionary = movement_data["frames"][frame_uuid]
-			var target_frame_uuid: StringName = data["previous_frame"] if is_undo else data["current_frame"]
-			var current_frame_uuid: StringName = data["current_frame"] if is_undo else data["previous_frame"]
+			var target_frame_uuid: String = data["previous_frame"] if is_undo else data["current_frame"]
+			var current_frame_uuid: String = data["current_frame"] if is_undo else data["previous_frame"]
 			
 			if target_frame_uuid != current_frame_uuid:
 				if target_frame_uuid.is_empty():
@@ -5477,11 +5477,11 @@ func _apply_movement_state(movement_data: Dictionary, is_undo: bool) -> void:
 			var data: Dictionary = movement_data["nodes"][node_uuid]
 			node.position_offset = data["previous_position"] if is_undo else data["current_position"]
 			
-			var target_frame_uuid: StringName = data["previous_frame"] if is_undo else data["current_frame"]
-			var current_frame_uuid: StringName = data["current_frame"] if is_undo else data["previous_frame"]
+			var target_frame_uuid: String = data["previous_frame"] if is_undo else data["current_frame"]
+			var current_frame_uuid: String = data["current_frame"] if is_undo else data["previous_frame"]
 			
 			if target_frame_uuid != current_frame_uuid:
-				if target_frame_uuid == &"":
+				if target_frame_uuid.is_empty():
 					discourse_graph_edit.detach_graph_element_from_frame(node.name)
 				else:
 					var target_frame: GraphFrame = discourse_graph_edit.get_discourse_frame(target_frame_uuid)
@@ -5489,7 +5489,7 @@ func _apply_movement_state(movement_data: Dictionary, is_undo: bool) -> void:
 						discourse_graph_edit.attach_graph_element_to_frame(node.name, target_frame.name)
 
 
-func _on_node_connected(from_node: StringName, from_port: int, to_node: StringName, to_port: int) -> void:
+func _on_node_connected(from_node: String, from_port: int, to_node: String, to_port: int) -> void:
 	undo.create_action("Connect Nodes")
 	undo.add_do_method(discourse_graph_edit.connect_discourse_nodes.bind(from_node, from_port, to_node, to_port))
 	undo.add_undo_method(discourse_graph_edit.disconnect_discourse_nodes.bind(from_node, from_port, to_node, to_port))
@@ -5497,7 +5497,7 @@ func _on_node_connected(from_node: StringName, from_port: int, to_node: StringNa
 	_on_conversation_changed()
 
 
-func _on_node_disconnected(from_node: StringName, from_port: int, to_node: StringName, to_port: int, from_state: Dictionary, to_state: Dictionary) -> void:
+func _on_node_disconnected(from_node: String, from_port: int, to_node: String, to_port: int, from_state: Dictionary, to_state: Dictionary) -> void:
 	undo.create_action("Disconnect Nodes")
 	undo.add_do_method(discourse_graph_edit.disconnect_discourse_nodes.bind(from_node, from_port, to_node, to_port))
 	undo.add_undo_method(_undo_node_disconnect.bind(from_node, from_port, to_node, to_port, from_state, to_state))
@@ -5505,7 +5505,7 @@ func _on_node_disconnected(from_node: StringName, from_port: int, to_node: Strin
 	_on_conversation_changed()
 
 
-func _undo_node_disconnect(from_node: StringName, from_port: int, to_node: String, to_port: int, from_state: Dictionary, to_state: Dictionary) -> void:
+func _undo_node_disconnect(from_node: String, from_port: int, to_node: String, to_port: int, from_state: Dictionary, to_state: Dictionary) -> void:
 	var f_node: DiscourseGraphNode = discourse_graph_edit.get_discourse_node(from_node)
 	var t_node: DiscourseGraphNode = discourse_graph_edit.get_discourse_node(to_node)
 	var resume_updates_from: bool = false
@@ -5532,14 +5532,14 @@ func _undo_node_disconnect(from_node: StringName, from_port: int, to_node: Strin
 		f_node._connection_updates_disabled = false
 
 
-func _on_node_connection_switched(origin_ports: Dictionary, new_node: StringName, new_port: int, old_from_data: Dictionary, old_to_data: Dictionary, new_from_data: Dictionary, new_to_data: Dictionary) -> void:
+func _on_node_connection_switched(origin_ports: Dictionary, new_node: String, new_port: int, old_from_data: Dictionary, old_to_data: Dictionary, new_from_data: Dictionary, new_to_data: Dictionary) -> void:
 	# origin_ports holds the OLD connection that was broken.
-	var old_from_node: StringName = origin_ports["from_node"]
+	var old_from_node: String = origin_ports["from_node"]
 	var old_from_port: int = origin_ports["from_port"]
-	var old_to_node: StringName = origin_ports["to_node"]
+	var old_to_node: String = origin_ports["to_node"]
 	var old_to_port: int = origin_ports["to_port"]
 	
-	var new_from_node: StringName = old_from_node
+	var new_from_node: String = old_from_node
 	var new_from_port: int = old_from_port
 	
 	var original_connection: Dictionary = {
@@ -5614,7 +5614,7 @@ func _do_switch_discourse_connections(from: Dictionary, to: Dictionary) -> void:
 		new_to_node._connection_updates_disabled = false
 
 
-func _on_nodes_created_batch(node_uuids: Array[StringName], action_name: String = "Create Nodes") -> void:
+func _on_nodes_created_batch(node_uuids: Array[String], action_name: String = "Create Nodes") -> void:
 	var action_data: Dictionary = {
 		"graph_nodes_data": {},
 		"nodes_frame_parents": {},
@@ -5802,7 +5802,7 @@ func _do_update_locale_group(group: String) -> void:
 
 
 func _on_localize_node(node: DiscourseGraphNode) -> void:
-	var uuid: StringName = node.get_node_uuid()
+	var uuid: String = node.get_node_uuid()
 	
 	if localization_nodes_tree.is_node_localized(uuid):
 		return
@@ -5814,7 +5814,7 @@ func _on_localize_node(node: DiscourseGraphNode) -> void:
 
 
 func _on_node_delocalization_requested(node: DiscourseGraphNode) -> void:
-	var uuid: StringName = node.get_node_uuid()
+	var uuid: String = node.get_node_uuid()
 	
 	# We MUST backup all translations before wiping them!
 	var snapshot: Dictionary = {}
@@ -5827,7 +5827,7 @@ func _on_node_delocalization_requested(node: DiscourseGraphNode) -> void:
 	undo.commit_action()
 
 
-func _do_localize_node(node_uuid: StringName, snapshot: Dictionary = {}) -> void:
+func _do_localize_node(node_uuid: String, snapshot: Dictionary = {}) -> void:
 	var node: DiscourseGraphNode = discourse_graph_edit.get_discourse_node(node_uuid)
 	
 	if node == null:
@@ -5858,7 +5858,7 @@ func _do_localize_node(node_uuid: StringName, snapshot: Dictionary = {}) -> void
 			localization_nodes_tree.create_localized_text_node(node.get_node_id(), node)
 
 
-func _do_delocalize_node(node_uuid: StringName) -> void:
+func _do_delocalize_node(node_uuid: String) -> void:
 	var node: DiscourseGraphNode = discourse_graph_edit.get_discourse_node(node_uuid)
 	if node == null:
 		return
@@ -5914,7 +5914,7 @@ func _do_delocalize_node(node_uuid: StringName) -> void:
 	localization_nodes_tree.remove_node(node_uuid)
 
 
-func _on_frame_title_changed(uuid: StringName, from: String, to: String) -> void:
+func _on_frame_title_changed(uuid: String, from: String, to: String) -> void:
 	undo.create_action("Set Frame Title")
 	undo.add_do_method(discourse_graph_edit.set_frame_title.bind(uuid, to))
 	undo.add_undo_method(discourse_graph_edit.set_frame_title.bind(uuid, from))
@@ -5922,7 +5922,7 @@ func _on_frame_title_changed(uuid: StringName, from: String, to: String) -> void
 	_on_conversation_changed()
 
 
-func _on_frame_color_changed(uuid: StringName, from: Color, to: Color) -> void:
+func _on_frame_color_changed(uuid: String, from: Color, to: Color) -> void:
 	undo.create_action("Set Frame Color")
 	undo.add_do_method(discourse_graph_edit.set_frame_tint.bind(uuid, to))
 	undo.add_undo_method(discourse_graph_edit.set_frame_tint.bind(uuid, from))
@@ -5930,14 +5930,14 @@ func _on_frame_color_changed(uuid: StringName, from: Color, to: Color) -> void:
 	_on_conversation_changed()
 
 
-func _on_close_frame_requested(uuid: StringName) -> void:
+func _on_close_frame_requested(uuid: String) -> void:
 	var frame: GraphFrame = discourse_graph_edit.get_discourse_frame(uuid)
 	if frame == null:
 		return
 	
 	# 1. Capture the exact state and contents of the frame before it is destroyed
 	var parent_frame: GraphFrame = discourse_graph_edit.get_element_frame(frame.name)
-	var parent_uuid: StringName = &"" if parent_frame == null else parent_frame.get_frame_uuid()
+	var parent_uuid: String = "" if parent_frame == null else parent_frame.get_frame_uuid()
 	var action_data: Dictionary = {
 		"uuid": uuid,
 		"frame_data": frame.get_frame_data(),
@@ -5952,8 +5952,8 @@ func _on_close_frame_requested(uuid: StringName) -> void:
 
 
 func _do_remove_frame(action_data: Dictionary) -> void:
-	var uuid: StringName = action_data["uuid"]
-	var parent_uuid: StringName = action_data["parent_frame"]
+	var uuid: String = action_data["uuid"]
+	var parent_uuid: String = action_data["parent_frame"]
 	
 	discourse_graph_edit.remove_frame(uuid)
 	
@@ -5972,7 +5972,7 @@ func _do_remove_frame(action_data: Dictionary) -> void:
 
 
 func _undo_remove_frame(action_data: Dictionary) -> void:
-	var uuid: StringName = action_data["uuid"]
+	var uuid: String = action_data["uuid"]
 	var frame_data: Dictionary = action_data["frame_data"]
 	var attached: Dictionary = action_data["attached_elements"]
 	
@@ -5997,21 +5997,21 @@ func _undo_remove_frame(action_data: Dictionary) -> void:
 				discourse_graph_edit.detach_graph_element_from_frame(nested_frame.name)
 			discourse_graph_edit.attach_graph_element_to_frame(nested_frame.name, frame.name)
 	
-	var parent_uuid: StringName = action_data["parent_frame"]
+	var parent_uuid: String = action_data["parent_frame"]
 	if not parent_uuid.is_empty():
 		var parent_frame: GraphFrame = discourse_graph_edit.get_discourse_frame(parent_uuid)
 		if parent_frame != null:
 			discourse_graph_edit.attach_graph_element_to_frame(frame.name, parent_frame.name)
 
 
-func _on_event_node_path_changed(node_uuid: StringName, from: String, to: String) -> void:
+func _on_event_node_path_changed(node_uuid: String, from: String, to: String) -> void:
 	undo.create_action("Set Event Variable Path")
 	undo.add_do_method(discourse_graph_edit.set_event_node_variable_path.bind(node_uuid, to))
 	undo.add_undo_method(discourse_graph_edit.set_event_node_variable_path.bind(node_uuid, from))
 	undo.commit_action(false)
 
 
-func _on_data_event_node_path_changed(node_uuid: StringName, from: String, to: String) -> void:
+func _on_data_event_node_path_changed(node_uuid: String, from: String, to: String) -> void:
 	undo.create_action("Set Data Event Variable Path")
 	undo.add_do_method(discourse_graph_edit.set_data_event_node_variable_path.bind(node_uuid, to))
 	undo.add_undo_method(discourse_graph_edit.set_data_event_node_variable_path.bind(node_uuid, from))
@@ -6025,7 +6025,7 @@ func _on_travel_node_target_id_changed(uuid: String, old_id: String, new_id: Str
 	undo.commit_action(false)
 
 
-func _on_travel_node_selected_waypoint_changed(node_uuid: StringName, old_waypoint: StringName, new_waypoint: StringName) -> void:
+func _on_travel_node_selected_waypoint_changed(node_uuid: String, old_waypoint: String, new_waypoint: String) -> void:
 	undo.create_action("Set Travel Node Target")
 	undo.add_do_method(discourse_graph_edit.set_travel_node_selected_waypoint.bind(node_uuid, new_waypoint))
 	undo.add_undo_method(discourse_graph_edit.set_travel_node_selected_waypoint.bind(node_uuid, old_waypoint))
@@ -6042,7 +6042,7 @@ func graph_copy_selected_to_clipboard() -> void:
 		return
 	var copy_data: Array[Dictionary] = []
 	for selected_node in selected_nodes:
-		var uuid: StringName = selected_node.get_node_uuid()
+		var uuid: String = selected_node.get_node_uuid()
 		var data: Dictionary = {
 			"node_uuid": uuid,
 			"state": selected_node.get_node_state()}
@@ -6060,8 +6060,8 @@ func _on_graph_copy_nodes_requested() -> void:
 
 func _on_graph_cut_nodes_requested() -> void:
 	graph_copy_selected_to_clipboard()
-	var nodes_to_remove: Array[StringName] = []
-	var removed_nodes_data: Dictionary[StringName, Dictionary] = {}
+	var nodes_to_remove: Array[String] = []
+	var removed_nodes_data: Dictionary[String, Dictionary] = {}
 	for selected_node in discourse_graph_edit.get_selected_graph_nodes():
 		nodes_to_remove.append(selected_node.get_node_uuid())
 		removed_nodes_data[selected_node.get_node_uuid()] =\

@@ -2,7 +2,7 @@
 extends DiscourseGraphNode
 
 
-signal signal_changed(uuid: StringName, old_state: Dictionary, new_state: Dictionary)
+signal signal_changed(uuid: String, old_state: Dictionary, new_state: Dictionary)
 
 static var available_signals: Dictionary = {}
 
@@ -14,7 +14,7 @@ static func _static_init() -> void:
 
 
 func _post_init() -> void:
-	set_node_id(&"Signal")
+	set_node_id("Signal")
 	title = "Signal"
 	node_type = DialogueNodeType.SIGNAL
 	parent_mode = PortMode.OUTPUT
@@ -94,21 +94,13 @@ func _get_node_data() -> Dictionary:
 
 
 func _set_node_data(data: Dictionary) -> void:
-	if data.has("name") and typeof(data["name"]) == TYPE_STRING_NAME:
-		_node_id = data["name"]
-	
-	if not data.has("metadata") or typeof(data["metadata"]) != TYPE_DICTIONARY:
-		return
-	var metadata: Dictionary = data["metadata"]
-	
-	if metadata.has("position") and typeof(metadata["position"]) == TYPE_VECTOR2:
-		position_offset = metadata["position"]
-	
-	if not metadata.has("signal") or typeof(metadata["signal"]) != TYPE_STRING:
+	super(data)
+	var signal_data: Variant = data.get("metadata", NFDictUtils.EMPTY_DICT).get("signal")
+	if typeof(signal_data) != TYPE_STRING:
 		return
 	
-	if await set_signal(metadata["signal"]):
-		signals_node.set_meta(&"old_value", metadata["signal"])
+	if await set_signal(signal_data):
+		signals_node.set_meta(&"old_value", signal_data)
 
 
 func get_signal_arguments() -> Array[Dictionary]:
@@ -296,7 +288,7 @@ func add_input_arg(arg_text: String, arg_type: int) -> void:
 	var slot_target: int = get_child_count()
 	var arg: Label = Label.new()
 	var slot_type: SlotConnectionType = SlotConnectionType.VAR_ANY
-	var field_id: StringName = &"argument_" + StringName(str(slot_target))
+	var field_id: StringName = StringName("argument_" + str(slot_target))
 	var input_icon: Texture2D = get_theme_icon("Variant", "EditorIcons")
 	var input_color: Color = COLORS["any"]
 	arg.custom_minimum_size.y = 24
@@ -338,7 +330,7 @@ func add_input_arg(arg_text: String, arg_type: int) -> void:
 func clear_input_args() -> void:
 	var fields: Array[StringName] = []
 	for item in range(get_child_count() - 1, 0, -1):
-		var field_id: StringName = &"argument_" + StringName(str(item))
+		var field_id: StringName = StringName("argument_" + str(item))
 		fields.append(field_id)
 	remove_fields(fields, -1)
 	_reset_height.call_deferred()

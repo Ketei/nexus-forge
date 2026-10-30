@@ -2,8 +2,8 @@
 extends DiscourseGraphNode
 
 
-signal mode_changed(uuid: StringName, old_state: Dictionary, new_state: Dictionary)
-signal range_changed(uuid: StringName, from_min: float, from_max: float, to_min: float, to_max: float)
+signal mode_changed(uuid: String, old_state: Dictionary, new_state: Dictionary)
+signal range_changed(uuid: String, from_min: float, from_max: float, to_min: float, to_max: float)
 
 # Modes can only be int, float & bool
 var current_mode: int = TYPE_INT
@@ -14,7 +14,7 @@ var menu: MenuButton
 
 
 func _post_init() -> void:
-	set_node_id(&"RandomValue")
+	set_node_id("RandomValue")
 	title = "Random Value"
 	node_type = DialogueNodeType.RANDOM_VALUE
 	parent_mode = PortMode.OUTPUT
@@ -154,33 +154,33 @@ func _get_node_data() -> Dictionary:
 
 
 func _set_node_data(data: Dictionary) -> void:
-	if data.has("name") and typeof(data["name"]) == TYPE_STRING_NAME:
-		_node_id = data["name"]
+	super(data)
 	
-	if not data.has("metadata") or typeof(data["metadata"]) != TYPE_DICTIONARY:
+	if not data.has("metadata"):
 		return
+	
 	var metadata: Dictionary = data["metadata"]
 	
-	if metadata.has("position") and typeof(metadata["position"]) == TYPE_VECTOR2:
-		position_offset = metadata["position"]
+	var mode_data: Variant = metadata.get("mode")
+	var values_data: Variant = metadata.get("values")
 	
-	if metadata.has("mode") and typeof(metadata["mode"]) == TYPE_INT:
-		set_mode(metadata["mode"])
+	if typeof(mode_data) == TYPE_INT:
+		set_mode(mode_data)
 	
-	if not metadata.has("values") or typeof(metadata["values"]) != TYPE_DICTIONARY:
+	if typeof(values_data) != TYPE_DICTIONARY:
 		return
 	
-	if metadata["values"].has("base"):
-		var base_type: int = typeof(metadata["values"]["base"])
-		if base_type == TYPE_INT or base_type == TYPE_FLOAT:
-			min_spinbox.set_value_no_signal(metadata["values"]["base"])
-			min_spinbox.set_meta(&"old_value", min_spinbox.value)
+	var base_val: Variant = values_data.get("base")
+	var base_type: int = typeof(base_val)
+	if base_type == TYPE_INT or base_type == TYPE_FLOAT:
+		min_spinbox.set_value_no_signal(base_val)
+		min_spinbox.set_meta(&"old_value", min_spinbox.value)
 	
-	if metadata["values"].has("max"):
-		var max_type: int = typeof(metadata["values"]["max"])
-		if max_type == TYPE_INT or max_type == TYPE_FLOAT:
-			max_spinbox.set_value_no_signal(maxf(min_spinbox.value, metadata["values"]["max"]))
-			max_spinbox.set_meta(&"old_value", max_spinbox.value)
+	var max_val: Variant = values_data.get("max")
+	var max_type: int = typeof(max_val)
+	if max_type == TYPE_INT or max_type == TYPE_FLOAT:
+		max_spinbox.set_value_no_signal(maxf(min_spinbox.value, max_val))
+		max_spinbox.set_meta(&"old_value", max_spinbox.value)
 	
 	if current_mode != TYPE_BOOL:
 		max_spinbox.min_value = min_spinbox.value

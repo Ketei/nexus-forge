@@ -1,15 +1,15 @@
 @tool
 extends DiscourseGraphNode
 
-signal type_changed(uuid: StringName, old_state: Dictionary, new_state: Dictionary)
-signal path_changed(uuid: StringName, from: String, to: String)
+signal type_changed(uuid: String, old_state: Dictionary, new_state: Dictionary)
+signal path_changed(uuid: String, from: String, to: String)
 
 var path_line: LineEdit
 var type_menu: MenuButton
 
 
 func _post_init() -> void:
-	set_node_id(&"GetVar")
+	set_node_id("GetVar")
 	title = "Get Variable"
 	node_type = DialogueNodeType.VARIABLE_GET
 	parent_mode = PortMode.OUTPUT
@@ -105,21 +105,18 @@ func _get_node_data() -> Dictionary:
 
 
 func _set_node_data(data: Dictionary) -> void:
-	if data.has("name") and typeof(data["name"]) == TYPE_STRING_NAME:
-		_node_id = data["name"]
-	
+	super(data)
 	if not data.has("metadata") or typeof(data["metadata"]) != TYPE_DICTIONARY:
 		return
 	var metadata: Dictionary = data["metadata"]
 	
-	if metadata.has("position") and typeof(metadata["position"]) == TYPE_VECTOR2:
-		position_offset = metadata["position"]
+	var path_data: Variant = metadata.get("variable_path")
+	var type_data: Variant = metadata.get("variable_type")
+	if typeof(path_data) == TYPE_STRING:
+		set_variable_path(path_data)
 	
-	if metadata.has("variable_path") and typeof(metadata["variable_path"]) == TYPE_STRING:
-		set_variable_path(metadata["variable_path"])
-		
-	if metadata.has("variable_type") and typeof(metadata["variable_type"]) == TYPE_INT:
-		set_node_type(metadata["variable_type"])
+	if typeof(type_data) == TYPE_INT:
+		set_node_type(type_data)
 	else:
 		set_node_type(TYPE_NIL)
 

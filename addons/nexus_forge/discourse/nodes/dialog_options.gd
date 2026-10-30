@@ -2,9 +2,9 @@
 extends DiscourseGraphNode
 
 
-signal use_code_editor_pressed(uuid: StringName, target: TextEdit)
-signal choice_text_changed(node_uuid: StringName, choice_idx: int, old_text: String, new_text: String)
-signal choices_resized(node_uuid: StringName, old_snapshot: Dictionary, new_snapshot: Dictionary)
+signal use_code_editor_pressed(uuid: String, target: TextEdit)
+signal choice_text_changed(node_uuid: String, choice_idx: int, old_text: String, new_text: String)
+signal choices_resized(node_uuid: String, old_snapshot: Dictionary, new_snapshot: Dictionary)
 
 const MAX_LINES: int = 3
 const EXTRA_Y_PADDING: int = 8
@@ -15,7 +15,7 @@ var _updating_choices: bool = false
 
 
 func _post_init() -> void:
-	set_node_id(&"Choices")
+	set_node_id("Choices")
 	title = "Choices"
 	node_type = DialogueNodeType.CHOICES
 	parent_mode = PortMode.INPUT
@@ -98,7 +98,7 @@ func set_choice_count(value: int) -> void:
 	if current < value:
 		for extra in range(value - current):
 			var index: int = current + extra
-			var choice_id: StringName = &"choice_" + StringName(str(index + 1))
+			var choice_id: StringName = StringName("choice_" + str(index + 1))
 			var new_idx: int = add_field(
 					choice_id,
 					get_choice_node(),
@@ -149,7 +149,7 @@ func _on_choice_count_changed(value: int) -> void:
 func get_choices_array() -> Array[Dictionary]:
 	var options: Array[Dictionary] = []
 	for choice in range(1, get_child_count()):
-		var field_id: StringName = &"choice_" + StringName(str(int(choice)))
+		var field_id: StringName = StringName("choice_" + str(int(choice)))
 		var field: TextEdit = get_field(field_id).get_child(0)
 		
 		options.append(
@@ -184,7 +184,7 @@ func _get_node_data() -> Dictionary:
 	var metadata: Dictionary = {"choices": options}
 		
 	for choice in range(1, get_child_count()):
-		var field_id: StringName = &"choice_" + StringName(str(int(choice)))
+		var field_id: StringName = StringName("choice_" + str(int(choice)))
 		var field: TextEdit = get_field(field_id).get_child(0)
 		
 		options.append(
@@ -202,24 +202,14 @@ func _get_node_data() -> Dictionary:
 
 
 func _set_node_data(data: Dictionary) -> void:
-	if data.has("name") and typeof(data["name"]) == TYPE_STRING_NAME:
-		_node_id = data["name"]
+	super(data)
 	
-	if not data.has("metadata") or typeof(data["metadata"]) != TYPE_DICTIONARY:
-		return
-	var metadata: Dictionary = data["metadata"]
-	
-	if metadata.has("position") and typeof(metadata["position"]) == TYPE_VECTOR2:
-		position_offset = metadata["position"]
-	
-	if metadata.has("localized") and typeof(metadata["localized"]) == TYPE_BOOL:
-		set_node_localized(metadata["localized"])
-	
-	if not metadata.has("choices") or typeof(metadata["choices"]) != TYPE_ARRAY:
+	var choice_data: Variant = data.get("metadata", NFDictUtils.EMPTY_DICT).get("choices")
+	if typeof(choice_data) != TYPE_ARRAY:
 		return
 	
 	var true_options: Array = []
-	for option in metadata["choices"]:
+	for option in choice_data:
 		if typeof(option) != TYPE_DICTIONARY or typeof(option.get("text")) != TYPE_STRING:
 			continue
 		true_options.append(option)
@@ -274,7 +264,7 @@ func _on_use_code_editor_on(item: TextEdit) -> void:
 
 
 func remove_choice(idx: int) -> void:
-	var field_id: StringName = &"choice_" + StringName(str(idx))
+	var field_id: StringName = StringName("choice_" + str(idx))
 	var choice: TextEdit = get_field(field_id).get_child(0)
 	choice.text_changed.disconnect(_on_option_text_changed)
 	remove_field(field_id, 40)
@@ -299,7 +289,7 @@ func get_options() -> Array[String]:
 	var options: Array[String] = []
 	
 	for choice in range(1, get_child_count()):
-		var field_id: StringName = &"choice_" + StringName(str(int(choice)))
+		var field_id: StringName = StringName("choice_" + str(int(choice)))
 		var field: TextEdit = get_field(field_id).get_child(0)
 		options.append(field.text)
 	
