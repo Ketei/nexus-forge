@@ -637,7 +637,7 @@ func _ready() -> void:
 									var id_type: int = typeof(id)
 									if typeof(path) != TYPE_STRING:
 										continue
-									elif id_type != TYPE_STRING_NAME and id_type != TYPE_STRING:
+									elif id_type != TYPE_STRING and id_type != TYPE_STRING_NAME:
 										continue
 									
 									if map.has(id):
@@ -660,7 +660,8 @@ func _ready() -> void:
 						if typeof(data) == TYPE_DICTIONARY:
 							var map: Dictionary[StringName, String] = {}
 							for char_id in data:
-								if typeof(char_id) == TYPE_STRING_NAME and typeof(data[char_id]) == TYPE_STRING:
+								var char_type: int = typeof(char_id)
+								if (char_type == TYPE_STRING_NAME or char_type == TYPE_STRING) and typeof(data[char_id]) == TYPE_STRING:
 									map[char_id] = data[char_id]
 							CharacterManager._characters.assign(map)
 						else:

@@ -580,6 +580,8 @@ func display_variables_of(folder_path: String) -> void:
 			folder_path,
 			NFDictUtils.EMPTY_DICT)
 	
+	variables_tree.clear_variables()
+	
 	for variable_id in folder_dict:
 		variables_tree.create_variable(
 			folder_dict[variable_id],

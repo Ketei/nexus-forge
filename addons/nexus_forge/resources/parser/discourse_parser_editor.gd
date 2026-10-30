@@ -1231,4 +1231,5 @@ func _to_id(uuid: String) -> StringName:
 func _to_uuid(id: String) -> String:
 	if _dialog_resource == null:
 		return ""
-	return _dialog_resource.find_uuid_from_id(id)
+	var data: Dictionary = _dialog_resource.find_uuid_from_id(id)
+	return data["uuid"]

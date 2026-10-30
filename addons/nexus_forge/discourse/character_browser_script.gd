@@ -44,14 +44,14 @@ func _input(event: InputEvent) -> void:
 
 
 # character_data = {path: ID}
-func populate_characters(character_data: Dictionary[String, StringName]) -> void:
+func populate_characters(character_data: Dictionary[String, String]) -> void:
 	if character_list.get_root() != null:
 		character_list.clear()
 	var root: TreeItem = character_list.create_item()
 	var paths: Array[String] = []
-	var traveled: Dictionary[StringName, Variant] = {}
+	var traveled: Dictionary[String, Variant] = {}
 	for key in character_data:
-		if typeof(character_data[key]) != TYPE_NIL and not traveled.has(character_data[key]):
+		if not traveled.has(character_data[key]):
 			paths.append(key)
 			traveled[character_data[key]] = null
 	
@@ -59,7 +59,7 @@ func populate_characters(character_data: Dictionary[String, StringName]) -> void
 	
 	for path in paths:
 		var item: TreeItem = root.create_child()
-		item.set_text(0, String(character_data[path]))
+		item.set_text(0, character_data[path])
 		item.set_tooltip_text(0, path)
 
 

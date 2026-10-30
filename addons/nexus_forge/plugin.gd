@@ -271,8 +271,8 @@ func _set_window_layout(configuration: ConfigFile) -> void:
 		editor_view.quests.open_files(open_quests)
 
 
-func _on_character_browser_requested(node_uuid: StringName, target: LineEdit) -> void:
-	var data_to_populate: Dictionary[String, StringName] = {}
+func _on_character_browser_requested(node_uuid: String, target: LineEdit) -> void:
+	var data_to_populate: Dictionary[String, String] = {}
 	
 	for entry in tracked_characters:
 		data_to_populate[entry["path"]] = entry["character_id"]
@@ -585,11 +585,11 @@ func _editor_ready() -> bool:
 	return editor_view != null and editor_view.is_node_ready()
 
 
-func _on_character_saved(path: String, id: StringName) -> void:
+func _on_character_saved(path: String, id: String) -> void:
 	set_character_entry(path, id, FileAccess.get_modified_time(path))
 
 
-func _on_character_opened(path: String, id: StringName) -> void:
+func _on_character_opened(path: String, id: String) -> void:
 	set_character_entry(path, id)
 
 
@@ -810,7 +810,7 @@ func _on_scan_confirmed(dialog: ConfirmationDialog) -> void:
 		return
 	
 	var log_msg: String = ""
-	var found_files: Dictionary[String, StringName] = discover_character_sheets(result[1])
+	var found_files: Dictionary[String, String] = discover_character_sheets(result[1])
 	
 	if found_files.is_empty():
 		log_msg = "Scan finished. No character files found."
@@ -869,10 +869,10 @@ func save_character_paths() -> void:
 	
 
 
-func discover_character_sheets(on_path: String = "") -> Dictionary[String, StringName]:
+func discover_character_sheets(on_path: String = "") -> Dictionary[String, String]:
 	var efs: EditorFileSystem = EditorInterface.get_resource_filesystem()
 	var sys_directory: EditorFileSystemDirectory = efs.get_filesystem() if on_path.is_empty() else efs.get_filesystem_path(on_path)
-	var character_sheets: Dictionary[String, StringName] = {}
+	var character_sheets: Dictionary[String, String] = {}
 	
 	if sys_directory != null:
 		_traverse_for_character_resources(sys_directory, character_sheets)
@@ -880,7 +880,7 @@ func discover_character_sheets(on_path: String = "") -> Dictionary[String, Strin
 	return character_sheets
 
 
-func _traverse_for_character_resources(dir: EditorFileSystemDirectory, results: Dictionary[String, StringName]) -> void:
+func _traverse_for_character_resources(dir: EditorFileSystemDirectory, results: Dictionary[String, String]) -> void:
 	for index in range(dir.get_file_count()):
 		var path: String = dir.get_file_path(index)
 		if path.get_extension() == "tres":
@@ -893,7 +893,7 @@ func _traverse_for_character_resources(dir: EditorFileSystemDirectory, results: 
 
 
 func parse_character_file(file_path: String, id_property: String = "id") -> Dictionary:
-	var data: Dictionary = {"is_character": false, "id": &""}
+	var data: Dictionary = {"is_character": false, "id": ""}
 	var file: FileAccess = FileAccess.open(file_path, FileAccess.READ)
 	
 	if file == null:
@@ -955,7 +955,7 @@ func scan_for_character_changes() -> void:
 			tracker_edited = true
 
 
-func set_character_entry(path: String, character_id: StringName = &"", timestamp: int = -1) -> void:
+func set_character_entry(path: String, character_id: String = "", timestamp: int = -1) -> void:
 	if not ResourceLoader.exists(path):
 		return
 	
