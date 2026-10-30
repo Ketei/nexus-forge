@@ -97,8 +97,8 @@ var _dialog_resource: DiscourseDialog = null:
 
 var _resource_id: StringName = &""
 var _conversation_started: bool = false
-var _next_uuid: StringName = &""
-var _current_uuid: StringName = &""
+var _next_id: StringName = &""
+var _current_id: StringName = &""
 var _conversation_cache: NFLRUResourceCache = null
 var _parser_regex: RegEx = RegEx.new()
 var _node_travel_stack: Array[StringName] = []
@@ -1054,13 +1054,7 @@ func _get_dialog_locale(dialog_id: String, lang_code: String) -> DiscourseDialog
 	if not _id_to_data.has(dialog_id):
 		return null
 	
-	var file_path: String = ProjectSettings.get_setting(
-		NFPluginGameHandler.get_setting_path("discourse"),
-			"res://localization/")
-	var filename: String = _id_to_data[dialog_id]["locale_file"]
-	var hash_slice: String = filename.substr(0, 2)
-	var locale_path: String = NFStringUtils.make_path(
-		[file_path, lang_code, hash_slice, filename])
+	var locale_path: String = _get_base_locale_path(dialog_id, lang_code)
 	
 	if FileAccess.file_exists(locale_path):
 		var locale_data: DiscourseDialogLocale = DiscourseDialogLocale.new_from_json(
@@ -1144,7 +1138,7 @@ func load_dialog(path: String, starting_id: StringName = &"") -> bool:
 		var id: String = _path_to_id.get(path, "")
 		
 		if res == null or res is not DiscourseDialog:
-			_next_uuid = &""
+			_next_id = &""
 			_resource_id = ""
 			_dialog_resource = null
 			return false
@@ -1162,9 +1156,9 @@ func load_dialog(path: String, starting_id: StringName = &"") -> bool:
 		_dialog_resource = res
 		
 	if _dialog_resource.node_logic.has(starting_id):
-		_next_uuid = starting_id
+		_next_id = starting_id
 	else:
-		_next_uuid = _dialog_resource.entry_node
+		_next_id = _dialog_resource.entry_node
 	
 	return true
 
@@ -1349,16 +1343,16 @@ func set_dialog_id(id: StringName) -> bool:
 				"discourse",
 				"Attempted to set an invalid dialog ID '%s' in loaded resource. Setting to dialogue end." % id,
 				NFPluginGameHandler._LogLevel.ERROR)
-		_next_uuid = &""
+		_next_id = &""
 		return false
 	
-	_next_uuid = id
+	_next_id = id
 	return true
 
 
 ## Returns the ID of the current dialog position.
 func get_dialog_current_id() -> StringName:
-	return _current_uuid
+	return _current_id
 
 
 ## Returns the current state of the dialog parser in raw data form for 
@@ -1366,7 +1360,7 @@ func get_dialog_current_id() -> StringName:
 func get_state() -> Dictionary[String, Variant]:
 	var data: Dictionary[String, Variant] = {
 		"current_dialog_id": get_dialog_current_id(),
-		"next_dialog_id": _next_uuid,
+		"next_dialog_id": _next_id,
 		"conversation_started": _conversation_started,
 		"dialog_travel_stack": _node_travel_stack.duplicate(true)}
 	return data
@@ -1404,8 +1398,8 @@ func set_state(to: Dictionary) -> bool:
 		conv_started = started_value
 	
 	_clear_target_travel_stack()
-	_current_uuid = new_uuid
-	_next_uuid = next_uuid
+	_current_id = new_uuid
+	_next_id = next_uuid
 	_conversation_started = conv_started
 	_node_travel_stack.assign(new_stack)
 	
@@ -1421,17 +1415,17 @@ func advance() -> void:
 		_conversation_started = true
 		dialog_started.emit()
 	
-	var result: Dictionary[String, Variant] = _process_logic(_next_uuid)
+	var result: Dictionary[String, Variant] = _process_logic(_next_id)
 	
 	if result["type"] == -1 or result["type"] == NodeTypes.DIALOG_END:
 		_conversation_started = false
-		_next_uuid = _dialog_resource.entry_node
-		_current_uuid = &""
+		_next_id = _dialog_resource.entry_node
+		_current_id = &""
 		_clear_target_travel_stack()
 		dialog_finished.emit()
 	else:
-		_current_uuid = result["current"]
-		_next_uuid = result["next"]
+		_current_id = result["current"]
+		_next_id = result["next"]
 		match result["type"]:
 			NodeTypes.DIALOG:
 				dialog_reached.emit(result["data"])
@@ -1451,18 +1445,18 @@ func advance() -> void:
 ## [b]Note:[/b] This only reprocesses the current node if it is a dialog
 ## or choices node and does not re-trigger previous nodes leading up to it.
 func refresh() -> void:
-	if _dialog_resource == null or _current_uuid.is_empty() or not _dialog_resource.node_logic.has(_current_uuid):
+	if _dialog_resource == null or _current_id.is_empty() or not _dialog_resource.node_logic.has(_current_id):
 		return
 	
-	var dialog_type: NodeTypes = _dialog_resource.node_logic[_current_uuid]["node_type"]
+	var dialog_type: NodeTypes = _dialog_resource.node_logic[_current_id]["node_type"]
 	
 	if dialog_type != NodeTypes.DIALOG and dialog_type != NodeTypes.CHOICES:
 		return
 	
-	var result: Dictionary[String, Variant] = _process_logic(_current_uuid)
+	var result: Dictionary[String, Variant] = _process_logic(_current_id)
 	
-	if _next_uuid != result["next"]:
-		_next_uuid = result["next"]
+	if _next_id != result["next"]:
+		_next_id = result["next"]
 	
 	if result["type"] == NodeTypes.DIALOG:
 		dialog_reached.emit(result["data"])

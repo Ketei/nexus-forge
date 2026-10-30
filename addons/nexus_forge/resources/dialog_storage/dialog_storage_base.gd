@@ -70,10 +70,6 @@ var _mutex: Mutex = null
 	#}
 }
 
-var _uid_to_id: Dictionary[StringName, StringName] = {
-	#&"9156f183-6761-4259-9dde-1a81d12fb047": &"Greeting"
-}
-
 var _dialog_overrides: NFDialogEntryOverride = null:
 	set(o):
 		if o == _dialog_overrides:
@@ -188,7 +184,7 @@ func _get_text_data(dialog_id: StringName, node_id: StringName) -> Dictionary:
 	if _active_locale != null:
 		var loc_str: String = _active_locale.get_text(dialog_id, node_id).strip_edges()
 		if not loc_str.is_empty():
-			base_string = "[MISSING LOCALIZATION DATA]"
+			base_string = loc_str
 	
 	if _dialog_overrides != null:
 		var override: Variant = _dialog_overrides.get_override(node_id, locale)
