@@ -346,7 +346,7 @@ class NFDialogEntryOverride extends RefCounted:
 	## Emits when an override was changed
 	signal override_changed(node_id: StringName, locale: String, indexes: Array[int])
 	# node id: {locale: etry}
-	var _overrides: Dictionary[String, Dictionary] = {}
+	var _overrides: Dictionary[StringName, Dictionary] = {}
 	
 	## Clears all overrides. Does not emit
 	## [signal NFDialogEntryOverride.override_changed].

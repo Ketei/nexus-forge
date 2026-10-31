@@ -425,8 +425,8 @@ var signalers: Array[DiscourseGraphNode] = []
 # Data for the mouse release.
 var release_data: Dictionary = {}
 var movement_data: Dictionary[String, Dictionary] = {
-	"nodes": NFDictUtils.create_typed(TYPE_STRING_NAME, TYPE_DICTIONARY),
-	"frames": NFDictUtils.create_typed(TYPE_STRING_NAME, TYPE_DICTIONARY)}
+	"nodes": NFDictUtils.create_typed(TYPE_STRING, TYPE_DICTIONARY),
+	"frames": NFDictUtils.create_typed(TYPE_STRING, TYPE_DICTIONARY)}
 # {
 	#"reference": null,
 	#"nodes": [],
@@ -1297,8 +1297,8 @@ func get_nodes_in_frame(frame_uuid: String) -> Array[String]:
 
 func get_elements_in_frame(frame_uuid: String) -> Dictionary[String, Array]:
 	var elements: Dictionary[String, Array] = {
-		"nodes": NFArrayUtils.create_typed(TYPE_STRING_NAME),
-		"frames": NFArrayUtils.create_typed(TYPE_STRING_NAME)}
+		"nodes": NFArrayUtils.create_typed(TYPE_STRING),
+		"frames": NFArrayUtils.create_typed(TYPE_STRING)}
 	
 	if not node_frames.has(frame_uuid):
 		return elements
@@ -1680,8 +1680,8 @@ func port_type_to_var_type(port_type: int) -> int:
 		_:
 			return TYPE_NIL
 
-func _on_connection_drag_started(from_node: String, from_port: int, is_output: bool) -> void:
-	var from_graph: DiscourseGraphNode = get_node(NodePath(from_node))
+func _on_connection_drag_started(from_node: StringName, from_port: int, is_output: bool) -> void:
+	var from_graph: DiscourseGraphNode = get_node(NodePath(String(from_node)))
 	
 	if is_output:
 		if from_graph.is_port_available(DiscourseGraphNode.PortMode.OUTPUT, from_port):
@@ -1717,9 +1717,9 @@ func _on_connection_drag_started(from_node: String, from_port: int, is_output: b
 				from_port)
 
 
-func _on_connection_request(from_node: String, from_port: int, to_node: String, to_port: int) -> void:
-	var from: DiscourseGraphNode = get_node(NodePath(from_node))
-	var to: DiscourseGraphNode = get_node(NodePath(to_node))
+func _on_connection_request(from_node: StringName, from_port: int, to_node: StringName, to_port: int) -> void:
+	var from: DiscourseGraphNode = get_node(NodePath(String(from_node)))
+	var to: DiscourseGraphNode = get_node(NodePath(String(to_node)))
 	
 	var has_type: bool = _pending_connection_change.has("type")
 	if has_type:
@@ -1782,7 +1782,7 @@ func _on_connection_drag_ended() -> void:
 		dialog_changed.emit()
 
 
-func _on_connection_to_empty(from_node: String, from_port: int, release_position: Vector2) -> void:
+func _on_connection_to_empty(from_node: StringName, from_port: int, release_position: Vector2) -> void:
 	if _pending_connection_change.has("type"):
 		var conn_snapshot: Dictionary = _pending_connection_change.duplicate()
 		commit_disconnection()
@@ -1792,7 +1792,7 @@ func _on_connection_to_empty(from_node: String, from_port: int, release_position
 	if not Input.is_key_pressed(KEY_CTRL):
 		return
 	
-	var port_node: DiscourseGraphNode = get_node(NodePath(from_node))
+	var port_node: DiscourseGraphNode = get_node(NodePath(String(from_node)))
 	var port_type: int = port_node.get_output_port_type(from_port)
 	var node_count: int = get_compatible_node_count(port_type, "output")
 	
@@ -1838,14 +1838,14 @@ func _on_connection_to_empty(from_node: String, from_port: int, release_position
 	show_connection_popup_at(get_global_mouse_position())
 
 
-func _on_connection_from_empty(to_node: String, to_port: int, release_position: Vector2) -> void:
+func _on_connection_from_empty(to_node: StringName, to_port: int, release_position: Vector2) -> void:
 	if _pending_connection_change.has("type"):
 		commit_disconnection()
 	
 	if not Input.is_key_pressed(KEY_CTRL):
 		return
 	
-	var to_graph: DiscourseGraphNode = get_node(NodePath(to_node))
+	var to_graph: DiscourseGraphNode = get_node(NodePath(String(to_node)))
 	var port_type: ConnectionType = to_graph.get_input_port_type(to_port) as ConnectionType
 	var node_count: int = get_compatible_node_count(port_type, "input")
 	
@@ -1961,7 +1961,7 @@ func snap_node_to_grid(target_node: DiscourseGraphNode) -> void:
 	target_node.position_offset = target_node.position_offset.snappedf(snapping_distance)
 
 
-func _on_graph_elements_linked_to_frame_request(elements: Array, frame: String) -> void:
+func _on_graph_elements_linked_to_frame_request(elements: Array, frame: StringName) -> void:
 	for element in elements:
 		attach_graph_element_to_frame(element, frame)
 	

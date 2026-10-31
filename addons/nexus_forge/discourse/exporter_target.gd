@@ -11,7 +11,7 @@ func get_target(uuid: String) -> StringName:
 	return uuid_to_id_conversions.get(target, &"")
 
 
-func _uuid_lookup(uuid: String, _origin: String = "", _iteration: int = 0) -> StringName:
+func _uuid_lookup(uuid: String, _origin: String = "", _iteration: int = 0) -> String:
 	if _origin == uuid or 100 <= _iteration:
 		if 100 <= _iteration:
 			NFPluginGameHandler._log_msg(

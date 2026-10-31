@@ -82,7 +82,7 @@ func _on_dialog_reached(data: Dictionary) -> void:
 	data_text_edit.set_deferred("scroll_vertical", data_text_edit.get_v_scroll_bar().max_value)
 	var displayed_text: String = ""
 	if not data["character_id"].is_empty():
-		displayed_text = data["character_id"] + ": "
+		displayed_text = String(data["character_id"]) + ": "
 	displayed_text += data["dialog_text"]
 	
 	dialog_text_edit.text = displayed_text

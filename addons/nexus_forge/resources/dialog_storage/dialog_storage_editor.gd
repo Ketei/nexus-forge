@@ -150,7 +150,7 @@ func _get_text_data_localized(node_uuid: String, for_locale: String) -> Dictiona
 	if for_locale.is_empty() or not node_data.has(node_uuid):
 		return data
 	
-	var node_id: String = node_data[node_uuid].get("name", &"")
+	var node_id: StringName = node_data[node_uuid].get("name", &"")
 	var localized: bool = node_data[node_uuid]["metadata"]["localized"]
 	
 	if _dialog_overrides != null and _dialog_overrides.has_override(node_id, for_locale, TYPE_STRING):
@@ -856,7 +856,7 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 					"font_resource": &"",
 					"dialog_scene": &"",
 					"dialog_speed": &"",
-					"metadata": {}}
+					"metadata": NFDictUtils.create_typed(TYPE_STRING, TYPE_NIL)}
 				
 				if not node_data[node_id]["input_connections"]["character_settings"]["target_node_uuid"].is_empty():
 					var character_settings_data: Dictionary = node_data[node_data[node_id]["input_connections"]["character_settings"]["target_node_uuid"]]
@@ -902,7 +902,7 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 				var options: Array[Dictionary] = []
 				for option:Dictionary in metadata["choices"]:
 					var new_option: Dictionary[String, Variant] = {
-						"next_node": target_finder.get_target(StringName(option["output_connections"]["next_node"]["target_node_uuid"])),
+						"next_node": target_finder.get_target(option["output_connections"]["next_node"]["target_node_uuid"]),
 						"settings": {
 							"available": &"",
 							"unlocked": &"",
@@ -937,24 +937,24 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 				export_data["choices"] = options
 			NodeType.BRANCH:
 				export_data["result"] = target_finder.get_target(node_data[node_id]["input_connections"]["path_direction"]["target_node_uuid"])
-				export_data["case_true"] = target_finder.get_target(StringName(node_data[node_id]["output_connections"]["next_node_true"]["target_node_uuid"]))
-				export_data["case_false"] = target_finder.get_target(StringName(node_data[node_id]["output_connections"]["next_node_false"]["target_node_uuid"]))
+				export_data["case_true"] = target_finder.get_target(node_data[node_id]["output_connections"]["next_node_true"]["target_node_uuid"])
+				export_data["case_false"] = target_finder.get_target(node_data[node_id]["output_connections"]["next_node_false"]["target_node_uuid"])
 			NodeType.CONDITION_SELECT:
 				export_data["result"] = target_finder.get_target(node_data[node_id]["input_connections"]["result"]["target_node_uuid"])
-				export_data["true_value"] = target_finder.get_target(StringName(node_data[node_id]["input_connections"]["true_value"]["target_node_uuid"]))
-				export_data["false_value"] = target_finder.get_target(StringName(node_data[node_id]["input_connections"]["false_value"]["target_node_uuid"]))
+				export_data["true_value"] = target_finder.get_target(node_data[node_id]["input_connections"]["true_value"]["target_node_uuid"])
+				export_data["false_value"] = target_finder.get_target(node_data[node_id]["input_connections"]["false_value"]["target_node_uuid"])
 			NodeType.COMPARATION:
 				export_data["operator"] = metadata["operator"]
 				export_data["value_a"] = target_finder.get_target(node_data[node_id]["input_connections"]["node_a"]["target_node_uuid"])
 				export_data["value_b"] = target_finder.get_target(node_data[node_id]["input_connections"]["node_b"]["target_node_uuid"])
 			NodeType.EVENT:
-				var var_val: StringName = StringName(node_data[node_id]["input_connections"]["variable_value"]["target_node_uuid"])
+				var var_val: String = node_data[node_id]["input_connections"]["variable_value"]["target_node_uuid"]
 				export_data["value"] = target_finder.get_target(var_val)
 				
 				if not node_data[node_id]["input_connections"]["callable"]["target_node_uuid"].is_empty():
-					var callable_uuid: StringName = node_data[node_id]["input_connections"]["callable"]["target_node_uuid"]
+					var callable_uuid: String = node_data[node_id]["input_connections"]["callable"]["target_node_uuid"]
 					if available_methods.has(node_data[callable_uuid]["metadata"]["method"]):
-						export_data["callable"] = target_finder.get_target(node_data[node_id]["input_connections"]["callable"]["target_node_uuid"])
+						export_data["callable"] = target_finder.get_target(callable_uuid)
 					else:
 						export_data["callable"] = &""
 						NFPluginGameHandler._log_msg(
@@ -967,7 +967,7 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 					export_data["callable"] = &""
 				
 				if not node_data[node_id]["input_connections"]["signal"]["target_node_uuid"].is_empty():
-					var signal_uuid: StringName = node_data[node_id]["input_connections"]["signal"]["target_node_uuid"]
+					var signal_uuid: String = node_data[node_id]["input_connections"]["signal"]["target_node_uuid"]
 					if available_signals.has(node_data[signal_uuid]["metadata"]["signal"]):
 						export_data["signal"] = target_finder.get_target(signal_uuid)
 					else:
@@ -981,7 +981,7 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 				else:
 					export_data["signal"] = &""
 				
-				export_data["next_node"] = target_finder.get_target(StringName(node_data[node_id]["output_connections"]["next_node"]["target_node_uuid"]))
+				export_data["next_node"] = target_finder.get_target(node_data[node_id]["output_connections"]["next_node"]["target_node_uuid"])
 				
 				if var_val.is_empty():
 					export_data["variable_path"] = ""
@@ -994,20 +994,20 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 				for case:Dictionary in metadata["cases"]:
 					var new_case: Dictionary[String, Variant] = {}
 					new_case["value"] = case["value"]
-					new_case["next_node"] = target_finder.get_target(StringName(case["output_connections"]["next_node"]["target_node_uuid"]))
+					new_case["next_node"] = target_finder.get_target(case["output_connections"]["next_node"]["target_node_uuid"])
 					cases.append(new_case)
 				
-				export_data["case_default"] = target_finder.get_target(StringName(node_data[node_id]["output_connections"]["default"]["target_node_uuid"]))
+				export_data["case_default"] = target_finder.get_target(node_data[node_id]["output_connections"]["default"]["target_node_uuid"])
 				export_data["match_value"] = target_finder.get_target(node_data[node_id]["input_connections"]["match_value_source"]["target_node_uuid"])
 				export_data["cases"] = cases
 			NodeType.PAUSE:
-				export_data["next_node"] = target_finder.get_target(StringName(node_data[node_id]["output_connections"]["next_node"]["target_node_uuid"]))
+				export_data["next_node"] = target_finder.get_target(node_data[node_id]["output_connections"]["next_node"]["target_node_uuid"])
 			NodeType.RANDOM:
 				var options: Array[Dictionary] = []
 				
 				for option:Dictionary in metadata["options"]:
 					var new_option: Dictionary[String, StringName] = {}
-					new_option["target"] = target_finder.get_target(StringName(option["output_connections"]["next_node"]["target_node_uuid"]))
+					new_option["target"] = target_finder.get_target(option["output_connections"]["next_node"]["target_node_uuid"])
 					new_option["weight_override"] = target_finder.get_target(option["input_connections"]["weight"]["target_node_uuid"])
 					options.append(new_option)
 				
@@ -1019,7 +1019,7 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 			NodeType.SIGNAL:
 				var arguments: Array[StringName] = []
 				for argument:Dictionary in metadata["arguments"]:
-					var target_uuid: StringName = StringName(argument["target_node_uuid"])
+					var target_uuid: String = argument["target_node_uuid"]
 					if not target_uuid.is_empty():
 						arguments.append(target_finder.get_target(target_uuid))
 					else:
@@ -1045,7 +1045,7 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 					var skipped_previous: bool = false
 					for argument:Dictionary in metadata["arguments"]:
 						arg_idx += 1
-						var t_uuid: StringName = StringName(argument["target_node_uuid"])
+						var t_uuid: String = argument["target_node_uuid"]
 						
 						if not t_uuid.is_empty():
 							arguments.append(target_finder.get_target(t_uuid))
@@ -1088,7 +1088,7 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 					var skipped_previous: bool = false
 					for argument:Dictionary in metadata["arguments"]:
 						arg_idx += 1
-						var t_uuid: StringName = StringName(argument["target_node_uuid"])
+						var t_uuid: String = argument["target_node_uuid"]
 						if not argument["target_node_uuid"].is_empty():
 							arguments.append(target_finder.get_target(t_uuid))
 							if skipped_previous:
@@ -1135,11 +1135,11 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 			NodeType.RESOURCE:
 				export_data["resource_path"] = metadata["resource_path"]
 			NodeType.DATA_EVENT:
-				var var_val: StringName = StringName(node_data[node_id]["input_connections"]["variable_value"]["target_node_uuid"])
+				var var_val: String = node_data[node_id]["input_connections"]["variable_value"]["target_node_uuid"]
 				export_data["value"] = target_finder.get_target(var_val)
 				
 				if not node_data[node_id]["input_connections"]["callable"]["target_node_uuid"].is_empty():
-					var callable_uuid: StringName = node_data[node_id]["input_connections"]["callable"]["target_node_uuid"]
+					var callable_uuid: String = node_data[node_id]["input_connections"]["callable"]["target_node_uuid"]
 					if available_methods.has(node_data[callable_uuid]["metadata"]["method"]):
 						export_data["callable"] = target_finder.get_target(callable_uuid)
 					else:
@@ -1154,7 +1154,7 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 					export_data["callable"] = &""
 				
 				if not node_data[node_id]["input_connections"]["signal"]["target_node_uuid"].is_empty():
-					var signal_uuid: StringName = node_data[node_id]["input_connections"]["signal"]["target_node_uuid"]
+					var signal_uuid: String = node_data[node_id]["input_connections"]["signal"]["target_node_uuid"]
 					if available_signals.has(node_data[signal_uuid]["metadata"]["signal"]):
 						export_data["signal"] = target_finder.get_target(signal_uuid)
 					else:
@@ -1182,10 +1182,10 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 			NodeType.VALUE:
 				export_data["value"] = metadata["value"]
 			NodeType.TRAVEL_TO:
-				export_data["travel_target"] = target_finder.get_target(StringName(metadata["travel_target"]))
-				export_data["next_node"] = target_finder.get_target(StringName(node_data[node_id]["output_connections"]["next_node"]["target_node_uuid"]))
+				export_data["travel_target"] = target_finder.get_target(metadata["travel_target"])
+				export_data["next_node"] = target_finder.get_target(node_data[node_id]["output_connections"]["next_node"]["target_node_uuid"])
 			NodeType.TRAVEL_TARGET:
-				export_data["next_node"] = target_finder.get_target(StringName(node_data[node_id]["output_connections"]["next_node"]["target_node_uuid"]))
+				export_data["next_node"] = target_finder.get_target(node_data[node_id]["output_connections"]["next_node"]["target_node_uuid"])
 			_:
 				pass
 		

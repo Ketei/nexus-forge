@@ -1155,9 +1155,8 @@ func _on_file_menu_id_pressed(id: int) -> void:
 			var import_data: Dictionary = import_status["data"]
 			if import_data.is_empty():
 				return
-			discourse_graph_edit.update_localization_data(
-					active_conversation,
-					current_locale)
+			
+			save_current_dialog_to_memory()
 			var previous_state: Dictionary[String, Dictionary] = active_conversation.localization.duplicate(true)
 			active_conversation._set_csv_data(import_data)
 			var new_state: Dictionary[String, Dictionary] = active_conversation.localization.duplicate(true)
@@ -5163,23 +5162,23 @@ func _on_nodes_removed(action: String, graph_nodes_data: Dictionary[String, Dict
 	var action_data: Dictionary = {
 		"graph_nodes_data": graph_nodes_data,
 		"nodes_frame_parents": NFDictUtils.create_typed( # Node NFUUID, parent NFUUID
-				TYPE_STRING_NAME,
-				TYPE_STRING_NAME),
+				TYPE_STRING,
+				TYPE_STRING),
 		"resource_node_data": NFDictUtils.create_typed(
-			TYPE_STRING_NAME,
+			TYPE_STRING,
 			TYPE_DICTIONARY),
 		"resource_localization": NFDictUtils.create_typed(
-			TYPE_STRING_NAME,
+			TYPE_STRING,
 			TYPE_DICTIONARY),
 		"tree_hierarchy": NFDictUtils.create_typed(
-			TYPE_STRING_NAME,
+			TYPE_STRING,
 			TYPE_DICTIONARY),
 		"pointer_states": NFDictUtils.create_typed(
-			TYPE_STRING_NAME,
-			TYPE_STRING_NAME),
+			TYPE_STRING,
+			TYPE_STRING),
 		"waypoint_states": NFDictUtils.create_typed(
-			TYPE_STRING_NAME,
-			TYPE_STRING_NAME),}
+			TYPE_STRING,
+			TYPE_STRING),}
 	
 	var requires_anchor_snapshot: bool = false
 	var requires_waypoint_snapshot: bool = false
@@ -5274,21 +5273,27 @@ func _undo_remove_nodes(action_data: Dictionary) -> void:
 		
 		if d_node.is_node_localized():
 			if d_node.node_type == DiscourseGraphNode.DialogueNodeType.DIALOG:
-				d_node.set_dialog_text(NFDictUtils.get_nested_value(
-						active_conversation.localization,
-						[node_uuid, "locales", current_locale],
-						"",
-						true))
+				
+				var node_data: Dictionary = active_conversation.localization.get(node_uuid, NFDictUtils.EMPTY_DICT)
+				var locales_data: Dictionary = node_data.get("locales", NFDictUtils.EMPTY_DICT)
+				var localized_data: Variant = locales_data.get(current_locale, "")
+				
+				if typeof(localized_data) == TYPE_STRING:
+					d_node.set_dialog_text(localized_data)
+				else:
+					d_node.set_dialog_text("")
+				
 				localization_nodes_tree.create_dialog_node(d_node.get_node_id(), d_node)
 			elif d_node.node_type == DiscourseGraphNode.DialogueNodeType.CHOICES:
 				var localized_options: Array[String] = []
 				var choice_size: int = d_node.choice_count()
 				
-				localized_options.assign(NFDictUtils.get_nested_value(
-						active_conversation.localization,
-						[node_uuid, "locales", current_locale],
-						[],
-						true))
+				var node_data: Dictionary = active_conversation.localization.get(node_uuid, NFDictUtils.EMPTY_DICT)
+				var locales_data: Dictionary = node_data.get("locales", NFDictUtils.EMPTY_DICT)
+				var localized_data: Variant = locales_data.get(current_locale)
+				
+				if typeof(localized_data) == TYPE_PACKED_STRING_ARRAY:
+					localized_options.assign(localized_data)
 				
 				if localized_options.size() < choice_size:
 					localized_options.resize(choice_size)
@@ -5301,11 +5306,15 @@ func _undo_remove_nodes(action_data: Dictionary) -> void:
 				
 				localization_nodes_tree.create_options_node(d_node.get_node_id(), d_node)
 			elif d_node.node_type == DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
-				d_node.set_text(NFDictUtils.get_nested_value(
-						active_conversation.localization,
-						[node_uuid, "locales", current_locale],
-						"",
-						true))
+				var node_data: Dictionary = active_conversation.localization.get(node_uuid, NFDictUtils.EMPTY_DICT)
+				var locales_data: Dictionary = node_data.get("locales", NFDictUtils.EMPTY_DICT)
+				var localized_data: Variant = locales_data.get(current_locale, "")
+				
+				if typeof(localized_data) == TYPE_STRING:
+					d_node.set_text(localized_data)
+				else:
+					d_node.set_text("")
+				
 				localization_nodes_tree.create_localized_text_node(d_node.get_node_id(), d_node)
 		created_nodes[node_uuid] = d_node
 	
@@ -5999,8 +6008,8 @@ func _undo_remove_frame(action_data: Dictionary) -> void:
 	
 	frame.set_frame_data(frame_data)
 	if not attached.is_empty():
-		var att_nodes: Dictionary = attached.get("nodes", NFDictUtils.EMPTY_DICT)
-		var att_frames: Dictionary = attached.get("frames", NFDictUtils.EMPTY_DICT)
+		var att_nodes: Array = attached.get("nodes", NFArrayUtils.EMPTY)
+		var att_frames: Array = attached.get("frames", NFArrayUtils.EMPTY)
 		
 		for node_uuid in att_nodes:
 			var node: DiscourseGraphNode = discourse_graph_edit.get_discourse_node(node_uuid)

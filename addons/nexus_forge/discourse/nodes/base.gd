@@ -1114,7 +1114,7 @@ func has_any_field_input(field_id: StringName) -> bool:
 func get_field(field_id: StringName) -> Control:
 	if field_id.is_empty():
 		return null
-	var child: Control = get_node_or_null(NodePath(field_id))
+	var child: Control = get_node_or_null(NodePath(String(field_id)))
 	
 	return null if child == null else child.get_child(1)
 

@@ -64,7 +64,7 @@ func load_dialog(path: String, starting_id: StringName = &"") -> bool:
 		if starting_id.is_empty():
 			_next_node_uuid = _dialog_resource.entry_node_uuid
 		elif _dialog_resource.node_data.has(starting_id):
-			_next_node_uuid = String(starting_id)
+			_next_node_uuid = starting_id
 		else:
 			var data: Dictionary = _dialog_resource.find_uuid_from_id(starting_id)
 			if data["found"]:
@@ -565,7 +565,7 @@ func _process_logic(id: StringName) -> Dictionary[String, Variant]:
 							var notif_args: Array = signal_args.duplicate(true)
 							var api_signal: Signal = Signal(
 									NexusForge.Discourse.API,
-									signal_metadata["signal"])
+									signal_str)
 							
 							api_signal.emit.callv(signal_args)
 							
@@ -789,7 +789,7 @@ func _get_data_editor(from_uuid: String, fallback = null, _remaining_travels: in
 					if not override_base.is_empty():
 						var override_val: Variant = _get_data_editor(override_base, val_base, _remaining_travels - 1)
 						var override_type: int = typeof(override_val)
-						if override_type == TYPE_BOOL:
+						if override_type == TYPE_INT or override_type == TYPE_FLOAT:
 							val_base = override_val
 					
 					if val_base <= 0:
