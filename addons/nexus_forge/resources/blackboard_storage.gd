@@ -10,15 +10,18 @@ extends Resource
 ## are simplified using [method String.simplify_path].
 
 
-## Emmited when data is set via [method BlackboardData.set_variable].
-signal data_set(variable_path: String)
-## Emmited when data is erased via [method BlackboardData.set_variable].
-signal data_erased(variable_path: String)
-## Emmited only when a folder is created via [method BlackboardData.create_folder].
+## Emitted when data is set via [method BlackboardData.set_variable].
+signal variable_set(variable_path: String)
+## Emitted when data is erased via [method BlackboardData.set_variable].
+signal variable_erased(variable_path: String)
+## Emitted only when a folder is created via [method BlackboardData.create_folder].
 ## If this function is called but no folder is created the signal won't be emmited.
 signal folder_created(folder_path: String)
-## Emmited when a folder is erased.
+## Emitted when a folder is erased.
 signal folder_erased(folder_path: String)
+## Emitted when the set value of a variable is different to what it was before.[br]
+## [b]Note:[/b] This will not emit if the variable is erased.
+signal variable_changed(variable_path: String, value: Variant)
 
 
 @export_storage var _variables: Dictionary[String, Dictionary] = {}
@@ -156,14 +159,23 @@ func set_variable(variable_path: String, value: Variant) -> bool:
 	
 	if value == null:
 		if on_active and _active_variables[folder_path].erase(parts["variable"]):
-			data_erased.emit(parts["path"])
+			variable_erased.emit(parts["path"])
 	else:
 		if not _active_variables.has(folder_path):
 			_active_variables[folder_path] = NFDictUtils.create_typed(
 					TYPE_STRING,
 					TYPE_NIL)
-		_active_variables[folder_path][parts["variable"]] = value
-		data_set.emit(parts["path"])
+		var folder: Dictionary = _active_variables[folder_path]
+		var variable_id: String = parts["variable"]
+		var value_exists: bool = folder.has(variable_id)
+		var current_value: Variant = folder.get(variable_id)
+		var different_values: bool = current_value != value
+		
+		folder[variable_id] = value
+		
+		variable_set.emit(parts["path"])
+		if not value_exists or different_values:
+			variable_changed.emit(parts["path"], value)
 	return true
 
 
@@ -228,7 +240,7 @@ func reset_variable(variable_path: String) -> bool:
 	if _active_variables.has(parts["folder"]):
 		var erased: bool = _active_variables[parts["folder"]].erase(parts["variable"])
 		if erased:
-			data_erased.emit(parts["path"])
+			variable_erased.emit(parts["path"])
 		return erased
 	return false
 

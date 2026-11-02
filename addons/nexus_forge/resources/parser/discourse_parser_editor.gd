@@ -10,11 +10,11 @@ extends NFDialogParser
 ## For the release parser see [NFDialogParser].
 
 
-## Emmited when data is set on the NexusForge.Blackboard singleton.
-signal data_set(path: String, data: Variant)
-## Emmited when a method is called from the DiscourseAPI.
+## Emitted when data is set on the NexusForge.Blackboard singleton.
+signal variable_set(path: String, data: Variant)
+## Emitted when a method is called from the DiscourseAPI.
 signal method_called(method_string: String, arguments: Array)
-## Emmited when a signal is emmited from the DiscourseAPI.
+## Emitted when a signal is emmited from the DiscourseAPI.
 signal signal_emitted(signal_name: String, arguments: Array)
 
 var _next_node_uuid: String = "":
@@ -318,8 +318,8 @@ func _process_logic(id: StringName) -> Dictionary[String, Variant]:
 				
 				if text_source_node.is_empty():
 					var text_data: Dictionary[String, Variant] = _dialog_resource._get_text_data_localized(current_node, locale)
-					target["data"] = {
-						"dialog_text": _parse_dialog(
+					var dialogue_data: Dictionary[String, Variant] =  {
+						"text": _parse_dialog(
 								current_node,
 								text_data["text"],
 								text_data["is_override"]),
@@ -331,6 +331,7 @@ func _process_logic(id: StringName) -> Dictionary[String, Variant]:
 						"display_name": display_name,
 						"portrait_id": portrait_id,
 						"metadata": dialog_metadata}
+					target["data"] = dialogue_data
 				else:
 					var data_source = _get_data_editor(text_source_node, "")
 					var text: String = ""
@@ -345,8 +346,8 @@ func _process_logic(id: StringName) -> Dictionary[String, Variant]:
 					else:
 						text = "[ERROR GETTING DATA FROM '%s']" % text_source_node
 					
-					target["data"] = {
-						"dialog_text": _parse_dialog(
+					var dialogue_data: Dictionary[String, Variant] = {
+						"text": _parse_dialog(
 								current_node,
 								text,
 								is_override),
@@ -358,6 +359,8 @@ func _process_logic(id: StringName) -> Dictionary[String, Variant]:
 						"display_name": display_name,
 						"portrait_id": portrait_id,
 						"metadata": dialog_metadata}
+					
+					target["data"] = dialogue_data
 				
 				target["type"] = NodeTypes.DIALOG
 				target["current"] = current_node
@@ -378,19 +381,22 @@ func _process_logic(id: StringName) -> Dictionary[String, Variant]:
 					var choice_target: String = output_connections.get("next_node", E).get(T, "")
 					var settings_node: String = input_connections.get("settings", E).get(T, "")
 					
+					var target_id: StringName = _to_id(choice_target)
+					
 					option_idx += 1
 					option_duuid = String(current_node) + "_" + str(option_idx)
 					
 					if settings_node.is_empty():
 						option_duuid += "_unlocked"
-						available_options.append({
+						var choice_dict: Dictionary[String, Variant] = {
 								"unlocked": true,
 								"text": _parse_dialog(
 										option_duuid,
 										localized_choices[option_idx],
 										is_overridden),
-								"target": choice_target,
-								"metadata": {}})
+								"target": target_id,
+								"metadata": NFDictUtils.create_typed(TYPE_STRING, TYPE_NIL)}
+						available_options.append(choice_dict)
 					else:
 						var opt_settings: Dictionary = _dialog_resource.node_data.get(settings_node, E)
 						var opt_node_inputs: Dictionary = opt_settings.get(I, E)
@@ -464,7 +470,7 @@ func _process_logic(id: StringName) -> Dictionary[String, Variant]:
 									option_duuid,
 									choice_text,
 									is_overridden),
-							"target": choice_target,
+							"target": target_id,
 							"metadata": option_metadata})
 				
 				target["data"] = available_options
@@ -502,7 +508,7 @@ func _process_logic(id: StringName) -> Dictionary[String, Variant]:
 					var set_data: Variant = _get_data_editor(set_node)
 					
 					if NexusForge.Blackboard.set_variable(set_path, set_data):
-						data_set.emit(set_path, set_data)
+						variable_set.emit(set_path, set_data)
 					else:
 						NFPluginGameHandler._log_msg(
 							"discourse",
@@ -861,7 +867,7 @@ func _get_data_editor(from_uuid: String, fallback = null, _remaining_travels: in
 				if NexusForge.Blackboard.set_variable(
 						data_var_path,
 						data_conn):
-					data_set.emit(data_var_path, data_conn)
+					variable_set.emit(data_var_path, data_conn)
 				else:
 					NFPluginGameHandler._log_msg(
 							"discourse",

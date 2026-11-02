@@ -17,7 +17,7 @@ signal dialog_finished
 ## Emitted when a dialog reaches a "Pause" point.
 signal dialog_paused
 ## Emmited when a dialog event is reached.
-signal dialog_reached(dialog_data: Dictionary)
+signal dialog_reached(dialog_data: Dictionary[String, Variant])
 ## Emited when a choice event is reached.
 signal choices_reached(options: Array[Dictionary])
 
@@ -453,8 +453,8 @@ func _process_logic(node_id: StringName) -> Dictionary[String, Variant]:
 				
 				if text_source_node.is_empty():
 					var text_data: Dictionary[String, Variant] = _dialog_resource._get_text_data(dialog_id, current_node)
-					target["data"] = {
-						"dialog_text": _parse_dialog(
+					var dialogue_data: Dictionary = {
+						"text": _parse_dialog(
 								String(current_node),
 								text_data["text"],
 								text_data["is_override"]),
@@ -466,6 +466,7 @@ func _process_logic(node_id: StringName) -> Dictionary[String, Variant]:
 						"display_name": display_name,
 						"portrait_id": portrait_id,
 						"metadata": dialogue_metadata}
+					target["data"] = dialogue_data
 				else:
 					var data_source = _get_data(text_source_node, "")
 					var text: String = ""
@@ -480,8 +481,8 @@ func _process_logic(node_id: StringName) -> Dictionary[String, Variant]:
 					else:
 						text = "[ERROR GETTING DATA FROM '%s']" % text_source_node
 					
-					target["data"] ={
-						"dialog_text": _parse_dialog(
+					var dialogue_data: Dictionary[String, Variant] = {
+						"text": _parse_dialog(
 								String(current_node),
 								text,
 								is_override),
@@ -493,6 +494,8 @@ func _process_logic(node_id: StringName) -> Dictionary[String, Variant]:
 						"display_name": display_name,
 						"portrait_id": portrait_id,
 						"metadata": dialogue_metadata}
+					
+					target["data"] = dialogue_data
 				
 				target["current"] = current_node
 				target["next"] = next_node
@@ -533,12 +536,12 @@ func _process_logic(node_id: StringName) -> Dictionary[String, Variant]:
 					
 					if option_settings.is_empty():
 						option_duuid += "_unlocked"
-						available_options.append(
-							{
+						var choice_data: Dictionary[String, Variant] = {
 								"unlocked": true,
 								"text": _parse_dialog(option_duuid, localized_options[idx], is_overridden),
 								"target": choice_target,
-								"metadata": NFDictUtils.create_typed(TYPE_STRING, TYPE_NIL)})
+								"metadata": NFDictUtils.create_typed(TYPE_STRING, TYPE_NIL)}
+						available_options.append(choice_data)
 					else:
 						var settings_node: StringName = option_settings.get("available", &"")
 						var show: bool = _to_bool(
@@ -577,12 +580,13 @@ func _process_logic(node_id: StringName) -> Dictionary[String, Variant]:
 							option_duuid += "_locked"
 						
 						var option_text: String = _parse_dialog(option_duuid, text, is_overridden)
-						
-						available_options.append({
+						var choice_data: Dictionary[String, Variant] = {
 							"unlocked": unlocked,
 							"text": option_text,
 							"target": choice_target,
-							"metadata": choice_metadata})
+							"metadata": choice_metadata}
+						
+						available_options.append(choice_data)
 				
 				target["data"] = available_options
 				target["current"] = current_node

@@ -64,7 +64,7 @@ func _ready() -> void:
 	NexusForge.Discourse.dialog_started.connect(_on_dialog_started)
 	NexusForge.Discourse.dialog_paused.connect(_on_dialog_paused)
 	NexusForge.Discourse.dialog_finished.connect(_on_dialog_finished)
-	NexusForge.Discourse.data_set.connect(_on_data_set)
+	NexusForge.Discourse.variable_set.connect(_on_data_set)
 	NexusForge.Discourse.method_called.connect(_on_method_called)
 	NexusForge.Discourse.signal_emitted.connect(_on_signal_emitted)
 
