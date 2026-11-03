@@ -5731,7 +5731,10 @@ func _do_add_locale_action(locale: String, snapshot: Dictionary = {}) -> void:
 	
 	add_locale(locale)
 	
-	if snapshot.is_empty():
+	if snapshot.is_empty(): # First time creation
+		var base_phrase_locale: Dictionary = active_conversation.format_strings.get(base_language, NFDictUtils.EMPTY_DICT)
+		if not base_phrase_locale.is_empty():
+			active_conversation.format_strings[locale] = base_phrase_locale
 		return
 	
 	var restored_codes: Array = snapshot["format_strings"].keys()
@@ -5864,15 +5867,25 @@ func _do_localize_node(node_uuid: String, snapshot: Dictionary = {}) -> void:
 		# First time localizing
 		match node.node_type:
 			DiscourseGraphNode.DialogueNodeType.DIALOG:
-				active_conversation.set_dialog_text(node_uuid, node.get_dialog_text(), current_locale)
+				# Get the current text for the initial localization.
+				var current_text: String = node.get_dialog_text()
+				# Store the text on the current locale
+				active_conversation.set_dialog_text(node_uuid, current_text, current_locale)
+				if current_locale != base_language: # If it's not the base, store it there too.
+					active_conversation.set_dialog_text(node_uuid, current_text, base_language)
 			DiscourseGraphNode.DialogueNodeType.CHOICES:
-				active_conversation.set_choices_array(node_uuid, node.get_options(), current_locale)
+				var choices: Array[String] = node.get_options()
+				active_conversation.set_choices_array(node_uuid, choices, current_locale)
+				if current_locale != base_language:
+					active_conversation.set_choices_array(node_uuid, choices, base_language)
 			DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
-				active_conversation.set_dialog_text(node_uuid, node.get_text(), current_locale)
+				var current_text: String = node.get_text()
+				active_conversation.set_dialog_text(node_uuid, current_text, current_locale)
+				if current_locale != base_language:
+					active_conversation.set_dialog_text(node_uuid, current_text, base_language)
 	else:
 		# Restoring from an Undo
 		active_conversation.localization[node_uuid] = snapshot.duplicate(true)
-	
 	
 	node.set_node_localized(true)
 	

@@ -256,6 +256,7 @@ expand_margin_right = 2.0
 anti_aliasing = false
 
 [resource]
+Button/colors/icon_disabled_color = Color(1, 1, 1, 1)
 GraphNode/constants/separation = 8
 GraphNode/styles/panel = SubResource("StyleBoxFlat_iusu8")
 GraphNode/styles/panel_selected = SubResource("StyleBoxFlat_svvrm")

@@ -77,7 +77,7 @@ const COLORS: Dictionary = {
 	"metadata": Color(0.541, 0.624, 0.82)}
 
 ## Color to tint the localization button when it is toggled.
-const LOCALIZED_COLOR: Color = Color.LIME_GREEN
+const LOCALIZED_COLOR: Color = Color.GREEN_YELLOW
 
 ## The arrow icon that indicates dialogue flow
 @onready var flow_icon: Texture2D = preload("res://addons/nexus_forge/icons/right_arrow.png")

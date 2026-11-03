@@ -83,7 +83,7 @@ func _on_dialog_reached(data: Dictionary) -> void:
 	var displayed_text: String = ""
 	if not data["character_id"].is_empty():
 		displayed_text = String(data["character_id"]) + ": "
-	displayed_text += data["dialog_text"]
+	displayed_text += data["text"]
 	
 	dialog_text_edit.text = displayed_text
 
