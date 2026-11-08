@@ -113,7 +113,7 @@ func _on_option_activated() -> void:
 	continue_btn.disabled = false
 	continue_btn.grab_focus()
 	
-	NexusForge.Discourse.set_dialog_id(selected.get_metadata(0))
+	NexusForge.Discourse.set_next_node_id(selected.get_metadata(0))
 	NexusForge.Discourse.advance()
 
 
@@ -122,7 +122,7 @@ func _on_option_button_clicked(item: TreeItem, _column: int, id: int, mouse_butt
 		return
 	
 	if id == 0:
-		NexusForge.Discourse.set_dialog_id(item.get_metadata(0))
+		NexusForge.Discourse.set_next_node_id(item.get_metadata(0))
 		options_container.visible = false
 		continue_btn.disabled = false
 		continue_btn.grab_focus()

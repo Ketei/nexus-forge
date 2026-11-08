@@ -370,7 +370,7 @@ class NFDialogEntryOverride extends RefCounted:
 	## Returns the registered override of [param node_id] for [param locale].[br]
 	## Returns [code]null[/code] if no override existed.
 	func get_override(node_id: StringName, locale: String) -> Variant:
-		return _overrides.get(node_id, NFDictUtils.EMPTY_DICT).get(locale)
+		return _overrides.get(node_id, NFDictUtils.EMPTY).get(locale)
 	
 	
 	## Registers a text [param override] for [param node_id] on the
@@ -495,7 +495,7 @@ class NFDialogEntryOverride extends RefCounted:
 	## [param locale].[br]
 	## [b]Note:[/b] This only works if the override exists and is of type choices.
 	func clear_choice_overrides(node_id: StringName, locale: String) -> void:
-		var value: Variant = _overrides.get(node_id, NFDictUtils.EMPTY_DICT).get(locale)
+		var value: Variant = _overrides.get(node_id, NFDictUtils.EMPTY).get(locale)
 		if typeof(value) != TYPE_ARRAY:
 			return
 		
@@ -593,7 +593,7 @@ class NFPhraseEntryOverride extends RefCounted:
 			overrides.append(case)
 			update = true
 		
-		var e: Dictionary = NFDictUtils.EMPTY_DICT
+		var e: Dictionary = NFDictUtils.EMPTY
 		var locales_dict: Dictionary = _overrides.get(dialog, e).get(locale, e).get(phrase, e).get("format", e).get(format, e).get("cases", e)
 		if locales_dict.has(case):
 			update = true

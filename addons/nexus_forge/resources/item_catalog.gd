@@ -102,9 +102,9 @@ func get_item_flags(item_id: StringName) -> Array[int]:
 	var item_flags: Array[int] = []
 	var flags_dict: Dictionary = _items.get(
 			item_id,
-			NFDictUtils.EMPTY_DICT).get(
+			NFDictUtils.EMPTY).get(
 					"flags",
-					NFDictUtils.EMPTY_DICT)
+					NFDictUtils.EMPTY)
 	for flag in flags_dict:
 		item_flags.append(flag)
 	return item_flags

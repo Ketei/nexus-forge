@@ -204,7 +204,7 @@ func _get_node_data() -> Dictionary:
 func _set_node_data(data: Dictionary) -> void:
 	super(data)
 	
-	var metadata: Dictionary = data.get("metadata", NFDictUtils.EMPTY_DICT)
+	var metadata: Dictionary = data.get("metadata", NFDictUtils.EMPTY)
 	
 	if metadata.is_empty():
 		return

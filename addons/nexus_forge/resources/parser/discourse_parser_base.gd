@@ -396,7 +396,7 @@ func _process_logic(node_id: StringName) -> Dictionary[String, Variant]:
 	if node_id.is_empty():
 		return target
 	
-	var E: Dictionary = NFDictUtils.EMPTY_DICT
+	var E: Dictionary = NFDictUtils.EMPTY
 	
 	var dialog_id: String = _resource_id
 	var process_next: StringName = node_id
@@ -755,7 +755,7 @@ func _process_logic(node_id: StringName) -> Dictionary[String, Variant]:
 func _get_data(node_id: StringName, fallback = null, _remaining_travels: int = 250) -> Variant:
 	if _dialog_resource == null or _remaining_travels <= 0 or not _dialog_resource.node_logic.has(node_id):
 		return fallback
-	var E: Dictionary = NFDictUtils.EMPTY_DICT
+	var E: Dictionary = NFDictUtils.EMPTY
 	var data: Dictionary = _dialog_resource.node_logic.get(node_id, E)
 	
 	match data.get("node_type", NodeTypes.INVALID):
@@ -983,7 +983,7 @@ func _load_locale_into(dialog: DiscourseDialog, locale_code: String, force_reloa
 	if dialog_id.is_empty():
 		return
 	
-	var e: Dictionary = NFDictUtils.EMPTY_DICT
+	var e: Dictionary = NFDictUtils.EMPTY
 	var base_path: String = _get_base_locale_path(dialog_id, locale_code)
 	var file_path: String = _locale_overrides.get(dialog_id, e).get(locale_code, base_path)
 	
@@ -1103,7 +1103,7 @@ func load_dialog(path: String, starting_id: StringName = &"") -> bool:
 		var locale_data: DiscourseDialogLocale = data._get_locale(locale)
 		
 		var base_path: String = _get_base_locale_path(dialog_id, locale)
-		var eff_path: String = _locale_overrides.get(dialog_id, NFDictUtils.EMPTY_DICT).get(locale, base_path)
+		var eff_path: String = _locale_overrides.get(dialog_id, NFDictUtils.EMPTY).get(locale, base_path)
 		
 		var current_json: String = locale_data.json_file if locale_data != null else ""
 		var reload_locale: bool = false
@@ -1309,7 +1309,7 @@ func prepare_dialog(path: String) -> bool:
 	var locale_data: DiscourseDialogLocale = data._get_locale(locale)
 	
 	var base_path: String = _get_base_locale_path(dialog_id, locale)
-	var eff_path: String = _locale_overrides.get(dialog_id, NFDictUtils.EMPTY_DICT).get(locale, base_path)
+	var eff_path: String = _locale_overrides.get(dialog_id, NFDictUtils.EMPTY).get(locale, base_path)
 	
 	var current_json: String = locale_data.json_file if locale_data != null else ""
 	var reload_locale: bool = false
@@ -1338,7 +1338,7 @@ func prepare_dialog(path: String) -> bool:
 
 ## Sets the dialog to be at the specific point of [param id].[br]
 ## Returns [code]true[/code] if the ID was set successfully.
-func set_dialog_id(id: StringName) -> bool:
+func set_next_node_id(id: StringName) -> bool:
 	if _dialog_resource == null:
 		return false
 	
@@ -1355,7 +1355,7 @@ func set_dialog_id(id: StringName) -> bool:
 
 
 ## Returns the ID of the current dialog position.
-func get_dialog_current_id() -> StringName:
+func get_current_node_id() -> StringName:
 	return _current_id
 
 
@@ -1363,7 +1363,7 @@ func get_dialog_current_id() -> StringName:
 ## serialization.
 func get_state() -> Dictionary[String, Variant]:
 	var data: Dictionary[String, Variant] = {
-		"current_dialog_id": get_dialog_current_id(),
+		"current_dialog_id": get_current_node_id(),
 		"next_dialog_id": _next_id,
 		"conversation_started": _conversation_started,
 		"dialog_travel_stack": _node_travel_stack.duplicate(true)}
@@ -1977,7 +1977,7 @@ func _to_bool(data: Variant, fallback: bool = false) -> bool:
 
 
 func _get_base_locale_path(dialog_id: StringName, target_locale: String) -> String:
-	var e: Dictionary = NFDictUtils.EMPTY_DICT
+	var e: Dictionary = NFDictUtils.EMPTY
 	var dialog_data: Dictionary = _id_to_data.get(dialog_id, e)
 	var m_file: String = dialog_data.get("locale_file", "")
 	

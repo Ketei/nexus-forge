@@ -60,7 +60,7 @@ func _get_node_data() -> Dictionary:
 
 func _set_node_data(data: Dictionary) -> void:
 	super(data)
-	var target_data: Variant = data.get("metadata", NFDictUtils.EMPTY_DICT).get("anchor_target")
+	var target_data: Variant = data.get("metadata", NFDictUtils.EMPTY).get("anchor_target")
 	var target_type: int = typeof(target_data)
 	if target_type == TYPE_STRING or target_type == TYPE_STRING_NAME:
 		select_target(target_data)

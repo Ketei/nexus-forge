@@ -58,8 +58,8 @@ func has_variable(path: String) -> bool:
 	var folder_path: String = parts["folder"]
 	var variable_name: String = parts["variable"]
 	
-	var base_folder: Dictionary = _variables.get(folder_path, NFDictUtils.EMPTY_DICT)
-	var active_folder: Dictionary = _active_variables.get(folder_path, NFDictUtils.EMPTY_DICT)
+	var base_folder: Dictionary = _variables.get(folder_path, NFDictUtils.EMPTY)
+	var active_folder: Dictionary = _active_variables.get(folder_path, NFDictUtils.EMPTY)
 	
 	return base_folder.has(variable_name) or active_folder.has(variable_name)
 
@@ -80,8 +80,8 @@ func get_variable(path: String, fallback: Variant = null) -> Variant:
 	var folder: String = parts["folder"]
 	var variable: String = parts["variable"]
 	
-	var active_folder: Dictionary = _active_variables.get(folder, NFDictUtils.EMPTY_DICT)
-	var base_folder: Dictionary = _variables.get(folder, NFDictUtils.EMPTY_DICT)
+	var active_folder: Dictionary = _active_variables.get(folder, NFDictUtils.EMPTY)
+	var base_folder: Dictionary = _variables.get(folder, NFDictUtils.EMPTY)
 	
 	if active_folder.has(variable):
 		return active_folder[variable]
@@ -95,10 +95,10 @@ func variables(folder_path: String) -> Array[String]:
 	var keys_dict: Dictionary[String, Variant] = {}
 	var clean_path: String = folder_path.simplify_path()
 	
-	for var_key in _active_variables.get(clean_path, NFDictUtils.EMPTY_DICT):
+	for var_key in _active_variables.get(clean_path, NFDictUtils.EMPTY):
 		keys_dict[var_key] = null
 
-	for var_key in _variables.get(clean_path, NFDictUtils.EMPTY_DICT):
+	for var_key in _variables.get(clean_path, NFDictUtils.EMPTY):
 		keys_dict[var_key] = null
 	
 	if not keys_dict.is_empty():
@@ -222,8 +222,8 @@ func erase_folder(folder_path: String) -> void:
 func is_folder_empty(folder_path: String) -> bool:
 	var clean_path: String = folder_path.simplify_path()
 	
-	var active_folder: Dictionary = _active_variables.get(clean_path, NFDictUtils.EMPTY_DICT)
-	var base_folder: Dictionary = _variables.get(clean_path, NFDictUtils.EMPTY_DICT)
+	var active_folder: Dictionary = _active_variables.get(clean_path, NFDictUtils.EMPTY)
+	var base_folder: Dictionary = _variables.get(clean_path, NFDictUtils.EMPTY)
 	
 	return active_folder.is_empty() and base_folder.is_empty()
 

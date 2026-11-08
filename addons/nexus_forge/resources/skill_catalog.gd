@@ -37,7 +37,7 @@ func set_skill_name(skill_id: StringName, skill_name: String) -> void:
 
 ## Returns the custom skill [param skill_id] name.
 func get_skill_name(skill_id: StringName) -> String:
-	return _skill_data.get(skill_id, NFDictUtils.EMPTY_DICT).get("name", "")
+	return _skill_data.get(skill_id, NFDictUtils.EMPTY).get("name", "")
 
 
 ## Sets the custom skill [param skill_id] description.
@@ -48,7 +48,7 @@ func set_skill_description(skill_id: StringName, skill_description: String) -> v
 
 ## Returns the custom skill [param skill_id] description.
 func get_skill_description(skill_id: String) -> String:
-	return _skill_data.get(skill_id, NFDictUtils.EMPTY_DICT).get("description", "")
+	return _skill_data.get(skill_id, NFDictUtils.EMPTY).get("description", "")
 
 
 ## Returns true if a custom skill with [param skill_id] exists.
@@ -74,7 +74,7 @@ func set_skill_data(skill_id: StringName, data_key: String, data: Variant) -> vo
 
 ## Returns the value of [param data_id] on the custom skill [param skill_id].
 func get_skill_data(skill_id: StringName, data_id: String) -> Variant:
-	var custom_data: Dictionary = _skill_data.get(skill_id, NFDictUtils.EMPTY_DICT).get("custom_data", NFDictUtils.EMPTY_DICT)
+	var custom_data: Dictionary = _skill_data.get(skill_id, NFDictUtils.EMPTY).get("custom_data", NFDictUtils.EMPTY)
 	return custom_data.get(data_id)
 
 

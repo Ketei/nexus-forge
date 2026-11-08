@@ -172,7 +172,7 @@ func _apply_variable_rename(folder: String, old_name: String, new_name: String, 
 
 
 func _on_variable_updated(variable_id: String, value: Variant) -> void:
-	var old_value: Variant = _variables_resource._variables.get(_current_folder, NFDictUtils.EMPTY_DICT).get(variable_id)
+	var old_value: Variant = _variables_resource._variables.get(_current_folder, NFDictUtils.EMPTY).get(variable_id)
 	var type: int = typeof(old_value)
 	
 	if typeof(value) == type and value == old_value:
@@ -538,7 +538,7 @@ func _undo_add_variable(on_folder: String, data_id: String) -> void:
 
 
 func _do_add_variable(on_folder: String, data_id: String, value: Variant) -> void:
-	var target_dict: Dictionary = _variables_resource._variables.get(on_folder, NFDictUtils.EMPTY_DICT)
+	var target_dict: Dictionary = _variables_resource._variables.get(on_folder, NFDictUtils.EMPTY)
 	if target_dict.has(data_id):
 		return
 	
@@ -560,7 +560,7 @@ func refresh_current_variable_folder() -> void:
 	
 	var is_selected: bool = variables_tree.is_variable_selected()
 	var selected: String = variables_tree.get_selected_variable() if is_selected else ""
-	var folder: Dictionary = _variables_resource._variables.get(_current_folder, NFDictUtils.EMPTY_DICT)
+	var folder: Dictionary = _variables_resource._variables.get(_current_folder, NFDictUtils.EMPTY)
 	variables_tree.clear_variables()
 	for variable_id in folder:
 		variables_tree.create_variable(
@@ -578,7 +578,7 @@ func display_variables_of(folder_path: String) -> void:
 	var variables: Array[String] = []
 	var folder_dict: Dictionary = _variables_resource._variables.get(
 			folder_path,
-			NFDictUtils.EMPTY_DICT)
+			NFDictUtils.EMPTY)
 	
 	variables_tree.clear_variables()
 	
@@ -660,7 +660,7 @@ func _on_variable_dropped(origin_folder: String, variable: String, new_folder: S
 	var new_var_name: String = original_var_name
 	
 	if not _variables_resource._variables.get(
-				origin_folder, NFDictUtils.EMPTY_DICT).has(
+				origin_folder, NFDictUtils.EMPTY).has(
 						original_var_name):
 		return
 	
@@ -668,7 +668,7 @@ func _on_variable_dropped(origin_folder: String, variable: String, new_folder: S
 	var is_replacing: bool = false
 	var overwritten_value: Variant = null
 	
-	if _variables_resource._variables.get(new_folder, NFDictUtils.EMPTY_DICT).has(new_var_name):
+	if _variables_resource._variables.get(new_folder, NFDictUtils.EMPTY).has(new_var_name):
 		var folder_slices: int = new_folder.get_slice_count("/")
 		var display_folder: String = new_folder if folder_slices == 0 else\
 				new_folder.get_slice("/", folder_slices - 1)

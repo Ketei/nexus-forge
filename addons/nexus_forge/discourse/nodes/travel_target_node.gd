@@ -56,7 +56,7 @@ func _get_node_data() -> Dictionary:
 
 func _set_node_data(data: Dictionary) -> void:
 	super(data)
-	var waypoint_data: Variant = data.get("metadata", NFDictUtils.EMPTY_DICT).get("waypoint_id")
+	var waypoint_data: Variant = data.get("metadata", NFDictUtils.EMPTY).get("waypoint_id")
 	
 	if typeof(waypoint_data) == TYPE_STRING:
 		set_waypoint_id(waypoint_data)

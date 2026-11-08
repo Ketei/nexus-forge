@@ -5,11 +5,11 @@ extends RefCounted
 
 
 ## A read-only empty dictionary constant.
-const EMPTY_DICT: Dictionary = {}
+const EMPTY: Dictionary = {}
 
 
 static func _static_init() -> void:
-	EMPTY_DICT.make_read_only()
+	EMPTY.make_read_only()
 
 
 ## Returns [code]true[/code] if the [param dict] has any of the [param keys] given.

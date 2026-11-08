@@ -50,7 +50,7 @@ func _get_node_data() -> Dictionary:
 
 func _set_node_data(data: Dictionary) -> void:
 	super(data)
-	var path_data: Variant = data.get("metadata", NFDictUtils.EMPTY_DICT).get("resource_path")
+	var path_data: Variant = data.get("metadata", NFDictUtils.EMPTY).get("resource_path")
 	if typeof(path_data) == TYPE_STRING:
 		set_resource_path(path_data)
 

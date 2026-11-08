@@ -159,7 +159,7 @@ func invalidate_empty_strings(text: bool = true, choices: bool = true, formats: 
 							choice_array[i] = missing_choice
 
 	if formats:
-		var E: Dictionary = NFDictUtils.EMPTY_DICT
+		var E: Dictionary = NFDictUtils.EMPTY
 		
 		for dialog_id: Variant in format_strings:
 			var conversation_data: Dictionary = format_strings[dialog_id]
@@ -263,7 +263,7 @@ func merge_dialog(with: DiscourseDialogLocale) -> void:
 
 ## Sets the dialog text from the [param conversation]'s [param node] to [param text].
 func set_text(conversation: StringName, node: StringName, text: String) -> void:
-	var target: Dictionary = localization.get(conversation, NFDictUtils.EMPTY_DICT)
+	var target: Dictionary = localization.get(conversation, NFDictUtils.EMPTY)
 	if not target.has(node):
 		return
 	
@@ -273,7 +273,7 @@ func set_text(conversation: StringName, node: StringName, text: String) -> void:
 ## Sets the dialog options from the [param conversation]'s [param node] to be
 ## [param options].
 func set_choices(conversation: StringName, node: StringName, choices: PackedStringArray) -> void:
-	var target: Dictionary = localization.get(conversation, NFDictUtils.EMPTY_DICT)
+	var target: Dictionary = localization.get(conversation, NFDictUtils.EMPTY)
 	if not target.has(node):
 		return
 	
@@ -317,7 +317,7 @@ func get_choices(conversation: StringName, node: StringName) -> PackedStringArra
 
 ## Returns the dialog text from the given [param uuid] from the [param conversation]
 func get_text(conversation: StringName, node: StringName) -> String:
-	var e: Dictionary = NFDictUtils.EMPTY_DICT
+	var e: Dictionary = NFDictUtils.EMPTY
 	return localization.get(conversation, e).get(node, e).get("text", "")
 
 

@@ -95,7 +95,7 @@ func _get_node_data() -> Dictionary:
 
 func _set_node_data(data: Dictionary) -> void:
 	super(data)
-	var signal_data: Variant = data.get("metadata", NFDictUtils.EMPTY_DICT).get("signal")
+	var signal_data: Variant = data.get("metadata", NFDictUtils.EMPTY).get("signal")
 	if typeof(signal_data) != TYPE_STRING:
 		return
 	

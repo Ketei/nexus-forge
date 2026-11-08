@@ -108,7 +108,7 @@ func _get_node_data() -> Dictionary:
 func _set_node_data(data: Dictionary) -> void:
 	super(data)
 	
-	var port_data: Variant = data.get("metadata", NFDictUtils.EMPTY_DICT).get("port_count")
+	var port_data: Variant = data.get("metadata", NFDictUtils.EMPTY).get("port_count")
 	if typeof(port_data) == TYPE_INT:
 		set_input_port_count(port_data)
 

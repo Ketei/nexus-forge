@@ -42,7 +42,7 @@ func set_trait_description(trait_id: StringName, description: String) -> void:
 
 ## Returns the trait [trait_id] description.
 func get_trait_description(trait_id: StringName) -> String:
-	return _trait_data.get(trait_id, NFDictUtils.EMPTY_DICT).get("description", "")
+	return _trait_data.get(trait_id, NFDictUtils.EMPTY).get("description", "")
 
 
 ## Sets the data with key [param data_key] to [param data] of the trait
@@ -60,7 +60,7 @@ func set_trait_data(trait_id: StringName, data_key: String, data: Variant) -> vo
 ## Returns the data from the trait [param trait_id] with key [param data_key].[br]
 ## Returns [code]null[/code] if either the trait or the data don't exist.
 func get_trait_data(trait_id: StringName, data_key: String) -> Variant:
-	var target: Dictionary = _trait_data.get(trait_id, NFDictUtils.EMPTY_DICT).get("custom_data", NFDictUtils.EMPTY_DICT)
+	var target: Dictionary = _trait_data.get(trait_id, NFDictUtils.EMPTY).get("custom_data", NFDictUtils.EMPTY)
 	return target.get(data_key)
 
 

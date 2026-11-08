@@ -110,7 +110,7 @@ func _get_node_data() -> Dictionary:
 
 func _set_node_data(data: Dictionary) -> void:
 	super(data)
-	var fallback_data: Variant = data.get("metadata", NFDictUtils.EMPTY_DICT).get("fallback_value")
+	var fallback_data: Variant = data.get("metadata", NFDictUtils.EMPTY).get("fallback_value")
 	set_fallback_value(fallback_data)
 
 

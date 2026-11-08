@@ -423,7 +423,7 @@ func _on_skill_selected(skill_idx: int) -> void:
 func load_skill(skill_id: StringName) -> void:
 	var skill_name: String = _skills_resource.get_skill_name(skill_id)
 	var skill_desc: String = _skills_resource.get_skill_description(skill_id)
-	var data: Dictionary = _skills_resource._skill_data.get(skill_id, NFDictUtils.EMPTY_DICT).get("custom_data", NFDictUtils.EMPTY_DICT)
+	var data: Dictionary = _skills_resource._skill_data.get(skill_id, NFDictUtils.EMPTY).get("custom_data", NFDictUtils.EMPTY)
 	
 	skill_ln_edt.text = skill_name
 	skill_ln_edt.set_meta(&"old_value", skill_name)
@@ -661,7 +661,7 @@ func _on_trait_selected(trait_idx: int) -> void:
 func load_trait(trait_id: StringName) -> void:
 	var trait_name: String = _traits_resource.get_trait_name(trait_id)
 	var trait_desc: String = _traits_resource.get_trait_description(trait_id)
-	var data: Dictionary = _traits_resource._trait_data.get(trait_id, NFDictUtils.EMPTY_DICT).get("custom_data", NFDictUtils.EMPTY_DICT)
+	var data: Dictionary = _traits_resource._trait_data.get(trait_id, NFDictUtils.EMPTY).get("custom_data", NFDictUtils.EMPTY)
 	
 	trait_ln_edt.text = trait_name
 	trait_ln_edt.set_meta(&"old_value", trait_name)
@@ -924,7 +924,7 @@ func _on_stat_selected(stat_idx: int) -> void:
 func load_stat(stat_id: StringName) -> void:
 	var stat_name: String = _stats_resource.get_stat_name(stat_id)
 	var stat_desc: String = _stats_resource.get_stat_description(stat_id)
-	var data: Dictionary = _stats_resource._stat_data.get(stat_id, NFDictUtils.EMPTY_DICT).get("custom_data", NFDictUtils.EMPTY_DICT)
+	var data: Dictionary = _stats_resource._stat_data.get(stat_id, NFDictUtils.EMPTY).get("custom_data", NFDictUtils.EMPTY)
 	
 	stat_ln_edt.text = stat_name
 	stat_ln_edt.set_meta(&"old_value", stat_name)

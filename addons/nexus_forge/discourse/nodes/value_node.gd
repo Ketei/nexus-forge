@@ -175,7 +175,7 @@ func _get_node_data() -> Dictionary:
 
 func _set_node_data(data: Dictionary) -> void:
 	super(data)
-	var value_data: Variant = data.get("metadata", NFDictUtils.EMPTY_DICT).get("value")
+	var value_data: Variant = data.get("metadata", NFDictUtils.EMPTY).get("value")
 	var value_type: int = typeof(value_data)
 	
 	if set_mode(value_type):

@@ -114,7 +114,7 @@ func load_dialog(path: String, starting_id: StringName = &"") -> bool:
 
 ## Sets the dialog to be at a specific point. If invalid it'll
 ## set the dialog to be at the beggining.
-func set_dialog_id(id: StringName) -> bool:
+func set_next_node_id(id: StringName) -> bool:
 	if _dialog_resource == null:
 		return false
 	
@@ -219,7 +219,7 @@ func _process_logic(id: StringName) -> Dictionary[String, Variant]:
 	if id.is_empty():
 		return target
 	
-	var E: Dictionary = NFDictUtils.EMPTY_DICT
+	var E: Dictionary = NFDictUtils.EMPTY
 	
 	var translation_layer: Dictionary = _dialog_resource.find_uuid_from_id(id)
 	
@@ -729,7 +729,7 @@ func _get_data_editor(from_uuid: String, fallback = null, _remaining_travels: in
 	const T: String = "target_node_uuid"
 	const I: String = "input_connections"
 	
-	var E: Dictionary = NFDictUtils.EMPTY_DICT
+	var E: Dictionary = NFDictUtils.EMPTY
 	var data: Dictionary = _dialog_resource.node_data.get(from_uuid, E)
 	
 	var metadata: Dictionary = data.get("metadata", E)
@@ -1230,7 +1230,7 @@ func _get_data_string_editor(node_uuid: String, fallback: String = "") -> String
 func _to_id(uuid: String) -> StringName:
 	if _dialog_resource == null:
 		return &""
-	var id_name: String = _dialog_resource.node_data.get(uuid, NFDictUtils.EMPTY_DICT).get("name", "")
+	var id_name: String = _dialog_resource.node_data.get(uuid, NFDictUtils.EMPTY).get("name", "")
 	return StringName(id_name)
 
 

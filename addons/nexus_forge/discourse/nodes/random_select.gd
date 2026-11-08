@@ -257,7 +257,7 @@ func _reset_height() -> void:
 
 func _set_node_data(data: Dictionary) -> void:
 	super(data)
-	var options_data: Variant = data.get("metadata", NFDictUtils.EMPTY_DICT).get("options")
+	var options_data: Variant = data.get("metadata", NFDictUtils.EMPTY).get("options")
 	if typeof(options_data) != TYPE_ARRAY:
 		return
 	

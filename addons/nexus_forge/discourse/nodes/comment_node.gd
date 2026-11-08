@@ -41,7 +41,7 @@ func _get_node_data() -> Dictionary:
 
 func _set_node_data(data: Dictionary) -> void:
 	super(data)
-	var comment_data: String = data.get("metadata", NFDictUtils.EMPTY_DICT).get("comment")
+	var comment_data: String = data.get("metadata", NFDictUtils.EMPTY).get("comment")
 	
 	if typeof(comment_data) == TYPE_STRING:
 		set_comment_text(comment_data)

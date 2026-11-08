@@ -56,7 +56,7 @@ func _get_node_data() -> Dictionary:
 
 func _set_node_data(data: Dictionary) -> void:
 	super(data)
-	var anchor_data: Variant = data.get("metadata", NFDictUtils.EMPTY_DICT).get("anchor_id")
+	var anchor_data: Variant = data.get("metadata", NFDictUtils.EMPTY).get("anchor_id")
 	
 	if typeof(anchor_data) == TYPE_STRING:
 		set_anchor_id(anchor_data)

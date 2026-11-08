@@ -129,7 +129,7 @@ func _get_node_data() -> Dictionary:
 func _set_node_data(data: Dictionary) -> void:
 	super(data)
 	
-	var operator_data: Variant = data.get("metadata", NFDictUtils.EMPTY_DICT).get("operator")
+	var operator_data: Variant = data.get("metadata", NFDictUtils.EMPTY).get("operator")
 	
 	if typeof(operator_data) == TYPE_INT:
 		set_operator(operator_data)

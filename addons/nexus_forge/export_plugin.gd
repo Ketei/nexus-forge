@@ -291,20 +291,47 @@ func customize_species(resource: NFSpeciesCatalog) -> NFSpeciesCatalog:
 	var traits: Array[StringName] = NFTraitBlock.traits()
 	
 	for species in resource._species.keys():
-		for stat in resource._species[species]["stats"].keys():
+		var species_dict: Dictionary = resource._species[species]
+		var parent_species: StringName = species_dict.get("parent_dominant", &"")
+		var submissive_species: StringName = species_dict.get("parent_recessive", &"")
+		
+		if not parent_species.is_empty() and not resource._species.has(parent_species):
+			var text: String = ""
+			var new_dom: StringName = submissive_species
+			
+			if not submissive_species.is_empty() and resource._species.has(submissive_species):
+				text = "Setting dominant to recessive '%s' " % submissive_species
+			else:
+				new_dom = &""
+				text = "Clearing"
+			
+			NFPluginGameHandler._log_msg(
+					"export",
+					"Species '%s' has its dominant species set to an inexisting species '%s'. %s." % [species, parent_species, text],
+					NFPluginGameHandler._LogLevel.ERROR)
+			species_dict["parent_dominant"] = new_dom
+			species_dict["parent_recessive"] = &""
+		elif not submissive_species.is_empty() and not resource._species.has(submissive_species):
+			NFPluginGameHandler._log_msg(
+					"export",
+					"Species '%s' has its recessive species set to an inexisting species '%s'. Clearing." % [species, submissive_species],
+					NFPluginGameHandler._LogLevel.ERROR)
+			species_dict["parent_recessive"] = &""
+		
+		for stat in species_dict["stats"].keys():
 			if stats.has(stat):
 				continue
-			resource._species[species]["stats"].erase(stat)
+			species_dict["stats"].erase(stat)
 		
-		for skill in resource._species[species]["skills"].keys():
+		for skill in species_dict["skills"].keys():
 			if skills.has(skill):
 				continue
-			resource._species[species]["skills"].erase(skill)
+			species_dict["skills"].erase(skill)
 		
-		for trait_id in resource._species[species]["traits"].keys():
+		for trait_id in species_dict["traits"].keys():
 			if traits.has(trait_id):
 				continue
-			resource._species[species]["traits"].erase(trait_id)
+			species_dict["traits"].erase(trait_id)
 	
 	return resource
 

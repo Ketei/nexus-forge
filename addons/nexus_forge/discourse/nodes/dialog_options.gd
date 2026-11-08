@@ -204,7 +204,7 @@ func _get_node_data() -> Dictionary:
 func _set_node_data(data: Dictionary) -> void:
 	super(data)
 	
-	var choice_data: Variant = data.get("metadata", NFDictUtils.EMPTY_DICT).get("choices")
+	var choice_data: Variant = data.get("metadata", NFDictUtils.EMPTY).get("choices")
 	if typeof(choice_data) != TYPE_ARRAY:
 		return
 	

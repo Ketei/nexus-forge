@@ -134,7 +134,7 @@ func _get_node_data() -> Dictionary:
 func _set_node_data(data: Dictionary) -> void:
 	super(data)
 	
-	var connections_data: Variant = data.get("metadata", NFDictUtils.EMPTY_DICT).get("metadata_connections")
+	var connections_data: Variant = data.get("metadata", NFDictUtils.EMPTY).get("metadata_connections")
 	if typeof(connections_data) != TYPE_ARRAY:
 		return
 	

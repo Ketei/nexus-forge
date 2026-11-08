@@ -148,7 +148,7 @@ func _get_node_data() -> Dictionary:
 func _set_node_data(data: Dictionary) -> void:
 	super(data)
 	
-	var path_data: Variant = data.get("metadata", NFDictUtils.EMPTY_DICT).get("variable_path")
+	var path_data: Variant = data.get("metadata", NFDictUtils.EMPTY).get("variable_path")
 	if typeof(path_data) == TYPE_STRING:
 		set_variable_path(path_data)
 

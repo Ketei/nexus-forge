@@ -72,7 +72,7 @@ func _get_node_data() -> Dictionary:
 
 func _set_node_data(data: Dictionary) -> void:
 	super(data)
-	var text_data: Variant = data.get("metadata", NFDictUtils.EMPTY_DICT).get("text")
+	var text_data: Variant = data.get("metadata", NFDictUtils.EMPTY).get("text")
 	
 	if typeof(text_data) == TYPE_STRING:
 		set_text(text_data)

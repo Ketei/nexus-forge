@@ -112,7 +112,7 @@ func _get_node_data() -> Dictionary:
 
 func _set_node_data(data: Dictionary) -> void:
 	super(data)
-	var method_data: Variant = data.get("metadata", NFDictUtils.EMPTY_DICT).get("method")
+	var method_data: Variant = data.get("metadata", NFDictUtils.EMPTY).get("method")
 	if typeof(method_data) != TYPE_STRING:
 		return
 	set_method(method_data)

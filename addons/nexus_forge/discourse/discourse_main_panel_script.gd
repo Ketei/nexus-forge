@@ -4972,14 +4972,14 @@ func _set_localization_window_choices(new_node: DiscourseGraphNode) -> void:
 	var options_localized: Array[String] = []
 	var options_base: Array[String] = []
 	
-	var localized_data: Dictionary = active_conversation.localization.get(new_node_uuid, NFDictUtils.EMPTY_DICT)
-	var locales: Dictionary = localized_data.get("locales", NFDictUtils.EMPTY_DICT)
+	var localized_data: Dictionary = active_conversation.localization.get(new_node_uuid, NFDictUtils.EMPTY)
+	var locales: Dictionary = localized_data.get("locales", NFDictUtils.EMPTY)
 	var active_data: Variant = locales.get(active_locale)
 	if typeof(active_data) == TYPE_PACKED_STRING_ARRAY:
 		options_localized.assign(active_data)
 	
-	var base_data: Dictionary = active_conversation.localization.get(new_node_uuid, NFDictUtils.EMPTY_DICT)
-	var base_locales: Dictionary = base_data.get("locales", NFDictUtils.EMPTY_DICT)
+	var base_data: Dictionary = active_conversation.localization.get(new_node_uuid, NFDictUtils.EMPTY)
+	var base_locales: Dictionary = base_data.get("locales", NFDictUtils.EMPTY)
 	var base_localization: Variant = base_locales.get(base_language)
 	if typeof(base_localization) == TYPE_PACKED_STRING_ARRAY:
 		options_base.assign(base_localization)
@@ -5274,8 +5274,8 @@ func _undo_remove_nodes(action_data: Dictionary) -> void:
 		if d_node.is_node_localized():
 			if d_node.node_type == DiscourseGraphNode.DialogueNodeType.DIALOG:
 				
-				var node_data: Dictionary = active_conversation.localization.get(node_uuid, NFDictUtils.EMPTY_DICT)
-				var locales_data: Dictionary = node_data.get("locales", NFDictUtils.EMPTY_DICT)
+				var node_data: Dictionary = active_conversation.localization.get(node_uuid, NFDictUtils.EMPTY)
+				var locales_data: Dictionary = node_data.get("locales", NFDictUtils.EMPTY)
 				var localized_data: Variant = locales_data.get(current_locale, "")
 				
 				if typeof(localized_data) == TYPE_STRING:
@@ -5288,8 +5288,8 @@ func _undo_remove_nodes(action_data: Dictionary) -> void:
 				var localized_options: Array[String] = []
 				var choice_size: int = d_node.choice_count()
 				
-				var node_data: Dictionary = active_conversation.localization.get(node_uuid, NFDictUtils.EMPTY_DICT)
-				var locales_data: Dictionary = node_data.get("locales", NFDictUtils.EMPTY_DICT)
+				var node_data: Dictionary = active_conversation.localization.get(node_uuid, NFDictUtils.EMPTY)
+				var locales_data: Dictionary = node_data.get("locales", NFDictUtils.EMPTY)
 				var localized_data: Variant = locales_data.get(current_locale)
 				
 				if typeof(localized_data) == TYPE_PACKED_STRING_ARRAY:
@@ -5306,8 +5306,8 @@ func _undo_remove_nodes(action_data: Dictionary) -> void:
 				
 				localization_nodes_tree.create_options_node(d_node.get_node_id(), d_node)
 			elif d_node.node_type == DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
-				var node_data: Dictionary = active_conversation.localization.get(node_uuid, NFDictUtils.EMPTY_DICT)
-				var locales_data: Dictionary = node_data.get("locales", NFDictUtils.EMPTY_DICT)
+				var node_data: Dictionary = active_conversation.localization.get(node_uuid, NFDictUtils.EMPTY)
+				var locales_data: Dictionary = node_data.get("locales", NFDictUtils.EMPTY)
 				var localized_data: Variant = locales_data.get(current_locale, "")
 				
 				if typeof(localized_data) == TYPE_STRING:
@@ -5732,7 +5732,7 @@ func _do_add_locale_action(locale: String, snapshot: Dictionary = {}) -> void:
 	add_locale(locale)
 	
 	if snapshot.is_empty(): # First time creation
-		var base_phrase_locale: Dictionary = active_conversation.format_strings.get(base_language, NFDictUtils.EMPTY_DICT)
+		var base_phrase_locale: Dictionary = active_conversation.format_strings.get(base_language, NFDictUtils.EMPTY)
 		if not base_phrase_locale.is_empty():
 			active_conversation.format_strings[locale] = base_phrase_locale
 		return
@@ -5914,7 +5914,7 @@ func _do_delocalize_node(node_uuid: String) -> void:
 			if current_locale != base_language: # GUI update only
 				discourse_graph_edit.set_dialog_node_dialog_text(node_uuid, base_text)
 		DiscourseGraphNode.DialogueNodeType.CHOICES:
-			var e: Dictionary = NFDictUtils.EMPTY_DICT
+			var e: Dictionary = NFDictUtils.EMPTY
 			var options: Array[String] = []
 			var option_data: Variant = active_conversation.localization.get(node_uuid, e).get("locales", e).get(base_language)
 			if typeof(option_data) == TYPE_PACKED_STRING_ARRAY:
@@ -6000,7 +6000,7 @@ func _do_remove_frame(action_data: Dictionary) -> void:
 	if not parent_uuid.is_empty():
 		var parent_frame: GraphFrame = discourse_graph_edit.get_discourse_frame(parent_uuid)
 		if parent_frame != null:
-			var attached_elements: Dictionary = action_data.get("attached_elements", NFDictUtils.EMPTY_DICT)
+			var attached_elements: Dictionary = action_data.get("attached_elements", NFDictUtils.EMPTY)
 			for node_uuid in attached_elements["nodes"]:
 				var node: DiscourseGraphNode = discourse_graph_edit.get_discourse_node(node_uuid)
 				if node != null:
@@ -6013,8 +6013,8 @@ func _do_remove_frame(action_data: Dictionary) -> void:
 
 func _undo_remove_frame(action_data: Dictionary) -> void:
 	var uuid: String = action_data.get("uuid", "")
-	var frame_data: Dictionary = action_data.get("frame_data", NFDictUtils.EMPTY_DICT)
-	var attached: Dictionary = action_data.get("attached_elements", NFDictUtils.EMPTY_DICT)
+	var frame_data: Dictionary = action_data.get("frame_data", NFDictUtils.EMPTY)
+	var attached: Dictionary = action_data.get("attached_elements", NFDictUtils.EMPTY)
 	
 	var frame_pos: Vector2 = frame_data.get("position", Vector2.ZERO)
 	var frame: GraphFrame = discourse_graph_edit.spawn_frame(uuid, frame_pos)

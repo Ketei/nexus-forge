@@ -161,7 +161,7 @@ func _get_text_data_localized(node_uuid: String, for_locale: String) -> Dictiona
 	if not localization.has(node_uuid):
 		return data
 	
-	var e: Dictionary = NFDictUtils.EMPTY_DICT
+	var e: Dictionary = NFDictUtils.EMPTY
 	var localization_dict: Dictionary = localization.get(node_uuid, e)
 	var locales_dict: Dictionary = localization_dict.get("locales", e)
 	
@@ -225,7 +225,7 @@ func _get_array_data_localized(node_uuid: String, for_locale: String) -> Diction
 	
 	var node_size: int = 0
 	if node_data.has(node_uuid):
-		var e: Dictionary = NFDictUtils.EMPTY_DICT
+		var e: Dictionary = NFDictUtils.EMPTY
 		node_size = node_data[node_uuid].get("metadata", e).get("choices", NFArrayUtils.EMPTY).size()
 	
 	if node_size == 0:
@@ -314,7 +314,7 @@ func _get_array_data_localized(node_uuid: String, for_locale: String) -> Diction
 ## Returns the text of a localized string.
 func get_format_string(key: String, locale: String) -> String:
 	locale = NFStringUtils.sanitize_locale(locale)
-	var e: Dictionary = NFDictUtils.EMPTY_DICT
+	var e: Dictionary = NFDictUtils.EMPTY
 	return format_strings.get(key, e).get(locale, e).get("base_string", "")
 
 
@@ -325,13 +325,13 @@ func has_format_string(key: String, locale: String = "") -> bool:
 	if locale.is_empty():
 		return format_strings.has(key)
 	else:
-		return format_strings.get(key, NFDictUtils.EMPTY_DICT).has(locale)
+		return format_strings.get(key, NFDictUtils.EMPTY).has(locale)
 
 
 ## Returns all format keys that the localized string has.
 func get_format_string_formats(key: String, locale_code: String) -> Array[String]:
 	var lang_code: String = NFStringUtils.sanitize_locale(locale_code)
-	var e: Dictionary = NFDictUtils.EMPTY_DICT
+	var e: Dictionary = NFDictUtils.EMPTY
 	var format_dict: Dictionary = format_strings.get(key, e).get(lang_code, e).get("format", e)
 	var formats: Array[String] = []
 	if not format_dict.is_empty():
@@ -342,7 +342,7 @@ func get_format_string_formats(key: String, locale_code: String) -> Array[String
 ## Returns the format keys and the possible formats of a given key.
 func get_format_string_arguments(key: String, locale_code: String) -> Dictionary[String, Dictionary]:
 	var lang_code: String = NFStringUtils.sanitize_locale(locale_code)
-	var e: Dictionary = NFDictUtils.EMPTY_DICT
+	var e: Dictionary = NFDictUtils.EMPTY
 	var format_dict: Variant = format_strings.get(key, e).get(lang_code, e).get("format")
 	var return_dict: Dictionary[String, Dictionary] = {}
 	
@@ -431,7 +431,7 @@ func set_format_string_case(key: String, locale: String, format: String, case: S
 ## in the specified [param key].[br]
 ## Returns an empty string if not found.
 func get_format_string_case(key: String, locale: String, format: String, case: String) -> String:
-	var e: Dictionary = NFDictUtils.EMPTY_DICT
+	var e: Dictionary = NFDictUtils.EMPTY
 	locale = NFStringUtils.sanitize_locale(locale)
 	return format_strings.get(key, e).get(locale, e).get("format", e).get(format, e).get("cases", e).get(case, "")
 
@@ -567,7 +567,7 @@ func get_text_entry(node_uuid: String, locale: String, fallback: String = "[ENTR
 	if not localization.has(node_uuid) or localization[node_uuid]["type"] != LocalizationType.TEXT:
 		return fallback
 	
-	var e: Dictionary = NFDictUtils.EMPTY_DICT
+	var e: Dictionary = NFDictUtils.EMPTY
 	var source_dict: Dictionary = localization[node_uuid]
 	
 	var localized: bool = node_data.get(node_uuid, e).get("metadata", e).get("localized", true)
@@ -585,7 +585,7 @@ func get_text_entry(node_uuid: String, locale: String, fallback: String = "[ENTR
 ## If the node isn't of a type that supports choices or it is not found it'll
 ## return [param fallback].
 func get_choices_entry(node_uuid: String, locale: String = "", fallback: Array = ["[ENTRY NOT FOUND]"]) -> Array[String]:
-	var e: Dictionary = NFDictUtils.EMPTY_DICT
+	var e: Dictionary = NFDictUtils.EMPTY
 	
 	locale = NFStringUtils.sanitize_locale(locale)
 	var return_array: Array[String] = []
@@ -605,7 +605,7 @@ func get_choices_entry(node_uuid: String, locale: String = "", fallback: Array =
 			if typeof(data) == TYPE_PACKED_STRING_ARRAY:
 				base_array.assign(data)
 	else:
-		if localization.get(node_uuid, NFDictUtils.EMPTY_DICT).has("unlocalized"):
+		if localization.get(node_uuid, NFDictUtils.EMPTY).has("unlocalized"):
 			var data: Variant = localization[node_uuid]["unlocalized"]
 			if typeof(data) == TYPE_PACKED_STRING_ARRAY:
 				base_array.assign(data)
@@ -1229,7 +1229,7 @@ func generate_localization_files(localization_id: String, base_path: String, fil
 			new_files.append({
 				"file": lang_file,
 				"path": lang_path})
-		elif localization_groups.get(locale_group, NFDictUtils.EMPTY_DICT).has(lang_key):
+		elif localization_groups.get(locale_group, NFDictUtils.EMPTY).has(lang_key):
 			lang_file = localization_groups[locale_group][lang_key]
 		else:
 			lang_file = DiscourseDialogLocale.new()
@@ -1286,9 +1286,11 @@ func generate_localization_files(localization_id: String, base_path: String, fil
 		var localization_keys = localization_locales.keys()
 		
 		if not used_locales.has_all(localization_keys):
+			var extra_locales: Array = localization_keys.duplicate()
+			NFArrayUtils.subtract_array(extra_locales, used_locales.keys())
 			NFPluginGameHandler._log_msg(
 					"export - dialog",
-					"Localization data of file '%s' contains more localization data than the resource is set for.\nUsed locales: %s\nExisting locales: %s" % [resource_path, used_locales.keys(), localization_keys],
+					"Localization data of file '%s' contains more localization data than the resource is set for.\nExtra locales: %s" % [resource_path, str(extra_locales)],
 					NFPluginGameHandler._LogLevel.WARNING)
 			extra_data_warned = true
 			break
@@ -1299,9 +1301,11 @@ func generate_localization_files(localization_id: String, base_path: String, fil
 	for string_key in format_strings:
 		var used_string_locales = format_strings[string_key].keys()
 		if not used_locales.has_all(used_string_locales):
+			var extra_locales: Array = used_string_locales.duplicate()
+			NFArrayUtils.subtract_array(extra_locales, used_locales.keys())
 			NFPluginGameHandler._log_msg(
 					"export - dialog",
-					"Localization data of file '%s' contains more localization data than the resource is set for.\nUsed locales: %s\nExisting locales: %s" % [resource_path, used_locales.keys(), used_string_locales],
+					"Localization data of file '%s' contains more localization data than the resource is set for.\nExtra locales: %s" % [resource_path, extra_locales],
 					NFPluginGameHandler._LogLevel.WARNING)
 			break
 	
@@ -1310,7 +1314,7 @@ func generate_localization_files(localization_id: String, base_path: String, fil
 
 func _add_locale_data(file: DiscourseDialogLocale, localization_id: String, locale: String) -> void:
 	var missing_text: String = "" # Leaving empty is good. As data invalidation is performed at runtime.
-	var e: Dictionary = NFDictUtils.EMPTY_DICT
+	var e: Dictionary = NFDictUtils.EMPTY
 	
 	for node_uuid in localization.keys():
 		if not node_data.has(node_uuid):
@@ -1404,12 +1408,12 @@ func _add_locale_data(file: DiscourseDialogLocale, localization_id: String, loca
 				if localized:
 					NFPluginGameHandler._log_msg(
 							"export - dialog",
-							"Localization data for node UID '%s' for locale '%s' is missing." % [node_uuid, locale],
+							"Localization data for node UID '%s' for locale '%s' of resource '%s' is missing." % [node_uuid, locale, resource_path],
 							NFPluginGameHandler._LogLevel.WARNING)
 				else:
 					NFPluginGameHandler._log_msg(
 							"export - dialog",
-							"Unlocalized data for node UID '%s' is missing." % node_uuid,
+							"Unlocalized data for node UID '%s' of resource '%s' is missing." % [node_uuid, resource_path],
 							NFPluginGameHandler._LogLevel.WARNING)
 			
 			if not file.localization.has(localization_id):
@@ -1460,12 +1464,12 @@ func _add_locale_data(file: DiscourseDialogLocale, localization_id: String, loca
 				if localized:
 					NFPluginGameHandler._log_msg(
 							"export - dialog",
-							"Localization data for node UID '%s' for locale '%s' is missing." % [node_uuid, locale],
+							"Localization data for node UID '%s' for locale '%s' of resource '%s' is missing." % [node_uuid, locale, resource_path],
 							NFPluginGameHandler._LogLevel.WARNING)
 				else:
 					NFPluginGameHandler._log_msg(
 							"export - dialog",
-							"Unlocalized data for node UID '%s' is missing." % node_uuid,
+							"Unlocalized data for node UID '%s' of resource '%s' is missing." % [node_uuid, resource_path],
 							NFPluginGameHandler._LogLevel.WARNING)
 				var err_string: String = missing_text
 				base.resize(choice_size)
@@ -1904,7 +1908,7 @@ func get_used_locales() -> Array[String]:
 
 
 func _get_data_for_csv() -> Dictionary:
-	var e: Dictionary = NFDictUtils.EMPTY_DICT
+	var e: Dictionary = NFDictUtils.EMPTY
 	var csv_data: Dictionary = {}
 	
 	var possible_locales: Array[String] = get_used_locales()
@@ -2107,7 +2111,7 @@ func _get_format_string_args_localized(key: String, for_locale: String) -> Dicti
 	
 	const missing_format_case: String = "[MISSING CASE LOCALIZATION]" # formats
 	
-	var e: Dictionary = NFDictUtils.EMPTY_DICT
+	var e: Dictionary = NFDictUtils.EMPTY
 	var base: Dictionary[String, Dictionary] = {}
 	
 	if format_strings.has(key):
