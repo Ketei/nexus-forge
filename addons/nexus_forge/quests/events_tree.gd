@@ -1,5 +1,5 @@
 @tool
-extends IDTree
+extends NFIDTree
 
 
 signal data_created(path: String, index: int ,data: Variant)
@@ -136,7 +136,7 @@ func _on_compact_menu_id_pressed(id: int) -> void:
 	else:
 		data_name += "data"
 	
-	var path: String = add_data(data_name, data_type, data_item)
+	var path: String = add_data(data_name, data_type, data_item, true)
 	
 	data_item = null
 	
@@ -209,6 +209,19 @@ func _do_move_item(from: String, to: String, index: int) -> void:
 	
 	var new_name: String = to_slice[-1]
 	
+	for slice in from_slice:
+		var found: bool = false
+		for item in current_folder.get_children():
+			if item.get_metadata(0)["name"] == slice:
+				current_folder = item
+				found = true
+				break
+		if not found:
+			return
+	
+	target = current_folder
+	
+	current_folder = get_root()
 	for slice in to_slice.slice(0, -1):
 		var found: bool = false
 		for item in current_folder.get_children():
@@ -226,22 +239,8 @@ func _do_move_item(from: String, to: String, index: int) -> void:
 		return
 	
 	for item in new_parent.get_children():
-		if item.get_metadata(0)["name"] == new_name:
+		if item != target and item.get_metadata(0)["name"] == new_name:
 			return
-	
-	current_folder = get_root()
-	
-	for slice in from_slice:
-		var found: bool = false
-		for item in current_folder.get_children():
-			if item.get_metadata(0)["name"] == slice:
-				current_folder = item
-				found = true
-				break
-		if not found:
-			return
-	
-	target = current_folder
 	
 	target.set_text(0, new_name)
 	target.get_metadata(0)["name"] = new_name
@@ -249,13 +248,14 @@ func _do_move_item(from: String, to: String, index: int) -> void:
 	if target.get_parent() != new_parent:
 		target.get_parent().remove_child(target)
 		new_parent.add_child(target)
-		if -1 < index and target.get_index() != index:
-			if new_parent.get_child_count() <= 1:
-				return
-			if index == 0:
-				target.move_before(new_parent.get_first_child())
-			else:
-				target.move_after(new_parent.get_child(index - 1))
+	
+	if -1 < index and target.get_index() != index:
+		if new_parent.get_child_count() <= 1:
+			return
+		if index == 0:
+			target.move_before(new_parent.get_first_child())
+		else:
+			target.move_after(new_parent.get_child(index - 1))
 
 
 func _is_in_tree(item: TreeItem) -> bool:
@@ -264,7 +264,7 @@ func _is_in_tree(item: TreeItem) -> bool:
 	
 	while current_level != null:
 		current_level = current_level.get_parent()
-		if current_level == get_root():
+		if current_level == root:
 			return true
 	return false
 
@@ -346,9 +346,7 @@ func _get_data_path(item: TreeItem) -> String:
 	if item == null or item == get_root():
 		return ""
 	
-	var path: String = ""
-	
-	var items: Array[String] = []
+	var items: PackedStringArray = []
 	
 	var current_item: TreeItem = item
 	var root: TreeItem = get_root()
@@ -359,7 +357,7 @@ func _get_data_path(item: TreeItem) -> String:
 	
 	items.reverse()
 	
-	return StringUtils.make_path(items)
+	return "/".join(items)
 
 
 func _get_data_item(path: String) -> TreeItem:
@@ -561,18 +559,16 @@ func _do_update_item_data(path: String, data: Variant) -> void:
 	item.get_metadata(0)["value"] = data
 
 
-func add_data(data_id: String, data: Variant, on_node: TreeItem = get_root()) -> String:
+func add_data(data_id: String, data: Variant, on_node: TreeItem = get_root(), select: bool = false) -> String:
 	var new_name: String = get_unique_id(on_node, data_id)
 	var data_path: String = _get_data_path(on_node).path_join(new_name)
 	
-	var type: int = typeof(data)
-	
-	_add_data_to_tree(new_name, data, on_node)
+	_add_data_to_tree(new_name, data, on_node, -1, select)
 	
 	return data_path
 
 
-func _add_data_to_tree(new_name: String, data: Variant, on_node: TreeItem = get_root(), index: int = -1) -> TreeItem:
+func _add_data_to_tree(new_name: String, data: Variant, on_node: TreeItem = get_root(), index: int = -1, select: bool = false) -> TreeItem:
 	var data_type: int = typeof(data)
 	var new_data: TreeItem = on_node.create_child(index)
 	var metadata: Dictionary = {"name": new_name, "type": ItemType.DATA, "value": data}
@@ -653,6 +649,8 @@ func add_constant_data(new_name: String, data: Variant, on_node: TreeItem = get_
 	data_tree.erase_button(
 			1,
 			data_tree.get_button_by_id(1, ButtonIds.DELETE))
+	data_tree.set_editable(0, false)
+	data_tree.set_editable(1, false)
 
 
 func get_data_cell_data(cell: TreeItem) -> Variant:
@@ -680,6 +678,33 @@ func get_data_cell_data(cell: TreeItem) -> Variant:
 			return null
 
 
+func get_data_cell_data_stringname(cell: TreeItem) -> Variant:
+	match cell.get_metadata(1):
+		TYPE_INT:
+			return int(cell.get_range(1))
+		TYPE_FLOAT:
+			return float(cell.get_range(1))
+		TYPE_BOOL:
+			return cell.is_checked(1)
+		TYPE_STRING:
+			return cell.get_text(1)
+		TYPE_DICTIONARY:
+			var subfolder: Dictionary[StringName, Variant] = {}
+			for sub_data in cell.get_children():
+				var key: StringName = StringName(sub_data.get_text(0))
+				subfolder[key] = get_data_cell_data_stringname(sub_data)
+			return subfolder
+		TYPE_NIL:
+			var type: int = typeof(cell.get_metadata(0)["data"])
+			if type == TYPE_DICTIONARY or type == TYPE_ARRAY:
+				return cell.get_metadata(0)["data"].duplicate(true)
+			else:
+				return cell.get_metadata(0)["data"]
+		_:
+			return null
+
+
+
 func _on_button_clicked(item: TreeItem, column: int, id: int, mouse_button_index: int) -> void:
 	var data_path: String = ""
 	var data_copy: Variant = null
@@ -694,19 +719,19 @@ func _on_button_clicked(item: TreeItem, column: int, id: int, mouse_button_index
 			return
 		ButtonIds.INT:
 			data_copy = 0
-			data_path = add_data("new_int", 0, item)
+			data_path = add_data("new_int", 0, item, true)
 		ButtonIds.FLOAT:
 			data_copy = 0.0
-			data_path = add_data("new_float", 0.0, item)
+			data_path = add_data("new_float", 0.0, item, true)
 		ButtonIds.BOOL:
 			data_copy = false
-			data_path = add_data("new_bool", false, item)
+			data_path = add_data("new_bool", false, item, true)
 		ButtonIds.STRING:
 			data_copy = ""
-			data_path = add_data("new_string", "", item)
+			data_path = add_data("new_string", "", item, true)
 		ButtonIds.LEVEL:
 			data_copy = {}
-			data_path = add_data("new_folder", {}, item)
+			data_path = add_data("new_folder", {}, item, true)
 		ButtonIds.TYPE_MENU:
 			data_item = item
 			mn.position = DisplayServer.mouse_get_position()
@@ -767,8 +792,6 @@ func on_data_edited() -> void:
 	var new_name: String = get_unique_id(edited.get_parent(), edited.get_text(0), edited)
 	
 	var parent_path: String = _get_data_path(edited.get_parent())
-	var old_path: String = parent_path.path_join(old_name)
-	var new_path: String = parent_path.path_join(new_name)
 	
 	edited.set_text(0, new_name)
 	edited.get_metadata(0)["name"] = new_name
@@ -783,7 +806,8 @@ func get_data() -> Dictionary[StringName, Variant]:
 	var rank_data: Dictionary[StringName, Variant] = {}
 	
 	for data_item in get_root().get_children():
-		rank_data[data_item.get_text(0)] = get_data_cell_data(data_item)
+		var key: StringName = StringName(data_item.get_text(0))
+		rank_data[key] = get_data_cell_data_stringname(data_item)
 	
 	return rank_data
 

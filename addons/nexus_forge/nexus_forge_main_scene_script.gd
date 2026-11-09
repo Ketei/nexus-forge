@@ -2,7 +2,7 @@
 extends Control
 
 
-var recipes_link: EditorItemRecipeLink = EditorItemRecipeLink.new()
+var recipes_link: NFEditorItemRecipeLink = NFEditorItemRecipeLink.new()
 var current_tab: int = 0
 var tool_count: int = 0
 
@@ -42,17 +42,19 @@ func _input(event: InputEvent) -> void:
 				else:
 					tool_tab_bar.current_tab = posmod(tool_tab_bar.current_tab + 1, tool_count)
 				get_viewport().set_input_as_handled()
-		elif event.keycode == KEY_W:
-			if event.ctrl_pressed:
-				if discourse != null and discourse.visible:
-					discourse.close_active_conversation()
-					get_viewport().set_input_as_handled()
-				elif characters != null and characters.visible:
-					characters.close_active_character()
-					get_viewport().set_input_as_handled()
-				elif phrase_maps != null and phrase_maps.visible:
-					phrase_maps.close_active_map()
-					get_viewport().set_input_as_handled()
+		elif event.ctrl_pressed and event.keycode == KEY_W:
+			if discourse != null and current_tab == discourse.get_index():
+				discourse.close_active_conversation()
+				get_viewport().set_input_as_handled()
+			elif characters != null and current_tab == characters.get_index():
+				characters.close_active_character()
+				get_viewport().set_input_as_handled()
+			elif quests != null and current_tab == quests.get_index():
+				quests.close_current_quest()
+				get_viewport().set_input_as_handled()
+			elif phrase_maps != null and current_tab == phrase_maps.get_index():
+				phrase_maps.close_active_map()
+				get_viewport().set_input_as_handled()
 		elif event.ctrl_pressed and event.keycode == KEY_Z:
 			var focused_node: Control = get_viewport().gui_get_focus_owner()
 			if focused_node != null:
@@ -86,9 +88,7 @@ func _input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 
 
-func ready_plugin(use_discourse: bool, use_characters: bool, use_species: bool, use_stats: bool, use_skills: bool, use_traits: bool, use_items: bool, use_currencies: bool, use_recipes: bool, use_quests: bool, use_phrases: bool, discourse_base_lang: String) -> void:
-	set_process_input(true)
-	
+func ready_plugin(use_discourse: bool, use_characters: bool, use_species: bool, use_stats: bool, use_skills: bool, use_traits: bool, use_items: bool, use_currencies: bool, use_recipes: bool, use_quests: bool, use_phrases: bool, discourse_base_lang: String, paths_obj_reference: RefCounted) -> void:
 	variables = load("res://addons/nexus_forge/variables/variables_main.tscn").instantiate()
 	
 	if use_discourse:
@@ -138,19 +138,24 @@ func ready_plugin(use_discourse: bool, use_characters: bool, use_species: bool, 
 		tool_tab_bar.add_tab("Phrase Maps", load("res://addons/nexus_forge/icons/brackets_speech.svg"))
 	
 	if discourse != null:
+		discourse._class_update_signaler = paths_obj_reference
 		discourse.ready_plugin(discourse_base_lang)
 	variables.ready_plugin()
 	if characters != null:
+		characters._class_update_signaler = paths_obj_reference
 		characters.ready_plugin()
 	if species != null:
+		species._class_update_signaler = paths_obj_reference
 		species.ready_plugin()
 	if talents != null:
+		talents._class_update_signaler = paths_obj_reference
 		talents.ready_plugin(use_stats, use_skills, use_traits)
 	if items != null:
-		items.ready_plugin(use_items, use_currencies)
+		items.ready_plugin(use_items, use_currencies, paths_obj_reference)
 	if recipes != null:
 		recipes.ready_plugin()
 	if quests != null:
+		quests._class_update_signaler = paths_obj_reference
 		quests.ready_plugin()
 	if phrase_maps != null:
 		phrase_maps.ready_plugin()
@@ -210,9 +215,9 @@ func _get_variables_for(path: String) -> Array[Dictionary]:
 	
 	paths.sort_custom(
 		func(a:Dictionary, b:Dictionary):
-			var distance_a: float = StringUtils.levenshtein_distance(a["path"], path)
-			var distance_b: float = StringUtils.levenshtein_distance(b["path"], path)
-			return distance_a < distance_b)
+			var distance_a: float = NFStringUtils.levenshtein_similarity(a["path"], path)
+			var distance_b: float = NFStringUtils.levenshtein_similarity(b["path"], path)
+			return distance_b < distance_a)
 	
 	return paths
 
@@ -227,21 +232,18 @@ func _on_import_species_data_pressed() -> void:
 		return
 
 	var confirmation_dialog: ConfirmationDialog = load("res://addons/nexus_forge/characters/import_stat_data_cdialog.gd").new()
-	add_child(confirmation_dialog)
-	confirmation_dialog.popup_centered()
+	EditorInterface.popup_dialog_centered(confirmation_dialog)
 	
 	var use_inheritance : int = await confirmation_dialog.dialog_finished
+	confirmation_dialog.queue_free()
 	
 	if use_inheritance == 0:
-		confirmation_dialog.queue_free()
 		return
 	
 	if not species.loaded_species.is_empty():
 		species.save_current_species()
 	
 	characters.import_species_data(species._species_resource, use_inheritance == 1)
-	
-	confirmation_dialog.queue_free()
 
 
 func _on_items_loaded() -> void:
@@ -289,8 +291,8 @@ func handle_resource(resource: Resource) -> void:
 					NFPluginGameHandler._LogLevel.INFO)
 		else:
 			go_to_tab(discourse.get_index())
-		discourse.plugin_file_selected(resource)
-	elif resource is CharacterSheet:
+			discourse.plugin_file_selected(resource)
+	elif resource is NFCharacterSheet:
 		if characters == null:
 			NFPluginGameHandler._log_msg(
 					"editor",
@@ -299,8 +301,8 @@ func handle_resource(resource: Resource) -> void:
 		else:
 			go_to_tab(characters.get_index())
 			characters.plugin_open_resource(resource)
-	elif resource is PhraseMap:
-		if PhraseMap == null:
+	elif resource is NFPhraseMap:
+		if phrase_maps == null:
 			NFPluginGameHandler._log_msg(
 					"editor",
 					"Phrase Maps are disabled. Can't edit resource.",
@@ -308,8 +310,8 @@ func handle_resource(resource: Resource) -> void:
 		else:
 			go_to_tab(phrase_maps.get_index())
 			phrase_maps.plugin_open_resource(resource)
-	elif resource is Quest:
-		if discourse == null:
+	elif resource is NFQuest:
+		if quests == null:
 			NFPluginGameHandler._log_msg(
 					"editor",
 					"Quests are disabled. Can't edit resource.",
@@ -333,7 +335,7 @@ func handle_resource(resource: Resource) -> void:
 func has_unsaved_changes() -> bool:
 	var discourse_unsaved: bool = discourse.has_unsaved_files() if discourse != null else false
 	var characters_unsaved: bool = characters.has_unsaved_files() if characters != null else false
-	var species_unsaved: bool = species._unsaved if species != null else false
+	var species_unsaved: bool = species.has_unsaved_changes() if species != null else false
 	var talents_unsaved: bool = talents.has_unsaved_changes() if talents != null else false
 	var items_unsaved: bool = items.has_unsaved_changes() if items != null else false
 	var recipes_unsaved: bool = recipes._unsaved if recipes != null else false

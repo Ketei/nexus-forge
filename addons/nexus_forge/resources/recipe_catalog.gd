@@ -1,10 +1,10 @@
 @tool
 @icon("res://addons/nexus_forge/icons/bluepring_fill.svg")
-class_name RecipeCatalog
+class_name NFRecipeCatalog
 extends Resource
 
 
-@export_storage var _recipes: Dictionary = {}
+@export_storage var _recipes: Dictionary[StringName, Dictionary] = {}
 
 #region Crafting Recipes
 
@@ -16,37 +16,29 @@ func recipes() -> Array[StringName]:
 
 
 ## Overwrites the inputs for [param recipe_id] with [param inputs].
-func set_recipe_inputs(recipe_id: StringName, inputs: Array[RecipeItem]) -> void:
+func set_recipe_inputs(recipe_id: StringName, inputs: Array[NFRecipeItem]) -> void:
 	if not _recipes.has(recipe_id):
 		return
 	
-	var recipe_inputs: Array[Dictionary] = []
+	var recipe_inputs: Array[NFRecipeItem] = []
 	
 	for input in inputs:
-		var input_entry: Dictionary[String, Variant] = {
-			"item_id": input.id,
-			"amount": input.amount,
-			"custom_data": input.custom_data.duplicate(true)}
-		
-		recipe_inputs.append(input_entry)
+		var new_input: NFRecipeItem = input.duplicate(true)
+		recipe_inputs.append(new_input)
 	
 	_recipes[recipe_id]["input"] = recipe_inputs
 
 
 ## Overwrites the outputs for [param recipe_id] with [param outputs].
-func set_recipe_outputs(recipe_id: StringName, outputs: Array[RecipeItem]) -> void:
+func set_recipe_outputs(recipe_id: StringName, outputs: Array[NFRecipeItem]) -> void:
 	if not _recipes.has(recipe_id):
 		return
 	
-	var recipe_outputs: Array[Dictionary] = []
+	var recipe_outputs: Array[NFRecipeItem] = []
 	
 	for output in outputs:
-		var output_entry: Dictionary[String, Variant] = {
-			"item_id": output.id,
-			"amount": output.amount,
-			"custom_data": output.custom_data.duplicate(true)}
-		
-		recipe_outputs.append(output_entry)
+		var new_output: NFRecipeItem = output.duplicate(true)
+		recipe_outputs.append(new_output)
 	
 	_recipes[recipe_id]["output"] = recipe_outputs
 
@@ -56,13 +48,13 @@ func create_recipe(recipe_id: StringName) -> void:
 	if _recipes.has(recipe_id):
 		return
 	
-	var inputs: Array[Dictionary] = []
-	var outputs: Array[Dictionary] = []
+	var inputs: Array[NFRecipeItem] = []
+	var outputs: Array[NFRecipeItem] = []
 	
-	var recipe: Dictionary = {
+	var recipe: Dictionary[String, Variant] = {
 		"input": inputs,
 		"output": outputs,
-		"custom_data": DictUtils.create_typed(TYPE_STRING, TYPE_NIL)}
+		"custom_data": NFDictUtils.create_typed(TYPE_STRING, TYPE_NIL)}
 
 	_recipes[recipe_id] = recipe
 
@@ -83,41 +75,55 @@ func set_recipe_data(recipe_id: StringName, data_key: String, data: Variant) -> 
 ## Sets the custom data of an input ingredient in the [param recipe_id]
 ## to [param data]. If param data is [code]null[/code] then the key is erased.
 func set_recipe_input_item_data(recipe_id: StringName, ingredient_idx: int, data_key: String, data: Variant) -> void:
-	if ingredient_idx < 0 or not _recipes.has(recipe_id) or not ingredient_idx < _recipes[recipe_id]["input"].size():
+	if not _recipes.has(recipe_id):
+		return
+	
+	var target: Array[NFRecipeItem] = _recipes[recipe_id]["input"]
+	if not NFArrayUtils.is_index_valid(target, ingredient_idx):
 		return
 	
 	if data == null:
-		_recipes[recipe_id]["input"][ingredient_idx]["custom_data"].erase(data_key)
+		target[ingredient_idx].custom_data.erase(data_key)
 	else:
-		_recipes[recipe_id]["input"][ingredient_idx]["custom_data"][data_key] = data
+		target[ingredient_idx].custom_data[data_key] = data
 
 
 ## Sets the custom data of an output ingredient in the [param recipe_id]
 ## to [param data]. If param data is [code]null[/code] then the key is erased.
 func set_recipe_output_item_data(recipe_id: StringName, ingredient_idx: int, data_key: String, data: Variant) -> void:
-	if ingredient_idx < 0 or not _recipes.has(recipe_id) or not ingredient_idx < _recipes[recipe_id]["output"].size():
+	if not _recipes.has(recipe_id):
+		return
+	
+	var target: Array[NFRecipeItem] = _recipes[recipe_id]["output"]
+	if not NFArrayUtils.is_index_valid(target, ingredient_idx):
 		return
 	
 	if data == null:
-		_recipes[recipe_id]["output"][ingredient_idx]["custom_data"].erase(data_key)
+		target[ingredient_idx].custom_data.erase(data_key)
 	else:
-		_recipes[recipe_id]["output"][ingredient_idx]["custom_data"][data_key] = data
+		target[ingredient_idx].custom_data[data_key] = data
 
 
 ## Clears the custom data from the input ingredient with index [param ingredient_idx]
 ## on [param recipe_id].
 func clear_recipe_input_item_data(recipe_id: StringName, ingredient_idx: int) -> void:
-	if ingredient_idx < 0 or not _recipes.has(recipe_id) or not ingredient_idx < _recipes[recipe_id]["input"].size():
+	if not _recipes.has(recipe_id):
 		return
-	_recipes[recipe_id]["input"][ingredient_idx]["custom_data"].clear()
+	
+	var target: Array[NFRecipeItem] = _recipes[recipe_id]["input"]
+	if NFArrayUtils.is_index_valid(target, ingredient_idx):
+		target[ingredient_idx].custom_data.clear()
 
 
 ## Clears the custom data from the output ingredient with index [param ingredient_idx]
 ## on [param recipe_id].
 func clear_recipe_output_item_data(recipe_id: StringName, ingredient_idx: int) -> void:
-	if ingredient_idx < 0 or not _recipes.has(recipe_id) or not ingredient_idx < _recipes[recipe_id]["input"].size():
+	if not _recipes.has(recipe_id):
 		return
-	_recipes[recipe_id]["output"][ingredient_idx]["custom_data"].clear()
+	
+	var target: Array[NFRecipeItem] = _recipes[recipe_id]["output"]
+	if NFArrayUtils.is_index_valid(target, ingredient_idx):
+		target[ingredient_idx].custom_data.clear()
 
 
 ## Clears the custom data of [param recipe_id].
@@ -126,97 +132,65 @@ func clear_recipe_data(recipe_id: StringName) -> void:
 		_recipes[recipe_id]["custom_data"].clear()
 
 
-## Returns a [RecipeSheet] of the [param recipe_id] or [code]null[/code]
+## Returns a [NFRecipeSheet] of the [param recipe_id] or [code]null[/code]
 ## if the recipe doesn't exist.
-func get_recipe(recipe_id: StringName) -> RecipeSheet:
+func get_recipe(recipe_id: StringName) -> NFRecipeSheet:
 	if not _recipes.has(recipe_id):
 		return null
 	
-	var recipe: RecipeSheet = RecipeSheet.new()
+	var recipe: NFRecipeSheet = NFRecipeSheet.new()
 	recipe.id = recipe_id
 	recipe.input.assign(get_recipe_inputs(recipe_id))
 	recipe.output.assign(get_recipe_outputs(recipe_id))
-	
 	recipe.custom_data.assign(get_recipe_custom_data(recipe_id))
+	
 	return recipe
 
 
+## Returns a copy of the [param recipe_id] custom data.
 func get_recipe_custom_data(recipe_id: StringName) -> Dictionary[StringName, Variant]:
-	var data: Dictionary[StringName, Variant] = {}
-	data.assign(DictUtils.get_nested_value(
-			_recipes,
-			[recipe_id, "custom_data"],
-			{},
-			true))
-	return data
+	var recipe: Variant = _recipes.get(recipe_id)
+	if typeof(recipe) != TYPE_DICTIONARY:
+		return {}
+	
+	var data: Variant = recipe.get("custom_data")
+	if typeof(data) != TYPE_DICTIONARY:
+		return {}
+	
+	var custom_data: Dictionary[StringName, Variant] = {}
+	custom_data.assign(data)
+	return custom_data.duplicate(true)
 
 
-func get_recipe_inputs(recipe_id: StringName) -> Array[RecipeItem]:
-	var inp: Array[RecipeItem] = []
+## Returns a copy array of the [NFRecipeItem]s registered on the
+## recipe input.
+func get_recipe_inputs(recipe_id: StringName) -> Array[NFRecipeItem]:
+	var inp: Array[NFRecipeItem] = []
+	
 	if not _recipes.has(recipe_id):
 		return inp
 	
-	var inputs: Array = DictUtils.get_nested_value(
-			_recipes,
-			[recipe_id, "input"],
-			[],
-			true)
+	var inputs: Array[NFRecipeItem] = _recipes[recipe_id]["input"]
 	
 	for input in inputs:
-		if typeof(input) != TYPE_DICTIONARY or not input.has("item_id"):
-			continue
-		var amount_data = DictUtils.get_nested_value(input, ["amount"], 0)
-		var amount_type: int = typeof(amount_data)
-		var input_item: RecipeItem = RecipeItem.new()
-		
-		input_item.id = input["item_id"]
-		if amount_type != TYPE_INT and amount_type != TYPE_FLOAT:
-			input_item.amount = 1
-		else:
-			input_item.amount = amount_data
-		input_item.amount = input["amount"]
-		input_item.custom_data.assign(DictUtils.get_nested_value(
-				input,
-				["custom_data"],
-				{},
-				true))
-		inp.append(input_item)
+		inp.append(input.duplicate(true))
 	
 	return inp
 
 
-func get_recipe_outputs(recipe_id: StringName) -> Array[RecipeItem]:
-	var inp: Array[RecipeItem] = []
+## Returns a copy array of the [NFRecipeItem]s registered on the
+## recipe output.
+func get_recipe_outputs(recipe_id: StringName) -> Array[NFRecipeItem]:
+	var out: Array[NFRecipeItem] = []
 	if not _recipes.has(recipe_id):
-		return inp
+		return out
 	
-	var outputs: Array = DictUtils.get_nested_value(
-			_recipes,
-			[recipe_id, "output"],
-			[],
-			true)
+	var outputs: Array[NFRecipeItem] = _recipes[recipe_id]["output"]
 	
-	for input in outputs:
-		if typeof(input) != TYPE_DICTIONARY or not input.has("item_id"):
-			continue
-		var amount_data = DictUtils.get_nested_value(input, ["amount"], 0)
-		var amount_type: int = typeof(amount_data)
-		var input_item: RecipeItem = RecipeItem.new()
-		
-		input_item.id = input["item_id"]
-		if amount_type != TYPE_INT and amount_type != TYPE_FLOAT:
-			input_item.amount = 1
-		else:
-			input_item.amount = amount_data
-		input_item.amount = input["amount"]
-		input_item.custom_data.assign(DictUtils.get_nested_value(
-				input,
-				["custom_data"],
-				{},
-				true))
-		inp.append(input_item)
+	for output in outputs:
+		out.append(output.duplicate(true))
 	
-	return inp
+	return out
 
 
 ## Returns [code]true[/code] if param recipe_id is registered.

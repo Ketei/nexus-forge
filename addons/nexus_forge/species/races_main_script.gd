@@ -6,12 +6,18 @@ signal species_loaded
 
 const UNDO_MAX_STEPS: int = 50
 
-var _unsaved: bool = false
-var _species_resource: SpeciesCatalog = null
+var _unsaved: bool = false:
+	get():
+		if _species_resource == null:
+			return false
+		else:
+			return _unsaved
+var _species_resource: NFSpeciesCatalog = null
 var loaded_species: StringName = &""
 var undo: UndoRedo = null
 var expr: Expression = null
 var _current_species: Array[StringName] = [] # Used for hybridization
+var _class_update_signaler: RefCounted = null
 var _gui_enabled: bool = false
 var signal_change: bool = false
 
@@ -100,6 +106,8 @@ func ready_plugin() -> void:
 	edit_trait_block_btn.pressed.connect(_on_edit_traitblock_pressed)
 	
 	dom_opt_btn.item_selected.connect(_on_dominant_gene_selected)
+	
+	_class_update_signaler.classes_updated.connect(_on_class_updated)
 
 
 func can_undo() -> bool:
@@ -208,31 +216,6 @@ func _on_desc_text_focus_lost() -> void:
 	undo.commit_action(false)
 
 
-func _on_attribute_editing_toggled(is_toggled: bool, attribute: SpinBox) -> void:
-	if is_toggled:
-		return
-	
-	var line: LineEdit = attribute.get_line_edit()
-	var old_value: float = attribute.get_meta(&"old_value")
-	var new_value: float = _parse_value(line.text, attribute.value)
-	
-	if new_value == old_value:
-		return
-	
-	var id: StringName = attribute.get_parent().get_meta(&"field_id")
-	var parent: VBoxContainer = attribute.get_parent().get_parent()
-	var type: int = 0
-	
-	var id_name: String = String(id).capitalize()
-	
-	attribute.set_meta(&"old_value", new_value)
-	
-	undo.create_action("Set '%s' %s" % [loaded_species, id_name])
-	undo.add_do_method(_do_update_attribute.bind(loaded_species, id, new_value, type))
-	undo.add_undo_method(_do_update_attribute.bind(loaded_species, id, old_value, type))
-	undo.commit_action(false)
-
-
 func _do_update_attribute(on_species: StringName, attribute_id: StringName, value: float, attribute_type: int,) -> void:
 	if not races_tree.has_species(on_species):
 		return
@@ -278,21 +261,37 @@ func _on_attribute_value_changed(new_value: float, spin: SpinBox) -> void:
 
 
 func _on_edit_statblock_pressed() -> void:
-	EditorInterface.edit_script(StatBlock.new().get_script())
 	if not EditorInterface.get_editor_settings().get_setting("text_editor/external/use_external_editor"):
 		EditorInterface.set_main_screen_editor("Script")
+	EditorInterface.edit_script(NFStatBlock)
 
 
 func _on_edit_skillset_pressed() -> void:
-	EditorInterface.edit_script(SkillSet.new().get_script())
 	if not EditorInterface.get_editor_settings().get_setting("text_editor/external/use_external_editor"):
 		EditorInterface.set_main_screen_editor("Script")
+	EditorInterface.edit_script(NFSkillSet)
 
 
 func _on_edit_traitblock_pressed() -> void:
-	EditorInterface.edit_script(TraitBlock.new().get_script())
 	if not EditorInterface.get_editor_settings().get_setting("text_editor/external/use_external_editor"):
 		EditorInterface.set_main_screen_editor("Script")
+	EditorInterface.edit_script(NFTraitBlock)
+
+
+func _on_class_updated(class_list: Array[String]) -> void:
+	var change_file: bool = false
+	if class_list.has("NFStatBlock"):
+		update_stats()
+		change_file = true
+	if class_list.has("NFSkillSet"):
+		update_skills()
+		change_file = true
+	if class_list.has("NFTraitBlock"):
+		update_traits()
+		change_file = true
+	
+	if change_file:
+		_on_something_changed()
 
 
 func _on_hybridize_pressed() -> void:
@@ -377,14 +376,10 @@ func _on_hybridize_confirmed() -> void:
 	undo.add_do_method(_do_hybridize_species.bind(loaded_species, dominant, submissive))
 	undo.add_undo_method(_do_hybridize_species.bind(loaded_species, current_dominant, current_recessive))
 	undo.commit_action()
+	_on_something_changed()
 
 
 func _do_hybridize_species(target: StringName, dominant: StringName, recessive: StringName) -> void:
-	#if loaded_species != target:
-		#if not loaded_species.is_empty():
-			#save_current_species()
-		#switch_to_species(target)
-	
 	if recessive.is_empty():
 		if races_tree.is_species_hybrid(target):
 			races_tree.dehybridize_species(target, dominant)
@@ -395,8 +390,8 @@ func _do_hybridize_species(target: StringName, dominant: StringName, recessive: 
 		races_tree.hybridize_species(target, dominant, recessive)
 	
 		hybrid_info_container.visible = true
-		hybrid_a.text = dom_opt_btn.get_selected_metadata()
-		hybrid_b.text = sub_opt_btn.get_selected_metadata()
+		hybrid_a.text = String(dominant)
+		hybrid_b.text = String(recessive)
 
 
 func _on_hybridize_cancelled() -> void:
@@ -411,6 +406,7 @@ func _on_species_dehibridized(species_id: StringName, new_top: StringName, dom: 
 	
 	if species_id == loaded_species and hybrid_info_container.visible:
 		hybrid_info_container.visible = false
+	_on_something_changed()
 
 
 func _do_dehibridize_species(species_id: StringName, move_to: StringName) -> void:
@@ -440,7 +436,7 @@ func reload_resource(first_load: bool = false) -> void:
 	
 	if res_path != "" and FileAccess.file_exists(res_path):
 		var preload_res: Resource = load(res_path)
-		if preload_res is SpeciesCatalog:
+		if preload_res is NFSpeciesCatalog:
 			_species_resource = preload_res
 	
 	if _species_resource == null:
@@ -449,7 +445,7 @@ func reload_resource(first_load: bool = false) -> void:
 			var no_db = preload("res://addons/nexus_forge/no_db_container.tscn").instantiate()
 			add_child(no_db)
 			no_db.message_minimum_size.x = 450
-			no_db.set_resource_type("SpeciesCatalog", "Species", "Species")
+			no_db.set_resource_type("NFSpeciesCatalog", "Species", "Species")
 			no_db.create_resource_pressed.connect(_on_create_database_pressed.bind(no_db))
 			no_db.load_resource_pressed.connect(_on_load_database_pressed.bind(no_db))
 			no_db.resource_dropped.connect(_on_resource_dropped.bind(no_db))
@@ -463,26 +459,25 @@ func reload_resource(first_load: bool = false) -> void:
 func _on_create_database_pressed(node: Control) -> void:
 	var database_creator: FileDialog = load("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	database_creator.file_mode = database_creator.FILE_MODE_SAVE_FILE
-	add_child(database_creator)
-	database_creator.show()
 	
+	EditorInterface.popup_dialog_centered(database_creator)
 	var result = await database_creator.dialog_finished
-	
-	if result[0]:
-		_species_resource = SpeciesCatalog.new()
-		ResourceSaver.save(_species_resource, result[1])
-		_species_resource.resource_path = result[1]
-		ProjectSettings.set_setting(
-				NFPluginGameHandler.get_setting_path("species"),
-				result[1])
-		if Engine.is_editor_hint():
-			ProjectSettings.save()
-		load_species_resource()
-		$RacesContainer.visible = true
-		node.visible = false
-		node.queue_free()
-	
 	database_creator.queue_free()
+	
+	if not result[0]:
+		return
+	_species_resource = NFSpeciesCatalog.new()
+	ResourceSaver.save(_species_resource, result[1])
+	_species_resource.resource_path = result[1]
+	ProjectSettings.set_setting(
+			NFPluginGameHandler.get_setting_path("species"),
+			result[1])
+	if Engine.is_editor_hint():
+		ProjectSettings.save()
+	load_species_resource()
+	$RacesContainer.visible = true
+	node.visible = false
+	node.queue_free()
 
 
 func _on_resource_dropped(resource: Resource, panel: Control) -> void:
@@ -501,34 +496,39 @@ func _on_resource_dropped(resource: Resource, panel: Control) -> void:
 func _on_load_database_pressed(node: Control) -> void:
 	var database_creator: FileDialog = load("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	database_creator.file_mode = database_creator.FILE_MODE_OPEN_FILE
-	add_child(database_creator)
-	database_creator.show()
 	
+	EditorInterface.popup_dialog_centered(database_creator)
 	var result = await database_creator.dialog_finished
-	
-	if result[0]:
-		var res_pre: Resource = load(result[1])
-		if res_pre != null and res_pre is SpeciesCatalog:
-			_species_resource = res_pre
-			ProjectSettings.set_setting(
-					NFPluginGameHandler.get_setting_path("species"),
-					result[1])
-			if Engine.is_editor_hint():
-				ProjectSettings.save()
-			load_species_resource()
-			$RacesContainer.visible = true
-			node.visible = false
-			node.queue_free()
-	
 	database_creator.queue_free()
+	
+	if not result[0]:
+		return
+	
+	var res_pre: Resource = load(result[1])
+	if res_pre != null and res_pre is NFSpeciesCatalog:
+		_species_resource = res_pre
+		ProjectSettings.set_setting(
+				NFPluginGameHandler.get_setting_path("species"),
+				result[1])
+		if Engine.is_editor_hint():
+			ProjectSettings.save()
+		load_species_resource()
+		$RacesContainer.visible = true
+		node.visible = false
+		node.queue_free()
 
 
 func _on_add_data_pressed(data_name: String, value: Variant) -> void:
-	race_data_tree.add_data(data_name, value)
+	race_data_tree.add_data(
+			data_name,
+			value,
+			false,
+			race_data_tree.get_root(),
+			true)
 	if race_data_tree.has_undo():
 		undo.create_action("Data Changed")
-		undo.add_do_method(race_data_tree.redo)
-		undo.add_undo_method(race_data_tree.undo)
+		undo.add_do_method(_perform_data_action.bind(loaded_species, true))
+		undo.add_undo_method(_perform_data_action.bind(loaded_species, false))
 		undo.commit_action(false)
 	_on_something_changed()
 
@@ -574,6 +574,7 @@ func _on_species_created(species_id: StringName) -> void:
 	
 	_species_resource.create_species(species_id)
 	_species_resource.set_species_name(species_id, "New Species")
+	
 	if not parent_species.is_empty():
 		_species_resource.link_species(species_id, parent_species)
 	
@@ -633,36 +634,36 @@ func _on_create_species_pressed() -> void:
 	id_creator.text_blacklist.assign(races_tree.get_all_species())
 	id_creator.title = "Create Species"
 	id_creator.ok_button_text = "Create"
-	add_child(id_creator)
-	id_creator.show()
+	
+	EditorInterface.popup_dialog_centered(id_creator)
 	id_creator.grab_text_focus()
-	
 	var result: Array = await id_creator.dialog_finished
-	
-	if result[0]:
-		if not loaded_species.is_empty():
-			save_current_species()
-		
-		var species_id: StringName = StringName(result[1])
-		
-		_species_resource.create_species(species_id)
-		_species_resource.set_species_name(species_id, "New Species")
-		
-		undo.create_action("Create Species '%s'" % species_id)
-		undo.add_do_method(_do_create_species.bind(species_id))
-		undo.add_undo_method(_undo_create_species.bind(species_id))
-		undo.commit_action(false)
-		
-		races_tree.create_species(species_id)
-		races_tree.select_species(species_id, false)
-		load_species(species_id)
-		loaded_species = species_id
-		
-		set_ui_enabled(true)
-		_on_something_changed()
-		_on_race_entries_changed()
-		
 	id_creator.queue_free()
+	
+	if not result[0]:
+		return
+	
+	if not loaded_species.is_empty():
+		save_current_species()
+	
+	var species_id: StringName = StringName(result[1])
+	
+	_species_resource.create_species(species_id)
+	_species_resource.set_species_name(species_id, "New Species")
+	
+	undo.create_action("Create Species '%s'" % species_id)
+	undo.add_do_method(_do_create_species.bind(species_id))
+	undo.add_undo_method(_undo_create_species.bind(species_id))
+	undo.commit_action(false)
+	
+	races_tree.create_species(species_id)
+	races_tree.select_species(species_id, false)
+	load_species(species_id)
+	loaded_species = species_id
+	
+	set_ui_enabled(true)
+	_on_something_changed()
+	_on_race_entries_changed()
 
 
 func _on_erase_species_requested(species: StringName) -> void:
@@ -672,8 +673,7 @@ func _on_erase_species_requested(species: StringName) -> void:
 	dialog.ok_button_text = "Delete"
 	dialog.cancel_button_text = "Cancel"
 	dialog.initial_position = Window.WINDOW_INITIAL_POSITION_CENTER_MAIN_WINDOW_SCREEN
-	add_child(dialog)
-	dialog.popup_centered()
+	EditorInterface.popup_dialog_centered(dialog)
 	
 	var delete: bool = await dialog.dialog_finished
 	dialog.queue_free()
@@ -730,6 +730,7 @@ func _on_species_moved(species: StringName, from: StringName, to: StringName) ->
 	undo.add_do_method(_do_move_species.bind(species, to))
 	undo.add_undo_method(_do_move_species.bind(species, from))
 	undo.commit_action(false)
+	_on_something_changed()
 
 
 func _do_move_species(what: StringName, to: StringName) -> void:
@@ -769,9 +770,10 @@ func save_current_species() -> void:
 	_species_resource.set_species_name(loaded_species, race_name_ln_edt.text.strip_edges())
 	_species_resource.set_species_description(loaded_species, race_desc_txt_edt.text.strip_edges())
 	_species_resource.clear_species_data(loaded_species)
+	
 	var data: Dictionary[String, Variant] = race_data_tree.get_data()
 	
-	for data_key in data.keys():
+	for data_key in data:
 		_species_resource.set_species_data(
 				loaded_species,
 				data_key,
@@ -782,33 +784,40 @@ func save_current_species() -> void:
 	for stat in race_stats_container.get_children():
 		if stat.get_child(0).button_pressed == false:
 			continue
+		var stat_spin: SpinBox = stat.get_child(1)
+		if stat_spin.get_line_edit().is_editing():
+			stat_spin.apply()
 		
 		_species_resource.set_species_stat_value(
 				loaded_species,
 				stat.get_meta(&"field_id"),
-				int(stat.get_child(1).value))
+				stat_spin.value)
 	
 	_species_resource.clear_species_skills(loaded_species)
 	
 	for skill in race_skill_container.get_children():
 		if skill.get_child(0).button_pressed == false:
 			continue
-		
+		var skill_spin: SpinBox = skill.get_child(1)
+		if skill_spin.get_line_edit().is_editing():
+			skill_spin.apply()
 		_species_resource.set_species_skill_value(
 				loaded_species,
 				skill.get_meta(&"field_id"),
-				int(skill.get_child(1).value))
+				int(skill_spin.value))
 	
 	_species_resource.clear_species_traits(loaded_species)
 	
 	for trait_child in race_traits_container.get_children():
 		if trait_child.get_child(0).button_pressed == false:
 			continue
-		
+		var trait_spin: SpinBox = trait_child.get_child(1)
+		if trait_spin.get_line_edit().is_editing():
+			trait_spin.apply()
 		_species_resource.set_species_trait_value(
 				loaded_species,
 				trait_child.get_meta(&"field_id"),
-				int(trait_child.get_child(1).value))
+				int(trait_spin.value))
 
 
 func load_species_resource() -> void:
@@ -824,7 +833,7 @@ func load_species_resource() -> void:
 	var subspecies: Dictionary[StringName, Array] = {}
 	var hybrid_species: Array[Dictionary] = []
 	
-	for species_key in _species_resource._species.keys():
+	for species_key in _species_resource._species:
 		if _species_resource._species[species_key]["parent_dominant"].is_empty():
 			top_species.append(species_key)
 		else:
@@ -837,11 +846,7 @@ func load_species_resource() -> void:
 				"dom": _species_resource._species[species_key]["parent_dominant"],
 				"sub": _species_resource._species[species_key]["parent_recessive"],
 				"hybrid": species_key})
-		
-		var undo_dict: Dictionary[String, UndoRedo] = {
-			"species": UndoRedo.new(),
-			"data": UndoRedo.new()}
-		
+	
 	races_tree.clear_species()
 	
 	for id in top_species:
@@ -884,7 +889,7 @@ func load_species(species_id: StringName) -> void:
 		hybrid_info_container.visible = false
 	
 	for data_key in _species_resource.species_data_keys(species_id):
-		race_data_tree.add_data(data_key, _species_resource.get_species_data(species_id, data_key), true)
+		race_data_tree.add_data(String(data_key), _species_resource.get_species_data(species_id, data_key), true)
 	
 	for stat in race_stats_container.get_children():
 		var stat_id: StringName = stat.get_meta(&"field_id")
@@ -910,6 +915,7 @@ func load_species(species_id: StringName) -> void:
 		var new_value: int = 0
 		
 		if _species_resource.species_has_skill(species_id, skill_id):
+			new_value = _species_resource.get_species_skill_value(species_id, skill_id)
 			chk.set_pressed_no_signal(true)
 			spn.editable = true
 		else:
@@ -937,20 +943,6 @@ func load_species(species_id: StringName) -> void:
 		
 		spn.set_meta(&"old_value", new_val)
 		spn.set_value_no_signal(new_val)
-
-
-func clear_talents() -> void:
-	for child in race_stats_container.get_children():
-		race_stats_container.remove_child(child)
-		child.queue_free()
-	
-	for child in race_skill_container.get_children():
-		race_skill_container.remove_child(child)
-		child.queue_free()
-	
-	for child in race_traits_container.get_children():
-		race_traits_container.remove_child(child)
-		child.queue_free()
 
 
 func default_talents() -> void:
@@ -1003,101 +995,131 @@ func set_ui_enabled(enabled: bool) -> void:
 		child.get_child(1).editable = child.get_child(0).button_pressed and enabled
 
 
-func update_talent_nodes() -> void:
-	var skill_set: SkillSet = SkillSet.new()
+func update_stats() -> void:
+	var scr: Script
+	var existing_stats: Dictionary[StringName, int] = NFStatBlock.stats()
+	var sorted_stats: Array[StringName] = []
+	sorted_stats.assign(existing_stats.keys())
 	
-	var trait_block: TraitBlock = TraitBlock.new()
-	
-	var stat_block: StatBlock = StatBlock.new()
-	
-	var stat_data: Dictionary[StringName, int] = StatBlock.stats()
-	var stats: Array[StringName] = []
-	stats.assign(stat_data.keys())
-	stats.sort_custom(func(a,b): return String(a).naturalnocasecmp_to(String(b)) < 0)
+	sorted_stats.sort_custom(
+			func(a:StringName,b:StringName):
+				return String(a).naturalnocasecmp_to(String(b)) < 0)
 	
 	var stat_map: Dictionary[StringName, HBoxContainer] = {}
-	for existing_stat in race_stats_container.get_children():
-		race_stats_container.remove_child(existing_stat)
-		if existing_stat.get_meta(&"field_id") in stats:
-			stat_map[existing_stat.get_meta(&"field_id")] = existing_stat
+	for stat_node in race_stats_container.get_children():
+		race_stats_container.remove_child(stat_node)
+		if existing_stats.has(stat_node.get_meta(&"field_id")):
+			stat_map[stat_node.get_meta(&"field_id")] = stat_node
 		else:
-			existing_stat.queue_free()
+			stat_node.queue_free()
 	
-	for stat_id in stats:
-		var stat_default: float = 0.0
-		var stat_item: ValueRange = stat_block.get(stat_id)
-		if stat_item != null:
-			stat_default = stat_item.value
-		
+	for stat_id in sorted_stats:
 		if stat_map.has(stat_id):
 			race_stats_container.add_child(stat_map[stat_id])
-			stat_map[stat_id].set_meta(&"default_value", stat_default)
-			if stat_data[stat_id] != stat_map[stat_id].get_meta(&"type"):
-				stat_map[stat_id].get_meta(&"value").step = 1.0 if stat_data[stat_id] == TYPE_INT else 0.01
+			if existing_stats[stat_id] != stat_map[stat_id].get_meta(&"type"):
+				stat_map[stat_id].get_meta(&"value").step = 1.0 if existing_stats[stat_id] == TYPE_INT else 0.01
 			_set_focus_for_stat(stat_map[stat_id])
 			stat_map.erase(stat_id)
 		else:
-			create_stat(stat_id, stat_default, stat_data[stat_id])
+			create_stat(stat_id, 0.0, existing_stats[stat_id])
 	for remaining_stat in stat_map:
 		stat_map[remaining_stat].queue_free()
+
+
+func update_skills() -> void:
+	var scr: Script = NFSkillSet
+	var existing_skills: Array[StringName] = NFSkillSet.skills()
+	var default_values: Dictionary[StringName, int] = {}
 	
-	var skills: Array[StringName] = SkillSet.skills()
-	skills.sort_custom(func(a,b): return String(a).naturalnocasecmp_to(String(b)) < 0)
+	existing_skills.sort_custom(
+			func(a:StringName,b:StringName):
+				return String(a).naturalnocasecmp_to(String(b)) < 0)
 	
-	var skill_map: Dictionary[StringName, HBoxContainer] = {}
-	for existing_skill in race_skill_container.get_children():
-		race_skill_container.remove_child(existing_skill)
-		if skills.has(existing_skill.get_meta(&"field_id")):
-			skill_map[existing_skill.get_meta(&"field_id")] = existing_skill
+	for skill_id in existing_skills:
+		var def = scr.get_property_default_value(skill_id)
+		var def_type: int = typeof(def)
+		if def_type == TYPE_INT:
+			default_values[skill_id] = def
+		elif def_type == TYPE_FLOAT:
+			default_values[skill_id] = int(def)
 		else:
-			existing_skill.queue_free()
+			default_values[skill_id] = 0
 	
-	for skill_id in skills:
+	var skill_map: Dictionary[StringName, Control] = {}
+	for skill_node in race_skill_container.get_children():
+		race_skill_container.remove_child(skill_node)
+		if existing_skills.has(skill_node.get_meta(&"field_id")):
+			skill_map[skill_node.get_meta(&"field_id")] = skill_node
+		else:
+			skill_node.queue_free()
+	
+	for skill_id in existing_skills:
 		if skill_map.has(skill_id):
-			skill_map[skill_id].set_meta(&"default_value", skill_set.get(skill_id))
 			race_skill_container.add_child(skill_map[skill_id])
+			skill_map[skill_id].set_meta(&"default_value", default_values[skill_id])
 			_set_focus_for_skill(skill_map[skill_id])
 			skill_map.erase(skill_id)
 		else:
-			create_skill(skill_id, skill_set.get(skill_id))
+			create_skill(skill_id, default_values[skill_id])
+	
 	for remaining_skill in skill_map.keys():
 		skill_map[remaining_skill].queue_free()
+
+
+func update_traits() -> void:
+	var scr: Script = NFTraitBlock
+	var existing_traits: Array[StringName] = NFTraitBlock.traits()
+	var default_values: Dictionary[StringName, int] = {}
 	
-	var traits: Array[StringName] = TraitBlock.traits()
+	existing_traits.sort_custom(
+			func(a:StringName,b:StringName):
+				return String(a).naturalnocasecmp_to(String(b)) < 0)
 	
-	traits.sort_custom(func(a,b): return String(a).naturalnocasecmp_to(String(b)) < 0)
+	for trait_id in existing_traits:
+		var def = scr.get_property_default_value(trait_id)
+		var def_type: int = typeof(def)
+		if def_type == TYPE_INT:
+			default_values[trait_id] = def
+		elif def_type == TYPE_FLOAT:
+			default_values[trait_id] = int(def)
+		else:
+			default_values[trait_id] = 0
 	
-	var trait_map: Dictionary[StringName, HBoxContainer] = {}
+	var trait_map: Dictionary[StringName, Control] = {}
 	for existing_trait in race_traits_container.get_children():
 		race_traits_container.remove_child(existing_trait)
-		if traits.has(existing_trait.get_meta(&"field_id")):
+		if existing_traits.has(existing_trait.get_meta(&"field_id")):
 			trait_map[existing_trait.get_meta(&"field_id")] = existing_trait
 		else:
 			existing_trait.queue_free()
 	
-	for trait_id in traits:
+	for trait_id in existing_traits:
 		if trait_map.has(trait_id):
-			trait_map[trait_id].set_meta(&"default_value", trait_block.get(trait_id))
 			race_traits_container.add_child(trait_map[trait_id])
+			trait_map[trait_id].set_meta(&"default_value", default_values[trait_id])
 			_set_focus_for_trait(trait_map[trait_id])
 			trait_map.erase(trait_id)
 		else:
-			create_trait(trait_id, trait_block.get(trait_id))
+			create_trait(trait_id, default_values[trait_id])
+	
 	for remaining_trait in trait_map.keys():
 		trait_map[remaining_trait].queue_free()
+
+
+func update_talent_nodes() -> void:
+	update_stats()
+	update_skills()
+	update_traits()
 	
 	if loaded_species != &"":
 		_on_something_changed()
-
-
-func value_field_active(field: HBoxContainer) -> bool:
-	return field.get_child(0).button_pressed
 
 
 func create_stat(stat_id: StringName, default_value: float, type: int) -> void:
 	var field: HBoxContainer = _create_value_field(stat_id, default_value, 1.0 if type == TYPE_INT else 0.01)
 	field.get_child(0).disabled = not _gui_enabled
 	field.get_child(1).editable = false
+	field.set_meta(&"type", type)
 	race_stats_container.add_child(field)
 	_set_focus_for_stat(field)
 
@@ -1139,6 +1161,7 @@ func _create_value_field(field_id: StringName, default_value: float, step: float
 	value.custom_minimum_size.y = 32
 	value.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	value.size_flags_stretch_ratio = 3.0
+	value.get_line_edit().set_meta(&"nf_species_spin", value)
 	
 	new_field.add_child(activatable)
 	new_field.add_child(value)
@@ -1149,23 +1172,42 @@ func _create_value_field(field_id: StringName, default_value: float, step: float
 	
 	activatable.toggled.connect(_on_value_field_toggled.bind(activatable, value))
 	value.value_changed.connect(_on_attribute_value_changed.bind(value))
-	value.get_line_edit().editing_toggled.connect(_on_attribute_editing_toggled.bind(value))
 	
 	return new_field
 
 
-func save() -> void:
-	_unsaved = false
+func has_unsaved_changes() -> bool:
+	var focused_item: Control = get_viewport().gui_get_focus_owner()
 	
+	if focused_item != null and focused_item is LineEdit and\
+			focused_item.is_editing() and focused_item.has_meta(&"nf_species_spin"):
+		var spin: SpinBox = focused_item.get_meta(&"nf_species_spin")
+		if spin.get_parent().get_child(0).button_pressed:
+			var p_value: float = _parse_value(
+					focused_item.text,
+					spin.value)
+			if p_value != spin.value:
+				return true
+	
+	return _unsaved
+
+
+func save() -> void:
 	if _species_resource == null:
 		return
 	
 	if not loaded_species.is_empty():
+		var focus_holder: Control = get_viewport().gui_get_focus_owner()
+		
+		if focus_holder != null and focus_holder is LineEdit\
+				and focus_holder.is_editing() and focus_holder.has_meta(&"nf_species_spin"):
+			var spin: SpinBox = focus_holder.get_meta(&"nf_species_spin")
+			if spin.get_parent().get_child(0).button_pressed:
+				spin.apply()
+		
 		save_current_species()
 	
 	var species_data: Array[Dictionary] = races_tree.get_species_map()
-	var top_species: Array[StringName] = []
-	var sub_species: Array[Dictionary] = []
 	
 	# We clear the top species link, as they are a subspecies of nothing.
 	for species in species_data:
@@ -1173,9 +1215,17 @@ func save() -> void:
 		var dom: StringName = species["dominant_species"]
 		var sub: StringName = species["recessive_species"]
 		
+		if not _species_resource._species.has(id):
+			NFPluginGameHandler._log_msg(
+					"kindred - editor",
+					"Tried to link species '%s' but entry wasn't found in resource." % id,
+					NFPluginGameHandler._LogLevel.ERROR)
+			continue
 		_species_resource.link_species(id, dom, sub)
 		
 	ResourceSaver.save(_species_resource)
+	
+	_unsaved = false
 
 
 func _parse_value(value: String, fallback: float) -> float:
@@ -1234,7 +1284,7 @@ func _set_focus_for_skill(skill: HBoxContainer) -> void:
 	var current_skills: int = race_skill_container.get_child_count()
 	var skill_idx: int = skill.get_index()
 	
-	if skill_idx < 0:
+	if 0 < skill_idx:
 		var prev_skill: HBoxContainer = race_skill_container.get_child(skill_idx - 1)
 		var prev_line: LineEdit = prev_skill.get_meta(&"value").get_line_edit()
 		prev_line.focus_next = line.get_path()
@@ -1253,7 +1303,7 @@ func _set_focus_for_skill(skill: HBoxContainer) -> void:
 		line.focus_next = next_line.get_path()
 		next_line.focus_previous = line.get_path()
 	elif 0 < race_traits_container.get_child_count():
-		var next_trait: HBoxContainer = race_traits_container.get_child(skill_idx + 1)
+		var next_trait: HBoxContainer = race_traits_container.get_child(0)
 		var next_line: LineEdit = next_trait.get_meta(&"value").get_line_edit()
 		line.focus_next = next_line.get_path()
 		next_line.focus_previous = line.get_path()

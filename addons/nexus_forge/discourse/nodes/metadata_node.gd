@@ -2,7 +2,7 @@
 extends DiscourseGraphNode
 
 
-signal metadata_id_changed(uuid: StringName, index: int, from: String, to: String)
+signal metadata_id_changed(uuid: String, index: int, from: String, to: String)
 
 
 var meta_fields: int = 0
@@ -14,7 +14,7 @@ var _connection_updates_disabled: bool = false:
 
 
 func _post_init() -> void:
-	set_node_id(&"Metadata")
+	set_node_id("Metadata")
 	title = "Metadata"
 	size = Vector2(250.0, 121.0)
 	custom_minimum_size.y = 121.0
@@ -132,33 +132,30 @@ func _get_node_data() -> Dictionary:
 
 
 func _set_node_data(data: Dictionary) -> void:
-	if data.has("name") and typeof(data["name"]) == TYPE_STRING_NAME:
-		_node_id = data["name"]
+	super(data)
 	
-	if not data.has("metadata") or typeof(data["metadata"]) != TYPE_DICTIONARY:
-		return
-	var metadata: Dictionary = data["metadata"]
-	
-	if metadata.has("position") and typeof(metadata["position"]) == TYPE_VECTOR2:
-		position_offset = metadata["position"]
-		
-	if not metadata.has("metadata_connections"):
+	var connections_data: Variant = data.get("metadata", NFDictUtils.EMPTY).get("metadata_connections")
+	if typeof(connections_data) != TYPE_ARRAY:
 		return
 	
-	var metadata_size: int = metadata["metadata_connections"].size()
+	var target_meta_size: int = 1
+	for metadata_data: Dictionary in connections_data:
+		if target_meta_size <= metadata_data["port"]:
+			target_meta_size = metadata_data["port"] + 2
+	
 	var current_meta_size: int = get_child_count() - 2
 	
-	if current_meta_size < metadata_size:
-		for _a in range(metadata_size - current_meta_size):
+	if current_meta_size < target_meta_size:
+		for _a in range(target_meta_size - current_meta_size):
 			add_metadata_port()
-	elif metadata_size < current_meta_size:
+	elif target_meta_size < current_meta_size:
 		var fields_to_remove: Array[StringName] = []
-		for port in range(current_meta_size, metadata_size, -1):
+		for port in range(current_meta_size - 1, target_meta_size - 1, -1):
 			fields_to_remove.append(StringName("metadata_" + str(port)))
 		remove_fields(fields_to_remove, -1)
 		update_size.call_deferred()
 	
-	for metadata_data:Dictionary in metadata["metadata_connections"]:
+	for metadata_data:Dictionary in connections_data:
 		var field_id: StringName = StringName("metadata_" + str(metadata_data["port"]))
 		var field: Control = get_field(field_id)
 		if field == null:
@@ -204,7 +201,7 @@ func get_valid_metadata_id(desired: String, skip: LineEdit = null) -> String:
 	if used_ids.has(desired):
 		var base: String = desired
 		var modified: String = desired
-		var trailing_data: Dictionary = StringUtils.get_trailing_integer(desired)
+		var trailing_data: Dictionary = NFStringUtils.get_trailing_integer(desired)
 		var iteration: int = trailing_data["integer"]
 		if trailing_data["has_integer"]:
 			base = base.trim_suffix(str(iteration))
@@ -227,7 +224,7 @@ func get_metadata_port_of(metadata_id: String) -> int:
 	if meta_count <= 0:
 		return -1
 	
-	for meta_field in range(1, meta_count):
+	for meta_field in range(1, meta_count + 1):
 		var field: Control = get_index_field(meta_field)
 		if field == null:
 			continue

@@ -1,52 +1,63 @@
 @tool
 @icon("res://addons/nexus_forge/icons/sword_icon.svg")
-class_name ItemSheet
+class_name NFItemSheet
 extends Resource
 ## A resource representing an Item.
 
-
+## Defines boolean-like capabilities or properties of an item.
+## [br][br]
+## This enum is meant to be updated by the developer. Modifying it
+## while the Depot module is active will automatically update the item
+## flag entries in the editor GUI.
 enum ItemFlag {
-	SELLABLE,
-	GIFTABLE,
+	SELLABLE = 0, ## Example flag 0
+	GIFTABLE = 1, ## Example flag 1
 	}
 
+## Defines the tier or rarity level of an item.
+## [br][br]
+## This enum is meant to be updated by the developer. Modifying it
+## while the Depot module is active will automatically update the
+## rarity dropdowns in the editor GUI.
 enum Rarity {
-	BASIC,
-	COMMON,
-	UNCOMMON,
-	RARE,
+	BASIC = 0, ## Example rarity 0
+	COMMON = 1, ## Example rarity 1
+	UNCOMMON = 2, ## Example rarity 2
+	RARE = 3, ## Example rarity 3
 	}
+
+static var _name_desc_regex: RegEx
 
 ## The ID of the item
-var item_id: StringName = &"":
+@export var item_id: StringName = &"":
 	set(id):
 		if item_id.is_empty():
 			item_id = id
 ## The name of the item.
-var name: String = "": set = _set_item_name
+@export var name: String = "": set = _set_item_name
 ## The ID of the category this item belongs to
-var category: StringName = &""
+@export var category: StringName = &""
 ## The rarity of the item.
-var rarity: Rarity = Rarity.COMMON
+@export var rarity: Rarity = Rarity.COMMON
 ## The value of the item.
-var value: int = 0
+@export var value: int = 0
 ## THe description of the item.
-var description: String = "": set = _set_item_description
+@export var description: String = "": set = _set_item_description
 ## An array contaning the item flags.
-var flags: Array[ItemFlag] = []
-## Custom data of the item. It can be accessed directly with the data ID. eg.
-## [code]my_item.example_data[/code]
-var custom_data: Dictionary[StringName, Variant] = {}
+@export var flags: Array[ItemFlag] = []
+## Custom data of the item.
+@export var custom_data: Dictionary[StringName, Variant] = {}
 
 var _name_builder: Callable = Callable()
 var _description_builder: Callable = Callable()
 
-func _get(property: StringName) -> Variant:
-	if custom_data.has(property):
-		return custom_data[property]
-	return null
 
-## Returns the item [member ItemSheet.name]. Formats it if [code]Format Item Strings with Blackboard[/code]
+static func _static_init() -> void:
+	_name_desc_regex = RegEx.new()
+	_name_desc_regex.compile("\\{\\$[^\\s\\}]+\\}")
+
+
+## Returns the item [member NFItemSheet.name]. Formats it if [code]Format Item Strings with Blackboard[/code]
 ## is [code]On[/code] on [code]Project Settings[/code].
 func get_item_name() -> String:
 	if not ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("items_format_strings"), false):
@@ -55,19 +66,12 @@ func get_item_name() -> String:
 	if _name_builder.is_valid():
 		return _name_builder.call()
 	
-	var _regex_formatter: RegEx
-	
-	_regex_formatter = RegEx.new()
-	_regex_formatter.compile("\\{\\$[^\\s\\}]+\\}")
-	
 	var title_formats: Dictionary[String, Callable] = {}
 	
-	for format_title in _regex_formatter.search_all(name):
+	for format_title in _name_desc_regex.search_all(name):
 		var string_path: String = format_title.get_string().trim_prefix("{$").trim_suffix("}")
-		var path_simplified: String = string_path.simplify_path()
-		#var var_parts: PackedStringArray = string_path.rsplit("/", false, 1)
 		
-		var black_callable: Callable = NexusForge.Blackboard.get_variable.bind(path_simplified, path_simplified)
+		var black_callable: Callable = NexusForge.Blackboard.get_variable.bind(string_path, format_title.get_string())
 		
 		title_formats["$" + string_path] = black_callable
 	
@@ -76,7 +80,7 @@ func get_item_name() -> String:
 	return _build_format(name, title_formats)
 
 
-## Returns the item [member ItemSheet.description]. Formats it if [code]Format Item Strings with Blackboard[/code]
+## Returns the item [member NFItemSheet.description]. Formats it if [code]Format Item Strings with Blackboard[/code]
 ## is [code]On[/code] on [code]Project Settings[/code].
 func get_item_description() -> String:
 	if not ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("items_format_strings"), false):
@@ -85,20 +89,12 @@ func get_item_description() -> String:
 	if _description_builder.is_valid():
 		return _description_builder.call()
 	
-	var _regex_formatter: RegEx
-	
-	_regex_formatter = RegEx.new()
-	_regex_formatter.compile("\\{\\$[^\\s\\}]+\\}")
-	
 	var desc_formats: Dictionary[String, Callable] = {}
 	
-	for description_item in _regex_formatter.search_all(description):
+	for description_item in _name_desc_regex.search_all(description):
 		var string_path: String = description_item.get_string().trim_prefix("{$").trim_suffix("}")
-		var var_parts: PackedStringArray = string_path.rsplit("/", false, 1)
-		if var_parts.size() != 2:
-			continue
 		
-		var variable: Callable = NexusForge.Blackboard.get_variable.bind(var_parts[0], var_parts[1], string_path)
+		var variable: Callable = NexusForge.Blackboard.get_variable.bind(string_path, description_item.get_string())
 		
 		desc_formats["$" + string_path] = variable
 	
@@ -127,6 +123,6 @@ func _build_format(string: String, call_formats: Dictionary[String, Callable]) -
 	var new_format: Dictionary[String, String] = {}
 	
 	for key in call_formats.keys():
-		new_format[key] = call_formats[key].call()
+		new_format[key] = str(call_formats[key].call())
 	
 	return string.format(new_format)

@@ -2,9 +2,9 @@
 extends DiscourseGraphNode
 
 
-signal method_changed(node_uuid: StringName, old_state: Dictionary, new_state: Dictionary)
+signal method_changed(node_uuid: String, old_state: Dictionary, new_state: Dictionary)
 
-static var available_methods: Dictionary = {}
+static var available_methods: Dictionary[String, Dictionary] = {}
 
 var methods_node: OptionButton
 
@@ -13,7 +13,7 @@ static func _static_init() -> void:
 
 
 func _post_init() -> void:
-	set_node_id(&"CallWithReturn")
+	set_node_id("CallWithReturn")
 	title = "Call Method (Return)"
 	graph_icon = get_theme_icon("MemberMethod", "EditorIcons")
 	node_type = DialogueNodeType.CALLABLE_RETURN
@@ -27,8 +27,11 @@ func _post_init() -> void:
 	methods_node.fit_to_longest_item = false
 	methods_node.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	methods_node.custom_minimum_size.y = 32
-
-	for method:String in available_methods.keys():
+	
+	var method_keys: Array = available_methods.keys()
+	method_keys.sort_custom(NFArrayUtils.sort_custom_alphabetically_asc)
+	
+	for method:String in method_keys:
 		methods_node.add_item(method.capitalize())
 		methods_node.set_item_metadata(-1, method)
 	
@@ -92,7 +95,6 @@ func _get_issues() -> PackedStringArray:
 
 
 func _get_node_data() -> Dictionary:
-	var data: Dictionary = {}
 	var inputs: Array[Dictionary] = []
 	
 	for arg_idx in range(get_child_count() - 1):
@@ -109,27 +111,11 @@ func _get_node_data() -> Dictionary:
 
 
 func _set_node_data(data: Dictionary) -> void:
-	if data.has("name") and typeof(data["name"]) == TYPE_STRING_NAME:
-		_node_id = data["name"]
-	
-	if not data.has("metadata") or typeof(data["metadata"]) != TYPE_DICTIONARY:
+	super(data)
+	var method_data: Variant = data.get("metadata", NFDictUtils.EMPTY).get("method")
+	if typeof(method_data) != TYPE_STRING:
 		return
-	var metadata: Dictionary = data["metadata"]
-	
-	if metadata.has("position") and typeof(metadata["position"]) == TYPE_VECTOR2:
-		position_offset = metadata["position"]
-	
-	if not metadata.has("method") or typeof(metadata["method"]) != TYPE_STRING:
-		return
-	
-	var method_opt_btn: OptionButton = get_field(&"methods")
-	for idx in range(method_opt_btn.item_count):
-		if method_opt_btn.get_item_metadata(idx) != metadata["method"]:
-			continue
-		method_opt_btn.select(idx)
-		method_opt_btn.set_meta(&"old_value", metadata["method"])
-		load_method(metadata["method"])
-		break
+	set_method(method_data)
 
 
 func _on_method_selected(idx: int) -> void:
@@ -152,7 +138,7 @@ func _on_method_selected(idx: int) -> void:
 			"arguments": old_inputs,
 			"method": prev_id}}
 	
-	load_method(id)
+	await load_method(id)
 	methods_node.set_meta(&"old_value", id)
 	
 	var new_inputs: Array[Dictionary] = []
@@ -184,12 +170,12 @@ func set_method(method_id: String) -> bool:
 	return false
 
 
-func reload_methods() -> void:
-	available_methods = get_user_methods()
+func reload_methods(reload_api: bool = true) -> void:
+	if reload_api:
+		available_methods = get_user_methods()
 	
 	if available_methods.is_empty():
 		if has_any_output(0):
-			var target: DiscourseGraphNode = get_node_connected_to_port(PortMode.OUTPUT, 0)
 			disconnect_port(PortMode.OUTPUT, 0)
 		methods_node.clear()
 		await clear_input_args()
@@ -204,7 +190,7 @@ func reload_methods() -> void:
 	var all_methods: Array = available_methods.keys()
 	var new_select: int = -1
 	
-	all_methods.sort_custom(ArrayUtils.sort_custom_alphabetically_asc)
+	all_methods.sort_custom(NFArrayUtils.sort_custom_alphabetically_asc)
 	
 	if selected_method != "":
 		new_select = all_methods.find(selected_method)
@@ -375,7 +361,7 @@ func add_input_arg(arg_text: String, arg_type: int) -> void:
 	var slot_target: int = get_child_count()
 	var arg: Label = Label.new()
 	var slot_type: SlotConnectionType = SlotConnectionType.VAR_ANY
-	var field_id: StringName = &"argument_" + StringName(str(slot_target))
+	var field_id: StringName = StringName("argument_" + str(slot_target))
 	
 	var input_icon: Texture2D = get_theme_icon("Variant", "EditorIcons")
 	var input_color: Color = COLORS["any"]
@@ -415,7 +401,7 @@ func add_input_arg(arg_text: String, arg_type: int) -> void:
 func clear_input_args() -> void:
 	var field_ids: Array[StringName] = []
 	for item in range(get_child_count() - 1, 0, -1):
-		var field_id: StringName = &"argument_" + StringName(str(item))
+		var field_id: StringName = StringName("argument_" + str(item))
 		field_ids.append(field_id)
 	await remove_fields(field_ids, -1)
 	update_node_size.call_deferred()
@@ -425,18 +411,10 @@ func update_node_size() -> void:
 	size.y = 0 
 
 
-static func get_user_methods() -> Dictionary:
-	var methods: Dictionary = {}
-		
-	if api_path.is_empty() or not ResourceLoader.exists(api_path):
-		if not validate_api_path():
-			NFPluginGameHandler._log_msg(
-					"discourse - editor",
-					"Couldn't load DiscourseAPI script.",
-					NFPluginGameHandler._LogLevel.ERROR)
-			return methods
+static func get_user_methods() -> Dictionary[String, Dictionary]:
+	var methods: Dictionary[String, Dictionary] = {}
 	
-	var api_script: Script = load(api_path)
+	var api_script: Script = DiscourseAPI
 	var api_methods: Array[Dictionary] = api_script.get_script_method_list()
 		
 	for method:Dictionary in api_methods:

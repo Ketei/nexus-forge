@@ -2,7 +2,7 @@
 extends DiscourseGraphNode
 
 
-signal fallback_changed(uuid: StringName, from: Variant, to: Variant)
+signal fallback_changed(uuid: String, from: Variant, to: Variant)
 
 var filter_mode: int = TYPE_NIL
 var str_fallback: LineEdit
@@ -12,7 +12,7 @@ var spinbox_container: HBoxContainer
 
 
 func _post_init() -> void:
-	set_node_id(&"TypeGuard")
+	set_node_id("TypeGuard")
 	title = "Type Guard"
 	node_type = DialogueNodeType.TYPE_GUARD
 	parent_mode = PortMode.OUTPUT
@@ -109,26 +109,9 @@ func _get_node_data() -> Dictionary:
 
 
 func _set_node_data(data: Dictionary) -> void:
-	if data.has("name") and typeof(data["name"]) == TYPE_STRING_NAME:
-		_node_id = data["name"]
-	
-	if not data.has("metadata") or typeof(data["metadata"]) != TYPE_DICTIONARY:
-		return
-	var metadata: Dictionary = data["metadata"]
-	
-	if metadata.has("position") and typeof(metadata["position"]) == TYPE_VECTOR2:
-		position_offset = metadata["position"]
-	
-	if metadata.has("fallback_value"):
-		match typeof(metadata["fallback_value"]):
-			TYPE_INT, TYPE_FLOAT:
-				val_fallback.set_value_no_signal(metadata["fallback_value"])
-			TYPE_BOOL:
-				bool_fallback.set_pressed_no_signal(metadata["fallback_value"])
-			TYPE_STRING:
-				str_fallback.text = metadata["fallback_value"]
-			_:
-				return
+	super(data)
+	var fallback_data: Variant = data.get("metadata", NFDictUtils.EMPTY).get("fallback_value")
+	set_fallback_value(fallback_data)
 
 
 func _on_output_connected(output: int, to_node: DiscourseGraphNode, _to_port: int) -> void:
@@ -151,7 +134,7 @@ func _on_output_connected(output: int, to_node: DiscourseGraphNode, _to_port: in
 			set_slot_type_right(0, SlotConnectionType.VAR_FLOAT)
 			set_slot_color_right(0, COLORS["float"])
 			set_output_connection_icon(&"connection", get_theme_icon("float", "EditorIcons"))
-			val_fallback.visible = true
+			spinbox_container.visible = true
 			val_fallback.step = 0.01
 			filter_mode = TYPE_FLOAT
 		SlotConnectionType.VAR_BOOL:
@@ -237,7 +220,6 @@ func _on_bool_fallback_toggled(is_toggled: bool) -> void:
 
 
 func get_active_data_type() -> Variant:
-	var fallback_panel: PanelContainer = get_field(&"fallback")
 	match filter_mode:
 		TYPE_INT:
 			return int(val_fallback.value)

@@ -443,6 +443,7 @@ metadata/current_search = ""
 [node name="NewTextButton" type="Button" parent="MainSplitContainer/ActiveWindowSplit/PhrasesContainer/PanelContainer/KeyBoxContainer/HBoxContainer" unique_id=737861922]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
+tooltip_text = "Create new Phrase entry"
 disabled = true
 icon = ExtResource("6_nnanj")
 flat = true

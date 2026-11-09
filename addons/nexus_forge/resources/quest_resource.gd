@@ -1,12 +1,16 @@
 @tool
 @icon("res://addons/nexus_forge/icons/scroll_full.svg")
-class_name Quest
+class_name NFQuest
 extends Resource
 
-
+## Defines the types of quests.
+## [br][br]
+## This enum is designed to be customized and expanded by the
+## developer. Modifying its values while the Odyssey module is active
+## will automatically update the quest type dropdown in the editor GUI.
 enum QuestType {
-	MAIN_QUEST = 0,
-	SIDE_QUEST = 1,
+	MAIN_QUEST = 0, ## Example Type 0
+	SIDE_QUEST = 1, ## Example Type 1
 }
 
 static var _regex_formatter: RegEx
@@ -44,7 +48,7 @@ static var _regex_formatter: RegEx
 ## completes. Currently only success and failure are supported.
 @export var events: Dictionary[StringName, Dictionary] = {}
 
-@export var _stages: Dictionary[StringName, QuestStage] = {}
+@export var _stages: Dictionary[StringName, NFQuestStage] = {}
 
 var _title_builder: Callable = Callable()
 var _description_builder: Callable = Callable()
@@ -60,10 +64,10 @@ static func _static_init() -> void:
 	_regex_formatter.compile("\\{\\$[^\\}]+\\}")
 
 
-## Returns the quest [member Quest.title]. Formats it if [code]Format Quest Strings with Blackboard[/code]
+## Returns the quest [member NFQuest.title]. Formats it if [code]Format NFQuest Strings with Blackboard[/code]
 ## is [code]On[/code] on [code]Project Settings[/code].
 func get_quest_title() -> String:
-	if not ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("items_format_strings"), false):
+	if not ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("quests_format_strings"), false):
 		return title
 	
 	if _title_builder.is_valid():
@@ -84,16 +88,16 @@ func get_quest_title() -> String:
 	return _build_format(title, title_formats)
 
 
-## Returns the item [member Quest.description]. Formats it if [code]Format Quest Strings with Blackboard[/code]
+## Returns the item [member NFQuest.description]. Formats it if [code]Format NFQuest Strings with Blackboard[/code]
 ## is [code]On[/code] on [code]Project Settings[/code].
 func get_quest_description() -> String:
-	if not ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("items_format_strings"), false):
+	if not ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("quests_format_strings"), false):
 		return description
 	
 	if _description_builder.is_valid():
 		return _description_builder.call()
 	
-	var desc_formats: Dictionary = {}
+	var desc_formats: Dictionary[String, Callable] = {}
 	
 	for description_item in _regex_formatter.search_all(description):
 		var string_path: String = description_item.get_string().trim_prefix("{$").trim_suffix("}")
@@ -116,9 +120,9 @@ func stages() -> Array[StringName]:
 
 
 ## Adds a new stage to this quest.[br]
-## [b]Note:[/b] Ensure that the [member QuestStage.id] from [param stage] is
+## [b]Note:[/b] Ensure that the [member NFQuestStage.id] from [param stage] is
 ## unique or it'll be overwriting an existing stage.
-func add_stage(stage: QuestStage) -> void:
+func add_stage(stage: NFQuestStage) -> void:
 	_stages[stage.id] = stage
 
 
@@ -134,14 +138,14 @@ func has_stage(stage_id: StringName) -> bool:
 
 ## Returns the stage object from [param stage_id] or [code]null[/code] if the stage
 ## doesn't exist.
-func get_stage(stage_id: StringName) -> QuestStage:
+func get_stage(stage_id: StringName) -> NFQuestStage:
 	if _stages.has(stage_id):
 		return _stages[stage_id]
 	return null
 
 
 func _build_format(string: String, call_formats: Dictionary[String, Callable]) -> String:
-	var new_format: Dictionary[String, String] = {}
+	var new_format: Dictionary[String, Variant] = {}
 	
 	for key in call_formats:
 		new_format[key] = call_formats[key].call()

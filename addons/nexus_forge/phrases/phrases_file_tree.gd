@@ -28,7 +28,7 @@ func _on_button_clicked(item: TreeItem, _column: int, id: int, mouse_button_inde
 			meta["save_required"])
 
 
-func add_map(resource: PhraseMap, select: bool = false, emit_select: bool = true) -> void:
+func add_map(resource: NFPhraseMap, select: bool = false, emit_select: bool = true) -> void:
 	var new_map: TreeItem = get_root().create_child()
 	new_map.set_text(0, resource.resource_path.get_file().get_basename())
 	new_map.set_tooltip_text(0, resource.resource_path)
@@ -85,3 +85,9 @@ func set_save_required_all(save_required: bool) -> void:
 		else:
 			item.set_text(0, item.get_text(0).trim_suffix("*"))
 		item.get_metadata(0)["save_required"] = save_required
+
+
+func search_for(pattern: String) -> void:
+	var empty: bool = pattern.is_empty()
+	for item in get_root().get_children():
+		item.visible = empty or item.get_tooltip_text(0).containsn(pattern)

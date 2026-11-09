@@ -19,11 +19,19 @@ func add_currency(id: StringName, title: String, value: int) -> void:
 	
 	new_item.set_cell_mode(1, TreeItem.CELL_MODE_RANGE)
 	new_item.set_range_config(1, 0, 1_000_000, 1.0)
-	new_item.set_range(0, 1.0)
+	new_item.set_range(1, 0.0)
 	new_item.set_editable(1, true)
 	new_item.set_editable(0, false)
 	
 	sort_currency_item(new_item)
+
+
+func update_currency_id(from: StringName, to: StringName) -> void:
+	for item in get_root().get_children():
+		if item.get_metadata(1)["id"] == from:
+			item.get_metadata(1)["id"] = to
+			item.set_tooltip_text(0, String(to))
+			break
 
 
 func update_currency_value(id: StringName, value: int) -> void:
@@ -75,7 +83,6 @@ func set_currency(id: StringName, title: String, value: int) -> void:
 			sort_currency_item(target)
 
 
-
 func reset_table() -> void:
 	for item in get_root().get_children():
 		item.set_range(1, 0)
@@ -87,6 +94,11 @@ func update_calculation() -> void:
 	for item in get_root().get_children():
 		new_value += _get_currency_value(item) * item.get_range(1)
 	calculation_updated.emit(new_value)
+
+
+func clear_currencies() -> void:
+	for item in get_root().get_children():
+		item.free()
 
 
 func _get_currency_value(item: TreeItem) -> int:

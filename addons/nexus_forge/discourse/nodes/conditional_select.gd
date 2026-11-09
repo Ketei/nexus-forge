@@ -3,7 +3,7 @@ extends DiscourseGraphNode
 
 
 func _post_init() -> void:
-	set_node_id(&"ConditionalValue")
+	set_node_id("ConditionalValue")
 	title = "Conditional Value"
 	node_type = DialogueNodeType.CONDITION_SELECT
 	parent_mode = PortMode.OUTPUT
@@ -85,4 +85,4 @@ func _get_issues() -> PackedStringArray:
 		issues.append("Error: No value assigned for true evaluation")
 	if not has_any_input(2):
 		issues.append("Error: No value assigned for false evaluation")
-	return PackedStringArray()
+	return issues

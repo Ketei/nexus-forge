@@ -20,7 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-class_name UUID
+class_name NFUUID
 extends Resource
 ## Godot UUID by Binogure Studio used to generate V4 UUIDs
 ##
@@ -33,6 +33,9 @@ extends Resource
 # - Changed internal array to `PackedByteArray` for memory efficiency.
 # - Added some documentation.
 
+## Bitmask ([code]0xFF[/code] or [code]255[/code]) used to isolate
+## the lowest 8 bits (a single byte) of a 32-bit integer when
+## extracting random bytes.
 const BYTE_MASK: int = 0b11111111 # 255
 var _uuid: PackedByteArray
 
@@ -170,7 +173,7 @@ func as_dict(big_endian: bool = true) -> Dictionary[String, int]:
 
 
 ## Converts the internal raw byte array of the UUID object into the standard UUID v4 string format.
-## Call this after creating a UUID object with [method UUID.new] to get its string representation.
+## Call this after creating a NFUUID object with [method NFUUID.new] to get its string representation.
 func as_string() -> String:
 	return '%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x' % [
 	# low
@@ -190,8 +193,8 @@ func as_string() -> String:
 	]
 
 
-## Compares this UUID object to the [param other] UUID object to check if they represent the same UUID.
-func is_equal(other: UUID) -> bool:
+## Compares this NFUUID object to the [param other] NFUUID object to check if they represent the same UUID.
+func is_equal(other: NFUUID) -> bool:
   # Godot Engine compares Array recursively
   # There's no need for custom comparison here.
 	return _uuid == other._uuid

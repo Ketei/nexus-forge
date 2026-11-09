@@ -2,19 +2,20 @@
 extends DiscourseGraphNode
 
 
-signal use_code_editor_pressed(uuid: StringName, target: TextEdit)
-signal choice_text_changed(node_uuid: StringName, choice_idx: int, old_text: String, new_text: String)
-signal choices_resized(node_uuid: StringName, old_snapshot: Dictionary, new_snapshot: Dictionary)
+signal use_code_editor_pressed(uuid: String, target: TextEdit)
+signal choice_text_changed(node_uuid: String, choice_idx: int, old_text: String, new_text: String)
+signal choices_resized(node_uuid: String, old_snapshot: Dictionary, new_snapshot: Dictionary)
 
 const MAX_LINES: int = 3
 const EXTRA_Y_PADDING: int = 8
 const CHOICE_TEXT_EDIT = preload("res://addons/nexus_forge/discourse/textedit_bracket_handler.gd")
 
+var choices_spinbox: SpinBox
 var _updating_choices: bool = false
 
 
 func _post_init() -> void:
-	set_node_id(&"Choices")
+	set_node_id("Choices")
 	title = "Choices"
 	node_type = DialogueNodeType.CHOICES
 	parent_mode = PortMode.INPUT
@@ -24,7 +25,7 @@ func _post_init() -> void:
 	
 	var choice_count_container: HBoxContainer = HBoxContainer.new()
 	var choices_label: Label = Label.new()
-	var choices_spinbox: SpinBox = SpinBox.new()
+	choices_spinbox = SpinBox.new()
 	var first_choice: HBoxContainer = get_choice_node()
 	
 	choices_label.text = "Choices"
@@ -43,7 +44,6 @@ func _post_init() -> void:
 			choice_count_container,
 			false,
 			SlotConnectionType.DIALOG)
-	map_field(&"choice_counter", &"choice_count", choices_spinbox)
 	
 	var first_out_idx: int = add_field(
 			&"choice_1",
@@ -98,7 +98,7 @@ func set_choice_count(value: int) -> void:
 	if current < value:
 		for extra in range(value - current):
 			var index: int = current + extra
-			var choice_id: StringName = &"choice_" + StringName(str(index + 1))
+			var choice_id: StringName = StringName("choice_" + str(index + 1))
 			var new_idx: int = add_field(
 					choice_id,
 					get_choice_node(),
@@ -149,7 +149,7 @@ func _on_choice_count_changed(value: int) -> void:
 func get_choices_array() -> Array[Dictionary]:
 	var options: Array[Dictionary] = []
 	for choice in range(1, get_child_count()):
-		var field_id: StringName = &"choice_" + StringName(str(int(choice)))
+		var field_id: StringName = StringName("choice_" + str(int(choice)))
 		var field: TextEdit = get_field(field_id).get_child(0)
 		
 		options.append(
@@ -166,7 +166,7 @@ func get_choices_array() -> Array[Dictionary]:
 
 
 func _update_value_to_spinbox() -> void:
-	var new_choice_count: int = get_mapped_field(&"choice_counter", &"choice_count").value
+	var new_choice_count: int = choices_spinbox.value
 	
 	var old_options: Array[Dictionary] = get_choices_array()
 	await set_choice_count(new_choice_count)
@@ -184,7 +184,7 @@ func _get_node_data() -> Dictionary:
 	var metadata: Dictionary = {"choices": options}
 		
 	for choice in range(1, get_child_count()):
-		var field_id: StringName = &"choice_" + StringName(str(int(choice)))
+		var field_id: StringName = StringName("choice_" + str(int(choice)))
 		var field: TextEdit = get_field(field_id).get_child(0)
 		
 		options.append(
@@ -202,38 +202,28 @@ func _get_node_data() -> Dictionary:
 
 
 func _set_node_data(data: Dictionary) -> void:
-	if data.has("name") and typeof(data["name"]) == TYPE_STRING_NAME:
-		_node_id = data["name"]
+	super(data)
 	
-	if not data.has("metadata") or typeof(data["metadata"]) != TYPE_DICTIONARY:
-		return
-	var metadata: Dictionary = data["metadata"]
-	
-	if metadata.has("position") and typeof(metadata["position"]) == TYPE_VECTOR2:
-		position_offset = metadata["position"]
-	
-	if metadata.has("localized") and typeof(metadata["localized"]) == TYPE_BOOL:
-		set_node_localized(metadata["localized"])
-	
-	if not metadata.has("choices") or typeof(metadata["choices"]) != TYPE_ARRAY:
+	var choice_data: Variant = data.get("metadata", NFDictUtils.EMPTY).get("choices")
+	if typeof(choice_data) != TYPE_ARRAY:
 		return
 	
 	var true_options: Array = []
-	for option in metadata["choices"]:
+	for option in choice_data:
 		if typeof(option) != TYPE_DICTIONARY or typeof(option.get("text")) != TYPE_STRING:
 			continue
 		true_options.append(option)
 	
 	var choice_size: int = true_options.size()
 	var choice_counts: int = max(1, choice_size)
-	get_mapped_field(&"choice_counter", &"choice_count").set_value_no_signal(choice_counts)
+	choices_spinbox.set_value_no_signal(choice_counts)
 	await set_choice_count(choice_counts)
 	for option in range(1, choice_size + 1):
 		set_choice_text(option, true_options[option - 1]["text"])
 
 
 func choice_count() -> int:
-	return get_mapped_field(&"choice_counter", &"choice_count").value
+	return choices_spinbox.value
 
 
 func get_choice_node() -> HBoxContainer:
@@ -274,7 +264,7 @@ func _on_use_code_editor_on(item: TextEdit) -> void:
 
 
 func remove_choice(idx: int) -> void:
-	var field_id: StringName = &"choice_" + StringName(str(idx))
+	var field_id: StringName = StringName("choice_" + str(idx))
 	var choice: TextEdit = get_field(field_id).get_child(0)
 	choice.text_changed.disconnect(_on_option_text_changed)
 	remove_field(field_id, 40)
@@ -299,7 +289,7 @@ func get_options() -> Array[String]:
 	var options: Array[String] = []
 	
 	for choice in range(1, get_child_count()):
-		var field_id: StringName = &"choice_" + StringName(str(int(choice)))
+		var field_id: StringName = StringName("choice_" + str(int(choice)))
 		var field: TextEdit = get_field(field_id).get_child(0)
 		options.append(field.text)
 	

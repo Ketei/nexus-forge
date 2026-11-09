@@ -13,7 +13,7 @@ var selected_key_index: int = -1
 var selected_format: String = ""
 
 var api_path: String = ""
-var map: PhraseMap = null:
+var map: NFPhraseMap = null:
 	set(m):
 		map = m
 		new_text_button.disabled = m == null
@@ -110,6 +110,7 @@ func ready_plugin() -> void:
 	argument_opt_btn.item_selected.connect(_on_format_item_selected)
 	
 	files_tree.map_resource_selected.connect(_on_map_resource_selected)
+	search_file_ln_edt.text_changed.connect(_on_file_search_text_changed)
 	
 	file_menu_button.get_popup().id_pressed.connect(_on_menu_id_pressed)
 	files_tree.map_close_pressed.connect(_on_map_close_pressed)
@@ -232,7 +233,7 @@ func _on_format_item_selected(idx: int) -> void:
 	
 	_update_choice_textbox_size(default_case_text)
 	
-	for case in map._phrases[phrase_key]["formats"][format_argument]["cases"].keys():
+	for case in map._phrases[phrase_key]["formats"][format_argument]["cases"]:
 		create_case_entry(
 				case,
 				map.get_case(phrase_key, format_argument, case),
@@ -255,15 +256,17 @@ func _on_map_close_pressed(closing_map: int, requires_save: bool) -> void:
 		var unsaved_dialog: AcceptDialog = load("res://addons/nexus_forge/dialogs/unsaved_dialog_script.gd").new()
 		unsaved_dialog.dialog_text = "File has unsaved changes\nDo you want to save before closing?"
 		unsaved_dialog.title = "Save changes..."
-		add_child(unsaved_dialog)
-		unsaved_dialog.show()
 		
+		EditorInterface.popup_dialog_centered(unsaved_dialog)
 		var result: int = await unsaved_dialog.dialog_finished
 		unsaved_dialog.queue_free()
+		
 		# 0 = save, 1 = don't save, 2 = cancel
 		if result == 0: # Save
-			save_current_resource()
-			ResourceSaver.save(map)
+			var closing_resource: Resource = _open_files[closing_map]["resource"]
+			if map == closing_resource:
+				save_current_resource()
+			ResourceSaver.save(closing_resource)
 		elif result == 2: # Cancel
 			return
 	
@@ -367,7 +370,7 @@ func _on_edit_cases_pressed(container: HBoxContainer) -> void:
 	default_case_text.text = default_case
 	default_case_text.set_meta(&"old_value", default_case)
 	_update_choice_textbox_size(default_case_text)
-	for custom_case in map._phrases[phrase_key]["formats"][argument_format]["cases"].keys():
+	for custom_case in map._phrases[phrase_key]["formats"][argument_format]["cases"]:
 		create_case_entry(
 				custom_case,
 				map.get_case(phrase_key, argument_format, custom_case),
@@ -418,9 +421,7 @@ func _on_menu_id_pressed(id: int) -> void:
 		map_dialog.file_mode = map_dialog.FILE_MODE_OPEN_FILE
 		map_dialog.title = "Open map"
 	
-	add_child(map_dialog)
-	map_dialog.show()
-	
+	EditorInterface.popup_dialog_centered(map_dialog)
 	var result: Array = await map_dialog.dialog_finished # (success: bool, resource_path: String)
 	map_dialog.queue_free()
 	
@@ -434,7 +435,7 @@ func _on_menu_id_pressed(id: int) -> void:
 		
 		if 0 <= selected_key_index:
 			save_current_resource()
-		var new_map: PhraseMap = PhraseMap.new()
+		var new_map: NFPhraseMap = NFPhraseMap.new()
 		var new_undo: UndoRedo = UndoRedo.new()
 		new_undo.max_steps = MAX_UNDO_STEPS
 		new_map.locale = locale_code
@@ -452,19 +453,19 @@ func _on_menu_id_pressed(id: int) -> void:
 		map = new_map
 	elif id == 1:
 		var res_pre: Resource = load(result[1])
-		if res_pre is PhraseMap:
+		if res_pre is NFPhraseMap:
 			if res_pre == map:
 				return
 			
 			if 0 <= selected_key_index:
 				save_current_resource()
-			
-			if _open_files.has(res_pre.get_instance_id()):
-				files_tree.select_map(res_pre, false)
+			var new_id: int = res_pre.get_instance_id()
+			if _open_files.has(new_id):
+				files_tree.select_map(new_id, false)
 			else:
 				var new_undo: UndoRedo = UndoRedo.new()
 				new_undo.max_steps = MAX_UNDO_STEPS
-				_open_files[res_pre.get_instance_id()] = {
+				_open_files[new_id] = {
 					"resource": res_pre,
 					"undo": new_undo,
 					"unsaved": false}
@@ -500,6 +501,10 @@ func _on_key_search_text_changed(text: String) -> void:
 	search_text_ln_edt.set_meta(&"current_search", clean_text)
 
 
+func _on_file_search_text_changed(text: String) -> void:
+	files_tree.search_for(text.strip_edges())
+
+
 func _on_case_search_text_changed(text: String) -> void:
 	var clean_text: String = text.strip_edges()
 	
@@ -528,7 +533,7 @@ func _on_case_search_text_changed(text: String) -> void:
 	search_case_ln_edt.set_meta(&"current_search", clean_text)
 
 
-func plugin_open_resource(resource: PhraseMap) -> void:
+func plugin_open_resource(resource: NFPhraseMap) -> void:
 	if resource == map:
 		return
 	elif map != null:
@@ -561,7 +566,7 @@ func open_map_files(files: Array[String]) -> void:
 		if not FileAccess.file_exists(file):
 			continue
 		var res_load: Resource = load(file)
-		if res_load == null or res_load is not PhraseMap or _open_files.has(res_load.get_instance_id()):
+		if res_load == null or res_load is not NFPhraseMap or _open_files.has(res_load.get_instance_id()):
 			continue
 		
 		var new_undo: UndoRedo = UndoRedo.new()
@@ -597,7 +602,7 @@ func select_region(country_code: String) -> void:
 			return
 
 
-func load_map(new_map: PhraseMap) -> void:
+func load_map(new_map: NFPhraseMap) -> void:
 	var locale_parts: PackedStringArray = new_map.locale.split("_", false, 1)
 	var parts_size: int = locale_parts.size()
 	var lang: String = locale_parts[0] if 0 < parts_size else language_opt_btn.get_selected_metadata()
@@ -651,7 +656,7 @@ func save_current_phrase_key() -> void:
 	
 	map.clear_cases(phrase_key, selected_format)
 	
-	for case in cases.keys():
+	for case in cases:
 		map.set_case(
 				phrase_key,
 				selected_format,
@@ -745,12 +750,6 @@ func save_current_resource() -> void:
 	
 	map.locale = locale_code
 	
-	# Correct key: Current text
-	var keys: Dictionary[String, String] = {}
-	
-	# Correct key: Line field
-	var new_phrases: Dictionary[StringName, Dictionary]
-	
 	for key_node in %EntriesContainer.get_children():
 		if key_node.is_queued_for_deletion():
 			continue
@@ -763,6 +762,14 @@ func save_current_resource() -> void:
 
 
 func has_unsaved_files() -> bool:
+	if map != null:
+		var current_focus: Control = get_viewport().gui_get_focus_owner()
+		
+		if current_focus != null and current_focus is LineEdit and\
+			current_focus.is_editing() and current_focus.has_meta(&"map_key_line"):
+				if current_focus.get_meta(&"old_value") != current_focus.text:
+					return true
+	
 	for id in _open_files:
 		if _open_files[id]["unsaved"]:
 			return true
@@ -770,6 +777,12 @@ func has_unsaved_files() -> bool:
 
 
 func save_all() -> void:
+	var current_focus: Control = get_viewport().gui_get_focus_owner()
+	if current_focus != null and current_focus is LineEdit and\
+			current_focus.is_editing() and current_focus.has_meta(&"map_key_line"):
+		current_focus.unedit()
+		current_focus.editing_toggled.emit(false)
+	
 	if save_required:
 		save_current_resource()
 	
@@ -814,9 +827,8 @@ func close_active_map() -> void:
 		var unsaved_dialog: AcceptDialog = load("res://addons/nexus_forge/dialogs/unsaved_dialog_script.gd").new()
 		unsaved_dialog.dialog_text = "File has unsaved changes\nDo you want to save before closing?"
 		unsaved_dialog.title = "Save changes..."
-		add_child(unsaved_dialog)
-		unsaved_dialog.show()
 		
+		EditorInterface.popup_dialog_centered(unsaved_dialog)
 		var result: int = await unsaved_dialog.dialog_finished
 		unsaved_dialog.queue_free()
 		
@@ -874,6 +886,7 @@ func create_case_entry(case: String, format: String, highlights: Array) -> void:
 	case_line.size_flags_stretch_ratio = 1.0
 	case_line.custom_minimum_size = Vector2(115.0, 33.0)
 	case_line.set_meta(&"old_value", case)
+	case_line.set_meta(&"map_key_line", case_line)
 	
 	case_text.syntax_highlighter = highlighter
 	case_text.caret_blink = true
@@ -951,6 +964,7 @@ func create_key_text_entry(key: String, text_entry: String) -> void:
 	key_line.placeholder_text = "Key"
 	key_line.text = key
 	key_line.set_meta(&"old_value", key)
+	key_line.set_meta(&"map_key_line", key_line)
 	key_line.size_flags_stretch_ratio = 1.0
 	
 	erase_button.icon = get_theme_icon("Remove", "EditorIcons")
@@ -1156,7 +1170,7 @@ func get_api_user_methods() -> Array[String]:
 	if api_path.is_empty() or not FileAccess.file_exists(api_path):
 		var all_classes: Array[Dictionary] = ProjectSettings.get_global_class_list()
 		for class_entry in all_classes:
-			if class_entry["class"] == "PhraseAPI":
+			if class_entry["class"] == "NFPhraseAPI":
 				api_path = class_entry["path"]
 				break
 	
@@ -1164,7 +1178,7 @@ func get_api_user_methods() -> Array[String]:
 	if api_path.is_empty() or not FileAccess.file_exists(api_path):
 		NFPluginGameHandler._log_msg(
 				"phrase maps - editor",
-				"Unable to locate PhraseAPI class file",
+				"Unable to locate NFPhraseAPI class file",
 				NFPluginGameHandler._LogLevel.ERROR)
 		return methods
 	
@@ -1196,7 +1210,7 @@ func get_valid_id(desired: String, ignore_node: LineEdit = null) -> String:
 	
 	var modified: String = desired.strip_edges()
 	var base: String = modified
-	var trailing_data: Dictionary = StringUtils.get_trailing_integer(modified)
+	var trailing_data: Dictionary = NFStringUtils.get_trailing_integer(modified)
 	var iteration: int = trailing_data["integer"]
 	if trailing_data["has_integer"]:
 		base = base.trim_suffix(str(iteration))
@@ -1210,7 +1224,6 @@ func get_valid_id(desired: String, ignore_node: LineEdit = null) -> String:
 
 func get_valid_case_id(desired: String, ignore_node: LineEdit = null) -> String:
 	var all_ids: Dictionary[String, Variant] = {}
-	var default_case: HBoxContainer = %CasesContainer.get_child(0)
 	
 	for node_idx in range(1, %CasesContainer.get_child_count()):
 		var node: HBoxContainer = %CasesContainer.get_child(node_idx)
@@ -1228,7 +1241,7 @@ func get_valid_case_id(desired: String, ignore_node: LineEdit = null) -> String:
 	
 	var modified: String = desired.strip_edges()
 	var base: String = modified
-	var trailing_data: Dictionary = StringUtils.get_trailing_integer(modified)
+	var trailing_data: Dictionary = NFStringUtils.get_trailing_integer(modified)
 	var iteration: int = trailing_data["integer"]
 	if trailing_data["has_integer"]:
 		base = base.trim_suffix(str(iteration))
@@ -1270,7 +1283,6 @@ func _on_phrase_text_focus_exited(field: TextEdit) -> void:
 	
 	var phrase_key_line: LineEdit = field.get_parent().get_child(1)
 	var phrase_key: StringName = StringName(phrase_key_line.get_meta(&"old_value"))
-	
 	var old_data: Dictionary = map._phrases.get(phrase_key, {}).duplicate(true)
 	
 	undo.create_action("Edit Phrase Text")
@@ -1348,8 +1360,6 @@ func _do_update_prase_key(from: String, to: String) -> void:
 	if target_line == null:
 		return
 	
-	var old_key: StringName = StringName(from)
-	var new_key: StringName = StringName(to)
 	target_line.text = to
 	target_line.set_meta(&"old_value", to)
 

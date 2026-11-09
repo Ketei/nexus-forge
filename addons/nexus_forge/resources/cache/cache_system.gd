@@ -1,5 +1,5 @@
 @icon("res://addons/nexus_forge/icons/cache_icon.svg")
-class_name Cache
+class_name NFLRUCache
 extends RefCounted
 ## A basic implemetation of a Least Recently Used Cache (LRU Cache)
 ##
@@ -10,9 +10,9 @@ extends RefCounted
 ## from the cache, freeing one slot and filling it with the newly cached item.
 ## [br]
 ## [br]
-## [b]IMPORTANT:[/b] While [Cache] will automatically clean itself
+## [b]IMPORTANT:[/b] While [NFLRUCache] will automatically clean itself
 ## when its reference counter drops to 0 it is highly recommended to
-## manually call [method Cache.clear] as soon as you no longer need the [Cache].
+## manually call [method NFLRUCache.clear] as soon as you no longer need the [NFLRUCache].
 ## This ensures that it clears all its references and allows
 ## the memory to be safely released.
 
@@ -20,12 +20,38 @@ extends RefCounted
 ## Max size of the cache.
 var max_size: int = 50: # Custom set that resizes _cache_map if larger
 	set(new_size):
+		if thread_safe:
+			_mutex.lock()
+		
 		var clamped_size: int = maxi(new_size, 1)
 		_resize_cache(clamped_size)
 		max_size = clamped_size
-var _cache_map: Dictionary[String, CacheLink] = {}
-var _newest_used: CacheLink = null
-var _oldest_used: CacheLink = null
+		if thread_safe:
+			_mutex.unlock()
+
+## Enables/Disables mutex locking to prevent race conditions
+## if doing multi-threaded access.
+## [br][br]
+## [b]Tip:[/b] Leave as [code]false[/code] if only using the main thread
+## to avoid unnecessary locking overhead.
+## [br][br]
+## [b]Note:[/b] Enabling this option instantiates a [Mutex] for this object,
+## setting it to [code]false[/code] drops the mutex's reference.
+var thread_safe: bool = false:
+	set(t):
+		if thread_safe and not t:
+			if is_instance_valid(_mutex):
+				_mutex = null # Refcoutend so it should free itself
+		
+		thread_safe = t
+		
+		if t and not is_instance_valid(_mutex):
+			_mutex = Mutex.new()
+
+var _mutex: Mutex = null
+var _cache_map: Dictionary[String, NFLRUCacheLink] = {}
+var _newest_used: NFLRUCacheLink = null
+var _oldest_used: NFLRUCacheLink = null
 
 
 func _resize_cache(target_size: int) -> void:
@@ -42,7 +68,7 @@ func _remove_oldest() -> void:
 	if _oldest_used == null:
 		return
 	
-	var target_link: CacheLink = _oldest_used
+	var target_link: NFLRUCacheLink = _oldest_used
 	
 	_cache_map.erase(target_link.key)
 	
@@ -59,7 +85,7 @@ func _remove_oldest() -> void:
 	target_link.clear()
 
 
-func _move_to_newest(link: CacheLink) -> void:
+func _move_to_newest(link: NFLRUCacheLink) -> void:
 	if link == _newest_used:
 		return
 	
@@ -84,7 +110,7 @@ func _move_to_newest(link: CacheLink) -> void:
 		_oldest_used = link
 
 
-func _add_to_newest(link: CacheLink) -> void:
+func _add_to_newest(link: NFLRUCacheLink) -> void:
 	if _newest_used != null:
 		link.older_link = _newest_used
 		_newest_used.newer_link = link
@@ -101,73 +127,164 @@ func _add_to_newest(link: CacheLink) -> void:
 ## If the item was already cached it moves it to the front of the
 ## cache (newest used).
 func cache_data(key: String, data: Variant) -> void:
+	if thread_safe:
+		_mutex.lock()
+	
 	if _cache_map.has(key):
-		var link: CacheLink = _cache_map[key]
+		var link: NFLRUCacheLink = _cache_map[key]
 		
-		if link.data != data:
-			link.data = data
+		link.data = data
 		
 		_move_to_newest(link)
-		return
+	else:
+		var current_size: int = _cache_map.size()
+		
+		while max_size <= current_size:
+			_remove_oldest()
+			current_size -= 1
+		
+		var new_link: NFLRUCacheLink = NFLRUCacheLink.new()
+		
+		new_link.key = key
+		new_link.data = data
+		_add_to_newest(new_link)
 	
-	var current_size: int = _cache_map.size()
-	
-	while max_size <= current_size:
-		_remove_oldest()
-		current_size -= 1
-	
-	var new_link: CacheLink = CacheLink.new()
-	
-	new_link.key = key
-	new_link.data = data
-	_add_to_newest(new_link)
+	if thread_safe:
+		_mutex.unlock()
 
 
 ## Returns the cached item assigned to [param key] or [code]null[/code] if
 ## the item isn't in the cache.
 func get_cache(key: String) -> Variant:
-	if _cache_map.has(key):
-		return _cache_map[key].data
-	return null
+	var result: Variant = null
+	if thread_safe:
+		_mutex.lock()
+	
+	var link: NFLRUCacheLink = _cache_map.get(key)
+	if link != null:
+		result = link.data
+		_move_to_newest(link)
+	
+	if thread_safe:
+		_mutex.unlock()
+	
+	return result
 
 
 ## Returns true if an item with key [param key] is in the cache.
 func is_in_cache(key: String) -> bool:
-	return _cache_map.has(key)
+	var has_item: bool = false
+	if thread_safe:
+		_mutex.lock()
+	has_item = _cache_map.has(key)
+	if thread_safe:
+		_mutex.unlock()
+	return has_item
+
+
+## Returns all the keys of the cached items.
+func keys() -> Array[String]:
+	var c_keys: Array[String] = []
+	if thread_safe:
+		_mutex.lock()
+	c_keys.assign(_cache_map.keys())
+	if thread_safe:
+		_mutex.unlock()
+	return c_keys
 
 
 ## Removes an item from the cache. Returns [code]true[/code] if [param key] was
 ## in the cache.
-func remove_data(key: String) -> void:
-	if not _cache_map.has(key):
+func remove_data(key: String) -> bool:
+	var removed: bool = false
+	var target_link: NFLRUCacheLink = null
+	
+	if thread_safe:
+		_mutex.lock()
+	
+	if _cache_map.has(key):
+		target_link = _cache_map[key]
+		
+		_cache_map.erase(key)
+		
+		if target_link.older_link != null:
+			target_link.older_link.newer_link = target_link.newer_link
+			
+		if target_link.newer_link != null:
+			target_link.newer_link.older_link = target_link.older_link
+		
+		if _newest_used == target_link:
+			_newest_used = target_link.older_link
+		
+		if _oldest_used == target_link:
+			_oldest_used = target_link.newer_link
+	
+		removed = true
+	
+	if thread_safe:
+		_mutex.unlock()
+	if removed:
+		target_link.clear()
+	return removed
+
+
+## Removes the bulk of entries on param key_arr from
+## the cache in 1 operation. Intended for use when
+## member thread_safe is [code]true[/code] and
+## a need to remove multiple keys is required.
+func remove_keys(key_arr: Array[String]) -> void:
+	if key_arr.is_empty():
 		return
 	
-	var target_link: CacheLink = _cache_map[key]
+	var deferred_clears: Array[NFLRUCacheLink] = []
 	
-	_cache_map.erase(key)
+	if thread_safe:
+		_mutex.lock()
 	
-	if target_link.older_link != null:
-		target_link.older_link.newer_link = target_link.newer_link
+	for key in key_arr:
+		var target_link: NFLRUCacheLink = _cache_map.get(key)
+		if target_link == null:
+			continue
 		
-	if target_link.newer_link != null:
-		target_link.newer_link.older_link = target_link.older_link
+		_cache_map.erase(key)
+		
+		if target_link.older_link != null:
+			target_link.older_link.newer_link = target_link.newer_link
+			
+		if target_link.newer_link != null:
+			target_link.newer_link.older_link = target_link.older_link
+		
+		if _newest_used == target_link:
+			_newest_used = target_link.older_link
+		
+		if _oldest_used == target_link:
+			_oldest_used = target_link.newer_link
 	
-	if _newest_used == target_link:
-		_newest_used = target_link.older_link
+		deferred_clears.append(target_link)
 	
-	if _oldest_used == target_link:
-		_oldest_used = target_link.newer_link
+	if thread_safe:
+		_mutex.unlock()
 	
-	target_link.clear()
+	for link in deferred_clears:
+		link.clear()
 
 
 ## Returns the current size of the cache.
 func size() -> int:
-	return _cache_map.size()
+	var current_size: int = 0
+	if thread_safe:
+		_mutex.lock()
+	current_size = _cache_map.size()
+	if thread_safe:
+		_mutex.unlock()
+	return current_size
 
 
 ## Clears the cache.
 func clear() -> void:
+	if thread_safe:
+		_mutex.lock()
+	
 	for cache_key in _cache_map.keys():
 		var link = _cache_map[cache_key]
 		if is_instance_valid(link):
@@ -175,12 +292,19 @@ func clear() -> void:
 	_cache_map.clear()
 	_newest_used = null
 	_oldest_used = null
+	
+	if thread_safe:
+		_mutex.unlock()
 
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_PREDELETE:
+		if thread_safe and is_instance_valid(_mutex):
+			_mutex.lock()
 		for cache_key in _cache_map.keys():
 			_cache_map[cache_key].clear()
 		_cache_map.clear()
 		_newest_used = null
 		_oldest_used = null
+		if thread_safe and is_instance_valid(_mutex):
+			_mutex.unlock()

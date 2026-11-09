@@ -80,7 +80,7 @@ func add_conversation(id: int, path: String, select: bool = false, signal_select
 		active_conversation_item = new_conversation
 		new_conversation.select(0)
 		if signal_select:
-			conversation_selected.emit()
+			conversation_selected.emit(id)
 
 
 func select_conversation(conversation_id: int, emit_select: bool = true) -> void:

@@ -2,7 +2,7 @@
 extends DiscourseGraphNode
 
 
-signal choice_count_state_changed(uuid: StringName, old_state: Dictionary, new_state: Dictionary)
+signal choice_count_state_changed(uuid: String, old_state: Dictionary, new_state: Dictionary)
 
 var custom_default_weight: int = -1:
 	set(new_default):
@@ -10,10 +10,11 @@ var custom_default_weight: int = -1:
 		update_weights()
 
 var _exits_update_queued: bool = false
+var options_spn: SpinBox
 
 
 func _post_init() -> void:
-	set_node_id(&"RandomPath")
+	set_node_id("RandomPath")
 	title = "Random"
 	size = Vector2(200.0, 146.0)
 	custom_minimum_size.y = 146.0
@@ -23,7 +24,7 @@ func _post_init() -> void:
 	
 	var options_container: HBoxContainer = HBoxContainer.new()
 	var options_lbl: Label = Label.new()
-	var options_spn: SpinBox = SpinBox.new()
+	options_spn = SpinBox.new()
 	var default_weight: Label = Label.new()
 	var first_random: Label = Label.new()
 	
@@ -49,7 +50,6 @@ func _post_init() -> void:
 			options_container,
 			false,
 			SlotConnectionType.DIALOG)
-	map_field(&"options", &"count", options_spn)
 	
 	add_field(
 			&"weight_default",
@@ -77,7 +77,7 @@ func _ready() -> void:
 	set_slot_custom_icon_left(0, flow_icon)
 	
 	for conn_idx in range(1, get_child_count() - 1):
-		var id: StringName = &"option_" + StringName(str(conn_idx))
+		var id: StringName = StringName("option_" + str(conn_idx))
 		set_input_connection_icon(id, get_theme_icon("int", "EditorIcons"))
 	
 	for slot_index in range(2, get_child_count()):
@@ -104,7 +104,7 @@ func _on_input_disconnected(input_port: int, from_node: DiscourseGraphNode, _fro
 	if from_node.node_type == DialogueNodeType.VALUE:
 		if from_node.num_value.value_changed.is_connected(_on_value_node_weight_changed):
 			from_node.num_value.value_changed.disconnect(_on_value_node_weight_changed)
-		elif from_node.num_value.value_changed.is_connected(_on_custom_default_weight_changed):
+		if from_node.num_value.value_changed.is_connected(_on_custom_default_weight_changed):
 			from_node.num_value.value_changed.disconnect(_on_custom_default_weight_changed)
 		from_node.clamp_range(0.0, 100.0, true, true)
 	
@@ -122,7 +122,7 @@ func _on_input_connected(input_port: int, from_node: DiscourseGraphNode, _from_p
 	
 	if input_port == 1: # Defaults
 		if from_node.node_type == DialogueNodeType.VALUE:
-			custom_default_weight = int(from_node.num_value)
+			custom_default_weight = int(from_node.num_value.value)
 			from_node.num_value.value_changed.connect(_on_custom_default_weight_changed)
 		else:
 			custom_default_weight = 0
@@ -187,7 +187,7 @@ func _on_random_exit_changed(_target_options: int) -> void:
 
 
 func _update_exits_with_value(old_state: Dictionary) -> void:
-	var exit_size: int = get_mapped_field(&"options", &"count").value
+	var exit_size: int = options_spn.value
 	await set_random_exit_number(exit_size)
 	
 	var new_state: Dictionary = {"metadata": {"options": get_outputs_state()}}
@@ -220,7 +220,7 @@ func set_random_exit_number(target_options: int) -> void:
 			new_random.text = "Weight ??.??%"
 			new_random.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			new_random.horizontal_alignment = HORIZONTAL_ALIGNMENT_FILL
-			var option_id: StringName = &"option_" + StringName(str(int(new_option)))
+			var option_id: StringName = StringName("option_" + str(int(new_option)))
 			add_field(
 				option_id,
 				new_random,
@@ -242,11 +242,11 @@ func set_random_exit_number(target_options: int) -> void:
 	else:
 		var fields_to_remove: Array[StringName] = []
 		for extra_option in range(current_options, target_options, -1):
-			var port_id: StringName = &"option_" + StringName(str(int(extra_option)))
+			var port_id: StringName = StringName("option_" + str(int(extra_option)))
 			fields_to_remove.append(port_id)
 		await remove_fields(fields_to_remove)
 	
-	get_mapped_field(&"options", &"count").set_value_no_signal(target_options)
+	options_spn.set_value_no_signal(target_options)
 	update_weights()
 	_reset_height.call_deferred()
 
@@ -256,21 +256,13 @@ func _reset_height() -> void:
 
 
 func _set_node_data(data: Dictionary) -> void:
-	if data.has("name") and typeof(data["name"]) == TYPE_STRING_NAME:
-		_node_id = data["name"]
-	
-	if not data.has("metadata") or typeof(data["metadata"]) != TYPE_DICTIONARY:
-		return
-	var metadata: Dictionary = data["metadata"]
-	
-	if metadata.has("position") and typeof(metadata["position"]) == TYPE_VECTOR2:
-		position_offset = metadata["position"]
-	
-	if not metadata.has("options") or typeof(metadata["options"]) != TYPE_ARRAY:
+	super(data)
+	var options_data: Variant = data.get("metadata", NFDictUtils.EMPTY).get("options")
+	if typeof(options_data) != TYPE_ARRAY:
 		return
 	
-	var option_size: int = metadata["options"].size()
-	get_mapped_field(&"options", &"count").set_value_no_signal(option_size)
+	var option_size: int = options_data.size()
+	options_spn.set_value_no_signal(option_size)
 	set_random_exit_number(option_size)
 
 

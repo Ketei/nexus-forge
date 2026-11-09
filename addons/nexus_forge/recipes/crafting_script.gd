@@ -6,7 +6,7 @@ signal recipes_loaded
 
 const MAX_UNDO_STEPS: int = 50
 
-var recipes_resource: RecipeCatalog = null
+var recipes_resource: NFRecipeCatalog = null
 
 var active_recipe: StringName = &"":
 	set(new_active):
@@ -47,13 +47,15 @@ func _input(event: InputEvent) -> void:
 		return
 	
 	if event is InputEventKey:
-		if event.echo or not event.pressed:
+		if event.echo or not event.pressed or event.ctrl_pressed or event.shift_pressed:
 			return
 		
-		if event.keycode == KEY_DELETE and not event.ctrl_pressed and not event.shift_pressed:
-			if not active_recipe.is_empty():
-				recipe_tree.remove_recipe(active_recipe)
-				_on_recipe_erased(active_recipe)
+		if event.keycode == KEY_DELETE and recipe_tree.has_focus() and recipe_tree.get_selected() != null:
+			var selected_id: StringName = recipe_tree.get_selected_recipe()
+			var selected_tree: TreeItem = recipe_tree.get_selected()
+			if recipes_resource.has_recipe(selected_id):
+				recipe_tree.remove_recipe(selected_id)
+				_on_recipe_erased(selected_id, selected_tree.get_index())
 			get_viewport().set_input_as_handled()
 
 
@@ -148,7 +150,6 @@ func do_redo() -> void:
 	_something_changed()
 
 
-
 func _on_recipe_lnedt_text_changed(text: String) -> void:
 	recipe_tree.search_text(text)
 
@@ -170,7 +171,12 @@ func _something_changed(arg: Variant = null) -> void:
 
 
 func _on_custom_data_button_pressed(id: String, data: Variant) -> void:
-	recipe_custom_data_tree.add_data(id, data)
+	recipe_custom_data_tree.add_data(
+			id,
+			data,
+			false,
+			recipe_custom_data_tree.get_root(),
+			true)
 	_something_changed()
 
 
@@ -178,8 +184,8 @@ func _on_item_erased(item_id: StringName) -> void:
 	if recipes_resource == null:
 		return
 	recipe_items_tree.remove_item(item_id)
-	recipe_input_tree.remove_item(item_id)
-	recipe_output_tree.remove_item(item_id)
+	recipe_input_tree.mark_item_missing(item_id, true)
+	recipe_output_tree.mark_item_missing(item_id, true)
 	_something_changed()
 
 
@@ -197,19 +203,19 @@ func change_item_id(old: StringName, new: StringName) -> void:
 	
 	_something_changed()
 	for recipe in recipes_resource.recipes():
-		for input_item in recipes_resource._recipes[recipe]["input"]:
-			if input_item["item_id"] == old:
-				input_item["item_id"] = new
-		for output_item in recipes_resource._recipes[recipe]["output"]:
-			if output_item["item_id"] == old:
-				output_item["item_id"] = new
+		for input_item:NFRecipeItem in recipes_resource._recipes[recipe]["input"]:
+			if input_item.id == old:
+				input_item.id = new
+		for output_item:NFRecipeItem in recipes_resource._recipes[recipe]["output"]:
+			if output_item.id == old:
+				output_item.id = new
 
 
 func save_current_recipe() -> void:
 	var data: Dictionary[String, Variant] = recipe_custom_data_tree.get_data()
 	recipes_resource.clear_recipe_data(active_recipe)
 	
-	for data_key in data.keys():
+	for data_key in data:
 		recipes_resource.set_recipe_data(
 				active_recipe,
 				data_key,
@@ -218,21 +224,21 @@ func save_current_recipe() -> void:
 	var inputs: Array[Dictionary] = recipe_input_tree.get_recipe_items()
 	var outputs: Array[Dictionary] = recipe_output_tree.get_recipe_items()
 	
-	var input_items: Array[RecipeItem] = []
-	var output_items: Array[RecipeItem] = []
+	var input_items: Array[NFRecipeItem] = []
+	var output_items: Array[NFRecipeItem] = []
 	
 	for input in inputs:
-		var item: RecipeItem = RecipeItem.new()
-		item.id = input["item_id"]
-		item.amount = input["amount"]
-		item.custom_data.assign(input["data"])
+		var item: NFRecipeItem = NFRecipeItem.new()
+		item.id = input.get("item_id", &"")
+		item.amount = input.get("amount", 1)
+		item.custom_data = input.get("data", item.custom_data)
 		input_items.append(item)
 	
 	for output in outputs:
-		var item: RecipeItem = RecipeItem.new()
-		item.id = output["item_id"]
-		item.amount = output["amount"]
-		item.custom_data.assign(output["data"])
+		var item: NFRecipeItem = NFRecipeItem.new()
+		item.id = output.get("item_id", &"")
+		item.amount = output.get("amount", 1)
+		item.custom_data = output.get("data", item.custom_data)
 		output_items.append(item)
 	
 	recipes_resource.set_recipe_inputs(active_recipe, input_items)
@@ -262,7 +268,7 @@ func reload_recipe_resource(first_launch: bool = false) -> void:
 	
 	if path != "" and FileAccess.file_exists(path):
 		var pre_res: Resource = load(path)
-		if pre_res is RecipeCatalog:
+		if pre_res is NFRecipeCatalog:
 			recipes_resource = pre_res
 	
 	$CraftingContainer.visible = recipes_resource != null
@@ -273,7 +279,7 @@ func reload_recipe_resource(first_launch: bool = false) -> void:
 			var no_db: Control = load("res://addons/nexus_forge/no_db_container.tscn").instantiate()
 			add_child(no_db)
 			no_db.message_minimum_size.x = 450
-			no_db.set_resource_type("RecipeCatalog", "Recipes", "Recipes")
+			no_db.set_resource_type("NFRecipeCatalog", "Recipes", "Recipes")
 			no_db.create_resource_pressed.connect(_on_create_database_pressed.bind(no_db))
 			no_db.load_resource_pressed.connect(_on_load_database_pressed.bind(no_db))
 			no_db.resource_dropped.connect(_on_resource_dropped.bind(no_db))
@@ -285,9 +291,12 @@ func add_item(item_id: StringName, item_name: String) -> void:
 	recipe_items_tree.add_item(
 			item_id,
 			item_name)
+	
+	recipe_input_tree.mark_item_missing(item_id, false)
+	recipe_output_tree.mark_item_missing(item_id, false)
 
 
-func reload_items(items: ItemCatalog = null) -> void:
+func reload_items(items: NFItemCatalog = null) -> void:
 	recipe_items_tree.clear_items()
 	
 	if items == null:
@@ -297,7 +306,7 @@ func reload_items(items: ItemCatalog = null) -> void:
 		
 		if item_path != "" and FileAccess.file_exists(item_path):
 			var res_pre: Resource = load(item_path)
-			if res_pre is ItemCatalog:
+			if res_pre is NFItemCatalog:
 				for item in res_pre.items():
 					recipe_items_tree.add_item(
 							item,
@@ -320,51 +329,53 @@ func load_recipe_resource() -> void:
 func _on_create_database_pressed(node: Control) -> void:
 	var database_creator: FileDialog = load("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	database_creator.file_mode = database_creator.FILE_MODE_SAVE_FILE
-	add_child(database_creator)
-	database_creator.show()
 	
+	EditorInterface.popup_dialog_centered(database_creator)
 	var result = await database_creator.dialog_finished
-	
-	if result[0]:
-		recipes_resource = RecipeCatalog.new()
-		ResourceSaver.save(recipes_resource, result[1])
-		recipes_resource.resource_path = result[1]
-		ProjectSettings.set_setting(
-				NFPluginGameHandler.get_setting_path("recipes"),
-				result[1])
-		if Engine.is_editor_hint():
-			ProjectSettings.save()
-		load_recipe_resource()
-		$CraftingContainer.visible = true
-		node.visible = false
-		node.queue_free()
-	
 	database_creator.queue_free()
+	
+	if not result[0]:
+		return
+	
+	recipes_resource = NFRecipeCatalog.new()
+	ResourceSaver.save(recipes_resource, result[1])
+	recipes_resource.resource_path = result[1]
+	ProjectSettings.set_setting(
+			NFPluginGameHandler.get_setting_path("recipes"),
+			result[1])
+	if Engine.is_editor_hint():
+		ProjectSettings.save()
+	load_recipe_resource()
+	$CraftingContainer.visible = true
+	node.visible = false
+	node.queue_free()
 
 
 func _on_load_database_pressed(node: Control) -> void:
 	var database_creator: FileDialog = load("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	database_creator.file_mode = database_creator.FILE_MODE_OPEN_FILE
-	add_child(database_creator)
-	database_creator.show()
 	
+	EditorInterface.popup_dialog_centered(database_creator)
 	var result = await database_creator.dialog_finished
-	
-	if result[0]:
-		var res_pre: Resource = load(result[1])
-		if res_pre != null and res_pre is RecipeCatalog:
-			recipes_resource = res_pre
-			ProjectSettings.set_setting(
-					NFPluginGameHandler.get_setting_path("recipes"),
-					result[1])
-			if Engine.is_editor_hint():
-				ProjectSettings.save()
-			load_recipe_resource()
-			$CraftingContainer.visible = true
-			node.visible = false
-			node.queue_free()
-	
 	database_creator.queue_free()
+	
+	if not result[0]:
+		return
+	
+	var res_pre: Resource = load(result[1])
+	if res_pre == null or res_pre is not NFRecipeCatalog:
+		return
+	
+	recipes_resource = res_pre
+	ProjectSettings.set_setting(
+			NFPluginGameHandler.get_setting_path("recipes"),
+			result[1])
+	if Engine.is_editor_hint():
+		ProjectSettings.save()
+	load_recipe_resource()
+	$CraftingContainer.visible = true
+	node.visible = false
+	node.queue_free()
 
 
 func _on_resource_dropped(resource: Resource, panel: Control) -> void:
@@ -381,7 +392,8 @@ func _on_resource_dropped(resource: Resource, panel: Control) -> void:
 
 
 func load_recipe(recipe_id: StringName) -> void:
-	var recipe: RecipeSheet = recipes_resource.get_recipe(recipe_id)
+	var recipe: NFRecipeSheet = recipes_resource.get_recipe(recipe_id)
+	var missing_ingredients: Dictionary[StringName, Variant] = {}
 	
 	if recipe == null:
 		NFPluginGameHandler._log_msg(
@@ -394,20 +406,30 @@ func load_recipe(recipe_id: StringName) -> void:
 	recipe_output_tree.clear_items()
 	
 	for item in recipe.input:
+		if not recipe_items_tree.has_item(item.id):
+			missing_ingredients[item.id] = null
+	
 		recipe_input_tree.add_item(
 				item.id,
 				item.amount,
 				item.custom_data)
 	
 	for item in recipe.output:
+		if not recipe_items_tree.has_item(item.id):
+			missing_ingredients[item.id] = null
+		
 		recipe_output_tree.add_item(
 				item.id,
 				item.amount,
 				item.custom_data)
 	
 	recipe_custom_data_tree.clear_data(false)
-	for data_entry in recipe.custom_data.keys():
+	for data_entry in recipe.custom_data:
 		recipe_custom_data_tree.add_data(data_entry, recipe.custom_data[data_entry], true)
+	
+	for missing_id in missing_ingredients:
+		recipe_input_tree.mark_item_missing(missing_id, true)
+		recipe_output_tree.mark_item_missing(missing_id, true)
 
 
 func switch_to_recipe(recipe_id: StringName) -> void:
@@ -429,33 +451,39 @@ func _on_recipe_create_pressed() -> void:
 	id_dialog.strip_edges = true
 	id_dialog.use_blacklist = true
 	id_dialog.text_blacklist.assign(recipe_tree.recipes())
-	id_dialog.character_blacklist.append(" ")
 	id_dialog.line_placeholder_text = "Recipe ID"
-	add_child(id_dialog)
-	id_dialog.show()
+	
+	EditorInterface.popup_dialog_centered(id_dialog)
 	id_dialog.grab_text_focus()
+	
 	var result: Array = await id_dialog.dialog_finished
-	if result[0]:
-		var id: StringName = StringName(result[1])
-		
-		undo.create_action("Create Recipe")
-		undo.add_do_method(_do_create_recipe.bind(id))
-		undo.add_undo_method(_undo_create_recipe.bind(id))
-		undo.commit_action(false)
-		
-		recipes_resource.create_recipe(id)
-		recipe_tree.add_recipe(id, true, false)
-		recipe_input_tree.recipe_selected = true
-		recipe_output_tree.recipe_selected = true
-		load_recipe(id)
-		active_recipe = id
-		_something_changed()
 	id_dialog.queue_free()
+	
+	if not result[0]:
+		return
+	
+	if not active_recipe.is_empty():
+		save_current_recipe()
+	
+	var id: StringName = StringName(result[1])
+	
+	undo.create_action("Create Recipe")
+	undo.add_do_method(_do_create_recipe.bind(id))
+	undo.add_undo_method(_undo_create_recipe.bind(id))
+	undo.commit_action(false)
+	
+	recipes_resource.create_recipe(id)
+	recipe_tree.add_recipe(id, -1, true, false)
+	recipe_input_tree.recipe_selected = true
+	recipe_output_tree.recipe_selected = true
+	load_recipe(id)
+	active_recipe = id
+	_something_changed()
 
 
 func _do_create_recipe(recipe_id: StringName) -> void:
 	recipes_resource.create_recipe(recipe_id)
-	recipe_tree.add_recipe(recipe_id, false)
+	recipe_tree.add_recipe(recipe_id, -1, false)
 
 
 func _undo_create_recipe(recipe_id: StringName) -> void:
@@ -488,26 +516,18 @@ func _do_update_recipe_id(from: StringName, to: StringName) -> void:
 	recipes_resource._recipes.erase(from)
 	if active_recipe == from:
 		active_recipe = to
+	recipe_tree.update_recipe_id(from, to)
 
 
-func _on_recipe_erased(recipe_id: StringName) -> void:
-	var recipe_data: Dictionary = {}
-	
+func _on_recipe_erased(recipe_id: StringName, index: int) -> void:
 	if active_recipe == recipe_id:
-		var inputs: Array[Dictionary] = recipe_input_tree.get_recipe_items()
-		var outputs: Array[Dictionary] = recipe_output_tree.get_recipe_items()
-		var custom_data: Dictionary[String, Variant] = recipe_custom_data_tree.get_data()
-		
-		recipe_data = {
-			"input": inputs,
-			"output": outputs,
-			"custom_data": custom_data}
-	else:
-		recipe_data = recipes_resource._recipes[recipe_id].duplicate(true)
+		save_current_recipe()
+	
+	var recipe_data: Dictionary = recipes_resource._recipes[recipe_id].duplicate(true)
 	
 	undo.create_action("Erase Recipe")
 	undo.add_do_method(_do_erase_recipe.bind(recipe_id))
-	undo.add_undo_method(_undo_erase_recipe.bind(recipe_id, recipe_data))
+	undo.add_undo_method(_undo_erase_recipe.bind(recipe_id, index, recipe_data))
 	undo.commit_action(false)
 	
 	recipes_resource.erase_recipe(recipe_id)
@@ -524,9 +544,9 @@ func _on_recipe_erased(recipe_id: StringName) -> void:
 	_something_changed()
 
 
-func _undo_erase_recipe(recipe_id: StringName, recipe_data: Dictionary) -> void:
+func _undo_erase_recipe(recipe_id: StringName, index: int, recipe_data: Dictionary) -> void:
 	recipes_resource._recipes[recipe_id] = recipe_data.duplicate(true)
-	recipe_tree.add_recipe(recipe_id)
+	recipe_tree.add_recipe(recipe_id, index)
 
 
 func _do_erase_recipe(recipe_id: StringName) -> void:

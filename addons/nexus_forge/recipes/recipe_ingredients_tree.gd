@@ -116,8 +116,6 @@ func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
 				drop_mode_flags = DROP_MODE_DISABLED
 				return false
 	
-	var section: int = get_drop_section_at_position(at_position)
-	
 	if data["item"] == null:
 		drop_mode_flags = DROP_MODE_INBETWEEN
 	elif data["type"] == ItemType.RECIPE_ITEM:
@@ -136,9 +134,9 @@ func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
 
 func _drop_data(at_position: Vector2, data: Variant) -> void:
 	var drop_target: TreeItem = get_item_at_position(at_position)
+	var from_this_tree: bool = _is_item_local(data["item"])
 	var dropped_item: TreeItem = _create_item(data["id"], 1, {}) if data["item"] == null else data["item"]
 	var original_index: int = dropped_item.get_index() if data["item"] != null else -1
-	var from_this_tree: bool = _is_item_local(dropped_item)
 	var origin_path: String = ""
 	var origin_index: int = -1
 	var new_parent: TreeItem = null
@@ -200,8 +198,13 @@ func _drop_data(at_position: Vector2, data: Variant) -> void:
 			new_parent.add_child(dropped_item)
 		
 		sort_item = dropped_item
-	else: # We dragged from the other tree. Copy the data.
-		if data["type"] == ItemType.RECIPE_ITEM:
+	else: # We dragged from another tree.
+		if data["item"] == null:
+			# Dragged from the ingredients tree and was instantiated
+			# at the start of the function
+			sort_item = dropped_item
+		elif data["type"] == ItemType.RECIPE_ITEM:
+			# Dragged ingredient from the other tree. Copy data.
 			var item_metadata: Dictionary = {}
 			for meta in dropped_item.get_children():
 				item_metadata[meta.get_text(0)] = get_data_cell_data(meta)
@@ -209,7 +212,8 @@ func _drop_data(at_position: Vector2, data: Variant) -> void:
 					dropped_item.get_metadata(0)["id"],
 					dropped_item.get_range(1),
 					item_metadata)
-		else: # It's data
+		else:
+			# It's data
 			var cell_data: Variant = get_data_cell_data(dropped_item)
 			sort_item = _add_data_on(
 					new_parent,
@@ -225,6 +229,9 @@ func _drop_data(at_position: Vector2, data: Variant) -> void:
 			if new_index < sort_item.get_index():
 				new_index -= 1
 			sort_item.move_after(new_parent.get_child(new_index))
+	
+	sort_item.select(0)
+	scroll_to_item.call_deferred(sort_item)
 	
 	if data["type"] == ItemType.ITEM_DATA:
 		sort_item.set_text(0, data_id)
@@ -281,8 +288,9 @@ func _on_item_edited() -> void:
 	var is_item: bool = edited.get_parent() == get_root()
 	
 	if is_item:
-		if edited_column == 1:
+		if edited_column != 1:
 			return
+		
 		var new_amount: int = edited.get_range(1)
 		var old_amount: int = edited.get_metadata(1)["amount"]
 		
@@ -424,6 +432,8 @@ func _on_add_data_menu_id_pressed(id: int) -> void:
 	var data: Variant = get_data_cell_data(meta_item)
 	
 	data_item = null
+	meta_item.select(0)
+	scroll_to_item.call_deferred(meta_item)
 	
 	metadata_added.emit(index, path, data)
 
@@ -485,10 +495,10 @@ func _add_data_on(item: TreeItem, data: Variant, data_name: String) -> TreeItem:
 			new_data.set_icon(0, get_theme_icon("Folder", "EditorIcons"))
 			new_data.set_editable(1, false)
 			new_data.set_metadata(1, TYPE_DICTIONARY)
-			for data_key in data.keys():
+			for data_key in data:
 				match typeof(data_key):
 					TYPE_STRING, TYPE_STRING_NAME:
-						_add_data_on(new_data, data[data_key], data_key)
+						_add_data_on(new_data, data[data_key], String(data_key))
 					_:
 						NFPluginGameHandler._log_msg(
 						"depot - editor",
@@ -537,9 +547,9 @@ func get_recipe_items() -> Array[Dictionary]:
 	var items: Array[Dictionary] = []
 	
 	for item in get_root().get_children():
-		var data: Dictionary[String, Variant] = {}
+		var data: Dictionary[StringName, Variant] = {}
 		for data_child in item.get_children():
-			data[data_child.get_text(0)] = get_data_cell_data(data_child)
+			data[data_child.get_text(0)] = get_data_cell_data_stringname(data_child)
 		items.append({
 				"item_id": StringName(item.get_text(0)),
 				"amount": int(item.get_range(1)),
@@ -568,14 +578,37 @@ func get_data_cell_data(cell: TreeItem) -> Variant:
 			return null
 
 
-func add_item(item_id: StringName, input_amount: int = 1, data: Dictionary = {}) -> void:
-	_create_item(item_id, input_amount, data)
+func get_data_cell_data_stringname(cell: TreeItem) -> Variant:
+	match cell.get_metadata(1):
+		TYPE_INT:
+			return int(cell.get_range(1))
+		TYPE_FLOAT:
+			return float(cell.get_range(1))
+		TYPE_BOOL:
+			return cell.is_checked(1)
+		TYPE_STRING:
+			return cell.get_text(1)
+		TYPE_DICTIONARY:
+			var subfolder: Dictionary[StringName, Variant] = {}
+			for sub_data in cell.get_children():
+				var key: StringName = StringName(sub_data.get_text(0))
+				subfolder[key] = get_data_cell_data_stringname(sub_data)
+			return subfolder
+		TYPE_NIL:
+			return cell.get_metadata(0)["data"]
+		_:
+			return null
+
+
+func add_item(item_id: StringName, input_amount: int = 1, data: Dictionary = {}, select: bool = false) -> void:
+	_create_item(item_id, input_amount, data, -1, select)
 
 
 func set_item_amount(index: int, new_amount: int) -> void:
 	var target: TreeItem = _get_item_from_index(index)
 	if target != null:
 		target.set_range(1, new_amount)
+		target.get_metadata(1)["amount"] = target.get_range(1)
 
 
 func set_metadata_id(index: int, path: String, new_name: String) -> void:
@@ -613,7 +646,7 @@ func set_metadata(index: int, path: String, new_value: Variant) -> void:
 		match data_type:
 			TYPE_INT, TYPE_FLOAT:
 				meta_item.set_cell_mode(1, TreeItem.CELL_MODE_RANGE)
-				meta_item.set_range_config(1, -9999, -9999, 1.0 if data_type == TYPE_INT else 0.01)
+				meta_item.set_range_config(1, -9999, 9999, 1.0 if data_type == TYPE_INT else 0.01)
 				meta_item.set_editable(1, true)
 			TYPE_BOOL:
 				meta_item.set_cell_mode(1, TreeItem.CELL_MODE_CHECK)
@@ -635,7 +668,17 @@ func set_metadata(index: int, path: String, new_value: Variant) -> void:
 			meta_item.set_text(1, new_value)
 	
 	meta_item.get_metadata(0)["data"] = new_value
-	
+
+
+func mark_item_missing(item_id: StringName, missing_item: bool) -> void:
+	for item_tree in get_root().get_children():
+		if item_tree.get_metadata(0)["id"] == item_id:
+			if missing_item:
+				item_tree.set_custom_color(
+						0,
+						Color.CRIMSON)
+			else:
+				item_tree.clear_custom_color(0)
 
 
 func _type_to_used_type(type: int) -> int:
@@ -646,7 +689,7 @@ func _type_to_used_type(type: int) -> int:
 			return TYPE_NIL
 
 
-func _create_item(item_id: StringName, input_amount: int, data: Dictionary, index: int = -1) -> TreeItem:
+func _create_item(item_id: StringName, input_amount: int, data: Dictionary, index: int = -1, select: bool = false) -> TreeItem:
 	var new_item: TreeItem = get_root().create_child()
 	new_item.set_text(0, String(item_id))
 	new_item.set_cell_mode(1, TreeItem.CELL_MODE_RANGE)
@@ -659,7 +702,7 @@ func _create_item(item_id: StringName, input_amount: int, data: Dictionary, inde
 	for data_key in data:
 		match typeof(data_key):
 			TYPE_STRING, TYPE_STRING_NAME:
-				_add_data_on(new_item, data[data_key], data_key)
+				_add_data_on(new_item, data[data_key], String(data_key))
 			_:
 				NFPluginGameHandler._log_msg(
 						"depot - editor",
@@ -689,6 +732,10 @@ func _create_item(item_id: StringName, input_amount: int, data: Dictionary, inde
 				new_item.move_before(get_root().get_first_child())
 			else:
 				new_item.move_after(get_root().get_child(valid_idx - 1))
+	
+	if select:
+		new_item.select(0)
+		scroll_to_item.call_deferred(new_item)
 	
 	return new_item
 
@@ -861,7 +908,7 @@ func move_metadata(from_ingredient: int, from_path: String, to_ingredient: int, 
 
 		var base: String = target_name
 		var modified: String = target_name
-		var trailing_data: Dictionary = StringUtils.get_trailing_integer(target_name)
+		var trailing_data: Dictionary = NFStringUtils.get_trailing_integer(target_name)
 		var iteration: int = trailing_data["integer"]
 		if trailing_data["has_integer"]:
 			base = base.trim_suffix(str(iteration))
@@ -918,9 +965,9 @@ func get_ingredient_data(index: int) -> Dictionary:
 
 func change_item_id(from: StringName, to: StringName) -> void:
 	for item in get_root().get_children():
-		if item.get_metadata(0) == from:
+		if item.get_metadata(0)["id"] == from:
 			item.set_text(0, String(to))
-			item.set_metadata(0, to)
+			item.get_metadata(0)["id"] = to
 
 
 func clear_items() -> void:
@@ -936,7 +983,7 @@ func validate_id(on_tree: TreeItem, desired_id: String, skip_item: TreeItem = nu
 			continue
 		used_ids[tree_item.get_text(0)] = null
 	
-	var trailing_data: Dictionary = StringUtils.get_trailing_integer(desired_id)
+	var trailing_data: Dictionary = NFStringUtils.get_trailing_integer(desired_id)
 	var iteration: int = trailing_data["integer"]
 	var base: String = desired_id
 	var modified: String = desired_id
@@ -969,4 +1016,4 @@ func get_metadata_path(metadata: TreeItem) -> String:
 	
 	parts.reverse()
 	
-	return StringUtils.make_path(parts)
+	return NFStringUtils.make_path(parts)

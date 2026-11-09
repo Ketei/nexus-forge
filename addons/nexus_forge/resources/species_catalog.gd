@@ -1,6 +1,6 @@
 @tool
 @icon("res://addons/nexus_forge/icons/dna.svg")
-class_name SpeciesCatalog
+class_name NFSpeciesCatalog
 extends Resource
 ## A resource holding species basic data.
 ##
@@ -9,7 +9,9 @@ extends Resource
 ## For stats, skills and traits it can hold the values for inexistent properties
 ## but these will be ignored when calling a method that returns an object.
 
-
+# When inheriting stats, after the multiplication, it'll be snapped to this
+# decimal step.
+const _INHERITANCE_SNAP_VALUE: float = 0.001
 # This is not meant to be edited manually, as the exporter will clean it,
 # losing any custom species stats/skills/traits added manually.
 @export_storage var _species: Dictionary[StringName, Dictionary] = {}
@@ -26,10 +28,31 @@ func _species_stat_data(species_id: StringName, use_inheritance: bool) -> Dictio
 	if not use_inheritance:
 		return stats
 	
+	var dilution_factor: float = clampf(
+			ProjectSettings.get_setting(
+					NFPluginGameHandler.get_setting_path(
+							"species_genetic_dilution"),
+					0.0),
+			0.0,
+			1.0)
+	
 	var recessive_parent: StringName = _species[species_id]["parent_recessive"]
 	var dominant_parent: StringName = _species[species_id]["parent_dominant"]
 	
 	if not _species.has(dominant_parent):
+		return stats
+	
+	var dilute_parents: bool = ProjectSettings.get_setting(
+			NFPluginGameHandler.get_setting_path(
+					"species_dilute_parents"),
+			false)
+	
+	var dilution_multiplier: float = 1.0
+	
+	if dilute_parents:
+		dilution_multiplier -= dilution_factor
+	
+	if dilution_multiplier <= 0:
 		return stats
 	
 	var explored_species: Dictionary[StringName, Variant] = {
@@ -41,36 +64,63 @@ func _species_stat_data(species_id: StringName, use_inheritance: bool) -> Dictio
 		var hybrid_genes: Dictionary[StringName, float] = {}
 		
 		for stat_id in dominant_genes.keys():
+			var full_value: float = 0.0
 			if recessive_genes.has(stat_id):
-				hybrid_genes[stat_id] = roundf(( dominant_genes[stat_id] * 0.75) + ( recessive_genes[stat_id] / 4.0 ))
+				full_value = ((
+							(dominant_genes[stat_id] * 0.75) +\
+							(recessive_genes[stat_id] / 4.0)
+						) * dilution_multiplier)
+				
 			else:
-				hybrid_genes[stat_id] = dominant_genes[stat_id]
+				full_value = (dominant_genes[stat_id] *\
+						dilution_multiplier)
+			
+			hybrid_genes[stat_id] = snappedf(
+					full_value,
+					_INHERITANCE_SNAP_VALUE)
 		
 		for stat_id in recessive_genes.keys():
 			if hybrid_genes.has(stat_id):
 				continue
-			hybrid_genes[stat_id] = roundf(recessive_genes[stat_id] / 2.0)
+			var full_value: float = (
+					(recessive_genes[stat_id] / 2.0) *\
+					dilution_multiplier)
+			
+			hybrid_genes[stat_id] = snappedf(
+					full_value,
+					_INHERITANCE_SNAP_VALUE)
 		
 		stats.merge(hybrid_genes)
 		explored_species[recessive_parent] = null
 	else:
-		stats.merge(_species[dominant_parent]["stats"])
+		var dominant_genes: Dictionary[StringName, float] = {}
+		for stat_id in _species[dominant_parent]["stats"].keys():
+			var full_value: float = (
+					_species[dominant_parent]["stats"][stat_id] *\
+					dilution_multiplier)
+			
+			dominant_genes[stat_id] = snappedf(
+					full_value,
+					_INHERITANCE_SNAP_VALUE)
+		stats.merge(dominant_genes)
 	
 	dominant_parent = _species[dominant_parent]["parent_dominant"]
-	
-	var dilution_multiplier: float = 1.0
-	var dilution_factor: float = clampf(ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("species_genetic_dilution"), 0.0), 0.0, 1.0)
 	
 	if dilution_multiplier <= dilution_factor:
 		return stats
 	
-	while _species.has(dominant_parent) and 0 < dilution_multiplier and not dominant_parent.is_empty() and not explored_species.has(dominant_parent):
+	while _species.has(dominant_parent) and dilution_factor < dilution_multiplier and not dominant_parent.is_empty() and not explored_species.has(dominant_parent):
 		dilution_multiplier -= dilution_factor
 		explored_species[dominant_parent] = null
 		for stat in _species[dominant_parent]["stats"].keys():
 			if stats.has(stat):
 				continue
-			stats[stat] = roundf( _species[dominant_parent]["stats"][stat] * dilution_multiplier )
+			var full_value: float = (
+					_species[dominant_parent]["stats"][stat] *\
+					dilution_multiplier)
+			stats[stat] = snappedf(
+					full_value,
+					_INHERITANCE_SNAP_VALUE)
 		
 		dominant_parent = _species[dominant_parent]["parent_dominant"]
 	
@@ -88,10 +138,31 @@ func _species_skill_data(species_id: StringName, use_inheritance: bool) -> Dicti
 	if not use_inheritance:
 		return skills
 	
+	var dilution_factor: float = clampf(
+			ProjectSettings.get_setting(
+					NFPluginGameHandler.get_setting_path(
+							"species_genetic_dilution"),
+					0.0),
+			0.0,
+			1.0)
+	
 	var recessive_parent: StringName = _species[species_id]["parent_recessive"]
 	var dominant_parent: StringName = _species[species_id]["parent_dominant"]
 	
 	if not _species.has(dominant_parent):
+		return skills
+	
+	var dilute_parents: bool = ProjectSettings.get_setting(
+			NFPluginGameHandler.get_setting_path(
+					"species_dilute_parents"),
+			false)
+	
+	var dilution_multiplier: float = 1.0
+	
+	if dilute_parents:
+		dilution_multiplier -= dilution_factor
+	
+	if dilution_multiplier <= 0:
 		return skills
 	
 	var explored_species: Dictionary[StringName, Variant] = {
@@ -104,31 +175,47 @@ func _species_skill_data(species_id: StringName, use_inheritance: bool) -> Dicti
 		
 		for skill_id in dominant_genes.keys():
 			if recessive_genes.has(skill_id):
-				hybrid_genes[skill_id] = roundf(( dominant_genes[skill_id] * 0.75) + ( recessive_genes[skill_id] / 4.0 ))
+				hybrid_genes[skill_id] = roundi(
+						((dominant_genes[skill_id] * 0.75) +\
+						(recessive_genes[skill_id] / 4.0)) *\
+						dilution_multiplier)
 			else:
-				hybrid_genes[skill_id] = dominant_genes[skill_id]
+				hybrid_genes[skill_id] = roundi(
+						dominant_genes[skill_id] *\
+						dilution_multiplier)
 		
 		for skill_id in recessive_genes.keys():
 			if hybrid_genes.has(skill_id):
 				continue
-			hybrid_genes[skill_id] = roundi(recessive_genes[skill_id] / 2.0)
+			hybrid_genes[skill_id] = roundi(
+					(recessive_genes[skill_id] / 2.0) *\
+					dilution_multiplier)
 		
 		skills.merge(hybrid_genes)
 		explored_species[recessive_parent] = null
 	else:
-		skills.merge(_species[dominant_parent]["skills"])
+		var dominant_genes: Dictionary[StringName, int] = {}
+		for skill_id in _species[dominant_parent]["skills"].keys():
+			dominant_genes[skill_id] = roundi(
+					_species[dominant_parent]["skills"][skill_id] *\
+					dilution_multiplier)
+		
+		skills.merge(dominant_genes)
 	
 	dominant_parent = _species[dominant_parent]["parent_dominant"]
 	
-	var dilution_multiplier: float = 1.0
-	var dilution_factor: float = clampf(ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("species_genetic_dilution"), 0.0), 0.0, 1.0)
+	if dilution_multiplier <= dilution_factor:
+		return skills
 	
-	while _species.has(dominant_parent) and 0 < dilution_multiplier and not dominant_parent.is_empty() and not explored_species.has(dominant_parent):
+	while _species.has(dominant_parent) and dilution_factor < dilution_multiplier and not dominant_parent.is_empty() and not explored_species.has(dominant_parent):
 		dilution_multiplier -= dilution_factor
+		explored_species[dominant_parent] = null
 		for skill in _species[dominant_parent]["skills"].keys():
 			if skills.has(skill):
 				continue
-			skills[skill] = roundi(_species[dominant_parent]["skills"][skill] * dilution_multiplier)
+			skills[skill] = roundi(
+					_species[dominant_parent]["skills"][skill] *\
+					dilution_multiplier)
 			
 		dominant_parent = _species[dominant_parent]["parent_dominant"]
 	
@@ -137,6 +224,7 @@ func _species_skill_data(species_id: StringName, use_inheritance: bool) -> Dicti
 
 func _species_trait_data(species_id: StringName, use_inheritance: bool) -> Dictionary[StringName, int]:
 	var traits: Dictionary[StringName, int] = {}
+	
 	if not _species.has(species_id):
 		return traits
 	
@@ -145,10 +233,31 @@ func _species_trait_data(species_id: StringName, use_inheritance: bool) -> Dicti
 	if not use_inheritance:
 		return traits
 	
+	var dilution_factor: float = clampf(
+			ProjectSettings.get_setting(
+					NFPluginGameHandler.get_setting_path(
+							"species_genetic_dilution"),
+					0.0),
+			0.0,
+			1.0)
+	
 	var recessive_parent: StringName = _species[species_id]["parent_recessive"]
 	var dominant_parent: StringName = _species[species_id]["parent_dominant"]
 	
 	if not _species.has(dominant_parent):
+		return traits
+	
+	var dilute_parents: bool = ProjectSettings.get_setting(
+			NFPluginGameHandler.get_setting_path(
+					"species_dilute_parents"),
+			false)
+	
+	var dilution_multiplier: float = 1.0
+	
+	if dilute_parents:
+		dilution_multiplier -= dilution_factor
+	
+	if dilution_multiplier <= 0:
 		return traits
 	
 	var explored_species: Dictionary[StringName, Variant] = {
@@ -161,86 +270,102 @@ func _species_trait_data(species_id: StringName, use_inheritance: bool) -> Dicti
 		
 		for trait_id in dominant_genes.keys():
 			if recessive_genes.has(trait_id):
-				hybrid_genes[trait_id] = roundf(( dominant_genes[trait_id] * 0.75) + ( recessive_genes[trait_id] / 4.0 ))
+				hybrid_genes[trait_id] = roundi(
+							(
+								(dominant_genes[trait_id] * 0.75) +\
+								(recessive_genes[trait_id] / 4.0)
+							) * dilution_multiplier)
 			else:
-				hybrid_genes[trait_id] = dominant_genes[trait_id]
+				hybrid_genes[trait_id] = roundi(
+						dominant_genes[trait_id] *\
+						dilution_multiplier)
 		
 		for trait_id in recessive_genes.keys():
 			if hybrid_genes.has(trait_id):
 				continue
-			hybrid_genes[trait_id] = roundi(recessive_genes[trait_id] / 2.0)
+			hybrid_genes[trait_id] = roundi(
+					(recessive_genes[trait_id] / 2.0) *\
+					dilution_multiplier)
 		
 		traits.merge(hybrid_genes)
 		explored_species[recessive_parent] = null
 	else:
-		traits.merge(_species[dominant_parent]["traits"])
+		var dominant_genes: Dictionary[StringName, int] = {}
+		for trait_id in _species[dominant_parent]["traits"].keys():
+			dominant_genes[trait_id] = roundi(
+					_species[dominant_parent]["traits"][trait_id] *\
+					dilution_multiplier)
+		
+		traits.merge(dominant_genes)
 	
 	dominant_parent = _species[dominant_parent]["parent_dominant"]
 	
-	var dilution_multiplier: float = 1.0
-	var dilution_factor: float = clampf(ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("species_genetic_dilution"), 0.0), 0.0, 1.0)
+	if dilution_multiplier <= dilution_factor:
+		return traits
 	
-	while _species.has(dominant_parent) and 0 < dilution_multiplier and not dominant_parent.is_empty() and not explored_species.has(dominant_parent):
+	while _species.has(dominant_parent) and dilution_factor < dilution_multiplier and not dominant_parent.is_empty() and not explored_species.has(dominant_parent):
 		dilution_multiplier -= dilution_factor
+		explored_species[dominant_parent] = null
 		for trait_id in _species[dominant_parent]["traits"].keys():
 			if traits.has(trait_id):
 				continue
-			traits[trait_id] = _species[dominant_parent]["traits"][trait_id]
+			traits[trait_id] = roundi(
+					_species[dominant_parent]["traits"][trait_id] *
+					dilution_multiplier)
 			
 		dominant_parent = _species[dominant_parent]["parent_dominant"]
 	
 	return traits
 
-
-## Returns a [SpeciesSheet] with data, stats, skills and traits of the species.
+## Returns a [NFSpeciesSheet] with data, stats, skills and traits of the species.
 ## Stats, skills and traits will have inherited values from the parent species
 ## if [code]settings/species_use_genetic_inheritance[/code] is enabled on 
 ## [code]ProjectSettings/NexusForge[/code].[br]
 ## Returns [code]null[/code] if the species is not found.
-func get_species(species_id: StringName) -> SpeciesSheet:
+func get_species(species_id: StringName) -> NFSpeciesSheet:
 	if not _species.has(species_id):
 		return null
 	
-	var inherit: bool = ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("species_use_inheritance"), true)
+	var inherit: bool = ProjectSettings.get_setting(
+			NFPluginGameHandler.get_setting_path(
+					"species_genetic_dilution"), 0.0) < 1.0
 	
-	var new_species: SpeciesSheet = SpeciesSheet.new()
-	
-	var stats: Dictionary[StringName, float] = _species_stat_data(species_id, inherit)
-	var skills: Dictionary[StringName, int] = _species_skill_data(species_id, inherit)
-	var traits: Dictionary[StringName, int] = _species_trait_data(species_id, inherit)
+	var new_species: NFSpeciesSheet = NFSpeciesSheet.new()
+	var species_entry: Dictionary = _species[species_id]
 	
 	new_species.id = species_id
-	new_species.name = _species[species_id]["name"]
-	new_species.description = _species[species_id]["description"]
-	new_species.custom_data = _species[species_id]["data"].duplicate(true)
-	new_species.stats = get_species_stats(species_id)
-	new_species.skills = get_species_skills(species_id)
-	new_species.traits = get_species_traits(species_id)
+	new_species.name = species_entry["name"]
+	new_species.description = species_entry["description"]
+	new_species.custom_data.assign(species_entry["custom_data"].duplicate(true))
+	new_species.dominant_species = species_entry["parent_dominant"]
+	new_species.recessive_species = species_entry["parent_recessive"]
+	new_species.stats = get_species_stats(species_id, inherit)
+	new_species.skills = get_species_skills(species_id, inherit)
+	new_species.traits = get_species_traits(species_id, inherit)
 	
 	return new_species
 
 
-## Returns a [SpeciesSheet] object containing the base data of a species
+## Returns a [NFSpeciesSheet] object containing the base data of a species
 ## without using inheritance. Useful if you need the base data but
 ## [code]settings/species_use_genetic_inheritance[/code] is
 ## [code]On[/code] in [code]ProjectSettings/NexusForge[/code].
-func get_species_base(species_id: StringName) -> SpeciesSheet:
+func get_species_base(species_id: StringName) -> NFSpeciesSheet:
 	if not _species.has(species_id):
 		return null
 	
-	var new_species: SpeciesSheet = SpeciesSheet.new()
-	
-	var stats: Dictionary[StringName, float] = _species_stat_data(species_id, false)
-	var skills: Dictionary[StringName, int] = _species_skill_data(species_id, false)
-	var traits: Dictionary[StringName, int] = _species_trait_data(species_id, false)
+	var species_entry: Dictionary = _species[species_id]
+	var new_species: NFSpeciesSheet = NFSpeciesSheet.new()
 	
 	new_species.id = species_id
-	new_species.name = _species[species_id]["name"]
-	new_species.description = _species[species_id]["description"]
-	new_species.custom_data = _species[species_id]["data"].duplicate(true)
-	new_species.stats = get_species_stats(species_id)
-	new_species.skills = get_species_skills(species_id)
-	new_species.traits = get_species_traits(species_id)
+	new_species.name = species_entry["name"]
+	new_species.description = species_entry["description"]
+	new_species.dominant_species = species_entry["parent_dominant"]
+	new_species.recessive_species = species_entry["parent_recessive"]
+	new_species.custom_data.assign(species_entry["custom_data"].duplicate(true))
+	new_species.stats = get_species_stats(species_id, false)
+	new_species.skills = get_species_skills(species_id, false)
+	new_species.traits = get_species_traits(species_id, false)
 	
 	return new_species
 
@@ -256,11 +381,18 @@ func species() -> Array[StringName]:
 func create_species(species_id: StringName, parent_species: StringName = &"", recessive_species: StringName = &"") -> void:
 	if _species.has(species_id):
 		return
-	var data: Dictionary[String, Variant] = {}
+	elif species_id == parent_species or species_id == recessive_species:
+		NFPluginGameHandler._log_msg(
+				"kindred",
+				"Tried to register species '%s' with itself as their genetic parent. Aborting.",
+				NFPluginGameHandler._LogLevel.ERROR)
+		return
+	
+	var data: Dictionary[StringName, Variant] = {}
 	var stats: Dictionary[StringName, float] = {}
 	var skills: Dictionary[StringName, int] = {}
 	var traits: Dictionary[StringName, int] = {}
-	var default_data: Dictionary = SpeciesSheet.new().custom_data.duplicate(true)
+	var default_data: Dictionary = NFSpeciesSheet.new().custom_data.duplicate(true)
 	
 	data.assign(default_data)
 	
@@ -269,7 +401,7 @@ func create_species(species_id: StringName, parent_species: StringName = &"", re
 		"parent_recessive": recessive_species,
 		"name": "",
 		"description": "",
-		"data": data,
+		"custom_data": data,
 		"stats": stats,
 		"skills": skills,
 		"traits": traits}
@@ -277,24 +409,29 @@ func create_species(species_id: StringName, parent_species: StringName = &"", re
 	_species[species_id] = new_species
 
 
+## Returns an array of species IDs that are a subspecies of [param from_species].
+## A species is considered a subspecies if [param from_species]
+## is registered as either its dominant or recessive parent.
+## Returns an empty array if [param from_species] is not found
+## or has no subspecies.
 func get_subspecies_of(from_species: StringName) -> Array[StringName]:
 	var ids: Array[StringName] = []
 	if not _species.has(from_species):
-		ids
+		return ids
 	
-	for species_id in _species.keys():
+	for species_id in _species:
 		if _species[species_id]["parent_dominant"] == from_species or _species[species_id]["parent_recessive"] == from_species:
 			ids.append(species_id)
 	
 	return ids
 
 
-## Creates a new species using a [SpeciesSheet]. Creation will fail if the species
+## Creates a new species using a [NFSpeciesSheet]. Creation will fail if the species
 ## already exists.[br]
 ## [param subspecies_of] will allow you to set [param species_sheet] as a subspecies
 ## as long as [param subspecies_of] exists. If not it'll be set as a "top-level"
 ## species.
-func register_species(species_sheet: SpeciesSheet, subspecies_of: StringName = &"", recessive_subspecies: StringName = &"") -> void:
+func register_species(species_sheet: NFSpeciesSheet, subspecies_of: StringName = &"", recessive_subspecies: StringName = &"") -> void:
 	if _species.has(species_sheet.id):
 		return
 	
@@ -303,33 +440,39 @@ func register_species(species_sheet: SpeciesSheet, subspecies_of: StringName = &
 	var traits: Dictionary[StringName, int] = {}
 	
 	if species_sheet.stats != null:
-		var stat_block: Dictionary[StringName, int] = StatBlock.stats()
+		var stat_block: Dictionary[StringName, int] = NFStatBlock.stats()
+		var stat_obj: NFSpeciesStatCatalog = species_sheet.stats
 		for stat_id in stat_block.keys():
-			var stat_value = species_sheet.stats.get(stat_id)
-			if stat_value == null or 0 == stat_value:
+			if not stat_obj.has(stat_id):
 				continue
+			var stat_value: float = stat_obj.get_entry(stat_id)
 			stats[stat_id] = stat_value
 	
 	if species_sheet.skills != null:
-		for skill_id in SkillSet.skills():
-			var skill_value = species_sheet.skills.get(skill_id)
-			if skill_value == null or 0 == skill_value:
+		var skill_obj: NFSpeciesStatCatalog = species_sheet.skills
+		for skill_id in NFSkillSet.skills():
+			if not skill_obj.has(skill_id):
 				continue
-			skills[skill_id] = int(skill_value)
+			var skill_value: int = int(skill_obj.get_entry(skill_id))
+			skills[skill_id] = skill_value
 	
 	if species_sheet.traits != null:
-		for trait_id in TraitBlock.traits():
-			var trait_value = species_sheet.traits.get(trait_id)
-			if trait_value == null or 0 == trait_value:
+		var trait_obj: NFSpeciesStatCatalog = species_sheet.traits
+		for trait_id in NFTraitBlock.traits():
+			if not trait_obj.has(trait_id):
 				continue
-			traits[trait_id] = int(trait_value)
+			var trait_value: int = int(trait_obj.get_entry(trait_id))
+			traits[trait_id] = trait_value
+	
+	var true_dom: StringName = subspecies_of if _species.has(subspecies_of) else &""
+	var true_sub: StringName = recessive_subspecies if _species.has(recessive_subspecies) else &""
 	
 	var new_species: Dictionary[String, Variant] = {
-		"parent_dominant": subspecies_of,
-		"parent_recessive": recessive_subspecies,
+		"parent_dominant": true_dom,
+		"parent_recessive": true_sub,
 		"name": species_sheet.name,
 		"description": species_sheet.description,
-		"data": species_sheet.custom_data.duplicate(true),
+		"custom_data": species_sheet.custom_data.duplicate(true),
 		"stats":stats,
 		"skills": skills,
 		"traits": traits}
@@ -352,30 +495,91 @@ func erase_species(species_id: StringName) -> void:
 
 ## Sets the [param species_id] to be a subspecies of [param parent_species].
 func link_species(species_id: StringName, parent_species: StringName, recessive_species: StringName = &"") -> void:
-	if not _species.has_all([species_id, parent_species]):
+	var entry: Variant = _species.get(species_id)
+	if entry == null:
 		return
 	
-	_species[species_id]["parent_dominant"] = parent_species
+	var dominant_found: bool = _species.has(parent_species)
+	var submissive_found: bool = _species.has(recessive_species)
 	
-	if not recessive_species.is_empty() and _species.has(recessive_species):
-		_species[species_id]["parent_recessive"] = recessive_species
+	if (dominant_found and species_id == parent_species) or (submissive_found and species_id == recessive_species):
+		NFPluginGameHandler._log_msg(
+				"kindred",
+				"Cannot link species '%s' as its own direct parent. Aborting." % species_id,
+				NFPluginGameHandler._LogLevel.ERROR)
+		return
+	
+	if dominant_found and _is_ancestor_of(species_id, parent_species):
+		NFPluginGameHandler._log_msg(
+				"kindred",
+				"Cannot link species '%s' to dominant parent '%s': '%s' is already an ancestor of '%s'. Aborting." % [
+						species_id,
+						parent_species,
+						species_id,
+						parent_species],
+				NFPluginGameHandler._LogLevel.ERROR)
+		return
+	
+	if submissive_found and _is_ancestor_of(species_id, recessive_species):
+		NFPluginGameHandler._log_msg(
+				"kindred",
+				"Cannot link species '%s' to recessive parent '%s': '%s' is already an ancestor of '%s'. Aborting." % [
+						species_id,
+						recessive_species,
+						species_id,
+						recessive_species],
+				NFPluginGameHandler._LogLevel.ERROR)
+		return
+	
+	if dominant_found:
+		entry["parent_dominant"] = parent_species
+	else:
+		if not parent_species.is_empty():
+			NFPluginGameHandler._log_msg(
+					"kindred",
+					"Attempted to link dominant parent '%s', but it does not exist. Clearing dominant parent." % parent_species,
+					NFPluginGameHandler._LogLevel.WARNING)
+		entry["parent_dominant"] = &""
+	
+	if submissive_found:
+		entry["parent_recessive"] = recessive_species
+	else:
+		if not recessive_species.is_empty():
+			NFPluginGameHandler._log_msg(
+					"kindred",
+					"Attempted to link recessive parent '%s', but it does not exist. Clearing recessive parent." % recessive_species,
+					NFPluginGameHandler._LogLevel.WARNING)
+		entry["parent_recessive"] = &""
+
+
+## Clears the genetic link of [param species_id] to it's parent species.[br]
+## [param clear_dominant] and [param clear_recessive] can be used to specify
+## which link to clear.
+func unlink_species(species_id: StringName, clear_dominant: bool = true, clear_recessive: bool = true) -> void:
+	var entry: Variant = _species.get(species_id)
+	if entry == null:
+		return
+	
+	if clear_dominant:
+		entry["parent_dominant"] = &""
+	if clear_recessive:
+		entry["parent_recessive"] = &""
 
 
 ## Returns the parent species of [param of_species].
 func get_dominant_species_of(species_id: StringName) -> StringName:
-	return DictUtils.get_nested_value(
+	return NFDictUtils.get_nested_value(
 			_species,
 			[species_id, "parent_dominant"],
 			&"",
 			true)
 
 
+## Returns the recessive species of [param species_id].[br]
+## Returns an empty StringName if the species isn't found or has
+## no parent.
 func get_recessive_species_of(species_id: StringName) -> StringName:
-	return DictUtils.get_nested_value(
-			_species,
-			[species_id, "parent_recessive"],
-			&"",
-			true)
+	return _species.get(species_id, {}).get("parent_recessive", &"")
 
 
 ## Returns [code]true[/code] if [param species_id] is registered.
@@ -386,7 +590,7 @@ func has_species(species_id: StringName) -> bool:
 ## Returns the name of [param species_id]. Returns an empty string if the species
 ## isn't registered.
 func get_species_name(species_id: StringName) -> String:
-	return DictUtils.get_nested_value(
+	return NFDictUtils.get_nested_value(
 			_species,
 			[species_id, "name"],
 			"",
@@ -404,7 +608,7 @@ func set_species_name(species_id: StringName, new_name: String) -> void:
 ## Returns the description of [param species_id]. Returns an empty string if
 ## the species isn't registered.
 func get_species_description(species_id: StringName) -> String:
-	return DictUtils.get_nested_value(
+	return NFDictUtils.get_nested_value(
 			_species,
 			[species_id, "description"],
 			"",
@@ -426,40 +630,45 @@ func set_species_data(species_id: StringName, data_key: String, data: Variant) -
 		return
 	
 	if data == null:
-		_species[species_id]["data"].erase(data_key)
+		_species[species_id]["custom_data"].erase(data_key)
 	else:
-		_species[species_id]["data"][data_key] = data
+		_species[species_id]["custom_data"][data_key] = data
 
 
 ## Returns the data with [param data_key] from the [param species_id] or
 ## [code]null[/code] if the species isn't registered or key doesn't exist.
 func get_species_data(species_id: StringName, data_key: String) -> Variant:
-	return DictUtils.get_nested_value(
+	return NFDictUtils.get_nested_value(
 			_species,
-			[species_id, "data", data_key])
+			[species_id, "custom_data", data_key])
 
 
-func get_species_custom_data(species_id: StringName) -> Dictionary[StringName, Variant]:
-	var data: Dictionary[StringName, Variant] = {}
-	data.assign(DictUtils.get_nested_value(
-			_species,
-			[species_id, "data"],
-			{},
-			true))
-	return data
+## Returns a copy of the custom data of species [param species_id].
+func get_species_custom_data(species_id: StringName) -> Dictionary[String, Variant]:
+	var entry: Variant = _species.get(species_id)
+	var custom_data: Dictionary[String, Variant] = {}
+	if typeof(entry) != TYPE_DICTIONARY:
+		return custom_data
+	
+	var data: Dictionary = entry.get("custom_data")
+	if typeof(data) != TYPE_DICTIONARY:
+		return custom_data
+	
+	custom_data.assign(data)
+	return custom_data.duplicate(true)
 
 
 ## Returns [code]true[/code] if [param species_id] has custom data with key
 ## [param data_key].
 func has_species_data(species_id: StringName, data_key: String) -> bool:
-	return _species.has(species_id) and _species[species_id]["data"].has(data_key)
+	return _species.has(species_id) and _species[species_id]["custom_data"].has(data_key)
 
 
 ## Returns an array with all custom data keys that [param species_id] has.
 func species_data_keys(species_id: StringName) -> Array[String]:
 	var all_keys: Array[String] = []
 	if _species.has(species_id):
-		all_keys.assign(_species[species_id]["data"].keys())
+		all_keys.assign(_species[species_id]["custom_data"].keys())
 	return all_keys
 
 
@@ -468,13 +677,13 @@ func clear_species_data(species_id: StringName) -> void:
 	if not _species.has(species_id):
 		return
 	
-	_species[species_id]["data"].clear()
+	_species[species_id]["custom_data"].clear()
 
 
 ## Returns the value of [param stat_id] assigned to the species with
 ## [param species_id] or 0 if the stat isn't assigned on the species.
 func get_species_stat_value(species_id: StringName, stat_id: StringName) -> float:
-	var data = DictUtils.get_nested_value(
+	var data = NFDictUtils.get_nested_value(
 			_species,
 			[species_id, "stats", stat_id],
 			0.0)
@@ -484,14 +693,15 @@ func get_species_stat_value(species_id: StringName, stat_id: StringName) -> floa
 	return 0.0
 
 
-## Returns a [StatBlock] with the stats of the [param species_id].[br]
-## The species will have inherited the stats of the parent species if
+## Returns a [NFStatBlock] with the stats of the [param species_id].[br]
+## The species will have inherited the stats of the parent species
+## using the [code]Species Genetic Dillution[/code] setting if
 ## [param inherit] is [code]true[/code].
 func get_species_stats(species_id: StringName, inherit: bool = true) -> NFSpeciesStatCatalog:
-	var new_block: NFSpeciesStatCatalog = NFSpeciesStatCatalog.new(TYPE_FLOAT)
+	var new_block: NFSpeciesStatCatalog = NFSpeciesStatCatalog.new()
 	var data_stats: Dictionary[StringName, float] = _species_stat_data(species_id, inherit)
 	
-	var properties: Dictionary[StringName, int] = StatBlock.stats()
+	var properties: Dictionary[StringName, int] = NFStatBlock.stats()
 	
 	for stat in data_stats.keys():
 		if not properties.has(stat):
@@ -531,7 +741,7 @@ func set_species_skill_value(species_id: StringName, skill_id: StringName, value
 ## Returns the value of [param skill_id] assigned to the species with
 ## [param species_id] or 0 if the skill isn't assigned on the species.
 func get_species_skill_value(species_id: StringName, skill_id: StringName) -> int:
-	var data = DictUtils.get_nested_value(
+	var data = NFDictUtils.get_nested_value(
 			_species,
 			[species_id, "skills", skill_id],
 			0.0)
@@ -542,14 +752,15 @@ func get_species_skill_value(species_id: StringName, skill_id: StringName) -> in
 	return 0
 
 
-## Returns a [SkillSet] with the skills of the [param species_id].[br]
-## The species will have inherited the skills of the parent species if
+## Returns a [NFSkillSet] with the skills of the [param species_id].[br]
+## The species will have inherited the stats of the parent species
+## using the [code]Species Genetic Dillution[/code] setting if
 ## [param inherit] is [code]true[/code].
 func get_species_skills(species_id: StringName, inherit: bool = true) -> NFSpeciesStatCatalog:
-	var new_set: NFSpeciesStatCatalog = NFSpeciesStatCatalog.new(TYPE_INT)
+	var new_set: NFSpeciesStatCatalog = NFSpeciesStatCatalog.new()
 	var data_stats: Dictionary[StringName, int] = _species_skill_data(species_id, inherit)
 	
-	var properties: Array[StringName] = SkillSet.skills()
+	var properties: Array[StringName] = NFSkillSet.skills()
 	
 	for stat in data_stats.keys():
 		if not properties.has(stat):
@@ -581,7 +792,7 @@ func set_species_trait_value(species_id: StringName, trait_id: StringName, value
 ## Returns the value of [param trait_id] assigned to the species with
 ## [param species_id] or 0 if the trait isn't assigned on the species.
 func get_species_trait_value(species_id: StringName, trait_id: StringName) -> int:
-	var data = DictUtils.get_nested_value(
+	var data = NFDictUtils.get_nested_value(
 			_species,
 			[species_id, "traits", trait_id],
 			0.0)
@@ -591,14 +802,15 @@ func get_species_trait_value(species_id: StringName, trait_id: StringName) -> in
 	return 0
 
 
-## Returns a [TraitBlock] with the traits of the [param species_id].[br]
-## The species will have inherited the traits of the parent species if
+## Returns a [NFTraitBlock] with the traits of the [param species_id].[br]
+## The species will have inherited the stats of the parent species
+## using the [code]Species Genetic Dillution[/code] setting if
 ## [param inherit] is [code]true[/code].
 func get_species_traits(species_id: StringName, inherit: bool = true) -> NFSpeciesStatCatalog:
-	var new_block: NFSpeciesStatCatalog = NFSpeciesStatCatalog.new(TYPE_INT)
+	var new_block: NFSpeciesStatCatalog = NFSpeciesStatCatalog.new()
 	var data_stats: Dictionary[StringName, int] = _species_trait_data(species_id, inherit)
 	
-	var properties: Array[StringName] = TraitBlock.traits()
+	var properties: Array[StringName] = NFTraitBlock.traits()
 	
 	for trait_id in data_stats.keys():
 		if not properties.has(trait_id):
@@ -635,3 +847,29 @@ func clear_species_skills(species_id: StringName) -> void:
 func clear_species_traits(species_id: StringName) -> void:
 	if _species.has(species_id):
 		_species[species_id]["traits"].clear()
+
+
+func _is_ancestor_of(potential_ancestor: StringName, start_species: StringName) -> bool:
+	var species_to_validate: Array[StringName] = [start_species]
+	
+	var visited: Dictionary[StringName, Variant] = {}
+	while not species_to_validate.is_empty():
+		var current: StringName = species_to_validate.pop_back()
+		if current == potential_ancestor:
+			return true
+		if visited.has(current):
+			continue
+		visited[current] = null
+		
+		var species_data: Variant = _species.get(current)
+		if species_data == null:
+			continue
+		
+		var dom: StringName = species_data["parent_dominant"]
+		var sub: StringName = species_data["parent_recessive"]
+		if not dom.is_empty():
+			species_to_validate.append(dom)
+		if not sub.is_empty():
+			species_to_validate.append(sub)
+	
+	return false

@@ -10,7 +10,6 @@ signal something_changed
 const VALUE_MAX_RANGE: int = 9999
 const FLOAT_STEP: float = 0.01
 
-var _current_selected: TreeItem = null
 var current_folder: String = ""
 var sorting_column: int = 0
 
@@ -105,22 +104,26 @@ func _on_item_edited() -> void:
 		0: # Var name edited
 			if edited.get_metadata(0) == edited.get_text(0):
 				return
+			var old_name: String = edited.get_metadata(0)
 			var valid_name: String = validate_var_name(edited.get_text(0), edited)
+			if old_name == valid_name:
+				if edited.get_text(0) != valid_name:
+					edited.set_text(0, valid_name)
+				return
+			
 			edited.set_text(0, valid_name)
 			edited.set_metadata(0, valid_name)
 			if sorting_column == 0:
 				sort_single_item(edited)
 				ensure_cursor_is_visible()
-			variable_renamed.emit(edited.get_metadata(0), valid_name)
+			variable_renamed.emit(old_name, valid_name)
 		1: # Var value changed
 			variable_updated.emit(edited.get_text(0), get_tree_variant(edited))
-	something_changed.emit()
 
 
-func create_variable(variable_value: Variant, variable_name: String = "new_variable") -> String:
+func create_variable(variable_value: Variant, variable_name: String = "new_variable", select: bool = false) -> String:
 	var unique_name: String = validate_var_name(variable_name)
 	var new_variable: TreeItem = get_root().create_child()
-	var variable_typeof: int = typeof(variable_value)
 	
 	var editable_id: bool = true
 	var editable_value: bool = true
@@ -161,7 +164,7 @@ func create_variable(variable_value: Variant, variable_name: String = "new_varia
 			editable_value = false
 			new_variable.set_metadata(1, {"type": TYPE_NIL, "data": variable_value})
 			new_variable.set_cell_mode(1, TreeItem.CELL_MODE_STRING)
-			new_variable.set_text(1, StringUtils.title_case(type_string(typeof(variable_value))))
+			new_variable.set_text(1, NFStringUtils.title_case(type_string(typeof(variable_value))))
 	# ------------------
 	
 	# Setting editability
@@ -176,7 +179,30 @@ func create_variable(variable_value: Variant, variable_name: String = "new_varia
 	
 	sort_single_item(new_variable)
 	
+	if select:
+		scroll_to_item.call_deferred(new_variable)
+	
 	return unique_name
+
+
+func is_variable_selected() -> bool:
+	return get_selected() != null
+
+
+func get_selected_variable() -> String:
+	var selected: TreeItem = get_selected()
+	if selected == null:
+		return ""
+	return selected.get_metadata(0)
+
+
+func select_variable(variable: String, focus: bool = false) -> void:
+	for item in get_root().get_children():
+		if item.get_metadata(0) == variable:
+			item.select(0)
+			if focus:
+				scroll_to_item.call_deferred(item)
+			return
 
 
 func rename_variable(old_id: String, new_id: String) -> bool:
@@ -198,7 +224,7 @@ func update_variable(variable_id: String, value: Variant) -> bool:
 		if item.get_metadata(0) != variable_id:
 			continue
 		
-		if get_tree_variant(item) != typeof(value):
+		if _get_tree_variable_type(item) != typeof(value):
 			match typeof(value): 
 				TYPE_INT:
 					item.set_icon(0, get_theme_icon("int", "EditorIcons"))
@@ -232,7 +258,7 @@ func update_variable(variable_id: String, value: Variant) -> bool:
 					item.set_editable(1, false)
 					item.set_metadata(1, {"type": TYPE_NIL, "data": value})
 					item.set_cell_mode(1, TreeItem.CELL_MODE_STRING)
-					item.set_text(1, StringUtils.title_case(type_string(typeof(value))))
+					item.set_text(1, NFStringUtils.title_case(type_string(typeof(value))))
 		else:
 			match typeof(value):
 				TYPE_INT, TYPE_FLOAT:

@@ -8,6 +8,8 @@ extends RefCounted
 ## It also provides methods to get data for storage and restoring it.
 
 
+signal _quests_modified
+
 ## Emitted when a quest is started via [method start_quest].
 signal quest_started(quest_id: StringName)
 ## Emitted when a quest progresses. Emitted too when a quest starts with [param to_stage]
@@ -24,28 +26,22 @@ signal objective_completed(quest_id: StringName, stage_id: StringName, objective
 ## Emits when a quest/stage/objective is completed either successfully or not.
 signal quest_event_triggered(event_data: Dictionary)
 
-enum SuccessStatus{
-	SUCCESS,
-	FAILURE,
-	UNKNOWN,
+## Defines the status of tracked quests.
+enum SuccessStatus {
+	SUCCESS, ## When a tracked quest was successfully completed.
+	FAILURE, ## When a tracked quest was failed.
+	UNKNOWN, ## The quest is currently in progress (tracked but neither succeeded nor failed).
 }
 
 var _active_quests: Dictionary[StringName, NFQuestEntry] = {}
 var _static_progress: Dictionary[String, Variant] = {}
+var _advancing_quests: Dictionary[StringName, Variant] = {}
 
 ## The quest log in which the history of quest started and finished is stored.
 var Log: NFQuestLog = NFQuestLog.new()
 
 
 var _quest_modifiers: Dictionary[StringName, Dictionary] = {}
-
-
-func _get(property: StringName) -> Variant:
-	if _active_quests.has(property):
-		return property
-	var invalid: NFQuestEntry = NFQuestEntry.new()
-	invalid._flags = BitUtils.set_bit_index(0, 63, true)
-	return invalid
 
 
 ## Starts a quest. If [param auto_advance_stages] is [code]true[/code]
@@ -55,11 +51,11 @@ func _get(property: StringName) -> Variant:
 ## pass [param success] as [code]false[/code].
 ## And it'll auto-advance to the failed quest path if [param auto_advance_stages]
 ## was enabled.
-func start_quest(quest: Quest, auto_advance_stages: bool) -> bool:
+func start_quest(quest: NFQuest, auto_advance_stages: bool) -> bool:
 	if _active_quests.has(quest.id):
 		NFPluginGameHandler._log_msg(
 				"odyssey",
-				"Coulnd't start quest. Quest with ID '%s' is already active." % quest.id,
+				"Couldn't start quest. Quest with ID '%s' is already active." % quest.id,
 				NFPluginGameHandler._LogLevel.ERROR)
 		return false
 	elif not quest.has_stage(quest.entry_stage):
@@ -73,11 +69,12 @@ func start_quest(quest: Quest, auto_advance_stages: bool) -> bool:
 		for id in _quest_modifiers[quest.id]["order"]:
 			if _quest_modifiers[quest.id]["mods"][id]["callable"].is_valid():
 				_quest_modifiers[quest.id]["mods"][id]["callable"].call(quest)
+		quest._mods_applied = true
 	
 	var new_entry: NFQuestEntry = NFQuestEntry.new()
 	new_entry.resource = quest
 	new_entry.auto_advance_stages = auto_advance_stages
-	new_entry._flags = BitUtils.set_bit_index(0, 0, true)
+	new_entry._flags = NFBitUtils.set_bit_index(0, 0, true)
 	_active_quests[quest.id] = new_entry
 	new_entry.objective_state_changed.connect(_on_quest_objective_state_changed)
 	
@@ -87,6 +84,7 @@ func start_quest(quest: Quest, auto_advance_stages: bool) -> bool:
 		for objective_id in quest.get_stage(stage_id).objectives():
 			stage_entry.set_entry(objective_id)
 	
+	_quests_modified.emit()
 	quest_started.emit(quest.id)
 	quest_progressed.emit(quest.id, quest.entry_stage)
 	
@@ -106,7 +104,7 @@ func start_quest(quest: Quest, auto_advance_stages: bool) -> bool:
 ## in the [member QuestManager.Log].[br]
 ## Intended to restore programmatically generated
 ## quests before calling [method QuestManager.restore_state].
-func add_quest_resource(quest: Quest, auto_advance_stages: bool, apply_mods: bool = true) -> bool:
+func add_quest_resource(quest: NFQuest, auto_advance_stages: bool, apply_mods: bool = true) -> bool:
 	if _active_quests.has(quest.id):
 		return false
 	
@@ -114,15 +112,17 @@ func add_quest_resource(quest: Quest, auto_advance_stages: bool, apply_mods: boo
 		for id in _quest_modifiers[quest.id]["order"]:
 			if _quest_modifiers[quest.id]["mods"][id]["callable"].is_valid():
 				_quest_modifiers[quest.id]["mods"][id]["callable"].call(quest)
+		quest._mods_applied = true
 	
 	var new_entry: NFQuestEntry = NFQuestEntry.new()
 	new_entry.resource = quest
 	new_entry.auto_advance_stages = auto_advance_stages
-	new_entry.current_stage = quest.entry_stage
-	new_entry._flags = BitUtils.set_bit_index(0, 0, true)
+	new_entry.set_stage(quest.entry_stage, {}, false)
+	new_entry._flags = NFBitUtils.set_bit_index(0, 0, true)
 	_active_quests[quest.id] = new_entry
 	new_entry.objective_state_changed.connect(_on_quest_objective_state_changed)
 	
+	_quests_modified.emit()
 	return true
 
 
@@ -143,7 +143,7 @@ func get_state() -> Dictionary[StringName, Dictionary]:
 
 
 ## Restores a previous state of the manager.
-func restore_state(state_data: Dictionary) -> void:
+func set_state(state_data: Dictionary) -> void:
 	for key in state_data:
 		var key_type: int = typeof(key)
 		if key_type != TYPE_STRING_NAME and key_type != TYPE_STRING:
@@ -155,16 +155,16 @@ func restore_state(state_data: Dictionary) -> void:
 		if not _is_serialized_data_valid(key, state_data[key]):
 			continue
 		
-		var res: Quest = null
+		var res: NFQuest = null
 		
 		if _active_quests.has(key):
 			res = _active_quests[key].resource
 		else:
 			var pre = load(state_data[key]["resource_path"])
-			if pre != null and pre is Quest:
+			if pre != null and pre is NFQuest:
 				res = pre
 		
-		if res == null or res is not Quest:
+		if res == null or res is not NFQuest:
 			NFPluginGameHandler._log_msg(
 				"quests - deserializer",
 				"Resource for quest '%s' couldn't be loaded. Skipping." % key,
@@ -175,6 +175,7 @@ func restore_state(state_data: Dictionary) -> void:
 			for id in _quest_modifiers[key]["order"]:
 				if _quest_modifiers[key]["mods"][id]["callable"].is_valid():
 					_quest_modifiers[key]["mods"][id]["callable"].call(res)
+			res._mods_applied = true
 		
 		if not _active_quests.has(key):
 			var new_entry: NFQuestEntry = NFQuestEntry.new()
@@ -183,7 +184,7 @@ func restore_state(state_data: Dictionary) -> void:
 				auto_advance = state_data[key]["auto_advance_stages"]
 			new_entry.resource = res
 			new_entry.auto_advance_stages = auto_advance
-			new_entry._flags = BitUtils.set_bit_index(0, 0, true)
+			new_entry._flags = NFBitUtils.set_bit_index(0, 0, true)
 			_active_quests[key] = new_entry
 			new_entry.objective_state_changed.connect(_on_quest_objective_state_changed)
 		
@@ -218,26 +219,22 @@ func restore_state(state_data: Dictionary) -> void:
 		
 		_active_quests[key].set_stage(state_data[key]["current_stage"], _static_progress, false)
 		_active_quests[key].set_objectives_state(valid_progress)
+	_quests_modified.emit()
 
 
 ## Removes an active quest and clears it from the history if
 ## [param clear_from_history] is [code]true[/code]
 func remove_quest(quest_id: StringName, clear_from_history: bool = true) -> void:
-	if _active_quests.erase(quest_id) and clear_from_history:
+	var was_active: bool = _active_quests.erase(quest_id)
+	if clear_from_history:
 		Log.erase(quest_id)
+	if was_active:
+		_quests_modified.emit()
 
 
-## Returns the quest object from the active quest [param quest_id] or
-## [code]null[/code] if the quest isn't active.
-func get_quest(quest_id: StringName) -> Quest:
-	if _active_quests.has(quest_id):
-		return _active_quests[quest_id].resource
-	return null
-
-
-## Returns the current [QuestStage] object of the param quest_id or
+## Returns the current [NFQuestStage] object of the param quest_id or
 ## [code]null[/code] if the quest doesn't exist.
-func get_quest_current_stage(quest_id: StringName) -> QuestStage:
+func get_quest_current_stage(quest_id: StringName) -> NFQuestStage:
 	if _active_quests.has(quest_id):
 		return _active_quests[quest_id].resource.get_stage(_active_quests[quest_id].current_stage)
 	return null
@@ -266,8 +263,8 @@ func quest_success_status(quest_id: StringName) -> SuccessStatus:
 ## If the quest isn't active or the stage hasn't been completed yet it'll return
 ## [enum SuccessStatus.UNKNOWN].
 func stage_success_status(quest_id: StringName, stage_id: StringName) -> SuccessStatus:
-	if Log.has(quest_id):
-		return Log.get_quest_entry(quest_id).get_entry_status(stage_id)
+	if Log.has_quest(quest_id):
+		return Log.get_quest(quest_id).get_status(stage_id)
 	return SuccessStatus.UNKNOWN
 
 
@@ -275,8 +272,8 @@ func stage_success_status(quest_id: StringName, stage_id: StringName) -> Success
 ## If the quest isn't active or the objective hasn't been completed yet it'll return
 ## [enum SuccessStatus.UNKNOWN].
 func objective_success_status(quest_id: StringName, stage_id: StringName, objective_id: StringName) -> SuccessStatus:
-	if Log.has_stage_entry(quest_id, stage_id):
-		return Log.get_stage_entry(quest_id, stage_id).get_entry_status(objective_id)
+	if Log.has_stage(quest_id, stage_id):
+		return Log.get_stage(quest_id, stage_id).get_status(objective_id)
 	return SuccessStatus.UNKNOWN
 
 
@@ -343,8 +340,6 @@ func complete_objective(quest_id: StringName, stage_id: StringName, objective_id
 	if not entry.auto_advance_stages or not entry.can_complete_stage():
 		return
 	
-	var next_stage: StringName = entry.resource.get_stage(stage_id).success_stage_id
-	
 	_set_stage_complete(quest_id, stage_id, true)
 	stage_completed.emit(quest_id, stage_id, true)
 	
@@ -365,18 +360,18 @@ func complete_stage(quest_id: StringName, stage_id: StringName, success: bool) -
 		return
 	
 	var entry: NFQuestEntry = _active_quests[quest_id]
-	var next_stage: StringName = entry.resource.get_stage(stage_id).success_stage_id
-	
-	_set_stage_complete(quest_id, stage_id, true)
-	stage_completed.emit(quest_id, stage_id, true)
+	var stage = entry.resource.get_stage(stage_id)
+	var next_stage: StringName = stage.success_stage_id if success else stage.failure_stage_id
 	
 	if next_stage.is_empty():
-		_set_quest_complete(quest_id, true)
-		_active_quests.erase(quest_id)
-		quest_finished.emit(quest_id)
+		# Second parameter is if the quest was completed successfully.
+		# The automatic progression system has no idea when to classify a
+		# quest as "failed", so we pass true to set as successful.
+		complete_quest(quest_id, true)
 	else:
 		if entry.set_stage(next_stage, _static_progress):
 			quest_progressed.emit(quest_id, next_stage)
+			_check_stage_auto_advance(quest_id)
 		else:
 			NFPluginGameHandler._log_msg(
 					"odyssey - quest manager",
@@ -390,11 +385,12 @@ func complete_quest(quest_id: StringName, success: bool) -> void:
 		_set_quest_complete(quest_id, success)
 		_active_quests.erase(quest_id)
 		quest_finished.emit(quest_id)
+		_quests_modified.emit()
 
 
 ## Registers a [Callable] with ID [param mod_id] to modify [param quest_id]
 ## before it's tracked with [method QuestManager.start_quest].
-## The callable must have a single argument of type [Quest]. Modifications
+## The callable must have a single argument of type [NFQuest]. Modifications
 ## must be done directly to the object in-place.[br]
 ## The [param order] argument can be passed which will determine
 ## the execution sequence. A value less than 0 will append the modifier
@@ -402,6 +398,8 @@ func complete_quest(quest_id: StringName, success: bool) -> void:
 ## The [param after_mod] argument can be used to ensure the given callable
 ## executes after another modification. The [param order] will be respected.
 func register_quest_modifier(quest_id: StringName, mod_id: StringName, mod_callable: Callable, order: int = -1, after_mod: StringName = &"") -> void:
+	order = maxi(-1, order)
+	
 	if mod_id.is_empty():
 		NFPluginGameHandler._log_msg(
 				"odyssey",
@@ -419,21 +417,28 @@ func register_quest_modifier(quest_id: StringName, mod_id: StringName, mod_calla
 	
 	if not _quest_modifiers.has(quest_id):
 		_quest_modifiers[quest_id] = {
-			"order": ArrayUtils.create_typed(TYPE_STRING_NAME),
-			"mods": DictUtils.create_typed(TYPE_STRING_NAME, TYPE_DICTIONARY)}
-	
+			"order": NFArrayUtils.create_typed(TYPE_STRING_NAME),
+			"mods": NFDictUtils.create_typed(TYPE_STRING_NAME, TYPE_DICTIONARY)}
 	
 	var new_mod: bool = not _quest_modifiers[quest_id]["mods"].has(mod_id)
-	var trigger_sort: bool = true if new_mod else _quest_modifiers[quest_id]["mods"][mod_id]["order"] != order
+	var trigger_sort: bool = true if new_mod else\
+			_quest_modifiers[quest_id]["mods"][mod_id]["order"] != order or\
+			_quest_modifiers[quest_id]["mods"][mod_id]["dependency"] != after_mod
 	
-	DictUtils.set_nested_value(
-			_quest_modifiers, # ID
-			[quest_id, "mods", mod_id], # Key path
-			{"order": order, "callable": mod_callable, "dependency": after_mod}, # Value set to
-			true) # Create the mod_id dictionary if it doesn't exist
+	var mods_entry: Dictionary = _quest_modifiers[quest_id]
 	
 	if new_mod:
-		_quest_modifiers[quest_id]["order"].append(mod_id)
+		var new_entry: Dictionary[String, Variant] = {
+			"order": order,
+			"callable": mod_callable,
+			"dependency": after_mod}
+		mods_entry["mods"][mod_id] = new_entry
+		mods_entry["order"].append(mod_id)
+	else:
+		var ex_entry: Dictionary = mods_entry["mods"][mod_id]
+		ex_entry["order"] = order
+		ex_entry["callable"] = mod_callable
+		ex_entry["dependency"] = after_mod
 	
 	if trigger_sort:
 		_sort_mods(quest_id)
@@ -476,27 +481,45 @@ func _on_quest_objective_state_changed(quest_id: StringName, stage_id: StringNam
 	if objective_complete:
 		_set_objective_complete(quest_id, stage_id, objective_id, true)
 		objective_completed.emit(quest_id, stage_id, objective_id, true)
+	elif Log.has_objective(quest_id, stage_id, objective_id):
+		Log.get_stage(quest_id, stage_id).set_entry(objective_id, SuccessStatus.UNKNOWN)
 	
 	_check_stage_auto_advance(quest_id)
 
 
 func _check_stage_auto_advance(quest_id: StringName) -> void:
-	if not _active_quests.has(quest_id):
+	if not _active_quests.has(quest_id) or _advancing_quests.has(quest_id):
 		return
 	
+	if _advancing_quests.has(quest_id):
+		NFPluginGameHandler._log_msg(
+				"odyssey",
+				"Blocked recursive auto-advance for quest '%s' to prevent stack overflow." % quest_id,
+				NFPluginGameHandler._LogLevel.ERROR)
+		return
+	
+	_advancing_quests[quest_id] = null
 	var entry: NFQuestEntry = _active_quests[quest_id]
 	
+	var visited_stages: Dictionary[StringName, Variant] = {}
 	while entry.auto_advance_stages and entry.can_complete_stage():
 		var stage_id: StringName = entry.current_stage
+		
+		if visited_stages.has(stage_id):
+			NFPluginGameHandler._log_msg(
+					"odyssey - quest manager",
+					"Infinite auto-advance loop detected in quest '%s' at stage '%s'. Aborting chain to prevent thread lock." % [quest_id, stage_id],
+					NFPluginGameHandler._LogLevel.ERROR)
+			break
+		visited_stages[stage_id] = null
+		
 		var next_stage: StringName = entry.resource.get_stage(stage_id).success_stage_id
 	
 		_set_stage_complete(quest_id, stage_id, true)
 		stage_completed.emit(quest_id, stage_id, true)
 	
 		if next_stage.is_empty():
-			_set_quest_complete(quest_id, true)
-			_active_quests.erase(quest_id)
-			quest_finished.emit(quest_id)
+			complete_quest(quest_id, true)
 			break
 		else:
 			quest_progressed.emit(quest_id, next_stage)
@@ -506,10 +529,11 @@ func _check_stage_auto_advance(quest_id: StringName) -> void:
 						"Stage '%s' on quest '%s' not found." % [next_stage, quest_id],
 						NFPluginGameHandler._LogLevel.ERROR)
 				break
+	_advancing_quests.erase(quest_id)
 
 
 func _set_quest_complete(quest_id: StringName, success: bool, emit_events: bool = true) -> void:
-	var quest: Quest = _active_quests[quest_id].resource
+	var quest: NFQuest = _active_quests[quest_id].resource
 	
 	Log.set_entry(
 			quest_id,
@@ -531,7 +555,7 @@ func _set_quest_complete(quest_id: StringName, success: bool, emit_events: bool 
 
 
 func _set_stage_complete(quest_id: StringName, stage_id: StringName, success: bool, emit_events: bool = true) -> void:
-	var stage: QuestStage = _active_quests[quest_id].resource.get_stage(stage_id)
+	var stage: NFQuestStage = _active_quests[quest_id].resource.get_stage(stage_id)
 	
 	_log_stage_complete(quest_id, stage_id, success)
 	
@@ -551,8 +575,12 @@ func _set_stage_complete(quest_id: StringName, stage_id: StringName, success: bo
 
 
 func _set_objective_complete(quest_id: StringName, stage_id: StringName, objective_id: StringName, success: bool, emit_events: bool = true) -> void:
-	var objective: QuestObjective = _active_quests[quest_id].resource.get_stage(stage_id).get_objective(objective_id)
+	var objective: NFQuestObjective = _active_quests[quest_id].resource.get_stage(stage_id).get_objective(objective_id)
 	_log_objective_complete(quest_id, stage_id, objective_id, success)
+	
+	var entry: NFQuestEntry = _active_quests[quest_id]
+	if entry._objective_tracker.has(objective_id):
+		entry._objective_tracker[objective_id]._forced_complete = true
 	
 	if not emit_events:
 		return
@@ -586,21 +614,29 @@ func _log_stage_complete(quest_id: StringName, stage_id: StringName, success: bo
 
 
 func _sort_mods(for_quest: StringName) -> void:
+	var current_order: Array = _quest_modifiers[for_quest]["order"]
+	var index_cache: Dictionary[StringName, int] = {}
+	for i in range(current_order.size()):
+		index_cache[current_order[i]] = i
+	
 	var mods_with_dependencies: Dictionary[StringName, Array] = {}
 	var independent_mods: Array[StringName] = []
 	var mods: Dictionary[StringName, Dictionary] = _quest_modifiers[for_quest]["mods"]
 	var final_order: Array[StringName] = []
+	
 	var sorting_lambda: Callable = func(a:StringName,b:StringName) -> bool:
 		var order_a: int = mods[a]["order"]
 		var order_b: int = mods[b]["order"]
+		
 		if order_a == order_b:
-			return false
+			return index_cache.get(a, NFMath.INT_MAX) < index_cache.get(b, NFMath.INT_MAX)
 		elif order_a < 0:
 			return false
 		elif order_b < 0:
 			return true
 		else:
 			return order_a < order_b
+	
 	var process_mod: Callable = func(current_id: StringName, self_ref: Callable) -> void:
 			if final_order.has(current_id):
 				return
@@ -611,7 +647,7 @@ func _sort_mods(for_quest: StringName) -> void:
 				for child_id in mods_with_dependencies[current_id]:
 					self_ref.call(child_id, self_ref)
 	
-	for mod_id in mods.keys():
+	for mod_id in mods:
 		var dependency: StringName = mods[mod_id]["dependency"]
 		if dependency.is_empty() or not mods.has(dependency):
 			independent_mods.append(mod_id)
@@ -621,14 +657,14 @@ func _sort_mods(for_quest: StringName) -> void:
 			mods_with_dependencies[dependency].append(mod_id)
 	
 	independent_mods.sort_custom(sorting_lambda)
-	for after_id in mods_with_dependencies.keys():
+	for after_id in mods_with_dependencies:
 		mods_with_dependencies[after_id].sort_custom(sorting_lambda)
 	
 	for mod_id in independent_mods:
 		process_mod.call(mod_id, process_mod)
 	
 	if final_order.size() < mods.size():
-		for mod_id in mods.keys():
+		for mod_id in mods:
 			if not final_order.has(mod_id):
 				NFPluginGameHandler._log_msg(
 						"odyssey",
@@ -650,7 +686,8 @@ func _is_dependency_circular(on_quest: StringName, mod_id: StringName, depends_o
 				NFPluginGameHandler._LogLevel.WARNING)
 		return true
 	
-	_visited.append(depends_on)
+	var visited_dupe: Array[StringName] = _visited.duplicate()
+	visited_dupe.append(depends_on)
 	
 	var mods: Dictionary[StringName, Dictionary] = _quest_modifiers[on_quest]["mods"]
 	
@@ -661,12 +698,15 @@ func _is_dependency_circular(on_quest: StringName, mod_id: StringName, depends_o
 	elif dependency == mod_id:
 		return true
 	else:
-		return _is_dependency_circular(on_quest, mod_id, dependency, _visited)
+		return _is_dependency_circular(on_quest, mod_id, dependency, visited_dupe)
 
 
 func _update_objective_progress(for_key: String, value: Variant) -> void:
-	for quest_id in _active_quests:
-		_active_quests[quest_id].update_objective_progress(
+	for quest_id in _active_quests.keys():
+		var entry: NFQuestEntry = _active_quests.get(quest_id)
+		if entry == null:
+			continue
+		entry.update_objective_progress(
 				for_key,
 				value)
 
@@ -686,12 +726,13 @@ func _is_serialized_data_valid(quest: StringName, data: Dictionary) -> bool:
 				NFPluginGameHandler._LogLevel.ERROR)
 		return false
 	
-	if data["resource_path"].is_empty() or not ResourceLoader.exists(data["resource_path"]):
-		NFPluginGameHandler._log_msg(
-				"quests - deserializer",
-				"Resource path '%s' for quest '%s' is empty or does not exist." % [data["resource_path"], quest],
-				NFPluginGameHandler._LogLevel.ERROR)
-		return false
+	if not _active_quests.has(quest):
+		if data["resource_path"].is_empty() or not ResourceLoader.exists(data["resource_path"]):
+			NFPluginGameHandler._log_msg(
+					"quests - deserializer",
+					"Resource path '%s' for quest '%s' is empty or does not exist." % [data["resource_path"], quest],
+					NFPluginGameHandler._LogLevel.ERROR)
+			return false
 	
 	var stage_type = typeof(data["current_stage"])
 	
@@ -711,16 +752,27 @@ func _is_serialized_data_valid(quest: StringName, data: Dictionary) -> bool:
 	return true
 
 
+## A quest entry generated by [NFQuestManager] used to keep track
+## of quests.
 class NFQuestEntry extends RefCounted:
+	## Emitted when the completion state of an objective changes. 
+	## Provides the relevant [param quest_id], [param stage_id], and [param objective_id].
 	signal objective_state_changed(quest_id: StringName, stage_id: StringName, objective_id: StringName)
 	
-	var resource: Quest = null: # Blueprint
+	## The [NFQuest] resource associated with this entry. 
+	## Setting this to a new resource will clear the [member current_stage] and active trackers.
+	var resource: NFQuest = null: # Blueprint
 		set(r):
 			if r == null and resource != null:
 				_current_stage = &""
 				_clear_trackers()
 			resource = r
+	## If [code]true[/code], the quest will automatically progress
+	## to the next stage when all required objectives are met.
 	var auto_advance_stages: bool = false
+	## The ID of the currently active stage.
+	## This property is read-only; use
+	## [method NFQuestManager.NFQuestEntry.set_stage] to modify it.
 	var current_stage: StringName = &"":
 		set(s):
 			return
@@ -729,12 +781,17 @@ class NFQuestEntry extends RefCounted:
 	var _current_stage: StringName = &""
 	var _objective_tracker: Dictionary[StringName, NFObjectiveProgressTracker] = {}
 	var _is_stage_initializing: bool = false
-	var _flags: int = 0:
-		set(f):
-			if _flags == 0:
-				_flags = f
+	var _flags: int = 0
 	
-	
+	## Sets the current stage to [param stage_id] and generates
+	## trackers for the objectives. Returns [code]true[/code]
+	## if the stage was successfully set.
+	## [br][br]
+	## [param static_progress] can be passed to apply pre-existing
+	## progress to the new trackers.[br]
+	## If [param initialize_stage] is [code]true[/code],
+	## it immediately checks if any new objectives are already
+	## complete and emits relevant signals.
 	func set_stage(stage_id: StringName, static_progress: Dictionary[String, Variant] = {}, initialize_stage: bool = true) -> bool:
 		if resource == null:
 			return false
@@ -743,11 +800,11 @@ class NFQuestEntry extends RefCounted:
 		elif current_stage == stage_id:
 			return true
 		
-		var stage: QuestStage = resource.get_stage(stage_id)
+		var stage: NFQuestStage = resource.get_stage(stage_id)
 		_clear_trackers()
 		
 		for objective_id in stage.objectives():
-			var objective: QuestObjective = stage.get_objective(objective_id)
+			var objective: NFQuestObjective = stage.get_objective(objective_id)
 			var progress_tracker: NFObjectiveProgressTracker = NFObjectiveProgressTracker.new()
 			progress_tracker.objective_id = objective_id
 			progress_tracker.is_required = stage.is_objective_required(objective_id)
@@ -779,11 +836,13 @@ class NFQuestEntry extends RefCounted:
 		
 		_is_stage_initializing = false
 	
-	
+	## Returns [code]true[/code] if the current stage can be completed.[br]
+	## If [param exclude_optional] is [code]true[/code],
+	## only required objectives are considered; otherwise,
+	## all objectives must be complete.
 	func can_complete_stage(exclude_optional: bool = true) -> bool:
 		if _is_stage_initializing:
 			return false
-		
 		
 		for obj_id in _objective_tracker:
 			if not _objective_tracker[obj_id].is_required and exclude_optional:
@@ -793,15 +852,20 @@ class NFQuestEntry extends RefCounted:
 		return true
 	
 	
+	## Returns [code]true[/code] if this entry was generated by a
+	## [NFQuestManager] from a valid quest resource.
 	func is_valid() -> bool:
-		return BitUtils.is_bit_index(_flags, 0, true)
+		return NFBitUtils.is_bit_index(_flags, 0, true)
 	
 	
+	## Sets a progress update to all active objective
+	## trackers using the given [param key] and [param value].
 	func update_objective_progress(key: String, value: Variant) -> void:
 		for tracker_id in _objective_tracker:
 			_objective_tracker[tracker_id].set_progress(key, value)
 	
-	
+	## Returns a dictionary containing a duplicated state of
+	## all current objective trackers. Useful for saving quest progress.
 	func get_objectives_state() -> Dictionary[StringName, Dictionary]:
 		var state: Dictionary[StringName, Dictionary] = {}
 		for tracker_id in _objective_tracker:
@@ -809,12 +873,17 @@ class NFQuestEntry extends RefCounted:
 		return state
 	
 	
+	## Returns the [NFQuestManager.NFObjectiveProgressTracker]
+	## associated with [param objective_id]. Returns [code]null[/code]
+	## if it is not found in the current stage.
 	func get_objective_tracker(objective_id: StringName) -> NFObjectiveProgressTracker:
 		if _objective_tracker.has(objective_id):
 			return _objective_tracker[objective_id]
 		return null
 	
 	
+	## Sets a [param state] dictionary to the current objective
+	## trackers, restoring their progress.
 	func set_objectives_state(state: Dictionary) -> void:
 		var valid_state: Dictionary[StringName, Dictionary] = {}
 		
@@ -862,21 +931,50 @@ class NFQuestEntry extends RefCounted:
 		_objective_tracker.clear()
 
 
+## An objective tracker generated by [NFQuestManager.NFQuestEntry]
+## to keep track of objectives and their progression.
 class NFObjectiveProgressTracker extends RefCounted:
+	## Emitted when the completion state of the tracked objective
+	## changes (e.g., completed or invalidated).[br]
 	signal state_updated(objective_id: StringName)
 	
+	## The ID of this objective.
 	var objective_id: StringName
+	## Whether this objecive is required to complete the stage or not.
 	var is_required: bool
+	## A dictionary mapping requirement keys to their current
+	## progress values.
 	var progress: Dictionary[String, Variant] = {
-		"inventory/apples": 2,
-		"inventory/oranges": 0}
+		#"inventory/apples": 2,
+		#"inventory/oranges": 0
+		}
 	var _requirements: Dictionary[String, Dictionary] = {
-		"inventory/apples": {"operator": OP_GREATER_EQUAL, "value": 5},
-		"inventory/oranges": {"operator": OP_GREATER_EQUAL, "value": 1},
-		"time": {"operator": OP_LESS_EQUAL, "value": 720}}
+		#"inventory/apples": {"operator": OP_GREATER_EQUAL, "value": 5},
+		#"inventory/oranges": {"operator": OP_GREATER_EQUAL, "value": 1},
+		#"time": {"operator": OP_LESS_EQUAL, "value": 720}
+		}
 	var _is_complete: bool = false
+	var _forced_complete: bool = false:
+		set(c):
+			if _forced_complete == c:
+				return
+			
+			_forced_complete = c
+			
+			if not _forced_complete:
+				_is_complete = _are_requirements_met()
+				
+				if not _is_complete:
+					state_updated.emit(objective_id)
 	
 	
+	## Returns an array of requirement entries and its details.
+	## Each entry is a [Dictionary] containing:[br]
+	## [code]"key"[/code]: The progress key.[br]
+	## [code]"required"[/code]: If the requirement of the objective[br]
+	## is necessary to complete it.[br]
+	## [code]"operator"[/code]: The operator to which it is comparing it.[br]
+	## [code]"current"[/code]: The current status of the requirement.
 	func get_progress() -> Array[Dictionary]:
 		var progress_array: Array[Dictionary] = []
 		for key in _requirements:
@@ -888,35 +986,46 @@ class NFObjectiveProgressTracker extends RefCounted:
 		return progress_array
 	
 	
+	## Clears all tracked requirements and active progress data.
 	func clear() -> void:
 		_requirements = {}
 		progress.clear()
 	
 	
+	## Returns [code]true[/code] if all requirements for this
+	## objective are currently satisfied or if it is already
+	## marked complete.
 	func can_complete() -> bool:
-		if _is_complete:
+		if _is_complete or _forced_complete:
 			return true
 		return _are_requirements_met()
 	
 	
+	## Updates the progress value for the specified requirement
+	## [param key] with [param value].[br]
+	## If the update causes the objective's completion state to
+	##change, [signal state_updated] is emitted.
 	func set_progress(key: String, value: Variant) -> void:
 		if not _requirements.has(key):
 			return
 		
 		progress[key] = value
-		var was_complete: bool = _is_complete
 		
+		if _forced_complete:
+			return
+		
+		var was_complete: bool = _is_complete
 		_validate_progress()
 		
-		if was_complete and not _is_complete:
-			state_updated.emit(objective_id)
-		elif not was_complete and can_complete():
+		if not was_complete and can_complete():
 			_is_complete = true
+		
+		if was_complete != _is_complete:
 			state_updated.emit(objective_id)
 	
 	
 	func _validate_progress() -> void:
-		if not _is_complete:
+		if _forced_complete or not _is_complete:
 			return
 		
 		if not _are_requirements_met():

@@ -2,8 +2,8 @@
 extends DiscourseGraphNode
 
 
-signal mode_changed(uuid: StringName, old_state: Dictionary, new_state: Dictionary)
-signal range_changed(uuid: StringName, from_min: float, from_max: float, to_min: float, to_max: float)
+signal mode_changed(uuid: String, old_state: Dictionary, new_state: Dictionary)
+signal range_changed(uuid: String, from_min: float, from_max: float, to_min: float, to_max: float)
 
 # Modes can only be int, float & bool
 var current_mode: int = TYPE_INT
@@ -14,7 +14,7 @@ var menu: MenuButton
 
 
 func _post_init() -> void:
-	set_node_id(&"RandomValue")
+	set_node_id("RandomValue")
 	title = "Random Value"
 	node_type = DialogueNodeType.RANDOM_VALUE
 	parent_mode = PortMode.OUTPUT
@@ -92,7 +92,6 @@ func _post_init() -> void:
 			SlotConnectionType.VAR_INT,
 			-1)
 	set_slot_color_left(2, COLORS["integer"])
-	map_field(&"max_value", &"max_spinbox", max_spinbox)
 	
 	min_spinbox.value_changed.connect(_on_min_value_changed)
 	max_spinbox.value_changed.connect(_on_max_value_changed)
@@ -155,35 +154,36 @@ func _get_node_data() -> Dictionary:
 
 
 func _set_node_data(data: Dictionary) -> void:
-	if data.has("name") and typeof(data["name"]) == TYPE_STRING_NAME:
-		_node_id = data["name"]
+	super(data)
 	
-	if not data.has("metadata") or typeof(data["metadata"]) != TYPE_DICTIONARY:
+	if not data.has("metadata"):
 		return
+	
 	var metadata: Dictionary = data["metadata"]
 	
-	if metadata.has("position") and typeof(metadata["position"]) == TYPE_VECTOR2:
-		position_offset = metadata["position"]
+	var mode_data: Variant = metadata.get("mode")
+	var values_data: Variant = metadata.get("values")
 	
-	var type_menu: MenuButton = get_mapped_field(&"random_type", "type_button")
+	if typeof(mode_data) == TYPE_INT:
+		set_mode(mode_data)
 	
-	if metadata.has("mode") and typeof(metadata["mode"]) == TYPE_INT:
-		set_mode(metadata["mode"])
-	
-	if not metadata.has("values") or typeof(metadata["values"]) != TYPE_DICTIONARY:
+	if typeof(values_data) != TYPE_DICTIONARY:
 		return
 	
-	if metadata["values"].has("base"):
-		var base_type: int = typeof(metadata["values"]["base"])
-		if base_type == TYPE_INT or base_type == TYPE_FLOAT:
-			min_spinbox.set_value_no_signal(metadata["values"]["base"])
-			min_spinbox.set_meta(&"old_value", min_spinbox.value)
+	var base_val: Variant = values_data.get("base")
+	var base_type: int = typeof(base_val)
+	if base_type == TYPE_INT or base_type == TYPE_FLOAT:
+		min_spinbox.set_value_no_signal(base_val)
+		min_spinbox.set_meta(&"old_value", min_spinbox.value)
 	
-	if metadata["values"].has("max"):
-		var max_type: int = typeof(metadata["values"]["max"])
-		if max_type == TYPE_INT or max_type == TYPE_FLOAT:
-			max_spinbox.set_value_no_signal(maxf(min_spinbox.value, metadata["values"]["max"]))
-			max_spinbox.set_meta(&"old_value", max_spinbox.value)
+	var max_val: Variant = values_data.get("max")
+	var max_type: int = typeof(max_val)
+	if max_type == TYPE_INT or max_type == TYPE_FLOAT:
+		max_spinbox.set_value_no_signal(maxf(min_spinbox.value, max_val))
+		max_spinbox.set_meta(&"old_value", max_spinbox.value)
+	
+	if current_mode != TYPE_BOOL:
+		max_spinbox.min_value = min_spinbox.value
 
 
 func _on_min_value_changed(min_value: float) -> void:
@@ -272,6 +272,7 @@ func set_mode(mode: int) -> void:
 		return
 	
 	current_mode = mode
+	menu.set_meta(&"old_value", mode)
 	_set_type_fields(mode)
 
 
@@ -304,8 +305,8 @@ func _set_type_fields(type: int) -> void:
 	match type:
 		TYPE_INT:
 			menu.icon = get_theme_icon("int", "EditorIcons")
-			set_slot_type_left(0, SlotConnectionType.VAR_INT)
 			set_slot_type_left(1, SlotConnectionType.VAR_INT)
+			set_slot_type_left(2, SlotConnectionType.VAR_INT)
 			set_slot_type_right(0, SlotConnectionType.VAR_INT)
 			set_slot_color_left(1, COLORS["integer"])
 			set_slot_color_left(2, COLORS["integer"])
@@ -315,8 +316,8 @@ func _set_type_fields(type: int) -> void:
 			
 		TYPE_FLOAT:
 			menu.icon = get_theme_icon("float", "EditorIcons")
-			set_slot_type_left(0, SlotConnectionType.VAR_FLOAT)
 			set_slot_type_left(1, SlotConnectionType.VAR_FLOAT)
+			set_slot_type_left(2, SlotConnectionType.VAR_FLOAT)
 			set_slot_type_right(0, SlotConnectionType.VAR_FLOAT)
 			set_slot_color_left(1, COLORS["float"])
 			set_slot_color_left(2, COLORS["float"])
@@ -325,8 +326,8 @@ func _set_type_fields(type: int) -> void:
 			set_input_connection_icon(&"max_value", get_theme_icon("float", "EditorIcons"))
 		TYPE_BOOL:
 			menu.icon = get_theme_icon("bool", "EditorIcons")
-			set_slot_type_left(0, SlotConnectionType.VAR_BOOL)
 			set_slot_type_left(1, SlotConnectionType.VAR_INT)
+			set_slot_type_left(2, SlotConnectionType.VAR_BOOL)
 			set_slot_type_right(0, SlotConnectionType.VAR_BOOL)
 			set_slot_color_left(1, COLORS["integer"])
 			set_slot_color_left(2, COLORS["bool"])
@@ -351,7 +352,7 @@ func _set_type_fields(type: int) -> void:
 		min_spinbox.step = 1.0
 		min_spinbox.allow_lesser = false
 		min_spinbox.allow_greater = false
-		if not RangeUtils.is_between(min_spinbox.value, 0.0, 100.0):
+		if not NFMath.is_between(min_spinbox.value, 0.0, 100.0):
 			min_spinbox.set_value_no_signal(clampf(min_spinbox.value, 0.0, 100.0))
 		set_field_visible(&"max_value", false)
 		set_deferred(&"size", Vector2(240.0, 85.0))

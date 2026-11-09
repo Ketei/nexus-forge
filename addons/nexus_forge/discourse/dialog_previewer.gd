@@ -64,7 +64,7 @@ func _ready() -> void:
 	NexusForge.Discourse.dialog_started.connect(_on_dialog_started)
 	NexusForge.Discourse.dialog_paused.connect(_on_dialog_paused)
 	NexusForge.Discourse.dialog_finished.connect(_on_dialog_finished)
-	NexusForge.Discourse.data_set.connect(_on_data_set)
+	NexusForge.Discourse.variable_set.connect(_on_data_set)
 	NexusForge.Discourse.method_called.connect(_on_method_called)
 	NexusForge.Discourse.signal_emitted.connect(_on_signal_emitted)
 
@@ -82,8 +82,8 @@ func _on_dialog_reached(data: Dictionary) -> void:
 	data_text_edit.set_deferred("scroll_vertical", data_text_edit.get_v_scroll_bar().max_value)
 	var displayed_text: String = ""
 	if not data["character_id"].is_empty():
-		displayed_text = data["character_id"] + ": "
-	displayed_text += data["dialog_text"]
+		displayed_text = String(data["character_id"]) + ": "
+	displayed_text += data["text"]
 	
 	dialog_text_edit.text = displayed_text
 
@@ -108,11 +108,13 @@ func _on_option_activated() -> void:
 	var selected: TreeItem = options_tree.get_selected()
 	if selected == null:
 		return
-	NexusForge.Discourse.set_dialog_id(selected.get_metadata(0))
-	NexusForge.Discourse.advance()
+	
 	options_container.visible = false
 	continue_btn.disabled = false
 	continue_btn.grab_focus()
+	
+	NexusForge.Discourse.set_next_node_id(selected.get_metadata(0))
+	NexusForge.Discourse.advance()
 
 
 func _on_option_button_clicked(item: TreeItem, _column: int, id: int, mouse_button_index: int) -> void:
@@ -120,11 +122,12 @@ func _on_option_button_clicked(item: TreeItem, _column: int, id: int, mouse_butt
 		return
 	
 	if id == 0:
-		NexusForge.Discourse.set_dialog_id(item.get_metadata(0))
-		NexusForge.Discourse.advance()
+		NexusForge.Discourse.set_next_node_id(item.get_metadata(0))
 		options_container.visible = false
 		continue_btn.disabled = false
 		continue_btn.grab_focus()
+		
+		NexusForge.Discourse.advance()
 
 
 func _on_continue_pressed() -> void:

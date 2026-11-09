@@ -14,7 +14,6 @@ var _unsaved: bool = false:
 @onready var finish_cat_btn: Button = $CategoriesContainer/DataContainer/FinishCatBtn
 @onready var items_container: HBoxContainer = $ItemsContainer
 @onready var categories_container: HBoxContainer = $CategoriesContainer
-@onready var categories_tree: Tree = $CategoriesContainer/DataContainer/CategoriesTree
 
 
 func _ready() -> void:
@@ -31,19 +30,32 @@ func _input(event: InputEvent) -> void:
 		
 		if event.keycode == KEY_DELETE and not event.shift_pressed and not event.ctrl_pressed:
 			if items_container.visible:
+				if not items_container.items_tree.has_focus() or\
+						items_container.items_tree.get_selected() == null:
+					return
 				if not items_container.loaded_item.is_empty():
 					var item_id: StringName = items_container.loaded_item
-					items_container.items_tree._erase_item(item_id)
-					items_container._on_item_erased(item_id)
+					if items_container.item_link.items.has_item(item_id):
+						items_container.items_tree._erase_item(item_id)
+						items_container._on_item_erased(item_id)
+				get_viewport().set_input_as_handled()
 			elif categories_container.visible:
+				if not categories_container.categories_tree.has_focus() or\
+						categories_container.categories_tree.get_selected() == null:
+					return
 				var category_id: StringName = categories_container.selected_category
-				categories_container._on_erase_category_pressed(category_id)
-			get_viewport().set_input_as_handled()
+				if categories_container.items_resource.has_category(category_id):
+					categories_container._on_erase_category_pressed(category_id)
+				get_viewport().set_input_as_handled()
 
 
-func ready_plugin(use_items: bool, use_currencies: bool) -> void:
+func ready_plugin(use_items: bool, use_currencies: bool, paths_resource: RefCounted) -> void:
 	set_process_input(true)
+	
+	items_container._class_update_signaler = paths_resource
+	
 	items_container.ready_plugin(use_items, use_currencies, MAX_UNDO_STEPS)
+		
 	if use_items:
 		if items_container.item_link.items != null:
 			categories_container.items_resource = items_container.item_link.items
@@ -91,11 +103,11 @@ func can_redo() -> bool:
 func do_undo() -> void:
 	var is_items: bool = items_container.visible
 	var undo: UndoRedo = items_container.undo if is_items else categories_container.category_undo
-	var action_name: String = undo.get_action_name(undo.get_current_action() + 1)
-	undo.redo()
+	var action_name: String = undo.get_action_name(undo.get_current_action())
+	undo.undo()
 	NFPluginGameHandler._log_msg(
 		"",
-		"Redo: " + action_name,
+		"Undo: " + action_name,
 		NFPluginGameHandler._LogLevel.EDITOR)
 
 
@@ -115,7 +127,7 @@ func _on_category_id_updated(from: StringName, to: StringName) -> void:
 
 
 func _on_resource_loaded() -> void:
-	var res: ItemCatalog = items_container.item_link.items
+	var res: NFItemCatalog = items_container.item_link.items
 	
 	categories_container.items_resource = res
 	categories_container.reload_categories()
@@ -130,6 +142,7 @@ func _on_category_edit_pressed() -> void:
 
 func _on_categories_done_pressed() -> void:
 	if categories_container.categories_edited:
+		categories_container.save_current_category()
 		items_container.reload_categories(true)
 		items_container._items_unsaved = true
 		categories_container.categories_edited = false

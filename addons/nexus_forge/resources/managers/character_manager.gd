@@ -1,26 +1,26 @@
 class_name NFCharacterManager
 extends RefCounted
-## Manages [CharacterSheet] loading, overrides and character mods.
+## Manages [NFCharacterSheet] loading, overrides and character mods.
 
 var _characters: Dictionary[StringName, String] = {}
 var _character_modifiers: Dictionary[StringName, Dictionary] = {}
 var _character_overrides: Dictionary[StringName, String] = {}
 
 
-## Retuns a [CharacterSheet] via their [param character_id] with modifications
+## Retuns a [NFCharacterSheet] via their [param character_id] with modifications
 ## applied if available.
 ## Returns [code]null[/code] if the ID is not registered.
-func get_character(character_id: StringName, force_reapply_mods: bool = false) -> CharacterSheet:
+func get_character(character_id: StringName, force_reapply_mods: bool = false) -> NFCharacterSheet:
 	if not _characters.has(character_id):
 		return null
 	
 	var using_override: bool = _character_overrides.has(character_id)
 	
-	var char_sheet: CharacterSheet = null
+	var char_sheet: NFCharacterSheet = null
 	
 	if using_override:
 		var res_load = ResourceLoader.load(_character_overrides[character_id], "", ResourceLoader.CACHE_MODE_REPLACE_DEEP) if force_reapply_mods else load(_character_overrides[character_id])
-		if res_load != null and res_load is CharacterSheet:
+		if res_load != null and res_load is NFCharacterSheet:
 			char_sheet = res_load
 		else:
 			NFPluginGameHandler._log_msg(
@@ -28,11 +28,11 @@ func get_character(character_id: StringName, force_reapply_mods: bool = false) -
 					"Error while loading override '%s'. Using default resource." % _character_overrides[character_id],
 					NFPluginGameHandler._LogLevel.ERROR)
 			res_load = ResourceLoader.load(_characters[character_id], "", ResourceLoader.CACHE_MODE_REPLACE_DEEP) if force_reapply_mods else load(_characters[character_id])
-			if res_load != null and res_load is CharacterSheet:
+			if res_load != null and res_load is NFCharacterSheet:
 				char_sheet = res_load
 	else:
 		var res_load = ResourceLoader.load(_characters[character_id], "", ResourceLoader.CACHE_MODE_REPLACE_DEEP) if force_reapply_mods else load(_characters[character_id])
-		if res_load != null and res_load is CharacterSheet:
+		if res_load != null and res_load is NFCharacterSheet:
 			char_sheet = res_load
 	
 	if char_sheet == null:
@@ -107,14 +107,14 @@ func remove_character(id: StringName) -> void:
 
 ## Registers a [Callable] with ID [param mod_id] to modify [param character_id]
 ## before returned with [method CharacterManager.get_character].
-## The callable must have a single argument of type [CharacterSheet].
+## The callable must have a single argument of type [NFCharacterSheet].
 ## Modifications must be done directly to the object in-place.[br]
 ## The [param order] argument can be passed which will determine
 ## the execution sequence. A value less than 0 will append the modifier
 ## to the end of the execution order.[br]
 ## The [param depends_on] argument can be used to ensure the given callable
 ## executes after another modification. The [param order] will be respected.
-func register_character_modifiers(character_id: StringName, mod_id: StringName, mod_callable: Callable, order: int = -1, depends_on: StringName = &"") -> void:
+func register_character_modifier(character_id: StringName, mod_id: StringName, mod_callable: Callable, order: int = -1, depends_on: StringName = &"") -> void:
 	if character_id.is_empty():
 		NFPluginGameHandler._log_msg(
 				"persona",
@@ -123,7 +123,10 @@ func register_character_modifiers(character_id: StringName, mod_id: StringName, 
 		return
 	
 	if not mod_callable.is_valid():
-		_character_modifiers.erase(character_id)
+		NFPluginGameHandler._log_msg(
+				"persona",
+				"Tried to register a character modifier to an invalid callable. Skipping",
+				NFPluginGameHandler._LogLevel.ERROR)
 		return
 	
 	if _is_dependency_circular(character_id, mod_id, depends_on):
@@ -136,23 +139,37 @@ func register_character_modifiers(character_id: StringName, mod_id: StringName, 
 	
 	if not _character_modifiers.has(character_id):
 		_character_modifiers[character_id] = {
-			"order": ArrayUtils.create_typed(TYPE_STRING_NAME),
-			"mods": DictUtils.create_typed(TYPE_STRING_NAME, TYPE_DICTIONARY)}
+			"order": NFArrayUtils.create_typed(TYPE_STRING_NAME),
+			"mods": NFDictUtils.create_typed(TYPE_STRING_NAME, TYPE_DICTIONARY)}
 	
 	var new_mod: bool = not _character_modifiers[character_id]["mods"].has(mod_id)
-	var trigger_sort: bool = true if new_mod else -1 < order and _character_modifiers[character_id]["mods"][mod_id]["order"] != order
+	var trigger_sort: bool = new_mod
 	
-	DictUtils.set_nested_value(
-			_character_modifiers,
-			[character_id, "mods", mod_id], # Key path
-			{"order": order, "callable": mod_callable, "dependency": depends_on}, # Value set to
-			true) # Create the mod_id dictionary if it doesn't exist
+	if not new_mod:
+		var existing_mod: Dictionary = _character_modifiers[character_id]["mods"][mod_id]
+		trigger_sort = (-1 < order and existing_mod["order"] != order) or existing_mod["dependency"] != depends_on
+	
+	_character_modifiers[character_id]["mods"][mod_id] = {
+		"order": order,
+		"callable": mod_callable,
+		"dependency": depends_on}
 	
 	if new_mod:
 		_character_modifiers[character_id]["order"].append(mod_id)
 	
 	if trigger_sort:
 		_sort_mods(character_id)
+
+
+## Removes a character modifier with the given [param mod_id]
+## from [param character_id] if it exists.
+func unregister_character_modifier(character_id: StringName, mod_id: StringName) -> void:
+	if _character_modifiers.has(character_id) and\
+		_character_modifiers[character_id]["mods"].erase(mod_id):
+		
+		_character_modifiers[character_id]["order"].erase(mod_id)
+		if _character_modifiers[character_id]["mods"].is_empty():
+			_character_modifiers.erase(character_id)
 
 
 func _sort_mods(for_character: StringName) -> void:
@@ -181,7 +198,7 @@ func _sort_mods(for_character: StringName) -> void:
 				for child_id in mods_with_dependencies[current_id]:
 					self_ref.call(child_id, self_ref)
 	
-	for mod_id in mods.keys():
+	for mod_id in mods:
 		var dependency: StringName = mods[mod_id]["dependency"]
 		if dependency.is_empty() or not mods.has(dependency):
 			independent_mods.append(mod_id)
@@ -191,14 +208,14 @@ func _sort_mods(for_character: StringName) -> void:
 			mods_with_dependencies[dependency].append(mod_id)
 	
 	independent_mods.sort_custom(sorting_lambda)
-	for after_id in mods_with_dependencies.keys():
+	for after_id in mods_with_dependencies:
 		mods_with_dependencies[after_id].sort_custom(sorting_lambda)
 	
 	for mod_id in independent_mods:
 		process_mod.call(mod_id, process_mod)
 	
 	if final_order.size() < mods.size():
-		for mod_id in mods.keys():
+		for mod_id in mods:
 			if not final_order.has(mod_id):
 				NFPluginGameHandler._log_msg(
 						"persona",

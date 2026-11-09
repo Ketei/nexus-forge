@@ -2,10 +2,10 @@
 extends DiscourseGraphNode
 
 
-signal method_changed(node_uuid: StringName, from_state: Dictionary, to_state: Dictionary)
+signal method_changed(node_uuid: String, from_state: Dictionary, to_state: Dictionary)
 
 
-static var available_methods: Dictionary = {}
+static var available_methods: Dictionary[String, Array] = {}
 
 var methods_node: OptionButton
 
@@ -15,7 +15,7 @@ static func _static_init() -> void:
 
 
 func _post_init() -> void:
-	set_node_id(&"Call")
+	set_node_id("Call")
 	title = "Call Method"
 	graph_icon = get_theme_icon("MemberMethod", "EditorIcons")
 	node_type = DialogueNodeType.CALLABLE
@@ -33,7 +33,7 @@ func _post_init() -> void:
 	
 	var method_keys: Array = available_methods.keys()
 	
-	method_keys.sort_custom(ArrayUtils.sort_custom_alphabetically_asc)
+	method_keys.sort_custom(NFArrayUtils.sort_custom_alphabetically_asc)
 	
 	for method:String in method_keys:
 		methods_node.add_item(method.capitalize())
@@ -116,18 +116,10 @@ func _get_node_data() -> Dictionary:
 
 
 func _set_node_data(data: Dictionary) -> void:
-	if data.has("name") and typeof(data["name"]) == TYPE_STRING_NAME:
-		_node_id = data["name"]
-	
-	if not data.has("metadata") or typeof(data["metadata"]) != TYPE_DICTIONARY:
-		return
-	var metadata: Dictionary = data["metadata"]
-	
-	if metadata.has("position") and typeof(metadata["position"]) == TYPE_VECTOR2:
-		position_offset = metadata["position"]
-	
-	if metadata.has("method") and typeof(metadata["method"]) == TYPE_STRING and available_methods.has(metadata["method"]):
-		set_method(metadata["method"])
+	super(data)
+	var method_data: Variant = data.get("metadata", NFDictUtils.EMPTY).get("method")
+	if typeof(method_data) == TYPE_STRING and available_methods.has(method_data):
+		set_method(method_data)
 
 
 func set_method(method_id: String) -> void:
@@ -270,8 +262,9 @@ func _on_method_selected(idx: int) -> void:
 			new_state)
 
 
-func reload_methods() -> void:
-	available_methods = get_user_methods()
+func reload_methods(reload_api: bool = true) -> void:
+	if reload_api:
+		available_methods = get_user_methods()
 	
 	if available_methods.is_empty():
 		methods_node.clear()
@@ -286,9 +279,8 @@ func reload_methods() -> void:
 	var selected_method: String = methods_node.get_selected_metadata() if methods_node.selected != -1 else ""
 	var all_methods: Array = available_methods.keys()
 	var new_select: int = -1
-	var emit_updated: bool = false
 	
-	all_methods.sort_custom(ArrayUtils.sort_custom_alphabetically_asc)
+	all_methods.sort_custom(NFArrayUtils.sort_custom_alphabetically_asc)
 	
 	if selected_method != "":
 		new_select = all_methods.find(selected_method)
@@ -327,7 +319,7 @@ func add_input_arg(arg_text: String, arg_type: int) -> void:
 	var slot_target: int = get_child_count()
 	var arg: Label = Label.new()
 	var slot_type: SlotConnectionType = SlotConnectionType.VAR_ANY
-	var field_id: StringName = &"argument_" + StringName(str(slot_target))
+	var field_id: StringName = StringName("argument_" + str(slot_target))
 	
 	var input_icon: Texture2D = get_theme_icon("Variant", "EditorIcons")
 	var input_color: Color = COLORS["any"]
@@ -383,18 +375,10 @@ func update_node_size() -> void:
 	size.y = 0 
 
 
-static func get_user_methods() -> Dictionary:
-	var methods: Dictionary = {}
-		
-	if api_path.is_empty() or not ResourceLoader.exists(api_path):
-		if not validate_api_path():
-			NFPluginGameHandler._log_msg(
-					"discourse - editor",
-					"Couldn't load DiscourseAPI script.",
-					NFPluginGameHandler._LogLevel.ERROR)
-			return methods
+static func get_user_methods() -> Dictionary[String, Array]:
+	var methods: Dictionary[String, Array] = {}
 	
-	var api_script: Script = load(api_path)
+	var api_script: Script = DiscourseAPI
 	var api_methods: Array[Dictionary] = api_script.get_script_method_list()
 	
 	for method:Dictionary in api_methods:

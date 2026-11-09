@@ -11,13 +11,14 @@ var localization_files: Dictionary[String, Array] = {}
 
 # Final map where the files are assigned to a non-conflicting ID.
 var dialog_file_to_id: Dictionary[String, String] = {}
+var id_to_dialog_file: Dictionary[String, String] = {}
 
 # Final map where non-conflicting IDs are assigned to a localization file.
 var id_to_localization: Dictionary[String, String] = {}
-
+# AnID: localization/aa/abcd-localization_id.json
+var localization_id_to_file: Dictionary[String, String] = {}
 
 var dialog_path: String = ""
-var export_temp_dir: DirAccess = null
 
 var character_ids: Dictionary[StringName, String] = {}
 var quest_ids: Dictionary[StringName, String] = {}
@@ -56,12 +57,11 @@ func _export_begin(_features: PackedStringArray, _is_debug: bool, _path: String,
 				"Couldn't locate DiscourseAPI script file.",
 				NFPluginGameHandler._LogLevel.ERROR)
 	
-	export_temp_dir = DirAccess.create_temp("godot_nf_plugin")
 	var file_base_path: String = ProjectSettings.get_setting(
 			NFPluginGameHandler.get_setting_path("discourse")).strip_edges()
 	
 	export_characters = ProjectSettings.get_setting(
-			NFPluginGameHandler.get_setting_path("characters_id_to_files"),
+			NFPluginGameHandler.get_setting_path("character_register_ids"),
 			true)
 	
 	if not file_base_path.ends_with("/"):
@@ -77,20 +77,49 @@ func _get_new_dialog_id_for(path: String) -> String:
 
 
 func _export_file(path: String, type: String, features: PackedStringArray) -> void:
-	if path.get_extension() != "tres":
+	var extension: String = path.get_extension()
+	if extension != "tres" and extension != "res":
 		return
 	
 	if release_files.has(path):
 		return
 		
-	var file: Resource = load(path)
+	var file: Variant = load(path)
 	if file is not EditorDiscourseDialog:
 		return
 	
+	var localization_filename: String = _get_localization_filename(path, file.locale_group)
+	var new_id: String = _get_valid_dialog_id(file.dialog_id, file.resource_path)
+	
+	dialog_file_to_id[path] = new_id
+	id_to_dialog_file[new_id] = path
+	id_to_localization[new_id] = localization_filename
+	
+	release_files[path] = process_editor_discourse_dialog(file, new_id, localization_filename)
+
+
+func _get_localization_filename(file_path: String, localization_id: String = "") -> String:
+	localization_id = localization_id.strip_edges()
+	var new_filename: String = ""
+	var base_name: String = file_path.get_file().get_basename() + ".json"
+	
+	if localization_id.is_empty():
+		var md5: String = file_path.to_lower().md5_text().substr(0, 12)
+		new_filename = md5 + "-" + base_name
+	else:
+		if localization_id_to_file.has(localization_id):
+			new_filename = localization_id_to_file[localization_id]
+		else:
+			var md5: String = localization_id.md5_text().substr(0, 12)
+			new_filename = md5 + "-" + localization_id + ".json"
+			localization_id_to_file[localization_id] = new_filename
+	
+	return new_filename
+
+
+func _get_valid_dialog_id(desired: String, path: String) -> String:
+	var dialog_id: String = desired.strip_edges().replace(" ", "_")
 	var new_id: String = ""
-	var md5_hash: String = path.to_lower().md5_text().substr(0, 12)
-	var localization_filename: String = md5_hash + "-" + path.get_file().get_basename() + ".json"
-	var dialog_id: String = file.dialog_id.strip_edges().replace(" ", "_")
 	
 	if dialog_id.is_empty():
 		var slug_id: String = _get_new_dialog_id_for(path)
@@ -99,23 +128,16 @@ func _export_file(path: String, type: String, features: PackedStringArray) -> vo
 		else:
 			new_id = slug_id
 	elif id_to_localization.has(dialog_id):
-		var culprit: String = ""
-		for filepath in dialog_file_to_id.keys():
-			if dialog_file_to_id[filepath] == dialog_id:
-				culprit = filepath
-				break
+		var culprit: String = id_to_dialog_file.get(dialog_id, "Unknown")
 		new_id = path.md5_text()
 		NFPluginGameHandler._log_msg(
 				"export",
-				"Dialog ID '%s' already in use by '%s'. Changing ID of file '%s' to '%s'" % [file.dialog_id, culprit, path, new_id],
+				"Dialog ID '%s' already in use by '%s'. Changing ID of file '%s' to '%s'" % [dialog_id, culprit, path, new_id],
 				NFPluginGameHandler._LogLevel.WARNING)
 	else:
 		new_id = dialog_id
-		
-	dialog_file_to_id[path] = new_id
-	id_to_localization[new_id] = localization_filename
 	
-	release_files[path] = process_editor_discourse_dialog(file, new_id, localization_filename)
+	return new_id
 
 
 func _begin_customize_resources(_platform: EditorExportPlatform, _features: PackedStringArray) -> bool:
@@ -134,10 +156,28 @@ func _get_customization_configuration_hash() -> int:
 
 func _customize_resource(resource: Resource, path: String) -> Resource:
 	if resource is EditorDiscourseDialog:
-		if not localization_files.has(path):
-			return release_files[path]
+		var res_key: String = resource.resource_path
 		
-		for locale_entry:Dictionary in localization_files[path]:
+		if resource.resource_path.is_empty():
+			NFPluginGameHandler._log_msg(
+					"export",
+					"Embedded EditorDiscourseDialog found in scene '%s'. Embedded dialogs are not supported by the runtime API. Please save it as an external .tres file." % path,
+					NFPluginGameHandler._LogLevel.ERROR)
+			return null
+		
+		if not release_files.has(res_key):
+			var dialog_id: String = _get_valid_dialog_id(resource.dialog_id, res_key)
+			var md5_hash: String = dialog_id.md5_text().substr(0, 12)
+			var loc_filename: String = md5_hash + "-" + res_key.get_file().get_basename() + ".json"
+			
+			release_files[res_key] = process_editor_discourse_dialog(resource, dialog_id, loc_filename)
+		
+		var loc_key: String = res_key
+		
+		if not localization_files.has(loc_key):
+			return release_files[res_key]
+		
+		for locale_entry:Dictionary in localization_files[loc_key]:
 			if locale_entry["path"].is_empty() or locale_entry["file"] == null:
 				NFPluginGameHandler._log_msg(
 						"export",
@@ -145,44 +185,34 @@ func _customize_resource(resource: Resource, path: String) -> Resource:
 						NFPluginGameHandler._LogLevel.ERROR)
 				continue
 				
-			#if localization_files.has(release_files[resource.resource_path].localization_uuid):
 			var locale_file: DiscourseDialogLocale = locale_entry["file"]
 			var virtual_path: String = locale_entry["path"]
-			var file_path: String = export_temp_dir.get_current_dir().path_join(virtual_path.get_file())
 			
-			var file: FileAccess = FileAccess.open(file_path, FileAccess.WRITE_READ)
-			file.store_string(locale_file.as_json())
-			file.close()
-			
-			if file != null:
-				if added_files.has(virtual_path):
-					NFPluginGameHandler._log_msg(
-						"export",
-						"Exporter tried to add a duplicate file '%s' when exporting. Skipping." % virtual_path,
-						NFPluginGameHandler._LogLevel.WARNING)
-				else:
-					added_files[virtual_path] = null
-					add_file(
-							virtual_path,
-							FileAccess.get_file_as_bytes(file_path),
-							false)
-			else:
+			if added_files.has(virtual_path):
 				NFPluginGameHandler._log_msg(
-						"export",
-						"Couldn't generate locale '%s' JSON for file '%s'" % [locale_file.locale, resource.resource_path],
-						NFPluginGameHandler._LogLevel.ERROR)
-		if path == "res://tests/test_dialog_exported.tres":
-			ResourceSaver.save(release_files[path], "res://tests/aaa_test_dialog_exported.tres")
-		return release_files[path]
-	elif resource is SkillCatalog:
+					"export",
+					"Exporter tried to add a duplicate file '%s' when exporting. Skipping." % virtual_path,
+					NFPluginGameHandler._LogLevel.WARNING)
+				continue
+			
+			added_files[virtual_path] = null
+			
+			var json_str: String = locale_file.as_json()
+			var data: = json_str.to_utf8_buffer()
+			add_file(
+					virtual_path,
+					data,
+					false)
+		return release_files[res_key]
+	elif resource is NFSkillCatalog:
 		return customize_skill_catalog(resource)
-	elif resource is TraitCatalog:
+	elif resource is NFTraitCatalog:
 		return customize_trait_catalog(resource)
-	elif resource is SpeciesCatalog:
+	elif resource is NFSpeciesCatalog:
 		return customize_species(resource)
-	elif resource is StatCatalog:
+	elif resource is NFStatCatalog:
 		return customize_stat_catalog(resource)
-	elif resource is CharacterSheet:
+	elif resource is NFCharacterSheet:
 		if character_ids.has(resource.id):
 			if export_characters:
 				NFPluginGameHandler._log_msg(
@@ -196,7 +226,7 @@ func _customize_resource(resource: Resource, path: String) -> Resource:
 						NFPluginGameHandler._LogLevel.WARNING)
 		else:
 			character_ids[resource.id] = path
-	elif resource is Quest:
+	elif resource is NFQuest:
 		if quest_ids.has(resource.id):
 			NFPluginGameHandler._log_msg(
 						"export",
@@ -219,46 +249,27 @@ func _end_customize_resources() -> void:
 		"id_to_locale_file": id_to_localization}
 	
 	var virtual_path: String = dialog_path.path_join("dialog_locale_map.json")
-	var file_path: String = export_temp_dir.get_current_dir().path_join(virtual_path.get_file())
 	
-	var file: FileAccess = FileAccess.open(file_path, FileAccess.WRITE_READ)
-	file.store_string(JSON.stringify(bridge_data))
-	file.close()
+	added_files[virtual_path] = null
+	
+	var text: String = JSON.stringify(bridge_data)
+	var data: PackedByteArray = text.to_utf8_buffer()
+	add_file(
+			virtual_path,
+			data,
+			false)
 	
 	if export_characters:
-		var config_path: String = export_temp_dir.get_current_dir().path_join("settings.cfg")
 		var cfg: ConfigFile = ConfigFile.new()
 		cfg.set_value("PERSONA", "CharacterMap", character_ids)
-		if cfg.save(config_path) == OK:
-			if added_files.has("res://addons/nexus_forge/settings.cfg"):
-				NFPluginGameHandler._log_msg(
-						"export",
-						"Exporter tried to add a duplicate file 'res://addons/nexus_forge/settings.cfg' when exporting. Skipping.",
-						NFPluginGameHandler._LogLevel.WARNING)
-			else:
-				added_files["res://addons/nexus_forge/settings.cfg"] = null
-				add_file(
-						"res://addons/nexus_forge/settings.cfg",
-						FileAccess.get_file_as_bytes(config_path),
-						false)
-	
-	if file != null:
-		if added_files.has(virtual_path):
-			NFPluginGameHandler._log_msg(
-						"export",
-						"Exporter tried to add a duplicate file '%s' when exporting. Skipping." % virtual_path,
-						NFPluginGameHandler._LogLevel.WARNING)
-		else:
-			added_files[virtual_path] = null
-			add_file(
-					virtual_path,
-					FileAccess.get_file_as_bytes(file_path),
-					false)
-	else:
-		NFPluginGameHandler._log_msg(
-				"export",
-				"Error while generating dialog locale map.",
-				NFPluginGameHandler._LogLevel.ERROR)
+		
+		var cfg_text: String = cfg.encode_to_text()
+		var bytes: PackedByteArray = cfg_text.to_utf8_buffer()
+		added_files["res://addons/nexus_forge/settings.cfg"] = null
+		add_file(
+				"res://addons/nexus_forge/settings.cfg",
+				bytes,
+				false)
 
 
 func process_editor_discourse_dialog(dialog_resource: EditorDiscourseDialog, dialog_id: String, expected_name: String) -> DiscourseDialog:
@@ -274,32 +285,59 @@ func process_editor_discourse_dialog(dialog_resource: EditorDiscourseDialog, dia
 	return release_resource
 
 
-func customize_species(resource: SpeciesCatalog) -> SpeciesCatalog:
-	var stats: Dictionary[StringName, int] = StatBlock.stats()
-	var skills: Array[StringName] = SkillSet.skills()
-	var traits: Array[StringName] = TraitBlock.traits()
+func customize_species(resource: NFSpeciesCatalog) -> NFSpeciesCatalog:
+	var stats: Dictionary[StringName, int] = NFStatBlock.stats()
+	var skills: Array[StringName] = NFSkillSet.skills()
+	var traits: Array[StringName] = NFTraitBlock.traits()
 	
 	for species in resource._species.keys():
-		for stat in resource._species[species]["stats"].keys():
+		var species_dict: Dictionary = resource._species[species]
+		var parent_species: StringName = species_dict.get("parent_dominant", &"")
+		var submissive_species: StringName = species_dict.get("parent_recessive", &"")
+		
+		if not parent_species.is_empty() and not resource._species.has(parent_species):
+			var text: String = ""
+			var new_dom: StringName = submissive_species
+			
+			if not submissive_species.is_empty() and resource._species.has(submissive_species):
+				text = "Setting dominant to recessive '%s' " % submissive_species
+			else:
+				new_dom = &""
+				text = "Clearing"
+			
+			NFPluginGameHandler._log_msg(
+					"export",
+					"Species '%s' has its dominant species set to an inexisting species '%s'. %s." % [species, parent_species, text],
+					NFPluginGameHandler._LogLevel.ERROR)
+			species_dict["parent_dominant"] = new_dom
+			species_dict["parent_recessive"] = &""
+		elif not submissive_species.is_empty() and not resource._species.has(submissive_species):
+			NFPluginGameHandler._log_msg(
+					"export",
+					"Species '%s' has its recessive species set to an inexisting species '%s'. Clearing." % [species, submissive_species],
+					NFPluginGameHandler._LogLevel.ERROR)
+			species_dict["parent_recessive"] = &""
+		
+		for stat in species_dict["stats"].keys():
 			if stats.has(stat):
 				continue
-			resource._species[species]["stats"].erase(stat)
+			species_dict["stats"].erase(stat)
 		
-		for skill in resource._species[species]["skills"].keys():
+		for skill in species_dict["skills"].keys():
 			if skills.has(skill):
 				continue
-			resource._species[species]["skills"].erase(skill)
+			species_dict["skills"].erase(skill)
 		
-		for trait_id in resource._species[species]["traits"].keys():
+		for trait_id in species_dict["traits"].keys():
 			if traits.has(trait_id):
 				continue
-			resource._species[species]["traits"].erase(trait_id)
+			species_dict["traits"].erase(trait_id)
 	
 	return resource
 
 
-func customize_trait_catalog(catalog: TraitCatalog) -> TraitCatalog:
-	var traits: Array[StringName] = TraitBlock.traits()
+func customize_trait_catalog(catalog: NFTraitCatalog) -> NFTraitCatalog:
+	var traits: Array[StringName] = NFTraitBlock.traits()
 	
 	for saved_trait in catalog._trait_data.keys():
 		if traits.has(saved_trait):
@@ -309,8 +347,8 @@ func customize_trait_catalog(catalog: TraitCatalog) -> TraitCatalog:
 	return catalog
 
 
-func customize_stat_catalog(catalog: StatCatalog) -> StatCatalog:
-	var stats_data: Dictionary[StringName, int] = StatBlock.stats()
+func customize_stat_catalog(catalog: NFStatCatalog) -> NFStatCatalog:
+	var stats_data: Dictionary[StringName, int] = NFStatBlock.stats()
 	
 	for saved_trait in catalog._stat_data.keys():
 		if stats_data.has(saved_trait):
@@ -320,8 +358,8 @@ func customize_stat_catalog(catalog: StatCatalog) -> StatCatalog:
 	return catalog
 
 
-func customize_skill_catalog(catalog: SkillCatalog) -> SkillCatalog:
-	var skills: Array[StringName] = SkillSet.skills()
+func customize_skill_catalog(catalog: NFSkillCatalog) -> NFSkillCatalog:
+	var skills: Array[StringName] = NFSkillSet.skills()
 	
 	for saved_skill in catalog._skill_data.keys():
 		if skills.has(saved_skill):
@@ -332,7 +370,6 @@ func customize_skill_catalog(catalog: SkillCatalog) -> SkillCatalog:
 
 
 func _export_end() -> void:
-	export_temp_dir = null
 	clear_memory()
 
 
@@ -346,3 +383,4 @@ func clear_memory() -> void:
 	quest_ids.clear()
 	added_files.clear()
 	discourse_api_methods.clear()
+	id_to_dialog_file.clear()

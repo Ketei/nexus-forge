@@ -2,17 +2,18 @@
 extends DiscourseGraphNode
 
 
-signal match_node_resized(uuid: StringName, old_snapshot: Dictionary, new_snapshot: Dictionary)
-signal match_field_updated(uuid: StringName, field_id: int, from: Variant, to: Variant)
-signal match_mode_changed(uuid: StringName, old_state: Dictionary, new_state: Dictionary)
+signal match_node_resized(uuid: String, old_snapshot: Dictionary, new_snapshot: Dictionary)
+signal match_field_updated(uuid: String, field_id: int, from: Variant, to: Variant)
+signal match_mode_changed(uuid: String, old_state: Dictionary, new_state: Dictionary)
 
 
 var current_mode: int = TYPE_INT
+var cases: SpinBox
 var _match_size_update_queed: bool = false
 
 
 func _post_init() -> void:
-	set_node_id(&"Match")
+	set_node_id("Match")
 	title = "Match"
 	size = Vector2(240.0, 204.0)
 	custom_minimum_size.y = 204.0
@@ -24,7 +25,7 @@ func _post_init() -> void:
 	var value_label: Label = Label.new()
 	var default_label: Label = Label.new()
 	
-	var cases: SpinBox = SpinBox.new()
+	cases = SpinBox.new()
 	var value_menu: MenuButton = MenuButton.new()
 	var menu_popup: PopupMenu = value_menu.get_popup()
 	var value_text: LineEdit = LineEdit.new()
@@ -72,7 +73,6 @@ func _post_init() -> void:
 			cases_container,
 			false,
 			SlotConnectionType.DIALOG)
-	map_field(&"cases", &"case_count", cases)
 	
 	add_field(
 		&"values",
@@ -144,7 +144,7 @@ func get_match_case_data() -> Array[Dictionary]:
 	var cases: Array[Dictionary] = []
 	
 	for case in range(1, get_child_count() - 2):
-		var case_id: StringName = &"case_" + StringName(str(int(case)))
+		var case_id: StringName = StringName("case_" + str(int(case)))
 		var control: Control = get_field(case_id).get_child(1 if current_mode == TYPE_STRING else 0)
 		var case_data: Dictionary = {}
 		case_data["output_connections"] = {
@@ -276,7 +276,7 @@ func _on_match_text_edit_toggled(is_toggled: bool, line: LineEdit) -> void:
 		return
 	
 	var node_idx: int = line.get_parent().get_parent().get_index()
-	var match_id: int = node_idx - 3
+	var match_id: int = node_idx - 2
 	
 	line.set_meta(&"old_value", new_value)
 	
@@ -292,27 +292,25 @@ func _on_match_text_changed(_text: String) -> void:
 
 
 func _set_node_data(data: Dictionary) -> void:
-	if data.has("name") and typeof(data["name"]) == TYPE_STRING_NAME:
-		_node_id = data["name"]
-	
-	if not data.has("metadata") or typeof(data["metadata"]) != TYPE_DICTIONARY:
+	super(data)
+	if not data.has("metadata"):
 		return
+	
 	var metadata: Dictionary = data["metadata"]
+	var match_data: Variant = metadata.get("match_data_type")
+	var cases_data: Variant = metadata.get("cases")
 	
-	if metadata.has("position") and typeof(metadata["position"]) == TYPE_VECTOR2:
-		position_offset = metadata["position"]
+	if typeof(match_data) == TYPE_INT:
+		set_match_mode(match_data)
 	
-	if metadata.has("match_data_type") and typeof(metadata["match_data_type"]) == TYPE_INT:
-		set_match_mode(metadata["match_data_type"])
-	
-	if metadata.has("cases") and typeof(metadata["cases"]) == TYPE_ARRAY:
-		var case_count: int = metadata["cases"].size()
-		get_mapped_field(&"cases", &"case_count").set_value_no_signal(case_count)
+	if typeof(cases_data) == TYPE_ARRAY:
+		var case_count: int = cases_data.size()
+		cases.set_value_no_signal(case_count)
 		set_match_case_count(case_count)
 		for match_option in range(1, case_count + 1):
-			var case_id: StringName = &"case_" + StringName(str(int(match_option)))
+			var case_id: StringName = StringName("case_" + str(int(match_option)))
 			var field: Control = get_field(case_id)
-			var val = metadata["cases"][match_option - 1].get("value")
+			var val = cases_data[match_option - 1].get("value")
 			var val_type = typeof(val)
 			if current_mode == TYPE_STRING:
 				if val_type == TYPE_STRING:
@@ -323,7 +321,7 @@ func _set_node_data(data: Dictionary) -> void:
 				if val_type == TYPE_FLOAT or val_type == TYPE_INT:
 					var spin: SpinBox = field.get_child(0)
 					spin.set_value_no_signal(val)
-					field.set_meta(&"old_value", spin.value)
+					spin.set_meta(&"old_value", spin.value)
 
 
 func _get_issues() -> PackedStringArray:
@@ -344,7 +342,7 @@ func set_match_case_count(new_count: int) -> void:
 		for new_match in range(new_count - current):
 			var new_field: PanelContainer = get_new_match_field()
 			var field_idx: int = add_field(
-					&"case_" + StringName(str(current + new_match + 1)),
+					StringName("case_" + str(current + new_match + 1)),
 					new_field,
 					false,
 					-1,
@@ -367,7 +365,7 @@ func _on_match_count_changed(new_count: int) -> void:
 
 
 func _update_match_case_value() -> void:
-	var case_size: int = get_mapped_field(&"cases", &"case_count").value
+	var case_size: int = cases.value
 	var old_snapshot: Dictionary = {"metadata": {"cases": get_match_case_data()}}
 	set_match_case_count(case_size)
 	var new_snapshot: Dictionary = {"metadata": {"cases": get_match_case_data()}}
@@ -384,7 +382,6 @@ func remove_match_fields(fields: Array[StringName]) -> void:
 		var field: Control = get_field(id)
 		field.get_child(0).value_changed.disconnect(_on_match_value_changed)
 		field.get_child(1).text_changed.disconnect(_on_match_text_changed)
-	
 	remove_fields(fields, -1)
 
 
@@ -422,7 +419,7 @@ func get_new_match_field() -> PanelContainer:
 func set_match_value(case_number: int, value: Variant) -> void:
 	var current_match_count: int = get_child_count() - 3
 	
-	if not RangeUtils.is_between(case_number, 1, current_match_count):
+	if not NFMath.is_between(case_number, 1, current_match_count):
 		return
 	
 	var set_type: int = typeof(value)

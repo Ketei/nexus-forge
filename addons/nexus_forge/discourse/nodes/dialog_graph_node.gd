@@ -2,21 +2,22 @@
 extends DiscourseGraphNode
 
 
-signal use_code_editor_pressed(uuid: StringName, target: TextEdit)
-signal select_character_pressed(uuid: StringName, target: LineEdit)
-signal character_id_changed(uuid: StringName, from: String, to: String)
-signal dialog_text_changed(uuid: StringName, from: String, to: String)
-signal dialog_presist_toggled(uuid: StringName, is_toggled: bool)
+signal use_code_editor_pressed(uuid: String, target: TextEdit)
+signal select_character_pressed(uuid: String, target: LineEdit)
+signal character_id_changed(uuid: String, from: String, to: String)
+signal dialog_text_changed(uuid: String, from: String, to: String)
+signal dialog_presist_toggled(uuid: String, is_toggled: bool)
 
 var free_size: Vector2 = Vector2(350.0, 300.0)
 var character_id_ln_edt: LineEdit
 var character_dialog: TextEdit
 var persist_check: CheckBox
+var use_code_editor_btn: Button
 var old_size: Vector2 = Vector2.ZERO
 
 
 func _post_init() -> void:
-	set_node_id(&"Dialog")
+	set_node_id("Dialog")
 	title = "Dialog"
 	node_type = DialogueNodeType.DIALOG
 	parent_mode = PortMode.INPUT
@@ -39,7 +40,7 @@ func _post_init() -> void:
 	var highlighter: NFEditorDialogSyntaxHighlighter = NFEditorDialogSyntaxHighlighter.new()
 	persist_check = CheckBox.new()
 	var flags_container: HBoxContainer = HBoxContainer.new()
-	var use_code_editor_btn: Button = Button.new()
+	use_code_editor_btn = Button.new()
 	
 	use_code_editor_btn.name = &"UseCodeEditorBtn"
 	connection_node.name = &"Connection"
@@ -136,7 +137,6 @@ func _post_init() -> void:
 	
 	var flgs_idx: int = add_field(&"flags", flags_container, false, SlotConnectionType.VAR_STRING, -1)
 	
-	map_field(&"flags", &"code_edit_button", use_code_editor_btn)
 	add_field(&"dialog_text", character_dialog, true)
 	
 	set_slot_color_left(connection_field, COLORS["dialog"])
@@ -152,7 +152,7 @@ func _ready() -> void:
 	set_input_connection_icon(&"character_id", preload("res://addons/nexus_forge/icons/gear_icon.png"))
 	set_input_connection_icon(&"dialog_settings", preload("res://addons/nexus_forge/icons/gear_icon.png"))
 	set_input_connection_icon(&"flags", get_theme_icon("String", "EditorIcons"))
-	get_mapped_field(&"flags", &"code_edit_button").icon = get_theme_icon("DistractionFree", "EditorIcons")
+	use_code_editor_btn.icon = get_theme_icon("DistractionFree", "EditorIcons")
 	get_field(&"character_id").get_child(2).icon = get_theme_icon("Search", "EditorIcons")
 
 
@@ -166,7 +166,7 @@ func _on_input_connected(input_port: int, from_node: DiscourseGraphNode, _from_p
 		3:
 			free_size = size
 			character_dialog.editable = false
-			get_mapped_field(&"flags", &"code_edit_button").disabled = true
+			use_code_editor_btn.disabled = true
 			get_child(4).visible = false
 			custom_minimum_size.y = 160.0
 			resizable = false
@@ -177,7 +177,7 @@ func _on_input_disconnected(input_port: int, _from_node: DiscourseGraphNode, _fr
 	match input_port:
 		3:
 			get_field(&"dialog_text").editable = true
-			get_mapped_field(&"flags", &"code_edit_button").disabled = false
+			use_code_editor_btn.disabled = false
 			get_child(4).visible = true
 			custom_minimum_size.y = 270.0
 			resizable = true
@@ -202,31 +202,25 @@ func _get_node_data() -> Dictionary:
 
 
 func _set_node_data(data: Dictionary) -> void:
-	if data.has("name") and typeof(data["name"]) == TYPE_STRING_NAME:
-		_node_id = data["name"]
+	super(data)
 	
-	if not data.has("metadata") or typeof(data["metadata"]) != TYPE_DICTIONARY:
+	var metadata: Dictionary = data.get("metadata", NFDictUtils.EMPTY)
+	
+	if metadata.is_empty():
 		return
 	
-	var metadata: Dictionary = data["metadata"]
+	var character_data: Variant = metadata.get("character_id")
+	var dialog_data: Variant = metadata.get("dialog_text")
+	var persist_data: Variant = metadata.get("persist")
 	
-	if metadata.has("position") and typeof(metadata["position"]) == TYPE_VECTOR2:
-		position_offset = metadata["position"]
+	if typeof(character_data) == TYPE_STRING:
+		set_character_id(character_data)
 	
-	if metadata.has("size") and typeof(metadata["size"]) == TYPE_VECTOR2:
-		size = metadata["size"]
+	if typeof(dialog_data) == TYPE_STRING:
+		set_dialog_text(dialog_data)
 	
-	if metadata.has("character_id") and typeof(metadata["character_id"]) == TYPE_STRING:
-		set_character_id(metadata["character_id"])
-	
-	if metadata.has("dialog_text") and typeof(metadata["dialog_text"]) == TYPE_STRING:
-		set_dialog_text(metadata["dialog_text"])
-	
-	if metadata.has("persist") and typeof(metadata["persist"]) == TYPE_BOOL:
-		persist_check.set_pressed_no_signal(metadata["persist"])
-	
-	if metadata.has("localized") and typeof(metadata["localized"]) == TYPE_BOOL:
-		set_node_localized(metadata["localized"])
+	if typeof(persist_data) == TYPE_BOOL:
+		persist_check.set_pressed_no_signal(persist_data)
 
 
 func _on_persist_toggled(is_toggled: bool) -> void:

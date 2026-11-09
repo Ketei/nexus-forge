@@ -8,7 +8,7 @@ extends DiscourseDialog
 ## [ReleaseDiscourseDialog] and the original files are NOT included.
 
 
-static var regex_search: RegEx
+static var _regex_search: RegEx
 
 ## Offset for the [GraphEdit] in Discourse.
 var scroll_offset: Vector2 = Vector2.ZERO:
@@ -18,21 +18,31 @@ var scroll_offset: Vector2 = Vector2.ZERO:
 var zoom: float = 1.0:
 	set(new_zoom):
 		zoom = snappedf(new_zoom, 0.001)
+## A dictionary containing the collapsed status of folders.
 var collapsed_state: Dictionary[String, bool] = {}
 
-# A map of all languages that will be exported and used. If localization data
-# is set but the locale isn't registered in here then the export plugin
-# will ignore that data.
+## A map of all languages that will be exported and used. If
+## localization data is set but the locale isn't registered in here
+## then the export plugin will ignore that data.
 @export_storage var locale_map: Dictionary[String, Dictionary] = {
 	#"en": {"US": null, "GB": null}
 }
 
+## The user-assigned ID of this dialogue. Will be used during the
+## game's export process.
 @export var dialog_id: String = ""
 
-# Localizations with the same id will be merged toguether on the release file.
-# If empty then each conversation will have it's own unique locale file.
+@export var entry_node_uuid: String = ""
+
+## The user-assigned locale group ID.
+## [br][br]
+## Localizations with the same id will be merged toguether on the
+## release file.
+## If empty then each conversation will have it's own unique locale
+## json file.
 @export_storage var locale_group: String = ""
 
+## Individual frame data.
 @export_storage var node_frames: Dictionary[String, Dictionary] = {
 	#"e2f420f0-1e9b-4672-bdaf-e926b59945d2": {
 		#"title": "Random Frame",
@@ -43,10 +53,10 @@ var collapsed_state: Dictionary[String, bool] = {}
 	#}
 }
 
-# Generated on export
-@export_storage var node_data: Dictionary[StringName, Dictionary] = {
+## Individual node data.
+@export_storage var node_data: Dictionary[String, Dictionary] = {
 	#&"9156f183-6761-4259-9dde-1a81d12fb047": {
-		#"name": &"Greeting",
+		#"name": "Greeting",
 		#"output_connections": {},
 		#"input_connections": {},
 		#"metadata": {
@@ -59,7 +69,8 @@ var collapsed_state: Dictionary[String, bool] = {}
 	#}
 }
 
-@export_storage var localization: Dictionary[StringName, Dictionary] = {
+## The localization data of this dialogue.
+@export_storage var localization: Dictionary[String, Dictionary] = {
 	#&"9156f183-6761-4259-9dde-1a81d12fb047": {
 		#"type": LocalizationType.DIALOG,
 		#"unlocalized": "",
@@ -80,6 +91,7 @@ var collapsed_state: Dictionary[String, bool] = {}
 	#}
 }
 
+## The format string data and localization of this dialogue.
 @export_storage var format_strings: Dictionary[String, Dictionary] = {
 	#"GREETINGS": {
 		#"en": {
@@ -91,15 +103,6 @@ var collapsed_state: Dictionary[String, bool] = {}
 						#"ketei": "Doggie",
 						#"wulfre": "variables/player/name",
 					#}
-				#},
-				#"daytime": {
-					#"default": "",
-					#"cases": {
-						#"type": LocalizationFormat.METHOD_CALL,
-						#"value": "get_time_string"}},
-				#"fruit": {
-					#"type": LocalizationFormat.STRING,
-					#"value": "Banana"
 				#}
 			#}
 		#}
@@ -110,15 +113,16 @@ var collapsed_state: Dictionary[String, bool] = {}
 # Node folder structure
 # {"is_node": true, "uuid": ""}
 # {"is_node": false, "name": "", "items": {}}
+## The folder structure of this dialogue file.
 @export_storage var node_structure: Array[Dictionary] = []
 
 # Local ID map that builds as calls are made for optimization.
-var _id_map: Dictionary[StringName, StringName] = {}
+var _id_map: Dictionary[String, String] = {} # User given ID / UUID
 
 
 static func _static_init() -> void:
-	regex_search = RegEx.new()
-	regex_search.compile("\\{[\\$\\!][^\\s\\}]+\\}")
+	_regex_search = RegEx.new()
+	_regex_search.compile("\\{[\\$\\!][^\\s\\}]+\\}")
 
 
 ## Returns an array with all the format arguments of the prase [param phrase_text].[br]
@@ -127,99 +131,282 @@ static func get_phrase_arguments(phrase_text: String, trim_brackets: bool = fals
 	var all_arguments: Array[String] = []
 	
 	if trim_brackets:
-		for regex_match in regex_search.search_all(phrase_text): # $variable
+		for regex_match in _regex_search.search_all(phrase_text): # $variable
 			all_arguments.append(regex_match.get_string().trim_prefix("{").trim_suffix("}"))
 	else:
-		for regex_match in regex_search.search_all(phrase_text): # $variable
+		for regex_match in _regex_search.search_all(phrase_text): # $variable
 			all_arguments.append(regex_match.get_string())
 	
 	return all_arguments
 
 
+func _get_text_data_localized(node_uuid: String, for_locale: String) -> Dictionary:
+	for_locale = NFStringUtils.sanitize_locale(for_locale)
+	
+	var data: Dictionary[String, Variant] = {
+		"is_override": false,
+		"text": "[MISSING LOCALIZATION DATA]"}
+	
+	if for_locale.is_empty() or not node_data.has(node_uuid):
+		return data
+	
+	var node_id: StringName = node_data[node_uuid].get("name", &"")
+	var localized: bool = node_data[node_uuid]["metadata"]["localized"]
+	
+	if _dialog_overrides != null and _dialog_overrides.has_override(node_id, for_locale, TYPE_STRING):
+		data["is_override"] = true
+		data["text"] = _dialog_overrides.get_override(node_id, for_locale)
+		return data
+	
+	if not localization.has(node_uuid):
+		return data
+	
+	var e: Dictionary = NFDictUtils.EMPTY
+	var localization_dict: Dictionary = localization.get(node_uuid, e)
+	var locales_dict: Dictionary = localization_dict.get("locales", e)
+	
+	if localized:
+		var localized_data: Variant = locales_dict.get(for_locale, "")
+		if typeof(localized_data) == TYPE_STRING:
+			var loc_str: String = localized_data.strip_edges()
+			if not loc_str.is_empty():
+				data["text"] = loc_str
+				return data
+	else:
+		var unlocalized_data: Variant = localization_dict.get("unlocalized")
+		if typeof(unlocalized_data) == TYPE_STRING:
+			var unloc_str: String = unlocalized_data.strip_edges()
+			if not unloc_str.is_empty():
+				data["text"] = unloc_str
+				return data
+	
+	# 0 = No Fallback
+	# 1 = Direct Fallback: Merge fallback_object with loaded objects
+	# 2 = Cascade fallback
+	var fallback_mode: int = ProjectSettings.get_setting(
+			NFPluginGameHandler.get_setting_path("discourse_fallback_mode"),
+			2)
+	
+	if fallback_mode == 0:
+		return data
+	
+	var lang_fallback: String = ProjectSettings.get_setting(
+			"internationalization/locale/fallback")
+	
+	if fallback_mode == 2 and for_locale.contains("_"):
+		var base_lang: String = for_locale.get_slice("_", 0)
+		if base_lang != lang_fallback:
+			if locales_dict.has(base_lang):
+				var locale_data: Variant = locales_dict.get(base_lang, "")
+				if typeof(locale_data) == TYPE_STRING:
+					var loc_str: String = locale_data.strip_edges()
+					if not loc_str.is_empty():
+						data["text"] = loc_str
+						return data
+	
+	if locales_dict.has(lang_fallback):
+		var locale_data: Variant = locales_dict.get(lang_fallback)
+		if typeof(locale_data) == TYPE_STRING:
+			var loc_str: String = locale_data.strip_edges()
+			if not loc_str.is_empty():
+				data["text"] = loc_str
+	
+	return data
+
+
+func _get_array_data_localized(node_uuid: String, for_locale: String) -> Dictionary:
+	for_locale = NFStringUtils.sanitize_locale(for_locale)
+	
+	var choices: PackedStringArray = []
+	var build_array: Array = []
+	var data: Dictionary[String, Variant] = {
+		"is_override": false,
+		"choices": choices}
+	
+	var node_size: int = 0
+	if node_data.has(node_uuid):
+		var e: Dictionary = NFDictUtils.EMPTY
+		node_size = node_data[node_uuid].get("metadata", e).get("choices", NFArrayUtils.EMPTY).size()
+	
+	if node_size == 0:
+		return data
+	else:
+		choices.resize(node_size)
+		build_array.resize(node_size)
+	
+	if not localization.has(node_uuid) or for_locale.is_empty():
+		choices.fill("[MISSING LOCALIZATION DATA]")
+		return data
+	
+	var node_id: String = node_data[node_uuid].get("name", &"")
+	var localized: bool = node_data[node_uuid]["metadata"]["localized"]
+	
+	if localized:
+		if localization[node_uuid]["locales"].has(for_locale):
+			if typeof(localization[node_uuid]["locales"][for_locale]) == TYPE_PACKED_STRING_ARRAY:
+				var source: PackedStringArray = localization[node_uuid]["locales"][for_locale]
+				for idx in range(mini(source.size(), node_size)):
+					var choice_item: String = source[idx].strip_edges()
+					if  not choice_item.is_empty():
+						build_array[idx] = choice_item
+	else:
+		if typeof(localization[node_uuid]["unlocalized"]) == TYPE_PACKED_STRING_ARRAY:
+			var source: PackedStringArray = localization[node_uuid]["unlocalized"]
+			for idx in range(mini(source.size(), node_size)):
+				var choice_item: String = source[idx].strip_edges()
+				if not choice_item.is_empty():
+					build_array[idx] = choice_item
+	
+	# 0 = No Fallback
+	# 1 = Direct Fallback: Merge fallback_object with loaded objects
+	# 2 = Cascade fallback
+	var fallback_mode: int = ProjectSettings.get_setting(
+			NFPluginGameHandler.get_setting_path("discourse_fallback_mode"),
+			2)
+	var lang_fallback: String = ProjectSettings.get_setting(
+			"internationalization/locale/fallback")
+	var req_is_not_fallback: bool = for_locale != lang_fallback
+	
+	for idx in range(build_array.size()):
+		var val: Variant = build_array[idx]
+		if val != null:
+			choices[idx] = val
+	
+	if fallback_mode == 2 and req_is_not_fallback and for_locale.contains("_"):
+		var base_lang: String = for_locale.get_slice("_", 0)
+		if base_lang != lang_fallback:
+			if localization[node_uuid]["locales"].has(base_lang):
+				if typeof(localization[node_uuid]["locales"][base_lang]) == TYPE_PACKED_STRING_ARRAY:
+					var source: PackedStringArray = localization[node_uuid]["locales"][base_lang]
+					var it: int = mini(source.size(), node_size)
+					for idx in range(it):
+						var choice_item: String = source[idx].strip_edges()
+						if choices[idx].is_empty() and not choice_item.is_empty():
+							choices[idx] = choice_item
+	
+	if fallback_mode != 0 and req_is_not_fallback and localization[node_uuid]["locales"].has(lang_fallback):
+		if typeof(localization[node_uuid]["locales"][lang_fallback]) == TYPE_PACKED_STRING_ARRAY:
+			var source: PackedStringArray = localization[node_uuid]["locales"][lang_fallback]
+			var it: int = mini(source.size(), node_size)
+			for idx in range(it):
+				var choice_item: String = source[idx].strip_edges()
+				if choices[idx].is_empty() and not choice_item.is_empty():
+					choices[idx] = choice_item
+	
+	var empty: int = choices.find("")
+	while -1 < empty:
+		choices[empty] = "[MISSING LOCALIZATION DATA]"
+		empty = choices.find("", empty + 1)
+	
+	if _dialog_overrides != null:
+		var override: Variant = _dialog_overrides.get_override(node_id, for_locale)
+		if typeof(override) == TYPE_ARRAY:
+			var it: int = mini(override.size(), node_size)
+			for override_index in range(it):
+				var item: Variant = override[override_index]
+				if item != null:
+					choices[override_index] = item
+			data["is_override"] = true
+	
+	return data
+
+
 ## Returns the text of a localized string.
 func get_format_string(key: String, locale: String) -> String:
-	locale = TranslationServer.standardize_locale(locale)
-	return DictUtils.get_nested_value(
-			format_strings,
-			[key, locale, "base_string"],
-			"")
+	locale = NFStringUtils.sanitize_locale(locale)
+	var e: Dictionary = NFDictUtils.EMPTY
+	return format_strings.get(key, e).get(locale, e).get("base_string", "")
 
 
+## Returns whether a format string with [param key] exists. If
+## [param locale] isn't empty it'll validate that locale too.
 func has_format_string(key: String, locale: String = "") -> bool:
+	locale = NFStringUtils.sanitize_locale(locale)
 	if locale.is_empty():
 		return format_strings.has(key)
 	else:
-		return format_strings.has(key) and format_strings[key].has(locale)
+		return format_strings.get(key, NFDictUtils.EMPTY).has(locale)
 
 
 ## Returns all format keys that the localized string has.
 func get_format_string_formats(key: String, locale_code: String) -> Array[String]:
-	var lang_code: String = TranslationServer.standardize_locale(locale_code)
-	if DictUtils.has_nested_path(format_strings, [key, lang_code, "format"]):
-		return ArrayUtils.create_typed(TYPE_STRING, format_strings[key][lang_code]["format"].keys())
-	else:
-		return ArrayUtils.create_typed(TYPE_STRING)
+	var lang_code: String = NFStringUtils.sanitize_locale(locale_code)
+	var e: Dictionary = NFDictUtils.EMPTY
+	var format_dict: Dictionary = format_strings.get(key, e).get(lang_code, e).get("format", e)
+	var formats: Array[String] = []
+	if not format_dict.is_empty():
+		formats.assign(format_dict.keys())
+	return formats
 
 
 ## Returns the format keys and the possible formats of a given key.
 func get_format_string_arguments(key: String, locale_code: String) -> Dictionary[String, Dictionary]:
-	var lang_code: String = TranslationServer.standardize_locale(locale_code)
-	var formats = DictUtils.get_nested_value(
-			format_strings,
-			[key, lang_code, "format"])
+	var lang_code: String = NFStringUtils.sanitize_locale(locale_code)
+	var e: Dictionary = NFDictUtils.EMPTY
+	var format_dict: Variant = format_strings.get(key, e).get(lang_code, e).get("format")
+	var return_dict: Dictionary[String, Dictionary] = {}
 	
-	if typeof(formats) == TYPE_DICTIONARY:
-		return Dictionary(formats.duplicate(true), TYPE_STRING, &"", null, TYPE_DICTIONARY, &"", null)
-	else:
-		return Dictionary({}, TYPE_STRING, &"", null, TYPE_DICTIONARY, &"", null)
+	if typeof(format_dict) == TYPE_DICTIONARY:
+		return_dict.assign(format_dict.duplicate(true))
+	return return_dict
 
 
 ## Returns strings formatted for NexusForge plugin use.
 func get_editor_localized_strings(locale_code: String) -> Dictionary[String, Dictionary]:
-	var lang_code: String = TranslationServer.standardize_locale(locale_code)
+	var lang_code: String = NFStringUtils.sanitize_locale(locale_code)
 	var data: Dictionary[String, Dictionary] = {}
 	
-	for key in format_strings.keys():
-		data[key] = format_strings[key][lang_code].duplicate(true)
+	for key in format_strings:
+		if format_strings[key].has(lang_code):
+			data[key] = format_strings[key][lang_code].duplicate(true)
 	return data
 
 
 ## Sets or creates a localized string with the given key.
 func set_format_string(key: String, text: String, locale: String) -> void:
-	locale = TranslationServer.standardize_locale(locale)
+	locale = NFStringUtils.sanitize_locale(locale)
 	
-	if not format_strings.has(key) or locale.is_empty():
+	if locale.is_empty():
 		return
 	
-	if not format_strings[key].has(locale):
-		format_strings[key][locale] = {
-			"base_string": "",
-			"format": {}}
+	if not format_strings.has(key):
+		format_strings[key] = NFDictUtils.create_typed(TYPE_STRING, TYPE_DICTIONARY)
+	var key_dict: Dictionary = format_strings[key]
 	
-	format_strings[key][locale]["base_string"] = text
+	if not key_dict.has(locale):
+		var new_locale: Dictionary[String, Variant] = {
+			"base_string": "",
+			"format": NFDictUtils.create_typed(TYPE_STRING, TYPE_DICTIONARY)}
+		key_dict[locale] = new_locale
+	var locale_dict: Dictionary = key_dict[locale]
+	locale_dict["base_string"] = text
 
 
 ## Checks if the format key exists in the given key and locale. If it doesn't it'll
 ## create it. Returns true if the entry was created or already existed.
 func validate_format_string_format(key: String, locale: String, format: String) -> bool:
-	if not DictUtils.has_nested_path(format_strings, [key, locale, "format"]):
+	locale = NFStringUtils.sanitize_locale(locale)
+	
+	if not NFDictUtils.has_nested_path(format_strings, [key, locale, "format"]):
 		return false
 	
 	if not format_strings[key][locale]["format"].has(format):
 		format_strings[key][locale]["format"][format] = {
-			"cases": {},
+			"cases": NFDictUtils.create_typed(TYPE_STRING, TYPE_STRING),
 			"default": ""}
 	else:
 		if not format_strings[key][locale]["format"][format].has("cases"):
-			format_strings[key][locale]["format"][format]["cases"] = {}
+			format_strings[key][locale]["format"][format]["cases"] = NFDictUtils.create_typed(TYPE_STRING, TYPE_STRING)
 		if not format_strings[key][locale]["format"][format].has("default"):
 			format_strings[key][locale]["format"][format]["default"] = ""
 	
 	return true
 
 
+## Sets the [param case] for the [param locale] on the [param format] in the
+## specified [param key] to [param value].
 func set_format_string_case(key: String, locale: String, format: String, case: String, value: String) -> void:
-	locale = TranslationServer.standardize_locale(locale)
+	locale = NFStringUtils.sanitize_locale(locale)
 	
 	if locale.is_empty() or not format_strings.has(key):
 		return
@@ -227,38 +414,42 @@ func set_format_string_case(key: String, locale: String, format: String, case: S
 	if not format_strings[key].has(locale):
 		format_strings[key][locale] = {
 			"base_string": "",
-			"format": {}}
+			"format": NFDictUtils.create_typed(TYPE_STRING, TYPE_DICTIONARY)}
 	
 	if not format_strings[key][locale]["format"].has(format):
 		format_strings[key][locale]["format"][format] = {
 			"default": "",
-			"cases": {}}
+			"cases": NFDictUtils.create_typed(TYPE_STRING, TYPE_STRING)}
 	
-	DictUtils.set_nested_value(
+	NFDictUtils.set_nested_value(
 			format_strings,
 			[key, locale, "format", format, "cases", case],
 			value)
 
 
+## Gets the [param case] in the [param locale] on the [param format]
+## in the specified [param key].[br]
+## Returns an empty string if not found.
 func get_format_string_case(key: String, locale: String, format: String, case: String) -> String:
-	return DictUtils.get_nested_value(
-			format_strings,
-			[key, locale, "format", format, "cases", case],
-			"",
-			true)
+	var e: Dictionary = NFDictUtils.EMPTY
+	locale = NFStringUtils.sanitize_locale(locale)
+	return format_strings.get(key, e).get(locale, e).get("format", e).get(format, e).get("cases", e).get(case, "")
 
 
+## Returns an array containing all the cases (not their results) of a specified
+## [param format] of the [param locale] from the specified [param key].
 func get_format_string_cases(key: String, locale: String, format: String) -> Array[String]:
+	locale = NFStringUtils.sanitize_locale(locale)
 	var cases: Array[String] = []
 	
-	if DictUtils.has_nested_path(format_strings, [key, locale, "format", format, "cases"]):
+	if NFDictUtils.has_nested_path(format_strings, [key, locale, "format", format, "cases"]):
 		cases.assign(format_strings[key][locale]["format"][format]["cases"].keys())
 	return cases
 
 
 ## Sets the default case from a localized string with the given key.
 func set_format_string_default_case(key: String, locale: String, format: String, default_text: String) -> void:
-	locale = TranslationServer.standardize_locale(locale)
+	locale = NFStringUtils.sanitize_locale(locale)
 	
 	if locale.is_empty() or not format_strings.has(key):
 		return
@@ -266,14 +457,14 @@ func set_format_string_default_case(key: String, locale: String, format: String,
 	if not format_strings[key].has(locale):
 		format_strings[key][locale] = {
 			"base_string": "",
-			"format": {}}
+			"format": NFDictUtils.create_typed(TYPE_STRING, TYPE_DICTIONARY)}
 	
 	if not format_strings[key][locale]["format"].has(format):
 		format_strings[key][locale]["format"][format] = {
 			"default": "",
-			"cases": {}}
+			"cases": NFDictUtils.create_typed(TYPE_STRING, TYPE_STRING)}
 	
-	DictUtils.set_nested_value(
+	NFDictUtils.set_nested_value(
 			format_strings,
 			[key, locale, "format", format, "default"],
 			default_text)
@@ -281,8 +472,8 @@ func set_format_string_default_case(key: String, locale: String, format: String,
 
 ## Returns the default case from a localized string with the given key.
 func get_format_string_default_case(key: String, locale: String, argument: String) -> String:
-	locale = TranslationServer.standardize_locale(locale)
-	return DictUtils.get_nested_value(
+	locale = NFStringUtils.sanitize_locale(locale)
+	return NFDictUtils.get_nested_value(
 			format_strings,
 			[key, locale, "format", argument, "default"],
 			"")
@@ -291,20 +482,24 @@ func get_format_string_default_case(key: String, locale: String, argument: Strin
 ## Erases a [param format_key] and all its cases on the given [param key]
 ## from the given [param locale].
 func erase_format_string_format(key: String, locale: String, format_key: String) -> void:
-	if DictUtils.has_nested_path(format_strings, [key, locale, "format"]):
+	locale = NFStringUtils.sanitize_locale(locale)
+	if NFDictUtils.has_nested_path(format_strings, [key, locale, "format"]):
 		format_strings[key][locale]["format"].erase(format_key)
 
 
+## Erases the specific [param case] of the [param format_key] of the specified
+## [param locale] in the [param key].
 func erase_format_string_case(key: String, locale: String, format_key: String, case: String) -> bool:
-	if DictUtils.has_nested_path(format_strings, [key, locale, "format", format_key, "cases"]):
+	locale = NFStringUtils.sanitize_locale(locale)
+	if NFDictUtils.has_nested_path(format_strings, [key, locale, "format", format_key, "cases"]):
 		return format_strings[key][locale]["format"][format_key]["cases"].erase(case)
 	return false
 
 
 ## Clears the list of custom cases from the given key.
 func clear_format_string_cases(key: String, locale: String, format: String) -> void:
-	locale = TranslationServer.standardize_locale(locale)
-	var cases = DictUtils.get_nested_value(
+	locale = NFStringUtils.sanitize_locale(locale)
+	var cases = NFDictUtils.get_nested_value(
 			format_strings,
 			[key, locale, "format", format, "cases"])
 	
@@ -322,84 +517,10 @@ func get_frames_uuids() -> Array:
 	return node_frames.keys()
 
 
-## Gets the text of a node with [param node_uuid] of a specific [param locale].
-## If the node isn't of a type that supports text or it is not found it'll
-## return [param fallback].
-func get_text_entry(node_uuid: StringName, locale: String, fallback: String = "[ENTRY NOT FOUND]") -> String:
-	locale = TranslationServer.standardize_locale(locale)
-	
-	if not localization.has(node_uuid) or localization[node_uuid]["type"] != LocalizationType.TEXT:
-		return fallback
-	
-	var has_id: bool = DictUtils.has_nested_path(node_data, [node_uuid, "name"])
-	var node_id: StringName = DictUtils.get_nested_value(node_data, [node_uuid, "name"], &"", true)
-	var localized: bool = DictUtils.get_nested_value(
-			node_data,
-			[node_uuid, "metadata", "localized"],
-			true,
-			true)
-	
-	if _dialog_overrides != null and has_id and _dialog_overrides.has_override(node_id, locale):
-		return _dialog_overrides.get_override(node_id, locale)
-	elif not localized:
-		return DictUtils.get_nested_value(localization, [node_uuid, "unlocalized"], fallback, true)
-	else:
-		return DictUtils.get_nested_value(
-				localization,
-				[node_uuid, "locales", locale],
-				fallback,
-				true)
-
-
-## Gets the array of choices of a node with [param node_uuid] of a specific [param locale].
-## If the node isn't of a type that supports choices or it is not found it'll
-## return [param fallback].
-func get_choices_entry(node_uuid: StringName, locale: String = "", fallback: Array = ["[ENTRY NOT FOUND]"]) -> Array[String]:
-	locale = TranslationServer.standardize_locale(locale)
-	var return_array: Array[String] = []
-	
-	if not localization.has(node_uuid) or localization[node_uuid]["type"] != LocalizationType.CHOICES:
-		return_array.assign(fallback)
-		return fallback
-	
-	#var localization_data: Dictionary = localization[node_uuid]
-	var has_id: bool = DictUtils.has_nested_path(node_data, [node_uuid, "name"])
-	var node_id: StringName = DictUtils.get_nested_value(
-			node_data,
-			[node_uuid, "name"],
-			&"",
-			true) if has_id else &""
-	var localized: bool = DictUtils.get_nested_value(
-			node_data,
-			[node_uuid, "metadata", "localized"],
-			true,
-			true)
-	
-	if _dialog_overrides != null and has_id and _dialog_overrides.has_override(node_id, locale):
-		var override = _dialog_overrides.get_override(node_id, locale)
-		var override_type: int = typeof(override)
-		if override_type == TYPE_PACKED_STRING_ARRAY:
-			return_array.assign(override)
-	elif localized:
-		return_array.assign(
-				DictUtils.get_nested_value(
-						localization,
-						[node_uuid, "locales", locale],
-						[],
-						true))
-	else:
-		return_array.assign(
-				DictUtils.get_nested_value(
-						localization,
-						[node_uuid, "unlocalized"],
-						[],
-						true))
-	
-	return return_array
-
-
-## Returns the node data from a the node with the given [param uuid] in a specific locale.
-func get_node_data(node_uuid: StringName, locale: String = "") -> Dictionary:
+## Gets the node data. If it contains localized data then [param locale]
+## will be used to integrate the localization data. Mainly used by the
+## graph editor to set node's data.
+func get_node_data(node_uuid: String, locale: String = "") -> Dictionary:
 	if not node_data.has(node_uuid):
 		return {}
 	
@@ -414,11 +535,15 @@ func get_node_data(node_uuid: StringName, locale: String = "") -> Dictionary:
 			var options_translated: Array[String] = []
 			options_translated.assign(get_choices_entry(node_uuid, locale))
 			var target_size: int = base_data["metadata"]["choices"].size()
-			
+	
 			if options_translated.size() != target_size:
-				push_warning("[DISCOURSE] Choice data of node {node_id} size is different from the {locale_code} localization data. Data size: {data_size}, locale size: {locale_size}".format({"data_size": target_size, "locale_size": options_translated.size(), "locale_code": locale, "node_id": base_data["name"]}) )
+				NFPluginGameHandler._log_msg(
+						"discourse - editor",
+						"Choice data size of node '%s' is different from the localization data of locale '%s'. Data size: %d, locale size: %d" % [base_data["name"], locale, target_size, options_translated.size()],
+						NFPluginGameHandler._LogLevel.WARNING)
+				
 				options_translated.resize(target_size)
-			
+	
 			var idx: int = -1
 			for option_translated in options_translated:
 				idx += 1
@@ -433,13 +558,68 @@ func get_node_data(node_uuid: StringName, locale: String = "") -> Dictionary:
 	return base_data
 
 
+## Gets the text of a node with [param node_uuid] of a specific [param locale].
+## If the node isn't of a type that supports text or it is not found it'll
+## return [param fallback].
+func get_text_entry(node_uuid: String, locale: String, fallback: String = "[ENTRY NOT FOUND]") -> String:
+	locale = NFStringUtils.sanitize_locale(locale)
+	
+	if not localization.has(node_uuid) or localization[node_uuid]["type"] != LocalizationType.TEXT:
+		return fallback
+	
+	var e: Dictionary = NFDictUtils.EMPTY
+	var source_dict: Dictionary = localization[node_uuid]
+	
+	var localized: bool = node_data.get(node_uuid, e).get("metadata", e).get("localized", true)
+	
+	if localized:
+		var data_source: Dictionary = source_dict.get("locales", e)
+		var data: String = data_source.get(locale, fallback)
+		return data
+	else:
+		var data: String = source_dict.get("unlocalized", fallback)
+		return data
+
+
+## Gets the array of choices of a node with [param node_uuid] of a specific [param locale].
+## If the node isn't of a type that supports choices or it is not found it'll
+## return [param fallback].
+func get_choices_entry(node_uuid: String, locale: String = "", fallback: Array = ["[ENTRY NOT FOUND]"]) -> Array[String]:
+	var e: Dictionary = NFDictUtils.EMPTY
+	
+	locale = NFStringUtils.sanitize_locale(locale)
+	var return_array: Array[String] = []
+	
+	if not localization.has(node_uuid) or localization[node_uuid]["type"] != LocalizationType.CHOICES:
+		return_array.assign(fallback)
+		return return_array
+	
+	var localized: bool = node_data.get(
+			node_uuid, e).get("metadata", e).get("localized", true)
+	
+	var base_array: Array[String] = []
+	
+	if localized:
+		if localization.get(node_uuid, e).get("locales", e).has(locale):
+			var data: Variant = localization[node_uuid]["locales"][locale]
+			if typeof(data) == TYPE_PACKED_STRING_ARRAY:
+				base_array.assign(data)
+	else:
+		if localization.get(node_uuid, NFDictUtils.EMPTY).has("unlocalized"):
+			var data: Variant = localization[node_uuid]["unlocalized"]
+			if typeof(data) == TYPE_PACKED_STRING_ARRAY:
+				base_array.assign(data)
+	
+	return base_array
+
+
 ## Sets the locale for text (Dialogs & localized text nodes). Passing [code]""[/code]
 ## on [param locale] will set the text as unlocalized, meaning that the text will
 ## be the same on all localizations.[br]
 ## Note: Switching from a localized to an unlocalized node will clear the localization
 ## data completely and viceversa.
-func set_dialog_text(uuid: StringName, text: String, locale: String = "") -> void:
-	locale = TranslationServer.standardize_locale(locale)
+func set_dialog_text(uuid: String, text: String, locale: String = "") -> void:
+	locale = NFStringUtils.sanitize_locale(locale)
 	var localization_level: Dictionary = localization.get_or_add(uuid, {"type": LocalizationType.TEXT, "unlocalized": "", "locales": {}})
 	
 	if localization_level["type"] != LocalizationType.TEXT:
@@ -457,10 +637,10 @@ func set_dialog_text(uuid: StringName, text: String, locale: String = "") -> voi
 ## will set the options as unlocalized.[br]
 ## Note: Switching from a localized to an unlocalized node will clear the localization
 ## data completely and viceversa.
-func set_choices_array(uuid: StringName, options: Array, locale: String = "") -> void:
+func set_choices_array(uuid: String, options: Array, locale: String = "") -> void:
 	# --- Data validation ---
-	locale = TranslationServer.standardize_locale(locale)
-	var valid_options: Array[String]
+	locale = NFStringUtils.sanitize_locale(locale)
+	var valid_options: PackedStringArray
 	for option in options:
 		var opt_type: int = typeof(option)
 		if opt_type == TYPE_STRING:
@@ -473,7 +653,14 @@ func set_choices_array(uuid: StringName, options: Array, locale: String = "") ->
 			valid_options.append("[INVALID FORMAT]")
 	# -----------------------
 	
-	var localization_level: Dictionary = localization.get_or_add(uuid, {"type": LocalizationType.CHOICES, "unlocalized": [], "locales": {}})
+	if not localization.has(uuid):
+		var new_entry: Dictionary[String, Variant] = {
+			"type": LocalizationType.CHOICES,
+			"unlocalized": PackedStringArray(),
+			"locales": NFDictUtils.create_typed(TYPE_STRING, TYPE_PACKED_STRING_ARRAY)}
+		localization[uuid] = new_entry
+	
+	var localization_level: Dictionary = localization[uuid]
 	
 	if localization_level["type"] != LocalizationType.CHOICES:
 		return
@@ -483,52 +670,51 @@ func set_choices_array(uuid: StringName, options: Array, locale: String = "") ->
 		localization_level["locales"].clear()
 	else:
 		localization_level["unlocalized"].clear()
-		DictUtils.set_nested_value(
-				localization_level,
-				["locales", locale],
-				valid_options)
+		localization_level["locales"][locale] = valid_options
 
 
 ## Sets a single choice for an option node. Specifically the choice with index
 ## [param option_index]. To set an unlocalized choice pass [code]common[/code]
 ## as the language argument. No region is needed when doing an unlocalized
 ## option.
-func set_choice_text(uuid: StringName, option_index: int, text: String, locale: String = "") -> void:
+func set_choice_text(uuid: String, option_index: int, text: String, locale: String = "") -> void:
 	if not localization.has(uuid) or localization[uuid]["type"] != LocalizationType.CHOICES:
 		return
 	
 	var base_level: Dictionary = localization[uuid]
 	
 	if locale.is_empty():
-		if not base_level.has("unlocalized") or typeof(base_level["unlocalized"]) != TYPE_ARRAY:
+		if not base_level.has("unlocalized") or typeof(base_level["unlocalized"]) != TYPE_PACKED_STRING_ARRAY:
 			return
 		
-		var arr_size: int = base_level["unlocalized"].size()
+		var items: PackedStringArray = base_level["unlocalized"]
+		var arr_size: int = items.size()
 		if arr_size == 0:
 			return
 		var max_index: int = arr_size - 1
-		if not RangeUtils.is_between(option_index, -arr_size, max_index):
+		if not NFMath.is_between(option_index, -arr_size, max_index):
 			return
 		
-		base_level["unlocalized"][option_index] = text
+		items[option_index] = text
 	else:
-		locale = TranslationServer.standardize_locale(locale)
-		if not DictUtils.has_nested_path(base_level, ["locales", locale]) or typeof(base_level["locales"][locale]) != TYPE_ARRAY:
+		locale = NFStringUtils.sanitize_locale(locale)
+		if not base_level["locales"].has(locale) or typeof(base_level["locales"][locale]) != TYPE_PACKED_STRING_ARRAY:
 			return
-		var locale_array: Array = base_level["locales"][locale]
 		
+		var locale_array: PackedStringArray = base_level["locales"][locale]
 		var arr_size: int = locale_array.size()
 		if arr_size == 0:
 			return
+		
 		var max_index: int = arr_size - 1
-		if not RangeUtils.is_between(option_index, -arr_size, max_index):
+		if not NFMath.is_between(option_index, -arr_size, max_index):
 			return
 		
 		locale_array[option_index] = text
 
 
 ## Registers a frame.[br]
-## Note: Always register frames before registering nodes.
+## [b]Note:[/b] Always register frames before registering nodes.
 func register_frame(uuid: String, title: String, position: Vector2, size: Vector2, tint: Color) -> void:
 	node_frames[uuid] = {
 		"title": title,
@@ -556,7 +742,7 @@ func get_frame_data(uuid: String) -> Dictionary:
 ## [method set_localization_choices], [method set_unlocalized_choices] and
 ## [method update_localization_choice] to save localizable data.
 func register_node(node: DiscourseGraphNode, parent_frame: String = "") -> void:
-	var uuid: StringName = node.get_node_uuid()
+	var uuid: String = node.get_node_uuid()
 	var data: Dictionary = node._get_node_data()
 	
 	if node.node_type == NodeType.DIALOG:
@@ -567,7 +753,7 @@ func register_node(node: DiscourseGraphNode, parent_frame: String = "") -> void:
 	elif node.node_type == NodeType.LOCALIZED_TEXT:
 		data["metadata"].erase("text")
 	elif node.node_type == NodeType.ENTRY:
-		entry_node = uuid
+		entry_node_uuid = uuid
 	
 	node_data[uuid] = data
 	
@@ -575,12 +761,14 @@ func register_node(node: DiscourseGraphNode, parent_frame: String = "") -> void:
 		node_frames[parent_frame]["nodes"].append(uuid)
 
 
-func remove_node(node_uuid: StringName) -> void:
+## Removes the [param node_uuid]'s node and localization data.
+func remove_node(node_uuid: String) -> void:
 	node_data.erase(node_uuid)
 	localization.erase(node_uuid)
 
 
-func remove_frame(frame_uuid: StringName) -> void:
+## Removes the frame [param frame_uuid] data.
+func remove_frame(frame_uuid: String) -> void:
 	node_frames.erase(frame_uuid)
 
 
@@ -595,46 +783,54 @@ func clear() -> void:
 
 
 ## Grabs all data, strips it of the editor information and returns its
-## [DiscourseDialog] version for release. Inteded ONLY to be used by the 
+## [DiscourseDialog] version for release. Intended ONLY to be used by the 
 ## NexusForge export plugin.
 func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> DiscourseDialog:
 	var available_methods: Dictionary = preload("res://addons/nexus_forge/discourse/nodes/method_call_node.gd").get_user_methods()
 	var available_signals: Dictionary = preload("res://addons/nexus_forge/discourse/nodes/signal_node.gd").get_user_signals()
 	
 	var release_dialog: DiscourseDialog = DiscourseDialog.new()
-	var uuid_translator: Dictionary[StringName, StringName] = {}
+	var uuid_translator: Dictionary[String, StringName] = {} # UUID / Release ID name
 	
-	release_dialog.entry_node = node_data[entry_node]["name"] if node_data.has(entry_node) else &""
-	
-	#var new_id_map: Dictionary[StringName, StringName] = {}
+	if node_data.has(entry_node_uuid) and node_data[entry_node_uuid].has("name"):
+		var node_id: String = node_data[entry_node_uuid]["name"]
+		if not node_id.is_empty():
+			release_dialog.entry_node = StringName(node_id)
+	elif entry_node_uuid.is_empty():
+		NFPluginGameHandler._log_msg(
+				"export - dialog",
+				"Dialogue resource has no entry node ID: " + resource_path,
+				NFPluginGameHandler._LogLevel.WARNING)
+	else:
+		NFPluginGameHandler._log_msg(
+				"export - dialog",
+				("Attempted to set starting ID but node '%s' was not found: " % entry_node_uuid) + resource_path,
+				NFPluginGameHandler._LogLevel.WARNING)
 	
 	# UUID(Anchor pointer): UUID(Anchor Target)
 	# Example "123"(anchor pointer uuid) -> "456"(Anchor) -> "789"(Anchor connection)
 	# anchor_nodes["123"] = "789"
 	# This is to skip the anchor nodes as they are only a visual helper for the editor
 	# on the release files, anchor nodes have no use.
-	var anchor_nodes: Dictionary[StringName, StringName] = {}
+	var anchor_nodes: Dictionary[String, String] = {}
 	
-	# UUID(merger_id): UUID(merger_next_node)
-	var dialog_mergers: Dictionary[StringName, StringName] = {}
+	# NFUUID(merger_id): NFUUID(merger_next_node)
+	var dialog_mergers: Dictionary[String, String] = {}
 	
 	var target_finder: RefCounted = preload("res://addons/nexus_forge/discourse/exporter_target.gd").new()
 	
-	var node_uuids: Array[StringName] = []
-	node_uuids.assign(node_data.keys())
-	
-	for node_uuid in node_uuids:
+	for node_uuid in node_data:
 		var metadata: Dictionary = node_data[node_uuid]["metadata"]
-		uuid_translator[node_uuid] = node_data[node_uuid]["name"]
+		uuid_translator[node_uuid] = StringName(node_data[node_uuid]["name"])
 		if node_data[node_uuid]["type"] == NodeType.SHORTCUT_IN:
-			var target_node: StringName = &""
+			var target_node: String = ""
 			if not metadata["anchor_target"].is_empty():
 				target_node = node_data[metadata["anchor_target"]]["output_connections"]["next_node"]["target_node_uuid"]
 			anchor_nodes[node_uuid] = target_node
 		elif node_data[node_uuid]["type"] == NodeType.DIALOG_MERGE:
-			var target_node: StringName = &""
+			var target_node: String = ""
 			if not node_data[node_uuid]["output_connections"]["next_node"]["target_node_uuid"].is_empty():
-				target_node = StringName(node_data[node_uuid]["output_connections"]["next_node"]["target_node_uuid"])
+				target_node = node_data[node_uuid]["output_connections"]["next_node"]["target_node_uuid"]
 			dialog_mergers[node_uuid] = target_node
 		else:
 			continue
@@ -643,11 +839,10 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 	target_finder.dialog_mergers.assign(dialog_mergers)
 	target_finder.uuid_to_id_conversions.assign(uuid_translator)
 	
-	for node_id in node_uuids:
+	for node_id in node_data:
 		var export_data: Dictionary[String, Variant] = {
 			"node_type": node_data[node_id]["type"]}
 		var metadata: Dictionary = node_data[node_id]["metadata"]
-		var node_name: StringName = node_data[node_id]["name"]
 		
 		match node_data[node_id]["type"]:
 			NodeType.ENTRY:
@@ -661,51 +856,53 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 					"font_resource": &"",
 					"dialog_scene": &"",
 					"dialog_speed": &"",
-					"metadata": {}}
+					"metadata": NFDictUtils.create_typed(TYPE_STRING, TYPE_NIL)}
 				
 				if not node_data[node_id]["input_connections"]["character_settings"]["target_node_uuid"].is_empty():
 					var character_settings_data: Dictionary = node_data[node_data[node_id]["input_connections"]["character_settings"]["target_node_uuid"]]
 					
 					if not character_settings_data["input_connections"]["display_name"]["target_node_uuid"].is_empty():
-						character_settings["display_name"] = StringName(character_settings_data["input_connections"]["display_name"]["target_node_uuid"])
+						character_settings["display_name"] = target_finder.get_target(character_settings_data["input_connections"]["display_name"]["target_node_uuid"])
 					
 					if not character_settings_data["input_connections"]["portrait_id"]["target_node_uuid"].is_empty():
-						character_settings["portrait_id_node"] = StringName(character_settings_data["input_connections"]["display_name"]["target_node_uuid"])
+						character_settings["portrait_id"] = target_finder.get_target(character_settings_data["input_connections"]["portrait_id"]["target_node_uuid"])
 				
 				if not node_data[node_id]["input_connections"]["dialog_settings"]["target_node_uuid"].is_empty():
 					var dialog_settings_data: Dictionary = node_data[node_data[node_id]["input_connections"]["dialog_settings"]["target_node_uuid"]]
 					
 					if not dialog_settings_data["input_connections"]["font_resource"]["target_node_uuid"].is_empty():
-						dialog_settings["font_resource"] = StringName(dialog_settings_data["input_connections"]["font_resource"]["target_node_uuid"])
+						dialog_settings["font_resource"] = target_finder.get_target(dialog_settings_data["input_connections"]["font_resource"]["target_node_uuid"])
 					
 					if not dialog_settings_data["input_connections"]["dialog_scene"]["target_node_uuid"].is_empty():
-						dialog_settings["dialog_scene"] = StringName(dialog_settings_data["input_connections"]["dialog_scene"]["target_node_uuid"])
+						dialog_settings["dialog_scene"] = target_finder.get_target(dialog_settings_data["input_connections"]["dialog_scene"]["target_node_uuid"])
 					
 					if not dialog_settings_data["input_connections"]["dialog_speed"]["target_node_uuid"].is_empty():
-						dialog_settings["dialog_speed"] = StringName(dialog_settings_data["input_connections"]["dialog_speed"]["target_node_uuid"])
+						dialog_settings["dialog_speed"] = target_finder.get_target(dialog_settings_data["input_connections"]["dialog_speed"]["target_node_uuid"])
 				
 					if not dialog_settings_data["input_connections"]["metadata"]["target_node_uuid"].is_empty():
 						var dialog_metadata_node: Dictionary = node_data[dialog_settings_data["input_connections"]["metadata"]["target_node_uuid"]]
 						var dialog_metadata: Dictionary = dialog_metadata_node["metadata"]
 						for meta_field in dialog_metadata["metadata_connections"]:
 							if not dialog_metadata_node["input_connections"].has(meta_field["id"]):
-								push_error(
-									"[DISCOURSE] Metadata node ", dialog_metadata_node["name"], " on file ", resource_path, " registered metadata with ID ", meta_field["id"], " on port ", meta_field["port"], " but the port isn't available. Setting to null.")
-								dialog_metadata["metadata"][meta_field["id"]] = null
+								NFPluginGameHandler._log_msg(
+										"export - dialog",
+										"Metadata node '%s' on file '%s' registered metadata with ID '%s' on port %d but the port isn't available. Setting to empty." % [dialog_metadata_node["name"], resource_path, meta_field["id"], meta_field["port"]],
+										NFPluginGameHandler._LogLevel.ERROR)
+								dialog_settings["metadata"][meta_field["id"]] = &""
 							else:
-								dialog_settings["metadata"][meta_field["id"]] = dialog_metadata_node["input_connections"][meta_field["id"]]["target_node_uuid"]
+								dialog_settings["metadata"][meta_field["id"]] = target_finder.get_target(dialog_metadata_node["input_connections"][meta_field["id"]]["target_node_uuid"])
 				
-				export_data["character_id"] = metadata["character_id"]
+				export_data["character_id"] = StringName(metadata["character_id"])
 				export_data["persist"] = metadata["persist"]
 				export_data["character_settings"] = character_settings
 				export_data["dialog_settings"] = dialog_settings
-				export_data["text_source"] = StringName(node_data[node_id]["input_connections"]["dialog_text_source"]["target_node_uuid"])
+				export_data["text_source"] = target_finder.get_target(node_data[node_id]["input_connections"]["dialog_text_source"]["target_node_uuid"])
 				export_data["next_node"] = target_finder.get_target(node_data[node_id]["output_connections"]["next_node"]["target_node_uuid"])
 			NodeType.CHOICES:
 				var options: Array[Dictionary] = []
 				for option:Dictionary in metadata["choices"]:
 					var new_option: Dictionary[String, Variant] = {
-						"next_node": target_finder.get_target(StringName(option["output_connections"]["next_node"]["target_node_uuid"])),
+						"next_node": target_finder.get_target(option["output_connections"]["next_node"]["target_node_uuid"]),
 						"settings": {
 							"available": &"",
 							"unlocked": &"",
@@ -715,64 +912,76 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 					if not option["input_connections"]["settings"]["target_node_uuid"].is_empty():
 						var option_settings: Dictionary = node_data[option["input_connections"]["settings"]["target_node_uuid"]]
 						if not option_settings["input_connections"]["option_available"]["target_node_uuid"].is_empty():
-							new_option["settings"]["available"] = StringName(option_settings["input_connections"]["option_available"]["target_node_uuid"])
+							new_option["settings"]["available"] = target_finder.get_target(option_settings["input_connections"]["option_available"]["target_node_uuid"])
 						
 						if not option_settings["input_connections"]["option_unlocked"]["target_node_uuid"].is_empty():
-							new_option["settings"]["unlocked"] = StringName(option_settings["input_connections"]["option_unlocked"]["target_node_uuid"])
+							new_option["settings"]["unlocked"] = target_finder.get_target(option_settings["input_connections"]["option_unlocked"]["target_node_uuid"])
 		
 						if not option_settings["input_connections"]["locked_hint"]["target_node_uuid"].is_empty():
-							new_option["settings"]["lock_hint"] = StringName(option_settings["input_connections"]["locked_hint"]["target_node_uuid"])
+							new_option["settings"]["lock_hint"] = target_finder.get_target(option_settings["input_connections"]["locked_hint"]["target_node_uuid"])
 					
 						if not option_settings["input_connections"]["metadata"]["target_node_uuid"].is_empty():
 							var dialog_metadata_node: Dictionary = node_data[option_settings["input_connections"]["metadata"]["target_node_uuid"]]
 							var dialog_metadata: Dictionary = dialog_metadata_node["metadata"]
-							for meta_field in dialog_metadata:
+							for meta_field in dialog_metadata["metadata_connections"]: 
 								if not dialog_metadata_node["input_connections"].has(meta_field["id"]):
-									push_error(
-										"[DISCOURSE] Metadata node ", dialog_metadata_node["name"], " on file ", resource_path, " registered metadata with ID ", meta_field["id"], " on port ", meta_field["port"], " but the port isn't available. Setting to null.")
-									new_option["metadata"][meta_field["id"]] = null
+									NFPluginGameHandler._log_msg(
+											"export - dialog",
+											"Metadata node '%s' on file '%s' registered metadata with ID '%s' on port %d but the port isn't available. Setting to empty." % [dialog_metadata_node["name"], resource_path, meta_field["id"], meta_field["port"]],
+											NFPluginGameHandler._LogLevel.ERROR)
+									new_option["settings"]["metadata"][meta_field["id"]] = &"" 
 								else:
-									new_option["metadata"][meta_field["id"]] = dialog_metadata_node["input_connections"][meta_field["id"]]["target_node_uuid"]
+									new_option["settings"]["metadata"][meta_field["id"]] = target_finder.get_target(dialog_metadata_node["input_connections"][meta_field["id"]]["target_node_uuid"])
 					
 					options.append(new_option)
 				export_data["choices"] = options
 			NodeType.BRANCH:
-				export_data["result"] = StringName(node_data[node_id]["input_connections"]["path_direction"]["target_node_uuid"])
-				export_data["case_true"] = target_finder.get_target(StringName(node_data[node_id]["output_connections"]["next_node_true"]["target_node_uuid"]))
-				export_data["case_false"] = target_finder.get_target(StringName(node_data[node_id]["output_connections"]["next_node_false"]["target_node_uuid"]))
+				export_data["result"] = target_finder.get_target(node_data[node_id]["input_connections"]["path_direction"]["target_node_uuid"])
+				export_data["case_true"] = target_finder.get_target(node_data[node_id]["output_connections"]["next_node_true"]["target_node_uuid"])
+				export_data["case_false"] = target_finder.get_target(node_data[node_id]["output_connections"]["next_node_false"]["target_node_uuid"])
 			NodeType.CONDITION_SELECT:
-				export_data["result"] = StringName(node_data[node_id]["input_connections"]["result"]["target_node_uuid"])
-				export_data["true_value"] = target_finder.get_target(StringName(node_data[node_id]["input_connections"]["true_value"]["target_node_uuid"]))
-				export_data["false_value"] = target_finder.get_target(StringName(node_data[node_id]["input_connections"]["false_value"]["target_node_uuid"]))
+				export_data["result"] = target_finder.get_target(node_data[node_id]["input_connections"]["result"]["target_node_uuid"])
+				export_data["true_value"] = target_finder.get_target(node_data[node_id]["input_connections"]["true_value"]["target_node_uuid"])
+				export_data["false_value"] = target_finder.get_target(node_data[node_id]["input_connections"]["false_value"]["target_node_uuid"])
 			NodeType.COMPARATION:
 				export_data["operator"] = metadata["operator"]
-				export_data["value_a"] = StringName(node_data[node_id]["input_connections"]["node_a"]["target_node_uuid"])
-				export_data["value_b"] = StringName(node_data[node_id]["input_connections"]["node_b"]["target_node_uuid"])
+				export_data["value_a"] = target_finder.get_target(node_data[node_id]["input_connections"]["node_a"]["target_node_uuid"])
+				export_data["value_b"] = target_finder.get_target(node_data[node_id]["input_connections"]["node_b"]["target_node_uuid"])
 			NodeType.EVENT:
-				var var_val: StringName = StringName(node_data[node_id]["input_connections"]["variable_value"]["target_node_uuid"])
-				export_data["value"] = var_val
+				var var_val: String = node_data[node_id]["input_connections"]["variable_value"]["target_node_uuid"]
+				export_data["value"] = target_finder.get_target(var_val)
 				
 				if not node_data[node_id]["input_connections"]["callable"]["target_node_uuid"].is_empty():
-					var callable_uuid: StringName = node_data[node_id]["input_connections"]["callable"]["target_node_uuid"]
+					var callable_uuid: String = node_data[node_id]["input_connections"]["callable"]["target_node_uuid"]
 					if available_methods.has(node_data[callable_uuid]["metadata"]["method"]):
-						export_data["callable"] = StringName(node_data[node_id]["input_connections"]["callable"]["target_node_uuid"])
+						export_data["callable"] = target_finder.get_target(callable_uuid)
 					else:
 						export_data["callable"] = &""
-						printerr("[DISCOURSE] Warning: Issue when exporting ", resource_path, ". Event ", node_data[node_id]["name"], " calls an inexistent method.")
+						NFPluginGameHandler._log_msg(
+								"export - dialog",
+								"[DISCOURSE] Warning: Issue when exporting %s. Event %s calls an inexistent method." % [
+									resource_path,
+									node_data[node_id]["name"]],
+								NFPluginGameHandler._LogLevel.ERROR)
 				else:
 					export_data["callable"] = &""
 				
 				if not node_data[node_id]["input_connections"]["signal"]["target_node_uuid"].is_empty():
-					var signal_uuid: StringName = node_data[node_id]["input_connections"]["signal"]["target_node_uuid"]
+					var signal_uuid: String = node_data[node_id]["input_connections"]["signal"]["target_node_uuid"]
 					if available_signals.has(node_data[signal_uuid]["metadata"]["signal"]):
-						export_data["signal"] = StringName(node_data[node_id]["input_connections"]["signal"]["target_node_uuid"])
+						export_data["signal"] = target_finder.get_target(signal_uuid)
 					else:
 						export_data["signal"] = &""
-						printerr("[DISCOURSE] Warning: Issue when exporting ", resource_path, ". Event ", node_data[node_id]["name"], " emits an inexistent signal.")
+						NFPluginGameHandler._log_msg(
+								"export - dialog",
+								"[DISCOURSE] Warning: Issue when exporting %s. Event %s emits an inexistent signal." % [
+									resource_path,
+									node_data[node_id]["name"]],
+								NFPluginGameHandler._LogLevel.ERROR)
 				else:
 					export_data["signal"] = &""
 				
-				export_data["next_node"] = target_finder.get_target(StringName(node_data[node_id]["output_connections"]["next_node"]["target_node_uuid"]))
+				export_data["next_node"] = target_finder.get_target(node_data[node_id]["output_connections"]["next_node"]["target_node_uuid"])
 				
 				if var_val.is_empty():
 					export_data["variable_path"] = ""
@@ -785,31 +994,36 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 				for case:Dictionary in metadata["cases"]:
 					var new_case: Dictionary[String, Variant] = {}
 					new_case["value"] = case["value"]
-					new_case["next_node"] = target_finder.get_target(StringName(case["output_connections"]["next_node"]["target_node_uuid"]))
+					new_case["next_node"] = target_finder.get_target(case["output_connections"]["next_node"]["target_node_uuid"])
+					cases.append(new_case)
 				
-				export_data["case_default"] = target_finder.get_target(StringName(node_data[node_id]["output_connections"]["default"]["target_node_uuid"]))
-				export_data["match_value"] = StringName(node_data[node_id]["input_connections"]["match_value_source"]["target_node_uuid"])
+				export_data["case_default"] = target_finder.get_target(node_data[node_id]["output_connections"]["default"]["target_node_uuid"])
+				export_data["match_value"] = target_finder.get_target(node_data[node_id]["input_connections"]["match_value_source"]["target_node_uuid"])
 				export_data["cases"] = cases
 			NodeType.PAUSE:
-				export_data["next_node"] = target_finder.get_target(StringName(node_data[node_id]["output_connections"]["next_node"]["target_node_uuid"]))
+				export_data["next_node"] = target_finder.get_target(node_data[node_id]["output_connections"]["next_node"]["target_node_uuid"])
 			NodeType.RANDOM:
 				var options: Array[Dictionary] = []
 				
 				for option:Dictionary in metadata["options"]:
 					var new_option: Dictionary[String, StringName] = {}
-					new_option["target"] = target_finder.get_target(StringName(option["output_connections"]["next_node"]["target_node_uuid"]))
-					new_option["weight_override"] = StringName(option["input_connections"]["weight"]["target_node_uuid"])
+					new_option["target"] = target_finder.get_target(option["output_connections"]["next_node"]["target_node_uuid"])
+					new_option["weight_override"] = target_finder.get_target(option["input_connections"]["weight"]["target_node_uuid"])
 					options.append(new_option)
 				
-				export_data["weight_override"] = StringName(node_data[node_id]["input_connections"]["default_weight"]["target_node_uuid"])
+				export_data["weight_override"] = target_finder.get_target(node_data[node_id]["input_connections"]["default_weight"]["target_node_uuid"])
 				export_data["choices"] = options
 			NodeType.TYPE_GUARD:
-				export_data["value"] = StringName(node_data[node_id]["input_connections"]["value"]["target_node_uuid"])
+				export_data["value"] = target_finder.get_target(node_data[node_id]["input_connections"]["value"]["target_node_uuid"])
 				export_data["fallback"] = metadata["fallback_value"]
 			NodeType.SIGNAL:
 				var arguments: Array[StringName] = []
 				for argument:Dictionary in metadata["arguments"]:
-					arguments.append(StringName(argument["target_node_uuid"]))
+					var target_uuid: String = argument["target_node_uuid"]
+					if not target_uuid.is_empty():
+						arguments.append(target_finder.get_target(target_uuid))
+					else:
+						arguments.append(&"")
 				export_data["signal"] = StringName(metadata["signal"])
 				export_data["arguments"] = arguments
 			NodeType.CALLABLE:
@@ -819,8 +1033,10 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 					var default_args_size: int = 0
 					
 					if not api_methods.has(method_id):
-						push_error(
-								"[DISCOURSE] Callable node ", node_data[node_id]["name"], " on file ", resource_path, " calls for inexisting method: ", method_id)
+						NFPluginGameHandler._log_msg(
+								"export - dialog",
+								"Callable node '%s' on file '%s' calls for an inexisting method '%s'" % [node_data[node_id]["name"], resource_path, method_id],
+								NFPluginGameHandler._LogLevel.ERROR)
 					else:
 						default_args_size = api_methods[method_id]["default_args"].size()
 					
@@ -829,29 +1045,41 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 					var skipped_previous: bool = false
 					for argument:Dictionary in metadata["arguments"]:
 						arg_idx += 1
-						arguments.append(StringName(argument["target_node_uuid"]))
-						if not argument["target_node_uuid"].is_empty():
+						var t_uuid: String = argument["target_node_uuid"]
+						
+						if not t_uuid.is_empty():
+							arguments.append(target_finder.get_target(t_uuid))
 							if skipped_previous:
-								push_error(
-									"[DISCOURSE] Callable node ", node_data[node_id]["name"], " on file ", resource_path, " passed an argument on index ", arg_idx, " but a previous index doesn't have a value.")
+								NFPluginGameHandler._log_msg(
+										"export - dialog",
+										"Callable node '%s' on file '%s' passed an argument on index %d but a previous index doesn't have a value." % [node_data[node_id]["name"], resource_path, arg_idx],
+										NFPluginGameHandler._LogLevel.ERROR)
 						else:
+							arguments.append(&"")
 							skipped_previous = true
 							if default_args_size <= arg_idx:
-								push_error(
-									"[DISCOURSE] Callable node ", node_data[node_id]["name"], " on file ", resource_path, " is missing a required argument value on index ", arg_idx)
+								NFPluginGameHandler._log_msg(
+										"export - dialog",
+										"Callable node '%s' on file '%s' is missing a required argument value on index %d" % [node_data[node_id]["name"], resource_path, arg_idx],
+										NFPluginGameHandler._LogLevel.ERROR)
 					export_data["method"] = method_id
 					export_data["arguments"] = arguments
 				else:
 					export_data["method"] = &""
-					export_data["arguments"] = ArrayUtils.create_typed(TYPE_STRING_NAME)
+					export_data["arguments"] = NFArrayUtils.create_typed(TYPE_STRING_NAME)
 			NodeType.CALLABLE_RETURN:
 				var method_id: StringName = StringName(metadata["method"])
 				if not method_id.is_empty():
 					var default_args_size: int = 0
 					
 					if not api_methods.has(method_id):
-						push_error(
-								"[DISCOURSE] Callable node ", node_data[node_id]["name"], " on file ", resource_path, " calls for inexisting method: ", method_id)
+						NFPluginGameHandler._log_msg(
+								"export - dialog",
+								"[DISCOURSE] Callable node '%s' on file '%s' calls for inexisting method '%s'" % [
+									node_data[node_id]["name"],
+									resource_path,
+									method_id],
+								NFPluginGameHandler._LogLevel.ERROR)
 					else:
 						default_args_size = api_methods[method_id]["default_args"].size()
 					
@@ -860,62 +1088,87 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 					var skipped_previous: bool = false
 					for argument:Dictionary in metadata["arguments"]:
 						arg_idx += 1
-						arguments.append(StringName(argument["target_node_uuid"]))
+						var t_uuid: String = argument["target_node_uuid"]
 						if not argument["target_node_uuid"].is_empty():
+							arguments.append(target_finder.get_target(t_uuid))
 							if skipped_previous:
-								push_error(
-									"[DISCOURSE] Callable node ", node_data[node_id]["name"], " on file ", resource_path, " passed an argument on index ", arg_idx, " but a previous index doesn't have a value.")
+								NFPluginGameHandler._log_msg(
+										"export - dialog",
+										"[DISCOURSE] Callable node '%s' on file '%s' passed an argument on index %d but a previous index doesn't have a value." % [
+											node_data[node_id]["name"],
+											resource_path,
+											arg_idx],
+										NFPluginGameHandler._LogLevel.ERROR)
 						else:
+							arguments.append(&"")
 							skipped_previous = true
 							if default_args_size <= arg_idx:
-								push_error(
-									"[DISCOURSE] Callable node ", node_data[node_id]["name"], " on file ", resource_path, " is missing a required argument value on index ", arg_idx)
+								NFPluginGameHandler._log_msg(
+										"export - dialog",
+										"[DISCOURSE] Callable node '%s' on file '%s' is missing a required argument value on index %d" % [
+											node_data[node_id]["name"],
+											resource_path,
+											arg_idx],
+										NFPluginGameHandler._LogLevel.ERROR)
 					export_data["method"] = method_id
 					export_data["arguments"] = arguments
 				else:
 					export_data["method"] = &""
-					export_data["arguments"] = ArrayUtils.create_typed(TYPE_STRING_NAME)
+					export_data["arguments"] = NFArrayUtils.create_typed(TYPE_STRING_NAME)
 			NodeType.VARIABLE_GET:
 				var meta_path: String = ""
 				if metadata.has("variable_path"):
 					meta_path = metadata["variable_path"].strip_edges().simplify_path()
 				else:
-					push_warning("[DISCOURSE] Node ", node_data[node_id]["name"], " has missing Blackboard data path. Using empty path instead")
+					NFPluginGameHandler._log_msg(
+							"export - dialog",
+							"[DISCOURSE] Node %s has missing Blackboard data path. Using empty path instead" % node_data[node_id]["name"],
+							NFPluginGameHandler._LogLevel.WARNING)
 				
 				export_data["path"] = meta_path
 			NodeType.RANDOM_VALUE:
 				export_data["random_type"] = metadata["mode"]
 				export_data["min_value"] = metadata["values"]["base"]
 				export_data["max_value"] = metadata["values"]["max"]
-				export_data["min_override"] = StringName(node_data[node_id]["input_connections"]["base_value"]["target_node_uuid"])
-				export_data["max_override"] = StringName(node_data[node_id]["input_connections"]["max_value"]["target_node_uuid"])
+				export_data["min_override"] = target_finder.get_target(node_data[node_id]["input_connections"]["base_value"]["target_node_uuid"])
+				export_data["max_override"] = target_finder.get_target(node_data[node_id]["input_connections"]["max_value"]["target_node_uuid"])
 			NodeType.RESOURCE:
-				export_data["path"] = metadata["resource_path"]
+				export_data["resource_path"] = metadata["resource_path"]
 			NodeType.DATA_EVENT:
-				var var_val: StringName = StringName(node_data[node_id]["input_connections"]["variable_value"]["target_node_uuid"])
-				export_data["value"] = var_val
+				var var_val: String = node_data[node_id]["input_connections"]["variable_value"]["target_node_uuid"]
+				export_data["value"] = target_finder.get_target(var_val)
 				
 				if not node_data[node_id]["input_connections"]["callable"]["target_node_uuid"].is_empty():
-					var callable_uuid: StringName = node_data[node_id]["input_connections"]["callable"]["target_node_uuid"]
+					var callable_uuid: String = node_data[node_id]["input_connections"]["callable"]["target_node_uuid"]
 					if available_methods.has(node_data[callable_uuid]["metadata"]["method"]):
-						export_data["callable"] = StringName(node_data[node_id]["input_connections"]["callable"]["target_node_uuid"])
+						export_data["callable"] = target_finder.get_target(callable_uuid)
 					else:
 						export_data["callable"] = &""
-						printerr("[DISCOURSE] Warning: Issue when exporting ", resource_path, ". Data event ", node_data[node_id]["name"], " calls an inexistent method.")
+						NFPluginGameHandler._log_msg(
+								"export - dialog",
+								"[DISCOURSE] Warning: Issue when exporting %s. Data event %s calls an inexistent method." % [
+									resource_path,
+									node_data[node_id]["name"]],
+								NFPluginGameHandler._LogLevel.ERROR)
 				else:
 					export_data["callable"] = &""
 				
 				if not node_data[node_id]["input_connections"]["signal"]["target_node_uuid"].is_empty():
-					var signal_uuid: StringName = node_data[node_id]["input_connections"]["signal"]["target_node_uuid"]
+					var signal_uuid: String = node_data[node_id]["input_connections"]["signal"]["target_node_uuid"]
 					if available_signals.has(node_data[signal_uuid]["metadata"]["signal"]):
-						export_data["signal"] = StringName(node_data[node_id]["input_connections"]["signal"]["target_node_uuid"])
+						export_data["signal"] = target_finder.get_target(signal_uuid)
 					else:
 						export_data["signal"] = &""
-						printerr("[DISCOURSE] Warning: Issue when exporting ", resource_path, ". Data event ", node_data[node_id]["name"], " emits an inexistent signal.")
+						NFPluginGameHandler._log_msg(
+								"export - dialog",
+								"[DISCOURSE] Warning: Issue when exporting %s. Data event %s emits an inexistent signal." % [
+									resource_path,
+									node_data[node_id]["name"]],
+								NFPluginGameHandler._LogLevel.ERROR)
 				else:
 					export_data["signal"] = &""
 				
-				export_data["data_source"] = StringName(node_data[node_id]["input_connections"]["data_input"]["target_node_uuid"])
+				export_data["data_source"] = target_finder.get_target(node_data[node_id]["input_connections"]["data_input"]["target_node_uuid"])
 				if var_val.is_empty():
 					export_data["variable_path"] = ""
 				else:
@@ -929,13 +1182,14 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 			NodeType.VALUE:
 				export_data["value"] = metadata["value"]
 			NodeType.TRAVEL_TO:
-				export_data["travel_target"] = target_finder.get_target(StringName(metadata["travel_target"]))
-				export_data["next_node"] = target_finder.get_target(StringName(node_data[node_id]["output_connections"]["next_node"]["target_node_uuid"]))
+				export_data["travel_target"] = target_finder.get_target(metadata["travel_target"])
+				export_data["next_node"] = target_finder.get_target(node_data[node_id]["output_connections"]["next_node"]["target_node_uuid"])
 			NodeType.TRAVEL_TARGET:
-				export_data["next_node"] = target_finder.get_target(StringName(node_data[node_id]["output_connections"]["next_node"]["target_node_uuid"]))
+				export_data["next_node"] = target_finder.get_target(node_data[node_id]["output_connections"]["next_node"]["target_node_uuid"])
 			_:
 				pass
-	
+		
+		release_dialog.node_logic[uuid_translator[node_id]] = export_data
 	return release_dialog
 
 
@@ -944,20 +1198,23 @@ func convert_for_release(api_methods: Dictionary[StringName, Dictionary]) -> Dis
 func generate_localization_files(localization_id: String, base_path: String, filename: String, localization_groups: Dictionary = {}) -> Array[Dictionary]:
 	# Should never be the case, but just in case
 	if resource_path.is_empty():
-		push_error("[DISCOURSE - EXPORT ERROR] Tried to generate localization of a file with no path.")
+		NFPluginGameHandler._log_msg(
+				"export - dialog",
+				"Tried to generate localization of a file with no path.",
+				NFPluginGameHandler._LogLevel.WARNING)
 		return []
 	
 	var new_files: Array[Dictionary] = []
 	#var md5_hash: String = resource_path.to_lower().md5_text().substr(0, 12)
 	var md5_fragment: String = filename.substr(0, 2)
 	var used_locales: Dictionary[String, Variant] = {}
-	
+		
 	# Given how Discourse works, there is ALWAYS a base language.
 	for language in locale_map.keys():
-		var lang_key: String = TranslationServer.standardize_locale(language)
+		var lang_key: String = TranslationServer.standardize_locale(language.to_lower())
 		if lang_key.is_empty():
 			continue
-		var lang_path: String = StringUtils.make_path(
+		var lang_path: String = NFStringUtils.make_path(
 				[base_path,
 				lang_key,
 				md5_fragment,
@@ -972,12 +1229,12 @@ func generate_localization_files(localization_id: String, base_path: String, fil
 			new_files.append({
 				"file": lang_file,
 				"path": lang_path})
-		elif DictUtils.has_nested_path(localization_groups, [locale_group, lang_key]):
+		elif localization_groups.get(locale_group, NFDictUtils.EMPTY).has(lang_key):
 			lang_file = localization_groups[locale_group][lang_key]
 		else:
 			lang_file = DiscourseDialogLocale.new()
 			lang_file.locale = lang_key
-			DictUtils.set_nested_value(
+			NFDictUtils.set_nested_value(
 						localization_groups,
 						[locale_group, lang_key],
 						lang_file)
@@ -990,20 +1247,20 @@ func generate_localization_files(localization_id: String, base_path: String, fil
 		used_locales[lang_key] = null
 		
 		for region_code in locale_map[lang_key].keys():
-			var locale_key: String = TranslationServer.standardize_locale(lang_key + "_" + region_code)
+			var locale_key: String = TranslationServer.standardize_locale(lang_key + "_" + region_code.to_upper())
 			if locale_key.is_empty():
 				continue
 			
 			var lang_locale_file: DiscourseDialogLocale = null
-			var locale_path: String = StringUtils.make_path([
+			var locale_path: String = NFStringUtils.make_path([
 				base_path, locale_key, md5_fragment, filename])
 			
-			if DictUtils.has_nested_path(localization_groups, [locale_group, locale_key]):
+			if not locale_group.is_empty() and NFDictUtils.has_nested_path(localization_groups, [locale_group, locale_key]):
 				lang_locale_file = localization_groups[locale_group][locale_key]
 			else:
 				lang_locale_file = DiscourseDialogLocale.new()
 				lang_locale_file.locale = locale_key
-				DictUtils.set_nested_value(
+				NFDictUtils.set_nested_value(
 						localization_groups,
 						[locale_group, locale_key],
 						lang_locale_file)
@@ -1020,41 +1277,56 @@ func generate_localization_files(localization_id: String, base_path: String, fil
 	var extra_data_warned: bool = false
 	
 	for localization_key in localization.keys():
-		var localization_locales = DictUtils.get_nested_value(localization, [localization_key, "locales"], {})
+		if not node_data.has(localization_key) or not NFDictUtils.get_nested_value(node_data[localization_key], ["metadata", "localized"], false, true):
+			continue
+		
+		var localization_locales = NFDictUtils.get_nested_value(localization, [localization_key, "locales"], {})
 		if typeof(localization_locales) != TYPE_DICTIONARY:
 			continue
 		var localization_keys = localization_locales.keys()
 		
 		if not used_locales.has_all(localization_keys):
-			push_warning("Used locales: %s, existing locales: %s" % [used_locales.keys(), localization_keys] )
-			#push_warning(
-				#"[DISCOUSE] File contains more localization data than is being exported: " + resource_path + "\n. Verify locale map.")
+			var extra_locales: Array = localization_keys.duplicate()
+			NFArrayUtils.subtract_array(extra_locales, used_locales.keys())
+			NFPluginGameHandler._log_msg(
+					"export - dialog",
+					"Localization data of file '%s' contains more localization data than the resource is set for.\nExtra locales: %s" % [resource_path, str(extra_locales)],
+					NFPluginGameHandler._LogLevel.WARNING)
 			extra_data_warned = true
 			break
 	
 	if extra_data_warned:
 		return new_files
 	
-	for string_key in format_strings.keys():
+	for string_key in format_strings:
 		var used_string_locales = format_strings[string_key].keys()
 		if not used_locales.has_all(used_string_locales):
-			push_warning("Used locales: %s, existing locales: %s" % [used_locales.keys(), used_string_locales] )
-			#push_warning(
-				#"[DISCOUSE] File contains more localization data than is being exported: " + resource_path + "\n. Verify locale map.")
+			var extra_locales: Array = used_string_locales.duplicate()
+			NFArrayUtils.subtract_array(extra_locales, used_locales.keys())
+			NFPluginGameHandler._log_msg(
+					"export - dialog",
+					"Localization data of file '%s' contains more localization data than the resource is set for.\nExtra locales: %s" % [resource_path, extra_locales],
+					NFPluginGameHandler._LogLevel.WARNING)
 			break
 	
 	return new_files
 
 
 func _add_locale_data(file: DiscourseDialogLocale, localization_id: String, locale: String) -> void:
+	var missing_text: String = "" # Leaving empty is good. As data invalidation is performed at runtime.
+	var e: Dictionary = NFDictUtils.EMPTY
+	
 	for node_uuid in localization.keys():
 		if not node_data.has(node_uuid):
-			push_warning("[DISCOURSE] Orphaned localization with ID '%s'. Skipping." % node_uuid)
+			NFPluginGameHandler._log_msg(
+					"export - dialog",
+					"Orphaned localization with ID '%s'. Skipping." % node_uuid,
+					NFPluginGameHandler._LogLevel.WARNING)
 			continue
 		
-		var nodeid: StringName = node_data[node_uuid]["name"]
+		var nodeid: String = node_data[node_uuid]["name"]
 		var data = localization[node_uuid]
-		var localized: bool = DictUtils.get_nested_value(
+		var localized: bool = NFDictUtils.get_nested_value(
 				node_data,
 				[node_uuid, "metadata", "localized"],
 				false,
@@ -1066,47 +1338,93 @@ func _add_locale_data(file: DiscourseDialogLocale, localization_id: String, loca
 		if type_mismatch or not data_complete:
 			var type: int = node_data[node_uuid]["type"]
 			if not data_complete:
-				push_error(
-						"[DISCOURSE] Incomplete or corrupt data for node with UID '%s' " % node_uuid)
+				NFPluginGameHandler._log_msg(
+						"export - dialog",
+						"Incomplete or corrupt data for node with UID '%s' " % node_uuid,
+						NFPluginGameHandler._LogLevel.ERROR)
 			if type_mismatch:
-				push_error(
-						"[DISCOURSE] Type mismatch for node & localization with UID '%s' of file %s" % [node_uuid, resource_path])
+				NFPluginGameHandler._log_msg(
+						"export - dialog",
+						"Type mismatch for node & localization with UID '%s' of file %s" % [node_uuid, resource_path],
+						NFPluginGameHandler._LogLevel.ERROR)
 			
-			push_warning("[DISCOURSE] Patching data with placeholder entries.")
+			NFPluginGameHandler._log_msg(
+					"export - dialog",
+					"Patching data with placeholder entries.",
+					NFPluginGameHandler._LogLevel.WARNING)
 			
 			if type == NodeType.DIALOG or type == NodeType.LOCALIZED_TEXT:
-				DictUtils.set_nested_value(
-					file.localization,
-					[localization_id, nodeid, "dialog"],
-					"",
-					true)
+				if not file.localization.has(localization_id):
+					file.localization[localization_id] = NFDictUtils.create_typed(TYPE_STRING_NAME, TYPE_DICTIONARY)
+				var loc_dict: Dictionary = file.localization[localization_id]
+				
+				if not loc_dict.has(nodeid):
+					loc_dict[nodeid] = NFDictUtils.create_typed(TYPE_STRING, TYPE_STRING)
+				var dialog_dict: Dictionary = loc_dict[nodeid]
+				
+				dialog_dict["dialog"] = missing_text
 			elif type == NodeType.CHOICES:
 				var choice_size: int = node_data[node_uuid]["metadata"]["choices"].size()
 				var choices: PackedStringArray = []
 				choices.resize(choice_size)
 				for idx in range(choice_size):
-					choices[idx] = "[MISSING LOCALIZATION DATA]"
-				DictUtils.set_nested_value(
-						file.localization,
-						[localization_id, nodeid, "choices"],
-						choices,
-						true)
+					choices[idx] = missing_text
+				
+				if not file.localization.has(localization_id):
+					file.localization[localization_id] = NFDictUtils.create_typed(TYPE_STRING_NAME, TYPE_DICTIONARY)
+				var loc_dict: Dictionary = file.localization[localization_id]
+				
+				if not loc_dict.has(nodeid):
+					loc_dict[nodeid] = NFDictUtils.create_typed(TYPE_STRING, TYPE_PACKED_STRING_ARRAY)
+				
+				var choices_dict: Dictionary = loc_dict[nodeid]
+				choices_dict["choices"] = choices
 		
 		if data["type"] == LocalizationType.TEXT:
-			var warn: bool = typeof(DictUtils.get_nested_value(data, ["locales", locale])) != TYPE_STRING if localized else typeof(data["unlocalized"]) != TYPE_STRING
-			DictUtils.set_nested_value(
-					file.localization,
-					[localization_id, nodeid, "dialog"],
-					DictUtils.get_nested_value(
-							data,
-							["locales", locale],
-							"[MISSING LOCALIZATION DATA]",
-							true) if localized else DictUtils.get_nested_value(data, ["unlocalized"], "[MISSING LOCALIZATION DATA]", true))
+			var warn: bool = false
+			var text_data: Variant = null
+			if localized:
+				text_data = data.get("locales", e).get(locale)
+			else:
+				text_data = data.get("unlocalized")
+			warn = typeof(text_data) != TYPE_STRING
+			
+			if not file.localization.has(localization_id):
+				file.localization[localization_id] = NFDictUtils.create_typed(TYPE_STRING_NAME, TYPE_DICTIONARY)
+			var locale_dict: Dictionary = file.localization[localization_id]
+			
+			if not locale_dict.has(nodeid):
+				locale_dict[nodeid] = NFDictUtils.create_typed(TYPE_STRING, TYPE_STRING)
+			var node_dict: Dictionary = locale_dict[nodeid]
+			
+			var text_set: String = ""
+			
+			if localized:
+				text_set = data.get("locales", e).get(locale, missing_text)
+			else:
+				text_set = data.get("unlocalized", missing_text)
+			
 			if warn:
 				if localized:
-					push_warning("[DISCOURSE] Unlocalized data for node UID \"" + node_uuid + "\" is missing.")
+					NFPluginGameHandler._log_msg(
+							"export - dialog",
+							"Localization data for node UID '%s' for locale '%s' of resource '%s' is missing." % [node_uuid, locale, resource_path],
+							NFPluginGameHandler._LogLevel.WARNING)
 				else:
-					push_warning("[DISCOURSE] Localization data for node UID \"" + node_uuid + "\" for locale \"" + locale + "\" is missing.")
+					NFPluginGameHandler._log_msg(
+							"export - dialog",
+							"Unlocalized data for node UID '%s' of resource '%s' is missing." % [node_uuid, resource_path],
+							NFPluginGameHandler._LogLevel.WARNING)
+			
+			if not file.localization.has(localization_id):
+				file.localization[localization_id] = NFDictUtils.create_typed(TYPE_STRING_NAME, TYPE_DICTIONARY)
+			var file_locale_dict: Dictionary = file.localization[localization_id]
+			
+			if not file_locale_dict.has(nodeid):
+				file_locale_dict[nodeid] = NFDictUtils.create_typed(TYPE_STRING, TYPE_STRING)
+			var str_dicts: Dictionary = file_locale_dict[nodeid]
+			
+			str_dicts["text"] = text_set
 		
 		elif data["type"] == LocalizationType.CHOICES:
 			var data_exists: bool = false
@@ -1114,85 +1432,143 @@ func _add_locale_data(file: DiscourseDialogLocale, localization_id: String, loca
 			var base: Array[String] = []
 			
 			if localized:
-				data_exists = data["locales"].has(locale) and typeof(data["locales"][locale]) == TYPE_ARRAY
+				data_exists = data["locales"].has(locale) and typeof(data["locales"][locale]) == TYPE_PACKED_STRING_ARRAY
 				if data_exists:
 					for idx in range(data["locales"][locale].size()):
 						if typeof(data["locales"][locale][idx]) == TYPE_STRING:
 							base.append(data["locales"][locale][idx])
 						else:
-							push_warning("[DISCORUSE] Choice with index " + str(idx) + " on locale " + locale + " isn't a string.")
-							base.append("[INVALID TEXT]")
+							NFPluginGameHandler._log_msg(
+									"export - dialog",
+									"Choice with index %d on locale '%s' isn't a string." % [idx, locale],
+									NFPluginGameHandler._LogLevel.WARNING)
+							base.append("[INVALID STRING]")
 				else:
 					base.resize(choice_size)
 			else:
-				data_exists = typeof(data["unlocalized"]) == TYPE_ARRAY
+				data_exists = typeof(data["unlocalized"]) == TYPE_PACKED_STRING_ARRAY
 				if data_exists:
 					for idx in range(data["unlocalized"].size()):
 						if typeof(data["unlocalized"][idx]) == TYPE_STRING:
 							base.append(data["unlocalized"][idx])
 						else:
-							push_warning("[DISCORUSE] Choice with index %s on locale '%s' isn't a string." % [idx, locale])
-							base.append("[INVALID TEXT]")
+							NFPluginGameHandler._log_msg(
+									"export - dialog",
+									"Choice with index %d on locale '%s' isn't a string." % [idx, locale],
+									NFPluginGameHandler._LogLevel.WARNING)
+							base.append("[INVALID STRING]")
 				else:
 					base.resize(choice_size)
 			
 			if not data_exists:
 				if localized:
-					push_warning("[DISCOURSE] Localization data for node UID '%s' for locale '%s' is missing." % [node_uuid, locale])
+					NFPluginGameHandler._log_msg(
+							"export - dialog",
+							"Localization data for node UID '%s' for locale '%s' of resource '%s' is missing." % [node_uuid, locale, resource_path],
+							NFPluginGameHandler._LogLevel.WARNING)
 				else:
-					push_warning("[DISCOURSE] Unlocalized data for node UID '%s' is missing." % node_uuid)
-				var err_string: String = "[MISSING LOCALIZATION DATA]"
+					NFPluginGameHandler._log_msg(
+							"export - dialog",
+							"Unlocalized data for node UID '%s' of resource '%s' is missing." % [node_uuid, resource_path],
+							NFPluginGameHandler._LogLevel.WARNING)
+				var err_string: String = missing_text
 				base.resize(choice_size)
 				for idx in range(choice_size):
 					base[idx] = err_string
 			
-			DictUtils.set_nested_value(
-					file.localization,
-					[localization_id, nodeid, "choices"],
-					PackedStringArray(base),
-					true)
+			if not file.localization.has(localization_id):
+				file.localization[localization_id] = NFDictUtils.create_typed(TYPE_STRING_NAME, TYPE_DICTIONARY)
+			var locale_id_dict: Dictionary = file.localization[localization_id]
+			
+			if not locale_id_dict.has(nodeid):
+				locale_id_dict[nodeid] = NFDictUtils.create_typed(TYPE_STRING, TYPE_PACKED_STRING_ARRAY)
+			var choices_dict: Dictionary = locale_id_dict[nodeid]
 			
 			var current_size: int = base.size()
 			if choice_size != current_size:
-				push_warning(
-					"[DISCOURSE] Localization choice count on node UID %s differs from data choice count: %s vs %s. Patching to match data size." % [node_uuid, current_size, choice_size])
+				NFPluginGameHandler._log_msg(
+						"export - dialog",
+						"Localization choice count on node UID %s differs from data choice count: %d vs %d. Patching to match data size." % [
+							node_uuid,
+							current_size,
+							choice_size],
+						NFPluginGameHandler._LogLevel.WARNING)
 				base.resize(choice_size)
 				if current_size < choice_size:
-					push_warning("[DISCOURSE] Localization count is smaller. Applying placeholders.")
+					NFPluginGameHandler._log_msg(
+							"export - dialog",
+							"Localization count is smaller. Applying placeholders.",
+							NFPluginGameHandler._LogLevel.WARNING)
 					for missing_idx in range(current_size, choice_size):
-						base[missing_idx] = "[MISSING LOCALIZATION DATA]"
+						base[missing_idx] = missing_text
+			
+			choices_dict["choices"] = PackedStringArray(base)
+		
 		else:
-			push_warning(
-					"[DISCOURSE] Localization export for node with UID '%s' couldn't define type." % node_uuid)
-			var nameless_id = DictUtils.get_nested_value(node_data, [node_uuid, "name"])
+			NFPluginGameHandler._log_msg(
+					"export - dialog",
+					"Localization export for node with UID '%s' couldn't define type." % node_uuid,
+					NFPluginGameHandler._LogLevel.WARNING)
+			var nameless_id = NFDictUtils.get_nested_value(node_data, [node_uuid, "name"])
 			if typeof(nameless_id) == TYPE_STRING_NAME:
-				push_warning("[DISCOURSE - INFO] ID for typeless node found: %s\"" % String(nameless_id))
+				NFPluginGameHandler._log_msg(
+						"export - dialog",
+						"ID for typeless node found: '%s'\"" % str(nameless_id),
+						NFPluginGameHandler._LogLevel.WARNING)
 	
 	for format_key in format_strings.keys():
 		if not format_strings[format_key].has(locale) or typeof(format_strings[format_key][locale]) != TYPE_DICTIONARY:
-			push_warning("[DISCOURSE] Format string of file '%s' with key '%s' doesn't have valid localization data for locale '%s'. Skipping" % [resource_path, format_key, locale])
+			NFPluginGameHandler._log_msg(
+					"export - dialog",
+					"Format string of file '%s' with key '%s' doesn't have valid localization data for locale '%s'. Skipping" % [
+						resource_path,
+						format_key,
+						locale],
+					NFPluginGameHandler._LogLevel.WARNING)
 			continue
 		
 		var data: Dictionary = format_strings[format_key][locale]
 		
 		if not data.has_all(["base_string", "format"]) or typeof(data["base_string"]) != TYPE_STRING or typeof(data["format"]) != TYPE_DICTIONARY:
-			push_error("[DISCOURSE] Format string of file '%s' with key '%s' doesn't have valid localization data for locale '%s'. Skipping" % [resource_path, format_key, locale])
+			NFPluginGameHandler._log_msg(
+					"export - dialog",
+					"Format string of file '%s' with key '%s' doesn't have valid localization data for locale '%s'. Skipping" % [
+						resource_path,
+						format_key,
+						locale],
+					NFPluginGameHandler._LogLevel.ERROR)
 			continue
 		
-		var valid_formats: Dictionary = {}
+		var valid_formats: Dictionary[String, Dictionary] = {}
+		var format_tags: Array[String] = get_phrase_arguments(data["base_string"], true)
 		
-		for format_slice in data["format"].keys():
-			var valid_cases: Dictionary = {}
-			
-			if typeof(data["format"][format_slice]) != TYPE_DICTIONARY or not data["format"][format_slice].has_all(["default", "cases"]) or typeof(data["format"][format_slice]["default"]) != TYPE_STRING or typeof(data["format"][format_slice]["cases"]) != TYPE_DICTIONARY:
-				push_error("[DISCOURSE] Format string of file '%s' with key '%s' format '%s' has missing or corrupt data. Skipping" % [resource_path, format_key, format_slice])
+		for format_slice in data["format"]:
+			if typeof(format_slice) != TYPE_STRING and typeof(format_slice) != TYPE_STRING_NAME:
 				continue
+			elif typeof(data["format"][format_slice]) != TYPE_DICTIONARY or not data["format"][format_slice].has_all(["default", "cases"]) or typeof(data["format"][format_slice]["default"]) != TYPE_STRING or typeof(data["format"][format_slice]["cases"]) != TYPE_DICTIONARY:
+				NFPluginGameHandler._log_msg(
+						"export - dialog",
+						"Format string of file '%s' with key '%s' format '%s' has missing or corrupt data. Skipping" % [
+							resource_path,
+							format_key,
+							format_slice],
+						NFPluginGameHandler._LogLevel.ERROR)
+				continue
+			elif not format_tags.has(format_slice):
+				continue
+				
+			var valid_cases: Dictionary[String, String] = {}
 			
 			var formats: Dictionary = data["format"][format_slice]
 			
-			for case in formats["cases"].keys():
+			for case in formats["cases"]:
 				if typeof(case) != TYPE_STRING and typeof(case) != TYPE_STRING_NAME:
-					push_error("[DISCOURSE] Case on resource %s is not of type string. Exception on: %s " % [resource_path, "/".join([format_key, locale, format_slice])])
+					NFPluginGameHandler._log_msg(
+							"export - dialog",
+							"Case on resource '%s' is not of type string. Exception on: '%s'" % [
+								resource_path,
+								"/".join([format_key, locale, format_slice])],
+							NFPluginGameHandler._LogLevel.ERROR)
 					continue
 				
 				var format_type: int = typeof(formats["cases"][case])
@@ -1200,24 +1576,26 @@ func _add_locale_data(file: DiscourseDialogLocale, localization_id: String, loca
 				if format_type != TYPE_STRING and format_type != TYPE_STRING_NAME:
 					NFPluginGameHandler._log_msg(
 							"dialog export",
-							"[DISCOURSE] Case on file '%s', format string with key '%s' format '%s' case '%s' is not of type string. Patching with warning string." % [resource_path, format_key, format_slice, case],
+							"Case on file '%s', format string with key '%s' format '%s' case '%s' is not of type string. Patching with warning string." % [resource_path, format_key, format_slice, case],
 							NFPluginGameHandler._LogLevel.WARNING)
 					valid_cases[case] = "[CASE NOT IMPLEMENTED]"
 				else:
 					valid_cases[case] = formats["cases"][case]
 			
-			valid_formats[format_slice] = {
+			var format_data: Dictionary[String, Variant] = {
 				"default": data["format"][format_slice]["default"] if typeof(data["format"][format_slice]["default"]) == TYPE_STRING else "",
 				"cases": valid_cases}
+			valid_formats[format_slice] = format_data
 		
-		var full_data: Dictionary = {
+		var full_data: Dictionary[String, Variant] = {
 			"base_string": data["base_string"],
 			"format": valid_formats}
 		
-		DictUtils.set_nested_value(
-				file.format_strings,
-				[localization_id, format_key],
-				full_data)
+		if not file.format_strings.has(localization_id):
+			file.format_strings[localization_id] = NFDictUtils.create_typed(TYPE_STRING, TYPE_DICTIONARY)
+		var format_dict: Dictionary = file.format_strings[localization_id]
+		
+		format_dict[format_key] = full_data
 
 
 func _is_localization_data_complete(data: Dictionary, localized: bool) -> bool:
@@ -1231,21 +1609,30 @@ func _is_localization_data_complete(data: Dictionary, localized: bool) -> bool:
 		keys.append("unlocalized")
 	
 	if not data.has_all(keys):
-		push_warning("[DISCOURSE] Localization data missing.")
+		NFPluginGameHandler._log_msg(
+				"export - dialog",
+				"Localization data missing.",
+				NFPluginGameHandler._LogLevel.WARNING)
 		return false
 	
 	if typeof(data["type"]) != TYPE_INT:
-		push_warning("[DISCOURSE] Localization data type missing.")
+		NFPluginGameHandler._log_msg(
+				"export - dialog",
+				"Localization data type missing.",
+				NFPluginGameHandler._LogLevel.WARNING)
 		return false
 	
 	if localized and typeof(data["locales"]) != TYPE_DICTIONARY:
-		push_warning("[DISCOURSE] Localization text data mismatch.")
+		NFPluginGameHandler._log_msg(
+				"export - dialog",
+				"Localization text data mismatch.",
+				NFPluginGameHandler._LogLevel.WARNING)
 		return false
 	
 	return true
 
 
-func _localization_type_mismatch(uuid: StringName) -> bool:
+func _localization_type_mismatch(uuid: String) -> bool:
 	if not node_data.has(uuid) or not localization.has(uuid):
 		return false
 	
@@ -1259,11 +1646,11 @@ func _localization_type_mismatch(uuid: StringName) -> bool:
 
 
 ## Returns an array with a split path used for variable access on the Blackboard.
-func split_path_variable(path: String) -> Array[StringName]:
+func split_path_variable(path: String) -> Array[String]:
 	var split: PackedStringArray = path.rsplit("/", false, 1)
-	var path_array: Array[StringName] = []
+	var path_array: Array[String] = []
 	for path_component in split:
-		path_array.append(StringName(path_component))
+		path_array.append(path_component)
 	if split.size() != 2:
 		path_array.resize(2)
 	return path_array
@@ -1275,13 +1662,12 @@ func split_path_variable(path: String) -> Array[StringName]:
 ## If there is localization data of locales not registered through here it'll
 ## warn that the data isn't going to be used during runtime.
 func add_locale(locale: String) -> void:
-	locale = TranslationServer.standardize_locale(locale)
+	locale = NFStringUtils.sanitize_locale(locale)
 	if locale.is_empty():
 		return
 	
-	var locale_parts: PackedStringArray = locale.split("_", false, 1)
-	var language: String = locale_parts[0]
-	var region: String = locale_parts[1] if locale_parts.size() == 2 else ""
+	var language: String = NFStringUtils.get_locale_language(locale)
+	var region: String = NFStringUtils.get_locale_country(locale)
 	
 	if not locale_map.has(language):
 		locale_map[language] = {}
@@ -1292,14 +1678,15 @@ func add_locale(locale: String) -> void:
 			locale_map[language][region] = null
 
 
+## Returns whether [param locale_code] is a valid locale registered
+## in this resource locale map.
 func has_locale(locale_code: String) -> bool:
-	var standard_code: String = TranslationServer.standardize_locale(locale_code)
+	var standard_code: String = NFStringUtils.sanitize_locale(locale_code)
 	if standard_code.is_empty():
 		return false
 	
-	var parts: PackedStringArray = standard_code.split("_", false, 2)
-	var lang: String = parts[0]
-	var reg: String = parts[1] if 1 < parts.size() else ""
+	var lang: String = NFStringUtils.get_locale_language(locale_code)
+	var reg: String = NFStringUtils.get_locale_country(locale_code)
 	
 	if reg.is_empty():
 		return locale_map.has(lang)
@@ -1311,29 +1698,34 @@ func has_locale(locale_code: String) -> bool:
 
 ## Removes a locale from the locale map.
 func remove_locale(locale: String) -> void:
-	locale = TranslationServer.standardize_locale(locale)
+	locale = NFStringUtils.sanitize_locale(locale)
+	
 	if locale.is_empty():
 		return
-	var locale_parts: PackedStringArray = locale.split("_", false, 1)
-	var language: String = locale_parts[0]
-	var region: String = locale_parts[1] if locale_parts.size() == 2 else ""
+	
+	var language: String = NFStringUtils.get_locale_language(locale)
+	var region: String = NFStringUtils.get_locale_country(locale)
 	
 	if not locale_map.has(language):
 		return
 	
-	var locale_code: String = language if region.is_empty() else language + "_" + region
-	
+	var locales_to_remove: Array[String] = [locale]
 	if region.is_empty():
+		for region_code in locale_map[language]:
+			locales_to_remove.append(language + "_" + region_code)
 		locale_map.erase(language)
 	else:
 		locale_map[language].erase(region)
 	
-	for format_key in format_strings.keys():
-		format_strings[format_key].erase(locale_code)
-	for node_uuid in localization.keys():
-		localization[node_uuid]["locales"].erase(locale_code)
+	for locale_code in locales_to_remove:
+		for format_key in format_strings:
+			format_strings[format_key].erase(locale_code)
+		for node_uuid in localization:
+			localization[node_uuid]["locales"].erase(locale_code)
 
 
+## Gets all the localization data of [param locale] contained
+## in this resource for display purposes.
 func get_display_localization_data(locale: String) -> Dictionary:
 	var data: Dictionary = {}
 	
@@ -1346,8 +1738,13 @@ func get_display_localization_data(locale: String) -> Dictionary:
 	return data
 
 
-func find_uuid_from_id(id: StringName) -> Dictionary:
-	var dict: Dictionary = {"found": false, "id": &""}
+## Returns a dictionary containing the UUID of a node based on its
+## [param id].
+## [br][br]
+## Dictionary contains 2 keys: 
+## [code]"found"[/code](bool) and [code]"uuid"[/code](String)
+func find_uuid_from_id(id: String) -> Dictionary:
+	var dict: Dictionary = {"found": false, "uuid": ""}
 	
 	_buid_id_map()
 	
@@ -1360,19 +1757,13 @@ func find_uuid_from_id(id: StringName) -> Dictionary:
 	return dict
 
 
-func get_id_target(id: StringName) -> StringName:
-	for entry in node_data.keys():
-		if node_data[entry]["name"] == id:
-			return entry
-	return &""
-
-
+## Returns whether [param id_or_uuid] exists in this file.
 func has_dialog_entry(id_or_uuid: String) -> bool:
 	_buid_id_map()
 	return node_data.has(id_or_uuid) or _id_map.has(id_or_uuid)
 
 
-func phrases_to_json_string() -> String:
+func _phrases_to_json_string() -> String:
 	var data: Dictionary = {}
 	
 	var valid_locales: Dictionary[String, Variant] = {}
@@ -1405,8 +1796,8 @@ func phrases_to_json_string() -> String:
 					"default": "",
 					"cases": {}}
 				if format_strings[key][locale_code]["format"].has(form):
-					format_data["default"] = DictUtils.get_nested_value(format_strings, [key, locale_code, "format", form, "default"], "")
-					format_data["cases"] = DictUtils.get_nested_value(format_strings, [key, locale_code, "format", form, "cases"], {})
+					format_data["default"] = NFDictUtils.get_nested_value(format_strings, [key, locale_code, "format", form, "default"], "")
+					format_data["cases"] = NFDictUtils.get_nested_value(format_strings, [key, locale_code, "format", form, "cases"], {})
 				phrase_data["format"][form] = format_data
 			locale_data[locale_code] = phrase_data
 		data[key] = locale_data
@@ -1414,7 +1805,7 @@ func phrases_to_json_string() -> String:
 	return JSON.stringify(data, "\t")
 
 
-func import_phrase_data(data: Dictionary) -> void:
+func _import_phrase_data(data: Dictionary) -> void:
 	var new_structure: Dictionary[String, Dictionary] = {}
 	
 	for imported_key in data:
@@ -1426,7 +1817,7 @@ func import_phrase_data(data: Dictionary) -> void:
 			if typeof(prob_loc) != TYPE_STRING or typeof(entry_data[prob_loc]) != TYPE_DICTIONARY:
 				continue
 			
-			var standard_locale: String = TranslationServer.standardize_locale(prob_loc)
+			var standard_locale: String = NFStringUtils.sanitize_locale(prob_loc)
 			if standard_locale.is_empty():
 				continue
 			var localization_data: Dictionary = entry_data[prob_loc]
@@ -1485,7 +1876,7 @@ func import_phrase_data(data: Dictionary) -> void:
 			
 			var local_locale_data: Dictionary = locale_level[imported_locale]
 			var imported_locale_data: Dictionary = new_structure[import_key][imported_locale]
-			var existing_formats: Array[String] = get_phrase_arguments(imported_locale_data["base_string"])
+			var existing_formats: Array[String] = get_phrase_arguments(imported_locale_data["base_string"], true)
 			local_locale_data["base_string"] = imported_locale_data["base_string"]
 			
 			for format_key in imported_locale_data["format"]:
@@ -1503,6 +1894,8 @@ func import_phrase_data(data: Dictionary) -> void:
 						local_format["cases"][case] = imported_format["cases"][case]
 
 
+## Returns an array of all the registered locale codes in this
+## resoruce.
 func get_used_locales() -> Array[String]:
 	var used_locales: Array[String] = []
 	
@@ -1515,6 +1908,7 @@ func get_used_locales() -> Array[String]:
 
 
 func _get_data_for_csv() -> Dictionary:
+	var e: Dictionary = NFDictUtils.EMPTY
 	var csv_data: Dictionary = {}
 	
 	var possible_locales: Array[String] = get_used_locales()
@@ -1544,11 +1938,10 @@ func _get_data_for_csv() -> Dictionary:
 			if localization.has(node_uuid):
 				for locale_code in possible_locales:
 					var assigned_choices: Array[String] = []
-					assigned_choices.assign(DictUtils.get_nested_value(
-							localization,
-							[node_uuid, "locales", locale_code],
-							[],
-							true))
+					var current_data: Variant = localization.get(node_uuid, e).get("locales", e).get(locale_code)
+					if typeof(current_data) == TYPE_PACKED_STRING_ARRAY:
+						assigned_choices.assign(current_data)
+					
 					if assigned_choices.size() < target_size:
 						assigned_choices.resize(target_size)
 					
@@ -1572,9 +1965,9 @@ func _set_csv_data(data: Dictionary) -> void:
 	if data.is_empty():
 		return
 	
-	var id_to_uuid: Dictionary[String, StringName] = {}
+	var id_to_uuid: Dictionary[String, String] = {}
 	for node_uuid in node_data:
-		id_to_uuid[String(node_data[node_uuid]["name"])] = node_uuid
+		id_to_uuid[node_data[node_uuid]["name"]] = node_uuid
 	
 	for import_id in data:
 		var id_type: int = typeof(import_id)
@@ -1588,7 +1981,7 @@ func _set_csv_data(data: Dictionary) -> void:
 		var choice_idx: int = -1
 		
 		if 2 <= node_id.length() and node_id.contains(":"):
-			var trailing_data: Dictionary = StringUtils.get_trailing_integer(node_id)
+			var trailing_data: Dictionary = NFStringUtils.get_trailing_integer(node_id)
 			if trailing_data["has_integer"]:
 				choice_idx = trailing_data["integer"]
 			node_id = node_id.trim_suffix(":" + str(choice_idx))
@@ -1596,7 +1989,7 @@ func _set_csv_data(data: Dictionary) -> void:
 		if not id_to_uuid.has(node_id):
 			continue
 		
-		var uuid: StringName = id_to_uuid[node_id]
+		var uuid: String = id_to_uuid[node_id]
 		
 		if not node_data[uuid]["metadata"]["localized"]:
 			continue
@@ -1610,7 +2003,7 @@ func _set_csv_data(data: Dictionary) -> void:
 				var locale_type: int = typeof(import_locale)
 				if locale_type != TYPE_STRING:
 					continue
-				var locale_code: String = TranslationServer.standardize_locale(String(import_locale))
+				var locale_code: String = NFStringUtils.sanitize_locale(String(import_locale))
 				if locale_code.is_empty():
 					continue
 				var localization_type: int = typeof(data[import_id][import_locale])
@@ -1632,7 +2025,7 @@ func _set_csv_data(data: Dictionary) -> void:
 				var locale_type: int = typeof(import_locale)
 				if locale_type != TYPE_STRING:
 					continue
-				var locale_code: String = TranslationServer.standardize_locale(String(import_locale))
+				var locale_code: String = NFStringUtils.sanitize_locale(String(import_locale))
 				if locale_code.is_empty():
 					continue
 				var localization_type: int = typeof(data[import_id][import_locale])
@@ -1640,18 +2033,168 @@ func _set_csv_data(data: Dictionary) -> void:
 					continue
 				
 				if not localization.has(uuid):
-					localization[uuid] = {
+					var entry: Dictionary[String, Variant] = {
 						"type": LocalizationType.CHOICES,
-						"unlocalized": ArrayUtils.create_typed(TYPE_STRING),
-						"locales": {}}
+						"unlocalized": PackedStringArray(),
+						"locales": NFDictUtils.create_typed(TYPE_STRING, TYPE_PACKED_STRING_ARRAY)}
+					localization[uuid] = entry
 				
-				var localized_choices: Array[String] = localization[uuid]["locales"].get_or_add(locale_code, ArrayUtils.create_typed(TYPE_STRING))
-				if localized_choices.size() != choice_size:
-					localized_choices.resize(choice_size)
-				localized_choices[choice_idx] = data[import_id][import_locale]
+				var locale_data: Dictionary = localization[uuid]["locales"]
+				if not locale_data.has(locale_code):
+					locale_data[locale_code] = PackedStringArray()
+				var target_array: PackedStringArray = locale_data[locale_code]
+				
+				if target_array.size() != choice_size:
+					target_array.resize(choice_size)
+				target_array[choice_idx] = data[import_id][import_locale]
 
 
 func _buid_id_map() -> void:
 	if _id_map.is_empty() and not node_data.is_empty():
 		for node_uuid in node_data:
-			_id_map[StringName(node_data[node_uuid]["name"])] = node_uuid
+			_id_map[node_data[node_uuid]["name"]] = node_uuid
+
+
+func _get_format_string_localized(key: String, for_locale: String) -> String:
+	for_locale = NFStringUtils.sanitize_locale(for_locale)
+	
+	if _phrase_overrides != null:
+		var possible_override: Variant = _phrase_overrides.get_base_string_override(
+				dialog_id,
+				for_locale,
+				key)
+		if possible_override != null:
+			return possible_override
+	
+	var default_fallback: String = "[MISSING LOCALIZATION PHRASE DATA]"
+	
+	var key_dict: Variant = format_strings.get(key)
+	if key_dict == null:
+		return default_fallback
+	
+	# 2. Direct Match
+	if key_dict.has(for_locale):
+		var base_str: String = key_dict[for_locale]["base_string"]
+		if not base_str.strip_edges().is_empty():
+			return base_str
+	
+	var fallback_mode: int = ProjectSettings.get_setting(
+			NFPluginGameHandler.get_setting_path("discourse_fallback_mode"),
+			2)
+			
+	if fallback_mode == 0:
+		return default_fallback
+		
+	var lang_fallback: String = ProjectSettings.get_setting(
+			"internationalization/locale/fallback")
+			
+	# 3. Cascade Fallback (e.g., es_AR -> es)
+	if fallback_mode == 2 and for_locale.contains("_"):
+		var base_lang: String = for_locale.get_slice("_", 0)
+		if base_lang != lang_fallback:
+			if key_dict.has(base_lang):
+				var cas_str: String = key_dict[base_lang]["base_string"]
+				if not cas_str.strip_edges().is_empty():
+					return cas_str
+	
+	# 4. Project Default Fallback
+	if key_dict.has(lang_fallback):
+		var fall_str: String = key_dict[lang_fallback]["base_string"]
+		if not fall_str.strip_edges().is_empty():
+			return fall_str
+	
+	return default_fallback
+
+
+func _get_format_string_args_localized(key: String, for_locale: String) -> Dictionary[String, Dictionary]:
+	for_locale = NFStringUtils.sanitize_locale(for_locale)
+	
+	const missing_format_case: String = "[MISSING CASE LOCALIZATION]" # formats
+	
+	var e: Dictionary = NFDictUtils.EMPTY
+	var base: Dictionary[String, Dictionary] = {}
+	
+	if format_strings.has(key):
+		var key_dict: Dictionary = format_strings[key]
+		var target_locale_to_use: String = ""
+		
+		if key_dict.has(for_locale) and not key_dict[for_locale].get("base_string", "").strip_edges().is_empty():
+			target_locale_to_use = for_locale
+		else:
+			var fallback_mode: int = ProjectSettings.get_setting(
+					NFPluginGameHandler.get_setting_path("discourse_fallback_mode"),
+					2)
+			
+			if 0 < fallback_mode:
+				var lang_fallback: String = ProjectSettings.get_setting("internationalization/locale/fallback")
+				
+				if fallback_mode == 2 and for_locale.contains("_"):
+					var base_lang: String = NFStringUtils.get_locale_language(for_locale)
+					if base_lang != lang_fallback and not key_dict.get(base_lang, e).get("base_string", "").strip_edges().is_empty():
+						target_locale_to_use = base_lang
+				
+				if target_locale_to_use.is_empty() and key_dict.has(lang_fallback) and not key_dict.get(lang_fallback, e).get("base_string", "").strip_edges().is_empty():
+					target_locale_to_use = lang_fallback
+		
+		if not target_locale_to_use.is_empty():
+			var formats_dict: Dictionary = key_dict[target_locale_to_use]["format"]
+			for format_id in formats_dict:
+				var cases: Dictionary[String, String] = {}
+				
+				var format_data: Dictionary = formats_dict[format_id]
+				var cases_data: Dictionary = format_data.get("cases", e)
+				
+				var default: String = format_data.get("default", "")
+				if default.strip_edges().is_empty():
+					default = missing_format_case
+				
+				for case in cases_data:
+					var case_text: String = cases_data[case]
+					if case_text.strip_edges().is_empty():
+						case_text = missing_format_case
+					
+					cases[case] = case_text
+				
+				var new_data: Dictionary[String, Variant] = {
+					"default": default,
+					"cases": cases}
+				
+				base[format_id] = new_data
+	
+	# 2. Deep-merge the specific locale's overrides on top of the resolved base
+	if _phrase_overrides != null:
+		var possible_override: Dictionary[String, Dictionary] = _phrase_overrides.get_formats_override(
+				dialog_id,
+				for_locale,
+				key)
+		
+		for format_key in possible_override:
+			if not base.has(format_key):
+				base[format_key] = possible_override[format_key]
+			else:
+				var base_format: Dictionary = base[format_key]
+				var over_format: Dictionary = possible_override[format_key]
+				
+				if over_format.has("default"):
+					base_format["default"] = over_format["default"]
+				
+				if over_format.has("cases"):
+					if not base_format.has("cases"):
+						base_format["cases"] = over_format["cases"]
+					else:
+						var case_dict: Dictionary = base_format["cases"]
+						case_dict.merge(over_format["cases"], true)
+		
+		for format_key in base:
+			var default_overrides: Array[String] = _phrase_overrides.get_format_case_default_overriden(
+					dialog_id,
+					key,
+					format_key,
+					for_locale)
+			
+			if not default_overrides.is_empty() and base[format_key].has("cases"):
+				var case_dict: Dictionary = base[format_key]["cases"]
+				for def_case: String in default_overrides:
+					case_dict.erase(def_case)
+	
+	return base

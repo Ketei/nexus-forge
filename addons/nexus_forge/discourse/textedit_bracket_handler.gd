@@ -11,6 +11,9 @@ func _ready() -> void:
 
 
 func _gui_input(event: InputEvent) -> void:
+	if not editable or not has_focus():
+		return
+	
 	if event is InputEventKey:
 		if event.echo or not event.pressed:
 			return

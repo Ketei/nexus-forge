@@ -55,15 +55,19 @@ func update_page_count() -> void:
 		_last_page = maxi(0, _search_results.size() - 1) / RESULTS_PER_PAGE
 	else:
 		_last_page = 0
+	
+	if _last_page < _current_page_index:
+		_current_page_index = _last_page
 
 
-func add_item(item_id: StringName, item_category: StringName = &"") -> bool:
+func add_item(item_id: StringName, item_category: StringName = &"", select: bool = false) -> bool:
 	var id_string: String = String(item_id)
 	
 	if _items.has(item_id):
 		return false
 	
-	var new_item: TreeItem = get_root().create_child()
+	var root: TreeItem = get_root()
+	var new_item: TreeItem = root.create_child()
 	new_item.set_text(0, id_string)
 	new_item.set_metadata(0, {"id": item_id, "category": item_category})
 	new_item.set_editable(0, true)
@@ -74,10 +78,10 @@ func add_item(item_id: StringName, item_category: StringName = &"") -> bool:
 		false,
 		"Erase Item")
 	
-	_items[id_string] = new_item
+	_items[item_id] = new_item
 	
 	if 0 < RESULTS_PER_PAGE:
-		get_root().remove_child(new_item)
+		root.remove_child(new_item)
 		var item_query_match: bool = _search_item_query.is_empty() or id_string.containsn(_search_item_query)
 		var cat_query_match: bool = _search_category_query.is_empty() or item_category.containsn(_search_category_query)
 		
@@ -94,7 +98,21 @@ func add_item(item_id: StringName, item_category: StringName = &"") -> bool:
 	else:
 		sort_single_item(new_item)
 	
+	if select and new_item.get_parent() == root and new_item.visible:
+		scroll_to_item(new_item)
+	
 	return true
+
+
+func update_item_id(from: StringName, to: StringName) -> void:
+	if not _items.has(from) or _items.has(to):
+		return
+	
+	var target: TreeItem = _items[from]
+	target.set_text(0, String(to))
+	target.get_metadata(0)["id"] = to
+	_items[to] = target
+	_items.erase(from)
 
 
 func set_active_item(item_id: StringName) -> void:
@@ -214,8 +232,10 @@ func select_item(item_id: StringName, emit_selected: bool = false) -> void:
 			_current_page_index = page
 	
 		target.select(0)
+		scroll_to_item.call_deferred(target)
 	else:
 		target.select(0)
+		scroll_to_item.call_deferred(target)
 	
 	if emit_selected:
 		item_selected.emit(item_id)
@@ -304,19 +324,24 @@ func _erase_item(item_id: StringName) -> void:
 	
 	_search_results.remove_at(search_idx)
 	var page_idx: int = search_idx / RESULTS_PER_PAGE
-	if page_idx <= _current_page_index:
-		_refresh_current_page()
+	var old_page: int = _current_page_index
+	
 	update_page_count()
+	
+	if page_idx <= old_page or _current_page_index != old_page:
+		_refresh_current_page()
 
 
 func _on_item_edited() -> void:
 	var edited: TreeItem = get_edited()
 	var prev_text: String = String(edited.get_metadata(0)["id"])
 	var new_text: String = get_valid_id(
-		edited.get_text(0),
+		edited.get_text(0).strip_edges().replace(" ", "_"),
 		edited.get_metadata(0)["id"])
 	
-	if new_text == prev_text:
+	if new_text.is_empty() or new_text == prev_text:
+		if edited.get_text(0) != new_text:
+			edited.set_text(0, prev_text)
 		return
 	
 	var old_id: StringName = edited.get_metadata(0)["id"]
@@ -328,6 +353,9 @@ func _on_item_edited() -> void:
 	_items[new_id] = _items[old_id]
 	_items.erase(old_id)
 	
+	if _active_item == old_id:
+		_active_item = new_id
+	
 	item_id_changed.emit(old_id, new_id)
 
 
@@ -337,7 +365,7 @@ func get_valid_id(desired: String, skip_item: StringName = &"") -> String:
 	
 	var base: String = desired
 	var modified: String = desired
-	var trailing_data: Dictionary = StringUtils.get_trailing_integer(base)
+	var trailing_data: Dictionary = NFStringUtils.get_trailing_integer(base)
 	var iteration: int = trailing_data["integer"]
 	if trailing_data["has_integer"]:
 		base = desired.trim_suffix(str(iteration))
@@ -346,8 +374,6 @@ func get_valid_id(desired: String, skip_item: StringName = &"") -> String:
 		if tree == skip:
 			continue
 		all_ids[tree.get_text(0)] = null
-	
-	all_ids.erase(skip.get_text(0))
 	
 	while all_ids.has(modified):
 		iteration += 1
@@ -506,7 +532,7 @@ func _refresh_current_page() -> void:
 			(_current_page_index + 1) * RESULTS_PER_PAGE)
 	for item in slice:
 		root.add_child(item)
-	if not _active_item.is_empty() and _items[_active_item].get_parent() == root:
+	if _items.has(_active_item) and _items[_active_item].get_parent() == root:
 		_items[_active_item].select(0)
 
 

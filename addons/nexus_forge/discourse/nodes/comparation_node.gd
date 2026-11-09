@@ -2,15 +2,15 @@
 extends DiscourseGraphNode
 
 
-signal operator_changed(uuid: StringName, old_operator: int, new_operator: int)
+signal operator_changed(uuid: String, old_operator: int, new_operator: int)
 
 
 var comparation_menu: MenuButton
 
 
 func _post_init() -> void:
-	set_node_id(&"Comparation")
-	title = "Comparation"
+	set_node_id("Comparison")
+	title = "Comparison"
 	size = Vector2(200.0, 150.0)
 	node_type = DialogueNodeType.COMPARATION
 	parent_mode = PortMode.OUTPUT
@@ -115,8 +115,6 @@ func _get_issues() -> PackedStringArray:
 
 
 func _get_node_data() -> Dictionary:
-	var data: Dictionary = {}
-	
 	var metadata: Dictionary = {
 		"operator": comparation_menu.get_meta(&"current_operator", 0)}
 	var in_connections: Dictionary = {
@@ -129,36 +127,12 @@ func _get_node_data() -> Dictionary:
 
 
 func _set_node_data(data: Dictionary) -> void:
-	if data.has("name") and typeof(data["name"]) == TYPE_STRING_NAME:
-		_node_id = data["name"]
+	super(data)
 	
-	if not data.has("metadata") or typeof(data["metadata"]) != TYPE_DICTIONARY:
-		return
+	var operator_data: Variant = data.get("metadata", NFDictUtils.EMPTY).get("operator")
 	
-	var metadata: Dictionary = data["metadata"]
-	
-	if metadata.has("position") and typeof(metadata["position"]) == TYPE_VECTOR2:
-		position_offset = metadata["position"]
-	
-	if not metadata.has("operator") or typeof(metadata["operator"]) != TYPE_INT:
-		return
-	
-	var operator: Variant.Operator = clampi(metadata["operator"], 0, 5) as Variant.Operator
-	match operator:
-		OP_EQUAL:
-			comparation_menu.text = "=="
-		OP_NOT_EQUAL:
-			comparation_menu.text = "!="
-		OP_LESS:
-			comparation_menu.text = "<"
-		OP_LESS_EQUAL:
-			comparation_menu.text = "<="
-		OP_GREATER:
-			comparation_menu.text = ">"
-		OP_GREATER_EQUAL:
-			comparation_menu.text = ">="
-	comparation_menu.set_meta(&"old_value", operator)
-	comparation_menu.set_meta(&"current_operator", operator)
+	if typeof(operator_data) == TYPE_INT:
+		set_operator(operator_data)
 
 
 func set_operator(operator: int) -> void:

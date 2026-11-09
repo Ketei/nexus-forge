@@ -1,6 +1,6 @@
 class_name NFItemManager
 extends RefCounted
-## An object that holds items as [ItemSheet] resources.
+## An object that holds items as [NFItemSheet] resources.
 ##
 ## This object provides several utilities, such as a custom getter
 ## for accessing registered items directly by their ID, eg. [code]Items.stick[/code]
@@ -16,22 +16,18 @@ signal item_erased(item_id: StringName)
 signal category_created(category_id: StringName)
 ## Emits when a category is removed.
 signal category_erased(category_id: StringName)
+## Emitted when the catalog is rebuilt by using [method NFItemManager.load_catalog]
+signal catalog_loaded
 
 
 var _categories: Dictionary[StringName, Dictionary] = {}
 
-var _items: Dictionary[StringName, ItemSheet] = {}
+var _items: Dictionary[StringName, NFItemSheet] = {}
 
 
-func _get(property: StringName) -> Variant:
-	if _items.has(property):
-		return _items[property]
-	return null
-
-
-## Loads an [ItemCatalog] into this object. If [param clear_items] is
+## Loads an [NFItemCatalog] into this object. If [param clear_items] is
 ## [code]true[/code] then the previous registered items will be cleared.
-func load_catalog(catalog: ItemCatalog, clear_items: bool = true) -> void:
+func load_catalog(catalog: NFItemCatalog, clear_items: bool = true) -> void:
 	if clear_items:
 		_items.clear()
 		_categories.clear()
@@ -44,7 +40,8 @@ func load_catalog(catalog: ItemCatalog, clear_items: bool = true) -> void:
 		_categories[category_id] = category
 	
 	for item_id in catalog.items():
-		var new_item: ItemSheet = ItemSheet.new()
+		var new_item: NFItemSheet = NFItemSheet.new()
+		new_item.item_id = item_id
 		new_item.name = catalog.get_item_name(item_id)
 		new_item.description = catalog.get_item_description(item_id)
 		new_item.category = catalog.get_item_category(item_id)
@@ -53,6 +50,8 @@ func load_catalog(catalog: ItemCatalog, clear_items: bool = true) -> void:
 		new_item.flags.assign(catalog.get_item_flags(item_id))
 		new_item.custom_data.assign(catalog.item_data(item_id))
 		_items[item_id] = new_item
+	
+	catalog_loaded.emit()
 
 
 #region Items
@@ -67,35 +66,39 @@ func items() -> Array[StringName]:
 ## Sets the [param data_key] of [param item_id] to [param data]. If [param data]
 ## is [code]null[/code] then the key is erased instead.
 func set_item_data(item_id: StringName, data_key: String, data: Variant) -> void:
-	if not _items.has(item_id):
+	var item: NFItemSheet = _items.get(item_id)
+	
+	if item == null:
 		return
 	
 	var update: bool = true
 	
 	if data == null:
-		update = _items[item_id].custom_data.erase(data_key)
+		update = item.custom_data.erase(data_key)
 	else:
-		_items[item_id].custom_data[data_key] = data
+		item.custom_data[data_key] = data
 	
 	if update:
-		_items[item_id].emit_changed()
+		item.emit_changed()
 
 
 ## Clears the custom data from [param item_id].
 func clear_item_data(item_id: StringName) -> void:
-	if not _items.has(item_id) or _items[item_id].custom_data.is_empty():
+	var item: NFItemSheet = _items.get(item_id)
+	
+	if item == null or item.custom_data.is_empty():
 		return
 	
-	_items[item_id].custom_data.clear()
-	_items[item_id].emit_changed()
+	item.custom_data.clear()
+	item.emit_changed()
 
 
-## Registers the [param item_sheet] as an item unless [member ItemSheet.item_id]
+## Adds the [param item_sheet] as an item unless [member NFItemSheet.item_id]
 ## it uses already exists or is empty.[br]
-## Note: Items are passed by reference, and [param item_sheet] will be
+## [b]Note:[/b] Items are passed by reference, and [param item_sheet] will be
 ## stored AS the reference.
-func register_item(item_sheet: ItemSheet = null) -> void:
-	if item_sheet.item_id.is_empty() or _items.has(item_sheet.item_id):
+func add_item(item_sheet: NFItemSheet) -> void:
+	if item_sheet == null or item_sheet.item_id.is_empty() or _items.has(item_sheet.item_id):
 		return
 	
 	_items[item_sheet.item_id] = item_sheet
@@ -104,39 +107,43 @@ func register_item(item_sheet: ItemSheet = null) -> void:
 
 
 ## Sets the [param flag] on [param item_id] to [param enabled].
-func set_item_flag(item_id: StringName, flag: ItemSheet.ItemFlag, enabled: bool) -> void:
-	if not _items.has(item_id):
+func set_item_flag(item_id: StringName, flag: NFItemSheet.ItemFlag, enabled: bool) -> void:
+	var item: NFItemSheet = _items.get(item_id)
+	
+	if item == null:
 		return
 	
-	var has: bool = _items[item_id].flags.has(flag)
+	var has: bool = item.flags.has(flag)
 	
 	if enabled and not has:
-		_items[item_id].flags.append(flag)
-		_items[item_id].emit_changed()
+		item.flags.append(flag)
+		item.emit_changed()
 	elif not enabled and has:
-		_items[item_id].flags.erase(flag)
-		_items[item_id].emit_changed()
+		item.flags.erase(flag)
+		item.emit_changed()
 
 
 ## Sets all the [param flags] on [param item_id] to [param enabled].
-func set_item_flags(item_id: StringName, flags: Array[ItemSheet.ItemFlag], enabled: bool) -> void:
-	if not _items.has(item_id):
+func set_item_flags(item_id: StringName, flags: Array[NFItemSheet.ItemFlag], enabled: bool) -> void:
+	var item: NFItemSheet = _items.get(item_id)
+	
+	if item == null:
 		return
 	
-	if enabled and not ArrayUtils.has_all(_items[item_id]["flags"], flags):
+	if enabled and not NFArrayUtils.has_all(item.flags, flags):
 		for flag in flags:
-			if not _items[item_id].flags.has(flag):
-				_items[item_id].flags.append(flag)
-		_items[item_id].emit_changed()
-	elif not enabled and ArrayUtils.has_any(_items[item_id].flags, flags):
+			if not item.flags.has(flag):
+				item.flags.append(flag)
+		item.emit_changed()
+	elif not enabled and NFArrayUtils.has_any(item.flags, flags):
 		for flag in flags:
-			if _items[item_id]["flags"].has(flag):
-				_items[item_id]["flags"].erase(flag)
-		_items[item_id].emit_changed()
+			if item.flags.has(flag):
+				item.flags.erase(flag)
+		item.emit_changed()
 
 
 ## Returns true if the [param item_id] has [param flag] enabled.
-func item_has_flag(item_id: StringName, flag: ItemSheet.ItemFlag) -> bool:
+func item_has_flag(item_id: StringName, flag: NFItemSheet.ItemFlag) -> bool:
 	if _items.has(item_id):
 		return _items[item_id].flags.has(flag)
 	return false
@@ -144,20 +151,24 @@ func item_has_flag(item_id: StringName, flag: ItemSheet.ItemFlag) -> bool:
 
 ## Clears all the flags from [param item_id].
 func clear_item_flags(item_id: StringName) -> void:
-	if not _items.has(item_id) or _items[item_id].flags.is_empty():
+	var item: NFItemSheet = _items.get(item_id)
+	
+	if item == null or item.flags.is_empty():
 		return
 	
-	_items[item_id].flags.clear()
-	_items[item_id].emit_changed()
+	item.flags.clear()
+	item.emit_changed()
 
 
 ## Sets the name of [param item_id] to [param new_name].
 func set_item_name(item_id: StringName, new_name: String) -> void:
-	if not _items.has(item_id) or _items[item_id].name == new_name:
+	var item: NFItemSheet = _items.get(item_id)
+	
+	if item == null or item.name == new_name:
 		return
 	
-	_items[item_id].name = new_name
-	_items[item_id].emit_changed()
+	item.name = new_name
+	item.emit_changed()
 
 
 ## Returns the name of [param item_id] or an empty string if the item doesn't exist.
@@ -169,47 +180,48 @@ func get_item_name(item_id: StringName) -> String:
 
 ## Sets the category of [param item_id] to [param new_category].
 func set_item_category(item_id: StringName, new_category: StringName) -> void:
-	if not _items.has(item_id) or _items[item_id].category == new_category or not ( _categories.has(new_category) or new_category.is_empty() ):
+	var item: NFItemSheet = _items.get(item_id)
+	if item == null or item.category == new_category:
 		return
 	
-	_items[item_id].category = new_category
-	_items[item_id].emit_changed()
+	if not new_category.is_empty() and not _categories.has(new_category):
+		return
+	
+	item.category = new_category
+	item.emit_changed()
 
 
 ## Sets the rarity of [param item_id] to [param new_rarity].
-func set_item_rarity(item_id: StringName, new_rarity: ItemSheet.Rarity) -> void:
-	if not _items.has(item_id) or _items[item_id].rarity == new_rarity:
+func set_item_rarity(item_id: StringName, new_rarity: NFItemSheet.Rarity) -> void:
+	var item: NFItemSheet = _items.get(item_id)
+	
+	if item == null or item.rarity == new_rarity:
 		return
 	
-	_items[item_id].rarity = new_rarity
-	_items[item_id].emit_changed()
+	item.rarity = new_rarity
+	item.emit_changed()
 
 
 ## Sets the value of [param item_id] to [param new_value].
 func set_item_value(item_id: StringName, new_value: int) -> void:
-	if not _items.has(item_id) or _items[item_id].value == new_value:
+	var item: NFItemSheet = _items.get(item_id)
+	
+	if item == null or item.value == new_value:
 		return
 	
-	_items[item_id].value = maxi(0, new_value)
-	_items[item_id].emit_changed()
+	item.value = maxi(0, new_value)
+	item.emit_changed()
 
 
 ## Sets the description of [param item_id] to [param new_desc].
 func set_item_description(item_id: StringName, new_desc: String) -> void:
-	if not _items.has(item_id) or _items[item_id].description == new_desc:
+	var item: NFItemSheet = _items.get(item_id)
+	
+	if item == null or item.description == new_desc:
 		return
 	
-	_items[item_id]["description"] = new_desc
-	_items[item_id].emit_changed()
-
-
-## Returns an [ItemSheet] of the item param item_id.[br]
-## Returns [code]null[/code] if the item doesn't exist.
-func get_item(item_id: StringName) -> ItemSheet:
-	if not _items.has(item_id):
-		return null
-	
-	return _items[item_id]
+	item.description = new_desc
+	item.emit_changed()
 
 
 ## Returns true if [param item_id] is registered.
@@ -242,7 +254,7 @@ func create_category(category_id: StringName) -> void:
 	var cat: Dictionary[String, Variant] = {
 		"parent_key": &"",
 		"name": &"",
-		"custom_data": DictUtils.create_typed(TYPE_STRING_NAME, TYPE_NIL)}
+		"custom_data": NFDictUtils.create_typed(TYPE_STRING_NAME, TYPE_NIL)}
 	
 	_categories[category_id] = cat
 	
@@ -305,17 +317,36 @@ func has_category(category_id: StringName) -> bool:
 ## Erases the category [param category_id] and removes the category from
 ## any item that has it.
 func erase_category(category_id: StringName) -> void:
-	if _categories.erase(category_id):
-		for item in _items:
-			if _items[item]["category"] == category_id:
-				_items[item]["category"] = &""
-		category_erased.emit(category_id)
+	if not _categories.has(category_id):
+		return
+	
+	var upper_category: StringName = _categories[category_id]["parent_key"]
+	var items_changed: Array[NFItemSheet] = []
+	
+	for item in _items:
+		var target: NFItemSheet = _items[item]
+		if target.category == category_id:
+			target.category = &""
+			items_changed.append(_items[item])
+	
+	for cat in _categories:
+		var target: Dictionary = _categories[cat]
+		if target["parent_key"] == category_id:
+			target["parent_key"] = upper_category
+	
+	category_erased.emit(category_id)
+	for item in items_changed:
+		item.emit_changed()
 
 
 ## Returns a dictionary with all the parent categories from [param from_category].[br]
 ## get_category_structure(&"c") = [code]{&"a": {&"b": {&"c": {}}}[/code]
 func get_supercategories_of(from_category: StringName) -> Dictionary[StringName, Dictionary]:
 	var category_map: Dictionary[StringName, Dictionary] = {}
+	
+	if not _categories.has(from_category):
+		return category_map
+	
 	var explored_categories: Array[StringName] = [from_category]
 	var current_category: StringName = _categories[from_category]["parent_key"]
 	

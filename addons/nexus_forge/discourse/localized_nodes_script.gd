@@ -2,8 +2,8 @@
 extends Tree
 
 
-signal dialog_selected(node_uuid: StringName)
-signal dialog_item_edited(node_uuid: StringName, desired_id: String)
+signal dialog_selected(node_uuid: String)
+signal dialog_item_edited(node_uuid: String, desired_id: String)
 signal node_delocalization_requested(node: DiscourseGraphNode)
 
 enum ButtonID {
@@ -16,7 +16,7 @@ var _dialog_tree: TreeItem
 var _options_tree: TreeItem
 var _text_tree: TreeItem
 
-var all_nodes: Dictionary[StringName, TreeItem] = {}
+var all_nodes: Dictionary[String, TreeItem] = {}
 
 var active_dialog: TreeItem = null:
 	set(new_dialog):
@@ -25,7 +25,7 @@ var active_dialog: TreeItem = null:
 		active_dialog = new_dialog
 		if new_dialog != null:
 			new_dialog.set_custom_color(0, SELECTED_COLOR)
-var previous_dialog: String
+
 
 # Called when the node enters the scene tree for the first time.
 func ready_plugin() -> void:
@@ -84,6 +84,8 @@ func clear_nodes() -> void:
 	for node in all_nodes.values():
 		node.free()
 	all_nodes.clear()
+	
+	active_dialog = null
 
 
 func create_dialog_node(node_name: String, node: DiscourseGraphNode) -> void:
@@ -92,7 +94,7 @@ func create_dialog_node(node_name: String, node: DiscourseGraphNode) -> void:
 	create_node_on(_dialog_tree, node_name, node, "DialogNode")
 
 
-func rename_dialog_node(uuid: StringName, new_name: String) -> void:
+func rename_dialog_node(uuid: String, new_name: String) -> void:
 	for node in _dialog_tree.get_children():
 		if node.get_metadata(0)["uuid"] == uuid:
 			node.set_text(0, new_name)
@@ -106,7 +108,7 @@ func create_options_node(node_name: String, node: DiscourseGraphNode) -> void:
 	create_node_on(_options_tree, node_name, node, "OptionsNode")
 
 
-func rename_options_node(uuid: StringName, new_name: String) -> void:
+func rename_options_node(uuid: String, new_name: String) -> void:
 	for node in _options_tree.get_children():
 		if node.get_metadata(0)["uuid"] == uuid:
 			node.set_text(0, new_name)
@@ -120,7 +122,7 @@ func create_localized_text_node(node_name: String, node: DiscourseGraphNode) -> 
 	create_node_on(_text_tree, node_name, node, "TextNode")
 
 
-func rename_text_node(uuid: StringName, new_name: String) -> void:
+func rename_text_node(uuid: String, new_name: String) -> void:
 	for node in _text_tree.get_children():
 		if node.get_metadata(0)["uuid"] == uuid:
 			node.set_text(0, new_name)
@@ -128,27 +130,27 @@ func rename_text_node(uuid: StringName, new_name: String) -> void:
 			break
 
 
-func remove_node(uuid: StringName) -> void:
+func remove_node(uuid: String) -> void:
 	if not all_nodes.has(uuid):
 		return
 	var target: TreeItem = all_nodes[uuid]
 	if active_dialog == target:
 		active_dialog = null
-		dialog_selected.emit(&"")
+		dialog_selected.emit("")
 	all_nodes.erase(uuid)
 	target.free()
 
 
-func get_active_node_uuid() -> StringName:
-	if active_dialog == null:
-		return &""
-	return active_dialog.get_metadata(0)["node"].get_node_uuid()
+func get_active_node_uuid() -> String:
+	if is_instance_valid(active_dialog):
+		return active_dialog.get_metadata(0)["node"].get_node_uuid()
+	return ""
 
 
 func get_active_node() -> DiscourseGraphNode:
-	if active_dialog == null:
-		return null
-	return active_dialog.get_metadata(0)["node"]
+	if is_instance_valid(active_dialog):
+		return active_dialog.get_metadata(0)["node"]
+	return null
 
 
 func create_node_on(tree: TreeItem, node_name: String, node: DiscourseGraphNode, default_name: String) -> void:
@@ -170,7 +172,7 @@ func create_node_on(tree: TreeItem, node_name: String, node: DiscourseGraphNode,
 	all_nodes[node.get_node_uuid()] = new_node
 
 
-func select_node(uuid: StringName) -> void:
+func select_node(uuid: String) -> void:
 	if uuid.is_empty():
 		return
 	
@@ -181,7 +183,7 @@ func select_node(uuid: StringName) -> void:
 				return
 
 
-func set_node_name(node_uuid: StringName, new_name: String) -> void:
+func set_node_name(node_uuid: String, new_name: String) -> void:
 	if not all_nodes.has(node_uuid):
 		return
 	var target: TreeItem = all_nodes[node_uuid]
@@ -190,5 +192,5 @@ func set_node_name(node_uuid: StringName, new_name: String) -> void:
 	target.get_metadata(0)["name"] = new_name
 
 
-func is_node_localized(node_uuid: StringName) -> bool:
+func is_node_localized(node_uuid: String) -> bool:
 	return all_nodes.has(node_uuid)

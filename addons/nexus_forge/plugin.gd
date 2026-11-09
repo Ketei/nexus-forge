@@ -5,63 +5,26 @@ extends EditorPlugin
 const MAIN_SCENE = preload("res://addons/nexus_forge/NexusForgeMainScene.tscn")
 const PLUGIN_NAME: String = "NexusForge"
 const PLUGIN_ICON_PATH: String = "res://addons/nexus_forge/icons/nexus_forge_small.svg"
-const HANDLED_CLASSES: Array[StringName] = [&"EditorDiscourseDialog", &"CharacterSheet", &"PhraseMap", &"Quest"]
+const HANDLED_CLASSES: Array[StringName] = [&"EditorDiscourseDialog", &"NFCharacterSheet", &"NFPhraseMap", &"NFQuest"]
 const TOOL_NAME: String = "Nexus Forge Character Lookup"
+const PLUGIN_CACHE_PATH: String = "user://nexus_forge/plugin_config.cfg"
 
 var editor_view: Control = null
 var export_plugin: EditorExportPlugin = null
-var character_map: Dictionary[String, StringName] = {}
+var tracked_characters: Array[Dictionary] = []
+var tracker_edited: bool = false
+var class_timestamps: RefCounted = null
 
 
 # Earlier versions of godot had an issue where documentation wouldn't show
 # unless recompiled. This forces a recompilation. Adds to load time.
 func recompile_script_docs() -> void:
-	const SCRIPT_DOC: Array[String] = [
-		"res://addons/nexus_forge/classes/autoload/nexus_forge_singleton.gd",
-		"res://addons/nexus_forge/resources/cache/cache_system.gd",
-		"res://addons/nexus_forge/resources/cache/resource_cache.gd",
-		"res://addons/nexus_forge/resources/bit_flags.gd",
-		"res://addons/nexus_forge/resources/value_range.gd",
-		"res://addons/nexus_forge/resources/range_float.gd",
-		"res://addons/nexus_forge/resources/range_integer.gd",
-		"res://addons/nexus_forge/classes/utils/array_utils.gd",
-		"res://addons/nexus_forge/classes/utils/bit_utils.gd",
-		"res://addons/nexus_forge/classes/utils/dict_utils.gd",
-		"res://addons/nexus_forge/classes/utils/math.gd",
-		"res://addons/nexus_forge/classes/utils/random_weight_pool.gd",
-		"res://addons/nexus_forge/classes/utils/ranges.gd",
-		"res://addons/nexus_forge/classes/utils/strings.gd",
-		"res://addons/nexus_forge/classes/utils/uuid.gd",
-		"res://addons/nexus_forge/resources/skill_set.gd",
-		"res://addons/nexus_forge/resources/stat_block.gd",
-		"res://addons/nexus_forge/resources/trait_block.gd",
-		"res://addons/nexus_forge/resources/dialog_storage/dialog_locale.gd",
-		"res://addons/nexus_forge/resources/dialog_storage/parsed_dialog.gd",
-		"res://addons/nexus_forge/resources/localization/phrase_map.gd",
-		"res://addons/nexus_forge/resources/parser/discouse_parser_base.gd",
-		"res://addons/nexus_forge/resources/character_sheet.gd",
-		"res://addons/nexus_forge/resources/item_sheet.gd",
-		"res://addons/nexus_forge/resources/quest_objective.gd",
-		"res://addons/nexus_forge/resources/quest_stage.gd",
-		"res://addons/nexus_forge/resources/quest_resource.gd",
-		"res://addons/nexus_forge/resources/quest_manager.gd",
-		"res://addons/nexus_forge/resources/recipe_item.gd",
-		"res://addons/nexus_forge/resources/recipe_sheet.gd",
-		"res://addons/nexus_forge/resources/species.gd",
-		"res://addons/nexus_forge/resources/currency_catalog.gd",
-		"res://addons/nexus_forge/resources/item_catalog.gd",
-		"res://addons/nexus_forge/resources/recipe_catalog.gd",
-		"res://addons/nexus_forge/resources/skill_catalog.gd",
-		"res://addons/nexus_forge/resources/species_catalog.gd",
-		"res://addons/nexus_forge/resources/stat_catalog.gd",
-		"res://addons/nexus_forge/resources/trait_catalog.gd",
-		"res://addons/nexus_forge/resources/var_db_script.gd"]
-	
 	var script_editor: ScriptEditor = EditorInterface.get_script_editor()
 	
-	for path in SCRIPT_DOC:
-		var script_file: Script = load(path)
-		script_editor.update_docs_from_script(script_file) # Could this work better?
+	for found_class in ProjectSettings.get_global_class_list():
+		var path: String = found_class["path"]
+		if path.begins_with("res://addons/nexus_forge/") and FileAccess.file_exists(path):
+			script_editor.update_docs_from_script(load(found_class["path"]))
 
 
 func _enter_tree() -> void:
@@ -105,6 +68,8 @@ func _enter_tree() -> void:
 	var use_phrases: bool = ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("phrases_enabled"), true)
 	var discourse_base_lang: String = ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("discourse_base_language"), OS.get_locale_language())
 	
+	class_timestamps = load("res://addons/nexus_forge/script_path_store.gd").new()
+	
 	editor_view.ready_plugin(
 			use_discourse,
 			use_characters,
@@ -117,16 +82,31 @@ func _enter_tree() -> void:
 			use_recipes,
 			use_quests,
 			use_phrases,
-			discourse_base_lang)
+			discourse_base_lang,
+			class_timestamps)
 	
 	# Resotring previous session character data.
 	if FileAccess.file_exists("user://nexus_forge/persona_settings.cfg"):
 		var cfg: ConfigFile = ConfigFile.new()
 		if cfg.load("user://nexus_forge/persona_settings.cfg") == OK:
 			var data = cfg.get_value("RUNTIME", "CharacterMap")
-			for key in data.keys():
-				if FileAccess.file_exists(key):
-					character_map[key] = StringName(data[key])
+			if typeof(data) == TYPE_ARRAY:
+				for entry in data:
+					if typeof(entry) != TYPE_DICTIONARY or not entry.has_all(["path", "character_id", "timestamp"]):
+						continue
+					var id_type: int = typeof(entry["character_id"])
+					if typeof(entry["path"]) != TYPE_STRING:
+						continue
+					elif id_type != TYPE_STRING_NAME and id_type != TYPE_STRING:
+						continue
+					elif typeof(entry["timestamp"]) != TYPE_INT:
+						continue
+					if FileAccess.file_exists(entry["path"]):
+						set_character_entry(
+								entry["path"],
+								entry["character_id"],
+								entry["timestamp"])
+	tracker_edited = false
 	
 	if use_discourse:
 		editor_view.discourse.character_browser_requested.connect(_on_character_browser_requested)
@@ -139,6 +119,9 @@ func _enter_tree() -> void:
 	add_tool_menu_item(TOOL_NAME, _on_scan_folder_selected)
 	
 	resource_saved.connect(_on_resource_saved, CONNECT_DEFERRED)
+	var fs: EditorFileSystem = EditorInterface.get_resource_filesystem()
+	fs.filesystem_changed.connect(_on_filesystem_changed)
+	
 	EditorInterface.get_file_system_dock().resource_removed.connect(_on_resource_removed)
 	EditorInterface.get_file_system_dock().files_moved.connect(_on_files_moved, CONNECT_DEFERRED)
 
@@ -150,7 +133,10 @@ func _build() -> bool:
 	var valid_path: bool = path != "" and path.is_absolute_path() and path.begins_with("res://") and path.get_extension() == ""
 	
 	if not valid_path:
-		printerr("[ERROR] NexusForge: Discourse needs a valid folder path for localization files on project settings.")
+		NFPluginGameHandler._log_msg(
+				"plugin",
+				"Invalid localization path '%s'" % path,
+				NFPluginGameHandler._LogLevel.ERROR)
 	
 	if ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("character_register_ids"), true):
 		save_character_paths()
@@ -162,15 +148,16 @@ func _save_external_data() -> void:
 	if _editor_ready():
 		editor_view.save_resources()
 	
-	var character_cfg: ConfigFile = ConfigFile.new()
-	
-	character_cfg.set_value("RUNTIME", "CharacterMap", character_map)
-	
-	if character_cfg.save("user://nexus_forge/persona_settings.cfg") != OK:
-		NFPluginGameHandler._log_msg(
-				"plugin",
-				"Failed saving character config to user://nexus_forge/persona_settings.cfg",
-				NFPluginGameHandler._LogLevel.ERROR)
+	if tracker_edited:
+		var character_cfg: ConfigFile = ConfigFile.new()
+		character_cfg.set_value("RUNTIME", "CharacterMap", tracked_characters.duplicate(true))
+		if character_cfg.save("user://nexus_forge/persona_settings.cfg") == OK:
+			tracker_edited = false
+		else:
+			NFPluginGameHandler._log_msg(
+					"plugin",
+					"Failed saving character config to user://nexus_forge/persona_settings.cfg",
+					NFPluginGameHandler._LogLevel.ERROR)
 
 
 func _has_main_screen() -> bool:
@@ -202,13 +189,33 @@ func _get_plugin_name() -> String:
 func _make_visible(visible):
 	if editor_view != null:
 		editor_view.visible = visible
-		
 
 
 func _enable_plugin() -> void:
 	add_autoload_singleton(
 			"NexusForge",
 			"res://addons/nexus_forge/classes/autoload/nexus_forge_singleton.gd")
+	
+	var trigger_settings_save: bool = false
+	
+	if FileAccess.file_exists(PLUGIN_CACHE_PATH):
+		var cfg: ConfigFile = ConfigFile.new()
+		var err: Error = cfg.load(PLUGIN_CACHE_PATH)
+		if err == OK:
+			for tool_id in NFPluginGameHandler._SETTINGS_PATHS:
+				if not cfg.has_section_key("ProjectSettings", tool_id):
+					continue
+				var path: String = NFPluginGameHandler.get_setting_path(tool_id)
+				var default_setting: Variant = NFPluginGameHandler.get_default_setting(tool_id)
+				var value: Variant = cfg.get_value("ProjectSettings", tool_id, null)
+				
+				if typeof(default_setting) == typeof(value) and default_setting != value:
+					ProjectSettings.set_setting(path, value)
+					trigger_settings_save = true
+	
+	if trigger_settings_save:
+		ProjectSettings.save()
+	
 	if ProjectSettings.get_setting(NFPluginGameHandler.get_setting_path("recompile_documentation"), false):
 		recompile_script_docs.call_deferred()
 
@@ -216,7 +223,7 @@ func _enable_plugin() -> void:
 func _get_window_layout(configuration: ConfigFile) -> void:
 	var discourse_id_visible: bool = editor_view.discourse.display_dialog_id_checked() if editor_view.discourse != null else false
 	var discourse_open_files: Array[String] = editor_view.discourse.get_open_files() if editor_view.discourse != null else Array([], TYPE_STRING, &"", null)
-	var discourse_recent_files: Array[String] = editor_view.discourse.get_recenlty_opened_files() if editor_view.discourse != null else ArrayUtils.create_typed(TYPE_STRING)
+	var discourse_recent_files: Array[String] = editor_view.discourse.get_recenlty_opened_files() if editor_view.discourse != null else NFArrayUtils.create_typed(TYPE_STRING)
 	var open_characters: Array[String] = editor_view.characters.get_open_characters() if editor_view.characters != null else Array([], TYPE_STRING, &"", null)
 	var open_maps: Array[String] = editor_view.phrase_maps.get_open_maps() if editor_view.phrase_maps != null else Array([], TYPE_STRING, &"", null)
 	var open_quests: Array[String] = editor_view.quests.get_open_files() if editor_view.quests != null else Array([], TYPE_STRING, &"", null)
@@ -264,11 +271,16 @@ func _set_window_layout(configuration: ConfigFile) -> void:
 		editor_view.quests.open_files(open_quests)
 
 
-func _on_character_browser_requested(node_uuid: StringName, target: LineEdit) -> void:
+func _on_character_browser_requested(node_uuid: String, target: LineEdit) -> void:
+	var data_to_populate: Dictionary[String, String] = {}
+	
+	for entry in tracked_characters:
+		data_to_populate[entry["path"]] = entry["character_id"]
+	
 	var browser: Window = load("res://addons/nexus_forge/discourse/character_browser.tscn").instantiate()
 	var initial_text: String = target.text
 	EditorInterface.popup_dialog_centered(browser)
-	browser.populate_characters(character_map)
+	browser.populate_characters(data_to_populate)
 	browser.grab_search_focus()
 	
 	var result: Array = await browser.window_finished
@@ -433,10 +445,12 @@ func verify_project_settings() -> void:
 				NFPluginGameHandler._SETTINGS_PATHS[tool_id]["default_value"] if tool_id != "discourse_base_language" else OS.get_locale_language())
 		
 		if tool_id == "discourse_base_language":
-			var set_setting: String = TranslationServer.standardize_locale(ProjectSettings.get_setting(NFPluginGameHandler._SETTINGS_PATHS[tool_id]["setting_path"], ""))
+			var set_setting: String = NFStringUtils.sanitize_locale(
+					ProjectSettings.get_setting(
+							NFPluginGameHandler._SETTINGS_PATHS[tool_id]["setting_path"],
+							""))
 			if not set_setting.is_empty():
-				var parts: PackedStringArray = set_setting.split("_", false)
-				var language: String = parts[0]
+				var language: String = NFStringUtils.get_locale_language(set_setting)
 				
 				if language != set_setting:
 					ProjectSettings.set_setting(
@@ -449,21 +463,16 @@ func verify_project_settings() -> void:
 		elif tool_id == "discourse_use_languages":
 			var set_setting: String = ProjectSettings.get_setting(NFPluginGameHandler._SETTINGS_PATHS[tool_id]["setting_path"], "")
 			if not set_setting.is_empty():
-				var locales: PackedStringArray = StringUtils.split_and_strip(set_setting, ",", false)
+				var locales: PackedStringArray = NFStringUtils.split_and_strip(set_setting, ",", false)
 				var valid_locales: Dictionary[String, Variant] = {}
 				
 				for locale in locales:
-					var valid_code: String = TranslationServer.standardize_locale(locale)
+					var valid_code: String = NFStringUtils.sanitize_locale(locale)
 					if valid_code.is_empty():
 						continue
 					
-					var parts: PackedStringArray = valid_code.split("_", false)
-					var lang: String = parts[0]
-					var region: String = ""
-					for idx in range(1, parts.size()):
-						if parts[idx].length() == 2:
-							region = parts[idx]
-							break
+					var lang: String = NFStringUtils.get_locale_language(valid_code)
+					var region: String = NFStringUtils.get_locale_country(valid_code)
 					
 					var locale_code: String = lang if region.is_empty() else lang + "_" + region
 					
@@ -476,8 +485,10 @@ func verify_project_settings() -> void:
 		elif tool_id == "discourse_custom_dialog_debug_scene":
 			var path: String = ProjectSettings.get_setting(NFPluginGameHandler._SETTINGS_PATHS[tool_id]["setting_path"], "")
 			if not path.is_empty() and not FileAccess.file_exists(path):
-				push_error(
-						"[NEXUS FORGE] Custom debug scene \"" + path + "\" was not found.")
+				NFPluginGameHandler._log_msg(
+						"plugin",
+						"Custom debug scene was not found at '%s'" % path,
+						NFPluginGameHandler._LogLevel.ERROR)
 		elif tool_id == "discourse_localization_preview_scene":
 			is_preview_scene_valid()
 			
@@ -512,11 +523,24 @@ func verify_project_settings() -> void:
 func _disable_plugin() -> void:
 	remove_autoload_singleton("NexusForge")
 	
+	var cache: ConfigFile = ConfigFile.new()
+	
 	for tool_id in NFPluginGameHandler._SETTINGS_PATHS.keys():
-		if ProjectSettings.has_setting(NFPluginGameHandler._SETTINGS_PATHS[tool_id]["setting_path"]):
+		var setting_path: String = NFPluginGameHandler.get_setting_path(tool_id)
+		if ProjectSettings.has_setting(setting_path):
+			var value: Variant = ProjectSettings.get_setting(setting_path)
+			cache.set_value("ProjectSettings", tool_id, value)
+			
 			ProjectSettings.set_setting(
-					NFPluginGameHandler._SETTINGS_PATHS[tool_id]["setting_path"],
+					setting_path,
 					null)
+	
+	if 0 < cache.get_sections().size():
+		if cache.save(PLUGIN_CACHE_PATH) != OK:
+			NFPluginGameHandler._log_msg(
+					"",
+					"Couldn't save Nexus Forge ProjectSettings Cache",
+					NFPluginGameHandler._LogLevel.WARNING)
 	
 	ProjectSettings.save()
 
@@ -535,12 +559,12 @@ func _handles(object: Object) -> bool:
 	match script_global_name:
 		&"EditorDiscourseDialog":
 			tool_available = editor_view.discourse != null
-		&"CharacterSheet":
-			character_map[object.resource_path] = object.id
+		&"NFCharacterSheet":
+			set_character_entry(object.resource_path, object.id)
 			tool_available = editor_view.characters != null
-		&"PhraseMap":
+		&"NFPhraseMap":
 			tool_available = editor_view.phrase_maps != null
-		&"Quest":
+		&"NFQuest":
 			tool_available = editor_view.quests != null
 	
 	return HANDLED_CLASSES.has(script_global_name) and tool_available
@@ -553,27 +577,26 @@ func _edit(object: Object) -> void:
 
 
 func _on_character_created(path: String) -> void:
-	if not character_map.has(path):
-		character_map[path] = &""
+	# ID is still not assigned, only the resource was created
+	set_character_entry(path)
 
 
 func _editor_ready() -> bool:
 	return editor_view != null and editor_view.is_node_ready()
 
 
-func _on_character_saved(path: String, id: StringName) -> void:
-	character_map[path] = id
+func _on_character_saved(path: String, id: String) -> void:
+	set_character_entry(path, id, FileAccess.get_modified_time(path))
 
 
-func _on_character_opened(path: String, id: StringName) -> void:
-	if not character_map.has(path):
-		character_map[path] = id
+func _on_character_opened(path: String, id: String) -> void:
+	set_character_entry(path, id)
 
 
 func _on_resource_saved(resource: Resource) -> void:
-	if resource is CharacterSheet:
+	if resource is NFCharacterSheet:
 		if not resource.resource_path.is_empty() and resource.resource_path.get_extension() == "tres":
-			character_map[resource.resource_path] = resource.id
+			set_character_entry(resource.resource_path, resource.id, FileAccess.get_modified_time(resource.resource_path))
 		return
 	elif resource is not Script:
 		return
@@ -582,33 +605,52 @@ func _on_resource_saved(resource: Resource) -> void:
 	
 	if script_class.is_empty():
 		return
-	elif script_class == &"StatBlock":
-		editor_view.reload_stats()
-	elif script_class == &"SkillSet":
-		editor_view.reload_skills()
-	elif script_class == &"TraitBlock":
-		editor_view.reload_traits()
-	elif script_class == &"CharacterSheet":
-		editor_view.reload_character_sheet()
-	elif script_class == &"ItemSheet":
-		editor_view.reload_items()
-	elif script_class == &"Quest":
-		editor_view.reload_quest_data_types()
-	elif script_class == &"QuestStage":
-		editor_view.reload_quest_stage_types()
-	elif script_class == &"QuestObjective":
-		editor_view.reload_quest_objective_types()
-	elif script_class == &"DiscourseAPI":
-		editor_view.reload_discourse_api()
+	class_timestamps.validate_update(String(script_class), resource.resource_path)
 
+
+func _on_filesystem_changed():
+	# Updates localtion of classes for API-dependent modules
+	class_timestamps.check_for_updates()
+	# Updates internal dictionary relation between ID and filepath
+	scan_for_character_changes()
+	
+	if editor_view == null:
+		return
+	# Remove open resources that were deleted
+	
+	if editor_view.characters != null:
+		var removed_characters: Array[NFCharacterSheet] = []
+		for inst_id in editor_view.characters._open_files:
+			var res: NFCharacterSheet = editor_view.characters._open_files[inst_id]["resource"]
+			if not FileAccess.file_exists(res.resource_path):
+				removed_characters.append(res)
+		for character in removed_characters:
+			editor_view.characters.filesystem_resource_removed(character)
+	
+	if editor_view.quests != null:
+		var removed_quests: Array[NFQuest] = []
+		for inst_id in editor_view.quests._open_files:
+			var res: NFQuest = editor_view.quests._open_files[inst_id]["resource"]
+			if not FileAccess.file_exists(res.resource_path):
+				removed_quests.append(res)
+		for quest in removed_quests:
+			editor_view.quests.filesystem_resource_removed(quest)
+	
+	if editor_view.phrase_maps != null:
+		var removed_phrases: Array[NFPhraseMap] = []
+		for instance_id in editor_view.phrase_maps._open_files:
+			var res: NFPhraseMap = editor_view.phrase_maps._open_files[instance_id]["resource"]
+			if not FileAccess.file_exists(res.resource_path):
+				removed_phrases.append(res)
+		
+		for phrase in removed_phrases:
+			editor_view.phrase_maps.filesystem_resource_removed(phrase)
 
 func _on_files_moved(old_file: String, new_file: String) -> void:
 	if old_file.get_extension() != "tres":
 		return
 	
-	if character_map.has(old_file):
-		character_map[new_file] = character_map[old_file]
-		character_map.erase(old_file)
+	change_character_path(old_file, new_file)
 	
 	if ProjectSettings.get_setting(
 			NFPluginGameHandler.get_setting_path("discourse"), "") == old_file:
@@ -662,7 +704,7 @@ func _on_files_moved(old_file: String, new_file: String) -> void:
 	var file = load(new_file)
 	var mode: String = ""
 	
-	if file is Quest:
+	if file is NFQuest:
 		mode = "-treestate-"
 	elif file is EditorDiscourseDialog:
 		mode = "-graphstate-"
@@ -675,21 +717,25 @@ func _on_files_moved(old_file: String, new_file: String) -> void:
 	if FileAccess.file_exists(path):
 		var new_md5: String = new_file.md5_text()
 		var new_path: String = "res://.godot/editor/".path_join(new_file.get_file() + mode + new_md5 + ".cfg")
-		DirAccess.rename_absolute(old_file, new_path)
+		DirAccess.rename_absolute(path, new_path)
 
 
 func _on_resource_removed(object: Resource) -> void:
 	if object == null:
 		return
 	if object is EditorDiscourseDialog:
-		editor_view.discourse.filesystem_resource_removed(object)
-	elif object is CharacterSheet:
-		character_map.erase(object.resource_path)
-		editor_view.characters.filesystem_resource_removed(object)
-	elif object is PhraseMap:
-		editor_view.phrase_maps.filesystem_resource_removed(object)
-	elif object is Quest:
-		editor_view.quests.filesystem_resource_removed(object)
+		if editor_view.discourse != null:
+			editor_view.discourse.filesystem_resource_removed(object)
+	elif object is NFCharacterSheet:
+		remove_character(object.resource_path)
+		if editor_view.characters != null:
+			editor_view.characters.filesystem_resource_removed(object)
+	elif object is NFPhraseMap:
+		if editor_view.phrase_maps != null:
+			editor_view.phrase_maps.filesystem_resource_removed(object)
+	elif object is NFQuest:
+		if editor_view.quests != null:
+			editor_view.quests.filesystem_resource_removed(object)
 	elif object is NFBlackboardData:
 		if editor_view.variables._variables_resource == object:
 			ProjectSettings.set_setting(
@@ -697,49 +743,52 @@ func _on_resource_removed(object: Resource) -> void:
 					"")
 			ProjectSettings.save()
 			editor_view.variables.reload_resource()
-	elif object is SpeciesCatalog:
-		if editor_view.species._species_resource == object:
+	elif object is NFSpeciesCatalog:
+		if editor_view.species != null and editor_view.species._species_resource == object:
 			ProjectSettings.set_setting(
 					NFPluginGameHandler.get_setting_path("species"),
 					"")
 			ProjectSettings.save()
 			editor_view.species.reload_resource()
-	elif object is SkillCatalog:
-		if editor_view.talents._skills_resource == object:
+	elif object is NFSkillCatalog:
+		if editor_view.talents != null and editor_view.talents._skills_resource == object:
 			ProjectSettings.set_setting(
 					NFPluginGameHandler.get_setting_path("skills"),
 					"")
 			ProjectSettings.save()
 			editor_view.talents.reload_skill_resource()
-	elif object is TraitCatalog:
-		if editor_view.talents._traits_resource == object:
+	elif object is NFTraitCatalog:
+		if editor_view.talents != null and editor_view.talents._traits_resource == object:
 			ProjectSettings.set_setting(
 				NFPluginGameHandler.get_setting_path("traits"),
 				"")
 			ProjectSettings.save()
 			editor_view.talents.reload_trait_resource()
-	elif object is ItemCatalog:
+	elif object is NFItemCatalog:
 		if editor_view.recipes_link.items == object:
 			ProjectSettings.set_setting(
 				NFPluginGameHandler.get_setting_path("items"),
 				"")
 			ProjectSettings.save()
-			editor_view.items.items_container.reload_item_resource()
-			editor_view.recipes.reload_items(null)
-	elif object is CurrencyCatalog:
-		if editor_view.items.items_container.currency_resource == object:
+			if editor_view.items != null:
+				editor_view.items.items_container.reload_item_resource()
+			if editor_view.recipes != null:
+				editor_view.recipes.reload_items(null)
+	elif object is NFCurrencyCatalog:
+		if editor_view.items != null and editor_view.items.items_container.currency_resource == object:
 			ProjectSettings.set_setting(
 				NFPluginGameHandler.get_setting_path("currency"),
 				"")
 			ProjectSettings.save()
 			editor_view.items.items_container.reload_currency_resource()
-	elif object is RecipeCatalog:
+	elif object is NFRecipeCatalog:
 		if editor_view.recipes_link.recipes == object:
 			ProjectSettings.set_setting(
 				NFPluginGameHandler.get_setting_path("recipes"),
 				"")
 			ProjectSettings.save()
-			editor_view.recipes.reload_recipe_resource()
+			if editor_view.recipes != null:
+				editor_view.recipes.reload_recipe_resource()
 
 
 func _on_scan_folder_selected() -> void:
@@ -754,23 +803,25 @@ func _on_scan_confirmed(dialog: ConfirmationDialog) -> void:
 	EditorInterface.popup_dialog_centered(dir_access)
 	
 	var result: Array = await dir_access.dialog_finished
-	
-	if result[0] and DirAccess.dir_exists_absolute(result[1]):
-		var log_msg: String = ""
-		var found_files: Dictionary[String, StringName] = discover_character_sheets(result[1])
-		
-		if found_files.is_empty():
-			log_msg = "Scan finished. No character files found."
-		else:
-			character_map.merge(found_files, true)
-			log_msg = "Scan Finished. %s character file(s) found." % found_files.size()
-			
-		NFPluginGameHandler._log_msg(
-				"plugin",
-				log_msg)
-	
 	dialog.queue_free()
 	dir_access.queue_free()
+	
+	if not result[0] or not DirAccess.dir_exists_absolute(result[1]):
+		return
+	
+	var log_msg: String = ""
+	var found_files: Dictionary[String, String] = discover_character_sheets(result[1])
+	
+	if found_files.is_empty():
+		log_msg = "Scan finished. No character files found."
+	else:
+		for path in found_files:
+			set_character_entry(path, found_files[path], FileAccess.get_modified_time(path))
+		log_msg = "Scan Finished. %s character file(s) found." % found_files.size()
+		
+	NFPluginGameHandler._log_msg(
+			"plugin",
+			log_msg)
 
 
 func _on_scan_canceled(dialog: ConfirmationDialog) -> void:
@@ -778,33 +829,50 @@ func _on_scan_canceled(dialog: ConfirmationDialog) -> void:
 
 
 func save_character_paths() -> void:
-	var valid_characters: Dictionary[String, StringName] = {}
+	var new_entries: Array[Dictionary] = []
+	var performed_changes: bool = false
 	
-	for res_path in character_map.keys():
-		if not ResourceLoader.exists(res_path):
+	for entry in tracked_characters:
+		if not ResourceLoader.exists(entry["path"]):
+			performed_changes = true
 			continue
-		var data: Dictionary = parse_character_file(res_path)
 		
-		if data["is_character"]:
-			valid_characters[res_path] = data["id"]
+		var file_timestamp: int = FileAccess.get_modified_time(entry["path"])
+		if file_timestamp == entry["timestamp"]:
+			new_entries.append(entry)
+			continue
+		else:
+			var data: Dictionary = parse_character_file(entry["path"])
+			if data["is_character"]:
+				var new_entry: Dictionary[String, Variant] = {
+					"path": entry["path"],
+					"character_id": data["id"],
+					"timestamp": file_timestamp}
+				new_entries.append(new_entry)
+			performed_changes = true
 	
-	if valid_characters != character_map:
-		character_map.assign(valid_characters)
+	if not performed_changes and not tracker_edited:
+		return
+	
+	if performed_changes:
+		tracked_characters.assign(new_entries)
 	
 	var character_cfg: ConfigFile = ConfigFile.new()
-	character_cfg.set_value("RUNTIME", "CharacterMap", valid_characters)
-	
-	if character_cfg.save("user://nexus_forge/persona_settings.cfg") != OK:
+	character_cfg.set_value("RUNTIME", "CharacterMap", new_entries)
+	if character_cfg.save("user://nexus_forge/persona_settings.cfg") == OK:
+		tracker_edited = false
+	else:
 		NFPluginGameHandler._log_msg(
 				"plugin",
 				"Failed saving character config to user://nexus_forge/persona_settings.cfg",
 				NFPluginGameHandler._LogLevel.WARNING)
+	
 
 
-func discover_character_sheets(on_path: String = "") -> Dictionary[String, StringName]:
+func discover_character_sheets(on_path: String = "") -> Dictionary[String, String]:
 	var efs: EditorFileSystem = EditorInterface.get_resource_filesystem()
 	var sys_directory: EditorFileSystemDirectory = efs.get_filesystem() if on_path.is_empty() else efs.get_filesystem_path(on_path)
-	var character_sheets: Dictionary[String, StringName] = {}
+	var character_sheets: Dictionary[String, String] = {}
 	
 	if sys_directory != null:
 		_traverse_for_character_resources(sys_directory, character_sheets)
@@ -812,20 +880,20 @@ func discover_character_sheets(on_path: String = "") -> Dictionary[String, Strin
 	return character_sheets
 
 
-func _traverse_for_character_resources(dir: EditorFileSystemDirectory, results: Dictionary[String, StringName]) -> void:
+func _traverse_for_character_resources(dir: EditorFileSystemDirectory, results: Dictionary[String, String]) -> void:
 	for index in range(dir.get_file_count()):
 		var path: String = dir.get_file_path(index)
 		if path.get_extension() == "tres":
 			var res_data: Dictionary = parse_character_file(path)
 			if res_data["is_character"]:
 				results[path] = res_data["id"]
-		
-		for sub_index in range(dir.get_subdir_count()):
-			_traverse_for_character_resources(dir.get_subdir(sub_index), results)
+	
+	for sub_index in range(dir.get_subdir_count()):
+		_traverse_for_character_resources(dir.get_subdir(sub_index), results)
 
 
 func parse_character_file(file_path: String, id_property: String = "id") -> Dictionary:
-	var data: Dictionary = {"is_character": false, "id": &""}
+	var data: Dictionary = {"is_character": false, "id": ""}
 	var file: FileAccess = FileAccess.open(file_path, FileAccess.READ)
 	
 	if file == null:
@@ -842,7 +910,7 @@ func parse_character_file(file_path: String, id_property: String = "id") -> Dict
 			
 		if not is_valid_class:
 			if line.begins_with("[gd_resource"):
-				if "script_class=\"CharacterSheet\"" in line:
+				if "script_class=\"NFCharacterSheet\"" in line:
 					data["is_character"] = true
 					is_valid_class = true
 					continue
@@ -867,3 +935,62 @@ func parse_character_file(file_path: String, id_property: String = "id") -> Dict
 					return data
 	
 	return data
+
+
+func scan_for_character_changes() -> void:
+	for idx in range(tracked_characters.size() - 1, -1, -1):
+		if FileAccess.file_exists(tracked_characters[idx]["path"]):
+			var dict: Dictionary = tracked_characters[idx]
+			var timestamp: int = FileAccess.get_modified_time(dict["path"])
+			if timestamp != dict["timestamp"]:
+				var char_data = parse_character_file(dict["path"])
+				if char_data["is_character"]:
+					dict["timestamp"] = timestamp
+					dict["character_id"] = char_data["id"]
+				else:
+					tracked_characters.remove_at(idx)
+				tracker_edited = true
+		else:
+			tracked_characters.remove_at(idx)
+			tracker_edited = true
+
+
+func set_character_entry(path: String, character_id: String = "", timestamp: int = -1) -> void:
+	if not ResourceLoader.exists(path):
+		return
+	
+	for item in tracked_characters:
+		if item["path"] == path:
+			if item["character_id"] != character_id:
+				item["character_id"] = character_id
+				tracker_edited = true
+			
+			if 0 < timestamp:
+				if item["timestamp"] != timestamp:
+					tracker_edited = true
+					item["timestamp"] = timestamp
+			
+			return
+	
+	var new_entry: Dictionary[String, Variant] = {
+		"path": path,
+		"character_id": character_id,
+		"timestamp": FileAccess.get_modified_time(path) if timestamp < 0 else timestamp}
+	tracked_characters.append(new_entry)
+	tracker_edited = true
+
+
+func change_character_path(old_path: String, new_path: String) -> void:
+	for item in tracked_characters:
+		if item["path"] == old_path:
+			item["path"] = new_path
+			tracker_edited = true
+			return
+
+
+func remove_character(path: String) -> void:
+	for idx in range(tracked_characters.size()):
+		if tracked_characters[idx]["path"] == path:
+			tracked_characters.remove_at(idx)
+			tracker_edited = true
+			return

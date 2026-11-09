@@ -57,7 +57,7 @@ func _on_language_button_clicked(item: TreeItem, _column: int, id: int, _mouse_b
 						"_" +\
 						item.get_metadata(0)["region_code"]
 			
-			locale_delete_requested.emit(TranslationServer.standardize_locale(locale_to_erase))
+			locale_delete_requested.emit(NFStringUtils.sanitize_locale(locale_to_erase))
 
 
 func _on_lang_item_activated() -> void:
@@ -103,8 +103,8 @@ func _on_create_region_pressed(at_lang: String) -> void:
 	window.sort_codes_array(regions)
 	window.title = "Select Region..."
 	window.set_codes(regions)
-	add_child(window)
-	window.show()
+	
+	EditorInterface.popup_dialog_centered(window)
 	window.focus_option_button()
 	var result_code: String = await window.dialog_finished
 	window.queue_free()
@@ -112,7 +112,7 @@ func _on_create_region_pressed(at_lang: String) -> void:
 	if result_code.is_empty():
 		return
 	
-	var full_locale: String = TranslationServer.standardize_locale(at_lang + "_" + result_code)
+	var full_locale: String = NFStringUtils.sanitize_locale(at_lang + "_" + result_code)
 	locale_creation_requested.emit(full_locale)
 
 
@@ -132,17 +132,17 @@ func get_active_locale() -> String:
 	var lang: String = get_active_language()
 	var reg: String = get_active_region()
 	var code: String = lang if reg.is_empty() else lang + "_" + reg
-	return TranslationServer.standardize_locale(code)
+	return NFStringUtils.sanitize_locale(code)
 
 
 func get_base_language() -> String:
 	if main_language == null:
 		return ""
-	return TranslationServer.standardize_locale(main_language.get_metadata(0)["language_code"])
+	return NFStringUtils.sanitize_locale(main_language.get_metadata(0)["language_code"])
 
 
 func create_language(language_code: String, is_main: bool = false) -> void:
-	language_code = TranslationServer.standardize_locale(language_code)
+	language_code = NFStringUtils.sanitize_locale(language_code)
 	if has_language(language_code):
 		return
 	
@@ -190,12 +190,12 @@ func create_region(on_lang: String, region_code: String) -> void:
 
 # Erases a language and all the regions.
 func erase_language(lang: String) -> void:
-	var normalized_lang: String = TranslationServer.standardize_locale(lang)
+	var normalized_lang: String = NFStringUtils.sanitize_locale(lang)
 	if normalized_lang.is_empty():
 		return
-	var parts: PackedStringArray = normalized_lang.split("_", false)
-	var language: String = parts[0]
-	var region: String = "" if parts.size() < 2 else parts[1]
+	
+	var language: String = NFStringUtils.get_locale_language(lang)
+	var region: String = NFStringUtils.get_locale_country(lang)
 	
 	for lang_item in get_root().get_children():
 		if lang_item.get_metadata(0)["language_code"] == language:
@@ -204,6 +204,8 @@ func erase_language(lang: String) -> void:
 					main_language = null
 				if active_language == lang_item:
 					active_language = null
+				if active_region != null and active_region.get_parent() == lang_item:
+					active_region = null
 				lang_item.free()
 			else:
 				for reg_item in lang_item.get_children():

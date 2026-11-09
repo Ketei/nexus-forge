@@ -2,14 +2,15 @@
 extends DiscourseGraphNode
 
 
-signal go_to_anchor_pressed(node_uuid: StringName)
-signal selected_shortcut_changed(node_uuid: StringName, old_anchor: StringName, new_anchor: StringName)
+signal go_to_anchor_pressed(node_uuid: String)
+signal selected_shortcut_changed(node_uuid: String, old_anchor: String, new_anchor: String)
 
 var shortcuts: OptionButton
+var go_to_btn: Button
 
 
 func _post_init() -> void:
-	set_node_id(&"FlowIn")
+	set_node_id("FlowIn")
 	title = "Flow In"
 	node_type = DialogueNodeType.SHORTCUT_IN
 	parent_mode = PortMode.INPUT
@@ -24,9 +25,9 @@ func _post_init() -> void:
 	shortcuts.disabled = true
 	shortcuts.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	shortcuts.custom_minimum_size.y = 32
-	shortcuts.set_meta(&"old_value", &"")
+	shortcuts.set_meta(&"old_value", "")
 	
-	var go_to_btn: Button = Button.new()
+	go_to_btn = Button.new()
 	go_to_btn.custom_minimum_size = Vector2(32.0, 32.0)
 	go_to_btn.disabled = true
 	go_to_btn.tooltip_text = "Go to anchor"
@@ -42,38 +43,27 @@ func _post_init() -> void:
 			fields,
 			false,
 			SlotConnectionType.DIALOG)
-	
-	map_field(&"fields", &"button", go_to_btn)
 
 
 func _ready() -> void:
 	graph_icon = preload("res://addons/nexus_forge/icons/dialog_exit.svg")
 	set_slot_custom_icon_left(0, flow_icon)
 	set_slot_color_left(0, COLORS["dialog"])
-	get_mapped_field(&"fields", &"button").icon = get_theme_icon("ExternalLink", "EditorIcons")
+	go_to_btn.icon = get_theme_icon("ExternalLink", "EditorIcons")
 
 
 func _get_node_data() -> Dictionary:
 	var metadata: Dictionary = {
-		"anchor_target": shortcuts.get_selected_metadata() if 0 <= shortcuts.selected else &""}
+		"anchor_target": shortcuts.get_selected_metadata() if 0 <= shortcuts.selected else ""}
 	return _build_node_data(metadata)
 
 
 func _set_node_data(data: Dictionary) -> void:
-	if data.has("name") and typeof(data["name"]) == TYPE_STRING_NAME:
-		_node_id = data["name"]
-	
-	if not data.has("metadata") or typeof(data["metadata"]) != TYPE_DICTIONARY:
-		return
-	var metadata: Dictionary = data["metadata"]
-	
-	if metadata.has("position") and typeof(metadata["position"]) == TYPE_VECTOR2:
-		position_offset = metadata["position"]
-	
-	if metadata.has("anchor_target"):
-		var target_type: int = typeof(metadata["anchor_target"])
-		if target_type == TYPE_STRING_NAME or target_type == TYPE_STRING:
-			select_target(metadata["anchor_target"])
+	super(data)
+	var target_data: Variant = data.get("metadata", NFDictUtils.EMPTY).get("anchor_target")
+	var target_type: int = typeof(target_data)
+	if target_type == TYPE_STRING or target_type == TYPE_STRING_NAME:
+		select_target(target_data)
 
 
 func _get_issues() -> PackedStringArray:
@@ -85,17 +75,16 @@ func _get_issues() -> PackedStringArray:
 	return issues
 
 
-func add_anchor(target_uuid: StringName, target_text: String) -> void:
-	var go_to_btn: Button = get_mapped_field(&"fields", &"button")
-	var id_selected: StringName = shortcuts.get_selected_metadata() if -1 < shortcuts.selected else &""
-	var existing_anchors: Dictionary[StringName, String] = {}
+func add_anchor(target_uuid: String, target_text: String) -> void:
+	var id_selected: String = shortcuts.get_selected_metadata() if -1 < shortcuts.selected else ""
+	var existing_anchors: Dictionary[String, String] = {}
 	
 	for idx in range(shortcuts.item_count):
 		existing_anchors[shortcuts.get_item_metadata(idx)] = shortcuts.get_item_text(idx)
 	
 	existing_anchors[target_uuid] = target_text
 	
-	var ids: Array[StringName] = []
+	var ids: Array[String] = []
 	ids.assign(existing_anchors.keys())
 	
 	ids.sort_custom(func(a,b): return existing_anchors[a] < existing_anchors[b])
@@ -122,7 +111,7 @@ func add_anchor(target_uuid: StringName, target_text: String) -> void:
 		go_to_btn.disabled = false
 
 
-func update_anchor(target_uuid: StringName, new_text: String) -> void:
+func update_anchor(target_uuid: String, new_text: String) -> void:
 	for idx in range(shortcuts.item_count):
 		if shortcuts.get_item_metadata(idx) != target_uuid:
 			continue
@@ -130,14 +119,13 @@ func update_anchor(target_uuid: StringName, new_text: String) -> void:
 		return
 
 
-func get_selected_target_uuid() -> StringName:
+func get_selected_target_uuid() -> String:
 	if -1 < shortcuts.selected:
 		return shortcuts.get_selected_metadata()
-	return &""
+	return ""
 
 
-func remove_anchor(target_uuid: StringName) -> bool:
-	var go_to_btn: Button = get_mapped_field(&"fields", &"button")
+func remove_anchor(target_uuid: String) -> bool:
 	var selected_index: int = shortcuts.selected
 	
 	for idx in range(shortcuts.item_count):
@@ -146,7 +134,7 @@ func remove_anchor(target_uuid: StringName) -> bool:
 		shortcuts.remove_item(idx)
 		if shortcuts.item_count == 0:
 			shortcuts.select(-1)
-			shortcuts.set_meta(&"old_value", &"")
+			shortcuts.set_meta(&"old_value", "")
 			shortcuts.disabled = true
 			go_to_btn.disabled = true
 		else:
@@ -165,7 +153,7 @@ func _on_go_to_anchor_pressed() -> void:
 	go_to_anchor_pressed.emit(shortcuts.get_selected_metadata())
 
 
-func select_target(uuid: StringName) -> void:
+func select_target(uuid: String) -> void:
 	for idx in range(shortcuts.item_count):
 		if shortcuts.get_item_metadata(idx) == uuid:
 			shortcuts.select(idx)
@@ -174,8 +162,8 @@ func select_target(uuid: StringName) -> void:
 
 
 func _on_anchor_idx_selected(idx: int) -> void:
-	var old_value: StringName = shortcuts.get_meta(&"old_value", &"")
-	var new_value: StringName = shortcuts.get_item_metadata(idx)
+	var old_value: String = shortcuts.get_meta(&"old_value", "")
+	var new_value: String = shortcuts.get_item_metadata(idx)
 	
 	if new_value == old_value:
 		return

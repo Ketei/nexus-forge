@@ -233,7 +233,7 @@ func move_stage(stage_id: StringName, to_index: int) -> void:
 	if to_index < -child_count or max_index < to_index:
 		NFPluginGameHandler._log_msg(
 				"odyssey - editor",
-				"Failed changing stage '%s' index. Index out of bounds",
+				"Failed changing stage '%s' index. Index out of bounds" % stage_id,
 				NFPluginGameHandler._LogLevel.ERROR)
 		return
 	
@@ -255,7 +255,7 @@ func set_objective_id(on_stage: StringName, from: StringName, to: StringName) ->
 	var objective: TreeItem = get_objective(on_stage, from)
 	var str_id: String = String(to)
 	
-	if objective == null or has_id(to, objective.get_parent(), objective):
+	if objective == null or has_id(str_id, objective.get_parent(), objective):
 		return
 	
 	objective.set_text(0, String(to))
@@ -290,11 +290,12 @@ func set_entry_stage(stage_id: StringName) -> void:
 
 func select_quest(emit_select: bool = true) -> void:
 	root.select(0)
+	scroll_to_item.call_deferred(root)
 	if emit_select:
 		quest_selected.emit()
 
 
-func set_quest(quest: Quest, select: bool = false, emit_select: bool = true) -> void:
+func set_quest(quest: NFQuest, select: bool = false, emit_select: bool = true) -> void:
 	if root == null:
 		root = create_item()
 	else:
@@ -334,12 +335,14 @@ func set_quest(quest: Quest, select: bool = false, emit_select: bool = true) -> 
 			objective_item.set_metadata(0, {"id": objective_id, "type": ItemType.OBJECTIVE})
 	
 	if select:
-		root.select(0)
-		if emit_select:
-			quest_selected.emit()
+		select_quest(emit_select)
 
 
-func add_stage(stage_id: String, index: int = -1) -> TreeItem:
+func set_quest_id(to: StringName) -> void:
+	get_root().get_metadata(0)["id"] = to
+
+
+func add_stage(stage_id: String, index: int = -1, select: bool = false) -> TreeItem:
 	var stage_item: TreeItem = root.create_child()
 	stage_item.set_text(0, stage_id)
 	stage_item.set_editable(0, true)
@@ -355,7 +358,7 @@ func add_stage(stage_id: String, index: int = -1) -> TreeItem:
 	if index != -1:
 		var child_count: int = root.get_child_count()
 		var max_index: int = child_count - 1
-		if RangeUtils.is_between(index, -child_count, max_index):
+		if NFMath.is_between(index, -child_count, max_index):
 			var target_index: int = wrapi(index, 0, child_count)
 			var current_index: int = stage_item.get_index()
 			if current_index != target_index:
@@ -366,18 +369,20 @@ func add_stage(stage_id: String, index: int = -1) -> TreeItem:
 						target_index -= 1
 					stage_item.move_after(root.get_child(target_index))
 	
+	if select:
+		stage_item.select(0)
+		scroll_to_item.call_deferred(stage_item)
+	
 	return stage_item
 
 
 func select_stage(stage_id: StringName, emit_select: bool = true) -> void:
 	for item in root.get_children():
 		if item.get_metadata(0)["id"] == stage_id:
+			item.select(0)
+			scroll_to_item.call_deferred(item)
 			if emit_select:
-				item.select(0)
-			else:
-				item_mouse_selected.disconnect(_on_item_clicked)
-				item.select(0)
-				item_mouse_selected.connect(_on_item_clicked, CONNECT_DEFERRED)
+				stage_selected.emit(stage_id)
 			return
 
 
@@ -400,19 +405,24 @@ func _restore_objectives(on_stage: StringName, objectives: Array[String]) -> voi
 		add_objective_on_tree(stage, objective)
 
 
-func add_objective_on_tree(on_item: TreeItem, objective_id: String, index: int = -1) -> void:
+func add_objective_on_tree(on_item: TreeItem, objective_id: String, index: int = -1, select: bool = false) -> void:
 	var objective_item: TreeItem = on_item.create_child()
+	
 	objective_item.set_text(0, objective_id)
 	objective_item.set_editable(0, true)
 	objective_item.set_icon(0, preload("res://addons/nexus_forge/icons/target_icon.svg"))
 	objective_item.set_metadata(0, {"id": StringName(objective_id), "type": ItemType.OBJECTIVE})
+	
+	if select:
+		objective_item.select(0)
+		scroll_to_item.call_deferred(objective_item)
 	
 	if index == -1:
 		return
 	
 	var child_count: int = on_item.get_child_count()
 	var max_index: int = child_count - 1
-	if not RangeUtils.is_between(index, -child_count, max_index):
+	if not NFMath.is_between(index, -child_count, max_index):
 		return
 	var target_index: int = wrapi(index, 0, child_count)
 	var current_index: int = objective_item.get_index()
@@ -447,8 +457,8 @@ func sort_all() -> void:
 			objectives.sort_custom(_sort_tree_alphabetically)
 			if objectives[0] != stage_item.get_first_child():
 				objectives[0].move_before(stage_item.get_first_child())
-				for objective_idx in range(1, objective_count):
-					objectives[objective_idx].move_after(objectives[objective_idx - 1])
+			for objective_idx in range(1, objective_count):
+				objectives[objective_idx].move_after(objectives[objective_idx - 1])
 
 
 func clear_quests() -> void:
@@ -534,7 +544,7 @@ func set_quest_structure(structure: Array[Dictionary]) -> void:
 	
 	for item in structure:
 		stage_ids.append(item["stage"])
-		objectives[item["stage"]] = ArrayUtils.create_typed(TYPE_STRING, item["objectives"].duplicate())
+		objectives[item["stage"]] = NFArrayUtils.create_typed(TYPE_STRING, item["objectives"].duplicate())
 	
 	var stages: Array[TreeItem] = root.get_children()
 	var stage_count: int = stages.size()
@@ -598,7 +608,7 @@ func _on_button_clicked(item: TreeItem, _column: int, id: int, mouse_button_inde
 			var result: Array = await dialog.dialog_finished
 			
 			if result[0]:
-				add_stage(result[1])
+				add_stage(result[1], -1, true)
 				stage_created.emit(StringName(result[1]))
 			
 			dialog.queue_free()
@@ -618,7 +628,7 @@ func _on_button_clicked(item: TreeItem, _column: int, id: int, mouse_button_inde
 			var result: Array = await dialog.dialog_finished
 			
 			if result[0]:
-				add_objective_on_tree(item, result[1])
+				add_objective_on_tree(item, result[1], -1, true)
 				objective_created.emit(item.get_metadata(0)["id"], StringName(result[1]))
 			
 			dialog.queue_free()

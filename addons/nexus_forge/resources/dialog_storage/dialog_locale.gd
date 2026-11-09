@@ -5,8 +5,8 @@ extends Resource
 ## The locale code this dialog is in.
 @export var locale: String = "en"
 
-# The dictionary containing the IDs of the conversations, nodes and localized
-# data.
+## The dictionary containing the IDs of the conversations, nodes
+## and localized data.
 @export_storage var localization: Dictionary[StringName, Dictionary] = {
 	#&"resourceUID": {
 		#&"NodeID": {"text": "Hello world"},
@@ -15,7 +15,8 @@ extends Resource
 		#...
 	#}
 	}
-# The format strings from conversations and all their formats.
+
+## The format strings from conversations and all their formats.
 @export_storage var format_strings: Dictionary[String, Dictionary] = {
 	#"resourceUID": {
 		#"HELLO_WORLD": {
@@ -31,14 +32,18 @@ extends Resource
 		#},
 		#&"EGGD": {
 			#"base_string": "",
-			#"formats": {}
+			#"format": {}
 		#}
 	#}
 }
 
+## The path to the JSON from which the localization was populated.
 var json_file: String = ""
 
 
+## Creates a new [DiscourseDialogLocale] object based on JSON data given
+## on [param json_string]. Returns [code]null[/code] if the parsing
+## failed.
 static func new_from_json(json_string: String) -> DiscourseDialogLocale:
 	if json_string.is_empty():
 		return null
@@ -51,13 +56,13 @@ static func new_from_json(json_string: String) -> DiscourseDialogLocale:
 	var new_locale: DiscourseDialogLocale = DiscourseDialogLocale.new()
 	
 	if data.has("localization") and typeof(data["localization"]) == TYPE_DICTIONARY:
-		for localization_key in data["localization"].keys():
+		for localization_key in data["localization"]:
 			if typeof(localization_key) != TYPE_STRING or typeof(data["localization"][localization_key]) != TYPE_DICTIONARY:
 				continue
 			var json_loc_data: Dictionary = data["localization"][localization_key]
 			
 			var locale_data: Dictionary[StringName, Dictionary] = {}
-			for node_uuid in json_loc_data.keys():
+			for node_uuid in json_loc_data:
 				if typeof(node_uuid) != TYPE_STRING or typeof(data["localization"][localization_key][node_uuid]) != TYPE_DICTIONARY:
 					continue
 				var json_n_data: Dictionary = json_loc_data[node_uuid]
@@ -81,12 +86,12 @@ static func new_from_json(json_string: String) -> DiscourseDialogLocale:
 	
 	if data.has("format_strings") and typeof(data["format_strings"]) == TYPE_DICTIONARY:
 		var json_data: Dictionary = data["format_strings"]
-		for dialog_id in json_data.keys():
+		for dialog_id in json_data:
 			if typeof(dialog_id) != TYPE_STRING or typeof(json_data[dialog_id]) != TYPE_DICTIONARY:
 				continue
 			var dialog_data: Dictionary = json_data[dialog_id]
 			var conversation_data: Dictionary[String, Dictionary] = {}
-			for format_id in dialog_data.keys():
+			for format_id in dialog_data:
 				if typeof(format_id) != TYPE_STRING or typeof(dialog_data[format_id]) != TYPE_DICTIONARY:
 					continue
 				
@@ -94,22 +99,22 @@ static func new_from_json(json_string: String) -> DiscourseDialogLocale:
 				
 				if dialog_data[format_id].has("format"):
 					var format_data: Dictionary = dialog_data[format_id]
-					for format_key in format_data["format"].keys():
+					for format_key in format_data["format"]:
 						if typeof(format_key) != TYPE_STRING or typeof(format_data["format"][format_key]) != TYPE_DICTIONARY:
 							continue
 						var custom_cases: Dictionary[String, String] = {}
 						var string_data: Dictionary = format_data["format"][format_key]
 						if string_data.has("cases") and typeof(string_data["cases"]) == TYPE_DICTIONARY:
-							for custom_case in string_data["cases"].keys():
+							for custom_case in string_data["cases"]:
 								if typeof(custom_case) != TYPE_STRING or typeof(string_data["cases"][custom_case]) != TYPE_STRING:
 									continue
 								custom_cases[custom_case] = string_data["cases"][custom_case]
 						formats[format_key] = {
 							"cases": custom_cases,
-							"default": DictUtils.get_nested_value(format_data, ["format", format_key, "default"], "", true)}
+							"default": NFDictUtils.get_nested_value(format_data, ["format", format_key, "default"], "", true)}
 				conversation_data[format_id] = {
 					"format": formats,
-					"base_string": DictUtils.get_nested_value(dialog_data, [format_id, "base_string"], "", true)}
+					"base_string": NFDictUtils.get_nested_value(dialog_data, [format_id, "base_string"], "", true)}
 			new_locale.format_strings[dialog_id] = conversation_data
 	
 	return new_locale
@@ -128,6 +133,53 @@ static func _overlay_dialog_array(target: PackedStringArray, source: PackedStrin
 		var text: String = target[i].strip_edges()
 		if text.is_empty():
 			target[i] = source[i]
+
+
+func invalidate_empty_strings(text: bool = true, choices: bool = true, formats: bool = true) -> void:
+	const missing_text: String = "[MISSING LOCALIZATION DATA]" # text
+	const missing_choice: String = "[MISSING LOCALIZATION DATA]" # choices
+	const missing_format_base: String = "[MISSING PHRASE LOCALIZATION]" # formats
+	const missing_format_case: String = "[MISSING CASE LOCALIZATION]" # formats
+	
+	if text or choices:
+		for dialog_id: StringName in localization:
+			var locale_data: Dictionary = localization[dialog_id]
+			for node_uuid: StringName in locale_data:
+				var node_data: Dictionary = locale_data[node_uuid]
+				
+				if text and node_data.has("text"):
+					if node_data["text"].strip_edges().is_empty():
+						node_data["text"] = missing_text
+						
+				if choices and node_data.has("choices"):
+					var choice_array: PackedStringArray = node_data["choices"]
+					
+					for i: int in range(choice_array.size()):
+						if choice_array[i].strip_edges().is_empty():
+							choice_array[i] = missing_choice
+
+	if formats:
+		var E: Dictionary = NFDictUtils.EMPTY
+		
+		for dialog_id: Variant in format_strings:
+			var conversation_data: Dictionary = format_strings[dialog_id]
+			for format_id: String in conversation_data:
+				var format_node: Dictionary = conversation_data[format_id]
+				
+				if format_node.get("base_string", "").strip_edges().is_empty():
+					format_node["base_string"] = missing_format_base
+					
+				var formats_dict: Dictionary = format_node.get("format", E)
+				for format_key: String in formats_dict:
+					var string_data: Dictionary = formats_dict[format_key]
+					
+					if string_data.get("default", "").strip_edges().is_empty():
+						string_data["default"] = missing_format_case
+						
+					var cases_dict: Dictionary = string_data.get("cases", E)
+					for case_key: String in cases_dict:
+						if cases_dict[case_key].strip_edges().is_empty():
+							cases_dict[case_key] = missing_format_case
 
 
 ## Merges the localization data of [param with] with the data of this
@@ -154,8 +206,10 @@ func merge_dialog(with: DiscourseDialogLocale) -> void:
 			var source_node: Dictionary = source_dialog[node_id]
 			
 			if target_node.has("text") and source_node.has("text"):
-				if target_node["text"].is_empty():
-					target_node["text"] = source_node["text"]
+				var target: String = target_node["text"].strip_edges()
+				var source: String = source_node["text"].strip_edges()
+				if target.is_empty() and not source.is_empty():
+					target_node["text"] = source
 			elif target_node.has("choices") and source_node.has("choices"):
 				_overlay_dialog_array(target_node["choices"], source_node["choices"])
 	
@@ -189,7 +243,7 @@ func merge_dialog(with: DiscourseDialogLocale) -> void:
 						target_data["format"] = source_data["format"].duplicate(true)
 				continue
 			
-			var entries: Array[String] = StringUtils.get_all_format_arguments(target_base, true)
+			var entries: Array[String] = NFStringUtils.get_all_format_arguments(target_base, true)
 			var source_formats: Dictionary = source_data["format"]
 			var target_formats: Dictionary = target_data["format"]
 			
@@ -205,105 +259,124 @@ func merge_dialog(with: DiscourseDialogLocale) -> void:
 				
 				if target_default.is_empty():
 					target_formats[existing_format]["default"] = source_formats[existing_format]["default"]
-				
-				var target_cases: Dictionary = target_formats[existing_format]["cases"]
-				var source_cases: Dictionary = source_formats[existing_format]["cases"]
-				
-				for case in source_cases:
-					if not target_cases.has(case):
-						target_cases[case] = source_cases[case]
-						continue
-					
-					var target_string: String = target_cases[case].strip_edges()
-					if target_string.is_empty():
-						target_cases[case] = source_cases[case]
 
 
-## Sets the dialog text from the [param conversation]'s [param uuid] to [param text].
-func set_text(conversation: StringName, uuid: StringName, text: String) -> void:
-	DictUtils.set_nested_value(
-			localization,
-			[conversation, uuid, "dialog"],
-			text,
-			false)
+## Sets the dialog text from the [param conversation]'s [param node] to [param text].
+func set_text(conversation: StringName, node: StringName, text: String) -> void:
+	var target: Dictionary = localization.get(conversation, NFDictUtils.EMPTY)
+	if not target.has(node):
+		return
+	
+	target[node]["text"] = text
 
 
-## Sets the dialog options from the [param conversation]'s [param uuid] to be
+## Sets the dialog options from the [param conversation]'s [param node] to be
 ## [param options].
-func set_choices(conversation: StringName, uuid: StringName, choices: PackedStringArray) -> void:
-	DictUtils.set_nested_value(
-			localization,
-			[conversation, uuid, "choices"],
-			choices.duplicate(),
-			false)
+func set_choices(conversation: StringName, node: StringName, choices: PackedStringArray) -> void:
+	var target: Dictionary = localization.get(conversation, NFDictUtils.EMPTY)
+	if not target.has(node):
+		return
+	
+	target[node]["choices"] = choices.duplicate()
 
 
+## Returns this object's data as a JSON string.
 func as_json() -> String:
+	var export_localization: Dictionary = localization.duplicate(true)
+	
+	for conv_key in export_localization:
+		var conv_dict: Dictionary = export_localization[conv_key]
+		for node_key in conv_dict:
+			var node_dict: Dictionary = conv_dict[node_key]
+			if node_dict.has("text"):
+				node_dict["dialog"] = node_dict["text"]
+				node_dict.erase("text")
+	
 	var data: Dictionary = {
-		"localization": localization,
+		"localization": export_localization,
 		"format_strings": format_strings}
 	return JSON.stringify(data, "\t")
 
 
-## Returns the options of the given [param uuid] from the [param conversation] .
+## Returns the options of the given [param node] from the [param conversation] .
 func get_choices(conversation: StringName, node: StringName) -> PackedStringArray:
-	if DictUtils.has_nested_path(localization, [conversation, node, "choices"]):
-		return localization[conversation][node]["choices"].duplicate()
+	var conv: Variant = localization.get(conversation)
+	if typeof(conv) != TYPE_DICTIONARY:
+		return []
+	
+	var node_dict: Variant = conv.get(node)
+	if typeof(node_dict) != TYPE_DICTIONARY:
+		return []
+	
+	var choices_packarr: Variant = node_dict.get("choices")
+	if typeof(choices_packarr) == TYPE_PACKED_STRING_ARRAY:
+		return choices_packarr.duplicate()
 	else:
-		return PackedStringArray()
+		return []
 
 
 ## Returns the dialog text from the given [param uuid] from the [param conversation]
 func get_text(conversation: StringName, node: StringName) -> String:
-	return DictUtils.get_nested_value(
-			localization,
-			[conversation, node, "text"],
-			"",
-			true)
+	var e: Dictionary = NFDictUtils.EMPTY
+	return localization.get(conversation, e).get(node, e).get("text", "")
 
 
 ## Returns if the [param conversation] has data for the given [param uuid]
 func has_data(conversation: StringName, node: StringName) -> bool:
-	return DictUtils.has_nested_path(localization, [conversation, node])
+	return localization.get(conversation, {}).has(node)
 
 
 ## Returns the unformatted string from the [param conversation] assiged to [param key].
-func get_format_string_text(conversation: StringName, key: StringName) -> String:
-	return DictUtils.get_nested_value(
-			format_strings,
-			[conversation, key, "base_string"],
-			"",
-			true)
+func get_format_string_text(conversation: StringName, key: String) -> String:
+	var conv_dict: Variant = format_strings.get(conversation)
+	if typeof(conv_dict) != TYPE_DICTIONARY:
+		return ""
+	
+	var format_dict: Variant = conv_dict.get(key)
+	if typeof(format_dict) != TYPE_DICTIONARY:
+		return ""
+	
+	var base_string: Variant = format_dict.get("base_string", "")
+	
+	if typeof(base_string) == TYPE_STRING:
+		return base_string
+	return ""
 
 
 ## Returns the dictionary containing the format arguments along with the data of
 ## their [code]default[/code] value and custom [code]cases[/code].
-func get_format_string_args(conversation: StringName, key: StringName) -> Dictionary[String, Dictionary]:
-	var data: Dictionary[String, Dictionary] = {}
-	var stored: Dictionary = DictUtils.get_nested_value(
-			format_strings,
-			[conversation, key, "format"],
-			{},
-			true)
-	data.assign(stored.duplicate(true))
-	return data
+func get_format_string_args(conversation: StringName, key: String) -> Dictionary[String, Dictionary]:
+	var conv_dict: Variant = format_strings.get(conversation)
+	if typeof(conv_dict) != TYPE_DICTIONARY:
+		return {}
+	
+	var key_dict: Variant = conv_dict.get(key)
+	if typeof(key_dict) != TYPE_DICTIONARY:
+		return {}
+	
+	if key_dict.has("format"):
+		return key_dict["format"].duplicate(true)
+	else:
+		return {}
 
 
 ## Returns true if the given [param conversation] has a format string with the given [param key].
-func has_format_string(conversation: StringName, key: StringName) -> bool:
-	return DictUtils.has_nested_path(
-			format_strings,
-			[conversation, key])
+func has_format_string(conversation: StringName, key: String) -> bool:
+	return format_strings.get(conversation, {}).has(key)
 
 
 ## Sets the format string from the [param conversation] with the assigned
 ## [param key] to be [param text] and the given format [param arguments].
 func set_format_string(conversation: StringName, key: String, text: String, arguments: Dictionary[String, Dictionary]) -> void:
-	var target: Dictionary = DictUtils.get_nested_value(
-			format_strings,
-			[conversation, key],
-			{})
+	if not format_strings.has(conversation):
+		format_strings[conversation] = NFDictUtils.create_typed(TYPE_STRING, TYPE_DICTIONARY)
+	var convo: Dictionary = format_strings[conversation]
 	
-	if not target.is_empty():
-		target["text"] = text
-		target["arguments"] = arguments.duplicate(true)
+	if convo.has(key):
+		var target: Dictionary = convo[key]
+		target["base_string"] = text
+		target["format"] = arguments.duplicate(true)
+	else:
+		convo[key] = {
+			"format": arguments.duplicate(true),
+			"base_string": text}

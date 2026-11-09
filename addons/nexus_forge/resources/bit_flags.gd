@@ -1,11 +1,15 @@
-class_name BitFlags
+class_name NFBitFlags
 extends Resource
 ## An object to store integer-flags and pair them with an identifiable key.
 ##
 ## A serializable object designed to combine the human-readable StringName keys
 ##  with the memory efficiency of bitwise storage.
 
-## The amount of flags BitFlags can hold. Must be a value between 1 and 64 inclusive.
+## The maximum amount of flags this resource can hold. Defaults to 63 to avoid 
+## changint Godot's 64-bit integer sign-bit, but can be safely increased to 64 
+## if interfacing with unsigned 64-bit systems
+## [br][br]
+## Must be a value between 1 and 64 inclusive.
 const MAX_BITMASK: int = 63
 
 @export_storage var _bit_store: int = 0
@@ -43,7 +47,7 @@ func create_flag(flag_id: StringName) -> bool:
 ## Removes flag_id from the registry.
 func release_flag(flag_id: StringName) -> void:
 	if _flag_data.has(flag_id):
-		_bit_store = BitUtils.set_bits(
+		_bit_store = NFBitUtils.set_bits(
 				_bit_store,
 				_flag_data[flag_id],
 				false)
@@ -68,14 +72,14 @@ func is_full() -> bool:
 
 
 ## Sets the flag assigned to [param flag_id] to [param value].
-func set_flag(flag_id: String, value: bool) -> void:
+func set_flag(flag_id: StringName, value: bool) -> void:
 	if not _flag_data.has(flag_id):
 		return
 	
 	if value:
-		_bit_store |= 1 << _flag_data[flag_id]
+		_bit_store |= _flag_data[flag_id]
 	else:
-		_bit_store ^= 1 << ~_flag_data[flag_id]
+		_bit_store &= ~_flag_data[flag_id]
 
 
 ## Sets an array of [param flags] to value. If a flag is

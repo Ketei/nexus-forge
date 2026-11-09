@@ -10,18 +10,23 @@ enum QuestModeType {
 
 const MAX_UNDO_STEPS: int = 50
 
-static var quest_path: String = ""
-static var stage_path: String = ""
-static var objecive_path: String = ""
-
 var quest_mode: QuestModeType = QuestModeType.NONE
-var quest_resource: Quest = null
+var quest_resource: NFQuest = null
 var undo: UndoRedo = null
 
 var selected_stage: StringName = &""
 var selected_objective: StringName = &""
 
 var _open_files: Dictionary[int, Dictionary] = {}
+var _class_update_signaler: RefCounted = null
+var _unsaved: bool = false:
+	set(u):
+		if quest_resource != null:
+			_open_files[quest_resource.get_instance_id()]["unsaved"] = u
+	get:
+		if quest_resource == null:
+			return false
+		return _open_files[quest_resource.get_instance_id()]["unsaved"]
 
 @onready var obj_req_chk_bx: CheckBox = $MainContainer/DataContainer/DataContainer/LogicContainer/TargetLogicContainer/ObjReqChkBx
 @onready var crumbs_label: Label = $MainContainer/TitleContainer/CrumbsContainer/CrumbsLabel
@@ -57,32 +62,6 @@ var _open_files: Dictionary[int, Dictionary] = {}
 @onready var add_req_bool_button: Button = $MainContainer/DataContainer/DataContainer/LogicContainer/TargetLogicContainer/RequirementsCotnainer/HeaderContainer/AddButtonsContainer/AddReqBoolButton
 @onready var add_req_string_button: Button = $MainContainer/DataContainer/DataContainer/LogicContainer/TargetLogicContainer/RequirementsCotnainer/HeaderContainer/AddButtonsContainer/AddReqStringButton
 @onready var obj_req_tree: Tree = $MainContainer/DataContainer/DataContainer/LogicContainer/TargetLogicContainer/RequirementsCotnainer/ObjReqTree
-
-
-static func _static_init() -> void:
-	update_script_path()
-
-
-static func update_script_path(quest: bool = true, stage: bool = true, objective: bool = true) -> void:
-	if not quest and not stage and not objective:
-		return
-	
-	var all_classes: Array[Dictionary] = ProjectSettings.get_global_class_list()
-	for class_entry in all_classes:
-		if class_entry["class"] == "Quest":
-			if quest:
-				quest_path = class_entry["path"]
-		elif class_entry["class"] == "QuestStage":
-			if stage:
-				stage_path = class_entry["path"]
-		elif class_entry["class"] == "QuestObjective":
-			if objective:
-				objecive_path = class_entry["path"]
-		
-		if (not quest_path.is_empty() or not quest) and\
-				(not stage_path.is_empty() or not stage) and\
-				(not objecive_path.is_empty() or not objective):
-			break
 
 
 func ready_plugin() -> void:
@@ -193,6 +172,8 @@ func ready_plugin() -> void:
 	obj_req_tree.data_updated.connect(_on_objective_data_updated)
 	obj_req_tree.data_erased.connect(_on_objective_data_erased)
 	obj_req_tree.data_operator_changed.connect(_on_data_data_operator_changed)
+	
+	_class_update_signaler.classes_updated.connect(_on_classes_updated)
 
 
 func can_undo() -> bool:
@@ -227,7 +208,10 @@ func do_redo() -> void:
 	_on_something_changed()
 
 
-func filesystem_resource_removed(quest: Quest) -> void:
+func filesystem_resource_removed(quest: NFQuest) -> void:
+	if not is_instance_valid(quest):
+		return
+	
 	var quest_id: int = quest.get_instance_id()
 	if not _open_files.has(quest_id):
 		return
@@ -245,37 +229,17 @@ func filesystem_resource_removed(quest: Quest) -> void:
 	files_tree.close_quest(quest)
 
 
-func update_type_button(type: int) -> void:
-	if quest_mode == QuestModeType.NONE:
-		return
-	
-	if quest_mode == QuestModeType.QUEST and type == 1:
+func _on_classes_updated(classes: Array[String]) -> void:
+	if quest_mode == QuestModeType.QUEST and classes.has("NFQuest"):
 		set_quest_types(true)
-	elif quest_mode == QuestModeType.STAGE and type == 2:
+	elif quest_mode == QuestModeType.STAGE and classes.has("NFQuestStage"):
 		set_stage_types(true)
-	elif quest_mode == QuestModeType.OBJECTIVE and type == 3:
+	elif quest_mode == QuestModeType.OBJECTIVE and classes.has("NFQuestObjective"):
 		set_objective_types(true)
 
 
 func set_quest_types(reselect: bool = false) -> void:
-	if not FileAccess.file_exists(quest_path):
-		update_script_path(true, false, false)
-		if not FileAccess.file_exists(quest_path):
-			NFPluginGameHandler._log_msg(
-					"odyssey - editor",
-					"Unable to update quest types. Script not found.",
-					NFPluginGameHandler._LogLevel.ERROR)
-			return
-	
-	var script: Script = load(quest_path)
-	
-	if script == null:
-		NFPluginGameHandler._log_msg(
-				"odyssey - editor",
-				"Unable to update quest types. Unable to load script.",
-				NFPluginGameHandler._LogLevel.ERROR)
-		return
-	
+	var script: Script = NFQuest
 	var quest_constants: Dictionary = script.get_script_constant_map()
 	
 	if not quest_constants.has(&"QuestType"):
@@ -305,24 +269,7 @@ func set_quest_types(reselect: bool = false) -> void:
 
 
 func set_stage_types(reselect: bool = false) -> void:
-	if not FileAccess.file_exists(stage_path):
-		update_script_path(false, true, false)
-		if not FileAccess.file_exists(stage_path):
-			NFPluginGameHandler._log_msg(
-					"odyssey - editor",
-					"Unable to update stage types. Script not found.",
-					NFPluginGameHandler._LogLevel.ERROR)
-			return
-	
-	var script: Script = load(stage_path)
-	
-	if script == null:
-		NFPluginGameHandler._log_msg(
-				"odyssey - editor",
-				"Unable to update stage types. Unable to load script.",
-				NFPluginGameHandler._LogLevel.ERROR)
-		return
-	
+	var script: Script = NFQuestStage
 	var stage_constants: Dictionary = script.get_script_constant_map()
 	
 	if not stage_constants.has(&"StageType"):
@@ -352,24 +299,7 @@ func set_stage_types(reselect: bool = false) -> void:
 
 
 func set_objective_types(reselect: bool = false) -> void:
-	if not FileAccess.file_exists(objecive_path):
-		update_script_path(false, true, false)
-		if not FileAccess.file_exists(objecive_path):
-			NFPluginGameHandler._log_msg(
-					"odyssey - editor",
-					"Unable to update objective types. Script not found.",
-					NFPluginGameHandler._LogLevel.ERROR)
-			return
-	
-	var script: Script = load(objecive_path)
-	
-	if script == null:
-		NFPluginGameHandler._log_msg(
-				"odyssey - editor",
-				"Unable to update objective types. Unable to load script.",
-				NFPluginGameHandler._LogLevel.ERROR)
-		return
-	
+	var script: Script = NFQuestObjective
 	var objectitve_constants: Dictionary = script.get_script_constant_map()
 	
 	if not objectitve_constants.has(&"ObjectiveType"):
@@ -425,6 +355,7 @@ func set_ui_enabled(enabled: bool) -> void:
 	title_ln_edt.editable = enabled
 	description_txt_edt.editable = enabled
 	custom_data_tree.enabled = enabled
+	obj_req_tree.enabled = enabled
 	events_tree.enabled = enabled
 	edit_types_btn.disabled = disabled
 	
@@ -502,10 +433,10 @@ func set_stage_target_pointers(pointers: Array[StringName], reselect: bool = fal
 	if reselect:
 		if reselect_success:
 			var success_idx: int = pointers.find(success_id)
-			success_pointer_opt_btn.select(0 if success_idx == -1 else success_idx)
+			success_pointer_opt_btn.select(0 if success_idx == -1 else success_idx + 1)
 		if reselect_failure:
 			var failure_idx: int = pointers.find(failure_id)
-			failure_pointer_opt_btn.select(0 if failure_idx == -1 else failure_idx)
+			failure_pointer_opt_btn.select(0 if failure_idx == -1 else failure_idx + 1)
 
 
 func select_success_pointer(target: StringName) -> void:
@@ -546,7 +477,7 @@ func save_current_quest() -> void:
 		if not quest_resource.has_stage(selected_stage):
 			return
 		
-		var stage: QuestStage = quest_resource.get_stage(selected_stage)
+		var stage: NFQuestStage = quest_resource.get_stage(selected_stage)
 		
 		stage.type = type_opt_btn.get_selected_metadata() if -1 < type_opt_btn.selected else 0
 		stage.title = title_ln_edt.text.strip_edges()
@@ -557,14 +488,14 @@ func save_current_quest() -> void:
 		stage.failure_stage_id = failure_pointer_opt_btn.get_selected_metadata()
 		
 		var events_data: Dictionary = events_tree.get_data()
-		stage.events[&"success"] = events_data["Success Events"]
-		stage.events[&"failure"] = events_data["Failure Events"]
+		stage.events[&"success"] = events_data[&"Success Events"]
+		stage.events[&"failure"] = events_data[&"Failure Events"]
 	
 	elif quest_mode == QuestModeType.OBJECTIVE:
 		if not quest_resource.has_stage(selected_stage) or not quest_resource.get_stage(selected_stage).has_objective(selected_objective):
 			return
 		
-		var objective: QuestObjective = quest_resource.get_stage(selected_stage).get_objective(selected_objective)
+		var objective: NFQuestObjective = quest_resource.get_stage(selected_stage).get_objective(selected_objective)
 		objective.type = type_opt_btn.get_selected_metadata() if -1 < type_opt_btn.selected else 0
 		objective.title = title_ln_edt.text.strip_edges()
 		objective.description = description_txt_edt.text.strip_edges()
@@ -574,8 +505,8 @@ func save_current_quest() -> void:
 		objective.clear_requirements()
 		
 		var events_data: Dictionary = events_tree.get_data()
-		objective.events[&"success"] = events_data["Success Events"]
-		objective.events[&"failure"] = events_data["Failure Events"]
+		objective.events[&"success"] = events_data[&"Success Events"]
+		objective.events[&"failure"] = events_data[&"Failure Events"]
 		
 		quest_resource.get_stage(selected_stage).set_objective_required(
 				selected_objective,
@@ -584,7 +515,7 @@ func save_current_quest() -> void:
 		objective._requirements = obj_req_tree.get_data()
 
 
-func plugin_handle_resource(quest: Quest) -> void:
+func plugin_handle_resource(quest: NFQuest) -> void:
 	if quest_resource != null and quest != quest_resource:
 		save_current_quest()
 		_open_files[quest_resource.get_instance_id()]["structure"] = quest_tree.get_quest_structure()
@@ -599,6 +530,13 @@ func plugin_handle_resource(quest: Quest) -> void:
 	quest_tree.select_quest(false)
 
 
+func close_current_quest() -> void:
+	if quest_resource == null:
+		return
+	var id: int = quest_resource.get_instance_id()
+	_on_quest_close_pressed(id)
+
+
 func display_quest(quest_id: int) -> void:
 	if not _open_files.has(quest_id) or _open_files[quest_id]["resource"] == quest_resource:
 		return
@@ -608,7 +546,7 @@ func display_quest(quest_id: int) -> void:
 	
 	quest_search_ln_edit.clear()
 	
-	var quest: Quest = _open_files[quest_id]["resource"]
+	var quest: NFQuest = _open_files[quest_id]["resource"]
 	quest_resource = quest
 	undo = _open_files[quest_id]["quest_undo"]
 	custom_data_tree.set_undo(_open_files[quest_id]["data_undo"])
@@ -648,14 +586,14 @@ func load_quest_data() -> void:
 	events_tree.clear_data()
 	custom_data_tree.clear_data(false)
 	
-	for data_key in quest_resource.custom_data.keys():
+	for data_key in quest_resource.custom_data:
 		custom_data_tree.add_data(
 				data_key,
 				quest_resource.custom_data[data_key],
 				true)
 	
-	var success_events: Dictionary[String, Variant] = {}
-	var failure_events: Dictionary[String, Variant] = {}
+	var success_events: Dictionary[StringName, Variant] = {}
+	var failure_events: Dictionary[StringName, Variant] = {}
 	
 	if quest_resource.events.has(&"success"):
 		success_events = quest_resource.events[&"success"]
@@ -671,7 +609,7 @@ func load_quest_data() -> void:
 
 
 func load_stage_data(stage_id: StringName) -> void:
-	var stage: QuestStage = quest_resource.get_stage(stage_id)
+	var stage: NFQuestStage = quest_resource.get_stage(stage_id)
 	
 	quest_mode = QuestModeType.STAGE
 	set_quest_mode(QuestModeType.STAGE)
@@ -691,14 +629,14 @@ func load_stage_data(stage_id: StringName) -> void:
 	events_tree.clear_data()
 	custom_data_tree.clear_data(false)
 	
-	for data_key in stage.custom_data.keys():
+	for data_key in stage.custom_data:
 		custom_data_tree.add_data(
 				data_key,
 				stage.custom_data[data_key],
 				true)
 	
-	var success_events: Dictionary[String, Variant] = {}
-	var failure_events: Dictionary[String, Variant] = {}
+	var success_events: Dictionary[StringName, Variant] = {}
+	var failure_events: Dictionary[StringName, Variant] = {}
 	
 	if stage.events.has(&"success"):
 		success_events = stage.events[&"success"]
@@ -719,7 +657,7 @@ func load_stage_data(stage_id: StringName) -> void:
 
 
 func load_objective_data(stage_id: StringName, objective_id: StringName) -> void:
-	var objective: QuestObjective = quest_resource.get_stage(stage_id).get_objective(objective_id)
+	var objective: NFQuestObjective = quest_resource.get_stage(stage_id).get_objective(objective_id)
 	
 	quest_mode = QuestModeType.OBJECTIVE
 	set_quest_mode(QuestModeType.OBJECTIVE)
@@ -738,7 +676,7 @@ func load_objective_data(stage_id: StringName, objective_id: StringName) -> void
 	
 	obj_req_tree.set_data(objective._requirements)
 	
-	for data_key in objective.custom_data.keys():
+	for data_key in objective.custom_data:
 		custom_data_tree.add_data(
 				data_key,
 				objective.custom_data[data_key],
@@ -746,8 +684,8 @@ func load_objective_data(stage_id: StringName, objective_id: StringName) -> void
 	
 	obj_req_chk_bx.set_pressed_no_signal(quest_resource.get_stage(stage_id).is_objective_required(objective_id))
 	
-	var success_events: Dictionary[String, Variant] = {}
-	var failure_events: Dictionary[String, Variant] = {}
+	var success_events: Dictionary[StringName, Variant] = {}
+	var failure_events: Dictionary[StringName, Variant] = {}
 	
 	if objective.events.has(&"success"):
 		success_events = objective.events[&"success"]
@@ -768,7 +706,10 @@ func load_objective_data(stage_id: StringName, objective_id: StringName) -> void
 
 
 func has_unsaved_files() -> bool:
-	return files_tree.has_unsaved_files()
+	for id in _open_files:
+		if _open_files[id]["unsaved"]:
+			return true
+	return false
 
 
 func save_resource() -> void:
@@ -776,12 +717,15 @@ func save_resource() -> void:
 		save_current_quest()
 		_open_files[quest_resource.get_instance_id()]["structure"] = quest_tree.get_quest_structure()
 	
-	for unsaved_entries:Dictionary in files_tree.get_unsaved_files():
-		var file: Quest = _open_files[unsaved_entries["id"]]["resource"]
+	for id in _open_files:
+		if not _open_files[id]["unsaved"]:
+			continue
+		var file: NFQuest = _open_files[id]["resource"]
 		_save_cfg_for(
 			file.resource_path,
-			_open_files[unsaved_entries["id"]]["structure"])
+			_open_files[id]["structure"])
 		ResourceSaver.save(file)
+		_open_files[id]["unsaved"] = false
 	files_tree.set_all_saved()
 
 
@@ -820,7 +764,7 @@ func open_quest_file(file_path: String) -> void:
 		return
 	
 	var res: Resource = load(file_path)
-	if res == null or res is not Quest:
+	if res == null or res is not NFQuest:
 		return
 	
 	var res_id: int = res.get_instance_id()
@@ -831,7 +775,7 @@ func open_quest_file(file_path: String) -> void:
 	add_quest_resource(res)
 
 
-func add_quest_resource(quest: Quest) -> void:
+func add_quest_resource(quest: NFQuest) -> void:
 	var instance_id: int = quest.get_instance_id()
 	var quest_undo: UndoRedo = UndoRedo.new()
 	var data_undo: UndoRedo = UndoRedo.new()
@@ -841,7 +785,8 @@ func add_quest_resource(quest: Quest) -> void:
 		"resource": quest,
 		"quest_undo": quest_undo,
 		"data_undo": data_undo,
-		"structure": structure}
+		"structure": structure,
+		"unsaved": false}
 	
 	files_tree.add_quest(
 			instance_id,
@@ -887,10 +832,17 @@ func _get_layout_config(config_path: String) -> Array[Dictionary]:
 
 
 func _add_quest_requirement_data_pressed(data: Variant) -> void:
-	obj_req_tree.add_data("new_requirement", data)
+	var path: String = obj_req_tree.add_data(
+			"new_requirement",
+			data,
+			OP_EQUAL,
+			obj_req_tree.get_root(),
+			true)
+	_on_objective_data_created(path, -1, data, OP_EQUAL)
 
 
 func _on_something_changed(_arg = null) -> void:
+	_unsaved = true
 	files_tree.set_current_save_required(true)
 
 
@@ -923,21 +875,6 @@ func _on_quest_resource_selected(quest_id: int) -> void:
 	display_quest(quest_id)
 
 
-func _on_objective_rearranged(from_stage: StringName, to_stage: StringName, objective_id: StringName) -> void:
-	if from_stage == to_stage:
-		return
-	
-	var stage_source: QuestStage = quest_resource.get_stage(from_stage)
-	var stage_target: QuestStage = quest_resource.get_stage(to_stage)
-	var objective: QuestObjective = stage_source.get_objective(objective_id)
-	var required: bool = stage_source.is_objective_required(objective_id)
-	
-	stage_source.remove_objective(objective_id)
-	stage_target.add_objective(objective, required)
-	
-	_on_something_changed()
-
-
 func _on_new_quest_file_pressed() -> void:
 	var dialog: FileDialog = load("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	add_child(dialog)
@@ -952,7 +889,7 @@ func _on_new_quest_file_pressed() -> void:
 	if quest_resource != null:
 		save_current_quest()
 	
-	var new_quest: Quest = Quest.new()
+	var new_quest: NFQuest = NFQuest.new()
 	var quest_undo: UndoRedo = UndoRedo.new()
 	var data_undo: UndoRedo = UndoRedo.new()
 	var quest_id: int = new_quest.get_instance_id()
@@ -984,7 +921,7 @@ func _on_new_quest_file_pressed() -> void:
 		"resource": new_quest,
 		"quest_undo": quest_undo,
 		"data_undo": data_undo,
-		"structure": ArrayUtils.create_typed(TYPE_DICTIONARY)}
+		"structure": NFArrayUtils.create_typed(TYPE_DICTIONARY)}
 	
 	undo = quest_undo
 	custom_data_tree.set_undo(data_undo)
@@ -1027,8 +964,11 @@ func _on_search_requirement_text_changed(text: String) -> void:
 	obj_req_tree.search_data(clean_text)
 
 
-func _on_quest_close_pressed(quest_id: int, requires_save: bool) -> void:
-	if requires_save:
+func _on_quest_close_pressed(quest_id: int) -> void:
+	if not _open_files.has(quest_id):
+		return
+	
+	if _open_files[quest_id]["unsaved"]:
 		var confirm_dialog: AcceptDialog = load("res://addons/nexus_forge/dialogs/unsaved_dialog_script.gd").new()
 		confirm_dialog.dialog_text = "File has unsaved changes. Save before closing?"
 		confirm_dialog.title = "Odyssey"
@@ -1039,7 +979,7 @@ func _on_quest_close_pressed(quest_id: int, requires_save: bool) -> void:
 		var result: int = await confirm_dialog.dialog_finished
 		
 		if result == 0:
-			var quest_res: Quest = _open_files[quest_id]["resource"]
+			var quest_res: NFQuest = _open_files[quest_id]["resource"]
 			if quest_res == quest_resource:
 				save_current_quest()
 			
@@ -1052,7 +992,7 @@ func _on_quest_close_pressed(quest_id: int, requires_save: bool) -> void:
 			confirm_dialog.queue_free()
 			return
 	
-	if quest_resource.get_instance_id() == quest_id:
+	if quest_resource != null and quest_resource.get_instance_id() == quest_id:
 		title_ln_edt.text = ""
 		description_txt_edt.text = ""
 		quest_resource = null
@@ -1072,14 +1012,19 @@ func _on_quest_close_pressed(quest_id: int, requires_save: bool) -> void:
 
 
 func _on_add_custom_data_pressed(id: String, data) -> void:
-	custom_data_tree.add_data(id, data)
+	custom_data_tree.add_data(
+			id,
+			data,
+			false,
+			custom_data_tree.get_root(),
+			true)
 	_on_something_changed()
 
 
 func _on_edit_types_pressed() -> void:
 	match quest_mode:
 		QuestModeType.QUEST:
-			var quest_script: Script = Quest.new().get_script()
+			var quest_script: Script = NFQuest
 			var source_code: String = quest_script.source_code
 			
 			if source_code.is_empty():
@@ -1114,7 +1059,7 @@ func _on_edit_types_pressed() -> void:
 			if not EditorInterface.get_editor_settings().get_setting("text_editor/external/use_external_editor"):
 				EditorInterface.set_main_screen_editor("Script")
 		QuestModeType.STAGE:
-			var stage_script: Script = QuestStage.new().get_script()
+			var stage_script: Script = NFQuestStage
 			var source_code: String = stage_script.source_code
 			
 			if source_code.is_empty():
@@ -1149,8 +1094,8 @@ func _on_edit_types_pressed() -> void:
 			if not EditorInterface.get_editor_settings().get_setting("text_editor/external/use_external_editor"):
 				EditorInterface.set_main_screen_editor("Script")
 		QuestModeType.OBJECTIVE:
-			EditorInterface.edit_script(QuestObjective.new().get_script())
-			var objective_script: Script = QuestObjective.new().get_script()
+			var objective_script: Script = NFQuestObjective
+			EditorInterface.edit_script(objective_script)
 			var source_code: String = objective_script.source_code
 			
 			if source_code.is_empty():
@@ -1208,19 +1153,25 @@ func _on_quest_type_selected(type: int) -> void:
 	if new_value == old_value:
 		return
 	
+	var mode_name: String = "Quest"
+	if quest_mode == QuestModeType.STAGE:
+		mode_name = "Stage"
+	elif quest_mode == QuestModeType.OBJECTIVE:
+		mode_name = "Objective"
+	
 	type_opt_btn.set_meta(&"old_value", new_value)
 	
-	undo.create_action("Set Quest Type")
-	undo.add_do_method(_do_update_quest_type.bind(new_value))
-	undo.add_undo_method(_do_update_quest_type.bind(old_value))
+	undo.create_action("Set %s Type" % mode_name)
+	undo.add_do_method(_do_update_item_type.bind(quest_mode, selected_stage, selected_objective, new_value))
+	undo.add_undo_method(_do_update_item_type.bind(quest_mode, selected_stage, selected_objective, old_value))
 	undo.commit_action(false)
 	
 	_on_something_changed()
 
 
-func _do_update_quest_type(type: int) -> void:
-	switch_to()
-	select_type(type)
+func _do_update_item_type(mode: int, stage_id: StringName, obj_id: StringName, type_val: int) -> void:
+	switch_to(stage_id, obj_id)
+	select_type(type_val)
 
 
 func _on_title_edit_toggled(is_toggled: bool) -> void:
@@ -1240,9 +1191,9 @@ func _on_title_edit_toggled(is_toggled: bool) -> void:
 	if selected_stage.is_empty() and selected_objective.is_empty():
 		action_title = "Set Quest Title"
 	elif selected_objective.is_empty():
-		action_title = "Set Stage '%s' Objective '%s' Title" % [selected_stage, selected_objective]
-	else:
 		action_title = "Set Stage '%s' Title" % selected_stage
+	else:
+		action_title = "Set Stage '%s' Objective '%s' Title" % [selected_stage, selected_objective]
 	
 	undo.create_action(action_title)
 	undo.add_do_method(_do_set_title_of.bind(
@@ -1280,9 +1231,9 @@ func _on_description_focus_lost() -> void:
 	if selected_stage.is_empty() and selected_objective.is_empty():
 		action_title = "Set Quest Description"
 	elif selected_objective.is_empty():
-		action_title = "Set Stage '%s' Objective '%s' Description" % [selected_stage, selected_objective]
-	else:
 		action_title = "Set Stage '%s' Description" % selected_stage
+	else:
+		action_title = "Set Stage '%s' Objective '%s' Description" % [selected_stage, selected_objective]
 	
 	undo.create_action(action_title)
 	undo.add_do_method(_do_set_description_of.bind(
@@ -1309,9 +1260,9 @@ func _on_custom_data_changed() -> void:
 		if selected_stage.is_empty() and selected_objective.is_empty():
 			action_name = "Set Quest Data"
 		elif selected_objective.is_empty():
-			action_name = "Set '%s' Stage '%s' Objective Data" % [selected_stage, selected_objective]
-		else:
 			action_name = "Set '%s' Stage Data" % selected_stage
+		else:
+			action_name = "Set '%s' Stage '%s' Objective Data" % [selected_stage, selected_objective]
 		
 		undo.create_action(action_name)
 		undo.add_do_method(_do_custom_data_change.bind(
@@ -1320,6 +1271,8 @@ func _on_custom_data_changed() -> void:
 		undo.add_undo_method(_undo_custom_data_change.bind(
 				selected_stage,
 				selected_objective))
+		undo.commit_action(false)
+	
 	_on_something_changed()
 
 
@@ -1527,6 +1480,7 @@ func _on_objective_data_created(path: String, index: int , data: Variant, operat
 			selected_stage,
 			selected_objective,
 			path))
+	undo.commit_action(false)
 	_on_something_changed()
 
 
@@ -1693,7 +1647,7 @@ func _do_update_objective_required(stage: StringName, objective: StringName, is_
 
 
 func _on_stage_created(stage_id: StringName) -> void:
-	var new_stage: QuestStage = QuestStage.new()
+	var new_stage: NFQuestStage = NFQuestStage.new()
 	new_stage.id = stage_id
 	quest_resource.add_stage(new_stage)
 	
@@ -1704,11 +1658,13 @@ func _on_stage_created(stage_id: StringName) -> void:
 	undo.add_undo_method(_undo_create_stage.bind(stage_id))
 	undo.commit_action(false)
 	
+	switch_to(stage_id)
+	
 	_on_something_changed()
 
 
 func _do_create_stage(stage_id: StringName) -> void:
-	var new_stage: QuestStage = QuestStage.new()
+	var new_stage: NFQuestStage = NFQuestStage.new()
 	new_stage.id = stage_id
 	quest_resource.add_stage(new_stage)
 	quest_tree.add_stage(stage_id)
@@ -1728,7 +1684,7 @@ func _undo_create_stage(stage_id: StringName) -> void:
 
 
 func _on_objective_created(stage_id: StringName, objective_id: StringName) -> void:
-	var new_objective: QuestObjective = QuestObjective.new()
+	var new_objective: NFQuestObjective = NFQuestObjective.new()
 	new_objective.id = objective_id
 	quest_resource.get_stage(stage_id).add_objective(new_objective, true)
 	
@@ -1737,18 +1693,20 @@ func _on_objective_created(stage_id: StringName, objective_id: StringName) -> vo
 	undo.add_undo_method(_undo_create_objective.bind(stage_id, objective_id))
 	undo.commit_action(false)
 	
+	switch_to(stage_id, objective_id)
+	
 	_on_something_changed()
 
 
 func _do_create_objective(on_stage: StringName, objective_id: StringName) -> void:
-	var new_objective: QuestObjective = QuestObjective.new()
+	var new_objective: NFQuestObjective = NFQuestObjective.new()
 	new_objective.id = objective_id
 	quest_resource.get_stage(on_stage).add_objective(new_objective, true)
 	quest_tree.add_objective(on_stage, objective_id)
 
 
 func _undo_create_objective(on_stage: StringName, objective_id: StringName) -> void:
-	var stage: QuestStage = quest_resource.get_stage(on_stage)
+	var stage: NFQuestStage = quest_resource.get_stage(on_stage)
 	if stage != null:
 		stage.remove_objective(objective_id)
 	quest_tree.erase_objective(on_stage, objective_id)
@@ -1759,15 +1717,19 @@ func _undo_create_objective(on_stage: StringName, objective_id: StringName) -> v
 
 
 func _on_quest_id_changed(from: StringName, to: StringName) -> void:
+	quest_resource.id = to
+	update_crumbs_label()
+	
 	undo.create_action("Set Quest ID")
 	undo.add_do_method(_do_update_quest_id.bind(to))
 	undo.add_undo_method(_do_update_quest_id.bind(from))
-	undo.commit_action()
+	undo.commit_action(false)
 	_on_something_changed()
 
 
 func _do_update_quest_id(to: StringName) -> void:
 	quest_resource.id = to
+	quest_tree.set_quest_id(to)
 	update_crumbs_label()
 
 
@@ -1777,8 +1739,21 @@ func _on_stage_id_changed(from: StringName, to: StringName) -> void:
 		quest_resource._stages[to] = quest_resource._stages[from]
 		quest_resource._stages.erase(from)
 	
+	for stage_id in quest_resource._stages:
+		var stage: NFQuestStage = quest_resource._stages[stage_id]
+		if stage.success_stage_id == from:
+			stage.success_stage_id = to
+		if stage.failure_stage_id == from:
+			stage.failure_stage_id = to
+	
 	if quest_resource.entry_stage == from:
 		quest_resource.entry_stage = to
+	
+	if success_pointer_opt_btn.get_selected_metadata() == from:
+		success_pointer_opt_btn.set_item_metadata(success_pointer_opt_btn.selected, to)
+	if failure_pointer_opt_btn.get_selected_metadata() == from:
+		failure_pointer_opt_btn.set_item_metadata(failure_pointer_opt_btn.selected, to)
+	update_stage_target_pointers()
 	
 	if selected_stage == from:
 		selected_stage = to
@@ -1796,13 +1771,18 @@ func _do_update_stage_id(from: StringName, to: StringName) -> void:
 	if not quest_resource.has_stage(from):
 		NFPluginGameHandler._log_msg(
 				"odyssey - editor",
-				"Couldn't set ID of stage '%s'. Stage not found",
+				"Couldn't set ID of stage '%s'. Stage not found" % from,
 				NFPluginGameHandler._LogLevel.ERROR)
 		return
 	
 	quest_resource.get_stage(from).id = to
 	quest_resource._stages[to] = quest_resource._stages[from]
 	quest_resource._stages.erase(from)
+	
+	if success_pointer_opt_btn.get_selected_metadata() == from:
+		success_pointer_opt_btn.set_item_metadata(success_pointer_opt_btn.selected, to)
+	if failure_pointer_opt_btn.get_selected_metadata() == from:
+		failure_pointer_opt_btn.set_item_metadata(failure_pointer_opt_btn.selected, to)
 	
 	quest_tree.set_stage_id(from, to)
 	
@@ -1812,6 +1792,8 @@ func _do_update_stage_id(from: StringName, to: StringName) -> void:
 	if selected_stage == from:
 		selected_stage = to
 		update_crumbs_label()
+	
+	update_stage_target_pointers()
 
 
 func _on_objective_id_changed(on_stage: StringName, from: StringName, to: StringName) -> void:
@@ -1894,8 +1876,8 @@ func _do_update_entry_stage(stage_id: StringName) -> void:
 
 
 func _on_stage_duplicated(from: StringName, duplicate_id: StringName) -> void:
-	var stage_obj: QuestStage = quest_resource.get_stage(from)
-	var duplicate_obj: QuestStage = stage_obj.duplicate(true)
+	var stage_obj: NFQuestStage = quest_resource.get_stage(from)
+	var duplicate_obj: NFQuestStage = stage_obj.duplicate(true)
 	duplicate_obj.id = duplicate_id
 	# --- Godot 4.4 Compatibility code ---
 	# A quest stage saves objectives as subresoruces. To ensure duplication
@@ -1903,7 +1885,7 @@ func _on_stage_duplicated(from: StringName, duplicate_id: StringName) -> void:
 	# Godot 4.5, but NexusForge 1.X will support 4.4. On version 2.0, supported
 	# versions will be changed just ahead enough to solve old issues like this.
 	for objective_id in duplicate_obj.objectives():
-		var original_obj: QuestObjective = stage_obj.get_objective(objective_id)
+		var original_obj: NFQuestObjective = stage_obj.get_objective(objective_id)
 		duplicate_obj._objectives[objective_id]["objective"] = original_obj.duplicate(true)
 	# ------------------------------------
 	quest_resource.add_stage(duplicate_obj)
@@ -1932,8 +1914,8 @@ func _do_duplicate_stage(target: StringName, new_id: StringName) -> void:
 				NFPluginGameHandler._LogLevel.ERROR)
 		return
 	
-	var stage_obj: QuestStage = quest_resource.get_stage(target)
-	var duplicate_obj: QuestStage = quest_resource.duplicate(true)
+	var stage_obj: NFQuestStage = quest_resource.get_stage(target)
+	var duplicate_obj: NFQuestStage = stage_obj.duplicate(true)
 	duplicate_obj.id = new_id
 	# --- Godot 4.4 Compatibility code ---
 	# A quest stage saves objectives as subresoruces. To ensure duplication
@@ -1941,7 +1923,7 @@ func _do_duplicate_stage(target: StringName, new_id: StringName) -> void:
 	# Godot 4.5, but NexusForge 1.X will support 4.4. On version 2.0, supported
 	# versions will be changed just ahead enough to solve old issues like this.
 	for objective_id in duplicate_obj.objectives():
-		var original_obj: QuestObjective = stage_obj.get_objective(objective_id)
+		var original_obj: NFQuestObjective = stage_obj.get_objective(objective_id)
 		duplicate_obj._objectives[objective_id]["objective"] = original_obj.duplicate(true)
 	# ------------------------------------
 	
@@ -1962,8 +1944,8 @@ func _undo_duplicate_stage(duplicate_id: StringName) -> void:
 
 
 func _on_objective_duplicated(from_stage: StringName, objective: StringName, duplicate_id: StringName) -> void:
-	var stage: QuestStage = quest_resource.get_stage(from_stage)
-	var objective_dupe: QuestObjective = stage.get_objective(objective).duplicate(true)
+	var stage: NFQuestStage = quest_resource.get_stage(from_stage)
+	var objective_dupe: NFQuestObjective = stage.get_objective(objective).duplicate(true)
 	objective_dupe.id = duplicate_id
 	stage.add_objective(objective_dupe, stage.is_objective_required(objective))
 	
@@ -1983,7 +1965,7 @@ func _do_duplicate_objective(from_stage: StringName, objective_id: StringName, d
 				NFPluginGameHandler._LogLevel.ERROR)
 		return
 	
-	var stage: QuestStage = quest_resource.get_stage(from_stage)
+	var stage: NFQuestStage = quest_resource.get_stage(from_stage)
 	
 	if not stage.has_objective(objective_id):
 		NFPluginGameHandler._log_msg(
@@ -1998,7 +1980,7 @@ func _do_duplicate_objective(from_stage: StringName, objective_id: StringName, d
 				NFPluginGameHandler._LogLevel.ERROR)
 		return
 	
-	var duplicate_objective: QuestObjective = stage.get_objective(objective_id).duplicate(true)
+	var duplicate_objective: NFQuestObjective = stage.get_objective(objective_id).duplicate(true)
 	duplicate_objective.id = duplicate_id
 	stage.add_objective(duplicate_objective, stage.is_objective_required(objective_id))
 	
@@ -2009,7 +1991,7 @@ func _undo_duplicate_objective(on_stage: StringName, objective_id: StringName) -
 	if not quest_resource.has_stage(on_stage):
 		return
 	
-	var target: QuestStage = quest_resource.get_stage(on_stage)
+	var target: NFQuestStage = quest_resource.get_stage(on_stage)
 	
 	if not target.has_objective(objective_id):
 		return
@@ -2033,6 +2015,20 @@ func _do_move_stage(stage_id: StringName, to_index: int) -> void:
 
 
 func _on_objective_moved(objective_id: StringName, from_stage: StringName, from_index: int, to_stage: StringName, to_index: int) -> void:
+	if from_stage != to_stage:
+		var source_stage: NFQuestStage = quest_resource.get_stage(from_stage)
+		var target_stage: NFQuestStage = quest_resource.get_stage(to_stage)
+		
+		if source_stage != null and target_stage != null and source_stage.has_objective(objective_id):
+			var objective: NFQuestObjective = source_stage.get_objective(objective_id)
+			var required: bool = source_stage.is_objective_required(objective_id)
+			
+			target_stage.add_objective(objective, required)
+			source_stage.remove_objective(objective_id)
+			
+			if selected_stage == from_stage and selected_objective == objective_id:
+				selected_stage = to_stage
+	
 	undo.create_action("Move Stage '%s' Objective '%s'" % [from_stage, objective_id])
 	undo.add_do_method(_do_move_objective.bind(
 			objective_id,
@@ -2049,6 +2045,20 @@ func _on_objective_moved(objective_id: StringName, from_stage: StringName, from_
 
 
 func _do_move_objective(objective_id: StringName, from_stage: StringName, to_stage: StringName, to_index: int) -> void:
+	if from_stage != to_stage:
+		var source_stage: NFQuestStage = quest_resource.get_stage(from_stage)
+		var target_stage: NFQuestStage = quest_resource.get_stage(to_stage)
+		
+		if source_stage != null and target_stage != null and source_stage.has_objective(objective_id):
+			var objective: NFQuestObjective = source_stage.get_objective(objective_id)
+			var required: bool = source_stage.is_objective_required(objective_id)
+			
+			target_stage.add_objective(objective, required)
+			source_stage.remove_objective(objective_id)
+			
+			if selected_stage == from_stage and selected_objective == objective_id:
+				selected_stage = to_stage
+	
 	quest_tree.move_objective(
 			objective_id,
 			from_stage,
@@ -2057,16 +2067,17 @@ func _do_move_objective(objective_id: StringName, from_stage: StringName, to_sta
 
 
 func _on_stage_erased(stage_id: StringName, index: int, objective_order: Array[String]) -> void:
-	var original_stage: QuestStage = quest_resource.get_stage(stage_id)
-	var duplicate_stage: QuestStage = original_stage.duplicate(true)
+	var original_stage: NFQuestStage = quest_resource.get_stage(stage_id)
+	var duplicate_stage: NFQuestStage = original_stage.duplicate(true)
+	var is_entry: bool = quest_resource.entry_stage == stage_id
 	# --- Godot 4.4 Compatibility code ---
 	# A quest stage saves objectives as subresoruces. To ensure duplication
 	# is true we will go and duplicate the resources too. This is solved in
 	# Godot 4.5, but NexusForge 1.X will support 4.4. On version 2.0, supported
 	# versions will be changed just ahead enough to solve old issues like this.
 	for objective_id in original_stage.objectives():
-		var original_obj: QuestObjective = original_stage.get_objective(objective_id)
-		var dupe_objective: QuestObjective = original_obj.duplicate(true)
+		var original_obj: NFQuestObjective = original_stage.get_objective(objective_id)
+		var dupe_objective: NFQuestObjective = original_obj.duplicate(true)
 		duplicate_stage._objectives[objective_id]["objective"] = dupe_objective
 	# ------------------------------------
 	var targeted_stages: Dictionary[StringName, Dictionary] = {}
@@ -2075,7 +2086,7 @@ func _on_stage_erased(stage_id: StringName, index: int, objective_order: Array[S
 	for id in quest_resource.stages():
 		if id == stage_id:
 			continue
-		var stg: QuestStage = quest_resource.get_stage(id)
+		var stg: NFQuestStage = quest_resource.get_stage(id)
 		var success_match: bool = false
 		var failure_match: bool = false
 		
@@ -2089,7 +2100,7 @@ func _on_stage_erased(stage_id: StringName, index: int, objective_order: Array[S
 		
 		if success_match or failure_match:
 			if not targeted_stages.has(id):
-				targeted_stages[id] = DictUtils.create_typed(TYPE_STRING, TYPE_BOOL)
+				targeted_stages[id] = NFDictUtils.create_typed(TYPE_STRING, TYPE_BOOL)
 			targeted_stages[id]["on_success"] = success_match
 			targeted_stages[id]["on_failure"] = failure_match
 	
@@ -2097,6 +2108,8 @@ func _on_stage_erased(stage_id: StringName, index: int, objective_order: Array[S
 	if selected_stage == stage_id:
 		quest_tree.select_quest(false)
 		load_quest_data()
+	if is_entry:
+		quest_resource.entry_stage = &""
 	
 	undo.create_action("Erase Stage '%s'" % stage_id)
 	undo.add_do_method(_do_erase_stage.bind(stage_id))
@@ -2104,13 +2117,14 @@ func _on_stage_erased(stage_id: StringName, index: int, objective_order: Array[S
 			duplicate_stage,
 			index,
 			targeted_stages,
-			objective_order))
+			objective_order,
+			is_entry))
 	undo.commit_action(false)
 	
 	_on_something_changed()
 
 
-func _undo_erase_stage(stage_res: QuestStage, index: int, pointers_patch: Dictionary[StringName, Dictionary], objectives: Array[String]) -> void:
+func _undo_erase_stage(stage_res: NFQuestStage, index: int, pointers_patch: Dictionary[StringName, Dictionary], objectives: Array[String], is_entry: bool) -> void:
 	if quest_resource.has_stage(stage_res.id):
 		NFPluginGameHandler._log_msg(
 				"odyssey - editor",
@@ -2118,7 +2132,7 @@ func _undo_erase_stage(stage_res: QuestStage, index: int, pointers_patch: Dictio
 				NFPluginGameHandler._LogLevel.ERROR)
 		return
 	
-	var restored_stage: QuestStage = stage_res.duplicate(true)
+	var restored_stage: NFQuestStage = stage_res.duplicate(true)
 	# --- Godot 4.4 Compatibility code ---
 	# A quest stage saves objectives as subresoruces. To ensure duplication
 	# is true we will go and duplicate the resources too. This is solved in
@@ -2127,23 +2141,25 @@ func _undo_erase_stage(stage_res: QuestStage, index: int, pointers_patch: Dictio
 	for objective_id in stage_res.objectives():
 		if not objectives.has(String(objective_id)):
 			objectives.append(String(objective_id))
-		var saved_objective: QuestObjective = stage_res.get_objective(objective_id)
-		var restored_objective: QuestObjective = saved_objective.duplicate(true)
+		var saved_objective: NFQuestObjective = stage_res.get_objective(objective_id)
+		var restored_objective: NFQuestObjective = saved_objective.duplicate(true)
 		restored_stage._objectives[objective_id]["objective"] = restored_objective
 	# ------------------------------------
 	
 	for stage_id in quest_resource.stages():
 		if not pointers_patch.has(stage_id):
 			continue
-		var stage: QuestStage = quest_resource.get_stage(stage_id)
+		var stage: NFQuestStage = quest_resource.get_stage(stage_id)
 		if pointers_patch[stage_id]["on_success"]:
 			stage.success_stage_id = stage_res.id
 		if pointers_patch[stage_id]["on_failure"]:
 			stage.failure_stage_id = stage_res.id
 	
-	quest_resource.add_stage(stage_res)
+	quest_resource.add_stage(restored_stage)
 	quest_tree.add_stage(stage_res.id, index)
 	quest_tree._restore_objectives(stage_res.id, objectives)
+	if is_entry:
+		quest_resource.entry_stage = stage_res.id
 	
 	update_stage_target_pointers()
 
@@ -2155,7 +2171,7 @@ func _do_erase_stage(stage_id: StringName) -> void:
 	for id in quest_resource.stages():
 		if id == stage_id:
 			continue
-		var stg: QuestStage = quest_resource.get_stage(id)
+		var stg: NFQuestStage = quest_resource.get_stage(id)
 		if stg.success_stage_id == stage_id:
 			stg.success_stage_id = &""
 		if stg.failure_stage_id == stage_id:
@@ -2166,11 +2182,13 @@ func _do_erase_stage(stage_id: StringName) -> void:
 	if selected_stage == stage_id:
 		quest_tree.select_quest(false)
 		load_quest_data()
+	if quest_resource.entry_stage == stage_id:
+		quest_resource.entry_stage = &""
 
 
 func _on_objective_erased(from_stage: StringName, objective_id: StringName, index: int) -> void:
-	var stage: QuestStage = quest_resource.get_stage(from_stage)
-	var objective_backup: QuestObjective = stage.get_objective(objective_id).duplicate(true)
+	var stage: NFQuestStage = quest_resource.get_stage(from_stage)
+	var objective_backup: NFQuestObjective = stage.get_objective(objective_id).duplicate(true)
 	var is_required: bool = stage.is_objective_required(objective_id)
 	
 	stage.remove_objective(objective_id)
@@ -2191,7 +2209,7 @@ func _on_objective_erased(from_stage: StringName, objective_id: StringName, inde
 	_on_something_changed()
 
 
-func _undo_erase_objective(on_stage: StringName, objective_res: QuestObjective, required: bool, index: int) -> void:
+func _undo_erase_objective(on_stage: StringName, objective_res: NFQuestObjective, required: bool, index: int) -> void:
 	if not quest_resource.has_stage(on_stage):
 		NFPluginGameHandler._log_msg(
 				"odyssey - editor",
@@ -2199,7 +2217,7 @@ func _undo_erase_objective(on_stage: StringName, objective_res: QuestObjective, 
 				NFPluginGameHandler._LogLevel.ERROR)
 		return
 	
-	var stage: QuestStage = quest_resource.get_stage(on_stage)
+	var stage: NFQuestStage = quest_resource.get_stage(on_stage)
 	
 	if stage.has_objective(objective_res.id):
 		NFPluginGameHandler._log_msg(
@@ -2208,7 +2226,7 @@ func _undo_erase_objective(on_stage: StringName, objective_res: QuestObjective, 
 				NFPluginGameHandler._LogLevel.ERROR)
 		return
 	
-	var restored_objective: QuestObjective = objective_res.duplicate(true)
+	var restored_objective: NFQuestObjective = objective_res.duplicate(true)
 	stage.add_objective(restored_objective, required)
 	quest_tree.add_objective(on_stage, objective_res.id, index)
 
@@ -2217,7 +2235,7 @@ func _do_erase_objective(from_stage: StringName, objective_id: StringName) -> vo
 	if not quest_resource.has_stage(from_stage):
 		return
 	
-	var stage: QuestStage = quest_resource.get_stage(from_stage)
+	var stage: NFQuestStage = quest_resource.get_stage(from_stage)
 	
 	if not stage.has_objective(objective_id):
 		return

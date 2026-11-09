@@ -1,26 +1,57 @@
-class_name ArrayUtils
+class_name NFArrayUtils
 extends RefCounted
 ## A collection of static functions to modify arrays.
+##
+## Utility methods for processing arrays.
+## [br][br]
+## [b]Note:[/b] For best performance in tight loops (e.g.
+## [method Object._process], or heavy procedural generation), consider
+## copying the logic of the methods inline where you need it.
 
 
-## Removes a random item on the array and returns it.
-static func pop_random(from: Array) -> Variant:
+## An empty non-typed array.
+const EMPTY: Array = []
+
+
+static func _static_init() -> void:
+	EMPTY.make_read_only()
+
+
+## Removes a random item on the array and returns it.[br]
+## The order of the array will be preserved unless [param preserve_order] is
+## set to [code]false[/code].
+static func pop_random(from: Array, preserve_order: bool = true) -> Variant:
 	if from.is_empty():
 		return null
-	var random_index: int = randi_range(0, from.size())
-	return from.pop_at(random_index)
+	var last_idx: int = from.size() - 1
+	var random_index: int = randi() % last_idx
+	
+	if preserve_order:
+		return from.pop_at(random_index)
+	
+	var item: Variant = from[random_index]
+	from[random_index] = from[last_idx]
+	from.remove_at(last_idx)
+	return item
 
 
 ## Switches the data on the [param at] array on the [param from] and [param to]
 ## indexes.
 static func switch_indexes(from: int, to: int, at: Array) -> void:
-	var array_size: int = at.size() - 1
-	if array_size < from or array_size < to:
+	if from == to:
 		return
 	
-	var second_memory = at[to]
+	var size: int = at.size()
+	if size <= from or from < -size or size <= to or to < -size:
+		NFPluginGameHandler._log_msg(
+				"array utils",
+				"One or both of the provided indexes are out of bounds: %d, %d. Array.size(): %d" % [from, to, size],
+				NFPluginGameHandler._LogLevel.ERROR)
+		return
+	
+	var temp: Variant = at[to]
 	at[to] = at[from]
-	at[from] = second_memory
+	at[from] = temp
 
 
 ## Searches array for target using the Binary Search Algorithm
@@ -41,44 +72,73 @@ static func bsearch_array_desc(array: Array, target: Variant) -> int:
 	var high: int = array.size() - 1
 	
 	while low <= high:
-		var mid_val: float = low + (high - low) / 2.0
-		var mid: int = roundi(mid_val)
+		var mid: int = low + (high - low) / 2
 		
 		if array[mid] == target:
 			return mid
-		elif array[mid] < target: # Right Half
-			low = mid + 1
-		else: # Left Half
+		elif array[mid] < target: # Left Half
 			high = mid - 1
+		else: # Right Half
+			low = mid + 1
 	
 	return -1
 
 
 ## Moves an item on the [param array] from [param from_idx] to [param to_idx].
 static func move_item(array: Array, from_idx: int, to_idx: int) -> void:
-	var insert_item: Variant = array[from_idx]
+	if from_idx == to_idx:
+		return
 	
-	array.remove_at(from_idx)
-	array.insert(to_idx, insert_item)
+	var size: int = array.size()
+	
+	if size <= from_idx or from_idx < -size or size <= to_idx or to_idx < -size:
+		NFPluginGameHandler._log_msg(
+				"array utils",
+				"One or both of the provided indexes are out of bounds: %d, %d. Array.size(): %d" % [from_idx, to_idx, size],
+				NFPluginGameHandler._LogLevel.ERROR)
+		return
+	
+	var normalized_from: int = from_idx if 0 <= from_idx else from_idx + size
+	var normalized_to: int = to_idx if 0 <= to_idx else to_idx + size
+	
+	if normalized_from == normalized_to:
+		return
+	
+	if normalized_from < normalized_to:
+		for idx:int in range(normalized_from, normalized_to):
+			array[idx] = array[idx + 1]
+	else:
+		for idx:int in range(normalized_from, normalized_to, -1):
+			array[idx] = array[idx - 1]
 
 
 ## Inserts [param item] on [param array] in an ascending order.[br]
 ## Function expects [param array] to already be sorted.
 static func insert_sorted_asc(array: Array, item: Variant) -> void:
+	if array.is_empty() or array.back() <= item:
+		array.append(item)
+		return
 	array.insert(array.bsearch(item), item)
 
 
 ## Inserts [param item] on [param array] in a descending order[br]
 ## Function expects [param array] to already be sorted.
 static func insert_sorted_desc(array: Array, item: Variant) -> void:
+	if array.is_empty() or array.back() <= item:
+		array.append(item)
+		return
+	
+	if array[0] <= item:
+		array.push_front(item)
+		return
+	
 	var low: int = 0
 	var high: int = array.size() - 1
 	
 	while low <= high:
-		@warning_ignore("integer_division")
 		var mid: int = (low + high) / 2
 	
-		if array[mid] > item:
+		if item < array[mid]:
 			low = mid + 1  # We should insert before this element
 		else:
 			high = mid - 1  # We should insert after this element
@@ -86,91 +146,150 @@ static func insert_sorted_desc(array: Array, item: Variant) -> void:
 	array.insert(low, item)
 
 
-## Simple sorting fucntion for [method Array.sort_custom][br]
+## Simple sorting function for [method Array.sort_custom][br]
 ## Does a simple [code]item_b < item_a[/code][br]
-## Usage: [code]Array.sort_custom(ArrayUtils.sort_custom_desc)[/code]
+## Usage: [code]Array.sort_custom(NFArrayUtils.sort_custom_desc)[/code]
 static func sort_custom_desc(item_a: Variant, item_b: Variant) -> bool:
 	return item_b < item_a
 
 
 ## Simple sorting function for [method Array.sort_custom] when the arrays
 ## contain strings. Sorts item in an alphabetically ascending order. Case insensitive.[br]
-## Usage: [code]Array.sort_custom(ArrayUtils.sort_custom_alphabetically_asc)[/code]
+## Usage: [code]Array.sort_custom(NFArrayUtils.sort_custom_alphabetically_asc)[/code]
 static func sort_custom_alphabetically_asc(string_a: String, string_b: String) -> bool:
 	return string_a.naturalnocasecmp_to(string_b) < 0
 
 
 ## Simple sorting function for [method Array.sort_custom] when the arrays
 ## contain strings. Sorts item in an alphabetically descending order. Case insensitive.[br]
-## Usage: [code]Array.sort_custom(ArrayUtils.sort_custom_alphabetically_desc)[/code]
+## Usage: [code]Array.sort_custom(NFArrayUtils.sort_custom_alphabetically_desc)[/code]
 static func sort_custom_alphabetically_desc(string_a: String, string_b: String) -> bool:
 	return string_b.naturalnocasecmp_to(string_a) < 0
 
 
 ## Returns true if the array contains the string [param what]. It performs a 
-## non-case-sensitive comparison.
+## non-case-sensitive comparison.[br]
+## [b]Note:[/b] StringNames are NOT considered as strings in this method.
 static func containsn(array: Array, what: String) -> bool:
 	what = what.to_upper()
 	
-	for element in array:
-		match typeof(element):
-			TYPE_STRING:
-				if element.to_upper() == what:
-					return true
-			_:
-				continue
+	for item:Variant in array:
+		if typeof(item) == TYPE_STRING and item.nocasecmp_to(what) == 0:
+			return true
 	return false
 
 
 ## Appends to [param append_to] the items from [param from] that it doesn't
 ## already have.
 static func append_uniques(append_to: Array, from: Array) -> void:
-	for item in from:
-		if not append_to.has(item):
+	if from.is_empty():
+		return
+	
+	var existing: Dictionary = {}
+	for item:Variant in append_to:
+		existing[item] = null
+	
+	for item:Variant in from:
+		if not existing.has(item):
+			existing[item] = null
 			append_to.append(item)
 
 
-## Clamps [param index] to be between 0 and the size of [param to_array].
-static func clamp_index(to_array: Variant, index: int) -> int:
-	return clampi(index, 0, to_array.size())
+## Clamps [param index] to be between 0 and the size of [param to_array].[br]
+## Returns [code]-1[/code] if param to_array is empty.
+static func clamp_index(to_array: Array, index: int) -> int:
+	var count: int = to_array.size()
+	if count <= 0:
+		return -1
+	return clampi(index, 0, count - 1)
 
 
 ## Inserts the items from [param items] to the array [param to] in an ascending
 ## order.[br]
 ## Function expects [param to] to be already sorted.
 static func insert_uniques_asc(to: Array, items: Array) -> void:
-	for item in items:
-		if not to.has(item):
-			insert_sorted_asc(to, item)
-
-
-## Removes the items from [param substract] that exist on [param from].
-static func substract_array(from: Array, substract: Array) -> void:
-	var remove_count: int = 0
-	var MAX_ITEMS: int = from.size()
-	
-	if from.is_empty():
+	if items.is_empty():
 		return
 	
-	for item in substract:
-		var found_idx: int = from.find(item)
-		if found_idx != -1:
-			from.remove_at(found_idx)
-			remove_count += 1
-		if MAX_ITEMS <= remove_count:
-			break
+	for item:Variant in items:
+		if to.is_empty():
+			to.append(item)
+			continue
+		
+		if to.back() < item:
+			to.append(item)
+			continue
+		elif item == to.back():
+			continue
+		
+		var idx: int = to.bsearch(item)
+		if idx < to.size() and to[idx] == item:
+			continue
+		
+		to.insert(idx, item)
+
+
+## Removes all items found in [param subtract] from [param from].[br]
+## By default, only one instance of each item found in substract will be removed
+## unless [param all_occurrences] is set to [code]true[/code].
+static func subtract_array(from: Array, subtract: Array, all_occurrences: bool = false) -> void:
+	if from.is_empty() or subtract.is_empty():
+		return
+	
+	var write_idx: int = 0
+	
+	if all_occurrences:
+		var lookup: Dictionary[Variant, Variant] = {}
+		for item:Variant in subtract:
+			lookup[item] = null
+		
+		for read_idx: int in from.size():
+			var item: Variant = from[read_idx]
+			if not lookup.has(item):
+				from[write_idx] = item
+				write_idx += 1
+	else:
+		var counts_to_remove: Dictionary[Variant, int]= {}
+		
+		for item:Variant in subtract:
+			counts_to_remove[item] = counts_to_remove.get(item, 0) + 1
+		
+		for read_idx:int in from.size():
+			var item: Variant = from[read_idx]
+			var remaining: int = counts_to_remove.get(item, 0)
+			if 0 < remaining:
+				counts_to_remove[item] = remaining - 1
+			else:
+				from[write_idx] = item
+				write_idx += 1
+		
+	from.resize(write_idx)
 
 
 ## Returns an array containing the unique items from both arrays.[br]
 ## [code]difference([a,b], [b,c])[/code] = [code][a, c][/code]
-static func symetric_difference(array_a: Array, array_b: Array) -> Array:
+static func symmetric_difference(array_a: Array, array_b: Array) -> Array:
+	if array_a.is_empty() and array_b.is_empty():
+		return []
+	
+	var set_a: Dictionary = {}
+	for item:Variant in array_a:
+		set_a[item] = null
+
+	var set_b: Dictionary = {}
+	for item:Variant in array_b:
+		set_b[item] = null
+	
 	var difference_items: Array = []
-	for item in array_a:
-		if not array_b.has(item):
+	
+	for item:Variant in set_a:
+		if not set_b.has(item):
 			difference_items.append(item)
-	for item in array_b:
-		if not array_a.has(item):
+	
+	for item:Variant in set_b:
+		if not set_a.has(item):
 			difference_items.append(item)
+	
 	return difference_items
 
 
@@ -180,89 +299,171 @@ static func symetric_difference(array_a: Array, array_b: Array) -> Array:
 ## of not preserving the order of items in the array.
 static func swap_remove(array: Array, index: int) -> void:
 	var size: int = array.size()
-	
-	if size == 0 or index < 0 or size <= index:
+	if index < -size or size <= index:
+		NFPluginGameHandler._log_msg(
+				"array utils",
+				"Index out of bounds: %d. Array.size(): %d" % [index, size],
+				NFPluginGameHandler._LogLevel.ERROR)
 		return
 	
-	if 2 <= size:
-		array[index] = array[size - 1]
-	
-	array.resize(size - 1)
+	if index != -1 and index != size - 1:
+		array[index] = array[-1]
+	array.resize(size -1)
 
 
-## Costructor for an array with default parameters set.
+## Constructor for an array with default parameters set.
 static func create_typed(type: int, from: Array = [], class_string: StringName = &"", script: Variant = null) -> Array:
 	return Array(from, type, class_string, script)
 
 
 ## Constructor for a 2D array.
-static func create_2d(size_x: int, size_y: int, type: int = -1) -> Array[Array]:
+static func create_2d(size_x: int, size_y: int, type: int = -1, class_type: StringName = &"", script: Variant = null) -> Array[Array]:
 	if size_x <= 0 or size_y <= 0:
 		return create_typed(TYPE_ARRAY)
 	
 	var y_array: Array[Array] = []
 	y_array.resize(size_y)
 	
-	if 0 <= type and type < TYPE_MAX:
-		for array_idx in range(size_x):
-			var x_array: Array = create_typed(type) if type != -1 else []
-			x_array.resize(size_x)
-			y_array[array_idx] = x_array
+	var x_array: Array = Array([], type, class_type, script) if NFMath.is_between(type, 0, TYPE_MAX - 1) else []
+	x_array.resize(size_x)
+	
+	for y_idx:int in size_y:
+		y_array[y_idx] = x_array.duplicate(true)
 	
 	return y_array
 
 
 ## Resizes a 2D array.
-static func resize_2d(array: Array[Array], new_width: int, new_height: int) -> void:
+static func resize_2d(array: Array[Array], new_width: int, new_height: int, new_types: int = TYPE_NIL, type_class: StringName = &"", type_script: Variant = null) -> void:
+	var old_size: int = array.size()
 	new_width = maxi(0, new_width)
 	new_height = maxi(0, new_height)
 	
 	if array.size() != new_height:
 		array.resize(new_height)
+		if old_size < new_height and -1 < new_types and new_types < TYPE_MAX:
+			for idx:int in range(old_size, new_height):
+				array[idx] = Array([], new_types, type_class, type_script)
 	
 	if 0 < new_height:
-		for x_arr in array:
+		for x_arr:Array in array:
 			x_arr.resize(new_width)
 
 
 ## Replaces all instances of [param find] with [param replace_with] on the
 ## array [param in_array]
-static func replace_all(in_array: Variant, find: Variant, replace_with: Variant) -> void:
-	var index_found: int = in_array.find(find)
+static func replace_all(in_array: Array, find: Variant, replace_with: Variant) -> void:
+	if find == replace_with:
+		return
 	
-	while index_found != -1:
-		in_array[index_found] = replace_with
-		index_found = in_array.find(find, index_found)
+	for idx:int in in_array.size():
+		if in_array[idx] == find:
+			in_array[idx] = replace_with
 
 
 ## Returns if [param in_array] has all the items in [param has_items].
 static func has_all(in_array: Array, has_items: Array) -> bool:
-	for item in has_items:
+	if has_items.is_empty():
+		return true
+	if in_array.is_empty():
+		return false
+
+	for item:Variant in has_items:
 		if not in_array.has(item):
 			return false
+
 	return true
 
 
 ## Returns if any item in [param has_any_in] exists in [param array].
 static func has_any(array: Array, has_any_in: Array) -> bool:
-	for item in has_any_in:
+	for item:Variant in has_any_in:
 		if array.has(item):
 			return true
 	return false
 
+
 ## Finds and removes the first occurrence of [param value] from the [param array]
-## beggining at the end of the list. If value does not exist in the array,
+## beginning at the end of the list. If value does not exist in the array,
 ## nothing happens.[br]
 ## Works exactly like [method Array.erase] but erases from the end to the
-## beggining.
+## beginning.
 static func erase_last(array: Array, value: Variant) -> void:
 	var erase_idx: int = array.rfind(value)
 	if 0 <= erase_idx:
 		array.remove_at(erase_idx)
 
 
-## Finds and removes all ocourrences of [param value] from the [param array].
+## Finds and removes all occurrences of [param value] from the [param array].
 static func erase_all(array: Array, value: Variant) -> void:
-	var idx: int = array.rfind(value)
-	while 0 <= idx:
-		array.remove_at(idx)
+	var first_idx: int = array.find(value)
+	if first_idx == -1:
+		return
+	
+	var write_idx: int = first_idx
+	var count: int = array.size()
+	
+	for read_idx:int in range(first_idx + 1, count):
+		var item: Variant = array[read_idx]
+		if item != value:
+			array[write_idx] = item
+			write_idx += 1
+	
+	array.resize(write_idx)
+
+
+## Checks if the [param index] is within bounds of the [param array],
+## supports negative indexing.
+static func is_index_valid(array: Array, index: int) -> bool:
+	var size: int = array.size()
+	return -size <= index and index < size
+
+
+## Returns a combined array where the [param target] array has its matching
+## values [param match_val] replaced with the ones on the same index of
+## the [param overlay] array.
+## [codeblock]
+## var a = [1, null, 3, null]
+## var b = ["one", "two", "three", "four", "five", "six"]
+## var combined = NFArrayUtils.overlaid_array(a, b, null)
+## print(combined) # Prints [1, "two", 3, "four"]
+## [/codeblock]
+## [br][br]
+## Note: While the returned array is NOT a reference to any of the passed 
+## arguments, the values in the array could be depending on the type as they
+## are not duplicated.
+static func overlaid_array(target: Array, overlay: Array, match_val: Variant) -> Array:
+	if target.is_empty():
+		return []
+	if overlay.is_empty():
+		return target.duplicate()
+	
+	var final_arr: Array = target.duplicate()
+	var iter_size: int = mini(target.size(), overlay.size())
+	
+	for idx:int in iter_size:
+		if final_arr[idx] == match_val:
+			final_arr[idx] = overlay[idx]
+	
+	return final_arr
+
+
+## Returns a combined PackedStringArray where the [param target] array has its
+## matching values [param match_val] replaced with the ones on the same index
+## of the [param overlay] array.
+## [codeblock]
+## var a = ["a", "", "", "d"]
+## var b = ["z", "y", "x"]
+## var combined = NFArrayUtils.overlaid_packed_string_array(a, b, "")
+## print(combined) # Prints ["a", "y", "x", "d"]
+## [/codeblock]
+static func overlaid_packed_string_array(target: PackedStringArray, overlay: PackedStringArray, match_val: String) -> PackedStringArray:
+	var final_arr: PackedStringArray = target.duplicate()
+	var iter_size: int = mini(target.size(), overlay.size())
+	if iter_size == 0:
+		return final_arr
+	
+	for idx:int in iter_size:
+		if final_arr[idx] == match_val:
+			final_arr[idx] = overlay[idx]
+	return final_arr

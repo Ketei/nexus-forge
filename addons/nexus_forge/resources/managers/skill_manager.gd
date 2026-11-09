@@ -2,17 +2,15 @@ class_name NFSkillManager
 extends RefCounted
 ## An object to keep track of skill's info and custom skills.
 ##
-## This object can keep track skill data of base skills and custom ones. Data
-## can be accessed directly by using the ID of the skill eg.[code]Skills.my_skill[/code].
-## If the skill isn't registered a fallback object will be returned. You can
-## call is_valid() to verify a skill validity as well as is_custom() to
-## see if the skill isn't a basic one.
+## This object can keep track skill data of base skills and custom ones.
 
 
 ## Emmited when a new custom skill is created.
 signal skill_created(id: StringName)
 ## Emmited when a custom skill is erased.
 signal skill_erased(id: StringName)
+## Emitted when the catalog is rebuilt by using [method NFSkillManager.load_catalog]
+signal catalog_loaded
 
 
 var _skills: Dictionary[StringName, NFCatalogEntry] = {}
@@ -20,27 +18,19 @@ var _base_skills: Dictionary[StringName, Variant] = {}
 
 
 func _init() -> void:
-	for skill_id in SkillSet.skills():
+	for skill_id in NFSkillSet.skills():
 		var base_entry: NFCatalogEntry = NFCatalogEntry.new()
 		base_entry.name = String(skill_id)
-		base_entry._flags = NFCatalogEntry._get_flags(true, false, true)
+		base_entry._flags = NFCatalogEntry._get_flags(false, true)
 		_base_skills[skill_id] = null
 		_skills[skill_id] = base_entry
 		
 	_base_skills.make_read_only()
 
 
-func _get(property: StringName) -> Variant:
-	if _skills.has(property):
-		return _skills[property]
-	var invalid: NFCatalogEntry = NFCatalogEntry.new()
-	invalid._flags = NFCatalogEntry._get_flags(false, false, true)
-	return invalid
-
-
 ## Loads a skill param catalog into this object. If param clear_skills
 ## is [code]true[/code] then previous skills data is cleared.
-func load_catalog(catalog: SkillCatalog, clear_skills: bool = true) -> void:
+func load_catalog(catalog: NFSkillCatalog, clear_skills: bool = true) -> void:
 	if clear_skills:
 		for entry in _skills.keys():
 			if _base_skills.has(entry):
@@ -52,25 +42,27 @@ func load_catalog(catalog: SkillCatalog, clear_skills: bool = true) -> void:
 		entry.name = catalog.get_skill_name(skill)
 		entry.description = catalog.get_skill_description(skill)
 		entry.custom_data.assign(catalog.get_skill_custom_data(skill))
-		entry._flags = NFCatalogEntry._get_flags(true, not _base_skills.has(skill), true)
+		entry._flags = NFCatalogEntry._get_flags(not _base_skills.has(skill), true)
 		_skills[skill] = entry
+	
+	catalog_loaded.emit()
 
 
 ## Returns all the IDs of the registered skills.
 func skills() -> Array[StringName]:
-	return ArrayUtils.create_typed(TYPE_STRING_NAME, _skills.keys())
+	return NFArrayUtils.create_typed(TYPE_STRING_NAME, _skills.keys())
 
 
 ## Creates a custom skill with [param skill_id]. Creating a custom skill using
-## this method will add it to all initialized and new [SkillSet] objects.
+## this method will add it to all initialized and new [NFSkillSet] objects.
 func create_skill(skill_id: StringName) -> void:
 	if _skills.has(skill_id):
 		return
 	
 	var item: NFCatalogEntry = NFCatalogEntry.new()
 	item.name = String(skill_id).capitalize()
-	item._valid = true
-	item._custom = true
+	item._flags = NFCatalogEntry._get_flags(true, true)
+	
 	_skills[skill_id] = item
 	
 	skill_created.emit(skill_id)

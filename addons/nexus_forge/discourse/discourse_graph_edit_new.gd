@@ -4,13 +4,13 @@ extends GraphEdit
 # Emmited when a node is created.
 signal node_created(node: DiscourseGraphNode)
 # Emitted when nodes are created.
-signal nodes_created(node_uuids: Array[StringName], action_name: String)
+signal nodes_created(node_uuids: Array[String], action_name: String)
 # When a change has happened. Used for applying unsaved status
 signal dialog_changed
 # When a node has been localized. Main window needs to update other elements
 signal localization_enabled(node: DiscourseGraphNode)
 # When a node is selected. Useful for highlithing the node in the menu tree.
-signal discourse_node_selected(node_uuid: StringName)
+signal discourse_node_selected(node_uuid: String)
 # When nodes need to be duplicated
 signal node_duplication_requested(nodes: Array[DiscourseGraphNode])
 # When a node movement finished and the movement it made. If substracted from
@@ -20,54 +20,51 @@ signal nodes_moved(state: Dictionary[String, Dictionary])
 signal nodes_removed(action: String, nodes_data: Dictionary)
 
 # --- Forward Signals ---
-signal node_resized(node_uuid: StringName, from: Vector2, to: Vector2)
-signal comment_node_text_changed(uuid: StringName, old_comment: String, new_comment: String)
-signal comparation_node_operator_changed(uuid: StringName, old_operator: int, new_operator: int)
-signal dialog_node_character_id_changed(uuid: StringName, from: String, to: String)
-signal dialog_node_text_changed(uuid: StringName, from: String, to: String)
-signal dialog_node_presist_toggled(uuid: StringName, is_toggled: bool)
-signal choice_node_text_changed(node_uuid: StringName, choice_idx: int, old_text: String, new_text: String)
-signal choices_node_resized(node_uuid: StringName, old_snapshot: Dictionary, new_snapshot: Dictionary)
-signal shortcut_node_target_changed(node_uuid: StringName, old_anchor: StringName, new_anchor: StringName)
+signal node_resized(node_uuid: String, from: Vector2, to: Vector2)
+signal comment_node_text_changed(uuid: String, old_comment: String, new_comment: String)
+signal comparation_node_operator_changed(uuid: String, old_operator: int, new_operator: int)
+signal dialog_node_character_id_changed(uuid: String, from: String, to: String)
+signal dialog_node_text_changed(uuid: String, from: String, to: String)
+signal dialog_node_presist_toggled(uuid: String, is_toggled: bool)
+signal choice_node_text_changed(node_uuid: String, choice_idx: int, old_text: String, new_text: String)
+signal choices_node_resized(node_uuid: String, old_snapshot: Dictionary, new_snapshot: Dictionary)
+signal shortcut_node_target_changed(node_uuid: String, old_anchor: String, new_anchor: String)
 signal shortcut_node_id_changed(node_uuid: String, old_id: String, new_id: String)
-signal localized_node_text_changed(uuid: StringName, old_value: String, new_value: String)
-signal match_node_cases_resized(uuid: StringName, old_snapshot: Dictionary, new_snapshot: Dictionary)
-signal match_node_field_updated(uuid: StringName, field_id: int, from: Variant, to: Variant)
-signal match_node_mode_changed(uuid: StringName, old_state: Dictionary, new_state: Dictionary)
-signal metadata_node_key_changed(node_uuid: StringName, index: int, from: String, to: String)
-signal call_node_method_changed(node_uuid: StringName, from_state: Dictionary, to_state: Dictionary)
-signal call_return_method_changed(node_uuid: StringName, old_state: Dictionary, new_state: Dictionary)
-signal random_node_count_state_changed(uuid: StringName, old_state: Dictionary, new_state: Dictionary)
-signal random_val_node_mode_changed(uuid: StringName, old_state: Dictionary, new_state: Dictionary)
-signal random_val_node_range_changed(uuid: StringName, from_min: float, from_max: float, to_min: float, to_max: float)
-signal resource_node_path_changed(uuid: StringName, from: String, to: String)
-signal signal_node_signal_changed(uuid: StringName, old_state: Dictionary, new_state: Dictionary)
-signal guard_node_fallback_changed(uuid: StringName, from: Variant, to: Variant)
-signal value_node_value_changed(uuid: StringName, from: Variant, to: Variant)
-signal value_node_type_changed(uuid: StringName, old_state: Dictionary, new_state: Dictionary)
-signal variable_node_type_changed(uuid: StringName, old_state: Dictionary, new_state: Dictionary)
-signal variable_node_path_changed(uuid: StringName, from: String, to: String)
-signal event_path_changed(uuid: StringName, from: String, to: String)
-signal data_event_path_changed(uuid: StringName, from: String, to: String)
+signal localized_node_text_changed(uuid: String, old_value: String, new_value: String)
+signal match_node_cases_resized(uuid: String, old_snapshot: Dictionary, new_snapshot: Dictionary)
+signal match_node_field_updated(uuid: String, field_id: int, from: Variant, to: Variant)
+signal match_node_mode_changed(uuid: String, old_state: Dictionary, new_state: Dictionary)
+signal metadata_node_key_changed(node_uuid: String, index: int, from: String, to: String)
+signal call_node_method_changed(node_uuid: String, from_state: Dictionary, to_state: Dictionary)
+signal call_return_method_changed(node_uuid: String, old_state: Dictionary, new_state: Dictionary)
+signal random_node_count_state_changed(uuid: String, old_state: Dictionary, new_state: Dictionary)
+signal random_val_node_mode_changed(uuid: String, old_state: Dictionary, new_state: Dictionary)
+signal random_val_node_range_changed(uuid: String, from_min: float, from_max: float, to_min: float, to_max: float)
+signal resource_node_path_changed(uuid: String, from: String, to: String)
+signal signal_node_signal_changed(uuid: String, old_state: Dictionary, new_state: Dictionary)
+signal guard_node_fallback_changed(uuid: String, from: Variant, to: Variant)
+signal value_node_value_changed(uuid: String, from: Variant, to: Variant)
+signal value_node_type_changed(uuid: String, old_state: Dictionary, new_state: Dictionary)
+signal variable_node_type_changed(uuid: String, old_state: Dictionary, new_state: Dictionary)
+signal variable_node_path_changed(uuid: String, from: String, to: String)
+signal event_path_changed(uuid: String, from: String, to: String)
+signal data_event_path_changed(uuid: String, from: String, to: String)
 
 signal travel_node_target_id_changed(uuid: String, old_id: String, new_id: String)
-signal travel_node_selected_waypoint_changed(node_uuid: StringName, old_waypoint: StringName, new_waypoint: StringName)
+signal travel_node_selected_waypoint_changed(node_uuid: String, old_waypoint: String, new_waypoint: String)
 
-signal close_frame_requested(uuid: StringName)
-signal frame_title_changed(uuid: StringName, from: String, to: String)
-signal frame_color_changed(uuid: StringName, from: Color, to: Color)
+signal close_frame_requested(uuid: String)
+signal frame_title_changed(uuid: String, from: String, to: String)
+signal frame_color_changed(uuid: String, from: Color, to: Color)
 # ----------------------------
 
 # -- Connections ---
-signal node_connected(from_node: StringName, from_port: int, to_node: StringName, to_port: int)
-signal node_disconnected(from_node: StringName, from_port: int, to_node: StringName, to_port: int, from_state: Dictionary, to_state: Dictionary)
-signal node_connection_switched(origin_ports: Dictionary, new_node: StringName, new_port: int, original_from_state: Dictionary, original_to_state: Dictionary, new_from_state: Dictionary, new_to_state: Dictionary)
+signal node_connected(from_node: String, from_port: int, to_node: String, to_port: int)
+signal node_disconnected(from_node: String, from_port: int, to_node: String, to_port: int, from_state: Dictionary, to_state: Dictionary)
+signal node_connection_switched(origin_ports: Dictionary, new_node: String, new_port: int, original_from_state: Dictionary, original_to_state: Dictionary, new_from_state: Dictionary, new_to_state: Dictionary)
 # --- Actions ---
 signal use_code_editor_requested(target_control: TextEdit)
-signal browse_character_requested(node_uuid: StringName, target_control: LineEdit)
-
-# --- Mutations (UndoRedo) ---
-
+signal browse_character_requested(node_uuid: String, target_control: LineEdit)
 
 # --- Move to parent control ---
 signal paste_nodes_requested
@@ -85,7 +82,7 @@ const DEFAULT_NODE_NAMES: Dictionary[DialogNodes, String] = {
 	DialogNodes.DIALOG: "Dialog",
 	DialogNodes.CHOICES: "Choice",
 	DialogNodes.BRANCH: "Branch",
-	DialogNodes.COMPARATION: "Comparation",
+	DialogNodes.COMPARATION: "Comparison",
 	DialogNodes.EVENT: "Event",
 	DialogNodes.MATCH: "Match",
 	DialogNodes.PAUSE: "Pause",
@@ -95,6 +92,7 @@ const DEFAULT_NODE_NAMES: Dictionary[DialogNodes, String] = {
 	DialogNodes.DIALOG_END: "End",
 	DialogNodes.DIALOG_MERGE: "Merge",
 	DialogNodes.LOCALIZED_TEXT: "Localized",
+	DialogNodes.COMMENT: "Comment",
 	DialogNodes.TRAVEL_TO: "TravelTo",
 	DialogNodes.TRAVEL_TARGET: "Waypoint",
 	DialogNodes.TRAVEL_BACK: "TravelBack",
@@ -115,101 +113,123 @@ const DEFAULT_NODE_NAMES: Dictionary[DialogNodes, String] = {
 	}
 
 # Dictionary with data about compatible nodes. Could be a const
-var compatible_connections: Dictionary = {
+@onready var compatible_connections: Dictionary = {
 	ConnectionType.DIALOG: {
 		"output": Array([
 			{
 				"name": "Dialog",
 				"type": DialogNodes.DIALOG,
+				"icon": load("res://addons/nexus_forge/icons/speech_bubble.svg"),
 				"ports": [{"port": 0}]},
 			{
 				"name": "Choices",
 				"type": DialogNodes.CHOICES,
+				"icon": load("res://addons/nexus_forge/icons/list_icon.svg"),
 				"ports": [{"port": 0}]},
 			{
 				"name": "Event",
 				"type": DialogNodes.EVENT,
+				"icon": load("res://addons/nexus_forge/icons/bulb_icon.svg"),
 				"ports": [{"port": 0}]},
 			{
 				"name": "Random",
 				"type": DialogNodes.RANDOM,
+				"icon": get_theme_icon("RandomNumberGenerator", "EditorIcons"),
 				"ports": [{"port": 0}]},
 			{
 				"name": "Match",
 				"type": DialogNodes.MATCH,
+				"icon": load("res://addons/nexus_forge/icons/match_icon.svg"),
 				"ports": [{"port": 0}]},
 			{
 				"name": "Branch",
 				"type": DialogNodes.BRANCH,
+				"icon": load("res://addons/nexus_forge/icons/branch_icon.svg"),
 				"ports": [{"port": 0}]},
 			{
 				"name": "Travel To",
 				"type": DialogNodes.TRAVEL_TO,
+				"icon": load("res://addons/nexus_forge/icons/travel_to_waypoint.svg"),
 				"ports": [{"port": 0}]},
 			{
 				"name": "Travel Back",
 				"type": DialogNodes.TRAVEL_BACK,
+				"icon": load("res://addons/nexus_forge/icons/travel_back.svg"),
 				"ports": [{"port": 0}]},
 			{
 				"name": "Flow In",
 				"type": DialogNodes.SHORTCUT_IN,
+				"icon": load("res://addons/nexus_forge/icons/dialog_exit.svg"),
 				"ports": [{"port": 0}]},
 			{
 				"name": "Dialog Merge",
 				"type": DialogNodes.DIALOG_MERGE,
+				"icon": load("res://addons/nexus_forge/icons/merge_icon.svg"),
 				"ports": [{"port": 0}]},
 			{
 				"name": "Pause",
 				"type": DialogNodes.PAUSE,
+				"icon": get_theme_icon("Pause", "EditorIcons"),
 				"ports": [{"port": 0}]},
 			{
 				"name": "Dialog End",
 				"type": DialogNodes.DIALOG_END,
+				"icon": get_theme_icon("Stop", "EditorIcons"),
 				"ports": [{"port": 0}]}], TYPE_DICTIONARY, &"", null),
 		"input": Array([
 			{
 				"name": "Dialog",
 				"type": DialogNodes.DIALOG,
+				"icon": load("res://addons/nexus_forge/icons/speech_bubble.svg"),
 				"ports": [{"port": 0}]},
 			{
 				"name": "Choices",
 				"type": DialogNodes.CHOICES,
+				"icon": load("res://addons/nexus_forge/icons/list_icon.svg"),
 				"ports": [{"port": 0}]},
 			{
 				"name": "Event",
 				"type": DialogNodes.EVENT,
+				"icon": load("res://addons/nexus_forge/icons/bulb_icon.svg"),
 				"ports": [{"port": 0}]},
 			{
 				"name": "Random",
 				"type": DialogNodes.RANDOM,
+				"icon": get_theme_icon("RandomNumberGenerator", "EditorIcons"),
 				"ports": [{"port": 0}]},
 			{
 				"name": "Match",
 				"type": DialogNodes.MATCH,
+				"icon": load("res://addons/nexus_forge/icons/match_icon.svg"),
 				"ports": [
 					{"port": 0, "name": "Default"},
 					{"port": 1, "name": "Case 1"}]},
 			{
 				"name": "Branch",
 				"type": DialogNodes.BRANCH,
+				"icon": load("res://addons/nexus_forge/icons/branch_icon.svg"),
 				"ports": [
 					{"port": 0, "name": "True Branch"},
 					{"port": 1, "name": "False Branch"}]},
 			{
 				"name": "Waypoint",
 				"type": DialogNodes.TRAVEL_TARGET,
+				"icon": load("res://addons/nexus_forge/icons/travel_waypoint.svg"),
 				"ports": [{"port": 0}]},
 			{
 				"name": "Flow Out",
 				"type": DialogNodes.SHORTCUT_OUT,
+				"icon": load("res://addons/nexus_forge/icons/dialog_entry.svg"),
 				"ports": [{"port": 0}]},
 			{
 				"name": "Dialog Merge",
 				"type": DialogNodes.DIALOG_MERGE,
+				"icon": load("res://addons/nexus_forge/icons/merge_icon.svg"),
 				"ports": [{"port": 0}]},
 			{
 				"name": "Pause",
 				"type": DialogNodes.PAUSE,
+				"icon": get_theme_icon("Pause", "EditorIcons"),
 				"ports": [{"port": 0}]},
 			], TYPE_DICTIONARY, &"", null)},
 	ConnectionType.METADATA: {
@@ -217,6 +237,7 @@ var compatible_connections: Dictionary = {
 			{
 				"name": "Metadata",
 				"type": DialogNodes.METADATA,
+				"icon": load("res://addons/nexus_forge/icons/metadata_icon.svg"),
 				"ports": [{"port": 0}]}
 		], TYPE_DICTIONARY, &"", null)},
 	ConnectionType.VAR_STRING: {
@@ -224,46 +245,56 @@ var compatible_connections: Dictionary = {
 			{
 				"name": "Value",
 				"type": DialogNodes.VALUE,
+				"icon": load("res://addons/nexus_forge/icons/variable_icon.svg"),
 				"ports": [{"port": 0,"data": {"value": ""}}]},
 			{
 				"name": "Localized Text",
 				"type": DialogNodes.LOCALIZED_TEXT,
+				"icon": get_theme_icon("Translation", "EditorIcons"),
 				"ports": [{"port": 0}]},
 			{
 				"name": "Type Guard",
 				"type": DialogNodes.TYPE_GUARD,
+				"icon": load("res://addons/nexus_forge/icons/shield_icon.svg"),
 				"ports": [{"port": 0}]},
 			{
 				"name": "Variable",
 				"type": DialogNodes.VARIABLE_GET,
+				"icon": get_theme_icon("LocalVariable", "EditorIcons"),
 				"ports": [{"port": 0, "data": {"variable_type": TYPE_STRING}}]}], TYPE_DICTIONARY, &"", null)},
 	ConnectionType.VAR_INT: {
 		"input": Array([
 			{
 				"name": "Value",
 				"type": DialogNodes.VALUE,
+				"icon": load("res://addons/nexus_forge/icons/variable_icon.svg"),
 				"ports": [{"port": 0, "data": {"value": 0}}]},
 			{
 				"name": "Random",
 				"type": DialogNodes.RANDOM_VALUE,
+				"icon": get_theme_icon("RandomNumberGenerator", "EditorIcons"),
 				"ports": [{"port": 0, "data": {"mode": TYPE_INT}}]},
 			{
 				"name": "Type Guard",
 				"type": DialogNodes.TYPE_GUARD,
+				"icon": load("res://addons/nexus_forge/icons/shield_icon.svg"),
 				"ports": [{"port": 0}]},
 			{
 				"name": "Variable",
 				"type": DialogNodes.VARIABLE_GET,
+				"icon": get_theme_icon("LocalVariable", "EditorIcons"),
 				"ports": [{"port": 0, "data": {"variable_type": TYPE_INT}}]}], TYPE_DICTIONARY, &"", null)},
 	ConnectionType.VAR_BOOL: {
 		"input": Array([
 			{
 				"name": "Value",
 				"type": DialogNodes.VALUE,
+				"icon": load("res://addons/nexus_forge/icons/variable_icon.svg"),
 				"ports": [{"port": 0, "data": {"value": false}}]},
 			{
 				"name": "Random",
 				"type": DialogNodes.RANDOM_VALUE,
+				"icon": get_theme_icon("RandomNumberGenerator", "EditorIcons"),
 				"ports": [{
 					"port": 0,
 					"data": {
@@ -272,50 +303,60 @@ var compatible_connections: Dictionary = {
 			{
 				"name": "Type Guard",
 				"type": DialogNodes.TYPE_GUARD,
+				"icon": load("res://addons/nexus_forge/icons/shield_icon.svg"),
 				"ports": [{"port": 0}]},
 			{
 				"name": "Variable",
 				"type": DialogNodes.VARIABLE_GET,
+				"icon": get_theme_icon("LocalVariable", "EditorIcons"),
 				"ports": [{"port": 0, "data": {"variable_type": TYPE_BOOL}}]},
 			{
-				"name": "Comparation",
+				"name": "Comparison",
 				"type": DialogNodes.COMPARATION,
+				"icon": load("res://addons/nexus_forge/icons/scale_icon.svg"),
 				"ports": [{"port": 0}]}], TYPE_DICTIONARY, &"", null)},
 	ConnectionType.SIGNAL: {
 		"input": Array([{
 			"name": "Signal",
 			"type": DialogNodes.SIGNAL,
+			"icon": get_theme_icon("Signals", "EditorIcons"),
 			"ports": [{"port": 0}]}], TYPE_DICTIONARY, &"", null)},
 	ConnectionType.CALL: {
 		"input": Array([{
-			"name": "Signal",
+			"name": "Callable",
 			"type": DialogNodes.CALLABLE,
+			"icon": get_theme_icon("Callable", "EditorIcons"),
 			"ports": [{"port": 0}]}], TYPE_DICTIONARY, &"", null)},
-		
 	ConnectionType.SETTINGS_CHARACTER: {
 		"input": Array([{
 			"name": "Settings",
 			"type": DialogNodes.SETTINGS_CHARACTER,
+			"icon": load("res://addons/nexus_forge/icons/gear_icon.png"),
 			"ports": [{"port": 0}]}], TYPE_DICTIONARY, &"", null)},
 	ConnectionType.SETTINGS_DIALOG: {
 		"input": Array([{
 			"name": "Settings",
 			"type": DialogNodes.SETTINGS_DIALOG,
+			"icon": load("res://addons/nexus_forge/icons/gear_icon.png"),
 			"ports": [{"port": 0}]}], TYPE_DICTIONARY, &"", null)},
 	ConnectionType.SETTINGS_OPTION: {
 		"input": Array([{
 			"name": "Settings",
 			"type": DialogNodes.SETTINGS_OPTION,
+			"icon": load("res://addons/nexus_forge/icons/gear_icon.png"),
 			"ports": [{"port": 0}]}], TYPE_DICTIONARY, &"", null)},
 	ConnectionType.RESOURCE: {
 		"input": Array([{
 			"name": "",
 			"type": DialogNodes.RESOURCE,
+			"icon": get_theme_icon("ResourcePreloader", "EditorIcons"),
 			"ports": [{"port": 0}]}], TYPE_DICTIONARY, &"", null)},
 	ConnectionType.VAR_ANY: {
 		"input": Array([{
 			"name": "Value",
-			"type": DialogNodes.VALUE, "ports": [
+			"type": DialogNodes.VALUE,
+			"icon": load("res://addons/nexus_forge/icons/variable_icon.svg"),
+			"ports": [
 				{"name": "Integer", "port": 0, "data": {"value": 0}},
 				{"name": "Float", "port": 0, "data": {"value": 0.0}},
 				{"name": "Bool", "port": 0, "data": {"value": false}},
@@ -323,26 +364,32 @@ var compatible_connections: Dictionary = {
 			{
 				"name": "Random Value",
 				"type": DialogNodes.RANDOM_VALUE,
+				"icon": get_theme_icon("RandomNumberGenerator", "EditorIcons"),
 				"ports": [{"port": 0}]},
 			{
 				"name": "Localized Text",
 				"type": DialogNodes.LOCALIZED_TEXT,
+				"icon": get_theme_icon("Translation", "EditorIcons"),
 				"ports": [{"port": 0}]},
 			{
 				"name": "Type Guard",
 				"type": DialogNodes.TYPE_GUARD,
+				"icon": load("res://addons/nexus_forge/icons/shield_icon.svg"),
 				"ports": [{"port": 0}]},
 			{
 				"name": "Variable",
 				"type": DialogNodes.VARIABLE_GET,
+				"icon": get_theme_icon("LocalVariable", "EditorIcons"),
 				"ports": [{"port": 0}]},
 			{
-				"name": "Comparation",
+				"name": "Comparison",
 				"type": DialogNodes.COMPARATION,
+				"icon": load("res://addons/nexus_forge/icons/scale_icon.svg"),
 				"ports": [{"port": 0}]},
 			{
 				"name": "Conditional Value",
 				"type": DialogNodes.CONDITION_SELECT,
+				"icon": load("res://addons/nexus_forge/icons/x_or_y_icon.svg"),
 				"ports": [{"port": 0}]
 			}
 		], TYPE_DICTIONARY, &"", null)
@@ -368,8 +415,8 @@ var travel_targets: Array[DiscourseGraphNode] = []
 
 # All of the spawned graph nodes. More straightforward since get_children also
 # returns the connection nodes
-var graph_nodes: Dictionary[StringName, DiscourseGraphNode] = {}
-var node_frames: Dictionary[StringName, GraphFrame] = {}
+var graph_nodes: Dictionary[String, DiscourseGraphNode] = {}
+var node_frames: Dictionary[String, GraphFrame] = {}
 # Tracking all method callers and signalers since we need to update them everytime
 # the API script is saved. Better than iterating through all the collection.
 var method_callers: Array[DiscourseGraphNode] = []
@@ -378,8 +425,8 @@ var signalers: Array[DiscourseGraphNode] = []
 # Data for the mouse release.
 var release_data: Dictionary = {}
 var movement_data: Dictionary[String, Dictionary] = {
-	"nodes": DictUtils.create_typed(TYPE_STRING_NAME, TYPE_DICTIONARY),
-	"frames": DictUtils.create_typed(TYPE_STRING_NAME, TYPE_DICTIONARY)}
+	"nodes": NFDictUtils.create_typed(TYPE_STRING, TYPE_DICTIONARY),
+	"frames": NFDictUtils.create_typed(TYPE_STRING, TYPE_DICTIONARY)}
 # {
 	#"reference": null,
 	#"nodes": [],
@@ -401,6 +448,7 @@ func _ready() -> void:
 	connection_popup = PopupMenu.new()
 	connection_popup.name = &"ConnectionsPopupMenu"
 	connection_popup.visible = false
+	connection_popup.add_theme_constant_override(&"icon_max_width", 16)
 	add_child(connection_popup)
 	
 	panning_scheme = GraphEdit.SCROLL_PANS
@@ -458,8 +506,6 @@ func _ready() -> void:
 	end_node_move.connect(_on_end_node_move, CONNECT_DEFERRED)
 	node_selected.connect(_on_node_selected)
 	graph_elements_linked_to_frame_request.connect(_on_graph_elements_linked_to_frame_request)
-	copy_nodes_request.connect(_on_copy_nodes_requested)
-	cut_nodes_request.connect(_on_cut_nodes_requested)
 	paste_nodes_request.connect(_on_paste_nodes_requested)
 	duplicate_nodes_request.connect(_on_graph_edit_keyboard_duplicate_pressed)
 	delete_nodes_request.connect(_on_delete_nodes_request)
@@ -474,26 +520,26 @@ func _ready() -> void:
 
 
 ## Creates a dialog node ready to be added. Connected to all relevant signals
-func new_dialog_node(node_type: DialogNodes, uuid: StringName = &"") -> DiscourseGraphNode:
+func new_dialog_node(node_type: DialogNodes, uuid: String = "") -> DiscourseGraphNode:
 	var created_node: DiscourseGraphNode = null
 	
 	match node_type:
 		DialogNodes.ENTRY:
 			if entry_node == null:
-				created_node = preload("res://addons/nexus_forge/discourse/nodes/dialog_entry.gd").new(uuid, &"", false, false, false)
+				created_node = preload("res://addons/nexus_forge/discourse/nodes/dialog_entry.gd").new(uuid, "", false, false, false)
 			else:
 				if not uuid.is_empty():
 					entry_node._uuid = uuid
 				return entry_node
 		DialogNodes.DIALOG:
-			created_node = preload("res://addons/nexus_forge/discourse/nodes/dialog_graph_node.gd").new(uuid, &"", true, true, true)
+			created_node = preload("res://addons/nexus_forge/discourse/nodes/dialog_graph_node.gd").new(uuid, "", true, true, true)
 			created_node.use_code_editor_pressed.connect(_on_use_code_editor_requested)
 			created_node.select_character_pressed.connect(_on_use_character_selector_pressed)
 			created_node.character_id_changed.connect(dialog_node_character_id_changed.emit)
 			created_node.dialog_text_changed.connect(dialog_node_text_changed.emit)
 			created_node.dialog_presist_toggled.connect(dialog_node_presist_toggled.emit)
 		DialogNodes.CHOICES:
-			created_node = preload("res://addons/nexus_forge/discourse/nodes/dialog_options.gd").new(uuid, &"", true, true, true)
+			created_node = preload("res://addons/nexus_forge/discourse/nodes/dialog_options.gd").new(uuid, "", true, true, true)
 			created_node.use_code_editor_pressed.connect(_on_use_code_editor_requested)
 			created_node.choices_resized.connect(choices_node_resized.emit)
 			created_node.choice_text_changed.connect(choice_node_text_changed.emit)
@@ -618,7 +664,7 @@ func new_dialog_node(node_type: DialogNodes, uuid: StringName = &"") -> Discours
 	return created_node
 
 
-func new_node_frame(uuid: StringName = &"") -> GraphFrame:
+func new_node_frame(uuid: String = "") -> GraphFrame:
 	var new_frame: GraphFrame = preload("res://addons/nexus_forge/discourse/nodes/dialog_graph_frame.gd").new(uuid)
 	new_frame.close_frame_requested.connect(close_frame_requested.emit)
 	new_frame.frame_title_changed.connect(frame_title_changed.emit)
@@ -626,24 +672,24 @@ func new_node_frame(uuid: StringName = &"") -> GraphFrame:
 	return new_frame
 
 
-func get_unique_node_name(desired: StringName, type: DialogNodes, skip_uuid: StringName = &"") -> StringName:
+func get_unique_node_name(desired: String, type: DialogNodes, skip_uuid: String = "") -> String:
 	var desired_id: String = String(desired).strip_edges()
 	if desired_id.is_empty():
-		desired_id = DEFAULT_NODE_NAMES[type]
+		desired_id = DEFAULT_NODE_NAMES.get(type, "Node")
 	
 	var names: Dictionary[String, Variant] = {}
 	
 	for node in graph_nodes.values():
 		if node.get_node_uuid() == skip_uuid:
 			continue
-		names[String(node.get_node_id())] = null
+		names[node.get_node_id()] = null
 	
 	if not names.has(desired_id):
 		return desired_id
 	
 	var modified: String = desired_id
 	var base: String = desired_id
-	var trailing_data: Dictionary = StringUtils.get_trailing_integer(desired_id)
+	var trailing_data: Dictionary = NFStringUtils.get_trailing_integer(desired_id)
 	var iteration: int = trailing_data["integer"]
 	if trailing_data["has_integer"]:
 		base = base.trim_suffix(str(iteration))
@@ -651,12 +697,12 @@ func get_unique_node_name(desired: StringName, type: DialogNodes, skip_uuid: Str
 	while names.has(modified):
 		iteration += 1
 		modified = base + str(iteration)
-	return StringName(modified)
+	return modified
 
 
 #region Spawners / Removers
 
-func spawn_node(node_type: DialogNodes, uuid: StringName = &"", data: Dictionary = {}) -> DiscourseGraphNode:
+func spawn_node(node_type: DialogNodes, uuid: String = "", data: Dictionary = {}) -> DiscourseGraphNode:
 	var new_node: DiscourseGraphNode = new_dialog_node(node_type, uuid)
 	if not data.is_empty():
 		var overwrite_data: Dictionary = new_node._get_node_data()
@@ -676,7 +722,7 @@ func spawn_node(node_type: DialogNodes, uuid: StringName = &"", data: Dictionary
 	return new_node
 
 
-func spawn_frame(uuid: StringName = &"", frame_position: Vector2 = Vector2.ZERO) -> GraphFrame:
+func spawn_frame(uuid: String = "", frame_position: Vector2 = Vector2.ZERO) -> GraphFrame:
 	var new_frame: GraphFrame = new_node_frame(uuid)
 	add_child(new_frame)
 	node_frames[new_frame.get_frame_uuid()] = new_frame
@@ -686,26 +732,25 @@ func spawn_frame(uuid: StringName = &"", frame_position: Vector2 = Vector2.ZERO)
 # ----------------------
 
 
-func paste_node_clipboard(clipboard: Array[Dictionary], uuid_map: Dictionary[StringName, StringName]) -> void:
+func paste_node_clipboard(clipboard: Array[Dictionary], uuid_map: Dictionary[String, String]) -> void:
 	if clipboard.is_empty():
 		return
 	
 	deselect_all_elements()
 	
-	var created_nodes: Array[StringName] = []
+	var created_nodes: Array[String] = []
 	var new_connections: Array[Dictionary] = [] 
-	var uuid_equivalences: Dictionary[StringName, DiscourseGraphNode] = {}
+	var uuid_equivalences: Dictionary[String, DiscourseGraphNode] = {}
 	var update_paused_nodes: Array[DiscourseGraphNode] = []
 	
 	var current_offset: Vector2 = clipboard[0]["state"]["data"]["metadata"]["position"]
-	var center_scroll_offset: Vector2 = get_center_offset()
+	
 	for clipboard_data in clipboard:
 		if not uuid_map.has(clipboard_data["node_uuid"]):
 			continue
 		
 		var node_data: Dictionary = clipboard_data["state"]["data"]
-		var node_meta: Dictionary = node_data["metadata"]
-		var new_name: StringName = get_unique_node_name(
+		var new_name: String = get_unique_node_name(
 				node_data["name"],
 				node_data["type"])
 		var new_data: Dictionary = node_data.duplicate(true)
@@ -750,31 +795,34 @@ func paste_node_clipboard(clipboard: Array[Dictionary], uuid_map: Dictionary[Str
 	
 	if not created_nodes.is_empty():
 		nodes_created.emit(created_nodes, "Paste Nodes")
+	
+	refresh_anchors()
+	refresh_waypoints()
 
 
 func _on_duplicate_node_button_pressed(node: DiscourseGraphNode) -> void:
-	var node_array: Array[StringName] = [node.get_node_uuid()]
+	var node_array: Array[String] = [node.get_node_uuid()]
 	node_duplication_requested.emit(node_array)
 
 
 func _on_graph_edit_keyboard_duplicate_pressed() -> void:
-	var uid_array: Array[StringName] = []
+	var uid_array: Array[String] = []
 	for node in get_selected_graph_nodes():
 		uid_array.append(node.get_node_uuid())
 	node_duplication_requested.emit(uid_array)
 
 
-func duplicate_single(node_uuid: StringName, new_uuid: StringName) -> void:
+func duplicate_single(node_uuid: String, new_uuid: String) -> void:
 	if not graph_nodes.has(node_uuid):
 		return
 	
 	var node: DiscourseGraphNode = graph_nodes[node_uuid]
 	var data: Dictionary = node._get_node_data()
-	var new_name: StringName = get_unique_node_name(
+	var new_name: String = get_unique_node_name(
 			node.get_node_id(),
 			node.node_type)
 	data["name"] = new_name
-	DictUtils.set_nested_value(
+	NFDictUtils.set_nested_value(
 			data,
 			["metadata", "position"],
 			node.position_offset + Vector2(100.0, 100.0))
@@ -802,17 +850,17 @@ func duplicate_single(node_uuid: StringName, new_uuid: StringName) -> void:
 	if frame != null:
 		attach_graph_element_to_frame(new_node.name, frame.name)
 	
-	var str_arr: Array[StringName] = [new_node.get_node_uuid()]
+	var str_arr: Array[String] = [new_node.get_node_uuid()]
 	node_created.emit(new_node)
 	nodes_created.emit(str_arr, "Duplicate Node")
 
 
 # Used for the Ctrl+D signal with undo-redo. Key = node to be duplicated
-# value = new UUID to be assigned to it.
-func duplicate_multiple(duplicate_targets: Dictionary[StringName, StringName]) -> void:
+# value = new NFUUID to be assigned to it.
+func duplicate_multiple(duplicate_targets: Dictionary[String, String]) -> void:
 	var nodes_to_duplicate: Array[Dictionary] = []
 	
-	for uuid in duplicate_targets.keys():
+	for uuid in duplicate_targets:
 		if graph_nodes.has(uuid):
 			nodes_to_duplicate.append({
 				"node": graph_nodes[uuid],
@@ -822,18 +870,18 @@ func duplicate_multiple(duplicate_targets: Dictionary[StringName, StringName]) -
 		return
 	
 	var new_connections: Array[Dictionary] = []
-	var created_nodes: Array[StringName] = []
+	var created_nodes: Array[String] = []
 	var uuid_equivalences: Dictionary[String, DiscourseGraphNode] = {}
 	var update_disabled_nodes: Array[DiscourseGraphNode] = []
 	
 	for node_data in nodes_to_duplicate:
 		var node: DiscourseGraphNode = node_data["node"]
-		var new_name: StringName = get_unique_node_name(
+		var new_name: String = get_unique_node_name(
 				node.get_node_id(),
 				node.node_type)
 		var old_data: Dictionary = node._get_node_data()
 		old_data["name"] = new_name
-		DictUtils.set_nested_value(
+		NFDictUtils.set_nested_value(
 				old_data,
 				["metadata", "position"],
 				node.position_offset + Vector2(100.0, 100.0))
@@ -890,7 +938,7 @@ func duplicate_multiple(duplicate_targets: Dictionary[StringName, StringName]) -
 		nodes_created.emit(created_nodes, "Duplicate Nodes")
 
 
-func remove_node(node_uuid: StringName) -> void:
+func remove_node(node_uuid: String) -> void:
 	if not graph_nodes.has(node_uuid):
 		return
 	
@@ -917,6 +965,8 @@ func remove_node(node_uuid: StringName) -> void:
 			target.use_code_editor_pressed.disconnect(_on_use_code_editor_requested)
 		DialogNodes.CHOICES:
 			target.use_code_editor_pressed.disconnect(_on_use_code_editor_requested)
+		DialogNodes.SIGNAL:
+			signalers.erase(target)
 	
 	graph_nodes.erase(node_uuid)
 	target.queue_free()
@@ -924,7 +974,7 @@ func remove_node(node_uuid: StringName) -> void:
 
 func get_valid_shortcut_id(desired_id: String, skip: DiscourseGraphNode = null) -> String:
 	var modified: String = desired_id
-	var existing_ids: Array[StringName] = []
+	var existing_ids: Array[String] = []
 	
 	for item in anchor_targets:
 		if item == skip:
@@ -950,7 +1000,7 @@ func get_valid_waypoint_id(desired_id: String, skip: DiscourseGraphNode = null) 
 		existing_ids[item.get_waypoint_id()] = null
 	
 	var base: String = desired_id
-	var trailing_data: Dictionary = StringUtils.get_trailing_integer(desired_id)
+	var trailing_data: Dictionary = NFStringUtils.get_trailing_integer(desired_id)
 	var iteration: int = trailing_data["integer"]
 	if trailing_data["has_integer"]:
 		base = base.trim_suffix(str(iteration))
@@ -962,21 +1012,21 @@ func get_valid_waypoint_id(desired_id: String, skip: DiscourseGraphNode = null) 
 	return modified
 
 
-func remove_nodes(node_uuids: Array[StringName]) -> void:
+func remove_nodes(node_uuids: Array[String]) -> void:
 	if node_uuids.is_empty():
 		return
 	
-	var status_data: Dictionary[StringName, Variant] = {}
+	var status_data: Dictionary[String, Variant] = {}
 	
 	for node in node_uuids:
 		if not graph_nodes.has(node):
 			continue
 		status_data[node] = null
 	
-	var removed_targets: Array[StringName] = []
-	var removed_travel_pointers: Array[StringName] = []
+	var removed_targets: Array[String] = []
+	var removed_travel_pointers: Array[String] = []
 	
-	for node_uuid in status_data.keys():
+	for node_uuid in status_data:
 		var target: DiscourseGraphNode = graph_nodes[node_uuid]
 	
 		disconnect_all_node_connections(node_uuid)
@@ -998,6 +1048,8 @@ func remove_nodes(node_uuids: Array[StringName]) -> void:
 				travel_targets.erase(target)
 			DialogNodes.TRAVEL_TO:
 				travel_pointers.erase(target)
+			DialogNodes.SIGNAL:
+				signalers.erase(target)
 		
 		graph_nodes.erase(node_uuid)
 		target.queue_free()
@@ -1013,7 +1065,7 @@ func remove_nodes(node_uuids: Array[StringName]) -> void:
 				pointer.remove_anchor(uuid)
 
 
-func remove_frame(frame_uuid: StringName) -> void:
+func remove_frame(frame_uuid: String) -> void:
 	if not node_frames.has(frame_uuid):
 		return
 	var frame: GraphFrame = node_frames[frame_uuid]
@@ -1042,8 +1094,7 @@ func clear_dialog_nodes(recreate_entry: bool = true) -> void:
 	signalers.clear()
 	entry_node = null
 	if recreate_entry:
-		entry_node = spawn_node(DialogNodes.ENTRY, &"", {"name": &"Entry"})
-		var arr: Array[StringName] = [entry_node.get_node_uuid()]
+		entry_node = spawn_node(DialogNodes.ENTRY, "", {"name": "Entry"})
 		node_created.emit(entry_node)
 
 #endregion
@@ -1101,53 +1152,13 @@ func get_compatible_node_overwrite_data(connection_type: ConnectionType, node_si
 	return {}
 
 
-func get_conversation_file(current_locale: String = "") -> EditorDiscourseDialog:
-	var convo: EditorDiscourseDialog = EditorDiscourseDialog.new()
-	
-	for frame_uuid in node_frames:
-		var frame: GraphFrame = node_frames[frame_uuid]
-		convo.register_frame(
-				frame_uuid,
-				frame.title,
-				frame.position_offset,
-				frame.size,
-				frame.tint_color)
-	
-	for node_uuid in graph_nodes.keys():
-		var node: DiscourseGraphNode = graph_nodes[node_uuid]
-		var node_data: Dictionary = node._get_node_data()
-		node_data["metadata"]["localized"] = node.is_node_localized()
-		var frame: GraphFrame = get_element_frame(node.name)
-		var frame_uuid: String = "" if frame == null else frame.get_frame_uuid()
-		
-		convo.register_node(node, frame_uuid)
-		
-		if node.node_type == DialogNodes.DIALOG:
-			convo.set_dialog_text(
-					node_uuid,
-					node.get_dialog_text(),
-					current_locale)
-		elif node.node_type == DialogNodes.CHOICES:
-			convo.set_choices_array(
-					node_uuid,
-					node.get_options(),
-					current_locale)
-		elif node.node_type == DialogNodes.LOCALIZED_TEXT:
-			convo.set_dialog_text(
-					node_uuid,
-					node.get_text(),
-					current_locale)
-	
-	return convo
-
-
 func update_conversation_file(on_file: EditorDiscourseDialog, current_locale: String = "") -> void:
 	if on_file == null:
 		return
 	
 	on_file.node_frames.clear()
 	
-	for frame_uuid in node_frames.keys():
+	for frame_uuid in node_frames:
 		var frame: GraphFrame = node_frames[frame_uuid]
 		on_file.register_frame(
 				frame_uuid,
@@ -1156,9 +1167,8 @@ func update_conversation_file(on_file: EditorDiscourseDialog, current_locale: St
 				frame.size,
 				frame.tint_color)
 	
-	for node_uuid in graph_nodes.keys():
+	for node_uuid in graph_nodes:
 		var node: DiscourseGraphNode = graph_nodes[node_uuid]
-		var node_data: Dictionary = node._get_node_data()
 		var frame: GraphFrame = get_element_frame(node.name)
 		var frame_uuid: String = "" if frame == null else frame.get_frame_uuid()
 		
@@ -1186,23 +1196,23 @@ func get_center_offset() -> Vector2:
 	return Vector2((scroll_offset / zoom) + ((size / 2.0) / zoom))
 
 
-func get_discourse_node(node_uuid: StringName) -> DiscourseGraphNode:
+func get_discourse_node(node_uuid: String) -> DiscourseGraphNode:
 	return graph_nodes.get(node_uuid, null)
 
 
-func get_discourse_frame(frame_uuid: StringName) -> GraphFrame:
+func get_discourse_frame(frame_uuid: String) -> GraphFrame:
 	return node_frames.get(frame_uuid, null)
 
 
-func has_discourse_node(node_uuid: StringName) -> bool:
+func has_discourse_node(node_uuid: String) -> bool:
 	return graph_nodes.has(node_uuid)
 
 
-func has_discourse_frame(frame_uuid: StringName) -> bool:
+func has_discourse_frame(frame_uuid: String) -> bool:
 	return node_frames.has(frame_uuid)
 
 
-func get_connection_dictionary(node_uuid: StringName, node_data: Dictionary) -> Array[Dictionary]:
+func get_connection_dictionary(node_uuid: String, node_data: Dictionary) -> Array[Dictionary]:
 	var node_connections: Array[Dictionary] = []
 	var meta = node_data["metadata"]
 	
@@ -1244,7 +1254,7 @@ func get_connection_dictionary(node_uuid: StringName, node_data: Dictionary) -> 
 			node_connections.sort_custom(func(a,b): return a["from_port"] < b["from_port"])
 		_:
 			if node_data.has("output_connections"):
-				for output_connection_key in node_data["output_connections"].keys():
+				for output_connection_key in node_data["output_connections"]:
 					if node_data["output_connections"][output_connection_key]["target_node_uuid"].is_empty():
 						continue
 					node_connections.append({
@@ -1268,8 +1278,8 @@ func get_issues() -> Array[Dictionary]:
 	return issues
 
 
-func get_nodes_in_frame(frame_uuid: StringName) -> Array[StringName]:
-	var node_uuids: Array[StringName] = []
+func get_nodes_in_frame(frame_uuid: String) -> Array[String]:
+	var node_uuids: Array[String] = []
 	
 	if not node_frames.has(frame_uuid):
 		return node_uuids
@@ -1285,10 +1295,10 @@ func get_nodes_in_frame(frame_uuid: StringName) -> Array[StringName]:
 	return node_uuids
 
 
-func get_elements_in_frame(frame_uuid: StringName) -> Dictionary[String, Array]:
+func get_elements_in_frame(frame_uuid: String) -> Dictionary[String, Array]:
 	var elements: Dictionary[String, Array] = {
-		"nodes": ArrayUtils.create_typed(TYPE_STRING_NAME),
-		"frames": ArrayUtils.create_typed(TYPE_STRING_NAME)}
+		"nodes": NFArrayUtils.create_typed(TYPE_STRING),
+		"frames": NFArrayUtils.create_typed(TYPE_STRING)}
 	
 	if not node_frames.has(frame_uuid):
 		return elements
@@ -1322,7 +1332,7 @@ func get_compatible_nodes(connection_type: ConnectionType, node_side: String) ->
 
 #region Setters / Updaters
 
-func set_graph_frame_position_offset(frame_uuid: StringName, offset: Vector2) -> void:
+func set_graph_frame_position_offset(frame_uuid: String, offset: Vector2) -> void:
 	if not node_frames.has(frame_uuid):
 		return
 	
@@ -1348,7 +1358,7 @@ func set_graph_frame_position_offset(frame_uuid: StringName, offset: Vector2) ->
 
 
 func set_localization_data(localization: Dictionary) -> void:
-	for node_uuid in graph_nodes.keys():
+	for node_uuid in graph_nodes:
 		var node: DiscourseGraphNode = graph_nodes[node_uuid]
 		if not node.is_node_localized() or not localization.has(node_uuid):
 			continue
@@ -1356,7 +1366,7 @@ func set_localization_data(localization: Dictionary) -> void:
 			if typeof(localization[node_uuid]) == TYPE_STRING:
 				node.set_dialog_text(localization[node_uuid])
 		elif node.node_type == DialogNodes.CHOICES:
-			if typeof(localization[node_uuid]) == TYPE_ARRAY:
+			if typeof(localization[node_uuid]) == TYPE_PACKED_STRING_ARRAY:
 				var idx: int = 0
 				for choice in localization[node_uuid]:
 					idx += 1
@@ -1389,16 +1399,40 @@ func update_localization_data(dialog: EditorDiscourseDialog, for_locale: String)
 
 
 func update_methods() -> void:
+	var clean_invalid: bool = false
+	
+	var script: Script = preload("res://addons/nexus_forge/discourse/nodes/method_call_node.gd")
+	var ret_script: Script = preload("res://addons/nexus_forge/discourse/nodes/method_call_return.gd")
+	script.available_methods = script.get_user_methods()
+	ret_script.available_methods = ret_script.get_user_methods()
+	
 	for node in method_callers:
-		node.reload_methods()
+		if is_instance_valid(node):
+			node.reload_methods(false)
+		else:
+			clean_invalid = true
+	
+	if clean_invalid:
+		_remove_invalid_instances(method_callers)
 
 
 func update_signals() -> void:
+	var clean_invalid: bool = false
+	
+	var sig_script: Script = load("res://addons/nexus_forge/discourse/nodes/signal_node.gd")
+	sig_script.available_signals = sig_script.get_user_signals()
+	
 	for node in signalers:
-		node.reload_signals()
+		if is_instance_valid(node):
+			node.reload_signals(false)
+		else:
+			clean_invalid = true
+	
+	if clean_invalid:
+		_remove_invalid_instances(signalers)
 
 
-func localize_node(node_uuid: StringName, set_localized: bool) -> void:
+func localize_node(node_uuid: String, set_localized: bool) -> void:
 	if not graph_nodes.has(node_uuid):
 		return
 	var target: DiscourseGraphNode = graph_nodes[node_uuid]
@@ -1408,7 +1442,7 @@ func localize_node(node_uuid: StringName, set_localized: bool) -> void:
 
 #region Connectors
 
-func connect_discourse_nodes(from_node_uuid: StringName, from_port: int, to_node_uuid: StringName, to_port: int) -> bool:
+func connect_discourse_nodes(from_node_uuid: String, from_port: int, to_node_uuid: String, to_port: int) -> bool:
 	if from_node_uuid == to_node_uuid or not graph_nodes.has_all([from_node_uuid, to_node_uuid]):
 		return false
 
@@ -1460,7 +1494,7 @@ func connect_discourse_nodes(from_node_uuid: StringName, from_port: int, to_node
 	return true
 
 
-func disconnect_discourse_nodes(from_node_uuid: StringName, from_port: int, to_node_uuid: StringName, to_port: int) -> void:
+func disconnect_discourse_nodes(from_node_uuid: String, from_port: int, to_node_uuid: String, to_port: int) -> void:
 	if not graph_nodes.has_all([from_node_uuid, to_node_uuid]):
 		return
 	
@@ -1485,7 +1519,7 @@ func disconnect_discourse_nodes(from_node_uuid: StringName, from_port: int, to_n
 	disconnect_node(output_node.name, from_port, input_node.name, to_port)
 
 
-func disconnect_all_node_connections(for_uuid: StringName) -> void:
+func disconnect_all_node_connections(for_uuid: String) -> void:
 	if not graph_nodes.has(for_uuid):
 		return
 	
@@ -1515,7 +1549,7 @@ func disconnect_all_node_connections(for_uuid: StringName) -> void:
 				output_target.get_port_connected_to(PortFlow.INPUT, target, output_port))
 
 
-func disconnect_all_outputs_of(for_node: StringName) -> void:
+func disconnect_all_outputs_of(for_node: String) -> void:
 	if not has_discourse_node(for_node):
 		return
 	
@@ -1538,17 +1572,17 @@ func disconnect_all_outputs_of(for_node: StringName) -> void:
 #region UI Actions / Listeners
 
 
-func _on_use_code_editor_requested(node_uuid: StringName, target_node: TextEdit) -> void:
+func _on_use_code_editor_requested(node_uuid: String, target_node: TextEdit) -> void:
 	use_code_editor_requested.emit(node_uuid, target_node)
 
 
-func _on_use_character_selector_pressed(node_uuid: StringName, target: LineEdit) -> void:
+func _on_use_character_selector_pressed(node_uuid: String, target: LineEdit) -> void:
 	browse_character_requested.emit(node_uuid, target)
 
 
 func _on_delete_nodes_request(nodes: Array[StringName]) -> void:
-	var nodes_to_remove: Dictionary[StringName, Dictionary] = {}
-	var node_uuids: Array[StringName] = []
+	var nodes_to_remove: Dictionary[String, Dictionary] = {}
+	var node_uuids: Array[String] = []
 	for selected_node in nodes:
 		var node: Control = get_node(NodePath(selected_node))
 		if node is DiscourseGraphNode:
@@ -1563,7 +1597,7 @@ func _on_delete_nodes_request(nodes: Array[StringName]) -> void:
 	nodes_removed.emit("remove", nodes_to_remove)
 
 
-func set_node_in_frame(node_uuid: StringName, frame: StringName) -> void:
+func set_node_in_frame(node_uuid: String, frame: String) -> void:
 	if not graph_nodes.has(node_uuid) or not node_frames.has(frame) or get_element_frame(graph_nodes[node_uuid].name) == node_frames[frame]:
 		return
 	attach_graph_element_to_frame(graph_nodes[node_uuid].name, node_frames[frame].name)
@@ -1594,12 +1628,12 @@ func _on_popup_index_pressed(index: int, menu: PopupMenu) -> void:
 			data["target_type"],
 			0 if menu == connection_popup else index).duplicate(true)
 	
-	DictUtils.set_nested_value(
+	NFDictUtils.set_nested_value(
 			node_data,
 			["metadata", "position"],
 			target_position)
 	
-	var new_node: DiscourseGraphNode = spawn_node(data["target_type"], &"", node_data)
+	var new_node: DiscourseGraphNode = spawn_node(data["target_type"], "", node_data)
 
 	var frame: GraphFrame = get_element_frame(from.name)
 	
@@ -1608,7 +1642,6 @@ func _on_popup_index_pressed(index: int, menu: PopupMenu) -> void:
 	
 	if data["flow"] == "input":
 		if new_node.node_type == DialogNodes.VALUE:
-			var port
 			new_node.set_mode(port_type_to_var_type(release_data["target_type"]))
 		elif new_node.node_type == DialogNodes.VARIABLE_GET:
 			new_node.set_node_type(release_data["target_type"])
@@ -1628,7 +1661,7 @@ func _on_popup_index_pressed(index: int, menu: PopupMenu) -> void:
 	if frame != null:
 		attach_graph_element_to_frame(new_node.name, frame.name)
 	
-	var node_arr: Array[StringName] = [new_node.get_node_uuid()]
+	var node_arr: Array[String] = [new_node.get_node_uuid()]
 	node_created.emit(new_node)
 	nodes_created.emit(node_arr, "Create Node")
 	dialog_changed.emit()
@@ -1648,7 +1681,7 @@ func port_type_to_var_type(port_type: int) -> int:
 			return TYPE_NIL
 
 func _on_connection_drag_started(from_node: StringName, from_port: int, is_output: bool) -> void:
-	var from_graph: DiscourseGraphNode = get_node(NodePath(from_node))
+	var from_graph: DiscourseGraphNode = get_node(NodePath(String(from_node)))
 	
 	if is_output:
 		if from_graph.is_port_available(DiscourseGraphNode.PortMode.OUTPUT, from_port):
@@ -1685,14 +1718,13 @@ func _on_connection_drag_started(from_node: StringName, from_port: int, is_outpu
 
 
 func _on_connection_request(from_node: StringName, from_port: int, to_node: StringName, to_port: int) -> void:
-	var from: DiscourseGraphNode = get_node(NodePath(from_node))
-	var to: DiscourseGraphNode = get_node(NodePath(to_node))
+	var from: DiscourseGraphNode = get_node(NodePath(String(from_node)))
+	var to: DiscourseGraphNode = get_node(NodePath(String(to_node)))
 	
 	var has_type: bool = _pending_connection_change.has("type")
 	if has_type:
 		var same_origin: bool = from.get_node_uuid() == _pending_connection_change["from_node"] and from_port == _pending_connection_change["from_port"]
 		var same_destination: bool = to.get_node_uuid() == _pending_connection_change["to_node"] and to_port == _pending_connection_change["to_port"]
-		var switch_disconnect: bool = _pending_connection_change["type"] == ConnectionChangeType.SWITCH_DISCONNECT
 		
 		if same_origin and same_destination:
 			rollback_disconnection()
@@ -1752,14 +1784,15 @@ func _on_connection_drag_ended() -> void:
 
 func _on_connection_to_empty(from_node: StringName, from_port: int, release_position: Vector2) -> void:
 	if _pending_connection_change.has("type"):
+		var conn_snapshot: Dictionary = _pending_connection_change.duplicate()
 		commit_disconnection()
-		if _pending_connection_change["type"] == ConnectionChangeType.SWITCH_DISCONNECT:
+		if conn_snapshot["type"] == ConnectionChangeType.SWITCH_DISCONNECT:
 			dialog_changed.emit()
 	
 	if not Input.is_key_pressed(KEY_CTRL):
 		return
 	
-	var port_node: DiscourseGraphNode = get_node(NodePath(from_node))
+	var port_node: DiscourseGraphNode = get_node(NodePath(String(from_node)))
 	var port_type: int = port_node.get_output_port_type(from_port)
 	var node_count: int = get_compatible_node_count(port_type, "output")
 	
@@ -1776,7 +1809,7 @@ func _on_connection_to_empty(from_node: StringName, from_port: int, release_posi
 			data.merge(to_info["data"])
 		var to_graph: DiscourseGraphNode = spawn_node(
 				to_info["type"],
-				&"",
+				"",
 				data)
 		
 		var frame: GraphFrame = get_element_frame(from_node)
@@ -1789,7 +1822,7 @@ func _on_connection_to_empty(from_node: StringName, from_port: int, release_posi
 				to_info["ports"][0]["port"])
 		if frame != null:
 			attach_graph_element_to_frame(to_graph.name, frame.name)
-		var node_arr: Array[StringName] = [to_graph.get_node_uuid()]
+		var node_arr: Array[String] = [to_graph.get_node_uuid()]
 		node_created.emit(to_graph)
 		nodes_created.emit(node_arr, "Create Node")
 		dialog_changed.emit()
@@ -1812,7 +1845,7 @@ func _on_connection_from_empty(to_node: StringName, to_port: int, release_positi
 	if not Input.is_key_pressed(KEY_CTRL):
 		return
 	
-	var to_graph: DiscourseGraphNode = get_node(NodePath(to_node))
+	var to_graph: DiscourseGraphNode = get_node(NodePath(String(to_node)))
 	var port_type: ConnectionType = to_graph.get_input_port_type(to_port) as ConnectionType
 	var node_count: int = get_compatible_node_count(port_type, "input")
 	
@@ -1831,7 +1864,7 @@ func _on_connection_from_empty(to_node: StringName, to_port: int, release_positi
 		
 		var from_graph: DiscourseGraphNode = spawn_node(
 				from_info["type"],
-				&"",
+				"",
 				data)
 		
 		graph_nodes[from_graph.get_node_uuid()] = from_graph
@@ -1845,7 +1878,7 @@ func _on_connection_from_empty(to_node: StringName, to_port: int, release_positi
 				to_port)
 		if frame != null:
 			attach_graph_element_to_frame(from_graph.name, frame.name)
-		var node_arr: Array[StringName] = [from_graph.get_node_uuid()]
+		var node_arr: Array[String] = [from_graph.get_node_uuid()]
 		node_created.emit(from_graph)
 		nodes_created.emit(node_arr, "Create Node")
 		dialog_changed.emit()
@@ -1879,15 +1912,15 @@ func _on_begin_node_move() -> void:
 			movement_data["nodes"][node.get_node_uuid()] = {
 				"previous_position": node.position_offset,
 				"current_position": Vector2.ZERO,
-				"previous_frame": &"" if frame == null else frame.get_frame_uuid(),
-				"current_frame": &""}
+				"previous_frame": "" if frame == null else frame.get_frame_uuid(),
+				"current_frame": ""}
 		else:
 			var p_frame: GraphFrame = get_element_frame(node.name)
 			movement_data["frames"][node.get_frame_uuid()] = {
 				"previous_position": node.position_offset,
-				"previous_frame": &"" if p_frame == null else p_frame.get_frame_uuid(),
+				"previous_frame": "" if p_frame == null else p_frame.get_frame_uuid(),
 				"current_position": Vector2.ZERO,
-				"current_frame": &""}
+				"current_frame": ""}
 	
 	if not Input.is_key_pressed(KEY_ALT):
 		return
@@ -1911,7 +1944,7 @@ func _on_end_node_move() -> void:
 	for frame_uuid in movement_data["frames"]:
 		var frame: GraphFrame = node_frames[frame_uuid]
 		var in_frame: GraphFrame = get_element_frame(frame.name)
-		var parent_frame: StringName = &""
+		var parent_frame: String = ""
 		if in_frame != null:
 			parent_frame = in_frame.get_frame_uuid()
 		movement_data["frames"][frame_uuid]["current_position"] =\
@@ -1929,9 +1962,6 @@ func snap_node_to_grid(target_node: DiscourseGraphNode) -> void:
 
 
 func _on_graph_elements_linked_to_frame_request(elements: Array, frame: StringName) -> void:
-	var frame_node: StringName = get_node_or_null(NodePath(frame)).get_frame_uuid()
-	var element_uuids: Array[StringName] = []
-	
 	for element in elements:
 		attach_graph_element_to_frame(element, frame)
 	
@@ -1946,18 +1976,12 @@ func _on_localize_node_toggled(is_pressed: bool, node: DiscourseGraphNode) -> vo
 
 
 func _close_requested(node: DiscourseGraphNode) -> void:
-	var node_data: Dictionary[StringName, Dictionary] = {
+	var node_data: Dictionary[String, Dictionary] = {
 		node.get_node_uuid(): node.get_node_state()}
 	nodes_removed.emit("remove", node_data)
 
 
-func _close_frame_requested(frame: StringName) -> void:
-	#remove_frame(frame.get_frame_uuid())
-	#dialog_changed.emit()
-	pass
-
-
-func _on_disconnection_request(from_node_uuid: StringName, from_port: int, to_node_uuid: StringName, to_port: int, caller: DiscourseGraphNode) -> void:
+func _on_disconnection_request(from_node_uuid: String, from_port: int, to_node_uuid: String, to_port: int, caller: DiscourseGraphNode) -> void:
 	disconnect_discourse_nodes(from_node_uuid, from_port, to_node_uuid, to_port)
 	caller.node_disconnected.emit()
 	# I don't think this is required as this is only done when a node state
@@ -1965,7 +1989,7 @@ func _on_disconnection_request(from_node_uuid: StringName, from_port: int, to_no
 	#node_disconnected.emit(from_node_uuid, from_port, to_node_uuid, to_port)
 
 
-func _on_go_to_node_pressed(uuid: StringName) -> void:
+func _on_go_to_node_pressed(uuid: String) -> void:
 	focus_graph_node(uuid)
 
 
@@ -1981,11 +2005,11 @@ func stop_focus_animation() -> void:
 
 
 ## Focuses the child node in the graph node.
-func focus_graph_node(node_uuid: StringName, animate: bool = true) -> void:
-	if not graph_nodes.has(node_uuid):
-		return
+func focus_graph_node(node_uuid: String, animate: bool = true) -> void:
+	var node: DiscourseGraphNode = graph_nodes.get(node_uuid)
 	
-	var node: DiscourseGraphNode = graph_nodes[node_uuid]
+	if node == null:
+		return
 	
 	if focus_tween != null:
 		stop_focus_animation()
@@ -2018,22 +2042,6 @@ func reset_scroll_offset() -> void:
 	scroll_offset = target_size
 
 
-func _on_copy_nodes_requested() -> void:
-	copy_selected_to_clipboard()
-
-
-func _on_cut_nodes_requested() -> void:
-	copy_selected_to_clipboard()
-	var nodes_to_remove: Array[StringName] = []
-	var removed_nodes_data: Dictionary[StringName, Dictionary] = {}
-	for selected_node in get_selected_graph_nodes():
-		nodes_to_remove.append(selected_node.get_node_uuid())
-		removed_nodes_data[selected_node.get_node_uuid()] =\
-				selected_node.get_node_state()
-	
-	nodes_removed.emit("cut", removed_nodes_data)
-
-
 func _on_paste_nodes_requested() -> void:
 	paste_nodes_requested.emit()
 
@@ -2044,7 +2052,7 @@ func _on_paste_nodes_requested() -> void:
 # apply the disconnection use commit_disconnection or to cancel the disconnection
 # use rollback disconnection.
 # If there is no to_node or to_port, then there is no disconnection.
-func set_diconnection(from_node: StringName, from_port: int, to_node: StringName = &"", to_port: int = -1) -> void:
+func set_diconnection(from_node: String, from_port: int, to_node: String = "", to_port: int = -1) -> void:
 	if 0 <= to_port:
 		_pending_connection_change = {
 				"type": ConnectionChangeType.SWITCH_DISCONNECT,
@@ -2102,10 +2110,7 @@ func rollback_disconnection() -> void:
 
 
 func show_connection_popup_at(new_position: Vector2i):
-	# Get the PopupMenu's global size
-	var popup_size: Vector2i = Vector2i(connection_popup.get_contents_minimum_size())
-	
-	connection_popup.position = DisplayServer.mouse_get_position()#new_position + offset
+	connection_popup.position = DisplayServer.mouse_get_position()
 	connection_popup.popup()
 
 
@@ -2115,7 +2120,10 @@ func populate_popup(node_type: ConnectionType, port_direction: String) -> void:
 	
 	for node in get_compatible_nodes(node_type, port_direction):
 		if node["ports"].size() == 1:
-			connection_popup.add_item(node["name"], node_type)
+			connection_popup.add_icon_item(
+					node.get("icon", null),
+					node["name"],
+					node_type)
 			connection_popup.set_item_metadata(
 					-1,
 					{
@@ -2125,7 +2133,10 @@ func populate_popup(node_type: ConnectionType, port_direction: String) -> void:
 		else:
 			var connection_submenu: PopupMenu = PopupMenu.new()
 			for subitem:Dictionary in node["ports"]:
-				connection_submenu.add_item(subitem["name"], node_type)
+				connection_submenu.add_icon_item(
+					subitem.get("icon", null),
+					subitem["name"],
+					node_type)
 				connection_submenu.set_item_metadata(
 						-1,
 						{
@@ -2136,36 +2147,16 @@ func populate_popup(node_type: ConnectionType, port_direction: String) -> void:
 			connection_submenu.index_pressed.connect(_on_popup_index_pressed.bind(connection_submenu))
 
 
-func copy_selected_to_clipboard() -> void:
-	var selected_nodes: Array[DiscourseGraphNode] = get_selected_graph_nodes()
-	if selected_nodes.is_empty():
-		return
-	node_clipboard.clear()
-	var copy_data: Array[Dictionary] = []
-	for selected_node in selected_nodes:
-		var data: Dictionary = {
-			"node_uuid": selected_node.get_node_uuid(),
-			"state": selected_node.get_node_state()}
-		copy_data.append(data)
-	copy_data.sort_custom(sort_clipboard_custom)
-	node_clipboard.clear()
-	node_clipboard.assign(copy_data)
-
-
-func sort_clipboard_custom(item_a: Dictionary, item_b: Dictionary) -> bool:
-	return item_a["state"]["data"]["metadata"]["position"] < item_b["state"]["data"]["metadata"]["position"]
-
-
-func spawn_node_at_center(node_type: DialogNodes, uuid: String = "") -> StringName:
+func spawn_node_at_center(node_type: DialogNodes, uuid: String = "") -> String:
 	var new_node: DiscourseGraphNode = spawn_node(node_type, uuid)
-	var node_arr: Array[StringName] = [new_node.get_node_uuid()]
+	var node_arr: Array[String] = [new_node.get_node_uuid()]
 	new_node.position_offset = get_center_offset() - (new_node.size / 2.0)
 	node_created.emit(new_node)
 	nodes_created.emit(node_arr, "Create Node")
 	return new_node.get_node_uuid()
 
 
-func spawn_frame_at_center(uuid: String = "") -> StringName:
+func spawn_frame_at_center(uuid: String = "") -> String:
 	var new_frame: GraphFrame = spawn_frame(uuid)
 	new_frame.position_offset = get_center_offset() - ( new_frame.size / 2.0 )
 	return new_frame.get_frame_uuid()
@@ -2191,56 +2182,56 @@ func refresh_waypoints() -> void:
 
 # --- UndoRedo restore ---
 
-func resize_node(node_uuid: StringName, to_size: Vector2) -> void:
+func resize_node(node_uuid: String, to_size: Vector2) -> void:
 	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
 	
 	if node != null:
 		node.size = to_size
 
 
-func set_comment_node_text(node_uuid: StringName, text: String) -> void:
+func set_comment_node_text(node_uuid: String, text: String) -> void:
 	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
 	
 	if node != null and node.node_type == DialogNodes.COMMENT:
 		node.set_comment_text(text)
 
 
-func set_comparation_node_operator(node_uuid: StringName, operator: int) -> void:
+func set_comparation_node_operator(node_uuid: String, operator: int) -> void:
 	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
 	
 	if node != null and node.node_type == DialogNodes.COMPARATION:
 		node.set_operator(operator)
 
 
-func set_dialog_node_character_id(node_uuid: StringName, character_id: String) -> void:
+func set_dialog_node_character_id(node_uuid: String, character_id: String) -> void:
 	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
 	
 	if node != null and node.node_type == DialogNodes.DIALOG:
 		node.set_character_id(character_id)
 
 
-func set_dialog_node_dialog_text(node_uuid: StringName, text: String) -> void:
+func set_dialog_node_dialog_text(node_uuid: String, text: String) -> void:
 	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
 	
 	if node != null and node.node_type == DialogNodes.DIALOG:
 		node.set_dialog_text(text)
 
 
-func set_dialog_node_persist_enabled(node_uuid: StringName, persist: bool) -> void:
+func set_dialog_node_persist_enabled(node_uuid: String, persist: bool) -> void:
 	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
 	
 	if node != null and node.node_type == DialogNodes.DIALOG:
 		node.set_persist_dialog(persist)
 
 
-func set_choice_node_text(node_uuid: StringName, choice_id: int, to: String) -> void:
+func set_choice_node_text(node_uuid: String, choice_id: int, to: String) -> void:
 	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
 	
 	if node != null and node.node_type == DialogNodes.CHOICES:
 		node.set_choice_text(choice_id, to)
 
 
-func set_choices_node_state(node_uuid: StringName, state: Dictionary) -> void:
+func set_choices_node_state(node_uuid: String, state: Dictionary) -> void:
 	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
 	
 	if node != null and node.node_type == DialogNodes.CHOICES:
@@ -2260,7 +2251,7 @@ func set_choices_node_state(node_uuid: StringName, state: Dictionary) -> void:
 						option["input_connections"]["settings"]["from_port"])
 
 
-func set_shortcut_node_target(node_uuid: StringName, target_uuid: StringName) -> void:
+func set_shortcut_node_target(node_uuid: String, target_uuid: String) -> void:
 	if not has_discourse_node(node_uuid) or not has_discourse_node(target_uuid):
 		return
 	
@@ -2270,7 +2261,7 @@ func set_shortcut_node_target(node_uuid: StringName, target_uuid: StringName) ->
 		node.select_target(target_uuid)
 
 
-func set_shortcut_target_id(node_uuid: StringName, id: String) -> void:
+func set_shortcut_target_id(node_uuid: String, id: String) -> void:
 	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
 	
 	if node == null or node.node_type != DialogNodes.SHORTCUT_OUT:
@@ -2281,10 +2272,10 @@ func set_shortcut_target_id(node_uuid: StringName, id: String) -> void:
 	for anchor in anchor_pointers:
 		anchor.update_anchor(
 				node_uuid,
-				id)
+				valid_id)
 
 
-func set_localized_text_node_text(node_uuid: StringName, text: String) -> void:
+func set_localized_text_node_text(node_uuid: String, text: String) -> void:
 	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
 	
 	if node != null and node.node_type == DialogNodes.LOCALIZED_TEXT:
@@ -2292,7 +2283,7 @@ func set_localized_text_node_text(node_uuid: StringName, text: String) -> void:
 
 
 # For match_node_resized
-func set_match_node_cases(node_uuid: StringName, state: Dictionary) -> void:
+func set_match_node_cases(node_uuid: String, state: Dictionary) -> void:
 	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
 	
 	if node != null and node.node_type == DialogNodes.MATCH:
@@ -2309,7 +2300,7 @@ func set_match_node_cases(node_uuid: StringName, state: Dictionary) -> void:
 
 
 # Cases IDs start from 1. IDs are Case index + 1
-func set_match_node_field(node_uuid: StringName, case_id: int, value: Variant) -> void:
+func set_match_node_field(node_uuid: String, case_id: int, value: Variant) -> void:
 	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
 	
 	if node != null and node.node_type == DialogNodes.MATCH:
@@ -2317,7 +2308,7 @@ func set_match_node_field(node_uuid: StringName, case_id: int, value: Variant) -
 
 
 # Used for match_mode_changed
-func set_match_node_state(node_uuid: StringName, state: Dictionary) -> void:
+func set_match_node_state(node_uuid: String, state: Dictionary) -> void:
 	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
 	if node == null or node.node_type != DialogNodes.MATCH:
 		return
@@ -2337,7 +2328,7 @@ func set_match_node_state(node_uuid: StringName, state: Dictionary) -> void:
 		var from_node: DiscourseGraphNode = node.get_node_connected_to_port(
 				DiscourseGraphNode.PortMode.INPUT,
 				1)
-		var from_uuid: StringName = from_node.get_node_uuid()
+		var from_uuid: String = from_node.get_node_uuid()
 		var from_port: int = node.get_target_port_connected_to_self(
 				DiscourseGraphNode.PortMode.INPUT,
 				1)
@@ -2372,13 +2363,13 @@ func set_match_node_state(node_uuid: StringName, state: Dictionary) -> void:
 				output_connection["target_port"])
 
 
-func set_metadata_node_key(node_uuid: StringName, key_index: int, to: String) -> void:
+func set_metadata_node_key(node_uuid: String, key_index: int, to: String) -> void:
 	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
 	if node != null and node.node_type == DialogNodes.METADATA:
 		node.set_metadata_id(key_index, to)
 
 
-func set_call_node_state(node_uuid: StringName, state: Dictionary) -> void:
+func set_call_node_state(node_uuid: String, state: Dictionary) -> void:
 	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
 	
 	if node != null and node.node_type == DialogNodes.CALLABLE:
@@ -2393,31 +2384,33 @@ func set_call_node_state(node_uuid: StringName, state: Dictionary) -> void:
 					arg_connection["from_port"])
 
 
-func set_call_return_node_state(node_uuid: StringName, state: Dictionary) -> void:
+func set_call_return_node_state(node_uuid: String, state: Dictionary) -> void:
 	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
 	
 	if node != null and node.node_type == DialogNodes.CALLABLE_RETURN:
 		await node.set_method(state["metadata"]["method"])
 		var caller_state: Dictionary = state["output_connections"]["caller"]
+		
 		if has_discourse_node(caller_state["target_node_uuid"]):
 			connect_discourse_nodes(
-					caller_state["target_node_uuid"],
-					caller_state["target_port"],
 					node_uuid,
-					caller_state["from_port"])
+					caller_state["from_port"],
+					caller_state["target_node_uuid"],
+					caller_state["target_port"])
 		
 		for arg_connection in state["metadata"]["arguments"]:
 			if not has_discourse_node(arg_connection["target_node_uuid"]):
 				continue
+			
 			connect_discourse_nodes(
-					node_uuid,
-					arg_connection["from_port"],
 					arg_connection["target_node_uuid"],
-					arg_connection["target_port"])
+					arg_connection["target_port"],
+					node_uuid,
+					arg_connection["from_port"])
 
 
 # Used for choice_count_state_changed
-func set_random_path_node_state(node_uuid: StringName, state: Dictionary) -> void:
+func set_random_path_node_state(node_uuid: String, state: Dictionary) -> void:
 	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
 	
 	if node != null and node.node_type == DialogNodes.RANDOM:
@@ -2437,14 +2430,14 @@ func set_random_path_node_state(node_uuid: StringName, state: Dictionary) -> voi
 						connection["output_connections"]["next_node"]["target_port"])
 
 
-func set_random_value_node_range(node_uuid: StringName, base: float, ceil: float) -> void:
+func set_random_value_node_range(node_uuid: String, base: float, ceil: float) -> void:
 	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
 	
 	if node != null and node.node_type == DialogNodes.RANDOM_VALUE:
 		node.set_range(base, ceil)
 
 
-func set_random_value_state(node_uuid: StringName, state: Dictionary) -> void:
+func set_random_value_state(node_uuid: String, state: Dictionary) -> void:
 	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
 	
 	if node != null and node.node_type == DialogNodes.RANDOM_VALUE:
@@ -2471,14 +2464,14 @@ func set_random_value_state(node_uuid: StringName, state: Dictionary) -> void:
 					state["output_connections"]["next_node"]["target_port"])
 
 
-func set_resource_node_path(node_uuid: StringName, path: String) -> void:
+func set_resource_node_path(node_uuid: String, path: String) -> void:
 	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
 	
 	if node != null and node.node_type == DialogNodes.RESOURCE:
 		node.set_resource_path(path)
 
 
-func set_emit_signal_node_state(node_uuid: StringName, state: Dictionary) -> void:
+func set_emit_signal_node_state(node_uuid: String, state: Dictionary) -> void:
 	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
 	
 	if node != null and node.node_type == DialogNodes.SIGNAL:
@@ -2493,14 +2486,14 @@ func set_emit_signal_node_state(node_uuid: StringName, state: Dictionary) -> voi
 					signal_argument["from_port"])
 
 
-func set_shield_node_fallback(node_uuid: StringName, fallback: Variant) -> void:
+func set_shield_node_fallback(node_uuid: String, fallback: Variant) -> void:
 	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
 	
 	if node != null and node.node_type == DialogNodes.TYPE_GUARD:
 		node.set_fallback_value(fallback)
 
 
-func set_value_node_state(node_uuid: StringName, state: Dictionary) -> void:
+func set_value_node_state(node_uuid: String, state: Dictionary) -> void:
 	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
 	
 	if node != null and node.node_type == DialogNodes.VALUE:
@@ -2514,14 +2507,14 @@ func set_value_node_state(node_uuid: StringName, state: Dictionary) -> void:
 						state["output_connections"]["next_node"]["target_port"])
 
 
-func set_value_node_value(node_uuid: StringName, value: Variant) -> void:
+func set_value_node_value(node_uuid: String, value: Variant) -> void:
 	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
 	
 	if node != null and node.node_type == DialogNodes.VALUE:
 		node.set_value(value)
 
 
-func set_variable_node_state(node_uuid: StringName, state: Dictionary) -> void:
+func set_variable_node_state(node_uuid: String, state: Dictionary) -> void:
 	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
 	
 	if node != null and node.node_type == DialogNodes.VARIABLE_GET:
@@ -2534,38 +2527,38 @@ func set_variable_node_state(node_uuid: StringName, state: Dictionary) -> void:
 					state["output_connections"]["target"]["target_port"])
 
 
-func set_variable_node_path(node_uuid: StringName, path: String) -> void:
+func set_variable_node_path(node_uuid: String, path: String) -> void:
 	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
 	
 	if node != null and node.node_type == DialogNodes.VARIABLE_GET:
 		node.set_variable_path(path)
 
 
-func set_frame_title(frame_uuid: StringName, title: String) -> void:
+func set_frame_title(frame_uuid: String, title: String) -> void:
 	if node_frames.has(frame_uuid):
 		node_frames[frame_uuid].title = title
 
 
-func set_frame_tint(frame_uuid: StringName, tint: Color) -> void:
+func set_frame_tint(frame_uuid: String, tint: Color) -> void:
 	if node_frames.has(frame_uuid):
 		node_frames[frame_uuid].set_frame_tint(tint)
 
 
-func set_event_node_variable_path(node_uuid: StringName, path: String) -> void:
+func set_event_node_variable_path(node_uuid: String, path: String) -> void:
 	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
 	
 	if node != null and node.node_type == DialogNodes.EVENT:
 		node.set_variable_path(path)
 
 
-func set_data_event_node_variable_path(node_uuid: StringName, path: String) -> void:
+func set_data_event_node_variable_path(node_uuid: String, path: String) -> void:
 	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
 	
 	if node != null and node.node_type == DialogNodes.DATA_EVENT:
 		node.set_variable_path(path)
 
 
-func set_travel_node_selected_waypoint(node_uuid: StringName, target_uuid: StringName) -> void:
+func set_travel_node_selected_waypoint(node_uuid: String, target_uuid: String) -> void:
 	if not has_discourse_node(node_uuid) or not has_discourse_node(target_uuid):
 		return
 	
@@ -2575,7 +2568,7 @@ func set_travel_node_selected_waypoint(node_uuid: StringName, target_uuid: Strin
 		node.select_waypoint(target_uuid)
 
 
-func set_waypoint_node_id(node_uuid: StringName, id: String) -> void:
+func set_waypoint_node_id(node_uuid: String, id: String) -> void:
 	var node: DiscourseGraphNode = get_discourse_node(node_uuid)
 	
 	if node == null or node.node_type != DialogNodes.TRAVEL_TARGET:
@@ -2586,7 +2579,10 @@ func set_waypoint_node_id(node_uuid: StringName, id: String) -> void:
 	for anchor in travel_pointers:
 		anchor.update_waypoint_id(
 				node_uuid,
-				id)
+				valid_id)
 
 
-# --- Node Signalers ---
+func _remove_invalid_instances(array: Array) -> void:
+	for idx in range(array.size() -1, -1, -1):
+		if not is_instance_valid(array[idx]):
+			array.remove_at(idx)

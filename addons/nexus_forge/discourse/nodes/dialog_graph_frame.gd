@@ -2,9 +2,9 @@
 extends GraphFrame
 
 
-signal close_frame_requested(uuid: StringName)
-signal frame_title_changed(uuid: StringName, from: String, to: String)
-signal frame_color_changed(uuid: StringName, from: Color, to: Color)
+signal close_frame_requested(uuid: String)
+signal frame_title_changed(uuid: String, from: String, to: String)
+signal frame_color_changed(uuid: String, from: Color, to: Color)
 
 var last_click_time: int = 0
 var label_editor: LineEdit = null
@@ -14,7 +14,7 @@ var color_picker: ColorPickerButton
 
 
 func _init(uuid: String = "") -> void:
-	_uuid = UUID.generate_new() if uuid.is_empty() else uuid
+	_uuid = NFUUID.generate_new() if uuid.is_empty() else uuid
 	var title_frame: HBoxContainer = get_titlebar_hbox()
 	var title_label: Label = title_frame.get_child(0)
 	var centering_spacer: Control = Control.new()

@@ -1,4 +1,4 @@
-class_name RandomWeightedPool
+class_name NFRandomWeightedPool
 extends RefCounted
 ## An object which can store items each associated with a specific weight
 ## that influences the likelihood of selection.
@@ -11,6 +11,19 @@ var _max_weight: float = 0.0
 
 ## Adds [param item] to the item pool and assigns it the [param weight] provided.
 func add_weighted(item: Variant, weight: float) -> void:
+	if not is_finite(weight):
+		NFPluginGameHandler._log_msg(
+				"",
+				"[NFRandomWeightedPool] Tried to add an item with an INF or NaN weight. Ignoring.",
+				NFPluginGameHandler._LogLevel.ERROR)
+		return
+	elif weight <= 0:
+		NFPluginGameHandler._log_msg(
+				"",
+				"[NFRandomWeightedPool] Can't add an item with a weight of 0 or less. Ignoring",
+				NFPluginGameHandler._LogLevel.ERROR)
+		return
+	
 	if _sorted:
 		_sorted = false
 	var new_item: NFWeightedPoolEntry = NFWeightedPoolEntry.new()
@@ -67,7 +80,7 @@ func pool_items() -> Array[Dictionary]:
 func remove_item(item: Variant) -> bool:
 	for item_idx in range(_items.size()):
 		if _items[item_idx].value == item:
-			_max_weight -= _items[item_idx].value
+			_max_weight -= _items[item_idx].weight
 			_items.remove_at(item_idx)
 			return true
 	return false
@@ -84,8 +97,15 @@ func _sort_weighted(item_a: NFWeightedPoolEntry, item_b: NFWeightedPoolEntry) ->
 	return item_a.weight > item_b.weight
 
 
+## An object representing an entry in a [NFRandomWeightedPool]
+## object.
 class NFWeightedPoolEntry extends RefCounted:
+	## The data stored in this entry.
 	var value = null
+	## How probable is for this entry to be picked from
+	## a pool of objects.
+	## [br][br]
+	## [b]Note:[/b] Weight is [method @GlobalScope.snappedf] to 0.001
 	var weight: float = 0.0:
 		set(w):
-			weight = maxf(0.001, w)
+			weight = snappedf(w, 0.001)

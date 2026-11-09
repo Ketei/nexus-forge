@@ -4,19 +4,9 @@ extends RefCounted
 ## status (success/failure/unknown).
 ##
 ## This object keeps track of quests, their stages and the objectives of such
-## stages. Supports accessing directly using the ID of the quest
-## (eg. Log.main_quest). If no quest exist, a fallback object will be
-## returned. To differentiate if an object is valid call is_valid() on the object.
+## stages.
 
 var _entries: Dictionary[StringName, NFQuestLogEntry] = {}
-
-
-func _get(property: StringName) -> Variant:
-	if _entries.has(property):
-		return _entries[property]
-	var invalid: NFQuestLogEntry = NFQuestLogEntry.new(property)
-	invalid._flags = BitUtils.set_bit_index(0, 63, true)
-	return invalid
 
 
 ## Sets an entry on the log with [param id] and a [param success_status].
@@ -25,7 +15,7 @@ func set_entry(id: StringName, success_status: NFQuestManager.SuccessStatus = NF
 		_entries[id].success_status = success_status
 	else:
 		var new_entry: NFQuestLogEntry = NFQuestLogEntry.new(id, success_status)
-		new_entry._flags = BitUtils.set_bit_index(0, 0, true)
+		new_entry._flags = NFBitUtils.set_bit_index(0, 0, true)
 		_entries[id] = new_entry
 	
 	return _entries[id]
@@ -80,7 +70,7 @@ func has_objective(on_quest: StringName, from_stage: StringName, entry: StringNa
 func log_state() -> Dictionary[StringName, Dictionary]:
 	var log_data: Dictionary[StringName, Dictionary] = {}
 	
-	for quest_id in _entries.keys():
+	for quest_id in _entries:
 		var stage_data: Dictionary[StringName, Dictionary] = {}
 		var quest_data: Dictionary[String, Variant] = {
 			"success_status": _entries[quest_id].success_status,
@@ -99,24 +89,35 @@ func log_state() -> Dictionary[StringName, Dictionary]:
 
 ## Restores the log from [param data].
 func restore_state(data: Dictionary) -> void:
-	for key_entry in data.keys():
+	var success_values: Array = NFQuestManager.SuccessStatus.values()
+	for key_entry in data:
 		var key_type: int = typeof(key_entry)
 		if (key_type != TYPE_STRING_NAME and key_type != TYPE_STRING) or typeof(data[key_entry]) != TYPE_DICTIONARY:
 			continue
 		
-		var status: NFQuestManager.SuccessStatus = NFQuestManager.SuccessStatus.UNKNOWN
+		var status: int = NFQuestManager.SuccessStatus.UNKNOWN
 		
-		if data[key_entry].has("success_status") and typeof(data[key_entry]["success_status"]) == TYPE_INT:
-			status = data[key_entry]["success_status"]
-		else:
-			NFPluginGameHandler._log_msg(
-					"quest - log",
-					"Quest '%s' doesn't have a valid success status." % key_entry,
-					NFPluginGameHandler._LogLevel.WARNING)
+		if data[key_entry].has("success_status"):
+			var val: Variant = data[key_entry]["success_status"]
+			var type: int = typeof(data[key_entry]["success_status"])
+			if type == TYPE_INT or type == TYPE_FLOAT:
+				var num_val: int = int(val)
+				if success_values.has(num_val):
+					status = num_val
+				else:
+					NFPluginGameHandler._log_msg(
+							"quest - log",
+							"NFQuest '%s' success status value is not valid." % key_entry,
+							NFPluginGameHandler._LogLevel.WARNING)
+			else:
+				NFPluginGameHandler._log_msg(
+						"quest - log",
+						"NFQuest '%s' doesn't have a valid success status." % key_entry,
+						NFPluginGameHandler._LogLevel.WARNING)
 		
 		var quest_entry: NFQuestLogEntry = NFQuestLogEntry.new(key_entry, status)
 		
-		quest_entry._flags = BitUtils.set_bit_index(0, 0, true)
+		quest_entry._flags = NFBitUtils.set_bit_index(0, 0, true)
 		
 		if data[key_entry].has("stages"):
 			quest_entry._load_from_data(data[key_entry]["stages"])
@@ -134,13 +135,11 @@ func clear() -> void:
 	_entries.clear()
 
 
+## A base entry used in [NFQuestLog].
 class NFQuestLogStatusEntry extends RefCounted:
 	## The status of the entry.
 	var success_status: NFQuestManager.SuccessStatus = NFQuestManager.SuccessStatus.UNKNOWN
-	var _flags: int = 0:
-		set(f):
-			if _flags == 0:
-				_flags = f
+	var _flags: int = 0
 	
 	
 	func _init(status: NFQuestManager.SuccessStatus = NFQuestManager.SuccessStatus.UNKNOWN) -> void:
@@ -149,9 +148,10 @@ class NFQuestLogStatusEntry extends RefCounted:
 	
 	## Returns if this entry exists in the log or was provided as a fallback.
 	func is_valid() -> bool:
-		return BitUtils.is_bit_index(_flags, 0, true)
+		return NFBitUtils.is_bit_index(_flags, 0, true)
 
 
+## A quest entry used in [NFQuestLog].
 class NFQuestLogEntry extends NFQuestLogStatusEntry:
 	## The ID of the quest.
 	var id: StringName = &"":
@@ -165,35 +165,37 @@ class NFQuestLogEntry extends NFQuestLogStatusEntry:
 		id = entry_id
 		success_status = status
 	
-	
-	func _get(property: StringName) -> Variant:
-		if _entries.has(property):
-			return _entries[property]
-		var invalid: NFQuestLogStageEntry = NFQuestLogStageEntry.new(property)
-		invalid._flags = BitUtils.set_bit_index(0, 63, true)
-		return invalid
-	
-	
 	func _load_from_data(dict: Dictionary):
+		var success_status: Array = NFQuestManager.SuccessStatus.values()
 		_entries.clear()
 		
-		for key_entry in dict.keys():
+		for key_entry in dict:
 			var key_type: int = typeof(key_entry)
 			
 			if (key_type != TYPE_STRING_NAME and key_type != TYPE_STRING) or typeof(dict[key_entry]) != TYPE_DICTIONARY:
 				continue
 			
-			var success: NFQuestManager.SuccessStatus = NFQuestManager.SuccessStatus.UNKNOWN
-			if dict[key_entry].has("success_status") and typeof(dict[key_entry]["success_status"]) == TYPE_INT:
-				success = dict[key_entry]["success_status"]
+			var success: int = NFQuestManager.SuccessStatus.UNKNOWN
+			if dict[key_entry].has("success_status"):
+				var val: Variant = dict[key_entry]["success_status"]
+				var type: int = typeof(val)
+				if type == TYPE_FLOAT or type == TYPE_INT:
+					var val_int: int = int(val)
+					if success_status.has(val_int):
+						success = val_int
+					else:
+						NFPluginGameHandler._log_msg(
+								"quest - log",
+								"NFQuest '%s' success status value is not valid." % key_entry,
+								NFPluginGameHandler._LogLevel.WARNING)
 			else:
 				NFPluginGameHandler._log_msg(
-					"quest - log",
-					"Quest '%s' doesn't have a valid success status." % key_entry,
-					NFPluginGameHandler._LogLevel.WARNING)
+						"quest - log",
+						"NFQuest '%s' doesn't have a valid success status." % key_entry,
+						NFPluginGameHandler._LogLevel.WARNING)
 			
 			var entry: NFQuestLogStageEntry = NFQuestLogStageEntry.new(key_entry, success)
-			entry._flags = BitUtils.set_bit_index(0, 0, true)
+			entry._flags = NFBitUtils.set_bit_index(0, 0, true)
 			if dict[key_entry].has("objectives") and typeof(dict[key_entry]["objectives"]) == TYPE_DICTIONARY:
 				entry._load_from_data(dict[key_entry]["objectives"])
 			_entries[key_entry] = entry
@@ -238,7 +240,7 @@ class NFQuestLogEntry extends NFQuestLogStatusEntry:
 	func stage_data() -> Dictionary[StringName, Dictionary]:
 		var stage_data: Dictionary[StringName, Dictionary] = {}
 		
-		for id in _entries.keys():
+		for id in _entries:
 			stage_data[id] = _entries[id].objective_data()
 		return stage_data
 	
@@ -258,6 +260,7 @@ class NFQuestLogEntry extends NFQuestLogStatusEntry:
 		_entries.clear()
 
 
+## A stage entry used in [NFQuestLog.NFQuestLogEntry]
 class NFQuestLogStageEntry extends NFQuestLogStatusEntry:
 	## The ID of the stage.
 	var id: StringName = &"":
@@ -272,24 +275,16 @@ class NFQuestLogStageEntry extends NFQuestLogStatusEntry:
 		success_status = status
 	
 	
-	func _get(property: StringName) -> Variant:
-		if _entries.has(property):
-			return _entries[property]
-		var invalid: NFQuestLogStatusEntry = NFQuestLogStatusEntry.new()
-		invalid._flags = BitUtils.set_bit_index(0, 63, true)
-		return invalid
-	
-	
 	func _load_from_data(dict: Dictionary):
 		_entries.clear()
 		
-		for key_entry in dict.keys():
+		for key_entry in dict:
 			var key_type: int = typeof(key_entry)
 			if (key_type != TYPE_STRING_NAME and key_type != TYPE_STRING) or typeof(dict[key_entry]) != TYPE_INT:
 				continue
 			
 			var entry: NFQuestLogStatusEntry = NFQuestLogStatusEntry.new(dict[key_entry])
-			entry._flags = BitUtils.set_bit_index(0, 0, true)
+			entry._flags = NFBitUtils.set_bit_index(0, 0, true)
 			_entries[key_entry] = entry
 	
 	
@@ -323,7 +318,7 @@ class NFQuestLogStageEntry extends NFQuestLogStatusEntry:
 	func objective_data() -> Dictionary[StringName, int]:
 		var objective_data: Dictionary[StringName, int] = {}
 		
-		for id in _entries.keys():
+		for id in _entries:
 			objective_data[id] = _entries[id].success_status
 		return objective_data
 	

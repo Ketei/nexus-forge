@@ -105,7 +105,6 @@ Features that are planned to be implemented in the future:
   - [x] Blueprints (Recipes)
   - [x] Odyssey (Quests)
   - [x] Phrase Maps
-- [ ] **Core:** Implement an automatic mod loader
 - [x] **Discourse:** Import/Export CSV files for localization
 - [ ] **Github Wiki:** Rewrite the Wiki and include examples using screenshots/gifs
 - [ ] **GUI:** Improved GUI for smaller resolutions

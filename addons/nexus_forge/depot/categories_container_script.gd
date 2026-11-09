@@ -6,7 +6,7 @@ signal category_id_changed(from: StringName, to: StringName)
 var selected_category: StringName = &""
 
 var categories_edited: bool = false
-var items_resource: ItemCatalog
+var items_resource: NFItemCatalog
 var category_undo: UndoRedo
 
 @onready var search_cat_ln_edt: LineEdit = $DataContainer/SearchContainer/SearchCatLnEdt
@@ -70,10 +70,9 @@ func _on_new_category_pressed() -> void:
 	id_creator.text_blacklist.assign(items_resource.categories())
 	id_creator.title = "Create Category"
 	id_creator.ok_button_text = "Create"
-	add_child(id_creator)
-	id_creator.show()
-	id_creator.grab_text_focus()
 	
+	EditorInterface.popup_dialog_centered(id_creator)
+	id_creator.grab_text_focus()
 	var result = await id_creator.dialog_finished
 	id_creator.queue_free()
 	
@@ -155,7 +154,7 @@ func switch_to_category(category_id: StringName) -> void:
 	
 	var data: Dictionary = items_resource._categories[category_id]["custom_data"]
 	
-	for data_key in data.keys():
+	for data_key in data:
 		item_data_tree.add_data(data_key, data[data_key], true)
 	
 	add_cat_int_btn.disabled = false
@@ -168,8 +167,6 @@ func switch_to_category(category_id: StringName) -> void:
 
 
 func reload_categories() -> void:
-	var item_selected: bool = categories_tree.get_selected() != null
-	
 	categories_tree.clear_categories()
 	
 	var top_level_categories: Array[StringName] = []
@@ -184,11 +181,12 @@ func reload_categories() -> void:
 
 
 func _add_category_map(categories: Dictionary[StringName, Dictionary], target: StringName = &"") -> void:
-	for category_id in categories.keys():
+	for category_id in categories:
 		categories_tree.create_category(
 				category_id,
 				items_resource._categories[category_id]["name"],
-				target)
+				target,
+				false)
 		_add_category_map(categories[category_id], category_id)
 
 
@@ -298,6 +296,13 @@ func _on_category_id_changed(from: StringName, to: StringName) -> void:
 		if items_resource.get_item_category(item_id) == from:
 			items_resource.set_item_category(item_id, to)
 	
+	for category_id in items_resource._categories:
+		if items_resource._categories[category_id]["parent_key"] == from:
+			items_resource._categories[category_id]["parent_key"] = to
+	
+	if selected_category == from:
+		selected_category = to
+	
 	category_undo.create_action("Set Category ID")
 	category_undo.add_do_method(_do_update_category_id.bind(from, to))
 	category_undo.add_undo_method(_do_update_category_id.bind(to, from))
@@ -315,8 +320,14 @@ func _do_update_category_id(from: StringName, to: StringName) -> void:
 		for item_id in items_resource.items():
 			if items_resource.get_item_category(item_id) == from:
 				items_resource.set_item_category(item_id, to)
+		for category_id in items_resource._categories:
+			if items_resource._categories[category_id]["parent_key"] == from:
+				items_resource._categories[category_id]["parent_key"] = to
+	
+	if selected_category == from:
+		selected_category = to
+	
 	categories_tree.set_category_id(from, to)
-	_on_category_changed()
 	category_id_changed.emit(from, to)
 
 

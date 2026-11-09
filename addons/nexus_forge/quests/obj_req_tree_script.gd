@@ -1,5 +1,5 @@
 @tool
-extends IDTree
+extends NFIDTree
 
 
 signal data_created(path: String, index: int , data: Variant, operator: int)
@@ -140,11 +140,11 @@ func _on_compact_menu_id_pressed(id: int) -> void:
 	else:
 		data_name += "data"
 	
-	var path: String = add_data(data_name, data_type, false, data_item)
+	var path: String = add_data(data_name, data_type, OP_EQUAL, data_item, true)
 	
 	data_item = null
 	
-	data_created.emit(path, -1, data_type)
+	data_created.emit(path, -1, data_type, OP_EQUAL)
 
 
 func _get_drag_data(at_position: Vector2) -> Variant:
@@ -181,7 +181,7 @@ func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
 		else:
 			drop_mode_flags = DROP_MODE_INBETWEEN
 		return true
-	else: 
+	else:
 		drop_mode_flags = DROP_MODE_DISABLED
 		return false
 
@@ -212,6 +212,19 @@ func _do_move_item(from: String, to: String, index: int) -> void:
 	
 	var new_name: String = to_slice[-1]
 	
+	for slice in from_slice:
+		var found: bool = false
+		for item in current_folder.get_children():
+			if item.get_metadata(0)["name"] == slice:
+				current_folder = item
+				found = true
+				break
+		if not found:
+			return
+	
+	target = current_folder
+	
+	current_folder = get_root()
 	for slice in to_slice.slice(0, -1):
 		var found: bool = false
 		for item in current_folder.get_children():
@@ -229,22 +242,8 @@ func _do_move_item(from: String, to: String, index: int) -> void:
 		return
 	
 	for item in new_parent.get_children():
-		if item.get_metadata(0)["name"] == new_name:
+		if item != target and item.get_metadata(0)["name"] == new_name:
 			return
-	
-	current_folder = get_root()
-	
-	for slice in from_slice:
-		var found: bool = false
-		for item in current_folder.get_children():
-			if item.get_metadata(0)["name"] == slice:
-				current_folder = item
-				found = true
-				break
-		if not found:
-			return
-	
-	target = current_folder
 	
 	target.set_text(0, new_name)
 	target.get_metadata(0)["name"] = new_name
@@ -252,13 +251,14 @@ func _do_move_item(from: String, to: String, index: int) -> void:
 	if target.get_parent() != new_parent:
 		target.get_parent().remove_child(target)
 		new_parent.add_child(target)
-		if -1 < index and target.get_index() != index:
-			if new_parent.get_child_count() <= 1:
-				return
-			if index == 0:
-				target.move_before(new_parent.get_first_child())
-			else:
-				target.move_after(new_parent.get_child(index - 1))
+	
+	if -1 < index and target.get_index() != index:
+		if new_parent.get_child_count() <= 1:
+			return
+		if index == 0:
+			target.move_before(new_parent.get_first_child())
+		else:
+			target.move_after(new_parent.get_child(index - 1))
 
 
 func _is_in_tree(item: TreeItem) -> bool:
@@ -267,7 +267,7 @@ func _is_in_tree(item: TreeItem) -> bool:
 	
 	while current_level != null:
 		current_level = current_level.get_parent()
-		if current_level == get_root():
+		if current_level == root:
 			return true
 	return false
 
@@ -334,10 +334,12 @@ func _drop_data(at_position: Vector2, data: Variant) -> void:
 		
 		data_moved.emit(original_path, original_index, drop_path, new_index)
 	else: # Data created
+		var operator: int = range_to_operator(object.get_range(1))
 		data_created.emit(
 				drop_path,
 				new_index,
-				get_data_cell_data(object))
+				get_data_cell_data(object),
+				operator)
 
 
 func clear_data() -> void:
@@ -348,8 +350,6 @@ func clear_data() -> void:
 func _get_data_path(item: TreeItem) -> String:
 	if item == null or item == get_root():
 		return ""
-	
-	var path: String = ""
 	
 	var items: Array[String] = []
 	
@@ -362,7 +362,7 @@ func _get_data_path(item: TreeItem) -> String:
 	
 	items.reverse()
 	
-	return StringUtils.make_path(items)
+	return "/".join(items)
 
 
 func _get_data_item(path: String) -> TreeItem:
@@ -490,6 +490,16 @@ func _do_update_item_data(path: String, data: Variant) -> void:
 	var new_type: int = _data_type_to_internal(typeof(data))
 	
 	if new_type != item.get_metadata(2):
+		if item.get_metadata(2) == TYPE_DICTIONARY:
+			if compact_mode:
+				var idx: int = item.get_button_by_id(2, ButtonIds.TYPE_MENU)
+				if -1 < idx:
+					item.erase_button(2, idx)
+			else:
+				for id in [ButtonIds.LEVEL, ButtonIds.STRING, ButtonIds.BOOL, ButtonIds.FLOAT, ButtonIds.INT]:
+					var idx: int = item.get_button_by_id(2, id)
+					if -1 < idx:
+						item.erase_button(2, idx)
 		match new_type:
 			TYPE_INT:
 				item.set_icon(0, ICON_INT)
@@ -524,19 +534,22 @@ func _do_update_item_data(path: String, data: Variant) -> void:
 				item.set_selectable(2, false)
 				item.set_editable(2, false)
 				item.get_metadata(0)["type"] = ItemType.FOLDER
+				item.set_cell_mode(1, TreeItem.CELL_MODE_STRING)
+				item.set_text(1, "")
+				item.set_editable(1, false)
 				if compact_mode:
 					item.add_button(
-							1,
+							2,
 							preload("res://addons/nexus_forge/icons/add_variable_icon.svg"),
 							ButtonIds.TYPE_MENU,
 							false,
 							"Add data")
 				else:
-					item.add_button(1, preload("res://addons/nexus_forge/icons/add_int.svg"), ButtonIds.INT, false, "Add Integer")
-					item.add_button(1, preload("res://addons/nexus_forge/icons/add_float.svg"), ButtonIds.FLOAT, false, "Add Float")
-					item.add_button(1, preload("res://addons/nexus_forge/icons/add_bool.svg"), ButtonIds.BOOL, false, "Add Bool")
-					item.add_button(1, preload("res://addons/nexus_forge/icons/add_string.svg"), ButtonIds.STRING, false, "Add String")
-					item.add_button(1, get_theme_icon("FolderCreate", "EditorIcons"), ButtonIds.LEVEL, false, "Add Level")
+					item.add_button(2, preload("res://addons/nexus_forge/icons/add_int.svg"), ButtonIds.INT, false, "Add Integer")
+					item.add_button(2, preload("res://addons/nexus_forge/icons/add_float.svg"), ButtonIds.FLOAT, false, "Add Float")
+					item.add_button(2, preload("res://addons/nexus_forge/icons/add_bool.svg"), ButtonIds.BOOL, false, "Add Bool")
+					item.add_button(2, preload("res://addons/nexus_forge/icons/add_string.svg"), ButtonIds.STRING, false, "Add String")
+					item.add_button(2, get_theme_icon("FolderCreate", "EditorIcons"), ButtonIds.LEVEL, false, "Add Level")
 				for subdata in data:
 					add_data(subdata, data[subdata], false, item)
 			_:
@@ -560,18 +573,16 @@ func _do_update_item_data(path: String, data: Variant) -> void:
 	item.get_metadata(0)["value"] = data
 
 
-func add_data(data_id: String, data: Variant, operator: int = OP_EQUAL, on_node: TreeItem = get_root()) -> String:
+func add_data(data_id: String, data: Variant, operator: int = OP_EQUAL, on_node: TreeItem = get_root(), select: bool = false) -> String:
 	var new_name: String = get_unique_id(on_node, data_id)
 	var data_path: String = _get_data_path(on_node).path_join(new_name)
 	
-	var type: int = typeof(data)
-	
-	_add_data_to_tree(new_name, data, operator, on_node)
+	_add_data_to_tree(new_name, data, operator, on_node, -1, select)
 	
 	return data_path
 
 
-func _add_data_to_tree(new_name: String, data: Variant, operator: int, on_node: TreeItem = get_root(), index: int = -1) -> TreeItem:
+func _add_data_to_tree(new_name: String, data: Variant, operator: int, on_node: TreeItem = get_root(), index: int = -1, select: bool = false) -> TreeItem:
 	var data_type: int = typeof(data)
 	var new_data: TreeItem = on_node.create_child(index)
 	var metadata: Dictionary = {"name": new_name, "type": ItemType.DATA, "value": data}
@@ -660,6 +671,10 @@ func _add_data_to_tree(new_name: String, data: Variant, operator: int, on_node: 
 		new_data.set_cell_mode(1, TreeItem.CELL_MODE_STRING)
 		new_data.set_editable(1, false)
 	
+	if select:
+		new_data.select(0)
+		scroll_to_item.call_deferred(new_data)
+	
 	return new_data
 
 
@@ -696,34 +711,37 @@ func _on_button_clicked(item: TreeItem, column: int, id: int, mouse_button_index
 			var path: String = _get_data_path(item)
 			var data: Variant = get_data_cell_data(item)
 			var index: int = item.get_index()
+			var op: int = range_to_operator(item.get_range(1))
 			
 			item.free()
-			data_erased.emit(path, index, data)
+			data_erased.emit(path, index, data, op)
 			return
 		ButtonIds.INT:
 			data_copy = 0
-			data_path = add_data("new_int", 0, OP_EQUAL, item)
+			data_path = add_data("new_int", 0, OP_EQUAL, item, true)
 		ButtonIds.FLOAT:
 			data_copy = 0.0
-			data_path = add_data("new_float", 0.0, OP_EQUAL, item)
+			data_path = add_data("new_float", 0.0, OP_EQUAL, item, true)
 		ButtonIds.BOOL:
 			data_copy = false
-			data_path = add_data("new_bool", false, OP_EQUAL, item)
+			data_path = add_data("new_bool", false, OP_EQUAL, item, true)
 		ButtonIds.STRING:
 			data_copy = ""
-			data_path = add_data("new_string", "", OP_EQUAL, item)
+			data_path = add_data("new_string", "", OP_EQUAL, item, true)
 		ButtonIds.LEVEL:
 			data_copy = {}
-			data_path = add_data("new_folder", {}, OP_EQUAL, item)
+			data_path = add_data("new_folder", {}, OP_EQUAL, item, true)
 		ButtonIds.TYPE_MENU:
 			data_item = item
 			mn.position = DisplayServer.mouse_get_position()
 			mn.popup()
 			return
+	
 	data_created.emit(
 			data_path,
 			-1,
-			data_copy)
+			data_copy,
+			OP_EQUAL)
 
 
 func on_data_edited() -> void:
@@ -739,8 +757,6 @@ func on_data_edited() -> void:
 		var new_name: String = get_unique_id(edited.get_parent(), edited.get_text(0), edited)
 		
 		var parent_path: String = _get_data_path(edited.get_parent())
-		var old_path: String = parent_path.path_join(old_name)
-		var new_path: String = parent_path.path_join(new_name)
 		
 		edited.set_text(0, new_name)
 		edited.get_metadata(0)["name"] = new_name
@@ -841,7 +857,7 @@ func get_path_from(item: TreeItem) -> String:
 	if path_items.is_empty():
 		return ""
 	else:
-		return StringUtils.make_path(path_items)
+		return NFStringUtils.make_path(path_items)
 
 
 func set_data(flat_data: Dictionary[String, Dictionary]) -> void:
@@ -855,7 +871,7 @@ func set_data(flat_data: Dictionary[String, Dictionary]) -> void:
 	for full_path in flat_data.keys():
 		var item_data: Dictionary = flat_data[full_path]
 		
-		var segments: Array[String] = ArrayUtils.create_typed(TYPE_STRING, Array(full_path.split("/")))
+		var segments: Array[String] = NFArrayUtils.create_typed(TYPE_STRING, Array(full_path.split("/")))
 		
 		var item_name: String = segments.pop_back()
 		

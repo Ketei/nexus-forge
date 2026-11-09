@@ -147,9 +147,11 @@ func create_folder(path: String, expand: bool = true, select: bool = false) -> v
 		for folder_tree in current_level.get_children():
 			if folder_tree.get_metadata(0)["id"] == folder:
 				current_level = folder_tree
+				no_match = false
 				break
 		if no_match:
 			current_level = _create_folder(current_level, folder, expand, false)
+			
 	
 	for tree in current_level.get_children():
 		if tree.get_metadata(0)["id"] == folder_name:
@@ -170,11 +172,9 @@ func remove_folder(path: String) -> void:
 	if path_parts.is_empty():
 		return
 	
-	var folder_name: String = path_parts[-1]
 	var current_level: TreeItem = get_root()
-	var erase: bool = true
 	
-	for path_slice in path_parts.slice(0, -1):
+	for path_slice in path_parts:
 		var found: bool = false
 		for item in current_level.get_children():
 			if item.get_metadata(0)["id"] == path_slice:
@@ -182,10 +182,9 @@ func remove_folder(path: String) -> void:
 				current_level = item
 				break
 		if not found:
-			erase = false
-			break
+			return
 	
-	if erase:
+	if current_level != get_root():
 		current_level.free()
 
 
@@ -218,7 +217,7 @@ func rename_folder(path: String, to: String) -> bool:
 	if valid_name != to:
 		NFPluginGameHandler._log_msg(
 				"blackboard - editor",
-				"Tried to rename folder to '%s' but name is already taken or invalid. Using '%s' instead.",
+				"Tried to rename folder to '%s' but name is already taken or invalid. Using '%s' instead." % [to, valid_name],
 				NFPluginGameHandler._LogLevel.WARNING)
 		to = valid_name
 		success = false
@@ -366,14 +365,14 @@ func _on_item_button_pressed(item: TreeItem, _column: int, id: int, _mouse_butto
 			confirmation.ok_button_text = "Erase"
 			confirmation.cancel_button_text = "Cancel"
 			confirmation.initial_position = Window.WINDOW_INITIAL_POSITION_CENTER_MAIN_WINDOW_SCREEN
-			add_child(confirmation)
-			confirmation.show()
+			
+			EditorInterface.popup_dialog_centered(confirmation)
 			var erase: bool = await confirmation.dialog_finished
-			if not erase:
-				confirmation.queue_free()
-				return
-			var path: String = get_path_to_folder(item)
 			confirmation.queue_free()
+			if not erase:
+				return
+			
+			var path: String = get_path_to_folder(item)
 			item.free()
 			folder_deleted.emit(path)
 	something_changed.emit()
@@ -408,7 +407,7 @@ func validate_folder_name(parent_tree: TreeItem, folder_name: String = default_f
 	if folder_name.strip_edges().is_empty():
 		folder_name = "new_folder"
 	var tweaked_name: String = folder_name.replace("/", "_")
-	var trailing_int: Dictionary = StringUtils.get_trailing_integer(tweaked_name)
+	var trailing_int: Dictionary = NFStringUtils.get_trailing_integer(tweaked_name)
 	var iteration: int = trailing_int["integer"]
 	var modified_name = tweaked_name
 	if trailing_int["has_integer"]:
@@ -419,7 +418,7 @@ func validate_folder_name(parent_tree: TreeItem, folder_name: String = default_f
 		iteration += 1
 		modified_name = str(tweaked_name, "_", iteration)
 	
-	return tweaked_name
+	return modified_name
 
 
 func _has_folder(parent_folder: TreeItem, folder_name: String, exception: TreeItem) -> bool:
@@ -462,11 +461,11 @@ func get_path_to_folder(folder: TreeItem) -> String:
 		folder_step = folder_step.get_parent()
 	
 	folder_path.reverse()
-	return StringUtils.make_path(folder_path)
+	return NFStringUtils.make_path(folder_path)
 
 
 func get_state_path_to_folder(folder: TreeItem) -> String:
-	var folder_path: Array[String] = []
+	var folder_path: PackedStringArray = []
 	var folder_step: TreeItem = folder
 	var root: TreeItem = get_root()
 	

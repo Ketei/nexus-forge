@@ -1,5 +1,5 @@
 @icon("res://addons/nexus_forge/icons/dna_sheet.svg")
-class_name SpeciesSheet
+class_name NFSpeciesSheet
 extends Resource
 ## A resource containing the basic information of a species.
 ##
@@ -27,14 +27,8 @@ extends Resource
 ## The custom data of the species.
 @export var custom_data: Dictionary[StringName, Variant] = {}
 ## The stats of the species.
-@export var stats: NFSpeciesStatCatalog = NFSpeciesStatCatalog.new(TYPE_FLOAT)
+@export var stats: NFSpeciesStatCatalog = NFSpeciesStatCatalog.new()
 ## The skills of the species.
-@export var skills: NFSpeciesStatCatalog = NFSpeciesStatCatalog.new(TYPE_INT)
+@export var skills: NFSpeciesStatCatalog = NFSpeciesStatCatalog.new()
 ## The traits of the species.
-@export var traits: NFSpeciesStatCatalog = NFSpeciesStatCatalog.new(TYPE_INT)
-
-
-func _get(property: StringName) -> Variant:
-	if custom_data.has(property):
-		return custom_data[property]
-	return null
+@export var traits: NFSpeciesStatCatalog = NFSpeciesStatCatalog.new()

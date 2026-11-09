@@ -1,6 +1,6 @@
 @tool
 @icon("res://addons/nexus_forge/icons/star.svg")
-class_name SkillCatalog
+class_name NFSkillCatalog
 extends Resource
 ## A resource containing common data about skills and custom skills.
 ##
@@ -16,7 +16,7 @@ func skills() -> Array[StringName]:
 
 
 ## Creates a custom skill with [param skill_id]. Creating a custom skill using
-## this method will add it to all initialized and new [SkillSet] objects.
+## this method will add it to all initialized and new [NFSkillSet] objects.
 func create_skill(skill_id: StringName) -> void:
 	if _skill_data.has(skill_id):
 		return
@@ -24,7 +24,7 @@ func create_skill(skill_id: StringName) -> void:
 	var skill_data: Dictionary[String, Variant] = {
 		"name": "",
 		"description": "",
-		"custom_data": DictUtils.create_typed(TYPE_STRING, TYPE_NIL)}
+		"custom_data": NFDictUtils.create_typed(TYPE_STRING, TYPE_NIL)}
 	
 	_skill_data[skill_id] = skill_data
 
@@ -37,11 +37,7 @@ func set_skill_name(skill_id: StringName, skill_name: String) -> void:
 
 ## Returns the custom skill [param skill_id] name.
 func get_skill_name(skill_id: StringName) -> String:
-	return DictUtils.get_nested_value(
-			_skill_data,
-			[skill_id, "name"],
-			"",
-			true)
+	return _skill_data.get(skill_id, NFDictUtils.EMPTY).get("name", "")
 
 
 ## Sets the custom skill [param skill_id] description.
@@ -52,11 +48,7 @@ func set_skill_description(skill_id: StringName, skill_description: String) -> v
 
 ## Returns the custom skill [param skill_id] description.
 func get_skill_description(skill_id: String) -> String:
-	return DictUtils.get_nested_value(
-			_skill_data,
-			[skill_id, "description"],
-			"",
-			true)
+	return _skill_data.get(skill_id, NFDictUtils.EMPTY).get("description", "")
 
 
 ## Returns true if a custom skill with [param skill_id] exists.
@@ -82,19 +74,24 @@ func set_skill_data(skill_id: StringName, data_key: String, data: Variant) -> vo
 
 ## Returns the value of [param data_id] on the custom skill [param skill_id].
 func get_skill_data(skill_id: StringName, data_id: String) -> Variant:
-	if _skill_data.has(skill_id) and _skill_data[skill_id]["custom_data"].has(data_id):
-		return _skill_data[skill_id]["custom_data"][data_id]
-	return null
+	var custom_data: Dictionary = _skill_data.get(skill_id, NFDictUtils.EMPTY).get("custom_data", NFDictUtils.EMPTY)
+	return custom_data.get(data_id)
 
 
-func get_skill_custom_data(skill_id: StringName) -> Dictionary[StringName, Variant]:
-	var data: Dictionary[StringName, Variant] = {}
-	data.assign(DictUtils.get_nested_value(
-			_skill_data,
-			[skill_id, "custom_data"],
-			{},
-			true))
-	return data
+## Returns a copy of the custom data of [param skill_id].
+func get_skill_custom_data(skill_id: StringName) -> Dictionary[String, Variant]:
+	var entry: Variant = _skill_data.get(skill_id)
+	var data_found: Dictionary[String, Variant] = {}
+	
+	if typeof(entry) != TYPE_DICTIONARY:
+		return data_found
+	
+	var data: Variant = entry.get("custom_data")
+	if typeof(data) != TYPE_DICTIONARY:
+		return data_found
+	
+	data_found.assign(data)
+	return data_found.duplicate(true)
 
 
 ## Returns if the custom [param skill_id] has data with key [param data_id].

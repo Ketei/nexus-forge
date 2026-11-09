@@ -98,7 +98,8 @@ func _on_button_clicked(item: TreeItem, _column: int, id: int, mouse_button_inde
 		create_category(
 			id_text,
 			"New Subcategory",
-			item.get_text(0))
+			item.get_text(0),
+			false)
 		category_created.emit(id_text)
 
 
@@ -129,13 +130,13 @@ func _on_item_edited() -> void:
 		category_name_changed.emit(StringName(edited.get_metadata(0)["id"]), old_name, edited.get_text(1))
 
 
-func create_category(category_id: String, category_name: String, on: String) -> void:
+func create_category(category_id: String, category_name: String, on: String, select: bool) -> void:
 	var valid_id: String = get_valid_id(category_id)
 	
 	if not on.is_empty() and not categories.has(on):
 		return
 	
-	_add_category(StringName(valid_id), category_name, on)
+	_add_category(StringName(valid_id), category_name, on, select)
 
 
 func select_category(category_id: StringName, ensure_visible: bool, emit_select: bool = true) -> void:
@@ -209,16 +210,19 @@ func _restore_categories(on_category: StringName, map: Dictionary[StringName, Di
 			continue
 		
 		_add_category(
-			category_id,
-			map[category_id]["name"],
-			on_category)
-	
-		for subcategory_id in map[category_id]["subcategories"]:
+				category_id,
+				map[category_id]["name"],
+				on_category,
+				false)
+		
+		var subcategories_map: Dictionary = map[category_id]["subcategories"]
+		for subcategory_id in subcategories_map:
+			var sub_data: Dictionary = subcategories_map[subcategory_id]
 			_restore_subcategory_on(
 					category_id,
 					subcategory_id,
-					map[subcategory_id]["name"],
-					map[subcategory_id]["subcategories"])
+					sub_data["name"],
+					sub_data["subcategories"])
 
 
 func _restore_subcategory_on(on: String, subcategory_id: String, subcategory_name: String, subcategories: Dictionary[StringName, Dictionary]) -> void:
@@ -232,7 +236,7 @@ func _restore_subcategory_on(on: String, subcategory_id: String, subcategory_nam
 				NFPluginGameHandler._LogLevel.ERROR)
 		return
 		
-	_add_category(subcategory_id, subcategory_name, on)
+	_add_category(subcategory_id, subcategory_name, on, false)
 	
 	for sub_id in subcategories:
 		_restore_subcategory_on(
@@ -251,13 +255,12 @@ func _get_map_of(item: TreeItem) -> Dictionary[StringName, Dictionary]:
 	return data
 
 
-func _add_category(category_id: StringName, category_name: String, on: StringName) -> bool:
+func _add_category(category_id: StringName, category_name: String, on: StringName, select: bool) -> bool:
 	if categories.has(category_id) or (not on.is_empty() and not categories.has(on)):
 		return false
 	var category_parent: TreeItem = get_root() if on.is_empty() else categories[on]
-	
 	var new_category: TreeItem = category_parent.create_child()
-	var id_name: String = String(category_id)
+	
 	new_category.set_text(0, category_id)
 	new_category.set_text(1, category_name)
 	new_category.set_metadata(0, {"id": category_id, "name": category_name})
@@ -278,6 +281,10 @@ func _add_category(category_id: StringName, category_name: String, on: StringNam
 	sort_single_item(new_category)
 	
 	categories[category_id] = new_category
+	
+	if select:
+		new_category.select(0)
+		scroll_to_item.call_deferred(new_category)
 	return true
 
 
@@ -349,7 +356,7 @@ func get_valid_id(desired: String, skip: TreeItem = null) -> String:
 	var all_ids: Dictionary[String, Variant] = {}
 	var base: String = desired
 	var modified: String = desired
-	var trailing_data: Dictionary = StringUtils.get_trailing_integer(desired)
+	var trailing_data: Dictionary = NFStringUtils.get_trailing_integer(desired)
 	var iteration: int = trailing_data["integer"]
 	if trailing_data["has_integer"]:
 		base = desired.trim_suffix(str(iteration))

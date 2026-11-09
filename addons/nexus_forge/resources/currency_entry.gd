@@ -2,56 +2,41 @@ class_name NFCurrencyEntry
 extends RefCounted
 
 
+## The ID of the currency.
+var id: StringName = &"":
+	set(new_id):
+		if NFBitUtils.is_bit_index(_flags, 63, false):
+			id = new_id
+## The name of the currency.
 var name: String = ""
+## The unitary value of the currency.
 var value: int = 1:
 	set(v):
-		value = maxi(1, v)
+		if NFBitUtils.is_bit_index(_flags, 63, false):
+			value = maxi(1, v)
+## The custom data of the currency.
 var custom_data: Dictionary[StringName, Variant] = {}
-var _flags: int = 0:
-	set(f):
-		if _flags == 0:
-			_flags = f
+var _flags: int = 0
 
 
-func _set(property: StringName, value: Variant) -> bool:
-	if custom_data.has(property):
-		if typeof(value) != TYPE_NIL:
-			custom_data[property] = value
-		else:
-			custom_data.erase(property)
-		return true
-	return false
-
-
-func _get(property: StringName) -> Variant:
-	if custom_data.has(property):
-		return custom_data[property]
-	return null
-
-
+## Converts [param total_value] to this currency.
 func from_value(total_value: int) -> int:
 	if total_value < value:
 		return 0
-	elif total_value == value:
-		return 1
 	else:
-		return floori(total_value / float(value))
+		return total_value / value
 
 
-func is_valid() -> bool:
-	return BitUtils.is_bit_index(_flags, 0, true)
-
-
+## Returns whether this currency was created programatically within
+## [NFCurrencyManager] or not.
 func is_custom() -> bool:
-	return BitUtils.is_bit_index(_flags, 1, true)
+	return NFBitUtils.is_bit_index(_flags, 0, true)
 
 
-static func _get_flags(valid: bool, custom: bool, lock: bool) -> int:
+static func _get_flags(custom: bool, lock: bool) -> int:
 	var flags: int = 0
-	if valid:
-		flags = BitUtils.set_bit_index(flags, 0, true)
 	if custom:
-		flags = BitUtils.set_bit_index(flags, 1, true)
+		flags = NFBitUtils.set_bit_index(flags, 0, true)
 	if lock:
-		flags = BitUtils.set_bit_index(flags, 63, true)
+		flags = NFBitUtils.set_bit_index(flags, 63, true)
 	return flags

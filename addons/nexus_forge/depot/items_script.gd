@@ -10,12 +10,12 @@ signal item_deleted(item_id: StringName)
 
 const PAGE_LABEL_STRING: String = "%d / %d"
 
-var item_link: EditorItemRecipeLink = EditorItemRecipeLink.new():
+var item_link: NFEditorItemRecipeLink = NFEditorItemRecipeLink.new():
 	set(new_link):
 		new_link.items = item_link.items
 		item_link.items = null
 		item_link = new_link
-var currency_resource: CurrencyCatalog = null
+var currency_resource: NFCurrencyCatalog = null
 
 var items_ui_enabled: bool = true
 var currency_ui_enabled: bool = true
@@ -25,13 +25,13 @@ var loaded_item: StringName = &"":
 		item_id_label.text = String(i)
 		item_id_label.tooltip_text = item_id_label.text
 var loaded_currency: StringName = &""
-var noncategory_loaded: bool = false
 
 var undo: UndoRedo
 var exp_parser: Expression = null
 
 var _items_unsaved: bool = false
 var _currency_unsaved: bool = false
+var _class_update_signaler: RefCounted = null
 
 @onready var search_item_container: LineEdit = $ItemsPanel/ItemsContainer/TreeContainer/ItemSearchContainer/SearchItemContainer
 @onready var new_item_btn: Button = $ItemsPanel/ItemsContainer/TreeContainer/ItemSearchContainer/NewItemBtn
@@ -52,7 +52,6 @@ var _currency_unsaved: bool = false
 
 @onready var item_page_container: HBoxContainer = $ItemsPanel/ItemsContainer/TreeContainer/ItemPageContainer
 @onready var category_opt_btn: OptionButton = $ItemsPanel/ItemsContainer/DataContainer/CategoryContainer/OptBtnContainer/CategoryOptBtn
-@onready var edit_categories_btn: Button = $ItemsPanel/ItemsContainer/DataContainer/CategoryContainer/OptBtnContainer/EditCategoriesBtn
 @onready var item_search_debounce: Timer = $ItemSearchDebounce
 @onready var prev_item_page_btn: Button = $ItemsPanel/ItemsContainer/TreeContainer/ItemPageContainer/PrevItemPageBtn
 @onready var item_page_lbl: Label = $ItemsPanel/ItemsContainer/TreeContainer/ItemPageContainer/ItemPageLbl
@@ -82,7 +81,6 @@ var _currency_unsaved: bool = false
 
 # --------------------------
 
-
 func ready_plugin(use_items: bool, use_currencies: bool, max_undo_steps: int) -> void:
 	exp_parser = Expression.new()
 	
@@ -98,13 +96,16 @@ func ready_plugin(use_items: bool, use_currencies: bool, max_undo_steps: int) ->
 	next_item_page_btn.icon = get_theme_icon("Forward", "EditorIcons")
 	prev_item_page_btn.icon = get_theme_icon("Back", "EditorIcons")
 	
+	new_item_btn.disabled = not use_items
+	
+	if use_items or use_currencies:
+		undo = UndoRedo.new()
+	
 	if use_items:
-		new_item_btn.disabled = false
 		items_tree.ready_plugin()
 		item_data_tree.ready_plugin()
 		reload_item_resource(true)
 	if use_currencies:
-		undo = UndoRedo.new()
 		currency_tree.ready_plugin()
 		currency_custom_data_tree.ready_plugin()
 		currencies_calculator_tree.ready_plugin()
@@ -164,10 +165,12 @@ func ready_plugin(use_items: bool, use_currencies: bool, max_undo_steps: int) ->
 	go_to_calc_btn.pressed.connect(_on_go_to_calculator_pressed, CONNECT_DEFERRED)
 	
 	value_ln_edt.set_drag_forwarding(_get_copy_button_drag_data, Callable(), Callable())
+	
+	_class_update_signaler.classes_updated.connect(_on_classes_changed)
 
 
 func _on_edit_rarities_pressed() -> void:
-	var item_script: Script = ItemSheet.new().get_script()
+	var item_script: Script = NFItemSheet
 	var source_code: String = item_script.source_code
 	
 	if source_code.is_empty():
@@ -197,14 +200,14 @@ func _on_edit_rarities_pressed() -> void:
 	var line: int  = text_before_target.count("\n") + 1
 	var last_newline_idx: int = text_before_target.rfind("\n")
 	var column: int = text_before_target.length() - last_newline_idx
-	EditorInterface.edit_script(item_script, line, column)
 	
 	if not EditorInterface.get_editor_settings().get_setting("text_editor/external/use_external_editor"):
 		EditorInterface.set_main_screen_editor("Script")
+	EditorInterface.edit_script(item_script, line, column)
 
 
 func _on_edit_flags_pressed() -> void:
-	var item_script: Script = ItemSheet.new().get_script()
+	var item_script: Script = NFItemSheet
 	var source_code: String = item_script.source_code
 	
 	if source_code.is_empty():
@@ -234,10 +237,10 @@ func _on_edit_flags_pressed() -> void:
 	var line: int  = text_before_target.count("\n") + 1
 	var last_newline_idx: int = text_before_target.rfind("\n")
 	var column: int = text_before_target.length() - last_newline_idx
-	EditorInterface.edit_script(item_script, line, column)
 	
 	if not EditorInterface.get_editor_settings().get_setting("text_editor/external/use_external_editor"):
 		EditorInterface.set_main_screen_editor("Script")
+	EditorInterface.edit_script(item_script, line, column)
 
 
 func _on_next_page_btn_pressed() -> void:
@@ -295,51 +298,53 @@ func _on_currency_search_text_changed(text: String) -> void:
 func _on_create_currency_database_pressed(node: Control) -> void:
 	var database_creator: FileDialog = load("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	database_creator.file_mode = database_creator.FILE_MODE_SAVE_FILE
-	add_child(database_creator)
-	database_creator.show()
 	
+	EditorInterface.popup_dialog_centered(database_creator)
 	var result = await database_creator.dialog_finished
-	
-	if result[0]:
-		currency_resource = CurrencyCatalog.new()
-		currency_resource.resource_path = result[1]
-		ResourceSaver.save(currency_resource, result[1])
-		ProjectSettings.set_setting(
-				NFPluginGameHandler.get_setting_path("currency"),
-				result[1])
-		if Engine.is_editor_hint():
-			ProjectSettings.save()
-		reload_categories()
-		$CurrencyPanel/CurrencyContainer.visible = true
-		node.visible = false
-		node.queue_free()
-	
 	database_creator.queue_free()
+	
+	if not result[0]:
+		return
+	
+	currency_resource = NFCurrencyCatalog.new()
+	currency_resource.resource_path = result[1]
+	ResourceSaver.save(currency_resource, result[1])
+	ProjectSettings.set_setting(
+			NFPluginGameHandler.get_setting_path("currency"),
+			result[1])
+	if Engine.is_editor_hint():
+		ProjectSettings.save()
+	reload_currency_resource(true)
+	$CurrencyPanel/CurrencyContainer.visible = true
+	node.visible = false
+	node.queue_free()
 
 
 func _on_load_currency_database_pressed(node: Control) -> void:
 	var database_creator: FileDialog = load("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	database_creator.file_mode = database_creator.FILE_MODE_OPEN_FILE
-	add_child(database_creator)
-	database_creator.show()
 	
+	EditorInterface.popup_dialog_centered(database_creator)
 	var result = await database_creator.dialog_finished
-	
-	if result[0]:
-		var res_pre: Resource = load(result[1])
-		if res_pre != null and res_pre is CurrencyCatalog:
-			currency_resource = res_pre
-			ProjectSettings.set_setting(
-					NFPluginGameHandler.get_setting_path("currency"),
-					result[1])
-			if Engine.is_editor_hint():
-				ProjectSettings.save()
-			reload_currency_resource()
-			$CurrencyPanel/CurrencyContainer.visible = true
-			node.visible = false
-			node.queue_free()
-	
 	database_creator.queue_free()
+	
+	if not result[0]:
+		return
+	
+	var res_pre: Resource = load(result[1])
+	if res_pre == null or res_pre is not NFCurrencyCatalog:
+		return
+	
+	currency_resource = res_pre
+	ProjectSettings.set_setting(
+			NFPluginGameHandler.get_setting_path("currency"),
+			result[1])
+	if Engine.is_editor_hint():
+		ProjectSettings.save()
+	reload_currency_resource()
+	$CurrencyPanel/CurrencyContainer.visible = true
+	node.visible = false
+	node.queue_free()
 
 
 func _on_currency_resource_dropped(resource: Resource, panel: Control) -> void:
@@ -364,25 +369,25 @@ func _on_create_currency_pressed() -> void:
 	id_creator.text_blacklist.assign(currency_tree.get_currencies())
 	id_creator.title = "Create Currency"
 	id_creator.ok_button_text = "Create"
-	add_child(id_creator)
-	id_creator.show()
+	
+	EditorInterface.popup_dialog_centered(id_creator)
 	id_creator.grab_text_focus()
-	
 	var result = await id_creator.dialog_finished
-	
-	if result[0]:
-		if not loaded_currency.is_empty():
-			save_current_currency()
-		
-		var currency_id: StringName = StringName(result[1])
-		currency_resource.create_currency(currency_id, 0, "New Currency")
-		currency_tree.add_currency(currency_id, true, false)
-		currencies_calculator_tree.add_currency(currency_id, "New Currency", 0)
-		load_currency(currency_id)
-		loaded_currency = currency_id
-		set_currency_ui_enabled(true)
-		_on_currency_changed()
 	id_creator.queue_free()
+	
+	if not result[0]:
+		return
+	if not loaded_currency.is_empty():
+		save_current_currency()
+	
+	var currency_id: StringName = StringName(result[1])
+	currency_resource.create_currency(currency_id, 0, "New Currency")
+	currency_tree.add_currency(currency_id, true, false)
+	currencies_calculator_tree.add_currency(currency_id, "New Currency", 0)
+	load_currency(currency_id)
+	loaded_currency = currency_id
+	set_currency_ui_enabled(true)
+	_on_currency_changed()
 
 
 func _on_currency_value_changed(new_value: int) -> void:
@@ -414,7 +419,7 @@ func _on_currency_deleted(currency_id: StringName) -> void:
 	var current: bool = loaded_currency == currency_id
 	var curr_name: String = currency_name_ln_edt.text.strip_edges() if current else currency_resource.get_currency_name(currency_id)
 	var curr_val: int = _parse_value(currency_value_spn_bx.get_line_edit().text, currency_value_spn_bx.value) if current else currency_resource.get_currency_value(currency_id)
-	var curr_data: Dictionary[String, Variant] = currency_custom_data_tree.get_data() if current else currency_resource._currencies[currency_id]["custom_data"].duplicate(true)
+	var curr_data: Dictionary[String, Variant] = currency_custom_data_tree.item_data_tree.get_data() if current else currency_resource._currencies[currency_id]["custom_data"].duplicate(true)
 	
 	var currency_data: Dictionary = {
 		"name": curr_name,
@@ -480,6 +485,8 @@ func _on_currency_id_changed(from: StringName, to: StringName) -> void:
 	if loaded_currency == from:
 		loaded_currency = to
 	
+	currencies_calculator_tree.update_currency_id(from, to)
+	
 	undo.create_action("Set Currency ID")
 	undo.add_do_method(_do_change_currency_id.bind(from, to))
 	undo.add_undo_method(_do_change_currency_id.bind(to, from))
@@ -491,11 +498,12 @@ func _on_currency_id_changed(from: StringName, to: StringName) -> void:
 func _do_change_currency_id(from: StringName, to: StringName) -> void:
 	currency_resource._currencies[to] = currency_resource._currencies[from]
 	currency_resource._currencies.erase(from)
+	
 	if loaded_currency == from:
 		loaded_currency = to
-	currency_tree.change_currency_id(from, to)
-	_on_currency_changed()
 	
+	currency_tree.change_currency_id(from, to)
+	currencies_calculator_tree.update_currency_id(from, to)
 
 
 func _on_currency_selected(currency_id: StringName) -> void:
@@ -522,7 +530,7 @@ func reload_currency_resource(first_launch: bool = false) -> void:
 	
 	if currency_path != "" and FileAccess.file_exists(currency_path):
 		var res_pre: Resource = load(currency_path)
-		if res_pre is CurrencyCatalog:
+		if res_pre is NFCurrencyCatalog:
 			currency_resource = res_pre
 	
 	$CurrencyPanel/CurrencyContainer.visible = currency_resource != null
@@ -534,7 +542,7 @@ func reload_currency_resource(first_launch: bool = false) -> void:
 			var no_db := preload("res://addons/nexus_forge/no_db_container.tscn").instantiate()
 			$CurrencyPanel.add_child(no_db)
 			no_db.message_minimum_size.x = 250.0
-			no_db.set_resource_type("CurrencyCatalog", "Currency", "Currencies")
+			no_db.set_resource_type("NFCurrencyCatalog", "Currency", "Currencies")
 			no_db.create_resource_pressed.connect(_on_create_currency_database_pressed.bind(no_db))
 			no_db.load_resource_pressed.connect(_on_load_currency_database_pressed.bind(no_db))
 			no_db.resource_dropped.connect(_on_currency_resource_dropped.bind(no_db))
@@ -548,14 +556,21 @@ func reload_currency_resource(first_launch: bool = false) -> void:
 
 
 func clear_currency_section() -> void:
+	currencies_calculator_tree.clear_currencies()
 	currency_tree.clear_currencies()
+	loaded_currency = &""
 	currency_name_ln_edt.text = ""
 	currency_value_spn_bx.set_value_no_signal(0)
 	currency_custom_data_tree.clear_data(false)
 
 
 func add_currency_data(data_key: String, data: Variant) -> void:
-	currency_custom_data_tree.add_data(data_key, data)
+	currency_custom_data_tree.add_data(
+			data_key,
+			data,
+			false,
+			currency_custom_data_tree.get_root(),
+			true)
 	_on_currency_changed()
 
 
@@ -577,9 +592,13 @@ func set_currency_ui_enabled(enabled: bool) -> void:
 
 
 func load_currency(currency_id: StringName) -> void:
+	var currency_name: String = currency_resource.get_currency_name(currency_id)
 	var currency_value: int = currency_resource.get_currency_value(currency_id)
-	currency_name_ln_edt.text = currency_resource.get_currency_name(currency_id)
+	
+	currency_name_ln_edt.text = currency_name
 	currency_value_spn_bx.set_value_no_signal(currency_value)
+	
+	currency_name_ln_edt.set_meta(&"old_value", currency_name)
 	currency_value_spn_bx.set_meta(&"old_value", currency_value)
 	currency_custom_data_tree.clear_data(false)
 	
@@ -603,10 +622,9 @@ func save_current_currency() -> void:
 	
 	currency_resource.clear_currency_data(loaded_currency)
 	
-	var data: Dictionary[StringName, Variant] = {}
-	data.assign(currency_custom_data_tree.get_data())
+	var data: Dictionary[String, Variant] = currency_custom_data_tree.get_data()
 	
-	for data_key in data.keys():
+	for data_key in data:
 		currency_resource.set_currency_data(
 				loaded_currency,
 				data_key,
@@ -623,6 +641,7 @@ func sync_calculator_currencies() -> void:
 				currency_id,
 				currency_resource.get_currency_name(currency_id),
 				currency_resource.get_currency_value(currency_id))
+	currencies_calculator_tree.update_calculation()
 
 
 func _on_go_to_calculator_pressed() -> void:
@@ -678,6 +697,8 @@ func _on_item_name_edit_toggled(is_toggled: bool) -> void:
 	
 	if new_name == old_name:
 		return
+	
+	item_name_ln_edt.set_meta(&"old_value", new_name)
 	
 	undo.create_action("Set '%s' Item Name" % loaded_item)
 	undo.add_do_method(_do_update_item_name.bind(loaded_item, new_name))
@@ -860,6 +881,21 @@ func _on_item_id_changed(from: StringName, to: StringName) -> void:
 	item_link.change_item_id(from, to)
 	if loaded_item == from:
 		loaded_item = to
+	
+	undo.create_action("Set Item Name")
+	undo.add_do_method(_do_set_item_id.bind(from, to))
+	undo.add_undo_method(_do_set_item_id.bind(to, from))
+	undo.commit_action(false)
+	_on_items_changed()
+
+
+func _do_set_item_id(from: StringName, to: StringName) -> void:
+	if loaded_item == from:
+		loaded_item = to
+	
+	item_link.change_item_id(from, to)
+	items_tree.update_item_id(from, to)
+	_on_items_changed()
 
 
 func _on_search_item_text_changed(text: String) -> void:
@@ -879,13 +915,13 @@ func _parse_search_query(query: String) -> Dictionary:
 	var name_prefix: String = "name:"
 	var category_prefix: String = "category:"
 	
-	var cat_idx: int = query.find(category_prefix)
+	var cat_idx: int = _find_prefix(query, category_prefix)
 	if cat_idx == -1:
-		cat_idx = query.find("c:")
+		cat_idx = _find_prefix(query, "c:")
 		category_prefix = "c:"
-	var name_idx: int = query.find(name_prefix)
+	var name_idx: int = _find_prefix(query, name_prefix)
 	if name_idx == -1:
-		name_idx = query.find("n:")
+		name_idx = _find_prefix(query, "n:")
 		name_prefix = "n:"
 	
 	# If neither tag is present, the whole query is just the item text.
@@ -911,54 +947,56 @@ func _parse_search_query(query: String) -> Dictionary:
 func _on_create_database_pressed(node: Control) -> void:
 	var database_creator: FileDialog = load("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	database_creator.file_mode = database_creator.FILE_MODE_SAVE_FILE
-	add_child(database_creator)
-	database_creator.show()
 	
+	EditorInterface.popup_dialog_centered(database_creator)
 	var result = await database_creator.dialog_finished
-	
-	if result[0]:
-		var item_resource: ItemCatalog = ItemCatalog.new()
-		ResourceSaver.save(item_resource, result[1])
-		item_resource.resource_path = result[1]
-		item_link.items = item_resource
-		ProjectSettings.set_setting(
-				NFPluginGameHandler.get_setting_path("items"),
-				result[1])
-		if Engine.is_editor_hint():
-			ProjectSettings.save()
-		reload_categories()
-		$ItemsPanel/ItemsContainer.visible = true
-		node.visible = false
-		node.queue_free()
-		resource_loaded.emit()
-	
 	database_creator.queue_free()
+	
+	if not result[0]:
+		return
+	
+	var item_resource: NFItemCatalog = NFItemCatalog.new()
+	ResourceSaver.save(item_resource, result[1])
+	item_resource.resource_path = result[1]
+	item_link.items = item_resource
+	ProjectSettings.set_setting(
+			NFPluginGameHandler.get_setting_path("items"),
+			result[1])
+	if Engine.is_editor_hint():
+		ProjectSettings.save()
+	reload_item_resource(true)
+	$ItemsPanel/ItemsContainer.visible = true
+	node.visible = false
+	node.queue_free()
+	resource_loaded.emit()
 
 
 func _on_load_database_pressed(node: Control) -> void:
 	var database_creator: FileDialog = load("res://addons/nexus_forge/classes/resource_file_dialog.gd").get_file_browser()
 	database_creator.file_mode = database_creator.FILE_MODE_OPEN_FILE
-	add_child(database_creator)
-	database_creator.show()
 	
+	EditorInterface.popup_dialog_centered(database_creator)
 	var result = await database_creator.dialog_finished
-	
-	if result[0]:
-		var res_pre: Resource = load(result[1])
-		if res_pre != null and res_pre is ItemCatalog:
-			item_link.items = res_pre
-			ProjectSettings.set_setting(
-					NFPluginGameHandler.get_setting_path("items"),
-					result[1])
-			if Engine.is_editor_hint():
-				ProjectSettings.save()
-			reload_categories()
-			$ItemsPanel/ItemsContainer.visible = true
-			node.visible = false
-			node.queue_free()
-			resource_loaded.emit()
-	
 	database_creator.queue_free()
+	
+	if not result[0]:
+		return
+	
+	var res_pre: Resource = load(result[1])
+	if res_pre == null or res_pre is not NFItemCatalog:
+		return
+	
+	item_link.items = res_pre
+	ProjectSettings.set_setting(
+			NFPluginGameHandler.get_setting_path("items"),
+			result[1])
+	if Engine.is_editor_hint():
+		ProjectSettings.save()
+	reload_item_resource(true)
+	$ItemsPanel/ItemsContainer.visible = true
+	node.visible = false
+	node.queue_free()
+	resource_loaded.emit()
 
 
 func _on_items_resource_dropped(resource: Resource, panel: Control) -> void:
@@ -971,7 +1009,7 @@ func _on_items_resource_dropped(resource: Resource, panel: Control) -> void:
 	panel.visible = false
 	panel.queue_free()
 	$ItemsPanel/ItemsContainer.visible = true
-	reload_categories()
+	reload_item_resource(true)
 	resource_loaded.emit()
 
 
@@ -1053,8 +1091,7 @@ func _on_create_item_pressed() -> void:
 	id_creator.error_line_blacklist_character_msg = "Spaces disallowed"
 	id_creator.error_line_empty_msg = "ID can't be empty"
 	
-	add_child(id_creator)
-	id_creator.popup_centered()
+	EditorInterface.popup_dialog_centered(id_creator)
 	id_creator.grab_text_focus()
 	
 	var result = await id_creator.dialog_finished
@@ -1071,7 +1108,7 @@ func _on_create_item_pressed() -> void:
 	
 	item_link.create_item(item_id)
 	item_link.set_item_name(item_id, "New Item")
-	items_tree.add_item(item_id)
+	items_tree.add_item(item_id, &"", true)
 	items_tree.select_item(item_id, false)
 	load_item(item_id)
 	loaded_item = item_id
@@ -1081,7 +1118,12 @@ func _on_create_item_pressed() -> void:
 
 
 func add_item_data(data_key: String, data: Variant) -> void:
-	item_data_tree.add_data(data_key, data)
+	item_data_tree.add_data(
+			data_key,
+			data,
+			false,
+			item_data_tree.get_root(),
+			true)
 	_on_items_changed()
 
 
@@ -1108,16 +1150,6 @@ func set_items_ui_enabled(enabled: bool) -> void:
 	items_ui_enabled = enabled
 
 
-func clear_all_fields() -> void:
-	items_tree.clear_items()
-	item_name_ln_edt.text = ""
-	rarity_opt_btn.select(0 if 0 < rarity_opt_btn.item_count else -1)
-	item_val_spn_bx.set_value_no_signal(0)
-	item_desc_txt_edt.text = ""
-	item_data_tree.clear_data(false)
-	reset_flags()
-
-
 func save_current_item() -> void:
 	item_link.set_item_name(loaded_item, item_name_ln_edt.text.strip_edges())
 	item_link.items.set_item_description(loaded_item, item_desc_txt_edt.text.strip_edges())
@@ -1132,13 +1164,12 @@ func save_current_item() -> void:
 	
 	item_link.items.clear_item_data(loaded_item)
 	
-	var data: Dictionary[StringName, Variant] = {}
-	data.assign(item_data_tree.get_data())
+	var data: Dictionary[String, Variant] = item_data_tree.get_data()
 	
-	for item_key in data.keys():
+	for item_key in data:
 		item_link.items.set_item_data(loaded_item, item_key, data[item_key])
 	
-	var flags: Array[ItemSheet.ItemFlag] = []
+	var flags: Array[NFItemSheet.ItemFlag] = []
 	
 	for flag:CheckBox in items_flags_container.get_children():
 		if flag.button_pressed:
@@ -1149,7 +1180,7 @@ func save_current_item() -> void:
 
 
 func load_item(item_id: StringName) -> void:
-	var item: ItemSheet = item_link.items.get_item(item_id)
+	var item: NFItemSheet = item_link.items.get_item(item_id)
 	
 	if item == null:
 		NFPluginGameHandler._log_msg(
@@ -1169,7 +1200,7 @@ func load_item(item_id: StringName) -> void:
 	
 	item_data_tree.clear_data(false)
 	
-	for data_key in item.custom_data.keys():
+	for data_key in item.custom_data:
 		item_data_tree.add_data(data_key, item.custom_data[data_key], true)
 	
 	for flag:CheckBox in items_flags_container.get_children():
@@ -1178,7 +1209,7 @@ func load_item(item_id: StringName) -> void:
 						flag.get_meta(&"flag_value")))
 
 
-func select_rarity(rarity: ItemSheet.Rarity) -> void:
+func select_rarity(rarity: NFItemSheet.Rarity) -> void:
 	for item_idx in range(rarity_opt_btn.item_count):
 		if rarity_opt_btn.get_item_metadata(item_idx) == rarity:
 			rarity_opt_btn.select(item_idx)
@@ -1200,7 +1231,7 @@ func reload_item_resource(first_launch: bool = false) -> void:
 	
 	if item_path != "" and FileAccess.file_exists(item_path):
 		var res_pre: Resource = load(item_path)
-		if res_pre is ItemCatalog:
+		if res_pre is NFItemCatalog:
 			item_link.items = res_pre
 	
 	$ItemsPanel/ItemsContainer.visible = item_link.items != null
@@ -1213,11 +1244,10 @@ func reload_item_resource(first_launch: bool = false) -> void:
 			var no_db := preload("res://addons/nexus_forge/no_db_container.tscn").instantiate()
 			$ItemsPanel.add_child(no_db)
 			no_db.message_minimum_size.x = 450.0
-			no_db.set_resource_type("ItemCatalog", "Depot", "Items")
+			no_db.set_resource_type("NFItemCatalog", "Depot", "Items")
 			no_db.create_resource_pressed.connect(_on_create_database_pressed.bind(no_db))
 			no_db.load_resource_pressed.connect(_on_load_database_pressed.bind(no_db))
 			no_db.resource_dropped.connect(_on_items_resource_dropped.bind(no_db))
-			new_item_btn.disabled = true
 	else:
 		reload_categories()
 		items_tree.clear_entries()
@@ -1274,8 +1304,14 @@ func select_category(category_id: StringName, uncategorized_if_not_found: bool =
 	return false
 
 
+func _on_classes_changed(classes: Array[String]) -> void:
+	if classes.has("NFItemSheet"):
+		reload_fields()
+
+
 func reload_fields() -> void:
-	var constant_map: Dictionary = ItemSheet.new().get_script().get_script_constant_map()
+	var item_script: Script = NFItemSheet
+	var constant_map: Dictionary = item_script.get_script_constant_map()
 	
 	if constant_map.has(&"Rarity"):
 		var rarities: Dictionary = constant_map[&"Rarity"]
@@ -1283,7 +1319,7 @@ func reload_fields() -> void:
 		var new_index: int = -1
 		rarity_opt_btn.clear()
 		var idx: int = -1
-		for rarity:String in rarities.keys():
+		for rarity:String in rarities:
 			idx += 1
 			rarity_opt_btn.add_item(rarity.capitalize())
 			rarity_opt_btn.set_item_metadata(-1, rarities[rarity])
@@ -1314,13 +1350,15 @@ func reload_fields() -> void:
 			
 		for flag in sorted_flags:
 			if existing_flags.has(flag):
-				items_flags_container.add_child(existing_flags[flag])
+				var flag_check: CheckBox = existing_flags[flag]
+				flag_check.set_meta(&"flag_value", item_flags[flag])
+				items_flags_container.add_child(flag_check)
 				existing_flags.erase(flag)
 			else:
 				items_flags_container.add_child(
 						create_flag_item(flag, item_flags[flag]))
 		
-		for remaining_flag in existing_flags.keys():
+		for remaining_flag in existing_flags:
 			existing_flags[remaining_flag].queue_free()
 
 
@@ -1375,28 +1413,24 @@ func _parse_value(value: String, fallback: float) -> float:
 
 func _on_flag_toggled(toggled: bool, flag_id: String) -> void:
 	undo.create_action("Set '%s' Item Flag" % loaded_item)
-	undo.add_do_method(_do_update_flag_toggled.bind(flag_id, toggled))
-	undo.add_undo_method(_do_update_flag_toggled.bind(flag_id, not toggled))
+	undo.add_do_method(_do_update_flag_toggled.bind(loaded_item, flag_id, toggled))
+	undo.add_undo_method(_do_update_flag_toggled.bind(loaded_item, flag_id, not toggled))
 	undo.commit_action(false)
 	
 	_on_items_changed()
 
 
-func _do_update_flag_toggled(flag_id: String, set_pressed: bool) -> void:
-	for item:CheckBox in items_flags_container.get_children():
-		if item.get_meta(&"flag_id") != flag_id:
-			continue
-		item.set_pressed_no_signal(set_pressed)
-		_on_items_changed()
-		return
+func _do_update_flag_toggled(item_id: StringName, flag_id: String, set_pressed: bool) -> void:
+	if loaded_item != item_id:
+		switch_to_item(item_id)
 	
-	NFPluginGameHandler._log_msg(
-			"depot - editor",
-			"UndoRedo couldn't apply action on inexistent flag '%s'" % flag_id,
-			NFPluginGameHandler._LogLevel.EDITOR)
+	for item:CheckBox in items_flags_container.get_children():
+		if item.get_meta(&"flag_id") == flag_id:
+			item.set_pressed_no_signal(set_pressed)
+			return
 
 
-func create_flag_item(flag_id: String, flag_value: ItemSheet.ItemFlag) -> CheckBox:
+func create_flag_item(flag_id: String, flag_value: NFItemSheet.ItemFlag) -> CheckBox:
 	var new_flag: CheckBox = CheckBox.new()
 	new_flag.text = flag_id.capitalize()
 	new_flag.set_meta(&"flag_value", flag_value)
@@ -1413,3 +1447,17 @@ func create_flag_item(flag_id: String, flag_value: ItemSheet.ItemFlag) -> CheckB
 func reset_flags() -> void:
 	for item:CheckBox in items_flags_container.get_children():
 		item.set_pressed_no_signal(false)
+
+
+func _find_prefix(query: String, prefix: String) -> int:
+	var from: int = 0
+	var idx: int = query.find(prefix, from)
+	
+	while idx != -1:
+		if idx == 0 or query[idx - 1] == " ":
+			return idx
+			
+		from = idx + 1
+		idx = query.find(prefix, from)
+		
+	return -1
