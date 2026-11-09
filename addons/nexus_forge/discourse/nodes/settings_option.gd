@@ -3,8 +3,8 @@ extends DiscourseGraphNode
 
 
 func _post_init() -> void:
-	set_node_id("OptionSettings")
-	title = "Option"
+	set_node_id("ChoiceSettings")
+	title = "Choice"
 	graph_icon = preload("res://addons/nexus_forge/icons/gear_icon.png")
 	node_type = DialogueNodeType.SETTINGS_OPTION
 	parent_mode = PortMode.OUTPUT
@@ -17,7 +17,7 @@ func _post_init() -> void:
 	var option_hint: Label = Label.new()
 	var metadata_label: Label = Label.new()
 	
-	option_connection.text = "Option"
+	option_connection.text = "Choice"
 	option_connection.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	option_connection.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	

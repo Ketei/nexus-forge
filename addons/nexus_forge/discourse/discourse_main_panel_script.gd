@@ -260,7 +260,7 @@ func ready_plugin(base_locale: String = "") -> void:
 	setting_submenu.set_item_tooltip(-1, "Provides settings for a 'Dialog Node'")
 	setting_submenu.add_icon_item(load("res://addons/nexus_forge/icons/gear_icon.png"), "Character", DiscourseGraphNode.DialogueNodeType.SETTINGS_CHARACTER)
 	setting_submenu.set_item_tooltip(-1, "Provides settings to customize\na character from a 'Dialog Node'")
-	setting_submenu.add_icon_item(load("res://addons/nexus_forge/icons/gear_icon.png"), "Option", DiscourseGraphNode.DialogueNodeType.SETTINGS_OPTION)
+	setting_submenu.add_icon_item(load("res://addons/nexus_forge/icons/gear_icon.png"), "Choice", DiscourseGraphNode.DialogueNodeType.SETTINGS_OPTION)
 	setting_submenu.set_item_tooltip(-1, "Provides settings to a specific\nchoice of the 'Choices Node'")
 	
 	export_submenu.add_item(

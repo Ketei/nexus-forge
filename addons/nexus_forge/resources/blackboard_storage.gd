@@ -237,12 +237,25 @@ func reset_variable(variable_path: String) -> bool:
 	if not parts["parsed"]:
 		return false
 	
-	if _active_variables.has(parts["folder"]):
-		var erased: bool = _active_variables[parts["folder"]].erase(parts["variable"])
-		if erased:
-			variable_erased.emit(parts["path"])
-		return erased
-	return false
+	var folder_path: String = parts["folder"]
+	var data_id: String = parts["variable"]
+	
+	var active_folder: Dictionary = _active_variables.get(folder_path, NFDictUtils.EMPTY)
+	var active_value: Variant = active_folder.get(data_id)
+	if active_value == null:
+		return false
+	
+	var path: String = parts["path"]
+	var base_value: Variant = _variables.get(folder_path, NFDictUtils.EMPTY).get(data_id)
+	
+	active_folder.erase(data_id)
+	
+	if base_value == null:
+		variable_erased.emit(path)
+	elif base_value != active_value:
+		variable_changed.emit(path, base_value)
+	
+	return true
 
 
 ## Resets the object's data to the default state.
