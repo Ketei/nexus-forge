@@ -27,11 +27,7 @@ func set_trait_name(trait_id: StringName, new_name: String) -> void:
 
 ## Returns the trait [param trait_id] name.
 func get_trait_name(trait_id: StringName) -> String:
-	return NFDictUtils.get_nested_value(
-			_trait_data,
-			[trait_id, "name"],
-			"",
-			true)
+	return _trait_data.get(trait_id, NFDictUtils.EMPTY).get("name", "")
 
 
 ## Sets the trait [param trait_id] description. The trait must exist in a [NFTraitBlock].

@@ -135,21 +135,13 @@ func set_item_name(item_id: StringName, new_name: String) -> void:
 
 ## Returns the name of [param item_id] or an empty string if the item doesn't exist.
 func get_item_name(item_id: StringName) -> String:
-	return NFDictUtils.get_nested_value(
-			_items,
-			[item_id, "name"],
-			"",
-			true)
+	return _items.get(item_id, NFDictUtils.EMPTY).get("name", "")
 
 
 ## Returns the description of the [param item_id] or an empty string
 ## if the item isn't found.
 func get_item_description(item_id: StringName) -> String:
-	return NFDictUtils.get_nested_value(
-			_items,
-			[item_id, "description"],
-			"",
-			true)
+	return _items.get(item_id, NFDictUtils.EMPTY).get("description", "")
 
 
 ## Sets the category of [param item_id] to [param new_category].
@@ -181,11 +173,7 @@ func set_item_rarity(item_id: StringName, new_rarity: int) -> void:
 
 ## Returns the rarity of [param item_id].
 func get_item_rarity(item_id: StringName) -> int:
-	return NFDictUtils.get_nested_value(
-			_items,
-			[item_id, "rarity"],
-			0,
-			true)
+	return _items.get(item_id, NFDictUtils.EMPTY).get("rarity", 0)
 
 
 ## Sets the value of [param item_id] to [param new_value].
@@ -198,10 +186,8 @@ func set_item_value(item_id: StringName, new_value: int) -> void:
 
 ## Returns the absolute value of [param item_id].
 func get_item_value(item_id: StringName) -> int:
-	var value = NFDictUtils.get_nested_value(
-			_items,
-			[item_id, "value"],
-			0)
+	var value: Variant = _items.get(item_id, NFDictUtils.EMPTY).get("value", 0)
+	
 	var type: int = typeof(value)
 	if type == TYPE_INT or type == TYPE_FLOAT:
 		return value
@@ -286,20 +272,12 @@ func set_category_name(category_id: StringName, category_name: String) -> void:
 ## Returns the name of [param category_id] or an empty string if the category
 ## isn't registered.
 func get_category_name(category_id: StringName) -> String:
-	return NFDictUtils.get_nested_value(
-			_categories,
-			[category_id, "name"],
-			"",
-			true)
+	return _categories.get(category_id, NFDictUtils.EMPTY).get("name", "")
 
 
 ## Returns the parent category of [param category_id].
 func get_category_parent(category_id: StringName) -> StringName:
-	return NFDictUtils.get_nested_value(
-			_categories,
-			[category_id, "parent_key"],
-			&"",
-			true)
+	return _categories.get(category_id, NFDictUtils.EMPTY).get("parent_key", &"")
 
 
 ## Sets the custom data on [param data_key] to [param data].[br]
@@ -328,9 +306,9 @@ func clear_category_data(category_id: StringName) -> void:
 ## Returns [code]null[/code] if [param category_id] isn't registered
 ## or [param data_key] doesn't exist.
 func get_category_data(category_id: StringName, data_key: StringName) -> Variant:
-	return NFDictUtils.get_nested_value(
-			_categories,
-			[category_id, "custom_data", data_key])
+	var e: Dictionary = NFDictUtils.EMPTY
+	var custom_data: Dictionary = _categories.get(category_id, e).get("custom_data", e)
+	return custom_data.get(data_key)
 
 
 ## Returns the custom data of the [param category_id].

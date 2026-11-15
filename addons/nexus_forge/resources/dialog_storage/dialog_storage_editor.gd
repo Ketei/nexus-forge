@@ -382,23 +382,32 @@ func set_format_string(key: String, text: String, locale: String) -> void:
 	locale_dict["base_string"] = text
 
 
-## Checks if the format key exists in the given key and locale. If it doesn't it'll
-## create it. Returns true if the entry was created or already existed.
+## Ensures that the [param format] exists in the given [param key] and [param locale]
+## and that the immediate key-value pairs exist.[br]
+## Returns [code]false[/code] if the validation failed.[br]
+## [b]Note:[/b] For the operation to succeed the [param key] and [param locale] must
+## already exist in the data.
 func validate_format_string_format(key: String, locale: String, format: String) -> bool:
 	locale = NFStringUtils.sanitize_locale(locale)
 	
-	if not NFDictUtils.has_nested_path(format_strings, [key, locale, "format"]):
+	var e: Dictionary = NFDictUtils.EMPTY # <- This dictionary is read-only
+	var locale_dict: Dictionary = format_strings.get(key, e).get(locale, e)
+	var formats_dict: Dictionary = locale_dict.get("format", e)
+	
+	# The key or locale or formats key didn't exist. Creation fails.
+	if formats_dict.is_read_only():
 		return false
 	
-	if not format_strings[key][locale]["format"].has(format):
-		format_strings[key][locale]["format"][format] = {
+	if formats_dict.has(format):
+		var target_format: Dictionary = formats_dict[format]
+		if not target_format.has("cases"):
+			target_format["cases"] = NFDictUtils.create_typed(TYPE_STRING, TYPE_STRING)
+		if not target_format.has("default"):
+			target_format["default"] = ""
+	else:
+		formats_dict[format] = {
 			"cases": NFDictUtils.create_typed(TYPE_STRING, TYPE_STRING),
 			"default": ""}
-	else:
-		if not format_strings[key][locale]["format"][format].has("cases"):
-			format_strings[key][locale]["format"][format]["cases"] = NFDictUtils.create_typed(TYPE_STRING, TYPE_STRING)
-		if not format_strings[key][locale]["format"][format].has("default"):
-			format_strings[key][locale]["format"][format]["default"] = ""
 	
 	return true
 
@@ -442,8 +451,14 @@ func get_format_string_cases(key: String, locale: String, format: String) -> Arr
 	locale = NFStringUtils.sanitize_locale(locale)
 	var cases: Array[String] = []
 	
-	if NFDictUtils.has_nested_path(format_strings, [key, locale, "format", format, "cases"]):
-		cases.assign(format_strings[key][locale]["format"][format]["cases"].keys())
+	var e: Dictionary = NFDictUtils.EMPTY
+	var locales_dict: Dictionary = format_strings.get(key, e).get(locale, e)
+	var formats_dict: Dictionary = locales_dict.get("format", e)
+	var target_dict: Dictionary = formats_dict.get(format, e)
+	var cases_dict: Dictionary = target_dict.get("cases", e)
+	if not cases_dict.is_empty():
+		cases.assign(cases_dict.keys())
+	
 	return cases
 
 
@@ -473,38 +488,58 @@ func set_format_string_default_case(key: String, locale: String, format: String,
 ## Returns the default case from a localized string with the given key.
 func get_format_string_default_case(key: String, locale: String, argument: String) -> String:
 	locale = NFStringUtils.sanitize_locale(locale)
-	return NFDictUtils.get_nested_value(
-			format_strings,
-			[key, locale, "format", argument, "default"],
-			"")
+	var e: Dictionary = NFDictUtils.EMPTY
+	var locale_dict: Dictionary = format_strings.get(key, e).get(locale, e)
+	var formats_dict: Dictionary = locale_dict.get("format", e)
+	var argument_dict: Dictionary = formats_dict.get(argument, e)
+	var default_data: Variant = argument_dict.get("default", "")
+	
+	if typeof(default_data) == TYPE_STRING:
+		return default_data
+	else:
+		return ""
 
 
 ## Erases a [param format_key] and all its cases on the given [param key]
 ## from the given [param locale].
 func erase_format_string_format(key: String, locale: String, format_key: String) -> void:
 	locale = NFStringUtils.sanitize_locale(locale)
-	if NFDictUtils.has_nested_path(format_strings, [key, locale, "format"]):
-		format_strings[key][locale]["format"].erase(format_key)
+	var e: Dictionary = NFDictUtils.EMPTY
+	var locale_dict: Dictionary = format_strings.get(key, e).get(locale, e)
+	var formats_dict: Dictionary = locale_dict.get("format", e)
+	if formats_dict.has(format_key):
+		formats_dict.erase(format_key)
 
 
 ## Erases the specific [param case] of the [param format_key] of the specified
 ## [param locale] in the [param key].
 func erase_format_string_case(key: String, locale: String, format_key: String, case: String) -> bool:
 	locale = NFStringUtils.sanitize_locale(locale)
-	if NFDictUtils.has_nested_path(format_strings, [key, locale, "format", format_key, "cases"]):
-		return format_strings[key][locale]["format"][format_key]["cases"].erase(case)
-	return false
+	var e: Dictionary = NFDictUtils.EMPTY
+	var locales_dict: Dictionary = format_strings.get(key, e).get(locale, e)
+	var formats_dict: Dictionary = locales_dict.get("format", e)
+	var target_dict: Dictionary = formats_dict.get(format_key, e)
+	var cases_dict: Dictionary = target_dict.get("cases", e)
+	
+	if cases_dict.has(case):
+		cases_dict.erase(case)
+		return true
+	else:
+		return false
 
 
 ## Clears the list of custom cases from the given key.
 func clear_format_string_cases(key: String, locale: String, format: String) -> void:
 	locale = NFStringUtils.sanitize_locale(locale)
-	var cases = NFDictUtils.get_nested_value(
-			format_strings,
-			[key, locale, "format", format, "cases"])
+	var e: Dictionary = NFDictUtils.EMPTY
+	var locale_dict: Dictionary = format_strings.get(key, e).get(locale, e)
+	var formats_dict: Dictionary = locale_dict.get("format", e)
+	var target_dict: Dictionary = formats_dict.get(format, e)
+	var cases_dict: Dictionary = target_dict.get("cases", e)
 	
-	if typeof(cases) == TYPE_DICTIONARY:
-		cases.clear()
+	# Check because calling clear() on a read-only dictionary prints an error.
+	if not cases_dict.is_empty():
+		cases_dict.clear()
 
 
 ## Returns all the registered node uuids.
@@ -1234,10 +1269,13 @@ func generate_localization_files(localization_id: String, base_path: String, fil
 		else:
 			lang_file = DiscourseDialogLocale.new()
 			lang_file.locale = lang_key
-			NFDictUtils.set_nested_value(
-						localization_groups,
-						[locale_group, lang_key],
-						lang_file)
+			
+			if not localization_groups.has(locale_group):
+				var new_group: Dictionary[String, DiscourseDialogLocale] = {}
+				localization_groups[locale_group] = new_group
+			
+			var group: Dictionary = localization_groups[locale_group]
+			group[lang_key] = lang_file
 			
 			new_files.append({
 				"file": lang_file,
@@ -1255,15 +1293,23 @@ func generate_localization_files(localization_id: String, base_path: String, fil
 			var locale_path: String = NFStringUtils.make_path([
 				base_path, locale_key, md5_fragment, filename])
 			
-			if not locale_group.is_empty() and NFDictUtils.has_nested_path(localization_groups, [locale_group, locale_key]):
+			if locale_group.is_empty():
+				lang_locale_file = DiscourseDialogLocale.new()
+				lang_locale_file.locale = locale_key
+				new_files.append({
+					"file": lang_locale_file,
+					"path": locale_path})
+			elif localization_groups.get(locale_group, NFDictUtils.EMPTY).has(locale_key):
 				lang_locale_file = localization_groups[locale_group][locale_key]
 			else:
 				lang_locale_file = DiscourseDialogLocale.new()
 				lang_locale_file.locale = locale_key
-				NFDictUtils.set_nested_value(
-						localization_groups,
-						[locale_group, locale_key],
-						lang_locale_file)
+				
+				if not localization_groups.has(locale_group):
+					var new_group: Dictionary[String, DiscourseDialogLocale] = {}
+					localization_groups[locale_group] = new_group
+				var group: Dictionary = localization_groups[locale_group]
+				group[locale_key] = lang_locale_file
 				
 				new_files.append({
 					"file": lang_locale_file,
@@ -1277,13 +1323,19 @@ func generate_localization_files(localization_id: String, base_path: String, fil
 	var extra_data_warned: bool = false
 	
 	for localization_key in localization.keys():
-		if not node_data.has(localization_key) or not NFDictUtils.get_nested_value(node_data[localization_key], ["metadata", "localized"], false, true):
+		var e: Dictionary = NFDictUtils.EMPTY
+		var metadata_dict: Dictionary = node_data.get(localization_key, e).get("metadata", e)
+		var is_localized: bool = metadata_dict.get("localized", false)
+		
+		if not node_data.has(localization_key) or not is_localized:
 			continue
 		
-		var localization_locales = NFDictUtils.get_nested_value(localization, [localization_key, "locales"], {})
-		if typeof(localization_locales) != TYPE_DICTIONARY:
+		var localization_locales: Dictionary = localization.get(localization_key, e).get("locales", e)
+		
+		if localization_locales.is_empty():
 			continue
-		var localization_keys = localization_locales.keys()
+		
+		var localization_keys: Array = localization_locales.keys()
 		
 		if not used_locales.has_all(localization_keys):
 			var extra_locales: Array = localization_keys.duplicate()
@@ -1326,11 +1378,7 @@ func _add_locale_data(file: DiscourseDialogLocale, localization_id: String, loca
 		
 		var nodeid: String = node_data[node_uuid]["name"]
 		var data = localization[node_uuid]
-		var localized: bool = NFDictUtils.get_nested_value(
-				node_data,
-				[node_uuid, "metadata", "localized"],
-				false,
-				true)
+		var localized: bool = node_data.get(node_uuid, e).get("metadata", e).get("localized", false)
 		
 		var type_mismatch: bool = _localization_type_mismatch(node_uuid)
 		var data_complete: bool = _is_localization_data_complete(data, localized)
@@ -1509,7 +1557,7 @@ func _add_locale_data(file: DiscourseDialogLocale, localization_id: String, loca
 					"export - dialog",
 					"Localization export for node with UID '%s' couldn't define type." % node_uuid,
 					NFPluginGameHandler._LogLevel.WARNING)
-			var nameless_id = NFDictUtils.get_nested_value(node_data, [node_uuid, "name"])
+			var nameless_id: Variant = node_data.get(node_uuid, e).get("name")
 			if typeof(nameless_id) == TYPE_STRING_NAME:
 				NFPluginGameHandler._log_msg(
 						"export - dialog",
@@ -1796,8 +1844,17 @@ func _phrases_to_json_string() -> String:
 					"default": "",
 					"cases": {}}
 				if format_strings[key][locale_code]["format"].has(form):
-					format_data["default"] = NFDictUtils.get_nested_value(format_strings, [key, locale_code, "format", form, "default"], "")
-					format_data["cases"] = NFDictUtils.get_nested_value(format_strings, [key, locale_code, "format", form, "cases"], {})
+					var e: Dictionary = NFDictUtils.EMPTY
+					var locale_dict: Dictionary = format_strings.get(key, e).get(locale_code, e)
+					var format_dict: Dictionary = locale_dict.get("format", e)
+					var form_dict: Dictionary = format_dict.get(form, e)
+					
+					var default_data: Variant = form_dict.get("default", "")
+					var cases_data: Variant = form_dict.get("cases", e)
+					
+					format_data["default"] = default_data if typeof(default_data) == TYPE_STRING else ""
+					format_data["cases"] = cases_data if typeof(cases_data) == TYPE_DICTIONARY else {}
+					
 				phrase_data["format"][form] = format_data
 			locale_data[locale_code] = phrase_data
 		data[key] = locale_data

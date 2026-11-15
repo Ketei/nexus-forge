@@ -44,10 +44,8 @@ func set_currency_value(currency_id: StringName, new_value: int) -> void:
 ## Returns the value of [param currency_id]. Value returned won't be less
 ## than 1.
 func get_currency_value(currency_id: StringName) -> int:
-	var data = NFDictUtils.get_nested_value(
-			_currencies,
-			[currency_id, "value"],
-			1)
+	var data: Variant = _currencies.get(currency_id, NFDictUtils.EMPTY).get("value", 1)
+	
 	var type: int = typeof(data)
 	if type == TYPE_INT or type == TYPE_FLOAT:
 		return maxi(1, data)
@@ -63,11 +61,7 @@ func set_currency_name(currency_id: StringName, new_name: String) -> void:
 ## Returns the name of [param currency_id] or an empty string if the currency
 ## isn't registered.
 func get_currency_name(currency_id: StringName) -> String:
-	return NFDictUtils.get_nested_value(
-			_currencies,
-			[currency_id, "name"],
-			"",
-			true)
+	return _currencies.get(currency_id, NFDictUtils.EMPTY).get("name", "")
 
 
 ## Sets the value of the custom data with key param data_key to [param data]
@@ -89,9 +83,9 @@ func set_currency_data(currency_id: StringName, data_key: String, data: Variant)
 ## Returns the value of [param data_key] of the custom data of
 ## [param currency_id].
 func get_currency_data(currency_id: StringName, data_key: String) -> Variant:
-	return NFDictUtils.get_nested_value(
-			_currencies,
-			[currency_id, "custom_data", data_key])
+	var e: Dictionary = NFDictUtils.EMPTY
+	var custom_dict: Dictionary = _currencies.get(currency_id, e).get("custom_data", e)
+	return custom_dict.get(data_key)
 
 
 ## Returns a copy of the [param currency_id] custom data.
@@ -112,19 +106,19 @@ func get_currency_custom_data(currency_id: StringName) -> Dictionary[StringName,
 ## Returns the keys of the custom data that [param currency_id] has.
 func currency_data_keys(currency_id: StringName) -> Array[String]:
 	var keys: Array[String] = []
-	keys.assign(NFDictUtils.get_nested_value(
-			_currencies,
-			[currency_id, "custom_data"],
-			{},
-			true).keys())
+	var e: Dictionary = NFDictUtils.EMPTY
+	var custom_data: Dictionary = _currencies.get(currency_id, e).get("custom_data", e)
+	if not custom_data.is_empty():
+		keys.assign(custom_data.keys())
 	return keys
 
 
 ## Clears the custom data of the currency with id [param currency_id]
 func clear_currency_data(currency_id: StringName) -> void:
-	var target_dict: Variant = _currencies.get(currency_id)
-	if typeof(target_dict) == TYPE_DICTIONARY:
-		target_dict["custom_data"].clear()
+	var e: Dictionary = NFDictUtils.EMPTY
+	var custom_data: Dictionary = _currencies.get(currency_id, e).get("custom_data", e)
+	if not custom_data.is_empty():
+		custom_data.clear()
 
 
 ## Returns an array containing the keys of all currencies.[br]

@@ -25,11 +25,7 @@ func has_stat(stat_id: StringName) -> bool:
 
 ## Returns the built-in type of a stat.
 func stat_type(stat_id: StringName) -> int:
-	var type: int = NFDictUtils.get_nested_value(
-			_stat_data,
-			[stat_id, "type"],
-			TYPE_FLOAT,
-			true)
+	var type: int = _stat_data.get(stat_id, NFDictUtils.EMPTY).get("type", TYPE_FLOAT)
 	
 	if type != TYPE_INT and type != TYPE_FLOAT:
 		return TYPE_FLOAT

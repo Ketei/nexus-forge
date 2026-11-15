@@ -1274,20 +1274,17 @@ func _do_update_node_localization(to: Dictionary, do_assign: bool = true) -> voi
 		return
 	
 	if node.node_type == DiscourseGraphNode.DialogueNodeType.DIALOG or node.node_type == DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
-		var base_text: String = ""
-		var new_text: String = ""
+		var e: Dictionary = NFDictUtils.EMPTY
 		
-		new_text = NFDictUtils.get_nested_value(
-				active_conversation.localization,
-				[selected_node, "locales", selected_locale],
-				"",
-				true)
+		var node_dict: Dictionary = active_conversation.localization.get(selected_node, e)
+		var locales_dict: Dictionary = node_dict.get("locales", e)
 		
-		base_text = NFDictUtils.get_nested_value(
-				active_conversation.localization,
-				[selected_node, "locales", base_language],
-				base_text_edt.text,
-				true)
+		var base_data: Variant = locales_dict.get(base_language, base_text_edt.text)
+		var localized_data: Variant = locales_dict.get(selected_locale, "")
+		
+		var base_text: String = base_data if typeof(base_data) == TYPE_STRING else base_text_edt.text
+		var new_text: String = localized_data if typeof(localized_data) == TYPE_STRING else ""
+		
 		base_text_edt.text = base_text
 		translation_txt_box.text = new_text
 		translation_txt_box.set_meta(&"old_value", new_text)
@@ -1295,20 +1292,22 @@ func _do_update_node_localization(to: Dictionary, do_assign: bool = true) -> voi
 		_set_dialog_previewer_text(new_text)
 		
 	elif node.node_type == DiscourseGraphNode.DialogueNodeType.CHOICES:
+		var e: Dictionary = NFDictUtils.EMPTY
+		
+		var node_dict: Dictionary = active_conversation.localization.get(selected_node, e)
+		var locales_dict: Dictionary = node_dict.get("locales", e)
+		
 		var localized_options: Array[String] = []
 		var base_options: Array[String] = []
 		
-		localized_options.assign(NFDictUtils.get_nested_value(
-				active_conversation.localization,
-				[selected_node, "locales", selected_locale],
-				[],
-				true))
+		var localized_data: Variant = locales_dict.get(selected_locale)
+		var base_data: Variant = locales_dict.get(base_language)
 		
-		base_options.assign(NFDictUtils.get_nested_value(
-				active_conversation.localization,
-				[selected_node, "locales", base_language],
-				[],
-				true))
+		if typeof(localized_data) == TYPE_PACKED_STRING_ARRAY:
+			localized_options.assign(localized_data)
+		
+		if typeof(base_data) == TYPE_PACKED_STRING_ARRAY:
+			base_options.assign(base_data)
 		
 		clear_localized_options()
 		var choice_size: int = node.choice_count()
@@ -1713,20 +1712,16 @@ func _on_side_editor_locale_changed(from: String, to: String) -> void:
 	var node_uuid: String = active_node.get_node_uuid()
 	
 	if active_node.node_type == DiscourseGraphNode.DialogueNodeType.DIALOG or active_node.node_type == DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
-		var base_text: String = ""
-		var new_text: String = ""
+		var e: Dictionary = NFDictUtils.EMPTY
 		
-		new_text = NFDictUtils.get_nested_value(
-				active_conversation.localization,
-				[node_uuid, "locales", to],
-				"",
-				true)
+		var node_dict: Dictionary = active_conversation.localization.get(node_uuid, e)
+		var locales_dict: Dictionary = node_dict.get("locales", e)
 		
-		base_text = NFDictUtils.get_nested_value(
-				active_conversation.localization,
-				[node_uuid, "locales", base_locale],
-				base_text_edt.text,
-				true)
+		var base_data: Variant = locales_dict.get(base_locale, base_text_edt.text)
+		var localized_data: Variant = locales_dict.get(to, "")
+		
+		var base_text: String = base_data if typeof(base_data) == TYPE_STRING else base_text_edt.text
+		var new_text: String = localized_data if typeof(localized_data) == TYPE_STRING else ""
 		
 		base_text_edt.text = base_text
 		translation_txt_box.text = new_text
@@ -1735,20 +1730,21 @@ func _on_side_editor_locale_changed(from: String, to: String) -> void:
 		_set_dialog_previewer_text(new_text)
 	
 	elif active_node.node_type == DiscourseGraphNode.DialogueNodeType.CHOICES:
-		var localized_options: Array[String] = []
+		var e: Dictionary = NFDictUtils.EMPTY
+		
+		var node_dict: Dictionary = active_conversation.localization.get(node_uuid, e)
+		var locales_dict: Dictionary = node_dict.get("locales", e)
+		
 		var base_options: Array[String] = []
+		var localized_options: Array[String] = []
 		
-		localized_options.assign(NFDictUtils.get_nested_value(
-				active_conversation.localization,
-				[node_uuid, "locales", to],
-				[],
-				true))
+		var base_data: Variant = locales_dict.get(base_locale)
+		var localized_data: Variant = locales_dict.get(to)
 		
-		base_options.assign(NFDictUtils.get_nested_value(
-				active_conversation.localization,
-				[node_uuid, "locales", base_locale],
-				[],
-				true))
+		if typeof(base_data) == TYPE_PACKED_STRING_ARRAY:
+			base_options.assign(base_data)
+		if typeof(localized_data) == TYPE_PACKED_STRING_ARRAY:
+			localized_options.assign(localized_data)
 		
 		clear_localized_options()
 		var choice_size: int = active_node.choice_count()
@@ -1824,20 +1820,15 @@ func _on_localizer_node_selected(uuid: String) -> void:
 	
 	match new_node.node_type:
 		DiscourseGraphNode.DialogueNodeType.DIALOG:
-			var base_text: String = ""
-			var new_text: String = ""
+			var e: Dictionary = NFDictUtils.EMPTY
 			
-			new_text = NFDictUtils.get_nested_value(
-				active_conversation.localization,
-				[new_node_uuid, "locales", active_locale],
-				"",
-				true)
+			var node_dict: Dictionary = active_conversation.localization.get(new_node_uuid, e)
+			var locales_dict: Dictionary = node_dict.get("locales", e)
+			var base_data: Variant = locales_dict.get(base_language, "")
+			var localized_data: Variant = locales_dict.get(active_locale, "")
 			
-			base_text = NFDictUtils.get_nested_value(
-				active_conversation.localization,
-				[new_node_uuid, "locales", base_language],
-				base_text_edt.text,
-				true)
+			var base_text: String = base_data if typeof(base_data) == TYPE_STRING else ""
+			var new_text: String = localized_data if typeof(localized_data) == TYPE_STRING else ""
 			
 			base_text_edt.text = base_text
 			translation_txt_box.text = new_text
@@ -1850,16 +1841,15 @@ func _on_localizer_node_selected(uuid: String) -> void:
 				var choices: Array[String] = get_localizer_choices()
 				_set_dialog_previewer_choices(choices)
 		DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
-			var new_text: String = NFDictUtils.get_nested_value(
-				active_conversation.localization,
-				[uuid, "locales", active_locale],
-				"",
-				true)
-			var base_text: String = NFDictUtils.get_nested_value(
-				active_conversation.localization,
-				[uuid, "locales", base_language],
-				"",
-				true)
+			var e: Dictionary = NFDictUtils.EMPTY
+			var node_dict: Dictionary = active_conversation.localization.get(uuid, e)
+			var locales_dict: Dictionary = node_dict.get("locales", e)
+			
+			var base_data: Variant = locales_dict.get(base_language, "")
+			var localized_data: Variant = locales_dict.get(active_locale, "")
+			
+			var base_text: String = base_data if typeof(base_data) == TYPE_STRING else ""
+			var new_text: String = localized_data if typeof(localized_data) == TYPE_STRING else ""
 			
 			base_text_edt.text = base_text
 			translation_txt_box.text = new_text
@@ -1921,19 +1911,23 @@ func _on_switch_window_pressed() -> void:
 		var node_uuid: String = active_node.get_node_uuid()
 		# Node is option. Specific method call is needed
 		if active_node.node_type == DiscourseGraphNode.DialogueNodeType.CHOICES:
+			var e: Dictionary = NFDictUtils.EMPTY
+			
+			var node_dict: Dictionary = active_conversation.localization.get(node_uuid, e)
+			var locales_dict: Dictionary = node_dict.get("locales", e)
+			
+			var base_data: Variant = locales_dict.get(base_language)
+			var localized_data: Variant = locales_dict.get(localizer_locale)
+			
 			var target_choices: int = active_node.choice_count()
-			var options: Array[String] = []
-			options.assign(NFDictUtils.get_nested_value(
-					active_conversation.localization,
-					[node_uuid, "locales", localizer_locale],
-					[],
-					true))
 			var base_lang: Array[String] = []
-			base_lang.assign(NFDictUtils.get_nested_value(
-					active_conversation.localization,
-					[node_uuid, "locales", base_language],
-					[],
-					true))
+			var options: Array[String] = []
+			
+			if typeof(localized_data) == TYPE_PACKED_STRING_ARRAY:
+				options.assign(localized_data)
+			
+			if typeof(base_data) == TYPE_PACKED_STRING_ARRAY:
+				base_lang.assign(base_data)
 			
 			if options.size() != target_choices:
 				options.resize(target_choices)
@@ -1949,17 +1943,16 @@ func _on_switch_window_pressed() -> void:
 			_set_dialog_previewer_choices(options)
 		
 		else: # Either dialog or localized text. Same method can be used.
-			var localized_text: String = NFDictUtils.get_nested_value(
-					active_conversation.localization,
-					[node_uuid, "locales", localizer_locale],
-					"",
-					true)
-			var base_text: String = NFDictUtils.get_nested_value(
-					active_conversation.localization,
-					[node_uuid, "locales", base_language],
-					"",
-					true)
-				
+			var e: Dictionary = NFDictUtils.EMPTY
+			var node_dict: Dictionary = active_conversation.localization.get(node_uuid, e)
+			var locales_dict: Dictionary = node_dict.get("locales", e)
+			
+			var base_data: Variant = locales_dict.get(base_language, "")
+			var localized_data: Variant = locales_dict.get(localizer_locale, "")
+			
+			var base_text: String = base_data if typeof(base_data) == TYPE_STRING else ""
+			var localized_text: String = localized_data if typeof(localized_data) == TYPE_STRING else ""
+			
 			base_text_edt.text = base_text
 			translation_txt_box.text = localized_text
 			translation_txt_box.set_meta(&"old_value", localized_text)
@@ -3198,12 +3191,14 @@ func _on_phrase_field_code_editor_requested(target: TextEdit) -> void:
 	if not result[0] or result[1] == initial_text:
 		return
 	
+	var e: Dictionary = NFDictUtils.EMPTY
 	var phrase_id: String = target.get_parent().get_meta(&"phrase_key")
 	var locale_code: String = phrases_lang_menu.get_selected_metadata()
 	var old_state: Dictionary = {}
 	
-	if NFDictUtils.has_nested_path(active_conversation.format_strings, [phrase_id, locale_code]):
-		old_state = active_conversation.format_strings[phrase_id][locale_code].duplicate(true)
+	var locale_dict: Dictionary = active_conversation.format_strings.get(phrase_id, e).get(locale_code, e)
+	if not locale_dict.is_empty():
+		old_state = locale_dict.duplicate(true)
 	
 	set_phrase_format_string(phrase_id, locale_code, result[1])
 	target.set_meta(&"old_value", result[1])
@@ -3214,7 +3209,6 @@ func _on_phrase_field_code_editor_requested(target: TextEdit) -> void:
 	undo.add_do_method(_set_phrase_state_action.bind(phrase_id, locale_code, new_state))
 	undo.add_undo_method(_set_phrase_state_action.bind(phrase_id, locale_code, old_state))
 	undo.commit_action(false)
-	
 	
 	target.text = result[1]
 	
@@ -3382,11 +3376,17 @@ func _on_edit_cases_pressed(field: Control) -> void:
 		default_case_edt.text = active_conversation.get_format_string_default_case(phrase_key, locale_code, argument_format)
 		default_case_edt.set_meta(&"old_value", default_case_edt.text)
 		
-		if NFDictUtils.has_nested_path(active_conversation.format_strings, [phrase_key, locale_code, "format", argument_format, "cases"]):
-			for custom_case in active_conversation.format_strings[phrase_key][locale_code]["format"][argument_format]["cases"]:
+		var e: Dictionary = NFDictUtils.EMPTY
+		var locale_dict: Dictionary = active_conversation.format_strings.get(phrase_key, e).get(locale_code, e)
+		var format_dict: Dictionary = locale_dict.get("format", e)
+		var target_dict: Dictionary = format_dict.get(argument_format, e)
+		var cases_dict: Dictionary = target_dict.get("cases", e)
+		
+		if not cases_dict.is_empty():
+			for custom_case in cases_dict:
 				create_new_phrase_case(
 					custom_case,
-					active_conversation.get_format_string_case(phrase_key, locale_code, argument_format, custom_case),
+					cases_dict[custom_case],
 					phrases)
 	
 	case_box_container.visible = true
@@ -4521,16 +4521,17 @@ func _on_phrase_text_editing_focus_lost(field: TextEdit) -> void:
 	var locale_code: String = phrases_lang_menu.get_selected_metadata()
 	
 	var old_state: Dictionary = {}
-	if NFDictUtils.has_nested_path(active_conversation.format_strings, [phrase_id, locale_code]):
-		old_state = active_conversation.format_strings[phrase_id][locale_code].duplicate(true)
+	
+	var e: Dictionary = NFDictUtils.EMPTY
+	var locale_dict: Dictionary = active_conversation.format_strings.get(phrase_id, e).get(locale_code, e)
+	if not locale_dict.is_empty():
+		old_state = locale_dict.duplicate(true)
 	
 	set_phrase_format_string(phrase_id, locale_code, new_text)
 	
-	var new_state: Dictionary = NFDictUtils.get_nested_value(
-			active_conversation.format_strings,
-			[phrase_id, locale_code],
-			{},
-			true).duplicate(true)
+	var phrase_dict: Dictionary = active_conversation.format_strings.get(phrase_id, e).get(locale_code, e)
+	
+	var new_state: Dictionary = {} if phrase_dict.is_empty() else phrase_dict.duplicate(true)
 	
 	undo.create_action("Set Phrase Text (%s)" % locale_code)
 	undo.add_do_method(_set_phrase_state_action.bind(phrase_id, locale_code, new_state))
@@ -5905,11 +5906,13 @@ func _do_delocalize_node(node_uuid: String) -> void:
 	
 	match node.node_type:
 		DiscourseGraphNode.DialogueNodeType.DIALOG:
-			var base_text: String = NFDictUtils.get_nested_value(
-				active_conversation.localization,
-				[node_uuid, "locales", base_language],
-				node.get_dialog_text(),
-				true)
+			var e: Dictionary = NFDictUtils.EMPTY
+			var locales_dict: Dictionary = active_conversation.localization.get(node_uuid, e).get("locales", e)
+			var fallback: String = node.get_dialog_text()
+			var base_data: Variant = locales_dict.get(base_language, fallback)
+			
+			var base_text: String = base_data if typeof(base_data) == TYPE_STRING else fallback
+			
 			active_conversation.set_dialog_text(node_uuid, base_text)
 			if current_locale != base_language: # GUI update only
 				discourse_graph_edit.set_dialog_node_dialog_text(node_uuid, base_text)
@@ -5930,11 +5933,14 @@ func _do_delocalize_node(node_uuid: String) -> void:
 							choice_id,
 							options[choice_id - 1])
 		DiscourseGraphNode.DialogueNodeType.LOCALIZED_TEXT:
-			var base_text: String = NFDictUtils.get_nested_value(
-					active_conversation.localization,
-					[node_uuid, "locales", base_language],
-					node.get_text(),
-					true)
+			var e: Dictionary = NFDictUtils.EMPTY
+			var locales_dict: Dictionary = active_conversation.localization.get(node_uuid, e).get("locales", e)
+			
+			var fallback: String = node.get_text()
+			var base_data: Variant = locales_dict.get(base_language, fallback)
+			
+			var base_text: String = base_data if typeof(base_data) == TYPE_STRING else fallback
+			
 			active_conversation.set_dialog_text(node_uuid, base_text)
 			if current_locale != base_language:
 				discourse_graph_edit.set_localized_text_node_text(

@@ -568,18 +568,14 @@ func unlink_species(species_id: StringName, clear_dominant: bool = true, clear_r
 
 ## Returns the parent species of [param of_species].
 func get_dominant_species_of(species_id: StringName) -> StringName:
-	return NFDictUtils.get_nested_value(
-			_species,
-			[species_id, "parent_dominant"],
-			&"",
-			true)
+	return _species.get(species_id, NFDictUtils.EMPTY).get("parent_dominant", &"")
 
 
 ## Returns the recessive species of [param species_id].[br]
 ## Returns an empty StringName if the species isn't found or has
 ## no parent.
 func get_recessive_species_of(species_id: StringName) -> StringName:
-	return _species.get(species_id, {}).get("parent_recessive", &"")
+	return _species.get(species_id, NFDictUtils.EMPTY).get("parent_recessive", &"")
 
 
 ## Returns [code]true[/code] if [param species_id] is registered.
@@ -590,11 +586,7 @@ func has_species(species_id: StringName) -> bool:
 ## Returns the name of [param species_id]. Returns an empty string if the species
 ## isn't registered.
 func get_species_name(species_id: StringName) -> String:
-	return NFDictUtils.get_nested_value(
-			_species,
-			[species_id, "name"],
-			"",
-			true)
+	return _species.get(species_id, NFDictUtils.EMPTY).get("name", "")
 
 
 ## Sets the species name of [param species_id] to [param new_name]
@@ -608,11 +600,7 @@ func set_species_name(species_id: StringName, new_name: String) -> void:
 ## Returns the description of [param species_id]. Returns an empty string if
 ## the species isn't registered.
 func get_species_description(species_id: StringName) -> String:
-	return NFDictUtils.get_nested_value(
-			_species,
-			[species_id, "description"],
-			"",
-			true)
+	return _species.get(species_id, NFDictUtils.EMPTY).get("description", "")
 
 
 ## Sets the description of [param species_id] to [param new_name].
@@ -638,9 +626,10 @@ func set_species_data(species_id: StringName, data_key: String, data: Variant) -
 ## Returns the data with [param data_key] from the [param species_id] or
 ## [code]null[/code] if the species isn't registered or key doesn't exist.
 func get_species_data(species_id: StringName, data_key: String) -> Variant:
-	return NFDictUtils.get_nested_value(
-			_species,
-			[species_id, "custom_data", data_key])
+	var e: Dictionary = NFDictUtils.EMPTY
+	var custom_data: Dictionary = _species.get(species_id, e).get("custom_data", e)
+	
+	return custom_data.get(data_key)
 
 
 ## Returns a copy of the custom data of species [param species_id].
@@ -683,13 +672,13 @@ func clear_species_data(species_id: StringName) -> void:
 ## Returns the value of [param stat_id] assigned to the species with
 ## [param species_id] or 0 if the stat isn't assigned on the species.
 func get_species_stat_value(species_id: StringName, stat_id: StringName) -> float:
-	var data = NFDictUtils.get_nested_value(
-			_species,
-			[species_id, "stats", stat_id],
-			0.0)
-	var type: int = typeof(data)
+	var e: Dictionary = NFDictUtils.EMPTY
+	var stats_dict: Dictionary = _species.get(species_id, e)
+	var stat_data: Variant = stats_dict.get(stat_id, 0.0)
+	
+	var type: int = typeof(stat_data)
 	if type == TYPE_INT or type == TYPE_FLOAT:
-		return data
+		return stat_data
 	return 0.0
 
 
@@ -741,10 +730,10 @@ func set_species_skill_value(species_id: StringName, skill_id: StringName, value
 ## Returns the value of [param skill_id] assigned to the species with
 ## [param species_id] or 0 if the skill isn't assigned on the species.
 func get_species_skill_value(species_id: StringName, skill_id: StringName) -> int:
-	var data = NFDictUtils.get_nested_value(
-			_species,
-			[species_id, "skills", skill_id],
-			0.0)
+	var e: Dictionary = NFDictUtils.EMPTY
+	var skills_dict: Dictionary = _species.get(_species, e).get("skills", e)
+	var data: Variant = skills_dict.get(skill_id, 0.0)
+	
 	var type: int = typeof(data)
 	
 	if type == TYPE_INT or type == TYPE_FLOAT:
@@ -792,10 +781,10 @@ func set_species_trait_value(species_id: StringName, trait_id: StringName, value
 ## Returns the value of [param trait_id] assigned to the species with
 ## [param species_id] or 0 if the trait isn't assigned on the species.
 func get_species_trait_value(species_id: StringName, trait_id: StringName) -> int:
-	var data = NFDictUtils.get_nested_value(
-			_species,
-			[species_id, "traits", trait_id],
-			0.0)
+	var e: Dictionary = NFDictUtils.EMPTY
+	var traits_dict: Dictionary = _species.get(species_id, e).get("traits", e)
+	var data: Variant = traits_dict.get(trait_id, 0.0)
+	
 	var type: int = typeof(data)
 	if type == TYPE_INT or type == TYPE_FLOAT:
 		return data

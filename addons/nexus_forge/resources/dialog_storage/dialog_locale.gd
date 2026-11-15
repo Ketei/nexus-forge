@@ -53,6 +53,7 @@ static func new_from_json(json_string: String) -> DiscourseDialogLocale:
 	if data == null or typeof(data) != TYPE_DICTIONARY:
 		return null
 	
+	var e: Dictionary = NFDictUtils.EMPTY
 	var new_locale: DiscourseDialogLocale = DiscourseDialogLocale.new()
 	
 	if data.has("localization") and typeof(data["localization"]) == TYPE_DICTIONARY:
@@ -109,12 +110,22 @@ static func new_from_json(json_string: String) -> DiscourseDialogLocale:
 								if typeof(custom_case) != TYPE_STRING or typeof(string_data["cases"][custom_case]) != TYPE_STRING:
 									continue
 								custom_cases[custom_case] = string_data["cases"][custom_case]
+						
+						
+						var format_dict: Dictionary = format_data.get("format", e)
+						var key_dict: Dictionary = format_dict.get(format_key, e)
+						var default_data: Variant = key_dict.get("default", "")
+						
 						formats[format_key] = {
 							"cases": custom_cases,
-							"default": NFDictUtils.get_nested_value(format_data, ["format", format_key, "default"], "", true)}
+							"default": default_data if typeof(default_data) == TYPE_STRING else ""}
+				
+				var format_dict: Dictionary = dialog_data.get(format_id, e)
+				var base_data: Variant = format_dict.get("base_string", "")
+				
 				conversation_data[format_id] = {
 					"format": formats,
-					"base_string": NFDictUtils.get_nested_value(dialog_data, [format_id, "base_string"], "", true)}
+					"base_string": base_data if typeof(base_data) == TYPE_STRING else ""}
 			new_locale.format_strings[dialog_id] = conversation_data
 	
 	return new_locale
