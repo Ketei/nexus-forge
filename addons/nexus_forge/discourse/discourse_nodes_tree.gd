@@ -19,85 +19,8 @@ enum ContextMenuID {
 	REMOVE,
 }
 
-const DATA_COLOR: Color = Color(0.557, 0.937, 0.592)
-const DIALOG_COLOR: Color = Color(0.553, 0.647, 0.953)
-const SETTINGS_COLOR: Color = Color(0.99, 0.808, 0.495)
-const RESOURCE_COLOR: Color = Color(0.988, 0.498, 0.498)
-
-const DIALOG: Array[NFDialogParser.NodeTypes] = [
-		NFDialogParser.NodeTypes.ENTRY,
-		NFDialogParser.NodeTypes.DIALOG,
-		NFDialogParser.NodeTypes.CHOICES,
-		NFDialogParser.NodeTypes.BRANCH,
-		NFDialogParser.NodeTypes.COMPARATION,
-		NFDialogParser.NodeTypes.EVENT,
-		NFDialogParser.NodeTypes.MATCH,
-		NFDialogParser.NodeTypes.PAUSE,
-		NFDialogParser.NodeTypes.RANDOM,
-		NFDialogParser.NodeTypes.SHORTCUT_IN,
-		NFDialogParser.NodeTypes.SHORTCUT_OUT,
-		NFDialogParser.NodeTypes.DIALOG_END,
-		NFDialogParser.NodeTypes.DIALOG_MERGE,
-		NFDialogParser.NodeTypes.LOCALIZED_TEXT,
-		NFDialogParser.NodeTypes.TRAVEL_TO,
-		NFDialogParser.NodeTypes.TRAVEL_TARGET,
-		NFDialogParser.NodeTypes.TRAVEL_BACK]
-	
-const DATA: Array[NFDialogParser.NodeTypes] = [
-		NFDialogParser.NodeTypes.CONDITION_SELECT,
-		NFDialogParser.NodeTypes.TYPE_GUARD,
-		NFDialogParser.NodeTypes.VALUE,
-		NFDialogParser.NodeTypes.SIGNAL,
-		NFDialogParser.NodeTypes.CALLABLE,
-		NFDialogParser.NodeTypes.CALLABLE_RETURN,
-		NFDialogParser.NodeTypes.VARIABLE_GET,
-		NFDialogParser.NodeTypes.RANDOM_VALUE,
-		NFDialogParser.NodeTypes.DATA_EVENT,
-		NFDialogParser.NodeTypes.METADATA]
-	
-const SETTINGS: Array[NFDialogParser.NodeTypes] = [
-		NFDialogParser.NodeTypes.SETTINGS_CHARACTER,
-		NFDialogParser.NodeTypes.SETTINGS_DIALOG,
-		NFDialogParser.NodeTypes.SETTINGS_OPTION]
-	
-const RESOURCES: Array[NFDialogParser.NodeTypes] = [
-		NFDialogParser.NodeTypes.RESOURCE]
-
-const DEFAULT_NODE_NAMES: Dictionary[NFDialogParser.NodeTypes, String] = {
-	NFDialogParser.NodeTypes.ENTRY: "Entry",
-	NFDialogParser.NodeTypes.DIALOG: "Dialog",
-	NFDialogParser.NodeTypes.CHOICES: "Choice",
-	NFDialogParser.NodeTypes.BRANCH: "Branch",
-	NFDialogParser.NodeTypes.COMPARATION: "Comparison",
-	NFDialogParser.NodeTypes.EVENT: "Event",
-	NFDialogParser.NodeTypes.MATCH: "Match",
-	NFDialogParser.NodeTypes.PAUSE: "Pause",
-	NFDialogParser.NodeTypes.RANDOM: "Random",
-	NFDialogParser.NodeTypes.SHORTCUT_IN: "FlowIn",
-	NFDialogParser.NodeTypes.SHORTCUT_OUT: "FlowOut",
-	NFDialogParser.NodeTypes.DIALOG_END: "End",
-	NFDialogParser.NodeTypes.DIALOG_MERGE: "Merge",
-	NFDialogParser.NodeTypes.LOCALIZED_TEXT: "Localized",
-	NFDialogParser.NodeTypes.COMMENT: "Comment",
-	NFDialogParser.NodeTypes.TRAVEL_TO: "TravelTo",
-	NFDialogParser.NodeTypes.TRAVEL_TARGET: "Waypoint",
-	NFDialogParser.NodeTypes.TRAVEL_BACK: "TravelBack",
-	NFDialogParser.NodeTypes.CONDITION_SELECT: "ConditionSelect",
-	NFDialogParser.NodeTypes.TYPE_GUARD: "TypeGuard",
-	NFDialogParser.NodeTypes.VALUE: "Value",
-	NFDialogParser.NodeTypes.SIGNAL: "Signal",
-	NFDialogParser.NodeTypes.CALLABLE: "Callable",
-	NFDialogParser.NodeTypes.CALLABLE_RETURN: "CallableReturn",
-	NFDialogParser.NodeTypes.VARIABLE_GET: "Variable",
-	NFDialogParser.NodeTypes.RANDOM_VALUE: "RandomValue",
-	NFDialogParser.NodeTypes.DATA_EVENT: "EventData",
-	NFDialogParser.NodeTypes.METADATA: "Metadata",
-	NFDialogParser.NodeTypes.SETTINGS_CHARACTER: "ConfigCharacter",
-	NFDialogParser.NodeTypes.SETTINGS_DIALOG: "ConfigDialog",
-	NFDialogParser.NodeTypes.SETTINGS_OPTION: "ConfigChoice",
-	NFDialogParser.NodeTypes.RESOURCE: "Resource",
-}
-
+var _node_colors: Dictionary[int, Color] = {}
+var _node_names: Dictionary[int, String] = {}
 
 var nodes: Dictionary[String, TreeItem] = {}
 var folders: Dictionary[int, TreeItem] = {}
@@ -570,11 +493,11 @@ func create_with_path(node: DiscourseGraphNode, path: String = "", index: int = 
 
 func create_node(node: DiscourseGraphNode, on: TreeItem = get_root(), index: int = -1) -> void:
 	var new_item: TreeItem = on.create_child()
-	var type: int = 0 if node.node_type in DIALOG else 1 if node.node_type in DATA else 2 if node.node_type in SETTINGS else 3 if node.node_type in RESOURCES else -1
 	var node_name: String = str(node.get_node_id())
 	new_item.set_icon(0, preload("res://addons/nexus_forge/icons/node_icon.svg") if node.graph_icon == null else node.graph_icon)
-	if 0 <= type:
-		new_item.set_icon_modulate(0, DIALOG_COLOR if type == 0 else DATA_COLOR if type == 1 else SETTINGS_COLOR if type == 2 else RESOURCE_COLOR)
+	var node_color: Color = _node_colors.get(node.node_type, Color.WHITE)
+	if node_color != Color.WHITE:
+		new_item.set_icon_modulate(0, node_color)
 	new_item.set_text(0, node_name)
 	new_item.add_button(
 			0,
@@ -646,7 +569,7 @@ func remove_dialog_node(uuid: String) -> bool:
 func get_unique_name_for_node(desired_name: String, type: int, skip_item: TreeItem = null) -> String:
 	desired_name = desired_name.strip_edges()
 	if desired_name.is_empty():
-		desired_name = DEFAULT_NODE_NAMES.get(type, "Node")
+		desired_name = _node_names.get(type, "Node")
 		
 	var all_names: Dictionary = {}
 	

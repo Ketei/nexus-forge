@@ -77,40 +77,7 @@ const ConnectionType = DiscourseGraphNode.SlotConnectionType
 # Enum to differentiate port directions
 const PortFlow = DiscourseGraphNode.PortMode
 
-const DEFAULT_NODE_NAMES: Dictionary[DialogNodes, String] = {
-	DialogNodes.ENTRY: "Entry",
-	DialogNodes.DIALOG: "Dialog",
-	DialogNodes.CHOICES: "Choice",
-	DialogNodes.BRANCH: "Branch",
-	DialogNodes.COMPARATION: "Comparison",
-	DialogNodes.EVENT: "Event",
-	DialogNodes.MATCH: "Match",
-	DialogNodes.PAUSE: "Pause",
-	DialogNodes.RANDOM: "Random",
-	DialogNodes.SHORTCUT_IN: "FlowIn",
-	DialogNodes.SHORTCUT_OUT: "FlowOut",
-	DialogNodes.DIALOG_END: "End",
-	DialogNodes.DIALOG_MERGE: "Merge",
-	DialogNodes.LOCALIZED_TEXT: "Localized",
-	DialogNodes.COMMENT: "Comment",
-	DialogNodes.TRAVEL_TO: "TravelTo",
-	DialogNodes.TRAVEL_TARGET: "Waypoint",
-	DialogNodes.TRAVEL_BACK: "TravelBack",
-	DialogNodes.CONDITION_SELECT: "ConditionSelect",
-	DialogNodes.TYPE_GUARD: "TypeGuard",
-	DialogNodes.VALUE: "Value",
-	DialogNodes.SIGNAL: "Signal",
-	DialogNodes.CALLABLE: "Callable",
-	DialogNodes.CALLABLE_RETURN: "CallableReturn",
-	DialogNodes.VARIABLE_GET: "Variable",
-	DialogNodes.RANDOM_VALUE: "RandomValue",
-	DialogNodes.DATA_EVENT: "EventData",
-	DialogNodes.METADATA: "Metadata",
-	DialogNodes.SETTINGS_CHARACTER: "ConfigCharacter",
-	DialogNodes.SETTINGS_DIALOG: "ConfigDialog",
-	DialogNodes.SETTINGS_OPTION: "ConfigChoice",
-	DialogNodes.RESOURCE: "Resource",
-	}
+var _default_node_names: Dictionary[int, String] = {}
 
 # Dictionary with data about compatible nodes. Could be a const
 @onready var compatible_connections: Dictionary = {
@@ -675,7 +642,7 @@ func new_node_frame(uuid: String = "") -> GraphFrame:
 func get_unique_node_name(desired: String, type: DialogNodes, skip_uuid: String = "") -> String:
 	var desired_id: String = String(desired).strip_edges()
 	if desired_id.is_empty():
-		desired_id = DEFAULT_NODE_NAMES.get(type, "Node")
+		desired_id = _default_node_names.get(type, "Node")
 	
 	var names: Dictionary[String, Variant] = {}
 	

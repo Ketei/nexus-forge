@@ -41,6 +41,113 @@ const MAX_LINES: int = 3
 const EXTRA_Y_PADDING: int = 8
 # --------------------
 const UNDO_MAX_STEPS: int = 50
+# ---------------------
+const DATA_COLOR: Color = Color(0.557, 0.937, 0.592)
+const DIALOG_COLOR: Color = Color(0.553, 0.647, 0.953)
+const SETTINGS_COLOR: Color = Color(0.99, 0.808, 0.495)
+const RESOURCE_COLOR: Color = Color(0.988, 0.498, 0.498)
+
+# Info of the default nodes.
+# "name" is the default name they'll use when spawning.
+# "color" is the color they'll have on the node tree.
+const NODE_INFO: Dictionary[int, Dictionary] = {
+	NFDialogParser.NodeTypes.ENTRY: {
+		"name": "Entry",
+		"color": DIALOG_COLOR},
+	NFDialogParser.NodeTypes.DIALOG: {
+		"name": "Dialog",
+		"color": DIALOG_COLOR},
+	NFDialogParser.NodeTypes.CHOICES: {
+		"name": "Choice",
+		"color": DIALOG_COLOR},
+	NFDialogParser.NodeTypes.BRANCH: {
+		"name": "Branch",
+		"color": DIALOG_COLOR},
+	NFDialogParser.NodeTypes.COMPARATION: {
+		"name": "Comparison",
+		"color": DIALOG_COLOR},
+	NFDialogParser.NodeTypes.EVENT: {
+		"name": "Event",
+		"color": DIALOG_COLOR},
+	NFDialogParser.NodeTypes.MATCH: {
+		"name": "Match",
+		"color": DIALOG_COLOR},
+	NFDialogParser.NodeTypes.PAUSE: {
+		"name": "Pause",
+		"color": DIALOG_COLOR},
+	NFDialogParser.NodeTypes.RANDOM: {
+		"name": "Random",
+		"color": DIALOG_COLOR},
+	NFDialogParser.NodeTypes.SHORTCUT_IN: {
+		"name": "FlowIn",
+		"color": DIALOG_COLOR},
+	NFDialogParser.NodeTypes.SHORTCUT_OUT: {
+		"name": "FlowOut",
+		"color": DIALOG_COLOR},
+	NFDialogParser.NodeTypes.DIALOG_END: {
+		"name": "End",
+		"color": DIALOG_COLOR},
+	NFDialogParser.NodeTypes.DIALOG_MERGE: {
+		"name": "Merge",
+		"color": DIALOG_COLOR},
+	NFDialogParser.NodeTypes.LOCALIZED_TEXT: {
+		"name": "Localized",
+		"color": DIALOG_COLOR},
+	NFDialogParser.NodeTypes.COMMENT: {
+		"name": "Comment",
+		"color": Color.WHITE},
+	NFDialogParser.NodeTypes.TRAVEL_TO: {
+		"name": "TravelTo",
+		"color": DIALOG_COLOR},
+	NFDialogParser.NodeTypes.TRAVEL_TARGET: {
+		"name": "Waypoint",
+		"color": DIALOG_COLOR},
+	NFDialogParser.NodeTypes.TRAVEL_BACK: {
+		"name": "TravelBack",
+		"color": DIALOG_COLOR},
+	NFDialogParser.NodeTypes.CONDITION_SELECT: {
+		"name": "ConditionSelect",
+		"color": DATA_COLOR},
+	NFDialogParser.NodeTypes.TYPE_GUARD: {
+		"name": "TypeGuard",
+		"color": DATA_COLOR},
+	NFDialogParser.NodeTypes.VALUE: {
+		"name": "Value",
+		"color": DATA_COLOR},
+	NFDialogParser.NodeTypes.SIGNAL: {
+		"name": "Signal",
+		"color": DATA_COLOR},
+	NFDialogParser.NodeTypes.CALLABLE: {
+		"name": "Callable",
+		"color": DATA_COLOR},
+	NFDialogParser.NodeTypes.CALLABLE_RETURN: {
+		"name": "CallableReturn",
+		"color": DATA_COLOR},
+	NFDialogParser.NodeTypes.VARIABLE_GET: {
+		"name": "Variable",
+		"color": DATA_COLOR},
+	NFDialogParser.NodeTypes.RANDOM_VALUE: {
+		"name": "RandomValue",
+		"color": DATA_COLOR},
+	NFDialogParser.NodeTypes.DATA_EVENT: {
+		"name": "EventData",
+		"color": DATA_COLOR},
+	NFDialogParser.NodeTypes.METADATA: {
+		"name": "Metadata",
+		"color": DATA_COLOR},
+	NFDialogParser.NodeTypes.SETTINGS_CHARACTER: {
+		"name": "ConfigCharacter",
+		"color": SETTINGS_COLOR},
+	NFDialogParser.NodeTypes.SETTINGS_DIALOG: {
+		"name": "ConfigDialog",
+		"color": SETTINGS_COLOR},
+	NFDialogParser.NodeTypes.SETTINGS_OPTION: {
+		"name": "ConfigChoice",
+		"color": SETTINGS_COLOR},
+	NFDialogParser.NodeTypes.RESOURCE: {
+		"name": "Resource",
+		"color": RESOURCE_COLOR}
+}
 
 var active_conversation: EditorDiscourseDialog = null
 var previous_conversation: int = 0
@@ -135,6 +242,16 @@ var _recently_opened_popup: PopupMenu = null
 
 
 func ready_plugin(base_locale: String = "") -> void:
+	var _node_colors: Dictionary[int, Color] = {}
+	var _node_names: Dictionary[int, String] = {}
+	
+	for node_type in NODE_INFO:
+		var i: Dictionary = NODE_INFO[node_type]
+		var def_name: String = i.get("name", "Node")
+		discourse_nodes_tree._node_colors[node_type] = i.get("color", Color.WHITE)
+		discourse_nodes_tree._node_names[node_type] = def_name
+		discourse_graph_edit._default_node_names[node_type] = def_name
+	
 	text_editor = TEXT_CODE_EDITOR.instantiate()
 	add_child(text_editor)
 	text_editor.ready_plugin()
