@@ -1058,14 +1058,12 @@ func _parse_dialog(dialog_id: String, dialog_text: String, is_override: bool) ->
 			if random_processed.has(reg_result.get_string()):
 				continue
 			
-			random_processed[reg_result.get_string()] = null
-			var options: Array[String] = []
-			options.assign(
-					format_key.substr(1).split("|", false))
+			var c: Callable = _build_callable_for_random(
+					format_key.substr(1))
 			
 			parsed.set_format_callable(
 					format_key,
-					options.pick_random)
+					c)
 		
 		elif token == "!":
 			if functions_processed.has(reg_result.get_string()):
@@ -1109,14 +1107,12 @@ func _parse_dialog(dialog_id: String, dialog_text: String, is_override: bool) ->
 				var case_token: String = phrase_case[0]
 				
 				if case_token == "?":
-					var options: Array[String] = []
-					options.assign(
-							phrase_case.substr(1).split("|", false))
-					
+					var c: Callable = _build_callable_for_random(
+							phrase_case.substr(1))
 					parsed.set_format_phrase_callable(
 							format_key,
 							phrase_case,
-							options.pick_random)
+							c)
 				
 				elif case_token == "!":
 					parsed.set_format_phrase_callable(

@@ -220,12 +220,12 @@ func _parse_dialog(dialog_id: String, dialog_text: String, is_override: bool) ->
 				continue
 			
 			random_processed[rgx_result.get_string()] = null
-			var options: Array[String] = []
-			options.assign(slice.substr(1).split("|", false))
+			var c: Callable = _build_callable_for_random(
+					slice.substr(1))
 			
 			parsed.set_format_callable(
 					slice,
-					options.pick_random)
+					c)
 		
 		elif token == "!":
 			if functions_processed.has(rgx_result.get_string()):
@@ -267,12 +267,12 @@ func _parse_dialog(dialog_id: String, dialog_text: String, is_override: bool) ->
 				var phrase_token: String = phrase_item[0]
 				
 				if phrase_token == "?":
-					var items: Array[String] = []
-					items.assign(phrase_item.substr(1).split("|", false))
+					var c: Callable = _build_callable_for_random(
+							phrase_item.substr(1))
 					parsed.set_format_phrase_callable(
 							slice,
 							phrase_item,
-							items.pick_random)
+							c)
 				
 				elif phrase_token == "!":
 					parsed.set_format_phrase_callable(
@@ -291,6 +291,34 @@ func _parse_dialog(dialog_id: String, dialog_text: String, is_override: bool) ->
 		parsed)
 	
 	return parsed.get_dialog()
+
+
+func _build_callable_for_random(random_string: String) -> Callable:
+	var slices: PackedStringArray = random_string.split("|", false)
+	var items: Array[Callable] = []
+	
+	for slice in slices:
+		if slice.begins_with("!"):
+			var m_call: Callable = _build_callable_for_method(slice)
+			items.append(m_call)
+		elif slice.begins_with("$"):
+			var v_call: Callable = _build_callable_for_variable(slice)
+			items.append(v_call)
+		else:
+			var s_call: Callable = _string_return_method.bind(slice)
+			items.append(s_call)
+	
+	return _build_random_lazy_wrapper.bind(items)
+
+
+func _build_random_lazy_wrapper(items: Array[Callable]) -> String:
+	if items.is_empty():
+		return ""
+	
+	var pickd: Callable = items.pick_random()
+	var data: Variant = pickd.call()
+	var text: String = str(data)
+	return text
 
 
 func _build_callable_for_variable(text: String) -> Callable:
