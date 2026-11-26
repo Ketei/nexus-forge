@@ -380,7 +380,10 @@ func search_for_pattern(pattern: String) -> void:
 				TreeItem.CELL_MODE_STRING:
 					text = item.get_text(column)
 				TreeItem.CELL_MODE_RANGE:
-					text = str(item.get_range(column))
+					if item.get_metadata(1)["type"] == TYPE_INT:
+						text = str(int(item.get_range(column)))
+					else:
+						text = str(item.get_range(column))
 				TreeItem.CELL_MODE_CHECK:
 					text = "true" if item.is_checked(column) else "false"
 				_:
